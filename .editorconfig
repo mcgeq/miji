@@ -5,40 +5,59 @@ root = true
 
 # 通配所有文件的基础配置
 [*]
-charset = utf-8                  # 文件编码统一为 UTF-8
-end_of_line = lf                 # 使用 Unix 风格换行符（\n）
-insert_final_newline = true      # 文件末尾添加换行符
-trim_trailing_whitespace = true  # 删除行尾多余空白字符
-max_line_length = 80             # 推荐最大行长度为 80（Dart 推荐值，可根据团队调整）
+# 文件编码统一为 UTF-8
+charset = utf-8
+# 使用 Unix 风格换行符（\n）
+end_of_line = lf
+# 文件末尾添加换行符
+insert_final_newline = true
+# 删除行尾多余空白字符
+trim_trailing_whitespace = true
+# 推荐最大行长度为 80（Dart 推荐值，可根据团队调整）
+max_line_length = 80
 
 # Dart 文件的特定配置
 [*.dart]
-indent_style = space             # 缩进使用空格
-indent_size = 2                  # 缩进大小为 2 个空格（Flutter/Dart 官方推荐）
-continuation_indent_size = 4     # 续行缩进（如参数列表换行）为 4 个空格
-curly_braces_in_flow_control = true  # 强制在流程控制语句（如 if、for）中使用大括号
+# 缩进使用空格
+indent_style = space
+# 缩进大小为 2 个空格（Flutter/Dart 官方推荐）
+indent_size = 2
+# 续行缩进（如参数列表换行）为 4 个空格
+continuation_indent_size = 4
+# 强制在流程控制语句（如 if、for）中使用大括号
+curly_braces_in_flow_control = true
 
 # YAML 文件（如 pubspec.yaml、analysis_options.yaml）
 [*.{yml,yaml}]
-indent_style = space             # 缩进使用空格
-indent_size = 2                  # 缩进大小为 2 个空格
+# 缩进使用空格
+indent_style = space
+# 缩进大小为 2 个空格
+indent_size = 2
 
 # JSON 文件
 [*.json]
-indent_style = space             # 缩进使用空格
-indent_size = 2                  # 缩进大小为 2 个空格
+# 缩进使用空格
+indent_style = space
+# 缩进大小为 2 个空格
+indent_size = 2
 
 # Markdown 文件
 [*.md]
-trim_trailing_whitespace = true  # 删除行尾空白
-insert_final_newline = true      # 文件末尾添加换行符
-max_line_length = off            # Markdown 不限制行长度
+# 删除行尾空白
+trim_trailing_whitespace = true
+# 文件末尾添加换行符
+insert_final_newline = true
+# Markdown 不限制行长度
+max_line_length = off
 
 # 配置文件（如 .gitignore）
 [.{gitignore,gitattributes,editorconfig}]
-indent_style = space             # 缩进使用空格
-indent_size = 2                  # 缩进大小为 2 个空格
+# 缩进使用空格
+indent_style = space
+# 缩进大小为 2 个空格
+indent_size = 2
 
 # 避免对二进制文件应用规则
 [*.{png,jpg,jpeg,gif,ico,ttf,otf}]
-charset = binary                 # 二进制文件不应用文本编码规则
+# 二进制文件不应用文本编码规则
+charset = binary
