@@ -1,3 +1,14 @@
+// -----------------------------------------------------------------------------
+//    Copyright (C) 2025 mcge. All rights reserved.
+// Author:         mcge
+// Email:          <mcgeq@outlook.com>
+// File:           logger.dart
+// Description:    About logger
+// Create   Date:  2025-03-29 21:54:14
+// Last Modified:  2025-03-29 21:54:39
+// Modified   By:  mcgeq <mcgeq@outlook.com>
+// -----------------------------------------------------------------------------
+
 import 'dart:convert';
 import 'dart:io';
 import 'dart:async';
