@@ -5,12 +5,18 @@
 // File:           main.dart
 // Description:    About Flutter main
 // Create   Date:  2025-03-29 16:27:14
-// Last Modified:  2025-03-29 16:27:14
-// Modified   By:  mcge <mcgeq@outlook.com>
+// Last Modified:  2025-03-29 21:47:22
+// Modified   By:  mcgeq <mcgeq@outlook.com>
 // -----------------------------------------------------------------------------
 import 'package:flutter/material.dart';
+import 'package:mcge_pisces/utils/logger.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // init logger
+  McgLogger.init(enableFileLogging: false, minLevel: LogLevel.verbose);
+
   runApp(const MyApp());
 }
 
@@ -67,6 +73,7 @@ class _MyHomePageState extends State<MyHomePage> {
   int _counter = 0;
 
   void _incrementCounter() {
+    McgLogger.i('main', '_incrementCounter');
     setState(() {
       // This call to setState tells the Flutter framework that something has
       // changed in this State, which causes it to rerun the build method below
