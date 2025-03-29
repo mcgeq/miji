@@ -20,6 +20,7 @@ analyzer:
     - "**/*.freezed.dart"    # Freezed generated files
     - "build/**"             # Build output directory
     - "**/*.pb.dart"         # Protocol Buffer generated files
+    - test/**  # 可选，排除所有测试文件
 
   # Customize error and warning behavior.
   errors:
@@ -47,6 +48,9 @@ linter:
     prefer_const_constructors: true     # Prefer const constructors where possible
     prefer_single_quotes: true          # Use single quotes (consistent with Flutter style)
     unnecessary_brace_in_string_interps: false  # Allow braces in string interpolation if preferred
+    prefer_final_locals: true       # 让局部变量尽可能使用 final
+    avoid_classes_with_only_static_members: true  # 避免只有静态方法的类（可以使用顶级函数）
+    avoid_void_async: true
 
     # Formatting-related rules (aligned with .editorconfig).
     lines_longer_than_80_chars: true    # Warn if lines exceed 80 chars (matches max_line_length)
@@ -56,11 +60,17 @@ linter:
     use_key_in_widget_constructors: true  # Require keys in widget constructors
     avoid_unnecessary_containers: true    # Avoid redundant Container widgets
     sized_box_for_whitespace: true        # Prefer SizedBox over Container for spacing
+    sort_child_properties_last: true      # Sort child properties last
+
+    # Additional recommended rules
+    avoid_function_literals_in_foreach_calls: true  # Avoid literals in forEach
+    unnecessary_lambdas: true             # Avoid unnecessary lambdas
 
 # Customize Dart language features if needed (optional).
 language:
   strict-casts: true
   strict-inference: true
+  strict-raw-types: true  # 禁止使用原始类型，如 List 或 Map，而不指定泛型
 
 # Additional information about this file can be found at
 # https://dart.dev/guides/language/analysis-options
