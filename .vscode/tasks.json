@@ -1,0 +1,56 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Update Last Edited Time",
+			"type": "process",
+			"command": "python3",
+			"args": [
+				"${workspaceFolder}${pathSeparator}.vscode${pathSeparator}update_timestamp.py",
+				"${file}"
+			],
+			"options": {
+				"cwd": "${workspaceFolder}",
+				"env": {
+					"PYTHONIOENCODING": "utf-8",
+					"PYTHONUNBUFFERED": "1"
+				}
+			},
+			"problemMatcher": {
+				"owner": "python",
+				"pattern": {
+					"regexp": "^Error updating file: (.*)$",
+					"message": 1
+				},
+				"background": {
+					"activeOnStart": true,
+					"beginsPattern": "^.*$",
+					"endsPattern": "^(Successfully updated timestamp|Error updating file).*$"
+				}
+			},
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			"presentation": {
+				"echo": false,
+				"reveal": "silent",
+				"revealProblems": "onProblem",
+				"focus": false,
+				"panel": "shared",
+				"showReuseMessage": false,
+				"clear": true
+			},
+			"windows": {
+				"command": "python",
+				"args": ["${workspaceFolder}\\.vscode\\update_timestamp.py", "${file}"]
+			},
+			"linux": {
+				"command": "python3"
+			},
+			"osx": {
+				"command": "python3"
+			}
+		}
+	]
+}

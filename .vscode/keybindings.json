@@ -1,0 +1,8 @@
+[
+	{
+		"key": "ctrl+alt+shift+u",
+		"command": "workbench.action.tasks.runTask",
+		"args": "Update Last Edited Time",
+		"when": "editorTextFocus && !terminalFocus"
+	}
+]

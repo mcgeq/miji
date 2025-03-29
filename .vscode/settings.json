@@ -1,0 +1,104 @@
+{
+	// 全局界面设置
+	"breadcrumbs.enabled": true, // 启用面包屑导航
+	"chat.commandCenter.enabled": false, // 禁用命令中心聊天功能
+	"window.zoomLevel": 0, // 窗口缩放级别，默认大小
+	"workbench.colorTheme": "Eva Dark", // 主题设置为 Eva Dark
+	"workbench.iconTheme": "material-icon-theme", // 图标主题设置为 vscode-icons
+	"workbench.startupEditor": "none", // 启动时不显示欢迎页
+
+	// 编辑器通用设置
+	"editor.bracketPairColorization.enabled": true, // 括号颜色匹配
+	"editor.defaultFormatter": "biomejs.biome", // 全局默认格式化工具为 Biome
+	"editor.fontFamily": "'JetBrains Mono', 'Fira Code', Consolas, monospace", // 字体优先级
+	"editor.fontLigatures": true, // 启用连字（如 => 变成箭头）
+	"editor.fontSize": 16, // 编辑器字体大小
+	"editor.formatOnSave": true, // 保存时自动格式化
+	"editor.guides.bracketPairs": "active", // 括号匹配辅助线仅在光标内显示
+	"editor.insertSpaces": true, // 使用空格代替 Tab
+	"editor.minimap.enabled": false, // 禁用代码缩略图
+	//"editor.renderWhitespace": "all",       // 显示所有空白字符
+	"editor.rulers": [80], // 80 列参考线
+	"editor.tabSize": 2, // Tab 宽度为 2 个空格
+	//"editor.wordWrap": "on",                // 启用自动换行
+	"editor.wordWrap": "wordWrapColumn", // 按指定列宽换行
+	"editor.wordWrapColumn": 80, // 换行宽度设为 80 字符
+
+	// 文件相关设置
+	"files.autoSave": "afterDelay", // 启用自动保存
+	"files.autoSaveDelay": 500, // 自动保存延迟 500ms
+	"files.eol": "\n", // 统一使用 LF 换行符
+
+	// 终端设置
+	"terminal.integrated.fontSize": 14, // 终端字体大小
+
+	// 语言特定配置
+	"[python]": {
+		"editor.defaultFormatter": "charliermarsh.ruff", // 使用 ruff 格式化 Python
+		"editor.codeActionsOnSave": {
+			"source.fixAll.ruff": "explicit", // Ruff 修复所有问题
+			"source.organizeImports.ruff": "explicit" // Ruff 整理导入
+		}
+	},
+	"[rust]": {
+		"editor.defaultFormatter": "rust-lang.rust-analyzer", // 使用 rustfmt 格式化 Rust
+		"editor.formatOnSave": true // 保存时格式化 Rust 代码
+	},
+	"[dart]": {
+		"editor.defaultFormatter": "Dart-Code.dart-code", // Dart 使用官方扩展格式化
+		"editor.formatOnSave": true, // 保存时格式化
+		"editor.formatOnType": true, // 输入时格式化
+		"editor.rulers": [80], // 80 列参考线
+		"editor.selectionHighlight": false, // 禁用选中高亮
+		"editor.tabCompletion": "onlySnippets", // Tab 仅触发 Snippet
+		"editor.wordBasedSuggestions": "off" // 禁用单词补全
+	},
+	"[markdown]": {
+		"editor.defaultFormatter": "vscode.markdown-language-features", // Markdown 使用内置格式化
+		"editor.quickSuggestions": {
+			"comments": false,
+			"other": true,
+			"strings": false
+		}, // 启用部分代码补全
+		"editor.wordWrap": "on" // Markdown 自动换行
+	},
+	"[css]": {
+		"editor.codeActionsOnSave": {
+			"source.fixAll.biome": "explicit" // 保存时修复问题（CSS 不支持 organizeImports）
+		}
+	},
+	"[graphql]": {
+		"editor.codeActionsOnSave": {
+			"source.fixAll.biome": "explicit" // 保存时修复问题（GraphQL 不支持 organizeImports）
+		}
+	},
+	"[javascript]": {
+		"editor.codeActionsOnSave": {
+			"source.fixAll.biome": "explicit",
+			"source.organizeImports.biome": "explicit" // 保存时整理导入
+		}
+	},
+	"[javascriptreact]": {
+		"editor.codeActionsOnSave": {
+			"source.fixAll.biome": "explicit",
+			"source.organizeImports.biome": "explicit"
+		}
+	},
+	"[json]": {
+		"editor.codeActionsOnSave": {
+			"source.fixAll.biome": "explicit" // JSON 不支持 organizeImports
+		}
+	},
+	"[typescript]": {
+		"editor.codeActionsOnSave": {
+			"source.fixAll.biome": "explicit",
+			"source.organizeImports.biome": "explicit"
+		}
+	},
+	"[typescriptreact]": {
+		"editor.codeActionsOnSave": {
+			"source.fixAll.biome": "explicit",
+			"source.organizeImports.biome": "explicit"
+		}
+	}
+}
