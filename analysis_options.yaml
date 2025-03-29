@@ -1,0 +1,66 @@
+# This file configures the analyzer, which statically analyzes Dart code to
+# check for errors, warnings, and lints.
+#
+# The issues identified by the analyzer are surfaced in the UI of Dart-enabled
+# IDEs (https://dart.dev/tools#ides-and-editors). The analyzer can also be
+# invoked from the command line by running `flutter analyze`.
+
+# The following line activates a set of recommended lints for Flutter apps,
+# packages, and plugins designed to encourage good coding practices.
+include: package:flutter_lints/flutter.yaml
+analyzer:
+  # Enable strong mode for stricter type checking.
+  strong-mode:
+    implicit-casts: false
+    implicit-dynamic: false
+
+  # Exclude generated files from analysis to avoid noise.
+  exclude:
+    - "**/*.g.dart"          # Generated Dart files (e.g., from json_serializable)
+    - "**/*.freezed.dart"    # Freezed generated files
+    - "build/**"             # Build output directory
+    - "**/*.pb.dart"         # Protocol Buffer generated files
+
+  # Customize error and warning behavior.
+  errors:
+    # Treat missing required parameters as errors instead of warnings.
+    missing_required_param: error
+    # Ignore unused imports as a warning (optional, depending on team preference).
+    unused_import: warning
+
+linter:
+  # The lint rules applied to this project can be customized in the
+  # section below to disable rules from the `package:flutter_lints/flutter.yaml`
+  # included above or to enable additional rules. A list of all available lints
+  # and their documentation is published at https://dart.dev/lints.
+  #
+  # Instead of disabling a lint rule for the entire project in the
+  # section below, it can also be suppressed for a single line of code
+  # or a specific dart file by using the `// ignore: name_of_lint` and
+  # `// ignore_for_file: name_of_lint` syntax on the line or in the file
+  # producing the lint.
+  rules:
+    # avoid_print: false  # Uncomment to disable the `avoid_print` rule
+    # prefer_single_quotes: true  # Uncomment to enable the `prefer_single_quotes` rule
+    always_use_package_imports: true    # Prefer package: imports over relative imports
+    avoid_print: true                   # Avoid using print() in production code
+    prefer_const_constructors: true     # Prefer const constructors where possible
+    prefer_single_quotes: true          # Use single quotes (consistent with Flutter style)
+    unnecessary_brace_in_string_interps: false  # Allow braces in string interpolation if preferred
+
+    # Formatting-related rules (aligned with .editorconfig).
+    lines_longer_than_80_chars: true    # Warn if lines exceed 80 chars (matches max_line_length)
+    curly_braces_in_flow_control_structures: true  # Enforce braces in if/for (matches .editorconfig)
+
+    # Flutter-specific rules.
+    use_key_in_widget_constructors: true  # Require keys in widget constructors
+    avoid_unnecessary_containers: true    # Avoid redundant Container widgets
+    sized_box_for_whitespace: true        # Prefer SizedBox over Container for spacing
+
+# Customize Dart language features if needed (optional).
+language:
+  strict-casts: true
+  strict-inference: true
+
+# Additional information about this file can be found at
+# https://dart.dev/guides/language/analysis-options
