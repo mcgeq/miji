@@ -1,3 +1,13 @@
+// -----------------------------------------------------------------------------
+//    Copyright (C) 2025 mcge. All rights reserved.
+// Author:         mcge
+// Email:          <mcgeq@outlook.com>
+// File:           main.dart
+// Description:    About Flutter main
+// Create   Date:  2025-03-29 16:27:14
+// Last Modified:  2025-03-29 16:27:14
+// Modified   By:  mcge <mcgeq@outlook.com>
+// -----------------------------------------------------------------------------
 import 'package:flutter/material.dart';
 
 void main() {
