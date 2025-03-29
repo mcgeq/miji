@@ -1,0 +1,17 @@
+[window]
+# 窗口宽度和高度
+width = 1000
+height = 800
+
+# 是否居中（true 则忽略 position）
+center = true
+
+[window.position]
+# 窗口位置（仅当 center = false 时生效）
+x = 100
+y = 100
+
+[window.behavior]
+# 是否允许调整大小和最大化
+resizable = false
+maximizable = false
