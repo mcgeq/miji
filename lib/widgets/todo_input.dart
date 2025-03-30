@@ -63,10 +63,11 @@ class TodoInputState extends State<TodoInput> {
           ElevatedButton(
             onPressed: () {
               if (_controller.text.isNotEmpty) {
-                Provider.of<TodoProvider>(
-                  context,
-                  listen: false,
-                ).addTodo(_controller.text, reminder: _selectedReminder);
+                Provider.of<TodoProvider>(context, listen: false).addTodo(
+                  _controller.text,
+                  reminder: _selectedReminder,
+                  dueDate: _selectedReminder,
+                );
                 _controller.clear();
                 setState(() {
                   _selectedReminder = null;

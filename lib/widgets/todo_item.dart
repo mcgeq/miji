@@ -45,8 +45,8 @@ class TodoItem extends StatelessWidget {
             horizontal: 16,
           ),
           leading:
-              isYesterday
-                  ? const Icon(Icons.lock, color: Colors.grey) // "昨" 不能编辑
+              isYesterday || todo.dueDate.isSameDay(tomorrowStart)
+                  ? const Icon(Icons.schedule, color: Colors.grey) // "昨" 不能编辑
                   : Checkbox(
                     value: isCompleted,
                     onChanged:
