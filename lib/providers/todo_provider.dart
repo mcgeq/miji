@@ -161,6 +161,14 @@ class TodoProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> editTodo(String todoId, String newTitle) async {
+    final todo = _todoBox.get(todoId);
+    if (todo == null) return;
+    todo.title = newTitle;
+    await _todoBox.put(todoId, todo);
+    notifyListeners();
+  }
+
   void setFilter(String filter) {
     _filter = filter;
     _currentPage = 1;
