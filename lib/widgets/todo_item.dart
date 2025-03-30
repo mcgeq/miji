@@ -74,16 +74,39 @@ class TodoItem extends StatelessWidget {
             title: Align(
               // 让 title 左对齐，同时垂直居中
               alignment: Alignment.centerLeft,
-              child: Text(
-                todo.title,
-                style: theme.textTheme.bodyLarge?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color:
-                      todo.isCompleted
-                          ? Colors.grey.shade600
-                          : todo.priority == Priority.high
-                          ? Colors.red
-                          : theme.colorScheme.onSurface,
+              child: GestureDetector(
+                onLongPress: () {
+                  if (MediaQuery.of(context).size.width < 600) {
+                    showModalBottomSheet(
+                      context: context,
+                      builder:
+                          (context) => Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Text(
+                              todo.title,
+                              style: theme.textTheme.bodyLarge,
+                            ),
+                          ),
+                    );
+                  }
+                },
+                child: Tooltip(
+                  message: todo.title,
+                  waitDuration: const Duration(microseconds: 500),
+                  child: Text(
+                    todo.title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color:
+                          todo.isCompleted
+                              ? Colors.grey.shade600
+                              : todo.priority == Priority.high
+                              ? Colors.red
+                              : theme.colorScheme.onSurface,
+                    ),
+                  ),
                 ),
               ),
             ),
