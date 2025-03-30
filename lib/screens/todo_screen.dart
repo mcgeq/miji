@@ -36,6 +36,7 @@ class TodoScreen extends StatelessWidget {
                   onDelete: () => todoProvider.deleteTodo(todo.id),
                   onMoveToTomorrow:
                       () => todoProvider.moveTodoToTomorrow(todo.id),
+                  onMoveToToday: () => todoProvider.moveTodToToday(todo.id),
                 );
               },
             ),

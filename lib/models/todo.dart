@@ -53,7 +53,18 @@ class Todo {
   }
 
   void moveToTomorrow() {
-    dueDate = DateTime.now().add(const Duration(days: 1));
+    dueDate = DateTime.now()
+        .add(const Duration(days: 1))
+        .copyWith(hour: 23, minute: 59, second: 59, millisecond: 999);
+  }
+
+  void moveToToday() {
+    dueDate = DateTime.now().copyWith(
+      hour: 23,
+      minute: 59,
+      second: 59,
+      millisecond: 999,
+    );
   }
 
   // 可选：添加 toJson 和 fromJson 方法，便于持久化存储

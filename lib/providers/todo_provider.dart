@@ -141,13 +141,24 @@ class TodoProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void moveTodoToTomorrow(String todoId) {
+  Future<void> moveTodoToTomorrow(String todoId) async {
     final index = _todos.indexWhere((todo) => todo.id == todoId);
     if (index == -1) return;
 
     final todo = _todos[index];
     todo.moveToTomorrow();
+    await _todoBox.put(todoId, todo);
     notifyListeners(); // 更新 UI
+  }
+
+  Future<void> moveTodToToday(String todoId) async {
+    final index = _todos.indexWhere((todo) => todo.id == todoId);
+    if (index == -1) return;
+
+    final todo = _todos[index];
+    todo.moveToToday();
+    await _todoBox.put(todoId, todo);
+    notifyListeners();
   }
 
   void setFilter(String filter) {
