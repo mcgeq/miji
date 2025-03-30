@@ -39,17 +39,30 @@ class TodoProvider extends ChangeNotifier {
     final yesterday = today.subtract(const Duration(days: 1));
     final tomorrow = today.add(const Duration(days: 1));
 
-    return _todos.where((todo) {
-      final date = todo.completedAt ?? todo.createdAt;
-      if (_filter == '昨') {
-        return date.isSameDay(yesterday);
-      } else if (_filter == '今') {
-        return date.isSameDay(today);
-      } else if (_filter == '明') {
-        return date.isSameDay(tomorrow);
+    final List<Todo> result =
+        _todos.where((todo) {
+          final date = todo.completedAt ?? todo.createdAt;
+          if (_filter == '昨') {
+            return date.isSameDay(yesterday);
+          } else if (_filter == '今') {
+            return date.isSameDay(today);
+          } else if (_filter == '明') {
+            return date.isSameDay(tomorrow);
+          }
+          return false;
+        }).toList();
+    // 未完成任务按创建时间降序排列，已完成任务按创建时间升序排列
+    result.sort((a, b) {
+      if (a.isCompleted == b.isCompleted) {
+        // 如果完成状态相同，按创建时间排序
+        return a.isCompleted
+            ? a.createdAt.compareTo(b.createdAt) // 已完成任务按创建时间升序排列
+            : b.createdAt.compareTo(a.createdAt); // 未完成任务按创建时间降序排列
+      } else {
+        return a.isCompleted ? 1 : -1; // 已完成任务排后面
       }
-      return false;
-    }).toList();
+    });
+    return result;
   }
 
   List<Todo> get paginatedTodos {
@@ -75,7 +88,8 @@ class TodoProvider extends ChangeNotifier {
       reminder: reminder,
     );
     _todos.add(todo);
-    await _todoBox.add(todo);
+    // await _todoBox.add(todo);
+    await _todoBox.put(todo.id, todo);
     McgLogger.i('Todo', todo.toJson().toString());
     if (reminder != null) {
       await NotificationService.scheduleNotification(
@@ -98,14 +112,25 @@ class TodoProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> deleteTodo(int index) async {
-    final todo = _todos[index];
+  Future<void> deleteTodo(String todoId) async {
+    final todo = _todoBox.get(todoId); // 先检查是否存在
+    if (todo == null) return;
+
     if (todo.reminder != null) {
       await NotificationService.cancelNotification(todo.id.hashCode);
     }
-    _todos.removeAt(index);
-    await _todoBox.deleteAt(index);
+    await _todoBox.delete(todoId);
+    _todos.removeWhere((t) => t.id == todoId);
     notifyListeners();
+  }
+
+  void moveTodoToTomorrow(String todoId) {
+    final index = _todos.indexWhere((todo) => todo.id == todoId);
+    if (index == -1) return;
+
+    final todo = _todos[index];
+    todo.moveToTomorrow();
+    notifyListeners(); // 更新 UI
   }
 
   void setFilter(String filter) {

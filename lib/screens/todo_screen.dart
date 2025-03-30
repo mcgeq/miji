@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mcge_pisces/constants/constants.dart';
 import 'package:provider/provider.dart';
 import 'package:mcge_pisces/providers/todo_provider.dart';
 import 'package:mcge_pisces/widgets/todo_input.dart';
@@ -25,13 +26,17 @@ class TodoScreen extends StatelessWidget {
               itemCount: todos.length,
               itemBuilder: (context, index) {
                 final todo = todos[index];
-                final globalIndex = (todoProvider.currentPage - 1) * 5 + index;
+                final globalIndex =
+                    (todoProvider.currentPage - 1) * AppConstants.todosPerPage +
+                    index;
                 return TodoItem(
                   todo: todo,
                   index: globalIndex,
                   onToggle:
                       () => todoProvider.toggleTodoCompletion(globalIndex),
-                  onDelete: () => todoProvider.deleteTodo(globalIndex),
+                  onDelete: () => todoProvider.deleteTodo(todo.id),
+                  onMoveToTomorrow:
+                      () => todoProvider.moveTodoToTomorrow(todo.id),
                 );
               },
             ),

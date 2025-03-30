@@ -52,6 +52,10 @@ class Todo {
     completedAt = isCompleted ? DateTime.now() : null;
   }
 
+  void moveToTomorrow() {
+    dueDate = DateTime.now().add(const Duration(days: 1));
+  }
+
   // 可选：添加 toJson 和 fromJson 方法，便于持久化存储
   Map<String, dynamic> toJson() {
     return {
