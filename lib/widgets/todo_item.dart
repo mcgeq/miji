@@ -45,6 +45,17 @@ class TodoItem extends StatelessWidget {
                     value: isCompleted,
                     onChanged:
                         isCompleted ? null : (value) => onToggle(), // 复选框禁用
+                    activeColor:
+                        isCompleted
+                            ? Colors.grey.shade600
+                            : Theme.of(context).colorScheme.primary,
+                    checkColor:
+                        Theme.of(context).brightness == Brightness.dark
+                            ? Colors
+                                .white // 在暗黑模式下设置对钩颜色为白色
+                            : Theme.of(
+                              context,
+                            ).colorScheme.onSurface, // 在浅色模式下使用默认颜色
                   ),
           title: Align(
             // 让 title 左对齐，同时垂直居中
@@ -54,17 +65,16 @@ class TodoItem extends StatelessWidget {
               style: theme.textTheme.bodyLarge?.copyWith(
                 fontWeight: FontWeight.w600,
                 color:
-                    todo.priority == Priority.high
+                    todo.isCompleted
+                        ? Colors.grey.shade600
+                        : todo.priority == Priority.high
                         ? Colors.red
                         : theme.colorScheme.onSurface,
               ),
             ),
           ),
           trailing:
-              isCompleted &&
-                      (todo.completedAt != null ||
-                          todo.dueDate != null ||
-                          todo.reminder != null)
+              isCompleted && (todo.completedAt != null || todo.reminder != null)
                   ? Column(
                     mainAxisAlignment: MainAxisAlignment.center, // 保持居中对齐
                     crossAxisAlignment: CrossAxisAlignment.end, // 右对齐
@@ -76,13 +86,12 @@ class TodoItem extends StatelessWidget {
                             color: Colors.grey.shade600,
                           ),
                         ),
-                      if (todo.dueDate != null)
-                        Text(
-                          '截止: ${dateFormat.format(todo.dueDate!)}',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: Colors.orange,
-                          ),
+                      Text(
+                        '截止: ${dateFormat.format(todo.dueDate)}',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: Colors.orange,
                         ),
+                      ),
                       if (todo.reminder != null)
                         Text(
                           '提醒: ${dateFormat.format(todo.reminder!)}',

@@ -20,7 +20,7 @@ class Todo {
   DateTime createdAt;
 
   @HiveField(5)
-  DateTime? dueDate;
+  DateTime dueDate;
 
   @HiveField(6)
   Priority priority;
@@ -39,7 +39,7 @@ class Todo {
     this.isCompleted = false,
     this.completedAt,
     required this.createdAt,
-    this.dueDate,
+    required this.dueDate,
     this.priority = Priority.medium,
     this.description,
     this.tags = const [],
@@ -64,7 +64,7 @@ class Todo {
       'isCompleted': isCompleted,
       'completedAt': completedAt?.toIso8601String(),
       'createdAt': createdAt.toIso8601String(),
-      'dueDate': dueDate?.toIso8601String(),
+      'dueDate': dueDate.toIso8601String(),
       'priority': priority.toString(),
       'description': description,
       'tags': tags,
@@ -82,7 +82,7 @@ class Todo {
               ? DateTime.parse(json['completedAt'])
               : null,
       createdAt: DateTime.parse(json['createdAt']),
-      dueDate: json['dueDate'] != null ? DateTime.parse(json['dueDate']) : null,
+      dueDate: DateTime.parse(json['dueDate']),
       priority: Priority.values.firstWhere(
         (e) => e.toString() == json['priority'],
         orElse: () => Priority.medium,

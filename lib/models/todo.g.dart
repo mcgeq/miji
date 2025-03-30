@@ -21,7 +21,7 @@ class TodoAdapter extends TypeAdapter<Todo> {
       isCompleted: fields[2] as bool,
       completedAt: fields[3] as DateTime?,
       createdAt: fields[4] as DateTime,
-      dueDate: fields[5] as DateTime?,
+      dueDate: fields[5] as DateTime,
       priority: fields[6] as Priority,
       description: fields[7] as String?,
       tags: (fields[8] as List).cast<String>(),

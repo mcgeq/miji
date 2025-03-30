@@ -56,17 +56,49 @@ class Pagination extends StatelessWidget {
     required String label,
     VoidCallback? onPressed,
   }) {
-    return TextButton(
-      onPressed: onPressed,
-      style: TextButton.styleFrom(
-        foregroundColor:
-            onPressed == null
-                ? Theme.of(context).colorScheme.onSurface.withValues(
-                  alpha: 0.5,
-                ) // 禁用时颜色变浅
-                : Theme.of(context).colorScheme.primary, // 启用时使用主题色
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8.0),
+      child: SizedBox(
+        width: 80.0, // 固定宽度
+        child: TextButton(
+          onPressed: onPressed,
+          style: TextButton.styleFrom(
+            foregroundColor:
+                onPressed == null
+                    ? Theme.of(context).colorScheme.onSurface.withValues(
+                      alpha: 0.5,
+                    ) // 禁用时颜色变浅
+                    : Theme.of(context).colorScheme.primary, // 启用时使用主题色
+            backgroundColor:
+                onPressed == null
+                    ? Theme.of(context).colorScheme.surface.withValues(
+                      alpha: 0.5,
+                    ) // 禁用时背景色
+                    : Theme.of(
+                      context,
+                    ).colorScheme.primary.withValues(alpha: 0.1), // 启用时按钮背景色
+            padding: const EdgeInsets.symmetric(vertical: 12.0), // 增加按钮内边距
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8.0), // 设置圆角
+            ),
+            side: BorderSide(
+              color:
+                  onPressed == null
+                      ? Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withValues(alpha: 0.5)
+                      : Theme.of(context).colorScheme.primary,
+              width: 2.0,
+            ),
+          ),
+          child: Text(
+            label,
+            style: const TextStyle(
+              fontWeight: FontWeight.bold, // 加粗字体
+            ),
+          ),
+        ),
       ),
-      child: Text(label),
     );
   }
 }

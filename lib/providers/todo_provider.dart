@@ -36,14 +36,14 @@ class TodoProvider extends ChangeNotifier {
   List<Todo> get filteredTodos {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    final yesterday = today.subtract(const Duration(days: 1));
+    final yesterday = today.subtract(const Duration(days: 2));
     final tomorrow = today.add(const Duration(days: 1));
 
     final List<Todo> result =
         _todos.where((todo) {
-          final date = todo.completedAt ?? todo.createdAt;
+          final date = todo.dueDate;
           if (_filter == '昨') {
-            return date.isSameDay(yesterday);
+            return date.isBefore(yesterday);
           } else if (_filter == '今') {
             return date.isSameDay(today);
           } else if (_filter == '明') {
@@ -80,12 +80,27 @@ class TodoProvider extends ChangeNotifier {
   int get totalPages =>
       (filteredTodos.length / AppConstants.todosPerPage).ceil();
 
-  Future<void> addTodo(String title, {DateTime? reminder}) async {
+  Future<void> addTodo(
+    String title, {
+    DateTime? reminder,
+    DateTime? dueDate,
+  }) async {
+    // Set the default dueDate to today at 23:59:59 if not provided
+    final defaultDueDate = DateTime(
+      DateTime.now().year,
+      DateTime.now().month,
+      DateTime.now().day,
+      23,
+      59,
+      59,
+    );
+
     final todo = Todo(
       id: MgUUID.generate(),
       title: title,
       createdAt: DateTime.now(),
       reminder: reminder,
+      dueDate: dueDate ?? defaultDueDate,
     );
     _todos.add(todo);
     // await _todoBox.add(todo);
@@ -102,10 +117,12 @@ class TodoProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> toggleTodoCompletion(int index) async {
-    final todo = _todos[index];
+  Future<void> toggleTodoCompletion(String todoId) async {
+    final todo = _todoBox.get(todoId); // 先检查是否存在
+    if (todo == null) return;
+
     todo.toggleCompletion();
-    await _todoBox.putAt(index, todo);
+    await _todoBox.put(todoId, todo);
     if (todo.isCompleted && todo.reminder != null) {
       await NotificationService.cancelNotification(todo.id.hashCode);
     }

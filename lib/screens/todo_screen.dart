@@ -32,8 +32,7 @@ class TodoScreen extends StatelessWidget {
                 return TodoItem(
                   todo: todo,
                   index: globalIndex,
-                  onToggle:
-                      () => todoProvider.toggleTodoCompletion(globalIndex),
+                  onToggle: () => todoProvider.toggleTodoCompletion(todo.id),
                   onDelete: () => todoProvider.deleteTodo(todo.id),
                   onMoveToTomorrow:
                       () => todoProvider.moveTodoToTomorrow(todo.id),
@@ -41,7 +40,10 @@ class TodoScreen extends StatelessWidget {
               },
             ),
           ),
-          const Pagination(),
+          const Padding(
+            padding: EdgeInsets.only(bottom: 60),
+            child: Pagination(),
+          ),
         ],
       ),
     );
