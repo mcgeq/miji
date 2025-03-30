@@ -5,68 +5,23 @@
 // File:           main.dart
 // Description:    About Flutter main
 // Create   Date:  2025-03-29 16:27:14
-// Last Modified:  2025-03-29 22:15:58
+// Last Modified:  2025-03-30 11:00:45
 // Modified   By:  mcgeq <mcgeq@outlook.com>
 // -----------------------------------------------------------------------------
-import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:mcge_pisces/utils/logger.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
-import 'package:flutter/services.dart' show rootBundle;
-import 'package:toml/toml.dart';
-import 'package:window_manager/window_manager.dart';
+import 'package:mcge_pisces/utils/window_manager_helper.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // init window
+  await WindowManagerHelper.initialize();
 
-  if (!kIsWeb && Platform.isWindows) {
-    await windowManager.ensureInitialized();
-    final Map<String, dynamic> config = await loadWindowConfig();
-
-    final windowConfig = config['window'] ?? {};
-    final positionConfig = windowConfig['position'] ?? {};
-    final behaviorConfig = windowConfig['behavior'] ?? {};
-
-    windowManager.waitUntilReadyToShow().then((_) async {
-      final Size windowSize = Size(
-        (windowConfig['width'] ?? 800).toDouble(),
-        (windowConfig['height'] ?? 600).toDouble(),
-      );
-      await windowManager.setSize(windowSize);
-
-      final bool isCentered = windowConfig['center'] ?? true;
-      if (isCentered) {
-        await windowManager.center();
-      } else if (positionConfig['x'] != null && positionConfig['y'] != null) {
-        await windowManager.setPosition(
-          Offset(
-            positionConfig['x'].toDouble(),
-            positionConfig['y'].toDouble(),
-          ),
-        );
-      }
-
-      await windowManager.setResizable(behaviorConfig['resizable'] ?? false);
-      await windowManager.setMaximizable(
-        behaviorConfig['maximizable'] ?? false,
-      );
-
-      await windowManager.show();
-    });
-  }
   // init logger
   McgLogger.init(enableFileLogging: false, minLevel: LogLevel.verbose);
 
   runApp(const MyApp());
-}
-
-/// 读取 `window_config.toml` 并解析为 Map
-Future<Map<String, dynamic>> loadWindowConfig() async {
-  final String tomlString = await rootBundle.loadString(
-    'assets/window_config.toml',
-  );
-  return TomlDocument.parse(tomlString).toMap();
 }
 
 class MyApp extends StatelessWidget {
