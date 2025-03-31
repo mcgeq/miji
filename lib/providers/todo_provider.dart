@@ -45,7 +45,7 @@ class TodoProvider extends ChangeNotifier {
           if (_filter == '昨') {
             return date.isBefore(yesterday);
           } else if (_filter == '今') {
-            return date.isSameDay(today);
+            return today.isWithinDays(date, -1);
           } else if (_filter == '明') {
             return date.isSameDay(tomorrow);
           }
