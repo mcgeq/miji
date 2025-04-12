@@ -1,3 +1,13 @@
+// -----------------------------------------------------------------------------
+//    Copyright (C) 2025 mcge. All rights reserved.
+// Author:         mcge
+// Email:          <mcgeq@outlook.com>
+// File:           todo.dart
+// Description:    About Tod model
+// Create   Date:  2025-04-12 10:54:15
+// Last Modified:  2025-04-12 10:54:21
+// Modified   By:  mcgeq <mcgeq@outlook.com>
+// -----------------------------------------------------------------------------
 import 'package:hive_flutter/adapters.dart';
 
 part 'todo.g.dart';
@@ -103,6 +113,11 @@ class Todo {
       reminder:
           json['reminder'] != null ? DateTime.parse(json['reminder']) : null,
     );
+  }
+
+  @override
+  String toString() {
+    return toJson().toString();
   }
 }
 

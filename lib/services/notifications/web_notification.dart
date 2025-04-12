@@ -1,4 +1,13 @@
-// web_notification.dart（仅 Web 平台使用）
+// -----------------------------------------------------------------------------
+//    Copyright (C) 2025 mcge. All rights reserved.
+// Author:         mcge
+// Email:          <mcgeq@outlook.com>
+// File:           web_notification.dart
+// Description:    About WebNotification
+// Create   Date:  2025-04-12 10:57:24
+// Last Modified:  2025-04-12 10:57:31
+// Modified   By:  mcgeq <mcgeq@outlook.com>
+// -----------------------------------------------------------------------------
 
 import 'dart:async';
 import 'dart:js_interop';
@@ -20,6 +29,9 @@ external String get _notificationPermission;
 external Future<String> _requestNotificationPermission();
 
 class WebNotification {
+  // Add a private constructor
+  WebNotification._();
+
   static final Map<int, Timer> _timers = {};
 
   static Future<void> requestPermission() async {
@@ -38,26 +50,38 @@ class WebNotification {
     final delay = scheduledDate.difference(now);
 
     if (delay.isNegative) {
-      _showNotification(title, body);
+      // Don't show past notifications on web? Or show immediately?
+      // _showNotification(title, body); // Option: Show immediately
+      print(
+        "Attempted to schedule past notification on web: $title",
+      ); // Option: Log it
       return;
     }
 
+    // Cancel existing timer for this ID if any
+    cancelNotification(id);
+
     _timers[id] = Timer(delay, () {
       _showNotification(title, body);
-      _timers.remove(id);
+      _timers.remove(id); // Remove timer after showing
     });
   }
 
   static void cancelNotification(int id) {
-    final timer = _timers[id];
+    final timer = _timers.remove(id); // Remove and get timer
     timer?.cancel();
-    _timers.remove(id);
   }
 
   static void _showNotification(String title, String body) {
     if (_notificationPermission == 'granted') {
-      final options = web.NotificationOptions(body: body);
-      createNotification(title, options);
+      try {
+        final options = web.NotificationOptions(body: body);
+        createNotification(title, options);
+      } catch (e) {
+        print("Error showing web notification: $e");
+      }
+    } else {
+      print("Web notification permission not granted.");
     }
   }
 }

@@ -1,10 +1,21 @@
+// -----------------------------------------------------------------------------
+//    Copyright (C) 2025 mcge. All rights reserved.
+// Author:         mcge
+// Email:          <mcgeq@outlook.com>
+// File:           notification_service.dart
+// Description:    About NotificationService
+// Create   Date:  2025-04-12 10:57:07
+// Last Modified:  2025-04-12 10:57:14
+// Modified   By:  mcgeq <mcgeq@outlook.com>
+// -----------------------------------------------------------------------------
+
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 
 // 条件导入 dart:html，仅在 Web 平台使用
-import 'package:mcge_pisces/utils/web_notification.dart'
+import 'package:mcge_pisces/services/notifications/web_notification.dart'
     if (dart.library.io) 'package:mcge_pisces/stub/web_notification_stub.dart';
 
 class NotificationService {

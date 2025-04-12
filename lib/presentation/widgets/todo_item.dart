@@ -1,11 +1,21 @@
+// -----------------------------------------------------------------------------
+//    Copyright (C) 2025 mcge. All rights reserved.
+// Author:         mcge
+// Email:          <mcgeq@outlook.com>
+// File:           todo_item.dart
+// Description:    About TodoItem
+// Create   Date:  2025-04-12 10:56:25
+// Last Modified:  2025-04-12 10:56:31
+// Modified   By:  mcgeq <mcgeq@outlook.com>
+// -----------------------------------------------------------------------------
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:mcge_pisces/models/todo.dart';
+import 'package:mcge_pisces/data/models/todo.dart';
 import 'package:mcge_pisces/utils/date_time_extensions.dart';
 
 class TodoItem extends StatelessWidget {
   final Todo todo;
-  final int index;
   final VoidCallback onToggle;
   final VoidCallback onDelete;
   final VoidCallback onMoveToTomorrow;
@@ -16,7 +26,6 @@ class TodoItem extends StatelessWidget {
   const TodoItem({
     super.key,
     required this.todo,
-    required this.index,
     required this.onToggle,
     required this.onDelete,
     required this.onMoveToTomorrow,
@@ -30,13 +39,16 @@ class TodoItem extends StatelessWidget {
     final theme = Theme.of(context);
     final dateFormat = DateFormat('yyyy-MM-dd HH:mm:ss');
     final isCompleted = todo.isCompleted;
-    // 获取明天的日期（不包含时间部分）
+
     final tomorrow = DateTime.now().add(const Duration(days: 1));
     final tomorrowStart = DateTime(tomorrow.year, tomorrow.month, tomorrow.day);
+    final bool isDueTomorrow = todo.dueDate.isSameDay(tomorrowStart);
+
+    final bool canInteract = !isCompleted && !isYesterday;
 
     return GestureDetector(
       onDoubleTap: () {
-        if (!isCompleted) {
+        if (canInteract) {
           onEdit();
         }
       },
@@ -44,7 +56,7 @@ class TodoItem extends StatelessWidget {
         margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         elevation: 3,
-        color: isCompleted ? Colors.grey.shade300 : null, // 背景为灰色
+        color: isCompleted ? Colors.grey.shade300 : null,
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 8),
           child: ListTile(
@@ -53,32 +65,28 @@ class TodoItem extends StatelessWidget {
               horizontal: 16,
             ),
             leading:
-                isYesterday || todo.dueDate.isSameDay(tomorrowStart)
-                    ? const Icon(Icons.schedule, color: Colors.grey) // "昨" 不能编辑
+                isYesterday || isDueTomorrow
+                    ? const Icon(Icons.schedule, color: Colors.grey)
                     : Checkbox(
                       value: isCompleted,
-                      onChanged:
-                          isCompleted ? null : (value) => onToggle(), // 复选框禁用
+                      onChanged: canInteract ? (value) => onToggle() : null,
                       activeColor:
                           isCompleted
                               ? Colors.grey.shade600
                               : Theme.of(context).colorScheme.primary,
                       checkColor:
                           Theme.of(context).brightness == Brightness.dark
-                              ? Colors
-                                  .white // 在暗黑模式下设置对钩颜色为白色
-                              : Theme.of(
-                                context,
-                              ).colorScheme.onSurface, // 在浅色模式下使用默认颜色
+                              ? Colors.white
+                              : Theme.of(context).colorScheme.onSurface,
                     ),
             title: Align(
-              // 让 title 左对齐，同时垂直居中
               alignment: Alignment.centerLeft,
               child: GestureDetector(
                 onLongPress: () {
                   if (MediaQuery.of(context).size.width < 600) {
                     showModalBottomSheet(
                       context: context,
+                      backgroundColor: theme.cardColor,
                       builder:
                           (context) => Padding(
                             padding: const EdgeInsets.all(16),
@@ -100,22 +108,24 @@ class TodoItem extends StatelessWidget {
                     style: theme.textTheme.bodyLarge?.copyWith(
                       fontWeight: FontWeight.w600,
                       color:
-                          todo.isCompleted
+                          isCompleted
                               ? Colors.grey.shade600
                               : todo.priority == Priority.high
                               ? Colors.red
                               : theme.colorScheme.onSurface,
+                      // REMOVED decoration property to disable strikethrough:
+                      // decoration: isCompleted
+                      // ? TextDecoration.lineThrough : null,
                     ),
                   ),
                 ),
               ),
             ),
             trailing:
-                isCompleted &&
-                        (todo.completedAt != null || todo.reminder != null)
+                isCompleted
                     ? Column(
-                      mainAxisAlignment: MainAxisAlignment.center, // 保持居中对齐
-                      crossAxisAlignment: CrossAxisAlignment.end, // 右对齐
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
                         if (todo.completedAt != null)
                           Text(
@@ -128,26 +138,29 @@ class TodoItem extends StatelessWidget {
                           '截止: ${dateFormat.format(todo.dueDate)}',
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: Colors.orange,
+                            // Removed strikethrough from due date as well
+                            // decoration: TextDecoration.lineThrough,
                           ),
                         ),
                         if (todo.reminder != null)
                           Text(
                             '提醒: ${dateFormat.format(todo.reminder!)}',
                             style: theme.textTheme.bodySmall?.copyWith(
-                              color: Colors.blue,
+                              color: Colors.blue[600],
+                              // Removed strikethrough from reminder
+                              // decoration: TextDecoration.lineThrough,
                             ),
                           ),
                       ],
                     )
                     : isYesterday
-                    ? const SizedBox.shrink() // "昨" 隐藏删除按钮
+                    ? const SizedBox.shrink()
                     : Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        // 判断 dueDate 是否是明天来决定是否显示 "今" 按钮
-                        if (todo.dueDate.isSameDay(tomorrowStart))
+                        if (isDueTomorrow)
                           TextButton(
-                            onPressed: onMoveToToday, // 迁移到今天按钮
+                            onPressed: onMoveToToday,
                             style: TextButton.styleFrom(
                               shape: const CircleBorder(),
                               padding: const EdgeInsets.all(16),
@@ -169,7 +182,7 @@ class TodoItem extends StatelessWidget {
                           onPressed: onDelete,
                         ),
                         TextButton(
-                          onPressed: onMoveToTomorrow, // 迁移到明天按钮
+                          onPressed: onMoveToTomorrow,
                           style: TextButton.styleFrom(
                             shape: const CircleBorder(),
                             padding: const EdgeInsets.all(16),
