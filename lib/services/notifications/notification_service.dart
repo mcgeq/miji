@@ -15,8 +15,8 @@ import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 
 // 条件导入 dart:html，仅在 Web 平台使用
-import 'package:mcge_pisces/services/notifications/web_notification.dart'
-    if (dart.library.io) 'package:mcge_pisces/stub/web_notification_stub.dart';
+import 'package:miji/services/notifications/web_notification.dart'
+    if (dart.library.io) 'package:miji/stub/web_notification_stub.dart';
 
 class NotificationService {
   static final NotificationService _instance = NotificationService._internal();

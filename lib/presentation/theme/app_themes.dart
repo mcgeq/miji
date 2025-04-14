@@ -9,7 +9,7 @@
 // Modified   By:  mcgeq <mcgeq@outlook.com>
 // -----------------------------------------------------------------------------
 import 'package:flutter/material.dart';
-import 'package:mcge_pisces/constants/constants.dart'; // Adjust import path
+import 'package:miji/constants/constants.dart'; // Adjust import path
 
 class AppThemes {
   AppThemes._();

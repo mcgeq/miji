@@ -11,8 +11,8 @@
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:mcge_pisces/data/models/todo.dart';
-import 'package:mcge_pisces/utils/date_time_extensions.dart';
+import 'package:miji/data/models/todo.dart';
+import 'package:miji/utils/date_time_extensions.dart';
 
 class TodoItem extends StatelessWidget {
   final Todo todo;

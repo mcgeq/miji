@@ -10,16 +10,16 @@
 // -----------------------------------------------------------------------------
 import 'dart:async';
 import 'package:hive_flutter/adapters.dart';
-import 'package:mcge_pisces/utils/date_time_extensions.dart';
+import 'package:miji/utils/date_time_extensions.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mcge_pisces/constants/constants.dart';
-import 'package:mcge_pisces/data/models/todo.dart';
-import 'package:mcge_pisces/services/logging/logger.dart';
-import 'package:mcge_pisces/services/notifications/notification_service.dart';
-import 'package:mcge_pisces/utils/mguid.dart';
-import 'package:mcge_pisces/providers/todo_filter_provider.dart';
-import 'package:mcge_pisces/providers/todo_page_provider.dart';
+import 'package:miji/constants/constants.dart';
+import 'package:miji/data/models/todo.dart';
+import 'package:miji/services/logging/logger.dart';
+import 'package:miji/services/notifications/notification_service.dart';
+import 'package:miji/utils/mguid.dart';
+import 'package:miji/providers/todo_filter_provider.dart';
+import 'package:miji/providers/todo_page_provider.dart';
 
 part 'todo_provider.g.dart';
 

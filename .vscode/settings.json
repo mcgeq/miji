@@ -100,5 +100,6 @@
 			"source.fixAll.biome": "explicit",
 			"source.organizeImports.biome": "explicit"
 		}
-	}
+	},
+	"cmake.sourceDirectory": "F:/projects/miji/windows"
 }

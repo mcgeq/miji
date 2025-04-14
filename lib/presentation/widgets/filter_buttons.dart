@@ -11,8 +11,8 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mcge_pisces/providers/todo_filter_provider.dart'; // Adjust path
-import 'package:mcge_pisces/providers/todo_page_provider.dart'; // Adjust path
+import 'package:miji/providers/todo_filter_provider.dart'; // Adjust path
+import 'package:miji/providers/todo_page_provider.dart'; // Adjust path
 
 class FilterButtons extends ConsumerWidget {
   // Change to ConsumerWidget

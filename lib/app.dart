@@ -11,9 +11,9 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mcge_pisces/providers/theme_provider.dart'; // Adjust paths
-import 'package:mcge_pisces/presentation/screens/todo_screen.dart';
-import 'package:mcge_pisces/presentation/theme/theme_button.dart';
+import 'package:miji/providers/theme_provider.dart'; // Adjust paths
+import 'package:miji/presentation/screens/todo_screen.dart';
+import 'package:miji/presentation/theme/theme_button.dart';
 
 class PiscesApp extends ConsumerWidget {
   const PiscesApp({super.key});

@@ -11,7 +11,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mcge_pisces/providers/theme_provider.dart'; // Adjust import path
+import 'package:miji/providers/theme_provider.dart'; // Adjust import path
 
 class ThemeToggleButton extends ConsumerWidget {
   const ThemeToggleButton({super.key});

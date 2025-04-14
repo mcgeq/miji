@@ -15,15 +15,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart'; // Import Riverpod
 
 import 'package:hive_flutter/hive_flutter.dart';
 
-import 'package:mcge_pisces/data/models/todo.dart'; // Adjust paths
+import 'package:miji/data/models/todo.dart'; // Adjust paths
 
-import 'package:mcge_pisces/services/logging/logger.dart';
+import 'package:miji/services/logging/logger.dart';
 
-import 'package:mcge_pisces/services/notifications/notification_service.dart';
+import 'package:miji/services/notifications/notification_service.dart';
 
-import 'package:mcge_pisces/services/window/window_manager_helper.dart';
+import 'package:miji/services/window/window_manager_helper.dart';
 
-import 'package:mcge_pisces/app.dart'; // Import the new App widget
+import 'package:miji/app.dart'; // Import the new App widget
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

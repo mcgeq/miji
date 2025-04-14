@@ -1,4 +1,4 @@
-package com.example.mcge_pisces
+package com.example.miji
 
 import io.flutter.embedding.android.FlutterActivity
 

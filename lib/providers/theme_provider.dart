@@ -11,7 +11,7 @@
 import 'package:flutter/material.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:mcge_pisces/presentation/theme/app_themes.dart'; // Adjust import path
+import 'package:miji/presentation/theme/app_themes.dart'; // Adjust import path
 
 part 'theme_provider.g.dart';
 

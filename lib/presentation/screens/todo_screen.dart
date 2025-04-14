@@ -10,13 +10,13 @@
 // -----------------------------------------------------------------------------
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mcge_pisces/providers/todo_provider.dart';
-import 'package:mcge_pisces/providers/todo_filter_provider.dart';
-import 'package:mcge_pisces/presentation/widgets/todo_input.dart';
-import 'package:mcge_pisces/presentation/widgets/filter_buttons.dart';
-import 'package:mcge_pisces/presentation/widgets/todo_item.dart';
-import 'package:mcge_pisces/presentation/widgets/pagination.dart';
-import 'package:mcge_pisces/data/models/todo.dart';
+import 'package:miji/providers/todo_provider.dart';
+import 'package:miji/providers/todo_filter_provider.dart';
+import 'package:miji/presentation/widgets/todo_input.dart';
+import 'package:miji/presentation/widgets/filter_buttons.dart';
+import 'package:miji/presentation/widgets/todo_item.dart';
+import 'package:miji/presentation/widgets/pagination.dart';
+import 'package:miji/data/models/todo.dart';
 
 class TodoScreen extends ConsumerWidget {
   const TodoScreen({super.key});
