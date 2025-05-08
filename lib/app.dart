@@ -5,15 +5,22 @@
 // File:           app.dart
 // Description:    About App
 // Create   Date:  2025-04-12 10:59:00
-// Last Modified:  2025-04-12 10:59:12
+// Last Modified:  2025-05-08 20:16:30
 // Modified   By:  mcgeq <mcgeq@outlook.com>
 // -----------------------------------------------------------------------------
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+
+import 'package:miji/config/theme/app_themes.dart';
+
+
+import 'package:miji/config/theme/theme_button.dart';
+
+
+import 'package:miji/features/todos/todo_screen.dart';
 import 'package:miji/providers/theme_provider.dart'; // Adjust paths
-import 'package:miji/presentation/screens/todo_screen.dart';
-import 'package:miji/presentation/theme/theme_button.dart';
 
 class PiscesApp extends ConsumerWidget {
   const PiscesApp({super.key});
@@ -22,18 +29,16 @@ class PiscesApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     // Watch the theme provider state
     final themeState = ref.watch(themeNotifierProvider);
-    final themeNotifier = ref.read(themeNotifierProvider.notifier);
 
     return themeState.when(
       data:
-          (themeMode) => MaterialApp(
+          (theme) => MaterialApp(
             debugShowCheckedModeBanner: false,
             title: 'Pisces Note', // Use constant if available
             theme:
-                themeNotifier
-                    .lightTheme, // Access themes via notifier or AppThemes
-            darkTheme: themeNotifier.darkTheme,
-            themeMode: themeMode,
+                AppThemes.lightTheme, // Access themes via notifier or AppThemes
+            darkTheme: AppThemes.darkTheme,
+            themeMode: theme.mode,
             home: const Scaffold(
               // appBar: AppBar(title: Text('Pisces Todo')), // Optional AppBar
               body: TodoScreen(),

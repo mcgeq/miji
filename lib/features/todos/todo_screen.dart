@@ -5,17 +5,24 @@
 // File:           todo_screen.dart
 // Description:    About Todo Screen
 // Create   Date:  2025-04-12 10:54:38
-// Last Modified:  2025-04-12 10:54:46
+// Last Modified:  2025-05-08 19:57:48
 // Modified   By:  mcgeq <mcgeq@outlook.com>
 // -----------------------------------------------------------------------------
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+
+import 'package:miji/features/todos/widgets/filter_buttons.dart';
+
+import 'package:miji/features/todos/widgets/pagination.dart';
+
+
+import 'package:miji/features/todos/widgets/todo_input.dart';
+
+
+import 'package:miji/features/todos/widgets/todo_item.dart';
 import 'package:miji/providers/todo_provider.dart';
 import 'package:miji/providers/todo_filter_provider.dart';
-import 'package:miji/presentation/widgets/todo_input.dart';
-import 'package:miji/presentation/widgets/filter_buttons.dart';
-import 'package:miji/presentation/widgets/todo_item.dart';
-import 'package:miji/presentation/widgets/pagination.dart';
 import 'package:miji/data/models/todo.dart';
 
 class TodoScreen extends ConsumerWidget {

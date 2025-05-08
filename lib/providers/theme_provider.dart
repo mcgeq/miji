@@ -5,13 +5,17 @@
 // File:           theme_provider.dart
 // Description:    About Theme
 // Create   Date:  2025-04-12 10:53:45
-// Last Modified:  2025-04-12 10:53:54
+// Last Modified:  2025-05-08 20:25:41
 // Modified   By:  mcgeq <mcgeq@outlook.com>
 // -----------------------------------------------------------------------------
+
 import 'package:flutter/material.dart';
+
+import 'package:miji/config/theme/app_themes.dart';
+
+import 'package:miji/config/theme/theme_state.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:miji/presentation/theme/app_themes.dart'; // Adjust import path
 
 part 'theme_provider.g.dart';
 
@@ -22,9 +26,11 @@ class ThemeNotifier extends _$ThemeNotifier {
   late SharedPreferences _prefs;
 
   @override
-  Future<ThemeMode> build() async {
+  Future<ThemeState> build() async {
     _prefs = await SharedPreferences.getInstance();
-    return _loadThemeFromPrefs();
+    final mode = _loadThemeFromPrefs();
+    final theme = _getThemeData(mode);
+    return ThemeState(mode: mode, theme: theme);
   }
 
   ThemeMode _loadThemeFromPrefs() {
@@ -32,28 +38,26 @@ class ThemeNotifier extends _$ThemeNotifier {
     return isDark ? ThemeMode.dark : ThemeMode.light;
   }
 
-  Future<void> toggleTheme() async {
-    final currentMode =
-        state.value ?? ThemeMode.light; // Get current state safely
-    final newMode =
-        currentMode == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark;
-    final isDark = newMode == ThemeMode.dark;
+  ThemeData _getThemeData(ThemeMode mode) {
+    return mode == ThemeMode.dark ? AppThemes.darkTheme : AppThemes.lightTheme;
+  }
 
+  Future<void> toggleTheme() async {
+    final current = state.value!;
+    final newMode =
+        current.mode == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark;
+    final newTheme = _getThemeData(newMode);
     state = AsyncValue.data(
-      newMode,
+      ThemeState(mode: newMode, theme: newTheme),
     ); // Update state immediately for responsiveness
 
     try {
-      await _prefs.setBool(_themePrefsKey, isDark);
+      await _prefs.setBool(_themePrefsKey, newMode == ThemeMode.dark);
     } catch (e) {
       // Handle potential error saving prefs
       // Revert state or show error?
-      state = AsyncValue.data(currentMode); // Revert on error
+      state = AsyncValue.data(current); // Revert on error
       // Optionally log the error
     }
   }
-
-  // Expose the themes directly (optional, could also be accessed via AppThemes)
-  ThemeData get lightTheme => AppThemes.lightTheme;
-  ThemeData get darkTheme => AppThemes.darkTheme;
 }

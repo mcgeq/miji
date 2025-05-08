@@ -5,12 +5,11 @@
 // File:           main.dart
 // Description:    About Flutter main
 // Create   Date:  2025-03-29 16:27:14
-// Last Modified:  2025-05-08 14:48:57
+// Last Modified:  2025-05-08 20:25:25
 // Modified   By:  mcgeq <mcgeq@outlook.com>
 // -----------------------------------------------------------------------------
 
 import 'package:flutter/material.dart';
-
 
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
@@ -31,9 +30,7 @@ import 'package:miji/app.dart'; // Import the new App widget
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-
   await dotenv.load(fileName: 'assets/.env');
-
 
   // Hive Initialization
 

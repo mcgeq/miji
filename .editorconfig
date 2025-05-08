@@ -10,7 +10,7 @@ charset = utf-8
 # 使用 Unix 风格换行符（\n）
 end_of_line = lf
 # 文件末尾添加换行符
-insert_final_newline = true
+insert_final_newline = false
 # 删除行尾多余空白字符
 trim_trailing_whitespace = true
 # 推荐最大行长度为 80（Dart 推荐值，可根据团队调整）

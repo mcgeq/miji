@@ -40,7 +40,7 @@ final totalTodoPagesProvider = AutoDisposeProvider<int>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef TotalTodoPagesRef = AutoDisposeProviderRef<int>;
-String _$todoListHash() => r'2340f0c646d128e551d59d184e7a8af2a3784fd2';
+String _$todoListHash() => r'1aa1b4a9a9c29b623a6a7afbe1d1d0274844e575';
 
 /// See also [TodoList].
 @ProviderFor(TodoList)
