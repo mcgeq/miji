@@ -5,11 +5,14 @@
 // File:           main.dart
 // Description:    About Flutter main
 // Create   Date:  2025-03-29 16:27:14
-// Last Modified:  2025-04-12 11:02:24
+// Last Modified:  2025-05-08 14:48:57
 // Modified   By:  mcgeq <mcgeq@outlook.com>
 // -----------------------------------------------------------------------------
 
 import 'package:flutter/material.dart';
+
+
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart'; // Import Riverpod
 
@@ -27,6 +30,10 @@ import 'package:miji/app.dart'; // Import the new App widget
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+
+  await dotenv.load(fileName: 'assets/.env');
+
 
   // Hive Initialization
 
