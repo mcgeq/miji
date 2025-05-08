@@ -1,0 +1,6 @@
+{
+    "language": "Language",
+    "setLanguage": "Set the language",
+    "followSystem": "Automatic",
+    "languageFollowSystemDescription": "Note: System presets only support language from the list below."
+}
