@@ -8,32 +8,32 @@ import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 /// A singleton class for managing HTTP requests using Dio with smart dialog
 /// notifications.
 class XHttp {
-  static const String _get = 'GET';
+  static const String get = 'GET';
   // ignore: unused_field
-  static const String _post = 'POST';
+  static const String post = 'POST';
   // ignore: unused_field
-  static const String _put = 'PUT';
+  static const String put = 'PUT';
   // ignore: unused_field
-  static const String _patch = 'PATCH';
+  static const String patch = 'PATCH';
   // ignore: unused_field
-  static const String _delete = 'DELETE';
+  static const String delete = 'DELETE';
 
-  static const String _customErrorCode = 'DIO_CUSTOM_ERROR';
-  static const String _requestType = 'REQUEST';
-  static const String _responseType = 'RESPONSE';
-  static const String _errorType = 'RESPONSE_ERROR';
-  static const String _defaultLoadMsg = 'Loading...';
+  static const String customErrorCode = 'DIO_CUSTOM_ERROR';
+  static const String requestType = 'REQUEST';
+  static const String responseType = 'RESPONSE';
+  static const String errorType = 'RESPONSE_ERROR';
+  static const String defaultLoadMsg = 'Loading...';
 
-  static const int _connectTimeout = 60000;
-  static const int _receiveTimeout = 60000;
-  static const int _sendTimeout = 60000;
+  static const int connectTimeout = 60000;
+  static const int receiveTimeout = 60000;
+  static const int sendTimeout = 60000;
 
-  static const String _dialogTypeOthers = 'OTHERS';
-  static const String _dialogTypeToast = 'TOAST';
-  static const String _dialogTypeAlert = 'ALERT';
-  static const String _dialogTypeCustom = 'CUSTOM';
+  static const String dialogTypeOthers = 'OTHERS';
+  static const String dialogTypeToast = 'TOAST';
+  static const String dialogTypeAlert = 'ALERT';
+  static const String dialogTypeCustom = 'CUSTOM';
 
-  static String loadMsg = _defaultLoadMsg;
+  static String loadMsg = defaultLoadMsg;
   static String errorShowTitle = 'An error occurred';
   static String errorShowMsg = '';
 
@@ -50,9 +50,9 @@ class XHttp {
       _dio.options = dio.BaseOptions(
         baseUrl: _getBaseUrl(),
         headers: {'Content-Type': 'application/json'},
-        connectTimeout: const Duration(milliseconds: _connectTimeout),
-        receiveTimeout: const Duration(milliseconds: _receiveTimeout),
-        sendTimeout: const Duration(milliseconds: _sendTimeout),
+        connectTimeout: const Duration(milliseconds: connectTimeout),
+        receiveTimeout: const Duration(milliseconds: receiveTimeout),
+        sendTimeout: const Duration(milliseconds: sendTimeout),
         extra: {'cancelDuplicatedRequest': true},
       );
       _init();
@@ -166,7 +166,7 @@ class XHttp {
       'method': options.method,
       'headers': options.headers,
       'data': options.data ?? options.queryParameters,
-    }, _requestType);
+    }, requestType);
   }
 
   /// Handles response logging and hides loading dialog.
@@ -181,7 +181,7 @@ class XHttp {
       'data': response.data,
       'statusCode': response.statusCode,
       'statusMessage': response.statusMessage,
-    }, _responseType);
+    }, responseType);
     Toast.instance.hide();
   }
 
@@ -217,7 +217,7 @@ class XHttp {
       'errorType': error.type,
       'errorMessage': error.message,
       'errorTypeInfo': errorTypeInfo,
-    }, _errorType);
+    }, errorType);
     Toast.instance.hide();
     errorShowMsg =
         '$errorShowTitle ${error.response?.statusCode ?? 'unknown'} '
@@ -253,12 +253,12 @@ class XHttp {
     if (logData['data'] != null) {
       logStr.writeln('- ${logType}_BODY:\n${parseData(logData['data'])}');
     }
-    if (logType.contains(_responseType) || logType.contains(_errorType)) {
+    if (logType.contains(responseType) || logType.contains(errorType)) {
       logStr
         ..writeln('- STATUS_CODE: ${logData['statusCode']}')
         ..writeln('- STATUS_MESSAGE: ${logData['statusMessage']}');
     }
-    if (logType == _errorType) {
+    if (logType == errorType) {
       logStr
         ..writeln('- ERROR_TYPE: ${logData['errorType']}')
         ..writeln('- ERROR_MESSAGE: ${logData['errorMessage']}')
@@ -278,22 +278,22 @@ class XHttp {
   ) async {
     if (response == null) return;
     final Map<String, dynamic> configMap = config ?? {};
-    final String dialogType = configMap['type'] ?? _dialogTypeOthers;
-    if (dialogType == _dialogTypeOthers) return;
+    final String dialogType = configMap['type'] ?? dialogTypeOthers;
+    if (dialogType == dialogTypeOthers) return;
 
     final bool isSuccess = response.data.success;
     final String msg = response.data.message ?? 'Unknown error';
 
-    if (dialogType == _dialogTypeToast) {
+    if (dialogType == dialogTypeToast) {
       Toast.instance.show(
         isSuccess
             ? configMap['successMsg'] ?? msg
             : configMap['errorMsg'] ?? msg,
         type: isSuccess ? Toast.success : Toast.error,
       );
-    } else if (dialogType == _dialogTypeAlert) {
+    } else if (dialogType == dialogTypeAlert) {
       // Implement alert dialog (e.g., using showDialog)
-    } else if (dialogType == _dialogTypeCustom) {
+    } else if (dialogType == dialogTypeCustom) {
       if (isSuccess && configMap['onSuccess'] != null) {
         configMap['onSuccess'](response.data);
       } else if (!isSuccess && configMap['onError'] != null) {
@@ -305,8 +305,8 @@ class XHttp {
   /// Handles non-Dio exceptions and displays notifications.
   void _catchOthersError(dynamic e) {
     final String errMsg =
-        '${errorShowMsg.isEmpty ? e.toString() : errorShowMsg}$_customErrorCode'
-            .split(_customErrorCode)[0];
+        '${errorShowMsg.isEmpty ? e.toString() : errorShowMsg}$customErrorCode'
+            .split(customErrorCode)[0];
     final String truncatedMsg =
         errMsg.length > 300 ? errMsg.substring(0, 150) : errMsg;
     if (e is dio.DioException && dio.CancelToken.isCancel(e)) {
@@ -321,7 +321,7 @@ class XHttp {
     if (baseUrl != null && baseUrl.isNotEmpty) {
       _dio.options.baseUrl = baseUrl;
     }
-    loadMsg = msg ?? _defaultLoadMsg;
+    loadMsg = msg ?? defaultLoadMsg;
     return _instance;
   }
 
@@ -349,7 +349,7 @@ class XHttp {
   /// Unified request method for all HTTP methods.
   Future<Result> request(
     String url, {
-    String method = _get,
+    String method = get,
     Map<String, dynamic>? queryParameters,
     dynamic data,
     bool isCancelWhiteList = false,
