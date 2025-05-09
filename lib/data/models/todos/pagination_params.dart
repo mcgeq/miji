@@ -1,11 +1,14 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'pagination_params.freezed.dart';
+part 'pagination_params.g.dart';
 
 @freezed
 class PaginationParams with _$PaginationParams {
-  const factory PaginationParams({required int? page, required int? pageSize}) =
-      _PaginationParams;
+  const factory PaginationParams({
+    @JsonKey(name: 'page', required: true) int? page,
+    @JsonKey(name: 'page_size', required: true) int? pageSize,
+  }) = _PaginationParams;
 
   factory PaginationParams.fromJson(Map<String, dynamic> json) =>
       _$PaginationParamsFromJson(json);

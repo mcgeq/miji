@@ -20,8 +20,11 @@ AttachmentInfo _$AttachmentInfoFromJson(Map<String, dynamic> json) {
 
 /// @nodoc
 mixin _$AttachmentInfo {
+  @JsonKey(name: 'serial_num', required: true)
   String get serialNum => throw _privateConstructorUsedError;
+  @JsonKey(name: 'file_path')
   String? get filePath => throw _privateConstructorUsedError;
+  @JsonKey(name: 'url')
   String? get url => throw _privateConstructorUsedError;
 
   /// Serializes this AttachmentInfo to a JSON map.
@@ -40,7 +43,10 @@ abstract class $AttachmentInfoCopyWith<$Res> {
           AttachmentInfo value, $Res Function(AttachmentInfo) then) =
       _$AttachmentInfoCopyWithImpl<$Res, AttachmentInfo>;
   @useResult
-  $Res call({String serialNum, String? filePath, String? url});
+  $Res call(
+      {@JsonKey(name: 'serial_num', required: true) String serialNum,
+      @JsonKey(name: 'file_path') String? filePath,
+      @JsonKey(name: 'url') String? url});
 }
 
 /// @nodoc
@@ -87,7 +93,10 @@ abstract class _$$AttachmentInfoImplCopyWith<$Res>
       __$$AttachmentInfoImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call({String serialNum, String? filePath, String? url});
+  $Res call(
+      {@JsonKey(name: 'serial_num', required: true) String serialNum,
+      @JsonKey(name: 'file_path') String? filePath,
+      @JsonKey(name: 'url') String? url});
 }
 
 /// @nodoc
@@ -128,16 +137,21 @@ class __$$AttachmentInfoImplCopyWithImpl<$Res>
 @JsonSerializable()
 class _$AttachmentInfoImpl implements _AttachmentInfo {
   const _$AttachmentInfoImpl(
-      {required this.serialNum, this.filePath, this.url});
+      {@JsonKey(name: 'serial_num', required: true) required this.serialNum,
+      @JsonKey(name: 'file_path') this.filePath,
+      @JsonKey(name: 'url') this.url});
 
   factory _$AttachmentInfoImpl.fromJson(Map<String, dynamic> json) =>
       _$$AttachmentInfoImplFromJson(json);
 
   @override
+  @JsonKey(name: 'serial_num', required: true)
   final String serialNum;
   @override
+  @JsonKey(name: 'file_path')
   final String? filePath;
   @override
+  @JsonKey(name: 'url')
   final String? url;
 
   @override
@@ -180,18 +194,22 @@ class _$AttachmentInfoImpl implements _AttachmentInfo {
 
 abstract class _AttachmentInfo implements AttachmentInfo {
   const factory _AttachmentInfo(
-      {required final String serialNum,
-      final String? filePath,
-      final String? url}) = _$AttachmentInfoImpl;
+      {@JsonKey(name: 'serial_num', required: true)
+      required final String serialNum,
+      @JsonKey(name: 'file_path') final String? filePath,
+      @JsonKey(name: 'url') final String? url}) = _$AttachmentInfoImpl;
 
   factory _AttachmentInfo.fromJson(Map<String, dynamic> json) =
       _$AttachmentInfoImpl.fromJson;
 
   @override
+  @JsonKey(name: 'serial_num', required: true)
   String get serialNum;
   @override
+  @JsonKey(name: 'file_path')
   String? get filePath;
   @override
+  @JsonKey(name: 'url')
   String? get url;
 
   /// Create a copy of AttachmentInfo

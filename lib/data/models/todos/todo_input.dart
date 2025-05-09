@@ -2,6 +2,7 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:miji/data/models/enums/priority.dart';
 import 'package:miji/data/models/enums/status.dart';
 import 'package:miji/data/models/todos/create_or_update_form.dart';
+import 'package:miji/shared/utils/date_utils.dart';
 
 part 'todo_input.freezed.dart';
 part 'todo_input.g.dart';
@@ -9,19 +10,20 @@ part 'todo_input.g.dart';
 @freezed
 class TodoInput with _$TodoInput {
   const factory TodoInput({
-    String? title,
-    String? description,
-    @JsonKey(fromJson: dateTimeFromJson, toJson: dateTimeToJson)
+    @JsonKey(name: 'title') String? title,
+    @JsonKey(name: 'description') String? description,
+    @JsonKey(name: 'due_at', fromJson: dateTimeFromJson, toJson: dateTimeToJson)
     DateTime? dueAt,
+    @JsonKey(fromJson: Priority.fromJson, toJson: priorityToJson)
     Priority? priority,
-    Status? status,
-    List<CreateOrUpdateForm>? tags,
-    String? repeat,
-    int? progress,
-    String? assigneeId,
-    List<CreateOrUpdateForm>? projects,
-    String? location,
-    String? ownerId,
+    @JsonKey(fromJson: Status.fromJson, toJson: statusToJson) Status? status,
+    @JsonKey(name: 'tags') List<CreateOrUpdateForm>? tags,
+    @JsonKey(name: 'repeat') String? repeat,
+    @JsonKey(name: 'progress') int? progress,
+    @JsonKey(name: 'assignee_id') String? assigneeId,
+    @JsonKey(name: 'projects') List<CreateOrUpdateForm>? projects,
+    @JsonKey(name: 'location') String? location,
+    @JsonKey(name: 'owner_id') String? ownerId,
   }) = _TodoInput;
 
   factory TodoInput.fromJson(Map<String, dynamic> json) =>
@@ -52,8 +54,3 @@ class TodoInput with _$TodoInput {
     return null;
   }
 }
-
-DateTime? dateTimeFromJson(String? json) =>
-    json != null ? DateTime.parse(json) : null;
-
-String? dateTimeToJson(DateTime? date) => date?.toIso8601String();

@@ -1,13 +1,14 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'create_or_update_form.freezed.dart';
+part 'create_or_update_form.g.dart';
 
 @freezed
 class CreateOrUpdateForm with _$CreateOrUpdateForm {
   const factory CreateOrUpdateForm({
-    String? serialNum,
-    String? name,
-    String? description,
+    @JsonKey(name: 'serial_num') String? serialNum,
+    @JsonKey(name: 'name') String? name,
+    @JsonKey(name: 'description') String? description,
   }) = _CreateOrUpdateForm;
 
   factory CreateOrUpdateForm.fromJson(Map<String, dynamic> json) =>

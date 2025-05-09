@@ -13,42 +13,47 @@ part 'todo_response.g.dart';
 @freezed
 class TodoResponse with _$TodoResponse {
   const factory TodoResponse({
-    required String serialNum,
-    required String title,
-    String? description,
-
-    @JsonKey(fromJson: dateTimeFromJson, toJson: dateTimeToJson)
+    @JsonKey(name: 'serial_num', required: true) required String serialNum,
+    @JsonKey(name: 'title', required: true) required String title,
+    @JsonKey(name: 'description') String? description,
+    @JsonKey(
+      name: 'created_at',
+      fromJson: dateTimeFromJson,
+      toJson: dateTimeToJson,
+    )
     required DateTime createdAt,
-
-    @JsonKey(fromJson: dateTimeFromJson, toJson: dateTimeToJson)
+    @JsonKey(
+      name: 'updated_at',
+      fromJson: dateTimeFromJson,
+      toJson: dateTimeToJson,
+    )
     DateTime? updatedAt,
-
-    @JsonKey(fromJson: dateTimeFromJson, toJson: dateTimeToJson)
+    @JsonKey(name: 'due_at', fromJson: dateTimeFromJson, toJson: dateTimeToJson)
     required DateTime dueAt,
-
-    @JsonKey(fromJson: Priority.fromJson, toJson: _priorityToJson)
+    @JsonKey(fromJson: Priority.fromJson, toJson: priorityToJson)
     required Priority priority,
-
-    @JsonKey(fromJson: Status.fromJson, toJson: _statusToJson)
+    @JsonKey(fromJson: Status.fromJson, toJson: statusToJson)
     required Status status,
-    String? repeat,
-
-    @JsonKey(fromJson: dateTimeFromJson, toJson: dateTimeToJson)
+    @JsonKey(name: 'repeat') String? repeat,
+    @JsonKey(
+      name: 'completed_at',
+      fromJson: dateTimeFromJson,
+      toJson: dateTimeToJson,
+    )
     DateTime? completedAt,
-
-    String? assigneeId,
-    required int progress,
-    String? location,
-    String? ownerId,
+    @JsonKey(name: 'assignee_id') String? assigneeId,
+    @JsonKey(name: 'progress', required: true) required int progress,
+    @JsonKey(name: 'location') String? location,
+    @JsonKey(name: 'owner_id') String? ownerId,
+    @JsonKey(name: 'projects', required: true)
     required List<ProjectInfo> projects,
-    required List<TagInfo> tags,
+    @JsonKey(name: 'tags', required: true) required List<TagInfo> tags,
+    @JsonKey(name: 'reminders', required: true)
     required List<ReminderInfo> reminders,
+    @JsonKey(name: 'attachments', required: true)
     required List<AttachmentInfo> attachments,
   }) = _TodoResponse;
 
   factory TodoResponse.fromJson(Map<String, dynamic> json) =>
       _$TodoResponseFromJson(json);
 }
-
-int _priorityToJson(Priority priority) => priority.toJson();
-int _statusToJson(Status status) => status.toJson();

@@ -20,8 +20,11 @@ ProjectCore _$ProjectCoreFromJson(Map<String, dynamic> json) {
 
 /// @nodoc
 mixin _$ProjectCore {
+  @JsonKey(name: 'serial_num', required: true)
   String get serialNum => throw _privateConstructorUsedError;
+  @JsonKey(name: 'name', required: true)
   String get name => throw _privateConstructorUsedError;
+  @JsonKey(name: 'description')
   String? get description => throw _privateConstructorUsedError;
 
   /// Serializes this ProjectCore to a JSON map.
@@ -40,7 +43,10 @@ abstract class $ProjectCoreCopyWith<$Res> {
           ProjectCore value, $Res Function(ProjectCore) then) =
       _$ProjectCoreCopyWithImpl<$Res, ProjectCore>;
   @useResult
-  $Res call({String serialNum, String name, String? description});
+  $Res call(
+      {@JsonKey(name: 'serial_num', required: true) String serialNum,
+      @JsonKey(name: 'name', required: true) String name,
+      @JsonKey(name: 'description') String? description});
 }
 
 /// @nodoc
@@ -87,7 +93,10 @@ abstract class _$$ProjectCoreImplCopyWith<$Res>
       __$$ProjectCoreImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call({String serialNum, String name, String? description});
+  $Res call(
+      {@JsonKey(name: 'serial_num', required: true) String serialNum,
+      @JsonKey(name: 'name', required: true) String name,
+      @JsonKey(name: 'description') String? description});
 }
 
 /// @nodoc
@@ -128,16 +137,21 @@ class __$$ProjectCoreImplCopyWithImpl<$Res>
 @JsonSerializable()
 class _$ProjectCoreImpl implements _ProjectCore {
   const _$ProjectCoreImpl(
-      {required this.serialNum, required this.name, this.description});
+      {@JsonKey(name: 'serial_num', required: true) required this.serialNum,
+      @JsonKey(name: 'name', required: true) required this.name,
+      @JsonKey(name: 'description') this.description});
 
   factory _$ProjectCoreImpl.fromJson(Map<String, dynamic> json) =>
       _$$ProjectCoreImplFromJson(json);
 
   @override
+  @JsonKey(name: 'serial_num', required: true)
   final String serialNum;
   @override
+  @JsonKey(name: 'name', required: true)
   final String name;
   @override
+  @JsonKey(name: 'description')
   final String? description;
 
   @override
@@ -179,18 +193,23 @@ class _$ProjectCoreImpl implements _ProjectCore {
 
 abstract class _ProjectCore implements ProjectCore {
   const factory _ProjectCore(
-      {required final String serialNum,
-      required final String name,
-      final String? description}) = _$ProjectCoreImpl;
+          {@JsonKey(name: 'serial_num', required: true)
+          required final String serialNum,
+          @JsonKey(name: 'name', required: true) required final String name,
+          @JsonKey(name: 'description') final String? description}) =
+      _$ProjectCoreImpl;
 
   factory _ProjectCore.fromJson(Map<String, dynamic> json) =
       _$ProjectCoreImpl.fromJson;
 
   @override
+  @JsonKey(name: 'serial_num', required: true)
   String get serialNum;
   @override
+  @JsonKey(name: 'name', required: true)
   String get name;
   @override
+  @JsonKey(name: 'description')
   String? get description;
 
   /// Create a copy of ProjectCore

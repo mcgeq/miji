@@ -28,6 +28,7 @@ analyzer:
     missing_required_param: error
     # Ignore unused imports as a warning (optional, depending on team preference).
     unused_import: warning
+    invalid_annotation_target: ignore
   plugins:
     - custom_lint
 

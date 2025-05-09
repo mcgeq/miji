@@ -20,29 +20,44 @@ TodoResponse _$TodoResponseFromJson(Map<String, dynamic> json) {
 
 /// @nodoc
 mixin _$TodoResponse {
+  @JsonKey(name: 'serial_num', required: true)
   String get serialNum => throw _privateConstructorUsedError;
+  @JsonKey(name: 'title', required: true)
   String get title => throw _privateConstructorUsedError;
+  @JsonKey(name: 'description')
   String? get description => throw _privateConstructorUsedError;
-  @JsonKey(fromJson: dateTimeFromJson, toJson: dateTimeToJson)
+  @JsonKey(
+      name: 'created_at', fromJson: dateTimeFromJson, toJson: dateTimeToJson)
   DateTime get createdAt => throw _privateConstructorUsedError;
-  @JsonKey(fromJson: dateTimeFromJson, toJson: dateTimeToJson)
+  @JsonKey(
+      name: 'updated_at', fromJson: dateTimeFromJson, toJson: dateTimeToJson)
   DateTime? get updatedAt => throw _privateConstructorUsedError;
-  @JsonKey(fromJson: dateTimeFromJson, toJson: dateTimeToJson)
+  @JsonKey(name: 'due_at', fromJson: dateTimeFromJson, toJson: dateTimeToJson)
   DateTime get dueAt => throw _privateConstructorUsedError;
-  @JsonKey(fromJson: Priority.fromJson, toJson: _priorityToJson)
+  @JsonKey(fromJson: Priority.fromJson, toJson: priorityToJson)
   Priority get priority => throw _privateConstructorUsedError;
-  @JsonKey(fromJson: Status.fromJson, toJson: _statusToJson)
+  @JsonKey(fromJson: Status.fromJson, toJson: statusToJson)
   Status get status => throw _privateConstructorUsedError;
+  @JsonKey(name: 'repeat')
   String? get repeat => throw _privateConstructorUsedError;
-  @JsonKey(fromJson: dateTimeFromJson, toJson: dateTimeToJson)
+  @JsonKey(
+      name: 'completed_at', fromJson: dateTimeFromJson, toJson: dateTimeToJson)
   DateTime? get completedAt => throw _privateConstructorUsedError;
+  @JsonKey(name: 'assignee_id')
   String? get assigneeId => throw _privateConstructorUsedError;
+  @JsonKey(name: 'progress', required: true)
   int get progress => throw _privateConstructorUsedError;
+  @JsonKey(name: 'location')
   String? get location => throw _privateConstructorUsedError;
+  @JsonKey(name: 'owner_id')
   String? get ownerId => throw _privateConstructorUsedError;
+  @JsonKey(name: 'projects', required: true)
   List<ProjectInfo> get projects => throw _privateConstructorUsedError;
+  @JsonKey(name: 'tags', required: true)
   List<TagInfo> get tags => throw _privateConstructorUsedError;
+  @JsonKey(name: 'reminders', required: true)
   List<ReminderInfo> get reminders => throw _privateConstructorUsedError;
+  @JsonKey(name: 'attachments', required: true)
   List<AttachmentInfo> get attachments => throw _privateConstructorUsedError;
 
   /// Serializes this TodoResponse to a JSON map.
@@ -62,28 +77,39 @@ abstract class $TodoResponseCopyWith<$Res> {
       _$TodoResponseCopyWithImpl<$Res, TodoResponse>;
   @useResult
   $Res call(
-      {String serialNum,
-      String title,
-      String? description,
-      @JsonKey(fromJson: dateTimeFromJson, toJson: dateTimeToJson)
+      {@JsonKey(name: 'serial_num', required: true) String serialNum,
+      @JsonKey(name: 'title', required: true) String title,
+      @JsonKey(name: 'description') String? description,
+      @JsonKey(
+          name: 'created_at',
+          fromJson: dateTimeFromJson,
+          toJson: dateTimeToJson)
       DateTime createdAt,
-      @JsonKey(fromJson: dateTimeFromJson, toJson: dateTimeToJson)
+      @JsonKey(
+          name: 'updated_at',
+          fromJson: dateTimeFromJson,
+          toJson: dateTimeToJson)
       DateTime? updatedAt,
-      @JsonKey(fromJson: dateTimeFromJson, toJson: dateTimeToJson)
+      @JsonKey(
+          name: 'due_at', fromJson: dateTimeFromJson, toJson: dateTimeToJson)
       DateTime dueAt,
-      @JsonKey(fromJson: Priority.fromJson, toJson: _priorityToJson)
+      @JsonKey(fromJson: Priority.fromJson, toJson: priorityToJson)
       Priority priority,
-      @JsonKey(fromJson: Status.fromJson, toJson: _statusToJson) Status status,
-      String? repeat,
-      @JsonKey(fromJson: dateTimeFromJson, toJson: dateTimeToJson)
+      @JsonKey(fromJson: Status.fromJson, toJson: statusToJson) Status status,
+      @JsonKey(name: 'repeat') String? repeat,
+      @JsonKey(
+          name: 'completed_at',
+          fromJson: dateTimeFromJson,
+          toJson: dateTimeToJson)
       DateTime? completedAt,
-      String? assigneeId,
-      int progress,
-      String? location,
-      String? ownerId,
-      List<ProjectInfo> projects,
-      List<TagInfo> tags,
-      List<ReminderInfo> reminders,
+      @JsonKey(name: 'assignee_id') String? assigneeId,
+      @JsonKey(name: 'progress', required: true) int progress,
+      @JsonKey(name: 'location') String? location,
+      @JsonKey(name: 'owner_id') String? ownerId,
+      @JsonKey(name: 'projects', required: true) List<ProjectInfo> projects,
+      @JsonKey(name: 'tags', required: true) List<TagInfo> tags,
+      @JsonKey(name: 'reminders', required: true) List<ReminderInfo> reminders,
+      @JsonKey(name: 'attachments', required: true)
       List<AttachmentInfo> attachments});
 }
 
@@ -207,28 +233,39 @@ abstract class _$$TodoResponseImplCopyWith<$Res>
   @override
   @useResult
   $Res call(
-      {String serialNum,
-      String title,
-      String? description,
-      @JsonKey(fromJson: dateTimeFromJson, toJson: dateTimeToJson)
+      {@JsonKey(name: 'serial_num', required: true) String serialNum,
+      @JsonKey(name: 'title', required: true) String title,
+      @JsonKey(name: 'description') String? description,
+      @JsonKey(
+          name: 'created_at',
+          fromJson: dateTimeFromJson,
+          toJson: dateTimeToJson)
       DateTime createdAt,
-      @JsonKey(fromJson: dateTimeFromJson, toJson: dateTimeToJson)
+      @JsonKey(
+          name: 'updated_at',
+          fromJson: dateTimeFromJson,
+          toJson: dateTimeToJson)
       DateTime? updatedAt,
-      @JsonKey(fromJson: dateTimeFromJson, toJson: dateTimeToJson)
+      @JsonKey(
+          name: 'due_at', fromJson: dateTimeFromJson, toJson: dateTimeToJson)
       DateTime dueAt,
-      @JsonKey(fromJson: Priority.fromJson, toJson: _priorityToJson)
+      @JsonKey(fromJson: Priority.fromJson, toJson: priorityToJson)
       Priority priority,
-      @JsonKey(fromJson: Status.fromJson, toJson: _statusToJson) Status status,
-      String? repeat,
-      @JsonKey(fromJson: dateTimeFromJson, toJson: dateTimeToJson)
+      @JsonKey(fromJson: Status.fromJson, toJson: statusToJson) Status status,
+      @JsonKey(name: 'repeat') String? repeat,
+      @JsonKey(
+          name: 'completed_at',
+          fromJson: dateTimeFromJson,
+          toJson: dateTimeToJson)
       DateTime? completedAt,
-      String? assigneeId,
-      int progress,
-      String? location,
-      String? ownerId,
-      List<ProjectInfo> projects,
-      List<TagInfo> tags,
-      List<ReminderInfo> reminders,
+      @JsonKey(name: 'assignee_id') String? assigneeId,
+      @JsonKey(name: 'progress', required: true) int progress,
+      @JsonKey(name: 'location') String? location,
+      @JsonKey(name: 'owner_id') String? ownerId,
+      @JsonKey(name: 'projects', required: true) List<ProjectInfo> projects,
+      @JsonKey(name: 'tags', required: true) List<TagInfo> tags,
+      @JsonKey(name: 'reminders', required: true) List<ReminderInfo> reminders,
+      @JsonKey(name: 'attachments', required: true)
       List<AttachmentInfo> attachments});
 }
 
@@ -345,29 +382,42 @@ class __$$TodoResponseImplCopyWithImpl<$Res>
 @JsonSerializable()
 class _$TodoResponseImpl implements _TodoResponse {
   const _$TodoResponseImpl(
-      {required this.serialNum,
-      required this.title,
-      this.description,
-      @JsonKey(fromJson: dateTimeFromJson, toJson: dateTimeToJson)
+      {@JsonKey(name: 'serial_num', required: true) required this.serialNum,
+      @JsonKey(name: 'title', required: true) required this.title,
+      @JsonKey(name: 'description') this.description,
+      @JsonKey(
+          name: 'created_at',
+          fromJson: dateTimeFromJson,
+          toJson: dateTimeToJson)
       required this.createdAt,
-      @JsonKey(fromJson: dateTimeFromJson, toJson: dateTimeToJson)
+      @JsonKey(
+          name: 'updated_at',
+          fromJson: dateTimeFromJson,
+          toJson: dateTimeToJson)
       this.updatedAt,
-      @JsonKey(fromJson: dateTimeFromJson, toJson: dateTimeToJson)
+      @JsonKey(
+          name: 'due_at', fromJson: dateTimeFromJson, toJson: dateTimeToJson)
       required this.dueAt,
-      @JsonKey(fromJson: Priority.fromJson, toJson: _priorityToJson)
+      @JsonKey(fromJson: Priority.fromJson, toJson: priorityToJson)
       required this.priority,
-      @JsonKey(fromJson: Status.fromJson, toJson: _statusToJson)
+      @JsonKey(fromJson: Status.fromJson, toJson: statusToJson)
       required this.status,
-      this.repeat,
-      @JsonKey(fromJson: dateTimeFromJson, toJson: dateTimeToJson)
+      @JsonKey(name: 'repeat') this.repeat,
+      @JsonKey(
+          name: 'completed_at',
+          fromJson: dateTimeFromJson,
+          toJson: dateTimeToJson)
       this.completedAt,
-      this.assigneeId,
-      required this.progress,
-      this.location,
-      this.ownerId,
+      @JsonKey(name: 'assignee_id') this.assigneeId,
+      @JsonKey(name: 'progress', required: true) required this.progress,
+      @JsonKey(name: 'location') this.location,
+      @JsonKey(name: 'owner_id') this.ownerId,
+      @JsonKey(name: 'projects', required: true)
       required final List<ProjectInfo> projects,
-      required final List<TagInfo> tags,
+      @JsonKey(name: 'tags', required: true) required final List<TagInfo> tags,
+      @JsonKey(name: 'reminders', required: true)
       required final List<ReminderInfo> reminders,
+      @JsonKey(name: 'attachments', required: true)
       required final List<AttachmentInfo> attachments})
       : _projects = projects,
         _tags = tags,
@@ -378,41 +428,53 @@ class _$TodoResponseImpl implements _TodoResponse {
       _$$TodoResponseImplFromJson(json);
 
   @override
+  @JsonKey(name: 'serial_num', required: true)
   final String serialNum;
   @override
+  @JsonKey(name: 'title', required: true)
   final String title;
   @override
+  @JsonKey(name: 'description')
   final String? description;
   @override
-  @JsonKey(fromJson: dateTimeFromJson, toJson: dateTimeToJson)
+  @JsonKey(
+      name: 'created_at', fromJson: dateTimeFromJson, toJson: dateTimeToJson)
   final DateTime createdAt;
   @override
-  @JsonKey(fromJson: dateTimeFromJson, toJson: dateTimeToJson)
+  @JsonKey(
+      name: 'updated_at', fromJson: dateTimeFromJson, toJson: dateTimeToJson)
   final DateTime? updatedAt;
   @override
-  @JsonKey(fromJson: dateTimeFromJson, toJson: dateTimeToJson)
+  @JsonKey(name: 'due_at', fromJson: dateTimeFromJson, toJson: dateTimeToJson)
   final DateTime dueAt;
   @override
-  @JsonKey(fromJson: Priority.fromJson, toJson: _priorityToJson)
+  @JsonKey(fromJson: Priority.fromJson, toJson: priorityToJson)
   final Priority priority;
   @override
-  @JsonKey(fromJson: Status.fromJson, toJson: _statusToJson)
+  @JsonKey(fromJson: Status.fromJson, toJson: statusToJson)
   final Status status;
   @override
+  @JsonKey(name: 'repeat')
   final String? repeat;
   @override
-  @JsonKey(fromJson: dateTimeFromJson, toJson: dateTimeToJson)
+  @JsonKey(
+      name: 'completed_at', fromJson: dateTimeFromJson, toJson: dateTimeToJson)
   final DateTime? completedAt;
   @override
+  @JsonKey(name: 'assignee_id')
   final String? assigneeId;
   @override
+  @JsonKey(name: 'progress', required: true)
   final int progress;
   @override
+  @JsonKey(name: 'location')
   final String? location;
   @override
+  @JsonKey(name: 'owner_id')
   final String? ownerId;
   final List<ProjectInfo> _projects;
   @override
+  @JsonKey(name: 'projects', required: true)
   List<ProjectInfo> get projects {
     if (_projects is EqualUnmodifiableListView) return _projects;
     // ignore: implicit_dynamic_type
@@ -421,6 +483,7 @@ class _$TodoResponseImpl implements _TodoResponse {
 
   final List<TagInfo> _tags;
   @override
+  @JsonKey(name: 'tags', required: true)
   List<TagInfo> get tags {
     if (_tags is EqualUnmodifiableListView) return _tags;
     // ignore: implicit_dynamic_type
@@ -429,6 +492,7 @@ class _$TodoResponseImpl implements _TodoResponse {
 
   final List<ReminderInfo> _reminders;
   @override
+  @JsonKey(name: 'reminders', required: true)
   List<ReminderInfo> get reminders {
     if (_reminders is EqualUnmodifiableListView) return _reminders;
     // ignore: implicit_dynamic_type
@@ -437,6 +501,7 @@ class _$TodoResponseImpl implements _TodoResponse {
 
   final List<AttachmentInfo> _attachments;
   @override
+  @JsonKey(name: 'attachments', required: true)
   List<AttachmentInfo> get attachments {
     if (_attachments is EqualUnmodifiableListView) return _attachments;
     // ignore: implicit_dynamic_type
@@ -525,75 +590,104 @@ class _$TodoResponseImpl implements _TodoResponse {
 
 abstract class _TodoResponse implements TodoResponse {
   const factory _TodoResponse(
-      {required final String serialNum,
-      required final String title,
-      final String? description,
-      @JsonKey(fromJson: dateTimeFromJson, toJson: dateTimeToJson)
+      {@JsonKey(name: 'serial_num', required: true)
+      required final String serialNum,
+      @JsonKey(name: 'title', required: true) required final String title,
+      @JsonKey(name: 'description') final String? description,
+      @JsonKey(
+          name: 'created_at',
+          fromJson: dateTimeFromJson,
+          toJson: dateTimeToJson)
       required final DateTime createdAt,
-      @JsonKey(fromJson: dateTimeFromJson, toJson: dateTimeToJson)
+      @JsonKey(
+          name: 'updated_at',
+          fromJson: dateTimeFromJson,
+          toJson: dateTimeToJson)
       final DateTime? updatedAt,
-      @JsonKey(fromJson: dateTimeFromJson, toJson: dateTimeToJson)
+      @JsonKey(
+          name: 'due_at', fromJson: dateTimeFromJson, toJson: dateTimeToJson)
       required final DateTime dueAt,
-      @JsonKey(fromJson: Priority.fromJson, toJson: _priorityToJson)
+      @JsonKey(fromJson: Priority.fromJson, toJson: priorityToJson)
       required final Priority priority,
-      @JsonKey(fromJson: Status.fromJson, toJson: _statusToJson)
+      @JsonKey(fromJson: Status.fromJson, toJson: statusToJson)
       required final Status status,
-      final String? repeat,
-      @JsonKey(fromJson: dateTimeFromJson, toJson: dateTimeToJson)
+      @JsonKey(name: 'repeat') final String? repeat,
+      @JsonKey(
+          name: 'completed_at',
+          fromJson: dateTimeFromJson,
+          toJson: dateTimeToJson)
       final DateTime? completedAt,
-      final String? assigneeId,
-      required final int progress,
-      final String? location,
-      final String? ownerId,
+      @JsonKey(name: 'assignee_id') final String? assigneeId,
+      @JsonKey(name: 'progress', required: true) required final int progress,
+      @JsonKey(name: 'location') final String? location,
+      @JsonKey(name: 'owner_id') final String? ownerId,
+      @JsonKey(name: 'projects', required: true)
       required final List<ProjectInfo> projects,
-      required final List<TagInfo> tags,
+      @JsonKey(name: 'tags', required: true) required final List<TagInfo> tags,
+      @JsonKey(name: 'reminders', required: true)
       required final List<ReminderInfo> reminders,
+      @JsonKey(name: 'attachments', required: true)
       required final List<AttachmentInfo> attachments}) = _$TodoResponseImpl;
 
   factory _TodoResponse.fromJson(Map<String, dynamic> json) =
       _$TodoResponseImpl.fromJson;
 
   @override
+  @JsonKey(name: 'serial_num', required: true)
   String get serialNum;
   @override
+  @JsonKey(name: 'title', required: true)
   String get title;
   @override
+  @JsonKey(name: 'description')
   String? get description;
   @override
-  @JsonKey(fromJson: dateTimeFromJson, toJson: dateTimeToJson)
+  @JsonKey(
+      name: 'created_at', fromJson: dateTimeFromJson, toJson: dateTimeToJson)
   DateTime get createdAt;
   @override
-  @JsonKey(fromJson: dateTimeFromJson, toJson: dateTimeToJson)
+  @JsonKey(
+      name: 'updated_at', fromJson: dateTimeFromJson, toJson: dateTimeToJson)
   DateTime? get updatedAt;
   @override
-  @JsonKey(fromJson: dateTimeFromJson, toJson: dateTimeToJson)
+  @JsonKey(name: 'due_at', fromJson: dateTimeFromJson, toJson: dateTimeToJson)
   DateTime get dueAt;
   @override
-  @JsonKey(fromJson: Priority.fromJson, toJson: _priorityToJson)
+  @JsonKey(fromJson: Priority.fromJson, toJson: priorityToJson)
   Priority get priority;
   @override
-  @JsonKey(fromJson: Status.fromJson, toJson: _statusToJson)
+  @JsonKey(fromJson: Status.fromJson, toJson: statusToJson)
   Status get status;
   @override
+  @JsonKey(name: 'repeat')
   String? get repeat;
   @override
-  @JsonKey(fromJson: dateTimeFromJson, toJson: dateTimeToJson)
+  @JsonKey(
+      name: 'completed_at', fromJson: dateTimeFromJson, toJson: dateTimeToJson)
   DateTime? get completedAt;
   @override
+  @JsonKey(name: 'assignee_id')
   String? get assigneeId;
   @override
+  @JsonKey(name: 'progress', required: true)
   int get progress;
   @override
+  @JsonKey(name: 'location')
   String? get location;
   @override
+  @JsonKey(name: 'owner_id')
   String? get ownerId;
   @override
+  @JsonKey(name: 'projects', required: true)
   List<ProjectInfo> get projects;
   @override
+  @JsonKey(name: 'tags', required: true)
   List<TagInfo> get tags;
   @override
+  @JsonKey(name: 'reminders', required: true)
   List<ReminderInfo> get reminders;
   @override
+  @JsonKey(name: 'attachments', required: true)
   List<AttachmentInfo> get attachments;
 
   /// Create a copy of TodoResponse

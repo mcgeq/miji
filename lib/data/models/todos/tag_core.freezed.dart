@@ -20,7 +20,9 @@ TagCore _$TagCoreFromJson(Map<String, dynamic> json) {
 
 /// @nodoc
 mixin _$TagCore {
+  @JsonKey(name: 'serial_num', required: true)
   String get serialNum => throw _privateConstructorUsedError;
+  @JsonKey(name: 'name', required: true)
   String get name => throw _privateConstructorUsedError;
 
   /// Serializes this TagCore to a JSON map.
@@ -37,7 +39,9 @@ abstract class $TagCoreCopyWith<$Res> {
   factory $TagCoreCopyWith(TagCore value, $Res Function(TagCore) then) =
       _$TagCoreCopyWithImpl<$Res, TagCore>;
   @useResult
-  $Res call({String serialNum, String name});
+  $Res call(
+      {@JsonKey(name: 'serial_num', required: true) String serialNum,
+      @JsonKey(name: 'name', required: true) String name});
 }
 
 /// @nodoc
@@ -78,7 +82,9 @@ abstract class _$$TagCoreImplCopyWith<$Res> implements $TagCoreCopyWith<$Res> {
       __$$TagCoreImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call({String serialNum, String name});
+  $Res call(
+      {@JsonKey(name: 'serial_num', required: true) String serialNum,
+      @JsonKey(name: 'name', required: true) String name});
 }
 
 /// @nodoc
@@ -113,14 +119,18 @@ class __$$TagCoreImplCopyWithImpl<$Res>
 /// @nodoc
 @JsonSerializable()
 class _$TagCoreImpl implements _TagCore {
-  const _$TagCoreImpl({required this.serialNum, required this.name});
+  const _$TagCoreImpl(
+      {@JsonKey(name: 'serial_num', required: true) required this.serialNum,
+      @JsonKey(name: 'name', required: true) required this.name});
 
   factory _$TagCoreImpl.fromJson(Map<String, dynamic> json) =>
       _$$TagCoreImplFromJson(json);
 
   @override
+  @JsonKey(name: 'serial_num', required: true)
   final String serialNum;
   @override
+  @JsonKey(name: 'name', required: true)
   final String name;
 
   @override
@@ -160,14 +170,18 @@ class _$TagCoreImpl implements _TagCore {
 
 abstract class _TagCore implements TagCore {
   const factory _TagCore(
-      {required final String serialNum,
-      required final String name}) = _$TagCoreImpl;
+          {@JsonKey(name: 'serial_num', required: true)
+          required final String serialNum,
+          @JsonKey(name: 'name', required: true) required final String name}) =
+      _$TagCoreImpl;
 
   factory _TagCore.fromJson(Map<String, dynamic> json) = _$TagCoreImpl.fromJson;
 
   @override
+  @JsonKey(name: 'serial_num', required: true)
   String get serialNum;
   @override
+  @JsonKey(name: 'name', required: true)
   String get name;
 
   /// Create a copy of TagCore

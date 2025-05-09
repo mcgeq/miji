@@ -20,18 +20,29 @@ TodoInput _$TodoInputFromJson(Map<String, dynamic> json) {
 
 /// @nodoc
 mixin _$TodoInput {
+  @JsonKey(name: 'title')
   String? get title => throw _privateConstructorUsedError;
+  @JsonKey(name: 'description')
   String? get description => throw _privateConstructorUsedError;
-  @JsonKey(fromJson: dateTimeFromJson, toJson: dateTimeToJson)
+  @JsonKey(name: 'due_at', fromJson: dateTimeFromJson, toJson: dateTimeToJson)
   DateTime? get dueAt => throw _privateConstructorUsedError;
+  @JsonKey(fromJson: Priority.fromJson, toJson: priorityToJson)
   Priority? get priority => throw _privateConstructorUsedError;
+  @JsonKey(fromJson: Status.fromJson, toJson: statusToJson)
   Status? get status => throw _privateConstructorUsedError;
+  @JsonKey(name: 'tags')
   List<CreateOrUpdateForm>? get tags => throw _privateConstructorUsedError;
+  @JsonKey(name: 'repeat')
   String? get repeat => throw _privateConstructorUsedError;
+  @JsonKey(name: 'progress')
   int? get progress => throw _privateConstructorUsedError;
+  @JsonKey(name: 'assignee_id')
   String? get assigneeId => throw _privateConstructorUsedError;
+  @JsonKey(name: 'projects')
   List<CreateOrUpdateForm>? get projects => throw _privateConstructorUsedError;
+  @JsonKey(name: 'location')
   String? get location => throw _privateConstructorUsedError;
+  @JsonKey(name: 'owner_id')
   String? get ownerId => throw _privateConstructorUsedError;
 
   /// Serializes this TodoInput to a JSON map.
@@ -50,19 +61,21 @@ abstract class $TodoInputCopyWith<$Res> {
       _$TodoInputCopyWithImpl<$Res, TodoInput>;
   @useResult
   $Res call(
-      {String? title,
-      String? description,
-      @JsonKey(fromJson: dateTimeFromJson, toJson: dateTimeToJson)
+      {@JsonKey(name: 'title') String? title,
+      @JsonKey(name: 'description') String? description,
+      @JsonKey(
+          name: 'due_at', fromJson: dateTimeFromJson, toJson: dateTimeToJson)
       DateTime? dueAt,
+      @JsonKey(fromJson: Priority.fromJson, toJson: priorityToJson)
       Priority? priority,
-      Status? status,
-      List<CreateOrUpdateForm>? tags,
-      String? repeat,
-      int? progress,
-      String? assigneeId,
-      List<CreateOrUpdateForm>? projects,
-      String? location,
-      String? ownerId});
+      @JsonKey(fromJson: Status.fromJson, toJson: statusToJson) Status? status,
+      @JsonKey(name: 'tags') List<CreateOrUpdateForm>? tags,
+      @JsonKey(name: 'repeat') String? repeat,
+      @JsonKey(name: 'progress') int? progress,
+      @JsonKey(name: 'assignee_id') String? assigneeId,
+      @JsonKey(name: 'projects') List<CreateOrUpdateForm>? projects,
+      @JsonKey(name: 'location') String? location,
+      @JsonKey(name: 'owner_id') String? ownerId});
 }
 
 /// @nodoc
@@ -155,19 +168,21 @@ abstract class _$$TodoInputImplCopyWith<$Res>
   @override
   @useResult
   $Res call(
-      {String? title,
-      String? description,
-      @JsonKey(fromJson: dateTimeFromJson, toJson: dateTimeToJson)
+      {@JsonKey(name: 'title') String? title,
+      @JsonKey(name: 'description') String? description,
+      @JsonKey(
+          name: 'due_at', fromJson: dateTimeFromJson, toJson: dateTimeToJson)
       DateTime? dueAt,
+      @JsonKey(fromJson: Priority.fromJson, toJson: priorityToJson)
       Priority? priority,
-      Status? status,
-      List<CreateOrUpdateForm>? tags,
-      String? repeat,
-      int? progress,
-      String? assigneeId,
-      List<CreateOrUpdateForm>? projects,
-      String? location,
-      String? ownerId});
+      @JsonKey(fromJson: Status.fromJson, toJson: statusToJson) Status? status,
+      @JsonKey(name: 'tags') List<CreateOrUpdateForm>? tags,
+      @JsonKey(name: 'repeat') String? repeat,
+      @JsonKey(name: 'progress') int? progress,
+      @JsonKey(name: 'assignee_id') String? assigneeId,
+      @JsonKey(name: 'projects') List<CreateOrUpdateForm>? projects,
+      @JsonKey(name: 'location') String? location,
+      @JsonKey(name: 'owner_id') String? ownerId});
 }
 
 /// @nodoc
@@ -253,18 +268,21 @@ class __$$TodoInputImplCopyWithImpl<$Res>
 @JsonSerializable()
 class _$TodoInputImpl implements _TodoInput {
   const _$TodoInputImpl(
-      {this.title,
-      this.description,
-      @JsonKey(fromJson: dateTimeFromJson, toJson: dateTimeToJson) this.dueAt,
+      {@JsonKey(name: 'title') this.title,
+      @JsonKey(name: 'description') this.description,
+      @JsonKey(
+          name: 'due_at', fromJson: dateTimeFromJson, toJson: dateTimeToJson)
+      this.dueAt,
+      @JsonKey(fromJson: Priority.fromJson, toJson: priorityToJson)
       this.priority,
-      this.status,
-      final List<CreateOrUpdateForm>? tags,
-      this.repeat,
-      this.progress,
-      this.assigneeId,
-      final List<CreateOrUpdateForm>? projects,
-      this.location,
-      this.ownerId})
+      @JsonKey(fromJson: Status.fromJson, toJson: statusToJson) this.status,
+      @JsonKey(name: 'tags') final List<CreateOrUpdateForm>? tags,
+      @JsonKey(name: 'repeat') this.repeat,
+      @JsonKey(name: 'progress') this.progress,
+      @JsonKey(name: 'assignee_id') this.assigneeId,
+      @JsonKey(name: 'projects') final List<CreateOrUpdateForm>? projects,
+      @JsonKey(name: 'location') this.location,
+      @JsonKey(name: 'owner_id') this.ownerId})
       : _tags = tags,
         _projects = projects;
 
@@ -272,18 +290,23 @@ class _$TodoInputImpl implements _TodoInput {
       _$$TodoInputImplFromJson(json);
 
   @override
+  @JsonKey(name: 'title')
   final String? title;
   @override
+  @JsonKey(name: 'description')
   final String? description;
   @override
-  @JsonKey(fromJson: dateTimeFromJson, toJson: dateTimeToJson)
+  @JsonKey(name: 'due_at', fromJson: dateTimeFromJson, toJson: dateTimeToJson)
   final DateTime? dueAt;
   @override
+  @JsonKey(fromJson: Priority.fromJson, toJson: priorityToJson)
   final Priority? priority;
   @override
+  @JsonKey(fromJson: Status.fromJson, toJson: statusToJson)
   final Status? status;
   final List<CreateOrUpdateForm>? _tags;
   @override
+  @JsonKey(name: 'tags')
   List<CreateOrUpdateForm>? get tags {
     final value = _tags;
     if (value == null) return null;
@@ -293,13 +316,17 @@ class _$TodoInputImpl implements _TodoInput {
   }
 
   @override
+  @JsonKey(name: 'repeat')
   final String? repeat;
   @override
+  @JsonKey(name: 'progress')
   final int? progress;
   @override
+  @JsonKey(name: 'assignee_id')
   final String? assigneeId;
   final List<CreateOrUpdateForm>? _projects;
   @override
+  @JsonKey(name: 'projects')
   List<CreateOrUpdateForm>? get projects {
     final value = _projects;
     if (value == null) return null;
@@ -309,8 +336,10 @@ class _$TodoInputImpl implements _TodoInput {
   }
 
   @override
+  @JsonKey(name: 'location')
   final String? location;
   @override
+  @JsonKey(name: 'owner_id')
   final String? ownerId;
 
   @override
@@ -377,47 +406,61 @@ class _$TodoInputImpl implements _TodoInput {
 
 abstract class _TodoInput implements TodoInput {
   const factory _TodoInput(
-      {final String? title,
-      final String? description,
-      @JsonKey(fromJson: dateTimeFromJson, toJson: dateTimeToJson)
+      {@JsonKey(name: 'title') final String? title,
+      @JsonKey(name: 'description') final String? description,
+      @JsonKey(
+          name: 'due_at', fromJson: dateTimeFromJson, toJson: dateTimeToJson)
       final DateTime? dueAt,
+      @JsonKey(fromJson: Priority.fromJson, toJson: priorityToJson)
       final Priority? priority,
+      @JsonKey(fromJson: Status.fromJson, toJson: statusToJson)
       final Status? status,
-      final List<CreateOrUpdateForm>? tags,
-      final String? repeat,
-      final int? progress,
-      final String? assigneeId,
-      final List<CreateOrUpdateForm>? projects,
-      final String? location,
-      final String? ownerId}) = _$TodoInputImpl;
+      @JsonKey(name: 'tags') final List<CreateOrUpdateForm>? tags,
+      @JsonKey(name: 'repeat') final String? repeat,
+      @JsonKey(name: 'progress') final int? progress,
+      @JsonKey(name: 'assignee_id') final String? assigneeId,
+      @JsonKey(name: 'projects') final List<CreateOrUpdateForm>? projects,
+      @JsonKey(name: 'location') final String? location,
+      @JsonKey(name: 'owner_id') final String? ownerId}) = _$TodoInputImpl;
 
   factory _TodoInput.fromJson(Map<String, dynamic> json) =
       _$TodoInputImpl.fromJson;
 
   @override
+  @JsonKey(name: 'title')
   String? get title;
   @override
+  @JsonKey(name: 'description')
   String? get description;
   @override
-  @JsonKey(fromJson: dateTimeFromJson, toJson: dateTimeToJson)
+  @JsonKey(name: 'due_at', fromJson: dateTimeFromJson, toJson: dateTimeToJson)
   DateTime? get dueAt;
   @override
+  @JsonKey(fromJson: Priority.fromJson, toJson: priorityToJson)
   Priority? get priority;
   @override
+  @JsonKey(fromJson: Status.fromJson, toJson: statusToJson)
   Status? get status;
   @override
+  @JsonKey(name: 'tags')
   List<CreateOrUpdateForm>? get tags;
   @override
+  @JsonKey(name: 'repeat')
   String? get repeat;
   @override
+  @JsonKey(name: 'progress')
   int? get progress;
   @override
+  @JsonKey(name: 'assignee_id')
   String? get assigneeId;
   @override
+  @JsonKey(name: 'projects')
   List<CreateOrUpdateForm>? get projects;
   @override
+  @JsonKey(name: 'location')
   String? get location;
   @override
+  @JsonKey(name: 'owner_id')
   String? get ownerId;
 
   /// Create a copy of TodoInput

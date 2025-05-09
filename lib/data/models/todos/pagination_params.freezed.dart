@@ -20,7 +20,9 @@ PaginationParams _$PaginationParamsFromJson(Map<String, dynamic> json) {
 
 /// @nodoc
 mixin _$PaginationParams {
+  @JsonKey(name: 'page', required: true)
   int? get page => throw _privateConstructorUsedError;
+  @JsonKey(name: 'page_size', required: true)
   int? get pageSize => throw _privateConstructorUsedError;
 
   /// Serializes this PaginationParams to a JSON map.
@@ -39,7 +41,9 @@ abstract class $PaginationParamsCopyWith<$Res> {
           PaginationParams value, $Res Function(PaginationParams) then) =
       _$PaginationParamsCopyWithImpl<$Res, PaginationParams>;
   @useResult
-  $Res call({int? page, int? pageSize});
+  $Res call(
+      {@JsonKey(name: 'page', required: true) int? page,
+      @JsonKey(name: 'page_size', required: true) int? pageSize});
 }
 
 /// @nodoc
@@ -81,7 +85,9 @@ abstract class _$$PaginationParamsImplCopyWith<$Res>
       __$$PaginationParamsImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call({int? page, int? pageSize});
+  $Res call(
+      {@JsonKey(name: 'page', required: true) int? page,
+      @JsonKey(name: 'page_size', required: true) int? pageSize});
 }
 
 /// @nodoc
@@ -116,14 +122,18 @@ class __$$PaginationParamsImplCopyWithImpl<$Res>
 /// @nodoc
 @JsonSerializable()
 class _$PaginationParamsImpl implements _PaginationParams {
-  const _$PaginationParamsImpl({required this.page, required this.pageSize});
+  const _$PaginationParamsImpl(
+      {@JsonKey(name: 'page', required: true) this.page,
+      @JsonKey(name: 'page_size', required: true) this.pageSize});
 
   factory _$PaginationParamsImpl.fromJson(Map<String, dynamic> json) =>
       _$$PaginationParamsImplFromJson(json);
 
   @override
+  @JsonKey(name: 'page', required: true)
   final int? page;
   @override
+  @JsonKey(name: 'page_size', required: true)
   final int? pageSize;
 
   @override
@@ -164,15 +174,18 @@ class _$PaginationParamsImpl implements _PaginationParams {
 
 abstract class _PaginationParams implements PaginationParams {
   const factory _PaginationParams(
-      {required final int? page,
-      required final int? pageSize}) = _$PaginationParamsImpl;
+          {@JsonKey(name: 'page', required: true) final int? page,
+          @JsonKey(name: 'page_size', required: true) final int? pageSize}) =
+      _$PaginationParamsImpl;
 
   factory _PaginationParams.fromJson(Map<String, dynamic> json) =
       _$PaginationParamsImpl.fromJson;
 
   @override
+  @JsonKey(name: 'page', required: true)
   int? get page;
   @override
+  @JsonKey(name: 'page_size', required: true)
   int? get pageSize;
 
   /// Create a copy of PaginationParams

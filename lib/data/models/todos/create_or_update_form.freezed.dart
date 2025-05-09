@@ -20,8 +20,11 @@ CreateOrUpdateForm _$CreateOrUpdateFormFromJson(Map<String, dynamic> json) {
 
 /// @nodoc
 mixin _$CreateOrUpdateForm {
+  @JsonKey(name: 'serial_num')
   String? get serialNum => throw _privateConstructorUsedError;
+  @JsonKey(name: 'name')
   String? get name => throw _privateConstructorUsedError;
+  @JsonKey(name: 'description')
   String? get description => throw _privateConstructorUsedError;
 
   /// Serializes this CreateOrUpdateForm to a JSON map.
@@ -40,7 +43,10 @@ abstract class $CreateOrUpdateFormCopyWith<$Res> {
           CreateOrUpdateForm value, $Res Function(CreateOrUpdateForm) then) =
       _$CreateOrUpdateFormCopyWithImpl<$Res, CreateOrUpdateForm>;
   @useResult
-  $Res call({String? serialNum, String? name, String? description});
+  $Res call(
+      {@JsonKey(name: 'serial_num') String? serialNum,
+      @JsonKey(name: 'name') String? name,
+      @JsonKey(name: 'description') String? description});
 }
 
 /// @nodoc
@@ -87,7 +93,10 @@ abstract class _$$CreateOrUpdateFormImplCopyWith<$Res>
       __$$CreateOrUpdateFormImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call({String? serialNum, String? name, String? description});
+  $Res call(
+      {@JsonKey(name: 'serial_num') String? serialNum,
+      @JsonKey(name: 'name') String? name,
+      @JsonKey(name: 'description') String? description});
 }
 
 /// @nodoc
@@ -127,16 +136,22 @@ class __$$CreateOrUpdateFormImplCopyWithImpl<$Res>
 /// @nodoc
 @JsonSerializable()
 class _$CreateOrUpdateFormImpl implements _CreateOrUpdateForm {
-  const _$CreateOrUpdateFormImpl({this.serialNum, this.name, this.description});
+  const _$CreateOrUpdateFormImpl(
+      {@JsonKey(name: 'serial_num') this.serialNum,
+      @JsonKey(name: 'name') this.name,
+      @JsonKey(name: 'description') this.description});
 
   factory _$CreateOrUpdateFormImpl.fromJson(Map<String, dynamic> json) =>
       _$$CreateOrUpdateFormImplFromJson(json);
 
   @override
+  @JsonKey(name: 'serial_num')
   final String? serialNum;
   @override
+  @JsonKey(name: 'name')
   final String? name;
   @override
+  @JsonKey(name: 'description')
   final String? description;
 
   @override
@@ -179,18 +194,22 @@ class _$CreateOrUpdateFormImpl implements _CreateOrUpdateForm {
 
 abstract class _CreateOrUpdateForm implements CreateOrUpdateForm {
   const factory _CreateOrUpdateForm(
-      {final String? serialNum,
-      final String? name,
-      final String? description}) = _$CreateOrUpdateFormImpl;
+          {@JsonKey(name: 'serial_num') final String? serialNum,
+          @JsonKey(name: 'name') final String? name,
+          @JsonKey(name: 'description') final String? description}) =
+      _$CreateOrUpdateFormImpl;
 
   factory _CreateOrUpdateForm.fromJson(Map<String, dynamic> json) =
       _$CreateOrUpdateFormImpl.fromJson;
 
   @override
+  @JsonKey(name: 'serial_num')
   String? get serialNum;
   @override
+  @JsonKey(name: 'name')
   String? get name;
   @override
+  @JsonKey(name: 'description')
   String? get description;
 
   /// Create a copy of CreateOrUpdateForm

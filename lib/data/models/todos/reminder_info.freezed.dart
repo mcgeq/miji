@@ -20,8 +20,10 @@ ReminderInfo _$ReminderInfoFromJson(Map<String, dynamic> json) {
 
 /// @nodoc
 mixin _$ReminderInfo {
+  @JsonKey(name: 'serial_num', required: true)
   String get serialNum => throw _privateConstructorUsedError;
-  @JsonKey(fromJson: dateTimeFromJson, toJson: dateTimeToJson)
+  @JsonKey(
+      name: 'remind_at', fromJson: dateTimeFromJson, toJson: dateTimeToJson)
   DateTime get remindAt => throw _privateConstructorUsedError;
 
   /// Serializes this ReminderInfo to a JSON map.
@@ -41,8 +43,9 @@ abstract class $ReminderInfoCopyWith<$Res> {
       _$ReminderInfoCopyWithImpl<$Res, ReminderInfo>;
   @useResult
   $Res call(
-      {String serialNum,
-      @JsonKey(fromJson: dateTimeFromJson, toJson: dateTimeToJson)
+      {@JsonKey(name: 'serial_num', required: true) String serialNum,
+      @JsonKey(
+          name: 'remind_at', fromJson: dateTimeFromJson, toJson: dateTimeToJson)
       DateTime remindAt});
 }
 
@@ -86,8 +89,9 @@ abstract class _$$ReminderInfoImplCopyWith<$Res>
   @override
   @useResult
   $Res call(
-      {String serialNum,
-      @JsonKey(fromJson: dateTimeFromJson, toJson: dateTimeToJson)
+      {@JsonKey(name: 'serial_num', required: true) String serialNum,
+      @JsonKey(
+          name: 'remind_at', fromJson: dateTimeFromJson, toJson: dateTimeToJson)
       DateTime remindAt});
 }
 
@@ -124,17 +128,20 @@ class __$$ReminderInfoImplCopyWithImpl<$Res>
 @JsonSerializable()
 class _$ReminderInfoImpl implements _ReminderInfo {
   const _$ReminderInfoImpl(
-      {required this.serialNum,
-      @JsonKey(fromJson: dateTimeFromJson, toJson: dateTimeToJson)
+      {@JsonKey(name: 'serial_num', required: true) required this.serialNum,
+      @JsonKey(
+          name: 'remind_at', fromJson: dateTimeFromJson, toJson: dateTimeToJson)
       required this.remindAt});
 
   factory _$ReminderInfoImpl.fromJson(Map<String, dynamic> json) =>
       _$$ReminderInfoImplFromJson(json);
 
   @override
+  @JsonKey(name: 'serial_num', required: true)
   final String serialNum;
   @override
-  @JsonKey(fromJson: dateTimeFromJson, toJson: dateTimeToJson)
+  @JsonKey(
+      name: 'remind_at', fromJson: dateTimeFromJson, toJson: dateTimeToJson)
   final DateTime remindAt;
 
   @override
@@ -175,17 +182,21 @@ class _$ReminderInfoImpl implements _ReminderInfo {
 
 abstract class _ReminderInfo implements ReminderInfo {
   const factory _ReminderInfo(
-      {required final String serialNum,
-      @JsonKey(fromJson: dateTimeFromJson, toJson: dateTimeToJson)
+      {@JsonKey(name: 'serial_num', required: true)
+      required final String serialNum,
+      @JsonKey(
+          name: 'remind_at', fromJson: dateTimeFromJson, toJson: dateTimeToJson)
       required final DateTime remindAt}) = _$ReminderInfoImpl;
 
   factory _ReminderInfo.fromJson(Map<String, dynamic> json) =
       _$ReminderInfoImpl.fromJson;
 
   @override
+  @JsonKey(name: 'serial_num', required: true)
   String get serialNum;
   @override
-  @JsonKey(fromJson: dateTimeFromJson, toJson: dateTimeToJson)
+  @JsonKey(
+      name: 'remind_at', fromJson: dateTimeFromJson, toJson: dateTimeToJson)
   DateTime get remindAt;
 
   /// Create a copy of ReminderInfo

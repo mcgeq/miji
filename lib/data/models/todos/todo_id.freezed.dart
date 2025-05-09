@@ -20,6 +20,7 @@ TodoId _$TodoIdFromJson(Map<String, dynamic> json) {
 
 /// @nodoc
 mixin _$TodoId {
+  @JsonKey(name: 'serial_num', required: true)
   String get serialNum => throw _privateConstructorUsedError;
 
   /// Serializes this TodoId to a JSON map.
@@ -36,7 +37,7 @@ abstract class $TodoIdCopyWith<$Res> {
   factory $TodoIdCopyWith(TodoId value, $Res Function(TodoId) then) =
       _$TodoIdCopyWithImpl<$Res, TodoId>;
   @useResult
-  $Res call({String serialNum});
+  $Res call({@JsonKey(name: 'serial_num', required: true) String serialNum});
 }
 
 /// @nodoc
@@ -72,7 +73,7 @@ abstract class _$$TodoIdImplCopyWith<$Res> implements $TodoIdCopyWith<$Res> {
       __$$TodoIdImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call({String serialNum});
+  $Res call({@JsonKey(name: 'serial_num', required: true) String serialNum});
 }
 
 /// @nodoc
@@ -102,12 +103,14 @@ class __$$TodoIdImplCopyWithImpl<$Res>
 /// @nodoc
 @JsonSerializable()
 class _$TodoIdImpl implements _TodoId {
-  const _$TodoIdImpl({required this.serialNum});
+  const _$TodoIdImpl(
+      {@JsonKey(name: 'serial_num', required: true) required this.serialNum});
 
   factory _$TodoIdImpl.fromJson(Map<String, dynamic> json) =>
       _$$TodoIdImplFromJson(json);
 
   @override
+  @JsonKey(name: 'serial_num', required: true)
   final String serialNum;
 
   @override
@@ -145,11 +148,14 @@ class _$TodoIdImpl implements _TodoId {
 }
 
 abstract class _TodoId implements TodoId {
-  const factory _TodoId({required final String serialNum}) = _$TodoIdImpl;
+  const factory _TodoId(
+      {@JsonKey(name: 'serial_num', required: true)
+      required final String serialNum}) = _$TodoIdImpl;
 
   factory _TodoId.fromJson(Map<String, dynamic> json) = _$TodoIdImpl.fromJson;
 
   @override
+  @JsonKey(name: 'serial_num', required: true)
   String get serialNum;
 
   /// Create a copy of TodoId

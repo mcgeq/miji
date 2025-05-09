@@ -1,10 +1,13 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'todo_id.freezed.dart';
+part 'todo_id.g.dart';
 
 @freezed
 class TodoId with _$TodoId {
-  const factory TodoId({required String serialNum}) = _TodoId;
+  const factory TodoId({
+    @JsonKey(name: 'serial_num', required: true) required String serialNum,
+  }) = _TodoId;
 
   factory TodoId.fromJson(Map<String, dynamic> json) => _$TodoIdFromJson(json);
 
