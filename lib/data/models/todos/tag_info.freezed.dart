@@ -109,8 +109,8 @@ class __$$TagInfoImplCopyWithImpl<$Res>
 
 /// @nodoc
 
-class _$TagInfoImpl implements _TagInfo {
-  const _$TagInfoImpl({required this.core});
+class _$TagInfoImpl extends _TagInfo {
+  const _$TagInfoImpl({required this.core}) : super._();
 
   @override
   final TagCore core;
@@ -140,8 +140,9 @@ class _$TagInfoImpl implements _TagInfo {
       __$$TagInfoImplCopyWithImpl<_$TagInfoImpl>(this, _$identity);
 }
 
-abstract class _TagInfo implements TagInfo {
+abstract class _TagInfo extends TagInfo {
   const factory _TagInfo({required final TagCore core}) = _$TagInfoImpl;
+  const _TagInfo._() : super._();
 
   @override
   TagCore get core;

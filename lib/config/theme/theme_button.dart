@@ -5,7 +5,7 @@
 // File:           theme_button.dart
 // Description:    About Theme Switch
 // Create   Date:  2025-04-12 10:55:08
-// Last Modified:  2025-04-12 10:55:16
+// Last Modified:  2025-05-09 22:26:26
 // Modified   By:  mcgeq <mcgeq@outlook.com>
 // -----------------------------------------------------------------------------
 
@@ -34,8 +34,8 @@ class ThemeToggleButton extends ConsumerWidget {
           .when(
             // Watch here for icon state
             data:
-                (themeMode) => Icon(
-                  themeMode == ThemeMode.dark
+                (themeState) => Icon(
+                  themeState.mode == ThemeMode.dark
                       ? Icons.light_mode
                       : Icons.dark_mode,
                 ),

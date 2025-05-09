@@ -13,7 +13,9 @@ class CreateOrUpdateForm with _$CreateOrUpdateForm {
 
   factory CreateOrUpdateForm.fromJson(Map<String, dynamic> json) =>
       _$CreateOrUpdateFormFromJson(json);
+}
 
+extension CreateOrUpdateFormValidation on CreateOrUpdateForm {
   String? validate() {
     if (serialNum != null &&
         (serialNum!.length < 32 || serialNum!.length > 38)) {

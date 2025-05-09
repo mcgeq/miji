@@ -112,8 +112,8 @@ class __$$ProjectInfoImplCopyWithImpl<$Res>
 
 /// @nodoc
 
-class _$ProjectInfoImpl implements _ProjectInfo {
-  const _$ProjectInfoImpl({required this.core});
+class _$ProjectInfoImpl extends _ProjectInfo {
+  const _$ProjectInfoImpl({required this.core}) : super._();
 
   @override
   final ProjectCore core;
@@ -143,9 +143,10 @@ class _$ProjectInfoImpl implements _ProjectInfo {
       __$$ProjectInfoImplCopyWithImpl<_$ProjectInfoImpl>(this, _$identity);
 }
 
-abstract class _ProjectInfo implements ProjectInfo {
+abstract class _ProjectInfo extends ProjectInfo {
   const factory _ProjectInfo({required final ProjectCore core}) =
       _$ProjectInfoImpl;
+  const _ProjectInfo._() : super._();
 
   @override
   ProjectCore get core;

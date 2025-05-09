@@ -4,8 +4,8 @@ import 'package:miji/data/models/todos/project_core.dart';
 part 'project_info.freezed.dart';
 
 @freezed
-@JsonSerializable(explicitToJson: true)
 class ProjectInfo with _$ProjectInfo {
+  const ProjectInfo._();
   const factory ProjectInfo({required ProjectCore core}) = _ProjectInfo;
 
   factory ProjectInfo.fromJson(Map<String, dynamic> json) {

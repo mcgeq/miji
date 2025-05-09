@@ -5,20 +5,14 @@
 // File:           app.dart
 // Description:    About App
 // Create   Date:  2025-04-12 10:59:00
-// Last Modified:  2025-05-08 20:16:30
+// Last Modified:  2025-05-09 22:54:58
 // Modified   By:  mcgeq <mcgeq@outlook.com>
 // -----------------------------------------------------------------------------
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-
 import 'package:miji/config/theme/app_themes.dart';
-
-
 import 'package:miji/config/theme/theme_button.dart';
-
-
 import 'package:miji/features/todos/todo_screen.dart';
 import 'package:miji/providers/theme_provider.dart'; // Adjust paths
 

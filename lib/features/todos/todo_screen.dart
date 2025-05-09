@@ -5,25 +5,24 @@
 // File:           todo_screen.dart
 // Description:    About Todo Screen
 // Create   Date:  2025-04-12 10:54:38
-// Last Modified:  2025-05-08 19:57:48
+// Last Modified:  2025-05-09 22:23:07
 // Modified   By:  mcgeq <mcgeq@outlook.com>
 // -----------------------------------------------------------------------------
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-
 import 'package:miji/features/todos/widgets/filter_buttons.dart';
 
 import 'package:miji/features/todos/widgets/pagination.dart';
 
-
 import 'package:miji/features/todos/widgets/todo_input.dart';
-
 
 import 'package:miji/features/todos/widgets/todo_item.dart';
 import 'package:miji/providers/todo_provider.dart';
 import 'package:miji/providers/todo_filter_provider.dart';
-import 'package:miji/data/models/todo.dart';
+
+// 移除重复的 Todo 导入，使用 todo_provider.dart 中的 Todo
+// import 'package:miji/data/models/todo.dart';
 
 class TodoScreen extends ConsumerWidget {
   const TodoScreen({super.key});
@@ -35,7 +34,6 @@ class TodoScreen extends ConsumerWidget {
     final todoNotifier = ref.read(todoListProvider.notifier);
 
     void editTodoDialog(BuildContext context, Todo todo) {
-      // ... (dialog code remains the same) ...
       final TextEditingController controller = TextEditingController(
         text: todo.title,
       );
@@ -47,31 +45,24 @@ class TodoScreen extends ConsumerWidget {
               borderRadius: BorderRadius.circular(12),
             ),
             child: ConstrainedBox(
-              // Keep constraints
               constraints: const BoxConstraints(maxWidth: 400),
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(
-                      '修改',
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ), // Use theme
+                    Text('修改', style: Theme.of(context).textTheme.titleLarge),
                     const SizedBox(height: 16),
                     TextField(
                       controller: controller,
                       maxLines: null,
                       keyboardType: TextInputType.multiline,
                       textInputAction: TextInputAction.done,
-                      decoration: const InputDecoration(
-                        labelText: '任务内容',
-                      ), // Added label
+                      decoration: const InputDecoration(labelText: '任务内容'),
                     ),
                     const SizedBox(height: 24),
                     Row(
-                      mainAxisAlignment:
-                          MainAxisAlignment.end, // Align buttons end
+                      mainAxisAlignment: MainAxisAlignment.end,
                       children: [
                         TextButton(
                           onPressed: () => Navigator.of(context).pop(),
@@ -79,11 +70,9 @@ class TodoScreen extends ConsumerWidget {
                         ),
                         const SizedBox(width: 8),
                         ElevatedButton(
-                          // Use ElevatedButton for primary action
                           onPressed: () {
                             final newTitle = controller.text.trim();
                             if (newTitle.isNotEmpty && newTitle != todo.title) {
-                              // Use ref.read to call the notifier method
                               ref
                                   .read(todoListProvider.notifier)
                                   .editTodo(todo.id, newTitle);
@@ -111,7 +100,7 @@ class TodoScreen extends ConsumerWidget {
         Expanded(
           child:
               todos.isEmpty
-                  ? Center(child: Text('没有 "$currentFilter" 的任务')) // Use const
+                  ? Center(child: Text('没有 "$currentFilter" 的任务'))
                   : ListView.builder(
                     itemCount: todos.length,
                     itemBuilder: (context, index) {
@@ -123,9 +112,9 @@ class TodoScreen extends ConsumerWidget {
                             () => todoNotifier.toggleTodoCompletion(todo.id),
                         onDelete: () => todoNotifier.deleteTodo(todo.id),
                         onMoveToTomorrow:
-                            () => todoNotifier.moveTodoToTomorrow(todo.id),
+                            () => todoNotifier.moveToTomorrow(todo.id), // 修正方法名
                         onMoveToToday:
-                            () => todoNotifier.moveTodToToday(todo.id),
+                            () => todoNotifier.moveToToday(todo.id), // 修正方法名
                         onEdit: () => editTodoDialog(context, todo),
                         isYesterday: currentFilter == '昨',
                       );
@@ -133,7 +122,6 @@ class TodoScreen extends ConsumerWidget {
                   ),
         ),
         const Padding(
-          // Add const
           padding: EdgeInsets.only(bottom: 80.0, top: 10.0),
           child: Pagination(),
         ),

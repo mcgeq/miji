@@ -4,8 +4,8 @@ import 'package:miji/data/models/todos/tag_core.dart';
 part 'tag_info.freezed.dart';
 
 @freezed
-@JsonSerializable(explicitToJson: true)
 class TagInfo with _$TagInfo {
+  const TagInfo._();
   const factory TagInfo({required TagCore core}) = _TagInfo;
 
   factory TagInfo.fromJson(Map<String, dynamic> json) {

@@ -5,13 +5,17 @@
 // File:           todo_item.dart
 // Description:    About TodoItem
 // Create   Date:  2025-04-12 10:56:25
-// Last Modified:  2025-04-12 10:56:31
+// Last Modified:  2025-05-09 22:23:23
 // Modified   By:  mcgeq <mcgeq@outlook.com>
 // -----------------------------------------------------------------------------
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:miji/data/models/todo.dart';
+
+import 'package:miji/data/models/enums/priority.dart';
+
+
+import 'package:miji/providers/todo_provider.dart';
 import 'package:miji/utils/date_time_extensions.dart';
 
 class TodoItem extends StatelessWidget {

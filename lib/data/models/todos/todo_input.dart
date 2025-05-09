@@ -28,7 +28,9 @@ class TodoInput with _$TodoInput {
 
   factory TodoInput.fromJson(Map<String, dynamic> json) =>
       _$TodoInputFromJson(json);
+}
 
+extension TodoInputValidator on TodoInput {
   String? validate() {
     if (title != null && (title!.isEmpty || title!.length > 1000)) {
       return 'title must be between 1 and 1000 characters';
@@ -40,14 +42,16 @@ class TodoInput with _$TodoInput {
       return 'progress must be between 0 and 100';
     }
     if (tags != null) {
-      for (var tag in tags!) {
+      for (final tag in tags!) {
         final error = tag.validate();
         if (error != null) return error;
       }
     }
     if (projects != null) {
-      for (var project in projects!) {
-        final error = project.validate();
+      for (final project in projects!) {
+        final error =
+            project
+                .validate(); // Ensure `validate` is defined for `ProjectInfo`
         if (error != null) return error;
       }
     }
