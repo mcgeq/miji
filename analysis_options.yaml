@@ -30,7 +30,6 @@ analyzer:
     unused_import: warning
     invalid_annotation_target: ignore
   plugins:
-    - custom_lint
 
 linter:
   # The lint rules applied to this project can be customized in the
