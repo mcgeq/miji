@@ -1,0 +1,49 @@
+{
+"home": "Home",
+"@home": {
+"description": "Label for the Home navigation item and page title"
+},
+"profile": "Profile",
+"@profile": {
+"description": "Label for the Profile navigation item and page title"
+},
+"settings": "Settings",
+"@settings": {
+"description": "Label for the Settings navigation item and page title"
+},
+"menu": "Menu",
+"@menu": {
+"description": "Label for the menu header in the drawer"
+},
+"profileDescription": "This is your profile page.",
+"@profileDescription": {
+"description": "Description text for the profile page"
+},
+"themeSettings": "Theme Settings",
+"@themeSettings": {
+"description": "Label for the theme settings section"
+},
+"toggleTheme": "Toggle Theme",
+"@toggleTheme": {
+"description": "Label for the theme toggle button"
+},
+"error": "Error: {message}",
+"@error": {
+"description": "Error message with placeholder",
+"placeholders": {
+"message": {}
+}
+},
+"addTodo": "Add Todo",
+"@addTodo": {
+"description": "Label for the add todo button"
+},
+"todoHint": "Enter a new todo",
+"@todoHint": {
+"description": "Hint text for the todo input field"
+},
+"deleteTodo": "Delete",
+"@deleteTodo": {
+"description": "Label for the delete todo button"
+}
+}

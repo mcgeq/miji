@@ -1,0 +1,49 @@
+{
+"home": "Inicio",
+"@home": {
+"description": "Etiqueta para el elemento de navegación y título de la página de Inicio"
+},
+"profile": "Perfil",
+"@profile": {
+"description": "Etiqueta para el elemento de navegación y título de la página de Perfil"
+},
+"settings": "Configuración",
+"@settings": {
+"description": "Etiqueta para el elemento de navegación y título de la página de Configuración"
+},
+"menu": "Menú",
+"@menu": {
+"description": "Etiqueta para el encabezado del menú en el cajón"
+},
+"profileDescription": "Esta es tu página de perfil.",
+"@profileDescription": {
+"description": "Texto de descripción para la página de perfil"
+},
+"themeSettings": "Configuración de Tema",
+"@themeSettings": {
+"description": "Etiqueta para la sección de configuración de temas"
+},
+"toggleTheme": "Cambiar Tema",
+"@toggleTheme": {
+"description": "Etiqueta para el botón de cambio de tema"
+},
+"error": "Error: {message}",
+"@error": {
+"description": "Mensaje de error con marcador de posición",
+"placeholders": {
+"message": {}
+}
+},
+"addTodo": "Agregar Tarea",
+"@addTodo": {
+"description": "Etiqueta para el botón de agregar tarea"
+},
+"todoHint": "Ingresa una nueva tarea",
+"@todoHint": {
+"description": "Texto de sugerencia para el campo de entrada de tareas"
+},
+"deleteTodo": "Eliminar",
+"@deleteTodo": {
+"description": "Etiqueta para el botón de eliminar tarea"
+}
+}

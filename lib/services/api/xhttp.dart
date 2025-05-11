@@ -220,8 +220,10 @@ class XHttp {
 
   /// Logs request/response/error details.
   void _logRequest(dynamic logData, String logType) {
-    final buffer = StringBuffer()
-      ..writeln('===================== $logType START =====================');
+    final buffer =
+        StringBuffer()..writeln(
+          '===================== $logType START =====================',
+        );
 
     // Handle URL and METHOD based on logData type
     if (logData is dio.RequestOptions) {
@@ -247,14 +249,16 @@ class XHttp {
     }
 
     if (logType == responseType || logType == errorType) {
-      final statusCode = logData is dio.Response
-          ? logData.statusCode
-          : logData is Map
+      final statusCode =
+          logData is dio.Response
+              ? logData.statusCode
+              : logData is Map
               ? logData['statusCode']
               : null;
-      final statusMessage = logData is dio.Response
-          ? logData.statusMessage
-          : logData is Map
+      final statusMessage =
+          logData is dio.Response
+              ? logData.statusMessage
+              : logData is Map
               ? logData['statusMessage']
               : null;
       buffer
@@ -449,11 +453,21 @@ extension Map2StringEx on Map {
       buffer.write('$indent"${entry.key}": ');
       final value = entry.value;
       if (value is Map) {
-        buffer.write('${value.mapToStructureString(indentation: indentation + 1)}\n');
+        buffer.write(
+          '${value.mapToStructureString(indentation: indentation + 1)}\n',
+        );
       } else if (value is List) {
-        buffer.write('${value.listToStructureString(indentation: indentation + 1)}\n');
+        buffer.write(
+          '${value.listToStructureString(indentation: indentation + 1)}\n',
+        );
       } else {
-        buffer.write('${value == null ? "null" : value is String ? '"$value"' : value}\n');
+        buffer.write(
+          '${value == null
+              ? "null"
+              : value is String
+              ? '"$value"'
+              : value}\n',
+        );
       }
     }
     buffer.write('${space * indentation}}');
@@ -468,11 +482,21 @@ extension List2StringEx on List {
     final indent = space * (indentation + 1);
     for (final value in this) {
       if (value is Map) {
-        buffer.write('$indent${value.mapToStructureString(indentation: indentation + 1)}\n');
+        buffer.write(
+          '$indent${value.mapToStructureString(indentation: indentation + 1)}\n',
+        );
       } else if (value is List) {
-        buffer.write('$indent${value.listToStructureString(indentation: indentation + 1)}\n');
+        buffer.write(
+          '$indent${value.listToStructureString(indentation: indentation + 1)}\n',
+        );
       } else {
-        buffer.write('$indent${value == null ? "null" : value is String ? '"$value"' : value}\n');
+        buffer.write(
+          '$indent${value == null
+              ? "null"
+              : value is String
+              ? '"$value"'
+              : value}\n',
+        );
       }
     }
     buffer.write('${space * indentation}]');

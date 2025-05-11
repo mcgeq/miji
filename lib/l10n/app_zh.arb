@@ -1,0 +1,49 @@
+{
+"home": "首页",
+"@home": {
+"description": "导航项和页面标题的首页标签"
+},
+"profile": "我的",
+"@profile": {
+"description": "导航项和页面标题的我的标签"
+},
+"settings": "设置",
+"@settings": {
+"description": "导航项和页面标题的设置标签"
+},
+"menu": "菜单",
+"@menu": {
+"description": "抽屉菜单标题的标签"
+},
+"profileDescription": "这是您的个人页面。",
+"@profileDescription": {
+"description": "个人页面描述文本"
+},
+"themeSettings": "主题设置",
+"@themeSettings": {
+"description": "主题设置部分的标签"
+},
+"toggleTheme": "切换主题",
+"@toggleTheme": {
+"description": "切换主题按钮的标签"
+},
+"error": "错误：{message}",
+"@error": {
+"description": "包含占位符的错误消息",
+"placeholders": {
+"message": {}
+}
+},
+"addTodo": "添加待办",
+"@addTodo": {
+"description": "添加待办按钮的标签"
+},
+"todoHint": "输入新的待办事项",
+"@todoHint": {
+"description": "提示文本：输入新的待办事项"
+},
+"deleteTodo": "删除",
+"@deleteTodo": {
+"description": "删除待办按钮的标签"
+}
+}

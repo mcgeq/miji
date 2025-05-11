@@ -1,12 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:miji/config/environment/env_config.dart';
+import 'package:miji/config/theme/app_colors.dart';
 import 'package:miji/config/theme/bloc/theme_bloc.dart';
-import 'package:miji/config/theme/bloc/theme_event.dart';
 import 'package:miji/config/theme/bloc/theme_state.dart';
-import 'package:miji/data/repositories/todo_repository.dart';
 import 'package:miji/di/injector.dart';
+import 'package:miji/features/home/bloc/home_bloc.dart';
+import 'package:miji/features/home/bloc/home_event.dart';
+import 'package:miji/features/home/data/home_repository.dart';
+import 'package:miji/features/home/view/home_page.dart';
+import 'package:miji/features/mine/profile_page.dart';
+import 'package:miji/features/settings/settings_page.dart';
+import 'package:miji/l10n/l10n.dart';
 import 'package:miji/services/logging/miji_logging.dart';
+import 'package:miji/shared/widgets/navigation/navigation_cubit.dart';
+import 'package:miji/shared/widgets/navigation/responsive_navigation.dart';
 
 class Miji extends StatelessWidget {
   const Miji({super.key});
@@ -16,8 +25,11 @@ class Miji extends StatelessWidget {
     return MultiBlocProvider(
       providers: [
         BlocProvider<ThemeBloc>(create: (_) => ThemeBloc()),
-        // BlocProvider<TodoBloc>(create: (_) => TodoBloc()),
-        // BlocProvider<AuthBloc>(create: (_) => AuthBloc()),
+        BlocProvider<NavigationCubit>(create: (_) => NavigationCubit()),
+        BlocProvider<HomeBloc>(
+          create:
+              (_) => HomeBloc(getIt<HomeRepository>())..add(LoadTodos(page: 1)),
+        ),
       ],
       child: const MijiApp(),
     );
@@ -32,27 +44,7 @@ class MijiApp extends StatefulWidget {
 }
 
 class _MijiAppState extends State<MijiApp> {
-  String? todoResponse; // State variable to hold the API response
-  Future<void> _fetchTodo(String todoId) async {
-    try {
-      final repository = getIt<TodoRepository>();
-      final todo = await repository.fetchTodo(todoId);
-      if (mounted) {
-        setState(() {
-          todoResponse =
-              'Title: ${todo.title}\n'
-              'Projects: ${todo.projects.map((p) => p.name).join(", ")}';
-        });
-      }
-    } catch (e) {
-      McgLogger.e('Miji', 'Error fetching todo: $e');
-      if (mounted) {
-        setState(() {
-          todoResponse = 'Error: $e';
-        });
-      }
-    }
-  }
+  String? todoResponse;
 
   @override
   Widget build(BuildContext context) {
@@ -61,33 +53,43 @@ class _MijiAppState extends State<MijiApp> {
       builder: (context, state) {
         return MaterialApp(
           themeMode: _convertAppThemeMode(state.themeMode),
-          darkTheme: ThemeData.dark(),
-          home: Scaffold(
-            appBar: AppBar(title: const Text('Env Testing')),
-            body: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text('API Key: ${env.apiKey}'),
-                  if (todoResponse != null)
-                    Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Text(todoResponse!),
+          darkTheme: ThemeData.dark().copyWith(
+            primaryColor: AppColors.primaryColor,
+          ),
+          localizationsDelegates: const [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: const [
+            Locale('en', ''),
+            Locale('zh', ''),
+            Locale('es', ''),
+          ],
+          home: BlocBuilder<NavigationCubit, NavigationState>(
+            builder: (context, navState) {
+              return Scaffold(
+                body: Stack(
+                  children: [
+                    ResponsiveNavigation(
+                      selectedIndex: navState.index,
+                      onDestinationSelected: (index) {
+                        context.read<NavigationCubit>().setIndex(index);
+                      },
+                      pages: const [HomePage(), ProfilePage(), SettingsPage()],
                     ),
-                  ElevatedButton(
-                    onPressed:
-                        () => _fetchTodo('20250426091357948402500786969162'),
-                    child: const Text('Fetch Todo'),
-                  ),
-                ],
-              ),
-            ),
-            floatingActionButton: FloatingActionButton(
-              onPressed: () {
-                context.read<ThemeBloc>().add(ToggleTheme());
-              },
-              child: const Icon(Icons.brightness_4),
-            ),
+                    if (todoResponse != null)
+                      Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Text(todoResponse!, style: AppColors.bodyText),
+                        ),
+                      ),
+                  ],
+                ),
+              );
+            },
           ),
         );
       },

@@ -1,5 +1,6 @@
 import 'package:get_it/get_it.dart';
 import 'package:miji/data/repositories/todo_repository.dart';
+import 'package:miji/features/home/data/home_repository.dart';
 import 'package:miji/services/api/api_service.dart';
 import 'package:miji/services/api/xhttp.dart';
 
@@ -10,4 +11,5 @@ void setupDependencies() {
   getIt.registerSingleton<TodoRepository>(
     TodoRepositoryImpl(ApiService(getIt<XHttp>())),
   );
+  getIt.registerSingleton<HomeRepository>(HomeRepository());
 }
