@@ -45,6 +45,10 @@ dependencies:
   hydrated_bloc: ^10.0.0
   freezed_annotation: ^3.0.0
   json_annotation: ^4.9.0
+  dio: ^5.8.0+1
+  flutter_smart_dialog: ^4.9.8+7
+  flutter_dotenv: ^5.2.1
+  flutter_secure_storage: ^4.2.1
 
 dev_dependencies:
   flutter_test:
