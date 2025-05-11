@@ -1,135 +1,156 @@
 import 'package:dio/dio.dart' as dio;
-import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:miji/config/environment/env_config.dart';
 import 'package:miji/services/logging/miji_logging.dart';
 
-/// A singleton class for managing HTTP requests using Dio with smart dialog
-/// notifications.
+/// A singleton class for managing HTTP requests using Dio.
 class XHttp {
+  // HTTP Methods
   static const String get = 'GET';
   static const String post = 'POST';
   static const String put = 'PUT';
   static const String patch = 'PATCH';
   static const String delete = 'DELETE';
 
-  static const String customErrorCode = 'DIO_CUSTOM_ERROR';
+  // Constants
   static const String requestType = 'REQUEST';
   static const String responseType = 'RESPONSE';
   static const String errorType = 'RESPONSE_ERROR';
-  static const String defaultLoadMsg = 'Loading...';
-
   static const int connectTimeout = 60000;
   static const int receiveTimeout = 60000;
   static const int sendTimeout = 60000;
 
-  static const String dialogTypeOthers = 'OTHERS';
-  static const String dialogTypeToast = 'TOAST';
-  static const String dialogTypeAlert = 'ALERT';
-  static const String dialogTypeCustom = 'CUSTOM';
-
-  static String loadMsg = defaultLoadMsg;
-  static String errorShowTitle = 'An error occurred';
-  static String errorShowMsg = '';
-
+  // Static Fields
   static dio.CancelToken cancelToken = dio.CancelToken();
   static dio.CancelToken whiteListCancelToken = dio.CancelToken();
 
+  // Instance Fields
   final Map<String, dio.CancelToken> _pendingRequests = {};
-  static final dio.Dio _dio = dio.Dio();
+  final dio.Dio _dio = dio.Dio();
   static const FlutterSecureStorage _secureStorage = FlutterSecureStorage();
 
-  /// Private constructor for singleton pattern.
-  XHttp._internal() {
-    if (_dio.options.baseUrl.isEmpty) {
-      _dio.options = dio.BaseOptions(
-        baseUrl: _getBaseUrl(),
-        headers: {'Content-Type': 'application/json'},
-        connectTimeout: const Duration(milliseconds: connectTimeout),
-        receiveTimeout: const Duration(milliseconds: receiveTimeout),
-        sendTimeout: const Duration(milliseconds: sendTimeout),
-        extra: {'cancelDuplicatedRequest': true},
-      );
-      _init();
-    }
-  }
-
+  /// Singleton instance
   static final XHttp _instance = XHttp._internal();
 
-  /// Loads baseUrl from EnvironmentConfig.
-  String _getBaseUrl() {
-    return env.baseUrl; // 使用 env 的 baseUrl
+  factory XHttp() => _instance;
+
+  XHttp._internal() {
+    _initializeDio();
   }
 
-  /// Initializes Dio with interceptors.
-  void _init() {
+  /// Initializes Dio with base configuration and interceptors.
+  void _initializeDio() {
+    _dio.options = dio.BaseOptions(
+      baseUrl: env.baseUrl,
+      headers: {'Content-Type': 'application/json'},
+      connectTimeout: const Duration(milliseconds: connectTimeout),
+      receiveTimeout: const Duration(milliseconds: receiveTimeout),
+      sendTimeout: const Duration(milliseconds: sendTimeout),
+      extra: {'cancelDuplicatedRequest': true},
+    );
+    _addInterceptors();
+  }
+
+  /// Adds Dio interceptors for request, response, and error handling.
+  void _addInterceptors() {
     _dio.interceptors.add(
       dio.InterceptorsWrapper(
-        onRequest: (options, handler) async {
-          McgLogger.d('XHttp', 'Request: ${options.uri}');
-
-          // Add token from secure storage
-          final String? token = await _secureStorage.read(key: 'auth_token');
-          if (token != null && token.isNotEmpty) {
-            options.headers['Authorization'] = 'Bearer $token';
-          }
-
-          if (_dio.options.extra['cancelDuplicatedRequest'] == true &&
-              options.cancelToken == null) {
-            final String tokenKey = _generateRequestKey(options);
-            _removePendingRequest(tokenKey);
-            options.cancelToken = dio.CancelToken();
-            options.extra['tokenKey'] = tokenKey;
-            _pendingRequests[tokenKey] = options.cancelToken!;
-          }
-          _handleRequest(options, handler);
-          return handler.next(options);
-        },
-        onResponse: (response, handler) {
-          McgLogger.d('XHttp', 'Response: ${response.statusCode}');
-          _handleResponse(response, handler);
-          if (_dio.options.extra['cancelDuplicatedRequest'] == true) {
-            _removePendingRequest(response.requestOptions.extra['tokenKey']);
-          }
-          final bool isSuccess =
-              response.statusCode == 200 || response.statusCode == 201;
-          final String? message =
-              response.data is Map
-                  ? response.data['message']?.toString()
-                  : response.statusMessage;
-          response.data = Result(
-            data: response.data,
-            success: isSuccess,
-            code: response.statusCode ?? 500,
-            message: message ?? 'Unknown error',
-            headers: response.headers,
-          );
-          return handler.next(response);
-        },
-        onError: (error, handler) {
-          McgLogger.e('XHttp', 'Error: ${error.message}', error);
-          _handleError(error);
-          if (!dio.CancelToken.isCancel(error) &&
-              _dio.options.extra['cancelDuplicatedRequest'] == true) {
-            _pendingRequests.clear();
-          }
-          if (error.response != null && error.response?.data != null) {
-            error.response!.data = Result(
-              data: error.response?.data,
-              success: false,
-              code: error.response!.statusCode ?? 500,
-              message:
-                  errorShowMsg.isNotEmpty
-                      ? errorShowMsg
-                      : error.response!.statusMessage ?? 'Unknown error',
-              headers: error.response?.headers,
-            );
-          }
-          return handler.next(error);
-        },
+        onRequest: _handleRequestInterceptor,
+        onResponse: _handleResponseInterceptor,
+        onError: _handleErrorInterceptor,
       ),
     );
+  }
+
+  /// Handles request interception (e.g., adding token, deduplication).
+  Future<void> _handleRequestInterceptor(
+    dio.RequestOptions options,
+    dio.RequestInterceptorHandler handler,
+  ) async {
+    McgLogger.d('XHttp', 'Request: ${options.uri}');
+
+    // Add auth token
+    final token = await _secureStorage.read(key: 'auth_token');
+    if (token != null && token.isNotEmpty) {
+      options.headers['Authorization'] = 'Bearer $token';
+    }
+
+    // Handle request deduplication
+    if (_dio.options.extra['cancelDuplicatedRequest'] == true &&
+        options.cancelToken == null) {
+      final tokenKey = _generateRequestKey(options);
+      _removePendingRequest(tokenKey);
+      options.cancelToken = dio.CancelToken();
+      options.extra['tokenKey'] = tokenKey;
+      _pendingRequests[tokenKey] = options.cancelToken!;
+    }
+
+    _logRequest(options, requestType);
+    handler.next(options);
+  }
+
+  /// Handles response interception (e.g., formatting response, logging).
+  void _handleResponseInterceptor(
+    dio.Response response,
+    dio.ResponseInterceptorHandler handler,
+  ) {
+    McgLogger.d('XHttp', 'Response: ${response.statusCode}');
+    _logRequest(response, responseType);
+
+    if (_dio.options.extra['cancelDuplicatedRequest'] == true) {
+      _removePendingRequest(response.requestOptions.extra['tokenKey']);
+    }
+
+    final isSuccess = response.statusCode == 200 || response.statusCode == 201;
+    String message;
+    if (response.data is Map<String, dynamic>) {
+      final messageValue = (response.data as Map<String, dynamic>)['message'];
+      message = messageValue?.toString() ?? 'No message provided';
+    } else {
+      message = response.statusMessage ?? 'Unknown response';
+    }
+
+    response.data = Result(
+      data: response.data,
+      success: isSuccess,
+      code: response.statusCode ?? 500,
+      message: message,
+      headers: response.headers,
+    );
+    handler.next(response);
+  }
+
+  /// Handles error interception (e.g., formatting error, logging).
+  void _handleErrorInterceptor(
+    dio.DioException error,
+    dio.ErrorInterceptorHandler handler,
+  ) {
+    McgLogger.e('XHttp', 'Error: ${error.message}', error);
+
+    if (!dio.CancelToken.isCancel(error) &&
+        _dio.options.extra['cancelDuplicatedRequest'] == true) {
+      _pendingRequests.clear();
+    }
+
+    final errorInfo = _getErrorInfo(error);
+    _logRequest({
+      ...errorInfo,
+      'url': error.requestOptions.uri.toString(),
+      'method': error.requestOptions.method,
+      'headers': error.response?.headers,
+      'data': error.response?.data,
+    }, errorType);
+
+    if (error.response != null) {
+      error.response!.data = Result(
+        data: error.response?.data,
+        success: false,
+        code: error.response!.statusCode ?? 500,
+        message: error.response!.statusMessage ?? 'Unknown error',
+        headers: error.response?.headers,
+      );
+    }
+    handler.next(error);
   }
 
   /// Generates a unique key for request deduplication.
@@ -142,47 +163,16 @@ class XHttp {
     ].join('&');
   }
 
-  /// Cancels a pending request by token key.
-  void _removePendingRequest(String tokenKey) {
-    if (_pendingRequests.containsKey(tokenKey)) {
+  /// Removes a pending request by token key.
+  void _removePendingRequest(String? tokenKey) {
+    if (tokenKey != null && _pendingRequests.containsKey(tokenKey)) {
       _pendingRequests[tokenKey]?.cancel(tokenKey);
       _pendingRequests.remove(tokenKey);
     }
   }
 
-  /// Handles request logging and shows loading dialog.
-  void _handleRequest(
-    dio.RequestOptions options,
-    dio.RequestInterceptorHandler handler,
-  ) {
-    Toast.instance.hide();
-    Toast.instance.loading(loadMsg);
-    _logRequest({
-      'url': options.uri.toString(),
-      'method': options.method,
-      'headers': options.headers,
-      'data': options.data ?? options.queryParameters,
-    }, requestType);
-  }
-
-  /// Handles response logging and hides loading dialog.
-  void _handleResponse(
-    dio.Response response,
-    dio.ResponseInterceptorHandler handler,
-  ) {
-    _logRequest({
-      'url': response.requestOptions.uri.toString(),
-      'method': response.requestOptions.method,
-      'headers': response.headers,
-      'data': response.data,
-      'statusCode': response.statusCode,
-      'statusMessage': response.statusMessage,
-    }, responseType);
-    Toast.instance.hide();
-  }
-
-  /// Handles error logging and shows error notification.
-  void _handleError(dio.DioException error) {
+  /// Extracts error information based on Dio exception type.
+  Map<String, dynamic> _getErrorInfo(dio.DioException error) {
     String errorTypeInfo;
     switch (error.type) {
       case dio.DioExceptionType.connectionTimeout:
@@ -203,22 +193,13 @@ class XHttp {
       default:
         errorTypeInfo = 'Network error';
     }
-    _logRequest({
-      'url': error.requestOptions.uri.toString(),
-      'method': error.requestOptions.method,
-      'headers': error.response?.headers,
-      'data': error.response?.data,
+    return {
       'statusCode': error.response?.statusCode,
       'statusMessage': error.response?.statusMessage,
       'errorType': error.type,
       'errorMessage': error.message,
       'errorTypeInfo': errorTypeInfo,
-    }, errorType);
-    Toast.instance.hide();
-    errorShowMsg =
-        '$errorShowTitle ${error.response?.statusCode ?? 'unknown'} '
-        '$errorTypeInfo\n'
-        '${error.response?.statusMessage ?? error.message ?? ''}';
+    };
   }
 
   /// Maps HTTP status codes to user-friendly messages.
@@ -237,100 +218,106 @@ class XHttp {
     }
   }
 
-  /// Logs request/response/error details using McgLogger.
-  String _logRequest(Map logData, String logType) {
-    final StringBuffer logStr =
-        StringBuffer()
-          ..writeln(
-            '======================== $logType START ========================',
-          )
-          ..writeln('- URL: ${logData['url']}')
-          ..writeln('- METHOD: ${logData['method']}');
-    if (logData['data'] != null) {
-      logStr.writeln('- ${logType}_BODY:\n${parseData(logData['data'])}');
+  /// Logs request/response/error details.
+  void _logRequest(dynamic logData, String logType) {
+    final buffer = StringBuffer()
+      ..writeln('===================== $logType START =====================');
+
+    // Handle URL and METHOD based on logData type
+    if (logData is dio.RequestOptions) {
+      buffer
+        ..writeln('- URL: ${logData.uri}')
+        ..writeln('- METHOD: ${logData.method}');
+    } else if (logData is dio.Response) {
+      buffer
+        ..writeln('- URL: ${logData.requestOptions.uri}')
+        ..writeln('- METHOD: ${logData.requestOptions.method}');
+    } else if (logData is Map) {
+      buffer
+        ..writeln('- URL: ${logData['url']}')
+        ..writeln('- METHOD: ${logData['method']}');
     }
-    if (logType.contains(responseType) || logType.contains(errorType)) {
-      logStr
-        ..writeln('- STATUS_CODE: ${logData['statusCode']}')
-        ..writeln('- STATUS_MESSAGE: ${logData['statusMessage']}');
+
+    if (logData is dio.RequestOptions && logData.data != null) {
+      buffer.writeln('- ${logType}_BODY:\n${parseData(logData.data)}');
+    } else if (logData is dio.Response && logData.data != null) {
+      buffer.writeln('- ${logType}_BODY:\n${parseData(logData.data)}');
+    } else if (logData is Map && logData['data'] != null) {
+      buffer.writeln('- ${logType}_BODY:\n${parseData(logData['data'])}');
     }
-    if (logType == errorType) {
-      logStr
+
+    if (logType == responseType || logType == errorType) {
+      final statusCode = logData is dio.Response
+          ? logData.statusCode
+          : logData is Map
+              ? logData['statusCode']
+              : null;
+      final statusMessage = logData is dio.Response
+          ? logData.statusMessage
+          : logData is Map
+              ? logData['statusMessage']
+              : null;
+      buffer
+        ..writeln('- STATUS_CODE: $statusCode')
+        ..writeln('- STATUS_MESSAGE: $statusMessage');
+    }
+
+    if (logType == errorType && logData is Map) {
+      buffer
         ..writeln('- ERROR_TYPE: ${logData['errorType']}')
         ..writeln('- ERROR_MESSAGE: ${logData['errorMessage']}')
         ..writeln('- ERROR_TYPE_INFO: ${logData['errorTypeInfo']}');
     }
-    logStr.writeln(
-      '======================== $logType END ========================',
-    );
 
-    // 使用 McgLogger 记录
-    if (logType == errorType) {
-      McgLogger.e('XHttp', logStr.toString());
-    } else {
-      McgLogger.d('XHttp', logStr.toString());
-    }
-    return logStr.toString();
+    buffer.writeln('===================== $logType END =====================');
+
+    logType == errorType
+        ? McgLogger.e('XHttp', buffer.toString())
+        : McgLogger.d('XHttp', buffer.toString());
   }
 
-  /// Displays result dialogs or notifications based on configuration.
-  Future<void> _showResultDialog(
-    dio.Response? response,
-    Map<String, dynamic>? config,
-  ) async {
-    if (response == null) return;
-    final Map<String, dynamic> configMap = config ?? {};
-    final String dialogType = configMap['type'] ?? dialogTypeOthers;
-    if (dialogType == dialogTypeOthers) return;
-
-    final bool isSuccess = response.data.success;
-    final String msg = response.data.message ?? 'Unknown error';
-
-    if (dialogType == dialogTypeToast) {
-      Toast.instance.show(
-        isSuccess
-            ? configMap['successMsg'] ?? msg
-            : configMap['errorMsg'] ?? msg,
-        type: isSuccess ? Toast.success : Toast.error,
-      );
-    } else if (dialogType == dialogTypeAlert) {
-      // Implement alert dialog (e.g., using showDialog)
-    } else if (dialogType == dialogTypeCustom) {
-      if (isSuccess && configMap['onSuccess'] != null) {
-        configMap['onSuccess'](response.data);
-      } else if (!isSuccess && configMap['onError'] != null) {
-        configMap['onError'](response.data);
+  /// Parses data for logging.
+  String parseData(dynamic data) {
+    try {
+      if (data is Map) {
+        return data.mapToStructureString();
       }
+      if (data is dio.FormData) {
+        final map = Map.fromEntries([...data.fields, ...data.files]);
+        return map.mapToStructureString();
+      }
+      if (data is List) {
+        return data.listToStructureString();
+      }
+      return data.toString();
+    } catch (e, stackTrace) {
+      McgLogger.e('XHttp', 'Failed to parse data: $e', e, stackTrace);
+      return 'Error parsing data: $e';
     }
   }
 
-  /// Handles non-Dio exceptions and displays notifications.
+  /// Handles non-Dio exceptions.
   void _catchOthersError(dynamic e) {
-    final String errMsg =
-        '${errorShowMsg.isEmpty ? e.toString() : errorShowMsg}$customErrorCode'
-            .split(customErrorCode)[0];
-    final String truncatedMsg =
-        errMsg.length > 300 ? errMsg.substring(0, 150) : errMsg;
     if (e is dio.DioException && dio.CancelToken.isCancel(e)) {
-      Toast.instance.show('Request cancelled successfully', type: Toast.info);
+      McgLogger.d('XHttp', 'Request cancelled successfully');
     } else {
-      Toast.instance.show(truncatedMsg, type: Toast.error);
+      McgLogger.e('XHttp', 'Error: $e');
     }
   }
 
-  /// Gets instance with optional baseUrl and loading message.
-  static XHttp getInstance({String? baseUrl, String? msg}) {
+  // Public Methods
+
+  /// Gets instance with optional baseUrl.
+  static XHttp getInstance({String? baseUrl}) {
     if (baseUrl != null && baseUrl.isNotEmpty) {
-      _dio.options.baseUrl = baseUrl;
+      _instance._dio.options.baseUrl = baseUrl;
     }
-    loadMsg = msg ?? defaultLoadMsg;
     return _instance;
   }
 
   /// Cancels all non-whitelisted requests.
   static XHttp cancelRequest() {
-    Toast.instance.hide();
-    if (_dio.options.extra['cancelDuplicatedRequest'] == true) {
+    if (_instance._dio.options.extra['cancelDuplicatedRequest'] == true) {
       _instance._pendingRequests.forEach((key, token) => token.cancel(key));
       _instance._pendingRequests.clear();
     } else {
@@ -342,38 +329,9 @@ class XHttp {
 
   /// Cancels all whitelisted requests.
   static XHttp cancelWhiteListRequest() {
-    Toast.instance.hide();
     whiteListCancelToken.cancel('Cancel whitelist request');
     whiteListCancelToken = dio.CancelToken();
     return _instance;
-  }
-
-  String parseData(dynamic data) {
-    try {
-      McgLogger.d('XHttp', 'Parsing data type: ${data.runtimeType}');
-      if (data is Map) {
-        final result = data.mapToStructureString();
-        McgLogger.d('XHttp', 'Parsed map length: ${result.length}');
-        return result;
-      }
-      if (data is dio.FormData) {
-        final map = Map.fromEntries([...data.fields, ...data.files]);
-        final result = map.mapToStructureString();
-        McgLogger.d('XHttp', 'Parsed form data length: ${result.length}');
-        return result;
-      }
-      if (data is List) {
-        final result = data.listToStructureString();
-        McgLogger.d('XHttp', 'Parsed list length: ${result.length}');
-        return result;
-      }
-      final result = data.toString();
-      McgLogger.d('XHttp', 'Parsed other: $result');
-      return result;
-    } catch (e, stackTrace) {
-      McgLogger.e('XHttp', 'Failed to parse data: $e', e, stackTrace);
-      return 'Error parsing data: $e';
-    }
   }
 
   /// Unified request method for all HTTP methods.
@@ -383,16 +341,13 @@ class XHttp {
     Map<String, dynamic>? queryParameters,
     dynamic data,
     bool isCancelWhiteList = false,
-    Map<String, dynamic>? resultDialogConfig,
     dio.Options? options,
     void Function(int, int)? onSendProgress,
     void Function(int, int)? onReceiveProgress,
-    String? msg,
     String? baseUrl,
   }) async {
-    XHttp.getInstance(baseUrl: baseUrl, msg: msg);
-    final dio.CancelToken requestToken =
-        isCancelWhiteList ? whiteListCancelToken : cancelToken;
+    getInstance(baseUrl: baseUrl);
+    final requestToken = isCancelWhiteList ? whiteListCancelToken : cancelToken;
 
     try {
       final response = await _dio.request(
@@ -404,7 +359,6 @@ class XHttp {
         onReceiveProgress: onReceiveProgress,
         onSendProgress: onSendProgress,
       );
-      await _showResultDialog(response, resultDialogConfig);
       return response.data as Result;
     } catch (e) {
       _catchOthersError(e);
@@ -416,12 +370,10 @@ class XHttp {
   Future<Result> downloadFile(
     String urlPath,
     dynamic savePath, {
-    Map<String, dynamic>? resultDialogConfig,
     bool isCancelWhiteList = false,
     void Function(int, int)? onReceiveProgress,
   }) async {
-    final dio.CancelToken requestToken =
-        isCancelWhiteList ? whiteListCancelToken : cancelToken;
+    final requestToken = isCancelWhiteList ? whiteListCancelToken : cancelToken;
     try {
       final response = await _dio.download(
         urlPath,
@@ -429,7 +381,6 @@ class XHttp {
         onReceiveProgress: onReceiveProgress,
         cancelToken: requestToken,
       );
-      await _showResultDialog(response, resultDialogConfig);
       return response.data as Result;
     } catch (e) {
       _catchOthersError(e);
@@ -441,38 +392,32 @@ class XHttp {
   static XHttp setAuthToken(String? token) {
     if (token == null) {
       _secureStorage.delete(key: 'auth_token');
-      _dio.options.headers.remove('Authorization');
+      _instance._dio.options.headers.remove('Authorization');
     } else {
       _secureStorage.write(key: 'auth_token', value: token);
-      _dio.options.headers['Authorization'] = 'Bearer $token';
+      _instance._dio.options.headers['Authorization'] = 'Bearer $token';
     }
     return _instance;
   }
 
   /// Gets the current baseUrl.
-  static String getBaseUrl() => _dio.options.baseUrl;
+  static String getBaseUrl() => _instance._dio.options.baseUrl;
 
   /// Sets the baseUrl.
   static XHttp setBaseUrl(String baseUrl) {
-    _dio.options.baseUrl = baseUrl;
+    _instance._dio.options.baseUrl = baseUrl;
     return _instance;
   }
 
   /// Sets a header.
   static XHttp setHeader(String key, String value) {
-    _dio.options.headers[key] = value;
+    _instance._dio.options.headers[key] = value;
     return _instance;
   }
 
   /// Removes a header.
   static XHttp removeHeader(String key) {
-    _dio.options.headers.remove(key);
-    return _instance;
-  }
-
-  /// Sets error title for notifications.
-  static XHttp setErrorTitle(String msg) {
-    errorShowTitle = msg;
+    _instance._dio.options.headers.remove(key);
     return _instance;
   }
 }
@@ -494,183 +439,43 @@ class Result {
   });
 }
 
-/// Toast utility for displaying notifications and loading dialogs using
-/// flutter_smart_dialog.
-class Toast {
-  static const String success = 'SUCCESS';
-  static const String error = 'ERROR';
-  static const String warning = 'WARNING';
-  static const String info = 'INFO';
-
-  /// Singleton instance.
-  static final Toast _instance = Toast._internal();
-
-  /// Factory constructor to return the singleton instance.
-  factory Toast() => _instance;
-
-  /// Private constructor for singleton pattern.
-  Toast._internal();
-
-  /// Provides access to the singleton instance.
-  static Toast get instance => _instance;
-
-  /// Shows a loading dialog with a message.
-  void loading(String msg) {
-    SmartDialog.showLoading(msg: msg);
-  }
-
-  /// Shows a toast notification with custom styling based on type.
-  void show(String msg, {String? type}) {
-    Color backgroundColor;
-    switch (type) {
-      case success:
-        backgroundColor = Colors.green;
-        break;
-      case error:
-        backgroundColor = Colors.red;
-        break;
-      case warning:
-        backgroundColor = Colors.orange;
-        break;
-      case info:
-      default:
-        backgroundColor = Colors.blue;
-    }
-    SmartDialog.showToast(
-      '',
-      builder:
-          (_) => Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: BoxDecoration(
-              color: backgroundColor,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Text(msg, style: const TextStyle(color: Colors.white)),
-          ),
-    );
-  }
-
-  /// Hides the loading dialog.
-  void hide() {
-    SmartDialog.dismiss();
-  }
-}
-
+/// Extensions for structured string conversion.
 extension Map2StringEx on Map {
   String mapToStructureString({int indentation = 0, String space = '  '}) {
     if (isEmpty) return '{}';
-    final StringBuffer result = StringBuffer('{\n');
-    final String indent = space * (indentation + 1);
+    final buffer = StringBuffer('{\n');
+    final indent = space * (indentation + 1);
     for (final entry in entries) {
+      buffer.write('$indent"${entry.key}": ');
       final value = entry.value;
-      result.write('$indent"${entry.key}": ');
       if (value is Map) {
-        result.write(
-          '${value.mapToStructureString(indentation: indentation + 1)}\n',
-        );
+        buffer.write('${value.mapToStructureString(indentation: indentation + 1)}\n');
       } else if (value is List) {
-        result.write(
-          '${value.listToStructureString(indentation: indentation + 1)}\n',
-        );
+        buffer.write('${value.listToStructureString(indentation: indentation + 1)}\n');
       } else {
-        result.write(
-          '${value == null
-              ? "null"
-              : value is String
-              ? '"$value"'
-              : value}\n',
-        );
+        buffer.write('${value == null ? "null" : value is String ? '"$value"' : value}\n');
       }
     }
-    result.write('${space * indentation}}');
-    return result.toString();
+    buffer.write('${space * indentation}}');
+    return buffer.toString();
   }
 }
 
 extension List2StringEx on List {
   String listToStructureString({int indentation = 0, String space = '  '}) {
     if (isEmpty) return '[]';
-    final StringBuffer result = StringBuffer('[\n');
-    final String indent = space * (indentation + 1);
+    final buffer = StringBuffer('[\n');
+    final indent = space * (indentation + 1);
     for (final value in this) {
       if (value is Map) {
-        result.write(
-          '$indent${value.mapToStructureString(indentation: indentation + 1)}\n',
-        );
+        buffer.write('$indent${value.mapToStructureString(indentation: indentation + 1)}\n');
       } else if (value is List) {
-        result.write(
-          '$indent${value.listToStructureString(indentation: indentation + 1)}\n',
-        );
+        buffer.write('$indent${value.listToStructureString(indentation: indentation + 1)}\n');
       } else {
-        result.write(
-          '$indent${value == null
-              ? "null"
-              : value is String
-              ? '"$value"'
-              : value}\n',
-        );
+        buffer.write('$indent${value == null ? "null" : value is String ? '"$value"' : value}\n');
       }
     }
-    result.write('${space * indentation}]');
-    return result.toString();
+    buffer.write('${space * indentation}]');
+    return buffer.toString();
   }
 }
-
-/// Utility methods for parsing data.
-// String parseData(dynamic data) {
-//   if (data is Map) return data.mapToStructureString();
-//   if (data is dio.FormData) {
-//     final map = Map.fromEntries([...data.fields, ...data.files]);
-//     return map.mapToStructureString();
-//   }
-//   if (data is List) return data.listToStructureString();
-//   return data.toString();
-// }
-
-// extension Map2StringEx on Map {
-//   String mapToStructureString({int indentation = 0, String space = '  '}) {
-//     if (isEmpty) return '{}';
-//     final StringBuffer result = StringBuffer('{\n');
-//     final String indent = space * (indentation + 1);
-//     for (final entry in entries) {
-//       final value = entry.value;
-//       result.write('$indent"${entry.key}": ');
-//       if (value is Map) {
-//         result.write(
-//           '${value.mapToStructureString(indentation: indentation + 1)}\n',
-//         );
-//       } else if (value is List) {
-//         result.write(
-//           '${value.listToStructureString(indentation: indentation + 1)}\n',
-//         );
-//       } else {
-//         result.write('${value is String ? '"$value"' : value}\n');
-//       }
-//     }
-//     result.write('${space * indentation}}');
-//     return result.toString();
-//   }
-// }
-//
-// extension List2StringEx on List {
-//   String listToStructureString({int indentation = 0, String space = '  '}) {
-//     if (isEmpty) return '[]';
-//     final StringBuffer result = StringBuffer('[\n');
-//     final String indent = space * (indentation + 1);
-//     for (final value in this) {
-//       if (value is Map) {
-//         result.write(
-//           '$indent${value.mapToStructureString(indentation: indentation + 1)}\n',
-//         );
-//       } else if (value is List) {
-//         result.write(
-//           '$indent${value.listToStructureString(indentation: indentation + 1)}\n',
-//         );
-//       } else {
-//         result.write('$indent${value is String ? '"$value"' : value}\n');
-//       }
-//     }
-//     result.write('${space * indentation}]');
-//     return result.toString();
-//   }
-// }

@@ -1,71 +1,55 @@
 import 'package:miji/data/models/projects.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
 
-class Todo {
-  final String? assigneeId;
-  final List<dynamic> attachments;
-  final String? completedAt;
-  final String createdAt;
-  final String? description;
-  final String dueAt;
-  final String? location;
-  final String? ownerId;
-  final int priority;
-  final int progress;
-  final List<Project> projects;
-  final List<dynamic> reminders;
-  final String? repeat;
-  final String serialNum;
-  final int status;
-  final List<dynamic> tags;
-  final String title;
-  final String updatedAt;
+part 'todos.freezed.dart';
+part 'todos.g.dart';
 
-  Todo({
-    required this.assigneeId,
-    required this.attachments,
-    required this.completedAt,
-    required this.createdAt,
-    required this.description,
-    required this.dueAt,
-    required this.location,
-    required this.ownerId,
-    required this.priority,
-    required this.progress,
-    required this.projects,
-    required this.reminders,
-    required this.repeat,
-    required this.serialNum,
-    required this.status,
-    required this.tags,
-    required this.title,
-    required this.updatedAt,
-  });
+@freezed
+abstract class Todos with _$Todos {
+  const factory Todos({
+    @JsonKey(name: 'assignee_id') String? assigneeId,
+    @JsonKey(name: 'attachments') @Default([]) List<dynamic> attachments,
+    @JsonKey(name: 'completed_at') DateTime? completedAt,
+    @JsonKey(name: 'created_at') required DateTime createdAt,
+    @JsonKey(name: 'description') String? description,
+    @JsonKey(name: 'due_at') required DateTime dueAt,
+    @JsonKey(name: 'location') String? location,
+    @JsonKey(name: 'owner_id') String? ownerId,
+    @JsonKey(name: 'priority') @Default(0) int priority,
+    @JsonKey(name: 'progress') @Default(0) int progress,
+    @JsonKey(name: 'projects') @Default([]) List<Projects> projects,
+    @JsonKey(name: 'reminders') @Default([]) List<dynamic> reminders,
+    @JsonKey(name: 'repeat') String? repeat,
+    @JsonKey(name: 'serial_num') required String serialNum,
+    @JsonKey(name: 'status') required int status,
+    @JsonKey(name: 'tags') @Default([]) List<dynamic> tags,
+    @JsonKey(name: 'title') required String title,
+    @JsonKey(name: 'updated_at') DateTime? updatedAt,
+  }) = _Todos;
 
-  factory Todo.fromJson(Map<String, dynamic> json) {
-    return Todo(
-      assigneeId: json['assignee_id'] as String?,
-      attachments: json['attachments'] as List<dynamic>? ?? [],
-      completedAt: json['completed_at'] as String?,
-      createdAt: json['created_at'] as String? ?? '',
-      description: json['description'] as String?,
-      dueAt: json['due_at'] as String,
-      location: json['location'] as String?,
-      ownerId: json['owner_id'] as String?,
-      priority: json['priority'] as int? ?? 0,
-      progress: json['progress'] as int? ?? 0,
-      projects:
-          (json['projects'] as List<dynamic>)
-              .map(
-                (project) => Project.fromJson(project as Map<String, dynamic>),
-              )
-              .toList(),
-      reminders: json['reminders'] as List<dynamic>,
-      repeat: json['repeat'] as String?,
-      serialNum: json['serial_num'] as String,
-      status: json['status'] as int,
-      tags: json['tags'] as List<dynamic>? ?? [],
-      title: json['title'] as String,
-      updatedAt: json['updated_at'] as String,
+  factory Todos.fromJson(Map<String, dynamic> json) => _$TodosFromJson(json);
+
+factory Todos.empty() {
+    final now = DateTime.now();
+    return Todos(
+      assigneeId: null,
+      attachments: [],
+      completedAt: null,
+      createdAt: now,
+      description: null,
+      dueAt: now,
+      location: null,
+      ownerId: null,
+      priority: 0,
+      progress: 0,
+      projects: [],
+      reminders: [],
+      repeat: null,
+      serialNum: '',
+      status: 0,
+      tags: [],
+      title: '',
+      updatedAt: null,
     );
   }
 }

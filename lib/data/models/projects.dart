@@ -1,19 +1,16 @@
-class Project {
-  final String? description;
-  final String name;
-  final String serialNum;
+import 'package:freezed_annotation/freezed_annotation.dart';
 
-  Project({
-    required this.description,
-    required this.name,
-    required this.serialNum,
-  });
+part 'projects.freezed.dart';
+part 'projects.g.dart';
 
-  factory Project.fromJson(Map<String, dynamic> json) {
-    return Project(
-      description: json['description'] as String?,
-      name: json['name'] as String? ?? '',
-      serialNum: json['serial_num'] as String? ?? '',
-    );
-  }
+@freezed
+abstract class Projects with _$Projects {
+  const factory Projects({
+    @JsonKey(name: 'description') @Default(null) String? description,
+    @JsonKey(name: 'name') required String name,
+    @JsonKey(name: 'serial_num') required String serialNum,
+  }) = _Projects;
+
+  factory Projects.fromJson(Map<String, dynamic> json) =>
+      _$ProjectsFromJson(json);
 }

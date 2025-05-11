@@ -7,7 +7,6 @@ import 'package:miji/config/theme/bloc/theme_state.dart';
 import 'package:miji/data/repositories/todo_repository.dart';
 import 'package:miji/di/injector.dart';
 import 'package:miji/services/logging/miji_logging.dart';
-import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 
 class Miji extends StatelessWidget {
   const Miji({super.key});
@@ -36,7 +35,6 @@ class _MijiAppState extends State<MijiApp> {
   String? todoResponse; // State variable to hold the API response
   Future<void> _fetchTodo(String todoId) async {
     try {
-      SmartDialog.showLoading(msg: 'Fetching Todo...');
       final repository = getIt<TodoRepository>();
       final todo = await repository.fetchTodo(todoId);
       if (mounted) {
@@ -47,14 +45,12 @@ class _MijiAppState extends State<MijiApp> {
         });
       }
     } catch (e) {
+      McgLogger.e('Miji', 'Error fetching todo: $e');
       if (mounted) {
         setState(() {
           todoResponse = 'Error: $e';
         });
-        SmartDialog.showToast('Error: $e', alignment: Alignment.bottomCenter);
       }
-    } finally {
-      SmartDialog.dismiss();
     }
   }
 
@@ -66,8 +62,6 @@ class _MijiAppState extends State<MijiApp> {
         return MaterialApp(
           themeMode: _convertAppThemeMode(state.themeMode),
           darkTheme: ThemeData.dark(),
-          navigatorObservers: [FlutterSmartDialog.observer],
-          builder: FlutterSmartDialog.init(),
           home: Scaffold(
             appBar: AppBar(title: const Text('Env Testing')),
             body: Center(
