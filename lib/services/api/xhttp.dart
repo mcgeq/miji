@@ -348,6 +348,34 @@ class XHttp {
     return _instance;
   }
 
+  String parseData(dynamic data) {
+    try {
+      McgLogger.d('XHttp', 'Parsing data type: ${data.runtimeType}');
+      if (data is Map) {
+        final result = data.mapToStructureString();
+        McgLogger.d('XHttp', 'Parsed map length: ${result.length}');
+        return result;
+      }
+      if (data is dio.FormData) {
+        final map = Map.fromEntries([...data.fields, ...data.files]);
+        final result = map.mapToStructureString();
+        McgLogger.d('XHttp', 'Parsed form data length: ${result.length}');
+        return result;
+      }
+      if (data is List) {
+        final result = data.listToStructureString();
+        McgLogger.d('XHttp', 'Parsed list length: ${result.length}');
+        return result;
+      }
+      final result = data.toString();
+      McgLogger.d('XHttp', 'Parsed other: $result');
+      return result;
+    } catch (e, stackTrace) {
+      McgLogger.e('XHttp', 'Failed to parse data: $e', e, stackTrace);
+      return 'Error parsing data: $e';
+    }
+  }
+
   /// Unified request method for all HTTP methods.
   Future<Result> request(
     String url, {
@@ -528,17 +556,6 @@ class Toast {
   }
 }
 
-/// Utility methods for parsing data.
-String parseData(dynamic data) {
-  if (data is Map) return data.mapToStructureString();
-  if (data is dio.FormData) {
-    final map = Map.fromEntries([...data.fields, ...data.files]);
-    return map.mapToStructureString();
-  }
-  if (data is List) return data.listToStructureString();
-  return data.toString();
-}
-
 extension Map2StringEx on Map {
   String mapToStructureString({int indentation = 0, String space = '  '}) {
     if (isEmpty) return '{}';
@@ -546,25 +563,26 @@ extension Map2StringEx on Map {
     final String indent = space * (indentation + 1);
     for (final entry in entries) {
       final value = entry.value;
+      result.write('$indent"${entry.key}": ');
       if (value is Map) {
         result.write(
-          '$indent"${entry.key}": '
-          '${value.mapToStructureString(indentation: indentation + 1)},\n',
+          '${value.mapToStructureString(indentation: indentation + 1)}\n',
         );
       } else if (value is List) {
         result.write(
-          '$indent"${entry.key}": '
-          '${value.listToStructureString(indentation: indentation + 1)},\n',
+          '${value.listToStructureString(indentation: indentation + 1)}\n',
         );
       } else {
         result.write(
-          '$indent"${entry.key}": '
-          '${value is String ? '"$value"' : value},\n',
+          '${value == null
+              ? "null"
+              : value is String
+              ? '"$value"'
+              : value}\n',
         );
       }
     }
-    result.write(result.toString().substring(0, result.length - 2));
-    result.write('\n${space * indentation}}');
+    result.write('${space * indentation}}');
     return result.toString();
   }
 }
@@ -577,20 +595,82 @@ extension List2StringEx on List {
     for (final value in this) {
       if (value is Map) {
         result.write(
-          '$indent'
-          '${value.mapToStructureString(indentation: indentation + 1)},\n',
+          '$indent${value.mapToStructureString(indentation: indentation + 1)}\n',
         );
       } else if (value is List) {
         result.write(
-          '$indent'
-          '${value.listToStructureString(indentation: indentation + 1)},\n',
+          '$indent${value.listToStructureString(indentation: indentation + 1)}\n',
         );
       } else {
-        result.write('$indent${value is String ? '"$value"' : value},\n');
+        result.write(
+          '$indent${value == null
+              ? "null"
+              : value is String
+              ? '"$value"'
+              : value}\n',
+        );
       }
     }
-    result.write(result.toString().substring(0, result.length - 2));
-    result.write('\n${space * indentation}]');
+    result.write('${space * indentation}]');
     return result.toString();
   }
 }
+
+/// Utility methods for parsing data.
+// String parseData(dynamic data) {
+//   if (data is Map) return data.mapToStructureString();
+//   if (data is dio.FormData) {
+//     final map = Map.fromEntries([...data.fields, ...data.files]);
+//     return map.mapToStructureString();
+//   }
+//   if (data is List) return data.listToStructureString();
+//   return data.toString();
+// }
+
+// extension Map2StringEx on Map {
+//   String mapToStructureString({int indentation = 0, String space = '  '}) {
+//     if (isEmpty) return '{}';
+//     final StringBuffer result = StringBuffer('{\n');
+//     final String indent = space * (indentation + 1);
+//     for (final entry in entries) {
+//       final value = entry.value;
+//       result.write('$indent"${entry.key}": ');
+//       if (value is Map) {
+//         result.write(
+//           '${value.mapToStructureString(indentation: indentation + 1)}\n',
+//         );
+//       } else if (value is List) {
+//         result.write(
+//           '${value.listToStructureString(indentation: indentation + 1)}\n',
+//         );
+//       } else {
+//         result.write('${value is String ? '"$value"' : value}\n');
+//       }
+//     }
+//     result.write('${space * indentation}}');
+//     return result.toString();
+//   }
+// }
+//
+// extension List2StringEx on List {
+//   String listToStructureString({int indentation = 0, String space = '  '}) {
+//     if (isEmpty) return '[]';
+//     final StringBuffer result = StringBuffer('[\n');
+//     final String indent = space * (indentation + 1);
+//     for (final value in this) {
+//       if (value is Map) {
+//         result.write(
+//           '$indent${value.mapToStructureString(indentation: indentation + 1)}\n',
+//         );
+//       } else if (value is List) {
+//         result.write(
+//           '$indent${value.listToStructureString(indentation: indentation + 1)}\n',
+//         );
+//       } else {
+//         result.write('$indent${value is String ? '"$value"' : value}\n');
+//       }
+//     }
+//     result.write('${space * indentation}]');
+//     return result.toString();
+//   }
+// }

@@ -5,7 +5,7 @@
 // File:           main.dart
 // Description:    About Flutter main
 // Create   Date:  2025-03-29 16:27:14
-// Last Modified:  2025-05-11 11:38:14
+// Last Modified:  2025-05-11 12:55:18
 // Modified   By:  mcgeq <mcgeq@outlook.com>
 // -----------------------------------------------------------------------------
 
@@ -15,7 +15,7 @@ import 'package:hydrated_bloc/hydrated_bloc.dart';
 import 'package:miji/app/app.dart';
 import 'package:miji/config/environment/env.dart';
 import 'package:miji/config/environment/env_config.dart';
-import 'package:miji/services/api/xhttp.dart';
+import 'package:miji/di/injector.dart';
 import 'package:miji/services/logging/miji_logging.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -24,7 +24,7 @@ Future<void> main() async {
   await dotenv.load(fileName: 'assets/.env');
   McgLogger.init(enableFileLogging: true, minLevel: LogLevel.verbose);
   loadEnvironment(EnvironmentType.dev);
-  XHttp.getInstance();
+  setupDependencies();
   final storageDirectory = await getApplicationDocumentsDirectory();
   HydratedBloc.storage = await HydratedStorage.build(
     storageDirectory: HydratedStorageDirectory(storageDirectory.path),
