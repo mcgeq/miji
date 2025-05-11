@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:miji/app/routes/pages/home_page.dart';
+import 'package:miji/app/routes/pages/profile_page.dart';
+import 'package:miji/app/routes/pages/settings_page.dart';
 import 'package:miji/config/theme/app_colors.dart';
 import 'package:miji/l10n/l10n.dart';
 
 class ResponsiveNavigation extends StatefulWidget {
   final int selectedIndex;
-  final Function(int) onDestinationSelected;
   final List<Widget> pages;
 
   const ResponsiveNavigation({
     super.key,
     required this.selectedIndex,
-    required this.onDestinationSelected,
     required this.pages,
   });
 
@@ -22,17 +23,24 @@ class _ResponsiveNavigationState extends State<ResponsiveNavigation>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _drawerAnimation;
+  late Animation<double> _overlayOpacity;
+  late int _currentIndex;
 
   @override
   void initState() {
     super.initState();
+    _currentIndex = widget.selectedIndex;
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 300),
     );
     _drawerAnimation = Tween<double>(
-      begin: -250,
+      begin: -120,
       end: 0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+    _overlayOpacity = Tween<double>(
+      begin: 0.0,
+      end: 0.3,
     ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
   }
 
@@ -40,6 +48,21 @@ class _ResponsiveNavigationState extends State<ResponsiveNavigation>
   void dispose() {
     _controller.dispose();
     super.dispose();
+  }
+
+  void _onDestinationSelected(int index) {
+    if (_currentIndex == index) return; // 避免重复导航
+    setState(() {
+      _currentIndex = index;
+    });
+    // 使用路由导航
+    final routes = [
+      HomePage.routeName,
+      ProfilePage.routeName,
+      SettingsPage.routeName,
+    ];
+    debugPrint('Navigating to: ${routes[index]}');
+    Navigator.pushReplacementNamed(context, routes[index]);
   }
 
   @override
@@ -57,92 +80,82 @@ class _ResponsiveNavigationState extends State<ResponsiveNavigation>
   Widget _buildDesktopLayout(BuildContext context) {
     return Stack(
       children: [
-        // 主界面全屏显示
-        AnimatedSwitcher(
-          duration: const Duration(milliseconds: 300),
-          child: widget.pages[widget.selectedIndex],
+        Navigator(
+          onGenerateRoute: (settings) {
+            return MaterialPageRoute(
+              builder: (context) => widget.pages[_currentIndex],
+            );
+          },
         ),
-        // 遮罩层：侧边栏打开时显示，点击关闭侧边栏
         AnimatedBuilder(
           animation: _controller,
           builder: (context, child) {
-            return _controller.isCompleted
-                ? Semantics(
-                  label: AppLocalizations.of(context)!.menu,
-                  button: true,
+            return Opacity(
+              opacity: _overlayOpacity.value, // 使用透明度动画
+              child: Semantics(
+                label: AppLocalizations.of(context)!.menu,
+                button: true,
+                onTap: () => _controller.reverse(),
+                child: GestureDetector(
                   onTap: () => _controller.reverse(),
-                  child: GestureDetector(
-                    onTap: () => _controller.reverse(),
-                    child: Container(
-                      color: Colors.black.withValues(alpha: 0.3),
-                    ),
+                  child: Container(
+                    color: Colors.black, // 颜色直接使用 black，透明度由 Opacity 控制
                   ),
-                )
-                : const SizedBox.shrink();
+                ),
+              ),
+            );
           },
         ),
-        // 侧边栏：浮动显示，带滑入滑出动画
         AnimatedBuilder(
           animation: _controller,
           builder: (context, child) {
             return Transform.translate(
               offset: Offset(_drawerAnimation.value, 0),
               child: SizedBox(
-                width: 250,
+                width: 120,
                 child: Drawer(
                   elevation: 8,
                   backgroundColor: Colors.white,
                   child: ListView(
                     children: [
-                      DrawerHeader(
-                        decoration: const BoxDecoration(
-                          color: AppColors.primaryColor,
-                        ),
-                        child: Text(
-                          AppLocalizations.of(context)!.menu,
-                          style: AppColors.headerText.copyWith(
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
                       Semantics(
                         label: AppLocalizations.of(context)!.home,
-                        selected: widget.selectedIndex == 0,
+                        selected: _currentIndex == 0,
                         button: true,
                         child: ListTile(
                           leading: const Icon(Icons.home),
                           title: Text(AppLocalizations.of(context)!.home),
-                          selected: widget.selectedIndex == 0,
+                          selected: _currentIndex == 0,
                           onTap: () {
-                            widget.onDestinationSelected(0);
+                            _onDestinationSelected(0);
                             _controller.reverse();
                           },
                         ),
                       ),
                       Semantics(
                         label: AppLocalizations.of(context)!.profile,
-                        selected: widget.selectedIndex == 1,
+                        selected: _currentIndex == 1,
                         button: true,
                         child: ListTile(
                           leading: const Icon(Icons.person),
                           title: Text(AppLocalizations.of(context)!.profile),
-                          selected: widget.selectedIndex == 1,
+                          selected: _currentIndex == 1,
                           onTap: () {
-                            widget.onDestinationSelected(1);
+                            _onDestinationSelected(1);
                             _controller.reverse();
                           },
                         ),
                       ),
                       Semantics(
                         label: AppLocalizations.of(context)!.settings,
-                        selected: widget.selectedIndex == 2,
+                        selected: _currentIndex == 2,
                         button: true,
                         child: ListTile(
                           leading: const Icon(Icons.settings),
                           title: Text(AppLocalizations.of(context)!.settings),
-                          selected: widget.selectedIndex == 2,
+                          selected: _currentIndex == 2,
                           onTap: () {
-                            widget.onDestinationSelected(2);
+                            _onDestinationSelected(2);
                             _controller.reverse();
                           },
                         ),
@@ -154,7 +167,6 @@ class _ResponsiveNavigationState extends State<ResponsiveNavigation>
             );
           },
         ),
-        // 打开/关闭侧边栏的按钮
         Positioned(
           left: 16,
           bottom: 16,
@@ -180,13 +192,16 @@ class _ResponsiveNavigationState extends State<ResponsiveNavigation>
 
   Widget _buildMobileLayout(BuildContext context) {
     return Scaffold(
-      body: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 300),
-        child: widget.pages[widget.selectedIndex],
+      body: Navigator(
+        onGenerateRoute: (settings) {
+          return MaterialPageRoute(
+            builder: (context) => widget.pages[widget.selectedIndex],
+          );
+        },
       ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: widget.selectedIndex,
-        onTap: widget.onDestinationSelected,
+        onTap: _onDestinationSelected,
         selectedItemColor: AppColors.primaryColor,
         items: [
           BottomNavigationBarItem(
