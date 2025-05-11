@@ -3,17 +3,33 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:miji/config/environment/env_config.dart';
 import 'package:miji/config/theme/bloc/theme_bloc.dart';
 import 'package:miji/config/theme/bloc/theme_event.dart';
-import 'package:miji/config/theme/bloc/theme_state.dart' as app_theme;
+import 'package:miji/config/theme/bloc/theme_state.dart';
 
 class Miji extends StatelessWidget {
   const Miji({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider<ThemeBloc>(create: (_) => ThemeBloc()),
+        // BlocProvider<TodoBloc>(create: (_) => TodoBloc()),
+        // BlocProvider<AuthBloc>(create: (_) => AuthBloc()),
+      ],
+      child: const MijiApp(),
+    );
+  }
+}
+
+class MijiApp extends StatelessWidget {
+  const MijiApp({super.key});
   @override
   Widget build(BuildContext context) {
     debugPrint('Current run baseUrl: ${env.baseUrl}');
-    return BlocBuilder<ThemeBloc, app_theme.ThemeState>(
+    return BlocBuilder<ThemeBloc, ThemeState>(
       builder: (context, state) {
         return MaterialApp(
-          themeMode: state.themeMode as ThemeMode?, // 动态绑定主题模式
+          themeMode: _convertAppThemeMode(state.themeMode), // 动态绑定主题模式
           darkTheme: ThemeData.dark(), // 可选：自定义暗色主题
           home: Scaffold(
             appBar: AppBar(title: const Text('Env Testing')),
@@ -29,5 +45,16 @@ class Miji extends StatelessWidget {
         );
       },
     );
+  }
+
+  ThemeMode _convertAppThemeMode(AppThemeMode mode) {
+    switch (mode) {
+      case AppThemeMode.light:
+        return ThemeMode.light;
+      case AppThemeMode.dark:
+        return ThemeMode.dark;
+      default:
+        return ThemeMode.system;
+    }
   }
 }

@@ -5,37 +5,23 @@
 // File:           main.dart
 // Description:    About Flutter main
 // Create   Date:  2025-03-29 16:27:14
-// Last Modified:  2025-05-11 00:30:18
+// Last Modified:  2025-05-11 09:55:32
 // Modified   By:  mcgeq <mcgeq@outlook.com>
 // -----------------------------------------------------------------------------
 
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:hive/hive.dart';
+import 'package:hydrated_bloc/hydrated_bloc.dart';
 import 'package:miji/app/app.dart';
 import 'package:miji/config/environment/env.dart';
 import 'package:miji/config/environment/env_config.dart';
-import 'package:miji/config/theme/bloc/theme_bloc.dart';
-import 'package:miji/config/theme/models/custom_theme_config.dart';
-import 'package:miji/hive/adapters/text_theme_adapter.dart';
+import 'package:path_provider/path_provider.dart';
 
-void main() async {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  Hive.init('.');
-  await Hive.openBox<CustomThemeConfig>('theme_box');
-  final themeBox = Hive.box<CustomThemeConfig>('theme_box');
-  if (themeBox.isEmpty) {
-    final defaultTextTheme = ThemeData.light().textTheme;
-    final config = CustomThemeConfig(
-      primaryColor: Colors.blue,
-      backgroundColor: Colors.white,
-      textTheme: defaultTextTheme,
-    );
-    themeBox.put('current_theme', config);
-  }
-  Hive.registerAdapter(TextThemeAdapter());
   loadEnvironment(EnvironmentType.dev);
-  final themeBloc = ThemeBloc();
-
-  runApp(BlocProvider(create: (context) => themeBloc, child: const Miji()));
+  final storageDirectory = await getApplicationDocumentsDirectory();
+  HydratedBloc.storage = await HydratedStorage.build(
+    storageDirectory: HydratedStorageDirectory(storageDirectory.path),
+  );
+  runApp(const Miji());
 }
