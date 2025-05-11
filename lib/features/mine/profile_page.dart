@@ -8,23 +8,24 @@ class ProfilePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(AppLocalizations.of(context)!.profile),
-        backgroundColor: AppColors.primaryColor,
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const CircleAvatar(radius: 50, child: Icon(Icons.person, size: 50)),
-            const SizedBox(height: 16),
-            Text('John Doe', style: AppColors.headerText),
-            const SizedBox(height: 8),
-            Text(
-              AppLocalizations.of(context)!.profileDescription,
-              style: AppColors.bodyText,
-            ),
-          ],
+      body: SafeArea(
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const CircleAvatar(
+                radius: 50,
+                child: Icon(Icons.person, size: 50),
+              ),
+              const SizedBox(height: 16),
+              Text('John Doe', style: AppColors.headerText),
+              const SizedBox(height: 8),
+              Text(
+                AppLocalizations.of(context)!.profileDescription,
+                style: AppColors.bodyText,
+              ),
+            ],
+          ),
         ),
       ),
     );

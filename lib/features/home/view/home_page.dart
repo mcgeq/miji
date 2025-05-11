@@ -41,82 +41,80 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(AppLocalizations.of(context)!.home),
-        backgroundColor: AppColors.primaryColor,
-      ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _controller,
-                    decoration: InputDecoration(
-                      hintText: AppLocalizations.of(context)!.todoHint,
-                      border: const OutlineInputBorder(),
+      body: SafeArea(
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _controller,
+                      decoration: InputDecoration(
+                        hintText: AppLocalizations.of(context)!.todoHint,
+                        border: const OutlineInputBorder(),
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 8),
-                ElevatedButton(
-                  style: AppColors.elevatedButtonStyle,
-                  onPressed: () {
-                    if (_controller.text.isNotEmpty) {
-                      context.read<HomeBloc>().add(AddTodo(_controller.text));
-                      _controller.clear();
-                    }
-                  },
-                  child: Text(AppLocalizations.of(context)!.addTodo),
-                ),
-              ],
+                  const SizedBox(width: 8),
+                  ElevatedButton(
+                    style: AppColors.elevatedButtonStyle,
+                    onPressed: () {
+                      if (_controller.text.isNotEmpty) {
+                        context.read<HomeBloc>().add(AddTodo(_controller.text));
+                        _controller.clear();
+                      }
+                    },
+                    child: Text(AppLocalizations.of(context)!.addTodo),
+                  ),
+                ],
+              ),
             ),
-          ),
-          Expanded(
-            child: BlocBuilder<HomeBloc, HomeState>(
-              builder: (context, state) {
-                if (state.isLoading && state.todos.isEmpty) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                if (state.error != null) {
-                  return Center(
-                    child: Text(
-                      AppLocalizations.of(context)!.error(state.error!),
-                      style: AppColors.bodyText,
-                    ),
-                  );
-                }
-                return ListView.builder(
-                  controller: _scrollController,
-                  padding: const EdgeInsets.all(16.0),
-                  itemCount: state.todos.length + (state.hasMore ? 1 : 0),
-                  itemBuilder: (context, index) {
-                    if (index == state.todos.length && state.hasMore) {
-                      return const Center(child: CircularProgressIndicator());
-                    }
-                    return Card(
-                      child: ListTile(
-                        title: Text(
-                          state.todos[index],
-                          style: AppColors.bodyText,
-                        ),
-                        trailing: IconButton(
-                          icon: const Icon(Icons.delete),
-                          onPressed: () {
-                            context.read<HomeBloc>().add(DeleteTodo(index));
-                          },
-                          tooltip: AppLocalizations.of(context)!.deleteTodo,
-                        ),
+            Expanded(
+              child: BlocBuilder<HomeBloc, HomeState>(
+                builder: (context, state) {
+                  if (state.isLoading && state.todos.isEmpty) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  if (state.error != null) {
+                    return Center(
+                      child: Text(
+                        AppLocalizations.of(context)!.error(state.error!),
+                        style: AppColors.bodyText,
                       ),
                     );
-                  },
-                );
-              },
+                  }
+                  return ListView.builder(
+                    controller: _scrollController,
+                    padding: const EdgeInsets.all(16.0),
+                    itemCount: state.todos.length + (state.hasMore ? 1 : 0),
+                    itemBuilder: (context, index) {
+                      if (index == state.todos.length && state.hasMore) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
+                      return Card(
+                        child: ListTile(
+                          title: Text(
+                            state.todos[index],
+                            style: AppColors.bodyText,
+                          ),
+                          trailing: IconButton(
+                            icon: const Icon(Icons.delete),
+                            onPressed: () {
+                              context.read<HomeBloc>().add(DeleteTodo(index));
+                            },
+                            tooltip: AppLocalizations.of(context)!.deleteTodo,
+                          ),
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

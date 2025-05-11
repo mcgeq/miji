@@ -11,31 +11,29 @@ class SettingsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(AppLocalizations.of(context)!.settings),
-        backgroundColor: AppColors.primaryColor,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              AppLocalizations.of(context)!.themeSettings,
-              style: AppColors.headerText,
-            ),
-            const SizedBox(height: 8),
-            ListTile(
-              title: Text(
-                AppLocalizations.of(context)!.toggleTheme,
-                style: AppColors.bodyText,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                AppLocalizations.of(context)!.themeSettings,
+                style: AppColors.headerText,
               ),
-              trailing: const Icon(Icons.brightness_4),
-              onTap: () {
-                context.read<ThemeBloc>().add(ToggleTheme());
-              },
-            ),
-          ],
+              const SizedBox(height: 8),
+              ListTile(
+                title: Text(
+                  AppLocalizations.of(context)!.toggleTheme,
+                  style: AppColors.bodyText,
+                ),
+                trailing: const Icon(Icons.brightness_4),
+                onTap: () {
+                  context.read<ThemeBloc>().add(ToggleTheme());
+                },
+              ),
+            ],
+          ),
         ),
       ),
     );
