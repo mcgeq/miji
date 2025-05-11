@@ -4,6 +4,7 @@ import 'package:miji/config/environment/env_config.dart';
 import 'package:miji/config/theme/bloc/theme_bloc.dart';
 import 'package:miji/config/theme/bloc/theme_event.dart';
 import 'package:miji/config/theme/bloc/theme_state.dart';
+import 'package:miji/services/logging/miji_logging.dart';
 
 class Miji extends StatelessWidget {
   const Miji({super.key});
@@ -25,7 +26,7 @@ class MijiApp extends StatelessWidget {
   const MijiApp({super.key});
   @override
   Widget build(BuildContext context) {
-    debugPrint('Current run baseUrl: ${env.baseUrl}');
+    McgLogger.i('Miji', 'Current run baseUrl: ${env.baseUrl}');
     return BlocBuilder<ThemeBloc, ThemeState>(
       builder: (context, state) {
         return MaterialApp(
