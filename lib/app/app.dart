@@ -49,24 +49,29 @@ class _MijiAppState extends State<MijiApp> {
   Widget build(BuildContext context) {
     McgLogger.i('Miji', 'Current run baseUrl: ${env.baseUrl}');
     return BlocBuilder<ThemeBloc, ThemeState>(
-      builder: (context, state) {
-        return MaterialApp.router(
-          routerConfig: MijiRouter.router,
-          themeMode: _convertAppThemeMode(state.themeMode),
-          darkTheme: ThemeData.dark().copyWith(
-            primaryColor: AppColors.primaryColor,
-          ),
-          localizationsDelegates: const [
-            AppLocalizations.delegate,
-            GlobalMaterialLocalizations.delegate,
-            GlobalWidgetsLocalizations.delegate,
-            GlobalCupertinoLocalizations.delegate,
-          ],
-          supportedLocales: const [
-            Locale('en', ''),
-            Locale('zh', ''),
-            Locale('es', ''),
-          ],
+      builder: (context, themeState) {
+        return BlocBuilder<LocaleBloc, LocaleState>(
+          builder: (context, localState) {
+            return MaterialApp.router(
+              routerConfig: MijiRouter.router,
+              locale: localState.locale,
+              themeMode: _convertAppThemeMode(themeState.themeMode),
+              darkTheme: ThemeData.dark().copyWith(
+                primaryColor: AppColors.primaryColor,
+              ),
+              localizationsDelegates: const [
+                AppLocalizations.delegate,
+                GlobalMaterialLocalizations.delegate,
+                GlobalWidgetsLocalizations.delegate,
+                GlobalCupertinoLocalizations.delegate,
+              ],
+              supportedLocales: const [
+                Locale('en', ''),
+                Locale('zh', ''),
+                Locale('es', ''),
+              ],
+            );
+          },
         );
       },
     );

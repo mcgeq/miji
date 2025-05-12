@@ -63,8 +63,8 @@ class _SettingsPageState extends State<SettingsPage>
 
     // Dynamic highlight color based on theme
     final highlightColor = theme.brightness == Brightness.dark
-        ? AppColors.primaryColor.withOpacity(0.1)
-        : Colors.grey[200]!.withOpacity(0.5); // Lighter grey for light theme
+        ? AppColors.primaryColor.withValues(alpha:0.1)
+        : Colors.grey[200]!.withValues(alpha: 0.5);
 
     return Scaffold(
       backgroundColor: theme.brightness == Brightness.dark
@@ -73,7 +73,8 @@ class _SettingsPageState extends State<SettingsPage>
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
+            padding: const EdgeInsets.symmetric(horizontal: 16.0,
+            vertical: 24.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -90,7 +91,8 @@ class _SettingsPageState extends State<SettingsPage>
                       elevation: 2,
                       child: InkWell(
                         borderRadius: BorderRadius.circular(12),
-                        splashColor: AppColors.primaryColor.withOpacity(0.3),
+                        splashColor: AppColors.primaryColor.withValues(
+                        alpha: 0.3),
                         highlightColor: highlightColor,
                         onTap: () {}, // Empty onTap to allow ripple effect
                         child: Padding(
@@ -101,7 +103,8 @@ class _SettingsPageState extends State<SettingsPage>
                               leading: Icon(
                                 Icons.brightness_4,
                                 color: theme.brightness == Brightness.dark
-                                    ? AppColors.darkTextColor.withOpacity(0.7)
+                                    ? AppColors.darkTextColor.withValues(
+                                    alpha: 0.7)
                                     : Colors.black54,
                               ),
                               title: Text(
@@ -147,7 +150,8 @@ class _SettingsPageState extends State<SettingsPage>
                       elevation: 2,
                       child: InkWell(
                         borderRadius: BorderRadius.circular(12),
-                        splashColor: AppColors.primaryColor.withOpacity(0.3),
+                        splashColor: AppColors.primaryColor.withValues(
+                        alpha: 0.3),
                         highlightColor: highlightColor,
                         onTap: () {}, // Empty onTap to allow ripple effect
                         child: Padding(
@@ -169,7 +173,7 @@ class _SettingsPageState extends State<SettingsPage>
                                   child: DropdownButton<Locale>(
                                     isExpanded: true,
                                     value: state.locale,
-                                    icon: Icon(
+                                    icon: const Icon(
                                       Icons.arrow_drop_down,
                                       color: AppColors.primaryColor,
                                     ),
