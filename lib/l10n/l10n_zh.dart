@@ -30,6 +30,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get toggleTheme => '切换主题';
 
   @override
+  String get languageSettings => '语言设置';
+
+  @override
   String error(Object message) {
     return '错误：$message';
   }

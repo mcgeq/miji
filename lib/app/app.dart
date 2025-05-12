@@ -11,6 +11,7 @@ import 'package:miji/features/home/bloc/home_bloc.dart';
 import 'package:miji/features/home/bloc/home_event.dart';
 import 'package:miji/features/home/data/home_repository.dart';
 import 'package:miji/l10n/l10n.dart';
+import 'package:miji/l10n/locale_bloc.dart';
 import 'package:miji/services/logging/miji_logging.dart';
 import 'package:miji/shared/widgets/navigation/navigation_cubit.dart';
 
@@ -27,6 +28,7 @@ class Miji extends StatelessWidget {
           create:
               (_) => HomeBloc(getIt<HomeRepository>())..add(LoadTodos(page: 1)),
         ),
+        BlocProvider<LocaleBloc>(create: (_) => LocaleBloc()),
       ],
       child: const MijiApp(),
     );

@@ -27,6 +27,10 @@
 "@toggleTheme": {
 "description": "切换主题按钮的标签"
 },
+"languageSettings": "语言设置",
+  "@languageSettings": {
+    "description": "语言设置部分的标签"
+  },
 "error": "错误：{message}",
 "@error": {
 "description": "包含占位符的错误消息",

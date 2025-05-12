@@ -27,6 +27,10 @@
 "@toggleTheme": {
 "description": "Etiqueta para el botón de cambio de tema"
 },
+"languageSettings": "Configuración de Idioma",
+  "@languageSettings": {
+    "description": "Etiqueta para la sección de configuración de idioma"
+  },
 "error": "Error: {message}",
 "@error": {
 "description": "Mensaje de error con marcador de posición",

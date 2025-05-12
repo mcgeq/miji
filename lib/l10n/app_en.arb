@@ -27,6 +27,10 @@
 "@toggleTheme": {
 "description": "Label for the theme toggle button"
 },
+"languageSettings": "Language Settings",
+  "@languageSettings": {
+    "description": "Label for the language settings section"
+  },
 "error": "Error: {message}",
 "@error": {
 "description": "Error message with placeholder",

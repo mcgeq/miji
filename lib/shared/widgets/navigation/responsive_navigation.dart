@@ -91,6 +91,9 @@ class _ResponsiveNavigationState extends State<ResponsiveNavigation>
         AnimatedBuilder(
           animation: _controller,
           builder: (context, child) {
+            if (_controller.value == 0) {
+              return const SizedBox.shrink();
+            }
             return Opacity(
               opacity: _overlayOpacity.value, // 使用透明度动画
               child: Semantics(

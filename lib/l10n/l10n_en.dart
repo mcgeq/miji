@@ -30,6 +30,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get toggleTheme => 'Toggle Theme';
 
   @override
+  String get languageSettings => 'Language Settings';
+
+  @override
   String error(Object message) {
     return 'Error: $message';
   }

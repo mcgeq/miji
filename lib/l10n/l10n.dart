@@ -139,6 +139,12 @@ abstract class AppLocalizations {
   /// **'Toggle Theme'**
   String get toggleTheme;
 
+  /// Label for the language settings section
+  ///
+  /// In en, this message translates to:
+  /// **'Language Settings'**
+  String get languageSettings;
+
   /// Error message with placeholder
   ///
   /// In en, this message translates to:
