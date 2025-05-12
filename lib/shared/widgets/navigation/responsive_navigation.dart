@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:miji/app/routes/pages/home_page.dart';
 import 'package:miji/app/routes/pages/profile_page.dart';
 import 'package:miji/app/routes/pages/settings_page.dart';
@@ -62,7 +63,7 @@ class _ResponsiveNavigationState extends State<ResponsiveNavigation>
       SettingsPage.routeName,
     ];
     debugPrint('Navigating to: ${routes[index]}');
-    Navigator.pushReplacementNamed(context, routes[index]);
+    context.go(routes[index]);
   }
 
   @override
