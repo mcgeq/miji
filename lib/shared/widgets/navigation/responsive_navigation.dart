@@ -36,7 +36,7 @@ class _ResponsiveNavigationState extends State<ResponsiveNavigation>
       duration: const Duration(milliseconds: 300),
     );
     _drawerAnimation = Tween<double>(
-      begin: -120,
+      begin: -200,
       end: 0,
     ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
     _overlayOpacity = Tween<double>(
@@ -79,6 +79,9 @@ class _ResponsiveNavigationState extends State<ResponsiveNavigation>
   }
 
   Widget _buildDesktopLayout(BuildContext context) {
+    final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
+
     return Stack(
       children: [
         Navigator(
@@ -95,15 +98,15 @@ class _ResponsiveNavigationState extends State<ResponsiveNavigation>
               return const SizedBox.shrink();
             }
             return Opacity(
-              opacity: _overlayOpacity.value, // 使用透明度动画
+              opacity: _overlayOpacity.value,
               child: Semantics(
-                label: AppLocalizations.of(context)!.menu,
+                label: l10n.menu,
                 button: true,
                 onTap: () => _controller.reverse(),
                 child: GestureDetector(
                   onTap: () => _controller.reverse(),
                   child: Container(
-                    color: Colors.black, // 颜色直接使用 black，透明度由 Opacity 控制
+                    color: Colors.black,
                   ),
                 ),
               ),
@@ -116,52 +119,71 @@ class _ResponsiveNavigationState extends State<ResponsiveNavigation>
             return Transform.translate(
               offset: Offset(_drawerAnimation.value, 0),
               child: SizedBox(
-                width: 120,
+                width: 200, // Increased width for better spacing
                 child: Drawer(
-                  elevation: 8,
-                  backgroundColor: Colors.white,
-                  child: ListView(
+                  elevation: 12,
+                  backgroundColor: theme.brightness == Brightness.dark
+                      ? Colors.grey[900]
+                      : Colors.white,
+                  shape: const RoundedRectangleBorder(
+                    borderRadius: BorderRadius.only(
+                      topRight: Radius.circular(16),
+                      bottomRight: Radius.circular(16),
+                    ),
+                  ),
+                  child: Column(
                     children: [
-                      Semantics(
-                        label: AppLocalizations.of(context)!.home,
-                        selected: _currentIndex == 0,
-                        button: true,
-                        child: ListTile(
-                          leading: const Icon(Icons.home),
-                          title: Text(AppLocalizations.of(context)!.home),
-                          selected: _currentIndex == 0,
-                          onTap: () {
-                            _onDestinationSelected(0);
-                            _controller.reverse();
-                          },
+                      // Drawer Header
+                      Container(
+                        height: 120,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              AppColors.primaryColor,
+                              AppColors.primaryColor.withValues(alpha: 0.7),
+                            ],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: const BorderRadius.only(
+                            topRight: Radius.circular(16),
+                          ),
+                        ),
+                        child: const Center(
+                          child: Text(
+                            'Miji',
+                            style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
                         ),
                       ),
-                      Semantics(
-                        label: AppLocalizations.of(context)!.profile,
-                        selected: _currentIndex == 1,
-                        button: true,
-                        child: ListTile(
-                          leading: const Icon(Icons.person),
-                          title: Text(AppLocalizations.of(context)!.profile),
-                          selected: _currentIndex == 1,
-                          onTap: () {
-                            _onDestinationSelected(1);
-                            _controller.reverse();
-                          },
-                        ),
-                      ),
-                      Semantics(
-                        label: AppLocalizations.of(context)!.settings,
-                        selected: _currentIndex == 2,
-                        button: true,
-                        child: ListTile(
-                          leading: const Icon(Icons.settings),
-                          title: Text(AppLocalizations.of(context)!.settings),
-                          selected: _currentIndex == 2,
-                          onTap: () {
-                            _onDestinationSelected(2);
-                            _controller.reverse();
-                          },
+                      // Navigation Items
+                      Expanded(
+                        child: ListView(
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          children: [
+                            _buildNavItem(
+                              context: context,
+                              icon: Icons.home,
+                              label: l10n.home,
+                              index: 0,
+                            ),
+                            _buildNavItem(
+                              context: context,
+                              icon: Icons.person,
+                              label: l10n.profile,
+                              index: 1,
+                            ),
+                            _buildNavItem(
+                              context: context,
+                              icon: Icons.settings,
+                              label: l10n.settings,
+                              index: 2,
+                            ),
+                          ],
                         ),
                       ),
                     ],
@@ -175,7 +197,7 @@ class _ResponsiveNavigationState extends State<ResponsiveNavigation>
           left: 16,
           bottom: 16,
           child: Semantics(
-            label: AppLocalizations.of(context)!.menu,
+            label: l10n.menu,
             button: true,
             child: FloatingActionButton(
               backgroundColor: AppColors.primaryColor,
@@ -191,6 +213,59 @@ class _ResponsiveNavigationState extends State<ResponsiveNavigation>
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildNavItem({
+    required BuildContext context,
+    required IconData icon,
+    required String label,
+    required int index,
+  }) {
+    final theme = Theme.of(context);
+    final isSelected = _currentIndex == index;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? AppColors.primaryColor.withValues(alpha: 0.1)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: ListTile(
+          leading: Icon(
+            icon,
+            size: 28,
+            color: isSelected
+                ? AppColors.primaryColor
+                : (theme.brightness == Brightness.dark
+                    ? Colors.white70
+                    : Colors.black54),
+          ),
+          title: Text(
+            label,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+              color: theme.brightness == Brightness.dark
+                  ? AppColors.darkTextColor
+                  : AppColors.textColor,
+            ),
+          ),
+          selected: isSelected,
+          onTap: () {
+            _onDestinationSelected(index);
+            _controller.reverse();
+          },
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          hoverColor: AppColors.primaryColor.withValues(alpha: 0.05),
+        ),
+      ),
     );
   }
 
