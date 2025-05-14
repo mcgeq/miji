@@ -38,7 +38,7 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get addTodo => '添加待办';
+  String get addTodo => '添加';
 
   @override
   String get todoHint => '输入新的待办事项';

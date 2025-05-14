@@ -154,7 +154,7 @@ abstract class AppLocalizations {
   /// Label for the add todo button
   ///
   /// In en, this message translates to:
-  /// **'Add Todo'**
+  /// **'Add'**
   String get addTodo;
 
   /// Hint text for the todo input field

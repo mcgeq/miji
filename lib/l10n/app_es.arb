@@ -38,7 +38,7 @@
 "message": {}
 }
 },
-"addTodo": "Agregar Tarea",
+"addTodo": "Agregar",
 "@addTodo": {
 "description": "Etiqueta para el botón de agregar tarea"
 },

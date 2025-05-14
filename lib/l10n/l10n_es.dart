@@ -38,7 +38,7 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
-  String get addTodo => 'Agregar Tarea';
+  String get addTodo => 'Agregar';
 
   @override
   String get todoHint => 'Ingresa una nueva tarea';

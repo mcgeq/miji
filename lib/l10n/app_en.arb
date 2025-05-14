@@ -38,7 +38,7 @@
 "message": {}
 }
 },
-"addTodo": "Add Todo",
+"addTodo": "Add",
 "@addTodo": {
 "description": "Label for the add todo button"
 },
