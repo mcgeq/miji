@@ -13,9 +13,11 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
+
 class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   final TextEditingController _controller = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+  bool _isSearchVisible = false; // Track search box visibility
 
   @override
   void initState() {
@@ -42,6 +44,10 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
+    // Get current date and time
+    final now = DateTime.now();
+    final formattedDateTime = "${now.day}/${now.month}/${now.year} ${now.hour}:${now.minute.toString().padLeft(2, '0')}";
 
     return Scaffold(
       backgroundColor: isDarkMode
@@ -71,126 +77,163 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: isDarkMode
-                                ? Colors.grey[700]
-                                : Colors.white,
-                            borderRadius: BorderRadius.circular(12),
-                            boxShadow: [
-                              BoxShadow(
-                                color: isDarkMode
-                                    ? Colors.black.withOpacity(0.2)
-                                    : Colors.grey.withOpacity(0.3),
-                                blurRadius: 6,
-                                offset: const Offset(0, 3),
-                              ),
-                            ],
-                          ),
-                          child: TextField(
-                            controller: _controller,
-                            style: TextStyle(
-                              color: isDarkMode
-                                  ? AppColors.darkTextColor
-                                  : AppColors.lightTextColor,
-                            ),
-                            decoration: AppColors.inputDecoration.copyWith(
-                              fillColor: isDarkMode
-                                  ? Colors.grey[700]
-                                  : Colors.white,
-                              hintText: l10n.todoHint,
-                              hintStyle: AppColors.bodyText.copyWith(
-                                color: isDarkMode
-                                    ? AppColors.darkTextColor.withOpacity(0.7)
-                                    : AppColors.lightTextColor.withOpacity(0.7),
-                              ),
-                              prefixIcon: Icon(
-                                Icons.add_task,
-                                color: isDarkMode
-                                    ? AppColors.darkTextColor.withOpacity(0.7)
-                                    : AppColors.primaryColor,
-                              ),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(
+                  _isSearchVisible
+                      ? Row(
+                          children: [
+                            Expanded(
+                              child: Container(
+                                decoration: BoxDecoration(
                                   color: isDarkMode
-                                      ? Colors.grey[600]!
-                                      : Colors.grey[300]!,
-                                  width: 1,
+                                      ? Colors.grey[700]
+                                      : Colors.white,
+                                  borderRadius: BorderRadius.circular(12),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: isDarkMode
+                                          ? Colors.black.withOpacity(0.2)
+                                          : Colors.grey.withOpacity(0.3),
+                                      blurRadius: 6,
+                                      offset: const Offset(0, 3),
+                                    ),
+                                  ],
                                 ),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(
-                                  color: AppColors.primaryColor,
-                                  width: 2,
+                                child: TextField(
+                                  controller: _controller,
+                                  style: TextStyle(
+                                    color: isDarkMode
+                                        ? AppColors.darkTextColor
+                                        : AppColors.lightTextColor,
+                                  ),
+                                  decoration: AppColors.inputDecoration.copyWith(
+                                    fillColor: isDarkMode
+                                        ? Colors.grey[700]
+                                        : Colors.white,
+                                    hintText: l10n.todoHint,
+                                    hintStyle: AppColors.bodyText.copyWith(
+                                      color: isDarkMode
+                                          ? AppColors.darkTextColor.withOpacity(0.7)
+                                          : AppColors.lightTextColor.withOpacity(0.7),
+                                    ),
+                                    prefixIcon: Icon(
+                                      Icons.add_task,
+                                      color: isDarkMode
+                                          ? AppColors.darkTextColor.withOpacity(0.7)
+                                          : AppColors.primaryColor,
+                                    ),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                      borderSide: BorderSide(
+                                        color: isDarkMode
+                                            ? Colors.grey[600]!
+                                            : Colors.grey[300]!,
+                                        width: 1,
+                                      ),
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                      borderSide: BorderSide(
+                                        color: AppColors.primaryColor,
+                                        width: 2,
+                                      ),
+                                    ),
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Container(
-                        decoration: BoxDecoration(
-                          gradient: !isDarkMode
-                              ? LinearGradient(
-                                  colors: [
-                                    AppColors.primaryColor,
-                                    AppColors.primaryColor.withOpacity(0.8),
-                                  ],
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                )
-                              : null,
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [
-                            BoxShadow(
-                              color: isDarkMode
-                                  ? Colors.black.withOpacity(0.2)
-                                  : AppColors.primaryColor.withOpacity(0.3),
-                              blurRadius: 6,
-                              offset: const Offset(0, 3),
+                            const SizedBox(width: 12),
+                            Container(
+                              decoration: BoxDecoration(
+                                gradient: !isDarkMode
+                                    ? LinearGradient(
+                                        colors: [
+                                          AppColors.primaryColor,
+                                          AppColors.primaryColor.withOpacity(0.8),
+                                        ],
+                                        begin: Alignment.topLeft,
+                                        end: Alignment.bottomRight,
+                                      )
+                                    : null,
+                                borderRadius: BorderRadius.circular(12),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: isDarkMode
+                                        ? Colors.black.withOpacity(0.2)
+                                        : AppColors.primaryColor.withOpacity(0.3),
+                                    blurRadius: 6,
+                                    offset: const Offset(0, 3),
+                                  ),
+                                ],
+                              ),
+                              child: ElevatedButton(
+                                style: AppColors.elevatedButtonStyle.copyWith(
+                                  backgroundColor: WidgetStateProperty.all(
+                                    isDarkMode
+                                        ? AppColors.primaryColor
+                                        : Colors.transparent,
+                                  ),
+                                  foregroundColor: WidgetStateProperty.all(
+                                    Colors.white,
+                                  ),
+                                  shadowColor: WidgetStateProperty.all(Colors.transparent),
+                                  shape: WidgetStateProperty.all(
+                                    RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                  ),
+                                ),
+                                onPressed: () {
+                                  if (_controller.text.isNotEmpty) {
+                                    context.read<HomeBloc>().add(AddTodo(_controller.text));
+                                    _controller.clear();
+                                    setState(() {
+                                      _isSearchVisible = false; // Hide search after adding
+                                    });
+                                  }
+                                },
+                                child: Text(
+                                  l10n.addTodo,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        )
+                      : Row(
+                          children: [
+                            IconButton(
+                              icon: Icon(
+                                Icons.add,
+                                color: isDarkMode
+                                    ? AppColors.darkTextColor
+                                    : AppColors.primaryColor,
+                                size: 28,
+                              ),
+                              onPressed: () {
+                                setState(() {
+                                  _isSearchVisible = true; // Show search box
+                                });
+                              },
+                              tooltip: l10n.addTodo,
+                            ),
+                            Expanded(
+                              child: Center(
+                                child: Text(
+                                  formattedDateTime,
+                                  style: (isDarkMode
+                                          ? AppColors.darkBodyText
+                                          : AppColors.bodyText)
+                                      .copyWith(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
                             ),
                           ],
                         ),
-                        child: ElevatedButton(
-                          style: AppColors.elevatedButtonStyle.copyWith(
-                            backgroundColor: WidgetStateProperty.all(
-                              isDarkMode
-                                  ? AppColors.primaryColor
-                                  : Colors.transparent,
-                            ),
-                            foregroundColor: WidgetStateProperty.all(
-                              Colors.white,
-                            ),
-                            shadowColor: WidgetStateProperty.all(Colors.transparent),
-                            shape: WidgetStateProperty.all(
-                              RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                          ),
-                          onPressed: () {
-                            if (_controller.text.isNotEmpty) {
-                              context.read<HomeBloc>().add(AddTodo(_controller.text));
-                              _controller.clear();
-                            }
-                          },
-                          child: Text(
-                            l10n.addTodo,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 16,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
                 ],
               ),
             ),
@@ -296,12 +339,12 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                                         end: Alignment.bottomRight,
                                       )
                                     : null,
-                                borderRadius: AppColors.cardDecoration.borderRadius! as BorderRadius, // Fixed: Cast to BorderRadius
+                                borderRadius: AppColors.cardDecoration.borderRadius! as BorderRadius,
                               ),
                               child: Material(
                                 color: Colors.transparent,
                                 child: InkWell(
-                                  borderRadius: AppColors.cardDecoration.borderRadius! as BorderRadius, // Fixed: Cast to BorderRadius
+                                  borderRadius: AppColors.cardDecoration.borderRadius! as BorderRadius,
                                   splashColor: AppColors.primaryColor.withOpacity(0.2),
                                   onTap: () {
                                     // Placeholder for future functionality (e.g., toggle todo)
