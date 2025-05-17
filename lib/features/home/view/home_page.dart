@@ -5,6 +5,7 @@ import 'package:miji/features/home/bloc/home_bloc.dart';
 import 'package:miji/features/home/bloc/home_event.dart';
 import 'package:miji/features/home/bloc/home_state.dart';
 import 'package:miji/l10n/l10n.dart';
+import 'package:miji/shared/widgets/clock/index.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -13,11 +14,11 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-
 class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   final TextEditingController _controller = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   bool _isSearchVisible = false; // Track search box visibility
+  final FocusNode _focusNode = FocusNode();
 
   @override
   void initState() {
@@ -31,12 +32,21 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         }
       }
     });
+
+    _focusNode.addListener(() {
+      if (!_focusNode.hasFocus) {
+        setState(() {
+          _isSearchVisible = false;
+        });
+      }
+    });
   }
 
   @override
   void dispose() {
     _controller.dispose();
     _scrollController.dispose();
+    _focusNode.dispose();
     super.dispose();
   }
 
@@ -45,14 +55,11 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     final l10n = AppLocalizations.of(context)!;
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
-    // Get current date and time
-    final now = DateTime.now();
-    final formattedDateTime = "${now.day}/${now.month}/${now.year} ${now.hour}:${now.minute.toString().padLeft(2, '0')}";
-
     return Scaffold(
-      backgroundColor: isDarkMode
-          ? AppColors.darkBackgroundColor
-          : AppColors.lightBackgroundColor,
+      backgroundColor:
+          isDarkMode
+              ? AppColors.darkBackgroundColor
+              : AppColors.lightBackgroundColor,
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -61,16 +68,19 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
             Container(
               padding: const EdgeInsets.fromLTRB(16, 24, 16, 16),
               decoration: BoxDecoration(
-                gradient: !isDarkMode
-                    ? LinearGradient(
-                        colors: [
-                          AppColors.primaryColor.withOpacity(0.1),
-                          AppColors.lightBackgroundColor,
-                        ],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      )
-                    : null,
+                gradient:
+                    !isDarkMode
+                        ? LinearGradient(
+                          colors: [
+                            AppColors.primaryColor.withAlpha(
+                              (0.1 * 255).toInt(),
+                            ),
+                            AppColors.lightBackgroundColor,
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        )
+                        : null,
                 color: isDarkMode ? AppColors.darkBackgroundColor : null,
               ),
               child: Column(
@@ -79,170 +89,203 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                   const SizedBox(height: 16),
                   _isSearchVisible
                       ? Row(
-                          children: [
-                            Expanded(
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: isDarkMode
-                                      ? Colors.grey[700]
-                                      : Colors.white,
-                                  borderRadius: BorderRadius.circular(12),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: isDarkMode
-                                          ? Colors.black.withOpacity(0.2)
-                                          : Colors.grey.withOpacity(0.3),
-                                      blurRadius: 6,
-                                      offset: const Offset(0, 3),
-                                    ),
-                                  ],
-                                ),
-                                child: TextField(
-                                  controller: _controller,
-                                  style: TextStyle(
-                                    color: isDarkMode
-                                        ? AppColors.darkTextColor
-                                        : AppColors.lightTextColor,
-                                  ),
-                                  decoration: AppColors.inputDecoration.copyWith(
-                                    fillColor: isDarkMode
+                        children: [
+                          Expanded(
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color:
+                                    isDarkMode
                                         ? Colors.grey[700]
                                         : Colors.white,
-                                    hintText: l10n.todoHint,
-                                    hintStyle: AppColors.bodyText.copyWith(
-                                      color: isDarkMode
-                                          ? AppColors.darkTextColor.withOpacity(0.7)
-                                          : AppColors.lightTextColor.withOpacity(0.7),
-                                    ),
-                                    prefixIcon: Icon(
-                                      Icons.add_task,
-                                      color: isDarkMode
-                                          ? AppColors.darkTextColor.withOpacity(0.7)
-                                          : AppColors.primaryColor,
-                                    ),
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                      borderSide: BorderSide(
-                                        color: isDarkMode
-                                            ? Colors.grey[600]!
-                                            : Colors.grey[300]!,
-                                        width: 1,
-                                      ),
-                                    ),
-                                    focusedBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                      borderSide: BorderSide(
-                                        color: AppColors.primaryColor,
-                                        width: 2,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Container(
-                              decoration: BoxDecoration(
-                                gradient: !isDarkMode
-                                    ? LinearGradient(
-                                        colors: [
-                                          AppColors.primaryColor,
-                                          AppColors.primaryColor.withOpacity(0.8),
-                                        ],
-                                        begin: Alignment.topLeft,
-                                        end: Alignment.bottomRight,
-                                      )
-                                    : null,
                                 borderRadius: BorderRadius.circular(12),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: isDarkMode
-                                        ? Colors.black.withOpacity(0.2)
-                                        : AppColors.primaryColor.withOpacity(0.3),
+                                    color:
+                                        isDarkMode
+                                            ? Colors.black.withAlpha(
+                                              (0.2 * 255).toInt(),
+                                            )
+                                            : Colors.grey.withAlpha(
+                                              (0.3 * 255).toInt(),
+                                            ),
                                     blurRadius: 6,
                                     offset: const Offset(0, 3),
                                   ),
                                 ],
                               ),
-                              child: ElevatedButton(
-                                style: AppColors.elevatedButtonStyle.copyWith(
-                                  backgroundColor: WidgetStateProperty.all(
-                                    isDarkMode
-                                        ? AppColors.primaryColor
-                                        : Colors.transparent,
+                              child: TextField(
+                                focusNode: _focusNode,
+                                controller: _controller,
+                                style: TextStyle(
+                                  color:
+                                      isDarkMode
+                                          ? AppColors.darkTextColor
+                                          : AppColors.lightTextColor,
+                                ),
+                                decoration: AppColors.inputDecoration.copyWith(
+                                  fillColor:
+                                      isDarkMode
+                                          ? Colors.grey[700]
+                                          : Colors.white,
+                                  hintText: l10n.todoHint,
+                                  hintStyle: AppColors.bodyText.copyWith(
+                                    color:
+                                        isDarkMode
+                                            ? AppColors.darkTextColor.withAlpha(
+                                              (0.7 * 255).toInt(),
+                                            )
+                                            : AppColors.lightTextColor
+                                                .withAlpha((0.7 * 255).toInt()),
                                   ),
-                                  foregroundColor: WidgetStateProperty.all(
-                                    Colors.white,
+                                  prefixIcon: Icon(
+                                    Icons.add_task,
+                                    color:
+                                        isDarkMode
+                                            ? AppColors.darkTextColor.withAlpha(
+                                              (0.7 * 255).toInt(),
+                                            )
+                                            : AppColors.primaryColor,
                                   ),
-                                  shadowColor: WidgetStateProperty.all(Colors.transparent),
-                                  shape: WidgetStateProperty.all(
-                                    RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide(
+                                      color:
+                                          isDarkMode
+                                              ? Colors.grey[600]!
+                                              : Colors.grey[300]!,
+                                      width: 1,
+                                    ),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: const BorderSide(
+                                      color: AppColors.primaryColor,
+                                      width: 2,
                                     ),
                                   ),
                                 ),
-                                onPressed: () {
-                                  if (_controller.text.isNotEmpty) {
-                                    context.read<HomeBloc>().add(AddTodo(_controller.text));
-                                    _controller.clear();
-                                    setState(() {
-                                      _isSearchVisible = false; // Hide search after adding
-                                    });
-                                  }
-                                },
-                                child: Text(
-                                  l10n.addTodo,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 16,
-                                  ),
-                                ),
                               ),
                             ),
-                          ],
-                        )
-                      : Row(
-                          children: [
-                            IconButton(
-                              icon: Icon(
-                                Icons.add,
-                                color: isDarkMode
-                                    ? AppColors.darkTextColor
-                                    : AppColors.primaryColor,
-                                size: 28,
+                          ),
+                          const SizedBox(width: 12),
+                          Container(
+                            decoration: BoxDecoration(
+                              gradient:
+                                  !isDarkMode
+                                      ? LinearGradient(
+                                        colors: [
+                                          AppColors.primaryColor,
+                                          AppColors.primaryColor.withAlpha(
+                                            (0.8 * 255).toInt(),
+                                          ),
+                                        ],
+                                        begin: Alignment.topLeft,
+                                        end: Alignment.bottomRight,
+                                      )
+                                      : null,
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: [
+                                BoxShadow(
+                                  color:
+                                      isDarkMode
+                                          ? Colors.black.withAlpha(
+                                            (0.2 * 255).toInt(),
+                                          )
+                                          : AppColors.primaryColor.withAlpha(
+                                            (0.3 * 255).toInt(),
+                                          ),
+                                  blurRadius: 6,
+                                  offset: const Offset(0, 3),
+                                ),
+                              ],
+                            ),
+                            child: ElevatedButton(
+                              style: AppColors.elevatedButtonStyle.copyWith(
+                                backgroundColor: WidgetStateProperty.all(
+                                  isDarkMode
+                                      ? AppColors.primaryColor
+                                      : Colors.transparent,
+                                ),
+                                foregroundColor: WidgetStateProperty.all(
+                                  Colors.white,
+                                ),
+                                shadowColor: WidgetStateProperty.all(
+                                  Colors.transparent,
+                                ),
+                                shape: WidgetStateProperty.all(
+                                  RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
                               ),
                               onPressed: () {
-                                setState(() {
-                                  _isSearchVisible = true; // Show search box
-                                });
+                                if (_controller.text.isNotEmpty) {
+                                  context.read<HomeBloc>().add(
+                                    AddTodo(_controller.text),
+                                  );
+                                  _controller.clear();
+                                  setState(() {
+                                    _isSearchVisible = false;
+                                  });
+                                }
                               },
-                              tooltip: l10n.addTodo,
-                            ),
-                            Expanded(
-                              child: Center(
-                                child: Text(
-                                  formattedDateTime,
-                                  style: (isDarkMode
-                                          ? AppColors.darkBodyText
-                                          : AppColors.bodyText)
-                                      .copyWith(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w500,
-                                  ),
+                              child: Text(
+                                l10n.addTodo,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 16,
                                 ),
                               ),
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
+                      )
+                      : Row(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          IconButton(
+                            icon: Icon(
+                              Icons.add,
+                              color:
+                                  isDarkMode
+                                      ? AppColors.darkTextColor
+                                      : AppColors.primaryColor,
+                              size: 28,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _isSearchVisible = true; // Show search box
+                              });
+                              FocusScope.of(context).requestFocus(_focusNode);
+                            },
+                            tooltip: l10n.addTodo,
+                          ),
+                          Expanded(
+                            child: Center(
+                              child: CustomClock(
+                                format: 'yyyy年MM月dd日 HH时mm分ss秒',
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 20,
+                                  vertical: 14,
+                                ),
+                                borderRadius: 20,
+                                textStyle: Theme.of(context)
+                                    .textTheme
+                                    .titleMedium
+                                    ?.copyWith(color: Colors.white),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                 ],
               ),
             ),
             // Divider for Visual Separation
             Container(
               height: 1,
-              color: isDarkMode
-                  ? Colors.grey[700]
-                  : Colors.grey[200],
+              color: isDarkMode ? Colors.grey[700] : Colors.grey[200],
               margin: const EdgeInsets.symmetric(horizontal: 16),
             ),
             // Todo List Section
@@ -259,9 +302,10 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                             height: 40,
                             child: CircularProgressIndicator(
                               color: AppColors.primaryColor,
-                              backgroundColor: isDarkMode
-                                  ? Colors.grey[600]
-                                  : Colors.grey[200],
+                              backgroundColor:
+                                  isDarkMode
+                                      ? Colors.grey[600]
+                                      : Colors.grey[200],
                               strokeWidth: 4,
                             ),
                           ),
@@ -274,7 +318,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(
+                          const Icon(
                             Icons.error_outline,
                             color: AppColors.errorColor,
                             size: 24,
@@ -286,9 +330,9 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                                     ? AppColors.darkBodyText
                                     : AppColors.bodyText)
                                 .copyWith(
-                              color: AppColors.errorColor,
-                              fontWeight: FontWeight.w500,
-                            ),
+                                  color: AppColors.errorColor,
+                                  fontWeight: FontWeight.w500,
+                                ),
                           ),
                         ],
                       ),
@@ -305,9 +349,10 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                           child: Center(
                             child: CircularProgressIndicator(
                               color: AppColors.primaryColor,
-                              backgroundColor: isDarkMode
-                                  ? Colors.grey[600]
-                                  : Colors.grey[200],
+                              backgroundColor:
+                                  isDarkMode
+                                      ? Colors.grey[600]
+                                      : Colors.grey[200],
                               strokeWidth: 4,
                             ),
                           ),
@@ -320,61 +365,66 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                           duration: const Duration(milliseconds: 300),
                           curve: Curves.easeInOut,
                           child: Card(
-                            color: isDarkMode
-                                ? AppColors.darkCardColor
-                                : null,
+                            color: isDarkMode ? AppColors.darkCardColor : null,
                             shape: RoundedRectangleBorder(
-                              borderRadius: AppColors.cardDecoration.borderRadius!,
+                              borderRadius:
+                                  AppColors.cardDecoration.borderRadius!,
                             ),
                             elevation: isDarkMode ? 4.0 : 2.0,
                             child: Container(
                               decoration: BoxDecoration(
-                                gradient: !isDarkMode
-                                    ? LinearGradient(
-                                        colors: [
-                                          Colors.white,
-                                          AppColors.lightCardColor,
-                                        ],
-                                        begin: Alignment.topLeft,
-                                        end: Alignment.bottomRight,
-                                      )
-                                    : null,
-                                borderRadius: AppColors.cardDecoration.borderRadius! as BorderRadius,
+                                gradient:
+                                    !isDarkMode
+                                        ? const LinearGradient(
+                                          colors: [
+                                            Colors.white,
+                                            AppColors.lightCardColor,
+                                          ],
+                                          begin: Alignment.topLeft,
+                                          end: Alignment.bottomRight,
+                                        )
+                                        : null,
+                                borderRadius:
+                                    AppColors.cardDecoration.borderRadius!
+                                        as BorderRadius,
                               ),
                               child: Material(
                                 color: Colors.transparent,
                                 child: InkWell(
-                                  borderRadius: AppColors.cardDecoration.borderRadius! as BorderRadius,
-                                  splashColor: AppColors.primaryColor.withOpacity(0.2),
-                                  onTap: () {
-                                    // Placeholder for future functionality (e.g., toggle todo)
-                                  },
+                                  borderRadius:
+                                      AppColors.cardDecoration.borderRadius!
+                                          as BorderRadius,
+                                  splashColor: AppColors.primaryColor.withAlpha(
+                                    (0.2 * 255).toInt(),
+                                  ),
+                                  onTap: () {},
                                   child: ListTile(
                                     contentPadding: const EdgeInsets.symmetric(
                                       horizontal: 16,
                                       vertical: 8,
                                     ),
                                     leading: Checkbox(
-                                      value: false, // Placeholder: Assumes HomeState tracks completion
-                                      onChanged: (value) {
-                                        // Placeholder: Add ToggleTodo event in HomeBloc
-                                      },
+                                      value: false,
+                                      onChanged: (value) {},
                                       activeColor: AppColors.primaryColor,
                                       checkColor: Colors.white,
                                     ),
                                     title: Text(
                                       state.todos[index],
-                                      style: isDarkMode
-                                          ? AppColors.darkBodyText
-                                          : AppColors.bodyText,
+                                      style:
+                                          isDarkMode
+                                              ? AppColors.darkBodyText
+                                              : AppColors.bodyText,
                                     ),
                                     trailing: IconButton(
-                                      icon: Icon(
+                                      icon: const Icon(
                                         Icons.delete,
                                         color: AppColors.primaryColor,
                                       ),
                                       onPressed: () {
-                                        context.read<HomeBloc>().add(DeleteTodo(index));
+                                        context.read<HomeBloc>().add(
+                                          DeleteTodo(index),
+                                        );
                                       },
                                       tooltip: l10n.deleteTodo,
                                     ),

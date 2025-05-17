@@ -13,6 +13,7 @@ import 'package:miji/features/home/data/home_repository.dart';
 import 'package:miji/l10n/l10n.dart';
 import 'package:miji/l10n/locale_bloc.dart';
 import 'package:miji/services/logging/miji_logging.dart';
+import 'package:miji/shared/widgets/clock/index.dart';
 import 'package:miji/shared/widgets/navigation/navigation_cubit.dart';
 
 class Miji extends StatelessWidget {
@@ -23,6 +24,7 @@ class Miji extends StatelessWidget {
     return MultiBlocProvider(
       providers: [
         BlocProvider<ThemeBloc>(create: (_) => ThemeBloc()),
+        BlocProvider<ClockBloc>(create: (_) => ClockBloc()),
         BlocProvider<NavigationCubit>(create: (_) => NavigationCubit()),
         BlocProvider<HomeBloc>(
           create:
