@@ -5,10 +5,11 @@
 // File:           main.dart
 // Description:    About Flutter main
 // Create   Date:  2025-03-29 16:27:14
-// Last Modified:  2025-05-11 12:55:18
+// Last Modified:  2025-05-17 21:46:31
 // Modified   By:  mcgeq <mcgeq@outlook.com>
 // -----------------------------------------------------------------------------
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:hydrated_bloc/hydrated_bloc.dart';
@@ -25,9 +26,11 @@ Future<void> main() async {
   McgLogger.init(enableFileLogging: true, minLevel: LogLevel.verbose);
   loadEnvironment(EnvironmentType.dev);
   setupDependencies();
-  final storageDirectory = await getApplicationDocumentsDirectory();
   HydratedBloc.storage = await HydratedStorage.build(
-    storageDirectory: HydratedStorageDirectory(storageDirectory.path),
+    storageDirectory:
+        kIsWeb
+            ? HydratedStorageDirectory.web
+            : HydratedStorageDirectory((await getTemporaryDirectory()).path),
   );
   runApp(const Miji());
 }
