@@ -105,9 +105,7 @@ class _ResponsiveNavigationState extends State<ResponsiveNavigation>
                 onTap: () => _controller.reverse(),
                 child: GestureDetector(
                   onTap: () => _controller.reverse(),
-                  child: Container(
-                    color: Colors.black,
-                  ),
+                  child: Container(color: Colors.black),
                 ),
               ),
             );
@@ -122,9 +120,10 @@ class _ResponsiveNavigationState extends State<ResponsiveNavigation>
                 width: 200, // Increased width for better spacing
                 child: Drawer(
                   elevation: 12,
-                  backgroundColor: theme.brightness == Brightness.dark
-                      ? Colors.grey[900]
-                      : Colors.white,
+                  backgroundColor:
+                      theme.brightness == Brightness.dark
+                          ? Colors.grey[900]
+                          : Colors.white,
                   shape: const RoundedRectangleBorder(
                     borderRadius: BorderRadius.only(
                       topRight: Radius.circular(16),
@@ -230,29 +229,32 @@ class _ResponsiveNavigationState extends State<ResponsiveNavigation>
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         decoration: BoxDecoration(
-          color: isSelected
-              ? AppColors.primaryColor.withValues(alpha: 0.1)
-              : Colors.transparent,
+          color:
+              isSelected
+                  ? AppColors.primaryColor.withValues(alpha: 0.1)
+                  : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
         ),
         child: ListTile(
           leading: Icon(
             icon,
             size: 28,
-            color: isSelected
-                ? AppColors.primaryColor
-                : (theme.brightness == Brightness.dark
-                    ? Colors.white70
-                    : Colors.black54),
+            color:
+                isSelected
+                    ? AppColors.primaryColor
+                    : (theme.brightness == Brightness.dark
+                        ? Colors.white70
+                        : Colors.black54),
           ),
           title: Text(
             label,
             style: TextStyle(
               fontSize: 16,
               fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-              color: theme.brightness == Brightness.dark
-                  ? AppColors.darkTextColor
-                  : AppColors.textColor,
+              color:
+                  theme.brightness == Brightness.dark
+                      ? AppColors.darkTextColor
+                      : AppColors.lightTextColor,
             ),
           ),
           selected: isSelected,

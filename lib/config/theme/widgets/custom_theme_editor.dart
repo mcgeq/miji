@@ -25,7 +25,7 @@ class CustomThemeEditorState extends State<CustomThemeEditor> {
         state.customThemeConfig ??
         CustomThemeConfig(
           primaryColor: AppColors.primaryColor,
-          backgroundColor: AppColors.backgroundColor,
+          backgroundColor: AppColors.lightBackgroundColor,
           textTheme: ThemeData.light().textTheme,
         );
     _primaryColor = _config.primaryColor;

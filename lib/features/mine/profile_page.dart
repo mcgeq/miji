@@ -18,7 +18,7 @@ class ProfilePage extends StatelessWidget {
                 child: Icon(Icons.person, size: 50),
               ),
               const SizedBox(height: 16),
-              Text('John Doe', style: AppColors.headerText),
+              const Text('John Doe', style: AppColors.titleText),
               const SizedBox(height: 8),
               Text(
                 AppLocalizations.of(context)!.profileDescription,

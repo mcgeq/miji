@@ -29,22 +29,24 @@ class _SettingsPageState extends State<SettingsPage>
     );
 
     // Fade animation for cards
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
 
     // Scale animation for cards
-    _scaleAnimation = Tween<double>(begin: 0.95, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
+    _scaleAnimation = Tween<double>(
+      begin: 0.95,
+
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
 
     // Slide animation for ListTile
     _slideAnimation = Tween<Offset>(
       begin: const Offset(-0.2, 0),
       end: Offset.zero,
-    ).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
 
     // Start the animation when the page loads
     _controller.forward();
@@ -62,19 +64,23 @@ class _SettingsPageState extends State<SettingsPage>
     final theme = Theme.of(context);
 
     // Dynamic highlight color based on theme
-    final highlightColor = theme.brightness == Brightness.dark
-        ? AppColors.primaryColor.withValues(alpha:0.1)
-        : Colors.grey[200]!.withValues(alpha: 0.5);
+    final highlightColor =
+        theme.brightness == Brightness.dark
+            ? AppColors.primaryColor.withValues(alpha: 0.1)
+            : Colors.grey[200]!.withValues(alpha: 0.5);
 
     return Scaffold(
-      backgroundColor: theme.brightness == Brightness.dark
-          ? AppColors.darkBackgroundColor
-          : AppColors.backgroundColor,
+      backgroundColor:
+          theme.brightness == Brightness.dark
+              ? AppColors.darkBackgroundColor
+              : AppColors.lightBackgroundColor,
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0,
-            vertical: 24.0),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 16.0,
+              vertical: 24.0,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -84,15 +90,17 @@ class _SettingsPageState extends State<SettingsPage>
                   child: ScaleTransition(
                     scale: _scaleAnimation,
                     child: Material(
-                      color: theme.brightness == Brightness.dark
-                          ? Colors.grey[800]
-                          : Colors.white,
+                      color:
+                          theme.brightness == Brightness.dark
+                              ? Colors.grey[800]
+                              : Colors.white,
                       borderRadius: BorderRadius.circular(12),
                       elevation: 2,
                       child: InkWell(
                         borderRadius: BorderRadius.circular(12),
                         splashColor: AppColors.primaryColor.withValues(
-                        alpha: 0.3),
+                          alpha: 0.3,
+                        ),
                         highlightColor: highlightColor,
                         onTap: () {}, // Empty onTap to allow ripple effect
                         child: Padding(
@@ -102,19 +110,22 @@ class _SettingsPageState extends State<SettingsPage>
                             child: _AnimatedListTile(
                               leading: Icon(
                                 Icons.brightness_4,
-                                color: theme.brightness == Brightness.dark
-                                    ? AppColors.darkTextColor.withValues(
-                                    alpha: 0.7)
-                                    : Colors.black54,
+                                color:
+                                    theme.brightness == Brightness.dark
+                                        ? AppColors.darkTextColor.withValues(
+                                          alpha: 0.7,
+                                        )
+                                        : Colors.black54,
                               ),
                               title: Text(
                                 l10n.toggleTheme,
                                 style: AppColors.bodyText.copyWith(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w500,
-                                  color: theme.brightness == Brightness.dark
-                                      ? AppColors.darkTextColor
-                                      : AppColors.textColor,
+                                  color:
+                                      theme.brightness == Brightness.dark
+                                          ? AppColors.darkTextColor
+                                          : AppColors.lightTextColor,
                                 ),
                               ),
                               trailing: Switch(
@@ -143,15 +154,17 @@ class _SettingsPageState extends State<SettingsPage>
                   child: ScaleTransition(
                     scale: _scaleAnimation,
                     child: Material(
-                      color: theme.brightness == Brightness.dark
-                          ? Colors.grey[800]
-                          : Colors.white,
+                      color:
+                          theme.brightness == Brightness.dark
+                              ? Colors.grey[800]
+                              : Colors.white,
                       borderRadius: BorderRadius.circular(12),
                       elevation: 2,
                       child: InkWell(
                         borderRadius: BorderRadius.circular(12),
                         splashColor: AppColors.primaryColor.withValues(
-                        alpha: 0.3),
+                          alpha: 0.3,
+                        ),
                         highlightColor: highlightColor,
                         onTap: () {}, // Empty onTap to allow ripple effect
                         child: Padding(
@@ -164,9 +177,10 @@ class _SettingsPageState extends State<SettingsPage>
                                   vertical: 4,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: theme.brightness == Brightness.dark
-                                      ? Colors.grey[900]
-                                      : Colors.grey[100],
+                                  color:
+                                      theme.brightness == Brightness.dark
+                                          ? Colors.grey[900]
+                                          : Colors.grey[100],
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: DropdownButtonHideUnderline(
@@ -199,9 +213,9 @@ class _SettingsPageState extends State<SettingsPage>
                                     ],
                                     onChanged: (locale) {
                                       if (locale != null) {
-                                        context
-                                            .read<LocaleBloc>()
-                                            .add(ChangeLocale(locale));
+                                        context.read<LocaleBloc>().add(
+                                          ChangeLocale(locale),
+                                        );
                                       }
                                     },
                                   ),
@@ -253,9 +267,11 @@ class _AnimatedListTileState extends State<_AnimatedListTile>
       vsync: this,
       duration: const Duration(milliseconds: 200),
     );
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.95).animate(
-      CurvedAnimation(parent: _tapController, curve: Curves.easeInOut),
-    );
+    _scaleAnimation = Tween<double>(
+      begin: 1.0,
+
+      end: 0.95,
+    ).animate(CurvedAnimation(parent: _tapController, curve: Curves.easeInOut));
   }
 
   @override
@@ -276,17 +292,21 @@ class _AnimatedListTileState extends State<_AnimatedListTile>
         scale: _scaleAnimation,
         child: Container(
           decoration: BoxDecoration(
-            color: theme.brightness == Brightness.dark
-                ? Colors.grey[900]
-                : Colors.grey[100],
+            color:
+                theme.brightness == Brightness.dark
+                    ? Colors.grey[900]
+                    : Colors.grey[100],
             borderRadius: BorderRadius.circular(8),
           ),
           child: ListTile(
             leading: widget.leading,
             title: widget.title,
             trailing: widget.trailing,
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+
+              vertical: 8,
+            ),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(8),
             ),
@@ -323,9 +343,10 @@ class _AnimatedDropdownItem extends StatelessWidget {
         style: AppColors.bodyText.copyWith(
           fontSize: 16,
           fontWeight: FontWeight.w500,
-          color: Theme.of(context).brightness == Brightness.dark
-              ? AppColors.darkTextColor
-              : AppColors.textColor,
+          color:
+              Theme.of(context).brightness == Brightness.dark
+                  ? AppColors.darkTextColor
+                  : AppColors.lightTextColor,
         ),
       ),
     );

@@ -23,7 +23,7 @@ class ThemeGenerator {
           config?.backgroundColor ??
           (brightness == Brightness.dark
               ? AppColors.darkBackgroundColor
-              : AppColors.backgroundColor),
+              : AppColors.lightBackgroundColor),
       textTheme: textTheme,
     );
   }
