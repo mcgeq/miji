@@ -1,0 +1,28 @@
+# 忽略依赖项
+node_modules
+
+# 构建输出目录
+dist
+build
+.out
+.turbo
+.next
+
+# 临时文件 / 缓存
+*.log
+*.tmp
+*.swp
+*.lock
+.DS_Store
+.env
+.env.*
+
+# 测试覆盖率输出
+coverage
+
+# IDE 配置
+.vscode
+.idea
+
+# TypeScript 输出（如 tsconfig 中设置为 outDir）
+lib

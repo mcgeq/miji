@@ -1,0 +1,66 @@
+# EditorConfig (https://editorconfig.org)
+root = true
+
+# 默认设置
+[*]
+charset = utf-8
+indent_style = space
+indent_size = 2
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# Rust 文件
+[*.rs]
+indent_size = 4
+max_line_length = 100
+
+# TypeScript 和 TSX 文件
+[*.{ts,tsx}]
+indent_size = 2
+max_line_length = 100
+
+# HTML 文件
+[*.html]
+indent_size = 2
+max_line_length = 120
+
+# CSS 文件
+[*.css]
+indent_size = 2
+max_line_length = 80
+
+# JSON 文件
+[*.json]
+indent_size = 2
+insert_final_newline = false
+
+# TOML 文件
+[*.toml]
+indent_size = 2
+max_line_length = 100
+
+# Markdown 文件
+[*.md]
+trim_trailing_whitespace = false
+insert_final_newline = true
+indent_size = 2
+
+# YAML 文件
+[*.{yml,yaml}]
+indent_size = 2
+indent_style = space
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# Shell 脚本
+[*.{sh,bash}]
+indent_style = space
+indent_size = 2
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# Gitignore 文件
+[.gitignore]
+insert_final_newline = true
+trim_trailing_whitespace = false
