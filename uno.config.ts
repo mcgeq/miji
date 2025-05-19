@@ -3,15 +3,21 @@ import {
   presetAttributify,
   presetIcons,
   presetWebFonts,
+  presetTypography,
+  presetWind3,
+  transformerDirectives,
+  transformerVariantGroup,
 } from 'unocss';
 export default defineConfig({
   // ...UnoCSS options
   presets: [
+    presetWind3(),
     presetAttributify(),
     presetIcons({
       scale: 1.2,
       warn: true,
     }),
+    presetTypography(),
     presetWebFonts({
       fonts: {
         sans: 'DM Sans',
@@ -20,4 +26,5 @@ export default defineConfig({
       },
     }),
   ],
+  transformers: [transformerDirectives(), transformerVariantGroup()],
 });
