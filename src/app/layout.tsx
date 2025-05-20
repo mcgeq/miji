@@ -1,18 +1,20 @@
 import { Outlet } from '@tanstack/react-router';
+import { Sidebar } from '@/components/layout/Sidebar';
+import { BottomNav } from '@/components/layout/BottomNav';
 
 export function Layout() {
   return (
-    <div className="min-h-screen flex flex-col bg-white dark:bg-gray-900">
-      {/* 可选：顶部导航栏 */}
-      <header className="p-4 shadow-md">App Header</header>
+    <div className="min-h-screen flex flex-col lg:flex-row bg-white dark:bg-gray-900">
+      {/* Desktop Sidebar */}
+      <Sidebar />
 
-      {/* 路由页面容器 */}
-      <main className="flex-1 p-4">
+      {/* Main content */}
+      <main className="flex-1 p-4 pb-20 lg:pb-4">
         <Outlet />
       </main>
 
-      {/* 可选：底部 TabBar */}
-      <footer className="p-4 shadow-inner">Tab Navigation</footer>
+      {/* Bottom Navigation */}
+      <BottomNav />
     </div>
   );
 }
