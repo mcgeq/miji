@@ -1,7 +1,7 @@
 import { useUIStore } from '@/stores/ui';
-import { navItems } from './navItems';
 import { Link, useRouterState } from '@tanstack/react-router';
 import clsx from 'clsx';
+import { navItems } from './navItems';
 
 export function Sidebar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
@@ -10,7 +10,7 @@ export function Sidebar() {
   return (
     <aside
       className={clsx(
-        'hidden md:flex flex-col bg-white dark:bg-gray-900 shadow-md transition-all',
+        'flex-col bg-white dark:bg-gray-900 shadow-md transition-all',
         sidebarOpen ? 'w-56' : 'w-16',
       )}
     >
@@ -21,7 +21,7 @@ export function Sidebar() {
             <Link
               key={item.path}
               to={item.path}
-              onClick={() => setSidebarOpen(false)} // 自动折叠
+              onClick={() => setSidebarOpen(false)}
               className={clsx(
                 'flex items-center gap-2 px-4 py-3 hover:bg-gray-100 dark:hover:bg-gray-800',
                 isActive ? 'text-red-500' : 'text-gray-500',
@@ -34,7 +34,6 @@ export function Sidebar() {
         })}
       </div>
 
-      {/* 悬浮开关按钮 */}
       {!sidebarOpen && (
         <button
           type="button"

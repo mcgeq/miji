@@ -6,7 +6,7 @@ export function BottomNav() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   return (
-    <nav className="fixed bottom-0 inset-x-0 flex md:hidden justify-around bg-white dark:bg-gray-900 shadow h-14 z-50">
+    <nav className="fixed bottom-0 inset-x-0 flex justify-around bg-white dark:bg-gray-900 shadow h-14 z-50">
       {navItems.map((item) => {
         const isActive = pathname === item.path;
         return (

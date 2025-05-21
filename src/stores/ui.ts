@@ -13,11 +13,11 @@ export const useUIStore = create<UIState>()(
     (set) => ({
       sidebarOpen: true,
       toggleSidebar: () => set((s) => ({ sidebarOpen: !s.sidebarOpen })),
-      setSidebarOpen: (open) => set({ sidebarOpen: open }),
+      setSidebarOpen: (open) => set(() => ({ sidebarOpen: open })),
     }),
     {
       name: 'ui-store',
-      storage: createTauriStorage(),
+      storage: createTauriStorage<UIState>(),
     },
   ),
 );
