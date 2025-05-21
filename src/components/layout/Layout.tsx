@@ -6,7 +6,8 @@ import { useMediaQuery } from 'react-responsive';
 
 export function Layout() {
   const { sidebarOpen } = useUIStore();
-  const isDesktop = useMediaQuery({ minWidth: 1024 }); // lg 断点，1024px
+  const isDesktop = useMediaQuery({ minWidth: 1000 }); // lg 断点，1024px
+  console.log('sidebarOpen', sidebarOpen);
 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row bg-white dark:bg-gray-900">

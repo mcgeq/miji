@@ -17,7 +17,18 @@ export const useUIStore = create<UIState>()(
     }),
     {
       name: 'ui-store',
-      storage: createTauriStorage<UIState>(),
+      version: 1, // ✅ 增加版本号
+      storage: createTauriStorage<{ sidebarOpen: boolean }>(),
+      migrate: (persistedState, version) => {
+        if (version < 1) {
+          // ✅ 当没有版本或旧版本时，强制重设默认值
+          return {
+            ...(persistedState as Partial<UIState>),
+            sidebarOpen: true,
+          };
+        }
+        return persistedState as UIState;
+      },
     },
   ),
 );
