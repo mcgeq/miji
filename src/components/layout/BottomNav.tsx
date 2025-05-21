@@ -16,12 +16,10 @@ export function BottomNav() {
             className={clsx(
               'flex flex-col items-center justify-center text-xs flex-1',
               isActive ? 'text-red-500' : 'text-gray-400',
-              item.isCenter &&
-                'relative -top-4 bg-red-500 text-white rounded-full w-14 h-14 shadow-md',
             )}
           >
             <i className={clsx('text-xl', item.icon)} />
-            {!item.isCenter && <span>{item.label}</span>}
+            {<span>{item.label}</span>}
           </Link>
         );
       })}
