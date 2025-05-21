@@ -19,8 +19,17 @@ export const useTauriStorage = {
   async get<T = unknown>(key: string): Promise<T | null> {
     try {
       const store = await getStore();
-      const value = await store.get<T>(key);
-      return value ?? null;
+      const value = await store.get(key); // Get raw value from store
+      if (value === null || value === undefined) return null;
+      // If the value is a string and looks like JSON, parse it
+      if (typeof value === 'string') {
+        try {
+          return JSON.parse(value) as T;
+        } catch (e) {
+          return value as T; // If parsing fails, return the string as is
+        }
+      }
+      return value as T; // Return non-string values directly
     } catch (error) {
       console.error(`[useTauriStorage] Failed to get key "${key}":`, error);
       return null;
@@ -29,7 +38,12 @@ export const useTauriStorage = {
   async set<T = unknown>(key: string, value: T): Promise<void> {
     try {
       const store = await getStore();
-      await store.set(key, value);
+      // If the value is an object, stringify it; otherwise, store it as is
+      const storeValue =
+        typeof value === 'object' && value !== null
+          ? JSON.stringify(value)
+          : value;
+      await store.set(key, storeValue);
       await store.save();
     } catch (error) {
       console.error(`[useTauriStorage] Failed to set key "${key}":`, error);
@@ -49,20 +63,14 @@ export const useTauriStorage = {
 export function createTauriStorage<S>(): PersistStorage<S> {
   return {
     async getItem(key: string): Promise<StorageValue<S> | null> {
-      const value = await useTauriStorage.get<string>(key);
-      if (!value) return null;
-      try {
-        return JSON.parse(value) as StorageValue<S>;
-      } catch (e) {
-        console.error(`[createTauriStorage] Failed to parse key "${key}":`, e);
-        return null;
-      }
+      const value = await useTauriStorage.get<StorageValue<S>>(key); // Get typed value
+      return value ?? null;
     },
 
     async setItem(key: string, value: StorageValue<S>): Promise<void> {
       try {
-        const str = JSON.stringify(value);
-        await useTauriStorage.set(key, str);
+        const str = JSON.stringify(value); // Stringify the value
+        await useTauriStorage.set(key, str); // Store as string
       } catch (e) {
         console.error(
           `[createTauriStorage] Failed to stringify key "${key}":`,
