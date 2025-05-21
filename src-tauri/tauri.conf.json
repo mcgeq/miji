@@ -12,9 +12,15 @@
   "app": {
     "windows": [
       {
-        "title": "miji",
-        "width": 800,
-        "height": 600
+        "title": "MiJi",
+        "width": 1000,
+        "height": 600,
+        "center": true,
+        "fullscreen": false,
+        "maximizable": false,
+        "resizable": false,
+        "decorations": true,
+        "visible": true
       }
     ],
     "security": {
