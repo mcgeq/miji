@@ -1,4 +1,4 @@
-import { Layout } from '@/components/layout/layout';
+import { Layout } from '@/components/layout/Layout';
 import { loginRoute } from '@/features/auth/router';
 import { checklistRoute } from '@/features/checklist/router';
 import { notesRoute } from '@/features/notes/router';
