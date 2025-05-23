@@ -13,7 +13,7 @@
     "windows": [
       {
         "title": "MiJi",
-        "width": 1000,
+        "width": 1024,
         "height": 600,
         "center": true,
         "fullscreen": false,
