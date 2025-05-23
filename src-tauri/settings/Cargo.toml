@@ -1,0 +1,7 @@
+[package]
+name = "settings"
+version = "0.1.0"
+edition = "2024"
+description = "Application settings such as theme, notifications, privacy, and configuration."
+
+[dependencies]

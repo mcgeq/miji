@@ -1,0 +1,7 @@
+[package]
+name = "health"
+version = "0.1.0"
+edition = "2024"
+description = "Health tracking module including physiological cycle monitoring and related wellness features."
+
+[dependencies]

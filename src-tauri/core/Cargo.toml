@@ -1,0 +1,7 @@
+[package]
+name = "miji_core"
+version = "0.1.0"
+edition = "2024"
+description = "Common core definitions, shared models, error types, and utilities."
+
+[dependencies]

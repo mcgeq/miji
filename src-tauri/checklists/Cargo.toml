@@ -1,0 +1,7 @@
+[package]
+name = "checklists"
+version = "0.1.0"
+edition = "2024"
+description = "Checklist management supporting multiple checklists and progress tracking."
+
+[dependencies]
