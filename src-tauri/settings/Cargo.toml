@@ -5,3 +5,4 @@ edition = "2024"
 description = "Application settings such as theme, notifications, privacy, and configuration."
 
 [dependencies]
+snafu = { workspace = true }

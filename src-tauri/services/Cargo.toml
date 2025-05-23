@@ -5,3 +5,4 @@ edition = "2024"
 description = "Aggregated business logic coordinating workflows across multiple modules."
 
 [dependencies]
+snafu = { workspace = true }

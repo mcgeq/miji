@@ -5,3 +5,4 @@ edition = "2024"
 description = "Note-taking module for creating, editing, and organizing personal notes."
 
 [dependencies]
+snafu = { workspace = true }

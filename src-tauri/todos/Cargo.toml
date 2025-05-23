@@ -5,3 +5,4 @@ edition = "2024"
 description = "To-Do list feature with task creation, editing, and filtering."
 
 [dependencies]
+snafu = { workspace = true }

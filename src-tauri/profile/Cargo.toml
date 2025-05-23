@@ -5,3 +5,4 @@ edition = "2024"
 description = "User profile management including personal information and preferences."
 
 [dependencies]
+snafu = { workspace = true }

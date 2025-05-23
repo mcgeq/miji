@@ -5,3 +5,4 @@ edition = "2024"
 description = "User authentication and authorization including login, registration, and session management."
 
 [dependencies]
+snafu = { workspace = true }

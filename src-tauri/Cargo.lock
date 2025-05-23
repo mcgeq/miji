@@ -227,6 +227,9 @@ checksum = "1505bd5d3d116872e7271a6d4e16d81d0c8570876c8de68093a09ac269d8aac0"
 [[package]]
 name = "auth"
 version = "0.1.0"
+dependencies = [
+ "snafu",
+]
 
 [[package]]
 name = "autocfg"
@@ -482,6 +485,9 @@ checksum = "613afe47fcd5fac7ccf1db93babcb082c5994d996f20b8b159f2ad1658eb5724"
 [[package]]
 name = "checklists"
 version = "0.1.0"
+dependencies = [
+ "snafu",
+]
 
 [[package]]
 name = "chrono"
@@ -1423,6 +1429,9 @@ checksum = "84b26c544d002229e640969970a2e74021aadf6e2f96372b9c58eff97de08eb3"
 [[package]]
 name = "health"
 version = "0.1.0"
+dependencies = [
+ "snafu",
+]
 
 [[package]]
 name = "heck"
@@ -2019,6 +2028,17 @@ dependencies = [
 [[package]]
 name = "miji_core"
 version = "0.1.0"
+dependencies = [
+ "auth",
+ "checklists",
+ "health",
+ "notes",
+ "profile",
+ "services",
+ "settings",
+ "snafu",
+ "todos",
+]
 
 [[package]]
 name = "mime"
@@ -2126,6 +2146,9 @@ checksum = "72ef4a56884ca558e5ddb05a1d1e7e1bfd9a68d9ed024c21704cc98872dae1bb"
 [[package]]
 name = "notes"
 version = "0.1.0"
+dependencies = [
+ "snafu",
+]
 
 [[package]]
 name = "notify-rust"
@@ -2815,6 +2838,9 @@ dependencies = [
 [[package]]
 name = "profile"
 version = "0.1.0"
+dependencies = [
+ "snafu",
+]
 
 [[package]]
 name = "quick-xml"
@@ -3288,6 +3314,9 @@ dependencies = [
 [[package]]
 name = "services"
 version = "0.1.0"
+dependencies = [
+ "snafu",
+]
 
 [[package]]
 name = "servo_arc"
@@ -3302,6 +3331,9 @@ dependencies = [
 [[package]]
 name = "settings"
 version = "0.1.0"
+dependencies = [
+ "snafu",
+]
 
 [[package]]
 name = "sha2"
@@ -3361,6 +3393,28 @@ name = "smallvec"
 version = "1.15.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8917285742e9f3e1683f0a9c4e6b57960b7314d0b08d30d1ecd426713ee2eee9"
+
+[[package]]
+name = "snafu"
+version = "0.8.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "223891c85e2a29c3fe8fb900c1fae5e69c2e42415e3177752e8718475efa5019"
+dependencies = [
+ "backtrace",
+ "snafu-derive",
+]
+
+[[package]]
+name = "snafu-derive"
+version = "0.8.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "03c3c6b7927ffe7ecaa769ee0e3994da3b8cafc8f444578982c83ecb161af917"
+dependencies = [
+ "heck 0.5.0",
+ "proc-macro2",
+ "quote",
+ "syn 2.0.101",
+]
 
 [[package]]
 name = "socket2"
@@ -4062,6 +4116,9 @@ dependencies = [
 [[package]]
 name = "todos"
 version = "0.1.0"
+dependencies = [
+ "snafu",
+]
 
 [[package]]
 name = "tokio"

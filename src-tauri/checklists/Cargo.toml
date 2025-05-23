@@ -5,3 +5,4 @@ edition = "2024"
 description = "Checklist management supporting multiple checklists and progress tracking."
 
 [dependencies]
+snafu = { workspace = true }

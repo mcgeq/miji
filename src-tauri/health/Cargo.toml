@@ -5,3 +5,4 @@ edition = "2024"
 description = "Health tracking module including physiological cycle monitoring and related wellness features."
 
 [dependencies]
+snafu = { workspace = true }
