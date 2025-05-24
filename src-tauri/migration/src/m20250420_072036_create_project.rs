@@ -29,8 +29,16 @@ impl MigrationTrait for Migration {
                             .not_null()
                             .default(false),
                     )
-                    .col(ColumnDef::new(Project::CreatedAt).timestamp().not_null())
-                    .col(ColumnDef::new(Project::UpdatedAt).timestamp().null())
+                    .col(
+                        ColumnDef::new(Project::CreatedAt)
+                            .timestamp_with_time_zone()
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(Project::UpdatedAt)
+                            .timestamp_with_time_zone()
+                            .null(),
+                    )
                     .to_owned(),
             )
             .await?;

@@ -21,8 +21,16 @@ impl MigrationTrait for Migration {
                     )
                     .col(ColumnDef::new(Tag::Name).string().not_null().unique_key())
                     .col(ColumnDef::new(Tag::Description).string().null())
-                    .col(ColumnDef::new(Tag::CreatedAt).timestamp().not_null())
-                    .col(ColumnDef::new(Tag::UpdatedAt).timestamp().null())
+                    .col(
+                        ColumnDef::new(Tag::CreatedAt)
+                            .timestamp_with_time_zone()
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(Tag::UpdatedAt)
+                            .timestamp_with_time_zone()
+                            .null(),
+                    )
                     .to_owned(),
             )
             .await?;

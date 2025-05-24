@@ -45,7 +45,11 @@ impl MigrationTrait for Migration {
                     .col(ColumnDef::new(User::Phone).string().null().unique_key())
                     .col(ColumnDef::new(User::PasswordHash).string().not_null())
                     .col(ColumnDef::new(User::AvatarUrl).string().null())
-                    .col(ColumnDef::new(User::LastLoginAt).timestamp().null())
+                    .col(
+                        ColumnDef::new(User::LastLoginAt)
+                            .timestamp_with_time_zone()
+                            .null(),
+                    )
                     .col(
                         ColumnDef::new(User::IsVerified)
                             .boolean()
@@ -82,9 +86,21 @@ impl MigrationTrait for Migration {
                             .timestamp_with_time_zone()
                             .null(),
                     )
-                    .col(ColumnDef::new(User::DeletedAt).timestamp().null())
-                    .col(ColumnDef::new(User::CreatedAt).timestamp().not_null())
-                    .col(ColumnDef::new(User::UpdatedAt).timestamp().null())
+                    .col(
+                        ColumnDef::new(User::DeletedAt)
+                            .timestamp_with_time_zone()
+                            .null(),
+                    )
+                    .col(
+                        ColumnDef::new(User::CreatedAt)
+                            .timestamp_with_time_zone()
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(User::UpdatedAt)
+                            .timestamp_with_time_zone()
+                            .null(),
+                    )
                     .to_owned(),
             )
             .await?;

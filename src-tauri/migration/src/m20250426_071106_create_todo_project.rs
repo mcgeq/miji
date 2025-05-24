@@ -26,10 +26,14 @@ impl MigrationTrait for Migration {
                     .col(ColumnDef::new(TodoProject::Order).integer().null())
                     .col(
                         ColumnDef::new(TodoProject::CreatedAt)
-                            .timestamp()
+                            .timestamp_with_time_zone()
                             .not_null(),
                     )
-                    .col(ColumnDef::new(TodoProject::UpdatedAt).timestamp().null())
+                    .col(
+                        ColumnDef::new(TodoProject::UpdatedAt)
+                            .timestamp_with_time_zone()
+                            .null(),
+                    )
                     .primary_key(
                         Index::create()
                             .name("pk_todo_project")

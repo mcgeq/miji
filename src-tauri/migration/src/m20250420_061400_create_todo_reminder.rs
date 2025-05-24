@@ -37,7 +37,11 @@ impl MigrationTrait for Migration {
                             .string_len(38)
                             .not_null(),
                     )
-                    .col(ColumnDef::new(Reminder::RemindAt).timestamp().not_null())
+                    .col(
+                        ColumnDef::new(Reminder::RemindAt)
+                            .timestamp_with_time_zone()
+                            .not_null(),
+                    )
                     .col(
                         ColumnDef::new(Reminder::Type)
                             .custom(ReminderType::Type)
