@@ -6,3 +6,4 @@ description = "Checklist management supporting multiple checklists and progress 
 
 [dependencies]
 snafu = { workspace = true }
+miji_core = { path = "../core" }

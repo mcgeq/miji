@@ -6,3 +6,4 @@ description = "Note-taking module for creating, editing, and organizing personal
 
 [dependencies]
 snafu = { workspace = true }
+miji_core = { path = "../core" }

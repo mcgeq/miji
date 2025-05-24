@@ -6,3 +6,4 @@ description = "Aggregated business logic coordinating workflows across multiple 
 
 [dependencies]
 snafu = { workspace = true }
+miji_core = { path = "../core" }

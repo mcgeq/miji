@@ -1,47 +1,61 @@
-use snafu::Snafu;
+use std::{error::Error, fmt};
 
-#[derive(Debug, Snafu)]
 pub enum MijiError {
-    #[snafu(display("Auth module error: {}", source))]
-    Auth { source: auth::error::AuthError },
+    Auth(Box<dyn Error + Send + Sync + 'static>),
+    CheckLists(Box<dyn Error + Send + Sync + 'static>),
+    Health(Box<dyn Error + Send + Sync + 'static>),
+    Notes(Box<dyn Error + Send + Sync + 'static>),
+    Profile(Box<dyn Error + Send + Sync + 'static>),
+    Services(Box<dyn Error + Send + Sync + 'static>),
+    Settings(Box<dyn Error + Send + Sync + 'static>),
+    Todos(Box<dyn Error + Send + Sync + 'static>),
+    User(Box<dyn Error + Send + Sync + 'static>),
+}
 
-    #[snafu(display("User module error: {}", source))]
-    User { source: auth::error::UserError },
+impl fmt::Display for MijiError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            MijiError::Auth(err) => write!(f, "{}", err),
+            MijiError::CheckLists(err) => write!(f, "{}", err),
+            MijiError::Health(err) => write!(f, "{}", err),
+            MijiError::Notes(err) => write!(f, "{}", err),
+            MijiError::Profile(err) => write!(f, "{}", err),
+            MijiError::Services(err) => write!(f, "{}", err),
+            MijiError::Settings(err) => write!(f, "{}", err),
+            MijiError::Todos(err) => write!(f, "{}", err),
+            MijiError::User(err) => write!(f, "{}", err),
+        }
+    }
+}
 
-    #[snafu(display("Permission error: {}", source))]
-    Permission {
-        source: crate::permissions::PermissionError,
-    },
+impl fmt::Debug for MijiError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            MijiError::Auth(err) => write!(f, "{}", err),
+            MijiError::CheckLists(err) => write!(f, "{}", err),
+            MijiError::Health(err) => write!(f, "{}", err),
+            MijiError::Notes(err) => write!(f, "{}", err),
+            MijiError::Profile(err) => write!(f, "{}", err),
+            MijiError::Services(err) => write!(f, "{}", err),
+            MijiError::Settings(err) => write!(f, "{}", err),
+            MijiError::Todos(err) => write!(f, "{}", err),
+            MijiError::User(err) => write!(f, "{}", err),
+        }
+    }
+}
 
-    #[snafu(display("Health module error: {}", source))]
-    Health { source: health::error::HealthError },
-
-    #[snafu(display("Checklists module error: {}", source))]
-    Checklists {
-        source: checklists::error::ChecklistsError,
-    },
-
-    #[snafu(display("Notes module error: {}", source))]
-    Notes { source: notes::error::NotesError },
-
-    #[snafu(display("Todos module error: {}", source))]
-    Todos { source: todos::error::TodosError },
-
-    #[snafu(display("Profile module error: {}", source))]
-    Profile {
-        source: profile::error::ProfileError,
-    },
-
-    #[snafu(display("Settings module error: {}", source))]
-    Settings {
-        source: settings::error::SettingsError,
-    },
-
-    #[snafu(display("Services module error: {}", source))]
-    Services {
-        source: services::error::ServicesError,
-    },
-
-    #[snafu(display("Other error: {}", message))]
-    Other { message: String },
+impl Error for MijiError {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        match self {
+            MijiError::Auth(err) => Some(err.as_ref()),
+            MijiError::CheckLists(err) => Some(err.as_ref()),
+            MijiError::Health(err) => Some(err.as_ref()),
+            MijiError::Notes(err) => Some(err.as_ref()),
+            MijiError::Profile(err) => Some(err.as_ref()),
+            MijiError::Services(err) => Some(err.as_ref()),
+            MijiError::Settings(err) => Some(err.as_ref()),
+            MijiError::Todos(err) => Some(err.as_ref()),
+            MijiError::User(err) => Some(err.as_ref()),
+        }
+    }
 }

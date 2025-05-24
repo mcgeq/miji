@@ -6,11 +6,3 @@ description = "Common core definitions, shared models, error types, and utilitie
 
 [dependencies]
 snafu = { workspace = true }
-auth = { path = "../auth" }
-health = { path = "../health" }
-notes = { path = "../notes" }
-todos = { path = "../todos" }
-profile = { path = "../profile" }
-settings = { path = "../settings" }
-services = { path = "../services" }
-checklists = { path = "../checklists" }

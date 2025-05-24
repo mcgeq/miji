@@ -228,6 +228,7 @@ checksum = "1505bd5d3d116872e7271a6d4e16d81d0c8570876c8de68093a09ac269d8aac0"
 name = "auth"
 version = "0.1.0"
 dependencies = [
+ "miji_core",
  "snafu",
 ]
 
@@ -486,6 +487,7 @@ checksum = "613afe47fcd5fac7ccf1db93babcb082c5994d996f20b8b159f2ad1658eb5724"
 name = "checklists"
 version = "0.1.0"
 dependencies = [
+ "miji_core",
  "snafu",
 ]
 
@@ -1430,6 +1432,7 @@ checksum = "84b26c544d002229e640969970a2e74021aadf6e2f96372b9c58eff97de08eb3"
 name = "health"
 version = "0.1.0"
 dependencies = [
+ "miji_core",
  "snafu",
 ]
 
@@ -2029,15 +2032,7 @@ dependencies = [
 name = "miji_core"
 version = "0.1.0"
 dependencies = [
- "auth",
- "checklists",
- "health",
- "notes",
- "profile",
- "services",
- "settings",
  "snafu",
- "todos",
 ]
 
 [[package]]
@@ -2147,6 +2142,7 @@ checksum = "72ef4a56884ca558e5ddb05a1d1e7e1bfd9a68d9ed024c21704cc98872dae1bb"
 name = "notes"
 version = "0.1.0"
 dependencies = [
+ "miji_core",
  "snafu",
 ]
 
@@ -2839,6 +2835,7 @@ dependencies = [
 name = "profile"
 version = "0.1.0"
 dependencies = [
+ "miji_core",
  "snafu",
 ]
 
@@ -3315,6 +3312,7 @@ dependencies = [
 name = "services"
 version = "0.1.0"
 dependencies = [
+ "miji_core",
  "snafu",
 ]
 
@@ -3332,6 +3330,7 @@ dependencies = [
 name = "settings"
 version = "0.1.0"
 dependencies = [
+ "miji_core",
  "snafu",
 ]
 
@@ -4117,6 +4116,7 @@ dependencies = [
 name = "todos"
 version = "0.1.0"
 dependencies = [
+ "miji_core",
  "snafu",
 ]
 

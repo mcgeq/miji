@@ -6,3 +6,4 @@ description = "User authentication and authorization including login, registrati
 
 [dependencies]
 snafu = { workspace = true }
+miji_core = { path = "../core" }

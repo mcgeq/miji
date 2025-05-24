@@ -1,3 +1,4 @@
+use miji_core::error::MijiError;
 use snafu::Snafu;
 
 #[derive(Debug, Snafu)]
@@ -22,4 +23,16 @@ pub enum AuthError {
 
     #[snafu(display("Token expired"))]
     TokenExpired,
+}
+
+impl From<UserError> for MijiError {
+    fn from(value: UserError) -> Self {
+        MijiError::User(Box::new(value))
+    }
+}
+
+impl From<AuthError> for MijiError {
+    fn from(value: AuthError) -> Self {
+        MijiError::Auth(Box::new(value))
+    }
 }
