@@ -11,6 +11,7 @@ edition = "2024"
 members = [
   "core",
   "auth",
+  "migration",
   "notes",
   "todos",
   "checklists",
@@ -43,6 +44,15 @@ chrono = { version = "0.4.41", features = ["serde"] }
 dotenvy = "0.15.7"
 tauri-plugin-log = { version = "2", features = ["colored"] }
 log = { version = "0.4.27", features = ["serde"] }
+argon2 = "0.5.3"
+sea-orm = { version = "1.1.11", features = [
+  "sqlx-postgres",
+  "runtime-tokio-native-tls",
+  "macros",
+  "with-chrono",
+  "with-json",
+  "debug-print",
+] }
 
 [dependencies]
 tauri = { workspace = true }
@@ -55,6 +65,9 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 log = { workspace = true }
 tauri-plugin-log = { workspace = true }
+dotenvy.workspace = true
+sea-orm.workspace = true
+migration = { path = "migration" }
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-single-instance = "2"
