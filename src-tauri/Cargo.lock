@@ -2180,6 +2180,7 @@ name = "miji_core"
 version = "0.1.0"
 dependencies = [
  "snafu",
+ "tauri",
 ]
 
 [[package]]

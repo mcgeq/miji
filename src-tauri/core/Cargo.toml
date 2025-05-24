@@ -6,3 +6,4 @@ description = "Common core definitions, shared models, error types, and utilitie
 
 [dependencies]
 snafu = { workspace = true }
+tauri = { workspace = true }
