@@ -15,15 +15,15 @@ pub enum MijiError {
 impl fmt::Display for MijiError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            MijiError::Auth(err) => write!(f, "{}", err),
-            MijiError::CheckLists(err) => write!(f, "{}", err),
-            MijiError::Health(err) => write!(f, "{}", err),
-            MijiError::Notes(err) => write!(f, "{}", err),
-            MijiError::Profile(err) => write!(f, "{}", err),
-            MijiError::Services(err) => write!(f, "{}", err),
-            MijiError::Settings(err) => write!(f, "{}", err),
-            MijiError::Todos(err) => write!(f, "{}", err),
-            MijiError::User(err) => write!(f, "{}", err),
+            MijiError::Auth(err) => write!(f, "{err}"),
+            MijiError::CheckLists(err) => write!(f, "{err}"),
+            MijiError::Health(err) => write!(f, "{err}"),
+            MijiError::Notes(err) => write!(f, "{err}"),
+            MijiError::Profile(err) => write!(f, "{err}"),
+            MijiError::Services(err) => write!(f, "{err}"),
+            MijiError::Settings(err) => write!(f, "{err}"),
+            MijiError::Todos(err) => write!(f, "{err}"),
+            MijiError::User(err) => write!(f, "{err}"),
         }
     }
 }
@@ -31,15 +31,15 @@ impl fmt::Display for MijiError {
 impl fmt::Debug for MijiError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            MijiError::Auth(err) => write!(f, "{}", err),
-            MijiError::CheckLists(err) => write!(f, "{}", err),
-            MijiError::Health(err) => write!(f, "{}", err),
-            MijiError::Notes(err) => write!(f, "{}", err),
-            MijiError::Profile(err) => write!(f, "{}", err),
-            MijiError::Services(err) => write!(f, "{}", err),
-            MijiError::Settings(err) => write!(f, "{}", err),
-            MijiError::Todos(err) => write!(f, "{}", err),
-            MijiError::User(err) => write!(f, "{}", err),
+            MijiError::Auth(err) => write!(f, "{err}"),
+            MijiError::CheckLists(err) => write!(f, "{err}"),
+            MijiError::Health(err) => write!(f, "{err}"),
+            MijiError::Notes(err) => write!(f, "{err}"),
+            MijiError::Profile(err) => write!(f, "{err}"),
+            MijiError::Services(err) => write!(f, "{err}"),
+            MijiError::Settings(err) => write!(f, "{err}"),
+            MijiError::Todos(err) => write!(f, "{err}"),
+            MijiError::User(err) => write!(f, "{err}"),
         }
     }
 }
