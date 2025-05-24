@@ -1,3 +1,16 @@
+import { invoke } from '@tauri-apps/api/core';
+
 export default function TodoPage() {
-  return <div className="text-xl font-bold">📝 Todo Page</div>;
+  const greet = async () => {
+    const name = await invoke('greet', { name: 'mcgeq' });
+    console.log(name);
+  };
+  return (
+    <>
+      <div className="text-xl font-bold">📝 Todo Page</div>{' '}
+      <button type="button" onClick={greet}>
+        Greet
+      </button>
+    </>
+  );
 }
