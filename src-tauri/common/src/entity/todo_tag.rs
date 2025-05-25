@@ -11,8 +11,8 @@ pub struct Model {
     #[sea_orm(primary_key, auto_increment = false)]
     pub tag_serial_num: String,
     pub order: Option<i32>,
-    pub created_at: DateTimeWithTimeZone,
-    pub updated_at: Option<DateTimeWithTimeZone>,
+    pub created_at: DateTime,
+    pub updated_at: Option<DateTime>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

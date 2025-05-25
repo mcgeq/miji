@@ -1,4 +1,9 @@
 pub mod attachment;
+pub mod period_daily_records;
+pub mod period_pms_records;
+pub mod period_pms_symptoms;
+pub mod period_records;
+pub mod period_symptoms;
 pub mod prelude;
 pub mod project;
 pub mod reminder;

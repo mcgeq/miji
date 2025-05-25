@@ -4,6 +4,38 @@ use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Eq, EnumIter, DeriveActiveEnum, Serialize, Deserialize)]
+#[sea_orm(rs_type = "String", db_type = "Enum", enum_name = "exercise_intensity")]
+pub enum ExerciseIntensity {
+    #[sea_orm(string_value = "None")]
+    None,
+    #[sea_orm(string_value = "Light")]
+    Light,
+    #[sea_orm(string_value = "Medium")]
+    Medium,
+    #[sea_orm(string_value = "Heavy")]
+    Heavy,
+}
+#[derive(Debug, Clone, PartialEq, Eq, EnumIter, DeriveActiveEnum, Serialize, Deserialize)]
+#[sea_orm(rs_type = "String", db_type = "Enum", enum_name = "flow_level")]
+pub enum FlowLevel {
+    #[sea_orm(string_value = "Light")]
+    Light,
+    #[sea_orm(string_value = "Medium")]
+    Medium,
+    #[sea_orm(string_value = "Heavy")]
+    Heavy,
+}
+#[derive(Debug, Clone, PartialEq, Eq, EnumIter, DeriveActiveEnum, Serialize, Deserialize)]
+#[sea_orm(rs_type = "String", db_type = "Enum", enum_name = "intensity")]
+pub enum Intensity {
+    #[sea_orm(string_value = "Light")]
+    Light,
+    #[sea_orm(string_value = "Medium")]
+    Medium,
+    #[sea_orm(string_value = "Heavy")]
+    Heavy,
+}
+#[derive(Debug, Clone, PartialEq, Eq, EnumIter, DeriveActiveEnum, Serialize, Deserialize)]
 #[sea_orm(rs_type = "String", db_type = "Enum", enum_name = "reminder_type")]
 pub enum ReminderType {
     #[sea_orm(string_value = "notification")]
@@ -12,6 +44,16 @@ pub enum ReminderType {
     Email,
     #[sea_orm(string_value = "popup")]
     Popup,
+}
+#[derive(Debug, Clone, PartialEq, Eq, EnumIter, DeriveActiveEnum, Serialize, Deserialize)]
+#[sea_orm(rs_type = "String", db_type = "Enum", enum_name = "symptoms_type")]
+pub enum SymptomsType {
+    #[sea_orm(string_value = "Pain")]
+    Pain,
+    #[sea_orm(string_value = "Fatigue")]
+    Fatigue,
+    #[sea_orm(string_value = "MoodSwing")]
+    MoodSwing,
 }
 #[derive(Debug, Clone, PartialEq, Eq, EnumIter, DeriveActiveEnum, Serialize, Deserialize)]
 #[sea_orm(rs_type = "String", db_type = "Enum", enum_name = "user_role")]
