@@ -6,4 +6,6 @@ description = "User authentication and authorization including login, registrati
 
 [dependencies]
 snafu = { workspace = true }
+argon2 = { workspace = true }
+serde = { workspace = true }
 common = { path = "../common" }
