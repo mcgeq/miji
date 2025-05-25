@@ -8,3 +8,6 @@ sea-orm.workspace = true
 serde.workspace = true
 chrono = { workspace = true }
 serde_json = { workspace = true }
+snafu = { workspace = true }
+tokio = { workspace = true }
+log = { workspace = true }

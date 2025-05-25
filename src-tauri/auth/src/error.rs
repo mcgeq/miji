@@ -1,4 +1,4 @@
-use miji_core::error::MijiError;
+use common::error::MijiError;
 use snafu::Snafu;
 
 #[derive(Debug, Snafu)]

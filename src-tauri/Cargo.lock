@@ -419,7 +419,7 @@ checksum = "1505bd5d3d116872e7271a6d4e16d81d0c8570876c8de68093a09ac269d8aac0"
 name = "auth"
 version = "0.1.0"
 dependencies = [
- "miji_core",
+ "common",
  "snafu",
 ]
 
@@ -766,7 +766,7 @@ checksum = "613afe47fcd5fac7ccf1db93babcb082c5994d996f20b8b159f2ad1658eb5724"
 name = "checklists"
 version = "0.1.0"
 dependencies = [
- "miji_core",
+ "common",
  "snafu",
 ]
 
@@ -856,9 +856,12 @@ name = "common"
 version = "0.1.0"
 dependencies = [
  "chrono",
+ "log",
  "sea-orm",
  "serde",
  "serde_json",
+ "snafu",
+ "tokio",
 ]
 
 [[package]]
@@ -1977,7 +1980,7 @@ dependencies = [
 name = "health"
 version = "0.1.0"
 dependencies = [
- "miji_core",
+ "common",
  "snafu",
 ]
 
@@ -2686,8 +2689,12 @@ dependencies = [
 name = "miji_core"
 version = "0.1.0"
 dependencies = [
+ "common",
+ "log",
+ "sea-orm",
  "snafu",
  "tauri",
+ "tokio",
 ]
 
 [[package]]
@@ -2814,7 +2821,7 @@ checksum = "72ef4a56884ca558e5ddb05a1d1e7e1bfd9a68d9ed024c21704cc98872dae1bb"
 name = "notes"
 version = "0.1.0"
 dependencies = [
- "miji_core",
+ "common",
  "snafu",
 ]
 
@@ -3721,7 +3728,7 @@ dependencies = [
 name = "profile"
 version = "0.1.0"
 dependencies = [
- "miji_core",
+ "common",
  "snafu",
 ]
 
@@ -4510,7 +4517,7 @@ dependencies = [
 name = "services"
 version = "0.1.0"
 dependencies = [
- "miji_core",
+ "common",
  "snafu",
 ]
 
@@ -4528,7 +4535,7 @@ dependencies = [
 name = "settings"
 version = "0.1.0"
 dependencies = [
- "miji_core",
+ "common",
  "snafu",
 ]
 
@@ -5659,7 +5666,7 @@ checksum = "1f3ccbac311fea05f86f61904b462b55fb3df8837a366dfc601a0161d0532f20"
 name = "todos"
 version = "0.1.0"
 dependencies = [
- "miji_core",
+ "common",
  "snafu",
 ]
 
