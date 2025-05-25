@@ -2668,6 +2668,7 @@ dependencies = [
 name = "miji"
 version = "0.1.0"
 dependencies = [
+ "common",
  "dotenvy",
  "log",
  "migration",
@@ -2683,6 +2684,7 @@ dependencies = [
  "tauri-plugin-os",
  "tauri-plugin-single-instance",
  "tauri-plugin-store",
+ "tokio",
 ]
 
 [[package]]

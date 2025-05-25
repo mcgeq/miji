@@ -54,6 +54,7 @@ sea-orm = { version = "1.1.11", features = [
   "with-json",
   "debug-print",
 ] }
+common = { path = "./common" }
 
 [dependencies]
 tauri = { workspace = true }
@@ -69,6 +70,8 @@ tauri-plugin-log = { workspace = true }
 dotenvy.workspace = true
 sea-orm.workspace = true
 migration = { path = "migration" }
+common = { workspace = true }
+tokio = { workspace = true }
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-single-instance = "2"

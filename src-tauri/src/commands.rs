@@ -1,10 +1,18 @@
-use log::info;
-use tauri::{Builder, Wry};
+use common::{AppState, db::get_database_version};
+use log::{error, info};
+use tauri::{Builder, State, Wry};
 
 #[tauri::command]
-fn greet(name: &str) -> String {
+async fn greet(name: String, state: State<'_, AppState>) -> Result<String, String> {
+    let db = state.db.clone();
+    match get_database_version(&db).await {
+        Ok(version) => {
+            info!("Database Version: {version}");
+        }
+        Err(e) => error!("Failed to get database version: {e}"),
+    }
     info!("Greet {name}");
-    format!("Hello, {name}! You've been greeted from Rust!")
+    Ok(format!("Hello, {name}! You've been greeted from Rust!"))
 }
 
 pub fn init_commands(builder: Builder<Wry>) -> Builder<Wry> {

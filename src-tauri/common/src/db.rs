@@ -6,14 +6,14 @@
 // File:           db.rs
 // Description:    About SQL
 // Create   Date:  2025-05-25 17:13:04
-// Last Modified:  2025-05-25 20:57:35
+// Last Modified:  2025-05-25 22:00:21
 // Modified   By:  mcgeq <mcgeq@outlook.com>
 // -----------------------------------------------------------------------------
 
 use std::time::Duration;
 
 use log::{error, info};
-use sea_orm::{ConnectOptions, Database, DatabaseConnection};
+use sea_orm::{ConnectOptions, ConnectionTrait, Database, DatabaseConnection, DbErr, Statement};
 use snafu::{Backtrace, GenerateImplicitData};
 use tokio::time::sleep;
 
@@ -142,4 +142,36 @@ async fn connect_with_retry(
         source: Box::new(last_error.unwrap()),
         backtrace: Backtrace::generate(),
     })?
+}
+
+pub async fn get_database_version(db: &DatabaseConnection) -> Result<String, DbErr> {
+    // 根据数据库类型，执行不同的版本查询语句
+    let sql = match db.get_database_backend() {
+        sea_orm::DatabaseBackend::Postgres => "SELECT version() AS version",
+        sea_orm::DatabaseBackend::Sqlite => "SELECT sqlite_version() AS version",
+        sea_orm::DatabaseBackend::MySql => "SELECT VERSION() AS version",
+    };
+
+    // 执行查询
+    let row_opt = db
+        .query_one(Statement::from_string(
+            db.get_database_backend(),
+            sql.to_string(),
+        ))
+        .await?;
+
+    if let Some(row) = row_opt {
+        // 取列名为 "version" 的字符串值
+        // 第一个参数为表别名或空字符串，这里没用就传空串
+        match row.try_get::<String>("", "version") {
+            Ok(version) => Ok(version),
+            Err(e) => Err(DbErr::Custom(format!(
+                "Failed to parse version string: {e}",
+            ))),
+        }
+    } else {
+        Err(DbErr::Custom(
+            "No version info returned from database".to_string(),
+        ))
+    }
 }
