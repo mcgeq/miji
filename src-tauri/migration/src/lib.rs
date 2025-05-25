@@ -1,5 +1,6 @@
 pub use sea_orm_migration::prelude::*;
 
+mod m20250420_060449_create_user_enum;
 mod m20250420_060450_create_user;
 mod m20250420_060451_create_project;
 mod m20250420_060452_create_todos;
@@ -17,6 +18,7 @@ mod m20250525_053058_create_period_pms_records;
 mod m20250525_053115_create_period_pms_symptoms;
 pub mod period_scheme;
 pub mod schema;
+pub mod user_scheme;
 
 pub struct Migrator;
 
@@ -24,6 +26,7 @@ pub struct Migrator;
 impl MigratorTrait for Migrator {
     fn migrations() -> Vec<Box<dyn MigrationTrait>> {
         vec![
+            Box::new(m20250420_060449_create_user_enum::Migration),
             Box::new(m20250420_060450_create_user::Migration),
             Box::new(m20250420_060451_create_project::Migration),
             Box::new(m20250420_060452_create_todos::Migration),

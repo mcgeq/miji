@@ -1,6 +1,6 @@
 use sea_orm_migration::prelude::*;
 
-use crate::schema::{Todo, User};
+use crate::{schema::Todo, user_scheme::User};
 
 #[derive(DeriveMigrationName)]
 pub struct Migration;
