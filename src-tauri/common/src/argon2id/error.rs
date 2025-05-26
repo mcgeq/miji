@@ -5,7 +5,7 @@
 // File:           error.rs
 // Description:    About Argon2 Error
 // Create   Date:  2025-05-26 10:55:36
-// Last Modified:  2025-05-26 11:06:30
+// Last Modified:  2025-05-26 18:58:30
 // Modified   By:  mcgeq <mcgeq@outlook.com>
 // -----------------------------------------------------------------------------
 
@@ -15,9 +15,7 @@ use crate::{business_code::BusinessCode, error::MijiError};
 
 #[derive(Debug, Snafu)]
 pub enum Argon2ErrorWrapper {
-    #[snafu(display("Argon2 operation failure: [{code}:{message}]"))]
-    Argon2 { code: BusinessCode, message: String },
-    #[snafu(display("Hash operation failure: [{code}:{message}]"))]
+    #[snafu(display("Argon2 error: [{code}:{message}]"))]
     Hash { code: BusinessCode, message: String },
 }
 
