@@ -878,12 +878,14 @@ dependencies = [
 name = "common"
 version = "0.1.0"
 dependencies = [
+ "argon2",
  "chrono",
  "log",
  "sea-orm",
  "serde",
  "serde_json",
  "snafu",
+ "tauri",
  "tokio",
 ]
 
@@ -2718,7 +2720,6 @@ dependencies = [
  "log",
  "sea-orm",
  "snafu",
- "tauri",
  "tokio",
 ]
 

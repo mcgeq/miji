@@ -4,6 +4,7 @@ pub type MijiResult<T> = Result<T, MijiError>;
 
 pub enum MijiError {
     Auth(Box<dyn Error + Send + Sync + 'static>),
+    Argon2(Box<dyn Error + Send + Sync + 'static>),
     CheckLists(Box<dyn Error + Send + Sync + 'static>),
     Env(Box<dyn Error + Send + Sync + 'static>),
     Health(Box<dyn Error + Send + Sync + 'static>),
@@ -21,6 +22,7 @@ impl fmt::Display for MijiError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             MijiError::Auth(err) => write!(f, "{err}"),
+            MijiError::Argon2(err) => write!(f, "{err}"),
             MijiError::CheckLists(err) => write!(f, "{err}"),
             MijiError::Env(err) => write!(f, "{err}"),
             MijiError::Health(err) => write!(f, "{err}"),
@@ -40,6 +42,7 @@ impl fmt::Debug for MijiError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             MijiError::Auth(err) => write!(f, "{err}"),
+            MijiError::Argon2(err) => write!(f, "{err}"),
             MijiError::CheckLists(err) => write!(f, "{err}"),
             MijiError::Env(err) => write!(f, "{err}"),
             MijiError::Health(err) => write!(f, "{err}"),
@@ -59,6 +62,7 @@ impl Error for MijiError {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         match self {
             MijiError::Auth(err) => Some(err.as_ref()),
+            MijiError::Argon2(err) => Some(err.as_ref()),
             MijiError::CheckLists(err) => Some(err.as_ref()),
             MijiError::Env(err) => Some(err.as_ref()),
             MijiError::Health(err) => Some(err.as_ref()),

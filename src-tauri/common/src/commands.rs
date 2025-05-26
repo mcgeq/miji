@@ -3,9 +3,9 @@
 // Author:         mcge
 // Email:          <mcgeq@outlook.com>
 // File:           commands.rs
-// Description:    About commands trait
-// Create   Date:  2025-05-24 19:53:20
-// Last Modified:  2025-05-24 20:32:28
+// Description:    About Command Trait
+// Create   Date:  2025-05-26 10:31:14
+// Last Modified:  2025-05-26 10:33:46
 // Modified   By:  mcgeq <mcgeq@outlook.com>
 // -----------------------------------------------------------------------------
 

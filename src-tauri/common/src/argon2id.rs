@@ -2,9 +2,13 @@
 //    Copyright (C) 2025 mcge. All rights reserved.
 // Author:         mcge
 // Email:          <mcgeq@outlook.com>
-// File:           helper.rs
-// Description:    About User
-// Create   Date:  2025-05-25 22:46:37
-// Last Modified:  2025-05-26 10:55:25
+// File:           argon2id.rs
+// Description:    About Argon2 helpler
+// Create   Date:  2025-05-26 10:47:04
+// Last Modified:  2025-05-26 10:55:10
 // Modified   By:  mcgeq <mcgeq@outlook.com>
 // -----------------------------------------------------------------------------
+
+pub mod config;
+pub mod error;
+pub mod helper;
