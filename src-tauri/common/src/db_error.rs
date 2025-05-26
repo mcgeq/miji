@@ -4,7 +4,7 @@ use crate::{business_code::BusinessCode, error::MijiError};
 use snafu::{Backtrace, Snafu};
 
 #[derive(Debug, Snafu)]
-pub enum SqlError {
+pub enum DataBaseError {
     #[snafu(display("DataBase init failed: {message}"))]
     DataBaseError {
         code: BusinessCode,
@@ -54,8 +54,8 @@ pub enum SqlError {
     },
 }
 
-impl From<SqlError> for MijiError {
-    fn from(value: SqlError) -> Self {
+impl From<DataBaseError> for MijiError {
+    fn from(value: DataBaseError) -> Self {
         MijiError::Sql(Box::new(value))
     }
 }

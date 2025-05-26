@@ -1,5 +1,5 @@
 import { Layout } from '@/components/layout/Layout';
-import { loginRoute } from '@/features/auth/router';
+import { loginRoute, registerRoute } from '@/features/auth/router';
 import { checklistRoute } from '@/features/checklist/router';
 import { notesRoute } from '@/features/notes/router';
 import { periodRoute } from '@/features/period/router';
@@ -21,6 +21,7 @@ const routeTree = rootRoute.addChildren([
   profileRoute,
   settingsRoute,
   loginRoute,
+  registerRoute,
 ]);
 
 export const router = createRouter({ routeTree });

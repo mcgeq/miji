@@ -14,3 +14,4 @@ log = { workspace = true }
 tauri = { workspace = true }
 argon2 = { workspace = true }
 base64 = { workspace = true }
+rand = { workspace = true }

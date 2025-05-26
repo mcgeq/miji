@@ -1,5 +1,7 @@
 use std::{error::Error, fmt};
 
+use serde::Serialize;
+
 pub type MijiResult<T> = Result<T, MijiError>;
 
 pub enum MijiError {
@@ -76,4 +78,48 @@ impl Error for MijiError {
             MijiError::User(err) => Some(err.as_ref()),
         }
     }
+}
+
+#[derive(Debug, Serialize)]
+#[serde(tag = "module", content = "message")]
+pub enum MijiErrorDto {
+    Auth(String),
+    Argon2(String),
+    CheckLists(String),
+    Env(String),
+    Health(String),
+    Notes(String),
+    Profile(String),
+    Permissions(String),
+    Services(String),
+    Settings(String),
+    Sql(String),
+    Todos(String),
+    User(String),
+    Unknown(String), // 可选：处理兜底错误
+}
+
+impl From<&MijiError> for MijiErrorDto {
+    fn from(err: &MijiError) -> Self {
+        match err {
+            MijiError::Auth(e) => MijiErrorDto::Auth(e.to_string()),
+            MijiError::Argon2(e) => MijiErrorDto::Argon2(e.to_string()),
+            MijiError::CheckLists(e) => MijiErrorDto::CheckLists(e.to_string()),
+            MijiError::Env(e) => MijiErrorDto::Env(e.to_string()),
+            MijiError::Health(e) => MijiErrorDto::Health(e.to_string()),
+            MijiError::Notes(e) => MijiErrorDto::Notes(e.to_string()),
+            MijiError::Profile(e) => MijiErrorDto::Profile(e.to_string()),
+            MijiError::Permissions(e) => MijiErrorDto::Permissions(e.to_string()),
+            MijiError::Services(e) => MijiErrorDto::Services(e.to_string()),
+            MijiError::Settings(e) => MijiErrorDto::Settings(e.to_string()),
+            MijiError::Sql(e) => MijiErrorDto::Sql(e.to_string()),
+            MijiError::Todos(e) => MijiErrorDto::Todos(e.to_string()),
+            MijiError::User(e) => MijiErrorDto::User(e.to_string()),
+        }
+    }
+}
+
+pub fn to_dto<E: Into<MijiError>>(err: E) -> MijiErrorDto {
+    let err = err.into();
+    MijiErrorDto::from(&err)
 }

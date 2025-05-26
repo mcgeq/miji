@@ -1,6 +1,5 @@
 pub mod argon2id;
 pub mod business_code;
-pub mod commands;
 pub mod db;
 pub mod db_error;
 pub mod entity;
@@ -8,6 +7,7 @@ pub mod env;
 pub mod env_error;
 pub mod error;
 pub mod sql_error;
+pub mod utils;
 
 use sea_orm::DatabaseConnection;
 use std::sync::Arc;

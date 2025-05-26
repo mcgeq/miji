@@ -34,6 +34,7 @@ tauri-build = { version = "2", features = [] }
 
 [workspace.dependencies]
 base64 = "0.22.1"
+jsonwebtoken = "9.3.1"
 tauri = { version = "2", features = [] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
@@ -55,7 +56,9 @@ sea-orm = { version = "1.1.11", features = [
   "with-json",
   "debug-print",
 ] }
+rand = { version = "0.9.1", features = ["serde"] }
 common = { path = "./common" }
+auth = { path = "./auth" }
 
 [dependencies]
 tauri = { workspace = true }
@@ -73,6 +76,7 @@ sea-orm.workspace = true
 migration = { path = "migration" }
 common = { workspace = true }
 tokio = { workspace = true }
+auth = { workspace = true }
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-single-instance = "2"

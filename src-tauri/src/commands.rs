@@ -16,5 +16,5 @@ async fn greet(name: String, state: State<'_, AppState>) -> Result<String, Strin
 }
 
 pub fn init_commands(builder: Builder<Wry>) -> Builder<Wry> {
-    builder.invoke_handler(tauri::generate_handler![greet])
+    builder.invoke_handler(tauri::generate_handler![greet, auth::commands::register])
 }

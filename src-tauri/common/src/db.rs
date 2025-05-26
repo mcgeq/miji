@@ -6,7 +6,7 @@
 // File:           db.rs
 // Description:    About SQL
 // Create   Date:  2025-05-25 17:13:04
-// Last Modified:  2025-05-25 22:00:21
+// Last Modified:  2025-05-26 20:37:43
 // Modified   By:  mcgeq <mcgeq@outlook.com>
 // -----------------------------------------------------------------------------
 
@@ -19,7 +19,7 @@ use tokio::time::sleep;
 
 use crate::{
     business_code::BusinessCode,
-    db_error::SqlError,
+    db_error::DataBaseError,
     env::{env_get, env_get_string},
     env_error::EnvError,
     error::MijiResult,
@@ -136,7 +136,7 @@ async fn connect_with_retry(
             }
         }
     }
-    Err(SqlError::DataBaseConnectionError {
+    Err(DataBaseError::DataBaseConnectionError {
         code: BusinessCode::DatabaseConnectionFailure,
         message: "Failed to connect to database after retries".to_string(),
         source: Box::new(last_error.unwrap()),
