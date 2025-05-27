@@ -53,6 +53,7 @@ pub enum FamilyMember {
 pub enum Account {
     Table,
     SerialNum,
+    #[sea_orm(iden = "account_type")]
     AccountType,
     Description,
     Balance,
@@ -67,7 +68,10 @@ pub enum Account {
 #[derive(DeriveIden)]
 pub enum Transaction {
     Table,
+    SerialNum,
+    #[sea_orm(iden = "transaction_type")]
     TransactionType,
+    #[sea_orm(iden = "transaction_status")]
     TransactionStatus,
     Date,
     Amount,
@@ -98,7 +102,8 @@ pub enum Budget {
     Name,
     Category,
     Amount,
-    Period,
+    #[sea_orm(iden = "repeat_period")]
+    RepeatPeriod,
     StartDate,
     EndDate,
     UsedAmount,

@@ -13,7 +13,11 @@ impl MigrationTrait for Migration {
             .create_type(
                 Type::create()
                     .as_enum(SymptomsType::Type)
-                    .values(vec!["Pain", "Fatigue", "MoodSwing"])
+                    .values(vec![
+                        Alias::new("Pain"),
+                        Alias::new("Fatigue"),
+                        Alias::new("MoodSwing"),
+                    ])
                     .to_owned(),
             )
             .await?;
@@ -23,7 +27,11 @@ impl MigrationTrait for Migration {
             .create_type(
                 Type::create()
                     .as_enum(Intensity::Type)
-                    .values(vec!["Light", "Medium", "Heavy"])
+                    .values(vec![
+                        Alias::new("Light"),
+                        Alias::new("Medium"),
+                        Alias::new("Heavy"),
+                    ])
                     .to_owned(),
             )
             .await?;
@@ -33,7 +41,11 @@ impl MigrationTrait for Migration {
             .create_type(
                 Type::create()
                     .as_enum(FlowLevel::Type)
-                    .values(vec!["Light", "Medium", "Heavy"])
+                    .values(vec![
+                        Alias::new("Light"),
+                        Alias::new("Medium"),
+                        Alias::new("Heavy"),
+                    ])
                     .to_owned(),
             )
             .await?;
@@ -43,7 +55,12 @@ impl MigrationTrait for Migration {
             .create_type(
                 Type::create()
                     .as_enum(ExerciseIntensity::Type)
-                    .values(vec!["None", "Light", "Medium", "Heavy"])
+                    .values(vec![
+                        Alias::new("None"),
+                        Alias::new("Light"),
+                        Alias::new("Medium"),
+                        Alias::new("Heavy"),
+                    ])
                     .to_owned(),
             )
             .await?;

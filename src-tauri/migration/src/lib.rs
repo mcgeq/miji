@@ -17,12 +17,13 @@ mod m20250525_053043_create_period_symptoms;
 mod m20250525_053058_create_period_pms_records;
 mod m20250525_053115_create_period_pms_symptoms;
 mod m20250527_000001_create_money_enum;
-mod m20250527_000002_create_money_account;
-mod m20250527_000003_create_money_transaction;
-mod m20250527_000004_create_money_currency;
+mod m20250527_000002_create_money_currency;
+mod m20250527_000003_create_money_family_member;
+mod m20250527_000004_create_money_account;
 mod m20250527_000005_create_money_budget;
-mod m20250527_000006_create_money_family_ledger;
-mod m20250527_000007_create_money_bill_reminder;
+mod m20250527_000006_create_money_transaction;
+mod m20250527_000007_create_money_family_ledger;
+mod m20250527_000008_create_money_bill_reminder;
 pub mod money_scheme;
 pub mod period_scheme;
 pub mod schema;
@@ -51,12 +52,13 @@ impl MigratorTrait for Migrator {
             Box::new(m20250525_053058_create_period_pms_records::Migration),
             Box::new(m20250525_053115_create_period_pms_symptoms::Migration),
             Box::new(m20250527_000001_create_money_enum::Migration),
-            Box::new(m20250527_000002_create_money_account::Migration),
-            Box::new(m20250527_000003_create_money_transaction::Migration),
-            Box::new(m20250527_000004_create_money_currency::Migration),
+            Box::new(m20250527_000002_create_money_currency::Migration),
+            Box::new(m20250527_000003_create_money_family_member::Migration),
+            Box::new(m20250527_000004_create_money_account::Migration),
             Box::new(m20250527_000005_create_money_budget::Migration),
-            Box::new(m20250527_000006_create_money_family_ledger::Migration),
-            Box::new(m20250527_000007_create_money_bill_reminder::Migration),
+            Box::new(m20250527_000006_create_money_transaction::Migration),
+            Box::new(m20250527_000007_create_money_family_ledger::Migration),
+            Box::new(m20250527_000008_create_money_bill_reminder::Migration),
         ]
     }
 }

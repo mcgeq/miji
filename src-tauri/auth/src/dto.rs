@@ -4,17 +4,24 @@ use common::entity::{
     user,
 };
 use serde::{Deserialize, Serialize};
-#[derive(Debug, Deserialize)]
+use validator::Validate;
+
+#[derive(Debug, Deserialize, Validate)]
 pub struct RegisterPayload {
+    #[validate(length(min = 1))]
     pub name: String,
+    #[validate(email)]
     pub email: String,
+    #[validate(length(min = 8))]
     pub password: String,
     pub code: String,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Validate)]
 pub struct LoginPayload {
+    #[validate(email)]
     pub email: String,
+    #[validate(length(min = 8))]
     pub password: String,
 }
 

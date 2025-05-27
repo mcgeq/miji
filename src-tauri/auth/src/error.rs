@@ -26,6 +26,9 @@ pub enum AuthError {
 
     #[snafu(display("User and Password are failure"))]
     UserAndPasswordFailure,
+
+    #[snafu(display("Validate failure: {details}"))]
+    Validation { details: String },
 }
 
 impl From<UserError> for MijiError {

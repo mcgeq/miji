@@ -13,7 +13,15 @@ impl MigrationTrait for Migration {
             .create_type(
                 Type::create()
                     .as_enum(UserRole::Type)
-                    .values(vec![Alias::new("admin"), Alias::new("user")])
+                    .values(vec![
+                        Alias::new("admin"),
+                        Alias::new("user"),
+                        Alias::new("moderator"),
+                        Alias::new("editor"),
+                        Alias::new("guest"),
+                        Alias::new("developer"),
+                        Alias::new("owner"),
+                    ])
                     .to_owned(),
             )
             .await?;
@@ -23,7 +31,14 @@ impl MigrationTrait for Migration {
             .create_type(
                 Type::create()
                     .as_enum(UserStatus::Type)
-                    .values(vec![Alias::new("active"), Alias::new("inactive")])
+                    .values(vec![
+                        Alias::new("active"),
+                        Alias::new("inactive"),
+                        Alias::new("suspended"),
+                        Alias::new("banned"),
+                        Alias::new("pending"),
+                        Alias::new("deleted"),
+                    ])
                     .to_owned(),
             )
             .await?;

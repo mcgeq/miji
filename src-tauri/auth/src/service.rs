@@ -5,7 +5,7 @@
 // File:           service.rs
 // Description:    About Auth service
 // Create   Date:  2025-05-26 20:01:16
-// Last Modified:  2025-05-27 18:37:11
+// Last Modified:  2025-05-27 22:19:35
 // Modified   By:  mcgeq <mcgeq@outlook.com>
 // -----------------------------------------------------------------------------
 
@@ -27,6 +27,8 @@ use crate::{
     error::{AuthError, UserError},
     jwt::JwtHelper,
 };
+
+static JWT_SECRET: &str = "mcgeq";
 
 pub struct AuthService;
 
@@ -58,7 +60,7 @@ impl AuthService {
             let sql_error: SQLError = e.into();
             MijiError::from(sql_error)
         })?;
-        let token = AuthService::user_token(user.password_hash.clone(), &user.email, &user.role)?;
+        let token = Self::user_token(&user.email, &user.role)?;
         Ok((user, token))
     }
 
@@ -67,19 +69,24 @@ impl AuthService {
         email: &str,
         password: &str,
     ) -> MijiResult<(UserModel, String)> {
-        let u = AuthService::user(db, email).await.unwrap();
+        let u = Self::user(db, email).await.unwrap();
         if u.status.eq(&UserStatus::Inactive) {
             Err(UserError::UserNotFound)?
         }
-        let u = AuthService::check_password_hash(u, password)?;
-        let token = AuthService::user_token(u.password_hash.clone(), &u.email, &u.role)?;
+        let u = Self::check_password_hash(u, password)?;
+        let token = Self::user_token(&u.email, &u.role)?;
         Ok((u, token))
     }
 
     pub async fn logout(db: &DatabaseConnection, email: &str, password: &str) -> MijiResult<bool> {
-        let u = AuthService::user(db, email).await.unwrap();
-        let mut u = AuthService::check_password_hash(u, password)?;
-        u.status = UserStatus::Inactive;
+        let u = Self::user(db, email).await.unwrap();
+        let u = Self::check_password_hash(u, password)?;
+        let mut u: user::ActiveModel = u.into();
+        u.status = Set(UserStatus::Inactive);
+        u.update(db).await.map_err(|e| {
+            let sql_error: SQLError = e.into();
+            MijiError::from(sql_error)
+        })?;
         Ok(true)
     }
     async fn user(db: &DatabaseConnection, email: &str) -> MijiResult<UserModel> {
@@ -104,8 +111,8 @@ impl AuthService {
         Ok(user)
     }
 
-    fn user_token(secret: String, user_id: &str, role: &UserRole) -> MijiResult<String> {
-        let jwt = JwtHelper::new(secret);
+    fn user_token(user_id: &str, role: &UserRole) -> MijiResult<String> {
+        let jwt = JwtHelper::new(JWT_SECRET.to_string());
         jwt.generate_token(user_id, &serde_json::to_string(role).unwrap())
     }
 }

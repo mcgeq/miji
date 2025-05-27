@@ -4,6 +4,22 @@ use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Eq, EnumIter, DeriveActiveEnum, Serialize, Deserialize)]
+#[sea_orm(rs_type = "String", db_type = "Enum", enum_name = "account_type")]
+pub enum AccountType {
+    #[sea_orm(string_value = "Cash")]
+    Cash,
+    #[sea_orm(string_value = "Bank")]
+    Bank,
+    #[sea_orm(string_value = "CreditCard")]
+    CreditCard,
+    #[sea_orm(string_value = "WeChat")]
+    WeChat,
+    #[sea_orm(string_value = "Alipay")]
+    Alipay,
+    #[sea_orm(string_value = "Investment")]
+    Investment,
+}
+#[derive(Debug, Clone, PartialEq, Eq, EnumIter, DeriveActiveEnum, Serialize, Deserialize)]
 #[sea_orm(rs_type = "String", db_type = "Enum", enum_name = "exercise_intensity")]
 pub enum ExerciseIntensity {
     #[sea_orm(string_value = "None")]
@@ -46,6 +62,20 @@ pub enum ReminderType {
     Popup,
 }
 #[derive(Debug, Clone, PartialEq, Eq, EnumIter, DeriveActiveEnum, Serialize, Deserialize)]
+#[sea_orm(rs_type = "String", db_type = "Enum", enum_name = "repeat_period")]
+pub enum RepeatPeriod {
+    #[sea_orm(string_value = "Daily")]
+    Daily,
+    #[sea_orm(string_value = "Weekly")]
+    Weekly,
+    #[sea_orm(string_value = "Monthy")]
+    Monthy,
+    #[sea_orm(string_value = "Quarterly")]
+    Quarterly,
+    #[sea_orm(string_value = "Yearly")]
+    Yearly,
+}
+#[derive(Debug, Clone, PartialEq, Eq, EnumIter, DeriveActiveEnum, Serialize, Deserialize)]
 #[sea_orm(rs_type = "String", db_type = "Enum", enum_name = "symptoms_type")]
 pub enum SymptomsType {
     #[sea_orm(string_value = "Pain")]
@@ -56,12 +86,46 @@ pub enum SymptomsType {
     MoodSwing,
 }
 #[derive(Debug, Clone, PartialEq, Eq, EnumIter, DeriveActiveEnum, Serialize, Deserialize)]
+#[sea_orm(rs_type = "String", db_type = "Enum", enum_name = "transaction_status")]
+pub enum TransactionStatus {
+    #[sea_orm(string_value = "Pending")]
+    Pending,
+    #[sea_orm(string_value = "Completed")]
+    Completed,
+    #[sea_orm(string_value = "Reversed")]
+    Reversed,
+}
+#[derive(Debug, Clone, PartialEq, Eq, EnumIter, DeriveActiveEnum, Serialize, Deserialize)]
+#[sea_orm(rs_type = "String", db_type = "Enum", enum_name = "transaction_type")]
+pub enum TransactionType {
+    #[sea_orm(string_value = "Income")]
+    Income,
+    #[sea_orm(string_value = "Expense")]
+    Expense,
+    #[sea_orm(string_value = "Transfer")]
+    Transfer,
+    #[sea_orm(string_value = "Reimbursement")]
+    Reimbursement,
+    #[sea_orm(string_value = "Gift")]
+    Gift,
+}
+#[derive(Debug, Clone, PartialEq, Eq, EnumIter, DeriveActiveEnum, Serialize, Deserialize)]
 #[sea_orm(rs_type = "String", db_type = "Enum", enum_name = "user_role")]
 pub enum UserRole {
     #[sea_orm(string_value = "admin")]
     Admin,
     #[sea_orm(string_value = "user")]
     User,
+    #[sea_orm(string_value = "moderator")]
+    Moderator,
+    #[sea_orm(string_value = "editor")]
+    Editor,
+    #[sea_orm(string_value = "guest")]
+    Guest,
+    #[sea_orm(string_value = "developer")]
+    Developer,
+    #[sea_orm(string_value = "owner")]
+    Owner,
 }
 #[derive(Debug, Clone, PartialEq, Eq, EnumIter, DeriveActiveEnum, Serialize, Deserialize)]
 #[sea_orm(rs_type = "String", db_type = "Enum", enum_name = "user_status")]
@@ -70,4 +134,12 @@ pub enum UserStatus {
     Active,
     #[sea_orm(string_value = "inactive")]
     Inactive,
+    #[sea_orm(string_value = "suspended")]
+    Suspended,
+    #[sea_orm(string_value = "banned")]
+    Banned,
+    #[sea_orm(string_value = "pending")]
+    Pending,
+    #[sea_orm(string_value = "deleted")]
+    Deleted,
 }

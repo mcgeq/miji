@@ -1,6 +1,6 @@
 use sea_orm_migration::prelude::*;
 
-use crate::money_scheme::{Account, AccountType};
+use crate::money_scheme::FamilyMember;
 
 #[derive(DeriveMigrationName)]
 pub struct Migration;
@@ -11,42 +11,38 @@ impl MigrationTrait for Migration {
         manager
             .create_table(
                 Table::create()
-                    .table(Account::Table)
+                    .table(FamilyMember::Table)
                     .if_not_exists()
                     .col(
-                        ColumnDef::new(Account::SerialNum)
+                        ColumnDef::new(FamilyMember::SerialNum)
                             .string_len(38)
                             .not_null()
                             .primary_key(),
                     )
+                    .col(ColumnDef::new(FamilyMember::Name).string().not_null())
+                    .col(ColumnDef::new(FamilyMember::Role).string().not_null())
+                    .col(ColumnDef::new(FamilyMember::IsPrimary).boolean().not_null())
+                    .col(ColumnDef::new(FamilyMember::Permissions).json().not_null())
                     .col(
-                        ColumnDef::new(Account::AccountType)
-                            .custom(AccountType::Type)
-                            .not_null(),
-                    )
-                    .col(ColumnDef::new(Account::Description).string().null())
-                    .col(
-                        ColumnDef::new(Account::CreatedAt)
+                        ColumnDef::new(FamilyMember::CreatedAt)
                             .timestamp_with_time_zone()
                             .not_null(),
                     )
                     .col(
-                        ColumnDef::new(Account::UpdatedAt)
+                        ColumnDef::new(FamilyMember::UpdatedAt)
                             .timestamp_with_time_zone()
                             .null(),
                     )
                     .to_owned(),
             )
             .await?;
-
         Ok(())
     }
 
     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
         manager
-            .drop_table(Table::drop().table(Account::Table).to_owned())
+            .drop_table(Table::drop().table(FamilyMember::Table).to_owned())
             .await?;
-
         Ok(())
     }
 }

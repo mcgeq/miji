@@ -15,3 +15,5 @@ sea-orm = { workspace = true }
 tauri = { workspace = true }
 common = { path = "../common" }
 log = { workspace = true }
+validator = { workspace = true }
+tokio = { workspace = true }

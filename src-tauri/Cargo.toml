@@ -19,7 +19,8 @@ members = [
   "settings",
   "health",
   "services",
-  "common", "money",
+  "common",
+  "money",
 ]
 
 [lib]
@@ -57,6 +58,7 @@ sea-orm = { version = "1.1.11", features = [
   "debug-print",
 ] }
 rand = { version = "0.9.1", features = ["serde"] }
+validator = { version = "0.20.0", features = ["derive"] }
 common = { path = "./common" }
 auth = { path = "./auth" }
 

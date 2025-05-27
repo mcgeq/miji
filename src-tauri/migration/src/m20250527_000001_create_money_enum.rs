@@ -1,6 +1,6 @@
 use sea_orm_migration::prelude::{extension::postgres::Type, *};
 
-use crate::money_scheme::{RepeatPeriod, TransactionStatus, TransactionType};
+use crate::money_scheme::{AccountType, RepeatPeriod, TransactionStatus, TransactionType};
 
 #[derive(DeriveMigrationName)]
 pub struct Migration;
@@ -13,21 +13,12 @@ impl MigrationTrait for Migration {
                 Type::create()
                     .as_enum(TransactionType::Type)
                     .values(vec![
-                        "Income",
-                        "Expense",
-                        "Transfer",
-                        "Reimbursement",
-                        "Gift",
+                        Alias::new("Income"),
+                        Alias::new("Expense"),
+                        Alias::new("Transfer"),
+                        Alias::new("Reimbursement"),
+                        Alias::new("Gift"),
                     ])
-                    .to_owned(),
-            )
-            .await?;
-
-        manager
-            .create_type(
-                Type::create()
-                    .as_enum(TransactionStatus::Type)
-                    .values(vec!["Pending", "Completed", "Reversed"])
                     .to_owned(),
             )
             .await?;
@@ -37,12 +28,25 @@ impl MigrationTrait for Migration {
                 Type::create()
                     .as_enum(TransactionStatus::Type)
                     .values(vec![
-                        "Cash",
-                        "Bank",
-                        "CreditCard",
-                        "WeChat",
-                        "Alipay",
-                        "Investment",
+                        Alias::new("Pending"),
+                        Alias::new("Completed"),
+                        Alias::new("Reversed"),
+                    ])
+                    .to_owned(),
+            )
+            .await?;
+
+        manager
+            .create_type(
+                Type::create()
+                    .as_enum(AccountType::Type)
+                    .values(vec![
+                        Alias::new("Cash"),
+                        Alias::new("Bank"),
+                        Alias::new("CreditCard"),
+                        Alias::new("WeChat"),
+                        Alias::new("Alipay"),
+                        Alias::new("Investment"),
                     ])
                     .to_owned(),
             )
@@ -52,7 +56,13 @@ impl MigrationTrait for Migration {
             .create_type(
                 Type::create()
                     .as_enum(RepeatPeriod::Type)
-                    .values(vec!["Daily", "Weekly", "Monthy", "Quarterly", "Yearly"])
+                    .values(vec![
+                        Alias::new("Daily"),
+                        Alias::new("Weekly"),
+                        Alias::new("Monthy"),
+                        Alias::new("Quarterly"),
+                        Alias::new("Yearly"),
+                    ])
                     .to_owned(),
             )
             .await?;
