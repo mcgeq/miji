@@ -23,6 +23,9 @@ pub enum AuthError {
 
     #[snafu(display("Token expired"))]
     TokenExpired,
+
+    #[snafu(display("User and Password are failure"))]
+    UserAndPasswordFailure,
 }
 
 impl From<UserError> for MijiError {

@@ -1,48 +1,34 @@
-use common::{entity::user, error::MijiResult};
+use common::error::MijiResult;
 use sea_orm::DatabaseConnection;
-use serde::{Deserialize, Serialize};
 
-use crate::service::AuthService;
-
-#[derive(Debug, Deserialize)]
-pub struct RegisterPayload {
-    pub name: String,
-    pub email: String,
-    pub password: String,
-    pub code: String,
-}
-
-#[derive(Debug, Deserialize)]
-pub struct LoginPayload {
-    pub email: String,
-    pub password: String,
-}
-
-#[derive(Debug, Serialize)]
-pub struct LoginResponse {
-    pub token: String,
-    pub user: user::Model,
-}
+use crate::{
+    dto::{LoginPayload, LoginResponse, RegisterPayload},
+    service::AuthService,
+};
 
 pub async fn register_handler(
     db: &DatabaseConnection,
     payload: RegisterPayload,
-) -> MijiResult<user::Model> {
-    AuthService::register(
+) -> MijiResult<LoginResponse> {
+    let (user, token) = AuthService::register(
         db,
         &payload.name,
         &payload.email,
         &payload.password,
         &payload.code,
     )
-    .await
+    .await?;
+    Ok(LoginResponse { token, user })
 }
 
-// pub async fn login_handler(db: DbConn, payload: LoginPayload) -> MijiResult<LoginResponse> {
-//     let (user, token) = AuthService::login(&db, &payload.email, &payload.password).await?;
-//     Ok(LoginResponse { token, user })
-// }
-//
+pub async fn login_handler(
+    db: &DatabaseConnection,
+    payload: LoginPayload,
+) -> MijiResult<LoginResponse> {
+    let (user, token) = AuthService::login(db, &payload.email, &payload.password).await?;
+    Ok(LoginResponse { token, user })
+}
+
 // pub async fn logout_handler(user: model::Model) -> MijiResult<()> {
 //     AuthService::logout(&user)
 // }

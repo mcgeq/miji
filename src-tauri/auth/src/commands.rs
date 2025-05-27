@@ -5,17 +5,28 @@ use common::{
 use tauri::State;
 
 use crate::{
-    dto::UserDto,
-    handler::{RegisterPayload, register_handler},
+    dto::{LoginPayload, LoginResponseDto, RegisterPayload},
+    handler::{login_handler, register_handler},
 };
 
 #[tauri::command]
 pub async fn register(
     payload: RegisterPayload,
     state: State<'_, AppState>,
-) -> Result<UserDto, MijiErrorDto> {
+) -> Result<LoginResponseDto, MijiErrorDto> {
     register_handler(&state.db, payload)
         .await
-        .map(UserDto::from)
+        .map(LoginResponseDto::from)
+        .map_err(to_dto)
+}
+
+#[tauri::command]
+pub async fn login(
+    payload: LoginPayload,
+    state: State<'_, AppState>,
+) -> Result<LoginResponseDto, MijiErrorDto> {
+    login_handler(&state.db, payload)
+        .await
+        .map(LoginResponseDto::from)
         .map_err(to_dto)
 }
