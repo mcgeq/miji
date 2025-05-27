@@ -19,7 +19,7 @@ members = [
   "settings",
   "health",
   "services",
-  "common",
+  "common", "money",
 ]
 
 [lib]
