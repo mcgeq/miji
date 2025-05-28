@@ -3,6 +3,8 @@
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
+use super::sea_orm_active_enums::{UserRole, UserStatus};
+
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize)]
 #[sea_orm(table_name = "user")]
 pub struct Model {
@@ -18,8 +20,8 @@ pub struct Model {
     pub avatar_url: Option<String>,
     pub last_login_at: Option<DateTimeWithTimeZone>,
     pub is_verified: bool,
-    pub role: i16,
-    pub status: i16,
+    pub role: UserRole,
+    pub status: UserStatus,
     pub email_verified_at: Option<DateTimeWithTimeZone>,
     pub phone_verified_at: Option<DateTimeWithTimeZone>,
     pub bio: Option<String>,

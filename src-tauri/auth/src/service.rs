@@ -5,12 +5,13 @@
 // File:           service.rs
 // Description:    About Auth service
 // Create   Date:  2025-05-26 20:01:16
-// Last Modified:  2025-05-27 22:19:35
+// Last Modified:  2025-05-28 22:07:37
 // Modified   By:  mcgeq <mcgeq@outlook.com>
 // -----------------------------------------------------------------------------
 
 use chrono::{Local, Offset};
 use common::{
+    AppState,
     argon2id::{helper::Argon2Helper, store_hash::StoredHash},
     entity::{
         sea_orm_active_enums::{UserRole, UserStatus},
@@ -21,25 +22,24 @@ use common::{
     utils::uuid::McgUuid,
 };
 use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, Set};
-use serde_json::json;
+use tauri::State;
 
 use crate::{
     error::{AuthError, UserError},
     jwt::JwtHelper,
 };
 
-static JWT_SECRET: &str = "mcgeq";
-
 pub struct AuthService;
 
 impl AuthService {
     pub async fn register(
-        db: &DatabaseConnection,
+        state: &State<'_, AppState>,
         name: &str,
         email: &str,
         password: &str,
         _code: &str,
     ) -> MijiResult<(UserModel, String)> {
+        let db = &*state.db;
         let helper = Argon2Helper::new()?;
         let hash = helper.create_hashed_password(password)?;
         let now = Local::now();
@@ -60,25 +60,38 @@ impl AuthService {
             let sql_error: SQLError = e.into();
             MijiError::from(sql_error)
         })?;
-        let token = Self::user_token(&user.email, &user.role)?;
+        let jwt_secret = {
+            let credentials = state.credentials.lock().await;
+            credentials.jwt_secret.clone()
+        };
+
+        let token = Self::user_token(&user.email, &user.role, &jwt_secret)?;
         Ok((user, token))
     }
 
     pub async fn login(
-        db: &DatabaseConnection,
+        state: &State<'_, AppState>,
         email: &str,
         password: &str,
     ) -> MijiResult<(UserModel, String)> {
+        let db = &*state.db;
         let u = Self::user(db, email).await.unwrap();
         if u.status.eq(&UserStatus::Inactive) {
             Err(UserError::UserNotFound)?
         }
+        let credentials = state.credentials.lock().await;
+        let jwt_secret = credentials.jwt_secret.clone();
         let u = Self::check_password_hash(u, password)?;
-        let token = Self::user_token(&u.email, &u.role)?;
+        let token = Self::user_token(&u.email, &u.role, &jwt_secret)?;
         Ok((u, token))
     }
 
-    pub async fn logout(db: &DatabaseConnection, email: &str, password: &str) -> MijiResult<bool> {
+    pub async fn logout(
+        state: &State<'_, AppState>,
+        email: &str,
+        password: &str,
+    ) -> MijiResult<bool> {
+        let db = &*state.db;
         let u = Self::user(db, email).await.unwrap();
         let u = Self::check_password_hash(u, password)?;
         let mut u: user::ActiveModel = u.into();
@@ -102,7 +115,7 @@ impl AuthService {
         Ok(u)
     }
     fn check_password_hash(user: UserModel, password: &str) -> MijiResult<UserModel> {
-        let store: StoredHash = serde_json::from_value(json!(&user.password_hash)).unwrap();
+        let store: StoredHash = serde_json::from_str(&user.password_hash).unwrap();
         let helper = Argon2Helper::new()?;
         let verity_hash = helper.verify_hashed_password(password, &store)?;
         if !verity_hash {
@@ -111,8 +124,8 @@ impl AuthService {
         Ok(user)
     }
 
-    fn user_token(user_id: &str, role: &UserRole) -> MijiResult<String> {
-        let jwt = JwtHelper::new(JWT_SECRET.to_string());
+    fn user_token(user_id: &str, role: &UserRole, secret: &str) -> MijiResult<String> {
+        let jwt = JwtHelper::new(secret.to_string());
         jwt.generate_token(user_id, &serde_json::to_string(role).unwrap())
     }
 }

@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import { Link } from '@tanstack/react-router';
+import { Link, useNavigate } from '@tanstack/react-router';
 import { useAuthStore } from '../store';
+import type { UserDto } from '@/features/common/users/user';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -19,6 +20,8 @@ export default function LoginPage() {
     return null;
   };
 
+  const navigate = useNavigate();
+
   const handleLogin = async () => {
     setError(null);
     const msg = validate();
@@ -26,10 +29,12 @@ export default function LoginPage() {
 
     setLoading(true);
     try {
-      const user = await invoke('login', {
+      const user = await invoke<UserDto>('login', {
         payload: { email, password, code },
       });
+      console.log(user);
       setAuth(user.token, user, rememberMe);
+      navigate({ to: '/' });
     } catch (err) {
       console.error(err);
       setError(typeof err === 'string' ? err : '登录失败');

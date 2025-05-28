@@ -14,7 +14,7 @@ pub async fn register(
     payload: RegisterPayload,
     state: State<'_, AppState>,
 ) -> Result<LoginResponseDto, MijiErrorDto> {
-    register_handler(&state.db, payload)
+    register_handler(&state, payload)
         .await
         .map(LoginResponseDto::from)
         .map_err(to_dto)
@@ -25,7 +25,7 @@ pub async fn login(
     payload: LoginPayload,
     state: State<'_, AppState>,
 ) -> Result<LoginResponseDto, MijiErrorDto> {
-    login_handler(&state.db, payload)
+    login_handler(&state, payload)
         .await
         .map(LoginResponseDto::from)
         .map_err(to_dto)

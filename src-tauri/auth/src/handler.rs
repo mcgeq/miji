@@ -1,5 +1,8 @@
-use common::error::{MijiError, MijiResult};
-use sea_orm::DatabaseConnection;
+use common::{
+    AppState,
+    error::{MijiError, MijiResult},
+};
+use tauri::State;
 use validator::Validate;
 
 use crate::{
@@ -9,7 +12,7 @@ use crate::{
 };
 
 pub async fn register_handler(
-    db: &DatabaseConnection,
+    state: &State<'_, AppState>,
     payload: RegisterPayload,
 ) -> MijiResult<LoginResponse> {
     if let Err(e) = payload.validate() {
@@ -18,7 +21,7 @@ pub async fn register_handler(
         })));
     }
     let (user, token) = AuthService::register(
-        db,
+        state,
         &payload.name,
         &payload.email,
         &payload.password,
@@ -29,7 +32,7 @@ pub async fn register_handler(
 }
 
 pub async fn login_handler(
-    db: &DatabaseConnection,
+    state: &State<'_, AppState>,
     payload: LoginPayload,
 ) -> MijiResult<LoginResponse> {
     if let Err(e) = payload.validate() {
@@ -38,7 +41,7 @@ pub async fn login_handler(
         })));
     }
 
-    let (user, token) = AuthService::login(db, &payload.email, &payload.password).await?;
+    let (user, token) = AuthService::login(state, &payload.email, &payload.password).await?;
     Ok(LoginResponse { token, user })
 }
 

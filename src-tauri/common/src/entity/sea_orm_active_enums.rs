@@ -128,7 +128,7 @@ pub enum UserRole {
     Owner,
 }
 #[derive(Debug, Clone, PartialEq, Eq, EnumIter, DeriveActiveEnum, Serialize, Deserialize)]
-#[sea_orm(rs_type = "i32", db_type = "Integer")]
+#[sea_orm(rs_type = "i16", db_type = "Integer")]
 pub enum UserStatus {
     #[sea_orm(num_value = 0)]
     Active,
