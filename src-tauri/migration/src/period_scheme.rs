@@ -32,10 +32,8 @@ pub enum PeriodSymptoms {
     Table,
     SerialNum,                   // 主键
     PeriodDailyRecordsSerialNum, // 外键，关联 PeriodDailyRecords.SerialNum
-    #[sea_orm(iden = "symptom_type")]
-    SymptomType, // 症状类型（枚举类型）
-    #[sea_orm(iden = "intensity")]
-    Intensity, // 强度（枚举类型）
+    SymptomType,                 // 症状类型（枚举类型）
+    Intensity,                   // 强度（枚举类型）
     CreatedAt,                   // 创建时间
     UpdatedAt,                   // 更新时间
 }
@@ -58,38 +56,8 @@ pub enum PeriodPmsSymptoms {
     Table,
     SerialNum,                 // 主键
     PeriodPmsRecordsSerialNum, // 外键，关联 PeriodPmsRecords.SerialNum
-    #[sea_orm(iden = "symptom_type")]
-    SymptomType, // 症状类型（枚举类型）
-    #[sea_orm(iden = "intensity")]
-    Intensity, // 强度（枚举类型）
+    SymptomType,               // 症状类型（枚举类型）
+    Intensity,                 // 强度（枚举类型）
     CreatedAt,                 // 创建时间
     UpdatedAt,                 // 更新时间
-}
-
-// SymptomsType: 症状类型的枚举名称定义
-#[derive(DeriveIden)]
-pub enum SymptomsType {
-    #[sea_orm(iden = "symptoms_type")]
-    Type, // 在迁移中用作枚举类型名称
-}
-
-// Intensity: 强度枚举名称定义（新增）
-#[derive(DeriveIden)]
-pub enum Intensity {
-    #[sea_orm(iden = "intensity")]
-    Type, // 在迁移中用作枚举类型名称
-}
-
-// FlowLevel: 流量等级枚举名称定义（新增）
-#[derive(DeriveIden)]
-pub enum FlowLevel {
-    #[sea_orm(iden = "flow_level")]
-    Type, // 在迁移中用作枚举类型名称
-}
-
-// ExerciseIntensity: 运动强度枚举名称定义（新增）
-#[derive(DeriveIden)]
-pub enum ExerciseIntensity {
-    #[sea_orm(iden = "exercise_intensity")]
-    Type, // 在迁移中用作枚举类型名称
 }

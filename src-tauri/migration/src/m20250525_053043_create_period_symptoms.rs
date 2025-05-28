@@ -1,6 +1,6 @@
 use sea_orm_migration::prelude::*;
 
-use crate::period_scheme::{Intensity, PeriodDailyRecords, PeriodSymptoms, SymptomsType};
+use crate::period_scheme::{PeriodDailyRecords, PeriodSymptoms};
 
 #[derive(DeriveMigrationName)]
 pub struct Migration;
@@ -26,13 +26,15 @@ impl MigrationTrait for Migration {
                     )
                     .col(
                         ColumnDef::new(PeriodSymptoms::SymptomType)
-                            .custom(SymptomsType::Type)
-                            .not_null(),
+                            .tiny_integer()
+                            .not_null()
+                            .check(Expr::col(PeriodSymptoms::SymptomType).is_in([0, 1, 2])),
                     )
                     .col(
                         ColumnDef::new(PeriodSymptoms::Intensity)
-                            .custom(Intensity::Type)
-                            .not_null(),
+                            .tiny_integer()
+                            .not_null()
+                            .check(Expr::col(PeriodSymptoms::Intensity).is_in([0, 1, 2])),
                     )
                     .col(
                         ColumnDef::new(PeriodSymptoms::CreatedAt)

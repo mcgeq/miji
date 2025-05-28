@@ -1,6 +1,6 @@
 use sea_orm_migration::prelude::*;
 
-use crate::money_scheme::{Account, AccountType, Currency, FamilyMember};
+use crate::money_scheme::{Account, Currency, FamilyMember};
 
 #[derive(DeriveMigrationName)]
 pub struct Migration;
@@ -21,14 +21,25 @@ impl MigrationTrait for Migration {
                     )
                     .col(
                         ColumnDef::new(Account::AccountType)
-                            .custom(AccountType::Type)
+                            .tiny_integer()
                             .not_null()
-                            .default("WeChat"),
+                            .check(Expr::col(Account::AccountType).is_in([0, 1, 2, 3, 4, 5]))
+                            .default(0),
                     )
                     .col(ColumnDef::new(Account::Description).string().not_null())
-                    .col(ColumnDef::new(Account::Balance).decimal().not_null())
+                    .col(
+                        ColumnDef::new(Account::Balance)
+                            .decimal()
+                            .not_null()
+                            .default(0),
+                    )
                     .col(ColumnDef::new(Account::Currency).string().not_null())
-                    .col(ColumnDef::new(Account::IsShared).boolean().not_null())
+                    .col(
+                        ColumnDef::new(Account::IsShared)
+                            .boolean()
+                            .not_null()
+                            .default(false),
+                    )
                     .col(ColumnDef::new(Account::OwnerId).string_len(38).not_null())
                     .col(
                         ColumnDef::new(Account::CreatedAt)

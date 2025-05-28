@@ -1,6 +1,6 @@
 use sea_orm_migration::prelude::*;
 
-use crate::money_scheme::{BilReminder, RepeatPeriod, Transaction};
+use crate::money_scheme::{BilReminder, Transaction};
 
 #[derive(DeriveMigrationName)]
 pub struct Migration;
@@ -24,9 +24,10 @@ impl MigrationTrait for Migration {
                     .col(ColumnDef::new(BilReminder::DueDate).date().not_null())
                     .col(
                         ColumnDef::new(BilReminder::RepeatPeriod)
-                            .custom(RepeatPeriod::Type)
+                            .tiny_integer()
                             .not_null()
-                            .default("Daily"),
+                            .check(Expr::col(BilReminder::RepeatPeriod).is_in([0, 1, 2, 3, 4]))
+                            .default(0),
                     )
                     .col(ColumnDef::new(BilReminder::IsPaid).boolean().not_null())
                     .col(

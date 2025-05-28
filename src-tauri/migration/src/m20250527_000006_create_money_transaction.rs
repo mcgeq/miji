@@ -1,6 +1,6 @@
 use sea_orm_migration::prelude::*;
 
-use crate::money_scheme::{Account, Currency, Transaction, TransactionStatus, TransactionType};
+use crate::money_scheme::{Account, Currency, Transaction};
 
 #[derive(DeriveMigrationName)]
 pub struct Migration;
@@ -20,15 +20,17 @@ impl MigrationTrait for Migration {
                     )
                     .col(
                         ColumnDef::new(Transaction::TransactionType)
-                            .custom(TransactionType::Type)
+                            .tiny_integer()
                             .not_null()
-                            .default("Expense"),
+                            .check(Expr::col(Transaction::TransactionType).is_in([0, 1, 2, 3, 4]))
+                            .default(0),
                     )
                     .col(
                         ColumnDef::new(Transaction::TransactionStatus)
-                            .custom(TransactionStatus::Type)
+                            .tiny_integer()
                             .not_null()
-                            .default("Completed"),
+                            .check(Expr::col(Transaction::TransactionStatus).is_in([0, 1, 2]))
+                            .default(0),
                     )
                     .col(ColumnDef::new(Transaction::Date).date().not_null())
                     .col(ColumnDef::new(Transaction::Amount).decimal().not_null())

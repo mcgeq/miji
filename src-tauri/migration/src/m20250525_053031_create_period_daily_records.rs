@@ -1,6 +1,6 @@
 use sea_orm_migration::prelude::*;
 
-use crate::period_scheme::{ExerciseIntensity, FlowLevel, PeriodDailyRecords, PeriodRecords};
+use crate::period_scheme::{PeriodDailyRecords, PeriodRecords};
 
 #[derive(DeriveMigrationName)]
 pub struct Migration;
@@ -27,8 +27,9 @@ impl MigrationTrait for Migration {
                     .col(ColumnDef::new(PeriodDailyRecords::Date).date().not_null())
                     .col(
                         ColumnDef::new(PeriodDailyRecords::FlowLevel)
-                            .custom(FlowLevel::Type)
-                            .null(),
+                            .tiny_integer()
+                            .null()
+                            .check(Expr::col(PeriodDailyRecords::FlowLevel).is_in([0, 1, 2])),
                     )
                     .col(
                         ColumnDef::new(PeriodDailyRecords::SexualActivity)
@@ -37,8 +38,13 @@ impl MigrationTrait for Migration {
                     )
                     .col(
                         ColumnDef::new(PeriodDailyRecords::ExerciseIntensity)
-                            .custom(ExerciseIntensity::Type)
-                            .not_null(),
+                            .tiny_integer()
+                            .not_null()
+                            .check(
+                                Expr::col(PeriodDailyRecords::ExerciseIntensity)
+                                    .is_in([0, 1, 2, 3]),
+                            )
+                            .default(0),
                     )
                     .col(
                         ColumnDef::new(PeriodDailyRecords::Diet)

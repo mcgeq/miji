@@ -1,6 +1,6 @@
 use sea_orm_migration::prelude::*;
 
-use crate::user_scheme::{User, UserRole, UserStatus};
+use crate::user_scheme::User;
 
 #[derive(DeriveMigrationName)]
 pub struct Migration;
@@ -38,15 +38,17 @@ impl MigrationTrait for Migration {
                     )
                     .col(
                         ColumnDef::new(User::Role)
-                            .custom(UserRole::Type)
+                            .tiny_integer()
                             .not_null()
-                            .default("user"),
+                            .check(Expr::col(User::Role).is_in([0, 1, 2, 3, 4, 5, 6]))
+                            .default(1),
                     )
                     .col(
                         ColumnDef::new(User::Status)
-                            .custom(UserStatus::Type)
+                            .tiny_integer()
                             .not_null()
-                            .default("active"),
+                            .check(Expr::col(User::Status).is_in([0, 1, 2, 3, 4, 5]))
+                            .default(0),
                     )
                     .col(
                         ColumnDef::new(User::EmailVerifiedAt)

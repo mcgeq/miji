@@ -1,6 +1,6 @@
 use sea_orm_migration::prelude::*;
 
-use crate::money_scheme::{Budget, RepeatPeriod};
+use crate::money_scheme::Budget;
 
 #[derive(DeriveMigrationName)]
 pub struct Migration;
@@ -20,12 +20,18 @@ impl MigrationTrait for Migration {
                     )
                     .col(ColumnDef::new(Budget::Name).string().not_null())
                     .col(ColumnDef::new(Budget::Category).string().not_null())
-                    .col(ColumnDef::new(Budget::Amount).decimal().not_null())
+                    .col(
+                        ColumnDef::new(Budget::Amount)
+                            .decimal()
+                            .not_null()
+                            .default(0),
+                    )
                     .col(
                         ColumnDef::new(Budget::RepeatPeriod)
-                            .custom(RepeatPeriod::Type)
+                            .tiny_integer()
                             .not_null()
-                            .default("Daily"),
+                            .check(Expr::col(Budget::RepeatPeriod).is_in([0, 1, 2, 3, 4]))
+                            .default(0),
                     )
                     .col(ColumnDef::new(Budget::StartDate).date().not_null())
                     .col(ColumnDef::new(Budget::EndDate).date().not_null())

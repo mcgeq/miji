@@ -5,35 +5,11 @@
 // File:           money_scheme.rs
 // Description:    About Bookkeeping
 // Create   Date:  2025-05-27 10:09:48
-// Last Modified:  2025-05-27 12:21:55
+// Last Modified:  2025-05-28 20:29:30
 // Modified   By:  mcgeq <mcgeq@outlook.com>
 // -----------------------------------------------------------------------------
 
 use sea_orm_migration::prelude::*;
-
-#[derive(DeriveIden)]
-pub enum RepeatPeriod {
-    #[sea_orm(iden = "repeat_period")]
-    Type, // 在迁移中用作枚举类型名称
-}
-
-#[derive(DeriveIden)]
-pub enum AccountType {
-    #[sea_orm(iden = "account_type")]
-    Type, // 在迁移中用作枚举类型名称
-}
-
-#[derive(DeriveIden)]
-pub enum TransactionStatus {
-    #[sea_orm(iden = "transaction_status")]
-    Type,
-}
-
-#[derive(DeriveIden)]
-pub enum TransactionType {
-    #[sea_orm(iden = "transaction_type")]
-    Type,
-}
 
 // 家庭成员
 #[derive(DeriveIden)]
@@ -53,7 +29,6 @@ pub enum FamilyMember {
 pub enum Account {
     Table,
     SerialNum,
-    #[sea_orm(iden = "account_type")]
     AccountType,
     Description,
     Balance,
@@ -69,9 +44,7 @@ pub enum Account {
 pub enum Transaction {
     Table,
     SerialNum,
-    #[sea_orm(iden = "transaction_type")]
     TransactionType,
-    #[sea_orm(iden = "transaction_status")]
     TransactionStatus,
     Date,
     Amount,
@@ -102,7 +75,6 @@ pub enum Budget {
     Name,
     Category,
     Amount,
-    #[sea_orm(iden = "repeat_period")]
     RepeatPeriod,
     StartDate,
     EndDate,
@@ -133,7 +105,6 @@ pub enum BilReminder {
     Name,
     Amount,
     DueDate,
-    #[sea_orm(iden = "repeat_period")]
     RepeatPeriod,
     IsPaid,
     RelatedTransactionSerialNum,

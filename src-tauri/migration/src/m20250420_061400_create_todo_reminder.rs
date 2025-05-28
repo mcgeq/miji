@@ -1,7 +1,6 @@
-use sea_orm_migration::prelude::extension::postgres::Type;
 use sea_orm_migration::prelude::*;
 
-use crate::schema::{Reminder, ReminderType, Todo};
+use crate::schema::{Reminder, Todo};
 
 #[derive(DeriveMigrationName)]
 pub struct Migration;
@@ -9,18 +8,6 @@ pub struct Migration;
 #[async_trait::async_trait]
 impl MigrationTrait for Migration {
     async fn up(&self, manager: &SchemaManager) -> Result<(), DbErr> {
-        manager
-            .create_type(
-                Type::create()
-                    .as_enum(ReminderType::Type)
-                    .values(vec![
-                        Alias::new("notification"),
-                        Alias::new("email"),
-                        Alias::new("popup"),
-                    ])
-                    .to_owned(),
-            )
-            .await?;
         manager
             .create_table(
                 Table::create()
@@ -44,7 +31,8 @@ impl MigrationTrait for Migration {
                     )
                     .col(
                         ColumnDef::new(Reminder::Type)
-                            .custom(ReminderType::Type)
+                            .tiny_integer()
+                            .check(Expr::col(Reminder::Type).is_in([0, 1, 2]))
                             .null(),
                     )
                     .col(
@@ -57,6 +45,11 @@ impl MigrationTrait for Migration {
                         ColumnDef::new(Reminder::CreatedAt)
                             .timestamp_with_time_zone()
                             .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(Reminder::UpdatedAt)
+                            .timestamp_with_time_zone()
+                            .null(),
                     )
                     .foreign_key(
                         ForeignKey::create()

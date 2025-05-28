@@ -97,10 +97,5 @@ pub enum Reminder {
     Type,          // 提醒类型（email / popup / etc）
     IsSent,        // 是否已发送
     CreatedAt,     // 创建时间
-}
-
-#[derive(DeriveIden)]
-pub enum ReminderType {
-    #[sea_orm(iden = "reminder_type")]
-    Type,
+    UpdatedAt,
 }

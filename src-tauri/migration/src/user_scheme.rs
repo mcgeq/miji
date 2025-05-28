@@ -23,15 +23,3 @@ pub enum User {
     Role,            // 角色（如 admin / user）
     Status,          // 状态（如 active / inactive）
 }
-// 定义 UserRole 和 UserStatus 枚举用于 Iden
-#[derive(DeriveIden)]
-pub enum UserRole {
-    #[sea_orm(iden = "user_role")]
-    Type,
-}
-
-#[derive(DeriveIden)]
-pub enum UserStatus {
-    #[sea_orm(iden = "user_status")]
-    Type,
-}

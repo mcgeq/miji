@@ -38,15 +38,14 @@ impl MigrationTrait for Migration {
                     )
                     .col(
                         ColumnDef::new(Todo::Priority)
-                            .small_integer()
+                            .tiny_integer()
                             .not_null()
                             .check(Expr::col(Todo::Priority).is_in([0, 1, 2, 3]))
-                            .not_null()
                             .default(0),
                     )
                     .col(
                         ColumnDef::new(Todo::Status)
-                            .small_integer()
+                            .tiny_integer()
                             .check(Expr::col(Todo::Status).is_in([0, 1, 2, 3, 4]))
                             .not_null()
                             .default(0),
@@ -60,7 +59,7 @@ impl MigrationTrait for Migration {
                     .col(ColumnDef::new(Todo::AssigneeId).string_len(38).null())
                     .col(
                         ColumnDef::new(Todo::Progress)
-                            .small_unsigned()
+                            .tiny_unsigned()
                             .not_null()
                             .default(0)
                             .check(Expr::col(Todo::Progress).lte(100)),
