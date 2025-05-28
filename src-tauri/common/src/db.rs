@@ -6,7 +6,7 @@
 // File:           db.rs
 // Description:    About SQL
 // Create   Date:  2025-05-25 17:13:04
-// Last Modified:  2025-05-26 20:37:43
+// Last Modified:  2025-05-28 08:40:44
 // Modified   By:  mcgeq <mcgeq@outlook.com>
 // -----------------------------------------------------------------------------
 
@@ -104,7 +104,8 @@ pub async fn get_db_conn() -> MijiResult<DatabaseConnection> {
             .idle_timeout(Duration::from_secs(config.idle_timeout))
             .max_lifetime(Duration::from_secs(config.max_lifetime));
     }
-    opt.sqlx_logging(config.sqlx_logging);
+    opt.sqlx_logging(config.sqlx_logging)
+        .sqlx_logging_level(log::LevelFilter::Info);
 
     let conn = connect_with_retry(opt, 3, 2).await?;
     // migration::Migrator::up(&conn, None)

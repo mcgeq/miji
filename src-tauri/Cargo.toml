@@ -51,6 +51,7 @@ log = { version = "0.4.27", features = ["serde"] }
 argon2 = "0.5.3"
 sea-orm = { version = "1.1.11", features = [
   "sqlx-postgres",
+  "sqlx-sqlite",
   "runtime-tokio-native-tls",
   "macros",
   "with-chrono",
