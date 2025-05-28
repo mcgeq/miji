@@ -19,3 +19,7 @@ pub struct AppState {
     // pub config: Arc<AppConfig>,
     // pub current_user: Arc<Mutex<Option<User>>>,
 }
+
+pub struct ApiCredentials {
+    api_secret: String,
+}
