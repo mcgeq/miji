@@ -6,6 +6,7 @@ pub mod entity;
 pub mod env;
 pub mod env_error;
 pub mod error;
+pub mod response;
 pub mod sql_error;
 pub mod utils;
 

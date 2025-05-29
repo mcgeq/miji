@@ -1,34 +1,34 @@
-use common::error::MijiError;
+use common::{business_code::BusinessCode, error::MijiError};
 use snafu::Snafu;
 
 #[derive(Debug, Snafu)]
 pub enum UserError {
     #[snafu(display("User not found"))]
-    UserNotFound,
+    UserNotFound { code: BusinessCode, message: String },
 
     #[snafu(display("Role not found"))]
-    RoleNotFound,
+    RoleNotFound { code: BusinessCode, message: String },
 
     #[snafu(display("Permission denied"))]
-    PermissionDenied,
+    PermissionDenied { code: BusinessCode, message: String },
 
-    #[snafu(display("Other error: {}", message))]
-    Other { message: String },
+    #[snafu(display("Other error: {message}"))]
+    Other { code: BusinessCode, message: String },
 }
 
 #[derive(Debug, Snafu)]
 pub enum AuthError {
     #[snafu(display("Invalid credentials"))]
-    InvalidCredentials,
+    InvalidCredentials { code: BusinessCode, message: String },
 
     #[snafu(display("Token expired"))]
-    TokenExpired,
+    TokenExpired { code: BusinessCode, message: String },
 
     #[snafu(display("User and Password are failure"))]
-    UserAndPasswordFailure,
+    UserAndPasswordFailure { code: BusinessCode, message: String },
 
-    #[snafu(display("Validate failure: {details}"))]
-    Validation { details: String },
+    #[snafu(display("Validate failure: {message}"))]
+    Validation { code: BusinessCode, message: String },
 }
 
 impl From<UserError> for MijiError {

@@ -1,13 +1,17 @@
-use common::error::MijiError;
+use common::{business_code::BusinessCode, error::MijiError};
 use snafu::Snafu;
 
 #[derive(Debug, Snafu)]
 pub enum SettingsError {
-    #[snafu(display("Failed to load settings: {}", source))]
-    LoadFailed { source: std::io::Error },
+    #[snafu(display("Failed to load settings: {message}"))]
+    LoadFailed {
+        code: BusinessCode,
+        message: String,
+        source: std::io::Error,
+    },
 
-    #[snafu(display("Invalid setting value: {}", key))]
-    InvalidValue { key: String },
+    #[snafu(display("Invalid setting value: {message}"))]
+    InvalidValue { code: BusinessCode, message: String },
 }
 
 impl From<SettingsError> for MijiError {

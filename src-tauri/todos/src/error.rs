@@ -1,13 +1,13 @@
-use common::error::MijiError;
+use common::{business_code::BusinessCode, error::MijiError};
 use snafu::Snafu;
 
 #[derive(Debug, Snafu)]
 pub enum TodosError {
-    #[snafu(display("Todo not found: {}", id))]
-    NotFound { id: String },
+    #[snafu(display("Todo not found: {message}"))]
+    NotFound { code: BusinessCode, message: String },
 
-    #[snafu(display("Failed to update todo: {}", source))]
-    UpdateFailed { source: std::io::Error },
+    #[snafu(display("Failed to update todo: {message}"))]
+    UpdateFailed { code: BusinessCode, message: String },
 }
 
 impl From<TodosError> for MijiError {

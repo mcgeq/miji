@@ -1,10 +1,14 @@
-use common::error::MijiError;
+use common::{business_code::BusinessCode, error::MijiError};
 use snafu::Snafu;
 
 #[derive(Debug, Snafu)]
 pub enum HealthError {
     #[snafu(display("Health check failed: {}", source))]
-    CheckFailed { source: std::io::Error },
+    CheckFailed {
+        code: BusinessCode,
+        message: String,
+        source: std::io::Error,
+    },
 }
 
 impl From<HealthError> for MijiError {

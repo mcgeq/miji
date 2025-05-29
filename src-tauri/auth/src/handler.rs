@@ -1,5 +1,6 @@
 use common::{
     AppState,
+    business_code::BusinessCode,
     error::{MijiError, MijiResult},
 };
 use tauri::State;
@@ -17,7 +18,8 @@ pub async fn register_handler(
 ) -> MijiResult<LoginResponse> {
     if let Err(e) = payload.validate() {
         return Err(MijiError::Auth(Box::new(AuthError::Validation {
-            details: e.to_string(),
+            code: BusinessCode::Unauthorized,
+            message: e.to_string(),
         })));
     }
     let (user, token) = AuthService::register(
@@ -37,7 +39,8 @@ pub async fn login_handler(
 ) -> MijiResult<LoginResponse> {
     if let Err(e) = payload.validate() {
         return Err(MijiError::Auth(Box::new(AuthError::Validation {
-            details: e.to_string(),
+            code: BusinessCode::Unauthorized,
+            message: e.to_string(),
         })));
     }
 

@@ -5,12 +5,12 @@
 // File:           jwt.rs
 // Description:    About jsonwebtoken
 // Create   Date:  2025-05-26 19:53:47
-// Last Modified:  2025-05-26 23:35:49
+// Last Modified:  2025-05-29 09:26:25
 // Modified   By:  mcgeq <mcgeq@outlook.com>
 // -----------------------------------------------------------------------------
 
 use chrono::{Duration, Utc};
-use common::error::MijiResult;
+use common::{business_code::BusinessCode, error::MijiResult};
 use jsonwebtoken::{DecodingKey, EncodingKey, Header, TokenData, Validation, decode, encode};
 use serde::{Deserialize, Serialize};
 
@@ -47,7 +47,10 @@ impl JwtHelper {
             &claims,
             &EncodingKey::from_secret(self.secret.as_bytes()),
         )
-        .map_err(|_| AuthError::TokenExpired)?;
+        .map_err(|e| AuthError::TokenExpired {
+            code: BusinessCode::AuthenticationFailed,
+            message: e.to_string(),
+        })?;
         Ok(token)
     }
 
@@ -57,7 +60,10 @@ impl JwtHelper {
             &DecodingKey::from_secret(self.secret.as_bytes()),
             &Validation::default(),
         )
-        .map_err(|_| AuthError::TokenExpired)?;
+        .map_err(|e| AuthError::TokenExpired {
+            code: BusinessCode::AuthenticationFailed,
+            message: e.to_string(),
+        })?;
         Ok(token_data.claims)
     }
 }

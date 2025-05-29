@@ -1,13 +1,21 @@
-use common::error::MijiError;
+use common::{business_code::BusinessCode, error::MijiError};
 use snafu::Snafu;
 
 #[derive(Debug, Snafu)]
 pub enum NotesError {
     #[snafu(display("Note not found: {}", id))]
-    NotFound { id: String },
+    NotFound {
+        code: BusinessCode,
+        message: String,
+        id: String,
+    },
 
     #[snafu(display("Failed to save note: {}", source))]
-    SaveFailed { source: std::io::Error },
+    SaveFailed {
+        code: BusinessCode,
+        message: String,
+        source: std::io::Error,
+    },
 }
 
 impl From<NotesError> for MijiError {

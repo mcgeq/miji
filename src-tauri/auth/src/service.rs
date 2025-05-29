@@ -5,7 +5,7 @@
 // File:           service.rs
 // Description:    About Auth service
 // Create   Date:  2025-05-26 20:01:16
-// Last Modified:  2025-05-28 22:07:37
+// Last Modified:  2025-05-29 09:23:40
 // Modified   By:  mcgeq <mcgeq@outlook.com>
 // -----------------------------------------------------------------------------
 
@@ -13,6 +13,7 @@ use chrono::{Local, Offset};
 use common::{
     AppState,
     argon2id::{helper::Argon2Helper, store_hash::StoredHash},
+    business_code::BusinessCode,
     entity::{
         sea_orm_active_enums::{UserRole, UserStatus},
         user::{self, Model as UserModel},
@@ -77,7 +78,10 @@ impl AuthService {
         let db = &*state.db;
         let u = Self::user(db, email).await.unwrap();
         if u.status.eq(&UserStatus::Inactive) {
-            Err(UserError::UserNotFound)?
+            Err(UserError::UserNotFound {
+                code: BusinessCode::InvalidParameter,
+                message: "User not found".to_string(),
+            })?
         }
         let credentials = state.credentials.lock().await;
         let jwt_secret = credentials.jwt_secret.clone();
@@ -119,7 +123,10 @@ impl AuthService {
         let helper = Argon2Helper::new()?;
         let verity_hash = helper.verify_hashed_password(password, &store)?;
         if !verity_hash {
-            Err(AuthError::UserAndPasswordFailure)?
+            Err(AuthError::UserAndPasswordFailure {
+                code: BusinessCode::Unauthorized,
+                message: "User or Password is failure".to_string(),
+            })?
         }
         Ok(user)
     }
