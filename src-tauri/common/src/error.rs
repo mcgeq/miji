@@ -1,8 +1,86 @@
-use std::{error::Error, fmt};
+use std::{any::Any, error::Error, fmt};
 
 use serde::Serialize;
 
 pub type MijiResult<T> = Result<T, MijiError>;
+
+pub trait CodeMessage: std::error::Error + Any + 'static {
+    fn code(&self) -> i32;
+    fn message(&self) -> &str;
+}
+
+macro_rules! generate_code_message_impl {
+    (message, $self:ident, $($variant:ident),*) => {{
+        match $self {
+            $(
+                MijiError::$variant(e) => {
+                    // 通过 Any 进行类型转换
+                    if let Some(code_msg) = e.as_ref().downcast_ref::<dyn CodeMessage>() {
+                        code_msg.message()
+                    } else {
+                        e.to_string().as_str()
+                    }
+                }
+            )*
+        }
+    }};
+
+    (code, $self:ident, $($variant:ident),*) => {{
+        match $self {
+            $(
+                MijiError::$variant(e) => {
+                    if let Some(code_msg) = e.as_ref().downcast_ref::<dyn CodeMessage>() {
+                        code_msg.code()
+                    } else {
+                        0
+                    }
+                }
+            )*
+        }
+    }};
+}
+
+impl CodeMessage for MijiError {
+    fn code(&self) -> i32 {
+        generate_code_message_impl!(
+            code,
+            self,
+            Auth,
+            Argon2,
+            CheckLists,
+            Env,
+            Health,
+            Notes,
+            Profile,
+            Permissions,
+            Services,
+            Settings,
+            Sql,
+            Todos,
+            User
+        )
+    }
+
+    fn message(&self) -> &str {
+        generate_code_message_impl!(
+            message,
+            self,
+            Auth,
+            Argon2,
+            CheckLists,
+            Env,
+            Health,
+            Notes,
+            Profile,
+            Permissions,
+            Services,
+            Settings,
+            Sql,
+            Todos,
+            User
+        )
+    }
+}
 
 pub enum MijiError {
     Auth(Box<dyn Error + Send + Sync + 'static>),
@@ -18,6 +96,48 @@ pub enum MijiError {
     Sql(Box<dyn Error + Send + Sync + 'static>),
     Todos(Box<dyn Error + Send + Sync + 'static>),
     User(Box<dyn Error + Send + Sync + 'static>),
+}
+
+impl CodeMessage for MijiError {
+    fn code(&self) -> i32 {
+        generate_code_message_impl!(
+            code,
+            self,
+            Auth,
+            Argon2,
+            CheckLists,
+            Env,
+            Health,
+            Notes,
+            Profile,
+            Permissions,
+            Services,
+            Settings,
+            Sql,
+            Todos,
+            User
+        )
+    }
+
+    fn message(&self) -> &str {
+        generate_code_message_impl!(
+            message,
+            self,
+            Auth,
+            Argon2,
+            CheckLists,
+            Env,
+            Health,
+            Notes,
+            Profile,
+            Permissions,
+            Services,
+            Settings,
+            Sql,
+            Todos,
+            User
+        )
+    }
 }
 
 impl fmt::Display for MijiError {

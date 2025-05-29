@@ -1,7 +1,11 @@
-use common::{business_code::BusinessCode, error::MijiError};
+use common::{
+    business_code::BusinessCode,
+    error::{CodeMessage, MijiError},
+};
+use miji_derive::CodeMessage;
 use snafu::Snafu;
 
-#[derive(Debug, Snafu)]
+#[derive(Debug, Snafu, CodeMessage)]
 pub enum UserError {
     #[snafu(display("User not found"))]
     UserNotFound { code: BusinessCode, message: String },
@@ -16,7 +20,7 @@ pub enum UserError {
     Other { code: BusinessCode, message: String },
 }
 
-#[derive(Debug, Snafu)]
+#[derive(Debug, Snafu, CodeMessage)]
 pub enum AuthError {
     #[snafu(display("Invalid credentials"))]
     InvalidCredentials { code: BusinessCode, message: String },

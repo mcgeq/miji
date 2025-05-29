@@ -7,3 +7,4 @@ description = "To-Do list feature with task creation, editing, and filtering."
 [dependencies]
 snafu = { workspace = true }
 common = { path = "../common" }
+miji_derive = { workspace = true }

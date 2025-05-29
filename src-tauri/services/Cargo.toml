@@ -7,3 +7,4 @@ description = "Aggregated business logic coordinating workflows across multiple 
 [dependencies]
 snafu = { workspace = true }
 common = { path = "../common" }
+miji_derive = { workspace = true }

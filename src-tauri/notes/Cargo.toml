@@ -7,3 +7,4 @@ description = "Note-taking module for creating, editing, and organizing personal
 [dependencies]
 snafu = { workspace = true }
 common = { path = "../common" }
+miji_derive = { workspace = true }

@@ -7,3 +7,4 @@ description = "Health tracking module including physiological cycle monitoring a
 [dependencies]
 snafu = { workspace = true }
 common = { path = "../common" }
+miji_derive = { workspace = true }

@@ -1,10 +1,15 @@
-use common::error::MijiError;
+use common::{
+    business_code::BusinessCode,
+    error::{CodeMessage, MijiError},
+};
+use miji_derive::CodeMessage;
+
 use snafu::Snafu;
 
 #[derive(Debug, Snafu)]
 pub enum ChecklistsError {
-    #[snafu(display("Checklist item not found: {}", id))]
-    NotFound { id: String },
+    #[snafu(display("Checklist item not found: {message}"))]
+    NotFound { code: BusinessCode, message: String },
 }
 
 impl From<ChecklistsError> for MijiError {

@@ -7,3 +7,4 @@ description = "Application settings such as theme, notifications, privacy, and c
 [dependencies]
 snafu = { workspace = true }
 common = { path = "../common" }
+miji_derive = { workspace = true }

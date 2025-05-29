@@ -7,3 +7,4 @@ description = "Checklist management supporting multiple checklists and progress 
 [dependencies]
 snafu = { workspace = true }
 common = { path = "../common" }
+miji_derive = { workspace = true }

@@ -436,6 +436,7 @@ dependencies = [
  "common",
  "jsonwebtoken",
  "log",
+ "miji_derive",
  "sea-orm",
  "serde",
  "serde_json",
@@ -798,6 +799,7 @@ name = "checklists"
 version = "0.1.0"
 dependencies = [
  "common",
+ "miji_derive",
  "snafu",
 ]
 
@@ -890,6 +892,7 @@ dependencies = [
  "base64 0.22.1",
  "chrono",
  "log",
+ "miji_derive",
  "rand 0.9.1",
  "sea-orm",
  "serde",
@@ -2019,6 +2022,7 @@ name = "health"
 version = "0.1.0"
 dependencies = [
  "common",
+ "miji_derive",
  "snafu",
 ]
 
@@ -2724,6 +2728,7 @@ version = "0.1.0"
 dependencies = [
  "auth",
  "common",
+ "darling",
  "dotenvy",
  "log",
  "migration",
@@ -2751,6 +2756,15 @@ dependencies = [
  "sea-orm",
  "snafu",
  "tokio",
+]
+
+[[package]]
+name = "miji_derive"
+version = "0.1.0"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.101",
 ]
 
 [[package]]
@@ -2882,6 +2896,7 @@ name = "notes"
 version = "0.1.0"
 dependencies = [
  "common",
+ "miji_derive",
  "snafu",
 ]
 
@@ -3810,6 +3825,7 @@ name = "profile"
 version = "0.1.0"
 dependencies = [
  "common",
+ "miji_derive",
  "snafu",
 ]
 
@@ -4644,6 +4660,7 @@ name = "services"
 version = "0.1.0"
 dependencies = [
  "common",
+ "miji_derive",
  "snafu",
 ]
 
@@ -4662,6 +4679,7 @@ name = "settings"
 version = "0.1.0"
 dependencies = [
  "common",
+ "miji_derive",
  "snafu",
 ]
 
@@ -5805,6 +5823,7 @@ name = "todos"
 version = "0.1.0"
 dependencies = [
  "common",
+ "miji_derive",
  "snafu",
 ]
 

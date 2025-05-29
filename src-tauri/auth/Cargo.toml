@@ -17,3 +17,4 @@ common = { path = "../common" }
 log = { workspace = true }
 validator = { workspace = true }
 tokio = { workspace = true }
+miji_derive = { workspace = true }

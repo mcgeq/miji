@@ -34,13 +34,13 @@ pub enum BusinessCode {
 
 impl fmt::Display for BusinessCode {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", *self as u32)
+        write!(f, "{}", *self as i32)
     }
 }
 
-impl From<BusinessCode> for u32 {
+impl From<BusinessCode> for i32 {
     fn from(value: BusinessCode) -> Self {
-        value as u32
+        value as i32
     }
 }
 
