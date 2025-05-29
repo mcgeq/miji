@@ -1,36 +1,41 @@
-use crate::{business_code::BusinessCode, error::MijiError};
+use crate::{
+    business_code::BusinessCode,
+    error::{CodeMessage, MijiError},
+};
+use miji_derive::CodeMessage;
 use snafu::{Backtrace, Snafu};
 use std::num::ParseIntError;
 
-#[derive(Debug, Snafu)]
+#[derive(Debug, Snafu, CodeMessage)]
 pub enum EnvError {
     #[snafu(display("Environment variable key is empty"))]
     EnvVarEmptyKey {
         code: BusinessCode,
+        message: String,
         #[snafu(backtrace)]
         backtrace: Backtrace,
     },
 
-    #[snafu(display("Environment variable '{key}' is not set"))]
+    #[snafu(display("Environment variable '{message}' is not set"))]
     EnvVarNotPresent {
         code: BusinessCode,
-        key: String,
+        message: String,
         #[snafu(backtrace)]
         backtrace: Backtrace,
     },
 
-    #[snafu(display("Environment variable '{key}' is not valid Unicode"))]
+    #[snafu(display("Environment variable '{message}' is not valid Unicode"))]
     EnvVarNotUnicode {
         code: BusinessCode,
-        key: String,
+        message: String,
         #[snafu(backtrace)]
         backtrace: Backtrace,
     },
 
-    #[snafu(display("Failed to parse environment variable '{key}': {source}"))]
+    #[snafu(display("Failed to parse environment variable '{message}': {source}"))]
     EnvVarParseError {
         code: BusinessCode,
-        key: String,
+        message: String,
         #[snafu(source)]
         source: ParseIntError,
         #[snafu(backtrace)]

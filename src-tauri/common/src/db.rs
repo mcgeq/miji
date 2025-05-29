@@ -6,7 +6,7 @@
 // File:           db.rs
 // Description:    About SQL
 // Create   Date:  2025-05-25 17:13:04
-// Last Modified:  2025-05-28 08:40:44
+// Last Modified:  2025-05-29 22:02:34
 // Modified   By:  mcgeq <mcgeq@outlook.com>
 // -----------------------------------------------------------------------------
 
@@ -57,7 +57,7 @@ impl DbConfig {
         } else {
             return Err(EnvError::EnvVarNotPresent {
                 code: BusinessCode::InvalidParameter,
-                key: "DATABASE_URL".to_string(),
+                message: "DATABASE_URL".to_string(),
                 backtrace: Backtrace::generate(),
             })?;
         };

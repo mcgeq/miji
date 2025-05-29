@@ -6,13 +6,16 @@
 // File:           response.rs
 // Description:    About Response
 // Create   Date:  2025-05-29 08:37:51
-// Last Modified:  2025-05-29 19:37:52
+// Last Modified:  2025-05-29 22:13:08
 // Modified   By:  mcgeq <mcgeq@outlook.com>
 // -----------------------------------------------------------------------------
 
 use serde::Deserialize;
 
-use crate::{business_code::BusinessCode, error::MijiError};
+use crate::{
+    business_code::BusinessCode,
+    error::{CodeMessage, MijiError},
+};
 
 #[derive(Debug, Deserialize)]
 pub struct Res<T> {
@@ -30,5 +33,11 @@ impl<T> Res<T> {
         }
     }
 
-    pub fn error(_e: MijiError) {}
+    pub fn error(e: MijiError) -> Self {
+        Self {
+            code: e.code().to_string(),
+            data: None,
+            message: e.message().to_string(),
+        }
+    }
 }

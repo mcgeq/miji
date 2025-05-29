@@ -10,3 +10,4 @@ sea-orm = { workspace = true }
 log = { workspace = true }
 tokio = { workspace = true }
 common = { path = "../common" }
+miji_derive = { workspace = true }

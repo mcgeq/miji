@@ -1,9 +1,13 @@
 use std::error::Error;
 
-use crate::{business_code::BusinessCode, error::MijiError};
+use crate::{
+    business_code::BusinessCode,
+    error::{CodeMessage, MijiError},
+};
+use miji_derive::CodeMessage;
 use snafu::{Backtrace, Snafu};
 
-#[derive(Debug, Snafu)]
+#[derive(Debug, Snafu, CodeMessage)]
 pub enum DataBaseError {
     #[snafu(display("DataBase init failed: {message}"))]
     DataBaseError {

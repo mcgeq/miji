@@ -9,134 +9,57 @@ pub trait CodeMessage: std::error::Error + Any + 'static {
     fn message(&self) -> &str;
 }
 
-macro_rules! generate_code_message_impl {
-    (message, $self:ident, $($variant:ident),*) => {{
-        match $self {
-            $(
-                MijiError::$variant(e) => {
-                    // 通过 Any 进行类型转换
-                    if let Some(code_msg) = e.as_ref().downcast_ref::<dyn CodeMessage>() {
-                        code_msg.message()
-                    } else {
-                        e.to_string().as_str()
-                    }
-                }
-            )*
-        }
-    }};
-
-    (code, $self:ident, $($variant:ident),*) => {{
-        match $self {
-            $(
-                MijiError::$variant(e) => {
-                    if let Some(code_msg) = e.as_ref().downcast_ref::<dyn CodeMessage>() {
-                        code_msg.code()
-                    } else {
-                        0
-                    }
-                }
-            )*
-        }
-    }};
-}
-
-impl CodeMessage for MijiError {
-    fn code(&self) -> i32 {
-        generate_code_message_impl!(
-            code,
-            self,
-            Auth,
-            Argon2,
-            CheckLists,
-            Env,
-            Health,
-            Notes,
-            Profile,
-            Permissions,
-            Services,
-            Settings,
-            Sql,
-            Todos,
-            User
-        )
-    }
-
-    fn message(&self) -> &str {
-        generate_code_message_impl!(
-            message,
-            self,
-            Auth,
-            Argon2,
-            CheckLists,
-            Env,
-            Health,
-            Notes,
-            Profile,
-            Permissions,
-            Services,
-            Settings,
-            Sql,
-            Todos,
-            User
-        )
-    }
-}
-
 pub enum MijiError {
-    Auth(Box<dyn Error + Send + Sync + 'static>),
-    Argon2(Box<dyn Error + Send + Sync + 'static>),
-    CheckLists(Box<dyn Error + Send + Sync + 'static>),
-    Env(Box<dyn Error + Send + Sync + 'static>),
-    Health(Box<dyn Error + Send + Sync + 'static>),
-    Notes(Box<dyn Error + Send + Sync + 'static>),
-    Profile(Box<dyn Error + Send + Sync + 'static>),
-    Permissions(Box<dyn Error + Send + Sync + 'static>),
-    Services(Box<dyn Error + Send + Sync + 'static>),
-    Settings(Box<dyn Error + Send + Sync + 'static>),
-    Sql(Box<dyn Error + Send + Sync + 'static>),
-    Todos(Box<dyn Error + Send + Sync + 'static>),
-    User(Box<dyn Error + Send + Sync + 'static>),
+    Auth(Box<dyn CodeMessage + Send + Sync + 'static>),
+    Argon2(Box<dyn CodeMessage + Send + Sync + 'static>),
+    CheckLists(Box<dyn CodeMessage + Send + Sync + 'static>),
+    Env(Box<dyn CodeMessage + Send + Sync + 'static>),
+    Health(Box<dyn CodeMessage + Send + Sync + 'static>),
+    Notes(Box<dyn CodeMessage + Send + Sync + 'static>),
+    Profile(Box<dyn CodeMessage + Send + Sync + 'static>),
+    Permissions(Box<dyn CodeMessage + Send + Sync + 'static>),
+    Services(Box<dyn CodeMessage + Send + Sync + 'static>),
+    Settings(Box<dyn CodeMessage + Send + Sync + 'static>),
+    Sql(Box<dyn CodeMessage + Send + Sync + 'static>),
+    Todos(Box<dyn CodeMessage + Send + Sync + 'static>),
+    User(Box<dyn CodeMessage + Send + Sync + 'static>),
 }
 
 impl CodeMessage for MijiError {
     fn code(&self) -> i32 {
-        generate_code_message_impl!(
-            code,
-            self,
-            Auth,
-            Argon2,
-            CheckLists,
-            Env,
-            Health,
-            Notes,
-            Profile,
-            Permissions,
-            Services,
-            Settings,
-            Sql,
-            Todos,
-            User
-        )
+        match self {
+            MijiError::Auth(e) => e.code(),
+            MijiError::Argon2(e) => e.code(),
+            MijiError::CheckLists(e) => e.code(),
+            MijiError::Env(e) => e.code(),
+            MijiError::Health(e) => e.code(),
+            MijiError::Notes(e) => e.code(),
+            MijiError::Profile(e) => e.code(),
+            MijiError::Permissions(e) => e.code(),
+            MijiError::Services(e) => e.code(),
+            MijiError::Settings(e) => e.code(),
+            MijiError::Sql(e) => e.code(),
+            MijiError::Todos(e) => e.code(),
+            MijiError::User(e) => e.code(),
+        }
     }
 
     fn message(&self) -> &str {
-        generate_code_message_impl!(
-            message,
-            self,
-            Auth,
-            Argon2,
-            CheckLists,
-            Env,
-            Health,
-            Notes,
-            Profile,
-            Permissions,
-            Services,
-            Settings,
-            Sql,
-            Todos,
-            User
-        )
+        match self {
+            MijiError::Auth(e) => e.message(),
+            MijiError::Argon2(e) => e.message(),
+            MijiError::CheckLists(e) => e.message(),
+            MijiError::Env(e) => e.message(),
+            MijiError::Health(e) => e.message(),
+            MijiError::Notes(e) => e.message(),
+            MijiError::Profile(e) => e.message(),
+            MijiError::Permissions(e) => e.message(),
+            MijiError::Services(e) => e.message(),
+            MijiError::Settings(e) => e.message(),
+            MijiError::Sql(e) => e.message(),
+            MijiError::Todos(e) => e.message(),
+            MijiError::User(e) => e.message(),
+        }
     }
 }
 

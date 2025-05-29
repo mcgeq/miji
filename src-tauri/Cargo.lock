@@ -2753,6 +2753,7 @@ version = "0.1.0"
 dependencies = [
  "common",
  "log",
+ "miji_derive",
  "sea-orm",
  "snafu",
  "tokio",

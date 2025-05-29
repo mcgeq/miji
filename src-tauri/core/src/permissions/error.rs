@@ -1,10 +1,14 @@
-use common::error::MijiError;
+use common::{
+    business_code::BusinessCode,
+    error::{CodeMessage, MijiError},
+};
+use miji_derive::CodeMessage;
 use snafu::Snafu;
 
-#[derive(Debug, Snafu)]
+#[derive(Debug, Snafu, CodeMessage)]
 pub enum PermissionError {
     #[snafu(display("Insufficient permissions"))]
-    InsufficientPermissions,
+    InsufficientPermissions { code: BusinessCode, message: String },
 }
 
 impl From<PermissionError> for MijiError {
