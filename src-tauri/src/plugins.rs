@@ -5,23 +5,29 @@
 // File:           plugins.rs
 // Description:    About init plugins
 // Create   Date:  2025-05-24 19:32:49
-// Last Modified:  2025-05-30 13:28:01
+// Last Modified:  2025-05-30 14:28:19
 // Modified   By:  mcgeq <mcgeq@outlook.com>
 // -----------------------------------------------------------------------------
 
+use common::utils::files::MijiFiles;
 use log::LevelFilter;
 use tauri::{Builder, Manager, Wry};
 use tauri_plugin_log::{Target, fern::colors::ColoredLevelConfig};
 
 pub fn init_plugins(builder: Builder<Wry>) -> Builder<Wry> {
+    let root_dir = MijiFiles::root_path().unwrap();
+    eprintln!("root_dir: {root_dir}");
     let builder = builder
         .plugin(
             tauri_plugin_log::Builder::default()
+                .max_file_size(10 * 1024)
+                .rotation_strategy(tauri_plugin_log::RotationStrategy::KeepAll)
                 .targets([
                     Target::new(tauri_plugin_log::TargetKind::Stdout),
                     Target::new(tauri_plugin_log::TargetKind::Webview),
-                    Target::new(tauri_plugin_log::TargetKind::LogDir {
-                        file_name: Some("logs".to_string()),
+                    Target::new(tauri_plugin_log::TargetKind::Folder {
+                        path: MijiFiles::join(&[&root_dir, "logs"]),
+                        file_name: Some("miji".to_string()),
                     }),
                 ])
                 .timezone_strategy(tauri_plugin_log::TimezoneStrategy::UseLocal)
