@@ -5,10 +5,11 @@
 // File:           plugins.rs
 // Description:    About init plugins
 // Create   Date:  2025-05-24 19:32:49
-// Last Modified:  2025-05-24 19:38:20
+// Last Modified:  2025-05-30 13:28:01
 // Modified   By:  mcgeq <mcgeq@outlook.com>
 // -----------------------------------------------------------------------------
 
+use log::LevelFilter;
 use tauri::{Builder, Manager, Wry};
 use tauri_plugin_log::{Target, fern::colors::ColoredLevelConfig};
 
@@ -23,6 +24,12 @@ pub fn init_plugins(builder: Builder<Wry>) -> Builder<Wry> {
                         file_name: Some("logs".to_string()),
                     }),
                 ])
+                .timezone_strategy(tauri_plugin_log::TimezoneStrategy::UseLocal)
+                .level(LevelFilter::Debug)
+                .filter(|metadata| {
+                    !(metadata.target() == "sea_orm::driver::sqlx_sqlite"
+                        && metadata.level() == log::Level::Debug)
+                })
                 .with_colors(ColoredLevelConfig::default())
                 .build(),
         )
