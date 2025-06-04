@@ -6,7 +6,7 @@
 // File:           response.rs
 // Description:    About Response
 // Create   Date:  2025-05-29 08:37:51
-// Last Modified:  2025-05-29 22:13:08
+// Last Modified:  2025-06-04 22:27:56
 // Modified   By:  mcgeq <mcgeq@outlook.com>
 // -----------------------------------------------------------------------------
 
@@ -25,6 +25,13 @@ pub struct Res<T> {
 }
 
 impl<T> Res<T> {
+    pub fn empty() -> Res<()> {
+        Res {
+            code: BusinessCode::Success.into(),
+            data: None,
+            message: "success".to_string(),
+        }
+    }
     pub fn success(data: T) -> Self {
         Self {
             code: BusinessCode::Success.into(),

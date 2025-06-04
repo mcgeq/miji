@@ -2,6 +2,8 @@ use std::{any::Any, error::Error, fmt};
 
 use serde::Serialize;
 
+use crate::response::Res;
+
 pub type MijiResult<T> = Result<T, MijiError>;
 
 pub trait CodeMessage: std::error::Error + Any + 'static {
@@ -165,4 +167,13 @@ impl From<&MijiError> for MijiErrorDto {
 pub fn to_dto<E: Into<MijiError>>(err: E) -> MijiErrorDto {
     let err = err.into();
     MijiErrorDto::from(&err)
+}
+
+impl<T> From<Result<T, MijiError>> for Res<T> {
+    fn from(value: Result<T, MijiError>) -> Self {
+        match value {
+            Ok(data) => Res::success(data),
+            Err(err) => Res::error(err),
+        }
+    }
 }

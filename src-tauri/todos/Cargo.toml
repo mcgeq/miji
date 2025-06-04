@@ -5,6 +5,10 @@ edition = "2024"
 description = "To-Do list feature with task creation, editing, and filtering."
 
 [dependencies]
+chrono = { workspace = true }
+serde = { workspace = true }
 snafu = { workspace = true }
 common = { path = "../common" }
 miji_derive = { workspace = true }
+tauri = { workspace = true }
+validator = { workspace = true }
