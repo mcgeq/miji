@@ -5,7 +5,7 @@
 // File:           dto.rs
 // Description:    About Dto
 // Create   Date:  2025-06-04 22:02:09
-// Last Modified:  2025-06-04 23:13:57
+// Last Modified:  2025-06-05 10:23:32
 // Modified   By:  mcgeq <mcgeq@outlook.com>
 // -----------------------------------------------------------------------------
 
@@ -19,6 +19,8 @@ use common::entity::{
 };
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use validator::{Validate, ValidationError};
+
+use crate::helper::{format_naive_datetime, format_opt_naive_datetime};
 
 pub trait FromModel<M> {
     fn from_model(model: M) -> Self;
@@ -398,31 +400,4 @@ where
         }
         None => serializer.serialize_none(),
     }
-}
-
-// Helper function to format DateTime to String (or use a standard like ISO 8601)
-// fn format_datetime<Tz: TimeZone>(dt: DateTime<Tz>) -> String
-// where
-//     Tz::Offset: std::fmt::Display,
-// {
-//     dt.to_rfc3339() // Or any other desired format
-// }
-//
-// fn format_opt_datetime<Tz: TimeZone>(opt_dt: Option<DateTime<Tz>>) -> Option<String>
-// where
-//     Tz::Offset: std::fmt::Display,
-// {
-//     // map applies the format_datetime function, inferring the Tz type
-//     opt_dt.map(format_datetime)
-// }
-
-// Format NaiveDateTime assuming it represents a UTC time, output as RFC 3339
-fn format_naive_datetime(ndt: NaiveDateTime) -> String {
-    ndt.to_string()
-}
-
-// Format Option<NaiveDateTime> assuming it represents a UTC time
-fn format_opt_naive_datetime(opt_ndt: Option<NaiveDateTime>) -> Option<String> {
-    // Map the naive formatter over the option
-    opt_ndt.map(format_naive_datetime)
 }

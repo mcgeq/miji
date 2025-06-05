@@ -5,7 +5,7 @@
 // File:           sql_error.rs
 // Description:    About SQL Error
 // Create   Date:  2025-05-26 20:36:27
-// Last Modified:  2025-05-29 22:09:56
+// Last Modified:  2025-06-05 13:03:57
 // Modified   By:  mcgeq <mcgeq@outlook.com>
 // -----------------------------------------------------------------------------
 
@@ -57,7 +57,7 @@ pub enum SQLError {
         source: DbErr,
     },
 
-    #[snafu(display("Record not found"))]
+    #[snafu(display("Record not found: {message}"))]
     NotFound { code: BusinessCode, message: String },
 
     #[snafu(display("Unique constraint violated: {details}"))]

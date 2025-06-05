@@ -47,6 +47,7 @@ snafu = { version = "0.8.5", features = [
 tokio = { version = "1.45.0", features = ["full", "tracing"] }
 chrono = { version = "0.4.41", features = ["serde"] }
 dotenvy = "0.15.7"
+futures = "0.3.31"
 tauri-plugin-log = { version = "2", features = ["colored"] }
 log = { version = "0.4.27", features = ["serde"] }
 argon2 = "0.5.3"

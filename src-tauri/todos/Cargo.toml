@@ -12,3 +12,5 @@ common = { path = "../common" }
 miji_derive = { workspace = true }
 tauri = { workspace = true }
 validator = { workspace = true }
+sea-orm = { workspace = true }
+futures = { workspace = true }

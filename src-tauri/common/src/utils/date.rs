@@ -1,4 +1,4 @@
-use chrono::{DateTime, Duration, Local, NaiveDateTime, Timelike, Utc};
+use chrono::{DateTime, Duration, FixedOffset, Local, NaiveDateTime, Timelike, Utc};
 
 #[derive(Debug, Clone)]
 pub struct DateUtils;
@@ -12,6 +12,18 @@ impl DateUtils {
 
     pub fn current_datetime_utc() -> DateTime<Utc> {
         Utc::now()
+    }
+
+    pub fn current_datetime_local_fixed() -> DateTime<FixedOffset> {
+        Utc::now().fixed_offset()
+    }
+
+    pub fn datetime_local_fixed(datetime: Option<NaiveDateTime>) -> DateTime<FixedOffset> {
+        if let Some(n) = datetime {
+            n.and_utc().fixed_offset()
+        } else {
+            Self::end_of_today("L").and_utc().fixed_offset()
+        }
     }
 
     pub fn local_to_utc(local_time: DateTime<Local>) -> DateTime<Utc> {
