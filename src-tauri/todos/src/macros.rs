@@ -5,7 +5,7 @@
 // File:           macros.rs
 // Description:    About Macro
 // Create   Date:  2025-06-05 12:14:12
-// Last Modified:  2025-06-05 22:42:12
+// Last Modified:  2025-06-05 23:29:44
 // Modified   By:  mcgeq <mcgeq@outlook.com>
 // -----------------------------------------------------------------------------
 
@@ -30,5 +30,12 @@ macro_rules! set_fields {
                 $should_update = true;
             }
         )*
+    };
+}
+
+#[macro_export]
+macro_rules! map_dto {
+    ($e:expr) => {
+        $e.await.map_err(to_dto)
     };
 }
