@@ -5,7 +5,7 @@
 // File:           commands.rs
 // Description:    About Commands
 // Create   Date:  2025-06-04 22:01:52
-// Last Modified:  2025-06-05 19:31:19
+// Last Modified:  2025-06-05 23:13:52
 // Modified   By:  mcgeq <mcgeq@outlook.com>
 // -----------------------------------------------------------------------------
 
@@ -16,8 +16,12 @@ use common::{
 use tauri::State;
 
 use crate::{
-    dto::{PaginationParams, ProjectInfo, TodoId, TodoInput, TodoListResult, TodoResponse},
-    handlers::TodoHandler,
+    dto::{
+        CreateOrUpdateForm, PaginationParams, ProjectResponse, TagResponse, TodoInput,
+        TodoListResult, TodoResponse,
+    },
+    handlers::{TagHandler, TodoHandler},
+    services::ProjectService,
 };
 
 #[tauri::command]
@@ -59,50 +63,72 @@ pub async fn delete_todo(
 pub async fn list_tag(
     pagination: PaginationParams,
     state: State<'_, AppState>,
-) -> Result<String, MijiErrorDto> {
-    Ok("list".to_string())
+) -> Result<Vec<TagResponse>, MijiErrorDto> {
+    TagHandler::list(pagination, state).await.map_err(to_dto)
 }
 
 #[tauri::command]
-pub async fn create_tag(state: State<'_, AppState>) -> Result<String, MijiErrorDto> {
-    Ok("create".to_string())
+pub async fn create_tag(
+    param: CreateOrUpdateForm,
+    state: State<'_, AppState>,
+) -> Result<TagResponse, MijiErrorDto> {
+    TagHandler::create(&param, state).await.map_err(to_dto)
 }
 
 #[tauri::command]
-pub async fn update_tag(state: State<'_, AppState>) -> Result<String, MijiErrorDto> {
-    Ok("create".to_string())
+pub async fn update_tag(
+    serial_num: String,
+    param: CreateOrUpdateForm,
+    state: State<'_, AppState>,
+) -> Result<TagResponse, MijiErrorDto> {
+    TagHandler::update(serial_num, &param, state)
+        .await
+        .map_err(to_dto)
 }
 
 #[tauri::command]
-pub async fn delete_tag(param: TodoId, state: State<'_, AppState>) -> Result<String, MijiErrorDto> {
-    Ok("delete".to_string())
+pub async fn delete_tag(
+    serial_num: String,
+    state: State<'_, AppState>,
+) -> Result<TagResponse, MijiErrorDto> {
+    TagHandler::delete(serial_num, state).await.map_err(to_dto)
 }
 
 #[tauri::command]
 pub async fn list_project(
     pagination: PaginationParams,
     state: State<'_, AppState>,
-) -> Result<String, MijiErrorDto> {
-    Ok("list".to_string())
+) -> Result<Vec<ProjectResponse>, MijiErrorDto> {
+    ProjectService::list(state, &pagination)
+        .await
+        .map_err(to_dto)
 }
 
 #[tauri::command]
 pub async fn create_project(
-    param: ProjectInfo,
+    param: CreateOrUpdateForm,
     state: State<'_, AppState>,
-) -> Result<String, MijiErrorDto> {
-    Ok("create".to_string())
+) -> Result<ProjectResponse, MijiErrorDto> {
+    ProjectService::create(state, &param).await.map_err(to_dto)
 }
 
 #[tauri::command]
-pub async fn update_project(state: State<'_, AppState>) -> Result<String, MijiErrorDto> {
-    Ok("create".to_string())
+pub async fn update_project(
+    serial_num: String,
+    param: CreateOrUpdateForm,
+    state: State<'_, AppState>,
+) -> Result<ProjectResponse, MijiErrorDto> {
+    ProjectService::update(state, &serial_num, &param)
+        .await
+        .map_err(to_dto)
 }
 
 #[tauri::command]
 pub async fn delete_project(
-    param: TodoId,
+    serial_num: String,
     state: State<'_, AppState>,
-) -> Result<String, MijiErrorDto> {
-    Ok("delete".to_string())
+) -> Result<ProjectResponse, MijiErrorDto> {
+    ProjectService::delete(state, &serial_num)
+        .await
+        .map_err(to_dto)
 }

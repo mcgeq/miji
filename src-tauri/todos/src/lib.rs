@@ -4,6 +4,4 @@ pub mod error;
 pub mod handlers;
 pub mod helper;
 pub mod macros;
-pub mod project_service;
 pub mod services;
-pub mod tag_service;

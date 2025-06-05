@@ -5,7 +5,7 @@
 // File:           services.rs
 // Description:    About Services
 // Create   Date:  2025-06-05 12:09:23
-// Last Modified:  2025-06-05 20:24:27
+// Last Modified:  2025-06-05 22:46:36
 // Modified   By:  mcgeq <mcgeq@outlook.com>
 // -----------------------------------------------------------------------------
 
@@ -38,18 +38,8 @@ use crate::{
     },
     error::TodosError,
     helper::{load_response, not_found_error},
+    p_set_fields, set_fields,
 };
-
-macro_rules! set_fields {
-    ($active:expr, $param:expr, $should_update:expr, $($field:ident : $type:ty => $set:expr),* $(,)?) => {
-        $(
-            if let Some(value) = $param.$field {
-                $active.$field = Set($set(value));
-                $should_update = true;
-            }
-        )*
-    };
-}
 
 pub struct TodoService;
 pub struct TagService;
@@ -437,14 +427,14 @@ impl TodoService {
                 }
 
                 // Validate description (if provided)
-                if let Some(description) = &create_tag.description {
-                    if description.len() > 1000 {
-                        return Err(TodosError::ReqParamsFailure {
-                            code: BusinessCode::InvalidParameter,
-                            message: "Tag description must not exceed 1000 characters".to_string(),
-                        }
-                        .into());
+                if let Some(description) = &create_tag.description
+                    && description.len() > 1000
+                {
+                    return Err(TodosError::ReqParamsFailure {
+                        code: BusinessCode::InvalidParameter,
+                        message: "Tag description must not exceed 1000 characters".to_string(),
                     }
+                    .into());
                 }
 
                 let tag_serial_num = if let Some(serial_num) = create_tag.serial_num {
@@ -733,7 +723,7 @@ impl TagService {
             .map_err(|e| {
                 let sql_error: SQLError = e.into();
                 MijiError::from(sql_error)
-            })
+            })?
             .ok_or_else(|| not_found_error(serial_num))?;
 
         let mut responses = load_response(vec![tag]).await?;
@@ -751,7 +741,7 @@ impl TagService {
                 .as_ref()
                 .map_or("".to_string(), |s| s.as_str().to_string())),
             description: Set(tag.description.as_ref().map(|s| s.to_string())),
-            created_at: Set(DateUtils::current_datetime().naive_local()),
+            created_at: Set(DateUtils::current_datetime_local_fixed()),
             ..Default::default()
         };
         let db = &*state.db;
@@ -784,13 +774,13 @@ impl TagService {
             .map_err(|e| {
                 let sql_error: SQLError = e.into();
                 MijiError::from(sql_error)
-            })
+            })?
             .ok_or_else(|| not_found_error(serial_num))?;
 
         let mut t_active: tag::ActiveModel = tag.clone().into();
 
         let mut should_update = false;
-        set_fields!(
+        p_set_fields!(
             t_active,
             param,
             should_update,
@@ -799,7 +789,7 @@ impl TagService {
         );
 
         let tag = if should_update {
-            t_active.updated_at = Set(Some(DateUtils::current_datetime().naive_local()));
+            t_active.updated_at = Set(Some(DateUtils::current_datetime_local_fixed()));
             t_active.update(&tx).await.map_err(|e| {
                 let sql_error: SQLError = e.into();
                 MijiError::from(sql_error)
@@ -872,20 +862,20 @@ impl ProjectService {
             .map_err(|e| {
                 let sql_error: SQLError = e.into();
                 MijiError::from(sql_error)
-            });
+            })?;
         load_response(projects).await
     }
 
     pub async fn get(state: State<'_, AppState>, serial_num: &str) -> MijiResult<ProjectResponse> {
         let db = &*state.db;
-        let todo = Proj::find()
+        let todo = project::Entity::find()
             .filter(project::Column::SerialNum.eq(serial_num))
             .one(db)
             .await
             .map_err(|e| {
                 let sql_error: SQLError = e.into();
                 MijiError::from(sql_error)
-            })
+            })?
             .ok_or_else(|| not_found_error(serial_num))?;
 
         let mut responses = load_response(vec![todo]).await?;
@@ -903,7 +893,7 @@ impl ProjectService {
                 .as_ref()
                 .map_or("".to_string(), |s| s.as_str().to_string())),
             description: Set(project.description.as_ref().map(|s| s.to_string())),
-            created_at: Set(DateUtils::current_datetime().naive_local()),
+            created_at: Set(DateUtils::current_datetime_local_fixed()),
             ..Default::default()
         };
 
@@ -929,20 +919,20 @@ impl ProjectService {
             MijiError::from(sql_error)
         })?;
 
-        let proj: project::Model = Proj::find()
+        let proj: project::Model = project::Entity::find()
             .filter(project::Column::SerialNum.eq(serial_num))
             .one(&tx)
             .await
             .map_err(|e| {
                 let sql_error: SQLError = e.into();
                 MijiError::from(sql_error)
-            })
+            })?
             .ok_or_else(|| not_found_error(serial_num))?;
 
         let mut t_active: project::ActiveModel = proj.clone().into();
 
         let mut should_update = false;
-        set_fields!(
+        p_set_fields!(
             t_active,
             param,
             should_update,
@@ -950,7 +940,7 @@ impl ProjectService {
             description: String => |v: String| Some(v),
         );
         let proj = if should_update {
-            t_active.updated_at = Set(Some(DateUtils::current_datetime().naive_local()));
+            t_active.updated_at = Set(Some(DateUtils::current_datetime_local_fixed()));
             t_active.update(&tx).await.map_err(|e| {
                 let sql_error: SQLError = e.into();
                 MijiError::from(sql_error)
@@ -976,7 +966,7 @@ impl ProjectService {
             let sql_error: SQLError = e.into();
             MijiError::from(sql_error)
         })?;
-        let proj: Option<todo_project::Model> = TProj::find()
+        let proj: Option<todo_project::Model> = todo_project::Entity::find()
             .filter(todo_project::Column::ProjectSerialNum.eq(serial_num))
             .one(&tx)
             .await
@@ -985,20 +975,21 @@ impl ProjectService {
                 MijiError::from(sql_error)
             })?;
         if proj.is_some() {
-            return Err(McgErr::AppRuleError {
+            return Err(TodosError::Validation {
                 code: BusinessCode::InvalidParameter,
                 message: "Associated to-do tasks cannot be deleted".to_string(),
-            });
+            }
+            .into());
         };
 
-        let proj: project::Model = Proj::find()
+        let proj: project::Model = project::Entity::find()
             .filter(project::Column::SerialNum.eq(serial_num))
             .one(&tx)
             .await
             .map_err(|e| {
                 let sql_error: SQLError = e.into();
                 MijiError::from(sql_error)
-            })
+            })?
             .ok_or_else(|| not_found_error(serial_num))?;
 
         project::Entity::delete_by_id(serial_num)
@@ -1007,13 +998,13 @@ impl ProjectService {
             .map_err(|e| {
                 let sql_error: SQLError = e.into();
                 MijiError::from(sql_error)
-            });
+            })?;
         let mut response = load_response(vec![proj]).await?;
 
         tx.commit().await.map_err(|e| {
             let sql_error: SQLError = e.into();
             MijiError::from(sql_error)
-        });
+        })?;
         Ok(response.pop().unwrap())
     }
 }
