@@ -19,6 +19,18 @@ pub fn init_commands(builder: Builder<Wry>) -> Builder<Wry> {
     builder.invoke_handler(tauri::generate_handler![
         greet,
         auth::commands::register,
-        auth::commands::login
+        auth::commands::login,
+        todos::commands::todo_command::list_todo,
+        todos::commands::todo_command::create_todo,
+        todos::commands::todo_command::update_todo,
+        todos::commands::todo_command::delete_todo,
+        todos::commands::tag_command::list_tag,
+        todos::commands::tag_command::create_tag,
+        todos::commands::tag_command::update_tag,
+        todos::commands::tag_command::delete_tag,
+        todos::commands::project_command::list_project,
+        todos::commands::project_command::create_project,
+        todos::commands::project_command::update_project,
+        todos::commands::project_command::delete_project,
     ])
 }
