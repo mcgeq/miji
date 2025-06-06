@@ -5,7 +5,7 @@
 // File:           money_scheme.rs
 // Description:    About Bookkeeping
 // Create   Date:  2025-05-27 10:09:48
-// Last Modified:  2025-05-28 20:29:30
+// Last Modified:  2025-06-06 16:42:59
 // Modified   By:  mcgeq <mcgeq@outlook.com>
 // -----------------------------------------------------------------------------
 
@@ -57,6 +57,8 @@ pub enum Transaction {
     SubCategory,
     Tags,
     SplitMembers,
+    CreatedAt,
+    UpdatedAt,
 }
 
 // 货币类型
@@ -80,6 +82,8 @@ pub enum Budget {
     EndDate,
     UsedAmount,
     IsActive,
+    CreatedAt,
+    UpdatedAt,
 }
 
 // 家庭记账本

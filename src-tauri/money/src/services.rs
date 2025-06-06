@@ -2,15 +2,13 @@
 //    Copyright (C) 2025 mcge. All rights reserved.
 // Author:         mcge
 // Email:          <mcgeq@outlook.com>
-// File:           lib.rs
-// Description:    About Money
-// Create   Date:  2025-06-06 13:14:52
-// Last Modified:  2025-06-06 13:21:06
+// File:           services.rs
+// Description:    About Money Services
+// Create   Date:  2025-06-06 13:20:14
+// Last Modified:  2025-06-06 13:22:14
 // Modified   By:  mcgeq <mcgeq@outlook.com>
 // -----------------------------------------------------------------------------
 
-pub mod commands;
-pub mod dto;
-pub mod error;
-pub mod handler;
-pub mod services;
+pub struct MoneyService;
+
+impl MoneyService {}
