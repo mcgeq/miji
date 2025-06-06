@@ -5,7 +5,7 @@
 // File:           sql_error.rs
 // Description:    About SQL Error
 // Create   Date:  2025-05-26 20:36:27
-// Last Modified:  2025-06-05 13:03:57
+// Last Modified:  2025-06-06 22:54:52
 // Modified   By:  mcgeq <mcgeq@outlook.com>
 // -----------------------------------------------------------------------------
 
@@ -102,5 +102,12 @@ impl From<DbErr> for SQLError {
 impl From<SQLError> for MijiError {
     fn from(err: SQLError) -> Self {
         MijiError::Sql(Box::new(err))
+    }
+}
+
+pub fn not_found_error(serial_num: &str) -> SQLError {
+    SQLError::NotFound {
+        code: BusinessCode::DatabaseQueryFailure,
+        message: format!("Todo with {serial_num} not found"),
     }
 }

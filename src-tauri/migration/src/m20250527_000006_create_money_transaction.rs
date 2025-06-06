@@ -67,6 +67,16 @@ impl MigrationTrait for Migration {
                             .not_null()
                             .check(Expr::col(Transaction::ActualPayerAccount).is_in([0, 1, 2, 3])),
                     )
+                    .col(
+                        ColumnDef::new(Transaction::CreatedAt)
+                            .timestamp_with_time_zone()
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(Transaction::UpdatedAt)
+                            .timestamp_with_time_zone()
+                            .null(),
+                    )
                     .foreign_key(
                         ForeignKey::create()
                             .from(Transaction::Table, Transaction::Currency)

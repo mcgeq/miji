@@ -29,6 +29,8 @@ pub struct Model {
     pub split_members: Option<Json>,
     pub payment_method: PaymentMethod,
     pub actual_payer_account: AccountType,
+    pub create_at: DateTimeWithTimeZone,
+    pub update_at: DateTimeWithTimeZone,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
