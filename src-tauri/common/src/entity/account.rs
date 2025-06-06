@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 pub struct Model {
     #[sea_orm(primary_key, auto_increment = false)]
     pub serial_num: String,
-    pub account_type: i16,
+    pub name: String,
     pub description: String,
     pub balance: Decimal,
     pub currency: String,
@@ -28,16 +28,16 @@ pub enum Relation {
         on_delete = "NoAction"
     )]
     Currency,
+    #[sea_orm(has_many = "super::transaction::Entity")]
+    Transaction,
     #[sea_orm(
-        belongs_to = "super::family_member::Entity",
+        belongs_to = "super::user::Entity",
         from = "Column::OwnerId",
-        to = "super::family_member::Column::SerialNum",
+        to = "super::user::Column::SerialNum",
         on_update = "NoAction",
         on_delete = "NoAction"
     )]
-    FamilyMember,
-    #[sea_orm(has_many = "super::transaction::Entity")]
-    Transaction,
+    User,
 }
 
 impl Related<super::currency::Entity> for Entity {
@@ -46,15 +46,15 @@ impl Related<super::currency::Entity> for Entity {
     }
 }
 
-impl Related<super::family_member::Entity> for Entity {
-    fn to() -> RelationDef {
-        Relation::FamilyMember.def()
-    }
-}
-
 impl Related<super::transaction::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::Transaction.def()
+    }
+}
+
+impl Related<super::user::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::User.def()
     }
 }
 

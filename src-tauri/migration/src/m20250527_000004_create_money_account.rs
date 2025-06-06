@@ -1,6 +1,9 @@
 use sea_orm_migration::prelude::*;
 
-use crate::money_scheme::{Account, Currency, FamilyMember};
+use crate::{
+    money_scheme::{Account, Currency},
+    user_scheme::User,
+};
 
 #[derive(DeriveMigrationName)]
 pub struct Migration;
@@ -19,13 +22,7 @@ impl MigrationTrait for Migration {
                             .not_null()
                             .primary_key(),
                     )
-                    .col(
-                        ColumnDef::new(Account::AccountType)
-                            .tiny_integer()
-                            .not_null()
-                            .check(Expr::col(Account::AccountType).is_in([0, 1, 2, 3, 4, 5]))
-                            .default(0),
-                    )
+                    .col(ColumnDef::new(Account::Name).string_len(20).not_null())
                     .col(ColumnDef::new(Account::Description).string().not_null())
                     .col(
                         ColumnDef::new(Account::Balance)
@@ -59,7 +56,7 @@ impl MigrationTrait for Migration {
                     .foreign_key(
                         ForeignKey::create()
                             .from(Account::Table, Account::OwnerId)
-                            .to(FamilyMember::Table, FamilyMember::SerialNum),
+                            .to(User::Table, User::SerialNum),
                     )
                     .to_owned(),
             )

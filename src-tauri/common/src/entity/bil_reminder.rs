@@ -3,6 +3,8 @@
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
+use crate::entity::sea_orm_active_enums::RepeatPeriod;
+
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize)]
 #[sea_orm(table_name = "bil_reminder")]
 pub struct Model {
@@ -11,7 +13,7 @@ pub struct Model {
     pub name: String,
     pub amount: Decimal,
     pub due_date: Date,
-    pub repeat_period: i16,
+    pub repeat_period: RepeatPeriod,
     pub is_paid: bool,
     pub related_transaction_serial_num: Option<String>,
     pub created_at: DateTimeWithTimeZone,

@@ -3,7 +3,7 @@
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
-use super::sea_orm_active_enums::{UserRole, UserStatus};
+use crate::entity::sea_orm_active_enums::{UserRole, UserStatus};
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize)]
 #[sea_orm(table_name = "user")]
@@ -35,8 +35,16 @@ pub struct Model {
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
+    #[sea_orm(has_many = "super::account::Entity")]
+    Account,
     #[sea_orm(has_many = "super::todo::Entity")]
     Todo,
+}
+
+impl Related<super::account::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::Account.def()
+    }
 }
 
 impl Related<super::todo::Entity> for Entity {

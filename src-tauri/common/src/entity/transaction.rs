@@ -3,13 +3,17 @@
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
+use crate::entity::sea_orm_active_enums::{
+    AccountType, Category, PaymentMethod, TransactionStatus, TransactionType,
+};
+
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize)]
 #[sea_orm(table_name = "transaction")]
 pub struct Model {
     #[sea_orm(primary_key, auto_increment = false)]
     pub serial_num: String,
-    pub transaction_type: i16,
-    pub transaction_status: i16,
+    pub transaction_type: TransactionType,
+    pub transaction_status: TransactionStatus,
     pub date: Date,
     pub amount: Decimal,
     pub currency: String,
@@ -17,13 +21,14 @@ pub struct Model {
     #[sea_orm(column_type = "Text", nullable)]
     pub notes: Option<String>,
     pub account_serial_num: String,
-    pub counterparty_account_id: Option<String>,
-    pub category: String,
+    pub category: Category,
     pub sub_category: Option<String>,
     #[sea_orm(column_type = "JsonBinary", nullable)]
     pub tags: Option<Json>,
     #[sea_orm(column_type = "JsonBinary", nullable)]
     pub split_members: Option<Json>,
+    pub payment_method: PaymentMethod,
+    pub actual_payer_account: AccountType,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

@@ -47,6 +47,16 @@ impl MigrationTrait for Migration {
                             .not_null()
                             .default(true),
                     )
+                    .col(
+                        ColumnDef::new(Budget::CreatedAt)
+                            .timestamp_with_time_zone()
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(Budget::UpdatedAt)
+                            .timestamp_with_time_zone()
+                            .null(),
+                    )
                     .to_owned(),
             )
             .await?;

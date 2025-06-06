@@ -3,14 +3,16 @@
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
+use crate::entity::sea_orm_active_enums::{Intensity, SymptomsType};
+
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize)]
 #[sea_orm(table_name = "period_pms_symptoms")]
 pub struct Model {
     #[sea_orm(primary_key, auto_increment = false)]
     pub serial_num: String,
     pub period_pms_records_serial_num: String,
-    pub symptom_type: i16,
-    pub intensity: i16,
+    pub symptom_type: SymptomsType,
+    pub intensity: Intensity,
     pub created_at: DateTimeWithTimeZone,
     pub updated_at: Option<DateTimeWithTimeZone>,
 }

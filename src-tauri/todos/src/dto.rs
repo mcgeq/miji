@@ -5,7 +5,7 @@
 // File:           dto.rs
 // Description:    About Dto
 // Create   Date:  2025-06-04 22:02:09
-// Last Modified:  2025-06-05 10:23:32
+// Last Modified:  2025-06-06 21:47:12
 // Modified   By:  mcgeq <mcgeq@outlook.com>
 // -----------------------------------------------------------------------------
 
@@ -161,7 +161,7 @@ pub struct TodoInput {
     pub tags: Option<Vec<CreateOrUpdateForm>>,
     pub repeat: Option<String>,
     #[validate(range(min = 0, max = 100, message = "progress must be between 0 and 100"))]
-    pub progress: Option<i16>,
+    pub progress: Option<i8>,
     pub assignee_id: Option<String>,
     pub projects: Option<Vec<CreateOrUpdateForm>>,
     pub location: Option<String>,
@@ -197,12 +197,12 @@ pub struct TodoResponse {
     pub created_at: String,
     pub updated_at: Option<String>,
     pub due_at: String,
-    pub priority: i16,
-    pub status: i16,
+    pub priority: i8,
+    pub status: i8,
     pub repeat: Option<String>,
     pub completed_at: Option<String>,
     pub assignee_id: Option<String>,
-    pub progress: i16,
+    pub progress: i8,
     pub location: Option<String>,
     pub owner_id: Option<String>,
     pub projects: Vec<ProjectInfo>,

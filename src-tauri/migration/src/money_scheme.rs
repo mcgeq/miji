@@ -5,7 +5,7 @@
 // File:           money_scheme.rs
 // Description:    About Bookkeeping
 // Create   Date:  2025-05-27 10:09:48
-// Last Modified:  2025-06-06 16:42:59
+// Last Modified:  2025-06-06 20:49:09
 // Modified   By:  mcgeq <mcgeq@outlook.com>
 // -----------------------------------------------------------------------------
 
@@ -28,8 +28,8 @@ pub enum FamilyMember {
 #[derive(DeriveIden)]
 pub enum Account {
     Table,
+    Name,
     SerialNum,
-    AccountType,
     Description,
     Balance,
     Currency,
@@ -52,11 +52,12 @@ pub enum Transaction {
     Description,
     Notes,
     AccountSerialNum,
-    CounterpartyAccountId,
     Category,
     SubCategory,
     Tags,
     SplitMembers,
+    PaymentMethod,
+    ActualPayerAccount,
     CreatedAt,
     UpdatedAt,
 }

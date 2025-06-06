@@ -9,8 +9,8 @@ pub struct Model {
     #[sea_orm(primary_key, auto_increment = false)]
     pub serial_num: String,
     pub period_daily_records_serial_num: String,
-    pub symptom_type: i16,
-    pub intensity: i16,
+    pub symptom_type: i8,
+    pub intensity: i8,
     pub created_at: DateTimeWithTimeZone,
     pub updated_at: Option<DateTimeWithTimeZone>,
 }

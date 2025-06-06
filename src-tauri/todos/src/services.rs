@@ -5,7 +5,7 @@
 // File:           services.rs
 // Description:    About Services
 // Create   Date:  2025-06-05 12:09:23
-// Last Modified:  2025-06-05 22:46:36
+// Last Modified:  2025-06-06 21:52:35
 // Modified   By:  mcgeq <mcgeq@outlook.com>
 // -----------------------------------------------------------------------------
 
@@ -78,7 +78,7 @@ impl TodoService {
             priority: Priority => |v: Priority| v.into(),
             status: Status => |v: Status| v.into(),
             repeat: String => |v: String| Some(v),
-            progress: i16 => |v: i16| v,
+            progress: i8 => |v: i8| v,
             assignee_id: String => |v: String| Some(v),
             location: String => |v: String| Some(v),
             owner_id: String => |v: String| Some(v),
@@ -245,7 +245,7 @@ impl TodoService {
                 v.into()
             },
             repeat: String => |v: String| Some(v),
-            progress: i16 => |v: i16| v,
+            progress: i8 => |v: i8| v,
             assignee_id: String => |v: String| Some(v),
             location: String => |v: String| Some(v),
             owner_id: String => |v: String| Some(v),
@@ -525,7 +525,7 @@ impl TodoService {
                     let todo_tag_active = todo_tag::ActiveModel {
                         todo_serial_num: Set(todo_serial_num.to_string()),
                         tag_serial_num: Set(tag_serial_num.clone()),
-                        created_at: Set(DateUtils::current_datetime().naive_local()),
+                        created_at: Set(DateUtils::current_datetime_local_fixed()),
                         ..Default::default()
                     };
                     todo_tag_active.insert(tx).await.map_err(|e| {

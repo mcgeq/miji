@@ -3,6 +3,8 @@
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
+use crate::entity::sea_orm_active_enums::ReminderType;
+
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize)]
 #[sea_orm(table_name = "reminder")]
 pub struct Model {
@@ -10,7 +12,7 @@ pub struct Model {
     pub serial_num: String,
     pub todo_serial_num: String,
     pub remind_at: DateTimeWithTimeZone,
-    pub r#type: Option<i16>,
+    pub r#type: Option<ReminderType>,
     pub is_sent: bool,
     pub created_at: DateTimeWithTimeZone,
     pub updated_at: Option<DateTimeWithTimeZone>,

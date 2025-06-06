@@ -43,17 +43,29 @@ impl MigrationTrait for Migration {
                             .not_null(),
                     )
                     .col(
-                        ColumnDef::new(Transaction::CounterpartyAccountId)
-                            .string_len(38)
-                            .null(),
+                        ColumnDef::new(Transaction::Category)
+                            .small_unsigned()
+                            .not_null(),
                     )
-                    .col(ColumnDef::new(Transaction::Category).string().not_null())
                     .col(ColumnDef::new(Transaction::SubCategory).string().null())
                     .col(ColumnDef::new(Transaction::Tags).json_binary().null())
                     .col(
                         ColumnDef::new(Transaction::SplitMembers)
                             .json_binary()
                             .null(),
+                    )
+                    .col(
+                        ColumnDef::new(Transaction::PaymentMethod)
+                            .small_unsigned()
+                            .not_null()
+                            .check(Expr::col(Transaction::PaymentMethod).is_in([0, 1, 2, 3, 4, 5]))
+                            .default(0),
+                    )
+                    .col(
+                        ColumnDef::new(Transaction::ActualPayerAccount)
+                            .small_unsigned()
+                            .not_null()
+                            .check(Expr::col(Transaction::ActualPayerAccount).is_in([0, 1, 2, 3])),
                     )
                     .foreign_key(
                         ForeignKey::create()
