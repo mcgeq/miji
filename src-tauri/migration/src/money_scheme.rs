@@ -5,7 +5,7 @@
 // File:           money_scheme.rs
 // Description:    About Bookkeeping
 // Create   Date:  2025-05-27 10:09:48
-// Last Modified:  2025-06-07 11:01:08
+// Last Modified:  2025-06-07 21:21:50
 // Modified   By:  mcgeq <mcgeq@outlook.com>
 // -----------------------------------------------------------------------------
 
@@ -76,6 +76,7 @@ pub enum Currency {
 pub enum Budget {
     Table,
     SerialNum,
+    AccountSerialNum,
     Name,
     Category,
     Amount,

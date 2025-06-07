@@ -10,6 +10,7 @@ use crate::entity::sea_orm_active_enums::RepeatPeriod;
 pub struct Model {
     #[sea_orm(primary_key, auto_increment = false)]
     pub serial_num: String,
+    pub account_serial_num: String,
     pub name: String,
     pub category: String,
     pub amount: Decimal,
@@ -23,6 +24,21 @@ pub struct Model {
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
-pub enum Relation {}
+pub enum Relation {
+    #[sea_orm(
+        belongs_to = "super::account::Entity",
+        from = "Column::AccountSerialNum",
+        to = "super::account::Column::SerialNum",
+        on_update = "Cascade",
+        on_delete = "Cascade"
+    )]
+    Account,
+}
+
+impl Related<super::account::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::Account.def()
+    }
+}
 
 impl ActiveModelBehavior for ActiveModel {}

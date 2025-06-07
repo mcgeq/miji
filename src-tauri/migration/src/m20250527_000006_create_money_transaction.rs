@@ -84,8 +84,11 @@ impl MigrationTrait for Migration {
                     )
                     .foreign_key(
                         ForeignKey::create()
+                            .name("fk_transaction_account")
                             .from(Transaction::Table, Transaction::AccountSerialNum)
-                            .to(Account::Table, Account::SerialNum),
+                            .to(Account::Table, Account::SerialNum)
+                            .on_update(ForeignKeyAction::Cascade)
+                            .on_delete(ForeignKeyAction::Cascade),
                     )
                     .to_owned(),
             )

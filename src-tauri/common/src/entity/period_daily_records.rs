@@ -3,8 +3,6 @@
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
-use crate::entity::sea_orm_active_enums::{ExerciseIntensity, FlowLevel};
-
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize)]
 #[sea_orm(table_name = "period_daily_records")]
 pub struct Model {
@@ -12,9 +10,9 @@ pub struct Model {
     pub serial_num: String,
     pub period_serial_num: String,
     pub date: Date,
-    pub flow_level: Option<FlowLevel>,
+    pub flow_level: Option<i8>,
     pub sexual_activity: bool,
-    pub exercise_intensity: ExerciseIntensity,
+    pub exercise_intensity: i8,
     pub diet: String,
     pub created_at: DateTimeWithTimeZone,
     pub updated_at: Option<DateTimeWithTimeZone>,

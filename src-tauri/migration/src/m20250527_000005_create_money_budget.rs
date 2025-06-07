@@ -1,6 +1,6 @@
 use sea_orm_migration::prelude::*;
 
-use crate::money_scheme::Budget;
+use crate::money_scheme::{Account, Budget};
 
 #[derive(DeriveMigrationName)]
 pub struct Migration;
@@ -17,6 +17,11 @@ impl MigrationTrait for Migration {
                             .string_len(38)
                             .not_null()
                             .primary_key(),
+                    )
+                    .col(
+                        ColumnDef::new(Budget::AccountSerialNum)
+                            .string_len(38)
+                            .not_null(),
                     )
                     .col(ColumnDef::new(Budget::Name).string().not_null())
                     .col(ColumnDef::new(Budget::Category).string().not_null())
@@ -56,6 +61,14 @@ impl MigrationTrait for Migration {
                         ColumnDef::new(Budget::UpdatedAt)
                             .timestamp_with_time_zone()
                             .null(),
+                    )
+                    .foreign_key(
+                        ForeignKey::create()
+                            .name("fk_budget_acccount")
+                            .from(Budget::Table, Budget::AccountSerialNum)
+                            .to(Account::Table, Account::SerialNum)
+                            .on_delete(ForeignKeyAction::Cascade)
+                            .on_update(ForeignKeyAction::Cascade),
                     )
                     .to_owned(),
             )

@@ -21,6 +21,8 @@ pub struct Model {
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
+    #[sea_orm(has_many = "super::budget::Entity")]
+    Budget,
     #[sea_orm(
         belongs_to = "super::currency::Entity",
         from = "Column::Currency",
@@ -39,6 +41,12 @@ pub enum Relation {
         on_delete = "NoAction"
     )]
     User,
+}
+
+impl Related<super::budget::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::Budget.def()
+    }
 }
 
 impl Related<super::currency::Entity> for Entity {

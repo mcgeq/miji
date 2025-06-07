@@ -29,8 +29,8 @@ pub struct Model {
     pub split_members: Option<Json>,
     pub payment_method: PaymentMethod,
     pub actual_payer_account: AccountType,
-    pub create_at: DateTimeWithTimeZone,
-    pub update_at: DateTimeWithTimeZone,
+    pub created_at: DateTimeWithTimeZone,
+    pub updated_at: Option<DateTimeWithTimeZone>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
@@ -39,8 +39,8 @@ pub enum Relation {
         belongs_to = "super::account::Entity",
         from = "Column::AccountSerialNum",
         to = "super::account::Column::SerialNum",
-        on_update = "NoAction",
-        on_delete = "NoAction"
+        on_update = "Cascade",
+        on_delete = "Cascade"
     )]
     Account,
     #[sea_orm(has_many = "super::bil_reminder::Entity")]

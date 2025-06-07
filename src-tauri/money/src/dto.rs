@@ -5,7 +5,7 @@
 // File:           dto.rs
 // Description:    About Money DTO
 // Create   Date:  2025-06-06 13:19:58
-// Last Modified:  2025-06-07 16:29:00
+// Last Modified:  2025-06-07 23:05:43
 // Modified   By:  mcgeq <mcgeq@outlook.com>
 // -----------------------------------------------------------------------------
 
@@ -33,6 +33,15 @@ pub struct PaginationParams {
         range(min = 1, message = "page_size must be greater than or equal to 1")
     )]
     pub page_size: Option<u64>,
+}
+
+impl PaginationParams {
+    pub fn page(&self) -> u64 {
+        self.page.unwrap_or(1)
+    }
+    pub fn page_size(&self) -> u64 {
+        self.page_size.unwrap_or(10)
+    }
 }
 
 // Existing DTOs
@@ -173,6 +182,14 @@ pub struct TransactionResDto {
     pub updated_at: Option<DateTimeWithTimeZone>,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct PageResDto<T> {
+    pub data: Vec<T>,
+    pub total: u64,
+    pub page: u64,
+    pub page_size: u64,
+}
+
 impl From<transaction::Model> for TransactionResDto {
     fn from(value: transaction::Model) -> Self {
         Self {
@@ -193,8 +210,8 @@ impl From<transaction::Model> for TransactionResDto {
                 payment_method: value.payment_method,
                 actual_payer_account: value.actual_payer_account,
             },
-            created_at: value.create_at,
-            updated_at: Some(value.update_at),
+            created_at: value.created_at,
+            updated_at: Some(value.updated_at.unwrap()),
         }
     }
 }

@@ -1,4 +1,4 @@
-use common::entity::account;
+use common::entity::{account, transaction};
 use common::error::MijiError;
 use common::sql_error::{SQLError, not_found_error};
 use common::utils::date::DateUtils;
@@ -23,6 +23,19 @@ impl AccountService {
             })?
             .ok_or_else(|| not_found_error(serial_num))?;
         Ok(account)
+    }
+
+    pub async fn get_transactions(
+        serial_num: &str,
+        db: &DatabaseConnection,
+    ) -> MijiResult<Vec<transaction::Model>> {
+        let transactions = transaction::Entity::find()
+            .filter(transaction::Column::AccountSerialNum.eq(serial_num))
+            .all(db)
+            .await
+            .map_err(|e| MijiError::from(SQLError::from(e)))?;
+
+        Ok(transactions)
     }
 
     pub async fn create(
@@ -74,21 +87,18 @@ impl AccountService {
         Ok(updated)
     }
     pub async fn delete(serial_num: &str, db: &DatabaseConnection) -> MijiResult<account::Model> {
-        let mut res_dto = account::Entity::find()
+        let account = account::Entity::find()
             .filter(account::Column::SerialNum.eq(serial_num))
             .one(db)
             .await
-            .map_err(|e| {
-                let sql_error: SQLError = e.into();
-                MijiError::from(sql_error)
-            })?
+            .map_err(|e| MijiError::from(SQLError::from(e)))?
             .ok_or_else(|| not_found_error(serial_num))?;
-        res_dto.is_active = false;
-        let active_model: account::ActiveModel = res_dto.clone().into();
-        active_model.update(db).await.map_err(|e| {
-            let sql_error: SQLError = e.into();
-            MijiError::from(sql_error)
-        })?;
-        Ok(res_dto)
+        let mut active_model: account::ActiveModel = account.into();
+        active_model.is_active = Set(false); // 软删除
+        let updated = active_model
+            .update(db)
+            .await
+            .map_err(|e| MijiError::from(SQLError::from(e)))?;
+        Ok(updated)
     }
 }

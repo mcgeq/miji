@@ -157,16 +157,8 @@ pub enum TransactionType {
     /// 支出
     #[sea_orm(num_value = 1)]
     Expense,
-    /// 转账
-    #[sea_orm(num_value = 2)]
-    Transfer,
-    /// 报销
-    #[sea_orm(num_value = 3)]
-    Reimbursement,
-    /// 礼物
-    #[sea_orm(num_value = 4)]
-    Gift,
 }
+
 // 交易分类
 #[derive(Debug, Clone, PartialEq, Eq, EnumIter, DeriveActiveEnum, Serialize, Deserialize)]
 #[sea_orm(rs_type = "i32", db_type = "Integer")]
