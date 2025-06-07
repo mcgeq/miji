@@ -21,7 +21,11 @@ impl MigrationTrait for Migration {
                     )
                     .col(ColumnDef::new(BilReminder::Name).string().not_null())
                     .col(ColumnDef::new(BilReminder::Amount).decimal().not_null())
-                    .col(ColumnDef::new(BilReminder::DueDate).date().not_null())
+                    .col(
+                        ColumnDef::new(BilReminder::DueDate)
+                            .timestamp_with_time_zone()
+                            .not_null(),
+                    )
                     .col(
                         ColumnDef::new(BilReminder::RepeatPeriod)
                             .tiny_integer()

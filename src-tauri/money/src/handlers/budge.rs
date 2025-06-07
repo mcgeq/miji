@@ -2,13 +2,13 @@
 //    Copyright (C) 2025 mcge. All rights reserved.
 // Author:         mcge
 // Email:          <mcgeq@outlook.com>
-// File:           handler.rs
-// Description:    About Money Handler
-// Create   Date:  2025-06-06 13:21:15
-// Last Modified:  2025-06-06 13:21:47
+// File:           budge.rs
+// Description:    About Budge Handler
+// Create   Date:  2025-06-07 14:39:14
+// Last Modified:  2025-06-07 14:39:55
 // Modified   By:  mcgeq <mcgeq@outlook.com>
 // -----------------------------------------------------------------------------
 
-pub struct MoneyHandler;
+pub struct BudgetHandler;
 
-impl MoneyHandler {}
+impl BudgetHandler {}

@@ -2,15 +2,13 @@
 //    Copyright (C) 2025 mcge. All rights reserved.
 // Author:         mcge
 // Email:          <mcgeq@outlook.com>
-// File:           lib.rs
-// Description:    About Money
-// Create   Date:  2025-06-06 13:14:52
-// Last Modified:  2025-06-07 14:35:17
+// File:           family.rs
+// Description:    About Family Handler
+// Create   Date:  2025-06-07 14:40:00
+// Last Modified:  2025-06-07 14:40:22
 // Modified   By:  mcgeq <mcgeq@outlook.com>
 // -----------------------------------------------------------------------------
 
-pub mod commands;
-pub mod dto;
-pub mod error;
-pub mod handlers;
-pub mod services;
+pub struct FamilyHandler;
+
+impl FamilyHandler {}

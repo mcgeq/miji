@@ -5,7 +5,7 @@
 // File:           dto.rs
 // Description:    About Dto
 // Create   Date:  2025-06-04 22:02:09
-// Last Modified:  2025-06-06 21:47:12
+// Last Modified:  2025-06-07 13:01:10
 // Modified   By:  mcgeq <mcgeq@outlook.com>
 // -----------------------------------------------------------------------------
 
@@ -14,9 +14,10 @@ use std::ops::Deref;
 use chrono::NaiveDateTime;
 use common::entity::{
     attachment, project, reminder,
-    sea_orm_active_enums::{Priority, Status},
+    sea_orm_active_enums::{Priority, ReminderType, Status},
     tag, todo,
 };
+use sea_orm::prelude::DateTimeWithTimeZone;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use validator::{Validate, ValidationError};
 
@@ -258,6 +259,46 @@ pub struct TagResponse {
 pub struct ReminderInfo {
     pub serial_num: String,
     pub remind_at: String, // Store as string for JSON
+}
+
+// New DTOs for Reminder
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Validate)]
+pub struct ReminderCore {
+    pub todo_serial_num: String,
+    pub remind_at: DateTimeWithTimeZone,
+    pub r#type: Option<ReminderType>,
+    pub is_sent: bool,
+}
+
+#[derive(Debug, Serialize, Validate)]
+pub struct ReminderDto {
+    #[serde(flatten)]
+    pub core: ReminderCore,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Deserialize, Validate)]
+pub struct ReminderResDto {
+    pub serial_num: String,
+    #[serde(flatten)]
+    pub core: ReminderCore,
+    pub created_at: DateTimeWithTimeZone,
+    pub updated_at: Option<DateTimeWithTimeZone>,
+}
+
+impl From<reminder::Model> for ReminderResDto {
+    fn from(value: reminder::Model) -> Self {
+        Self {
+            serial_num: value.serial_num,
+            core: ReminderCore {
+                todo_serial_num: value.todo_serial_num,
+                remind_at: value.remind_at,
+                r#type: value.r#type,
+                is_sent: value.is_sent,
+            },
+            created_at: value.created_at,
+            updated_at: value.updated_at,
+        }
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]

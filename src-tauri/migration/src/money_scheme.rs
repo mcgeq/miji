@@ -5,7 +5,7 @@
 // File:           money_scheme.rs
 // Description:    About Bookkeeping
 // Create   Date:  2025-05-27 10:09:48
-// Last Modified:  2025-06-06 20:49:09
+// Last Modified:  2025-06-07 11:01:08
 // Modified   By:  mcgeq <mcgeq@outlook.com>
 // -----------------------------------------------------------------------------
 
@@ -35,6 +35,7 @@ pub enum Account {
     Currency,
     IsShared,
     OwnerId,
+    IsActive,
     CreatedAt,
     UpdatedAt,
 }

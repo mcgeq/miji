@@ -14,6 +14,7 @@ pub struct Model {
     pub currency: String,
     pub is_shared: bool,
     pub owner_id: String,
+    pub is_active: bool,
     pub created_at: DateTimeWithTimeZone,
     pub updated_at: Option<DateTimeWithTimeZone>,
 }

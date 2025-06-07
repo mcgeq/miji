@@ -12,7 +12,7 @@ pub struct Model {
     pub serial_num: String,
     pub name: String,
     pub amount: Decimal,
-    pub due_date: Date,
+    pub due_date: DateTimeWithTimeZone,
     pub repeat_period: RepeatPeriod,
     pub is_paid: bool,
     pub related_transaction_serial_num: Option<String>,

@@ -38,6 +38,7 @@ impl MigrationTrait for Migration {
                             .default(false),
                     )
                     .col(ColumnDef::new(Account::OwnerId).string_len(38).not_null())
+                    .col(ColumnDef::new(Account::IsActive).boolean().default(true))
                     .col(
                         ColumnDef::new(Account::CreatedAt)
                             .timestamp_with_time_zone()
