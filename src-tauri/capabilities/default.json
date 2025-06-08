@@ -12,6 +12,9 @@
     "fs:default",
     "notification:default",
     "os:default",
-    "log:default"
+    "log:default",
+    "sql:default",
+    "sql:allow-execute",
+    "dialog:default"
   ]
 }

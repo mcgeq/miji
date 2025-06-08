@@ -38,6 +38,8 @@ tauri-build = { version = "2", features = [] }
 base64 = "0.22.1"
 jsonwebtoken = "9.3.1"
 tauri = { version = "2", features = [] }
+tauri-plugin-sql = { version = "2", features = ["sqlite"] }
+tauri-plugin-dialog = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 snafu = { version = "0.8.5", features = [
@@ -47,6 +49,7 @@ snafu = { version = "0.8.5", features = [
 tokio = { version = "1.45.0", features = ["full", "tracing"] }
 chrono = { version = "0.4.41", features = ["serde"] }
 dotenvy = "0.15.7"
+darling = "0.20.11"
 futures = "0.3.31"
 tauri-plugin-log = { version = "2", features = ["colored"] }
 log = { version = "0.4.27", features = ["serde"] }
@@ -79,6 +82,7 @@ tauri-plugin-store = "2"
 tauri-plugin-fs = "2"
 tauri-plugin-notification = "2"
 tauri-plugin-os = "2"
+tauri-plugin-dialog = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 log = { workspace = true }
@@ -90,7 +94,8 @@ common = { workspace = true }
 tokio = { workspace = true }
 auth = { workspace = true }
 todos = { workspace = true }
-darling = "0.20.11"
+tauri-plugin-sql = { workspace = true }
+darling = { workspace = true }
 
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]

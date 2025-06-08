@@ -5,7 +5,7 @@
 // File:           plugins.rs
 // Description:    About init plugins
 // Create   Date:  2025-05-24 19:32:49
-// Last Modified:  2025-05-30 14:28:19
+// Last Modified:  2025-06-08 22:48:55
 // Modified   By:  mcgeq <mcgeq@outlook.com>
 // -----------------------------------------------------------------------------
 
@@ -39,7 +39,9 @@ pub fn init_plugins(builder: Builder<Wry>) -> Builder<Wry> {
                 .with_colors(ColoredLevelConfig::default())
                 .build(),
         )
+        .plugin(tauri_plugin_sql::Builder::new().build())
         .plugin(tauri_plugin_os::init())
+        .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_store::Builder::new().build())
