@@ -57,7 +57,7 @@ proc-macro2 = "1.0.95"
 sea-orm = { version = "1.1.11", features = [
   "sqlx-postgres",
   "sqlx-sqlite",
-  "runtime-tokio-native-tls",
+  "runtime-tokio-rustls",
   "macros",
   "with-chrono",
   "with-json",
@@ -91,6 +91,7 @@ tokio = { workspace = true }
 auth = { workspace = true }
 todos = { workspace = true }
 darling = "0.20.11"
+
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-single-instance = "2"
