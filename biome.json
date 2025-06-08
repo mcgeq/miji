@@ -32,10 +32,15 @@
   },
   "linter": {
     "enabled": true,
+    "include": ["*.svelte"],
     "rules": {
       "recommended": true,
       "correctness": {
         "noUnusedImports": "error"
+      },
+      "style": {
+        "useConst": "off",
+        "useImportType": "off"
       }
     }
   },

@@ -5,8 +5,6 @@ import {
   presetWebFonts,
   presetTypography,
   presetWind3,
-  transformerDirectives,
-  transformerVariantGroup,
 } from 'unocss';
 export default defineConfig({
   // ...UnoCSS options
@@ -14,6 +12,11 @@ export default defineConfig({
     presetWind3(),
     presetAttributify(),
     presetIcons({
+      prefix: 'i-',
+      extraProperties: {
+        display: 'inline-block',
+        'vertical-align': 'middle',
+      },
       scale: 1.2,
       warn: true,
     }),
@@ -26,5 +29,5 @@ export default defineConfig({
       },
     }),
   ],
-  transformers: [transformerDirectives(), transformerVariantGroup()],
+  safelist: ['bg-orange-300', 'prose', 'styled-input'],
 });

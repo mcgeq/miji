@@ -1,17 +1,28 @@
-import UnoCSS from 'unocss/vite';
+import UnoCSS from '@unocss/svelte-scoped/vite';
 import { resolve } from 'node:path';
 import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
+import { sveltekit } from '@sveltejs/kit/vite';
+import transformerDirectives from '@unocss/transformer-directives';
+import transformerVariantGroup from '@unocss/transformer-variant-group';
+import { getAllConfigFiles } from './getAllConfigFiles';
 
 const host = process.env.TAURI_DEV_HOST;
 
 // https://vitejs.dev/config/
 export default defineConfig(async () => ({
-  plugins: [UnoCSS(), react()],
+  plugins: [
+    UnoCSS({
+      injectReset: '@unocss/reset/tailwind.css',
+      cssFileTransformers: [transformerDirectives(), transformerVariantGroup()],
+      configOrPath: {
+        configDeps: getAllConfigFiles('./src/shortcuts'),
+      },
+    }),
+    sveltekit(),
+  ],
   resolve: {
     alias: {
       '@': resolve(__dirname, 'src'),
-      '@c': resolve(__dirname, 'src/components'),
     },
   },
   // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
