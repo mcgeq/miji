@@ -8,21 +8,7 @@ edition = "2024"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [workspace]
-members = [
-  "core",
-  "auth",
-  "migration",
-  "notes",
-  "todos",
-  "checklists",
-  "profile",
-  "settings",
-  "health",
-  "services",
-  "common",
-  "money",
-  "miji_derive",
-]
+members = ["migration", "common"]
 
 [lib]
 # The `_lib` suffix may seem redundant but it is necessary
@@ -57,23 +43,11 @@ argon2 = "0.5.3"
 syn = "2.0.101"
 quote = "1.0.40"
 proc-macro2 = "1.0.95"
-sea-orm = { version = "1.1.11", features = [
-  "sqlx-postgres",
-  "sqlx-sqlite",
-  "runtime-tokio-rustls",
-  "macros",
-  "with-chrono",
-  "with-json",
-  "debug-print",
-] }
 rand = { version = "0.9.1", features = ["serde"] }
 rust_decimal = { version = "1.37.1", features = ["macros"] }
 validator = { version = "0.20.0", features = ["derive"] }
 zeroize = { version = "1.8.1", features = ["serde", "zeroize_derive"] }
 common = { path = "./common" }
-auth = { path = "./auth" }
-todos = { path = "./todos" }
-miji_derive = { path = "./miji_derive" }
 
 [dependencies]
 tauri = { workspace = true }
@@ -88,14 +62,11 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 log = { workspace = true }
 tauri-plugin-log = { workspace = true }
-dotenvy.workspace = true
-sea-orm.workspace = true
 migration = { path = "migration" }
 common = { workspace = true }
 tokio = { workspace = true }
-auth = { workspace = true }
-todos = { workspace = true }
 darling = { workspace = true }
+dotenvy.workspace = true
 
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]

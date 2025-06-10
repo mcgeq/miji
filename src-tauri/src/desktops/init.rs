@@ -5,18 +5,14 @@
 // File:           init.rs
 // Description:    About Desktop Initialize
 // Create   Date:  2025-06-10 14:57:48
-// Last Modified:  2025-06-10 18:44:49
+// Last Modified:  2025-06-10 22:20:06
 // Modified   By:  mcgeq <mcgeq@outlook.com>
 // -----------------------------------------------------------------------------
 
 use common::utils::files::MijiFiles;
 use log::LevelFilter;
-use std::sync::Arc;
 use tauri::{Manager, Runtime};
 use tauri_plugin_log::{Target, fern::colors::ColoredLevelConfig};
-
-use common::{ApiCredentials, AppState, db::get_db_conn};
-use tokio::{runtime::Runtime as TokioRuntime, sync::Mutex};
 
 pub trait MijiInit {
     fn init_plugin(self) -> Self;
@@ -26,14 +22,6 @@ impl<R: Runtime> MijiInit for tauri::Builder<R> {
     fn init_plugin(self) -> Self {
         let root_dir = MijiFiles::root_path().unwrap();
         eprintln!("root_dir: {root_dir}");
-        let rt = TokioRuntime::new().expect("Failed to create Tokio runtime");
-        let db_conn =
-            rt.block_on(async { get_db_conn().await.expect("Database connection failed") });
-        let api_credentials = ApiCredentials::load_from_env().unwrap();
-        let app_state = AppState {
-            db: Arc::new(db_conn),
-            credentials: Arc::new(Mutex::new(api_credentials)),
-        };
 
         self.plugin(tauri_plugin_autostart::init(
             tauri_plugin_autostart::MacosLauncher::LaunchAgent,
@@ -66,6 +54,5 @@ impl<R: Runtime> MijiInit for tauri::Builder<R> {
                 .with_colors(ColoredLevelConfig::default())
                 .build(),
         )
-        .manage(app_state)
     }
 }
