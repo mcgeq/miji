@@ -9,7 +9,7 @@
 // Modified   By:  mcgeq <mcgeq@outlook.com>
 // -----------------------------------------------------------------------------
 
-use migration::m_000001_todos::{MijiMigrationTrait, TodoMigration};
+use migration::{m20250610_000003_create_todos::TodoMigration, schema::MijiMigrationTrait};
 use tauri::Runtime;
 
 pub trait MijiMigrations {
