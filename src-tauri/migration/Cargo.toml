@@ -11,6 +11,7 @@ path = "src/lib.rs"
 [dependencies]
 async-std = { version = "1", features = ["attributes", "tokio1"] }
 tokio = { workspace = true, features = ["rt-multi-thread"] }
+tauri-plugin-sql = { workspace = true }
 
 [dependencies.sea-orm-migration]
 version = "1.1.0"

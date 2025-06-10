@@ -21,6 +21,7 @@ mod m20250527_000005_create_money_budget;
 mod m20250527_000006_create_money_transaction;
 mod m20250527_000007_create_money_family_ledger;
 mod m20250527_000008_create_money_bill_reminder;
+pub mod m_000001_todos;
 pub mod money_scheme;
 pub mod period_scheme;
 pub mod schema;

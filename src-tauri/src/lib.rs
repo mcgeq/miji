@@ -1,25 +1,30 @@
+#[cfg(desktop)]
+mod desktops;
+
 mod commands;
+mod migrations;
+#[cfg(any(target_os = "android", target_os = "ios"))]
+mod mobiles;
 mod plugins;
 
-use std::sync::Arc;
+#[cfg(desktop)]
+use desktops::init;
+#[cfg(desktop)]
+use init::MijiInit;
 
 use commands::init_commands;
-use common::{ApiCredentials, AppState, db::get_db_conn};
-use plugins::init_plugins;
-use tokio::{runtime::Runtime, sync::Mutex};
+use migrations::MijiMigrations;
+use plugins::generic_plugins;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    let rt = Runtime::new().expect("Failed to create Tokio runtime");
-    let db_conn = rt.block_on(async { get_db_conn().await.expect("Database connection failed") });
-    let api_credentials = ApiCredentials::load_from_env().unwrap();
-    let app_state = AppState {
-        db: Arc::new(db_conn),
-        credentials: Arc::new(Mutex::new(api_credentials)),
-    };
+    let builder = tauri::Builder::default();
+    let builder = generic_plugins(builder);
+    #[cfg(desktop)]
+    let builder = builder.init_plugin();
 
-    let builder = tauri::Builder::default().manage(app_state.clone());
-    let builder = init_plugins(builder);
+    // let builder = builder.init_migrations();
+
     let builder = init_commands(builder);
     builder
         .run(tauri::generate_context!())
