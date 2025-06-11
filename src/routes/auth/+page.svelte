@@ -1,4 +1,4 @@
-<!-- src/routes/login/+page.svelte -->
+<!-- src/routes/auth/+page.svelte -->
 <script lang="ts">
 import { login, register } from '$lib/api/auth';
 import { goto } from '$app/navigation';
@@ -127,7 +127,7 @@ function toggleMode() {
         class:op-50={loading}
         class:cursor-not-allowed={loading}
       />
-
+      {#if isLoginMode}
       <label class="flex items-center gap-2 select-none">
         <input
           type="checkbox"
@@ -137,7 +137,7 @@ function toggleMode() {
         />
         <span class="text-gray-900 dark:text-white">记住我</span>
       </label>
-
+      {/if}
       <button
         type="submit"
         class="w-full py-2 rounded-lg bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-semibold shadow-md hover:brightness-110 transition duration-200"
