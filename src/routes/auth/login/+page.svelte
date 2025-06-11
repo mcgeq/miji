@@ -5,6 +5,7 @@ import { LoginSchema } from '$lib/schema/auth';
 import { login } from '$lib/api/auth';
 import { goto } from '$app/navigation';
 import FormInput from '@/components/common/FormInput.svelte';
+import { t } from 'svelte-i18n';
 
 let rememberMe = false;
 let success = false;
@@ -17,7 +18,7 @@ const { form, errors, isSubmitting } = createForm({
       success = true;
       goto('/todo');
     } catch (e) {
-      alert((e as Error)?.message ?? '登录失败');
+      alert((e as Error)?.message ?? $t('loginFailed'));
     }
   },
 });
@@ -25,15 +26,15 @@ const { form, errors, isSubmitting } = createForm({
 
 <div class="flex flex-col items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900">
   <div class="w-full max-w-sm p-6 space-y-6 bg-white dark:bg-gray-800 rounded-lg shadow-md">
-    <h2 class="text-3xl font-bold text-center text-gray-900 dark:text-white">登录</h2>
+    <h2 class="text-3xl font-bold text-center text-gray-900 dark:text-white">{$t('login')}</h2>
 
     <form use:form class="flex flex-col gap-4">
-      <FormInput name="email" placeholder="邮箱" errors={$errors} />
-      <FormInput name="password" type="password" placeholder="密码" errors={$errors} />
+      <FormInput name="email" placeholder={$t('email')} errors={$errors} />
+      <FormInput name="password" type="password" placeholder={$t('password')} errors={$errors} />
 
       <label class="flex items-center gap-2 select-none">
         <input type="checkbox" bind:checked={rememberMe} />
-        <span class="text-gray-900 dark:text-white">记住我</span>
+        <span class="text-gray-900 dark:text-white">{$t('rememberMe')}</span>
       </label>
 
       <button
@@ -41,17 +42,17 @@ const { form, errors, isSubmitting } = createForm({
         class="w-full py-2 rounded-lg bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-semibold shadow-md hover:brightness-110 transition duration-200"
         disabled={$isSubmitting}
       >
-        {$isSubmitting ? '登录中...' : '登录'}
+        {$isSubmitting ? $t('loggingIn') : $t('login')}
       </button>
     </form>
 
     <p class="text-center">
-      没有账号？
-      <a href="/auth/register" class="text-blue-600 hover:underline">注册</a>
+      {$t('noAccount')}
+      <a href="/auth/register" class="text-blue-600 hover:underline">{$t('register')}</a>
     </p>
 
     {#if success}
-      <p class="text-green-600 font-semibold text-center select-text">登录成功！欢迎回来。</p>
+      <p class="text-green-600 font-semibold text-center select-text">{$t('loginSuccess')}</p>
     {/if}
   </div>
 </div>

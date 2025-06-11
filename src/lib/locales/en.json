@@ -1,0 +1,21 @@
+{
+  "login": "Login",
+  "register": "Register",
+  "email": "Email",
+  "password": "Password",
+  "username": "Username",
+  "rememberMe": "Remember Me",
+  "noAccount": "No account?",
+  "haveAccount": "Already have an account?",
+  "loginSuccess": "Login successful! Welcome back.",
+  "registerSuccess": "Registration successful! Welcome.",
+  "loggingIn": "Logging in...",
+  "registering": "Registering...",
+  "code": "Verification Code",
+  "errors": {
+    "required": "This field is required.",
+    "email": "Invalid email format.",
+    "min": "Minimum {min} characters required.",
+    "max": "Maximum {max} characters allowed."
+  }
+}

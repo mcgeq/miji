@@ -1,14 +1,16 @@
 // src/lib/schema/auth.ts
-import { z } from 'zod';
+import { z, setErrorMap } from 'zod';
+import { i18nErrorMap } from './i18nErrorMap';
+setErrorMap(i18nErrorMap);
 
 export const RegisterSchema = z.object({
-  username: z.string().nonempty('请输入用户名').min(3, '用户名至少3位'),
-  email: z.string().nonempty('请输入邮箱').email('邮箱格式不正确'),
-  password: z.string().nonempty('请输入密码').min(6, '密码至少 6 位'),
-  code: z.string(),
+  username: z.string().trim().min(3),
+  email: z.string().trim().email(),
+  password: z.string().trim().min(6),
+  code: z.string().trim().optional(),
 });
 
 export const LoginSchema = z.object({
-  email: z.string().nonempty('请输入邮箱').email('邮箱格式不正确'),
-  password: z.string().nonempty('请输入密码'),
+  email: z.string().trim().email(),
+  password: z.string().trim().nonempty(),
 });

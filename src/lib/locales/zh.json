@@ -1,0 +1,21 @@
+{
+  "login": "登录",
+  "register": "注册",
+  "email": "邮箱",
+  "password": "密码",
+  "username": "用户名",
+  "rememberMe": "记住我",
+  "noAccount": "没有账号？",
+  "haveAccount": "已有账号？",
+  "loginSuccess": "登录成功！欢迎回来。",
+  "registerSuccess": "注册成功！欢迎加入。",
+  "loggingIn": "登录中...",
+  "registering": "注册中...",
+  "code": "验证码",
+  "errors": {
+    "required": "请输入内容",
+    "email": "邮箱格式不正确",
+    "min": "至少输入 {min} 个字符",
+    "max": "最多输入 {max} 个字符"
+  }
+}
