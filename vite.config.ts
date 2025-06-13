@@ -1,6 +1,7 @@
+/// <reference types="vitest/config" />
+import { defineConfig } from 'vite';
 import UnoCSS from '@unocss/svelte-scoped/vite';
 import { resolve } from 'node:path';
-import { defineConfig } from 'vite';
 import { sveltekit } from '@sveltejs/kit/vite';
 import transformerDirectives from '@unocss/transformer-directives';
 import transformerVariantGroup from '@unocss/transformer-variant-group';
@@ -46,4 +47,5 @@ export default defineConfig(async () => ({
       ignored: ['**/src-tauri/**'],
     },
   },
+  test: {},
 }));

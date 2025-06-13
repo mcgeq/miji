@@ -11,7 +11,8 @@
     "preview": "vite preview",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "test": "vitest"
   },
   "dependencies": {
     "@felte/validator-zod": "^1.0.18",
@@ -43,6 +44,7 @@
     "svelte-check": "^4.2.1",
     "typescript": "~5.8.3",
     "unocss": "^66.1.4",
-    "vite": "npm:rolldown-vite@latest"
+    "vite": "npm:rolldown-vite@latest",
+    "vitest": "^3.2.3"
   }
 }
