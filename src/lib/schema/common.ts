@@ -1,5 +1,7 @@
 import { z } from 'zod/v4';
 
+export const passwordRegex =
+  /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
 export const alphanumericRegex = /^[a-z0-9]+$/;
 export const ColorHexRegex = /^0x[0-9a-fA-F]{3,8}$/;
 export const NullableStringSchema = z.string().optional().nullable();

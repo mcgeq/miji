@@ -16,6 +16,7 @@
     "required": "This field is required.",
     "email": "Invalid email format.",
     "min": "Minimum {min} characters required.",
-    "max": "Maximum {max} characters allowed."
+    "max": "Maximum {max} characters allowed.",
+    "password": "Password must include uppercase and lowercase letters, numbers, and special characters."
   }
 }

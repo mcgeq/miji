@@ -1,10 +1,12 @@
 import { z } from 'zod/v4';
 import { UserRoleSchema } from './userRole';
 import { UserStatusSchema } from './userStatus';
-import { DateTimeSchema, NameSchema, SerialNumSchema } from './common';
-
-const passwordRegex =
-  /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+import {
+  DateTimeSchema,
+  NameSchema,
+  passwordRegex,
+  SerialNumSchema,
+} from './common';
 
 export const UserSchema = z.object({
   serial_num: SerialNumSchema,
