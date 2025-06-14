@@ -1,5 +1,4 @@
 <script lang="ts">
-import '$lib/i18n/i18n';
 import { getDb } from '@/lib/db';
 import { onMount } from 'svelte';
 import { Toaster } from 'svelte-sonner';

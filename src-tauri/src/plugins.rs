@@ -5,7 +5,7 @@
 // File:           plugins.rs
 // Description:    About init plugins
 // Create   Date:  2025-05-24 19:32:49
-// Last Modified:  2025-06-10 18:27:26
+// Last Modified:  2025-06-14 23:42:52
 // Modified   By:  mcgeq <mcgeq@outlook.com>
 // -----------------------------------------------------------------------------
 
@@ -18,6 +18,6 @@ pub fn generic_plugins(builder: Builder<Wry>) -> Builder<Wry> {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_fs::init())
-        .plugin(tauri_plugin_store::Builder::new().build())
+        .plugin(tauri_plugin_svelte::init())
         .plugin(tauri_plugin_opener::init())
 }
