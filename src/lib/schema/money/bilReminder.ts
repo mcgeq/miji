@@ -1,13 +1,21 @@
-import type { RepeatPeriod } from '@/types/enum/reminder';
+import { z } from 'zod/v4';
+import {
+  DateTimeSchema,
+  NameSchema,
+  RepeatPeriodSchema,
+  SerialNumSchema,
+} from '../common';
 
-export interface BilReminder {
-  serial_num: string;
-  name: string;
-  amount: string;
-  due_date: string;
-  repeat_period: RepeatPeriod;
-  is_paid: boolean;
-  related_transaction_serial_num: string | null;
-  created_at: string;
-  updated_at: string | null;
-}
+export const BilReminderSchema = z.object({
+  serial_num: SerialNumSchema,
+  name: NameSchema,
+  amount: z.string(),
+  due_date: DateTimeSchema,
+  repeat_period: RepeatPeriodSchema,
+  is_paid: z.boolean(),
+  related_transaction_serial_num: SerialNumSchema,
+  created_at: DateTimeSchema,
+  updated_at: DateTimeSchema.optional().nullable(),
+});
+
+export type BilReminder = z.infer<typeof BilReminderSchema>;

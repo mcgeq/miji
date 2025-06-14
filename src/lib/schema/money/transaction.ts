@@ -1,26 +1,35 @@
-import type { AccountType, PaymentMethod } from '../enum/account';
-import type {
-  Category,
-  TransactionStatus,
-  TransactionType,
-} from '../enum/transaction';
+import { z } from 'zod/v4';
+import {
+  CategorySchema,
+  DateSchema,
+  DateTimeSchema,
+  SerialNumSchema,
+  SubCategorySchema,
+  TransactionStatusSchema,
+  TransactionTypeSchema,
+} from '../common';
+import { AccountTypeSchema, PaymentMethodSchema } from './money.e';
+import { TagsSchema } from '../tags';
+import { FamilyMemberSchema } from './family';
 
-export interface Transaction {
-  serial_num: string;
-  transaction_type: TransactionType;
-  transaction_status: TransactionStatus;
-  date: string; // ISO date string (e.g., "2025-06-12")
-  amount: string; // decimal as string, e.g., "1234.56"
-  currency: string; // currency code (e.g., "USD", "CNY")
-  description: string;
-  notes?: string | null;
-  account_serial_num: string;
-  category: Category;
-  sub_category?: string | null;
-  tags?: any | null; // JSON value, recommend defining more strictly if needed
-  split_members?: any | null; // JSON value, can be array of { member: string, amount: string } etc.
-  payment_method: PaymentMethod;
-  actual_payer_account: AccountType;
-  created_at: string;
-  updated_at?: string | null;
-}
+export const TransactionSchema = z.object({
+  serial_num: SerialNumSchema,
+  transaction_type: TransactionTypeSchema,
+  transaction_status: TransactionStatusSchema,
+  date: DateSchema, // ISO date string (e.g., "2025-06-12")
+  amount: z.string(), // decimal as string, e.g., "1234.56"
+  currency: z.string(), // currency code (e.g., "USD", "CNY")
+  description: z.string().max(1000).optional(),
+  notes: z.string().optional().nullable(),
+  account_serial_num: SerialNumSchema,
+  category: CategorySchema,
+  sub_category: SubCategorySchema.optional().nullable(),
+  tags: z.array(TagsSchema), // JSON value, recommend defining more strictly if needed
+  split_members: z.array(FamilyMemberSchema).optional(), // JSON value, can be array of { member: string, amount: string } etc.
+  payment_method: PaymentMethodSchema,
+  actual_payer_account: AccountTypeSchema,
+  created_at: DateTimeSchema,
+  updated_at: DateTimeSchema.optional().nullable(),
+});
+
+export type Transaction = z.infer<typeof TransactionSchema>;
