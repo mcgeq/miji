@@ -23,7 +23,7 @@ pub fn run() {
     #[cfg(desktop)]
     let builder = builder.init_plugin();
 
-    // let builder = builder.init_migrations();
+    let builder = builder.init_migrations();
 
     let builder = init_commands(builder);
     builder

@@ -1,7 +1,8 @@
 // src/lib/api/auth.ts
 import { user } from '$lib/stores/auth';
-import type { Credentials, User } from '@/types';
+import type { Credentials } from '@/types';
 import { invoke } from '@tauri-apps/api/core';
+import type { User } from '$lib/schema/user';
 
 export async function login(credentials: Credentials): Promise<User> {
   try {

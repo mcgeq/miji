@@ -5,14 +5,15 @@
 // File:           m20250610_000011_create_period.rs
 // Description:    About Period Migration
 // Create   Date:  2025-06-10 23:33:49
-// Last Modified:  2025-06-10 23:33:58
+// Last Modified:  2025-06-14 22:37:59
 // Modified   By:  mcgeq <mcgeq@outlook.com>
 // -----------------------------------------------------------------------------
-use tauri_plugin_sql::Migration;
 
 use crate::schema::MijiMigrationTrait;
+use tauri_plugin_sql::Migration;
 
 pub struct PeriodRecordsMigration;
+pub struct PeriodDailyRecordsMigration;
 pub struct PeriodSymptomsMigration;
 pub struct PeriodPmsRecordsMigration;
 pub struct PeriodPmsSymptomsMigration;
@@ -24,17 +25,16 @@ impl MijiMigrationTrait for PeriodRecordsMigration {
             description: "create PeriodRecords table",
             sql: r#"
                 CREATE TABLE IF NOT EXISTS period_records (
-                    serial_num TEXT NOT NULL PRIMARY KEY,
-                    start_date DATE NOT NULL,
-                    end_date DATE NOT NULL,
-                    created_at DATETIME NOT NULL,
-                    updated_at DATETIME
+                    serial_num TEXT NOT NULL PRIMARY KEY CHECK (LENGTH(serial_num) <= 38),
+                    start_date TEXT NOT NULL,
+                    end_date TEXT NOT NULL,
+                    created_at TEXT NOT NULL,
+                    updated_at TEXT
                 );
             "#,
             kind: tauri_plugin_sql::MigrationKind::Up,
         }
     }
-
     fn down() -> Migration {
         Migration {
             version: 10,
@@ -45,8 +45,6 @@ impl MijiMigrationTrait for PeriodRecordsMigration {
     }
 }
 
-pub struct PeriodDailyRecordsMigration;
-
 impl MijiMigrationTrait for PeriodDailyRecordsMigration {
     fn up() -> Migration {
         Migration {
@@ -54,25 +52,25 @@ impl MijiMigrationTrait for PeriodDailyRecordsMigration {
             description: "create PeriodDailyRecords table",
             sql: r#"
                 CREATE TABLE IF NOT EXISTS period_daily_records (
-                    serial_num TEXT NOT NULL PRIMARY KEY,
-                    period_serial_num TEXT NOT NULL,
-                    date DATE NOT NULL,
-                    flow_level INTEGER,
-                    sexual_activity BOOLEAN NOT NULL,
-                    exercise_intensity INTEGER NOT NULL DEFAULT 0,
-                    diet TEXT NOT NULL,
-                    created_at DATETIME NOT NULL,
-                    updated_at DATETIME,
+                    serial_num TEXT NOT NULL PRIMARY KEY CHECK (LENGTH(serial_num) <= 38),
+                    period_serial_num TEXT NOT NULL CHECK (LENGTH(period_serial_num) <= 38),
+                    date TEXT NOT NULL,
+                    flow_level TEXT CHECK (flow_level IN ('Light', 'Medium', 'Heavy')),
+                    exercise_intensity TEXT NOT NULL DEFAULT 'None' CHECK (exercise_intensity IN ('None', 'Light', 'Medium', 'Heavy')),
+                    sexual_activity INTEGER NOT NULL CHECK (sexual_activity IN (0,1)),
+                    diet TEXT NOT NULL CHECK (LENGTH(diet) <= 1000),
+                    created_at TEXT NOT NULL,
+                    updated_at TEXT,
                     FOREIGN KEY (period_serial_num)
                         REFERENCES period_records(serial_num)
                         ON DELETE CASCADE
                         ON UPDATE CASCADE
                 );
+                CREATE INDEX IF NOT EXISTS idx_period_daily_records_period ON period_daily_records(period_serial_num);
             "#,
             kind: tauri_plugin_sql::MigrationKind::Up,
         }
     }
-
     fn down() -> Migration {
         Migration {
             version: 11,
@@ -90,22 +88,22 @@ impl MijiMigrationTrait for PeriodSymptomsMigration {
             description: "create PeriodSymptoms table",
             sql: r#"
                 CREATE TABLE IF NOT EXISTS period_symptoms (
-                    serial_num TEXT NOT NULL PRIMARY KEY,
-                    period_daily_records_serial_num TEXT NOT NULL,
+                    serial_num TEXT NOT NULL PRIMARY KEY CHECK (LENGTH(serial_num) <= 38),
+                    period_daily_records_serial_num TEXT NOT NULL CHECK (LENGTH(period_daily_records_serial_num) <= 38),
                     symptom_type INTEGER NOT NULL,
                     intensity INTEGER NOT NULL,
-                    created_at DATETIME NOT NULL,
-                    updated_at DATETIME,
+                    created_at TEXT NOT NULL,
+                    updated_at TEXT,
                     FOREIGN KEY (period_daily_records_serial_num)
                         REFERENCES period_daily_records(serial_num)
                         ON DELETE CASCADE
                         ON UPDATE CASCADE
                 );
+                CREATE INDEX IF NOT EXISTS idx_period_symptoms_daily_record ON period_symptoms(period_daily_records_serial_num);
             "#,
             kind: tauri_plugin_sql::MigrationKind::Up,
         }
     }
-
     fn down() -> Migration {
         Migration {
             version: 12,
@@ -123,22 +121,22 @@ impl MijiMigrationTrait for PeriodPmsRecordsMigration {
             description: "create PeriodPmsRecords table",
             sql: r#"
                 CREATE TABLE IF NOT EXISTS period_pms_records (
-                    serial_num TEXT NOT NULL PRIMARY KEY,
-                    period_serial_num TEXT NOT NULL,
-                    start_date DATE NOT NULL,
-                    end_date DATE NOT NULL,
-                    created_at DATETIME NOT NULL,
-                    updated_at DATETIME,
+                    serial_num TEXT NOT NULL PRIMARY KEY CHECK (LENGTH(serial_num) <= 38),
+                    period_serial_num TEXT NOT NULL CHECK (LENGTH(period_serial_num) <= 38),
+                    start_date TEXT NOT NULL,
+                    end_date TEXT NOT NULL,
+                    created_at TEXT NOT NULL,
+                    updated_at TEXT,
                     FOREIGN KEY (period_serial_num)
                         REFERENCES period_records(serial_num)
                         ON DELETE CASCADE
                         ON UPDATE CASCADE
                 );
+                CREATE INDEX IF NOT EXISTS idx_period_pms_records_period ON period_pms_records(period_serial_num);
             "#,
             kind: tauri_plugin_sql::MigrationKind::Up,
         }
     }
-
     fn down() -> Migration {
         Migration {
             version: 13,
@@ -156,22 +154,22 @@ impl MijiMigrationTrait for PeriodPmsSymptomsMigration {
             description: "create PeriodPmsSymptoms table",
             sql: r#"
                 CREATE TABLE IF NOT EXISTS period_pms_symptoms (
-                    serial_num TEXT NOT NULL PRIMARY KEY,
-                    period_pms_records_serial_num TEXT NOT NULL,
-                    symptom_type INTEGER NOT NULL DEFAULT 0,
-                    intensity INTEGER NOT NULL DEFAULT 0,
-                    created_at DATETIME NOT NULL,
-                    updated_at DATETIME,
+                    serial_num TEXT NOT NULL PRIMARY KEY CHECK (LENGTH(serial_num) <= 38),
+                    period_pms_records_serial_num TEXT NOT NULL CHECK (LENGTH(period_pms_records_serial_num) <= 38),
+                    symptom_type TEXT NOT NULL CHECK (symptom_type IN ('Pain', 'Fatigue', 'MoodSwing')),
+                    intensity TEXT NOT NULL CHECK (intensity IN ('Light', 'Medium', 'Heavy')),
+                    created_at TEXT NOT NULL,
+                    updated_at TEXT,
                     FOREIGN KEY (period_pms_records_serial_num)
                         REFERENCES period_pms_records(serial_num)
                         ON DELETE CASCADE
                         ON UPDATE CASCADE
                 );
+                CREATE INDEX IF NOT EXISTS idx_period_pms_symptoms_pms_record ON period_pms_symptoms(period_pms_records_serial_num);
             "#,
             kind: tauri_plugin_sql::MigrationKind::Up,
         }
     }
-
     fn down() -> Migration {
         Migration {
             version: 14,

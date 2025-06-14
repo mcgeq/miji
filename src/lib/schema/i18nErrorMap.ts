@@ -3,7 +3,6 @@ import type { ZodErrorMap } from 'zod';
 import { $t } from '../i18n/utils';
 
 export const i18nErrorMap: ZodErrorMap = (issue, ctx) => {
-  console.log(issue);
   switch (issue.code) {
     case 'invalid_type':
       return { message: $t('errors.required') };
