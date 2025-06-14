@@ -24,11 +24,13 @@ const { form, errors, isSubmitting } = createForm({
 });
 </script>
 
-<div class="flex flex-col items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900">
-  <div class="w-full max-w-sm p-6 space-y-6 bg-white dark:bg-gray-800 rounded-lg shadow-md">
-    <h2 class="text-3xl font-bold text-center text-gray-900 dark:text-white">{$t('register')}</h2>
+<div class="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900 px4">
+  <div class="w-full max-w-md p6 sm:p8 bg-white/90 dark:bg-gray-800/80 backdrop-blur-xl border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg space-y-6">
+    <h2 class="text-center text-3xl font-bold text-gray-900 dark:text-white tracking-tight">
+      {$t('register')}
+    </h2>
 
-    <form use:form class="flex flex-col gap-4">
+    <form use:form class="space-y-4">
       <FormInput name="username" placeholder={$t('username')} errors={$errors} />
       <FormInput name="email" placeholder={$t('email')} errors={$errors} />
       <FormInput name="password" type="password" placeholder={$t('password')} errors={$errors} />
@@ -36,20 +38,30 @@ const { form, errors, isSubmitting } = createForm({
 
       <button
         type="submit"
-        class="w-full py-2 rounded-lg bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-semibold shadow-md hover:brightness-110 transition duration-200"
+        class="w-full py2 px4 rounded-md bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-sm
+               disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-all"
         disabled={$isSubmitting}
       >
-        {$isSubmitting ? $t('registering') : $t('register')}
+        {#if $isSubmitting}
+          <div class="i-svg-spinners-ring-resize h5 w5 animate-spin"></div>
+          {$t('registering')}
+        {:else}
+          {$t('register')}
+        {/if}
       </button>
     </form>
 
-    <p class="text-center">
+    <p class="text-center text-sm text-gray-600 dark:text-gray-400">
       {$t('haveAccount')}
-      <a href="/auth/login" class="text-blue-600 hover:underline">{$t('login')}</a>
+      <a href="/auth/login" class="text-blue-600 dark:text-blue-400 hover:underline ml1 font-medium">
+        {$t('login')}
+      </a>
     </p>
 
     {#if success}
-      <p class="text-green-600 font-semibold text-center select-text">{$t('registerSuccess')}</p>
+      <p class="text-center text-green-600 text-sm font-semibold select-text">
+        {$t('registerSuccess')}
+      </p>
     {/if}
   </div>
 </div>

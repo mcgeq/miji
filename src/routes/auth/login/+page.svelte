@@ -24,35 +24,53 @@ const { form, errors, isSubmitting } = createForm({
 });
 </script>
 
-<div class="flex flex-col items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900">
-  <div class="w-full max-w-sm p-6 space-y-6 bg-white dark:bg-gray-800 rounded-lg shadow-md">
-    <h2 class="text-3xl font-bold text-center text-gray-900 dark:text-white">{$t('login')}</h2>
+<!-- 页面容器 -->
+<div class="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900 px4">
+  <!-- 表单卡片 -->
+  <div class="w-full max-w-md p6 sm:p8 bg-white/90 dark:bg-gray-800/80 backdrop-blur-xl border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg space-y-6">
+    <!-- 标题 -->
+    <h2 class="text-center text-3xl font-bold text-gray-900 dark:text-white tracking-tight">
+      {$t('login')}
+    </h2>
 
-    <form use:form class="flex flex-col gap-4">
+    <!-- 登录表单 -->
+    <form use:form class="space-y-4">
       <FormInput name="email" placeholder={$t('email')} errors={$errors} />
       <FormInput name="password" type="password" placeholder={$t('password')} errors={$errors} />
 
-      <label class="flex items-center gap-2 select-none">
-        <input type="checkbox" bind:checked={rememberMe} />
-        <span class="text-gray-900 dark:text-white">{$t('rememberMe')}</span>
+      <!-- 记住我 -->
+      <label class="inline-flex items-center gap-2 text-sm text-gray-800 dark:text-gray-200 cursor-pointer select-none">
+        <input
+          type="checkbox"
+          bind:checked={rememberMe}
+          class="accent-blue-600 dark:accent-blue-500 w4 h4"
+        />
+        <span>{$t('rememberMe')}</span>
       </label>
 
+      <!-- 提交按钮 -->
       <button
         type="submit"
-        class="w-full py-2 rounded-lg bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-semibold shadow-md hover:brightness-110 transition duration-200"
+        class="w-full py2 px4 rounded-md bg-gradient-to-r from-blue-600 to-indigo-600 hover:brightness-110 text-white font-semibold shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
         disabled={$isSubmitting}
       >
         {$isSubmitting ? $t('loggingIn') : $t('login')}
       </button>
     </form>
 
-    <p class="text-center">
+    <!-- 注册跳转 -->
+    <p class="text-center text-sm text-gray-600 dark:text-gray-400">
       {$t('noAccount')}
-      <a href="/auth/register" class="text-blue-600 hover:underline">{$t('register')}</a>
+      <a href="/auth/register" class="text-blue-600 dark:text-blue-400 hover:underline ml-1 font-medium">
+        {$t('register')}
+      </a>
     </p>
 
+    <!-- 登录成功提示 -->
     {#if success}
-      <p class="text-green-600 font-semibold text-center select-text">{$t('loginSuccess')}</p>
+      <p class="text-center text-green-600 text-sm font-semibold select-text">
+        {$t('loginSuccess')}
+      </p>
     {/if}
   </div>
 </div>
