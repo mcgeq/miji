@@ -1,22 +1,14 @@
 import { z } from 'zod/v4';
 import { UserRoleSchema } from './userRole';
 import { UserStatusSchema } from './userStatus';
-import {
-  DateTimeSchema,
-  NameSchema,
-  passwordRegex,
-  SerialNumSchema,
-} from './common';
+import { DateTimeSchema, NameSchema, SerialNumSchema } from './common';
 
 export const UserSchema = z.object({
   serial_num: SerialNumSchema,
   name: NameSchema,
   email: z.email(),
   phone: z.string().length(11).optional().nullable(),
-  password: z.string().regex(passwordRegex, {
-    error:
-      'Password mut be at least 8 characters and include uppercase, lowercase, number, and special character.',
-  }),
+  password: z.string(),
   avatar_url: z.string().optional().nullable(),
   last_login_at: DateTimeSchema,
   is_verified: z.boolean(),
@@ -34,3 +26,24 @@ export const UserSchema = z.object({
 });
 
 export type User = z.infer<typeof UserSchema>;
+
+export type AuthUser = {
+  serial_num: string;
+  name: string;
+  email: string;
+  avatar_url: string | null;
+  role: string;
+  timezone: string;
+  language?: string;
+};
+
+export interface TokenResponse {
+  token: string;
+  expires_at: number; // UNIX timestamp (秒)
+}
+
+export enum TokenStatus {
+  Valid = 'Valid',
+  Expired = 'Expired',
+  Invalid = 'Invalid',
+}

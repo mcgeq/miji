@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { TodoSchema } from './todos';
+import { Lg } from '@/lib/utils/debugLog';
 
 const validTodo = {
   serial_num: 'abcdefghijklmnopqrstuvwxyz123456782145', // 38位小写+数字
@@ -66,7 +67,7 @@ describe('TodoSchema', () => {
     const result = TodoSchema.safeParse(partialTodo);
 
     if (!result.success) {
-      console.error(result.error.message);
+      Lg.e('Todo Test', result.error.message);
     }
     expect(result.success).toBe(true);
   });

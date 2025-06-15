@@ -5,7 +5,7 @@
 // File:           m20250610_000001_create_user.rs
 // Description:    About User Migration
 // Create   Date:  2025-06-10 23:33:06
-// Last Modified:  2025-06-14 22:35:58
+// Last Modified:  2025-06-15 13:30:45
 // Modified   By:  mcgeq <mcgeq@outlook.com>
 // -----------------------------------------------------------------------------
 
@@ -25,7 +25,7 @@ impl MijiMigrationTrait for UserMigration {
                     name TEXT NOT NULL UNIQUE,
                     email TEXT NOT NULL UNIQUE,
                     phone TEXT UNIQUE,
-                    password_hash TEXT NOT NULL,
+                    password TEXT NOT NULL,
                     avatar_url TEXT,
                     last_login_at TEXT,
                     is_verified INTEGER NOT NULL DEFAULT 0 CHECK (is_verified IN (0, 1)),

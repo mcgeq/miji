@@ -30,4 +30,13 @@ export default defineConfig({
     }),
   ],
   safelist: ['bg-orange-300', 'prose', 'styled-input'],
+  theme: {
+    colors: {
+      success: '#22c55e',
+      error: '#ef4444',
+      info: '#3b82f6',
+      'toast-bg': '#1f2937',
+      'toast-text': '#f3f4f6',
+    },
+  },
 });

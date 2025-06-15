@@ -1,16 +1,13 @@
 <script lang="ts">
-import { getDb } from '@/lib/db';
+import { storeStart } from '@/lib/stores';
+import { Lg } from '@/lib/utils/debugLog';
 import { onMount } from 'svelte';
 import { Toaster } from 'svelte-sonner';
 onMount(async () => {
   try {
-    const db = await getDb();
-    const tables = await db.select(
-      "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%';",
-    );
-    console.log('📦 所有用户定义的表:', tables);
+    storeStart();
   } catch (error) {
-    console.error('❌ 查询表失败:', error);
+    Lg.e('Routes Store initialization', error);
   }
 });
 </script>

@@ -6,9 +6,11 @@ import { login } from '$lib/api/auth';
 import { goto } from '$app/navigation';
 import FormInput from '@/components/common/FormInput.svelte';
 import { t } from 'svelte-i18n';
+import { toast } from '@/lib/utils/toast';
+import { Lg } from '@/lib/utils/debugLog';
 
-let rememberMe = false;
-let success = false;
+let rememberMe = $state(false);
+let success = $state(false);
 
 const { form, errors, isSubmitting } = createForm({
   extend: validator({ schema: LoginSchema }),
@@ -16,9 +18,10 @@ const { form, errors, isSubmitting } = createForm({
     try {
       await login(values);
       success = true;
-      goto('/todo');
+      goto('/todos');
     } catch (e) {
-      alert((e as Error)?.message ?? $t('loginFailed'));
+      toast.error($t('loginFailed'));
+      Lg.e('login', e);
     }
   },
 });

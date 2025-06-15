@@ -5,6 +5,7 @@ import { LoginSchema, RegisterSchema } from '$lib/schema/auth';
 import { login, register } from '$lib/api/auth';
 import type { ZodSchema } from 'zod';
 import { goto } from '$app/navigation';
+import { Lg } from '../utils/debugLog';
 
 type AuthMode = 'login' | 'register';
 
@@ -22,7 +23,7 @@ export function useAuthForm(mode: AuthMode = 'login') {
         }
         goto('/');
       } catch (err) {
-        console.error('Auth error:', err);
+        Lg.e('Auth error:', err);
       }
     },
   });

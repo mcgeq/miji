@@ -13,11 +13,19 @@ use desktops::init;
 use init::MijiInit;
 
 use commands::init_commands;
+use common::{ApiCredentials, AppState};
 use migrations::MijiMigrations;
 use plugins::generic_plugins;
+use std::sync::Arc;
+use tokio::sync::Mutex;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    let api_credentials = ApiCredentials::load_from_env().unwrap();
+    let app_state = AppState {
+        db: Arc::new("null".to_string()),
+        credentials: Arc::new(Mutex::new(api_credentials)),
+    };
     let builder = tauri::Builder::default();
     let builder = generic_plugins(builder);
     #[cfg(desktop)]
@@ -27,6 +35,7 @@ pub fn run() {
 
     let builder = init_commands(builder);
     builder
+        .manage(app_state.clone())
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

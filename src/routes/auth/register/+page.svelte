@@ -6,9 +6,11 @@ import { register } from '$lib/api/auth';
 import { goto } from '$app/navigation';
 import FormInput from '@/components/common/FormInput.svelte';
 import { t } from 'svelte-i18n';
+import { toast } from '@/lib/utils/toast';
+import { Lg } from '@/lib/utils/debugLog';
 
 let rememberMe = false;
-let success = false;
+let success = $state(false);
 
 const { form, errors, isSubmitting } = createForm({
   extend: validator({ schema: RegisterSchema }),
@@ -16,9 +18,10 @@ const { form, errors, isSubmitting } = createForm({
     try {
       await register(values, rememberMe);
       success = true;
-      goto('/todo');
+      goto('/todos');
     } catch (e) {
-      alert((e as Error)?.message ?? $t('registerFailed'));
+      toast.error($t('registerFailed'));
+      Lg.e('register', e, 'error');
     }
   },
 });
