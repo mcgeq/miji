@@ -1,5 +1,20 @@
+// src/lib/stores/index.ts
+import { Lg } from '../utils/debugLog';
 import { authStore } from './auth';
+import { localeStore } from './locales';
 
-export const storeStart = async () => {
-  authStore.start();
-};
+let isStarted = false;
+
+export async function storeStart() {
+  if (isStarted) return;
+  isStarted = true;
+
+  try {
+    // 初始化 authStore 和 localeStore
+    await Promise.all([authStore.start(), localeStore.start()]);
+    Lg.i('Store', 'Stores initialized successfully');
+  } catch (error) {
+    Lg.e('Store', 'Store initialization failed:', error);
+    throw error;
+  }
+}

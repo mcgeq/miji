@@ -145,7 +145,9 @@ function debugLog(
     'color: #6b7280; font-size: 0.9em; font-family: monospace;',
   );
   console.log(`%cMode: ${import.meta.env.MODE}`, 'color: #6b7280;');
-  console.log(`%cNode: ${process.version}`, 'color: #6b7280;');
+  if (typeof process !== 'undefined' && process.version) {
+    console.log(`%cNode: ${process.version}`, 'color: #6b7280;');
+  }
   console.groupEnd();
 
   console.groupEnd();

@@ -2,7 +2,7 @@
 import { invoke } from '@tauri-apps/api/core';
 import type { Credentials } from '@/types';
 import type { TokenResponse, User } from '$lib/schema/user';
-import { loginUser } from '$lib/stores/auth';
+import { authStore, loginUser, logoutUser } from '$lib/stores/auth';
 import { getDb } from '../db';
 import { uuid } from '../utils/uuid';
 import { getLocalISODateTimeWithOffset } from '../utils/date';
@@ -13,7 +13,10 @@ interface AuthError extends Error {
   details?: unknown;
 }
 
-export async function login(credentials: Credentials): Promise<User> {
+export async function login(
+  credentials: Credentials,
+  rememberMe = false,
+): Promise<User> {
   try {
     const db = await getDb();
     const { email, password } = credentials;
@@ -41,7 +44,7 @@ export async function login(credentials: Credentials): Promise<User> {
     });
 
     // Update auth store
-    await loginUser(user, tokenResponse);
+    await loginUser(user, tokenResponse, rememberMe);
 
     const now = getLocalISODateTimeWithOffset();
     await db.execute(
@@ -173,6 +176,18 @@ export async function verifyToken(
   } catch (error) {
     Lg.e('Api Token verification', error);
     return 'Invalid';
+  }
+}
+
+export async function maybeLogoutOnExit() {
+  if (authStore.state.token && !authStore.state.rememberMe) {
+    await logoutUser();
+  }
+}
+
+export async function checkAndCleanSession() {
+  if (authStore.state.token && !authStore.state.rememberMe) {
+    await logoutUser();
   }
 }
 

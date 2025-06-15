@@ -9,14 +9,14 @@ import { t } from 'svelte-i18n';
 import { toast } from '@/lib/utils/toast';
 import { Lg } from '@/lib/utils/debugLog';
 
-let rememberMe = $state(false);
+let rememberMe = $state(true);
 let success = $state(false);
 
 const { form, errors, isSubmitting } = createForm({
   extend: validator({ schema: LoginSchema }),
   onSubmit: async (values) => {
     try {
-      await login(values);
+      await login(values, rememberMe);
       success = true;
       goto('/todos');
     } catch (e) {
