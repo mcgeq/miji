@@ -25,5 +25,8 @@
     "min": "Minimum {min} characters required.",
     "max": "Maximum {max} characters allowed.",
     "password": "Password must include uppercase and lowercase letters, numbers, and special characters."
+  },
+  "todos": {
+    "input_place": "Add a new task..."
   }
 }
