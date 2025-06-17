@@ -9,12 +9,25 @@ const { addTodo, removeTodo, toggleTodo } = useTodos();
 
 let newT = $state('');
 let todos = $state([] as Todo[]);
+
+function handleAdd(text: string) {
+  if (text.trim()) {
+    todos = addTodo(todos, text);
+    newT = '';
+  }
+}
+const handleToggle = (serial_num: string) => {
+  todos = toggleTodo(todos, serial_num);
+};
+
+const handleRemove = (serial_num: string) => {
+  todos = removeTodo(todos, serial_num);
+};
 </script>
 
 <main class="max-w-xl mx-auto p-4">
   <!-- TodoInput 监听 add 事件 -->
-  <TodoInput  bind:newT handleAdd={addTodo}/>
+  <TodoInput  bind:newT handleAdd={handleAdd}/>
 
-  <h1>{newT}</h1>
-  <TodoList bind:todos onToggle={toggleTodo} onRemove={removeTodo}/>
+  <TodoList bind:todos onToggle={handleToggle} onRemove={handleRemove}/>
 </main>

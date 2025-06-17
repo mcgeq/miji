@@ -7,8 +7,8 @@ import {
 import { PrioritySchema, StatusSchema } from '../schema/common';
 import { uuid } from '../utils/uuid';
 
-export function useTodos(todos: Todo[] = []) {
-  const addTodo = (text: string) => {
+export function useTodos() {
+  const addTodo = (todos: Todo[], text: string): Todo[] => {
     const now = getLocalISODateTimeWithOffset();
     const newTodo: Todo = {
       serial_num: uuid(38),
@@ -31,11 +31,11 @@ export function useTodos(todos: Todo[] = []) {
       parent_id: null,
       subtask_order: null,
     };
-    return newTodo;
+    return [...todos, newTodo];
   };
 
-  const toggleTodo = (serial_num: string) => {
-    todos = todos.map((todo) =>
+  const toggleTodo = (todos: Todo[], serial_num: string): Todo[] => {
+    return todos.map((todo) =>
       todo.serial_num === serial_num
         ? {
             ...todo,
@@ -52,12 +52,11 @@ export function useTodos(todos: Todo[] = []) {
     );
   };
 
-  const removeTodo = (serial_num: string) => {
-    todos = todos.filter((todo) => todo.serial_num !== serial_num);
+  const removeTodo = (todos: Todo[], serial_num: string): Todo[] => {
+    return todos.filter((todo) => todo.serial_num !== serial_num);
   };
 
   return {
-    todos,
     addTodo,
     toggleTodo,
     removeTodo,
