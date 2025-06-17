@@ -1,6 +1,7 @@
 <!-- src/components/TodoItem.svelte -->
 
 <script lang="ts">
+import { escapeHTML } from '@/lib/utils/sanitize';
 import { CheckCircle, Circle, Trash2 } from '@lucide/svelte';
 
 let {
@@ -23,7 +24,7 @@ let {
     {:else}
       <Circle class="w-5 h-5 text-gray-400" />
     {/if}
-    <span class={completed ? 'line-through text-gray-400' : ''}>{text}</span>
+    <span class={completed ? 'line-through text-gray-400' : ''}>{@html escapeHTML(text)}</span>
   </button>
 
   <button
