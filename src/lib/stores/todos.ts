@@ -70,4 +70,11 @@ export const todoStore = {
       currentTodos.filter((todo) => todo.serial_num !== serial_num),
     );
   },
+  editTodo: (serial_num: string, updatedTodo: Todo) => {
+    todos.update((currentTodos) =>
+      currentTodos.map((todo) =>
+        todo.serial_num === serial_num ? { ...todo, ...updatedTodo } : todo,
+      ),
+    );
+  },
 };

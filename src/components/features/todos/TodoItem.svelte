@@ -2,7 +2,7 @@
 
 <script lang="ts">
 import { escapeHTML } from '@/lib/utils/sanitize';
-import { CheckCircle, Circle, Pencil, Trash2 } from '@lucide/svelte';
+import { CheckCircle, Circle, Pencil, Plus, Trash2 } from '@lucide/svelte';
 import { differenceInSeconds, intervalToDuration, format } from 'date-fns';
 import { onDestroy } from 'svelte';
 import { t } from 'svelte-i18n';
@@ -33,6 +33,28 @@ $effect(() => {
     setupInterval();
   }
 });
+
+let isRotatingAdd = $state(false);
+let isRotatingEdit = $state(false);
+let isRotatingRemove = $state(false);
+
+function handleRotate(button: 'add' | 'edit' | 'remove', callback: () => void) {
+  if (completed) {
+    callback();
+    return;
+  }
+  if (button === 'add') isRotatingAdd = true;
+  if (button === 'edit') isRotatingEdit = true;
+  if (button === 'remove') isRotatingRemove = true;
+
+  callback();
+
+  setTimeout(() => {
+    if (button === 'add') isRotatingAdd = false;
+    if (button === 'edit') isRotatingEdit = false;
+    if (button === 'remove') isRotatingRemove = false;
+  }, 500);
+}
 
 function calculateRemainingTime(dueDate: string | Date) {
   const now = new Date();
@@ -124,21 +146,49 @@ onDestroy(() => {
     <div class="flex items-center gap-3">  <!-- 右侧按钮，垂直居中 -->
       <button
         type="button"
-        onclick={onEdit}
+        onclick={() => !completed && handleRotate('edit', onEdit)}
         aria-label="Edit task"
-        class="text-gray-400 hover:text-blue-500 transition"
+        class="transition
+         text-gray-400
+         hover:text-blue-500
+         disabled:(text-gray-300 cursor-not-allowed hover:text-gray-300)"
+        disabled={completed}
       >
-        <Pencil class="w-4 h-4" />
+        <span class:rotating={isRotatingEdit && !completed}>
+          <Pencil class="w-4 h-4" />
+        </span>
         <span class="sr-only">Edit</span>
       </button>
 
       <button
         type="button"
-        onclick={onRemove}
-        aria-label="Delete task"
-        class="text-red-400 hover:text-red-600 transition"
+        aria-label="Add task"
+        disabled={completed}
+        class="transition
+         text-blue-500
+         hover:text-blue-700
+         disabled:(text-gray-300 cursor-not-allowed hover:text-gray-300)"
       >
-        <Trash2 class="w-5 h-5" />
+        <span class:rotating={isRotatingAdd && !completed}>
+          <Plus class="w-5 h-5" />
+        </span>
+        <span class="sr-only">Add</span>
+      </button>
+
+      <button
+        type="button"
+        onclick={() => !completed && handleRotate('remove', onRemove)}
+        aria-label="Delete task"
+        disabled={completed}
+        class="transition
+         text-red-400
+         hover:text-red-600
+         disabled:(text-gray-300 cursor-not-allowed hover:text-gray-300)"
+      >
+
+        <span class:rotating={isRotatingRemove && !completed}>
+          <Trash2 class="w-5 h-5" />
+        </span>
         <span class="sr-only">Delete</span>
       </button>
     </div>
@@ -151,3 +201,31 @@ onDestroy(() => {
     </div>
   {/if}
 </div>
+
+
+<style>
+  @keyframes spin {
+    from { transform: rotate(0deg);}
+    to { transform: rotate(360deg);}
+  }
+  .rotating {
+    display: inline-block;
+    animation: spin 0.5s linear !important;
+  }
+
+  button > span {
+    display: inline-block;
+  }
+
+  button:hover > span {
+    animation: spin 0.5s linear;
+  }
+
+  button:not(:disabled):hover > span {
+    animation: spin 0.5s linear;
+  }
+
+button:disabled > span.rotating {
+  animation: none !important;
+}
+</style>

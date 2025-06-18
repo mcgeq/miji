@@ -4,7 +4,7 @@ export interface TodoListProps {
   todos: Todo[];
   onToggle: (serial_num: string) => void;
   onRemove: (serial_num: string) => void;
-  onEdit: () => void;
+  onEdit: (serial_num: string, todo: Todo) => void;
 }
 
 export interface TodoItemProps {
