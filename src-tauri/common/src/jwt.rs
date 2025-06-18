@@ -5,7 +5,7 @@
 // File:           jwt.rs
 // Description:    About jsonwebtoken
 // Create   Date:  2025-05-26 19:53:47
-// Last Modified:  2025-06-15 15:27:19
+// Last Modified:  2025-06-18 15:24:35
 // Modified   By:  mcgeq <mcgeq@outlook.com>
 // -----------------------------------------------------------------------------
 
@@ -34,9 +34,14 @@ impl JwtHelper {
         Self { secret }
     }
 
-    pub fn generate_token(&self, user_id: &str, role: &str) -> MijiResult<String> {
+    pub fn generate_token(
+        &self,
+        user_id: &str,
+        role: &str,
+        expirted_at: i64,
+    ) -> MijiResult<String> {
         let exp = Utc::now()
-            .checked_add_signed(Duration::hours(24))
+            .checked_add_signed(Duration::hours(expirted_at))
             .expect("valid timestamp")
             .timestamp() as usize;
         let claims = Claims {

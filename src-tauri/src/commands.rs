@@ -5,7 +5,7 @@
 // File:           commands.rs
 // Description:    About Commands
 // Create   Date:  2025-06-15 15:49:12
-// Last Modified:  2025-06-15 15:49:20
+// Last Modified:  2025-06-18 15:25:23
 // Modified   By:  mcgeq <mcgeq@outlook.com>
 // -----------------------------------------------------------------------------
 use chrono::{Duration, Utc};
@@ -56,9 +56,11 @@ async fn generate_token(
     let credentials = &state.credentials.lock().await;
     let jwt_helper = JwtHelper::new(credentials.jwt_secret.to_string());
 
-    let token = jwt_helper.generate_token(&user_id, &role).map_err(to_dto)?;
+    let token = jwt_helper
+        .generate_token(&user_id, &role, credentials.expired_at)
+        .map_err(to_dto)?;
     let expires_at = Utc::now()
-        .checked_add_signed(Duration::hours(24))
+        .checked_add_signed(Duration::hours(credentials.expired_at))
         .expect("valid timestamp")
         .timestamp() as usize;
     Ok(TokenResponse { token, expires_at })

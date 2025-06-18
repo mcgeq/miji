@@ -27,6 +27,7 @@ pub struct AppState {
 #[zeroize(drop)]
 pub struct ApiCredentials {
     pub jwt_secret: Zeroizing<String>,
+    pub expired_at: i64,
 }
 
 impl ApiCredentials {
@@ -38,8 +39,13 @@ impl ApiCredentials {
                 "mcgeqJWTSECRET".to_string()
             }
         };
+        let expired_at = match env_get_string("EXPIRED_AT") {
+            Ok(expired) => expired.parse::<i64>().unwrap(),
+            Err(_) => 7 * 24,
+        };
         Ok(Self {
             jwt_secret: Zeroizing::new(jwt_secret),
+            expired_at,
         })
     }
 }
