@@ -27,6 +27,9 @@
     "password": "密码要包含数字大小写字母和特殊字符"
   },
   "todos": {
-    "input_place": "添加新任务..."
+    "input_place": "添加新任务...",
+    "due_at": "剩余",
+    "expired": "过期",
+    "completed": "完成"
   }
 }

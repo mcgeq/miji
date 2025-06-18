@@ -4,12 +4,15 @@
 import type { Todo } from '@/lib/schema/todos';
 import TodoItem from './TodoItem.svelte';
 import { slideFade } from '@/lib/animations/slideFade';
+import { Lg } from '@/lib/utils/debugLog';
 
 let {
   todos = $bindable([] as Todo[]),
   onToggle = () => {},
   onRemove = () => {},
+  onEdit = () => {},
 } = $props<import('@/types/todos').TodoListProps>();
+Lg.i('TodoList', todos);
 </script>
 
 
@@ -20,8 +23,10 @@ let {
         serial_num={todo.serial_num.toString()}
         text={todo.title}
         completed={todo.status === 'Completed'}
+        dueAt={todo.due_at}
         onToggle={() => onToggle(todo.serial_num.toString())}
         onRemove={() => onRemove(todo.serial_num.toString())}
+        onEdit={() => onEdit()}
       />
     </div>
   {/each}

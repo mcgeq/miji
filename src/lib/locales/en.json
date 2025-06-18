@@ -27,6 +27,9 @@
     "password": "Password must include uppercase and lowercase letters, numbers, and special characters."
   },
   "todos": {
-    "input_place": "Add a new task..."
+    "input_place": "Add a new task...",
+    "due_at": "Remainder",
+    "expired": "Expired",
+    "completed": "Completed"
   }
 }
