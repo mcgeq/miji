@@ -24,19 +24,17 @@ let displayText = $derived.by(() => {
 let remainingTime = $state('');
 let intervalId: ReturnType<typeof setInterval> | null = null;
 let prevDueAt: string | Date | undefined;
+let prevCompleted: boolean | undefined;
 
 $effect(() => {
-  if (dueAt !== prevDueAt || completed) {
+  if (dueAt !== prevDueAt || completed !== prevCompleted) {
     prevDueAt = dueAt;
+    prevCompleted = completed;
     setupInterval();
   }
 });
 
 function calculateRemainingTime(dueDate: string | Date) {
-  if (completed) {
-    clearIntervalSafe();
-    return `${$t('todos.completed')}: ${format(new Date(), 'yyyy-MM-dd HH:mm:ss')}`;
-  }
   const now = new Date();
   const diffSeconds = differenceInSeconds(new Date(dueDate), now);
 
@@ -68,6 +66,10 @@ function setupInterval() {
     return;
   }
 
+  if (completed) {
+    remainingTime = `${$t('todos.completed')}: ${format(new Date(), 'yyyy-MM-dd HH:mm:ss')}`;
+    return;
+  }
   updateRemainingTime();
 
   intervalId = setInterval(
