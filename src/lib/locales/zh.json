@@ -16,10 +16,10 @@
   "registering": "注册中...",
   "code": "验证码",
   "errors": {
-    "init_failed": "初始化失败，请重试",
-    "please_login": "请先登录",
-    "locale_switch_failed": "切换语言失败",
-    "locale_switch_success": "语言切换成功",
+    "initFailed": "初始化失败，请重试",
+    "pleaseLogin": "请先登录",
+    "localeSwitchFailed": "切换语言失败",
+    "localeSwitchSuccess": "语言切换成功",
     "required": "请输入内容",
     "email": "邮箱格式不正确",
     "min": "至少输入 {min} 个字符",
@@ -27,8 +27,8 @@
     "password": "密码要包含数字大小写字母和特殊字符"
   },
   "todos": {
-    "input_place": "添加新任务...",
-    "due_at": "剩余",
+    "inputPlace": "添加新任务...",
+    "dueAt": "剩余",
     "expired": "过期",
     "completed": "完成"
   }

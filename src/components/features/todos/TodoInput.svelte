@@ -14,7 +14,7 @@ let { newT = $bindable(''), handleAdd } =
     bind:value={newT}
     maxlength="1000"
     type="text"
-    placeholder={$t('todos.input_place')}
+    placeholder={$t('todos.inputPlace')}
     class="flex-1 bg-transparent outline-none text-base placeholder-gray-400"
   />
 

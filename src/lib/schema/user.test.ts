@@ -4,24 +4,24 @@ import type { User } from './user';
 
 // 创建基础有效用户数据模板
 const baseUser: User = {
-  serial_num: 'abcdefghijklmnopqrstuvwxyz123456782145', // 38 字符
+  serialNum: 'abcdefghijklmnopqrstuvwxyz123456782145', // 38 字符
   name: 'John Doe',
   email: 'john@example.com',
   phone: '12345678901',
   password: 'Password1!',
-  avatar_url: 'https://example.com/avatar.jpg',
-  last_login_at: '2023-01-01T12:00:00.000000Z',
-  is_verified: true,
+  avatarUrl: 'https://example.com/avatar.jpg',
+  lastLoginAt: '2023-01-01T12:00:00.000000Z',
+  isVerified: true,
   role: 'User',
   status: 'Active',
-  email_verified_at: '2023-01-01T12:00:00.000000Z',
-  phone_verified_at: '2023-01-01T12:00:00.000000Z',
+  emailVerifiedAt: '2023-01-01T12:00:00.000000Z',
+  phoneVerifiedAt: '2023-01-01T12:00:00.000000Z',
   bio: 'Hello, I am John.',
   language: 'en',
   timezone: 'America/New_York',
-  last_active_at: '2023-01-01T12:00:00.000000Z',
-  created_at: '2023-01-01T12:00:00.000000Z',
-  updated_at: '2023-01-01T12:00:00.000000Z',
+  lastActiveAt: '2023-01-01T12:00:00.000000Z',
+  createdAt: '2023-01-01T12:00:00.000000Z',
+  updatedAt: '2023-01-01T12:00:00.000000Z',
 };
 
 describe('UserSchema', () => {
@@ -166,14 +166,14 @@ describe('UserSchema', () => {
   it('should allow optional fields to be undefined (omitted)', () => {
     const {
       phone,
-      avatar_url,
-      email_verified_at,
-      phone_verified_at,
+      avatarUrl: avatar_url,
+      emailVerifiedAt: email_verified_at,
+      phoneVerifiedAt: phone_verified_at,
       bio,
       language,
       timezone,
-      last_active_at,
-      updated_at,
+      lastActiveAt: last_active_at,
+      updatedAt: updated_at,
       ...rest
     } = baseUser;
 

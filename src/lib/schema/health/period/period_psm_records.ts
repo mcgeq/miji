@@ -6,12 +6,12 @@ import {
 } from '@/lib/schema/common';
 
 export const PeriodPmsRecordsSchema = z.object({
-  serial_num: SerialNumSchema,
-  period_serial_num: SerialNumSchema,
-  start_date: DateSchema,
-  end_date: DateSchema,
-  created_at: DateTimeSchema,
-  updated_at: DateTimeSchema.optional().nullable(),
+  serialNum: SerialNumSchema,
+  periodSerialNum: SerialNumSchema,
+  startDate: DateSchema,
+  endDate: DateSchema,
+  createdAt: DateTimeSchema,
+  updatedAt: DateTimeSchema.optional().nullable(),
 });
 
 export type PeriodPmsRecords = z.infer<typeof PeriodPmsRecordsSchema>;

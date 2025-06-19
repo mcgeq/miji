@@ -16,19 +16,19 @@
   "registering": "Registering...",
   "code": "Verification Code",
   "errors": {
-    "init_failed": "Initialization failed, please try again",
-    "please_login": "Please login first",
+    "initFailed": "Initialization failed, please try again",
+    "pleaseLogin": "Please login first",
     "required": "This field is required.",
-    "locale_switch_failed": "Failed to switch language",
-    "locale_switch_success": "Language switched successfully",
+    "localeSwitchFailed": "Failed to switch language",
+    "localeSwitchSuccess": "Language switched successfully",
     "email": "Invalid email format.",
     "min": "Minimum {min} characters required.",
     "max": "Maximum {max} characters allowed.",
     "password": "Password must include uppercase and lowercase letters, numbers, and special characters."
   },
   "todos": {
-    "input_place": "Add a new task...",
-    "due_at": "Remainder",
+    "inputPlace": "Add a new task...",
+    "dueAt": "Remainder",
     "expired": "Expired",
     "completed": "Completed"
   }

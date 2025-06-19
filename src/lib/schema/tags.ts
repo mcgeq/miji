@@ -7,11 +7,11 @@ import {
 } from './common';
 
 export const TagsSchema = z.object({
-  serial_num: SerialNumSchema,
+  serialNum: SerialNumSchema,
   name: NameSchema,
   description: DescriptionSchema,
-  created_at: DateTimeSchema,
-  updated_at: DateTimeSchema,
+  createdAt: DateTimeSchema,
+  updatedAt: DateTimeSchema,
 });
 
 export type Tags = z.infer<typeof TagsSchema>;

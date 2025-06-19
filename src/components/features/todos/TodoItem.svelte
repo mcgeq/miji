@@ -67,10 +67,10 @@ function calculateRemainingTime(dueDate: string | Date) {
   const duration = intervalToDuration({ start: 0, end: diffSeconds * 1000 });
 
   if ((duration.days || 0) > 0) {
-    return `${$t('todos.due_at')}: ${duration.days || 0}d ${duration.hours || 0}h ${duration.minutes || 0}m`;
+    return `${$t('todos.dueAt')}: ${duration.days || 0}d ${duration.hours || 0}h ${duration.minutes || 0}m`;
   }
 
-  return `${$t('todos.due_at')}: ${duration.hours || 0}h ${duration.minutes || 0}m`;
+  return `${$t('todos.dueAt')}: ${duration.hours || 0}h ${duration.minutes || 0}m`;
 }
 
 function clearIntervalSafe() {

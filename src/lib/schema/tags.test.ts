@@ -4,11 +4,11 @@ import { TagsSchema } from './tags';
 
 describe('TagsSchema', () => {
   const validTag = {
-    serial_num: 'abcdefghijklmnopqrstuvwxyz123456782357', // 38 chars
+    serialNum: 'abcdefghijklmnopqrstuvwxyz123456782357', // 38 chars
     name: 'Health',
     description: 'Tag for health-related activities.',
-    created_at: '2025-06-14T12:34:56.123456+08:00',
-    updated_at: '2025-06-14T12:34:56.123456+08:00',
+    createdAt: '2025-06-14T12:34:56.123456+08:00',
+    updatedAt: '2025-06-14T12:34:56.123456+08:00',
   };
 
   it('should pass validation with valid data', () => {

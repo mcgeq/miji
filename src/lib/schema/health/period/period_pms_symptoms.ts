@@ -7,12 +7,12 @@ import {
 } from '@/lib/schema/common';
 
 export const PeriodPmsSymptomsSchema = z.object({
-  serial_num: SerialNumSchema,
-  period_pms_records_serial_num: SerialNumSchema,
-  symptom_type: SymptomsTypeSchema,
+  serialNum: SerialNumSchema,
+  periodPmsRecordsSerialNum: SerialNumSchema,
+  symptomType: SymptomsTypeSchema,
   intensity: IntensitySchema,
-  created_at: DateTimeSchema,
-  updated_at: DateTimeSchema.optional().nullable(),
+  createdAt: DateTimeSchema,
+  updatedAt: DateTimeSchema.optional().nullable(),
 });
 
 export type PeriodPmsSymptoms = z.infer<typeof PeriodPmsSymptomsSchema>;

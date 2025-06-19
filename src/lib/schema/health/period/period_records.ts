@@ -6,11 +6,11 @@ import {
 } from '@/lib/schema/common';
 
 export const PeriodRecordsSchema = z.object({
-  serial_num: SerialNumSchema,
-  start_date: DateSchema,
-  end_date: DateSchema,
-  created_at: DateTimeSchema,
-  updated_at: DateTimeSchema.optional().nullable(),
+  serialNum: SerialNumSchema,
+  startDate: DateSchema,
+  endDate: DateSchema,
+  createdAt: DateTimeSchema,
+  updatedAt: DateTimeSchema.optional().nullable(),
 });
 
 export type PeriodRecords = z.infer<typeof PeriodRecordsSchema>;

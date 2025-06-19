@@ -23,7 +23,7 @@ onMount(async () => {
 
     if (!isAuth && !hasRedirected) {
       hasRedirected = true;
-      toast.warning($t('errors.please_login'));
+      toast.warning($t('errors.pleaseLogin'));
       goto('/auth/login');
       return;
     }
@@ -31,7 +31,7 @@ onMount(async () => {
     return;
   } catch (error) {
     Lg.e('Routes Store initialization', error);
-    toast.error($t('errors.init_failed'));
+    toast.error($t('errors.initFailed'));
   } finally {
     isLoading = false;
   }
@@ -58,7 +58,7 @@ beforeNavigate(async ({ to, cancel }) => {
     protectedRoutes.some((route) => to.url.pathname.startsWith(route))
   ) {
     cancel();
-    toast.info($t('errors.please_login'));
+    toast.info($t('errors.pleaseLogin'));
     goto('/auth/login');
   }
 });

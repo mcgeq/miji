@@ -39,7 +39,7 @@ export async function login(
 
     // Generate token
     const tokenResponse = await invoke<TokenResponse>('generate_token', {
-      userId: user.serial_num,
+      userId: user.serialNum,
       role: user.role,
     });
 
@@ -49,7 +49,7 @@ export async function login(
     const now = getLocalISODateTimeWithOffset();
     await db.execute(
       'UPDATE users SET last_login_at = ?, last_active_at = ? WHERE serial_num = ?',
-      [now, now, user.serial_num],
+      [now, now, user.serialNum],
     );
     return user;
   } catch (error) {
@@ -78,24 +78,24 @@ export async function register(
     // 生成字段
     const now = getLocalISODateTimeWithOffset();
     const user: Omit<User, 'password'> = {
-      serial_num: uuid(38),
+      serialNum: uuid(38),
       name: username,
       email,
       phone: null,
-      avatar_url: null,
-      last_login_at: now,
-      is_verified: false,
+      avatarUrl: null,
+      lastLoginAt: now,
+      isVerified: false,
       role: 'User',
       status: 'Active',
-      email_verified_at: null,
-      phone_verified_at: null,
+      emailVerifiedAt: null,
+      phoneVerifiedAt: null,
       bio: null,
       language: 'en',
       timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
-      last_active_at: now,
-      deleted_at: null,
-      created_at: now,
-      updated_at: now,
+      lastActiveAt: now,
+      deletedAt: null,
+      createdAt: now,
+      updatedAt: now,
     };
 
     const password_hash = await hashPassword(password);
@@ -108,25 +108,25 @@ export async function register(
         deleted_at, created_at, updated_at
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
-        user.serial_num,
+        user.serialNum,
         user.name,
         user.email,
         user.phone,
         password_hash,
-        user.avatar_url,
-        user.last_login_at,
-        user.is_verified ? 1 : 0,
+        user.avatarUrl,
+        user.lastLoginAt,
+        user.isVerified ? 1 : 0,
         user.role,
         user.status,
-        user.email_verified_at,
-        user.phone_verified_at,
+        user.emailVerifiedAt,
+        user.phoneVerifiedAt,
         user.bio,
         user.language,
         user.timezone,
-        user.last_active_at,
-        user.deleted_at,
-        user.created_at,
-        user.updated_at,
+        user.lastActiveAt,
+        user.deletedAt,
+        user.createdAt,
+        user.updatedAt,
       ],
     );
 
@@ -139,7 +139,7 @@ export async function register(
 
     if (rememberMe) {
       const tokenResponse = await invoke<TokenResponse>('generate_token', {
-        userId: newUser.serial_num,
+        userId: newUser.serialNum,
         role: newUser.role,
       });
       await loginUser(newUser, tokenResponse);

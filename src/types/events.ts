@@ -3,6 +3,6 @@ export type TodoInputEvents = {
 };
 
 export type TodoListEvents = {
-  toggle: { serial_num: string };
-  remove: { serial_num: string };
+  toggle: { serialNum: string };
+  remove: { serialNum: string };
 };

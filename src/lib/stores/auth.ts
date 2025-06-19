@@ -35,7 +35,7 @@ export async function loginUser(
   if (tokenResponse) {
     authStore.state.token = tokenResponse.token;
     authStore.state.tokenExpiresAt = rememberMe
-      ? tokenResponse.expires_at
+      ? tokenResponse.expiresAt
       : null;
 
     // Verify token immediately after login

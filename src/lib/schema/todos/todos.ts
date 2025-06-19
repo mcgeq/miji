@@ -8,26 +8,26 @@ import {
 } from '../common';
 
 export const TodoSchema = z.object({
-  serial_num: SerialNumSchema,
+  serialNum: SerialNumSchema,
   title: z.string().min(1).max(100),
   description: NullableStringSchema,
-  created_at: DateTimeSchema,
-  updated_at: DateTimeSchema.optional().nullable(),
-  due_at: DateTimeSchema,
+  createdAt: DateTimeSchema,
+  updatedAt: DateTimeSchema.optional().nullable(),
+  dueAt: DateTimeSchema,
   priority: PrioritySchema, // 建议改为 z.enum(['Low', 'Medium', ...])
   status: StatusSchema,
   repeat: NullableStringSchema,
-  completed_at: DateTimeSchema.optional().nullable(),
-  assignee_id: NullableStringSchema,
+  completedAt: DateTimeSchema.optional().nullable(),
+  assigneeId: NullableStringSchema,
   progress: z.number().min(0).max(100),
   location: NullableStringSchema,
-  owner_id: SerialNumSchema.optional().nullable(),
-  is_archived: z.boolean(),
-  is_pinned: z.boolean(),
-  estimate_minutes: z.number().int().nonnegative().optional().nullable(),
-  reminder_count: z.number().int().nonnegative(),
-  parent_id: SerialNumSchema.optional().nullable(),
-  subtask_order: z.number().int().optional().nullable(),
+  ownerId: SerialNumSchema.optional().nullable(),
+  isArchived: z.boolean(),
+  isPinned: z.boolean(),
+  estimateMinutes: z.number().int().nonnegative().optional().nullable(),
+  reminderCount: z.number().int().nonnegative(),
+  parentId: SerialNumSchema.optional().nullable(),
+  subtaskOrder: z.number().int().optional().nullable(),
 });
 
 export type Todo = z.infer<typeof TodoSchema>;

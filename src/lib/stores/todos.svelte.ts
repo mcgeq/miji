@@ -10,29 +10,29 @@ import { SvelteMap } from 'svelte/reactivity';
 
 // 默认 Todo 对象
 const defaultTodo: Partial<Todo> = {
-  created_at: getLocalISODateTimeWithOffset(),
-  updated_at: null,
-  due_at: getEndOfTodayISOWithOffset(),
+  createdAt: getLocalISODateTimeWithOffset(),
+  updatedAt: null,
+  dueAt: getEndOfTodayISOWithOffset(),
   priority: PrioritySchema.enum.Medium,
   status: StatusSchema.enum.NotStarted,
   description: null,
-  completed_at: null,
-  assignee_id: null,
+  completedAt: null,
+  assigneeId: null,
   progress: 0,
   location: null,
-  owner_id: null,
-  is_archived: false,
-  is_pinned: false,
-  estimate_minutes: null,
-  reminder_count: 0,
-  parent_id: null,
-  subtask_order: null,
+  ownerId: null,
+  isArchived: false,
+  isPinned: false,
+  estimateMinutes: null,
+  reminderCount: 0,
+  parentId: null,
+  subtaskOrder: null,
 };
 
 // 创建新 Todo
 const createTodo = (title: string): Todo =>
   ({
-    serial_num: uuid(38),
+    serialNum: uuid(38),
     title,
     ...defaultTodo,
   }) as Todo;
@@ -43,11 +43,11 @@ export let todos = $state<SvelteMap<string, Todo>>(new SvelteMap());
 export const addTodo = (text: string) => {
   if (!text.trim()) return;
   const newTodo = createTodo(text);
-  todos.set(newTodo.serial_num, newTodo);
+  todos.set(newTodo.serialNum, newTodo);
 };
 
-export const toggleTodo = (serial_num: string) => {
-  const todo = todos.get(serial_num);
+export const toggleTodo = (serialNum: string) => {
+  const todo = todos.get(serialNum);
   if (!todo) return;
 
   const updatedTodo = {
@@ -62,17 +62,17 @@ export const toggleTodo = (serial_num: string) => {
         : getLocalISODateTimeWithOffset(),
   };
 
-  todos.set(serial_num, updatedTodo);
+  todos.set(serialNum, updatedTodo);
 };
 
-export const removeTodo = (serial_num: string) => {
-  todos.delete(serial_num);
+export const removeTodo = (serialNum: string) => {
+  todos.delete(serialNum);
 };
 
-export const editTodo = (serial_num: string, updatedTodo: Todo) => {
-  const todo = todos.get(serial_num);
+export const editTodo = (serialNum: string, updatedTodo: Todo) => {
+  const todo = todos.get(serialNum);
   if (!todo) return;
-  todos.set(serial_num, { ...todo, ...updatedTodo });
+  todos.set(serialNum, { ...todo, ...updatedTodo });
 };
 
 export const todoStore = {

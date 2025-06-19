@@ -3,26 +3,26 @@ import { TodoSchema } from './todos';
 import { Lg } from '@/lib/utils/debugLog';
 
 const validTodo = {
-  serial_num: 'abcdefghijklmnopqrstuvwxyz123456782145', // 38位小写+数字
+  serialNum: 'abcdefghijklmnopqrstuvwxyz123456782145', // 38位小写+数字
   title: 'Buy groceries',
   description: 'Milk, eggs, bread',
-  created_at: '2025-06-14T12:00:00.000000Z',
-  updated_at: '2025-06-14T12:30:00.000000Z',
-  due_at: '2025-06-15T10:00:00.000000Z',
+  createdAt: '2025-06-14T12:00:00.000000Z',
+  updatedAt: '2025-06-14T12:30:00.000000Z',
+  dueAt: '2025-06-15T10:00:00.000000Z',
   priority: 'Medium',
   status: 'InProgress',
   repeat: null,
-  completed_at: null,
-  assignee_id: null,
+  completedAt: null,
+  assigneeId: null,
   progress: 50,
   location: null,
-  owner_id: 'abcdefghijklmnopqrstuvwxyz123456782145',
-  is_archived: false,
-  is_pinned: true,
-  estimate_minutes: 30,
-  reminder_count: 2,
-  parent_id: null,
-  subtask_order: null,
+  ownerId: 'abcdefghijklmnopqrstuvwxyz123456782145',
+  isArchived: false,
+  isPinned: true,
+  estimateMinutes: 30,
+  reminderCount: 2,
+  parentId: null,
+  subtaskOrder: null,
 };
 
 describe('TodoSchema', () => {
@@ -32,7 +32,7 @@ describe('TodoSchema', () => {
   });
 
   it('should fail if serial_num is invalid', () => {
-    const invalidTodo = { ...validTodo, serial_num: 'abc!' };
+    const invalidTodo = { ...validTodo, serialNum: 'abc!' };
     const result = TodoSchema.safeParse(invalidTodo);
     expect(result.success).toBe(false);
     if (!result.success) {
@@ -56,13 +56,13 @@ describe('TodoSchema', () => {
     const partialTodo = {
       ...validTodo,
       description: null,
-      updated_at: null,
-      completed_at: null,
-      assignee_id: null,
+      updatedAt: null,
+      completedAt: null,
+      assigneeId: null,
       location: null,
-      estimate_minutes: null,
-      parent_id: null,
-      subtask_order: null,
+      estimateMinutes: null,
+      parentId: null,
+      subtaskOrder: null,
     };
     const result = TodoSchema.safeParse(partialTodo);
 
@@ -74,12 +74,12 @@ describe('TodoSchema', () => {
 
   it('should allow optional fields to be omitted', () => {
     const {
-      updated_at,
-      completed_at,
-      estimate_minutes,
-      parent_id,
-      subtask_order,
-      owner_id,
+      updatedAt: updated_at,
+      completedAt: completed_at,
+      estimateMinutes: estimate_minutes,
+      parentId: parent_id,
+      subtaskOrder: subtask_order,
+      ownerId: owner_id,
       ...minimalTodo
     } = validTodo;
 
@@ -88,13 +88,13 @@ describe('TodoSchema', () => {
   });
 
   it('should fail if estimate_minutes is negative', () => {
-    const invalidTodo = { ...validTodo, estimate_minutes: -5 };
+    const invalidTodo = { ...validTodo, estimateMinutes: -5 };
     const result = TodoSchema.safeParse(invalidTodo);
     expect(result.success).toBe(false);
   });
 
   it('should fail if reminder_count is negative', () => {
-    const invalidTodo = { ...validTodo, reminder_count: -1 };
+    const invalidTodo = { ...validTodo, reminderCount: -1 };
     const result = TodoSchema.safeParse(invalidTodo);
     expect(result.success).toBe(false);
   });

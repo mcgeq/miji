@@ -14,16 +14,16 @@ function handleAdd(text: string) {
   }
 }
 
-const handleToggle = (serial_num: string) => {
-  todoStore.toggleTodo(serial_num);
+const handleToggle = (serialNum: string) => {
+  todoStore.toggleTodo(serialNum);
 };
 
-const handleRemove = (serial_num: string) => {
-  todoStore.removeTodo(serial_num);
+const handleRemove = (serialNum: string) => {
+  todoStore.removeTodo(serialNum);
 };
 
-const handleEdit = (serial_num: string, todo: Todo) => {
-  todoStore.editTodo(serial_num, todo);
+const handleEdit = (serialNum: string, todo: Todo) => {
+  todoStore.editTodo(serialNum, todo);
 };
 </script>
 

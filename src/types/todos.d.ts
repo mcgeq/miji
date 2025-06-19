@@ -2,13 +2,13 @@ import type { Todo } from '@/lib/schema/todos';
 
 export interface TodoListProps {
   todos: Todo[];
-  onToggle: (serial_num: string) => void;
-  onRemove: (serial_num: string) => void;
-  onEdit: (serial_num: string, todo: Todo) => void;
+  onToggle: (serialNum: string) => void;
+  onRemove: (serialNum: string) => void;
+  onEdit: (serialNum: string, todo: Todo) => void;
 }
 
 export interface TodoItemProps {
-  serial_num: string;
+  serialNum: string;
   text: string;
   completed: boolean;
   dueAt: string;

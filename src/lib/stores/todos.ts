@@ -10,29 +10,29 @@ import { uuid } from '@/lib/utils/uuid';
 
 // 默认 Todo 对象
 const defaultTodo: Partial<Todo> = {
-  created_at: getLocalISODateTimeWithOffset(),
-  updated_at: null,
-  due_at: getEndOfTodayISOWithOffset(),
+  createdAt: getLocalISODateTimeWithOffset(),
+  updatedAt: null,
+  dueAt: getEndOfTodayISOWithOffset(),
   priority: PrioritySchema.enum.Medium,
   status: StatusSchema.enum.NotStarted,
   description: null,
-  completed_at: null,
-  assignee_id: null,
+  completedAt: null,
+  assigneeId: null,
   progress: 0,
   location: null,
-  owner_id: null,
-  is_archived: false,
-  is_pinned: false,
-  estimate_minutes: null,
-  reminder_count: 0,
-  parent_id: null,
-  subtask_order: null,
+  ownerId: null,
+  isArchived: false,
+  isPinned: false,
+  estimateMinutes: null,
+  reminderCount: 0,
+  parentId: null,
+  subtaskOrder: null,
 };
 
 // 创建新 Todo
 const createTodo = (title: string): Todo =>
   ({
-    serial_num: uuid(38),
+    serialNum: uuid(38),
     title,
     ...defaultTodo,
   }) as Todo;
@@ -46,17 +46,17 @@ export const todoStore = {
     const newTodo = createTodo(text);
     todos.update((currentTodos) => [...currentTodos, newTodo]);
   },
-  toggleTodo: (serial_num: string) => {
+  toggleTodo: (serialNum: string) => {
     todos.update((currentTodos) =>
       currentTodos.map((todo) =>
-        todo.serial_num === serial_num
+        todo.serialNum === serialNum
           ? {
               ...todo,
               status:
                 todo.status === StatusSchema.enum.Completed
                   ? StatusSchema.enum.NotStarted
                   : StatusSchema.enum.Completed,
-              completed_at:
+              completedAt:
                 todo.status === StatusSchema.enum.Completed
                   ? null
                   : getLocalISODateTimeWithOffset(),
@@ -65,15 +65,15 @@ export const todoStore = {
       ),
     );
   },
-  removeTodo: (serial_num: string) => {
+  removeTodo: (serialNum: string) => {
     todos.update((currentTodos) =>
-      currentTodos.filter((todo) => todo.serial_num !== serial_num),
+      currentTodos.filter((todo) => todo.serialNum !== serialNum),
     );
   },
-  editTodo: (serial_num: string, updatedTodo: Todo) => {
+  editTodo: (serialNum: string, updatedTodo: Todo) => {
     todos.update((currentTodos) =>
       currentTodos.map((todo) =>
-        todo.serial_num === serial_num ? { ...todo, ...updatedTodo } : todo,
+        todo.serialNum === serialNum ? { ...todo, ...updatedTodo } : todo,
       ),
     );
   },
