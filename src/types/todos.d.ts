@@ -9,9 +9,7 @@ export interface TodoListProps {
 
 export interface TodoItemProps {
   serialNum: string;
-  text: string;
-  completed: boolean;
-  dueAt: string;
+  todo: Todo;
   onToggle: () => void;
   onRemove: () => void;
   onEdit: () => void;

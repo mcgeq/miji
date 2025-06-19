@@ -1,5 +1,5 @@
 // src/lib/stores/todos.ts
-import { writable } from 'svelte/store';
+import { get, writable } from 'svelte/store';
 import type { Todo } from '@/lib/schema/todos';
 import {
   getLocalISODateTimeWithOffset,
@@ -64,6 +64,7 @@ export const todoStore = {
           : todo,
       ),
     );
+    console.log(get(todos));
   },
   removeTodo: (serialNum: string) => {
     todos.update((currentTodos) =>

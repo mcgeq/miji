@@ -1,6 +1,8 @@
 <!-- src/components/TodoItem.svelte -->
 
 <script lang="ts">
+import { StatusSchema } from '@/lib/schema/common';
+import type { Todo } from '@/lib/schema/todos';
 import { escapeHTML } from '@/lib/utils/sanitize';
 import { CheckCircle, Circle, Pencil, Plus, Trash2 } from '@lucide/svelte';
 import { differenceInSeconds, intervalToDuration, format } from 'date-fns';
@@ -8,17 +10,18 @@ import { onDestroy } from 'svelte';
 import { t } from 'svelte-i18n';
 
 let {
-  text,
-  completed,
-  dueAt,
+  todo = $bindable({} as Todo),
   onToggle = () => {},
   onRemove = () => {},
   onEdit = () => {},
 } = $props<import('@/types/todos').TodoItemProps>();
 
+let completed = $derived(todo.status === StatusSchema.enum.Completed);
 let maxChars = $state(18);
 let displayText = $derived.by(() => {
-  return text.length > maxChars ? `${text.slice(0, maxChars)}...` : text;
+  return todo.title.length > maxChars
+    ? `${todo.title.slice(0, maxChars)}...`
+    : todo.title;
 });
 
 let remainingTime = $state('');
@@ -27,8 +30,8 @@ let prevDueAt: string | Date | undefined;
 let prevCompleted: boolean | undefined;
 
 $effect(() => {
-  if (dueAt !== prevDueAt || completed !== prevCompleted) {
-    prevDueAt = dueAt;
+  if (todo.dueAt !== prevDueAt || completed !== prevCompleted) {
+    prevDueAt = todo.dueAt;
     prevCompleted = completed;
     setupInterval();
   }
@@ -83,7 +86,7 @@ function clearIntervalSafe() {
 function setupInterval() {
   clearIntervalSafe();
 
-  if (!dueAt) {
+  if (!todo.dueAt) {
     remainingTime = '';
     return;
   }
@@ -103,11 +106,11 @@ function setupInterval() {
 }
 
 function updateRemainingTime() {
-  if (!dueAt) {
+  if (!todo.dueAt) {
     remainingTime = '';
     return;
   }
-  remainingTime = calculateRemainingTime(dueAt);
+  remainingTime = calculateRemainingTime(todo.dueAt);
 }
 
 onDestroy(() => {
@@ -137,7 +140,7 @@ onDestroy(() => {
       <span
         class="text-left text-sm leading-snug line-clamp-1"
         class:text-gray-400={completed}
-        title={text}
+        title={todo.title}
       >
         {@html escapeHTML(displayText)}
       </span>
@@ -146,7 +149,7 @@ onDestroy(() => {
     <div class="flex items-center gap-3">  <!-- 右侧按钮，垂直居中 -->
       <button
         type="button"
-        onclick={() => !completed && handleRotate('edit', onEdit)}
+        onclick={() => !todo.completed && handleRotate('edit', onEdit)}
         aria-label="Edit task"
         class="transition
          text-gray-400
@@ -195,7 +198,7 @@ onDestroy(() => {
   </div>
 
   <!-- 底部右下角 dueAt -->
-  {#if dueAt}
+  {#if todo.dueAt}
     <div class="text-xs text-gray-500 absolute right-4 bottom-1">
       {remainingTime}
     </div>

@@ -21,9 +21,7 @@ Lg.i('TodoList', todos);
     <div in:slideFade={{}} out:slideFade={{}}>
       <TodoItem
         serialNum={todo.serialNum.toString()}
-        text={todo.title}
-        completed={todo.status === 'Completed'}
-        dueAt={todo.dueAt}
+        todo={todo}
         onToggle={() => onToggle(todo.serialNum.toString())}
         onRemove={() => onRemove(todo.serialNum.toString())}
         onEdit={() => onEdit()}
