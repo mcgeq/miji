@@ -1,7 +1,7 @@
 import type { Todo } from '@/lib/schema/todos';
 
 export interface TodoListProps {
-  todos: Todo[];
+  todos: Map<string, Todo>;
   onToggle: (serialNum: string) => void;
   onRemove: (serialNum: string) => void;
   onEdit: (serialNum: string, todo: Todo) => void;

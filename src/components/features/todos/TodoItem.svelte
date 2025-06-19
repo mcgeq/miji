@@ -1,5 +1,4 @@
 <!-- src/components/TodoItem.svelte -->
-
 <script lang="ts">
 import { StatusSchema } from '@/lib/schema/common';
 import type { Todo } from '@/lib/schema/todos';
@@ -49,9 +48,7 @@ function handleRotate(button: 'add' | 'edit' | 'remove', callback: () => void) {
   if (button === 'add') isRotatingAdd = true;
   if (button === 'edit') isRotatingEdit = true;
   if (button === 'remove') isRotatingRemove = true;
-
   callback();
-
   setTimeout(() => {
     if (button === 'add') isRotatingAdd = false;
     if (button === 'edit') isRotatingEdit = false;
@@ -62,17 +59,14 @@ function handleRotate(button: 'add' | 'edit' | 'remove', callback: () => void) {
 function calculateRemainingTime(dueDate: string | Date) {
   const now = new Date();
   const diffSeconds = differenceInSeconds(new Date(dueDate), now);
-
   if (diffSeconds <= 0) {
     clearIntervalSafe();
     return $t('todos.expired');
   }
   const duration = intervalToDuration({ start: 0, end: diffSeconds * 1000 });
-
   if ((duration.days || 0) > 0) {
     return `${$t('todos.dueAt')}: ${duration.days || 0}d ${duration.hours || 0}h ${duration.minutes || 0}m`;
   }
-
   return `${$t('todos.dueAt')}: ${duration.hours || 0}h ${duration.minutes || 0}m`;
 }
 
@@ -85,18 +79,15 @@ function clearIntervalSafe() {
 
 function setupInterval() {
   clearIntervalSafe();
-
   if (!todo.dueAt) {
     remainingTime = '';
     return;
   }
-
   if (completed) {
     remainingTime = `${$t('todos.completed')}: ${format(new Date(), 'yyyy-MM-dd HH:mm:ss')}`;
     return;
   }
   updateRemainingTime();
-
   intervalId = setInterval(
     () => {
       updateRemainingTime();
@@ -118,7 +109,6 @@ onDestroy(() => {
 });
 </script>
 
-
 <div
   class="p-4 bg-white rounded-2xl border border-gray-200 flex flex-col h-18 mb-1 relative">
   <!-- 上半部分：主内容 -->
@@ -136,7 +126,6 @@ onDestroy(() => {
           <Circle class="w-5 h-5 text-gray-400" />
         {/if}
       </button>
-
       <span
         class="text-left text-sm leading-snug line-clamp-1"
         class:text-gray-400={completed}
@@ -149,7 +138,7 @@ onDestroy(() => {
     <div class="flex items-center gap-3">  <!-- 右侧按钮，垂直居中 -->
       <button
         type="button"
-        onclick={() => !todo.completed && handleRotate('edit', onEdit)}
+        onclick={() => !completed && handleRotate('edit', onEdit)}
         aria-label="Edit task"
         class="transition
          text-gray-400
@@ -188,7 +177,6 @@ onDestroy(() => {
          hover:text-red-600
          disabled:(text-gray-300 cursor-not-allowed hover:text-gray-300)"
       >
-
         <span class:rotating={isRotatingRemove && !completed}>
           <Trash2 class="w-5 h-5" />
         </span>

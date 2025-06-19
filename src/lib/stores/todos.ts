@@ -1,5 +1,5 @@
 // src/lib/stores/todos.ts
-import { get, writable } from 'svelte/store';
+import { writable } from 'svelte/store';
 import type { Todo } from '@/lib/schema/todos';
 import {
   getLocalISODateTimeWithOffset,
@@ -38,44 +38,55 @@ const createTodo = (title: string): Todo =>
   }) as Todo;
 
 // 定义 store
-export const todos = writable<Todo[]>([]);
+export const todos = writable<Map<string, Todo>>(new Map());
 
 export const todoStore = {
   addTodo: (text: string) => {
     if (!text.trim()) return;
     const newTodo = createTodo(text);
-    todos.update((currentTodos) => [...currentTodos, newTodo]);
+    todos.update((currentTodos) => {
+      const newMap = new Map(currentTodos);
+      newMap.set(newTodo.serialNum, newTodo);
+      return newMap;
+    });
   },
   toggleTodo: (serialNum: string) => {
-    todos.update((currentTodos) =>
-      currentTodos.map((todo) =>
-        todo.serialNum === serialNum
-          ? {
-              ...todo,
-              status:
-                todo.status === StatusSchema.enum.Completed
-                  ? StatusSchema.enum.NotStarted
-                  : StatusSchema.enum.Completed,
-              completedAt:
-                todo.status === StatusSchema.enum.Completed
-                  ? null
-                  : getLocalISODateTimeWithOffset(),
-            }
-          : todo,
-      ),
-    );
-    console.log(get(todos));
+    todos.update((currentMap) => {
+      const newMap = new Map(currentMap);
+      const todo = newMap.get(serialNum);
+      if (todo) {
+        const newTodo = {
+          ...todo,
+          status:
+            todo.status === StatusSchema.enum.Completed
+              ? StatusSchema.enum.NotStarted
+              : StatusSchema.enum.Completed,
+          completedAt:
+            todo.status === StatusSchema.enum.Completed
+              ? null
+              : getLocalISODateTimeWithOffset(),
+        };
+        newMap.set(serialNum, newTodo);
+      }
+      return newMap;
+    });
   },
   removeTodo: (serialNum: string) => {
-    todos.update((currentTodos) =>
-      currentTodos.filter((todo) => todo.serialNum !== serialNum),
-    );
+    todos.update((currentMap) => {
+      const newMap = new Map(currentMap);
+      newMap.delete(serialNum);
+      return newMap;
+    });
   },
   editTodo: (serialNum: string, updatedTodo: Todo) => {
-    todos.update((currentTodos) =>
-      currentTodos.map((todo) =>
-        todo.serialNum === serialNum ? { ...todo, ...updatedTodo } : todo,
-      ),
-    );
+    todos.update((currentMap) => {
+      const newMap = new Map(currentMap);
+      const todo = newMap.get(serialNum);
+      if (todo) {
+        const newTodo = { ...todo, ...updatedTodo };
+        newMap.set(serialNum, newTodo);
+      }
+      return newMap;
+    });
   },
 };
