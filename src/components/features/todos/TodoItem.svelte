@@ -1,15 +1,12 @@
 <!-- src/components/TodoItem.svelte -->
 <script lang="ts">
 import { StatusSchema } from '@/lib/schema/common';
-import type { Todo } from '@/lib/schema/todos';
+import type { TodoRemain } from '@/lib/schema/todos';
 import { escapeHTML } from '@/lib/utils/sanitize';
 import { CheckCircle, Circle, Pencil, Plus, Trash2 } from '@lucide/svelte';
-import { differenceInSeconds, intervalToDuration, format } from 'date-fns';
-import { onDestroy } from 'svelte';
-import { t } from 'svelte-i18n';
 
 let {
-  todo = $bindable({} as Todo),
+  todo = $bindable({} as TodoRemain),
   onToggle = () => {},
   onRemove = () => {},
   onEdit = () => {},
@@ -21,19 +18,6 @@ let displayText = $derived.by(() => {
   return todo.title.length > maxChars
     ? `${todo.title.slice(0, maxChars)}...`
     : todo.title;
-});
-
-let remainingTime = $state('');
-let intervalId: ReturnType<typeof setInterval> | null = null;
-let prevDueAt: string | Date | undefined;
-let prevCompleted: boolean | undefined;
-
-$effect(() => {
-  if (todo.dueAt !== prevDueAt || completed !== prevCompleted) {
-    prevDueAt = todo.dueAt;
-    prevCompleted = completed;
-    setupInterval();
-  }
 });
 
 let isRotatingAdd = $state(false);
@@ -55,58 +39,6 @@ function handleRotate(button: 'add' | 'edit' | 'remove', callback: () => void) {
     if (button === 'remove') isRotatingRemove = false;
   }, 500);
 }
-
-function calculateRemainingTime(dueDate: string | Date) {
-  const now = new Date();
-  const diffSeconds = differenceInSeconds(new Date(dueDate), now);
-  if (diffSeconds <= 0) {
-    clearIntervalSafe();
-    return $t('todos.expired');
-  }
-  const duration = intervalToDuration({ start: 0, end: diffSeconds * 1000 });
-  if ((duration.days || 0) > 0) {
-    return `${$t('todos.dueAt')}: ${duration.days || 0}d ${duration.hours || 0}h ${duration.minutes || 0}m`;
-  }
-  return `${$t('todos.dueAt')}: ${duration.hours || 0}h ${duration.minutes || 0}m`;
-}
-
-function clearIntervalSafe() {
-  if (intervalId !== null) {
-    clearInterval(intervalId);
-    intervalId = null;
-  }
-}
-
-function setupInterval() {
-  clearIntervalSafe();
-  if (!todo.dueAt) {
-    remainingTime = '';
-    return;
-  }
-  if (completed) {
-    remainingTime = `${$t('todos.completed')}: ${format(new Date(), 'yyyy-MM-dd HH:mm:ss')}`;
-    return;
-  }
-  updateRemainingTime();
-  intervalId = setInterval(
-    () => {
-      updateRemainingTime();
-    },
-    5 * 60 * 1000,
-  );
-}
-
-function updateRemainingTime() {
-  if (!todo.dueAt) {
-    remainingTime = '';
-    return;
-  }
-  remainingTime = calculateRemainingTime(todo.dueAt);
-}
-
-onDestroy(() => {
-  clearIntervalSafe();
-});
 </script>
 
 <div
@@ -188,7 +120,7 @@ onDestroy(() => {
   <!-- 底部右下角 dueAt -->
   {#if todo.dueAt}
     <div class="text-xs text-gray-500 absolute right-4 bottom-1">
-      {remainingTime}
+      {todo.remainingTime}
     </div>
   {/if}
 </div>

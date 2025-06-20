@@ -39,7 +39,7 @@ export async function login(
 
     // Generate token
     const tokenResponse = await invoke<TokenResponse>('generate_token', {
-      userId: user.serialNum,
+      userId: user.email,
       role: user.role,
     });
 
@@ -139,7 +139,7 @@ export async function register(
 
     if (rememberMe) {
       const tokenResponse = await invoke<TokenResponse>('generate_token', {
-        userId: newUser.serialNum,
+        userId: newUser.email,
         role: newUser.role,
       });
       await loginUser(newUser, tokenResponse);

@@ -31,4 +31,4 @@ export const TodoSchema = z.object({
 });
 
 export type Todo = z.infer<typeof TodoSchema>;
-export type TodoRemain = Todo & { remainingTime?: string };
+export type TodoRemain = Todo & { remainingTime: string };

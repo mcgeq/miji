@@ -3,9 +3,17 @@
 import TodoInput from '@/components/features/todos/TodoInput.svelte';
 import TodoList from '@/components/features/todos/TodoList.svelte';
 import type { Todo } from '@/lib/schema/todos';
-import { todoStore, todos } from '@/lib/stores/todos';
+import {
+  getTodosRemainingTime,
+  startGlobalTimer,
+  stopGlobalTimer,
+  todoStore,
+} from '@/lib/stores/todos.svelte';
+import { onDestroy, onMount } from 'svelte';
+import { SvelteMap } from 'svelte/reactivity';
 
 let newT = $state('');
+let todos = $state(new SvelteMap<string, Todo>());
 
 function handleAdd(text: string) {
   if (text.trim()) {
@@ -25,9 +33,18 @@ const handleRemove = (serialNum: string) => {
 const handleEdit = (serialNum: string, todo: Todo) => {
   todoStore.editTodo(serialNum, todo);
 };
+
+onMount(async () => {
+  todos = await getTodosRemainingTime();
+  startGlobalTimer();
+});
+
+onDestroy(() => {
+  stopGlobalTimer();
+});
 </script>
 
 <main class="max-w-xl mx-auto p-4">
   <TodoInput bind:newT handleAdd={handleAdd} />
-  <TodoList todos={$todos} onToggle={handleToggle} onRemove={handleRemove} onEdit={handleEdit}/>
+  <TodoList {todos} onToggle={handleToggle} onRemove={handleRemove} onEdit={handleEdit}/>
 </main>

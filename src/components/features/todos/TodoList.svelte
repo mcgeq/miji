@@ -1,11 +1,11 @@
 <!-- src/components/TodoList.svelte -->
 <script lang="ts">
-import type { Todo } from '@/lib/schema/todos';
+import type { TodoRemain } from '@/lib/schema/todos';
 import TodoItem from './TodoItem.svelte';
 import { slideFade } from '@/lib/animations/slideFade';
 
 let {
-  todos = $bindable(new Map<string, Todo>()),
+  todos = $bindable(new Map<string, TodoRemain>()),
   onToggle = () => {},
   onRemove = () => {},
   onEdit = () => {},

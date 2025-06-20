@@ -7,7 +7,7 @@ pub mod jwt;
 pub mod response;
 pub mod utils;
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use zeroize::{Zeroize, Zeroizing};
@@ -50,9 +50,10 @@ impl ApiCredentials {
     }
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize)]
 pub struct TokenResponse {
     pub token: String,
+    #[serde(rename = "expiresAt")]
     pub expires_at: usize, // UNIX timestamp
 }
 

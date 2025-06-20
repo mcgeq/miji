@@ -10,14 +10,13 @@ import { toast } from '@/lib/utils/toast';
 import { Lg } from '@/lib/utils/debugLog';
 
 let rememberMe = $state(true);
-let success = $state(false);
 
 const { form, errors, isSubmitting } = createForm({
   extend: validator({ schema: LoginSchema }),
   onSubmit: async (values) => {
     try {
       await login(values, rememberMe);
-      success = true;
+      toast.success($t('loginSuccess'));
       goto('/todos');
     } catch (e) {
       toast.error($t('loginFailed'));
@@ -68,12 +67,5 @@ const { form, errors, isSubmitting } = createForm({
         {$t('register')}
       </a>
     </p>
-
-    <!-- 登录成功提示 -->
-    {#if success}
-      <p class="text-center text-green-600 text-sm font-semibold select-text">
-        {$t('loginSuccess')}
-      </p>
-    {/if}
   </div>
 </div>
