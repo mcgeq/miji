@@ -80,6 +80,7 @@ export const toggleTodo = (serialNum: string) => {
 
 export const removeTodo = (serialNum: string) => {
   todos.delete(serialNum);
+  todosRemainingTime.delete(serialNum);
 };
 
 export const editTodo = (serialNum: string, updatedTodo: Todo) => {
