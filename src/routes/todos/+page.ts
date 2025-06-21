@@ -1,6 +1,6 @@
 // src/routes/todo/+page.ts
 import { getTodos } from '$lib/api/todos';
-import type { Todo } from '@/types';
+import type { Todo } from '@/lib/schema/todos';
 import type { PageLoad } from './$types';
 
 export const load: PageLoad = async () => {

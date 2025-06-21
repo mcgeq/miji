@@ -1,16 +1,27 @@
 <!-- src/components/TodoItem.svelte -->
 <script lang="ts">
+import PriorityBadge from '@/components/common/PriorityBadge.svelte';
 import { StatusSchema } from '@/lib/schema/common';
 import type { TodoRemain } from '@/lib/schema/todos';
+import { menuStore } from '@/lib/stores/menuStore.svelte';
 import { escapeHTML } from '@/lib/utils/sanitize';
-import { CheckCircle, Circle, Pencil, Plus, Trash2 } from '@lucide/svelte';
-import { t } from 'svelte-i18n';
+import {
+  CheckCircle,
+  Circle,
+  Folder,
+  Pencil,
+  Plus,
+  StickyNote,
+  Tag,
+  Trash2,
+} from '@lucide/svelte';
 
 let {
   todo = $bindable({} as TodoRemain),
   onToggle = () => {},
   onRemove = () => {},
   onEdit = () => {},
+  onChangePriority = () => {},
 } = $props<import('@/types/todos').TodoItemProps>();
 
 let completed = $derived(todo.status === StatusSchema.enum.Completed);
@@ -51,25 +62,17 @@ function handleRotate(button: 'add' | 'edit' | 'remove', callback: () => void) {
   }, 500);
 }
 
-const priorityChar = (priority: string) => {
-  switch (priority.toUpperCase()) {
-    case 'MEDIUM':
-      return $t('todos.priority.medium');
-    case 'HIGH':
-      return $t('todos.priority.high');
-    case 'URGENT':
-      return $t('todos.priority.urgent');
-    default:
-      return $t('todos.priority.low');
-  }
-};
-
 // menu
-let showMenu = $state(false);
+let showMenu = $derived.by(
+  () => menuStore.getMenuSerialNum() === todo.serialNum,
+);
 
 const toggleMenu = () => {
   isRotatingAdd = true;
-  showMenu = !showMenu;
+
+  menuStore.setMenuSerialNum(
+    menuStore.getMenuSerialNum() === todo.serialNum ? '' : todo.serialNum,
+  );
 
   setTimeout(() => {
     isRotatingAdd = false;
@@ -79,30 +82,11 @@ const toggleMenu = () => {
 
 <div
   class="p-4 bg-white rounded-2xl border border-gray-200 flex flex-col h-18 mb-1 relative">
-<!-- 优先级标签 -->
 {#if todo.priority}
-<div class="absolute left-1 top-1 w-4 h-4 rounded-full flex items-center justify-center text-xs font-medium
-  transition-all duration-300 hover:scale-110
-  bg-opacity-80 backdrop-blur-sm
-  [border:2px_solid_transparent] [border-image:linear-gradient(45deg,var(--priority-gradient))] [border-image-slice:1]
-  shadow-[0_0_12px_rgba(0,0,0,0.1)] dark:shadow-[0_0_12px_rgba(255,255,255,0.1)]
-"
-  class:bg-gradient-to-br={
-    todo.priority === 'Low'
-      ? 'from-green-200 to-emerald-100'
-      : todo.priority === 'Medium'
-        ? 'from-yellow-200 to-amber-100'
-        : todo.priority === 'High'
-          ? 'from-red-200 to-rose-100'
-          : 'from-red-300 to-rose-200'
-  }
-  class:text-green-800={todo.priority === 'Low'}
-  class:text-yellow-800={todo.priority === 'Medium'}
-  class:text-red-800={todo.priority === 'High'}
-  class:text-red-900={todo.priority === 'Urgent'}
-  >
-  {priorityChar(todo.priority)}
-</div>
+    <PriorityBadge
+      serialNum={todo.serialNum}
+      bind:priority={todo.priority}
+      onChangePriority={()=>onChangePriority(todo.serialNum, todo.priority)}/>
 {/if}
   <!-- 上半部分：主内容 -->
   <div class="flex items-center justify-between flex-1">
@@ -186,30 +170,69 @@ const toggleMenu = () => {
   {/if}
 
 {#if showMenu}
-  <div
-    class="absolute z-10 mt-2 w-48 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800
-      divide-y divide-gray-100 dark:divide-gray-700 py-1
-      transition-opacity duration-200 opacity-100
-      [transform:translateY(-2px)]"
-    style:left="calc(100% + 8px)"
-      style:top= {0}
-  >
+<div
+  class="absolute z-20 mt-3 w-14 rounded-2xl shadow-xl
+         border border-gray-300/70 dark:border-gray-700/70
+         bg-gradient-to-b from-white to-gray-50 dark:from-gray-950 dark:to-gray-900
+         p-2 transition-all duration-300 ease-out opacity-100
+         [transform:translateY(-4px)]"
+  style:left="calc(100% + 6px)"
+  style:top={0}
+>
+  <div class="flex flex-col gap-1.5">
     <button
-      class="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+      class="relative w-10 h-10 flex items-center justify-center text-gray-600 dark:text-gray-300
+             border border-gray-200/50 dark:border-gray-800/50
+             bg-white/80 dark:bg-gray-900/80
+             hover:bg-gradient-to-r hover:from-blue-100 hover:to-blue-200
+             dark:hover:from-blue-800/50 dark:hover:to-blue-900/50
+             hover:scale-110 hover:-translate-y-0.5
+             transition-all duration-200 ease-out
+             rounded-xl
+             shadow-sm hover:shadow-lg dark:shadow-gray-950
+             focus:ring-2 focus:ring-blue-400 focus:ring-opacity-50
+             mx-auto animate-fade-in-up animation-delay-100"
+      aria-label="Description"
+      title="Description"
     >
-      Add Description
+      <StickyNote class="w-6 h-6 group-hover:text-blue-600 dark:group-hover:text-blue-400" />
     </button>
     <button
-      class="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+      class="relative w-10 h-10 flex items-center justify-center text-gray-600 dark:text-gray-300
+             border border-gray-200/50 dark:border-gray-800/50
+             bg-white/80 dark:bg-gray-900/80
+             hover:bg-gradient-to-r hover:from-blue-100 hover:to-blue-200
+             dark:hover:from-blue-800/50 dark:hover:to-blue-900/50
+             hover:scale-110 hover:-translate-y-0.5
+             transition-all duration-200 ease-out
+             rounded-xl
+             shadow-sm hover:shadow-lg dark:shadow-gray-950
+             focus:ring-2 focus:ring-blue-400 focus:ring-opacity-50
+             mx-auto animate-fade-in-up animation-delay-200"
+      aria-label="Label"
+      title="Label"
     >
-      Add Label
+      <Tag class="w-6 h-6 group-hover:text-blue-600 dark:group-hover:text-blue-400" />
     </button>
     <button
-      class="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+      class="relative w-10 h-10 flex items-center justify-center text-gray-600 dark:text-gray-300
+             border border-gray-200/50 dark:border-gray-800/50
+             bg-white/80 dark:bg-gray-900/80
+             hover:bg-gradient-to-r hover:from-blue-100 hover:to-blue-200
+             dark:hover:from-blue-800/50 dark:hover:to-blue-900/50
+             hover:scale-110 hover:-translate-y-0.5
+             transition-all duration-200 ease-out
+             rounded-xl
+             shadow-sm hover:shadow-lg dark:shadow-gray-950
+             focus:ring-2 focus:ring-blue-400 focus:ring-opacity-50
+             mx-auto animate-fade-in-up animation-delay-300"
+      aria-label="Project"
+      title="Project"
     >
-      Add Project
+      <Folder class="w-6 h-6 group-hover:text-blue-600 dark:group-hover:text-blue-400" />
     </button>
   </div>
+</div>
 {/if}
 </div>
 
@@ -235,4 +258,9 @@ const toggleMenu = () => {
   button:hover > span {
     animation: spin 0.5s linear;
   }
+
+@keyframes pulse-subtle {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.1); opacity: 0.8; }
+}
 </style>

@@ -2,9 +2,9 @@
 <script lang="ts">
 import TodoInput from '@/components/features/todos/TodoInput.svelte';
 import TodoList from '@/components/features/todos/TodoList.svelte';
+import type { Priority } from '@/lib/schema/common';
 import type { Todo } from '@/lib/schema/todos';
 import {
-  getTodosRemainingTime,
   startGlobalTimer,
   stopGlobalTimer,
   todoStore,
@@ -34,8 +34,12 @@ const handleEdit = (serialNum: string, todo: Todo) => {
   todoStore.editTodo(serialNum, todo);
 };
 
+const handleChangePriority = (serialNum: string, priority: Priority) => {
+  todoStore.changePriority(serialNum, priority);
+};
+
 onMount(async () => {
-  todos = await getTodosRemainingTime();
+  todos = await todoStore.getTodosRemainingTime();
   startGlobalTimer();
 });
 
@@ -46,5 +50,5 @@ onDestroy(() => {
 
 <main class="max-w-xl mx-auto p-4">
   <TodoInput bind:newT handleAdd={handleAdd} />
-  <TodoList {todos} onToggle={handleToggle} onRemove={handleRemove} onEdit={handleEdit}/>
+  <TodoList {todos} onToggle={handleToggle} onRemove={handleRemove} onEdit={handleEdit} onChangePriority={handleChangePriority}/>
 </main>

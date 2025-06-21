@@ -4,7 +4,11 @@ import {
   getLocalISODateTimeWithOffset,
   getEndOfTodayISOWithOffset,
 } from '@/lib/utils/date';
-import { PrioritySchema, StatusSchema } from '@/lib/schema/common';
+import {
+  PrioritySchema,
+  StatusSchema,
+  type Priority,
+} from '@/lib/schema/common';
 import { uuid } from '@/lib/utils/uuid';
 import { SvelteMap } from 'svelte/reactivity';
 import { differenceInSeconds, format, intervalToDuration } from 'date-fns';
@@ -47,18 +51,18 @@ const createTodo = (title: string): Todo =>
     ...defaultTodo,
   }) as Todo;
 
-export const getTodos = () => todos;
+const getTodos = () => todos;
 
-export const getTodosRemainingTime = () => todosRemainingTime;
+const getTodosRemainingTime = () => todosRemainingTime;
 
-export const addTodo = (text: string) => {
+const addTodo = (text: string) => {
   if (!text.trim()) return;
   const newTodo = createTodo(text);
   todos.set(newTodo.serialNum, newTodo);
   updateTodoRemainingTime(newTodo);
 };
 
-export const toggleTodo = (serialNum: string) => {
+const toggleTodo = (serialNum: string) => {
   const todo = todos.get(serialNum);
   if (!todo) return;
 
@@ -72,23 +76,38 @@ export const toggleTodo = (serialNum: string) => {
       todo.status === StatusSchema.enum.Completed
         ? null
         : getLocalISODateTimeWithOffset(),
+    updatedAt: getLocalISODateTimeWithOffset(),
   };
 
   todos.set(serialNum, updatedTodo);
   updateTodoRemainingTime(updatedTodo);
 };
 
-export const removeTodo = (serialNum: string) => {
+const removeTodo = (serialNum: string) => {
   todos.delete(serialNum);
   todosRemainingTime.delete(serialNum);
 };
 
-export const editTodo = (serialNum: string, updatedTodo: Todo) => {
+const editTodo = (serialNum: string, updatedTodo: Todo) => {
   const todo = todos.get(serialNum);
   if (!todo) return;
   const newTodo = { ...todo, ...updatedTodo };
   todos.set(serialNum, newTodo);
   updateTodoRemainingTime(newTodo);
+};
+
+const changePriority = (serialNum: string, priority: Priority) => {
+  const todo = todos.get(serialNum);
+  if (!todo) return;
+  const newTodo = {
+    ...todo,
+    priority,
+    updatedAt: getLocalISODateTimeWithOffset(),
+  };
+  todos.set(serialNum, newTodo);
+  updateTodoRemainingTime(newTodo);
+  console.log('changePriority: ', todos);
+  console.log('changePriority todosRemainingTime: ', todosRemainingTime);
 };
 
 export const startGlobalTimer = () => {
@@ -141,5 +160,6 @@ export const todoStore = {
   toggleTodo,
   removeTodo,
   editTodo,
+  changePriority,
   getTodosRemainingTime,
 };

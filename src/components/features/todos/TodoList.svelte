@@ -9,6 +9,7 @@ let {
   onToggle = () => {},
   onRemove = () => {},
   onEdit = () => {},
+  onChangePriority = () => {},
 } = $props<import('@/types/todos').TodoListProps>();
 </script>
 
@@ -22,6 +23,7 @@ let {
         onToggle={() => onToggle(todo.serialNum.toString())}
         onRemove={() => onRemove(todo.serialNum.toString())}
         onEdit={() => onEdit()}
+        onChangePriority={onChangePriority}
       />
     </div>
   {/each}
