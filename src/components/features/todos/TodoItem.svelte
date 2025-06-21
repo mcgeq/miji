@@ -63,6 +63,18 @@ const priorityChar = (priority: string) => {
       return $t('todos.priority.low');
   }
 };
+
+// menu
+let showMenu = $state(false);
+
+const toggleMenu = () => {
+  isRotatingAdd = true;
+  showMenu = !showMenu;
+
+  setTimeout(() => {
+    isRotatingAdd = false;
+  }, 500);
+};
 </script>
 
 <div
@@ -136,6 +148,7 @@ const priorityChar = (priority: string) => {
       <button
         type="button"
         aria-label="Add task"
+        onclick={toggleMenu}
         class="transition
          text-blue-500
          hover:text-blue-700
@@ -171,6 +184,33 @@ const priorityChar = (priority: string) => {
       {todo.remainingTime}
     </div>
   {/if}
+
+{#if showMenu}
+  <div
+    class="absolute z-10 mt-2 w-48 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800
+      divide-y divide-gray-100 dark:divide-gray-700 py-1
+      transition-opacity duration-200 opacity-100
+      [transform:translateY(-2px)]"
+    style:left="calc(100% + 8px)"
+      style:top= {0}
+  >
+    <button
+      class="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+    >
+      Add Description
+    </button>
+    <button
+      class="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+    >
+      Add Label
+    </button>
+    <button
+      class="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+    >
+      Add Project
+    </button>
+  </div>
+{/if}
 </div>
 
 
