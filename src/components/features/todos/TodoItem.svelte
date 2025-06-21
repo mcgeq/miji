@@ -4,6 +4,7 @@ import { StatusSchema } from '@/lib/schema/common';
 import type { TodoRemain } from '@/lib/schema/todos';
 import { escapeHTML } from '@/lib/utils/sanitize';
 import { CheckCircle, Circle, Pencil, Plus, Trash2 } from '@lucide/svelte';
+import { t } from 'svelte-i18n';
 
 let {
   todo = $bindable({} as TodoRemain),
@@ -53,13 +54,13 @@ function handleRotate(button: 'add' | 'edit' | 'remove', callback: () => void) {
 const priorityChar = (priority: string) => {
   switch (priority.toUpperCase()) {
     case 'MEDIUM':
-      return 'M';
+      return $t('todos.priority.medium');
     case 'HIGH':
-      return 'H';
+      return $t('todos.priority.high');
     case 'URGENT':
-      return 'U';
+      return $t('todos.priority.urgent');
     default:
-      return 'L';
+      return $t('todos.priority.low');
   }
 };
 </script>
@@ -68,19 +69,28 @@ const priorityChar = (priority: string) => {
   class="p-4 bg-white rounded-2xl border border-gray-200 flex flex-col h-18 mb-1 relative">
 <!-- 优先级标签 -->
 {#if todo.priority}
-  <!-- 映射关系：Low → L / Medium → M / High → H / Urgent → U -->
-  <div class="absolute left-0 top-0 w-4 h-4 rounded-full flex items-center justify-center text-xs font-medium
-    transition-all duration-300 hover:scale-110 hover:shadow-md"
-    class:bg-green-100={todo.priority === 'Low'}
-    class:bg-yellow-100={todo.priority === 'Medium'}
-    class:bg-red-100={todo.priority === 'High'}
-    class:bg-red-200={todo.priority === 'Urgent'}     class:text-green-800={todo.priority === 'Low'}
-    class:text-yellow-800={todo.priority === 'Medium'}
-    class:text-red-800={todo.priority === 'High'}
-    class:text-red-900={todo.priority === 'Urgent'}
+<div class="absolute left-1 top-1 w-4 h-4 rounded-full flex items-center justify-center text-xs font-medium
+  transition-all duration-300 hover:scale-110
+  bg-opacity-80 backdrop-blur-sm
+  [border:2px_solid_transparent] [border-image:linear-gradient(45deg,var(--priority-gradient))] [border-image-slice:1]
+  shadow-[0_0_12px_rgba(0,0,0,0.1)] dark:shadow-[0_0_12px_rgba(255,255,255,0.1)]
+"
+  class:bg-gradient-to-br={
+    todo.priority === 'Low'
+      ? 'from-green-200 to-emerald-100'
+      : todo.priority === 'Medium'
+        ? 'from-yellow-200 to-amber-100'
+        : todo.priority === 'High'
+          ? 'from-red-200 to-rose-100'
+          : 'from-red-300 to-rose-200'
+  }
+  class:text-green-800={todo.priority === 'Low'}
+  class:text-yellow-800={todo.priority === 'Medium'}
+  class:text-red-800={todo.priority === 'High'}
+  class:text-red-900={todo.priority === 'Urgent'}
   >
-    {priorityChar(todo.priority)}
-  </div>
+  {priorityChar(todo.priority)}
+</div>
 {/if}
   <!-- 上半部分：主内容 -->
   <div class="flex items-center justify-between flex-1">

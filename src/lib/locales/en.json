@@ -30,6 +30,12 @@
     "inputPlace": "Add a new task...",
     "dueAt": "Remainder",
     "expired": "Expired",
-    "completed": "Completed"
+    "completed": "Completed",
+    "priority": {
+      "low": "L",
+      "medium": "M",
+      "high": "H",
+      "urgent": "U"
+    }
   }
 }

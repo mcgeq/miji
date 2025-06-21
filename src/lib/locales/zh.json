@@ -30,6 +30,12 @@
     "inputPlace": "添加新任务...",
     "dueAt": "剩余",
     "expired": "过期",
-    "completed": "完成"
+    "completed": "完成",
+    "priority": {
+      "low": "低",
+      "medium": "中",
+      "high": "高",
+      "urgent": "急"
+    }
   }
 }
