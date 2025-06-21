@@ -11,7 +11,7 @@ import { differenceInSeconds, format, intervalToDuration } from 'date-fns';
 import { t } from 'svelte-i18n';
 import { get } from 'svelte/store';
 
-const REFRESH_INTERVAL_MS = 1 * 60 * 1000;
+const REFRESH_INTERVAL_MS = 5 * 60 * 1000;
 
 // 定义 store
 let todos = $state<SvelteMap<string, Todo>>(new SvelteMap());

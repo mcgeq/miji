@@ -23,20 +23,30 @@ let displayText = $derived.by(() => {
 let isRotatingAdd = $state(false);
 let isRotatingEdit = $state(false);
 let isRotatingRemove = $state(false);
-
 function handleRotate(button: 'add' | 'edit' | 'remove', callback: () => void) {
   if (completed) {
-    callback();
+    callback(); // 如果任务已完成，直接执行回调
     return;
   }
-  if (button === 'add') isRotatingAdd = true;
-  if (button === 'edit') isRotatingEdit = true;
-  if (button === 'remove') isRotatingRemove = true;
-  callback();
+
+  // 定义按钮类型与旋转状态的映射关系
+  const rotationMap = {
+    add: isRotatingAdd,
+    edit: isRotatingEdit,
+    remove: isRotatingRemove,
+  };
+
+  // 从映射中获取对应的状态变量
+  const key = button;
+
+  // 设置旋转状态为 true
+  (rotationMap[key] as boolean) = true;
+
+  callback(); // 执行操作（如编辑、添加、删除）
+
+  // 在动画结束后重置旋转状态
   setTimeout(() => {
-    if (button === 'add') isRotatingAdd = false;
-    if (button === 'edit') isRotatingEdit = false;
-    if (button === 'remove') isRotatingRemove = false;
+    (rotationMap[key] as boolean) = false;
   }, 500);
 }
 </script>
@@ -140,15 +150,11 @@ function handleRotate(button: 'add' | 'edit' | 'remove', callback: () => void) {
     display: inline-block;
   }
 
+  button[disabled] > span {
+    animation: none !important;
+  }
+
   button:hover > span {
     animation: spin 0.5s linear;
   }
-
-  button:not(:disabled):hover > span {
-    animation: spin 0.5s linear;
-  }
-
-button:disabled > span.rotating {
-  animation: none !important;
-}
 </style>
