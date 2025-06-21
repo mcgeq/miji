@@ -86,13 +86,13 @@ export const removeTodo = (serialNum: string) => {
 export const editTodo = (serialNum: string, updatedTodo: Todo) => {
   const todo = todos.get(serialNum);
   if (!todo) return;
-  todos.set(serialNum, { ...todo, ...updatedTodo });
+  const newTodo = { ...todo, ...updatedTodo };
+  todos.set(serialNum, newTodo);
+  updateTodoRemainingTime(newTodo);
 };
 
 export const startGlobalTimer = () => {
   if (globalIntervalId) return;
-
-  console.log('startGlobalTimer.......');
   globalIntervalId = setInterval(() => {
     todos.forEach(updateTodoRemainingTime);
   }, REFRESH_INTERVAL_MS);
@@ -100,7 +100,6 @@ export const startGlobalTimer = () => {
 
 export const stopGlobalTimer = () => {
   if (globalIntervalId) {
-    console.log('stopGlobalTimer...');
     clearInterval(globalIntervalId);
     globalIntervalId = null;
   }

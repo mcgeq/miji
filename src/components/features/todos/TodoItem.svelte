@@ -49,10 +49,39 @@ function handleRotate(button: 'add' | 'edit' | 'remove', callback: () => void) {
     (rotationMap[key] as boolean) = false;
   }, 500);
 }
+
+const priorityChar = (priority: string) => {
+  switch (priority.toUpperCase()) {
+    case 'MEDIUM':
+      return 'M';
+    case 'HIGH':
+      return 'H';
+    case 'URGENT':
+      return 'U';
+    default:
+      return 'L';
+  }
+};
 </script>
 
 <div
   class="p-4 bg-white rounded-2xl border border-gray-200 flex flex-col h-18 mb-1 relative">
+<!-- 优先级标签 -->
+{#if todo.priority}
+  <!-- 映射关系：Low → L / Medium → M / High → H / Urgent → U -->
+  <div class="absolute left-0 top-0 w-4 h-4 rounded-full flex items-center justify-center text-xs font-medium
+    transition-all duration-300 hover:scale-110 hover:shadow-md"
+    class:bg-green-100={todo.priority === 'Low'}
+    class:bg-yellow-100={todo.priority === 'Medium'}
+    class:bg-red-100={todo.priority === 'High'}
+    class:bg-red-200={todo.priority === 'Urgent'}     class:text-green-800={todo.priority === 'Low'}
+    class:text-yellow-800={todo.priority === 'Medium'}
+    class:text-red-800={todo.priority === 'High'}
+    class:text-red-900={todo.priority === 'Urgent'}
+  >
+    {priorityChar(todo.priority)}
+  </div>
+{/if}
   <!-- 上半部分：主内容 -->
   <div class="flex items-center justify-between flex-1">
     <div class="flex items-center gap-2">
@@ -97,13 +126,12 @@ function handleRotate(button: 'add' | 'edit' | 'remove', callback: () => void) {
       <button
         type="button"
         aria-label="Add task"
-        disabled={completed}
         class="transition
          text-blue-500
          hover:text-blue-700
          disabled:(text-gray-300 cursor-not-allowed hover:text-gray-300)"
       >
-        <span class:rotating={isRotatingAdd && !completed}>
+        <span class:rotating={isRotatingAdd}>
           <Plus class="w-5 h-5" />
         </span>
         <span class="sr-only">Add</span>
