@@ -32,7 +32,7 @@
     <button
       v-for="p in priorities"
       :key="p"
-      @click="selectPriority(p)"
+      @click="selectPriority(serialNum, p)"
       :class="[
         'block w-full px-2.5 py-1 text-[13px] font-medium tracking-wide rounded-md transition-colors duration-150 ease-in-out',
         'hover:bg-gray-100 dark:hover:bg-neutral-700 active:scale-[0.98]',
@@ -51,11 +51,15 @@ import { Priority, PrioritySchema } from '@/schema/common';
 
 const priorities: Priority[] = PrioritySchema.options;
 
+const emit = defineEmits<{
+  (e: 'changePriority', serialNum: string, priority: Priority): void;
+}>();
+
 const props = defineProps<{
-  serialNum: number | string;
+  serialNum: string;
   priority: Priority;
   completed: boolean;
-  onChangePriority: (serialNum: number | string, p: Priority) => void;
+  onChangePriority: (serialNum: string, p: Priority) => void;
 }>();
 
 const showMenu = ref(false);
@@ -95,9 +99,9 @@ const priorityClasses = computed(() => ({
   text: textColorMap[normalizedPriority.value],
 }));
 
-function selectPriority(p: Priority) {
+function selectPriority(serialNum: string, p: Priority) {
   showMenu.value = false;
-  props.onChangePriority(props.serialNum, p);
+  emit('changePriority', serialNum, p);
 }
 </script>
 

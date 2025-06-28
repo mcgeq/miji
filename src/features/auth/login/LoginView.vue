@@ -32,7 +32,8 @@
         <button
           type="submit"
           :disabled="isSubmitting"
-          class="w-full py-2 px-4 rounded-md bg-gradient-to-r from-blue-600 to-indigo-600 hover:brightness-110 text-white font-semibold shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          class="w-full py-2 px-4 rounded-md bg-gradient-to-r from-blue-600 to-indigo-600 hover:brightness-110 text-white font-semibold shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          style="color: white !important; background: linear-gradient(to right, #2563eb, #4f46e5);"
         >
           {{ isSubmitting ? $t('loggingIn') : $t('login') }}
         </button>

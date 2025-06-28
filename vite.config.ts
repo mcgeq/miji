@@ -7,7 +7,7 @@ const host = process.env.TAURI_DEV_HOST;
 
 // https://vitejs.dev/config/
 export default defineConfig(async () => ({
-  plugins: [Vue(), UnoCSS()],
+  plugins: [UnoCSS(), Vue()],
   resolve: {
     alias: {
       '@': resolve(__dirname, 'src'),

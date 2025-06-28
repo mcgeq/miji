@@ -11,7 +11,10 @@ import { transformerDirectives, transformerVariantGroup } from 'unocss';
 const iconDirectory = resolve(__dirname, 'icons');
 
 export default defineConfig({
-  shortcuts: [{ logo: 'i-logos-vue w-6em h-6em transform transition-800' }],
+  shortcuts: [
+    { logo: 'i-logos-vue w-6em h-6em transform transition-800' },
+    ['flex-juster-center', 'flex justify-center items-center'],
+  ],
   presets: [
     presetWind3(),
     presetAttributify(),

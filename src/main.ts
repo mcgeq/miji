@@ -1,6 +1,7 @@
 import { createApp } from 'vue';
 import App from './App.vue';
 import 'uno.css';
+import '@unocss/reset/tailwind.css';
 import 'virtual:unocss-devtools';
 import router from './router';
 import { initI18n } from './i18n/i18n';

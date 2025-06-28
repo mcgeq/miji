@@ -147,7 +147,6 @@ export async function register(
 
     return newUser;
   } catch (error) {
-    console.log(error);
     const authError = handleAuthError(error);
     Lg.e('Api Registration', authError);
     throw authError;

@@ -95,15 +95,11 @@ const onSubmit = handleSubmit(async (values) => {
         <button
           type="submit"
           :disabled="isSubmitting"
-          class="w-full py-2 px-4 rounded-md bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-sm
-          disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-all"
+          class="w-full py-2 px-4 rounded-md bg-gradient-to-r from-blue-600 to-indigo-600 hover:brightness-110 text-white font-semibold shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          style="color: white !important; background: linear-gradient(to right, #2563eb, #4f46e5);"
         >
           <template v-if="isSubmitting">
-            <svg class="animate-spin h-5 w-5 mr-2 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 00-8 8z"></path>
-            </svg>
-            {{ t('registering') }}
+           {{ t('registering') }}
           </template>
           <template v-else>
             {{ t('register') }}

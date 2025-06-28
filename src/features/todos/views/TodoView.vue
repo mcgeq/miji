@@ -6,7 +6,13 @@
       <!-- 切换按钮 -->
       <button
         v-if="showBtn"
-        class="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 flex items-center justify-center rounded-full bg-white text-blue-600 ring-1 ring-blue-300 hover:bg-blue-50 hover:text-blue-700 active:scale-95 shadow-md transition-all duration-300"
+        class="
+        absolute left-0 top-1/2 -translate-y-1/2 z-10
+        w-8 h-8 flex items-center justify-center
+        rounded-full bg-white text-blue-600 ring-1 ring-blue-300
+        hover:bg-blue-50 hover:text-blue-700 active:scale-95
+        shadow-md transition-all duration-300
+        "
         @click="toggleInput"
         aria-label="Toggle Input"
       >
@@ -17,12 +23,9 @@
       <Transition name="fade-slide">
         <div
           v-show="showInput"
-          class="overflow-hidden transition-all duration-500 ease-in-out"
-          :style="{ maxHeight: showInput ? '200px' : '0px', opacity: showInput ? 1 : 0 }"
+          class="pl-10"
         >
-          <div class="pl-10">
             <InputCommon v-model="newT" @add="handleAdd" />
-          </div>
         </div>
       </Transition>
 
@@ -30,16 +33,32 @@
       <Transition name="fade-slide">
         <div
           v-show="!showInput"
-          class="absolute top-0 left-0 right-0 flex justify-center items-center h-full bg-white dark:bg-gray-800 transition-opacity duration-300 ease-in-out"
+          class="
+            absolute top-0 left-0 right-0 flex justify-center items-center h-full
+            bg-white dark:bg-gray-800
+            transition-opacity duration-300 ease-in-out
+            "
         >
-          <div class="inline-flex gap-2 px-3 py-2 bg-white shadow-sm border border-gray-300 rounded-full dark:bg-gray-800 dark:border-gray-700 transition-all duration-300">
+          <div class="
+            inline-flex gap-2 px-3 py-2
+            bg-white shadow-sm border border-gray-300 rounded-full
+            dark:bg-gray-800 dark:border-gray-700
+            transition-all duration-300
+          ">
             <button
               v-for="item in filterButtons"
               :key="item.value"
               :data-active="filterBtn === item.value"
-              class="px-3 py-1 text-sm font-semibold rounded-full bg-gray-100 text-gray-700 hover:bg-blue-100 hover:text-blue-700 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-blue-800 dark:hover:text-white shadow-sm border border-transparent transition-all duration-300"
               :class="{ 'bg-blue-500 text-white': filterBtn === item.value }"
               @click="changeFilter(item.value)"
+              class="
+                px-3 py-1 text-sm font-semibold rounded-full
+                bg-gray-100 text-gray-700 hover:bg-blue-100 hover:text-blue-700
+                dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-blue-800 dark:hover:text-white
+                shadow-sm border border-transparent
+                transition-all duration-300
+                data-[active=true]:bg-blue-500 data-[active=true]:text-white
+              "
             >
               {{ item.label }}
             </button>
@@ -54,7 +73,6 @@
       @toggle="handleToggle"
       @remove="handleRemove"
       @edit="handleEdit"
-      @change-priority="handleChangePriority"
     />
 
     <!-- 分页器 -->
@@ -79,7 +97,7 @@ import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue';
 import { Plus, X } from 'lucide-vue-next';
 import { useI18n } from 'vue-i18n';
 import { useTodoStore } from '@/stores/todoStore';
-import { FilterBtn, FilterBtnSchema, Priority } from '@/schema/common';
+import { FilterBtn, FilterBtnSchema } from '@/schema/common';
 import { TodoRemain } from '@/schema/todos';
 import InputCommon from '@/components/common/InputCommon.vue';
 import Pagination from '@/components/common/Pagination.vue';
@@ -114,66 +132,64 @@ const filterButtons = [
   },
 ] as const;
 
-function toggleInput() {
+const toggleInput = () => {
   showInput.value = !showInput.value;
   filterBtn.value = FilterBtnSchema.enum.TODAY;
-}
+};
 
-function handleAdd(text: string) {
+const handleAdd = (text: string) => {
   if (text.trim()) {
     todoStore.addTodo(text);
     newT.value = '';
   }
-}
+};
 
-function handleToggle(id: string) {
-  todoStore.toggleTodo(id);
-}
+const handleToggle = (serialNum: string) => {
+  todoStore.toggleTodo(serialNum);
+};
 
-function handleRemove(id: string) {
-  todoStore.removeTodo(id);
-}
+const handleRemove = (serialNum: string) => {
+  todoStore.removeTodo(serialNum);
+};
 
-function handleEdit(id: string, todo: TodoRemain) {
-  todoStore.editTodo(id, todo);
-}
+const handleEdit = (serialNum: string, todo: TodoRemain) => {
+  todoStore.editTodo(serialNum, todo);
+};
 
-function handleChangePriority(id: string, priority: Priority) {
-  todoStore.changePriority(id, priority);
-}
-
-function handlePageJump(page: number) {
+const handlePageJump = (page: number) => {
   todoStore.setPage(page);
-}
+};
 
-function handlePageSizeChange(size: number) {
+const handlePageSizeChange = (size: number) => {
   todoStore.setPageSize(size);
-}
+};
 
-function handleNext() {
+const handleNext = () => {
   todoStore.nextPage();
-}
+};
 
-function handlePrev() {
+const handlePrev = () => {
   todoStore.prevPage();
-}
+};
 
-function handleFirst() {
+const handleFirst = () => {
   todoStore.setPage(1);
-}
+};
 
-function handleLast() {
+const handleLast = () => {
   todoStore.setPage(todoStore.totalPages);
-}
+};
 
-function changeFilter(value: FilterBtn) {
+const changeFilter = async (value: FilterBtn) => {
   filterBtn.value = value;
-  todoStore.setFilterBtn(value);
-}
+  await todoStore.setFilterBtn(value);
+};
 
 onMounted(async () => {
   await todoStore.reloadPage();
-  todoStore.setPage(1);
+  if (todoStore.totalPages) {
+    todoStore.setPage(1);
+  }
   todoStore.startGlobalTimer();
 });
 
@@ -184,16 +200,34 @@ onBeforeUnmount(() => {
 // Keep page and size synced with store
 watch(currentPage, (val) => todoStore.setPage(val));
 watch(pageSize, (val) => todoStore.setPageSize(val));
+watch(
+  () => todoStore.currentPage,
+  (val) => {
+    currentPage.value = val;
+  },
+);
+watch(currentPage, (val) => {
+  console.log('watch currentPage: ', val);
+  todoStore.setPage(val);
+});
 </script>
 
 <style scoped>
 .fade-slide-enter-active,
 .fade-slide-leave-active {
-  transition: all 0.5s ease;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  will-change: opacity, transform;
 }
+
 .fade-slide-enter-from,
 .fade-slide-leave-to {
   opacity: 0;
-  transform: translateY(-10px);
+  transform: scale(0.95) translateY(-6px);
+}
+
+.fade-slide-enter-to,
+.fade-slide-leave-from {
+  opacity: 1;
+  transform: scale(1) translateY(0);
 }
 </style>

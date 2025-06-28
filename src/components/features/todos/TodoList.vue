@@ -1,60 +1,53 @@
 <!-- src/components/TodoList.vue -->
 <script setup lang="ts">
-import { computed, toRaw } from 'vue';
+import { computed } from 'vue';
 import TodoItem from './TodoItem.vue';
-import { TodoRemain } from '@/schema/todos';
+import type { TodoRemain } from '@/schema/todos';
 
-// 定义 Props 类型
 const props = defineProps<{
   todos: Map<string, TodoRemain>;
 }>();
 
-// 定义事件
 const emit = defineEmits<{
   (e: 'toggle', serialNum: string): void;
   (e: 'remove', serialNum: string): void;
   (e: 'edit', serialNum: string, todo: TodoRemain): void;
-  (e: 'changePriority', ...args: any[]): void;
 }>();
 
-// 转成数组，便于遍历
-const todoList = computed(() => {
-  const rawTodos = toRaw(props.todos);
-  if (!(rawTodos instanceof Map)) {
-    console.warn('props.todos is not a Map!', rawTodos);
-    return [];
-  }
-  return Array.from(rawTodos.values());
-});
-// 示例动画钩子（Vue TransitionGroup 或其他动画方案）
+// 直接转换Map为数组用于渲染
+const todoList = computed(() => Array.from(props.todos.values()));
+
+// 更新 Map 中的某条 todo，响应式生效
+function updateTodo(updated: TodoRemain) {
+  props.todos.set(updated.serialNum, updated);
+  emit('edit', updated.serialNum, updated);
+}
 </script>
 
 <template>
   <div class="mt-4 bg-white rounded-lg shadow">
-    <transition-group name="slide-fade" tag="div">
       <TodoItem
         v-for="todo in todoList"
         :key="todo.serialNum"
-        :serialNum="todo.serialNum.toString()"
         :todo="todo"
-        @toggle="() => emit('toggle', todo.serialNum.toString())"
-        @remove="() => emit('remove', todo.serialNum.toString())"
+        @update:todo="updateTodo"
+        @toggle="() => emit('toggle', todo.serialNum)"
+        @remove="() => emit('remove', todo.serialNum)"
         @edit="() => emit('edit', todo.serialNum, todo)"
-        @changePriority="emit('changePriority', $event)"
       />
-    </transition-group>
   </div>
 </template>
 
 <style scoped>
-/* 简单实现 slide-fade 动画 */
 .slide-fade-enter-active,
 .slide-fade-leave-active {
-  transition: all 0.3s ease;
+  transition: opacity 0.5s ease, transform 0.5s ease;
+  will-change: opacity, transform;
 }
+
 .slide-fade-enter-from,
 .slide-fade-leave-to {
   opacity: 0;
-  transform: translateY(10px);
+  transform: translateX(-20px); /* 从左侧滑入/滑出 */
 }
 </style>

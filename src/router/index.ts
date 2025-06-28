@@ -1,3 +1,4 @@
+// router/index.ts
 import { createRouter, createWebHistory } from 'vue-router';
 import LoginView from '@/features/auth/login/LoginView.vue';
 import RegisterView from '@/features/auth/register/RegisterView.vue';
@@ -11,41 +12,38 @@ const routes = [
   { path: '/auth/register', component: RegisterView, name: 'Register' },
   { path: '/auth/login', component: LoginView, name: 'Login' },
   { path: '/todos', component: TodoView, name: 'Todos' },
-  { path: '/', redirect: '/auth/login' },
+  { path: '/', redirect: '/todos' },
 ];
 
 const protectedRoutes = ['/todos'];
-const publicRoutes = ['/auth/login', '/auth/register', '/'];
 
 const router = createRouter({
   history: createWebHistory(),
   routes,
 });
 
-// 路由守卫，基于 authStore.value.isAuth 同步判断
-
 router.beforeEach(async (to, _from, next) => {
   if (!i18nInstance) {
     return next();
   }
-
-  // 断言 global 为 Composer 类型
-  const globalComposer = i18nInstance.global as Composer;
-
-  // 断言 t 函数类型为 (key: string) => string
-  const t = globalComposer.t as (key: string) => string;
-
+  const t = (i18nInstance.global as Composer).t;
   const isAuth = await isAuthenticated();
 
-  if (!isAuth && protectedRoutes.some((path) => to.path.startsWith(path))) {
-    toast.info(t('errors.pleaseLogin'));
+  const isProtected = protectedRoutes.some((route) =>
+    to.path.startsWith(route),
+  );
+  const isAuthPage = ['/auth/login', '/auth/register'].includes(to.path);
+
+  if (!isAuth && isProtected) {
+    toast.warning(t('errors.pleaseLogin'));
     return next('/auth/login');
   }
 
-  if (isAuth && publicRoutes.includes(to.path)) {
+  if (isAuth && isAuthPage) {
     return next('/todos');
   }
 
-  next();
+  return next();
 });
+
 export default router;

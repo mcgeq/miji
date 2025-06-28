@@ -22,8 +22,23 @@ import { Lg } from '@/utils/debugLog';
 import { createRepeatPeriod, createWithDefaults } from '@/utils/zodFactory';
 import { todosDb } from '@/services/todos';
 import { todoStoreConst } from '@/constants/todoStore';
+import { useI18n } from 'vue-i18n';
+
+const customOrderBy = `
+  CASE WHEN status = '${StatusSchema.enum.Completed}' THEN 1 ELSE 0 END ASC,
+  CASE priority
+    WHEN '${PrioritySchema.enum.Urgent}' THEN 1
+    WHEN '${PrioritySchema.enum.High}' THEN 2
+    WHEN '${PrioritySchema.enum.Medium}' THEN 3
+    WHEN '${PrioritySchema.enum.Low}' THEN 4
+    ELSE 5
+  END ASC,
+  created_at ASC
+`;
 
 export const useTodoStore = defineStore('todo', () => {
+  // i18n
+  const { t } = useI18n();
   // ---------- state ----------
   const todos = reactive(new Map<string, Todo>());
   const todosWithRemaining = reactive(new Map<string, TodoRemain>());
@@ -177,37 +192,31 @@ export const useTodoStore = defineStore('todo', () => {
     todos.delete(serialNum);
     todosWithRemaining.delete(serialNum);
     const { remainingTime, ...uTodo } = updatedTodo;
-    await setTodo({ ...todo, ...uTodo });
-  };
-
-  const changePriority = async (serialNum: string, priority: Priority) => {
-    const todo = todos.get(serialNum);
-    if (!todo) return;
     await setTodo({
       ...todo,
-      priority,
+      ...uTodo,
       updatedAt: getLocalISODateTimeWithOffset(),
     });
   };
 
+  const formatCompletedTime = (completedAt: string | null | undefined) =>
+    `${t('todos.completed')}: ${format(new Date(completedAt ?? new Date()), 'yyyy-MM-dd HH:mm:ss')}`;
+
   const calculateRemainingTime = (todo: Todo): string => {
     if (todo.status === StatusSchema.enum.Completed) {
-      return `${'todos.completed'}: ${format(
-        new Date(todo.completedAt ?? new Date()),
-        'yyyy-MM-dd HH:mm:ss',
-      )}`;
+      return formatCompletedTime(todo.completedAt);
     }
     const now = new Date();
     const due = new Date(todo.dueAt);
     const diff = differenceInSeconds(due, now);
-    if (diff <= 0) return 'todos.expired';
+    if (diff <= 0) return t('todos.expired');
     const duration = intervalToDuration({ start: 0, end: diff * 1000 });
     if ((duration.days || 0) > 0) {
-      return `${'todos.dueAt'}: ${duration.days || 0}d ${duration.hours || 0}h ${
+      return `${t('todos.dueAt')}: ${duration.days || 0}d ${duration.hours || 0}h ${
         duration.minutes || 0
       }m`;
     }
-    return `${'todos.dueAt'}: ${duration.hours || 0}h ${duration.minutes || 0}m`;
+    return `${t('todos.dueAt')}: ${duration.hours || 0}h ${duration.minutes || 0}m`;
   };
 
   const updateTodoRemainingTime = (todo: Todo) => {
@@ -265,6 +274,10 @@ export const useTodoStore = defineStore('todo', () => {
 
     const pagedMap = new Map<string, TodoRemain>();
     for (const todo of slice) pagedMap.set(todo.serialNum, todo);
+    if (sortedTodos.value.length === 0) {
+      currentPage.value = 0;
+      totalPages.value = 0;
+    }
     return pagedMap;
   };
 
@@ -295,8 +308,14 @@ export const useTodoStore = defineStore('todo', () => {
 
   const setFilterBtn = async (filter: FilterBtn) => {
     filterBtn.value = filter;
-    currentPage.value = 1;
     await reloadPage();
+    if (todos.size === 0) {
+      totalPages.value = 0;
+      currentPage.value = 0;
+    } else {
+      totalPages.value = 1;
+      currentPage.value = 1;
+    }
   };
 
   const getTodayTodos = async (ownerId: string) => {
@@ -312,8 +331,7 @@ export const useTodoStore = defineStore('todo', () => {
         filters,
         currentPage.value,
         pageSize.value,
-        'status,priority,created_at',
-        'ASC',
+        { customOrderBy },
       );
     } catch (e) {
       Lg.e('todoStore', 'getTodayTodos', e);
@@ -331,8 +349,7 @@ export const useTodoStore = defineStore('todo', () => {
         filters,
         currentPage.value,
         pageSize.value,
-        'status,priority,created_at',
-        'ASC',
+        { customOrderBy },
       );
     } catch (e) {
       Lg.e('todoStore', 'getYesterdayTodos', e);
@@ -350,8 +367,7 @@ export const useTodoStore = defineStore('todo', () => {
         filters,
         currentPage.value,
         pageSize.value,
-        'status,priority,created_at',
-        'ASC',
+        { customOrderBy },
       );
     } catch (e) {
       Lg.e('todoStore', 'getTomorrowTodos', e);
@@ -373,7 +389,6 @@ export const useTodoStore = defineStore('todo', () => {
     toggleTodo,
     removeTodo,
     editTodo,
-    changePriority,
     getPagedTodos,
     nextPage,
     prevPage,

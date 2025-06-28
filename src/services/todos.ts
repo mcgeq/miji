@@ -1,6 +1,11 @@
 // src/lib/api/todos.ts
 import { getDb } from '../db';
-import type { DateRange, QueryFilters, Status } from '../schema/common';
+import type {
+  DateRange,
+  QueryFilters,
+  SortOptions,
+  Status,
+} from '../schema/common';
 import type { Todo } from '../schema/todos';
 import { toCamelCase, toSnakeCase } from '../utils/common';
 import { Lg } from '../utils/debugLog';
@@ -57,8 +62,7 @@ const listPaged = async (
   filters: QueryFilters = {},
   page = 1,
   pageSize = 5,
-  sortBy = 'created_at',
-  sortDir: 'ASC' | 'DESC' = 'ASC',
+  sortOptions: SortOptions = {},
 ): Promise<{ rows: Todo[]; totalCount: number }> => {
   const offset = (page - 1) * pageSize;
   const db = await getDb();
@@ -77,9 +81,16 @@ const listPaged = async (
 
   const whereClause =
     whereParts.length > 0 ? `WHERE ${whereParts.join(' AND ')}` : '';
+
+  const orderClause = sortOptions.customOrderBy
+    ? `ORDER BY ${sortOptions.customOrderBy}`
+    : sortOptions.sortBy
+      ? `ORDER BY ${sortOptions.sortBy} ${sortOptions.sortDir ?? 'ASC'}`
+      : '';
+
   // 查询当前页数据
   const rows = await db.select(
-    `SELECT * FROM todo ${whereClause} ORDER BY ${sortBy} ${sortDir} LIMIT ? OFFSET ?`,
+    `SELECT * FROM todo ${whereClause} ${orderClause} LIMIT ? OFFSET ?`,
     [...params, pageSize, offset],
   );
 

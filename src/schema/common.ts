@@ -155,3 +155,9 @@ export interface QueryFilters {
   completedAtRange?: DateRange;
   dueAtRange?: DateRange;
 }
+
+export type SortOptions = {
+  customOrderBy?: string; // 新增：完整排序 SQL
+  sortBy?: string;
+  sortDir?: 'ASC' | 'DESC';
+};

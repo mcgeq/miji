@@ -44,9 +44,6 @@ export async function loginUser(
       throw new Error('Generated token is invalid');
     }
   }
-  console.log('tokenResponse', authStore.value.tokenResponse);
-  console.log('user', authStore.value.user);
-  console.log('tokenExpiresAt', authStore.value.tokenExpiresAt);
   await authStore.$tauri.saveNow();
 }
 
