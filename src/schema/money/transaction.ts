@@ -1,0 +1,35 @@
+import { z } from 'zod/v4';
+import {
+  CategorySchema,
+  DateSchema,
+  DateTimeSchema,
+  SerialNumSchema,
+  SubCategorySchema,
+  TransactionStatusSchema,
+  TransactionTypeSchema,
+} from '../common';
+import { AccountTypeSchema, PaymentMethodSchema } from './money.e';
+import { TagsSchema } from '../tags';
+import { FamilyMemberSchema } from './family';
+
+export const TransactionSchema = z.object({
+  serialNum: SerialNumSchema,
+  transactionType: TransactionTypeSchema,
+  transactionStatus: TransactionStatusSchema,
+  date: DateSchema, // ISO date string (e.g., "2025-06-12")
+  amount: z.string(), // decimal as string, e.g., "1234.56"
+  currency: z.string(), // currency code (e.g., "USD", "CNY")
+  description: z.string().max(1000).optional(),
+  notes: z.string().optional().nullable(),
+  accountSerialNum: SerialNumSchema,
+  category: CategorySchema,
+  subCategory: SubCategorySchema.optional().nullable(),
+  tags: z.array(TagsSchema), // JSON value, recommend defining more strictly if needed
+  splitMembers: z.array(FamilyMemberSchema).optional(), // JSON value, can be array of { member: string, amount: string } etc.
+  paymentMethod: PaymentMethodSchema,
+  actualPayerAccount: AccountTypeSchema,
+  createdAt: DateTimeSchema,
+  updatedAt: DateTimeSchema.optional().nullable(),
+});
+
+export type Transaction = z.infer<typeof TransactionSchema>;

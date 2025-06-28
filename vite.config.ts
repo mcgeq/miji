@@ -1,4 +1,3 @@
-/// <reference types="vitest/config" />
 import { defineConfig } from 'vite';
 import Vue from '@vitejs/plugin-vue';
 import UnoCSS from 'unocss/vite';
@@ -8,10 +7,7 @@ const host = process.env.TAURI_DEV_HOST;
 
 // https://vitejs.dev/config/
 export default defineConfig(async () => ({
-  plugins: [
-    Vue(),
-    UnoCSS(),
-  ],
+  plugins: [Vue(), UnoCSS()],
   resolve: {
     alias: {
       '@': resolve(__dirname, 'src'),
@@ -28,10 +24,10 @@ export default defineConfig(async () => ({
     host: host || false,
     hmr: host
       ? {
-        protocol: 'ws',
-        host,
-        port: 9429,
-      }
+          protocol: 'ws',
+          host,
+          port: 9429,
+        }
       : undefined,
     watch: {
       // 3. tell vite to ignore watching `src-tauri`

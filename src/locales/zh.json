@@ -1,0 +1,55 @@
+{
+  "login": "登录",
+  "register": "注册",
+  "email": "邮箱",
+  "loading": "加载中",
+  "password": "密码",
+  "username": "用户名",
+  "rememberMe": "记住我",
+  "noAccount": "没有账号？",
+  "haveAccount": "已有账号？",
+  "loginSuccess": "登录成功！欢迎回来。",
+  "loginFailed": "登录失败，账号或密码不正确。",
+  "registerSuccess": "注册成功！欢迎加入。",
+  "registerFailed": "注册失败，可能是邮箱已被使用或信息填写有误。",
+  "loggingIn": "登录中...",
+  "registering": "注册中...",
+  "code": "验证码",
+  "errors": {
+    "initFailed": "初始化失败，请重试",
+    "pleaseLogin": "请先登录",
+    "localeSwitchFailed": "切换语言失败",
+    "localeSwitchSuccess": "语言切换成功",
+    "required": "请输入内容",
+    "email": "邮箱格式不正确",
+    "min": "至少输入 {min} 个字符",
+    "max": "最多输入 {max} 个字符",
+    "password": "密码要包含数字大小写字母和特殊字符"
+  },
+  "input": {
+    "inputPlace": "添加新任务...",
+    "btn": "添加"
+  },
+  "todos": {
+    "dueAt": "剩余",
+    "expired": "过期",
+    "completed": "完成",
+    "priority": {
+      "low": "低",
+      "medium": "中",
+      "high": "高",
+      "urgent": "急"
+    },
+    "filterBtn": {
+      "yesterday": "昨",
+      "today": "今",
+      "tomorrow": "明"
+    }
+  },
+  "pagination": {
+    "next": "下一页",
+    "previous": "上一页",
+    "home": "首页",
+    "last": "末页"
+  }
+}

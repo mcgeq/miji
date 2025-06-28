@@ -1,0 +1,17 @@
+import { z } from 'zod/v4';
+import {
+  DateTimeSchema,
+  DescriptionSchema,
+  NameSchema,
+  SerialNumSchema,
+} from './common';
+
+export const TagsSchema = z.object({
+  serialNum: SerialNumSchema,
+  name: NameSchema,
+  description: DescriptionSchema.nullable(),
+  createdAt: DateTimeSchema,
+  updatedAt: DateTimeSchema,
+});
+
+export type Tags = z.infer<typeof TagsSchema>;

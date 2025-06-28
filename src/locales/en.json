@@ -1,0 +1,55 @@
+{
+  "login": "Login",
+  "register": "Register",
+  "email": "Email",
+  "loading": "Loading...",
+  "password": "Password",
+  "username": "Username",
+  "rememberMe": "Remember Me",
+  "noAccount": "No account?",
+  "haveAccount": "Already have an account?",
+  "loginSuccess": "Login successful! Welcome back.",
+  "loginFailed": "Login failed. Incorrect username or password.",
+  "registerSuccess": "Registration successful! Welcome.",
+  "registerFailed": "Registration failed. The email may already be in use or the information is invalid.",
+  "loggingIn": "Logging in...",
+  "registering": "Registering...",
+  "code": "Verification Code",
+  "errors": {
+    "initFailed": "Initialization failed, please try again",
+    "pleaseLogin": "Please login first",
+    "required": "This field is required.",
+    "localeSwitchFailed": "Failed to switch language",
+    "localeSwitchSuccess": "Language switched successfully",
+    "email": "Invalid email format.",
+    "min": "Minimum {min} characters required.",
+    "max": "Maximum {max} characters allowed.",
+    "password": "Password must include uppercase and lowercase letters, numbers, and special characters."
+  },
+  "input": {
+    "inputPlace": "Add a new task...",
+    "btn": "Add"
+  },
+  "todos": {
+    "dueAt": "Remainder",
+    "expired": "Expired",
+    "completed": "Completed",
+    "priority": {
+      "low": "L",
+      "medium": "M",
+      "high": "H",
+      "urgent": "U"
+    },
+    "filterBtn": {
+      "yesterday": "Y",
+      "today": "T",
+      "tomorrow": "M"
+    }
+  },
+  "pagination": {
+    "next": "Next",
+    "prev": "Previous",
+    "home": "First",
+    "last": "Last"
+  }
+}
