@@ -1,0 +1,9 @@
+[package]
+name = "migration"
+version = "0.1.0"
+edition = "2024"
+description = "About Migration"
+
+
+[dependencies]
+tauri-plugin-sql = { workspace = true }

@@ -1,0 +1,46 @@
+{
+  "name": "miji",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "license": "MIT",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "tauri": "tauri",
+    "test": "vitest"
+  },
+  "dependencies": {
+    "@tauri-apps/api": "^2",
+    "@tauri-apps/plugin-autostart": "~2.5.0",
+    "@tauri-apps/plugin-dialog": "~2.3.0",
+    "@tauri-apps/plugin-fs": "~2.4.0",
+    "@tauri-apps/plugin-log": "~2.6.0",
+    "@tauri-apps/plugin-notification": "~2.3.0",
+    "@tauri-apps/plugin-opener": "^2.4.0",
+    "@tauri-apps/plugin-os": "~2.3.0",
+    "@tauri-apps/plugin-sql": "~2.3.0",
+    "@tauri-store/vue": "^0.3.0",
+    "@unocss/reset": "^66.3.2",
+    "date-fns": "^4.1.0",
+    "vue": "^3.5.17",
+    "zod": "^3.25.67"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2",
+    "@types/node": "^24.0.6",
+    "@unocss/core": "^66.3.2",
+    "@unocss/preset-attributify": "^66.3.2",
+    "@unocss/preset-icons": "^66.3.2",
+    "@unocss/preset-web-fonts": "^66.3.2",
+    "@unocss/preset-wind4": "^66.3.2",
+    "@vitejs/plugin-vue": "^6.0.0",
+    "npm-check-updates": "^18.0.1",
+    "typescript": "~5.8.3",
+    "unocss": "^66.3.2",
+    "vite": "^7.0.0",
+    "vitest": "^3.2.4",
+    "vue-tsc": "^2.2.10"
+  }
+}

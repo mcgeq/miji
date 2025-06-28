@@ -1,0 +1,77 @@
+[package]
+name = "miji"
+version = "0.1.0"
+description = "A modular, cross-platform productivity and health app built with Tauri and Rust."
+authors = ["mcgeq"]
+edition = "2024"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[workspace]
+members = ["migration", "common", "miji_derive"]
+
+[lib]
+# The `_lib` suffix may seem redundant but it is necessary
+# to make the lib name unique and wouldn't conflict with the bin name.
+# This seems to be only an issue on Windows, see https://github.com/rust-lang/cargo/issues/8519
+name = "miji_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[workspace.dependencies]
+base64 = "0.22.1"
+jsonwebtoken = "9.3.1"
+tauri = { version = "2", features = [] }
+tauri-plugin-dialog = "2"
+tauri-plugin-sql = { version = "2", features = ["sqlite"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+snafu = { version = "0.8.6", features = [
+  "backtrace",
+  "backtraces-impl-backtrace-crate",
+] }
+tokio = { version = "1.45.1", features = ["full", "tracing"] }
+chrono = { version = "0.4.41", features = ["serde"] }
+dotenvy = "0.15.7"
+darling = "0.20.11"
+futures = "0.3.31"
+tauri-plugin-log = { version = "2", features = ["colored"] }
+log = { version = "0.4.27", features = ["serde"] }
+argon2 = "0.5.3"
+syn = "2.0.104"
+quote = "1.0.40"
+proc-macro2 = "1.0.95"
+rand = { version = "0.9.1", features = ["serde"] }
+rust_decimal = { version = "1.37.2", features = ["macros"] }
+validator = { version = "0.20.0", features = ["derive"] }
+zeroize = { version = "1.8.1", features = ["serde", "zeroize_derive"] }
+common = { path = "./common" }
+miji_derive = { path = "./miji_derive" }
+
+[dependencies]
+tauri = { workspace = true }
+tauri-plugin-opener = "2"
+tauri-plugin-fs = "2"
+tauri-plugin-notification = "2"
+tauri-plugin-os = "2"
+tauri-plugin-dialog = { workspace = true }
+tauri-plugin-sql = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+log = { workspace = true }
+tauri-plugin-log = { workspace = true }
+migration = { path = "migration" }
+common = { workspace = true }
+tokio = { workspace = true }
+darling = { workspace = true }
+dotenvy.workspace = true
+tauri-plugin-svelte = "2.6.0"
+chrono = { workspace = true }
+tauri-plugin-vue = "0.3.0"
+
+
+[target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
+tauri-plugin-autostart = "2"
+tauri-plugin-single-instance = "2"
