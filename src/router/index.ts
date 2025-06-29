@@ -9,10 +9,22 @@ import { i18nInstance } from '@/i18n/i18n';
 import type { Composer } from 'vue-i18n';
 
 const routes = [
-  { path: '/auth/register', component: RegisterView, name: 'Register' },
-  { path: '/auth/login', component: LoginView, name: 'Login' },
-  { path: '/todos', component: TodoView, name: 'Todos' },
-  { path: '/', redirect: '/todos' },
+  {
+    path: '/auth',
+    children: [
+      { path: 'register', component: RegisterView, name: 'Register' },
+      { path: 'login', component: LoginView, name: 'Login' },
+    ],
+  },
+  {
+    path: '/todos',
+    component: TodoView,
+    name: 'Todos',
+  },
+  {
+    path: '/',
+    redirect: '/todos',
+  },
 ];
 
 const protectedRoutes = ['/todos'];
