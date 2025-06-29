@@ -161,3 +161,8 @@ export type SortOptions = {
   sortBy?: string;
   sortDir?: 'ASC' | 'DESC';
 };
+
+export type UsageDetail = {
+  count: number;
+  serialNums: string[];
+};

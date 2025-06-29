@@ -44,6 +44,10 @@
       "yesterday": "昨",
       "today": "今",
       "tomorrow": "明"
+    },
+    "desc": {
+      "save": "保存",
+      "edit": "编辑"
     }
   },
   "pagination": {

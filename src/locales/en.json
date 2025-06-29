@@ -44,6 +44,10 @@
       "yesterday": "Y",
       "today": "T",
       "tomorrow": "M"
+    },
+    "desc": {
+      "save": "Save",
+      "edit": "Edit"
     }
   },
   "pagination": {

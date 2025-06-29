@@ -76,6 +76,7 @@
                 class="icon-btn animate-fade-in-up"
                 aria-label="Description"
                 title="Description"
+                @click="openPopup('description')"
               >
                 <StickyNote class="w-5 h-5 group-hover:text-blue-600 dark:group-hover:text-blue-400" />
               </button>
@@ -83,7 +84,7 @@
                 class="icon-btn animate-fade-in-up"
                 aria-label="Label"
                 title="Label"
-                @click="openTagsPopup"
+                @click="openPopup('tags')"
               >
                 <Tag class="w-5 h-5 group-hover:text-blue-600 dark:group-hover:text-blue-400" />
               </button>
@@ -91,6 +92,7 @@
                 class="icon-btn animate-fade-in-up"
                 aria-label="Project"
                 title="Project"
+                @click="openPopup('projects')"
               >
                 <Folder class="w-5 h-5 group-hover:text-blue-600 dark:group-hover:text-blue-400" />
               </button>
@@ -240,9 +242,16 @@
   </transition>
   </div>
 
-  <PopupWrapper v-if="showTagsPopup" @close="showTagsPopup = false">
+  <PopupWrapper v-if="currentPopup === 'description'" @close="currentPopup = ''">
+    <Descriptions v-model="todo.description" @close="currentPopup = ''"/>
+  </PopupWrapper>
+  <PopupWrapper v-if="currentPopup === 'tags'" @close="currentPopup = ''">
     <TagsView />
   </PopupWrapper>
+  <PopupWrapper v-if="currentPopup === 'projects'" @close="currentPopup = ''">
+    <ProjectsView />
+  </PopupWrapper>
+
 </template>
 
 <script setup lang="ts">
@@ -266,6 +275,8 @@ import { Priority } from '@/schema/common';
 import { parseToISO } from '@/utils/date';
 import PopupWrapper from '@/components/common/PopupWrapper.vue';
 import TagsView from '@/features/tags/views/TagsView.vue';
+import ProjectsView from '@/features/projects/views/ProjectsView.vue';
+import Descriptions from '@/components/common/Descriptions.vue';
 
 const props = defineProps<{
   todo: TodoRemain;
@@ -273,7 +284,8 @@ const props = defineProps<{
   onRemove: () => void;
   onEdit: () => void;
 }>();
-const showTagsPopup = ref(false);
+
+const currentPopup = ref<string>('');
 const emit = defineEmits(['update:todo', 'toggle', 'remove', 'edit']);
 
 const menuStore = useMenuStore();
@@ -420,9 +432,17 @@ function openDueDateModal() {
   showEditOptions.value = false;
 }
 
-function openTagsPopup() {
-  showTagsPopup.value = true;
+function openPopup(type: string) {
+  currentPopup.value = type;
 }
+
+watch(
+  () => todo.value.description,
+  (newDesc) => {
+    const updated = { ...todo.value, description: newDesc };
+    updateTodo(updated);
+  },
+);
 </script>
 
 <style scoped>

@@ -5,6 +5,7 @@ import {
   DescriptionSchema,
   NameSchema,
   SerialNumSchema,
+  UsageDetail,
 } from '../common';
 
 export const ProjectSchema = z.object({
@@ -21,3 +22,8 @@ export const ProjectSchema = z.object({
 });
 
 export type Projects = z.infer<typeof ProjectSchema>;
+export type ProjectWithUsageStats = Projects & {
+  usage: {
+    todos: UsageDetail;
+  };
+};

@@ -5,17 +5,17 @@
     <div
       class="absolute -top-2 -left-2 w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs font-bold"
     >
-      {{ 8 }}
+      {{ totalUsageCount }}
     </div>
 
     <div class="mb-0">
       <input
-        :value="modelValue?.name"
-        @input="onNameInput"
+        :value="modelValue[keyToEdit]"
+        @input="onInput"
         class="w-20 px-3 py-2 border border-gray-300 rounded-md text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 placeholder-gray-400"
         :readonly="readonly"
-        placeholder="标签"
-        :title="modelValue?.name"
+        :placeholder="String(keyToEdit)"
+        :title="String(modelValue[keyToEdit])"
       />
     </div>
 
@@ -28,31 +28,45 @@
   </div>
 </template>
 
-<script setup lang="ts">
-import { Tags } from '@/schema/tags';
+<script lang="ts" setup generic="T extends { [key: string]: unknown }">
 import { X } from 'lucide-vue-next';
 import { computed } from 'vue';
 
 const props = defineProps<{
-  modelValue: Tags;
+  modelValue: T;
   readonly?: boolean;
+  displayKey?: keyof T;
 }>();
 
 const emit = defineEmits<{
-  (e: 'update:modelValue', val: Tags): void;
+  (e: 'update:modelValue', val: T): void;
   (e: 'remove'): void;
 }>();
 
 const modelValue = computed({
   get: () => props.modelValue,
-  set: (val: Tags) => emit('update:modelValue', val),
+  set: (val: T) => emit('update:modelValue', val),
 });
 
-const onNameInput = (event: Event) => {
-  const newName = (event.target as HTMLInputElement).value;
+const keyToEdit = computed(() => props.displayKey ?? ('name' as keyof T));
+
+const totalUsageCount = computed(() => {
+  const usage = modelValue.value['usage'];
+
+  if (!usage || typeof usage !== 'object') return 0;
+
+  return Object.values(usage).reduce((sum, entry) => {
+    const count =
+      typeof entry === 'object' && 'count' in entry ? Number(entry.count) : 0;
+    return sum + (isNaN(count) ? 0 : count);
+  }, 0);
+});
+
+const onInput = (event: Event) => {
+  const newValue = (event.target as HTMLInputElement).value;
   modelValue.value = {
     ...modelValue.value,
-    name: newName,
+    [keyToEdit.value]: newValue,
   };
 };
 </script>

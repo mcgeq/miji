@@ -23,7 +23,6 @@ onMounted(async () => {
     }
   } catch (error) {
     toast.error(t('errors.initFailed'));
-    console.error('初始化登录状态失败:', error);
   } finally {
     isLoading.value = false;
   }

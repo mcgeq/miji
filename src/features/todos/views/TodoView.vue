@@ -206,7 +206,6 @@ watch(
   },
 );
 watch(currentPage, (val) => {
-  console.log('watch currentPage: ', val);
   todoStore.setPage(val);
 });
 </script>

@@ -5,14 +5,14 @@
 // File:           projects.ts
 // Description:    About Projects Db
 // Create   Date:  2025-06-23 23:35:48
-// Last Modified:  2025-06-23 23:40:33
+// Last Modified:  2025-06-29 16:25:08
 // Modified   By:  mcgeq <mcgeq@outlook.com>
 // -----------------------------------------------------------------------------
 
-import { getDb } from '../db';
-import type { Projects } from '../schema/todos';
-import { toCamelCase, toSnakeCase } from '../utils/common';
-import { Lg } from '../utils/debugLog';
+import { getDb } from '@/db';
+import { Projects } from '@/schema/todos';
+import { toCamelCase, toSnakeCase } from '@/utils/common';
+import { Lg } from '@/utils/debugLog';
 
 type UpdatableFields = Partial<Record<keyof Projects, string | boolean | null>>;
 

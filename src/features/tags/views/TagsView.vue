@@ -1,84 +1,61 @@
 <template>
-  <div class="flex flex-wrap gap-3 p-4 bg-gray-100">
-    <TagItem
-      v-for="([key, tag]) in tagsArray"
-      :key="key"
-      :modelValue="tag"
-      :readonly="true"
-      @update:modelValue="val => updateTag(key, val)"
-      @remove="onRemove(key)"
-    />
-  </div>
+  <GenericViewItem
+    :entities="tagsMap"
+    :component="GenericItem"
+    displayKey="name"
+    :readonly="true"
+    @update:entities="val => tagsMap = val"
+  />
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
-import { Tags } from '@/schema/tags';
-import TagItem from '../components/TagItem.vue';
+import { ref } from 'vue';
+import type { TagsWithUsageStats } from '@/schema/tags';
+import GenericViewItem from '@/components/common/GenericViewItem.vue';
+import GenericItem from '@/components/common/GenericItem.vue';
 
 const tagsMap = ref(
-  new Map<string, Tags>([
+  new Map<string, TagsWithUsageStats>([
     [
       '001',
       {
         serialNum: '001',
-        name: 'Vue 3.4 标签1',
-        description: '标签说明1',
+        name: '标签一',
+        description: '说明一',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
+        usage: {
+          todos: {
+            count: 1,
+            serialNums: ['ssss'],
+          },
+          projects: {
+            count: 2,
+            serialNums: ['ssss', 'dhjddg'],
+          },
+        },
       },
     ],
     [
       '002',
       {
         serialNum: '002',
-        name: 'Vue 3.4 标签2',
-        description: '标签说明2',
+        name: '标签二',
+        description: '说明二',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-      },
-    ],
-    [
-      '003',
-      {
-        serialNum: '002',
-        name: 'Vue 3.4 标签2',
-        description: '标签说明2',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
-    ],
-    [
-      '004',
-      {
-        serialNum: '002',
-        name: 'Vue 3.4 标签2',
-        description: '标签说明2',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
-    ],
-    [
-      '005',
-      {
-        serialNum: '002',
-        name: 'Vue 3.4 标签2',
-        description: '标签说明2',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+        usage: {
+          todos: {
+            count: 1,
+            serialNums: ['ssss'],
+          },
+          projects: {
+            count: 4,
+            serialNums: ['ssss', 'ssssdsdsfd', '1', '3'],
+          },
+        },
       },
     ],
   ]),
 );
-
-const tagsArray = computed(() => Array.from(tagsMap.value.entries()));
-
-function onRemove(key: string) {
-  console.log('标签被移除，key:', key);
-  tagsMap.value.delete(key);
-}
-
-function updateTag(key: string, updated: Tags) {
-  tagsMap.value.set(key, updated);
-}
 </script>

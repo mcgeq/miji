@@ -4,6 +4,7 @@ import {
   DescriptionSchema,
   NameSchema,
   SerialNumSchema,
+  UsageDetail,
 } from './common';
 
 export const TagsSchema = z.object({
@@ -15,3 +16,9 @@ export const TagsSchema = z.object({
 });
 
 export type Tags = z.infer<typeof TagsSchema>;
+export type TagsWithUsageStats = Tags & {
+  usage: {
+    todos: UsageDetail;
+    projects: UsageDetail;
+  };
+};

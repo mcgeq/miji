@@ -5,14 +5,14 @@
 // File:           tags.ts
 // Description:    About Tags Db
 // Create   Date:  2025-06-23 23:35:34
-// Last Modified:  2025-06-23 23:40:09
+// Last Modified:  2025-06-29 16:24:11
 // Modified   By:  mcgeq <mcgeq@outlook.com>
 // -----------------------------------------------------------------------------
 
-import { getDb } from '../db';
-import type { Tags } from '../schema/tags';
-import { toCamelCase, toSnakeCase } from '../utils/common';
-import { Lg } from '../utils/debugLog';
+import { getDb } from '@/db';
+import { Tags } from '@/schema/tags';
+import { toCamelCase, toSnakeCase } from '@/utils/common';
+import { Lg } from '@/utils/debugLog';
 
 type UpdatableFields = Partial<Record<keyof Tags, string | null>>;
 
