@@ -241,8 +241,6 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
-
 import PriorityBadge from '@/components/common/PriorityBadge.vue';
 import { TodoRemain } from '@/schema/todos';
 
@@ -260,7 +258,6 @@ import {
   Folder,
 } from 'lucide-vue-next';
 import { Priority } from '@/schema/common';
-import { useMenuStore } from '@/stores/menuStore';
 import { parseToISO } from '@/utils/date';
 
 const props = defineProps<{

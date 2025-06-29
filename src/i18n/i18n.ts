@@ -2,7 +2,6 @@
 
 import { createI18n } from 'vue-i18n';
 import { getCurrentLocale, updateLocale } from '../stores/locales';
-import { Ref } from 'vue';
 import { toast } from '@/utils/toast';
 
 let i18nInstance: ReturnType<typeof createI18n> | null = null;

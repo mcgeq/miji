@@ -27,7 +27,6 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, PropType, ref, watch } from 'vue';
 import { Plus } from 'lucide-vue-next';
 import { useI18n } from 'vue-i18n';
 

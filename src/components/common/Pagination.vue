@@ -92,7 +92,6 @@ import {
   ChevronsLeft,
   ChevronsRight,
 } from 'lucide-vue-next';
-import { defineComponent, ref, watch, PropType, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 export default defineComponent({

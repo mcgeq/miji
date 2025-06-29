@@ -1,9 +1,7 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { toast } from '@/utils/toast';
-import { isAuthenticated } from '@/stores/auth';
 import { checkAndCleanSession } from './services/auth';
 
 const isLoading = ref(true);

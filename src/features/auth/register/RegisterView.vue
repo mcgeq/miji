@@ -1,43 +1,3 @@
-<script lang="ts" setup>
-import { ref } from 'vue';
-import { useRouter } from 'vue-router';
-import { useForm, useField } from 'vee-validate';
-import { toTypedSchema } from '@vee-validate/zod';
-import { useI18n } from 'vue-i18n';
-import { Lg } from '@/utils/debugLog';
-import { register } from '@/services/auth';
-import { toast } from '@/utils/toast';
-import { RegisterSchema } from '@/schema/auth';
-
-const router = useRouter();
-const { t } = useI18n();
-
-const rememberMe = ref(false);
-const success = ref(false);
-
-const validationSchema = toTypedSchema(RegisterSchema);
-
-const { handleSubmit, errors, isSubmitting } = useForm({
-  validationSchema,
-});
-
-const { value: username } = useField('username');
-const { value: email } = useField('email');
-const { value: password } = useField('password');
-const { value: code } = useField('code');
-
-const onSubmit = handleSubmit(async (values) => {
-  try {
-    await register(values, rememberMe.value);
-    success.value = true;
-    router.push('/todos');
-  } catch (e) {
-    toast.error(t('registerFailed'));
-    Lg.e('register', e, 'error');
-  }
-});
-</script>
-
 <template>
   <div class="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900 px-4">
     <div
@@ -120,6 +80,45 @@ const onSubmit = handleSubmit(async (values) => {
     </div>
   </div>
 </template>
+
+<script lang="ts" setup>
+import { useRouter } from 'vue-router';
+import { useForm, useField } from 'vee-validate';
+import { toTypedSchema } from '@vee-validate/zod';
+import { useI18n } from 'vue-i18n';
+import { Lg } from '@/utils/debugLog';
+import { register } from '@/services/auth';
+import { toast } from '@/utils/toast';
+import { RegisterSchema } from '@/schema/auth';
+
+const router = useRouter();
+const { t } = useI18n();
+
+const rememberMe = ref(false);
+const success = ref(false);
+
+const validationSchema = toTypedSchema(RegisterSchema);
+
+const { handleSubmit, errors, isSubmitting } = useForm({
+  validationSchema,
+});
+
+const { value: username } = useField('username');
+const { value: email } = useField('email');
+const { value: password } = useField('password');
+const { value: code } = useField('code');
+
+const onSubmit = handleSubmit(async (values) => {
+  try {
+    await register(values, rememberMe.value);
+    success.value = true;
+    router.push('/todos');
+  } catch (e) {
+    toast.error(t('registerFailed'));
+    Lg.e('register', e, 'error');
+  }
+});
+</script>
 
 <style scoped>
 .input {

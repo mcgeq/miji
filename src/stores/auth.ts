@@ -19,15 +19,15 @@ export const authStore = createStore<AuthState>('auth', {
   rememberMe: false,
 });
 
-export function getCurrentUser(): AuthUser | null {
+export const getCurrentUser = (): AuthUser | null => {
   return authStore.value.user;
-}
+};
 
-export async function loginUser(
+export const loginUser = async (
   user: User,
   tokenResponse?: TokenResponse,
   rememberMe = false,
-) {
+) => {
   const authUser = toAuthUser(user);
   authStore.value.user = authUser;
   authStore.value.rememberMe = rememberMe;
@@ -45,16 +45,16 @@ export async function loginUser(
     }
   }
   await authStore.$tauri.saveNow();
-}
+};
 
-export async function logoutUser() {
+export const logoutUser = async () => {
   authStore.value.user = null;
   authStore.value.token = null;
   authStore.value.tokenExpiresAt = null;
   await authStore.$tauri.saveNow();
-}
+};
 
-export async function isAuthenticated(): Promise<boolean> {
+export const isAuthenticated = async (): Promise<boolean> => {
   const { user, token, tokenExpiresAt, rememberMe } = authStore.value;
   if (!user || !token) {
     return false;
@@ -83,4 +83,4 @@ export async function isAuthenticated(): Promise<boolean> {
   }
 
   return true;
-}
+};

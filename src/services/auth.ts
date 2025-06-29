@@ -2,7 +2,6 @@
 import { invoke } from '@tauri-apps/api/core';
 import type { Credentials, CredentialsLogin } from '@/types';
 import type { TokenResponse, User } from '@/schema/user';
-import { authStore, loginUser, logoutUser } from '@/stores/auth';
 import { getDb } from '../db';
 import { uuid } from '../utils/uuid';
 import { getLocalISODateTimeWithOffset } from '../utils/date';
@@ -164,9 +163,9 @@ export const checkPassword = async (password: string, pwdHash: string) => {
   });
 };
 
-export async function verifyToken(
+export const verifyToken = async (
   token: string,
-): Promise<'Valid' | 'Expired' | 'Invalid'> {
+): Promise<'Valid' | 'Expired' | 'Invalid'> => {
   try {
     const status = await invoke<string>('is_verify_token', { token });
     if (status === 'Valid' || status === 'Expired' || status === 'Invalid') {
@@ -177,19 +176,19 @@ export async function verifyToken(
     Lg.e('Api Token verification', error);
     return 'Invalid';
   }
-}
+};
 
-export async function maybeLogoutOnExit() {
+export const maybeLogoutOnExit = async () => {
   if (authStore.value.token && !authStore.value.rememberMe) {
     await logoutUser();
   }
-}
+};
 
-export async function checkAndCleanSession() {
+export const checkAndCleanSession = async () => {
   if (authStore.value.token && !authStore.value.rememberMe) {
     await logoutUser();
   }
-}
+};
 
 function createAuthError(
   message: string,

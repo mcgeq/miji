@@ -1,5 +1,4 @@
 import { createStore } from '@tauri-store/vue';
-import { ref, readonly, watchEffect } from 'vue';
 
 interface LocaleState {
   currentLocale: string | null;

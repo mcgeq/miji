@@ -3,7 +3,6 @@ import { createRouter, createWebHistory } from 'vue-router';
 import LoginView from '@/features/auth/login/LoginView.vue';
 import RegisterView from '@/features/auth/register/RegisterView.vue';
 import TodoView from '@/features/todos/views/TodoView.vue';
-import { isAuthenticated } from '@/stores/auth';
 import { toast } from '@/utils/toast';
 import { i18nInstance } from '@/i18n/i18n';
 import type { Composer } from 'vue-i18n';
