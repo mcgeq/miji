@@ -1,120 +1,85 @@
 <!-- src/components/TodoItem.vue -->
 <template>
   <div>
-  <div
-    class="p-4 bg-white rounded-2xl border border-gray-200 flex flex-col h-18 mb-2 relative"
-  >
-    <PriorityBadge
-      v-if="todo.priority"
-      :serialNum="todo.serialNum"
-      v-model:priority="todo.priority"
-      :completed="completed"
-      @changePriority="onChangePriorityHandler"
-    />
+    <div
+      class="p-4 bg-white rounded-2xl border border-gray-200 flex flex-col h-18 mb-2 relative"
+    >
+      <PriorityBadge
+        v-if="todo.priority"
+        :serialNum="todo.serialNum"
+        v-model:priority="todo.priority"
+        :completed="completed"
+        @changePriority="onChangePriorityHandler"
+      />
 
-    <!-- 主内容区 -->
-    <div class="flex items-center justify-between flex-1">
-      <div class="flex items-center gap-2">
-        <button
-          type="button"
-          class="flex items-center focus:outline-none"
-          :aria-pressed="completed"
-          :disabled="completed"
-          @click="onToggleHandler"
-        >
-          <CheckCircle v-if="completed" class="w-5 h-5 text-green-500" />
-          <Circle v-else class="w-5 h-5 text-gray-400" />
-        </button>
-
-        <span
-          class="text-left text-sm leading-snug line-clamp-1"
-          :class="{ 'text-gray-400': completed }"
-          :title="todo.title"
-          v-html="displayTextHtml"
-        />
-      </div>
-
-      <div class="flex items-center gap-3">
-        <!-- 编辑按钮 -->
-        <button
-          type="button"
-          :disabled="completed"
-          aria-label="Edit task"
-          class="transition text-gray-400 hover:text-blue-500 disabled:text-gray-300 disabled:cursor-not-allowed disabled:hover:text-gray-300"
-          @click="onEditClick"
-        >
-          <span :class="{ rotating: isRotatingEdit && !completed }">
-            <Pencil class="w-4 h-4" />
-          </span>
-          <span class="sr-only">Edit</span>
-        </button>
-
-        <!-- 添加菜单按钮 -->
-        <div class="relative">
+      <!-- 主内容区 -->
+      <div class="flex items-center justify-between flex-1">
+        <div class="flex items-center gap-2">
           <button
             type="button"
-            aria-label="Add task"
-            class="transition text-blue-500 hover:text-blue-700 disabled:text-gray-300 disabled:cursor-not-allowed disabled:hover:text-gray-300"
-            @click="toggleMenu"
+            class="flex items-center focus:outline-none"
+            :aria-pressed="completed"
+            :disabled="completed"
+            @click="onToggleHandler"
           >
-            <span :class="{ rotating: isRotatingAdd }">
-              <Plus class="w-5 h-5" />
-            </span>
-            <span class="sr-only">Add</span>
+            <CheckCircle v-if="completed" class="w-5 h-5 text-green-500" />
+            <Circle v-else class="w-5 h-5 text-gray-400" />
           </button>
 
-          <div
-            v-if="showMenu"
-            class="absolute z-20 mt-3 w-10 rounded-2xl shadow-xl border border-gray-300/70 dark:border-gray-700/70
-                   bg-gradient-to-b from-white to-gray-50 dark:from-gray-950 dark:to-gray-900
-                   p-1 transition-all duration-300 ease-out opacity-100
-                   [transform:translateY(-4px)]"
-            style="left: 50%; top: calc(100%)"
-          >
-            <div class="flex flex-col gap-1">
-              <button
-                class="icon-btn animate-fade-in-up"
-                aria-label="Description"
-                title="Description"
-                @click="openPopup('description')"
-              >
-                <StickyNote class="w-5 h-5 group-hover:text-blue-600 dark:group-hover:text-blue-400" />
-              </button>
-              <button
-                class="icon-btn animate-fade-in-up"
-                aria-label="Label"
-                title="Label"
-                @click="openPopup('tags')"
-              >
-                <Tag class="w-5 h-5 group-hover:text-blue-600 dark:group-hover:text-blue-400" />
-              </button>
-              <button
-                class="icon-btn animate-fade-in-up"
-                aria-label="Project"
-                title="Project"
-                @click="openPopup('projects')"
-              >
-                <Folder class="w-5 h-5 group-hover:text-blue-600 dark:group-hover:text-blue-400" />
-              </button>
-            </div>
-          </div>
+          <span
+            class="text-left text-sm leading-snug line-clamp-1"
+            :class="{ 'text-gray-400': completed }"
+            :title="todo.title"
+            v-html="displayTextHtml"
+          />
         </div>
 
-        <!-- 删除按钮 -->
-        <button
-          type="button"
-          :disabled="completed"
-          aria-label="Delete task"
-          class="transition text-red-400 hover:text-red-600 disabled:text-gray-300 disabled:cursor-not-allowed disabled:hover:text-gray-300"
-          @click="onRemoveClick"
-        >
-          <span :class="{ rotating: isRotatingRemove && !completed }">
-            <Trash2 class="w-5 h-5" />
-          </span>
-          <span class="sr-only">Delete</span>
-        </button>
+        <div class="flex items-center gap-3">
+          <!-- 编辑按钮 -->
+          <button
+            type="button"
+            :disabled="completed"
+            aria-label="Edit task"
+            class="transition text-gray-400 hover:text-blue-500 disabled:text-gray-300 disabled:cursor-not-allowed disabled:hover:text-gray-300"
+            @click="onEditClick"
+          >
+            <span :class="{ rotating: isRotatingEdit && !completed }">
+              <Pencil class="w-4 h-4" />
+            </span>
+            <span class="sr-only">Edit</span>
+          </button>
+
+          <!-- 添加菜单按钮 -->
+          <div class="relative">
+            <button
+              type="button"
+              aria-label="Add task"
+              class="transition text-blue-500 hover:text-blue-700 disabled:text-gray-300 disabled:cursor-not-allowed disabled:hover:text-gray-300"
+              @click="toggleMenu"
+            >
+              <span :class="{ rotating: isRotatingAdd }">
+                <Plus class="w-5 h-5" />
+              </span>
+              <span class="sr-only">Add</span>
+            </button>
+
+                      </div>
+
+          <!-- 删除按钮 -->
+          <button
+            type="button"
+            :disabled="completed"
+            aria-label="Delete task"
+            class="transition text-red-400 hover:text-red-600 disabled:text-gray-300 disabled:cursor-not-allowed disabled:hover:text-gray-300"
+            @click="onRemoveClick"
+          >
+            <span :class="{ rotating: isRotatingRemove && !completed }">
+              <Trash2 class="w-5 h-5" />
+            </span>
+            <span class="sr-only">Delete</span>
+          </button>
+        </div>
       </div>
-    </div>
 
     <!-- 右下角截止时间 -->
     <div v-if="todo.dueAt" class="text-xs text-gray-500 absolute right-4 bottom-1">
@@ -123,132 +88,185 @@
   </div>
 
   <!-- 编辑选项模态框 -->
-  <transition name="fade">
-    <div
-      v-if="showEditOptions"
-      class="fixed inset-0 bg-black/60 z-50 backdrop-blur-sm px-4 flex justify-center items-center"
-      role="button"
-      tabindex="0"
-      @keydown.enter.space="showEditOptions = false"
-      @click="showEditOptions = false"
-    >
-      <transition name="scale">
-        <div
-          class="bg-white/70 dark:bg-gray-900/80 p-6 rounded-2xl shadow-xl w-40 flex flex-col gap-4 border border-white/20 dark:border-gray-700/30"
-          @click.stop
-          role="dialog"
-          tabindex="0"
-          aria-modal="true"
-          @keydown.enter.space.stop
-        >
-          <button
-            class="w-full rounded-xl py-2 px-2 bg-blue-600 hover:bg-blue-700 btn-lucide-icon flex justify-center"
-            @click="openEditModal"
+    <transition name="fade">
+      <div
+        v-if="showEditOptions"
+        class="fixed inset-0 bg-black/60 z-50 backdrop-blur-sm px-4 flex justify-center items-center"
+        role="button"
+        tabindex="0"
+        @keydown.enter.space="showEditOptions = false"
+        @click="showEditOptions = false"
+      >
+        <transition name="scale">
+          <div
+            class="bg-white/70 dark:bg-gray-900/80 p-6 rounded-2xl shadow-xl w-40 flex flex-col gap-4 border border-white/20 dark:border-gray-700/30"
+            @click.stop
+            role="dialog"
+            tabindex="0"
+            aria-modal="true"
+            @keydown.enter.space.stop
           >
-            <Pencil class="w-5 h-5" />
-          </button>
-          <button
-            class="w-full rounded-xl py-2 px-4 bg-indigo-500 hover:bg-indigo-600 btn-lucide-icon flex justify-center"
-            @click="openDueDateModal"
-          >
-            <Calendar class="w-5 h-5" />
-          </button>
-          <button
-            class="mt-2 text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 flex justify-center"
-            @click="() => (showEditOptions = false)"
-          >
-            <X class="w-4 h-4" />
-          </button>
-        </div>
-      </transition>
-    </div>
-  </transition>
+            <button
+              class="w-full rounded-xl py-2 px-2 bg-blue-600 hover:bg-blue-700 btn-lucide-icon flex justify-center"
+              @click="openEditModal"
+            >
+              <Pencil class="w-5 h-5" />
+            </button>
+            <button
+              class="w-full rounded-xl py-2 px-4 bg-indigo-500 hover:bg-indigo-600 btn-lucide-icon flex justify-center"
+              @click="openDueDateModal"
+            >
+              <Calendar class="w-5 h-5" />
+            </button>
+            <button
+              class="mt-2 text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 flex justify-center"
+              @click="() => (showEditOptions = false)"
+            >
+              <X class="w-4 h-4" />
+            </button>
+          </div>
+        </transition>
+      </div>
+    </transition>
 
-  <!-- 编辑标题模态框 -->
-  <transition name="fade">
-    <div
-      v-if="showEditModal"
-      class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 backdrop-blur-sm px-4"
-    >
-      <transition name="scale">
-        <div
-          class="bg-white/70 dark:bg-gray-900/80 p-6 rounded-2xl shadow-xl w-96 flex flex-col h-auto backdrop-blur-lg border border-white/20 dark:border-gray-700/30"
-        >
-          <input
-            class="w-full border border-gray-200 dark:border-gray-600 rounded-xl p-3 text-base dark:bg-gray-800 dark:text-gray-100
+    <!-- 编辑标题模态框 -->
+    <transition name="fade">
+      <div
+        v-if="showEditModal"
+        class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 backdrop-blur-sm px-4"
+      >
+        <transition name="scale">
+          <div
+            class="bg-white/70 dark:bg-gray-900/80 p-6 rounded-2xl shadow-xl w-96 flex flex-col h-auto backdrop-blur-lg border border-white/20 dark:border-gray-700/30"
+          >
+            <input
+              class="w-full border border-gray-200 dark:border-gray-600 rounded-xl p-3 text-base dark:bg-gray-800 dark:text-gray-100
                    focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all placeholder:text-gray-400"
-            v-model="tempTitle"
-            placeholder="输入任务标题"
-          />
-          <div class="flex justify-center gap-4 mt-5">
-            <button
-              class="px-5 py-2 text-sm font-medium rounded-xl bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600
+              v-model="tempTitle"
+              placeholder="输入任务标题"
+            />
+            <div class="flex justify-center gap-4 mt-5">
+              <button
+                class="px-5 py-2 text-sm font-medium rounded-xl bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600
                      text-gray-700 dark:text-gray-200 transition-all hover:scale-105 active:scale-95"
-              @click="() => (showEditModal = false)"
-            >
-              <X class="w-5 h-5" />
-            </button>
-            <button
-              class="px-5 py-2 text-sm font-medium rounded-xl bg-blue-600 hover:bg-blue-700 text-white disabled:bg-gray-400 disabled:hover:scale-100
+                @click="() => (showEditModal = false)"
+              >
+                <X class="w-5 h-5" />
+              </button>
+              <button
+                class="px-5 py-2 text-sm font-medium rounded-xl bg-blue-600 hover:bg-blue-700 text-white disabled:bg-gray-400 disabled:hover:scale-100
                      transition-all hover:scale-105 active:scale-95"
-              :disabled="tempTitle.trim() === todo.title.trim()"
-              @click="submitTitleChange"
-            >
-              <Check class="w-5 h-5" />
-            </button>
+                :disabled="tempTitle.trim() === todo.title.trim()"
+                @click="submitTitleChange"
+              >
+                <Check class="w-5 h-5" />
+              </button>
+            </div>
           </div>
-        </div>
-      </transition>
-    </div>
-  </transition>
+        </transition>
+      </div>
+    </transition>
 
-  <!-- 编辑截止日期模态框 -->
-  <transition name="fade">
-    <div
-      v-if="showDueDateModal"
-      class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 backdrop-blur-sm px-4"
-    >
-      <transition name="scale">
-        <div
-          class="bg-white/70 dark:bg-gray-900/80 p-6 rounded-2xl shadow-xl w-96 flex flex-col backdrop-blur-lg border border-white/20 dark:border-gray-700/30"
-        >
-          <input
-            type="datetime-local"
-            v-model="tempDueAt"
-            class="w-full border border-gray-300 rounded-xl p-3 mt-1 dark:bg-gray-800 dark:text-gray-100"
-          />
-          <div class="flex justify-center gap-4 mt-5">
+    <!-- 编辑截止日期模态框 -->
+    <transition name="fade">
+      <div
+        v-if="showDueDateModal"
+        class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 backdrop-blur-sm px-4"
+      >
+        <transition name="scale">
+          <div
+            class="bg-white/70 dark:bg-gray-900/80 p-6 rounded-2xl shadow-xl w-96 flex flex-col backdrop-blur-lg border border-white/20 dark:border-gray-700/30"
+          >
+            <input
+              type="datetime-local"
+              v-model="tempDueAt"
+              class="w-full border border-gray-300 rounded-xl p-3 mt-1 dark:bg-gray-800 dark:text-gray-100"
+            />
+            <div class="flex justify-center gap-4 mt-5">
+              <button
+                class="px-5 py-2 bg-gray-100 dark:bg-gray-700 rounded-xl"
+                @click="() => (showDueDateModal = false)"
+              >
+                <X class="w-5 h-5" />
+              </button>
+              <button
+                :class="{
+                  'px-5 py-2 text-white rounded-xl': true,
+                  'bg-gray-400': isDateTimeContaining(todo.dueAt, tempDueAt),
+                  'bg-blue-600 hover:bg-blue-700': !isDateTimeContaining(todo.dueAt, tempDueAt),
+                }"
+                :disabled="isDateTimeContaining(todo.dueAt, tempDueAt)"
+                @click="submitDueDateChange"
+              >
+                <Check class="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+        </transition>
+      </div>
+
+    </transition name="fade">
+      <div
+        v-if="showMenu"
+        class="fixed inset-0 bg-black/60 z-50 backdrop-blur-sm px-4 flex justify-center items-center"
+        role="button"
+        tabindex="0"
+        @keydown.enter.space="showMenu = false"
+        @click="showMenu = false"
+      >
+        <transition name="scale">
+          <div
+            class="bg-white/70 dark:bg-gray-900/80 p-6 rounded-2xl shadow-xl w-40 flex flex-col gap-4 border border-white/20 dark:border-gray-700/30"
+            @click.stop
+            role="dialog"
+            tabindex="0"
+            aria-modal="true"
+            @keydown.enter.space.stop
+          >
             <button
-              class="px-5 py-2 bg-gray-100 dark:bg-gray-700 rounded-xl"
-              @click="() => (showDueDateModal = false)"
+              class="w-full rounded-xl py-2 px-2 bg-yellow-100 hover:bg-yellow-200 dark:bg-yellow-800/50 dark:hover:bg-yellow-700 btn-lucide-icon flex justify-center"
+              aria-label="Description"
+              title="Description"
+              @click="openPopup('description')"
             >
-              <X class="w-5 h-5" />
+              <StickyNote class="w-5 h-5" />
             </button>
             <button
-              :class="{
-                'px-5 py-2 text-white rounded-xl': true,
-                'bg-gray-400': isDateTimeContaining(todo.dueAt, tempDueAt),
-                'bg-blue-600 hover:bg-blue-700': !isDateTimeContaining(todo.dueAt, tempDueAt),
-              }"
-              :disabled="isDateTimeContaining(todo.dueAt, tempDueAt)"
-              @click="submitDueDateChange"
+              class="w-full rounded-xl py-2 px-2 bg-yellow-100 hover:bg-yellow-200 dark:bg-yellow-800/50 dark:hover:bg-yellow-700 btn-lucide-icon flex justify-center"
+              aria-label="Label"
+              title="Label"
+              @click="openPopup('tags')"
             >
-              <Check class="w-5 h-5" />
+              <Tag class="w-5 h-5" />
+            </button>
+            <button
+              class="w-full rounded-xl py-2 px-2 bg-yellow-100 hover:bg-yellow-200 dark:bg-yellow-800/50 dark:hover:bg-yellow-700 btn-lucide-icon flex justify-center"
+              aria-label="Project"
+              title="Project"
+              @click="openPopup('projects')"
+           >
+            <Folder class="w-5 h-5" />
+            </button>
+            <button
+              class="mt-2 text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 flex justify-center"
+              @click="toggleMenu"
+            >
+              <X class="w-4 h-4" />
             </button>
           </div>
-        </div>
-      </transition>
-    </div>
-  </transition>
+        </transition>
+      </div>
+    <transition>
+    </transition>
   </div>
 
   <PopupWrapper v-if="currentPopup === 'description'" @close="currentPopup = ''">
-    <Descriptions v-model="todo.description" @close="currentPopup = ''"/>
+    <Descriptions v-model="todo.description" @close="closeMenu"/>
   </PopupWrapper>
-  <PopupWrapper v-if="currentPopup === 'tags'" @close="currentPopup = ''">
+  <PopupWrapper v-if="currentPopup === 'tags'" @close="closeMenu">
     <TagsView />
   </PopupWrapper>
-  <PopupWrapper v-if="currentPopup === 'projects'" @close="currentPopup = ''">
+  <PopupWrapper v-if="currentPopup === 'projects'" @close="closeMenu">
     <ProjectsView />
   </PopupWrapper>
 
@@ -396,6 +414,7 @@ function toggleMenu() {
   } else {
     menuStore.setMenuSerialNum(todo.value.serialNum);
   }
+  console.log('toggleMenu', menuStore.getMenuSerialNum);
   setTimeout(() => {
     isRotatingAdd.value = false;
   }, 500);
@@ -435,6 +454,11 @@ function openDueDateModal() {
 function openPopup(type: string) {
   currentPopup.value = type;
 }
+
+const closeMenu = () => {
+  currentPopup.value = '';
+  toggleMenu();
+};
 
 watch(
   () => todo.value.description,
