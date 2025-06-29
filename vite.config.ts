@@ -1,13 +1,14 @@
 import { defineConfig } from 'vite';
 import Vue from '@vitejs/plugin-vue';
 import UnoCSS from 'unocss/vite';
+import vueDevTools from 'vite-plugin-vue-devtools';
 import { resolve } from 'node:path';
 
 const host = process.env.TAURI_DEV_HOST;
 
 // https://vitejs.dev/config/
 export default defineConfig(async () => ({
-  plugins: [UnoCSS(), Vue()],
+  plugins: [UnoCSS(), Vue(), vueDevTools()],
   resolve: {
     alias: {
       '@': resolve(__dirname, 'src'),
