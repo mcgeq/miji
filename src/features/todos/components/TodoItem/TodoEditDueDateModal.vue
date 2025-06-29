@@ -17,6 +17,11 @@
             </button>
             <button
               class="px-5 py-2 text-white rounded-xl bg-blue-600 hover:bg-blue-700 transition-all"
+              :class="{
+                'bg-blue-600 hover:bg-blue-700': !isChanged,
+                'bg-gray-400 hover:bg-gray-400 cursor-not-allowed': isChanged
+              }"
+             :disabled="isChanged"
               @click="emit('save', localDueDate)"
             >
               <Check class="w-5 h-5" />
@@ -29,11 +34,23 @@
 </template>
 
 <script setup lang="ts">
+import {
+  formatForDisplay,
+  getLocalISODateTimeWithOffset,
+  isDateTimeContaining,
+} from '@/utils/date';
 import { Check, X } from 'lucide-vue-next';
 
 const props = defineProps<{ dueDate: string | undefined }>();
 const emit = defineEmits(['save', 'close']);
-const localDueDate = ref(props.dueDate?.substring(0, 16) || '');
+const localDueDate = ref(
+  formatForDisplay(props.dueDate ?? getLocalISODateTimeWithOffset()),
+);
+
+const isChanged = computed(() => {
+  if (!props.dueDate) return true;
+  return isDateTimeContaining(props.dueDate, localDueDate.value);
+});
 </script>
 
 <style scoped>

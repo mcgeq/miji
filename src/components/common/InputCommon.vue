@@ -20,8 +20,7 @@
              flex items-center gap-1.5 shadow-md hover:bg-blue-600 active:scale-95
              transition-transform duration-150 disabled:opacity-60 disabled:cursor-not-allowed"
     >
-      <Plus class="w-4 h-4" />
-      {{ t('input.btn') }}
+      <Plus class="w-5 h-5" />
     </button>
   </div>
 </template>

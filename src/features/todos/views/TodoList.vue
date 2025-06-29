@@ -14,8 +14,8 @@
 </template>
 
 <script setup lang="ts">
-import TodoItem from './TodoItem.vue';
 import type { TodoRemain } from '@/schema/todos';
+import TodoItem from '../components/TodoItem/TodoItem.vue';
 
 const props = defineProps<{
   todos: Map<string, TodoRemain>;
