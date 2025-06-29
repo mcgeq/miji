@@ -172,15 +172,9 @@ export const useTodoStore = defineStore('todo', () => {
     todosWithRemaining.delete(serialNum);
     try {
       await todosDb.deletes(serialNum);
-      if (totalPages.value === 0) currentPage.value = 0;
-      if (
-        currentPage.value > 1 &&
-        totalPages.value > Math.ceil(todos.size / pageSize.value)
-      ) {
-        totalPages.value = Math.ceil(todos.size / pageSize.value);
-        currentPage.value -= 1;
-      }
+
       await reloadPage();
+      if (totalPages.value === 0) currentPage.value = 0;
     } catch (e) {
       Lg.e('todoStore', 'removeTodo', e);
     }

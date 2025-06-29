@@ -100,7 +100,7 @@ import { FilterBtn, FilterBtnSchema } from '@/schema/common';
 import { TodoRemain } from '@/schema/todos';
 import InputCommon from '@/components/common/InputCommon.vue';
 import Pagination from '@/components/common/Pagination.vue';
-import TodoList from '@/components/features/todos/TodoList.vue';
+import TodoList from '../components/TodoList.vue';
 
 const { t } = useI18n();
 
@@ -186,8 +186,9 @@ const changeFilter = async (value: FilterBtn) => {
 
 onMounted(async () => {
   await todoStore.reloadPage();
-  if (todoStore.totalPages) {
+  if (totalPages.value !== 0) {
     todoStore.setPage(1);
+    currentPage.value = 1;
   }
   todoStore.startGlobalTimer();
 });
