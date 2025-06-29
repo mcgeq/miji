@@ -1,60 +1,40 @@
 // router/index.ts
 import { createRouter, createWebHistory } from 'vue-router';
-import LoginView from '@/features/auth/login/LoginView.vue';
-import RegisterView from '@/features/auth/register/RegisterView.vue';
-import TodoView from '@/features/todos/views/TodoView.vue';
+import { routes } from 'vue-router/auto-routes';
 import { toast } from '@/utils/toast';
 import { i18nInstance } from '@/i18n/i18n';
 import type { Composer } from 'vue-i18n';
-
-const routes = [
-  {
-    path: '/auth',
-    children: [
-      { path: 'register', component: RegisterView, name: 'Register' },
-      { path: 'login', component: LoginView, name: 'Login' },
-    ],
-  },
-  {
-    path: '/todos',
-    component: TodoView,
-    name: 'Todos',
-  },
-  {
-    path: '/',
-    redirect: '/todos',
-  },
-];
-
-const protectedRoutes = ['/todos'];
+import { Lg } from '@/utils/debugLog';
 
 const router = createRouter({
   history: createWebHistory(),
   routes,
 });
 
-router.beforeEach(async (to, _from, next) => {
+router.beforeEach(async (to, _from) => {
   if (!i18nInstance) {
-    return next();
+    return true;
   }
   const t = (i18nInstance.global as Composer).t;
-  const isAuth = await isAuthenticated();
+  let isAuth = false;
+  try {
+    isAuth = await isAuthenticated();
+  } catch (error) {
+    Lg.e('Router', 'Failed to check auth:', error);
+  }
+  const routeName = typeof to.name === 'string' ? to.name : '';
+  const isAuthPage = ['auth-login', 'auth-register'].includes(routeName);
 
-  const isProtected = protectedRoutes.some((route) =>
-    to.path.startsWith(route),
-  );
-  const isAuthPage = ['/auth/login', '/auth/register'].includes(to.path);
-
-  if (!isAuth && isProtected) {
+  if (!isAuth && to.meta.requiresAuth) {
     toast.warning(t('errors.pleaseLogin'));
-    return next('/auth/login');
+    return { name: 'auth-login' };
   }
 
   if (isAuth && isAuthPage) {
-    return next('/todos');
+    return { name: 'todos' };
   }
 
-  return next();
+  return true;
 });
 
 export default router;

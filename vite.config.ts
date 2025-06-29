@@ -4,6 +4,8 @@ import UnoCSS from 'unocss/vite';
 import vueDevTools from 'vite-plugin-vue-devtools';
 import AutoImport from 'unplugin-auto-import/vite';
 import VueI18n from '@intlify/unplugin-vue-i18n/vite';
+import VueRouter from 'unplugin-vue-router/vite';
+import { VueRouterAutoImports } from 'unplugin-vue-router';
 import { resolve } from 'node:path';
 
 const host = process.env.TAURI_DEV_HOST;
@@ -12,6 +14,10 @@ const host = process.env.TAURI_DEV_HOST;
 export default defineConfig(async () => ({
   plugins: [
     UnoCSS(),
+    VueRouter({
+      extensions: ['.vue', '.md'],
+      dts: 'src/typed-router.d.ts',
+    }),
     Vue(),
     AutoImport({
       include: [/\.[jt]sx?$/, /\.vue$/, /\.vue\?vue/, /\.md$/],
@@ -19,6 +25,7 @@ export default defineConfig(async () => ({
         'vue',
         'vue-i18n',
         '@vueuse/core',
+        VueRouterAutoImports,
         {
           // add any other imports you were relying on
           'vue-router/auto': ['useLink'],
