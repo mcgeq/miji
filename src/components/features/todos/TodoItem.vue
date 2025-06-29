@@ -83,6 +83,7 @@
                 class="icon-btn animate-fade-in-up"
                 aria-label="Label"
                 title="Label"
+                @click="openTagsPopup"
               >
                 <Tag class="w-5 h-5 group-hover:text-blue-600 dark:group-hover:text-blue-400" />
               </button>
@@ -238,6 +239,10 @@
     </div>
   </transition>
   </div>
+
+  <PopupWrapper v-if="showTagsPopup" @close="showTagsPopup = false">
+    <TagsView />
+  </PopupWrapper>
 </template>
 
 <script setup lang="ts">
@@ -259,6 +264,8 @@ import {
 } from 'lucide-vue-next';
 import { Priority } from '@/schema/common';
 import { parseToISO } from '@/utils/date';
+import PopupWrapper from '@/components/common/PopupWrapper.vue';
+import TagsView from '@/features/tags/views/TagsView.vue';
 
 const props = defineProps<{
   todo: TodoRemain;
@@ -266,7 +273,7 @@ const props = defineProps<{
   onRemove: () => void;
   onEdit: () => void;
 }>();
-
+const showTagsPopup = ref(false);
 const emit = defineEmits(['update:todo', 'toggle', 'remove', 'edit']);
 
 const menuStore = useMenuStore();
@@ -411,6 +418,10 @@ function openEditModal() {
 function openDueDateModal() {
   showDueDateModal.value = true;
   showEditOptions.value = false;
+}
+
+function openTagsPopup() {
+  showTagsPopup.value = true;
 }
 </script>
 
