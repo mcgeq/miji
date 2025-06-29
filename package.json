@@ -25,6 +25,7 @@
     "@tauri-store/vue": "^0.3.0",
     "@unocss/reset": "^66.3.2",
     "@vee-validate/zod": "^4.15.1",
+    "@vueuse/core": "^13.4.0",
     "date-fns": "^4.1.0",
     "lucide-vue-next": "^0.525.0",
     "pinia": "^3.0.3",

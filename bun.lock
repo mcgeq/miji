@@ -17,6 +17,7 @@
         "@tauri-store/vue": "^0.3.0",
         "@unocss/reset": "^66.3.2",
         "@vee-validate/zod": "^4.15.1",
+        "@vueuse/core": "^13.4.0",
         "date-fns": "^4.1.0",
         "lucide-vue-next": "^0.525.0",
         "pinia": "^3.0.3",
@@ -328,6 +329,8 @@
 
     "@types/node": ["@types/node@24.0.6", "https://mirrors.cloud.tencent.com/npm/@types/node/-/node-24.0.6.tgz", { "dependencies": { "undici-types": "~7.8.0" } }, "sha512-ZOyn+gOs749xU7ovp+Ibj0g1o3dFRqsfPnT22C2t5JzcRvgsEDpGawPbCISGKLudJk9Y0wiu9sYd6kUh0pc9TA=="],
 
+    "@types/web-bluetooth": ["@types/web-bluetooth@0.0.21", "https://mirrors.cloud.tencent.com/npm/@types/web-bluetooth/-/web-bluetooth-0.0.21.tgz", {}, "sha512-oIQLCGWtcFZy2JW77j9k8nHzAOpqMHLQejDA48XXMWH6tjCQHz5RCFz1bzsmROyL6PUm+LLnUiI4BCn221inxA=="],
+
     "@typescript-eslint/project-service": ["@typescript-eslint/project-service@8.35.0", "https://mirrors.cloud.tencent.com/npm/@typescript-eslint/project-service/-/project-service-8.35.0.tgz", { "dependencies": { "@typescript-eslint/tsconfig-utils": "^8.35.0", "@typescript-eslint/types": "^8.35.0", "debug": "^4.3.4" }, "peerDependencies": { "typescript": ">=4.8.4 <5.9.0" } }, "sha512-41xatqRwWZuhUMF/aZm2fcUsOFKNcG28xqRSS6ZVr9BVJtGExosLAm5A1OxTjRMagx8nJqva+P5zNIGt8RIgbQ=="],
 
     "@typescript-eslint/scope-manager": ["@typescript-eslint/scope-manager@8.35.0", "https://mirrors.cloud.tencent.com/npm/@typescript-eslint/scope-manager/-/scope-manager-8.35.0.tgz", { "dependencies": { "@typescript-eslint/types": "8.35.0", "@typescript-eslint/visitor-keys": "8.35.0" } }, "sha512-+AgL5+mcoLxl1vGjwNfiWq5fLDZM1TmTPYs2UkyHfFhgERxBbqHlNjRzhThJqz+ktBqTChRYY6zwbMwy0591AA=="],
@@ -447,6 +450,12 @@
     "@vue/server-renderer": ["@vue/server-renderer@3.5.17", "https://mirrors.cloud.tencent.com/npm/@vue/server-renderer/-/server-renderer-3.5.17.tgz", { "dependencies": { "@vue/compiler-ssr": "3.5.17", "@vue/shared": "3.5.17" }, "peerDependencies": { "vue": "3.5.17" } }, "sha512-BOHhm8HalujY6lmC3DbqF6uXN/K00uWiEeF22LfEsm9Q93XeJ/plHTepGwf6tqFcF7GA5oGSSAAUock3VvzaCA=="],
 
     "@vue/shared": ["@vue/shared@3.5.17", "https://mirrors.cloud.tencent.com/npm/@vue/shared/-/shared-3.5.17.tgz", {}, "sha512-CabR+UN630VnsJO/jHWYBC1YVXyMq94KKp6iF5MQgZJs5I8cmjw6oVMO1oDbtBkENSHSSn/UadWlW/OAgdmKrg=="],
+
+    "@vueuse/core": ["@vueuse/core@13.4.0", "https://mirrors.cloud.tencent.com/npm/@vueuse/core/-/core-13.4.0.tgz", { "dependencies": { "@types/web-bluetooth": "^0.0.21", "@vueuse/metadata": "13.4.0", "@vueuse/shared": "13.4.0" }, "peerDependencies": { "vue": "^3.5.0" } }, "sha512-OnK7zW3bTq/QclEk17+vDFN3tuAm8ONb9zQUIHrYQkkFesu3WeGUx/3YzpEp+ly53IfDAT9rsYXgGW6piNZC5w=="],
+
+    "@vueuse/metadata": ["@vueuse/metadata@13.4.0", "https://mirrors.cloud.tencent.com/npm/@vueuse/metadata/-/metadata-13.4.0.tgz", {}, "sha512-CPDQ/IgOeWbqItg1c/pS+Ulum63MNbpJ4eecjFJqgD/JUCJ822zLfpw6M9HzSvL6wbzMieOtIAW/H8deQASKHg=="],
+
+    "@vueuse/shared": ["@vueuse/shared@13.4.0", "https://mirrors.cloud.tencent.com/npm/@vueuse/shared/-/shared-13.4.0.tgz", { "peerDependencies": { "vue": "^3.5.0" } }, "sha512-+AxuKbw8R1gYy5T21V5yhadeNM7rJqb4cPaRI9DdGnnNl3uqXh+unvQ3uCaA2DjYLbNr1+l7ht/B4qEsRegX6A=="],
 
     "acorn": ["acorn@8.15.0", "https://mirrors.cloud.tencent.com/npm/acorn/-/acorn-8.15.0.tgz", { "bin": { "acorn": "bin/acorn" } }, "sha512-NZyJarBfL7nWwIq+FDL6Zp/yHEhePMNnnJ0y3qfieCrmNvYct8uvtiV41UvlSe6apAfk0fY1FbWx+NwfmpvtTg=="],
 
@@ -632,7 +641,7 @@
 
     "import-fresh": ["import-fresh@3.3.1", "https://mirrors.cloud.tencent.com/npm/import-fresh/-/import-fresh-3.3.1.tgz", { "dependencies": { "parent-module": "^1.0.0", "resolve-from": "^4.0.0" } }, "sha512-TR3KfrTZTYLPB6jUjfx6MF9WcWrHL9su5TObK4ZkYgBdWKPOFoSoQIdEuTuR82pmtxH2spWG9h6etwfr1pLBqQ=="],
 
-    "imurmurhash": ["imurmurhash@0.1.4", "https://mirrors.cloud.tencent.com/npm/imurmurhash/-/imurmurhash-0.1.4.tgz", {}, "sha1-khi5srkoojixPcT7a21XbyMUU+o="],
+    "imurmurhash": ["imurmurhash@0.1.4", "https://mirrors.cloud.tencent.com/npm/imurmurhash/-/imurmurhash-0.1.4.tgz", {}, ""],
 
     "is-binary-path": ["is-binary-path@2.1.0", "https://mirrors.cloud.tencent.com/npm/is-binary-path/-/is-binary-path-2.1.0.tgz", { "dependencies": { "binary-extensions": "^2.0.0" } }, "sha512-ZMERYes6pDydyuGidse7OsHxtbI7WVeUEozgR/g7rd0xUimYNlvZRE/K2MgZTjWy725IfelLeVcEM97mmtRGXw=="],
 

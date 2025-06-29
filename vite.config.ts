@@ -18,6 +18,7 @@ export default defineConfig(async () => ({
       imports: [
         'vue',
         'vue-i18n',
+        '@vueuse/core',
         {
           // add any other imports you were relying on
           'vue-router/auto': ['useLink'],
@@ -62,5 +63,8 @@ export default defineConfig(async () => ({
       ignored: ['**/src-tauri/**'],
     },
   },
-  test: {},
+  test: {
+    include: ['test/**/*.test.ts'],
+    environment: 'jsdom',
+  },
 }));
