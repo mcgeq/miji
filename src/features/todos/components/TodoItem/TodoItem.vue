@@ -104,7 +104,9 @@ const showDueDateModal = ref(false);
 const isRotatingAdd = ref(false);
 
 // 计算属性
-const completed = computed(() => todoCopy.value.status === 'Completed');
+const completed = computed(
+  () => todoCopy.value.status === StatusSchema.enum.Completed,
+);
 const showMenu = computed(
   () => menuStore.getMenuSerialNum === todoCopy.value.serialNum,
 );
