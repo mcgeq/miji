@@ -4,7 +4,7 @@
       type="button"
       :disabled="completed"
       aria-label="Edit task"
-      class="transition text-gray-400 hover:text-blue-500 disabled:text-gray-300 disabled:cursor-not-allowed"
+      class="text-gray-400 hover:text-blue-500 action-btn"
       @click="emit('edit')"
     >
       <Pencil class="w-4 h-4" />
@@ -16,17 +16,17 @@
       class="transition text-blue-500 hover:text-blue-700"
       @click="emit('add')"
     >
-      <Plus class="w-5 h-5" />
+      <Plus class="wh-5" />
       <span class="sr-only">Add</span>
     </button>
     <button
       type="button"
       :disabled="completed"
       aria-label="Delete task"
-      class="transition text-red-400 hover:text-red-600 disabled:text-gray-300 disabled:cursor-not-allowed"
+      class="text-red-400 hover:text-red-600 action-btn"
       @click="emit('remove')"
     >
-      <Trash2 class="w-5 h-5" />
+      <Trash2 class="wh-5" />
       <span class="sr-only">Delete</span>
     </button>
   </div>
@@ -41,3 +41,9 @@ const emit = defineEmits(['edit', 'add', 'remove']);
 const show = computed(() => props.show);
 const completed = computed(() => props.completed);
 </script>
+
+<style scoped lang="postcss">
+.action-btn {
+  @apply transition  disabled:text-gray-300 disabled:cursor-not-allowed
+}
+</style>

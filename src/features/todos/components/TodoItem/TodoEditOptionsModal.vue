@@ -13,16 +13,16 @@
             class="w-full rounded-xl py-2 px-2 bg-blue-600 hover:bg-blue-700 flex justify-center"
             @click="emit('editTitle')"
           >
-            <Pencil class="w-5 h-5" />
+            <Pencil class="wh-5" />
           </button>
           <button
             class="w-full rounded-xl py-2 px-4 bg-indigo-500 hover:bg-indigo-600 flex justify-center"
             @click="emit('editDueDate')"
           >
-            <Calendar class="w-5 h-5" />
+            <Calendar class="wh-5" />
           </button>
           <button
-            class="mt-2 text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 flex justify-center"
+            class="modal-btn-x"
             @click="emit('close')"
           >
             <X class="w-4 h-4" />

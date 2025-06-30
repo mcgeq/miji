@@ -13,13 +13,18 @@
               class="px-5 py-2 text-sm font-medium rounded-xl bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 transition-all hover:scale-105 active:scale-95"
               @click="emit('close')"
             >
-              <X class="w-5 h-5" />
+              <X class="wh-5" />
             </button>
             <button
               class="px-5 py-2 text-sm font-medium rounded-xl bg-blue-600 hover:bg-blue-700 text-white transition-all hover:scale-105 active:scale-95"
+              :class="{
+                'bg-blue-600 hover:bg-blue-700': !isEditable,
+                'bg-gray-400 hover:bg-gray-400 cursor-not-allowed': isEditable
+              }"
+              :disabled="isEditable"
               @click="emit('save', localTitle)"
             >
-              <Check class="w-5 h-5" />
+              <Check class="wh-5" />
             </button>
           </div>
         </div>
@@ -29,12 +34,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, defineProps, defineEmits } from 'vue';
 import { Check, X } from 'lucide-vue-next';
 
 const props = defineProps<{ title: string }>();
 const emit = defineEmits(['save', 'close']);
 const localTitle = ref(props.title);
+const isEditable = computed(
+  () => localTitle.value.trim() === props.title.trim(),
+);
 </script>
 
 <style scoped>

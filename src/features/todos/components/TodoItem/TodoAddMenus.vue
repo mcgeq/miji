@@ -10,25 +10,25 @@
           @click.stop
         >
           <button
-            class="w-full rounded-xl py-2 px-2 bg-yellow-100 hover:bg-yellow-200 dark:bg-yellow-800/50 dark:hover:bg-yellow-700 flex justify-center"
+            class="add-menu-btn"
             @click="emit('openPopup', 'description')"
           >
-            <StickyNote class="w-5 h-5" />
+            <StickyNote class="wh-5" />
           </button>
           <button
-            class="w-full rounded-xl py-2 px-2 bg-yellow-100 hover:bg-yellow-200 dark:bg-yellow-800/50 dark:hover:bg-yellow-700 flex justify-center"
+            class="add-menu-btn"
             @click="emit('openPopup', 'tags')"
           >
-            <Tag class="w-5 h-5" />
+            <Tag class="wh-5" />
           </button>
           <button
-            class="w-full rounded-xl py-2 px-2 bg-yellow-100 hover:bg-yellow-200 dark:bg-yellow-800/50 dark:hover:bg-yellow-700 flex justify-center"
+            class="add-menu-btn"
             @click="emit('openPopup', 'projects')"
           >
-            <Folder class="w-5 h-5" />
+            <Folder class="wh-5" />
           </button>
           <button
-            class="mt-2 text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 flex justify-center"
+            class="modal-btn-x"
             @click="emit('close')"
           >
             <X class="w-4 h-4" />
@@ -45,7 +45,7 @@ import { StickyNote, Tag, Folder, X } from 'lucide-vue-next';
 const emit = defineEmits(['openPopup', 'close']);
 </script>
 
-<style scoped>
+<style scoped lang="postcss">
 .fade-enter-active, .fade-leave-active {
   transition: opacity 0.25s ease-out, transform 0.25s ease-out;
 }
@@ -58,5 +58,9 @@ const emit = defineEmits(['openPopup', 'close']);
 }
 .scale-enter-from, .scale-leave-to {
   transform: scale(0.9);
+}
+
+.add-menu-btn {
+  @apply w-full rounded-xl py-2 px-2 bg-yellow-100 hover:bg-yellow-200 dark:bg-yellow-800/50 dark:hover:bg-yellow-700 flex justify-center
 }
 </style>

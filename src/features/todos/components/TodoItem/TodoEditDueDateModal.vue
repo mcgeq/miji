@@ -13,7 +13,7 @@
               class="px-5 py-2 bg-gray-100 dark:bg-gray-700 rounded-xl"
               @click="emit('close')"
             >
-              <X class="w-5 h-5" />
+              <X class="wh-5" />
             </button>
             <button
               class="px-5 py-2 text-white rounded-xl bg-blue-600 hover:bg-blue-700 transition-all"
@@ -24,7 +24,7 @@
              :disabled="isChanged"
               @click="emit('save', localDueDate)"
             >
-              <Check class="w-5 h-5" />
+              <Check class="wh-5" />
             </button>
           </div>
         </div>

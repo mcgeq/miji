@@ -14,6 +14,11 @@ export default defineConfig({
   shortcuts: [
     { logo: 'i-logos-vue w-6em h-6em transform transition-800' },
     ['flex-juster-center', 'flex justify-center items-center'],
+    [
+      'modal-btn-x',
+      'mt-2 text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 flex justify-center',
+    ],
+    ['wh-5', 'w-5 h-5'],
   ],
   presets: [
     presetWind3(),
