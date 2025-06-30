@@ -1,22 +1,22 @@
 <template>
   <transition name="fade">
     <div
-      class="fixed inset-0 bg-black/60 z-50 backdrop-blur-sm px-4 flex justify-center items-center"
+      class="modal-mask"
       @click="emit('close')"
     >
       <transition name="scale">
         <div
-          class="bg-white/70 dark:bg-gray-900/80 p-6 rounded-2xl shadow-xl w-40 flex flex-col gap-4 border border-white/20 dark:border-gray-700/30"
+          class="modal-mask-window"
           @click.stop
         >
           <button
-            class="w-full rounded-xl py-2 px-2 bg-blue-600 hover:bg-blue-700 flex justify-center"
+            class="modal-btn-icon"
             @click="emit('editTitle')"
           >
             <Pencil class="wh-5" />
           </button>
           <button
-            class="w-full rounded-xl py-2 px-4 bg-indigo-500 hover:bg-indigo-600 flex justify-center"
+            class="modal-btn-icon"
             @click="emit('editDueDate')"
           >
             <Calendar class="wh-5" />

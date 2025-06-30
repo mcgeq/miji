@@ -18,6 +18,18 @@ export default defineConfig({
       'modal-btn-x',
       'mt-2 text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 flex justify-center',
     ],
+    [
+      'modal-btn-icon',
+      'w-full rounded-xl py-2 px-2 bg-blue-600 hover:bg-blue-700 flex justify-center',
+    ],
+    [
+      'modal-mask',
+      'fixed inset-0 bg-black/60 z-50 backdrop-blur-sm px-4 flex justify-center items-center',
+    ],
+    [
+      'modal-mask-window',
+      'bg-white/70 dark:bg-gray-900/80 p-6 rounded-2xl shadow-xl w-40 flex flex-col gap-4 border border-white/20 dark:border-gray-700/30',
+    ],
     ['wh-5', 'w-5 h-5'],
   ],
   presets: [
