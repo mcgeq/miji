@@ -22,6 +22,12 @@
             <Calendar class="wh-5" />
           </button>
           <button
+            class="modal-btn-icon"
+            @click="emit('editRepeat')"
+          >
+            <Repeat class="wh-5"/>
+          </button>
+          <button
             class="modal-btn-x"
             @click="emit('close')"
           >
@@ -34,9 +40,9 @@
 </template>
 
 <script setup lang="ts">
-import { Pencil, Calendar, X } from 'lucide-vue-next';
+import { Pencil, Calendar, Repeat, X } from 'lucide-vue-next';
 
-const emit = defineEmits(['editTitle', 'editDueDate', 'close']);
+const emit = defineEmits(['editTitle', 'editDueDate', 'editRepeat', 'close']);
 </script>
 
 <style scoped>

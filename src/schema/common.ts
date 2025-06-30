@@ -30,7 +30,15 @@ export const CurrencySchema = z.object({
 });
 
 export type Currency = z.infer<typeof CurrencySchema>;
-
+export const weekdays = [
+  'Mon',
+  'Tue',
+  'Wed',
+  'Thu',
+  'Fri',
+  'Sat',
+  'Sun',
+] as const;
 export const RepeatPeriodSchema = z.discriminatedUnion('type', [
   z.object({
     type: z.literal('None'),
@@ -42,9 +50,7 @@ export const RepeatPeriodSchema = z.discriminatedUnion('type', [
   z.object({
     type: z.literal('Weekly'),
     interval: z.number().min(1).default(1), // 每 N 周
-    daysOfWeek: z
-      .array(z.enum(['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']))
-      .nonempty(),
+    daysOfWeek: z.array(z.enum(weekdays)).nonempty(),
   }),
   z.object({
     type: z.literal('Monthly'),
@@ -64,6 +70,10 @@ export const RepeatPeriodSchema = z.discriminatedUnion('type', [
 ]);
 
 export type RepeatPeriod = z.infer<typeof RepeatPeriodSchema>;
+
+export type RepeatType = RepeatPeriod['type'];
+
+export type Weekday = (typeof weekdays)[number];
 
 export const ReminderTypeSchema = z.enum(['Notification', 'Email', 'Popup']);
 export type ReminderType = z.infer<typeof ReminderTypeSchema>;

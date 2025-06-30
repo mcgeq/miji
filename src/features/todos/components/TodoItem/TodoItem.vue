@@ -39,6 +39,7 @@
       v-if="showEditOptions"
       @editTitle="openEditModal"
       @editDueDate="openDueDateModal"
+      @editRepeat="openEditRepeatModal"
       @close="showEditOptions = false"
     />
     <TodoEditTitleModal
@@ -52,6 +53,12 @@
       :dueDate="todoCopy.dueAt"
       @save="submitDueDateChange"
       @close="showDueDateModal = false"
+    />
+    <TodoEditRepeatModal
+      v-if="showEditRepeatModal"
+      :repeat="todoCopy.repeat ?? {type: 'None'}"
+      @save="submitRepeatChange"
+      @close="showEditRepeatModal = false"
     />
 
     <!-- Popups -->
@@ -75,12 +82,13 @@ import TodoAddMenus from './TodoAddMenus.vue';
 import TodoEditOptionsModal from './TodoEditOptionsModal.vue';
 import TodoEditTitleModal from './TodoEditTitleModal.vue';
 import TodoEditDueDateModal from './TodoEditDueDateModal.vue';
+import TodoEditRepeatModal from './TodoEditRepeatModal.vue';
 import PopupWrapper from '@/components/common/PopupWrapper.vue';
 import TagsView from '@/features/tags/views/TagsView.vue';
 import ProjectsView from '@/features/projects/views/ProjectsView.vue';
 import Descriptions from '@/components/common/Descriptions.vue';
 import { TodoRemain } from '@/schema/todos';
-import { Priority, StatusSchema } from '@/schema/common';
+import { Priority, RepeatPeriod, StatusSchema } from '@/schema/common';
 import { parseToISO } from '@/utils/date';
 import { useMenuStore } from '@/stores/menuStore';
 import TodoTitle from './TodoTitle.vue';
@@ -101,6 +109,7 @@ const showActions = ref(false);
 const showEditOptions = ref(false);
 const showEditModal = ref(false);
 const showDueDateModal = ref(false);
+const showEditRepeatModal = ref(false);
 const isRotatingAdd = ref(false);
 
 // 计算属性
@@ -155,6 +164,11 @@ const openDueDateModal = () => {
   showDueDateModal.value = true;
 };
 
+const openEditRepeatModal = () => {
+  showEditOptions.value = false;
+  showEditRepeatModal.value = true;
+};
+
 const submitTitleChange = (newTitle: string) => {
   const trimmed = newTitle.trim();
   if (trimmed && trimmed !== todoCopy.value.title) {
@@ -171,6 +185,13 @@ const submitDueDateChange = (newDueAt: string) => {
     emit('edit');
   }
   showDueDateModal.value = false;
+};
+
+const submitRepeatChange = (repeat: RepeatPeriod) => {
+  if (repeat !== todoCopy.value.repeat) {
+    updateTodo({ repeat: repeat });
+    emit('edit');
+  }
 };
 
 const onChangePriorityHandler = (serialNum: string, priority: Priority) => {
