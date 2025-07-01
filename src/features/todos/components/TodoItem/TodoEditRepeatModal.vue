@@ -1,19 +1,12 @@
 <template>
   <transition name="fade">
-    <div class="modal-mask fixed inset-0 bg-black/60 z-50 backdrop-blur-sm px-4 flex justify-center items-center" @click="emit('close')">
+    <div class="modal-mask" @click="emit('close')">
       <transition name="scale">
-        <div class="modal-mask-window w-80" @click.stop>
-
-          <!-- 关闭按钮 -->
-          <div class="flex justify-end mb-1">
-            <button class="modal-btn-x text-gray-600 dark:text-gray-300" @click="emit('close')">
-              <X class="w-4 h-4" />
-            </button>
-          </div>
-
+        <div class="modal-mask-window w-80 h-96" @click.stop>
+          <div class="h-80">
           <!-- Repeat Type -->
           <div class="text-center">
-            <label for="repeat-type" class="label-text block">Repeat Type</label>
+            <label for="repeat-type" class="label-text block mb-2 mt-0">Repeat Type</label>
             <select v-model="form.type" id="repeat-type" class="mt-1 block w-full input-select" @change="resetForm">
               <option value="None">None</option>
               <option value="Daily">Daily</option>
@@ -32,16 +25,36 @@
           </div>
 
           <!-- Weekly -->
+          
           <div v-if="form.type === 'Weekly'" class="flex flex-col items-center gap-2">
-            <div class="flex items-center gap-2">
-              <label for="weekly-interval" class="label-text">Every</label>
-              <input type="number" id="weekly-interval" v-model.number="form.interval" min="1" required class="input-number" />
-              <span class="label-text">week(s) on</span>
+            <div class="flex items-center gap-2 mt-4">
+              <label for="weekly-interval" class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Every
+              </label>
+              <input 
+                type="number" 
+                id="weekly-interval" 
+                v-model.number="form.interval" 
+                min="1" 
+                required 
+                class="w-16 px-2 py-1 text-sm border border-gray-300 rounded-md dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500"
+              />
+              <span class="text-sm font-medium text-gray-700 dark:text-gray-300">week(s) on</span>
             </div>
+  
             <div class="flex flex-wrap gap-3 justify-center mt-1">
-              <label v-for="day in weekdays" :key="day" class="inline-flex items-center cursor-pointer select-none">
-                <input type="checkbox" :value="day" v-model="form.daysOfWeek" class="rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500" />
-                <span class="ml-2 label-text">{{ day }}</span>
+              <label 
+                v-for="day in weekdays" 
+                :key="day" 
+                class="flex items-center cursor-pointer select-none text-sm"
+              >
+                <input 
+                  type="checkbox" 
+                  :value="day" 
+                  v-model="form.daysOfWeek" 
+                  class="w-4 h-4 border-gray-300 rounded focus:ring-blue-500 text-blue-600 dark:border-gray-600 dark:bg-gray-700 dark:text-blue-500"
+                />
+                <span class="ml-2 text-gray-700 dark:text-gray-300">{{ day }}</span>
               </label>
             </div>
           </div>
@@ -81,9 +94,10 @@
             <label for="custom-description" class="label-text block">Custom Description</label>
             <input type="text" id="custom-description" v-model="form.description" required class="mt-1 block w-full input-select" />
           </div>
+          </div>
 
           <!-- 按钮 -->
-          <div class="flex justify-center gap-4 mt-5">
+          <div class="flex justify-center gap-4">
             <button class="px-5 py-2 text-sm font-medium rounded-xl bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 transition-all hover:scale-105 active:scale-95" @click="emit('close')">
               <X class="wh-5" />
             </button>
@@ -176,11 +190,11 @@ const save = () => {
 }
 
 .input-number {
-  @apply w-20 text-center rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 p-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500;
+  @apply w-20 mt-4 text-center rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 p-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500;
 }
 
 .label-text {
-  @apply text-sm font-medium text-gray-700 dark:text-gray-300;
+  @apply text-sm font-medium mt-4 text-gray-700 dark:text-gray-300;
 }
 
 .modal-button {
