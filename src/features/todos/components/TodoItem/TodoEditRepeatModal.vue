@@ -63,7 +63,7 @@
               <label for="monthly-interval" class="label-text">{{ t('todos.repeat.typeLabel.monthly') }}</label>
               <input type="number" id="monthly-interval" v-model.number="form.interval" min="1" required class="input-number" />
               <select v-model="form.day" class="ml-1 input-select">
-                <option v-for="n in 31" :key="n" :value="n">{{ n }}</option>
+                <option v-for="n in monthlyDays" :key="n" :value="n">{{ n }}</option>
                 <option value="last">Last day</option>
               </select>
             </div>
@@ -80,7 +80,7 @@
                 <option v-for="n in 12" :key="n" :value="n">{{ monthNames[n - 1] }}</option>
               </select>
               <select v-model="form.day" class="input-select">
-                <option v-for="n in 31" :key="n" :value="n">{{ n }}</option>
+                <option v-for="n in yearlyMonthDays" :key="n" :value="n">{{ n }}</option>
               </select>
             </div>
           </div>
@@ -126,8 +126,6 @@ const repeatObj = computed(() =>
 );
 
 const form = ref<RepeatPeriod>(buildRepeatPeriod(repeatObj.value));
-console.log('editRepeat: ', props.repeat);
-console.log('editRepeat form: ', form.value);
 
 const monthNames = [
   'January',
@@ -154,6 +152,24 @@ const resetForm = () => {
     description: '',
   };
 };
+
+const monthlyDays = computed(() => {
+  if (form.value.type === 'Monthly') {
+    const cYear = new Date().getFullYear();
+    const month = form.value.interval;
+    return new Date(cYear, month, 0).getDate();
+  }
+  return 30;
+});
+
+const yearlyMonthDays = computed(() => {
+  if (form.value.type === 'Yearly') {
+    const cYear = new Date().getFullYear();
+    const month = form.value.month;
+    return new Date(cYear, month, 0).getDate();
+  }
+  return 30;
+});
 
 const save = () => {
   try {
