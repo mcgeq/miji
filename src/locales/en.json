@@ -48,6 +48,23 @@
     "desc": {
       "save": "Save",
       "edit": "Edit"
+    },
+    "repeat": {
+      "title": "Repeat Type",
+      "type": {
+        "no": "None",
+        "daily": "Daily",
+        "weekly": "Weekly",
+        "monthly": "Monthly",
+        "yearly": "Yearly",
+        "custom": "Custom"
+      },
+      "typeLabel": {
+        "daily": "Every Day(s)",
+        "weekly": "Every Week(s)",
+        "monthly": "Every Month(s)",
+        "yearly": "Every Year(s)"
+      }
     }
   },
   "pagination": {

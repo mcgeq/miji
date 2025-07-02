@@ -6,22 +6,21 @@
           <div class="h-80">
           <!-- Repeat Type -->
           <div class="text-center">
-            <label for="repeat-type" class="label-text block mb-2 mt-0">Repeat Type</label>
+              <label for="repeat-type" class="label-text block mb-2 mt-0">{{ t('todos.repeat.title') }}</label>
             <select v-model="form.type" id="repeat-type" class="mt-1 block w-full input-select" @change="resetForm">
-              <option value="None">None</option>
-              <option value="Daily">Daily</option>
-              <option value="Weekly">Weekly</option>
-              <option value="Monthly">Monthly</option>
-              <option value="Yearly">Yearly</option>
-              <option value="Custom">Custom</option>
+                <option value="None">{{ t('todos.repeat.type.no') }}</option>
+              <option value="Daily">{{ t('todos.repeat.type.daily') }}</option>
+              <option value="Weekly">{{ t('todos.repeat.type.weekly') }}</option>
+              <option value="Monthly">{{ t('todos.repeat.type.monthly') }}</option>
+              <option value="Yearly">{{ t('todos.repeat.type.yearly') }}</option>
+              <option value="Custom">{{ t('todos.repeat.type.custom') }}</option>
             </select>
           </div>
 
           <!-- Daily -->
           <div v-if="form.type === 'Daily'" class="flex-juster-center gap-2">
-            <label for="daily-interval" class="label-text">Every</label>
+              <label for="daily-interval" class="label-text">{{ t('todos.repeat.typeLabel.daily') }}</label>
             <input type="number" id="daily-interval" v-model.number="form.interval" min="1" required class="input-number" />
-            <span class="label-text">day(s)</span>
           </div>
 
           <!-- Weekly -->
@@ -29,7 +28,7 @@
           <div v-if="form.type === 'Weekly'" class="flex flex-col items-center gap-2">
             <div class="flex items-center gap-2 mt-4">
               <label for="weekly-interval" class="text-sm font-medium text-gray-700 dark:text-gray-300">
-                Every
+                {{ t('todos.repeat.typeLabel.weekly') }}
               </label>
               <input 
                 type="number" 
@@ -39,7 +38,6 @@
                 required 
                 class="w-16 px-2 py-1 text-sm border border-gray-300 rounded-md dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500"
               />
-              <span class="text-sm font-medium text-gray-700 dark:text-gray-300">week(s) on</span>
             </div>
   
             <div class="flex flex-wrap gap-3 justify-center mt-1">
@@ -62,9 +60,8 @@
           <!-- Monthly -->
           <div v-if="form.type === 'Monthly'" class="flex flex-col items-center gap-2">
             <div class="flex items-center gap-2">
-              <label for="monthly-interval" class="label-text">Every</label>
+              <label for="monthly-interval" class="label-text">{{ t('todos.repeat.typeLabel.monthly') }}</label>
               <input type="number" id="monthly-interval" v-model.number="form.interval" min="1" required class="input-number" />
-              <span class="label-text">month(s) on</span>
               <select v-model="form.day" class="ml-1 input-select">
                 <option v-for="n in 31" :key="n" :value="n">{{ n }}</option>
                 <option value="last">Last day</option>
@@ -75,9 +72,8 @@
           <!-- Yearly -->
           <div v-if="form.type === 'Yearly'" class="flex flex-col items-center gap-2">
             <div class="flex items-center gap-2">
-              <label for="yearly-interval" class="label-text">Every</label>
+              <label for="yearly-interval" class="label-text">{{ t('todos.repeat.typeLabel.yearly') }}</label>
               <input type="number" id="yearly-interval" v-model.number="form.interval" min="1" required class="input-number" />
-              <span class="label-text">year(s) on</span>
             </div>
             <div class="flex items-center gap-2">
               <select v-model="form.month" class="input-select">
@@ -91,7 +87,7 @@
 
           <!-- Custom -->
           <div v-if="form.type === 'Custom'" class="text-center">
-            <label for="custom-description" class="label-text block">Custom Description</label>
+            <label for="custom-description" class="label-text block">{{ t('todos.repeat.type.custom') }}</label>
             <input type="text" id="custom-description" v-model="form.description" required class="mt-1 block w-full input-select" />
           </div>
           </div>
@@ -122,7 +118,7 @@ import { buildRepeatPeriod } from '@/utils/common';
 import { X, Check } from 'lucide-vue-next';
 
 const emit = defineEmits(['save', 'close']);
-
+const { t } = useI18n();
 const props = defineProps<{ repeat: RepeatPeriod }>();
 const isChanged = ref(false);
 const repeatObj = computed(() =>

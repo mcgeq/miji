@@ -45,7 +45,6 @@
 </template>
 
 <script setup lang="ts">
-import { useI18n } from 'vue-i18n';
 import { Priority, PrioritySchema } from '@/schema/common';
 
 const priorities: Priority[] = PrioritySchema.options;

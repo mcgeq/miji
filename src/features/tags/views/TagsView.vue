@@ -9,7 +9,6 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
 import type { TagsWithUsageStats } from '@/schema/tags';
 import GenericViewItem from '@/components/common/GenericViewItem.vue';
 import GenericItem from '@/components/common/GenericItem.vue';

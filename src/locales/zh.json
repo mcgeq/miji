@@ -48,6 +48,23 @@
     "desc": {
       "save": "保存",
       "edit": "编辑"
+    },
+    "repeat": {
+      "title": "周期",
+      "type": {
+        "no": "无",
+        "daily": "日",
+        "weekly": "周",
+        "monthly": "月",
+        "yearly": "年",
+        "custom": "自定义"
+      },
+      "typeLabel": {
+        "daily": "每日",
+        "weekly": "每周",
+        "monthly": "每月",
+        "yearly": "每年"
+      }
     }
   },
   "pagination": {
