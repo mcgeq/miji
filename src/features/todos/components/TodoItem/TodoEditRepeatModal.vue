@@ -2,116 +2,170 @@
   <transition name="fade">
     <div class="modal-mask" @click="emit('close')">
       <transition name="scale">
-        <div class="modal-mask-window w-80 h-96" @click.stop>
+        <div class="modal-mask-window w-80" @click.stop>
           <div class="h-80">
-          <!-- Repeat Type -->
-          <div class="text-center">
-              <label for="repeat-type" class="label-text block mb-2 mt-0">{{ t('todos.repeat.title') }}</label>
-            <select v-model="form.type" id="repeat-type" class="mt-1 block w-full input-select" @change="resetForm">
-                <option value="None">{{ t('todos.repeat.type.no') }}</option>
-              <option value="Daily">{{ t('todos.repeat.type.daily') }}</option>
-              <option value="Weekly">{{ t('todos.repeat.type.weekly') }}</option>
-              <option value="Monthly">{{ t('todos.repeat.type.monthly') }}</option>
-              <option value="Yearly">{{ t('todos.repeat.type.yearly') }}</option>
-              <option value="Custom">{{ t('todos.repeat.type.custom') }}</option>
-            </select>
-          </div>
-
-          <!-- Daily -->
-          <div v-if="form.type === 'Daily'" class="flex-juster-center gap-2">
-              <label for="daily-interval" class="label-text">{{ t('todos.repeat.typeLabel.daily') }}</label>
-            <input type="number" id="daily-interval" v-model.number="form.interval" min="1" required class="input-number" />
-          </div>
-
-          <!-- Weekly -->
-          
-          <div v-if="form.type === 'Weekly'" class="flex flex-col items-center gap-2">
-            <div class="flex items-center gap-2 mt-4">
-              <label for="weekly-interval" class="text-sm font-medium text-gray-700 dark:text-gray-300">
-                {{ t('todos.repeat.typeLabel.weekly') }}
+            <!-- Repeat Type -->
+            <div class="text-center">
+              <label for="repeat-type" class="text-sm font-medium mb-2 mt-0 text-gray-700 dark:text-gray-300 block">
+                {{ t('todos.repeat.title') }}
               </label>
-              <input 
-                type="number" 
-                id="weekly-interval" 
-                v-model.number="form.interval" 
+              <select
+                v-model="form.type"
+                id="repeat-type"
+                class="mt-1 block w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 p-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                @change="resetForm"
+              >
+                <option value="None">{{ t('todos.repeat.type.no') }}</option>
+                <option value="Daily">{{ t('todos.repeat.type.daily') }}</option>
+                <option value="Weekly">{{ t('todos.repeat.type.weekly') }}</option>
+                <option value="Monthly">{{ t('todos.repeat.type.monthly') }}</option>
+                <option value="Yearly">{{ t('todos.repeat.type.yearly') }}</option>
+                <option value="Custom">{{ t('todos.repeat.type.custom') }}</option>
+              </select>
+            </div>
+
+            <!-- Daily -->
+            <div v-if="form.type === 'Daily'" class="flex justify-center items-center gap-2 mt-4">
+              <label for="daily-interval" class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                {{ t('todos.repeat.typeLabel.daily') }}
+              </label>
+              <input
+                type="number"
+                id="daily-interval"
+                v-model.number="form.interval"
                 min="1" 
                 required 
-                class="w-16 px-2 py-1 text-sm border border-gray-300 rounded-md dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500"
+                class="w-20 text-center rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 p-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
-  
-            <div class="flex flex-wrap gap-3 justify-center mt-1">
-              <label 
-                v-for="day in weekdays" 
-                :key="day" 
-                class="flex items-center cursor-pointer select-none text-sm"
-              >
+
+            <!-- Weekly -->
+            <div v-if="form.type === 'Weekly'" class="flex flex-col items-center gap-2 mt-4">
+              <div class="flex items-center gap-2">
+                <label for="weekly-interval" class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  {{ t('todos.repeat.typeLabel.weekly') }}
+                </label>
                 <input 
-                  type="checkbox" 
-                  :value="day" 
-                  v-model="form.daysOfWeek" 
-                  class="w-4 h-4 border-gray-300 rounded focus:ring-blue-500 text-blue-600 dark:border-gray-600 dark:bg-gray-700 dark:text-blue-500"
+                  type="number"
+                  id="weekly-interval"
+                  v-model.number="form.interval"
+                  min="1"
+                  required
+                  class="w-16 px-2 py-1 text-sm border border-gray-300 rounded-md dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500"
                 />
-                <span class="ml-2 text-gray-700 dark:text-gray-300">{{ day }}</span>
+              </div>
+              <div class="flex flex-wrap gap-3 justify-center mt-1">
+                <label
+                  v-for="day in weekdays"
+                  :key="day"
+                  class="flex items-center cursor-pointer select-none text-sm"
+                >
+                  <input
+                    type="checkbox"
+                    :value="day"
+                    v-model="form.daysOfWeek"
+                    class="w-4 h-4 border-gray-300 rounded focus:ring-blue-500 text-blue-600 dark:border-gray-600 dark:bg-gray-700 dark:text-blue-500"
+                  />
+                  <span class="ml-2 text-gray-700 dark:text-gray-300">{{ day }}</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Monthly -->
+            <div v-if="form.type === 'Monthly'" class="flex flex-col items-center gap-2 mt-4">
+              <div class="flex items-center gap-2">
+                <label for="monthly-interval" class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  {{ t('todos.repeat.typeLabel.monthly') }}
+                </label>
+                <input
+                  type="number"
+                  id="monthly-interval"
+                  v-model.number="form.interval"
+                  min="1"
+                  required
+                  class="w-20 text-center rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 p-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <select
+                  v-model="form.day"
+                  class="ml-1 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 p-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option v-for="n in monthlyDays" :key="n" :value="n">{{ n }}</option>
+                  <option value="last">Last day</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Yearly -->
+            <div v-if="form.type === 'Yearly'" class="flex flex-col items-center gap-2 mt-4">
+              <div class="flex items-center gap-2">
+                <label for="yearly-interval" class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  {{ t('todos.repeat.typeLabel.yearly') }}
+                </label>
+                <input
+                  type="number"
+                  id="yearly-interval"
+                  v-model.number="form.interval"
+                  min="1"
+                  required
+                  class="w-20 text-center rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 p-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div class="flex items-center gap-2">
+                <select
+                  v-model="form.month"
+                  class="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 p-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option v-for="n in 12" :key="n" :value="n">{{ monthNames[n - 1] }}</option>
+                </select>
+                <select
+                  v-model="form.day"
+                  class="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 p-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option v-for="n in yearlyMonthDays" :key="n" :value="n">{{ n }}</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Custom -->
+            <div v-if="form.type === 'Custom'" class="text-center mt-4">
+              <label for="custom-description" class="text-sm font-medium block text-gray-700 dark:text-gray-300">
+                {{ t('todos.repeat.type.custom') }}
               </label>
+              <input
+                type="text"
+                id="custom-description"
+                v-model="form.description"
+                required
+                class="mt-1 block w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 p-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
             </div>
           </div>
 
-          <!-- Monthly -->
-          <div v-if="form.type === 'Monthly'" class="flex flex-col items-center gap-2">
-            <div class="flex items-center gap-2">
-              <label for="monthly-interval" class="label-text">{{ t('todos.repeat.typeLabel.monthly') }}</label>
-              <input type="number" id="monthly-interval" v-model.number="form.interval" min="1" required class="input-number" />
-              <select v-model="form.day" class="ml-1 input-select">
-                <option v-for="n in monthlyDays" :key="n" :value="n">{{ n }}</option>
-                <option value="last">Last day</option>
-              </select>
-            </div>
-          </div>
-
-          <!-- Yearly -->
-          <div v-if="form.type === 'Yearly'" class="flex flex-col items-center gap-2">
-            <div class="flex items-center gap-2">
-              <label for="yearly-interval" class="label-text">{{ t('todos.repeat.typeLabel.yearly') }}</label>
-              <input type="number" id="yearly-interval" v-model.number="form.interval" min="1" required class="input-number" />
-            </div>
-            <div class="flex items-center gap-2">
-              <select v-model="form.month" class="input-select">
-                <option v-for="n in 12" :key="n" :value="n">{{ monthNames[n - 1] }}</option>
-              </select>
-              <select v-model="form.day" class="input-select">
-                <option v-for="n in yearlyMonthDays" :key="n" :value="n">{{ n }}</option>
-              </select>
-            </div>
-          </div>
-
-          <!-- Custom -->
-          <div v-if="form.type === 'Custom'" class="text-center">
-            <label for="custom-description" class="label-text block">{{ t('todos.repeat.type.custom') }}</label>
-            <input type="text" id="custom-description" v-model="form.description" required class="mt-1 block w-full input-select" />
-          </div>
-          </div>
-
-          <!-- 按钮 -->
-          <div class="flex justify-center gap-4">
-            <button class="px-5 py-2 text-sm font-medium rounded-xl bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 transition-all hover:scale-105 active:scale-95" @click="emit('close')">
+          <!-- Buttons -->
+          <div class="flex justify-center gap-4 mt-6">
+            <button
+              class="px-5 py-2 text-sm font-medium rounded-xl bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 transition-all hover:scale-105 active:scale-95"
+              @click="emit('close')"
+            >
               <X class="wh-5" />
             </button>
             <button
-              class="modal-button"
-              :class="isChanged ? 'modal-button-disabled' : 'modal-button-active'"
+              :class="[
+                'px-5 py-2 rounded-xl transition-all',
+                isChanged ? 'bg-gray-400 cursor-not-allowed text-white' : 'bg-blue-600 hover:bg-blue-700 text-white'
+              ]"
               :disabled="isChanged"
               @click="save"
             >
               <Check class="wh-5" />
             </button>
           </div>
-
         </div>
       </transition>
     </div>
   </transition>
 </template>
+
 <script setup lang="ts">
 import { RepeatPeriod, RepeatPeriodSchema, weekdays } from '@/schema/common';
 import { buildRepeatPeriod } from '@/utils/common';
@@ -155,20 +209,23 @@ const resetForm = () => {
 
 const monthlyDays = computed(() => {
   if (form.value.type === 'Monthly') {
-    const cYear = new Date().getFullYear();
-    const month = form.value.interval;
-    return new Date(cYear, month, 0).getDate();
+    const year = new Date().getFullYear();
+    // 这里按每月的第 interval 个月算可能语义不太对，应该是当月？
+    const month = new Date().getMonth() + 1;
+    const days = new Date(year, month, 0).getDate();
+    return Array.from({ length: days }, (_, i) => i + 1);
   }
-  return 30;
+  return [];
 });
 
 const yearlyMonthDays = computed(() => {
   if (form.value.type === 'Yearly') {
-    const cYear = new Date().getFullYear();
+    const year = new Date().getFullYear();
     const month = form.value.month;
-    return new Date(cYear, month, 0).getDate();
+    const days = new Date(year, month, 0).getDate();
+    return Array.from({ length: days }, (_, i) => i + 1);
   }
-  return 30;
+  return [];
 });
 
 const save = () => {
