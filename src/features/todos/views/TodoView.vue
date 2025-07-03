@@ -93,9 +93,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue';
 import { Plus, X } from 'lucide-vue-next';
-import { useI18n } from 'vue-i18n';
 import { FilterBtn, FilterBtnSchema } from '@/schema/common';
 import { TodoRemain } from '@/schema/todos';
 import InputCommon from '@/components/common/InputCommon.vue';

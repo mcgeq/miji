@@ -12,7 +12,6 @@
 import GenericItem from '@/components/common/GenericItem.vue';
 import GenericViewItem from '@/components/common/GenericViewItem.vue';
 import { ProjectWithUsageStats } from '@/schema/todos';
-import { ref } from 'vue';
 
 const projectsMap = ref(
   new Map<string, ProjectWithUsageStats>([

@@ -54,9 +54,7 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { useI18n } from 'vue-i18n';
 import { toast } from '@/utils/toast';
 import { Lg } from '@/utils/debugLog';
 import FormInput from '@/components/common/FormInput.vue';

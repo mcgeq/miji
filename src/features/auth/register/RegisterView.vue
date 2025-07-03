@@ -85,7 +85,6 @@
 import { useRouter } from 'vue-router';
 import { useForm, useField } from 'vee-validate';
 import { toTypedSchema } from '@vee-validate/zod';
-import { useI18n } from 'vue-i18n';
 import { Lg } from '@/utils/debugLog';
 import { register } from '@/services/auth';
 import { toast } from '@/utils/toast';
