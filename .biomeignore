@@ -1,0 +1,11 @@
+node_modules
+dist
+build
+.turbo
+.next
+target
+coverage
+out
+.tauri
+src-tauri/target
+
