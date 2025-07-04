@@ -1,10 +1,7 @@
 <script setup lang="ts">
-import { useRouter } from 'vue-router';
-import { useI18n } from 'vue-i18n';
-import { toast } from '@/utils/toast';
-import { checkAndCleanSession } from './services/auth';
-import { useTransitionsStore } from './stores/transition';
 import { storeToRefs } from 'pinia';
+import { checkAndCleanSession } from './services/auth';
+import { toast } from './utils/toast';
 
 const isLoading = ref(true);
 const router = useRouter();
