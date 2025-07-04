@@ -15,8 +15,23 @@
     "lineWidth": 80,
     "indentWidth": 2
   },
+  "assist": {
+    "actions": {
+      "source": {
+        "organizeImports": {
+          "level": "on",
+          "options": {
+            "groups": [{ "type": true }]
+          }
+        }
+      }
+    }
+  },
   "linter": {
     "enabled": true,
+    "domains": {
+      "vue": "all"
+    },
     "includes": ["*.svelte"],
     "rules": {
       "recommended": true,

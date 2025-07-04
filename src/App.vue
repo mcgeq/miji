@@ -31,9 +31,10 @@ onMounted(async () => {
 
 <template>
   <div v-if="isLoading" class="loading">{{ t('loading') }}</div>
-<!-- 使用动态过渡名称 -->
+  <!-- 使用动态过渡名称 -->
   <router-view v-else v-slot="{ Component, route }">
-    <transition :name="typeof route.meta.transition === 'string' ? route.meta.transition : transitionName" mode="out-in">
+    <transition :name="typeof route.meta.transition === 'string' ? route.meta.transition : transitionName"
+      mode="out-in">
       <component :is="Component" />
     </transition>
   </router-view>
