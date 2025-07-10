@@ -1,10 +1,12 @@
 // src/lib/api/todos.ts
+import { getEndOfTodayISOWithOffset } from '@/utils/date';
 import { getDb } from '../db';
-import type {
-  DateRange,
-  QueryFilters,
-  SortOptions,
-  Status,
+import {
+  StatusSchema,
+  type DateRange,
+  type QueryFilters,
+  type SortOptions,
+  type Status,
 } from '../schema/common';
 import type { Todo } from '../schema/todos';
 import { toCamelCase, toSnakeCase } from '../utils/common';
@@ -79,6 +81,18 @@ const listPaged = async (
   appendDateRange('completed_at', filters.completedAtRange, whereParts, params);
   appendDateRange('due_at', filters.dueAtRange, whereParts, params);
 
+  const orConditions: string[] = [];
+  if (filters.includeRecentCreated) {
+    const dueEnd = getEndOfTodayISOWithOffset();
+    orConditions.push(
+      `(status != '${StatusSchema.enum.Completed}' AND due_at <= '${dueEnd}')`,
+    );
+  }
+
+  if (orConditions.length > 0) {
+    whereParts.push(`(${orConditions.join(' OR ')})`);
+  }
+
   const whereClause =
     whereParts.length > 0 ? `WHERE ${whereParts.join(' AND ')}` : '';
 
@@ -88,6 +102,8 @@ const listPaged = async (
       ? `ORDER BY ${sortOptions.sortBy} ${sortOptions.sortDir ?? 'ASC'}`
       : '';
 
+  console.log('Query SQL: ', whereClause, orderClause);
+  console.log('Query Parts: ', whereParts);
   // 查询当前页数据
   const rows = await db.select(
     `SELECT * FROM todo ${whereClause} ${orderClause} LIMIT ? OFFSET ?`,

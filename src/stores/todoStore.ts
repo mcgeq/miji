@@ -319,6 +319,7 @@ export const useTodoStore = defineStore('todo', () => {
           start: getEndOfTodayISOWithOffset({ days: -3 }),
           end: getEndOfTodayISOWithOffset(),
         },
+        includeRecentCreated: true,
       };
       return await todosDb.listPaged(
         ownerId,
@@ -337,6 +338,7 @@ export const useTodoStore = defineStore('todo', () => {
     try {
       const filters: QueryFilters = {
         dueAtRange: { end: getEndOfTodayISOWithOffset({ days: -3 }) },
+        status: StatusSchema.enum.Completed,
       };
       return await todosDb.listPaged(
         ownerId,
