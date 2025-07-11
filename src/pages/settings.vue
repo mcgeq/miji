@@ -1,11 +1,10 @@
 <template>
-  <TagsView />
+  <div>settings</div>
 </template>
 
 <script setup lang="ts">
-import TagsView from '@/features/tags/views/TagsView.vue';
 definePage({
-  name: 'tags',
+  name: 'settings',
   meta: {
     requiresAuth: true,
     layout: 'default',

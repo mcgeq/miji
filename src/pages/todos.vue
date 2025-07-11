@@ -9,6 +9,7 @@ definePage({
   name: 'todos',
   meta: {
     requiresAuth: true,
+    layout: 'default',
   },
 });
 </script>
