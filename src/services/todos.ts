@@ -81,18 +81,6 @@ const listPaged = async (
   appendDateRange('completed_at', filters.completedAtRange, whereParts, params);
   appendDateRange('due_at', filters.dueAtRange, whereParts, params);
 
-  const orConditions: string[] = [];
-  if (filters.includeRecentCreated) {
-    const dueEnd = getEndOfTodayISOWithOffset();
-    orConditions.push(
-      `(status != '${StatusSchema.enum.Completed}' AND due_at <= '${dueEnd}')`,
-    );
-  }
-
-  if (orConditions.length > 0) {
-    whereParts.push(`(${orConditions.join(' OR ')})`);
-  }
-
   const whereClause =
     whereParts.length > 0 ? `WHERE ${whereParts.join(' AND ')}` : '';
 
@@ -102,17 +90,30 @@ const listPaged = async (
       ? `ORDER BY ${sortOptions.sortBy} ${sortOptions.sortDir ?? 'ASC'}`
       : '';
 
-  console.log('Query SQL: ', whereClause, orderClause);
-  console.log('Query Parts: ', whereParts);
+  const orConditions: string[] = [];
+  if (filters.orQuery) {
+    const dueEnd = getEndOfTodayISOWithOffset();
+    orConditions.push('status != ?');
+    orConditions.push('due_at <= ?');
+    params.push(StatusSchema.enum.Completed);
+    params.push(dueEnd);
+  }
+
+  const whereOrClause =
+    orConditions.length > 0 ? `${orConditions.join(' AND ')}` : '';
+
+  const querySql = filters.orQuery
+    ? whereClause + ' OR (' + whereOrClause + ')'
+    : whereClause;
   // 查询当前页数据
   const rows = await db.select(
-    `SELECT * FROM todo ${whereClause} ${orderClause} LIMIT ? OFFSET ?`,
+    `SELECT * FROM todo ${querySql} ${orderClause} LIMIT ? OFFSET ?`,
     [...params, pageSize, offset],
   );
 
   // 查询总条数
   const totalRes = await db.select<{ cnt: number }[]>(
-    `SELECT COUNT(*) as cnt FROM todo ${whereClause}`,
+    `SELECT COUNT(*) as cnt FROM todo ${querySql}`,
     params,
   );
   const total = totalRes[0]?.cnt ?? 0;
@@ -317,6 +318,7 @@ const appendDateRange = (
 };
 
 export const todosDb = {
+  getTodo,
   list,
   listPaged,
   insert,

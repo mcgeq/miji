@@ -164,7 +164,7 @@ export interface QueryFilters {
   createdAtRange?: DateRange;
   completedAtRange?: DateRange;
   dueAtRange?: DateRange;
-  includeRecentCreated?: boolean;
+  orQuery?: boolean;
 }
 
 export type SortOptions = {

@@ -144,7 +144,7 @@ export const useTodoStore = defineStore('todo', () => {
   };
 
   const toggleTodo = async (serialNum: string) => {
-    const todo = todos.get(serialNum);
+    const todo = await todosDb.getTodo(serialNum);
     if (!todo) return;
     const isCompleted = todo.status === StatusSchema.enum.Completed;
     const updated = {
@@ -319,7 +319,7 @@ export const useTodoStore = defineStore('todo', () => {
           start: getEndOfTodayISOWithOffset({ days: -3 }),
           end: getEndOfTodayISOWithOffset(),
         },
-        includeRecentCreated: true,
+        orQuery: true,
       };
       return await todosDb.listPaged(
         ownerId,
