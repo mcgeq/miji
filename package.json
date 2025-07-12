@@ -9,7 +9,8 @@
     "build": "vue-tsc --noEmit && vite build",
     "preview": "vite preview",
     "tauri": "tauri",
-    "test": "vitest"
+    "test": "vitest",
+    "commit": "git add . && cz"
   },
   "dependencies": {
     "@intlify/unplugin-vue-i18n": "^6.0.8",
@@ -22,10 +23,10 @@
     "@tauri-apps/plugin-opener": "^2.4.0",
     "@tauri-apps/plugin-os": "~2.3.0",
     "@tauri-apps/plugin-sql": "~2.3.0",
-    "@tauri-store/vue": "^0.3.0",
-    "@unocss/reset": "^66.3.2",
+    "@tauri-store/vue": "^1.0.0",
+    "@unocss/reset": "^66.3.3",
     "@vee-validate/zod": "^4.15.1",
-    "@vueuse/core": "^13.4.0",
+    "@vueuse/core": "^13.5.0",
     "date-fns": "^4.1.0",
     "lucide-vue-next": "^0.525.0",
     "pinia": "^3.0.3",
@@ -34,26 +35,39 @@
     "vue-i18n": "11",
     "vue-router": "4",
     "vue-toastification": "^2.0.0-rc.5",
-    "zod": "^3.25.67"
+    "zod": "^4.0.5"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.0.6",
+    "@commitlint/config-conventional": "^19.8.1",
+    "commitizen": "^4.3.1",
+    "commitlint": "^19.8.1",
+    "commitlint-config-gitmoji": "^2.3.1",
+    "cz-customizable": "^7.4.0",
+    "@biomejs/biome": "2.1.1",
     "@tauri-apps/cli": "^2",
-    "@types/node": "^24.0.6",
-    "@unocss/core": "^66.3.2",
-    "@unocss/preset-attributify": "^66.3.2",
-    "@unocss/preset-icons": "^66.3.2",
-    "@unocss/preset-web-fonts": "^66.3.2",
-    "@unocss/preset-wind4": "^66.3.2",
+    "@types/node": "^24.0.13",
+    "@unocss/core": "^66.3.3",
+    "@unocss/preset-attributify": "^66.3.3",
+    "@unocss/preset-icons": "^66.3.3",
+    "@unocss/preset-web-fonts": "^66.3.3",
+    "@unocss/preset-wind4": "^66.3.3",
     "@vitejs/plugin-vue": "^6.0.0",
     "npm-check-updates": "^18.0.1",
     "typescript": "~5.8.3",
-    "unocss": "^66.3.2",
+    "unocss": "^66.3.3",
     "unplugin-auto-import": "^19.3.0",
-    "unplugin-vue-router": "^0.12.0",
-    "vite": "^7.0.0",
+    "unplugin-vue-router": "^0.14.0",
+    "vite": "^7.0.4",
     "vite-plugin-vue-devtools": "^7.7.7",
     "vitest": "^3.2.4",
-    "vue-tsc": "^2.2.10"
+    "vue-tsc": "^3.0.1"
+  },
+  "config": {
+    "commitizen": {
+      "path": "node_modules/cz-customizable"
+    },
+    "cz-customizable": {
+      "config": ".cz-config.cjs"
+    }
   }
 }
