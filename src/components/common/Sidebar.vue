@@ -1,7 +1,7 @@
 <template>
-  <aside class="w-16 bg-gray-600 text-white h-screen flex flex-col justify-between transition-all duration-300 ease-in-out">
+  <aside class="w-12 bg-gray-600 text-white h-screen flex flex-col justify-between transition-all duration-300 ease-in-out">
     <!-- 顶部头像区域 -->
-    <div class="flex justify-center items-center pt6 pb2">
+    <div class="flex justify-center items-center pt-6 pb-2">
       <img src="" class="w-8 h-8 rounded-full border border-white/20" />
     </div>
     <!-- Menu -->
@@ -13,7 +13,7 @@
           @click="navigate(item)"
           :title="item.title"
           :class="[
-            'cursor-pointer flex-juster-center py3 hover:bg-gray-700 transition-all duration-300 rounded-md mx2',
+            'cursor-pointer flex-juster-center py-2 hover:bg-gray-700 transition-all duration-300 rounded-md mx2',
             isActive(item) ? 'bg-gray-700 shadow-inset ring-1 ring-white/10' : ''
           ]"
         >
