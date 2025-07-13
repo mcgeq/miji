@@ -22,28 +22,40 @@
           <!-- 操作按钮靠右 -->
           <div class="flex gap-3.75 flex-wrap justify-end">
             <button
-              class="flex items-center gap-2 px-5 py-3 border-none rounded-md cursor-pointer text-sm transition-all duration-200 bg-green-50 text-green-600 hover:opacity-80 hover:-translate-y-0.25"
+              class="flex items-center gap-2 px-2 py-3 border-none rounded-md cursor-pointer text-sm transition-all duration-200 bg-purple-50 text-purple-500 hover:opacity-80 hover:-translate-y-0.25"
+              @click="showAccountModal">
+              <CreditCard class="w-4 h-4" />
+              <span>添加账户</span>
+            </button>
+            <button
+              class="flex items-center gap-2 px-2 py-3 border-none rounded-md cursor-pointer text-sm transition-all duration-200 bg-green-50 text-green-600 hover:opacity-80 hover:-translate-y-0.25"
               @click="showTransactionModal(TransactionTypeSchema.enum.Income)">
-              <i class="icon-plus"></i>
+              <PlusCircle class="w-4 h-4" />
               <span>记录收入</span>
             </button>
             <button
-              class="flex items-center gap-2 px-5 py-3 border-none rounded-md cursor-pointer text-sm transition-all duration-200 bg-red-50 text-red-500 hover:opacity-80 hover:-translate-y-0.25"
+              class="flex items-center gap-2 px-2 py-3 border-none rounded-md cursor-pointer text-sm transition-all duration-200 bg-red-50 text-red-500 hover:opacity-80 hover:-translate-y-0.25"
               @click="showTransactionModal(TransactionTypeSchema.enum.Expense)">
-              <i class="icon-minus"></i>
+              <MinusCircle class="w-4 h-4" />
               <span>记录支出</span>
             </button>
             <button
-              class="flex items-center gap-2 px-5 py-3 border-none rounded-md cursor-pointer text-sm transition-all duration-200 bg-blue-50 text-blue-500 hover:opacity-80 hover:-translate-y-0.25"
+              class="flex items-center gap-2 px-2 py-3 border-none rounded-md cursor-pointer text-sm transition-all duration-200 bg-blue-50 text-blue-500 hover:opacity-80 hover:-translate-y-0.25"
               @click="showTransactionModal(TransactionTypeSchema.enum.Transfer)">
-              <i class="icon-repeat"></i>
-              <span>转账</span>
+              <ArrowRightLeft class="w-4 h-4" />
+              <span>记录转账</span>
             </button>
             <button
-              class="flex items-center gap-2 px-5 py-3 border-none rounded-md cursor-pointer text-sm transition-all duration-200 bg-orange-50 text-orange-500 hover:opacity-80 hover:-translate-y-0.25"
+              class="flex items-center gap-2 px-2 py-3 border-none rounded-md cursor-pointer text-sm transition-all duration-200 bg-orange-50 text-orange-500 hover:opacity-80 hover:-translate-y-0.25"
               @click="showBudgetModal">
-              <i class="icon-target"></i>
+              <Target class="w-4 h-4" />
               <span>设置预算</span>
+            </button>
+            <button
+              class="flex items-center gap-2 px-2 py-3 border-none rounded-md cursor-pointer text-sm transition-all duration-200 bg-yellow-50 text-yellow-600 hover:opacity-80 hover:-translate-y-0.25"
+              @click="showReminderModal">
+              <Bell class="w-4 h-4" />
+              <span>设置提醒</span>
             </button>
           </div>
         </div>
@@ -62,13 +74,6 @@
       <div class="p-5">
         <!-- 账户管理 -->
         <div v-if="activeTab === 'accounts'" class="accounts-section">
-          <div class="btn-div">
-            <button
-              class="btn"
-              @click="showAccountModal">
-              添加账户
-            </button>
-          </div>
           <AccountList :accounts="accounts" :loading="accountsLoading" @edit="editAccount" @delete="deleteAccount"
             @toggle-active="toggleAccountActive" />
         </div>
@@ -97,42 +102,20 @@
           </div>
           <TransactionList :transactions="filteredTransactions" :loading="transactionsLoading" @edit="editTransaction"
             @delete="deleteTransaction" @view-details="viewTransactionDetails" />
-          <SimplePagination 
-            :current-page="transactionPagination.currentPage" 
-            :total-pages="transactionPagination.totalPages"
-            :total-items="transactionPagination.totalItems"
-            :page-size="transactionPagination.pageSize"
-            :show-page-size="false"
-            :page-size-options="[10, 20, 50, 100]"
-            @page-change="handleTransactionPageChange"
-            @page-size-change="handleTransactionPageSizeChange"
-          />
+          <SimplePagination :current-page="transactionPagination.currentPage"
+            :total-pages="transactionPagination.totalPages" :total-items="transactionPagination.totalItems"
+            :page-size="transactionPagination.pageSize" :show-page-size="false" :page-size-options="[10, 20, 50, 100]"
+            @page-change="handleTransactionPageChange" @page-size-change="handleTransactionPageSizeChange" />
         </div>
 
         <!-- 预算管理 -->
         <div v-if="activeTab === 'budgets'" class="budgets-section">
-          <div class="btn-div">
-            <button
-              class="btn"
-              @click="showBudgetModal">
-              <i class="icon-plus"></i>
-              添加预算
-            </button>
-          </div>
           <BudgetList :budgets="budgets" :loading="budgetsLoading" @edit="editBudget" @delete="deleteBudget"
             @toggle-active="toggleBudgetActive" />
         </div>
 
         <!-- 账单提醒 -->
         <div v-if="activeTab === 'reminders'" class="reminders-section">
-          <div class="btn-div">
-            <button
-              class="btn"
-              @click="showReminderModal">
-              <i class="icon-plus"></i>
-              添加提醒
-            </button>
-          </div>
           <ReminderList :reminders="reminders" :loading="remindersLoading" @edit="editReminder" @delete="deleteReminder"
             @mark-paid="markReminderPaid" />
         </div>
@@ -143,7 +126,7 @@
     <TransactionModal v-if="showTransaction" :visible="showTransaction" :type="transactionType"
       :transaction="selectedTransaction" :accounts="accounts" @close="closeTransactionModal" @save="saveTransaction" />
 
-    <AccountModal v-if="showAccount" :visible="showAccount" :account="selectedAccount" @close="closeAccountModal"
+    <AccountModal :visible="showAccount" :account="selectedAccount" @close="closeAccountModal"
       @save="saveAccount" />
 
     <BudgetModal v-if="showBudget" :visible="showBudget" :budget="selectedBudget" @close="closeBudgetModal"
@@ -155,7 +138,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue';
+import {
+  PlusCircle,
+  MinusCircle,
+  ArrowRightLeft,
+  Target,
+  CreditCard,
+  Bell,
+} from 'lucide-vue-next';
 import StatCard from '../components/StatCard.vue';
 import AccountList from '../components/AccountList.vue';
 import AccountModal from '../components/AccountModal.vue';
@@ -422,6 +412,7 @@ const saveTransaction = async (transaction: TransactionWithAccount) => {
 const showAccountModal = () => {
   selectedAccount.value = null;
   showAccount.value = true;
+  console.log('showAccountModal: ', showAccount.value);
 };
 
 const editAccount = (account: Account) => {
@@ -607,6 +598,7 @@ onMounted(() => {
 .btn-div {
   @apply flex justify-end items-center mb-3;
 }
+
 .btn {
   @apply flex items-center gap-1 px-3 py-1.5 border-none rounded-md cursor-pointer text-xs bg-[#1890ff] text-white transition-all duration-200 hover:bg-[#40a9ff]
 }

@@ -9,7 +9,6 @@
           </svg>
         </button>
       </div>
-      
       <form @submit.prevent="saveReminder">
         <div class="mb-4">
           <label class="block text-sm font-medium text-gray-700 mb-2">提醒标题</label>
@@ -21,7 +20,6 @@
             placeholder="请输入提醒标题"
           />
         </div>
-        
         <div class="mb-4">
           <label class="block text-sm font-medium text-gray-700 mb-2">提醒类型</label>
           <select
@@ -38,7 +36,6 @@
             <option value="other">其他</option>
           </select>
         </div>
-        
         <div class="mb-4">
           <label class="block text-sm font-medium text-gray-700 mb-2">金额</label>
           <input
@@ -49,7 +46,6 @@
             placeholder="0.00（可选）"
           />
         </div>
-        
         <div class="mb-4">
           <label class="block text-sm font-medium text-gray-700 mb-2">提醒日期</label>
           <input
@@ -59,7 +55,6 @@
             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
-        
         <div class="mb-4">
           <label class="block text-sm font-medium text-gray-700 mb-2">提醒时间</label>
           <input
@@ -68,7 +63,6 @@
             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
-        
         <div class="mb-4">
           <label class="block text-sm font-medium text-gray-700 mb-2">重复频率</label>
           <select
@@ -82,7 +76,6 @@
             <option value="yearly">每年</option>
           </select>
         </div>
-        
         <div class="mb-4">
           <label class="block text-sm font-medium text-gray-700 mb-2">优先级</label>
           <select
@@ -94,7 +87,6 @@
             <option value="high">高</option>
           </select>
         </div>
-        
         <div class="mb-4">
           <label class="block text-sm font-medium text-gray-700 mb-2">提前提醒</label>
           <div class="flex items-center space-x-2">
@@ -116,7 +108,6 @@
             </select>
           </div>
         </div>
-        
         <div class="mb-4">
           <label class="block text-sm font-medium text-gray-700 mb-2">颜色</label>
           <div class="flex gap-2">
@@ -132,7 +123,6 @@
             ></div>
           </div>
         </div>
-        
         <div class="mb-4">
           <label class="flex items-center">
             <input
@@ -143,7 +133,6 @@
             <span class="text-sm font-medium text-gray-700">启用提醒</span>
           </label>
         </div>
-        
         <div class="mb-6">
           <label class="block text-sm font-medium text-gray-700 mb-2">描述</label>
           <textarea
@@ -153,7 +142,6 @@
             placeholder="提醒描述（可选）"
           ></textarea>
         </div>
-        
         <div class="flex justify-end space-x-3">
           <button
             type="button"
