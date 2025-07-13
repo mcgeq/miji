@@ -162,104 +162,111 @@
   </div>
 </template>
 
-<script>
-export default {
-  name: 'ReminderModal',
-  props: {
-    isOpen: {
-      type: Boolean,
-      default: false,
-    },
-    editingReminder: {
-      type: Object,
-      default: null,
-    },
+<script setup>
+// 定义 props
+const props = defineProps({
+  isOpen: {
+    type: Boolean,
+    default: false,
   },
-  data() {
-    return {
-      form: {
-        title: '',
-        type: '',
-        amount: 0,
-        date: '',
-        time: '09:00',
-        repeat: 'none',
-        priority: 'medium',
-        advanceValue: 0,
-        advanceUnit: 'minutes',
-        color: '#3B82F6',
-        enabled: true,
-        description: '',
-      },
-      colors: [
-        '#3B82F6',
-        '#EF4444',
-        '#10B981',
-        '#F59E0B',
-        '#8B5CF6',
-        '#F97316',
-        '#06B6D4',
-        '#84CC16',
-        '#EC4899',
-        '#6B7280',
-      ],
-    };
+  editingReminder: {
+    type: Object,
+    default: null,
   },
-  watch: {
-    isOpen(newVal) {
-      if (newVal) {
-        this.resetForm();
-      }
-    },
-    editingReminder: {
-      handler(newVal) {
-        if (newVal) {
-          this.form = { ...newVal };
-        }
-      },
-      immediate: true,
-    },
-  },
-  methods: {
-    resetForm() {
-      if (this.editingReminder) {
-        this.form = { ...this.editingReminder };
-      } else {
-        const today = new Date();
-        this.form = {
-          title: '',
-          type: '',
-          amount: 0,
-          date: today.toISOString().split('T')[0],
-          time: '09:00',
-          repeat: 'none',
-          priority: 'medium',
-          advanceValue: 0,
-          advanceUnit: 'minutes',
-          color: '#3B82F6',
-          enabled: true,
-          description: '',
-        };
-      }
-    },
-    closeModal() {
-      this.$emit('close');
-    },
-    saveReminder() {
-      const reminderData = {
-        ...this.form,
-        id: this.editingReminder?.id || Date.now(),
-        createdAt: this.editingReminder?.createdAt || new Date().toISOString(),
-        status: this.editingReminder?.status || 'pending',
-      };
+});
 
-      this.$emit('save', reminderData);
-      this.closeModal();
-    },
-  },
+// 定义 emits
+const emit = defineEmits(['close', 'save']);
+
+// 响应式数据
+const form = reactive({
+  title: '',
+  type: '',
+  amount: 0,
+  date: '',
+  time: '09:00',
+  repeat: 'none',
+  priority: 'medium',
+  advanceValue: 0,
+  advanceUnit: 'minutes',
+  color: '#3B82F6',
+  enabled: true,
+  description: '',
+});
+
+const colors = ref([
+  '#3B82F6',
+  '#EF4444',
+  '#10B981',
+  '#F59E0B',
+  '#8B5CF6',
+  '#F97316',
+  '#06B6D4',
+  '#84CC16',
+  '#EC4899',
+  '#6B7280',
+]);
+
+// 方法
+const resetForm = () => {
+  if (props.editingReminder) {
+    Object.assign(form, props.editingReminder);
+  } else {
+    const today = new Date();
+    Object.assign(form, {
+      title: '',
+      type: '',
+      amount: 0,
+      date: today.toISOString().split('T')[0],
+      time: '09:00',
+      repeat: 'none',
+      priority: 'medium',
+      advanceValue: 0,
+      advanceUnit: 'minutes',
+      color: '#3B82F6',
+      enabled: true,
+      description: '',
+    });
+  }
 };
+
+const closeModal = () => {
+  emit('close');
+};
+
+const saveReminder = () => {
+  const reminderData = {
+    ...form,
+    id: props.editingReminder?.id || Date.now(),
+    createdAt: props.editingReminder?.createdAt || new Date().toISOString(),
+    status: props.editingReminder?.status || 'pending',
+  };
+  emit('save', reminderData);
+  closeModal();
+};
+
+// 监听器
+watch(
+  () => props.isOpen,
+  (newVal) => {
+    if (newVal) {
+      resetForm();
+    }
+  },
+);
+
+watch(
+  () => props.editingReminder,
+  (newVal) => {
+    if (newVal) {
+      Object.assign(form, newVal);
+    }
+  },
+  { immediate: true },
+);
 </script>
 
 <style scoped>
 /* 自定义样式 */
 </style>
+

@@ -20,7 +20,7 @@
             placeholder="请输入账户名称"
           />
         </div>
-        
+ 
         <div class="mb-4">
           <label class="block text-sm font-medium text-gray-700 mb-2">账户类型</label>
           <select
@@ -37,7 +37,7 @@
             <option value="investment">投资账户</option>
           </select>
         </div>
-        
+ 
         <div class="mb-4">
           <label class="block text-sm font-medium text-gray-700 mb-2">初始余额</label>
           <input
@@ -49,7 +49,7 @@
             placeholder="0.00"
           />
         </div>
-        
+ 
         <div class="mb-4">
           <label class="block text-sm font-medium text-gray-700 mb-2">颜色</label>
           <div class="flex gap-2">
@@ -65,7 +65,7 @@
             ></div>
           </div>
         </div>
-        
+ 
         <div class="mb-6">
           <label class="block text-sm font-medium text-gray-700 mb-2">描述</label>
           <textarea
@@ -75,7 +75,7 @@
             placeholder="账户描述（可选）"
           ></textarea>
         </div>
-        
+ 
         <div class="flex justify-end space-x-3">
           <button
             type="button"
@@ -96,88 +96,93 @@
   </div>
 </template>
 
-<script>
-export default {
-  name: 'AccountModal',
-  props: {
-    isOpen: {
-      type: Boolean,
-      default: false,
-    },
-    editingAccount: {
-      type: Object,
-      default: null,
-    },
+<script setup>
+// 定义 props
+const props = defineProps({
+  isOpen: {
+    type: Boolean,
+    default: false,
   },
-  data() {
-    return {
-      form: {
-        name: '',
-        type: '',
-        balance: 0,
-        color: '#3B82F6',
-        description: '',
-      },
-      colors: [
-        '#3B82F6',
-        '#EF4444',
-        '#10B981',
-        '#F59E0B',
-        '#8B5CF6',
-        '#F97316',
-        '#06B6D4',
-        '#84CC16',
-        '#EC4899',
-        '#6B7280',
-      ],
-    };
+  editingAccount: {
+    type: Object,
+    default: null,
   },
-  watch: {
-    isOpen(newVal) {
-      if (newVal) {
-        this.resetForm();
-      }
-    },
-    editingAccount: {
-      handler(newVal) {
-        if (newVal) {
-          this.form = { ...newVal };
-        }
-      },
-      immediate: true,
-    },
-  },
-  methods: {
-    resetForm() {
-      if (this.editingAccount) {
-        this.form = { ...this.editingAccount };
-      } else {
-        this.form = {
-          name: '',
-          type: '',
-          balance: 0,
-          color: '#3B82F6',
-          description: '',
-        };
-      }
-    },
-    closeModal() {
-      this.$emit('close');
-    },
-    saveAccount() {
-      const accountData = {
-        ...this.form,
-        id: this.editingAccount?.id || Date.now(),
-        createdAt: this.editingAccount?.createdAt || new Date().toISOString(),
-      };
+});
 
-      this.$emit('save', accountData);
-      this.closeModal();
-    },
-  },
+// 定义 emits
+const emit = defineEmits(['close', 'save']);
+
+// 响应式数据
+const form = reactive({
+  name: '',
+  type: '',
+  balance: 0,
+  color: '#3B82F6',
+  description: '',
+});
+
+const colors = ref([
+  '#3B82F6',
+  '#EF4444',
+  '#10B981',
+  '#F59E0B',
+  '#8B5CF6',
+  '#F97316',
+  '#06B6D4',
+  '#84CC16',
+  '#EC4899',
+  '#6B7280',
+]);
+
+// 方法
+const resetForm = () => {
+  if (props.editingAccount) {
+    Object.assign(form, props.editingAccount);
+  } else {
+    Object.assign(form, {
+      name: '',
+      type: '',
+      balance: 0,
+      color: '#3B82F6',
+      description: '',
+    });
+  }
 };
-</script>
 
+const closeModal = () => {
+  emit('close');
+};
+
+const saveAccount = () => {
+  const accountData = {
+    ...form,
+    id: props.editingAccount?.id || Date.now(),
+    createdAt: props.editingAccount?.createdAt || new Date().toISOString(),
+  };
+  emit('save', accountData);
+  closeModal();
+};
+
+// 监听器
+watch(
+  () => props.isOpen,
+  (newVal) => {
+    if (newVal) {
+      resetForm();
+    }
+  },
+);
+
+watch(
+  () => props.editingAccount,
+  (newVal) => {
+    if (newVal) {
+      Object.assign(form, newVal);
+    }
+  },
+  { immediate: true },
+);
+</script>
 <style scoped>
 /* 自定义样式 */
 </style>
