@@ -71,7 +71,7 @@ export const RepeatPeriodSchema = z.discriminatedUnion('type', [
 
 export type RepeatPeriod = z.infer<typeof RepeatPeriodSchema>;
 
-export type RepeatType = RepeatPeriod['type'];
+export type RepeatPeriodType = RepeatPeriod['type'];
 
 export type Weekday = (typeof weekdays)[number];
 
@@ -85,7 +85,7 @@ export const TransactionStatusSchema = z.enum([
 ]);
 export type TransactionStatus = z.infer<typeof TransactionStatusSchema>;
 
-export const TransactionTypeSchema = z.enum(['Income', 'Expense']);
+export const TransactionTypeSchema = z.enum(['Income', 'Expense', 'Transfer']);
 export type TransactionType = z.infer<typeof TransactionTypeSchema>;
 
 export const CategorySchema = z.enum([

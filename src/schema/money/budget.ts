@@ -3,6 +3,7 @@ import {
   CategorySchema,
   DateSchema,
   DateTimeSchema,
+  DescriptionSchema,
   NameSchema,
   RepeatPeriodSchema,
   SerialNumSchema,
@@ -10,6 +11,7 @@ import {
 
 export const BudgetSchema = z.object({
   serialNum: SerialNumSchema,
+  description: DescriptionSchema,
   accountSerialNum: SerialNumSchema,
   name: NameSchema,
   Category: CategorySchema,

@@ -1,8 +1,9 @@
 <template>
-  <div>Money</div>
+  <MoneyView />
 </template>
 
 <script setup lang="ts">
+import MoneyView from '@/features/money/views/MoneyView.vue';
 definePage({
   name: 'money',
   meta: {

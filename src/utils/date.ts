@@ -5,7 +5,7 @@
 // File:           date.ts
 // Description:    About Date and Time
 // Create   Date:  2025-06-28 13:52:19
-// Last Modified:  2025-06-28 13:52:28
+// Last Modified:  2025-07-13 22:02:07
 // Modified   By:  mcgeq <mcgeq@outlook.com>
 // -----------------------------------------------------------------------------
 export const getLocalISODateTimeWithOffset = (options?: {
@@ -267,4 +267,12 @@ export const isDateTimeContaining = (
     fullDate.getHours() === hour &&
     fullDate.getMinutes() === minute
   );
+};
+
+export const formatDate = (dateStr: string) => {
+  const date = new Date(dateStr);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0'); // 月份从0开始
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 };

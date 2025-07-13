@@ -11,6 +11,7 @@ import {
 import { AccountTypeSchema, PaymentMethodSchema } from './money.e';
 import { TagsSchema } from '../tags';
 import { FamilyMemberSchema } from './family';
+import { AccountSchema } from './account';
 
 export const TransactionSchema = z.object({
   serialNum: SerialNumSchema,
@@ -32,4 +33,11 @@ export const TransactionSchema = z.object({
   updatedAt: DateTimeSchema.optional().nullable(),
 });
 
+export const TransactionWithAccountSchema = TransactionSchema.extend({
+  account: AccountSchema,
+});
+
 export type Transaction = z.infer<typeof TransactionSchema>;
+export type TransactionWithAccount = z.infer<
+  typeof TransactionWithAccountSchema
+>;

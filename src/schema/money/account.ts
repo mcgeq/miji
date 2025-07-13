@@ -6,11 +6,13 @@ import {
   NameSchema,
   SerialNumSchema,
 } from '../common';
+import { AccountTypeSchema } from './money.e';
 
 export const AccountSchema = z.object({
   serialNum: SerialNumSchema,
   name: NameSchema,
   description: DescriptionSchema,
+  type: AccountTypeSchema,
   balance: z.string(),
   currency: CurrencySchema,
   isShared: z.boolean(),
