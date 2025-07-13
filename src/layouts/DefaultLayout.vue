@@ -1,9 +1,13 @@
 <template>
   <div class="flex min-h-screen">
-    <Sidebar v-if="!isMobile" :menu="menuItems" @logout="logout"  class="hidden md:flex"/>
-
-    <div class="flex-1 flex flex-col">
-      <main class="['flex-1 bg-gray-50', isMobile ? 'pb-16' : '']">
+    <Sidebar
+      v-if="!isMobile"
+      :menu="menuItems"
+      @logout="logout"
+      class="hidden md:flex fixed left-0 top-0 h-screen z-10"
+    />
+    <div class="flex-1 flex flex-col md:ml-12">
+      <main class="flex-1 bg-gray-50" :class="{ 'pb-16': isMobile }">
         <slot />
       </main>
       <MobileBottomNav v-if="isMobile" :menu="menuItems" />
