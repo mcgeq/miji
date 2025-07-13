@@ -1,4 +1,4 @@
-import { z } from 'zod/v4';
+import { z } from 'zod';
 import { SerialNumSchema, DateTimeSchema, DateSchema } from '@/schema/common';
 
 export const PeriodRecordsSchema = z.object({

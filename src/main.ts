@@ -6,14 +6,16 @@ import router from './router';
 import { initI18n } from './i18n/i18n';
 import Toast from 'vue-toastification';
 import 'vue-toastification/dist/index.css';
-import { setErrorMap } from 'zod';
 import { i18nErrorMap } from './schema/i18nErrorMap';
 import { storeStart } from './stores';
 import { createPinia } from 'pinia';
+import z from 'zod';
 
 const app = createApp(App);
 
-setErrorMap(i18nErrorMap);
+z.config({
+  localeError: i18nErrorMap,
+});
 // Initialize i18n and mount the app
 async function bootstrap() {
   try {

@@ -1,4 +1,4 @@
-import { z } from 'zod/v4';
+import { z } from 'zod';
 import { UserRoleSchema } from './userRole';
 import { UserStatusSchema } from './userStatus';
 import { DateTimeSchema, NameSchema, SerialNumSchema } from './common';

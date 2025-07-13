@@ -1,4 +1,4 @@
-import { z } from 'zod/v4';
+import { z } from 'zod';
 import { SerialNumSchema } from '../common';
 
 export const TaskSchema = z.object({

@@ -109,7 +109,7 @@ const { value: code } = useField('code');
 
 const onSubmit = handleSubmit(async (values) => {
   try {
-    await register(values, rememberMe.value);
+    await register({ ...values, code: values.code ?? '' }, rememberMe.value);
     success.value = true;
     router.push('/todos');
   } catch (e) {

@@ -4,12 +4,12 @@ import { passwordRegex } from './common';
 
 export const RegisterSchema = z.object({
   username: z.string().trim().min(3),
-  email: z.string().trim().email(),
+  email: z.email(),
   password: z.string().trim().regex(passwordRegex).min(6),
-  code: z.string().trim().optional().default(''),
+  code: z.string().trim().optional(),
 });
 
 export const LoginSchema = z.object({
-  email: z.string().trim().email(),
+  email: z.email(),
   password: z.string().trim().nonempty(),
 });

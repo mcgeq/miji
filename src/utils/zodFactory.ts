@@ -1,4 +1,4 @@
-import { z, type ZodObject, type ZodRawShape } from 'zod/v4';
+import { z, type ZodObject, type ZodRawShape } from 'zod';
 import { Lg } from './debugLog';
 import { RepeatPeriodSchema, type RepeatPeriod } from '../schema/common';
 
