@@ -1,5 +1,5 @@
 <template>
-  <div class="grid grid-cols-1 md:grid-cols-2 grid-rows-4 md:grid-rows-2 gap-4 p-2 min-h-screen bg-gray-100">
+  <div class="grid grid-cols-1 md:grid-cols-2 grid-rows-4 md:grid-rows-2 gap-2 p-2 min-h-screen bg-gray-100">
     <div class="home-scoop text-red-600">
       区域 1
     </div>

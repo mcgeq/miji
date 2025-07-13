@@ -1,17 +1,20 @@
 <template>
   <div class="flex min-h-screen">
-    <Sidebar :menu="menuItems" @logout="logout" />
+    <Sidebar v-if="!isMobile" :menu="menuItems" @logout="logout"  class="hidden md:flex"/>
 
     <div class="flex-1 flex flex-col">
-      <main class="flex-1 bg-gray-50">
+      <main class="['flex-1 bg-gray-50', isMobile ? 'pb-16' : '']">
         <slot />
       </main>
+      <MobileBottomNav v-if="isMobile" :menu="menuItems" />
     </div>
   </div>
 </template>
 
 <script setup>
 import Sidebar from '@/components/common/Sidebar.vue';
+import MobileBottomNav from '@/components/common/MobileBottomNav.vue';
+
 import {
   CircleCheckBig,
   FolderDot,
@@ -20,9 +23,13 @@ import {
   Settings,
   Tags,
 } from 'lucide-vue-next';
-import path from 'path';
 
 const collapsed = ref(false);
+const isMobile = ref(window.innerWidth < 768);
+
+const updateIsMobile = () => {
+  isMobile.value = window.innerWidth < 768;
+};
 
 const menuItems = [
   { name: 'home', title: 'Home', icon: Home, path: '/' },
@@ -40,8 +47,15 @@ const menuItems = [
 
 const router = useRouter();
 const logout = async () => {
-  console.log('logout: ', router.getRoutes());
   await logoutUser();
   router.replace({ name: 'auth-login' });
 };
+
+onMounted(() => {
+  window.addEventListener('resize', updateIsMobile);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('resize', updateIsMobile);
+});
 </script>
