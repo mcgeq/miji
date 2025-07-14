@@ -101,18 +101,11 @@
         </div>
         <div class="mb-2 flex items-center justify-between">
           <label class="text-sm font-medium text-gray-700 mb-2">颜色</label>
-          <div class="flex gap-2">
-            <div
-              v-for="color in colors"
-              :key="color"
-              @click="form.color = color"
-              :class="[
-                'w-6 h-6 rounded-full cursor-pointer border-2',
-                form.color === color ? 'border-gray-800' : 'border-gray-300'
-              ]"
-              :style="{ backgroundColor: color }"
-            ></div>
-          </div>
+          <ColorSelector
+            v-model="form.color"
+            :colors="colors"
+            :color-names="colorNameMap"
+          />
         </div>
         <div class="mb-2">
           <textarea
@@ -150,6 +143,7 @@ import { getLocalISODateTimeWithOffset } from '@/utils/date';
 import { Account, AccountTypeSchema } from '@/schema/money';
 import { DEFAULT_COLORS, DEFAULT_CURRENCY } from '@/constants/moneyConst';
 import { safeGet } from '@/utils/common';
+import ColorSelector from '@/components/common/ColorSelector.vue';
 
 interface Props {
   account: Account | null;
@@ -162,15 +156,26 @@ const emit = defineEmits(['close', 'save']);
 
 const colors = ref(DEFAULT_COLORS);
 const currencys = ref(DEFAULT_CURRENCY);
-
+const colorNameMap = ref({
+  '#3B82F6': '蓝色',
+  '#EF4444': '红色',
+  '#10B981': '绿色',
+  '#F59E0B': '橙色',
+  '#8B5CF6': '紫色',
+  '#06B6D4': '青色',
+  '#84CC16': '柠檬绿',
+  '#F97316': '深橙色',
+  '#EC4899': '粉色',
+  '#6B7280': '灰色',
+});
 const account = props.account || {
   serialNum: '',
   name: '',
   description: '',
   type: AccountTypeSchema.enum.Other,
   balance: '0',
-  currency: safeGet(DEFAULT_CURRENCY, 1),
-  color: safeGet(DEFAULT_COLORS, 0),
+  currency: safeGet(DEFAULT_CURRENCY, 1, DEFAULT_CURRENCY[0])!,
+  color: safeGet(DEFAULT_COLORS, 0, '#3B82F6'),
   isShared: false,
   isActive: false,
   ownerId: '',

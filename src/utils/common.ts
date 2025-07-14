@@ -5,7 +5,7 @@
 // File:           common.ts
 // Description:    About Common
 // Create   Date:  2025-06-22 20:39:52
-// Last Modified:  2025-07-14 19:58:10
+// Last Modified:  2025-07-15 00:08:27
 // Modified   By:  mcgeq <mcgeq@outlook.com>
 // -----------------------------------------------------------------------------
 
@@ -76,6 +76,13 @@ export const buildRepeatPeriod = (
   }
 };
 
-export const safeGet = <T>(arr: T[], index: number): T => {
-  return arr[index] ?? arr[0];
-};
+// 类型重载版本
+export function safeGet<T>(arr: T[], index: number): T | undefined;
+export function safeGet<T>(arr: T[], index: number, fallback: T): T;
+export function safeGet<T>(
+  arr: T[],
+  index: number,
+  fallback?: T,
+): T | undefined {
+  return arr[index] ?? fallback;
+}

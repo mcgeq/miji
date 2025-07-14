@@ -18,7 +18,7 @@ export const AccountSchema = z.object({
   isShared: z.boolean(),
   ownerId: SerialNumSchema,
   isActive: z.boolean(),
-  color: z.string().optional().nullable(),
+  color: z.string(),
   createdAt: DateTimeSchema,
   updatedAt: DateTimeSchema.optional().nullable(),
 });
