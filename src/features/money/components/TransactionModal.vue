@@ -1,18 +1,19 @@
 <template>
-  <div v-if="visible" class="fixed inset-0 bg-black/50 flex-justify-center z-1000" @click="handleOverlayClick">
-    <div class="bg-white dark:bg-gray-800 rounded-lg w-11/12 max-w-xl max-h-[80vh] overflow-y-auto p-6" @click.stop>
+  <div class="modal-mask" @click="handleOverlayClick">
+    <div class="modal-mask-window-money h-8" @click.stop>
       <div class="flex justify-between items-center mb-4 border-b pb-2">
         <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-100">{{ getModalTitle() }}</h2>
-        <button class="text-gray-500 hover:text-red-500 transition" @click="$emit('close')">
-          <i class="i-lucide-x w-5 h-5"></i>
+        <button @click="emit('close')" class="text-gray-500 hover:text-gray-700">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
         </button>
       </div>
-
       <form class="space-y-4" @submit.prevent="handleSubmit">
         <!-- 交易类型 -->
-        <div>
-          <label class="block text-sm font-medium mb-1">交易类型</label>
-          <select v-model="form.transactionType" class="form-select w-full" required>
+        <div class="flex items-center justify-between">
+          <label class="text-sm font-medium mb-1">交易类型</label>
+          <select v-model="form.transactionType" class="w-2/3 modal-input-select" required>
             <option value="Income">收入</option>
             <option value="Expense">支出</option>
             <option value="Transfer">转账</option>
@@ -20,12 +21,12 @@
         </div>
 
         <!-- 金额 -->
-        <div>
-          <label class="block text-sm font-medium mb-1">金额</label>
+        <div class="flex items-center justify-between mt-4">
+          <label class="text-sm font-medium mb-1">金额</label>
           <input
             type="number"
             v-model="form.amount"
-            class="form-input w-full"
+            class="w-2/3 modal-input-select"
             placeholder="请输入金额"
             step="0.01"
             min="0"
@@ -34,11 +35,11 @@
         </div>
 
         <!-- 账户 -->
-        <div>
-          <label class="block text-sm font-medium mb-1">
+        <div class="flex items-center justify-between">
+          <label class="text-sm font-medium mb-1">
             {{ form.transactionType === TransactionTypeSchema.enum.Transfer ? '转出账户' : '账户' }}
           </label>
-          <select v-model="form.accountSerialNum" class="form-select w-full" required>
+          <select v-model="form.accountSerialNum" class="w-2/3 modal-input-select" required>
             <option value="">请选择账户</option>
             <option
               v-for="account in accounts"
@@ -51,9 +52,9 @@
         </div>
 
         <!-- 分类 -->
-        <div>
+        <div class="flex items-center justify-between">
           <label class="block text-sm font-medium mb-1">分类</label>
-          <select v-model="form.category" class="form-select w-full" required>
+          <select v-model="form.category" class="w-2/3 modal-input-select" required>
             <option value="">请选择分类</option>
             <option
               v-for="category in filteredCategories"
@@ -66,9 +67,9 @@
         </div>
 
         <!-- 子分类 -->
-        <div v-if="filteredSubcategories.length > 0">
-          <label class="block text-sm font-medium mb-1">子分类</label>
-          <select v-model="form.subCategory" class="form-select w-full">
+        <div v-if="filteredSubcategories.length > 0" class="flex items-center justify-between">
+          <label class="text-sm font-medium mb-1">子分类</label>
+          <select v-model="form.subCategory" class="w-2/3 modal-input-select">
             <option value="">请选择子分类</option>
             <option
               v-for="subcategory in filteredSubcategories"
@@ -80,29 +81,28 @@
           </select>
         </div>
         <!-- 日期 -->
-        <div>
-          <label class="block text-sm font-medium mb-1">交易日期</label>
-          <input type="date" v-model="form.date" class="form-input w-full" required />
+        <div class="flex items-center justify-between">
+          <label class="text-sm font-medium mb-1">交易日期</label>
+          <input type="date" v-model="form.date" class="w-2/3 modal-input-select" required />
         </div>
 
         <!-- 备注 -->
-        <div>
-          <label class="block text-sm font-medium mb-1">备注</label>
+        <div class="mb-2">
           <textarea
             v-model="form.description"
-            class="form-textarea w-full"
+            class="w-full modal-input-select"
             rows="3"
             placeholder="请输入备注信息（可选）"
           ></textarea>
         </div>
 
         <!-- 按钮 -->
-        <div class="flex justify-end gap-3 pt-4 border-t">
-          <button type="button" class="btn px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700" @click="$emit('close')">
-            取消
+        <div class="flex justify-center gap-3 pt-4">
+          <button type="button" class="modal-btn-x" @click="$emit('close')">
+            <X class="wh-5" />
           </button>
-          <button type="submit" class="btn px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
-            保存
+          <button type="submit" class="modal-btn-check">
+            <Check class="wh-5" />
           </button>
         </div>
       </form>
@@ -111,6 +111,7 @@
 </template>
 
 <script setup lang="ts">
+import { Check, X } from 'lucide-vue-next';
 import {
   CategorySchema,
   SubCategorySchema,
@@ -120,7 +121,6 @@ import {
 import { Account, TransactionWithAccount } from '@/schema/money';
 
 interface Props {
-  visible: boolean;
   type: TransactionType;
   transaction?: TransactionWithAccount | null;
   accounts: Account[];
@@ -152,6 +152,14 @@ const emit = defineEmits<{
   save: [transaction: TransactionWithAccount];
 }>();
 
+const mapSubToCategory = (sub: string): string => {
+  if (['Restaurant', 'Groceries', 'Snacks'].includes(sub)) return 'Food';
+  if (['Bus', 'Taxi', 'Fuel'].includes(sub)) return 'Transport';
+  if (['Movies', 'Concerts'].includes(sub)) return 'Entertainment';
+  if (['MonthlySalary', 'Bonus'].includes(sub)) return 'Salary';
+  return 'Others';
+};
+
 // 模拟分类数据
 const categories = ref(
   CategorySchema.options.map((name) => ({
@@ -166,14 +174,6 @@ const subcategories = ref(
     category: mapSubToCategory(name),
   })),
 );
-
-const mapSubToCategory = (sub: string): string => {
-  if (['Restaurant', 'Groceries', 'Snacks'].includes(sub)) return 'Food';
-  if (['Bus', 'Taxi', 'Fuel'].includes(sub)) return 'Transport';
-  if (['Movies', 'Concerts'].includes(sub)) return 'Entertainment';
-  if (['MonthlySalary', 'Bonus'].includes(sub)) return 'Salary';
-  return 'Others';
-};
 
 const filteredCategories = computed(() => {
   return categories.value.filter((c) => c.type === form.value.transactionType);

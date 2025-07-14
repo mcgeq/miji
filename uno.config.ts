@@ -17,7 +17,11 @@ export default defineConfig({
     ['flex-justify-center', 'flex justify-center items-center'],
     [
       'modal-btn-x',
-      'mt-2 text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 flex justify-center',
+      'px-4 py-2 text-gray-700 border border-gray-300 rounded-xl hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-200 transition-all hover:scale-105 active:scale-95',
+    ],
+    [
+      'modal-btn-check',
+      'px-4 py-2 text-white rounded-xl bg-blue-600 hover:bg-blue-700 transition-all hover:scale-105 active:scale-95',
     ],
     [
       'modal-btn-icon',
@@ -30,6 +34,14 @@ export default defineConfig({
     [
       'modal-mask-window',
       'bg-white/70 dark:bg-gray-900/80 p-6 rounded-2xl shadow-xl w-40 flex flex-col gap-4 border border-white/20 dark:border-gray-700/30',
+    ],
+    [
+      'modal-mask-window-money',
+      'min-h-screen h-10 bg-white rounded-lg p-6 w-full max-w-md mx-4',
+    ],
+    [
+      'modal-input-select',
+      'px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500',
     ],
     ['wh-5', 'w-5 h-5'],
     [

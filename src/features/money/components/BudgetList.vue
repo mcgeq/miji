@@ -31,7 +31,7 @@
             <button
               class="money-option-btn hover:(border-blue-500 text-blue-500)"
               @click="emit('toggle-active', budget.serialNum)" :title="budget.isActive ? '停用' : '启用'">
-              <component :is="budget.isActive ? EyeOff : Eye" class="w-4 h-4" />
+              <component :is="budget.isActive ? Ban : StopCircle" class="w-4 h-4" />
             </button>
             <button
               class="money-option-btn hover:(border-red-500 text-red-500)"
@@ -93,7 +93,7 @@
 </template>
 
 <script setup lang="ts">
-import { Trash, Edit, Eye, EyeOff, CalendarIcon } from 'lucide-vue-next';
+import { Trash, Edit, CalendarIcon, StopCircle, Ban } from 'lucide-vue-next';
 import { Budget } from '@/schema/money';
 import { RepeatPeriod } from '@/schema/common';
 import { formatDate } from '@/utils/date';

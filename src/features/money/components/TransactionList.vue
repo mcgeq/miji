@@ -17,12 +17,12 @@
       <div
         class="hidden md:grid md:grid-cols-[120px_140px_180px_140px_140px_120px] bg-gray-100 border-b border-gray-200 font-semibold text-gray-800"
       >
-        <div class="p-4 text-sm grid place-items-center">类型</div>
-        <div class="p-4 text-sm grid place-items-center">金额</div>
-        <div class="p-4 text-sm grid place-items-center">账户</div>
-        <div class="p-4 text-sm grid place-items-center">分类</div>
-        <div class="p-4 text-sm grid place-items-center">时间</div>
-        <div class="p-4 text-sm grid place-items-center">操作</div>
+        <div class="p-4 text-sm grid place-items-end">类型</div>
+        <div class="p-4 text-sm grid place-items-end">金额</div>
+        <div class="p-4 text-sm grid place-items-end">账户</div>
+        <div class="p-4 text-sm grid place-items-end">分类</div>
+        <div class="p-4 text-sm grid place-items-end">时间</div>
+        <div class="p-4 text-sm grid place-items-end">操作</div>
       </div>
 
       <div
@@ -31,7 +31,7 @@
         class="grid grid-cols-1 md:grid-cols-[120px_140px_180px_140px_140px_120px] border-b border-gray-200 hover:bg-gray-50"
       >
         <!-- 类型列 -->
-        <div class="p-4 text-sm flex justify-between md:justify-center md:items-center">
+        <div class="p-4 text-sm flex justify-between md:justify-end md:items-center">
           <span class="md:hidden text-gray-600 font-semibold">类型</span>
           <div class="flex items-center gap-2">
             <component :is="getTransactionTypeIcon(transaction.transactionType)" class="w-4 h-4" />
@@ -40,7 +40,7 @@
         </div>
 
         <!-- 金额列 -->
-        <div class="p-4 text-sm flex justify-between md:justify-center md:items-center">
+        <div class="p-4 text-sm flex justify-between md:justify-end md:items-center">
           <span class="md:hidden text-gray-600 font-semibold">金额</span>
           <div
             :class="[
@@ -55,33 +55,33 @@
         </div>
 
         <!-- 账户列 -->
-        <div class="p-4 text-sm flex justify-between md:justify-center md:items-center">
+        <div class="p-4 text-sm flex justify-between md:justify-end md:items-center">
           <span class="md:hidden text-gray-600 font-semibold">账户</span>
-          <div class="md:text-center">
+          <div class="md:text-right">
             <div class="font-medium text-gray-800">{{ transaction.account.name}}</div>
             <!-- <div v-if="transaction.toAccountName" class="text-xs text-gray-600">→ {{ transaction.toAccountName }}</div> -->
           </div>
         </div>
 
         <!-- 分类列 -->
-        <div class="p-4 text-sm flex justify-between md:justify-center md:items-center">
+        <div class="p-4 text-sm flex justify-between md:justify-end md:items-center">
           <span class="md:hidden text-gray-600 font-semibold">分类</span>
-          <div class="md:text-center">
+          <div class="md:text-right">
             <span class="font-medium text-gray-800">{{ transaction.category}}</span>
             <div v-if="transaction.subCategory" class="text-xs text-gray-600">/ {{ transaction.subCategory}}</div>
           </div>
         </div>
 
         <!-- 时间列 -->
-        <div class="p-4 text-sm flex justify-between md:justify-center md:items-center">
+        <div class="p-4 text-sm flex justify-between md:justify-end md:items-center">
           <span class="md:hidden text-gray-600 font-semibold">时间</span>
-          <div class="md:text-center">
+          <div class="md:text-right">
             <div class="font-medium text-gray-800">{{ formatDate(transaction.date) }}</div>
-            <div class="text-xs text-gray-600 text-right">{{ formatTime(transaction.createdAt) }}</div>
+            <div class="text-xs text-gray-600">{{ formatTime(transaction.createdAt) }}</div>
           </div>
         </div>
         <!-- 操作列 - 始终靠右 -->
-        <div class="p-4 text-sm flex justify-end gap-2">
+        <div class="p-4 flex justify-between md:justify-end gap-1">
           <button
             class="money-option-btn hover:(border-green-500 text-green-500)"
             @click="emit('view-details', transaction)"

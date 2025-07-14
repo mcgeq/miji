@@ -1,6 +1,6 @@
 <template>
-  <div v-if="isOpen" class="fixed inset-0 z-50 flex-justify-center bg-black bg-opacity-50">
-    <div class="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+  <div class="modal-mask">
+    <div class="modal-mask-window-money">
       <div class="flex justify-between items-center mb-4">
         <h3 class="text-lg font-semibold">{{ editingReminder ? '编辑提醒' : '添加提醒' }}</h3>
         <button @click="closeModal" class="text-gray-500 hover:text-gray-700">
@@ -10,22 +10,22 @@
         </button>
       </div>
       <form @submit.prevent="saveReminder">
-        <div class="mb-4">
-          <label class="block text-sm font-medium text-gray-700 mb-2">提醒标题</label>
+        <div class="mb-2 flex items-center justify-between">
+          <label class="text-sm font-medium text-gray-700 mb-2">提醒标题</label>
           <input
             v-model="form.title"
             type="text"
             required
-            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            class="w-2/3 modal-input-select"
             placeholder="请输入提醒标题"
           />
         </div>
-        <div class="mb-4">
-          <label class="block text-sm font-medium text-gray-700 mb-2">提醒类型</label>
+        <div class="mb-2 flex items-center justify-between">
+          <label class="text-sm font-medium text-gray-700 mb-2">提醒类型</label>
           <select
             v-model="form.type"
             required
-            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            class="w-2/3 modal-input-select"
           >
             <option value="">请选择类型</option>
             <option value="bill">账单提醒</option>
@@ -36,38 +36,38 @@
             <option value="other">其他</option>
           </select>
         </div>
-        <div class="mb-4">
-          <label class="block text-sm font-medium text-gray-700 mb-2">金额</label>
+        <div class="mb-2 flex items-center justify-between">
+          <label class="text-sm font-medium text-gray-700 mb-2">金额</label>
           <input
             v-model.number="form.amount"
             type="number"
             step="0.01"
-            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            class="w-2/3 modal-input-select"
             placeholder="0.00（可选）"
           />
         </div>
-        <div class="mb-4">
-          <label class="block text-sm font-medium text-gray-700 mb-2">提醒日期</label>
+        <div class="mb-2 flex items-center justify-between">
+          <label class="text-sm font-medium text-gray-700 mb-2">提醒日期</label>
           <input
             v-model="form.date"
             type="date"
             required
-            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            class="w-2/3 modal-input-select"
           />
         </div>
-        <div class="mb-4">
-          <label class="block text-sm font-medium text-gray-700 mb-2">提醒时间</label>
+        <div class="mb-2 flex items-center justify-between">
+          <label class="text-sm font-medium text-gray-700 mb-2">提醒时间</label>
           <input
             v-model="form.time"
             type="time"
-            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            class="w-2/3 modal-input-select"
           />
         </div>
-        <div class="mb-4">
-          <label class="block text-sm font-medium text-gray-700 mb-2">重复频率</label>
+        <div class="mb-4 flex items-center justify-between">
+          <label class="text-sm font-medium text-gray-700 mb-2">重复频率</label>
           <select
             v-model="form.repeat"
-            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            class="w-2/3 modal-input-select"
           >
             <option value="none">不重复</option>
             <option value="daily">每日</option>
@@ -76,30 +76,30 @@
             <option value="yearly">每年</option>
           </select>
         </div>
-        <div class="mb-4">
-          <label class="block text-sm font-medium text-gray-700 mb-2">优先级</label>
+        <div class="mb-2 flex items-center justify-between">
+          <label class="text-sm font-medium text-gray-700 mb-2">优先级</label>
           <select
             v-model="form.priority"
-            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            class="w-2/3 modal-input-select"
           >
             <option value="low">低</option>
             <option value="medium">中</option>
             <option value="high">高</option>
           </select>
         </div>
-        <div class="mb-4">
+        <div class="mb-2 flex items-center justify-between">
           <label class="block text-sm font-medium text-gray-700 mb-2">提前提醒</label>
-          <div class="flex items-center space-x-2">
+          <div class="flex items-center space-x-1 w-2/3">
             <input
               v-model.number="form.advanceValue"
               type="number"
               min="0"
-              class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              class="w-1/2 flex-1 modal-input-select"
               placeholder="0"
             />
             <select
               v-model="form.advanceUnit"
-              class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              class="modal-input-select"
             >
               <option value="minutes">分钟</option>
               <option value="hours">小时</option>
@@ -108,22 +108,22 @@
             </select>
           </div>
         </div>
-        <div class="mb-4">
-          <label class="block text-sm font-medium text-gray-700 mb-2">颜色</label>
+        <div class="mb-2 flex items-center justify-between">
+          <label class="text-sm font-medium text-gray-700 mb-2">颜色</label>
           <div class="flex gap-2">
             <div
               v-for="color in colors"
               :key="color"
               @click="form.color = color"
               :class="[
-                'w-8 h-8 rounded-full cursor-pointer border-2',
+                'w-6 h-6 rounded-full cursor-pointer border-2',
                 form.color === color ? 'border-gray-800' : 'border-gray-300'
               ]"
               :style="{ backgroundColor: color }"
             ></div>
           </div>
         </div>
-        <div class="mb-4">
+        <div class="mb-2">
           <label class="flex items-center">
             <input
               v-model="form.enabled"
@@ -133,28 +133,27 @@
             <span class="text-sm font-medium text-gray-700">启用提醒</span>
           </label>
         </div>
-        <div class="mb-6">
-          <label class="block text-sm font-medium text-gray-700 mb-2">描述</label>
+        <div class="mb-2">
           <textarea
             v-model="form.description"
             rows="3"
-            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            class="w-full modal-input-select"
             placeholder="提醒描述（可选）"
           ></textarea>
         </div>
-        <div class="flex justify-end space-x-3">
+        <div class="flex justify-center space-x-3">
           <button
             type="button"
             @click="closeModal"
-            class="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50"
+            class="modal-btn-x"
           >
-            取消
+            <X class="wh-5" />
           </button>
           <button
             type="submit"
-            class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+            class="modal-btn-check"
           >
-            {{ editingReminder ? '更新' : '添加' }}
+            <Check class="wh-5" />
           </button>
         </div>
       </form>
@@ -163,6 +162,7 @@
 </template>
 
 <script setup>
+import { Check, X } from 'lucide-vue-next';
 // 定义 props
 const props = defineProps({
   isOpen: {

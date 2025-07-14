@@ -1,6 +1,6 @@
 <template>
-  <div v-if="showAccount" class="fixed inset-0 z-50 flex-justify-center bg-black bg-opacity-50">
-    <div class="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+  <div class="modal-mask">
+    <div class="modal-mask-window-money">
       <div class="flex justify-between items-center mb-4">
         <h3 class="text-lg font-semibold">{{ editingAccount ? '编辑账户' : '添加账户' }}</h3>
         <button @click="closeModal" class="text-gray-500 hover:text-gray-700">
@@ -16,7 +16,7 @@
             v-model="form.name"
             type="text"
             required
-            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            class="w-full modal-input-select"
             placeholder="请输入账户名称"
           />
         </div>
@@ -26,7 +26,7 @@
           <select
             v-model="form.type"
             required
-            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            class="w-full modal-input-select"
           >
             <option value="">请选择账户类型</option>
             <option value="cash">现金</option>
@@ -45,7 +45,7 @@
             type="number"
             step="0.01"
             required
-            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            class="w-full modal-input-select"
             placeholder="0.00"
           />
         </div>
@@ -71,24 +71,24 @@
           <textarea
             v-model="form.description"
             rows="3"
-            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            class="w-full modal-input-select"
             placeholder="账户描述（可选）"
           ></textarea>
         </div>
  
-        <div class="flex justify-end space-x-3">
+        <div class="flex justify-center space-x-3">
           <button
             type="button"
             @click="closeModal"
-            class="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50"
+            class="modal-btn-x"
           >
-            取消
+            <X class="wh-5" />
           </button>
           <button
             type="submit"
-            class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+            class="modal-btn-check"
           >
-            {{ editingAccount ? '更新' : '添加' }}
+            <Check class="wh-5" />
           </button>
         </div>
       </form>
@@ -97,16 +97,15 @@
 </template>
 
 <script setup>
+import { Check, X } from 'lucide-vue-next';
+import { Account } from '@/schema/money';
 // 定义 props
 const props = defineProps({
-  isOpen: {
-    type: Boolean,
-    default: false,
-  },
   editingAccount: {
     type: Object,
     default: null,
   },
+  account: Account,
 });
 
 // 定义 emits
@@ -165,17 +164,9 @@ const saveAccount = () => {
 
 // 监听器
 watch(
-  () => props.isOpen,
-  (newVal) => {
-    if (newVal) {
-      resetForm();
-    }
-  },
-);
-
-watch(
   () => props.editingAccount,
   (newVal) => {
+    console.log(accountData);
     if (newVal) {
       Object.assign(form, newVal);
     }

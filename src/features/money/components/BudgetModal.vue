@@ -1,6 +1,6 @@
 <template>
-  <div v-if="isOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-    <div class="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+  <div class="modal-mask">
+    <div class="modal-mask-window-money">
       <div class="flex justify-between items-center mb-4">
         <h3 class="text-lg font-semibold">{{ editingBudget ? '编辑预算' : '添加预算' }}</h3>
         <button @click="closeModal" class="text-gray-500 hover:text-gray-700">
@@ -10,22 +10,22 @@
         </button>
       </div>
       <form @submit.prevent="saveBudget">
-        <div class="mb-4">
-          <label class="block text-sm font-medium text-gray-700 mb-2">预算名称</label>
+        <div class="mb-2 flex items-center justify-between">
+          <label class="text-sm font-medium text-gray-700 mb-2">预算名称</label>
           <input
             v-model="form.name"
             type="text"
             required
-            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            class="w-2/3 modal-input-select"
             placeholder="请输入预算名称"
           />
         </div>
-        <div class="mb-4">
-          <label class="block text-sm font-medium text-gray-700 mb-2">预算类别</label>
+        <div class="mb-2 flex items-center justify-between">
+          <label class="text-sm font-medium text-gray-700 mb-2">预算类别</label>
           <select
             v-model="form.category"
             required
-            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            class="w-2/3 modal-input-select"
           >
             <option value="">请选择类别</option>
             <option value="food">餐饮</option>
@@ -42,24 +42,24 @@
           </select>
         </div>
 
-        <div class="mb-4">
-          <label class="block text-sm font-medium text-gray-700 mb-2">预算金额</label>
+        <div class="mb-2 flex items-center justify-between">
+          <label class="text-sm font-medium text-gray-700 mb-2">预算金额</label>
           <input
             v-model.number="form.amount"
             type="number"
             step="0.01"
             required
-            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            class="w-2/3 modal-input-select"
             placeholder="0.00"
           />
         </div>
  
-        <div class="mb-4">
-          <label class="block text-sm font-medium text-gray-700 mb-2">预算周期</label>
+        <div class="mb-2 flex items-center justify-between">
+          <label class="text-sm font-medium text-gray-700 mb-2">预算周期</label>
           <select
             v-model="form.period"
             required
-            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            class="w-2/3 modal-input-select"
           >
             <option value="monthly">月度</option>
             <option value="weekly">周度</option>
@@ -68,34 +68,34 @@
           </select>
         </div>
  
-        <div class="mb-4">
-          <label class="block text-sm font-medium text-gray-700 mb-2">开始日期</label>
+        <div class="mb-2 flex items-center justify-between">
+          <label class="text-sm font-medium text-gray-700 mb-2">开始日期</label>
           <input
             v-model="form.startDate"
             type="date"
             required
-            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            class="w-2/3 modal-input-select"
           />
         </div>
  
-        <div class="mb-4">
-          <label class="block text-sm font-medium text-gray-700 mb-2">结束日期</label>
+        <div class="mb-2 flex items-center justify-between">
+          <label class="text-sm font-medium text-gray-700 mb-2">结束日期</label>
           <input
             v-model="form.endDate"
             type="date"
-            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            class="w-2/3 modal-input-select"
           />
         </div>
  
-        <div class="mb-4">
-          <label class="block text-sm font-medium text-gray-700 mb-2">颜色</label>
+        <div class="mb-2 flex items-center justify-between">
+          <label class="text-sm font-medium text-gray-700 mb-2">颜色</label>
           <div class="flex gap-2">
             <div
               v-for="color in colors"
               :key="color"
               @click="form.color = color"
               :class="[
-                'w-8 h-8 rounded-full cursor-pointer border-2',
+                'w-6 h-6 rounded-full cursor-pointer border-2',
                 form.color === color ? 'border-gray-800' : 'border-gray-300'
               ]"
               :style="{ backgroundColor: color }"
@@ -103,52 +103,51 @@
           </div>
         </div>
  
-        <div class="mb-4">
-          <label class="flex items-center">
+        <div class="mb-4 h-8 flex items-center justify-between">
+          <div class="w-1/3">
+            <label class="flex items-center">
+              <input
+                v-model="form.alertEnabled"
+                type="checkbox"
+                class="mr-2 modal-input-select"
+              />
+              <span class="text-sm font-medium text-gray-700">启用超支提醒</span>
+            </label>
+          </div>
+ 
+          <div v-if="form.alertEnabled" class="w-2/3">
             <input
-              v-model="form.alertEnabled"
-              type="checkbox"
-              class="mr-2"
+              v-model.number="form.alertThreshold"
+              type="number"
+              min="1"
+              max="100"
+              class="w-full modal-input-select"
+              placeholder="80"
             />
-            <span class="text-sm font-medium text-gray-700">启用超支提醒</span>
-          </label>
+          </div>
         </div>
- 
-        <div v-if="form.alertEnabled" class="mb-4">
-          <label class="block text-sm font-medium text-gray-700 mb-2">提醒阈值 (%)</label>
-          <input
-            v-model.number="form.alertThreshold"
-            type="number"
-            min="1"
-            max="100"
-            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="80"
-          />
-        </div>
- 
-        <div class="mb-6">
-          <label class="block text-sm font-medium text-gray-700 mb-2">描述</label>
+        <div class="mb-2">
           <textarea
             v-model="form.description"
             rows="3"
-            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            class="w-full modal-input-select"
             placeholder="预算描述（可选）"
           ></textarea>
         </div>
  
-        <div class="flex justify-end space-x-3">
+        <div class="flex justify-center space-x-3">
           <button
             type="button"
             @click="closeModal"
-            class="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50"
+            class="modal-btn-x"
           >
-            取消
+            <X class="wh-5" />
           </button>
           <button
             type="submit"
-            class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+            class="modal-btn-check"
           >
-            {{ editingBudget ? '更新' : '添加' }}
+            <Check class="wh-5" />
           </button>
         </div>
       </form>
@@ -157,6 +156,7 @@
 </template>
 
 <script setup>
+import { Check, X } from 'lucide-vue-next';
 // 定义 props
 const props = defineProps({
   isOpen: {

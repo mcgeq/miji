@@ -123,16 +123,16 @@
     </div>
 
     <!-- 模态框 -->
-    <TransactionModal v-if="showTransaction" :visible="showTransaction" :type="transactionType"
+    <TransactionModal v-if="showTransaction" :type="transactionType"
       :transaction="selectedTransaction" :accounts="accounts" @close="closeTransactionModal" @save="saveTransaction" />
 
-    <AccountModal :visible="showAccount" :account="selectedAccount" @close="closeAccountModal"
+    <AccountModal v-if="showAccount" :account="selectedAccount" @close="closeAccountModal"
       @save="saveAccount" />
 
-    <BudgetModal v-if="showBudget" :visible="showBudget" :budget="selectedBudget" @close="closeBudgetModal"
+    <BudgetModal v-if="showBudget" :budget="selectedBudget" @close="closeBudgetModal"
       @save="saveBudget" />
 
-    <ReminderModal v-if="showReminder" :visible="showReminder" :reminder="selectedReminder" @close="closeReminderModal"
+    <ReminderModal v-if="showReminder" :reminder="selectedReminder" @close="closeReminderModal"
       @save="saveReminder" />
   </div>
 </template>
@@ -412,7 +412,6 @@ const saveTransaction = async (transaction: TransactionWithAccount) => {
 const showAccountModal = () => {
   selectedAccount.value = null;
   showAccount.value = true;
-  console.log('showAccountModal: ', showAccount.value);
 };
 
 const editAccount = (account: Account) => {
