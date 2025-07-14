@@ -14,6 +14,7 @@ export default defineConfig({
   shortcuts: [
     { logo: 'i-logos-vue w-6em h-6em transform transition-800' },
     ['flex-juster-center', 'flex justify-center items-center'],
+    ['flex-justify-center', 'flex justify-center items-center'],
     [
       'modal-btn-x',
       'mt-2 text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 flex justify-center',
@@ -31,6 +32,10 @@ export default defineConfig({
       'bg-white/70 dark:bg-gray-900/80 p-6 rounded-2xl shadow-xl w-40 flex flex-col gap-4 border border-white/20 dark:border-gray-700/30',
     ],
     ['wh-5', 'w-5 h-5'],
+    [
+      'money-option-btn',
+      'w-8 h-8 bg-white rounded cursor-pointer flex items-center justify-center transition-all text-xs',
+    ],
   ],
   presets: [
     presetWind3(),

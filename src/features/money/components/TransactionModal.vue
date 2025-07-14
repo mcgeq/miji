@@ -1,5 +1,5 @@
 <template>
-  <div v-if="visible" class="fixed inset-0 bg-black/50 flex items-center justify-center z-1000" @click="handleOverlayClick">
+  <div v-if="visible" class="fixed inset-0 bg-black/50 flex-justify-center z-1000" @click="handleOverlayClick">
     <div class="bg-white dark:bg-gray-800 rounded-lg w-11/12 max-w-xl max-h-[80vh] overflow-y-auto p-6" @click.stop>
       <div class="flex justify-between items-center mb-4 border-b pb-2">
         <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-100">{{ getModalTitle() }}</h2>

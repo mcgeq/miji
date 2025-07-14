@@ -1,20 +1,18 @@
 <template>
   <div class="min-h-50">
-    <div v-if="loading" class="flex justify-center items-center h-50 text-gray-500">加载中...</div>
+    <div v-if="loading" class="flex-justify-center h-50 text-gray-500">加载中...</div>
 
-    <div v-else-if="accounts.length === 0" class="flex flex-col items-center justify-center h-50 text-gray-400">
+    <div v-else-if="accounts.length === 0" class="flex-justify-center flex-col h-50 text-gray-400">
       <div class="text-6xl mb-4 opacity-50">
         <i class="icon-credit-card"></i>
       </div>
       <div class="text-base">暂无账户</div>
     </div>
-
     <div v-else class="grid gap-5" style="grid-template-columns: repeat(auto-fill, minmax(320px, 1fr))">
       <div v-for="account in accounts" :key="account.serialNum" :class="[
         'bg-white border border-gray-200 rounded-lg p-5 transition-all hover:shadow-md',
         !account.isActive && 'opacity-60 bg-gray-100'
       ]">
-
         <div class="flex flex-wrap justify-between items-center mb-4 gap-2">
           <!-- 类型图标 + 类型名称 + 账户名称 + 币种-->
           <div class="flex items-center gap-3 text-gray-800">
@@ -27,17 +25,17 @@
           <!-- 操作按钮 -->
           <div class="flex items-center gap-1.5 self-end">
             <button
-              class="w-6 h-6 bg-white cursor-pointer flex items-center justify-center transition-all hover:(border-blue-500 text-blue-500)"
-              @click="emit('edit', account)" title="编辑">
-              <Edit class="w-4 h-4" />
-            </button>
-            <button
-              class="w-6 h-6 bg-white cursor-pointer flex items-center justify-center transition-all hover:(border-blue-500 text-blue-500)"
+              class="money-option-btn hover:(border-green-500 text-green-500)"
               @click="emit('toggle-active', account.serialNum)" :title="account.isActive ? '停用' : '启用'">
               <Ban class="w-4 h-4" />
             </button>
             <button
-              class="w-6 h-6 bg-white cursor-pointer flex items-center justify-center transition-all hover:(border-red-500 text-red-500)"
+              class="money-option-btn hover:(border-blue-500 text-blue-500)"
+              @click="emit('edit', account)" title="编辑">
+              <Edit class="w-4 h-4" />
+            </button>
+            <button
+              class="money-option-btn hover:(border-red-500 text-red-500)"
               @click="emit('delete', account.serialNum)" title="删除">
               <Trash class="w-4 h-4" />
             </button>
@@ -50,11 +48,11 @@
 
         <div class="border-t border-gray-200 pt-4">
           <div class="flex justify-between mb-2 text-sm">
-            <span class="text-gray-500">创建时间：</span>
+            <span class="text-gray-600">创建时间：</span>
             <span class="text-gray-800">{{ formatDate(account.createdAt) }}</span>
           </div>
           <div v-if="account.description" class="flex justify-between mb-2 text-sm">
-            <span class="text-gray-500">备注：</span>
+            <span class="text-gray-600">备注：</span>
             <span class="text-gray-800">{{ account.description }}</span>
           </div>
         </div>

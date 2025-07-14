@@ -1,9 +1,9 @@
 <template>
   <div class="min-h-25">
-    <div v-if="loading" class="flex justify-center items-center h-25 text-gray-600">
+    <div v-if="loading" class="flex-justify-center h-25 text-gray-600">
       加载中...
     </div>
-    <div v-else-if="budgets.length === 0" class="flex flex-col items-center justify-center h-25 text-#999">
+    <div v-else-if="budgets.length === 0" class="flex-justify-center flex-col h-25 text-#999">
       <div class="text-sm mb-2 opacity-50">
         <i class="icon-target"></i>
       </div>
@@ -24,17 +24,17 @@
           <!-- 右侧按钮组 -->
           <div class="flex items-center gap-1 md:self-end">
             <button
-              class="w-8 h-8 bg-white rounded-md cursor-pointer flex items-center justify-center transition-all hover:border-[#1890ff] hover:text-[#1890ff]"
+              class="money-option-btn hover:(border-green-500 text-green-500)"
               @click="emit('edit', budget)" title="编辑">
               <Edit class="w-4 h-4" />
             </button>
             <button
-              class="w-8 h-8 bg-white rounded-md cursor-pointer flex items-center justify-center transition-all hover:border-[#1890ff] hover:text-[#1890ff]"
+              class="money-option-btn hover:(border-blue-500 text-blue-500)"
               @click="emit('toggle-active', budget.serialNum)" :title="budget.isActive ? '停用' : '启用'">
               <component :is="budget.isActive ? EyeOff : Eye" class="w-4 h-4" />
             </button>
             <button
-              class="w-8 h-8 bg-white rounded-md cursor-pointer flex items-center justify-center transition-all hover:border-[#ff4d4f] hover:text-[#ff4d4f]"
+              class="money-option-btn hover:(border-red-500 text-red-500)"
               @click="emit('delete', budget.serialNum)" title="删除">
               <Trash class="w-4 h-4" />
             </button>
@@ -74,15 +74,15 @@
 
         <!-- Info -->
         <div class="border-t border-gray-200 pt-2">
-          <div class="flex justify-between mb-1 text-lg">
-            <span class="text-gray-600">分类：</span>
-            <span class="text-gray-800">{{ budget.Category }}</span>
+          <div class="flex justify-between mb-1 text-sm">
+            <span class="font-medium text-gray-600">分类：</span>
+            <span class="font-medium text-gray-800">{{ budget.Category }}</span>
           </div>
-          <div class="flex justify-between mb-1 text-lg">
+          <div class="flex justify-between mb-1 text-sm">
             <span class="text-gray-600">创建时间：</span>
             <span class="text-gray-800">{{ formatDate(budget.createdAt) }}</span>
           </div>
-          <div v-if="budget.description" class="flex justify-between mb-1 text-lg last:mb-0">
+          <div v-if="budget.description" class="flex justify-between mb-1 text-sm last:mb-0">
             <span class="text-gray-600">备注：</span>
             <span class="text-gray-800">{{ budget.description }}</span>
           </div>

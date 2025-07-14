@@ -1,5 +1,5 @@
 <template>
-  <div v-if="isOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+  <div v-if="isOpen" class="fixed inset-0 z-50 flex-justify-center bg-black bg-opacity-50">
     <div class="bg-white rounded-lg p-6 w-full max-w-md mx-4">
       <div class="flex justify-between items-center mb-4">
         <h3 class="text-lg font-semibold">{{ editingReminder ? '编辑提醒' : '添加提醒' }}</h3>

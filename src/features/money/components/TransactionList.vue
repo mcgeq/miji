@@ -1,12 +1,11 @@
 <template>
   <div class="min-h-50">
-    <div v-if="loading" class="flex justify-center items-center h-50 text-gray-600">
+    <div v-if="loading" class="flex-justify-center h-50 text-gray-600">
       加载中...
     </div>
-
     <div
       v-else-if="transactions.length === 0"
-      class="flex flex-col items-center justify-center h-50 text-gray-400"
+      class="flex-justify-center flex-col h-50 text-gray-400"
     >
       <div class="text-6xl mb-4 opacity-50">
         <i class="icon-list"></i>
@@ -84,21 +83,21 @@
         <!-- 操作列 - 始终靠右 -->
         <div class="p-4 text-sm flex justify-end gap-2">
           <button
-            class="w-8 h-8 bg-white rounded cursor-pointer flex items-center justify-center transition-all text-xs hover:(border-blue-500 text-blue-500)"
+            class="money-option-btn hover:(border-green-500 text-green-500)"
             @click="emit('view-details', transaction)"
             title="查看详情"
           >
             <Eye class="w-4 h-4" />
           </button>
           <button
-            class="w-8 h-8 bg-white rounded cursor-pointer flex items-center justify-center transition-all text-xs hover:(border-blue-500 text-blue-500)"
+            class=" money-option-btn hover:(border-blue-500 text-blue-500)"
             @click="emit('edit', transaction)"
             title="编辑"
           >
             <Edit class="w-4 h-4" />
           </button>
           <button
-            class="w-8 h-8 bg-white rounded cursor-pointer flex items-center justify-center transition-all text-xs hover:(border-red-500 text-red-500)"
+            class="money-option-btn hover:(border-red-500 text-red-500)"
             @click="emit('delete', transaction.serialNum)"
             title="删除"
           >

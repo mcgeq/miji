@@ -1,9 +1,9 @@
 <template>
   <div class="min-h-25">
-    <div v-if="loading" class="flex justify-center items-center h-25 text-gray-600">
+    <div v-if="loading" class="flex-justify-center h-25 text-gray-600">
       加载中...
     </div>
-    <div v-else-if="reminders.length === 0" class="flex flex-col items-center justify-center h-[200px] text-gray-400">
+    <div v-else-if="reminders.length === 0" class="flex-justify-center flex-col h-[200px] text-gray-400">
       <div class="text-lg mb-4 opacity-50">
         <i class="icon-bell"></i>
       </div>
@@ -29,21 +29,21 @@
           <div class="flex gap-2">
             <button
               v-if="!reminder.isPaid"
-              class="w-8 h-8 rounded flex items-center justify-center cursor-pointer transition-colors hover:border-green-600 hover:text-green-600"
+              class="money-option-btn hover:(border-green-500 text-green-500)"
               @click="emit('mark-paid', reminder.serialNum)"
               title="标记已付"
             >
               <CheckCircle class="w-4 h-4" />
             </button>
             <button
-              class="w-8 h-8 rounded flex items-center justify-center cursor-pointer transition-colors hover:border-blue-600 hover:text-blue-600"
+              class="money-option-btn hover:(border-blue-500 text-blue-500)"
               @click="emit('edit', reminder)"
               title="编辑"
             >
               <Edit class="w-4 h-4" />
             </button>
             <button
-              class="danger w-8 h-8 rounded flex items-center justify-center cursor-pointer transition-colors hover:border-red-600 hover:text-red-600"
+              class="money-option-btn hover:(border-red-500 text-red-500)"
               @click="emit('delete', reminder.serialNum)"
               title="删除"
             >
@@ -65,39 +65,39 @@
           </div>
         </div>
         <div class="flex items-baseline gap-2 mb-4">
-          <span class="amount-value text-2xl font-semibold text-gray-800">
+          <span class="text-2xl font-semibold text-gray-800">
             {{ formatCurrency(reminder.amount) }}
           </span>
-          <span class="amount-currency text-sm text-gray-800">
+          <span class="text-sm text-gray-800">
             {{ reminder.currency.code }}
           </span>
         </div>
         <div class="mb-4 space-y-2">
-          <div class="date-item flex justify-between text-sm text-gray-600">
-            <span class="date-label">账单日期：</span>
-            <span class="date-value font-medium text-gray-800">{{ formatDate(reminder.billDate) }}</span>
+          <div class="flex justify-between text-sm">
+            <span class="text-gray-600">账单日期：</span>
+            <span class="text-gray-800">{{ formatDate(reminder.billDate) }}</span>
           </div>
-          <div class="date-item flex justify-between text-sm text-gray-600">
-            <span class="date-label">提醒时间：</span>
-            <span class="date-value font-medium text-gray-800">{{ formatDate(reminder.remindDate) }}</span>
+          <div class="flex justify-between text-sm">
+            <span class="text-gray-600">提醒时间：</span>
+            <span class="text-gray-800">{{ formatDate(reminder.remindDate) }}</span>
           </div>
         </div>
         <div class="flex items-center gap-2 mb-4 text-gray-600 text-sm">
-          <i class="icon-repeat"></i>
+          <Repeat class="w-4 h-4" />
           <span>{{ getRepeatTypeName(reminder.repeatPeriod) }}</span>
         </div>
         <div class="border-t border-gray-200 pt-4 space-y-2 text-sm">
-          <div class="info-item flex justify-between text-gray-600">
-            <span class="info-label">分类：</span>
-            <span class="info-value text-gray-800">{{ reminder.category }}</span>
+          <div class="flex justify-between">
+            <span class="text-gray-600">分类：</span>
+            <span class="text-gray-800">{{ reminder.category }}</span>
           </div>
-          <div class="info-item flex justify-between text-gray-600">
-            <span class="info-label">创建时间：</span>
-            <span class="info-value text-gray-800">{{ formatDate(reminder.createdAt) }}</span>
+          <div class="flex justify-between">
+            <span class="text-gray-600">创建时间：</span>
+            <span class="text-gray-800">{{ formatDate(reminder.createdAt) }}</span>
           </div>
-          <div v-if="reminder.description" class="info-item flex justify-between text-gray-600">
-            <span class="info-label">备注：</span>
-            <span class="info-value text-gray-800">{{ reminder.description }}</span>
+          <div v-if="reminder.description" class="flex justify-between">
+            <span class="text-gray-600">备注：</span>
+            <span class="text-gray-800">{{ reminder.description }}</span>
           </div>
         </div>
       </div>
@@ -106,7 +106,7 @@
 </template>
 
 <script setup lang="ts">
-import { Trash, Edit, CheckCircle } from 'lucide-vue-next';
+import { Trash, Edit, CheckCircle, Repeat } from 'lucide-vue-next';
 import { RepeatPeriod } from '@/schema/common';
 import { BilReminder } from '@/schema/money';
 import { formatDate } from '@/utils/date';
