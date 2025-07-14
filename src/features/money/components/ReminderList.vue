@@ -26,7 +26,17 @@
           <div class="text-lg font-semibold text-gray-800">
             {{ reminder.name }}
           </div>
-          <div class="flex gap-2">
+          <div
+            :class="[
+              'inline-flex items-center gap-1.5 px-2 py-1 rounded text-xs font-medium',
+              getStatusClass(reminder) === 'paid' ? 'bg-green-100 text-green-600' :
+              getStatusClass(reminder) === 'overdue' ? 'bg-red-100 text-red-600' :
+              'bg-blue-100 text-blue-600'              ]"
+          >
+            <component :is="getStatusIcon(reminder)" class="w-4 h-4" />
+            <span>{{ getStatusText(reminder) }}</span>
+          </div>
+          <div class="flex gap-1">
             <button
               v-if="!reminder.isPaid"
               class="money-option-btn hover:(border-green-500 text-green-500)"
@@ -49,19 +59,6 @@
             >
               <Trash class="w-4 h-4" />
             </button>
-          </div>
-        </div>
-        <div class="mb-4">
-          <div
-            :class="[
-              'inline-flex items-center gap-1.5 px-2 py-1 rounded text-xs font-medium',
-              getStatusClass(reminder) === 'paid' ? 'bg-green-100 text-green-600' :
-              getStatusClass(reminder) === 'overdue' ? 'bg-red-100 text-red-600' :
-              'bg-blue-100 text-blue-600'
-            ]"
-          >
-            <i :class="getStatusIcon(reminder)"></i>
-            <span>{{ getStatusText(reminder) }}</span>
           </div>
         </div>
         <div class="flex items-baseline gap-2 mb-4">
@@ -106,7 +103,14 @@
 </template>
 
 <script setup lang="ts">
-import { Trash, Edit, CheckCircle, Repeat } from 'lucide-vue-next';
+import {
+  Trash,
+  Edit,
+  CheckCircle,
+  Repeat,
+  AlertCircle,
+  Clock,
+} from 'lucide-vue-next';
 import { RepeatPeriod } from '@/schema/common';
 import { BilReminder } from '@/schema/money';
 import { formatDate } from '@/utils/date';
@@ -138,9 +142,9 @@ const getStatusClass = (reminder: BilReminder) => {
 };
 
 const getStatusIcon = (reminder: BilReminder) => {
-  if (reminder.isPaid) return 'icon-check-circle';
-  if (isOverdue(reminder)) return 'icon-alert-circle';
-  return 'icon-clock';
+  if (reminder.isPaid) return CheckCircle;
+  if (isOverdue(reminder)) return AlertCircle;
+  return Clock;
 };
 
 const getStatusText = (reminder: BilReminder) => {
