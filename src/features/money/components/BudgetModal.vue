@@ -157,8 +157,6 @@
 </template>
 
 <script setup>
-import { ref, reactive, watch, defineProps, defineEmits } from 'vue';
-
 // 定义 props
 const props = defineProps({
   isOpen: {
