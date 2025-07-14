@@ -5,7 +5,7 @@
 // File:           common.ts
 // Description:    About Common
 // Create   Date:  2025-06-22 20:39:52
-// Last Modified:  2025-06-30 22:08:55
+// Last Modified:  2025-07-14 19:58:10
 // Modified   By:  mcgeq <mcgeq@outlook.com>
 // -----------------------------------------------------------------------------
 
@@ -74,4 +74,8 @@ export const buildRepeatPeriod = (
     default:
       return { type: 'None' };
   }
+};
+
+export const safeGet = <T>(arr: T[], index: number): T => {
+  return arr[index] ?? arr[0];
 };

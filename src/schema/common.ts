@@ -27,6 +27,8 @@ export const TimesSchema = z.iso.time();
 export const CurrencySchema = z.object({
   code: z.string().length(3),
   symbol: z.string(),
+  nameEn: z.string(),
+  nameZh: z.string(),
 });
 
 export type Currency = z.infer<typeof CurrencySchema>;

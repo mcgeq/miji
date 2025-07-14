@@ -19,7 +19,7 @@
             <component :is="getAccountTypeIcon(account.type)" class="w-4 h-4 text-blue-500" />
             <span class="text-lg font-semibold text-gray-800">{{ account.name }}</span>
             <span class="text-sm text-gray-700">{{ getAccountTypeName(account.type) }}</span>
-            <span class="text-xs text-gray-600">{{ account.currency.code }}</span>
+            <span class="text-xs text-gray-600">{{ account.currency?.code }}</span>
           </div>
 
           <!-- 操作按钮 -->

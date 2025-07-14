@@ -162,6 +162,7 @@
 </template>
 
 <script setup>
+import { DEFAULT_COLORS } from '@/constants/moneyConst';
 import { Check, X } from 'lucide-vue-next';
 // 定义 props
 const props = defineProps({
@@ -194,18 +195,7 @@ const form = reactive({
   description: '',
 });
 
-const colors = ref([
-  '#3B82F6',
-  '#EF4444',
-  '#10B981',
-  '#F59E0B',
-  '#8B5CF6',
-  '#F97316',
-  '#06B6D4',
-  '#84CC16',
-  '#EC4899',
-  '#6B7280',
-]);
+const colors = ref(DEFAULT_COLORS);
 
 // 方法
 const resetForm = () => {
