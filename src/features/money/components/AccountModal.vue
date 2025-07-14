@@ -152,7 +152,7 @@ import { DEFAULT_COLORS, DEFAULT_CURRENCY } from '@/constants/moneyConst';
 import { safeGet } from '@/utils/common';
 
 interface Props {
-  account: Account;
+  account: Account | null;
 }
 // 定义 props
 const props = defineProps<Props>();

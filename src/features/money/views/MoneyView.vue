@@ -579,6 +579,37 @@ const handleTransactionPageSizeChange = (pageSize: number) => {
   // 如果需要，可以在这里调用 API 获取新数据
   // await fetchTransactions(1, pageSize);
 };
+
+// 计算是否有 Modal 打开
+const hasModalOpen = computed(() => {
+  return (
+    showTransaction.value ||
+    showAccount.value ||
+    showBudget.value ||
+    showReminder.value
+  );
+});
+
+// 监听并控制背景滚动
+watchEffect(() => {
+  if (hasModalOpen.value) {
+    const scrollY = window.scrollY;
+    document.body.style.overflow = 'hidden';
+    document.body.style.position = 'fixed';
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.width = '100%';
+  } else {
+    const scrollY = document.body.style.top;
+    document.body.style.overflow = '';
+    document.body.style.position = '';
+    document.body.style.top = '';
+    document.body.style.width = '';
+    if (scrollY) {
+      window.scrollTo(0, parseInt(scrollY || '0') * -1);
+    }
+  }
+});
+
 watch(
   transactionFilters,
   () => {
@@ -600,5 +631,26 @@ onMounted(() => {
 
 .btn {
   @apply flex items-center gap-1 px-3 py-1.5 border-none rounded-md cursor-pointer text-xs bg-[#1890ff] text-white transition-all duration-200 hover:bg-[#40a9ff]
+}
+
+/* 新增：隐藏滚动条 */
+html, body {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE 和 Edge */
+}
+
+html::-webkit-scrollbar, body::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
+/* 或者只对特定容器隐藏滚动条 */
+.main-container {
+  overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.main-container::-webkit-scrollbar {
+  display: none;
 }
 </style>

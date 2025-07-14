@@ -134,15 +134,33 @@ export default defineConfig({
     ],
     ['modal-mask', 'modal-overlay'],
     ['modal-mask-window', 'modal-content w-40 flex flex-col gap-4'],
+    // 更新 modal-mask-window-money 定义
     [
       'modal-mask-window-money',
-      'min-h-screen h-10 bg-white rounded-lg p-6 w-full max-w-md mx-4',
+      'max-h-90vh min-h-0 overflow-y-auto bg-white rounded-lg p-6 w-full max-w-md mx-4 scrollbar-hide flex flex-col',
     ],
+    // 添加滚动条隐藏的快捷方式
+    [
+      'scrollbar-hide',
+      'scrollbar-width-none -ms-overflow-style-none [&::-webkit-scrollbar]:display-none',
+    ],
+    // 可选：添加平滑滚动
+    ['scroll-smooth', 'scroll-behavior-smooth'],
+    // 可选：为 Modal 内容区域单独定义样式
+    ['modal-content-scrollable', 'flex-1 overflow-y-auto scrollbar-hide'],
+    // 可选：Modal 头部固定样式
+    ['modal-header-fixed', 'flex-shrink-0 pb-4 border-b border-gray-200'],
+    // 可选：Modal 底部固定样式
+    ['modal-footer-fixed', 'flex-shrink-0 pt-4 border-t border-gray-200'],
     ['modal-input-select', 'input-base'],
     [
       'money-option-btn',
       'wh-8 bg-white rounded cursor-pointer flex-center transition-all text-xs hover:bg-gray-50',
     ],
+  ],
+  rules: [
+    [/^scrollbar-width-(.+)$/, ([, c]) => ({ 'scrollbar-width': c })],
+    [/^-ms-overflow-style-(.+)$/, ([, c]) => ({ '-ms-overflow-style': c })],
   ],
   presets: [
     presetWind3(),
@@ -192,6 +210,11 @@ export default defineConfig({
         800: '#1e40af',
         900: '#1e3a8a',
       },
+    },
+    maxHeight: {
+      '90vh': '90vh',
+      '80vh': '80vh',
+      '70vh': '70vh',
     },
     animation: {
       'fade-in': 'fadeIn 0.3s ease-in-out',

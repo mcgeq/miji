@@ -1,6 +1,6 @@
 <template>
   <div class="modal-mask" @click="handleOverlayClick">
-    <div class="modal-mask-window-money h-8" @click.stop>
+    <div class="modal-mask-window-money" @click.stop>
       <div class="flex justify-between items-center mb-4 border-b pb-2">
         <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-100">{{ getModalTitle() }}</h2>
         <button @click="emit('close')" class="text-gray-500 hover:text-gray-700">
