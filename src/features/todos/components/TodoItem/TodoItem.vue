@@ -120,6 +120,25 @@ const showMenu = computed(
   () => menuStore.getMenuSerialNum === todoCopy.value.serialNum,
 );
 
+// const showPriorityBar = computed(() => {
+//   return PrioritySchema.safeParse(todoCopy.value.priority).success;
+// });
+//
+// const priorityBarClass = computed(() => {
+//   if (!showPriorityBar.value) return '';
+//
+//   const styleMap: Record<Priority, string> = {
+//     Urgent:
+//       'bg-gradient-to-b from-red-600 to-red-700 shadow-lg shadow-red-500/20',
+//     High: 'bg-gradient-to-b from-red-500 to-red-600 shadow-md shadow-red-500/15',
+//     Medium:
+//       'bg-gradient-to-b from-yellow-500 to-yellow-600 shadow-md shadow-yellow-500/15',
+//     Low: 'bg-gradient-to-b from-blue-500 to-blue-600 shadow-md shadow-blue-500/15',
+//   };
+//
+//   return styleMap[todoCopy.value.priority as Priority];
+// });
+
 // 👇 所有修改 todo 都使用这个函数
 const updateTodo = (partial: Partial<TodoRemain>) => {
   todoCopy.value = { ...todoCopy.value, ...partial };
