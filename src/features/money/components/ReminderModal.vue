@@ -123,18 +123,17 @@
         />
 
         <!-- 优先级 -->
-        <div class="mb-2 flex items-center justify-between">
-          <label class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">优先级</label>
-          <select
-            v-model="form.priority"
-            class="w-2/3 modal-input-select"
-          >
-            <option value="Low">🟢 低</option>
-            <option value="Medium">🟡 中</option>
-            <option value="High">🟠 高</option>
-            <option value="Urgent">🔴 紧急</option>
-          </select>
-        </div>
+        <PrioritySelector
+          v-model="form.priority"
+          label="优先级"
+          :error-message="validationErrors.priority"
+          :locale="locale"
+          :show-icons="true"
+          width="2/3"
+          help-text="选择合适的优先级来管理提醒的重要程度"
+          @change="handlePriorityChange"
+          @validate="handlePriorityValidation"
+        />
 
         <!-- 提前提醒 -->
         <div class="mb-2 flex items-center justify-between">
@@ -184,7 +183,7 @@
         <!-- 描述 -->
         <div class="mb-4">
           <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            描述 
+            描述
             <span class="text-gray-500">(可选)</span>
           </label>
           <textarea
@@ -239,10 +238,12 @@ import {
   CategorySchema,
   PrioritySchema,
   ReminderTypeSchema,
+  type Priority,
 } from '@/schema/common';
 import type { RepeatPeriod } from '@/schema/common';
 import ReminderSelector from '@/components/common/ReminderSelector.vue';
 import RepeatPeriodSelector from '@/components/common/RepeatPeriodSelector.vue';
+import PrioritySelector from '@/components/common/PrioritySelector.vue';
 
 const colorNameMap = ref(COLORS_MAP);
 
@@ -265,6 +266,7 @@ const validationErrors = reactive({
   amount: '',
   remindDate: '',
   repeatPeriod: '',
+  priority: '',
 });
 
 // 表单数据
@@ -306,7 +308,7 @@ const form = reactive<BilReminder>({
   repeatPeriod: reminder.repeatPeriod,
   isPaid: reminder.isPaid,
   priority: reminder.priority,
-  advanceValue: reminder.advanceValue || 0, // 确保默认值为0
+  advanceValue: reminder.advanceValue ?? 0, // 使用空值合并运算符确保不为 undefined
   advanceUnit: reminder.advanceUnit,
   color: reminder.color,
   relatedTransactionSerialNum: reminder.relatedTransactionSerialNum,
@@ -356,11 +358,13 @@ const isFormValid = computed(() => {
     form.name.trim() &&
     form.type &&
     form.remindDate &&
+    form.priority &&
     !validationErrors.name &&
     !validationErrors.type &&
     !validationErrors.amount &&
     !validationErrors.remindDate &&
     !validationErrors.repeatPeriod &&
+    !validationErrors.priority &&
     (!isFinanceType.value || (form.amount && form.amount > 0))
   );
 });
@@ -484,15 +488,18 @@ const handleTypeValidation = (isValid: boolean) => {
 };
 
 const handleRepeatPeriodChange = (value: RepeatPeriod) => {
+  // 确保 advanceValue 有值，如果为 undefined 或 null 则设为 0
+  const currentAdvanceValue = form.advanceValue ?? 0;
+
   // 根据重复类型调整提前提醒时间的合理性
-  if (value.type === 'Daily' && (form.advanceValue || 0) > 12) {
+  if (value.type === 'Daily' && currentAdvanceValue > 12) {
     form.advanceValue = 1;
     form.advanceUnit = 'hours';
-  } else if (value.type === 'Weekly' && (form.advanceValue || 0) > 168) {
+  } else if (value.type === 'Weekly' && currentAdvanceValue > 168) {
     // 168小时 = 7天
     form.advanceValue = 1;
     form.advanceUnit = 'days';
-  } else if (value.type === 'Monthly' && (form.advanceValue || 0) > 720) {
+  } else if (value.type === 'Monthly' && currentAdvanceValue > 720) {
     // 720小时 = 30天
     form.advanceValue = 3;
     form.advanceUnit = 'days';
@@ -507,6 +514,53 @@ const handleRepeatPeriodValidation = (isValid: boolean) => {
     validationErrors.repeatPeriod = '重复频率配置不完整，请检查必填项';
   } else {
     validationErrors.repeatPeriod = '';
+  }
+};
+
+const handlePriorityChange = (value: Priority) => {
+  validationErrors.priority = '';
+
+  // 确保 advanceValue 有值，如果为 undefined 或 null 则设为 0
+  const currentAdvanceValue = form.advanceValue ?? 0;
+
+  // 根据优先级调整提前提醒时间的建议
+  switch (value) {
+    case 'Urgent':
+      // 紧急事项建议提前30分钟或1小时提醒
+      if (currentAdvanceValue === 0 || currentAdvanceValue > 24) {
+        form.advanceValue = 1;
+        form.advanceUnit = 'hours';
+      }
+      break;
+    case 'High':
+      // 高优先级建议提前几小时或1天提醒
+      if (currentAdvanceValue === 0 || currentAdvanceValue < 2) {
+        form.advanceValue = 3;
+        form.advanceUnit = 'hours';
+      }
+      break;
+    case 'Medium':
+      // 中等优先级保持当前设置或使用默认值
+      if (currentAdvanceValue === 0) {
+        form.advanceValue = 1;
+        form.advanceUnit = 'hours';
+      }
+      break;
+    case 'Low':
+      // 低优先级可以设置较长的提前时间
+      if (currentAdvanceValue === 0) {
+        form.advanceValue = 1;
+        form.advanceUnit = 'days';
+      }
+      break;
+  }
+};
+
+const handlePriorityValidation = (isValid: boolean) => {
+  if (!isValid) {
+    validationErrors.priority = '请选择优先级';
+  } else {
+    validationErrors.priority = '';
   }
 };
 
@@ -551,8 +605,8 @@ watch(
   (newVal) => {
     if (newVal) {
       const clonedReminder = JSON.parse(JSON.stringify(newVal));
-      // 确保advanceValue有默认值
-      clonedReminder.advanceValue = clonedReminder.advanceValue || 0;
+      // 确保 advanceValue 有默认值，使用空值合并运算符
+      clonedReminder.advanceValue = clonedReminder.advanceValue ?? 0;
       Object.assign(form, clonedReminder);
     }
   },
@@ -588,7 +642,7 @@ watch(
   },
 );
 
-// 确保advanceValue始终有值
+// 确保 advanceValue 始终有值
 watch(
   () => form.advanceValue,
   (newVal) => {
