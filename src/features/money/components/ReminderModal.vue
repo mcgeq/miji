@@ -34,7 +34,6 @@
           {{ validationErrors.name }}
         </div>
 
-        <!-- 提醒类型选择器 - 优化版本 -->
         <ReminderSelector
           v-model="form.type"
           label="提醒类型"
@@ -113,21 +112,15 @@
           {{ validationErrors.remindDate }}
         </div>
 
-        <!-- 重复频率 -->
-        <div class="mb-4 flex items-center justify-between">
-          <label class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">重复频率</label>
-          <select
-            v-model="form.repeatPeriod.type"
-            class="w-2/3 modal-input-select"
-            @change="handleRepeatChange"
-          >
-            <option value="None">不重复</option>
-            <option value="Daily">每日</option>
-            <option value="Weekly">每周</option>
-            <option value="Monthly">每月</option>
-            <option value="Yearly">每年</option>
-          </select>
-        </div>
+        <!-- 重复频率  -->
+        <RepeatPeriodSelector
+          v-model="form.repeatPeriod"
+          label="重复频率"
+          :error-message="validationErrors.repeatPeriod"
+          help-text="设置提醒的重复规则，可以精确控制重复时间"
+          @change="handleRepeatPeriodChange"
+          @validate="handleRepeatPeriodValidation"
+        />
 
         <!-- 优先级 -->
         <div class="mb-2 flex items-center justify-between">
@@ -247,7 +240,9 @@ import {
   PrioritySchema,
   ReminderTypeSchema,
 } from '@/schema/common';
+import type { RepeatPeriod } from '@/schema/common';
 import ReminderSelector from '@/components/common/ReminderSelector.vue';
+import RepeatPeriodSelector from '@/components/common/RepeatPeriodSelector.vue';
 
 const colorNameMap = ref(COLORS_MAP);
 
@@ -269,6 +264,7 @@ const validationErrors = reactive({
   type: '',
   amount: '',
   remindDate: '',
+  repeatPeriod: '',
 });
 
 // 表单数据
@@ -284,7 +280,7 @@ const reminder = props.reminder || {
   dueDate: '',
   billDate: '',
   remindDate: '',
-  repeatPeriod: { type: 'None' },
+  repeatPeriod: { type: 'None' } as RepeatPeriod,
   isPaid: false,
   priority: PrioritySchema.enum.Medium,
   advanceValue: 0,
@@ -364,6 +360,7 @@ const isFormValid = computed(() => {
     !validationErrors.type &&
     !validationErrors.amount &&
     !validationErrors.remindDate &&
+    !validationErrors.repeatPeriod &&
     (!isFinanceType.value || (form.amount && form.amount > 0))
   );
 });
@@ -453,7 +450,7 @@ const handleTypeChange = (value: string) => {
       form.advanceValue = 1;
       form.advanceUnit = 'days';
       form.color = '#EC4899'; // 粉色
-      form.repeatPeriod = { type: 'None' };
+      form.repeatPeriod = { type: 'Yearly', interval: 1, month: 1, day: 1 }; // 生日和纪念日通常每年重复
       break;
     case 'Exercise':
       form.priority = 'Low';
@@ -486,14 +483,30 @@ const handleTypeValidation = (isValid: boolean) => {
   }
 };
 
-const handleRepeatChange = () => {
-  // 如果选择了重复，可以给出一些提示或设置默认值
-  if (form.repeatPeriod.type !== 'None') {
-    // 可以根据重复类型调整提前提醒时间
-    if (form.repeatPeriod.type === 'Daily' && (form.advanceValue || 0) > 12) {
-      form.advanceValue = 1;
-      form.advanceUnit = 'hours';
-    }
+const handleRepeatPeriodChange = (value: RepeatPeriod) => {
+  // 根据重复类型调整提前提醒时间的合理性
+  if (value.type === 'Daily' && (form.advanceValue || 0) > 12) {
+    form.advanceValue = 1;
+    form.advanceUnit = 'hours';
+  } else if (value.type === 'Weekly' && (form.advanceValue || 0) > 168) {
+    // 168小时 = 7天
+    form.advanceValue = 1;
+    form.advanceUnit = 'days';
+  } else if (value.type === 'Monthly' && (form.advanceValue || 0) > 720) {
+    // 720小时 = 30天
+    form.advanceValue = 3;
+    form.advanceUnit = 'days';
+  }
+
+  // 清除验证错误
+  validationErrors.repeatPeriod = '';
+};
+
+const handleRepeatPeriodValidation = (isValid: boolean) => {
+  if (!isValid) {
+    validationErrors.repeatPeriod = '重复频率配置不完整，请检查必填项';
+  } else {
+    validationErrors.repeatPeriod = '';
   }
 };
 
