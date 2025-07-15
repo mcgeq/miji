@@ -4,15 +4,21 @@
 
     <div v-else-if="accounts.length === 0" class="flex-justify-center flex-col h-50 text-gray-400">
       <div class="text-6xl mb-4 opacity-50">
-        <i class="icon-credit-card"></i>
+        <CreditCard class="wh-5" />
       </div>
       <div class="text-base">暂无账户</div>
     </div>
     <div v-else class="grid gap-5" style="grid-template-columns: repeat(auto-fill, minmax(320px, 1fr))">
-      <div v-for="account in accounts" :key="account.serialNum" :class="[
-        'bg-white border border-gray-200 rounded-lg p-5 transition-all hover:shadow-md',
-        !account.isActive && 'opacity-60 bg-gray-100'
-      ]">
+      <div v-for="account in accounts"
+        :key="account.serialNum"
+        :class="[
+          'bg-white border rounded-lg p-5 transition-all hover:shadow-md',
+          !account.isActive && 'opacity-60 bg-gray-100'
+        ]"
+        :style="{
+          borderColor: account.color || '#E5E7EB' // #E5E7EB 是 border-gray-200 的对应色值
+        }"
+      >
         <div class="flex flex-wrap justify-between items-center mb-4 gap-2">
           <!-- 类型图标 + 类型名称 + 账户名称 + 币种-->
           <div class="flex items-center gap-3 text-gray-800">

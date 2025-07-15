@@ -10,10 +10,16 @@
       <div class="text-sm">暂无预算</div>
     </div>
     <div v-else class="budget-grid frid gap-5 w-full">
-      <div v-for="budget in budgets" :key="budget.serialNum" :class="[
-        'bg-white border border-gray-200 rounded-md p-1.5 transition-all hover:shadow-md',
+      <div v-for="budget in budgets"
+        :key="budget.serialNum"
+        :class="[
+        'bg-white border rounded-md p-1.5 transition-all hover:shadow-md',
         { 'opacity-60 bg-gray-100': !budget.isActive }
-      ]">
+        ]"
+        :style="{
+          borderColor: budget.color || '#E5E7EB'
+        }"
+      >
         <!-- Header -->
         <div class="flex flex-wrap justify-between items-center mb-2 gap-2">
           <!-- 左侧预算名称 -->

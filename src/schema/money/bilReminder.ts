@@ -21,6 +21,7 @@ export const BilReminderSchema = z.object({
   remindDate: DateTimeSchema,
   repeatPeriod: RepeatPeriodSchema,
   isPaid: z.boolean(),
+  color: z.string().optional().nullable(),
   relatedTransactionSerialNum: SerialNumSchema,
   createdAt: DateTimeSchema,
   updatedAt: DateTimeSchema.optional().nullable(),

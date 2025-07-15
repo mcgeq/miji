@@ -50,40 +50,20 @@
 </template>
 
 <script setup lang="ts">
+import { COLORS_MAP } from '@/constants/moneyConst';
+import { DefaultColors } from '@/schema/common';
 import { ref, onMounted, onUnmounted } from 'vue';
 
 interface Props {
   modelValue: string;
-  colors?: string[];
-  colorNames?: Record<string, string>;
+  colorNames: DefaultColors[];
 }
 
+const locale = computed(() => getCurrentLocale());
+const colors = computed(() => COLORS_MAP.map((v) => v.code));
 // 定义 props
 const props = withDefaults(defineProps<Props>(), {
-  colors: () => [
-    '#3B82F6',
-    '#EF4444',
-    '#10B981',
-    '#F59E0B',
-    '#8B5CF6',
-    '#06B6D4',
-    '#84CC16',
-    '#F97316',
-    '#EC4899',
-    '#6B7280',
-  ],
-  colorNames: () => ({
-    '#3B82F6': '蓝色',
-    '#EF4444': '红色',
-    '#10B981': '绿色',
-    '#F59E0B': '橙色',
-    '#8B5CF6': '紫色',
-    '#06B6D4': '青色',
-    '#84CC16': '柠檬绿',
-    '#F97316': '深橙色',
-    '#EC4899': '粉色',
-    '#6B7280': '灰色',
-  }),
+  colorNames: () => COLORS_MAP,
 });
 
 // 定义 emits
@@ -97,7 +77,14 @@ const colorSelectorRef = ref<HTMLElement | null>(null);
 
 // 获取颜色名称
 const getColorName = (colorValue: string): string => {
-  return props.colorNames[colorValue] || '自定义颜色';
+  const color: DefaultColors | undefined = props.colorNames
+    .filter((v) => v.code === colorValue)
+    .pop();
+  return color
+    ? locale.value === 'zh'
+      ? color.nameZh
+      : color.nameEn
+    : '自定义颜色';
 };
 
 // 切换下拉状态

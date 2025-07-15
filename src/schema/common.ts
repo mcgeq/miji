@@ -179,3 +179,9 @@ export type UsageDetail = {
   count: number;
   serialNums: string[];
 };
+
+export type DefaultColors = {
+  code: string;
+  nameEn: string;
+  nameZh: string;
+};

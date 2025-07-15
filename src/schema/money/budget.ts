@@ -21,6 +21,7 @@ export const BudgetSchema = z.object({
   endDate: DateSchema,
   usedAmount: z.string(),
   isActive: z.boolean(),
+  color: z.string().optional().nullable(),
   createdAt: DateTimeSchema,
   updatedAt: DateTimeSchema.optional().nullable(),
 });

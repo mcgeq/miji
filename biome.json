@@ -13,7 +13,8 @@
     "enabled": true,
     "indentStyle": "space",
     "lineWidth": 80,
-    "indentWidth": 2
+    "indentWidth": 2,
+    "lineEnding": "lf"
   },
   "assist": {
     "actions": {
@@ -32,7 +33,7 @@
     "domains": {
       "vue": "all"
     },
-    "includes": ["*.svelte"],
+    "includes": ["*.svelte", "*.vue"],
     "rules": {
       "recommended": true,
       "correctness": {
@@ -43,7 +44,10 @@
   "javascript": {
     "formatter": {
       "quoteStyle": "single",
-      "lineWidth": 80
+      "lineWidth": 80,
+      "trailingCommas": "all",
+      "semicolons": "always",
+      "attributePosition": "auto"
     }
   },
   "json": {

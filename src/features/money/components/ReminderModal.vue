@@ -108,21 +108,15 @@
             </select>
           </div>
         </div>
+
         <div class="mb-2 flex items-center justify-between">
           <label class="text-sm font-medium text-gray-700 mb-2">颜色</label>
-          <div class="flex gap-2">
-            <div
-              v-for="color in colors"
-              :key="color"
-              @click="form.color = color"
-              :class="[
-                'w-6 h-6 rounded-full cursor-pointer border-2',
-                form.color === color ? 'border-gray-800' : 'border-gray-300'
-              ]"
-              :style="{ backgroundColor: color }"
-            ></div>
-          </div>
+          <ColorSelector
+            v-model="form.color"
+            :color-names="colorNameMap"
+          />
         </div>
+
         <div class="mb-2">
           <label class="flex items-center">
             <input
@@ -162,8 +156,12 @@
 </template>
 
 <script setup>
-import { DEFAULT_COLORS } from '@/constants/moneyConst';
 import { Check, X } from 'lucide-vue-next';
+import { COLORS_MAP } from '@/constants/moneyConst';
+import ColorSelector from '@/components/common/ColorSelector.vue';
+
+const colorNameMap = ref(COLORS_MAP);
+
 // 定义 props
 const props = defineProps({
   isOpen: {
@@ -194,8 +192,6 @@ const form = reactive({
   enabled: true,
   description: '',
 });
-
-const colors = ref(DEFAULT_COLORS);
 
 // 方法
 const resetForm = () => {
