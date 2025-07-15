@@ -76,7 +76,7 @@
           </div>
           <div class="flex justify-between text-sm">
             <span class="text-gray-600">提醒时间：</span>
-            <span class="text-gray-800">{{ formatDate(reminder.remindDate) }}</span>
+            <span class="text-gray-800">{{ formatDateTime(reminder.remindDate) }}</span>
           </div>
         </div>
         <div class="flex items-center gap-2 mb-4 text-gray-600 text-sm">
@@ -113,7 +113,7 @@ import {
 } from 'lucide-vue-next';
 import { RepeatPeriod } from '@/schema/common';
 import { BilReminder } from '@/schema/money';
-import { formatDate } from '@/utils/date';
+import { formatDate, formatDateTime } from '@/utils/date';
 import { formatCurrency } from '../utils/money';
 
 interface Props {

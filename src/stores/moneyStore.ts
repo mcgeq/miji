@@ -3,6 +3,8 @@
 import { COLORS_MAP, DEFAULT_CURRENCY } from '@/constants/moneyConst';
 import {
   CategorySchema,
+  PrioritySchema,
+  ReminderTypeSchema,
   SubCategorySchema,
   TransactionStatusSchema,
   TransactionType,
@@ -225,6 +227,8 @@ const mockReminders: BilReminder[] = [
   {
     serialNum: uuid(38),
     name: '信用卡还款',
+    type: ReminderTypeSchema.enum.Popup,
+    enabled: true,
     description: '还款',
     category: CategorySchema.enum.Salary,
     amount: '2500.00',
@@ -234,6 +238,7 @@ const mockReminders: BilReminder[] = [
     remindDate: '2024-12-15T00:00:00.000Z',
     repeatPeriod: { type: 'None' },
     isPaid: false,
+    priority: PrioritySchema.enum.High,
     color: COLORS_MAP[4].code,
     relatedTransactionSerialNum: '',
     createdAt: '2024-12-01T00:00:00.000Z',
@@ -242,6 +247,8 @@ const mockReminders: BilReminder[] = [
   {
     serialNum: 'REM002',
     name: '房租',
+    type: ReminderTypeSchema.enum.Notification,
+    enabled: true,
     description: '房租',
     category: CategorySchema.enum.Salary,
     amount: '3200.00',
@@ -251,6 +258,7 @@ const mockReminders: BilReminder[] = [
     billDate: '2024-12-15T00:00:00.000Z',
     repeatPeriod: { type: 'None' },
     isPaid: true,
+    priority: PrioritySchema.enum.Urgent,
     color: COLORS_MAP[3].code,
     relatedTransactionSerialNum: 'TXN005',
     createdAt: '2024-12-01T00:00:00.000Z',
@@ -259,6 +267,8 @@ const mockReminders: BilReminder[] = [
   {
     serialNum: 'REM003',
     name: '水电费',
+    type: ReminderTypeSchema.enum.Email,
+    enabled: true,
     description: '水电费',
     category: CategorySchema.enum.Salary,
     amount: '180.00',
@@ -268,6 +278,7 @@ const mockReminders: BilReminder[] = [
     billDate: '2024-12-15T00:00:00.000Z',
     repeatPeriod: { type: 'None' },
     isPaid: false,
+    priority: PrioritySchema.enum.Low,
     color: COLORS_MAP[1].code,
     relatedTransactionSerialNum: '',
     createdAt: '2024-12-01T00:00:00.000Z',

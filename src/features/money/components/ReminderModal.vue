@@ -2,7 +2,7 @@
   <div class="modal-mask">
     <div class="modal-mask-window-money">
       <div class="flex justify-between items-center mb-4">
-        <h3 class="text-lg font-semibold">{{ editingReminder ? '编辑提醒' : '添加提醒' }}</h3>
+        <h3 class="text-lg font-semibold">{{ props.reminder ? '编辑提醒' : '添加提醒' }}</h3>
         <button @click="closeModal" class="text-gray-500 hover:text-gray-700">
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -13,7 +13,7 @@
         <div class="mb-2 flex items-center justify-between">
           <label class="text-sm font-medium text-gray-700 mb-2">提醒标题</label>
           <input
-            v-model="form.title"
+            v-model="form.name"
             type="text"
             required
             class="w-2/3 modal-input-select"
@@ -28,12 +28,12 @@
             class="w-2/3 modal-input-select"
           >
             <option value="">请选择类型</option>
-            <option value="bill">账单提醒</option>
+            <option value="Bill">账单提醒</option>
             <option value="income">收入提醒</option>
-            <option value="budget">预算提醒</option>
-            <option value="goal">目标提醒</option>
-            <option value="investment">投资提醒</option>
-            <option value="other">其他</option>
+            <option value="Budget">预算提醒</option>
+            <option value="Goal">目标提醒</option>
+            <option value="Investment">投资提醒</option>
+            <option value="Other">其他</option>
           </select>
         </div>
         <div class="mb-2 flex items-center justify-between">
@@ -49,31 +49,23 @@
         <div class="mb-2 flex items-center justify-between">
           <label class="text-sm font-medium text-gray-700 mb-2">提醒日期</label>
           <input
-            v-model="form.date"
+            v-model="form.remindDate"
             type="date"
             required
-            class="w-2/3 modal-input-select"
-          />
-        </div>
-        <div class="mb-2 flex items-center justify-between">
-          <label class="text-sm font-medium text-gray-700 mb-2">提醒时间</label>
-          <input
-            v-model="form.time"
-            type="time"
             class="w-2/3 modal-input-select"
           />
         </div>
         <div class="mb-4 flex items-center justify-between">
           <label class="text-sm font-medium text-gray-700 mb-2">重复频率</label>
           <select
-            v-model="form.repeat"
+            v-model="form.repeatPeriod"
             class="w-2/3 modal-input-select"
           >
-            <option value="none">不重复</option>
-            <option value="daily">每日</option>
-            <option value="weekly">每周</option>
-            <option value="monthly">每月</option>
-            <option value="yearly">每年</option>
+            <option value="None">不重复</option>
+            <option value="Daily">每日</option>
+            <option value="Weekly">每周</option>
+            <option value="Monthly">每月</option>
+            <option value="Yearly">每年</option>
           </select>
         </div>
         <div class="mb-2 flex items-center justify-between">
@@ -82,9 +74,10 @@
             v-model="form.priority"
             class="w-2/3 modal-input-select"
           >
-            <option value="low">低</option>
-            <option value="medium">中</option>
-            <option value="high">高</option>
+            <option value="Low">低</option>
+            <option value="Medium">中</option>
+            <option value="High">高</option>
+            <option value="Urgent">急</option>
           </select>
         </div>
         <div class="mb-2 flex items-center justify-between">
@@ -155,66 +148,72 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { Check, X } from 'lucide-vue-next';
-import { COLORS_MAP } from '@/constants/moneyConst';
+import { COLORS_MAP, DEFAULT_CURRENCY } from '@/constants/moneyConst';
 import ColorSelector from '@/components/common/ColorSelector.vue';
+import { uuid } from '@/utils/uuid';
+import { getLocalISODateTimeWithOffset } from '@/utils/date';
+import { BilReminder } from '@/schema/money';
+import {
+  CategorySchema,
+  PrioritySchema,
+  ReminderTypeSchema,
+} from '@/schema/common';
 
 const colorNameMap = ref(COLORS_MAP);
 
-// 定义 props
-const props = defineProps({
-  isOpen: {
-    type: Boolean,
-    default: false,
-  },
-  editingReminder: {
-    type: Object,
-    default: null,
-  },
-});
-
-// 定义 emits
+interface Props {
+  reminder: BilReminder | null;
+}
+const props = defineProps<Props>();
 const emit = defineEmits(['close', 'save']);
 
-// 响应式数据
-const form = reactive({
-  title: '',
-  type: '',
-  amount: 0,
-  date: '',
-  time: '09:00',
-  repeat: 'none',
-  priority: 'medium',
-  advanceValue: 0,
-  advanceUnit: 'minutes',
-  color: '#3B82F6',
+const reminder = props.reminder || {
+  serialNum: '',
+  name: '',
   enabled: true,
+  type: ReminderTypeSchema.enum.Notification,
   description: '',
-});
-
-// 方法
-const resetForm = () => {
-  if (props.editingReminder) {
-    Object.assign(form, props.editingReminder);
-  } else {
-    const today = new Date();
-    Object.assign(form, {
-      title: '',
-      type: '',
-      amount: 0,
-      date: today.toISOString().split('T')[0],
-      time: '09:00',
-      repeat: 'none',
-      priority: 'medium',
-      advanceValue: 0,
-      advanceUnit: 'minutes',
-      color: '#3B82F6',
-      enabled: true,
-      description: '',
-    });
-  }
+  category: CategorySchema.enum.Food,
+  amount: '',
+  currency: DEFAULT_CURRENCY[1],
+  dueDate: '',
+  billDate: '',
+  remindDate: '',
+  repeatPeriod: { type: 'None' },
+  isPaid: false,
+  priority: PrioritySchema.enum.Medium,
+  advanceValue: 0,
+  advanceUnit: '',
+  color: COLORS_MAP[0].code,
+  relatedTransactionSerialNum: '',
+  createdAt: '',
+  updatedAt: '',
 };
+
+const form = reactive<BilReminder>({
+  serialNum: reminder.serialNum,
+  name: reminder.name,
+  enabled: reminder.enabled,
+  type: reminder.type,
+  description: reminder.description,
+  category: reminder.category,
+  amount: reminder.amount,
+  currency: reminder.currency,
+  dueDate: reminder.dueDate,
+  billDate: reminder.billDate,
+  remindDate: reminder.remindDate,
+  repeatPeriod: reminder.repeatPeriod,
+  isPaid: reminder.isPaid,
+  priority: reminder.priority,
+  advanceValue: reminder.advanceValue,
+  advanceUnit: reminder.advanceUnit,
+  color: reminder.color,
+  relatedTransactionSerialNum: reminder.relatedTransactionSerialNum,
+  createdAt: reminder.createdAt,
+  updatedAt: reminder.updatedAt,
+});
 
 const closeModal = () => {
   emit('close');
@@ -223,32 +222,22 @@ const closeModal = () => {
 const saveReminder = () => {
   const reminderData = {
     ...form,
-    id: props.editingReminder?.id || Date.now(),
-    createdAt: props.editingReminder?.createdAt || new Date().toISOString(),
-    status: props.editingReminder?.status || 'pending',
+    serialNum: props.reminder?.serialNum || uuid(38),
+    createdAt: props.reminder?.createdAt || getLocalISODateTimeWithOffset(),
   };
   emit('save', reminderData);
   closeModal();
 };
 
-// 监听器
 watch(
-  () => props.isOpen,
+  () => props.reminder,
   (newVal) => {
     if (newVal) {
-      resetForm();
+      const clonedReminder = JSON.parse(JSON.stringify(newVal));
+      Object.assign(form, clonedReminder);
     }
   },
-);
-
-watch(
-  () => props.editingReminder,
-  (newVal) => {
-    if (newVal) {
-      Object.assign(form, newVal);
-    }
-  },
-  { immediate: true },
+  { immediate: true, deep: true },
 );
 </script>
 
