@@ -18,7 +18,7 @@ export const BilReminderSchema = z.object({
   type: ReminderTypeSchema,
   description: DescriptionSchema,
   category: CategorySchema,
-  amount: z.string(),
+  amount: z.number(),
   currency: CurrencySchema,
   dueDate: DateTimeSchema,
   billDate: DateTimeSchema,
