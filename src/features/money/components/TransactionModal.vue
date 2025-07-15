@@ -119,6 +119,8 @@ import {
   TransactionTypeSchema,
 } from '@/schema/common';
 import { Account, TransactionWithAccount } from '@/schema/money';
+import { formatCurrency } from '../utils/money';
+import { DEFAULT_CURRENCY } from '@/constants/moneyConst';
 
 interface Props {
   type: TransactionType;
@@ -133,7 +135,7 @@ const form = ref<TransactionWithAccount>({
   category: '' as any, // or default from CategorySchema.enum
   subCategory: '' as any,
   amount: '',
-  currency: 'CNY',
+  currency: props.transaction?.currency ?? DEFAULT_CURRENCY[1],
   date: new Date().toISOString().split('T')[0],
   description: '',
   notes: null,
@@ -209,14 +211,6 @@ const handleSubmit = () => {
   emit('save', transaction);
 };
 
-const formatCurrency = (amount: string) => {
-  const num = parseFloat(amount);
-  return num.toLocaleString('zh-CN', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
-};
-
 // 监听分类变化，清空子分类
 watch(
   () => form.value.category,
@@ -266,7 +260,7 @@ watch(
         accountSerialNum: '',
         category: CategorySchema.enum.Others,
         subCategory: SubCategorySchema.enum.Other,
-        currency: 'CNY',
+        currency: DEFAULT_CURRENCY[1],
         date: new Date().toISOString().split('T')[0],
         description: '',
         notes: null,

@@ -82,7 +82,7 @@
         <div class="border-t border-gray-200 pt-2">
           <div class="flex justify-between mb-1 text-sm">
             <span class="font-medium text-gray-600">分类：</span>
-            <span class="font-medium text-gray-800">{{ budget.Category }}</span>
+            <span class="font-medium text-gray-800">{{ budget.category }}</span>
           </div>
           <div class="flex justify-between mb-1 text-sm">
             <span class="text-gray-600">创建时间：</span>
@@ -103,6 +103,7 @@ import { Trash, Edit, CalendarIcon, StopCircle, Ban } from 'lucide-vue-next';
 import { Budget } from '@/schema/money';
 import { RepeatPeriod } from '@/schema/common';
 import { formatDate } from '@/utils/date';
+import { formatCurrency } from '../utils/money';
 
 interface Props {
   budgets: Budget[];
@@ -159,14 +160,6 @@ const getRemainingAmount = (budget: Budget) => {
   const used = parseFloat(budget.usedAmount);
   const total = parseFloat(budget.amount);
   return (total - used).toString();
-};
-
-const formatCurrency = (amount: string) => {
-  const num = parseFloat(amount);
-  return num.toLocaleString('zh-CN', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
 };
 </script>
 

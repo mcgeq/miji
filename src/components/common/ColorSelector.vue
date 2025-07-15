@@ -81,7 +81,7 @@ const getColorName = (colorValue: string): string => {
     .filter((v) => v.code === colorValue)
     .pop();
   return color
-    ? locale.value === 'zh'
+    ? locale.value === 'zh-CN'
       ? color.nameZh
       : color.nameEn
     : '自定义颜色';

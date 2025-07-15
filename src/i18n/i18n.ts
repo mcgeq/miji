@@ -19,15 +19,15 @@ async function loadLocaleMessages(locale: string) {
 export async function initI18n() {
   try {
     const savedLocale = getCurrentLocale();
-    const browserLocale = navigator.language.split('-')[0];
-    const initialLocale = savedLocale || browserLocale || 'zh';
+    const browserLocale = navigator.language;
+    const initialLocale = savedLocale || browserLocale || 'zh-CN';
 
     const messages = await loadLocaleMessages(initialLocale);
 
     i18nInstance = createI18n({
       legacy: false,
       locale: initialLocale,
-      fallbackLocale: 'zh',
+      fallbackLocale: 'zh-CN',
       messages: messages ? { [initialLocale]: messages } : {},
       globalInjection: true,
     });
@@ -39,17 +39,17 @@ export async function initI18n() {
     toast.error('语言初始化失败，将使用默认语言');
     console.error('i18n init error:', error);
 
-    const messages = await loadLocaleMessages('zh');
+    const messages = await loadLocaleMessages('zh-CN');
 
     i18nInstance = createI18n({
       legacy: false,
-      locale: 'zh',
-      fallbackLocale: 'zh',
+      locale: 'zh-CN',
+      fallbackLocale: 'zh-CN',
       messages: messages ? { zh: messages } : {},
       globalInjection: true,
     });
 
-    updateLocale('zh');
+    updateLocale('zh-CN');
 
     return i18nInstance;
   }

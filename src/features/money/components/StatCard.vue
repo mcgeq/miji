@@ -119,11 +119,6 @@ const trendTextClass = computed(() => {
 });
 
 const formattedValue = computed(() => {
-  const num = parseFloat(props.value);
-  if (isNaN(num)) return props.value;
-  return num.toLocaleString('zh-CN', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
+  return props.value;
 });
 </script>

@@ -25,8 +25,8 @@ watchEffect(() => {
 });
 
 // 获取当前语言
-export function getCurrentLocale(): string | null {
-  return locale.value.currentLocale;
+export function getCurrentLocale(): string {
+  return locale.value.currentLocale ? locale.value.currentLocale : 'zh-CN';
 }
 
 // 更新语言，并同步到持久化 store

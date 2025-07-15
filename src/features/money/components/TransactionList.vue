@@ -121,6 +121,7 @@ import {
 import { TransactionType, TransactionTypeSchema } from '@/schema/common';
 import { TransactionWithAccount } from '@/schema/money';
 import { formatDate } from '@/utils/date';
+import { formatCurrency } from '../utils/money';
 
 interface Props {
   transactions: TransactionWithAccount[];
@@ -151,14 +152,6 @@ const getTransactionTypeName = (type: TransactionType) => {
     Transfer: '转账',
   };
   return names[type] || '未知';
-};
-
-const formatCurrency = (amount: string) => {
-  const num = parseFloat(amount);
-  return num.toLocaleString('zh-CN', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
 };
 
 const formatTime = (dateStr: string) => {

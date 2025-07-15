@@ -114,6 +114,7 @@ import {
 import { RepeatPeriod } from '@/schema/common';
 import { BilReminder } from '@/schema/money';
 import { formatDate } from '@/utils/date';
+import { formatCurrency } from '../utils/money';
 
 interface Props {
   reminders: BilReminder[];
@@ -177,14 +178,6 @@ const getRepeatTypeName = (period: RepeatPeriod): string => {
     default:
       return '未知周期';
   }
-};
-
-const formatCurrency = (amount: string) => {
-  const num = parseFloat(amount);
-  return num.toLocaleString('zh-CN', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
 };
 </script>
 

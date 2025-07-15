@@ -25,6 +25,7 @@ export const DateTimeSchema = z.iso.datetime({
 export const DateSchema = z.iso.date();
 export const TimesSchema = z.iso.time();
 export const CurrencySchema = z.object({
+  locale: z.string(),
   code: z.string().length(3),
   symbol: z.string(),
   nameEn: z.string(),

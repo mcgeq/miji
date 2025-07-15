@@ -49,7 +49,7 @@
         </div>
 
         <div class="flex items-baseline gap-2 mb-4">
-          <span class="text-2xl font-semibold text-gray-800">{{ formatCurrency(account.balance) }}</span>
+          <span class="text-2xl font-semibold text-gray-800">{{ formatCurrency(account.balance)}}</span>
         </div>
 
         <div class="border-t border-gray-200 pt-4">
@@ -83,6 +83,7 @@ import {
 } from 'lucide-vue-next';
 import { Account, AccountType } from '@/schema/money';
 import { formatDate } from '@/utils/date';
+import { formatCurrency } from '../utils/money';
 
 interface Props {
   accounts: Account[];
@@ -125,14 +126,6 @@ const getAccountTypeName = (type: AccountType): string => {
     Other: '其他',
   };
   return names[type] || '未知类型';
-};
-
-const formatCurrency = (amount: string) => {
-  const num = parseFloat(amount);
-  return num.toLocaleString('zh-CN', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
 };
 </script>
 

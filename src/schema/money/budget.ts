@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import {
   CategorySchema,
+  CurrencySchema,
   DateSchema,
   DateTimeSchema,
   DescriptionSchema,
@@ -14,14 +15,17 @@ export const BudgetSchema = z.object({
   description: DescriptionSchema,
   accountSerialNum: SerialNumSchema,
   name: NameSchema,
-  Category: CategorySchema,
+  category: CategorySchema,
   amount: z.string(),
+  currency: CurrencySchema,
   repeatPeriod: RepeatPeriodSchema,
   startDate: DateSchema,
   endDate: DateSchema,
   usedAmount: z.string(),
   isActive: z.boolean(),
-  color: z.string().optional().nullable(),
+  alertEnabled: z.boolean(),
+  alertThreshold: z.string().optional(),
+  color: z.string(),
   createdAt: DateTimeSchema,
   updatedAt: DateTimeSchema.optional().nullable(),
 });

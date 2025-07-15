@@ -2,7 +2,7 @@
   <div class="modal-mask">
     <div class="modal-mask-window-money">
       <div class="flex justify-between items-center mb-4">
-        <h3 class="text-lg font-semibold">{{ editingBudget ? '编辑预算' : '添加预算' }}</h3>
+        <h3 class="text-lg font-semibold">{{ props.budget ? '编辑预算' : '添加预算' }}</h3>
         <button @click="closeModal" class="text-gray-500 hover:text-gray-700">
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -57,14 +57,15 @@
         <div class="mb-2 flex items-center justify-between">
           <label class="text-sm font-medium text-gray-700 mb-2">预算周期</label>
           <select
-            v-model="form.period"
+            v-model="form.repeatPeriod"
             required
             class="w-2/3 modal-input-select"
           >
-            <option value="monthly">月度</option>
-            <option value="weekly">周度</option>
-            <option value="daily">日度</option>
-            <option value="yearly">年度</option>
+            <option value="None">无</option>
+            <option value="Monthly">月度</option>
+            <option value="Weekly">周度</option>
+            <option value="Daily">日度</option>
+            <option value="Yearly">年度</option>
           </select>
         </div>
  
@@ -151,92 +152,88 @@
 import { Check, X } from 'lucide-vue-next';
 import { COLORS_MAP } from '@/constants/moneyConst';
 import ColorSelector from '@/components/common/ColorSelector.vue';
+import { Budget } from '@/schema/money';
+import { CategorySchema } from '@/schema/common';
+import { getLocalISODateTimeWithOffset } from '@/utils/date';
+import { uuid } from '@/utils/uuid';
+import { getLocalCurrencyInfo } from '../utils/money';
 
 const colorNameMap = ref(COLORS_MAP);
 
+interface Props {
+  budget: Budget | null;
+}
 // 定义 props
-const props = defineProps({
-  isOpen: {
-    type: Boolean,
-    default: false,
-  },
-  editingBudget: {
-    type: Object,
-    default: null,
-  },
-});
+const props = defineProps<Props>();
 
 // 定义 emits
 const emit = defineEmits(['close', 'save']);
 
-// 响应式数据
-const form = reactive({
+const budget = props.budget || {
+  serialNum: '',
   name: '',
-  category: '',
-  amount: 0,
-  period: 'monthly',
+  description: '',
+  accountSerialNum: '',
+  category: CategorySchema.enum.Others,
+  amount: '',
+  currency: getLocalCurrencyInfo(),
+  repeatPeriod: { type: 'None' },
   startDate: '',
   endDate: '',
-  color: '#3B82F6',
+  usedAmount: '',
+  isActive: true,
   alertEnabled: false,
-  alertThreshold: 80,
-  description: '',
-});
-
-// 方法
-const resetForm = () => {
-  if (props.editingBudget) {
-    Object.assign(form, props.editingBudget);
-  } else {
-    const today = new Date();
-    Object.assign(form, {
-      name: '',
-      category: '',
-      amount: 0,
-      period: 'monthly',
-      startDate: today.toISOString().split('T')[0],
-      endDate: '',
-      color: '#3B82F6',
-      alertEnabled: false,
-      alertThreshold: 80,
-      description: '',
-    });
-  }
+  alertThreshold: '0',
+  color: COLORS_MAP[0].code,
+  createdAt: getLocalISODateTimeWithOffset(),
+  updatedAt: '',
 };
+
+// 响应式数据
+const form = reactive<Budget>({
+  serialNum: budget.serialNum,
+  accountSerialNum: budget.accountSerialNum,
+  name: budget.name,
+  description: budget.description,
+  category: budget.category,
+  amount: budget.amount,
+  currency: budget.currency,
+  repeatPeriod: budget.repeatPeriod,
+  startDate: budget.startDate,
+  endDate: budget.endDate,
+  usedAmount: budget.usedAmount,
+  isActive: budget.isActive,
+  alertEnabled: budget.alertEnabled,
+  alertThreshold: budget.alertThreshold,
+  color: budget.color,
+  createdAt: budget.createdAt,
+  updatedAt: budget.updatedAt,
+});
 
 const closeModal = () => {
   emit('close');
 };
 
 const saveBudget = () => {
-  const budgetData = {
+  const budgetData: Budget = {
     ...form,
-    id: props.editingBudget?.id || Date.now(),
-    spent: props.editingBudget?.spent || 0,
-    createdAt: props.editingBudget?.createdAt || new Date().toISOString(),
+    serialNum: props.budget?.serialNum || uuid(38),
+    createdAt: props.budget?.createdAt || getLocalISODateTimeWithOffset(),
+    updatedAt: getLocalISODateTimeWithOffset(),
   };
   emit('save', budgetData);
   closeModal();
 };
 
-// 监听器
 watch(
-  () => props.isOpen,
+  () => props.budget,
   (newVal) => {
     if (newVal) {
-      resetForm();
+      const clonedAccount = JSON.parse(JSON.stringify(newVal));
+      Object.assign(form, clonedAccount);
     }
   },
-);
-
-watch(
-  () => props.editingBudget,
-  (newVal) => {
-    if (newVal) {
-      Object.assign(form, newVal);
-    }
-  },
-  { immediate: true },
+  { immediate: true, deep: true },
 );
 </script>
 

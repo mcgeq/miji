@@ -165,11 +165,12 @@ import {
 } from '@/schema/money';
 import { TransactionType, TransactionTypeSchema } from '@/schema/common';
 import { toast } from '@/utils/toast';
+import { formatCurrency, getLocalCurrencyInfo } from '../utils/money';
 
 const moneyStore = useMoneyStore();
 
 const activeTab = ref('accounts');
-const baseCurrency = ref('CNY');
+const baseCurrency = computed(() => getLocalCurrencyInfo().symbol);
 
 const accountsLoading = ref(false);
 const transactionsLoading = ref(false);
@@ -214,14 +215,6 @@ const accounts = ref<Account[]>([]);
 const transactions = ref<TransactionWithAccount[]>([]);
 const budgets = ref<Budget[]>([]);
 const reminders = ref<BilReminder[]>([]);
-
-const formatCurrency = (value: number | string): string => {
-  const num = typeof value === 'string' ? parseFloat(value) : value;
-  return new Intl.NumberFormat('zh-CN', {
-    style: 'currency',
-    currency: baseCurrency.value,
-  }).format(num);
-};
 
 const totalAssets = computed(() => {
   return accounts.value
