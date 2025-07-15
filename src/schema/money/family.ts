@@ -20,6 +20,7 @@ export const FamilyMemberSchema = z.object({
 
 export const FamilyLedgerSchema = z.object({
   serialNum: SerialNumSchema,
+  name: z.string(),
   description: DescriptionSchema,
   baseCurrency: CurrencySchema,
   members: z.array(FamilyMemberSchema),
