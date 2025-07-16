@@ -57,24 +57,22 @@
           <div class="flex items-baseline gap-1 mb-1">
             <span class="text-lg font-semibold text-gray-800">{{ formatCurrency(budget.usedAmount) }}</span>
             <span class="text-sm text-gray-600">/ {{ formatCurrency(budget.amount) }}</span>
+            <div class="ml-auto flex justify-end mb-2 p-1.5 bg-gray-50 rounded-md">
+              <div :class="[
+                'text-lg font-semibold',
+                shouldHighlightRed(budget) ? 'text-red-500' : 'text-green-500'
+              ]">
+               {{ formatCurrency(getRemainingAmount(budget)) }}
+              </div>
+            </div>
           </div>
           <div class="w-full h-1 bg-gray-200 rounded-md overflow-hidden mb-1">
             <div class="h-full transition-[width] duration-300" :style="{ width: `${getProgressPercent(budget)}%` }"
               :class="isOverBudget(budget) ? 'bg-red-500' : 'bg-blue-500'"></div>
           </div>
-          <div class="text-center text-lg text-gray-600">
+          <div class="text-center text-lg"
+            :class="shouldHighlightRed(budget) ? 'text-red-500' : 'text-gray-600'">
             {{ getProgressPercent(budget) }}%
-          </div>
-        </div>
-
-        <!-- Remaining -->
-        <div class="flex justify-between items-center mb-2 p-1.5 bg-gray-50 rounded-md">
-          <div class="text-lg text-gray-600">剩余：</div>
-          <div :class="[
-            'text-lg font-semibold',
-            isOverBudget(budget) ? 'text-red-500' : 'text-green-500'
-          ]">
-            {{ formatCurrency(getRemainingAmount(budget)) }}
           </div>
         </div>
 
@@ -99,11 +97,11 @@
 </template>
 
 <script setup lang="ts">
-import { Trash, Edit, CalendarIcon, StopCircle, Ban } from 'lucide-vue-next';
-import { Budget } from '@/schema/money';
-import { RepeatPeriod } from '@/schema/common';
-import { formatDate } from '@/utils/date';
-import { formatCurrency } from '../utils/money';
+import {Trash, Edit, CalendarIcon, StopCircle, Ban} from 'lucide-vue-next';
+import {Budget} from '@/schema/money';
+import {RepeatPeriod} from '@/schema/common';
+import {formatDate} from '@/utils/date';
+import {formatCurrency} from '../utils/money';
 
 interface Props {
   budgets: Budget[];
@@ -154,6 +152,15 @@ const isOverBudget = (budget: Budget) => {
   const used = parseFloat(budget.usedAmount);
   const total = parseFloat(budget.amount);
   return used > total;
+};
+
+const isLowOnBudget = (budget: Budget) => {
+  const percent = getProgressPercent(budget);
+  return percent > 70;
+};
+
+const shouldHighlightRed = (budget: Budget) => {
+  return isOverBudget(budget) || isLowOnBudget(budget);
 };
 
 const getRemainingAmount = (budget: Budget) => {

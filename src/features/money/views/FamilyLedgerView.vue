@@ -29,11 +29,11 @@
 </template>
 
 <script setup lang="ts">
-import { Plus } from 'lucide-vue-next';
+import {Plus} from 'lucide-vue-next';
 import FamilyLedgerList from '../components/FamilyLedgerList.vue';
 import FamilyLedgerModal from '../components/FamilyLedgerModal.vue';
-import { toast } from '@/utils/toast';
-import { FamilyLedger } from '@/schema/money';
+import {toast} from '@/utils/toast';
+import {FamilyLedger} from '@/schema/money';
 
 const loading = ref(false);
 const showLedgerModal = ref(false);
