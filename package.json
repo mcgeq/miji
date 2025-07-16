@@ -19,7 +19,7 @@
   "lint-staged": {
     "src/**/*.{js,jsx,ts,tsx,vue,svelte,astro}":
       [
-        "biome check --apply-unsafe --files-max-size=0 --no-errors-on-unmatched",
+        "biome check --apply-unsafe --no-errors-on-unmatched",
         "biome format --write --no-errors-on-unmatched"
       ],
       "*.{json,css,scss,less,md}":[
