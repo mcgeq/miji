@@ -41,7 +41,7 @@
       </div>
       <div
         v-if="helpText && !hasError"
-        class="text-xs text-gray-500 dark:text-gray-400 mt-1"
+        class="flex justify-end text-xs text-gray-500 dark:text-gray-400 mt-2"
       >
         {{ helpText }}
       </div>

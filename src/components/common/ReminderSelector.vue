@@ -99,7 +99,7 @@
     <!-- 帮助文本 -->
     <div
       v-if="helpText"
-      class="text-xs text-gray-500 dark:text-gray-400 mt-1"
+      class="flex justify-end text-xs text-gray-500 dark:text-gray-400 mt-2"
     >
       {{ helpText }}
     </div>

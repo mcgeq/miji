@@ -54,21 +54,16 @@
           />
         </div>
  
-        <div class="mb-2 flex items-center justify-between">
-          <label class="text-sm font-medium text-gray-700 mb-2">预算周期</label>
-          <select
-            v-model="form.repeatPeriod"
-            required
-            class="w-2/3 modal-input-select"
-          >
-            <option value="None">无</option>
-            <option value="Monthly">月度</option>
-            <option value="Weekly">周度</option>
-            <option value="Daily">日度</option>
-            <option value="Yearly">年度</option>
-          </select>
-        </div>
- 
+        <!-- 重复频率  -->
+        <RepeatPeriodSelector
+          v-model="form.repeatPeriod"
+          label="重复频率"
+          :error-message="validationErrors.repeatPeriod"
+          help-text="设置提醒的重复规则，可以精确控制重复时间"
+          @change="handleRepeatPeriodChange"
+          @validate="handleRepeatPeriodValidation"
+        />
+
         <div class="mb-2 flex items-center justify-between">
           <label class="text-sm font-medium text-gray-700 mb-2">开始日期</label>
           <input
@@ -153,10 +148,11 @@ import { Check, X } from 'lucide-vue-next';
 import { COLORS_MAP } from '@/constants/moneyConst';
 import ColorSelector from '@/components/common/ColorSelector.vue';
 import { Budget } from '@/schema/money';
-import { CategorySchema } from '@/schema/common';
+import { CategorySchema, RepeatPeriod } from '@/schema/common';
 import { getLocalISODateTimeWithOffset } from '@/utils/date';
 import { uuid } from '@/utils/uuid';
 import { getLocalCurrencyInfo } from '../utils/money';
+import RepeatPeriodSelector from '@/components/common/RepeatPeriodSelector.vue';
 
 const colorNameMap = ref(COLORS_MAP);
 
@@ -168,6 +164,15 @@ const props = defineProps<Props>();
 
 // 定义 emits
 const emit = defineEmits(['close', 'save']);
+// 验证错误
+const validationErrors = reactive({
+  name: '',
+  type: '',
+  amount: '',
+  remindDate: '',
+  repeatPeriod: '',
+  priority: '',
+});
 
 const budget = props.budget || {
   serialNum: '',
@@ -223,6 +228,19 @@ const saveBudget = () => {
   };
   emit('save', budgetData);
   closeModal();
+};
+
+const handleRepeatPeriodChange = (_value: RepeatPeriod) => {
+  // 清除验证错误
+  validationErrors.repeatPeriod = '';
+};
+
+const handleRepeatPeriodValidation = (isValid: boolean) => {
+  if (!isValid) {
+    validationErrors.repeatPeriod = '重复频率配置不完整，请检查必填项';
+  } else {
+    validationErrors.repeatPeriod = '';
+  }
 };
 
 watch(

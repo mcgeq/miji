@@ -28,10 +28,10 @@
       {{ errorMessage }}
     </div>
 
-    <div v-if="modelValue.type !== 'None'" class="ml-4 space-y-3">
+    <div v-if="modelValue.type !== 'None'" class="space-y-3">
       <div v-if="modelValue.type === 'Daily'" class="flex items-center justify-between">
-        <label class="text-sm text-gray-600 dark:text-gray-400">间隔天数</label>
-        <div class="flex items-center space-x-2 w-2/3">
+        <label class="ml-4 text-sm text-gray-600 dark:text-gray-400">间隔天数</label>
+        <div class="flex items-center space-x-1 w-2/3">
           <span class="text-sm text-gray-500">每</span>
           <input
             :value="getDailyInterval()"
@@ -48,7 +48,7 @@
 
       <div v-if="modelValue.type === 'Weekly'" class="space-y-3">
         <div class="flex items-center justify-between">
-          <label class="text-sm text-gray-600 dark:text-gray-400">间隔周数</label>
+          <label class="ml-4 text-sm text-gray-600 dark:text-gray-400">间隔周数</label>
           <div class="flex items-center space-x-2 w-2/3">
             <span class="text-sm text-gray-500">每</span>
             <input
@@ -65,17 +65,17 @@
         </div>
         <div class="space-y-2">
           <div class="flex items-start justify-between">
-            <label class="text-sm text-gray-600 dark:text-gray-400 pt-2">重复星期</label>
+            <label class="ml-4 text-sm text-gray-600 dark:text-gray-400 pt-2">重复星期</label>
             <div class="w-2/3">
-              <div class="grid grid-cols-7 gap-1">
+              <div class="grid grid-cols-7 gap-2">
                 <button
                   v-for="(day, _index) in weekdayOptions"
                   :key="day.value"
                   type="button"
                   :class="[
-                    'text-sm py-2 px-2 rounded transition-colors min-h-[2.5rem] min-w-[2.5rem] flex items-center justify-center font-medium',
+                    'text-sm rounded-3xl transition-colors min-h-[0.5rem] min-w-[0.5rem] flex items-center justify-center font-medium',
                     isWeekdaySelected(day.value)
-                      ? 'bg-blue-500 text-white'
+                      ? 'bg-blue-500 text-gray-700'
                       : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                   ]"
                   @click="toggleWeekday(day.value)"
@@ -90,7 +90,7 @@
 
       <div v-if="modelValue.type === 'Monthly'" class="space-y-3">
         <div class="flex items-center justify-between">
-          <label class="text-sm text-gray-600 dark:text-gray-400">间隔月数</label>
+          <label class="ml-4 text-sm text-gray-600 dark:text-gray-400">间隔月数</label>
           <div class="flex items-center space-x-2 w-2/3">
             <span class="text-sm text-gray-500">每</span>
             <input
@@ -106,7 +106,7 @@
           </div>
         </div>
         <div class="flex items-center justify-between">
-          <label class="text-sm text-gray-600 dark:text-gray-400">日期</label>
+          <label class="ml-4 text-sm text-gray-600 dark:text-gray-400">日期</label>
           <div class="w-2/3">
             <select
               :value="getMonthlyDay()"
@@ -128,7 +128,7 @@
 
       <div v-if="modelValue.type === 'Yearly'" class="space-y-3">
         <div class="flex items-center justify-between">
-          <label class="text-sm text-gray-600 dark:text-gray-400">间隔年数</label>
+          <label class="ml-4 text-sm text-gray-600 dark:text-gray-400">间隔年数</label>
           <div class="flex items-center space-x-2 w-2/3">
             <span class="text-sm text-gray-500">每</span>
             <input
@@ -144,7 +144,7 @@
           </div>
         </div>
         <div class="flex items-center justify-between">
-          <label class="text-sm text-gray-600 dark:text-gray-400">月份</label>
+          <label class="ml-4 text-sm text-gray-600 dark:text-gray-400">月份</label>
           <div class="w-2/3">
             <select
               :value="getYearlyMonth()"
@@ -162,7 +162,7 @@
           </div>
         </div>
         <div class="flex items-center justify-between">
-          <label class="text-sm text-gray-600 dark:text-gray-400">日期</label>
+          <label class="ml-4 text-sm text-gray-600 dark:text-gray-400">日期</label>
           <div class="w-2/3">
             <select
               :value="getYearlyDay()"
@@ -202,7 +202,7 @@
       </div>
     </div>
 
-    <div v-if="helpText" class="text-xs text-gray-500 dark:text-gray-400 mt-2">
+    <div v-if="helpText" class="flex justify-end text-xs text-gray-500 dark:text-gray-400 mt-2">
       {{ helpText }}
     </div>
   </div>

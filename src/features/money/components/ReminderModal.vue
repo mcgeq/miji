@@ -53,7 +53,7 @@
         />
 
         <!-- 金额 -->
-        <div class="mb-2 flex items-center justify-between">
+        <div class="mt-2 mb-2 flex items-center justify-between">
           <label class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             金额
             <span v-if="isFinanceType" class="text-blue-500 ml-1">*</span>
@@ -123,18 +123,19 @@
         />
 
         <!-- 优先级 -->
-        <PrioritySelector
-          v-model="form.priority"
-          label="优先级"
-          :error-message="validationErrors.priority"
-          :locale="locale"
-          :show-icons="true"
-          width="2/3"
-          help-text="选择合适的优先级来管理提醒的重要程度"
-          @change="handlePriorityChange"
-          @validate="handlePriorityValidation"
-        />
-
+        <div class="mt-2 mb-2">
+          <PrioritySelector
+            v-model="form.priority"
+            label="优先级"
+            :error-message="validationErrors.priority"
+            :locale="locale"
+            :show-icons="true"
+            width="2/3"
+            help-text="选择合适的优先级来管理提醒的重要程度"
+            @change="handlePriorityChange"
+            @validate="handlePriorityValidation"
+          />
+        </div>
         <!-- 提前提醒 -->
         <div class="mb-2 flex items-center justify-between">
           <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">提前提醒</label>
