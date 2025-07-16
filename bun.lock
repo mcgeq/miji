@@ -43,6 +43,7 @@
         "commitlint": "^19.8.1",
         "commitlint-config-gitmoji": "^2.3.1",
         "cz-customizable": "^7.4.0",
+        "husky": "^9.1.7",
         "lint-staged": "^16.1.2",
         "npm-check-updates": "^18.0.1",
         "typescript": "~5.8.3",
@@ -832,6 +833,8 @@
     "hookable": ["hookable@5.5.3", "https://mirrors.cloud.tencent.com/npm/hookable/-/hookable-5.5.3.tgz", {}, "sha512-Yc+BQe8SvoXH1643Qez1zqLRmbA5rCL+sSmk6TVos0LWVfNIB7PGncdlId77WzLGSIB5KaWgTaNTs2lNVEI6VQ=="],
 
     "human-signals": ["human-signals@8.0.1", "https://mirrors.cloud.tencent.com/npm/human-signals/-/human-signals-8.0.1.tgz", {}, "sha512-eKCa6bwnJhvxj14kZk5NCPc6Hb6BdsU9DZcOnmQKSnO1VKrfV0zCvtttPZUsBvjmNDn8rpcJfpwSYnHBjc95MQ=="],
+
+    "husky": ["husky@9.1.7", "", { "bin": { "husky": "bin.js" } }, "sha512-5gs5ytaNjBrh5Ow3zrvdUUY+0VxIuWVL4i9irt6friV+BqdCfmV11CQTWMiBYWHbXhco+J1kHfTOUkePhCDvMA=="],
 
     "iconv-lite": ["iconv-lite@0.4.24", "https://mirrors.cloud.tencent.com/npm/iconv-lite/-/iconv-lite-0.4.24.tgz", { "dependencies": { "safer-buffer": ">= 2.1.2 < 3" } }, "sha512-v3MXnZAcvnywkTUEZomIActle7RXXeedOR31wwl7VlyoXO4Qi9arvSenNQWne1TcRwhCL1HwLI21bEqdpj8/rA=="],
 
