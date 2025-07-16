@@ -80,32 +80,12 @@
 
         <!-- 交易记录 -->
         <div v-if="activeTab === 'transactions'" class="transactions-section">
-          <div class="flex justify-end items-center mb-5">
-            <div class="flex gap-2.5 flex-wrap">
-              <select v-model="transactionFilters.type" class="p-2 border border-gray-300 rounded-md text-sm">
-                <option value="">全部类型</option>
-                <option value="income">收入</option>
-                <option value="expense">支出</option>
-                <option value="transfer">转账</option>
-              </select>
-              <select v-model="transactionFilters.account" class="p-2 border border-gray-300 rounded-md text-sm">
-                <option value="">全部账户</option>
-                <option v-for="account in accounts" :key="account.serialNum" :value="account.serialNum">
-                  {{ account.name }}
-                </option>
-              </select>
-              <input type="date" v-model="transactionFilters.dateFrom" placeholder="开始日期"
-                class="p-2 border border-gray-300 rounded-md text-sm" />
-              <input type="date" v-model="transactionFilters.dateTo" placeholder="结束日期"
-                class="p-2 border border-gray-300 rounded-md text-sm" />
-            </div>
-          </div>
-          <TransactionList :transactions="filteredTransactions" :loading="transactionsLoading" @edit="editTransaction"
-            @delete="deleteTransaction" @view-details="viewTransactionDetails" />
-          <SimplePagination :current-page="transactionPagination.currentPage"
-            :total-pages="transactionPagination.totalPages" :total-items="transactionPagination.totalItems"
-            :page-size="transactionPagination.pageSize" :show-page-size="false" :page-size-options="[10, 20, 50, 100]"
-            @page-change="handleTransactionPageChange" @page-size-change="handleTransactionPageSizeChange" />
+          <TransactionList 
+            :accounts="accounts"
+            @edit="editTransaction"
+            @delete="deleteTransaction" 
+            @view-details="viewTransactionDetails" 
+          />
         </div>
 
         <!-- 预算管理 -->
@@ -155,17 +135,16 @@ import BudgetModal from '../components/BudgetModal.vue';
 import ReminderList from '../components/ReminderList.vue';
 import ReminderModal from '../components/ReminderModal.vue';
 import TransactionModal from '../components/TransactionModal.vue';
-import { useMoneyStore } from '@/stores/moneyStore';
-import SimplePagination from '@/components/common/SimplePagination.vue';
+import {useMoneyStore} from '@/stores/moneyStore';
 import {
   Account,
   BilReminder,
   Budget,
   TransactionWithAccount,
 } from '@/schema/money';
-import { TransactionType, TransactionTypeSchema } from '@/schema/common';
-import { toast } from '@/utils/toast';
-import { formatCurrency, getLocalCurrencyInfo } from '../utils/money';
+import {TransactionType, TransactionTypeSchema} from '@/schema/common';
+import {toast} from '@/utils/toast';
+import {formatCurrency, getLocalCurrencyInfo} from '../utils/money';
 
 const moneyStore = useMoneyStore();
 
@@ -173,7 +152,6 @@ const activeTab = ref('accounts');
 const baseCurrency = computed(() => getLocalCurrencyInfo().symbol);
 
 const accountsLoading = ref(false);
-const transactionsLoading = ref(false);
 const budgetsLoading = ref(false);
 const remindersLoading = ref(false);
 
@@ -190,31 +168,19 @@ const transactionType = ref<TransactionType>(
   TransactionTypeSchema.enum.Expense,
 );
 
-const transactionFilters = ref({
-  type: '',
-  account: '',
-  dateFrom: '',
-  dateTo: '',
-});
-
-const transactionPagination = ref({
-  currentPage: 1,
-  totalPages: 1,
-  totalItems: 0,
-  pageSize: 20,
-});
-
 const tabs = [
-  { key: 'accounts', label: '账户' },
-  { key: 'transactions', label: '交易' },
-  { key: 'budgets', label: '预算' },
-  { key: 'reminders', label: '提醒' },
+  {key: 'accounts', label: '账户'},
+  {key: 'transactions', label: '交易'},
+  {key: 'budgets', label: '预算'},
+  {key: 'reminders', label: '提醒'},
 ];
 
 const accounts = ref<Account[]>([]);
-const transactions = ref<TransactionWithAccount[]>([]);
 const budgets = ref<Budget[]>([]);
 const reminders = ref<BilReminder[]>([]);
+
+// 用于统计的交易数据 - 只获取当月数据用于统计
+const monthlyTransactions = ref<TransactionWithAccount[]>([]);
 
 const totalAssets = computed(() => {
   return accounts.value
@@ -223,36 +189,14 @@ const totalAssets = computed(() => {
 });
 
 const monthlyIncome = computed(() => {
-  const now = new Date();
-  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-  const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-
-  return transactions.value
-    .filter((t) => {
-      const date = new Date(t.date);
-      return (
-        t.transactionType === TransactionTypeSchema.enum.Income &&
-        date >= startOfMonth &&
-        date <= endOfMonth
-      );
-    })
+  return monthlyTransactions.value
+    .filter((t) => t.transactionType === TransactionTypeSchema.enum.Income)
     .reduce((sum, t) => sum + parseFloat(t.amount), 0);
 });
 
 const monthlyExpense = computed(() => {
-  const now = new Date();
-  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-  const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-
-  return transactions.value
-    .filter((t) => {
-      const date = new Date(t.date);
-      return (
-        t.transactionType === TransactionTypeSchema.enum.Expense &&
-        date >= startOfMonth &&
-        date <= endOfMonth
-      );
-    })
+  return monthlyTransactions.value
+    .filter((t) => t.transactionType === TransactionTypeSchema.enum.Expense)
     .reduce((sum, t) => sum + parseFloat(t.amount), 0);
 });
 
@@ -265,41 +209,11 @@ const budgetRemaining = computed(() => {
     );
 });
 
-const filteredTransactions = computed(() => {
-  let filtered = [...transactions.value];
-
-  if (transactionFilters.value.type) {
-    filtered = filtered.filter(
-      (t) => t.transactionType === transactionFilters.value.type,
-    );
-  }
-
-  if (transactionFilters.value.account) {
-    filtered = filtered.filter(
-      (t) => t.accountSerialNum === transactionFilters.value.account,
-    );
-  }
-
-  if (transactionFilters.value.dateFrom) {
-    filtered = filtered.filter(
-      (t) => t.date >= transactionFilters.value.dateFrom,
-    );
-  }
-
-  if (transactionFilters.value.dateTo) {
-    filtered = filtered.filter(
-      (t) => t.date <= transactionFilters.value.dateTo,
-    );
-  }
-
-  return filtered;
-});
-
 const loadData = async () => {
   try {
     await Promise.all([
       loadAccounts(),
-      loadTransactions(),
+      loadMonthlyTransactions(),
       loadBudgets(),
       loadReminders(),
     ]);
@@ -317,20 +231,22 @@ const loadAccounts = async () => {
   }
 };
 
-const loadTransactions = async () => {
-  transactionsLoading.value = true;
+// 只加载当月交易数据用于统计
+const loadMonthlyTransactions = async () => {
   try {
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+
     const result = await moneyStore.getTransactions({
-      page: transactionPagination.value.currentPage,
-      pageSize: transactionPagination.value.pageSize,
+      page: 1,
+      pageSize: 1000, // 获取足够多的数据用于统计
+      dateFrom: startOfMonth.toISOString().split('T')[0],
+      dateTo: endOfMonth.toISOString().split('T')[0],
     });
-    transactions.value = result.items;
-    transactionPagination.value.totalItems = result.total;
-    transactionPagination.value.totalPages = Math.ceil(
-      result.total / transactionPagination.value.pageSize,
-    );
-  } finally {
-    transactionsLoading.value = false;
+    monthlyTransactions.value = result.items;
+  } catch (error) {
+    console.error('加载月度交易数据失败:', error);
   }
 };
 
@@ -369,7 +285,8 @@ const deleteTransaction = async (serialNum: string) => {
     try {
       await moneyStore.deleteTransaction(serialNum);
       toast.success('删除成功');
-      loadTransactions();
+      // 刷新相关数据
+      await Promise.all([loadAccounts(), loadMonthlyTransactions()]);
     } catch (error) {
       toast.error('删除失败');
     }
@@ -395,8 +312,8 @@ const saveTransaction = async (transaction: TransactionWithAccount) => {
       toast.success('添加成功');
     }
     closeTransactionModal();
-    loadTransactions();
-    loadAccounts();
+    // 刷新相关数据
+    await Promise.all([loadAccounts(), loadMonthlyTransactions()]);
   } catch (error) {
     toast.error('保存失败');
   }
@@ -561,18 +478,6 @@ const saveReminder = async (reminder: BilReminder) => {
   }
 };
 
-const handleTransactionPageChange = (page: number) => {
-  transactionPagination.value.currentPage = page;
-  loadTransactions();
-};
-
-const handleTransactionPageSizeChange = (pageSize: number) => {
-  transactionPagination.value.pageSize = pageSize;
-  transactionPagination.value.currentPage = 1; // 重置到第一页
-  // 如果需要，可以在这里调用 API 获取新数据
-  // await fetchTransactions(1, pageSize);
-};
-
 // 计算是否有 Modal 打开
 const hasModalOpen = computed(() => {
   return (
@@ -602,15 +507,6 @@ watchEffect(() => {
     }
   }
 });
-
-watch(
-  transactionFilters,
-  () => {
-    transactionPagination.value.currentPage = 1;
-    loadTransactions();
-  },
-  { deep: true },
-);
 
 onMounted(() => {
   loadData();

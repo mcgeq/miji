@@ -1,70 +1,100 @@
 <!-- src/components/SimplePagination.vue -->
 <template>
   <div
-    class="flex flex-wrap sm:flex-nowrap items-center justify-between p-4 bg-white rounded-lg shadow-md gap-4"
+    :class="[
+      'flex items-center justify-between p-4 rounded-lg shadow-md gap-4',
+      compact ? 'bg-transparent shadow-none p-2' : 'bg-white',
+      responsive ? 'flex-wrap sm:flex-nowrap' : 'flex-nowrap'
+    ]"
   >
-    <!-- First / Prev -->
+    <!-- 左侧：第一页/上一页按钮 -->
     <div class="flex gap-2">
       <button
+        v-if="showFirstLast"
         @click="goToFirst"
-        :disabled="currentPage <= 1"
+        :disabled="currentPage <= 1 || disabled"
         :aria-label="t('pagination.home')"
-        class="btn-fancy"
+        :class="buttonClasses"
       >
         <ChevronsLeft class="w-4 h-4" />
       </button>
       <button
         @click="goToPrev"
-        :disabled="currentPage <= 1"
+        :disabled="currentPage <= 1 || disabled"
         :aria-label="t('pagination.prev')"
-        class="btn-fancy"
+        :class="buttonClasses"
       >
         <ChevronLeft class="w-4 h-4" />
       </button>
     </div>
 
-    <!-- Page Info -->
+    <!-- 中间：页码信息和跳转 -->
     <div class="flex items-center gap-3">
-      <span class="text-sm text-gray-700">{{ currentPage }}/{{ totalPages }}</span>
+      <!-- 页码显示 -->
+      <span :class="compact ? 'text-xs' : 'text-sm'" class="text-gray-700">
+        {{ currentPage }}/{{ totalPages }}
+      </span>
+      
+      <!-- 总数显示 -->
+      <span v-if="showTotal && totalItems > 0" :class="compact ? 'text-xs' : 'text-sm'" class="text-gray-500">
+        (共 {{ totalItems }} 条)
+      </span>
+
+      <!-- 页码跳转输入框 -->
       <input
+        v-if="showJump"
         type="number"
         v-model.number="pageInput"
         @change="handlePageJump"
         @keydown.enter="handlePageJump"
         :min="1"
         :max="totalPages"
+        :disabled="disabled"
         aria-label="Jump to page"
-        class="input-fancy"
+        :class="[
+          'text-center text-gray-800 border border-gray-300 rounded-lg shadow-inner',
+          'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2',
+          'transition-all duration-200 ease-in-out hover:border-gray-400',
+          'disabled:opacity-50 disabled:cursor-not-allowed',
+          compact ? 'w-12 px-2 py-1 text-xs' : 'w-16 px-3 py-1.5 text-sm'
+        ]"
       />
     </div>
 
-    <!-- Next / Last -->
+    <!-- 右侧：下一页/最后一页按钮 -->
     <div class="flex gap-2">
       <button
         @click="goToNext"
-        :disabled="currentPage >= totalPages"
+        :disabled="currentPage >= totalPages || disabled"
         :aria-label="t('pagination.next')"
-        class="btn-fancy"
+        :class="buttonClasses"
       >
         <ChevronRight class="w-4 h-4" />
       </button>
       <button
+        v-if="showFirstLast"
         @click="goToLast"
-        :disabled="currentPage >= totalPages"
+        :disabled="currentPage >= totalPages || disabled"
         :aria-label="t('pagination.last')"
-        class="btn-fancy"
+        :class="buttonClasses"
       >
         <ChevronsRight class="w-4 h-4" />
       </button>
     </div>
 
-    <!-- Page size selector (可选显示) -->
+    <!-- 每页大小选择器 -->
     <select
       v-if="showPageSize"
       v-model="internalPageSize"
       @change="handlePageSizeChange"
+      :disabled="disabled"
       aria-label="Select items per page"
-      class="px-2 py-1 border border-gray-300 rounded-md text-sm"
+      :class="[
+        'border border-gray-300 rounded-md text-gray-700',
+        'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2',
+        'disabled:opacity-50 disabled:cursor-not-allowed',
+        compact ? 'px-2 py-1 text-xs' : 'px-2 py-1 text-sm'
+      ]"
     >
       <option v-for="size in pageSizeOptions" :key="size" :value="size">
         {{ size }}
@@ -80,7 +110,7 @@ import {
   ChevronsLeft,
   ChevronsRight,
 } from 'lucide-vue-next';
-import { useI18n } from 'vue-i18n';
+import {useI18n} from 'vue-i18n';
 
 export default defineComponent({
   name: 'SimplePagination',
@@ -91,45 +121,65 @@ export default defineComponent({
     ChevronsRight,
   },
   props: {
-    // 当前页码
+    // 基础分页属性
     currentPage: {
       type: Number,
       required: true,
     },
-    // 总页数
     totalPages: {
       type: Number,
       required: true,
     },
-    // 总条目数 (可选)
     totalItems: {
       type: Number,
       default: 0,
     },
-    // 每页大小
     pageSize: {
       type: Number,
       default: 10,
     },
-    // 是否显示每页大小选择器
+
+    // 显示选项
     showPageSize: {
       type: Boolean,
       default: false,
     },
-    // 每页大小选项
+    showTotal: {
+      type: Boolean,
+      default: false,
+    },
+    showJump: {
+      type: Boolean,
+      default: true,
+    },
+    showFirstLast: {
+      type: Boolean,
+      default: true,
+    },
+
+    // 样式选项
+    compact: {
+      type: Boolean,
+      default: false,
+    },
+    responsive: {
+      type: Boolean,
+      default: true,
+    },
+
+    // 功能选项
     pageSizeOptions: {
       type: Array as PropType<number[]>,
       default: () => [10, 20, 50, 100],
     },
-    // 禁用状态
     disabled: {
       type: Boolean,
       default: false,
     },
   },
   emits: ['page-change', 'page-size-change'],
-  setup(props, { emit }) {
-    const { t } = useI18n();
+  setup(props, {emit}) {
+    const {t} = useI18n();
 
     // 页码输入框的值
     const pageInput = ref(props.currentPage);
@@ -137,13 +187,27 @@ export default defineComponent({
     // 内部页面大小状态
     const internalPageSize = ref(props.pageSize);
 
+    // 按钮样式类
+    const buttonClasses = computed(() => [
+      'inline-flex items-center justify-center rounded-xl border border-gray-300',
+      'text-sm font-semibold text-gray-800 bg-gradient-to-b from-white via-gray-100 to-gray-200',
+      'shadow-[inset_0_1px_0_rgba(255,255,255,0.6),_0_2px_4px_rgba(0,0,0,0.1)]',
+      'transition-all duration-200 ease-in-out',
+      'hover:from-gray-100 hover:via-gray-200 hover:to-gray-300',
+      'hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.4),_0_4px_6px_rgba(0,0,0,0.15)]',
+      'active:translate-y-[1px] active:shadow-inner',
+      'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2',
+      'disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none',
+      props.compact ? 'px-2 py-1' : 'px-3 py-2',
+    ]);
+
     // 监听当前页码变化，同步到输入框
     watch(
       () => props.currentPage,
       (newPage) => {
         pageInput.value = newPage;
       },
-      { immediate: true },
+      {immediate: true},
     );
 
     // 监听页面大小变化
@@ -152,7 +216,7 @@ export default defineComponent({
       (newSize) => {
         internalPageSize.value = newSize;
       },
-      { immediate: true },
+      {immediate: true},
     );
 
     // 跳转到第一页
@@ -212,6 +276,7 @@ export default defineComponent({
       t,
       pageInput,
       internalPageSize,
+      buttonClasses,
       goToFirst,
       goToPrev,
       goToNext,
@@ -224,22 +289,5 @@ export default defineComponent({
 </script>
 
 <style scoped lang="postcss">
-.btn-fancy {
-  @apply inline-flex items-center justify-center px-3 py-2 rounded-xl border border-gray-300
-    text-sm font-semibold text-gray-800 bg-gradient-to-b from-white via-gray-100 to-gray-200
-    shadow-[inset_0_1px_0_rgba(255,255,255,0.6),_0_2px_4px_rgba(0,0,0,0.1)]
-    transition-all duration-200 ease-in-out
-    hover:from-gray-100 hover:via-gray-200 hover:to-gray-300
-    hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.4),_0_4px_6px_rgba(0,0,0,0.15)]
-    active:translate-y-[1px] active:shadow-inner
-    focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
-    disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none;
-}
-
-.input-fancy {
-  @apply w-16 text-center text-sm text-gray-800 px-3 py-1.5 rounded-lg border border-gray-300
-    bg-gradient-to-b from-white to-gray-100 shadow-inner
-    focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
-    transition-all duration-200 ease-in-out hover:border-gray-400 disabled:opacity-50;
-}
+/* 保持原有样式，现在使用计算属性 */
 </style>
