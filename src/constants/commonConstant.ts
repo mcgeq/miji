@@ -466,11 +466,11 @@ export const getReminderTypesByCategory = (
 // 工具函数：搜索提醒类型
 export const searchReminderTypes = (
   keyword: string,
-  locale: 'zh' | 'en' = 'zh',
+  locale: 'zh-CN' | 'en' = 'zh-CN',
 ): ReminderTypeI18[] => {
   const searchTerm = keyword.toLowerCase();
   return DEFAULT_REMINDER_TYPES.filter((type) => {
-    const name = locale === 'zh' ? type.nameZh : type.nameEn;
+    const name = locale === 'zh-CN' ? type.nameZh : type.nameEn;
     return (
       name.toLowerCase().includes(searchTerm) ||
       (type.description && type.description.toLowerCase().includes(searchTerm))

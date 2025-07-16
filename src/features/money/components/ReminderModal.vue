@@ -58,26 +58,25 @@
             金额
             <span v-if="isFinanceType" class="text-blue-500 ml-1">*</span>
           </label>
-          <div class="w-2/3 flex items-center space-x-2">
-            <input
-              v-model.number="form.amount"
-              type="number"
-              step="0.01"
-              min="0"
-              class="flex-1 modal-input-select"
-              :class="{ 'border-red-500': validationErrors.amount }"
-              :placeholder="amountPlaceholder"
-              :required="isFinanceType"
-              @blur="validateAmount"
-            />
-            <select
-              v-model="form.currency"
-              class="modal-input-select w-20"
-            >
-              <option value="CNY">¥</option>
-              <option value="USD">$</option>
-              <option value="EUR">€</option>
-            </select>
+          <div class="w-2/3">
+            <div class="flex items-center space-x-2">
+              <div class="flex-1">
+              <input
+                v-model.number="form.amount"
+                type="number"
+                step="0.01"
+                min="0"
+                class="w-full modal-input-select"
+                :class="{ 'border-red-500': validationErrors.amount }"
+                :placeholder="amountPlaceholder"
+                :required="isFinanceType"
+                @blur="validateAmount"
+              />
+              </div>
+              <div class="flex-1 mt-2">
+                <CurrencySelector width="full" v-model="form.currency"/>
+              </div>
+            </div>
           </div>
         </div>
         <div
@@ -245,6 +244,7 @@ import type { RepeatPeriod } from '@/schema/common';
 import ReminderSelector from '@/components/common/ReminderSelector.vue';
 import RepeatPeriodSelector from '@/components/common/RepeatPeriodSelector.vue';
 import PrioritySelector from '@/components/common/PrioritySelector.vue';
+import CurrencySelector from '@/components/common/money/CurrencySelector.vue';
 
 const colorNameMap = ref(COLORS_MAP);
 
@@ -258,7 +258,7 @@ const emit = defineEmits(['close', 'save']);
 // 响应式状态
 const isSubmitting = ref(false);
 const locale = ref<'zh-CN' | 'en'>('zh-CN');
-const today = ref(new Date().toISOString().split('T')[0]);
+const today = ref(getLocalISODateTimeWithOffset().split('T')[0]);
 
 // 验证错误
 const validationErrors = reactive({
@@ -309,7 +309,7 @@ const form = reactive<BilReminder>({
   repeatPeriod: reminder.repeatPeriod,
   isPaid: reminder.isPaid,
   priority: reminder.priority,
-  advanceValue: reminder.advanceValue ?? 0, // 使用空值合并运算符确保不为 undefined
+  advanceValue: reminder.advanceValue ?? 0,
   advanceUnit: reminder.advanceUnit,
   color: reminder.color,
   relatedTransactionSerialNum: reminder.relatedTransactionSerialNum,
@@ -455,7 +455,7 @@ const handleTypeChange = (value: string) => {
       form.advanceValue = 1;
       form.advanceUnit = 'days';
       form.color = '#EC4899'; // 粉色
-      form.repeatPeriod = { type: 'Yearly', interval: 1, month: 1, day: 1 }; // 生日和纪念日通常每年重复
+      form.repeatPeriod = { type: 'Yearly', interval: 1, month: 1, day: 1 };
       break;
     case 'Exercise':
       form.priority = 'Low';
