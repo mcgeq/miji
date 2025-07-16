@@ -69,7 +69,7 @@
             {{ reminder.currency.code }}
           </span>
         </div>
-        <div class="mb-4 space-y-2">
+        <div class="mb-2 space-y-2">
           <div class="flex justify-between text-sm">
             <span class="text-gray-600">账单日期：</span>
             <span class="text-gray-800">{{ formatDate(reminder.billDate) }}</span>
@@ -79,7 +79,7 @@
             <span class="text-gray-800">{{ formatDateTime(reminder.remindDate) }}</span>
           </div>
         </div>
-        <div class="flex items-center gap-2 mb-4 text-gray-600 text-sm">
+        <div class="flex justify-end items-center gap-2 mb-2 text-gray-600 text-sm">
           <Repeat class="w-4 h-4" />
           <span>{{ getRepeatTypeName(reminder.repeatPeriod) }}</span>
         </div>
@@ -111,10 +111,10 @@ import {
   AlertCircle,
   Clock,
 } from 'lucide-vue-next';
-import { RepeatPeriod } from '@/schema/common';
-import { BilReminder } from '@/schema/money';
-import { formatDate, formatDateTime } from '@/utils/date';
-import { formatCurrency } from '../utils/money';
+import {BilReminder} from '@/schema/money';
+import {formatDate, formatDateTime} from '@/utils/date';
+import {formatCurrency} from '../utils/money';
+import {getRepeatTypeName} from '@/utils/common';
 
 interface Props {
   reminders: BilReminder[];
@@ -152,32 +152,6 @@ const getStatusText = (reminder: BilReminder) => {
   if (reminder.isPaid) return '已付款';
   if (isOverdue(reminder)) return '已逾期';
   return '待付款';
-};
-
-const getRepeatTypeName = (period: RepeatPeriod): string => {
-  switch (period.type) {
-    case 'None':
-      return '无周期';
-    case 'Daily':
-      return period.interval > 1 ? `每${period.interval}天` : '每日预算';
-    case 'Weekly':
-      return period.interval > 1
-        ? `每${period.interval}周 (${period.daysOfWeek.join(',')})`
-        : `每周 (${period.daysOfWeek.join(',')})`;
-    case 'Monthly':
-      const day = period.day === 'last' ? '最后一天' : `第${period.day}天`;
-      return period.interval > 1
-        ? `每${period.interval}月，${day}`
-        : `每月，${day}`;
-    case 'Yearly':
-      return period.interval > 1
-        ? `每${period.interval}年，${period.month}月${period.day}日`
-        : `${period.month}月${period.day}日`;
-    case 'Custom':
-      return period.description;
-    default:
-      return '未知周期';
-  }
 };
 </script>
 

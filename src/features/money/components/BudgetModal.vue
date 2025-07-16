@@ -64,7 +64,7 @@
           @validate="handleRepeatPeriodValidation"
         />
 
-        <div class="mb-2 flex items-center justify-between">
+        <div class="mt-2 mb-2 flex items-center justify-between">
           <label class="text-sm font-medium text-gray-700 mb-2">开始日期</label>
           <input
             v-model="form.startDate"
@@ -144,14 +144,14 @@
 </template>
 
 <script setup lang="ts">
-import { Check, X } from 'lucide-vue-next';
-import { COLORS_MAP } from '@/constants/moneyConst';
+import {Check, X} from 'lucide-vue-next';
+import {COLORS_MAP} from '@/constants/moneyConst';
 import ColorSelector from '@/components/common/ColorSelector.vue';
-import { Budget } from '@/schema/money';
-import { CategorySchema, RepeatPeriod } from '@/schema/common';
-import { getLocalISODateTimeWithOffset } from '@/utils/date';
-import { uuid } from '@/utils/uuid';
-import { getLocalCurrencyInfo } from '../utils/money';
+import {Budget} from '@/schema/money';
+import {CategorySchema, RepeatPeriod} from '@/schema/common';
+import {getLocalISODateTimeWithOffset} from '@/utils/date';
+import {uuid} from '@/utils/uuid';
+import {getLocalCurrencyInfo} from '../utils/money';
 import RepeatPeriodSelector from '@/components/common/RepeatPeriodSelector.vue';
 
 const colorNameMap = ref(COLORS_MAP);
@@ -182,7 +182,7 @@ const budget = props.budget || {
   category: CategorySchema.enum.Others,
   amount: '',
   currency: getLocalCurrencyInfo(),
-  repeatPeriod: { type: 'None' },
+  repeatPeriod: {type: 'None'},
   startDate: '',
   endDate: '',
   usedAmount: '',
@@ -251,7 +251,7 @@ watch(
       Object.assign(form, clonedAccount);
     }
   },
-  { immediate: true, deep: true },
+  {immediate: true, deep: true},
 );
 </script>
 

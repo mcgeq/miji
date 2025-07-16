@@ -5,11 +5,11 @@
 // File:           common.ts
 // Description:    About Common
 // Create   Date:  2025-06-22 20:39:52
-// Last Modified:  2025-07-15 00:08:27
+// Last Modified:  2025-07-16 20:21:48
 // Modified   By:  mcgeq <mcgeq@outlook.com>
 // -----------------------------------------------------------------------------
 
-import { RepeatPeriod } from '@/schema/common';
+import {RepeatPeriod} from '@/schema/common';
 
 export function toCamelCase<T = any>(obj: any): T {
   if (Array.isArray(obj)) {
@@ -72,7 +72,7 @@ export const buildRepeatPeriod = (
         description: input.description ?? '',
       };
     default:
-      return { type: 'None' };
+      return {type: 'None'};
   }
 };
 
@@ -86,3 +86,29 @@ export function safeGet<T>(
 ): T | undefined {
   return arr[index] ?? fallback;
 }
+
+export const getRepeatTypeName = (period: RepeatPeriod): string => {
+  switch (period.type) {
+    case 'None':
+      return '无周期';
+    case 'Daily':
+      return period.interval > 1 ? `每${period.interval}天` : '每日';
+    case 'Weekly':
+      return period.interval > 1
+        ? `每${period.interval}周 (${period.daysOfWeek.join(',')})`
+        : `每周 (${period.daysOfWeek.join(',')})`;
+    case 'Monthly':
+      const day = period.day === 'last' ? '最后一天' : `第${period.day}天`;
+      return period.interval > 1
+        ? `每${period.interval}月，${day}`
+        : `每月，${day}`;
+    case 'Yearly':
+      return period.interval > 1
+        ? `每${period.interval}年，${period.month}月${period.day}日`
+        : `${period.month}月${period.day}日`;
+    case 'Custom':
+      return period.description;
+    default:
+      return '无周期';
+  }
+};

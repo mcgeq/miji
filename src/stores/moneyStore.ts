@@ -1,6 +1,6 @@
 // stores/moneyStore.ts
 
-import { COLORS_MAP, DEFAULT_CURRENCY } from '@/constants/moneyConst';
+import {COLORS_MAP, DEFAULT_CURRENCY} from '@/constants/moneyConst';
 import {
   CategorySchema,
   PrioritySchema,
@@ -17,8 +17,8 @@ import {
   Budget,
   TransactionWithAccount,
 } from '@/schema/money';
-import { uuid } from '@/utils/uuid';
-import { defineStore } from 'pinia';
+import {uuid} from '@/utils/uuid';
+import {defineStore} from 'pinia';
 
 // 模拟数据生成器
 const generateSerialNum = () => uuid(38);
@@ -173,7 +173,7 @@ const mockBudgets: Budget[] = [
     description: '餐饮',
     category: 'Food',
     amount: '1500.00',
-    repeatPeriod: { type: 'Monthly', interval: 1, day: 28 },
+    repeatPeriod: {type: 'Monthly', interval: 1, day: 28},
     startDate: '2024-12-01',
     endDate: '2024-12-31',
     usedAmount: '456.80',
@@ -191,7 +191,7 @@ const mockBudgets: Budget[] = [
     description: '交通',
     category: CategorySchema.enum.Transport,
     amount: '800.00',
-    repeatPeriod: { type: 'None' },
+    repeatPeriod: {type: 'None'},
     startDate: '2024-12-01',
     endDate: '2024-12-31',
     usedAmount: '128.00',
@@ -210,7 +210,7 @@ const mockBudgets: Budget[] = [
     description: '娱乐',
     category: 'Entertainment',
     amount: '600.00',
-    repeatPeriod: { type: 'None' },
+    repeatPeriod: {type: 'None'},
     startDate: '2024-12-01',
     endDate: '2024-12-31',
     usedAmount: '0.00',
@@ -236,7 +236,7 @@ const mockReminders: BilReminder[] = [
     dueDate: '2024-12-15T00:00:00.000Z',
     billDate: '2024-12-15T00:00:00.000Z',
     remindDate: '2024-12-15T00:00:00.000Z',
-    repeatPeriod: { type: 'None' },
+    repeatPeriod: {type: 'Monthly', interval: 1, day: 3},
     isPaid: false,
     priority: PrioritySchema.enum.High,
     color: COLORS_MAP[4].code,
@@ -256,7 +256,7 @@ const mockReminders: BilReminder[] = [
     dueDate: '2024-12-05T00:00:00.000Z',
     remindDate: '2024-12-15T00:00:00.000Z',
     billDate: '2024-12-15T00:00:00.000Z',
-    repeatPeriod: { type: 'None' },
+    repeatPeriod: {type: 'None'},
     isPaid: true,
     priority: PrioritySchema.enum.Urgent,
     color: COLORS_MAP[3].code,
@@ -276,7 +276,7 @@ const mockReminders: BilReminder[] = [
     dueDate: '2024-12-20T00:00:00.000Z',
     remindDate: '2024-12-15T00:00:00.000Z',
     billDate: '2024-12-15T00:00:00.000Z',
-    repeatPeriod: { type: 'None' },
+    repeatPeriod: {type: 'None'},
     isPaid: false,
     priority: PrioritySchema.enum.Low,
     color: COLORS_MAP[1].code,

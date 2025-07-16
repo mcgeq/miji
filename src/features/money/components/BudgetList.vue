@@ -47,14 +47,14 @@
           </div>
         </div>
         <!-- Period -->
-        <div class="flex items-center gap-1 mb-2 text-gray-600 text-sm">
-          <CalendarIcon class="w-4 h-4 text-gray-600" />
-          <span>{{ getBudgetPeriodName(budget.repeatPeriod) }}</span>
+        <div class="flex justify-end items-center gap-1 mb-1 text-gray-600 text-sm">
+          <Repeat class="w-4 h-4 text-gray-600" />
+          <span>{{ getRepeatTypeName(budget.repeatPeriod) }}</span>
         </div>
 
         <!-- Progress -->
         <div class="mb-2">
-          <div class="flex items-baseline gap-1 mb-1">
+          <div class="flex items-baseline gap-1">
             <span class="text-lg font-semibold text-gray-800">{{ formatCurrency(budget.usedAmount) }}</span>
             <span class="text-sm text-gray-600">/ {{ formatCurrency(budget.amount) }}</span>
             <div class="ml-auto flex justify-end mb-2 p-1.5 bg-gray-50 rounded-md">
@@ -97,11 +97,11 @@
 </template>
 
 <script setup lang="ts">
-import {Trash, Edit, CalendarIcon, StopCircle, Ban} from 'lucide-vue-next';
+import {Trash, Edit, StopCircle, Ban, Repeat} from 'lucide-vue-next';
 import {Budget} from '@/schema/money';
-import {RepeatPeriod} from '@/schema/common';
 import {formatDate} from '@/utils/date';
 import {formatCurrency} from '../utils/money';
+import {getRepeatTypeName} from '@/utils/common';
 
 interface Props {
   budgets: Budget[];
@@ -115,32 +115,6 @@ const emit = defineEmits<{
   delete: [serialNum: string];
   'toggle-active': [serialNum: string];
 }>();
-
-const getBudgetPeriodName = (period: RepeatPeriod): string => {
-  switch (period.type) {
-    case 'None':
-      return '无周期';
-    case 'Daily':
-      return period.interval > 1 ? `每${period.interval}天` : '每日预算';
-    case 'Weekly':
-      return period.interval > 1
-        ? `每${period.interval}周 (${period.daysOfWeek.join(',')})`
-        : `每周 (${period.daysOfWeek.join(',')})`;
-    case 'Monthly':
-      const day = period.day === 'last' ? '最后一天' : `第${period.day}天`;
-      return period.interval > 1
-        ? `每${period.interval}月，${day}`
-        : `每月，${day}`;
-    case 'Yearly':
-      return period.interval > 1
-        ? `每${period.interval}年，${period.month}月${period.day}日`
-        : `${period.month}月${period.day}日`;
-    case 'Custom':
-      return period.description;
-    default:
-      return '未知周期';
-  }
-};
 
 const getProgressPercent = (budget: Budget) => {
   const used = parseFloat(budget.usedAmount);
