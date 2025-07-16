@@ -72,12 +72,17 @@
                   v-for="(day, _index) in weekdayOptions"
                   :key="day.value"
                   type="button"
-                  :class="[
-                    'text-sm rounded-3xl transition-colors min-h-[0.5rem] min-w-[0.5rem] flex items-center justify-center font-medium',
-                    isWeekdaySelected(day.value)
-                      ? 'bg-blue-500 text-gray-700'
-                      : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-                  ]"
+                  class="
+                    text-xs font-medium flex items-center justify-center
+                    rounded-3xl transition-colors
+                    h-0.25rem w-0.25rem
+                    hover:bg-gray-200 dark:hover:bg-gray-600
+                    bg-gray-100 dark:bg-gray-700
+                    text-gray-700 dark:text-gray-300
+                    "
+                  :class="{
+                    '!bg-blue-500 !text-gray-700': isWeekdaySelected(day.value)
+                  }"
                   @click="toggleWeekday(day.value)"
                 >
                   {{ day.label }}
