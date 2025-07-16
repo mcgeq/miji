@@ -11,10 +11,20 @@
     "tauri": "tauri",
     "test": "vitest",
     "commit": "git add . && cz",
-    "lint": "biome lint && tsc --noEmit",
-    "lint:fix": "biome check --write --unsafe",
-    "lint-staged": "biome check --staged --fix",
+    "format": "biome format --write src",
+    "lint": "biome check src",
+    "lint:fix": "biome check --write --unsafe src",
     "prepare": "husky"
+  },
+  "lint-staged": {
+    "src/**/*.{js,jsx,ts,tsx,vue,svelte,astro}":
+      [
+        "biome check --apply-unsafe --files-max-size=0 --no-errors-on-unmatched",
+        "biome format --write --no-errors-on-unmatched"
+      ],
+      "*.{json,css,scss,less,md}":[
+        "biome format --write --no-errors-on-unmatched"
+      ]
   },
   "dependencies": {
     "@intlify/unplugin-vue-i18n": "^6.0.8",

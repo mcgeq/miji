@@ -8,7 +8,8 @@
   },
   "files": {
     "ignoreUnknown": false,
-    "includes": ["src/**"]
+    "includes": ["src/**/*"],
+    "experimentalScannerIgnores": []
   },
   "formatter": {
     "enabled": true,
