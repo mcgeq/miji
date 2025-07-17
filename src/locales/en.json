@@ -15,6 +15,50 @@
   "loggingIn": "Logging in...",
   "registering": "Registering...",
   "code": "Verification Code",
+  "generalOperations": {
+    "all": "All",
+    "edit": "Edit",
+    "delete": "Delete",
+    "save": "Save",
+    "cancel": "Cancel",
+    "confirm": "Confirm"
+  },
+  "categories": {
+    "category": "Category",
+    "allCategory": "All Categories",
+    "subCategory": "Subcategory"
+  },
+  "dateAndTime": {
+    "today": "Today",
+    "none": "No Repeat",
+    "week": "Week",
+    "month": "Month",
+    "year": "Year",
+    "daily": "Daily",
+    "weekly": "Weekly",
+    "monthly": "Monthly",
+    "yearly": "Yearly",
+    "custom": "Custom",
+    "startDate": "Start Date",
+    "endDate": "End Date",
+    "createDate": "Creation Date",
+    "reminderDate": "Reminder Date",
+    "rangeDate": "Date Range"
+  },
+  "optionsAndStatus": {
+    "options": "Options",
+    "overdue": "Overdue",
+    "noReminder": "No Reminder",
+    "noPatternResult": "No Matching Results"
+  },
+  "financial": {
+    "money": "Amount",
+    "account": "Account"
+  },
+  "others": {
+    "types": "Types",
+    "remark": "Note"
+  },
   "errors": {
     "initFailed": "Initialization failed, please try again",
     "pleaseLogin": "Please login first",

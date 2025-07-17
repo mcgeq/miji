@@ -160,6 +160,8 @@ export default defineConfig({
       'money-option-btn',
       'wh-8 bg-white rounded cursor-pointer flex-center transition-all text-xs hover:bg-gray-50',
     ],
+    // filter
+    ['filter-flex-wrap', 'flex p-2 border border-gray-200 rounded-md items-center gap-2']
   ],
   rules: [
     [/^scrollbar-width-(.+)$/, ([, c]) => ({ 'scrollbar-width': c })],

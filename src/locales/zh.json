@@ -15,6 +15,50 @@
   "loggingIn": "登录中...",
   "registering": "注册中...",
   "code": "验证码",
+  "generalOperations": {
+    "all": "全部",
+    "edit": "编辑",
+    "delete": "删除",
+    "save": "保存",
+    "cancel": "取消",
+    "confirm": "确定"
+  },
+  "categories": {
+    "category": "分类",
+    "allCategory": "全部分类",
+    "subCategory": "子分类"
+  },
+  "dateAndTime": {
+    "today": "今天",
+    "none": "无重复",
+    "week": "本周",
+    "month": "本月",
+    "year": "本年",
+    "daily": "每日",
+    "weekly": "每周",
+    "monthly": "每月",
+    "yearly": "每年",
+    "custom": "自定义",
+    "startDate": "开始日期",
+    "endDate": "结束日期",
+    "createDate": "创建时间",
+    "reminderDate": "提醒时间",
+    "rangeDate": "日期范围"
+  },
+  "optionsAndStatus": {
+    "options": "操作",
+    "overdue": "已逾期",
+    "noReminder": "暂无提醒",
+    "noPatternResult": "无匹配结果"
+  },
+  "financial": {
+    "money": "金额",
+    "account": "账户"
+  },
+  "others": {
+    "types": "类型",
+    "remark": "备注"
+  },
   "errors": {
     "initFailed": "初始化失败，请重试",
     "pleaseLogin": "请先登录",
@@ -66,6 +110,9 @@
         "yearly": "每年"
       }
     }
+  },
+  "moneys": {
+    "billDate": "账单日期"
   },
   "pagination": {
     "next": "下一页",

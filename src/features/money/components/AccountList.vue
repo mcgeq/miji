@@ -4,7 +4,7 @@
     <div class="mb-6 p-4 bg-white rounded-lg shadow-sm border border-gray-200">
       <div class="flex flex-wrap items-center gap-3">
         <!-- 账户状态过滤 -->
-        <div class="flex items-center gap-2">
+        <div class="filter-flex-wrap">
           <div class="flex gap-1">
             <button
               :class="[
@@ -44,12 +44,9 @@
           </div>
         </div>
 
-        <!-- 分隔线 -->
-        <div class="w-px h-6 bg-gray-300"></div>
-
         <!-- 账户类型过滤 -->
-        <div class="flex items-center gap-2">
-          <span class="show-on-desktop text-sm font-medium text-gray-700">类型：</span>
+        <div class="filter-flex-wrap">
+          <span class="show-on-desktop text-sm font-medium text-gray-700">类型</span>
           <select
             v-model="selectedType"
             @change="handleTypeFilter"
@@ -62,12 +59,9 @@
           </select>
         </div>
 
-        <!-- 分隔线 -->
-        <div class="w-px h-6 bg-gray-300"></div>
-
         <!-- 币种过滤 -->
-        <div class="flex items-center gap-2">
-          <span class="show-on-desktop text-sm font-medium text-gray-700">币种：</span>
+        <div class="filter-flex-wrap">
+          <span class="show-on-desktop text-sm font-medium text-gray-700">币种</span>
           <select
             v-model="selectedCurrency"
             @change="handleCurrencyFilter"
@@ -80,12 +74,9 @@
           </select>
         </div>
 
-        <!-- 分隔线 -->
-        <div class="w-px h-6 bg-gray-300"></div>
-
         <!-- 排序选项 -->
-        <div class="flex items-center gap-2">
-          <span class="show-on-desktop text-sm font-medium text-gray-700">排序：</span>
+        <div class="filter-flex-wrap">
+          <span class="show-on-desktop text-sm font-medium text-gray-700">排序</span>
           <select
             v-model="sortBy"
             @change="handleSortChange"
@@ -179,11 +170,11 @@
 
         <div class="border-t border-gray-200 pt-4">
           <div class="flex justify-between mb-2 text-sm">
-            <span class="text-gray-600">创建时间：</span>
+            <span class="text-gray-600">创建时间</span>
             <span class="text-gray-800">{{ formatDate(account.createdAt) }}</span>
           </div>
           <div v-if="account.description" class="flex justify-between mb-2 text-sm">
-            <span class="text-gray-600">备注：</span>
+            <span class="text-gray-600">备注</span>
             <span class="text-gray-800">{{ account.description }}</span>
           </div>
         </div>

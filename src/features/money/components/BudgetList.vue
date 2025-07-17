@@ -2,8 +2,8 @@
   <div class="min-h-25">
     <!-- 过滤器区域 -->
     <div class="flex flex-wrap justify-center items-center gap-3 mb-5 p-4 bg-gray-50 rounded-lg">
-      <div class="flex items-center gap-2">
-        <label class="show-on-desktop text-sm font-medium text-gray-700">状态：</label>
+      <div class="filter-flex-wrap">
+        <label class="show-on-desktop text-sm font-medium text-gray-700">状态</label>
         <select 
           v-model="filters.status" 
           class="px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -14,8 +14,8 @@
         </select>
       </div>
 
-      <div class="flex items-center gap-2">
-        <label class="show-on-desktop text-sm font-medium text-gray-700">完成状态：</label>
+      <div class="filter-flex-wrap">
+        <label class="show-on-desktop text-sm font-medium text-gray-700">完成状态</label>
         <select 
           v-model="filters.completion" 
           class="px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -27,8 +27,8 @@
         </select>
       </div>
 
-      <div class="flex items-center gap-2">
-        <label class="show-on-desktop text-sm font-medium text-gray-700">周期类型：</label>
+      <div class="filter-flex-wrap">
+        <label class="show-on-desktop text-sm font-medium text-gray-700">周期类型</label>
         <select 
           v-model="filters.period" 
           class="px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -43,8 +43,8 @@
         </select>
       </div>
 
-      <div class="flex items-center gap-2">
-        <label class="show-on-desktop text-sm font-medium text-gray-700">分类：</label>
+      <div class="filter-flex-wrap">
+        <label class="show-on-desktop text-sm font-medium text-gray-700">分类</label>
         <select 
           v-model="filters.category" 
           class="px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -161,15 +161,15 @@
         <!-- Info -->
         <div class="border-t border-gray-200 pt-2">
           <div class="flex justify-between mb-1 text-sm">
-            <span class="font-medium text-gray-600">分类：</span>
+            <span class="font-medium text-gray-600">分类</span>
             <span class="font-medium text-gray-800">{{ budget.category }}</span>
           </div>
           <div class="flex justify-between mb-1 text-sm">
-            <span class="text-gray-600">创建时间：</span>
+            <span class="text-gray-600">创建时间</span>
             <span class="text-gray-800">{{ formatDate(budget.createdAt) }}</span>
           </div>
           <div v-if="budget.description" class="flex justify-between mb-1 text-sm last:mb-0">
-            <span class="text-gray-600">备注：</span>
+            <span class="text-gray-600">备注</span>
             <span class="text-gray-800">{{ budget.description }}</span>
           </div>
         </div>
