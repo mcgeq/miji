@@ -18,6 +18,9 @@ export default defineConfig({
     ['flex-start', 'flex justify-start items-center'],
     ['flex-end', 'flex justify-end items-center'],
 
+    // hidden
+    ['show-on-desktop', 'hidden md:block'],
+    ['show-on-mobile', 'block md:hidden'],
     // Button variants
     [
       'btn-base',

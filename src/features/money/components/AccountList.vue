@@ -49,7 +49,7 @@
 
         <!-- 账户类型过滤 -->
         <div class="flex items-center gap-2">
-          <span class="text-sm font-medium text-gray-700">类型：</span>
+          <span class="show-on-desktop text-sm font-medium text-gray-700">类型：</span>
           <select
             v-model="selectedType"
             @change="handleTypeFilter"
@@ -67,7 +67,7 @@
 
         <!-- 币种过滤 -->
         <div class="flex items-center gap-2">
-          <span class="text-sm font-medium text-gray-700">币种：</span>
+          <span class="show-on-desktop text-sm font-medium text-gray-700">币种：</span>
           <select
             v-model="selectedCurrency"
             @change="handleCurrencyFilter"
@@ -85,7 +85,7 @@
 
         <!-- 排序选项 -->
         <div class="flex items-center gap-2">
-          <span class="text-sm font-medium text-gray-700">排序：</span>
+          <span class="show-on-desktop text-sm font-medium text-gray-700">排序：</span>
           <select
             v-model="sortBy"
             @change="handleSortChange"

@@ -3,7 +3,7 @@
     <!-- 过滤器区域 -->
     <div class="flex flex-wrap justify-center items-center gap-3 mb-5 p-4 bg-gray-50 rounded-lg">
       <div class="flex items-center gap-2">
-        <label class="text-sm font-medium text-gray-700">状态：</label>
+        <label class="show-on-desktop text-sm font-medium text-gray-700">状态：</label>
         <select 
           v-model="filters.status" 
           class="px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -15,7 +15,7 @@
       </div>
 
       <div class="flex items-center gap-2">
-        <label class="text-sm font-medium text-gray-700">完成状态：</label>
+        <label class="show-on-desktop text-sm font-medium text-gray-700">完成状态：</label>
         <select 
           v-model="filters.completion" 
           class="px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -28,7 +28,7 @@
       </div>
 
       <div class="flex items-center gap-2">
-        <label class="text-sm font-medium text-gray-700">周期类型：</label>
+        <label class="show-on-desktop text-sm font-medium text-gray-700">周期类型：</label>
         <select 
           v-model="filters.period" 
           class="px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -44,7 +44,7 @@
       </div>
 
       <div class="flex items-center gap-2">
-        <label class="text-sm font-medium text-gray-700">分类：</label>
+        <label class="show-on-desktop text-sm font-medium text-gray-700">分类：</label>
         <select 
           v-model="filters.category" 
           class="px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
