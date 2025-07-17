@@ -8,18 +8,27 @@
             经期管理
           </h1>
           <div class="flex items-center gap-3">
-            <button @click="currentView = 'calendar'" class="nav-tab"
-              :class="{ 'nav-tab-active': currentView === 'calendar' }">
+            <button 
+              @click="currentView = 'calendar'" 
+              class="nav-tab"
+              :class="{ 'nav-tab-active': currentView === 'calendar' }"
+            >
               <i class="i-tabler-calendar wh-4 mr-2" />
               日历
             </button>
-            <button @click="currentView = 'stats'" class="nav-tab"
-              :class="{ 'nav-tab-active': currentView === 'stats' }">
+            <button 
+              @click="currentView = 'stats'" 
+              class="nav-tab"
+              :class="{ 'nav-tab-active': currentView === 'stats' }"
+            >
               <i class="i-tabler-chart-line wh-4 mr-2" />
               统计
             </button>
-            <button @click="currentView = 'settings'" class="nav-tab"
-              :class="{ 'nav-tab-active': currentView === 'settings' }">
+            <button 
+              @click="currentView = 'settings'" 
+              class="nav-tab"
+              :class="{ 'nav-tab-active': currentView === 'settings' }"
+            >
               <i class="i-tabler-settings wh-4 mr-2" />
               设置
             </button>
@@ -29,23 +38,29 @@
     </div>
 
     <!-- 主要内容区域 -->
-    <div class="main-content">
+    <div class="main-content scrollbar-hide">
       <div class="container mx-auto px-4 py-6">
         <!-- 统计仪表板视图 -->
         <div v-if="currentView === 'stats'" class="stats-view">
-          <PeriodStatsDashboard @add-record="openRecordForm()" @edit-record="openRecordForm($event)" />
+          <PeriodStatsDashboard 
+            @add-record="openRecordForm()" 
+            @edit-record="openRecordForm($event)" 
+          />
         </div>
 
         <!-- 日历视图 -->
         <div v-else-if="currentView === 'calendar'" class="calendar-view">
-          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div class="calendar-layout">
             <!-- 日历组件 -->
-            <div class="lg:col-span-2">
-              <PeriodCalendar :selected-date="selectedDate" @date-select="handleDateSelect" />
+            <div class="calendar-section">
+              <PeriodCalendar 
+                :selected-date="selectedDate" 
+                @date-select="handleDateSelect" 
+              />
             </div>
 
-            <!-- 侧边栏 -->
-            <div class="space-y-6">
+            <!-- 右侧操作区域 -->
+            <div class="sidebar-section">
               <!-- 快速操作 -->
               <div class="quick-actions card-base p-4">
                 <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
@@ -85,7 +100,10 @@
                   </div>
                   <div v-if="todayRecord" class="info-item">
                     <span class="info-label">今日记录</span>
-                    <button @click="openDailyForm(todayRecord)" class="text-blue-500 hover:underline text-sm">
+                    <button 
+                      @click="openDailyForm(todayRecord)" 
+                      class="text-blue-500 hover:underline text-sm"
+                    >
                       查看详情
                     </button>
                   </div>
@@ -98,7 +116,11 @@
                   健康提示
                 </h3>
                 <div class="space-y-2">
-                  <div v-for="tip in currentTips" :key="tip.id" class="tip-item">
+                  <div 
+                    v-for="tip in currentTips" 
+                    :key="tip.id" 
+                    class="tip-item"
+                  >
                     <i :class="tip.icon" class="wh-4 text-blue-500 flex-shrink-0" />
                     <span class="text-sm text-gray-700 dark:text-gray-300">
                       {{ tip.text }}
@@ -118,25 +140,42 @@
     </div>
 
     <!-- 经期记录表单弹窗 -->
-    <div v-if="showRecordForm" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
-      @click.self="closeRecordForm">
-      <div class="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
-        <PeriodRecordForm :record="editingRecord" @submit="handleRecordSubmit" @delete="handleRecordDelete"
-          @cancel="closeRecordForm" />
+    <div 
+      v-if="showRecordForm" 
+      class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+      @click.self="closeRecordForm"
+    >
+      <div class="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto scrollbar-hide">
+        <PeriodRecordForm 
+          :record="editingRecord" 
+          @submit="handleRecordSubmit" 
+          @delete="handleRecordDelete"
+          @cancel="closeRecordForm" 
+        />
       </div>
     </div>
 
     <!-- 日常记录表单弹窗 -->
-    <div v-if="showDailyForm" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
-      @click.self="closeDailyForm">
-      <div class="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
-        <PeriodDailyForm :date="selectedDate" :record="editingDailyRecord" @submit="handleDailySubmit"
-          @cancel="closeDailyForm" />
+    <div 
+      v-if="showDailyForm" 
+      class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+      @click.self="closeDailyForm"
+    >
+      <div class="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto scrollbar-hide">
+        <PeriodDailyForm 
+          :date="selectedDate" 
+          :record="editingDailyRecord" 
+          @submit="handleDailySubmit"
+          @cancel="closeDailyForm" 
+        />
       </div>
     </div>
 
     <!-- 加载状态 -->
-    <div v-if="periodStore.loading" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+    <div 
+      v-if="periodStore.loading" 
+      class="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+    >
       <div class="bg-white dark:bg-gray-800 rounded-lg p-6 flex items-center gap-3">
         <i class="i-tabler-loader-2 wh-5 animate-spin text-blue-500" />
         <span class="text-gray-700 dark:text-gray-300">处理中...</span>
@@ -144,8 +183,10 @@
     </div>
 
     <!-- 错误提示 -->
-    <div v-if="periodStore.error"
-      class="fixed bottom-4 right-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 max-w-sm">
+    <div 
+      v-if="periodStore.error"
+      class="fixed bottom-4 right-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 max-w-sm"
+    >
       <div class="flex items-start gap-3">
         <i class="i-tabler-alert-circle wh-5 text-red-500 flex-shrink-0" />
         <div>
@@ -156,7 +197,10 @@
             {{ periodStore.error }}
           </p>
         </div>
-        <button @click="periodStore.clearError()" class="text-red-400 hover:text-red-600 dark:hover:text-red-300">
+        <button 
+          @click="periodStore.clearError()" 
+          class="text-red-400 hover:text-red-600 dark:hover:text-red-300"
+        >
           <i class="i-tabler-x wh-4" />
         </button>
       </div>
@@ -165,13 +209,14 @@
 </template>
 
 <script setup lang="ts">
-import { usePeriodStore } from '@/stores/periodStore';
+import {ref, computed, onMounted} from 'vue';
+import {usePeriodStore} from '@/stores/periodStore';
 import PeriodCalendar from '../components/PeriodCalendar.vue';
 import PeriodStatsDashboard from './PeriodStatsDashboard.vue';
 import PeriodSettings from './PeriodSettings.vue';
 import PeriodRecordForm from './PeriodRecordForm.vue';
 import PeriodDailyForm from './PeriodDailyForm.vue';
-import type { PeriodRecords, PeriodDailyRecords } from '@/schema/health/period';
+import type {PeriodRecords, PeriodDailyRecords} from '@/schema/health/period';
 
 // Store
 const periodStore = usePeriodStore();
@@ -231,15 +276,15 @@ const currentTips = computed(() => {
   // 根据当前阶段提供特定建议
   if (phase === 'Menstrual') {
     return [
-      { id: 1, icon: 'i-tabler-cup', text: '多喝温水，避免冷饮' },
-      { id: 2, icon: 'i-tabler-bed', text: '充分休息，避免剧烈运动' },
-      { id: 3, icon: 'i-tabler-flame', text: '注意保暖，特别是腹部' },
+      {id: 1, icon: 'i-tabler-cup', text: '多喝温水，避免冷饮'},
+      {id: 2, icon: 'i-tabler-bed', text: '充分休息，避免剧烈运动'},
+      {id: 3, icon: 'i-tabler-flame', text: '注意保暖，特别是腹部'},
     ];
   } else if (phase === 'Ovulation') {
     return [
-      { id: 1, icon: 'i-tabler-heart', text: '排卵期，注意个人卫生' },
-      { id: 2, icon: 'i-tabler-activity', text: '适当运动有助于健康' },
-      { id: 3, icon: 'i-tabler-leaf', text: '多吃新鲜蔬果' },
+      {id: 1, icon: 'i-tabler-heart', text: '排卵期，注意个人卫生'},
+      {id: 2, icon: 'i-tabler-activity', text: '适当运动有助于健康'},
+      {id: 3, icon: 'i-tabler-leaf', text: '多吃新鲜蔬果'},
     ];
   }
 
@@ -263,13 +308,13 @@ const closeRecordForm = () => {
 
 const handleRecordSubmit = (record: PeriodRecords) => {
   closeRecordForm();
-  console.log(record);
+  console.log('Record submitted:', record);
   // 可以在这里添加成功提示
 };
 
 const handleRecordDelete = (serialNum: string) => {
   closeRecordForm();
-  console.log(serialNum);
+  console.log('Record deleted:', serialNum);
   // 可以在这里添加删除成功提示
 };
 
@@ -285,7 +330,7 @@ const closeDailyForm = () => {
 
 const handleDailySubmit = (record: PeriodDailyRecords) => {
   closeDailyForm();
-  console.log(record);
+  console.log('Daily record submitted:', record);
   // 可以在这里添加成功提示
 };
 
@@ -329,12 +374,25 @@ onMounted(async () => {
   @apply flex-1;
 }
 
+/* 日历布局样式 */
+.calendar-layout {
+  @apply flex gap-6;
+}
+
+.calendar-section {
+  @apply flex-shrink-0;
+}
+
+.sidebar-section {
+  @apply flex-1 space-y-4 min-w-0 max-h-screen overflow-y-auto scrollbar-hide;
+}
+
 .card-base {
   @apply bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm;
 }
 
 .quick-actions .action-btn {
-  @apply w-full flex items-center justify-start px-4 py-3 rounded-lg border transition-all hover:shadow-sm focus:ring-2 focus:ring-offset-2;
+  @apply w-full flex items-center justify-start px-4 py-2.5 rounded-lg border transition-all hover:shadow-sm focus:ring-2 focus:ring-offset-2 text-sm;
 }
 
 .period-btn {
@@ -369,9 +427,59 @@ onMounted(async () => {
   @apply flex items-start gap-2;
 }
 
+/* 滚动条隐藏样式 - 确保使用 UnoCSS 的 scrollbar-hide */
+.main-content,
+.sidebar-section {
+  /* UnoCSS scrollbar-hide 类已应用，这里添加额外的兼容性支持 */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+
+.main-content::-webkit-scrollbar,
+.sidebar-section::-webkit-scrollbar,
+.scrollbar-hide::-webkit-scrollbar {
+  display: none; /* Chrome/Safari */
+  width: 0;
+  height: 0;
+}
+
+/* 模态框动画 */
+.fixed.inset-0 {
+  animation: fadeIn 0.2s ease-out;
+}
+
+.fixed .bg-white,
+.fixed .dark\\:bg-gray-800 {
+  animation: slideUp 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @media (max-width: 1024px) {
-  .calendar-view .grid {
-    @apply grid-cols-1;
+  .calendar-layout {
+    @apply flex-col gap-4;
+  }
+  
+  .sidebar-section {
+    @apply space-y-3 max-h-none; /* 移动端移除高度限制 */
   }
 
   .nav-tab {
@@ -399,37 +507,21 @@ onMounted(async () => {
   .main-content .container {
     @apply py-4;
   }
-}
-
-/* 模态框动画 */
-.fixed.inset-0 {
-  animation: fadeIn 0.2s ease-out;
-}
-
-.fixed .bg-white,
-.fixed .dark\\:bg-gray-800 {
-  animation: slideUp 0.2s ease-out;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
+  
+  .calendar-layout {
+    @apply gap-3;
   }
-
-  to {
-    opacity: 1;
+  
+  .sidebar-section {
+    @apply space-y-2 max-h-none; /* 移动端移除高度限制 */
   }
-}
-
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
+  
+  .card-base {
+    @apply p-3;
   }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
+  
+  .quick-actions .action-btn {
+    @apply py-2 text-xs;
   }
 }
 </style>
