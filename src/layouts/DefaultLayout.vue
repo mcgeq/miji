@@ -21,6 +21,7 @@ import MobileBottomNav from '@/components/common/MobileBottomNav.vue';
 
 import {
   CircleCheckBig,
+  Droplet,
   FolderDot,
   HandCoins,
   Home,
@@ -36,11 +37,17 @@ const updateIsMobile = () => {
 };
 
 const menuItems = [
-  { name: 'home', title: 'Home', icon: Home, path: '/' },
-  { name: 'todos', title: 'Todo', icon: CircleCheckBig, path: '/todos' },
-  { name: 'money', title: 'Money', icon: HandCoins, path: '/money' },
-  { name: 'tags', title: 'Tag', icon: Tags, path: '/tags' },
-  { name: 'projects', title: 'Project', icon: FolderDot, path: '/projects' },
+  {name: 'home', title: 'Home', icon: Home, path: '/'},
+  {name: 'todos', title: 'Todo', icon: CircleCheckBig, path: '/todos'},
+  {name: 'money', title: 'Money', icon: HandCoins, path: '/money'},
+  {
+    name: 'health-period',
+    title: 'Period',
+    icon: Droplet,
+    path: '/health/period',
+  },
+  {name: 'tags', title: 'Tag', icon: Tags, path: '/tags'},
+  {name: 'projects', title: 'Project', icon: FolderDot, path: '/projects'},
   {
     name: 'settings',
     title: 'Settings',
@@ -52,7 +59,7 @@ const menuItems = [
 const router = useRouter();
 const logout = async () => {
   await logoutUser();
-  router.replace({ name: 'auth-login' });
+  router.replace({name: 'auth-login'});
 };
 
 onMounted(() => {
