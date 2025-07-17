@@ -2,7 +2,7 @@
   "login": "登录",
   "register": "注册",
   "email": "邮箱",
-  "loading": "加载中",
+  "loading": "加载中...",
   "password": "密码",
   "username": "用户名",
   "rememberMe": "记住我",
@@ -21,14 +21,24 @@
     "delete": "删除",
     "save": "保存",
     "cancel": "取消",
-    "confirm": "确定"
+    "confirm": "确定",
+    "view": "查看",
+    "sort": "排序",
+    "desc": "降序",
+    "asc": "升序",
+    "enabled": "启用",
+    "active": "已启用",
+    "stop": "停用",
+    "inactive": "已停用",
+    "completed": "完成"
   },
   "categories": {
     "category": "分类",
     "allCategory": "全部分类",
     "subCategory": "子分类"
   },
-  "dateAndTime": {
+  "date": {
+    "date": "时间",
     "today": "今天",
     "none": "无重复",
     "week": "本周",
@@ -46,18 +56,39 @@
     "rangeDate": "日期范围"
   },
   "optionsAndStatus": {
+    "status": "状态",
     "options": "操作",
+    "paid": "已付款",
     "overdue": "已逾期",
+    "pending": "待付款",
     "noReminder": "暂无提醒",
-    "noPatternResult": "无匹配结果"
+    "noPatternResult": "无匹配结果",
+    "normal": "正常",
+    "warning": "预警",
+    "exceeded": "已超支",
+    "inactive": "已停用",
+    "markPaid": "标记已付"
   },
   "financial": {
+    "currency": "币种",
     "money": "金额",
-    "account": "账户"
+    "balance": "余额",
+    "account": "账户",
+    "income": "收入",
+    "expense": "支出",
+    "transfer": "转账",
+    "transType": "交易类型",
+    "unknown": "未知",
+    "name": "账户名称",
+    "type": "账户类型",
+    "noAccount": "暂无账户",
+    "noPatternAccount": "暂无符合条件的账户",
+    "noBudget": "暂无预算"
   },
   "others": {
     "types": "类型",
-    "remark": "备注"
+    "remark": "备注",
+    "periodType": "周期类型"
   },
   "errors": {
     "initFailed": "初始化失败，请重试",

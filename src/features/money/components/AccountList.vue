@@ -15,7 +15,7 @@
               ]"
               @click="setActiveFilter('all')"
             >
-              全部 <span class="ml-1 text-xs opacity-75">({{ totalAccounts }})</span>
+              {{ t('generalOperations.all') }}<span class="ml-1 text-xs opacity-75">[{{ totalAccounts }}]</span>
             </button>
             <button
               :class="[
@@ -27,7 +27,7 @@
               @click="setActiveFilter('active')"
             >
               <CheckCircle class="w-3 h-3 mr-1" />
-              已启用 <span class="ml-1 text-xs opacity-75">({{ activeAccounts }})</span>
+              {{ t('generalOperations.active') }}<span class="ml-1 text-xs opacity-75">({{ activeAccounts }})</span>
             </button>
             <button
               :class="[
@@ -39,20 +39,20 @@
               @click="setActiveFilter('inactive')"
             >
               <XCircle class="w-3 h-3 mr-1" />
-              已停用 <span class="ml-1 text-xs opacity-75">({{ inactiveAccounts }})</span>
+              {{ t('generalOperations.inactive') }}<span class="ml-1 text-xs opacity-75">({{ inactiveAccounts }})</span>
             </button>
           </div>
         </div>
 
         <!-- 账户类型过滤 -->
         <div class="filter-flex-wrap">
-          <span class="show-on-desktop text-sm font-medium text-gray-700">类型</span>
+          <span class="show-on-desktop text-sm font-medium text-gray-700">{{ t('others.types') }}</span>
           <select
             v-model="selectedType"
             @change="handleTypeFilter"
             class="px-3 py-1.5 text-xs border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           >
-            <option value="">全部类型</option>
+            <option value=""> {{ t('generalOperations.all') }}{{ t('others.types') }} </option>
             <option v-for="type in accountTypes" :key="type" :value="type">
               {{ getAccountTypeName(type) }}
             </option>
@@ -61,13 +61,13 @@
 
         <!-- 币种过滤 -->
         <div class="filter-flex-wrap">
-          <span class="show-on-desktop text-sm font-medium text-gray-700">币种</span>
+          <span class="show-on-desktop text-sm font-medium text-gray-700">{{ t('financial.currency') }}</span>
           <select
             v-model="selectedCurrency"
             @change="handleCurrencyFilter"
             class="px-3 py-1.5 text-xs border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           >
-            <option value="">全部币种</option>
+            <option value=""> {{ t('generalOperations.all') }}{{ t('financial.currency') }} </option>
             <option v-for="currency in currencies" :key="currency" :value="currency">
               {{ currency }}
             </option>
@@ -76,21 +76,21 @@
 
         <!-- 排序选项 -->
         <div class="filter-flex-wrap">
-          <span class="show-on-desktop text-sm font-medium text-gray-700">排序</span>
+          <span class="show-on-desktop text-sm font-medium text-gray-700"> {{ t('generalOperations.sort') }} </span>
           <select
             v-model="sortBy"
             @change="handleSortChange"
             class="px-3 py-1.5 text-xs border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           >
-            <option value="createdAt">创建时间</option>
-            <option value="name">账户名称</option>
-            <option value="balance">余额</option>
-            <option value="type">账户类型</option>
+            <option value="createdAt">{{ t('date.createDate') }}</option>
+            <option value="name">{{ t('financial.name') }}</option>
+            <option value="balance">{{ t('financial.balance') }}</option>
+            <option value="type">{{ t('financial.type') }}</option>
           </select>
           <button
             @click="toggleSortOrder"
             class="p-1.5 text-gray-600 hover:text-blue-500 transition-colors"
-            :title="sortOrder === 'asc' ? '升序' : '降序'"
+            :title="sortOrder === 'asc' ? t('generalOperations.asc') : t('generalOperations.desc') "
           >
             <ArrowUpDown class="w-4 h-4" :class="sortOrder === 'desc' && 'rotate-180'" />
           </button>
@@ -107,14 +107,14 @@
     </div>
 
     <!-- 账户列表区域 -->
-    <div v-if="loading" class="flex-justify-center h-50 text-gray-500">加载中...</div>
+    <div v-if="loading" class="flex-justify-center h-50 text-gray-500">{{ t('loading') }}</div>
 
     <div v-else-if="paginatedAccounts.length === 0" class="flex-justify-center flex-col h-50 text-gray-400">
       <div class="text-6xl mb-4 opacity-50">
         <CreditCard class="wh-5" />
       </div>
       <div class="text-base">
-        {{ filteredAccounts.length === 0 ? '暂无符合条件的账户' : '暂无账户' }}
+        {{ filteredAccounts.length === 0 ? t('financial.noPatternAccount')  : t('financial.noAccount') }}
       </div>
     </div>
 
@@ -143,21 +143,21 @@
             <button
               class="money-option-btn hover:(border-green-500 text-green-500)"
               @click="emit('toggle-active', account.serialNum)" 
-              :title="account.isActive ? '停用' : '启用'"
+              :title="account.isActive ? t('generalOperations.stop') : t('generalOperations.enabled')"
             >
               <Ban class="w-4 h-4" />
             </button>
             <button
               class="money-option-btn hover:(border-blue-500 text-blue-500)"
               @click="emit('edit', account)" 
-              title="编辑"
+              :title="t('generalOperations.edit')"
             >
               <Edit class="w-4 h-4" />
             </button>
             <button
               class="money-option-btn hover:(border-red-500 text-red-500)"
               @click="emit('delete', account.serialNum)" 
-              title="删除"
+              :title="t('generalOperations.delete')"
             >
               <Trash class="w-4 h-4" />
             </button>
@@ -170,12 +170,12 @@
 
         <div class="border-t border-gray-200 pt-4">
           <div class="flex justify-between mb-2 text-sm">
-            <span class="text-gray-600">创建时间</span>
+            <span class="text-gray-600"> {{ t('date.createDate') }} </span>
             <span class="text-gray-800">{{ formatDate(account.createdAt) }}</span>
           </div>
           <div v-if="account.description" class="flex justify-between mb-2 text-sm">
-            <span class="text-gray-600">备注</span>
-            <span class="text-gray-800">{{ account.description }}</span>
+            <span class="text-gray-600"> {{ t('others.remark') }} </span>
+            <span class="text-gray-800"> {{ account.description }} </span>
           </div>
         </div>
       </div>
@@ -188,7 +188,7 @@
         :total-pages="totalPages"
         :total-items="filteredAccounts.length"
         :page-size="pageSize"
-        :show-total="true"
+        :show-total="false"
         :show-page-size="true"
         :page-size-options="[4, 8, 12, 20]"
         @page-change="handlePageChange"
@@ -233,6 +233,8 @@ const emit = defineEmits<{
   delete: [serialNum: string];
   'toggle-active': [serialNum: string];
 }>();
+
+const {t} = useI18n();
 
 // 过滤和分页状态
 const activeFilter = ref<'all' | 'active' | 'inactive'>('all');

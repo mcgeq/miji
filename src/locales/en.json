@@ -21,14 +21,23 @@
     "delete": "Delete",
     "save": "Save",
     "cancel": "Cancel",
-    "confirm": "Confirm"
+    "confirm": "Confirm",
+    "view": "View",
+    "sort": "Sort",
+    "desc": "Desc",
+    "asc": "Asc",
+    "enabled": "Enabled",
+    "active": "Active",
+    "stop": "Stop",
+    "inactive": "Stoped"
   },
   "categories": {
     "category": "Category",
     "allCategory": "All Categories",
     "subCategory": "Subcategory"
   },
-  "dateAndTime": {
+  "date": {
+    "date": "Time",
     "today": "Today",
     "none": "No Repeat",
     "week": "Week",
@@ -47,17 +56,32 @@
   },
   "optionsAndStatus": {
     "options": "Options",
+    "paid": "Paid",
     "overdue": "Overdue",
+    "pending": "Pending",
     "noReminder": "No Reminder",
-    "noPatternResult": "No Matching Results"
+    "noPatternResult": "No Matching Results",
+    "normal": "Normal",
+    "warning": "Warning",
+    "exceeded": "Exceeded"
   },
   "financial": {
+    "currency": "Currency",
     "money": "Amount",
-    "account": "Account"
+    "balance": "Balance",
+    "account": "Account",
+    "income": "Income",
+    "expense": "Expense",
+    "transfer": "Transfer",
+    "transType": "Type",
+    "unknown": "Unknown",
+    "name": "Account Name",
+    "type": "Account Type"
   },
   "others": {
     "types": "Types",
-    "remark": "Note"
+    "remark": "Note",
+    "periodType": "Period"
   },
   "errors": {
     "initFailed": "Initialization failed, please try again",

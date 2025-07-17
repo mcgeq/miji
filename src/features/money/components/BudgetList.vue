@@ -3,54 +3,57 @@
     <!-- 过滤器区域 -->
     <div class="flex flex-wrap justify-center items-center gap-3 mb-5 p-4 bg-gray-50 rounded-lg">
       <div class="filter-flex-wrap">
-        <label class="show-on-desktop text-sm font-medium text-gray-700">状态</label>
+        <label class="show-on-desktop text-sm font-medium text-gray-700">{{ t('optionsAndStatus.status') }}</label>
         <select 
           v-model="filters.status" 
           class="px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
-          <option value="">全部</option>
-          <option value="active">进行中</option>
-          <option value="inactive">已停用</option>
+          <option value="">{{ t('generalOperations.all') }}</option>
+          <option value="active">{{ t('generalOperations.active') }}</option>
+          <option value="inactive">{{ t('generalOperations.inactive') }}</option>
         </select>
       </div>
 
       <div class="filter-flex-wrap">
-        <label class="show-on-desktop text-sm font-medium text-gray-700">完成状态</label>
+        <label class="show-on-desktop text-sm font-medium text-gray-700"> {{ t('generalOperations.completed') }}{{ t('optionsAndStatus.status') }} </label>
         <select 
           v-model="filters.completion" 
           class="px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
-          <option value="">全部</option>
-          <option value="normal">正常</option>
-          <option value="warning">预警(>70%)</option>
-          <option value="exceeded">已超支</option>
+          <option value="">{{ t('generalOperations.all') }}</option>
+          <option value="normal"> {{ t('optionsAndStatus.normal') }} </option>
+          <option value="warning">{{ t('optionsAndStatus.warning') }}(>70%)</option>
+          <option value="exceeded"> {{ t('optionsAndStatus.exceeded') }} </option>
         </select>
       </div>
 
       <div class="filter-flex-wrap">
-        <label class="show-on-desktop text-sm font-medium text-gray-700">周期类型</label>
+        <label class="show-on-desktop text-sm font-medium text-gray-700">{{ t('others.periodType') }}</label>
         <select 
           v-model="filters.period" 
           class="px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
-          <option value="">全部</option>
-          <option value="None">无重复</option>
-          <option value="Daily">每日</option>
-          <option value="Weekly">每周</option>
-          <option value="Monthly">每月</option>
-          <option value="Yearly">每年</option>
-          <option value="Custom">自定义</option>
+          <option value="">{{ t('generalOperations.all') }}</option>
+          <option value="None">{{ t('date.none') }}</option>
+          <option value="Daily">{{ t('date.daily') }}</option>
+          <option value="Weekly">{{ t('date.weekly') }}</option>
+          <option value="Monthly">{{ t('date.monthly') }}</option>
+          <option value="Yearly">{{ t('date.yearly') }}</option>
+          <option value="Custom">{{ t('date.custom') }}</option>
         </select>
       </div>
 
       <div class="filter-flex-wrap">
-        <label class="show-on-desktop text-sm font-medium text-gray-700">分类</label>
+        <label class="show-on-desktop text-sm font-medium text-gray-700"> {{ t('categories.category') }} </label>
         <select 
           v-model="filters.category" 
           class="px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
-          <option value="">全部分类</option>
-          <option v-for="category in uniqueCategories" :key="category" :value="category">
+          <option value=""> {{ t('categories.allCategory') }} </option>
+          <option
+            v-for="category in uniqueCategories"
+            :key="category"
+            :value="category">
             {{ category }}
           </option>
         </select>
@@ -65,22 +68,28 @@
     </div>
 
     <!-- 加载状态 -->
-    <div v-if="loading" class="flex-justify-center h-25 text-gray-600">
-      加载中...
+    <div
+      v-if="loading"
+      class="flex-justify-center h-25 text-gray-600">
+      {{ t('loading') }}
     </div>
 
     <!-- 空状态 -->
-    <div v-else-if="paginatedBudgets.length === 0" class="flex-justify-center flex-col h-25 text-#999">
+    <div
+      v-else-if="paginatedBudgets.length === 0"
+      class="flex-justify-center flex-col h-25 text-#999">
       <div class="text-sm mb-2 opacity-50">
         <i class="icon-target"></i>
       </div>
       <div class="text-sm">
-        {{ filteredBudgets.length === 0 ? '暂无预算' : '无匹配结果' }}
+        {{ filteredBudgets.length === 0 ? t('financial.noBudget') : t('optionsAndStatus.noPatternResult') }}
       </div>
     </div>
 
     <!-- 预算网格 -->
-    <div v-else class="budget-grid grid gap-5 w-full mb-6">
+    <div
+      v-else
+      class="budget-grid grid gap-5 w-full mb-6">
       <div v-for="budget in paginatedBudgets"
         :key="budget.serialNum"
         :class="[
@@ -97,14 +106,20 @@
           <div class="flex items-center text-gray-800">
             <span class="text-lg font-semibold">{{ budget.name }}</span>
             <!-- 状态标签 -->
-            <span v-if="!budget.isActive" class="ml-2 px-2 py-0.5 bg-gray-200 text-gray-600 text-xs rounded">
-              已停用
+            <span
+              v-if="!budget.isActive"
+              class="ml-2 px-2 py-0.5 bg-gray-200 text-gray-600 text-xs rounded">
+              {{ t('optionsAndStatus.inactive') }}
             </span>
-            <span v-else-if="isOverBudget(budget)" class="ml-2 px-2 py-0.5 bg-red-100 text-red-600 text-xs rounded">
-              已超支
+            <span
+              v-else-if="isOverBudget(budget)"
+              class="ml-2 px-2 py-0.5 bg-red-100 text-red-600 text-xs rounded">
+              {{ t('optionsAndStatus.exceeded') }}
             </span>
-            <span v-else-if="isLowOnBudget(budget)" class="ml-2 px-2 py-0.5 bg-yellow-100 text-yellow-600 text-xs rounded">
-              预警
+            <span
+              v-else-if="isLowOnBudget(budget)"
+              class="ml-2 px-2 py-0.5 bg-yellow-100 text-yellow-600 text-xs rounded">
+              {{ t('optionsAndStatus.warning') }}
             </span>
           </div>
 
@@ -112,17 +127,20 @@
           <div class="flex items-center gap-1 md:self-end">
             <button
               class="money-option-btn hover:(border-green-500 text-green-500)"
-              @click="emit('edit', budget)" title="编辑">
+              @click="emit('edit', budget)"
+              :title="t('generalOperations.edit')">
               <Edit class="w-4 h-4" />
             </button>
             <button
               class="money-option-btn hover:(border-blue-500 text-blue-500)"
-              @click="emit('toggle-active', budget.serialNum)" :title="budget.isActive ? '停用' : '启用'">
+              @click="emit('toggle-active', budget.serialNum)"
+              :title="budget.isActive ? t('generalOperations.stop') : t('generalOperations.enabled')">
               <component :is="budget.isActive ? Ban : StopCircle" class="w-4 h-4" />
             </button>
             <button
               class="money-option-btn hover:(border-red-500 text-red-500)"
-              @click="emit('delete', budget.serialNum)" title="删除">
+              @click="emit('delete', budget.serialNum)"
+              :title="t('generalOperations.delete')">
               <Trash class="w-4 h-4" />
             </button>
           </div>
@@ -161,15 +179,15 @@
         <!-- Info -->
         <div class="border-t border-gray-200 pt-2">
           <div class="flex justify-between mb-1 text-sm">
-            <span class="font-medium text-gray-600">分类</span>
+            <span class="font-medium text-gray-600"> {{ t('categories.category') }} </span>
             <span class="font-medium text-gray-800">{{ budget.category }}</span>
           </div>
           <div class="flex justify-between mb-1 text-sm">
-            <span class="text-gray-600">创建时间</span>
+            <span class="text-gray-600"> {{ t('date.createDate') }} </span>
             <span class="text-gray-800">{{ formatDate(budget.createdAt) }}</span>
           </div>
           <div v-if="budget.description" class="flex justify-between mb-1 text-sm last:mb-0">
-            <span class="text-gray-600">备注</span>
+            <span class="text-gray-600">{{ t('others.remark') }}</span>
             <span class="text-gray-800">{{ budget.description }}</span>
           </div>
         </div>
@@ -209,6 +227,8 @@ const emit = defineEmits<{
   delete: [serialNum: string];
   'toggle-active': [serialNum: string];
 }>();
+
+const {t} = useI18n();
 
 // 过滤器状态
 const filters = ref({

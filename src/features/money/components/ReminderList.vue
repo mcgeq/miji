@@ -3,41 +3,42 @@
     <!-- 过滤器区域 -->
     <div class="flex flex-wrap justify-center items-center gap-3 mb-5 p-4 bg-gray-50 rounded-lg">
       <div class="filter-flex-wrap">
-        <label class="show-on-desktop text-sm font-medium text-gray-700">状态</label>
+        <label class="show-on-desktop text-sm font-medium text-gray-700">{{ t('optionsAndStatus.status') }}</label>
         <select 
           v-model="filters.status" 
           class="px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
-          <option value="">全部</option>
-          <option value="paid">已付款</option>
-          <option value="overdue">已逾期</option>
-          <option value="pending">待付款</option>
+          <option value=""> {{ t('generalOperations.all') }} </option>
+          <option value="paid">{{ t('optionsAndStatus.paid') }}</option>
+          <option value="overdue">{{ t('optionsAndStatus.overdue') }}</option>
+          <option value="pending">{{ t('optionsAndStatus.pending') }}</option>
         </select>
       </div>
 
       <div class="filter-flex-wrap">
-        <label class="show-on-desktop text-sm font-medium text-gray-700">周期类型</label>
+        <label class="show-on-desktop text-sm font-medium text-gray-700">{{ t('others.periodType') }}</label>
         <select 
           v-model="filters.period" 
           class="px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
-          <option value="">全部</option>
-          <option value="None">无重复</option>
-          <option value="Daily">每日</option>
-          <option value="Weekly">每周</option>
-          <option value="Monthly">每月</option>
-          <option value="Yearly">每年</option>
-          <option value="Custom">自定义</option>
-        </select>
+          <option value="">{{ t('generalOperations.all') }}</option>
+          <option value="None">{{ t('date.none') }}</option>
+          <option value="Daily">{{ t('date.daily') }}</option>
+          <option value="Weekly">{{ t('date.weekly') }}</option>
+          <option value="Monthly">{{ t('date.monthly') }}</option>
+          <option value="Yearly">{{ t('date.yearly') }}</option>
+          <option value="Custom">{{ t('date.custom') }}</option>
+
+      </select>
       </div>
 
       <div class="filter-flex-wrap">
-        <label class="show-on-desktop text-sm font-medium text-gray-700">分类</label>
-        <select 
+        <label class="show-on-desktop text-sm font-medium text-gray-700"> {{ t('categories.category') }} </label>
+        <select
           v-model="filters.category" 
           class="px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
-          <option value="">全部分类</option>
+          <option value=""> {{ t('categories.allCategory') }} </option>
           <option v-for="category in uniqueCategories" :key="category" :value="category">
             {{ category }}
           </option>
@@ -45,16 +46,16 @@
       </div>
 
       <div class="filter-flex-wrap">
-        <label class="show-on-desktop text-sm font-medium text-gray-700">日期范围</label>
+        <label class="show-on-desktop text-sm font-medium text-gray-700">{{ t('date.rangeDate') }}</label>
         <select 
           v-model="filters.dateRange" 
           class="px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
-          <option value="">全部</option>
-          <option value="today">今天</option>
-          <option value="week">本周</option>
-          <option value="month">本月</option>
-          <option value="overdue">已逾期</option>
+          <option value="">{{ t('generalOperations.all') }}</option>
+          <option value="today">{{ t('date.today') }}</option>
+          <option value="week">{{ t('date.week') }}</option>
+          <option value="month">{{ t('date.month') }}</option>
+          <option value="overdue">{{ t('optionsAndStatus.overdue') }}</option>
         </select>
       </div>
 
@@ -67,8 +68,9 @@
     </div>
 
     <!-- 加载状态 -->
-    <div v-if="loading" class="flex-justify-center h-25 text-gray-600">
-      加载中...
+    <div v-if="loading"
+      class="flex-justify-center h-25 text-gray-600">
+      {{ t('loading') }}
     </div>
 
     <!-- 空状态 -->
@@ -77,7 +79,7 @@
         <i class="icon-bell"></i>
       </div>
       <div class="text-sm">
-        {{ filteredReminders.length === 0 ? '暂无提醒' : '无匹配结果' }}
+        {{ filteredReminders.length === 0 ? t('optionsAndStatus.noReminder') : t('optionsAndStatus.noPatternResult') }}
       </div>
     </div>
 
@@ -116,21 +118,21 @@
                 v-if="!reminder.isPaid"
                 class="money-option-btn hover:(border-green-500 text-green-500)"
                 @click="emit('mark-paid', reminder.serialNum)"
-                title="标记已付"
+                :title="t('optionsAndStatus.markPaid')"
               >
                 <CheckCircle class="w-4 h-4" />
               </button>
               <button
                 class="money-option-btn hover:(border-blue-500 text-blue-500)"
                 @click="emit('edit', reminder)"
-                title="编辑"
+                :title="t('generalOperations.edit')"
               >
                 <Edit class="w-4 h-4" />
               </button>
               <button
                 class="money-option-btn hover:(border-red-500 text-red-500)"
                 @click="emit('delete', reminder.serialNum)"
-                title="删除"
+                :title="t('generalOperations.delete')"
               >
                 <Trash class="w-4 h-4" />
               </button>
@@ -149,11 +151,11 @@
 
         <div class="mb-2 space-y-2">
           <div class="flex justify-between text-sm">
-            <span class="text-gray-600">账单日期</span>
+            <span class="text-gray-600">{{ t('moneys.billDate') }}</span>
             <span class="text-gray-800">{{ formatDate(reminder.billDate) }}</span>
           </div>
           <div class="flex justify-between text-sm">
-            <span class="text-gray-600">提醒时间</span>
+            <span class="text-gray-600">{{ t('date.reminderDate') }}</span>
             <span class="text-gray-800">{{ formatDateTime(reminder.remindDate) }}</span>
           </div>
         </div>
@@ -165,15 +167,15 @@
 
         <div class="border-t border-gray-200 pt-4 space-y-2 text-sm">
           <div class="flex justify-between">
-            <span class="text-gray-600">分类</span>
+            <span class="text-gray-600"> {{ t('categories.category') }} </span>
             <span class="text-gray-800">{{ reminder.category }}</span>
           </div>
           <div class="flex justify-between">
-            <span class="text-gray-600">创建时间</span>
+            <span class="text-gray-600"> {{ t('date.createDate') }} </span>
             <span class="text-gray-800">{{ formatDate(reminder.createdAt) }}</span>
           </div>
           <div v-if="reminder.description" class="flex justify-between">
-            <span class="text-gray-600">备注</span>
+            <span class="text-gray-600"> {{ t('others.remark') }} </span>
             <span class="text-gray-800">{{ reminder.description }}</span>
           </div>
         </div>
@@ -222,6 +224,7 @@ const emit = defineEmits<{
   'mark-paid': [serialNum: string];
 }>();
 
+const {t} = useI18n();
 // 过滤器状态
 const filters = ref({
   status: '',
@@ -360,9 +363,9 @@ const getStatusIcon = (reminder: BilReminder) => {
 };
 
 const getStatusText = (reminder: BilReminder) => {
-  if (reminder.isPaid) return '已付款';
-  if (isOverdue(reminder)) return '已逾期';
-  return '待付款';
+  if (reminder.isPaid) return t('optionsAndStatus.paid');
+  if (isOverdue(reminder)) return t('optionsAndStatus.overdue');
+  return t('optionsAndStatus.pending');
 };
 </script>
 

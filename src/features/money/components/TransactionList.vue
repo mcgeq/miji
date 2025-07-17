@@ -3,25 +3,25 @@
     <!-- 过滤器区域 -->
     <div class="flex flex-wrap justify-center items-center gap-3 mb-5 p-4 bg-gray-50 rounded-lg">
       <div class="filter-flex-wrap">
-        <label class="show-on-desktop text-sm font-medium text-gray-700">交易类型</label>
+        <label class="show-on-desktop text-sm font-medium text-gray-700">{{ t('financial.transType') }}</label>
         <select 
           v-model="filters.transactionType" 
           class="px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
-          <option value="">全部</option>
-          <option value="Income">收入</option>
-          <option value="Expense">支出</option>
-          <option value="Transfer">转账</option>
+          <option value="">{{ t('generalOperations.all') }}</option>
+          <option value="Income">{{ t('financial.income') }}</option>
+          <option value="Expense">{{ t('financial.expense') }}</option>
+          <option value="Transfer">{{ t('financial.transfer') }}</option>
         </select>
       </div>
 
       <div class="filter-flex-wrap">
-        <label class="show-on-desktop text-sm font-medium text-gray-700">账户</label>
+        <label class="show-on-desktop text-sm font-medium text-gray-700">{{ t('financial.account') }}</label>
         <select 
           v-model="filters.account" 
           class="px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
-          <option value="">全部账户</option>
+          <option value="">{{t('generalOperations.all')}}{{t('financial.account')}}</option>
           <option v-for="account in props.accounts" :key="account.serialNum" :value="account.serialNum">
             {{ account.name }}
           </option>
@@ -29,12 +29,12 @@
       </div>
 
       <div class="filter-flex-wrap">
-        <label class="show-on-desktop text-sm font-medium text-gray-700">分类</label>
+        <label class="show-on-desktop text-sm font-medium text-gray-700">{{ t('categories.category') }}</label>
         <select 
           v-model="filters.category" 
           class="px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
-          <option value="">全部分类</option>
+          <option value="">{{ t('categories.allCategory') }}</option>
           <option v-for="category in uniqueCategories" :key="category" :value="category">
             {{ category }}
           </option>
@@ -42,7 +42,7 @@
       </div>
 
       <div class="filter-flex-wrap">
-        <label class="show-on-desktop text-sm font-medium text-gray-700">开始日期</label>
+        <label class="show-on-desktop text-sm font-medium text-gray-700">{{ t('date.startDate') }}</label>
         <input 
           type="date"
           v-model="filters.dateFrom"
@@ -51,7 +51,7 @@
       </div>
 
       <div class="filter-flex-wrap">
-        <label class="show-on-desktop text-sm font-medium text-gray-700">结束日期</label>
+        <label class="show-on-desktop text-sm font-medium text-gray-700">{{ t('date.endDate') }}</label>
         <input 
           type="date"
           v-model="filters.dateTo"
@@ -69,7 +69,7 @@
 
     <!-- 加载状态 -->
     <div v-if="loading" class="flex-justify-center h-25 text-gray-600">
-      加载中...
+      {{ t('loading') }}
     </div>
 
     <!-- 空状态 -->
@@ -86,12 +86,12 @@
     <div v-else class="border border-gray-200 rounded-lg overflow-hidden mb-6">
       <!-- 表头 - 桌面版 -->
       <div class="hidden md:grid md:grid-cols-[120px_140px_180px_140px_140px_120px] bg-gray-100 border-b border-gray-200 font-semibold text-gray-800">
-        <div class="p-4 text-sm grid place-items-end">类型</div>
-        <div class="p-4 text-sm grid place-items-end">金额</div>
-        <div class="p-4 text-sm grid place-items-end">账户</div>
-        <div class="p-4 text-sm grid place-items-end">分类</div>
-        <div class="p-4 text-sm grid place-items-end">时间</div>
-        <div class="p-4 text-sm grid place-items-end">操作</div>
+        <div class="p-4 text-sm grid place-items-end">{{ t('others.types') }}</div>
+        <div class="p-4 text-sm grid place-items-end">{{ t('financial.money') }}</div>
+        <div class="p-4 text-sm grid place-items-end">{{ t('financial.account') }}</div>
+        <div class="p-4 text-sm grid place-items-end">{{ t('categories.category') }}</div>
+        <div class="p-4 text-sm grid place-items-end">{{ t('date.date') }}</div>
+        <div class="p-4 text-sm grid place-items-end">{{ t('optionsAndStatus.options') }}</div>
       </div>
 
       <!-- 交易行 -->
@@ -102,7 +102,7 @@
       >
         <!-- 类型列 -->
         <div class="p-4 text-sm flex justify-between md:justify-end md:items-center">
-          <span class="md:hidden text-gray-600 font-semibold">类型</span>
+          <span class="md:hidden text-gray-600 font-semibold">{{ t('categories.category') }}</span>
           <div class="flex items-center gap-2">
             <component :is="getTransactionTypeIcon(transaction.transactionType)" class="w-4 h-4" />
             <span class="font-medium">{{ getTransactionTypeName(transaction.transactionType) }}</span>
@@ -111,7 +111,7 @@
 
         <!-- 金额列 -->
         <div class="p-4 text-sm flex justify-between md:justify-end md:items-center">
-          <span class="md:hidden text-gray-600 font-semibold">金额</span>
+          <span class="md:hidden text-gray-600 font-semibold">{{ t('financial.money') }}</span>
           <div
             :class="[
               'font-semibold text-lg',
@@ -126,7 +126,7 @@
 
         <!-- 账户列 -->
         <div class="p-4 text-sm flex justify-between md:justify-end md:items-center">
-          <span class="md:hidden text-gray-600 font-semibold">账户</span>
+          <span class="md:hidden text-gray-600 font-semibold">{{ t('financial.account') }}</span>
           <div class="md:text-right">
             <div class="font-medium text-gray-800">{{ transaction.account.name }}</div>
             <div v-if="transaction.description" class="text-xs text-gray-600 mt-1">{{ transaction.description }}</div>
@@ -135,7 +135,7 @@
 
         <!-- 分类列 -->
         <div class="p-4 text-sm flex justify-between md:justify-end md:items-center">
-          <span class="md:hidden text-gray-600 font-semibold">分类</span>
+          <span class="md:hidden text-gray-600 font-semibold">{{ t('categories.category') }}</span>
           <div class="md:text-right">
             <span class="font-medium text-gray-800">{{ transaction.category }}</span>
             <div v-if="transaction.subCategory" class="text-xs text-gray-600">/ {{ transaction.subCategory }}</div>
@@ -144,7 +144,7 @@
 
         <!-- 时间列 -->
         <div class="p-4 text-sm flex justify-between md:justify-end md:items-center">
-          <span class="md:hidden text-gray-600 font-semibold">时间</span>
+          <span class="md:hidden text-gray-600 font-semibold">{{ t('date.date') }}</span>
           <div class="md:text-right">
             <div class="font-medium text-gray-800">{{ formatDate(transaction.date) }}</div>
             <div class="text-xs text-gray-600">{{ formatTime(transaction.createdAt) }}</div>
@@ -153,26 +153,26 @@
 
         <!-- 操作列 -->
         <div class="p-4 flex justify-between md:justify-end items-center">
-          <span class="md:hidden text-gray-600 font-semibold">操作</span>
+          <span class="md:hidden text-gray-600 font-semibold">{{ t('optionsAndStatus.options') }}</span>
           <div class="flex gap-1">
             <button
               class="money-option-btn hover:(border-green-500 text-green-500)"
               @click="emit('view-details', transaction)"
-              title="查看详情"
+              :title="t('generalOperations.view')"
             >
               <Eye class="w-4 h-4" />
             </button>
             <button
               class="money-option-btn hover:(border-blue-500 text-blue-500)"
               @click="emit('edit', transaction)"
-              title="编辑"
+              :title="t('generalOperations.edit')"
             >
               <Edit class="w-4 h-4" />
             </button>
             <button
               class="money-option-btn hover:(border-red-500 text-red-500)"
               @click="emit('delete', transaction.serialNum)"
-              title="删除"
+              :title="t('generalOperations.delete')"
             >
               <Trash class="w-4 h-4" />
             </button>
@@ -232,7 +232,7 @@
           :page-size-options="[10, 20, 50, 100]"
           :compact="false"
           :responsive="false"
-          :show-total="true"
+          :show-total="false"
           :show-jump="true"
           :show-first-last="true"
           @page-change="handlePageChange"
@@ -274,6 +274,7 @@ const emit = defineEmits<{
   'view-details': [transaction: TransactionWithAccount];
 }>();
 
+const {t} = useI18n();
 const moneyStore = useMoneyStore();
 
 // 数据状态
@@ -351,7 +352,6 @@ const loadTransactions = async () => {
       result.total / pagination.value.pageSize,
     );
   } catch (error) {
-    console.error('加载交易数据失败:', error);
     transactions.value = [];
     pagination.value.totalItems = 0;
     pagination.value.totalPages = 0;
@@ -395,11 +395,11 @@ const getTransactionTypeIcon = (type: TransactionType) => {
 
 const getTransactionTypeName = (type: TransactionType) => {
   const names = {
-    Income: '收入',
-    Expense: '支出',
-    Transfer: '转账',
+    Income: t('financial.income'),
+    Expense: t('financial.expense'),
+    Transfer: t('financial.transfer'),
   };
-  return names[type] || '未知';
+  return names[type] || t('financial.unknown');
 };
 
 const formatTime = (dateStr: string) => {
