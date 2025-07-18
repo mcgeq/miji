@@ -5,7 +5,7 @@
 // File:           date.ts
 // Description:    About Date and Time
 // Create   Date:  2025-06-28 13:52:19
-// Last Modified:  2025-07-15 19:24:16
+// Last Modified:  2025-07-18 10:37:51
 // Modified   By:  mcgeq <mcgeq@outlook.com>
 // -----------------------------------------------------------------------------
 export const getLocalISODateTimeWithOffset = (options?: {
@@ -80,6 +80,12 @@ export function getIsoTime(): string {
 
   return `${hours}:${minutes}:${seconds}.${micro}`;
 }
+
+export const getCurrentDate = () => {
+  const l = getLocalISODateTimeWithOffset();
+  const n = new Date(l);
+  return n;
+};
 
 export const getEndOfTodayISOWithOffset = (options?: {
   days?: number;

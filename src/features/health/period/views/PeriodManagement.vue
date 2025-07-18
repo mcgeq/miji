@@ -3,34 +3,31 @@
     <!-- 头部导航 -->
     <div class="header-section">
       <div class="container mx-auto px-4">
-        <div class="flex-between py-4">
-          <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
-            经期管理
-          </h1>
+        <div class="flex-end py-4">
+          <!-- <h1 class="text-2xl font-bold text-gray-900 dark:text-white"> -->
+          <!--   经期管理 -->
+          <!-- </h1> -->
           <div class="flex items-center gap-3">
             <button 
               @click="currentView = 'calendar'" 
               class="nav-tab"
               :class="{ 'nav-tab-active': currentView === 'calendar' }"
             >
-              <i class="i-tabler-calendar wh-4 mr-2" />
-              日历
+              <CalendarCheck class="wh-5" />
             </button>
             <button 
               @click="currentView = 'stats'" 
               class="nav-tab"
               :class="{ 'nav-tab-active': currentView === 'stats' }"
             >
-              <i class="i-tabler-chart-line wh-4 mr-2" />
-              统计
+              <Activity class="wh-5" />
             </button>
             <button 
               @click="currentView = 'settings'" 
               class="nav-tab"
               :class="{ 'nav-tab-active': currentView === 'settings' }"
             >
-              <i class="i-tabler-settings wh-4 mr-2" />
-              设置
+              <Settings class="wh-5" />
             </button>
           </div>
         </div>
@@ -38,7 +35,7 @@
     </div>
 
     <!-- 主要内容区域 -->
-    <div class="main-content scrollbar-hide">
+    <div class="main-content">
       <div class="container mx-auto px-4 py-6">
         <!-- 统计仪表板视图 -->
         <div v-if="currentView === 'stats'" class="stats-view">
@@ -51,22 +48,21 @@
         <!-- 日历视图 -->
         <div v-else-if="currentView === 'calendar'" class="calendar-view">
           <div class="calendar-layout">
+            <div class="flex justify-center space-x-4">
             <!-- 日历组件 -->
-            <div class="calendar-section">
+            <div class="calendar-section w-2/3">
               <PeriodCalendar 
                 :selected-date="selectedDate" 
                 @date-select="handleDateSelect" 
               />
             </div>
-
-            <!-- 右侧操作区域 -->
-            <div class="sidebar-section">
+            <div class="flex justify-center">
               <!-- 快速操作 -->
               <div class="quick-actions card-base p-4">
-                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                  快速操作
-                </h3>
-                <div class="space-y-3">
+                <!-- <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4"> -->
+                <!--   快速操作 -->
+                <!-- </h3> -->
+                <div class="space-y-12">
                   <button @click="openRecordForm()" class="action-btn period-btn">
                     <i class="i-tabler-plus wh-4 mr-2" />
                     记录经期
@@ -81,7 +77,10 @@
                   </button>
                 </div>
               </div>
-
+            </div>
+            </div>
+            <!-- 操作区域 -->
+            <div class="sidebar-section">
               <!-- 今日信息 -->
               <div class="today-info card-base p-4">
                 <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
@@ -104,7 +103,7 @@
                       @click="openDailyForm(todayRecord)" 
                       class="text-blue-500 hover:underline text-sm"
                     >
-                      查看详情
+                      <Eye class="wh-5" />
                     </button>
                   </div>
                 </div>
@@ -209,7 +208,7 @@
 </template>
 
 <script setup lang="ts">
-import {ref, computed, onMounted} from 'vue';
+import {CalendarCheck, Settings, Activity, Eye} from 'lucide-vue-next';
 import {usePeriodStore} from '@/stores/periodStore';
 import PeriodCalendar from '../components/PeriodCalendar.vue';
 import PeriodStatsDashboard from './PeriodStatsDashboard.vue';
@@ -217,13 +216,14 @@ import PeriodSettings from './PeriodSettings.vue';
 import PeriodRecordForm from './PeriodRecordForm.vue';
 import PeriodDailyForm from './PeriodDailyForm.vue';
 import type {PeriodRecords, PeriodDailyRecords} from '@/schema/health/period';
+import {getTodayDate} from '@/utils/date';
 
 // Store
 const periodStore = usePeriodStore();
 
 // Reactive state
 const currentView = ref<'calendar' | 'stats' | 'settings'>('calendar');
-const selectedDate = ref(new Date().toISOString().split('T')[0]);
+const selectedDate = ref(getTodayDate().split('T')[0]);
 const showRecordForm = ref(false);
 const showDailyForm = ref(false);
 const editingRecord = ref<PeriodRecords | undefined>();
@@ -425,22 +425,6 @@ onMounted(async () => {
 
 .tip-item {
   @apply flex items-start gap-2;
-}
-
-/* 滚动条隐藏样式 - 确保使用 UnoCSS 的 scrollbar-hide */
-.main-content,
-.sidebar-section {
-  /* UnoCSS scrollbar-hide 类已应用，这里添加额外的兼容性支持 */
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE/Edge */
-}
-
-.main-content::-webkit-scrollbar,
-.sidebar-section::-webkit-scrollbar,
-.scrollbar-hide::-webkit-scrollbar {
-  display: none; /* Chrome/Safari */
-  width: 0;
-  height: 0;
 }
 
 /* 模态框动画 */

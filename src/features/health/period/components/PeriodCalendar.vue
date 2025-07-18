@@ -60,7 +60,6 @@
           @click="selectDate(day.date)"
         >
           <span class="day-number">{{ day.day }}</span>
-          
           <!-- 事件指示器 -->
           <div v-if="day.events.length > 0" class="event-indicators">
             <div
@@ -135,9 +134,9 @@
 </template>
 
 <script setup lang="ts">
-import {ref, computed, onMounted} from 'vue';
 import {PeriodCalendarEvent} from '@/schema/health/period';
 import {usePeriodStore} from '@/stores/periodStore';
+import {getCurrentDate, getLocalISODateTimeWithOffset} from '@/utils/date';
 
 interface CalendarDay {
   date: string;
@@ -165,7 +164,7 @@ const emit = defineEmits<{
 const periodStore = usePeriodStore();
 
 // Reactive state
-const currentDate = ref(new Date());
+const currentDate = ref(getCurrentDate());
 const viewMode = ref<'calendar' | 'list'>('calendar');
 const weekDays = ['日', '一', '二', '三', '四', '五', '六'];
 
@@ -193,7 +192,7 @@ const calendarDays = computed((): CalendarDay[] => {
   endDate.setDate(endDate.getDate() + (6 - lastDay.getDay()));
 
   const days: CalendarDay[] = [];
-  const today = new Date().toISOString().split('T')[0];
+  const today = getLocalISODateTimeWithOffset().split('T')[0];
 
   // 获取事件数据
   const events = periodStore.getCalendarEvents(
@@ -202,9 +201,10 @@ const calendarDays = computed((): CalendarDay[] => {
   );
 
   for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
-    const dateStr = d.toISOString().split('T')[0];
     const dayEvents = events.filter((event) => event.date === dateStr);
-
+    let nd = new Date(d);
+    nd.setDate(d.getDate() + 1);
+    const dateStr = nd.toISOString().split('T')[0];
     days.push({
       date: dateStr,
       day: d.getDate(),
@@ -213,7 +213,6 @@ const calendarDays = computed((): CalendarDay[] => {
       events: dayEvents,
     });
   }
-
   return days;
 });
 
