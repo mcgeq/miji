@@ -1,3 +1,5 @@
+import {defineStore} from 'pinia';
+import {computed, ref} from 'vue';
 import {
   PeriodCalendarEvent,
   PeriodDailyRecords,
@@ -9,8 +11,6 @@ import {
   PeriodStats,
   PeriodSymptoms,
 } from '@/schema/health/period';
-import {defineStore} from 'pinia';
-import {computed, ref} from 'vue';
 
 export const usePeriodStore = defineStore('period', () => {
   // 状态
@@ -232,6 +232,7 @@ export const usePeriodStore = defineStore('period', () => {
           endDate: '2024-01-20',
           createdAt: new Date().toISOString(),
           updatedAt: null,
+          notes: '',
         },
         {
           serialNum: 'period_002'.padEnd(38, '0'),
@@ -239,6 +240,7 @@ export const usePeriodStore = defineStore('period', () => {
           endDate: '2024-02-17',
           createdAt: new Date().toISOString(),
           updatedAt: null,
+          notes: '',
         },
       ];
 
@@ -275,6 +277,32 @@ export const usePeriodStore = defineStore('period', () => {
     } catch (e) {
       const errorMessage =
         e instanceof Error ? e.message : 'Failed to fetch daily records';
+      setError(errorMessage);
+      throw new Error(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const deleteDailyRecord = async (serialNum: string) => {
+    setLoading(true);
+    clearError();
+
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
+      // 模拟API调用
+      // await periodApi.deleteDailyRecord(serialNum);
+
+      // 立即从本地状态中移除记录
+      dailyRecords.value = dailyRecords.value.filter(
+        (record) => record.serialNum !== serialNum,
+      );
+
+      console.log('Daily record deleted:', serialNum);
+    } catch (e) {
+      const errorMessage =
+        e instanceof Error ? e.message : 'Failed to delete daily record';
       setError(errorMessage);
       throw new Error(errorMessage);
     } finally {
@@ -360,22 +388,36 @@ export const usePeriodStore = defineStore('period', () => {
     try {
       await new Promise((resolve) => setTimeout(resolve, 500));
 
-      // 模拟API调用
-      // await periodApi.deletePeriodRecord(serialNum);
-
-      periodRecords.value = periodRecords.value.filter(
-        (record) => record.serialNum !== serialNum,
+      // 检查要删除的是经期记录还是日常记录
+      const isDailyRecord = dailyRecords.value.some(
+        (record) => record.serialNum === serialNum,
       );
+
+      if (isDailyRecord) {
+        // 如果是日常记录，只删除日常记录
+        dailyRecords.value = dailyRecords.value.filter(
+          (record) => record.serialNum !== serialNum,
+        );
+      } else {
+        // 如果是经期记录，删除经期记录和相关的日常记录
+        periodRecords.value = periodRecords.value.filter(
+          (record) => record.serialNum !== serialNum,
+        );
+
+        // 同时删除与该经期相关的所有日常记录
+        dailyRecords.value = dailyRecords.value.filter(
+          (record) => record.periodSerialNum !== serialNum,
+        );
+      }
     } catch (e) {
       const errorMessage =
-        e instanceof Error ? e.message : 'Failed to delete period record';
+        e instanceof Error ? e.message : 'Failed to delete record';
       setError(errorMessage);
       throw new Error(errorMessage);
     } finally {
       setLoading(false);
     }
   };
-
   // 添加或更新每日记录
   const upsertDailyRecord = async (record: Partial<PeriodDailyRecords>) => {
     setLoading(true);
@@ -391,11 +433,14 @@ export const usePeriodStore = defineStore('period', () => {
 
       if (existingIndex !== -1) {
         // 更新现有记录
-        dailyRecords.value[existingIndex] = {
+        const updatedRecord = {
           ...dailyRecords.value[existingIndex],
           ...record,
           updatedAt: new Date().toISOString(),
         };
+
+        // 使用 splice 确保响应式更新
+        dailyRecords.value.splice(existingIndex, 1, updatedRecord);
       } else {
         // 创建新记录
         const newRecord: PeriodDailyRecords = {
@@ -409,13 +454,16 @@ export const usePeriodStore = defineStore('period', () => {
           mood: record.mood || null,
           waterIntake: record.waterIntake,
           sleepHours: record.sleepHours,
-          notes: record.notes,
+          notes: record.notes || '',
           createdAt: new Date().toISOString(),
           updatedAt: null,
         };
 
         dailyRecords.value.push(newRecord);
       }
+
+      // 强制触发响应式更新
+      dailyRecords.value = [...dailyRecords.value];
     } catch (e) {
       const errorMessage =
         e instanceof Error ? e.message : 'Failed to save daily record';
@@ -428,7 +476,9 @@ export const usePeriodStore = defineStore('period', () => {
 
   // 获取特定日期的记录
   const getDailyRecord = (date: string): PeriodDailyRecords | null => {
-    return dailyRecords.value.find((record) => record.date === date) || null;
+    // 强制获取最新的 dailyRecords
+    const records = dailyRecords.value;
+    return records.find((record) => record.date === date) || null;
   };
 
   // 更新设置
@@ -476,6 +526,30 @@ export const usePeriodStore = defineStore('period', () => {
     } catch (e) {
       const errorMessage =
         e instanceof Error ? e.message : 'Failed to reset data';
+      setError(errorMessage);
+      throw new Error(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 5. 添加强制刷新日常记录的方法
+  const refreshDailyRecords = async () => {
+    setLoading(true);
+    clearError();
+
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 300));
+
+      // 模拟重新获取数据
+      // const response = await periodApi.getDailyRecords();
+      // dailyRecords.value = response.data;
+
+      // 强制触发响应式更新
+      dailyRecords.value = [...dailyRecords.value];
+    } catch (e) {
+      const errorMessage =
+        e instanceof Error ? e.message : 'Failed to refresh daily records';
       setError(errorMessage);
       throw new Error(errorMessage);
     } finally {
@@ -588,5 +662,7 @@ export const usePeriodStore = defineStore('period', () => {
     resetAllData,
     exportData,
     getCalendarEvents,
+    deleteDailyRecord,
+    refreshDailyRecords,
   };
 });
