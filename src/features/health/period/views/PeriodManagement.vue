@@ -50,30 +50,26 @@
           <div class="calendar-layout">
             <div class="flex justify-center space-x-4">
             <!-- 日历组件 -->
-            <div class="calendar-section w-2/3">
+            <div class="calendar-section w-1/3">
               <PeriodCalendar 
                 :selected-date="selectedDate" 
                 @date-select="handleDateSelect" 
               />
             </div>
-            <div class="flex justify-center">
+            <div class="flex justify-end">
               <!-- 快速操作 -->
               <div class="quick-actions card-base p-4">
-                <!-- <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4"> -->
                 <!--   快速操作 -->
                 <!-- </h3> -->
                 <div class="space-y-12">
                   <button @click="openRecordForm()" class="action-btn period-btn">
-                    <i class="i-tabler-plus wh-4 mr-2" />
-                    记录经期
+                      <Plus class="wh-5" />
                   </button>
                   <button @click="openDailyForm()" class="action-btn daily-btn">
-                    <i class="i-tabler-edit wh-4 mr-2" />
-                    日常记录
+                      <Edit class="wh-5" />
                   </button>
                   <button @click="currentView = 'stats'" class="action-btn stats-btn">
-                    <i class="i-tabler-chart-bar wh-4 mr-2" />
-                    查看统计
+                    <Eye class="wh-5" />
                   </button>
                 </div>
               </div>
@@ -208,7 +204,14 @@
 </template>
 
 <script setup lang="ts">
-import {CalendarCheck, Settings, Activity, Eye} from 'lucide-vue-next';
+import {
+  CalendarCheck,
+  Settings,
+  Activity,
+  Eye,
+  Edit,
+  Plus,
+} from 'lucide-vue-next';
 import {usePeriodStore} from '@/stores/periodStore';
 import PeriodCalendar from '../components/PeriodCalendar.vue';
 import PeriodStatsDashboard from './PeriodStatsDashboard.vue';
@@ -392,7 +395,7 @@ onMounted(async () => {
 }
 
 .quick-actions .action-btn {
-  @apply w-full flex items-center justify-start px-4 py-2.5 rounded-lg border transition-all hover:shadow-sm focus:ring-2 focus:ring-offset-2 text-sm;
+  @apply w-full flex items-center justify-end px-4 py-2.5 rounded-lg border transition-all hover:shadow-sm focus:ring-2 focus:ring-offset-2 text-sm;
 }
 
 .period-btn {

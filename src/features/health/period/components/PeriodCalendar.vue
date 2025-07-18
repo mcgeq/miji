@@ -8,7 +8,7 @@
           class="nav-button"
           aria-label="上个月"
         >
-          <i class="i-tabler-chevron-left wh-4" />
+          <ChevronUp class="wh-5" />
         </button>
         <h2 class="month-title">{{ currentMonthYear }}</h2>
         <button 
@@ -16,7 +16,7 @@
           class="nav-button"
           aria-label="下个月"
         >
-          <i class="i-tabler-chevron-right wh-4" />
+          <ChevronDown class="wh-5" />
         </button>
       </div>
       
@@ -134,6 +134,7 @@
 </template>
 
 <script setup lang="ts">
+import {ChevronUp, ChevronDown} from 'lucide-vue-next';
 import {PeriodCalendarEvent} from '@/schema/health/period';
 import {usePeriodStore} from '@/stores/periodStore';
 import {getCurrentDate, getLocalISODateTimeWithOffset} from '@/utils/date';
@@ -543,22 +544,6 @@ onMounted(() => {
   }
 }
 
-/* 滚动条样式 */
-.list-container::-webkit-scrollbar {
-  @apply w-1;
-}
-
-.list-container::-webkit-scrollbar-track {
-  @apply bg-gray-100 dark:bg-gray-800;
-}
-
-.list-container::-webkit-scrollbar-thumb {
-  @apply bg-gray-300 dark:bg-gray-600 rounded-full;
-}
-
-.list-container::-webkit-scrollbar-thumb:hover {
-  @apply bg-gray-400 dark:bg-gray-500;
-}
 
 /* 深色模式优化 */
 @media (prefers-color-scheme: dark) {
