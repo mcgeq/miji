@@ -193,8 +193,8 @@
 </template>
 
 <script setup lang="ts">
-import { usePeriodStore } from '@/stores/periodStore';
-import type { PeriodRecords } from '@/schema/health/period';
+import {usePeriodStore} from '@/stores/periodStore';
+import type {PeriodRecords} from '@/schema/health/period';
 
 // Emits
 const emit = defineEmits<{
@@ -425,7 +425,7 @@ watch(
   () => {
     currentPage.value = 1;
   },
-  { deep: true },
+  {deep: true},
 );
 </script>
 

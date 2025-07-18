@@ -6,24 +6,30 @@
 
     <form @submit.prevent="handleSubmit" class="space-y-6">
       <!-- 日期选择 -->
-      <div class="form-group">
+      <div class="form-group flex items-center justify-between">
         <label class="form-label">
-          <i class="i-tabler-calendar wh-4 mr-2" />
+          <CalendarCheck class="wh-5" />
           日期
         </label>
-        <input v-model="formData.date" type="date" class="input-base w-full" :max="today" required />
+        <input v-model="formData.date"
+          type="date"
+          class="w-3/4 modal-input-select"
+          :max="today"
+          required
+          :disabled="isEditing"
+        />
         <div v-if="getFieldErrors('date').length > 0" class="form-error">
           {{ getFieldErrors('date')[0] }}
         </div>
       </div>
 
       <!-- 经期流量 -->
-      <div class="form-group">
+      <div class="form-group flex items-center justify-between">
         <label class="form-label">
-          <i class="i-tabler-droplet wh-4 mr-2" />
+          <Droplet class="wh-5" />
           经期流量
         </label>
-        <div class="flex gap-2">
+        <div class="flex gap-2 w-3/4">
           <button v-for="level in flowLevels" :key="level.value" type="button" @click="formData.flowLevel = level.value"
             class="flex-1 p-3 rounded-lg border transition-all" :class="[
               formData.flowLevel === level.value
@@ -39,7 +45,7 @@
       <!-- 心情状态 -->
       <div class="form-group">
         <label class="form-label">
-          <i class="i-tabler-mood-smile wh-4 mr-2" />
+          <Smile class="wh-5" />
           心情状态
         </label>
         <div class="grid grid-cols-3 gap-2">
@@ -57,28 +63,30 @@
 
       <!-- 运动强度 -->
       <div class="form-group">
-        <label class="form-label">
-          <i class="i-tabler-activity wh-4 mr-2" />
-          运动强度
-        </label>
-        <div class="flex gap-2">
-          <button v-for="intensity in exerciseIntensities" :key="intensity.value" type="button"
-            @click="formData.exerciseIntensity = intensity.value" class="flex-1 p-3 rounded-lg border transition-all"
-            :class="[
-              formData.exerciseIntensity === intensity.value
-                ? 'border-green-500 bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-                : 'border-gray-300 hover:border-gray-400 dark:border-gray-600 dark:hover:border-gray-500'
-            ]">
-            <i :class="intensity.icon" class="wh-5 mx-auto mb-1" />
-            <div class="text-sm font-medium">{{ intensity.label }}</div>
-          </button>
+        <div class="flex items-center justify-between">
+          <label class="form-label">
+            <Dumbbell class="wh-5" />
+            运动强度
+          </label>
+          <div class="flex gap-2 w-3/4">
+            <button v-for="intensity in exerciseIntensities" :key="intensity.value" type="button"
+              @click="formData.exerciseIntensity = intensity.value" class="flex-1 p-3 rounded-lg border transition-all"
+              :class="[
+                formData.exerciseIntensity === intensity.value
+                  ? 'border-green-500 bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                  : 'border-gray-300 hover:border-gray-400 dark:border-gray-600 dark:hover:border-gray-500'
+              ]">
+              <i :class="intensity.icon" class="wh-5 mx-auto mb-1" />
+              <div class="text-sm font-medium">{{ intensity.label }}</div>
+            </button>
+          </div>
         </div>
       </div>
 
       <!-- 饮食记录 -->
       <div class="form-group">
         <label class="form-label">
-          <i class="i-tabler-apple wh-4 mr-2" />
+          <Utensils class="wh-5" />
           饮食记录
         </label>
         <textarea v-model="formData.diet" class="input-base w-full h-20 resize-none" placeholder="记录今天的饮食情况..."
@@ -90,16 +98,18 @@
 
       <!-- 饮水量 -->
       <div class="form-group">
-        <label class="form-label">
-          <i class="i-tabler-glass-water wh-4 mr-2" />
-          饮水量 (ml)
-        </label>
-        <div class="flex items-center gap-4">
-          <input v-model.number="formData.waterIntake" type="number" class="input-base flex-1" placeholder="例如: 2000"
+        <div flex items-center justify-between>
+          <label class="form-label w-1/3">
+            <Waves class="wh-5" />
+            饮水量 (ml)
+          </label>
+          <input v-model.number="formData.waterIntake" type="number" class="input-base" placeholder="例如: 2000"
             min="0" max="5000" step="100" />
-          <div class="flex gap-2">
+        </div>
+        <div class="flex items-center gap-4">
+          <div class="flex gap-1">
             <button v-for="preset in waterPresets" :key="preset" type="button" @click="formData.waterIntake = preset"
-              class="btn-secondary text-sm px-3 py-1">
+              class="btn-secondary text-sm px-2 py-1">
               {{ preset }}ml
             </button>
           </div>
@@ -150,10 +160,6 @@
 
       <!-- 备注 -->
       <div class="form-group">
-        <label class="form-label">
-          <i class="i-tabler-note wh-4 mr-2" />
-          备注
-        </label>
         <textarea v-model="formData.notes" class="input-base w-full h-20 resize-none" placeholder="记录其他想要记录的内容..."
           maxlength="500" />
         <div class="flex justify-between text-sm text-gray-500 mt-1">
@@ -167,13 +173,12 @@
       </div>
 
       <!-- 操作按钮 -->
-      <div class="flex gap-3 pt-4">
-        <button type="button" @click="$emit('cancel')" class="btn-secondary flex-1" :disabled="loading">
-          取消
+      <div class="flex justify-center space-x-6 pt-2">
+        <button type="button" @click="$emit('cancel')" class="btn-secondary" :disabled="loading">
+          <X class="wh-5" />
         </button>
-        <button type="submit" class="btn-primary flex-1" :disabled="loading || hasErrors()">
-          <i v-if="loading" class="i-tabler-loader-2 wh-4 mr-2 animate-spin" />
-          {{ isEditing ? '更新' : '保存' }}
+        <button type="submit" class="btn-primary" :disabled="loading || hasErrors()">
+          <Check class="wh-5" />
         </button>
       </div>
     </form>
@@ -181,10 +186,23 @@
 </template>
 
 <script setup lang="ts">
-import { usePeriodStore } from '@/stores/periodStore';
-import type { PeriodDailyRecords, Mood } from '@/schema/health/period';
-import { usePeriodValidation } from '../composables/usePeriodValidation';
-import { ExerciseIntensity, FlowLevel } from '@/schema/common';
+import {
+  CalendarCheck,
+  X,
+  Check,
+  Smile,
+  Dumbbell,
+  Utensils,
+  Waves,
+  Droplet,
+} from 'lucide-vue-next';
+import {usePeriodStore} from '@/stores/periodStore';
+import type {PeriodDailyRecords, Mood} from '@/schema/health/period';
+import {usePeriodValidation} from '../composables/usePeriodValidation';
+import {ExerciseIntensity, FlowLevel} from '@/schema/common';
+import {uuid} from '@/utils/uuid';
+import {getLocalISODateTimeWithOffset} from '@/utils/date';
+import {Lg} from '@/utils/debugLog';
 
 // Props
 interface Props {
@@ -205,7 +223,7 @@ const emit = defineEmits<{
 
 // Store & Composables
 const periodStore = usePeriodStore();
-const { validateDailyRecord, getFieldErrors, hasErrors, clearValidationErrors } =
+const {validateDailyRecord, getFieldErrors, hasErrors, clearValidationErrors} =
   usePeriodValidation();
 
 // Reactive state
@@ -229,25 +247,25 @@ const formData = ref({
 
 // Options
 const flowLevels = [
-  { value: 'Light' as const, label: '轻量', icon: 'i-tabler-droplet' },
-  { value: 'Medium' as const, label: '中量', icon: 'i-tabler-droplets' },
-  { value: 'Heavy' as const, label: '大量', icon: 'i-tabler-droplets-filled' },
+  {value: 'Light' as const, label: '轻量', icon: 'i-tabler-droplet'},
+  {value: 'Medium' as const, label: '中量', icon: 'i-tabler-droplets'},
+  {value: 'Heavy' as const, label: '大量', icon: 'i-tabler-droplets-filled'},
 ];
 
 const moods = [
-  { value: 'Happy' as const, label: '开心', icon: 'i-tabler-mood-happy' },
-  { value: 'Calm' as const, label: '平静', icon: 'i-tabler-mood-smile' },
-  { value: 'Sad' as const, label: '难过', icon: 'i-tabler-mood-sad' },
-  { value: 'Angry' as const, label: '愤怒', icon: 'i-tabler-mood-angry' },
-  { value: 'Anxious' as const, label: '焦虑', icon: 'i-tabler-mood-nervous' },
-  { value: 'Irritable' as const, label: '易怒', icon: 'i-tabler-mood-annoyed' },
+  {value: 'Happy' as const, label: '开心', icon: 'i-tabler-mood-happy'},
+  {value: 'Calm' as const, label: '平静', icon: 'i-tabler-mood-smile'},
+  {value: 'Sad' as const, label: '难过', icon: 'i-tabler-mood-sad'},
+  {value: 'Angry' as const, label: '愤怒', icon: 'i-tabler-mood-angry'},
+  {value: 'Anxious' as const, label: '焦虑', icon: 'i-tabler-mood-nervous'},
+  {value: 'Irritable' as const, label: '易怒', icon: 'i-tabler-mood-annoyed'},
 ];
 
 const exerciseIntensities = [
-  { value: 'None' as const, label: '无', icon: 'i-tabler-sleep' },
-  { value: 'Light' as const, label: '轻度', icon: 'i-tabler-walk' },
-  { value: 'Medium' as const, label: '中度', icon: 'i-tabler-run' },
-  { value: 'Heavy' as const, label: '高强度', icon: 'i-tabler-barbell' },
+  {value: 'None' as const, label: '无', icon: 'i-tabler-sleep'},
+  {value: 'Light' as const, label: '轻度', icon: 'i-tabler-walk'},
+  {value: 'Medium' as const, label: '中度', icon: 'i-tabler-run'},
+  {value: 'Heavy' as const, label: '高强度', icon: 'i-tabler-barbell'},
 ];
 
 const waterPresets = [1000, 1500, 2000, 2500];
@@ -265,11 +283,10 @@ const handleSubmit = async () => {
 
   try {
     await periodStore.upsertDailyRecord(formData.value);
-
+    const recordDateTime = getLocalISODateTimeWithOffset();
     // 模拟创建完整记录对象用于回调
     const record: PeriodDailyRecords = {
-      serialNum:
-        props.record?.serialNum || `daily_${Date.now()}`.padEnd(38, '0'),
+      serialNum: props.record?.serialNum || uuid(38),
       periodSerialNum:
         props.record?.periodSerialNum || 'period_current'.padEnd(38, '0'),
       date: formData.value.date,
@@ -281,13 +298,13 @@ const handleSubmit = async () => {
       sleepHours: formData.value.sleepHours,
       sexualActivity: formData.value.sexualActivity,
       notes: formData.value.notes || '',
-      createdAt: props.record?.createdAt || new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      createdAt: props.record?.createdAt || recordDateTime,
+      updatedAt: recordDateTime,
     };
 
     emit('submit', record);
   } catch (error) {
-    console.error('Failed to save daily record:', error);
+    Lg.e('Period', 'Failed to save daily record:', error);
   } finally {
     loading.value = false;
   }
@@ -343,7 +360,7 @@ const initializeForm = () => {
 };
 
 // Watchers
-watch(() => props.record, initializeForm, { immediate: true });
+watch(() => props.record, initializeForm, {immediate: true});
 watch(
   () => props.date,
   (newDate) => {

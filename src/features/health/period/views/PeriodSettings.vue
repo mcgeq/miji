@@ -189,8 +189,7 @@
         <div class="setting-item">
           <label class="setting-label text-red-600 dark:text-red-400">危险操作</label>
           <button @click="showResetModal = true" class="btn-danger" :disabled="loading">
-            <i class="i-tabler-trash wh-4 mr-2" />
-            清空所有数据
+            <Trash class="wh-5" />
           </button>
           <p class="setting-description">
             删除所有经期记录，此操作不可撤销
@@ -246,9 +245,10 @@
 </template>
 
 <script setup lang="ts">
-import { usePeriodStore } from '@/stores/periodStore';
-import type { PeriodSettings } from '@/schema/health/period';
-import { PeriodDataManager } from '../utils/periodUtils';
+import {Trash} from 'lucide-vue-next';
+import {usePeriodStore} from '@/stores/periodStore';
+import type {PeriodSettings} from '@/schema/health/period';
+import {PeriodDataManager} from '../utils/periodUtils';
 
 // Store
 const periodStore = usePeriodStore();
@@ -388,7 +388,7 @@ const initializeSettings = () => {
 };
 
 // Watchers
-watch(() => periodStore.settings, initializeSettings, { deep: true });
+watch(() => periodStore.settings, initializeSettings, {deep: true});
 
 // Lifecycle
 onMounted(() => {

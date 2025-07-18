@@ -56,7 +56,41 @@
                 @date-select="handleDateSelect" 
               />
             </div>
-            <div class="flex justify-end">
+            <!-- 今日信息 -->
+            <div class="today-info card-base p-4 w-1/3">
+              <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                今日信息
+              </h3>
+              <div class="space-y-3">
+                <div class="info-item">
+                  <span class="info-label">当前阶段</span>
+                  <span class="info-value phase-badge">
+                    {{ currentPhaseLabel }}
+                  </span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">距离下次</span>
+                  <span class="info-value">{{ daysUntilNext }}</span>
+                </div>
+                <div v-if="todayRecord" class="info-item">
+                  <span class="info-label">今日记录</span>
+                  <div class="flex grid gap-3">
+                    <button
+                      @click="openDailyForm(todayRecord)"
+                      class="text-blue-500 hover:underline text-sm"
+                    >
+                      <Eye class="wh-5" />
+                    </button>
+                    <button
+                      @click="deleteDailyForm(todayRecord.serialNum)"
+                      class="text-red-500 hover:underline text-sm">
+                      <Trash class="wh-5" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="flex justify-center w-1/3">
               <!-- 快速操作 -->
               <div class="quick-actions card-base p-4">
                 <!--   快速操作 -->
@@ -77,34 +111,6 @@
             </div>
             <!-- 操作区域 -->
             <div class="sidebar-section">
-              <!-- 今日信息 -->
-              <div class="today-info card-base p-4">
-                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                  今日信息
-                </h3>
-                <div class="space-y-3">
-                  <div class="info-item">
-                    <span class="info-label">当前阶段</span>
-                    <span class="info-value phase-badge">
-                      {{ currentPhaseLabel }}
-                    </span>
-                  </div>
-                  <div class="info-item">
-                    <span class="info-label">距离下次</span>
-                    <span class="info-value">{{ daysUntilNext }}</span>
-                  </div>
-                  <div v-if="todayRecord" class="info-item">
-                    <span class="info-label">今日记录</span>
-                    <button 
-                      @click="openDailyForm(todayRecord)" 
-                      class="text-blue-500 hover:underline text-sm"
-                    >
-                      <Eye class="wh-5" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-
               <!-- 健康提示 -->
               <div class="health-tips card-base p-4">
                 <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
@@ -136,16 +142,16 @@
 
     <!-- 经期记录表单弹窗 -->
     <div 
-      v-if="showRecordForm" 
+      v-if="showRecordForm"
       class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
       @click.self="closeRecordForm"
     >
       <div class="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto scrollbar-hide">
-        <PeriodRecordForm 
-          :record="editingRecord" 
-          @submit="handleRecordSubmit" 
+        <PeriodRecordForm
+          :record="editingRecord"
+          @submit="handleRecordSubmit"
           @delete="handleRecordDelete"
-          @cancel="closeRecordForm" 
+          @cancel="closeRecordForm"
         />
       </div>
     </div>
@@ -196,7 +202,7 @@
           @click="periodStore.clearError()" 
           class="text-red-400 hover:text-red-600 dark:hover:text-red-300"
         >
-          <i class="i-tabler-x wh-4" />
+          <X class="wh-5" />
         </button>
       </div>
     </div>
@@ -211,6 +217,8 @@ import {
   Eye,
   Edit,
   Plus,
+  Trash,
+  X,
 } from 'lucide-vue-next';
 import {usePeriodStore} from '@/stores/periodStore';
 import PeriodCalendar from '../components/PeriodCalendar.vue';
@@ -312,18 +320,21 @@ const closeRecordForm = () => {
 const handleRecordSubmit = (record: PeriodRecords) => {
   closeRecordForm();
   console.log('Record submitted:', record);
-  // 可以在这里添加成功提示
 };
 
 const handleRecordDelete = (serialNum: string) => {
   closeRecordForm();
   console.log('Record deleted:', serialNum);
-  // 可以在这里添加删除成功提示
 };
 
 const openDailyForm = (record?: PeriodDailyRecords) => {
   editingDailyRecord.value = record;
   showDailyForm.value = true;
+};
+
+const deleteDailyForm = (serialNum: string) => {
+  console.log(serialNum);
+  periodStore.deletePeriodRecord(serialNum);
 };
 
 const closeDailyForm = () => {

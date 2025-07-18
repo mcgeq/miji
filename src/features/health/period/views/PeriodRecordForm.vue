@@ -52,7 +52,7 @@
               </label>
               <div class="input-wrapper">
                 <input v-model="formData.endDate" type="date" class="date-input"
-                  :class="{ 'input-error': hasFieldError('endDate') }" :min="formData.startDate" :max="maxDate" required
+                  :class="{ 'input-error': hasFieldError('endDate') }" :min="formData.startDate" required
                   @change="validateDates" />
                 <div class="input-icon">
                   <i class="i-tabler-calendar-check wh-4 text-gray-400" />
@@ -148,20 +148,16 @@
           <div class="actions-left">
             <button v-if="isEditing" type="button" @click="showDeleteConfirm = true" class="btn-danger"
               :disabled="loading">
-              <i class="i-tabler-trash wh-4 mr-2" />
-              删除记录
+              <Trash class="wh-5" />
             </button>
           </div>
-
           <div class="actions-right">
             <button type="button" @click="handleCancel" class="btn-secondary" :disabled="loading">
-              取消
+              <X class="wh-5" />
             </button>
             <button type="submit" class="btn-primary" :disabled="!canSubmit || loading">
               <i v-if="loading" class="i-tabler-loader-2 wh-4 mr-2 animate-spin" />
-              <i v-else-if="isEditing" class="i-tabler-device-floppy wh-4 mr-2" />
-              <i v-else class="i-tabler-plus wh-4 mr-2" />
-              {{ isEditing ? '更新记录' : '保存记录' }}
+              <Edit class="wh-5" />
             </button>
           </div>
         </div>
@@ -210,7 +206,8 @@
 </template>
 
 <script setup lang="ts">
-import { usePeriodStore } from '@/stores/periodStore';
+import {X, Trash, Edit} from 'lucide-vue-next';
+import {usePeriodStore} from '@/stores/periodStore';
 import {
   DateUtils,
   PeriodCalculator,
@@ -220,9 +217,9 @@ import {
 import InputError from '@/components/common/InputError.vue';
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue';
 import WarningDialog from '@/components/common/WarningDialog.vue';
-import type { PeriodRecords } from '@/schema/health/period';
-import { usePeriodValidation } from '../composables/usePeriodValidation';
-import { Intensity, SymptomsType } from '@/schema/common';
+import type {PeriodRecords} from '@/schema/health/period';
+import {usePeriodValidation} from '../composables/usePeriodValidation';
+import {Intensity, SymptomsType} from '@/schema/common';
 
 // Props
 interface Props {
@@ -244,7 +241,7 @@ const emit = defineEmits<{
 
 // Store & Composables
 const periodStore = usePeriodStore();
-const { validatePeriodRecord, getFieldErrors, hasErrors, clearValidationErrors } =
+const {validatePeriodRecord, getFieldErrors, hasErrors, clearValidationErrors} =
   usePeriodValidation();
 
 // Reactive state
@@ -268,11 +265,11 @@ const symptoms = ref<Record<SymptomsType, Intensity | null>>({
 
 // Configuration
 const durationPresets = [
-  { days: 3, label: '3天' },
-  { days: 4, label: '4天' },
-  { days: 5, label: '5天' },
-  { days: 6, label: '6天' },
-  { days: 7, label: '7天' },
+  {days: 3, label: '3天'},
+  {days: 4, label: '4天'},
+  {days: 5, label: '5天'},
+  {days: 6, label: '6天'},
+  {days: 7, label: '7天'},
 ];
 
 const symptomGroups = [
@@ -297,9 +294,9 @@ const symptomGroups = [
 ];
 
 const intensityLevels = [
-  { value: 'Light' as const, label: '轻度' },
-  { value: 'Medium' as const, label: '中度' },
-  { value: 'Heavy' as const, label: '重度' },
+  {value: 'Light' as const, label: '轻度'},
+  {value: 'Medium' as const, label: '中度'},
+  {value: 'Heavy' as const, label: '重度'},
 ];
 
 // Computed
@@ -387,7 +384,7 @@ const canSubmit = computed(() => {
 });
 
 const deletionInfo = computed(() => {
-  if (!props.record) return { dateRange: '', duration: '' };
+  if (!props.record) return {dateRange: '', duration: ''};
 
   return {
     dateRange: DateUtils.formatDateRange(
@@ -401,7 +398,7 @@ const deletionInfo = computed(() => {
 });
 
 const overlapInfo = computed(() => {
-  if (!overlapRecord.value) return { dateRange: '' };
+  if (!overlapRecord.value) return {dateRange: ''};
 
   return {
     dateRange: DateUtils.formatDateRange(
@@ -595,7 +592,7 @@ const initializeForm = () => {
 };
 
 // Watchers
-watch(() => props.record, initializeForm, { immediate: true });
+watch(() => props.record, initializeForm, {immediate: true});
 
 // Lifecycle
 onMounted(() => {
