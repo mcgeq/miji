@@ -13,22 +13,13 @@
         <div class="space-y-4">
           <div class="flex items-center justify-between">
             <label class="text-sm font-medium text-gray-700">账本名称</label>
-            <input
-              v-model="form.description"
-              type="text"
-              required
-              class="w-2/3 modal-input-select"
-              placeholder="请输入账本名称"
-            />
+            <input v-model="form.description" type="text" required class="w-2/3 modal-input-select"
+              placeholder="请输入账本名称" />
           </div>
 
           <div class="flex items-center justify-between">
             <label class="text-sm font-medium text-gray-700">基础币种</label>
-            <select
-              v-model="form.baseCurrency.code"
-              required
-              class="w-2/3 modal-input-select"
-            >
+            <select v-model="form.baseCurrency.code" required class="w-2/3 modal-input-select">
               <option v-for="currency in currencies" :key="currency.code" :value="currency.code">
                 {{ currency.nameZh }} ({{ currency.code }})
               </option>
@@ -40,11 +31,7 @@
         <div class="space-y-3">
           <div class="flex justify-between items-center">
             <label class="text-sm font-medium text-gray-700">成员管理</label>
-            <button
-              type="button"
-              @click="showMemberModal = true"
-              class="btn-secondary text-xs px-2 py-1"
-            >
+            <button type="button" @click="showMemberModal = true" class="btn-secondary text-xs px-2 py-1">
               <Plus class="w-3 h-3 mr-1" />
               添加成员
             </button>
@@ -52,7 +39,7 @@
 
           <div class="space-y-2 max-h-40 overflow-y-auto">
             <div v-for="(member, index) in form.members" :key="member.serialNum"
-                 class="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
+              class="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
               <div class="flex items-center gap-2">
                 <Crown v-if="member.isPrimary" class="w-4 h-4 text-yellow-500" />
                 <User v-else class="w-4 h-4 text-gray-500" />
@@ -60,21 +47,11 @@
                 <span class="text-xs text-gray-500">({{ getRoleName(member.role) }})</span>
               </div>
               <div class="flex gap-1">
-                <button
-                  type="button"
-                  @click="editMember(index)"
-                  class="action-btn"
-                  title="编辑"
-                >
+                <button type="button" @click="editMember(index)" class="action-btn" title="编辑">
                   <Edit class="w-3 h-3" />
                 </button>
-                <button
-                  type="button"
-                  @click="removeMember(index)"
-                  class="action-btn-danger"
-                  title="移除"
-                  :disabled="member.isPrimary"
-                >
+                <button type="button" @click="removeMember(index)" class="action-btn-danger" title="移除"
+                  :disabled="member.isPrimary">
                   <Trash class="w-3 h-3" />
                 </button>
               </div>
@@ -95,24 +72,19 @@
     </div>
 
     <!-- 成员添加/编辑模态框 -->
-    <MemberModal
-      v-if="showMemberModal"
-      :member="editingMember"
-      @close="closeMemberModal"
-      @save="saveMember"
-    />
+    <MemberModal v-if="showMemberModal" :member="editingMember" @close="closeMemberModal" @save="saveMember" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { Check, X, Plus, Edit, Trash, Crown, User } from 'lucide-vue-next';
-import { uuid } from '@/utils/uuid';
-import { getLocalISODateTimeWithOffset } from '@/utils/date';
-import type { UserRole } from '@/schema/userRole';
+import { Check, Crown, Edit, Plus, Trash, User, X } from 'lucide-vue-next';
 import { DEFAULT_CURRENCY } from '@/constants/moneyConst';
-import { safeGet } from '@/utils/common';
-import MemberModal from './MemberModal.vue';
 import { FamilyLedger, FamilyMember } from '@/schema/money';
+import type { UserRole } from '@/schema/userRole';
+import { safeGet } from '@/utils/common';
+import { getLocalISODateTimeWithOffset } from '@/utils/date';
+import { uuid } from '@/utils/uuid';
+import MemberModal from './MemberModal.vue';
 
 interface Props {
   ledger: FamilyLedger | null;

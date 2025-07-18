@@ -1,10 +1,10 @@
+import {ExerciseIntensity, FlowLevel, Intensity} from '@/schema/common';
 import type {
   Mood,
   PeriodDailyRecords,
   PeriodPhase,
   PeriodRecords,
 } from '@/schema/health/period';
-import {ExerciseIntensity, FlowLevel, Intensity} from '@/schema/common';
 
 /**
  * 日期相关工具函数

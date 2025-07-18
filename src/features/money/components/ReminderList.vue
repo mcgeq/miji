@@ -4,10 +4,8 @@
     <div class="flex flex-wrap justify-center items-center gap-3 mb-5 p-4 bg-gray-50 rounded-lg">
       <div class="filter-flex-wrap">
         <label class="show-on-desktop text-sm font-medium text-gray-700">{{ t('optionsAndStatus.status') }}</label>
-        <select 
-          v-model="filters.status" 
-          class="px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
+        <select v-model="filters.status"
+          class="px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
           <option value=""> {{ t('generalOperations.all') }} </option>
           <option value="paid">{{ t('optionsAndStatus.paid') }}</option>
           <option value="overdue">{{ t('optionsAndStatus.overdue') }}</option>
@@ -17,10 +15,8 @@
 
       <div class="filter-flex-wrap">
         <label class="show-on-desktop text-sm font-medium text-gray-700">{{ t('others.periodType') }}</label>
-        <select 
-          v-model="filters.period" 
-          class="px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
+        <select v-model="filters.period"
+          class="px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
           <option value="">{{ t('generalOperations.all') }}</option>
           <option value="None">{{ t('date.none') }}</option>
           <option value="Daily">{{ t('date.daily') }}</option>
@@ -29,15 +25,13 @@
           <option value="Yearly">{{ t('date.yearly') }}</option>
           <option value="Custom">{{ t('date.custom') }}</option>
 
-      </select>
+        </select>
       </div>
 
       <div class="filter-flex-wrap">
         <label class="show-on-desktop text-sm font-medium text-gray-700"> {{ t('categories.category') }} </label>
-        <select
-          v-model="filters.category" 
-          class="px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
+        <select v-model="filters.category"
+          class="px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
           <option value=""> {{ t('categories.allCategory') }} </option>
           <option v-for="category in uniqueCategories" :key="category" :value="category">
             {{ category }}
@@ -47,10 +41,8 @@
 
       <div class="filter-flex-wrap">
         <label class="show-on-desktop text-sm font-medium text-gray-700">{{ t('date.rangeDate') }}</label>
-        <select 
-          v-model="filters.dateRange" 
-          class="px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
+        <select v-model="filters.dateRange"
+          class="px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
           <option value="">{{ t('generalOperations.all') }}</option>
           <option value="today">{{ t('date.today') }}</option>
           <option value="week">{{ t('date.week') }}</option>
@@ -59,17 +51,14 @@
         </select>
       </div>
 
-      <button 
-        @click="resetFilters"
-        class="px-3 py-1.5 bg-gray-200 text-gray-700 rounded-md text-sm hover:bg-gray-300 transition-colors"
-      >
-          <RotateCcw class="wh-5 mr-1" />
+      <button @click="resetFilters"
+        class="px-3 py-1.5 bg-gray-200 text-gray-700 rounded-md text-sm hover:bg-gray-300 transition-colors">
+        <RotateCcw class="wh-5 mr-1" />
       </button>
     </div>
 
     <!-- 加载状态 -->
-    <div v-if="loading"
-      class="flex-justify-center h-25 text-gray-600">
+    <div v-if="loading" class="flex-justify-center h-25 text-gray-600">
       {{ t('loading') }}
     </div>
 
@@ -85,55 +74,39 @@
 
     <!-- 提醒网格 -->
     <div v-else class="reminder-grid grid gap-5 w-full mb-6">
-      <div
-        v-for="reminder in paginatedReminders"
-        :key="reminder.serialNum"
-        :class="[
-          'reminder-card bg-white border rounded-lg p-5 transition-shadow',
-          {
-            'border-red-500 bg-red-50': isOverdue(reminder),
-            'opacity-80 bg-green-50 border-green-400': reminder.isPaid,
-            'shadow-md hover:shadow-lg': true,
-          }
-        ]"
-      >
+      <div v-for="reminder in paginatedReminders" :key="reminder.serialNum" :class="[
+        'reminder-card bg-white border rounded-lg p-5 transition-shadow',
+        {
+          'border-red-500 bg-red-50': isOverdue(reminder),
+          'opacity-80 bg-green-50 border-green-400': reminder.isPaid,
+          'shadow-md hover:shadow-lg': true,
+        }
+      ]">
         <div class="flex justify-between items-center mb-4">
           <div class="text-lg font-semibold text-gray-800">
             {{ reminder.name }}
           </div>
           <div class="flex items-center gap-2">
-            <div
-              :class="[
-                'inline-flex items-center gap-1.5 px-2 py-1 rounded text-xs font-medium',
-                getStatusClass(reminder) === 'paid' ? 'bg-green-100 text-green-600' :
+            <div :class="[
+              'inline-flex items-center gap-1.5 px-2 py-1 rounded text-xs font-medium',
+              getStatusClass(reminder) === 'paid' ? 'bg-green-100 text-green-600' :
                 getStatusClass(reminder) === 'overdue' ? 'bg-red-100 text-red-600' :
-                'bg-blue-100 text-blue-600'
-              ]"
-            >
+                  'bg-blue-100 text-blue-600'
+            ]">
               <component :is="getStatusIcon(reminder)" class="w-4 h-4" />
               <span>{{ getStatusText(reminder) }}</span>
             </div>
             <div class="flex gap-1">
-              <button
-                v-if="!reminder.isPaid"
-                class="money-option-btn hover:(border-green-500 text-green-500)"
-                @click="emit('mark-paid', reminder.serialNum)"
-                :title="t('optionsAndStatus.markPaid')"
-              >
+              <button v-if="!reminder.isPaid" class="money-option-btn hover:(border-green-500 text-green-500)"
+                @click="emit('mark-paid', reminder.serialNum)" :title="t('optionsAndStatus.markPaid')">
                 <CheckCircle class="w-4 h-4" />
               </button>
-              <button
-                class="money-option-btn hover:(border-blue-500 text-blue-500)"
-                @click="emit('edit', reminder)"
-                :title="t('generalOperations.edit')"
-              >
+              <button class="money-option-btn hover:(border-blue-500 text-blue-500)" @click="emit('edit', reminder)"
+                :title="t('generalOperations.edit')">
                 <Edit class="w-4 h-4" />
               </button>
-              <button
-                class="money-option-btn hover:(border-red-500 text-red-500)"
-                @click="emit('delete', reminder.serialNum)"
-                :title="t('generalOperations.delete')"
-              >
+              <button class="money-option-btn hover:(border-red-500 text-red-500)"
+                @click="emit('delete', reminder.serialNum)" :title="t('generalOperations.delete')">
                 <Trash class="w-4 h-4" />
               </button>
             </div>
@@ -184,32 +157,27 @@
 
     <!-- 分页组件 -->
     <div v-if="filteredReminders.length > pageSize" class="flex justify-center">
-      <SimplePagination 
-        :current-page="currentPage"
-        :total-pages="totalPages"
-        :total-items="filteredReminders.length"
-        :page-size="pageSize"
-        @page-change="handlePageChange"
-      />
+      <SimplePagination :current-page="currentPage" :total-pages="totalPages" :total-items="filteredReminders.length"
+        :page-size="pageSize" @page-change="handlePageChange" />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import {
-  Trash,
-  Edit,
-  CheckCircle,
-  Repeat,
   AlertCircle,
+  CheckCircle,
   Clock,
+  Edit,
+  Repeat,
   RotateCcw,
+  Trash,
 } from 'lucide-vue-next';
-import {BilReminder} from '@/schema/money';
-import {formatDate, formatDateTime} from '@/utils/date';
-import {formatCurrency} from '../utils/money';
-import {getRepeatTypeName} from '@/utils/common';
 import SimplePagination from '@/components/common/SimplePagination.vue';
+import { BilReminder } from '@/schema/money';
+import { getRepeatTypeName } from '@/utils/common';
+import { formatDate, formatDateTime } from '@/utils/date';
+import { formatCurrency } from '../utils/money';
 
 interface Props {
   reminders: BilReminder[];
@@ -224,7 +192,7 @@ const emit = defineEmits<{
   'mark-paid': [serialNum: string];
 }>();
 
-const {t} = useI18n();
+const { t } = useI18n();
 // 过滤器状态
 const filters = ref({
   status: '',
@@ -339,7 +307,7 @@ watch(
   () => {
     currentPage.value = 1;
   },
-  {deep: true},
+  { deep: true },
 );
 
 // 原有的方法

@@ -245,10 +245,10 @@
 </template>
 
 <script setup lang="ts">
-import {Trash} from 'lucide-vue-next';
-import {usePeriodStore} from '@/stores/periodStore';
-import type {PeriodSettings} from '@/schema/health/period';
-import {PeriodDataManager} from '../utils/periodUtils';
+import { Trash } from 'lucide-vue-next';
+import type { PeriodSettings } from '@/schema/health/period';
+import { usePeriodStore } from '@/stores/periodStore';
+import { PeriodDataManager } from '../utils/periodUtils';
 
 // Store
 const periodStore = usePeriodStore();
@@ -388,7 +388,7 @@ const initializeSettings = () => {
 };
 
 // Watchers
-watch(() => periodStore.settings, initializeSettings, {deep: true});
+watch(() => periodStore.settings, initializeSettings, { deep: true });
 
 // Lifecycle
 onMounted(() => {

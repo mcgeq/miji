@@ -269,19 +269,19 @@ import {
   CalendarCheck,
   Edit,
   Eye,
-  Settings,
   Plus,
+  Settings,
   Trash,
   X,
 } from 'lucide-vue-next';
-import {usePeriodStore} from '@/stores/periodStore';
+import type { PeriodDailyRecords, PeriodRecords } from '@/schema/health/period';
+import { usePeriodStore } from '@/stores/periodStore';
+import { getTodayDate } from '@/utils/date';
 import PeriodCalendar from '../components/PeriodCalendar.vue';
-import PeriodStatsDashboard from './PeriodStatsDashboard.vue';
-import PeriodSettings from './PeriodSettings.vue';
-import PeriodRecordForm from './PeriodRecordForm.vue';
 import PeriodDailyForm from './PeriodDailyForm.vue';
-import type {PeriodRecords, PeriodDailyRecords} from '@/schema/health/period';
-import {getTodayDate} from '@/utils/date';
+import PeriodRecordForm from './PeriodRecordForm.vue';
+import PeriodSettings from './PeriodSettings.vue';
+import PeriodStatsDashboard from './PeriodStatsDashboard.vue';
 
 // Store
 const periodStore = usePeriodStore();
@@ -355,15 +355,15 @@ const currentTips = computed(() => {
   // 根据当前阶段提供特定建议
   if (phase === 'Menstrual') {
     return [
-      {id: 1, icon: 'i-tabler-cup', text: '多喝温水，避免冷饮'},
-      {id: 2, icon: 'i-tabler-bed', text: '充分休息，避免剧烈运动'},
-      {id: 3, icon: 'i-tabler-flame', text: '注意保暖，特别是腹部'},
+      { id: 1, icon: 'i-tabler-cup', text: '多喝温水，避免冷饮' },
+      { id: 2, icon: 'i-tabler-bed', text: '充分休息，避免剧烈运动' },
+      { id: 3, icon: 'i-tabler-flame', text: '注意保暖，特别是腹部' },
     ];
   } else if (phase === 'Ovulation') {
     return [
-      {id: 1, icon: 'i-tabler-heart', text: '排卵期，注意个人卫生'},
-      {id: 2, icon: 'i-tabler-activity', text: '适当运动有助于健康'},
-      {id: 3, icon: 'i-tabler-leaf', text: '多吃新鲜蔬果'},
+      { id: 1, icon: 'i-tabler-heart', text: '排卵期，注意个人卫生' },
+      { id: 2, icon: 'i-tabler-activity', text: '适当运动有助于健康' },
+      { id: 3, icon: 'i-tabler-leaf', text: '多吃新鲜蔬果' },
     ];
   }
 
@@ -500,7 +500,7 @@ watch(
       hasTodayRecord: !!newRecords.find((r) => r.date === selectedDate.value),
     });
   },
-  {deep: true},
+  { deep: true },
 );
 // Lifecycle
 onMounted(async () => {

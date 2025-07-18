@@ -3,34 +3,20 @@
     <!-- 头部导航 -->
     <div class="calendar-header">
       <div class="month-navigation">
-        <button 
-          @click="goToPreviousMonth"
-          class="nav-button"
-          aria-label="上个月"
-        >
+        <button @click="goToPreviousMonth" class="nav-button" aria-label="上个月">
           <ChevronUp class="wh-5" />
         </button>
         <h2 class="month-title">{{ currentMonthYear }}</h2>
-        <button 
-          @click="goToNextMonth"
-          class="nav-button"
-          aria-label="下个月"
-        >
+        <button @click="goToNextMonth" class="nav-button" aria-label="下个月">
           <ChevronDown class="wh-5" />
         </button>
       </div>
-      
+
       <div class="view-controls">
-        <button 
-          @click="goToToday"
-          class="control-button"
-        >
+        <button @click="goToToday" class="control-button">
           今天
         </button>
-        <button 
-          @click="toggleView"
-          class="control-button"
-        >
+        <button @click="toggleView" class="control-button">
           <i :class="viewMode === 'calendar' ? 'i-tabler-list' : 'i-tabler-calendar'" class="wh-3 mr-1" />
           {{ viewMode === 'calendar' ? '列表' : '日历' }}
         </button>
@@ -41,39 +27,21 @@
     <div v-if="viewMode === 'calendar'" class="calendar-container">
       <!-- 星期标题 -->
       <div class="weekdays-header">
-        <div 
-          v-for="day in weekDays" 
-          :key="day"
-          class="weekday-label"
-        >
+        <div v-for="day in weekDays" :key="day" class="weekday-label">
           {{ day }}
         </div>
       </div>
 
       <!-- 日期网格 -->
       <div class="calendar-grid">
-        <div
-          v-for="day in calendarDays"
-          :key="day.date"
-          class="calendar-cell"
-          :class="getCellClasses(day)"
-          @click="selectDate(day.date)"
-        >
+        <div v-for="day in calendarDays" :key="day.date" class="calendar-cell" :class="getCellClasses(day)"
+          @click="selectDate(day.date)">
           <span class="day-number">{{ day.day }}</span>
           <!-- 事件指示器 -->
           <div v-if="day.events.length > 0" class="event-indicators">
-            <div
-              v-for="event in day.events.slice(0, 2)"
-              :key="event.type"
-              class="event-dot"
-              :class="getEventDotClass(event)"
-              :title="getEventLabel(event)"
-            />
-            <div
-              v-if="day.events.length > 2"
-              class="event-dot more-events"
-              :title="`+${day.events.length - 2} 更多事件`"
-            />
+            <div v-for="event in day.events.slice(0, 2)" :key="event.type" class="event-dot"
+              :class="getEventDotClass(event)" :title="getEventLabel(event)" />
+            <div v-if="day.events.length > 2" class="event-dot more-events" :title="`+${day.events.length - 2} 更多事件`" />
           </div>
         </div>
       </div>
@@ -81,30 +49,21 @@
 
     <!-- 列表视图 -->
     <div v-else class="list-container">
-      <div
-        v-for="day in calendarDays.filter(d => d.events.length > 0)"
-        :key="day.date"
-        class="list-item"
-        @click="selectDate(day.date)"
-      >
+      <div v-for="day in calendarDays.filter(d => d.events.length > 0)" :key="day.date" class="list-item"
+        @click="selectDate(day.date)">
         <div class="list-item-content">
           <div class="date-info">
             <div class="date-primary">{{ formatDateShort(day.date) }}</div>
             <div class="date-secondary">{{ formatDateFull(day.date) }}</div>
           </div>
           <div class="event-badges">
-            <div
-              v-for="event in day.events"
-              :key="event.type"
-              class="event-badge"
-              :class="getEventBadgeClass(event)"
-            >
+            <div v-for="event in day.events" :key="event.type" class="event-badge" :class="getEventBadgeClass(event)">
               {{ getEventLabel(event) }}
             </div>
           </div>
         </div>
       </div>
-      
+
       <div v-if="calendarDays.filter(d => d.events.length > 0).length === 0" class="empty-state">
         <i class="i-tabler-calendar-x wh-8 text-gray-400" />
         <p class="text-sm text-gray-500 mt-2">本月暂无记录</p>
@@ -134,10 +93,10 @@
 </template>
 
 <script setup lang="ts">
-import {ChevronUp, ChevronDown} from 'lucide-vue-next';
-import {PeriodCalendarEvent} from '@/schema/health/period';
-import {usePeriodStore} from '@/stores/periodStore';
-import {getCurrentDate, getLocalISODateTimeWithOffset} from '@/utils/date';
+import { ChevronDown, ChevronUp } from 'lucide-vue-next';
+import { PeriodCalendarEvent } from '@/schema/health/period';
+import { usePeriodStore } from '@/stores/periodStore';
+import { getCurrentDate, getLocalISODateTimeWithOffset } from '@/utils/date';
 
 interface CalendarDay {
   date: string;
@@ -349,10 +308,7 @@ onMounted(() => {
 }
 
 .nav-button {
-  @apply w-7 h-7 flex items-center justify-center rounded-md
-         text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200
-         hover:bg-gray-200 dark:hover:bg-gray-700
-         transition-colors;
+  @apply w-7 h-7 flex items-center justify-center rounded-md text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors;
 }
 
 .month-title {
@@ -364,11 +320,7 @@ onMounted(() => {
 }
 
 .control-button {
-  @apply px-2 py-1 text-xs font-medium rounded-md border
-         border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700
-         text-gray-700 dark:text-gray-300
-         hover:bg-gray-50 dark:hover:bg-gray-600
-         transition-colors flex items-center;
+  @apply px-2 py-1 text-xs font-medium rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors flex items-center;
 }
 
 /* 日历容器 */
@@ -389,8 +341,7 @@ onMounted(() => {
 }
 
 .calendar-cell {
-  @apply relative w-8 h-8 flex flex-col items-center justify-center
-         cursor-pointer transition-all duration-150 hover:bg-gray-100 dark:hover:bg-gray-700;
+  @apply relative w-8 h-8 flex flex-col items-center justify-center cursor-pointer transition-all duration-150 hover:bg-gray-100 dark:hover:bg-gray-700;
 }
 
 .calendar-cell.other-month {
@@ -431,9 +382,7 @@ onMounted(() => {
 }
 
 .list-item {
-  @apply p-2 rounded-md border border-gray-200 dark:border-gray-700 
-         hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer
-         transition-colors;
+  @apply p-2 rounded-md border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors;
 }
 
 .list-item-content {
@@ -506,39 +455,39 @@ onMounted(() => {
   .calendar-header {
     @apply p-2;
   }
-  
+
   .month-title {
     @apply text-sm px-2;
   }
-  
+
   .nav-button {
     @apply w-6 h-6;
   }
-  
+
   .control-button {
     @apply px-1.5 py-0.5;
   }
-  
+
   .calendar-container {
     @apply p-1;
   }
-  
+
   .calendar-cell {
     @apply w-7 h-7;
   }
-  
+
   .day-number {
     @apply text-xs;
   }
-  
+
   .weekdays-header {
     @apply mb-0.5;
   }
-  
+
   .legend {
     @apply gap-2 p-2;
   }
-  
+
   .legend-item span {
     @apply text-xs;
   }
@@ -550,7 +499,7 @@ onMounted(() => {
   .calendar-cell.today {
     @apply shadow-sm;
   }
-  
+
   .calendar-cell.selected {
     @apply shadow-sm;
   }
@@ -576,11 +525,11 @@ onMounted(() => {
   .calendar-header {
     @apply bg-white border-b border-gray-400;
   }
-  
+
   .legend {
     @apply bg-white border-t border-gray-400;
   }
-  
+
   .calendar-cell {
     @apply hover:bg-white;
   }

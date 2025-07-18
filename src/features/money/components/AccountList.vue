@@ -6,38 +6,29 @@
         <!-- 账户状态过滤 -->
         <div class="filter-flex-wrap">
           <div class="flex gap-1">
-            <button
-              :class="[
-                'px-3 py-1.5 text-xs font-medium rounded-full border transition-all',
-                activeFilter === 'all' 
-                  ? 'bg-blue-500 text-white border-blue-500' 
-                  : 'bg-white text-gray-600 border-gray-300 hover:border-blue-400'
-              ]"
-              @click="setActiveFilter('all')"
-            >
+            <button :class="[
+              'px-3 py-1.5 text-xs font-medium rounded-full border transition-all',
+              activeFilter === 'all'
+                ? 'bg-blue-500 text-white border-blue-500'
+                : 'bg-white text-gray-600 border-gray-300 hover:border-blue-400'
+            ]" @click="setActiveFilter('all')">
               {{ t('generalOperations.all') }}<span class="ml-1 text-xs opacity-75">[{{ totalAccounts }}]</span>
             </button>
-            <button
-              :class="[
-                'px-3 py-1.5 text-xs font-medium rounded-full border transition-all',
-                activeFilter === 'active' 
-                  ? 'bg-green-500 text-white border-green-500' 
-                  : 'bg-white text-gray-600 border-gray-300 hover:border-green-400'
-              ]"
-              @click="setActiveFilter('active')"
-            >
+            <button :class="[
+              'px-3 py-1.5 text-xs font-medium rounded-full border transition-all',
+              activeFilter === 'active'
+                ? 'bg-green-500 text-white border-green-500'
+                : 'bg-white text-gray-600 border-gray-300 hover:border-green-400'
+            ]" @click="setActiveFilter('active')">
               <CheckCircle class="w-3 h-3 mr-1" />
               {{ t('generalOperations.active') }}<span class="ml-1 text-xs opacity-75">({{ activeAccounts }})</span>
             </button>
-            <button
-              :class="[
-                'px-3 py-1.5 text-xs font-medium rounded-full border transition-all',
-                activeFilter === 'inactive' 
-                  ? 'bg-gray-500 text-white border-gray-500' 
-                  : 'bg-white text-gray-600 border-gray-300 hover:border-gray-400'
-              ]"
-              @click="setActiveFilter('inactive')"
-            >
+            <button :class="[
+              'px-3 py-1.5 text-xs font-medium rounded-full border transition-all',
+              activeFilter === 'inactive'
+                ? 'bg-gray-500 text-white border-gray-500'
+                : 'bg-white text-gray-600 border-gray-300 hover:border-gray-400'
+            ]" @click="setActiveFilter('inactive')">
               <XCircle class="w-3 h-3 mr-1" />
               {{ t('generalOperations.inactive') }}<span class="ml-1 text-xs opacity-75">({{ inactiveAccounts }})</span>
             </button>
@@ -47,11 +38,8 @@
         <!-- 账户类型过滤 -->
         <div class="filter-flex-wrap">
           <span class="show-on-desktop text-sm font-medium text-gray-700">{{ t('others.types') }}</span>
-          <select
-            v-model="selectedType"
-            @change="handleTypeFilter"
-            class="px-3 py-1.5 text-xs border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          >
+          <select v-model="selectedType" @change="handleTypeFilter"
+            class="px-3 py-1.5 text-xs border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
             <option value=""> {{ t('generalOperations.all') }}{{ t('others.types') }} </option>
             <option v-for="type in accountTypes" :key="type" :value="type">
               {{ getAccountTypeName(type) }}
@@ -62,11 +50,8 @@
         <!-- 币种过滤 -->
         <div class="filter-flex-wrap">
           <span class="show-on-desktop text-sm font-medium text-gray-700">{{ t('financial.currency') }}</span>
-          <select
-            v-model="selectedCurrency"
-            @change="handleCurrencyFilter"
-            class="px-3 py-1.5 text-xs border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          >
+          <select v-model="selectedCurrency" @change="handleCurrencyFilter"
+            class="px-3 py-1.5 text-xs border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
             <option value=""> {{ t('generalOperations.all') }}{{ t('financial.currency') }} </option>
             <option v-for="currency in currencies" :key="currency" :value="currency">
               {{ currency }}
@@ -77,30 +62,22 @@
         <!-- 排序选项 -->
         <div class="filter-flex-wrap">
           <span class="show-on-desktop text-sm font-medium text-gray-700"> {{ t('generalOperations.sort') }} </span>
-          <select
-            v-model="sortBy"
-            @change="handleSortChange"
-            class="px-3 py-1.5 text-xs border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          >
+          <select v-model="sortBy" @change="handleSortChange"
+            class="px-3 py-1.5 text-xs border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
             <option value="createdAt">{{ t('date.createDate') }}</option>
             <option value="name">{{ t('financial.name') }}</option>
             <option value="balance">{{ t('financial.balance') }}</option>
             <option value="type">{{ t('financial.type') }}</option>
           </select>
-          <button
-            @click="toggleSortOrder"
-            class="p-1.5 text-gray-600 hover:text-blue-500 transition-colors"
-            :title="sortOrder === 'asc' ? t('generalOperations.asc') : t('generalOperations.desc') "
-          >
+          <button @click="toggleSortOrder" class="p-1.5 text-gray-600 hover:text-blue-500 transition-colors"
+            :title="sortOrder === 'asc' ? t('generalOperations.asc') : t('generalOperations.desc')">
             <ArrowUpDown class="w-4 h-4" :class="sortOrder === 'desc' && 'rotate-180'" />
           </button>
         </div>
 
         <!-- 清空过滤器 -->
-        <button
-          @click="resetFilters"
-          class="px-3 py-1.5 bg-gray-200 text-gray-700 rounded-md text-sm hover:bg-gray-300 transition-colors"
-        >
+        <button @click="resetFilters"
+          class="px-3 py-1.5 bg-gray-200 text-gray-700 rounded-md text-sm hover:bg-gray-300 transition-colors">
           <RotateCcw class="wh-5 mr-1" />
         </button>
       </div>
@@ -114,21 +91,17 @@
         <CreditCard class="wh-5" />
       </div>
       <div class="text-base">
-        {{ filteredAccounts.length === 0 ? t('financial.noPatternAccount')  : t('financial.noAccount') }}
+        {{ filteredAccounts.length === 0 ? t('financial.noPatternAccount') : t('financial.noAccount') }}
       </div>
     </div>
 
     <div v-else class="grid gap-5 mb-6" style="grid-template-columns: repeat(auto-fill, minmax(320px, 1fr))">
-      <div v-for="account in paginatedAccounts"
-        :key="account.serialNum"
-        :class="[
-          'bg-white border rounded-lg p-5 transition-all hover:shadow-md',
-          !account.isActive && 'opacity-60 bg-gray-100'
-        ]"
-        :style="{
-          borderColor: account.color || '#E5E7EB'
-        }"
-      >
+      <div v-for="account in paginatedAccounts" :key="account.serialNum" :class="[
+        'bg-white border rounded-lg p-5 transition-all hover:shadow-md',
+        !account.isActive && 'opacity-60 bg-gray-100'
+      ]" :style="{
+        borderColor: account.color || '#E5E7EB'
+      }">
         <div class="flex flex-wrap justify-between items-center mb-4 gap-2">
           <!-- 类型图标 + 类型名称 + 账户名称 + 币种-->
           <div class="flex items-center gap-3 text-gray-800">
@@ -140,32 +113,24 @@
 
           <!-- 操作按钮 -->
           <div class="flex items-center gap-1.5 self-end">
-            <button
-              class="money-option-btn hover:(border-green-500 text-green-500)"
-              @click="emit('toggle-active', account.serialNum)" 
-              :title="account.isActive ? t('generalOperations.stop') : t('generalOperations.enabled')"
-            >
+            <button class="money-option-btn hover:(border-green-500 text-green-500)"
+              @click="emit('toggle-active', account.serialNum)"
+              :title="account.isActive ? t('generalOperations.stop') : t('generalOperations.enabled')">
               <Ban class="w-4 h-4" />
             </button>
-            <button
-              class="money-option-btn hover:(border-blue-500 text-blue-500)"
-              @click="emit('edit', account)" 
-              :title="t('generalOperations.edit')"
-            >
+            <button class="money-option-btn hover:(border-blue-500 text-blue-500)" @click="emit('edit', account)"
+              :title="t('generalOperations.edit')">
               <Edit class="w-4 h-4" />
             </button>
-            <button
-              class="money-option-btn hover:(border-red-500 text-red-500)"
-              @click="emit('delete', account.serialNum)" 
-              :title="t('generalOperations.delete')"
-            >
+            <button class="money-option-btn hover:(border-red-500 text-red-500)"
+              @click="emit('delete', account.serialNum)" :title="t('generalOperations.delete')">
               <Trash class="w-4 h-4" />
             </button>
           </div>
         </div>
 
         <div class="flex items-baseline gap-2 mb-4">
-          <span class="text-2xl font-semibold text-gray-800">{{ formatCurrency(account.balance)}}</span>
+          <span class="text-2xl font-semibold text-gray-800">{{ formatCurrency(account.balance) }}</span>
         </div>
 
         <div class="border-t border-gray-200 pt-4">
@@ -183,43 +148,35 @@
 
     <!-- 分页组件 -->
     <div v-if="totalPages > 1" class="flex justify-center mt-6">
-      <SimplePagination
-        :current-page="currentPage"
-        :total-pages="totalPages"
-        :total-items="filteredAccounts.length"
-        :page-size="pageSize"
-        :show-total="false"
-        :show-page-size="true"
-        :page-size-options="[4, 8, 12, 20]"
-        @page-change="handlePageChange"
-        @page-size-change="handlePageSizeChange"
-      />
+      <SimplePagination :current-page="currentPage" :total-pages="totalPages" :total-items="filteredAccounts.length"
+        :page-size="pageSize" :show-total="false" :show-page-size="true" :page-size-options="[4, 8, 12, 20]"
+        @page-change="handlePageChange" @page-size-change="handlePageSizeChange" />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import {
-  Trash,
-  Edit,
+  ArrowUpDown,
   Ban,
-  PiggyBank,
-  DollarSign,
-  LucideIcon,
+  CheckCircle,
+  Cloud,
   CreditCard,
+  DollarSign,
+  Edit,
+  LucideIcon,
+  PiggyBank,
+  RotateCcw,
+  Trash,
   TrendingUp,
   Wallet,
   Wallet2,
-  Cloud,
-  CheckCircle,
   XCircle,
-  ArrowUpDown,
-  RotateCcw,
 } from 'lucide-vue-next';
-import {Account, AccountType} from '@/schema/money';
-import {formatDate} from '@/utils/date';
-import {formatCurrency} from '../utils/money';
 import SimplePagination from '@/components/common/SimplePagination.vue';
+import { Account, AccountType } from '@/schema/money';
+import { formatDate } from '@/utils/date';
+import { formatCurrency } from '../utils/money';
 
 interface Props {
   accounts: Account[];
@@ -234,7 +191,7 @@ const emit = defineEmits<{
   'toggle-active': [serialNum: string];
 }>();
 
-const {t} = useI18n();
+const { t } = useI18n();
 
 // 过滤和分页状态
 const activeFilter = ref<'all' | 'active' | 'inactive'>('all');
@@ -418,7 +375,6 @@ const getAccountTypeName = (type: AccountType): string => {
 
 <style lang="postcss">
 .money-option-btn {
-  @apply inline-flex items-center justify-center w-8 h-8 rounded-lg border border-gray-300 text-gray-600 
-         hover:shadow-md transition-all duration-200 bg-white;
+  @apply inline-flex items-center justify-center w-8 h-8 rounded-lg border border-gray-300 text-gray-600 hover:shadow-md transition-all duration-200 bg-white;
 }
 </style>

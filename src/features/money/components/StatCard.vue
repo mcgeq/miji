@@ -1,10 +1,8 @@
 <template>
-  <div
-    :class="[
-      'stat-card relative overflow-hidden rounded-xl p-5 bg-white shadow transition-all border-l-4',
-      colorBorderClass
-    ]"
-  >
+  <div :class="[
+    'stat-card relative overflow-hidden rounded-xl p-5 bg-white shadow transition-all border-l-4',
+    colorBorderClass
+  ]">
     <div class="flex justify-between items-center mb-4">
       <div class="text-sm font-medium uppercase tracking-wide text-gray-600">
         {{ title }}
@@ -17,12 +15,10 @@
     <div class="relative z-10">
       <div class="flex items-baseline gap-1 mb-2">
         <span class="text-lg font-semibold text-gray-500">{{ currency }}</span>
-        <span
-          :class="[
-            'text-3xl font-bold leading-none',
-            loading ? 'text-transparent bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 bg-clip-text animate-pulse' : 'text-gray-800'
-          ]"
-        >
+        <span :class="[
+          'text-3xl font-bold leading-none',
+          loading ? 'text-transparent bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 bg-clip-text animate-pulse' : 'text-gray-800'
+        ]">
           {{ formattedValue }}
         </span>
       </div>
@@ -38,22 +34,23 @@
     </div>
 
     <!-- Decorative overlay -->
-    <div class="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-transparent via-white/10 to-transparent rounded-full transform translate-x-8 -translate-y-8" />
+    <div
+      class="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-transparent via-white/10 to-transparent rounded-full transform translate-x-8 -translate-y-8" />
   </div>
 </template>
 
 
 <script setup lang="ts">
 import {
-  Wallet,
-  TrendingUp,
-  TrendingDown,
-  Target,
-  CreditCard,
-  PiggyBank,
-  ArrowUp,
   ArrowDown,
+  ArrowUp,
+  CreditCard,
   Minus,
+  PiggyBank,
+  Target,
+  TrendingDown,
+  TrendingUp,
+  Wallet,
 } from 'lucide-vue-next';
 
 interface Props {

@@ -1,5 +1,6 @@
 <template>
-  <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60]" @click.self="$emit('close')">
+  <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60]"
+    @click.self="$emit('close')">
     <div class="bg-white rounded-lg w-full max-w-2xl max-h-[90vh] overflow-hidden shadow-2xl">
       <!-- 头部 -->
       <div class="flex justify-between items-center p-6 border-b border-gray-200 bg-gray-50">
@@ -17,21 +18,14 @@
           <!-- 基本信息 -->
           <div class="space-y-4">
             <h3 class="text-lg font-medium text-gray-900 border-b border-gray-200 pb-2">基本信息</h3>
-            
+
             <!-- 账本名称 -->
             <div>
               <label for="name" class="block text-sm font-medium text-gray-700 mb-2">
                 账本名称 <span class="text-red-500">*</span>
               </label>
-              <input
-                id="name"
-                v-model="form.name"
-                type="text"
-                required
-                maxlength="50"
-                placeholder="例如：家庭主账本、投资理财账本"
-                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
+              <input id="name" v-model="form.name" type="text" required maxlength="50" placeholder="例如：家庭主账本、投资理财账本"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
               <p class="text-xs text-gray-500 mt-1">{{ form.name.length }}/50</p>
             </div>
 
@@ -40,14 +34,9 @@
               <label for="description" class="block text-sm font-medium text-gray-700 mb-2">
                 账本描述
               </label>
-              <textarea
-                id="description"
-                v-model="form.description"
-                rows="3"
-                maxlength="200"
+              <textarea id="description" v-model="form.description" rows="3" maxlength="200"
                 placeholder="简单描述这个账本的用途，例如：用于记录日常生活开支和收入"
-                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              ></textarea>
+                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"></textarea>
               <p class="text-xs text-gray-500 mt-1">{{ form.description.length }}/200</p>
             </div>
           </div>
@@ -55,24 +44,15 @@
           <!-- 货币设置 -->
           <div class="space-y-4">
             <h3 class="text-lg font-medium text-gray-900 border-b border-gray-200 pb-2">货币设置</h3>
-            
+
             <div>
               <label for="currency" class="block text-sm font-medium text-gray-700 mb-2">
                 基础货币 <span class="text-red-500">*</span>
               </label>
-              <select
-                id="currency"
-                v-model="form.baseCurrency.code"
-                @change="updateCurrencyInfo"
-                required
-                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              >
+              <select id="currency" v-model="form.baseCurrency.code" @change="updateCurrencyInfo" required
+                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                 <option value="">请选择货币</option>
-                <option 
-                  v-for="currency in availableCurrencies" 
-                  :key="currency.code" 
-                  :value="currency.code"
-                >
+                <option v-for="currency in availableCurrencies" :key="currency.code" :value="currency.code">
                   {{ currency.symbol }} {{ currency.code }} - {{ currency.nameZh }}
                 </option>
               </select>
@@ -86,11 +66,8 @@
           <div class="space-y-4">
             <div class="flex justify-between items-center border-b border-gray-200 pb-2">
               <h3 class="text-lg font-medium text-gray-900">家庭成员</h3>
-              <button
-                type="button"
-                @click="addMember"
-                class="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700"
-              >
+              <button type="button" @click="addMember"
+                class="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700">
                 <Plus class="w-4 h-4" />
                 添加成员
               </button>
@@ -103,26 +80,15 @@
             </div>
 
             <div v-else class="space-y-3">
-              <div 
-                v-for="(member, index) in form.members" 
-                :key="index"
-                class="flex items-center gap-3 p-3 border border-gray-200 rounded-md"
-              >
+              <div v-for="(member, index) in form.members" :key="index"
+                class="flex items-center gap-3 p-3 border border-gray-200 rounded-md">
                 <div class="flex-1">
-                  <input
-                    v-model="member.name"
-                    type="text"
-                    placeholder="成员姓名"
-                    required
-                    maxlength="20"
-                    class="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:border-blue-500"
-                  />
+                  <input v-model="member.name" type="text" placeholder="成员姓名" required maxlength="20"
+                    class="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:border-blue-500" />
                 </div>
                 <div class="flex-1">
-                  <select
-                    v-model="member.role"
-                    class="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:border-blue-500"
-                  >
+                  <select v-model="member.role"
+                    class="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:border-blue-500">
                     <option value="Owner">所有者</option>
                     <option value="Admin">管理员</option>
                     <option value="Member">成员</option>
@@ -131,19 +97,11 @@
                 </div>
                 <div class="flex items-center gap-2">
                   <label class="flex items-center gap-1 text-sm text-gray-600">
-                    <input
-                      v-model="member.isPrimary"
-                      type="checkbox"
-                      class="rounded border-gray-300"
-                    />
+                    <input v-model="member.isPrimary" type="checkbox" class="rounded border-gray-300" />
                     主要
                   </label>
-                  <button
-                    type="button"
-                    @click="removeMember(index)"
-                    class="text-red-500 hover:text-red-700 p-1"
-                    :disabled="form.members.length === 1"
-                  >
+                  <button type="button" @click="removeMember(index)" class="text-red-500 hover:text-red-700 p-1"
+                    :disabled="form.members.length === 1">
                     <Trash2 class="w-4 h-4" />
                   </button>
                 </div>
@@ -160,18 +118,12 @@
           <span v-else>创建新的家庭账本</span>
         </div>
         <div class="flex gap-3">
-          <button 
-            type="button"
-            @click="$emit('close')" 
-            class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
-          >
+          <button type="button" @click="$emit('close')"
+            class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors">
             取消
           </button>
-          <button 
-            @click="handleSubmit"
-            :disabled="!isFormValid || saving"
-            class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
+          <button @click="handleSubmit" :disabled="!isFormValid || saving"
+            class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
             <span v-if="saving">保存中...</span>
             <span v-else>{{ isEdit ? '更新' : '创建' }}</span>
           </button>
@@ -182,8 +134,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
-import { X, Plus, Users, Trash2 } from 'lucide-vue-next';
+import { Plus, Trash2, Users, X } from 'lucide-vue-next';
+import { computed, onMounted, ref } from 'vue';
 import { FamilyLedger } from '@/schema/money';
 import { toast } from '@/utils/toast';
 

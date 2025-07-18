@@ -10,30 +10,20 @@
     </div>
 
     <!-- 账本列表 -->
-    <FamilyLedgerList
-      :ledgers="ledgers"
-      :loading="loading"
-      @enter="enterLedger"
-      @edit="editLedger"
-      @delete="deleteLedger"
-    />
+    <FamilyLedgerList :ledgers="ledgers" :loading="loading" @enter="enterLedger" @edit="editLedger"
+      @delete="deleteLedger" />
 
     <!-- 模态框 -->
-    <FamilyLedgerModal
-      v-if="showLedgerModal"
-      :ledger="selectedLedger"
-      @close="closeLedgerModal"
-      @save="saveLedger"
-    />
+    <FamilyLedgerModal v-if="showLedgerModal" :ledger="selectedLedger" @close="closeLedgerModal" @save="saveLedger" />
   </div>
 </template>
 
 <script setup lang="ts">
-import {Plus} from 'lucide-vue-next';
+import { Plus } from 'lucide-vue-next';
+import { FamilyLedger } from '@/schema/money';
+import { toast } from '@/utils/toast';
 import FamilyLedgerList from '../components/FamilyLedgerList.vue';
 import FamilyLedgerModal from '../components/FamilyLedgerModal.vue';
-import {toast} from '@/utils/toast';
-import {FamilyLedger} from '@/schema/money';
 
 const loading = ref(false);
 const showLedgerModal = ref(false);

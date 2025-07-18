@@ -12,21 +12,11 @@
       <form @submit.prevent="saveBudget">
         <div class="mb-2 flex items-center justify-between">
           <label class="text-sm font-medium text-gray-700 mb-2">预算名称</label>
-          <input
-            v-model="form.name"
-            type="text"
-            required
-            class="w-2/3 modal-input-select"
-            placeholder="请输入预算名称"
-          />
+          <input v-model="form.name" type="text" required class="w-2/3 modal-input-select" placeholder="请输入预算名称" />
         </div>
         <div class="mb-2 flex items-center justify-between">
           <label class="text-sm font-medium text-gray-700 mb-2">预算类别</label>
-          <select
-            v-model="form.category"
-            required
-            class="w-2/3 modal-input-select"
-          >
+          <select v-model="form.category" required class="w-2/3 modal-input-select">
             <option value="">请选择类别</option>
             <option value="food">餐饮</option>
             <option value="transport">交通</option>
@@ -44,97 +34,53 @@
 
         <div class="mb-2 flex items-center justify-between">
           <label class="text-sm font-medium text-gray-700 mb-2">预算金额</label>
-          <input
-            v-model.number="form.amount"
-            type="number"
-            step="0.01"
-            required
-            class="w-2/3 modal-input-select"
-            placeholder="0.00"
-          />
+          <input v-model.number="form.amount" type="number" step="0.01" required class="w-2/3 modal-input-select"
+            placeholder="0.00" />
         </div>
- 
+
         <!-- 重复频率  -->
-        <RepeatPeriodSelector
-          v-model="form.repeatPeriod"
-          label="重复频率"
-          :error-message="validationErrors.repeatPeriod"
-          help-text="设置提醒的重复规则，可以精确控制重复时间"
-          @change="handleRepeatPeriodChange"
-          @validate="handleRepeatPeriodValidation"
-        />
+        <RepeatPeriodSelector v-model="form.repeatPeriod" label="重复频率" :error-message="validationErrors.repeatPeriod"
+          help-text="设置提醒的重复规则，可以精确控制重复时间" @change="handleRepeatPeriodChange"
+          @validate="handleRepeatPeriodValidation" />
 
         <div class="mt-2 mb-2 flex items-center justify-between">
           <label class="text-sm font-medium text-gray-700 mb-2">开始日期</label>
-          <input
-            v-model="form.startDate"
-            type="date"
-            required
-            class="w-2/3 modal-input-select"
-          />
+          <input v-model="form.startDate" type="date" required class="w-2/3 modal-input-select" />
         </div>
- 
+
         <div class="mb-2 flex items-center justify-between">
           <label class="text-sm font-medium text-gray-700 mb-2">结束日期</label>
-          <input
-            v-model="form.endDate"
-            type="date"
-            class="w-2/3 modal-input-select"
-          />
+          <input v-model="form.endDate" type="date" class="w-2/3 modal-input-select" />
         </div>
-        
+
         <div class="mb-2 flex items-center justify-between">
           <label class="text-sm font-medium text-gray-700 mb-2">颜色</label>
-          <ColorSelector
-            v-model="form.color"
-            :color-names="colorNameMap"
-          />
+          <ColorSelector v-model="form.color" :color-names="colorNameMap" />
         </div>
 
         <div class="mb-4 h-8 flex items-center justify-between">
           <div class="w-1/3">
             <label class="flex items-center">
-              <input
-                v-model="form.alertEnabled"
-                type="checkbox"
-                class="mr-2 modal-input-select"
-              />
+              <input v-model="form.alertEnabled" type="checkbox" class="mr-2 modal-input-select" />
               <span class="text-sm font-medium text-gray-700">启用超支提醒</span>
             </label>
           </div>
- 
+
           <div v-if="form.alertEnabled" class="w-2/3">
-            <input
-              v-model.number="form.alertThreshold"
-              type="number"
-              min="1"
-              max="100"
-              class="w-full modal-input-select"
-              placeholder="80"
-            />
+            <input v-model.number="form.alertThreshold" type="number" min="1" max="100"
+              class="w-full modal-input-select" placeholder="80" />
           </div>
         </div>
         <div class="mb-2">
-          <textarea
-            v-model="form.description"
-            rows="3"
-            class="w-full modal-input-select"
-            placeholder="预算描述（可选）"
-          ></textarea>
+          <textarea v-model="form.description" rows="3" class="w-full modal-input-select"
+            placeholder="预算描述（可选）"></textarea>
         </div>
- 
+
         <div class="flex justify-center space-x-3">
-          <button
-            type="button"
-            @click="closeModal"
-            class="modal-btn-x"
-          >
+          <button type="button" @click="closeModal" class="modal-btn-x">
             <X class="wh-5" />
           </button>
-          <button
-            type="submit"
-            class="modal-btn-check"
-          >
+          <button type="submit" class="modal-btn-check">
             <Check class="wh-5" />
           </button>
         </div>
@@ -144,15 +90,15 @@
 </template>
 
 <script setup lang="ts">
-import {Check, X} from 'lucide-vue-next';
-import {COLORS_MAP} from '@/constants/moneyConst';
+import { Check, X } from 'lucide-vue-next';
 import ColorSelector from '@/components/common/ColorSelector.vue';
-import {Budget} from '@/schema/money';
-import {CategorySchema, RepeatPeriod} from '@/schema/common';
-import {getLocalISODateTimeWithOffset} from '@/utils/date';
-import {uuid} from '@/utils/uuid';
-import {getLocalCurrencyInfo} from '../utils/money';
 import RepeatPeriodSelector from '@/components/common/RepeatPeriodSelector.vue';
+import { COLORS_MAP } from '@/constants/moneyConst';
+import { CategorySchema, RepeatPeriod } from '@/schema/common';
+import { Budget } from '@/schema/money';
+import { getLocalISODateTimeWithOffset } from '@/utils/date';
+import { uuid } from '@/utils/uuid';
+import { getLocalCurrencyInfo } from '../utils/money';
 
 const colorNameMap = ref(COLORS_MAP);
 
@@ -182,7 +128,7 @@ const budget = props.budget || {
   category: CategorySchema.enum.Others,
   amount: '',
   currency: getLocalCurrencyInfo(),
-  repeatPeriod: {type: 'None'},
+  repeatPeriod: { type: 'None' },
   startDate: '',
   endDate: '',
   usedAmount: '',
@@ -251,11 +197,10 @@ watch(
       Object.assign(form, clonedAccount);
     }
   },
-  {immediate: true, deep: true},
+  { immediate: true, deep: true },
 );
 </script>
 
 <style scoped>
 /* 自定义样式 */
 </style>
-

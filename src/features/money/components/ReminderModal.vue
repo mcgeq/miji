@@ -16,41 +16,17 @@
             提醒标题
             <span class="text-red-500 ml-1" aria-label="必填">*</span>
           </label>
-          <input
-            v-model="form.name"
-            type="text"
-            required
-            class="w-2/3 modal-input-select"
-            :class="{ 'border-red-500': validationErrors.name }"
-            placeholder="请输入提醒标题"
-            @blur="validateName"
-          />
+          <input v-model="form.name" type="text" required class="w-2/3 modal-input-select"
+            :class="{ 'border-red-500': validationErrors.name }" placeholder="请输入提醒标题" @blur="validateName" />
         </div>
-        <div
-          v-if="validationErrors.name"
-          class="text-sm text-red-600 dark:text-red-400 mb-2 text-right"
-          role="alert"
-        >
+        <div v-if="validationErrors.name" class="text-sm text-red-600 dark:text-red-400 mb-2 text-right" role="alert">
           {{ validationErrors.name }}
         </div>
 
-        <ReminderSelector
-          v-model="form.type"
-          label="提醒类型"
-          placeholder="请选择类型"
-          :required="true"
-          :error-message="validationErrors.type"
-          :show-grouped="true"
-          :show-quick-select="true"
-          :show-icons="true"
-          :popular-only="false"
-          :locale="locale"
-          width="2/3"
-          quick-select-label="常用类型"
-          help-text="选择合适的提醒类型以获得更好的分类和提醒体验"
-          @change="handleTypeChange"
-          @validate="handleTypeValidation"
-        />
+        <ReminderSelector v-model="form.type" label="提醒类型" placeholder="请选择类型" :required="true"
+          :error-message="validationErrors.type" :show-grouped="true" :show-quick-select="true" :show-icons="true"
+          :popular-only="false" :locale="locale" width="2/3" quick-select-label="常用类型"
+          help-text="选择合适的提醒类型以获得更好的分类和提醒体验" @change="handleTypeChange" @validate="handleTypeValidation" />
 
         <!-- 金额 -->
         <div class="mt-2 mb-2 flex items-center justify-between">
@@ -61,29 +37,17 @@
           <div class="w-2/3">
             <div class="flex items-center space-x-2">
               <div class="flex-1">
-              <input
-                v-model.number="form.amount"
-                type="number"
-                step="0.01"
-                min="0"
-                class="w-full modal-input-select"
-                :class="{ 'border-red-500': validationErrors.amount }"
-                :placeholder="amountPlaceholder"
-                :required="isFinanceType"
-                @blur="validateAmount"
-              />
+                <input v-model.number="form.amount" type="number" step="0.01" min="0" class="w-full modal-input-select"
+                  :class="{ 'border-red-500': validationErrors.amount }" :placeholder="amountPlaceholder"
+                  :required="isFinanceType" @blur="validateAmount" />
               </div>
               <div class="flex-1 mt-2">
-                <CurrencySelector width="full" v-model="form.currency"/>
+                <CurrencySelector width="full" v-model="form.currency" />
               </div>
             </div>
           </div>
         </div>
-        <div
-          v-if="validationErrors.amount"
-          class="text-sm text-red-600 dark:text-red-400 mb-2 text-right"
-          role="alert"
-        >
+        <div v-if="validationErrors.amount" class="text-sm text-red-600 dark:text-red-400 mb-2 text-right" role="alert">
           {{ validationErrors.amount }}
         </div>
 
@@ -93,64 +57,32 @@
             提醒日期
             <span class="text-red-500 ml-1" aria-label="必填">*</span>
           </label>
-          <input
-            v-model="form.remindDate"
-            type="date"
-            required
-            class="w-2/3 modal-input-select"
-            :class="{ 'border-red-500': validationErrors.remindDate }"
-            :min="today"
-            @blur="validateRemindDate"
-          />
+          <input v-model="form.remindDate" type="date" required class="w-2/3 modal-input-select"
+            :class="{ 'border-red-500': validationErrors.remindDate }" :min="today" @blur="validateRemindDate" />
         </div>
-        <div
-          v-if="validationErrors.remindDate"
-          class="text-sm text-red-600 dark:text-red-400 mb-2 text-right"
-          role="alert"
-        >
+        <div v-if="validationErrors.remindDate" class="text-sm text-red-600 dark:text-red-400 mb-2 text-right"
+          role="alert">
           {{ validationErrors.remindDate }}
         </div>
 
         <!-- 重复频率  -->
-        <RepeatPeriodSelector
-          v-model="form.repeatPeriod"
-          label="重复频率"
-          :error-message="validationErrors.repeatPeriod"
-          help-text="设置提醒的重复规则，可以精确控制重复时间"
-          @change="handleRepeatPeriodChange"
-          @validate="handleRepeatPeriodValidation"
-        />
+        <RepeatPeriodSelector v-model="form.repeatPeriod" label="重复频率" :error-message="validationErrors.repeatPeriod"
+          help-text="设置提醒的重复规则，可以精确控制重复时间" @change="handleRepeatPeriodChange"
+          @validate="handleRepeatPeriodValidation" />
 
         <!-- 优先级 -->
         <div class="mt-2 mb-2">
-          <PrioritySelector
-            v-model="form.priority"
-            label="优先级"
-            :error-message="validationErrors.priority"
-            :locale="locale"
-            :show-icons="true"
-            width="2/3"
-            help-text="选择合适的优先级来管理提醒的重要程度"
-            @change="handlePriorityChange"
-            @validate="handlePriorityValidation"
-          />
+          <PrioritySelector v-model="form.priority" label="优先级" :error-message="validationErrors.priority"
+            :locale="locale" :show-icons="true" width="2/3" help-text="选择合适的优先级来管理提醒的重要程度"
+            @change="handlePriorityChange" @validate="handlePriorityValidation" />
         </div>
         <!-- 提前提醒 -->
         <div class="mb-2 flex items-center justify-between">
           <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">提前提醒</label>
           <div class="flex items-center space-x-1 w-2/3">
-            <input
-              v-model.number="form.advanceValue"
-              type="number"
-              min="0"
-              max="999"
-              class="w-1/2 flex-1 modal-input-select"
-              placeholder="0"
-            />
-            <select
-              v-model="form.advanceUnit"
-              class="modal-input-select"
-            >
+            <input v-model.number="form.advanceValue" type="number" min="0" max="999"
+              class="w-1/2 flex-1 modal-input-select" placeholder="0" />
+            <select v-model="form.advanceUnit" class="modal-input-select">
               <option value="minutes">分钟</option>
               <option value="hours">小时</option>
               <option value="days">天</option>
@@ -162,20 +94,13 @@
         <!-- 颜色选择 -->
         <div class="mb-2 flex items-center justify-between">
           <label class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">颜色标记</label>
-          <ColorSelector
-            v-model="form.color"
-            :color-names="colorNameMap"
-          />
+          <ColorSelector v-model="form.color" :color-names="colorNameMap" />
         </div>
 
         <!-- 启用状态 -->
         <div class="mb-2">
           <label class="flex items-center">
-            <input
-              v-model="form.enabled"
-              type="checkbox"
-              class="mr-2"
-            />
+            <input v-model="form.enabled" type="checkbox" class="mr-2" />
             <span class="text-sm font-medium text-gray-700 dark:text-gray-300">启用提醒</span>
           </label>
         </div>
@@ -186,13 +111,8 @@
             描述
             <span class="text-gray-500">(可选)</span>
           </label>
-          <textarea
-            v-model="form.description"
-            rows="3"
-            class="w-full modal-input-select"
-            :placeholder="descriptionPlaceholder"
-            maxlength="200"
-          ></textarea>
+          <textarea v-model="form.description" rows="3" class="w-full modal-input-select"
+            :placeholder="descriptionPlaceholder" maxlength="200"></textarea>
           <div class="text-xs text-gray-500 dark:text-gray-400 mt-1 text-right">
             {{ form.description?.length || 0 }}/200
           </div>
@@ -200,20 +120,11 @@
 
         <!-- 操作按钮 -->
         <div class="flex justify-center space-x-3">
-          <button
-            type="button"
-            @click="closeModal"
-            class="modal-btn-x"
-            :disabled="isSubmitting"
-          >
+          <button type="button" @click="closeModal" class="modal-btn-x" :disabled="isSubmitting">
             <X class="wh-5" />
           </button>
-          <button
-            type="submit"
-            class="modal-btn-check"
-            :disabled="!isFormValid || isSubmitting"
-            :class="{ 'opacity-50 cursor-not-allowed': !isFormValid || isSubmitting }"
-          >
+          <button type="submit" class="modal-btn-check" :disabled="!isFormValid || isSubmitting"
+            :class="{ 'opacity-50 cursor-not-allowed': !isFormValid || isSubmitting }">
             <template v-if="isSubmitting">
               <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
             </template>
@@ -229,22 +140,22 @@
 
 <script setup lang="ts">
 import { Check, X } from 'lucide-vue-next';
-import { COLORS_MAP, DEFAULT_CURRENCY } from '@/constants/moneyConst';
 import ColorSelector from '@/components/common/ColorSelector.vue';
-import { uuid } from '@/utils/uuid';
-import { getLocalISODateTimeWithOffset } from '@/utils/date';
-import { BilReminder } from '@/schema/money';
-import {
-  CategorySchema,
-  PrioritySchema,
-  ReminderTypeSchema,
-  type Priority,
-} from '@/schema/common';
-import type { RepeatPeriod } from '@/schema/common';
+import CurrencySelector from '@/components/common/money/CurrencySelector.vue';
+import PrioritySelector from '@/components/common/PrioritySelector.vue';
 import ReminderSelector from '@/components/common/ReminderSelector.vue';
 import RepeatPeriodSelector from '@/components/common/RepeatPeriodSelector.vue';
-import PrioritySelector from '@/components/common/PrioritySelector.vue';
-import CurrencySelector from '@/components/common/money/CurrencySelector.vue';
+import { COLORS_MAP, DEFAULT_CURRENCY } from '@/constants/moneyConst';
+import type { RepeatPeriod } from '@/schema/common';
+import {
+  CategorySchema,
+  type Priority,
+  PrioritySchema,
+  ReminderTypeSchema,
+} from '@/schema/common';
+import { BilReminder } from '@/schema/money';
+import { getLocalISODateTimeWithOffset } from '@/utils/date';
+import { uuid } from '@/utils/uuid';
 
 const colorNameMap = ref(COLORS_MAP);
 
@@ -683,6 +594,7 @@ watch(
     flex-direction: column;
     align-items: stretch;
   }
+
   .mb-2 label {
     margin-bottom: 0.25rem;
   }

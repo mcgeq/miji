@@ -4,10 +4,8 @@
     <div class="flex flex-wrap justify-center items-center gap-3 mb-5 p-4 bg-gray-50 rounded-lg">
       <div class="filter-flex-wrap">
         <label class="show-on-desktop text-sm font-medium text-gray-700">{{ t('financial.transType') }}</label>
-        <select 
-          v-model="filters.transactionType" 
-          class="px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
+        <select v-model="filters.transactionType"
+          class="px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
           <option value="">{{ t('generalOperations.all') }}</option>
           <option value="Income">{{ t('financial.income') }}</option>
           <option value="Expense">{{ t('financial.expense') }}</option>
@@ -17,11 +15,9 @@
 
       <div class="filter-flex-wrap">
         <label class="show-on-desktop text-sm font-medium text-gray-700">{{ t('financial.account') }}</label>
-        <select 
-          v-model="filters.account" 
-          class="px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          <option value="">{{t('generalOperations.all')}}{{t('financial.account')}}</option>
+        <select v-model="filters.account"
+          class="px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <option value="">{{ t('generalOperations.all') }}{{ t('financial.account') }}</option>
           <option v-for="account in props.accounts" :key="account.serialNum" :value="account.serialNum">
             {{ account.name }}
           </option>
@@ -30,10 +26,8 @@
 
       <div class="filter-flex-wrap">
         <label class="show-on-desktop text-sm font-medium text-gray-700">{{ t('categories.category') }}</label>
-        <select 
-          v-model="filters.category" 
-          class="px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
+        <select v-model="filters.category"
+          class="px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
           <option value="">{{ t('categories.allCategory') }}</option>
           <option v-for="category in uniqueCategories" :key="category" :value="category">
             {{ category }}
@@ -43,26 +37,18 @@
 
       <div class="filter-flex-wrap">
         <label class="show-on-desktop text-sm font-medium text-gray-700">{{ t('date.startDate') }}</label>
-        <input 
-          type="date"
-          v-model="filters.dateFrom"
-          class="px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
+        <input type="date" v-model="filters.dateFrom"
+          class="px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
       </div>
 
       <div class="filter-flex-wrap">
         <label class="show-on-desktop text-sm font-medium text-gray-700">{{ t('date.endDate') }}</label>
-        <input 
-          type="date"
-          v-model="filters.dateTo"
-          class="px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
+        <input type="date" v-model="filters.dateTo"
+          class="px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
       </div>
 
-      <button
-        @click="resetFilters"
-        class="px-3 py-1.5 bg-gray-200 text-gray-700 rounded-md text-sm hover:bg-gray-300 transition-colors"
-      >
+      <button @click="resetFilters"
+        class="px-3 py-1.5 bg-gray-200 text-gray-700 rounded-md text-sm hover:bg-gray-300 transition-colors">
         <RotateCcw class="wh-5 mr-1" />
       </button>
     </div>
@@ -85,7 +71,8 @@
     <!-- 交易列表 -->
     <div v-else class="border border-gray-200 rounded-lg overflow-hidden mb-6">
       <!-- 表头 - 桌面版 -->
-      <div class="hidden md:grid md:grid-cols-[120px_140px_180px_140px_140px_120px] bg-gray-100 border-b border-gray-200 font-semibold text-gray-800">
+      <div
+        class="hidden md:grid md:grid-cols-[120px_140px_180px_140px_140px_120px] bg-gray-100 border-b border-gray-200 font-semibold text-gray-800">
         <div class="p-4 text-sm grid place-items-end">{{ t('others.types') }}</div>
         <div class="p-4 text-sm grid place-items-end">{{ t('financial.money') }}</div>
         <div class="p-4 text-sm grid place-items-end">{{ t('financial.account') }}</div>
@@ -95,11 +82,8 @@
       </div>
 
       <!-- 交易行 -->
-      <div
-        v-for="transaction in transactions"
-        :key="transaction.serialNum"
-        class="grid grid-cols-1 md:grid-cols-[120px_140px_180px_140px_140px_120px] border-b border-gray-200 hover:bg-gray-50 transition-colors"
-      >
+      <div v-for="transaction in transactions" :key="transaction.serialNum"
+        class="grid grid-cols-1 md:grid-cols-[120px_140px_180px_140px_140px_120px] border-b border-gray-200 hover:bg-gray-50 transition-colors">
         <!-- 类型列 -->
         <div class="p-4 text-sm flex justify-between md:justify-end md:items-center">
           <span class="md:hidden text-gray-600 font-semibold">{{ t('categories.category') }}</span>
@@ -112,15 +96,14 @@
         <!-- 金额列 -->
         <div class="p-4 text-sm flex justify-between md:justify-end md:items-center">
           <span class="md:hidden text-gray-600 font-semibold">{{ t('financial.money') }}</span>
-          <div
-            :class="[
-              'font-semibold text-lg',
-              transaction.transactionType === TransactionTypeSchema.enum.Income ? 'text-green-600' :
+          <div :class="[
+            'font-semibold text-lg',
+            transaction.transactionType === TransactionTypeSchema.enum.Income ? 'text-green-600' :
               transaction.transactionType === TransactionTypeSchema.enum.Expense ? 'text-red-500' :
-              'text-blue-500'
-            ]"
-          >
-            {{ transaction.transactionType === TransactionTypeSchema.enum.Expense ? '-' : '+' }}{{ formatCurrency(transaction.amount) }}
+                'text-blue-500'
+          ]">
+            {{ transaction.transactionType === TransactionTypeSchema.enum.Expense ? '-' : '+' }}{{
+              formatCurrency(transaction.amount) }}
           </div>
         </div>
 
@@ -155,25 +138,16 @@
         <div class="p-4 flex justify-between md:justify-end items-center">
           <span class="md:hidden text-gray-600 font-semibold">{{ t('optionsAndStatus.options') }}</span>
           <div class="flex gap-1">
-            <button
-              class="money-option-btn hover:(border-green-500 text-green-500)"
-              @click="emit('view-details', transaction)"
-              :title="t('generalOperations.view')"
-            >
+            <button class="money-option-btn hover:(border-green-500 text-green-500)"
+              @click="emit('view-details', transaction)" :title="t('generalOperations.view')">
               <Eye class="w-4 h-4" />
             </button>
-            <button
-              class="money-option-btn hover:(border-blue-500 text-blue-500)"
-              @click="emit('edit', transaction)"
-              :title="t('generalOperations.edit')"
-            >
+            <button class="money-option-btn hover:(border-blue-500 text-blue-500)" @click="emit('edit', transaction)"
+              :title="t('generalOperations.edit')">
               <Edit class="w-4 h-4" />
             </button>
-            <button
-              class="money-option-btn hover:(border-red-500 text-red-500)"
-              @click="emit('delete', transaction.serialNum)"
-              :title="t('generalOperations.delete')"
-            >
+            <button class="money-option-btn hover:(border-red-500 text-red-500)"
+              @click="emit('delete', transaction.serialNum)" :title="t('generalOperations.delete')">
               <Trash class="w-4 h-4" />
             </button>
           </div>
@@ -186,34 +160,27 @@
       <!-- 移动端紧凑分页 -->
       <div class="flex md:hidden items-center justify-center gap-2 bg-white p-2 rounded-lg shadow-sm border">
         <!-- 上一页 -->
-        <button
-          @click="handlePageChange(pagination.currentPage - 1)"
-          :disabled="pagination.currentPage <= 1"
-          class="p-1.5 rounded-md border border-gray-300 text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-        >
+        <button @click="handlePageChange(pagination.currentPage - 1)" :disabled="pagination.currentPage <= 1"
+          class="p-1.5 rounded-md border border-gray-300 text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50">
           <ChevronLeft class="w-4 h-4" />
         </button>
-        
+
         <!-- 页码信息 -->
         <span class="text-sm text-gray-700 px-2">
           {{ pagination.currentPage }}/{{ pagination.totalPages }}
         </span>
-        
+
         <!-- 下一页 -->
-        <button
-          @click="handlePageChange(pagination.currentPage + 1)"
+        <button @click="handlePageChange(pagination.currentPage + 1)"
           :disabled="pagination.currentPage >= pagination.totalPages"
-          class="p-1.5 rounded-md border border-gray-300 text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-        >
+          class="p-1.5 rounded-md border border-gray-300 text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50">
           <ChevronRight class="w-4 h-4" />
         </button>
-        
+
         <!-- 每页大小选择 -->
-        <select
-          :value="pagination.pageSize"
+        <select :value="pagination.pageSize"
           @change="handlePageSizeChange(Number(($event.target as HTMLSelectElement).value))"
-          class="text-xs border border-gray-300 rounded px-1 py-0.5 bg-white"
-        >
+          class="text-xs border border-gray-300 rounded px-1 py-0.5 bg-white">
           <option value="10">10</option>
           <option value="20">20</option>
           <option value="50">50</option>
@@ -223,21 +190,11 @@
 
       <!-- 桌面端完整分页 -->
       <div class="hidden md:block">
-        <SimplePagination 
-          :current-page="pagination.currentPage"
-          :total-pages="pagination.totalPages"
-          :total-items="pagination.totalItems"
-          :page-size="pagination.pageSize"
-          :show-page-size="true"
-          :page-size-options="[10, 20, 50, 100]"
-          :compact="false"
-          :responsive="false"
-          :show-total="false"
-          :show-jump="true"
-          :show-first-last="true"
-          @page-change="handlePageChange"
-          @page-size-change="handlePageSizeChange"
-        />
+        <SimplePagination :current-page="pagination.currentPage" :total-pages="pagination.totalPages"
+          :total-items="pagination.totalItems" :page-size="pagination.pageSize" :show-page-size="true"
+          :page-size-options="[10, 20, 50, 100]" :compact="false" :responsive="false" :show-total="false"
+          :show-jump="true" :show-first-last="true" @page-change="handlePageChange"
+          @page-size-change="handlePageSizeChange" />
       </div>
     </div>
   </div>
@@ -245,22 +202,22 @@
 
 <script setup lang="ts">
 import {
-  Trash,
-  Edit,
-  Eye,
-  TrendingUp,
-  TrendingDown,
-  Repeat,
-  RotateCcw,
   ChevronLeft,
   ChevronRight,
+  Edit,
+  Eye,
+  Repeat,
+  RotateCcw,
+  Trash,
+  TrendingDown,
+  TrendingUp,
 } from 'lucide-vue-next';
-import {TransactionType, TransactionTypeSchema} from '@/schema/common';
-import {TransactionWithAccount, Account} from '@/schema/money';
-import {formatDate} from '@/utils/date';
-import {formatCurrency} from '../utils/money';
-import {useMoneyStore} from '@/stores/moneyStore';
 import SimplePagination from '@/components/common/SimplePagination.vue';
+import { TransactionType, TransactionTypeSchema } from '@/schema/common';
+import { Account, TransactionWithAccount } from '@/schema/money';
+import { useMoneyStore } from '@/stores/moneyStore';
+import { formatDate } from '@/utils/date';
+import { formatCurrency } from '../utils/money';
 
 interface Props {
   accounts: Account[];
@@ -274,7 +231,7 @@ const emit = defineEmits<{
   'view-details': [transaction: TransactionWithAccount];
 }>();
 
-const {t} = useI18n();
+const { t } = useI18n();
 const moneyStore = useMoneyStore();
 
 // 数据状态
@@ -380,7 +337,7 @@ watch(
     pagination.value.currentPage = 1;
     loadTransactions();
   },
-  {deep: true},
+  { deep: true },
 );
 
 // 原有的方法

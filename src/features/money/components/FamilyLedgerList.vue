@@ -10,8 +10,7 @@
     </div>
 
     <div v-else class="grid gap-5" style="grid-template-columns: repeat(auto-fill, minmax(380px, 1fr))">
-      <div v-for="ledger in ledgers" :key="ledger.serialNum" 
-           class="card-hover p-5 transition-all duration-200">
+      <div v-for="ledger in ledgers" :key="ledger.serialNum" class="card-hover p-5 transition-all duration-200">
         <!-- 账本头部信息 -->
         <div class="flex justify-between items-start mb-4">
           <div class="flex-1">
@@ -41,14 +40,14 @@
           <div class="text-sm font-medium text-gray-700 mb-2">成员</div>
           <div class="flex flex-wrap gap-2">
             <div v-for="member in ledger.members.slice(0, 4)" :key="member.serialNum"
-                 class="flex items-center gap-1 px-2 py-1 bg-gray-100 rounded-full text-xs">
+              class="flex items-center gap-1 px-2 py-1 bg-gray-100 rounded-full text-xs">
               <Crown v-if="member.isPrimary" class="w-3 h-3 text-yellow-500" />
               <User v-else class="w-3 h-3 text-gray-500" />
               <span>{{ member.name }}</span>
               <span class="text-gray-500">({{ getRoleName(member.role) }})</span>
             </div>
-            <div v-if="ledger.members.length > 4" 
-                 class="flex items-center px-2 py-1 bg-gray-100 rounded-full text-xs text-gray-500">
+            <div v-if="ledger.members.length > 4"
+              class="flex items-center px-2 py-1 bg-gray-100 rounded-full text-xs text-gray-500">
               +{{ ledger.members.length - 4 }}
             </div>
           </div>
@@ -82,10 +81,10 @@
 </template>
 
 <script setup lang="ts">
-import { Users, Edit, Trash, LogIn, Crown, User } from 'lucide-vue-next';
+import { Crown, Edit, LogIn, Trash, User, Users } from 'lucide-vue-next';
+import { FamilyLedger } from '@/schema/money';
 import type { UserRole } from '@/schema/userRole';
 import { formatDate } from '@/utils/date';
-import { FamilyLedger } from '@/schema/money';
 
 interface Props {
   ledgers: FamilyLedger[];

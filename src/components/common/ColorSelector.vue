@@ -50,9 +50,9 @@
 </template>
 
 <script setup lang="ts">
-import { COLORS_MAP } from '@/constants/moneyConst';
-import { DefaultColors } from '@/schema/common';
-import { ref, onMounted, onUnmounted } from 'vue';
+import {COLORS_MAP} from '@/constants/moneyConst';
+import {DefaultColors} from '@/schema/common';
+import {ref, onMounted, onUnmounted} from 'vue';
 
 interface Props {
   modelValue: string;

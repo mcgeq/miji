@@ -135,9 +135,9 @@
 </template>
 
 <script setup lang="ts">
-import {Plus} from 'lucide-vue-next';
-import {usePeriodStore} from '@/stores/periodStore';
-import type {PeriodRecords} from '@/schema/health/period';
+import { Plus } from 'lucide-vue-next';
+import type { PeriodRecords } from '@/schema/health/period';
+import { usePeriodStore } from '@/stores/periodStore';
 
 // Emits
 const emit = defineEmits<{
@@ -325,9 +325,9 @@ const healthTips = computed(() => {
   const phase = stats.value.currentPhase;
   if (phase === 'Menstrual') {
     return [
-      {id: 1, icon: 'i-tabler-cup', text: '多喝温水，避免冷饮'},
-      {id: 2, icon: 'i-tabler-bed', text: '充分休息，避免剧烈运动'},
-      {id: 3, icon: 'i-tabler-flame', text: '注意保暖，特别是腹部'},
+      { id: 1, icon: 'i-tabler-cup', text: '多喝温水，避免冷饮' },
+      { id: 2, icon: 'i-tabler-bed', text: '充分休息，避免剧烈运动' },
+      { id: 3, icon: 'i-tabler-flame', text: '注意保暖，特别是腹部' },
     ];
   }
 

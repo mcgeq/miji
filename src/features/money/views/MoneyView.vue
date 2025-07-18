@@ -80,12 +80,8 @@
 
         <!-- 交易记录 -->
         <div v-if="activeTab === 'transactions'" class="transactions-section">
-          <TransactionList 
-            :accounts="accounts"
-            @edit="editTransaction"
-            @delete="deleteTransaction" 
-            @view-details="viewTransactionDetails" 
-          />
+          <TransactionList :accounts="accounts" @edit="editTransaction" @delete="deleteTransaction"
+            @view-details="viewTransactionDetails" />
         </div>
 
         <!-- 预算管理 -->
@@ -103,48 +99,45 @@
     </div>
 
     <!-- 模态框 -->
-    <TransactionModal v-if="showTransaction" :type="transactionType"
-      :transaction="selectedTransaction" :accounts="accounts" @close="closeTransactionModal" @save="saveTransaction" />
+    <TransactionModal v-if="showTransaction" :type="transactionType" :transaction="selectedTransaction"
+      :accounts="accounts" @close="closeTransactionModal" @save="saveTransaction" />
 
-    <AccountModal v-if="showAccount" :account="selectedAccount" @close="closeAccountModal"
-      @save="saveAccount" />
+    <AccountModal v-if="showAccount" :account="selectedAccount" @close="closeAccountModal" @save="saveAccount" />
 
-    <BudgetModal v-if="showBudget" :budget="selectedBudget" @close="closeBudgetModal"
-      @save="saveBudget" />
+    <BudgetModal v-if="showBudget" :budget="selectedBudget" @close="closeBudgetModal" @save="saveBudget" />
 
-    <ReminderModal v-if="showReminder" :reminder="selectedReminder" @close="closeReminderModal"
-      @save="saveReminder" />
+    <ReminderModal v-if="showReminder" :reminder="selectedReminder" @close="closeReminderModal" @save="saveReminder" />
   </div>
 </template>
 
 <script setup lang="ts">
 import {
-  PlusCircle,
-  MinusCircle,
   ArrowRightLeft,
-  Target,
-  CreditCard,
   Bell,
+  CreditCard,
+  MinusCircle,
+  PlusCircle,
+  Target,
 } from 'lucide-vue-next';
-import StatCard from '../components/StatCard.vue';
-import AccountList from '../components/AccountList.vue';
-import AccountModal from '../components/AccountModal.vue';
-import TransactionList from '../components/TransactionList.vue';
-import BudgetList from '../components/BudgetList.vue';
-import BudgetModal from '../components/BudgetModal.vue';
-import ReminderList from '../components/ReminderList.vue';
-import ReminderModal from '../components/ReminderModal.vue';
-import TransactionModal from '../components/TransactionModal.vue';
-import {useMoneyStore} from '@/stores/moneyStore';
+import { TransactionType, TransactionTypeSchema } from '@/schema/common';
 import {
   Account,
   BilReminder,
   Budget,
   TransactionWithAccount,
 } from '@/schema/money';
-import {TransactionType, TransactionTypeSchema} from '@/schema/common';
-import {toast} from '@/utils/toast';
-import {formatCurrency, getLocalCurrencyInfo} from '../utils/money';
+import { useMoneyStore } from '@/stores/moneyStore';
+import { toast } from '@/utils/toast';
+import AccountList from '../components/AccountList.vue';
+import AccountModal from '../components/AccountModal.vue';
+import BudgetList from '../components/BudgetList.vue';
+import BudgetModal from '../components/BudgetModal.vue';
+import ReminderList from '../components/ReminderList.vue';
+import ReminderModal from '../components/ReminderModal.vue';
+import StatCard from '../components/StatCard.vue';
+import TransactionList from '../components/TransactionList.vue';
+import TransactionModal from '../components/TransactionModal.vue';
+import { formatCurrency, getLocalCurrencyInfo } from '../utils/money';
 
 const moneyStore = useMoneyStore();
 
@@ -169,10 +162,10 @@ const transactionType = ref<TransactionType>(
 );
 
 const tabs = [
-  {key: 'accounts', label: '账户'},
-  {key: 'transactions', label: '交易'},
-  {key: 'budgets', label: '预算'},
-  {key: 'reminders', label: '提醒'},
+  { key: 'accounts', label: '账户' },
+  { key: 'transactions', label: '交易' },
+  { key: 'budgets', label: '预算' },
+  { key: 'reminders', label: '提醒' },
 ];
 
 const accounts = ref<Account[]>([]);

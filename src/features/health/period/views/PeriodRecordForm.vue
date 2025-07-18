@@ -181,7 +181,7 @@
         </div>
       </div>
       <div class="warning-note">
-        <i class="i-tabler-alert-triangle wh-4 text-orange-500" />
+        <Triangle class="wh-5" />
         <span>此操作无法撤销，请谨慎操作</span>
       </div>
     </ConfirmDialog>
@@ -206,20 +206,20 @@
 </template>
 
 <script setup lang="ts">
-import {X, Trash, Edit} from 'lucide-vue-next';
-import {usePeriodStore} from '@/stores/periodStore';
+import { Edit, Trash, Triangle, X } from 'lucide-vue-next';
+import ConfirmDialog from '@/components/common/ConfirmDialog.vue';
+import InputError from '@/components/common/InputError.vue';
+import WarningDialog from '@/components/common/WarningDialog.vue';
+import { Intensity, SymptomsType } from '@/schema/common';
+import type { PeriodRecords } from '@/schema/health/period';
+import { usePeriodStore } from '@/stores/periodStore';
+import { usePeriodValidation } from '../composables/usePeriodValidation';
 import {
   DateUtils,
   PeriodCalculator,
-  PeriodValidator,
   PeriodFormatter,
+  PeriodValidator,
 } from '../utils/periodUtils';
-import InputError from '@/components/common/InputError.vue';
-import ConfirmDialog from '@/components/common/ConfirmDialog.vue';
-import WarningDialog from '@/components/common/WarningDialog.vue';
-import type {PeriodRecords} from '@/schema/health/period';
-import {usePeriodValidation} from '../composables/usePeriodValidation';
-import {Intensity, SymptomsType} from '@/schema/common';
 
 // Props
 interface Props {
@@ -241,7 +241,7 @@ const emit = defineEmits<{
 
 // Store & Composables
 const periodStore = usePeriodStore();
-const {validatePeriodRecord, getFieldErrors, hasErrors, clearValidationErrors} =
+const { validatePeriodRecord, getFieldErrors, hasErrors, clearValidationErrors } =
   usePeriodValidation();
 
 // Reactive state
@@ -265,11 +265,11 @@ const symptoms = ref<Record<SymptomsType, Intensity | null>>({
 
 // Configuration
 const durationPresets = [
-  {days: 3, label: '3天'},
-  {days: 4, label: '4天'},
-  {days: 5, label: '5天'},
-  {days: 6, label: '6天'},
-  {days: 7, label: '7天'},
+  { days: 3, label: '3天' },
+  { days: 4, label: '4天' },
+  { days: 5, label: '5天' },
+  { days: 6, label: '6天' },
+  { days: 7, label: '7天' },
 ];
 
 const symptomGroups = [
@@ -294,9 +294,9 @@ const symptomGroups = [
 ];
 
 const intensityLevels = [
-  {value: 'Light' as const, label: '轻度'},
-  {value: 'Medium' as const, label: '中度'},
-  {value: 'Heavy' as const, label: '重度'},
+  { value: 'Light' as const, label: '轻度' },
+  { value: 'Medium' as const, label: '中度' },
+  { value: 'Heavy' as const, label: '重度' },
 ];
 
 // Computed
@@ -384,7 +384,7 @@ const canSubmit = computed(() => {
 });
 
 const deletionInfo = computed(() => {
-  if (!props.record) return {dateRange: '', duration: ''};
+  if (!props.record) return { dateRange: '', duration: '' };
 
   return {
     dateRange: DateUtils.formatDateRange(
@@ -398,7 +398,7 @@ const deletionInfo = computed(() => {
 });
 
 const overlapInfo = computed(() => {
-  if (!overlapRecord.value) return {dateRange: ''};
+  if (!overlapRecord.value) return { dateRange: '' };
 
   return {
     dateRange: DateUtils.formatDateRange(
@@ -592,7 +592,7 @@ const initializeForm = () => {
 };
 
 // Watchers
-watch(() => props.record, initializeForm, {immediate: true});
+watch(() => props.record, initializeForm, { immediate: true });
 
 // Lifecycle
 onMounted(() => {

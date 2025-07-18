@@ -9,10 +9,10 @@
 // Modified   By:  mcgeq <mcgeq@outlook.com>
 // -----------------------------------------------------------------------------
 
-import { getDb } from '@/db';
-import { Projects } from '@/schema/todos';
-import { toCamelCase, toSnakeCase } from '@/utils/common';
-import { Lg } from '@/utils/debugLog';
+import {getDb} from '@/db';
+import {Projects} from '@/schema/todos';
+import {toCamelCase, toSnakeCase} from '@/utils/common';
+import {Lg} from '@/utils/debugLog';
 
 type UpdatableFields = Partial<Record<keyof Projects, string | boolean | null>>;
 

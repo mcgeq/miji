@@ -16,10 +16,8 @@
           <div class="text-sm text-gray-600">
             共 {{ ledgers.length }} 个账本
           </div>
-          <button 
-            @click="showCreateForm = true" 
-            class="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
-          >
+          <button @click="showCreateForm = true"
+            class="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors">
             <Plus class="w-4 h-4" />
             创建新账本
           </button>
@@ -27,31 +25,24 @@
 
         <!-- 账本列表 -->
         <div v-if="ledgers.length > 0" class="grid gap-4">
-          <div 
-            v-for="ledger in ledgers" 
-            :key="ledger.serialNum"
-            :class="[
-              'border rounded-lg p-4 cursor-pointer transition-all hover:shadow-md',
-              currentLedgerId === ledger.serialNum 
-                ? 'border-blue-500 bg-blue-50 shadow-md' 
-                : 'border-gray-200 hover:border-gray-300'
-            ]"
-            @click="selectLedger(ledger.serialNum)"
-          >
+          <div v-for="ledger in ledgers" :key="ledger.serialNum" :class="[
+            'border rounded-lg p-4 cursor-pointer transition-all hover:shadow-md',
+            currentLedgerId === ledger.serialNum
+              ? 'border-blue-500 bg-blue-50 shadow-md'
+              : 'border-gray-200 hover:border-gray-300'
+          ]" @click="selectLedger(ledger.serialNum)">
             <div class="flex justify-between items-start">
               <div class="flex-1">
                 <div class="flex items-center gap-3 mb-2">
                   <h3 class="font-semibold text-gray-900 text-lg">{{ ledger.name }}</h3>
-                  <span 
-                    v-if="currentLedgerId === ledger.serialNum"
-                    class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full font-medium"
-                  >
+                  <span v-if="currentLedgerId === ledger.serialNum"
+                    class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full font-medium">
                     当前使用
                   </span>
                 </div>
-                
+
                 <p class="text-gray-600 text-sm mb-3">{{ ledger.description || '暂无描述' }}</p>
-                
+
                 <div class="flex items-center gap-6 text-xs text-gray-500">
                   <div class="flex items-center gap-1">
                     <CreditCard class="w-3 h-3" />
@@ -67,21 +58,16 @@
                   </div>
                 </div>
               </div>
-              
+
               <div class="flex gap-2 ml-4">
-                <button 
-                  @click.stop="editLedger(ledger)"
+                <button @click.stop="editLedger(ledger)"
                   class="text-gray-400 hover:text-blue-600 p-2 rounded-md hover:bg-blue-50 transition-colors"
-                  title="编辑账本"
-                >
+                  title="编辑账本">
                   <Edit class="w-4 h-4" />
                 </button>
-                <button 
-                  @click.stop="deleteLedger(ledger)"
-                  class="text-gray-400 hover:text-red-600 p-2 rounded-md hover:bg-red-50 transition-colors"
-                  title="删除账本"
-                  :disabled="currentLedgerId === ledger.serialNum"
-                >
+                <button @click.stop="deleteLedger(ledger)"
+                  class="text-gray-400 hover:text-red-600 p-2 rounded-md hover:bg-red-50 transition-colors" title="删除账本"
+                  :disabled="currentLedgerId === ledger.serialNum">
                   <Trash2 class="w-4 h-4" />
                 </button>
               </div>
@@ -96,10 +82,8 @@
           <p class="text-gray-500 mb-8 max-w-md mx-auto">
             创建您的第一个家庭账本，开始管理家庭财务。每个账本可以有不同的成员和货币设置。
           </p>
-          <button 
-            @click="showCreateForm = true"
-            class="bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700 transition-colors"
-          >
+          <button @click="showCreateForm = true"
+            class="bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700 transition-colors">
             创建第一个账本
           </button>
         </div>
@@ -116,17 +100,12 @@
           </span>
         </div>
         <div class="flex gap-3">
-          <button 
-            @click="$emit('close')" 
-            class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
-          >
+          <button @click="$emit('close')"
+            class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors">
             关闭
           </button>
-          <button 
-            v-if="currentLedgerId && currentLedgerId !== props.currentLedgerId"
-            @click="confirmSelection"
-            class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-          >
+          <button v-if="currentLedgerId && currentLedgerId !== props.currentLedgerId" @click="confirmSelection"
+            class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
             确认选择
           </button>
         </div>
@@ -134,27 +113,23 @@
     </div>
 
     <!-- 创建/编辑表单模态框 -->
-    <LedgerFormModal
-      v-if="showCreateForm || editingLedger"
-      :ledger="editingLedger"
-      @close="closeForm"
-      @save="handleSave"
-    />
+    <LedgerFormModal v-if="showCreateForm || editingLedger" :ledger="editingLedger" @close="closeForm"
+      @save="handleSave" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
 import {
-  X,
-  Plus,
-  Edit,
-  Trash2,
-  HandCoins,
-  CreditCard,
-  Users,
   Calendar,
+  CreditCard,
+  Edit,
+  HandCoins,
+  Plus,
+  Trash2,
+  Users,
+  X,
 } from 'lucide-vue-next';
+import { computed, ref } from 'vue';
 import { FamilyLedger } from '@/schema/money';
 import { toast } from '@/utils/toast';
 import LedgerFormModal from './LedgerFormModal.vue'; // 需要创建这个组件

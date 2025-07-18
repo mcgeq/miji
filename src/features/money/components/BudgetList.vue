@@ -4,10 +4,8 @@
     <div class="flex flex-wrap justify-center items-center gap-3 mb-5 p-4 bg-gray-50 rounded-lg">
       <div class="filter-flex-wrap">
         <label class="show-on-desktop text-sm font-medium text-gray-700">{{ t('optionsAndStatus.status') }}</label>
-        <select 
-          v-model="filters.status" 
-          class="px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
+        <select v-model="filters.status"
+          class="px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
           <option value="">{{ t('generalOperations.all') }}</option>
           <option value="active">{{ t('generalOperations.active') }}</option>
           <option value="inactive">{{ t('generalOperations.inactive') }}</option>
@@ -15,11 +13,10 @@
       </div>
 
       <div class="filter-flex-wrap">
-        <label class="show-on-desktop text-sm font-medium text-gray-700"> {{ t('generalOperations.completed') }}{{ t('optionsAndStatus.status') }} </label>
-        <select 
-          v-model="filters.completion" 
-          class="px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
+        <label class="show-on-desktop text-sm font-medium text-gray-700"> {{ t('generalOperations.completed') }}{{
+          t('optionsAndStatus.status') }} </label>
+        <select v-model="filters.completion"
+          class="px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
           <option value="">{{ t('generalOperations.all') }}</option>
           <option value="normal"> {{ t('optionsAndStatus.normal') }} </option>
           <option value="warning">{{ t('optionsAndStatus.warning') }}(>70%)</option>
@@ -29,10 +26,8 @@
 
       <div class="filter-flex-wrap">
         <label class="show-on-desktop text-sm font-medium text-gray-700">{{ t('others.periodType') }}</label>
-        <select 
-          v-model="filters.period" 
-          class="px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
+        <select v-model="filters.period"
+          class="px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
           <option value="">{{ t('generalOperations.all') }}</option>
           <option value="None">{{ t('date.none') }}</option>
           <option value="Daily">{{ t('date.daily') }}</option>
@@ -45,39 +40,28 @@
 
       <div class="filter-flex-wrap">
         <label class="show-on-desktop text-sm font-medium text-gray-700"> {{ t('categories.category') }} </label>
-        <select 
-          v-model="filters.category" 
-          class="px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
+        <select v-model="filters.category"
+          class="px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
           <option value=""> {{ t('categories.allCategory') }} </option>
-          <option
-            v-for="category in uniqueCategories"
-            :key="category"
-            :value="category">
+          <option v-for="category in uniqueCategories" :key="category" :value="category">
             {{ category }}
           </option>
         </select>
       </div>
 
-      <button 
-        @click="resetFilters"
-        class="px-3 py-1.5 bg-gray-200 text-gray-700 rounded-md text-sm hover:bg-gray-300 transition-colors"
-      >
-          <RotateCcw class="wh-5 mr-1" />
+      <button @click="resetFilters"
+        class="px-3 py-1.5 bg-gray-200 text-gray-700 rounded-md text-sm hover:bg-gray-300 transition-colors">
+        <RotateCcw class="wh-5 mr-1" />
       </button>
     </div>
 
     <!-- 加载状态 -->
-    <div
-      v-if="loading"
-      class="flex-justify-center h-25 text-gray-600">
+    <div v-if="loading" class="flex-justify-center h-25 text-gray-600">
       {{ t('loading') }}
     </div>
 
     <!-- 空状态 -->
-    <div
-      v-else-if="paginatedBudgets.length === 0"
-      class="flex-justify-center flex-col h-25 text-#999">
+    <div v-else-if="paginatedBudgets.length === 0" class="flex-justify-center flex-col h-25 text-#999">
       <div class="text-sm mb-2 opacity-50">
         <i class="icon-target"></i>
       </div>
@@ -87,37 +71,26 @@
     </div>
 
     <!-- 预算网格 -->
-    <div
-      v-else
-      class="budget-grid grid gap-5 w-full mb-6">
-      <div v-for="budget in paginatedBudgets"
-        :key="budget.serialNum"
-        :class="[
+    <div v-else class="budget-grid grid gap-5 w-full mb-6">
+      <div v-for="budget in paginatedBudgets" :key="budget.serialNum" :class="[
         'bg-white border rounded-md p-1.5 transition-all hover:shadow-md',
         { 'opacity-60 bg-gray-100': !budget.isActive }
-        ]"
-        :style="{
-          borderColor: budget.color || '#E5E7EB'
-        }"
-      >
+      ]" :style="{
+        borderColor: budget.color || '#E5E7EB'
+      }">
         <!-- Header -->
         <div class="flex flex-wrap justify-between items-center mb-2 gap-2">
           <!-- 左侧预算名称 -->
           <div class="flex items-center text-gray-800">
             <span class="text-lg font-semibold">{{ budget.name }}</span>
             <!-- 状态标签 -->
-            <span
-              v-if="!budget.isActive"
-              class="ml-2 px-2 py-0.5 bg-gray-200 text-gray-600 text-xs rounded">
+            <span v-if="!budget.isActive" class="ml-2 px-2 py-0.5 bg-gray-200 text-gray-600 text-xs rounded">
               {{ t('optionsAndStatus.inactive') }}
             </span>
-            <span
-              v-else-if="isOverBudget(budget)"
-              class="ml-2 px-2 py-0.5 bg-red-100 text-red-600 text-xs rounded">
+            <span v-else-if="isOverBudget(budget)" class="ml-2 px-2 py-0.5 bg-red-100 text-red-600 text-xs rounded">
               {{ t('optionsAndStatus.exceeded') }}
             </span>
-            <span
-              v-else-if="isLowOnBudget(budget)"
+            <span v-else-if="isLowOnBudget(budget)"
               class="ml-2 px-2 py-0.5 bg-yellow-100 text-yellow-600 text-xs rounded">
               {{ t('optionsAndStatus.warning') }}
             </span>
@@ -125,22 +98,17 @@
 
           <!-- 右侧按钮组 -->
           <div class="flex items-center gap-1 md:self-end">
-            <button
-              class="money-option-btn hover:(border-green-500 text-green-500)"
-              @click="emit('edit', budget)"
+            <button class="money-option-btn hover:(border-green-500 text-green-500)" @click="emit('edit', budget)"
               :title="t('generalOperations.edit')">
               <Edit class="w-4 h-4" />
             </button>
-            <button
-              class="money-option-btn hover:(border-blue-500 text-blue-500)"
+            <button class="money-option-btn hover:(border-blue-500 text-blue-500)"
               @click="emit('toggle-active', budget.serialNum)"
               :title="budget.isActive ? t('generalOperations.stop') : t('generalOperations.enabled')">
               <component :is="budget.isActive ? Ban : StopCircle" class="w-4 h-4" />
             </button>
-            <button
-              class="money-option-btn hover:(border-red-500 text-red-500)"
-              @click="emit('delete', budget.serialNum)"
-              :title="t('generalOperations.delete')">
+            <button class="money-option-btn hover:(border-red-500 text-red-500)"
+              @click="emit('delete', budget.serialNum)" :title="t('generalOperations.delete')">
               <Trash class="w-4 h-4" />
             </button>
           </div>
@@ -162,7 +130,7 @@
                 'text-lg font-semibold',
                 shouldHighlightRed(budget) ? 'text-red-500' : 'text-green-500'
               ]">
-               {{ formatCurrency(getRemainingAmount(budget)) }}
+                {{ formatCurrency(getRemainingAmount(budget)) }}
               </div>
             </div>
           </div>
@@ -170,8 +138,7 @@
             <div class="h-full transition-[width] duration-300" :style="{ width: `${getProgressPercent(budget)}%` }"
               :class="isOverBudget(budget) ? 'bg-red-500' : 'bg-blue-500'"></div>
           </div>
-          <div class="text-center text-lg"
-            :class="shouldHighlightRed(budget) ? 'text-red-500' : 'text-gray-600'">
+          <div class="text-center text-lg" :class="shouldHighlightRed(budget) ? 'text-red-500' : 'text-gray-600'">
             {{ getProgressPercent(budget) }}%
           </div>
         </div>
@@ -196,24 +163,19 @@
 
     <!-- 分页组件 -->
     <div v-if="filteredBudgets.length > pageSize" class="flex justify-center">
-      <SimplePagination 
-        :current-page="currentPage"
-        :total-pages="totalPages"
-        :total-items="filteredBudgets.length"
-        :page-size="pageSize"
-        @page-change="handlePageChange"
-      />
+      <SimplePagination :current-page="currentPage" :total-pages="totalPages" :total-items="filteredBudgets.length"
+        :page-size="pageSize" @page-change="handlePageChange" />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import {Trash, Edit, StopCircle, Ban, Repeat, RotateCcw} from 'lucide-vue-next';
-import {Budget} from '@/schema/money';
-import {formatDate} from '@/utils/date';
-import {formatCurrency} from '../utils/money';
-import {getRepeatTypeName} from '@/utils/common';
+import { Ban, Edit, Repeat, RotateCcw, StopCircle, Trash } from 'lucide-vue-next';
 import SimplePagination from '@/components/common/SimplePagination.vue';
+import { Budget } from '@/schema/money';
+import { getRepeatTypeName } from '@/utils/common';
+import { formatDate } from '@/utils/date';
+import { formatCurrency } from '../utils/money';
 
 interface Props {
   budgets: Budget[];
@@ -228,7 +190,7 @@ const emit = defineEmits<{
   'toggle-active': [serialNum: string];
 }>();
 
-const {t} = useI18n();
+const { t } = useI18n();
 
 // 过滤器状态
 const filters = ref({
@@ -329,7 +291,7 @@ watch(
   () => {
     currentPage.value = 1;
   },
-  {deep: true},
+  { deep: true },
 );
 
 // 原有的方法

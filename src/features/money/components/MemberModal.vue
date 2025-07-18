@@ -12,13 +12,7 @@
         <div class="space-y-3">
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">姓名</label>
-            <input
-              v-model="form.name"
-              type="text"
-              required
-              class="w-full modal-input-select"
-              placeholder="请输入成员姓名"
-            />
+            <input v-model="form.name" type="text" required class="w-full modal-input-select" placeholder="请输入成员姓名" />
           </div>
 
           <div>
@@ -35,21 +29,13 @@
 
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">权限设置</label>
-            <textarea
-              v-model="form.permissions"
-              rows="3"
-              class="w-full modal-input-select"
-              placeholder="权限描述（可选）"
-            ></textarea>
+            <textarea v-model="form.permissions" rows="3" class="w-full modal-input-select"
+              placeholder="权限描述（可选）"></textarea>
           </div>
 
           <div>
             <label class="flex items-center">
-              <input
-                v-model="form.isPrimary"
-                type="checkbox"
-                class="mr-2"
-              />
+              <input v-model="form.isPrimary" type="checkbox" class="mr-2" />
               <span class="text-sm font-medium text-gray-700">设为主要成员</span>
             </label>
           </div>
@@ -70,10 +56,10 @@
 
 <script setup lang="ts">
 import { Check, X } from 'lucide-vue-next';
-import { uuid } from '@/utils/uuid';
-import { getLocalISODateTimeWithOffset } from '@/utils/date';
-import { UserRoleSchema } from '@/schema/userRole';
 import { FamilyMember } from '@/schema/money';
+import { UserRoleSchema } from '@/schema/userRole';
+import { getLocalISODateTimeWithOffset } from '@/utils/date';
+import { uuid } from '@/utils/uuid';
 
 interface Props {
   member: FamilyMember | null;

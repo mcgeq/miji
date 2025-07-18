@@ -1,5 +1,5 @@
-import { DEFAULT_CURRENCY } from '@/constants/moneyConst';
-import { Currency } from '@/schema/common';
+import {DEFAULT_CURRENCY} from '@/constants/moneyConst';
+import {Currency} from '@/schema/common';
 
 export const formatCurrency = (amount: string | number) => {
   const num = typeof amount === 'string' ? parseFloat(amount) : amount;

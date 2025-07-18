@@ -23,15 +23,8 @@
         <!-- 金额 -->
         <div class="flex items-center justify-between mt-4">
           <label class="text-sm font-medium mb-1">金额</label>
-          <input
-            type="number"
-            v-model="form.amount"
-            class="w-2/3 modal-input-select"
-            placeholder="请输入金额"
-            step="0.01"
-            min="0"
-            required
-          />
+          <input type="number" v-model="form.amount" class="w-2/3 modal-input-select" placeholder="请输入金额" step="0.01"
+            min="0" required />
         </div>
 
         <!-- 账户 -->
@@ -41,11 +34,7 @@
           </label>
           <select v-model="form.accountSerialNum" class="w-2/3 modal-input-select" required>
             <option value="">请选择账户</option>
-            <option
-              v-for="account in accounts"
-              :key="account.serialNum"
-              :value="account.serialNum"
-            >
+            <option v-for="account in accounts" :key="account.serialNum" :value="account.serialNum">
               {{ account.name }} ({{ formatCurrency(account.balance) }})
             </option>
           </select>
@@ -56,11 +45,7 @@
           <label class="block text-sm font-medium mb-1">分类</label>
           <select v-model="form.category" class="w-2/3 modal-input-select" required>
             <option value="">请选择分类</option>
-            <option
-              v-for="category in filteredCategories"
-              :key="category.name"
-              :value="category.name"
-            >
+            <option v-for="category in filteredCategories" :key="category.name" :value="category.name">
               {{ category.name }}
             </option>
           </select>
@@ -71,11 +56,7 @@
           <label class="text-sm font-medium mb-1">子分类</label>
           <select v-model="form.subCategory" class="w-2/3 modal-input-select">
             <option value="">请选择子分类</option>
-            <option
-              v-for="subcategory in filteredSubcategories"
-              :key="subcategory.name"
-              :value="subcategory.name"
-            >
+            <option v-for="subcategory in filteredSubcategories" :key="subcategory.name" :value="subcategory.name">
               {{ subcategory.name }}
             </option>
           </select>
@@ -88,12 +69,8 @@
 
         <!-- 备注 -->
         <div class="mb-2">
-          <textarea
-            v-model="form.description"
-            class="w-full modal-input-select"
-            rows="3"
-            placeholder="请输入备注信息（可选）"
-          ></textarea>
+          <textarea v-model="form.description" class="w-full modal-input-select" rows="3"
+            placeholder="请输入备注信息（可选）"></textarea>
         </div>
 
         <!-- 按钮 -->
@@ -112,6 +89,7 @@
 
 <script setup lang="ts">
 import { Check, X } from 'lucide-vue-next';
+import { DEFAULT_CURRENCY } from '@/constants/moneyConst';
 import {
   CategorySchema,
   SubCategorySchema,
@@ -120,7 +98,6 @@ import {
 } from '@/schema/common';
 import { Account, TransactionWithAccount } from '@/schema/money';
 import { formatCurrency } from '../utils/money';
-import { DEFAULT_CURRENCY } from '@/constants/moneyConst';
 
 interface Props {
   type: TransactionType;

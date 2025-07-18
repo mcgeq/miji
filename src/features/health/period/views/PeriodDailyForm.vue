@@ -11,13 +11,8 @@
           <CalendarCheck class="wh-5" />
           日期
         </label>
-        <input v-model="formData.date"
-          type="date"
-          class="w-3/4 modal-input-select"
-          :max="today"
-          required
-          :disabled="isEditing"
-        />
+        <input v-model="formData.date" type="date" class="w-3/4 modal-input-select" :max="today" required
+          :disabled="isEditing" />
         <div v-if="getFieldErrors('date').length > 0" class="form-error">
           {{ getFieldErrors('date')[0] }}
         </div>
@@ -103,8 +98,8 @@
             <Waves class="wh-5" />
             饮水量 (ml)
           </label>
-          <input v-model.number="formData.waterIntake" type="number" class="input-base" placeholder="例如: 2000"
-            min="0" max="5000" step="100" />
+          <input v-model.number="formData.waterIntake" type="number" class="input-base" placeholder="例如: 2000" min="0"
+            max="5000" step="100" />
         </div>
         <div class="flex items-center gap-4">
           <div class="flex gap-1">
@@ -188,21 +183,21 @@
 <script setup lang="ts">
 import {
   CalendarCheck,
-  X,
   Check,
-  Smile,
+  Droplet,
   Dumbbell,
+  Smile,
   Utensils,
   Waves,
-  Droplet,
+  X,
 } from 'lucide-vue-next';
-import {usePeriodStore} from '@/stores/periodStore';
-import type {PeriodDailyRecords, Mood} from '@/schema/health/period';
-import {usePeriodValidation} from '../composables/usePeriodValidation';
-import {ExerciseIntensity, FlowLevel} from '@/schema/common';
-import {uuid} from '@/utils/uuid';
-import {getLocalISODateTimeWithOffset} from '@/utils/date';
-import {Lg} from '@/utils/debugLog';
+import { ExerciseIntensity, FlowLevel } from '@/schema/common';
+import type { Mood, PeriodDailyRecords } from '@/schema/health/period';
+import { usePeriodStore } from '@/stores/periodStore';
+import { getLocalISODateTimeWithOffset } from '@/utils/date';
+import { Lg } from '@/utils/debugLog';
+import { uuid } from '@/utils/uuid';
+import { usePeriodValidation } from '../composables/usePeriodValidation';
 
 // Props
 interface Props {
@@ -223,7 +218,7 @@ const emit = defineEmits<{
 
 // Store & Composables
 const periodStore = usePeriodStore();
-const {validateDailyRecord, getFieldErrors, hasErrors, clearValidationErrors} =
+const { validateDailyRecord, getFieldErrors, hasErrors, clearValidationErrors } =
   usePeriodValidation();
 
 // Reactive state
@@ -247,25 +242,25 @@ const formData = ref({
 
 // Options
 const flowLevels = [
-  {value: 'Light' as const, label: '轻量', icon: 'i-tabler-droplet'},
-  {value: 'Medium' as const, label: '中量', icon: 'i-tabler-droplets'},
-  {value: 'Heavy' as const, label: '大量', icon: 'i-tabler-droplets-filled'},
+  { value: 'Light' as const, label: '轻量', icon: 'i-tabler-droplet' },
+  { value: 'Medium' as const, label: '中量', icon: 'i-tabler-droplets' },
+  { value: 'Heavy' as const, label: '大量', icon: 'i-tabler-droplets-filled' },
 ];
 
 const moods = [
-  {value: 'Happy' as const, label: '开心', icon: 'i-tabler-mood-happy'},
-  {value: 'Calm' as const, label: '平静', icon: 'i-tabler-mood-smile'},
-  {value: 'Sad' as const, label: '难过', icon: 'i-tabler-mood-sad'},
-  {value: 'Angry' as const, label: '愤怒', icon: 'i-tabler-mood-angry'},
-  {value: 'Anxious' as const, label: '焦虑', icon: 'i-tabler-mood-nervous'},
-  {value: 'Irritable' as const, label: '易怒', icon: 'i-tabler-mood-annoyed'},
+  { value: 'Happy' as const, label: '开心', icon: 'i-tabler-mood-happy' },
+  { value: 'Calm' as const, label: '平静', icon: 'i-tabler-mood-smile' },
+  { value: 'Sad' as const, label: '难过', icon: 'i-tabler-mood-sad' },
+  { value: 'Angry' as const, label: '愤怒', icon: 'i-tabler-mood-angry' },
+  { value: 'Anxious' as const, label: '焦虑', icon: 'i-tabler-mood-nervous' },
+  { value: 'Irritable' as const, label: '易怒', icon: 'i-tabler-mood-annoyed' },
 ];
 
 const exerciseIntensities = [
-  {value: 'None' as const, label: '无', icon: 'i-tabler-sleep'},
-  {value: 'Light' as const, label: '轻度', icon: 'i-tabler-walk'},
-  {value: 'Medium' as const, label: '中度', icon: 'i-tabler-run'},
-  {value: 'Heavy' as const, label: '高强度', icon: 'i-tabler-barbell'},
+  { value: 'None' as const, label: '无', icon: 'i-tabler-sleep' },
+  { value: 'Light' as const, label: '轻度', icon: 'i-tabler-walk' },
+  { value: 'Medium' as const, label: '中度', icon: 'i-tabler-run' },
+  { value: 'Heavy' as const, label: '高强度', icon: 'i-tabler-barbell' },
 ];
 
 const waterPresets = [1000, 1500, 2000, 2500];
@@ -360,7 +355,7 @@ const initializeForm = () => {
 };
 
 // Watchers
-watch(() => props.record, initializeForm, {immediate: true});
+watch(() => props.record, initializeForm, { immediate: true });
 watch(
   () => props.date,
   (newDate) => {

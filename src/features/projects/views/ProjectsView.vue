@@ -1,11 +1,6 @@
 <template>
-  <GenericViewItem
-    :entities="projectsMap"
-    :component="GenericItem"
-    displayKey="name"
-    :readonly="false"
-    @update:entities="val => projectsMap = val"
-  />
+  <GenericViewItem :entities="projectsMap" :component="GenericItem" displayKey="name" :readonly="false"
+    @update:entities="val => projectsMap = val" />
 </template>
 
 <script setup lang="ts">
