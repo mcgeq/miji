@@ -12,18 +12,18 @@
 </template>
 
 <script setup lang="ts">
-import { storeToRefs } from 'pinia';
-import { checkAndCleanSession } from './services/auth';
-import { toast } from './utils/toast';
+import {storeToRefs} from 'pinia';
+import {checkAndCleanSession} from './services/auth';
+import {toast} from './utils/toast';
 import EmptyLayout from './layouts/EmptyLayout.vue';
 import DefaultLayout from './layouts/DefaultLayout.vue';
-import { RouteLocationNormalizedLoaded } from 'vue-router';
+import {RouteLocationNormalizedLoaded} from 'vue-router';
 
 const isLoading = ref(true);
 const router = useRouter();
-const { t } = useI18n();
+const {t} = useI18n();
 const transitionStore = useTransitionsStore();
-const { name: transitionName } = storeToRefs(transitionStore);
+const {name: transitionName} = storeToRefs(transitionStore);
 
 onMounted(async () => {
   try {
@@ -48,6 +48,16 @@ const layoutComponent = (route: RouteLocationNormalizedLoaded) => {
 </script>
 
 <style>
+/* 新增：隐藏滚动条 */
+html, body {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE 和 Edge */
+}
+
+html::-webkit-scrollbar, body::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
 .loading {
   display: flex;
   justify-content: center;

@@ -522,15 +522,6 @@ onMounted(() => {
   @apply flex items-center gap-1 px-3 py-1.5 border-none rounded-md cursor-pointer text-xs bg-[#1890ff] text-white transition-all duration-200 hover:bg-[#40a9ff]
 }
 
-/* 新增：隐藏滚动条 */
-html, body {
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE 和 Edge */
-}
-
-html::-webkit-scrollbar, body::-webkit-scrollbar {
-  display: none; /* Chrome, Safari, Opera */
-}
 
 /* 或者只对特定容器隐藏滚动条 */
 .main-container {
