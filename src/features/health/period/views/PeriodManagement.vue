@@ -3,30 +3,21 @@
     <!-- 头部导航 -->
     <div class="header-section">
       <div class="container mx-auto px-4 lg:px-6">
-        <div class="flex items-center justify-between py-4">
-          <div class="flex items-center gap-2">
-            <div
-              class="w-8 h-8 bg-gradient-to-r from-pink-500 to-purple-500 rounded-full flex items-center justify-center">
-              <CalendarCheck class="w-4 h-4 text-white" />
-            </div>
-            <h1 class="text-xl font-bold text-gray-900 dark:text-white">
-              经期管理
-            </h1>
-          </div>
+        <div class="flex items-center justify-end py-1">
           <div class="flex items-center gap-1 bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
             <button @click="currentView = 'calendar'" class="nav-tab"
               :class="{ 'nav-tab-active': currentView === 'calendar' }">
-              <CalendarCheck class="w-4 h-4" />
+              <CalendarCheck class="wh-4" />
               <span class="hidden sm:inline">日历</span>
             </button>
             <button @click="currentView = 'stats'" class="nav-tab"
               :class="{ 'nav-tab-active': currentView === 'stats' }">
-              <Activity class="w-4 h-4" />
+              <Activity class="wh-4" />
               <span class="hidden sm:inline">统计</span>
             </button>
             <button @click="currentView = 'settings'" class="nav-tab"
               :class="{ 'nav-tab-active': currentView === 'settings' }">
-              <Settings class="w-4 h-4" />
+              <Settings class="wh-4" />
               <span class="hidden sm:inline">设置</span>
             </button>
           </div>
@@ -79,11 +70,11 @@
                     <span class="info-label">今日记录</span>
                     <div class="flex items-center gap-2">
                       <button @click="openDailyForm(todayRecord)" class="action-icon-btn view-btn" title="查看记录">
-                        <Eye class="w-4 h-4" />
+                        <Eye class="wh-4" />
                       </button>
                       <button @click="handleDeleteDailyRecord(todayRecord.serialNum)" class="action-icon-btn delete-btn"
                         title="删除记录">
-                        <Trash class="w-4 h-4" />
+                        <Trash class="wh-4" />
                       </button>
                     </div>
                   </div>
@@ -107,15 +98,15 @@
                 </div>
                 <div class="space-y-3">
                   <button @click="openRecordForm()" class="action-btn period-btn">
-                    <Plus class="w-5 h-5" />
+                    <Plus class="wh-5" />
                     <span>记录经期</span>
                   </button>
                   <button @click="openDailyForm()" class="action-btn daily-btn">
-                    <Edit class="w-5 h-5" />
+                    <Edit class="wh-5" />
                     <span>日常记录</span>
                   </button>
                   <button @click="currentView = 'stats'" class="action-btn stats-btn">
-                    <Activity class="w-5 h-5" />
+                    <Activity class="wh-5" />
                     <span>查看统计</span>
                   </button>
                 </div>
@@ -124,11 +115,11 @@
           </div>
 
           <!-- 第二行：健康提示（铺满宽度） -->
-          <div class="card-base p-6">
+          <div class="card-base p-4">
             <div class="flex items-center gap-3 mb-6">
               <div
                 class="w-10 h-10 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center">
-                <i class="i-tabler-heart w-5 h-5 text-white" />
+                <Heart class="wh-5 text-white" />
               </div>
               <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
                 健康提示
@@ -139,7 +130,7 @@
                 <div class="flex items-start gap-3">
                   <div
                     class="w-8 h-8 bg-blue-50 dark:bg-blue-900/30 rounded-full flex items-center justify-center flex-shrink-0">
-                    <i :class="tip.icon" class="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                    <component :is="tip.icon" class="wh-4 text-blue-600 dark:text-blue-400" />
                   </div>
                   <span class="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
                     {{ tip.text }}
@@ -266,9 +257,17 @@
 <script setup lang="ts">
 import {
   Activity,
+  Apple,
+  Bed,
   CalendarCheck,
+  CupSoda,
+  Droplet,
   Edit,
   Eye,
+  Flame,
+  Heart,
+  Leaf,
+  Moon,
   Plus,
   Settings,
   Trash,
@@ -282,6 +281,8 @@ import PeriodDailyForm from './PeriodDailyForm.vue';
 import PeriodRecordForm from './PeriodRecordForm.vue';
 import PeriodSettings from './PeriodSettings.vue';
 import PeriodStatsDashboard from './PeriodStatsDashboard.vue';
+import {phaseTips, Tip} from '../../utils/periodUtils';
+import {Lg} from '@/utils/debugLog';
 
 // Store
 const periodStore = usePeriodStore();
@@ -319,55 +320,23 @@ const daysUntilNext = computed(() => {
 });
 
 const todayRecord = computed(() => {
-  const recordsLength = periodStore.dailyRecords.length;
+  periodStore.dailyRecords.length;
   const records = periodStore.dailyRecords;
   const today = selectedDate.value;
 
   // 每次都重新查找，确保获取最新数据
   const found = records.find((record) => record.date === today);
 
-  console.log(
-    `Today record check: date=${today}, found=${!!found}, total records=${recordsLength}`,
-  );
   return found || null;
 });
-
+const baseTips: Tip[] = [
+  {id: 1, icon: Droplet, text: '每天喝足够的水，保持身体水分平衡'},
+  {id: 2, icon: Moon, text: '保持规律睡眠，稳定月经周期'},
+  {id: 3, icon: Apple, text: '食用富含铁质的食物，补充营养'},
+];
 const currentTips = computed(() => {
   const phase = periodStore.periodStats.currentPhase;
-  const baseTips = [
-    {
-      id: 1,
-      icon: 'i-tabler-droplet',
-      text: '每天喝足够的水有助于缓解经期不适',
-    },
-    {
-      id: 2,
-      icon: 'i-tabler-moon',
-      text: '保持规律的睡眠时间对月经周期很重要',
-    },
-    {
-      id: 3,
-      icon: 'i-tabler-apple',
-      text: '富含铁质的食物有助于补充经期流失的营养',
-    },
-  ];
-
-  // 根据当前阶段提供特定建议
-  if (phase === 'Menstrual') {
-    return [
-      {id: 1, icon: 'i-tabler-cup', text: '多喝温水，避免冷饮'},
-      {id: 2, icon: 'i-tabler-bed', text: '充分休息，避免剧烈运动'},
-      {id: 3, icon: 'i-tabler-flame', text: '注意保暖，特别是腹部'},
-    ];
-  } else if (phase === 'Ovulation') {
-    return [
-      {id: 1, icon: 'i-tabler-heart', text: '排卵期，注意个人卫生'},
-      {id: 2, icon: 'i-tabler-activity', text: '适当运动有助于健康'},
-      {id: 3, icon: 'i-tabler-leaf', text: '多吃新鲜蔬果'},
-    ];
-  }
-
-  return baseTips;
+  return phaseTips[phase] || baseTips;
 });
 
 // Methods
@@ -392,7 +361,7 @@ const handleRecordSubmit = async (record: PeriodRecords) => {
   await periodStore.fetchPeriodRecords();
 
   showSuccessToast('经期记录已保存');
-  console.log('Record submitted:', record);
+  Lg.i('PeriodManagement', 'Record submitted:', record);
 };
 
 const handleRecordDelete = async (serialNum: string) => {
@@ -402,7 +371,7 @@ const handleRecordDelete = async (serialNum: string) => {
   await periodStore.fetchPeriodRecords();
 
   showSuccessToast('经期记录已删除');
-  console.log('Record deleted:', serialNum);
+  Lg.i('PeriodManagement', 'Record deleted:', serialNum);
 };
 
 const openDailyForm = (record?: PeriodDailyRecords) => {
@@ -417,7 +386,7 @@ const closeDailyForm = () => {
 
 const handleDailySubmit = async (record: PeriodDailyRecords) => {
   try {
-    console.log('Submitting daily record:', record);
+    Lg.i('PeriodManagement', 'Submitting daily record:', record);
 
     closeDailyForm();
 
@@ -429,12 +398,13 @@ const handleDailySubmit = async (record: PeriodDailyRecords) => {
 
     showSuccessToast('日常记录已保存');
 
-    console.log(
+    Lg.i(
+      'PeriodManagement',
       'Daily record saved, total records:',
       periodStore.dailyRecords.length,
     );
   } catch (error) {
-    console.error('保存日常记录失败:', error);
+    Lg.e('PeriodManagement', '保存日常记录失败:', error);
   }
 };
 
@@ -454,7 +424,7 @@ const confirmDelete = async () => {
   try {
     const deletingId = deletingSerialNum.value;
 
-    console.log('Deleting record:', deletingId);
+    Lg.i('PeriodManagement', 'Deleting record:', deletingId);
 
     // 使用专门的删除日常记录方法
     await periodStore.deleteDailyRecord(deletingId);
@@ -468,7 +438,8 @@ const confirmDelete = async () => {
     showSuccessToast('记录已删除');
     closeDeleteConfirm();
 
-    console.log(
+    Lg.i(
+      'PeriodManagement',
       'Delete completed, records count:',
       periodStore.dailyRecords.length,
     );
@@ -493,7 +464,7 @@ const hideSuccessMessage = () => {
 watch(
   () => periodStore.dailyRecords,
   (newRecords, oldRecords) => {
-    console.log('Daily records changed:', {
+    Lg.i('PeriodManagement', 'Daily records changed:', {
       oldCount: oldRecords?.length || 0,
       newCount: newRecords.length,
       todayDate: selectedDate.value,
@@ -508,7 +479,7 @@ onMounted(async () => {
   try {
     await periodStore.fetchPeriodRecords();
   } catch (error) {
-    console.error('Failed to load period data:', error);
+    Lg.e('PeriodManagement', 'Failed to load period data:', error);
   }
 });
 </script>

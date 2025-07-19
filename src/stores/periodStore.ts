@@ -1,5 +1,5 @@
-import {defineStore} from 'pinia';
-import {computed, ref} from 'vue';
+import { defineStore } from 'pinia';
+import { computed, ref } from 'vue';
 import {
   PeriodCalendarEvent,
   PeriodDailyRecords,
@@ -11,6 +11,7 @@ import {
   PeriodStats,
   PeriodSymptoms,
 } from '@/schema/health/period';
+import { Lg } from '@/utils/debugLog';
 
 export const usePeriodStore = defineStore('period', () => {
   // 状态
@@ -72,8 +73,8 @@ export const usePeriodStore = defineStore('period', () => {
     const averageCycleLength =
       cycles.length > 0
         ? Math.round(
-            cycles.reduce((sum, cycle) => sum + cycle, 0) / cycles.length,
-          )
+          cycles.reduce((sum, cycle) => sum + cycle, 0) / cycles.length,
+        )
         : settings.value.averageCycleLength;
 
     // 计算经期长度
@@ -87,7 +88,7 @@ export const usePeriodStore = defineStore('period', () => {
 
     const averagePeriodLength = Math.round(
       periodLengths.reduce((sum, length) => sum + length, 0) /
-        periodLengths.length,
+      periodLengths.length,
     );
 
     // 预测下次经期
@@ -355,7 +356,6 @@ export const usePeriodStore = defineStore('period', () => {
       ];
 
       dailyRecords.value = mockDailyData;
-      console.log('Mock daily records loaded:', mockDailyData);
     } catch (e) {
       const errorMessage =
         e instanceof Error ? e.message : 'Failed to fetch daily records';
@@ -381,7 +381,7 @@ export const usePeriodStore = defineStore('period', () => {
         (record) => record.serialNum !== serialNum,
       );
 
-      console.log('Daily record deleted:', serialNum);
+      Lg.i('Period', 'Daily record deleted:', serialNum);
     } catch (e) {
       const errorMessage =
         e instanceof Error ? e.message : 'Failed to delete daily record';
@@ -693,7 +693,7 @@ export const usePeriodStore = defineStore('period', () => {
       const ovulationDate = new Date(period.startDate);
       ovulationDate.setDate(
         ovulationDate.getDate() +
-          Math.floor(settings.value.averageCycleLength / 2),
+        Math.floor(settings.value.averageCycleLength / 2),
       );
       const dateStr = ovulationDate.toISOString().split('T')[0];
 
@@ -752,7 +752,7 @@ export const usePeriodStore = defineStore('period', () => {
         const predictedOvulationDate = new Date(predictedStart);
         predictedOvulationDate.setDate(
           predictedOvulationDate.getDate() +
-            Math.floor(stats.averageCycleLength / 2),
+          Math.floor(stats.averageCycleLength / 2),
         );
         const ovulationDateStr = predictedOvulationDate
           .toISOString()
