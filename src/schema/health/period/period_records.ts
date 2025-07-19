@@ -29,9 +29,17 @@ export interface PeriodStats {
 // 经期日历事件类型
 export interface PeriodCalendarEvent {
   date: string;
-  type: 'period' | 'ovulation' | 'fertile' | 'pms';
+  type:
+    | 'period'
+    | 'ovulation'
+    | 'fertile'
+    | 'pms'
+    | 'predicted-period'
+    | 'predicted-ovulation'
+    | 'predicted-fertile';
   intensity?: Intensity;
   symptoms?: SymptomsType[];
+  isPredicted?: boolean;
 }
 
 // 经期设置类型

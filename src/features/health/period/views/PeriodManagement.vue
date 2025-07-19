@@ -274,9 +274,9 @@ import {
   Trash,
   X,
 } from 'lucide-vue-next';
-import type { PeriodDailyRecords, PeriodRecords } from '@/schema/health/period';
-import { usePeriodStore } from '@/stores/periodStore';
-import { getTodayDate } from '@/utils/date';
+import type {PeriodDailyRecords, PeriodRecords} from '@/schema/health/period';
+import {usePeriodStore} from '@/stores/periodStore';
+import {getTodayDate} from '@/utils/date';
 import PeriodCalendar from '../components/PeriodCalendar.vue';
 import PeriodDailyForm from './PeriodDailyForm.vue';
 import PeriodRecordForm from './PeriodRecordForm.vue';
@@ -355,15 +355,15 @@ const currentTips = computed(() => {
   // 根据当前阶段提供特定建议
   if (phase === 'Menstrual') {
     return [
-      { id: 1, icon: 'i-tabler-cup', text: '多喝温水，避免冷饮' },
-      { id: 2, icon: 'i-tabler-bed', text: '充分休息，避免剧烈运动' },
-      { id: 3, icon: 'i-tabler-flame', text: '注意保暖，特别是腹部' },
+      {id: 1, icon: 'i-tabler-cup', text: '多喝温水，避免冷饮'},
+      {id: 2, icon: 'i-tabler-bed', text: '充分休息，避免剧烈运动'},
+      {id: 3, icon: 'i-tabler-flame', text: '注意保暖，特别是腹部'},
     ];
   } else if (phase === 'Ovulation') {
     return [
-      { id: 1, icon: 'i-tabler-heart', text: '排卵期，注意个人卫生' },
-      { id: 2, icon: 'i-tabler-activity', text: '适当运动有助于健康' },
-      { id: 3, icon: 'i-tabler-leaf', text: '多吃新鲜蔬果' },
+      {id: 1, icon: 'i-tabler-heart', text: '排卵期，注意个人卫生'},
+      {id: 2, icon: 'i-tabler-activity', text: '适当运动有助于健康'},
+      {id: 3, icon: 'i-tabler-leaf', text: '多吃新鲜蔬果'},
     ];
   }
 
@@ -500,7 +500,7 @@ watch(
       hasTodayRecord: !!newRecords.find((r) => r.date === selectedDate.value),
     });
   },
-  { deep: true },
+  {deep: true},
 );
 // Lifecycle
 onMounted(async () => {
@@ -547,7 +547,7 @@ onMounted(async () => {
 }
 
 .period-btn {
-  @apply border-red-200 dark:border-red-800 bg-gradient-to-r from-red-50 to-pink-50 dark:from-red-900/20 dark:to-pink-900/20 text-red-700 dark:text-red-400 hover:from-red-100 hover:to-pink-100 dark:hover:from-red-900/30 dark:hover:to-pink-900/30 focus:ring-red-500;
+  @apply border-green-200 dark:border-green-800 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 text-green-700 dark:text-green-400 hover:from-green-100 hover:to-emerald-100 dark:hover:from-green-900/30 dark:hover:to-emerald-900/30 focus:ring-green-500;
 }
 
 .daily-btn {

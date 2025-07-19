@@ -224,28 +224,71 @@ export const usePeriodStore = defineStore('period', () => {
       // const response = await periodApi.getPeriodRecords();
       // periodRecords.value = response.data;
 
-      // 模拟数据
+      // 更新的模拟数据 - 包含更多历史记录以便计算预测
+      const today = new Date();
       const mockData: PeriodRecords[] = [
+        // 第一次经期 (3个月前)
         {
           serialNum: 'period_001'.padEnd(38, '0'),
-          startDate: '2024-01-15',
-          endDate: '2024-01-20',
+          startDate: new Date(today.getFullYear(), today.getMonth() - 3, 10)
+            .toISOString()
+            .split('T')[0],
+          endDate: new Date(today.getFullYear(), today.getMonth() - 3, 15)
+            .toISOString()
+            .split('T')[0],
           createdAt: new Date().toISOString(),
           updatedAt: null,
-          notes: '',
+          notes: '第一次记录',
         },
+        // 第二次经期 (2个月前)
         {
           serialNum: 'period_002'.padEnd(38, '0'),
-          startDate: '2024-02-12',
-          endDate: '2024-02-17',
+          startDate: new Date(today.getFullYear(), today.getMonth() - 2, 8)
+            .toISOString()
+            .split('T')[0],
+          endDate: new Date(today.getFullYear(), today.getMonth() - 2, 13)
+            .toISOString()
+            .split('T')[0],
           createdAt: new Date().toISOString(),
           updatedAt: null,
-          notes: '',
+          notes: '第二次记录',
+        },
+        // 第三次经期 (1个月前)
+        {
+          serialNum: 'period_003'.padEnd(38, '0'),
+          startDate: new Date(today.getFullYear(), today.getMonth() - 1, 12)
+            .toISOString()
+            .split('T')[0],
+          endDate: new Date(today.getFullYear(), today.getMonth() - 1, 17)
+            .toISOString()
+            .split('T')[0],
+          createdAt: new Date().toISOString(),
+          updatedAt: null,
+          notes: '第三次记录',
+        },
+        // 最近一次经期 (15天前，用于预测下次)
+        {
+          serialNum: 'period_004'.padEnd(38, '0'),
+          startDate: new Date(today.getTime() - 15 * 24 * 60 * 60 * 1000)
+            .toISOString()
+            .split('T')[0],
+          endDate: new Date(today.getTime() - 10 * 24 * 60 * 60 * 1000)
+            .toISOString()
+            .split('T')[0],
+          createdAt: new Date().toISOString(),
+          updatedAt: null,
+          notes: '最近一次经期',
         },
       ];
 
       periodRecords.value = mockData;
       lastFetch.value = new Date();
+
+      console.log('Mock period records loaded:', mockData);
+      console.log(
+        'Predicted next period:',
+        periodStats.value.nextPredictedDate,
+      );
     } catch (e) {
       const errorMessage =
         e instanceof Error ? e.message : 'Failed to fetch period records';
@@ -255,7 +298,6 @@ export const usePeriodStore = defineStore('period', () => {
       setLoading(false);
     }
   };
-
   // 获取每日记录
   const fetchDailyRecords = async (dateRange?: {
     start: string;
@@ -271,9 +313,49 @@ export const usePeriodStore = defineStore('period', () => {
       // const response = await periodApi.getDailyRecords(dateRange);
       // dailyRecords.value = response.data;
 
-      // 模拟数据
-      const mockData: PeriodDailyRecords[] = [];
-      dailyRecords.value = mockData;
+      // 添加一些模拟的日常记录
+      const today = new Date();
+      const mockDailyData: PeriodDailyRecords[] = [
+        // 昨天的记录
+        {
+          serialNum: `daily_${Date.now() - 1}`.padEnd(38, '0'),
+          periodSerialNum: 'period_current'.padEnd(38, '0'),
+          date: new Date(today.getTime() - 24 * 60 * 60 * 1000)
+            .toISOString()
+            .split('T')[0],
+          sexualActivity: false,
+          exerciseIntensity: 'Light',
+          diet: '正常饮食',
+          flowLevel: null,
+          mood: 'Happy',
+          waterIntake: 2000,
+          sleepHours: 8,
+          notes: '感觉不错',
+          createdAt: new Date().toISOString(),
+          updatedAt: null,
+        },
+        // 前天的记录
+        {
+          serialNum: `daily_${Date.now() - 2}`.padEnd(38, '0'),
+          periodSerialNum: 'period_current'.padEnd(38, '0'),
+          date: new Date(today.getTime() - 2 * 24 * 60 * 60 * 1000)
+            .toISOString()
+            .split('T')[0],
+          sexualActivity: false,
+          exerciseIntensity: 'Medium',
+          diet: '清淡饮食',
+          flowLevel: null,
+          mood: 'Calm',
+          waterIntake: 1800,
+          sleepHours: 7.5,
+          notes: '运动后感觉很好',
+          createdAt: new Date().toISOString(),
+          updatedAt: null,
+        },
+      ];
+
+      dailyRecords.value = mockDailyData;
+      console.log('Mock daily records loaded:', mockDailyData);
     } catch (e) {
       const errorMessage =
         e instanceof Error ? e.message : 'Failed to fetch daily records';
@@ -588,7 +670,7 @@ export const usePeriodStore = defineStore('period', () => {
   ): PeriodCalendarEvent[] => {
     const events: PeriodCalendarEvent[] = [];
 
-    // 添加经期事件
+    // 添加历史经期事件
     periodRecords.value.forEach((period) => {
       const start = new Date(period.startDate);
       const end = new Date(period.endDate);
@@ -600,25 +682,107 @@ export const usePeriodStore = defineStore('period', () => {
             date: dateStr,
             type: 'period',
             intensity: 'Medium',
+            isPredicted: false,
           });
         }
       }
     });
 
-    // 添加排卵期事件
-    // 简化计算：经期开始后14天为排卵日
+    // 添加历史排卵期事件
     periodRecords.value.forEach((period) => {
       const ovulationDate = new Date(period.startDate);
-      ovulationDate.setDate(ovulationDate.getDate() + 14);
+      ovulationDate.setDate(
+        ovulationDate.getDate() +
+          Math.floor(settings.value.averageCycleLength / 2),
+      );
       const dateStr = ovulationDate.toISOString().split('T')[0];
 
       if (dateStr >= startDate && dateStr <= endDate) {
         events.push({
           date: dateStr,
           type: 'ovulation',
+          isPredicted: false,
         });
+
+        // 排卵期前后各1天为易孕期
+        for (let i = -1; i <= 1; i++) {
+          if (i === 0) continue; // 排卵日已添加
+          const fertileDate = new Date(ovulationDate);
+          fertileDate.setDate(fertileDate.getDate() + i);
+          const fertileDateStr = fertileDate.toISOString().split('T')[0];
+
+          if (fertileDateStr >= startDate && fertileDateStr <= endDate) {
+            events.push({
+              date: fertileDateStr,
+              type: 'fertile',
+              isPredicted: false,
+            });
+          }
+        }
       }
     });
+
+    // 添加预测的未来经期事件
+    const stats = periodStats.value;
+    if (stats.nextPredictedDate && periodRecords.value.length > 0) {
+      const predictedStart = new Date(stats.nextPredictedDate);
+      const today = new Date();
+
+      // 只显示未来的预测
+      if (predictedStart >= today) {
+        // 预测经期天数
+        const predictedPeriodLength = stats.averagePeriodLength;
+
+        for (let i = 0; i < predictedPeriodLength; i++) {
+          const predictedDate = new Date(predictedStart);
+          predictedDate.setDate(predictedDate.getDate() + i);
+          const dateStr = predictedDate.toISOString().split('T')[0];
+
+          if (dateStr >= startDate && dateStr <= endDate) {
+            events.push({
+              date: dateStr,
+              type: 'predicted-period',
+              intensity: 'Medium',
+              isPredicted: true,
+            });
+          }
+        }
+
+        // 预测排卵期
+        const predictedOvulationDate = new Date(predictedStart);
+        predictedOvulationDate.setDate(
+          predictedOvulationDate.getDate() +
+            Math.floor(stats.averageCycleLength / 2),
+        );
+        const ovulationDateStr = predictedOvulationDate
+          .toISOString()
+          .split('T')[0];
+
+        if (ovulationDateStr >= startDate && ovulationDateStr <= endDate) {
+          events.push({
+            date: ovulationDateStr,
+            type: 'predicted-ovulation',
+            isPredicted: true,
+          });
+
+          // 预测易孕期
+          for (let i = -1; i <= 1; i++) {
+            if (i === 0) continue;
+            const fertileDate = new Date(predictedOvulationDate);
+            fertileDate.setDate(fertileDate.getDate() + i);
+            const fertileDateStr = fertileDate.toISOString().split('T')[0];
+
+            if (fertileDateStr >= startDate && fertileDateStr <= endDate) {
+              events.push({
+                date: fertileDateStr,
+                type: 'predicted-fertile',
+                isPredicted: true,
+              });
+            }
+          }
+        }
+      }
+    }
 
     return events;
   };
