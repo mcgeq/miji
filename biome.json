@@ -1,99 +1,98 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.1.2/schema.json",
-  "vcs": {
-    "enabled": true,
-    "clientKind": "git",
-    "useIgnoreFile": true,
-    "defaultBranch": "main"
-  },
-  "files": {
-    "ignoreUnknown": false,
-    "includes": ["src/**/*"],
-    "experimentalScannerIgnores": []
-  },
-  "formatter": {
-    "enabled": true,
-    "indentStyle": "space",
-    "useEditorconfig": true,
-    "formatWithErrors": true,
-    "attributePosition": "multiline",
-    "bracketSpacing": false,
-    "lineWidth": 80,
-    "indentWidth": 2,
-    "lineEnding": "lf"
-  },
-  "assist": {
-    "enabled": true,
-    "actions": {
-      "source": {
-        "organizeImports": "on"
-      }
-    }
-  },
-  "linter": {
-    "enabled": true,
-    "domains": {
-      "vue": "all"
-    },
-    "includes": ["*.svelte", "*.vue"],
-    "rules": {
-      "recommended": true,
-      "correctness": {
-        "noUnusedImports": "error",
-        "noUndeclaredDependencies": "error"
-      },
-      "suspicious": {
-        "noVar": "on"
-      },
-      "nursery": {
-        "noFloatingPromises": "error",
-        "noImportCycles": "error"
-      },
-      "style": {
-        "noParameterAssign": "error",
-        "useDefaultParameterLast": "error",
-        "useSingleVarDeclarator": "error",
-        "useConst": "error",
-        "noInferrableTypes": "error",
-        "noUselessElse": "error",
-        "useSelfClosingElements": "error",
-        "useNumberNamespace": "error",
-        "useAsConstAssertion": "error",
-        "noUnusedTemplateLiteral": "error",
-        "useTemplate": "error",
-        "useEnumInitializers": "error"
-      }
-    }
-  },
-  "javascript": {
-    "formatter": {
-      "quoteStyle": "single",
-      "lineWidth": 80,
-      "trailingCommas": "all",
-      "semicolons": "always",
-      "attributePosition": "auto"
-    }
-  },
-  "json": {
-    "formatter": {
-      "enabled": true
-    }
-  },
-  "overrides": [
-    {
-      "includes": ["**/*.svelte", "**/*.astro", "**/*.vue"],
-      "linter": {
-        "rules": {
-          "style": {
-            "useConst": "off",
-            "useImportType": "off"
-          },
-          "correctness": {
-            "noUnusedVariables": "off",
-            "noUnusedImports": "off"
-          }
-        }
-      }
-    }
-  ]
+	"$schema": "https://biomejs.dev/schemas/2.1.2/schema.json",
+	"vcs": {
+		"enabled": true,
+		"clientKind": "git",
+		"useIgnoreFile": true,
+		"defaultBranch": "main"
+	},
+	"files": {
+		"ignoreUnknown": false,
+		"includes": ["src/**/*.{js,jsx,ts,tsx,svelte,astro,json,css,scss,less,md}"],
+		"experimentalScannerIgnores": ["**/*.vue", "node_modules/**", "dist/**"]
+	},
+	"formatter": {
+		"enabled": true,
+		"indentStyle": "space",
+		"useEditorconfig": true,
+		"formatWithErrors": true,
+		"attributePosition": "multiline",
+		"bracketSpacing": false,
+		"lineWidth": 80,
+		"indentWidth": 2,
+		"lineEnding": "lf"
+	},
+	"assist": {
+		"enabled": true,
+		"actions": {
+			"source": {
+				"organizeImports": "on"
+			}
+		}
+	},
+	"linter": {
+		"enabled": true,
+		"includes": ["*.js", "*.jsx", "*.ts", "*.tsx", "*.svelte", "*.astro"],
+		"rules": {
+			"recommended": true,
+			"correctness": {
+				"noUnusedImports": "error",
+				"noUndeclaredDependencies": "error"
+			},
+			"suspicious": {
+				"noVar": "on"
+			},
+			"nursery": {
+				"noFloatingPromises": "error",
+				"noImportCycles": "error"
+			},
+			"style": {
+				"noParameterAssign": "error",
+				"useDefaultParameterLast": "error",
+				"useSingleVarDeclarator": "error",
+				"useConst": "error",
+				"noInferrableTypes": "error",
+				"noUselessElse": "error",
+				"useSelfClosingElements": "error",
+				"useNumberNamespace": "error",
+				"useAsConstAssertion": "error",
+				"noUnusedTemplateLiteral": "error",
+				"useTemplate": "error",
+				"useEnumInitializers": "error"
+			}
+		}
+	},
+	"javascript": {
+		"parser": {
+			"unsafeParameterDecoratorsEnabled": true
+		},
+		"formatter": {
+			"quoteStyle": "single",
+			"lineWidth": 80,
+			"trailingCommas": "all",
+			"semicolons": "always",
+			"attributePosition": "auto"
+		}
+	},
+	"json": {
+		"formatter": {
+			"enabled": true
+		}
+	},
+	"overrides": [
+		{
+			"includes": ["**/*.svelte", "**/*.astro"],
+			"linter": {
+				"rules": {
+					"style": {
+						"useConst": "off",
+						"useImportType": "off"
+					},
+					"correctness": {
+						"noUnusedVariables": "off"
+					}
+				}
+			}
+		}
+	]
 }
