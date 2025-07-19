@@ -2,14 +2,14 @@ import App from './App.vue';
 import 'uno.css';
 import '@unocss/reset/tailwind.css';
 import 'virtual:unocss-devtools';
-import router from './router';
-import { initI18n } from './i18n/i18n';
 import Toast from 'vue-toastification';
+import {initI18n} from './i18n/i18n';
+import router from './router';
 import 'vue-toastification/dist/index.css';
-import { i18nErrorMap } from './schema/i18nErrorMap';
-import { storeStart } from './stores';
-import { createPinia } from 'pinia';
+import {createPinia} from 'pinia';
 import z from 'zod';
+import {i18nErrorMap} from './schema/i18nErrorMap';
+import {storeStart} from './stores';
 
 const app = createApp(App);
 
@@ -34,7 +34,6 @@ async function bootstrap() {
 
     // Load UnoCSS icons after window.onload
     window.onload = () => import('uno:icons.css');
-    console.log('llll');
     // Mount the app
     app.mount('#app');
   } catch (error) {
