@@ -34,7 +34,7 @@ async function bootstrap() {
 
     // Load UnoCSS icons after window.onload
     window.onload = () => import('uno:icons.css');
-
+    console.log('llll');
     // Mount the app
     app.mount('#app');
   } catch (error) {
