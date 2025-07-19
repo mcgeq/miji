@@ -1,5 +1,5 @@
 <template>
-  <div class="period-record-form">
+  <div class="period-record-form card-base">
     <!-- 表单头部 -->
     <div class="form-header">
       <div class="header-content">
@@ -129,11 +129,6 @@
 
         <!-- 备注区域 -->
         <div class="section-card">
-          <div class="section-header">
-            <i class="i-tabler-note wh-4 text-purple-500" />
-            <h3 class="section-title">备注信息</h3>
-          </div>
-
           <div class="input-group">
             <textarea v-model="formData.notes" class="notes-textarea" placeholder="记录本次经期的特殊情况、身体感受或其他想要记录的内容..."
               maxlength="500" rows="4" />
@@ -206,14 +201,14 @@
 </template>
 
 <script setup lang="ts">
-import { Edit, Trash, Triangle, X } from 'lucide-vue-next';
+import {Edit, Trash, Triangle, X} from 'lucide-vue-next';
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue';
 import InputError from '@/components/common/InputError.vue';
 import WarningDialog from '@/components/common/WarningDialog.vue';
-import { Intensity, SymptomsType } from '@/schema/common';
-import type { PeriodRecords } from '@/schema/health/period';
-import { usePeriodStore } from '@/stores/periodStore';
-import { usePeriodValidation } from '../composables/usePeriodValidation';
+import {Intensity, SymptomsType} from '@/schema/common';
+import type {PeriodRecords} from '@/schema/health/period';
+import {usePeriodStore} from '@/stores/periodStore';
+import {usePeriodValidation} from '../composables/usePeriodValidation';
 import {
   DateUtils,
   PeriodCalculator,
@@ -241,7 +236,7 @@ const emit = defineEmits<{
 
 // Store & Composables
 const periodStore = usePeriodStore();
-const { validatePeriodRecord, getFieldErrors, hasErrors, clearValidationErrors } =
+const {validatePeriodRecord, getFieldErrors, hasErrors, clearValidationErrors} =
   usePeriodValidation();
 
 // Reactive state
@@ -265,11 +260,11 @@ const symptoms = ref<Record<SymptomsType, Intensity | null>>({
 
 // Configuration
 const durationPresets = [
-  { days: 3, label: '3天' },
-  { days: 4, label: '4天' },
-  { days: 5, label: '5天' },
-  { days: 6, label: '6天' },
-  { days: 7, label: '7天' },
+  {days: 3, label: '3天'},
+  {days: 4, label: '4天'},
+  {days: 5, label: '5天'},
+  {days: 6, label: '6天'},
+  {days: 7, label: '7天'},
 ];
 
 const symptomGroups = [
@@ -294,9 +289,9 @@ const symptomGroups = [
 ];
 
 const intensityLevels = [
-  { value: 'Light' as const, label: '轻度' },
-  { value: 'Medium' as const, label: '中度' },
-  { value: 'Heavy' as const, label: '重度' },
+  {value: 'Light' as const, label: '轻度'},
+  {value: 'Medium' as const, label: '中度'},
+  {value: 'Heavy' as const, label: '重度'},
 ];
 
 // Computed
@@ -384,7 +379,7 @@ const canSubmit = computed(() => {
 });
 
 const deletionInfo = computed(() => {
-  if (!props.record) return { dateRange: '', duration: '' };
+  if (!props.record) return {dateRange: '', duration: ''};
 
   return {
     dateRange: DateUtils.formatDateRange(
@@ -398,7 +393,7 @@ const deletionInfo = computed(() => {
 });
 
 const overlapInfo = computed(() => {
-  if (!overlapRecord.value) return { dateRange: '' };
+  if (!overlapRecord.value) return {dateRange: ''};
 
   return {
     dateRange: DateUtils.formatDateRange(
@@ -592,7 +587,7 @@ const initializeForm = () => {
 };
 
 // Watchers
-watch(() => props.record, initializeForm, { immediate: true });
+watch(() => props.record, initializeForm, {immediate: true});
 
 // Lifecycle
 onMounted(() => {
@@ -618,8 +613,16 @@ defineExpose({
 
 <style scoped lang="postcss">
 .period-record-form {
-  @apply max-w-2xl mx-auto bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden;
+  max-height: 80vh; /* 根据需要调整高度 */
+  overflow-y: scroll;
+  -ms-overflow-style: none; /* IE 10+ */
+  scrollbar-width: none; /* Firefox */
 }
+
+.period-record-form::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Edge */
+}
+
 
 /* 表单头部 */
 .form-header {

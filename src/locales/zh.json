@@ -22,6 +22,7 @@
   },
   "common": {
     "loading": "加载中...",
+    "processing": "处理中...",
     "actions": {
       "all": "全部",
       "edit": "编辑",
@@ -39,12 +40,17 @@
       "search": "搜索",
       "filter": "筛选",
       "select": "选择",
-      "choose": "选择"
+      "choose": "选择",
+      "clearFilter": "清除筛选",
+      "export": "导出",
+      "import": "导入",
+      "use": "采用"
     },
     "sorting": {
       "sort": "排序",
       "desc": "降序",
-      "asc": "升序"
+      "asc": "升序",
+      "sortBy": "排序方式"
     },
     "status": {
       "status": "状态",
@@ -59,7 +65,10 @@
       "paid": "已付款",
       "overdue": "已逾期",
       "pending": "待付款",
-      "current": "当前使用"
+      "current": "当前使用",
+      "success": "成功",
+      "failed": "失败",
+      "error": "错误"
     },
     "misc": {
       "options": "操作",
@@ -79,7 +88,19 @@
       "maxLength": "{current}/{max}",
       "priority": "优先级",
       "advance": "提前",
-      "basicInfo": "基本信息"
+      "basicInfo": "基本信息",
+      "notes": "备注",
+      "details": "详情",
+      "info": "信息",
+      "settings": "设置",
+      "statistics": "统计",
+      "dashboard": "仪表板",
+      "calendar": "日历",
+      "today": "今天",
+      "yes": "是",
+      "no": "否",
+      "days": "天",
+      "hours": "小时"
     },
     "placeholders": {
       "enterName": "请输入名称",
@@ -89,16 +110,17 @@
       "selectType": "请选择类型",
       "enterAmount": "请输入金额",
       "selectAccount": "请选择账户",
-      "enterTitle": "请输入标题"
+      "enterTitle": "请输入标题",
+      "searchRecords": "搜索记录...",
+      "enterNotes": "记录其他想要记录的内容...",
+      "selectFile": "选择文件"
     }
   },
-
   "categories": {
     "category": "分类",
     "allCategory": "全部分类",
     "subCategory": "子分类"
   },
-
   "date": {
     "date": "时间",
     "createDate": "创建时间",
@@ -268,7 +290,6 @@
     "createFailed": "创建账本失败",
     "updateFailed": "更新账本失败"
   },
-
   "roles": {
     "owner": "所有者",
     "admin": "管理员",
@@ -280,7 +301,6 @@
     "member": "成员",
     "viewer": "查看者"
   },
-
   "todos": {
     "inputPlace": "添加新任务...",
     "dueAt": "剩余",
@@ -319,7 +339,344 @@
       }
     }
   },
-
+  "period": {
+    "management": "经期管理",
+    "period": "经期",
+    "menstruation": "月经",
+    "cycle": "周期",
+    "phase": "阶段",
+    "record": "记录",
+    "records": "记录",
+    "duration": "持续时间",
+    "length": "长度",
+    "flow": "流量",
+    "symptoms": "症状",
+    "mood": "心情",
+    "exercise": "运动",
+    "diet": "饮食",
+    "water": "饮水",
+    "sleep": "睡眠",
+    "sexual": "性生活",
+    "analysis": "分析",
+    "prediction": "预测",
+    "tips": "提示",
+    "health": "健康",
+    "intelligence": "智能",
+    "regularity": "规律性",
+    "confidence": "置信度",
+    "overview": "概览",
+    "trend": "趋势",
+    "trends": "趋势",
+    "situation": "状况",
+    "information": "信息",
+    "operation": "操作",
+    "failed": "失败",
+    "saveFailed": "保存日常记录失败",
+    "deleteFailed": "删除失败，请重试",
+    "firstTime": "首次记录",
+    "navigation": {
+      "calendar": "日历",
+      "statistics": "统计",
+      "settings": "设置"
+    },
+    "phases": {
+      "menstrual": "经期",
+      "follicular": "卵泡期",
+      "ovulation": "排卵期",
+      "luteal": "黄体期"
+    },
+    "phaseDescriptions": {
+      "menstrual": "月经期间，注意休息和保暖",
+      "follicular": "新周期开始，精力逐渐恢复",
+      "ovulation": "排卵期，受孕几率较高",
+      "luteal": "黄体期，可能出现经前症状"
+    },
+    "flowLevels": {
+      "light": "轻量",
+      "medium": "中量",
+      "heavy": "大量"
+    },
+    "moods": {
+      "happy": "开心",
+      "calm": "平静",
+      "sad": "难过",
+      "angry": "愤怒",
+      "anxious": "焦虑",
+      "irritable": "易怒"
+    },
+    "exerciseIntensities": {
+      "none": "无",
+      "light": "轻度",
+      "medium": "中度",
+      "heavy": "高强度"
+    },
+    "symptomTypes": {
+      "pain": "疼痛程度",
+      "fatigue": "疲劳程度",
+      "moodSwing": "情绪波动"
+    },
+    "intensityLevels": {
+      "light": "轻度",
+      "medium": "中度",
+      "heavy": "重度"
+    },
+    "forms": {
+      "recordPeriod": "记录经期",
+      "dailyRecord": "日常记录",
+      "addRecord": "添加记录",
+      "editRecord": "编辑记录",
+      "recordDaily": "记录日常状况",
+      "editDaily": "编辑日常状况",
+      "addPeriodRecord": "添加经期记录",
+      "editPeriodRecord": "编辑经期记录",
+      "recordNewPeriod": "记录新的经期开始和结束时间",
+      "modifyExistingPeriod": "修改已有的经期信息",
+      "dateSettings": "日期设置",
+      "periodInfo": "经期信息",
+      "symptomRecord": "症状记录",
+      "notesInfo": "备注信息",
+      "quickSetup": "快速设置",
+      "selectSymptomLevel": "选择本次经期的症状程度"
+    },
+    "fields": {
+      "date": "日期",
+      "startDate": "开始日期",
+      "endDate": "结束日期",
+      "flowLevel": "经期流量",
+      "mood": "心情状态",
+      "exerciseIntensity": "运动强度",
+      "diet": "饮食记录",
+      "waterIntake": "饮水量",
+      "sleepHours": "睡眠时间（小时）",
+      "sexualActivity": "性生活",
+      "contraceptionMethod": "避孕措施",
+      "notes": "备注",
+      "averageCycleLength": "平均周期长度",
+      "averagePeriodLength": "平均经期长度",
+      "distanceFromLast": "距离上次",
+      "predictNext": "预测下次"
+    },
+    "contraceptionMethods": {
+      "none": "无措施",
+      "condom": "安全套",
+      "pill": "避孕药",
+      "iud": "宫内节育器",
+      "other": "其他方式"
+    },
+    "placeholders": {
+      "dietRecord": "记录今天的饮食情况...",
+      "waterIntakeExample": "例如: 2000",
+      "sleepExample": "8",
+      "notesPlaceholder": "记录其他想要记录的内容...",
+      "symptomDetails": "记录本次经期的特殊情况、身体感受或其他想要记录的内容...",
+      "start": "开始",
+      "end": "结束"
+    },
+    "units": {
+      "ml": "ml",
+      "hours": "小时",
+      "days": "天"
+    },
+    "presets": {
+      "water": "饮水量预设",
+      "sleep": "睡眠时间预设",
+      "duration": "天"
+    },
+    "quickActions": {
+      "title": "快速操作",
+      "recordPeriod": "记录经期",
+      "dailyRecord": "日常记录",
+      "viewStats": "查看统计"
+    },
+    "todayInfo": {
+      "title": "今日信息",
+      "currentPhase": "当前阶段",
+      "daysUntilNext": "距离下次",
+      "todayRecord": "今日记录",
+      "noRecord": "暂无记录"
+    },
+    "nextPeriod": {
+      "title": "下次经期",
+      "today": "今天",
+      "tomorrow": "明天",
+      "daysLater": "天后",
+      "todayStart": "今天开始",
+      "tomorrowStart": "明天开始",
+      "delayed": "已延迟",
+      "noPrediction": "暂无预测"
+    },
+    "stats": {
+      "totalRecords": "总记录数",
+      "averageDuration": "平均持续天数",
+      "averageCycle": "平均周期天数",
+      "cycleInfo": "周期信息",
+      "cycleRegularity": "周期规律性",
+      "currentPhase": "当前阶段",
+      "nextPeriod": "下次经期",
+      "veryRegular": "非常规律",
+      "regular": "较为规律",
+      "moderate": "一般",
+      "irregular": "不太规律",
+      "insufficient": "数据不足",
+      "high": "高",
+      "medium": "中等",
+      "low": "较低",
+      "firstRecord": "首次记录",
+      "recentRecords": "最近记录",
+      "trendAnalysis": "趋势分析",
+      "averagePeriod": "平均经期",
+      "averageCycleText": "平均周期",
+      "symptomSeverity": "症状严重度",
+      "severe": "较重",
+      "mild": "轻度",
+      "rare": "很少",
+      "continues": "持续",
+      "cycleText": "周期"
+    },
+    "healthTips": {
+      "title": "健康提示",
+      "water": "每天喝足够的水，保持身体水分平衡",
+      "sleep": "保持规律睡眠，稳定月经周期",
+      "iron": "食用富含铁质的食物，补充营养",
+      "exercise": "适度的运动可以缓解经期症状",
+      "menstrualWarmWater": "多喝温水，避免冷饮",
+      "menstrualRest": "充分休息，避免剧烈运动",
+      "menstrualWarmth": "注意保暖，特别是腹部",
+      "noRecordText": "还没有经期记录，",
+      "clickToAdd": "点击添加",
+      "healthAdvice": "健康建议"
+    },
+    "settings": {
+      "title": "设置",
+      "cycleSettings": "周期设置",
+      "reminderSettings": "提醒设置",
+      "privacySettings": "隐私设置",
+      "dataManagement": "数据管理",
+      "normalRange": "正常范围",
+      "mostWomen": "大部分女性",
+      "periodReminder": "经期提醒",
+      "ovulationReminder": "排卵期提醒",
+      "pmsReminder": "PMS提醒",
+      "reminderDays": "提前提醒天数",
+      "dataSync": "数据同步",
+      "analytics": "匿名统计",
+      "exportData": "导出数据",
+      "importData": "导入数据",
+      "resetAllData": "重置所有数据",
+      "intelligentAnalysis": "智能分析",
+      "recordCount": "记录数量",
+      "dataConfidence": "数据置信度",
+      "exportToJson": "导出为JSON",
+      "selectFile": "选择文件",
+      "resetConfirm": "确认重置",
+      "resetWarningText": "确定要清空所有数据吗？此操作将删除所有经期记录、日常记录和设置，且无法撤销。",
+      "resetInputPrompt": "输入 '确认重置' 来确认操作",
+      "importSuccess": "导入成功",
+      "importFailed": "导入失败",
+      "cycles": "个周期"
+    },
+    "settingsDescriptions": {
+      "cycleLength": "正常范围：21-35天，大部分女性为28天",
+      "periodLength": "正常范围：2-8天，大部分女性为3-7天",
+      "periodReminderDesc": "在经期开始前几天发送提醒",
+      "ovulationReminderDesc": "在排卵期到来时发送提醒",
+      "pmsReminderDesc": "在可能出现经前症状时发送提醒",
+      "reminderDaysDesc": "在经期开始前多少天发送提醒",
+      "dataSyncDesc": "将数据同步到云端，便于在多设备间使用",
+      "analyticsDesc": "帮助改进应用功能，所有数据都是匿名的",
+      "exportDesc": "导出所有经期数据到本地文件",
+      "importDesc": "从JSON文件导入经期数据",
+      "resetDesc": "删除所有经期记录，此操作不可撤销"
+    },
+    "filters": {
+      "title": "筛选",
+      "hasActiveFilters": "有活跃筛选",
+      "dateRange": "日期范围",
+      "duration": "持续时间",
+      "cycleLength": "周期长度",
+      "minDays": "最少天数",
+      "maxDays": "最多天数",
+      "minCycle": "最短周期",
+      "maxCycle": "最长周期",
+      "start": "开始",
+      "end": "结束",
+      "clearFilters": "清除筛选"
+    },
+    "sortOptions": {
+      "startDate": "按开始日期",
+      "duration": "按持续时间",
+      "cycleLength": "按周期长度"
+    },
+    "emptyStates": {
+      "noRecords": "还没有经期记录",
+      "noMatchingRecords": "未找到匹配的记录",
+      "startRecording": "开始记录你的经期数据吧",
+      "adjustFilters": "试试调整搜索条件或筛选器",
+      "clickToAdd": "点击添加",
+      "addFirstRecord": "添加第一条记录"
+    },
+    "confirmations": {
+      "deleteRecord": "确认删除",
+      "deleteWarning": "确定要删除这条记录吗？此操作无法撤销。",
+      "resetData": "确认重置",
+      "resetWarning": "确定要清空所有数据吗？此操作将删除所有经期记录、日常记录和设置，且无法撤销。",
+      "resetConfirmText": "确认重置",
+      "resetInputPrompt": "输入 '确认重置' 来确认操作",
+      "unsavedChanges": "有未保存的更改，确定要离开吗？",
+      "overlapWarning": "检测到您选择的日期与已有记录存在重叠：",
+      "overlapContinue": "是否继续保存？这可能会影响数据的准确性。",
+      "deletePeriodRecord": "删除经期记录",
+      "confirmDeletePeriodRecord": "确定要删除这条经期记录吗？",
+      "recordTime": "记录时间:",
+      "operationCannotUndo": "此操作无法撤销，请谨慎操作",
+      "dateOverlapReminder": "日期重叠提醒",
+      "dateOverlapDetected": "检测到您选择的日期与已有记录存在重叠："
+    },
+    "messages": {
+      "recordSaved": "记录已保存",
+      "dailyRecordSaved": "日常记录已保存",
+      "recordDeleted": "记录已删除",
+      "periodRecordSaved": "经期记录已保存",
+      "periodRecordDeleted": "经期记录已删除",
+      "settingsUpdated": "设置已更新",
+      "exportSuccess": "数据导出成功",
+      "exportFailed": "数据导出失败",
+      "importSuccess": "成功导入 {count} 条经期记录",
+      "importFailed": "文件格式错误或数据损坏",
+      "resetSuccess": "所有数据已清空",
+      "resetFailed": "重置失败，请重试",
+      "operationSuccess": "操作成功",
+      "operationFailed": "操作失败",
+      "calculatedHint": "根据历史数据计算：{value}天"
+    },
+    "calculations": {
+      "duration": "{days} 天",
+      "cycle": "周期 {days} 天",
+      "firstRecord": "首次记录",
+      "predicted": "预测下次",
+      "cycleDescription": {
+        "short": "周期偏短",
+        "normal": "周期正常",
+        "long": "周期偏长"
+      }
+    },
+    "dateFormats": {
+      "monthDay": "{month}月{day}日",
+      "monthDayRange": "{month1}月{day1}-{day2}日",
+      "crossMonthRange": "{month1}月{day1}日-{month2}月{day2}日"
+    },
+    "validation": {
+      "dateRequired": "请选择日期",
+      "dietRequired": "请输入饮食记录",
+      "waterIntakeInvalid": "请输入有效的饮水量",
+      "sleepHoursInvalid": "请输入有效的睡眠时间",
+      "notesMaxLength": "备注不能超过500字符",
+      "startDateRequired": "请选择开始日期",
+      "endDateRequired": "请选择结束日期",
+      "endDateAfterStart": "结束日期不能早于开始日期",
+      "durationTooLong": "经期持续时间不能超过14天"
+    }
+  },
   "units": {
     "minutes": "分钟",
     "hours": "小时",
@@ -328,14 +685,13 @@
     "months": "月",
     "years": "年"
   },
-
   "pagination": {
     "next": "下一页",
     "prev": "上一页",
     "home": "首页",
-    "last": "末页"
+    "last": "末页",
+    "showing": "显示 {start}-{end} 共 {total} 条记录"
   },
-
   "placeholders": {
     "reminderDetails": {
       "Bill": "如：信用卡账单、水电费等详细信息",
@@ -344,18 +700,17 @@
       "Meeting": "如：会议议题、参与人员、会议地点等",
       "Birthday": "如：生日礼物准备、庆祝计划等",
       "Travel": "如：行程安排、注意事项、携带物品等",
-      "default": "请输入提醒的详细描述信息"
+      "default": "请输入提醒的详细描述信息",
+      "Notification": "提醒描述（可选）"
     },
     "budgetDescription": "预算描述（可选）",
     "amountOptional": "0.00（可选）"
   },
-
   "helpTexts": {
     "reminderType": "选择合适的提醒类型以获得更好的分类和提醒体验",
     "priority": "选择合适的优先级来管理提醒的重要程度",
     "repeatPeriod": "设置提醒的重复规则，可以精确控制重复时间"
   },
-
   "messages": {
     "noReminder": "暂无提醒",
     "noPatternResult": "无匹配结果",
@@ -382,7 +737,6 @@
     "selectCurrency": "请选择货币",
     "selectedAsDefault": "选择后将作为此账本的默认货币单位，创建后不可修改"
   },
-
   "validation": {
     "invalid": "校验不通过",
     "required": "请输入内容",
@@ -412,3 +766,4 @@
     "repeatPeriodIncomplete": "重复频率配置不完整，请检查必填项"
   }
 }
+

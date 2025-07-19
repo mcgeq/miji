@@ -1,4 +1,4 @@
-import {z} from 'zod';
+import { z } from 'zod';
 import {
   SerialNumSchema,
   DateSchema,
@@ -26,7 +26,14 @@ export const PainTypeSchema = z.enum([
   'Bloating',
 ]);
 export type PainType = z.infer<typeof PainTypeSchema>;
-
+export const ContraceptionMethodSchema = z.enum([
+  'None',
+  'Condom',
+  'Pill',
+  'Iud',
+  'Other',
+]);
+export type ContraceptionMethod = z.infer<typeof ContraceptionMethodSchema>;
 export const PeriodPhaseSchema = z.enum([
   'Menstrual',
   'Follicular',
@@ -42,6 +49,7 @@ export const PeriodDailyRecordsSchema = z.object({
   date: DateSchema,
   flowLevel: FlowLevelSchema.optional().nullable(),
   sexualActivity: z.boolean(),
+  contraceptionMethod: ContraceptionMethodSchema.optional(),
   exerciseIntensity: ExerciseIntensitySchema,
   diet: z.string(),
   mood: MoodSchema.optional().nullable(),

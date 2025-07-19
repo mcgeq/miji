@@ -8,17 +8,17 @@
             <button @click="currentView = 'calendar'" class="nav-tab"
               :class="{ 'nav-tab-active': currentView === 'calendar' }">
               <CalendarCheck class="wh-4" />
-              <span class="hidden sm:inline">日历</span>
+              <span class="hidden sm:inline">{{ t('period.navigation.calendar') }}</span>
             </button>
             <button @click="currentView = 'stats'" class="nav-tab"
               :class="{ 'nav-tab-active': currentView === 'stats' }">
               <Activity class="wh-4" />
-              <span class="hidden sm:inline">统计</span>
+              <span class="hidden sm:inline">{{ t('period.navigation.statistics') }}</span>
             </button>
             <button @click="currentView = 'settings'" class="nav-tab"
               :class="{ 'nav-tab-active': currentView === 'settings' }">
               <Settings class="wh-4" />
-              <span class="hidden sm:inline">设置</span>
+              <span class="hidden sm:inline">{{ t('period.navigation.settings') }}</span>
             </button>
           </div>
         </div>
@@ -52,35 +52,35 @@
                     <CalendarCheck class="w-5 h-5 text-white" />
                   </div>
                   <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-                    今日信息
+                    {{ t('period.todayInfo.title') }}
                   </h3>
                 </div>
                 <div class="space-y-4">
                   <div class="info-item">
-                    <span class="info-label">当前阶段</span>
+                    <span class="info-label">{{ t('period.todayInfo.currentPhase') }}</span>
                     <span class="info-value phase-badge">
                       {{ currentPhaseLabel }}
                     </span>
                   </div>
                   <div class="info-item">
-                    <span class="info-label">距离下次</span>
+                    <span class="info-label">{{ t('period.todayInfo.daysUntilNext') }}</span>
                     <span class="info-value">{{ daysUntilNext }}</span>
                   </div>
                   <div v-if="todayRecord" class="info-item">
-                    <span class="info-label">今日记录</span>
+                    <span class="info-label">{{ t('period.todayInfo.todayRecord') }}</span>
                     <div class="flex items-center gap-2">
                       <button @click="openDailyForm(todayRecord)" class="action-icon-btn view-btn" title="查看记录">
                         <Eye class="wh-4" />
                       </button>
                       <button @click="handleDeleteDailyRecord(todayRecord.serialNum)" class="action-icon-btn delete-btn"
-                        title="删除记录">
+                        :title="t('common.actions.delete')">
                         <Trash class="wh-4" />
                       </button>
                     </div>
                   </div>
                   <div v-else class="info-item">
-                    <span class="info-label">今日记录</span>
-                    <span class="text-sm text-gray-500 dark:text-gray-400">暂无记录</span>
+                    <span class="info-label">{{ t('period.todayInfo.todayRecord') }}</span>
+                    <span class="text-sm text-gray-500 dark:text-gray-400">{{ t('period.todayInfo.noRecord') }}</span>
                   </div>
                 </div>
               </div>
@@ -93,21 +93,21 @@
                     <Plus class="w-5 h-5 text-white" />
                   </div>
                   <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-                    快速操作
+                    {{ t('period.quickActions.title') }}
                   </h3>
                 </div>
                 <div class="space-y-3">
                   <button @click="openRecordForm()" class="action-btn period-btn">
                     <Plus class="wh-5" />
-                    <span>记录经期</span>
+                    <span>{{ t('period.quickActions.recordPeriod') }}</span>
                   </button>
                   <button @click="openDailyForm()" class="action-btn daily-btn">
                     <Edit class="wh-5" />
-                    <span>日常记录</span>
+                    <span>{{ t('period.quickActions.dailyRecord') }}</span>
                   </button>
                   <button @click="currentView = 'stats'" class="action-btn stats-btn">
                     <Activity class="wh-5" />
-                    <span>查看统计</span>
+                    <span>{{ t('period.quickActions.viewStats') }}</span>
                   </button>
                 </div>
               </div>
@@ -122,7 +122,7 @@
                 <Heart class="wh-5 text-white" />
               </div>
               <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-                健康提示
+                {{ t('period.healthTips.title') }}
               </h3>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -175,20 +175,20 @@
               <Trash class="w-5 h-5 text-red-600 dark:text-red-400" />
             </div>
             <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-              确认删除
+              {{ t('period.confirmations.deleteRecord') }}
             </h3>
           </div>
           <p class="text-sm text-gray-600 dark:text-gray-400 mb-6">
-            确定要删除这条记录吗？此操作无法撤销。
+            {{ t('period.confirmations.deleteWarning') }}
           </p>
           <div class="flex items-center gap-3">
             <button @click="confirmDelete"
               class="flex-1 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-              确认删除
+              <Check class="wh-5" />
             </button>
             <button @click="closeDeleteConfirm"
               class="flex-1 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-              取消
+              <X class="wh-5" />
             </button>
           </div>
         </div>
@@ -199,7 +199,7 @@
     <div v-if="periodStore.loading" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
       <div class="bg-white dark:bg-gray-800 rounded-lg p-6 flex items-center gap-3 shadow-xl">
         <div class="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-        <span class="text-gray-700 dark:text-gray-300">处理中...</span>
+        <span class="text-gray-700 dark:text-gray-300"> {{ t('common.processing') }} </span>
       </div>
     </div>
 
@@ -213,7 +213,7 @@
           </div>
           <div class="flex-1">
             <p class="text-sm font-medium text-red-900 dark:text-red-400">
-              操作失败
+              {{ t('period.messages.operationFailed') }}
             </p>
             <p class="text-xs text-red-700 dark:text-red-400 mt-1">
               {{ periodStore.error }}
@@ -238,7 +238,7 @@
           </div>
           <div class="flex-1">
             <p class="text-sm font-medium text-green-900 dark:text-green-400">
-              操作成功
+              {{ t('period.messages.operationSuccess') }}
             </p>
             <p class="text-xs text-green-700 dark:text-green-400 mt-1">
               {{ successMessage }}
@@ -246,7 +246,7 @@
           </div>
           <button @click="hideSuccessMessage"
             class="text-green-400 hover:text-green-600 dark:hover:text-green-300 transition-colors">
-            <X class="w-4 h-4" />
+            <Check class="w-4 h-4" />
           </button>
         </div>
       </div>
@@ -258,15 +258,12 @@
 import {
   Activity,
   Apple,
-  Bed,
   CalendarCheck,
-  CupSoda,
+  Check,
   Droplet,
   Edit,
   Eye,
-  Flame,
   Heart,
-  Leaf,
   Moon,
   Plus,
   Settings,
@@ -287,6 +284,8 @@ import {Lg} from '@/utils/debugLog';
 // Store
 const periodStore = usePeriodStore();
 
+const {t} = useI18n();
+
 // Reactive state
 const currentView = ref<'calendar' | 'stats' | 'settings'>('calendar');
 const selectedDate = ref(getTodayDate().split('T')[0]);
@@ -303,20 +302,20 @@ const deletingSerialNum = ref<string>('');
 const currentPhaseLabel = computed(() => {
   const phase = periodStore.periodStats.currentPhase;
   const labels = {
-    Menstrual: '经期',
-    Follicular: '卵泡期',
-    Ovulation: '排卵期',
-    Luteal: '黄体期',
+    Menstrual: t('period.phases.menstrual'),
+    Follicular: t('period.phases.follicular'),
+    Ovulation: t('period.phases.ovulation'),
+    Luteal: t('period.phases.luteal'),
   };
   return labels[phase];
 });
 
 const daysUntilNext = computed(() => {
   const days = periodStore.periodStats.daysUntilNext;
-  if (days === 0) return '今天开始';
-  if (days === 1) return '明天开始';
-  if (days < 0) return '已延迟';
-  return `${days}天后`;
+  if (days === 0) return t('period.nextPeriod.todayStart');
+  if (days === 1) return t('period.nextPeriod.tomorrowStart');
+  if (days < 0) return t('period.nextPeriod.delayed');
+  return `${days}${t('period.nextPeriod.daysLater')}`;
 });
 
 const todayRecord = computed(() => {
@@ -330,9 +329,9 @@ const todayRecord = computed(() => {
   return found || null;
 });
 const baseTips: Tip[] = [
-  {id: 1, icon: Droplet, text: '每天喝足够的水，保持身体水分平衡'},
-  {id: 2, icon: Moon, text: '保持规律睡眠，稳定月经周期'},
-  {id: 3, icon: Apple, text: '食用富含铁质的食物，补充营养'},
+  {id: 1, icon: Droplet, text: t('period.healthTips.water')},
+  {id: 2, icon: Moon, text: t('period.healthTips.sleep')},
+  {id: 3, icon: Apple, text: t('period.healthTips.iron')},
 ];
 const currentTips = computed(() => {
   const phase = periodStore.periodStats.currentPhase;
@@ -360,7 +359,7 @@ const handleRecordSubmit = async (record: PeriodRecords) => {
   // 刷新数据以更新UI
   await periodStore.fetchPeriodRecords();
 
-  showSuccessToast('经期记录已保存');
+  showSuccessToast(t('period.messages.periodRecordSaved'));
   Lg.i('PeriodManagement', 'Record submitted:', record);
 };
 
@@ -370,7 +369,7 @@ const handleRecordDelete = async (serialNum: string) => {
   // 刷新数据以更新UI
   await periodStore.fetchPeriodRecords();
 
-  showSuccessToast('经期记录已删除');
+  showSuccessToast(t('period.messages.periodRecordDeleted'));
   Lg.i('PeriodManagement', 'Record deleted:', serialNum);
 };
 
@@ -396,7 +395,7 @@ const handleDailySubmit = async (record: PeriodDailyRecords) => {
     // 等待一个 tick 确保状态更新
     await nextTick();
 
-    showSuccessToast('日常记录已保存');
+    showSuccessToast(t('period.messages.dailyRecordSaved'));
 
     Lg.i(
       'PeriodManagement',
@@ -404,7 +403,7 @@ const handleDailySubmit = async (record: PeriodDailyRecords) => {
       periodStore.dailyRecords.length,
     );
   } catch (error) {
-    Lg.e('PeriodManagement', '保存日常记录失败:', error);
+    Lg.e('PeriodManagement', `${t('period.saveFailed')}:`, error);
   }
 };
 
@@ -435,7 +434,7 @@ const confirmDelete = async () => {
     // 强制刷新日常记录
     await periodStore.refreshDailyRecords();
 
-    showSuccessToast('记录已删除');
+    showSuccessToast(t('period.messages.recordDeleted'));
     closeDeleteConfirm();
 
     Lg.i(
@@ -444,7 +443,7 @@ const confirmDelete = async () => {
       periodStore.dailyRecords.length,
     );
   } catch (error) {
-    console.error('删除失败:', error);
+    console.error(`${t('messages.deleteFailed')}:`, error);
   }
 };
 
