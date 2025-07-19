@@ -6,12 +6,13 @@ import { toast } from '@/utils/toast';
 
 let i18nInstance: ReturnType<typeof createI18n> | null = null;
 
-async function loadLocaleMessages(locale: string) {
+async function loadLocaleMessages(locales: string) {
   try {
+    const locale = locales.split('-')[0];
     const messages = await import(`@/locales/${locale}.json`);
     return messages.default;
   } catch (error) {
-    console.error(`Failed to load locale messages for ${locale}:`, error);
+    console.error(`Failed to load locale messages for ${locales}:`, error);
     return null;
   }
 }

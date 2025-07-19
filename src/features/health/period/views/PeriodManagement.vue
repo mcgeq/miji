@@ -655,21 +655,65 @@ onMounted(async () => {
   }
 }
 
+/* 移动端适配 - 关键修复：保持导航在一行 */
 @media (max-width: 640px) {
-  .header-section .flex {
-    @apply flex-col gap-3 items-start;
+  /* 确保头部容器保持水平布局 */
+  .header-section .container > .flex {
+    @apply flex-row items-center justify-between gap-2;
   }
 
-  .nav-tab span {
+  /* 左侧标题区域 */
+  .header-section .flex.items-center.gap-2 {
+    @apply gap-1 flex-shrink-0;
+  }
+
+  .header-section h1 {
+    @apply text-base;
+  }
+
+  /* 右侧导航区域 - 保持水平排列 */
+  .header-section .flex.items-center.gap-1.bg-gray-100 {
+    @apply flex-1 max-w-[180px] gap-0.5 p-0.5;
+  }
+
+  /* 导航标签 - 水平排列 */
+  .nav-tab {
+    @apply px-1 py-1.5 text-xs flex-1 justify-center min-w-0;
+  }
+
+  /* 只在移动端隐藏文字 */
+  .nav-tab span.hidden.sm\\:inline {
     @apply hidden;
   }
 
-  .nav-tab {
-    @apply flex-1 justify-center;
+  /* 确保图标居中 */
+  .nav-tab .w-4.h-4 {
+    @apply mx-auto;
   }
 
+  /* 主要内容区域调整 */
   .main-content .container {
-    @apply py-4;
+    @apply py-4 px-3;
+  }
+
+  /* 卡片内边距调整 */
+  .card-base {
+    @apply p-3;
+  }
+
+  /* 按钮调整 */
+  .action-btn {
+    @apply py-2 text-xs gap-2;
+  }
+
+  /* 图标按钮调整 */
+  .action-icon-btn {
+    @apply w-7 h-7;
+  }
+
+  /* 提示卡片在移动端堆叠 */
+  .tip-item {
+    @apply p-3;
   }
 }
 
