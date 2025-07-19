@@ -2,7 +2,8 @@
   <div class="modal-mask">
     <div class="modal-mask-window-money">
       <div class="flex justify-between items-center mb-4">
-        <h3 class="text-lg font-semibold">{{ props.account ? '编辑账户' : '添加账户' }}</h3>
+        <h3 class="text-lg font-semibold">{{ props.account ? t('financial.account.editAccount') :
+          t('financial.account.addAccount') }}</h3>
         <button @click="closeModal" class="text-gray-500 hover:text-gray-700">
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -11,41 +12,43 @@
       </div>
       <form @submit.prevent="saveAccount">
         <div class="mb-2 flex items-center justify-between">
-          <label class="text-sm font-medium text-gray-700 mb-2">账户名称</label>
-          <input v-model="form.name" type="text" required class="w-2/3 modal-input-select" placeholder="请输入账户名称" />
+          <label class="text-sm font-medium text-gray-700 mb-2">{{ t('financial.account.accountName') }}</label>
+          <input v-model="form.name" type="text" required class="w-2/3 modal-input-select"
+            :placeholder="t('common.placeholders.enterName')" />
         </div>
 
         <div class="mb-2 flex items-center justify-between">
-          <label class="text-sm font-medium text-gray-700 mb-2">账户类型</label>
+          <label class="text-sm font-medium text-gray-700 mb-2">{{ t('financial.account.accountType') }}</label>
           <select v-model="form.type" required class="w-2/3 modal-input-select">
-            <option value="Cash">现金</option>
-            <option value="Bank">银行卡</option>
-            <option value="Savings">储蓄账户</option>
-            <option value="CreditCard">信用卡</option>
-            <option value="Investment">投资账户</option>
-            <option value="WeChat">微信</option>
-            <option value="Alipay">支付宝</option>
-            <option value="CloudQuickPass">云闪付</option>
-            <option value="Other">其他</option>
+            <option value="Cash">{{ t('financial.accountTypes.cash') }}</option>
+            <option value="Bank">{{ t('financial.accountTypes.bank') }}</option>
+            <option value="Savings">{{ t('financial.accountTypes.savings') }}</option>
+            <option value="CreditCard">{{ t('financial.accountTypes.creditCard') }}</option>
+            <option value="Investment">{{ t('financial.accountTypes.investment') }}</option>
+            <option value="WeChat">{{ t('financial.accountTypes.wechat') }}</option>
+            <option value="Alipay">{{ t('financial.accountTypes.alipay') }}</option>
+            <option value="CloudQuickPass">{{ t('financial.accountTypes.cloudQuickPass') }}</option>
+            <option value="Other">{{ t('financial.accountTypes.other') }}</option>
           </select>
         </div>
 
         <div class="mb-2 flex items-center justify-between">
-          <label class="text-sm font-medium text-gray-700 mb-2">初始余额</label>
+          <label class="text-sm font-medium text-gray-700 mb-2">{{ t('financial.initialBalance') }}</label>
           <input v-model.number="form.balance" type="number" step="0.01" required class="w-2/3 modal-input-select"
             placeholder="0.00" />
         </div>
 
         <div class="mb-2 flex items-center justify-between">
-          <label class="text-sm font-medium text-gray-700 mb-2">币种</label>
+          <label class="text-sm font-medium text-gray-700 mb-2">{{ t('financial.currency') }}</label>
           <select v-model="form.currency.code" required class="w-2/3 modal-input-select">
             <option v-for="currency in currencys" :key="currency.code" :value="currency.code">
               {{ currency.nameZh }}
             </option>
           </select>
         </div>
+
         <div class="mb-2 flex items-center justify-between">
-          <label class="text-sm font-medium text-gray-700 mb-2">所属</label>
+          <label class="text-sm font-medium text-gray-700 mb-2">{{ t('financial.account.owner') }}</label>
           <select v-model="form.ownerId" required class="w-2/3 modal-input-select">
             <option v-for="currency in currencys" :key="currency.code" :value="currency.code">
               {{ currency.nameZh }}
@@ -57,23 +60,25 @@
           <div class="w-1/2">
             <label class="flex items-center">
               <input v-model="form.isShared" type="checkbox" class="mr-2 modal-input-select" />
-              <span class="text-sm font-medium text-gray-700">共享</span>
+              <span class="text-sm font-medium text-gray-700">{{ t('financial.account.shared') }}</span>
             </label>
           </div>
           <div class="w-1/2">
             <label class="flex items-center">
               <input v-model="form.isActive" type="checkbox" class="mr-2 modal-input-select" />
-              <span class="text-sm font-medium text-gray-700">激活</span>
+              <span class="text-sm font-medium text-gray-700">{{ t('financial.account.activate') }}</span>
             </label>
           </div>
         </div>
+
         <div class="mb-2 flex items-center justify-between">
-          <label class="text-sm font-medium text-gray-700 mb-2">颜色</label>
+          <label class="text-sm font-medium text-gray-700 mb-2">{{ t('common.misc.color') }}</label>
           <ColorSelector v-model="form.color" :color-names="colorNameMap" />
         </div>
+
         <div class="mb-2">
           <textarea v-model="form.description" rows="3" class="w-full modal-input-select"
-            placeholder="账户描述（可选）"></textarea>
+            :placeholder="`${t('common.misc.description')}（${t('common.misc.optional')}）`"></textarea>
         </div>
 
         <div class="flex justify-center space-x-3">
@@ -101,11 +106,15 @@ import { uuid } from '@/utils/uuid';
 interface Props {
   account: Account | null;
 }
+
 // 定义 props
 const props = defineProps<Props>();
 
 // 定义 emits
 const emit = defineEmits(['close', 'save']);
+
+// 假设 t 函数已经通过 useI18n 或类似方式注入
+const { t } = useI18n();
 
 const currencys = ref(DEFAULT_CURRENCY);
 const colorNameMap = ref(COLORS_MAP);
@@ -123,6 +132,7 @@ const account = props.account || {
   createdAt: getLocalISODateTimeWithOffset(),
   updatedAt: '',
 };
+
 // 响应式数据
 const form = reactive<Account>({
   serialNum: account.serialNum,
@@ -148,6 +158,7 @@ const validateForm = (data: Account): boolean => {
     return false;
   }
 };
+
 const closeModal = () => {
   emit('close');
 };
@@ -176,6 +187,7 @@ watch(
   { immediate: true, deep: true },
 );
 </script>
+
 <style scoped>
 /* 自定义样式 */
 </style>

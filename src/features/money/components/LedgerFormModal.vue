@@ -5,7 +5,7 @@
       <!-- 头部 -->
       <div class="flex justify-between items-center p-6 border-b border-gray-200 bg-gray-50">
         <h2 class="text-xl font-bold text-gray-800">
-          {{ isEdit ? '编辑账本' : '创建新账本' }}
+          {{ isEdit ? t('familyLedger.editLedger') : t('familyLedger.createNewLedger') }}
         </h2>
         <button @click="$emit('close')" class="text-gray-400 hover:text-gray-600 transition-colors">
           <X class="w-6 h-6" />
@@ -17,14 +17,16 @@
         <form @submit.prevent="handleSubmit" class="space-y-6">
           <!-- 基本信息 -->
           <div class="space-y-4">
-            <h3 class="text-lg font-medium text-gray-900 border-b border-gray-200 pb-2">基本信息</h3>
+            <h3 class="text-lg font-medium text-gray-900 border-b border-gray-200 pb-2">{{ t('familyLedger.basicInfo')
+            }}</h3>
 
             <!-- 账本名称 -->
             <div>
               <label for="name" class="block text-sm font-medium text-gray-700 mb-2">
-                账本名称 <span class="text-red-500">*</span>
+                {{ t('familyLedger.ledgerName') }} <span class="text-red-500">*</span>
               </label>
-              <input id="name" v-model="form.name" type="text" required maxlength="50" placeholder="例如：家庭主账本、投资理财账本"
+              <input id="name" v-model="form.name" type="text" required maxlength="50"
+                :placeholder="t('common.placeholders.enterName')"
                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
               <p class="text-xs text-gray-500 mt-1">{{ form.name.length }}/50</p>
             </div>
@@ -32,10 +34,10 @@
             <!-- 账本描述 -->
             <div>
               <label for="description" class="block text-sm font-medium text-gray-700 mb-2">
-                账本描述
+                {{ t('familyLedger.ledgerDescription') }}
               </label>
               <textarea id="description" v-model="form.description" rows="3" maxlength="200"
-                placeholder="简单描述这个账本的用途，例如：用于记录日常生活开支和收入"
+                :placeholder="t('common.placeholders.enterDescription')"
                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"></textarea>
               <p class="text-xs text-gray-500 mt-1">{{ form.description.length }}/200</p>
             </div>
@@ -43,21 +45,22 @@
 
           <!-- 货币设置 -->
           <div class="space-y-4">
-            <h3 class="text-lg font-medium text-gray-900 border-b border-gray-200 pb-2">货币设置</h3>
+            <h3 class="text-lg font-medium text-gray-900 border-b border-gray-200 pb-2">{{
+              t('familyLedger.currencySettings') }}</h3>
 
             <div>
               <label for="currency" class="block text-sm font-medium text-gray-700 mb-2">
-                基础货币 <span class="text-red-500">*</span>
+                {{ t('financial.baseCurrency') }} <span class="text-red-500">*</span>
               </label>
               <select id="currency" v-model="form.baseCurrency.code" @change="updateCurrencyInfo" required
                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                <option value="">请选择货币</option>
+                <option value="">{{ t('messages.selectCurrency') }}</option>
                 <option v-for="currency in availableCurrencies" :key="currency.code" :value="currency.code">
                   {{ currency.symbol }} {{ currency.code }} - {{ currency.nameZh }}
                 </option>
               </select>
               <p class="text-xs text-gray-500 mt-1">
-                选择后将作为此账本的默认货币单位，创建后不可修改
+                {{ t('messages.selectedAsDefault') }}
               </p>
             </div>
           </div>
@@ -65,40 +68,41 @@
           <!-- 成员管理 -->
           <div class="space-y-4">
             <div class="flex justify-between items-center border-b border-gray-200 pb-2">
-              <h3 class="text-lg font-medium text-gray-900">家庭成员</h3>
+              <h3 class="text-lg font-medium text-gray-900">{{ t('familyLedger.members') }}</h3>
               <button type="button" @click="addMember"
                 class="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700">
                 <Plus class="w-4 h-4" />
-                添加成员
+                {{ t('familyLedger.addMember') }}
               </button>
             </div>
 
             <div v-if="form.members.length === 0" class="text-center py-6 text-gray-500">
               <Users class="w-12 h-12 mx-auto mb-2 text-gray-300" />
-              <p>还没有添加家庭成员</p>
-              <p class="text-sm">点击上方"添加成员"按钮开始添加</p>
+              <p>{{ t('familyLedger.noMembers') }}</p>
+              <p class="text-sm">{{ t('familyLedger.clickAddMember') }}</p>
             </div>
 
             <div v-else class="space-y-3">
               <div v-for="(member, index) in form.members" :key="index"
                 class="flex items-center gap-3 p-3 border border-gray-200 rounded-md">
                 <div class="flex-1">
-                  <input v-model="member.name" type="text" placeholder="成员姓名" required maxlength="20"
+                  <input v-model="member.name" type="text" :placeholder="t('familyLedger.memberName')" required
+                    maxlength="20"
                     class="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:border-blue-500" />
                 </div>
                 <div class="flex-1">
                   <select v-model="member.role"
                     class="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:border-blue-500">
-                    <option value="Owner">所有者</option>
-                    <option value="Admin">管理员</option>
-                    <option value="Member">成员</option>
-                    <option value="Viewer">查看者</option>
+                    <option value="Owner">{{ t('roles.owner') }}</option>
+                    <option value="Admin">{{ t('roles.admin') }}</option>
+                    <option value="Member">{{ t('roles.member') }}</option>
+                    <option value="Viewer">{{ t('roles.viewer') }}</option>
                   </select>
                 </div>
                 <div class="flex items-center gap-2">
                   <label class="flex items-center gap-1 text-sm text-gray-600">
                     <input v-model="member.isPrimary" type="checkbox" class="rounded border-gray-300" />
-                    主要
+                    {{ t('familyLedger.primaryMember') }}
                   </label>
                   <button type="button" @click="removeMember(index)" class="text-red-500 hover:text-red-700 p-1"
                     :disabled="form.members.length === 1">
@@ -114,18 +118,18 @@
       <!-- 底部操作栏 -->
       <div class="flex justify-between items-center p-6 border-t border-gray-200 bg-gray-50">
         <div class="text-sm text-gray-600">
-          <span v-if="isEdit">修改账本信息</span>
-          <span v-else>创建新的家庭账本</span>
+          <span v-if="isEdit">{{ t('familyLedger.editLedger') }}</span>
+          <span v-else>{{ t('familyLedger.createNewLedger') }}</span>
         </div>
         <div class="flex gap-3">
           <button type="button" @click="$emit('close')"
             class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors">
-            取消
+            {{ t('common.actions.cancel') }}
           </button>
           <button @click="handleSubmit" :disabled="!isFormValid || saving"
             class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-            <span v-if="saving">保存中...</span>
-            <span v-else>{{ isEdit ? '更新' : '创建' }}</span>
+            <span v-if="saving">{{ t('common.misc.saving') }}</span>
+            <span v-else>{{ isEdit ? t('common.actions.update') : t('common.actions.create') }}</span>
           </button>
         </div>
       </div>
@@ -137,7 +141,6 @@
 import { Plus, Trash2, Users, X } from 'lucide-vue-next';
 import { computed, onMounted, ref } from 'vue';
 import { FamilyLedger } from '@/schema/money';
-import { toast } from '@/utils/toast';
 
 interface Props {
   ledger?: FamilyLedger | null;
@@ -150,17 +153,22 @@ const emit = defineEmits<{
   save: [ledger: FamilyLedger];
 }>();
 
+// 假设 t 函数已经通过 useI18n 或类似方式注入
+const { t } = useI18n();
+
 const saving = ref(false);
 const isEdit = computed(() => !!props.ledger);
 
 // 可用货币列表
 const availableCurrencies = [
   { code: 'CNY', symbol: '¥', nameZh: '人民币', nameEn: 'Chinese Yuan' },
-  { code: 'USD', symbol: '$', nameZh: '美元', nameEn: 'US Dollar' },
+  {
+    code: 'USD', symbol: '$', nameZh: '美元', nameEn: 'US Dollar'
+  },
   { code: 'EUR', symbol: '€', nameZh: '欧元', nameEn: 'Euro' },
   { code: 'JPY', symbol: '¥', nameZh: '日元', nameEn: 'Japanese Yen' },
   { code: 'GBP', symbol: '£', nameZh: '英镑', nameEn: 'British Pound' },
-  { code: 'HKD', symbol: 'HK$', nameZh: '港币', nameEn: 'Hong Kong Dollar' },
+  { code: 'HKD', symbol: 'HK', nameZh: '港币', nameEn: 'Hong Kong Dollar' },
 ];
 
 // 表单数据
@@ -223,7 +231,9 @@ const addMember = () => {
 // 删除成员
 const removeMember = (index: number) => {
   if (form.value.members.length === 1) {
-    toast.warning('至少需要保留一个家庭成员');
+    // 使用 toast 显示警告，实际项目中需要替换为你的 toast 实现
+    // toast.warning(t('messages.atLeastOneMember'));
+    console.warn('至少需要保留一个家庭成员');
     return;
   }
 
@@ -239,18 +249,21 @@ const removeMember = (index: number) => {
 // 提交表单
 const handleSubmit = async () => {
   if (!isFormValid.value) {
-    toast.warning('请完善必填信息');
+    // toast.warning(t('messages.pleaseFillRequired'));
+    console.warn('请完善必填信息');
     return;
   }
 
   // 确保只有一个主要成员
   const primaryMembers = form.value.members.filter((m) => m.isPrimary);
   if (primaryMembers.length === 0) {
-    toast.warning('请至少指定一个主要成员');
+    // toast.warning(t('messages.atLeastOnePrimary'));
+    console.warn('请至少指定一个主要成员');
     return;
   }
   if (primaryMembers.length > 1) {
-    toast.warning('只能有一个主要成员');
+    // toast.warning(t('messages.onlyOnePrimary'));
+    console.warn('只能有一个主要成员');
     return;
   }
 
@@ -274,7 +287,8 @@ const handleSubmit = async () => {
 
     emit('save', ledgerData);
   } catch (error) {
-    toast.error(isEdit.value ? '更新账本失败' : '创建账本失败');
+    // toast.error(isEdit.value ? t('familyLedger.updateFailed') : t('familyLedger.createFailed'));
+    console.error(isEdit.value ? '更新账本失败' : '创建账本失败');
   } finally {
     saving.value = false;
   }

@@ -2,7 +2,9 @@
   <div class="modal-mask">
     <div class="modal-mask-window-money">
       <div class="flex justify-between items-center mb-4">
-        <h3 class="text-lg font-semibold">{{ props.reminder ? '编辑提醒' : '添加提醒' }}</h3>
+        <h3 class="text-lg font-semibold">
+          {{ props.reminder ? t('financial.reminder.editReminder') : t('financial.reminder.addReminder') }}
+        </h3>
         <button @click="closeModal" class="text-gray-500 hover:text-gray-700">
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -13,25 +15,27 @@
         <!-- 提醒标题 -->
         <div class="mb-2 flex items-center justify-between">
           <label class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            提醒标题
+            {{ t('financial.reminder.reminderTitle') }}
             <span class="text-red-500 ml-1" aria-label="必填">*</span>
           </label>
           <input v-model="form.name" type="text" required class="w-2/3 modal-input-select"
-            :class="{ 'border-red-500': validationErrors.name }" placeholder="请输入提醒标题" @blur="validateName" />
+            :class="{ 'border-red-500': validationErrors.name }" :placeholder="t('validation.reminderTitle')"
+            @blur="validateName" />
         </div>
         <div v-if="validationErrors.name" class="text-sm text-red-600 dark:text-red-400 mb-2 text-right" role="alert">
           {{ validationErrors.name }}
         </div>
 
-        <ReminderSelector v-model="form.type" label="提醒类型" placeholder="请选择类型" :required="true"
-          :error-message="validationErrors.type" :show-grouped="true" :show-quick-select="true" :show-icons="true"
-          :popular-only="false" :locale="locale" width="2/3" quick-select-label="常用类型"
-          help-text="选择合适的提醒类型以获得更好的分类和提醒体验" @change="handleTypeChange" @validate="handleTypeValidation" />
+        <ReminderSelector v-model="form.type" :label="t('financial.reminder.reminderType')"
+          :placeholder="t('common.placeholders.selectType')" :required="true" :error-message="validationErrors.type"
+          :show-grouped="true" :show-quick-select="true" :show-icons="true" :popular-only="false" :locale="locale"
+          width="2/3" quick-select-label="常用类型" :help-text="t('helpTexts.reminderType')" @change="handleTypeChange"
+          @validate="handleTypeValidation" />
 
         <!-- 金额 -->
         <div class="mt-2 mb-2 flex items-center justify-between">
           <label class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            金额
+            {{ t('financial.money') }}
             <span v-if="isFinanceType" class="text-blue-500 ml-1">*</span>
           </label>
           <div class="w-2/3">
@@ -54,7 +58,7 @@
         <!-- 提醒日期 -->
         <div class="mb-2 flex items-center justify-between">
           <label class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            提醒日期
+            {{ t('date.reminderDate') }}
             <span class="text-red-500 ml-1" aria-label="必填">*</span>
           </label>
           <input v-model="form.remindDate" type="date" required class="w-2/3 modal-input-select"
@@ -66,34 +70,39 @@
         </div>
 
         <!-- 重复频率  -->
-        <RepeatPeriodSelector v-model="form.repeatPeriod" label="重复频率" :error-message="validationErrors.repeatPeriod"
-          help-text="设置提醒的重复规则，可以精确控制重复时间" @change="handleRepeatPeriodChange"
-          @validate="handleRepeatPeriodValidation" />
+        <RepeatPeriodSelector v-model="form.repeatPeriod" :label="t('date.repeat.frequency')"
+          :error-message="validationErrors.repeatPeriod" :help-text="t('helpTexts.repeatPeriod')"
+          @change="handleRepeatPeriodChange" @validate="handleRepeatPeriodValidation" />
 
         <!-- 优先级 -->
         <div class="mt-2 mb-2">
-          <PrioritySelector v-model="form.priority" label="优先级" :error-message="validationErrors.priority"
-            :locale="locale" :show-icons="true" width="2/3" help-text="选择合适的优先级来管理提醒的重要程度"
-            @change="handlePriorityChange" @validate="handlePriorityValidation" />
+          <PrioritySelector v-model="form.priority" :label="t('common.misc.priority')"
+            :error-message="validationErrors.priority" :locale="locale" :show-icons="true" width="2/3"
+            :help-text="t('helpTexts.priority')" @change="handlePriorityChange" @validate="handlePriorityValidation" />
         </div>
+
         <!-- 提前提醒 -->
         <div class="mb-2 flex items-center justify-between">
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">提前提醒</label>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            {{ t('financial.reminder.advanceReminder') }}
+          </label>
           <div class="flex items-center space-x-1 w-2/3">
             <input v-model.number="form.advanceValue" type="number" min="0" max="999"
               class="w-1/2 flex-1 modal-input-select" placeholder="0" />
             <select v-model="form.advanceUnit" class="modal-input-select">
-              <option value="minutes">分钟</option>
-              <option value="hours">小时</option>
-              <option value="days">天</option>
-              <option value="weeks">周</option>
+              <option value="minutes">{{ t('units.minutes') }}</option>
+              <option value="hours">{{ t('units.hours') }}</option>
+              <option value="days">{{ t('units.days') }}</option>
+              <option value="weeks">{{ t('units.weeks') }}</option>
             </select>
           </div>
         </div>
 
         <!-- 颜色选择 -->
         <div class="mb-2 flex items-center justify-between">
-          <label class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">颜色标记</label>
+          <label class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            {{ t('common.misc.colorMark') }}
+          </label>
           <ColorSelector v-model="form.color" :color-names="colorNameMap" />
         </div>
 
@@ -101,20 +110,22 @@
         <div class="mb-2">
           <label class="flex items-center">
             <input v-model="form.enabled" type="checkbox" class="mr-2" />
-            <span class="text-sm font-medium text-gray-700 dark:text-gray-300">启用提醒</span>
+            <span class="text-sm font-medium text-gray-700 dark:text-gray-300">
+              {{ t('financial.reminder.enabled') }}
+            </span>
           </label>
         </div>
 
         <!-- 描述 -->
         <div class="mb-4">
           <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            描述
-            <span class="text-gray-500">(可选)</span>
+            {{ t('common.misc.description') }}
+            <span class="text-gray-500">({{ t('common.misc.optional') }})</span>
           </label>
           <textarea v-model="form.description" rows="3" class="w-full modal-input-select"
             :placeholder="descriptionPlaceholder" maxlength="200"></textarea>
           <div class="text-xs text-gray-500 dark:text-gray-400 mt-1 text-right">
-            {{ form.description?.length || 0 }}/200
+            {{ t('common.misc.maxLength', { current: form.description?.length || 0, max: 200 }) }}
           </div>
         </div>
 
@@ -165,6 +176,9 @@ interface Props {
 
 const props = defineProps<Props>();
 const emit = defineEmits(['close', 'save']);
+
+// 假设已注入 t 函数
+const { t } = useI18n();
 
 // 响应式状态
 const isSubmitting = ref(false);
@@ -245,24 +259,21 @@ const isFinanceType = computed(() => {
 
 const amountPlaceholder = computed(() => {
   if (isFinanceType.value) {
-    return '请输入金额';
+    return t('validation.amountRequired');
   }
-  return '0.00（可选）';
+  return t('placeholders.amountOptional');
 });
 
 const descriptionPlaceholder = computed(() => {
-  const typeDescriptions = {
-    Bill: '如：信用卡账单、水电费等详细信息',
-    Income: '如：工资、奖金、投资收益等来源',
-    Health: '如：体检项目、医院科室、注意事项等',
-    Meeting: '如：会议议题、参与人员、会议地点等',
-    Birthday: '如：生日礼物准备、庆祝计划等',
-    Travel: '如：行程安排、注意事项、携带物品等',
-  };
-  return (
-    typeDescriptions[form.type as keyof typeof typeDescriptions] ||
-    '请输入提醒的详细描述信息'
-  );
+  // 修复：正确的类型检查和动态键访问
+  const placeholderKey = `placeholders.reminderDetails.${form.type}`;
+  const defaultKey = 'placeholders.reminderDetails.default';
+
+  try {
+    return t(placeholderKey);
+  } catch {
+    return t(defaultKey);
+  }
 });
 
 const isFormValid = computed(() => {
@@ -284,11 +295,11 @@ const isFormValid = computed(() => {
 // 验证方法
 const validateName = () => {
   if (!form.name.trim()) {
-    validationErrors.name = '请输入提醒标题';
+    validationErrors.name = t('validation.reminderTitle');
   } else if (form.name.trim().length < 2) {
-    validationErrors.name = '标题长度至少2个字符';
+    validationErrors.name = t('validation.titleMinLength');
   } else if (form.name.trim().length > 50) {
-    validationErrors.name = '标题长度不能超过50个字符';
+    validationErrors.name = t('validation.titleMaxLength');
   } else {
     validationErrors.name = '';
   }
@@ -297,9 +308,9 @@ const validateName = () => {
 const validateAmount = () => {
   if (isFinanceType.value) {
     if (!form.amount || form.amount <= 0) {
-      validationErrors.amount = '财务类提醒必须输入有效金额';
+      validationErrors.amount = t('validation.financeTypeAmount');
     } else if (form.amount > 999999999) {
-      validationErrors.amount = '金额不能超过999,999,999';
+      validationErrors.amount = t('validation.maxAmount');
     } else {
       validationErrors.amount = '';
     }
@@ -310,14 +321,14 @@ const validateAmount = () => {
 
 const validateRemindDate = () => {
   if (!form.remindDate) {
-    validationErrors.remindDate = '请选择提醒日期';
+    validationErrors.remindDate = t('validation.reminderDate');
   } else {
     const selectedDate = new Date(form.remindDate);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
     if (selectedDate < today) {
-      validationErrors.remindDate = '提醒日期不能早于今天';
+      validationErrors.remindDate = t('validation.dateNotPast');
     } else {
       validationErrors.remindDate = '';
     }
@@ -393,7 +404,7 @@ const handleTypeChange = (value: string) => {
 
 const handleTypeValidation = (isValid: boolean) => {
   if (!isValid) {
-    validationErrors.type = '请选择提醒类型';
+    validationErrors.type = t('validation.selectReminderType');
   } else {
     validationErrors.type = '';
   }
@@ -423,7 +434,7 @@ const handleRepeatPeriodChange = (value: RepeatPeriod) => {
 
 const handleRepeatPeriodValidation = (isValid: boolean) => {
   if (!isValid) {
-    validationErrors.repeatPeriod = '重复频率配置不完整，请检查必填项';
+    validationErrors.repeatPeriod = t('validation.repeatPeriodIncomplete');
   } else {
     validationErrors.repeatPeriod = '';
   }
@@ -470,7 +481,7 @@ const handlePriorityChange = (value: Priority) => {
 
 const handlePriorityValidation = (isValid: boolean) => {
   if (!isValid) {
-    validationErrors.priority = '请选择优先级';
+    validationErrors.priority = t('validation.selectPriority');
   } else {
     validationErrors.priority = '';
   }
@@ -504,7 +515,7 @@ const saveReminder = async () => {
     emit('save', reminderData);
     closeModal();
   } catch (error) {
-    console.error('保存提醒失败:', error);
+    console.error(t('messages.saveFailed'), error);
     // 可以添加错误提示
   } finally {
     isSubmitting.value = false;

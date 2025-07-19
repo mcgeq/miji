@@ -1,5 +1,5 @@
 <template>
-  <div v-if="isLoading" class="loading">{{ t('loading') }}</div>
+  <div v-if="isLoading" class="loading">{{ t('common.loading') }}</div>
   <!-- 使用动态过渡名称 -->
   <router-view v-else v-slot="{ Component, route }">
     <transition :name="typeof route.meta.transition === 'string' ? route.meta.transition : transitionName"
@@ -12,18 +12,18 @@
 </template>
 
 <script setup lang="ts">
-import {storeToRefs} from 'pinia';
-import {checkAndCleanSession} from './services/auth';
-import {toast} from './utils/toast';
-import EmptyLayout from './layouts/EmptyLayout.vue';
+import { storeToRefs } from 'pinia';
+import { RouteLocationNormalizedLoaded } from 'vue-router';
 import DefaultLayout from './layouts/DefaultLayout.vue';
-import {RouteLocationNormalizedLoaded} from 'vue-router';
+import EmptyLayout from './layouts/EmptyLayout.vue';
+import { checkAndCleanSession } from './services/auth';
+import { toast } from './utils/toast';
 
 const isLoading = ref(true);
 const router = useRouter();
-const {t} = useI18n();
+const { t } = useI18n();
 const transitionStore = useTransitionsStore();
-const {name: transitionName} = storeToRefs(transitionStore);
+const { name: transitionName } = storeToRefs(transitionStore);
 
 onMounted(async () => {
   try {
@@ -31,11 +31,11 @@ onMounted(async () => {
     const auth = await isAuthenticated();
 
     if (!auth && router.currentRoute.value.path !== '/auth/login') {
-      toast.warning(t('errors.pleaseLogin'));
+      toast.warning(t('messages.pleaseLogin'));
       await router.replace('/auth/login');
     }
   } catch (error) {
-    toast.error(t('errors.initFailed'));
+    toast.error(t('messages.initFailed'));
   } finally {
     isLoading.value = false;
   }
@@ -49,13 +49,18 @@ const layoutComponent = (route: RouteLocationNormalizedLoaded) => {
 
 <style>
 /* 新增：隐藏滚动条 */
-html, body {
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE 和 Edge */
+html,
+body {
+  scrollbar-width: none;
+  /* Firefox */
+  -ms-overflow-style: none;
+  /* IE 和 Edge */
 }
 
-html::-webkit-scrollbar, body::-webkit-scrollbar {
-  display: none; /* Chrome, Safari, Opera */
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  display: none;
+  /* Chrome, Safari, Opera */
 }
 
 .loading {

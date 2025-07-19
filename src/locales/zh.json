@@ -1,132 +1,309 @@
 {
-  "login": "登录",
-  "register": "注册",
-  "email": "邮箱",
-  "loading": "加载中...",
-  "password": "密码",
-  "username": "用户名",
-  "rememberMe": "记住我",
-  "noAccount": "没有账号？",
-  "haveAccount": "已有账号？",
-  "loginSuccess": "登录成功！欢迎回来。",
-  "loginFailed": "登录失败，账号或密码不正确。",
-  "registerSuccess": "注册成功！欢迎加入。",
-  "registerFailed": "注册失败，可能是邮箱已被使用或信息填写有误。",
-  "loggingIn": "登录中...",
-  "registering": "注册中...",
-  "code": "验证码",
-  "generalOperations": {
-    "all": "全部",
-    "edit": "编辑",
-    "delete": "删除",
-    "save": "保存",
-    "cancel": "取消",
-    "confirm": "确定",
-    "view": "查看",
-    "sort": "排序",
-    "desc": "降序",
-    "asc": "升序",
-    "enabled": "启用",
-    "active": "已启用",
-    "stop": "停用",
-    "inactive": "已停用",
-    "completed": "完成"
+  "auth": {
+    "login": "登录",
+    "register": "注册",
+    "email": "邮箱",
+    "password": "密码",
+    "username": "用户名",
+    "code": "验证码",
+    "rememberMe": "记住我",
+    "noAccount": "没有账号？",
+    "haveAccount": "已有账号？",
+    "messages": {
+      "loginSuccess": "登录成功！欢迎回来。",
+      "loginFailed": "登录失败，账号或密码不正确。",
+      "registerSuccess": "注册成功！欢迎加入。",
+      "registerFailed": "注册失败，可能是邮箱已被使用或信息填写有误。"
+    },
+    "loading": {
+      "loggingIn": "登录中...",
+      "registering": "注册中..."
+    }
   },
+  "common": {
+    "loading": "加载中...",
+    "actions": {
+      "all": "全部",
+      "edit": "编辑",
+      "delete": "删除",
+      "save": "保存",
+      "cancel": "取消",
+      "confirm": "确定",
+      "view": "查看",
+      "add": "添加",
+      "create": "创建",
+      "update": "更新",
+      "close": "关闭",
+      "submit": "提交",
+      "reset": "重置",
+      "search": "搜索",
+      "filter": "筛选",
+      "select": "选择",
+      "choose": "选择"
+    },
+    "sorting": {
+      "sort": "排序",
+      "desc": "降序",
+      "asc": "升序"
+    },
+    "status": {
+      "status": "状态",
+      "enabled": "启用",
+      "active": "已启用",
+      "stop": "停用",
+      "inactive": "已停用",
+      "completed": "完成",
+      "normal": "正常",
+      "warning": "预警",
+      "exceeded": "已超支",
+      "paid": "已付款",
+      "overdue": "已逾期",
+      "pending": "待付款",
+      "current": "当前使用"
+    },
+    "misc": {
+      "options": "操作",
+      "types": "类型",
+      "remark": "备注",
+      "name": "名称",
+      "description": "描述",
+      "color": "颜色",
+      "colorMark": "颜色标记",
+      "optional": "可选",
+      "required": "必填",
+      "saving": "保存中...",
+      "updating": "更新中...",
+      "creating": "创建中...",
+      "noData": "暂无数据",
+      "noResults": "无匹配结果",
+      "maxLength": "{current}/{max}",
+      "priority": "优先级",
+      "advance": "提前",
+      "basicInfo": "基本信息"
+    },
+    "placeholders": {
+      "enterName": "请输入名称",
+      "enterDescription": "请输入描述",
+      "selectOption": "请选择",
+      "selectCategory": "请选择分类",
+      "selectType": "请选择类型",
+      "enterAmount": "请输入金额",
+      "selectAccount": "请选择账户",
+      "enterTitle": "请输入标题"
+    }
+  },
+
   "categories": {
     "category": "分类",
     "allCategory": "全部分类",
     "subCategory": "子分类"
   },
+
   "date": {
     "date": "时间",
-    "today": "今天",
-    "none": "无重复",
-    "week": "本周",
-    "month": "本月",
-    "year": "本年",
-    "daily": "每日",
-    "weekly": "每周",
-    "monthly": "每月",
-    "yearly": "每年",
-    "custom": "自定义",
-    "startDate": "开始日期",
-    "endDate": "结束日期",
     "createDate": "创建时间",
     "reminderDate": "提醒时间",
-    "rangeDate": "日期范围"
-  },
-  "optionsAndStatus": {
-    "status": "状态",
-    "options": "操作",
-    "paid": "已付款",
-    "overdue": "已逾期",
-    "pending": "待付款",
-    "noReminder": "暂无提醒",
-    "noPatternResult": "无匹配结果",
-    "normal": "正常",
-    "warning": "预警",
-    "exceeded": "已超支",
-    "inactive": "已停用",
-    "markPaid": "标记已付"
+    "startDate": "开始日期",
+    "endDate": "结束日期",
+    "rangeDate": "日期范围",
+    "billDate": "账单日期",
+    "transactionDate": "交易日期",
+    "dueDate": "到期日期",
+    "periods": {
+      "today": "今天",
+      "week": "本周",
+      "month": "本月",
+      "year": "本年"
+    },
+    "repeat": {
+      "none": "无重复",
+      "daily": "每日",
+      "weekly": "每周",
+      "monthly": "每月",
+      "yearly": "每年",
+      "custom": "自定义",
+      "frequency": "重复频率"
+    }
   },
   "financial": {
     "currency": "币种",
     "money": "金额",
     "balance": "余额",
-    "account": "账户",
-    "income": "收入",
-    "expense": "支出",
-    "transfer": "转账",
-    "transType": "交易类型",
-    "unknown": "未知",
-    "name": "账户名称",
-    "type": "账户类型",
-    "noAccount": "暂无账户",
-    "noPatternAccount": "暂无符合条件的账户",
-    "noBudget": "暂无预算"
+    "billDate": "账单日期",
+    "initialBalance": "初始余额",
+    "baseCurrency": "基础货币",
+    "account": {
+      "account": "账户",
+      "name": "账户名称",
+      "type": "账户类型",
+      "accountName": "账户名称",
+      "accountType": "账户类型",
+      "createAccount": "创建账户",
+      "editAccount": "编辑账户",
+      "addAccount": "添加账户",
+      "owner": "所属",
+      "shared": "共享",
+      "activate": "激活"
+    },
+    "accountTypes": {
+      "cash": "现金",
+      "bank": "银行卡",
+      "savings": "储蓄账户",
+      "creditCard": "信用卡",
+      "investment": "投资账户",
+      "wechat": "微信",
+      "alipay": "支付宝",
+      "cloudQuickPass": "云闪付",
+      "other": "其他"
+    },
+    "transaction": {
+      "income": "收入",
+      "expense": "支出",
+      "transfer": "转账",
+      "transType": "交易类型",
+      "unknown": "未知",
+      "markPaid": "标记已付",
+      "recordIncome": "记录收入",
+      "recordExpense": "记录支出",
+      "recordTransfer": "转账记录",
+      "editTransaction": "编辑交易",
+      "fromAccount": "转出账户"
+    },
+    "budget": {
+      "budget": "预算",
+      "budgetName": "预算名称",
+      "budgetCategory": "预算类别",
+      "budgetAmount": "预算金额",
+      "createBudget": "创建预算",
+      "editBudget": "编辑预算",
+      "addBudget": "添加预算",
+      "usedAmount": "已使用金额",
+      "remainingAmount": "剩余金额",
+      "alertEnabled": "启用超支提醒",
+      "alertThreshold": "提醒阈值",
+      "overBudgetAlert": "超支提醒"
+    },
+    "budgetCategories": {
+      "food": "餐饮",
+      "transport": "交通",
+      "shopping": "购物",
+      "entertainment": "娱乐",
+      "health": "医疗",
+      "education": "教育",
+      "housing": "住房",
+      "utilities": "水电费",
+      "insurance": "保险",
+      "investment": "投资",
+      "other": "其他"
+    },
+    "reminder": {
+      "reminder": "提醒",
+      "reminderTitle": "提醒标题",
+      "reminderType": "提醒类型",
+      "createReminder": "创建提醒",
+      "editReminder": "编辑提醒",
+      "addReminder": "添加提醒",
+      "advanceReminder": "提前提醒",
+      "enabled": "启用提醒",
+      "priority": "优先级",
+      "advanceValue": "提前时间值",
+      "advanceUnit": "提前时间单位"
+    },
+    "messages": {
+      "noAccount": "暂无账户",
+      "noPatternAccount": "暂无符合条件的账户",
+      "noBudget": "暂无预算",
+      "noReminder": "暂无提醒"
+    }
   },
-  "others": {
-    "types": "类型",
-    "remark": "备注",
-    "periodType": "周期类型"
+  "familyLedger": {
+    "ledger": "账本",
+    "familyLedger": "家庭账本",
+    "ledgerName": "账本名称",
+    "ledgerDescription": "账本描述",
+    "createLedger": "创建账本",
+    "editLedger": "编辑账本",
+    "createFamilyLedger": "创建家庭账本",
+    "editFamilyLedger": "编辑家庭账本",
+    "createNewLedger": "创建新账本",
+    "ledgerManagement": "家庭账本管理",
+    "basicInfo": "基本信息",
+    "currencySettings": "货币设置",
+    "memberManagement": "成员管理",
+    "members": "家庭成员",
+    "member": "成员",
+    "memberName": "成员姓名",
+    "addMember": "添加成员",
+    "editMember": "编辑成员",
+    "removeMember": "移除成员",
+    "primaryMember": "主要成员",
+    "setPrimary": "设为主要成员",
+    "role": "角色",
+    "permissions": "权限设置",
+    "permissionsDescription": "权限描述",
+    "noLedgers": "还没有账本",
+    "noMembers": "还没有添加家庭成员",
+    "firstLedger": "创建第一个账本",
+    "selectLedger": "请选择一个账本",
+    "confirmSelection": "确认选择",
+    "totalLedgers": "个账本",
+    "ledgerCount": "共 {count} 个账本",
+    "currentUsing": "当前使用",
+    "createFirst": "创建您的第一个家庭账本，开始管理家庭财务。每个账本可以有不同的成员和货币设置。",
+    "clickAddMember": "点击上方添加成员按钮开始添加",
+    "cannotDeleteCurrent": "不能删除当前正在使用的账本",
+    "deleteConfirm": "确定删除账本{name}吗？",
+    "deleteWarning": "此操作将永久删除该账本下的所有数据，包括：",
+    "deleteItems": {
+      "accounts": "所有账户信息",
+      "transactions": "所有交易记录",
+      "budgets": "所有预算设置",
+      "reminders": "所有提醒设置"
+    },
+    "deleteIrreversible": "此操作不可恢复！",
+    "deleteSuccess": "账本删除成功",
+    "deleteFailed": "删除账本失败",
+    "createSuccess": "账本创建成功",
+    "updateSuccess": "账本更新成功",
+    "createFailed": "创建账本失败",
+    "updateFailed": "更新账本失败"
   },
-  "errors": {
-    "initFailed": "初始化失败，请重试",
-    "pleaseLogin": "请先登录",
-    "localeSwitchFailed": "切换语言失败",
-    "localeSwitchSuccess": "语言切换成功",
-    "required": "请输入内容",
-    "email": "邮箱格式不正确",
-    "min": "至少输入 {min} 个字符",
-    "max": "最多输入 {max} 个字符",
-    "password": "密码要包含数字大小写字母和特殊字符"
+
+  "roles": {
+    "owner": "所有者",
+    "admin": "管理员",
+    "user": "用户",
+    "moderator": "协调员",
+    "editor": "编辑者",
+    "guest": "访客",
+    "developer": "开发者",
+    "member": "成员",
+    "viewer": "查看者"
   },
-  "input": {
-    "inputPlace": "添加新任务...",
-    "btn": "添加"
-  },
+
   "todos": {
+    "inputPlace": "添加新任务...",
     "dueAt": "剩余",
     "expired": "过期",
-    "completed": "完成",
     "priority": {
       "low": "低",
       "medium": "中",
       "high": "高",
       "urgent": "急"
     },
-    "filterBtn": {
+    "quickFilter": {
       "yesterday": "昨",
       "today": "今",
       "tomorrow": "明"
     },
-    "desc": {
+    "description": {
       "save": "保存",
       "edit": "编辑"
     },
     "repeat": {
       "title": "周期",
-      "type": {
+      "periodType": "周期类型",
+      "types": {
         "no": "无",
         "daily": "日",
         "weekly": "周",
@@ -134,7 +311,7 @@
         "yearly": "年",
         "custom": "自定义"
       },
-      "typeLabel": {
+      "labels": {
         "daily": "每日",
         "weekly": "每周",
         "monthly": "每月",
@@ -142,13 +319,96 @@
       }
     }
   },
-  "moneys": {
-    "billDate": "账单日期"
+
+  "units": {
+    "minutes": "分钟",
+    "hours": "小时",
+    "days": "天",
+    "weeks": "周",
+    "months": "月",
+    "years": "年"
   },
+
   "pagination": {
     "next": "下一页",
     "prev": "上一页",
     "home": "首页",
     "last": "末页"
+  },
+
+  "placeholders": {
+    "reminderDetails": {
+      "Bill": "如：信用卡账单、水电费等详细信息",
+      "Income": "如：工资、奖金、投资收益等来源",
+      "Health": "如：体检项目、医院科室、注意事项等",
+      "Meeting": "如：会议议题、参与人员、会议地点等",
+      "Birthday": "如：生日礼物准备、庆祝计划等",
+      "Travel": "如：行程安排、注意事项、携带物品等",
+      "default": "请输入提醒的详细描述信息"
+    },
+    "budgetDescription": "预算描述（可选）",
+    "amountOptional": "0.00（可选）"
+  },
+
+  "helpTexts": {
+    "reminderType": "选择合适的提醒类型以获得更好的分类和提醒体验",
+    "priority": "选择合适的优先级来管理提醒的重要程度",
+    "repeatPeriod": "设置提醒的重复规则，可以精确控制重复时间"
+  },
+
+  "messages": {
+    "noReminder": "暂无提醒",
+    "noPatternResult": "无匹配结果",
+    "initFailed": "初始化失败，请重试",
+    "pleaseLogin": "请先登录",
+    "localeSwitchFailed": "切换语言失败",
+    "localeSwitchSuccess": "语言切换成功",
+    "saveSuccess": "保存成功",
+    "saveFailed": "保存失败",
+    "updateSuccess": "更新成功",
+    "updateFailed": "更新失败",
+    "deleteSuccess": "删除成功",
+    "deleteFailed": "删除失败",
+    "createSuccess": "创建成功",
+    "createFailed": "创建失败",
+    "operationSuccess": "操作成功",
+    "operationFailed": "操作失败",
+    "confirmDelete": "确认删除",
+    "cannotRecover": "此操作不可恢复",
+    "pleaseFillRequired": "请完善必填信息",
+    "atLeastOnePrimary": "请至少指定一个主要成员",
+    "onlyOnePrimary": "只能有一个主要成员",
+    "atLeastOneMember": "至少需要保留一个家庭成员",
+    "selectCurrency": "请选择货币",
+    "selectedAsDefault": "选择后将作为此账本的默认货币单位，创建后不可修改"
+  },
+
+  "validation": {
+    "invalid": "校验不通过",
+    "required": "请输入内容",
+    "email": "邮箱格式不正确",
+    "min": "至少输入 {min} 个字符",
+    "max": "最多输入 {max} 个字符",
+    "password": "密码要包含数字大小写字母和特殊字符",
+    "titleMinLength": "标题长度至少2个字符",
+    "titleMaxLength": "标题长度不能超过50个字符",
+    "nameRequired": "请输入名称",
+    "typeRequired": "请选择类型",
+    "amountRequired": "请输入金额",
+    "dateRequired": "请选择日期",
+    "accountRequired": "请选择账户",
+    "categoryRequired": "请选择分类",
+    "reminderTitle": "请输入提醒标题",
+    "reminderDate": "请选择提醒日期",
+    "budgetName": "请输入预算名称",
+    "budgetAmount": "请输入预算金额",
+    "accountName": "请输入账户名称",
+    "memberName": "请输入成员姓名",
+    "financeTypeAmount": "财务类提醒必须输入有效金额",
+    "maxAmount": "金额不能超过999,999,999",
+    "dateNotPast": "提醒日期不能早于今天",
+    "selectReminderType": "请选择提醒类型",
+    "selectPriority": "请选择优先级",
+    "repeatPeriodIncomplete": "重复频率配置不完整，请检查必填项"
   }
 }

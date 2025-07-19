@@ -2,7 +2,9 @@
   <div class="modal-mask">
     <div class="modal-mask-window-money">
       <div class="flex justify-between items-center mb-4">
-        <h3 class="text-lg font-semibold">{{ props.budget ? '编辑预算' : '添加预算' }}</h3>
+        <h3 class="text-lg font-semibold">
+          {{ props.budget ? t('financial.budget.editBudget') : t('financial.budget.addBudget') }}
+        </h3>
         <button @click="closeModal" class="text-gray-500 hover:text-gray-700">
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -11,50 +13,64 @@
       </div>
       <form @submit.prevent="saveBudget">
         <div class="mb-2 flex items-center justify-between">
-          <label class="text-sm font-medium text-gray-700 mb-2">预算名称</label>
-          <input v-model="form.name" type="text" required class="w-2/3 modal-input-select" placeholder="请输入预算名称" />
+          <label class="text-sm font-medium text-gray-700 mb-2">
+            {{ t('financial.budget.budgetName') }}
+          </label>
+          <input v-model="form.name" type="text" required class="w-2/3 modal-input-select"
+            :placeholder="t('validation.budgetName')" />
         </div>
+
         <div class="mb-2 flex items-center justify-between">
-          <label class="text-sm font-medium text-gray-700 mb-2">预算类别</label>
+          <label class="text-sm font-medium text-gray-700 mb-2">
+            {{ t('financial.budget.budgetCategory') }}
+          </label>
           <select v-model="form.category" required class="w-2/3 modal-input-select">
-            <option value="">请选择类别</option>
-            <option value="food">餐饮</option>
-            <option value="transport">交通</option>
-            <option value="shopping">购物</option>
-            <option value="entertainment">娱乐</option>
-            <option value="health">医疗</option>
-            <option value="education">教育</option>
-            <option value="housing">住房</option>
-            <option value="utilities">水电费</option>
-            <option value="insurance">保险</option>
-            <option value="investment">投资</option>
-            <option value="other">其他</option>
+            <option value="">{{ t('common.placeholders.selectCategory') }}</option>
+            <option value="food">{{ t('financial.budgetCategories.food') }}</option>
+            <option value="transport">{{ t('financial.budgetCategories.transport') }}</option>
+            <option value="shopping">{{ t('financial.budgetCategories.shopping') }}</option>
+            <option value="entertainment">{{ t('financial.budgetCategories.entertainment') }}</option>
+            <option value="health">{{ t('financial.budgetCategories.health') }}</option>
+            <option value="education">{{ t('financial.budgetCategories.education') }}</option>
+            <option value="housing">{{ t('financial.budgetCategories.housing') }}</option>
+            <option value="utilities">{{ t('financial.budgetCategories.utilities') }}</option>
+            <option value="insurance">{{ t('financial.budgetCategories.insurance') }}</option>
+            <option value="investment">{{ t('financial.budgetCategories.investment') }}</option>
+            <option value="other">{{ t('financial.budgetCategories.other') }}</option>
           </select>
         </div>
 
         <div class="mb-2 flex items-center justify-between">
-          <label class="text-sm font-medium text-gray-700 mb-2">预算金额</label>
+          <label class="text-sm font-medium text-gray-700 mb-2">
+            {{ t('financial.budget.budgetAmount') }}
+          </label>
           <input v-model.number="form.amount" type="number" step="0.01" required class="w-2/3 modal-input-select"
             placeholder="0.00" />
         </div>
 
         <!-- 重复频率  -->
-        <RepeatPeriodSelector v-model="form.repeatPeriod" label="重复频率" :error-message="validationErrors.repeatPeriod"
-          help-text="设置提醒的重复规则，可以精确控制重复时间" @change="handleRepeatPeriodChange"
-          @validate="handleRepeatPeriodValidation" />
+        <RepeatPeriodSelector v-model="form.repeatPeriod" :label="t('date.repeat.frequency')"
+          :error-message="validationErrors.repeatPeriod" :help-text="t('helpTexts.repeatPeriod')"
+          @change="handleRepeatPeriodChange" @validate="handleRepeatPeriodValidation" />
 
         <div class="mt-2 mb-2 flex items-center justify-between">
-          <label class="text-sm font-medium text-gray-700 mb-2">开始日期</label>
+          <label class="text-sm font-medium text-gray-700 mb-2">
+            {{ t('date.startDate') }}
+          </label>
           <input v-model="form.startDate" type="date" required class="w-2/3 modal-input-select" />
         </div>
 
         <div class="mb-2 flex items-center justify-between">
-          <label class="text-sm font-medium text-gray-700 mb-2">结束日期</label>
+          <label class="text-sm font-medium text-gray-700 mb-2">
+            {{ t('date.endDate') }}
+          </label>
           <input v-model="form.endDate" type="date" class="w-2/3 modal-input-select" />
         </div>
 
         <div class="mb-2 flex items-center justify-between">
-          <label class="text-sm font-medium text-gray-700 mb-2">颜色</label>
+          <label class="text-sm font-medium text-gray-700 mb-2">
+            {{ t('common.misc.color') }}
+          </label>
           <ColorSelector v-model="form.color" :color-names="colorNameMap" />
         </div>
 
@@ -62,7 +78,9 @@
           <div class="w-1/3">
             <label class="flex items-center">
               <input v-model="form.alertEnabled" type="checkbox" class="mr-2 modal-input-select" />
-              <span class="text-sm font-medium text-gray-700">启用超支提醒</span>
+              <span class="text-sm font-medium text-gray-700">
+                {{ t('financial.budget.overBudgetAlert') }}
+              </span>
             </label>
           </div>
 
@@ -71,9 +89,10 @@
               class="w-full modal-input-select" placeholder="80" />
           </div>
         </div>
+
         <div class="mb-2">
           <textarea v-model="form.description" rows="3" class="w-full modal-input-select"
-            placeholder="预算描述（可选）"></textarea>
+            :placeholder="t('placeholders.budgetDescription')"></textarea>
         </div>
 
         <div class="flex justify-center space-x-3">
@@ -105,11 +124,16 @@ const colorNameMap = ref(COLORS_MAP);
 interface Props {
   budget: Budget | null;
 }
+
 // 定义 props
 const props = defineProps<Props>();
 
 // 定义 emits
 const emit = defineEmits(['close', 'save']);
+
+// 假设已注入 t 函数
+const { t } = useI18n();
+
 // 验证错误
 const validationErrors = reactive({
   name: '',
@@ -183,7 +207,7 @@ const handleRepeatPeriodChange = (_value: RepeatPeriod) => {
 
 const handleRepeatPeriodValidation = (isValid: boolean) => {
   if (!isValid) {
-    validationErrors.repeatPeriod = '重复频率配置不完整，请检查必填项';
+    validationErrors.repeatPeriod = t('validation.repeatPeriodIncomplete');
   } else {
     validationErrors.repeatPeriod = '';
   }

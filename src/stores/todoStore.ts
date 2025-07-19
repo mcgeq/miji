@@ -1,28 +1,29 @@
 // src/stores/todoStore.ts
-import { defineStore } from 'pinia';
-import { ref, reactive, computed } from 'vue';
-import { TodoSchema, type Todo, type TodoRemain } from '@/schema/todos';
+
+import {differenceInSeconds, format, intervalToDuration} from 'date-fns';
+import {defineStore} from 'pinia';
+import {computed, reactive, ref} from 'vue';
+import {useI18n} from 'vue-i18n';
+import {todoStoreConst} from '@/constants/todoStore';
 import {
-  getLocalISODateTimeWithOffset,
+  type FilterBtn,
+  FilterBtnSchema,
+  type Priority,
+  PrioritySchema,
+  type QueryFilters,
+  StatusSchema,
+} from '@/schema/common';
+import {type Todo, type TodoRemain, TodoSchema} from '@/schema/todos';
+import {todosDb} from '@/services/todos';
+import {getCurrentUser} from '@/stores/auth';
+import {
   getEndOfTodayISOWithOffset,
+  getLocalISODateTimeWithOffset,
   getStartOfTodayISOWithOffset,
 } from '@/utils/date';
-import {
-  FilterBtnSchema,
-  PrioritySchema,
-  StatusSchema,
-  type FilterBtn,
-  type Priority,
-  type QueryFilters,
-} from '@/schema/common';
-import { uuid } from '@/utils/uuid';
-import { differenceInSeconds, format, intervalToDuration } from 'date-fns';
-import { getCurrentUser } from '@/stores/auth';
-import { Lg } from '@/utils/debugLog';
-import { createRepeatPeriod, createWithDefaults } from '@/utils/zodFactory';
-import { todosDb } from '@/services/todos';
-import { todoStoreConst } from '@/constants/todoStore';
-import { useI18n } from 'vue-i18n';
+import {Lg} from '@/utils/debugLog';
+import {uuid} from '@/utils/uuid';
+import {createRepeatPeriod, createWithDefaults} from '@/utils/zodFactory';
 
 const customOrderBy = `
   CASE WHEN status = '${StatusSchema.enum.Completed}' THEN 1 ELSE 0 END ASC,
@@ -38,7 +39,7 @@ const customOrderBy = `
 
 export const useTodoStore = defineStore('todo', () => {
   // i18n
-  const { t } = useI18n();
+  const {t} = useI18n();
   // ---------- state ----------
   const todos = reactive(new Map<string, Todo>());
   const todosWithRemaining = reactive(new Map<string, TodoRemain>());
@@ -60,7 +61,7 @@ export const useTodoStore = defineStore('todo', () => {
     if (!user) return;
 
     try {
-      let allTodos: { rows: Todo[]; totalCount: number } = {
+      let allTodos: {rows: Todo[]; totalCount: number} = {
         rows: [],
         totalCount: 0,
       };
@@ -132,7 +133,7 @@ export const useTodoStore = defineStore('todo', () => {
     const user = getCurrentUser();
     if (!user) return Lg.e('todoStore', 'No user is logged in');
 
-    const newTodo = createTodo({ title: text, ownerId: user.serialNum });
+    const newTodo = createTodo({title: text, ownerId: user.serialNum});
     try {
       await todosDb.insert(newTodo);
       await reloadPage();
@@ -185,7 +186,7 @@ export const useTodoStore = defineStore('todo', () => {
     if (!todo) return;
     todos.delete(serialNum);
     todosWithRemaining.delete(serialNum);
-    const { remainingTime, ...uTodo } = updatedTodo;
+    const {remainingTime, ...uTodo} = updatedTodo;
     await setTodo({
       ...todo,
       ...uTodo,
@@ -194,7 +195,7 @@ export const useTodoStore = defineStore('todo', () => {
   };
 
   const formatCompletedTime = (completedAt: string | null | undefined) =>
-    `${t('todos.completed')}: ${format(new Date(completedAt ?? new Date()), 'yyyy-MM-dd HH:mm:ss')}`;
+    `${t('common.status.completed')}: ${format(new Date(completedAt ?? new Date()), 'yyyy-MM-dd HH:mm:ss')}`;
 
   const calculateRemainingTime = (todo: Todo): string => {
     if (todo.status === StatusSchema.enum.Completed) {
@@ -204,7 +205,7 @@ export const useTodoStore = defineStore('todo', () => {
     const due = new Date(todo.dueAt);
     const diff = differenceInSeconds(due, now);
     if (diff <= 0) return t('todos.expired');
-    const duration = intervalToDuration({ start: 0, end: diff * 1000 });
+    const duration = intervalToDuration({start: 0, end: diff * 1000});
     if ((duration.days || 0) > 0) {
       return `${t('todos.dueAt')}: ${duration.days || 0}d ${duration.hours || 0}h ${
         duration.minutes || 0
@@ -316,7 +317,7 @@ export const useTodoStore = defineStore('todo', () => {
     try {
       const filters: QueryFilters = {
         dueAtRange: {
-          start: getEndOfTodayISOWithOffset({ days: -3 }),
+          start: getEndOfTodayISOWithOffset({days: -3}),
           end: getEndOfTodayISOWithOffset(),
         },
         orQuery: true,
@@ -326,18 +327,18 @@ export const useTodoStore = defineStore('todo', () => {
         filters,
         currentPage.value,
         pageSize.value,
-        { customOrderBy },
+        {customOrderBy},
       );
     } catch (e) {
       Lg.e('todoStore', 'getTodayTodos', e);
-      return { rows: [], totalCount: 0 };
+      return {rows: [], totalCount: 0};
     }
   };
 
   const getYesterdayTodos = async (ownerId: string) => {
     try {
       const filters: QueryFilters = {
-        dueAtRange: { end: getEndOfTodayISOWithOffset({ days: -3 }) },
+        dueAtRange: {end: getEndOfTodayISOWithOffset({days: -3})},
         status: StatusSchema.enum.Completed,
       };
       return await todosDb.listPaged(
@@ -345,29 +346,29 @@ export const useTodoStore = defineStore('todo', () => {
         filters,
         currentPage.value,
         pageSize.value,
-        { customOrderBy },
+        {customOrderBy},
       );
     } catch (e) {
       Lg.e('todoStore', 'getYesterdayTodos', e);
-      return { rows: [], totalCount: 0 };
+      return {rows: [], totalCount: 0};
     }
   };
 
   const getTomorrowTodos = async (ownerId: string) => {
     try {
       const filters: QueryFilters = {
-        dueAtRange: { start: getStartOfTodayISOWithOffset({ days: 1 }) },
+        dueAtRange: {start: getStartOfTodayISOWithOffset({days: 1})},
       };
       return await todosDb.listPaged(
         ownerId,
         filters,
         currentPage.value,
         pageSize.value,
-        { customOrderBy },
+        {customOrderBy},
       );
     } catch (e) {
       Lg.e('todoStore', 'getTomorrowTodos', e);
-      return { rows: [], totalCount: 0 };
+      return {rows: [], totalCount: 0};
     }
   };
 

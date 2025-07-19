@@ -3,38 +3,38 @@
     <!-- 过滤器区域 -->
     <div class="flex flex-wrap justify-center items-center gap-3 mb-5 p-4 bg-gray-50 rounded-lg">
       <div class="filter-flex-wrap">
-        <label class="show-on-desktop text-sm font-medium text-gray-700">{{ t('optionsAndStatus.status') }}</label>
+        <label class="show-on-desktop text-sm font-medium text-gray-700">{{ t('common.status.status') }}</label>
         <select v-model="filters.status"
           class="px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-          <option value="">{{ t('generalOperations.all') }}</option>
-          <option value="active">{{ t('generalOperations.active') }}</option>
-          <option value="inactive">{{ t('generalOperations.inactive') }}</option>
+          <option value="">{{ t('common.actions.all') }}</option>
+          <option value="active">{{ t('common.status.active') }}</option>
+          <option value="inactive">{{ t('common.status.inactive') }}</option>
         </select>
       </div>
 
       <div class="filter-flex-wrap">
-        <label class="show-on-desktop text-sm font-medium text-gray-700"> {{ t('generalOperations.completed') }}{{
-          t('optionsAndStatus.status') }} </label>
+        <label class="show-on-desktop text-sm font-medium text-gray-700"> {{ t('common.status.completed') }}{{
+          t('common.status.status') }} </label>
         <select v-model="filters.completion"
           class="px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-          <option value="">{{ t('generalOperations.all') }}</option>
-          <option value="normal"> {{ t('optionsAndStatus.normal') }} </option>
-          <option value="warning">{{ t('optionsAndStatus.warning') }}(>70%)</option>
-          <option value="exceeded"> {{ t('optionsAndStatus.exceeded') }} </option>
+          <option value="">{{ t('common.actions.all') }}</option>
+          <option value="normal"> {{ t('common.status.normal') }} </option>
+          <option value="warning">{{ t('common.status.warning') }}(>70%)</option>
+          <option value="exceeded"> {{ t('common.status.exceeded') }} </option>
         </select>
       </div>
 
       <div class="filter-flex-wrap">
-        <label class="show-on-desktop text-sm font-medium text-gray-700">{{ t('others.periodType') }}</label>
+        <label class="show-on-desktop text-sm font-medium text-gray-700">{{ t('todos.repeat.periodType') }}</label>
         <select v-model="filters.period"
           class="px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-          <option value="">{{ t('generalOperations.all') }}</option>
-          <option value="None">{{ t('date.none') }}</option>
-          <option value="Daily">{{ t('date.daily') }}</option>
-          <option value="Weekly">{{ t('date.weekly') }}</option>
-          <option value="Monthly">{{ t('date.monthly') }}</option>
-          <option value="Yearly">{{ t('date.yearly') }}</option>
-          <option value="Custom">{{ t('date.custom') }}</option>
+          <option value="">{{ t('common.actions.all') }}</option>
+          <option value="None">{{ t('date.repeat.none') }}</option>
+          <option value="Daily">{{ t('date.repeat.daily') }}</option>
+          <option value="Weekly">{{ t('date.repeat.weekly') }}</option>
+          <option value="Monthly">{{ t('date.repeat.monthly') }}</option>
+          <option value="Yearly">{{ t('date.repeat.yearly') }}</option>
+          <option value="Custom">{{ t('date.repeat.custom') }}</option>
         </select>
       </div>
 
@@ -57,7 +57,7 @@
 
     <!-- 加载状态 -->
     <div v-if="loading" class="flex-justify-center h-25 text-gray-600">
-      {{ t('loading') }}
+      {{ t('common.loading') }}
     </div>
 
     <!-- 空状态 -->
@@ -66,7 +66,7 @@
         <i class="icon-target"></i>
       </div>
       <div class="text-sm">
-        {{ filteredBudgets.length === 0 ? t('financial.noBudget') : t('optionsAndStatus.noPatternResult') }}
+        {{ filteredBudgets.length === 0 ? t('financial.noBudget') : t('messages.noPatternResult') }}
       </div>
     </div>
 
@@ -92,23 +92,23 @@
             </span>
             <span v-else-if="isLowOnBudget(budget)"
               class="ml-2 px-2 py-0.5 bg-yellow-100 text-yellow-600 text-xs rounded">
-              {{ t('optionsAndStatus.warning') }}
+              {{ t('common.status.warning') }}
             </span>
           </div>
 
           <!-- 右侧按钮组 -->
           <div class="flex items-center gap-1 md:self-end">
             <button class="money-option-btn hover:(border-green-500 text-green-500)" @click="emit('edit', budget)"
-              :title="t('generalOperations.edit')">
+              :title="t('common.actions.edit')">
               <Edit class="w-4 h-4" />
             </button>
             <button class="money-option-btn hover:(border-blue-500 text-blue-500)"
               @click="emit('toggle-active', budget.serialNum)"
-              :title="budget.isActive ? t('generalOperations.stop') : t('generalOperations.enabled')">
+              :title="budget.isActive ? t('common.status.stop') : t('generalOperations.enabled')">
               <component :is="budget.isActive ? Ban : StopCircle" class="w-4 h-4" />
             </button>
             <button class="money-option-btn hover:(border-red-500 text-red-500)"
-              @click="emit('delete', budget.serialNum)" :title="t('generalOperations.delete')">
+              @click="emit('delete', budget.serialNum)" :title="t('common.actions.delete')">
               <Trash class="w-4 h-4" />
             </button>
           </div>
@@ -154,7 +154,7 @@
             <span class="text-gray-800">{{ formatDate(budget.createdAt) }}</span>
           </div>
           <div v-if="budget.description" class="flex justify-between mb-1 text-sm last:mb-0">
-            <span class="text-gray-600">{{ t('others.remark') }}</span>
+            <span class="text-gray-600">{{ t('common.misc.remark') }}</span>
             <span class="text-gray-800">{{ budget.description }}</span>
           </div>
         </div>

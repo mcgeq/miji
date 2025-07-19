@@ -1,125 +1,309 @@
 {
-  "login": "Login",
-  "register": "Register",
-  "email": "Email",
-  "loading": "Loading...",
-  "password": "Password",
-  "username": "Username",
-  "rememberMe": "Remember Me",
-  "noAccount": "No account?",
-  "haveAccount": "Already have an account?",
-  "loginSuccess": "Login successful! Welcome back.",
-  "loginFailed": "Login failed. Incorrect username or password.",
-  "registerSuccess": "Registration successful! Welcome.",
-  "registerFailed": "Registration failed. The email may already be in use or the information is invalid.",
-  "loggingIn": "Logging in...",
-  "registering": "Registering...",
-  "code": "Verification Code",
-  "generalOperations": {
-    "all": "All",
-    "edit": "Edit",
-    "delete": "Delete",
-    "save": "Save",
-    "cancel": "Cancel",
-    "confirm": "Confirm",
-    "view": "View",
-    "sort": "Sort",
-    "desc": "Desc",
-    "asc": "Asc",
-    "enabled": "Enabled",
-    "active": "Active",
-    "stop": "Stop",
-    "inactive": "Stoped"
+  "auth": {
+    "login": "Login",
+    "register": "Register",
+    "email": "Email",
+    "password": "Password",
+    "username": "Username",
+    "code": "Verification Code",
+    "rememberMe": "Remember Me",
+    "noAccount": "No account?",
+    "haveAccount": "Already have an account?",
+    "messages": {
+      "loginSuccess": "Login successful! Welcome back.",
+      "loginFailed": "Login failed. Incorrect email or password.",
+      "registerSuccess": "Registration successful! Welcome aboard.",
+      "registerFailed": "Registration failed. Email may already be in use or information is incorrect."
+    },
+    "loading": {
+      "loggingIn": "Logging in...",
+      "registering": "Registering..."
+    }
   },
+  "common": {
+    "loading": "Loading...",
+    "actions": {
+      "all": "All",
+      "edit": "Edit",
+      "delete": "Delete",
+      "save": "Save",
+      "cancel": "Cancel",
+      "confirm": "Confirm",
+      "view": "View",
+      "add": "Add",
+      "create": "Create",
+      "update": "Update",
+      "close": "Close",
+      "submit": "Submit",
+      "reset": "Reset",
+      "search": "Search",
+      "filter": "Filter",
+      "select": "Select",
+      "choose": "Choose"
+    },
+    "sorting": {
+      "sort": "Sort",
+      "desc": "Descending",
+      "asc": "Ascending"
+    },
+    "status": {
+      "status": "Status",
+      "enabled": "Enabled",
+      "active": "Active",
+      "stop": "Disabled",
+      "inactive": "Inactive",
+      "completed": "Completed",
+      "normal": "Normal",
+      "warning": "Warning",
+      "exceeded": "Over Budget",
+      "paid": "Paid",
+      "overdue": "Overdue",
+      "pending": "Pending",
+      "current": "Currently Using"
+    },
+    "misc": {
+      "options": "Options",
+      "types": "Types",
+      "remark": "Remark",
+      "name": "Name",
+      "description": "Description",
+      "color": "Color",
+      "colorMark": "Color Mark",
+      "optional": "Optional",
+      "required": "Required",
+      "saving": "Saving...",
+      "updating": "Updating...",
+      "creating": "Creating...",
+      "noData": "No Data",
+      "noResults": "No Matching Results",
+      "maxLength": "{current}/{max}",
+      "priority": "Priority",
+      "advance": "Advance",
+      "basicInfo": "Basic Information"
+    },
+    "placeholders": {
+      "enterName": "Enter Name",
+      "enterDescription": "Enter Description",
+      "selectOption": "Select an Option",
+      "selectCategory": "Select Category",
+      "selectType": "Select Type",
+      "enterAmount": "Enter Amount",
+      "selectAccount": "Select Account",
+      "enterTitle": "Enter Title"
+    }
+  },
+
   "categories": {
     "category": "Category",
     "allCategory": "All Categories",
     "subCategory": "Subcategory"
   },
+
   "date": {
-    "date": "Time",
-    "today": "Today",
-    "none": "No Repeat",
-    "week": "Week",
-    "month": "Month",
-    "year": "Year",
-    "daily": "Daily",
-    "weekly": "Weekly",
-    "monthly": "Monthly",
-    "yearly": "Yearly",
-    "custom": "Custom",
-    "startDate": "Start Date",
-    "endDate": "End Date",
+    "date": "Date",
     "createDate": "Creation Date",
     "reminderDate": "Reminder Date",
-    "rangeDate": "Date Range"
-  },
-  "optionsAndStatus": {
-    "options": "Options",
-    "paid": "Paid",
-    "overdue": "Overdue",
-    "pending": "Pending",
-    "noReminder": "No Reminder",
-    "noPatternResult": "No Matching Results",
-    "normal": "Normal",
-    "warning": "Warning",
-    "exceeded": "Exceeded"
+    "startDate": "Start Date",
+    "endDate": "End Date",
+    "rangeDate": "Date Range",
+    "billDate": "Bill Date",
+    "transactionDate": "Transaction Date",
+    "dueDate": "Due Date",
+    "periods": {
+      "today": "Today",
+      "week": "This Week",
+      "month": "This Month",
+      "year": "This Year"
+    },
+    "repeat": {
+      "none": "No Repeat",
+      "daily": "Daily",
+      "weekly": "Weekly",
+      "monthly": "Monthly",
+      "yearly": "Yearly",
+      "custom": "Custom",
+      "frequency": "Repeat Frequency"
+    }
   },
   "financial": {
     "currency": "Currency",
     "money": "Amount",
     "balance": "Balance",
-    "account": "Account",
-    "income": "Income",
-    "expense": "Expense",
-    "transfer": "Transfer",
-    "transType": "Type",
-    "unknown": "Unknown",
-    "name": "Account Name",
-    "type": "Account Type"
+    "billDate": "Bill Date",
+    "initialBalance": "Initial Balance",
+    "baseCurrency": "Base Currency",
+    "account": {
+      "account": "Account",
+      "name": "Account Name",
+      "type": "Account Type",
+      "accountName": "Account Name",
+      "accountType": "Account Type",
+      "createAccount": "Create Account",
+      "editAccount": "Edit Account",
+      "addAccount": "Add Account",
+      "owner": "Owner",
+      "shared": "Shared",
+      "activate": "Activate"
+    },
+    "accountTypes": {
+      "cash": "Cash",
+      "bank": "Bank Card",
+      "savings": "Savings Account",
+      "creditCard": "Credit Card",
+      "investment": "Investment Account",
+      "wechat": "WeChat",
+      "alipay": "Alipay",
+      "cloudQuickPass": "Cloud QuickPass",
+      "other": "Other"
+    },
+    "transaction": {
+      "income": "Income",
+      "expense": "Expense",
+      "transfer": "Transfer",
+      "transType": "Transaction Type",
+      "unknown": "Unknown",
+      "markPaid": "Mark as Paid",
+      "recordIncome": "Record Income",
+      "recordExpense": "Record Expense",
+      "recordTransfer": "Record Transfer",
+      "editTransaction": "Edit Transaction",
+      "fromAccount": "From Account"
+    },
+    "budget": {
+      "budget": "Budget",
+      "budgetName": "Budget Name",
+      "budgetCategory": "Budget Category",
+      "budgetAmount": "Budget Amount",
+      "createBudget": "Create Budget",
+      "editBudget": "Edit Budget",
+      "addBudget": "Add Budget",
+      "usedAmount": "Used Amount",
+      "remainingAmount": "Remaining Amount",
+      "alertEnabled": "Enable Overspending Alert",
+      "alertThreshold": "Alert Threshold",
+      "overBudgetAlert": "Over Budget Alert"
+    },
+    "budgetCategories": {
+      "food": "Food",
+      "transport": "Transportation",
+      "shopping": "Shopping",
+      "entertainment": "Entertainment",
+      "health": "Healthcare",
+      "education": "Education",
+      "housing": "Housing",
+      "utilities": "Utilities",
+      "insurance": "Insurance",
+      "investment": "Investment",
+      "other": "Other"
+    },
+    "reminder": {
+      "reminder": "Reminder",
+      "reminderTitle": "Reminder Title",
+      "reminderType": "Reminder Type",
+      "createReminder": "Create Reminder",
+      "editReminder": "Edit Reminder",
+      "addReminder": "Add Reminder",
+      "advanceReminder": "Advance Reminder",
+      "enabled": "Enable Reminder",
+      "priority": "Priority",
+      "advanceValue": "Advance Time Value",
+      "advanceUnit": "Advance Time Unit"
+    },
+    "messages": {
+      "noAccount": "No Accounts",
+      "noPatternAccount": "No Accounts Match the Criteria",
+      "noBudget": "No Budgets",
+      "noReminder": "No Reminders"
+    }
   },
-  "others": {
-    "types": "Types",
-    "remark": "Note",
-    "periodType": "Period"
+  "familyLedger": {
+    "ledger": "Ledger",
+    "familyLedger": "Family Ledger",
+    "ledgerName": "Ledger Name",
+    "ledgerDescription": "Ledger Description",
+    "createLedger": "Create Ledger",
+    "editLedger": "Edit Ledger",
+    "createFamilyLedger": "Create Family Ledger",
+    "editFamilyLedger": "Edit Family Ledger",
+    "createNewLedger": "Create New Ledger",
+    "ledgerManagement": "Family Ledger Management",
+    "basicInfo": "Basic Information",
+    "currencySettings": "Currency Settings",
+    "memberManagement": "Member Management",
+    "members": "Family Members",
+    "member": "Member",
+    "memberName": "Member Name",
+    "addMember": "Add Member",
+    "editMember": "Edit Member",
+    "removeMember": "Remove Member",
+    "primaryMember": "Primary Member",
+    "setPrimary": "Set as Primary Member",
+    "role": "Role",
+    "permissions": "Permissions",
+    "permissionsDescription": "Permissions Description",
+    "noLedgers": "No Ledgers Yet",
+    "noMembers": "No Family Members Added Yet",
+    "firstLedger": "Create Your First Ledger",
+    "selectLedger": "Select a Ledger",
+    "confirmSelection": "Confirm Selection",
+    "totalLedgers": "Ledgers",
+    "ledgerCount": "{count} Ledgers",
+    "currentUsing": "Currently Using",
+    "createFirst": "Create your first family ledger to start managing household finances. Each ledger can have different members and currency settings.",
+    "clickAddMember": "Click the 'Add Member' button above to start adding",
+    "cannotDeleteCurrent": "Cannot delete the currently used ledger",
+    "deleteConfirm": "Are you sure you want to delete the ledger '{name}'?",
+    "deleteWarning": "This action will permanently delete all data under this ledger, including:",
+    "deleteItems": {
+      "accounts": "All account information",
+      "transactions": "All transaction records",
+      "budgets": "All budget settings",
+      "reminders": "All reminder settings"
+    },
+    "deleteIrreversible": "This action cannot be undone!",
+    "deleteSuccess": "Ledger deleted successfully",
+    "deleteFailed": "Failed to delete ledger",
+    "createSuccess": "Ledger created successfully",
+    "updateSuccess": "Ledger updated successfully",
+    "createFailed": "Failed to create ledger",
+    "updateFailed": "Failed to update ledger"
   },
-  "errors": {
-    "initFailed": "Initialization failed, please try again",
-    "pleaseLogin": "Please login first",
-    "required": "This field is required.",
-    "localeSwitchFailed": "Failed to switch language",
-    "localeSwitchSuccess": "Language switched successfully",
-    "email": "Invalid email format.",
-    "min": "Minimum {min} characters required.",
-    "max": "Maximum {max} characters allowed.",
-    "password": "Password must include uppercase and lowercase letters, numbers, and special characters."
+
+  "roles": {
+    "owner": "Owner",
+    "admin": "Admin",
+    "user": "User",
+    "moderator": "Moderator",
+    "editor": "Editor",
+    "guest": "Guest",
+    "developer": "Developer",
+    "member": "Member",
+    "viewer": "Viewer"
   },
-  "input": {
-    "inputPlace": "Add a new task...",
-    "btn": "Add"
-  },
+
   "todos": {
-    "dueAt": "Remainder",
+    "inputPlace": "Add new task...",
+    "dueAt": "Due",
     "expired": "Expired",
-    "completed": "Completed",
     "priority": {
-      "low": "L",
-      "medium": "M",
-      "high": "H",
-      "urgent": "U"
+      "low": "Low",
+      "medium": "Medium",
+      "high": "High",
+      "urgent": "Urgent"
     },
-    "filterBtn": {
-      "yesterday": "Y",
-      "today": "T",
-      "tomorrow": "M"
+    "quickFilter": {
+      "yesterday": "Yesterday",
+      "today": "Today",
+      "tomorrow": "Tomorrow"
     },
-    "desc": {
+    "description": {
       "save": "Save",
       "edit": "Edit"
     },
     "repeat": {
-      "title": "Repeat Type",
-      "type": {
+      "title": "Repeat",
+      "periodType": "Period Type",
+      "types": {
         "no": "None",
         "daily": "Daily",
         "weekly": "Weekly",
@@ -127,18 +311,104 @@
         "yearly": "Yearly",
         "custom": "Custom"
       },
-      "typeLabel": {
-        "daily": "Every Day(s)",
-        "weekly": "Every Week(s)",
-        "monthly": "Every Month(s)",
-        "yearly": "Every Year(s)"
+      "labels": {
+        "daily": "Daily",
+        "weekly": "Weekly",
+        "monthly": "Monthly",
+        "yearly": "Yearly"
       }
     }
   },
+
+  "units": {
+    "minutes": "Minutes",
+    "hours": "Hours",
+    "days": "Days",
+    "weeks": "Weeks",
+    "months": "Months",
+    "years": "Years"
+  },
+
   "pagination": {
     "next": "Next",
     "prev": "Previous",
-    "home": "First",
+    "home": "Home",
     "last": "Last"
+  },
+
+  "placeholders": {
+    "reminderDetails": {
+      "Bill": "E.g., credit card bill, utility bill, etc.",
+      "Income": "E.g., salary, bonus, investment income, etc.",
+      "Health": "E.g., medical checkup, hospital department, precautions, etc.",
+      "Meeting": "E.g., meeting agenda, participants, location, etc.",
+      "Birthday": "E.g., birthday gift preparation, celebration plans, etc.",
+      "Travel": "E.g., itinerary, precautions, items to bring, etc.",
+      "default": "Enter detailed description for the reminder"
+    },
+    "budgetDescription": "Budget Description (Optional)",
+    "amountOptional": "0.00 (Optional)"
+  },
+
+  "helpTexts": {
+    "reminderType": "Choose an appropriate reminder type for better categorization and reminder experience",
+    "priority": "Select an appropriate priority to manage the importance of reminders",
+    "repeatPeriod": "Set the repeat rule for reminders to precisely control repeat timing"
+  },
+
+  "messages": {
+    "noReminder": "No Reminders",
+    "noPatternResult": "No Matching Results",
+    "initFailed": "Initialization failed, please try again",
+    "pleaseLogin": "Please log in first",
+    "localeSwitchFailed": "Failed to switch language",
+    "localeSwitchSuccess": "Language switched successfully",
+    "saveSuccess": "Saved successfully",
+    "saveFailed": "Failed to save",
+    "updateSuccess": "Updated successfully",
+    "updateFailed": "Failed to update",
+    "deleteSuccess": "Deleted successfully",
+    "deleteFailed": "Failed to delete",
+    "createSuccess": "Created successfully",
+    "createFailed": "Failed to create",
+    "operationSuccess": "Operation successful",
+    "operationFailed": "Operation failed",
+    "confirmDelete": "Confirm Delete",
+    "cannotRecover": "This action cannot be undone",
+    "pleaseFillRequired": "Please complete the required fields",
+    "atLeastOnePrimary": "Please specify at least one primary member",
+    "onlyOnePrimary": "Only one primary member is allowed",
+    "atLeastOneMember": "At least one family member is required",
+    "selectCurrency": "Please select a currency",
+    "selectedAsDefault": "Once selected, it will be the default currency for this ledger and cannot be changed after creation"
+  },
+
+  "validation": {
+    "invalid": "Validation failed",
+    "required": "Please enter content",
+    "email": "Invalid email format",
+    "min": "Enter at least {min} characters",
+    "max": "Enter up to {max} characters",
+    "password": "Password must include numbers, uppercase and lowercase letters, and special characters",
+    "titleMinLength": "Title must be at least 2 characters",
+    "titleMaxLength": "Title cannot exceed 50 characters",
+    "nameRequired": "Please enter a name",
+    "typeRequired": "Please select a type",
+    "amountRequired": "Please enter an amount",
+    "dateRequired": "Please select a date",
+    "accountRequired": "Please select an account",
+    "categoryRequired": "Please select a category",
+    "reminderTitle": "Please enter a reminder title",
+    "reminderDate": "Please select a reminder date",
+    "budgetName": "Please enter a budget name",
+    "budgetAmount": "Please enter a budget amount",
+    "accountName": "Please enter an account name",
+    "memberName": "Please enter a member name",
+    "financeTypeAmount": "Financial reminders must include a valid amount",
+    "maxAmount": "Amount cannot exceed 999,999,999",
+    "dateNotPast": "Reminder date cannot be earlier than today",
+    "selectReminderType": "Please select a reminder type",
+    "selectPriority": "Please select a priority",
+    "repeatPeriodIncomplete": "Repeat frequency configuration is incomplete, please check required fields"
   }
 }

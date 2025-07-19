@@ -3,21 +3,22 @@
     <!-- 过滤器区域 -->
     <div class="flex flex-wrap justify-center items-center gap-3 mb-5 p-4 bg-gray-50 rounded-lg">
       <div class="filter-flex-wrap">
-        <label class="show-on-desktop text-sm font-medium text-gray-700">{{ t('financial.transType') }}</label>
+        <label class="show-on-desktop text-sm font-medium text-gray-700">{{ t('financial.transaction.transType')
+        }}</label>
         <select v-model="filters.transactionType"
           class="px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-          <option value="">{{ t('generalOperations.all') }}</option>
-          <option value="Income">{{ t('financial.income') }}</option>
-          <option value="Expense">{{ t('financial.expense') }}</option>
-          <option value="Transfer">{{ t('financial.transfer') }}</option>
+          <option value="">{{ t('common.actions.all') }}</option>
+          <option value="Income">{{ t('financial.transaction.income') }}</option>
+          <option value="Expense">{{ t('financial.transaction.expense') }}</option>
+          <option value="Transfer">{{ t('financial.transaction.transfer') }}</option>
         </select>
       </div>
 
       <div class="filter-flex-wrap">
-        <label class="show-on-desktop text-sm font-medium text-gray-700">{{ t('financial.account') }}</label>
+        <label class="show-on-desktop text-sm font-medium text-gray-700">{{ t('financial.account.account') }}</label>
         <select v-model="filters.account"
           class="px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-          <option value="">{{ t('generalOperations.all') }}{{ t('financial.account') }}</option>
+          <option value="">{{ t('common.actions.all') }}{{ t('financial.account.account') }}</option>
           <option v-for="account in props.accounts" :key="account.serialNum" :value="account.serialNum">
             {{ account.name }}
           </option>
@@ -55,7 +56,7 @@
 
     <!-- 加载状态 -->
     <div v-if="loading" class="flex-justify-center h-25 text-gray-600">
-      {{ t('loading') }}
+      {{ t('common.loading') }}
     </div>
 
     <!-- 空状态 -->
@@ -73,12 +74,12 @@
       <!-- 表头 - 桌面版 -->
       <div
         class="hidden md:grid md:grid-cols-[120px_140px_180px_140px_140px_120px] bg-gray-100 border-b border-gray-200 font-semibold text-gray-800">
-        <div class="p-4 text-sm grid place-items-end">{{ t('others.types') }}</div>
+        <div class="p-4 text-sm grid place-items-end">{{ t('common.misc.types') }}</div>
         <div class="p-4 text-sm grid place-items-end">{{ t('financial.money') }}</div>
-        <div class="p-4 text-sm grid place-items-end">{{ t('financial.account') }}</div>
+        <div class="p-4 text-sm grid place-items-end">{{ t('financial.account.account') }}</div>
         <div class="p-4 text-sm grid place-items-end">{{ t('categories.category') }}</div>
         <div class="p-4 text-sm grid place-items-end">{{ t('date.date') }}</div>
-        <div class="p-4 text-sm grid place-items-end">{{ t('optionsAndStatus.options') }}</div>
+        <div class="p-4 text-sm grid place-items-end">{{ t('common.misc.options') }}</div>
       </div>
 
       <!-- 交易行 -->
@@ -109,7 +110,7 @@
 
         <!-- 账户列 -->
         <div class="p-4 text-sm flex justify-between md:justify-end md:items-center">
-          <span class="md:hidden text-gray-600 font-semibold">{{ t('financial.account') }}</span>
+          <span class="md:hidden text-gray-600 font-semibold">{{ t('financial.account.account') }}</span>
           <div class="md:text-right">
             <div class="font-medium text-gray-800">{{ transaction.account.name }}</div>
             <div v-if="transaction.description" class="text-xs text-gray-600 mt-1">{{ transaction.description }}</div>
@@ -136,18 +137,18 @@
 
         <!-- 操作列 -->
         <div class="p-4 flex justify-between md:justify-end items-center">
-          <span class="md:hidden text-gray-600 font-semibold">{{ t('optionsAndStatus.options') }}</span>
+          <span class="md:hidden text-gray-600 font-semibold">{{ t('common.misc.options') }}</span>
           <div class="flex gap-1">
             <button class="money-option-btn hover:(border-green-500 text-green-500)"
-              @click="emit('view-details', transaction)" :title="t('generalOperations.view')">
+              @click="emit('view-details', transaction)" :title="t('common.actions.view')">
               <Eye class="w-4 h-4" />
             </button>
             <button class="money-option-btn hover:(border-blue-500 text-blue-500)" @click="emit('edit', transaction)"
-              :title="t('generalOperations.edit')">
+              :title="t('common.actions.edit')">
               <Edit class="w-4 h-4" />
             </button>
             <button class="money-option-btn hover:(border-red-500 text-red-500)"
-              @click="emit('delete', transaction.serialNum)" :title="t('generalOperations.delete')">
+              @click="emit('delete', transaction.serialNum)" :title="t('common.actions.delete')">
               <Trash class="w-4 h-4" />
             </button>
           </div>
@@ -352,9 +353,9 @@ const getTransactionTypeIcon = (type: TransactionType) => {
 
 const getTransactionTypeName = (type: TransactionType) => {
   const names = {
-    Income: t('financial.income'),
-    Expense: t('financial.expense'),
-    Transfer: t('financial.transfer'),
+    Income: t('financial.transaction.income'),
+    Expense: t('financial.transaction.expense'),
+    Transfer: t('financial.transaction.transfer'),
   };
   return names[type] || t('financial.unknown');
 };

@@ -4,7 +4,7 @@
     <div class="stats-grid">
       <div class="stat-card current-phase">
         <div class="stat-header">
-          <i class="i-tabler-calendar-heart wh-6 text-pink-500" />
+          <CalendarHeart class="wh-6 text-pink-500" />
           <h3 class="stat-title">当前阶段</h3>
         </div>
         <div class="stat-content">
@@ -18,7 +18,7 @@
 
       <div class="stat-card next-period">
         <div class="stat-header">
-          <i class="i-tabler-clock wh-6 text-blue-500" />
+          <CalendarClock class="wh-6 text-blue-500" /> 
           <h3 class="stat-title">下次经期</h3>
         </div>
         <div class="stat-content">
@@ -39,7 +39,7 @@
 
       <div class="stat-card cycle-info">
         <div class="stat-header">
-          <i class="i-tabler-repeat wh-6 text-green-500" />
+          <CalendarSync class="wh-6 text-green-500" />
           <h3 class="stat-title">周期信息</h3>
         </div>
         <div class="stat-content">
@@ -58,7 +58,7 @@
 
       <div class="stat-card trends">
         <div class="stat-header">
-          <i class="i-tabler-trending-up wh-6 text-purple-500" />
+          <TrendingUp class="wh-6 text-purple-500" />
           <h3 class="stat-title">趋势分析</h3>
         </div>
         <div class="stat-content">
@@ -135,9 +135,15 @@
 </template>
 
 <script setup lang="ts">
-import { Plus } from 'lucide-vue-next';
-import type { PeriodRecords } from '@/schema/health/period';
-import { usePeriodStore } from '@/stores/periodStore';
+import {
+  CalendarClock,
+  CalendarHeart,
+  CalendarSync,
+  Plus,
+  TrendingUp,
+} from 'lucide-vue-next';
+import type {PeriodRecords} from '@/schema/health/period';
+import {usePeriodStore} from '@/stores/periodStore';
 
 // Emits
 const emit = defineEmits<{
@@ -325,9 +331,9 @@ const healthTips = computed(() => {
   const phase = stats.value.currentPhase;
   if (phase === 'Menstrual') {
     return [
-      { id: 1, icon: 'i-tabler-cup', text: '多喝温水，避免冷饮' },
-      { id: 2, icon: 'i-tabler-bed', text: '充分休息，避免剧烈运动' },
-      { id: 3, icon: 'i-tabler-flame', text: '注意保暖，特别是腹部' },
+      {id: 1, icon: 'i-tabler-cup', text: '多喝温水，避免冷饮'},
+      {id: 2, icon: 'i-tabler-bed', text: '充分休息，避免剧烈运动'},
+      {id: 3, icon: 'i-tabler-flame', text: '注意保暖，特别是腹部'},
     ];
   }
 

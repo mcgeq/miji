@@ -3,27 +3,27 @@
     <!-- 过滤器区域 -->
     <div class="flex flex-wrap justify-center items-center gap-3 mb-5 p-4 bg-gray-50 rounded-lg">
       <div class="filter-flex-wrap">
-        <label class="show-on-desktop text-sm font-medium text-gray-700">{{ t('optionsAndStatus.status') }}</label>
+        <label class="show-on-desktop text-sm font-medium text-gray-700">{{ t('common.status.status') }}</label>
         <select v-model="filters.status"
           class="px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-          <option value=""> {{ t('generalOperations.all') }} </option>
-          <option value="paid">{{ t('optionsAndStatus.paid') }}</option>
-          <option value="overdue">{{ t('optionsAndStatus.overdue') }}</option>
-          <option value="pending">{{ t('optionsAndStatus.pending') }}</option>
+          <option value=""> {{ t('common.actions.all') }} </option>
+          <option value="paid">{{ t('common.status.paid') }}</option>
+          <option value="overdue">{{ t('common.status.overdue') }}</option>
+          <option value="pending">{{ t('common.status.pending') }}</option>
         </select>
       </div>
 
       <div class="filter-flex-wrap">
-        <label class="show-on-desktop text-sm font-medium text-gray-700">{{ t('others.periodType') }}</label>
+        <label class="show-on-desktop text-sm font-medium text-gray-700">{{ t('todos.repeat.periodType') }}</label>
         <select v-model="filters.period"
           class="px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-          <option value="">{{ t('generalOperations.all') }}</option>
-          <option value="None">{{ t('date.none') }}</option>
-          <option value="Daily">{{ t('date.daily') }}</option>
-          <option value="Weekly">{{ t('date.weekly') }}</option>
-          <option value="Monthly">{{ t('date.monthly') }}</option>
-          <option value="Yearly">{{ t('date.yearly') }}</option>
-          <option value="Custom">{{ t('date.custom') }}</option>
+          <option value="">{{ t('common.actions.all') }}</option>
+          <option value="None">{{ t('date.repeat.none') }}</option>
+          <option value="Daily">{{ t('date.repeat.daily') }}</option>
+          <option value="Weekly">{{ t('date.repeat.weekly') }}</option>
+          <option value="Monthly">{{ t('date.repeat.monthly') }}</option>
+          <option value="Yearly">{{ t('date.repeat.yearly') }}</option>
+          <option value="Custom">{{ t('date.repeat.custom') }}</option>
 
         </select>
       </div>
@@ -43,11 +43,11 @@
         <label class="show-on-desktop text-sm font-medium text-gray-700">{{ t('date.rangeDate') }}</label>
         <select v-model="filters.dateRange"
           class="px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-          <option value="">{{ t('generalOperations.all') }}</option>
-          <option value="today">{{ t('date.today') }}</option>
-          <option value="week">{{ t('date.week') }}</option>
-          <option value="month">{{ t('date.month') }}</option>
-          <option value="overdue">{{ t('optionsAndStatus.overdue') }}</option>
+          <option value="">{{ t('common.actions.all') }}</option>
+          <option value="today">{{ t('date.periods.today') }}</option>
+          <option value="week">{{ t('date.periods.week') }}</option>
+          <option value="month">{{ t('date.periods.month') }}</option>
+          <option value="overdue">{{ t('common.status.overdue') }}</option>
         </select>
       </div>
 
@@ -59,7 +59,7 @@
 
     <!-- 加载状态 -->
     <div v-if="loading" class="flex-justify-center h-25 text-gray-600">
-      {{ t('loading') }}
+      {{ t('common.loading') }}
     </div>
 
     <!-- 空状态 -->
@@ -68,7 +68,7 @@
         <i class="icon-bell"></i>
       </div>
       <div class="text-sm">
-        {{ filteredReminders.length === 0 ? t('optionsAndStatus.noReminder') : t('optionsAndStatus.noPatternResult') }}
+        {{ filteredReminders.length === 0 ? t('messages.noReminder') : t('messages.noPatternResult') }}
       </div>
     </div>
 
@@ -98,15 +98,15 @@
             </div>
             <div class="flex gap-1">
               <button v-if="!reminder.isPaid" class="money-option-btn hover:(border-green-500 text-green-500)"
-                @click="emit('mark-paid', reminder.serialNum)" :title="t('optionsAndStatus.markPaid')">
+                @click="emit('mark-paid', reminder.serialNum)" :title="t('financial.transaction.markPaid')">
                 <CheckCircle class="w-4 h-4" />
               </button>
               <button class="money-option-btn hover:(border-blue-500 text-blue-500)" @click="emit('edit', reminder)"
-                :title="t('generalOperations.edit')">
+                :title="t('common.actions.edit')">
                 <Edit class="w-4 h-4" />
               </button>
               <button class="money-option-btn hover:(border-red-500 text-red-500)"
-                @click="emit('delete', reminder.serialNum)" :title="t('generalOperations.delete')">
+                @click="emit('delete', reminder.serialNum)" :title="t('common.actions.delete')">
                 <Trash class="w-4 h-4" />
               </button>
             </div>
@@ -124,7 +124,7 @@
 
         <div class="mb-2 space-y-2">
           <div class="flex justify-between text-sm">
-            <span class="text-gray-600">{{ t('moneys.billDate') }}</span>
+            <span class="text-gray-600">{{ t('financial.billDate') }}</span>
             <span class="text-gray-800">{{ formatDate(reminder.billDate) }}</span>
           </div>
           <div class="flex justify-between text-sm">
@@ -148,7 +148,7 @@
             <span class="text-gray-800">{{ formatDate(reminder.createdAt) }}</span>
           </div>
           <div v-if="reminder.description" class="flex justify-between">
-            <span class="text-gray-600"> {{ t('others.remark') }} </span>
+            <span class="text-gray-600"> {{ t('common.misc.remark') }} </span>
             <span class="text-gray-800">{{ reminder.description }}</span>
           </div>
         </div>
@@ -331,9 +331,9 @@ const getStatusIcon = (reminder: BilReminder) => {
 };
 
 const getStatusText = (reminder: BilReminder) => {
-  if (reminder.isPaid) return t('optionsAndStatus.paid');
-  if (isOverdue(reminder)) return t('optionsAndStatus.overdue');
-  return t('optionsAndStatus.pending');
+  if (reminder.isPaid) return t('common.status.paid');
+  if (isOverdue(reminder)) return t('common.status.overdue');
+  return t('common.status.pending');
 };
 </script>
 

@@ -12,7 +12,7 @@
                 ? 'bg-blue-500 text-white border-blue-500'
                 : 'bg-white text-gray-600 border-gray-300 hover:border-blue-400'
             ]" @click="setActiveFilter('all')">
-              {{ t('generalOperations.all') }}<span class="ml-1 text-xs opacity-75">[{{ totalAccounts }}]</span>
+              {{ t('common.actions.all') }}<span class="ml-1 text-xs opacity-75">[{{ totalAccounts }}]</span>
             </button>
             <button :class="[
               'px-3 py-1.5 text-xs font-medium rounded-full border transition-all',
@@ -21,7 +21,7 @@
                 : 'bg-white text-gray-600 border-gray-300 hover:border-green-400'
             ]" @click="setActiveFilter('active')">
               <CheckCircle class="w-3 h-3 mr-1" />
-              {{ t('generalOperations.active') }}<span class="ml-1 text-xs opacity-75">({{ activeAccounts }})</span>
+              {{ t('common.status.active') }}<span class="ml-1 text-xs opacity-75">({{ activeAccounts }})</span>
             </button>
             <button :class="[
               'px-3 py-1.5 text-xs font-medium rounded-full border transition-all',
@@ -30,17 +30,17 @@
                 : 'bg-white text-gray-600 border-gray-300 hover:border-gray-400'
             ]" @click="setActiveFilter('inactive')">
               <XCircle class="w-3 h-3 mr-1" />
-              {{ t('generalOperations.inactive') }}<span class="ml-1 text-xs opacity-75">({{ inactiveAccounts }})</span>
+              {{ t('common.status.inactive') }}<span class="ml-1 text-xs opacity-75">({{ inactiveAccounts }})</span>
             </button>
           </div>
         </div>
 
         <!-- 账户类型过滤 -->
         <div class="filter-flex-wrap">
-          <span class="show-on-desktop text-sm font-medium text-gray-700">{{ t('others.types') }}</span>
+          <span class="show-on-desktop text-sm font-medium text-gray-700">{{ t('common.misc.types') }}</span>
           <select v-model="selectedType" @change="handleTypeFilter"
             class="px-3 py-1.5 text-xs border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-            <option value=""> {{ t('generalOperations.all') }}{{ t('others.types') }} </option>
+            <option value=""> {{ t('common.actions.all') }}{{ t('common.misc.types') }} </option>
             <option v-for="type in accountTypes" :key="type" :value="type">
               {{ getAccountTypeName(type) }}
             </option>
@@ -52,7 +52,7 @@
           <span class="show-on-desktop text-sm font-medium text-gray-700">{{ t('financial.currency') }}</span>
           <select v-model="selectedCurrency" @change="handleCurrencyFilter"
             class="px-3 py-1.5 text-xs border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-            <option value=""> {{ t('generalOperations.all') }}{{ t('financial.currency') }} </option>
+            <option value=""> {{ t('common.actions.all') }}{{ t('financial.currency') }} </option>
             <option v-for="currency in currencies" :key="currency" :value="currency">
               {{ currency }}
             </option>
@@ -61,16 +61,16 @@
 
         <!-- 排序选项 -->
         <div class="filter-flex-wrap">
-          <span class="show-on-desktop text-sm font-medium text-gray-700"> {{ t('generalOperations.sort') }} </span>
+          <span class="show-on-desktop text-sm font-medium text-gray-700"> {{ t('common.sorting.sort') }} </span>
           <select v-model="sortBy" @change="handleSortChange"
             class="px-3 py-1.5 text-xs border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
             <option value="createdAt">{{ t('date.createDate') }}</option>
-            <option value="name">{{ t('financial.name') }}</option>
+            <option value="name">{{ t('financial.account.name') }}</option>
             <option value="balance">{{ t('financial.balance') }}</option>
-            <option value="type">{{ t('financial.type') }}</option>
+            <option value="type">{{ t('financial.account.type') }}</option>
           </select>
           <button @click="toggleSortOrder" class="p-1.5 text-gray-600 hover:text-blue-500 transition-colors"
-            :title="sortOrder === 'asc' ? t('generalOperations.asc') : t('generalOperations.desc')">
+            :title="sortOrder === 'asc' ? t('common.sorting.asc') : t('common.sorting.desc')">
             <ArrowUpDown class="w-4 h-4" :class="sortOrder === 'desc' && 'rotate-180'" />
           </button>
         </div>
@@ -84,14 +84,14 @@
     </div>
 
     <!-- 账户列表区域 -->
-    <div v-if="loading" class="flex-justify-center h-50 text-gray-500">{{ t('loading') }}</div>
+    <div v-if="loading" class="flex-justify-center h-50 text-gray-500">{{ t('common.loading') }}</div>
 
     <div v-else-if="paginatedAccounts.length === 0" class="flex-justify-center flex-col h-50 text-gray-400">
       <div class="text-6xl mb-4 opacity-50">
         <CreditCard class="wh-5" />
       </div>
       <div class="text-base">
-        {{ filteredAccounts.length === 0 ? t('financial.noPatternAccount') : t('financial.noAccount') }}
+        {{ filteredAccounts.length === 0 ? t('financial.messages.noPatternAccount') : t('financial.noAccount') }}
       </div>
     </div>
 
@@ -115,15 +115,15 @@
           <div class="flex items-center gap-1.5 self-end">
             <button class="money-option-btn hover:(border-green-500 text-green-500)"
               @click="emit('toggle-active', account.serialNum)"
-              :title="account.isActive ? t('generalOperations.stop') : t('generalOperations.enabled')">
+              :title="account.isActive ? t('common.status.stop') : t('common.status.enabled')">
               <Ban class="w-4 h-4" />
             </button>
             <button class="money-option-btn hover:(border-blue-500 text-blue-500)" @click="emit('edit', account)"
-              :title="t('generalOperations.edit')">
+              :title="t('common.actions.edit')">
               <Edit class="w-4 h-4" />
             </button>
             <button class="money-option-btn hover:(border-red-500 text-red-500)"
-              @click="emit('delete', account.serialNum)" :title="t('generalOperations.delete')">
+              @click="emit('delete', account.serialNum)" :title="t('common.actions.delete')">
               <Trash class="w-4 h-4" />
             </button>
           </div>
@@ -139,7 +139,7 @@
             <span class="text-gray-800">{{ formatDate(account.createdAt) }}</span>
           </div>
           <div v-if="account.description" class="flex justify-between mb-2 text-sm">
-            <span class="text-gray-600"> {{ t('others.remark') }} </span>
+            <span class="text-gray-600"> {{ t('common.misc.remark') }} </span>
             <span class="text-gray-800"> {{ account.description }} </span>
           </div>
         </div>
