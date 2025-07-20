@@ -1,22 +1,263 @@
+<script setup lang="ts">
+import type { Tip } from '../../utils/periodUtils'
+import type { PeriodDailyRecords, PeriodRecords } from '@/schema/health/period'
+import {
+  Activity,
+  Apple,
+  CalendarCheck,
+  Check,
+  Droplet,
+  Edit,
+  Eye,
+  Heart,
+  Moon,
+  Plus,
+  Settings,
+  Trash,
+  X,
+} from 'lucide-vue-next'
+import { usePeriodStore } from '@/stores/periodStore'
+import { getTodayDate } from '@/utils/date'
+import { Lg } from '@/utils/debugLog'
+import { phaseTips } from '../../utils/periodUtils'
+import PeriodCalendar from '../components/PeriodCalendar.vue'
+import PeriodDailyForm from './PeriodDailyForm.vue'
+import PeriodRecordForm from './PeriodRecordForm.vue'
+import PeriodSettings from './PeriodSettings.vue'
+import PeriodStatsDashboard from './PeriodStatsDashboard.vue'
+
+// Store
+const periodStore = usePeriodStore()
+
+const { t } = useI18n()
+
+// Reactive state
+const currentView = ref<'calendar' | 'stats' | 'settings'>('calendar')
+const selectedDate = ref(getTodayDate().split('T')[0])
+const showRecordForm = ref(false)
+const showDailyForm = ref(false)
+const showDeleteConfirm = ref(false)
+const showSuccessMessage = ref(false)
+const successMessage = ref('')
+const editingRecord = ref<PeriodRecords | undefined>()
+const editingDailyRecord = ref<PeriodDailyRecords | undefined>()
+const deletingSerialNum = ref<string>('')
+
+// Computed
+const currentPhaseLabel = computed(() => {
+  const phase = periodStore.periodStats.currentPhase
+  const labels = {
+    Menstrual: t('period.phases.menstrual'),
+    Follicular: t('period.phases.follicular'),
+    Ovulation: t('period.phases.ovulation'),
+    Luteal: t('period.phases.luteal'),
+  }
+  return labels[phase]
+})
+
+const daysUntilNext = computed(() => {
+  const days = periodStore.periodStats.daysUntilNext
+  if (days === 0)
+    return t('period.nextPeriod.todayStart')
+  if (days === 1)
+    return t('period.nextPeriod.tomorrowStart')
+  if (days < 0)
+    return t('period.nextPeriod.delayed')
+  return `${days}${t('period.nextPeriod.daysLater')}`
+})
+
+const todayRecord = computed(() => {
+  const records = periodStore.dailyRecords
+  const today = selectedDate.value
+
+  // 每次都重新查找，确保获取最新数据
+  const found = records.find(record => record.date === today)
+
+  return found || null
+})
+const baseTips: Tip[] = [
+  { id: 1, icon: Droplet, text: t('period.healthTips.water') },
+  { id: 2, icon: Moon, text: t('period.healthTips.sleep') },
+  { id: 3, icon: Apple, text: t('period.healthTips.iron') },
+]
+const currentTips = computed(() => {
+  const phase = periodStore.periodStats.currentPhase
+  return phaseTips[phase] || baseTips
+})
+
+// Methods
+function handleDateSelect(date: string) {
+  selectedDate.value = date
+}
+
+function openRecordForm(record?: PeriodRecords) {
+  editingRecord.value = record
+  showRecordForm.value = true
+}
+
+function closeRecordForm() {
+  showRecordForm.value = false
+  editingRecord.value = undefined
+}
+
+async function handleRecordSubmit(record: PeriodRecords) {
+  closeRecordForm()
+
+  // 刷新数据以更新UI
+  await periodStore.fetchPeriodRecords()
+
+  showSuccessToast(t('period.messages.periodRecordSaved'))
+  Lg.i('PeriodManagement', 'Record submitted:', record)
+}
+
+async function handleRecordDelete(serialNum: string) {
+  closeRecordForm()
+
+  // 刷新数据以更新UI
+  await periodStore.fetchPeriodRecords()
+
+  showSuccessToast(t('period.messages.periodRecordDeleted'))
+  Lg.i('PeriodManagement', 'Record deleted:', serialNum)
+}
+
+function openDailyForm(record?: PeriodDailyRecords) {
+  editingDailyRecord.value = record
+  showDailyForm.value = true
+}
+
+function closeDailyForm() {
+  showDailyForm.value = false
+  editingDailyRecord.value = undefined
+}
+
+async function handleDailySubmit(record: PeriodDailyRecords) {
+  try {
+    Lg.i('PeriodManagement', 'Submitting daily record:', record)
+
+    closeDailyForm()
+
+    // 等待保存完成
+    await periodStore.upsertDailyRecord(record)
+
+    // 等待一个 tick 确保状态更新
+    await nextTick()
+
+    showSuccessToast(t('period.messages.dailyRecordSaved'))
+
+    Lg.i(
+      'PeriodManagement',
+      'Daily record saved, total records:',
+      periodStore.dailyRecords.length,
+    )
+  }
+  catch (error) {
+    Lg.e('PeriodManagement', `${t('period.saveFailed')}:`, error)
+  }
+}
+
+// 删除相关方法
+function handleDeleteDailyRecord(serialNum: string) {
+  deletingSerialNum.value = serialNum
+  showDeleteConfirm.value = true
+}
+
+function closeDeleteConfirm() {
+  showDeleteConfirm.value = false
+  deletingSerialNum.value = ''
+}
+
+// 1. 修改 confirmDelete 方法
+async function confirmDelete() {
+  try {
+    const deletingId = deletingSerialNum.value
+
+    Lg.i('PeriodManagement', 'Deleting record:', deletingId)
+
+    // 使用专门的删除日常记录方法
+    await periodStore.deleteDailyRecord(deletingId)
+
+    // 等待一个 tick 确保状态更新完成
+    await nextTick()
+
+    // 强制刷新日常记录
+    await periodStore.refreshDailyRecords()
+
+    showSuccessToast(t('period.messages.recordDeleted'))
+    closeDeleteConfirm()
+
+    Lg.i(
+      'PeriodManagement',
+      'Delete completed, records count:',
+      periodStore.dailyRecords.length,
+    )
+  }
+  catch (error) {
+    console.error(`${t('messages.deleteFailed')}:`, error)
+  }
+}
+
+// 成功提示相关方法
+function showSuccessToast(message: string) {
+  successMessage.value = message
+  showSuccessMessage.value = true
+  setTimeout(() => {
+    showSuccessMessage.value = false
+  }, 3000)
+}
+
+function hideSuccessMessage() {
+  showSuccessMessage.value = false
+}
+
+watch(
+  () => periodStore.dailyRecords,
+  (newRecords, oldRecords) => {
+    Lg.i('PeriodManagement', 'Daily records changed:', {
+      oldCount: oldRecords?.length || 0,
+      newCount: newRecords.length,
+      todayDate: selectedDate.value,
+      hasTodayRecord: !!newRecords.find(r => r.date === selectedDate.value),
+    })
+  },
+  { deep: true },
+)
+// Lifecycle
+onMounted(async () => {
+  periodStore.initialize()
+  try {
+    await periodStore.fetchPeriodRecords()
+  }
+  catch (error) {
+    Lg.e('PeriodManagement', 'Failed to load period data:', error)
+  }
+})
+</script>
+
 <template>
   <div class="period-management">
     <!-- 头部导航 -->
     <div class="header-section">
       <div class="container mx-auto px-4 lg:px-6">
         <div class="flex items-center justify-end py-1">
-          <div class="flex items-center gap-1 bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
-            <button @click="currentView = 'calendar'" class="nav-tab"
-              :class="{ 'nav-tab-active': currentView === 'calendar' }">
+          <div class="flex items-center gap-1 rounded-lg bg-gray-100 p-1 dark:bg-gray-700">
+            <button
+              class="nav-tab" :class="{ 'nav-tab-active': currentView === 'calendar' }"
+              @click="currentView = 'calendar'"
+            >
               <CalendarCheck class="wh-4" />
               <span class="hidden sm:inline">{{ t('period.navigation.calendar') }}</span>
             </button>
-            <button @click="currentView = 'stats'" class="nav-tab"
-              :class="{ 'nav-tab-active': currentView === 'stats' }">
+            <button
+              class="nav-tab" :class="{ 'nav-tab-active': currentView === 'stats' }"
+              @click="currentView = 'stats'"
+            >
               <Activity class="wh-4" />
               <span class="hidden sm:inline">{{ t('period.navigation.statistics') }}</span>
             </button>
-            <button @click="currentView = 'settings'" class="nav-tab"
-              :class="{ 'nav-tab-active': currentView === 'settings' }">
+            <button
+              class="nav-tab" :class="{ 'nav-tab-active': currentView === 'settings' }"
+              @click="currentView = 'settings'"
+            >
               <Settings class="wh-4" />
               <span class="hidden sm:inline">{{ t('period.navigation.settings') }}</span>
             </button>
@@ -27,7 +268,7 @@
 
     <!-- 主要内容区域 -->
     <div class="main-content">
-      <div class="container mx-auto px-4 lg:px-6 py-6">
+      <div class="container mx-auto px-4 py-6 lg:px-6">
         <!-- 统计仪表板视图 -->
         <div v-if="currentView === 'stats'" class="stats-view">
           <PeriodStatsDashboard @add-record="openRecordForm()" @edit-record="openRecordForm($event)" />
@@ -36,22 +277,23 @@
         <!-- 日历视图 -->
         <div v-else-if="currentView === 'calendar'" class="calendar-view space-y-6">
           <!-- 第一行：日历占1/2，今日信息+快速操作占1/2 -->
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
             <!-- 日历组件 -->
             <div class="card-base p-6">
               <PeriodCalendar :selected-date="selectedDate" @date-select="handleDateSelect" />
             </div>
 
             <!-- 今日信息和快速操作 -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
               <!-- 今日信息 -->
               <div class="card-base p-6">
-                <div class="flex items-center gap-3 mb-6">
+                <div class="mb-6 flex items-center gap-3">
                   <div
-                    class="w-10 h-10 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full flex items-center justify-center">
-                    <CalendarCheck class="w-5 h-5 text-white" />
+                    class="h-10 w-10 flex items-center justify-center rounded-full from-blue-500 to-cyan-500 bg-gradient-to-r"
+                  >
+                    <CalendarCheck class="h-5 w-5 text-white" />
                   </div>
-                  <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+                  <h3 class="text-lg text-gray-900 font-semibold dark:text-white">
                     {{ t('period.todayInfo.title') }}
                   </h3>
                 </div>
@@ -69,11 +311,13 @@
                   <div v-if="todayRecord" class="info-item">
                     <span class="info-label">{{ t('period.todayInfo.todayRecord') }}</span>
                     <div class="flex items-center gap-2">
-                      <button @click="openDailyForm(todayRecord)" class="action-icon-btn view-btn" title="查看记录">
+                      <button class="action-icon-btn view-btn" title="查看记录" @click="openDailyForm(todayRecord)">
                         <Eye class="wh-4" />
                       </button>
-                      <button @click="handleDeleteDailyRecord(todayRecord.serialNum)" class="action-icon-btn delete-btn"
-                        :title="t('common.actions.delete')">
+                      <button
+                        class="action-icon-btn delete-btn" :title="t('common.actions.delete')"
+                        @click="handleDeleteDailyRecord(todayRecord.serialNum)"
+                      >
                         <Trash class="wh-4" />
                       </button>
                     </div>
@@ -87,25 +331,26 @@
 
               <!-- 快速操作 -->
               <div class="card-base p-6">
-                <div class="flex items-center gap-3 mb-6">
+                <div class="mb-6 flex items-center gap-3">
                   <div
-                    class="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
-                    <Plus class="w-5 h-5 text-white" />
+                    class="h-10 w-10 flex items-center justify-center rounded-full from-purple-500 to-pink-500 bg-gradient-to-r"
+                  >
+                    <Plus class="h-5 w-5 text-white" />
                   </div>
-                  <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+                  <h3 class="text-lg text-gray-900 font-semibold dark:text-white">
                     {{ t('period.quickActions.title') }}
                   </h3>
                 </div>
                 <div class="space-y-3">
-                  <button @click="openRecordForm()" class="action-btn period-btn">
+                  <button class="period-btn action-btn" @click="openRecordForm()">
                     <Plus class="wh-5" />
                     <span>{{ t('period.quickActions.recordPeriod') }}</span>
                   </button>
-                  <button @click="openDailyForm()" class="action-btn daily-btn">
+                  <button class="daily-btn action-btn" @click="openDailyForm()">
                     <Edit class="wh-5" />
                     <span>{{ t('period.quickActions.dailyRecord') }}</span>
                   </button>
-                  <button @click="currentView = 'stats'" class="action-btn stats-btn">
+                  <button class="stats-btn action-btn" @click="currentView = 'stats'">
                     <Activity class="wh-5" />
                     <span>{{ t('period.quickActions.viewStats') }}</span>
                   </button>
@@ -116,23 +361,25 @@
 
           <!-- 第二行：健康提示（铺满宽度） -->
           <div class="card-base p-4">
-            <div class="flex items-center gap-3 mb-6">
+            <div class="mb-6 flex items-center gap-3">
               <div
-                class="w-10 h-10 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center">
+                class="h-10 w-10 flex items-center justify-center rounded-full from-green-500 to-emerald-500 bg-gradient-to-r"
+              >
                 <Heart class="wh-5 text-white" />
               </div>
-              <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+              <h3 class="text-lg text-gray-900 font-semibold dark:text-white">
                 {{ t('period.healthTips.title') }}
               </h3>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div class="grid grid-cols-1 gap-4 lg:grid-cols-3 md:grid-cols-2">
               <div v-for="tip in currentTips" :key="tip.id" class="tip-item">
                 <div class="flex items-start gap-3">
                   <div
-                    class="w-8 h-8 bg-blue-50 dark:bg-blue-900/30 rounded-full flex items-center justify-center flex-shrink-0">
+                    class="h-8 w-8 flex flex-shrink-0 items-center justify-center rounded-full bg-blue-50 dark:bg-blue-900/30"
+                  >
                     <component :is="tip.icon" class="wh-4 text-blue-600 dark:text-blue-400" />
                   </div>
-                  <span class="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+                  <span class="text-sm text-gray-700 leading-relaxed dark:text-gray-300">
                     {{ tip.text }}
                   </span>
                 </div>
@@ -153,41 +400,49 @@
     <!-- 经期记录表单弹窗 -->
     <div v-if="showRecordForm" class="modal-overlay" @click.self="closeRecordForm">
       <div class="modal-content">
-        <PeriodRecordForm :record="editingRecord" @submit="handleRecordSubmit" @delete="handleRecordDelete"
-          @cancel="closeRecordForm" />
+        <PeriodRecordForm
+          :record="editingRecord" @submit="handleRecordSubmit" @delete="handleRecordDelete"
+          @cancel="closeRecordForm"
+        />
       </div>
     </div>
 
     <!-- 日常记录表单弹窗 -->
     <div v-if="showDailyForm" class="modal-overlay" @click.self="closeDailyForm">
       <div class="modal-content">
-        <PeriodDailyForm :date="selectedDate" :record="editingDailyRecord" @submit="handleDailySubmit"
-          @cancel="closeDailyForm" />
+        <PeriodDailyForm
+          :date="selectedDate" :record="editingDailyRecord" @submit="handleDailySubmit"
+          @cancel="closeDailyForm"
+        />
       </div>
     </div>
 
     <!-- 删除确认弹窗 -->
     <div v-if="showDeleteConfirm" class="modal-overlay" @click.self="closeDeleteConfirm">
-      <div class="modal-content max-w-sm">
+      <div class="max-w-sm modal-content">
         <div class="p-6">
-          <div class="flex items-center gap-3 mb-4">
-            <div class="w-10 h-10 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center">
-              <Trash class="w-5 h-5 text-red-600 dark:text-red-400" />
+          <div class="mb-4 flex items-center gap-3">
+            <div class="h-10 w-10 flex items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30">
+              <Trash class="h-5 w-5 text-red-600 dark:text-red-400" />
             </div>
-            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+            <h3 class="text-lg text-gray-900 font-semibold dark:text-white">
               {{ t('period.confirmations.deleteRecord') }}
             </h3>
           </div>
-          <p class="text-sm text-gray-600 dark:text-gray-400 mb-6">
+          <p class="mb-6 text-sm text-gray-600 dark:text-gray-400">
             {{ t('period.confirmations.deleteWarning') }}
           </p>
           <div class="flex items-center gap-3">
-            <button @click="confirmDelete"
-              class="flex-1 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+            <button
+              class="flex-1 rounded-lg bg-red-500 px-4 py-2 text-sm text-white font-medium transition-colors hover:bg-red-600"
+              @click="confirmDelete"
+            >
               <Check class="wh-5" />
             </button>
-            <button @click="closeDeleteConfirm"
-              class="flex-1 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+            <button
+              class="flex-1 rounded-lg bg-gray-100 px-4 py-2 text-sm text-gray-700 font-medium transition-colors dark:bg-gray-700 hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-gray-600"
+              @click="closeDeleteConfirm"
+            >
               <X class="wh-5" />
             </button>
           </div>
@@ -196,292 +451,70 @@
     </div>
 
     <!-- 加载状态 -->
-    <div v-if="periodStore.loading" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div class="bg-white dark:bg-gray-800 rounded-lg p-6 flex items-center gap-3 shadow-xl">
-        <div class="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+    <div v-if="periodStore.loading" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+      <div class="flex items-center gap-3 rounded-lg bg-white p-6 shadow-xl dark:bg-gray-800">
+        <div class="h-6 w-6 animate-spin border-2 border-blue-500 border-t-transparent rounded-full" />
         <span class="text-gray-700 dark:text-gray-300"> {{ t('common.processing') }} </span>
       </div>
     </div>
 
     <!-- 错误提示 -->
-    <div v-if="periodStore.error" class="fixed bottom-4 right-4 max-w-sm z-50">
-      <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 shadow-lg">
+    <div v-if="periodStore.error" class="fixed bottom-4 right-4 z-50 max-w-sm">
+      <div class="border border-red-200 rounded-lg bg-red-50 p-4 shadow-lg dark:border-red-800 dark:bg-red-900/20">
         <div class="flex items-start gap-3">
           <div
-            class="w-8 h-8 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center flex-shrink-0">
-            <i class="i-tabler-alert-circle w-4 h-4 text-red-500" />
+            class="h-8 w-8 flex flex-shrink-0 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30"
+          >
+            <i class="i-tabler-alert-circle h-4 w-4 text-red-500" />
           </div>
           <div class="flex-1">
-            <p class="text-sm font-medium text-red-900 dark:text-red-400">
+            <p class="text-sm text-red-900 font-medium dark:text-red-400">
               {{ t('period.messages.operationFailed') }}
             </p>
-            <p class="text-xs text-red-700 dark:text-red-400 mt-1">
+            <p class="mt-1 text-xs text-red-700 dark:text-red-400">
               {{ periodStore.error }}
             </p>
           </div>
-          <button @click="periodStore.clearError()"
-            class="text-red-400 hover:text-red-600 dark:hover:text-red-300 transition-colors">
-            <X class="w-4 h-4" />
+          <button
+            class="text-red-400 transition-colors hover:text-red-600 dark:hover:text-red-300"
+            @click="periodStore.clearError()"
+          >
+            <X class="h-4 w-4" />
           </button>
         </div>
       </div>
     </div>
 
     <!-- 成功提示 -->
-    <div v-if="showSuccessMessage" class="fixed bottom-4 right-4 max-w-sm z-50">
+    <div v-if="showSuccessMessage" class="fixed bottom-4 right-4 z-50 max-w-sm">
       <div
-        class="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4 shadow-lg">
+        class="border border-green-200 rounded-lg bg-green-50 p-4 shadow-lg dark:border-green-800 dark:bg-green-900/20"
+      >
         <div class="flex items-start gap-3">
           <div
-            class="w-8 h-8 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center flex-shrink-0">
-            <i class="i-tabler-check w-4 h-4 text-green-500" />
+            class="h-8 w-8 flex flex-shrink-0 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30"
+          >
+            <i class="i-tabler-check h-4 w-4 text-green-500" />
           </div>
           <div class="flex-1">
-            <p class="text-sm font-medium text-green-900 dark:text-green-400">
+            <p class="text-sm text-green-900 font-medium dark:text-green-400">
               {{ t('period.messages.operationSuccess') }}
             </p>
-            <p class="text-xs text-green-700 dark:text-green-400 mt-1">
+            <p class="mt-1 text-xs text-green-700 dark:text-green-400">
               {{ successMessage }}
             </p>
           </div>
-          <button @click="hideSuccessMessage"
-            class="text-green-400 hover:text-green-600 dark:hover:text-green-300 transition-colors">
-            <Check class="w-4 h-4" />
+          <button
+            class="text-green-400 transition-colors hover:text-green-600 dark:hover:text-green-300"
+            @click="hideSuccessMessage"
+          >
+            <Check class="h-4 w-4" />
           </button>
         </div>
       </div>
     </div>
   </div>
 </template>
-
-<script setup lang="ts">
-import {
-  Activity,
-  Apple,
-  CalendarCheck,
-  Check,
-  Droplet,
-  Edit,
-  Eye,
-  Heart,
-  Moon,
-  Plus,
-  Settings,
-  Trash,
-  X,
-} from 'lucide-vue-next';
-import type {PeriodDailyRecords, PeriodRecords} from '@/schema/health/period';
-import {usePeriodStore} from '@/stores/periodStore';
-import {getTodayDate} from '@/utils/date';
-import PeriodCalendar from '../components/PeriodCalendar.vue';
-import PeriodDailyForm from './PeriodDailyForm.vue';
-import PeriodRecordForm from './PeriodRecordForm.vue';
-import PeriodSettings from './PeriodSettings.vue';
-import PeriodStatsDashboard from './PeriodStatsDashboard.vue';
-import {phaseTips, Tip} from '../../utils/periodUtils';
-import {Lg} from '@/utils/debugLog';
-
-// Store
-const periodStore = usePeriodStore();
-
-const {t} = useI18n();
-
-// Reactive state
-const currentView = ref<'calendar' | 'stats' | 'settings'>('calendar');
-const selectedDate = ref(getTodayDate().split('T')[0]);
-const showRecordForm = ref(false);
-const showDailyForm = ref(false);
-const showDeleteConfirm = ref(false);
-const showSuccessMessage = ref(false);
-const successMessage = ref('');
-const editingRecord = ref<PeriodRecords | undefined>();
-const editingDailyRecord = ref<PeriodDailyRecords | undefined>();
-const deletingSerialNum = ref<string>('');
-
-// Computed
-const currentPhaseLabel = computed(() => {
-  const phase = periodStore.periodStats.currentPhase;
-  const labels = {
-    Menstrual: t('period.phases.menstrual'),
-    Follicular: t('period.phases.follicular'),
-    Ovulation: t('period.phases.ovulation'),
-    Luteal: t('period.phases.luteal'),
-  };
-  return labels[phase];
-});
-
-const daysUntilNext = computed(() => {
-  const days = periodStore.periodStats.daysUntilNext;
-  if (days === 0) return t('period.nextPeriod.todayStart');
-  if (days === 1) return t('period.nextPeriod.tomorrowStart');
-  if (days < 0) return t('period.nextPeriod.delayed');
-  return `${days}${t('period.nextPeriod.daysLater')}`;
-});
-
-const todayRecord = computed(() => {
-  periodStore.dailyRecords.length;
-  const records = periodStore.dailyRecords;
-  const today = selectedDate.value;
-
-  // 每次都重新查找，确保获取最新数据
-  const found = records.find((record) => record.date === today);
-
-  return found || null;
-});
-const baseTips: Tip[] = [
-  {id: 1, icon: Droplet, text: t('period.healthTips.water')},
-  {id: 2, icon: Moon, text: t('period.healthTips.sleep')},
-  {id: 3, icon: Apple, text: t('period.healthTips.iron')},
-];
-const currentTips = computed(() => {
-  const phase = periodStore.periodStats.currentPhase;
-  return phaseTips[phase] || baseTips;
-});
-
-// Methods
-const handleDateSelect = (date: string) => {
-  selectedDate.value = date;
-};
-
-const openRecordForm = (record?: PeriodRecords) => {
-  editingRecord.value = record;
-  showRecordForm.value = true;
-};
-
-const closeRecordForm = () => {
-  showRecordForm.value = false;
-  editingRecord.value = undefined;
-};
-
-const handleRecordSubmit = async (record: PeriodRecords) => {
-  closeRecordForm();
-
-  // 刷新数据以更新UI
-  await periodStore.fetchPeriodRecords();
-
-  showSuccessToast(t('period.messages.periodRecordSaved'));
-  Lg.i('PeriodManagement', 'Record submitted:', record);
-};
-
-const handleRecordDelete = async (serialNum: string) => {
-  closeRecordForm();
-
-  // 刷新数据以更新UI
-  await periodStore.fetchPeriodRecords();
-
-  showSuccessToast(t('period.messages.periodRecordDeleted'));
-  Lg.i('PeriodManagement', 'Record deleted:', serialNum);
-};
-
-const openDailyForm = (record?: PeriodDailyRecords) => {
-  editingDailyRecord.value = record;
-  showDailyForm.value = true;
-};
-
-const closeDailyForm = () => {
-  showDailyForm.value = false;
-  editingDailyRecord.value = undefined;
-};
-
-const handleDailySubmit = async (record: PeriodDailyRecords) => {
-  try {
-    Lg.i('PeriodManagement', 'Submitting daily record:', record);
-
-    closeDailyForm();
-
-    // 等待保存完成
-    await periodStore.upsertDailyRecord(record);
-
-    // 等待一个 tick 确保状态更新
-    await nextTick();
-
-    showSuccessToast(t('period.messages.dailyRecordSaved'));
-
-    Lg.i(
-      'PeriodManagement',
-      'Daily record saved, total records:',
-      periodStore.dailyRecords.length,
-    );
-  } catch (error) {
-    Lg.e('PeriodManagement', `${t('period.saveFailed')}:`, error);
-  }
-};
-
-// 删除相关方法
-const handleDeleteDailyRecord = (serialNum: string) => {
-  deletingSerialNum.value = serialNum;
-  showDeleteConfirm.value = true;
-};
-
-const closeDeleteConfirm = () => {
-  showDeleteConfirm.value = false;
-  deletingSerialNum.value = '';
-};
-
-// 1. 修改 confirmDelete 方法
-const confirmDelete = async () => {
-  try {
-    const deletingId = deletingSerialNum.value;
-
-    Lg.i('PeriodManagement', 'Deleting record:', deletingId);
-
-    // 使用专门的删除日常记录方法
-    await periodStore.deleteDailyRecord(deletingId);
-
-    // 等待一个 tick 确保状态更新完成
-    await nextTick();
-
-    // 强制刷新日常记录
-    await periodStore.refreshDailyRecords();
-
-    showSuccessToast(t('period.messages.recordDeleted'));
-    closeDeleteConfirm();
-
-    Lg.i(
-      'PeriodManagement',
-      'Delete completed, records count:',
-      periodStore.dailyRecords.length,
-    );
-  } catch (error) {
-    console.error(`${t('messages.deleteFailed')}:`, error);
-  }
-};
-
-// 成功提示相关方法
-const showSuccessToast = (message: string) => {
-  successMessage.value = message;
-  showSuccessMessage.value = true;
-  setTimeout(() => {
-    showSuccessMessage.value = false;
-  }, 3000);
-};
-
-const hideSuccessMessage = () => {
-  showSuccessMessage.value = false;
-};
-
-watch(
-  () => periodStore.dailyRecords,
-  (newRecords, oldRecords) => {
-    Lg.i('PeriodManagement', 'Daily records changed:', {
-      oldCount: oldRecords?.length || 0,
-      newCount: newRecords.length,
-      todayDate: selectedDate.value,
-      hasTodayRecord: !!newRecords.find((r) => r.date === selectedDate.value),
-    });
-  },
-  {deep: true},
-);
-// Lifecycle
-onMounted(async () => {
-  periodStore.initialize();
-  try {
-    await periodStore.fetchPeriodRecords();
-  } catch (error) {
-    Lg.e('PeriodManagement', 'Failed to load period data:', error);
-  }
-});
-</script>
 
 <style scoped lang="postcss">
 .period-management {
