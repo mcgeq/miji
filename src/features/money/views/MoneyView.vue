@@ -54,6 +54,9 @@ const transactionType = ref<TransactionType>(
   TransactionTypeSchema.enum.Expense,
 );
 
+// 添加对 StackedStatCards 组件的引用
+const stackedCardsRef = ref<InstanceType<typeof StackedStatCards> | null>(null);
+
 const tabs = [
   { key: 'accounts', label: '账户' },
   { key: 'transactions', label: '交易' },
@@ -130,6 +133,48 @@ const statCards = computed(() => [
     color: 'warning' as const,
   },
 ]);
+
+// 计算是否有 Modal 打开
+const hasModalOpen = computed(() => {
+  return (
+    showTransaction.value
+    || showAccount.value
+    || showBudget.value
+    || showReminder.value
+    || confirmState.value.visible
+  );
+});
+
+// 监听并控制背景滚动和卡片自动播放
+watchEffect(() => {
+  if (hasModalOpen.value) {
+    // 暂停卡片自动播放
+    if (stackedCardsRef.value) {
+      stackedCardsRef.value.stopAutoPlay();
+    }
+
+    const scrollY = window.scrollY;
+    document.body.style.overflow = 'hidden';
+    document.body.style.position = 'fixed';
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.width = '100%';
+  }
+  else {
+    // 恢复卡片自动播放
+    if (stackedCardsRef.value) {
+      stackedCardsRef.value.startAutoPlay();
+    }
+
+    const scrollY = document.body.style.top;
+    document.body.style.overflow = '';
+    document.body.style.position = '';
+    document.body.style.top = '';
+    document.body.style.width = '';
+    if (scrollY) {
+      window.scrollTo(0, Number.parseInt(scrollY || '0') * -1);
+    }
+  }
+});
 
 async function loadData() {
   try {
@@ -436,44 +481,23 @@ async function saveReminder(reminder: BilReminder) {
   }
 }
 
-// 计算是否有 Modal 打开
-const hasModalOpen = computed(() => {
-  return (
-    showTransaction.value
-    || showAccount.value
-    || showBudget.value
-    || showReminder.value
-    || confirmState.value.visible
-  );
-});
-
-// 监听并控制背景滚动
-watchEffect(() => {
-  if (hasModalOpen.value) {
-    const scrollY = window.scrollY;
-    document.body.style.overflow = 'hidden';
-    document.body.style.position = 'fixed';
-    document.body.style.top = `-${scrollY}px`;
-    document.body.style.width = '100%';
-  }
-  else {
-    const scrollY = document.body.style.top;
-    document.body.style.overflow = '';
-    document.body.style.position = '';
-    document.body.style.top = '';
-    document.body.style.width = '';
-    if (scrollY) {
-      window.scrollTo(0, Number.parseInt(scrollY || '0') * -1);
-    }
-  }
-});
-
-// 卡片事件处理
+// 卡片事件处理 - 当有模态框打开时不执行
 function handleCardChange(index: number, card: any) {
+  // 如果有模态框打开，不执行任何操作
+  if (hasModalOpen.value) {
+    return;
+  }
+
   Lg.d('handleCardChange', '卡片切换:', index, card.title);
+  // 这里可以添加其他需要在卡片切换时执行的逻辑
 }
 
 function handleCardClick(_index: number, card: any) {
+  // 如果有模态框打开，不执行任何操作
+  if (hasModalOpen.value) {
+    return;
+  }
+
   // 可以根据卡片类型执行特定操作
   switch (card.id) {
     case 'total-assets':
@@ -498,6 +522,7 @@ onMounted(() => {
   <div class="mx-auto max-w-1200px p-5">
     <!-- 头部统计卡片 - 扑克牌叠放样式 -->
     <StackedStatCards
+      ref="stackedCardsRef"
       :cards="statCards"
       :auto-play="true"
       :auto-play-delay="8000"
@@ -508,6 +533,7 @@ onMounted(() => {
       :enable-keyboard="true"
       :max-visible-cards="4"
       :transition-duration="600"
+      :disabled="hasModalOpen"
       @card-change="handleCardChange"
       @card-click="handleCardClick"
     />
