@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { Camera, Trash2, Upload, X } from 'lucide-vue-next';
+import ConfirmModal from '@/components/common/ConfirmModal.vue';
 import { useAuthStore } from '@/stores/auth';
 import { Lg } from '@/utils/debugLog';
 import { toast } from '@/utils/toast';
-import ConfirmDialog from './ConfirmDialog.vue';
 
 interface Props {
   isOpen: boolean;
@@ -339,7 +339,7 @@ const userInitial = computed(() => {
     </Transition>
 
     <!-- 删除确认对话框 -->
-    <ConfirmDialog
+    <ConfirmModal
       v-model:show="showDeleteConfirm"
       title="删除头像"
       message="确定要删除当前头像吗？删除后将显示默认头像。"

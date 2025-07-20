@@ -1,95 +1,3 @@
-<template>
-  <Teleport to="body">
-    <Transition
-      name="dialog-fade"
-      appear
-      @enter="onEnter"
-      @leave="onLeave"
-    >
-      <div
-        v-if="show"
-        class="dialog-overlay"
-        @click="handleOverlayClick"
-        role="dialog"
-        aria-modal="true"
-        :aria-labelledby="titleId"
-        :aria-describedby="contentId"
-      >
-        <div
-          ref="dialogRef"
-          class="dialog-container"
-          :class="dialogClasses"
-          @click.stop
-          @keydown.esc="handleEscape"
-          tabindex="-1"
-        >
-          <!-- 对话框头部 -->
-          <div class="dialog-header">
-            <div class="dialog-title-section">
-              <div class="dialog-icon" :class="iconClasses">
-                <i :class="iconClass" class="wh-6" />
-              </div>
-              <h3 :id="titleId" class="dialog-title">
-                {{ title }}
-              </h3>
-            </div>
-            <button
-              v-if="closable"
-              @click="handleCancel"
-              class="dialog-close"
-              type="button"
-              :disabled="loading"
-              aria-label="关闭对话框"
-            >
-              <i class="i-tabler-x wh-5" />
-            </button>
-          </div>
-
-          <!-- 对话框内容 -->
-          <div :id="contentId" class="dialog-content">
-            <slot>
-              <p class="dialog-message">{{ message }}</p>
-            </slot>
-          </div>
-
-          <!-- 对话框底部 -->
-          <div class="dialog-footer">
-            <div class="dialog-actions">
-              <button
-                v-if="showCancel"
-                @click="handleCancel"
-                :disabled="loading"
-                class="btn-cancel"
-                type="button"
-              >
-                {{ cancelText }}
-              </button>
-              <button
-                @click="handleConfirm"
-                :disabled="loading || !canConfirm"
-                class="btn-confirm"
-                :class="confirmButtonClasses"
-                type="button"
-              >
-                <i 
-                  v-if="loading" 
-                  class="i-tabler-loader-2 wh-4 mr-2 animate-spin" 
-                />
-                <i 
-                  v-else-if="confirmIcon" 
-                  :class="confirmIcon" 
-                  class="wh-4 mr-2" 
-                />
-                {{ confirmText }}
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </Transition>
-  </Teleport>
-</template>
-
 <script setup lang="ts">
 // Props
 interface Props {
@@ -128,9 +36,9 @@ const props = withDefaults(defineProps<Props>(), {
 // Emits
 const emit = defineEmits<{
   'update:show': [show: boolean];
-  confirm: [];
-  cancel: [];
-  close: [];
+  'confirm': [];
+  'cancel': [];
+  'close': [];
 }>();
 
 // Reactive state
@@ -211,41 +119,45 @@ const confirmButtonClasses = computed(() => {
 });
 
 // Methods
-const handleConfirm = () => {
-  if (props.loading || !props.canConfirm) return;
+function handleConfirm() {
+  if (props.loading || !props.canConfirm)
+    return;
   emit('confirm');
-};
+}
 
-const handleCancel = () => {
-  if (props.loading) return;
+function handleCancel() {
+  if (props.loading)
+    return;
   emit('cancel');
   handleClose();
-};
+}
 
-const handleClose = () => {
+function handleClose() {
   emit('update:show', false);
   emit('close');
-};
+}
 
-const handleOverlayClick = () => {
-  if (props.persistent || props.loading) return;
+function handleOverlayClick() {
+  if (props.persistent || props.loading)
+    return;
   handleCancel();
-};
+}
 
-const handleEscape = (event: KeyboardEvent) => {
-  if (props.persistent || props.loading) return;
+function handleEscape(event: KeyboardEvent) {
+  if (props.persistent || props.loading)
+    return;
   event.preventDefault();
   handleCancel();
-};
+}
 
-const focusDialog = async () => {
+async function focusDialog() {
   await nextTick();
   if (dialogRef.value) {
     dialogRef.value.focus();
   }
-};
+}
 
-const onEnter = async () => {
+async function onEnter() {
   // 保存当前焦点元素
   previousActiveElement.value = document.activeElement;
 
@@ -254,9 +166,9 @@ const onEnter = async () => {
 
   // 设置焦点
   await focusDialog();
-};
+}
 
-const onLeave = () => {
+function onLeave() {
   // 恢复页面滚动
   document.body.style.overflow = '';
 
@@ -264,11 +176,12 @@ const onLeave = () => {
   if (previousActiveElement.value) {
     (previousActiveElement.value as HTMLElement).focus?.();
   }
-};
+}
 
 // 键盘导航处理
-const handleKeyDown = (event: KeyboardEvent) => {
-  if (!props.show) return;
+function handleKeyDown(event: KeyboardEvent) {
+  if (!props.show)
+    return;
 
   // Tab 键焦点陷阱
   if (event.key === 'Tab' && dialogRef.value) {
@@ -286,19 +199,20 @@ const handleKeyDown = (event: KeyboardEvent) => {
         event.preventDefault();
         lastElement?.focus();
       }
-    } else {
+    }
+    else {
       if (document.activeElement === lastElement) {
         event.preventDefault();
         firstElement?.focus();
       }
     }
   }
-};
+}
 
 // Watchers
 watch(
   () => props.show,
-  async (newValue) => {
+  async newValue => {
     if (newValue) {
       await focusDialog();
     }
@@ -322,6 +236,100 @@ defineExpose({
   close: handleClose,
 });
 </script>
+
+<template>
+  <Teleport to="body">
+    <Transition
+      name="dialog-fade"
+      appear
+      @enter="onEnter"
+      @leave="onLeave"
+    >
+      <div
+        v-if="show"
+        class="dialog-overlay"
+        role="dialog"
+        aria-modal="true"
+        :aria-labelledby="titleId"
+        :aria-describedby="contentId"
+        @click="handleOverlayClick"
+      >
+        <div
+          ref="dialogRef"
+          class="dialog-container"
+          :class="dialogClasses"
+          tabindex="-1"
+          @click.stop
+          @keydown.esc="handleEscape"
+        >
+          <!-- 对话框头部 -->
+          <div class="dialog-header">
+            <div class="dialog-title-section">
+              <div class="dialog-icon" :class="iconClasses">
+                <i :class="iconClass" class="wh-6" />
+              </div>
+              <h3 :id="titleId" class="dialog-title">
+                {{ title }}
+              </h3>
+            </div>
+            <button
+              v-if="closable"
+              class="dialog-close"
+              type="button"
+              :disabled="loading"
+              aria-label="关闭对话框"
+              @click="handleCancel"
+            >
+              <i class="i-tabler-x wh-5" />
+            </button>
+          </div>
+
+          <!-- 对话框内容 -->
+          <div :id="contentId" class="dialog-content">
+            <slot>
+              <p class="dialog-message">
+                {{ message }}
+              </p>
+            </slot>
+          </div>
+
+          <!-- 对话框底部 -->
+          <div class="dialog-footer">
+            <div class="dialog-actions">
+              <button
+                v-if="showCancel"
+                :disabled="loading"
+                class="btn-cancel"
+                type="button"
+                @click="handleCancel"
+              >
+                {{ cancelText }}
+              </button>
+              <button
+                :disabled="loading || !canConfirm"
+                class="btn-confirm"
+                :class="confirmButtonClasses"
+                type="button"
+                @click="handleConfirm"
+              >
+                <i
+                  v-if="loading"
+                  class="i-tabler-loader-2 mr-2 wh-4 animate-spin"
+                />
+                <i
+                  v-else-if="confirmIcon"
+                  :class="confirmIcon"
+                  class="mr-2 wh-4"
+                />
+                {{ confirmText }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </Transition>
+  </Teleport>
+</template>
 
 <style scoped lang="postcss">
 .dialog-overlay {
@@ -389,7 +397,7 @@ defineExpose({
 }
 
 .dialog-close {
-  @apply flex-shrink-0 p-2 rounded-lg 
+  @apply flex-shrink-0 p-2 rounded-lg
          text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300
          hover:bg-gray-100 dark:hover:bg-gray-700
          focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2
@@ -481,27 +489,27 @@ defineExpose({
   .dialog-overlay {
     @apply p-2;
   }
-  
+
   .dialog-container {
     @apply max-w-full;
   }
-  
+
   .dialog-header {
     @apply p-4 pb-3;
   }
-  
+
   .dialog-content {
     @apply px-4 py-3;
   }
-  
+
   .dialog-footer {
     @apply px-4 py-3;
   }
-  
+
   .dialog-actions {
     @apply flex-col gap-2;
   }
-  
+
   .btn-cancel,
   .btn-confirm {
     @apply w-full justify-center;
@@ -521,11 +529,11 @@ defineExpose({
   .dialog-container {
     @apply border-2 border-gray-900 dark:border-gray-100;
   }
-  
+
   .dialog-header {
     @apply border-b-2;
   }
-  
+
   .dialog-footer {
     @apply border-t-2;
   }
