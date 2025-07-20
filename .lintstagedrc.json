@@ -9,4 +9,4 @@
   "*.{json,css,scss,less}": [
     "biome format --write --no-errors-on-unmatched"
   ]
-} 
+}
