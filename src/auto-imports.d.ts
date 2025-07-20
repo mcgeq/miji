@@ -35,10 +35,14 @@ declare global {
   const eagerComputed: typeof import('@vueuse/core')['eagerComputed']
   const effectScope: typeof import('vue')['effectScope']
   const extendRef: typeof import('@vueuse/core')['extendRef']
+  const getBrowserLocale: typeof import('./stores/locales')['getBrowserLocale']
   const getCurrentInstance: typeof import('vue')['getCurrentInstance']
   const getCurrentLocale: typeof import('./stores/locales')['getCurrentLocale']
   const getCurrentScope: typeof import('vue')['getCurrentScope']
   const getCurrentUser: typeof import('./stores/auth')['getCurrentUser']
+  const getLocaleFlag: typeof import('./stores/locales')['getLocaleFlag']
+  const getLocaleName: typeof import('./stores/locales')['getLocaleName']
+  const getSupportedLocales: typeof import('./stores/locales')['getSupportedLocales']
   const h: typeof import('vue')['h']
   const ignorableWatch: typeof import('@vueuse/core')['ignorableWatch']
   const inject: typeof import('vue')['inject']
@@ -49,6 +53,7 @@ declare global {
   const isReactive: typeof import('vue')['isReactive']
   const isReadonly: typeof import('vue')['isReadonly']
   const isRef: typeof import('vue')['isRef']
+  const isSupportedLocale: typeof import('./stores/locales')['isSupportedLocale']
   const localeState: typeof import('./stores/locales')['localeState']
   const localeStore: typeof import('./stores/locales')['localeStore']
   const loginUser: typeof import('./stores/auth')['loginUser']
@@ -94,6 +99,7 @@ declare global {
   const refDefault: typeof import('@vueuse/core')['refDefault']
   const refThrottled: typeof import('@vueuse/core')['refThrottled']
   const refWithControl: typeof import('@vueuse/core')['refWithControl']
+  const resetLocale: typeof import('./stores/locales')['resetLocale']
   const resolveComponent: typeof import('vue')['resolveComponent']
   const resolveRef: typeof import('@vueuse/core')['resolveRef']
   const resolveUnref: typeof import('@vueuse/core')['resolveUnref']
@@ -140,6 +146,7 @@ declare global {
   const useAsyncQueue: typeof import('@vueuse/core')['useAsyncQueue']
   const useAsyncState: typeof import('@vueuse/core')['useAsyncState']
   const useAttrs: typeof import('vue')['useAttrs']
+  const useAuthStore: typeof import('./stores/auth')['useAuthStore']
   const useBase64: typeof import('@vueuse/core')['useBase64']
   const useBattery: typeof import('@vueuse/core')['useBattery']
   const useBluetooth: typeof import('@vueuse/core')['useBluetooth']
@@ -203,6 +210,8 @@ declare global {
   const useLastChanged: typeof import('@vueuse/core')['useLastChanged']
   const useLink: typeof import('vue-router/auto')['useLink']
   const useLocalStorage: typeof import('@vueuse/core')['useLocalStorage']
+  const useLocaleStore: typeof import('./stores/locales')['useLocaleStore']
+  const useLocaleStores: typeof import('./stores/locales')['useLocaleStores']
   const useMagicKeys: typeof import('@vueuse/core')['useMagicKeys']
   const useManualRefHistory: typeof import('@vueuse/core')['useManualRefHistory']
   const useMediaControls: typeof import('@vueuse/core')['useMediaControls']
@@ -318,6 +327,9 @@ declare global {
   // @ts-ignore
   export type { Component, Slot, Slots, ComponentPublicInstance, ComputedRef, DirectiveBinding, ExtractDefaultPropTypes, ExtractPropTypes, ExtractPublicPropTypes, InjectionKey, PropType, Ref, MaybeRef, MaybeRefOrGetter, VNode, WritableComputedRef } from 'vue'
   import('vue')
+  // @ts-ignore
+  export type { LocaleState, SupportedLocale } from './stores/locales'
+  import('./stores/locales')
 }
 
 // for vue template auto import
@@ -354,10 +366,14 @@ declare module 'vue' {
     readonly eagerComputed: UnwrapRef<typeof import('@vueuse/core')['eagerComputed']>
     readonly effectScope: UnwrapRef<typeof import('vue')['effectScope']>
     readonly extendRef: UnwrapRef<typeof import('@vueuse/core')['extendRef']>
+    readonly getBrowserLocale: UnwrapRef<typeof import('./stores/locales')['getBrowserLocale']>
     readonly getCurrentInstance: UnwrapRef<typeof import('vue')['getCurrentInstance']>
     readonly getCurrentLocale: UnwrapRef<typeof import('./stores/locales')['getCurrentLocale']>
     readonly getCurrentScope: UnwrapRef<typeof import('vue')['getCurrentScope']>
     readonly getCurrentUser: UnwrapRef<typeof import('./stores/auth')['getCurrentUser']>
+    readonly getLocaleFlag: UnwrapRef<typeof import('./stores/locales')['getLocaleFlag']>
+    readonly getLocaleName: UnwrapRef<typeof import('./stores/locales')['getLocaleName']>
+    readonly getSupportedLocales: UnwrapRef<typeof import('./stores/locales')['getSupportedLocales']>
     readonly h: UnwrapRef<typeof import('vue')['h']>
     readonly ignorableWatch: UnwrapRef<typeof import('@vueuse/core')['ignorableWatch']>
     readonly inject: UnwrapRef<typeof import('vue')['inject']>
@@ -368,6 +384,7 @@ declare module 'vue' {
     readonly isReactive: UnwrapRef<typeof import('vue')['isReactive']>
     readonly isReadonly: UnwrapRef<typeof import('vue')['isReadonly']>
     readonly isRef: UnwrapRef<typeof import('vue')['isRef']>
+    readonly isSupportedLocale: UnwrapRef<typeof import('./stores/locales')['isSupportedLocale']>
     readonly localeState: UnwrapRef<typeof import('./stores/locales')['localeState']>
     readonly localeStore: UnwrapRef<typeof import('./stores/locales')['localeStore']>
     readonly loginUser: UnwrapRef<typeof import('./stores/auth')['loginUser']>
@@ -413,6 +430,7 @@ declare module 'vue' {
     readonly refDefault: UnwrapRef<typeof import('@vueuse/core')['refDefault']>
     readonly refThrottled: UnwrapRef<typeof import('@vueuse/core')['refThrottled']>
     readonly refWithControl: UnwrapRef<typeof import('@vueuse/core')['refWithControl']>
+    readonly resetLocale: UnwrapRef<typeof import('./stores/locales')['resetLocale']>
     readonly resolveComponent: UnwrapRef<typeof import('vue')['resolveComponent']>
     readonly resolveRef: UnwrapRef<typeof import('@vueuse/core')['resolveRef']>
     readonly resolveUnref: UnwrapRef<typeof import('@vueuse/core')['resolveUnref']>
@@ -459,6 +477,7 @@ declare module 'vue' {
     readonly useAsyncQueue: UnwrapRef<typeof import('@vueuse/core')['useAsyncQueue']>
     readonly useAsyncState: UnwrapRef<typeof import('@vueuse/core')['useAsyncState']>
     readonly useAttrs: UnwrapRef<typeof import('vue')['useAttrs']>
+    readonly useAuthStore: UnwrapRef<typeof import('./stores/auth')['useAuthStore']>
     readonly useBase64: UnwrapRef<typeof import('@vueuse/core')['useBase64']>
     readonly useBattery: UnwrapRef<typeof import('@vueuse/core')['useBattery']>
     readonly useBluetooth: UnwrapRef<typeof import('@vueuse/core')['useBluetooth']>
@@ -522,6 +541,8 @@ declare module 'vue' {
     readonly useLastChanged: UnwrapRef<typeof import('@vueuse/core')['useLastChanged']>
     readonly useLink: UnwrapRef<typeof import('vue-router/auto')['useLink']>
     readonly useLocalStorage: UnwrapRef<typeof import('@vueuse/core')['useLocalStorage']>
+    readonly useLocaleStore: UnwrapRef<typeof import('./stores/locales')['useLocaleStore']>
+    readonly useLocaleStores: UnwrapRef<typeof import('./stores/locales')['useLocaleStores']>
     readonly useMagicKeys: UnwrapRef<typeof import('@vueuse/core')['useMagicKeys']>
     readonly useManualRefHistory: UnwrapRef<typeof import('@vueuse/core')['useManualRefHistory']>
     readonly useMediaControls: UnwrapRef<typeof import('@vueuse/core')['useMediaControls']>

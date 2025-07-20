@@ -90,6 +90,12 @@ export default antfu({
         'destructuredArrayIgnorePattern': '^_',
         'ignoreRestSiblings': true
       }
-    ]
+    ],
+    // 允许单参数箭头函数使用括号
+    'style/arrow-parens': 'off',
+    // 或者使用更灵活的配置
+    'style/arrow-parens': ['error', 'as-needed', {
+      'requireForBlockBody': false
+    }]
   }
 });

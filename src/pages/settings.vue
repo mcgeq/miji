@@ -1,8 +1,6 @@
-<template>
-  <div>settings</div>
-</template>
-
 <script setup lang="ts">
+import SettingsView from '@/features/settings/views/SettingsView.vue';
+
 definePage({
   name: 'settings',
   meta: {
@@ -11,3 +9,7 @@ definePage({
   },
 });
 </script>
+
+<template>
+  <SettingsView />
+</template>
