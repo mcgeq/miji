@@ -3,7 +3,14 @@ import antfu from '@antfu/eslint-config';
 
 export default antfu({
   // 代码风格配置
-  stylistic: false,  // 禁用 ESLint 的样式规则，让 Biome 处理
+  stylistic: {
+    indent: 2,
+    quotes: 'single',
+    semi: false,  // antfu 默认不使用分号
+    commaDangle: 'always-multiline',
+    braceStyle: '1tbs',
+    maxLen: 100,
+  },
 
   // 框架支持
   typescript: true,
@@ -18,21 +25,30 @@ export default antfu({
   toml: true,
   xml: false,
 }, {
-  // 只保留逻辑相关的规则，不处理格式
+  // 简化的规则配置，避免正则表达式问题
   rules: {
-    // 禁用所有格式相关的规则
-    'style/object-curly-spacing': 'off',
-    'style/semi': 'off',
-    'style/quotes': 'off',
-    'style/comma-dangle': 'off',
-    'style/brace-style': 'off',
+    // 使用默认的 perfectionist 配置，但调整一些参数
+    'perfectionist/sort-imports': [
+      'error',
+      {
+        'type': 'natural',
+        'order': 'asc',
+        'ignoreCase': true,
+        'newlinesBetween': 'never',  // 不在组之间添加空行
+        'groups': [
+          'builtin',
+          'external',
+          'internal',
+          'parent',
+          'sibling',
+          'index',
+          'object',
+          'type'
+        ]
+      }
+    ],
 
-    // 禁用 import 排序，让 Biome 处理
-    'perfectionist/sort-imports': 'off',
-    'perfectionist/sort-named-imports': 'off',
-    'perfectionist/sort-exports': 'off',
-
-    // 保留重要的 TypeScript 规则
+    // 确保类型导入语法正确
     '@typescript-eslint/consistent-type-imports': [
       'error',
       {
@@ -42,10 +58,14 @@ export default antfu({
       }
     ],
 
-    // 保留重要的代码质量规则
-    'no-console': ['warn', { allow: ['warn', 'error'] }],
-    'no-debugger': 'error',
-    'no-unused-vars': 'off', // 让 TypeScript 处理
-    '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }]
+    // 确保导入语句中的命名导入也排序
+    'perfectionist/sort-named-imports': [
+      'error',
+      {
+        'type': 'natural',
+        'order': 'asc',
+        'ignoreCase': true
+      }
+    ]
   }
 });

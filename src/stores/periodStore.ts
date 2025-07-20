@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
+import { Lg } from '@/utils/debugLog'
 import type {
   PeriodCalendarEvent,
   PeriodDailyRecords,
@@ -11,7 +12,6 @@ import type {
   PeriodStats,
   PeriodSymptoms,
 } from '@/schema/health/period'
-import { Lg } from '@/utils/debugLog'
 
 export const usePeriodStore = defineStore('period', () => {
   // 状态
@@ -70,8 +70,8 @@ export const usePeriodStore = defineStore('period', () => {
       )
     })
 
-    const averageCycleLength =
-      cycles.length > 0
+    const averageCycleLength
+      = cycles.length > 0
         ? Math.round(
             cycles.reduce((sum, cycle) => sum + cycle, 0) / cycles.length,
           )
@@ -87,8 +87,8 @@ export const usePeriodStore = defineStore('period', () => {
     })
 
     const averagePeriodLength = Math.round(
-      periodLengths.reduce((sum, length) => sum + length, 0) /
-        periodLengths.length,
+      periodLengths.reduce((sum, length) => sum + length, 0)
+      / periodLengths.length,
     )
 
     // 预测下次经期
@@ -112,11 +112,14 @@ export const usePeriodStore = defineStore('period', () => {
 
     if (daysSinceLastPeriod <= averagePeriodLength) {
       currentPhase = 'Menstrual'
-    } else if (daysSinceLastPeriod <= averageCycleLength / 2) {
+    }
+    else if (daysSinceLastPeriod <= averageCycleLength / 2) {
       currentPhase = 'Follicular'
-    } else if (daysSinceLastPeriod <= averageCycleLength / 2 + 3) {
+    }
+    else if (daysSinceLastPeriod <= averageCycleLength / 2 + 3) {
       currentPhase = 'Ovulation'
-    } else {
+    }
+    else {
       currentPhase = 'Luteal'
     }
 
@@ -139,8 +142,8 @@ export const usePeriodStore = defineStore('period', () => {
       const end = new Date(record.endDate)
 
       // Calculate number of days in the period
-      const daysDiff =
-        Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1
+      const daysDiff
+        = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1
 
       for (let i = 0; i < daysDiff; i++) {
         const currentDate = new Date(start)
@@ -181,7 +184,7 @@ export const usePeriodStore = defineStore('period', () => {
   // 计算属性 - 当前月份的记录
   const currentMonthRecords = computed(() => {
     const currentMonth = new Date().toISOString().slice(0, 7) // YYYY-MM
-    return dailyRecords.value.filter((record) =>
+    return dailyRecords.value.filter(record =>
       record.date.startsWith(currentMonth),
     )
   })
@@ -210,7 +213,8 @@ export const usePeriodStore = defineStore('period', () => {
 
   // 检查缓存是否有效
   const isCacheValid = (): boolean => {
-    if (!lastFetch.value) return false
+    if (!lastFetch.value)
+      return false
     return Date.now() - lastFetch.value.getTime() < CACHE_DURATION
   }
 
@@ -225,7 +229,7 @@ export const usePeriodStore = defineStore('period', () => {
 
     try {
       // 模拟API调用
-      await new Promise((resolve) => setTimeout(resolve, 1000))
+      await new Promise(resolve => setTimeout(resolve, 1000))
 
       // 这里应该是实际的API调用
       // const response = await periodApi.getPeriodRecords();
@@ -298,12 +302,14 @@ export const usePeriodStore = defineStore('period', () => {
         'Predicted next period:',
         periodStats.value.nextPredictedDate,
       )
-    } catch (e) {
-      const errorMessage =
-        e instanceof Error ? e.message : 'Failed to fetch period records'
+    }
+    catch (e) {
+      const errorMessage
+        = e instanceof Error ? e.message : 'Failed to fetch period records'
       setError(errorMessage)
       throw new Error(errorMessage)
-    } finally {
+    }
+    finally {
       setLoading(false)
     }
   }
@@ -314,7 +320,7 @@ export const usePeriodStore = defineStore('period', () => {
     clearError()
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 800))
+      await new Promise(resolve => setTimeout(resolve, 800))
 
       // 模拟API调用
       // const response = await periodApi.getDailyRecords();
@@ -362,12 +368,14 @@ export const usePeriodStore = defineStore('period', () => {
       ]
 
       dailyRecords.value = mockDailyData
-    } catch (e) {
-      const errorMessage =
-        e instanceof Error ? e.message : 'Failed to fetch daily records'
+    }
+    catch (e) {
+      const errorMessage
+        = e instanceof Error ? e.message : 'Failed to fetch daily records'
       setError(errorMessage)
       throw new Error(errorMessage)
-    } finally {
+    }
+    finally {
       setLoading(false)
     }
   }
@@ -377,23 +385,25 @@ export const usePeriodStore = defineStore('period', () => {
     clearError()
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 500))
+      await new Promise(resolve => setTimeout(resolve, 500))
 
       // 模拟API调用
       // await periodApi.deleteDailyRecord(serialNum);
 
       // 立即从本地状态中移除记录
       dailyRecords.value = dailyRecords.value.filter(
-        (record) => record.serialNum !== serialNum,
+        record => record.serialNum !== serialNum,
       )
 
       Lg.i('Period', 'Daily record deleted:', serialNum)
-    } catch (e) {
-      const errorMessage =
-        e instanceof Error ? e.message : 'Failed to delete daily record'
+    }
+    catch (e) {
+      const errorMessage
+        = e instanceof Error ? e.message : 'Failed to delete daily record'
       setError(errorMessage)
       throw new Error(errorMessage)
-    } finally {
+    }
+    finally {
       setLoading(false)
     }
   }
@@ -406,7 +416,7 @@ export const usePeriodStore = defineStore('period', () => {
     clearError()
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 500))
+      await new Promise(resolve => setTimeout(resolve, 500))
 
       // 模拟API调用
       // const response = await periodApi.addPeriodRecord(record);
@@ -424,12 +434,14 @@ export const usePeriodStore = defineStore('period', () => {
       lastFetch.value = null
 
       return newRecord
-    } catch (e) {
-      const errorMessage =
-        e instanceof Error ? e.message : 'Failed to add period record'
+    }
+    catch (e) {
+      const errorMessage
+        = e instanceof Error ? e.message : 'Failed to add period record'
       setError(errorMessage)
       throw new Error(errorMessage)
-    } finally {
+    }
+    finally {
       setLoading(false)
     }
   }
@@ -443,13 +455,13 @@ export const usePeriodStore = defineStore('period', () => {
     clearError()
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 500))
+      await new Promise(resolve => setTimeout(resolve, 500))
 
       // 模拟API调用
       // const response = await periodApi.updatePeriodRecord(serialNum, updates);
 
       const index = periodRecords.value.findIndex(
-        (record) => record.serialNum === serialNum,
+        record => record.serialNum === serialNum,
       )
       if (index !== -1) {
         periodRecords.value[index] = {
@@ -458,12 +470,14 @@ export const usePeriodStore = defineStore('period', () => {
           updatedAt: new Date().toISOString(),
         }
       }
-    } catch (e) {
-      const errorMessage =
-        e instanceof Error ? e.message : 'Failed to update period record'
+    }
+    catch (e) {
+      const errorMessage
+        = e instanceof Error ? e.message : 'Failed to update period record'
       setError(errorMessage)
       throw new Error(errorMessage)
-    } finally {
+    }
+    finally {
       setLoading(false)
     }
   }
@@ -474,35 +488,38 @@ export const usePeriodStore = defineStore('period', () => {
     clearError()
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 500))
+      await new Promise(resolve => setTimeout(resolve, 500))
 
       // 检查要删除的是经期记录还是日常记录
       const isDailyRecord = dailyRecords.value.some(
-        (record) => record.serialNum === serialNum,
+        record => record.serialNum === serialNum,
       )
 
       if (isDailyRecord) {
         // 如果是日常记录，只删除日常记录
         dailyRecords.value = dailyRecords.value.filter(
-          (record) => record.serialNum !== serialNum,
+          record => record.serialNum !== serialNum,
         )
-      } else {
+      }
+      else {
         // 如果是经期记录，删除经期记录和相关的日常记录
         periodRecords.value = periodRecords.value.filter(
-          (record) => record.serialNum !== serialNum,
+          record => record.serialNum !== serialNum,
         )
 
         // 同时删除与该经期相关的所有日常记录
         dailyRecords.value = dailyRecords.value.filter(
-          (record) => record.periodSerialNum !== serialNum,
+          record => record.periodSerialNum !== serialNum,
         )
       }
-    } catch (e) {
-      const errorMessage =
-        e instanceof Error ? e.message : 'Failed to delete record'
+    }
+    catch (e) {
+      const errorMessage
+        = e instanceof Error ? e.message : 'Failed to delete record'
       setError(errorMessage)
       throw new Error(errorMessage)
-    } finally {
+    }
+    finally {
       setLoading(false)
     }
   }
@@ -513,11 +530,11 @@ export const usePeriodStore = defineStore('period', () => {
     clearError()
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 500))
+      await new Promise(resolve => setTimeout(resolve, 500))
 
       // 检查是否已存在该日期的记录
       const existingIndex = dailyRecords.value.findIndex(
-        (r) => r.date === record.date,
+        r => r.date === record.date,
       )
 
       if (existingIndex !== -1) {
@@ -530,7 +547,8 @@ export const usePeriodStore = defineStore('period', () => {
 
         // 使用 splice 确保响应式更新
         dailyRecords.value.splice(existingIndex, 1, updatedRecord)
-      } else {
+      }
+      else {
         // 创建新记录
         const newRecord: PeriodDailyRecords = {
           serialNum: `daily_${Date.now()}`.padEnd(38, '0'),
@@ -553,12 +571,14 @@ export const usePeriodStore = defineStore('period', () => {
 
       // 强制触发响应式更新
       dailyRecords.value = [...dailyRecords.value]
-    } catch (e) {
-      const errorMessage =
-        e instanceof Error ? e.message : 'Failed to save daily record'
+    }
+    catch (e) {
+      const errorMessage
+        = e instanceof Error ? e.message : 'Failed to save daily record'
       setError(errorMessage)
       throw new Error(errorMessage)
-    } finally {
+    }
+    finally {
       setLoading(false)
     }
   }
@@ -567,7 +587,7 @@ export const usePeriodStore = defineStore('period', () => {
   const getDailyRecord = (date: string): PeriodDailyRecords | null => {
     // 强制获取最新的 dailyRecords
     const records = dailyRecords.value
-    return records.find((record) => record.date === date) || null
+    return records.find(record => record.date === date) || null
   }
 
   // 更新设置
@@ -576,7 +596,7 @@ export const usePeriodStore = defineStore('period', () => {
     clearError()
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 300))
+      await new Promise(resolve => setTimeout(resolve, 300))
 
       // 模拟API调用
       // await periodApi.updateSettings(newSettings);
@@ -585,12 +605,14 @@ export const usePeriodStore = defineStore('period', () => {
         ...settings.value,
         ...newSettings,
       }
-    } catch (e) {
-      const errorMessage =
-        e instanceof Error ? e.message : 'Failed to update settings'
+    }
+    catch (e) {
+      const errorMessage
+        = e instanceof Error ? e.message : 'Failed to update settings'
       setError(errorMessage)
       throw new Error(errorMessage)
-    } finally {
+    }
+    finally {
       setLoading(false)
     }
   }
@@ -601,7 +623,7 @@ export const usePeriodStore = defineStore('period', () => {
     clearError()
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 500))
+      await new Promise(resolve => setTimeout(resolve, 500))
 
       // 模拟API调用
       // await periodApi.resetAllData();
@@ -612,12 +634,14 @@ export const usePeriodStore = defineStore('period', () => {
       pmsRecords.value = []
       pmsSymptoms.value = []
       lastFetch.value = null
-    } catch (e) {
-      const errorMessage =
-        e instanceof Error ? e.message : 'Failed to reset data'
+    }
+    catch (e) {
+      const errorMessage
+        = e instanceof Error ? e.message : 'Failed to reset data'
       setError(errorMessage)
       throw new Error(errorMessage)
-    } finally {
+    }
+    finally {
       setLoading(false)
     }
   }
@@ -628,7 +652,7 @@ export const usePeriodStore = defineStore('period', () => {
     clearError()
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 300))
+      await new Promise(resolve => setTimeout(resolve, 300))
 
       // 模拟重新获取数据
       // const response = await periodApi.getDailyRecords();
@@ -636,12 +660,14 @@ export const usePeriodStore = defineStore('period', () => {
 
       // 强制触发响应式更新
       dailyRecords.value = [...dailyRecords.value]
-    } catch (e) {
-      const errorMessage =
-        e instanceof Error ? e.message : 'Failed to refresh daily records'
+    }
+    catch (e) {
+      const errorMessage
+        = e instanceof Error ? e.message : 'Failed to refresh daily records'
       setError(errorMessage)
       throw new Error(errorMessage)
-    } finally {
+    }
+    finally {
       setLoading(false)
     }
   }
@@ -683,8 +709,8 @@ export const usePeriodStore = defineStore('period', () => {
       const end = new Date(period.endDate)
 
       // Calculate number of days in the period
-      const daysDiff =
-        Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1
+      const daysDiff
+        = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1
 
       for (let i = 0; i < daysDiff; i++) {
         const currentDate = new Date(start)
@@ -706,8 +732,8 @@ export const usePeriodStore = defineStore('period', () => {
     periodRecords.value.forEach((period) => {
       const ovulationDate = new Date(period.startDate)
       ovulationDate.setDate(
-        ovulationDate.getDate() +
-          Math.floor(settings.value.averageCycleLength / 2),
+        ovulationDate.getDate()
+        + Math.floor(settings.value.averageCycleLength / 2),
       )
       const dateStr = ovulationDate.toISOString().split('T')[0]
 
@@ -720,7 +746,8 @@ export const usePeriodStore = defineStore('period', () => {
 
         // 排卵期前后各1天为易孕期
         for (let i = -1; i <= 1; i++) {
-          if (i === 0) continue // 排卵日已添加
+          if (i === 0)
+            continue // 排卵日已添加
           const fertileDate = new Date(ovulationDate)
           fertileDate.setDate(fertileDate.getDate() + i)
           const fertileDateStr = fertileDate.toISOString().split('T')[0]
@@ -765,8 +792,8 @@ export const usePeriodStore = defineStore('period', () => {
         // 预测排卵期
         const predictedOvulationDate = new Date(predictedStart)
         predictedOvulationDate.setDate(
-          predictedOvulationDate.getDate() +
-            Math.floor(stats.averageCycleLength / 2),
+          predictedOvulationDate.getDate()
+          + Math.floor(stats.averageCycleLength / 2),
         )
         const ovulationDateStr = predictedOvulationDate
           .toISOString()
@@ -781,7 +808,8 @@ export const usePeriodStore = defineStore('period', () => {
 
           // 预测易孕期
           for (let i = -1; i <= 1; i++) {
-            if (i === 0) continue
+            if (i === 0)
+              continue
             const fertileDate = new Date(predictedOvulationDate)
             fertileDate.setDate(fertileDate.getDate() + i)
             const fertileDateStr = fertileDate.toISOString().split('T')[0]
