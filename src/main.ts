@@ -1,15 +1,15 @@
+import {createPinia} from 'pinia';
+import Toast from 'vue-toastification';
+import z from 'zod';
 import App from './App.vue';
+import {initI18n} from './i18n/i18n';
+import router from './router';
+import {i18nErrorMap} from './schema/i18nErrorMap';
+import {storeStart} from './stores';
 import 'uno.css';
 import '@unocss/reset/tailwind.css';
 import 'virtual:unocss-devtools';
-import Toast from 'vue-toastification';
-import {initI18n} from './i18n/i18n';
-import router from './router';
 import 'vue-toastification/dist/index.css';
-import {createPinia} from 'pinia';
-import z from 'zod';
-import {i18nErrorMap} from './schema/i18nErrorMap';
-import {storeStart} from './stores';
 
 const app = createApp(App);
 

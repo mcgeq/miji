@@ -1,6 +1,6 @@
-import { defineStore } from 'pinia';
-import { computed, ref } from 'vue';
-import {
+import {defineStore} from 'pinia';
+import {computed, ref} from 'vue';
+import type {
   PeriodCalendarEvent,
   PeriodDailyRecords,
   PeriodPhase,
@@ -11,7 +11,7 @@ import {
   PeriodStats,
   PeriodSymptoms,
 } from '@/schema/health/period';
-import { Lg } from '@/utils/debugLog';
+import {Lg} from '@/utils/debugLog';
 
 export const usePeriodStore = defineStore('period', () => {
   // 状态
@@ -73,8 +73,8 @@ export const usePeriodStore = defineStore('period', () => {
     const averageCycleLength =
       cycles.length > 0
         ? Math.round(
-          cycles.reduce((sum, cycle) => sum + cycle, 0) / cycles.length,
-        )
+            cycles.reduce((sum, cycle) => sum + cycle, 0) / cycles.length,
+          )
         : settings.value.averageCycleLength;
 
     // 计算经期长度
@@ -88,7 +88,7 @@ export const usePeriodStore = defineStore('period', () => {
 
     const averagePeriodLength = Math.round(
       periodLengths.reduce((sum, length) => sum + length, 0) /
-      periodLengths.length,
+        periodLengths.length,
     );
 
     // 预测下次经期
@@ -138,9 +138,16 @@ export const usePeriodStore = defineStore('period', () => {
       const start = new Date(record.startDate);
       const end = new Date(record.endDate);
 
-      for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+      // Calculate number of days in the period
+      const daysDiff =
+        Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) +
+        1;
+
+      for (let i = 0; i < daysDiff; i++) {
+        const currentDate = new Date(start);
+        currentDate.setDate(start.getDate() + i);
         events.push({
-          date: d.toISOString().split('T')[0],
+          date: currentDate.toISOString().split('T')[0],
           type: 'period',
           intensity: 'Medium',
         });
@@ -285,8 +292,10 @@ export const usePeriodStore = defineStore('period', () => {
       periodRecords.value = mockData;
       lastFetch.value = new Date();
 
-      console.log('Mock period records loaded:', mockData);
-      console.log(
+      // Use debug logging instead of console.log
+      Lg.d('Period', 'Mock period records loaded:', mockData);
+      Lg.d(
+        'Period',
         'Predicted next period:',
         periodStats.value.nextPredictedDate,
       );
@@ -299,11 +308,9 @@ export const usePeriodStore = defineStore('period', () => {
       setLoading(false);
     }
   };
+
   // 获取每日记录
-  const fetchDailyRecords = async (dateRange?: {
-    start: string;
-    end: string;
-  }) => {
+  const fetchDailyRecords = async () => {
     setLoading(true);
     clearError();
 
@@ -311,7 +318,7 @@ export const usePeriodStore = defineStore('period', () => {
       await new Promise((resolve) => setTimeout(resolve, 800));
 
       // 模拟API调用
-      // const response = await periodApi.getDailyRecords(dateRange);
+      // const response = await periodApi.getDailyRecords();
       // dailyRecords.value = response.data;
 
       // 添加一些模拟的日常记录
@@ -500,6 +507,7 @@ export const usePeriodStore = defineStore('period', () => {
       setLoading(false);
     }
   };
+
   // 添加或更新每日记录
   const upsertDailyRecord = async (record: Partial<PeriodDailyRecords>) => {
     setLoading(true);
@@ -615,7 +623,7 @@ export const usePeriodStore = defineStore('period', () => {
     }
   };
 
-  // 5. 添加强制刷新日常记录的方法
+  // 强制刷新日常记录的方法
   const refreshDailyRecords = async () => {
     setLoading(true);
     clearError();
@@ -675,8 +683,16 @@ export const usePeriodStore = defineStore('period', () => {
       const start = new Date(period.startDate);
       const end = new Date(period.endDate);
 
-      for (let d = start; d <= end; d.setDate(d.getDate() + 1)) {
-        const dateStr = d.toISOString().split('T')[0];
+      // Calculate number of days in the period
+      const daysDiff =
+        Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) +
+        1;
+
+      for (let i = 0; i < daysDiff; i++) {
+        const currentDate = new Date(start);
+        currentDate.setDate(start.getDate() + i);
+        const dateStr = currentDate.toISOString().split('T')[0];
+
         if (dateStr >= startDate && dateStr <= endDate) {
           events.push({
             date: dateStr,
@@ -693,7 +709,7 @@ export const usePeriodStore = defineStore('period', () => {
       const ovulationDate = new Date(period.startDate);
       ovulationDate.setDate(
         ovulationDate.getDate() +
-        Math.floor(settings.value.averageCycleLength / 2),
+          Math.floor(settings.value.averageCycleLength / 2),
       );
       const dateStr = ovulationDate.toISOString().split('T')[0];
 
@@ -752,7 +768,7 @@ export const usePeriodStore = defineStore('period', () => {
         const predictedOvulationDate = new Date(predictedStart);
         predictedOvulationDate.setDate(
           predictedOvulationDate.getDate() +
-          Math.floor(stats.averageCycleLength / 2),
+            Math.floor(stats.averageCycleLength / 2),
         );
         const ovulationDateStr = predictedOvulationDate
           .toISOString()
@@ -786,6 +802,7 @@ export const usePeriodStore = defineStore('period', () => {
 
     return events;
   };
+
   const initialize = () => {
     // 从本地存储或API加载数据
     const savedSettings = localStorage.getItem('periodSettings');
@@ -793,6 +810,7 @@ export const usePeriodStore = defineStore('period', () => {
       settings.value = JSON.parse(savedSettings);
     }
   };
+
   return {
     // 状态
     periodRecords,
