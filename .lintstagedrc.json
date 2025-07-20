@@ -1,0 +1,12 @@
+{
+  "src/**/*.{js,jsx,ts,tsx,svelte,astro}": [
+    "biome check --fix --no-errors-on-unmatched",
+    "biome format --write --no-errors-on-unmatched"
+  ],
+  "src/**/*.vue": [
+    "eslint --fix"
+  ],
+  "*.{json,css,scss,less,md}": [
+    "biome format --write --no-errors-on-unmatched"
+  ]
+}
