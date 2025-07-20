@@ -1,4 +1,3 @@
-// eslint.config.mjs
 import antfu from '@antfu/eslint-config';
 
 export default antfu({
@@ -6,26 +5,24 @@ export default antfu({
   stylistic: {
     indent: 2,
     quotes: 'single',
-    semi: true,  // antfu 默认不使用分号
+    semi: true,
     commaDangle: 'always-multiline',
     braceStyle: '1tbs',
     maxLen: 100,
   },
-
   // 框架支持
   typescript: true,
   vue: true,
   svelte: true,
   astro: true,
   unocss: true,
-
   // 文件类型支持
   jsonc: false,
   yaml: true,
   toml: true,
   xml: false,
 }, {
-  // 自定义 import 排序规则，与 Biome 一致
+  // 自定义规则
   rules: {
     // 配置 perfectionist 的 import 排序，与 Biome 规则一致
     'perfectionist/sort-imports': [
@@ -34,7 +31,7 @@ export default antfu({
         'type': 'natural',
         'order': 'asc',
         'ignoreCase': true,
-        'newlinesBetween': 'never',  // 不在组之间添加空行，与 Biome 一致
+        'newlinesBetween': 'never',
         'maxLineLength': undefined,
         'groups': [
           'builtin',
@@ -44,7 +41,7 @@ export default antfu({
           'sibling',
           'index',
           'object',
-          'type'  // 类型导入放在最后
+          'type'
         ],
         'customGroups': {
           'value': {
@@ -72,6 +69,26 @@ export default antfu({
         'type': 'natural',
         'order': 'asc',
         'ignoreCase': true
+      }
+    ],
+
+    // 关闭原生的 no-unused-vars 规则
+    'no-unused-vars': 'off',
+    '@typescript-eslint/no-unused-vars': 'off',
+
+    // 使用 unused-imports 插件来处理未使用的导入和变量
+    'unused-imports/no-unused-imports': 'error',
+    'unused-imports/no-unused-vars': [
+      'error',
+      {
+        'vars': 'all',
+        'varsIgnorePattern': '^_',
+        'args': 'after-used',
+        'argsIgnorePattern': '^_',
+        'caughtErrors': 'all',
+        'caughtErrorsIgnorePattern': '^_',
+        'destructuredArrayIgnorePattern': '^_',
+        'ignoreRestSiblings': true
       }
     ]
   }
