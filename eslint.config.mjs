@@ -6,7 +6,7 @@ export default antfu({
   stylistic: {
     indent: 2,
     quotes: 'single',
-    semi: false,  // antfu 默认不使用分号
+    semi: true,  // antfu 默认不使用分号
     commaDangle: 'always-multiline',
     braceStyle: '1tbs',
     maxLen: 100,
@@ -25,16 +25,17 @@ export default antfu({
   toml: true,
   xml: false,
 }, {
-  // 简化的规则配置，避免正则表达式问题
+  // 自定义 import 排序规则，与 Biome 一致
   rules: {
-    // 使用默认的 perfectionist 配置，但调整一些参数
+    // 配置 perfectionist 的 import 排序，与 Biome 规则一致
     'perfectionist/sort-imports': [
       'error',
       {
         'type': 'natural',
         'order': 'asc',
         'ignoreCase': true,
-        'newlinesBetween': 'never',  // 不在组之间添加空行
+        'newlinesBetween': 'never',  // 不在组之间添加空行，与 Biome 一致
+        'maxLineLength': undefined,
         'groups': [
           'builtin',
           'external',
@@ -43,8 +44,14 @@ export default antfu({
           'sibling',
           'index',
           'object',
-          'type'
-        ]
+          'type'  // 类型导入放在最后
+        ],
+        'customGroups': {
+          'value': {
+            'internal': '^@/'
+          }
+        },
+        'internalPattern': ['^@/']
       }
     ],
 
