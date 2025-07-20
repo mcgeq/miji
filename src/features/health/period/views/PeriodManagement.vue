@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import type { Tip } from '../../utils/periodUtils'
-import type { PeriodDailyRecords, PeriodRecords } from '@/schema/health/period'
 import {
   Activity,
   Apple,
@@ -15,198 +13,200 @@ import {
   Settings,
   Trash,
   X,
-} from 'lucide-vue-next'
-import { usePeriodStore } from '@/stores/periodStore'
-import { getTodayDate } from '@/utils/date'
-import { Lg } from '@/utils/debugLog'
-import { phaseTips } from '../../utils/periodUtils'
-import PeriodCalendar from '../components/PeriodCalendar.vue'
-import PeriodDailyForm from './PeriodDailyForm.vue'
-import PeriodRecordForm from './PeriodRecordForm.vue'
-import PeriodSettings from './PeriodSettings.vue'
-import PeriodStatsDashboard from './PeriodStatsDashboard.vue'
+} from 'lucide-vue-next';
+import { usePeriodStore } from '@/stores/periodStore';
+import { getTodayDate } from '@/utils/date';
+import { Lg } from '@/utils/debugLog';
+import { phaseTips } from '../../utils/periodUtils';
+import PeriodCalendar from '../components/PeriodCalendar.vue';
+import PeriodDailyForm from './PeriodDailyForm.vue';
+import PeriodRecordForm from './PeriodRecordForm.vue';
+import PeriodSettings from './PeriodSettings.vue';
+import PeriodStatsDashboard from './PeriodStatsDashboard.vue';
+import type { Tip } from '../../utils/periodUtils';
+import type { PeriodDailyRecords, PeriodRecords } from '@/schema/health/period';
 
 // Store
-const periodStore = usePeriodStore()
+const periodStore = usePeriodStore();
 
-const { t } = useI18n()
+const { t } = useI18n();
 
 // Reactive state
-const currentView = ref<'calendar' | 'stats' | 'settings'>('calendar')
-const selectedDate = ref(getTodayDate().split('T')[0])
-const showRecordForm = ref(false)
-const showDailyForm = ref(false)
-const showDeleteConfirm = ref(false)
-const showSuccessMessage = ref(false)
-const successMessage = ref('')
-const editingRecord = ref<PeriodRecords | undefined>()
-const editingDailyRecord = ref<PeriodDailyRecords | undefined>()
-const deletingSerialNum = ref<string>('')
+const currentView = ref<'calendar' | 'stats' | 'settings'>('calendar');
+const selectedDate = ref(getTodayDate().split('T')[0]);
+const showRecordForm = ref(false);
+const showDailyForm = ref(false);
+const showDeleteConfirm = ref(false);
+const showSuccessMessage = ref(false);
+const successMessage = ref('');
+const editingRecord = ref<PeriodRecords | undefined>();
+const editingDailyRecord = ref<PeriodDailyRecords | undefined>();
+const deletingSerialNum = ref<string>('');
 
 // Computed
 const currentPhaseLabel = computed(() => {
-  const phase = periodStore.periodStats.currentPhase
+  const phase = periodStore.periodStats.currentPhase;
   const labels = {
     Menstrual: t('period.phases.menstrual'),
     Follicular: t('period.phases.follicular'),
     Ovulation: t('period.phases.ovulation'),
     Luteal: t('period.phases.luteal'),
-  }
-  return labels[phase]
-})
+  };
+  return labels[phase];
+});
 
 const daysUntilNext = computed(() => {
-  const days = periodStore.periodStats.daysUntilNext
+  const days = periodStore.periodStats.daysUntilNext;
   if (days === 0)
-    return t('period.nextPeriod.todayStart')
+    return t('period.nextPeriod.todayStart');
   if (days === 1)
-    return t('period.nextPeriod.tomorrowStart')
+    return t('period.nextPeriod.tomorrowStart');
   if (days < 0)
-    return t('period.nextPeriod.delayed')
-  return `${days}${t('period.nextPeriod.daysLater')}`
-})
+    return t('period.nextPeriod.delayed');
+  return `${days}${t('period.nextPeriod.daysLater')}`;
+});
 
 const todayRecord = computed(() => {
-  const records = periodStore.dailyRecords
-  const today = selectedDate.value
+  const records = periodStore.dailyRecords;
+  const today = selectedDate.value;
 
   // 每次都重新查找，确保获取最新数据
-  const found = records.find(record => record.date === today)
+  const found = records.find(record => record.date === today);
 
-  return found || null
-})
+  return found || null;
+});
 const baseTips: Tip[] = [
   { id: 1, icon: Droplet, text: t('period.healthTips.water') },
   { id: 2, icon: Moon, text: t('period.healthTips.sleep') },
   { id: 3, icon: Apple, text: t('period.healthTips.iron') },
-]
+];
 const currentTips = computed(() => {
-  const phase = periodStore.periodStats.currentPhase
-  return phaseTips[phase] || baseTips
-})
+  const phase = periodStore.periodStats.currentPhase;
+  return phaseTips[phase] || baseTips;
+});
 
 // Methods
 function handleDateSelect(date: string) {
-  selectedDate.value = date
+  selectedDate.value = date;
 }
 
 function openRecordForm(record?: PeriodRecords) {
-  editingRecord.value = record
-  showRecordForm.value = true
+  editingRecord.value = record;
+  showRecordForm.value = true;
 }
 
 function closeRecordForm() {
-  showRecordForm.value = false
-  editingRecord.value = undefined
+  showRecordForm.value = false;
+  editingRecord.value = undefined;
 }
 
 async function handleRecordSubmit(record: PeriodRecords) {
-  closeRecordForm()
+  closeRecordForm();
 
   // 刷新数据以更新UI
-  await periodStore.fetchPeriodRecords()
+  await periodStore.fetchPeriodRecords();
 
-  showSuccessToast(t('period.messages.periodRecordSaved'))
-  Lg.i('PeriodManagement', 'Record submitted:', record)
+  showSuccessToast(t('period.messages.periodRecordSaved'));
+  Lg.i('PeriodManagement', 'Record submitted:', record);
 }
 
 async function handleRecordDelete(serialNum: string) {
-  closeRecordForm()
+  closeRecordForm();
 
   // 刷新数据以更新UI
-  await periodStore.fetchPeriodRecords()
+  await periodStore.fetchPeriodRecords();
 
-  showSuccessToast(t('period.messages.periodRecordDeleted'))
-  Lg.i('PeriodManagement', 'Record deleted:', serialNum)
+  showSuccessToast(t('period.messages.periodRecordDeleted'));
+  Lg.i('PeriodManagement', 'Record deleted:', serialNum);
 }
 
 function openDailyForm(record?: PeriodDailyRecords) {
-  editingDailyRecord.value = record
-  showDailyForm.value = true
+  editingDailyRecord.value = record;
+  showDailyForm.value = true;
 }
 
 function closeDailyForm() {
-  showDailyForm.value = false
-  editingDailyRecord.value = undefined
+  showDailyForm.value = false;
+  editingDailyRecord.value = undefined;
 }
 
 async function handleDailySubmit(record: PeriodDailyRecords) {
   try {
-    Lg.i('PeriodManagement', 'Submitting daily record:', record)
+    Lg.i('PeriodManagement', 'Submitting daily record:', record);
 
-    closeDailyForm()
+    closeDailyForm();
 
     // 等待保存完成
-    await periodStore.upsertDailyRecord(record)
+    await periodStore.upsertDailyRecord(record);
 
     // 等待一个 tick 确保状态更新
-    await nextTick()
+    await nextTick();
 
-    showSuccessToast(t('period.messages.dailyRecordSaved'))
+    showSuccessToast(t('period.messages.dailyRecordSaved'));
 
     Lg.i(
       'PeriodManagement',
       'Daily record saved, total records:',
       periodStore.dailyRecords.length,
-    )
+    );
   }
   catch (error) {
-    Lg.e('PeriodManagement', `${t('period.saveFailed')}:`, error)
+    Lg.e('PeriodManagement', `${t('period.saveFailed')}:`, error);
   }
 }
 
 // 删除相关方法
 function handleDeleteDailyRecord(serialNum: string) {
-  deletingSerialNum.value = serialNum
-  showDeleteConfirm.value = true
+  deletingSerialNum.value = serialNum;
+  showDeleteConfirm.value = true;
 }
 
 function closeDeleteConfirm() {
-  showDeleteConfirm.value = false
-  deletingSerialNum.value = ''
+  showDeleteConfirm.value = false;
+  deletingSerialNum.value = '';
 }
 
 // 1. 修改 confirmDelete 方法
 async function confirmDelete() {
   try {
-    const deletingId = deletingSerialNum.value
+    const deletingId = deletingSerialNum.value;
 
-    Lg.i('PeriodManagement', 'Deleting record:', deletingId)
+    Lg.i('PeriodManagement', 'Deleting record:', deletingId);
 
     // 使用专门的删除日常记录方法
-    await periodStore.deleteDailyRecord(deletingId)
+    await periodStore.deleteDailyRecord(deletingId);
 
     // 等待一个 tick 确保状态更新完成
-    await nextTick()
+    await nextTick();
 
     // 强制刷新日常记录
-    await periodStore.refreshDailyRecords()
+    await periodStore.refreshDailyRecords();
 
-    showSuccessToast(t('period.messages.recordDeleted'))
-    closeDeleteConfirm()
+    showSuccessToast(t('period.messages.recordDeleted'));
+    closeDeleteConfirm();
 
     Lg.i(
       'PeriodManagement',
       'Delete completed, records count:',
       periodStore.dailyRecords.length,
-    )
+    );
   }
   catch (error) {
-    console.error(`${t('messages.deleteFailed')}:`, error)
+    console.error(`${t('messages.deleteFailed')}:`, error);
   }
 }
 
 // 成功提示相关方法
 function showSuccessToast(message: string) {
-  successMessage.value = message
-  showSuccessMessage.value = true
+  successMessage.value = message;
+  showSuccessMessage.value = true;
   setTimeout(() => {
-    showSuccessMessage.value = false
-  }, 3000)
+    showSuccessMessage.value = false;
+  }, 3000);
 }
 
 function hideSuccessMessage() {
-  showSuccessMessage.value = false
+  showSuccessMessage.value = false;
 }
 
 watch(
@@ -217,20 +217,20 @@ watch(
       newCount: newRecords.length,
       todayDate: selectedDate.value,
       hasTodayRecord: !!newRecords.find(r => r.date === selectedDate.value),
-    })
+    });
   },
   { deep: true },
-)
+);
 // Lifecycle
 onMounted(async () => {
-  periodStore.initialize()
+  periodStore.initialize();
   try {
-    await periodStore.fetchPeriodRecords()
+    await periodStore.fetchPeriodRecords();
   }
   catch (error) {
-    Lg.e('PeriodManagement', 'Failed to load period data:', error)
+    Lg.e('PeriodManagement', 'Failed to load period data:', error);
   }
-})
+});
 </script>
 
 <template>
@@ -660,8 +660,9 @@ onMounted(async () => {
 
 /* 移动端适配 - 关键修复：保持导航在一行 */
 @media (max-width: 640px) {
+
   /* 确保头部容器保持水平布局 */
-  .header-section .container > .flex {
+  .header-section .container>.flex {
     @apply flex-row items-center justify-between gap-2;
   }
 
