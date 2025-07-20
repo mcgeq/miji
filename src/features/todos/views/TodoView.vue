@@ -1,75 +1,12 @@
 <!-- src/features/todo/views/TodoView.vue -->
-<template>
-  <main class="relative flex flex-col min-h-screen max-w-xl mx-auto p-4">
-    <!-- 输入框容器 -->
-    <div class="relative mb-4 h-[60px]">
-      <!-- 切换按钮 -->
-      <button v-if="showBtn" class="
-        absolute left-0 top-1/2 -translate-y-1/2 z-10
-        w-8 h-8 flex items-center justify-center
-        rounded-full bg-white text-blue-600 ring-1 ring-blue-300
-        hover:bg-blue-50 hover:text-blue-700 active:scale-95
-        shadow-md transition-all duration-300
-        " @click="toggleInput" aria-label="Toggle Input">
-        <component :is="showInput ? X : Plus" class="w-4 h-4"
-          :class="showInput ? 'text-red-500 hover:text-red-600' : ''" />
-      </button>
-
-      <!-- 展开输入区域 -->
-      <Transition name="fade-slide">
-        <div v-show="showInput" class="pl-10">
-          <InputCommon v-model="newT" @add="handleAdd" />
-        </div>
-      </Transition>
-
-      <!-- 过滤按钮 -->
-      <Transition name="fade-slide">
-        <div v-show="!showInput" class="
-            absolute top-0 left-0 right-0 flex justify-center items-center h-full
-            bg-white dark:bg-gray-800
-            transition-opacity duration-300 ease-in-out
-            ">
-          <div class="
-            inline-flex gap-2 px-3 py-2
-            bg-white shadow-sm border border-gray-300 rounded-full
-            dark:bg-gray-800 dark:border-gray-700
-            transition-all duration-300
-          ">
-            <button v-for="item in filterButtons" :key="item.value" :data-active="filterBtn === item.value"
-              :class="{ 'bg-blue-500 text-white': filterBtn === item.value }" @click="changeFilter(item.value)" class="
-                px-3 py-1 text-sm font-semibold rounded-full
-                bg-gray-100 text-gray-700 hover:bg-blue-100 hover:text-blue-700
-                dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-blue-800 dark:hover:text-white
-                shadow-sm border border-transparent
-                transition-all duration-300
-                data-[active=true]:bg-blue-500 data-[active=true]:text-white
-              ">
-              {{ item.label }}
-            </button>
-          </div>
-        </div>
-      </Transition>
-    </div>
-
-    <!-- 任务列表 -->
-    <TodoList :todos="todos" @toggle="handleToggle" @remove="handleRemove" @edit="handleEdit" />
-
-    <!-- 分页器 -->
-    <div class="mt-auto mb-1">
-      <Pagination v-model:current-page="currentPage" v-model:page-size="pageSize" :total-pages="totalPages"
-        @page-jump="handlePageJump" @page-size-change="handlePageSizeChange" @next="handleNext" @prev="handlePrev"
-        @first="handleFirst" @last="handleLast" />
-    </div>
-  </main>
-</template>
-
 <script setup lang="ts">
 import { Plus, X } from 'lucide-vue-next';
 import InputCommon from '@/components/common/InputCommon.vue';
 import Pagination from '@/components/common/Pagination.vue';
-import { FilterBtn, FilterBtnSchema } from '@/schema/common';
-import { TodoRemain } from '@/schema/todos';
+import { FilterBtnSchema } from '@/schema/common';
 import TodoList from '../components/TodoList.vue';
+import type { FilterBtn } from '@/schema/common';
+import type { TodoRemain } from '@/schema/todos';
 
 const { t } = useI18n();
 
@@ -100,58 +37,58 @@ const filterButtons = [
   },
 ] as const;
 
-const toggleInput = () => {
+function toggleInput() {
   showInput.value = !showInput.value;
   filterBtn.value = FilterBtnSchema.enum.TODAY;
-};
+}
 
-const handleAdd = (text: string) => {
+function handleAdd(text: string) {
   if (text.trim()) {
     todoStore.addTodo(text);
     newT.value = '';
   }
-};
+}
 
-const handleToggle = (serialNum: string) => {
+function handleToggle(serialNum: string) {
   todoStore.toggleTodo(serialNum);
-};
+}
 
-const handleRemove = (serialNum: string) => {
+function handleRemove(serialNum: string) {
   todoStore.removeTodo(serialNum);
-};
+}
 
-const handleEdit = (serialNum: string, todo: TodoRemain) => {
+function handleEdit(serialNum: string, todo: TodoRemain) {
   todoStore.editTodo(serialNum, todo);
-};
+}
 
-const handlePageJump = (page: number) => {
+function handlePageJump(page: number) {
   todoStore.setPage(page);
-};
+}
 
-const handlePageSizeChange = (size: number) => {
+function handlePageSizeChange(size: number) {
   todoStore.setPageSize(size);
-};
+}
 
-const handleNext = () => {
+function handleNext() {
   todoStore.nextPage();
-};
+}
 
-const handlePrev = () => {
+function handlePrev() {
   todoStore.prevPage();
-};
+}
 
-const handleFirst = () => {
+function handleFirst() {
   todoStore.setPage(1);
-};
+}
 
-const handleLast = () => {
+function handleLast() {
   todoStore.setPage(todoStore.totalPages);
-};
+}
 
-const changeFilter = async (value: FilterBtn) => {
+async function changeFilter(value: FilterBtn) {
   filterBtn.value = value;
   await todoStore.setFilterBtn(value);
-};
+}
 
 onMounted(async () => {
   await todoStore.reloadPage();
@@ -167,8 +104,8 @@ onBeforeUnmount(() => {
 });
 
 // Keep page and size synced with store
-watch(currentPage, (val) => todoStore.setPage(val));
-watch(pageSize, (val) => todoStore.setPageSize(val));
+watch(currentPage, val => todoStore.setPage(val));
+watch(pageSize, val => todoStore.setPageSize(val));
 watch(
   () => todoStore.currentPage,
   (val) => {
@@ -179,6 +116,60 @@ watch(currentPage, (val) => {
   todoStore.setPage(val);
 });
 </script>
+
+<template>
+  <main class="relative mx-auto max-w-xl min-h-screen flex flex-col p-4">
+    <!-- 输入框容器 -->
+    <div class="relative mb-4 h-[60px]">
+      <!-- 切换按钮 -->
+      <button
+        v-if="showBtn" class="absolute left-0 top-1/2 z-10 h-8 w-8 flex items-center justify-center rounded-full bg-white text-blue-600 shadow-md ring-1 ring-blue-300 transition-all duration-300 -translate-y-1/2 active:scale-95 hover:bg-blue-50 hover:text-blue-700" aria-label="Toggle Input" @click="toggleInput"
+      >
+        <component
+          :is="showInput ? X : Plus" class="h-4 w-4"
+          :class="showInput ? 'text-red-500 hover:text-red-600' : ''"
+        />
+      </button>
+
+      <!-- 展开输入区域 -->
+      <Transition name="fade-slide">
+        <div v-show="showInput" class="pl-10">
+          <InputCommon v-model="newT" @add="handleAdd" />
+        </div>
+      </Transition>
+
+      <!-- 过滤按钮 -->
+      <Transition name="fade-slide">
+        <div
+          v-show="!showInput" class="absolute left-0 right-0 top-0 h-full flex items-center justify-center bg-white transition-opacity duration-300 ease-in-out dark:bg-gray-800"
+        >
+          <div
+            class="inline-flex gap-2 border border-gray-300 rounded-full bg-white px-3 py-2 shadow-sm transition-all duration-300 dark:border-gray-700 dark:bg-gray-800"
+          >
+            <button
+              v-for="item in filterButtons" :key="item.value" :data-active="filterBtn === item.value"
+              :class="{ 'bg-blue-500 text-white': filterBtn === item.value }" class="border border-transparent rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-700 font-semibold shadow-sm transition-all duration-300 dark:bg-gray-700 data-[active=true]:bg-blue-500 hover:bg-blue-100 dark:text-gray-300 data-[active=true]:text-white hover:text-blue-700 dark:hover:bg-blue-800 dark:hover:text-white" @click="changeFilter(item.value)"
+            >
+              {{ item.label }}
+            </button>
+          </div>
+        </div>
+      </Transition>
+    </div>
+
+    <!-- 任务列表 -->
+    <TodoList :todos="todos" @toggle="handleToggle" @remove="handleRemove" @edit="handleEdit" />
+
+    <!-- 分页器 -->
+    <div class="mb-1 mt-auto">
+      <Pagination
+        v-model:current-page="currentPage" v-model:page-size="pageSize" :total-pages="totalPages"
+        @page-jump="handlePageJump" @page-size-change="handlePageSizeChange" @next="handleNext" @prev="handlePrev"
+        @first="handleFirst" @last="handleLast"
+      />
+    </div>
+  </main>
+</template>
 
 <style scoped>
 .fade-slide-enter-active,

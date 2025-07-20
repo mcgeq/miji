@@ -1,97 +1,22 @@
-<template>
-  <div class="p-4 bg-white rounded-2xl border border-gray-200 flex flex-col h-18 mb-2 relative" @mouseenter="showActions = true" @mouseleave="showActions = false">
-    <!-- Left Section with Checkbox, Priority, and Title -->
-    <div class="flex items-center justify-between flex-1">
-      <div class="flex items-center gap-2">
-        <PriorityBadge
-          v-if="todoCopy.priority"
-          :serialNum="todoCopy.serialNum"
-          :priority="todoCopy.priority"
-          :completed="completed"
-          @changePriority="onChangePriorityHandler"
-        />
-        <TodoCheckbox :completed="completed" @toggle="onToggleHandler" />
-        <TodoTitle :title="todoCopy.title" :completed="completed" @toggle="onToggleHandler" />
-      </div>
-
-      <!-- Right Section with Actions -->
-      <TodoActions
-        :completed="completed"
-        :show="showActions"
-        @edit="onEditClick"
-        @add="toggleMenu"
-        @remove="onRemoveClick"
-      />
-    </div>
-
-    <!-- Due Date -->
-    <div v-if="todoCopy.dueAt" class="text-xs text-gray-500 absolute right-4 bottom-1">
-      {{ todoCopy.remainingTime }}
-    </div>
-
-    <!-- Menus and Modals -->
-    <TodoAddMenus
-      v-if="showMenu"
-      @openPopup="openPopup"
-      @close="toggleMenu"
-    />
-    <TodoEditOptionsModal
-      v-if="showEditOptions"
-      @editTitle="openEditModal"
-      @editDueDate="openDueDateModal"
-      @editRepeat="openEditRepeatModal"
-      @close="showEditOptions = false"
-    />
-    <TodoEditTitleModal
-      v-if="showEditModal"
-      :title="todoCopy.title"
-      @save="submitTitleChange"
-      @close="showEditModal = false"
-    />
-    <TodoEditDueDateModal
-      v-if="showDueDateModal"
-      :dueDate="todoCopy.dueAt"
-      @save="submitDueDateChange"
-      @close="showDueDateModal = false"
-    />
-    <TodoEditRepeatModal
-      v-if="showEditRepeatModal"
-      :repeat="todoCopy.repeat ?? {type: 'None'}"
-      @save="submitRepeatChange"
-      @close="showEditRepeatModal = false"
-    />
-
-    <!-- Popups -->
-    <PopupWrapper v-if="currentPopup === 'description'" @close="closeMenu">
-      <Descriptions v-model="todoCopy.description" @close="closeMenu" />
-    </PopupWrapper>
-    <PopupWrapper v-if="currentPopup === 'tags'" @close="closeMenu">
-      <TagsView />
-    </PopupWrapper>
-    <PopupWrapper v-if="currentPopup === 'projects'" @close="closeMenu">
-      <ProjectsView />
-    </PopupWrapper>
-  </div>
-</template>
-
 <script setup lang="ts">
+import Descriptions from '@/components/common/Descriptions.vue';
+import PopupWrapper from '@/components/common/PopupWrapper.vue';
 import PriorityBadge from '@/components/common/PriorityBadge.vue';
-import TodoCheckbox from './TodoCheckbox.vue';
+import ProjectsView from '@/features/projects/views/ProjectsView.vue';
+import TagsView from '@/features/tags/views/TagsView.vue';
+import { StatusSchema } from '@/schema/common';
+import { useMenuStore } from '@/stores/menuStore';
+import { parseToISO } from '@/utils/date';
 import TodoActions from './TodoActions.vue';
 import TodoAddMenus from './TodoAddMenus.vue';
-import TodoEditOptionsModal from './TodoEditOptionsModal.vue';
-import TodoEditTitleModal from './TodoEditTitleModal.vue';
+import TodoCheckbox from './TodoCheckbox.vue';
 import TodoEditDueDateModal from './TodoEditDueDateModal.vue';
+import TodoEditOptionsModal from './TodoEditOptionsModal.vue';
 import TodoEditRepeatModal from './TodoEditRepeatModal.vue';
-import PopupWrapper from '@/components/common/PopupWrapper.vue';
-import TagsView from '@/features/tags/views/TagsView.vue';
-import ProjectsView from '@/features/projects/views/ProjectsView.vue';
-import Descriptions from '@/components/common/Descriptions.vue';
-import { TodoRemain } from '@/schema/todos';
-import { Priority, RepeatPeriod, StatusSchema } from '@/schema/common';
-import { parseToISO } from '@/utils/date';
-import { useMenuStore } from '@/stores/menuStore';
+import TodoEditTitleModal from './TodoEditTitleModal.vue';
 import TodoTitle from './TodoTitle.vue';
+import type { Priority, RepeatPeriod } from '@/schema/common';
+import type { TodoRemain } from '@/schema/todos';
 
 const props = defineProps<{
   todo: TodoRemain;
@@ -140,94 +65,170 @@ const showMenu = computed(
 // });
 
 // 👇 所有修改 todo 都使用这个函数
-const updateTodo = (partial: Partial<TodoRemain>) => {
+function updateTodo(partial: Partial<TodoRemain>) {
   todoCopy.value = { ...todoCopy.value, ...partial };
   emit('update:todo', { ...todoCopy.value });
-};
+}
 
-const onToggleHandler = () => {
+function onToggleHandler() {
   if (!completed.value) {
     updateTodo({ status: StatusSchema.enum.Completed });
     emit('toggle');
   }
-};
+}
 
-const onEditClick = () => {
+function onEditClick() {
   if (!completed.value) {
     showEditOptions.value = true;
   }
-};
+}
 
-const onRemoveClick = () => {
+function onRemoveClick() {
   if (!completed.value) {
     emit('remove');
   }
-};
+}
 
-const toggleMenu = () => {
+function toggleMenu() {
   isRotatingAdd.value = true;
   const currentSerial = todoCopy.value.serialNum;
   menuStore.setMenuSerialNum(
     menuStore.getMenuSerialNum === currentSerial ? '' : currentSerial,
   );
   setTimeout(() => (isRotatingAdd.value = false), 500);
-};
+}
 
-const openEditModal = () => {
+function openEditModal() {
   showEditOptions.value = false;
   showEditModal.value = true;
-};
+}
 
-const openDueDateModal = () => {
+function openDueDateModal() {
   showEditOptions.value = false;
   showDueDateModal.value = true;
-};
+}
 
-const openEditRepeatModal = () => {
+function openEditRepeatModal() {
   showEditOptions.value = false;
   showEditRepeatModal.value = true;
-};
+}
 
-const submitTitleChange = (newTitle: string) => {
+function submitTitleChange(newTitle: string) {
   const trimmed = newTitle.trim();
   if (trimmed && trimmed !== todoCopy.value.title) {
     updateTodo({ title: trimmed });
     emit('edit');
   }
   showEditModal.value = false;
-};
+}
 
-const submitDueDateChange = (newDueAt: string) => {
+function submitDueDateChange(newDueAt: string) {
   const newDue = parseToISO(newDueAt);
   if (newDue !== todoCopy.value.dueAt) {
     updateTodo({ dueAt: newDue });
     emit('edit');
   }
   showDueDateModal.value = false;
-};
+}
 
-const submitRepeatChange = (repeat: RepeatPeriod) => {
+function submitRepeatChange(repeat: RepeatPeriod) {
   if (repeat !== todoCopy.value.repeat) {
-    updateTodo({ repeat: repeat });
+    updateTodo({ repeat });
     emit('edit');
   }
-};
+}
 
-const onChangePriorityHandler = (serialNum: string, priority: Priority) => {
+function onChangePriorityHandler(serialNum: string, priority: Priority) {
   if (serialNum === todoCopy.value.serialNum) {
     updateTodo({ priority });
   }
-};
+}
 
-const openPopup = (type: string) => {
+function openPopup(type: string) {
   currentPopup.value = type;
-};
+}
 
-const closeMenu = () => {
+function closeMenu() {
   currentPopup.value = '';
   toggleMenu();
-};
+}
 </script>
+
+<template>
+  <div class="relative mb-2 h-18 flex flex-col border border-gray-200 rounded-2xl bg-white p-4" @mouseenter="showActions = true" @mouseleave="showActions = false">
+    <!-- Left Section with Checkbox, Priority, and Title -->
+    <div class="flex flex-1 items-center justify-between">
+      <div class="flex items-center gap-2">
+        <PriorityBadge
+          v-if="todoCopy.priority"
+          :serial-num="todoCopy.serialNum"
+          :priority="todoCopy.priority"
+          :completed="completed"
+          @change-priority="onChangePriorityHandler"
+        />
+        <TodoCheckbox :completed="completed" @toggle="onToggleHandler" />
+        <TodoTitle :title="todoCopy.title" :completed="completed" @toggle="onToggleHandler" />
+      </div>
+
+      <!-- Right Section with Actions -->
+      <TodoActions
+        :completed="completed"
+        :show="showActions"
+        @edit="onEditClick"
+        @add="toggleMenu"
+        @remove="onRemoveClick"
+      />
+    </div>
+
+    <!-- Due Date -->
+    <div v-if="todoCopy.dueAt" class="absolute bottom-1 right-4 text-xs text-gray-500">
+      {{ todoCopy.remainingTime }}
+    </div>
+
+    <!-- Menus and Modals -->
+    <TodoAddMenus
+      :show="showMenu"
+      @open-popup="openPopup"
+      @close="toggleMenu"
+    />
+    <TodoEditOptionsModal
+      :show="showEditOptions"
+      @edit-title="openEditModal"
+      @edit-due-date="openDueDateModal"
+      @edit-repeat="openEditRepeatModal"
+      @close="showEditOptions = false"
+    />
+    <TodoEditTitleModal
+      :show="showEditModal"
+      :title="todoCopy.title"
+      @save="submitTitleChange"
+      @close="showEditModal = false"
+    />
+    <TodoEditDueDateModal
+      :show="showDueDateModal"
+      :due-date="todoCopy.dueAt"
+      @save="submitDueDateChange"
+      @close="showDueDateModal = false"
+    />
+    <TodoEditRepeatModal
+      :show="showEditRepeatModal"
+      :repeat="todoCopy.repeat ?? { type: 'None' }"
+      @save="submitRepeatChange"
+      @close="showEditRepeatModal = false"
+    />
+
+    <!-- Popups -->
+    <PopupWrapper v-if="currentPopup === 'description'" @close="closeMenu">
+      <Descriptions v-model="todoCopy.description" @close="closeMenu" />
+    </PopupWrapper>
+    <PopupWrapper v-if="currentPopup === 'tags'" @close="closeMenu">
+      <TagsView />
+    </PopupWrapper>
+    <PopupWrapper v-if="currentPopup === 'projects'" @close="closeMenu">
+      <ProjectsView />
+    </PopupWrapper>
+  </div>
+</template>
 
 <style scoped>
 .rotating {

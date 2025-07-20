@@ -8,13 +8,13 @@
 // Last Modified:  2025-07-18 10:37:51
 // Modified   By:  mcgeq <mcgeq@outlook.com>
 // -----------------------------------------------------------------------------
-export const getLocalISODateTimeWithOffset = (options?: {
+export function getLocalISODateTimeWithOffset(options?: {
   days?: number;
   hours?: number;
   minutes?: number;
   seconds?: number;
   milliseconds?: number;
-}): string => {
+}): string {
   let now = new Date();
   if (options) {
     const {
@@ -25,12 +25,12 @@ export const getLocalISODateTimeWithOffset = (options?: {
       milliseconds = 0,
     } = options;
 
-    const totalMs =
-      days * 24 * 60 * 60 * 1000 +
-      hours * 60 * 60 * 1000 +
-      minutes * 60 * 1000 +
-      seconds * 1000 +
-      milliseconds;
+    const totalMs
+      = days * 24 * 60 * 60 * 1000
+        + hours * 60 * 60 * 1000
+        + minutes * 60 * 1000
+        + seconds * 1000
+        + milliseconds;
     now = new Date(now.getTime() + totalMs);
   }
 
@@ -44,7 +44,7 @@ export const getLocalISODateTimeWithOffset = (options?: {
 
   // 毫秒转微秒，补0到6位
   const ms = String(now.getMilliseconds()).padStart(3, '0');
-  const micro = (ms + '000').slice(0, 6);
+  const micro = `${ms}000`.slice(0, 6);
 
   // 计算时区偏移
   const offsetMinutes = now.getTimezoneOffset();
@@ -55,7 +55,7 @@ export const getLocalISODateTimeWithOffset = (options?: {
   const offsetStr = `${sign}${offsetHours}:${offsetMins}`;
 
   return `${yyyy}-${mm}-${dd}T${hh}:${min}:${ss}.${micro}${offsetStr}`;
-};
+}
 
 export function getTodayDate(): string {
   const now = new Date();
@@ -81,19 +81,19 @@ export function getIsoTime(): string {
   return `${hours}:${minutes}:${seconds}.${micro}`;
 }
 
-export const getCurrentDate = () => {
+export function getCurrentDate() {
   const l = getLocalISODateTimeWithOffset();
   const n = new Date(l);
   return n;
-};
+}
 
-export const getEndOfTodayISOWithOffset = (options?: {
+export function getEndOfTodayISOWithOffset(options?: {
   days?: number;
   hours?: number;
   minutes?: number;
   seconds?: number;
   milliseconds?: number;
-}): string => {
+}): string {
   let now = new Date();
   if (options) {
     const {
@@ -104,12 +104,12 @@ export const getEndOfTodayISOWithOffset = (options?: {
       milliseconds = 0,
     } = options;
 
-    const totalMs =
-      days * 24 * 60 * 60 * 1000 +
-      hours * 60 * 60 * 1000 +
-      minutes * 60 * 1000 +
-      seconds * 1000 +
-      milliseconds;
+    const totalMs
+      = days * 24 * 60 * 60 * 1000
+        + hours * 60 * 60 * 1000
+        + minutes * 60 * 1000
+        + seconds * 1000
+        + milliseconds;
     now = new Date(now.getTime() + totalMs);
   }
   // 设置时间为 23:59:59.999（本地时间）
@@ -125,7 +125,7 @@ export const getEndOfTodayISOWithOffset = (options?: {
 
   // 毫秒转微秒格式，补足 6 位
   const ms = String(now.getMilliseconds()).padStart(3, '0');
-  const micro = (ms + '000').slice(0, 6);
+  const micro = `${ms}000`.slice(0, 6);
 
   // 计算本地时区偏移
   const offsetMinutes = now.getTimezoneOffset();
@@ -137,15 +137,15 @@ export const getEndOfTodayISOWithOffset = (options?: {
 
   // 拼接最终字符串
   return `${yyyy}-${mm}-${dd}T${hh}:${min}:${ss}.${micro}${offsetStr}`;
-};
+}
 
-export const getStartOfTodayISOWithOffset = (options?: {
+export function getStartOfTodayISOWithOffset(options?: {
   days?: number;
   hours?: number;
   minutes?: number;
   seconds?: number;
   milliseconds?: number;
-}): string => {
+}): string {
   let now = new Date();
   if (options) {
     const {
@@ -156,12 +156,12 @@ export const getStartOfTodayISOWithOffset = (options?: {
       milliseconds = 0,
     } = options;
 
-    const totalMs =
-      days * 24 * 60 * 60 * 1000 +
-      hours * 60 * 60 * 1000 +
-      minutes * 60 * 1000 +
-      seconds * 1000 +
-      milliseconds;
+    const totalMs
+      = days * 24 * 60 * 60 * 1000
+        + hours * 60 * 60 * 1000
+        + minutes * 60 * 1000
+        + seconds * 1000
+        + milliseconds;
     now = new Date(now.getTime() + totalMs);
   }
   // 设置时间为 23:59:59.999（本地时间）
@@ -177,7 +177,7 @@ export const getStartOfTodayISOWithOffset = (options?: {
 
   // 毫秒转微秒格式，补足 6 位
   const ms = String(now.getMilliseconds()).padStart(3, '0');
-  const micro = (ms + '000').slice(0, 6);
+  const micro = `${ms}000`.slice(0, 6);
 
   // 计算本地时区偏移
   const offsetMinutes = now.getTimezoneOffset();
@@ -189,9 +189,9 @@ export const getStartOfTodayISOWithOffset = (options?: {
 
   // 拼接最终字符串
   return `${yyyy}-${mm}-${dd}T${hh}:${min}:${ss}.${micro}${offsetStr}`;
-};
+}
 
-export const parseToISO = (dt: string) => {
+export function parseToISO(dt: string) {
   // Check if dt is undefined or empty
   if (!dt || typeof dt !== 'string') {
     return getLocalISODateTimeWithOffset(); // Fallback to current time if invalid
@@ -211,12 +211,12 @@ export const parseToISO = (dt: string) => {
 
   // Validate parsed numbers
   if (
-    isNaN(yyyy) ||
-    isNaN(mm) ||
-    isNaN(dd) ||
-    isNaN(hh) ||
-    isNaN(min) ||
-    isNaN(ss)
+    Number.isNaN(yyyy)
+    || Number.isNaN(mm)
+    || Number.isNaN(dd)
+    || Number.isNaN(hh)
+    || Number.isNaN(min)
+    || Number.isNaN(ss)
   ) {
     return getLocalISODateTimeWithOffset(); // Fallback if any part is invalid
   }
@@ -236,10 +236,10 @@ export const parseToISO = (dt: string) => {
   const offsetStr = `${sign}${offsetHours}:${offsetMins}`;
 
   return `${yyyy}-${String(mm).padStart(2, '0')}-${String(dd).padStart(2, '0')}T${String(hh).padStart(2, '0')}:${String(min).padStart(2, '0')}:${String(ss).padStart(2, '0')}.${micro}${offsetStr}`;
-};
+}
 
 /// 解析todo.dueAt为yyyy-MM-dd HH:mm
-export const formatForDisplay = (isoString: string) => {
+export function formatForDisplay(isoString: string) {
   const date = new Date(isoString);
   const yyyy = date.getFullYear();
   const mm = String(date.getMonth() + 1).padStart(2, '0');
@@ -247,44 +247,46 @@ export const formatForDisplay = (isoString: string) => {
   const hh = String(date.getHours()).padStart(2, '0');
   const min = String(date.getMinutes()).padStart(2, '0');
   return `${yyyy}-${mm}-${dd} ${hh}:${min}`;
-};
+}
 
-export const isDateTimeContaining = (
+export function isDateTimeContaining(
   fullDateTime: string, // 完整 ISO 字符串，比如 2025-06-23T22:30:00.000000+08:00
-  partialDateTime: string, // 简化字符串，比如 2025-06-23 22:30
-): boolean => {
+  partialDateTime: string,
+): boolean {
   // 解析完整时间，new Date 自动识别 ISO 格式和时区
   const fullDate = new Date(fullDateTime);
-  if (isNaN(fullDate.getTime())) return false;
+  if (Number.isNaN(fullDate.getTime()))
+    return false;
 
   // 解析简化时间，需要先把空格替换成T并补充秒和时区才能用Date解析
   // 这里先解析年月日和小时分钟，忽略秒和时区
   const [datePart, timePart] = partialDateTime.split(' ');
-  if (!datePart || !timePart) return false;
+  if (!datePart || !timePart)
+    return false;
 
   const [year, month, day] = datePart.split('-').map(Number);
   const [hour, minute] = timePart.split(':').map(Number);
 
   // 比较两个时间的年月日和时分
   return (
-    fullDate.getFullYear() === year &&
-    fullDate.getMonth() + 1 === month && // 注意getMonth()从0开始
-    fullDate.getDate() === day &&
-    fullDate.getHours() === hour &&
-    fullDate.getMinutes() === minute
+    fullDate.getFullYear() === year
+    && fullDate.getMonth() + 1 === month // 注意getMonth()从0开始
+    && fullDate.getDate() === day
+    && fullDate.getHours() === hour
+    && fullDate.getMinutes() === minute
   );
-};
+}
 
-export const formatDate = (dateStr: string) => {
+export function formatDate(dateStr: string) {
   const date = new Date(dateStr);
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0'); // 月份从0开始
   const day = String(date.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
-};
+}
 
-export const formatDateTime = (dateStr: string) => {
+export function formatDateTime(dateStr: string) {
   const dt = dateStr.split('T');
   const t = dt[1].split('\.')[0];
   return `${dt[0]} ${t}`;
-};
+}

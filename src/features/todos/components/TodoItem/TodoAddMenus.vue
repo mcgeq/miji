@@ -1,11 +1,21 @@
+<script setup lang="ts">
+import { Folder, StickyNote, Tag, X } from 'lucide-vue-next';
+
+const props = defineProps<{ show: boolean }>();
+const emit = defineEmits(['openPopup', 'close']);
+const show = computed(() => props.show);
+</script>
+
 <template>
   <transition name="fade">
     <div
+      v-if="show"
       class="modal-mask"
       @click="emit('close')"
     >
       <transition name="scale">
         <div
+          v-if="show"
           class="modal-mask-window"
           @click.stop
         >
@@ -31,19 +41,13 @@
             class="modal-btn-x"
             @click="emit('close')"
           >
-            <X class="w-4 h-4" />
+            <X class="h-4 w-4" />
           </button>
         </div>
       </transition>
     </div>
   </transition>
 </template>
-
-<script setup lang="ts">
-import { StickyNote, Tag, Folder, X } from 'lucide-vue-next';
-
-const emit = defineEmits(['openPopup', 'close']);
-</script>
 
 <style scoped lang="postcss">
 .fade-enter-active, .fade-leave-active {

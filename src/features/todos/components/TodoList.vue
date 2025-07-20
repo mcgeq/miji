@@ -1,21 +1,7 @@
 <!-- src/components/TodoList.vue -->
-<template>
-  <div class="mt-4 bg-white rounded-lg shadow">
-      <TodoItem
-        v-for="todo in todoList"
-        :key="todo.serialNum"
-        :todo="todo"
-        @update:todo="updateTodo"
-        @toggle="() => emit('toggle', todo.serialNum)"
-        @remove="() => emit('remove', todo.serialNum)"
-        @edit="() => emit('edit', todo.serialNum, todo)"
-      />
-  </div>
-</template>
-
 <script setup lang="ts">
-import type { TodoRemain } from '@/schema/todos';
 import TodoItem from './TodoItem/TodoItem.vue';
+import type { TodoRemain } from '@/schema/todos';
 
 const props = defineProps<{
   todos: Map<string, TodoRemain>;
@@ -36,6 +22,20 @@ function updateTodo(updated: TodoRemain) {
   emit('edit', updated.serialNum, updated);
 }
 </script>
+
+<template>
+  <div class="mt-4 rounded-lg bg-white shadow">
+    <TodoItem
+      v-for="todo in todoList"
+      :key="todo.serialNum"
+      :todo="todo"
+      @update:todo="updateTodo"
+      @toggle="() => emit('toggle', todo.serialNum)"
+      @remove="() => emit('remove', todo.serialNum)"
+      @edit="() => emit('edit', todo.serialNum, todo)"
+    />
+  </div>
+</template>
 
 <style scoped>
 .slide-fade-enter-active,

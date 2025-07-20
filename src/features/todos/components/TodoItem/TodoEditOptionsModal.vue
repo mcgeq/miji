@@ -1,11 +1,21 @@
+<script setup lang="ts">
+import { Calendar, Pencil, Repeat, X } from 'lucide-vue-next';
+
+const props = defineProps<{ show: boolean }>();
+const emit = defineEmits(['editTitle', 'editDueDate', 'editRepeat', 'close']);
+const show = computed(() => props.show);
+</script>
+
 <template>
   <transition name="fade">
     <div
+      v-if="show"
       class="modal-mask"
       @click="emit('close')"
     >
       <transition name="scale">
         <div
+          v-if="show"
           class="modal-mask-window"
           @click.stop
         >
@@ -25,25 +35,19 @@
             class="modal-btn-icon"
             @click="emit('editRepeat')"
           >
-            <Repeat class="wh-5"/>
+            <Repeat class="wh-5" />
           </button>
           <button
             class="modal-btn-x"
             @click="emit('close')"
           >
-            <X class="w-4 h-4" />
+            <X class="h-4 w-4" />
           </button>
         </div>
       </transition>
     </div>
   </transition>
 </template>
-
-<script setup lang="ts">
-import { Pencil, Calendar, Repeat, X } from 'lucide-vue-next';
-
-const emit = defineEmits(['editTitle', 'editDueDate', 'editRepeat', 'close']);
-</script>
 
 <style scoped>
 .fade-enter-active, .fade-leave-active {
