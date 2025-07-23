@@ -1,14 +1,16 @@
-import { defineConfig } from 'vite';
+import { resolve } from 'node:path';
+import { env } from 'node:process';
+import VueI18n from '@intlify/unplugin-vue-i18n/vite';
 import Vue from '@vitejs/plugin-vue';
 import UnoCSS from 'unocss/vite';
-import vueDevTools from 'vite-plugin-vue-devtools';
 import AutoImport from 'unplugin-auto-import/vite';
-import VueI18n from '@intlify/unplugin-vue-i18n/vite';
-import VueRouter from 'unplugin-vue-router/vite';
+import Components from 'unplugin-vue-components/vite';
 import { VueRouterAutoImports } from 'unplugin-vue-router';
-import { resolve } from 'node:path';
+import VueRouter from 'unplugin-vue-router/vite';
+import { defineConfig } from 'vite';
+import vueDevTools from 'vite-plugin-vue-devtools';
 
-const host = process.env.TAURI_DEV_HOST;
+const host = env.TAURI_DEV_HOST;
 
 // https://vitejs.dev/config/
 export default defineConfig(async () => ({
@@ -19,6 +21,9 @@ export default defineConfig(async () => ({
       dts: 'src/typed-router.d.ts',
     }),
     Vue(),
+    Components({
+      dts: true
+    }),
     AutoImport({
       include: [/\.[jt]sx?$/, /\.vue$/, /\.vue\?vue/, /\.md$/],
       imports: [
@@ -60,10 +65,10 @@ export default defineConfig(async () => ({
     host: host || false,
     hmr: host
       ? {
-          protocol: 'ws',
-          host,
-          port: 9429,
-        }
+        protocol: 'ws',
+        host,
+        port: 9429,
+      }
       : undefined,
     watch: {
       // 3. tell vite to ignore watching `src-tauri`
