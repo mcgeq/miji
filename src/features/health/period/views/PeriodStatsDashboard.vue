@@ -3,20 +3,13 @@ import {
   CalendarClock,
   CalendarHeart,
   CalendarSync,
-  Plus,
   TrendingUp,
 } from 'lucide-vue-next';
-import { usePeriodStore } from '@/stores/periodStore';
-import type { PeriodRecords } from '@/schema/health/period';
-
-// Emits
-const emit = defineEmits<{
-  addRecord: [];
-  editRecord: [record: PeriodRecords];
-}>();
+import { usePeriodStore as usePeriodStores } from '@/stores/periodStore';
+import PeriodListView from './PeriodListView.vue';
 
 // Store
-const periodStore = usePeriodStore();
+const periodStore = usePeriodStores();
 
 // Computed
 const stats = computed(() => periodStore.periodStats);
@@ -167,93 +160,6 @@ const symptomSeverityText = computed(() => {
     return '轻度';
   return '很少';
 });
-
-const recentRecords = computed(() => {
-  return periodStore.periodRecords
-    .slice()
-    .sort(
-      (a, b) =>
-        new Date(b.startDate).getTime() - new Date(a.startDate).getTime(),
-    )
-    .slice(0, 3);
-});
-
-const healthTips = computed(() => {
-  const tips = [
-    {
-      id: 1,
-      icon: 'i-tabler-droplet',
-      text: '每天喝足够的水有助于缓解经期不适',
-    },
-    {
-      id: 2,
-      icon: 'i-tabler-moon',
-      text: '保持规律的睡眠时间对月经周期很重要',
-    },
-    {
-      id: 3,
-      icon: 'i-tabler-apple',
-      text: '富含铁质的食物有助于补充经期流失的营养',
-    },
-    {
-      id: 4,
-      icon: 'i-tabler-activity',
-      text: '适度的运动可以缓解经期症状',
-    },
-  ];
-
-  // 根据当前阶段返回相关建议
-  const phase = stats.value.currentPhase;
-  if (phase === 'Menstrual') {
-    return [
-      { id: 1, icon: 'i-tabler-cup', text: '多喝温水，避免冷饮' },
-      { id: 2, icon: 'i-tabler-bed', text: '充分休息，避免剧烈运动' },
-      { id: 3, icon: 'i-tabler-flame', text: '注意保暖，特别是腹部' },
-    ];
-  }
-
-  return tips.slice(0, 3);
-});
-
-// Methods
-function formatMonth(dateStr: string) {
-  const date = new Date(dateStr);
-  return `${date.getMonth() + 1}月`;
-}
-
-function formatDay(dateStr: string) {
-  const date = new Date(dateStr);
-  return date.getDate();
-}
-
-function calculateDuration(record: PeriodRecords) {
-  const start = new Date(record.startDate);
-  const end = new Date(record.endDate);
-  return (
-    Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1
-  );
-}
-
-function calculateCycleFromPrevious(record: PeriodRecords) {
-  const records = periodStore.periodRecords
-    .slice()
-    .sort(
-      (a, b) =>
-        new Date(a.startDate).getTime() - new Date(b.startDate).getTime(),
-    );
-
-  const index = records.findIndex(r => r.serialNum === record.serialNum);
-  if (index <= 0)
-    return '首次记录';
-
-  const current = new Date(record.startDate);
-  const previous = new Date(records[index - 1].startDate);
-  const cycleDays = Math.ceil(
-    (current.getTime() - previous.getTime()) / (1000 * 60 * 60 * 24),
-  );
-
-  return `周期 ${cycleDays} 天`;
-}
 </script>
 
 <template>
@@ -358,69 +264,7 @@ function calculateCycleFromPrevious(record: PeriodRecords) {
       </div>
     </div>
 
-    <!-- 最近记录 -->
-    <div class="recent-records card-base p-4">
-      <div class="mb-4 flex-between">
-        <h3 class="text-lg text-gray-900 font-semibold dark:text-white">
-          最近记录
-        </h3>
-        <button class="btn-primary text-sm" @click="emit('addRecord')">
-          <Plus class="wh-5" />
-        </button>
-      </div>
-
-      <div v-if="periodStore.periodRecords.length === 0" class="empty-state">
-        <i class="i-tabler-calendar-off mx-auto mb-3 wh-12 text-gray-400" />
-        <p class="text-center text-gray-500 dark:text-gray-400">
-          还没有经期记录，<button class="text-blue-500 hover:underline" @click="emit('addRecord')">
-            点击添加
-          </button>
-        </p>
-      </div>
-
-      <div v-else class="space-y-3">
-        <div
-          v-for="record in recentRecords" :key="record.serialNum" class="record-item"
-          @click="$emit('editRecord', record)"
-        >
-          <div class="record-date">
-            <div class="record-month">
-              {{ formatMonth(record.startDate) }}
-            </div>
-            <div class="record-day">
-              {{ formatDay(record.startDate) }}
-            </div>
-          </div>
-          <div class="record-info">
-            <div class="record-duration">
-              持续 {{ calculateDuration(record) }} 天
-            </div>
-            <div class="record-cycle">
-              {{ calculateCycleFromPrevious(record) }}
-            </div>
-          </div>
-          <div class="record-actions">
-            <i class="i-tabler-chevron-right wh-4 text-gray-400" />
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 健康建议 -->
-    <div class="health-tips card-base p-4">
-      <div class="mb-3 flex items-center gap-2">
-        <i class="i-tabler-bulb wh-5 text-yellow-500" />
-        <h3 class="text-lg text-gray-900 font-semibold dark:text-white">
-          健康建议
-        </h3>
-      </div>
-      <div class="space-y-2">
-        <div v-for="tip in healthTips" :key="tip.id" class="tip-item">
-          <i :class="tip.icon" class="mt-0.5 wh-4 flex-shrink-0 text-blue-500" />
-          <span class="text-sm text-gray-700 dark:text-gray-300">{{ tip.text }}</span>
-        </div>
-      </div>
-    </div>
+    <PeriodListView />
   </div>
 </template>
 
@@ -517,10 +361,6 @@ function calculateCycleFromPrevious(record: PeriodRecords) {
   @apply text-xs text-gray-500 dark:text-gray-400 flex-shrink-0;
 }
 
-.card-base {
-  @apply bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm;
-}
-
 .flex-between {
   @apply flex items-center justify-between;
 }
@@ -531,42 +371,6 @@ function calculateCycleFromPrevious(record: PeriodRecords) {
 
 .empty-state {
   @apply flex flex-col items-center py-8;
-}
-
-.record-item {
-  @apply flex items-center gap-4 p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors;
-}
-
-.record-date {
-  @apply text-center flex-shrink-0;
-}
-
-.record-month {
-  @apply text-xs text-gray-500 dark:text-gray-400;
-}
-
-.record-day {
-  @apply text-lg font-bold text-gray-900 dark:text-white;
-}
-
-.record-info {
-  @apply flex-1;
-}
-
-.record-duration {
-  @apply text-sm font-medium text-gray-900 dark:text-white;
-}
-
-.record-cycle {
-  @apply text-xs text-gray-500 dark:text-gray-400;
-}
-
-.record-actions {
-  @apply flex-shrink-0;
-}
-
-.tip-item {
-  @apply flex items-start gap-2;
 }
 
 @media (max-width: 768px) {

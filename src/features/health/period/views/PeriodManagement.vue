@@ -5,11 +5,9 @@ import {
   CalendarCheck,
   Check,
   Droplet,
-  Edit,
   Eye,
   Heart,
   Moon,
-  Plus,
   Settings,
   Trash,
   X,
@@ -19,6 +17,7 @@ import { getTodayDate } from '@/utils/date';
 import { Lg } from '@/utils/debugLog';
 import { phaseTips } from '../../utils/periodUtils';
 import PeriodCalendar from '../components/PeriodCalendar.vue';
+import PeriodRecentRecord from '../components/PeriodRecentRecord.vue';
 import PeriodDailyForm from './PeriodDailyForm.vue';
 import PeriodRecordForm from './PeriodRecordForm.vue';
 import PeriodSettings from './PeriodSettings.vue';
@@ -80,6 +79,7 @@ const baseTips: Tip[] = [
   { id: 2, icon: Moon, text: t('period.healthTips.sleep') },
   { id: 3, icon: Apple, text: t('period.healthTips.iron') },
 ];
+
 const currentTips = computed(() => {
   const phase = periodStore.periodStats.currentPhase;
   return phaseTips[phase] || baseTips;
@@ -271,7 +271,7 @@ onMounted(async () => {
       <div class="container mx-auto px-4 py-6 lg:px-6">
         <!-- 统计仪表板视图 -->
         <div v-if="currentView === 'stats'" class="stats-view">
-          <PeriodStatsDashboard @add-record="openRecordForm()" @edit-record="openRecordForm($event)" />
+          <PeriodStatsDashboard />
         </div>
 
         <!-- 日历视图 -->
@@ -329,35 +329,40 @@ onMounted(async () => {
                 </div>
               </div>
 
-              <!-- 快速操作 -->
-              <div class="card-base p-6">
-                <div class="mb-6 flex items-center gap-3">
-                  <div
-                    class="h-10 w-10 flex items-center justify-center rounded-full from-purple-500 to-pink-500 bg-gradient-to-r"
-                  >
-                    <Plus class="h-5 w-5 text-white" />
-                  </div>
-                  <h3 class="text-lg text-gray-900 font-semibold dark:text-white">
-                    {{ t('period.quickActions.title') }}
-                  </h3>
-                </div>
-                <div class="space-y-3">
-                  <button class="period-btn action-btn" @click="openRecordForm()">
-                    <Plus class="wh-5" />
-                    <span>{{ t('period.quickActions.recordPeriod') }}</span>
-                  </button>
-                  <button class="daily-btn action-btn" @click="openDailyForm()">
-                    <Edit class="wh-5" />
-                    <span>{{ t('period.quickActions.dailyRecord') }}</span>
-                  </button>
-                  <button class="stats-btn action-btn" @click="currentView = 'stats'">
-                    <Activity class="wh-5" />
-                    <span>{{ t('period.quickActions.viewStats') }}</span>
-                  </button>
-                </div>
+              <div class="card-base">
+                <!-- <PeriodHealthTip :stats="currentPhase" /> -->
               </div>
+              <!-- 快速操作 -->
+              <!-- <div class="card-base p-6"> -->
+              <!--   <div class="mb-6 flex items-center gap-3"> -->
+              <!--     <div -->
+              <!--       class="h-10 w-10 flex items-center justify-center rounded-full from-purple-500 to-pink-500 bg-gradient-to-r" -->
+              <!--     > -->
+              <!--       <Plus class="h-5 w-5 text-white" /> -->
+              <!--     </div> -->
+              <!--     <h3 class="text-lg text-gray-900 font-semibold dark:text-white"> -->
+              <!--       {{ t('period.quickActions.title') }} -->
+              <!--     </h3> -->
+              <!--   </div> -->
+              <!--   <div class="space-y-3"> -->
+              <!--     <button class="period-btn action-btn" @click="openRecordForm()"> -->
+              <!--       <Plus class="wh-5" /> -->
+              <!--       <span>{{ t('period.quickActions.recordPeriod') }}</span> -->
+              <!--     </button> -->
+              <!--     <button class="daily-btn action-btn" @click="openDailyForm()"> -->
+              <!--       <Edit class="wh-5" /> -->
+              <!--       <span>{{ t('period.quickActions.dailyRecord') }}</span> -->
+              <!--     </button> -->
+              <!--     <button class="stats-btn action-btn" @click="currentView = 'stats'"> -->
+              <!--       <Activity class="wh-5" /> -->
+              <!--       <span>{{ t('period.quickActions.viewStats') }}</span> -->
+              <!--     </button> -->
+              <!--   </div> -->
+              <!-- </div> -->
             </div>
           </div>
+
+          <PeriodRecentRecord @add-record="openRecordForm()" @edit-record="openRecordForm($event)" />
 
           <!-- 第二行：健康提示（铺满宽度） -->
           <div class="card-base p-4">
