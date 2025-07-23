@@ -1,10 +1,10 @@
 // router/index.ts
 import { createRouter, createWebHistory } from 'vue-router';
 import { routes } from 'vue-router/auto-routes';
-import { toast } from '@/utils/toast';
 import { i18nInstance } from '@/i18n/i18n';
-import type { Composer } from 'vue-i18n';
 import { Lg } from '@/utils/debugLog';
+import { toast } from '@/utils/toast';
+import type { Composer } from 'vue-i18n';
 
 const router = createRouter({
   history: createWebHistory(),
@@ -19,14 +19,15 @@ router.beforeEach(async (to, _from) => {
   let isAuth = false;
   try {
     isAuth = await isAuthenticated();
-  } catch (error) {
+  }
+  catch (error) {
     Lg.e('Router', 'Failed to check auth:', error);
   }
   const routeName = typeof to.name === 'string' ? to.name : '';
   const isAuthPage = ['auth-login', 'auth-register'].includes(routeName);
 
   if (!isAuth && to.meta.requiresAuth) {
-    toast.warning(t('errors.pleaseLogin'));
+    toast.warning(t('messages.pleaseLogin'));
     return { name: 'auth-login' };
   }
 

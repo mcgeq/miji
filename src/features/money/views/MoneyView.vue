@@ -497,20 +497,20 @@ function handleCardClick(_index: number, card: any) {
   if (hasModalOpen.value) {
     return;
   }
-
+  Lg.i('MoneyView', card);
   // 可以根据卡片类型执行特定操作
-  switch (card.id) {
-    case 'total-assets':
-      activeTab.value = 'accounts';
-      break;
-    case 'monthly-income':
-    case 'monthly-expense':
-      activeTab.value = 'transactions';
-      break;
-    case 'budget-remaining':
-      activeTab.value = 'budgets';
-      break;
-  }
+  // switch (card.id) {
+  //   case 'total-assets':
+  //     activeTab.value = 'accounts';
+  //     break;
+  //   case 'monthly-income':
+  //   case 'monthly-expense':
+  //     activeTab.value = 'transactions';
+  //     break;
+  //   case 'budget-remaining':
+  //     activeTab.value = 'budgets';
+  //     break;
+  // }
 }
 
 onMounted(() => {
