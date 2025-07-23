@@ -1,4 +1,5 @@
-import {ExerciseIntensity, FlowLevel, Intensity} from '@/schema/common';
+import { addDays, isValidDate } from '@/utils/date';
+import type { ExerciseIntensity, FlowLevel, Intensity } from '@/schema/common';
 import type {
   Mood,
   PeriodDailyRecords,
@@ -72,7 +73,7 @@ export class DateUtils {
   static getMonthRange(
     year: number,
     month: number,
-  ): {start: string; end: string} {
+  ): { start: string; end: string } {
     const start = new Date(year, month - 1, 1);
     const end = new Date(year, month, 0);
 
@@ -101,9 +102,11 @@ export class DateUtils {
 
     if (this.isSameDay(dateStr, today.toISOString().split('T')[0])) {
       return '今天';
-    } else if (this.isSameDay(dateStr, yesterday.toISOString().split('T')[0])) {
+    }
+    else if (this.isSameDay(dateStr, yesterday.toISOString().split('T')[0])) {
       return '昨天';
-    } else if (this.isSameDay(dateStr, tomorrow.toISOString().split('T')[0])) {
+    }
+    else if (this.isSameDay(dateStr, tomorrow.toISOString().split('T')[0])) {
       return '明天';
     }
 
@@ -113,7 +116,8 @@ export class DateUtils {
     );
     if (daysDiff > 0) {
       return `${daysDiff}天后`;
-    } else {
+    }
+    else {
       return `${Math.abs(daysDiff)}天前`;
     }
   }
@@ -153,12 +157,52 @@ export class PeriodCalculator {
   /**
    * 计算排卵日
    */
-  static calculateOvulationDate(
+  static calculateOvulationInfo(
     nextPeriodDate: string,
     cycleLength: number = 28,
-  ): string {
-    console.log(cycleLength);
-    return DateUtils.addDays(nextPeriodDate, -14);
+  ): {
+    ovulationDate: string;
+    fertileStart: string;
+    fertileEnd: string;
+    isValid: boolean;
+    message?: string;
+  } {
+    // 初始化返回结果
+    const result = {
+      ovulationDate: '',
+      fertileStart: '',
+      fertileEnd: '',
+      isValid: true,
+      message: '',
+    };
+
+    // 验证输入有效性
+    if (isValidDate(nextPeriodDate)) {
+      result.isValid = false;
+      result.message = '无效的下次月经日期';
+      return result;
+    }
+
+    if (typeof cycleLength !== 'number' || cycleLength < 14) {
+      result.isValid = false;
+      result.message = '周期长度必须为 ≥14 的整数';
+      return result;
+    }
+
+    if (!Number.isInteger(cycleLength)) {
+      result.isValid = false;
+      result.message = '周期长度必须为整数';
+      return result;
+    }
+
+    // 计算排卵日
+    result.ovulationDate = addDays(nextPeriodDate, -14);
+
+    // 计算排卵期范围（排卵日前5天到后1天）
+    result.fertileStart = addDays(result.ovulationDate, -5);
+    result.fertileEnd = addDays(result.ovulationDate, 1);
+
+    return result;
   }
 
   /**
@@ -190,11 +234,14 @@ export class PeriodCalculator {
 
     if (daysSinceLastPeriod <= averagePeriodLength) {
       return 'Menstrual';
-    } else if (daysSinceLastPeriod <= averageCycleLength / 2 - 3) {
+    }
+    else if (daysSinceLastPeriod <= averageCycleLength / 2 - 3) {
       return 'Follicular';
-    } else if (daysSinceLastPeriod <= averageCycleLength / 2 + 3) {
+    }
+    else if (daysSinceLastPeriod <= averageCycleLength / 2 + 3) {
       return 'Ovulation';
-    } else {
+    }
+    else {
       return 'Luteal';
     }
   }
@@ -213,7 +260,7 @@ export class PeriodCalculator {
    * 判断指定日期是否在经期内
    */
   static isInPeriod(date: string, periods: PeriodRecords[]): boolean {
-    return periods.some((period) => {
+    return periods.some(period => {
       const targetDate = new Date(date);
       const startDate = new Date(period.startDate);
       const endDate = new Date(period.endDate);
@@ -229,7 +276,7 @@ export class PeriodCalculator {
     periods: PeriodRecords[],
   ): PeriodRecords | null {
     return (
-      periods.find((period) => {
+      periods.find(period => {
         const targetDate = new Date(date);
         const startDate = new Date(period.startDate);
         const endDate = new Date(period.endDate);
@@ -247,7 +294,8 @@ export class PeriodAnalyzer {
    * 计算平均值
    */
   static calculateAverage(values: number[]): number {
-    if (values.length === 0) return 0;
+    if (values.length === 0)
+      return 0;
     return values.reduce((sum, value) => sum + value, 0) / values.length;
   }
 
@@ -255,12 +303,13 @@ export class PeriodAnalyzer {
    * 计算标准差
    */
   static calculateStandardDeviation(values: number[]): number {
-    if (values.length < 2) return 0;
+    if (values.length < 2)
+      return 0;
 
     const mean = this.calculateAverage(values);
-    const variance =
-      values.reduce((sum, value) => sum + Math.pow(value - mean, 2), 0) /
-      values.length;
+    const variance
+      = values.reduce((sum, value) => sum + (value - mean) ** 2, 0)
+        / values.length;
     return Math.sqrt(variance);
   }
 
@@ -277,7 +326,8 @@ export class PeriodAnalyzer {
    * 计算周期规律性评分 (0-100)
    */
   static calculateRegularityScore(cycleLengths: number[]): number {
-    if (cycleLengths.length < 2) return 100;
+    if (cycleLengths.length < 2)
+      return 100;
 
     const variation = this.calculateVariationCoefficient(cycleLengths);
     return Math.max(0, Math.round(100 - variation * 200));
@@ -290,7 +340,8 @@ export class PeriodAnalyzer {
     values: number[],
     windowSize: number = 6,
   ): 'stable' | 'increasing' | 'decreasing' {
-    if (values.length < windowSize * 2) return 'stable';
+    if (values.length < windowSize * 2)
+      return 'stable';
 
     const recent = values.slice(-windowSize);
     const earlier = values.slice(-windowSize * 2, -windowSize);
@@ -299,7 +350,8 @@ export class PeriodAnalyzer {
     const earlierAvg = this.calculateAverage(earlier);
     const difference = recentAvg - earlierAvg;
 
-    if (Math.abs(difference) < 1) return 'stable';
+    if (Math.abs(difference) < 1)
+      return 'stable';
     return difference > 0 ? 'increasing' : 'decreasing';
   }
 
@@ -310,9 +362,7 @@ export class PeriodAnalyzer {
     const mean = this.calculateAverage(values);
     const stdDev = this.calculateStandardDeviation(values);
 
-    return values.filter(
-      (value) => Math.abs(value - mean) > threshold * stdDev,
-    );
+    return values.filter(value => Math.abs(value - mean) > threshold * stdDev);
   }
 
   /**
@@ -321,7 +371,6 @@ export class PeriodAnalyzer {
   static calculateHealthScore(
     cycleLengths: number[],
     periodLengths: number[],
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _dailyRecords: PeriodDailyRecords[],
   ): number {
     let score = 100;
@@ -419,7 +468,8 @@ export class PeriodFormatter {
    * 格式化持续时间
    */
   static formatDuration(days: number): string {
-    if (days === 1) return '1天';
+    if (days === 1)
+      return '1天';
     return `${days}天`;
   }
 
@@ -427,9 +477,12 @@ export class PeriodFormatter {
    * 格式化周期描述
    */
   static formatCycleDescription(cycleLength: number): string {
-    if (cycleLength === 0) return '首次记录';
-    if (cycleLength < 21) return `${cycleLength}天 (偏短)`;
-    if (cycleLength > 35) return `${cycleLength}天 (偏长)`;
+    if (cycleLength === 0)
+      return '首次记录';
+    if (cycleLength < 21)
+      return `${cycleLength}天 (偏短)`;
+    if (cycleLength > 35)
+      return `${cycleLength}天 (偏长)`;
     return `${cycleLength}天`;
   }
 
@@ -437,11 +490,16 @@ export class PeriodFormatter {
    * 格式化规律性评分
    */
   static formatRegularityScore(score: number): string {
-    if (score >= 90) return '非常规律';
-    if (score >= 80) return '很规律';
-    if (score >= 70) return '比较规律';
-    if (score >= 60) return '一般规律';
-    if (score >= 50) return '不太规律';
+    if (score >= 90)
+      return '非常规律';
+    if (score >= 80)
+      return '很规律';
+    if (score >= 70)
+      return '比较规律';
+    if (score >= 60)
+      return '一般规律';
+    if (score >= 50)
+      return '不太规律';
     return '不规律';
   }
 
@@ -459,25 +517,29 @@ export class PeriodFormatter {
         color: 'green',
         description: '经期健康状况很好，请继续保持',
       };
-    } else if (score >= 80) {
+    }
+    else if (score >= 80) {
       return {
         level: '良好',
         color: 'blue',
         description: '经期健康状况良好，注意保持规律',
       };
-    } else if (score >= 70) {
+    }
+    else if (score >= 70) {
       return {
         level: '一般',
         color: 'yellow',
         description: '经期健康状况一般，建议关注生活习惯',
       };
-    } else if (score >= 60) {
+    }
+    else if (score >= 60) {
       return {
         level: '需要改善',
         color: 'orange',
         description: '经期健康需要改善，建议调整生活方式',
       };
-    } else {
+    }
+    else {
       return {
         level: '需要关注',
         color: 'red',
@@ -496,7 +558,8 @@ export class PeriodValidator {
    */
   static isValidDate(dateStr: string): boolean {
     const dateObj = new Date(dateStr);
-    const isValidDateObj = dateObj instanceof Date && !isNaN(dateObj.getTime());
+    const isValidDateObj
+      = dateObj instanceof Date && !Number.isNaN(dateObj.getTime());
     const matchesFormat = /^\d{4}-\d{2}-\d{2}$/.test(dateStr);
     return isValidDateObj && matchesFormat;
   }
@@ -515,7 +578,8 @@ export class PeriodValidator {
    * 验证经期长度
    */
   static isValidPeriodLength(startDate: string, endDate: string): boolean {
-    if (!this.isValidDateRange(startDate, endDate)) return false;
+    if (!this.isValidDateRange(startDate, endDate))
+      return false;
 
     const days = DateUtils.daysBetween(startDate, endDate) + 1;
     return days >= 1 && days <= 14;
@@ -532,13 +596,13 @@ export class PeriodValidator {
    * 验证经期记录重叠
    */
   static hasOverlap(
-    newRecord: {startDate: string; endDate: string},
+    newRecord: { startDate: string; endDate: string },
     existingRecords: PeriodRecords[],
   ): boolean {
     const newStart = new Date(newRecord.startDate);
     const newEnd = new Date(newRecord.endDate);
 
-    return existingRecords.some((record) => {
+    return existingRecords.some(record => {
       const existingStart = new Date(record.startDate);
       const existingEnd = new Date(record.endDate);
 
@@ -557,13 +621,15 @@ export class PeriodValidator {
 
     if (!record.startDate) {
       errors.push('开始日期不能为空');
-    } else if (!this.isValidDate(record.startDate)) {
+    }
+    else if (!this.isValidDate(record.startDate)) {
       errors.push('开始日期格式不正确');
     }
 
     if (!record.endDate) {
       errors.push('结束日期不能为空');
-    } else if (!this.isValidDate(record.endDate)) {
+    }
+    else if (!this.isValidDate(record.endDate)) {
       errors.push('结束日期格式不正确');
     }
 
@@ -593,9 +659,11 @@ export class PeriodValidator {
 
     if (!record.date) {
       errors.push('日期不能为空');
-    } else if (!this.isValidDate(record.date)) {
+    }
+    else if (!this.isValidDate(record.date)) {
       errors.push('日期格式不正确');
-    } else if (new Date(record.date) > new Date()) {
+    }
+    else if (new Date(record.date) > new Date()) {
       errors.push('日期不能超过今天');
     }
 
@@ -604,15 +672,15 @@ export class PeriodValidator {
     }
 
     if (
-      record.waterIntake !== undefined &&
-      (record.waterIntake < 0 || record.waterIntake > 5000)
+      record.waterIntake !== undefined
+      && (record.waterIntake < 0 || record.waterIntake > 5000)
     ) {
       errors.push('饮水量应在0-5000ml之间');
     }
 
     if (
-      record.sleepHours !== undefined &&
-      (record.sleepHours < 0 || record.sleepHours > 24)
+      record.sleepHours !== undefined
+      && (record.sleepHours < 0 || record.sleepHours > 24)
     ) {
       errors.push('睡眠时间应在0-24小时之间');
     }
@@ -663,12 +731,12 @@ export class PeriodDataManager {
   /**
    * 验证导入数据格式
    */
-  static validateImportData(data: any): {valid: boolean; errors: string[]} {
+  static validateImportData(data: any): { valid: boolean; errors: string[] } {
     const errors: string[] = [];
 
     if (typeof data !== 'object' || data === null) {
       errors.push('数据格式不正确');
-      return {valid: false, errors};
+      return { valid: false, errors };
     }
 
     if (!Array.isArray(data.periodRecords)) {
@@ -713,7 +781,7 @@ export class PeriodDataManager {
         PeriodCalculator.calculateCycleLength(record, sortedRecords[index]),
       );
 
-    const periodLengths = sortedRecords.map((record) =>
+    const periodLengths = sortedRecords.map(record =>
       PeriodCalculator.calculatePeriodLength(record),
     );
 
@@ -743,7 +811,7 @@ export class PeriodDataManager {
 ${sortedRecords
   .slice(-5)
   .map(
-    (record) =>
+    record =>
       `${DateUtils.formatDateRange(record.startDate, record.endDate)} (${PeriodCalculator.calculatePeriodLength(record)}天)`,
   )
   .join('\n')}

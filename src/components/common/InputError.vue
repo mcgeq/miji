@@ -1,50 +1,3 @@
-<template>
-  <Transition
-    name="error-slide"
-    appear
-    @enter="onEnter"
-    @leave="onLeave"
-  >
-    <div
-      v-if="hasErrors"
-      class="input-error-container"
-      :class="containerClasses"
-      role="alert"
-      :aria-live="ariaLive"
-    >
-      <div class="error-content">
-        <!-- 错误图标 -->
-        <div class="error-icon">
-          <i :class="iconClass" class="wh-4 flex-shrink-0" />
-        </div>
-        
-        <!-- 错误消息 -->
-        <div class="error-messages">
-          <div
-            v-for="(error, index) in displayErrors"
-            :key="`error-${index}`"
-            class="error-message"
-            :class="{ 'mt-1': index > 0 }"
-          >
-            {{ error }}
-          </div>
-        </div>
-        
-        <!-- 关闭按钮 -->
-        <button
-          v-if="dismissible"
-          @click="handleDismiss"
-          class="error-dismiss"
-          type="button"
-          :aria-label="dismissLabel"
-        >
-          <i class="i-tabler-x wh-3" />
-        </button>
-      </div>
-    </div>
-  </Transition>
-</template>
-
 <script setup lang="ts">
 // Props
 interface Props {
@@ -80,7 +33,8 @@ const dismissed = ref(false);
 
 // Computed
 const normalizedErrors = computed(() => {
-  if (!props.errors) return [];
+  if (!props.errors)
+    return [];
   return Array.isArray(props.errors) ? props.errors : [props.errors];
 });
 
@@ -115,21 +69,21 @@ const iconClass = computed(() => {
 });
 
 // Methods
-const handleDismiss = () => {
+function handleDismiss() {
   dismissed.value = true;
   emit('dismiss');
-};
+}
 
-const onEnter = (el: Element) => {
+function onEnter(el: Element) {
   const element = el as HTMLElement;
   void element.offsetHeight; // 触发重排
   element.classList.add('error-enter-active');
-};
+}
 
-const onLeave = (el: Element) => {
+function onLeave(el: Element) {
   const element = el as HTMLElement;
   element.classList.add('error-leave-active');
-};
+}
 
 // Watchers
 watch(
@@ -137,15 +91,15 @@ watch(
   () => {
     dismissed.value = false;
   },
-  {immediate: true},
+  { immediate: true },
 );
 
 watch(
   hasErrors,
-  (newValue) => {
+  newValue => {
     emit('errorChange', newValue);
   },
-  {immediate: true},
+  { immediate: true },
 );
 
 // Expose for parent component
@@ -158,13 +112,60 @@ defineExpose({
 });
 </script>
 
+<template>
+  <Transition
+    name="error-slide"
+    appear
+    @enter="onEnter"
+    @leave="onLeave"
+  >
+    <div
+      v-if="hasErrors"
+      class="input-error-container"
+      :class="containerClasses"
+      role="alert"
+      :aria-live="ariaLive"
+    >
+      <div class="error-content">
+        <!-- 错误图标 -->
+        <div class="error-icon">
+          <i :class="iconClass" class="wh-4 flex-shrink-0" />
+        </div>
+
+        <!-- 错误消息 -->
+        <div class="error-messages">
+          <div
+            v-for="(error, index) in displayErrors"
+            :key="`error-${index}`"
+            class="error-message"
+            :class="{ 'mt-1': index > 0 }"
+          >
+            {{ error }}
+          </div>
+        </div>
+
+        <!-- 关闭按钮 -->
+        <button
+          v-if="dismissible"
+          class="error-dismiss"
+          type="button"
+          :aria-label="dismissLabel"
+          @click="handleDismiss"
+        >
+          <i class="wh-3 i-tabler-x" />
+        </button>
+      </div>
+    </div>
+  </Transition>
+</template>
+
 <style scoped lang="postcss">
 .input-error-container {
   @apply mt-1;
 }
 
 .input-error {
-  @apply rounded-md border-l-4 border-red-400 bg-red-50 dark:bg-red-900/20 
+  @apply rounded-md border-l-4 border-red-400 bg-red-50 dark:bg-red-900/20
          dark:border-red-500;
 }
 
@@ -221,7 +222,7 @@ defineExpose({
 }
 
 .error-dismiss {
-  @apply flex-shrink-0 p-1 ml-auto -mr-1 rounded-md 
+  @apply flex-shrink-0 p-1 ml-auto -mr-1 rounded-md
          text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300
          hover:bg-red-100 dark:hover:bg-red-800/30
          focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2
@@ -235,7 +236,7 @@ defineExpose({
 }
 
 .input-error--tooltip::before {
-  @apply content-[''] absolute -top-1 left-4 w-0 h-0 
+  @apply content-[''] absolute -top-1 left-4 w-0 h-0
          border-l-4 border-r-4 border-b-4 border-transparent border-b-red-50
          dark:border-b-red-900;
 }
@@ -274,11 +275,11 @@ defineExpose({
   .input-error--default {
     @apply p-2;
   }
-  
+
   .error-content {
     @apply gap-1.5;
   }
-  
+
   .error-message {
     @apply text-xs;
   }
@@ -290,7 +291,7 @@ defineExpose({
   .error-slide-leave-active {
     @apply transition-none;
   }
-  
+
   .error-enter-active,
   .error-leave-active {
     @apply animate-none;
@@ -302,7 +303,7 @@ defineExpose({
   .input-error {
     @apply border-l-8 border-red-600 bg-red-100 dark:bg-red-800;
   }
-  
+
   .error-message {
     @apply text-red-900 dark:text-red-100 font-bold;
   }
@@ -313,11 +314,11 @@ defineExpose({
   .input-error {
     @apply border-l-2 border-gray-800 bg-gray-100;
   }
-  
+
   .error-message {
     @apply text-gray-900;
   }
-  
+
   .error-dismiss {
     @apply hidden;
   }

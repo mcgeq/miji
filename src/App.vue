@@ -1,23 +1,11 @@
-<template>
-  <div v-if="isLoading" class="loading">{{ t('common.loading') }}</div>
-  <!-- 使用动态过渡名称 -->
-  <router-view v-else v-slot="{ Component, route }">
-    <transition :name="typeof route.meta.transition === 'string' ? route.meta.transition : transitionName"
-      mode="out-in">
-      <component :is="layoutComponent(route)">
-        <component :is="Component" />
-      </component>
-    </transition>
-  </router-view>
-</template>
-
 <script setup lang="ts">
 import { storeToRefs } from 'pinia';
-import { RouteLocationNormalizedLoaded } from 'vue-router';
 import DefaultLayout from './layouts/DefaultLayout.vue';
 import EmptyLayout from './layouts/EmptyLayout.vue';
 import { checkAndCleanSession } from './services/auth';
+import { Lg } from './utils/debugLog';
 import { toast } from './utils/toast';
+import type { RouteLocationNormalizedLoaded } from 'vue-router';
 
 const isLoading = ref(true);
 const router = useRouter();
@@ -34,18 +22,38 @@ onMounted(async () => {
       toast.warning(t('messages.pleaseLogin'));
       await router.replace('/auth/login');
     }
-  } catch (error) {
+  }
+  catch (error) {
+    Lg.e('App', error);
     toast.error(t('messages.initFailed'));
-  } finally {
+  }
+  finally {
     isLoading.value = false;
   }
 });
 
-const layoutComponent = (route: RouteLocationNormalizedLoaded) => {
+function layoutComponent(route: RouteLocationNormalizedLoaded) {
   const layout = route.meta.layout || 'default';
   return layout === 'empty' ? EmptyLayout : DefaultLayout;
-};
+}
 </script>
+
+<template>
+  <div v-if="isLoading" class="loading">
+    {{ t('common.loading') }}
+  </div>
+  <!-- 使用动态过渡名称 -->
+  <router-view v-else v-slot="{ Component, route }">
+    <transition
+      :name="typeof route.meta.transition === 'string' ? route.meta.transition : transitionName"
+      mode="out-in"
+    >
+      <component :is="layoutComponent(route)">
+        <component :is="Component" />
+      </component>
+    </transition>
+  </router-view>
+</template>
 
 <style>
 /* 新增：隐藏滚动条 */

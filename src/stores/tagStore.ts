@@ -10,10 +10,11 @@
 // -----------------------------------------------------------------------------
 
 import { ref } from 'vue';
-import { TagsSchema, type Tags } from '../schema/tags';
+import { TagsSchema } from '../schema/tags';
 import { getLocalISODateTimeWithOffset } from '../utils/date';
 import { uuid } from '../utils/uuid';
 import { createWithDefaults } from '../utils/zodFactory';
+import type { Tags } from '../schema/tags';
 
 type SortByField = 'createdAt' | 'name';
 type SortOrder = 'asc' | 'desc';
@@ -32,8 +33,8 @@ interface TagFilterOptions {
 const tags = ref(new Map<string, Tags>());
 
 // 创建标签
-const createTag = (input?: Partial<Tags>): Tags =>
-  createWithDefaults(
+function createTag(input?: Partial<Tags>): Tags {
+  return createWithDefaults(
     TagsSchema,
     {
       serialNum: () => uuid(38),
@@ -44,22 +45,20 @@ const createTag = (input?: Partial<Tags>): Tags =>
     },
     input,
   );
+}
 
 // 添加标签
-const addTag = (input?: Partial<Tags>): Tags => {
+function addTag(input?: Partial<Tags>): Tags {
   const tag = createTag(input);
   if (tags.value.has(tag.serialNum)) {
     throw new Error(`Tag with serialNum ${tag.serialNum} already exists.`);
   }
   tags.value.set(tag.serialNum, tag);
   return tag;
-};
+}
 
 // 更新标签（不可修改 serialNum 与 createdAt）
-const updateTag = (
-  serialNum: string,
-  input: Partial<Omit<Tags, 'serialNum' | 'createdAt'>>,
-): Tags => {
+function updateTag(serialNum: string, input: Partial<Omit<Tags, 'serialNum' | 'createdAt'>>): Tags {
   const existing = tags.value.get(serialNum);
   if (!existing) {
     throw new Error(`Tag with serialNum ${serialNum} not found.`);
@@ -73,40 +72,40 @@ const updateTag = (
   });
   tags.value.set(serialNum, updatedTag);
   return updatedTag;
-};
+}
 
 // 删除标签
-const removeTag = (serialNum: string): boolean => {
+function removeTag(serialNum: string): boolean {
   return tags.value.delete(serialNum);
-};
+}
 
 // 清空所有标签
-const clearAllTags = (): void => {
+function clearAllTags(): void {
   tags.value.clear();
-};
+}
 
 // 获取全部标签
-const getAllTags = (): Map<string, Tags> => {
+function getAllTags(): Map<string, Tags> {
   return tags.value;
-};
+}
 
 // 根据 serialNum 获取标签
-const getTag = (serialNum: string): Tags | undefined => {
+function getTag(serialNum: string): Tags | undefined {
   return tags.value.get(serialNum);
-};
+}
 
 // 判断标签是否存在
-const hasTag = (serialNum: string): boolean => {
+function hasTag(serialNum: string): boolean {
   return tags.value.has(serialNum);
-};
+}
 
 // 根据名称查找标签
-const findTagsByName = (name: string): Tags[] => {
-  return Array.from(tags.value.values()).filter((tag) => tag.name === name);
-};
+function findTagsByName(name: string): Tags[] {
+  return Array.from(tags.value.values()).filter(tag => tag.name === name);
+}
 
 // 综合搜索标签
-const searchTags = (options: TagFilterOptions = {}) => {
+function searchTags(options: TagFilterOptions = {}) {
   const {
     keyword,
     name,
@@ -122,14 +121,15 @@ const searchTags = (options: TagFilterOptions = {}) => {
   if (keyword?.trim()) {
     const lower = keyword.toLowerCase();
     results = results.filter(
-      (tag) =>
-        tag.name.toLowerCase().includes(lower) ||
-        tag.description?.toLowerCase().includes(lower),
+      tag =>
+        tag.name.toLowerCase().includes(lower)
+        || tag.description?.toLowerCase().includes(lower),
     );
   }
-  if (name) results = results.filter((tag) => tag.name === name);
+  if (name)
+    results = results.filter(tag => tag.name === name);
   if (description)
-    results = results.filter((tag) => tag.description === description);
+    results = results.filter(tag => tag.description === description);
 
   results.sort((a, b) => {
     const fieldA = a[sortBy];
@@ -146,7 +146,7 @@ const searchTags = (options: TagFilterOptions = {}) => {
   const paged = results.slice(offset, offset + limit);
 
   return { total, results: paged };
-};
+}
 
 export const tagsStore = {
   tags,

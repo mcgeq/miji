@@ -1,24 +1,4 @@
-<template>
-  <div class="flex min-h-screen">
-    <Sidebar
-      v-if="!isMobile"
-      :menu="menuItems"
-      @logout="logout"
-      class="hidden md:flex fixed left-0 top-0 h-screen z-10"
-    />
-    <div class="flex-1 flex flex-col md:ml-12">
-      <main class="flex-1 bg-gray-50" :class="{ 'pb-16': isMobile }">
-        <slot />
-      </main>
-      <MobileBottomNav v-if="isMobile" :menu="menuItems" />
-    </div>
-  </div>
-</template>
-
 <script setup>
-import Sidebar from '@/components/common/Sidebar.vue';
-import MobileBottomNav from '@/components/common/MobileBottomNav.vue';
-
 import {
   CircleCheckBig,
   Droplet,
@@ -28,26 +8,27 @@ import {
   Settings,
   Tags,
 } from 'lucide-vue-next';
+import MobileBottomNav from '@/components/common/MobileBottomNav.vue';
+import Sidebar from '@/components/common/Sidebar.vue';
 
-const collapsed = ref(false);
 const isMobile = ref(window.innerWidth < 768);
 
-const updateIsMobile = () => {
+function updateIsMobile() {
   isMobile.value = window.innerWidth < 768;
-};
+}
 
 const menuItems = [
-  {name: 'home', title: 'Home', icon: Home, path: '/'},
-  {name: 'todos', title: 'Todo', icon: CircleCheckBig, path: '/todos'},
-  {name: 'money', title: 'Money', icon: HandCoins, path: '/money'},
+  { name: 'home', title: 'Home', icon: Home, path: '/' },
+  { name: 'todos', title: 'Todo', icon: CircleCheckBig, path: '/todos' },
+  { name: 'money', title: 'Money', icon: HandCoins, path: '/money' },
   {
     name: 'health-period',
     title: 'Period',
     icon: Droplet,
     path: '/health/period',
   },
-  {name: 'tags', title: 'Tag', icon: Tags, path: '/tags'},
-  {name: 'projects', title: 'Project', icon: FolderDot, path: '/projects'},
+  { name: 'tags', title: 'Tag', icon: Tags, path: '/tags' },
+  { name: 'projects', title: 'Project', icon: FolderDot, path: '/projects' },
   {
     name: 'settings',
     title: 'Settings',
@@ -57,10 +38,10 @@ const menuItems = [
 ];
 
 const router = useRouter();
-const logout = async () => {
+async function logout() {
   await logoutUser();
-  router.replace({name: 'auth-login'});
-};
+  router.replace({ name: 'auth-login' });
+}
 
 onMounted(() => {
   window.addEventListener('resize', updateIsMobile);
@@ -70,3 +51,20 @@ onUnmounted(() => {
   window.removeEventListener('resize', updateIsMobile);
 });
 </script>
+
+<template>
+  <div class="min-h-screen flex">
+    <Sidebar
+      v-if="!isMobile"
+      :menu="menuItems"
+      class="fixed left-0 top-0 z-10 hidden h-screen md:flex"
+      @logout="logout"
+    />
+    <div class="flex flex-1 flex-col md:ml-12">
+      <main class="flex-1 bg-gray-50" :class="{ 'pb-16': isMobile }">
+        <slot />
+      </main>
+      <MobileBottomNav v-if="isMobile" :menu="menuItems" />
+    </div>
+  </div>
+</template>

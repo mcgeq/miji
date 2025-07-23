@@ -1,218 +1,3 @@
-<template>
-  <div class="repeat-period-selector">
-    <div class="mb-2 flex items-center justify-between">
-      <label class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-        {{ label }}
-        <span v-if="required" class="text-red-500 ml-1" aria-label="必填">*</span>
-      </label>
-      <select
-        :model-value="modelValue.type"
-        class="w-2/3 modal-input-select"
-        :class="{ 'border-red-500': errorMessage }"
-        @change="handleTypeChange"
-      >
-        <option value="None">不重复</option>
-        <option value="Daily">日</option>
-        <option value="Weekly">周</option>
-        <option value="Monthly">月</option>
-        <option value="Yearly">年</option>
-        <option value="Custom">自定义</option>
-      </select>
-    </div>
-
-    <div
-      v-if="errorMessage"
-      class="text-sm text-red-600 dark:text-red-400 mb-2 text-right"
-      role="alert"
-    >
-      {{ errorMessage }}
-    </div>
-
-    <div v-if="modelValue.type !== 'None'" class="space-y-3">
-      <div v-if="modelValue.type === 'Daily'" class="flex items-center justify-between">
-        <label class="ml-4 text-sm text-gray-600 dark:text-gray-400">间隔天数</label>
-        <div class="flex items-center space-x-1 w-2/3">
-          <span class="text-sm text-gray-500">每</span>
-          <input
-            :value="getDailyInterval()"
-            type="number"
-            min="1"
-            max="365"
-            class="flex-1 modal-input-select"
-            placeholder="1"
-            @input="handleDailyIntervalChange"
-          />
-          <span class="text-sm text-gray-500">天</span>
-        </div>
-      </div>
-
-      <div v-if="modelValue.type === 'Weekly'" class="space-y-3">
-        <div class="flex items-center justify-between">
-          <label class="ml-4 text-sm text-gray-600 dark:text-gray-400">间隔周数</label>
-          <div class="flex items-center space-x-2 w-2/3">
-            <span class="text-sm text-gray-500">每</span>
-            <input
-              :value="getWeeklyInterval()"
-              type="number"
-              min="1"
-              max="52"
-              class="flex-1 modal-input-select"
-              placeholder="1"
-              @input="handleWeeklyIntervalChange"
-            />
-            <span class="text-sm text-gray-500">周</span>
-          </div>
-        </div>
-        <div class="space-y-2">
-          <div class="flex items-start justify-between">
-            <label class="ml-4 text-sm text-gray-600 dark:text-gray-400 pt-2">重复星期</label>
-            <div class="w-2/3">
-              <div class="grid grid-cols-7 gap-2">
-                <button
-                  v-for="(day, _index) in weekdayOptions"
-                  :key="day.value"
-                  type="button"
-                  class="
-                    text-xs font-medium flex items-center justify-center
-                    rounded-3xl transition-colors
-                    h-0.25rem w-0.25rem
-                    hover:bg-gray-200 dark:hover:bg-gray-600
-                    bg-gray-100 dark:bg-gray-700
-                    text-gray-700 dark:text-gray-300
-                    "
-                  :class="{
-                    '!bg-blue-500 !text-gray-700': isWeekdaySelected(day.value)
-                  }"
-                  @click="toggleWeekday(day.value)"
-                >
-                  {{ day.label }}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div v-if="modelValue.type === 'Monthly'" class="space-y-3">
-        <div class="flex items-center justify-between">
-          <label class="ml-4 text-sm text-gray-600 dark:text-gray-400">间隔月数</label>
-          <div class="flex items-center space-x-2 w-2/3">
-            <span class="text-sm text-gray-500">每</span>
-            <input
-              :value="getMonthlyInterval()"
-              type="number"
-              min="1"
-              max="12"
-              class="flex-1 modal-input-select"
-              placeholder="1"
-              @input="handleMonthlyIntervalChange"
-            />
-            <span class="text-sm text-gray-500">月</span>
-          </div>
-        </div>
-        <div class="flex items-center justify-between">
-          <label class="ml-4 text-sm text-gray-600 dark:text-gray-400">日期</label>
-          <div class="w-2/3">
-            <select
-              :value="getMonthlyDay()"
-              class="modal-input-select w-full"
-              @change="handleMonthlyDayChange"
-            >
-              <option
-                v-for="day in 31"
-                :key="day"
-                :value="day"
-              >
-                {{ day }}
-              </option>
-              <option value="last">每月最后一天</option>
-            </select>
-          </div>
-        </div>
-      </div>
-
-      <div v-if="modelValue.type === 'Yearly'" class="space-y-3">
-        <div class="flex items-center justify-between">
-          <label class="ml-4 text-sm text-gray-600 dark:text-gray-400">间隔年数</label>
-          <div class="flex items-center space-x-2 w-2/3">
-            <span class="text-sm text-gray-500">每</span>
-            <input
-              :value="getYearlyInterval()"
-              type="number"
-              min="1"
-              max="10"
-              class="flex-1 modal-input-select"
-              placeholder="1"
-              @input="handleYearlyIntervalChange"
-            />
-            <span class="text-sm text-gray-500">年</span>
-          </div>
-        </div>
-        <div class="flex items-center justify-between">
-          <label class="ml-4 text-sm text-gray-600 dark:text-gray-400">月份</label>
-          <div class="w-2/3">
-            <select
-              :value="getYearlyMonth()"
-              class="modal-input-select w-full"
-              @change="handleYearlyMonthChange"
-            >
-              <option
-                v-for="(month, index) in monthOptions"
-                :key="index + 1"
-                :value="index + 1"
-              >
-                {{ month }}
-              </option>
-            </select>
-          </div>
-        </div>
-        <div class="flex items-center justify-between">
-          <label class="ml-4 text-sm text-gray-600 dark:text-gray-400">日期</label>
-          <div class="w-2/3">
-            <select
-              :value="getYearlyDay()"
-              class="modal-input-select w-full"
-              @change="handleYearlyDayChange"
-            >
-              <option
-                v-for="day in getMaxDaysInMonth()"
-                :key="day"
-                :value="day"
-              >
-                {{ day }}
-              </option>
-            </select>
-          </div>
-        </div>
-      </div>
-
-      <!-- 自定义重复配置 -->
-      <div v-if="modelValue.type === 'Custom'" class="space-y-3">
-        <div class="flex items-start justify-between">
-          <label class="text-sm text-gray-600 dark:text-gray-400 pt-2">自定义描述</label>
-          <div class="w-2/3">
-            <textarea
-              :value="getCustomDescription()"
-              rows="2"
-              class="w-full modal-input-select"
-              placeholder="请描述重复规则，如：每月第二个周一、每季度末等"
-              maxlength="100"
-              @input="handleCustomDescriptionChange"
-            ></textarea>
-            <div class="text-xs text-gray-500 dark:text-gray-400 text-right mt-1">
-              {{ getCustomDescription()?.length || 0 }}/100
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div v-if="helpText" class="flex justify-end text-xs text-gray-500 dark:text-gray-400 mt-2">
-      {{ helpText }}
-    </div>
-  </div>
-</template>
-
 <script setup lang="ts">
 import type { RepeatPeriod, Weekday } from '@/schema/common';
 
@@ -235,8 +20,8 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<{
   'update:modelValue': [value: RepeatPeriod];
-  change: [value: RepeatPeriod];
-  validate: [isValid: boolean];
+  'change': [value: RepeatPeriod];
+  'validate': [isValid: boolean];
 }>();
 
 // 常量定义
@@ -266,27 +51,27 @@ const monthOptions = [
 ];
 
 // 工具函数
-const validateValue = (value: RepeatPeriod) => {
+function validateValue(value: RepeatPeriod) {
   let isValid = true;
 
   if (
-    value.type === 'Weekly' &&
-    (!value.daysOfWeek || value.daysOfWeek.length === 0)
+    value.type === 'Weekly'
+    && (!value.daysOfWeek || value.daysOfWeek.length === 0)
   ) {
     isValid = false;
   }
   if (
-    value.type === 'Custom' &&
-    (!value.description || value.description.trim().length === 0)
+    value.type === 'Custom'
+    && (!value.description || value.description.trim().length === 0)
   ) {
     isValid = false;
   }
 
   emit('validate', isValid);
-};
+}
 
 // 事件处理
-const handleTypeChange = (event: Event) => {
+function handleTypeChange(event: Event) {
   const target = event.target as HTMLSelectElement;
   const type = target.value as RepeatPeriod['type'];
 
@@ -318,51 +103,55 @@ const handleTypeChange = (event: Event) => {
   emit('update:modelValue', newValue);
   emit('change', newValue);
   validateValue(newValue);
-};
+}
 
 // 每日重复相关
-const getDailyInterval = () => {
+function getDailyInterval() {
   return props.modelValue.type === 'Daily' ? props.modelValue.interval : 1;
-};
+}
 
-const handleDailyIntervalChange = (event: Event) => {
-  if (props.modelValue.type !== 'Daily') return;
+function handleDailyIntervalChange(event: Event) {
+  if (props.modelValue.type !== 'Daily')
+    return;
 
   const target = event.target as HTMLInputElement;
-  const interval = parseInt(target.value) || 1;
+  const interval = Number.parseInt(target.value) || 1;
   const newValue: RepeatPeriod = { ...props.modelValue, interval };
   emit('update:modelValue', newValue);
   emit('change', newValue);
   validateValue(newValue);
-};
+}
 
 // 每周重复相关
-const getWeeklyInterval = () => {
+function getWeeklyInterval() {
   return props.modelValue.type === 'Weekly' ? props.modelValue.interval : 1;
-};
+}
 
-const handleWeeklyIntervalChange = (event: Event) => {
-  if (props.modelValue.type !== 'Weekly') return;
+function handleWeeklyIntervalChange(event: Event) {
+  if (props.modelValue.type !== 'Weekly')
+    return;
 
   const target = event.target as HTMLInputElement;
-  const interval = parseInt(target.value) || 1;
+  const interval = Number.parseInt(target.value) || 1;
   const newValue: RepeatPeriod = { ...props.modelValue, interval };
   emit('update:modelValue', newValue);
   emit('change', newValue);
   validateValue(newValue);
-};
+}
 
-const isWeekdaySelected = (day: Weekday) => {
-  if (props.modelValue.type !== 'Weekly') return false;
+function isWeekdaySelected(day: Weekday) {
+  if (props.modelValue.type !== 'Weekly')
+    return false;
   return props.modelValue.daysOfWeek.includes(day);
-};
+}
 
-const toggleWeekday = (day: Weekday) => {
-  if (props.modelValue.type !== 'Weekly') return;
+function toggleWeekday(day: Weekday) {
+  if (props.modelValue.type !== 'Weekly')
+    return;
 
   const currentDays = props.modelValue.daysOfWeek;
   const newDays = currentDays.includes(day)
-    ? currentDays.filter((d) => d !== day)
+    ? currentDays.filter(d => d !== day)
     : [...currentDays, day];
 
   // 至少保留一个选中的日期
@@ -372,101 +161,108 @@ const toggleWeekday = (day: Weekday) => {
     emit('change', newValue);
     validateValue(newValue);
   }
-};
+}
 
 // 每月重复相关
-const getMonthlyInterval = () => {
+function getMonthlyInterval() {
   return props.modelValue.type === 'Monthly' ? props.modelValue.interval : 1;
-};
+}
 
-const handleMonthlyIntervalChange = (event: Event) => {
-  if (props.modelValue.type !== 'Monthly') return;
+function handleMonthlyIntervalChange(event: Event) {
+  if (props.modelValue.type !== 'Monthly')
+    return;
 
   const target = event.target as HTMLInputElement;
-  const interval = parseInt(target.value) || 1;
+  const interval = Number.parseInt(target.value) || 1;
   const newValue: RepeatPeriod = { ...props.modelValue, interval };
   emit('update:modelValue', newValue);
   emit('change', newValue);
   validateValue(newValue);
-};
+}
 
-const getMonthlyDay = () => {
+function getMonthlyDay() {
   return props.modelValue.type === 'Monthly' ? props.modelValue.day : 1;
-};
+}
 
-const handleMonthlyDayChange = (event: Event) => {
-  if (props.modelValue.type !== 'Monthly') return;
+function handleMonthlyDayChange(event: Event) {
+  if (props.modelValue.type !== 'Monthly')
+    return;
 
   const target = event.target as HTMLSelectElement;
-  const day =
-    target.value === 'last' ? ('last' as const) : parseInt(target.value) || 1;
+  const day
+    = target.value === 'last' ? ('last' as const) : Number.parseInt(target.value) || 1;
   const newValue: RepeatPeriod = { ...props.modelValue, day };
   emit('update:modelValue', newValue);
   emit('change', newValue);
   validateValue(newValue);
-};
+}
 
 // 每年重复相关
-const getYearlyInterval = () => {
+function getYearlyInterval() {
   return props.modelValue.type === 'Yearly' ? props.modelValue.interval : 1;
-};
+}
 
-const handleYearlyIntervalChange = (event: Event) => {
-  if (props.modelValue.type !== 'Yearly') return;
+function handleYearlyIntervalChange(event: Event) {
+  if (props.modelValue.type !== 'Yearly')
+    return;
 
   const target = event.target as HTMLInputElement;
-  const interval = parseInt(target.value) || 1;
+  const interval = Number.parseInt(target.value) || 1;
   const newValue: RepeatPeriod = { ...props.modelValue, interval };
   emit('update:modelValue', newValue);
   emit('change', newValue);
   validateValue(newValue);
-};
+}
 
-const getYearlyMonth = () => {
+function getYearlyMonth() {
   return props.modelValue.type === 'Yearly' ? props.modelValue.month : 1;
-};
+}
 
-const handleYearlyMonthChange = (event: Event) => {
-  if (props.modelValue.type !== 'Yearly') return;
+function handleYearlyMonthChange(event: Event) {
+  if (props.modelValue.type !== 'Yearly')
+    return;
 
   const target = event.target as HTMLSelectElement;
-  const month = parseInt(target.value) || 1;
+  const month = Number.parseInt(target.value) || 1;
   const newValue: RepeatPeriod = { ...props.modelValue, month };
   emit('update:modelValue', newValue);
   emit('change', newValue);
   validateValue(newValue);
-};
+}
 
-const getYearlyDay = () => {
+function getYearlyDay() {
   return props.modelValue.type === 'Yearly' ? props.modelValue.day : 1;
-};
+}
 
-const handleYearlyDayChange = (event: Event) => {
-  if (props.modelValue.type !== 'Yearly') return;
+function handleYearlyDayChange(event: Event) {
+  if (props.modelValue.type !== 'Yearly')
+    return;
 
   const target = event.target as HTMLSelectElement;
-  const day = parseInt(target.value) || 1;
+  const day = Number.parseInt(target.value) || 1;
   const newValue: RepeatPeriod = { ...props.modelValue, day };
   emit('update:modelValue', newValue);
   emit('change', newValue);
   validateValue(newValue);
-};
+}
 
-const getMaxDaysInMonth = () => {
-  if (props.modelValue.type !== 'Yearly') return 31;
+function getMaxDaysInMonth() {
+  if (props.modelValue.type !== 'Yearly')
+    return 31;
 
   const month = props.modelValue.month;
   const daysInMonth = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
   return daysInMonth[month - 1];
-};
+}
 
 // 自定义重复相关
-const getCustomDescription = () => {
+function getCustomDescription() {
   return props.modelValue.type === 'Custom' ? props.modelValue.description : '';
-};
+}
 
-const handleCustomDescriptionChange = (event: Event) => {
-  if (props.modelValue.type !== 'Custom') return;
+function handleCustomDescriptionChange(event: Event) {
+  if (props.modelValue.type !== 'Custom')
+    return;
 
   const target = event.target as HTMLTextAreaElement;
   const description = target.value;
@@ -474,17 +270,239 @@ const handleCustomDescriptionChange = (event: Event) => {
   emit('update:modelValue', newValue);
   emit('change', newValue);
   validateValue(newValue);
-};
+}
 
 // 监听器
 watch(
   () => props.modelValue,
-  (newValue) => {
+  newValue => {
     validateValue(newValue);
   },
   { immediate: true, deep: true },
 );
 </script>
+
+<template>
+  <div class="repeat-period-selector">
+    <div class="mb-2 flex items-center justify-between">
+      <label class="mb-2 text-sm text-gray-700 font-medium dark:text-gray-300">
+        {{ label }}
+        <span v-if="required" class="ml-1 text-red-500" aria-label="必填">*</span>
+      </label>
+      <select
+        :model-value="modelValue.type"
+        class="w-2/3 modal-input-select"
+        :class="{ 'border-red-500': errorMessage }"
+        @change="handleTypeChange"
+      >
+        <option value="None">
+          不重复
+        </option>
+        <option value="Daily">
+          日
+        </option>
+        <option value="Weekly">
+          周
+        </option>
+        <option value="Monthly">
+          月
+        </option>
+        <option value="Yearly">
+          年
+        </option>
+        <option value="Custom">
+          自定义
+        </option>
+      </select>
+    </div>
+
+    <div
+      v-if="errorMessage"
+      class="mb-2 text-right text-sm text-red-600 dark:text-red-400"
+      role="alert"
+    >
+      {{ errorMessage }}
+    </div>
+
+    <div v-if="modelValue.type !== 'None'" class="space-y-3">
+      <div v-if="modelValue.type === 'Daily'" class="flex items-center justify-between">
+        <label class="ml-4 text-sm text-gray-600 dark:text-gray-400">间隔天数</label>
+        <div class="w-2/3 flex items-center space-x-1">
+          <span class="text-sm text-gray-500">每</span>
+          <input
+            :value="getDailyInterval()"
+            type="number"
+            min="1"
+            max="365"
+            class="flex-1 modal-input-select"
+            placeholder="1"
+            @input="handleDailyIntervalChange"
+          >
+          <span class="text-sm text-gray-500">天</span>
+        </div>
+      </div>
+
+      <div v-if="modelValue.type === 'Weekly'" class="space-y-3">
+        <div class="flex items-center justify-between">
+          <label class="ml-4 text-sm text-gray-600 dark:text-gray-400">间隔周数</label>
+          <div class="w-2/3 flex items-center space-x-2">
+            <span class="text-sm text-gray-500">每</span>
+            <input
+              :value="getWeeklyInterval()"
+              type="number"
+              min="1"
+              max="52"
+              class="flex-1 modal-input-select"
+              placeholder="1"
+              @input="handleWeeklyIntervalChange"
+            >
+            <span class="text-sm text-gray-500">周</span>
+          </div>
+        </div>
+        <div class="space-y-2">
+          <div class="flex items-start justify-between">
+            <label class="ml-4 pt-2 text-sm text-gray-600 dark:text-gray-400">重复星期</label>
+            <div class="w-2/3">
+              <div class="grid grid-cols-7 gap-2">
+                <button
+                  v-for="day in weekdayOptions"
+                  :key="day.value"
+                  type="button"
+                  class="h-0.25rem w-0.25rem flex items-center justify-center rounded-3xl bg-gray-100 text-xs text-gray-700 font-medium transition-colors dark:bg-gray-700 hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-gray-600"
+                  :class="{
+                    '!bg-blue-500 !text-gray-700': isWeekdaySelected(day.value),
+                  }"
+                  @click="toggleWeekday(day.value)"
+                >
+                  {{ day.label }}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div v-if="modelValue.type === 'Monthly'" class="space-y-3">
+        <div class="flex items-center justify-between">
+          <label class="ml-4 text-sm text-gray-600 dark:text-gray-400">间隔月数</label>
+          <div class="w-2/3 flex items-center space-x-2">
+            <span class="text-sm text-gray-500">每</span>
+            <input
+              :value="getMonthlyInterval()"
+              type="number"
+              min="1"
+              max="12"
+              class="flex-1 modal-input-select"
+              placeholder="1"
+              @input="handleMonthlyIntervalChange"
+            >
+            <span class="text-sm text-gray-500">月</span>
+          </div>
+        </div>
+        <div class="flex items-center justify-between">
+          <label class="ml-4 text-sm text-gray-600 dark:text-gray-400">日期</label>
+          <div class="w-2/3">
+            <select
+              :value="getMonthlyDay()"
+              class="w-full modal-input-select"
+              @change="handleMonthlyDayChange"
+            >
+              <option
+                v-for="day in 31"
+                :key="day"
+                :value="day"
+              >
+                {{ day }}
+              </option>
+              <option value="last">
+                每月最后一天
+              </option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div v-if="modelValue.type === 'Yearly'" class="space-y-3">
+        <div class="flex items-center justify-between">
+          <label class="ml-4 text-sm text-gray-600 dark:text-gray-400">间隔年数</label>
+          <div class="w-2/3 flex items-center space-x-2">
+            <span class="text-sm text-gray-500">每</span>
+            <input
+              :value="getYearlyInterval()"
+              type="number"
+              min="1"
+              max="10"
+              class="flex-1 modal-input-select"
+              placeholder="1"
+              @input="handleYearlyIntervalChange"
+            >
+            <span class="text-sm text-gray-500">年</span>
+          </div>
+        </div>
+        <div class="flex items-center justify-between">
+          <label class="ml-4 text-sm text-gray-600 dark:text-gray-400">月份</label>
+          <div class="w-2/3">
+            <select
+              :value="getYearlyMonth()"
+              class="w-full modal-input-select"
+              @change="handleYearlyMonthChange"
+            >
+              <option
+                v-for="(month, index) in monthOptions"
+                :key="index + 1"
+                :value="index + 1"
+              >
+                {{ month }}
+              </option>
+            </select>
+          </div>
+        </div>
+        <div class="flex items-center justify-between">
+          <label class="ml-4 text-sm text-gray-600 dark:text-gray-400">日期</label>
+          <div class="w-2/3">
+            <select
+              :value="getYearlyDay()"
+              class="w-full modal-input-select"
+              @change="handleYearlyDayChange"
+            >
+              <option
+                v-for="day in getMaxDaysInMonth()"
+                :key="day"
+                :value="day"
+              >
+                {{ day }}
+              </option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- 自定义重复配置 -->
+      <div v-if="modelValue.type === 'Custom'" class="space-y-3">
+        <div class="flex items-start justify-between">
+          <label class="pt-2 text-sm text-gray-600 dark:text-gray-400">自定义描述</label>
+          <div class="w-2/3">
+            <textarea
+              :value="getCustomDescription()"
+              rows="2"
+              class="w-full modal-input-select"
+              placeholder="请描述重复规则，如：每月第二个周一、每季度末等"
+              maxlength="100"
+              @input="handleCustomDescriptionChange"
+            />
+            <div class="mt-1 text-right text-xs text-gray-500 dark:text-gray-400">
+              {{ getCustomDescription()?.length || 0 }}/100
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="helpText" class="mt-2 flex justify-end text-xs text-gray-500 dark:text-gray-400">
+      {{ helpText }}
+    </div>
+  </div>
+</template>
 
 <style scoped lang="postcss">
 .repeat-period-selector {
@@ -518,22 +536,22 @@ watch(
   .flex.items-start.justify-between {
     @apply flex-col items-stretch space-y-2;
   }
-  
+
   .w-2\/3 {
     @apply w-full;
   }
-  
+
   /* 移动端星期按钮优化 */
   .grid-cols-7 {
     @apply gap-1;
   }
-  
+
   .grid-cols-7 button {
     min-height: 2.5rem;
     min-width: 2.5rem;
     @apply text-sm;
   }
-  
+
   /* 确保标签在小屏幕下也能正确对齐 */
   .text-sm.text-gray-600 {
     @apply text-left mb-1;

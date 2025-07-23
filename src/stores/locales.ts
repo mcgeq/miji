@@ -254,9 +254,7 @@ export const useLocaleStore = defineStore('locale', () => {
 
   const currentLocaleInfo = computed(() => {
     const code = currentLocale.value;
-    return (
-      SUPPORTED_LOCALES.find(l => l.code === code) || SUPPORTED_LOCALES[0]
-    );
+    return SUPPORTED_LOCALES.find(l => l.code === code) || SUPPORTED_LOCALES[0];
   });
 
   const currentLocaleName = computed(() => currentLocaleInfo.value.name);

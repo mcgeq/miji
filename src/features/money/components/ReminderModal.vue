@@ -1,154 +1,3 @@
-<template>
-  <div class="modal-mask">
-    <div class="modal-mask-window-money">
-      <div class="flex justify-between items-center mb-4">
-        <h3 class="text-lg font-semibold">
-          {{ props.reminder ? t('financial.reminder.editReminder') : t('financial.reminder.addReminder') }}
-        </h3>
-        <button @click="closeModal" class="text-gray-500 hover:text-gray-700">
-          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-          </svg>
-        </button>
-      </div>
-      <form @submit.prevent="saveReminder">
-        <!-- 提醒标题 -->
-        <div class="mb-2 flex items-center justify-between">
-          <label class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            {{ t('financial.reminder.reminderTitle') }}
-            <span class="text-red-500 ml-1" aria-label="必填">*</span>
-          </label>
-          <input v-model="form.name" type="text" required class="w-2/3 modal-input-select"
-            :class="{ 'border-red-500': validationErrors.name }" :placeholder="t('validation.reminderTitle')"
-            @blur="validateName" />
-        </div>
-        <div v-if="validationErrors.name" class="text-sm text-red-600 dark:text-red-400 mb-2 text-right" role="alert">
-          {{ validationErrors.name }}
-        </div>
-
-        <ReminderSelector v-model="form.type" :label="t('financial.reminder.reminderType')"
-          :placeholder="t('common.placeholders.selectType')" :required="true" :error-message="validationErrors.type"
-          :show-grouped="true" :show-quick-select="true" :show-icons="true" :popular-only="false" :locale="locale"
-          width="2/3" quick-select-label="常用类型" :help-text="t('helpTexts.reminderType')" @change="handleTypeChange"
-          @validate="handleTypeValidation" />
-
-        <!-- 金额 -->
-        <div class="mt-2 mb-2 flex items-center justify-between">
-          <label class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            {{ t('financial.money') }}
-            <span v-if="isFinanceType" class="text-blue-500 ml-1">*</span>
-          </label>
-          <div class="w-2/3">
-            <div class="flex items-center space-x-2">
-              <div class="flex-1">
-                <input v-model.number="form.amount" type="number" step="0.01" min="0" class="w-full modal-input-select"
-                  :class="{ 'border-red-500': validationErrors.amount }" :placeholder="amountPlaceholder"
-                  :required="isFinanceType" @blur="validateAmount" />
-              </div>
-              <div class="flex-1 mt-2">
-                <CurrencySelector width="full" v-model="form.currency" />
-              </div>
-            </div>
-          </div>
-        </div>
-        <div v-if="validationErrors.amount" class="text-sm text-red-600 dark:text-red-400 mb-2 text-right" role="alert">
-          {{ validationErrors.amount }}
-        </div>
-
-        <!-- 提醒日期 -->
-        <div class="mb-2 flex items-center justify-between">
-          <label class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            {{ t('date.reminderDate') }}
-            <span class="text-red-500 ml-1" aria-label="必填">*</span>
-          </label>
-          <input v-model="form.remindDate" type="date" required class="w-2/3 modal-input-select"
-            :class="{ 'border-red-500': validationErrors.remindDate }" :min="today" @blur="validateRemindDate" />
-        </div>
-        <div v-if="validationErrors.remindDate" class="text-sm text-red-600 dark:text-red-400 mb-2 text-right"
-          role="alert">
-          {{ validationErrors.remindDate }}
-        </div>
-
-        <!-- 重复频率  -->
-        <RepeatPeriodSelector v-model="form.repeatPeriod" :label="t('date.repeat.frequency')"
-          :error-message="validationErrors.repeatPeriod" :help-text="t('helpTexts.repeatPeriod')"
-          @change="handleRepeatPeriodChange" @validate="handleRepeatPeriodValidation" />
-
-        <!-- 优先级 -->
-        <div class="mt-2 mb-2">
-          <PrioritySelector v-model="form.priority" :label="t('common.misc.priority')"
-            :error-message="validationErrors.priority" :locale="locale" :show-icons="true" width="2/3"
-            :help-text="t('helpTexts.priority')" @change="handlePriorityChange" @validate="handlePriorityValidation" />
-        </div>
-
-        <!-- 提前提醒 -->
-        <div class="mb-2 flex items-center justify-between">
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            {{ t('financial.reminder.advanceReminder') }}
-          </label>
-          <div class="flex items-center space-x-1 w-2/3">
-            <input v-model.number="form.advanceValue" type="number" min="0" max="999"
-              class="w-1/2 flex-1 modal-input-select" placeholder="0" />
-            <select v-model="form.advanceUnit" class="modal-input-select">
-              <option value="minutes">{{ t('units.minutes') }}</option>
-              <option value="hours">{{ t('units.hours') }}</option>
-              <option value="days">{{ t('units.days') }}</option>
-              <option value="weeks">{{ t('units.weeks') }}</option>
-            </select>
-          </div>
-        </div>
-
-        <!-- 颜色选择 -->
-        <div class="mb-2 flex items-center justify-between">
-          <label class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            {{ t('common.misc.colorMark') }}
-          </label>
-          <ColorSelector v-model="form.color" :color-names="colorNameMap" />
-        </div>
-
-        <!-- 启用状态 -->
-        <div class="mb-2">
-          <label class="flex items-center">
-            <input v-model="form.enabled" type="checkbox" class="mr-2" />
-            <span class="text-sm font-medium text-gray-700 dark:text-gray-300">
-              {{ t('financial.reminder.enabled') }}
-            </span>
-          </label>
-        </div>
-
-        <!-- 描述 -->
-        <div class="mb-4">
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            {{ t('common.misc.description') }}
-            <span class="text-gray-500">({{ t('common.misc.optional') }})</span>
-          </label>
-          <textarea v-model="form.description" rows="3" class="w-full modal-input-select"
-            :placeholder="descriptionPlaceholder" maxlength="200"></textarea>
-          <div class="text-xs text-gray-500 dark:text-gray-400 mt-1 text-right">
-            {{ t('common.misc.maxLength', { current: form.description?.length || 0, max: 200 }) }}
-          </div>
-        </div>
-
-        <!-- 操作按钮 -->
-        <div class="flex justify-center space-x-3">
-          <button type="button" @click="closeModal" class="modal-btn-x" :disabled="isSubmitting">
-            <X class="wh-5" />
-          </button>
-          <button type="submit" class="modal-btn-check" :disabled="!isFormValid || isSubmitting"
-            :class="{ 'opacity-50 cursor-not-allowed': !isFormValid || isSubmitting }">
-            <template v-if="isSubmitting">
-              <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-            </template>
-            <template v-else>
-              <Check class="wh-5" />
-            </template>
-          </button>
-        </div>
-      </form>
-    </div>
-  </div>
-</template>
-
 <script setup lang="ts">
 import { Check, X } from 'lucide-vue-next';
 import ColorSelector from '@/components/common/ColorSelector.vue';
@@ -157,25 +6,26 @@ import PrioritySelector from '@/components/common/PrioritySelector.vue';
 import ReminderSelector from '@/components/common/ReminderSelector.vue';
 import RepeatPeriodSelector from '@/components/common/RepeatPeriodSelector.vue';
 import { COLORS_MAP, DEFAULT_CURRENCY } from '@/constants/moneyConst';
-import type { RepeatPeriod } from '@/schema/common';
 import {
   CategorySchema,
-  type Priority,
+
   PrioritySchema,
   ReminderTypeSchema,
 } from '@/schema/common';
-import { BilReminder } from '@/schema/money';
 import { getLocalISODateTimeWithOffset } from '@/utils/date';
 import { uuid } from '@/utils/uuid';
+import type { Priority, RepeatPeriod } from '@/schema/common';
+import type { BilReminder } from '@/schema/money';
+
+const props = defineProps<Props>();
+
+const emit = defineEmits(['close', 'save']);
 
 const colorNameMap = ref(COLORS_MAP);
 
 interface Props {
   reminder: BilReminder | null;
 }
-
-const props = defineProps<Props>();
-const emit = defineEmits(['close', 'save']);
 
 // 假设已注入 t 函数
 const { t } = useI18n();
@@ -271,72 +121,81 @@ const descriptionPlaceholder = computed(() => {
 
   try {
     return t(placeholderKey);
-  } catch {
+  }
+  catch {
     return t(defaultKey);
   }
 });
 
 const isFormValid = computed(() => {
   return !!(
-    form.name.trim() &&
-    form.type &&
-    form.remindDate &&
-    form.priority &&
-    !validationErrors.name &&
-    !validationErrors.type &&
-    !validationErrors.amount &&
-    !validationErrors.remindDate &&
-    !validationErrors.repeatPeriod &&
-    !validationErrors.priority &&
-    (!isFinanceType.value || (form.amount && form.amount > 0))
+    form.name.trim()
+    && form.type
+    && form.remindDate
+    && form.priority
+    && !validationErrors.name
+    && !validationErrors.type
+    && !validationErrors.amount
+    && !validationErrors.remindDate
+    && !validationErrors.repeatPeriod
+    && !validationErrors.priority
+    && (!isFinanceType.value || (form.amount && form.amount > 0))
   );
 });
 
 // 验证方法
-const validateName = () => {
+function validateName() {
   if (!form.name.trim()) {
     validationErrors.name = t('validation.reminderTitle');
-  } else if (form.name.trim().length < 2) {
+  }
+  else if (form.name.trim().length < 2) {
     validationErrors.name = t('validation.titleMinLength');
-  } else if (form.name.trim().length > 50) {
+  }
+  else if (form.name.trim().length > 50) {
     validationErrors.name = t('validation.titleMaxLength');
-  } else {
+  }
+  else {
     validationErrors.name = '';
   }
-};
+}
 
-const validateAmount = () => {
+function validateAmount() {
   if (isFinanceType.value) {
     if (!form.amount || form.amount <= 0) {
       validationErrors.amount = t('validation.financeTypeAmount');
-    } else if (form.amount > 999999999) {
+    }
+    else if (form.amount > 999999999) {
       validationErrors.amount = t('validation.maxAmount');
-    } else {
+    }
+    else {
       validationErrors.amount = '';
     }
-  } else {
+  }
+  else {
     validationErrors.amount = '';
   }
-};
+}
 
-const validateRemindDate = () => {
+function validateRemindDate() {
   if (!form.remindDate) {
     validationErrors.remindDate = t('validation.reminderDate');
-  } else {
+  }
+  else {
     const selectedDate = new Date(form.remindDate);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
     if (selectedDate < today) {
       validationErrors.remindDate = t('validation.dateNotPast');
-    } else {
+    }
+    else {
       validationErrors.remindDate = '';
     }
   }
-};
+}
 
 // 事件处理
-const handleTypeChange = (value: string) => {
+function handleTypeChange(value: string) {
   validationErrors.type = '';
 
   // 根据不同类型设置智能默认值
@@ -400,17 +259,18 @@ const handleTypeChange = (value: string) => {
 
   // 验证金额字段
   validateAmount();
-};
+}
 
-const handleTypeValidation = (isValid: boolean) => {
+function handleTypeValidation(isValid: boolean) {
   if (!isValid) {
     validationErrors.type = t('validation.selectReminderType');
-  } else {
+  }
+  else {
     validationErrors.type = '';
   }
-};
+}
 
-const handleRepeatPeriodChange = (value: RepeatPeriod) => {
+function handleRepeatPeriodChange(value: RepeatPeriod) {
   // 确保 advanceValue 有值，如果为 undefined 或 null 则设为 0
   const currentAdvanceValue = form.advanceValue ?? 0;
 
@@ -418,11 +278,13 @@ const handleRepeatPeriodChange = (value: RepeatPeriod) => {
   if (value.type === 'Daily' && currentAdvanceValue > 12) {
     form.advanceValue = 1;
     form.advanceUnit = 'hours';
-  } else if (value.type === 'Weekly' && currentAdvanceValue > 168) {
+  }
+  else if (value.type === 'Weekly' && currentAdvanceValue > 168) {
     // 168小时 = 7天
     form.advanceValue = 1;
     form.advanceUnit = 'days';
-  } else if (value.type === 'Monthly' && currentAdvanceValue > 720) {
+  }
+  else if (value.type === 'Monthly' && currentAdvanceValue > 720) {
     // 720小时 = 30天
     form.advanceValue = 3;
     form.advanceUnit = 'days';
@@ -430,17 +292,18 @@ const handleRepeatPeriodChange = (value: RepeatPeriod) => {
 
   // 清除验证错误
   validationErrors.repeatPeriod = '';
-};
+}
 
-const handleRepeatPeriodValidation = (isValid: boolean) => {
+function handleRepeatPeriodValidation(isValid: boolean) {
   if (!isValid) {
     validationErrors.repeatPeriod = t('validation.repeatPeriodIncomplete');
-  } else {
+  }
+  else {
     validationErrors.repeatPeriod = '';
   }
-};
+}
 
-const handlePriorityChange = (value: Priority) => {
+function handlePriorityChange(value: Priority) {
   validationErrors.priority = '';
 
   // 确保 advanceValue 有值，如果为 undefined 或 null 则设为 0
@@ -477,21 +340,22 @@ const handlePriorityChange = (value: Priority) => {
       }
       break;
   }
-};
+}
 
-const handlePriorityValidation = (isValid: boolean) => {
+function handlePriorityValidation(isValid: boolean) {
   if (!isValid) {
     validationErrors.priority = t('validation.selectPriority');
-  } else {
+  }
+  else {
     validationErrors.priority = '';
   }
-};
+}
 
-const closeModal = () => {
+function closeModal() {
   emit('close');
-};
+}
 
-const saveReminder = async () => {
+async function saveReminder() {
   // 执行所有验证
   validateName();
   validateAmount();
@@ -514,18 +378,20 @@ const saveReminder = async () => {
 
     emit('save', reminderData);
     closeModal();
-  } catch (error) {
+  }
+  catch (error) {
     console.error(t('messages.saveFailed'), error);
     // 可以添加错误提示
-  } finally {
+  }
+  finally {
     isSubmitting.value = false;
   }
-};
+}
 
 // 监听器
 watch(
   () => props.reminder,
-  (newVal) => {
+  newVal => {
     if (newVal) {
       const clonedReminder = JSON.parse(JSON.stringify(newVal));
       // 确保 advanceValue 有默认值，使用空值合并运算符
@@ -568,13 +434,192 @@ watch(
 // 确保 advanceValue 始终有值
 watch(
   () => form.advanceValue,
-  (newVal) => {
+  newVal => {
     if (newVal === undefined || newVal === null) {
       form.advanceValue = 0;
     }
   },
 );
 </script>
+
+<template>
+  <div class="modal-mask">
+    <div class="modal-mask-window-money">
+      <div class="mb-4 flex items-center justify-between">
+        <h3 class="text-lg font-semibold">
+          {{ props.reminder ? t('financial.reminder.editReminder') : t('financial.reminder.addReminder') }}
+        </h3>
+        <button class="text-gray-500 hover:text-gray-700" @click="closeModal">
+          <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+      <form @submit.prevent="saveReminder">
+        <!-- 提醒标题 -->
+        <div class="mb-2 flex items-center justify-between">
+          <label class="mb-2 text-sm text-gray-700 font-medium dark:text-gray-300">
+            {{ t('financial.reminder.reminderTitle') }}
+            <span class="ml-1 text-red-500" aria-label="必填">*</span>
+          </label>
+          <input
+            v-model="form.name" type="text" required class="w-2/3 modal-input-select"
+            :class="{ 'border-red-500': validationErrors.name }" :placeholder="t('validation.reminderTitle')"
+            @blur="validateName"
+          >
+        </div>
+        <div v-if="validationErrors.name" class="mb-2 text-right text-sm text-red-600 dark:text-red-400" role="alert">
+          {{ validationErrors.name }}
+        </div>
+
+        <ReminderSelector
+          v-model="form.type" :label="t('financial.reminder.reminderType')"
+          :placeholder="t('common.placeholders.selectType')" :required="true" :error-message="validationErrors.type"
+          :show-grouped="true" :show-quick-select="true" :show-icons="true" :popular-only="false" :locale="locale"
+          width="2/3" quick-select-label="常用类型" :help-text="t('helpTexts.reminderType')" @change="handleTypeChange"
+          @validate="handleTypeValidation"
+        />
+
+        <!-- 金额 -->
+        <div class="mb-2 mt-2 flex items-center justify-between">
+          <label class="mb-2 text-sm text-gray-700 font-medium dark:text-gray-300">
+            {{ t('financial.money') }}
+            <span v-if="isFinanceType" class="ml-1 text-blue-500">*</span>
+          </label>
+          <div class="w-2/3">
+            <div class="flex items-center space-x-2">
+              <div class="flex-1">
+                <input
+                  v-model.number="form.amount" type="number" step="0.01" min="0" class="w-full modal-input-select"
+                  :class="{ 'border-red-500': validationErrors.amount }" :placeholder="amountPlaceholder"
+                  :required="isFinanceType" @blur="validateAmount"
+                >
+              </div>
+              <div class="mt-2 flex-1">
+                <CurrencySelector v-model="form.currency" width="full" />
+              </div>
+            </div>
+          </div>
+        </div>
+        <div v-if="validationErrors.amount" class="mb-2 text-right text-sm text-red-600 dark:text-red-400" role="alert">
+          {{ validationErrors.amount }}
+        </div>
+
+        <!-- 提醒日期 -->
+        <div class="mb-2 flex items-center justify-between">
+          <label class="mb-2 text-sm text-gray-700 font-medium dark:text-gray-300">
+            {{ t('date.reminderDate') }}
+            <span class="ml-1 text-red-500" aria-label="必填">*</span>
+          </label>
+          <input
+            v-model="form.remindDate" type="date" required class="w-2/3 modal-input-select"
+            :class="{ 'border-red-500': validationErrors.remindDate }" :min="today" @blur="validateRemindDate"
+          >
+        </div>
+        <div
+          v-if="validationErrors.remindDate" class="mb-2 text-right text-sm text-red-600 dark:text-red-400"
+          role="alert"
+        >
+          {{ validationErrors.remindDate }}
+        </div>
+
+        <!-- 重复频率  -->
+        <RepeatPeriodSelector
+          v-model="form.repeatPeriod" :label="t('date.repeat.frequency')"
+          :error-message="validationErrors.repeatPeriod" :help-text="t('helpTexts.repeatPeriod')"
+          @change="handleRepeatPeriodChange" @validate="handleRepeatPeriodValidation"
+        />
+
+        <!-- 优先级 -->
+        <div class="mb-2 mt-2">
+          <PrioritySelector
+            v-model="form.priority" :label="t('common.misc.priority')"
+            :error-message="validationErrors.priority" :locale="locale" :show-icons="true" width="2/3"
+            :help-text="t('helpTexts.priority')" @change="handlePriorityChange" @validate="handlePriorityValidation"
+          />
+        </div>
+
+        <!-- 提前提醒 -->
+        <div class="mb-2 flex items-center justify-between">
+          <label class="mb-2 block text-sm text-gray-700 font-medium dark:text-gray-300">
+            {{ t('financial.reminder.advanceReminder') }}
+          </label>
+          <div class="w-2/3 flex items-center space-x-1">
+            <input
+              v-model.number="form.advanceValue" type="number" min="0" max="999"
+              class="w-1/2 flex-1 modal-input-select" placeholder="0"
+            >
+            <select v-model="form.advanceUnit" class="modal-input-select">
+              <option value="minutes">
+                {{ t('units.minutes') }}
+              </option>
+              <option value="hours">
+                {{ t('units.hours') }}
+              </option>
+              <option value="days">
+                {{ t('units.days') }}
+              </option>
+              <option value="weeks">
+                {{ t('units.weeks') }}
+              </option>
+            </select>
+          </div>
+        </div>
+
+        <!-- 颜色选择 -->
+        <div class="mb-2 flex items-center justify-between">
+          <label class="mb-2 text-sm text-gray-700 font-medium dark:text-gray-300">
+            {{ t('common.misc.colorMark') }}
+          </label>
+          <ColorSelector v-model="form.color" :color-names="colorNameMap" />
+        </div>
+
+        <!-- 启用状态 -->
+        <div class="mb-2">
+          <label class="flex items-center">
+            <input v-model="form.enabled" type="checkbox" class="mr-2">
+            <span class="text-sm text-gray-700 font-medium dark:text-gray-300">
+              {{ t('financial.reminder.enabled') }}
+            </span>
+          </label>
+        </div>
+
+        <!-- 描述 -->
+        <div class="mb-4">
+          <label class="mb-2 block text-sm text-gray-700 font-medium dark:text-gray-300">
+            {{ t('common.misc.description') }}
+            <span class="text-gray-500">({{ t('common.misc.optional') }})</span>
+          </label>
+          <textarea
+            v-model="form.description" rows="3" class="w-full modal-input-select"
+            :placeholder="descriptionPlaceholder" maxlength="200"
+          />
+          <div class="mt-1 text-right text-xs text-gray-500 dark:text-gray-400">
+            {{ t('common.misc.maxLength', { current: form.description?.length || 0, max: 200 }) }}
+          </div>
+        </div>
+
+        <!-- 操作按钮 -->
+        <div class="flex justify-center space-x-3">
+          <button type="button" class="modal-btn-x" :disabled="isSubmitting" @click="closeModal">
+            <X class="wh-5" />
+          </button>
+          <button
+            type="submit" class="modal-btn-check" :disabled="!isFormValid || isSubmitting"
+            :class="{ 'opacity-50 cursor-not-allowed': !isFormValid || isSubmitting }"
+          >
+            <template v-if="isSubmitting">
+              <div class="h-5 w-5 animate-spin border-b-2 border-white rounded-full" />
+            </template>
+            <template v-else>
+              <Check class="wh-5" />
+            </template>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</template>
 
 <style scoped lang="postcss">
 /* 自定义样式 */

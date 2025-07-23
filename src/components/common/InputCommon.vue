@@ -1,19 +1,4 @@
 <!-- src/components/TodoInput.vue -->
-<template>
-  <div
-    class="flex items-center gap-3 p-3 rounded-xl bg-white shadow-md dark:bg-gray-800 transition-all duration-200 hover:shadow-lg">
-    <input v-model="newT" maxlength="1000" type="text" :placeholder="t('todos.inputPlace')" class="flex-1 bg-transparent outline-none text-base placeholder-gray-400
-             px-3 py-1 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200
-             dark:border-gray-600 dark:focus:border-blue-400 dark:focus:ring-blue-900/30
-             transition-all duration-200" />
-    <button :disabled="!newT.trim()" @click="handleAdd" class="px-3 py-1.5 bg-blue-500 text-white text-sm font-semibold rounded-full
-             flex items-center gap-1.5 shadow-md hover:bg-blue-600 active:scale-95
-             transition-transform duration-150 disabled:opacity-60 disabled:cursor-not-allowed">
-      <Plus class="w-5 h-5" />
-    </button>
-  </div>
-</template>
-
 <script lang="ts">
 import { Plus } from 'lucide-vue-next';
 
@@ -39,14 +24,14 @@ export default defineComponent({
 
     watch(
       () => props.modelValue,
-      (val) => {
+      val => {
         if (val !== newT.value) {
           newT.value = val;
         }
       },
     );
 
-    watch(newT, (val) => {
+    watch(newT, val => {
       emit('update:modelValue', val);
     });
 
@@ -66,3 +51,18 @@ export default defineComponent({
   },
 });
 </script>
+
+<template>
+  <div
+    class="flex items-center gap-3 rounded-xl bg-white p-3 shadow-md transition-all duration-200 dark:bg-gray-800 hover:shadow-lg"
+  >
+    <input
+      v-model="newT" maxlength="1000" type="text" :placeholder="t('todos.inputPlace')" class="flex-1 border border-gray-300 rounded-lg bg-transparent px-3 py-1 text-base outline-none transition-all duration-200 dark:border-gray-600 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:focus:border-blue-400 dark:focus:ring-blue-900/30 placeholder-gray-400"
+    >
+    <button
+      :disabled="!newT.trim()" class="flex items-center gap-1.5 rounded-full bg-blue-500 px-3 py-1.5 text-sm text-white font-semibold shadow-md transition-transform duration-150 active:scale-95 disabled:cursor-not-allowed hover:bg-blue-600 disabled:opacity-60" @click="handleAdd"
+    >
+      <Plus class="h-5 w-5" />
+    </button>
+  </div>
+</template>

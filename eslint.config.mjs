@@ -98,7 +98,7 @@ export default antfu({
     'style/object-curly-spacing': ['error', 'always'],
     'style/quotes': ['error', 'single', {
       'avoidEscape': true,
-      'allowTemplateLiterals': false
+      'allowTemplateLiterals': 'never'
     }]
   }
 });

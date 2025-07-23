@@ -1,12 +1,7 @@
-<template>
-  <GenericViewItem :entities="projectsMap" :component="GenericItem" displayKey="name" :readonly="false"
-    @update:entities="val => projectsMap = val" />
-</template>
-
 <script setup lang="ts">
 import GenericItem from '@/components/common/GenericItem.vue';
 import GenericViewItem from '@/components/common/GenericViewItem.vue';
-import { ProjectWithUsageStats } from '@/schema/todos';
+import type { ProjectWithUsageStats } from '@/schema/todos';
 
 const projectsMap = ref(
   new Map<string, ProjectWithUsageStats>([
@@ -51,3 +46,10 @@ const projectsMap = ref(
   ]),
 );
 </script>
+
+<template>
+  <GenericViewItem
+    :entities="projectsMap" :component="GenericItem" display-key="name" :readonly="false"
+    @update:entities="val => projectsMap = val"
+  />
+</template>

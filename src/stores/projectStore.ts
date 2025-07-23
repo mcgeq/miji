@@ -10,10 +10,11 @@
 // -----------------------------------------------------------------------------
 
 import { ref } from 'vue';
+import { ProjectSchema } from '../schema/todos';
 import { getLocalISODateTimeWithOffset } from '../utils/date';
 import { uuid } from '../utils/uuid';
 import { createWithDefaults } from '../utils/zodFactory';
-import { ProjectSchema, type Projects } from '../schema/todos';
+import type { Projects } from '../schema/todos';
 
 type ProjectSortByField = 'createdAt' | 'name';
 type SortOrder = 'asc' | 'desc';
@@ -34,8 +35,8 @@ interface ProjectFilterOptions {
 const projects = ref(new Map<string, Projects>());
 
 // 创建项目
-const createProject = (input?: Partial<Projects>): Projects =>
-  createWithDefaults(
+function createProject(input?: Partial<Projects>): Projects {
+  return createWithDefaults(
     ProjectSchema,
     {
       serialNum: () => uuid(38),
@@ -49,9 +50,10 @@ const createProject = (input?: Partial<Projects>): Projects =>
     },
     input,
   );
+}
 
 // 新增项目
-const addProject = (input?: Partial<Projects>): Projects => {
+function addProject(input?: Partial<Projects>): Projects {
   const project = createProject(input);
   if (projects.value.has(project.serialNum)) {
     throw new Error(
@@ -60,13 +62,10 @@ const addProject = (input?: Partial<Projects>): Projects => {
   }
   projects.value.set(project.serialNum, project);
   return project;
-};
+}
 
 // 更新项目
-const updateProject = (
-  serialNum: string,
-  input: Partial<Omit<Projects, 'serialNum' | 'createdAt'>>,
-): Projects => {
+function updateProject(serialNum: string, input: Partial<Omit<Projects, 'serialNum' | 'createdAt'>>): Projects {
   const existing = projects.value.get(serialNum);
   if (!existing) {
     throw new Error(`Project with serialNum ${serialNum} not found.`);
@@ -80,35 +79,35 @@ const updateProject = (
   });
   projects.value.set(serialNum, updated);
   return updated;
-};
+}
 
 // 删除项目
-const removeProject = (serialNum: string): boolean => {
+function removeProject(serialNum: string): boolean {
   return projects.value.delete(serialNum);
-};
+}
 
 // 清空所有项目
-const clearAllProjects = (): void => {
+function clearAllProjects(): void {
   projects.value.clear();
-};
+}
 
 // 获取单个项目
-const getProject = (serialNum: string): Projects | undefined => {
+function getProject(serialNum: string): Projects | undefined {
   return projects.value.get(serialNum);
-};
+}
 
 // 判断是否存在某项目
-const hasProject = (serialNum: string): boolean => {
+function hasProject(serialNum: string): boolean {
   return projects.value.has(serialNum);
-};
+}
 
 // 按名称查找项目
-const findProjectsByName = (name: string): Projects[] => {
-  return Array.from(projects.value.values()).filter((p) => p.name === name);
-};
+function findProjectsByName(name: string): Projects[] {
+  return Array.from(projects.value.values()).filter(p => p.name === name);
+}
 
 // 搜索项目
-const searchProjects = (options: ProjectFilterOptions = {}) => {
+function searchProjects(options: ProjectFilterOptions = {}) {
   const {
     keyword,
     name,
@@ -126,17 +125,19 @@ const searchProjects = (options: ProjectFilterOptions = {}) => {
   if (keyword?.trim()) {
     const lower = keyword.toLowerCase();
     results = results.filter(
-      (p) =>
-        p.name.toLowerCase().includes(lower) ||
-        p.description?.toLowerCase().includes(lower),
+      p =>
+        p.name.toLowerCase().includes(lower)
+        || p.description?.toLowerCase().includes(lower),
     );
   }
-  if (name) results = results.filter((p) => p.name === name);
+  if (name)
+    results = results.filter(p => p.name === name);
   if (description)
-    results = results.filter((p) => p.description === description);
-  if (ownerId) results = results.filter((p) => p.ownerId === ownerId);
+    results = results.filter(p => p.description === description);
+  if (ownerId)
+    results = results.filter(p => p.ownerId === ownerId);
   if (typeof isArchived === 'boolean')
-    results = results.filter((p) => p.isArchived === isArchived);
+    results = results.filter(p => p.isArchived === isArchived);
 
   results.sort((a, b) => {
     const valA = a[sortBy];
@@ -152,7 +153,7 @@ const searchProjects = (options: ProjectFilterOptions = {}) => {
   const paged = results.slice(offset, offset + limit);
 
   return { total, results: paged };
-};
+}
 
 export const projectsStore = {
   projects,

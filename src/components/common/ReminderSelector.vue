@@ -1,119 +1,12 @@
-<template>
-  <div class="reminder-selector">
-    <div class="mb-2 flex items-center justify-between">
-      <label
-        :for="inputId"
-        class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
-      >
-        {{ label }}
-        <span v-if="required" class="text-red-500 ml-1" aria-label="必填">*</span>
-      </label>
-      <!-- 基础选择器 -->
-      <select
-        v-if="!showGrouped"
-        :id="inputId"
-        v-model="selectedValue"
-        :required="required"
-        :disabled="disabled"
-        :class="selectClasses"
-        :aria-invalid="!!errorMessage"
-        :aria-describedby="errorMessage ? `${inputId}-error` : undefined"
-        @change="handleChange"
-        @blur="handleBlur"
-        @focus="handleFocus"
-      >
-        <option value="" disabled>{{ placeholder }}</option>
-        <option
-          v-for="type in displayTypes"
-          :key="type.code"
-          :value="type.code"
-        >
-          {{ getCurrentDisplayName(type) }}
-        </option>
-      </select>
-
-      <!-- 分组选择器 -->
-      <select
-        v-else
-        :id="inputId"
-        v-model="selectedValue"
-        :required="required"
-        :disabled="disabled"
-        :class="selectClasses"
-        :aria-invalid="!!errorMessage"
-        :aria-describedby="errorMessage ? `${inputId}-error` : undefined"
-        @change="handleChange"
-        @blur="handleBlur"
-        @focus="handleFocus"
-      >
-        <option value="" disabled>{{ placeholder }}</option>
-        <optgroup
-          v-for="(types, category) in groupedTypes"
-          :key="category"
-          :label="getCategoryName(category)"
-        >
-          <option
-            v-for="type in types"
-            :key="type.code"
-            :value="type.code"
-          >
-            {{ getCurrentDisplayName(type) }}
-          </option>
-        </optgroup>
-      </select>
-    </div>
-    <!-- 快捷选择按钮 -->
-    <div 
-      v-if="showQuickSelect && quickSelectTypes.length > 0" 
-      class="mb-2"
-      role="group"
-      :aria-label="quickSelectLabel"
-    >
-      <div class="text-xs text-gray-500 dark:text-gray-400 mb-1">
-        {{ quickSelectLabel }}：
-      </div>
-      <div class="flex flex-wrap gap-1">
-        <button
-          v-for="type in quickSelectTypes"
-          :key="type.code"
-          type="button"
-          class="quick-select-btn"
-          :class="{ 'quick-select-btn-active': selectedValue === type.code }"
-          :disabled="disabled"
-          @click="selectQuickType(type)"
-        >
-          {{ getQuickSelectDisplayName(type) }}
-        </button>
-      </div>
-    </div>
-    <!-- 错误提示 -->
-    <div
-      v-if="errorMessage"
-      :id="`${inputId}-error`"
-      class="text-sm text-red-600 dark:text-red-400 mt-1"
-      role="alert"
-      aria-live="polite"
-    >
-      {{ errorMessage }}
-    </div>
-    <!-- 帮助文本 -->
-    <div
-      v-if="helpText"
-      class="flex justify-end text-xs text-gray-500 dark:text-gray-400 mt-2"
-    >
-      {{ helpText }}
-    </div>
-  </div>
-</template>
-
 <script setup lang="ts">
-import { computed, ref, useId, watch, nextTick } from 'vue';
+import { computed, nextTick, ref, useId, watch } from 'vue';
 import {
+  CATEGORY_NAMES,
   DEFAULT_REMINDER_TYPES,
   POPULAR_REMINDER_TYPES,
-  CATEGORY_NAMES,
-  type ReminderTypeI18,
+
 } from '@/constants/commonConstant';
+import type { ReminderTypeI18 } from '@/constants/commonConstant';
 
 // 组件 Props 接口
 export interface ReminderSelectorProps {
@@ -185,8 +78,8 @@ const selectClasses = computed(() => {
     lg: 'input-lg',
   };
   const widthClasses = {
-    full: 'w-full',
-    auto: 'w-auto',
+    'full': 'w-full',
+    'auto': 'w-auto',
     '2/3': 'w-2/3',
     '1/2': 'w-1/2',
     '1/3': 'w-1/3',
@@ -219,8 +112,8 @@ const selectClasses = computed(() => {
 // 显示的提醒类型列表
 const displayTypes = computed(() => {
   if (props.popularOnly) {
-    return POPULAR_REMINDER_TYPES.filter((type) =>
-      props.reminderTypes.some((rt) => rt.code === type.code),
+    return POPULAR_REMINDER_TYPES.filter(type =>
+      props.reminderTypes.some(rt => rt.code === type.code),
     );
   }
   return props.reminderTypes;
@@ -228,11 +121,12 @@ const displayTypes = computed(() => {
 
 // 分组的提醒类型
 const groupedTypes = computed(() => {
-  if (!props.showGrouped) return {};
+  if (!props.showGrouped)
+    return {};
 
   const grouped: Record<string, ReminderTypeI18[]> = {};
 
-  displayTypes.value.forEach((type) => {
+  displayTypes.value.forEach(type => {
     const category = type.category || 'general';
     if (!grouped[category]) {
       grouped[category] = [];
@@ -251,14 +145,14 @@ const groupedTypes = computed(() => {
     'general',
   ];
 
-  categoryOrder.forEach((category) => {
+  categoryOrder.forEach(category => {
     if (grouped[category]) {
       sortedGrouped[category] = grouped[category];
     }
   });
 
   // 添加其他未排序的分类
-  Object.keys(grouped).forEach((category) => {
+  Object.keys(grouped).forEach(category => {
     if (!categoryOrder.includes(category)) {
       sortedGrouped[category] = grouped[category];
     }
@@ -273,43 +167,45 @@ const quickSelectTypes = computed(() => {
     return props.customQuickTypes;
   }
 
-  return POPULAR_REMINDER_TYPES.filter((type) =>
-    props.reminderTypes.some((rt) => rt.code === type.code),
+  return POPULAR_REMINDER_TYPES.filter(type =>
+    props.reminderTypes.some(rt => rt.code === type.code),
   ).slice(0, 6); // 限制显示数量
 });
 
 // 当前选中的类型对象
 const selectedType = computed(() => {
-  return props.reminderTypes.find((type) => type.code === selectedValue.value);
+  return props.reminderTypes.find(type => type.code === selectedValue.value);
 });
 
 // 验证状态
 const isValid = computed(() => {
-  if (!props.required) return true;
+  if (!props.required)
+    return true;
   return !!selectedValue.value;
 });
 
 // 工具方法
-const getCurrentDisplayName = (type: ReminderTypeI18): string => {
+function getCurrentDisplayName(type: ReminderTypeI18): string {
   const name = props.locale === 'zh-CN' ? type.nameZh : type.nameEn;
   return props.showIcons && type.icon ? `${type.icon} ${name}` : name;
-};
+}
 
 // 专门为快捷选择按钮准备的显示名称方法
-const getQuickSelectDisplayName = (type: ReminderTypeI18): string => {
+function getQuickSelectDisplayName(type: ReminderTypeI18): string {
   const name = props.locale === 'zh-CN' ? type.nameZh : type.nameEn;
   // 快捷选择按钮中总是显示图标
   return type.icon ? `${type.icon} ${name}` : name;
-};
+}
 
-const getCategoryName = (category: string): string => {
+function getCategoryName(category: string): string {
   const categoryInfo = CATEGORY_NAMES[category as keyof typeof CATEGORY_NAMES];
-  if (!categoryInfo) return category;
+  if (!categoryInfo)
+    return category;
   return props.locale === 'zh-CN' ? categoryInfo.zh : categoryInfo.en;
-};
+}
 
 // 事件处理
-const handleChange = (event: Event) => {
+function handleChange(event: Event) {
   const target = event.target as HTMLSelectElement;
   const value = target.value;
 
@@ -323,18 +219,18 @@ const handleChange = (event: Event) => {
   nextTick(() => {
     emit('validate', isValid.value);
   });
-};
+}
 
-const handleBlur = (event: FocusEvent) => {
+function handleBlur(event: FocusEvent) {
   emit('blur', event);
 
   // 失焦时触发验证
   nextTick(() => {
     emit('validate', isValid.value);
   });
-};
+}
 
-const handleFocus = (event: FocusEvent) => {
+function handleFocus(event: FocusEvent) {
   emit('focus', event);
 
   // 首次聚焦时的特殊处理
@@ -342,10 +238,11 @@ const handleFocus = (event: FocusEvent) => {
     isFirstFocus.value = false;
     // 可以在这里添加首次聚焦的逻辑
   }
-};
+}
 
-const selectQuickType = (type: ReminderTypeI18) => {
-  if (props.disabled || props.loading) return;
+function selectQuickType(type: ReminderTypeI18) {
+  if (props.disabled || props.loading)
+    return;
 
   selectedValue.value = type.code;
   emit('update:modelValue', type.code);
@@ -355,38 +252,38 @@ const selectQuickType = (type: ReminderTypeI18) => {
   nextTick(() => {
     emit('validate', isValid.value);
   });
-};
+}
 
 // 公共方法
-const focus = () => {
+function focus() {
   const selectElement = document.getElementById(inputId);
   if (selectElement) {
     selectElement.focus();
   }
-};
+}
 
-const blur = () => {
+function blur() {
   const selectElement = document.getElementById(inputId);
   if (selectElement) {
     selectElement.blur();
   }
-};
+}
 
-const validate = (): boolean => {
+function validate(): boolean {
   return isValid.value;
-};
+}
 
-const reset = () => {
+function reset() {
   selectedValue.value = '';
   emit('update:modelValue', '');
   emit('change', '', undefined);
   emit('validate', false);
-};
+}
 
 // 监听器
 watch(
   () => props.modelValue,
-  (newValue) => {
+  newValue => {
     selectedValue.value = newValue;
   },
   { immediate: true },
@@ -395,7 +292,7 @@ watch(
 // 监听验证状态变化
 watch(
   isValid,
-  (valid) => {
+  valid => {
     emit('validate', valid);
   },
   { immediate: true },
@@ -412,10 +309,122 @@ defineExpose({
 });
 </script>
 
+<template>
+  <div class="reminder-selector">
+    <div class="mb-2 flex items-center justify-between">
+      <label
+        :for="inputId"
+        class="mb-2 text-sm text-gray-700 font-medium dark:text-gray-300"
+      >
+        {{ label }}
+        <span v-if="required" class="ml-1 text-red-500" aria-label="必填">*</span>
+      </label>
+      <!-- 基础选择器 -->
+      <select
+        v-if="!showGrouped"
+        :id="inputId"
+        v-model="selectedValue"
+        :required="required"
+        :disabled="disabled"
+        :class="selectClasses"
+        :aria-invalid="!!errorMessage"
+        :aria-describedby="errorMessage ? `${inputId}-error` : undefined"
+        @change="handleChange"
+        @blur="handleBlur"
+        @focus="handleFocus"
+      >
+        <option value="" disabled>
+          {{ placeholder }}
+        </option>
+        <option
+          v-for="type in displayTypes"
+          :key="type.code"
+          :value="type.code"
+        >
+          {{ getCurrentDisplayName(type) }}
+        </option>
+      </select>
+
+      <!-- 分组选择器 -->
+      <select
+        v-else
+        :id="inputId"
+        v-model="selectedValue"
+        :required="required"
+        :disabled="disabled"
+        :class="selectClasses"
+        :aria-invalid="!!errorMessage"
+        :aria-describedby="errorMessage ? `${inputId}-error` : undefined"
+        @change="handleChange"
+        @blur="handleBlur"
+        @focus="handleFocus"
+      >
+        <option value="" disabled>
+          {{ placeholder }}
+        </option>
+        <optgroup
+          v-for="(types, category) in groupedTypes"
+          :key="category"
+          :label="getCategoryName(category)"
+        >
+          <option
+            v-for="type in types"
+            :key="type.code"
+            :value="type.code"
+          >
+            {{ getCurrentDisplayName(type) }}
+          </option>
+        </optgroup>
+      </select>
+    </div>
+    <!-- 快捷选择按钮 -->
+    <div
+      v-if="showQuickSelect && quickSelectTypes.length > 0"
+      class="mb-2"
+      role="group"
+      :aria-label="quickSelectLabel"
+    >
+      <div class="mb-1 text-xs text-gray-500 dark:text-gray-400">
+        {{ quickSelectLabel }}：
+      </div>
+      <div class="flex flex-wrap gap-1">
+        <button
+          v-for="type in quickSelectTypes"
+          :key="type.code"
+          type="button"
+          class="quick-select-btn"
+          :class="{ 'quick-select-btn-active': selectedValue === type.code }"
+          :disabled="disabled"
+          @click="selectQuickType(type)"
+        >
+          {{ getQuickSelectDisplayName(type) }}
+        </button>
+      </div>
+    </div>
+    <!-- 错误提示 -->
+    <div
+      v-if="errorMessage"
+      :id="`${inputId}-error`"
+      class="mt-1 text-sm text-red-600 dark:text-red-400"
+      role="alert"
+      aria-live="polite"
+    >
+      {{ errorMessage }}
+    </div>
+    <!-- 帮助文本 -->
+    <div
+      v-if="helpText"
+      class="mt-2 flex justify-end text-xs text-gray-500 dark:text-gray-400"
+    >
+      {{ helpText }}
+    </div>
+  </div>
+</template>
+
 <style scoped lang="postcss">
 /* 快捷选择按钮样式 */
 .quick-select-btn {
-  @apply text-xs px-2 py-1 rounded-md border border-gray-200 dark:border-gray-600 
+  @apply text-xs px-2 py-1 rounded-md border border-gray-200 dark:border-gray-600
          bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300
          hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-300 dark:hover:border-gray-500
          focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
@@ -424,7 +433,7 @@ defineExpose({
 }
 
 .quick-select-btn-active {
-  @apply bg-blue-50 dark:bg-blue-900/30 border-blue-200 dark:border-blue-600 
+  @apply bg-blue-50 dark:bg-blue-900/30 border-blue-200 dark:border-blue-600
          text-blue-700 dark:text-blue-300;
 }
 
@@ -451,12 +460,12 @@ select:focus-visible {
     flex-direction: column;
     align-items: flex-start;
   }
-  
+
   .reminder-selector select {
     width: 100% !important;
     margin-top: 0.5rem;
   }
-  
+
   .quick-select-btn {
     @apply text-xs px-1.5 py-0.5;
   }

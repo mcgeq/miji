@@ -1,139 +1,3 @@
-<template>
-  <div class="period-stats-dashboard space-y-6">
-    <!-- 主要统计信息 -->
-    <div class="stats-grid">
-      <div class="stat-card current-phase">
-        <div class="stat-header">
-          <CalendarHeart class="wh-6 text-pink-500" />
-          <h3 class="stat-title">当前阶段</h3>
-        </div>
-        <div class="stat-content">
-          <div class="stat-value">{{ phaseLabel }}</div>
-          <div class="stat-description">{{ phaseDescription }}</div>
-        </div>
-        <div class="phase-indicator">
-          <div class="phase-progress" :style="{ width: `${phaseProgress}%` }"></div>
-        </div>
-      </div>
-
-      <div class="stat-card next-period">
-        <div class="stat-header">
-          <CalendarClock class="wh-6 text-blue-500" /> 
-          <h3 class="stat-title">下次经期</h3>
-        </div>
-        <div class="stat-content">
-          <div class="stat-value">{{ nextPeriodText }}</div>
-          <div class="stat-description">{{ nextPeriodDate }}</div>
-        </div>
-        <div class="countdown-ring">
-          <svg class="countdown-svg" width="40" height="40">
-            <circle cx="20" cy="20" r="16" stroke="currentColor" stroke-width="2" fill="none"
-              class="text-gray-300 dark:text-gray-600" />
-            <circle cx="20" cy="20" r="16" stroke="currentColor" stroke-width="2" fill="none" class="text-blue-500"
-              :stroke-dasharray="countdownCircumference" :stroke-dashoffset="countdownOffset" stroke-linecap="round"
-              transform="rotate(-90 20 20)" />
-          </svg>
-          <span class="countdown-text">{{ stats.daysUntilNext }}</span>
-        </div>
-      </div>
-
-      <div class="stat-card cycle-info">
-        <div class="stat-header">
-          <CalendarSync class="wh-6 text-green-500" />
-          <h3 class="stat-title">周期信息</h3>
-        </div>
-        <div class="stat-content">
-          <div class="cycle-stats">
-            <div class="cycle-stat">
-              <span class="cycle-label">平均周期</span>
-              <span class="cycle-value">{{ stats.averageCycleLength }}天</span>
-            </div>
-            <div class="cycle-stat">
-              <span class="cycle-label">平均经期</span>
-              <span class="cycle-value">{{ stats.averagePeriodLength }}天</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="stat-card trends">
-        <div class="stat-header">
-          <TrendingUp class="wh-6 text-purple-500" />
-          <h3 class="stat-title">趋势分析</h3>
-        </div>
-        <div class="stat-content">
-          <div class="trend-item">
-            <span class="trend-label">周期规律性</span>
-            <div class="trend-indicator">
-              <div class="trend-bar" :style="{ width: `${cycleRegularity}%` }"></div>
-              <span class="trend-text">{{ cycleRegularityText }}</span>
-            </div>
-          </div>
-          <div class="trend-item">
-            <span class="trend-label">症状严重度</span>
-            <div class="trend-indicator">
-              <div class="trend-bar severity" :style="{ width: `${symptomSeverity}%` }"></div>
-              <span class="trend-text">{{ symptomSeverityText }}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 最近记录 -->
-    <div class="recent-records card-base p-4">
-      <div class="flex-between mb-4">
-        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">最近记录</h3>
-        <button @click="emit('add-record')" class="btn-primary text-sm">
-          <Plus class="wh-5" />
-        </button>
-      </div>
-
-      <div v-if="periodStore.periodRecords.length === 0" class="empty-state">
-        <i class="i-tabler-calendar-off wh-12 text-gray-400 mx-auto mb-3" />
-        <p class="text-gray-500 dark:text-gray-400 text-center">
-          还没有经期记录，<button @click="emit('add-record')" class="text-blue-500 hover:underline">点击添加</button>
-        </p>
-      </div>
-
-      <div v-else class="space-y-3">
-        <div v-for="record in recentRecords" :key="record.serialNum" class="record-item"
-          @click="$emit('edit-record', record)">
-          <div class="record-date">
-            <div class="record-month">{{ formatMonth(record.startDate) }}</div>
-            <div class="record-day">{{ formatDay(record.startDate) }}</div>
-          </div>
-          <div class="record-info">
-            <div class="record-duration">
-              持续 {{ calculateDuration(record) }} 天
-            </div>
-            <div class="record-cycle">
-              {{ calculateCycleFromPrevious(record) }}
-            </div>
-          </div>
-          <div class="record-actions">
-            <i class="i-tabler-chevron-right wh-4 text-gray-400" />
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 健康建议 -->
-    <div class="health-tips card-base p-4">
-      <div class="flex items-center gap-2 mb-3">
-        <i class="i-tabler-bulb wh-5 text-yellow-500" />
-        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">健康建议</h3>
-      </div>
-      <div class="space-y-2">
-        <div v-for="tip in healthTips" :key="tip.id" class="tip-item">
-          <i :class="tip.icon" class="wh-4 text-blue-500 flex-shrink-0 mt-0.5" />
-          <span class="text-sm text-gray-700 dark:text-gray-300">{{ tip.text }}</span>
-        </div>
-      </div>
-    </div>
-  </div>
-</template>
-
 <script setup lang="ts">
 import {
   CalendarClock,
@@ -142,13 +6,13 @@ import {
   Plus,
   TrendingUp,
 } from 'lucide-vue-next';
-import type {PeriodRecords} from '@/schema/health/period';
-import {usePeriodStore} from '@/stores/periodStore';
+import { usePeriodStore } from '@/stores/periodStore';
+import type { PeriodRecords } from '@/schema/health/period';
 
 // Emits
 const emit = defineEmits<{
-  'add-record': [];
-  'edit-record': [record: PeriodRecords];
+  addRecord: [];
+  editRecord: [record: PeriodRecords];
 }>();
 
 // Store
@@ -214,9 +78,12 @@ const phaseProgress = computed(() => {
 
 const nextPeriodText = computed(() => {
   const days = stats.value.daysUntilNext;
-  if (days === 0) return '今天';
-  if (days === 1) return '明天';
-  if (days < 0) return '已延迟';
+  if (days === 0)
+    return '今天';
+  if (days === 1)
+    return '明天';
+  if (days < 0)
+    return '已延迟';
   return `${days}天后`;
 });
 
@@ -231,29 +98,30 @@ const nextPeriodDate = computed(() => {
 const countdownCircumference = computed(() => 2 * Math.PI * 16);
 
 const countdownOffset = computed(() => {
-  const progress =
-    Math.max(0, stats.value.daysUntilNext) / stats.value.averageCycleLength;
+  const progress
+    = Math.max(0, stats.value.daysUntilNext) / stats.value.averageCycleLength;
   return countdownCircumference.value * (1 - progress);
 });
 
 const cycleRegularity = computed(() => {
   // 计算周期规律性（基于标准差）
   const records = periodStore.periodRecords;
-  if (records.length < 3) return 50;
+  if (records.length < 3)
+    return 50;
 
   const cycles: number[] = [];
   for (let i = 1; i < records.length; i++) {
     const current = new Date(records[i].startDate);
     const previous = new Date(records[i - 1].startDate);
-    const cycleDays =
-      (current.getTime() - previous.getTime()) / (1000 * 60 * 60 * 24);
+    const cycleDays
+      = (current.getTime() - previous.getTime()) / (1000 * 60 * 60 * 24);
     cycles.push(cycleDays);
   }
 
   const average = cycles.reduce((sum, cycle) => sum + cycle, 0) / cycles.length;
-  const variance =
-    cycles.reduce((sum, cycle) => sum + Math.pow(cycle - average, 2), 0) /
-    cycles.length;
+  const variance
+    = cycles.reduce((sum, cycle) => sum + (cycle - average) ** 2, 0)
+      / cycles.length;
   const standardDeviation = Math.sqrt(variance);
 
   // 标准差越小，规律性越高
@@ -263,9 +131,12 @@ const cycleRegularity = computed(() => {
 
 const cycleRegularityText = computed(() => {
   const regularity = cycleRegularity.value;
-  if (regularity >= 80) return '非常规律';
-  if (regularity >= 60) return '较为规律';
-  if (regularity >= 40) return '一般';
+  if (regularity >= 80)
+    return '非常规律';
+  if (regularity >= 60)
+    return '较为规律';
+  if (regularity >= 40)
+    return '一般';
   return '不太规律';
 });
 
@@ -276,7 +147,8 @@ const symptomSeverity = computed(() => {
     (sum, count) => sum + count,
     0,
   );
-  if (totalSymptoms === 0) return 20;
+  if (totalSymptoms === 0)
+    return 20;
 
   // 简化计算：症状越多，严重度越高
   return Math.min(
@@ -287,9 +159,12 @@ const symptomSeverity = computed(() => {
 
 const symptomSeverityText = computed(() => {
   const severity = symptomSeverity.value;
-  if (severity >= 80) return '较重';
-  if (severity >= 60) return '中等';
-  if (severity >= 40) return '轻度';
+  if (severity >= 80)
+    return '较重';
+  if (severity >= 60)
+    return '中等';
+  if (severity >= 40)
+    return '轻度';
   return '很少';
 });
 
@@ -331,9 +206,9 @@ const healthTips = computed(() => {
   const phase = stats.value.currentPhase;
   if (phase === 'Menstrual') {
     return [
-      {id: 1, icon: 'i-tabler-cup', text: '多喝温水，避免冷饮'},
-      {id: 2, icon: 'i-tabler-bed', text: '充分休息，避免剧烈运动'},
-      {id: 3, icon: 'i-tabler-flame', text: '注意保暖，特别是腹部'},
+      { id: 1, icon: 'i-tabler-cup', text: '多喝温水，避免冷饮' },
+      { id: 2, icon: 'i-tabler-bed', text: '充分休息，避免剧烈运动' },
+      { id: 3, icon: 'i-tabler-flame', text: '注意保暖，特别是腹部' },
     ];
   }
 
@@ -341,25 +216,25 @@ const healthTips = computed(() => {
 });
 
 // Methods
-const formatMonth = (dateStr: string) => {
+function formatMonth(dateStr: string) {
   const date = new Date(dateStr);
   return `${date.getMonth() + 1}月`;
-};
+}
 
-const formatDay = (dateStr: string) => {
+function formatDay(dateStr: string) {
   const date = new Date(dateStr);
   return date.getDate();
-};
+}
 
-const calculateDuration = (record: PeriodRecords) => {
+function calculateDuration(record: PeriodRecords) {
   const start = new Date(record.startDate);
   const end = new Date(record.endDate);
   return (
     Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1
   );
-};
+}
 
-const calculateCycleFromPrevious = (record: PeriodRecords) => {
+function calculateCycleFromPrevious(record: PeriodRecords) {
   const records = periodStore.periodRecords
     .slice()
     .sort(
@@ -367,8 +242,9 @@ const calculateCycleFromPrevious = (record: PeriodRecords) => {
         new Date(a.startDate).getTime() - new Date(b.startDate).getTime(),
     );
 
-  const index = records.findIndex((r) => r.serialNum === record.serialNum);
-  if (index <= 0) return '首次记录';
+  const index = records.findIndex(r => r.serialNum === record.serialNum);
+  if (index <= 0)
+    return '首次记录';
 
   const current = new Date(record.startDate);
   const previous = new Date(records[index - 1].startDate);
@@ -377,8 +253,176 @@ const calculateCycleFromPrevious = (record: PeriodRecords) => {
   );
 
   return `周期 ${cycleDays} 天`;
-};
+}
 </script>
+
+<template>
+  <div class="period-stats-dashboard space-y-6">
+    <!-- 主要统计信息 -->
+    <div class="stats-grid">
+      <div class="stat-card current-phase">
+        <div class="stat-header">
+          <CalendarHeart class="wh-6 text-pink-500" />
+          <h3 class="stat-title">
+            当前阶段
+          </h3>
+        </div>
+        <div class="stat-content">
+          <div class="stat-value">
+            {{ phaseLabel }}
+          </div>
+          <div class="stat-description">
+            {{ phaseDescription }}
+          </div>
+        </div>
+        <div class="phase-indicator">
+          <div class="phase-progress" :style="{ width: `${phaseProgress}%` }" />
+        </div>
+      </div>
+
+      <div class="stat-card next-period">
+        <div class="stat-header">
+          <CalendarClock class="wh-6 text-blue-500" />
+          <h3 class="stat-title">
+            下次经期
+          </h3>
+        </div>
+        <div class="stat-content">
+          <div class="stat-value">
+            {{ nextPeriodText }}
+          </div>
+          <div class="stat-description">
+            {{ nextPeriodDate }}
+          </div>
+        </div>
+        <div class="countdown-ring">
+          <svg class="countdown-svg" width="40" height="40">
+            <circle
+              cx="20" cy="20" r="16" stroke="currentColor" stroke-width="2" fill="none"
+              class="text-gray-300 dark:text-gray-600"
+            />
+            <circle
+              cx="20" cy="20" r="16" stroke="currentColor" stroke-width="2" fill="none" class="text-blue-500"
+              :stroke-dasharray="countdownCircumference" :stroke-dashoffset="countdownOffset" stroke-linecap="round"
+              transform="rotate(-90 20 20)"
+            />
+          </svg>
+          <span class="countdown-text">{{ stats.daysUntilNext }}</span>
+        </div>
+      </div>
+
+      <div class="stat-card cycle-info">
+        <div class="stat-header">
+          <CalendarSync class="wh-6 text-green-500" />
+          <h3 class="stat-title">
+            周期信息
+          </h3>
+        </div>
+        <div class="stat-content">
+          <div class="cycle-stats">
+            <div class="cycle-stat">
+              <span class="cycle-label">平均周期</span>
+              <span class="cycle-value">{{ stats.averageCycleLength }}天</span>
+            </div>
+            <div class="cycle-stat">
+              <span class="cycle-label">平均经期</span>
+              <span class="cycle-value">{{ stats.averagePeriodLength }}天</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="stat-card trends">
+        <div class="stat-header">
+          <TrendingUp class="wh-6 text-purple-500" />
+          <h3 class="stat-title">
+            趋势分析
+          </h3>
+        </div>
+        <div class="stat-content">
+          <div class="trend-item">
+            <span class="trend-label">周期规律性</span>
+            <div class="trend-indicator">
+              <div class="trend-bar" :style="{ width: `${cycleRegularity}%` }" />
+              <span class="trend-text">{{ cycleRegularityText }}</span>
+            </div>
+          </div>
+          <div class="trend-item">
+            <span class="trend-label">症状严重度</span>
+            <div class="trend-indicator">
+              <div class="trend-bar severity" :style="{ width: `${symptomSeverity}%` }" />
+              <span class="trend-text">{{ symptomSeverityText }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 最近记录 -->
+    <div class="recent-records card-base p-4">
+      <div class="mb-4 flex-between">
+        <h3 class="text-lg text-gray-900 font-semibold dark:text-white">
+          最近记录
+        </h3>
+        <button class="btn-primary text-sm" @click="emit('addRecord')">
+          <Plus class="wh-5" />
+        </button>
+      </div>
+
+      <div v-if="periodStore.periodRecords.length === 0" class="empty-state">
+        <i class="i-tabler-calendar-off mx-auto mb-3 wh-12 text-gray-400" />
+        <p class="text-center text-gray-500 dark:text-gray-400">
+          还没有经期记录，<button class="text-blue-500 hover:underline" @click="emit('addRecord')">
+            点击添加
+          </button>
+        </p>
+      </div>
+
+      <div v-else class="space-y-3">
+        <div
+          v-for="record in recentRecords" :key="record.serialNum" class="record-item"
+          @click="$emit('editRecord', record)"
+        >
+          <div class="record-date">
+            <div class="record-month">
+              {{ formatMonth(record.startDate) }}
+            </div>
+            <div class="record-day">
+              {{ formatDay(record.startDate) }}
+            </div>
+          </div>
+          <div class="record-info">
+            <div class="record-duration">
+              持续 {{ calculateDuration(record) }} 天
+            </div>
+            <div class="record-cycle">
+              {{ calculateCycleFromPrevious(record) }}
+            </div>
+          </div>
+          <div class="record-actions">
+            <i class="i-tabler-chevron-right wh-4 text-gray-400" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 健康建议 -->
+    <div class="health-tips card-base p-4">
+      <div class="mb-3 flex items-center gap-2">
+        <i class="i-tabler-bulb wh-5 text-yellow-500" />
+        <h3 class="text-lg text-gray-900 font-semibold dark:text-white">
+          健康建议
+        </h3>
+      </div>
+      <div class="space-y-2">
+        <div v-for="tip in healthTips" :key="tip.id" class="tip-item">
+          <i :class="tip.icon" class="mt-0.5 wh-4 flex-shrink-0 text-blue-500" />
+          <span class="text-sm text-gray-700 dark:text-gray-300">{{ tip.text }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
 
 <style scoped lang="postcss">
 .period-stats-dashboard {

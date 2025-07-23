@@ -1,202 +1,3 @@
-<template>
-  <div class="period-daily-form card-base p-6">
-    <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-6">
-      {{ isEditing ? t('period.forms.editDaily') : t('period.forms.recordDaily') }}
-    </h2>
-
-    <form @submit.prevent="handleSubmit" class="space-y-6">
-      <!-- 日期选择 -->
-      <div class="form-group flex items-center justify-between" :title="t('period.fields.date')">
-        <label class="form-label">
-          <CalendarCheck class="wh-5" />
-        </label>
-        <input v-model="formData.date" type="date" class="w-3/4 modal-input-select" :max="today" required
-          :disabled="isEditing" />
-        <div v-if="getFieldErrors('date').length > 0" class="form-error">
-          {{ getFieldErrors('date')[0] }}
-        </div>
-      </div>
-
-      <!-- 经期流量 -->
-      <div class="form-group flex items-center justify-between">
-        <label class="form-label" :title="t('period.fields.flowLevel')">
-          <Droplet class="wh-5" />
-        </label>
-        <div class="flex gap-2 w-3/4">
-          <button v-for="level in flowLevels" :key="level.value" type="button" @click="formData.flowLevel = level.value"
-            class="flex-1 p-3 rounded-lg border transition-all" :class="[
-              formData.flowLevel === level.value
-                ? 'border-red-500 bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400'
-                : 'border-gray-300 hover:border-gray-400 dark:border-gray-600 dark:hover:border-gray-500'
-            ]">
-            <div class="flex justify-center" :title="level.label">
-              <component :is="level.icon" class="wh-5" />
-            </div>
-          </button>
-        </div>
-      </div>
-
-      <!-- 心情状态 -->
-      <div class="form-group flex justify-center justify-between">
-        <label class="form-label" :title="t('period.fields.mood')">
-          <Smile class="wh-5" />
-        </label>
-        <div class="grid grid-cols-6 gap-2">
-          <button v-for="mood in moods" :key="mood.value" type="button" @click="formData.mood = mood.value"
-            class="p-1 rounded-lg border transition-all text-center" :class="[
-              formData.mood === mood.value
-                ? 'border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
-                : 'border-gray-300 hover:border-gray-400 dark:border-gray-600 dark:hover:border-gray-500'
-            ]">
-            <div class="flex justify-center" :title="mood.label">
-              <component :is="mood.icon" class="wh-5 mb-1" />
-            </div>
-          </button>
-        </div>
-      </div>
-
-      <!-- 运动强度 -->
-      <div class="form-group">
-        <div class="flex items-center justify-between">
-          <label class="form-label" :title="t('period.fields.exerciseIntensity')">
-            <Dumbbell class="wh-5" />
-          </label>
-          <div class="flex gap-2">
-            <button v-for="intensity in exerciseIntensities" :key="intensity.value" type="button"
-              @click="formData.exerciseIntensity = intensity.value"
-              class="flex-1 p-1 rounded-lg justify-center border transition-all" :class="[
-                formData.exerciseIntensity === intensity.value
-                  ? 'border-green-500 bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-                  : 'border-gray-300 hover:border-gray-400 dark:border-gray-600 dark:hover:border-gray-500'
-              ]">
-              <div class="flex justify-center" :title="intensity.label">
-                <component :is="intensity.icon" class="wh-5" />
-              </div>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <!-- 饮食记录 -->
-      <div class="form-group">
-        <label class="form-label" :title="t('period.fields.diet')">
-          <Utensils class="wh-5" />
-        </label>
-        <textarea v-model="formData.diet" class="input-base w-full h-20 resize-none"
-          :placeholder="t('period.placeholders.dietRecord')" required />
-        <div v-if="getFieldErrors('diet').length > 0" class="form-error">
-          {{ getFieldErrors('diet')[0] }}
-        </div>
-      </div>
-
-      <!-- 饮水量 -->
-      <div class="form-group">
-        <div class="flex items-center justify-between">
-          <label class="form-label w-1/3" :title="t('period.fields.waterIntake')">
-            <Waves class="wh-5" />
-          </label>
-          <input v-model.number="formData.waterIntake" type="number" class="input-base"
-            :placeholder="t('period.placeholders.waterIntakeExample')" min="0" max="5000" step="100" />
-        </div>
-        <div class="flex items-center gap-4">
-          <div class="flex gap-1">
-            <button v-for="preset in waterPresets" :key="preset" type="button" @click="formData.waterIntake = preset"
-              class="btn-secondary text-sm px-2 py-1">
-              {{ preset }}ml
-            </button>
-          </div>
-        </div>
-        <div v-if="getFieldErrors('waterIntake').length > 0" class="form-error">
-          {{ getFieldErrors('waterIntake')[0] }}
-        </div>
-      </div>
-
-      <!-- 睡眠时间 -->
-      <div class="form-group flex items-center justify-between">
-        <label class="form-label w-1/8" :title="t('period.fields.sleepHours')">
-          <BedDouble class="wh-5" />
-        </label>
-        <div class="flex items-center gap-1">
-          <input v-model.number="formData.sleepHours" type="number" class="input-base flex-1"
-            :placeholder="t('period.placeholders.sleepExample')" min="0" max="24" step="0.5" />
-          <div class="flex gap-1">
-            <button v-for="preset in sleepPresets" :key="preset" type="button" @click="formData.sleepHours = preset"
-              class="btn-secondary text-sm px-3 py-1">
-              {{ preset }}h
-            </button>
-          </div>
-        </div>
-        <div v-if="getFieldErrors('sleepHours').length > 0" class="form-error">
-          {{ getFieldErrors('sleepHours')[0] }}
-        </div>
-      </div>
-
-      <!-- 性生活 -->
-      <div class="form-group">
-        <div class="flex items-center justify-between mb-3">
-          <label class="form-label" :title="t('period.fields.sexualActivity')">
-            <VenusAndMars class="wh-5" />
-          </label>
-          <div class="flex gap-4">
-            <label class="flex items-center gap-2 cursor-pointer">
-              <input v-model="formData.sexualActivity" type="radio" :value="true" class="radio-base" />
-              <span class="text-sm">{{ t('common.misc.yes') }}</span>
-            </label>
-            <label class="flex items-center gap-2 cursor-pointer">
-              <input v-model="formData.sexualActivity" type="radio" :value="false" class="radio-base" />
-              <span class="text-sm">{{ t('common.misc.no') }}</span>
-            </label>
-          </div>
-        </div>
-
-        <!-- 避孕措施选项 - 仅在有性生活时显示 -->
-        <div v-if="formData.sexualActivity" class="ml-6 space-y-2 border-l-2 border-gray-200 dark:border-gray-600 pl-4">
-          <div class="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
-            {{ t('period.fields.contraceptionMethod') }}
-          </div>
-          <div class="grid grid-cols-3 gap-1">
-            <label v-for="method in contraceptionMethods" :key="method.value" :title="method.label"
-              class="flex items-center justify-center cursor-pointer p-1.5 rounded border transition-colors" :class="[
-                formData.contraceptionMethod === method.value
-                  ? 'border-purple-500 bg-purple-50 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'
-                  : 'border-gray-300 hover:border-gray-400 dark:border-gray-600 dark:hover:border-gray-500'
-              ]">
-              <input v-model="formData.contraceptionMethod" type="radio" :value="method.value" class="sr-only" />
-              <div class="flex items-center">
-                <component :is="method.icon" class="wh-3.5" />
-              </div>
-            </label>
-          </div>
-        </div>
-      </div>
-
-      <!-- 备注 -->
-      <div class="form-group">
-        <textarea v-model="formData.notes" class="input-base w-full h-20 resize-none"
-          :placeholder="t('period.placeholders.notesPlaceholder')" maxlength="500" />
-        <div class="flex justify-between text-sm text-gray-500 mt-1">
-          <div v-if="getFieldErrors('notes').length > 0" class="form-error">
-            {{ getFieldErrors('notes')[0] }}
-          </div>
-          <div class="ml-auto">
-            {{ (formData.notes || '').length }}/500
-          </div>
-        </div>
-      </div>
-
-      <!-- 操作按钮 -->
-      <div class="flex justify-center space-x-6 pt-2">
-        <button type="button" @click="$emit('cancel')" class="btn-secondary" :disabled="loading">
-          <X class="wh-5" />
-        </button>
-        <button type="submit" class="btn-primary" :disabled="loading || hasErrors()">
-          <Check class="wh-5" />
-        </button>
-      </div>
-    </form>
-  </div>
-</template>
-
 <script setup lang="ts">
 import {
   Accessibility,
@@ -223,17 +24,17 @@ import {
   Waves,
   X,
 } from 'lucide-vue-next';
-import { ExerciseIntensity, FlowLevel } from '@/schema/common';
-import type {
-  ContraceptionMethod,
-  Mood,
-  PeriodDailyRecords,
-} from '@/schema/health/period';
 import { usePeriodStore } from '@/stores/periodStore';
 import { getLocalISODateTimeWithOffset } from '@/utils/date';
 import { Lg } from '@/utils/debugLog';
 import { uuid } from '@/utils/uuid';
 import { usePeriodValidation } from '../composables/usePeriodValidation';
+import type { ExerciseIntensity, FlowLevel } from '@/schema/common';
+import type {
+  ContraceptionMethod,
+  Mood,
+  PeriodDailyRecords,
+} from '@/schema/health/period';
 
 // Props
 interface Props {
@@ -256,8 +57,8 @@ const { t } = useI18n();
 
 // Store & Composables
 const periodStore = usePeriodStore();
-const { validateDailyRecord, getFieldErrors, hasErrors, clearValidationErrors } =
-  usePeriodValidation();
+const { validateDailyRecord, getFieldErrors, hasErrors, clearValidationErrors }
+  = usePeriodValidation();
 
 // Reactive state
 const loading = ref(false);
@@ -386,7 +187,7 @@ const waterPresets = [1000, 1500, 2000, 2500];
 const sleepPresets = [6, 7, 8, 9];
 
 // Methods
-const handleSubmit = async () => {
+async function handleSubmit() {
   clearValidationErrors();
 
   if (!validateDailyRecord(formData.value)) {
@@ -418,14 +219,16 @@ const handleSubmit = async () => {
     };
 
     emit('submit', record);
-  } catch (error) {
+  }
+  catch (error) {
     Lg.e('Period', 'Failed to save daily record:', error);
-  } finally {
+  }
+  finally {
     loading.value = false;
   }
-};
+}
 
-const resetForm = () => {
+function resetForm() {
   formData.value = {
     date: props.date || today.value,
     flowLevel: null,
@@ -439,10 +242,10 @@ const resetForm = () => {
     notes: '',
   };
   clearValidationErrors();
-};
+}
 
 // Initialize form data from existing record
-const initializeForm = () => {
+function initializeForm() {
   if (props.record) {
     formData.value = {
       date: props.record.date,
@@ -456,7 +259,8 @@ const initializeForm = () => {
       contraceptionMethod: props.record.contraceptionMethod ?? 'None', // Add this line
       notes: props.record.notes || '',
     };
-  } else if (props.date) {
+  }
+  else if (props.date) {
     // 尝试加载该日期的现有记录
     const existingRecord = periodStore.getDailyRecord(props.date);
     if (existingRecord) {
@@ -475,13 +279,13 @@ const initializeForm = () => {
       };
     }
   }
-};
+}
 
 // Watchers
 watch(() => props.record, initializeForm, { immediate: true });
 watch(
   () => props.date,
-  (newDate) => {
+  newDate => {
     if (newDate && !props.record) {
       formData.value.date = newDate;
       const existingRecord = periodStore.getDailyRecord(newDate);
@@ -503,6 +307,227 @@ defineExpose({
   validateForm: () => validateDailyRecord(formData.value),
 });
 </script>
+
+<template>
+  <div class="period-daily-form card-base p-6">
+    <h2 class="mb-6 text-lg text-gray-900 font-semibold dark:text-white">
+      {{ isEditing ? t('period.forms.editDaily') : t('period.forms.recordDaily') }}
+    </h2>
+
+    <form class="space-y-6" @submit.prevent="handleSubmit">
+      <!-- 日期选择 -->
+      <div class="form-group flex items-center justify-between" :title="t('period.fields.date')">
+        <label class="form-label">
+          <CalendarCheck class="wh-5" />
+        </label>
+        <input
+          v-model="formData.date" type="date" class="w-3/4 modal-input-select" :max="today" required
+          :disabled="isEditing"
+        >
+        <div v-if="getFieldErrors('date').length > 0" class="form-error">
+          {{ getFieldErrors('date')[0] }}
+        </div>
+      </div>
+
+      <!-- 经期流量 -->
+      <div class="form-group flex items-center justify-between">
+        <label class="form-label" :title="t('period.fields.flowLevel')">
+          <Droplet class="wh-5" />
+        </label>
+        <div class="w-3/4 flex gap-2">
+          <button
+            v-for="level in flowLevels" :key="level.value" type="button" class="flex-1 border rounded-lg p-3 transition-all"
+            :class="[
+              formData.flowLevel === level.value
+                ? 'border-red-500 bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                : 'border-gray-300 hover:border-gray-400 dark:border-gray-600 dark:hover:border-gray-500',
+            ]" @click="formData.flowLevel = level.value"
+          >
+            <div class="flex justify-center" :title="level.label">
+              <component :is="level.icon" class="wh-5" />
+            </div>
+          </button>
+        </div>
+      </div>
+
+      <!-- 心情状态 -->
+      <div class="form-group flex justify-center justify-between">
+        <label class="form-label" :title="t('period.fields.mood')">
+          <Smile class="wh-5" />
+        </label>
+        <div class="grid grid-cols-6 gap-2">
+          <button
+            v-for="mood in moods" :key="mood.value" type="button" class="border rounded-lg p-1 text-center transition-all"
+            :class="[
+              formData.mood === mood.value
+                ? 'border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
+                : 'border-gray-300 hover:border-gray-400 dark:border-gray-600 dark:hover:border-gray-500',
+            ]" @click="formData.mood = mood.value"
+          >
+            <div class="flex justify-center" :title="mood.label">
+              <component :is="mood.icon" class="mb-1 wh-5" />
+            </div>
+          </button>
+        </div>
+      </div>
+
+      <!-- 运动强度 -->
+      <div class="form-group">
+        <div class="flex items-center justify-between">
+          <label class="form-label" :title="t('period.fields.exerciseIntensity')">
+            <Dumbbell class="wh-5" />
+          </label>
+          <div class="flex gap-2">
+            <button
+              v-for="intensity in exerciseIntensities" :key="intensity.value" type="button"
+              class="flex-1 justify-center border rounded-lg p-1 transition-all"
+              :class="[
+                formData.exerciseIntensity === intensity.value
+                  ? 'border-green-500 bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                  : 'border-gray-300 hover:border-gray-400 dark:border-gray-600 dark:hover:border-gray-500',
+              ]" @click="formData.exerciseIntensity = intensity.value"
+            >
+              <div class="flex justify-center" :title="intensity.label">
+                <component :is="intensity.icon" class="wh-5" />
+              </div>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 饮食记录 -->
+      <div class="form-group">
+        <label class="form-label" :title="t('period.fields.diet')">
+          <Utensils class="wh-5" />
+        </label>
+        <textarea
+          v-model="formData.diet" class="h-20 w-full resize-none input-base"
+          :placeholder="t('period.placeholders.dietRecord')" required
+        />
+        <div v-if="getFieldErrors('diet').length > 0" class="form-error">
+          {{ getFieldErrors('diet')[0] }}
+        </div>
+      </div>
+
+      <!-- 饮水量 -->
+      <div class="form-group">
+        <div class="flex items-center justify-between">
+          <label class="form-label w-1/3" :title="t('period.fields.waterIntake')">
+            <Waves class="wh-5" />
+          </label>
+          <input
+            v-model.number="formData.waterIntake" type="number" class="input-base"
+            :placeholder="t('period.placeholders.waterIntakeExample')" min="0" max="5000" step="100"
+          >
+        </div>
+        <div class="flex items-center gap-4">
+          <div class="flex gap-1">
+            <button
+              v-for="preset in waterPresets" :key="preset" type="button" class="btn-secondary px-2 py-1 text-sm"
+              @click="formData.waterIntake = preset"
+            >
+              {{ preset }}ml
+            </button>
+          </div>
+        </div>
+        <div v-if="getFieldErrors('waterIntake').length > 0" class="form-error">
+          {{ getFieldErrors('waterIntake')[0] }}
+        </div>
+      </div>
+
+      <!-- 睡眠时间 -->
+      <div class="form-group flex items-center justify-between">
+        <label class="form-label w-1/8" :title="t('period.fields.sleepHours')">
+          <BedDouble class="wh-5" />
+        </label>
+        <div class="flex items-center gap-1">
+          <input
+            v-model.number="formData.sleepHours" type="number" class="flex-1 input-base"
+            :placeholder="t('period.placeholders.sleepExample')" min="0" max="24" step="0.5"
+          >
+          <div class="flex gap-1">
+            <button
+              v-for="preset in sleepPresets" :key="preset" type="button" class="btn-secondary px-3 py-1 text-sm"
+              @click="formData.sleepHours = preset"
+            >
+              {{ preset }}h
+            </button>
+          </div>
+        </div>
+        <div v-if="getFieldErrors('sleepHours').length > 0" class="form-error">
+          {{ getFieldErrors('sleepHours')[0] }}
+        </div>
+      </div>
+
+      <!-- 性生活 -->
+      <div class="form-group">
+        <div class="mb-3 flex items-center justify-between">
+          <label class="form-label" :title="t('period.fields.sexualActivity')">
+            <VenusAndMars class="wh-5" />
+          </label>
+          <div class="flex gap-4">
+            <label class="flex cursor-pointer items-center gap-2">
+              <input v-model="formData.sexualActivity" type="radio" :value="true" class="radio-base">
+              <span class="text-sm">{{ t('common.misc.yes') }}</span>
+            </label>
+            <label class="flex cursor-pointer items-center gap-2">
+              <input v-model="formData.sexualActivity" type="radio" :value="false" class="radio-base">
+              <span class="text-sm">{{ t('common.misc.no') }}</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- 避孕措施选项 - 仅在有性生活时显示 -->
+        <div v-if="formData.sexualActivity" class="ml-6 border-l-2 border-gray-200 pl-4 space-y-2 dark:border-gray-600">
+          <div class="mb-1 text-xs text-gray-600 font-medium dark:text-gray-400">
+            {{ t('period.fields.contraceptionMethod') }}
+          </div>
+          <div class="grid grid-cols-3 gap-1">
+            <label
+              v-for="method in contraceptionMethods" :key="method.value" :title="method.label"
+              class="flex cursor-pointer items-center justify-center border rounded p-1.5 transition-colors" :class="[
+                formData.contraceptionMethod === method.value
+                  ? 'border-purple-500 bg-purple-50 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'
+                  : 'border-gray-300 hover:border-gray-400 dark:border-gray-600 dark:hover:border-gray-500',
+              ]"
+            >
+              <input v-model="formData.contraceptionMethod" type="radio" :value="method.value" class="sr-only">
+              <div class="flex items-center">
+                <component :is="method.icon" class="wh-3.5" />
+              </div>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- 备注 -->
+      <div class="form-group">
+        <textarea
+          v-model="formData.notes" class="h-20 w-full resize-none input-base"
+          :placeholder="t('period.placeholders.notesPlaceholder')" maxlength="500"
+        />
+        <div class="mt-1 flex justify-between text-sm text-gray-500">
+          <div v-if="getFieldErrors('notes').length > 0" class="form-error">
+            {{ getFieldErrors('notes')[0] }}
+          </div>
+          <div class="ml-auto">
+            {{ (formData.notes || '').length }}/500
+          </div>
+        </div>
+      </div>
+
+      <!-- 操作按钮 -->
+      <div class="flex justify-center pt-2 space-x-6">
+        <button type="button" class="btn-secondary" :disabled="loading" @click="$emit('cancel')">
+          <X class="wh-5" />
+        </button>
+        <button type="submit" class="btn-primary" :disabled="loading || hasErrors()">
+          <Check class="wh-5" />
+        </button>
+      </div>
+    </form>
+  </div>
+</template>
 
 <style scoped lang="postcss">
 .period-daily-form {

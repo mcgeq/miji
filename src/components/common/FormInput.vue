@@ -1,24 +1,4 @@
 <!-- src/components/FormInput.vue -->
-<template>
-  <div class="relative">
-    <input
-      :id="name"
-      :name="name"
-      :type="type"
-      :placeholder="placeholder"
-      :disabled="disabled"
-      :value="modelValue"
-      @input="onInput"
-      class="w-full px-4 py-2 rounded-md border border-gray-300 dark:border-gray-700
-             bg-white dark:bg-gray-900 text-gray-900 dark:text-white
-             placeholder-gray-400 dark:placeholder-gray-500
-             focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
-             transition duration-200 disabled:opacity-60 disabled:cursor-not-allowed shadow-sm"
-    />
-    <FloatingErrorTip :visible="!!errorMsg" :message="errorMsg" />
-  </div>
-</template>
-
 <script setup lang="ts">
 import FloatingErrorTip from './FloatingErrorTip.vue';
 
@@ -49,3 +29,19 @@ function onInput(event: Event) {
   }
 }
 </script>
+
+<template>
+  <div class="relative">
+    <input
+      :id="name"
+      :name="name"
+      :type="type"
+      :placeholder="placeholder"
+      :disabled="disabled"
+      :value="modelValue"
+      class="w-full border border-gray-300 rounded-md bg-white px-4 py-2 text-gray-900 shadow-sm transition duration-200 disabled:cursor-not-allowed dark:border-gray-700 focus:border-transparent dark:bg-gray-900 dark:text-white disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400 dark:placeholder-gray-500"
+      @input="onInput"
+    >
+    <FloatingErrorTip :visible="!!errorMsg" :message="errorMsg" />
+  </div>
+</template>

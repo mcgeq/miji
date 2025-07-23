@@ -13,7 +13,7 @@ export function $t(key: string, values?: Record<string, any>): string {
   const t = i18nInstance.global.t as Composer['t'];
 
   if (values) {
-    Object.keys(values).forEach((k) => {
+    Object.keys(values).forEach(k => {
       if (typeof values[k] === 'bigint') {
         values[k] = values[k].toString();
       }

@@ -1,57 +1,7 @@
-<template>
-  <div class="mb-2 flex items-center justify-between">
-    <label
-      :for="inputId"
-      class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
-    >
-      {{ label }}
-      <span v-if="required" class="text-red-500 ml-1" aria-label="必填">*</span>
-    </label>
-    <div class="flex flex-col" :class="widthClass">
-      <select
-        :id="inputId"
-        v-model="currentValue"
-        :class="[
-          'modal-input-select',
-          {
-            'border-red-500': hasError,
-            'border-gray-300 dark:border-gray-600': !hasError
-          }
-        ]"
-        :required="required"
-        :disabled="disabled"
-        @blur="handleBlur"
-        @change="handleChange"
-      >
-        <option 
-          v-for="option in priorityOptions" 
-          :key="option.value" 
-          :value="option.value"
-          :disabled="option.disabled"
-        >
-          {{ option.label }}
-        </option>
-      </select>
-      <div
-        v-if="hasError && errorMessage"
-        class="text-sm text-red-600 dark:text-red-400 mt-1"
-        role="alert"
-      >
-        {{ errorMessage }}
-      </div>
-      <div
-        v-if="helpText && !hasError"
-        class="flex justify-end text-xs text-gray-500 dark:text-gray-400 mt-2"
-      >
-        {{ helpText }}
-      </div>
-    </div>
-  </div>
-</template>
-
 <script setup lang="ts">
-import { PrioritySchema, type Priority } from '@/schema/common';
+import { PrioritySchema } from '@/schema/common';
 import { uuid } from '@/utils/uuid';
+import type { Priority } from '@/schema/common';
 
 interface PriorityOption {
   value: Priority;
@@ -88,8 +38,8 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<{
   'update:modelValue': [value: Priority];
-  change: [value: Priority];
-  validate: [isValid: boolean];
+  'change': [value: Priority];
+  'validate': [isValid: boolean];
 }>();
 
 // 生成唯一ID
@@ -106,7 +56,7 @@ const i18nConfig = {
     High: '高',
     Urgent: '紧急',
   },
-  en: {
+  'en': {
     Low: 'Low',
     Medium: 'Medium',
     High: 'High',
@@ -162,7 +112,7 @@ const priorityOptions = computed(() => {
 // 样式类
 const widthClass = computed(() => {
   const widthMap: Record<string, string> = {
-    full: 'w-full',
+    'full': 'w-full',
     '1/2': 'w-1/2',
     '1/3': 'w-1/3',
     '2/3': 'w-2/3',
@@ -178,7 +128,7 @@ const hasError = computed(() => {
 });
 
 // 验证函数
-const validateValue = (value: Priority): boolean => {
+function validateValue(value: Priority): boolean {
   if (props.required && !value) {
     return false;
   }
@@ -187,13 +137,14 @@ const validateValue = (value: Priority): boolean => {
   try {
     PrioritySchema.parse(value);
     return true;
-  } catch {
+  }
+  catch {
     return false;
   }
-};
+}
 
 // 事件处理
-const handleChange = (event: Event) => {
+function handleChange(event: Event) {
   const target = event.target as HTMLSelectElement;
   const value = target.value as Priority;
 
@@ -202,20 +153,21 @@ const handleChange = (event: Event) => {
     emit('update:modelValue', value);
     emit('change', value);
     emit('validate', true);
-  } else {
+  }
+  else {
     emit('validate', false);
   }
-};
+}
 
-const handleBlur = () => {
+function handleBlur() {
   const isValid = validateValue(currentValue.value);
   emit('validate', isValid);
-};
+}
 
 // 监听器
 watch(
   () => props.modelValue,
-  (newValue) => {
+  newValue => {
     if (newValue !== currentValue.value) {
       currentValue.value = newValue;
     }
@@ -224,33 +176,33 @@ watch(
 );
 
 // 监听当前值变化，确保同步
-watch(currentValue, (newValue) => {
+watch(currentValue, newValue => {
   if (newValue !== props.modelValue) {
     emit('update:modelValue', newValue);
   }
 });
 
 // 公开方法
-const focus = () => {
+function focus() {
   const element = document.getElementById(inputId.value);
   if (element) {
     element.focus();
   }
-};
+}
 
-const reset = () => {
+function reset() {
   currentValue.value = 'Medium'; // 默认值
   emit('update:modelValue', 'Medium');
   emit('change', 'Medium');
   emit('validate', true);
-};
+}
 
 // 获取当前选中的优先级信息
-const getCurrentPriorityInfo = () => {
+function getCurrentPriorityInfo() {
   return priorityOptions.value.find(
-    (option) => option.value === currentValue.value,
+    option => option.value === currentValue.value,
   );
-};
+}
 
 // 暴露给父组件的方法
 defineExpose({
@@ -260,6 +212,56 @@ defineExpose({
   validate: () => validateValue(currentValue.value),
 });
 </script>
+
+<template>
+  <div class="mb-2 flex items-center justify-between">
+    <label
+      :for="inputId"
+      class="mb-2 text-sm text-gray-700 font-medium dark:text-gray-300"
+    >
+      {{ label }}
+      <span v-if="required" class="ml-1 text-red-500" aria-label="必填">*</span>
+    </label>
+    <div class="flex flex-col" :class="widthClass">
+      <select
+        :id="inputId"
+        v-model="currentValue"
+        class="modal-input-select" :class="[
+          {
+            'border-red-500': hasError,
+            'border-gray-300 dark:border-gray-600': !hasError,
+          },
+        ]"
+        :required="required"
+        :disabled="disabled"
+        @blur="handleBlur"
+        @change="handleChange"
+      >
+        <option
+          v-for="option in priorityOptions"
+          :key="option.value"
+          :value="option.value"
+          :disabled="option.disabled"
+        >
+          {{ option.label }}
+        </option>
+      </select>
+      <div
+        v-if="hasError && errorMessage"
+        class="mt-1 text-sm text-red-600 dark:text-red-400"
+        role="alert"
+      >
+        {{ errorMessage }}
+      </div>
+      <div
+        v-if="helpText && !hasError"
+        class="mt-2 flex justify-end text-xs text-gray-500 dark:text-gray-400"
+      >
+        {{ helpText }}
+      </div>
+    </div>
+  </div>
+</template>
 
 <style scoped lang="postcss">
 /* 基础样式 */
@@ -302,7 +304,7 @@ defineExpose({
   .modal-input-select {
     @apply border-gray-600;
   }
-  
+
   .modal-input-select:focus {
     @apply ring-blue-400;
   }

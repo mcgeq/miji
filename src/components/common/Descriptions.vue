@@ -20,7 +20,7 @@ const localValue = ref(props.modelValue);
 
 watch(
   () => props.modelValue,
-  (val) => {
+  val => {
     if (!editable.value) {
       localValue.value = val;
     }

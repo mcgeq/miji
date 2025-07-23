@@ -1,108 +1,4 @@
 <!-- src/components/SimplePagination.vue -->
-<template>
-  <div
-    :class="[
-      'flex items-center justify-between p-4 rounded-lg shadow-md gap-4',
-      compact ? 'bg-transparent shadow-none p-2' : 'bg-white',
-      responsive ? 'flex-wrap sm:flex-nowrap' : 'flex-nowrap'
-    ]"
-  >
-    <!-- 左侧：第一页/上一页按钮 -->
-    <div class="flex gap-2">
-      <button
-        v-if="showFirstLast"
-        @click="goToFirst"
-        :disabled="currentPage <= 1 || disabled"
-        :aria-label="t('pagination.home')"
-        :class="buttonClasses"
-      >
-        <ChevronsLeft class="w-4 h-4" />
-      </button>
-      <button
-        @click="goToPrev"
-        :disabled="currentPage <= 1 || disabled"
-        :aria-label="t('pagination.prev')"
-        :class="buttonClasses"
-      >
-        <ChevronLeft class="w-4 h-4" />
-      </button>
-    </div>
-
-    <!-- 中间：页码信息和跳转 -->
-    <div class="flex items-center gap-3">
-      <!-- 页码显示 -->
-      <span :class="compact ? 'text-xs' : 'text-sm'" class="text-gray-700">
-        {{ currentPage }}/{{ totalPages }}
-      </span>
-      
-      <!-- 总数显示 -->
-      <span v-if="showTotal && totalItems > 0" :class="compact ? 'text-xs' : 'text-sm'" class="text-gray-500">
-        (共 {{ totalItems }} 条)
-      </span>
-
-      <!-- 页码跳转输入框 -->
-      <input
-        v-if="showJump"
-        type="number"
-        v-model.number="pageInput"
-        @change="handlePageJump"
-        @keydown.enter="handlePageJump"
-        :min="1"
-        :max="totalPages"
-        :disabled="disabled"
-        aria-label="Jump to page"
-        :class="[
-          'text-center text-gray-800 border border-gray-300 rounded-lg shadow-inner',
-          'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2',
-          'transition-all duration-200 ease-in-out hover:border-gray-400',
-          'disabled:opacity-50 disabled:cursor-not-allowed',
-          compact ? 'w-12 px-2 py-1 text-xs' : 'w-16 px-3 py-1.5 text-sm'
-        ]"
-      />
-    </div>
-
-    <!-- 右侧：下一页/最后一页按钮 -->
-    <div class="flex gap-2">
-      <button
-        @click="goToNext"
-        :disabled="currentPage >= totalPages || disabled"
-        :aria-label="t('pagination.next')"
-        :class="buttonClasses"
-      >
-        <ChevronRight class="w-4 h-4" />
-      </button>
-      <button
-        v-if="showFirstLast"
-        @click="goToLast"
-        :disabled="currentPage >= totalPages || disabled"
-        :aria-label="t('pagination.last')"
-        :class="buttonClasses"
-      >
-        <ChevronsRight class="w-4 h-4" />
-      </button>
-    </div>
-
-    <!-- 每页大小选择器 -->
-    <select
-      v-if="showPageSize"
-      v-model="internalPageSize"
-      @change="handlePageSizeChange"
-      :disabled="disabled"
-      aria-label="Select items per page"
-      :class="[
-        'border border-gray-300 rounded-md text-gray-700',
-        'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2',
-        'disabled:opacity-50 disabled:cursor-not-allowed',
-        compact ? 'px-2 py-1 text-xs' : 'px-2 py-1 text-sm'
-      ]"
-    >
-      <option v-for="size in pageSizeOptions" :key="size" :value="size">
-        {{ size }}
-      </option>
-    </select>
-  </div>
-</template>
-
 <script lang="ts">
 import {
   ChevronLeft,
@@ -110,7 +6,7 @@ import {
   ChevronsLeft,
   ChevronsRight,
 } from 'lucide-vue-next';
-import {useI18n} from 'vue-i18n';
+import { useI18n } from 'vue-i18n';
 
 export default defineComponent({
   name: 'SimplePagination',
@@ -177,9 +73,9 @@ export default defineComponent({
       default: false,
     },
   },
-  emits: ['page-change', 'page-size-change'],
-  setup(props, {emit}) {
-    const {t} = useI18n();
+  emits: ['pageChange', 'pageSizeChange'],
+  setup(props, { emit }) {
+    const { t } = useI18n();
 
     // 页码输入框的值
     const pageInput = ref(props.currentPage);
@@ -204,59 +100,65 @@ export default defineComponent({
     // 监听当前页码变化，同步到输入框
     watch(
       () => props.currentPage,
-      (newPage) => {
+      newPage => {
         pageInput.value = newPage;
       },
-      {immediate: true},
+      { immediate: true },
     );
 
     // 监听页面大小变化
     watch(
       () => props.pageSize,
-      (newSize) => {
+      newSize => {
         internalPageSize.value = newSize;
       },
-      {immediate: true},
+      { immediate: true },
     );
 
     // 跳转到第一页
     const goToFirst = () => {
-      if (props.disabled || props.currentPage <= 1) return;
-      emit('page-change', 1);
+      if (props.disabled || props.currentPage <= 1)
+        return;
+      emit('pageChange', 1);
     };
 
     // 跳转到上一页
     const goToPrev = () => {
-      if (props.disabled || props.currentPage <= 1) return;
-      emit('page-change', props.currentPage - 1);
+      if (props.disabled || props.currentPage <= 1)
+        return;
+      emit('pageChange', props.currentPage - 1);
     };
 
     // 跳转到下一页
     const goToNext = () => {
-      if (props.disabled || props.currentPage >= props.totalPages) return;
-      emit('page-change', props.currentPage + 1);
+      if (props.disabled || props.currentPage >= props.totalPages)
+        return;
+      emit('pageChange', props.currentPage + 1);
     };
 
     // 跳转到最后一页
     const goToLast = () => {
-      if (props.disabled || props.currentPage >= props.totalPages) return;
-      emit('page-change', props.totalPages);
+      if (props.disabled || props.currentPage >= props.totalPages)
+        return;
+      emit('pageChange', props.totalPages);
     };
 
     // 处理页码跳转
     const handlePageJump = () => {
-      if (props.disabled) return;
+      if (props.disabled)
+        return;
 
       const targetPage = pageInput.value;
 
       // 验证页码范围
       if (
-        targetPage >= 1 &&
-        targetPage <= props.totalPages &&
-        targetPage !== props.currentPage
+        targetPage >= 1
+        && targetPage <= props.totalPages
+        && targetPage !== props.currentPage
       ) {
-        emit('page-change', targetPage);
-      } else {
+        emit('pageChange', targetPage);
+      }
+      else {
         // 如果输入无效，恢复到当前页码
         pageInput.value = props.currentPage;
       }
@@ -264,11 +166,12 @@ export default defineComponent({
 
     // 处理每页大小变化
     const handlePageSizeChange = () => {
-      if (props.disabled) return;
+      if (props.disabled)
+        return;
 
       const newSize = internalPageSize.value;
       if (newSize !== props.pageSize) {
-        emit('page-size-change', newSize);
+        emit('pageSizeChange', newSize);
       }
     };
 
@@ -287,6 +190,102 @@ export default defineComponent({
   },
 });
 </script>
+
+<template>
+  <div
+    class="flex items-center justify-between gap-4 rounded-lg p-4 shadow-md" :class="[
+      compact ? 'bg-transparent shadow-none p-2' : 'bg-white',
+      responsive ? 'flex-wrap sm:flex-nowrap' : 'flex-nowrap',
+    ]"
+  >
+    <!-- 左侧：第一页/上一页按钮 -->
+    <div class="flex gap-2">
+      <button
+        v-if="showFirstLast"
+        :disabled="currentPage <= 1 || disabled"
+        :aria-label="t('pagination.home')"
+        :class="buttonClasses"
+        @click="goToFirst"
+      >
+        <ChevronsLeft class="h-4 w-4" />
+      </button>
+      <button
+        :disabled="currentPage <= 1 || disabled"
+        :aria-label="t('pagination.prev')"
+        :class="buttonClasses"
+        @click="goToPrev"
+      >
+        <ChevronLeft class="h-4 w-4" />
+      </button>
+    </div>
+
+    <!-- 中间：页码信息和跳转 -->
+    <div class="flex items-center gap-3">
+      <!-- 页码显示 -->
+      <span :class="compact ? 'text-xs' : 'text-sm'" class="text-gray-700">
+        {{ currentPage }}/{{ totalPages }}
+      </span>
+
+      <!-- 总数显示 -->
+      <span v-if="showTotal && totalItems > 0" :class="compact ? 'text-xs' : 'text-sm'" class="text-gray-500">
+        (共 {{ totalItems }} 条)
+      </span>
+
+      <!-- 页码跳转输入框 -->
+      <input
+        v-if="showJump"
+        v-model.number="pageInput"
+        type="number"
+        :min="1"
+        :max="totalPages"
+        :disabled="disabled"
+        aria-label="Jump to page"
+        class="border border-gray-300 rounded-lg text-center text-gray-800 shadow-inner transition-all duration-200 ease-in-out disabled:cursor-not-allowed hover:border-gray-400 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+        :class="[
+          compact ? 'w-12 px-2 py-1 text-xs' : 'w-16 px-3 py-1.5 text-sm',
+        ]"
+        @change="handlePageJump" @keydown.enter="handlePageJump"
+      >
+    </div>
+
+    <!-- 右侧：下一页/最后一页按钮 -->
+    <div class="flex gap-2">
+      <button
+        :disabled="currentPage >= totalPages || disabled"
+        :aria-label="t('pagination.next')"
+        :class="buttonClasses"
+        @click="goToNext"
+      >
+        <ChevronRight class="h-4 w-4" />
+      </button>
+      <button
+        v-if="showFirstLast"
+        :disabled="currentPage >= totalPages || disabled"
+        :aria-label="t('pagination.last')"
+        :class="buttonClasses"
+        @click="goToLast"
+      >
+        <ChevronsRight class="h-4 w-4" />
+      </button>
+    </div>
+
+    <!-- 每页大小选择器 -->
+    <select
+      v-if="showPageSize"
+      v-model="internalPageSize"
+      :disabled="disabled"
+      aria-label="Select items per page"
+      class="border border-gray-300 rounded-md text-gray-700 disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+      :class="[
+        compact ? 'px-2 py-1 text-xs' : 'px-2 py-1 text-sm',
+      ]" @change="handlePageSizeChange"
+    >
+      <option v-for="size in pageSizeOptions" :key="size" :value="size">
+        {{ size }}
+      </option>
+    </select>
+  </div>
+</template>
 
 <style scoped lang="postcss">
 /* 保持原有样式，现在使用计算属性 */

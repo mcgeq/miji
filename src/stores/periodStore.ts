@@ -78,7 +78,7 @@ export const usePeriodStore = defineStore('period', () => {
         : settings.value.averageCycleLength;
 
     // 计算经期长度
-    const periodLengths = sortedRecords.map((record) => {
+    const periodLengths = sortedRecords.map(record => {
       const start = new Date(record.startDate);
       const end = new Date(record.endDate);
       return (
@@ -137,7 +137,7 @@ export const usePeriodStore = defineStore('period', () => {
     const events: PeriodCalendarEvent[] = [];
 
     // 添加经期事件
-    periodRecords.value.forEach((record) => {
+    periodRecords.value.forEach(record => {
       const start = new Date(record.startDate);
       const end = new Date(record.endDate);
 
@@ -160,7 +160,7 @@ export const usePeriodStore = defineStore('period', () => {
     // 添加排卵期事件（基于预测）
     const stats = periodStats.value;
     if (stats.averageCycleLength > 0) {
-      periodRecords.value.forEach((record) => {
+      periodRecords.value.forEach(record => {
         const start = new Date(record.startDate);
         const ovulationDate = new Date(start);
         ovulationDate.setDate(
@@ -193,7 +193,7 @@ export const usePeriodStore = defineStore('period', () => {
   // 计算属性 - 症状统计
   const symptomsStats = computed(() => {
     const stats: Record<string, number> = {};
-    symptoms.value.forEach((symptom) => {
+    symptoms.value.forEach(symptom => {
       stats[symptom.symptomType] = (stats[symptom.symptomType] || 0) + 1;
     });
     return stats;
@@ -705,7 +705,7 @@ export const usePeriodStore = defineStore('period', () => {
     const events: PeriodCalendarEvent[] = [];
 
     // 添加历史经期事件
-    periodRecords.value.forEach((period) => {
+    periodRecords.value.forEach(period => {
       const start = new Date(period.startDate);
       const end = new Date(period.endDate);
 
@@ -731,7 +731,7 @@ export const usePeriodStore = defineStore('period', () => {
     });
 
     // 添加历史排卵期事件
-    periodRecords.value.forEach((period) => {
+    periodRecords.value.forEach(period => {
       const ovulationDate = new Date(period.startDate);
       ovulationDate.setDate(
         ovulationDate.getDate()

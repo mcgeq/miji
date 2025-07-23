@@ -1,12 +1,12 @@
 // src/services/auth.ts
 import { invoke } from '@tauri-apps/api/core';
-import type { Credentials, CredentialsLogin } from '@/types';
-import type { TokenResponse, User } from '@/schema/user';
 import { getDb } from '../db';
-import { uuid } from '../utils/uuid';
+import { toCamelCase } from '../utils/common';
 import { getLocalISODateTimeWithOffset } from '../utils/date';
 import { Lg } from '../utils/debugLog';
-import { toCamelCase } from '../utils/common';
+import { uuid } from '../utils/uuid';
+import type { TokenResponse, User } from '@/schema/user';
+import type { Credentials, CredentialsLogin } from '@/types';
 
 interface AuthError extends Error {
   code?: string;
@@ -51,7 +51,8 @@ export async function login(
       [now, now, user.serialNum],
     );
     return user;
-  } catch (error) {
+  }
+  catch (error) {
     const authError = handleAuthError(error);
     Lg.e('Api Login', authError);
     throw authError;
@@ -145,50 +146,52 @@ export async function register(
     }
 
     return newUser;
-  } catch (error) {
+  }
+  catch (error) {
     const authError = handleAuthError(error);
     Lg.e('Api Registration', authError);
     throw authError;
   }
 }
 
-export const hashPassword = async (password: string) => {
+export async function hashPassword(password: string) {
   return await invoke<string>('pwd_hash', { pwd: password });
-};
+}
 
-export const checkPassword = async (password: string, pwdHash: string) => {
+export async function checkPassword(password: string, pwdHash: string) {
   return await invoke<boolean>('check_pwd', {
     pwd: password,
-    pwdHash: pwdHash,
+    pwdHash,
   });
-};
+}
 
-export const verifyToken = async (
+export async function verifyToken(
   token: string,
-): Promise<'Valid' | 'Expired' | 'Invalid'> => {
+): Promise<'Valid' | 'Expired' | 'Invalid'> {
   try {
     const status = await invoke<string>('is_verify_token', { token });
     if (status === 'Valid' || status === 'Expired' || status === 'Invalid') {
       return status;
     }
     return 'Invalid';
-  } catch (error) {
+  }
+  catch (error) {
     Lg.e('Api Token verification', error);
     return 'Invalid';
   }
-};
+}
 
-export const maybeLogoutOnExit = async () => {
+export async function maybeLogoutOnExit() {
   if (authStore.value.token && !authStore.value.rememberMe) {
     await logoutUser();
   }
-};
+}
 
-export const checkAndCleanSession = async () => {
+export async function checkAndCleanSession() {
   if (authStore.value.token && !authStore.value.rememberMe) {
     await logoutUser();
   }
-};
+}
 
 function createAuthError(
   message: string,

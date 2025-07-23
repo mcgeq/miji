@@ -1,4 +1,5 @@
-import {PeriodDailyRecords, PeriodRecords} from '@/schema/health/period';
+import { Lg } from '@/utils/debugLog';
+import type { PeriodDailyRecords, PeriodRecords } from '@/schema/health/period';
 
 export function usePeriodValidation() {
   const validationErrors = ref<Record<string, string[]>>({});
@@ -12,7 +13,8 @@ export function usePeriodValidation() {
       // 基本验证
       if (!record.date) {
         addValidationError('date', '日期不能为空');
-      } else {
+      }
+      else {
         const date = new Date(record.date);
         const today = new Date();
         if (date > today) {
@@ -25,15 +27,15 @@ export function usePeriodValidation() {
       }
 
       if (
-        record.waterIntake &&
-        (record.waterIntake < 0 || record.waterIntake > 5000)
+        record.waterIntake
+        && (record.waterIntake < 0 || record.waterIntake > 5000)
       ) {
         addValidationError('waterIntake', '饮水量应在0-5000ml之间');
       }
 
       if (
-        record.sleepHours &&
-        (record.sleepHours < 0 || record.sleepHours > 24)
+        record.sleepHours
+        && (record.sleepHours < 0 || record.sleepHours > 24)
       ) {
         addValidationError('sleepHours', '睡眠时间应在0-24小时之间');
       }
@@ -43,7 +45,9 @@ export function usePeriodValidation() {
       }
 
       return Object.keys(validationErrors.value).length === 0;
-    } catch (error) {
+    }
+    catch (error) {
+      Lg.e('usePeriodValidation: ', error);
       addValidationError('general', '数据格式错误');
       return false;
     }
@@ -78,18 +82,20 @@ export function usePeriodValidation() {
       }
 
       return Object.keys(validationErrors.value).length === 0;
-    } catch (error) {
+    }
+    catch (error) {
+      Lg.e('usePeriodValidation: ', error);
       addValidationError('general', '数据格式错误');
       return false;
     }
   };
 
-  const addValidationError = (field: string, message: string) => {
+  function addValidationError(field: string, message: string) {
     if (!validationErrors.value[field]) {
       validationErrors.value[field] = [];
     }
     validationErrors.value[field].push(message);
-  };
+  }
 
   const clearValidationErrors = () => {
     validationErrors.value = {};

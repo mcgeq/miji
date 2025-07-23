@@ -11,6 +11,6 @@ export const useMenuStore = defineStore('menu', {
     },
   },
   getters: {
-    getMenuSerialNum: (state) => state.openMenuSerialNum,
+    getMenuSerialNum: state => state.openMenuSerialNum,
   },
 });

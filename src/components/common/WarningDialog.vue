@@ -1,157 +1,3 @@
-<template>
-  <Teleport to="body">
-    <Transition
-      name="warning-fade"
-      appear
-      @enter="onEnter"
-      @leave="onLeave"
-    >
-      <div
-        v-if="show"
-        class="warning-overlay"
-        @click="handleOverlayClick"
-        role="alertdialog"
-        aria-modal="true"
-        :aria-labelledby="titleId"
-        :aria-describedby="contentId"
-      >
-        <div
-          ref="dialogRef"
-          class="warning-container"
-          :class="dialogClasses"
-          @click.stop
-          @keydown.esc="handleEscape"
-          tabindex="-1"
-        >
-          <!-- 警告对话框头部 -->
-          <div class="warning-header">
-            <div class="warning-title-section">
-              <div class="warning-icon" :class="iconClasses">
-                <i :class="iconClass" class="wh-8 animate-pulse" />
-              </div>
-              <div class="warning-title-content">
-                <h3 :id="titleId" class="warning-title">
-                  {{ title }}
-                </h3>
-                <p v-if="subtitle" class="warning-subtitle">
-                  {{ subtitle }}
-                </p>
-              </div>
-            </div>
-            <button
-              v-if="closable"
-              @click="handleCancel"
-              class="warning-close"
-              type="button"
-              :disabled="loading"
-              aria-label="关闭警告对话框"
-            >
-              <i class="i-tabler-x wh-5" />
-            </button>
-          </div>
-
-          <!-- 警告对话框内容 -->
-          <div :id="contentId" class="warning-content">
-            <slot>
-              <div class="warning-message">
-                <p class="warning-text">{{ message }}</p>
-                
-                <!-- 警告详情 -->
-                <div v-if="details" class="warning-details">
-                  <button
-                    @click="showDetails = !showDetails"
-                    class="warning-details-toggle"
-                    type="button"
-                  >
-                    <i 
-                      class="i-tabler-chevron-right wh-4 transition-transform"
-                      :class="{ 'rotate-90': showDetails }"
-                    />
-                    {{ showDetails ? '隐藏详情' : '查看详情' }}
-                  </button>
-                  
-                  <Transition name="details-slide">
-                    <div v-if="showDetails" class="warning-details-content">
-                      <div class="warning-details-text">
-                        {{ details }}
-                      </div>
-                    </div>
-                  </Transition>
-                </div>
-                
-                <!-- 警告列表 -->
-                <div v-if="warnings.length > 0" class="warning-list">
-                  <h4 class="warning-list-title">注意事项：</h4>
-                  <ul class="warning-list-items">
-                    <li
-                      v-for="(warning, index) in warnings"
-                      :key="`warning-${index}`"
-                      class="warning-list-item"
-                    >
-                      <i class="i-tabler-alert-triangle wh-4 text-amber-500 flex-shrink-0" />
-                      <span>{{ warning }}</span>
-                    </li>
-                  </ul>
-                </div>
-                
-                <!-- 倒计时 -->
-                <div v-if="countdown > 0" class="warning-countdown">
-                  <div class="countdown-progress">
-                    <div 
-                      class="countdown-bar"
-                      :style="{ width: `${(countdown / initialCountdown) * 100}%` }"
-                    />
-                  </div>
-                  <p class="countdown-text">
-                    {{ countdownText || `${countdown}秒后自动关闭` }}
-                  </p>
-                </div>
-              </div>
-            </slot>
-          </div>
-
-          <!-- 警告对话框底部 -->
-          <div class="warning-footer">
-            <div class="warning-actions">
-              <button
-                v-if="showCancel"
-                @click="handleCancel"
-                :disabled="loading"
-                class="btn-cancel"
-                type="button"
-              >
-                <i v-if="cancelIcon" :class="cancelIcon" class="wh-4 mr-2" />
-                {{ cancelText }}
-              </button>
-              <button
-                @click="handleConfirm"
-                :disabled="loading || !canConfirm || countdown > 0"
-                class="btn-confirm"
-                :class="confirmButtonClasses"
-                type="button"
-              >
-                <i 
-                  v-if="loading" 
-                  class="i-tabler-loader-2 wh-4 mr-2 animate-spin" 
-                />
-                <i 
-                  v-else-if="confirmIcon" 
-                  :class="confirmIcon" 
-                  class="wh-4 mr-2" 
-                />
-                {{ confirmText }}
-                <span v-if="countdown > 0" class="countdown-suffix">
-                  ({{ countdown }}s)
-                </span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </Transition>
-  </Teleport>
-</template>
-
 <script setup lang="ts">
 // Props
 interface Props {
@@ -202,10 +48,10 @@ const props = withDefaults(defineProps<Props>(), {
 // Emits
 const emit = defineEmits<{
   'update:show': [show: boolean];
-  confirm: [];
-  cancel: [];
-  close: [];
-  countdownEnd: [];
+  'confirm': [];
+  'cancel': [];
+  'close': [];
+  'countdownEnd': [];
 }>();
 
 // Reactive state
@@ -294,36 +140,41 @@ const confirmButtonClasses = computed(() => {
 });
 
 // Methods
-const handleConfirm = () => {
-  if (props.loading || !props.canConfirm || countdown.value > 0) return;
+function handleConfirm() {
+  if (props.loading || !props.canConfirm || countdown.value > 0)
+    return;
   emit('confirm');
-};
+}
 
-const handleCancel = () => {
-  if (props.loading) return;
+function handleCancel() {
+  if (props.loading)
+    return;
   emit('cancel');
   handleClose();
-};
+}
 
-const handleClose = () => {
+function handleClose() {
   emit('update:show', false);
   emit('close');
   stopCountdown();
-};
+}
 
-const handleOverlayClick = () => {
-  if (props.persistent || props.loading) return;
+function handleOverlayClick() {
+  if (props.persistent || props.loading)
+    return;
   handleCancel();
-};
+}
 
-const handleEscape = (event: KeyboardEvent) => {
-  if (props.persistent || props.loading) return;
+function handleEscape(event: KeyboardEvent) {
+  if (props.persistent || props.loading)
+    return;
   event.preventDefault();
   handleCancel();
-};
+}
 
-const startCountdown = () => {
-  if (props.countdown <= 0) return;
+function startCountdown() {
+  if (props.countdown <= 0)
+    return;
 
   countdown.value = props.countdown;
   initialCountdown.value = props.countdown;
@@ -337,24 +188,24 @@ const startCountdown = () => {
       handleClose();
     }
   }, 1000);
-};
+}
 
-const stopCountdown = () => {
+function stopCountdown() {
   if (countdownTimer.value) {
     clearInterval(countdownTimer.value);
     countdownTimer.value = null;
   }
   countdown.value = 0;
-};
+}
 
-const focusDialog = async () => {
+async function focusDialog() {
   await nextTick();
   if (dialogRef.value) {
     dialogRef.value.focus();
   }
-};
+}
 
-const onEnter = async () => {
+async function onEnter() {
   // 保存当前焦点元素
   previousActiveElement.value = document.activeElement;
 
@@ -366,9 +217,9 @@ const onEnter = async () => {
 
   // 开始倒计时
   startCountdown();
-};
+}
 
-const onLeave = () => {
+function onLeave() {
   // 恢复页面滚动
   document.body.style.overflow = '';
 
@@ -379,11 +230,12 @@ const onLeave = () => {
 
   // 停止倒计时
   stopCountdown();
-};
+}
 
 // 键盘导航处理
-const handleKeyDown = (event: KeyboardEvent) => {
-  if (!props.show) return;
+function handleKeyDown(event: KeyboardEvent) {
+  if (!props.show)
+    return;
 
   // Tab 键焦点陷阱
   if (event.key === 'Tab' && dialogRef.value) {
@@ -401,19 +253,20 @@ const handleKeyDown = (event: KeyboardEvent) => {
         event.preventDefault();
         lastElement?.focus();
       }
-    } else {
+    }
+    else {
       if (document.activeElement === lastElement) {
         event.preventDefault();
         firstElement?.focus();
       }
     }
   }
-};
+}
 
 // Watchers
 watch(
   () => props.show,
-  async (newValue) => {
+  async newValue => {
     if (newValue) {
       await focusDialog();
     }
@@ -422,7 +275,7 @@ watch(
 
 watch(
   () => props.countdown,
-  (newValue) => {
+  newValue => {
     if (newValue > 0 && props.show) {
       startCountdown();
     }
@@ -449,6 +302,164 @@ defineExpose({
   startCountdown,
 });
 </script>
+
+<template>
+  <Teleport to="body">
+    <Transition
+      name="warning-fade"
+      appear
+      @enter="onEnter"
+      @leave="onLeave"
+    >
+      <div
+        v-if="show"
+        class="warning-overlay"
+        role="alertdialog"
+        aria-modal="true"
+        :aria-labelledby="titleId"
+        :aria-describedby="contentId"
+        @click="handleOverlayClick"
+      >
+        <div
+          ref="dialogRef"
+          class="warning-container"
+          :class="dialogClasses"
+          tabindex="-1"
+          @click.stop
+          @keydown.esc="handleEscape"
+        >
+          <!-- 警告对话框头部 -->
+          <div class="warning-header">
+            <div class="warning-title-section">
+              <div class="warning-icon" :class="iconClasses">
+                <i :class="iconClass" class="wh-8 animate-pulse" />
+              </div>
+              <div class="warning-title-content">
+                <h3 :id="titleId" class="warning-title">
+                  {{ title }}
+                </h3>
+                <p v-if="subtitle" class="warning-subtitle">
+                  {{ subtitle }}
+                </p>
+              </div>
+            </div>
+            <button
+              v-if="closable"
+              class="warning-close"
+              type="button"
+              :disabled="loading"
+              aria-label="关闭警告对话框"
+              @click="handleCancel"
+            >
+              <i class="i-tabler-x wh-5" />
+            </button>
+          </div>
+
+          <!-- 警告对话框内容 -->
+          <div :id="contentId" class="warning-content">
+            <slot>
+              <div class="warning-message">
+                <p class="warning-text">
+                  {{ message }}
+                </p>
+
+                <!-- 警告详情 -->
+                <div v-if="details" class="warning-details">
+                  <button
+                    class="warning-details-toggle"
+                    type="button"
+                    @click="showDetails = !showDetails"
+                  >
+                    <i
+                      class="i-tabler-chevron-right wh-4 transition-transform"
+                      :class="{ 'rotate-90': showDetails }"
+                    />
+                    {{ showDetails ? '隐藏详情' : '查看详情' }}
+                  </button>
+
+                  <Transition name="details-slide">
+                    <div v-if="showDetails" class="warning-details-content">
+                      <div class="warning-details-text">
+                        {{ details }}
+                      </div>
+                    </div>
+                  </Transition>
+                </div>
+
+                <!-- 警告列表 -->
+                <div v-if="warnings.length > 0" class="warning-list">
+                  <h4 class="warning-list-title">
+                    注意事项：
+                  </h4>
+                  <ul class="warning-list-items">
+                    <li
+                      v-for="(warning, index) in warnings"
+                      :key="`warning-${index}`"
+                      class="warning-list-item"
+                    >
+                      <i class="i-tabler-alert-triangle wh-4 flex-shrink-0 text-amber-500" />
+                      <span>{{ warning }}</span>
+                    </li>
+                  </ul>
+                </div>
+
+                <!-- 倒计时 -->
+                <div v-if="countdown > 0" class="warning-countdown">
+                  <div class="countdown-progress">
+                    <div
+                      class="countdown-bar"
+                      :style="{ width: `${(countdown / initialCountdown) * 100}%` }"
+                    />
+                  </div>
+                  <p class="countdown-text">
+                    {{ countdownText || `${countdown}秒后自动关闭` }}
+                  </p>
+                </div>
+              </div>
+            </slot>
+          </div>
+
+          <!-- 警告对话框底部 -->
+          <div class="warning-footer">
+            <div class="warning-actions">
+              <button
+                v-if="showCancel"
+                :disabled="loading"
+                class="btn-cancel"
+                type="button"
+                @click="handleCancel"
+              >
+                <i v-if="cancelIcon" :class="cancelIcon" class="mr-2 wh-4" />
+                {{ cancelText }}
+              </button>
+              <button
+                :disabled="loading || !canConfirm || countdown > 0"
+                class="btn-confirm"
+                :class="confirmButtonClasses"
+                type="button"
+                @click="handleConfirm"
+              >
+                <i
+                  v-if="loading"
+                  class="i-tabler-loader-2 mr-2 wh-4 animate-spin"
+                />
+                <i
+                  v-else-if="confirmIcon"
+                  :class="confirmIcon"
+                  class="mr-2 wh-4"
+                />
+                {{ confirmText }}
+                <span v-if="countdown > 0" class="countdown-suffix">
+                  ({{ countdown }}s)
+                </span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </Transition>
+  </Teleport>
+</template>
 
 <style scoped lang="postcss">
 .warning-overlay {
@@ -541,7 +552,7 @@ defineExpose({
 }
 
 .warning-close {
-  @apply flex-shrink-0 p-2 rounded-lg 
+  @apply flex-shrink-0 p-2 rounded-lg
          text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300
          hover:bg-gray-100 dark:hover:bg-gray-700
          focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2
@@ -708,39 +719,39 @@ defineExpose({
   .warning-overlay {
     @apply p-2;
   }
-  
+
   .warning-container {
     @apply max-w-full;
   }
-  
+
   .warning-header {
     @apply p-4 pb-3;
   }
-  
+
   .warning-title-section {
     @apply gap-3;
   }
-  
+
   .warning-icon-wrapper {
     @apply w-10 h-10;
   }
-  
+
   .warning-title {
     @apply text-lg;
   }
-  
+
   .warning-content {
     @apply px-4 py-3;
   }
-  
+
   .warning-footer {
     @apply px-4 py-3;
   }
-  
+
   .warning-actions {
     @apply flex-col gap-2;
   }
-  
+
   .btn-cancel,
   .btn-confirm {
     @apply w-full justify-center;
@@ -755,7 +766,7 @@ defineExpose({
   .details-slide-leave-active {
     @apply transition-none;
   }
-  
+
   .warning-icon-wrapper i {
     @apply animate-none;
   }
@@ -766,11 +777,11 @@ defineExpose({
   .warning-container {
     @apply border-2 border-amber-600;
   }
-  
+
   .warning-header {
     @apply border-b-2;
   }
-  
+
   .warning-footer {
     @apply border-t-2;
   }

@@ -12,79 +12,6 @@
 -->
 <!-- src/components/Pagination.vue -->
 
-<template>
-  <div
-    class="flex flex-wrap sm:flex-nowrap items-center justify-between p-4 bg-white rounded-lg shadow-md gap-4"
-  >
-    <!-- First / Prev -->
-    <div class="flex gap-2">
-      <button
-        @click="onFirst"
-        :disabled="currentPage <= 1"
-        :aria-label="t('pagination.home')"
-        class="btn-fancy"
-      >
-        <ChevronsLeft class="w-4 h-4" />
-      </button>
-      <button
-        @click="onPrev"
-        :disabled="currentPage <= 1"
-        :aria-label="t('pagination.prev')"
-        class="btn-fancy"
-      >
-        <ChevronLeft class="w-4 h-4" />
-      </button>
-    </div>
-
-    <!-- Page Info -->
-    <div class="flex items-center gap-3">
-      <span class="text-sm text-gray-700">{{ modelCurrentPage }}/{{ totalPages }}</span>
-      <input
-        type="number"
-        v-model.number="pageInput"
-        @change="handlePageJump"
-        @keydown.enter="handlePageJump"
-        :min="1"
-        :max="totalPages"
-        aria-label="Jump to page"
-        class="input-fancy"
-      />
-    </div>
-
-    <!-- Next / Last -->
-    <div class="flex gap-2">
-      <button
-        @click="onNext"
-        :disabled="currentPage === totalPages"
-        :aria-label="t('pagination.next')"
-        class="btn-fancy"
-      >
-        <ChevronRight class="w-4 h-4" />
-      </button>
-      <button
-        @click="onLast"
-        :disabled="currentPage === totalPages"
-        :aria-label="t('pagination.last')"
-        class="btn-fancy"
-      >
-        <ChevronsRight class="w-4 h-4" />
-      </button>
-    </div>
-
-    <!-- Page size selector (hidden) -->
-    <select
-      v-model="modelPageSize"
-      @change="handlePageSizeChange"
-      hidden
-      disabled
-      aria-label="Select items per page"
-      class="px-2 py-1 border border-gray-300 rounded-md text-sm"
-    >
-      <option v-for="size in modelPageSize" :key="size" :value="size">{{ size }}</option>
-    </select>
-  </div>
-</template>
-
 <script lang="ts">
 import {
   ChevronLeft,
@@ -142,7 +69,7 @@ export default defineComponent({
 
     watch(
       () => props.currentPage,
-      (val) => {
+      val => {
         pageInput.value = val;
       },
     );
@@ -152,7 +79,8 @@ export default defineComponent({
       if (value >= 1 && value <= props.totalPages) {
         modelCurrentPage.value = value;
         props.onPageJump(value);
-      } else {
+      }
+      else {
         pageInput.value = props.currentPage;
       }
     };
@@ -176,6 +104,81 @@ export default defineComponent({
   },
 });
 </script>
+
+<template>
+  <div
+    class="flex flex-wrap items-center justify-between gap-4 rounded-lg bg-white p-4 shadow-md sm:flex-nowrap"
+  >
+    <!-- First / Prev -->
+    <div class="flex gap-2">
+      <button
+        :disabled="currentPage <= 1"
+        :aria-label="t('pagination.home')"
+        class="btn-fancy"
+        @click="onFirst"
+      >
+        <ChevronsLeft class="h-4 w-4" />
+      </button>
+      <button
+        :disabled="currentPage <= 1"
+        :aria-label="t('pagination.prev')"
+        class="btn-fancy"
+        @click="onPrev"
+      >
+        <ChevronLeft class="h-4 w-4" />
+      </button>
+    </div>
+
+    <!-- Page Info -->
+    <div class="flex items-center gap-3">
+      <span class="text-sm text-gray-700">{{ modelCurrentPage }}/{{ totalPages }}</span>
+      <input
+        v-model.number="pageInput"
+        type="number"
+        :min="1"
+        :max="totalPages"
+        aria-label="Jump to page"
+        class="input-fancy"
+        @change="handlePageJump"
+        @keydown.enter="handlePageJump"
+      >
+    </div>
+
+    <!-- Next / Last -->
+    <div class="flex gap-2">
+      <button
+        :disabled="currentPage === totalPages"
+        :aria-label="t('pagination.next')"
+        class="btn-fancy"
+        @click="onNext"
+      >
+        <ChevronRight class="h-4 w-4" />
+      </button>
+      <button
+        :disabled="currentPage === totalPages"
+        :aria-label="t('pagination.last')"
+        class="btn-fancy"
+        @click="onLast"
+      >
+        <ChevronsRight class="h-4 w-4" />
+      </button>
+    </div>
+
+    <!-- Page size selector (hidden) -->
+    <select
+      v-model="modelPageSize"
+      disabled
+
+      hidden aria-label="Select items per page"
+      class="border border-gray-300 rounded-md px-2 py-1 text-sm"
+      @change="handlePageSizeChange"
+    >
+      <option v-for="size in modelPageSize" :key="size" :value="size">
+        {{ size }}
+      </option>
+    </select>
+  </div>
+</template>
 
 <style scoped lang="postcss">
 .btn-fancy {

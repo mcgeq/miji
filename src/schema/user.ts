@@ -1,7 +1,7 @@
 import { z } from 'zod';
+import { DateTimeSchema, NameSchema, SerialNumSchema } from './common';
 import { UserRoleSchema } from './userRole';
 import { UserStatusSchema } from './userStatus';
-import { DateTimeSchema, NameSchema, SerialNumSchema } from './common';
 
 export const UserSchema = z.object({
   serialNum: SerialNumSchema,
@@ -27,15 +27,17 @@ export const UserSchema = z.object({
 
 export type User = z.infer<typeof UserSchema>;
 
-export type AuthUser = {
+export interface AuthUser {
   serialNum: string;
   name: string;
   email: string;
   avatarUrl: string | null;
   role: string;
+  isVerified?: boolean;
+  emailVerifiedAt?: string;
   timezone: string;
   language?: string;
-};
+}
 
 export interface TokenResponse {
   token: string;

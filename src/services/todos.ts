@@ -1,16 +1,16 @@
 // src/lib/api/todos.ts
 import { getEndOfTodayISOWithOffset } from '@/utils/date';
 import { getDb } from '../db';
-import {
-  StatusSchema,
-  type DateRange,
-  type QueryFilters,
-  type SortOptions,
-  type Status,
-} from '../schema/common';
-import type { Todo } from '../schema/todos';
+import { StatusSchema } from '../schema/common';
 import { toCamelCase, toSnakeCase } from '../utils/common';
 import { Lg } from '../utils/debugLog';
+import type {
+  DateRange,
+  QueryFilters,
+  SortOptions,
+  Status,
+} from '../schema/common';
+import type { Todo } from '../schema/todos';
 
 type UpdatableFields = Partial<Record<keyof Todo, Todo[keyof Todo]>>;
 
@@ -19,7 +19,7 @@ type UpdatableFields = Partial<Record<keyof Todo, Todo[keyof Todo]>>;
  * @param serialNum - The unique identifier of the todo.
  * @returns A promise that resolves to the Todo object or null if not found.
  */
-const getTodo = async (serialNum: string): Promise<Todo | null> => {
+async function getTodo(serialNum: string): Promise<Todo | null> {
   try {
     const db = await getDb();
     const rows: unknown = await db.select(
@@ -28,21 +28,20 @@ const getTodo = async (serialNum: string): Promise<Todo | null> => {
     );
     const typedRows = rows as Todo[];
     return typedRows.length > 0 ? toCamelCase(typedRows[0]) : null;
-  } catch (error) {
+  }
+  catch (error) {
     Lg.e('TodoDb', error);
     throw new Error('Database error');
   }
-};
+}
 
 /**
  * Fetches todos from the database, optionally filtered by status.
+ * @param userSerialNum - userSerialNum
  * @param status - Optional status to filter todos by.
  * @returns A promise that resolves to an array of Todo objects.
  */
-const list = async (
-  userSerialNum: string,
-  status?: Status,
-): Promise<Todo[]> => {
+async function list(userSerialNum: string, status?: Status): Promise<Todo[]> {
   const db = await getDb();
   let sql: string;
   let params: (string | number | boolean | null)[] = [];
@@ -50,26 +49,27 @@ const list = async (
   if (status) {
     sql = 'SELECT * FROM todo WHERE status = ?';
     params = [status];
-  } else {
+  }
+  else {
     sql = 'SELECT * FROM todo WHERE ownerId = ?';
     params = [userSerialNum];
   }
 
   const rows = await db.select(sql, params);
   return toCamelCase(rows) as Todo[];
-};
+}
 
-const listPaged = async (
+async function listPaged(
   userSerialNum: string,
   filters: QueryFilters = {},
   page = 1,
   pageSize = 5,
   sortOptions: SortOptions = {},
-): Promise<{ rows: Todo[]; totalCount: number }> => {
+): Promise<{ rows: Todo[]; totalCount: number }> {
   const offset = (page - 1) * pageSize;
   const db = await getDb();
 
-  let whereParts: string[] = ['owner_id = ?'];
+  const whereParts: string[] = ['owner_id = ?'];
   const params: (string | number | boolean | null)[] = [userSerialNum];
 
   if (filters.status) {
@@ -81,8 +81,8 @@ const listPaged = async (
   appendDateRange('completed_at', filters.completedAtRange, whereParts, params);
   appendDateRange('due_at', filters.dueAtRange, whereParts, params);
 
-  const whereClause =
-    whereParts.length > 0 ? `WHERE ${whereParts.join(' AND ')}` : '';
+  const whereClause
+    = whereParts.length > 0 ? `WHERE ${whereParts.join(' AND ')}` : '';
 
   const orderClause = sortOptions.customOrderBy
     ? `ORDER BY ${sortOptions.customOrderBy}`
@@ -99,11 +99,11 @@ const listPaged = async (
     params.push(dueEnd);
   }
 
-  const whereOrClause =
-    orConditions.length > 0 ? `${orConditions.join(' AND ')}` : '';
+  const whereOrClause
+    = orConditions.length > 0 ? `${orConditions.join(' AND ')}` : '';
 
   const querySql = filters.orQuery
-    ? whereClause + ' OR (' + whereOrClause + ')'
+    ? `${whereClause} OR (${whereOrClause})`
     : whereClause;
   // 查询当前页数据
   const rows = await db.select(
@@ -122,24 +122,24 @@ const listPaged = async (
     rows: toCamelCase(rows) as Todo[],
     totalCount: total,
   };
-};
+}
 
 /**
  * Deletes a todo from the database by its serialNum.
  * @param serialNum - The unique identifier of the todo to delete.
  * @returns A promise that resolves when the deletion is complete.
  */
-const deletes = async (serialNum: string): Promise<void> => {
+async function deletes(serialNum: string): Promise<void> {
   const db = await getDb();
   await db.execute('DELETE FROM todo WHERE serial_num = ?', [serialNum]);
-};
+}
 
 /**
  * Inserts a new todo into the database.
  * @param todo - The todo data without a serialNum.
  * @returns A promise that resolves to the created Todo object.
  */
-const insert = async (todo: Todo): Promise<Todo> => {
+async function insert(todo: Todo): Promise<Todo> {
   await validateForeignKeys(todo);
   const db = await getDb();
   const values = [
@@ -175,17 +175,18 @@ const insert = async (todo: Todo): Promise<Todo> => {
       values,
     );
     return todo;
-  } catch (error) {
+  }
+  catch (error) {
     Lg.e('TodoDb', error);
     throw new Error('Failed to insert todo into database');
   }
-};
+}
 /**
  * Updates an existing todo in the database.
  * @param todo - The todo object with updated fields, including serialNum.
  * @returns A promise that resolves to the updated Todo object.
  */
-const update = async (todo: Todo): Promise<Todo> => {
+async function update(todo: Todo): Promise<Todo> {
   const db = await getDb();
   const values = [
     todo.title,
@@ -218,16 +219,17 @@ const update = async (todo: Todo): Promise<Todo> => {
     values,
   );
   return todo;
-};
+}
 
 /**
  * Updates a todo in the database, only applying changed fields.
  * @param newTodo - The new todo object with updated fields.
  * @returns A promise that resolves when the update is complete.
  */
-const updateSmart = async (newTodo: Todo): Promise<void> => {
+async function updateSmart(newTodo: Todo): Promise<void> {
   const oldTodo = toCamelCase(await getTodo(newTodo.serialNum));
-  if (!oldTodo) return;
+  if (!oldTodo)
+    return;
 
   const updates: UpdatableFields = {};
   for (const key in newTodo) {
@@ -248,7 +250,7 @@ const updateSmart = async (newTodo: Todo): Promise<void> => {
   }
 
   await updatePartial(newTodo.serialNum, updates);
-};
+}
 
 /**
  * Updates specific fields of a todo in the database.
@@ -256,10 +258,10 @@ const updateSmart = async (newTodo: Todo): Promise<void> => {
  * @param updates - Partial Todo object with fields to update.
  * @returns A promise that resolves when the update is complete.
  */
-const updatePartial = async (
+async function updatePartial(
   serialNum: string,
   updates: UpdatableFields,
-): Promise<void> => {
+): Promise<void> {
   const db = await getDb();
   const fields: string[] = [];
   const values: (string | number | boolean | null)[] = [];
@@ -268,22 +270,24 @@ const updatePartial = async (
     const snakeKey = toSnakeCase(key);
     fields.push(`${snakeKey} = ?`);
     if (
-      typeof value === 'object' &&
-      value !== null &&
-      !(value instanceof Date)
+      typeof value === 'object'
+      && value !== null
+      && !(value instanceof Date)
     ) {
       values.push(JSON.stringify(value));
-    } else {
+    }
+    else {
       values.push(value as string | number | boolean | null);
     }
   }
 
-  if (fields.length === 0) return;
+  if (fields.length === 0)
+    return;
 
   values.push(serialNum);
   const sql = `UPDATE todo SET ${fields.join(', ')} WHERE serial_num = ?`;
   await db.execute(sql, values);
-};
+}
 
 async function validateForeignKeys(todo: Todo) {
   const db = await getDb();
@@ -300,13 +304,14 @@ async function validateForeignKeys(todo: Todo) {
   }
 }
 
-const appendDateRange = (
+function appendDateRange(
   field: string,
   range: DateRange | undefined,
   whereParts: string[],
   params: (string | number | boolean | null)[],
-) => {
-  if (!range) return;
+) {
+  if (!range)
+    return;
   if (range.start) {
     whereParts.push(`${field} >= ?`);
     params.push(range.start);
@@ -315,7 +320,7 @@ const appendDateRange = (
     whereParts.push(`${field} <= ?`);
     params.push(range.end);
   }
-};
+}
 
 export const todosDb = {
   getTodo,

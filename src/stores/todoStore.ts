@@ -1,29 +1,24 @@
 // src/stores/todoStore.ts
 
-import {differenceInSeconds, format, intervalToDuration} from 'date-fns';
-import {defineStore} from 'pinia';
-import {computed, reactive, ref} from 'vue';
-import {useI18n} from 'vue-i18n';
-import {todoStoreConst} from '@/constants/todoStore';
-import {
-  type FilterBtn,
-  FilterBtnSchema,
-  type Priority,
-  PrioritySchema,
-  type QueryFilters,
-  StatusSchema,
-} from '@/schema/common';
-import {type Todo, type TodoRemain, TodoSchema} from '@/schema/todos';
-import {todosDb} from '@/services/todos';
-import {getCurrentUser} from '@/stores/auth';
+import { differenceInSeconds, format, intervalToDuration } from 'date-fns';
+import { defineStore } from 'pinia';
+import { computed, reactive, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { todoStoreConst } from '@/constants/todoStore';
+import { FilterBtnSchema, PrioritySchema, StatusSchema } from '@/schema/common';
+import { TodoSchema } from '@/schema/todos';
+import { todosDb } from '@/services/todos';
+import { getCurrentUser } from '@/stores/auth';
 import {
   getEndOfTodayISOWithOffset,
   getLocalISODateTimeWithOffset,
   getStartOfTodayISOWithOffset,
 } from '@/utils/date';
-import {Lg} from '@/utils/debugLog';
-import {uuid} from '@/utils/uuid';
-import {createRepeatPeriod, createWithDefaults} from '@/utils/zodFactory';
+import { Lg } from '@/utils/debugLog';
+import { uuid } from '@/utils/uuid';
+import { createRepeatPeriod, createWithDefaults } from '@/utils/zodFactory';
+import type { FilterBtn, Priority, QueryFilters } from '@/schema/common';
+import type { Todo, TodoRemain } from '@/schema/todos';
 
 const customOrderBy = `
   CASE WHEN status = '${StatusSchema.enum.Completed}' THEN 1 ELSE 0 END ASC,
@@ -39,7 +34,7 @@ const customOrderBy = `
 
 export const useTodoStore = defineStore('todo', () => {
   // i18n
-  const {t} = useI18n();
+  const { t } = useI18n();
   // ---------- state ----------
   const todos = reactive(new Map<string, Todo>());
   const todosWithRemaining = reactive(new Map<string, TodoRemain>());
@@ -58,18 +53,21 @@ export const useTodoStore = defineStore('todo', () => {
   // ---------- methods ----------
   const reloadPage = async () => {
     const user = getCurrentUser();
-    if (!user) return;
+    if (!user)
+      return;
 
     try {
-      let allTodos: {rows: Todo[]; totalCount: number} = {
+      let allTodos: { rows: Todo[]; totalCount: number } = {
         rows: [],
         totalCount: 0,
       };
       if (filterBtn.value === FilterBtnSchema.enum.TODAY) {
         allTodos = await getTodayTodos(user.serialNum);
-      } else if (filterBtn.value === FilterBtnSchema.enum.YESTERDAY) {
+      }
+      else if (filterBtn.value === FilterBtnSchema.enum.YESTERDAY) {
         allTodos = await getYesterdayTodos(user.serialNum);
-      } else if (filterBtn.value === FilterBtnSchema.enum.TOMORROW) {
+      }
+      else if (filterBtn.value === FilterBtnSchema.enum.TOMORROW) {
         allTodos = await getTomorrowTodos(user.serialNum);
       }
 
@@ -79,7 +77,7 @@ export const useTodoStore = defineStore('todo', () => {
       }
 
       if (allTodos.totalCount !== 0 && allTodos.rows) {
-        const newTodoSerialNum = new Set(allTodos.rows.map((t) => t.serialNum));
+        const newTodoSerialNum = new Set(allTodos.rows.map(t => t.serialNum));
         const todosSerialNum = new Set(todos.keys());
         for (const sn of todosSerialNum) {
           if (!newTodoSerialNum.has(sn)) {
@@ -94,9 +92,11 @@ export const useTodoStore = defineStore('todo', () => {
 
         totalPages.value = Math.ceil(allTodos.totalCount / pageSize.value);
         lastFilterBtn.value = filterBtn.value;
-        if (totalPages.value === 0) currentPage.value = 0;
+        if (totalPages.value === 0)
+          currentPage.value = 0;
       }
-    } catch (e) {
+    }
+    catch (e) {
       Lg.e('todoStore', 'reloadPage', e);
     }
   };
@@ -129,24 +129,29 @@ export const useTodoStore = defineStore('todo', () => {
     );
 
   const addTodo = async (text: string) => {
-    if (!text.trim()) return;
+    if (!text.trim())
+      return;
     const user = getCurrentUser();
-    if (!user) return Lg.e('todoStore', 'No user is logged in');
+    if (!user)
+      return Lg.e('todoStore', 'No user is logged in');
 
-    const newTodo = createTodo({title: text, ownerId: user.serialNum});
+    const newTodo = createTodo({ title: text, ownerId: user.serialNum });
     try {
       await todosDb.insert(newTodo);
       await reloadPage();
-    } catch (e) {
+    }
+    catch (e) {
       Lg.e('todoStore', 'addTodo', e);
     }
 
-    if (currentPage.value === 0) currentPage.value = 1;
+    if (currentPage.value === 0)
+      currentPage.value = 1;
   };
 
   const toggleTodo = async (serialNum: string) => {
     const todo = await todosDb.getTodo(serialNum);
-    if (!todo) return;
+    if (!todo)
+      return;
     const isCompleted = todo.status === StatusSchema.enum.Completed;
     const updated = {
       ...todo,
@@ -159,14 +164,15 @@ export const useTodoStore = defineStore('todo', () => {
     await setTodo(updated);
   };
 
-  const setTodo = async (todo: Todo) => {
+  async function setTodo(todo: Todo) {
     try {
       await todosDb.updateSmart(todo);
       await reloadPage();
-    } catch (e) {
+    }
+    catch (e) {
       Lg.e('todoStore', 'setTodo', e);
     }
-  };
+  }
 
   const removeTodo = async (serialNum: string) => {
     todos.delete(serialNum);
@@ -175,18 +181,21 @@ export const useTodoStore = defineStore('todo', () => {
       await todosDb.deletes(serialNum);
 
       await reloadPage();
-      if (totalPages.value === 0) currentPage.value = 0;
-    } catch (e) {
+      if (totalPages.value === 0)
+        currentPage.value = 0;
+    }
+    catch (e) {
       Lg.e('todoStore', 'removeTodo', e);
     }
   };
 
   const editTodo = async (serialNum: string, updatedTodo: TodoRemain) => {
     const todo = todos.get(serialNum);
-    if (!todo) return;
+    if (!todo)
+      return;
     todos.delete(serialNum);
     todosWithRemaining.delete(serialNum);
-    const {remainingTime, ...uTodo} = updatedTodo;
+    const { remainingTime, ...uTodo } = updatedTodo;
     await setTodo({
       ...todo,
       ...uTodo,
@@ -204,25 +213,26 @@ export const useTodoStore = defineStore('todo', () => {
     const now = new Date();
     const due = new Date(todo.dueAt);
     const diff = differenceInSeconds(due, now);
-    if (diff <= 0) return t('todos.expired');
-    const duration = intervalToDuration({start: 0, end: diff * 1000});
+    if (diff <= 0)
+      return t('todos.expired');
+    const duration = intervalToDuration({ start: 0, end: diff * 1000 });
     if ((duration.days || 0) > 0) {
-      return `${t('todos.dueAt')}: ${duration.days || 0}d ${duration.hours || 0}h ${
-        duration.minutes || 0
+      return `${t('todos.dueAt')}: ${duration.days || 0}d ${duration.hours || 0}h ${duration.minutes || 0
       }m`;
     }
     return `${t('todos.dueAt')}: ${duration.hours || 0}h ${duration.minutes || 0}m`;
   };
 
-  const updateTodoRemainingTime = (todo: Todo) => {
+  async function updateTodoRemainingTime(todo: Todo) {
     todosWithRemaining.set(todo.serialNum, {
       ...todo,
       remainingTime: calculateRemainingTime(todo),
     });
-  };
+  }
 
   const startGlobalTimer = () => {
-    if (globalIntervalId) return;
+    if (globalIntervalId)
+      return;
     globalIntervalId = setInterval(() => {
       todos.forEach(updateTodoRemainingTime);
     }, todoStoreConst.REFRESH_INTERVAL_MS);
@@ -235,10 +245,11 @@ export const useTodoStore = defineStore('todo', () => {
     }
   };
 
-  const compareTodos = (a: TodoRemain, b: TodoRemain) => {
+  function compareTodos(a: TodoRemain, b: TodoRemain) {
     const isCompletedA = a.status === StatusSchema.enum.Completed;
     const isCompletedB = b.status === StatusSchema.enum.Completed;
-    if (isCompletedA !== isCompletedB) return isCompletedA ? 1 : -1;
+    if (isCompletedA !== isCompletedB)
+      return isCompletedA ? 1 : -1;
 
     if (!isCompletedA) {
       const priorityOrder: Record<Priority, number> = {
@@ -248,11 +259,12 @@ export const useTodoStore = defineStore('todo', () => {
         [PrioritySchema.enum.Low]: 4,
       };
       const diff = priorityOrder[a.priority] - priorityOrder[b.priority];
-      if (diff !== 0) return diff;
+      if (diff !== 0)
+        return diff;
     }
 
     return a.createdAt.localeCompare(b.createdAt);
-  };
+  }
 
   const getPagedTodos = () => {
     let start = (currentPage.value - 1) * pageSize.value;
@@ -260,9 +272,9 @@ export const useTodoStore = defineStore('todo', () => {
     let slice = sortedTodos.value.slice(start, end);
 
     if (!slice.length && sortedTodos.value.length > 0) {
-      start =
-        (Math.ceil(sortedTodos.value.length / pageSize.value) - 1) *
-        pageSize.value;
+      start
+        = (Math.ceil(sortedTodos.value.length / pageSize.value) - 1)
+          * pageSize.value;
       end = sortedTodos.value.length;
       slice = sortedTodos.value.slice(start, end);
     }
@@ -307,17 +319,18 @@ export const useTodoStore = defineStore('todo', () => {
     if (todos.size === 0) {
       totalPages.value = 0;
       currentPage.value = 0;
-    } else {
+    }
+    else {
       totalPages.value = 1;
       currentPage.value = 1;
     }
   };
 
-  const getTodayTodos = async (ownerId: string) => {
+  async function getTodayTodos(ownerId: string) {
     try {
       const filters: QueryFilters = {
         dueAtRange: {
-          start: getEndOfTodayISOWithOffset({days: -3}),
+          start: getEndOfTodayISOWithOffset({ days: -3 }),
           end: getEndOfTodayISOWithOffset(),
         },
         orQuery: true,
@@ -327,18 +340,19 @@ export const useTodoStore = defineStore('todo', () => {
         filters,
         currentPage.value,
         pageSize.value,
-        {customOrderBy},
+        { customOrderBy },
       );
-    } catch (e) {
-      Lg.e('todoStore', 'getTodayTodos', e);
-      return {rows: [], totalCount: 0};
     }
-  };
+    catch (e) {
+      Lg.e('todoStore', 'getTodayTodos', e);
+      return { rows: [], totalCount: 0 };
+    }
+  }
 
-  const getYesterdayTodos = async (ownerId: string) => {
+  async function getYesterdayTodos(ownerId: string) {
     try {
       const filters: QueryFilters = {
-        dueAtRange: {end: getEndOfTodayISOWithOffset({days: -3})},
+        dueAtRange: { end: getEndOfTodayISOWithOffset({ days: -3 }) },
         status: StatusSchema.enum.Completed,
       };
       return await todosDb.listPaged(
@@ -346,31 +360,33 @@ export const useTodoStore = defineStore('todo', () => {
         filters,
         currentPage.value,
         pageSize.value,
-        {customOrderBy},
+        { customOrderBy },
       );
-    } catch (e) {
-      Lg.e('todoStore', 'getYesterdayTodos', e);
-      return {rows: [], totalCount: 0};
     }
-  };
+    catch (e) {
+      Lg.e('todoStore', 'getYesterdayTodos', e);
+      return { rows: [], totalCount: 0 };
+    }
+  }
 
-  const getTomorrowTodos = async (ownerId: string) => {
+  async function getTomorrowTodos(ownerId: string) {
     try {
       const filters: QueryFilters = {
-        dueAtRange: {start: getStartOfTodayISOWithOffset({days: 1})},
+        dueAtRange: { start: getStartOfTodayISOWithOffset({ days: 1 }) },
       };
       return await todosDb.listPaged(
         ownerId,
         filters,
         currentPage.value,
         pageSize.value,
-        {customOrderBy},
+        { customOrderBy },
       );
-    } catch (e) {
-      Lg.e('todoStore', 'getTomorrowTodos', e);
-      return {rows: [], totalCount: 0};
     }
-  };
+    catch (e) {
+      Lg.e('todoStore', 'getTomorrowTodos', e);
+      return { rows: [], totalCount: 0 };
+    }
+  }
 
   return {
     todos,

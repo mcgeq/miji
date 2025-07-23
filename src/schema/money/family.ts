@@ -6,12 +6,12 @@ import {
   NameSchema,
   SerialNumSchema,
 } from '../common';
-import { UserRoleSchema } from '../userRole';
+import { MemberUserRoleSchema } from '../userRole';
 
 export const FamilyMemberSchema = z.object({
   serialNum: SerialNumSchema,
   name: NameSchema,
-  role: UserRoleSchema,
+  role: MemberUserRoleSchema,
   isPrimary: z.boolean(),
   permissions: z.string(),
   createdAt: DateTimeSchema,

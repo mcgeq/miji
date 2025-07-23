@@ -1,20 +1,5 @@
-<template>
-  <div class="flex flex-wrap gap-3 p-4 bg-gray-100">
-    <component
-      :is="component"
-      v-for="([key, entity]) in entityList"
-      :key="String(key)"
-      :modelValue="entity"
-      :readonly="readonly"
-      :displayKey="displayKey"
-      @update:modelValue="(val: T) => updateEntity(key, val)"
-      @remove="() => removeEntity(key)"
-    />
-  </div>
-</template>
-
 <script lang="ts" setup generic="T extends { [key: string]: unknown }">
-import { shallowRef, computed, watch } from 'vue';
+import { computed, shallowRef, watch } from 'vue';
 
 const props = defineProps<{
   entities: Map<string, T>;
@@ -33,7 +18,7 @@ const internalMap = shallowRef<Map<string, T>>(new Map(props.entities));
 // 当 props.entities 更新时同步更新 internalMap
 watch(
   () => props.entities,
-  (val) => {
+  val => {
     internalMap.value = new Map(val);
   },
   { deep: false }, // 因为 shallowRef 不需要 deep
@@ -43,14 +28,29 @@ watch(
 const entityList = computed(() => Array.from(internalMap.value.entries()));
 
 // 更新单个元素
-const updateEntity = (key: string, val: T) => {
+function updateEntity(key: string, val: T) {
   internalMap.value.set(key, val);
   emit('update:entities', new Map(internalMap.value));
-};
+}
 
 // 删除单个元素
-const removeEntity = (key: string) => {
+function removeEntity(key: string) {
   internalMap.value.delete(key);
   emit('update:entities', new Map(internalMap.value));
-};
+}
 </script>
+
+<template>
+  <div class="flex flex-wrap gap-3 bg-gray-100 p-4">
+    <component
+      :is="component"
+      v-for="([key, entity]) in entityList"
+      :key="String(key)"
+      :model-value="entity"
+      :readonly="readonly"
+      :display-key="displayKey"
+      @update:model-value="(val: T) => updateEntity(key, val)"
+      @remove="() => removeEntity(key)"
+    />
+  </div>
+</template>

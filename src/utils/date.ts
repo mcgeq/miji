@@ -290,3 +290,25 @@ export function formatDateTime(dateStr: string) {
   const t = dt[1].split('\.')[0];
   return `${dt[0]} ${t}`;
 }
+
+/**
+ * 验证给定字符串是否为合法日期
+ * @param dateString - 日期字符串（推荐 ISO 格式，如 "YYYY-MM-DD"）
+ * @returns 是否为合法日期
+ */
+export function isValidDate(dateString: string): boolean {
+  const date = new Date(dateString);
+  return !Number.isNaN(date.getTime());
+}
+
+/**
+ * 在给定日期上增加指定天数
+ * @param dateStr - 初始日期（ISO 格式）
+ * @param days - 要增加的天数（负值表示减少）
+ * @returns 新日期（ISO 格式）
+ */
+export function addDays(dateStr: string, days: number): string {
+  const date = new Date(dateStr);
+  date.setDate(date.getDate() + days);
+  return date.toISOString().split('T')[0]; // 返回 YYYY-MM-DD 格式
+}

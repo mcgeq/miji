@@ -1,24 +1,24 @@
 // stores/moneyStore.ts
 
-import {COLORS_MAP, DEFAULT_CURRENCY} from '@/constants/moneyConst';
+import { defineStore } from 'pinia';
+import { COLORS_MAP, DEFAULT_CURRENCY } from '@/constants/moneyConst';
 import {
   CategorySchema,
   PrioritySchema,
   ReminderTypeSchema,
   SubCategorySchema,
   TransactionStatusSchema,
-  TransactionType,
   TransactionTypeSchema,
 } from '@/schema/common';
-import {
+import { AccountTypeSchema } from '@/schema/money';
+import { uuid } from '@/utils/uuid';
+import type { TransactionType } from '@/schema/common';
+import type {
   Account,
-  AccountTypeSchema,
   BilReminder,
   Budget,
   TransactionWithAccount,
 } from '@/schema/money';
-import {uuid} from '@/utils/uuid';
-import {defineStore} from 'pinia';
 
 // 模拟数据生成器
 const generateSerialNum = () => uuid(38);
@@ -221,7 +221,7 @@ const mockBudgets: Budget[] = [
     description: '餐饮',
     category: 'Food',
     amount: '1500.00',
-    repeatPeriod: {type: 'Monthly', interval: 1, day: 28},
+    repeatPeriod: { type: 'Monthly', interval: 1, day: 28 },
     startDate: '2024-12-01',
     endDate: '2024-12-31',
     usedAmount: '456.80',
@@ -239,7 +239,7 @@ const mockBudgets: Budget[] = [
     description: '交通',
     category: CategorySchema.enum.Transport,
     amount: '800.00',
-    repeatPeriod: {type: 'None'},
+    repeatPeriod: { type: 'None' },
     startDate: '2024-12-01',
     endDate: '2024-12-31',
     usedAmount: '128.00',
@@ -258,7 +258,7 @@ const mockBudgets: Budget[] = [
     description: '娱乐',
     category: 'Entertainment',
     amount: '600.00',
-    repeatPeriod: {type: 'None'},
+    repeatPeriod: { type: 'None' },
     startDate: '2024-12-01',
     endDate: '2024-12-31',
     usedAmount: '0.00',
@@ -276,7 +276,7 @@ const mockBudgets: Budget[] = [
     description: '交通',
     category: CategorySchema.enum.Transport,
     amount: '800.00',
-    repeatPeriod: {type: 'None'},
+    repeatPeriod: { type: 'None' },
     startDate: '2024-12-01',
     endDate: '2024-12-31',
     usedAmount: '128.00',
@@ -295,7 +295,7 @@ const mockBudgets: Budget[] = [
     description: '娱乐',
     category: 'Entertainment',
     amount: '600.00',
-    repeatPeriod: {type: 'None'},
+    repeatPeriod: { type: 'None' },
     startDate: '2024-12-01',
     endDate: '2024-12-31',
     usedAmount: '0.00',
@@ -321,7 +321,7 @@ const mockReminders: BilReminder[] = [
     dueDate: '2024-12-15T00:00:00.000Z',
     billDate: '2024-12-15T00:00:00.000Z',
     remindDate: '2024-12-15T00:00:00.000Z',
-    repeatPeriod: {type: 'Monthly', interval: 1, day: 3},
+    repeatPeriod: { type: 'Monthly', interval: 1, day: 3 },
     isPaid: false,
     priority: PrioritySchema.enum.High,
     color: COLORS_MAP[4].code,
@@ -341,7 +341,7 @@ const mockReminders: BilReminder[] = [
     dueDate: '2024-12-05T00:00:00.000Z',
     remindDate: '2024-12-15T00:00:00.000Z',
     billDate: '2024-12-15T00:00:00.000Z',
-    repeatPeriod: {type: 'None'},
+    repeatPeriod: { type: 'None' },
     isPaid: true,
     priority: PrioritySchema.enum.Urgent,
     color: COLORS_MAP[3].code,
@@ -361,7 +361,7 @@ const mockReminders: BilReminder[] = [
     dueDate: '2024-12-20T00:00:00.000Z',
     remindDate: '2024-12-15T00:00:00.000Z',
     billDate: '2024-12-15T00:00:00.000Z',
-    repeatPeriod: {type: 'None'},
+    repeatPeriod: { type: 'None' },
     isPaid: false,
     priority: PrioritySchema.enum.Low,
     color: COLORS_MAP[1].code,
@@ -381,7 +381,7 @@ const mockReminders: BilReminder[] = [
     dueDate: '2024-12-05T00:00:00.000Z',
     remindDate: '2024-12-15T00:00:00.000Z',
     billDate: '2024-12-15T00:00:00.000Z',
-    repeatPeriod: {type: 'None'},
+    repeatPeriod: { type: 'None' },
     isPaid: true,
     priority: PrioritySchema.enum.Urgent,
     color: COLORS_MAP[3].code,
@@ -401,7 +401,7 @@ const mockReminders: BilReminder[] = [
     dueDate: '2024-12-20T00:00:00.000Z',
     remindDate: '2024-12-15T00:00:00.000Z',
     billDate: '2024-12-15T00:00:00.000Z',
-    repeatPeriod: {type: 'None'},
+    repeatPeriod: { type: 'None' },
     isPaid: false,
     priority: PrioritySchema.enum.Low,
     color: COLORS_MAP[1].code,
@@ -424,25 +424,25 @@ export const useMoneyStore = defineStore('money', () => {
   // 计算属性
   const totalBalance = computed(() => {
     return accounts.value
-      .filter((account) => account.isActive)
-      .reduce((sum, account) => sum + parseFloat(account.balance), 0);
+      .filter(account => account.isActive)
+      .reduce((sum, account) => sum + Number.parseFloat(account.balance), 0);
   });
 
   const activeAccounts = computed(() => {
-    return accounts.value.filter((account) => account.isActive);
+    return accounts.value.filter(account => account.isActive);
   });
 
   const activeBudgets = computed(() => {
-    return budgets.value.filter((budget) => budget.isActive);
+    return budgets.value.filter(budget => budget.isActive);
   });
 
   const unpaidReminders = computed(() => {
-    return reminders.value.filter((reminder) => !reminder.isPaid);
+    return reminders.value.filter(reminder => !reminder.isPaid);
   });
 
   // 模拟 API 延迟
   const mockDelay = (ms: number = 500) =>
-    new Promise((resolve) => setTimeout(resolve, ms));
+    new Promise(resolve => setTimeout(resolve, ms));
 
   // 账户相关方法
   const getAccounts = async (): Promise<Account[]> => {
@@ -452,10 +452,12 @@ export const useMoneyStore = defineStore('money', () => {
     try {
       await mockDelay();
       return accounts.value;
-    } catch (err) {
+    }
+    catch (err) {
       error.value = '获取账户列表失败';
       throw err;
-    } finally {
+    }
+    finally {
       loading.value = false;
     }
   };
@@ -478,10 +480,12 @@ export const useMoneyStore = defineStore('money', () => {
 
       accounts.value.push(newAccount);
       return newAccount;
-    } catch (err) {
+    }
+    catch (err) {
       error.value = '创建账户失败';
       throw err;
-    } finally {
+    }
+    finally {
       loading.value = false;
     }
   };
@@ -494,7 +498,7 @@ export const useMoneyStore = defineStore('money', () => {
       await mockDelay();
 
       const index = accounts.value.findIndex(
-        (a) => a.serialNum === account.serialNum,
+        a => a.serialNum === account.serialNum,
       );
       if (index === -1) {
         throw new Error('账户不存在');
@@ -507,10 +511,12 @@ export const useMoneyStore = defineStore('money', () => {
 
       accounts.value[index] = updatedAccount;
       return updatedAccount;
-    } catch (err) {
+    }
+    catch (err) {
       error.value = '更新账户失败';
       throw err;
-    } finally {
+    }
+    finally {
       loading.value = false;
     }
   };
@@ -522,16 +528,18 @@ export const useMoneyStore = defineStore('money', () => {
     try {
       await mockDelay();
 
-      const index = accounts.value.findIndex((a) => a.serialNum === serialNum);
+      const index = accounts.value.findIndex(a => a.serialNum === serialNum);
       if (index === -1) {
         throw new Error('账户不存在');
       }
 
       accounts.value.splice(index, 1);
-    } catch (err) {
+    }
+    catch (err) {
       error.value = '删除账户失败';
       throw err;
-    } finally {
+    }
+    finally {
       loading.value = false;
     }
   };
@@ -543,17 +551,19 @@ export const useMoneyStore = defineStore('money', () => {
     try {
       await mockDelay();
 
-      const account = accounts.value.find((a) => a.serialNum === serialNum);
+      const account = accounts.value.find(a => a.serialNum === serialNum);
       if (!account) {
         throw new Error('账户不存在');
       }
 
       account.isActive = !account.isActive;
       account.updatedAt = new Date().toISOString();
-    } catch (err) {
+    }
+    catch (err) {
       error.value = '切换账户状态失败';
       throw err;
-    } finally {
+    }
+    finally {
       loading.value = false;
     }
   };
@@ -584,21 +594,21 @@ export const useMoneyStore = defineStore('money', () => {
 
       // 筛选逻辑
       if (params.type) {
-        filtered = filtered.filter((t) => t.transactionType === params.type);
+        filtered = filtered.filter(t => t.transactionType === params.type);
       }
 
       if (params.accountSerialNum) {
         filtered = filtered.filter(
-          (t) => t.accountSerialNum === params.accountSerialNum,
+          t => t.accountSerialNum === params.accountSerialNum,
         );
       }
 
       if (params.dateFrom) {
-        filtered = filtered.filter((t) => t.date >= params.dateFrom!);
+        filtered = filtered.filter(t => t.date >= params.dateFrom!);
       }
 
       if (params.dateTo) {
-        filtered = filtered.filter((t) => t.date <= params.dateTo!);
+        filtered = filtered.filter(t => t.date <= params.dateTo!);
       }
 
       // 排序（按日期倒序）
@@ -619,10 +629,12 @@ export const useMoneyStore = defineStore('money', () => {
         page,
         pageSize,
       };
-    } catch (err) {
+    }
+    catch (err) {
       error.value = '获取交易列表失败';
       throw err;
-    } finally {
+    }
+    finally {
       loading.value = false;
     }
   };
@@ -652,14 +664,16 @@ export const useMoneyStore = defineStore('money', () => {
       await updateAccountBalance(
         transaction.accountSerialNum,
         transaction.transactionType,
-        parseFloat(transaction.amount),
+        Number.parseFloat(transaction.amount),
       );
 
       return newTransaction;
-    } catch (err) {
+    }
+    catch (err) {
       error.value = '创建交易失败';
       throw err;
-    } finally {
+    }
+    finally {
       loading.value = false;
     }
   };
@@ -674,7 +688,7 @@ export const useMoneyStore = defineStore('money', () => {
       await mockDelay();
 
       const index = transactions.value.findIndex(
-        (t) => t.serialNum === transaction.serialNum,
+        t => t.serialNum === transaction.serialNum,
       );
       if (index === -1) {
         throw new Error('交易不存在');
@@ -686,7 +700,7 @@ export const useMoneyStore = defineStore('money', () => {
       await updateAccountBalance(
         oldTransaction.accountSerialNum,
         oldTransaction.transactionType,
-        -parseFloat(oldTransaction.amount),
+        -Number.parseFloat(oldTransaction.amount),
       );
 
       const updatedTransaction = {
@@ -700,14 +714,16 @@ export const useMoneyStore = defineStore('money', () => {
       await updateAccountBalance(
         transaction.accountSerialNum,
         transaction.transactionType,
-        parseFloat(transaction.amount),
+        Number.parseFloat(transaction.amount),
       );
 
       return updatedTransaction;
-    } catch (err) {
+    }
+    catch (err) {
       error.value = '更新交易失败';
       throw err;
-    } finally {
+    }
+    finally {
       loading.value = false;
     }
   };
@@ -720,7 +736,7 @@ export const useMoneyStore = defineStore('money', () => {
       await mockDelay();
 
       const index = transactions.value.findIndex(
-        (t) => t.serialNum === serialNum,
+        t => t.serialNum === serialNum,
       );
       if (index === -1) {
         throw new Error('交易不存在');
@@ -732,14 +748,16 @@ export const useMoneyStore = defineStore('money', () => {
       await updateAccountBalance(
         transaction.accountSerialNum,
         transaction.transactionType,
-        -parseFloat(transaction.amount),
+        -Number.parseFloat(transaction.amount),
       );
 
       transactions.value.splice(index, 1);
-    } catch (err) {
+    }
+    catch (err) {
       error.value = '删除交易失败';
       throw err;
-    } finally {
+    }
+    finally {
       loading.value = false;
     }
   };
@@ -752,10 +770,12 @@ export const useMoneyStore = defineStore('money', () => {
     try {
       await mockDelay();
       return budgets.value;
-    } catch (err) {
+    }
+    catch (err) {
       error.value = '获取预算列表失败';
       throw err;
-    } finally {
+    }
+    finally {
       loading.value = false;
     }
   };
@@ -778,10 +798,12 @@ export const useMoneyStore = defineStore('money', () => {
 
       budgets.value.push(newBudget);
       return newBudget;
-    } catch (err) {
+    }
+    catch (err) {
       error.value = '创建预算失败';
       throw err;
-    } finally {
+    }
+    finally {
       loading.value = false;
     }
   };
@@ -794,7 +816,7 @@ export const useMoneyStore = defineStore('money', () => {
       await mockDelay();
 
       const index = budgets.value.findIndex(
-        (b) => b.serialNum === budget.serialNum,
+        b => b.serialNum === budget.serialNum,
       );
       if (index === -1) {
         throw new Error('预算不存在');
@@ -807,10 +829,12 @@ export const useMoneyStore = defineStore('money', () => {
 
       budgets.value[index] = updatedBudget;
       return updatedBudget;
-    } catch (err) {
+    }
+    catch (err) {
       error.value = '更新预算失败';
       throw err;
-    } finally {
+    }
+    finally {
       loading.value = false;
     }
   };
@@ -822,16 +846,18 @@ export const useMoneyStore = defineStore('money', () => {
     try {
       await mockDelay();
 
-      const index = budgets.value.findIndex((b) => b.serialNum === serialNum);
+      const index = budgets.value.findIndex(b => b.serialNum === serialNum);
       if (index === -1) {
         throw new Error('预算不存在');
       }
 
       budgets.value.splice(index, 1);
-    } catch (err) {
+    }
+    catch (err) {
       error.value = '删除预算失败';
       throw err;
-    } finally {
+    }
+    finally {
       loading.value = false;
     }
   };
@@ -843,17 +869,19 @@ export const useMoneyStore = defineStore('money', () => {
     try {
       await mockDelay();
 
-      const budget = budgets.value.find((b) => b.serialNum === serialNum);
+      const budget = budgets.value.find(b => b.serialNum === serialNum);
       if (!budget) {
         throw new Error('预算不存在');
       }
 
       budget.isActive = !budget.isActive;
       budget.updatedAt = new Date().toISOString();
-    } catch (err) {
+    }
+    catch (err) {
       error.value = '切换预算状态失败';
       throw err;
-    } finally {
+    }
+    finally {
       loading.value = false;
     }
   };
@@ -866,10 +894,12 @@ export const useMoneyStore = defineStore('money', () => {
     try {
       await mockDelay();
       return reminders.value;
-    } catch (err) {
+    }
+    catch (err) {
       error.value = '获取提醒列表失败';
       throw err;
-    } finally {
+    }
+    finally {
       loading.value = false;
     }
   };
@@ -892,10 +922,12 @@ export const useMoneyStore = defineStore('money', () => {
 
       reminders.value.push(newReminder);
       return newReminder;
-    } catch (err) {
+    }
+    catch (err) {
       error.value = '创建提醒失败';
       throw err;
-    } finally {
+    }
+    finally {
       loading.value = false;
     }
   };
@@ -910,7 +942,7 @@ export const useMoneyStore = defineStore('money', () => {
       await mockDelay();
 
       const index = reminders.value.findIndex(
-        (r) => r.serialNum === reminder.serialNum,
+        r => r.serialNum === reminder.serialNum,
       );
       if (index === -1) {
         throw new Error('提醒不存在');
@@ -923,10 +955,12 @@ export const useMoneyStore = defineStore('money', () => {
 
       reminders.value[index] = updatedReminder;
       return updatedReminder;
-    } catch (err) {
+    }
+    catch (err) {
       error.value = '更新提醒失败';
       throw err;
-    } finally {
+    }
+    finally {
       loading.value = false;
     }
   };
@@ -938,16 +972,18 @@ export const useMoneyStore = defineStore('money', () => {
     try {
       await mockDelay();
 
-      const index = reminders.value.findIndex((r) => r.serialNum === serialNum);
+      const index = reminders.value.findIndex(r => r.serialNum === serialNum);
       if (index === -1) {
         throw new Error('提醒不存在');
       }
 
       reminders.value.splice(index, 1);
-    } catch (err) {
+    }
+    catch (err) {
       error.value = '删除提醒失败';
       throw err;
-    } finally {
+    }
+    finally {
       loading.value = false;
     }
   };
@@ -959,35 +995,35 @@ export const useMoneyStore = defineStore('money', () => {
     try {
       await mockDelay();
 
-      const reminder = reminders.value.find((r) => r.serialNum === serialNum);
+      const reminder = reminders.value.find(r => r.serialNum === serialNum);
       if (!reminder) {
         throw new Error('提醒不存在');
       }
 
       reminder.isPaid = true;
       reminder.updatedAt = new Date().toISOString();
-    } catch (err) {
+    }
+    catch (err) {
       error.value = '标记支付状态失败';
       throw err;
-    } finally {
+    }
+    finally {
       loading.value = false;
     }
   };
 
   // 辅助方法
-  const updateAccountBalance = async (
+  async function updateAccountBalance(
     accountSerialNum: string,
     transactionType: TransactionType,
     amount: number,
-  ): Promise<void> => {
-    const account = accounts.value.find(
-      (a) => a.serialNum === accountSerialNum,
-    );
+  ): Promise<void> {
+    const account = accounts.value.find(a => a.serialNum === accountSerialNum);
     if (!account) {
       throw new Error('账户不存在');
     }
 
-    let currentBalance = parseFloat(account.balance);
+    let currentBalance = Number.parseFloat(account.balance);
 
     switch (transactionType) {
       case TransactionTypeSchema.enum.Income:
@@ -1004,7 +1040,7 @@ export const useMoneyStore = defineStore('money', () => {
 
     account.balance = currentBalance.toFixed(2);
     account.updatedAt = new Date().toISOString();
-  };
+  }
 
   const clearError = () => {
     error.value = null;
