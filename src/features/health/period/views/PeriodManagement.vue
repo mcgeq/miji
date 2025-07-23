@@ -1,13 +1,9 @@
 <script setup lang="ts">
 import {
   Activity,
-  Apple,
   CalendarCheck,
   Check,
-  Droplet,
   Eye,
-  Heart,
-  Moon,
   Settings,
   Trash,
   X,
@@ -15,14 +11,13 @@ import {
 import { usePeriodStore } from '@/stores/periodStore';
 import { getTodayDate } from '@/utils/date';
 import { Lg } from '@/utils/debugLog';
-import { phaseTips } from '../../utils/periodUtils';
 import PeriodCalendar from '../components/PeriodCalendar.vue';
+import PeriodHealthTip from '../components/PeriodHealthTip.vue';
 import PeriodRecentRecord from '../components/PeriodRecentRecord.vue';
 import PeriodDailyForm from './PeriodDailyForm.vue';
 import PeriodRecordForm from './PeriodRecordForm.vue';
 import PeriodSettings from './PeriodSettings.vue';
 import PeriodStatsDashboard from './PeriodStatsDashboard.vue';
-import type { Tip } from '../../utils/periodUtils';
 import type { PeriodDailyRecords, PeriodRecords } from '@/schema/health/period';
 
 // Store
@@ -43,15 +38,15 @@ const editingDailyRecord = ref<PeriodDailyRecords | undefined>();
 const deletingSerialNum = ref<string>('');
 
 // Computed
+const currentPhase = computed(() => periodStore.periodStats);
 const currentPhaseLabel = computed(() => {
-  const phase = periodStore.periodStats.currentPhase;
   const labels = {
     Menstrual: t('period.phases.menstrual'),
     Follicular: t('period.phases.follicular'),
     Ovulation: t('period.phases.ovulation'),
     Luteal: t('period.phases.luteal'),
   };
-  return labels[phase];
+  return labels[currentPhase.value.currentPhase];
 });
 
 const daysUntilNext = computed(() => {
@@ -73,16 +68,6 @@ const todayRecord = computed(() => {
   const found = records.find(record => record.date === today);
 
   return found || null;
-});
-const baseTips: Tip[] = [
-  { id: 1, icon: Droplet, text: t('period.healthTips.water') },
-  { id: 2, icon: Moon, text: t('period.healthTips.sleep') },
-  { id: 3, icon: Apple, text: t('period.healthTips.iron') },
-];
-
-const currentTips = computed(() => {
-  const phase = periodStore.periodStats.currentPhase;
-  return phaseTips[phase] || baseTips;
 });
 
 // Methods
@@ -330,7 +315,7 @@ onMounted(async () => {
               </div>
 
               <div class="card-base">
-                <!-- <PeriodHealthTip :stats="currentPhase" /> -->
+                <PeriodHealthTip :stats="currentPhase" />
               </div>
               <!-- 快速操作 -->
               <!-- <div class="card-base p-6"> -->
@@ -361,36 +346,7 @@ onMounted(async () => {
               <!-- </div> -->
             </div>
           </div>
-
           <PeriodRecentRecord @add-record="openRecordForm()" @edit-record="openRecordForm($event)" />
-
-          <!-- 第二行：健康提示（铺满宽度） -->
-          <div class="card-base p-4">
-            <div class="mb-6 flex items-center gap-3">
-              <div
-                class="h-10 w-10 flex items-center justify-center rounded-full from-green-500 to-emerald-500 bg-gradient-to-r"
-              >
-                <Heart class="wh-5 text-white" />
-              </div>
-              <h3 class="text-lg text-gray-900 font-semibold dark:text-white">
-                {{ t('period.healthTips.title') }}
-              </h3>
-            </div>
-            <div class="grid grid-cols-1 gap-4 lg:grid-cols-3 md:grid-cols-2">
-              <div v-for="tip in currentTips" :key="tip.id" class="tip-item">
-                <div class="flex items-start gap-3">
-                  <div
-                    class="h-8 w-8 flex flex-shrink-0 items-center justify-center rounded-full bg-blue-50 dark:bg-blue-900/30"
-                  >
-                    <component :is="tip.icon" class="wh-4 text-blue-600 dark:text-blue-400" />
-                  </div>
-                  <span class="text-sm text-gray-700 leading-relaxed dark:text-gray-300">
-                    {{ tip.text }}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
 
         <!-- 设置视图 -->
