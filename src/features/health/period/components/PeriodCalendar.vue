@@ -1,172 +1,8 @@
-<template>
-  <div class="period-calendar">
-    <!-- 头部导航 -->
-    <div class="calendar-header">
-      <div class="month-navigation">
-        <button @click="goToPreviousMonth" class="nav-button" aria-label="上个月">
-          <ChevronUp class="wh-5" />
-        </button>
-        <h2 class="month-title">{{ currentMonthYear }}</h2>
-        <button @click="goToNextMonth" class="nav-button" aria-label="下个月">
-          <ChevronDown class="wh-5" />
-        </button>
-      </div>
-
-      <div class="view-controls">
-        <button @click="goToToday" class="control-button">
-          今天
-        </button>
-        <button @click="toggleView" class="control-button">
-          <i :class="viewMode === 'calendar' ? 'i-tabler-list' : 'i-tabler-calendar'" class="wh-3 mr-1" />
-          {{ viewMode === 'calendar' ? '列表' : '日历' }}
-        </button>
-      </div>
-    </div>
-
-    <!-- 日历视图 -->
-    <div v-if="viewMode === 'calendar'" class="calendar-container">
-      <!-- 星期标题 -->
-      <div class="weekdays-header">
-        <div v-for="day in weekDays" :key="day" class="weekday-label">
-          {{ day }}
-        </div>
-      </div>
-
-      <!-- 日期网格 -->
-      <div class="calendar-grid">
-        <div 
-          v-for="day in calendarDays" 
-          :key="day.date" 
-          class="calendar-cell" 
-          :class="getCellClasses(day)"
-          @click="selectDate(day.date)"
-          @mouseenter="showTooltip($event, day)"
-          @mouseleave="hideTooltip"
-        >
-          <span class="day-number">{{ day.day }}</span>
-          <!-- 事件指示器 -->
-          <div v-if="day.events.length > 0" class="event-indicators">
-            <div v-for="event in day.events.slice(0, 3)" :key="event.type" class="event-dot"
-              :class="getEventDotClass(event)" />
-            <div v-if="day.events.length > 3" class="event-dot more-events" />
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 列表视图 -->
-    <div v-else class="list-container">
-      <div v-for="day in calendarDays.filter(d => d.events.length > 0)" :key="day.date" class="list-item"
-        @click="selectDate(day.date)">
-        <div class="list-item-content">
-          <div class="date-info">
-            <div class="date-primary">{{ formatDateShort(day.date) }}</div>
-            <div class="date-secondary">{{ formatDateFull(day.date) }}</div>
-          </div>
-          <div class="event-badges">
-            <div v-for="event in day.events" :key="event.type" class="event-badge" :class="getEventBadgeClass(event)">
-              {{ getEventLabel(event) }}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div v-if="calendarDays.filter(d => d.events.length > 0).length === 0" class="empty-state">
-        <i class="i-tabler-calendar-x wh-8 text-gray-400" />
-        <p class="text-sm text-gray-500 mt-2">本月暂无记录</p>
-      </div>
-    </div>
-
-    <!-- 图例 -->
-    <div class="legend">
-      <div class="legend-item">
-        <div class="legend-dot bg-green-500" />
-        <span>经期</span>
-      </div>
-      <div class="legend-item">
-        <div class="legend-dot bg-green-500 predicted predicted-period" />
-        <span>预测经期</span>
-      </div>
-      <div class="legend-item">
-        <div class="legend-dot bg-red-500" />
-        <span>排卵期</span>
-      </div>
-      <div class="legend-item">
-        <div class="legend-dot bg-red-500 predicted predicted-ovulation" />
-        <span>预测排卵期</span>
-      </div>
-      <div class="legend-item">
-        <div class="legend-dot bg-orange-500" />
-        <span>易孕期</span>
-      </div>
-      <div class="legend-item">
-        <div class="legend-dot bg-orange-500 predicted predicted-fertile" />
-        <span>预测易孕期</span>
-      </div>
-      <div class="legend-item">
-        <div class="legend-dot bg-yellow-500" />
-        <span>PMS</span>
-      </div>
-    </div>
-  </div>
-
-  <!-- 使用 Teleport 将提示框渲染到 body，避免被父容器遮挡 -->
-  <Teleport to="body">
-    <div 
-      v-if="tooltip.show" 
-      class="tooltip" 
-      :class="tooltip.position"
-      :style="{ 
-        left: tooltip.x + 'px', 
-        top: tooltip.y + 'px' 
-      }"
-    >
-      <div class="tooltip-content">
-        <!-- 日期标题 -->
-        <div class="tooltip-header">
-          <span class="tooltip-date">{{ tooltip.date }}</span>
-          <span v-if="tooltip.isToday" class="tooltip-today-badge">今天</span>
-        </div>
-        
-        <!-- 事件列表 -->
-        <div class="tooltip-events">
-          <div 
-            v-for="event in tooltip.events" 
-            :key="event.type" 
-            class="tooltip-event-item"
-            :class="getTooltipEventClass(event)"
-          >
-            <div class="tooltip-event-icon" :class="getEventDotClass(event)"></div>
-            <div class="tooltip-event-text">
-              <span class="tooltip-event-name">{{ getEventLabel(event) }}</span>
-              <span v-if="event.intensity" class="tooltip-event-detail">
-                强度: {{ getIntensityLabel(event.intensity) }}
-              </span>
-              <span v-if="getRiskLevel(event)" class="tooltip-risk-level">
-                {{ getRiskLevel(event) }}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <!-- 额外信息 -->
-        <div v-if="tooltip.extraInfo" class="tooltip-extra-info">
-          <div class="tooltip-divider"></div>
-          <div class="tooltip-extra-text">
-            {{ tooltip.extraInfo }}
-          </div>
-        </div>
-      </div>
-    </div>
-  </Teleport>
-</template>
-
 <script setup lang="ts">
-import {ChevronDown, ChevronUp} from 'lucide-vue-next';
-import {Teleport} from 'vue';
-import {PeriodCalendarEvent} from '@/schema/health/period';
-import {usePeriodStore} from '@/stores/periodStore';
-import {getCurrentDate, getLocalISODateTimeWithOffset} from '@/utils/date';
+import { ChevronDown, ChevronUp } from 'lucide-vue-next';
+import { usePeriodStore } from '@/stores/periodStore';
+import { DateUtils } from '@/utils/date';
+import type { PeriodCalendarEvent } from '@/schema/health/period';
 
 interface CalendarDay {
   date: string;
@@ -187,7 +23,7 @@ interface TooltipData {
   position: 'top' | 'bottom' | 'left' | 'right';
 }
 
-const props = withDefaults(defineProps<{selectedDate?: string}>(), {
+const props = withDefaults(defineProps<{ selectedDate?: string }>(), {
   selectedDate: '',
 });
 
@@ -197,7 +33,7 @@ const emit = defineEmits<{
 
 const periodStore = usePeriodStore();
 
-const currentDate = ref(getCurrentDate());
+const currentDate = ref(DateUtils.getCurrentDate());
 const viewMode = ref<'calendar' | 'list'>('calendar');
 const selectedDate = ref(props.selectedDate || '');
 
@@ -214,7 +50,7 @@ const tooltip = ref<TooltipData>({
   position: 'top',
 });
 
-let tooltipTimer: NodeJS.Timeout | null = null;
+const tooltipTimer: NodeJS.Timeout | null = null;
 
 const currentMonthYear = computed(() => {
   const year = currentDate.value.getFullYear();
@@ -236,18 +72,24 @@ const calendarDays = computed((): CalendarDay[] => {
   endDate.setDate(endDate.getDate() + (6 - lastDay.getDay()));
 
   const days: CalendarDay[] = [];
-  const today = getLocalISODateTimeWithOffset().split('T')[0];
+  const today = DateUtils.getTodayDate();
 
   const events = periodStore.getCalendarEvents(
     startDate.toISOString().split('T')[0],
     endDate.toISOString().split('T')[0],
   );
 
-  for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
-    let nd = new Date(d);
+  // 计算总天数
+  const totalDays = Math.floor((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+
+  for (let i = 0; i < totalDays; i++) {
+    const d = new Date(startDate);
+    d.setDate(startDate.getDate() + i);
+
+    const nd = new Date(d);
     nd.setDate(d.getDate() + 1);
     const dateStr = nd.toISOString().split('T')[0];
-    const dayEvents = events.filter((event) => event.date === dateStr);
+    const dayEvents = events.filter(event => event.date === dateStr);
 
     days.push({
       date: dateStr,
@@ -257,6 +99,7 @@ const calendarDays = computed((): CalendarDay[] => {
       events: dayEvents,
     });
   }
+
   return days;
 });
 
@@ -278,7 +121,7 @@ function goToNextMonth() {
 
 function goToToday() {
   currentDate.value = new Date();
-  selectedDate.value = getLocalISODateTimeWithOffset().split('T')[0];
+  selectedDate.value = DateUtils.getTodayDate();
   emit('dateSelect', selectedDate.value);
 }
 
@@ -298,10 +141,10 @@ function getCellClasses(day: CalendarDay): string[] {
   if (selectedDate.value === day.date) classes.push('selected'); // Use internal state
   if (day.events.length > 0) classes.push('has-events');
 
-  const predictedEvents = day.events.filter((e) => e.isPredicted);
+  const predictedEvents = day.events.filter(e => e.isPredicted);
   if (predictedEvents.length > 0) {
     classes.push('has-predicted');
-    predictedEvents.forEach((event) => {
+    predictedEvents.forEach(event => {
       switch (event.type) {
         case 'predicted-period':
           classes.push('predicted-period', 'has-predicted-period');
@@ -386,16 +229,12 @@ function getEventLabel(event: PeriodCalendarEvent): string {
 
 function showTooltip(event: MouseEvent, day: CalendarDay) {
   if (day.events.length === 0) {
-    console.log('[Early Return] No events on this day.');
     return;
   }
 
   if (tooltipTimer) {
-    console.log('[Timer] Clearing existing tooltip timer.');
     clearTimeout(tooltipTimer);
   }
-
-  console.log('[Action] Preparing to show tooltip.');
 
   const mouseX = event.clientX;
   const mouseY = event.clientY;
@@ -424,28 +263,32 @@ function showTooltip(event: MouseEvent, day: CalendarDay) {
     position = 'bottom';
     x = mouseX + scrollX + offset;
     y = mouseY + scrollY + offset;
-  } else if (
+  }
+  else if (
     spaceLeft >= tooltipWidth + offset &&
     spaceBottom >= tooltipHeight + offset
   ) {
     position = 'left';
     x = mouseX + scrollX - tooltipWidth - offset;
     y = mouseY + scrollY + offset;
-  } else if (
+  }
+  else if (
     spaceRight >= tooltipWidth + offset &&
     spaceTop >= tooltipHeight + offset
   ) {
     position = 'top';
     x = mouseX + scrollX + offset;
     y = mouseY + scrollY - tooltipHeight - offset;
-  } else if (
+  }
+  else if (
     spaceLeft >= tooltipWidth + offset &&
     spaceTop >= tooltipHeight + offset
   ) {
     position = 'left';
     x = mouseX + scrollX - tooltipWidth - offset;
     y = mouseY + scrollY - tooltipHeight - offset;
-  } else {
+  }
+  else {
     if (spaceRight >= spaceLeft) {
       position = spaceBottom >= spaceTop ? 'bottom' : 'top';
       x = mouseX + scrollX + offset;
@@ -453,7 +296,8 @@ function showTooltip(event: MouseEvent, day: CalendarDay) {
         spaceBottom >= spaceTop
           ? mouseY + scrollY + offset
           : mouseY + scrollY - tooltipHeight - offset;
-    } else {
+    }
+    else {
       position = 'left';
       x = mouseX + scrollX - tooltipWidth - offset;
       y =
@@ -537,13 +381,13 @@ function getRiskLevel(event: PeriodCalendarEvent): string {
 
 function generateExtraInfo(day: CalendarDay): string | undefined {
   const hasOvulation = day.events.some(
-    (e) => e.type === 'ovulation' || e.type === 'predicted-ovulation',
+    e => e.type === 'ovulation' || e.type === 'predicted-ovulation',
   );
   const hasFertile = day.events.some(
-    (e) => e.type === 'fertile' || e.type === 'predicted-fertile',
+    e => e.type === 'fertile' || e.type === 'predicted-fertile',
   );
   const hasPeriod = day.events.some(
-    (e) => e.type === 'period' || e.type === 'predicted-period',
+    e => e.type === 'period' || e.type === 'predicted-period',
   );
 
   if (hasOvulation) return '建议: 避孕用户需特别注意，备孕用户的最佳时机';
@@ -564,7 +408,7 @@ function formatDateFull(date: string): string {
 
 watch(
   () => props.selectedDate,
-  (newSelectedDate) => {
+  newSelectedDate => {
     selectedDate.value = newSelectedDate;
   },
 );
@@ -577,6 +421,181 @@ onMounted(() => {
   periodStore.initialize();
 });
 </script>
+
+<template>
+  <div class="period-calendar">
+    <!-- 头部导航 -->
+    <div class="calendar-header">
+      <div class="month-navigation">
+        <button class="nav-button" aria-label="上个月" @click="goToPreviousMonth">
+          <ChevronUp class="wh-5" />
+        </button>
+        <h2 class="month-title">
+          {{ currentMonthYear }}
+        </h2>
+        <button class="nav-button" aria-label="下个月" @click="goToNextMonth">
+          <ChevronDown class="wh-5" />
+        </button>
+      </div>
+
+      <div class="view-controls">
+        <button class="control-button" @click="goToToday">
+          今天
+        </button>
+        <button class="control-button" @click="toggleView">
+          <i :class="viewMode === 'calendar' ? 'i-tabler-list' : 'i-tabler-calendar'" class="wh-3 mr-1" />
+          {{ viewMode === 'calendar' ? '列表' : '日历' }}
+        </button>
+      </div>
+    </div>
+
+    <!-- 日历视图 -->
+    <div v-if="viewMode === 'calendar'" class="calendar-container">
+      <!-- 星期标题 -->
+      <div class="weekdays-header">
+        <div v-for="day in weekDays" :key="day" class="weekday-label">
+          {{ day }}
+        </div>
+      </div>
+
+      <!-- 日期网格 -->
+      <div class="calendar-grid">
+        <div
+          v-for="day in calendarDays"
+          :key="day.date"
+          class="calendar-cell"
+          :class="getCellClasses(day)"
+          @click="selectDate(day.date)"
+          @mouseenter="showTooltip($event, day)"
+          @mouseleave="hideTooltip"
+        >
+          <span class="day-number">{{ day.day }}</span>
+          <!-- 事件指示器 -->
+          <div v-if="day.events.length > 0" class="event-indicators">
+            <div
+              v-for="event in day.events.slice(0, 3)" :key="event.type" class="event-dot"
+              :class="getEventDotClass(event)"
+            />
+            <div v-if="day.events.length > 3" class="event-dot more-events" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 列表视图 -->
+    <div v-else class="list-container">
+      <div
+        v-for="day in calendarDays.filter(d => d.events.length > 0)" :key="day.date" class="list-item"
+        @click="selectDate(day.date)"
+      >
+        <div class="list-item-content">
+          <div class="date-info">
+            <div class="date-primary">
+              {{ formatDateShort(day.date) }}
+            </div>
+            <div class="date-secondary">
+              {{ formatDateFull(day.date) }}
+            </div>
+          </div>
+          <div class="event-badges">
+            <div v-for="event in day.events" :key="event.type" class="event-badge" :class="getEventBadgeClass(event)">
+              {{ getEventLabel(event) }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div v-if="calendarDays.filter(d => d.events.length > 0).length === 0" class="empty-state">
+        <i class="i-tabler-calendar-x wh-8 text-gray-400" />
+        <p class="mt-2 text-sm text-gray-500">
+          本月暂无记录
+        </p>
+      </div>
+    </div>
+
+    <!-- 图例 -->
+    <div class="legend">
+      <div class="legend-item">
+        <div class="legend-dot bg-green-500" />
+        <span>经期</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-dot predicted predicted-period bg-green-500" />
+        <span>预测经期</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-dot bg-red-500" />
+        <span>排卵期</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-dot predicted predicted-ovulation bg-red-500" />
+        <span>预测排卵期</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-dot bg-orange-500" />
+        <span>易孕期</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-dot predicted predicted-fertile bg-orange-500" />
+        <span>预测易孕期</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-dot bg-yellow-500" />
+        <span>PMS</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 使用 Teleport 将提示框渲染到 body，避免被父容器遮挡 -->
+  <Teleport to="body">
+    <div
+      v-if="tooltip.show"
+      class="tooltip"
+      :class="tooltip.position"
+      :style="{
+        left: `${tooltip.x}px`,
+        top: `${tooltip.y}px`,
+      }"
+    >
+      <div class="tooltip-content">
+        <!-- 日期标题 -->
+        <div class="tooltip-header">
+          <span class="tooltip-date">{{ tooltip.date }}</span>
+          <span v-if="tooltip.isToday" class="tooltip-today-badge">今天</span>
+        </div>
+
+        <!-- 事件列表 -->
+        <div class="tooltip-events">
+          <div
+            v-for="event in tooltip.events"
+            :key="event.type"
+            class="tooltip-event-item"
+            :class="getTooltipEventClass(event)"
+          >
+            <div class="tooltip-event-icon" :class="getEventDotClass(event)" />
+            <div class="tooltip-event-text">
+              <span class="tooltip-event-name">{{ getEventLabel(event) }}</span>
+              <span v-if="event.intensity" class="tooltip-event-detail">
+                强度: {{ getIntensityLabel(event.intensity) }}
+              </span>
+              <span v-if="getRiskLevel(event)" class="tooltip-risk-level">
+                {{ getRiskLevel(event) }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 额外信息 -->
+        <div v-if="tooltip.extraInfo" class="tooltip-extra-info">
+          <div class="tooltip-divider" />
+          <div class="tooltip-extra-text">
+            {{ tooltip.extraInfo }}
+          </div>
+        </div>
+      </div>
+    </div>
+  </Teleport>
+</template>
 
 <style scoped lang="postcss">
 /* Base Styles */

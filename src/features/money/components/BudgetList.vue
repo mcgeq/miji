@@ -2,7 +2,7 @@
 import { Ban, Edit, Repeat, RotateCcw, StopCircle, Trash } from 'lucide-vue-next';
 import SimplePagination from '@/components/common/SimplePagination.vue';
 import { getRepeatTypeName } from '@/utils/common';
-import { formatDate } from '@/utils/date';
+import { DateUtils } from '@/utils/date';
 import { formatCurrency } from '../utils/money';
 import type { Budget } from '@/schema/money';
 
@@ -357,7 +357,7 @@ function getRemainingAmount(budget: Budget) {
           </div>
           <div class="mb-1 flex justify-between text-sm">
             <span class="text-gray-600"> {{ t('date.createDate') }} </span>
-            <span class="text-gray-800">{{ formatDate(budget.createdAt) }}</span>
+            <span class="text-gray-800">{{ DateUtils.formatDate(budget.createdAt) }}</span>
           </div>
           <div v-if="budget.description" class="mb-1 flex justify-between text-sm last:mb-0">
             <span class="text-gray-600">{{ t('common.misc.remark') }}</span>

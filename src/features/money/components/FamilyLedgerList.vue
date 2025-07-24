@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Crown, Edit, LogIn, Trash, User, Users } from 'lucide-vue-next';
-import { formatDate } from '@/utils/date';
+import { DateUtils } from '@/utils/date';
 import { getRoleName } from '../utils/family';
 import type { FamilyLedger } from '@/schema/money';
 
@@ -144,7 +144,7 @@ function getBudgetCount(budgets: string): number {
         <!-- 创建时间 -->
         <div class="mt-3 border-t border-gray-200 pt-3">
           <div class="text-xs text-gray-500">
-            创建于 {{ formatDate(ledger.createdAt) }}
+            创建于 {{ DateUtils.formatDate(ledger.createdAt) }}
           </div>
         </div>
       </div>

@@ -16,7 +16,7 @@ import {
   XCircle,
 } from 'lucide-vue-next';
 import SimplePagination from '@/components/common/SimplePagination.vue';
-import { formatDate } from '@/utils/date';
+import { DateUtils } from '@/utils/date';
 import { formatCurrency } from '../utils/money';
 import type { Account, AccountType } from '@/schema/money';
 import type {
@@ -393,7 +393,7 @@ function getAccountTypeName(type: AccountType): string {
         <div class="border-t border-gray-200 pt-4">
           <div class="mb-2 flex justify-between text-sm">
             <span class="text-gray-600"> {{ t('date.createDate') }} </span>
-            <span class="text-gray-800">{{ formatDate(account.createdAt) }}</span>
+            <span class="text-gray-800">{{ DateUtils.formatDate(account.createdAt) }}</span>
           </div>
           <div v-if="account.description" class="mb-2 flex justify-between text-sm">
             <span class="text-gray-600"> {{ t('common.misc.remark') }} </span>

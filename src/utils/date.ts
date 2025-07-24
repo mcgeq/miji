@@ -27,46 +27,7 @@ export class DateUtils {
     seconds?: number;
     milliseconds?: number;
   }): string {
-    let now = new Date();
-    if (options) {
-      const {
-        days = 0,
-        hours = 0,
-        minutes = 0,
-        seconds = 0,
-        milliseconds = 0,
-      } = options;
-
-      const totalMs =
-        days * 24 * 60 * 60 * 1000 +
-        hours * 60 * 60 * 1000 +
-        minutes * 60 * 1000 +
-        seconds * 1000 +
-        milliseconds;
-      now = new Date(now.getTime() + totalMs);
-    }
-
-    // 获取本地时间各部分
-    const yyyy = now.getFullYear();
-    const mm = String(now.getMonth() + 1).padStart(2, '0');
-    const dd = String(now.getDate()).padStart(2, '0');
-    const hh = String(now.getHours()).padStart(2, '0');
-    const min = String(now.getMinutes()).padStart(2, '0');
-    const ss = String(now.getSeconds()).padStart(2, '0');
-
-    // 毫秒转微秒，补0到6位
-    const ms = String(now.getMilliseconds()).padStart(3, '0');
-    const micro = `${ms}000`.slice(0, 6);
-
-    // 计算时区偏移
-    const offsetMinutes = now.getTimezoneOffset();
-    const sign = offsetMinutes <= 0 ? '+' : '-';
-    const absOffset = Math.abs(offsetMinutes);
-    const offsetHours = String(Math.floor(absOffset / 60)).padStart(2, '0');
-    const offsetMins = String(absOffset % 60).padStart(2, '0');
-    const offsetStr = `${sign}${offsetHours}:${offsetMins}`;
-
-    return `${yyyy}-${mm}-${dd}T${hh}:${min}:${ss}.${micro}${offsetStr}`;
+    return DateUtils.generateISOWithOffset(options, () => { });
   }
 
   /**
@@ -106,9 +67,16 @@ export class DateUtils {
    * @returns 当前时间的Date实例
    */
   static getCurrentDate(): Date {
-    const l = this.getLocalISODateTimeWithOffset();
-    const n = new Date(l);
-    return n;
+    return new Date(this.getLocalISODateTimeWithOffset());
+  }
+
+  /**
+   * 计算两个日期之间的天数
+   */
+  static daysBetween(startDate: string, endDate: string): number {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    return Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
   }
 
   /**
@@ -128,49 +96,9 @@ export class DateUtils {
     seconds?: number;
     milliseconds?: number;
   }): string {
-    let now = new Date();
-    if (options) {
-      const {
-        days = 0,
-        hours = 0,
-        minutes = 0,
-        seconds = 0,
-        milliseconds = 0,
-      } = options;
-
-      const totalMs =
-        days * 24 * 60 * 60 * 1000 +
-        hours * 60 * 60 * 1000 +
-        minutes * 60 * 1000 +
-        seconds * 1000 +
-        milliseconds;
-      now = new Date(now.getTime() + totalMs);
-    }
-    // 设置时间为 23:59:59.999（本地时间）
-    now.setHours(23, 59, 59, 999);
-
-    // 构建日期部分
-    const yyyy = now.getFullYear();
-    const mm = String(now.getMonth() + 1).padStart(2, '0');
-    const dd = String(now.getDate()).padStart(2, '0');
-    const hh = String(now.getHours()).padStart(2, '0');
-    const min = String(now.getMinutes()).padStart(2, '0');
-    const ss = String(now.getSeconds()).padStart(2, '0');
-
-    // 毫秒转微秒格式，补足 6 位
-    const ms = String(now.getMilliseconds()).padStart(3, '0');
-    const micro = `${ms}000`.slice(0, 6);
-
-    // 计算本地时区偏移
-    const offsetMinutes = now.getTimezoneOffset();
-    const sign = offsetMinutes <= 0 ? '+' : '-';
-    const absOffset = Math.abs(offsetMinutes);
-    const offsetHours = String(Math.floor(absOffset / 60)).padStart(2, '0');
-    const offsetMins = String(absOffset % 60).padStart(2, '0');
-    const offsetStr = `${sign}${offsetHours}:${offsetMins}`;
-
-    // 拼接最终字符串
-    return `${yyyy}-${mm}-${dd}T${hh}:${min}:${ss}.${micro}${offsetStr}`;
+    return DateUtils.generateISOWithOffset(options, date => {
+      date.setHours(23, 59, 59, 999);
+    });
   }
 
   /**
@@ -190,49 +118,9 @@ export class DateUtils {
     seconds?: number;
     milliseconds?: number;
   }): string {
-    let now = new Date();
-    if (options) {
-      const {
-        days = 0,
-        hours = 0,
-        minutes = 0,
-        seconds = 0,
-        milliseconds = 0,
-      } = options;
-
-      const totalMs =
-        days * 24 * 60 * 60 * 1000 +
-        hours * 60 * 60 * 1000 +
-        minutes * 60 * 1000 +
-        seconds * 1000 +
-        milliseconds;
-      now = new Date(now.getTime() + totalMs);
-    }
-    // 设置时间为 23:59:59.999（本地时间）
-    now.setHours(0, 0, 0, 0);
-
-    // 构建日期部分
-    const yyyy = now.getFullYear();
-    const mm = String(now.getMonth() + 1).padStart(2, '0');
-    const dd = String(now.getDate()).padStart(2, '0');
-    const hh = String(now.getHours()).padStart(2, '0');
-    const min = String(now.getMinutes()).padStart(2, '0');
-    const ss = String(now.getSeconds()).padStart(2, '0');
-
-    // 毫秒转微秒格式，补足 6 位
-    const ms = String(now.getMilliseconds()).padStart(3, '0');
-    const micro = `${ms}000`.slice(0, 6);
-
-    // 计算本地时区偏移
-    const offsetMinutes = now.getTimezoneOffset();
-    const sign = offsetMinutes <= 0 ? '+' : '-';
-    const absOffset = Math.abs(offsetMinutes);
-    const offsetHours = String(Math.floor(absOffset / 60)).padStart(2, '0');
-    const offsetMins = String(absOffset % 60).padStart(2, '0');
-    const offsetStr = `${sign}${offsetHours}:${offsetMins}`;
-
-    // 拼接最终字符串
-    return `${yyyy}-${mm}-${dd}T${hh}:${min}:${ss}.${micro}${offsetStr}`;
+    return DateUtils.generateISOWithOffset(options, date => {
+      date.setHours(0, 0, 0);
+    });
   }
 
   /**
@@ -379,89 +267,93 @@ export class DateUtils {
     date.setDate(date.getDate() + days);
     return date.toISOString().split('T')[0]; // 返回 YYYY-MM-DD 格式
   }
-}
 
-export function getLocalISODateTimeWithOffset(options?: {
-  days?: number;
-  hours?: number;
-  minutes?: number;
-  seconds?: number;
-  milliseconds?: number;
-}): string {
-  let now = new Date();
-  if (options) {
-    const {
-      days = 0,
-      hours = 0,
-      minutes = 0,
-      seconds = 0,
-      milliseconds = 0,
-    } = options;
+  /**
+   * 通用方法，用于生成带偏移的 ISO 日期时间字符串
+   * @param options - 偏移配置
+   * @param options.days - 增加的天数（负值表示减少）
+   * @param options.hours - 增加的小时数（负值表示减少）
+   * @param options.minutes - 增加的分钟数（负值表示减少）
+   * @param options.seconds - 增加的秒数（负值表示减少）
+   * @param options.milliseconds - 增加的毫秒数（负值表示减少）
+   * @param setTimeFn - 时间设置回调函数
+   */
+  private static generateISOWithOffset(
+    options: {
+      days?: number;
+      hours?: number;
+      minutes?: number;
+      seconds?: number;
+      milliseconds?: number;
+    } = {},
+    setTimeFn: (date: Date) => void = () => { },
+  ): string {
+    let now = new Date();
 
-    const totalMs =
-      days * 24 * 60 * 60 * 1000 +
-      hours * 60 * 60 * 1000 +
-      minutes * 60 * 1000 +
-      seconds * 1000 +
-      milliseconds;
-    now = new Date(now.getTime() + totalMs);
+    // 1. 处理偏移
+    if (options) {
+      const {
+        days = 0,
+        hours = 0,
+        minutes = 0,
+        seconds = 0,
+        milliseconds = 0,
+      } = options;
+
+      const totalMs =
+        days * 24 * 60 * 60 * 1000 +
+        hours * 60 * 60 * 1000 +
+        minutes * 60 * 1000 +
+        seconds * 1000 +
+        milliseconds;
+
+      now = new Date(now.getTime() + totalMs);
+    }
+
+    // 2. 设置时间（如设置为当天的 00:00:00 或 23:59:59.999）
+    if (setTimeFn) {
+      setTimeFn(now);
+    }
+
+    // 3. 格式化日期、时间、时区偏移
+    const datePart = this.formatDatePart(now);
+    const timePart = this.formatTimePart(now);
+    const timeZone = this.formatTimeZone(now);
+
+    return `${datePart}T${timePart}${timeZone}`;
   }
 
-  // 获取本地时间各部分
-  const yyyy = now.getFullYear();
-  const mm = String(now.getMonth() + 1).padStart(2, '0');
-  const dd = String(now.getDate()).padStart(2, '0');
-  const hh = String(now.getHours()).padStart(2, '0');
-  const min = String(now.getMinutes()).padStart(2, '0');
-  const ss = String(now.getSeconds()).padStart(2, '0');
+  /**
+   * 格式化日期部分：YYYY-MM-DD
+   */
+  private static formatDatePart(date: Date): string {
+    const yyyy = date.getFullYear();
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const dd = String(date.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+  }
 
-  // 毫秒转微秒，补0到6位
-  const ms = String(now.getMilliseconds()).padStart(3, '0');
-  const micro = `${ms}000`.slice(0, 6);
+  /**
+   * 格式化时间部分：HH:MM:SS.ffffff
+   */
+  private static formatTimePart(date: Date): string {
+    const hh = String(date.getHours()).padStart(2, '0');
+    const min = String(date.getMinutes()).padStart(2, '0');
+    const ss = String(date.getSeconds()).padStart(2, '0');
+    const ms = String(date.getMilliseconds()).padStart(3, '0');
+    const micro = `${ms}000`.slice(0, 6); // 补足 6 位微秒
+    return `${hh}:${min}:${ss}.${micro}`;
+  }
 
-  // 计算时区偏移
-  const offsetMinutes = now.getTimezoneOffset();
-  const sign = offsetMinutes <= 0 ? '+' : '-';
-  const absOffset = Math.abs(offsetMinutes);
-  const offsetHours = String(Math.floor(absOffset / 60)).padStart(2, '0');
-  const offsetMins = String(absOffset % 60).padStart(2, '0');
-  const offsetStr = `${sign}${offsetHours}:${offsetMins}`;
-
-  return `${yyyy}-${mm}-${dd}T${hh}:${min}:${ss}.${micro}${offsetStr}`;
-}
-
-export function getCurrentDate() {
-  const l = getLocalISODateTimeWithOffset();
-  const n = new Date(l);
-  return n;
-}
-
-export function formatDate(dateStr: string) {
-  const date = new Date(dateStr);
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0'); // 月份从0开始
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
-
-/**
- * 验证给定字符串是否为合法日期
- * @param dateString - 日期字符串（推荐 ISO 格式，如 "YYYY-MM-DD"）
- * @returns 是否为合法日期
- */
-export function isValidDate(dateString: string): boolean {
-  const date = new Date(dateString);
-  return !Number.isNaN(date.getTime());
-}
-
-/**
- * 在给定日期上增加指定天数
- * @param dateStr - 初始日期（ISO 格式）
- * @param days - 要增加的天数（负值表示减少）
- * @returns 新日期（ISO 格式）
- */
-export function addDays(dateStr: string, days: number): string {
-  const date = new Date(dateStr);
-  date.setDate(date.getDate() + days);
-  return date.toISOString().split('T')[0]; // 返回 YYYY-MM-DD 格式
+  /**
+   * 格式化时区偏移：±HH:MM
+   */
+  private static formatTimeZone(date: Date): string {
+    const offsetMinutes = date.getTimezoneOffset();
+    const sign = offsetMinutes <= 0 ? '+' : '-';
+    const absOffset = Math.abs(offsetMinutes);
+    const offsetHours = String(Math.floor(absOffset / 60)).padStart(2, '0');
+    const offsetMins = String(absOffset % 60).padStart(2, '0');
+    return `${sign}${offsetHours}:${offsetMins}`;
+  }
 }

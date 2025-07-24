@@ -32,7 +32,7 @@ import {
   Wheat,
   WheatOff,
 } from 'lucide-vue-next';
-import { addDays } from '@/utils/date';
+import { DateUtils } from '@/utils/date';
 import type { ExerciseIntensity, FlowLevel, Intensity } from '@/schema/common';
 import type {
   Mood,
@@ -97,7 +97,7 @@ export interface AnalysisResult {
 /**
  * 日期相关工具函数
  */
-export class DateUtils {
+export class PeriodDateUtils {
   /**
    * 格式化日期为中文
    */
@@ -127,31 +127,6 @@ export class DateUtils {
     }
 
     return `${start.getMonth() + 1}月${start.getDate()}日 - ${end.getDate()}日`;
-  }
-
-  /**
-   * 计算两个日期之间的天数
-   */
-  static daysBetween(startDate: string, endDate: string): number {
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    return Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
-  }
-
-  /**
-   * 获取今天的日期字符串
-   */
-  static today(): string {
-    return new Date().toISOString().split('T')[0];
-  }
-
-  /**
-   * 添加天数到日期
-   */
-  static addDays(dateStr: string, days: number): string {
-    const date = new Date(dateStr);
-    date.setDate(date.getDate() + days);
-    return date.toISOString().split('T')[0];
   }
 
   /**
@@ -197,7 +172,7 @@ export class DateUtils {
       return '明天';
     }
 
-    const daysDiff = this.daysBetween(
+    const daysDiff = DateUtils.daysBetween(
       today.toISOString().split('T')[0],
       dateStr,
     );
@@ -559,7 +534,7 @@ export class PeriodDataManager {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `period-data-${DateUtils.today()}.json`;
+    a.download = `period-data-${DateUtils.getTodayDate()}.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -650,11 +625,11 @@ ${sortedRecords
   .slice(-5)
   .map(
     record =>
-      `${DateUtils.formatDateRange(record.startDate, record.endDate)} (${PeriodCalculator.calculatePeriodLength(record)}天)`,
+      `${PeriodDateUtils.formatDateRange(record.startDate, record.endDate)} (${PeriodCalculator.calculatePeriodLength(record)}天)`,
   )
   .join('\n')}
 
-生成时间: ${DateUtils.formatChineseDate(DateUtils.today())}
+生成时间: ${PeriodDateUtils.formatChineseDate(DateUtils.getTodayDate())}
     `.trim();
   }
 }
@@ -1159,7 +1134,7 @@ export class PeriodCalculator {
     };
 
     // 验证输入有效性
-    if (!isValidDate(nextPeriodDate)) {
+    if (!DateUtils.isValidDate(nextPeriodDate)) {
       result.isValid = false;
       result.message = '无效的下次月经日期';
       return result;
@@ -1178,11 +1153,11 @@ export class PeriodCalculator {
     }
 
     // 计算排卵日
-    result.ovulationDate = addDays(nextPeriodDate, -14);
+    result.ovulationDate = DateUtils.addDays(nextPeriodDate, -14);
 
     // 计算排卵期范围（排卵日前5天到后1天）
-    result.fertileStart = addDays(result.ovulationDate, -5);
-    result.fertileEnd = addDays(result.ovulationDate, 1);
+    result.fertileStart = DateUtils.addDays(result.ovulationDate, -5);
+    result.fertileEnd = DateUtils.addDays(result.ovulationDate, 1);
 
     return result;
   }
@@ -1207,7 +1182,7 @@ export class PeriodCalculator {
     lastPeriod: PeriodRecords,
     averageCycleLength: number,
     averagePeriodLength: number,
-    currentDate: string = DateUtils.today(),
+    currentDate: string = DateUtils.getTodayDate(),
   ): PeriodPhase {
     const daysSinceLastPeriod = DateUtils.daysBetween(
       lastPeriod.startDate,
@@ -1233,7 +1208,7 @@ export class PeriodCalculator {
    */
   static daysUntilNextPeriod(
     nextPeriodDate: string,
-    currentDate: string = DateUtils.today(),
+    currentDate: string = DateUtils.getTodayDate(),
   ): number {
     return DateUtils.daysBetween(currentDate, nextPeriodDate);
   }
@@ -1272,7 +1247,7 @@ export class PeriodCalculator {
    */
   static generatePrediction(
     periods: PeriodRecords[],
-    currentDate: string = DateUtils.today(),
+    currentDate: string = DateUtils.getTodayDate(),
   ): PredictionResult {
     if (periods.length === 0) {
       return {

@@ -4,10 +4,11 @@ import ConfirmDialog from '@/components/common/ConfirmDialog.vue';
 import InputError from '@/components/common/InputError.vue';
 import WarningDialog from '@/components/common/WarningDialog.vue';
 import { usePeriodStore } from '@/stores/periodStore';
+import { DateUtils } from '@/utils/date';
 import { usePeriodValidation } from '../composables/usePeriodValidation';
 import {
-  DateUtils,
   PeriodCalculator,
+  PeriodDateUtils,
   PeriodFormatter,
   PeriodValidator,
 } from '../utils/periodUtils';
@@ -95,7 +96,7 @@ const intensityLevels = [
 // Computed
 const isEditing = computed(() => !!props.record);
 
-const maxDate = computed(() => DateUtils.today());
+const maxDate = computed(() => DateUtils.getTodayDate());
 
 const periodDuration = computed(() => {
   if (!formData.value.startDate || !formData.value.endDate)
@@ -165,7 +166,7 @@ const predictedNext = computed(() => {
     periodStore.periodStats.averageCycleLength,
   );
 
-  return DateUtils.formatChineseDate(nextDate);
+  return PeriodDateUtils.formatChineseDate(nextDate);
 });
 
 const notesLength = computed(() => (formData.value.notes || '').length);
@@ -187,7 +188,7 @@ const deletionInfo = computed(() => {
     return { dateRange: '', duration: '' };
 
   return {
-    dateRange: DateUtils.formatDateRange(
+    dateRange: PeriodDateUtils.formatDateRange(
       props.record.startDate,
       props.record.endDate,
     ),
@@ -202,7 +203,7 @@ const overlapInfo = computed(() => {
     return { dateRange: '' };
 
   return {
-    dateRange: DateUtils.formatDateRange(
+    dateRange: PeriodDateUtils.formatDateRange(
       overlapRecord.value.startDate,
       overlapRecord.value.endDate,
     ),

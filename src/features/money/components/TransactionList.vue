@@ -13,7 +13,7 @@ import {
 import SimplePagination from '@/components/common/SimplePagination.vue';
 import { TransactionTypeSchema } from '@/schema/common';
 import { useMoneyStore } from '@/stores/moneyStore';
-import { formatDate } from '@/utils/date';
+import { DateUtils } from '@/utils/date';
 import { Lg } from '@/utils/debugLog';
 import { formatCurrency } from '../utils/money';
 import type { TransactionType } from '@/schema/common';
@@ -360,7 +360,7 @@ defineExpose({
           <span class="text-gray-600 font-semibold md:hidden">{{ t('date.date') }}</span>
           <div class="md:text-right">
             <div class="text-gray-800 font-medium">
-              {{ formatDate(transaction.date) }}
+              {{ DateUtils.formatDate(transaction.date) }}
             </div>
             <div class="text-xs text-gray-600">
               {{ formatTime(transaction.createdAt) }}
