@@ -4,7 +4,7 @@ import ColorSelector from '@/components/common/ColorSelector.vue';
 import RepeatPeriodSelector from '@/components/common/RepeatPeriodSelector.vue';
 import { COLORS_MAP } from '@/constants/moneyConst';
 import { CategorySchema } from '@/schema/common';
-import { getLocalISODateTimeWithOffset } from '@/utils/date';
+import { DateUtils } from '@/utils/date';
 import { uuid } from '@/utils/uuid';
 import { getLocalCurrencyInfo } from '../utils/money';
 import type { RepeatPeriod } from '@/schema/common';
@@ -51,7 +51,7 @@ const budget = props.budget || {
   alertEnabled: false,
   alertThreshold: '0',
   color: COLORS_MAP[0].code,
-  createdAt: getLocalISODateTimeWithOffset(),
+  createdAt: DateUtils.getLocalISODateTimeWithOffset(),
   updatedAt: '',
 };
 
@@ -84,8 +84,8 @@ function saveBudget() {
   const budgetData: Budget = {
     ...form,
     serialNum: props.budget?.serialNum || uuid(38),
-    createdAt: props.budget?.createdAt || getLocalISODateTimeWithOffset(),
-    updatedAt: getLocalISODateTimeWithOffset(),
+    createdAt: props.budget?.createdAt || DateUtils.getLocalISODateTimeWithOffset(),
+    updatedAt: DateUtils.getLocalISODateTimeWithOffset(),
   };
   emit('save', budgetData);
   closeModal();

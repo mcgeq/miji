@@ -1,5 +1,5 @@
 // src/lib/api/todos.ts
-import { getEndOfTodayISOWithOffset } from '@/utils/date';
+import { DateUtils } from '@/utils/date';
 import { getDb } from '../db';
 import { StatusSchema } from '../schema/common';
 import { toCamelCase, toSnakeCase } from '../utils/common';
@@ -81,8 +81,8 @@ async function listPaged(
   appendDateRange('completed_at', filters.completedAtRange, whereParts, params);
   appendDateRange('due_at', filters.dueAtRange, whereParts, params);
 
-  const whereClause
-    = whereParts.length > 0 ? `WHERE ${whereParts.join(' AND ')}` : '';
+  const whereClause =
+    whereParts.length > 0 ? `WHERE ${whereParts.join(' AND ')}` : '';
 
   const orderClause = sortOptions.customOrderBy
     ? `ORDER BY ${sortOptions.customOrderBy}`
@@ -92,15 +92,15 @@ async function listPaged(
 
   const orConditions: string[] = [];
   if (filters.orQuery) {
-    const dueEnd = getEndOfTodayISOWithOffset();
+    const dueEnd = DateUtils.getEndOfTodayISOWithOffset();
     orConditions.push('status != ?');
     orConditions.push('due_at <= ?');
     params.push(StatusSchema.enum.Completed);
     params.push(dueEnd);
   }
 
-  const whereOrClause
-    = orConditions.length > 0 ? `${orConditions.join(' AND ')}` : '';
+  const whereOrClause =
+    orConditions.length > 0 ? `${orConditions.join(' AND ')}` : '';
 
   const querySql = filters.orQuery
     ? `${whereClause} OR (${whereOrClause})`
@@ -228,8 +228,7 @@ async function update(todo: Todo): Promise<Todo> {
  */
 async function updateSmart(newTodo: Todo): Promise<void> {
   const oldTodo = toCamelCase(await getTodo(newTodo.serialNum));
-  if (!oldTodo)
-    return;
+  if (!oldTodo) return;
 
   const updates: UpdatableFields = {};
   for (const key in newTodo) {
@@ -270,9 +269,9 @@ async function updatePartial(
     const snakeKey = toSnakeCase(key);
     fields.push(`${snakeKey} = ?`);
     if (
-      typeof value === 'object'
-      && value !== null
-      && !(value instanceof Date)
+      typeof value === 'object' &&
+      value !== null &&
+      !(value instanceof Date)
     ) {
       values.push(JSON.stringify(value));
     }
@@ -281,8 +280,7 @@ async function updatePartial(
     }
   }
 
-  if (fields.length === 0)
-    return;
+  if (fields.length === 0) return;
 
   values.push(serialNum);
   const sql = `UPDATE todo SET ${fields.join(', ')} WHERE serial_num = ?`;
@@ -310,8 +308,7 @@ function appendDateRange(
   whereParts: string[],
   params: (string | number | boolean | null)[],
 ) {
-  if (!range)
-    return;
+  if (!range) return;
   if (range.start) {
     whereParts.push(`${field} >= ?`);
     params.push(range.start);

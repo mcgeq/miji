@@ -12,7 +12,7 @@ import {
   PrioritySchema,
   ReminderTypeSchema,
 } from '@/schema/common';
-import { getLocalISODateTimeWithOffset } from '@/utils/date';
+import { DateUtils } from '@/utils/date';
 import { uuid } from '@/utils/uuid';
 import type { Priority, RepeatPeriod } from '@/schema/common';
 import type { BilReminder } from '@/schema/money';
@@ -33,7 +33,7 @@ const { t } = useI18n();
 // 响应式状态
 const isSubmitting = ref(false);
 const locale = ref<'zh-CN' | 'en'>('zh-CN');
-const today = ref(getLocalISODateTimeWithOffset().split('T')[0]);
+const today = ref(DateUtils.getTodayDate());
 
 // 验证错误
 const validationErrors = reactive({
@@ -371,8 +371,8 @@ async function saveReminder() {
     const reminderData = {
       ...form,
       serialNum: props.reminder?.serialNum || uuid(38),
-      createdAt: props.reminder?.createdAt || getLocalISODateTimeWithOffset(),
-      updatedAt: getLocalISODateTimeWithOffset(),
+      createdAt: props.reminder?.createdAt || DateUtils.getLocalISODateTimeWithOffset(),
+      updatedAt: DateUtils.getLocalISODateTimeWithOffset(),
       advanceValue: form.advanceValue || 0, // 确保不为undefined
     };
 

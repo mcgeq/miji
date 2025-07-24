@@ -2,7 +2,7 @@
 import { Check, Crown, Edit, Plus, Trash, User, X } from 'lucide-vue-next';
 import { DEFAULT_CURRENCY } from '@/constants/moneyConst';
 import { safeGet } from '@/utils/common';
-import { getLocalISODateTimeWithOffset } from '@/utils/date';
+import { DateUtils } from '@/utils/date';
 import { uuid } from '@/utils/uuid';
 import { getRoleName } from '../utils/family';
 import MemberModal from './MemberModal.vue';
@@ -30,7 +30,7 @@ const defaultLedger: FamilyLedger = {
   transactions: '[]',
   budgets: '[]',
   auditLogs: '[]',
-  createdAt: getLocalISODateTimeWithOffset(),
+  createdAt: DateUtils.getLocalISODateTimeWithOffset(),
   updatedAt: null,
 };
 
@@ -75,8 +75,8 @@ function saveLedger() {
   const ledgerData: FamilyLedger = {
     ...form,
     serialNum: props.ledger?.serialNum || uuid(38),
-    createdAt: props.ledger?.createdAt || getLocalISODateTimeWithOffset(),
-    updatedAt: getLocalISODateTimeWithOffset(),
+    createdAt: props.ledger?.createdAt || DateUtils.getLocalISODateTimeWithOffset(),
+    updatedAt: DateUtils.getLocalISODateTimeWithOffset(),
   };
   emit('save', ledgerData);
 }

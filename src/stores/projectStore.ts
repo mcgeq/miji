@@ -11,7 +11,7 @@
 
 import { ref } from 'vue';
 import { ProjectSchema } from '../schema/todos';
-import { getLocalISODateTimeWithOffset } from '../utils/date';
+import { DateUtils } from '../utils/date';
 import { uuid } from '../utils/uuid';
 import { createWithDefaults } from '../utils/zodFactory';
 import type { Projects } from '../schema/todos';
@@ -45,7 +45,7 @@ function createProject(input?: Partial<Projects>): Projects {
       ownerId: () => uuid(38),
       color: '#ffffff',
       isArchived: false,
-      createdAt: getLocalISODateTimeWithOffset,
+      createdAt: DateUtils.getLocalISODateTimeWithOffset,
       updatedAt: null,
     },
     input,
@@ -65,7 +65,10 @@ function addProject(input?: Partial<Projects>): Projects {
 }
 
 // 更新项目
-function updateProject(serialNum: string, input: Partial<Omit<Projects, 'serialNum' | 'createdAt'>>): Projects {
+function updateProject(
+  serialNum: string,
+  input: Partial<Omit<Projects, 'serialNum' | 'createdAt'>>,
+): Projects {
   const existing = projects.value.get(serialNum);
   if (!existing) {
     throw new Error(`Project with serialNum ${serialNum} not found.`);
@@ -75,7 +78,7 @@ function updateProject(serialNum: string, input: Partial<Omit<Projects, 'serialN
     ...input,
     serialNum,
     createdAt: existing.createdAt,
-    updatedAt: getLocalISODateTimeWithOffset(),
+    updatedAt: DateUtils.getLocalISODateTimeWithOffset(),
   });
   projects.value.set(serialNum, updated);
   return updated;
@@ -126,16 +129,13 @@ function searchProjects(options: ProjectFilterOptions = {}) {
     const lower = keyword.toLowerCase();
     results = results.filter(
       p =>
-        p.name.toLowerCase().includes(lower)
-        || p.description?.toLowerCase().includes(lower),
+        p.name.toLowerCase().includes(lower) ||
+        p.description?.toLowerCase().includes(lower),
     );
   }
-  if (name)
-    results = results.filter(p => p.name === name);
-  if (description)
-    results = results.filter(p => p.description === description);
-  if (ownerId)
-    results = results.filter(p => p.ownerId === ownerId);
+  if (name) results = results.filter(p => p.name === name);
+  if (description) results = results.filter(p => p.description === description);
+  if (ownerId) results = results.filter(p => p.ownerId === ownerId);
   if (typeof isArchived === 'boolean')
     results = results.filter(p => p.isArchived === isArchived);
 

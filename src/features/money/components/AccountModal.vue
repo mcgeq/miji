@@ -4,7 +4,7 @@ import ColorSelector from '@/components/common/ColorSelector.vue';
 import { COLORS_MAP, DEFAULT_CURRENCY } from '@/constants/moneyConst';
 import { AccountTypeSchema } from '@/schema/money';
 import { safeGet } from '@/utils/common';
-import { getLocalISODateTimeWithOffset } from '@/utils/date';
+import { DateUtils } from '@/utils/date';
 import { uuid } from '@/utils/uuid';
 import type { Account } from '@/schema/money';
 
@@ -33,7 +33,7 @@ const account = props.account || {
   isShared: false,
   isActive: false,
   ownerId: '',
-  createdAt: getLocalISODateTimeWithOffset(),
+  createdAt: DateUtils.getLocalISODateTimeWithOffset(),
   updatedAt: '',
 };
 
@@ -74,8 +74,8 @@ function saveAccount() {
   const accountData: Account = {
     ...form,
     serialNum: props.account?.serialNum || uuid(38),
-    createdAt: props.account?.createdAt || getLocalISODateTimeWithOffset(),
-    updatedAt: getLocalISODateTimeWithOffset(),
+    createdAt: props.account?.createdAt || DateUtils.getLocalISODateTimeWithOffset(),
+    updatedAt: DateUtils.getLocalISODateTimeWithOffset(),
   };
   emit('save', accountData);
   closeModal();

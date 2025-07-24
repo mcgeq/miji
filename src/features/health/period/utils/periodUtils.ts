@@ -32,7 +32,7 @@ import {
   Wheat,
   WheatOff,
 } from 'lucide-vue-next';
-import { addDays, isValidDate } from '@/utils/date';
+import { addDays } from '@/utils/date';
 import type { ExerciseIntensity, FlowLevel, Intensity } from '@/schema/common';
 import type {
   Mood,
@@ -316,8 +316,7 @@ export class PeriodFormatter {
    * 格式化持续时间
    */
   static formatDuration(days: number): string {
-    if (days === 1)
-      return '1天';
+    if (days === 1) return '1天';
     return `${days}天`;
   }
 
@@ -325,12 +324,9 @@ export class PeriodFormatter {
    * 格式化周期描述
    */
   static formatCycleDescription(cycleLength: number): string {
-    if (cycleLength === 0)
-      return '首次记录';
-    if (cycleLength < 21)
-      return `${cycleLength}天 (偏短)`;
-    if (cycleLength > 35)
-      return `${cycleLength}天 (偏长)`;
+    if (cycleLength === 0) return '首次记录';
+    if (cycleLength < 21) return `${cycleLength}天 (偏短)`;
+    if (cycleLength > 35) return `${cycleLength}天 (偏长)`;
     return `${cycleLength}天`;
   }
 
@@ -338,16 +334,11 @@ export class PeriodFormatter {
    * 格式化规律性评分
    */
   static formatRegularityScore(score: number): string {
-    if (score >= 90)
-      return '非常规律';
-    if (score >= 80)
-      return '很规律';
-    if (score >= 70)
-      return '比较规律';
-    if (score >= 60)
-      return '一般规律';
-    if (score >= 50)
-      return '不太规律';
+    if (score >= 90) return '非常规律';
+    if (score >= 80) return '很规律';
+    if (score >= 70) return '比较规律';
+    if (score >= 60) return '一般规律';
+    if (score >= 50) return '不太规律';
     return '不规律';
   }
 
@@ -406,8 +397,8 @@ export class PeriodValidator {
    */
   static isValidDate(dateStr: string): boolean {
     const dateObj = new Date(dateStr);
-    const isValidDateObj
-      = dateObj instanceof Date && !Number.isNaN(dateObj.getTime());
+    const isValidDateObj =
+      dateObj instanceof Date && !Number.isNaN(dateObj.getTime());
     const matchesFormat = /^\d{4}-\d{2}-\d{2}$/.test(dateStr);
     return isValidDateObj && matchesFormat;
   }
@@ -426,8 +417,7 @@ export class PeriodValidator {
    * 验证经期长度
    */
   static isValidPeriodLength(startDate: string, endDate: string): boolean {
-    if (!this.isValidDateRange(startDate, endDate))
-      return false;
+    if (!this.isValidDateRange(startDate, endDate)) return false;
 
     const days = DateUtils.daysBetween(startDate, endDate) + 1;
     return days >= 1 && days <= 14;
@@ -520,15 +510,15 @@ export class PeriodValidator {
     }
 
     if (
-      record.waterIntake !== undefined
-      && (record.waterIntake < 0 || record.waterIntake > 5000)
+      record.waterIntake !== undefined &&
+      (record.waterIntake < 0 || record.waterIntake > 5000)
     ) {
       errors.push('饮水量应在0-5000ml之间');
     }
 
     if (
-      record.sleepHours !== undefined
-      && (record.sleepHours < 0 || record.sleepHours > 24)
+      record.sleepHours !== undefined &&
+      (record.sleepHours < 0 || record.sleepHours > 24)
     ) {
       errors.push('睡眠时间应在0-24小时之间');
     }
@@ -1301,11 +1291,11 @@ export class PeriodCalculator {
       cycleLengths.push(this.calculateCycleLength(periods[i], periods[i - 1]));
     }
 
-    const averageCycleLength
-      = cycleLengths.length > 0
+    const averageCycleLength =
+      cycleLengths.length > 0
         ? Math.round(
-            cycleLengths.reduce((sum, len) => sum + len, 0)
-            / cycleLengths.length,
+            cycleLengths.reduce((sum, len) => sum + len, 0) /
+            cycleLengths.length,
           )
         : 28;
 
@@ -1336,14 +1326,13 @@ export class PeriodCalculator {
    * 计算预测置信度
    */
   private static calculatePredictionConfidence(cycleLengths: number[]): number {
-    if (cycleLengths.length < 2)
-      return 50;
+    if (cycleLengths.length < 2) return 50;
 
-    const avg
-      = cycleLengths.reduce((sum, len) => sum + len, 0) / cycleLengths.length;
-    const variance
-      = cycleLengths.reduce((sum, len) => sum + (len - avg) ** 2, 0)
-        / cycleLengths.length;
+    const avg =
+      cycleLengths.reduce((sum, len) => sum + len, 0) / cycleLengths.length;
+    const variance =
+      cycleLengths.reduce((sum, len) => sum + (len - avg) ** 2, 0) /
+      cycleLengths.length;
     const standardDeviation = Math.sqrt(variance);
 
     // 标准差越小，置信度越高
@@ -1360,8 +1349,7 @@ export class PeriodAnalyzer {
    * 计算周期规律性评分 (0-100)
    */
   static calculateRegularityScore(cycleLengths: number[]): number {
-    if (cycleLengths.length < 2)
-      return 100;
+    if (cycleLengths.length < 2) return 100;
 
     const variation = this.calculateVariationCoefficient(cycleLengths);
     return Math.max(0, Math.round(100 - variation * 200));
@@ -1374,8 +1362,7 @@ export class PeriodAnalyzer {
     values: number[],
     windowSize: number = 6,
   ): 'stable' | 'increasing' | 'decreasing' {
-    if (values.length < windowSize * 2)
-      return 'stable';
+    if (values.length < windowSize * 2) return 'stable';
 
     const recent = values.slice(-windowSize);
     const earlier = values.slice(-windowSize * 2, -windowSize);
@@ -1384,8 +1371,7 @@ export class PeriodAnalyzer {
     const earlierAvg = this.calculateAverage(earlier);
     const difference = recentAvg - earlierAvg;
 
-    if (Math.abs(difference) < 1)
-      return 'stable';
+    if (Math.abs(difference) < 1) return 'stable';
     return difference > 0 ? 'increasing' : 'decreasing';
   }
 
@@ -1432,8 +1418,7 @@ export class PeriodAnalyzer {
    * 计算平均值
    */
   static calculateAverage(values: number[]): number {
-    if (values.length === 0)
-      return 0;
+    if (values.length === 0) return 0;
     return values.reduce((sum, val) => sum + val, 0) / values.length;
   }
 
@@ -1441,11 +1426,10 @@ export class PeriodAnalyzer {
    * 计算标准差
    */
   static calculateStandardDeviation(values: number[]): number {
-    if (values.length === 0)
-      return 0;
+    if (values.length === 0) return 0;
     const mean = this.calculateAverage(values);
-    const variance
-      = values.reduce((sum, val) => sum + (val - mean) ** 2, 0) / values.length;
+    const variance =
+      values.reduce((sum, val) => sum + (val - mean) ** 2, 0) / values.length;
     return Math.sqrt(variance);
   }
 
@@ -1453,11 +1437,9 @@ export class PeriodAnalyzer {
    * 计算变异系数（标准差与平均值的比率）
    */
   static calculateVariationCoefficient(values: number[]): number {
-    if (values.length === 0)
-      return 0;
+    if (values.length === 0) return 0;
     const mean = this.calculateAverage(values);
-    if (mean === 0)
-      return 0; // 避免除以零
+    if (mean === 0) return 0; // 避免除以零
     const stdDev = this.calculateStandardDeviation(values);
     return Number((stdDev / mean).toFixed(2));
   }
@@ -1478,8 +1460,7 @@ export class PeriodAnalyzer {
     slope: number;
     trend: 'stable' | 'increasing' | 'decreasing';
   } {
-    if (cycleLengths.length < 2)
-      return { slope: 0, trend: 'stable' };
+    if (cycleLengths.length < 2) return { slope: 0, trend: 'stable' };
 
     const n = cycleLengths.length;
     const xMean = (n * (n + 1)) / (2 * n);
@@ -1495,10 +1476,8 @@ export class PeriodAnalyzer {
     const slope = denominator !== 0 ? numerator / denominator : 0;
 
     let trend: 'stable' | 'increasing' | 'decreasing' = 'stable';
-    if (slope > 0.5)
-      trend = 'increasing';
-    else if (slope < -0.5)
-      trend = 'decreasing';
+    if (slope > 0.5) trend = 'increasing';
+    else if (slope < -0.5) trend = 'decreasing';
 
     return { slope: Number(slope.toFixed(2)), trend };
   }
@@ -1613,8 +1592,8 @@ export class PeriodAnalyzer {
       const currentStart = new Date(periods[i].startDate);
       const previousStart = new Date(periods[i - 1].startDate);
       const cycleLength = Math.ceil(
-        (currentStart.getTime() - previousStart.getTime())
-        / (1000 * 60 * 60 * 24),
+        (currentStart.getTime() - previousStart.getTime()) /
+        (1000 * 60 * 60 * 24),
       );
       cycleLengths.push(cycleLength);
     }

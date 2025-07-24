@@ -2,7 +2,7 @@
 import { invoke } from '@tauri-apps/api/core';
 import { getDb } from '../db';
 import { toCamelCase } from '../utils/common';
-import { getLocalISODateTimeWithOffset } from '../utils/date';
+import { DateUtils } from '../utils/date';
 import { Lg } from '../utils/debugLog';
 import { uuid } from '../utils/uuid';
 import type { TokenResponse, User } from '@/schema/user';
@@ -45,7 +45,7 @@ export async function login(
     // Update auth store
     await loginUser(user, tokenResponse, rememberMe);
 
-    const now = getLocalISODateTimeWithOffset();
+    const now = DateUtils.getLocalISODateTimeWithOffset();
     await db.execute(
       'UPDATE users SET last_login_at = ?, last_active_at = ? WHERE serial_num = ?',
       [now, now, user.serialNum],
@@ -76,7 +76,7 @@ export async function register(
     }
 
     // 生成字段
-    const now = getLocalISODateTimeWithOffset();
+    const now = DateUtils.getLocalISODateTimeWithOffset();
     const user: Omit<User, 'password'> = {
       serialNum: uuid(38),
       name: username,

@@ -2,7 +2,7 @@
 import { Plus, Trash2, Users, X } from 'lucide-vue-next';
 import { computed, onMounted, ref } from 'vue';
 import { DEFAULT_CURRENCY } from '@/constants/moneyConst';
-import { getLocalISODateTimeWithOffset } from '@/utils/date';
+import { DateUtils } from '@/utils/date';
 import { Lg } from '@/utils/debugLog';
 import { toast } from '@/utils/toast';
 import { uuid } from '@/utils/uuid';
@@ -138,7 +138,7 @@ async function handleSubmit() {
 
   saving.value = true;
   try {
-    const localTime = getLocalISODateTimeWithOffset();
+    const localTime = DateUtils.getLocalISODateTimeWithOffset();
     const ledgerData: FamilyLedger = {
       ...form.value,
       serialNum: isEdit.value ? form.value.serialNum : uuid(38),

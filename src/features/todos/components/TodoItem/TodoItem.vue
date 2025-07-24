@@ -6,7 +6,7 @@ import ProjectsView from '@/features/projects/views/ProjectsView.vue';
 import TagsView from '@/features/tags/views/TagsView.vue';
 import { StatusSchema } from '@/schema/common';
 import { useMenuStore } from '@/stores/menuStore';
-import { parseToISO } from '@/utils/date';
+import { DateUtils } from '@/utils/date';
 import TodoActions from './TodoActions.vue';
 import TodoAddMenus from './TodoAddMenus.vue';
 import TodoCheckbox from './TodoCheckbox.vue';
@@ -123,7 +123,7 @@ function submitTitleChange(newTitle: string) {
 }
 
 function submitDueDateChange(newDueAt: string) {
-  const newDue = parseToISO(newDueAt);
+  const newDue = DateUtils.parseToISO(newDueAt);
   if (newDue !== todoCopy.value.dueAt) {
     updateTodo({ dueAt: newDue });
     emit('edit');

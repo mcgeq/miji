@@ -11,7 +11,7 @@
 
 import { ref } from 'vue';
 import { TagsSchema } from '../schema/tags';
-import { getLocalISODateTimeWithOffset } from '../utils/date';
+import { DateUtils } from '../utils/date';
 import { uuid } from '../utils/uuid';
 import { createWithDefaults } from '../utils/zodFactory';
 import type { Tags } from '../schema/tags';
@@ -40,8 +40,8 @@ function createTag(input?: Partial<Tags>): Tags {
       serialNum: () => uuid(38),
       name: 'Untitled',
       description: null,
-      createdAt: getLocalISODateTimeWithOffset,
-      updatedAt: getLocalISODateTimeWithOffset,
+      createdAt: DateUtils.getLocalISODateTimeWithOffset,
+      updatedAt: DateUtils.getLocalISODateTimeWithOffset,
     },
     input,
   );
@@ -58,7 +58,10 @@ function addTag(input?: Partial<Tags>): Tags {
 }
 
 // 更新标签（不可修改 serialNum 与 createdAt）
-function updateTag(serialNum: string, input: Partial<Omit<Tags, 'serialNum' | 'createdAt'>>): Tags {
+function updateTag(
+  serialNum: string,
+  input: Partial<Omit<Tags, 'serialNum' | 'createdAt'>>,
+): Tags {
   const existing = tags.value.get(serialNum);
   if (!existing) {
     throw new Error(`Tag with serialNum ${serialNum} not found.`);
@@ -68,7 +71,7 @@ function updateTag(serialNum: string, input: Partial<Omit<Tags, 'serialNum' | 'c
     ...input,
     serialNum,
     createdAt: existing.createdAt,
-    updatedAt: getLocalISODateTimeWithOffset(),
+    updatedAt: DateUtils.getLocalISODateTimeWithOffset(),
   });
   tags.value.set(serialNum, updatedTag);
   return updatedTag;
@@ -122,12 +125,11 @@ function searchTags(options: TagFilterOptions = {}) {
     const lower = keyword.toLowerCase();
     results = results.filter(
       tag =>
-        tag.name.toLowerCase().includes(lower)
-        || tag.description?.toLowerCase().includes(lower),
+        tag.name.toLowerCase().includes(lower) ||
+        tag.description?.toLowerCase().includes(lower),
     );
   }
-  if (name)
-    results = results.filter(tag => tag.name === name);
+  if (name) results = results.filter(tag => tag.name === name);
   if (description)
     results = results.filter(tag => tag.description === description);
 

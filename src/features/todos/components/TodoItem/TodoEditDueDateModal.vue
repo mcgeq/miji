@@ -1,22 +1,20 @@
 <script setup lang="ts">
 import { Check, X } from 'lucide-vue-next';
 import {
-  formatForDisplay,
-  getLocalISODateTimeWithOffset,
-  isDateTimeContaining,
+  DateUtils,
 } from '@/utils/date';
 
 const props = defineProps<{ dueDate: string | undefined; show: boolean }>();
 const emit = defineEmits(['save', 'close']);
 const show = computed(() => props.show);
 const localDueDate = ref(
-  formatForDisplay(props.dueDate ?? getLocalISODateTimeWithOffset()),
+  DateUtils.formatForDisplay(props.dueDate ?? DateUtils.getLocalISODateTimeWithOffset()),
 );
 
 const isChanged = computed(() => {
   if (!props.dueDate)
     return true;
-  return isDateTimeContaining(props.dueDate, localDueDate.value);
+  return DateUtils.isDateTimeContaining(props.dueDate, localDueDate.value);
 });
 </script>
 

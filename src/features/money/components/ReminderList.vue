@@ -10,7 +10,7 @@ import {
 } from 'lucide-vue-next';
 import SimplePagination from '@/components/common/SimplePagination.vue';
 import { getRepeatTypeName } from '@/utils/common';
-import { formatDate, formatDateTime } from '@/utils/date';
+import { DateUtils } from '@/utils/date';
 import { formatCurrency } from '../utils/money';
 import type { BilReminder } from '@/schema/money';
 
@@ -358,11 +358,11 @@ function getStatusText(reminder: BilReminder) {
         <div class="mb-2 space-y-2">
           <div class="flex justify-between text-sm">
             <span class="text-gray-600">{{ t('financial.billDate') }}</span>
-            <span class="text-gray-800">{{ formatDate(reminder.billDate) }}</span>
+            <span class="text-gray-800">{{ DateUtils.formatDate(reminder.billDate) }}</span>
           </div>
           <div class="flex justify-between text-sm">
             <span class="text-gray-600">{{ t('date.reminderDate') }}</span>
-            <span class="text-gray-800">{{ formatDateTime(reminder.remindDate) }}</span>
+            <span class="text-gray-800">{{ DateUtils.formatDateTime(reminder.remindDate) }}</span>
           </div>
         </div>
 
@@ -378,7 +378,7 @@ function getStatusText(reminder: BilReminder) {
           </div>
           <div class="flex justify-between">
             <span class="text-gray-600"> {{ t('date.createDate') }} </span>
-            <span class="text-gray-800">{{ formatDate(reminder.createdAt) }}</span>
+            <span class="text-gray-800">{{ DateUtils.formatDate(reminder.createdAt) }}</span>
           </div>
           <div v-if="reminder.description" class="flex justify-between">
             <span class="text-gray-600"> {{ t('common.misc.remark') }} </span>

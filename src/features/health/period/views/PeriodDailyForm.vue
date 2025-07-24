@@ -25,7 +25,7 @@ import {
   X,
 } from 'lucide-vue-next';
 import { usePeriodStore } from '@/stores/periodStore';
-import { getLocalISODateTimeWithOffset } from '@/utils/date';
+import { DateUtils } from '@/utils/date';
 import { Lg } from '@/utils/debugLog';
 import { uuid } from '@/utils/uuid';
 import { usePeriodValidation } from '../composables/usePeriodValidation';
@@ -198,7 +198,7 @@ async function handleSubmit() {
 
   try {
     await periodStore.upsertDailyRecord(formData.value);
-    const recordDateTime = getLocalISODateTimeWithOffset();
+    const recordDateTime = DateUtils.getLocalISODateTimeWithOffset();
     // 模拟创建完整记录对象用于回调
     const record: PeriodDailyRecords = {
       serialNum: props.record?.serialNum || uuid(38),

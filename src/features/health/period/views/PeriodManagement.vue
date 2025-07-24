@@ -10,7 +10,7 @@ import {
   X,
 } from 'lucide-vue-next';
 import { usePeriodStore } from '@/stores/periodStore';
-import { getTodayDate } from '@/utils/date';
+import { DateUtils } from '@/utils/date';
 import { Lg } from '@/utils/debugLog';
 import PeriodCalendar from '../components/PeriodCalendar.vue';
 import PeriodHealthTip from '../components/PeriodHealthTip.vue';
@@ -28,7 +28,7 @@ const { t } = useI18n();
 
 // Reactive state
 const currentView = ref<'calendar' | 'stats' | 'settings'>('calendar');
-const selectedDate = ref(getTodayDate().split('T')[0]);
+const selectedDate = ref(DateUtils.getTodayDate());
 const showRecordForm = ref(false);
 const showDailyForm = ref(false);
 const showDeleteConfirm = ref(false);
