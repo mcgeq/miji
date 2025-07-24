@@ -120,6 +120,9 @@ function goToNextMonth() {
 }
 
 function goToToday() {
+  if (viewMode.value === 'list') {
+    viewMode.value = 'calendar';
+  }
   currentDate.value = new Date();
   selectedDate.value = DateUtils.getTodayDate();
   emit('dateSelect', selectedDate.value);
@@ -726,7 +729,7 @@ onMounted(() => {
 }
 
 .list-container {
-  @apply p-3 space-y-2 max-h-64 overflow-y-auto;
+  @apply p-3 space-y-2 max-h-51 overflow-y-auto;
 }
 
 .list-item {

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Edit, Trash, Triangle, X } from 'lucide-vue-next';
+import { Edit, Info, Trash, Triangle, X } from 'lucide-vue-next';
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue';
 import InputError from '@/components/common/InputError.vue';
 import WarningDialog from '@/components/common/WarningDialog.vue';
@@ -514,7 +514,7 @@ defineExpose({
         <!-- 经期信息显示 -->
         <div v-if="showPeriodInfo" class="info-card">
           <div class="info-header">
-            <i class="i-tabler-info-circle wh-4 text-blue-500" />
+            <Info class="mr-2 wh-5" />
             <span class="info-title">经期信息</span>
           </div>
           <div class="info-grid">
@@ -733,7 +733,7 @@ defineExpose({
 }
 
 .date-input {
-  @apply w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm;
+  @apply w-full pl-4 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm;
 }
 
 .date-input.input-error {
@@ -779,7 +779,7 @@ defineExpose({
 }
 
 .info-grid {
-  @apply grid grid-cols-1 sm:grid-cols-3 gap-3;
+  @apply grid grid-cols-1 gap-3;
 }
 
 .info-item {

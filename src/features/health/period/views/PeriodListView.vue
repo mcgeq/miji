@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ListFilterPlus, ListRestart } from 'lucide-vue-next';
 import { usePeriodStore } from '@/stores/periodStore';
 import type { PeriodRecords } from '@/schema/health/period';
 
@@ -279,14 +280,13 @@ watch(
             class="btn-secondary" :class="{ 'bg-blue-50 dark:bg-blue-900/30': hasActiveFilters }"
             @click="showFilters = !showFilters"
           >
-            <i class="i-tabler-filter mr-1 wh-4" />
-            筛选
+            <ListFilterPlus class="ml-2 wh-5" />
           </button>
         </div>
       </div>
       <!-- 高级筛选 -->
       <div v-if="showFilters" class="mt-4 border-t border-gray-200 pt-4 dark:border-gray-700">
-        <div class="grid grid-cols-1 gap-4 lg:grid-cols-4 sm:grid-cols-2">
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
             <label class="filter-label">日期范围</label>
             <div class="flex gap-2">
@@ -321,8 +321,8 @@ watch(
             </div>
           </div>
           <div class="flex items-end">
-            <button class="w-full btn-secondary text-sm" @click="clearFilters">
-              清除筛选
+            <button class="btn-secondary text-sm" @click="clearFilters">
+              <ListRestart class="ml-2 wh-5" />
             </button>
           </div>
         </div>
@@ -330,7 +330,7 @@ watch(
     </div>
 
     <!-- 统计概览 -->
-    <div class="stats-overview grid grid-cols-2 mb-6 gap-4 lg:grid-cols-4">
+    <div class="stats-overview grid grid-cols-4 mb-2 gap-2">
       <div class="stat-card">
         <div class="stat-icon bg-red-100 dark:bg-red-900/30">
           <i class="i-tabler-calendar-heart wh-5 text-red-600 dark:text-red-400" />
