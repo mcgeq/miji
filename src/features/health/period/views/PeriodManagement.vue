@@ -4,6 +4,7 @@ import {
   CalendarCheck,
   Check,
   Eye,
+  Plus,
   Settings,
   Trash,
   X,
@@ -310,6 +311,10 @@ onMounted(async () => {
                   <div v-else class="info-item">
                     <span class="info-label">{{ t('period.todayInfo.todayRecord') }}</span>
                     <span class="text-sm text-gray-500 dark:text-gray-400">{{ t('period.todayInfo.noRecord') }}</span>
+
+                    <div class="period-btn cursor-pointer" @click="openDailyForm()">
+                      <Plus class="wh-5" />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -317,33 +322,6 @@ onMounted(async () => {
               <div class="card-base">
                 <PeriodHealthTip :stats="currentPhase" />
               </div>
-              <!-- 快速操作 -->
-              <!-- <div class="card-base p-6"> -->
-              <!--   <div class="mb-6 flex items-center gap-3"> -->
-              <!--     <div -->
-              <!--       class="h-10 w-10 flex items-center justify-center rounded-full from-purple-500 to-pink-500 bg-gradient-to-r" -->
-              <!--     > -->
-              <!--       <Plus class="h-5 w-5 text-white" /> -->
-              <!--     </div> -->
-              <!--     <h3 class="text-lg text-gray-900 font-semibold dark:text-white"> -->
-              <!--       {{ t('period.quickActions.title') }} -->
-              <!--     </h3> -->
-              <!--   </div> -->
-              <!--   <div class="space-y-3"> -->
-              <!--     <button class="period-btn action-btn" @click="openRecordForm()"> -->
-              <!--       <Plus class="wh-5" /> -->
-              <!--       <span>{{ t('period.quickActions.recordPeriod') }}</span> -->
-              <!--     </button> -->
-              <!--     <button class="daily-btn action-btn" @click="openDailyForm()"> -->
-              <!--       <Edit class="wh-5" /> -->
-              <!--       <span>{{ t('period.quickActions.dailyRecord') }}</span> -->
-              <!--     </button> -->
-              <!--     <button class="stats-btn action-btn" @click="currentView = 'stats'"> -->
-              <!--       <Activity class="wh-5" /> -->
-              <!--       <span>{{ t('period.quickActions.viewStats') }}</span> -->
-              <!--     </button> -->
-              <!--   </div> -->
-              <!-- </div> -->
             </div>
           </div>
           <PeriodRecentRecord @add-record="openRecordForm()" @edit-record="openRecordForm($event)" />
@@ -383,8 +361,8 @@ onMounted(async () => {
       <div class="max-w-sm modal-content">
         <div class="p-6">
           <div class="mb-4 flex items-center gap-3">
-            <div class="h-10 w-10 flex items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30">
-              <Trash class="h-5 w-5 text-red-600 dark:text-red-400" />
+            <div class="h-8 w-8 flex items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30">
+              <Trash class="wh-4 text-red-600 dark:text-red-400" />
             </div>
             <h3 class="text-lg text-gray-900 font-semibold dark:text-white">
               {{ t('period.confirmations.deleteRecord') }}
