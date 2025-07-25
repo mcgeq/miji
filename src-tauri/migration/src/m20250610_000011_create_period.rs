@@ -26,6 +26,7 @@ impl MijiMigrationTrait for PeriodRecordsMigration {
             sql: r#"
                 CREATE TABLE IF NOT EXISTS period_records (
                     serial_num TEXT NOT NULL PRIMARY KEY CHECK (LENGTH(serial_num) <= 38),
+                    notes TEXT CHECK (LENGTH(notes) <= 1000),
                     start_date TEXT NOT NULL,
                     end_date TEXT NOT NULL,
                     created_at TEXT NOT NULL,
@@ -58,7 +59,12 @@ impl MijiMigrationTrait for PeriodDailyRecordsMigration {
                     flow_level TEXT CHECK (flow_level IN ('Light', 'Medium', 'Heavy')),
                     exercise_intensity TEXT NOT NULL DEFAULT 'None' CHECK (exercise_intensity IN ('None', 'Light', 'Medium', 'Heavy')),
                     sexual_activity INTEGER NOT NULL CHECK (sexual_activity IN (0,1)),
+                    contraception_method TEXT DEFAULT 'None' CHECK (contraception_method IN ('None', 'Condom','Pill','Iud','Other')),
                     diet TEXT NOT NULL CHECK (LENGTH(diet) <= 1000),
+                    mood TEXT CHECK (mood IN ('Happy', 'Sad', 'Angry', 'Anxious', 'Calm','Irritable')),
+                    water_intake INTEGER CHECK (water_intake <= 5000),
+                    sleep_hours INTEGER CHECK (sleep_hours >=0 AND sleep_hours <= 24),
+                    notes TEXT CHECK(LENGTH(notes) <= 5000),
                     created_at TEXT NOT NULL,
                     updated_at TEXT,
                     FOREIGN KEY (period_serial_num)
