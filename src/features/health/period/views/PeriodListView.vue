@@ -282,48 +282,49 @@ watch(
           >
             <ListFilterPlus class="ml-2 wh-5" />
           </button>
+          <div v-if="showFilters">
+            <button class="btn-secondary self-end text-sm" @click="clearFilters">
+              <ListRestart class="ml-2 wh-5" />
+            </button>
+          </div>
         </div>
       </div>
       <!-- 高级筛选 -->
       <div v-if="showFilters" class="mt-4 border-t border-gray-200 pt-4 dark:border-gray-700">
-        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div>
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <!-- 第一组：日期范围 -->
+          <div class="flex flex-col gap-2">
             <label class="filter-label">日期范围</label>
-            <div class="flex gap-2">
-              <input v-model="filters.startDate" type="date" class="input-base text-sm" placeholder="开始">
-              <input v-model="filters.endDate" type="date" class="input-base text-sm" placeholder="结束">
-            </div>
+            <input v-model="filters.startDate" type="date" class="w-full input-base text-sm" placeholder="开始">
+            <input v-model="filters.endDate" type="date" class="w-full input-base text-sm" placeholder="结束">
           </div>
-          <div>
+
+          <!-- 第二组：持续时间 -->
+          <div class="flex flex-col gap-2">
             <label class="filter-label">持续时间</label>
-            <div class="flex gap-2">
+            <input
+              v-model.number="filters.minDuration" type="number" class="w-full input-base text-sm" placeholder="最少天数"
+              min="1"
+            >
+            <input
+              v-model.number="filters.maxDuration" type="number" class="w-full input-base text-sm" placeholder="最多天数"
+              min="1"
+            >
+          </div>
+
+          <!-- 第三组：周期长度 + 按钮 -->
+          <div class="flex flex-col justify-between gap-4">
+            <div class="flex flex-col gap-2">
+              <label class="filter-label">周期长度</label>
               <input
-                v-model.number="filters.minDuration" type="number" class="input-base text-sm" placeholder="最少天数"
+                v-model.number="filters.minCycle" type="number" class="w-full input-base text-sm" placeholder="最短周期"
                 min="1"
               >
               <input
-                v-model.number="filters.maxDuration" type="number" class="input-base text-sm" placeholder="最多天数"
+                v-model.number="filters.maxCycle" type="number" class="w-full input-base text-sm" placeholder="最长周期"
                 min="1"
               >
             </div>
-          </div>
-          <div>
-            <label class="filter-label">周期长度</label>
-            <div class="flex gap-2">
-              <input
-                v-model.number="filters.minCycle" type="number" class="input-base text-sm" placeholder="最短周期"
-                min="1"
-              >
-              <input
-                v-model.number="filters.maxCycle" type="number" class="input-base text-sm" placeholder="最长周期"
-                min="1"
-              >
-            </div>
-          </div>
-          <div class="flex items-end">
-            <button class="btn-secondary text-sm" @click="clearFilters">
-              <ListRestart class="ml-2 wh-5" />
-            </button>
           </div>
         </div>
       </div>
