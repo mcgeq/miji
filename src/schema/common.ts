@@ -28,8 +28,6 @@ export const CurrencySchema = z.object({
   locale: z.string(),
   code: z.string().length(3),
   symbol: z.string(),
-  nameEn: z.string(),
-  nameZh: z.string(),
 });
 
 export type Currency = z.infer<typeof CurrencySchema>;
@@ -170,19 +168,19 @@ export interface QueryFilters {
   orQuery?: boolean;
 }
 
-export type SortOptions = {
+export interface SortOptions {
   customOrderBy?: string; // 新增：完整排序 SQL
   sortBy?: string;
   sortDir?: 'ASC' | 'DESC';
-};
+}
 
-export type UsageDetail = {
+export interface UsageDetail {
   count: number;
   serialNums: string[];
-};
+}
 
-export type DefaultColors = {
+export interface DefaultColors {
   code: string;
   nameEn: string;
   nameZh: string;
-};
+}

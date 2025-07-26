@@ -410,5 +410,18 @@
     "selectReminderType": "Please select a reminder type",
     "selectPriority": "Please select a priority",
     "repeatPeriodIncomplete": "Repeat frequency configuration is incomplete, please check required fields"
+  },
+  "currency": {
+    "USD": "US Dollar",
+    "CNY": "Chinese Yuan",
+    "EUR": "Euro",
+    "GBP": "British Pound",
+    "JPY": "Japanese Yen",
+    "AUD": "Australian Dollar",
+    "CAD": "Canadian Dollar",
+    "CHF": "Swiss Franc",
+    "SEK": "Swedish Krona",
+    "INR": "Indian Rupee"
   }
+
 }

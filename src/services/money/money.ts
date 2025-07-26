@@ -158,7 +158,7 @@ export class MoneyDb {
         description,
         type,
         balance,
-        JSON.stringify(currency),
+        currency.code,
         isShared,
         ownerId,
         isActive,
