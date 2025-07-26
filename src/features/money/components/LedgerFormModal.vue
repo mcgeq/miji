@@ -287,7 +287,7 @@ onMounted(() => {
                   {{ t('messages.selectCurrency') }}
                 </option>
                 <option v-for="currency in availableCurrencies" :key="currency.code" :value="currency.code">
-                  {{ currency.symbol }} {{ currency.code }} - {{ currency.nameZh }}
+                  {{ currency.symbol }} {{ currency.code }} - {{ t(currency.code) }}
                 </option>
               </select>
               <p class="mt-1 text-xs text-gray-500">

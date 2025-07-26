@@ -17,6 +17,8 @@ const emit = defineEmits<{
   delete: [serialNum: string];
 }>();
 
+const { t } = useI18n();
+
 // 这些函数需要根据实际的数据结构来解析
 function getAccountCount(accounts: string): number {
   try {
@@ -70,7 +72,7 @@ function getBudgetCount(budgets: string): number {
               {{ ledger.description }}
             </h3>
             <div class="flex items-center gap-2 text-sm text-gray-600">
-              <span>基础币种: {{ ledger.baseCurrency.nameZh }}</span>
+              <span>基础币种: {{ t(ledger.baseCurrency.code) }}</span>
               <span class="text-gray-400">|</span>
               <span>{{ ledger.members.length }} 位成员</span>
             </div>

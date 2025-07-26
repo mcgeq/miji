@@ -162,7 +162,7 @@ watch(
           <label class="mb-2 text-sm text-gray-700 font-medium">{{ t('financial.currency') }}</label>
           <select v-model="form.currency.code" required class="w-2/3 modal-input-select">
             <option v-for="currency in currencys" :key="currency.code" :value="currency.code">
-              {{ currency.nameZh }}
+              {{ t(currency.code) }}
             </option>
           </select>
         </div>
@@ -171,7 +171,7 @@ watch(
           <label class="mb-2 text-sm text-gray-700 font-medium">{{ t('financial.account.owner') }}</label>
           <select v-model="form.ownerId" required class="w-2/3 modal-input-select">
             <option v-for="currency in currencys" :key="currency.code" :value="currency.code">
-              {{ currency.nameZh }}
+              {{ t(currency.code) }}
             </option>
           </select>
         </div>

@@ -14,6 +14,7 @@ interface Props {
 
 const props = defineProps<Props>();
 const emit = defineEmits(['close', 'save']);
+const { t } = useI18n();
 
 const currencies = ref(DEFAULT_CURRENCY);
 const showMemberModal = ref(false);
@@ -123,7 +124,7 @@ watch(
             <label class="text-sm text-gray-700 font-medium">基础币种</label>
             <select v-model="form.baseCurrency.code" required class="w-2/3 modal-input-select">
               <option v-for="currency in currencies" :key="currency.code" :value="currency.code">
-                {{ currency.nameZh }} ({{ currency.code }})
+                {{ t(currency.code) }} ({{ currency.code }})
               </option>
             </select>
           </div>
