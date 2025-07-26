@@ -30,14 +30,28 @@ impl MijiMigrationTrait for CurrencyMigration {
             description: "create Currency table",
             sql: r#"
                 CREATE TABLE IF NOT EXISTS currency (
-                    code TEXT PRIMARY KEY CHECK (LENGTH(code) <= 10),
+                    code TEXT PRIMARY KEY CHECK (LENGTH(code) = 3),
                     locale TEXT NOT NULL,
                     symbol TEXT NOT NULL CHECK (LENGTH(symbol) <= 10),
-                    name_zh TEXT NOT NULL,
-                    name_en TEXT NOT NULL,
                     created_at TEXT NOT NULL,
                     updated_at TEXT
                 );
+                INSERT INTO currency (
+                    code, 
+                    locale, 
+                    symbol, 
+                    created_at
+                ) VALUES
+                    ('USD', 'en-US', '$',  '2025-07-26 13:13:24'),
+                    ('EUR', 'en-EU', '€',  '2025-07-26 13:13:24'),
+                    ('CNY', 'zh-CN', '¥',  '2025-07-26 13:13:24'),
+                    ('GBP', 'en-GB', '£',  '2025-07-26 13:13:24'),
+                    ('JPY', 'ja-JP', '¥',  '2025-07-26 13:13:24'),
+                    ('AUD', 'en-AU', '$',  '2025-07-26 13:13:24'),
+                    ('CAD', 'en-CA', '$',  '2025-07-26 13:13:24'),
+                    ('CHF', 'en-CH', 'CHF',  '2025-07-26 13:13:24'),
+                    ('SEK', 'sv-SE', 'kr',  '2025-07-26 13:13:24'),
+                    ('INR', 'hi-IN', '₹',  '2025-07-26 13:13:24');
             "#,
             kind: tauri_plugin_sql::MigrationKind::Up,
         }
