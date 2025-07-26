@@ -398,7 +398,7 @@ impl MijiMigrationTrait for BilReminderMigration {
                 CREATE TABLE IF NOT EXISTS bil_reminder (
                     serial_num TEXT NOT NULL PRIMARY KEY CHECK (LENGTH(serial_num) <= 38),
                     name TEXT NOT NULL,
-                    enabled INTEGER NOT NULL DEFAULT 1 CHECK (is_active IN (0,1)),
+                    enabled INTEGER NOT NULL DEFAULT 1 CHECK (enabled IN (0,1)),
                     type TEXT NOT NULL CHECK (type IN ('Notification', 'Email', 'Popup')),
                     description TEXT NOT NULL CHECK (LENGTH(description) <= 1000),
                     category TEXT NOT NULL CHECK (category IN ('Food', 'Transport', 'Entertainment', 'Utilities', 'Shopping', 'Salary', 'Investment', 'Others')),
@@ -408,7 +408,7 @@ impl MijiMigrationTrait for BilReminderMigration {
                     bill_date TEXT NOT NULL,
                     remind_date TEXT NOT NULL,
                     repeat_period TEXT NOT NULL,
-                    is_paid BOOLEAN NOT NULL DEFAULT 0,
+                    is_paid INTEGER NOT NULL DEFAULT 1 CHECK (is_paid IN (0,1)),
                     priority TEXT NOT NULL DEFAULT 'Low' CHECK (priority IN ('Low', 'Medium', 'High', 'Urgent')),
                     advance_value INTEGER,
                     advance_unit TEXT,
