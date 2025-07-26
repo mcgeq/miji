@@ -1,5 +1,7 @@
+import { DEFAULT_CURRENCY } from '@/constants/moneyConst';
 import { getDb } from '@/db';
 import { Lg } from '@/utils/debugLog';
+import type { Currency } from '@/schema/common';
 import type {
   Account,
   BilReminder,
@@ -175,16 +177,23 @@ export class MoneyDb {
     );
     if (result.length === 0) return null;
     const account = result[0];
-    account.currency = JSON.parse(account.currency);
+    const currency = await MoneyDb.getCurrencyByCode(account.currency);
+    account.currency = currency;
     return account as Account;
   }
 
   public static async listAccounts(): Promise<Account[]> {
     await MoneyDb.ensureDb();
-    const result = await MoneyDb.db.select<any[]>('SELECT * FROM accounts');
-    return result.map(a => ({
+    const accounts = await MoneyDb.db.select<any[]>('SELECT * FROM accounts');
+    const currencyCodes = accounts.map(a => a.currency);
+    const currencies = await MoneyDb.db.select<Currency[]>(
+      'SELECT * FROM currency WHERE code IN (?)',
+      [currencyCodes],
+    );
+    const currencyMap = MoneyDb.keyBy(currencies, 'code');
+    return accounts.map(a => ({
       ...a,
-      currency: JSON.parse(a.currency),
+      currency: currencyMap[a.currency] ?? DEFAULT_CURRENCY[1],
     })) as Account[];
   }
 
@@ -211,7 +220,7 @@ export class MoneyDb {
         description,
         type,
         balance,
-        JSON.stringify(currency),
+        currency.code,
         isShared,
         ownerId,
         isActive,
@@ -262,7 +271,7 @@ export class MoneyDb {
       const snakeKey = toSnakeCase(key);
       fields.push(`${snakeKey} = ?`);
       if (key === 'currency') {
-        values.push(JSON.stringify(value));
+        values.push((value as Currency).code);
       }
       else {
         values.push(value);
@@ -342,13 +351,20 @@ export class MoneyDb {
       params,
     );
 
+    const currencyCodes = rows.map(a => a.currency);
+    const currencies = await MoneyDb.db.select<Currency[]>(
+      'SELECT * FROM currency WHERE code IN (?)',
+      [currencyCodes],
+    );
+    const currencyMap = MoneyDb.keyBy(currencies, 'code');
+
     const totalCount = totalRes[0]?.cnt ?? 0;
     const totalPages = Math.ceil(totalCount / pageSize);
 
     return {
       rows: rows.map(a => ({
         ...a,
-        currency: JSON.parse(a.currency),
+        currency: currencyMap[a.currency] ?? DEFAULT_CURRENCY[1],
       })) as Account[],
       totalCount,
       currentPage: page,
@@ -1584,6 +1600,28 @@ export class MoneyDb {
       pageSize,
       totalPages,
     };
+  }
+
+  public static async getCurrencyByCode(
+    code: string,
+  ): Promise<Currency | null> {
+    await MoneyDb.ensureDb();
+    const result = await MoneyDb.db.select<Currency[]>(
+      'SELECT * FROM currency where code =$1',
+      [code],
+    );
+    return result.length > 0 ? result[0] : null;
+  }
+
+  private static keyBy<T>(array: T[], key: keyof T): Record<string, T> {
+    return array.reduce(
+      (acc, item) => {
+        const keyValue = String(item[key]);
+        acc[keyValue] = item;
+        return acc;
+      },
+      {} as Record<string, T>,
+    );
   }
 
   // 辅助函数：构建日期范围查询
