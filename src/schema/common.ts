@@ -28,6 +28,8 @@ export const CurrencySchema = z.object({
   locale: z.string(),
   code: z.string().length(3),
   symbol: z.string(),
+  createdAt: DateTimeSchema,
+  updatedAt: DateTimeSchema.optional().nullable(),
 });
 
 export type Currency = z.infer<typeof CurrencySchema>;

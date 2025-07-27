@@ -1,0 +1,369 @@
+import { db } from '@/utils/dbUtils';
+import { Lg } from '@/utils/debugLog';
+import type { Currency, SortOptions } from '@/schema/common';
+
+/**
+ * 实体基础接口
+ */
+interface BaseEntity {
+  serialNum: string;
+  createdAt?: string | null | undefined;
+  updatedAt?: string | null | undefined;
+}
+
+// 分页查询相关接口
+export interface DateRange {
+  start?: string;
+  end?: string;
+}
+
+export interface PagedResult<T> {
+  rows: T[];
+  totalCount: number;
+  currentPage: number;
+  pageSize: number;
+  totalPages: number;
+}
+
+/**
+ * 数据库操作错误类
+ */
+export class MoneyDbError extends Error {
+  constructor(
+    message: string,
+    public operation: string,
+    public entity: string,
+    public originalError?: Error,
+  ) {
+    super(message);
+    this.name = 'MoneyDbError';
+  }
+}
+
+/**
+ * 数据映射器抽象基类
+ */
+export abstract class BaseMapper<T extends BaseEntity> {
+  protected abstract tableName: string;
+  protected abstract entityName: string;
+
+  // Convert boolean to SQLite-compatible 0/1
+  protected toDbBoolean(value: boolean | undefined | null): number | undefined {
+    if (value === undefined || value === null) return undefined;
+    return value ? 1 : 0;
+  }
+
+  // Convert SQLite 0/1 to boolean
+  protected fromDbBoolean(
+    value: number | null | undefined,
+  ): boolean | undefined {
+    if (value === undefined || value === null) return undefined;
+    return value === 1;
+  }
+
+  // List of boolean fields that need conversion
+  protected getBooleanFields(): string[] {
+    return [];
+  }
+
+  /**
+   * 将对象字段转换为数据库字段格式
+   */
+  protected toSnakeCase(str: string): string {
+    return str.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
+  }
+
+  /**
+   * 比较两个值是否相等
+   */
+  protected isEqual(a: any, b: any): boolean {
+    if ((a === null && b === undefined) || (a === undefined && b === null)) {
+      return true;
+    }
+    if (
+      typeof a === 'object' &&
+      typeof b === 'object' &&
+      a !== null &&
+      b !== null
+    ) {
+      return JSON.stringify(a) === JSON.stringify(b);
+    }
+    return a === b;
+  }
+
+  /**
+   * 规范化值（null -> undefined）
+   */
+  protected normalizeValue<V>(value: V): V extends null ? undefined : V {
+    return (value === null ? undefined : value) as V extends null
+      ? undefined
+      : V;
+  }
+
+  /**
+   * 处理数据库错误
+   */
+  protected handleError(operation: string, error: unknown): never {
+    const dbError = new MoneyDbError(
+      `${this.entityName} ${operation} operation failed`,
+      operation,
+      this.entityName,
+      error as Error,
+    );
+    Lg.e('MoneyDb', `${this.entityName} ${operation} failed:`, error);
+    throw dbError;
+  }
+
+  /**
+   * 构建WHERE子句和参数
+   */
+  protected buildWhereClause(filters: Record<string, any>): {
+    clause: string;
+    params: any[];
+  } {
+    const whereParts: string[] = [];
+    const params: any[] = [];
+
+    for (const [key, value] of Object.entries(filters)) {
+      if (value !== undefined && value !== null) {
+        if (key.includes('Range')) {
+          this.appendRangeFilter(key, value, whereParts, params);
+        }
+        else {
+          const dbField = this.toSnakeCase(key);
+          whereParts.push(`${dbField} = ?`);
+          params.push(value);
+        }
+      }
+    }
+
+    return {
+      clause: whereParts.length > 0 ? `WHERE ${whereParts.join(' AND ')}` : '',
+      params,
+    };
+  }
+
+  /**
+   * 添加范围过滤器
+   */
+  private appendRangeFilter(
+    key: string,
+    range: any,
+    whereParts: string[],
+    params: any[],
+  ): void {
+    if (key === 'createdAtRange' || key === 'updatedAtRange') {
+      const field = key.replace('Range', '');
+      const dbField = this.toSnakeCase(field);
+      this.appendDateRange(dbField, range, whereParts, params);
+    }
+    else if (key === 'amountRange') {
+      this.appendAmountRange('amount', range, whereParts, params);
+    }
+    else if (key === 'dateRange') {
+      this.appendDateRange('date', range, whereParts, params);
+    }
+    else if (key === 'dueDateRange') {
+      this.appendDateRange('due_date', range, whereParts, params);
+    }
+  }
+
+  /**
+   * 构建日期范围查询
+   */
+  protected appendDateRange(
+    field: string,
+    range: DateRange | undefined,
+    whereParts: string[],
+    params: any[],
+  ): void {
+    if (!range) return;
+    if (range.start) {
+      whereParts.push(`${field} >= ?`);
+      params.push(range.start);
+    }
+    if (range.end) {
+      whereParts.push(`${field} <= ?`);
+      params.push(range.end);
+    }
+  }
+
+  /**
+   * 构建数值范围查询
+   */
+  protected appendAmountRange(
+    field: string,
+    range: { min?: number; max?: number } | undefined,
+    whereParts: string[],
+    params: any[],
+  ): void {
+    if (!range) return;
+    if (range.min !== undefined) {
+      whereParts.push(`${field} >= ?`);
+      params.push(range.min);
+    }
+    if (range.max !== undefined) {
+      whereParts.push(`${field} <= ?`);
+      params.push(range.max);
+    }
+  }
+
+  /**
+   * 构建排序子句
+   */
+  protected buildOrderClause(
+    sortOptions: SortOptions,
+    defaultSort: string = 'created_at DESC',
+  ): string {
+    if (sortOptions.customOrderBy) {
+      return `ORDER BY ${sortOptions.customOrderBy}`;
+    }
+    if (sortOptions.sortBy) {
+      return `ORDER BY ${sortOptions.sortBy} ${sortOptions.sortDir ?? 'ASC'}`;
+    }
+    return `ORDER BY ${defaultSort}`;
+  }
+
+  /**
+   * 通用分页查询
+   */
+  protected async queryPaged<R>(
+    baseQuery: string,
+    filters: Record<string, any>,
+    page: number,
+    pageSize: number,
+    sortOptions: SortOptions,
+    defaultSort?: string,
+    transform?: (row: any) => R,
+  ): Promise<PagedResult<R>> {
+    try {
+      const offset = (page - 1) * pageSize;
+      const { clause: whereClause, params } = this.buildWhereClause(filters);
+      const orderClause = this.buildOrderClause(sortOptions, defaultSort);
+
+      // 查询数据
+      const dataQuery = `${baseQuery} ${whereClause} ${orderClause} LIMIT ? OFFSET ?`;
+      const rows = await db.select<any[]>(
+        dataQuery,
+        [...params, pageSize, offset],
+        true,
+      );
+
+      // 查询总数
+      const countQuery = baseQuery.replace(
+        /SELECT .* FROM/,
+        'SELECT COUNT(*) as cnt FROM',
+      );
+      const totalRes = await db.select<{ cnt: number }[]>(
+        `${countQuery} ${whereClause}`,
+        params,
+        true,
+      );
+
+      const totalCount = totalRes[0]?.cnt ?? 0;
+      const totalPages = Math.ceil(totalCount / pageSize);
+
+      return {
+        rows: transform ? rows.map(transform) : rows,
+        totalCount,
+        currentPage: page,
+        pageSize,
+        totalPages,
+      };
+    }
+    catch (error) {
+      this.handleError('queryPaged', error);
+    }
+  }
+
+  /**
+   * 智能更新：只更新有变化的字段
+   */
+  protected async doSmartUpdate(
+    serialNum: string,
+    newEntity: T,
+    oldEntity: T,
+  ): Promise<void> {
+    const updates: Partial<T> = {};
+
+    for (const key in newEntity) {
+      const k = key as keyof T;
+      if (!this.isEqual(newEntity[k], oldEntity[k])) {
+        updates[k] = this.normalizeValue(newEntity[k]) as any;
+      }
+    }
+
+    if (Object.keys(updates).length === 0) {
+      Lg.d('MoneyDb', `No changes detected for ${this.entityName}`);
+      return;
+    }
+
+    await this.updatePartial(serialNum, updates);
+  }
+
+  /**
+   * 部分字段更新
+   */
+  protected async updatePartial(
+    serialNum: string,
+    updates: Partial<T>,
+  ): Promise<void> {
+    try {
+      const fields: string[] = [];
+      const values: any[] = [];
+
+      for (const [key, value] of Object.entries(updates)) {
+        const snakeKey = this.toSnakeCase(key);
+        fields.push(`${snakeKey} = ?`);
+
+        // 处理特殊字段的序列化
+        if (this.needsSerialization(key)) {
+          values.push(JSON.stringify(value));
+        }
+        else if (key === 'currency' && typeof value === 'object') {
+          values.push((value as Currency).code);
+        }
+        else {
+          values.push(value);
+        }
+      }
+
+      if (fields.length === 0) return;
+
+      values.push(serialNum);
+      const sql = `UPDATE ${this.tableName} SET ${fields.join(', ')} WHERE serial_num = ?`;
+      await db.execute(sql, values);
+
+      Lg.d('MoneyDb', `${this.entityName} updated:`, {
+        serialNum,
+        fields: Object.keys(updates),
+      });
+    }
+    catch (error) {
+      this.handleError('updatePartial', error);
+    }
+  }
+
+  /**
+   * 判断字段是否需要JSON序列化
+   */
+  protected needsSerialization(key: string): boolean {
+    const serializationFields = [
+      'tags',
+      'splitMembers',
+      'members',
+      'repeatPeriod',
+      'baseCurrency',
+    ];
+    return serializationFields.includes(key);
+  }
+
+  /**
+   * 通用的创建、读取、删除操作
+   */
+  abstract create(entity: T): Promise<void>;
+  abstract getById(serialNum: string): Promise<T | null>;
+  abstract list(): Promise<T[]>;
+  abstract update(entity: T): Promise<void>;
+  abstract deleteById(serialNum: string): Promise<void>;
+}

@@ -42,16 +42,16 @@ impl MijiMigrationTrait for CurrencyMigration {
                     symbol, 
                     created_at
                 ) VALUES
-                    ('USD', 'en-US', '$',  '2025-07-26 13:13:24'),
-                    ('EUR', 'en-EU', '€',  '2025-07-26 13:13:24'),
-                    ('CNY', 'zh-CN', '¥',  '2025-07-26 13:13:24'),
-                    ('GBP', 'en-GB', '£',  '2025-07-26 13:13:24'),
-                    ('JPY', 'ja-JP', '¥',  '2025-07-26 13:13:24'),
-                    ('AUD', 'en-AU', '$',  '2025-07-26 13:13:24'),
-                    ('CAD', 'en-CA', '$',  '2025-07-26 13:13:24'),
-                    ('CHF', 'en-CH', 'CHF',  '2025-07-26 13:13:24'),
-                    ('SEK', 'sv-SE', 'kr',  '2025-07-26 13:13:24'),
-                    ('INR', 'hi-IN', '₹',  '2025-07-26 13:13:24');
+                    ('USD', 'en-US', '$',  '2025-07-26T13:13:24.487000+08:00'),
+                    ('EUR', 'en-EU', '€',  '2025-07-26T13:13:24.487000+08:00'),
+                    ('CNY', 'zh-CN', '¥',  '2025-07-26T13:13:24.487000+08:00'),
+                    ('GBP', 'en-GB', '£',  '2025-07-26T13:13:24.487000+08:00'),
+                    ('JPY', 'ja-JP', '¥',  '2025-07-26T13:13:24.487000+08:00'),
+                    ('AUD', 'en-AU', '$',  '2025-07-26T13:13:24.487000+08:00'),
+                    ('CAD', 'en-CA', '$',  '2025-07-26T13:13:24.487000+08:00'),
+                    ('CHF', 'en-CH', 'CHF',  '2025-07-26T13:13:24.487000+08:00'),
+                    ('SEK', 'sv-SE', 'kr',  '2025-07-26T13:13:24.487000+08:00'),
+                    ('INR', 'hi-IN', '₹',  '2025-07-26T13:13:24.487000+08:00');
             "#,
             kind: tauri_plugin_sql::MigrationKind::Up,
         }
@@ -109,9 +109,9 @@ impl MijiMigrationTrait for AccountMigration {
                     description TEXT NOT NULL CHECK (LENGTH(description) <= 1000),
                     type TEXT NOT NULL CHECK (type IN ('Savings', 'Cash', 'Bank', 'CreditCard', 'Investment', 'Alipay', 'WeChat', 'CloudQuickPass', 'Other')),
                     balance DECIMAL NOT NULL DEFAULT 0,
-                    currency TEXT NOT NULL CHECK (LENGTH(currency) <= 10),
+                    currency TEXT NOT NULL CHECK (LENGTH(currency) = 3),
                     is_shared INTEGER NOT NULL DEFAULT 0 CHECK (is_shared IN (0,1)),
-                    owner_id TEXT NOT NULL CHECK (LENGTH(owner_id) <= 38),
+                    owner_id TEXT CHECK (LENGTH(owner_id) <= 38),
                     color TEXT,
                     is_active INTEGER NOT NULL DEFAULT 1 CHECK (is_active IN (0,1)),
                     created_at TEXT NOT NULL,

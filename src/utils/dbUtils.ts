@@ -38,7 +38,7 @@ export class DatabaseManager {
   private readonly CACHE_TTL = 5 * 60 * 1000;
   private readonly MAX_CACHE_SIZE = 100;
 
-  private constructor() {}
+  private constructor() { }
 
   // Get Singleton Instance
   public static getInstance(): DatabaseManager {
@@ -244,7 +244,9 @@ export class DatabaseManager {
   private setCache(key: string, data: any): void {
     if (this.queryCache.size >= this.MAX_CACHE_SIZE) {
       const firstKey = this.queryCache.keys().next().value;
-      this.queryCache.delete(firstKey);
+      if (firstKey) {
+        this.queryCache.delete(firstKey);
+      }
     }
     this.queryCache.set(key, {
       data,

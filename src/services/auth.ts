@@ -5,6 +5,8 @@ import { toCamelCase } from '../utils/common';
 import { DateUtils } from '../utils/date';
 import { Lg } from '../utils/debugLog';
 import { uuid } from '../utils/uuid';
+import { MoneyDb } from './money/money';
+import type { FamilyMember } from '@/schema/money';
 import type { TokenResponse, User } from '@/schema/user';
 import type { Credentials, CredentialsLogin } from '@/types';
 
@@ -129,6 +131,16 @@ export async function register(
         user.updatedAt,
       ],
     );
+
+    const familyMember: FamilyMember = {
+      serialNum: user.serialNum,
+      name: user.name,
+      role: 'Admin',
+      isPrimary: false,
+      permissions: '',
+      createdAt: user.createdAt,
+    };
+    await MoneyDb.createFamilyMember(familyMember);
 
     // 查询刚刚插入的用户
     const rows = await db.select<User[]>(

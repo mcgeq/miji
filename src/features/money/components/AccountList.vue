@@ -347,9 +347,10 @@ function getAccountTypeName(type: AccountType): string {
 
     <div v-else class="grid mb-6 gap-5" style="grid-template-columns: repeat(auto-fill, minmax(320px, 1fr))">
       <div
-        v-for="account in paginatedAccounts" :key="account.serialNum" class="border rounded-lg bg-white p-5 transition-all hover:shadow-md" :class="[
-          !account.isActive && 'opacity-60 bg-gray-100',
-        ]" :style="{
+        v-for="account in paginatedAccounts" :key="account.serialNum" class="border rounded-lg bg-white p-5 transition-all hover:shadow-md"
+        :class="{
+          'opacity-60 bg-gray-100': !account.isActive,
+        }" :style="{
           borderColor: account.color || '#E5E7EB',
         }"
       >

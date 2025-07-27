@@ -171,11 +171,11 @@
       "cash": "现金",
       "bank": "银行卡",
       "savings": "储蓄账户",
-      "creditCard": "信用卡",
+      "creditcard": "信用卡",
       "investment": "投资账户",
       "wechat": "微信",
       "alipay": "支付宝",
-      "cloudQuickPass": "云闪付",
+      "cloudquickpass": "云闪付",
       "other": "其他"
     },
     "transaction": {
@@ -735,7 +735,8 @@
     "onlyOnePrimary": "只能有一个主要成员",
     "atLeastOneMember": "至少需要保留一个家庭成员",
     "selectCurrency": "请选择货币",
-    "selectedAsDefault": "选择后将作为此账本的默认货币单位，创建后不可修改"
+    "selectedAsDefault": "选择后将作为此账本的默认货币单位，创建后不可修改",
+    "unknown": "未知错误"
   },
   "validation": {
     "invalid": "校验不通过",
@@ -788,4 +789,3 @@
     "VND": "越南盾"
   }
 }
-
