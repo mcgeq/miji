@@ -6,6 +6,7 @@ import {
   FamilyLedgerTransactionSchema,
   FamilyMemberSchema,
 } from '@/schema/money';
+import { toCamelCase } from '@/utils/common';
 import { db } from '@/utils/dbUtils';
 import { Lg } from '@/utils/debugLog';
 import { BaseMapper, MoneyDbError } from './baseManager';
@@ -116,7 +117,8 @@ export class FamilyMemberMapper extends BaseMapper<FamilyMember> {
         true,
       );
       const members = result.map(row => this.transformFamilyMemberRow(row));
-      return members.map(member => this.schema.parse(member));
+      const m = toCamelCase<FamilyMember[]>(members);
+      return m.map(member => this.schema.parse(member));
     }
     catch (error) {
       this.handleError('list', error);

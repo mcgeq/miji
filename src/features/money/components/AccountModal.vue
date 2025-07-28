@@ -32,17 +32,30 @@ const accountTypes = computed(() => AccountTypeSchema.options);
 const formErrors = ref<Record<string, string>>({});
 const isSubmitting = ref(false);
 const currentUser = computed(() => getCurrentUser());
+const familyMembers = computedAsync(() => MoneyDb.listFamilyMembers());
 const users = computed<User[]>(() => {
+  const usersSet = new Set('');
   const userList: User[] = [];
 
+  const familyMembersList = familyMembers.value?.map(item => {
+    const { permissions, createdAt, updatedAt, ...rest } = item;
+    return rest as Omit<User, 'permissions' | 'createdAt' | 'updatedAt'>;
+  });
   if (currentUser.value) {
     userList.push({
       serialNum: currentUser.value.serialNum,
       name: currentUser.value.name || 'Current User',
       role: currentUser.value.role || 'user', // Fallback role
     });
+    usersSet.add(currentUser.value.serialNum);
   }
 
+  familyMembersList?.forEach(item => {
+    if (!usersSet.has(item.serialNum)) {
+      usersSet.add(item.serialNum);
+      userList.push(item);
+    }
+  });
   return userList;
 });
 

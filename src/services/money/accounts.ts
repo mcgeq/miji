@@ -116,7 +116,6 @@ export class AccountMapper extends BaseMapper<Account> {
           currency: currencyMap[a.currency] ?? DEFAULT_CURRENCY[1],
         };
       }) as Account[];
-      Lg.i('AccountMapper list', act);
       return toCamelCase<Account[]>(act);
     }
     catch (error) {
