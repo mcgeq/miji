@@ -1,8 +1,11 @@
+import { CURRENCY_CNY } from '@/constants/moneyConst';
+import { toCamelCase } from '@/utils/common';
 import { db } from '@/utils/dbUtils';
 import { Lg } from '@/utils/debugLog';
 import { BaseMapper, MoneyDbError } from './baseManager';
+import { MoneyDb } from './money';
 import type { DateRange, PagedResult } from './baseManager';
-import type { SortOptions } from '@/schema/common';
+import type { Currency, SortOptions } from '@/schema/common';
 import type { Transaction, TransactionWithAccount } from '@/schema/money';
 
 export interface TransactionFilters {
@@ -55,7 +58,7 @@ export class TransactionMapper extends BaseMapper<Transaction> {
           transactionStatus,
           date,
           amount,
-          JSON.stringify(currency),
+          currency.code,
           description,
           notes,
           accountSerialNum,
@@ -86,8 +89,9 @@ export class TransactionMapper extends BaseMapper<Transaction> {
       );
 
       if (result.length === 0) return null;
-
-      return this.transformTransactionRow(result[0]);
+      const transaction = this.transformTransactionRow(result[0]);
+      transaction.currency = await this.getCurrencyByCode(transaction.currency);
+      return toCamelCase<Transaction>(transaction);
     }
     catch (error) {
       this.handleError('getById', error);
@@ -101,7 +105,16 @@ export class TransactionMapper extends BaseMapper<Transaction> {
         [],
         true,
       );
-      return result.map(t => this.transformTransactionRow(t));
+
+      const currencyMap = await this.getCurrencies(result);
+      const act = result.map(a => {
+        const transformed = this.transformTransactionRow(a);
+        return {
+          ...transformed,
+          currency: currencyMap[a.currency] ?? CURRENCY_CNY,
+        };
+      }) as Transaction[];
+      return toCamelCase<Transaction[]>(act);
     }
     catch (error) {
       this.handleError('list', error);
@@ -137,7 +150,7 @@ export class TransactionMapper extends BaseMapper<Transaction> {
           transactionStatus,
           date,
           amount,
-          JSON.stringify(currency),
+          currency.code,
           description,
           notes,
           accountSerialNum,
@@ -202,7 +215,7 @@ export class TransactionMapper extends BaseMapper<Transaction> {
   ): Promise<PagedResult<Transaction>> {
     const baseQuery = `SELECT * FROM ${this.tableName}`;
 
-    return await this.queryPaged(
+    const result = await this.queryPaged(
       baseQuery,
       filters,
       page,
@@ -211,6 +224,15 @@ export class TransactionMapper extends BaseMapper<Transaction> {
       'date DESC, created_at DESC',
       row => this.transformTransactionRow(row),
     );
+    const currencyCodes = [...new Set(result.rows.map((a: any) => a.currency))];
+    if (currencyCodes.length > 0) {
+      const currencyMap = await this.getCurrencies(result.rows);
+      result.rows = result.rows.map((a: any) => ({
+        ...a,
+        currency: currencyMap[a.currency] ?? CURRENCY_CNY,
+      }));
+    }
+    return toCamelCase<PagedResult<Transaction>>(result);
   }
 
   async listWithAccountPaged(
@@ -244,36 +266,34 @@ export class TransactionMapper extends BaseMapper<Transaction> {
       pageSize,
       sortOptions,
       't.date DESC, t.created_at DESC',
-      row => this.transformTransactionWithAccountRow(row),
+      async row => await this.transformTransactionWithAccountRow(row),
     );
   }
 
-  private transformTransactionRow(row: any): Transaction {
+  private transformTransactionRow(row: any): any {
     return {
       ...row,
       tags: JSON.parse(row.tags || '[]'),
       split_members: JSON.parse(row.split_members || '[]'),
-      currency: JSON.parse(row.currency),
     } as Transaction;
   }
 
-  private transformTransactionWithAccountRow(row: any): TransactionWithAccount {
+  private async transformTransactionWithAccountRow(
+    row: any,
+  ): Promise<TransactionWithAccount> {
+    const account = await MoneyDb.getAccount(row.account_serial_num);
     return {
       ...this.transformTransactionRow(row),
-      account: {
-        serialNum: row.account_serial_num_detail,
-        name: row.account_name,
-        description: row.account_description,
-        type: row.account_type,
-        balance: row.account_balance,
-        currency: JSON.parse(row.account_currency),
-        isShared: row.account_is_shared,
-        ownerId: row.account_owner_id,
-        isActive: row.account_is_active,
-        color: row.account_color,
-        createdAt: row.account_created_at,
-        updatedAt: row.account_updated_at,
-      },
+      account,
     } as TransactionWithAccount;
+  }
+
+  private async getCurrencyByCode(code: string): Promise<Currency> {
+    const result = await db.select<Currency[]>(
+      'SELECT * FROM currency WHERE code = ?',
+      [code],
+      true,
+    );
+    return result.length > 0 ? result[0] : CURRENCY_CNY;
   }
 }

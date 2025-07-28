@@ -260,7 +260,7 @@ function getRemainingAmount(budget: Budget) {
         <i class="icon-target" />
       </div>
       <div class="text-sm">
-        {{ filteredBudgets.length === 0 ? t('financial.noBudget') : t('messages.noPatternResult') }}
+        {{ filteredBudgets.length === 0 ? t('financial.messages.noBudget') : t('messages.noPatternResult') }}
       </div>
     </div>
 

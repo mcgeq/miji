@@ -149,7 +149,7 @@ export class MoneyDb {
     pageSize = 10,
     sortOptions: SortOptions = {},
   ): Promise<PagedResult<TransactionWithAccount>> {
-    return this.transactionMapper.listWithAccountPaged(
+    return await this.transactionMapper.listWithAccountPaged(
       filters,
       page,
       pageSize,

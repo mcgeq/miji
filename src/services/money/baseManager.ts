@@ -1,3 +1,4 @@
+import { toCamelCase } from '@/utils/common';
 import { db } from '@/utils/dbUtils';
 import { Lg } from '@/utils/debugLog';
 import type { Currency, SortOptions } from '@/schema/common';
@@ -143,6 +144,31 @@ export abstract class BaseMapper<T extends BaseEntity> {
     };
   }
 
+  protected keyBy<T>(array: T[], key: keyof T): Record<string, T> {
+    return array.reduce(
+      (acc, item) => {
+        const keyValue = String(item[key]);
+        acc[keyValue] = item;
+        return acc;
+      },
+      {} as Record<string, T>,
+    );
+  }
+
+  protected async getCurrencies(
+    entiry: any[],
+  ): Promise<Record<string, Currency>> {
+    // 批量获取货币信息以提高性能
+    const currencyCodes = [...new Set(entiry.map(a => a.currency))];
+    const currencies = await db.select<Currency[]>(
+      `SELECT * FROM currency WHERE code IN (${currencyCodes.map(() => '?').join(',')})`,
+      currencyCodes,
+      true,
+    );
+
+    return this.keyBy(currencies, 'code');
+  }
+
   /**
    * 添加范围过滤器
    */
@@ -234,7 +260,7 @@ export abstract class BaseMapper<T extends BaseEntity> {
     pageSize: number,
     sortOptions: SortOptions,
     defaultSort?: string,
-    transform?: (row: any) => R,
+    transform?: (row: any) => Promise<R> | R,
   ): Promise<PagedResult<R>> {
     try {
       const offset = (page - 1) * pageSize;
@@ -262,9 +288,11 @@ export abstract class BaseMapper<T extends BaseEntity> {
 
       const totalCount = totalRes[0]?.cnt ?? 0;
       const totalPages = Math.ceil(totalCount / pageSize);
-
+      const transformedRows = transform
+        ? await Promise.all(rows.map(transform))
+        : rows;
       return {
-        rows: transform ? rows.map(transform) : rows,
+        rows: toCamelCase(transformedRows),
         totalCount,
         currentPage: page,
         pageSize,

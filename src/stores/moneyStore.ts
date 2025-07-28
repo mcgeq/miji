@@ -235,7 +235,6 @@ export const useMoneyStore = defineStore('money', () => {
         pageSize,
         { sortBy: 'date', sortDir: 'DESC' },
       );
-
       transactions.value = result.rows;
 
       return {

@@ -159,7 +159,7 @@ function getTransactionTypeName(type: TransactionType) {
     Expense: t('financial.transaction.expense'),
     Transfer: t('financial.transaction.transfer'),
   };
-  return names[type] || t('financial.unknown');
+  return names[type] || t('financial.transaction.unknown');
 }
 
 function formatTime(dateStr: string) {

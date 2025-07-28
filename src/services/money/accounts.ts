@@ -231,12 +231,7 @@ export class AccountMapper extends BaseMapper<Account> {
     // 批量获取货币信息
     const currencyCodes = [...new Set(result.rows.map((a: any) => a.currency))];
     if (currencyCodes.length > 0) {
-      const currencies = await db.select<Currency[]>(
-        `SELECT * FROM currency WHERE code IN (${currencyCodes.map(() => '?').join(',')})`,
-        currencyCodes,
-        true,
-      );
-      const currencyMap = this.keyBy(currencies, 'code');
+      const currencyMap = await this.getCurrencies(result.rows);
 
       result.rows = result.rows.map((a: any) => ({
         ...a,
@@ -263,16 +258,5 @@ export class AccountMapper extends BaseMapper<Account> {
       true,
     );
     return result.length > 0 ? result[0] : CURRENCY_CNY;
-  }
-
-  private keyBy<T>(array: T[], key: keyof T): Record<string, T> {
-    return array.reduce(
-      (acc, item) => {
-        const keyValue = String(item[key]);
-        acc[keyValue] = item;
-        return acc;
-      },
-      {} as Record<string, T>,
-    );
   }
 }
