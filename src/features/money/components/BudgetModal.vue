@@ -2,13 +2,17 @@
 import { Check, X } from 'lucide-vue-next';
 import ColorSelector from '@/components/common/ColorSelector.vue';
 import RepeatPeriodSelector from '@/components/common/RepeatPeriodSelector.vue';
-import { COLORS_MAP } from '@/constants/moneyConst';
+import { COLORS_MAP, CURRENCY_CNY } from '@/constants/moneyConst';
 import { CategorySchema } from '@/schema/common';
 import { DateUtils } from '@/utils/date';
 import { uuid } from '@/utils/uuid';
 import { getLocalCurrencyInfo } from '../utils/money';
 import type { RepeatPeriod } from '@/schema/common';
 import type { Budget } from '@/schema/money';
+
+interface Props {
+  budget: Budget | null;
+}
 
 // 定义 props
 const props = defineProps<Props>();
@@ -17,10 +21,7 @@ const props = defineProps<Props>();
 const emit = defineEmits(['close', 'save']);
 
 const colorNameMap = ref(COLORS_MAP);
-
-interface Props {
-  budget: Budget | null;
-}
+const currency = ref(CURRENCY_CNY);
 
 // 假设已注入 t 函数
 const { t } = useI18n();
@@ -42,7 +43,7 @@ const budget = props.budget || {
   accountSerialNum: '',
   category: CategorySchema.enum.Others,
   amount: '',
-  currency: getLocalCurrencyInfo(),
+  currency: currency.value,
   repeatPeriod: { type: 'None' },
   startDate: '',
   endDate: '',
@@ -115,6 +116,11 @@ watch(
   },
   { immediate: true, deep: true },
 );
+
+onMounted(async () => {
+  const cny = await getLocalCurrencyInfo();
+  currency.value = cny;
+});
 </script>
 
 <template>

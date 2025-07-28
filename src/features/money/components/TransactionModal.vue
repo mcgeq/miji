@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Check, X } from 'lucide-vue-next';
-import { DEFAULT_CURRENCY } from '@/constants/moneyConst';
+import { CURRENCY_CNY } from '@/constants/moneyConst';
 import {
   CategorySchema,
   SubCategorySchema,
@@ -34,7 +34,7 @@ const form = ref<TransactionWithAccount>({
   category: '' as any, // or default from CategorySchema.enum
   subCategory: '' as any,
   amount: '',
-  currency: props.transaction?.currency ?? DEFAULT_CURRENCY[1],
+  currency: props.transaction?.currency ?? CURRENCY_CNY,
   date: new Date().toISOString().split('T')[0],
   description: '',
   notes: null,
@@ -143,7 +143,7 @@ watch(
         accountSerialNum: transaction.accountSerialNum,
         category: transaction.category,
         subCategory: transaction.subCategory || SubCategorySchema.enum.Other,
-        currency: transaction.currency || 'CNY',
+        currency: transaction.currency || CURRENCY_CNY,
         date: transaction.date,
         description: transaction.description || '',
         notes: transaction.notes || null,
@@ -164,7 +164,7 @@ watch(
         accountSerialNum: '',
         category: CategorySchema.enum.Others,
         subCategory: SubCategorySchema.enum.Other,
-        currency: DEFAULT_CURRENCY[1],
+        currency: CURRENCY_CNY,
         date: new Date().toISOString().split('T')[0],
         description: '',
         notes: null,

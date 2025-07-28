@@ -5,7 +5,7 @@ import CurrencySelector from '@/components/common/money/CurrencySelector.vue';
 import PrioritySelector from '@/components/common/PrioritySelector.vue';
 import ReminderSelector from '@/components/common/ReminderSelector.vue';
 import RepeatPeriodSelector from '@/components/common/RepeatPeriodSelector.vue';
-import { COLORS_MAP, DEFAULT_CURRENCY } from '@/constants/moneyConst';
+import { COLORS_MAP, CURRENCY_CNY } from '@/constants/moneyConst';
 import {
   CategorySchema,
 
@@ -54,7 +54,7 @@ const reminder = props.reminder || {
   description: '',
   category: CategorySchema.enum.Food,
   amount: 0,
-  currency: DEFAULT_CURRENCY[1],
+  currency: CURRENCY_CNY,
   dueDate: '',
   billDate: '',
   remindDate: '',

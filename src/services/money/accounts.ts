@@ -1,4 +1,4 @@
-import { DEFAULT_CURRENCY } from '@/constants/moneyConst';
+import { CURRENCY_CNY } from '@/constants/moneyConst';
 import { toCamelCase } from '@/utils/common';
 import { DateUtils } from '@/utils/date';
 import { db } from '@/utils/dbUtils';
@@ -113,7 +113,7 @@ export class AccountMapper extends BaseMapper<Account> {
         const transformed = this.transformAccountRow(a);
         return {
           ...transformed,
-          currency: currencyMap[a.currency] ?? DEFAULT_CURRENCY[1],
+          currency: currencyMap[a.currency] ?? CURRENCY_CNY,
         };
       }) as Account[];
       return toCamelCase<Account[]>(act);
@@ -240,7 +240,7 @@ export class AccountMapper extends BaseMapper<Account> {
 
       result.rows = result.rows.map((a: any) => ({
         ...a,
-        currency: currencyMap[a.currency] ?? DEFAULT_CURRENCY[1],
+        currency: currencyMap[a.currency] ?? CURRENCY_CNY,
       }));
     }
 
@@ -262,7 +262,7 @@ export class AccountMapper extends BaseMapper<Account> {
       [code],
       true,
     );
-    return result.length > 0 ? result[0] : DEFAULT_CURRENCY[1];
+    return result.length > 0 ? result[0] : CURRENCY_CNY;
   }
 
   private keyBy<T>(array: T[], key: keyof T): Record<string, T> {

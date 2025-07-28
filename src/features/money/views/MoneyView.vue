@@ -9,6 +9,7 @@ import {
 } from 'lucide-vue-next';
 import ConfirmModal from '@/components/common/ConfirmModal.vue';
 import { useConfirm } from '@/composables/useConfirm';
+import { CURRENCY_CNY } from '@/constants/moneyConst';
 import { TransactionTypeSchema } from '@/schema/common';
 import { useMoneyStore } from '@/stores/moneyStore';
 import { Lg } from '@/utils/debugLog';
@@ -35,7 +36,7 @@ const moneyStore = useMoneyStore();
 const { confirmState, confirmDelete, handleConfirm, handleCancel, handleClose } = useConfirm();
 
 const activeTab = ref('accounts');
-const baseCurrency = computed(() => getLocalCurrencyInfo().symbol);
+const baseCurrency = ref(CURRENCY_CNY.symbol);
 
 const accountsLoading = ref(false);
 const budgetsLoading = ref(false);
@@ -513,8 +514,10 @@ function handleCardClick(_index: number, card: any) {
   // }
 }
 
-onMounted(() => {
+onMounted(async () => {
   loadData();
+  const currency = await getLocalCurrencyInfo();
+  baseCurrency.value = currency.symbol;
 });
 </script>
 

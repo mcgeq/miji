@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { Check, Crown, Edit, Plus, Trash, User, X } from 'lucide-vue-next';
-import { DEFAULT_CURRENCY } from '@/constants/moneyConst';
-import { safeGet } from '@/utils/common';
+import { CURRENCY_CNY } from '@/constants/moneyConst';
+import { MoneyDb } from '@/services/money/money';
 import { DateUtils } from '@/utils/date';
+import { Lg } from '@/utils/debugLog';
 import { uuid } from '@/utils/uuid';
 import { getRoleName } from '../utils/family';
 import MemberModal from './MemberModal.vue';
+import type { Currency } from '@/schema/common';
 import type { FamilyLedger, FamilyMember } from '@/schema/money';
 
 interface Props {
@@ -16,16 +18,30 @@ const props = defineProps<Props>();
 const emit = defineEmits(['close', 'save']);
 const { t } = useI18n();
 
-const currencies = ref(DEFAULT_CURRENCY);
+const currencies = ref<Currency[]>([]);
 const showMemberModal = ref(false);
 const editingMember = ref<FamilyMember | null>(null);
 const editingMemberIndex = ref(-1);
+
+// Fetch currencies asynchronously
+async function loadCurrencies() {
+  try {
+    const fetchedCurrencies = await MoneyDb.listCurrencies();
+    currencies.value = fetchedCurrencies;
+  }
+  catch (err: unknown) {
+    Lg.e('AccountModal', 'Failed to load currencies:', err);
+  }
+}
+
+// Call loadCurrencies on component setup
+loadCurrencies();
 
 const defaultLedger: FamilyLedger = {
   name: '',
   serialNum: '',
   description: '',
-  baseCurrency: safeGet(DEFAULT_CURRENCY, 0, DEFAULT_CURRENCY[0])!,
+  baseCurrency: CURRENCY_CNY,
   members: [],
   accounts: '[]',
   transactions: '[]',

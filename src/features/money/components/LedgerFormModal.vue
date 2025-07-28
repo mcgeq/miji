@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { Plus, Trash2, Users, X } from 'lucide-vue-next';
 import { computed, onMounted, ref } from 'vue';
-import { DEFAULT_CURRENCY } from '@/constants/moneyConst';
+import { CURRENCY_CNY } from '@/constants/moneyConst';
+import { MoneyDb } from '@/services/money/money';
 import { DateUtils } from '@/utils/date';
 import { Lg } from '@/utils/debugLog';
 import { toast } from '@/utils/toast';
 import { uuid } from '@/utils/uuid';
+import type { Currency } from '@/schema/common';
 import type { FamilyLedger } from '@/schema/money';
 import type { MemberUserRole } from '@/schema/userRole';
 
@@ -24,15 +26,27 @@ const { t } = useI18n();
 
 const saving = ref(false);
 const isEdit = computed(() => !!props.ledger);
+const currencies = ref<Currency[]>([]);
 
-// 可用货币列表
-const availableCurrencies = computed(() => DEFAULT_CURRENCY);
+// Fetch currencies asynchronously
+async function loadCurrencies() {
+  try {
+    const fetchedCurrencies = await MoneyDb.listCurrencies();
+    currencies.value = fetchedCurrencies;
+  }
+  catch (err: unknown) {
+    Lg.e('AccountModal', 'Failed to load currencies:', err);
+  }
+}
+
+// Call loadCurrencies on component setup
+loadCurrencies();
 
 const familyLedger = props.ledger || {
   serialNum: '',
   name: '',
   description: '',
-  baseCurrency: DEFAULT_CURRENCY[1],
+  baseCurrency: CURRENCY_CNY,
   members: [] as Array<{
     serialNum: string;
     name: string;
@@ -78,7 +92,7 @@ const isFormValid = computed(() => {
 
 // 更新货币信息
 function updateCurrencyInfo() {
-  const selected = availableCurrencies.value.find(
+  const selected = currencies.value.find(
     c => c.code === form.value.baseCurrency.code,
   );
   if (selected) {
@@ -175,7 +189,7 @@ function initializeForm() {
       serialNum: props.ledger.serialNum || '',
       name: props.ledger.name || '',
       description: props.ledger.description || '',
-      baseCurrency: props.ledger.baseCurrency || DEFAULT_CURRENCY[1],
+      baseCurrency: props.ledger.baseCurrency || CURRENCY_CNY,
       members: props.ledger.members ? [...props.ledger.members] : [],
       accounts: props.ledger.accounts || '',
       transactions: props.ledger.transactions || '',
@@ -191,7 +205,7 @@ function initializeForm() {
       serialNum: '',
       name: '',
       description: '',
-      baseCurrency: DEFAULT_CURRENCY[1],
+      baseCurrency: CURRENCY_CNY,
       members: [],
       accounts: '',
       budgets: '',
@@ -286,7 +300,7 @@ onMounted(() => {
                 <option value="">
                   {{ t('messages.selectCurrency') }}
                 </option>
-                <option v-for="currency in availableCurrencies" :key="currency.code" :value="currency.code">
+                <option v-for="currency in currencies" :key="currency.code" :value="currency.code">
                   {{ currency.symbol }} {{ currency.code }} - {{ t(currency.code) }}
                 </option>
               </select>

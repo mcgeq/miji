@@ -1,4 +1,4 @@
-import { DEFAULT_CURRENCY } from '@/constants/moneyConst';
+import { CURRENCY_CNY } from '@/constants/moneyConst';
 import {
   FamilyLedgerAccountSchema,
   FamilyLedgerMemberSchema,
@@ -420,8 +420,7 @@ export class FamilyLedgerMapper extends BaseMapper<FamilyLedger> {
 
   private async transformFamilyLedgerRow(row: any): Promise<FamilyLedger> {
     const currency =
-      (await MoneyDb.getCurrencyByCode(row.base_currency)) ??
-      DEFAULT_CURRENCY[1];
+      (await MoneyDb.getCurrencyByCode(row.base_currency)) ?? CURRENCY_CNY;
     return {
       ...row,
       baseCurrency: currency,
