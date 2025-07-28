@@ -23,6 +23,8 @@ import type {
   BilReminder,
   Budget,
   FamilyLedger,
+  FamilyLedgerMember,
+  FamilyLedgerTransaction,
   FamilyMember,
   Transaction,
   TransactionWithAccount,
@@ -429,24 +431,17 @@ export class MoneyDb {
   }
 
   // FamilyLedgerTransaction 操作
-  static async createFamilyLedgerTransaction(assoc: {
-    familyLedgerSerialNum: string;
-    transactionSerialNum: string;
-  }): Promise<void> {
+  static async createFamilyLedgerTransaction(
+    assoc: FamilyLedgerTransaction,
+  ): Promise<void> {
     return this.familyLedgerTransactionMapper.create(assoc);
   }
 
-  static async getFamilyLedgerTransaction(
-    familyLedgerSerialNum: string,
-    transactionSerialNum: string,
-  ): Promise<{
+  static async getFamilyLedgerTransaction(serialNum: string): Promise<{
     familyLedgerSerialNum: string;
     transactionSerialNum: string;
   } | null> {
-    return this.familyLedgerTransactionMapper.getById(
-      familyLedgerSerialNum,
-      transactionSerialNum,
-    );
+    return this.familyLedgerTransactionMapper.getById(serialNum);
   }
 
   static async listFamilyLedgerTransactions(): Promise<
@@ -455,35 +450,22 @@ export class MoneyDb {
     return this.familyLedgerTransactionMapper.list();
   }
 
-  static async deleteFamilyLedgerTransaction(
-    familyLedgerSerialNum: string,
-    transactionSerialNum: string,
-  ): Promise<void> {
-    return this.familyLedgerTransactionMapper.deleteById(
-      familyLedgerSerialNum,
-      transactionSerialNum,
-    );
+  static async deleteFamilyLedgerTransaction(serialNum: string): Promise<void> {
+    return this.familyLedgerTransactionMapper.deleteById(serialNum);
   }
 
   // FamilyLedgerMember 操作
-  static async createFamilyLedgerMember(assoc: {
-    familyLedgerSerialNum: string;
-    familyMemberSerialNum: string;
-  }): Promise<void> {
+  static async createFamilyLedgerMember(
+    assoc: FamilyLedgerMember,
+  ): Promise<void> {
     return this.familyLedgerMemberMapper.create(assoc);
   }
 
-  static async getFamilyLedgerMember(
-    familyLedgerSerialNum: string,
-    familyMemberSerialNum: string,
-  ): Promise<{
+  static async getFamilyLedgerMember(serialNum: string): Promise<{
     familyLedgerSerialNum: string;
     familyMemberSerialNum: string;
   } | null> {
-    return this.familyLedgerMemberMapper.getById(
-      familyLedgerSerialNum,
-      familyMemberSerialNum,
-    );
+    return this.familyLedgerMemberMapper.getById(serialNum);
   }
 
   static async listFamilyLedgerMembers(): Promise<
@@ -492,14 +474,8 @@ export class MoneyDb {
     return this.familyLedgerMemberMapper.list();
   }
 
-  static async deleteFamilyLedgerMember(
-    familyLedgerSerialNum: string,
-    familyMemberSerialNum: string,
-  ): Promise<void> {
-    return this.familyLedgerMemberMapper.deleteById(
-      familyLedgerSerialNum,
-      familyMemberSerialNum,
-    );
+  static async deleteFamilyLedgerMember(serialNum: string): Promise<void> {
+    return this.familyLedgerMemberMapper.deleteById(serialNum);
   }
 
   // 批量操作
