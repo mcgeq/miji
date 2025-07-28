@@ -305,7 +305,6 @@ function showAccountModal() {
 
 function editAccount(account: Account) {
   selectedAccount.value = account;
-  Lg.i('MoneyView edit', selectedAccount.value);
   showAccount.value = true;
 }
 

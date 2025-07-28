@@ -67,7 +67,6 @@ async function loadCurrencies() {
   try {
     const fetchedCurrencies = await MoneyDb.listCurrencies();
     currencies.value = fetchedCurrencies;
-    Lg.i('AccountModal currency', fetchedCurrencies);
   }
   catch (err: unknown) {
     toast.error(t('financial.account.currencyLoadFailed'));

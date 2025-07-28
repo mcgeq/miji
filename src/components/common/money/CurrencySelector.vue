@@ -1,51 +1,10 @@
-<template>
-  <div id="currency-selector" class="mb-2 flex items-center justify-between">
-    <div class="flex flex-col" :class="widthClass">
-      <select
-        :id="inputId"
-        v-model="currentValue"
-        :class="[
-          'modal-input-select',
-          {
-            'border-red-500': hasError,
-            'border-gray-300 dark:border-gray-600': !hasError
-          }
-        ]"
-        :required="required"
-        :disabled="disabled"
-        @blur="handleBlur"
-        @change="handleChange"
-      >
-        <option
-          v-for="option in currencyOptions"
-          :key="option.value.code"
-          :value="option.value"
-          :disabled="option.disabled"
-        >
-          {{ option.label }}
-        </option>
-      </select>
-      <div
-        v-if="hasError && errorMessage"
-        class="text-sm text-red-600 dark:text-red-400 mt-1"
-        role="alert"
-      >
-        {{ errorMessage }}
-      </div>
-      <div
-        v-if="helpText && !hasError"
-        class="flex justify-end text-xs text-gray-500 dark:text-gray-400 mt-2"
-      >
-        {{ helpText }}
-      </div>
-    </div>
-  </div>
-</template>
-
 <script setup lang="ts">
-import { DEFAULT_CURRENCY } from '@/constants/moneyConst';
+import { CURRENCY_CNY } from '@/constants/moneyConst';
+import { CurrencySchema } from '@/schema/common';
+import { MoneyDb } from '@/services/money/money';
+import { Lg } from '@/utils/debugLog';
 import { uuid } from '@/utils/uuid';
-import { Currency, CurrencySchema } from '@/schema/common';
+import type { Currency } from '@/schema/common';
 
 // 类型定义
 interface PriorityOption {
@@ -88,11 +47,26 @@ const inputId = ref(`currency-selector-${uuid(38)}`);
 
 // 当前值
 const currentValue = ref<Currency>(props.modelValue);
+const currencies = ref<Currency[]>([]);
+
+// Fetch currencies asynchronously
+async function loadCurrencies() {
+  try {
+    const fetchedCurrencies = await MoneyDb.listCurrencies();
+    currencies.value = fetchedCurrencies;
+  }
+  catch (err: unknown) {
+    Lg.e('AccountModal', 'Failed to load currencies:', err);
+  }
+}
+
+// Call loadCurrencies on component setup
+loadCurrencies();
 
 // 计算宽度类
 const widthClass = computed(() => {
   const widthMap: Record<string, string> = {
-    full: 'w-full',
+    'full': 'w-full',
     '1/2': 'w-1/2',
     '1/3': 'w-1/3',
     '2/3': 'w-2/3',
@@ -108,7 +82,7 @@ const hasError = computed(() => {
 });
 
 // 验证函数
-const validateValue = (value: Currency): boolean => {
+function validateValue(value: Currency): boolean {
   if (props.required && !value) {
     return false;
   }
@@ -116,18 +90,19 @@ const validateValue = (value: Currency): boolean => {
   try {
     CurrencySchema.parse(value);
     return true;
-  } catch {
+  }
+  catch {
     return false;
   }
-};
+}
 
 // 处理 change 事件
-const handleChange = (event: Event) => {
+function handleChange(event: Event) {
   const target = event.target as HTMLSelectElement;
   const selectedCode = target.value;
 
-  const selectedCurrency = DEFAULT_CURRENCY.find(
-    (curr) => curr.code === selectedCode,
+  const selectedCurrency = currencies.value.find(
+    curr => curr.code === selectedCode,
   );
 
   if (selectedCurrency) {
@@ -135,21 +110,22 @@ const handleChange = (event: Event) => {
     emit('update:modelValue', selectedCurrency);
     emit('change', selectedCurrency);
     emit('validate', true);
-  } else {
+  }
+  else {
     emit('validate', false);
   }
-};
+}
 
 // 处理 blur 事件
-const handleBlur = () => {
+function handleBlur() {
   const isValid = validateValue(currentValue.value);
   emit('validate', isValid);
-};
+}
 
 // 监听 modelValue 变化
 watch(
   () => props.modelValue,
-  (newValue) => {
+  newValue => {
     if (newValue.code !== currentValue.value?.code) {
       currentValue.value = newValue;
     }
@@ -158,7 +134,7 @@ watch(
 );
 
 // 监听 currentValue 变化
-watch(currentValue, (newValue) => {
+watch(currentValue, newValue => {
   if (newValue.code !== props.modelValue.code) {
     emit('update:modelValue', newValue);
   }
@@ -169,7 +145,7 @@ const currencyOptions = computed(() => {
     return props.customOptions;
   }
 
-  return DEFAULT_CURRENCY.map((currency) => ({
+  return currencies.value.map(currency => ({
     value: currency,
     label: `${currency.code}`,
     disabled: false,
@@ -177,26 +153,26 @@ const currencyOptions = computed(() => {
 });
 
 // 公开方法
-const focus = () => {
+function focus() {
   const element = document.getElementById(inputId.value);
   if (element) {
     element.focus();
   }
-};
+}
 
-const reset = () => {
-  const defaultCurrency = DEFAULT_CURRENCY[1]; // 默认人民币
+function reset() {
+  const defaultCurrency = CURRENCY_CNY; // 默认人民币
   currentValue.value = defaultCurrency;
   emit('update:modelValue', defaultCurrency);
   emit('change', defaultCurrency);
   emit('validate', true);
-};
+}
 
-const getCurrentCurrencyInfo = () => {
+function getCurrentCurrencyInfo() {
   return currencyOptions.value.find(
-    (option) => option.value.code === currentValue.value.code,
+    option => option.value.code === currentValue.value.code,
   );
-};
+}
 
 defineExpose({
   focus,
@@ -205,6 +181,49 @@ defineExpose({
   validate: () => validateValue(currentValue.value),
 });
 </script>
+
+<template>
+  <div id="currency-selector" class="mb-2 flex items-center justify-between">
+    <div class="flex flex-col" :class="widthClass">
+      <select
+        :id="inputId"
+        v-model="currentValue"
+        class="modal-input-select" :class="[
+          {
+            'border-red-500': hasError,
+            'border-gray-300 dark:border-gray-600': !hasError,
+          },
+        ]"
+        :required="required"
+        :disabled="disabled"
+        @blur="handleBlur"
+        @change="handleChange"
+      >
+        <option
+          v-for="option in currencyOptions"
+          :key="option.value.code"
+          :value="option.value"
+          :disabled="option.disabled"
+        >
+          {{ option.label }}
+        </option>
+      </select>
+      <div
+        v-if="hasError && errorMessage"
+        class="mt-1 text-sm text-red-600 dark:text-red-400"
+        role="alert"
+      >
+        {{ errorMessage }}
+      </div>
+      <div
+        v-if="helpText && !hasError"
+        class="mt-2 flex justify-end text-xs text-gray-500 dark:text-gray-400"
+      >
+        {{ helpText }}
+      </div>
+    </div>
+  </div>
+</template>
 
 <style scoped lang="postcss">
 /* 基础样式 */

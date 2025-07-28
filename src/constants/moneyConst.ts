@@ -1,3 +1,4 @@
+import { DateUtils } from '@/utils/date';
 import type { Currency, DefaultColors } from '@/schema/common';
 
 export const COLORS_MAP: DefaultColors[] = [
@@ -13,6 +14,12 @@ export const COLORS_MAP: DefaultColors[] = [
   { code: '#A0AEC0', nameZh: '灰色', nameEn: 'Gray' },
 ];
 
+export const CURRENCY_CNY: Currency = {
+  locale: 'zh-CN',
+  code: 'CNY',
+  symbol: '¥',
+  createdAt: DateUtils.getLocalISODateTimeWithOffset(),
+};
 export const DEFAULT_CURRENCY: Currency[] = [
   {
     locale: 'en-US',
