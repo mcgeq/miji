@@ -10,7 +10,7 @@ import {
 import ConfirmModal from '@/components/common/ConfirmModal.vue';
 import { useConfirm } from '@/composables/useConfirm';
 import { CURRENCY_CNY } from '@/constants/moneyConst';
-import { TransactionTypeSchema } from '@/schema/common';
+import { CategorySchema, TransactionTypeSchema } from '@/schema/common';
 import { useMoneyStore } from '@/stores/moneyStore';
 import { Lg } from '@/utils/debugLog';
 import { toast } from '@/utils/toast';
@@ -258,8 +258,20 @@ async function deleteTransaction(serialNum: string) {
   const confirmed = await confirmDelete('此交易记录');
   if (confirmed) {
     try {
-      await moneyStore.deleteTransaction(serialNum);
-      toast.success('删除成功');
+      // 检查是否为转账交易
+      const transaction = monthlyTransactions.value.find(t => t.serialNum === serialNum);
+
+      if (transaction && isTransferTransaction(transaction)) {
+        // 如果是转账交易，需要特殊处理
+        await moneyStore.deleteTransferTransaction(serialNum);
+        toast.success('转账记录删除成功');
+      }
+      else {
+        // 普通交易删除
+        await moneyStore.deleteTransaction(serialNum);
+        toast.success('删除成功');
+      }
+
       // 刷新相关数据
       await Promise.all([loadAccounts(), loadMonthlyTransactions()]);
     }
@@ -267,6 +279,48 @@ async function deleteTransaction(serialNum: string) {
       Lg.e('deleteTransaction', err);
       toast.error('删除失败');
     }
+  }
+}
+
+// 判断是否为转账交易的辅助函数
+function isTransferTransaction(transaction: TransactionWithAccount): boolean {
+  // 根据你的业务逻辑判断，比如检查分类是否为'Transfer'
+  // 或者检查备注中是否包含转账关联信息
+  return transaction.category === CategorySchema.enum.Transfer;
+  // || (transaction.notes && transaction.notes.includes('转账关联ID'));
+}
+
+async function saveTransfer(fromTransaction: TransactionWithAccount, toTransaction: TransactionWithAccount) {
+  try {
+    // 如果是编辑转账交易
+    if (selectedTransaction.value) {
+      // 更新转出交易记录
+      await moneyStore.updateTransaction(fromTransaction);
+      // 对于编辑转账，需要找到对应的转入交易记录并更新
+      // 这里假设 moneyStore 有方法根据关联关系查找和更新转入交易
+      // 实际实现可能需要在数据库中添加 transferId 字段来关联转账的两条记录
+      await moneyStore.updateTransferToTransaction(toTransaction);
+      toast.success('转账更新成功');
+    }
+    else {
+      // 创建新的转账交易
+      // 先创建转出交易
+      const createdFromTransaction = await moneyStore.createTransaction(fromTransaction);
+
+      // 再创建转入交易，可以在这里建立关联关系
+      toTransaction.notes = toTransaction.notes || `转账关联ID: ${createdFromTransaction.serialNum}`;
+      await moneyStore.createTransaction(toTransaction);
+
+      toast.success('转账记录成功');
+    }
+
+    closeTransactionModal();
+    // 刷新相关数据
+    await Promise.all([loadAccounts(), loadMonthlyTransactions()]);
+  }
+  catch (err) {
+    Lg.e('saveTransfer', err);
+    toast.error('转账保存失败');
   }
 }
 
@@ -647,8 +701,13 @@ onMounted(async () => {
 
     <!-- 模态框 -->
     <TransactionModal
-      v-if="showTransaction" :type="transactionType" :transaction="selectedTransaction"
-      :accounts="accounts" @close="closeTransactionModal" @save="saveTransaction"
+      v-if="showTransaction"
+      :type="transactionType"
+      :transaction="selectedTransaction"
+      :accounts="accounts"
+      @close="closeTransactionModal"
+      @save="saveTransaction"
+      @save-transfer="saveTransfer"
     />
 
     <AccountModal v-if="showAccount" :account="selectedAccount" @close="closeAccountModal" @save="saveAccount" />

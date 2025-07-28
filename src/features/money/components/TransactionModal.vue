@@ -23,6 +23,7 @@ const props = defineProps<Props>();
 const emit = defineEmits<{
   close: [];
   save: [transaction: TransactionWithAccount];
+  saveTransfer: [fromTransaction: TransactionWithAccount, toTransaction: TransactionWithAccount];
 }>();
 
 const selectAccounts = computed(() => {
@@ -35,7 +36,7 @@ const selectAccounts = computed(() => {
 // 假设 t 函数已经通过 useI18n 或类似方式注入
 const { t } = useI18n();
 
-const form = ref<TransactionWithAccount>({
+const form = ref<TransactionWithAccount & { toAccountSerialNum?: string }>({
   serialNum: props.transaction?.serialNum || '',
   transactionType: props.type,
   category: '' as any, // or default from CategorySchema.enum
@@ -46,6 +47,7 @@ const form = ref<TransactionWithAccount>({
   description: '',
   notes: null,
   accountSerialNum: '',
+  toAccountSerialNum: '', // 临时字段，用于界面显示
   tags: [],
   paymentMethod: 'Cash', // replace with default from PaymentMethodSchema.enum
   actualPayerAccount: 'Bank', // replace with default from AccountTypeSchema.enum
@@ -71,7 +73,7 @@ function mapSubToCategory(sub: string): string {
 const categories = ref(
   CategorySchema.options.map(name => ({
     name,
-    type: ['Salary', 'Investment'].includes(name) ? 'Income' : 'Expense',
+    type: ['Salary', 'Investment', 'Transfer'].includes(name) ? 'Income' : 'Expense',
   })),
 );
 
@@ -88,6 +90,11 @@ const filteredCategories = computed(() => {
 
 const filteredSubcategories = computed(() => {
   return subcategories.value.filter(s => s.category === form.value.category);
+});
+
+// 为转入账户过滤掉已选择的转出账户
+const selectToAccounts = computed(() => {
+  return selectAccounts.value.filter(account => account.serialNum !== form.value.accountSerialNum);
 });
 
 function getModalTitle() {
@@ -109,16 +116,74 @@ function handleOverlayClick() {
 }
 
 function handleSubmit() {
-  const transaction: TransactionWithAccount = {
-    ...form.value,
-    serialNum: props.transaction?.serialNum || '',
+  if (form.value.transactionType === TransactionTypeSchema.enum.Transfer) {
+    // 处理转账：创建两条交易记录
+    const fromAccount = props.accounts.find(acc => acc.serialNum === form.value.accountSerialNum);
+    const toAccount = props.accounts.find(acc => acc.serialNum === form.value.toAccountSerialNum);
 
-    // 防止未填写的字段导致类型错误
-    updatedAt: new Date().toISOString(),
-    createdAt: props.transaction?.createdAt || new Date().toISOString(),
-  };
+    if (!fromAccount || !toAccount) {
+      console.error('转账账户未找到');
+      return;
+    }
 
-  emit('save', transaction);
+    // 转出交易（支出）
+    const fromTransaction: TransactionWithAccount = {
+      serialNum: props.transaction?.serialNum || '',
+      transactionType: 'Expense' as TransactionType,
+      amount: form.value.amount,
+      accountSerialNum: form.value.accountSerialNum,
+      category: 'Transfer' as any, // 需要在 CategorySchema 中定义 Transfer 分类
+      subCategory: form.value.subCategory,
+      currency: form.value.currency || CURRENCY_CNY,
+      date: form.value.date,
+      description: `转账至 ${toAccount.name}${form.value.description ? ` - ${form.value.description}` : ''}`,
+      notes: form.value.notes,
+      tags: form.value.tags || [],
+      paymentMethod: form.value.paymentMethod || 'Cash',
+      actualPayerAccount: form.value.actualPayerAccount || 'Bank',
+      transactionStatus: form.value.transactionStatus || 'Completed',
+      createdAt: props.transaction?.createdAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      account: fromAccount,
+    };
+
+    // 转入交易（收入）
+    const toTransaction: TransactionWithAccount = {
+      serialNum: '', // 新的交易记录
+      transactionType: 'Income' as TransactionType,
+      amount: form.value.amount,
+      accountSerialNum: form.value.toAccountSerialNum!,
+      category: 'Transfer' as any, // 需要在 CategorySchema 中定义 Transfer 分类
+      subCategory: form.value.subCategory,
+      currency: form.value.currency || CURRENCY_CNY,
+      date: form.value.date,
+      description: `来自 ${fromAccount.name}${form.value.description ? ` - ${form.value.description}` : ''}`,
+      notes: form.value.notes,
+      tags: form.value.tags || [],
+      paymentMethod: form.value.paymentMethod || 'Cash',
+      actualPayerAccount: form.value.actualPayerAccount || 'Bank',
+      transactionStatus: form.value.transactionStatus || 'Completed',
+      createdAt: new Date().toISOString(),
+      updatedAt: null,
+      account: toAccount,
+    };
+
+    emit('saveTransfer', fromTransaction, toTransaction);
+  }
+  else {
+    // 普通收入/支出交易
+    const transaction: TransactionWithAccount = {
+      ...form.value,
+      serialNum: props.transaction?.serialNum || '',
+      updatedAt: new Date().toISOString(),
+      createdAt: props.transaction?.createdAt || new Date().toISOString(),
+    };
+
+    // 移除临时字段
+    delete (transaction as any).toAccountSerialNum;
+
+    emit('save', transaction);
+  }
 }
 
 // 监听分类变化，清空子分类
@@ -138,16 +203,28 @@ watch(
   },
 );
 
+// 监听转出账户变化，如果与转入账户相同则清空转入账户
+watch(
+  () => form.value.accountSerialNum,
+  newAccountSerialNum => {
+    if (newAccountSerialNum === form.value.toAccountSerialNum) {
+      form.value.toAccountSerialNum = '';
+    }
+  },
+);
+
 // 初始化表单数据
 watch(
   () => props.transaction,
   transaction => {
     if (transaction) {
       form.value = {
+        ...transaction,
         serialNum: transaction.serialNum,
         transactionType: transaction.transactionType,
         amount: transaction.amount,
         accountSerialNum: transaction.accountSerialNum,
+        toAccountSerialNum: '', // 编辑时暂时不支持转账，所以为空
         category: transaction.category,
         subCategory: transaction.subCategory || SubCategorySchema.enum.Other,
         currency: transaction.currency || CURRENCY_CNY,
@@ -169,6 +246,7 @@ watch(
         transactionType: props.type,
         amount: '',
         accountSerialNum: '',
+        toAccountSerialNum: '',
         category: CategorySchema.enum.Others,
         subCategory: SubCategorySchema.enum.Other,
         currency: CURRENCY_CNY,
@@ -222,7 +300,7 @@ watch(
           >
         </div>
 
-        <!-- 账户 -->
+        <!-- 转出账户 -->
         <div class="flex items-center justify-between">
           <label class="mb-1 text-sm font-medium">
             {{ form.transactionType === TransactionTypeSchema.enum.Transfer ? t('financial.transaction.fromAccount')
@@ -233,6 +311,21 @@ watch(
               {{ t('common.placeholders.selectAccount') }}
             </option>
             <option v-for="account in selectAccounts" :key="account.serialNum" :value="account.serialNum">
+              {{ account.name }} ({{ formatCurrency(account.balance) }})
+            </option>
+          </select>
+        </div>
+
+        <!-- 转入账户（仅转账时显示） -->
+        <div v-if="form.transactionType === TransactionTypeSchema.enum.Transfer" class="flex items-center justify-between">
+          <label class="mb-1 text-sm font-medium">
+            {{ t('financial.transaction.toAccount') }}
+          </label>
+          <select v-model="form.toAccountSerialNum" class="w-2/3 modal-input-select" required>
+            <option value="">
+              {{ t('common.placeholders.selectAccount') }}
+            </option>
+            <option v-for="account in selectToAccounts" :key="account.serialNum" :value="account.serialNum">
               {{ account.name }} ({{ formatCurrency(account.balance) }})
             </option>
           </select>

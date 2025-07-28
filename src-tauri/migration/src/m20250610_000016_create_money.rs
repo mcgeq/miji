@@ -209,6 +209,7 @@ impl MijiMigrationTrait for TransactionMigration {
                     split_members TEXT,
                     payment_method TEXT NOT NULL DEFAULT 'Cash' CHECK (payment_method IN ('Cash', 'BankTransfer', 'CreditCard', 'WeChat', 'Alipay', 'Other')),
                     actual_payer_account TEXT NOT NULL CHECK (LENGTH(actual_payer_account) <= 38),
+                    related_transaction_serial_num TEXT CHECK (LENGTH(actual_payer_account) <= 38),
                     created_at TEXT NOT NULL,
                     updated_at TEXT,
                     FOREIGN KEY (currency)

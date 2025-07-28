@@ -45,13 +45,14 @@ export class TransactionMapper extends BaseMapper<Transaction> {
         splitMembers,
         paymentMethod,
         actualPayerAccount,
+        relatedTransactionSerialNum,
         createdAt,
         updatedAt,
       } = transaction;
 
       await db.execute(
-        `INSERT INTO ${this.tableName} (serial_num, transaction_type, transaction_status, date, amount, currency, description, notes, account_serial_num, category, sub_category, tags, split_members, payment_method, actual_payer_account, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO ${this.tableName} (serial_num, transaction_type, transaction_status, date, amount, currency, description, notes, account_serial_num, category, sub_category, tags, split_members, payment_method, actual_payer_account, related_transaction_serial_num, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           serialNum,
           transactionType,
@@ -68,6 +69,7 @@ export class TransactionMapper extends BaseMapper<Transaction> {
           JSON.stringify(splitMembers),
           paymentMethod,
           actualPayerAccount,
+          relatedTransactionSerialNum || null,
           createdAt,
           updatedAt,
         ],
@@ -95,6 +97,26 @@ export class TransactionMapper extends BaseMapper<Transaction> {
     }
     catch (error) {
       this.handleError('getById', error);
+    }
+  }
+
+  async getTransferRelatedTransaction(
+    serialNum: string,
+  ): Promise<Transaction | null> {
+    try {
+      const result = await db.select<any[]>(
+        `SELECT * FROM ${this.tableName} WHERE related_transaction_serial_num = ?`,
+        [serialNum],
+        true,
+      );
+
+      if (result.length === 0) return null;
+      const transaction = this.transformTransactionRow(result[0]);
+      transaction.currency = await this.getCurrencyByCode(transaction.currency);
+      return toCamelCase<Transaction>(transaction);
+    }
+    catch (error) {
+      this.handleError('getTransferRelatedTransaction', error);
     }
   }
 
@@ -139,11 +161,12 @@ export class TransactionMapper extends BaseMapper<Transaction> {
         splitMembers,
         paymentMethod,
         actualPayerAccount,
+        relatedTransactionSerialNum,
         updatedAt,
       } = transaction;
 
       await db.execute(
-        `UPDATE ${this.tableName} SET transaction_type = ?, transaction_status = ?, date = ?, amount = ?, currency = ?, description = ?, notes = ?, account_serial_num = ?, category = ?, sub_category = ?, tags = ?, split_members = ?, payment_method = ?, actual_payer_account = ?, updated_at = ?
+        `UPDATE ${this.tableName} SET transaction_type = ?, transaction_status = ?, date = ?, amount = ?, currency = ?, description = ?, notes = ?, account_serial_num = ?, category = ?, sub_category = ?, tags = ?, split_members = ?, payment_method = ?, actual_payer_account = ?, related_transaction_serial_num = ?, updated_at = ?
          WHERE serial_num = ?`,
         [
           transactionType,
@@ -160,6 +183,7 @@ export class TransactionMapper extends BaseMapper<Transaction> {
           JSON.stringify(splitMembers),
           paymentMethod,
           actualPayerAccount,
+          relatedTransactionSerialNum || null,
           updatedAt,
           serialNum,
         ],

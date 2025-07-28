@@ -9,10 +9,10 @@ import {
   TransactionStatusSchema,
   TransactionTypeSchema,
 } from '../common';
-import { AccountTypeSchema, PaymentMethodSchema } from './money.e';
 import { TagsSchema } from '../tags';
-import { FamilyMemberSchema } from './family';
 import { AccountSchema } from './account';
+import { FamilyMemberSchema } from './family';
+import { AccountTypeSchema, PaymentMethodSchema } from './money.e';
 
 export const TransactionSchema = z.object({
   serialNum: SerialNumSchema,
@@ -30,6 +30,7 @@ export const TransactionSchema = z.object({
   splitMembers: z.array(FamilyMemberSchema).optional(), // JSON value, can be array of { member: string, amount: string } etc.
   paymentMethod: PaymentMethodSchema,
   actualPayerAccount: AccountTypeSchema,
+  relatedTransactionSerialNum: SerialNumSchema.optional(),
   createdAt: DateTimeSchema,
   updatedAt: DateTimeSchema.optional().nullable(),
 });

@@ -189,7 +189,8 @@
       "recordExpense": "记录支出",
       "recordTransfer": "转账记录",
       "editTransaction": "编辑交易",
-      "fromAccount": "转出账户"
+      "fromAccount": "转出账户",
+      "toAccount": "转入账户"
     },
     "budget": {
       "budget": "预算",
