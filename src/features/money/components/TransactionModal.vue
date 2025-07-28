@@ -6,6 +6,7 @@ import {
   SubCategorySchema,
   TransactionTypeSchema,
 } from '@/schema/common';
+import { AccountTypeSchema } from '@/schema/money';
 import { formatCurrency } from '../utils/money';
 import type {
   TransactionType,
@@ -19,11 +20,17 @@ interface Props {
 }
 
 const props = defineProps<Props>();
-
 const emit = defineEmits<{
   close: [];
   save: [transaction: TransactionWithAccount];
 }>();
+
+const selectAccounts = computed(() => {
+  if (props.type === TransactionTypeSchema.enum.Income) {
+    return props.accounts.filter(account => account.type !== AccountTypeSchema.enum.CreditCard && account.isActive);
+  }
+  return props.accounts.filter(account => account.isActive);
+});
 
 // 假设 t 函数已经通过 useI18n 或类似方式注入
 const { t } = useI18n();
@@ -199,17 +206,11 @@ watch(
         <!-- 交易类型 -->
         <div class="flex items-center justify-between">
           <label class="mb-1 text-sm font-medium">{{ t('financial.transaction.transType') }}</label>
-          <select v-model="form.transactionType" class="w-2/3 modal-input-select" required>
-            <option value="Income">
-              {{ t('financial.transaction.income') }}
-            </option>
-            <option value="Expense">
-              {{ t('financial.transaction.expense') }}
-            </option>
-            <option value="Transfer">
-              {{ t('financial.transaction.transfer') }}
-            </option>
-          </select>
+          <div class="w-2/3 modal-input-select bg-gray-50 dark:bg-gray-700">
+            {{ form.transactionType === 'Income' ? t('financial.transaction.income')
+              : form.transactionType === 'Expense' ? t('financial.transaction.expense')
+                : t('financial.transaction.transfer') }}
+          </div>
         </div>
 
         <!-- 金额 -->
@@ -231,7 +232,7 @@ watch(
             <option value="">
               {{ t('common.placeholders.selectAccount') }}
             </option>
-            <option v-for="account in accounts" :key="account.serialNum" :value="account.serialNum">
+            <option v-for="account in selectAccounts" :key="account.serialNum" :value="account.serialNum">
               {{ account.name }} ({{ formatCurrency(account.balance) }})
             </option>
           </select>
