@@ -4,6 +4,7 @@ import { CURRENCY_CNY } from '@/constants/moneyConst';
 import {
   CategorySchema,
   SubCategorySchema,
+  TransactionStatusSchema,
   TransactionTypeSchema,
 } from '@/schema/common';
 import { AccountTypeSchema, PaymentMethodSchema } from '@/schema/money';
@@ -40,7 +41,7 @@ const { t } = useI18n();
 const trans = props.transaction || {
   serialNum: '',
   transactionType: props.type,
-  category: CategorySchema.enum.Others, // or default from CategorySchema.enum
+  category: CategorySchema.enum.Others,
   subCategory: SubCategorySchema.enum.Other,
   amount: '',
   currency: CURRENCY_CNY,
@@ -51,7 +52,7 @@ const trans = props.transaction || {
   tags: [],
   paymentMethod: PaymentMethodSchema.enum.Cash,
   actualPayerAccount: AccountTypeSchema.enum.Bank,
-  transactionStatus: 'Completed',
+  transactionStatus: TransactionStatusSchema.enum.Completed,
   createdAt: DateUtils.getLocalISODateTimeWithOffset(),
   updatedAt: null,
   account: props.accounts[0] || ({} as Account),
@@ -62,21 +63,21 @@ const form = ref<TransactionWithAccount & { toAccountSerialNum?: string }>({
   serialNum: trans.serialNum,
   transactionType: trans.transactionType,
   category: trans.category, // or default from CategorySchema.enum
-  subCategory: props.transaction?.subCategory || SubCategorySchema.enum.Other,
-  amount: '',
-  currency: props.transaction?.currency ?? CURRENCY_CNY,
-  date: new Date().toISOString().split('T')[0],
-  description: '',
-  notes: null,
-  accountSerialNum: '',
+  subCategory: trans.subCategory,
+  amount: trans.amount,
+  currency: trans.currency,
+  date: trans.date,
+  description: trans.description,
+  notes: trans.notes,
+  accountSerialNum: trans.accountSerialNum,
   toAccountSerialNum: '', // 临时字段，用于界面显示
-  tags: [],
-  paymentMethod: PaymentMethodSchema.enum.Cash, // replace with default from PaymentMethodSchema.enum
-  actualPayerAccount: 'Bank', // replace with default from AccountTypeSchema.enum
-  transactionStatus: 'Completed',
-  createdAt: DateUtils.getLocalISODateTimeWithOffset(),
-  updatedAt: null,
-  account: props.accounts[0] || ({} as Account),
+  tags: trans.tags,
+  paymentMethod: trans.paymentMethod,
+  actualPayerAccount: trans.actualPayerAccount,
+  transactionStatus: trans.transactionStatus,
+  createdAt: trans.createdAt,
+  updatedAt: trans.updatedAt,
+  account: trans.account,
 });
 
 function mapSubToCategory(sub: string): string {
@@ -118,7 +119,15 @@ const subcategories = ref(
 );
 
 const filteredCategories = computed(() => {
-  const category = categories.value.filter(c => c.type === form.value.transactionType);
+  const category = categories.value.filter(c => {
+    if (props.transaction?.category === CategorySchema.enum.Transfer) {
+      return c.type === CategorySchema.enum.Transfer;
+    }
+    else {
+      return c.type === form.value.transactionType;
+    }
+  });
+
   return category.map(item => ({
     name: item.name,
     type: item.type,
