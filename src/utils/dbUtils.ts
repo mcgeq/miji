@@ -124,7 +124,6 @@ export class DatabaseManager {
     useCache = false,
   ): Promise<T> {
     const db = await this.getDatabase();
-
     if (!useCache) {
       return this.executeQuery(db, 'select', sql, params);
     }

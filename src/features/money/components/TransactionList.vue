@@ -81,8 +81,11 @@ function resetFilters() {
 const uniqueCategories = computed(() => {
   const categories = transactions.value.map(
     transaction => transaction.category,
-  );
-  return [...new Set(categories)].filter(Boolean);
+  ).filter(Boolean);
+  return [...new Set(categories)].map(category => ({
+    type: category,
+    option: t(`financial.transactionCategories.${category.toLowerCase()}`),
+  }));
 });
 
 // 加载交易数据
@@ -110,7 +113,6 @@ async function loadTransactions() {
     if (filters.value.dateTo) {
       params.dateTo = filters.value.dateTo;
     }
-
     const result = await moneyStore.getTransactions(params);
     transactions.value = result.items;
     pagination.value.totalItems = result.total;
@@ -240,8 +242,8 @@ defineExpose({
           <option value="">
             {{ t('categories.allCategory') }}
           </option>
-          <option v-for="category in uniqueCategories" :key="category" :value="category">
-            {{ category }}
+          <option v-for="category in uniqueCategories" :key="category.type" :value="category.type">
+            {{ category.option }}
           </option>
         </select>
       </div>

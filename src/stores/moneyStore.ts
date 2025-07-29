@@ -5,7 +5,7 @@ import { TransactionTypeSchema } from '@/schema/common';
 import { MoneyDb } from '@/services/money/money';
 import { DateUtils } from '@/utils/date';
 import { uuid } from '@/utils/uuid';
-import type { TransactionType } from '@/schema/common';
+import type { Category, TransactionType } from '@/schema/common';
 import type {
   Account,
   BilReminder,
@@ -204,6 +204,7 @@ export const useMoneyStore = defineStore('money', () => {
       page?: number;
       pageSize?: number;
       type?: TransactionType;
+      category?: Category;
       accountSerialNum?: string;
       dateFrom?: string;
       dateTo?: string;
@@ -220,6 +221,9 @@ export const useMoneyStore = defineStore('money', () => {
     try {
       const filters: any = {};
       if (params.type) filters.transactionType = params.type;
+      if (params.category) {
+        filters.category = params.category;
+      }
       if (params.accountSerialNum)
         filters.accountSerialNum = params.accountSerialNum;
       if (params.dateFrom || params.dateTo) {
@@ -396,8 +400,8 @@ export const useMoneyStore = defineStore('money', () => {
           subCategory: transaction.subCategory,
           paymentMethod: transaction.paymentMethod,
           transactionType:
-            transaction.transactionType === 'EXPENSE' ? 'INCOME' : 'EXPENSE',
-          updatedAt: new Date().toISOString(),
+            transaction.transactionType === 'Expense' ? 'Income' : 'Expense',
+          updatedAt: DateUtils.getLocalISODateTimeWithOffset(),
         };
         await MoneyDb.updateTransaction(transaction);
         await MoneyDb.updateTransaction(updatedRelatedTransaction);
