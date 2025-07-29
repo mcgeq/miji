@@ -266,7 +266,7 @@ export const useMoneyStore = defineStore('money', () => {
       const newTransaction: TransactionWithAccount = {
         ...transaction,
         serialNum: uuid(38),
-        createdAt: new Date().toISOString(),
+        createdAt: DateUtils.getLocalISODateTimeWithOffset(),
         updatedAt: null,
       };
       await MoneyDb.createTransaction(newTransaction);
@@ -328,6 +328,7 @@ export const useMoneyStore = defineStore('money', () => {
       loading.value = false;
     }
   };
+
   const updateTransferToTransaction = async (
     transaction: TransactionWithAccount,
   ) => {
@@ -336,8 +337,12 @@ export const useMoneyStore = defineStore('money', () => {
 
     try {
       // 获取与转账相关的另一笔交易
+
+      if (!transaction.relatedTransactionSerialNum) {
+        throw new Error('未找到关联的转账交易');
+      }
       const relatedTransaction = await MoneyDb.getTransferRelatedTransaction(
-        transaction.serialNum,
+        transaction.relatedTransactionSerialNum,
       );
       if (!relatedTransaction) {
         throw new Error('未找到关联的转账交易');
@@ -366,36 +371,49 @@ export const useMoneyStore = defineStore('money', () => {
         -Number.parseFloat(oldRelatedTransaction.amount),
       );
 
-      // 创建对应的转入交易记录
-      const updatedRelatedTransaction: TransactionWithAccount = {
-        ...relatedTransaction,
-        amount: transaction.amount,
-        currency: transaction.currency,
-        description: transaction.description,
-        notes: transaction.notes,
-        category: transaction.category,
-        subCategory: transaction.subCategory,
-        paymentMethod: transaction.paymentMethod,
-        updatedAt: new Date().toISOString(),
-      };
-
       // 在事务中更新两笔交易
       await MoneyDb.executeInTransaction(async () => {
+        // 3.1 恢复旧余额
+        await updateAccountBalance(
+          oldTransaction.accountSerialNum,
+          oldTransaction.transactionType,
+          -Number.parseFloat(oldTransaction.amount),
+        );
+        await updateAccountBalance(
+          oldRelatedTransaction.accountSerialNum,
+          oldRelatedTransaction.transactionType,
+          -Number.parseFloat(oldRelatedTransaction.amount),
+        );
+
+        // 3.2 构造并更新关联交易
+        const updatedRelatedTransaction: TransactionWithAccount = {
+          ...relatedTransaction,
+          amount: transaction.amount,
+          currency: transaction.currency,
+          description: transaction.description,
+          notes: transaction.notes,
+          category: transaction.category,
+          subCategory: transaction.subCategory,
+          paymentMethod: transaction.paymentMethod,
+          transactionType:
+            transaction.transactionType === 'EXPENSE' ? 'INCOME' : 'EXPENSE',
+          updatedAt: new Date().toISOString(),
+        };
         await MoneyDb.updateTransaction(transaction);
         await MoneyDb.updateTransaction(updatedRelatedTransaction);
-      });
 
-      // 更新账户余额
-      await updateAccountBalance(
-        transaction.accountSerialNum,
-        transaction.transactionType,
-        Number.parseFloat(transaction.amount),
-      );
-      await updateAccountBalance(
-        updatedRelatedTransaction.accountSerialNum,
-        updatedRelatedTransaction.transactionType,
-        Number.parseFloat(updatedRelatedTransaction.amount),
-      );
+        // 3.3 更新新余额
+        await updateAccountBalance(
+          transaction.accountSerialNum,
+          transaction.transactionType,
+          Number.parseFloat(transaction.amount),
+        );
+        await updateAccountBalance(
+          updatedRelatedTransaction.accountSerialNum,
+          updatedRelatedTransaction.transactionType,
+          Number.parseFloat(updatedRelatedTransaction.amount),
+        );
+      });
 
       await updateLocalTransactions();
     }

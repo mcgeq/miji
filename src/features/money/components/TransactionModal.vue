@@ -6,7 +6,8 @@ import {
   SubCategorySchema,
   TransactionTypeSchema,
 } from '@/schema/common';
-import { AccountTypeSchema } from '@/schema/money';
+import { AccountTypeSchema, PaymentMethodSchema } from '@/schema/money';
+import { DateUtils } from '@/utils/date';
 import { formatCurrency } from '../utils/money';
 import type {
   TransactionType,
@@ -36,11 +37,32 @@ const selectAccounts = computed(() => {
 // 假设 t 函数已经通过 useI18n 或类似方式注入
 const { t } = useI18n();
 
-const form = ref<TransactionWithAccount & { toAccountSerialNum?: string }>({
-  serialNum: props.transaction?.serialNum || '',
+const trans = props.transaction || {
+  serialNum: '',
   transactionType: props.type,
-  category: '' as any, // or default from CategorySchema.enum
-  subCategory: '' as any,
+  category: CategorySchema.enum.Others, // or default from CategorySchema.enum
+  subCategory: SubCategorySchema.enum.Other,
+  amount: '',
+  currency: CURRENCY_CNY,
+  date: DateUtils.getLocalISODateTimeWithOffset().split('T')[0],
+  description: '',
+  notes: null,
+  accountSerialNum: '',
+  tags: [],
+  paymentMethod: PaymentMethodSchema.enum.Cash,
+  actualPayerAccount: AccountTypeSchema.enum.Bank,
+  transactionStatus: 'Completed',
+  createdAt: DateUtils.getLocalISODateTimeWithOffset(),
+  updatedAt: null,
+  account: props.accounts[0] || ({} as Account),
+
+};
+
+const form = ref<TransactionWithAccount & { toAccountSerialNum?: string }>({
+  serialNum: trans.serialNum,
+  transactionType: trans.transactionType,
+  category: trans.category, // or default from CategorySchema.enum
+  subCategory: props.transaction?.subCategory || SubCategorySchema.enum.Other,
   amount: '',
   currency: props.transaction?.currency ?? CURRENCY_CNY,
   date: new Date().toISOString().split('T')[0],
@@ -49,31 +71,42 @@ const form = ref<TransactionWithAccount & { toAccountSerialNum?: string }>({
   accountSerialNum: '',
   toAccountSerialNum: '', // 临时字段，用于界面显示
   tags: [],
-  paymentMethod: 'Cash', // replace with default from PaymentMethodSchema.enum
+  paymentMethod: PaymentMethodSchema.enum.Cash, // replace with default from PaymentMethodSchema.enum
   actualPayerAccount: 'Bank', // replace with default from AccountTypeSchema.enum
   transactionStatus: 'Completed',
-  createdAt: new Date().toISOString(),
+  createdAt: DateUtils.getLocalISODateTimeWithOffset(),
   updatedAt: null,
   account: props.accounts[0] || ({} as Account),
 });
 
 function mapSubToCategory(sub: string): string {
-  if (['Restaurant', 'Groceries', 'Snacks'].includes(sub))
-    return 'Food';
-  if (['Bus', 'Taxi', 'Fuel'].includes(sub))
-    return 'Transport';
-  if (['Movies', 'Concerts'].includes(sub))
-    return 'Entertainment';
-  if (['MonthlySalary', 'Bonus'].includes(sub))
-    return 'Salary';
+  if (['Restaurant', 'Groceries', 'Snacks'].includes(sub)) return 'Food';
+  if (['Bus', 'Taxi', 'Fuel', 'Train', 'Flight', 'Parking'].includes(sub)) return 'Transport';
+  if (['Movies', 'Concerts', 'Sports', 'Gaming', 'Streaming'].includes(sub)) return 'Entertainment';
+  if (['Electricity', 'Water', 'Gas', 'Internet', 'Cable'].includes(sub)) return 'Utilities';
+  if (['Clothing', 'Electronics', 'HomeDecor', 'Furniture', 'Toys'].includes(sub)) return 'Shopping';
+  if (['MonthlySalary', 'Bonus', 'Overtime', 'Commission'].includes(sub)) return 'Salary';
+  if (['StockDividend', 'BondInterest', 'PropertyRental', 'CryptoIncome'].includes(sub)) return 'Investment';
+  if (['AccountTransfer', 'LoanRepayment', 'InvestmentWithdrawal'].includes(sub)) return 'Transfer';
+  if (['Tuition', 'Books', 'Courses', 'SchoolSupplies'].includes(sub)) return 'Education';
+  if (['DoctorVisit', 'Medications', 'Hospitalization', 'Dental', 'InsurancePremiums'].includes(sub)) return 'Healthcare';
+  if (['HealthInsurance', 'CarInsurance', 'LifeInsurance'].includes(sub)) return 'Insurance';
+  if (['BankInterest', 'FixedDeposit'].includes(sub)) return 'Savings';
+  if (['GiftSent', 'GiftReceived'].includes(sub)) return 'Gift';
+  if (['Mortgage', 'PersonalLoan', 'CreditCardPayment'].includes(sub)) return 'Loan';
+  if (['OfficeSupplies', 'TravelExpenses', 'Marketing', 'ConsultingFees'].includes(sub)) return 'Business';
+  if (['Hotel', 'TourPackage', 'Activities'].includes(sub)) return 'Travel';
+  if (['Donation'].includes(sub)) return 'Charity';
+  if (['Netflix', 'Spotify', 'Software'].includes(sub)) return 'Subscription';
+  if (['PetFood', 'PetVet', 'PetToys'].includes(sub)) return 'Pet';
+  if (['Furniture', 'Renovation', 'HomeMaintenance'].includes(sub)) return 'Home';
   return 'Others';
 }
 
-// 模拟分类数据
 const categories = ref(
   CategorySchema.options.map(name => ({
     name,
-    type: ['Salary', 'Investment', 'Transfer'].includes(name) ? 'Income' : 'Expense',
+    type: name === TransactionTypeSchema.enum.Transfer ? 'Transfer' : ['Salary', 'Investment'].includes(name) ? 'Income' : 'Expense',
   })),
 );
 
@@ -85,11 +118,24 @@ const subcategories = ref(
 );
 
 const filteredCategories = computed(() => {
-  return categories.value.filter(c => c.type === form.value.transactionType);
+  const category = categories.value.filter(c => c.type === form.value.transactionType);
+  return category.map(item => ({
+    name: item.name,
+    type: item.type,
+    option: t(`financial.transactionCategories.${item.name.toLocaleLowerCase()}`),
+  }));
 });
 
 const filteredSubcategories = computed(() => {
-  return subcategories.value.filter(s => s.category === form.value.category);
+  if (form.value.category === TransactionTypeSchema.enum.Transfer) {
+    return [];
+  }
+  const sub = subcategories.value.filter(s => s.category === form.value.category);
+  return sub.map(item => ({
+    name: item.name,
+    category: item.category,
+    option: t(`financial.transactionSubCategories.${item.name.toLocaleLowerCase()}`),
+  }));
 });
 
 // 为转入账户过滤掉已选择的转出账户
@@ -129,10 +175,10 @@ function handleSubmit() {
     // 转出交易（支出）
     const fromTransaction: TransactionWithAccount = {
       serialNum: props.transaction?.serialNum || '',
-      transactionType: 'Expense' as TransactionType,
+      transactionType: TransactionTypeSchema.enum.Expense,
       amount: form.value.amount,
       accountSerialNum: form.value.accountSerialNum,
-      category: 'Transfer' as any, // 需要在 CategorySchema 中定义 Transfer 分类
+      category: CategorySchema.enum.Transfer,
       subCategory: form.value.subCategory,
       currency: form.value.currency || CURRENCY_CNY,
       date: form.value.date,
@@ -150,10 +196,10 @@ function handleSubmit() {
     // 转入交易（收入）
     const toTransaction: TransactionWithAccount = {
       serialNum: '', // 新的交易记录
-      transactionType: 'Income' as TransactionType,
+      transactionType: TransactionTypeSchema.enum.Income,
       amount: form.value.amount,
       accountSerialNum: form.value.toAccountSerialNum!,
-      category: 'Transfer' as any, // 需要在 CategorySchema 中定义 Transfer 分类
+      category: CategorySchema.enum.Transfer,
       subCategory: form.value.subCategory,
       currency: form.value.currency || CURRENCY_CNY,
       date: form.value.date,
@@ -339,7 +385,7 @@ watch(
               {{ t('common.placeholders.selectCategory') }}
             </option>
             <option v-for="category in filteredCategories" :key="category.name" :value="category.name">
-              {{ category.name }}
+              {{ category.option }}
             </option>
           </select>
         </div>
@@ -352,7 +398,7 @@ watch(
               {{ t('common.placeholders.selectOption') }}
             </option>
             <option v-for="subcategory in filteredSubcategories" :key="subcategory.name" :value="subcategory.name">
-              {{ subcategory.name }}
+              {{ subcategory.option }}
             </option>
           </select>
         </div>

@@ -30,7 +30,6 @@ export class AccountMapper extends BaseMapper<Account> {
   }
 
   async create(account: Account): Promise<void> {
-    Lg.i('AccountMapper currency code', account.currency.code);
     try {
       const {
         serialNum,

@@ -11,7 +11,7 @@ import {
   TrendingUp,
 } from 'lucide-vue-next';
 import SimplePagination from '@/components/common/SimplePagination.vue';
-import { TransactionTypeSchema } from '@/schema/common';
+import { CategorySchema, TransactionTypeSchema } from '@/schema/common';
 import { useMoneyStore } from '@/stores/moneyStore';
 import { DateUtils } from '@/utils/date';
 import { Lg } from '@/utils/debugLog';
@@ -37,7 +37,16 @@ const moneyStore = useMoneyStore();
 // 数据状态
 const loading = ref(false);
 const transactions = ref<TransactionWithAccount[]>([]);
-
+const disabledTransactions = computed(() => {
+  return new Set(
+    transactions.value
+      .filter(t =>
+        t.transactionType === TransactionTypeSchema.enum.Income &&
+        t.category === CategorySchema.enum.Transfer,
+      )
+      .map(t => t.serialNum),
+  );
+});
 // 过滤器状态
 const filters = ref({
   transactionType: '',
@@ -348,9 +357,9 @@ defineExpose({
         <div class="flex justify-between p-4 text-sm md:items-center md:justify-end">
           <span class="text-gray-600 font-semibold md:hidden">{{ t('categories.category') }}</span>
           <div class="md:text-right">
-            <span class="text-gray-800 font-medium">{{ transaction.category }}</span>
+            <span class="text-gray-800 font-medium">{{ t(`financial.transactionCategories.${transaction.category.toLocaleLowerCase()}`) }}</span>
             <div v-if="transaction.subCategory" class="text-xs text-gray-600">
-              / {{ transaction.subCategory }}
+              / {{ t(`financial.transactionSubCategories.${transaction.subCategory.toLocaleLowerCase()}`) }}
             </div>
           </div>
         </div>
@@ -380,13 +389,19 @@ defineExpose({
             </button>
             <button
               class="money-option-btn hover:(border-blue-500 text-blue-500)" :title="t('common.actions.edit')"
+              :disabled="disabledTransactions.has(transaction.serialNum)"
+              :class="{
+                'text-gray-500 bg-gray-200': disabledTransactions.has(transaction.serialNum),
+              }"
               @click="emit('edit', transaction)"
             >
               <Edit class="h-4 w-4" />
             </button>
             <button
               class="money-option-btn hover:(border-red-500 text-red-500)"
-              :title="t('common.actions.delete')" @click="emit('delete', transaction.serialNum)"
+              :title="t('common.actions.delete')"
+              :disabled="disabledTransactions.has(transaction.serialNum)"
+              @click="emit('delete', transaction.serialNum)"
             >
               <Trash class="h-4 w-4" />
             </button>

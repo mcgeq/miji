@@ -14,6 +14,7 @@ import { CategorySchema, TransactionTypeSchema } from '@/schema/common';
 import { useMoneyStore } from '@/stores/moneyStore';
 import { Lg } from '@/utils/debugLog';
 import { toast } from '@/utils/toast';
+import { uuid } from '@/utils/uuid';
 import AccountList from '../components/AccountList.vue';
 import AccountModal from '../components/AccountModal.vue';
 import BudgetList from '../components/BudgetList.vue';
@@ -291,6 +292,9 @@ function isTransferTransaction(transaction: TransactionWithAccount): boolean {
 }
 
 async function saveTransfer(fromTransaction: TransactionWithAccount, toTransaction: TransactionWithAccount) {
+  const relatedTransactionSerialNum = uuid(38);
+  fromTransaction.relatedTransactionSerialNum = relatedTransactionSerialNum;
+  toTransaction.relatedTransactionSerialNum = relatedTransactionSerialNum;
   try {
     // 如果是编辑转账交易
     if (selectedTransaction.value) {
@@ -308,7 +312,7 @@ async function saveTransfer(fromTransaction: TransactionWithAccount, toTransacti
       const createdFromTransaction = await moneyStore.createTransaction(fromTransaction);
 
       // 再创建转入交易，可以在这里建立关联关系
-      toTransaction.notes = toTransaction.notes || `转账关联ID: ${createdFromTransaction.serialNum}`;
+      toTransaction.notes = toTransaction.notes || `转账关联账户: ${createdFromTransaction.account.name}`;
       await moneyStore.createTransaction(toTransaction);
 
       toast.success('转账记录成功');

@@ -203,7 +203,7 @@ impl MijiMigrationTrait for TransactionMigration {
                     description TEXT NOT NULL CHECK (LENGTH(description) <= 1000),
                     notes TEXT CHECK (LENGTH(notes) <= 2000),
                     account_serial_num TEXT NOT NULL CHECK (LENGTH(account_serial_num) <= 38),
-                    category TEXT NOT NULL CHECK (category IN ('Food', 'Transport', 'Entertainment', 'Utilities', 'Shopping', 'Salary', 'Investment', 'Others')),
+                    category TEXT NOT NULL CHECK (category IN ('Food','Transport','Entertainment','Utilities','Shopping','Salary','Investment','Transfer','Education','Healthcare','Insurance','Savings','Gift','Loan','Business','Travel','Charity','Subscription','Pet','Home','Others')),
                     sub_category TEXT CHECK (sub_category IN ('Restaurant', 'Groceries', 'Snacks', 'Bus', 'Taxi', 'Fuel', 'Movies', 'Concerts', 'MonthlySalary', 'Bonus', 'Other') OR sub_category IS NULL),
                     tags TEXT CHECK (LENGTH(tags) <= 500),
                     split_members TEXT,
