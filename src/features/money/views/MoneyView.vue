@@ -79,17 +79,22 @@ const totalAssets = computed(() => {
     .reduce((sum, account) => sum + Number.parseFloat(account.balance), 0);
 });
 
+const yearlyIncome = computed(() => 1);
+const yearlyExpense = computed(() => 1);
+const prevYearlyIncome = computed(() => 1);
+const prevYearlyExpense = computed(() => 1);
 const monthlyIncome = computed(() => {
   return monthlyTransactions.value
     .filter(t => t.transactionType === TransactionTypeSchema.enum.Income)
     .reduce((sum, t) => sum + Number.parseFloat(t.amount), 0);
 });
-
 const monthlyExpense = computed(() => {
   return monthlyTransactions.value
     .filter(t => t.transactionType === TransactionTypeSchema.enum.Expense)
     .reduce((sum, t) => sum + Number.parseFloat(t.amount), 0);
 });
+const prevMonthlyIncome = computed(() => 1);
+const prevMonthlyExpense = computed(() => 1);
 
 const budgetRemaining = computed(() => {
   return budgets.value
@@ -111,6 +116,38 @@ const statCards = computed(() => [
     color: 'primary' as const,
   },
   {
+    id: 'prev-yearly-income',
+    title: '去年收入',
+    value: formatCurrency(prevYearlyIncome.value),
+    currency: baseCurrency.value,
+    icon: 'wallet',
+    color: 'primary' as const,
+  },
+  {
+    id: 'prev-yearly-expense',
+    title: '去年支出',
+    value: formatCurrency(prevYearlyExpense.value),
+    currency: baseCurrency.value,
+    icon: 'wallet',
+    color: 'primary' as const,
+  },
+  {
+    id: 'yearly-income',
+    title: '今年收入',
+    value: formatCurrency(yearlyIncome.value),
+    currency: baseCurrency.value,
+    icon: 'wallet',
+    color: 'primary' as const,
+  },
+  {
+    id: 'yearly-expense',
+    title: '今年支出',
+    value: formatCurrency(yearlyExpense.value),
+    currency: baseCurrency.value,
+    icon: 'wallet',
+    color: 'primary' as const,
+  },
+  {
     id: 'monthly-income',
     title: '本月收入',
     value: formatCurrency(monthlyIncome.value),
@@ -122,6 +159,22 @@ const statCards = computed(() => [
     id: 'monthly-expense',
     title: '本月支出',
     value: formatCurrency(monthlyExpense.value),
+    currency: baseCurrency.value,
+    icon: 'trending-down',
+    color: 'danger' as const,
+  },
+  {
+    id: 'prev-monthly-income',
+    title: '上月收入',
+    value: formatCurrency(prevMonthlyIncome.value),
+    currency: baseCurrency.value,
+    icon: 'trending-up',
+    color: 'success' as const,
+  },
+  {
+    id: 'prev-monthly-expense',
+    title: '上月支出',
+    value: formatCurrency(prevMonthlyExpense.value),
     currency: baseCurrency.value,
     icon: 'trending-down',
     color: 'danger' as const,
