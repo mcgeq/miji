@@ -286,7 +286,7 @@ export abstract class BaseMapper<T extends BaseEntity> {
         true,
       );
 
-      const totalCount = totalRes[0]?.cnt ?? 0;
+      const totalCount = totalRes.length;
       const totalPages = Math.ceil(totalCount / pageSize);
       const transformedRows = transform
         ? await Promise.all(rows.map(transform))

@@ -33,6 +33,9 @@ import type {
   TransactionWithAccount,
 } from '@/schema/money';
 
+// Add ref for TransactionList
+const transactionListRef = ref<InstanceType<typeof TransactionList> | null>(null);
+
 const moneyStore = useMoneyStore();
 const { confirmState, confirmDelete, handleConfirm, handleCancel, handleClose } = useConfirm();
 
@@ -56,7 +59,7 @@ const transactionType = ref<TransactionType>(
   TransactionTypeSchema.enum.Expense,
 );
 
-// 添加对 StackedStatCards 组件的引用
+// Adding ref for StackedStatCards component
 const stackedCardsRef = ref<InstanceType<typeof StackedStatCards> | null>(null);
 
 const tabs = [
@@ -265,7 +268,7 @@ async function loadMonthlyTransactions() {
 
     const result = await moneyStore.getTransactions({
       page: 1,
-      pageSize: 1000, // 获取足够多的数据用于统计
+      pageSize: 1000,
       dateFrom: startOfMonth.toISOString().split('T')[0],
       dateTo: endOfMonth.toISOString().split('T')[0],
     });
@@ -328,6 +331,10 @@ async function deleteTransaction(serialNum: string) {
 
       // 刷新相关数据
       await Promise.all([loadAccounts(), loadMonthlyTransactions()]);
+      // Call TransactionList's refresh method
+      if (transactionListRef.value) {
+        await transactionListRef.value.refresh();
+      }
     }
     catch (err) {
       Lg.e('deleteTransaction', err);
@@ -338,10 +345,7 @@ async function deleteTransaction(serialNum: string) {
 
 // 判断是否为转账交易的辅助函数
 function isTransferTransaction(transaction: TransactionWithAccount): boolean {
-  // 根据你的业务逻辑判断，比如检查分类是否为'Transfer'
-  // 或者检查备注中是否包含转账关联信息
   return transaction.category === CategorySchema.enum.Transfer;
-  // || (transaction.notes && transaction.notes.includes('转账关联ID'));
 }
 
 async function saveTransfer(fromTransaction: TransactionWithAccount, toTransaction: TransactionWithAccount) {
@@ -354,8 +358,6 @@ async function saveTransfer(fromTransaction: TransactionWithAccount, toTransacti
       // 更新转出交易记录
       await moneyStore.updateTransaction(fromTransaction);
       // 对于编辑转账，需要找到对应的转入交易记录并更新
-      // 这里假设 moneyStore 有方法根据关联关系查找和更新转入交易
-      // 实际实现可能需要在数据库中添加 transferId 字段来关联转账的两条记录
       await moneyStore.updateTransferToTransaction(toTransaction);
       toast.success('转账更新成功');
     }
@@ -372,8 +374,12 @@ async function saveTransfer(fromTransaction: TransactionWithAccount, toTransacti
     }
 
     closeTransactionModal();
-    // 刷新相关数据
-    await Promise.all([loadAccounts(), loadMonthlyTransactions()]);
+    // 刷新相关数据，包括 TransactionList 的 refresh 方法
+    await Promise.all([
+      loadAccounts(),
+      loadMonthlyTransactions(),
+      transactionListRef.value ? transactionListRef.value.refresh() : Promise.resolve(),
+    ]);
   }
   catch (err) {
     Lg.e('saveTransfer', err);
@@ -402,7 +408,11 @@ async function saveTransaction(transaction: TransactionWithAccount) {
     }
     closeTransactionModal();
     // 刷新相关数据
-    await Promise.all([loadAccounts(), loadMonthlyTransactions()]);
+    await Promise.all([
+      loadAccounts(),
+      loadMonthlyTransactions(),
+      transactionListRef.value ? transactionListRef.value.refresh() : Promise.resolve(),
+    ]);
   }
   catch (err) {
     Lg.e('saveTransaction', err);
@@ -601,7 +611,6 @@ function handleCardChange(index: number, card: any) {
   }
 
   Lg.d('handleCardChange', '卡片切换:', index, card.title);
-  // 这里可以添加其他需要在卡片切换时执行的逻辑
 }
 
 function handleCardClick(_index: number, card: any) {
@@ -610,19 +619,6 @@ function handleCardClick(_index: number, card: any) {
     return;
   }
   Lg.i('MoneyView', card);
-  // 可以根据卡片类型执行特定操作
-  // switch (card.id) {
-  //   case 'total-assets':
-  //     activeTab.value = 'accounts';
-  //     break;
-  //   case 'monthly-income':
-  //   case 'monthly-expense':
-  //     activeTab.value = 'transactions';
-  //     break;
-  //   case 'budget-remaining':
-  //     activeTab.value = 'budgets';
-  //     break;
-  // }
 }
 
 onMounted(async () => {
@@ -733,7 +729,10 @@ onMounted(async () => {
         <!-- 交易记录 -->
         <div v-if="activeTab === 'transactions'" class="transactions-section">
           <TransactionList
-            :accounts="accounts" @edit="editTransaction" @delete="deleteTransaction"
+            ref="transactionListRef"
+            :accounts="accounts"
+            @edit="editTransaction"
+            @delete="deleteTransaction"
             @view-details="viewTransactionDetails"
           />
         </div>

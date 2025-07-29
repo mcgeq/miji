@@ -64,6 +64,11 @@ const pagination = ref({
   pageSize: 20,
 });
 
+const isMobile = ref(window.innerWidth < 768);
+
+function updateIsMobile() {
+  isMobile.value = window.innerWidth < 768;
+}
 // 重置过滤器
 function resetFilters() {
   filters.value = {
@@ -185,7 +190,14 @@ function formatTime(dateStr: string) {
 onMounted(() => {
   loadTransactions();
 });
+onMounted(() => {
+  window.addEventListener('resize', updateIsMobile);
+  updateIsMobile();
+});
 
+onUnmounted(() => {
+  window.removeEventListener('resize', updateIsMobile);
+});
 // 暴露刷新方法给父组件
 defineExpose({
   refresh: loadTransactions,
@@ -415,7 +427,7 @@ defineExpose({
     <!-- 分页组件 - 移动端优化版 -->
     <div v-if="pagination.totalItems > 0" class="mt-4 flex justify-center">
       <!-- 移动端紧凑分页 -->
-      <div class="flex items-center justify-center gap-2 border rounded-lg bg-white p-2 shadow-sm md:hidden">
+      <div v-if="isMobile" class="flex items-center justify-center gap-2 border rounded-lg bg-white p-2 shadow-sm md:hidden">
         <!-- 上一页 -->
         <button
           :disabled="pagination.currentPage <= 1" class="border border-gray-300 rounded-md p-1.5 text-gray-600 disabled:cursor-not-allowed hover:bg-gray-50 disabled:opacity-50"
@@ -460,12 +472,20 @@ defineExpose({
       </div>
 
       <!-- 桌面端完整分页 -->
-      <div class="hidden md:block">
+      <div v-else>
         <SimplePagination
-          :current-page="pagination.currentPage" :total-pages="pagination.totalPages"
-          :total-items="pagination.totalItems" :page-size="pagination.pageSize" :show-page-size="true"
-          :page-size-options="[10, 20, 50, 100]" :compact="false" :responsive="false" :show-total="false"
-          :show-jump="true" :show-first-last="true" @page-change="handlePageChange"
+          :current-page="pagination.currentPage"
+          :total-pages="pagination.totalPages"
+          :total-items="pagination.totalItems"
+          :page-size="pagination.pageSize"
+          :show-page-size="true"
+          :page-size-options="[10, 20, 50, 100]"
+          :compact="false"
+          :responsive="false"
+          :show-total="false"
+          :show-jump="true"
+          :show-first-last="true"
+          @page-change="handlePageChange"
           @page-size-change="handlePageSizeChange"
         />
       </div>
