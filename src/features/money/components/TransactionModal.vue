@@ -16,8 +16,7 @@ import type {
 } from '@/schema/common';
 import type { Account, TransactionWithAccount } from '@/schema/money';
 
-interface Props
-{
+interface Props {
   type: TransactionType;
   transaction?: TransactionWithAccount | null;
   accounts: Account[];
@@ -30,15 +29,14 @@ const emit = defineEmits<{
   saveTransfer: [fromTransaction: TransactionWithAccount, toTransaction: TransactionWithAccount];
 }>();
 
+const { t } = useI18n();
+
 const selectAccounts = computed(() => {
   if (props.type === TransactionTypeSchema.enum.Income) {
     return props.accounts.filter(account => account.type !== AccountTypeSchema.enum.CreditCard && account.isActive);
   }
   return props.accounts.filter(account => account.isActive);
 });
-
-// 假设 t 函数已经通过 useI18n 或类似方式注入
-const { t } = useI18n();
 
 const trans = props.transaction || {
   serialNum: '',
@@ -58,13 +56,12 @@ const trans = props.transaction || {
   createdAt: DateUtils.getLocalISODateTimeWithOffset(),
   updatedAt: null,
   account: props.accounts[0] || ({} as Account),
-
 };
 
 const form = ref<TransactionWithAccount & { toAccountSerialNum?: string }>({
   serialNum: trans.serialNum,
   transactionType: trans.transactionType,
-  category: trans.category, // or default from CategorySchema.enum
+  category: trans.category,
   subCategory: trans.subCategory,
   amount: trans.amount,
   currency: trans.currency,
@@ -72,7 +69,7 @@ const form = ref<TransactionWithAccount & { toAccountSerialNum?: string }>({
   description: trans.description,
   notes: trans.notes,
   accountSerialNum: trans.accountSerialNum,
-  toAccountSerialNum: '', // 临时字段，用于界面显示
+  toAccountSerialNum: '',
   tags: trans.tags,
   paymentMethod: trans.paymentMethod,
   actualPayerAccount: trans.actualPayerAccount,
@@ -81,6 +78,76 @@ const form = ref<TransactionWithAccount & { toAccountSerialNum?: string }>({
   updatedAt: trans.updatedAt,
   account: trans.account,
 });
+
+// Compute available payment methods based on selected account and transaction type
+const availablePaymentMethods = computed(() => {
+  const selectedAccount = props.accounts.find(acc => acc.serialNum === form.value.accountSerialNum);
+  if (form.value.transactionType === TransactionTypeSchema.enum.Expense) {
+    if (selectedAccount?.type === AccountTypeSchema.enum.Alipay) {
+      return [PaymentMethodSchema.enum.Alipay];
+    }
+    else if (selectedAccount?.type === AccountTypeSchema.enum.WeChat) {
+      return [PaymentMethodSchema.enum.WeChat];
+    }
+    else if (selectedAccount?.type === AccountTypeSchema.enum.CloudQuickPass) {
+      return [PaymentMethodSchema.enum.CloudQuickPass];
+    }
+    else if (selectedAccount?.type === AccountTypeSchema.enum.CreditCard) {
+      return [PaymentMethodSchema.enum.CreditCard];
+    }
+    else if (selectedAccount?.type === AccountTypeSchema.enum.Savings || selectedAccount?.type === AccountTypeSchema.enum.Bank) {
+      return [PaymentMethodSchema.enum.BankTransfer, PaymentMethodSchema.enum.Savings];
+    }
+  }
+  return PaymentMethodSchema.options;
+});
+
+// Determine if payment method should be editable
+const isPaymentMethodEditable = computed(() => {
+  return availablePaymentMethods.value.length > 1;
+});
+
+// Update payment method when account or transaction type changes
+watch(
+  () => [form.value.accountSerialNum, form.value.transactionType],
+  ([newAccountSerialNum, newTransactionType]) => {
+    const selectedAccount = props.accounts.find(acc => acc.serialNum === newAccountSerialNum);
+    if (newTransactionType === TransactionTypeSchema.enum.Expense) {
+      if (selectedAccount?.type === AccountTypeSchema.enum.Alipay) {
+        form.value.paymentMethod = PaymentMethodSchema.enum.Alipay;
+      }
+      else if (selectedAccount?.type === AccountTypeSchema.enum.WeChat) {
+        form.value.paymentMethod = PaymentMethodSchema.enum.WeChat;
+      }
+      else if (selectedAccount?.type === AccountTypeSchema.enum.CloudQuickPass) {
+        form.value.paymentMethod = PaymentMethodSchema.enum.CloudQuickPass;
+      }
+      else {
+        // Reset to default if not Alipay, WeChat, or CloudQuickPass
+        if (
+          form.value.paymentMethod === PaymentMethodSchema.enum.Alipay ||
+          form.value.paymentMethod === PaymentMethodSchema.enum.WeChat ||
+          form.value.paymentMethod === PaymentMethodSchema.enum.CloudQuickPass
+        ) {
+          form.value.paymentMethod = PaymentMethodSchema.enum.Cash;
+        }
+      }
+    }
+    else {
+      // For non-Expense transactions, reset if payment method is restricted
+      if (
+        form.value.paymentMethod === PaymentMethodSchema.enum.Alipay ||
+        form.value.paymentMethod === PaymentMethodSchema.enum.WeChat ||
+        form.value.paymentMethod === PaymentMethodSchema.enum.CloudQuickPass
+      ) {
+        form.value.paymentMethod = PaymentMethodSchema.enum.Cash;
+      }
+    }
+    if (newAccountSerialNum === form.value.toAccountSerialNum) {
+      form.value.toAccountSerialNum = '';
+    }
+  },
+);
 
 function mapSubToCategory(sub: string): string {
   if (['Restaurant', 'Groceries', 'Snacks'].includes(sub)) return 'Food';
@@ -149,7 +216,6 @@ const filteredSubcategories = computed(() => {
   }));
 });
 
-// 为转入账户过滤掉已选择的转出账户
 const selectToAccounts = computed(() => {
   return selectAccounts.value.filter(account => account.serialNum !== form.value.accountSerialNum);
 });
@@ -174,7 +240,6 @@ function handleOverlayClick() {
 
 function handleSubmit() {
   if (form.value.transactionType === TransactionTypeSchema.enum.Transfer) {
-    // 处理转账：创建两条交易记录
     const fromAccount = props.accounts.find(acc => acc.serialNum === form.value.accountSerialNum);
     const toAccount = props.accounts.find(acc => acc.serialNum === form.value.toAccountSerialNum);
 
@@ -183,7 +248,6 @@ function handleSubmit() {
       return;
     }
 
-    // 转出交易（支出）
     const fromTransaction: TransactionWithAccount = {
       serialNum: props.transaction?.serialNum || '',
       transactionType: TransactionTypeSchema.enum.Expense,
@@ -204,9 +268,8 @@ function handleSubmit() {
       account: fromAccount,
     };
 
-    // 转入交易（收入）
     const toTransaction: TransactionWithAccount = {
-      serialNum: '', // 新的交易记录
+      serialNum: '',
       transactionType: TransactionTypeSchema.enum.Income,
       amount: form.value.amount,
       accountSerialNum: form.value.toAccountSerialNum!,
@@ -228,7 +291,6 @@ function handleSubmit() {
     emit('saveTransfer', fromTransaction, toTransaction);
   }
   else {
-    // 普通收入/支出交易
     const transaction: TransactionWithAccount = {
       ...form.value,
       serialNum: props.transaction?.serialNum || '',
@@ -236,14 +298,12 @@ function handleSubmit() {
       createdAt: props.transaction?.createdAt || new Date().toISOString(),
     };
 
-    // 移除临时字段
     delete (transaction as any).toAccountSerialNum;
 
     emit('save', transaction);
   }
 }
 
-// 监听分类变化，清空子分类
 watch(
   () => form.value.category,
   () => {
@@ -251,7 +311,6 @@ watch(
   },
 );
 
-// 监听交易类型变化，清空分类
 watch(
   () => form.value.transactionType,
   () => {
@@ -260,17 +319,41 @@ watch(
   },
 );
 
-// 监听转出账户变化，如果与转入账户相同则清空转入账户
 watch(
-  () => form.value.accountSerialNum,
-  newAccountSerialNum => {
+  () => [form.value.accountSerialNum, form.value.transactionType],
+  ([newAccountSerialNum, newTransactionType]) => {
+    const selectedAccount = props.accounts.find(acc => acc.serialNum === newAccountSerialNum);
+
+    // Reset payment method to a default value
+    form.value.paymentMethod = PaymentMethodSchema.enum.Cash;
+
+    if (newTransactionType === TransactionTypeSchema.enum.Expense) {
+      if (selectedAccount?.type === AccountTypeSchema.enum.Alipay) {
+        form.value.paymentMethod = PaymentMethodSchema.enum.Alipay;
+      }
+      else if (selectedAccount?.type === AccountTypeSchema.enum.WeChat) {
+        form.value.paymentMethod = PaymentMethodSchema.enum.WeChat;
+      }
+      else if (selectedAccount?.type === AccountTypeSchema.enum.CloudQuickPass) {
+        form.value.paymentMethod = PaymentMethodSchema.enum.CloudQuickPass;
+      }
+      else if (selectedAccount?.type === AccountTypeSchema.enum.CreditCard) {
+        form.value.paymentMethod = PaymentMethodSchema.enum.CreditCard;
+      }
+      else if (
+        selectedAccount?.type === AccountTypeSchema.enum.Savings ||
+        selectedAccount?.type === AccountTypeSchema.enum.Bank
+      ) {
+        form.value.paymentMethod = PaymentMethodSchema.enum.BankTransfer;
+      }
+    }
+
     if (newAccountSerialNum === form.value.toAccountSerialNum) {
       form.value.toAccountSerialNum = '';
     }
   },
 );
 
-// 初始化表单数据
 watch(
   () => props.transaction,
   transaction => {
@@ -281,7 +364,7 @@ watch(
         transactionType: transaction.transactionType,
         amount: transaction.amount,
         accountSerialNum: transaction.accountSerialNum,
-        toAccountSerialNum: '', // 编辑时暂时不支持转账，所以为空
+        toAccountSerialNum: '',
         category: transaction.category,
         subCategory: transaction.subCategory || SubCategorySchema.enum.Other,
         currency: transaction.currency || CURRENCY_CNY,
@@ -392,6 +475,29 @@ watch(
               {{ account.name }} ({{ formatCurrency(account.balance) }})
             </option>
           </select>
+        </div>
+
+        <!-- 支付渠道 -->
+        <div class="flex items-center justify-between">
+          <label class="mb-1 text-sm font-medium">{{ t('financial.transaction.paymentMethod') }}</label>
+          <div class="w-2/3 modal-input-select bg-gray-50 dark:bg-gray-700">
+            <select
+              v-if="isPaymentMethodEditable"
+              v-model="form.paymentMethod"
+              class="w-full"
+              required
+            >
+              <option value="">
+                {{ t('common.placeholders.selectOption') }}
+              </option>
+              <option v-for="method in availablePaymentMethods" :key="method" :value="method">
+                {{ t(`financial.paymentMethods.${method.toLocaleLowerCase()}`) }}
+              </option>
+            </select>
+            <span v-else>
+              {{ t(`financial.paymentMethods.${form.paymentMethod.toLocaleLowerCase()}`) }}
+            </span>
+          </div>
         </div>
 
         <!-- 分类 -->

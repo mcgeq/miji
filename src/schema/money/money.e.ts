@@ -14,11 +14,13 @@ export const AccountTypeSchema = z.enum([
 export type AccountType = z.infer<typeof AccountTypeSchema>;
 
 export const PaymentMethodSchema = z.enum([
+  'Savings', // 储蓄账户
   'Cash', // 现金支付
   'BankTransfer', // 银行转账
   'CreditCard', // 信用卡支付
   'WeChat', // 微信支付
   'Alipay', // 支付宝支付
+  'CloudQuickPass', // 云闪付
   'Other', // 其他方式
 ]);
 export type PaymentMethod = z.infer<typeof PaymentMethodSchema>;
