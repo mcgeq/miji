@@ -349,9 +349,6 @@ function isTransferTransaction(transaction: TransactionWithAccount): boolean {
 }
 
 async function saveTransfer(fromTransaction: TransactionWithAccount, toTransaction: TransactionWithAccount) {
-  const relatedTransactionSerialNum = uuid(38);
-  fromTransaction.relatedTransactionSerialNum = relatedTransactionSerialNum;
-  toTransaction.relatedTransactionSerialNum = relatedTransactionSerialNum;
   try {
     // 如果是编辑转账交易
     if (selectedTransaction.value) {
@@ -362,6 +359,12 @@ async function saveTransfer(fromTransaction: TransactionWithAccount, toTransacti
       toast.success('转账更新成功');
     }
     else {
+      const fromSerialNum = uuid(38);
+      fromTransaction.relatedTransactionSerialNum = fromSerialNum;
+      fromTransaction.serialNum = fromSerialNum;
+      toTransaction.relatedTransactionSerialNum = fromSerialNum;
+      toTransaction.serialNum = uuid(38);
+
       // 创建新的转账交易
       // 先创建转出交易
       const createdFromTransaction = await moneyStore.createTransaction(fromTransaction);

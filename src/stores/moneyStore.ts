@@ -258,18 +258,15 @@ export const useMoneyStore = defineStore('money', () => {
   };
 
   const createTransaction = async (
-    transaction: Omit<
-      TransactionWithAccount,
-      'serialNum' | 'createdAt' | 'updatedAt'
-    >,
+    transaction: Omit<TransactionWithAccount, 'createdAt' | 'updatedAt'>,
   ): Promise<TransactionWithAccount> => {
     loading.value = true;
     error.value = null;
-
+    const serialNum = transaction.serialNum || uuid(38);
     try {
       const newTransaction: TransactionWithAccount = {
         ...transaction,
-        serialNum: uuid(38),
+        serialNum,
         createdAt: DateUtils.getLocalISODateTimeWithOffset(),
         updatedAt: null,
       };
