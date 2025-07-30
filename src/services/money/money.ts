@@ -106,53 +106,30 @@ export class MoneyDb {
 
   static async getTransferRelatedTransaction(
     serialNum: string,
-  ): Promise<TransactionWithAccount | null> {
+  ): Promise<Transaction | null> {
     try {
       const transaction =
         await this.transactionMapper.getTransferRelatedTransaction(serialNum);
       if (!transaction) return null;
-
-      const result = await db.select<any[]>(
-        `SELECT t.*, 
-               a.serial_num as account_serial_num_detail,
-               a.name as account_name,
-               a.description as account_description,
-               a.type as account_type,
-               a.balance as account_balance,
-               a.currency as account_currency,
-               a.is_shared as account_is_shared,
-               a.owner_id as account_owner_id,
-               a.is_active as account_is_active,
-               a.color as account_color,
-               a.created_at as account_created_at,
-               a.updated_at as account_updated_at
-         FROM transactions t
-         JOIN account a ON t.account_serial_num = a.serial_num
-         WHERE t.serial_num = ?`,
-        [transaction.serialNum],
-        true,
+      return transaction;
+    }
+    catch (error) {
+      throw new MoneyDbError(
+        'Failed to get related transfer transaction',
+        'getTransferRelatedTransaction',
+        'Transaction',
+        error as Error,
       );
+    }
+  }
 
-      if (result.length === 0) return null;
-
-      const row = result[0];
-      return {
-        ...transaction,
-        account: {
-          serialNum: row.account_serial_num_detail,
-          name: row.account_name,
-          description: row.account_description,
-          type: row.account_type,
-          balance: row.account_balance,
-          currency: JSON.parse(row.account_currency),
-          isShared: row.account_is_shared,
-          ownerId: row.account_owner_id,
-          isActive: row.account_is_active,
-          color: row.account_color,
-          createdAt: row.account_created_at,
-          updatedAt: row.account_updated_at,
-        },
-      } as TransactionWithAccount;
+  static async getTransferRelatedTransactionWithAccount(
+    serialNum: string,
+  ): Promise<TransactionWithAccount | null> {
+    try {
+      return await this.transactionMapper.getTransferRelatedTransactionWithAccount(
+        serialNum,
+      );
     }
     catch (error) {
       throw new MoneyDbError(
@@ -220,60 +197,7 @@ export class MoneyDb {
   static async getTransactionWithAccount(
     serialNum: string,
   ): Promise<TransactionWithAccount | null> {
-    try {
-      const result = await db.select<any[]>(
-        `SELECT t.*, 
-               a.serial_num as account_serial_num_detail,
-               a.name as account_name,
-               a.description as account_description,
-               a.type as account_type,
-               a.balance as account_balance,
-               a.currency as account_currency,
-               a.is_shared as account_is_shared,
-               a.owner_id as account_owner_id,
-               a.is_active as account_is_active,
-               a.color as account_color,
-               a.created_at as account_created_at,
-               a.updated_at as account_updated_at
-         FROM transactions t
-         JOIN account a ON t.account_serial_num = a.serial_num
-         WHERE t.serial_num = ?`,
-        [serialNum],
-        true,
-      );
-
-      if (result.length === 0) return null;
-
-      const row = result[0];
-      return {
-        ...row,
-        tags: JSON.parse(row.tags || '[]'),
-        split_members: JSON.parse(row.split_members || '[]'),
-        currency: JSON.parse(row.currency),
-        account: {
-          serialNum: row.account_serial_num_detail,
-          name: row.account_name,
-          description: row.account_description,
-          type: row.account_type,
-          balance: row.account_balance,
-          currency: JSON.parse(row.account_currency),
-          isShared: row.account_is_shared,
-          ownerId: row.account_owner_id,
-          isActive: row.account_is_active,
-          color: row.account_color,
-          createdAt: row.account_created_at,
-          updatedAt: row.account_updated_at,
-        },
-      } as TransactionWithAccount;
-    }
-    catch (error) {
-      throw new MoneyDbError(
-        'Failed to get transaction with account',
-        'getTransactionWithAccount',
-        'Transaction',
-        error as Error,
-      );
-    }
+    return await this.transactionMapper.getTransactionWithAccount(serialNum);
   }
 
   // Budget 操作

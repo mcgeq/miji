@@ -85,14 +85,30 @@ export class TransactionMapper extends BaseMapper<Transaction> {
   async getById(serialNum: string): Promise<Transaction | null> {
     try {
       const result = await db.select<any[]>(
-        `SELECT * FROM ${this.tableName} WHERE serial_num = ?`,
+        `SELECT t.*,
+                c.locale as currency_locale,
+                c.code as currency_code,
+                c.symbol as currency_symbol,
+                c.created_at as currency_created_at,
+                c.updated_at as currency_updated_at
+          FROM ${this.tableName} t
+          JOIN currency c ON t.currency = c.code
+          WHERE serial_num = ?`,
         [serialNum],
         true,
       );
 
       if (result.length === 0) return null;
-      const transaction = this.transformTransactionRow(result[0]);
-      transaction.currency = await this.getCurrencyByCode(transaction.currency);
+      const row = result[0];
+      const ccy = {
+        locale: row.currency_locale,
+        code: row.currency_code,
+        symbol: row.currency_symbol,
+        created_at: row.currency_created_at,
+        updated_at: row.currency_updated_at,
+      };
+      const transaction = this.transformTransactionRow(row);
+      transaction.currency = ccy;
       return toCamelCase<Transaction>(transaction);
     }
     catch (error) {
@@ -105,18 +121,152 @@ export class TransactionMapper extends BaseMapper<Transaction> {
   ): Promise<Transaction | null> {
     try {
       const result = await db.select<any[]>(
-        `SELECT * FROM ${this.tableName} WHERE related_transaction_serial_num = ?`,
+        `SELECT t.*,
+                c.locale as currency_locale,
+                c.code as currency_code,
+                c.symbol as currency_symbol,
+                c.created_at as currency_created_at,
+                c.updated_at as currency_updated_at
+          FROM ${this.tableName} t
+          JOIN currency c ON t.currency = c.code
+          WHERE related_transaction_serial_num = ?`,
         [serialNum],
         true,
       );
 
       if (result.length === 0) return null;
-      const transaction = this.transformTransactionRow(result[0]);
-      transaction.currency = await this.getCurrencyByCode(transaction.currency);
+      const row = result[0];
+      const ccy = {
+        locale: row.currency_locale,
+        code: row.currency_code,
+        symbol: row.currency_symbol,
+        created_at: row.currency_created_at,
+        updated_at: row.currency_updated_at,
+      };
+
+      const transaction = this.transformTransactionRow(row);
+      transaction.currency = ccy;
       return toCamelCase<Transaction>(transaction);
     }
     catch (error) {
       this.handleError('getTransferRelatedTransaction', error);
+    }
+  }
+
+  async getTransactionWithAccount(
+    serialNum: string,
+  ): Promise<TransactionWithAccount | null> {
+    try {
+      const result = await db.select<any[]>(
+        `SELECT t.*, 
+               a.serial_num as account_serial_num_detail,
+               a.name as account_name,
+               a.description as account_description,
+               a.type as account_type,
+               a.balance as account_balance,
+                c.locale as account_currency_locale,
+                c.code as account_currency_code,
+                c.symbol as account_currency_symbol,
+                c.created_at as account_currency_created_at,
+                c.updated_at as account_currency_updated_at,
+               a.is_shared as account_is_shared,
+               a.owner_id as account_owner_id,
+               a.is_active as account_is_active,
+               a.color as account_color,
+               a.created_at as account_created_at,
+               a.updated_at as account_updated_at
+         FROM transactions t
+         JOIN account a ON t.account_serial_num = a.serial_num
+         JOIN currency c ON a.currency = c.code
+         WHERE t.serial_num = ?`,
+        [serialNum],
+        true,
+      );
+
+      if (result.length === 0) return null;
+
+      const row = result[0];
+      const ccy = {
+        locale: row.account_currency_locale,
+        code: row.account_currency_code,
+        symbol: row.account_currency_symbol,
+        created_at: row.account_currency_created_at,
+        updated_at: row.account_currency_updated_at,
+      };
+      return toCamelCase<TransactionWithAccount>({
+        ...row,
+        tags: JSON.parse(row.tags || '[]'),
+        split_members: JSON.parse(row.split_members || '[]'),
+        currency: ccy,
+        account: {
+          serial_num: row.account_serial_num_detail,
+          name: row.account_name,
+          description: row.account_description,
+          type: row.account_type,
+          balance: row.account_balance,
+          currency: ccy,
+          is_shared: row.account_is_shared,
+          owner_id: row.account_owner_id,
+          is_active: row.account_is_active,
+          color: row.account_color,
+          created_at: row.account_created_at,
+          updated_at: row.account_updated_at,
+        },
+      });
+    }
+    catch (error) {
+      this.handleError('getTransactionWithAccount', error);
+    }
+  }
+
+  async getTransferRelatedTransactionWithAccount(
+    serialNum: string,
+  ): Promise<TransactionWithAccount | null> {
+    try {
+      const result = await db.select<any[]>(
+        `SELECT t.*, 
+               a.serial_num as account_serial_num_detail,
+               a.name as account_name,
+               a.description as account_description,
+               a.type as account_type,
+               a.balance as account_balance,
+               a.currency as account_currency,
+               a.is_shared as account_is_shared,
+               a.owner_id as account_owner_id,
+               a.is_active as account_is_active,
+               a.color as account_color,
+               a.created_at as account_created_at,
+               a.updated_at as account_updated_at
+         FROM transactions t
+         JOIN account a ON t.account_serial_num = a.serial_num
+         WHERE t.serial_num = ?`,
+        [serialNum],
+        true,
+      );
+
+      if (result.length === 0) return null;
+
+      const row = result[0];
+      return {
+        ...row,
+        account: {
+          serialNum: row.account_serial_num_detail,
+          name: row.account_name,
+          description: row.account_description,
+          type: row.account_type,
+          balance: row.account_balance,
+          currency: JSON.parse(row.account_currency),
+          isShared: row.account_is_shared,
+          ownerId: row.account_owner_id,
+          isActive: row.account_is_active,
+          color: row.account_color,
+          createdAt: row.account_created_at,
+          updatedAt: row.account_updated_at,
+        },
+      } as TransactionWithAccount;
+    }
+    catch (error) {
+      this.handleError('getTransferRelatedTransactionWithAccount', error);
     }
   }
 
