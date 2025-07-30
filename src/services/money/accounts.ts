@@ -37,6 +37,7 @@ export class AccountMapper extends BaseMapper<Account> {
         description,
         type,
         balance,
+        initialBalance,
         currency,
         isShared,
         ownerId,
@@ -47,14 +48,15 @@ export class AccountMapper extends BaseMapper<Account> {
       } = account;
 
       await db.execute(
-        `INSERT INTO ${this.tableName} (serial_num, name, description, type, balance, currency, is_shared, owner_id, is_active, color, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO ${this.tableName} (serial_num, name, description, type, balance, initial_balance,currency, is_shared, owner_id, is_active, color, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           serialNum,
           name,
           description,
           type,
           balance,
+          initialBalance,
           currency.code,
           this.toDbBoolean(isShared),
           ownerId,

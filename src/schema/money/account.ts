@@ -14,6 +14,7 @@ export const AccountSchema = z.object({
   description: DescriptionSchema,
   type: AccountTypeSchema,
   balance: z.string(),
+  initialBalance: z.string(),
   currency: CurrencySchema,
   isShared: z.boolean(),
   ownerId: SerialNumSchema,

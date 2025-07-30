@@ -109,6 +109,7 @@ impl MijiMigrationTrait for AccountMigration {
                     description TEXT NOT NULL CHECK (LENGTH(description) <= 1000),
                     type TEXT NOT NULL CHECK (type IN ('Savings', 'Cash', 'Bank', 'CreditCard', 'Investment', 'Alipay', 'WeChat', 'CloudQuickPass', 'Other')),
                     balance DECIMAL NOT NULL DEFAULT 0,
+                    initial_balance DECIMAL NOT NULL DEFAULT 0,
                     currency TEXT NOT NULL CHECK (LENGTH(currency) = 3),
                     is_shared INTEGER NOT NULL DEFAULT 0 CHECK (is_shared IN (0,1)),
                     owner_id TEXT CHECK (LENGTH(owner_id) <= 38),

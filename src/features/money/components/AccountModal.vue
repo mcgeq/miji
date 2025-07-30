@@ -84,6 +84,7 @@ const defaultAccount: Account = props.account || {
   description: '',
   type: AccountTypeSchema.enum.Other,
   balance: '0.00',
+  initialBalance: '0.00',
   currency: {
     locale: 'zh-CN',
     code: 'CNY',
@@ -92,7 +93,7 @@ const defaultAccount: Account = props.account || {
   },
   color: COLORS_MAP[0].code,
   isShared: false,
-  isActive: false,
+  isActive: true,
   ownerId: currentUser.value?.serialNum || '',
   createdAt: DateUtils.getLocalISODateTimeWithOffset(),
   updatedAt: null,
@@ -198,6 +199,10 @@ watch(
     syncCurrency(newCode);
   },
 );
+
+watch(() => form.initialBalance, newBalance => {
+  form.balance = newBalance;
+});
 </script>
 
 <template>
@@ -253,14 +258,14 @@ watch(
           </label>
           <div class="w-2/3">
             <input
-              v-model="form.balance"
+              v-model="form.initialBalance"
               type="text"
               required
               class="w-full modal-input-select"
               placeholder="0.00"
-              @input="form.balance = formatBalance(($event.target as HTMLInputElement).value)"
+              @input="form.initialBalance = formatBalance(($event.target as HTMLInputElement).value)"
             >
-            <span v-if="formErrors.balance" class="text-xs text-red-500">{{ formErrors.balance }}</span>
+            <span v-if="formErrors.initialBalance" class="text-xs text-red-500">{{ formErrors.initialBalance }}</span>
           </div>
         </div>
 
