@@ -46,7 +46,9 @@ const emit = defineEmits<{
 const inputId = ref(`currency-selector-${uuid(38)}`);
 
 // 当前值
-const currentValue = ref<Currency>(props.modelValue);
+const currentValue = ref<Currency>(
+  props.modelValue && validateValue(props.modelValue) ? props.modelValue : CURRENCY_CNY,
+);
 const currencies = ref<Currency[]>([]);
 
 // Fetch currencies asynchronously

@@ -342,9 +342,10 @@ export const useMoneyStore = defineStore('money', () => {
       if (!transaction.relatedTransactionSerialNum) {
         throw new Error('未找到关联的转账交易');
       }
-      const relatedTransaction = await MoneyDb.getTransferRelatedTransaction(
-        transaction.relatedTransactionSerialNum,
-      );
+      const relatedTransaction =
+        await MoneyDb.getTransferRelatedTransactionWithAccount(
+          transaction.relatedTransactionSerialNum,
+        );
       if (!relatedTransaction) {
         throw new Error('未找到关联的转账交易');
       }

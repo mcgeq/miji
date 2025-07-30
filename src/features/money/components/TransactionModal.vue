@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Check, X } from 'lucide-vue-next';
+import CurrencySelector from '@/components/common/money/CurrencySelector.vue';
 import { CURRENCY_CNY } from '@/constants/moneyConst';
 import {
   CategorySchema,
@@ -15,7 +16,8 @@ import type {
 } from '@/schema/common';
 import type { Account, TransactionWithAccount } from '@/schema/money';
 
-interface Props {
+interface Props
+{
   type: TransactionType;
   transaction?: TransactionWithAccount | null;
   accounts: Account[];
@@ -353,6 +355,12 @@ watch(
             v-model="form.amount" type="number" class="w-2/3 modal-input-select"
             :placeholder="t('common.placeholders.enterAmount')" step="0.01" min="0" required
           >
+        </div>
+
+        <!-- 币种 -->
+        <div class="mt-4 flex items-center justify-between">
+          <label class="mb-1 text-sm font-medium">{{ t('financial.currency') }}</label>
+          <CurrencySelector v-model="form.currency" class="w-2/3" />
         </div>
 
         <!-- 转出账户 -->
