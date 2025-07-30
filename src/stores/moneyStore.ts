@@ -498,7 +498,7 @@ export const useMoneyStore = defineStore('money', () => {
 
     try {
       const relatedTransaction =
-        await MoneyDb.getTransferRelatedTransaction(serialNum);
+        await MoneyDb.getTransferRelatedTransactionWithAccount(serialNum);
       return relatedTransaction;
     }
     catch (err) {
@@ -757,25 +757,41 @@ export const useMoneyStore = defineStore('money', () => {
       throw new Error('账户不存在');
     }
 
-    let currentBalance = Number.parseFloat(account.balance);
+    const currentBalance = Number.parseFloat(account.balance);
+    const initialBalance = Number.parseFloat(account.initialBalance);
+
+    let newBalance: number;
 
     switch (transactionType) {
       case TransactionTypeSchema.enum.Income:
-        currentBalance += amount;
+        newBalance = currentBalance + amount;
         break;
       case TransactionTypeSchema.enum.Expense:
-        currentBalance -= amount;
+        newBalance = currentBalance - amount;
         break;
       case TransactionTypeSchema.enum.Transfer:
-        currentBalance -= amount;
+        newBalance = currentBalance - amount;
         break;
+      default:
+        throw new Error('无效的交易类型');
     }
 
-    account.balance = currentBalance.toFixed(2);
+    // Apply restrictions based on account type
+    if (account.type === 'CreditCard') {
+      // Credit card balance must be between 0 and initialBalance
+      if (newBalance < 0) {
+        throw new Error('信用卡余额不能低于0');
+      }
+      if (newBalance > initialBalance) {
+        throw new Error(`信用卡余额不能超过初始余额 ${initialBalance}`);
+      }
+    }
+
+    // Update account balance
+    account.balance = newBalance.toFixed(2);
     account.updatedAt = new Date().toISOString();
     await MoneyDb.updateAccount(account);
   }
-
   const clearError = () => {
     error.value = null;
   };

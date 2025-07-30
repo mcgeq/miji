@@ -19,7 +19,7 @@ export const TransactionSchema = z.object({
   transactionType: TransactionTypeSchema,
   transactionStatus: TransactionStatusSchema,
   date: DateSchema, // ISO date string (e.g., "2025-06-12")
-  amount: z.string(), // decimal as string, e.g., "1234.56"
+  amount: z.number(), // decimal as string, e.g., "1234.56"
   currency: CurrencySchema,
   description: z.string().max(1000).optional(),
   notes: z.string().optional().nullable(),

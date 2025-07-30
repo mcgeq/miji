@@ -10,6 +10,7 @@ import {
 } from '@/schema/common';
 import { AccountTypeSchema, PaymentMethodSchema } from '@/schema/money';
 import { DateUtils } from '@/utils/date';
+import { toast } from '@/utils/toast';
 import { formatCurrency } from '../utils/money';
 import type {
   TransactionType,
@@ -43,7 +44,7 @@ const trans = props.transaction || {
   transactionType: props.type,
   category: CategorySchema.enum.Others,
   subCategory: SubCategorySchema.enum.Other,
-  amount: '',
+  amount: 0,
   currency: CURRENCY_CNY,
   date: DateUtils.getLocalISODateTimeWithOffset().split('T')[0],
   description: '',
@@ -59,24 +60,9 @@ const trans = props.transaction || {
 };
 
 const form = ref<TransactionWithAccount & { toAccountSerialNum?: string }>({
-  serialNum: trans.serialNum,
-  transactionType: trans.transactionType,
-  category: trans.category,
-  subCategory: trans.subCategory,
-  amount: trans.amount,
-  currency: trans.currency,
-  date: trans.date,
-  description: trans.description,
-  notes: trans.notes,
-  accountSerialNum: trans.accountSerialNum,
+  ...trans,
+  amount: trans.amount || 0,
   toAccountSerialNum: '',
-  tags: trans.tags,
-  paymentMethod: trans.paymentMethod,
-  actualPayerAccount: trans.actualPayerAccount,
-  transactionStatus: trans.transactionStatus,
-  createdAt: trans.createdAt,
-  updatedAt: trans.updatedAt,
-  account: trans.account,
 });
 
 // Compute available payment methods based on selected account and transaction type
@@ -239,13 +225,59 @@ function handleOverlayClick() {
 }
 
 function handleSubmit() {
-  if (form.value.transactionType === TransactionTypeSchema.enum.Transfer) {
-    const fromAccount = props.accounts.find(acc => acc.serialNum === form.value.accountSerialNum);
-    const toAccount = props.accounts.find(acc => acc.serialNum === form.value.toAccountSerialNum);
+  const amount = form.value.amount;
+  if (Number.isNaN(amount) || amount <= 0) {
+    toast.error('请输入有效的金额');
+    return;
+  }
 
-    if (!fromAccount || !toAccount) {
-      console.error('转账账户未找到');
+  const fromAccount = props.accounts.find(acc => acc.serialNum === form.value.accountSerialNum);
+  if (!fromAccount) {
+    console.error('未找到转出账户');
+    return;
+  }
+
+  // 校验 1: 如果转出账户是信用卡，检查转出金额是否超过授信额度
+  // Validate credit card transactions
+  if (fromAccount.type === AccountTypeSchema.enum.CreditCard) {
+    const initialBalance = Number.parseFloat(fromAccount.initialBalance);
+    const balance = Number.parseFloat(fromAccount.balance);
+    if (Number.isNaN(initialBalance) || Number.isNaN(balance)) {
+      console.error('Invalid balance data:', { initialBalance, balance });
+      toast.error('账户余额数据无效');
       return;
+    }
+    const availableCredit = amount - initialBalance;
+    if (availableCredit > 0) {
+      toast.error('转出金额超过信用卡可用额度');
+      return;
+    }
+  }
+  else {
+    // Non-credit card accounts, check balance
+    const balance = Number.parseFloat(fromAccount.balance);
+    if (Number.isNaN(balance) || amount > balance) {
+      toast.error('转出金额超过账户余额');
+      return;
+    }
+  }
+
+  if (form.value.transactionType === TransactionTypeSchema.enum.Transfer) {
+    const toAccount = props.accounts.find(acc => acc.serialNum === form.value.toAccountSerialNum);
+    if (!toAccount) {
+      toast.error('未找到转入账户');
+      return;
+    }
+
+    // 校验 2: 如果转入账户是信用卡，检查转入金额是否导致余额超过授信额度
+    // Validate credit card for transfer-in
+    if (toAccount.type === AccountTypeSchema.enum.CreditCard) {
+      const newBalance = Number.parseFloat(toAccount.balance) + amount;
+      const initialBalance = Number.parseFloat(toAccount.initialBalance);
+      if (newBalance > initialBalance) {
+        toast.error('转入金额将导致信用卡余额超过授信额度');
+        return;
+      }
     }
 
     const fromTransaction: TransactionWithAccount = {
@@ -301,6 +333,16 @@ function handleSubmit() {
     delete (transaction as any).toAccountSerialNum;
 
     emit('save', transaction);
+  }
+}
+
+function validateAmount(event: Event) {
+  const input = event.target as HTMLInputElement;
+  if (input.value === '' || Number.isNaN(Number(input.value))) {
+    form.value.amount = 0; // Reset to empty string for invalid input
+  }
+  else {
+    form.value.amount = Number.parseFloat(input.value); // Keep as string
   }
 }
 
@@ -362,7 +404,7 @@ watch(
         ...transaction,
         serialNum: transaction.serialNum,
         transactionType: transaction.transactionType,
-        amount: transaction.amount,
+        amount: transaction.amount || 0,
         accountSerialNum: transaction.accountSerialNum,
         toAccountSerialNum: '',
         category: transaction.category,
@@ -384,7 +426,7 @@ watch(
       form.value = {
         serialNum: '',
         transactionType: props.type,
-        amount: '',
+        amount: 0,
         accountSerialNum: '',
         toAccountSerialNum: '',
         category: CategorySchema.enum.Others,
@@ -435,8 +477,14 @@ watch(
         <div class="mt-4 flex items-center justify-between">
           <label class="mb-1 text-sm font-medium">{{ t('financial.money') }}</label>
           <input
-            v-model="form.amount" type="number" class="w-2/3 modal-input-select"
-            :placeholder="t('common.placeholders.enterAmount')" step="0.01" min="0" required
+            v-model="form.amount"
+            type="number"
+            class="w-2/3 modal-input-select"
+            :placeholder="t('common.placeholders.enterAmount')"
+            step="0.01"
+            min="0"
+            required
+            @input="validateAmount"
           >
         </div>
 
