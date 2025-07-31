@@ -264,6 +264,40 @@ export class DateUtils {
     return date.toISOString().split('T')[0]; // 返回 YYYY-MM-DD 格式
   }
 
+  static getCurrentYearRange(): [string, string] {
+    const now = new Date();
+    const start = new Date(now.getFullYear(), 0, 1);
+    const end = new Date(now.getFullYear() + 1, 0, 1);
+    return [DateUtils.formatDatePart(start), DateUtils.formatDatePart(end)];
+  }
+
+  static getLastYearRange(): [string, string] {
+    const now = new Date();
+    const start = new Date(now.getFullYear() - 1, 0, 1);
+    const end = new Date(now.getFullYear(), 0, 1);
+    return [DateUtils.formatDatePart(start), DateUtils.formatDatePart(end)];
+  }
+
+  /**
+   * 获取当前月份的日期范围
+   */
+  static getCurrentMonthRange(): [string, string] {
+    const now = new Date();
+    const start = new Date(now.getFullYear(), now.getMonth(), 1);
+    const end = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    return [DateUtils.formatDatePart(start), DateUtils.formatDatePart(end)];
+  }
+
+  /**
+   * 获取上个月的日期范围
+   */
+  static getLastMonthRange(): [string, string] {
+    const now = new Date();
+    const start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const end = new Date(now.getFullYear(), now.getMonth(), 1);
+    return [DateUtils.formatDatePart(start), DateUtils.formatDatePart(end)];
+  }
+
   /**
    * 通用方法，用于生成带偏移的 ISO 日期时间字符串
    * @param options - 偏移配置

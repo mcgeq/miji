@@ -301,3 +301,18 @@ export interface DefaultColors {
   nameEn: string;
   nameZh: string;
 }
+
+export interface IncomeExpense {
+  income: {
+    total: number;
+    transfer: number;
+  };
+  expense: {
+    total: number;
+    transfer: number;
+  };
+  transfer?: {
+    income: number;
+    expense: number;
+  };
+}

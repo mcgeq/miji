@@ -1,11 +1,12 @@
 import { CURRENCY_CNY } from '@/constants/moneyConst';
 import { toCamelCase } from '@/utils/common';
+import { DateUtils } from '@/utils/date';
 import { db } from '@/utils/dbUtils';
 import { Lg } from '@/utils/debugLog';
 import { BaseMapper, MoneyDbError } from './baseManager';
 import { MoneyDb } from './money';
 import type { DateRange, PagedResult } from './baseManager';
-import type { Currency, SortOptions } from '@/schema/common';
+import type { IncomeExpense, SortOptions } from '@/schema/common';
 import type { Transaction, TransactionWithAccount } from '@/schema/money';
 
 export interface TransactionFilters {
@@ -444,6 +445,77 @@ export class TransactionMapper extends BaseMapper<Transaction> {
     );
   }
 
+  /**
+   * 本月收入、支出与转账
+   */
+  async monthlyIncomeAndExpense(): Promise<IncomeExpense> {
+    const [startDate, endDate] = DateUtils.getCurrentMonthRange();
+    return this.queryIncomeAndExpense(startDate, endDate);
+  }
+
+  /**
+   * 上个月收入、支出与转账
+   */
+  async lastMonthIncomeAndExpense(): Promise<IncomeExpense> {
+    const [startDate, endDate] = DateUtils.getLastMonthRange();
+    return this.queryIncomeAndExpense(startDate, endDate);
+  }
+
+  /**
+   * 本年度收入、支出与转账
+   */
+  async yearlyIncomeAndExpense(): Promise<IncomeExpense> {
+    const [startDate, endDate] = DateUtils.getCurrentYearRange();
+    return this.queryIncomeAndExpense(startDate, endDate);
+  }
+
+  /**
+   * 去年整年收入、支出与转账
+   */
+  async lastYearIncomeAndExpense(): Promise<IncomeExpense> {
+    const [startDate, endDate] = DateUtils.getLastYearRange();
+    return this.queryIncomeAndExpense(startDate, endDate);
+  }
+
+  private async queryIncomeAndExpense(
+    startDate: string,
+    endDate: string,
+  ): Promise<IncomeExpense> {
+    const query = `
+    SELECT
+      SUM(CASE WHEN transaction_type = 'Income' THEN amount ELSE 0 END) AS totalIncome,
+      SUM(CASE WHEN transaction_type = 'Expense' THEN amount ELSE 0 END) AS totalExpense,
+      SUM(CASE
+            WHEN category = 'Transfer' AND transaction_type = 'Income' THEN amount ELSE 0 END) AS transferIncome,
+      SUM(CASE
+            WHEN category = 'Transfer' AND transaction_type = 'Expense' THEN amount ELSE 0 END) AS transferExpense
+    FROM transactions
+    WHERE date >= ? AND date < ?;
+  `;
+    try {
+      const result = await db.select(query, [startDate, endDate], false);
+      const row = result[0];
+      return {
+        income: {
+          total: row?.totalIncome || 0,
+          transfer: row?.transferIncome || 0,
+        },
+        expense: {
+          total: row?.totalExpense || 0,
+          transfer: row?.transferExpense || 0,
+        },
+        transfer: {
+          income: 0,
+          expense: 0,
+        },
+      };
+    }
+    catch (error) {
+      console.error('查询失败:', error);
+      throw error;
+    }
+  }
+
   private transformTransactionRow(row: any): any {
     return {
       ...row,
@@ -460,14 +532,5 @@ export class TransactionMapper extends BaseMapper<Transaction> {
       ...this.transformTransactionRow(row),
       account,
     } as TransactionWithAccount;
-  }
-
-  private async getCurrencyByCode(code: string): Promise<Currency> {
-    const result = await db.select<Currency[]>(
-      'SELECT * FROM currency WHERE code = ?',
-      [code],
-      true,
-    );
-    return result.length > 0 ? result[0] : CURRENCY_CNY;
   }
 }

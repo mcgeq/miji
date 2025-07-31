@@ -11,6 +11,7 @@ import ConfirmModal from '@/components/common/ConfirmModal.vue';
 import { useConfirm } from '@/composables/useConfirm';
 import { CURRENCY_CNY } from '@/constants/moneyConst';
 import { CategorySchema, TransactionTypeSchema } from '@/schema/common';
+import { MoneyDb } from '@/services/money/money';
 import { useMoneyStore } from '@/stores/moneyStore';
 import { Lg } from '@/utils/debugLog';
 import { toast } from '@/utils/toast';
@@ -73,31 +74,20 @@ const accounts = ref<Account[]>([]);
 const budgets = ref<Budget[]>([]);
 const reminders = ref<BilReminder[]>([]);
 
-// 用于统计的交易数据 - 只获取当月数据用于统计
-const monthlyTransactions = ref<TransactionWithAccount[]>([]);
-
 const totalAssets = computed(() => {
   return accounts.value
     .filter(account => account.isActive)
     .reduce((sum, account) => sum + Number.parseFloat(account.balance), 0);
 });
 
-const yearlyIncome = computed(() => 1);
-const yearlyExpense = computed(() => 1);
-const prevYearlyIncome = computed(() => 1);
-const prevYearlyExpense = computed(() => 1);
-const monthlyIncome = computed(() => {
-  return monthlyTransactions.value
-    .filter(t => t.transactionType === TransactionTypeSchema.enum.Income)
-    .reduce((sum, t) => sum + t.amount, 0);
-});
-const monthlyExpense = computed(() => {
-  return monthlyTransactions.value
-    .filter(t => t.transactionType === TransactionTypeSchema.enum.Expense)
-    .reduce((sum, t) => sum + t.amount, 0);
-});
-const prevMonthlyIncome = computed(() => 1);
-const prevMonthlyExpense = computed(() => 1);
+const yearlyIncome = ref(0);
+const yearlyExpense = ref(0);
+const prevYearlyIncome = ref(0);
+const prevYearlyExpense = ref(0);
+const monthlyIncome = ref(0);
+const monthlyExpense = ref(0);
+const prevMonthlyIncome = ref(0);
+const prevMonthlyExpense = ref(0);
 
 const budgetRemaining = computed(() => {
   return budgets.value
@@ -238,9 +228,9 @@ async function loadData() {
   try {
     await Promise.all([
       loadAccounts(),
-      loadMonthlyTransactions(),
       loadBudgets(),
       loadReminders(),
+      syncIncomeExpense(),
     ]);
   }
   catch (err) {
@@ -256,26 +246,6 @@ async function loadAccounts() {
   }
   finally {
     accountsLoading.value = false;
-  }
-}
-
-// 只加载当月交易数据用于统计
-async function loadMonthlyTransactions() {
-  try {
-    const now = new Date();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-
-    const result = await moneyStore.getTransactions({
-      page: 1,
-      pageSize: 1000,
-      dateFrom: startOfMonth.toISOString().split('T')[0],
-      dateTo: endOfMonth.toISOString().split('T')[0],
-    });
-    monthlyTransactions.value = result.items;
-  }
-  catch (err) {
-    Lg.e('loadMonthlyTransactions', '加载月度交易数据失败:', err);
   }
 }
 
@@ -311,30 +281,28 @@ function editTransaction(transaction: TransactionWithAccount) {
   showTransaction.value = true;
 }
 
-async function deleteTransaction(serialNum: string) {
+async function deleteTransaction(transaction: TransactionWithAccount) {
   const confirmed = await confirmDelete('此交易记录');
   if (confirmed) {
     try {
       // 检查是否为转账交易
-      const transaction = monthlyTransactions.value.find(t => t.serialNum === serialNum);
-
       if (transaction && isTransferTransaction(transaction)) {
         // 如果是转账交易，需要特殊处理
-        await moneyStore.deleteTransferTransaction(serialNum);
+        await moneyStore.deleteTransferTransaction(transaction.serialNum);
         toast.success('转账记录删除成功');
       }
       else {
         // 普通交易删除
-        await moneyStore.deleteTransaction(serialNum);
+        await moneyStore.deleteTransaction(transaction.serialNum);
         toast.success('删除成功');
       }
 
-      // 刷新相关数据
-      await Promise.all([loadAccounts(), loadMonthlyTransactions()]);
       // Call TransactionList's refresh method
       if (transactionListRef.value) {
         await transactionListRef.value.refresh();
       }
+      // 刷新相关数据
+      await Promise.all([loadAccounts(), syncIncomeExpense()]);
     }
     catch (err) {
       Lg.e('deleteTransaction', err);
@@ -380,8 +348,8 @@ async function saveTransfer(fromTransaction: TransactionWithAccount, toTransacti
     // 刷新相关数据，包括 TransactionList 的 refresh 方法
     await Promise.all([
       loadAccounts(),
-      loadMonthlyTransactions(),
       transactionListRef.value ? transactionListRef.value.refresh() : Promise.resolve(),
+      syncIncomeExpense(),
     ]);
   }
   catch (err) {
@@ -413,8 +381,8 @@ async function saveTransaction(transaction: TransactionWithAccount) {
     // 刷新相关数据
     await Promise.all([
       loadAccounts(),
-      loadMonthlyTransactions(),
       transactionListRef.value ? transactionListRef.value.refresh() : Promise.resolve(),
+      syncIncomeExpense(),
     ]);
   }
   catch (err) {
@@ -622,6 +590,21 @@ function handleCardClick(_index: number, card: any) {
     return;
   }
   Lg.i('MoneyView', card);
+}
+
+async function syncIncomeExpense() {
+  const m = await MoneyDb.monthlyIncomeAndExpense();
+  const lm = await MoneyDb.lastMonthIncomeAndExpense();
+  const y = await MoneyDb.yearlyIncomeAndExpense();
+  const ly = await MoneyDb.lastYearIncomeAndExpense();
+  monthlyIncome.value = m.income.total;
+  monthlyExpense.value = m.expense.total;
+  prevMonthlyIncome.value = lm.income.total;
+  prevMonthlyExpense.value = lm.expense.total;
+  yearlyIncome.value = y.income.total;
+  yearlyExpense.value = y.expense.total;
+  prevYearlyIncome.value = ly.income.total;
+  prevYearlyExpense.value = ly.expense.total;
 }
 
 onMounted(async () => {

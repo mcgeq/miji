@@ -5,7 +5,7 @@ import { TransactionTypeSchema } from '@/schema/common';
 import { MoneyDb } from '@/services/money/money';
 import { DateUtils } from '@/utils/date';
 import { uuid } from '@/utils/uuid';
-import type { Category, TransactionType } from '@/schema/common';
+import type { Category, IncomeExpense, TransactionType } from '@/schema/common';
 import type {
   Account,
   BilReminder,
@@ -538,6 +538,11 @@ export const useMoneyStore = defineStore('money', () => {
     }
   };
 
+  // 本月支出收入
+  const monthlyIncomeAndExpense = async (): Promise<IncomeExpense> => {
+    return await MoneyDb.monthlyIncomeAndExpense();
+  };
+
   // 预算相关方法
   const getBudgets = async (): Promise<Budget[]> => {
     loading.value = true;
@@ -825,6 +830,7 @@ export const useMoneyStore = defineStore('money', () => {
     updateTransferToTransaction,
     deleteTransferTransaction,
     getTransferRelatedTransaction,
+    monthlyIncomeAndExpense,
 
     getBudgets,
     createBudget,

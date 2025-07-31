@@ -27,7 +27,7 @@ const props = defineProps<Props>();
 
 const emit = defineEmits<{
   edit: [transaction: TransactionWithAccount];
-  delete: [serialNum: string];
+  delete: [transaction: TransactionWithAccount];
   viewDetails: [transaction: TransactionWithAccount];
 }>();
 
@@ -415,7 +415,7 @@ defineExpose({
               class="money-option-btn hover:(border-red-500 text-red-500)"
               :title="t('common.actions.delete')"
               :disabled="disabledTransactions.has(transaction.serialNum)"
-              @click="emit('delete', transaction.serialNum)"
+              @click="emit('delete', transaction)"
             >
               <Trash class="h-4 w-4" />
             </button>

@@ -17,7 +17,7 @@ import type { PagedResult } from './baseManager';
 import type { BilReminderFilters } from './billReminder';
 import type { BudgetFilters } from './budgets';
 import type { TransactionFilters } from './transactions';
-import type { Currency, SortOptions } from '@/schema/common';
+import type { Currency, IncomeExpense, SortOptions } from '@/schema/common';
 import type {
   Account,
   BilReminder,
@@ -198,6 +198,22 @@ export class MoneyDb {
     serialNum: string,
   ): Promise<TransactionWithAccount | null> {
     return await this.transactionMapper.getTransactionWithAccount(serialNum);
+  }
+
+  static async monthlyIncomeAndExpense(): Promise<IncomeExpense> {
+    return await this.transactionMapper.monthlyIncomeAndExpense();
+  }
+
+  static async lastMonthIncomeAndExpense(): Promise<IncomeExpense> {
+    return await this.transactionMapper.lastMonthIncomeAndExpense();
+  }
+
+  static async yearlyIncomeAndExpense(): Promise<IncomeExpense> {
+    return await this.transactionMapper.yearlyIncomeAndExpense();
+  }
+
+  static async lastYearIncomeAndExpense(): Promise<IncomeExpense> {
+    return this.transactionMapper.lastYearIncomeAndExpense();
   }
 
   // Budget 操作

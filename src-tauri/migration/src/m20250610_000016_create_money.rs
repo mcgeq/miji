@@ -225,6 +225,7 @@ impl MijiMigrationTrait for TransactionMigration {
                 CREATE INDEX IF NOT EXISTS idx_transaction_date ON transactions(date);
                 CREATE INDEX IF NOT EXISTS idx_transaction_category ON transactions(category);
                 CREATE INDEX IF NOT EXISTS idx_transaction_account ON transactions(account_serial_num);
+                CREATE INDEX IF NOT EXISTS idx_transaction_category_date ON transactions(category, date);
             "#,
             kind: tauri_plugin_sql::MigrationKind::Up,
         }
