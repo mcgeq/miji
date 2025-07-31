@@ -158,17 +158,29 @@ export class DatabaseManager {
     callback: (db: Database) => Promise<T>,
   ): Promise<T> {
     const db = await this.getDatabase();
+    let transactionStarted = false;
 
-    await this.executeQuery(db, 'execute', 'BEGIN TRANSACTION', []);
     try {
+      await this.executeQuery(db, 'execute', 'BEGIN TRANSACTION', []);
+      transactionStarted = true;
+
       const result = await callback(db);
-      await this.executeQuery(db, 'execute', 'COMMIT', []);
+      if (transactionStarted) {
+        await this.executeQuery(db, 'execute', 'COMMIT', []);
+      }
 
       this.invalidateCache();
       return result;
     }
     catch (error) {
-      await this.executeQuery(db, 'execute', 'ROLLBACK', []);
+      if (transactionStarted) {
+        try {
+          await this.executeQuery(db, 'execute', 'ROLLBACK', []);
+        }
+        catch (rollbackError) {
+          console.warn('Rollback failed or not needed:', rollbackError);
+        }
+      }
       throw error;
     }
   }

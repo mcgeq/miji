@@ -427,6 +427,62 @@ export const useMoneyStore = defineStore('money', () => {
       loading.value = false;
     }
   };
+
+  const getTransactionOrThrow = async (
+    serialNum: string,
+    errorMsg: string,
+  ): Promise<TransactionWithAccount> => {
+    const transaction = await MoneyDb.getTransactionWithAccount(serialNum);
+    if (!transaction) {
+      throw new Error(errorMsg);
+    }
+    return transaction;
+  };
+
+  const revertAccountBalance = async (transaction: TransactionWithAccount) => {
+    const { accountSerialNum, transactionType, amount } = transaction;
+    const revertAmount = -amount;
+
+    await updateAccountBalance(accountSerialNum, transactionType, revertAmount);
+  };
+
+  const revertTransactionAndDelete = async (
+    transaction: TransactionWithAccount,
+  ) => {
+    await revertAccountBalance(transaction);
+    await MoneyDb.deleteTransaction(transaction.serialNum);
+  };
+
+  const doDeleteTransferTransaction = async (
+    fromSerialNum: string,
+    toSerialNum?: string,
+  ) => {
+    const fromTransaction = await getTransactionOrThrow(
+      fromSerialNum,
+      '转出交易不存在',
+    );
+
+    let toTransactionSerialNum = toSerialNum;
+    if (!toTransactionSerialNum) {
+      const related =
+        await MoneyDb.getTransferRelatedTransaction(fromSerialNum);
+      toTransactionSerialNum = related?.serialNum;
+    }
+
+    // 删除转出交易
+    await revertTransactionAndDelete(fromTransaction);
+
+    // 删除转入交易（如果存在）
+    if (toTransactionSerialNum) {
+      const toTransaction = await MoneyDb.getTransactionWithAccount(
+        toTransactionSerialNum,
+      );
+      if (toTransaction) {
+        await revertTransactionAndDelete(toTransaction);
+      }
+    }
+  };
+
   const deleteTransferTransaction = async (
     fromSerialNum: string,
     toSerialNum?: string,
@@ -436,47 +492,8 @@ export const useMoneyStore = defineStore('money', () => {
 
     try {
       await MoneyDb.executeInTransaction(async () => {
-        // 如果未提供 toSerialNum，尝试查找相关交易
-        let toTransactionSerialNum = toSerialNum;
-        if (!toTransactionSerialNum) {
-          const relatedTransaction =
-            await MoneyDb.getTransferRelatedTransaction(fromSerialNum);
-          toTransactionSerialNum = relatedTransaction?.serialNum;
-        }
-
-        // 获取转出和转入交易
-        const fromTransaction =
-          await MoneyDb.getTransactionWithAccount(fromSerialNum);
-        if (!fromTransaction) {
-          throw new Error('转出交易不存在');
-        }
-
-        // 恢复转出交易对账户余额的影响
-        await updateAccountBalance(
-          fromTransaction.accountSerialNum,
-          fromTransaction.transactionType,
-          -fromTransaction.amount,
-        );
-
-        // 删除转出交易
-        await MoneyDb.deleteTransaction(fromSerialNum);
-
-        // 如果存在转入交易，处理其余额并删除
-        if (toTransactionSerialNum) {
-          const toTransaction = await MoneyDb.getTransactionWithAccount(
-            toTransactionSerialNum,
-          );
-          if (toTransaction) {
-            await updateAccountBalance(
-              toTransaction.accountSerialNum,
-              toTransaction.transactionType,
-              -toTransaction.amount,
-            );
-            await MoneyDb.deleteTransaction(toTransactionSerialNum);
-          }
-        }
+        await doDeleteTransferTransaction(fromSerialNum, toSerialNum);
       });
-
       await updateLocalTransactions();
     }
     catch (err) {
@@ -487,6 +504,7 @@ export const useMoneyStore = defineStore('money', () => {
       loading.value = false;
     }
   };
+
   // 3. 获取转账关联的交易记录
   const getTransferRelatedTransaction = async (
     serialNum: string,
