@@ -1,7 +1,8 @@
 import { db } from '@/utils/dbUtils';
 import { Lg } from '@/utils/debugLog';
 import { BaseMapper, MoneyDbError } from './baseManager';
-import type { DateRange, PagedResult } from './baseManager';
+import type { PagedResult } from './baseManager';
+import type { DateRange, SortOptions } from '@/schema/common';
 import type { Budget } from '@/schema/money';
 
 export interface BudgetFilters {
