@@ -1,21 +1,8 @@
 <script setup lang="ts">
 import { ChevronLeft, ChevronRight, Pause, Play } from 'lucide-vue-next';
 import StatCard from './StatCard.vue';
+import type { CardData } from '../common/moneyCommon';
 import type { ComponentPublicInstance } from 'vue';
-
-// 类型定义
-interface CardData {
-  id: string;
-  title: string;
-  value: string;
-  currency?: string;
-  icon?: string;
-  color?: 'primary' | 'success' | 'danger' | 'warning' | 'info';
-  loading?: boolean;
-  subtitle?: string;
-  trend?: string;
-  trendType?: 'up' | 'down' | 'neutral';
-}
 
 interface CardPosition {
   left: string;
@@ -368,13 +355,13 @@ function toggleAutoPlay() {
 }
 
 // 监听器
-watch(() => props.cards.length, (newLength) => {
+watch(() => props.cards.length, newLength => {
   if (selectedIndex.value >= newLength) {
     selectedIndex.value = Math.max(0, newLength - 1);
   }
 });
 
-watch(() => props.autoPlay, (newValue) => {
+watch(() => props.autoPlay, newValue => {
   if (props.disabled)
     return;
 
@@ -387,7 +374,7 @@ watch(() => props.autoPlay, (newValue) => {
 });
 
 // 监听 disabled 属性变化
-watch(() => props.disabled, (newValue) => {
+watch(() => props.disabled, newValue => {
   if (newValue) {
     stopAutoPlay();
   }

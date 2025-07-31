@@ -16,6 +16,7 @@ import { useMoneyStore } from '@/stores/moneyStore';
 import { Lg } from '@/utils/debugLog';
 import { toast } from '@/utils/toast';
 import { uuid } from '@/utils/uuid';
+import { createComparisonCard } from '../common/moneyCommon';
 import AccountList from '../components/AccountList.vue';
 import AccountModal from '../components/AccountModal.vue';
 import BudgetList from '../components/BudgetList.vue';
@@ -26,6 +27,7 @@ import StackedStatCards from '../components/StackedStatCards.vue';
 import TransactionList from '../components/TransactionList.vue';
 import TransactionModal from '../components/TransactionModal.vue';
 import { formatCurrency, getLocalCurrencyInfo } from '../utils/money';
+import type { CardData } from '../common/moneyCommon';
 import type { TransactionType } from '@/schema/common';
 import type {
   Account,
@@ -99,7 +101,7 @@ const budgetRemaining = computed(() => {
 });
 
 // 统计卡片数据
-const statCards = computed(() => [
+const statCards = computed<CardData[]>(() => [
   {
     id: 'total-assets',
     title: '总资产',
@@ -108,77 +110,67 @@ const statCards = computed(() => [
     icon: 'wallet',
     color: 'primary' as const,
   },
+  createComparisonCard(
+    'monthly-income-comparison',
+    '月度收入',
+    formatCurrency(monthlyIncome.value),
+    formatCurrency(prevMonthlyIncome.value),
+    '上月',
+    baseCurrency.value,
+    'trending-up',
+    'success',
+  ),
+  createComparisonCard(
+    'yearly-income-comparison',
+    '年度收入',
+    formatCurrency(yearlyIncome.value),
+    formatCurrency(prevYearlyIncome.value),
+    '去年',
+    baseCurrency.value,
+    'trending-up',
+    'primary',
+  ),
+  createComparisonCard(
+    'monthly-expense-comparison',
+    '月度支出',
+    formatCurrency(monthlyExpense.value),
+    formatCurrency(prevMonthlyExpense.value),
+    '上月',
+    baseCurrency.value,
+    'trending-up',
+    'success',
+  ),
+  createComparisonCard(
+    'yearly-expense-comparison',
+    '年度支出',
+    formatCurrency(yearlyExpense.value),
+    formatCurrency(prevYearlyExpense.value),
+    '去年',
+    baseCurrency.value,
+    'trending-up',
+    'primary',
+  ),
+
   {
-    id: 'prev-yearly-income',
-    title: '去年收入',
-    value: formatCurrency(prevYearlyIncome.value),
-    currency: baseCurrency.value,
-    icon: 'wallet',
-    color: 'primary' as const,
-  },
-  {
-    id: 'prev-yearly-expense',
-    title: '去年支出',
-    value: formatCurrency(prevYearlyExpense.value),
-    currency: baseCurrency.value,
-    icon: 'wallet',
-    color: 'primary' as const,
-  },
-  {
-    id: 'yearly-income',
-    title: '今年收入',
-    value: formatCurrency(yearlyIncome.value),
-    currency: baseCurrency.value,
-    icon: 'wallet',
-    color: 'primary' as const,
-  },
-  {
-    id: 'yearly-expense',
-    title: '今年支出',
-    value: formatCurrency(yearlyExpense.value),
-    currency: baseCurrency.value,
-    icon: 'wallet',
-    color: 'primary' as const,
-  },
-  {
-    id: 'monthly-income',
-    title: '本月收入',
-    value: formatCurrency(monthlyIncome.value),
-    currency: baseCurrency.value,
-    icon: 'trending-up',
-    color: 'success' as const,
-  },
-  {
-    id: 'monthly-expense',
-    title: '本月支出',
-    value: formatCurrency(monthlyExpense.value),
-    currency: baseCurrency.value,
-    icon: 'trending-down',
-    color: 'danger' as const,
-  },
-  {
-    id: 'prev-monthly-income',
-    title: '上月收入',
-    value: formatCurrency(prevMonthlyIncome.value),
-    currency: baseCurrency.value,
-    icon: 'trending-up',
-    color: 'success' as const,
-  },
-  {
-    id: 'prev-monthly-expense',
-    title: '上月支出',
-    value: formatCurrency(prevMonthlyExpense.value),
-    currency: baseCurrency.value,
-    icon: 'trending-down',
-    color: 'danger' as const,
-  },
-  {
-    id: 'budget-remaining',
-    title: '预算剩余',
+    id: 'budget-overview',
+    title: '预算总览',
     value: formatCurrency(budgetRemaining.value),
     currency: baseCurrency.value,
     icon: 'target',
-    color: 'warning' as const,
+    color: 'warning',
+    subtitle: '本月剩余',
+    extraStats: [
+      {
+        label: '总预算',
+        value: formatCurrency(20000),
+        color: 'primary',
+      },
+      {
+        label: '已使用',
+        value: formatCurrency(5222),
+        color: 'danger',
+      },
+    ],
   },
 ]);
 
