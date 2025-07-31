@@ -68,22 +68,27 @@ const form = ref<TransactionWithAccount & { toAccountSerialNum?: string }>({
 // Compute available payment methods based on selected account and transaction type
 const availablePaymentMethods = computed(() => {
   const selectedAccount = props.accounts.find(acc => acc.serialNum === form.value.accountSerialNum);
-  if (form.value.transactionType === TransactionTypeSchema.enum.Expense) {
+  if (form.value.transactionType !== TransactionTypeSchema.enum.Income) {
     if (selectedAccount?.type === AccountTypeSchema.enum.Alipay) {
       return [PaymentMethodSchema.enum.Alipay];
     }
     else if (selectedAccount?.type === AccountTypeSchema.enum.WeChat) {
       return [PaymentMethodSchema.enum.WeChat];
     }
-    else if (selectedAccount?.type === AccountTypeSchema.enum.CloudQuickPass) {
-      return [PaymentMethodSchema.enum.CloudQuickPass];
-    }
+    // else if (selectedAccount?.type === AccountTypeSchema.enum.CloudQuickPass) {
+    //   return [PaymentMethodSchema.enum.CloudQuickPass];
+    // }
     else if (selectedAccount?.type === AccountTypeSchema.enum.CreditCard) {
-      return [PaymentMethodSchema.enum.CreditCard];
+      return [
+        PaymentMethodSchema.enum.CreditCard,
+        PaymentMethodSchema.enum.Alipay,
+        PaymentMethodSchema.enum.WeChat,
+        PaymentMethodSchema.enum.CloudQuickPass,
+      ];
     }
-    else if (selectedAccount?.type === AccountTypeSchema.enum.Savings || selectedAccount?.type === AccountTypeSchema.enum.Bank) {
-      return [PaymentMethodSchema.enum.BankTransfer, PaymentMethodSchema.enum.Savings];
-    }
+    // else if (selectedAccount?.type === AccountTypeSchema.enum.Savings || selectedAccount?.type === AccountTypeSchema.enum.Bank) {
+    //   return [PaymentMethodSchema.enum.BankTransfer, PaymentMethodSchema.enum.Savings];
+    // }
   }
   return PaymentMethodSchema.options;
 });
@@ -327,25 +332,25 @@ watch(
     // Reset payment method to a default value
     form.value.paymentMethod = PaymentMethodSchema.enum.Cash;
 
-    if (form.value.transactionType === TransactionTypeSchema.enum.Expense) {
+    if (form.value.transactionType !== TransactionTypeSchema.enum.Income) {
       if (selectedAccount?.type === AccountTypeSchema.enum.Alipay) {
         form.value.paymentMethod = PaymentMethodSchema.enum.Alipay;
       }
       else if (selectedAccount?.type === AccountTypeSchema.enum.WeChat) {
         form.value.paymentMethod = PaymentMethodSchema.enum.WeChat;
       }
-      else if (selectedAccount?.type === AccountTypeSchema.enum.CloudQuickPass) {
-        form.value.paymentMethod = PaymentMethodSchema.enum.CloudQuickPass;
-      }
+      // else if (selectedAccount?.type === AccountTypeSchema.enum.CloudQuickPass) {
+      //   form.value.paymentMethod = PaymentMethodSchema.enum.CloudQuickPass;
+      // }
       else if (selectedAccount?.type === AccountTypeSchema.enum.CreditCard) {
         form.value.paymentMethod = PaymentMethodSchema.enum.CreditCard;
       }
-      else if (
-        selectedAccount?.type === AccountTypeSchema.enum.Savings ||
-        selectedAccount?.type === AccountTypeSchema.enum.Bank
-      ) {
-        form.value.paymentMethod = PaymentMethodSchema.enum.BankTransfer;
-      }
+      // else if (
+      //   selectedAccount?.type === AccountTypeSchema.enum.Savings ||
+      //   selectedAccount?.type === AccountTypeSchema.enum.Bank
+      // ) {
+      //   form.value.paymentMethod = PaymentMethodSchema.enum.BankTransfer;
+      // }
     }
 
     if (newAccountSerialNum === form.value.toAccountSerialNum) {
