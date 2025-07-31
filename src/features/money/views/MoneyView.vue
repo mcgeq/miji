@@ -89,12 +89,12 @@ const prevYearlyExpense = computed(() => 1);
 const monthlyIncome = computed(() => {
   return monthlyTransactions.value
     .filter(t => t.transactionType === TransactionTypeSchema.enum.Income)
-    .reduce((sum, t) => sum + Number.parseFloat(t.amount), 0);
+    .reduce((sum, t) => sum + t.amount, 0);
 });
 const monthlyExpense = computed(() => {
   return monthlyTransactions.value
     .filter(t => t.transactionType === TransactionTypeSchema.enum.Expense)
-    .reduce((sum, t) => sum + Number.parseFloat(t.amount), 0);
+    .reduce((sum, t) => sum + t.amount, 0);
 });
 const prevMonthlyIncome = computed(() => 1);
 const prevMonthlyExpense = computed(() => 1);

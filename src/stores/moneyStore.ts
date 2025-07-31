@@ -274,7 +274,7 @@ export const useMoneyStore = defineStore('money', () => {
       await updateAccountBalance(
         newTransaction.accountSerialNum,
         newTransaction.transactionType,
-        Number.parseFloat(newTransaction.amount),
+        newTransaction.amount,
       );
       await updateLocalTransactions();
       return newTransaction;
@@ -306,7 +306,7 @@ export const useMoneyStore = defineStore('money', () => {
       await updateAccountBalance(
         oldTransaction.accountSerialNum,
         oldTransaction.transactionType,
-        -Number.parseFloat(oldTransaction.amount),
+        -oldTransaction.amount,
       );
 
       await MoneyDb.updateTransaction(transaction);
@@ -315,7 +315,7 @@ export const useMoneyStore = defineStore('money', () => {
       await updateAccountBalance(
         transaction.accountSerialNum,
         transaction.transactionType,
-        Number.parseFloat(transaction.amount),
+        transaction.amount,
       );
 
       await updateLocalTransactions();
@@ -365,12 +365,12 @@ export const useMoneyStore = defineStore('money', () => {
       await updateAccountBalance(
         oldTransaction.accountSerialNum,
         oldTransaction.transactionType,
-        -Number.parseFloat(oldTransaction.amount),
+        -oldTransaction.amount,
       );
       await updateAccountBalance(
         oldRelatedTransaction.accountSerialNum,
         oldRelatedTransaction.transactionType,
-        -Number.parseFloat(oldRelatedTransaction.amount),
+        -oldRelatedTransaction.amount,
       );
 
       // 在事务中更新两笔交易
@@ -379,12 +379,12 @@ export const useMoneyStore = defineStore('money', () => {
         await updateAccountBalance(
           oldTransaction.accountSerialNum,
           oldTransaction.transactionType,
-          -Number.parseFloat(oldTransaction.amount),
+          -oldTransaction.amount,
         );
         await updateAccountBalance(
           oldRelatedTransaction.accountSerialNum,
           oldRelatedTransaction.transactionType,
-          -Number.parseFloat(oldRelatedTransaction.amount),
+          -oldRelatedTransaction.amount,
         );
 
         // 3.2 构造并更新关联交易
@@ -408,12 +408,12 @@ export const useMoneyStore = defineStore('money', () => {
         await updateAccountBalance(
           transaction.accountSerialNum,
           transaction.transactionType,
-          Number.parseFloat(transaction.amount),
+          transaction.amount,
         );
         await updateAccountBalance(
           updatedRelatedTransaction.accountSerialNum,
           updatedRelatedTransaction.transactionType,
-          Number.parseFloat(updatedRelatedTransaction.amount),
+          updatedRelatedTransaction.amount,
         );
       });
 
@@ -455,7 +455,7 @@ export const useMoneyStore = defineStore('money', () => {
         await updateAccountBalance(
           fromTransaction.accountSerialNum,
           fromTransaction.transactionType,
-          -Number.parseFloat(fromTransaction.amount),
+          -fromTransaction.amount,
         );
 
         // 删除转出交易
@@ -470,7 +470,7 @@ export const useMoneyStore = defineStore('money', () => {
             await updateAccountBalance(
               toTransaction.accountSerialNum,
               toTransaction.transactionType,
-              -Number.parseFloat(toTransaction.amount),
+              -toTransaction.amount,
             );
             await MoneyDb.deleteTransaction(toTransactionSerialNum);
           }
@@ -523,7 +523,7 @@ export const useMoneyStore = defineStore('money', () => {
       await updateAccountBalance(
         transaction.accountSerialNum,
         transaction.transactionType,
-        -Number.parseFloat(transaction.amount),
+        -transaction.amount,
       );
 
       await MoneyDb.deleteTransaction(serialNum);

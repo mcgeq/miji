@@ -93,48 +93,6 @@ const isPaymentMethodEditable = computed(() => {
   return availablePaymentMethods.value.length > 1;
 });
 
-// Update payment method when account or transaction type changes
-watch(
-  () => [form.value.accountSerialNum, form.value.transactionType],
-  ([newAccountSerialNum, newTransactionType]) => {
-    const selectedAccount = props.accounts.find(acc => acc.serialNum === newAccountSerialNum);
-    if (newTransactionType === TransactionTypeSchema.enum.Expense) {
-      if (selectedAccount?.type === AccountTypeSchema.enum.Alipay) {
-        form.value.paymentMethod = PaymentMethodSchema.enum.Alipay;
-      }
-      else if (selectedAccount?.type === AccountTypeSchema.enum.WeChat) {
-        form.value.paymentMethod = PaymentMethodSchema.enum.WeChat;
-      }
-      else if (selectedAccount?.type === AccountTypeSchema.enum.CloudQuickPass) {
-        form.value.paymentMethod = PaymentMethodSchema.enum.CloudQuickPass;
-      }
-      else {
-        // Reset to default if not Alipay, WeChat, or CloudQuickPass
-        if (
-          form.value.paymentMethod === PaymentMethodSchema.enum.Alipay ||
-          form.value.paymentMethod === PaymentMethodSchema.enum.WeChat ||
-          form.value.paymentMethod === PaymentMethodSchema.enum.CloudQuickPass
-        ) {
-          form.value.paymentMethod = PaymentMethodSchema.enum.Cash;
-        }
-      }
-    }
-    else {
-      // For non-Expense transactions, reset if payment method is restricted
-      if (
-        form.value.paymentMethod === PaymentMethodSchema.enum.Alipay ||
-        form.value.paymentMethod === PaymentMethodSchema.enum.WeChat ||
-        form.value.paymentMethod === PaymentMethodSchema.enum.CloudQuickPass
-      ) {
-        form.value.paymentMethod = PaymentMethodSchema.enum.Cash;
-      }
-    }
-    if (newAccountSerialNum === form.value.toAccountSerialNum) {
-      form.value.toAccountSerialNum = '';
-    }
-  },
-);
-
 function mapSubToCategory(sub: string): string {
   if (['Restaurant', 'Groceries', 'Snacks'].includes(sub)) return 'Food';
   if (['Bus', 'Taxi', 'Fuel', 'Train', 'Flight', 'Parking'].includes(sub)) return 'Transport';
@@ -262,6 +220,7 @@ function handleSubmit() {
     }
   }
 
+  const transactionDateTime = DateUtils.getLocalISODateTimeWithOffset();
   if (form.value.transactionType === TransactionTypeSchema.enum.Transfer) {
     const toAccount = props.accounts.find(acc => acc.serialNum === form.value.toAccountSerialNum);
     if (!toAccount) {
@@ -279,7 +238,6 @@ function handleSubmit() {
         return;
       }
     }
-
     const fromTransaction: TransactionWithAccount = {
       serialNum: props.transaction?.serialNum || '',
       transactionType: TransactionTypeSchema.enum.Expense,
@@ -295,8 +253,8 @@ function handleSubmit() {
       paymentMethod: form.value.paymentMethod || 'Cash',
       actualPayerAccount: form.value.actualPayerAccount || 'Bank',
       transactionStatus: form.value.transactionStatus || 'Completed',
-      createdAt: props.transaction?.createdAt || new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      createdAt: props.transaction?.createdAt || transactionDateTime,
+      updatedAt: transactionDateTime,
       account: fromAccount,
     };
 
@@ -315,8 +273,8 @@ function handleSubmit() {
       paymentMethod: form.value.paymentMethod || 'Cash',
       actualPayerAccount: form.value.actualPayerAccount || 'Bank',
       transactionStatus: form.value.transactionStatus || 'Completed',
-      createdAt: new Date().toISOString(),
-      updatedAt: null,
+      createdAt: transactionDateTime,
+      updatedAt: transactionDateTime,
       account: toAccount,
     };
 
@@ -326,8 +284,8 @@ function handleSubmit() {
     const transaction: TransactionWithAccount = {
       ...form.value,
       serialNum: props.transaction?.serialNum || '',
-      updatedAt: new Date().toISOString(),
-      createdAt: props.transaction?.createdAt || new Date().toISOString(),
+      updatedAt: transactionDateTime,
+      createdAt: props.transaction?.createdAt || transactionDateTime,
     };
 
     delete (transaction as any).toAccountSerialNum;
@@ -362,14 +320,14 @@ watch(
 );
 
 watch(
-  () => [form.value.accountSerialNum, form.value.transactionType],
-  ([newAccountSerialNum, newTransactionType]) => {
+  () => [form.value.accountSerialNum],
+  ([newAccountSerialNum]) => {
     const selectedAccount = props.accounts.find(acc => acc.serialNum === newAccountSerialNum);
 
     // Reset payment method to a default value
     form.value.paymentMethod = PaymentMethodSchema.enum.Cash;
 
-    if (newTransactionType === TransactionTypeSchema.enum.Expense) {
+    if (form.value.transactionType === TransactionTypeSchema.enum.Expense) {
       if (selectedAccount?.type === AccountTypeSchema.enum.Alipay) {
         form.value.paymentMethod = PaymentMethodSchema.enum.Alipay;
       }
@@ -439,7 +397,7 @@ watch(
         paymentMethod: 'Cash',
         actualPayerAccount: 'Bank',
         transactionStatus: 'Completed',
-        createdAt: new Date().toISOString(),
+        createdAt: DateUtils.getLocalISODateTimeWithOffset(),
         updatedAt: null,
         account: props.accounts[0] || ({} as Account),
       };
