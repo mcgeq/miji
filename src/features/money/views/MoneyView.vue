@@ -28,6 +28,7 @@ import TransactionList from '../components/TransactionList.vue';
 import TransactionModal from '../components/TransactionModal.vue';
 import { formatCurrency, getLocalCurrencyInfo } from '../utils/money';
 import type { CardData } from '../common/moneyCommon';
+import type { AppError } from '@/errors/appError';
 import type { TransactionType } from '@/schema/common';
 import type {
   Account,
@@ -297,8 +298,17 @@ async function deleteTransaction(transaction: TransactionWithAccount) {
       await Promise.all([loadAccounts(), syncIncomeExpense()]);
     }
     catch (err) {
+      const error = err as AppError;
       Lg.e('deleteTransaction', err);
-      toast.error('删除失败');
+      if (error?.getUserMessage && typeof error.getUserMessage === 'function') {
+        toast.error(error.message);
+      }
+      else if (err instanceof Error) {
+        toast.error(err.message || '删除失败');
+      }
+      else {
+        toast.error('删除失败');
+      }
     }
   }
 }

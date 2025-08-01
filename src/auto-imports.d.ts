@@ -7,6 +7,8 @@
 export {}
 declare global {
   const EffectScope: typeof import('vue')['EffectScope']
+  const MoneyStoreError: typeof import('./stores/moneyStore')['MoneyStoreError']
+  const MoneyStoreErrorCode: typeof import('./stores/moneyStore')['MoneyStoreErrorCode']
   const asyncComputed: typeof import('@vueuse/core')['asyncComputed']
   const authStore: typeof import('./stores/auth')['authStore']
   const autoResetRef: typeof import('@vueuse/core')['autoResetRef']
@@ -330,6 +332,9 @@ declare global {
   // @ts-ignore
   export type { LocaleState, SupportedLocale } from './stores/locales'
   import('./stores/locales')
+  // @ts-ignore
+  export type { MoneyStoreErrorCode, MoneyStoreError } from './stores/moneyStore'
+  import('./stores/moneyStore')
 }
 
 // for vue template auto import
@@ -338,6 +343,8 @@ declare module 'vue' {
   interface GlobalComponents {}
   interface ComponentCustomProperties {
     readonly EffectScope: UnwrapRef<typeof import('vue')['EffectScope']>
+    readonly MoneyStoreError: UnwrapRef<typeof import('./stores/moneyStore')['MoneyStoreError']>
+    readonly MoneyStoreErrorCode: UnwrapRef<typeof import('./stores/moneyStore')['MoneyStoreErrorCode']>
     readonly asyncComputed: UnwrapRef<typeof import('@vueuse/core')['asyncComputed']>
     readonly authStore: UnwrapRef<typeof import('./stores/auth')['authStore']>
     readonly autoResetRef: UnwrapRef<typeof import('@vueuse/core')['autoResetRef']>

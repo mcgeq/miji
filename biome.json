@@ -24,7 +24,7 @@
     "useEditorconfig": true,
     "formatWithErrors": true,
     "attributePosition": "multiline",
-    "bracketSameLine": false,
+    "bracketSameLine": true,
     "lineWidth": 80,
     "indentWidth": 2,
     "lineEnding": "lf"
@@ -88,7 +88,7 @@
       "quoteStyle": "single",
       "lineWidth": 80,
       "trailingCommas": "all",
-      "bracketSameLine": false,
+      "bracketSameLine": true,
       "semicolons": "always",
       "attributePosition": "auto",
       "arrowParentheses": "asNeeded",
