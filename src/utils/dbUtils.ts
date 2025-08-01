@@ -1,4 +1,5 @@
 import Database from '@tauri-apps/plugin-sql';
+import { LRUCache } from 'lru-cache';
 import { Lg } from './debugLog';
 
 /**
@@ -31,14 +32,20 @@ export class DatabaseManager {
   private static instance: DatabaseManager;
   private db: Database | null = null;
   private dbPromise: Promise<Database> | null = null;
-  private queryCache = new Map<string, QueryCache>();
+  private queryCache: LRUCache<string, QueryCache>;
 
   // config
   private readonly DB_PATH = 'sqlite:miji.db';
   private readonly CACHE_TTL = 5 * 60 * 1000;
   private readonly MAX_CACHE_SIZE = 100;
 
-  private constructor() { }
+  private constructor() {
+    this.queryCache = new LRUCache({
+      max: this.MAX_CACHE_SIZE,
+      ttl: this.CACHE_TTL,
+      ttlAutopurge: true,
+    });
+  }
 
   // Get Singleton Instance
   public static getInstance(): DatabaseManager {
@@ -132,7 +139,7 @@ export class DatabaseManager {
     const cached = this.queryCache.get(cacheKey);
 
     // check cache
-    if (cached && this.isCacheValid(cached)) {
+    if (cached) {
       Lg.d('DatabaseManager', 'Cache hit query: ', sql);
       return cached.data;
     }
@@ -243,22 +250,9 @@ export class DatabaseManager {
   }
 
   /**
-   * Check cache validity
-   */
-  private isCacheValid(cache: QueryCache): boolean {
-    return Date.now() - cache.timestamp < this.CACHE_TTL;
-  }
-
-  /**
    * Set Cache
    */
   private setCache(key: string, data: any): void {
-    if (this.queryCache.size >= this.MAX_CACHE_SIZE) {
-      const firstKey = this.queryCache.keys().next().value;
-      if (firstKey) {
-        this.queryCache.delete(firstKey);
-      }
-    }
     this.queryCache.set(key, {
       data,
       timestamp: Date.now(),
@@ -277,17 +271,8 @@ export class DatabaseManager {
    * Clean expired cache entries
    */
   public cleanExpiredCache(): void {
-    const now = Date.now();
-    let cleanedCount = 0;
-
-    for (const [key, cache] of this.queryCache.entries()) {
-      if (now - cache.timestamp >= this.CACHE_TTL) {
-        this.queryCache.delete(key);
-        cleanedCount++;
-      }
-    }
-
-    if (cleanedCount > 0) {
+    const cleanedCount = this.queryCache.purgeStale();
+    if (cleanedCount) {
       Lg.d('DatabaseManager', `Cleaned ${cleanedCount} expired cache entries`);
     }
   }

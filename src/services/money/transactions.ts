@@ -74,7 +74,6 @@ export class TransactionMapper extends BaseMapper<Transaction> {
           updatedAt,
         ],
       );
-
       Lg.d('MoneyDb', 'Transaction created:', { serialNum });
     }
     catch (error) {
