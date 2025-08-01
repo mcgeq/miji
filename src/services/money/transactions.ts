@@ -4,8 +4,8 @@ import { DateUtils } from '@/utils/date';
 import { db } from '@/utils/dbUtils';
 import { Lg } from '@/utils/debugLog';
 import { BaseMapper, MoneyDbError } from './baseManager';
-import type { DateRange, PagedResult } from './baseManager';
-import type { IncomeExpense, SortOptions } from '@/schema/common';
+import type { PagedResult } from './baseManager';
+import type { DateRange, IncomeExpense, SortOptions } from '@/schema/common';
 import type { Transaction, TransactionWithAccount } from '@/schema/money';
 
 export interface TransactionFilters {
@@ -75,8 +75,7 @@ export class TransactionMapper extends BaseMapper<Transaction> {
         ],
       );
       Lg.d('MoneyDb', 'Transaction created:', { serialNum });
-    }
-    catch (error) {
+    } catch (error) {
       this.handleError('create', error);
     }
   }
@@ -98,11 +97,9 @@ export class TransactionMapper extends BaseMapper<Transaction> {
       );
 
       if (result.length === 0) return null;
-      const row = result[0];
-      const transaction = this.transformTransactionRow(row);
+      const transaction = this.transformTransactionRow(result[0]);
       return transaction;
-    }
-    catch (error) {
+    } catch (error) {
       this.handleError('getById', error);
     }
   }
@@ -126,12 +123,10 @@ export class TransactionMapper extends BaseMapper<Transaction> {
       );
 
       if (result.length === 0) return null;
-      const row = result[0];
 
-      const transaction = this.transformTransactionRow(row);
+      const transaction = this.transformTransactionRow(result[0]);
       return transaction;
-    }
-    catch (error) {
+    } catch (error) {
       this.handleError('getTransferRelatedTransaction', error);
     }
   }
@@ -147,18 +142,19 @@ export class TransactionMapper extends BaseMapper<Transaction> {
                a.description as account_description,
                a.type as account_type,
                a.balance as account_balance,
-                c.locale as account_currency_locale,
-                c.code as account_currency_code,
-                c.symbol as account_currency_symbol,
-                c.created_at as account_currency_created_at,
-                c.updated_at as account_currency_updated_at,
+               a.initial_balance as account_initial_balance,
                a.is_shared as account_is_shared,
                a.owner_id as account_owner_id,
                a.is_active as account_is_active,
                a.color as account_color,
                a.created_at as account_created_at,
-               a.updated_at as account_updated_at
-         FROM transactions t
+               a.updated_at as account_updated_at,
+               c.locale as account_currency_locale,
+               c.code as account_currency_code,
+               c.symbol as account_currency_symbol,
+               c.created_at as account_currency_created_at,
+               c.updated_at as account_currency_updated_at
+         FROM ${this.tableName} t
          JOIN account a ON t.account_serial_num = a.serial_num
          JOIN currency c ON a.currency = c.code
          WHERE t.serial_num = ?`,
@@ -168,36 +164,8 @@ export class TransactionMapper extends BaseMapper<Transaction> {
 
       if (result.length === 0) return null;
 
-      const row = result[0];
-      const ccy = {
-        locale: row.account_currency_locale,
-        code: row.account_currency_code,
-        symbol: row.account_currency_symbol,
-        created_at: row.account_currency_created_at,
-        updated_at: row.account_currency_updated_at,
-      };
-      return toCamelCase<TransactionWithAccount>({
-        ...row,
-        tags: JSON.parse(row.tags || '[]'),
-        split_members: JSON.parse(row.split_members || '[]'),
-        currency: ccy,
-        account: {
-          serial_num: row.account_serial_num_detail,
-          name: row.account_name,
-          description: row.account_description,
-          type: row.account_type,
-          balance: row.account_balance,
-          currency: ccy,
-          is_shared: row.account_is_shared,
-          owner_id: row.account_owner_id,
-          is_active: row.account_is_active,
-          color: row.account_color,
-          created_at: row.account_created_at,
-          updated_at: row.account_updated_at,
-        },
-      });
-    }
-    catch (error) {
+      return this.transformTransactionWithAccountRow(result[0]);
+    } catch (error) {
       this.handleError('getTransactionWithAccount', error);
     }
   }
@@ -208,41 +176,41 @@ export class TransactionMapper extends BaseMapper<Transaction> {
     try {
       const result = await db.select<any[]>(
         `SELECT t.*, 
-             a.serial_num as account_serial_num_detail,
-             a.name as account_name,
-             a.description as account_description,
-             a.type as account_type,
-             a.balance as account_balance,
-             a.currency as account_currency,
-             a.is_shared as account_is_shared,
-             a.owner_id as account_owner_id,
-             a.is_active as account_is_active,
-             a.color as account_color,
-             a.created_at as account_created_at,
-             a.updated_at as account_updated_at,
-             c.locale as currency_locale,
-             c.code as currency_code,
-             c.symbol as currency_symbol,
-             c.created_at as currency_created_at,
-             c.updated_at as currency_updated_at,
-             ca.locale as account_currency_locale,
-             ca.code as account_currency_code,
-             ca.symbol as account_currency_symbol,
-             ca.created_at as account_currency_created_at,
-             ca.updated_at as account_currency_updated_at
-         FROM ${this.tableName} t
-         JOIN account a ON t.account_serial_num = a.serial_num
-         JOIN currency c ON t.currency = c.code
-         JOIN currency ca ON a.currency = ca.code
-         WHERE t.serial_num = ?`,
+              a.serial_num as account_serial_num_detail,
+              a.name as account_name,
+              a.description as account_description,
+              a.type as account_type,
+              a.balance as account_balance,
+              a.initial_balance as account_initial_balance,
+              a.currency as account_currency,
+              a.is_shared as account_is_shared,
+              a.owner_id as account_owner_id,
+              a.is_active as account_is_active,
+              a.color as account_color,
+              a.created_at as account_created_at,
+              a.updated_at as account_updated_at,
+              c.locale as currency_locale,
+              c.code as currency_code,
+              c.symbol as currency_symbol,
+              c.created_at as currency_created_at,
+              c.updated_at as currency_updated_at,
+              ca.locale as account_currency_locale,
+              ca.code as account_currency_code,
+              ca.symbol as account_currency_symbol,
+              ca.created_at as account_currency_created_at,
+              ca.updated_at as account_currency_updated_at
+          FROM ${this.tableName} t
+          JOIN account a ON t.account_serial_num = a.serial_num
+          JOIN currency c ON t.currency = c.code
+          JOIN currency ca ON a.currency = ca.code
+          WHERE t.serial_num = ?`,
         [serialNum],
         true,
       );
 
       if (result.length === 0) return null;
       return this.transformTransactionWithAccountRow(result[0]);
-    }
-    catch (error) {
+    } catch (error) {
       this.handleError('getTransferRelatedTransactionWithAccount', error);
     }
   }
@@ -267,8 +235,7 @@ export class TransactionMapper extends BaseMapper<Transaction> {
         return this.transformTransactionRow(a);
       });
       return act;
-    }
-    catch (error) {
+    } catch (error) {
       this.handleError('list', error);
     }
   }
@@ -320,8 +287,7 @@ export class TransactionMapper extends BaseMapper<Transaction> {
       );
 
       Lg.d('MoneyDb', 'Transaction updated:', { serialNum });
-    }
-    catch (error) {
+    } catch (error) {
       this.handleError('update', error);
     }
   }
@@ -332,8 +298,7 @@ export class TransactionMapper extends BaseMapper<Transaction> {
         serialNum,
       ]);
       Lg.d('MoneyDb', 'Transaction deleted:', { serialNum });
-    }
-    catch (error) {
+    } catch (error) {
       this.handleError('deleteById', error);
     }
   }
@@ -405,33 +370,34 @@ export class TransactionMapper extends BaseMapper<Transaction> {
   ): Promise<PagedResult<TransactionWithAccount>> {
     const baseQuery = `
       SELECT t.*, 
-             a.serial_num as account_serial_num_detail,
-             a.name as account_name,
-             a.description as account_description,
-             a.type as account_type,
-             a.balance as account_balance,
-             a.currency as account_currency,
-             a.is_shared as account_is_shared,
-             a.owner_id as account_owner_id,
-             a.is_active as account_is_active,
-             a.color as account_color,
-             a.created_at as account_created_at,
-             a.updated_at as account_updated_at,
-             c.locale as currency_locale,
-             c.code as currency_code,
-             c.symbol as currency_symbol,
-             c.created_at as currency_created_at,
-             c.updated_at as currency_updated_at,
-             ca.locale as account_currency_locale,
-             ca.code as account_currency_code,
-             ca.symbol as account_currency_symbol,
-             ca.created_at as account_currency_created_at,
-             ca.updated_at as account_currency_updated_at
-      FROM ${this.tableName} t
-      JOIN account a ON t.account_serial_num = a.serial_num
-      JOIN currency c ON t.currency = c.code
-      JOIN currency ca ON a.currency = ca.code
-    `;
+              a.serial_num as account_serial_num_detail,
+              a.name as account_name,
+              a.description as account_description,
+              a.type as account_type,
+              a.balance as account_balance,
+              a.initial_balance as account_initial_balance,
+              a.currency as account_currency,
+              a.is_shared as account_is_shared,
+              a.owner_id as account_owner_id,
+              a.is_active as account_is_active,
+              a.color as account_color,
+              a.created_at as account_created_at,
+              a.updated_at as account_updated_at,
+              c.locale as currency_locale,
+              c.code as currency_code,
+              c.symbol as currency_symbol,
+              c.created_at as currency_created_at,
+              c.updated_at as currency_updated_at,
+              ca.locale as account_currency_locale,
+              ca.code as account_currency_code,
+              ca.symbol as account_currency_symbol,
+              ca.created_at as account_currency_created_at,
+              ca.updated_at as account_currency_updated_at
+        FROM ${this.tableName} t
+        JOIN account a ON t.account_serial_num = a.serial_num
+        JOIN currency c ON t.currency = c.code
+        JOIN currency ca ON a.currency = ca.code
+      `;
 
     return await this.queryPaged(
       baseQuery,
@@ -508,10 +474,8 @@ export class TransactionMapper extends BaseMapper<Transaction> {
           expense: 0,
         },
       };
-    }
-    catch (error) {
-      console.error('查询失败:', error);
-      throw error;
+    } catch (error) {
+      this.handleError('queryIncomeAndExpense', error);
     }
   }
 
@@ -566,6 +530,7 @@ export class TransactionMapper extends BaseMapper<Transaction> {
         description: row.account_description,
         type: row.account_type,
         balance: row.account_balance,
+        initial_balance: row.account_initial_balance,
         currency: {
           locale: row.account_currency_locale,
           code: row.account_currency_code,

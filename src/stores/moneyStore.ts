@@ -120,11 +120,9 @@ export const useMoneyStore = defineStore('money', () => {
           originalError: err.originalError,
         },
       );
-    }
-    else if (err instanceof MoneyStoreError) {
+    } else if (err instanceof MoneyStoreError) {
       appError = err;
-    }
-    else {
+    } else {
       appError = AppError.wrap(
         'money',
         err,
@@ -142,8 +140,7 @@ export const useMoneyStore = defineStore('money', () => {
     try {
       const accountList = await MoneyDb.listAccounts();
       accounts.value = accountList;
-    }
-    catch (err) {
+    } catch (err) {
       throw handleMoneyStoreError(
         err,
         '获取账户列表失败',
@@ -157,8 +154,7 @@ export const useMoneyStore = defineStore('money', () => {
     try {
       const { rows } = await MoneyDb.listTransactionsWithAccountPaged(params);
       transactions.value = rows;
-    }
-    catch (err) {
+    } catch (err) {
       handleMoneyStoreError(
         err,
         '获取交易列表失败',
@@ -172,8 +168,7 @@ export const useMoneyStore = defineStore('money', () => {
     try {
       const budgetList = await MoneyDb.listBudgets();
       budgets.value = budgetList;
-    }
-    catch (err) {
+    } catch (err) {
       handleMoneyStoreError(err, '获取预算列表失败', 'listBudgets', 'Budget');
     }
   };
@@ -182,8 +177,7 @@ export const useMoneyStore = defineStore('money', () => {
     try {
       const reminderList = await MoneyDb.listBilReminders();
       reminders.value = reminderList;
-    }
-    catch (err) {
+    } catch (err) {
       handleMoneyStoreError(
         err,
         '获取提醒列表失败',
@@ -202,16 +196,14 @@ export const useMoneyStore = defineStore('money', () => {
       const accountList = await MoneyDb.listAccounts();
       accounts.value = accountList;
       return accountList;
-    }
-    catch (err) {
+    } catch (err) {
       throw handleMoneyStoreError(
         err,
         '获取账户列表失败',
         'listAccounts',
         'Account',
       );
-    }
-    finally {
+    } finally {
       loading.value = false;
     }
   };
@@ -232,16 +224,14 @@ export const useMoneyStore = defineStore('money', () => {
       await MoneyDb.createAccount(newAccount);
       await updateLocalAccounts();
       return newAccount;
-    }
-    catch (err) {
+    } catch (err) {
       throw handleMoneyStoreError(
         err,
         '创建账户失败',
         'createAccount',
         'Account',
       );
-    }
-    finally {
+    } finally {
       loading.value = false;
     }
   };
@@ -254,16 +244,14 @@ export const useMoneyStore = defineStore('money', () => {
       await MoneyDb.updateAccount(account);
       await updateLocalAccounts();
       return account;
-    }
-    catch (err) {
+    } catch (err) {
       throw handleMoneyStoreError(
         err,
         '更新账户失败',
         'updateAccount',
         'Account',
       );
-    }
-    finally {
+    } finally {
       loading.value = false;
     }
   };
@@ -275,16 +263,14 @@ export const useMoneyStore = defineStore('money', () => {
     try {
       await MoneyDb.deleteAccount(serialNum);
       await updateLocalAccounts();
-    }
-    catch (err) {
+    } catch (err) {
       throw handleMoneyStoreError(
         err,
         '删除账户失败',
         'deleteAccount',
         'Account',
       );
-    }
-    finally {
+    } finally {
       loading.value = false;
     }
   };
@@ -311,16 +297,14 @@ export const useMoneyStore = defineStore('money', () => {
 
       account.isActive = newIsActive;
       account.updatedAt = DateUtils.getLocalISODateTimeWithOffset();
-    }
-    catch (err) {
+    } catch (err) {
       throw handleMoneyStoreError(
         err,
         '切换账户状态失败',
         'updateAccountActive',
         'Account',
       );
-    }
-    finally {
+    } finally {
       loading.value = false;
     }
   };
@@ -374,16 +358,14 @@ export const useMoneyStore = defineStore('money', () => {
         page: result.currentPage,
         pageSize: result.pageSize,
       };
-    }
-    catch (err) {
+    } catch (err) {
       throw handleMoneyStoreError(
         err,
         '获取交易列表失败',
         'listTransactions',
         'Transaction',
       );
-    }
-    finally {
+    } finally {
       loading.value = false;
     }
   };
@@ -409,16 +391,14 @@ export const useMoneyStore = defineStore('money', () => {
       );
       await updateLocalTransactions();
       return newTransaction;
-    }
-    catch (err) {
+    } catch (err) {
       throw handleMoneyStoreError(
         err,
         '创建交易失败',
         'createTransaction',
         'Transaction',
       );
-    }
-    finally {
+    } finally {
       loading.value = false;
     }
   };
@@ -459,16 +439,14 @@ export const useMoneyStore = defineStore('money', () => {
 
       await updateLocalTransactions();
       return transaction;
-    }
-    catch (err) {
+    } catch (err) {
       throw handleMoneyStoreError(
         err,
         '更新交易失败',
         'updateTransaction',
         'Transaction',
       );
-    }
-    finally {
+    } finally {
       loading.value = false;
     }
   };
@@ -571,16 +549,14 @@ export const useMoneyStore = defineStore('money', () => {
       });
 
       await updateLocalTransactions();
-    }
-    catch (err) {
+    } catch (err) {
       throw handleMoneyStoreError(
         err,
         '更新转账交易失败',
         'updateTransferTransaction',
         'Transaction',
       );
-    }
-    finally {
+    } finally {
       loading.value = false;
     }
   };
@@ -601,8 +577,7 @@ export const useMoneyStore = defineStore('money', () => {
         throw err;
       }
       return transaction;
-    }
-    catch (err) {
+    } catch (err) {
       throw handleMoneyStoreError(
         err,
         errorMsg,
@@ -631,8 +606,7 @@ export const useMoneyStore = defineStore('money', () => {
         throw err;
       }
       return trans;
-    }
-    catch (err) {
+    } catch (err) {
       throw handleMoneyStoreError(
         err,
         errorMsg,
@@ -643,20 +617,23 @@ export const useMoneyStore = defineStore('money', () => {
   };
 
   const revertAccountBalance = async (transaction: TransactionWithAccount) => {
+    console.log('revertAccountBalance start....');
     const { accountSerialNum, transactionType, amount } = transaction;
     const revertAmount = -amount;
+    console.log('revertAccountBalance transaction ', transaction);
 
     await updateAccountBalance(accountSerialNum, transactionType, revertAmount);
+    console.log('revertAccountBalance start....');
   };
 
   const revertTransactionAndDelete = async (
     transaction: TransactionWithAccount,
   ) => {
+    console.log('revertTransactionAndDelete start....');
     await revertAccountBalance(transaction);
     try {
       await MoneyDb.deleteTransaction(transaction.serialNum);
-    }
-    catch (err) {
+    } catch (err) {
       throw handleMoneyStoreError(
         err,
         '删除交易失败',
@@ -664,6 +641,7 @@ export const useMoneyStore = defineStore('money', () => {
         'Transaction',
       );
     }
+    console.log('revertTransactionAndDelete end....');
   };
 
   const doDeleteTransferTransaction = async (
@@ -700,16 +678,14 @@ export const useMoneyStore = defineStore('money', () => {
         await doDeleteTransferTransaction(fromSerialNum, toSerialNum);
       });
       await updateLocalTransactions();
-    }
-    catch (err) {
+    } catch (err) {
       throw handleMoneyStoreError(
         err,
         '删除转账交易失败',
         'deleteTransferTransaction',
         'Transaction',
       );
-    }
-    finally {
+    } finally {
       loading.value = false;
     }
   };
@@ -724,16 +700,14 @@ export const useMoneyStore = defineStore('money', () => {
       const relatedTransaction =
         await MoneyDb.getTransferRelatedTransactionWithAccount(serialNum);
       return relatedTransaction;
-    }
-    catch (err) {
+    } catch (err) {
       throw handleMoneyStoreError(
         err,
         '获取关联转账交易失败',
         'getTransferRelatedTransaction',
         'Transaction',
       );
-    }
-    finally {
+    } finally {
       loading.value = false;
     }
   };
@@ -762,16 +736,14 @@ export const useMoneyStore = defineStore('money', () => {
 
       await MoneyDb.deleteTransaction(serialNum);
       await updateLocalTransactions();
-    }
-    catch (err) {
+    } catch (err) {
       throw handleMoneyStoreError(
         err,
         '删除交易失败',
         'deleteTransaction',
         'Transaction',
       );
-    }
-    finally {
+    } finally {
       loading.value = false;
     }
   };
@@ -779,8 +751,7 @@ export const useMoneyStore = defineStore('money', () => {
   const monthlyIncomeAndExpense = async (): Promise<IncomeExpense> => {
     try {
       return await MoneyDb.monthlyIncomeAndExpense();
-    }
-    catch (err) {
+    } catch (err) {
       throw handleMoneyStoreError(
         err,
         '获取月度收支失败',
@@ -799,16 +770,14 @@ export const useMoneyStore = defineStore('money', () => {
       const budgetList = await MoneyDb.listBudgets();
       budgets.value = budgetList;
       return budgetList;
-    }
-    catch (err) {
+    } catch (err) {
       throw handleMoneyStoreError(
         err,
         '获取预算列表失败',
         'listBudgets',
         'Budget',
       );
-    }
-    finally {
+    } finally {
       loading.value = false;
     }
   };
@@ -829,16 +798,14 @@ export const useMoneyStore = defineStore('money', () => {
       await MoneyDb.createBudget(newBudget);
       await updateLocalBudgets();
       return newBudget;
-    }
-    catch (err) {
+    } catch (err) {
       throw handleMoneyStoreError(
         err,
         '创建预算失败',
         'createBudget',
         'Budget',
       );
-    }
-    finally {
+    } finally {
       loading.value = false;
     }
   };
@@ -851,16 +818,14 @@ export const useMoneyStore = defineStore('money', () => {
       await MoneyDb.updateBudget(budget);
       await updateLocalBudgets();
       return budget;
-    }
-    catch (err) {
+    } catch (err) {
       throw handleMoneyStoreError(
         err,
         '更新预算失败',
         'updateBudget',
         'Budget',
       );
-    }
-    finally {
+    } finally {
       loading.value = false;
     }
   };
@@ -872,16 +837,14 @@ export const useMoneyStore = defineStore('money', () => {
     try {
       await MoneyDb.deleteBudget(serialNum);
       await updateLocalBudgets();
-    }
-    catch (err) {
+    } catch (err) {
       throw handleMoneyStoreError(
         err,
         '删除预算失败',
         'deleteBudget',
         'Budget',
       );
-    }
-    finally {
+    } finally {
       loading.value = false;
     }
   };
@@ -905,16 +868,14 @@ export const useMoneyStore = defineStore('money', () => {
       budget.updatedAt = new Date().toISOString();
       await MoneyDb.updateBudget(budget);
       await updateLocalBudgets();
-    }
-    catch (err) {
+    } catch (err) {
       throw handleMoneyStoreError(
         err,
         '切换预算状态失败',
         'updateBudget',
         'Budget',
       );
-    }
-    finally {
+    } finally {
       loading.value = false;
     }
   };
@@ -928,16 +889,14 @@ export const useMoneyStore = defineStore('money', () => {
       const reminderList = await MoneyDb.listBilReminders();
       reminders.value = reminderList;
       return reminderList;
-    }
-    catch (err) {
+    } catch (err) {
       throw handleMoneyStoreError(
         err,
         '获取提醒列表失败',
         'listBilReminders',
         'BilReminder',
       );
-    }
-    finally {
+    } finally {
       loading.value = false;
     }
   };
@@ -958,16 +917,14 @@ export const useMoneyStore = defineStore('money', () => {
       await MoneyDb.createBilReminder(newReminder);
       await updateLocalReminders();
       return newReminder;
-    }
-    catch (err) {
+    } catch (err) {
       throw handleMoneyStoreError(
         err,
         '创建提醒失败',
         'createBilReminder',
         'BilReminder',
       );
-    }
-    finally {
+    } finally {
       loading.value = false;
     }
   };
@@ -982,16 +939,14 @@ export const useMoneyStore = defineStore('money', () => {
       await MoneyDb.updateBilReminder(reminder);
       await updateLocalReminders();
       return reminder;
-    }
-    catch (err) {
+    } catch (err) {
       throw handleMoneyStoreError(
         err,
         '更新提醒失败',
         'updateBilReminder',
         'BilReminder',
       );
-    }
-    finally {
+    } finally {
       loading.value = false;
     }
   };
@@ -1003,16 +958,14 @@ export const useMoneyStore = defineStore('money', () => {
     try {
       await MoneyDb.deleteBilReminder(serialNum);
       await updateLocalReminders();
-    }
-    catch (err) {
+    } catch (err) {
       throw handleMoneyStoreError(
         err,
         '删除提醒失败',
         'deleteBilReminder',
         'BilReminder',
       );
-    }
-    finally {
+    } finally {
       loading.value = false;
     }
   };
@@ -1036,16 +989,14 @@ export const useMoneyStore = defineStore('money', () => {
       reminder.updatedAt = new Date().toISOString();
       await MoneyDb.updateBilReminder(reminder);
       await updateLocalReminders();
-    }
-    catch (err) {
+    } catch (err) {
       throw handleMoneyStoreError(
         err,
         '标记支付状态失败',
         'updateBilReminder',
         'BilReminder',
       );
-    }
-    finally {
+    } finally {
       loading.value = false;
     }
   };
@@ -1056,7 +1007,8 @@ export const useMoneyStore = defineStore('money', () => {
     transactionType: TransactionType,
     amount: number,
   ): Promise<void> {
-    const account = accounts.value.find(a => a.serialNum === accountSerialNum);
+    console.log('updateAccountBalance start....');
+    const account = await MoneyDb.getAccount(accountSerialNum);
     if (!account) {
       const err = new MoneyStoreError(
         MoneyStoreErrorCode.ACCOUNT_NOT_FOUND,
@@ -1066,6 +1018,8 @@ export const useMoneyStore = defineStore('money', () => {
       err.log();
       throw err;
     }
+
+    console.log('updateAccountBalance account', account);
 
     const currentBalance = Number.parseFloat(account.balance);
     const initialBalance = Number.parseFloat(account.initialBalance);
@@ -1118,8 +1072,7 @@ export const useMoneyStore = defineStore('money', () => {
     account.updatedAt = new Date().toISOString();
     try {
       await MoneyDb.updateAccount(account);
-    }
-    catch (err) {
+    } catch (err) {
       handleMoneyStoreError(
         err,
         '更新账户余额失败',
@@ -1127,6 +1080,7 @@ export const useMoneyStore = defineStore('money', () => {
         'Account',
       );
     }
+    console.log('updateAccountBalance start....');
   }
 
   const clearError = () => {

@@ -4,8 +4,13 @@ import { DateUtils } from '@/utils/date';
 import { db } from '@/utils/dbUtils';
 import { Lg } from '@/utils/debugLog';
 import { BaseMapper, MoneyDbError } from './baseManager';
-import type { DateRange, PagedResult } from './baseManager';
-import type { Currency, SortOptions } from '@/schema/common';
+import type { PagedResult } from './baseManager';
+import type {
+  AccountBalanceSummary,
+  Currency,
+  DateRange,
+  SortOptions,
+} from '@/schema/common';
 import type { Account } from '@/schema/money';
 
 // 查询过滤器接口
@@ -67,8 +72,7 @@ export class AccountMapper extends BaseMapper<Account> {
         ],
       );
       Lg.d('MoneyDb', 'Account created:', { account });
-    }
-    catch (error) {
+    } catch (error) {
       this.handleError('create', error);
     }
   }
@@ -76,7 +80,15 @@ export class AccountMapper extends BaseMapper<Account> {
   async getById(serialNum: string): Promise<Account | null> {
     try {
       const result = await db.select<any[]>(
-        `SELECT * FROM ${this.tableName} WHERE serial_num = ?`,
+        `SELECT t.*,
+              c.locale as currency_locale,
+              c.code as currency_code,
+              c.symbol as currency_symbol,
+              c.created_at as currency_created_at,
+              c.updated_at as currency_updated_at
+          FROM ${this.tableName} t
+          JOIN currency c ON t.currency = c.code
+          WHERE serial_num = ?`,
         [serialNum],
         true,
       );
@@ -84,10 +96,8 @@ export class AccountMapper extends BaseMapper<Account> {
       if (result.length === 0) return null;
 
       const account = this.transformAccountRow(result[0]);
-      account.currency = await this.getCurrencyByCode(account.currency);
-      return toCamelCase<Account>(account) as Account;
-    }
-    catch (error) {
+      return account;
+    } catch (error) {
       this.handleError('getById', error);
     }
   }
@@ -118,8 +128,7 @@ export class AccountMapper extends BaseMapper<Account> {
         };
       }) as Account[];
       return toCamelCase<Account[]>(act);
-    }
-    catch (error) {
+    } catch (error) {
       this.handleError('list', error);
     }
   }
@@ -159,8 +168,7 @@ export class AccountMapper extends BaseMapper<Account> {
       );
 
       Lg.d('MoneyDb', 'Account updated:', { serialNum });
-    }
-    catch (error) {
+    } catch (error) {
       this.handleError('update', error);
     }
   }
@@ -179,8 +187,7 @@ export class AccountMapper extends BaseMapper<Account> {
         ],
       );
       Lg.d('MoneyDb', 'Account isActive updated:', { serialNum, isActive });
-    }
-    catch (error) {
+    } catch (error) {
       this.handleError('updateAccountActive', error);
     }
   }
@@ -191,8 +198,7 @@ export class AccountMapper extends BaseMapper<Account> {
         serialNum,
       ]);
       Lg.d('MoneyDb', 'Account deleted:', { serialNum });
-    }
-    catch (error) {
+    } catch (error) {
       this.handleError('deleteById', error);
     }
   }
@@ -217,9 +223,17 @@ export class AccountMapper extends BaseMapper<Account> {
     pageSize = 10,
     sortOptions: SortOptions = {},
   ): Promise<PagedResult<Account>> {
-    const baseQuery = `SELECT * FROM ${this.tableName}`;
+    const baseQuery = `SELECT t.*,
+              c.locale as currency_locale,
+              c.code as currency_code,
+              c.symbol as currency_symbol,
+              c.created_at as currency_created_at,
+              c.updated_at as currency_updated_at
+          FROM ${this.tableName} t
+          JOIN currency c ON t.currency = c.code
+          `;
 
-    const result = await this.queryPaged(
+    const result = await this.queryPaged<Account>(
       baseQuery,
       filters,
       page,
@@ -229,18 +243,32 @@ export class AccountMapper extends BaseMapper<Account> {
       row => this.transformAccountRow(row),
     );
 
-    // 批量获取货币信息
-    const currencyCodes = [...new Set(result.rows.map((a: any) => a.currency))];
-    if (currencyCodes.length > 0) {
-      const currencyMap = await this.getCurrencies(result.rows);
+    return result;
+  }
 
-      result.rows = result.rows.map((a: any) => ({
-        ...a,
-        currency: currencyMap[a.currency] ?? CURRENCY_CNY,
-      }));
+  async totalAssets(): Promise<AccountBalanceSummary> {
+    const query = `SELECT
+          SUM(CASE WHEN type IN ('Savings', 'Bank') THEN balance ELSE 0 END) AS bankSavingsBalance,
+          SUM(CASE WHEN type = 'Cash' THEN balance ELSE 0 END) AS cashBalance,
+          SUM(CASE WHEN type = 'CreditCard' THEN ABS(balance) ELSE 0 END) AS creditCardBalance,
+          SUM(CASE WHEN type = 'Investment' THEN balance ELSE 0 END) AS investmentBalance,
+          SUM(CASE WHEN type = 'Alipay' THEN balance ELSE 0 END) AS alipayBalance,
+          SUM(CASE WHEN type = 'WeChat' THEN balance ELSE 0 END) AS weChatBalance,
+          SUM(CASE WHEN type = 'CloudQuickPass' THEN balance ELSE 0 END) AS cloudQuickPassBalance,
+          SUM(CASE WHEN type = 'Other' THEN balance ELSE 0 END) AS otherBalance,
+          SUM(balance) AS totalBalance,
+          SUM(CASE WHEN type = 'CreditCard' THEN -balance ELSE balance END) AS adjustedNetWorth,
+          SUM(CASE WHEN type NOT IN ('CreditCard') THEN balance ELSE 0 END) AS totalAssets
+        FROM ${this.tableName}
+        WHERE is_active = 1;
+      `;
+
+    try {
+      const result = await db.select(query, [], false);
+      return result[0];
+    } catch (err) {
+      this.handleError('totalAssets', err);
     }
-
-    return toCamelCase<PagedResult<Account>>(result);
   }
 
   private transformAccountRow(row: any): any {
@@ -249,15 +277,26 @@ export class AccountMapper extends BaseMapper<Account> {
       const f = this.toSnakeCase(field);
       row[f] = this.fromDbBoolean(row[f]);
     });
-    return row;
-  }
-
-  private async getCurrencyByCode(code: string): Promise<Currency> {
-    const result = await db.select<Currency[]>(
-      'SELECT * FROM currency WHERE code = ?',
-      [code],
-      true,
-    );
-    return result.length > 0 ? result[0] : CURRENCY_CNY;
+    return toCamelCase<Account>({
+      serial_num: row.serial_num,
+      name: row.name,
+      description: row.description,
+      type: row.type,
+      balance: row.balance,
+      initial_balance: row.initial_balance,
+      currency: {
+        locale: row.currency_locale,
+        code: row.currency_code,
+        symbol: row.currency_symbol,
+        created_at: row.currency_created_at,
+        updated_at: row.currency_updated_at,
+      },
+      is_shared: row.is_shared,
+      owner_id: row.owner_id,
+      is_active: row.is_active,
+      color: row.color,
+      created_at: row.created_at,
+      updated_at: row.updated_at,
+    });
   }
 }

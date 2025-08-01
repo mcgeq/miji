@@ -1,8 +1,8 @@
 import { db } from '@/utils/dbUtils';
 import { Lg } from '@/utils/debugLog';
 import { BaseMapper } from './baseManager';
-import type { DateRange, PagedResult } from './baseManager';
-import type { SortOptions } from '@/schema/common';
+import type { PagedResult } from './baseManager';
+import type { DateRange, SortOptions } from '@/schema/common';
 import type { BilReminder } from '@/schema/money';
 
 export interface BilReminderFilters {
@@ -75,8 +75,7 @@ export class BilReminderMapper extends BaseMapper<BilReminder> {
       );
 
       Lg.d('MoneyDb', 'BilReminder created:', { serialNum });
-    }
-    catch (error) {
+    } catch (error) {
       this.handleError('create', error);
     }
   }
@@ -97,8 +96,7 @@ export class BilReminderMapper extends BaseMapper<BilReminder> {
         repeat_period: JSON.parse(reminder.repeat_period || '{}'),
         currency: JSON.parse(reminder.currency),
       } as BilReminder;
-    }
-    catch (error) {
+    } catch (error) {
       this.handleError('getById', error);
     }
   }
@@ -115,8 +113,7 @@ export class BilReminderMapper extends BaseMapper<BilReminder> {
         repeat_period: JSON.parse(r.repeat_period || '{}'),
         currency: JSON.parse(r.currency),
       })) as BilReminder[];
-    }
-    catch (error) {
+    } catch (error) {
       this.handleError('list', error);
     }
   }
@@ -172,8 +169,7 @@ export class BilReminderMapper extends BaseMapper<BilReminder> {
       );
 
       Lg.d('MoneyDb', 'BilReminder updated:', { serialNum });
-    }
-    catch (error) {
+    } catch (error) {
       this.handleError('update', error);
     }
   }
@@ -184,8 +180,7 @@ export class BilReminderMapper extends BaseMapper<BilReminder> {
         serialNum,
       ]);
       Lg.d('MoneyDb', 'BilReminder deleted:', { serialNum });
-    }
-    catch (error) {
+    } catch (error) {
       this.handleError('deleteById', error);
     }
   }

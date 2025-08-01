@@ -77,12 +77,12 @@ const accounts = ref<Account[]>([]);
 const budgets = ref<Budget[]>([]);
 const reminders = ref<BilReminder[]>([]);
 
-const totalAssets = computed(() => {
-  return accounts.value
-    .filter(account => account.isActive)
-    .reduce((sum, account) => sum + Number.parseFloat(account.balance), 0);
-});
-
+// const totalAssets = computed(() => {
+//   return accounts.value
+//     .filter(account => account.isActive)
+//     .reduce((sum, account) => sum + Number.parseFloat(account.balance), 0);
+// });
+const totalAssets = ref(0);
 const yearlyIncome = ref(0);
 const yearlyExpense = ref(0);
 const prevYearlyIncome = ref(0);
@@ -199,8 +199,7 @@ watchEffect(() => {
     document.body.style.position = 'fixed';
     document.body.style.top = `-${scrollY}px`;
     document.body.style.width = '100%';
-  }
-  else {
+  } else {
     // 恢复卡片自动播放
     if (stackedCardsRef.value) {
       stackedCardsRef.value.startAutoPlay();
@@ -225,8 +224,7 @@ async function loadData() {
       loadReminders(),
       syncIncomeExpense(),
     ]);
-  }
-  catch (err) {
+  } catch (err) {
     Lg.e('loadData', err);
     toast.error('加载数据失败');
   }
@@ -236,8 +234,7 @@ async function loadAccounts() {
   accountsLoading.value = true;
   try {
     accounts.value = await moneyStore.getAccounts();
-  }
-  finally {
+  } finally {
     accountsLoading.value = false;
   }
 }
@@ -246,8 +243,7 @@ async function loadBudgets() {
   budgetsLoading.value = true;
   try {
     budgets.value = await moneyStore.getBudgets();
-  }
-  finally {
+  } finally {
     budgetsLoading.value = false;
   }
 }
@@ -256,8 +252,7 @@ async function loadReminders() {
   remindersLoading.value = true;
   try {
     reminders.value = await moneyStore.getReminders();
-  }
-  finally {
+  } finally {
     remindersLoading.value = false;
   }
 }
@@ -283,8 +278,7 @@ async function deleteTransaction(transaction: TransactionWithAccount) {
         // 如果是转账交易，需要特殊处理
         await moneyStore.deleteTransferTransaction(transaction.serialNum);
         toast.success('转账记录删除成功');
-      }
-      else {
+      } else {
         // 普通交易删除
         await moneyStore.deleteTransaction(transaction.serialNum);
         toast.success('删除成功');
@@ -296,17 +290,14 @@ async function deleteTransaction(transaction: TransactionWithAccount) {
       }
       // 刷新相关数据
       await Promise.all([loadAccounts(), syncIncomeExpense()]);
-    }
-    catch (err) {
+    } catch (err) {
       const error = err as AppError;
       Lg.e('deleteTransaction', err);
       if (error?.getUserMessage && typeof error.getUserMessage === 'function') {
         toast.error(error.message);
-      }
-      else if (err instanceof Error) {
+      } else if (err instanceof Error) {
         toast.error(err.message || '删除失败');
-      }
-      else {
+      } else {
         toast.error('删除失败');
       }
     }
@@ -327,8 +318,7 @@ async function saveTransfer(fromTransaction: TransactionWithAccount, toTransacti
       // 对于编辑转账，需要找到对应的转入交易记录并更新
       await moneyStore.updateTransferToTransaction(toTransaction);
       toast.success('转账更新成功');
-    }
-    else {
+    } else {
       const fromSerialNum = uuid(38);
       fromTransaction.relatedTransactionSerialNum = fromSerialNum;
       fromTransaction.serialNum = fromSerialNum;
@@ -353,8 +343,7 @@ async function saveTransfer(fromTransaction: TransactionWithAccount, toTransacti
       transactionListRef.value ? transactionListRef.value.refresh() : Promise.resolve(),
       syncIncomeExpense(),
     ]);
-  }
-  catch (err) {
+  } catch (err) {
     Lg.e('saveTransfer', err);
     toast.error('转账保存失败');
   }
@@ -374,8 +363,7 @@ async function saveTransaction(transaction: TransactionWithAccount) {
     if (selectedTransaction.value) {
       await moneyStore.updateTransaction(transaction);
       toast.success('更新成功');
-    }
-    else {
+    } else {
       await moneyStore.createTransaction(transaction);
       toast.success('添加成功');
     }
@@ -386,8 +374,7 @@ async function saveTransaction(transaction: TransactionWithAccount) {
       transactionListRef.value ? transactionListRef.value.refresh() : Promise.resolve(),
       syncIncomeExpense(),
     ]);
-  }
-  catch (err) {
+  } catch (err) {
     Lg.e('saveTransaction', err);
     toast.error('保存失败');
   }
@@ -410,8 +397,8 @@ async function deleteAccount(serialNum: string) {
       await moneyStore.deleteAccount(serialNum);
       toast.success('删除成功');
       loadAccounts();
-    }
-    catch (err) {
+      await syncAccountBalanceSummary();
+    } catch (err) {
       Lg.e('deleteAccount', err);
       toast.error('删除失败');
     }
@@ -423,8 +410,8 @@ async function toggleAccountActive(serialNum: string) {
     await moneyStore.toggleAccountActive(serialNum);
     toast.success('状态更新成功');
     loadAccounts();
-  }
-  catch (err) {
+      await syncAccountBalanceSummary();
+  } catch (err) {
     Lg.e('toggleAccountActive', err);
     toast.error('状态更新失败');
   }
@@ -440,15 +427,14 @@ async function saveAccount(account: Account) {
     if (selectedAccount.value) {
       await moneyStore.updateAccount(account);
       toast.success('更新成功');
-    }
-    else {
+    } else {
       await moneyStore.createAccount(account);
       toast.success('添加成功');
     }
     closeAccountModal();
     loadAccounts();
-  }
-  catch (err) {
+      await syncAccountBalanceSummary();
+  } catch (err) {
     Lg.e('saveAccount', err);
     toast.error('保存失败');
   }
@@ -471,8 +457,7 @@ async function deleteBudget(serialNum: string) {
       await moneyStore.deleteBudget(serialNum);
       toast.success('删除成功');
       loadBudgets();
-    }
-    catch (err) {
+    } catch (err) {
       Lg.e('deleteBudget', err);
       toast.error('删除失败');
     }
@@ -484,8 +469,7 @@ async function toggleBudgetActive(serialNum: string) {
     await moneyStore.toggleBudgetActive(serialNum);
     toast.success('状态更新成功');
     loadBudgets();
-  }
-  catch (err) {
+  } catch (err) {
     Lg.e('toggleBudgetActive', err);
     toast.error('状态更新失败');
   }
@@ -501,15 +485,13 @@ async function saveBudget(budget: Budget) {
     if (selectedBudget.value) {
       await moneyStore.updateBudget(budget);
       toast.success('更新成功');
-    }
-    else {
+    } else {
       await moneyStore.createBudget(budget);
       toast.success('添加成功');
     }
     closeBudgetModal();
     loadBudgets();
-  }
-  catch (err) {
+  } catch (err) {
     Lg.e('saveBudget', err);
     toast.error('保存失败');
   }
@@ -532,8 +514,7 @@ async function deleteReminder(serialNum: string) {
       await moneyStore.deleteReminder(serialNum);
       toast.success('删除成功');
       loadReminders();
-    }
-    catch (err) {
+    } catch (err) {
       Lg.e('deleteReminder', err);
       toast.error('删除失败');
     }
@@ -545,8 +526,7 @@ async function markReminderPaid(serialNum: string) {
     await moneyStore.markReminderPaid(serialNum);
     toast.success('标记成功');
     loadReminders();
-  }
-  catch (err) {
+  } catch (err) {
     Lg.e('markReminderPaid', err);
     toast.error('标记失败');
   }
@@ -562,15 +542,13 @@ async function saveReminder(reminder: BilReminder) {
     if (selectedReminder.value) {
       await moneyStore.updateReminder(reminder);
       toast.success('更新成功');
-    }
-    else {
+    } else {
       await moneyStore.createReminder(reminder);
       toast.success('添加成功');
     }
     closeReminderModal();
     loadReminders();
-  }
-  catch (err) {
+  } catch (err) {
     Lg.e('saveReminder', err);
     toast.error('保存失败');
   }
@@ -595,6 +573,7 @@ function handleCardClick(_index: number, card: any) {
 }
 
 async function syncIncomeExpense() {
+  await syncAccountBalanceSummary();
   const m = await MoneyDb.monthlyIncomeAndExpense();
   const lm = await MoneyDb.lastMonthIncomeAndExpense();
   const y = await MoneyDb.yearlyIncomeAndExpense();
@@ -607,6 +586,11 @@ async function syncIncomeExpense() {
   yearlyExpense.value = y.expense.total;
   prevYearlyIncome.value = ly.income.total;
   prevYearlyExpense.value = ly.expense.total;
+}
+
+async function syncAccountBalanceSummary() {
+  const t = await MoneyDb.totalAssets();
+  totalAssets.value = t.totalAssets;
 }
 
 onMounted(async () => {

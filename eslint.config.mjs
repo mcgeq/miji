@@ -26,6 +26,7 @@ export default antfu({
   rules: {
     'style/operator-linebreak': 'off', // 禁用操作符换行校验
     'antfu/if-newline': 'off', // 禁用 if 语句换行校验
+    'style/brace-style': ['error', '1tbs'],
     // 配置 perfectionist 的 import 排序，与 Biome 规则一致
     'perfectionist/sort-imports': [
       'error',

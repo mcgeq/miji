@@ -316,3 +316,27 @@ export interface IncomeExpense {
     expense: number;
   };
 }
+
+export const AccountBalanceSummarySchema = z.object({
+  // 分类账户余额
+  bankSavingsBalance: z.number(),
+  cashBalance: z.number(),
+  creditCardBalance: z.number(),
+  investmentBalance: z.number(),
+  alipayBalance: z.number(),
+  weChatBalance: z.number(),
+  cloudQuickPassBalance: z.number(),
+  otherBalance: z.number(),
+
+  // 总额统计
+  totalBalance: z.number(),
+  adjustedNetWorth: z.number(),
+  totalAssets: z.number(),
+
+  // 额外元数据
+  accountCount: z.number(),
+  currency: z.string(),
+});
+
+// 导出类型
+export type AccountBalanceSummary = z.infer<typeof AccountBalanceSummarySchema>;

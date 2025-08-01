@@ -1,7 +1,6 @@
-import { toCamelCase } from '@/utils/common';
 import { db } from '@/utils/dbUtils';
 import { Lg } from '@/utils/debugLog';
-import type { Currency, SortOptions } from '@/schema/common';
+import type { Currency, DateRange, SortOptions } from '@/schema/common';
 
 /**
  * 实体基础接口
@@ -10,12 +9,6 @@ interface BaseEntity {
   serialNum: string;
   createdAt?: string | null | undefined;
   updatedAt?: string | null | undefined;
-}
-
-// 分页查询相关接口
-export interface DateRange {
-  start?: string;
-  end?: string;
 }
 
 export interface PagedResult<T> {
@@ -129,8 +122,7 @@ export abstract class BaseMapper<T extends BaseEntity> {
       if (value !== undefined && value !== null) {
         if (key.includes('Range')) {
           this.appendRangeFilter(key, value, whereParts, params);
-        }
-        else {
+        } else {
           const dbField = this.toSnakeCase(key);
           whereParts.push(`${dbField} = ?`);
           params.push(value);
@@ -182,14 +174,11 @@ export abstract class BaseMapper<T extends BaseEntity> {
       const field = key.replace('Range', '');
       const dbField = this.toSnakeCase(field);
       this.appendDateRange(dbField, range, whereParts, params);
-    }
-    else if (key === 'amountRange') {
+    } else if (key === 'amountRange') {
       this.appendAmountRange('amount', range, whereParts, params);
-    }
-    else if (key === 'dateRange') {
+    } else if (key === 'dateRange') {
       this.appendDateRange('date', range, whereParts, params);
-    }
-    else if (key === 'dueDateRange') {
+    } else if (key === 'dueDateRange') {
       this.appendDateRange('due_date', range, whereParts, params);
     }
   }
@@ -292,14 +281,13 @@ export abstract class BaseMapper<T extends BaseEntity> {
         ? await Promise.all(rows.map(transform))
         : rows;
       return {
-        rows: toCamelCase(transformedRows),
+        rows: transformedRows,
         totalCount,
         currentPage: page,
         pageSize,
         totalPages,
       };
-    }
-    catch (error) {
+    } catch (error) {
       this.handleError('queryPaged', error);
     }
   }
@@ -347,11 +335,9 @@ export abstract class BaseMapper<T extends BaseEntity> {
         // 处理特殊字段的序列化
         if (this.needsSerialization(key)) {
           values.push(JSON.stringify(value));
-        }
-        else if (key === 'currency' && typeof value === 'object') {
+        } else if (key === 'currency' && typeof value === 'object') {
           values.push((value as Currency).code);
-        }
-        else {
+        } else {
           values.push(value);
         }
       }
@@ -366,8 +352,7 @@ export abstract class BaseMapper<T extends BaseEntity> {
         serialNum,
         fields: Object.keys(updates),
       });
-    }
-    catch (error) {
+    } catch (error) {
       this.handleError('updatePartial', error);
     }
   }

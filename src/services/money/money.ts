@@ -17,7 +17,12 @@ import type { PagedResult } from './baseManager';
 import type { BilReminderFilters } from './billReminder';
 import type { BudgetFilters } from './budgets';
 import type { TransactionFilters } from './transactions';
-import type { Currency, IncomeExpense, SortOptions } from '@/schema/common';
+import type {
+  AccountBalanceSummary,
+  Currency,
+  IncomeExpense,
+  SortOptions,
+} from '@/schema/common';
 import type {
   Account,
   BilReminder,
@@ -112,8 +117,7 @@ export class MoneyDb {
         await this.transactionMapper.getTransferRelatedTransaction(serialNum);
       if (!transaction) return null;
       return transaction;
-    }
-    catch (error) {
+    } catch (error) {
       throw new MoneyDbError(
         'Failed to get related transfer transaction',
         'getTransferRelatedTransaction',
@@ -130,8 +134,7 @@ export class MoneyDb {
       return await this.transactionMapper.getTransferRelatedTransactionWithAccount(
         serialNum,
       );
-    }
-    catch (error) {
+    } catch (error) {
       throw new MoneyDbError(
         'Failed to get related transfer transaction',
         'getTransferRelatedTransaction',
@@ -198,6 +201,10 @@ export class MoneyDb {
     serialNum: string,
   ): Promise<TransactionWithAccount | null> {
     return await this.transactionMapper.getTransactionWithAccount(serialNum);
+  }
+
+  static async totalAssets(): Promise<AccountBalanceSummary> {
+    return await this.accountMapper.totalAssets();
   }
 
   static async monthlyIncomeAndExpense(): Promise<IncomeExpense> {

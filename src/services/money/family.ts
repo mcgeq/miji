@@ -11,8 +11,8 @@ import { db } from '@/utils/dbUtils';
 import { Lg } from '@/utils/debugLog';
 import { BaseMapper, MoneyDbError } from './baseManager';
 import { MoneyDb } from './money';
-import type { DateRange, PagedResult } from './baseManager';
-import type { SortOptions } from '@/schema/common';
+import type { PagedResult } from './baseManager';
+import type { DateRange, SortOptions } from '@/schema/common';
 import type {
   FamilyLedger,
   FamilyLedgerMember,
@@ -87,8 +87,7 @@ export class FamilyMemberMapper extends BaseMapper<FamilyMember> {
         ],
       );
       Lg.d('MoneyDb', 'FamilyMember created:', { serialNum });
-    }
-    catch (error) {
+    } catch (error) {
       this.handleError('create', error);
     }
   }
@@ -103,8 +102,7 @@ export class FamilyMemberMapper extends BaseMapper<FamilyMember> {
       if (result.length === 0) return null;
       const member = this.transformFamilyMemberRow(result[0]);
       return this.schema.parse(member);
-    }
-    catch (error) {
+    } catch (error) {
       this.handleError('getById', error);
     }
   }
@@ -119,8 +117,7 @@ export class FamilyMemberMapper extends BaseMapper<FamilyMember> {
       const members = result.map(row => this.transformFamilyMemberRow(row));
       const m = toCamelCase<FamilyMember[]>(members);
       return m.map(member => this.schema.parse(member));
-    }
-    catch (error) {
+    } catch (error) {
       this.handleError('list', error);
     }
   }
@@ -143,8 +140,7 @@ export class FamilyMemberMapper extends BaseMapper<FamilyMember> {
         ],
       );
       Lg.d('MoneyDb', 'FamilyMember updated:', { serialNum });
-    }
-    catch (error) {
+    } catch (error) {
       this.handleError('update', error);
     }
   }
@@ -155,8 +151,7 @@ export class FamilyMemberMapper extends BaseMapper<FamilyMember> {
         serialNum,
       ]);
       Lg.d('MoneyDb', 'FamilyMember deleted:', { serialNum });
-    }
-    catch (error) {
+    } catch (error) {
       this.handleError('deleteById', error);
     }
   }
@@ -173,8 +168,7 @@ export class FamilyMemberMapper extends BaseMapper<FamilyMember> {
         );
       }
       await this.doSmartUpdate(validated.serialNum, validated, oldMember);
-    }
-    catch (error) {
+    } catch (error) {
       this.handleError('updateSmart', error);
     }
   }
@@ -186,8 +180,7 @@ export class FamilyMemberMapper extends BaseMapper<FamilyMember> {
     try {
       const validatedUpdates = this.schema.partial().parse(updates);
       await this.updatePartial(serialNum, validatedUpdates);
-    }
-    catch (error) {
+    } catch (error) {
       this.handleError('updatePartial', error);
     }
   }
@@ -213,8 +206,7 @@ export class FamilyMemberMapper extends BaseMapper<FamilyMember> {
         ...result,
         rows: result.rows.map(row => this.schema.parse(row)),
       };
-    }
-    catch (error) {
+    } catch (error) {
       this.handleError('listPaged', error);
     }
   }
@@ -271,8 +263,7 @@ export class FamilyLedgerMapper extends BaseMapper<FamilyLedger> {
         ],
       );
       Lg.d('MoneyDb', 'FamilyLedger created:', { serialNum });
-    }
-    catch (error) {
+    } catch (error) {
       this.handleError('create', error);
     }
   }
@@ -287,8 +278,7 @@ export class FamilyLedgerMapper extends BaseMapper<FamilyLedger> {
       if (result.length === 0) return null;
       const ledger = await this.transformFamilyLedgerRow(result[0]);
       return this.schema.parse(ledger);
-    }
-    catch (error) {
+    } catch (error) {
       this.handleError('getById', error);
     }
   }
@@ -304,8 +294,7 @@ export class FamilyLedgerMapper extends BaseMapper<FamilyLedger> {
         result.map(row => this.transformFamilyLedgerRow(row)),
       );
       return ledgers.map(ledger => this.schema.parse(ledger));
-    }
-    catch (error) {
+    } catch (error) {
       this.handleError('list', error);
     }
   }
@@ -342,8 +331,7 @@ export class FamilyLedgerMapper extends BaseMapper<FamilyLedger> {
         ],
       );
       Lg.d('MoneyDb', 'FamilyLedger updated:', { serialNum });
-    }
-    catch (error) {
+    } catch (error) {
       this.handleError('update', error);
     }
   }
@@ -354,8 +342,7 @@ export class FamilyLedgerMapper extends BaseMapper<FamilyLedger> {
         serialNum,
       ]);
       Lg.d('MoneyDb', 'FamilyLedger deleted:', { serialNum });
-    }
-    catch (error) {
+    } catch (error) {
       this.handleError('deleteById', error);
     }
   }
@@ -372,8 +359,7 @@ export class FamilyLedgerMapper extends BaseMapper<FamilyLedger> {
         );
       }
       await this.doSmartUpdate(validated.serialNum, validated, oldLedger);
-    }
-    catch (error) {
+    } catch (error) {
       this.handleError('updateSmart', error);
     }
   }
@@ -385,8 +371,7 @@ export class FamilyLedgerMapper extends BaseMapper<FamilyLedger> {
     try {
       const validatedUpdates = this.schema.partial().parse(updates);
       await this.updatePartial(serialNum, validatedUpdates);
-    }
-    catch (error) {
+    } catch (error) {
       this.handleError('updatePartial', error);
     }
   }
@@ -412,8 +397,7 @@ export class FamilyLedgerMapper extends BaseMapper<FamilyLedger> {
         ...result,
         rows: await Promise.all(result.rows.map(row => this.schema.parse(row))),
       };
-    }
-    catch (error) {
+    } catch (error) {
       this.handleError('listPaged', error);
     }
   }
@@ -473,8 +457,7 @@ export class FamilyLedgerAccountMapper extends BaseMapper<{
         ],
       );
       Lg.d('MoneyDb', 'FamilyLedgerAccount created:', { serialNum });
-    }
-    catch (error) {
+    } catch (error) {
       this.handleError('create', error);
     }
   }
@@ -492,8 +475,7 @@ export class FamilyLedgerAccountMapper extends BaseMapper<{
       );
       if (result.length === 0) return null;
       return this.schema.parse(result[0]);
-    }
-    catch (error) {
+    } catch (error) {
       this.handleError('getById', error);
     }
   }
@@ -512,8 +494,7 @@ export class FamilyLedgerAccountMapper extends BaseMapper<{
         true,
       );
       return result.map(row => this.schema.parse(row));
-    }
-    catch (error) {
+    } catch (error) {
       this.handleError('list', error);
     }
   }
@@ -533,8 +514,7 @@ export class FamilyLedgerAccountMapper extends BaseMapper<{
         [familyLedgerSerialNum, accountSerialNum, updatedAt, serialNum],
       );
       Lg.d('MoneyDb', 'FamilyLedgerAccount updated:', { serialNum });
-    }
-    catch (error) {
+    } catch (error) {
       this.handleError('update', error);
     }
   }
@@ -545,8 +525,7 @@ export class FamilyLedgerAccountMapper extends BaseMapper<{
         serialNum,
       ]);
       Lg.d('MoneyDb', 'FamilyLedgerAccount deleted:', { serialNum });
-    }
-    catch (error) {
+    } catch (error) {
       this.handleError('deleteById', error);
     }
   }
@@ -574,8 +553,7 @@ export class FamilyLedgerAccountMapper extends BaseMapper<{
         'created_at DESC',
         row => this.schema.parse(row),
       );
-    }
-    catch (error) {
+    } catch (error) {
       this.handleError('listPaged', error);
     }
   }
@@ -611,8 +589,7 @@ export class FamilyLedgerTransactionMapper extends BaseMapper<FamilyLedgerTransa
         ],
       );
       Lg.d('MoneyDb', 'FamilyLedgerTransaction created:', { serialNum });
-    }
-    catch (error) {
+    } catch (error) {
       this.handleError('create', error);
     }
   }
@@ -626,8 +603,7 @@ export class FamilyLedgerTransactionMapper extends BaseMapper<FamilyLedgerTransa
       );
       if (result.length === 0) return null;
       return this.schema.parse(result[0]);
-    }
-    catch (error) {
+    } catch (error) {
       this.handleError('getById', error);
     }
   }
@@ -640,8 +616,7 @@ export class FamilyLedgerTransactionMapper extends BaseMapper<FamilyLedgerTransa
         true,
       );
       return result.map(row => this.schema.parse(row));
-    }
-    catch (error) {
+    } catch (error) {
       this.handleError('list', error);
     }
   }
@@ -654,8 +629,7 @@ export class FamilyLedgerTransactionMapper extends BaseMapper<FamilyLedgerTransa
       Lg.d('MoneyDb', 'FamilyLedgerTransaction deleted:', {
         serialNum,
       });
-    }
-    catch (error) {
+    } catch (error) {
       this.handleError('deleteById', error);
     }
   }
@@ -675,8 +649,7 @@ export class FamilyLedgerTransactionMapper extends BaseMapper<FamilyLedgerTransa
         [familyLedgerSerialNum, transactionSerialNum, updatedAt, serialNum],
       );
       Lg.d('MoneyDb', 'FamilyLedgerTransaction updated:', { serialNum });
-    }
-    catch (error) {
+    } catch (error) {
       this.handleError('update', error);
     }
   }
@@ -698,8 +671,7 @@ export class FamilyLedgerTransactionMapper extends BaseMapper<FamilyLedgerTransa
         'created_at DESC',
         row => this.schema.parse(row),
       );
-    }
-    catch (error) {
+    } catch (error) {
       this.handleError('listPaged', error);
     }
   }
@@ -735,8 +707,7 @@ export class FamilyLedgerMemberMapper extends BaseMapper<FamilyLedgerMember> {
         ],
       );
       Lg.d('MoneyDb', 'FamilyLedgerMember created:', { serialNum });
-    }
-    catch (error) {
+    } catch (error) {
       this.handleError('create', error);
     }
   }
@@ -750,8 +721,7 @@ export class FamilyLedgerMemberMapper extends BaseMapper<FamilyLedgerMember> {
       );
       if (result.length === 0) return null;
       return this.schema.parse(result[0]);
-    }
-    catch (error) {
+    } catch (error) {
       this.handleError('getById', error);
     }
   }
@@ -764,8 +734,7 @@ export class FamilyLedgerMemberMapper extends BaseMapper<FamilyLedgerMember> {
         true,
       );
       return result.map(row => this.schema.parse(row));
-    }
-    catch (error) {
+    } catch (error) {
       this.handleError('list', error);
     }
   }
@@ -776,8 +745,7 @@ export class FamilyLedgerMemberMapper extends BaseMapper<FamilyLedgerMember> {
         serialNum,
       ]);
       Lg.d('MoneyDb', 'FamilyLedgerMember deleted:', { serialNum });
-    }
-    catch (error) {
+    } catch (error) {
       this.handleError('deleteById', error);
     }
   }
@@ -797,8 +765,7 @@ export class FamilyLedgerMemberMapper extends BaseMapper<FamilyLedgerMember> {
         [familyLedgerSerialNum, familyMemberSerialNum, updatedAt, serialNum],
       );
       Lg.d('MoneyDb', 'FamilyLedgerMember updated:', { serialNum });
-    }
-    catch (error) {
+    } catch (error) {
       this.handleError('update', error);
     }
   }
@@ -820,8 +787,7 @@ export class FamilyLedgerMemberMapper extends BaseMapper<FamilyLedgerMember> {
         'created_at DESC',
         row => this.schema.parse(row),
       );
-    }
-    catch (error) {
+    } catch (error) {
       this.handleError('listPaged', error);
     }
   }
