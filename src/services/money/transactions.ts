@@ -4,7 +4,6 @@ import { DateUtils } from '@/utils/date';
 import { db } from '@/utils/dbUtils';
 import { Lg } from '@/utils/debugLog';
 import { BaseMapper, MoneyDbError } from './baseManager';
-import { MoneyDb } from './money';
 import type { DateRange, PagedResult } from './baseManager';
 import type { IncomeExpense, SortOptions } from '@/schema/common';
 import type { Transaction, TransactionWithAccount } from '@/schema/money';
@@ -101,16 +100,8 @@ export class TransactionMapper extends BaseMapper<Transaction> {
 
       if (result.length === 0) return null;
       const row = result[0];
-      const ccy = {
-        locale: row.currency_locale,
-        code: row.currency_code,
-        symbol: row.currency_symbol,
-        created_at: row.currency_created_at,
-        updated_at: row.currency_updated_at,
-      };
       const transaction = this.transformTransactionRow(row);
-      transaction.currency = ccy;
-      return toCamelCase<Transaction>(transaction);
+      return transaction;
     }
     catch (error) {
       this.handleError('getById', error);
@@ -137,17 +128,9 @@ export class TransactionMapper extends BaseMapper<Transaction> {
 
       if (result.length === 0) return null;
       const row = result[0];
-      const ccy = {
-        locale: row.currency_locale,
-        code: row.currency_code,
-        symbol: row.currency_symbol,
-        created_at: row.currency_created_at,
-        updated_at: row.currency_updated_at,
-      };
 
       const transaction = this.transformTransactionRow(row);
-      transaction.currency = ccy;
-      return toCamelCase<Transaction>(transaction);
+      return transaction;
     }
     catch (error) {
       this.handleError('getTransferRelatedTransaction', error);
@@ -226,45 +209,39 @@ export class TransactionMapper extends BaseMapper<Transaction> {
     try {
       const result = await db.select<any[]>(
         `SELECT t.*, 
-               a.serial_num as account_serial_num_detail,
-               a.name as account_name,
-               a.description as account_description,
-               a.type as account_type,
-               a.balance as account_balance,
-               a.currency as account_currency,
-               a.is_shared as account_is_shared,
-               a.owner_id as account_owner_id,
-               a.is_active as account_is_active,
-               a.color as account_color,
-               a.created_at as account_created_at,
-               a.updated_at as account_updated_at
-         FROM transactions t
+             a.serial_num as account_serial_num_detail,
+             a.name as account_name,
+             a.description as account_description,
+             a.type as account_type,
+             a.balance as account_balance,
+             a.currency as account_currency,
+             a.is_shared as account_is_shared,
+             a.owner_id as account_owner_id,
+             a.is_active as account_is_active,
+             a.color as account_color,
+             a.created_at as account_created_at,
+             a.updated_at as account_updated_at,
+             c.locale as currency_locale,
+             c.code as currency_code,
+             c.symbol as currency_symbol,
+             c.created_at as currency_created_at,
+             c.updated_at as currency_updated_at,
+             ca.locale as account_currency_locale,
+             ca.code as account_currency_code,
+             ca.symbol as account_currency_symbol,
+             ca.created_at as account_currency_created_at,
+             ca.updated_at as account_currency_updated_at
+         FROM ${this.tableName} t
          JOIN account a ON t.account_serial_num = a.serial_num
+         JOIN currency c ON t.currency = c.code
+         JOIN currency ca ON a.currency = ca.code
          WHERE t.serial_num = ?`,
         [serialNum],
         true,
       );
 
       if (result.length === 0) return null;
-
-      const row = result[0];
-      return {
-        ...row,
-        account: {
-          serialNum: row.account_serial_num_detail,
-          name: row.account_name,
-          description: row.account_description,
-          type: row.account_type,
-          balance: row.account_balance,
-          currency: JSON.parse(row.account_currency),
-          isShared: row.account_is_shared,
-          ownerId: row.account_owner_id,
-          isActive: row.account_is_active,
-          color: row.account_color,
-          createdAt: row.account_created_at,
-          updatedAt: row.account_updated_at,
-        },
-      } as TransactionWithAccount;
+      return this.transformTransactionWithAccountRow(result[0]);
     }
     catch (error) {
       this.handleError('getTransferRelatedTransactionWithAccount', error);
@@ -274,20 +251,23 @@ export class TransactionMapper extends BaseMapper<Transaction> {
   async list(): Promise<Transaction[]> {
     try {
       const result = await db.select<any[]>(
-        `SELECT * FROM ${this.tableName}`,
+        `SELECT
+            t.*,
+            c.locale as currency_locale,
+            c.code as currency_code,
+            c.symbol as currency_symbol,
+            c.created_at as currency_created_at,
+            c.updated_at as currency_updated_at
+        FROM ${this.tableName} t
+        JOIN currency c ON t.currency = c.code`,
         [],
-        true,
+        false,
       );
 
-      const currencyMap = await this.getCurrencies(result);
       const act = result.map(a => {
-        const transformed = this.transformTransactionRow(a);
-        return {
-          ...transformed,
-          currency: currencyMap[a.currency] ?? CURRENCY_CNY,
-        };
-      }) as Transaction[];
-      return toCamelCase<Transaction[]>(act);
+        return this.transformTransactionRow(a);
+      });
+      return act;
     }
     catch (error) {
       this.handleError('list', error);
@@ -388,7 +368,15 @@ export class TransactionMapper extends BaseMapper<Transaction> {
     pageSize = 10,
     sortOptions: SortOptions = {},
   ): Promise<PagedResult<Transaction>> {
-    const baseQuery = `SELECT * FROM ${this.tableName}`;
+    const baseQuery = `SELECT
+            t.*,
+            c.locale as currency_locale,
+            c.code as currency_code,
+            c.symbol as currency_symbol,
+            c.created_at as currency_created_at,
+            c.updated_at as currency_updated_at
+        FROM ${this.tableName} t
+        JOIN currency c ON t.currency = c.code`;
 
     const result = await this.queryPaged(
       baseQuery,
@@ -429,9 +417,21 @@ export class TransactionMapper extends BaseMapper<Transaction> {
              a.is_active as account_is_active,
              a.color as account_color,
              a.created_at as account_created_at,
-             a.updated_at as account_updated_at
+             a.updated_at as account_updated_at,
+             c.locale as currency_locale,
+             c.code as currency_code,
+             c.symbol as currency_symbol,
+             c.created_at as currency_created_at,
+             c.updated_at as currency_updated_at,
+             ca.locale as account_currency_locale,
+             ca.code as account_currency_code,
+             ca.symbol as account_currency_symbol,
+             ca.created_at as account_currency_created_at,
+             ca.updated_at as account_currency_updated_at
       FROM ${this.tableName} t
       JOIN account a ON t.account_serial_num = a.serial_num
+      JOIN currency c ON t.currency = c.code
+      JOIN currency ca ON a.currency = ca.code
     `;
 
     return await this.queryPaged(
@@ -517,20 +517,82 @@ export class TransactionMapper extends BaseMapper<Transaction> {
   }
 
   private transformTransactionRow(row: any): any {
-    return {
-      ...row,
+    return toCamelCase<Transaction>({
+      serial_num: row.serial_num,
+      transaction_type: row.transaction_type,
+      transaction_status: row.transaction_status,
+      date: row.date,
+      amount: row.amount,
+      currency: {
+        locale: row.currency_locale,
+        code: row.currency_code,
+        symbol: row.currency_symbol,
+        created_at: row.currency_created_at,
+        updated_at: row.currency_updated_at,
+      },
+      description: row.description,
+      notes: row.notes,
+      account_serial_num: row.account_serial_num,
+      category: row.category,
+      sub_category: row.sub_category,
       tags: JSON.parse(row.tags || '[]'),
       split_members: JSON.parse(row.split_members || '[]'),
-    } as Transaction;
+      payment_method: row.payment_method,
+      actual_payer_account: row.actual_payer_account,
+      related_transaction_serial_num: row.related_transaction_serial_num,
+      created_at: row.created_at,
+      updated_at: row.updated_at,
+    });
   }
 
   private async transformTransactionWithAccountRow(
     row: any,
   ): Promise<TransactionWithAccount> {
-    const account = await MoneyDb.getAccount(row.account_serial_num);
-    return {
-      ...this.transformTransactionRow(row),
-      account,
-    } as TransactionWithAccount;
+    return toCamelCase<TransactionWithAccount>({
+      serial_num: row.serial_num,
+      transaction_type: row.transaction_type,
+      transaction_status: row.transaction_status,
+      date: row.date,
+      amount: row.amount,
+      currency: {
+        locale: row.currency_locale,
+        code: row.currency_code,
+        symbol: row.currency_symbol,
+        created_at: row.currency_created_at,
+        updated_at: row.currency_updated_at,
+      },
+      account: {
+        serial_num: row.account_serial_num_detail,
+        name: row.account_name,
+        description: row.account_description,
+        type: row.account_type,
+        balance: row.account_balance,
+        currency: {
+          locale: row.account_currency_locale,
+          code: row.account_currency_code,
+          symbol: row.account_currency_symbol,
+          created_at: row.account_currency_created_at,
+          updated_at: row.account_currency_updated_at,
+        },
+        is_shared: row.account_is_shared,
+        owner_id: row.account_owner_id,
+        is_active: row.account_is_active,
+        color: row.account_color,
+        created_at: row.account_created_at,
+        updated_at: row.account_updated_at,
+      },
+      description: row.description,
+      notes: row.notes,
+      account_serial_num: row.account_serial_num,
+      category: row.category,
+      sub_category: row.sub_category,
+      tags: JSON.parse(row.tags || '[]'),
+      split_members: JSON.parse(row.split_members || '[]'),
+      payment_method: row.payment_method,
+      actual_payer_account: row.actual_payer_account,
+      related_transaction_serial_num: row.related_transaction_serial_num,
+      created_at: row.created_at,
+      updated_at: row.updated_at,
+    });
   }
 }
