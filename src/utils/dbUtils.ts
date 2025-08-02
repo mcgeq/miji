@@ -70,8 +70,7 @@ export class DatabaseManager {
     try {
       this.db = await this.dbPromise;
       return this.db;
-    }
-    catch (error) {
+    } catch (error) {
       this.dbPromise = null;
       throw error;
     }
@@ -87,8 +86,7 @@ export class DatabaseManager {
       Lg.i('DatabaseManager', 'Database connection established successfully');
       await this.optimizeDatabase(db);
       return db;
-    }
-    catch (error) {
+    } catch (error) {
       const dbError = new DatabaseError(
         'Failed to initialize database connection',
         'DB_INIT_FAILED',
@@ -112,8 +110,7 @@ export class DatabaseManager {
       await db.execute('PRAGMA cache_size=10000');
       await db.execute('PRAGMA foreign_keys=ON');
       Lg.i('DatabaseManager', 'Database optimization settings applied');
-    }
-    catch (error) {
+    } catch (error) {
       Lg.w(
         'DatabaseManager',
         'Failed to apply database optimizations: ',
@@ -166,30 +163,65 @@ export class DatabaseManager {
   ): Promise<T> {
     const db = await this.getDatabase();
     let transactionStarted = false;
+    const maxRetries = 5; // 最大重试次数
+    let retries = 0;
+    const baseDelay = 50; // 基础延迟(ms)
 
-    try {
-      await this.executeQuery(db, 'execute', 'BEGIN TRANSACTION', []);
-      transactionStarted = true;
+    while (retries < maxRetries) {
+      try {
+        await this.executeQuery(
+          db,
+          'execute',
+          'BEGIN IMMEDIATE TRANSACTION',
+          [],
+        );
+        transactionStarted = true;
 
-      const result = await callback(db);
-      if (transactionStarted) {
+        const result = await callback(db);
+
         await this.executeQuery(db, 'execute', 'COMMIT', []);
-      }
+        transactionStarted = false;
 
-      this.invalidateCache();
-      return result;
-    }
-    catch (error) {
-      if (transactionStarted) {
-        try {
-          await this.executeQuery(db, 'execute', 'ROLLBACK', []);
+        this.invalidateCache();
+        return result;
+      } catch (error) {
+        // 锁定错误处理（指数退避策略）
+        if (
+          error instanceof DatabaseError &&
+          error.message.includes('database is locked') &&
+          retries < maxRetries
+        ) {
+          // 回滚当前尝试
+          if (transactionStarted) {
+            try {
+              await this.executeQuery(db, 'execute', 'ROLLBACK', []);
+            } catch { }
+            transactionStarted = false;
+          }
+
+          retries++;
+          const waitTime = baseDelay * 2 ** retries;
+          Lg.d('DatabaseManager', `Lock detected, retrying in ${waitTime}ms`);
+          await new Promise(resolve => setTimeout(resolve, waitTime));
+          continue;
         }
-        catch (rollbackError) {
-          console.warn('Rollback failed or not needed:', rollbackError);
+
+        // 其他错误处理
+        if (transactionStarted) {
+          try {
+            await this.executeQuery(db, 'execute', 'ROLLBACK', []);
+          } catch (rollbackError) {
+            console.warn('Rollback failed:', rollbackError);
+          }
         }
+        throw error;
       }
-      throw error;
     }
+    throw new DatabaseError(
+      'Transaction failed after retries',
+      'DB_LOCK_TIMEOUT',
+      'transaction',
+    );
   }
 
   /**
@@ -225,8 +257,7 @@ export class DatabaseManager {
       const duration = Date.now() - startTime;
       Lg.d('DatabaseManager', `Query completed in ${duration}ms`);
       return result;
-    }
-    catch (error) {
+    } catch (error) {
       const dbError = new DatabaseError(
         `Database ${method} operation failed: ${(error as Error).message}`,
         'DB_QUERY_FAILED',
@@ -303,8 +334,7 @@ export class DatabaseManager {
         this.dbPromise = null;
         this.invalidateCache();
         Lg.i('DatabaseManager', 'Database connection closed');
-      }
-      catch (error) {
+      } catch (error) {
         Lg.e('DatabaseManager', 'Error closing database:', error);
       }
     }
