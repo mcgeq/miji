@@ -1,6 +1,14 @@
+import { DateUtils } from '@/utils/date';
 import { db } from '@/utils/dbUtils';
 import { Lg } from '@/utils/debugLog';
-import type { Currency, DateRange, SortOptions } from '@/schema/common';
+import { uuid } from '@/utils/uuid';
+import type {
+  Currency,
+  DateRange,
+  OperationLog,
+  OperationType,
+  SortOptions,
+} from '@/schema/common';
 
 /**
  * 实体基础接口
@@ -159,6 +167,143 @@ export abstract class BaseMapper<T extends BaseEntity> {
     );
 
     return this.keyBy(currencies, 'code');
+  }
+
+  protected async recordOperationLog(
+    operation: OperationType,
+    recordId: string,
+    changes?: Record<string, any>,
+    snapshot?: any,
+  ): Promise<void> {
+    try {
+      const actorId = '当前用户ID'; // 实际应从上下文中获取
+      const deviceId = '设备ID'; // 实际应从设备信息获取
+      const compressSnapshot = snapshot
+        ? this.compressSnapshot(snapshot)
+        : undefined;
+
+      const log: OperationLog = {
+        serial_num: uuid(38),
+        recorded_at: DateUtils.getLocalISODateTimeWithOffset(),
+        operation,
+        table_name: this.tableName,
+        record_id: recordId,
+        actor_id: actorId,
+        changes_json: changes ? JSON.stringify(changes) : undefined,
+        snapshot_json: compressSnapshot
+          ? JSON.stringify(compressSnapshot)
+          : undefined,
+        device_id: deviceId,
+      };
+
+      // 插入日志表（假设有operation_log表）
+      await db.execute(
+        `INSERT INTO operation_log 
+      (serial_num, recorded_at, operation, target_table, record_id, actor_id, changes_json, snapshot_json, device_id)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          log.serial_num,
+          log.recorded_at,
+          log.operation,
+          log.table_name,
+          log.record_id,
+          log.actor_id,
+          log.changes_json,
+          log.snapshot_json,
+          log.device_id,
+        ],
+      );
+    } catch (logError) {
+      this.handleError('recordOperationLog', logError);
+    }
+  }
+
+  protected detectChanges<T extends Record<string, any>>(
+    oldObj: T | null | undefined,
+    newObj: T | null | undefined,
+  ): Partial<T> {
+    const changes: Partial<T> = {};
+
+    const safeOldObj = oldObj || ({} as T);
+    const safeNewObj = newObj || ({} as T);
+
+    const allKeys = new Set([
+      ...Object.keys(safeOldObj),
+      ...Object.keys(safeNewObj),
+    ]) as Set<keyof T>;
+
+    for (const key of allKeys) {
+      const oldVal = safeOldObj[key];
+      const newVal = safeNewObj[key];
+
+      if (!this.isEqual(oldVal, newVal)) {
+        if (key in safeNewObj) {
+          changes[key] = newVal;
+        } else {
+          // 对于删除的键，使用 undefined
+          changes[key] = undefined as any;
+        }
+      }
+    }
+
+    return changes;
+  }
+
+  /**
+   * 压缩快照 - 保留所有字段但优化存储
+   * @param snapshot 原始快照对象
+   * @returns 优化后的快照
+   */
+  protected compressSnapshot(snapshot: any): any {
+    // 1. 深拷贝对象避免修改原始数据
+    const compressed = { ...snapshot };
+
+    // 2. 处理大型文本字段
+    this.truncateLargeFields(compressed);
+
+    // 3. 过滤敏感信息
+    this.filterSensitiveFields(compressed);
+
+    // 4. 移除未定义和空值
+    this.removeEmptyValues(compressed);
+
+    return compressed;
+  }
+
+  /**
+   * 截断大型文本字段
+   */
+  private truncateLargeFields(obj: any): void {
+    const MAX_SIZE = 2000; // 2KB
+    for (const key in obj) {
+      if (typeof obj[key] === 'string' && obj[key].length > MAX_SIZE) {
+        obj[key] =
+          `[TRUNCATED ${obj[key].length} chars] ${obj[key].substring(0, 100)}...`;
+      }
+    }
+  }
+
+  /**
+   * 过滤敏感字段
+   */
+  private filterSensitiveFields(obj: any): void {
+    const SENSITIVE_FIELDS = ['password', 'token', 'secret', 'apiKey'];
+    SENSITIVE_FIELDS.forEach(field => {
+      if (obj[field] !== undefined) {
+        obj[field] = '******';
+      }
+    });
+  }
+
+  /**
+   * 移除空值
+   */
+  private removeEmptyValues(obj: any): void {
+    for (const key in obj) {
+      if (obj[key] === undefined || obj[key] === null) {
+        delete obj[key];
+      }
+    }
   }
 
   /**

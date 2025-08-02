@@ -26,6 +26,7 @@ use migration::{
         FamilyLedgerAccountMigration, FamilyLedgerMemberMigration, FamilyLedgerMigration,
         FamilyLedgerTransactionMigration, FamilyMemberMigration, TransactionMigration,
     },
+    m20250802_000001_create_operation_log::OperationLogMigration,
     schema::MijiMigrationTrait,
 };
 use tauri::Runtime;
@@ -61,6 +62,7 @@ impl<R: Runtime> MijiMigrations for tauri::Builder<R> {
             BilReminderMigration::up(),
             FamilyLedgerAccountMigration::up(),
             FamilyLedgerTransactionMigration::up(),
+            OperationLogMigration::up(),
         ];
         self.plugin(
             tauri_plugin_sql::Builder::default()

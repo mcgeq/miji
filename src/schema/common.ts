@@ -340,3 +340,41 @@ export const AccountBalanceSummarySchema = z.object({
 
 // 导出类型
 export type AccountBalanceSummary = z.infer<typeof AccountBalanceSummarySchema>;
+
+// 操作类型枚举定义
+export const OperationTypeSchema = z.union([
+  z.literal('INSERT'),
+  z.literal('UPDATE'),
+  z.literal('DELETE'),
+  z.literal('SOFT_DELETE'),
+  z.literal('RESTORE'),
+]);
+
+export type OperationType = z.infer<typeof OperationTypeSchema>;
+
+// 主日志架构
+export const OperationLogSchema = z.object({
+  serial_num: z.string().length(36).describe('UUID格式的日志唯一标识'),
+  recorded_at: DateTimeSchema.describe('ISO 8601格式的时间戳'),
+  operation: OperationTypeSchema.describe('操作类型'),
+  table_name: z.string().min(1).describe('操作的目标表'),
+  record_id: z.string().min(1).describe('操作的目标记录ID'),
+  actor_id: z.string().min(1).describe('执行操作的主体标识'),
+
+  // JSON格式的变更数据（可为空）
+  changes_json: z.string().optional(),
+
+  // JSON格式的数据快照（可为空）
+  snapshot_json: z.string().optional(),
+  // 设备ID（可为空）
+  device_id: z
+    .string()
+    .max(100)
+    .nullable()
+    .optional()
+    .default(null)
+    .describe('操作设备的标识符'),
+});
+
+// 导出类型
+export type OperationLog = z.infer<typeof OperationLogSchema>;

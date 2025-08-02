@@ -431,6 +431,7 @@ impl MijiMigrationTrait for BilReminderMigration {
                     advance_unit TEXT,
                     related_transaction_serial_num TEXT CHECK (LENGTH(related_transaction_serial_num) <= 38),
                     color TEXT,
+                    is_deleted INTEGER NOT NULL DEFAULT 0 CHECK (is_deleted IN (0,1)),
                     created_at TEXT NOT NULL,
                     updated_at TEXT,
                     FOREIGN KEY (related_transaction_serial_num)

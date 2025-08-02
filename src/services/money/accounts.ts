@@ -72,6 +72,12 @@ export class AccountMapper extends BaseMapper<Account> {
         ],
       );
       Lg.d('MoneyDb', 'Account created:', { account });
+      await this.recordOperationLog(
+        'INSERT',
+        account.serialNum,
+        account,
+        undefined,
+      );
     } catch (error) {
       this.handleError('create', error);
     }
@@ -135,6 +141,10 @@ export class AccountMapper extends BaseMapper<Account> {
 
   async update(account: Account): Promise<void> {
     try {
+      const oldAccount = await this.getById(account.serialNum);
+      if (!oldAccount) {
+        this.handleError('update', 'Account not found');
+      }
       const {
         serialNum,
         name,
@@ -166,8 +176,14 @@ export class AccountMapper extends BaseMapper<Account> {
           serialNum,
         ],
       );
-
       Lg.d('MoneyDb', 'Account updated:', { serialNum });
+      const changes = this.detectChanges(oldAccount, account);
+      await this.recordOperationLog(
+        'UPDATE',
+        account.serialNum,
+        changes,
+        oldAccount,
+      );
     } catch (error) {
       this.handleError('update', error);
     }
@@ -194,10 +210,12 @@ export class AccountMapper extends BaseMapper<Account> {
 
   async deleteById(serialNum: string): Promise<void> {
     try {
+      const oldAccount = await this.getById(serialNum);
       await db.execute(`DELETE FROM ${this.tableName} WHERE serial_num = ?`, [
         serialNum,
       ]);
       Lg.d('MoneyDb', 'Account deleted:', { serialNum });
+      await this.recordOperationLog('DELETE', serialNum, undefined, oldAccount);
     } catch (error) {
       this.handleError('deleteById', error);
     }
