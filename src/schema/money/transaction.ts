@@ -31,6 +31,7 @@ export const TransactionSchema = z.object({
   paymentMethod: PaymentMethodSchema,
   actualPayerAccount: AccountTypeSchema,
   relatedTransactionSerialNum: SerialNumSchema.optional(),
+  idDeleted: z.boolean().default(false),
   createdAt: DateTimeSchema,
   updatedAt: DateTimeSchema.optional().nullable(),
 });

@@ -9,6 +9,7 @@ import type {
   OperationType,
   SortOptions,
 } from '@/schema/common';
+import Database from '@tauri-apps/plugin-sql';
 
 /**
  * 实体基础接口
@@ -523,5 +524,5 @@ export abstract class BaseMapper<T extends BaseEntity> {
   abstract getById(serialNum: string): Promise<T | null>;
   abstract list(): Promise<T[]>;
   abstract update(entity: T): Promise<void>;
-  abstract deleteById(serialNum: string): Promise<void>;
+  abstract deleteById(serialNum: string, db?: Database): Promise<void>;
 }

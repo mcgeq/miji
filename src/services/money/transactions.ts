@@ -7,6 +7,7 @@ import { BaseMapper, MoneyDbError } from './baseManager';
 import type { PagedResult } from './baseManager';
 import type { DateRange, IncomeExpense, SortOptions } from '@/schema/common';
 import type { Transaction, TransactionWithAccount } from '@/schema/money';
+import type Database from '@tauri-apps/plugin-sql';
 
 export interface TransactionFilters {
   transactionType?: string;
@@ -226,7 +227,8 @@ export class TransactionMapper extends BaseMapper<Transaction> {
             c.created_at as currency_created_at,
             c.updated_at as currency_updated_at
         FROM ${this.tableName} t
-        JOIN currency c ON t.currency = c.code`,
+        JOIN currency c ON t.currency = c.code
+        WHERE is_deleted = 0`,
         [],
         false,
       );
@@ -292,11 +294,13 @@ export class TransactionMapper extends BaseMapper<Transaction> {
     }
   }
 
-  async deleteById(serialNum: string): Promise<void> {
+  async deleteById(serialNum: string, nDb?: Database): Promise<void> {
     try {
-      await db.execute(`DELETE FROM ${this.tableName} WHERE serial_num = ?`, [
-        serialNum,
-      ]);
+      await db.execute(
+        `DELETE FROM ${this.tableName} WHERE serial_num = ?`,
+        [serialNum],
+        nDb,
+      );
       Lg.d('MoneyDb', 'Transaction deleted:', { serialNum });
     } catch (error) {
       this.handleError('deleteById', error);
@@ -340,7 +344,8 @@ export class TransactionMapper extends BaseMapper<Transaction> {
             c.created_at as currency_created_at,
             c.updated_at as currency_updated_at
         FROM ${this.tableName} t
-        JOIN currency c ON t.currency = c.code`;
+        JOIN currency c ON t.currency = c.code
+        WHERE is_deleted = 0`;
 
     const result = await this.queryPaged(
       baseQuery,
@@ -397,6 +402,7 @@ export class TransactionMapper extends BaseMapper<Transaction> {
         JOIN account a ON t.account_serial_num = a.serial_num
         JOIN currency c ON t.currency = c.code
         JOIN currency ca ON a.currency = ca.code
+        WHERE is_deleted = 0
       `;
 
     return await this.queryPaged(
@@ -455,7 +461,7 @@ export class TransactionMapper extends BaseMapper<Transaction> {
       SUM(CASE
             WHEN category = 'Transfer' AND transaction_type = 'Expense' THEN amount ELSE 0 END) AS transferExpense
     FROM transactions
-    WHERE date >= ? AND date < ?;
+    WHERE date >= ? AND date < ? and is_deleted = 0;
   `;
     try {
       const result = await db.select(query, [startDate, endDate], false);

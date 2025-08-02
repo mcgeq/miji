@@ -276,6 +276,8 @@ async function deleteTransaction(transaction: TransactionWithAccount) {
       // 检查是否为转账交易
       if (transaction && isTransferTransaction(transaction)) {
         // 如果是转账交易，需要特殊处理
+        console.log('deleteTransferTransaction fromSerialNum', transaction.serialNum);
+        console.log('deleteTransferTransaction relatedTransactionSerialNum', transaction.relatedTransactionSerialNum);
         await moneyStore.deleteTransferTransaction(transaction.serialNum);
         toast.success('转账记录删除成功');
       } else {
@@ -410,7 +412,7 @@ async function toggleAccountActive(serialNum: string) {
     await moneyStore.toggleAccountActive(serialNum);
     toast.success('状态更新成功');
     loadAccounts();
-      await syncAccountBalanceSummary();
+    await syncAccountBalanceSummary();
   } catch (err) {
     Lg.e('toggleAccountActive', err);
     toast.error('状态更新失败');
@@ -433,7 +435,7 @@ async function saveAccount(account: Account) {
     }
     closeAccountModal();
     loadAccounts();
-      await syncAccountBalanceSummary();
+    await syncAccountBalanceSummary();
   } catch (err) {
     Lg.e('saveAccount', err);
     toast.error('保存失败');
