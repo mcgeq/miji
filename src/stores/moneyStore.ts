@@ -617,19 +617,15 @@ export const useMoneyStore = defineStore('money', () => {
   };
 
   const revertAccountBalance = async (transaction: TransactionWithAccount) => {
-    console.log('revertAccountBalance start....');
     const { accountSerialNum, transactionType, amount } = transaction;
     const revertAmount = -amount;
-    console.log('revertAccountBalance transaction ', transaction);
 
     await updateAccountBalance(accountSerialNum, transactionType, revertAmount);
-    console.log('revertAccountBalance start....');
   };
 
   const revertTransactionAndDelete = async (
     transaction: TransactionWithAccount,
   ) => {
-    console.log('revertTransactionAndDelete start....');
     await revertAccountBalance(transaction);
     try {
       await MoneyDb.deleteTransaction(transaction.serialNum);
@@ -641,7 +637,6 @@ export const useMoneyStore = defineStore('money', () => {
         'Transaction',
       );
     }
-    console.log('revertTransactionAndDelete end....');
   };
 
   const doDeleteTransferTransaction = async (
@@ -1007,7 +1002,6 @@ export const useMoneyStore = defineStore('money', () => {
     transactionType: TransactionType,
     amount: number,
   ): Promise<void> {
-    console.log('updateAccountBalance start....');
     const account = await MoneyDb.getAccount(accountSerialNum);
     if (!account) {
       const err = new MoneyStoreError(
@@ -1018,8 +1012,6 @@ export const useMoneyStore = defineStore('money', () => {
       err.log();
       throw err;
     }
-
-    console.log('updateAccountBalance account', account);
 
     const currentBalance = Number.parseFloat(account.balance);
     const initialBalance = Number.parseFloat(account.initialBalance);
@@ -1080,7 +1072,6 @@ export const useMoneyStore = defineStore('money', () => {
         'Account',
       );
     }
-    console.log('updateAccountBalance start....');
   }
 
   const clearError = () => {
