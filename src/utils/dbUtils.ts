@@ -34,17 +34,30 @@ export class DatabaseManager {
   private dbPromise: Promise<Database> | null = null;
   private queryCache: LRUCache<string, QueryCache>;
 
+  // Cache statistics
+  private cacheHits = 0;
+  private cacheMisses = 0;
+
   // config
   private readonly DB_PATH = 'sqlite:miji.db';
   private readonly CACHE_TTL = 5 * 60 * 1000;
   private readonly MAX_CACHE_SIZE = 100;
+  private readonly MAX_RETRIES = 5;
+  private readonly BASE_DELAY = 50;
+
+  // Environment flag (Tauri doesn't have process.env)
+  private readonly isProduction: boolean;
 
   private constructor() {
-    this.queryCache = new LRUCache({
+    // Initialize cache with explicit types
+    this.queryCache = new LRUCache<string, QueryCache>({
       max: this.MAX_CACHE_SIZE,
       ttl: this.CACHE_TTL,
-      ttlAutopurge: true,
     });
+
+    // Detect environment - in Tauri we can use window.__TAURI__ to check
+    this.isProduction =
+      typeof window !== 'undefined' && !!(window as any).__TAURI__;
   }
 
   // Get Singleton Instance
@@ -138,11 +151,16 @@ export class DatabaseManager {
     // check cache
     if (cached) {
       Lg.d('DatabaseManager', 'Cache hit query: ', sql);
+      this.cacheHits++;
       return cached.data;
     }
 
+    this.cacheMisses++;
     const result = await this.executeQuery(db, 'select', sql, params);
-    this.setCache(cacheKey, result);
+    this.queryCache.set(cacheKey, {
+      data: result,
+      timestamp: Date.now(),
+    });
     return result;
   }
 
@@ -156,69 +174,75 @@ export class DatabaseManager {
   }
 
   /**
-   * Execute transaction
+   * Execute transaction (Optimized with exclusive locking and retry strategy)
    */
   public async transaction<T>(
     callback: (db: Database) => Promise<T>,
   ): Promise<T> {
     const db = await this.getDatabase();
-    let transactionStarted = false;
-    const maxRetries = 5; // 最大重试次数
     let retries = 0;
-    const baseDelay = 50; // 基础延迟(ms)
+    const randomFactor = 0.1; // Random jitter factor
 
-    while (retries < maxRetries) {
+    while (retries < this.MAX_RETRIES) {
       try {
+        // Start exclusive transaction
         await this.executeQuery(
           db,
           'execute',
-          'BEGIN IMMEDIATE TRANSACTION',
+          'BEGIN EXCLUSIVE TRANSACTION',
           [],
         );
-        transactionStarted = true;
 
+        // Execute callback
         const result = await callback(db);
 
+        // Commit transaction
         await this.executeQuery(db, 'execute', 'COMMIT', []);
-        transactionStarted = false;
 
+        // Invalidate cache
         this.invalidateCache();
+
         return result;
       } catch (error) {
-        // 锁定错误处理（指数退避策略）
+        // Always attempt rollback on error
+        try {
+          await this.executeQuery(db, 'execute', 'ROLLBACK', []);
+        } catch (rollbackError) {
+          Lg.w('DatabaseManager', 'Rollback failed: ', rollbackError);
+        }
+
+        // Handle lock errors with exponential backoff
         if (
           error instanceof DatabaseError &&
           error.message.includes('database is locked') &&
-          retries < maxRetries
+          retries < this.MAX_RETRIES
         ) {
-          // 回滚当前尝试
-          if (transactionStarted) {
-            try {
-              await this.executeQuery(db, 'execute', 'ROLLBACK', []);
-            } catch { }
-            transactionStarted = false;
-          }
-
           retries++;
-          const waitTime = baseDelay * 2 ** retries;
-          Lg.d('DatabaseManager', `Lock detected, retrying in ${waitTime}ms`);
-          await new Promise(resolve => setTimeout(resolve, waitTime));
+
+          // Calculate backoff with jitter
+          const jitter = 1 + Math.random() * randomFactor;
+          // Use exponentiation operator ** instead of Math.pow
+          const delay = Math.min(
+            this.BASE_DELAY * 2 ** retries * jitter,
+            5000, // Max delay 5s
+          );
+
+          Lg.w(
+            'DatabaseManager',
+            `Lock detected, retrying (${retries}/${this.MAX_RETRIES}) in ${delay.toFixed(0)}ms`,
+          );
+          await new Promise(resolve => setTimeout(resolve, delay));
           continue;
         }
 
-        // 其他错误处理
-        if (transactionStarted) {
-          try {
-            await this.executeQuery(db, 'execute', 'ROLLBACK', []);
-          } catch (rollbackError) {
-            console.warn('Rollback failed:', rollbackError);
-          }
-        }
+        // Re-throw other errors
         throw error;
       }
     }
+
+    // Max retries reached
     throw new DatabaseError(
-      'Transaction failed after retries',
+      `Transaction failed after ${this.MAX_RETRIES} retries`,
       'DB_LOCK_TIMEOUT',
       'transaction',
     );
@@ -232,7 +256,7 @@ export class DatabaseManager {
   ): Promise<void> {
     await this.transaction(async db => {
       for (const { sql, params } of operations) {
-        await db.execute(sql, params);
+        await this.executeQuery(db, 'execute', sql, params);
       }
     });
   }
@@ -247,7 +271,15 @@ export class DatabaseManager {
     params: any[],
   ): Promise<any> {
     try {
-      Lg.d('DatabaseManager', `Executing ${method}: `, { sql, params });
+      // Use debug level in production, info in development
+      const logLevel = this.isProduction ? 'd' : 'i';
+
+      // Log with appropriate level
+      if (logLevel === 'd') {
+        Lg.d('DatabaseManager', `Executing ${method}: `, { sql, params });
+      } else {
+        Lg.i('DatabaseManager', `Executing ${method}: `, { sql, params });
+      }
 
       const startTime = Date.now();
       const result =
@@ -255,7 +287,19 @@ export class DatabaseManager {
           ? await db.select(sql, params)
           : await db.execute(sql, params);
       const duration = Date.now() - startTime;
-      Lg.d('DatabaseManager', `Query completed in ${duration}ms`);
+
+      if (logLevel === 'd') {
+        Lg.d('DatabaseManager', `Query completed in ${duration}ms`, {
+          sql,
+          duration,
+        });
+      } else {
+        Lg.i('DatabaseManager', `Query completed in ${duration}ms`, {
+          sql,
+          duration,
+        });
+      }
+
       return result;
     } catch (error) {
       const dbError = new DatabaseError(
@@ -267,7 +311,7 @@ export class DatabaseManager {
       Lg.e('DatabaseManager', `Database ${method} failed: `, {
         sql,
         params,
-        error,
+        error: dbError,
       });
       throw dbError;
     }
@@ -278,16 +322,6 @@ export class DatabaseManager {
    */
   private getCacheKey(sql: string, params: any[]): string {
     return `${sql}:${JSON.stringify(params)}`;
-  }
-
-  /**
-   * Set Cache
-   */
-  private setCache(key: string, data: any): void {
-    this.queryCache.set(key, {
-      data,
-      timestamp: Date.now(),
-    });
   }
 
   /**
@@ -315,11 +349,15 @@ export class DatabaseManager {
     cacheSize: number;
     dbPath: string;
     isConnected: boolean;
+    cacheHits: number;
+    cacheMisses: number;
   }> {
     return {
       cacheSize: this.queryCache.size,
       dbPath: this.DB_PATH,
       isConnected: this.db !== null,
+      cacheHits: this.cacheHits,
+      cacheMisses: this.cacheMisses,
     };
   }
 
@@ -337,6 +375,37 @@ export class DatabaseManager {
       } catch (error) {
         Lg.e('DatabaseManager', 'Error closing database:', error);
       }
+    }
+  }
+
+  /**
+   * Check if database connection is active
+   */
+  public isConnected(): boolean {
+    return this.db !== null;
+  }
+
+  /**
+   * Reset database connection (for recovery scenarios)
+   */
+  public async resetConnection(): Promise<void> {
+    if (this.db) {
+      try {
+        await this.db.close();
+      } catch (error) {
+        Lg.w('DatabaseManager', 'Error during connection reset:', error);
+      }
+    }
+
+    this.db = null;
+    this.dbPromise = null;
+    this.invalidateCache();
+
+    try {
+      await this.getDatabase(); // Re-establish connection
+      Lg.i('DatabaseManager', 'Database connection reset successfully');
+    } catch (error) {
+      Lg.e('DatabaseManager', 'Failed to reset database connection:', error);
     }
   }
 }
@@ -393,6 +462,8 @@ export const db = {
     cacheSize: number;
     dbPath: string;
     isConnected: boolean;
+    cacheHits: number;
+    cacheMisses: number;
   }> => {
     return DatabaseManager.getInstance().getStats();
   },
@@ -409,6 +480,13 @@ export const db = {
    */
   close: (): Promise<void> => {
     return DatabaseManager.getInstance().close();
+  },
+
+  /**
+   * Reset connection
+   */
+  reset: (): Promise<void> => {
+    return DatabaseManager.getInstance().resetConnection();
   },
 };
 
