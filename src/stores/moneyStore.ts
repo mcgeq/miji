@@ -467,11 +467,11 @@ export const useMoneyStore = defineStore('money', () => {
         err.log();
         throw err;
       }
-      const relatedTransaction =
+      const relatedTransactions =
         await MoneyDb.getTransferRelatedTransactionWithAccount(
           transaction.relatedTransactionSerialNum,
         );
-      if (!relatedTransaction) {
+      if (!relatedTransactions) {
         const err = new MoneyStoreError(
           MoneyStoreErrorCode.RELATED_TRANSACTION_NOT_FOUND,
           '未找到关联的转账交易',
@@ -481,47 +481,42 @@ export const useMoneyStore = defineStore('money', () => {
         throw err;
       }
 
-      const oldTransaction = await MoneyDb.getTransactionWithAccount(
-        transaction.serialNum,
-      );
-      const oldRelatedTransaction = await MoneyDb.getTransactionWithAccount(
-        relatedTransaction.serialNum,
-      );
-      if (!oldTransaction || !oldRelatedTransaction) {
-        const err = new MoneyStoreError(
-          MoneyStoreErrorCode.TRANSACTION_NOT_FOUND,
-          '交易记录不存在',
-          { serialNum: transaction.serialNum },
-        );
-        err.log();
-        throw err;
-      }
+      const fromTrans =
+        relatedTransactions[0].transactionType ===
+          TransactionTypeSchema.enum.Expense
+          ? relatedTransactions[0]
+          : relatedTransactions[1];
+      const toTrans =
+        relatedTransactions[0].transactionType ===
+          TransactionTypeSchema.enum.Income
+          ? relatedTransactions[0]
+          : relatedTransactions[1];
 
       await updateAccountBalance(
-        oldTransaction.accountSerialNum,
-        oldTransaction.transactionType,
-        -oldTransaction.amount,
+        fromTrans.accountSerialNum,
+        fromTrans.transactionType,
+        -fromTrans.amount,
       );
       await updateAccountBalance(
-        oldRelatedTransaction.accountSerialNum,
-        oldRelatedTransaction.transactionType,
-        -oldRelatedTransaction.amount,
+        toTrans.accountSerialNum,
+        toTrans.transactionType,
+        -toTrans.amount,
       );
 
       await MoneyDb.executeInTransaction(async () => {
         await updateAccountBalance(
-          oldTransaction.accountSerialNum,
-          oldTransaction.transactionType,
-          -oldTransaction.amount,
+          fromTrans.account.serialNum,
+          fromTrans.transactionType,
+          -fromTrans.amount,
         );
         await updateAccountBalance(
-          oldRelatedTransaction.accountSerialNum,
-          oldRelatedTransaction.transactionType,
-          -oldRelatedTransaction.amount,
+          toTrans.account.serialNum,
+          toTrans.transactionType,
+          -toTrans.amount,
         );
 
         const updatedRelatedTransaction: TransactionWithAccount = {
-          ...relatedTransaction,
+          ...toTrans,
           amount: transaction.amount,
           currency: transaction.currency,
           description: transaction.description,
@@ -561,36 +556,10 @@ export const useMoneyStore = defineStore('money', () => {
     }
   };
 
-  const getTransactionWithAccountOrThrow = async (
-    serialNum: string,
-    errorMsg: string,
-  ): Promise<TransactionWithAccount> => {
-    try {
-      const transaction = await MoneyDb.getTransactionWithAccount(serialNum);
-      if (!transaction) {
-        const err = new MoneyStoreError(
-          MoneyStoreErrorCode.TRANSACTION_NOT_FOUND,
-          errorMsg,
-          { serialNum },
-        );
-        err.log();
-        throw err;
-      }
-      return transaction;
-    } catch (err) {
-      throw handleMoneyStoreError(
-        err,
-        errorMsg,
-        'getTransaction',
-        'Transaction',
-      );
-    }
-  };
-
   const getTransferRelatedTransactionWithAccountOrThrow = async (
     releatedSerialNum: string,
     errorMsg: string,
-  ): Promise<TransactionWithAccount> => {
+  ): Promise<TransactionWithAccount[]> => {
     try {
       const trans =
         await MoneyDb.getTransferRelatedTransactionWithAccount(
@@ -617,26 +586,40 @@ export const useMoneyStore = defineStore('money', () => {
   };
 
   const deleteTransferTransaction = async (
-    fromSerialNum: string,
-    toSerialNum?: string,
+    relatedTransactionSerialNum: string,
   ) => {
     loading.value = true;
     error.value = null;
 
     try {
-      const fromTransaction = await getTransactionWithAccountOrThrow(
-        fromSerialNum,
-        '转出交易不存在',
-      );
-      const toTransaction = toSerialNum
-        ? await getTransactionWithAccountOrThrow(toSerialNum, '转入交易不存在')
-        : await getTransferRelatedTransactionWithAccountOrThrow(
-          fromSerialNum,
-          '转入交易不存在',
+      const relatedTransactions =
+        await getTransferRelatedTransactionWithAccountOrThrow(
+          relatedTransactionSerialNum,
+          '交易不存在',
         );
+      if (relatedTransactions.length !== 2) {
+        throw handleMoneyStoreError(
+          '',
+          '无法删除转账交易',
+          'deleteTransferTransaction',
+          'Transaction',
+        );
+      }
+
+      const fromTrans =
+        relatedTransactions[0].transactionType ===
+          TransactionTypeSchema.enum.Expense
+          ? relatedTransactions[0]
+          : relatedTransactions[1];
+      const toTrans =
+        relatedTransactions[0].transactionType ===
+          TransactionTypeSchema.enum.Income
+          ? relatedTransactions[0]
+          : relatedTransactions[1];
+
       const operations = MoneyDb.buildDeleteTransferOperations(
-        fromTransaction,
-        toTransaction,
+        fromTrans,
+        toTrans,
       );
       await MoneyDb.executeBatch(operations);
       await updateLocalTransactions();
@@ -654,7 +637,7 @@ export const useMoneyStore = defineStore('money', () => {
 
   const getTransferRelatedTransaction = async (
     serialNum: string,
-  ): Promise<TransactionWithAccount | null> => {
+  ): Promise<TransactionWithAccount[] | null> => {
     loading.value = true;
     error.value = null;
 

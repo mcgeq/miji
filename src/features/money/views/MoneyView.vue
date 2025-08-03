@@ -320,10 +320,10 @@ async function saveTransfer(fromTransaction: TransactionWithAccount, toTransacti
       toast.success('转账更新成功');
     } else {
       const fromSerialNum = uuid(38);
-      fromTransaction.relatedTransactionSerialNum = fromSerialNum;
       fromTransaction.serialNum = fromSerialNum;
-      toTransaction.relatedTransactionSerialNum = fromSerialNum;
+      fromTransaction.relatedTransactionSerialNum = fromSerialNum;
       toTransaction.serialNum = uuid(38);
+      toTransaction.relatedTransactionSerialNum = fromSerialNum;
 
       // 创建新的转账交易
       // 先创建转出交易

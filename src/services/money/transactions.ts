@@ -171,8 +171,8 @@ export class TransactionMapper extends BaseMapper<Transaction> {
   }
 
   async getTransferRelatedTransactionWithAccount(
-    serialNum: string,
-  ): Promise<TransactionWithAccount | null> {
+    releatedTransactionSerialNum: string,
+  ): Promise<TransactionWithAccount[] | null> {
     try {
       const result = await db.select<any[]>(
         `SELECT t.*, 
@@ -203,13 +203,16 @@ export class TransactionMapper extends BaseMapper<Transaction> {
           JOIN account a ON t.account_serial_num = a.serial_num
           JOIN currency c ON t.currency = c.code
           JOIN currency ca ON a.currency = ca.code
-          WHERE t.serial_num = ?`,
-        [serialNum],
+          WHERE t.related_transaction_serial_num = ?`,
+        [releatedTransactionSerialNum],
         true,
       );
 
       if (result.length === 0) return null;
-      return this.transformTransactionWithAccountRow(result[0]);
+      return [
+        await this.transformTransactionWithAccountRow(result[0]),
+        await this.transformTransactionWithAccountRow(result[1]),
+      ];
     } catch (error) {
       this.handleError('getTransferRelatedTransactionWithAccount', error);
     }

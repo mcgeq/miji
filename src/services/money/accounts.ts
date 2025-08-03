@@ -305,7 +305,7 @@ export class AccountMapper extends BaseMapper<Account> {
             WHERE serial_num = ?`,
       params: [
         amountDelta,
-        new Date().toISOString(), // 使用当前时间戳
+        DateUtils.getLocalISODateTimeWithOffset(), // 使用当前时间戳
         serialNum,
       ],
     };

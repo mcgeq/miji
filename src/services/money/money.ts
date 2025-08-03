@@ -128,11 +128,11 @@ export class MoneyDb {
   }
 
   static async getTransferRelatedTransactionWithAccount(
-    serialNum: string,
-  ): Promise<TransactionWithAccount | null> {
+    relatedTransactionSerialNum: string,
+  ): Promise<TransactionWithAccount[] | null> {
     try {
       return await this.transactionMapper.getTransferRelatedTransactionWithAccount(
-        serialNum,
+        relatedTransactionSerialNum,
       );
     } catch (error) {
       throw new MoneyDbError(
@@ -235,13 +235,13 @@ export class MoneyDb {
     return [
       // 恢复转出账户余额
       this.accountMapper.buildUpdateBalanceOperation(
-        fromTransaction.accountSerialNum,
+        fromTransaction.account.serialNum,
         fromTransaction.amount, // 正数增加（因为是支出，删除后要加回）
       ),
 
       // 恢复转入账户余额
       this.accountMapper.buildUpdateBalanceOperation(
-        toTransaction.accountSerialNum,
+        toTransaction.account.serialNum,
         -toTransaction.amount, // 负数减少（因为是收入，删除后要扣除）
       ),
 
@@ -545,6 +545,6 @@ export class MoneyDb {
 
   // 关闭连接
   static async close(): Promise<void> {
-    return db.close();
+    return db.closeAll();
   }
 }
