@@ -54,6 +54,7 @@ const trans = props.transaction || {
   paymentMethod: PaymentMethodSchema.enum.Cash,
   actualPayerAccount: AccountTypeSchema.enum.Bank,
   transactionStatus: TransactionStatusSchema.enum.Completed,
+  idDeleted: false,
   createdAt: DateUtils.getLocalISODateTimeWithOffset(),
   updatedAt: null,
   account: props.accounts[0] || ({} as Account),
@@ -71,14 +72,9 @@ const availablePaymentMethods = computed(() => {
   if (form.value.transactionType !== TransactionTypeSchema.enum.Income) {
     if (selectedAccount?.type === AccountTypeSchema.enum.Alipay) {
       return [PaymentMethodSchema.enum.Alipay];
-    }
-    else if (selectedAccount?.type === AccountTypeSchema.enum.WeChat) {
+    } else if (selectedAccount?.type === AccountTypeSchema.enum.WeChat) {
       return [PaymentMethodSchema.enum.WeChat];
-    }
-    // else if (selectedAccount?.type === AccountTypeSchema.enum.CloudQuickPass) {
-    //   return [PaymentMethodSchema.enum.CloudQuickPass];
-    // }
-    else if (selectedAccount?.type === AccountTypeSchema.enum.CreditCard) {
+    } else if (selectedAccount?.type === AccountTypeSchema.enum.CreditCard) {
       return [
         PaymentMethodSchema.enum.CreditCard,
         PaymentMethodSchema.enum.Alipay,
@@ -140,8 +136,7 @@ const filteredCategories = computed(() => {
   const category = categories.value.filter(c => {
     if (props.transaction?.category === CategorySchema.enum.Transfer) {
       return c.type === CategorySchema.enum.Transfer;
-    }
-    else {
+    } else {
       return c.type === form.value.transactionType;
     }
   });
@@ -215,8 +210,7 @@ function handleSubmit() {
       toast.error('转出金额超过信用卡可用额度');
       return;
     }
-  }
-  else {
+  } else {
     // Non-credit card accounts, check balance
     const balance = Number.parseFloat(fromAccount.balance);
     if (Number.isNaN(balance) || amount > balance) {
@@ -259,6 +253,7 @@ function handleSubmit() {
       actualPayerAccount: form.value.actualPayerAccount || 'Bank',
       transactionStatus: form.value.transactionStatus || 'Completed',
       createdAt: props.transaction?.createdAt || transactionDateTime,
+      idDeleted: props.transaction?.idDeleted || false,
       updatedAt: transactionDateTime,
       account: fromAccount,
     };
@@ -278,14 +273,14 @@ function handleSubmit() {
       paymentMethod: form.value.paymentMethod || 'Cash',
       actualPayerAccount: form.value.actualPayerAccount || 'Bank',
       transactionStatus: form.value.transactionStatus || 'Completed',
+      idDeleted: form.value.idDeleted || false,
       createdAt: transactionDateTime,
       updatedAt: transactionDateTime,
       account: toAccount,
     };
 
     emit('saveTransfer', fromTransaction, toTransaction);
-  }
-  else {
+  } else {
     const transaction: TransactionWithAccount = {
       ...form.value,
       serialNum: props.transaction?.serialNum || '',
@@ -303,8 +298,7 @@ function validateAmount(event: Event) {
   const input = event.target as HTMLInputElement;
   if (input.value === '' || Number.isNaN(Number(input.value))) {
     form.value.amount = 0; // Reset to empty string for invalid input
-  }
-  else {
+  } else {
     form.value.amount = Number.parseFloat(input.value); // Keep as string
   }
 }
@@ -335,16 +329,15 @@ watch(
     if (form.value.transactionType !== TransactionTypeSchema.enum.Income) {
       if (selectedAccount?.type === AccountTypeSchema.enum.Alipay) {
         form.value.paymentMethod = PaymentMethodSchema.enum.Alipay;
-      }
-      else if (selectedAccount?.type === AccountTypeSchema.enum.WeChat) {
+      } else if (selectedAccount?.type === AccountTypeSchema.enum.WeChat) {
         form.value.paymentMethod = PaymentMethodSchema.enum.WeChat;
+      } else if (selectedAccount?.type === AccountTypeSchema.enum.CreditCard) {
+        form.value.paymentMethod = PaymentMethodSchema.enum.CreditCard;
       }
       // else if (selectedAccount?.type === AccountTypeSchema.enum.CloudQuickPass) {
       //   form.value.paymentMethod = PaymentMethodSchema.enum.CloudQuickPass;
       // }
-      else if (selectedAccount?.type === AccountTypeSchema.enum.CreditCard) {
-        form.value.paymentMethod = PaymentMethodSchema.enum.CreditCard;
-      }
+
       // else if (
       //   selectedAccount?.type === AccountTypeSchema.enum.Savings ||
       //   selectedAccount?.type === AccountTypeSchema.enum.Bank
@@ -384,8 +377,7 @@ watch(
         updatedAt: transaction.updatedAt || null,
         account: transaction.account,
       };
-    }
-    else {
+    } else {
       form.value = {
         serialNum: '',
         transactionType: props.type,
@@ -403,6 +395,7 @@ watch(
         actualPayerAccount: 'Bank',
         transactionStatus: 'Completed',
         createdAt: DateUtils.getLocalISODateTimeWithOffset(),
+        idDeleted: false,
         updatedAt: null,
         account: props.accounts[0] || ({} as Account),
       };

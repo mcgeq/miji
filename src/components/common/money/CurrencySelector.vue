@@ -49,16 +49,21 @@ const inputId = ref(`currency-selector-${uuid(38)}`);
 const currentValue = ref<Currency>(
   props.modelValue && validateValue(props.modelValue) ? props.modelValue : CURRENCY_CNY,
 );
-const currencies = ref<Currency[]>([]);
+const currencies = ref<Currency[]>([CURRENCY_CNY]);
 
 // Fetch currencies asynchronously
 async function loadCurrencies() {
   try {
     const fetchedCurrencies = await MoneyDb.listCurrencies();
-    currencies.value = fetchedCurrencies;
-  }
-  catch (err: unknown) {
+    if (fetchedCurrencies.length === 0) {
+      currencies.value = [CURRENCY_CNY];
+      return;
+    }
+    const hasCNY = fetchedCurrencies.some(c => c.code === CURRENCY_CNY.code);
+    currencies.value = hasCNY ? fetchedCurrencies : [CURRENCY_CNY, ...fetchedCurrencies];
+  } catch (err: unknown) {
     Lg.e('AccountModal', 'Failed to load currencies:', err);
+    currencies.value = [CURRENCY_CNY];
   }
 }
 
@@ -92,8 +97,7 @@ function validateValue(value: Currency): boolean {
   try {
     CurrencySchema.parse(value);
     return true;
-  }
-  catch {
+  } catch {
     return false;
   }
 }
@@ -112,8 +116,7 @@ function handleChange(event: Event) {
     emit('update:modelValue', selectedCurrency);
     emit('change', selectedCurrency);
     emit('validate', true);
-  }
-  else {
+  } else {
     emit('validate', false);
   }
 }
@@ -124,29 +127,14 @@ function handleBlur() {
   emit('validate', isValid);
 }
 
-// 监听 modelValue 变化
-watch(
-  () => props.modelValue,
-  newValue => {
-    if (newValue.code !== currentValue.value?.code) {
-      currentValue.value = newValue;
-    }
-  },
-  { immediate: true },
-);
-
-// 监听 currentValue 变化
-watch(currentValue, newValue => {
-  if (newValue.code !== props.modelValue.code) {
-    emit('update:modelValue', newValue);
-  }
-});
-
 const currencyOptions = computed(() => {
-  if (props.customOptions && props.customOptions.length > 0) {
-    return props.customOptions;
+  if (props.customOptions) {
+    return props.customOptions.filter(opt =>
+      opt.value &&
+      typeof opt.value === 'object' &&
+      'code' in opt.value,
+    );
   }
-
   return currencies.value.map(currency => ({
     value: currency,
     label: `${currency.code}`,
@@ -176,6 +164,24 @@ function getCurrentCurrencyInfo() {
   );
 }
 
+// 监听 modelValue 变化
+watch(
+  () => props.modelValue,
+  newValue => {
+    if (newValue.code !== currentValue.value?.code) {
+      currentValue.value = newValue;
+    }
+  },
+  { immediate: true },
+);
+
+// 监听 currentValue 变化
+watch(currentValue, newValue => {
+  if (newValue.code !== props.modelValue.code) {
+    emit('update:modelValue', newValue);
+  }
+});
+
 defineExpose({
   focus,
   reset,
@@ -189,7 +195,7 @@ defineExpose({
     <div class="flex flex-col" :class="widthClass">
       <select
         :id="inputId"
-        v-model="currentValue"
+        v-model="currentValue.code"
         class="modal-input-select" :class="[
           {
             'border-red-500': hasError,
@@ -204,7 +210,7 @@ defineExpose({
         <option
           v-for="option in currencyOptions"
           :key="option.value.code"
-          :value="option.value"
+          :value="option.value.code"
           :disabled="option.disabled"
         >
           {{ option.label }}
