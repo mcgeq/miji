@@ -17,3 +17,4 @@ rand = { workspace = true }
 zeroize = { workspace = true }
 miji_derive = { workspace = true }
 jsonwebtoken = { workspace = true }
+sea-orm = { workspace = true }

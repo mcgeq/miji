@@ -35,7 +35,7 @@ snafu = { version = "0.8.6", features = [
 tokio = { version = "1.45.1", features = ["full", "tracing"] }
 chrono = { version = "0.4.41", features = ["serde"] }
 dotenvy = "0.15.7"
-darling = "0.20.11"
+darling = "0.21.0"
 futures = "0.3.31"
 tauri-plugin-log = { version = "2", features = ["colored"] }
 log = { version = "0.4.27", features = ["serde"] }
@@ -45,6 +45,15 @@ quote = "1.0.40"
 proc-macro2 = "1.0.95"
 rand = { version = "0.9.1", features = ["serde"] }
 rust_decimal = { version = "1.37.2", features = ["macros"] }
+sea-orm = { version = "1.1.14", features = [
+  "sqlx-sqlite",
+  "runtime-tokio-native-tls",
+  "debug-print",
+  "with-chrono",
+  "with-json",
+  "macros",
+  "with-rust_decimal",
+] }
 validator = { version = "0.20.0", features = ["derive"] }
 zeroize = { version = "1.8.1", features = ["serde", "zeroize_derive"] }
 common = { path = "./common" }
@@ -60,16 +69,18 @@ tauri-plugin-dialog = { workspace = true }
 tauri-plugin-sql = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
+sea-orm = { workspace = true }
 log = { workspace = true }
 tauri-plugin-log = { workspace = true }
-migration = { path = "migration" }
+migration = { path = "./migration" }
 common = { workspace = true }
 tokio = { workspace = true }
 darling = { workspace = true }
 dotenvy.workspace = true
 tauri-plugin-svelte = "2.6.0"
 chrono = { workspace = true }
-tauri-plugin-vue = "0.3.0"
+tauri-plugin-vue = "1.0.0"
+futures = { workspace = true, features = ["futures-executor"] }
 
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]

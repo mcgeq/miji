@@ -6,17 +6,18 @@ pub mod error;
 pub mod jwt;
 pub mod response;
 pub mod utils;
+pub mod config;
 
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use zeroize::{Zeroize, Zeroizing};
-
+use sea_orm::DatabaseConnection;
 use crate::{env::env_get_string, error::MijiResult};
 
 #[derive(Debug, Clone)]
 pub struct AppState {
-    pub db: Arc<String>,
+    pub db: Arc<DatabaseConnection>,
     pub credentials: Arc<Mutex<ApiCredentials>>,
     // 未来还可加更多全局状态，如：
     // pub config: Arc<AppConfig>,

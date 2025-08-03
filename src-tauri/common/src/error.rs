@@ -28,6 +28,7 @@ pub enum MijiError {
     Sql(Box<dyn CodeMessage + Send + Sync + 'static>),
     Todos(Box<dyn CodeMessage + Send + Sync + 'static>),
     User(Box<dyn CodeMessage + Send + Sync + 'static>),
+    Database(Box<dyn CodeMessage + Send + Sync + 'static>),
 }
 
 impl CodeMessage for MijiError {
@@ -47,6 +48,7 @@ impl CodeMessage for MijiError {
             MijiError::Sql(e) => e.code(),
             MijiError::Todos(e) => e.code(),
             MijiError::User(e) => e.code(),
+            MijiError::Database(e) => e.code(),
         }
     }
 
@@ -66,6 +68,7 @@ impl CodeMessage for MijiError {
             MijiError::Sql(e) => e.message(),
             MijiError::Todos(e) => e.message(),
             MijiError::User(e) => e.message(),
+            MijiError::Database(e) => e.message(),
         }
     }
 }
@@ -87,6 +90,7 @@ impl fmt::Display for MijiError {
             MijiError::Sql(err) => write!(f, "{err}"),
             MijiError::Todos(err) => write!(f, "{err}"),
             MijiError::User(err) => write!(f, "{err}"),
+            MijiError::Database(err) => write!(f, "{err}"),
         }
     }
 }
@@ -108,6 +112,7 @@ impl fmt::Debug for MijiError {
             MijiError::Sql(err) => write!(f, "{err}"),
             MijiError::Todos(err) => write!(f, "{err}"),
             MijiError::User(err) => write!(f, "{err}"),
+            MijiError::Database(err) => write!(f, "{err}"),
         }
     }
 }
@@ -129,6 +134,7 @@ impl Error for MijiError {
             MijiError::Sql(err) => Some(err.as_ref()),
             MijiError::Todos(err) => Some(err.as_ref()),
             MijiError::User(err) => Some(err.as_ref()),
+            MijiError::Database(err) => Some(err.as_ref()),
         }
     }
 }
@@ -150,6 +156,7 @@ pub enum MijiErrorDto {
     Sql(String),
     Todos(String),
     User(String),
+    Database(String),
     Unknown(String), // 可选：处理兜底错误
 }
 
@@ -170,6 +177,7 @@ impl From<&MijiError> for MijiErrorDto {
             MijiError::Sql(e) => MijiErrorDto::Sql(e.to_string()),
             MijiError::Todos(e) => MijiErrorDto::Todos(e.to_string()),
             MijiError::User(e) => MijiErrorDto::User(e.to_string()),
+            MijiError::Database(e) => MijiErrorDto::Database(e.to_string()),
         }
     }
 }
@@ -206,5 +214,55 @@ pub enum AuthError {
 impl From<AuthError> for MijiError {
     fn from(value: AuthError) -> Self {
         MijiError::Auth(Box::new(value))
+    }
+}
+
+#[derive(Debug, Snafu)]
+#[snafu(visibility(pub))]
+pub enum EnvError {
+    #[snafu(display("无法获取主目录: {source}"))]
+    HomeDir {
+        source: tauri::Error,
+        code: BusinessCode,
+        message: String,
+    },
+
+    #[snafu(display("路径转换失败: {message}"))]
+    PathConversion { code: BusinessCode, message: String },
+
+    #[snafu(display("环境变量解析失败: {message}"))]
+    EnvParse { code: BusinessCode, message: String },
+
+    #[snafu(display("数据库错误: {message}"))]
+    Sql { code: BusinessCode, message: String },
+    #[snafu(display("数据库连接失败: {message}"))]
+    DatabaseConnection { code: BusinessCode, message: String },
+}
+
+impl CodeMessage for EnvError {
+    fn code(&self) -> i32 {
+        match self {
+            EnvError::HomeDir { code, .. } => (*code).into(), // Dereference code
+            EnvError::PathConversion { code, .. } => (*code).into(),
+            EnvError::EnvParse { code, .. } => (*code).into(),
+            EnvError::Sql { code, .. } => (*code).into(),
+            EnvError::DatabaseConnection { code, .. } => (*code).into(),
+        }
+    }
+
+    fn message(&self) -> &str {
+        match self {
+            EnvError::HomeDir { message, .. } => message,
+            EnvError::PathConversion { message, .. } => message,
+            EnvError::EnvParse { message, .. } => message,
+            EnvError::Sql { message, .. } => message,
+            EnvError::DatabaseConnection { message, .. } => message,
+        }
+    }
+}
+
+impl From<EnvError> for MijiError {
+    fn from(value: EnvError) -> Self {
+        MijiError::Env(Box::new(value))
     }
 }
