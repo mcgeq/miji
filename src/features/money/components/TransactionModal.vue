@@ -294,13 +294,23 @@ function handleSubmit() {
   }
 }
 
-function validateAmount(event: Event) {
+function handleAmountInput(event: Event) {
   const input = event.target as HTMLInputElement;
-  if (input.value === '' || Number.isNaN(Number(input.value))) {
-    form.value.amount = 0; // Reset to empty string for invalid input
-  } else {
-    form.value.amount = Number.parseFloat(input.value); // Keep as string
+  const value = input.value;
+
+  // 允许空字符串（用户清除输入）
+  if (value === '') {
+    form.value.amount = 0;
+    return;
   }
+
+  const numValue = Number.parseFloat(value);
+
+  // 仅处理有效数字
+  if (!Number.isNaN(numValue)) {
+    form.value.amount = numValue;
+  }
+  // 无效输入保持当前值（不清除用户输入）
 }
 
 watch(
@@ -403,6 +413,19 @@ watch(
   },
   { immediate: true },
 );
+
+watch(
+  () => form.value.amount,
+  newVal => {
+    if (newVal === 0) {
+      // 当用户主动清除后重置为0时，保持输入框为空
+      nextTick(() => {
+        const input = document.querySelector('input[type="number"]') as HTMLInputElement;
+        if (input && input.value === '0') input.value = '';
+      });
+    }
+  },
+);
 </script>
 
 <template>
@@ -440,7 +463,7 @@ watch(
             step="0.01"
             min="0"
             required
-            @input="validateAmount"
+            @input="handleAmountInput"
           >
         </div>
 

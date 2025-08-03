@@ -65,13 +65,13 @@ export class TransactionMapper extends BaseMapper<Transaction> {
           accountSerialNum,
           category,
           subCategory,
-          JSON.stringify(tags),
-          JSON.stringify(splitMembers),
+          JSON.stringify(tags) || null,
+          JSON.stringify(splitMembers) || null,
           paymentMethod,
           actualPayerAccount,
           relatedTransactionSerialNum || null,
           createdAt,
-          updatedAt,
+          updatedAt || null,
         ],
       );
       Lg.d('MoneyDb', 'Transaction created:', { serialNum });
