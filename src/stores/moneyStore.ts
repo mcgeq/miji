@@ -561,7 +561,7 @@ export const useMoneyStore = defineStore('money', () => {
     }
   };
 
-  const getTransactionOrThrow = async (
+  const getTransactionWithAccountOrThrow = async (
     serialNum: string,
     errorMsg: string,
   ): Promise<TransactionWithAccount> => {
@@ -587,7 +587,7 @@ export const useMoneyStore = defineStore('money', () => {
     }
   };
 
-  const getTransferRelatedTransactionOrThrow = async (
+  const getTransferRelatedTransactionWithAccountOrThrow = async (
     releatedSerialNum: string,
     errorMsg: string,
   ): Promise<TransactionWithAccount> => {
@@ -616,51 +616,6 @@ export const useMoneyStore = defineStore('money', () => {
     }
   };
 
-  const revertAccountBalance = async (transaction: TransactionWithAccount) => {
-    const { accountSerialNum, transactionType, amount } = transaction;
-    const revertAmount = -amount;
-
-    await updateAccountBalance(accountSerialNum, transactionType, revertAmount);
-  };
-
-  const revertTransactionAndDelete = async (
-    transaction: TransactionWithAccount,
-  ) => {
-    await revertAccountBalance(transaction);
-    try {
-      await MoneyDb.deleteTransaction(transaction.serialNum);
-    } catch (err) {
-      throw handleMoneyStoreError(
-        err,
-        '删除交易失败',
-        'deleteTransaction',
-        'Transaction',
-      );
-    }
-  };
-
-  const doDeleteTransferTransaction = async (
-    fromSerialNum: string,
-    toSerialNum?: string,
-  ) => {
-    const fromTransaction = await getTransactionOrThrow(
-      fromSerialNum,
-      '转出交易不存在',
-    );
-
-    let toTransactionSerialNum = toSerialNum;
-    if (!toTransactionSerialNum) {
-      const related = await getTransferRelatedTransactionOrThrow(
-        fromSerialNum,
-        '转入交易不存在',
-      );
-      toTransactionSerialNum = related?.serialNum;
-      await revertTransactionAndDelete(related);
-    }
-
-    await revertTransactionAndDelete(fromTransaction);
-  };
-
   const deleteTransferTransaction = async (
     fromSerialNum: string,
     toSerialNum?: string,
@@ -669,9 +624,21 @@ export const useMoneyStore = defineStore('money', () => {
     error.value = null;
 
     try {
-      await MoneyDb.executeInTransaction(async () => {
-        await doDeleteTransferTransaction(fromSerialNum, toSerialNum);
-      });
+      const fromTransaction = await getTransactionWithAccountOrThrow(
+        fromSerialNum,
+        '转出交易不存在',
+      );
+      const toTransaction = toSerialNum
+        ? await getTransactionWithAccountOrThrow(toSerialNum, '转入交易不存在')
+        : await getTransferRelatedTransactionWithAccountOrThrow(
+          fromSerialNum,
+          '转入交易不存在',
+        );
+      const operations = MoneyDb.buildDeleteTransferOperations(
+        fromTransaction,
+        toTransaction,
+      );
+      await MoneyDb.executeBatch(operations);
       await updateLocalTransactions();
     } catch (err) {
       throw handleMoneyStoreError(

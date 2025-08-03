@@ -289,6 +289,28 @@ export class AccountMapper extends BaseMapper<Account> {
     }
   }
 
+  /**
+   * 构建更新账户余额的 SQL 操作
+   * @param serialNum 账户序列号
+   * @param amountDelta 余额变化量（正数为增加，负数为减少）
+   */
+  buildUpdateBalanceOperation(
+    serialNum: string,
+    amountDelta: number,
+  ): { sql: string; params: any[] } {
+    return {
+      sql: `UPDATE ${this.tableName} 
+            SET balance = CAST(balance AS REAL) + ?, 
+                updated_at = ? 
+            WHERE serial_num = ?`,
+      params: [
+        amountDelta,
+        new Date().toISOString(), // 使用当前时间戳
+        serialNum,
+      ],
+    };
+  }
+
   private transformAccountRow(row: any): any {
     const booleanFields = this.getBooleanFields();
     booleanFields.forEach(field => {

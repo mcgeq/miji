@@ -445,6 +445,17 @@ export class TransactionMapper extends BaseMapper<Transaction> {
     return this.queryIncomeAndExpense(startDate, endDate);
   }
 
+  /**
+   * 构建删除交易的 SQL 操作
+   * @param serialNum 交易序列号
+   */
+  buildDeleteOperation(serialNum: string): { sql: string; params: any[] } {
+    return {
+      sql: `DELETE FROM ${this.tableName} WHERE serial_num = ?`,
+      params: [serialNum],
+    };
+  }
+
   private async queryIncomeAndExpense(
     startDate: string,
     endDate: string,

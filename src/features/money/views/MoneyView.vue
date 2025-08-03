@@ -276,8 +276,6 @@ async function deleteTransaction(transaction: TransactionWithAccount) {
       // 检查是否为转账交易
       if (transaction && isTransferTransaction(transaction)) {
         // 如果是转账交易，需要特殊处理
-        console.log('deleteTransferTransaction fromSerialNum', transaction.serialNum);
-        console.log('deleteTransferTransaction relatedTransactionSerialNum', transaction.relatedTransactionSerialNum);
         await moneyStore.deleteTransferTransaction(transaction.serialNum);
         toast.success('转账记录删除成功');
       } else {

@@ -223,6 +223,36 @@ export class MoneyDb {
     return this.transactionMapper.lastYearIncomeAndExpense();
   }
 
+  /**
+   * 构建删除转账交易的批处理操作
+   * @param fromTransaction 转出交易
+   * @param toTransaction 转入交易
+   */
+  static buildDeleteTransferOperations(
+    fromTransaction: TransactionWithAccount,
+    toTransaction: TransactionWithAccount,
+  ): Array<{ sql: string; params: any[] }> {
+    return [
+      // 恢复转出账户余额
+      this.accountMapper.buildUpdateBalanceOperation(
+        fromTransaction.accountSerialNum,
+        fromTransaction.amount, // 正数增加（因为是支出，删除后要加回）
+      ),
+
+      // 恢复转入账户余额
+      this.accountMapper.buildUpdateBalanceOperation(
+        toTransaction.accountSerialNum,
+        -toTransaction.amount, // 负数减少（因为是收入，删除后要扣除）
+      ),
+
+      // 删除转出交易
+      this.transactionMapper.buildDeleteOperation(fromTransaction.serialNum),
+
+      // 删除转入交易
+      this.transactionMapper.buildDeleteOperation(toTransaction.serialNum),
+    ];
+  }
+
   // Budget 操作
   static async createBudget(budget: Budget): Promise<void> {
     return this.budgetMapper.create(budget);
