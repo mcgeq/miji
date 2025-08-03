@@ -524,5 +524,5 @@ export abstract class BaseMapper<T extends BaseEntity> {
   abstract getById(serialNum: string): Promise<T | null>;
   abstract list(): Promise<T[]>;
   abstract update(entity: T): Promise<void>;
-  abstract deleteById(serialNum: string, db?: Database): Promise<void>;
+  abstract deleteById(serialNum: string): Promise<void>;
 }

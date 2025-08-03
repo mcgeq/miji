@@ -7,7 +7,6 @@ import { BaseMapper, MoneyDbError } from './baseManager';
 import type { PagedResult } from './baseManager';
 import type { DateRange, IncomeExpense, SortOptions } from '@/schema/common';
 import type { Transaction, TransactionWithAccount } from '@/schema/money';
-import type Database from '@tauri-apps/plugin-sql';
 
 export interface TransactionFilters {
   transactionType?: string;
@@ -294,13 +293,11 @@ export class TransactionMapper extends BaseMapper<Transaction> {
     }
   }
 
-  async deleteById(serialNum: string, nDb?: Database): Promise<void> {
+  async deleteById(serialNum: string): Promise<void> {
     try {
-      await db.execute(
-        `DELETE FROM ${this.tableName} WHERE serial_num = ?`,
-        [serialNum],
-        nDb,
-      );
+      await db.execute(`DELETE FROM ${this.tableName} WHERE serial_num = ?`, [
+        serialNum,
+      ]);
       Lg.d('MoneyDb', 'Transaction deleted:', { serialNum });
     } catch (error) {
       this.handleError('deleteById', error);
