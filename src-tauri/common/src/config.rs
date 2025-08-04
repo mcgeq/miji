@@ -169,7 +169,7 @@ fn get_mobile_data_dir(app: &AppHandle) -> MijiResult<PathBuf> {
 #[cfg(not(any(target_os = "ios", target_os = "android")))]
 fn get_desktop_data_dir(app: &AppHandle) -> MijiResult<PathBuf> {
     app.path()
-        .home_dir()
+        .data_dir()
         .map(|home| home.join(".miji/data"))
         .map_err(|e| {
             MijiError::Env(Box::new(EnvError::HomeDir { source: e, code: BusinessCode::SystemError, message: "Failed to get hoe directory".into() }))})

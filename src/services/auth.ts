@@ -53,8 +53,7 @@ export async function login(
       [now, now, user.serialNum],
     );
     return user;
-  }
-  catch (error) {
+  } catch (error) {
     const authError = handleAuthError(error);
     Lg.e('Api Login', authError);
     throw authError;
@@ -66,6 +65,8 @@ export async function register(
   rememberMe = false,
 ): Promise<User> {
   try {
+    const list = await invoke<string>('list');
+    console.log('registered list', list);
     const db = await getDb();
     const { email, username, password } = credentials;
 
@@ -158,8 +159,8 @@ export async function register(
     }
 
     return newUser;
-  }
-  catch (error) {
+  } catch (error) {
+    console.log('registered error', error);
     const authError = handleAuthError(error);
     Lg.e('Api Registration', authError);
     throw authError;
@@ -186,8 +187,7 @@ export async function verifyToken(
       return status;
     }
     return 'Invalid';
-  }
-  catch (error) {
+  } catch (error) {
     Lg.e('Api Token verification', error);
     return 'Invalid';
   }

@@ -17,6 +17,7 @@ use common::{
 };
 use log::info;
 use tauri::{Builder, State, Wry};
+use todos::command;
 
 pub fn init_commands(builder: Builder<Wry>) -> Builder<Wry> {
     builder.invoke_handler(tauri::generate_handler![
@@ -24,7 +25,12 @@ pub fn init_commands(builder: Builder<Wry>) -> Builder<Wry> {
         pwd_hash,
         check_pwd,
         generate_token,
-        is_verify_token
+        is_verify_token,
+        command::list,
+        command::list_paged,
+        command::create,
+        command::update,
+        command::delete
     ])
 }
 

@@ -8,7 +8,7 @@ edition = "2024"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [workspace]
-members = ["migration", "common", "miji_derive"]
+members = ["migration", "common", "miji_derive", "crates/todos", "crates/money", "entity"]
 
 [lib]
 # The `_lib` suffix may seem redundant but it is necessary
@@ -81,6 +81,7 @@ tauri-plugin-svelte = "2.6.0"
 chrono = { workspace = true }
 tauri-plugin-vue = "1.0.0"
 futures = { workspace = true, features = ["futures-executor"] }
+todos = { path = "./crates/todos" }
 
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]

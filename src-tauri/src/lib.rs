@@ -1,3 +1,4 @@
+use migration::{Migrator, MigratorTrait};
 use tauri::Manager;
 
 #[cfg(desktop)]
@@ -67,6 +68,15 @@ pub fn run() {
                 MijiError::Database(Box::new(EnvError::DatabaseConnection {
                     code: BusinessCode::SystemError,
                     message: format!("数据库连接失败: {e}"),
+                }))
+            })?;
+            tauri::async_runtime::block_on(async {
+                Migrator::up(&db, None).await
+            })
+            .map_err(|e| {
+                MijiError::Database(Box::new(EnvError::Sql{
+                    code: BusinessCode::SystemError,
+                    message: format!("数据库迁移失败: {e}"),
                 }))
             })?;
 

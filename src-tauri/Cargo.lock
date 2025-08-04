@@ -1368,6 +1368,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a3d8a32ae18130a3c84dd492d4215c3d913c3b07c6b63c2eb3eb7ff1101ab7bf"
 
 [[package]]
+name = "entity"
+version = "0.1.0"
+
+[[package]]
 name = "enumflags2"
 version = "0.7.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2802,6 +2806,7 @@ dependencies = [
  "tauri-plugin-sql",
  "tauri-plugin-svelte",
  "tauri-plugin-vue",
+ "todos",
  "tokio",
 ]
 
@@ -2839,6 +2844,13 @@ dependencies = [
  "libc",
  "wasi 0.11.1+wasi-snapshot-preview1",
  "windows-sys 0.59.0",
+]
+
+[[package]]
+name = "money"
+version = "0.1.0"
+dependencies = [
+ "tauri",
 ]
 
 [[package]]
@@ -5971,6 +5983,13 @@ name = "tinyvec_macros"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1f3ccbac311fea05f86f61904b462b55fb3df8837a366dfc601a0161d0532f20"
+
+[[package]]
+name = "todos"
+version = "0.1.0"
+dependencies = [
+ "tauri",
+]
 
 [[package]]
 name = "tokio"

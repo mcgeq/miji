@@ -1,5 +1,6 @@
 pub mod argon2id;
 pub mod business_code;
+pub mod curd;
 pub mod env;
 pub mod env_error;
 pub mod error;
