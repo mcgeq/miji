@@ -1,4 +1,4 @@
-use std::{ path::PathBuf, sync::OnceLock};
+use std::{path::PathBuf, sync::OnceLock};
 
 use tauri::{AppHandle, Manager};
 use zeroize::Zeroizing;
@@ -27,113 +27,46 @@ impl Config {
         let jwt_secret = Zeroizing::new(env_get_string("JWT_SECRET").unwrap_or_else(|_| {
             log::warn!("JWT_SECRET not set, using default");
             "mcgeqJWTSECRET".to_string()
-        })
-        );
+        }));
 
         let expired_at = env_get_string("EXPIRED_AT")
-            .and_then(|val| val.parse::<i64>().map_err(|e| {
-            MijiError::Env(Box::new(
-                    EnvError::EnvParse { 
+            .and_then(|val| {
+                val.parse::<i64>().map_err(|e| {
+                    MijiError::Env(Box::new(EnvError::EnvParse {
                         code: BusinessCode::EnvVarParseFailure,
-                        message: format!("Failed to parse EXPIRED_AT: {e}") }))
-                    })).unwrap_or_else(|_| {
+                        message: format!("Failed to parse EXPIRED_AT: {e}"),
+                    }))
+                })
+            })
+            .unwrap_or_else(|_| {
                 log::warn!("EXPIRED_AT not set, using default (7 days in hours)");
                 7 * 24
             });
         let data_dir = get_app_data_dir(app)?;
 
         std::fs::create_dir_all(&data_dir).map_err(|_| {
-            MijiError::Env(Box::new(EnvError::PathConversion { code: BusinessCode::SystemError, message: "Failed to create data directory".into() }))
+            MijiError::Env(Box::new(EnvError::PathConversion {
+                code: BusinessCode::SystemError,
+                message: "Failed to create data directory".into(),
+            }))
         })?;
 
         let db_file = data_dir.join("db.sqlite");
         let db_url = format!("sqlite:{}?mode=rwc", db_file.display());
-        CONFIG.set(Config{
-            jwt_secret,
-            expired_at,
-            data_dir,
-            db_url,
-        }).map_err(|_| MijiError::Env(Box::new(EnvError::EnvParse { code: BusinessCode::SystemError, message: "Failed initialized Config".into() })))
+        CONFIG
+            .set(Config {
+                jwt_secret,
+                expired_at,
+                data_dir,
+                db_url,
+            })
+            .map_err(|_| {
+                MijiError::Env(Box::new(EnvError::EnvParse {
+                    code: BusinessCode::SystemError,
+                    message: "Failed initialized Config".into(),
+                }))
+            })
     }
-
-    // pub fn load(app_handle: &tauri::AppHandle) -> MijiResult<Self> {
-    //     let jwt_secret = Zeroizing::new(env_get_string("JWT_SECRET").unwrap_or_else(|_| {
-    //         log::warn!("未设置 JWT_SECRET，使用默认值");
-    //         "mcgeqJWTSECRET".to_string()
-    //     }));
-    //
-    //     let expired_at = env_get_string("EXPIRED_AT")
-    //         .unwrap_or_else(|_| {
-    //             log::warn!("未设置 EXPIRED_AT，使用默认值");
-    //             "7*24".to_string()
-    //         })
-    //         .parse::<i64>()
-    //         .map_err(|e| {
-    //             MijiError::Env(Box::new(EnvError::EnvParse {
-    //                 code: BusinessCode::EnvVarParseFailure,
-    //                 message: format!("解析 EXPIRED_AT 失败: {e}"),
-    //             }))
-    //         })?;
-    //
-    //     let data_dir = app_handle
-    //         .path()
-    //         .home_dir()
-    //         .map_err(|e| {
-    //             MijiError::Env(Box::new(EnvError::HomeDir {
-    //                 source: e,
-    //                 code: BusinessCode::SystemError,
-    //                 message: "无法获取主目录".to_string(),
-    //             }))
-    //         })?
-    //         .join(".tauri-seaorm-template/data")
-    //         .to_str()
-    //         .ok_or_else(|| {
-    //             MijiError::Env(Box::new(EnvError::PathConversion {
-    //                 code: BusinessCode::SystemError,
-    //                 message: "路径转换失败".to_string(),
-    //             }))
-    //         })?
-    //         .to_string();
-    //
-    //     let db_url = format!("sqlite://{data_dir}/db.sqlite?mode=rwc");
-    //
-    //     Ok(Config {
-    //         jwt_secret,
-    //         expired_at,
-    //         data_dir,
-    //         db_url,
-    //     })
-    // }
-    //
-    // pub fn load_no() -> MijiResult<Self> {
-    //     let jwt_secret = Zeroizing::new(env_get_string("JWT_SECRET").unwrap_or_else(|_| {
-    //         log::warn!("未设置 JWT_SECRET，使用默认值");
-    //         "mcgeqJWTSECRET".to_string()
-    //     }));
-    //
-    //     let expired_at = env_get_string("EXPIRED_AT")
-    //         .unwrap_or_else(|_| {
-    //             log::warn!("未设置 EXPIRED_AT，使用默认值");
-    //             "7*24".to_string()
-    //         })
-    //         .parse::<i64>()
-    //         .map_err(|e| {
-    //             MijiError::Env(Box::new(EnvError::EnvParse {
-    //                 code: BusinessCode::EnvVarParseFailure,
-    //                 message: format!("解析 EXPIRED_AT 失败: {e}"),
-    //             }))
-    //         })?;
-    //
-    //     let data_dir = std::env::var("DATA_DIR").unwrap_or_else(|_| "~/.miji/data".to_string());
-    //     let db_url = format!("sqlite://{data_dir}/db.sqlite?mode=rwc");
-    //
-    //     Ok(Config {
-    //         jwt_secret,
-    //         expired_at,
-    //         data_dir,
-    //         db_url,
-    //     })
-    // }
 }
 
 fn get_app_data_dir(app: &AppHandle) -> MijiResult<PathBuf> {
@@ -161,9 +94,13 @@ fn get_mobile_data_dir(app: &AppHandle) -> MijiResult<PathBuf> {
     #[cfg(target_os = "android")]
     let dir = app.path().data_dir();
 
-    dir.map(|d| d.join("data"))
-        .map_err(|e| {
-            MijiError::Env(EnvError::HomeDir { source: e, code: BusinessCode::SystemError, message: "Failed to get mobile data director".into() })})
+    dir.map(|d| d.join("data")).map_err(|e| {
+        MijiError::Env(EnvError::HomeDir {
+            source: e,
+            code: BusinessCode::SystemError,
+            message: "Failed to get mobile data director".into(),
+        })
+    })
 }
 
 #[cfg(not(any(target_os = "ios", target_os = "android")))]
@@ -172,6 +109,10 @@ fn get_desktop_data_dir(app: &AppHandle) -> MijiResult<PathBuf> {
         .data_dir()
         .map(|home| home.join(".miji/data"))
         .map_err(|e| {
-            MijiError::Env(Box::new(EnvError::HomeDir { source: e, code: BusinessCode::SystemError, message: "Failed to get hoe directory".into() }))})
-            
+            MijiError::Env(Box::new(EnvError::HomeDir {
+                source: e,
+                code: BusinessCode::SystemError,
+                message: "Failed to get hoe directory".into(),
+            }))
+        })
 }

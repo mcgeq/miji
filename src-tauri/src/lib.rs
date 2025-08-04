@@ -46,21 +46,21 @@ pub fn run() {
 
     builder
         .setup(|app| {
-            // 1. 获取AppHandle
+            // 1. 获取 AppHandle
             let app_handle = app.handle();
 
             // 2. 加载配置
             Config::init(app_handle)?;
             let config = Config::get();
 
-            // 3. 创建API凭证
+            // 3. 创建 API 凭证
             let credentials = ApiCredentials {
                 jwt_secret: config.jwt_secret.clone(),
                 expired_at: config.expired_at,
             };
 
             // 4. 初始化数据库连接
-            // 使用tauri的异步运行时执行数据库连接
+            // 使用 tauri 的异步运行时执行数据库连接
             let db = tauri::async_runtime::block_on(async {
                 sea_orm::Database::connect(&config.db_url).await
             })
@@ -70,15 +70,14 @@ pub fn run() {
                     message: format!("数据库连接失败: {e}"),
                 }))
             })?;
-            tauri::async_runtime::block_on(async {
-                Migrator::up(&db, None).await
-            })
-            .map_err(|e| {
-                MijiError::Database(Box::new(EnvError::Sql{
-                    code: BusinessCode::SystemError,
-                    message: format!("数据库迁移失败: {e}"),
-                }))
-            })?;
+            tauri::async_runtime::block_on(async { Migrator::up(&db, None).await }).map_err(
+                |e| {
+                    MijiError::Database(Box::new(EnvError::Sql {
+                        code: BusinessCode::SystemError,
+                        message: format!("数据库迁移失败: {e}"),
+                    }))
+                },
+            )?;
 
             let db = Arc::new(db);
 
