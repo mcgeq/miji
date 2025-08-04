@@ -68,7 +68,7 @@
     "husky": "^9.1.7",
     "lint-staged": "^16.1.2",
     "npm-check-updates": "^18.0.1",
-    "svelte": "^5.36.16",
+    "svelte": "^5.37.3",
     "typescript": "~5.8.3",
     "unocss": "^66.3.3",
     "unplugin-auto-import": "^19.3.0",

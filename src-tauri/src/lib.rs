@@ -49,10 +49,8 @@ pub fn run() {
             let app_handle = app.handle();
 
             // 2. 加载配置
-            let config = Config::load(app_handle).map_err(|e| {
-                eprintln!("Failed to load config: {e}");
-                e
-            })?;
+            Config::init(app_handle)?;
+            let config = Config::get();
 
             // 3. 创建API凭证
             let credentials = ApiCredentials {
