@@ -22,12 +22,10 @@ onMounted(async () => {
       toast.warning(t('messages.pleaseLogin'));
       await router.replace('/auth/login');
     }
-  }
-  catch (error) {
+  } catch (error) {
     Lg.e('App', error);
     toast.error(t('messages.initFailed'));
-  }
-  finally {
+  } finally {
     isLoading.value = false;
   }
 });

@@ -29,9 +29,11 @@ use common::{
 use plugins::generic_plugins;
 use std::sync::Arc;
 use tokio::sync::Mutex;
+use dotenvy::dotenv;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    dotenv().ok();
     let builder = tauri::Builder::default();
 
     let builder = generic_plugins(builder);
