@@ -64,6 +64,8 @@ sea-orm = { version = "1.1.14", features = [
 ] }
 validator = { version = "0.20.0", features = ["derive"] }
 zeroize = { version = "1.8.1", features = ["serde", "zeroize_derive"] }
+lazy_static = "1.5.0"
+regex = "1.11.1"
 common = { path = "./common" }
 miji_derive = { path = "./miji_derive" }
 entity = { path = "./entity" }
@@ -93,6 +95,7 @@ futures = { workspace = true, features = ["futures-executor"] }
 todos = { path = "./crates/todos" }
 entity = { workspace = true }
 validator.workspace = true
+
 
 
 

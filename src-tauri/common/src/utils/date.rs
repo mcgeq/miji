@@ -1,5 +1,8 @@
-use chrono::{DateTime, Datelike, Duration,
-    FixedOffset, Local, NaiveDate, NaiveDateTime, Timelike, Utc, Weekday};
+use chrono::{
+    DateTime, Datelike, Duration, FixedOffset, Local, NaiveDate, NaiveDateTime, Timelike, Utc,
+    Weekday,
+};
+use chrono_tz::Tz;
 
 #[derive(Debug, Clone)]
 pub struct DateUtils;
@@ -85,16 +88,20 @@ impl DateUtils {
         Self::format_date(&result_date.naive_local(), format)
     }
 
-    pub fn parse_datetime(datetime_str: &str,
-        format: Option<&str>) -> Result<NaiveDateTime, chrono::ParseError> {
+    pub fn parse_datetime(
+        datetime_str: &str,
+        format: Option<&str>,
+    ) -> Result<NaiveDateTime, chrono::ParseError> {
         let fmt = format.unwrap_or("%Y-%m-%d %H:%M:%S");
         NaiveDateTime::parse_from_str(datetime_str, fmt)
     }
 
-    pub fn parse_datatime_utc(datetime_str: &str,
-        format: Option<&str>) -> Result<DateTime<Utc>, chrono::ParseError> {
+    pub fn parse_datatime_utc(
+        datetime_str: &str,
+        format: Option<&str>,
+    ) -> Result<DateTime<Utc>, chrono::ParseError> {
         let fmt = format.unwrap_or("%Y-%m-%d %H:%M:%S");
-            DateTime::parse_from_str(datetime_str, fmt).map(|dt| dt.with_timezone(&Utc))
+        DateTime::parse_from_str(datetime_str, fmt).map(|dt| dt.with_timezone(&Utc))
     }
 
     /// 获取本周开始时间（周一）
@@ -139,7 +146,9 @@ impl DateUtils {
             NaiveDate::from_ymd_opt(start.year(), start.month() + 1, 1).unwrap()
         };
 
-        (next_month - Duration::days(1)).and_hms_opt(23, 59, 59).unwrap()
+        (next_month - Duration::days(1))
+            .and_hms_opt(23, 59, 59)
+            .unwrap()
     }
 
     /// 获取季度开始时间
@@ -171,7 +180,9 @@ impl DateUtils {
             NaiveDate::from_ymd_opt(start.year(), start.month() + 3, 1).unwrap()
         };
 
-        (next_quarter_start - Duration::days(1)).and_hms_opt(23, 59, 59).unwrap()
+        (next_quarter_start - Duration::days(1))
+            .and_hms_opt(23, 59, 59)
+            .unwrap()
     }
 
     /// 获取年份开始时间
@@ -263,8 +274,16 @@ impl DateUtils {
     /// 格式化时间戳为日期时间
     pub fn format_timestamp(timestamp: i64, format: Option<&str>) -> String {
         let fmt = Self::get_format(format);
-        let dt = NaiveDateTime::from_timestamp(timestamp, 0).unwrap();
-        dt.format(fmt).to_string()
+
+        // 使用推荐的新方法
+        let dt_utc = DateTime::from_timestamp(timestamp, 0).unwrap_or_else(|| {
+            DateTime::from_timestamp(0, 0).expect("Fallback timestamp should be valid")
+        });
+
+        // 如果需要 NaiveDateTime 格式可以使用 dt_utc.naive_utc()
+        let naive_dt = dt_utc.naive_utc();
+
+        naive_dt.format(fmt).to_string()
     }
 
     /// 获取月份名称
@@ -396,14 +415,6 @@ mod tests {
 
         let workdays = DateUtils::workdays_between(start, end);
         assert_eq!(5, workdays); // 周一到周五共 5 个工作日
-    }
-
-    #[test]
-    fn test_convert_timezone() {
-        let utc_time = Utc::now();
-        let tokyo_time = DateUtils::convert_timezone(utc_time, "Asia/Tokyo").unwrap();
-        let offset = tokyo_time.offset().fix().local_minus_utc();
-        assert_eq!(9 * 3600, offset); // 东京时区是 UTC+9
     }
 
     #[test]

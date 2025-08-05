@@ -1,9 +1,9 @@
+use chrono::{DateTime, Utc};
 use common::utils::uuid::McgUuid;
-use entity::account;
+use entity::{account, currency};
+use sea_orm::{ActiveValue::Set, prelude::Decimal};
 use serde::{Deserialize, Serialize};
 use validator::Validate;
-use bigdecimal::BigDecimal;
-use chrono::{DateTime, Utc};
 
 #[derive(Debug, Clone, Deserialize, Validate)]
 pub struct CreateAccountDto {
@@ -16,8 +16,8 @@ pub struct CreateAccountDto {
     #[validate(length(min = 1, max = 50, message = "账户类型长度必须在1-50字符之间"))]
     pub r#type: String,
 
-    #[validate(range(min = 0, message = "初始余额不能为负数"))]
-    pub initial_balance: BigDecimal,
+    #[validate(range(min = 0.00, message = "初始余额不能为负数"))]
+    pub initial_balance: Decimal,
 
     #[validate(length(min = 3, max = 3, message = "货币代码必须是3个字符"))]
     pub currency: String,
@@ -63,9 +63,9 @@ pub struct AccountResponseDto {
     pub name: String,
     pub description: String,
     pub r#type: String,
-    pub balance: BigDecimal,
-    pub initial_balance: BigDecimal,
-    pub currency: String,
+    pub balance: Decimal,
+    pub initial_balance: Decimal,
+    pub currency: currency::Model,
     pub is_shared: bool,
     pub owner_id: Option<String>,
     pub color: Option<String>,
@@ -74,24 +74,24 @@ pub struct AccountResponseDto {
     pub updated_at: Option<DateTime<Utc>>,
 }
 
-impl From<account::Model> for AccountResponseDto {
-    fn from(model: account::Model) -> Self {
+impl From<(account::Model, currency::Model)> for AccountResponseDto {
+    fn from((account, currency): (account::Model, currency::Model)) -> Self {
         AccountResponseDto {
-            serial_num: model.serial_num,
-            name: model.name,
-            description: model.description,
-            r#type: model.r#type,
-            balance: model.balance,
-            initial_balance: model.initial_balance,
-            currency: model.currency,
-            is_shared: model.is_shared != 0,
-            owner_id: model.owner_id,
-            color: model.color,
-            is_active: model.is_active != 0,
-            created_at: DateTime::parse_from_rfc3339(&model.created_at)
+            serial_num: account.serial_num,
+            name: account.name,
+            description: account.description,
+            r#type: account.r#type,
+            balance: account.balance,
+            initial_balance: account.initial_balance,
+            currency, // 直接使用完整的 Currency 实体
+            is_shared: account.is_shared != 0,
+            owner_id: account.owner_id,
+            color: account.color,
+            is_active: account.is_active != 0,
+            created_at: DateTime::parse_from_rfc3339(&account.created_at)
                 .expect("Invalid created_at format")
                 .with_timezone(&Utc),
-            updated_at: model.updated_at.as_ref().map(|dt| {
+            updated_at: account.updated_at.as_ref().map(|dt| {
                 DateTime::parse_from_rfc3339(dt)
                     .expect("Invalid updated_at format")
                     .with_timezone(&Utc)
