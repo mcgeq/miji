@@ -8,7 +8,14 @@ edition = "2024"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [workspace]
-members = ["migration", "common", "miji_derive", "crates/todos", "crates/money", "entity"]
+members = [
+  "migration",
+  "common",
+  "miji_derive",
+  "crates/todos",
+  "crates/money",
+  "entity",
+]
 
 [lib]
 # The `_lib` suffix may seem redundant but it is necessary
@@ -35,6 +42,7 @@ snafu = { version = "0.8.6", features = [
 tokio = { version = "1.45.1", features = ["full", "tracing"] }
 chrono = { version = "0.4.41", features = ["serde"] }
 dotenvy = "0.15.7"
+chrono-tz = { version = "0.10.4", features = ["serde"] }
 darling = "0.21.0"
 futures = "0.3.31"
 tauri-plugin-log = { version = "2", features = ["colored"] }
@@ -58,6 +66,7 @@ validator = { version = "0.20.0", features = ["derive"] }
 zeroize = { version = "1.8.1", features = ["serde", "zeroize_derive"] }
 common = { path = "./common" }
 miji_derive = { path = "./miji_derive" }
+entity = { path = "./entity" }
 
 [dependencies]
 tauri = { workspace = true }
@@ -82,6 +91,9 @@ chrono = { workspace = true }
 tauri-plugin-vue = "1.0.0"
 futures = { workspace = true, features = ["futures-executor"] }
 todos = { path = "./crates/todos" }
+entity = { workspace = true }
+validator.workspace = true
+
 
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]

@@ -18,3 +18,4 @@ zeroize = { workspace = true }
 miji_derive = { workspace = true }
 jsonwebtoken = { workspace = true }
 sea-orm = { workspace = true }
+chrono-tz = { workspace = true }

@@ -1,14 +1,28 @@
-pub fn add(left: u64, right: u64) -> u64 {
-    left + right
-}
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+pub mod prelude;
 
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
-}
+pub mod account;
+pub mod attachment;
+pub mod bil_reminder;
+pub mod budget;
+pub mod currency;
+pub mod family_ledger;
+pub mod family_ledger_account;
+pub mod family_ledger_member;
+pub mod family_ledger_transaction;
+pub mod family_member;
+pub mod operation_log;
+pub mod period_daily_records;
+pub mod period_pms_records;
+pub mod period_pms_symptoms;
+pub mod period_records;
+pub mod period_symptoms;
+pub mod project;
+pub mod reminder;
+pub mod tag;
+pub mod task_dependency;
+pub mod todo;
+pub mod todo_project;
+pub mod todo_tag;
+pub mod transactions;
+pub mod users;
