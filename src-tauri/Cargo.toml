@@ -14,7 +14,7 @@ members = [
   "miji_derive",
   "crates/todos",
   "crates/money",
-  "entity",
+  "entity", "crates/auth",
 ]
 
 [lib]
@@ -93,6 +93,7 @@ chrono = { workspace = true }
 tauri-plugin-vue = "1.0.0"
 futures = { workspace = true, features = ["futures-executor"] }
 todos = { path = "./crates/todos" }
+auth = { path = "./crates/auth" }
 entity = { workspace = true }
 validator.workspace = true
 

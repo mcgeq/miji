@@ -6,45 +6,83 @@
 // File:           response.rs
 // Description:    About Response
 // Create   Date:  2025-05-29 08:37:51
-// Last Modified:  2025-06-15 10:15:31
+// Last Modified:  2025-08-06 18:02:34
 // Modified   By:  mcgeq <mcgeq@outlook.com>
 // -----------------------------------------------------------------------------
 
-use serde::Deserialize;
+use serde::Serialize;
+use crate::{business_code::BusinessCode, error::AppError};
 
-use crate::{
-    business_code::BusinessCode,
-    error::{CodeMessage, MijiError},
-};
-
-#[derive(Debug, Deserialize)]
-pub struct Res<T> {
-    code: String,
-    data: Option<T>,
-    message: String,
+/// 统一 API 响应结构
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ApiResponse<T: Serialize> {
+    pub success: bool,
+    pub code: String, // 6 位错误码字符串
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub data: Option<T>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub error: Option<ErrorPayload>,
 }
 
-impl<T> Res<T> {
-    pub fn empty() -> Res<()> {
-        Res {
-            code: BusinessCode::Success.into(),
-            data: None,
-            message: "success".to_string(),
-        }
-    }
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ErrorPayload {
+    pub code: String, // 6 位错误码字符串
+    pub message: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub details: Option<serde_json::Value>,
+    pub description: String,
+    pub category: String, // 错误分类字符串
+    pub module: String,   // 错误模块字符串
+}
+
+impl<T: Serialize> ApiResponse<T> {
+    /// 创建成功的响应
     pub fn success(data: T) -> Self {
         Self {
-            code: BusinessCode::Success.into(),
+            success: true,
+            code: BusinessCode::Success.as_str().to_string(),
             data: Some(data),
-            message: String::from("success"),
+            error: None,
         }
     }
 
-    pub fn error(e: MijiError) -> Self {
+    /// 创建空成功的响应
+    pub fn empty() -> Self {
         Self {
-            code: e.code().to_string(),
+            success: true,
+            code: BusinessCode::Success.as_str().to_string(),
             data: None,
-            message: e.message().to_string(),
+            error: None,
+        }
+    }
+
+    /// 从错误创建响应
+    pub fn from_error(error: AppError) -> Self {
+        let inner = error.inner();
+        let code = inner.business_code();
+
+        Self {
+            success: false,
+            code: code.as_str().to_string(),
+            data: None,
+            error: Some(ErrorPayload {
+                code: code.as_str().to_string(),
+                message: inner.to_string(),
+                details: inner.extra_data(),
+                description: code.description().to_string(),
+                category: code.category().as_str().to_string(),
+                module: code.module().as_str().to_string(),
+            }),
+        }
+    }
+
+    /// 从结果创建响应
+    pub fn from_result(result: Result<T, AppError>) -> Self {
+        match result {
+            Ok(data) => ApiResponse::success(data),
+            Err(error) => ApiResponse::from_error(error),
         }
     }
 }

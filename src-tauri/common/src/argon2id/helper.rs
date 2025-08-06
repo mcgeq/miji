@@ -6,7 +6,7 @@
 // File:           helper.rs
 // Description:    About Argon2 Utils with Argon2id
 // Create   Date:  2025-05-26 11:11:16
-// Last Modified:  2025-05-26 19:35:22
+// Last Modified:  2025-08-06 20:35:10
 // Modified   By:  mcgeq <mcgeq@outlook.com>
 // -----------------------------------------------------------------------------
 
@@ -15,8 +15,9 @@ use argon2::{
     password_hash::rand_core::{OsRng, RngCore},
 };
 use base64::{Engine, engine::general_purpose};
+use snafu::GenerateImplicitData;
 
-use crate::{business_code::BusinessCode, error::MijiResult};
+use crate::{error::MijiResult};
 
 use super::{config::Argon2Config, error::Argon2ErrorWrapper, store_hash::StoredHash};
 
@@ -37,9 +38,9 @@ impl<'a> Argon2Helper<'a> {
             config.parallelism,
             Some(config.hash_length as usize),
         )
-        .map_err(|e| Argon2ErrorWrapper::Hash {
-            code: BusinessCode::AuthenticationFailed,
-            message: format!("Invalid params: {e}"),
+            .map_err(|e| Argon2ErrorWrapper::HashingFailed {
+                reason: format!("Invalid params: {e}"),
+                backtrace: snafu::Backtrace::generate(),
         })?;
         let argon2 = Argon2::new(config.algorithm, config.version, params);
         Ok(Self { config, argon2 })
@@ -62,15 +63,15 @@ impl<'a> Argon2Helper<'a> {
     pub fn verify_hashed_password(&self, password: &str, stored: &StoredHash) -> MijiResult<bool> {
         let salt = general_purpose::STANDARD
             .decode(&stored.salt_b64)
-            .map_err(|e| Argon2ErrorWrapper::Hash {
-                code: BusinessCode::AuthenticationFailed,
-                message: format!("Salt decode error: {e}"),
+            .map_err(|e| Argon2ErrorWrapper::HashingFailed {
+                reason: format!("Salt decode error: {e}"),
+                backtrace: snafu::Backtrace::generate(),
             })?;
         let expected = general_purpose::STANDARD
             .decode(&stored.hash_b64)
-            .map_err(|e| Argon2ErrorWrapper::Hash {
-                code: BusinessCode::AuthenticationFailed,
-                message: format!("Hash decode error: {e}"),
+            .map_err(|e| Argon2ErrorWrapper::HashingFailed {
+                reason: format!("Hash decode error: {e}"),
+                backtrace: snafu::Backtrace::generate(),
             })?;
         self.verify_custom_raw_hash(password, &salt, &expected)
     }
@@ -84,9 +85,9 @@ impl<'a> Argon2Helper<'a> {
         let mut output = vec![0u8; self.config.hash_length as usize];
         self.argon2
             .hash_password_into(password.as_bytes(), salt_bytes, &mut output)
-            .map_err(|e| Argon2ErrorWrapper::Hash {
-                code: BusinessCode::AuthenticationFailed,
-                message: format!("Raw hash error: {e}"),
+            .map_err(|e| Argon2ErrorWrapper::HashingFailed {
+                reason: format!("Raw hash error: {e}"),
+                backtrace: snafu::Backtrace::generate(),
             })?;
         Ok(output)
     }
@@ -101,9 +102,9 @@ impl<'a> Argon2Helper<'a> {
         let mut actual = vec![0u8; expected_hash.len()];
         self.argon2
             .hash_password_into(password.as_bytes(), salt_bytes, &mut actual)
-            .map_err(|e| Argon2ErrorWrapper::Hash {
-                code: BusinessCode::AuthenticationFailed,
-                message: format!("Verify raw error: {e}"),
+            .map_err(|e| Argon2ErrorWrapper::HashingFailed {
+                reason: format!("Verify raw error: {e}"),
+                backtrace: snafu::Backtrace::generate(),
             })?;
         Ok(actual == expected_hash)
     }
