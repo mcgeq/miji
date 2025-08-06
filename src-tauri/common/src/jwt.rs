@@ -5,7 +5,7 @@
 // File:           jwt.rs
 // Description:    About jsonwebtoken
 // Create   Date:  2025-05-26 19:53:47
-// Last Modified:  2025-06-18 15:24:35
+// Last Modified:  2025-08-06 21:47:39
 // Modified   By:  mcgeq <mcgeq@outlook.com>
 // -----------------------------------------------------------------------------
 
@@ -13,10 +13,7 @@ use chrono::{Duration, Utc};
 use jsonwebtoken::{DecodingKey, EncodingKey, Header, TokenData, Validation, decode, encode};
 use serde::{Deserialize, Serialize};
 
-use crate::{
-    business_code::BusinessCode,
-    error::{AuthError, MijiError, MijiResult},
-};
+use crate::{error::{AppError, MijiResult}, BusinessCode};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Claims {
@@ -54,9 +51,11 @@ impl JwtHelper {
             &claims,
             &EncodingKey::from_secret(self.secret.as_bytes()),
         )
-        .map_err(|e| AuthError::TokenExpired {
-            code: BusinessCode::AuthenticationFailed,
-            message: e.to_string(),
+        .map_err(|e| {
+           AppError::simple(
+               BusinessCode::TokenGenerationFailed,
+               format!("Failed to generate token: {}", e)
+           )
         })?;
         Ok(token)
     }
@@ -67,9 +66,15 @@ impl JwtHelper {
             &DecodingKey::from_secret(self.secret.as_bytes()),
             &Validation::default(),
         )
-        .map_err(|e| AuthError::TokenExpired {
-            code: BusinessCode::AuthenticationFailed,
-            message: e.to_string(),
+        .map_err(|e| {
+            match e.kind() {
+                jsonwebtoken::errors::ErrorKind::ExpiredSignature => {
+                    AppError::simple(BusinessCode::TokenExpired, "Token has expired")
+                }
+                _ => {
+                    AppError::simple(BusinessCode::TokenInvalid, format!("Invalid token: {e}"))
+                }
+            }
         })?;
         Ok(token_data.claims)
     }
@@ -81,10 +86,20 @@ impl JwtHelper {
             &Validation::default(),
         )
         .map_err(|e| {
-            MijiError::from(AuthError::TokenExpired {
-                code: BusinessCode::AuthenticationFailed,
-                message: e.to_string(),
-            })
+            match e.kind() {
+            jsonwebtoken::errors::ErrorKind::ExpiredSignature => {
+                AppError::simple(
+                    BusinessCode::TokenExpired,
+                    "Token has expired"
+                )
+            }
+            _ => {
+                AppError::simple(
+                    BusinessCode::TokenInvalid,
+                    format!("Invalid token: {}", e)
+                )
+            }
+        }
         })?;
         Ok(true)
     }

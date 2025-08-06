@@ -21,15 +21,12 @@ use mobiles::init;
 
 use commands::init_commands;
 use common::{
-    ApiCredentials, AppState,
-    business_code::BusinessCode,
-    config::Config,
-    error::{EnvError, MijiError},
+    ApiCredentials, AppState, business_code::BusinessCode, config::Config, error::AppError,
 };
+use dotenvy::dotenv;
 use plugins::generic_plugins;
 use std::sync::Arc;
 use tokio::sync::Mutex;
-use dotenvy::dotenv;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -67,17 +64,17 @@ pub fn run() {
                 sea_orm::Database::connect(&config.db_url).await
             })
             .map_err(|e| {
-                MijiError::Database(Box::new(EnvError::DatabaseConnection {
-                    code: BusinessCode::SystemError,
-                    message: format!("数据库连接失败: {e}"),
-                }))
+                AppError::simple(
+                    BusinessCode::DatabaseError,
+                    format!("Database connection failed: {e}"),
+                )
             })?;
             tauri::async_runtime::block_on(async { Migrator::up(&db, None).await }).map_err(
                 |e| {
-                    MijiError::Database(Box::new(EnvError::Sql {
-                        code: BusinessCode::SystemError,
-                        message: format!("数据库迁移失败: {e}"),
-                    }))
+                    AppError::simple(
+                        BusinessCode::DatabaseError,
+                        format!("Database migration failed: {e}"),
+                    )
                 },
             )?;
 

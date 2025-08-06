@@ -11,5 +11,7 @@ validator = { workspace = true }
 entity = { workspace = true }
 common = { workspace = true }
 sea-orm = { workspace = true }
-lazy_static = {workspace = true}
+lazy_static = { workspace = true }
 regex = { workspace = true }
+snafu = { workspace = true }
+serde_json = { workspace = true }
