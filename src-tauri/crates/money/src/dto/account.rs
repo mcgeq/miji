@@ -1,9 +1,10 @@
 use chrono::{DateTime, Utc};
 use common::utils::uuid::McgUuid;
 use entity::{account, currency};
+use num_traits::Zero;
 use sea_orm::{ActiveValue::Set, prelude::Decimal};
 use serde::{Deserialize, Serialize};
-use validator::Validate;
+use validator::{Validate, ValidationError};
 
 #[derive(Debug, Clone, Deserialize, Validate)]
 pub struct CreateAccountDto {
@@ -15,8 +16,6 @@ pub struct CreateAccountDto {
 
     #[validate(length(min = 1, max = 50, message = "账户类型长度必须在1-50字符之间"))]
     pub r#type: String,
-
-    #[validate(range(min = 0.00, message = "初始余额不能为负数"))]
     pub initial_balance: Decimal,
 
     #[validate(length(min = 3, max = 3, message = "货币代码必须是3个字符"))]
@@ -104,7 +103,6 @@ impl TryFrom<CreateAccountDto> for account::ActiveModel {
     type Error = validator::ValidationErrors;
 
     fn try_from(dto: CreateAccountDto) -> Result<Self, Self::Error> {
-        // 验证 DTO
         dto.validate()?;
         // 生成唯一序列号
         let serial_num = McgUuid::uuid(38);
@@ -173,4 +171,11 @@ impl TryFrom<UpdateAccountDto> for account::ActiveModel {
 
         Ok(active_model)
     }
+}
+
+fn validate_initial_balance(balance: &Decimal) -> Result<(), ValidationError> {
+    if *balance < Decimal::zero() {
+        return Err(ValidationError::new("初始余额不能为负数"));
+    }
+    Ok(())
 }

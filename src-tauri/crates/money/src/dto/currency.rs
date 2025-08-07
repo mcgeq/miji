@@ -50,7 +50,7 @@ impl From<entity::currency::Model> for CurrencyResponse {
 // ======================
 
 /// 创建货币请求DTO
-#[derive(Debug, Serialize, Deserialize, Validate)]
+#[derive(Debug, Serialize, Deserialize, Validate, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct CreateCurrencyRequest {
     #[validate(

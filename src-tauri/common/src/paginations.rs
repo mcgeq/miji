@@ -1,6 +1,7 @@
-use std::str::FromStr;
-use sea_orm::{ ColumnTrait, Condition, EntityTrait, Order, QueryOrder, Select};
+use sea_orm::sea_query::Expr;
+use sea_orm::{ColumnTrait, Condition, EntityTrait, Order, QueryOrder, Select};
 use serde::{Deserialize, Serialize};
+use std::str::FromStr;
 use validator::Validate;
 
 /// 分页查询参数
@@ -101,17 +102,23 @@ where
     E::Column: ColumnTrait + FromStr,
 {
     fn apply_sort(&self, query: Select<E>) -> Select<E> {
-        match &self {
+        match self {
             SortOptions {
                 custom_order_by: Some(order_by),
+                sort_dir,
                 ..
-            } => query.order_by_raw(order_by.clone()),
+            } => {
+                let direction = sort_dir.unwrap_or(SortDirection::Asc).into();
+                // 使用 Expr::cust 创建自定义表达式并通过 order_by 应用
+                query.order_by(Expr::cust(order_by), direction)
+            }
             SortOptions {
                 sort_by: Some(field),
+                sort_dir,
                 ..
             } => {
                 if let Ok(column) = E::Column::from_str(field) {
-                    let direction = self.sort_dir.unwrap_or(SortDirection::Asc).into();
+                    let direction = sort_dir.unwrap_or(SortDirection::Asc).into();
                     query.order_by(column, direction)
                 } else {
                     query

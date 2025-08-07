@@ -1,3 +1,124 @@
+use common::{ApiResponse, AppState, curd::CrudService, paginations::PagedQuery};
+use tauri::State;
+
+use crate::{
+    dto::currency::{CreateCurrencyRequest, CurrencyResponse, UpdateCurrencyRequest},
+    services::currency::{CurrencyConverter, CurrencyFilter, CurrencyService},
+};
+
+// 定义分页结果结构体
+#[derive(serde::Serialize)]
+pub struct PagedResult<T> {
+    rows: Vec<T>,
+    total_count: i64,
+    current_page: i32,
+    page_size: i32,
+    total_pages: i32,
+}
+
+// 创建货币
+#[tauri::command]
+pub async fn create_currency(
+    state: State<'_, AppState>,
+    data: CreateCurrencyRequest,
+) -> Result<ApiResponse<CurrencyResponse>, String> {
+    let service = get_currency_service();
+    let db = &state.db;
+    Ok(ApiResponse::from_result(
+        service
+            .create(db, data)
+            .await
+            .map(|model| CurrencyResponse::from(model)),
+    ))
+}
+
+// 获取单个货币（按 ID）
+#[tauri::command]
+pub async fn get_currency(
+    state: State<'_, AppState>,
+    id: String,
+) -> Result<ApiResponse<CurrencyResponse>, String> {
+    let service = get_currency_service();
+    let db = &state.db;
+    Ok(ApiResponse::from_result(
+        service
+            .get_by_id(db, id)
+            .await
+            .map(|model| CurrencyResponse::from(model)),
+    ))
+}
+
+// 更新货币
+#[tauri::command]
+pub async fn update_currency(
+    state: State<'_, AppState>,
+    id: String,
+    data: UpdateCurrencyRequest,
+) -> Result<ApiResponse<CurrencyResponse>, String> {
+    let service = get_currency_service();
+    let db = &state.db;
+    Ok(ApiResponse::from_result(
+        service
+            .update(db, id, data)
+            .await
+            .map(|model| CurrencyResponse::from(model)),
+    ))
+}
+// 删除货币
+#[tauri::command]
+pub async fn delete_currency(
+    state: State<'_, AppState>,
+    id: String,
+) -> Result<ApiResponse<()>, String> {
+    let service = get_currency_service();
+    let db = &state.db;
+    Ok(ApiResponse::from_result(service.delete(db, id).await))
+}
+
+// 列出货币（带过滤条件）
+#[tauri::command]
+pub async fn list_currencies(
+    state: State<'_, AppState>,
+    filter: CurrencyFilter,
+) -> Result<ApiResponse<Vec<CurrencyResponse>>, String> {
+    let service = get_currency_service();
+    let db = &state.db;
+    Ok(ApiResponse::from_result(
+        service
+            .list_with_filter(db, filter)
+            .await
+            .map(|models| models.into_iter().map(CurrencyResponse::from).collect()),
+    ))
+}
+
+// 分页列出货币
+#[tauri::command]
+pub async fn list_currencies_paged(
+    state: State<'_, AppState>,
+    query: PagedQuery<CurrencyFilter>,
+) -> Result<ApiResponse<PagedResult<CurrencyResponse>>, String> {
+    let service = get_currency_service();
+    let db = &state.db;
+    Ok(ApiResponse::from_result(
+        service
+            .list_paged(db, query)
+            .await
+            .map(|paged| PagedResult {
+                rows: paged.rows.into_iter().map(CurrencyResponse::from).collect(),
+                total_count: paged.total_count as i64,
+                current_page: paged.current_page as i32,
+                page_size: paged.page_size as i32,
+                total_pages: paged.total_pages as i32,
+            }),
+    ))
+}
+
+// 辅助函数（占位实现）
+fn get_currency_service() -> CurrencyService {
+    // 这里应返回 CurrencyService 实例，例如通过全局状态或依赖注入
+    CurrencyService::new(CurrencyConverter)
+}
+
 #[tauri::command]
 pub async fn list_account() -> String {
     eprintln!("todos list");
@@ -49,6 +170,3 @@ pub async fn update_transaction() {
 pub async fn delete_transaction() {
     eprintln!("todos delete");
 }
-
-
-

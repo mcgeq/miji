@@ -1,6 +1,8 @@
 use migration::{Migrator, MigratorTrait};
 use tauri::Manager;
 
+mod app_state;
+
 #[cfg(desktop)]
 mod desktops;
 

@@ -14,7 +14,8 @@ members = [
   "miji_derive",
   "crates/todos",
   "crates/money",
-  "entity", "crates/auth",
+  "entity",
+  "crates/auth",
 ]
 
 [lib]
@@ -51,6 +52,7 @@ argon2 = "0.5.3"
 syn = "2.0.104"
 quote = "1.0.40"
 proc-macro2 = "1.0.95"
+num-traits = "0.2.19"
 rand = { version = "0.9.1", features = ["serde"] }
 rust_decimal = { version = "1.37.2", features = ["macros"] }
 sea-orm = { version = "1.1.14", features = [
@@ -92,12 +94,11 @@ tauri-plugin-svelte = "2.6.0"
 chrono = { workspace = true }
 tauri-plugin-vue = "1.0.0"
 futures = { workspace = true, features = ["futures-executor"] }
-todos = { path = "./crates/todos" }
-auth = { path = "./crates/auth" }
 entity = { workspace = true }
 validator.workspace = true
-
-
+todos = { path = "./crates/todos" }
+auth = { path = "./crates/auth" }
+money = { path = "./crates/money" }
 
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
