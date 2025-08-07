@@ -890,6 +890,7 @@ dependencies = [
  "snafu",
  "tauri",
  "tokio",
+ "validator",
  "zeroize",
 ]
 
