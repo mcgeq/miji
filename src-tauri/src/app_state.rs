@@ -1,6 +1,10 @@
-use common::AppState as CommonAppState;
+use std::sync::Arc;
 
-#[derive(Debug, Clone)]
+use common::AppState as CommonAppState;
+use money::services::currency::CurrencyService;
+
+#[derive(Clone)]
 pub struct ExtendedAppState {
     pub common: CommonAppState,
+    pub currency_service: Arc<CurrencyService>,
 }

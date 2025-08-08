@@ -1,9 +1,9 @@
-use common::{ApiResponse, AppState, curd::CrudService, paginations::PagedQuery};
+use common::{ApiResponse, AppState, crud::service::CrudService, paginations::PagedQuery};
 use tauri::State;
 
 use crate::{
     dto::currency::{CreateCurrencyRequest, CurrencyResponse, UpdateCurrencyRequest},
-    services::currency::{CurrencyConverter, CurrencyFilter, CurrencyService},
+    services::currency::{CurrencyFilter, get_currency_service},
 };
 
 // 定义分页结果结构体
@@ -25,10 +25,7 @@ pub async fn create_currency(
     let service = get_currency_service();
     let db = &state.db;
     Ok(ApiResponse::from_result(
-        service
-            .create(db, data)
-            .await
-            .map(|model| CurrencyResponse::from(model)),
+        service.create(db, data).await.map(CurrencyResponse::from),
     ))
 }
 
@@ -41,10 +38,7 @@ pub async fn get_currency(
     let service = get_currency_service();
     let db = &state.db;
     Ok(ApiResponse::from_result(
-        service
-            .get_by_id(db, id)
-            .await
-            .map(|model| CurrencyResponse::from(model)),
+        service.get_by_id(db, id).await.map(CurrencyResponse::from),
     ))
 }
 
@@ -61,7 +55,7 @@ pub async fn update_currency(
         service
             .update(db, id, data)
             .await
-            .map(|model| CurrencyResponse::from(model)),
+            .map(CurrencyResponse::from),
     ))
 }
 // 删除货币
@@ -111,12 +105,6 @@ pub async fn list_currencies_paged(
                 total_pages: paged.total_pages as i32,
             }),
     ))
-}
-
-// 辅助函数（占位实现）
-fn get_currency_service() -> CurrencyService {
-    // 这里应返回 CurrencyService 实例，例如通过全局状态或依赖注入
-    CurrencyService::new(CurrencyConverter)
 }
 
 #[tauri::command]

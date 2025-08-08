@@ -1,4 +1,4 @@
-import { toCamelCase } from '@/utils/common';
+import { invokeCommand } from '@/types/api';
 import { db } from '@/utils/dbUtils';
 import { Lg } from '@/utils/debugLog';
 import { BaseMapper } from './baseManager';
@@ -20,8 +20,7 @@ export class CurrencyMapper extends BaseMapper<Currency> {
         [code, locale, symbol, createdAt, updatedAt],
       );
       Lg.d('MoneyDb', 'Currency created:', { code });
-    }
-    catch (error) {
+    } catch (error) {
       this.handleError('create', error);
     }
   }
@@ -34,22 +33,21 @@ export class CurrencyMapper extends BaseMapper<Currency> {
         true,
       );
       return result.length > 0 ? result[0] : null;
-    }
-    catch (error) {
+    } catch (error) {
       this.handleError('getById', error);
     }
   }
 
   async list(): Promise<Currency[]> {
     try {
-      const currencies = await db.select<Currency[]>(
-        `SELECT * FROM ${this.tableName}`,
-        [],
-        true,
+      const tauriCurrencies = await invokeCommand<Currency[]>(
+        'list_currencies',
+        {
+          filter: {},
+        },
       );
-      return toCamelCase<Currency[]>(currencies);
-    }
-    catch (error) {
+      return tauriCurrencies;
+    } catch (error) {
       this.handleError('list', error);
     }
   }
@@ -63,8 +61,7 @@ export class CurrencyMapper extends BaseMapper<Currency> {
         [locale, symbol, updatedAt, code],
       );
       Lg.d('MoneyDb', 'Currency updated:', { code });
-    }
-    catch (error) {
+    } catch (error) {
       this.handleError('update', error);
     }
   }
@@ -73,8 +70,7 @@ export class CurrencyMapper extends BaseMapper<Currency> {
     try {
       await db.execute(`DELETE FROM ${this.tableName} WHERE code = ?`, [code]);
       Lg.d('MoneyDb', 'Currency deleted:', { code });
-    }
-    catch (error) {
+    } catch (error) {
       this.handleError('deleteById', error);
     }
   }

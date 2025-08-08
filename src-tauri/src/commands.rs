@@ -18,8 +18,9 @@ use common::{
     response::ApiResponse,
 };
 use log::info;
+use money::command as money_cmd;
 use tauri::{Builder, State, Wry};
-use todos::command;
+use todos::command as todo_cmd;
 
 pub fn init_commands(builder: Builder<Wry>) -> Builder<Wry> {
     builder.invoke_handler(tauri::generate_handler![
@@ -28,11 +29,12 @@ pub fn init_commands(builder: Builder<Wry>) -> Builder<Wry> {
         check_pwd,
         generate_token,
         is_verify_token,
-        command::list,
-        command::list_paged,
-        command::create,
-        command::update,
-        command::delete
+        todo_cmd::list,
+        todo_cmd::list_paged,
+        todo_cmd::create,
+        todo_cmd::update,
+        todo_cmd::delete,
+        money_cmd::list_currencies
     ])
 }
 
@@ -40,7 +42,9 @@ pub fn init_commands(builder: Builder<Wry>) -> Builder<Wry> {
 async fn greet(name: String, state: State<'_, AppState>) -> Result<ApiResponse<String>, String> {
     let _db = state.db.clone();
     info!("Greet {name}");
-    Ok(ApiResponse::success(format!("Hello, {name}! You've been greeted from Rust!")))
+    Ok(ApiResponse::success(format!(
+        "Hello, {name}! You've been greeted from Rust!"
+    )))
 }
 
 #[tauri::command]
@@ -48,11 +52,12 @@ async fn pwd_hash(pwd: String) -> ApiResponse<String> {
     let result = (|| -> MijiResult<String> {
         let argon = Argon2Helper::new()?;
         let pwds = argon.create_hashed_password(&pwd)?;
-        let json_str = serde_json::to_string(&pwds)
-            .map_err(|e| AppError::simple(
+        let json_str = serde_json::to_string(&pwds).map_err(|e| {
+            AppError::simple(
                 common::business_code::BusinessCode::SerializationError,
-                format!("Failed to serialize password hash: {}", e)
-            ))?;
+                format!("Failed to serialize password hash: {}", e),
+            )
+        })?;
         Ok(json_str)
     })();
 
@@ -75,8 +80,7 @@ async fn generate_token(
     let jwt_helper = JwtHelper::new(credentials.jwt_secret.to_string());
 
     let result = (|| -> MijiResult<TokenResponse> {
-        let token = jwt_helper
-            .generate_token(&user_id, &role, credentials.expired_at)?;
+        let token = jwt_helper.generate_token(&user_id, &role, credentials.expired_at)?;
 
         let expires_at = Utc::now()
             .checked_add_signed(Duration::hours(credentials.expired_at))
@@ -116,7 +120,7 @@ fn check_password_hash(password: &str, pwd_hash: &str) -> MijiResult<bool> {
     let store: StoredHash = serde_json::from_str(pwd_hash).map_err(|e| {
         AppError::simple(
             common::business_code::BusinessCode::DeserializationError,
-            format!("Failed to parse password hash: {}", e)
+            format!("Failed to parse password hash: {}", e),
         )
     })?;
 
@@ -126,7 +130,7 @@ fn check_password_hash(password: &str, pwd_hash: &str) -> MijiResult<bool> {
     if !verity_hash {
         return Err(AppError::simple(
             common::business_code::BusinessCode::AuthenticationFailed,
-            "User or Password is failure"
+            "User or Password is failure",
         ));
     }
 

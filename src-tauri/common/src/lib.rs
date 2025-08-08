@@ -1,6 +1,6 @@
 pub mod argon2id;
 pub mod business_code;
-pub mod curd;
+pub mod crud;
 pub mod env;
 pub mod error;
 pub mod jwt;

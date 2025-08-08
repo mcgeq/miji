@@ -1,4 +1,5 @@
 use chrono::Utc;
+use common::utils::date::DateUtils;
 use lazy_static::lazy_static;
 use regex::Regex;
 use sea_orm::ActiveValue::Set;
@@ -72,7 +73,7 @@ pub struct CreateCurrencyRequest {
 // 创建请求到实体模型的转换
 impl From<CreateCurrencyRequest> for entity::currency::ActiveModel {
     fn from(request: CreateCurrencyRequest) -> Self {
-        let now = Utc::now().to_rfc3339();
+        let now = DateUtils::current_datetime_local_fixed().to_string();
 
         entity::currency::ActiveModel {
             code: Set(request.code),

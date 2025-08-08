@@ -25,6 +25,10 @@ export class BusinessError extends Error {
     public category: string,
     public module: string,
     public details?: any,
+    public requestInfo?: {
+      command?: string;
+      args?: any;
+    },
   ) {
     super(description);
     this.name = 'BusinessError';
@@ -32,19 +36,28 @@ export class BusinessError extends Error {
 }
 
 export class SystemError extends Error {
-  constructor(message: string, public originalError?: unknown) {
+  constructor(
+    message: string,
+    public originalError?: unknown,
+  ) {
     super(message);
     this.name = 'SystemError';
   }
 }
 
 // API 调用工具函数
-export async function invokeCommand<T>(
+export async function invokeCommand<T = void>(
   command: string,
   args?: Record<string, any>,
+  timeout = 5000,
 ): Promise<T> {
   try {
-    const response = await invoke<ApiResponse<T>>(command, args);
+    const response = await Promise.race([
+      invoke<ApiResponse<T>>(command, args),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new SystemError('Request timeout')), timeout),
+      ),
+    ]);
 
     if (!response.success) {
       const error = response.error!;

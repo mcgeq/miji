@@ -9,13 +9,12 @@ import type {
   OperationType,
   SortOptions,
 } from '@/schema/common';
-import Database from '@tauri-apps/plugin-sql';
 
 /**
  * 实体基础接口
  */
 interface BaseEntity {
-  serialNum: string;
+  serialNum?: string;
   createdAt?: string | null | undefined;
   updatedAt?: string | null | undefined;
 }

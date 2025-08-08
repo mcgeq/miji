@@ -2,25 +2,27 @@
 //    Copyright (C) 2025 mcgeq. All rights reserved.
 // Author:         mcgeq
 // Email:          <mcgeq@outlook.com>
-// File:           curd.rs
+// File:           service.rs
 // Description:    About Common
 // Create   Date:  2025-08-07 09:16:50
-// Last Modified:  2025-08-07 18:19:12
+// Last Modified:  2025-08-08 19:43:15
 // Modified   By:  mcgeq <mcgeq@outlook.com>
 // ----------------------------------------------------------------------------
 
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, FromQueryResult,
-    IntoActiveModel, PaginatorTrait, PrimaryKeyTrait, QueryFilter, QuerySelect,
+    IntoActiveModel, PaginatorTrait, PrimaryKeyTrait, QueryFilter, QuerySelect, TransactionTrait,
     prelude::async_trait::async_trait,
 };
 use serde::Serialize;
-use std::str::FromStr;
+use std::{str::FromStr, sync::Arc};
 use validator::Validate;
 
 use crate::{
     BusinessCode,
+    crud::hooks::Hooks,
     error::{AppError, MijiResult},
+    log::logger::OperationLogger,
     paginations::{Filter, PagedQuery, PagedResult, Sortable},
 };
 
@@ -125,15 +127,23 @@ where
 
     /// 将更新数据应用到现有 ActiveModel
     fn update_to_active_model(&self, model: E::Model, data: U) -> MijiResult<E::ActiveModel>;
+
+    /// 获取主键值字符串表示
+    fn primary_key_to_string(&self, model: &E::Model) -> String;
+
+    /// 获取表名
+    fn table_name(&self) -> &'static str;
 }
 
 /// 通用 CRUD 服务实现
-pub struct GenericCrudService<E, F, C, U, Conv> {
+pub struct GenericCrudService<E, F, C, U, Conv, H> {
     converter: Conv,
+    hooks: H,
+    logger: Arc<dyn OperationLogger>,
     _phantom: std::marker::PhantomData<(E, F, C, U)>,
 }
 
-impl<E, F, C, U, Conv> GenericCrudService<E, F, C, U, Conv>
+impl<E, F, C, U, Conv, H> GenericCrudService<E, F, C, U, Conv, H>
 where
     E: EntityTrait,
     E::Model: FromQueryResult + Serialize + Send + Sync + Clone,
@@ -144,10 +154,13 @@ where
     C: Validate + Send + Sync,
     U: Validate + Send + Sync,
     Conv: CrudConverter<E, C, U>,
+    H: Hooks<E, C, U>,
 {
-    pub fn new(converter: Conv) -> Self {
+    pub fn new(converter: Conv, hooks: H, logger: Arc<dyn OperationLogger>) -> Self {
         Self {
             converter,
+            hooks,
+            logger,
             _phantom: std::marker::PhantomData,
         }
     }
@@ -156,10 +169,20 @@ where
     pub fn converter(&self) -> &Conv {
         &self.converter
     }
+
+    pub fn logger(&self) -> &dyn OperationLogger {
+        self.logger.as_ref()
+    }
+
+    /// 序列化模型为 JSON
+    fn serialize_model(&self, model: &E::Model) -> MijiResult<serde_json::Value> {
+        serde_json::to_value(model)
+            .map_err(|e| AppError::internal_server_error(format!("Serialization failed: {e}")))
+    }
 }
 
 #[async_trait]
-impl<E, F, C, U, Conv> CrudService<E, F, C, U> for GenericCrudService<E, F, C, U, Conv>
+impl<E, F, C, U, Conv, H> CrudService<E, F, C, U> for GenericCrudService<E, F, C, U, Conv, H>
 where
     E: EntityTrait,
     E::Model: FromQueryResult + Serialize + Send + Sync + Clone + IntoActiveModel<E::ActiveModel>,
@@ -171,22 +194,43 @@ where
     C: Validate + Send + Sync + Clone,
     U: Validate + Send + Sync,
     Conv: CrudConverter<E, C, U> + Send + Sync,
+    H: Hooks<E, C, U> + Send + Sync,
 {
     async fn create(&self, db: &DatabaseConnection, data: C) -> MijiResult<E::Model> {
         // 验证数据
         self.validate_data(&data)?;
 
+        let tx = db.begin().await?;
+
         // 前置钩子
-        self.before_create(&data).await?;
+        self.hooks.before_create(&tx, &data).await?;
 
         // 转换为 ActiveModel
         let active_model = self.converter.create_to_active_model(data)?;
 
         // 插入数据库
-        let model = active_model.insert(db).await.map_err(AppError::from)?;
+        let model = active_model.insert(&tx).await.map_err(AppError::from)?;
+
+        // 记录日志
+        let record_id = self.converter.primary_key_to_string(&model);
+        let data_after = self.serialize_model(&model)?;
+        let table_name = self.converter.table_name();
+
+        // 记录日志
+        self.logger
+            .log_operation(
+                "CREATE",
+                table_name,
+                &record_id,
+                None,
+                Some(&data_after),
+                Some(&tx),
+            )
+            .await?;
 
         // 后置钩子
-        self.after_create(&model).await?;
+        self.hooks.after_create(&tx, &model).await?;
+        tx.commit().await?;
 
         Ok(model)
     }
@@ -212,22 +256,49 @@ where
         // 验证数据
         self.validate_update_data(&data)?;
 
+        let tx = db.begin().await?;
+
         // 查找现有实体
-        let existing_model = self.get_by_id(db, id).await?;
+        let existing_model = E::find_by_id(id.clone())
+            .one(&tx)
+            .await?
+            .ok_or_else(|| AppError::simple(BusinessCode::NotFound, "Entity not found"))?;
 
         // 前置钩子
-        self.before_update(&existing_model, &data).await?;
+        self.hooks
+            .before_update(&tx, &existing_model, &data)
+            .await?;
 
         // 转换为 ActiveModel
         let active_model = self
             .converter
-            .update_to_active_model(existing_model, data)?;
+            .update_to_active_model(existing_model.clone(), data)?;
 
         // 更新数据库
-        let updated_model = active_model.update(db).await.map_err(AppError::from)?;
+        let updated_model = active_model.update(&tx).await?;
+
+        // 记录日志
+        let record_id = self.converter.primary_key_to_string(&updated_model);
+        let data_before = self.serialize_model(&existing_model)?;
+        let data_after = self.serialize_model(&updated_model)?;
+        let table_name = self.converter.table_name();
+
+        // 记录日志
+        self.logger
+            .log_operation(
+                "UPDATE",
+                table_name,
+                &record_id,
+                Some(&data_before),
+                Some(&data_after),
+                Some(&tx),
+            )
+            .await?;
 
         // 后置钩子
-        self.after_update(&updated_model).await?;
+        self.hooks.after_update(&tx, &updated_model).await?;
+
+        tx.commit().await?;
 
         Ok(updated_model)
     }
@@ -237,20 +308,41 @@ where
         db: &DatabaseConnection,
         id: <E::PrimaryKey as PrimaryKeyTrait>::ValueType,
     ) -> MijiResult<()> {
+        let tx = db.begin().await?;
+
         // 检查实体是否存在并获取实体信息
-        let model = self.get_by_id(db, id.clone()).await?;
+        let model = E::find_by_id(id.clone())
+            .one(&tx)
+            .await?
+            .ok_or_else(|| AppError::simple(BusinessCode::NotFound, "Entity not found"))?;
 
         // 前置钩子
-        self.before_delete(&model).await?;
+        self.hooks.before_delete(&tx, &model).await?;
+
+        // 记录日志
+        let record_id = self.converter.primary_key_to_string(&model);
+        let data_before = self.serialize_model(&model)?;
+        let table_name = self.converter.table_name();
+
+        // 记录日志
+        self.logger
+            .log_operation(
+                "DELETE",
+                table_name,
+                &record_id,
+                Some(&data_before),
+                None,
+                Some(&tx),
+            )
+            .await?;
 
         // 删除实体
-        E::delete_by_id(id.clone())
-            .exec(db)
-            .await
-            .map_err(AppError::from)?;
+        E::delete_by_id(id.clone()).exec(&tx).await?;
 
         // 后置钩子
-        self.after_delete(&id).await?;
+        self.hooks.after_delete(&tx, &id).await?;
+
+        tx.commit().await?;
 
         Ok(())
     }
@@ -325,24 +417,49 @@ where
             return Ok(Vec::new());
         }
 
+        let tx = db.begin().await.map_err(AppError::from)?;
         let mut results = Vec::with_capacity(data.len());
+        let mut logs = Vec::with_capacity(data.len());
+        let table_name = self.converter.table_name();
 
         for item in data {
             // 验证每个数据项
             self.validate_data(&item)?;
 
             // 前置钩子
-            self.before_create(&item).await?;
+            self.hooks.before_create(&tx, &item).await?;
 
             // 转换并插入
             let active_model = self.converter.create_to_active_model(item)?;
-            let model = active_model.insert(db).await.map_err(AppError::from)?;
+            let model = active_model.insert(&tx).await.map_err(AppError::from)?;
+
+            // 准备日志
+            let record_id = self.converter.primary_key_to_string(&model);
+            let data_after = self.serialize_model(&model)?;
+
+            logs.push((table_name, record_id, None, Some(data_after)));
 
             // 后置钩子
-            self.after_create(&model).await?;
+            self.hooks.after_create(&tx, &model).await?;
 
             results.push(model);
         }
+
+        // 批量记录日志
+        for (target_table, record_id, data_before, data_after) in logs {
+            self.logger
+                .log_operation(
+                    "CREATE_BATCH",
+                    target_table,
+                    &record_id,
+                    data_before.as_ref(),
+                    data_after.as_ref(),
+                    Some(&tx),
+                )
+                .await?;
+        }
+
+        tx.commit().await.map_err(AppError::from)?;
 
         Ok(results)
     }
@@ -357,13 +474,21 @@ where
         }
 
         // 注意：这里简化了批量删除的实现，实际使用中可能需要根据具体 Entity 调整
+        let tx = db.begin().await.map_err(AppError::from)?;
         let mut deleted_count = 0u64;
+        let mut logs = Vec::new();
+        let table_name = self.converter.table_name();
 
         for id in ids.iter() {
             // 获取要删除的实体（用于钩子）
             if let Ok(model) = self.get_by_id(db, id.clone()).await {
                 // 执行前置钩子
-                self.before_delete(&model).await?;
+                self.hooks.before_delete(&tx, &model).await?;
+
+                // 准备日志
+                let record_id = self.converter.primary_key_to_string(&model);
+                let data_before = self.serialize_model(&model)?;
+                logs.push((table_name, record_id, Some(data_before), None));
 
                 // 删除单个实体
                 let delete_result = E::delete_by_id(id.clone())
@@ -373,9 +498,25 @@ where
                 deleted_count += delete_result.rows_affected;
 
                 // 执行后置钩子
-                self.after_delete(id).await?;
+                self.hooks.after_delete(&tx, id).await?;
             }
         }
+
+        // 批量记录日志
+        for (target_table, record_id, data_before, data_after) in logs {
+            self.logger
+                .log_operation(
+                    "DELETE_BATCH",
+                    target_table,
+                    &record_id,
+                    data_before.as_ref(),
+                    data_after,
+                    Some(&tx),
+                )
+                .await?;
+        }
+
+        tx.commit().await.map_err(AppError::from)?;
 
         Ok(deleted_count)
     }
@@ -403,7 +544,7 @@ where
 }
 
 // 辅助方法实现
-impl<E, F, C, U, Conv> GenericCrudService<E, F, C, U, Conv>
+impl<E, F, C, U, Conv, H> GenericCrudService<E, F, C, U, Conv, H>
 where
     E: EntityTrait,
     C: Validate,
