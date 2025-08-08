@@ -5,7 +5,7 @@
 // File:           commands.rs
 // Description:    About Commands
 // Create   Date:  2025-06-15 15:49:12
-// Last Modified:  2025-08-06 22:32:57
+// Last Modified:  2025-08-09 07:16:25
 // Modified   By:  mcgeq <mcgeq@outlook.com>
 // -----------------------------------------------------------------------------
 
@@ -34,7 +34,12 @@ pub fn init_commands(builder: Builder<Wry>) -> Builder<Wry> {
         todo_cmd::create,
         todo_cmd::update,
         todo_cmd::delete,
-        money_cmd::list_currencies
+        money_cmd::create_currency,
+        money_cmd::get_currency,
+        money_cmd::update_currency,
+        money_cmd::delete_currency,
+        money_cmd::list_currencies,
+        money_cmd::list_currencies_paged,
     ])
 }
 

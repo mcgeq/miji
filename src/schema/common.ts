@@ -33,6 +33,10 @@ export const CurrencySchema = z.object({
 });
 
 export type Currency = z.infer<typeof CurrencySchema>;
+export type CreateCurrencyRequest = Omit<Currency, 'createdAt' | 'updatedAt'>;
+export type UpdateCurrencyRequest = Partial<Omit<Currency, 'createdAt'>> & {
+  code: string;
+};
 export const weekdays = [
   'Mon',
   'Tue',
