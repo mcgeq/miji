@@ -20,3 +20,5 @@ jsonwebtoken = { workspace = true }
 sea-orm = { workspace = true }
 chrono-tz = { workspace = true }
 validator = { workspace = true }
+tracing = { workspace = true }
+async-trait = { workspace = true }

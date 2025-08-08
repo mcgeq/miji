@@ -68,6 +68,8 @@ validator = { version = "0.20.0", features = ["derive"] }
 zeroize = { version = "1.8.1", features = ["serde", "zeroize_derive"] }
 lazy_static = "1.5.0"
 regex = "1.11.1"
+tracing = "0.1.41"
+async-trait = "0.1.88"
 common = { path = "./common" }
 miji_derive = { path = "./miji_derive" }
 entity = { path = "./entity" }
@@ -99,6 +101,7 @@ validator.workspace = true
 todos = { path = "./crates/todos" }
 auth = { path = "./crates/auth" }
 money = { path = "./crates/money" }
+
 
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]

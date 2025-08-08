@@ -154,6 +154,48 @@ impl AppError {
 
         Self::validation_failed(code, message, errors)
     }
+
+    /// 创建内部服务器错误
+    pub fn internal_server_error(
+        message: impl Into<String>,
+    ) -> Self {
+        struct InternalServerError {
+            code: BusinessCode,
+            message: String,
+        }
+
+        impl std::fmt::Display for InternalServerError {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                write!(f, "{}", self.message)
+            }
+        }
+
+        impl std::error::Error for InternalServerError {}
+
+        impl ErrorExt for InternalServerError {
+            fn business_code(&self) -> BusinessCode {
+                self.code
+            }
+
+            fn extra_data(&self) -> Option<serde_json::Value> {
+                None // 内部服务器错误通常不需要额外数据
+            }
+        }
+
+        impl std::fmt::Debug for InternalServerError {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                f.debug_struct("InternalServerError")
+                    .field("code", &self.code.as_str())
+                    .field("message", &self.message)
+                    .finish()
+            }
+        }
+
+        AppError::new(InternalServerError {
+            code: BusinessCode::SystemError,
+            message: message.into(),
+        })
+    }
 }
 
 impl<E: ErrorExt + 'static> From<E> for AppError {
