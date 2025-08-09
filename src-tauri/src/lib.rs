@@ -1,5 +1,4 @@
 use migration::{Migrator, MigratorTrait};
-use money::services::account::get_account_service;
 use tauri::Manager;
 
 #[cfg(desktop)]

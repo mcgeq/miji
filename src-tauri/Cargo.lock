@@ -2893,6 +2893,7 @@ dependencies = [
  "serde_json",
  "snafu",
  "tauri",
+ "tracing",
  "validator",
 ]
 
@@ -5642,6 +5643,7 @@ dependencies = [
  "tauri-plugin",
  "thiserror 2.0.12",
  "time",
+ "tracing",
 ]
 
 [[package]]

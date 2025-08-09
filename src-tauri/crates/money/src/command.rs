@@ -1,5 +1,6 @@
 use common::{ApiResponse, AppState, crud::service::CrudService, paginations::PagedQuery};
 use tauri::State;
+use tracing::info;
 
 use crate::{
     dto::{
@@ -91,6 +92,7 @@ pub async fn list_currencies(
     state: State<'_, AppState>,
     filter: CurrencyFilter,
 ) -> Result<ApiResponse<Vec<CurrencyResponse>>, String> {
+    info!("list_currencies......");
     let service = get_currency_service();
     let db = &state.db;
     Ok(ApiResponse::from_result(
