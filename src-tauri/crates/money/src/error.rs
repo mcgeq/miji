@@ -1,7 +1,5 @@
-use common::{
-    BusinessCode,
-    error::{ ErrorExt},
-};
+use common::{BusinessCode, error::ErrorExt};
+use sea_orm::prelude::Decimal;
 use snafu::{Backtrace, Snafu};
 
 /// 财务相关错误
@@ -10,7 +8,7 @@ use snafu::{Backtrace, Snafu};
 pub enum MoneyError {
     #[snafu(display("Insufficient funds: current balance {}", balance))]
     InsufficientFunds {
-        balance: f64,
+        balance: Decimal,
         #[snafu(backtrace)]
         backtrace: Backtrace,
     },
@@ -38,7 +36,7 @@ pub enum MoneyError {
 
     #[snafu(display("Invalid amount: {}", amount))]
     InvalidAmount {
-        amount: f64,
+        amount: Decimal,
         #[snafu(backtrace)]
         backtrace: Backtrace,
     },
@@ -53,7 +51,7 @@ pub enum MoneyError {
     #[snafu(display("Transfer limit exceeded: limit={}, amount={}", limit, amount))]
     TransferLimitExceeded {
         limit: f64,
-        amount: f64,
+        amount: Decimal,
         #[snafu(backtrace)]
         backtrace: Backtrace,
     },

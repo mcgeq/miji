@@ -67,7 +67,8 @@ pub struct SortOptions {
     /// 排序字段
     #[serde(rename = "sortBy")]
     pub sort_by: Option<String>,
-
+    /// 是否降序
+    pub desc: bool,
     /// 排序方向
     #[serde(rename = "sortDir")]
     pub sort_dir: Option<SortDirection>,
