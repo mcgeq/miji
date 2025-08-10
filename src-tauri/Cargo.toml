@@ -74,6 +74,15 @@ tracing = { version = "0.1.41", features = [
   "max_level_trace",
   "release_max_level_info",
 ] }
+tracing-subscriber = { version = "0.3.19", features = [
+  "chrono",
+  "serde",
+  "env-filter",
+  "fmt",
+  "json",
+  "serde_json",
+  "tracing-serde",
+] }
 async-trait = "0.1.88"
 common = { path = "./common" }
 miji_derive = { path = "./miji_derive" }
@@ -106,6 +115,8 @@ validator.workspace = true
 todos = { path = "./crates/todos" }
 auth = { path = "./crates/auth" }
 money = { path = "./crates/money" }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
 
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
