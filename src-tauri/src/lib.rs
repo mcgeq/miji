@@ -1,6 +1,8 @@
 use migration::{Migrator, MigratorTrait};
 use tauri::Manager;
 
+pub mod logging;
+
 #[cfg(desktop)]
 mod desktops;
 

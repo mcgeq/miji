@@ -214,7 +214,7 @@ fn json_log_format_impl(
         "message": format!("{}", message),
         "app_version": env!("CARGO_PKG_VERSION"),
     });
-    out.finish(format_args!("{}", log_obj));
+    out.finish(format_args!("{log_obj}"));
 }
 
 fn perf_log_format_impl(
@@ -266,7 +266,7 @@ where
             "app_version": env!("CARGO_PKG_VERSION"),
         });
 
-        writeln!(writer, "{}", log_obj)
+        writeln!(writer, "{log_obj}")
     }
 }
 
@@ -312,7 +312,7 @@ fn cleanup_old_logs(root_dir: &Path, relative_path: &str, days: i64) -> std::io:
                 .and_then(|os| os.to_str())
                 .is_some_and(|name| should_remove_log_dir(name, threshold))
         {
-            println!("Removing old log directory: {:?}", path);
+            println!("Removing old log directory: {path:?}");
             let _ = fs::remove_dir_all(&path);
         }
     }
