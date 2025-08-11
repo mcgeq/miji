@@ -11,7 +11,6 @@
 
 use chrono::{Datelike, Local, NaiveDate, SecondsFormat, TimeZone};
 use common::utils::files::MijiFiles;
-use log::{Level, LevelFilter};
 use serde_json::json;
 use std::{
     env,
@@ -19,18 +18,11 @@ use std::{
     path::{Path, PathBuf},
 };
 use tauri::{Manager, Runtime};
-use tauri_plugin_log::{
-    Target, TargetKind,
-    fern::{
-        self,
-        colors::{Color, ColoredLevelConfig},
-    },
-};
 use tracing::field::Field;
 use tracing::{Event, Subscriber};
 use tracing_subscriber::{
     EnvFilter,
-    fmt::{self, FormatEvent, format::Writer},
+    fmt::{self, FormatEvent, format::Writer, time::ChronoLocal},
     layer::SubscriberExt,
     prelude::*,
     registry::{LookupSpan, Registry},
@@ -49,21 +41,6 @@ impl<R: Runtime> MijiInit for tauri::Builder<R> {
         let _ = cleanup_old_logs(Path::new(&root_dir), "logs/tracing", 30);
 
         // 根据构建配置调整日志级别
-        let log_level = if cfg!(debug_assertions) {
-            LevelFilter::Debug
-        } else {
-            env::var("MIJI_LOG_LEVEL")
-                .ok()
-                .and_then(|level| match level.to_uppercase().as_str() {
-                    "TRACE" => Some(LevelFilter::Trace),
-                    "DEBUG" => Some(LevelFilter::Debug),
-                    "INFO" => Some(LevelFilter::Info),
-                    "WARN" => Some(LevelFilter::Warn),
-                    "ERROR" => Some(LevelFilter::Error),
-                    _ => None,
-                })
-                .unwrap_or(LevelFilter::Info)
-        };
 
         self.plugin(tauri_plugin_autostart::init(
             tauri_plugin_autostart::MacosLauncher::LaunchAgent,
@@ -76,160 +53,8 @@ impl<R: Runtime> MijiInit for tauri::Builder<R> {
                 .expect("no main window")
                 .set_focus();
         }))
-        .plugin(
-            tauri_plugin_log::Builder::default()
-                .max_file_size(50 * 1024 * 1024) // 50MB，更合理的文件大小
-                .rotation_strategy(tauri_plugin_log::RotationStrategy::KeepAll)
-                .targets([
-                    Target::new(TargetKind::Stdout),
-                    Target::new(TargetKind::Webview),
-                    Target::new(TargetKind::Folder {
-                        path: MijiFiles::join(&[&root_dir, "logs", "app"]),
-                        file_name: Some("miji-app".to_string()),
-                    }),
-                    Target::new(TargetKind::Folder {
-                        path: MijiFiles::join(&[&root_dir, "logs", "errors"]),
-                        file_name: Some("miji-errors".to_string()),
-                    })
-                    .filter(|metadata| metadata.level() <= Level::Warn),
-                    Target::new(TargetKind::Folder {
-                        path: MijiFiles::join(&[&root_dir, "logs", "performance"]),
-                        file_name: Some("miji-perf".to_string()),
-                    })
-                    .filter(|metadata| metadata.target().starts_with("perf::")),
-                ])
-                .timezone_strategy(tauri_plugin_log::TimezoneStrategy::UseLocal)
-                .level(log_level)
-                .filter(|metadata| {
-                    let target = metadata.target();
-                    let level = metadata.level();
-
-                    if target == "sea_orm::driver::sqlx_sqlite" && level == Level::Debug {
-                        return false;
-                    }
-                    if target.starts_with("hyper::") && level == Level::Debug {
-                        return false;
-                    }
-                    if target.starts_with("tokio::") && level == Level::Debug {
-                        return false;
-                    }
-                    if target.starts_with("wry::") && level == Level::Debug {
-                        return false;
-                    }
-                    true
-                })
-                .with_colors(create_custom_color_config())
-                .format(enhanced_log_format)
-                .skip_logger()
-                .build(),
-        )
+        .plugin(tauri_plugin_log::Builder::default().skip_logger().build())
     }
-}
-
-/// 创建自定义颜色配置
-fn create_custom_color_config() -> ColoredLevelConfig {
-    ColoredLevelConfig::new()
-        .error(Color::Red)
-        .warn(Color::Yellow)
-        .info(Color::Green)
-        .debug(Color::Blue)
-        .trace(Color::Magenta)
-}
-
-/// 增强的日志格式化函数
-fn enhanced_log_format(
-    out: fern::FormatCallback,
-    message: &std::fmt::Arguments,
-    record: &log::Record,
-) {
-    let force_json = env::var("MIJI_LOG_JSON")
-        .map(|v| v == "1" || v.eq_ignore_ascii_case("true"))
-        .unwrap_or(false);
-
-    let is_console_target = record.target() == "console" || record.target() == "webview";
-    let is_performance = record.target().starts_with("perf::");
-
-    if force_json {
-        json_log_format_impl(out, message, record);
-    } else if is_performance {
-        perf_log_format_impl(out, message, record);
-    } else if is_console_target {
-        console_log_format_impl(out, message, record);
-    } else {
-        let is_terminal_output = env::var("MIJI_TERMINAL_OUTPUT").is_ok();
-        if is_terminal_output {
-            console_log_format_impl(out, message, record);
-        } else {
-            json_log_format_impl(out, message, record);
-        }
-    }
-}
-
-fn console_log_format_impl(
-    out: fern::FormatCallback,
-    message: &std::fmt::Arguments,
-    record: &log::Record,
-) {
-    let colors = create_custom_color_config();
-    let level_icon = match record.level() {
-        Level::Error => "❌",
-        Level::Warn => "⚠️",
-        Level::Info => "ℹ️",
-        Level::Debug => "🐛",
-        Level::Trace => "🔍",
-    };
-
-    let module = record
-        .module_path()
-        .unwrap_or("unknown")
-        .split("::")
-        .last()
-        .unwrap_or("unknown");
-
-    out.finish(format_args!(
-        "[{}] {} {} [{}:{}] {}",
-        Local::now().format("%H:%M:%S%.3f"),
-        level_icon,
-        colors.color(record.level()),
-        module,
-        record.line().unwrap_or(0),
-        message
-    ));
-}
-
-fn json_log_format_impl(
-    out: fern::FormatCallback,
-    message: &std::fmt::Arguments,
-    record: &log::Record,
-) {
-    let log_obj = json!({
-        "timestamp": Local::now().to_rfc3339_opts(SecondsFormat::Millis, true),
-        "level": record.level().to_string(),
-        "target": record.target(),
-        "module": record.module_path().unwrap_or("unknown"),
-        "file": record.file().unwrap_or("unknown"),
-        "line": record.line().unwrap_or(0),
-        "thread": std::thread::current().name().unwrap_or("main"),
-        "thread_id": format!("{:?}", std::thread::current().id()),
-        "message": format!("{}", message),
-        "app_version": env!("CARGO_PKG_VERSION"),
-    });
-    out.finish(format_args!("{log_obj}"));
-}
-
-fn perf_log_format_impl(
-    out: fern::FormatCallback,
-    message: &std::fmt::Arguments,
-    record: &log::Record,
-) {
-    let colors = create_custom_color_config();
-    out.finish(format_args!(
-        "⚡ [{}] {} | {} | {}",
-        Local::now().format("%H:%M:%S%.3f"),
-        colors.color(record.level()),
-        record.target().replace("perf::", ""),
-        message
-    ));
 }
 
 // ==== tracing 部分 ====
@@ -254,7 +79,7 @@ where
 
         let meta = event.metadata();
         let log_obj = json!({
-            "timestamp": Local::now().to_rfc3339_opts(SecondsFormat::Millis, true),
+            "timestamp": Local::now().to_rfc3339_opts(SecondsFormat::Nanos, false),
             "level": meta.level().to_string(),
             "target": meta.target(),
             "module": meta.module_path().unwrap_or("unknown"),
@@ -329,7 +154,8 @@ pub fn init_tracing_subscriber() {
         .with_file(true)
         .with_line_number(true)
         .with_ansi(true)
-        .with_writer(std::io::stdout);
+        .with_writer(std::io::stdout)
+        .with_timer(ChronoLocal::rfc_3339());
 
     // JSON 文件输出，放在 logs/tracing/2025-08-11/app.log
     let root_dir = MijiFiles::root_path().unwrap_or_else(|_| ".".into());
