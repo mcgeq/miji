@@ -73,7 +73,7 @@ pub struct CreateCurrencyRequest {
 // 创建请求到实体模型的转换
 impl From<CreateCurrencyRequest> for entity::currency::ActiveModel {
     fn from(request: CreateCurrencyRequest) -> Self {
-        let now = DateUtils::current_datetime_local_fixed().to_string();
+        let now = DateUtils::local_rfc3339();
 
         entity::currency::ActiveModel {
             code: Set(request.code),

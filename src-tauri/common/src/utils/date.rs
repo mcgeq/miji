@@ -18,8 +18,8 @@ impl DateUtils {
         Utc::now()
     }
 
-    pub fn current_datetime_local_fixed() -> DateTime<FixedOffset> {
-        Local::now().fixed_offset()
+    pub fn local_rfc3339() -> String {
+        Local::now().to_rfc3339_opts(chrono::SecondsFormat::Micros, false)
     }
 
     pub fn datetime_local_fixed(datetime: Option<NaiveDateTime>) -> DateTime<FixedOffset> {

@@ -1,4 +1,4 @@
-use common::{ApiResponse, AppState, crud::service::CrudService, paginations::PagedQuery};
+use common::{crud::service::CrudService, paginations::{PagedQuery, PagedResult}, ApiResponse, AppState};
 use tauri::State;
 use tracing::info;
 
@@ -21,16 +21,6 @@ use crate::{
     },
 };
 
-// 定义分页结果结构体
-#[derive(serde::Serialize)]
-pub struct PagedResult<T> {
-    rows: Vec<T>,
-    total_count: i64,
-    current_page: i32,
-    page_size: i32,
-    total_pages: i32,
-}
-
 // ============================================================================
 // start 货币
 // 创建货币
@@ -40,9 +30,8 @@ pub async fn create_currency(
     data: CreateCurrencyRequest,
 ) -> Result<ApiResponse<CurrencyResponse>, String> {
     let service = get_currency_service();
-    let db = &state.db;
     Ok(ApiResponse::from_result(
-        service.create(db, data).await.map(CurrencyResponse::from),
+        service.create(&state.db, data).await.map(CurrencyResponse::from),
     ))
 }
 
@@ -50,12 +39,11 @@ pub async fn create_currency(
 #[tauri::command]
 pub async fn get_currency(
     state: State<'_, AppState>,
-    id: String,
+    serial_num: String,
 ) -> Result<ApiResponse<CurrencyResponse>, String> {
     let service = get_currency_service();
-    let db = &state.db;
     Ok(ApiResponse::from_result(
-        service.get_by_id(db, id).await.map(CurrencyResponse::from),
+        service.get_by_id(&state.db, serial_num).await.map(CurrencyResponse::from),
     ))
 }
 
@@ -63,14 +51,13 @@ pub async fn get_currency(
 #[tauri::command]
 pub async fn update_currency(
     state: State<'_, AppState>,
-    id: String,
+    serial_num: String,
     data: UpdateCurrencyRequest,
 ) -> Result<ApiResponse<CurrencyResponse>, String> {
     let service = get_currency_service();
-    let db = &state.db;
     Ok(ApiResponse::from_result(
         service
-            .update(db, id, data)
+            .update(&state.db, serial_num, data)
             .await
             .map(CurrencyResponse::from),
     ))
@@ -79,11 +66,10 @@ pub async fn update_currency(
 #[tauri::command]
 pub async fn delete_currency(
     state: State<'_, AppState>,
-    id: String,
+    serial_num: String,
 ) -> Result<ApiResponse<()>, String> {
     let service = get_currency_service();
-    let db = &state.db;
-    Ok(ApiResponse::from_result(service.delete(db, id).await))
+    Ok(ApiResponse::from_result(service.delete(&state.db, serial_num).await))
 }
 
 // 列出货币（带过滤条件）
@@ -94,10 +80,9 @@ pub async fn list_currencies(
 ) -> Result<ApiResponse<Vec<CurrencyResponse>>, String> {
     info!("list_currencies......");
     let service = get_currency_service();
-    let db = &state.db;
     Ok(ApiResponse::from_result(
         service
-            .list_with_filter(db, filter)
+            .list_with_filter(&state.db, filter)
             .await
             .map(|models| models.into_iter().map(CurrencyResponse::from).collect()),
     ))
@@ -110,17 +95,16 @@ pub async fn list_currencies_paged(
     query: PagedQuery<CurrencyFilter>,
 ) -> Result<ApiResponse<PagedResult<CurrencyResponse>>, String> {
     let service = get_currency_service();
-    let db = &state.db;
     Ok(ApiResponse::from_result(
         service
-            .list_paged(db, query)
+            .list_paged(&state.db, query)
             .await
             .map(|paged| PagedResult {
                 rows: paged.rows.into_iter().map(CurrencyResponse::from).collect(),
-                total_count: paged.total_count as i64,
-                current_page: paged.current_page as i32,
-                page_size: paged.page_size as i32,
-                total_pages: paged.total_pages as i32,
+                total_count: paged.total_count,
+                current_page: paged.current_page,
+                page_size: paged.page_size,
+                total_pages: paged.total_pages,
             }),
     ))
 }
@@ -133,12 +117,12 @@ pub async fn list_currencies_paged(
 #[tauri::command]
 pub async fn get_account(
     state: State<'_, AppState>,
-    id: String,
+    serial_num: String,
 ) -> Result<ApiResponse<AccountResponseWithRelations>, String> {
     let service = get_account_service();
     Ok(ApiResponse::from_result(
         service
-            .get_account_with_relations(&state.db, id)
+            .get_account_with_relations(&state.db, serial_num)
             .await
             .map(tuple_to_response),
     ))
@@ -148,9 +132,9 @@ pub async fn get_account(
 #[tauri::command]
 pub async fn get_account_with_relations(
     state: State<'_, AppState>,
-    id: String,
+    serial_num: String,
 ) -> Result<ApiResponse<AccountResponseWithRelations>, String> {
-    get_account(state, id).await
+    get_account(state, serial_num).await
 }
 
 // 创建账户
@@ -160,12 +144,11 @@ pub async fn create_account(
     data: CreateAccountRequest,
 ) -> Result<ApiResponse<AccountResponseWithRelations>, String> {
     let service = get_account_service();
-    let db = &state.db;
 
     // 先创建账户，然后获取完整信息
-    let result = match service.base().create(db, data).await {
+    let result = match service.base().create(&state.db, data).await {
         Ok(created_account) => service
-            .get_account_with_relations(db, created_account.serial_num)
+            .get_account_with_relations(&state.db, created_account.serial_num)
             .await
             .map(tuple_to_response),
         Err(e) => Err(e),
@@ -178,16 +161,15 @@ pub async fn create_account(
 #[tauri::command]
 pub async fn update_account(
     state: State<'_, AppState>,
-    id: String,
+    serial_num: String,
     data: UpdateAccountRequest,
 ) -> Result<ApiResponse<AccountResponseWithRelations>, String> {
     let service = get_account_service();
-    let db = &state.db;
 
     // 先更新账户，然后获取完整信息
-    let result = match service.base().update(db, id.clone(), data).await {
+    let result = match service.base().update(&state.db, serial_num.clone(), data).await {
         Ok(_) => service
-            .get_account_with_relations(db, id)
+            .get_account_with_relations(&state.db, serial_num)
             .await
             .map(tuple_to_response),
         Err(e) => Err(e),
@@ -200,11 +182,11 @@ pub async fn update_account(
 #[tauri::command]
 pub async fn delete_account(
     state: State<'_, AppState>,
-    id: String,
+    serial_num: String,
 ) -> Result<ApiResponse<()>, String> {
     let service = get_account_service();
     Ok(ApiResponse::from_result(
-        service.base().delete(&state.db, id).await,
+        service.base().delete(&state.db, serial_num).await,
     ))
 }
 
@@ -233,11 +215,10 @@ pub async fn create_transaction(
     data: CreateTransactionRequest,
 ) -> Result<ApiResponse<TransactionResponse>, String> {
     let service = get_transaction_service();
-    let db = &state.db;
 
     Ok(ApiResponse::from_result(
         service
-            .create(db, data)
+            .create(&state.db, data)
             .await
             .map(TransactionResponse::from),
     ))
@@ -249,9 +230,8 @@ pub async fn transfer(
     data: TransferRequest,
 ) -> Result<ApiResponse<(TransactionResponse, TransactionResponse)>, String> {
     let service = get_transaction_service();
-    let db = &state.db;
 
-    match service.transfer(db, data).await {
+    match service.transfer(&state.db, data).await {
         Ok((from_tx, to_tx)) => Ok(ApiResponse::success((
             TransactionResponse::from(from_tx),
             TransactionResponse::from(to_tx),
@@ -264,14 +244,13 @@ pub async fn transfer(
 #[tauri::command]
 pub async fn get_transaction(
     state: State<'_, AppState>,
-    id: String,
+    serial_num: String,
 ) -> Result<ApiResponse<TransactionResponse>, String> {
     let service = get_transaction_service();
-    let db = &state.db;
 
     Ok(ApiResponse::from_result(
         service
-            .get_by_id(db, id)
+            .get_by_id(&state.db, serial_num)
             .await
             .map(TransactionResponse::from),
     ))
@@ -281,15 +260,14 @@ pub async fn get_transaction(
 #[tauri::command]
 pub async fn update_transaction(
     state: State<'_, AppState>,
-    id: String,
+    serial_num: String,
     data: UpdateTransactionRequest,
 ) -> Result<ApiResponse<TransactionResponse>, String> {
     let service = get_transaction_service();
-    let db = &state.db;
 
     Ok(ApiResponse::from_result(
         service
-            .update(db, id, data)
+            .update(&state.db, serial_num, data)
             .await
             .map(TransactionResponse::from),
     ))
@@ -299,12 +277,11 @@ pub async fn update_transaction(
 #[tauri::command]
 pub async fn delete_transaction(
     state: State<'_, AppState>,
-    id: String,
+    serial_num: String,
 ) -> Result<ApiResponse<()>, String> {
     let service = get_transaction_service();
-    let db = &state.db;
 
-    Ok(ApiResponse::from_result(service.delete(db, id).await))
+    Ok(ApiResponse::from_result(service.delete(&state.db, serial_num).await))
 }
 
 // 列出交易（带过滤条件）
@@ -314,11 +291,10 @@ pub async fn list_transactions(
     filter: TransactionFilter,
 ) -> Result<ApiResponse<Vec<TransactionResponse>>, String> {
     let service = get_transaction_service();
-    let db = &state.db;
 
     Ok(ApiResponse::from_result(
         service
-            .list_with_filter(db, filter)
+            .list_with_filter(&state.db, filter)
             .await
             .map(|models| models.into_iter().map(TransactionResponse::from).collect()),
     ))
@@ -331,11 +307,10 @@ pub async fn list_paged_transactions(
     query: PagedQuery<TransactionFilter>,
 ) -> Result<ApiResponse<PagedResult<TransactionResponse>>, String> {
     let service = get_transaction_service();
-    let db = &state.db;
 
     Ok(ApiResponse::from_result(
         service
-            .list_paged(db, query)
+            .list_paged(&state.db, query)
             .await
             .map(|paged| PagedResult {
                 rows: paged
@@ -343,10 +318,10 @@ pub async fn list_paged_transactions(
                     .into_iter()
                     .map(TransactionResponse::from)
                     .collect(),
-                total_count: paged.total_count as i64,
-                current_page: paged.current_page as i32,
-                page_size: paged.page_size as i32,
-                total_pages: paged.total_pages as i32,
+                total_count: paged.total_count,
+                current_page: paged.current_page,
+                page_size: paged.page_size,
+                total_pages: paged.total_pages,
             }),
     ))
 }

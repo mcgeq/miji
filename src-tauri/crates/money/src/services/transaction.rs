@@ -222,7 +222,7 @@ impl TransactionServiceImpl {
         // 生成唯一序列号
         let trans_from_serial_num = McgUuid::uuid(38);
         let trans_to_serial_num = McgUuid::uuid(38);
-        let now = DateUtils::current_datetime_local_fixed().to_string();
+        let now = DateUtils::local_rfc3339();
 
         // 创建转出交易
         let from_tx = entity::transactions::ActiveModel {
@@ -422,7 +422,7 @@ impl TransactionServiceImpl {
         // 生成唯一序列号
         let reverse_out_serial_num = McgUuid::uuid(38);
         let reverse_in_serial_num = McgUuid::uuid(38);
-        let now = DateUtils::current_datetime_local_fixed().to_string();
+        let now = DateUtils::local_rfc3339();
 
         // 创建反向转出交易（原转入账户转出）
         let reverse_out = entity::transactions::ActiveModel {

@@ -96,7 +96,7 @@ impl CrudConverter<entity::account::Entity, CreateAccountRequest, UpdateAccountR
 
                 // 设置更新时间
                 active_model.updated_at =
-                    Set(Some(DateUtils::current_datetime_local_fixed().to_string()));
+                    Set(Some(DateUtils::local_rfc3339()));
 
                 active_model
             })
@@ -383,15 +383,12 @@ impl AccountService {
             }
 
             // 尝试解析为货币字段 (格式: currency.field)
-            if let Some((entity, field)) = sort_by.split_once('.') {
-                if entity == "currency" {
-                    if let Ok(column) = entity::currency::Column::from_str(field) {
-                        return if desc {
-                            query_builder.order_by_desc(column)
-                        } else {
-                            query_builder.order_by_asc(column)
-                        };
-                    }
+            if let Some(("currency", field)) = sort_by.split_once('.') {
+                if let Ok(column) = entity::currency::Column::from_str(field) {
+                    return if desc {
+                        query_builder.order_by_desc(column)
+                    } else {
+                        query_builder.order_by_asc(column)                        };
                 }
             }
         }

@@ -57,7 +57,7 @@ pub struct CreateTransactionRequest {
 
 impl From<CreateTransactionRequest> for entity::transactions::ActiveModel {
     fn from(request: CreateTransactionRequest) -> Self {
-        let now = DateUtils::current_datetime_local_fixed().to_string();
+        let now = DateUtils::local_rfc3339();
 
         entity::transactions::ActiveModel {
             serial_num: Set(request.serial_num),
@@ -136,7 +136,7 @@ pub struct UpdateTransactionRequest {
 
 impl UpdateTransactionRequest {
     pub fn apply_to_model(&self, model: &mut entity::transactions::ActiveModel) {
-        let now = DateUtils::current_datetime_local_fixed().to_string();
+        let now = DateUtils::local_rfc3339().to_string();
 
         if let Some(transaction_type) = &self.transaction_type {
             model.transaction_type = Set(transaction_type.clone());

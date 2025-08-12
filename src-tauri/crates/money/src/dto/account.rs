@@ -189,7 +189,7 @@ impl TryFrom<CreateAccountRequest> for account::ActiveModel {
         let serial_num = McgUuid::uuid(38);
 
         // 获取当前时间
-        let now = DateUtils::current_datetime_local_fixed().to_string();
+        let now = DateUtils::local_rfc3339().to_string();
 
         Ok(account::ActiveModel {
             serial_num: Set(serial_num),
@@ -248,7 +248,7 @@ impl TryFrom<UpdateAccountRequest> for account::ActiveModel {
             is_active: sea_orm::ActiveValue::NotSet,
             created_at: sea_orm::ActiveValue::NotSet,
             updated_at: sea_orm::ActiveValue::Set(Some(
-                common::utils::date::DateUtils::current_datetime_local_fixed().to_string(),
+                common::utils::date::DateUtils::local_rfc3339(),
             )),
         })
     }

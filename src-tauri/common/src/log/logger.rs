@@ -114,7 +114,7 @@ impl FileLogger {
     ) -> MijiResult<Self> {
         let file = Self::create_file(&file_path).await?;
         let metadata = file.metadata().await.map_err(|e| {
-            AppError::internal_server_error(format!("Failed to get file metadata: {}", e))
+            AppError::internal_server_error(format!("Failed to get file metadata: {e}"))
         })?;
         let current_size = metadata.len();
 
@@ -136,7 +136,7 @@ impl FileLogger {
             .await
             .map_err(|e| {
                 AppError::internal_server_error(
-                    format!("Failed to create log file: {}", e)
+                    format!("Failed to create log file: {e}")
                 )
             })
     }
@@ -148,7 +148,7 @@ impl FileLogger {
         // 关闭当前文件
         file.flush().await.map_err(|e| {
             AppError::internal_server_error(
-                format!("Failed to flush log file: {}", e)
+                format!("Failed to flush log file: {e}")
             )
         })?;
 
@@ -162,23 +162,23 @@ impl FileLogger {
 
         // 重命名旧文件
         for i in (1..self.max_files).rev() {
-            let old_name = format!("{}.{}.{}", base_name, i, extension);
+            let old_name = format!("{base_name}.{i}.{extension}");
             let new_name = format!("{}.{}.{}", base_name, i + 1, extension);
 
             if tokio::fs::metadata(&old_name).await.is_ok() {
                 tokio::fs::rename(&old_name, &new_name).await.map_err(|e| {
                     AppError::internal_server_error(
-                        format!("Failed to rotate log file: {}", e)
+                        format!("Failed to rotate log file: {e}")
                     )
                 })?;
             }
         }
 
         // 重命名当前文件
-        let first_backup = format!("{}.1.{}", base_name, extension);
+        let first_backup = format!("{base_name}.1.{extension}");
         tokio::fs::rename(&self.file_path, &first_backup).await.map_err(|e| {
             AppError::internal_server_error(
-                format!("Failed to rename log file: {}", e)
+                format!("Failed to rename log file: {e}")
             )
         })?;
 
@@ -224,7 +224,7 @@ impl OperationLogger for FileLogger {
 
         let log_entry = format!(
             "[{}] {} - {} - {} - Before: {:?} - After: {:?}\n",
-            DateUtils::current_datetime_local_fixed(),
+            DateUtils::local_rfc3339(),
             operation,
             target_table,
             record_id,
@@ -250,12 +250,12 @@ impl OperationLogger for FileLogger {
         let mut file = self.current_file.lock().await;
         file.write_all(log_bytes).await.map_err(|e| {
             AppError::internal_server_error(
-                format!("Failed to write to log file: {}", e)
+                format!("Failed to write to log file: {e}")
             )
         })?;
         file.flush().await.map_err(|e| {
             AppError::internal_server_error(
-                format!("Failed to flush log file: {}", e)
+                format!("Failed to flush log file: {e}")
             )
         })?;
 
