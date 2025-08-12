@@ -1,4 +1,5 @@
 import { CURRENCY_CNY } from '@/constants/moneyConst';
+import { invokeCommand } from '@/types/api';
 import { toCamelCase } from '@/utils/common';
 import { DateUtils } from '@/utils/date';
 import { db } from '@/utils/dbUtils';
@@ -11,7 +12,12 @@ import type {
   DateRange,
   SortOptions,
 } from '@/schema/common';
-import type { Account } from '@/schema/money';
+import type {
+  Account,
+  AccountResponseWithRelations,
+  CreateAccountRequest,
+  UpdateAccountRequest,
+} from '@/schema/money';
 
 // 查询过滤器接口
 export interface AccountFilters {
@@ -26,7 +32,11 @@ export interface AccountFilters {
 /**
  * 账户数据映射器
  */
-export class AccountMapper extends BaseMapper<Account> {
+export class AccountMapper extends BaseMapper<
+  CreateAccountRequest,
+  UpdateAccountRequest,
+  AccountResponseWithRelations
+> {
   protected tableName = 'account';
   protected entityName = 'Account';
 
@@ -34,156 +44,55 @@ export class AccountMapper extends BaseMapper<Account> {
     return ['isShared', 'isActive'];
   }
 
-  async create(account: Account): Promise<void> {
+  async create(
+    account: CreateAccountRequest,
+  ): Promise<AccountResponseWithRelations> {
     try {
-      const {
-        serialNum,
-        name,
-        description,
-        type,
-        balance,
-        initialBalance,
-        currency,
-        isShared,
-        ownerId,
-        isActive,
-        color,
-        createdAt,
-        updatedAt,
-      } = account;
-
-      await db.execute(
-        `INSERT INTO ${this.tableName} (serial_num, name, description, type, balance, initial_balance,currency, is_shared, owner_id, is_active, color, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [
-          serialNum,
-          name,
-          description,
-          type,
-          balance,
-          initialBalance,
-          currency.code,
-          this.toDbBoolean(isShared),
-          ownerId,
-          this.toDbBoolean(isActive),
-          color,
-          createdAt,
-          updatedAt,
-        ],
-      );
-      Lg.d('MoneyDb', 'Account created:', { account });
-      await this.recordOperationLog(
-        'INSERT',
-        account.serialNum,
-        account,
-        undefined,
+      return await invokeCommand<AccountResponseWithRelations>(
+        'create_account',
+        { data: account },
       );
     } catch (error) {
       this.handleError('create', error);
     }
   }
 
-  async getById(serialNum: string): Promise<Account | null> {
+  async getById(
+    serialNum: string,
+  ): Promise<AccountResponseWithRelations | null> {
     try {
-      const result = await db.select<any[]>(
-        `SELECT t.*,
-              c.locale as currency_locale,
-              c.code as currency_code,
-              c.symbol as currency_symbol,
-              c.created_at as currency_created_at,
-              c.updated_at as currency_updated_at
-          FROM ${this.tableName} t
-          JOIN currency c ON t.currency = c.code
-          WHERE serial_num = ?`,
-        [serialNum],
-        true,
+      const account = await invokeCommand<AccountResponseWithRelations>(
+        'get_account',
+        {
+          serialNum,
+        },
       );
-
-      if (result.length === 0) return null;
-
-      const account = this.transformAccountRow(result[0]);
       return account;
     } catch (error) {
       this.handleError('getById', error);
     }
   }
 
-  async list(): Promise<Account[]> {
+  async list(): Promise<AccountResponseWithRelations[]> {
     try {
-      const accounts = await db.select<any[]>(
-        `SELECT * FROM ${this.tableName}`,
-        [],
-        false,
+      return await invokeCommand<AccountResponseWithRelations[]>(
+        'list_accounts',
       );
-
-      // 批量获取货币信息以提高性能
-      const currencyCodes = [...new Set(accounts.map(a => a.currency))];
-      const currencies = await db.select<Currency[]>(
-        `SELECT * FROM currency WHERE code IN (${currencyCodes.map(() => '?').join(',')})`,
-        currencyCodes,
-        true,
-      );
-
-      const currencyMap = this.keyBy(currencies, 'code');
-
-      const act = accounts.map(a => {
-        const transformed = this.transformAccountRow(a);
-        return {
-          ...transformed,
-          currency: currencyMap[a.currency] ?? CURRENCY_CNY,
-        };
-      }) as Account[];
-      return toCamelCase<Account[]>(act);
     } catch (error) {
       this.handleError('list', error);
     }
   }
 
-  async update(account: Account): Promise<void> {
+  async update(
+    account: UpdateAccountRequest,
+  ): Promise<AccountResponseWithRelations> {
     try {
-      const oldAccount = await this.getById(account.serialNum);
-      if (!oldAccount) {
-        this.handleError('update', 'Account not found');
-      }
-      const {
-        serialNum,
-        name,
-        description,
-        type,
-        balance,
-        currency,
-        isShared,
-        ownerId,
-        isActive,
-        color,
-        updatedAt,
-      } = account;
-
-      await db.execute(
-        `UPDATE ${this.tableName} SET name = ?, description = ?, type = ?, balance = ?, currency = ?, is_shared = ?, owner_id = ?, is_active = ?, color = ?, updated_at = ?
-         WHERE serial_num = ?`,
-        [
-          name,
-          description,
-          type,
-          balance,
-          currency.code,
-          this.toDbBoolean(isShared),
-          ownerId,
-          this.toDbBoolean(isActive),
-          color,
-          updatedAt,
-          serialNum,
-        ],
+      const result = await invokeCommand<AccountResponseWithRelations>(
+        'update_account',
+        { data: account },
       );
-      Lg.d('MoneyDb', 'Account updated:', { serialNum });
-      const changes = this.detectChanges(oldAccount, account);
-      await this.recordOperationLog(
-        'UPDATE',
-        account.serialNum,
-        changes,
-        oldAccount,
-      );
+      Lg.d('MoneyDb', 'Account updated:', account.serialNum);
+      return result;
     } catch (error) {
       this.handleError('update', error);
     }
@@ -210,12 +119,7 @@ export class AccountMapper extends BaseMapper<Account> {
 
   async deleteById(serialNum: string): Promise<void> {
     try {
-      const oldAccount = await this.getById(serialNum);
-      await db.execute(`DELETE FROM ${this.tableName} WHERE serial_num = ?`, [
-        serialNum,
-      ]);
-      Lg.d('MoneyDb', 'Account deleted:', { serialNum });
-      await this.recordOperationLog('DELETE', serialNum, undefined, oldAccount);
+      await invokeCommand('delete_account', { serialNum });
     } catch (error) {
       this.handleError('deleteById', error);
     }

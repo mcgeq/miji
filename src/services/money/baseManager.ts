@@ -10,15 +10,6 @@ import type {
   SortOptions,
 } from '@/schema/common';
 
-/**
- * 实体基础接口
- */
-interface BaseEntity {
-  serialNum?: string;
-  createdAt?: string | null | undefined;
-  updatedAt?: string | null | undefined;
-}
-
 export interface PagedResult<T> {
   rows: T[];
   totalCount: number;
@@ -45,7 +36,7 @@ export class MoneyDbError extends Error {
 /**
  * 数据映射器抽象基类
  */
-export abstract class BaseMapper<T extends BaseEntity> {
+export abstract class BaseMapper<C, U, R> {
   protected abstract tableName: string;
   protected abstract entityName: string;
 
@@ -442,13 +433,13 @@ export abstract class BaseMapper<T extends BaseEntity> {
    */
   protected async doSmartUpdate(
     serialNum: string,
-    newEntity: T,
-    oldEntity: T,
+    newEntity: C,
+    oldEntity: C,
   ): Promise<void> {
-    const updates: Partial<T> = {};
+    const updates: Partial<C> = {};
 
     for (const key in newEntity) {
-      const k = key as keyof T;
+      const k = key as keyof C;
       if (!this.isEqual(newEntity[k], oldEntity[k])) {
         updates[k] = this.normalizeValue(newEntity[k]) as any;
       }
@@ -467,7 +458,7 @@ export abstract class BaseMapper<T extends BaseEntity> {
    */
   protected async updatePartial(
     serialNum: string,
-    updates: Partial<T>,
+    updates: Partial<C>,
   ): Promise<void> {
     try {
       const fields: string[] = [];
@@ -519,9 +510,9 @@ export abstract class BaseMapper<T extends BaseEntity> {
   /**
    * 通用的创建、读取、删除操作
    */
-  abstract create(entity: T): Promise<void>;
-  abstract getById(serialNum: string): Promise<T | null>;
-  abstract list(): Promise<T[]>;
-  abstract update(entity: T): Promise<void>;
+  abstract create(entity: C): Promise<R>;
+  abstract getById(serialNum: string): Promise<R | null>;
+  abstract list(): Promise<R[]>;
+  abstract update(entity: U): Promise<R>;
   abstract deleteById(serialNum: string): Promise<void>;
 }

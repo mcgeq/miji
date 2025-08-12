@@ -1,12 +1,10 @@
 use common::{crud::service::CrudService, paginations::{PagedQuery, PagedResult}, ApiResponse, AppState};
 use tauri::State;
-use tracing::info;
 
 use crate::{
     dto::{
         account::{
-            AccountResponseWithRelations, CreateAccountRequest, UpdateAccountRequest,
-            convert_to_response, tuple_to_response,
+            convert_to_response, tuple_to_response, AccountResponseWithRelations, CreateAccountRequest, UpdateAccountRequest
         },
         currency::{CreateCurrencyRequest, CurrencyResponse, UpdateCurrencyRequest},
         transactions::{
@@ -15,9 +13,9 @@ use crate::{
         },
     },
     services::{
-        account::get_account_service,
-        currency::{CurrencyFilter, get_currency_service},
-        transaction::{TransactionFilter, get_transaction_service},
+        account::{get_account_service, AccountFilter},
+        currency::{get_currency_service, CurrencyFilter},
+        transaction::{get_transaction_service, TransactionFilter},
     },
 };
 
@@ -78,7 +76,6 @@ pub async fn list_currencies(
     state: State<'_, AppState>,
     filter: CurrencyFilter,
 ) -> Result<ApiResponse<Vec<CurrencyResponse>>, String> {
-    info!("list_currencies......");
     let service = get_currency_service();
     Ok(ApiResponse::from_result(
         service
@@ -126,15 +123,6 @@ pub async fn get_account(
             .await
             .map(tuple_to_response),
     ))
-}
-
-// 获取单个账户（带完整关系信息）
-#[tauri::command]
-pub async fn get_account_with_relations(
-    state: State<'_, AppState>,
-    serial_num: String,
-) -> Result<ApiResponse<AccountResponseWithRelations>, String> {
-    get_account(state, serial_num).await
 }
 
 // 创建账户
@@ -204,6 +192,22 @@ pub async fn list_accounts_paged(
             .map(convert_to_response),
     ))
 }
+
+#[tauri::command]
+pub async fn list_accounts(
+    state: State<'_, AppState>,
+    filter: AccountFilter,
+) -> Result<ApiResponse<Vec<AccountResponseWithRelations>>, String> {
+    let service = get_account_service();
+    Ok(ApiResponse::from_result(
+        service
+            .list_with_filter(&state.db, filter)
+            .await
+            .map(convert_to_response),
+    ))
+}
+
+
 // end 账户相关
 // ============================================================================
 

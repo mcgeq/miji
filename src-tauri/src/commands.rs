@@ -34,6 +34,12 @@ pub fn init_commands(builder: Builder<Wry>) -> Builder<Wry> {
         todo_cmd::create,
         todo_cmd::update,
         todo_cmd::delete,
+        money_cmd::get_account,
+        money_cmd::create_account,
+        money_cmd::update_account,
+        money_cmd::delete_account,
+        money_cmd::list_accounts,
+        money_cmd::list_accounts_paged,
         money_cmd::create_currency,
         money_cmd::get_currency,
         money_cmd::update_currency,
@@ -60,7 +66,7 @@ async fn pwd_hash(pwd: String) -> ApiResponse<String> {
         let json_str = serde_json::to_string(&pwds).map_err(|e| {
             AppError::simple(
                 common::business_code::BusinessCode::SerializationError,
-                format!("Failed to serialize password hash: {}", e),
+                format!("Failed to serialize password hash: {e}"),
             )
         })?;
         Ok(json_str)
@@ -125,7 +131,7 @@ fn check_password_hash(password: &str, pwd_hash: &str) -> MijiResult<bool> {
     let store: StoredHash = serde_json::from_str(pwd_hash).map_err(|e| {
         AppError::simple(
             common::business_code::BusinessCode::DeserializationError,
-            format!("Failed to parse password hash: {}", e),
+            format!("Failed to parse password hash: {e}"),
         )
     })?;
 

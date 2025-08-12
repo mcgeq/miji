@@ -25,14 +25,17 @@ import type {
 } from '@/schema/common';
 import type {
   Account,
+  AccountResponseWithRelations,
   BilReminder,
   Budget,
+  CreateAccountRequest,
   FamilyLedger,
   FamilyLedgerMember,
   FamilyLedgerTransaction,
   FamilyMember,
   Transaction,
   TransactionWithAccount,
+  UpdateAccountRequest,
 } from '@/schema/money';
 
 /**
@@ -53,7 +56,9 @@ export class MoneyDb {
   private static familyLedgerMemberMapper = new FamilyLedgerMemberMapper();
 
   // Account 操作
-  static async createAccount(account: Account): Promise<void> {
+  static async createAccount(
+    account: CreateAccountRequest,
+  ): Promise<AccountResponseWithRelations> {
     return this.accountMapper.create(account);
   }
 
@@ -65,7 +70,9 @@ export class MoneyDb {
     return this.accountMapper.list();
   }
 
-  static async updateAccount(account: Account): Promise<void> {
+  static async updateAccount(
+    account: UpdateAccountRequest,
+  ): Promise<AccountResponseWithRelations> {
     return this.accountMapper.update(account);
   }
 

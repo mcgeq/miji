@@ -261,6 +261,44 @@ fn validate_non_negative_amount(amount: &Decimal) -> Result<(), ValidationError>
     Ok(())
 }
 
+pub fn convert_to_account(
+    paged: PagedResult<(
+        entity::account::Model,
+        entity::currency::Model,
+        Option<entity::family_member::Model>,
+    )>,
+) -> Vec<AccountResponseWithRelations> {
+    let rows = paged.rows.into_iter().map(|(account, currency, owner)| {
+        AccountResponseWithRelations {
+            serial_num: account.serial_num,
+            name: account.name,
+            description: account.description,
+            r#type: account.r#type,
+            balance: account.balance,
+            initial_balance: account.initial_balance,
+            currency: CurrencyInfo {
+                code: currency.code,
+                locale: currency.locale,
+                symbol: currency.symbol,
+                created_at: currency.created_at,
+                updated_at: currency.updated_at,
+            },
+            is_shared: account.is_shared != 0,
+            owner_id: account.owner_id,
+            owner: owner.map(|o| OwnerInfo {
+                serial_num: o.serial_num,
+                name: o.name,
+                role: Some(o.role),
+            }),
+            color: account.color,
+            is_active: account.is_active != 0,
+            created_at: account.created_at,
+            updated_at: account.updated_at,
+        }
+    }).collect();
+    return rows;
+}
+
 pub fn convert_to_response(
     paged: PagedResult<(
         entity::account::Model,
