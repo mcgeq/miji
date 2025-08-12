@@ -382,3 +382,9 @@ export const OperationLogSchema = z.object({
 
 // 导出类型
 export type OperationLog = z.infer<typeof OperationLogSchema>;
+
+export type PageQuery<F> = {
+  currentPage: number;
+  pageSize: number;
+  sortOptions: SortOptions;
+} & F;

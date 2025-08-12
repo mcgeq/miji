@@ -1,14 +1,12 @@
-import { CURRENCY_CNY } from '@/constants/moneyConst';
 import { invokeCommand } from '@/types/api';
 import { toCamelCase } from '@/utils/common';
 import { DateUtils } from '@/utils/date';
 import { db } from '@/utils/dbUtils';
 import { Lg } from '@/utils/debugLog';
-import { BaseMapper, MoneyDbError } from './baseManager';
+import { BaseMapper } from './baseManager';
 import type { PagedResult } from './baseManager';
 import type {
   AccountBalanceSummary,
-  Currency,
   DateRange,
   SortOptions,
 } from '@/schema/common';
@@ -89,7 +87,7 @@ export class AccountMapper extends BaseMapper<
     try {
       const result = await invokeCommand<AccountResponseWithRelations>(
         'update_account',
-        { data: account },
+        { serialNum: account.serialNum, data: account },
       );
       Lg.d('MoneyDb', 'Account updated:', account.serialNum);
       return result;
@@ -123,20 +121,6 @@ export class AccountMapper extends BaseMapper<
     } catch (error) {
       this.handleError('deleteById', error);
     }
-  }
-
-  async updateSmart(newAccount: Account): Promise<void> {
-    const oldAccount = await this.getById(newAccount.serialNum);
-    if (!oldAccount)
-      throw new MoneyDbError('Account not found', 'updateSmart', 'Account');
-    await this.doSmartUpdate(newAccount.serialNum, newAccount, oldAccount);
-  }
-
-  async updateAccountPartial(
-    serialNum: string,
-    updates: Partial<Account>,
-  ): Promise<void> {
-    await this.updatePartial(serialNum, updates);
   }
 
   async listPaged(

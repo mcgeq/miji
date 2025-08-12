@@ -1,4 +1,3 @@
-use std::str::FromStr;
 use common::{
     BusinessCode,
     crud::service::{CrudConverter, GenericCrudService},
@@ -11,6 +10,7 @@ use sea_orm::{
     QueryFilter, QueryOrder, QuerySelect, SelectTwo,
 };
 use serde::{Deserialize, Serialize};
+use std::str::FromStr;
 use std::sync::Arc;
 use validator::Validate;
 
@@ -22,13 +22,13 @@ use crate::{
 /// 账户过滤器
 #[derive(Debug, Validate, Serialize, Deserialize)]
 pub struct AccountFilter {
-    pub serial_num: Option<String>,
     pub name: Option<String>,
     pub r#type: Option<String>,
     pub currency: Option<String>,
     pub is_shared: Option<bool>,
     pub owner_id: Option<String>,
     pub is_active: Option<bool>,
+    pub created_at: Option<String>,
 }
 
 /// 包含完整关联信息的账户数据结构
@@ -95,8 +95,7 @@ impl CrudConverter<entity::account::Entity, CreateAccountRequest, UpdateAccountR
                 active_model.created_at = Set(model.created_at.clone());
 
                 // 设置更新时间
-                active_model.updated_at =
-                    Set(Some(DateUtils::local_rfc3339()));
+                active_model.updated_at = Set(Some(DateUtils::local_rfc3339()));
 
                 active_model
             })
@@ -197,7 +196,6 @@ impl AccountService {
         entity::currency::Model,
         Option<entity::family_member::Model>,
     )> {
-
         let result = entity::account::Entity::find_by_id(id)
             .find_also_related(entity::currency::Entity)
             .find_also_related(entity::family_member::Entity)
@@ -214,13 +212,17 @@ impl AccountService {
         Ok((account, currency, owner))
     }
 
-    pub async fn list_with_filter(&self,
+    pub async fn list_with_filter(
+        &self,
         db: &DatabaseConnection,
-        query: AccountFilter) -> MijiResult<
-    PagedResult<(
-        entity::account::Model, 
-        entity::currency::Model,
-        Option<entity::family_member::Model>)>> {
+        query: AccountFilter,
+    ) -> MijiResult<
+        PagedResult<(
+            entity::account::Model,
+            entity::currency::Model,
+            Option<entity::family_member::Model>,
+        )>,
+    > {
         query.validate().map_err(AppError::from_validation_errors)?;
 
         let mut query_builder = entity::account::Entity::find()
@@ -228,69 +230,67 @@ impl AccountService {
             .filter(query.to_condition());
 
         let total_count = query_builder
-        .clone()
-        .count(db)
-        .await
-        .map_err(AppError::from)? as usize;
-
-    // 获取所有符合条件的账户+货币记录（无分页，全量查询）
-    let accounts_with_currency = query_builder
-        .all(db)
-        .await
-        .map_err(AppError::from)?;
-
-    // 提取所有关联的 owner_id（用于批量查询家庭成员）
-    let owner_ids: Vec<String> = accounts_with_currency
-        .iter()
-        .filter_map(|(account, _)| account.owner_id.as_ref())  // 过滤无 owner_id 的记录
-        .cloned()
-        .collect();
-
-    // 批量查询家庭成员信息（减少数据库交互次数）
-    let owners = if !owner_ids.is_empty() {
-        entity::family_member::Entity::find()
-            .filter(entity::family_member::Column::SerialNum.is_in(owner_ids))  // IN 条件批量查询
-            .all(db)
+            .clone()
+            .count(db)
             .await
-            .map_err(AppError::from)?
-    } else {
-        Vec::new()  // 无 owner_id 时返回空数组
-    };
+            .map_err(AppError::from)? as usize;
 
-    // 构建 owner_id -> family_member 的映射（O(1) 查找）
-    let owners_map: std::collections::HashMap<String, entity::family_member::Model> = owners
-        .into_iter()
-        .map(|owner| (owner.serial_num.clone(), owner))
-        .collect();
+        // 获取所有符合条件的账户+货币记录（无分页，全量查询）
+        let accounts_with_currency = query_builder.all(db).await.map_err(AppError::from)?;
 
-    // 组装最终结果：合并账户、货币、家庭成员信息
-    let rows: Vec<(
-        entity::account::Model,
-        entity::currency::Model,
-        Option<entity::family_member::Model>,
-    )> = accounts_with_currency
-        .into_iter()
-        .filter_map(|(account, currency)| {
-            // 仅保留有货币信息的记录（根据业务需求调整，若允许无货币可移除 filter_map）
-            currency.map(|c| {
-                // 查找当前账户关联的家庭成员（可能为 None）
-                let owner = account.owner_id.as_ref()
-                    .and_then(|id| owners_map.get(id))
-                    .cloned();
-                (account, c, owner)
+        // 提取所有关联的 owner_id（用于批量查询家庭成员）
+        let owner_ids: Vec<String> = accounts_with_currency
+            .iter()
+            .filter_map(|(account, _)| account.owner_id.as_ref()) // 过滤无 owner_id 的记录
+            .cloned()
+            .collect();
+
+        // 批量查询家庭成员信息（减少数据库交互次数）
+        let owners = if !owner_ids.is_empty() {
+            entity::family_member::Entity::find()
+                .filter(entity::family_member::Column::SerialNum.is_in(owner_ids)) // IN 条件批量查询
+                .all(db)
+                .await
+                .map_err(AppError::from)?
+        } else {
+            Vec::new() // 无 owner_id 时返回空数组
+        };
+
+        // 构建 owner_id -> family_member 的映射（O(1) 查找）
+        let owners_map: std::collections::HashMap<String, entity::family_member::Model> = owners
+            .into_iter()
+            .map(|owner| (owner.serial_num.clone(), owner))
+            .collect();
+
+        // 组装最终结果：合并账户、货币、家庭成员信息
+        let rows: Vec<(
+            entity::account::Model,
+            entity::currency::Model,
+            Option<entity::family_member::Model>,
+        )> = accounts_with_currency
+            .into_iter()
+            .filter_map(|(account, currency)| {
+                // 仅保留有货币信息的记录（根据业务需求调整，若允许无货币可移除 filter_map）
+                currency.map(|c| {
+                    // 查找当前账户关联的家庭成员（可能为 None）
+                    let owner = account
+                        .owner_id
+                        .as_ref()
+                        .and_then(|id| owners_map.get(id))
+                        .cloned();
+                    (account, c, owner)
+                })
             })
+            .collect();
+
+        // 构造 PagedResult（无分页时，当前页为 1，每页大小为总记录数，总页数为 1）
+        Ok(PagedResult {
+            rows,
+            total_count,
+            current_page: 1,
+            page_size: total_count,
+            total_pages: 1,
         })
-        .collect();
-
-    // 构造 PagedResult（无分页时，当前页为 1，每页大小为总记录数，总页数为 1）
-    Ok(PagedResult {
-        rows,
-        total_count,
-        current_page: 1,
-        page_size: total_count,
-        total_pages: 1,
-    })
-
     }
     /// 分页查询账户列表（带完整关联信息）
     pub async fn list_accounts_paged_with_relations(
@@ -466,7 +466,8 @@ impl AccountService {
                     return if desc {
                         query_builder.order_by_desc(column)
                     } else {
-                        query_builder.order_by_asc(column)                        };
+                        query_builder.order_by_asc(column)
+                    };
                 }
             }
         }
