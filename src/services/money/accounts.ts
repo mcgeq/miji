@@ -19,10 +19,12 @@ import type {
 
 // 查询过滤器接口
 export interface AccountFilters {
+  name?: string;
   type?: string;
-  isActive?: boolean;
+  currency?: string;
   isShared?: boolean;
   ownerId?: string;
+  isActive?: boolean;
   createdAtRange?: DateRange;
   updatedAtRange?: DateRange;
 }
@@ -74,7 +76,7 @@ export class AccountMapper extends BaseMapper<
   async list(): Promise<AccountResponseWithRelations[]> {
     try {
       return await invokeCommand<AccountResponseWithRelations[]>(
-        'list_accounts',
+        'list_accounts', { filter: {} }
       );
     } catch (error) {
       this.handleError('list', error);
@@ -153,25 +155,9 @@ export class AccountMapper extends BaseMapper<
   }
 
   async totalAssets(): Promise<AccountBalanceSummary> {
-    const query = `SELECT
-          SUM(CASE WHEN type IN ('Savings', 'Bank') THEN balance ELSE 0 END) AS bankSavingsBalance,
-          SUM(CASE WHEN type = 'Cash' THEN balance ELSE 0 END) AS cashBalance,
-          SUM(CASE WHEN type = 'CreditCard' THEN ABS(balance) ELSE 0 END) AS creditCardBalance,
-          SUM(CASE WHEN type = 'Investment' THEN balance ELSE 0 END) AS investmentBalance,
-          SUM(CASE WHEN type = 'Alipay' THEN balance ELSE 0 END) AS alipayBalance,
-          SUM(CASE WHEN type = 'WeChat' THEN balance ELSE 0 END) AS weChatBalance,
-          SUM(CASE WHEN type = 'CloudQuickPass' THEN balance ELSE 0 END) AS cloudQuickPassBalance,
-          SUM(CASE WHEN type = 'Other' THEN balance ELSE 0 END) AS otherBalance,
-          SUM(balance) AS totalBalance,
-          SUM(CASE WHEN type = 'CreditCard' THEN -balance ELSE balance END) AS adjustedNetWorth,
-          SUM(CASE WHEN type NOT IN ('CreditCard') THEN balance ELSE 0 END) AS totalAssets
-        FROM ${this.tableName}
-        WHERE is_active = 1;
-      `;
-
     try {
-      const result = await db.select(query, [], false);
-      return result[0];
+      const result = await invokeCommand<AccountBalanceSummary>('total_assets');
+      return result;
     } catch (err) {
       this.handleError('totalAssets', err);
     }

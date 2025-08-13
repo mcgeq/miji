@@ -1,4 +1,7 @@
-use common::{paginations::PagedResult, utils::{date::DateUtils, uuid::McgUuid}};
+use common::{
+    paginations::PagedResult,
+    utils::{date::DateUtils, uuid::McgUuid},
+};
 use entity::account;
 use sea_orm::{ActiveValue::Set, prelude::Decimal};
 use serde::{Deserialize, Serialize};
@@ -58,6 +61,22 @@ pub struct UpdateAccountRequest {
     pub is_active: Option<bool>,
 }
 
+/// 资产汇总统计结果
+#[derive(Debug, Deserialize, Serialize)]
+pub struct AccountBalanceSummary {
+    pub bank_savings_balance: Decimal,     // 银行/储蓄余额
+    pub cash_balance: Decimal,             // 现金余额
+    pub credit_card_balance: Decimal,      // 信用卡余额（绝对值）
+    pub investment_balance: Decimal,       // 投资余额
+    pub alipay_balance: Decimal,           // 支付宝余额
+    pub wechat_balance: Decimal,           // 微信余额
+    pub cloud_quick_pass_balance: Decimal, // 云闪付余额
+    pub other_balance: Decimal,            // 其他余额
+    pub total_balance: Decimal,            // 总余额
+    pub adjusted_net_worth: Decimal,       // 调整后净资产（信用卡负向计算）
+    pub total_assets: Decimal,             // 总资产（不含信用卡）
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct AccountResponse {
     pub serial_num: String,
@@ -74,7 +93,6 @@ pub struct AccountResponse {
     pub created_at: String,
     pub updated_at: Option<String>,
 }
-
 
 /// 包含完整关联信息的账户响应
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -164,7 +182,7 @@ impl From<entity::currency::Model> for CurrencyInfo {
             locale: currency.locale,
             symbol: currency.symbol,
             created_at: currency.created_at,
-            updated_at: currency.updated_at
+            updated_at: currency.updated_at,
         }
     }
 }
@@ -189,7 +207,7 @@ impl TryFrom<CreateAccountRequest> for account::ActiveModel {
         let serial_num = McgUuid::uuid(38);
 
         // 获取当前时间
-        let now = DateUtils::local_rfc3339().to_string();
+        let now = DateUtils::local_rfc3339();
 
         Ok(account::ActiveModel {
             serial_num: Set(serial_num),
@@ -268,8 +286,10 @@ pub fn convert_to_account(
         Option<entity::family_member::Model>,
     )>,
 ) -> Vec<AccountResponseWithRelations> {
-    let rows = paged.rows.into_iter().map(|(account, currency, owner)| {
-        AccountResponseWithRelations {
+    let rows = paged
+        .rows
+        .into_iter()
+        .map(|(account, currency, owner)| AccountResponseWithRelations {
             serial_num: account.serial_num,
             name: account.name,
             description: account.description,
@@ -294,8 +314,8 @@ pub fn convert_to_account(
             is_active: account.is_active != 0,
             created_at: account.created_at,
             updated_at: account.updated_at,
-        }
-    }).collect();
+        })
+        .collect();
     return rows;
 }
 
@@ -306,8 +326,10 @@ pub fn convert_to_response(
         Option<entity::family_member::Model>,
     )>,
 ) -> PagedResult<AccountResponseWithRelations> {
-    let rows = paged.rows.into_iter().map(|(account, currency, owner)| {
-        AccountResponseWithRelations {
+    let rows = paged
+        .rows
+        .into_iter()
+        .map(|(account, currency, owner)| AccountResponseWithRelations {
             serial_num: account.serial_num,
             name: account.name,
             description: account.description,
@@ -332,8 +354,8 @@ pub fn convert_to_response(
             is_active: account.is_active != 0,
             created_at: account.created_at,
             updated_at: account.updated_at,
-        }
-    }).collect();
+        })
+        .collect();
 
     PagedResult {
         rows,

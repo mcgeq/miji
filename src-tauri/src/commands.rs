@@ -5,7 +5,7 @@
 // File:           commands.rs
 // Description:    About Commands
 // Create   Date:  2025-06-15 15:49:12
-// Last Modified:  2025-08-09 07:16:25
+// Last Modified:  2025-08-13 16:59:35
 // Modified   By:  mcgeq <mcgeq@outlook.com>
 // -----------------------------------------------------------------------------
 
@@ -34,6 +34,7 @@ pub fn init_commands(builder: Builder<Wry>) -> Builder<Wry> {
         todo_cmd::create,
         todo_cmd::update,
         todo_cmd::delete,
+        money_cmd::total_assets,
         money_cmd::get_account,
         money_cmd::create_account,
         money_cmd::update_account,

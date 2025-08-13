@@ -1,10 +1,15 @@
-use common::{crud::service::CrudService, paginations::{PagedQuery, PagedResult}, ApiResponse, AppState};
+use common::{
+    ApiResponse, AppState,
+    crud::service::CrudService,
+    paginations::{PagedQuery, PagedResult},
+};
 use tauri::State;
 
 use crate::{
     dto::{
         account::{
-            convert_to_response, tuple_to_response, AccountResponseWithRelations, CreateAccountRequest, UpdateAccountRequest
+            AccountBalanceSummary, AccountResponseWithRelations, CreateAccountRequest,
+            UpdateAccountRequest, convert_to_account, convert_to_response, tuple_to_response,
         },
         currency::{CreateCurrencyRequest, CurrencyResponse, UpdateCurrencyRequest},
         transactions::{
@@ -13,9 +18,9 @@ use crate::{
         },
     },
     services::{
-        account::{get_account_service, AccountFilter},
-        currency::{get_currency_service, CurrencyFilter},
-        transaction::{get_transaction_service, TransactionFilter},
+        account::{AccountFilter, get_account_service},
+        currency::{CurrencyFilter, get_currency_service},
+        transaction::{TransactionFilter, get_transaction_service},
     },
 };
 
@@ -29,7 +34,10 @@ pub async fn create_currency(
 ) -> Result<ApiResponse<CurrencyResponse>, String> {
     let service = get_currency_service();
     Ok(ApiResponse::from_result(
-        service.create(&state.db, data).await.map(CurrencyResponse::from),
+        service
+            .create(&state.db, data)
+            .await
+            .map(CurrencyResponse::from),
     ))
 }
 
@@ -41,7 +49,10 @@ pub async fn get_currency(
 ) -> Result<ApiResponse<CurrencyResponse>, String> {
     let service = get_currency_service();
     Ok(ApiResponse::from_result(
-        service.get_by_id(&state.db, serial_num).await.map(CurrencyResponse::from),
+        service
+            .get_by_id(&state.db, serial_num)
+            .await
+            .map(CurrencyResponse::from),
     ))
 }
 
@@ -67,7 +78,9 @@ pub async fn delete_currency(
     serial_num: String,
 ) -> Result<ApiResponse<()>, String> {
     let service = get_currency_service();
-    Ok(ApiResponse::from_result(service.delete(&state.db, serial_num).await))
+    Ok(ApiResponse::from_result(
+        service.delete(&state.db, serial_num).await,
+    ))
 }
 
 // 列出货币（带过滤条件）
@@ -155,7 +168,11 @@ pub async fn update_account(
     let service = get_account_service();
 
     // 先更新账户，然后获取完整信息
-    let result = match service.base().update(&state.db, serial_num.clone(), data).await {
+    let result = match service
+        .base()
+        .update(&state.db, serial_num.clone(), data)
+        .await
+    {
         Ok(_) => service
             .get_account_with_relations(&state.db, serial_num)
             .await
@@ -203,10 +220,19 @@ pub async fn list_accounts(
         service
             .list_with_filter(&state.db, filter)
             .await
-            .map(convert_to_response),
+            .map(convert_to_account),
     ))
 }
 
+#[tauri::command]
+pub async fn total_assets(
+    state: State<'_, AppState>,
+) -> Result<ApiResponse<AccountBalanceSummary>, String> {
+    let service = get_account_service();
+    Ok(ApiResponse::from_result(
+        service.total_assets(&state.db).await,
+    ))
+}
 
 // end 账户相关
 // ============================================================================
@@ -285,7 +311,9 @@ pub async fn delete_transaction(
 ) -> Result<ApiResponse<()>, String> {
     let service = get_transaction_service();
 
-    Ok(ApiResponse::from_result(service.delete(&state.db, serial_num).await))
+    Ok(ApiResponse::from_result(
+        service.delete(&state.db, serial_num).await,
+    ))
 }
 
 // 列出交易（带过滤条件）

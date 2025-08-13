@@ -136,7 +136,7 @@ pub struct UpdateTransactionRequest {
 
 impl UpdateTransactionRequest {
     pub fn apply_to_model(&self, model: &mut entity::transactions::ActiveModel) {
-        let now = DateUtils::local_rfc3339().to_string();
+        let now = DateUtils::local_rfc3339();
 
         if let Some(transaction_type) = &self.transaction_type {
             model.transaction_type = Set(transaction_type.clone());
