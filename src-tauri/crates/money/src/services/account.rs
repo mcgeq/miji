@@ -5,14 +5,19 @@ use common::{
     paginations::{DateRange, Filter, PagedQuery, PagedResult},
     utils::date::DateUtils,
 };
-use entity::account::Column as AColumn;
+
 use sea_orm::{
-    ActiveModelTrait, ActiveValue::Set, ColumnTrait, Condition, DatabaseConnection, EntityOrSelect,
-    EntityTrait, IntoActiveModel, PaginatorTrait, QueryFilter, QueryOrder, QuerySelect, SelectTwo,
+    ActiveModelTrait,
+    ActiveValue::Set,
+    ColumnTrait, Condition, DatabaseConnection, EntityOrSelect, EntityTrait, IntoActiveModel,
+    PaginatorTrait, QueryFilter, QueryOrder, QuerySelect, SelectTwo, Value,
+    prelude::{Decimal, Expr},
+    sea_query::SelectStatement,
 };
 use serde::{Deserialize, Serialize};
-use std::str::FromStr;
+
 use std::sync::Arc;
+use std::{collections::HashMap, str::FromStr};
 use validator::Validate;
 
 use crate::{
@@ -46,37 +51,37 @@ impl Filter<entity::account::Entity> for AccountFilter {
         let mut condition = Condition::all();
 
         if let Some(name) = &self.name {
-            condition = condition.add(AColumn::Name.eq(name));
+            condition = condition.add(entity::account::Column::Name.eq(name));
         }
         if let Some(r#type) = &self.r#type {
-            condition = condition.add(AColumn::Type.eq(r#type));
+            condition = condition.add(entity::account::Column::Type.eq(r#type));
         }
         if let Some(currency) = &self.currency {
-            condition = condition.add(AColumn::Currency.eq(currency));
+            condition = condition.add(entity::account::Column::Currency.eq(currency));
         }
         if let Some(is_shared) = self.is_shared {
-            condition = condition.add(AColumn::IsShared.eq(is_shared as i32));
+            condition = condition.add(entity::account::Column::IsShared.eq(is_shared as i32));
         }
         if let Some(owner_id) = &self.owner_id {
-            condition = condition.add(AColumn::OwnerId.eq(owner_id));
+            condition = condition.add(entity::account::Column::OwnerId.eq(owner_id));
         }
         if let Some(is_active) = self.is_active {
-            condition = condition.add(AColumn::IsActive.eq(is_active as i32));
+            condition = condition.add(entity::account::Column::IsActive.eq(is_active as i32));
         }
         if let Some(created_range) = &self.created_at_range {
             if let Some(start) = &created_range.start {
-                condition = condition.add(AColumn::CreatedAt.ge(start));
+                condition = condition.add(entity::account::Column::CreatedAt.ge(start));
             }
             if let Some(end) = &created_range.end {
-                condition = condition.add(AColumn::CreatedAt.le(end));
+                condition = condition.add(entity::account::Column::CreatedAt.le(end));
             }
         }
         if let Some(updated_range) = &self.updated_at_range {
             if let Some(start) = &updated_range.start {
-                condition = condition.add(AColumn::UpdatedAt.ge(start));
+                condition = condition.add(entity::account::Column::UpdatedAt.ge(start));
             }
             if let Some(end) = &updated_range.end {
-                condition = condition.add(AColumn::UpdatedAt.le(end));
+                condition = condition.add(entity::account::Column::UpdatedAt.le(end));
             }
         }
         condition
@@ -367,11 +372,11 @@ impl AccountService {
         db: &DatabaseConnection,
         serial_num: String,
         is_active: bool,
-    ) -> MijiResult<
+    ) -> MijiResult<(
         entity::account::Model,
         entity::currency::Model,
         Option<entity::family_member::Model>,
-    > {
+    )> {
         let mut account = entity::account::Entity::find_by_id(serial_num)
             .one(db)
             .await
@@ -398,7 +403,7 @@ impl AccountService {
             .ok_or_else(|| {
                 AppError::simple(
                     BusinessCode::NotFound,
-                    format!("Account with ID {} not found after update", account_id),
+                    format!("Account with ID {} not found after update", serial_num),
                 )
             })?;
         Ok((updated_account, currency, owner))
@@ -507,60 +512,63 @@ impl AccountService {
     pub async fn total_assets(db: &DatabaseConnection) -> MijiResult<AccountBalanceSummary> {
         // 构建 `CASE WHEN` 表达式（手动链式调用，避免宏问题）
         let bank_savings_case = Expr::case()
-            .when(AColumn::r#Type.in_vec(vec![
+            .when(entity::account::Column::r#Type.in_vec(vec![
                 Value::String("Savings".to_string()),
                 Value::String("Bank".to_string()),
             ]))
-            .then(AColumn::Balance)
+            .then(entity::account::Column::Balance)
             .else_(Value::Decimal(Decimal::ZERO));
 
         let cash_case = Expr::case()
-            .when(AColumn::r#Type.eq(Value::String("Cash".to_string())))
-            .then(AColumn::Balance)
+            .when(entity::account::Column::r#Type.eq(Value::String("Cash".to_string())))
+            .then(entity::account::Column::Balance)
             .else_(Value::Decimal(Decimal::ZERO));
 
         let credit_card_case = Expr::case()
-            .when(AColumn::r#Type.eq(Value::String("CreditCard".to_string())))
-            .then(AColumn::Balance.abs())
+            .when(entity::account::Column::r#Type.eq(Value::String("CreditCard".to_string())))
+            .then(entity::account::Column::Balance.abs())
             .else_(Value::Decimal(Decimal::ZERO));
 
         let investment_case = Expr::case()
-            .when(AColumn::r#Type.eq(Value::String("Investment".to_string())))
-            .then(AColumn::Balance)
+            .when(entity::account::Column::r#Type.eq(Value::String("Investment".to_string())))
+            .then(entity::account::Column::Balance)
             .else_(Value::Decimal(Decimal::ZERO));
 
         let alipay_case = Expr::case()
-            .when(AColumn::r#Type.eq(Value::String("Alipay".to_string())))
-            .then(AColumn::Balance)
+            .when(entity::account::Column::r#Type.eq(Value::String("Alipay".to_string())))
+            .then(entity::account::Column::Balance)
             .else_(Value::Decimal(Decimal::ZERO));
 
         let wechat_case = Expr::case()
-            .when(AColumn::r#Type.eq(Value::String("WeChat".to_string())))
-            .then(AColumn::Balance)
+            .when(entity::account::Column::r#Type.eq(Value::String("WeChat".to_string())))
+            .then(entity::account::Column::Balance)
             .else_(Value::Decimal(Decimal::ZERO));
 
         let cloud_quick_pass_case = Expr::case()
-            .when(AColumn::r#Type.eq(Value::String("CloudQuickPass".to_string())))
-            .then(AColumn::Balance)
+            .when(entity::account::Column::r#Type.eq(Value::String("CloudQuickPass".to_string())))
+            .then(entity::account::Column::Balance)
             .else_(Value::Decimal(Decimal::ZERO));
 
         let other_case = Expr::case()
-            .when(AColumn::r#Type.eq(Value::String("Other".to_string())))
-            .then(AColumn::Balance)
+            .when(entity::account::Column::r#Type.eq(Value::String("Other".to_string())))
+            .then(entity::account::Column::Balance)
             .else_(Value::Decimal(Decimal::ZERO));
 
         let adjusted_net_worth_case = Expr::case()
-            .when(AColumn::r#Type.eq(Value::String("CreditCard".to_string())))
-            .then(AColumn::Balance.neg())
-            .else_(Column::Balance);
+            .when(entity::account::Column::r#Type.eq(Value::String("CreditCard".to_string())))
+            .then(entity::account::Column::Balance.neg())
+            .else_(entity::account::Column::Balance);
 
         let total_assets_case = Expr::case()
-            .when(AColumn::r#Type.not_in(vec![Value::String("CreditCard".to_string())]))
-            .then(AColumn::Balance)
+            .when(
+                entity::account::Column::r#Type
+                    .not_in(vec![Value::String("CreditCard".to_string())]),
+            )
+            .then(entity::account::Column::Balance)
             .else_(Value::Decimal(Decimal::ZERO));
 
         // 构建完整查询
-        let query = AccountEntity
+        let query = entity::account::Entity
             .select([
                 Expr::sum(bank_savings_case).alias("bank_savings_balance"),
                 Expr::sum(cash_case).alias("cash_balance"),
@@ -570,12 +578,12 @@ impl AccountService {
                 Expr::sum(wechat_case).alias("wechat_balance"),
                 Expr::sum(cloud_quick_pass_case).alias("cloud_quick_pass_balance"),
                 Expr::sum(other_case).alias("other_balance"),
-                Expr::sum(Column::Balance).alias("total_balance"),
+                Expr::sum(entity::account::Column::Balance).alias("total_balance"),
                 Expr::sum(adjusted_net_worth_case).alias("adjusted_net_worth"),
                 Expr::sum(total_assets_case).alias("total_assets"),
             ])
-            .from(AccountEntity)
-            .and_where(AColumn::IsActive.eq(1));
+            .from(entity::account::Entity)
+            .and_where(entity::account::Column::IsActive.eq(1));
 
         // 执行查询并解析结果
         let result = query.one(db).await?;
@@ -603,7 +611,7 @@ impl AccountService {
     ) -> SelectTwo<entity::account::Entity, entity::currency::Entity> {
         if let Some(sort_by) = sort_by {
             // 尝试解析为账户字段
-            if let Ok(column) = AColumn::from_str(sort_by) {
+            if let Ok(column) = entity::account::Column::from_str(sort_by) {
                 return if desc {
                     query_builder.order_by_desc(column)
                 } else {
