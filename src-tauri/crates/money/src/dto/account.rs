@@ -3,7 +3,7 @@ use common::{
     utils::{date::DateUtils, uuid::McgUuid},
 };
 use entity::account;
-use sea_orm::{ActiveValue::Set, prelude::Decimal};
+use sea_orm::{prelude::Decimal, ActiveValue::Set, FromQueryResult};
 use serde::{Deserialize, Serialize};
 use validator::{Validate, ValidationError};
 
@@ -62,7 +62,7 @@ pub struct UpdateAccountRequest {
 }
 
 /// 资产汇总统计结果
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, FromQueryResult)]
 pub struct AccountBalanceSummary {
     pub bank_savings_balance: Decimal,     // 银行/储蓄余额
     pub cash_balance: Decimal,             // 现金余额
@@ -75,6 +75,24 @@ pub struct AccountBalanceSummary {
     pub total_balance: Decimal,            // 总余额
     pub adjusted_net_worth: Decimal,       // 调整后净资产（信用卡负向计算）
     pub total_assets: Decimal,             // 总资产（不含信用卡）
+}
+
+impl Default for AccountBalanceSummary {
+    fn default() -> Self {
+        Self {
+            bank_savings_balance: Decimal::ZERO,
+            cash_balance: Decimal::ZERO,
+            credit_card_balance: Decimal::ZERO,
+            investment_balance: Decimal::ZERO,
+            alipay_balance: Decimal::ZERO,
+            wechat_balance: Decimal::ZERO,
+            cloud_quick_pass_balance: Decimal::ZERO,
+            other_balance: Decimal::ZERO,
+            total_balance: Decimal::ZERO,
+            adjusted_net_worth: Decimal::ZERO,
+            total_assets: Decimal::ZERO,
+        }
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
