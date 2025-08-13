@@ -4,12 +4,6 @@ use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 use validator::Validate;
 
-#[derive(Debug, Clone, Deserialize)]
-pub struct DateRange {
-    pub start: Option<String>,
-    pub end: Option<String>,
-}
-
 /// 分页查询参数
 #[derive(Debug, Clone, Deserialize, Validate)]
 pub struct PagedQuery<F> {
