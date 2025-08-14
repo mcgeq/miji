@@ -10,6 +10,7 @@ import { uuid } from '@/utils/uuid';
 import type { Category, IncomeExpense, TransactionType } from '@/schema/common';
 import type {
   Account,
+  AccountResponseWithRelations,
   BilReminder,
   Budget,
   TransactionWithAccount,
@@ -209,8 +210,8 @@ export const useMoneyStore = defineStore('money', () => {
   };
 
   const createAccount = async (
-    account: Omit<Account, 'serialNum' | 'createdAt' | 'updatedAt'>,
-  ): Promise<Account> => {
+    account: AccountResponseWithRelations,
+  ): Promise<AccountResponseWithRelations> => {
     loading.value = true;
     error.value = null;
 
@@ -221,8 +222,9 @@ export const useMoneyStore = defineStore('money', () => {
         createdAt: DateUtils.getLocalISODateTimeWithOffset(),
         updatedAt: null,
       };
-      await MoneyDb.createAccount(newAccount);
+      const result = await MoneyDb.createAccount(newAccount);
       await updateLocalAccounts();
+      return result;
       return newAccount;
     } catch (err) {
       throw handleMoneyStoreError(
@@ -483,12 +485,12 @@ export const useMoneyStore = defineStore('money', () => {
 
       const fromTrans =
         relatedTransactions[0].transactionType ===
-          TransactionTypeSchema.enum.Expense
+        TransactionTypeSchema.enum.Expense
           ? relatedTransactions[0]
           : relatedTransactions[1];
       const toTrans =
         relatedTransactions[0].transactionType ===
-          TransactionTypeSchema.enum.Income
+        TransactionTypeSchema.enum.Income
           ? relatedTransactions[0]
           : relatedTransactions[1];
 
@@ -608,12 +610,12 @@ export const useMoneyStore = defineStore('money', () => {
 
       const fromTrans =
         relatedTransactions[0].transactionType ===
-          TransactionTypeSchema.enum.Expense
+        TransactionTypeSchema.enum.Expense
           ? relatedTransactions[0]
           : relatedTransactions[1];
       const toTrans =
         relatedTransactions[0].transactionType ===
-          TransactionTypeSchema.enum.Income
+        TransactionTypeSchema.enum.Income
           ? relatedTransactions[0]
           : relatedTransactions[1];
 
@@ -993,7 +995,7 @@ export const useMoneyStore = defineStore('money', () => {
       if (newBalance < 0) {
         const err = new MoneyStoreError(
           MoneyStoreErrorCode.CREDIT_CARD_BALANCE_INVALID,
-          '信用卡余额不能低于0',
+          '信用卡余额不能低于 0',
           { newBalance },
         );
         err.log();

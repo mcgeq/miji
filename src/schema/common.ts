@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import type { ZodObject, ZodType } from 'zod';
 
 export const passwordRegex =
   /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
@@ -12,9 +13,14 @@ export const SerialNumSchema = z
     error: 'Serial number must contain only letters and numbers',
   });
 
-export const NameSchema = z.string().min(3).max(20);
+export const NameSchema = z
+  .string()
+  .min(3, { error: 'Name must be at least 3 characters long' })
+  .max(20, { error: 'Name must be no more than 20 characters long' });
 
-export const DescriptionSchema = z.string().max(1000);
+export const DescriptionSchema = z.string().max(1000, {
+  error: 'Description must be no more than 1000 characters long',
+});
 
 export const DateTimeSchema = z.iso.datetime({
   offset: true,
@@ -358,19 +364,19 @@ export type OperationType = z.infer<typeof OperationTypeSchema>;
 
 // 主日志架构
 export const OperationLogSchema = z.object({
-  serial_num: z.string().length(36).describe('UUID格式的日志唯一标识'),
-  recorded_at: DateTimeSchema.describe('ISO 8601格式的时间戳'),
+  serial_num: z.string().length(36).describe('UUID 格式的日志唯一标识'),
+  recorded_at: DateTimeSchema.describe('ISO 8601 格式的时间戳'),
   operation: OperationTypeSchema.describe('操作类型'),
   table_name: z.string().min(1).describe('操作的目标表'),
-  record_id: z.string().min(1).describe('操作的目标记录ID'),
+  record_id: z.string().min(1).describe('操作的目标记录 ID'),
   actor_id: z.string().min(1).describe('执行操作的主体标识'),
 
-  // JSON格式的变更数据（可为空）
+  // JSON 格式的变更数据（可为空）
   changes_json: z.string().optional(),
 
-  // JSON格式的数据快照（可为空）
+  // JSON 格式的数据快照（可为空）
   snapshot_json: z.string().optional(),
-  // 设备ID（可为空）
+  // 设备 ID（可为空）
   device_id: z
     .string()
     .max(100)
@@ -383,8 +389,46 @@ export const OperationLogSchema = z.object({
 // 导出类型
 export type OperationLog = z.infer<typeof OperationLogSchema>;
 
-export type PageQuery<F> = {
+export interface PageQuery<F> {
   currentPage: number;
   pageSize: number;
   sortOptions: SortOptions;
-} & F;
+  filter: F;
+}
+
+/**
+ * 通用类型转换工具（Zod 4 兼容版）：从源对象中提取目标 Zod Schema 定义的字段，生成目标类型对象
+ * @param source 源对象（需包含目标 Schema 的所有字段）
+ * @param targetSchema 目标类型的 Zod Schema（定义需要提取的字段）
+ * @returns 转换后的目标类型对象（类型为 z.infer<T>）
+ */
+export function extractFields<
+  S extends object,
+  T extends ZodObject<{ [K in keyof U]: ZodType<unknown> }>,
+  U = z.infer<T>,
+>(source: S, targetSchema: T): z.infer<T> {
+  // 1. 提取目标 Schema 的所有字段名（Zod 4 中 shape 是 Record<string, ZodTypeAny>）
+  const targetKeys = Object.keys(targetSchema.shape) as (keyof z.infer<T>)[];
+
+  // 2. 运行时校验：源对象必须包含所有目标字段（Zod 4 严格模式需要）
+  targetKeys.forEach(key => {
+    if (!(key in source)) {
+      throw new Error(`源对象缺少目标字段: ${String(key)}`);
+    }
+  });
+
+  // 3. 提取目标字段的值（Zod 4 要求显式类型兼容断言）
+  const extracted: Partial<z.infer<T>> = {};
+  targetKeys.forEach(key => {
+    // 显式断言 key 在源对象和目标类型中的合法性（Zod 4 类型系统更严格）
+    const sourceKey = key as keyof S;
+    const targetKey = key as keyof z.infer<T>;
+    // 提取值并断言类型兼容（Zod 4 会自动校验类型，此处仅为 TypeScript 类型提示）
+    extracted[targetKey] = source[
+      sourceKey
+    ] as unknown as z.infer<T>[typeof targetKey];
+  });
+
+  // 4. 通过 Zod 4 的 parse 方法最终校验并返回（自动推导 z.infer<T>）
+  return targetSchema.parse(extracted);
+}

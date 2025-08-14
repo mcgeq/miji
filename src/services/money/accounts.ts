@@ -1,17 +1,14 @@
 import { invokeCommand } from '@/types/api';
-import { toCamelCase } from '@/utils/common';
 import { DateUtils } from '@/utils/date';
-import { db } from '@/utils/dbUtils';
 import { Lg } from '@/utils/debugLog';
 import { BaseMapper } from './baseManager';
 import type { PagedResult } from './baseManager';
 import type {
   AccountBalanceSummary,
   DateRange,
-  SortOptions,
+  PageQuery,
 } from '@/schema/common';
 import type {
-  Account,
   AccountResponseWithRelations,
   CreateAccountRequest,
   UpdateAccountRequest,
@@ -39,10 +36,6 @@ export class AccountMapper extends BaseMapper<
 > {
   protected tableName = 'account';
   protected entityName = 'Account';
-
-  protected getBooleanFields(): string[] {
-    return ['isShared', 'isActive'];
-  }
 
   async create(
     account: CreateAccountRequest,
@@ -76,7 +69,8 @@ export class AccountMapper extends BaseMapper<
   async list(): Promise<AccountResponseWithRelations[]> {
     try {
       return await invokeCommand<AccountResponseWithRelations[]>(
-        'list_accounts', { filter: {} }
+        'list_accounts',
+        { filter: {} },
       );
     } catch (error) {
       this.handleError('list', error);
@@ -101,17 +95,14 @@ export class AccountMapper extends BaseMapper<
   async updateAccountActive(
     serialNum: string,
     isActive: boolean,
-  ): Promise<void> {
+  ): Promise<AccountResponseWithRelations> {
     try {
-      await db.execute(
-        `UPDATE ${this.tableName} SET is_active = ?, updated_at = ? WHERE serial_num = ?`,
-        [
-          this.toDbBoolean(isActive),
-          DateUtils.getLocalISODateTimeWithOffset(),
-          serialNum,
-        ],
+      const account = await invokeCommand<AccountResponseWithRelations>(
+        'update_account_active',
+        { isActive },
       );
       Lg.d('MoneyDb', 'Account isActive updated:', { serialNum, isActive });
+      return account;
     } catch (error) {
       this.handleError('updateAccountActive', error);
     }
@@ -126,32 +117,22 @@ export class AccountMapper extends BaseMapper<
   }
 
   async listPaged(
-    filters: AccountFilters = {},
-    page = 1,
-    pageSize = 10,
-    sortOptions: SortOptions = {},
-  ): Promise<PagedResult<Account>> {
-    const baseQuery = `SELECT t.*,
-              c.locale as currency_locale,
-              c.code as currency_code,
-              c.symbol as currency_symbol,
-              c.created_at as currency_created_at,
-              c.updated_at as currency_updated_at
-          FROM ${this.tableName} t
-          JOIN currency c ON t.currency = c.code
-          `;
-
-    const result = await this.queryPaged<Account>(
-      baseQuery,
-      filters,
-      page,
-      pageSize,
-      sortOptions,
-      'created_at DESC',
-      row => this.transformAccountRow(row),
-    );
-
-    return result;
+    query: PageQuery<AccountFilters> = {
+      currentPage: 1,
+      pageSize: 10,
+      sortOptions: {},
+      filter: {},
+    },
+  ): Promise<PagedResult<AccountResponseWithRelations>> {
+    try {
+      const result = invokeCommand<PagedResult<AccountResponseWithRelations>>(
+        'list_accounts_paged_with_relations',
+        { query },
+      );
+      return result;
+    } catch (err) {
+      this.handleError('totalAssets', err);
+    }
   }
 
   async totalAssets(): Promise<AccountBalanceSummary> {
@@ -183,34 +164,5 @@ export class AccountMapper extends BaseMapper<
         serialNum,
       ],
     };
-  }
-
-  private transformAccountRow(row: any): any {
-    const booleanFields = this.getBooleanFields();
-    booleanFields.forEach(field => {
-      const f = this.toSnakeCase(field);
-      row[f] = this.fromDbBoolean(row[f]);
-    });
-    return toCamelCase<Account>({
-      serial_num: row.serial_num,
-      name: row.name,
-      description: row.description,
-      type: row.type,
-      balance: row.balance,
-      initial_balance: row.initial_balance,
-      currency: {
-        locale: row.currency_locale,
-        code: row.currency_code,
-        symbol: row.currency_symbol,
-        created_at: row.currency_created_at,
-        updated_at: row.currency_updated_at,
-      },
-      is_shared: row.is_shared,
-      owner_id: row.owner_id,
-      is_active: row.is_active,
-      color: row.color,
-      created_at: row.created_at,
-      updated_at: row.updated_at,
-    });
   }
 }
