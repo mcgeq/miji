@@ -19,6 +19,7 @@ use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use std::{collections::HashMap, str::FromStr};
 use validator::Validate;
+use tracing::info;
 
 use crate::{
     dto::account::{AccountBalanceSummary, CreateAccountRequest, UpdateAccountRequest},
@@ -407,7 +408,7 @@ impl AccountService {
                 .ok_or_else(|| {
                     AppError::simple(
                         BusinessCode::NotFound,
-                        format!("Account with ID {} not found after update", serial_num),
+                        format!("Account with ID {serial_num} not found after update"),
                     )
                 })?;
         let currency = currency.ok_or_else(|| {
@@ -416,7 +417,7 @@ impl AccountService {
         Ok((updated_account, currency, owner))
     }
 
-    /// 通用批量查询家庭成员并构建映射（优化点 1）
+    /// 通用批量查询家庭成员并构建映射
     async fn batch_fetch_owners(
         db: &DatabaseConnection,
         owner_ids: &[String],
@@ -437,7 +438,7 @@ impl AccountService {
             .collect())
     }
 
-    /// 结果组装闭包（优化点 2）
+    /// 结果组装闭包
     fn assemble_account_row(
         owners_map: &HashMap<String, entity::family_member::Model>,
     ) -> impl Fn(
@@ -457,7 +458,7 @@ impl AccountService {
         }
     }
 
-    /// 通用分页查询处理器（优化点 3）
+    /// 通用分页查询处理器
     async fn paginate_query<F>(
         query_builder: SelectTwo<entity::account::Entity, entity::currency::Entity>,
         db: &DatabaseConnection,
@@ -504,7 +505,7 @@ impl AccountService {
         let assemble_row = Self::assemble_account_row(&owners_map);
         let rows = rows_with_currency
             .into_iter()
-            .filter_map(|row| filter_fn(row).map(|filtered_row| assemble_row(filtered_row)))
+            .filter_map(|row| filter_fn(row).map(&assemble_row))
             .collect();
 
         Ok((rows, total_count, total_pages))
@@ -653,6 +654,8 @@ impl AccountService {
                     } else {
                         query_builder.order_by_asc(column)
                     };
+                } else {
+                    info!("currency query failed");
                 }
             }
         }
