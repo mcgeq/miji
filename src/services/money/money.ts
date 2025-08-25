@@ -22,8 +22,7 @@ import type {
   Currency,
   IncomeExpense,
   SortOptions,
-  PageQuery
-
+  PageQuery,
 } from '@/schema/common';
 import type {
   Account,
@@ -40,9 +39,9 @@ import type {
   UpdateAccountRequest,
 } from '@/schema/money';
 
- **
+/**
  * 主要的 MoneyDb 类 - 使用映射器模式
-  */
+ */
 export class MoneyDb {
   private static accountMapper = new AccountMapper();
   private static transactionMapper = new TransactionMapper();
@@ -90,8 +89,12 @@ export class MoneyDb {
   }
 
   static async listAccountsPaged(
-    query: PageQuery<AccountFilters> =
-      { currentPage: 1, pageSize: 10, sortOptions: {}, filter: {} },
+    query: PageQuery<AccountFilters> = {
+      currentPage: 1,
+      pageSize: 10,
+      sortOptions: {},
+      filter: {},
+    },
   ): Promise<PagedResult<Account>> {
     return this.accountMapper.listPaged(query);
   }
@@ -218,329 +221,329 @@ export class MoneyDb {
   static async lastYearIncomeAndExpense(): Promise<IncomeExpense> {
     return this.transactionMapper.lastYearIncomeAndExpense();
   }
-  
-   **
-   * 构建删除转账交易的批处理操作
-  * @param fromTransaction 转出交易
-    * @param toTransaction 转入交易
-      */
+
+  /**
+   * 构建删除转账交易的批处理操作;
+   * @param fromTransaction 转出交易;
+   * @param toTransaction 转入交易;
+   */
   static buildDeleteTransferOperations(
-        fromTransaction: TransactionWithAccount,
-        toTransaction: TransactionWithAccount,
-      ): Array < { sql: string; params: any[] } > {
-        return [
-          // 恢复转出账户余额
-          this.accountMapper.buildUpdateBalanceOperation(
-            fromTransaction.account.serialNum,
-            fromTransaction.amount, // 正数增加（因为是支出，删除后要加回）
-          ),
+    fromTransaction: TransactionWithAccount,
+    toTransaction: TransactionWithAccount,
+  ): Array<{ sql: string; params: any[] }> {
+    return [
+      // 恢复转出账户余额
+      this.accountMapper.buildUpdateBalanceOperation(
+        fromTransaction.account.serialNum,
+        fromTransaction.amount, // 正数增加（因为是支出，删除后要加回）
+      ),
 
-          // 恢复转入账户余额
-          this.accountMapper.buildUpdateBalanceOperation(
-            toTransaction.account.serialNum,
-            -toTransaction.amount, // 负数减少（因为是收入，删除后要扣除）
-          ),
+      // 恢复转入账户余额
+      this.accountMapper.buildUpdateBalanceOperation(
+        toTransaction.account.serialNum,
+        -toTransaction.amount, // 负数减少（因为是收入，删除后要扣除）
+      ),
 
-          // 删除转出交易
-          this.transactionMapper.buildDeleteOperation(fromTransaction.serialNum),
+      // 删除转出交易
+      this.transactionMapper.buildDeleteOperation(fromTransaction.serialNum),
 
-          // 删除转入交易
-          this.transactionMapper.buildDeleteOperation(toTransaction.serialNum),
-        ];
-      }
+      // 删除转入交易
+      this.transactionMapper.buildDeleteOperation(toTransaction.serialNum),
+    ];
+  }
 
   // Budget 操作
-  static async createBudget(budget: Budget): Promise < void> {
-  return this.budgetMapper.create(budget);
-}
+  static async createBudget(budget: Budget): Promise<void> {
+    return this.budgetMapper.create(budget);
+  }
 
-  static async getBudget(serialNum: string): Promise < Budget | null > {
-  return this.budgetMapper.getById(serialNum);
-}
+  static async getBudget(serialNum: string): Promise<Budget | null> {
+    return this.budgetMapper.getById(serialNum);
+  }
 
-  static async listBudgets(): Promise < Budget[] > {
-  return this.budgetMapper.list();
-}
+  static async listBudgets(): Promise<Budget[]> {
+    return this.budgetMapper.list();
+  }
 
-  static async updateBudget(budget: Budget): Promise < void> {
-  return this.budgetMapper.update(budget);
-}
+  static async updateBudget(budget: Budget): Promise<void> {
+    return this.budgetMapper.update(budget);
+  }
 
-  static async deleteBudget(serialNum: string): Promise < void> {
-  return this.budgetMapper.deleteById(serialNum);
-}
+  static async deleteBudget(serialNum: string): Promise<void> {
+    return this.budgetMapper.deleteById(serialNum);
+  }
 
-  static async updateBudgetSmart(newBudget: Budget): Promise < void> {
-  return this.budgetMapper.updateSmart(newBudget);
-}
+  static async updateBudgetSmart(newBudget: Budget): Promise<void> {
+    return this.budgetMapper.updateSmart(newBudget);
+  }
 
   static async updateBudgetPartial(
-  serialNum: string,
-  updates: Partial<Budget>,
-): Promise < void> {
-  return this.budgetMapper.updateBudgetPartial(serialNum, updates);
-}
+    serialNum: string,
+    updates: Partial<Budget>,
+  ): Promise<void> {
+    return this.budgetMapper.updateBudgetPartial(serialNum, updates);
+  }
 
   static async listBudgetsPaged(
-  filters: BudgetFilters = {},
-  page = 1,
-  pageSize = 10,
-  sortOptions: SortOptions = {},
-): Promise < PagedResult < Budget >> {
-  return this.budgetMapper.listPaged(filters, page, pageSize, sortOptions);
-}
+    filters: BudgetFilters = {},
+    page = 1,
+    pageSize = 10,
+    sortOptions: SortOptions = {},
+  ): Promise<PagedResult<Budget>> {
+    return this.budgetMapper.listPaged(filters, page, pageSize, sortOptions);
+  }
 
   // BilReminder 操作
-  static async createBilReminder(reminder: BilReminder): Promise < void> {
-  return this.bilReminderMapper.create(reminder);
-}
+  static async createBilReminder(reminder: BilReminder): Promise<void> {
+    return this.bilReminderMapper.create(reminder);
+  }
 
-  static async getBilReminder(serialNum: string): Promise < BilReminder | null > {
-  return this.bilReminderMapper.getById(serialNum);
-}
+  static async getBilReminder(serialNum: string): Promise<BilReminder | null> {
+    return this.bilReminderMapper.getById(serialNum);
+  }
 
-  static async listBilReminders(): Promise < BilReminder[] > {
-  return this.bilReminderMapper.list();
-}
+  static async listBilReminders(): Promise<BilReminder[]> {
+    return this.bilReminderMapper.list();
+  }
 
-  static async updateBilReminder(reminder: BilReminder): Promise < void> {
-  return this.bilReminderMapper.update(reminder);
-}
+  static async updateBilReminder(reminder: BilReminder): Promise<void> {
+    return this.bilReminderMapper.update(reminder);
+  }
 
-  static async deleteBilReminder(serialNum: string): Promise < void> {
-  return this.bilReminderMapper.deleteById(serialNum);
-}
+  static async deleteBilReminder(serialNum: string): Promise<void> {
+    return this.bilReminderMapper.deleteById(serialNum);
+  }
 
   static async listBilRemindersPaged(
-  filters: BilReminderFilters = {},
-  page = 1,
-  pageSize = 10,
-  sortOptions: SortOptions = {},
-): Promise < PagedResult < BilReminder >> {
-  return this.bilReminderMapper.listPaged(
-    filters,
-    page,
-    pageSize,
-    sortOptions,
-  );
-}
+    filters: BilReminderFilters = {},
+    page = 1,
+    pageSize = 10,
+    sortOptions: SortOptions = {},
+  ): Promise<PagedResult<BilReminder>> {
+    return this.bilReminderMapper.listPaged(
+      filters,
+      page,
+      pageSize,
+      sortOptions,
+    );
+  }
 
   // Currency 操作
-  static async createCurrency(currency: Currency): Promise < void> {
-  return this.currencyMapper.create(currency);
-}
+  static async createCurrency(currency: Currency): Promise<void> {
+    return this.currencyMapper.create(currency);
+  }
 
-  static async getCurrency(code: string): Promise < Currency | null > {
-  return this.currencyMapper.getById(code);
-}
+  static async getCurrency(code: string): Promise<Currency | null> {
+    return this.currencyMapper.getById(code);
+  }
 
-  static async listCurrencies(): Promise < Currency[] > {
-  return this.currencyMapper.list();
-}
+  static async listCurrencies(): Promise<Currency[]> {
+    return this.currencyMapper.list();
+  }
 
-  static async updateCurrency(currency: Currency): Promise < void> {
-  return this.currencyMapper.update(currency);
-}
+  static async updateCurrency(currency: Currency): Promise<void> {
+    return this.currencyMapper.update(currency);
+  }
 
-  static async deleteCurrency(code: string): Promise < void> {
-  return this.currencyMapper.deleteById(code);
-}
+  static async deleteCurrency(code: string): Promise<void> {
+    return this.currencyMapper.deleteById(code);
+  }
 
-  static async getCurrencyByCode(code: string): Promise < Currency | null > {
-  return this.currencyMapper.getById(code);
-}
+  static async getCurrencyByCode(code: string): Promise<Currency | null> {
+    return this.currencyMapper.getById(code);
+  }
 
   // FamilyMember 操作
-  static async createFamilyMember(member: FamilyMember): Promise < void> {
-  return this.familyMemberMapper.create(member);
-}
+  static async createFamilyMember(member: FamilyMember): Promise<void> {
+    return this.familyMemberMapper.create(member);
+  }
 
   static async getFamilyMember(
-  serialNum: string,
-): Promise < FamilyMember | null > {
-  return this.familyMemberMapper.getById(serialNum);
-}
+    serialNum: string,
+  ): Promise<FamilyMember | null> {
+    return this.familyMemberMapper.getById(serialNum);
+  }
 
-  static async listFamilyMembers(): Promise < FamilyMember[] > {
-  return this.familyMemberMapper.list();
-}
+  static async listFamilyMembers(): Promise<FamilyMember[]> {
+    return this.familyMemberMapper.list();
+  }
 
-  static async updateFamilyMember(member: FamilyMember): Promise < void> {
-  return this.familyMemberMapper.update(member);
-}
+  static async updateFamilyMember(member: FamilyMember): Promise<void> {
+    return this.familyMemberMapper.update(member);
+  }
 
-  static async deleteFamilyMember(serialNum: string): Promise < void> {
-  return this.familyMemberMapper.deleteById(serialNum);
-}
+  static async deleteFamilyMember(serialNum: string): Promise<void> {
+    return this.familyMemberMapper.deleteById(serialNum);
+  }
 
   static async listFamilyMembersPaged(
-  filters: Record<string, any> = {},
-  page = 1,
-  pageSize = 10,
-  sortOptions: SortOptions = {},
-): Promise < PagedResult < FamilyMember >> {
-  return this.familyMemberMapper.listPaged(
-    filters,
-    page,
-    pageSize,
-    sortOptions,
-  );
-}
+    filters: Record<string, any> = {},
+    page = 1,
+    pageSize = 10,
+    sortOptions: SortOptions = {},
+  ): Promise<PagedResult<FamilyMember>> {
+    return this.familyMemberMapper.listPaged(
+      filters,
+      page,
+      pageSize,
+      sortOptions,
+    );
+  }
 
   // FamilyLedger 操作
-  static async createFamilyLedger(ledger: FamilyLedger): Promise < void> {
-  return this.familyLedgerMapper.create(ledger);
-}
+  static async createFamilyLedger(ledger: FamilyLedger): Promise<void> {
+    return this.familyLedgerMapper.create(ledger);
+  }
 
   static async getFamilyLedger(
-  serialNum: string,
-): Promise < FamilyLedger | null > {
-  return this.familyLedgerMapper.getById(serialNum);
-}
+    serialNum: string,
+  ): Promise<FamilyLedger | null> {
+    return this.familyLedgerMapper.getById(serialNum);
+  }
 
-  static async listFamilyLedgers(): Promise < FamilyLedger[] > {
-  return this.familyLedgerMapper.list();
-}
+  static async listFamilyLedgers(): Promise<FamilyLedger[]> {
+    return this.familyLedgerMapper.list();
+  }
 
-  static async updateFamilyLedger(ledger: FamilyLedger): Promise < void> {
-  return this.familyLedgerMapper.update(ledger);
-}
+  static async updateFamilyLedger(ledger: FamilyLedger): Promise<void> {
+    return this.familyLedgerMapper.update(ledger);
+  }
 
-  static async deleteFamilyLedger(serialNum: string): Promise < void> {
-  return this.familyLedgerMapper.deleteById(serialNum);
-}
+  static async deleteFamilyLedger(serialNum: string): Promise<void> {
+    return this.familyLedgerMapper.deleteById(serialNum);
+  }
 
   static async listFamilyLedgersPaged(
-  filters: Record<string, any> = {},
-  page = 1,
-  pageSize = 10,
-  sortOptions: SortOptions = {},
-): Promise < PagedResult < FamilyLedger >> {
-  return this.familyLedgerMapper.listPaged(
-    filters,
-    page,
-    pageSize,
-    sortOptions,
-  );
-}
+    filters: Record<string, any> = {},
+    page = 1,
+    pageSize = 10,
+    sortOptions: SortOptions = {},
+  ): Promise<PagedResult<FamilyLedger>> {
+    return this.familyLedgerMapper.listPaged(
+      filters,
+      page,
+      pageSize,
+      sortOptions,
+    );
+  }
 
   // FamilyLedgerAccount 操作
   static async createFamilyLedgerAccount(assoc: {
-  serialNum: string;
-  familyLedgerSerialNum: string;
-  accountSerialNum: string;
-}): Promise < void> {
-  return this.familyLedgerAccountMapper.create(assoc);
-}
-
-  static async getFamilyLedgerAccount(serialNum: string): Promise < {
-  serialNum: string;
-  familyLedgerSerialNum: string;
-  accountSerialNum: string;
-} | null > {
-  return this.familyLedgerAccountMapper.getById(serialNum);
-}
-
-  static async listFamilyLedgerAccounts(): Promise <
-  {
     serialNum: string;
     familyLedgerSerialNum: string;
     accountSerialNum: string;
-  }[]
+  }): Promise<void> {
+    return this.familyLedgerAccountMapper.create(assoc);
+  }
+
+  static async getFamilyLedgerAccount(serialNum: string): Promise<{
+    serialNum: string;
+    familyLedgerSerialNum: string;
+    accountSerialNum: string;
+  } | null> {
+    return this.familyLedgerAccountMapper.getById(serialNum);
+  }
+
+  static async listFamilyLedgerAccounts(): Promise<
+    {
+      serialNum: string;
+      familyLedgerSerialNum: string;
+      accountSerialNum: string;
+    }[]
   > {
-  return this.familyLedgerAccountMapper.list();
-}
+    return this.familyLedgerAccountMapper.list();
+  }
 
   static async updateFamilyLedgerAccount(assoc: {
-  serialNum: string;
-  familyLedgerSerialNum: string;
-  accountSerialNum: string;
-}): Promise < void> {
-  return this.familyLedgerAccountMapper.update(assoc);
-}
+    serialNum: string;
+    familyLedgerSerialNum: string;
+    accountSerialNum: string;
+  }): Promise<void> {
+    return this.familyLedgerAccountMapper.update(assoc);
+  }
 
-  static async deleteFamilyLedgerAccount(serialNum: string): Promise < void> {
-  return this.familyLedgerAccountMapper.deleteById(serialNum);
-}
+  static async deleteFamilyLedgerAccount(serialNum: string): Promise<void> {
+    return this.familyLedgerAccountMapper.deleteById(serialNum);
+  }
 
   // FamilyLedgerTransaction 操作
   static async createFamilyLedgerTransaction(
-  assoc: FamilyLedgerTransaction,
-): Promise < void> {
-  return this.familyLedgerTransactionMapper.create(assoc);
-}
+    assoc: FamilyLedgerTransaction,
+  ): Promise<void> {
+    return this.familyLedgerTransactionMapper.create(assoc);
+  }
 
-  static async getFamilyLedgerTransaction(serialNum: string): Promise < {
-  familyLedgerSerialNum: string;
-  transactionSerialNum: string;
-} | null > {
-  return this.familyLedgerTransactionMapper.getById(serialNum);
-}
+  static async getFamilyLedgerTransaction(serialNum: string): Promise<{
+    familyLedgerSerialNum: string;
+    transactionSerialNum: string;
+  } | null> {
+    return this.familyLedgerTransactionMapper.getById(serialNum);
+  }
 
-  static async listFamilyLedgerTransactions(): Promise <
-  { familyLedgerSerialNum: string; transactionSerialNum: string }[]
+  static async listFamilyLedgerTransactions(): Promise<
+    { familyLedgerSerialNum: string; transactionSerialNum: string }[]
   > {
-  return this.familyLedgerTransactionMapper.list();
-}
+    return this.familyLedgerTransactionMapper.list();
+  }
 
-  static async deleteFamilyLedgerTransaction(serialNum: string): Promise < void> {
-  return this.familyLedgerTransactionMapper.deleteById(serialNum);
-}
+  static async deleteFamilyLedgerTransaction(serialNum: string): Promise<void> {
+    return this.familyLedgerTransactionMapper.deleteById(serialNum);
+  }
 
   // FamilyLedgerMember 操作
   static async createFamilyLedgerMember(
-  assoc: FamilyLedgerMember,
-): Promise < void> {
-  return this.familyLedgerMemberMapper.create(assoc);
-}
+    assoc: FamilyLedgerMember,
+  ): Promise<void> {
+    return this.familyLedgerMemberMapper.create(assoc);
+  }
 
-  static async getFamilyLedgerMember(serialNum: string): Promise < {
-  familyLedgerSerialNum: string;
-  familyMemberSerialNum: string;
-} | null > {
-  return this.familyLedgerMemberMapper.getById(serialNum);
-}
+  static async getFamilyLedgerMember(serialNum: string): Promise<{
+    familyLedgerSerialNum: string;
+    familyMemberSerialNum: string;
+  } | null> {
+    return this.familyLedgerMemberMapper.getById(serialNum);
+  }
 
-  static async listFamilyLedgerMembers(): Promise <
-  { familyLedgerSerialNum: string; familyMemberSerialNum: string }[]
+  static async listFamilyLedgerMembers(): Promise<
+    { familyLedgerSerialNum: string; familyMemberSerialNum: string }[]
   > {
-  return this.familyLedgerMemberMapper.list();
-}
+    return this.familyLedgerMemberMapper.list();
+  }
 
-  static async deleteFamilyLedgerMember(serialNum: string): Promise < void> {
-  return this.familyLedgerMemberMapper.deleteById(serialNum);
-}
+  static async deleteFamilyLedgerMember(serialNum: string): Promise<void> {
+    return this.familyLedgerMemberMapper.deleteById(serialNum);
+  }
 
   // 批量操作
   static async executeBatch(
-  operations: Array<{ sql: string; params: any[] }>,
-): Promise < void> {
-  return db.executeBatch(operations);
-}
+    operations: Array<{ sql: string; params: any[] }>,
+  ): Promise<void> {
+    return db.executeBatch(operations);
+  }
 
   // 事务操作
-  static async executeInTransaction<T>(callback: () => Promise<T>): Promise < T > {
-  return db.transaction(async () => {
-    return await callback();
-  });
-}
+  static async executeInTransaction<T>(callback: () => Promise<T>): Promise<T> {
+    return db.transaction(async () => {
+      return await callback();
+    });
+  }
 
   // 统计信息
-  static async getStats(): Promise < {
-  cacheSize: number;
-  dbPath: string;
-  isConnected: boolean;
-} > {
-  return db.getStats();
-}
+  static async getStats(): Promise<{
+    cacheSize: number;
+    dbPath: string;
+    isConnected: boolean;
+  }> {
+    return db.getStats();
+  }
 
   // 清理缓存
   static cleanCache(): void {
-  db.cleanCache();
-}
+    db.cleanCache();
+  }
 
   // 关闭连接
-  static async close(): Promise < void> {
-  return db.closeAll();
-}
+  static async close(): Promise<void> {
+    return db.closeAll();
+  }
 }
