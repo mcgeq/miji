@@ -3,17 +3,16 @@ import { Check, X } from 'lucide-vue-next';
 import { useI18n } from 'vue-i18n';
 import ColorSelector from '@/components/common/ColorSelector.vue';
 import { COLORS_MAP } from '@/constants/moneyConst';
-import { AccountSchema, AccountTypeSchema } from '@/schema/money';
+import { AccountTypeSchema, CreateAccountRequestSchema, UpdateAccountRequestSchema } from '@/schema/money';
 import { MoneyDb } from '@/services/money/money';
 import { DateUtils } from '@/utils/date';
 import { Lg } from '@/utils/debugLog';
 import { toast } from '@/utils/toast';
-import { uuid } from '@/utils/uuid';
 import type { Currency } from '@/schema/common';
-import type { Account } from '@/schema/money';
+import type { AccountResponseWithRelations, CreateAccountRequest, UpdateAccountRequest } from '@/schema/money';
 
 interface Props {
-  account: Account | null;
+  account: AccountResponseWithRelations | null;
 }
 
 interface User {
@@ -67,8 +66,7 @@ async function loadCurrencies() {
   try {
     const fetchedCurrencies = await MoneyDb.listCurrencies();
     currencies.value = fetchedCurrencies;
-  }
-  catch (err: unknown) {
+  } catch (err: unknown) {
     toast.error(t('financial.account.currencyLoadFailed'));
     Lg.e('AccountModal', 'Failed to load currencies:', err);
   }
@@ -78,7 +76,7 @@ async function loadCurrencies() {
 loadCurrencies();
 
 // 默认账户
-const defaultAccount: Account = props.account || {
+const defaultAccount: AccountResponseWithRelations = props.account || {
   serialNum: '',
   name: '',
   description: '',
@@ -100,7 +98,7 @@ const defaultAccount: Account = props.account || {
 };
 
 // 初始化表单
-const form = reactive<Account>({
+const form = reactive<AccountResponseWithRelations>({
   ...defaultAccount,
   ...(props.account ? JSON.parse(JSON.stringify(props.account)) : {}),
 });
@@ -110,8 +108,7 @@ function syncCurrency(code: string) {
   const currency = currencies.value.find(c => c.code === code);
   if (currency) {
     form.currency = { ...currency };
-  }
-  else {
+  } else {
     form.currency = {
       locale: 'zh-CN',
       code: 'CNY',
@@ -125,21 +122,6 @@ function syncCurrency(code: string) {
 function formatBalance(value: string | number): string {
   const num = Number.parseFloat(value.toString());
   return Number.isNaN(num) ? '0.00' : num.toFixed(2);
-}
-
-// 校验表单
-function validateForm(data: Partial<Account>): boolean {
-  try {
-    formErrors.value = {};
-    // 校验数据
-    AccountSchema.partial().parse(data);
-    return true;
-  }
-  catch (e: unknown) {
-    toast.error(t('messages.unknown'));
-    Lg.e('AccountModal', 'Unknown error:', e);
-    return false;
-  }
 }
 
 // 关闭模态框
@@ -156,28 +138,48 @@ async function saveAccount() {
   form.balance = formatBalance(form.balance);
 
   try {
-    const accountData: Account = {
-      ...form,
-      serialNum: props.account?.serialNum || uuid(38),
-      createdAt: props.account?.createdAt || DateUtils.getLocalISODateTimeWithOffset(),
-      updatedAt: DateUtils.getLocalISODateTimeWithOffset(),
-    };
-    // 校验表单
-    if (!validateForm(accountData)) {
+    const commonRequestFields = buildCommonRequestFields(form);
+    const isUpdate = !!props.account;
+    const requestData: CreateAccountRequest | UpdateAccountRequest = isUpdate
+      ? {
+          ...commonRequestFields,
+          serialNum: props.account.serialNum,
+        }
+      : commonRequestFields;
+
+    const schemaToUse = isUpdate ? UpdateAccountRequestSchema : CreateAccountRequestSchema;
+
+    const validationRequest = schemaToUse.safeParse(requestData);
+    
+    if (!validationRequest.success) {
+      toast.error('数据校验失败');
+      Lg.e('AccountModal', validationRequest.error);
       isSubmitting.value = false;
       return;
     }
 
-    emit('save', accountData);
+    emit('save', requestData);
     closeModal();
-  }
-  catch (err: unknown) {
+  } catch (err: unknown) {
     toast.error(t('financial.account.saveFailed'));
     Lg.e('AccountModal', 'Save account failed:', err);
-  }
-  finally {
+  } finally {
     isSubmitting.value = false;
   }
+}
+
+function buildCommonRequestFields(form: AccountResponseWithRelations) {
+  return {
+    name: form.name,
+    description: form.description,
+    type: form.type,
+    isShared: form.isShared,
+    ownerId: form.ownerId,
+    color: form.color,
+    isActive: form.isActive,
+    initialBalance: form.initialBalance,
+    currency: form.currency?.code || 'CNY', // 安全访问 optional 字段 + 默认值
+  };
 }
 
 // 监听 props.account 变化

@@ -13,7 +13,9 @@ import type {
   AccountResponseWithRelations,
   BilReminder,
   Budget,
+  CreateAccountRequest,
   TransactionWithAccount,
+  UpdateAccountRequest,
 } from '@/schema/money';
 
 export enum MoneyStoreErrorCode {
@@ -210,22 +212,15 @@ export const useMoneyStore = defineStore('money', () => {
   };
 
   const createAccount = async (
-    account: AccountResponseWithRelations,
+    account: CreateAccountRequest,
   ): Promise<AccountResponseWithRelations> => {
     loading.value = true;
     error.value = null;
-
     try {
-      const newAccount: Account = {
-        ...account,
-        serialNum: uuid(38),
-        createdAt: DateUtils.getLocalISODateTimeWithOffset(),
-        updatedAt: null,
-      };
-      const result = await MoneyDb.createAccount(newAccount);
+      console.log('createAccount', account);
+      const result = await MoneyDb.createAccount(account);
       await updateLocalAccounts();
       return result;
-      return newAccount;
     } catch (err) {
       throw handleMoneyStoreError(
         err,
@@ -238,14 +233,16 @@ export const useMoneyStore = defineStore('money', () => {
     }
   };
 
-  const updateAccount = async (account: Account): Promise<Account> => {
+  const updateAccount = async (
+    account: UpdateAccountRequest,
+  ): Promise<AccountResponseWithRelations> => {
     loading.value = true;
     error.value = null;
 
     try {
-      await MoneyDb.updateAccount(account);
+      const act = await MoneyDb.updateAccount(account);
       await updateLocalAccounts();
-      return account;
+      return act;
     } catch (err) {
       throw handleMoneyStoreError(
         err,
@@ -485,12 +482,12 @@ export const useMoneyStore = defineStore('money', () => {
 
       const fromTrans =
         relatedTransactions[0].transactionType ===
-        TransactionTypeSchema.enum.Expense
+          TransactionTypeSchema.enum.Expense
           ? relatedTransactions[0]
           : relatedTransactions[1];
       const toTrans =
         relatedTransactions[0].transactionType ===
-        TransactionTypeSchema.enum.Income
+          TransactionTypeSchema.enum.Income
           ? relatedTransactions[0]
           : relatedTransactions[1];
 
@@ -610,12 +607,12 @@ export const useMoneyStore = defineStore('money', () => {
 
       const fromTrans =
         relatedTransactions[0].transactionType ===
-        TransactionTypeSchema.enum.Expense
+          TransactionTypeSchema.enum.Expense
           ? relatedTransactions[0]
           : relatedTransactions[1];
       const toTrans =
         relatedTransactions[0].transactionType ===
-        TransactionTypeSchema.enum.Income
+          TransactionTypeSchema.enum.Income
           ? relatedTransactions[0]
           : relatedTransactions[1];
 
@@ -1014,16 +1011,16 @@ export const useMoneyStore = defineStore('money', () => {
 
     account.balance = newBalance.toFixed(2);
     account.updatedAt = new Date().toISOString();
-    try {
-      await MoneyDb.updateAccount(account);
-    } catch (err) {
-      handleMoneyStoreError(
-        err,
-        '更新账户余额失败',
-        'updateAccount',
-        'Account',
-      );
-    }
+    // try {
+    //   await MoneyDb.updateAccount(account);
+    // } catch (err) {
+    //   handleMoneyStoreError(
+    //     err,
+    //     '更新账户余额失败',
+    //     'updateAccount',
+    //     'Account',
+    //   );
+    // }
   }
 
   const clearError = () => {

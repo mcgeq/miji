@@ -10,6 +10,7 @@ use validator::{Validate, ValidationError};
 use crate::services::account::AccountWithRelations;
 
 #[derive(Debug, Clone, Deserialize, Validate)]
+#[serde(rename_all = "camelCase")]
 pub struct CreateAccountRequest {
     #[validate(length(min = 1, max = 100, message = "账户名称长度必须在1-100字符之间"))]
     pub name: String,

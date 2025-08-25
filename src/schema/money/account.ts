@@ -8,22 +8,6 @@ import {
 } from '../common';
 import { AccountTypeSchema } from './money.e';
 
-export const AccountSchema = z.object({
-  serialNum: SerialNumSchema,
-  name: NameSchema,
-  description: DescriptionSchema,
-  type: AccountTypeSchema,
-  balance: z.string(),
-  initialBalance: z.string(),
-  currency: CurrencySchema,
-  isShared: z.boolean(),
-  ownerId: SerialNumSchema,
-  isActive: z.boolean(),
-  color: z.string(),
-  createdAt: DateTimeSchema,
-  updatedAt: DateTimeSchema.optional().nullable(),
-});
-
 export const BaseAccountFields = z.object({
   serialNum: SerialNumSchema,
   name: NameSchema,
@@ -38,6 +22,10 @@ export const BaseAccountFields = z.object({
   createdAt: DateTimeSchema,
   updatedAt: DateTimeSchema.optional().nullable(),
 });
+
+export const AccountSchema = BaseAccountFields.extend({
+  SerialNum: SerialNumSchema,
+}).strict();
 
 export const CreateAccountRequestSchema = BaseAccountFields.pick({
   name: true,
@@ -68,7 +56,6 @@ export const UpdateAccountRequestSchema = BaseAccountFields.pick({
   .extend({
     currency: z.string().length(3),
   })
-  .partial()
   .strict();
 
 export const BaseAccountResponseSchema = BaseAccountFields.extend({

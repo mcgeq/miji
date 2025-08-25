@@ -34,7 +34,9 @@ import type {
   Account,
   BilReminder,
   Budget,
+  CreateAccountRequest,
   TransactionWithAccount,
+  UpdateAccountRequest,
 } from '@/schema/money';
 
 // Add ref for TransactionList
@@ -422,9 +424,9 @@ function closeAccountModal() {
   selectedAccount.value = null;
 }
 
-async function saveAccount(account: Account) {
+async function saveAccount(account: CreateAccountRequest | UpdateAccountRequest) {
   try {
-    if (selectedAccount.value) {
+    if (selectedAccount.value && isUpdateAccountRequest(account)) {
       await moneyStore.updateAccount(account);
       toast.success('更新成功');
     } else {
@@ -591,6 +593,12 @@ async function syncIncomeExpense() {
 async function syncAccountBalanceSummary() {
   const t = await MoneyDb.totalAssets();
   totalAssets.value = t.totalAssets;
+}
+
+function isUpdateAccountRequest(
+  account: CreateAccountRequest | UpdateAccountRequest,
+): account is UpdateAccountRequest {
+  return 'serialNum' in account;
 }
 
 onMounted(async () => {

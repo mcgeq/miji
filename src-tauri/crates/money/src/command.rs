@@ -4,6 +4,7 @@ use common::{
     paginations::{PagedQuery, PagedResult},
 };
 use tauri::State;
+use tracing::info;
 
 use crate::{
     dto::{
@@ -145,6 +146,7 @@ pub async fn create_account(
     data: CreateAccountRequest,
 ) -> Result<ApiResponse<AccountResponseWithRelations>, String> {
     let service = get_account_service();
+    info!("{:?}", data);
 
     // 先创建账户，然后获取完整信息
     let result = match service.base().create(&state.db, data).await {
