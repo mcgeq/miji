@@ -1,0 +1,187 @@
+use std::sync::Arc;
+
+use common::{
+    crud::service::{CrudConverter, CrudService, GenericCrudService},
+    error::MijiResult,
+    log::logger::{NoopLogger, OperationLogger},
+    paginations::{Filter, PagedQuery, PagedResult},
+    utils::date::DateUtils,
+};
+use sea_orm::{
+    ActiveValue::Set, ColumnTrait, Condition, DatabaseConnection, prelude::async_trait::async_trait,
+};
+use validator::Validate;
+
+use crate::{
+    dto::users::{CreateUserDto, UpdateUserDto},
+    services::user_hooks::UserHooks,
+};
+
+#[derive(Debug)]
+pub struct UserConverter;
+
+#[derive(Debug, Validate)]
+pub struct UserFilter {
+    pub name: Option<String>,
+    pub email: Option<String>,
+    pub status: Option<String>,
+    pub role: Option<String>,
+}
+
+pub struct UserService {
+    inner: GenericCrudService<
+        entity::users::Entity,
+        UserFilter,
+        CreateUserDto,
+        UpdateUserDto,
+        UserConverter,
+        UserHooks,
+    >,
+}
+
+impl Filter<entity::users::Entity> for UserFilter {
+    fn to_condition(&self) -> Condition {
+        let mut condition = Condition::all();
+        if let Some(name) = &self.name {
+            condition = condition.add(entity::users::Column::Name.eq(name));
+        }
+        if let Some(email) = &self.email {
+            condition = condition.add(entity::users::Column::Email.eq(email));
+        }
+        if let Some(status) = &self.status {
+            condition = condition.add(entity::users::Column::Status.eq(status));
+        }
+        if let Some(role) = &self.role {
+            condition = condition.add(entity::users::Column::Role.eq(role));
+        }
+        condition
+    }
+}
+
+impl CrudConverter<entity::users::Entity, CreateUserDto, UpdateUserDto> for UserConverter {
+    fn create_to_active_model(
+        &self,
+        data: CreateUserDto,
+    ) -> MijiResult<entity::users::ActiveModel> {
+        entity::users::ActiveModel::try_from(data)
+    }
+
+    fn update_to_active_model(
+        &self,
+        model: entity::users::Model,
+        data: UpdateUserDto,
+    ) -> MijiResult<entity::users::ActiveModel> {
+        let mut active_model = entity::users::ActiveModel::try_from(data)?;
+        active_model.serial_num = Set(model.serial_num.clone());
+        active_model.created_at = Set(model.created_at.clone());
+        active_model.updated_at = Set(Some(DateUtils::local_rfc3339()));
+        Ok(active_model)
+    }
+
+    fn primary_key_to_string(&self, model: &entity::users::Model) -> String {
+        model.serial_num.clone()
+    }
+
+    fn table_name(&self) -> &'static str {
+        "users"
+    }
+}
+
+impl UserService {
+    pub fn get_user_service() -> Self {
+        Self {
+            inner: GenericCrudService::new(
+                UserConverter,
+                UserHooks,
+                Arc::new(NoopLogger), // 默认使用 NoopLogger
+            ),
+        }
+    }
+
+    pub fn new(logger: Arc<dyn OperationLogger>) -> Self {
+        Self {
+            inner: GenericCrudService::new(UserConverter, UserHooks, logger),
+        }
+    }
+}
+
+// 实现 CrudService 特性
+#[async_trait]
+impl CrudService<entity::users::Entity, UserFilter, CreateUserDto, UpdateUserDto> for UserService {
+    async fn create(
+        &self,
+        db: &DatabaseConnection,
+        data: CreateUserDto,
+    ) -> MijiResult<entity::users::Model> {
+        self.inner.create(db, data).await
+    }
+
+    async fn get_by_id(
+        &self,
+        db: &DatabaseConnection,
+        id: String,
+    ) -> MijiResult<entity::users::Model> {
+        self.inner.get_by_id(db, id).await
+    }
+
+    async fn update(
+        &self,
+        db: &DatabaseConnection,
+        id: String,
+        data: UpdateUserDto,
+    ) -> MijiResult<entity::users::Model> {
+        self.inner.update(db, id, data).await
+    }
+
+    async fn delete(&self, db: &DatabaseConnection, id: String) -> MijiResult<()> {
+        self.inner.delete(db, id).await
+    }
+
+    async fn list(&self, db: &DatabaseConnection) -> MijiResult<Vec<entity::users::Model>> {
+        self.inner.list(db).await
+    }
+
+    async fn list_with_filter(
+        &self,
+        db: &DatabaseConnection,
+        filter: UserFilter,
+    ) -> MijiResult<Vec<entity::users::Model>> {
+        self.inner.list_with_filter(db, filter).await
+    }
+
+    async fn list_paged(
+        &self,
+        db: &DatabaseConnection,
+        query: PagedQuery<UserFilter>,
+    ) -> MijiResult<PagedResult<entity::users::Model>> {
+        self.inner.list_paged(db, query).await
+    }
+
+    async fn create_batch(
+        &self,
+        db: &DatabaseConnection,
+        data: Vec<CreateUserDto>,
+    ) -> MijiResult<Vec<entity::users::Model>> {
+        self.inner.create_batch(db, data).await
+    }
+
+    async fn delete_batch(&self, db: &DatabaseConnection, ids: Vec<String>) -> MijiResult<u64> {
+        self.inner.delete_batch(db, ids).await
+    }
+
+    async fn exists(&self, db: &DatabaseConnection, id: String) -> MijiResult<bool> {
+        self.inner.exists(db, id).await
+    }
+
+    async fn count(&self, db: &DatabaseConnection) -> MijiResult<u64> {
+        self.inner.count(db).await
+    }
+
+    async fn count_with_filter(
+        &self,
+        db: &DatabaseConnection,
+        filter: UserFilter,
+    ) -> MijiResult<u64> {
+        self.inner.count_with_filter(db, filter).await
+    }
+}

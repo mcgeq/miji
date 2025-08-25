@@ -1,0 +1,102 @@
+use common::{
+    ApiResponse, AppState,
+    crud::service::CrudService,
+    paginations::{PagedQuery, PagedResult},
+};
+use tauri::State;
+
+use crate::{
+    dto::users::{CreateUserDto, UpdateUserDto, User},
+    services::user::{UserFilter, UserService},
+};
+
+// 创建用户
+#[tauri::command]
+pub async fn create_user(
+    state: State<'_, AppState>,
+    data: CreateUserDto,
+) -> Result<ApiResponse<User>, String> {
+    let service = UserService::get_user_service();
+    Ok(ApiResponse::from_result(
+        service.create(&state.db, data).await.map(User::from),
+    ))
+}
+
+// 获取单个用户（按 serial_num）
+#[tauri::command]
+pub async fn get_user(
+    state: State<'_, AppState>,
+    serial_num: String,
+) -> Result<ApiResponse<User>, String> {
+    let service = UserService::get_user_service();
+    Ok(ApiResponse::from_result(
+        service
+            .get_by_id(&state.db, serial_num)
+            .await
+            .map(User::from),
+    ))
+}
+
+// 更新用户
+#[tauri::command]
+pub async fn update_user(
+    state: State<'_, AppState>,
+    serial_num: String,
+    data: UpdateUserDto,
+) -> Result<ApiResponse<User>, String> {
+    let service = UserService::get_user_service();
+    Ok(ApiResponse::from_result(
+        service
+            .update(&state.db, serial_num, data)
+            .await
+            .map(User::from),
+    ))
+}
+
+// 删除用户
+#[tauri::command]
+pub async fn delete_user(
+    state: State<'_, AppState>,
+    serial_num: String,
+) -> Result<ApiResponse<()>, String> {
+    let service = UserService::get_user_service();
+    Ok(ApiResponse::from_result(
+        service.delete(&state.db, serial_num).await,
+    ))
+}
+
+// 列出用户（带过滤条件）
+#[tauri::command]
+pub async fn list_users(
+    state: State<'_, AppState>,
+    filter: UserFilter,
+) -> Result<ApiResponse<Vec<User>>, String> {
+    let service = UserService::get_user_service();
+    Ok(ApiResponse::from_result(
+        service
+            .list_with_filter(&state.db, filter)
+            .await
+            .map(|models| models.into_iter().map(User::from).collect()),
+    ))
+}
+
+// 分页列出用户
+#[tauri::command]
+pub async fn list_users_paged(
+    state: State<'_, AppState>,
+    query: PagedQuery<UserFilter>,
+) -> Result<ApiResponse<PagedResult<User>>, String> {
+    let service = UserService::get_user_service();
+    Ok(ApiResponse::from_result(
+        service
+            .list_paged(&state.db, query)
+            .await
+            .map(|paged| PagedResult {
+                rows: paged.rows.into_iter().map(User::from).collect(),
+                total_count: paged.total_count,
+                current_page: paged.current_page,
+                page_size: paged.page_size,
+                total_pages: paged.total_pages,
+            }),
+    ))
+}
