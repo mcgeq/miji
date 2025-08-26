@@ -403,6 +403,7 @@ dependencies = [
  "serde_json",
  "snafu",
  "tauri",
+ "tracing",
  "validator",
 ]
 

@@ -1,12 +1,13 @@
 use common::{
     ApiResponse, AppState,
     crud::service::CrudService,
+    error::AppError,
     paginations::{PagedQuery, PagedResult},
 };
 use tauri::State;
 
 use crate::{
-    dto::users::{CreateUserDto, UpdateUserDto, User},
+    dto::users::{CreateUserDto, UpdateUserDto, User, UserQuery},
     services::user::{UserFilter, UserService},
 };
 
@@ -62,6 +63,26 @@ pub async fn delete_user(
     let service = UserService::get_user_service();
     Ok(ApiResponse::from_result(
         service.delete(&state.db, serial_num).await,
+    ))
+}
+
+#[tauri::command]
+pub async fn exists_user(
+    state: State<'_, AppState>,
+    query: UserQuery,
+) -> Result<ApiResponse<bool>, String> {
+    if query.serial_num.is_none()
+        && query.email.is_none()
+        && query.phone.is_none()
+        && query.name.is_none()
+    {
+        return Err(
+            AppError::simple(common::BusinessCode::InvalidParameter, "查询条件有误").to_string(),
+        );
+    }
+    let service = UserService::get_user_service();
+    Ok(ApiResponse::from_result(
+        service.exists_user(&state.db, &query).await,
     ))
 }
 

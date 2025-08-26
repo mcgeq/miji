@@ -8,12 +8,14 @@ use common::{
     utils::date::DateUtils,
 };
 use sea_orm::{
-    ActiveValue::Set, ColumnTrait, Condition, DatabaseConnection, prelude::async_trait::async_trait,
+    ActiveValue::Set, ColumnTrait, Condition, DatabaseConnection, EntityTrait, QueryFilter,
+    prelude::async_trait::async_trait, sea_query::IntoCondition,
 };
+use tracing::info;
 use validator::Validate;
 
 use crate::{
-    dto::users::{CreateUserDto, UpdateUserDto},
+    dto::users::{CreateUserDto, UpdateUserDto, UserQuery},
     services::user_hooks::UserHooks,
 };
 
@@ -183,5 +185,39 @@ impl CrudService<entity::users::Entity, UserFilter, CreateUserDto, UpdateUserDto
         filter: UserFilter,
     ) -> MijiResult<u64> {
         self.inner.count_with_filter(db, filter).await
+    }
+}
+
+impl UserService {
+    pub async fn exists_user(
+        &self,
+        db: &DatabaseConnection,
+        query: &UserQuery,
+    ) -> MijiResult<bool> {
+        use entity::users::Entity as UserEntity;
+        let mut conditions = Condition::all();
+
+        if let Some(serial_num) = &query.serial_num {
+            conditions = conditions.add(entity::users::Column::SerialNum.eq(serial_num));
+        }
+        if let Some(email) = &query.email {
+            conditions = conditions.add(entity::users::Column::Email.eq(email));
+        }
+        if let Some(phone) = &query.phone {
+            conditions = conditions.add(entity::users::Column::Phone.eq(phone));
+        }
+        if let Some(name) = &query.name {
+            conditions = conditions.add(entity::users::Column::Name.eq(name));
+        }
+        if conditions.is_empty() {
+            return Ok(false);
+        }
+        info!("{}", &query.email.clone().unwrap());
+        let exists = UserEntity::find()
+            .filter(conditions.into_condition())
+            .one(db)
+            .await?
+            .is_some();
+        Ok(exists)
     }
 }

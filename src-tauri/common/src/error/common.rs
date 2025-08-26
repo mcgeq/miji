@@ -1,8 +1,8 @@
+use crate::{BusinessCode, error::EnvError};
+use sea_orm::DbErr;
 use serde_json::Value;
 use snafu::{Backtrace, GenerateImplicitData};
-use sea_orm::DbErr;
 use validator::ValidationErrors;
-use crate::{error::EnvError, BusinessCode};
 
 /// 业务错误特征
 pub trait ErrorExt: std::error::Error + Send + Sync + 'static {
@@ -139,10 +139,11 @@ impl AppError {
             error_details.insert(
                 field.to_string(),
                 serde_json::Value::Array(
-                    messages.into_iter()
+                    messages
+                        .into_iter()
                         .map(serde_json::Value::String)
-                        .collect()
-                )
+                        .collect(),
+                ),
             );
         }
 
@@ -156,9 +157,7 @@ impl AppError {
     }
 
     /// 创建内部服务器错误
-    pub fn internal_server_error(
-        message: impl Into<String>,
-    ) -> Self {
+    pub fn internal_server_error(message: impl Into<String>) -> Self {
         struct InternalServerError {
             code: BusinessCode,
             message: String,
@@ -312,6 +311,7 @@ impl ErrorExt for CommonError {
 // 实现 From 转换
 impl From<DbErr> for AppError {
     fn from(error: DbErr) -> Self {
+        println!("{:?}", error);
         CommonError::Database {
             source: error,
             backtrace: snafu::Backtrace::generate(),
@@ -326,7 +326,7 @@ impl From<std::io::Error> for AppError {
         CommonError::File {
             path: "".to_string(), // 实际使用中应替换为实际路径
             source: error,
-            backtrace: snafu::Backtrace::generate()
+            backtrace: snafu::Backtrace::generate(),
         }
         .into()
     }

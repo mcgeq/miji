@@ -4,10 +4,14 @@ import { getDb } from '../db';
 import { toCamelCase } from '../utils/common';
 import { DateUtils } from '../utils/date';
 import { Lg } from '../utils/debugLog';
-import { uuid } from '../utils/uuid';
 import { MoneyDb } from './money/money';
 import type { FamilyMember } from '@/schema/money';
-import type { TokenResponse, User } from '@/schema/user';
+import type {
+  CreateUserRequest,
+  TokenResponse,
+  User,
+  UserQuery,
+} from '@/schema/user';
 import type { Credentials, CredentialsLogin } from '@/types';
 
 // 认证相关的业务错误类
@@ -73,102 +77,57 @@ export async function register(
   rememberMe = false,
 ): Promise<User> {
   try {
-    const db = await getDb();
     const { email, username, password } = credentials;
 
-    // 检查是否存在
-    const exists = await db.select('SELECT 1 FROM users WHERE email = ?', [
-      email,
-    ]);
-    if ((exists as unknown[]).length > 0) {
+    const exists = await invokeCommand<boolean>('exists_user', {
+      query: { email } as UserQuery,
+    });
+    if (exists) {
       throw new AuthError('EMAIL_EXISTS', 'Email already registered');
     }
 
     // 生成字段
-    const now = DateUtils.getLocalISODateTimeWithOffset();
-    const user: Omit<User, 'password'> = {
-      serialNum: uuid(38),
+    const user: CreateUserRequest = {
       name: username,
       email,
+      password,
       phone: null,
       avatarUrl: null,
-      lastLoginAt: now,
       isVerified: false,
       role: 'User',
       status: 'Active',
-      emailVerifiedAt: null,
-      phoneVerifiedAt: null,
       bio: null,
       language: 'en',
       timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
-      lastActiveAt: now,
-      deletedAt: null,
-      createdAt: now,
-      updatedAt: now,
     };
-
     // 使用新的 API 调用方式
     const password_hash = await hashPassword(password);
+    user.password = password_hash;
 
-    await db.execute(
-      `INSERT INTO users (
-        serial_num, name, email, phone, password, avatar_url,
-        last_login_at, is_verified, role, status, email_verified_at,
-        phone_verified_at, bio, language, timezone, last_active_at,
-        deleted_at, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        user.serialNum,
-        user.name,
-        user.email,
-        user.phone,
-        password_hash,
-        user.avatarUrl,
-        user.lastLoginAt,
-        user.isVerified ? 1 : 0,
-        user.role,
-        user.status,
-        user.emailVerifiedAt,
-        user.phoneVerifiedAt,
-        user.bio,
-        user.language,
-        user.timezone,
-        user.lastActiveAt,
-        user.deletedAt,
-        user.createdAt,
-        user.updatedAt,
-      ],
-    );
+    const result = await invokeCommand<User>('create_user', { data: user });
 
     const familyMember: FamilyMember = {
-      serialNum: user.serialNum,
-      name: user.name,
+      serialNum: result.serialNum,
+      name: result.name,
       role: 'Admin',
       isPrimary: false,
       permissions: '',
-      createdAt: user.createdAt,
+      createdAt: result.createdAt,
     };
     await MoneyDb.createFamilyMember(familyMember);
-
-    // 查询刚刚插入的用户
-    const rows = await db.select<User[]>(
-      'SELECT * FROM users WHERE email = ?',
-      [email],
-    );
-    const newUser = toCamelCase(rows[0]);
 
     if (rememberMe) {
       const tokenResponse = await invokeCommand<TokenResponse>(
         'generate_token',
         {
-          userId: newUser.email,
-          role: newUser.role,
+          userId: result.email,
+          role: result.role,
         },
       );
-      await loginUser(newUser, tokenResponse);
+      await loginUser(result, tokenResponse);
     }
 
-    return newUser;
+    return result;
   } catch (error) {
     const authError = handleAuthError(error);
     Lg.e('Api Registration', authError);

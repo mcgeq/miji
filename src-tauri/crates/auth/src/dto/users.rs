@@ -1,11 +1,19 @@
 use chrono::{DateTime, Local};
-use common::{BusinessCode, error::AppError};
+use common::{
+    BusinessCode,
+    error::AppError,
+    utils::{
+        serde_helper::{deserialize_bool_as_i32, serialize_i32_as_bool},
+        uuid::McgUuid,
+    },
+};
 use sea_orm::ActiveValue;
 use serde::{Deserialize, Serialize};
+use tracing::info;
 use validator::Validate;
 
 #[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
+#[serde(rename_all = "camelCase")]
 pub enum UserStatus {
     Active,
     Inactive,
@@ -16,7 +24,7 @@ pub enum UserStatus {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
+#[serde(rename_all = "camelCase")]
 pub enum UserRole {
     Admin,
     User,
@@ -28,12 +36,21 @@ pub enum UserRole {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
+#[serde(rename_all = "camelCase")]
 pub enum MemberUserRole {
     Owner,
     Admin,
     Member,
     Viewer,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct UserQuery {
+    pub serial_num: Option<String>,
+    pub email: Option<String>,
+    pub phone: Option<String>,
+    pub name: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -59,9 +76,8 @@ pub struct User {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+#[serde(rename_all = "camelCase")]
 pub struct CreateUserDto {
-    #[validate(length(equal = 38))]
-    pub serial_num: String,
     #[validate(length(min = 1, max = 100))]
     pub name: String,
     #[validate(email)]
@@ -71,6 +87,10 @@ pub struct CreateUserDto {
     pub password: String,
     pub avatar_url: Option<String>,
     #[validate(range(min = 0, max = 1))]
+    #[serde(
+        serialize_with = "serialize_i32_as_bool",
+        deserialize_with = "deserialize_bool_as_i32"
+    )]
     pub is_verified: i32,
     pub role: String,
     pub status: String,
@@ -80,7 +100,10 @@ pub struct CreateUserDto {
 }
 
 #[derive(Debug, Serialize, Deserialize, Validate)]
+#[serde(rename_all = "camelCase")]
 pub struct UpdateUserDto {
+    #[validate(length(equal = 38))]
+    pub serial_num: Option<String>,
     #[validate(length(min = 1, max = 100))]
     pub name: Option<String>,
     #[validate(email)]
@@ -99,6 +122,7 @@ pub struct UpdateUserDto {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct TokenResponse {
     pub token: String,
     pub expires_at: i64, // UNIX timestamp (seconds)
@@ -160,16 +184,6 @@ impl TryFrom<CreateUserDto> for entity::users::ActiveModel {
     fn try_from(data: CreateUserDto) -> Result<Self, Self::Error> {
         // 验证 DTO
         data.validate().map_err(AppError::from_validation_errors)?;
-
-        // 额外验证 serial_num 长度
-        if data.serial_num.len() != 38 {
-            return Err(AppError::validation_failed(
-                BusinessCode::ValidationError,
-                "序列号必须正好为38个字符",
-                None,
-            ));
-        }
-
         // 验证 role 和 status
         if !is_valid_role(&data.role) {
             return Err(AppError::validation_failed(
@@ -187,7 +201,7 @@ impl TryFrom<CreateUserDto> for entity::users::ActiveModel {
         }
 
         Ok(entity::users::ActiveModel {
-            serial_num: ActiveValue::set(data.serial_num),
+            serial_num: ActiveValue::set(McgUuid::uuid(38)),
             name: ActiveValue::set(data.name),
             email: ActiveValue::set(data.email),
             phone: ActiveValue::set(data.phone),
@@ -224,6 +238,10 @@ impl TryFrom<UpdateUserDto> for entity::users::ActiveModel {
         };
 
         // 更新提供的字段
+        if let Some(serial_num) = data.serial_num {
+            active_model.serial_num = ActiveValue::set(serial_num);
+        }
+
         if let Some(name) = data.name {
             active_model.name = ActiveValue::set(name);
         }

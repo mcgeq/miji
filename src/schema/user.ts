@@ -25,7 +25,38 @@ export const UserSchema = z.object({
   updatedAt: DateTimeSchema.optional().nullable(),
 });
 
+export const CreateUserRequestSchema = UserSchema.pick({
+  name: true,
+  email: true,
+  phone: true,
+  password: true,
+  avatarUrl: true,
+  isVerified: true,
+  role: true,
+  status: true,
+  bio: true,
+  language: true,
+  timezone: true,
+});
+
+export const UpdateUserRequestSchema = UserSchema.pick({
+  serialNum: true,
+  name: true,
+  email: true,
+  phone: true,
+  password: true,
+  avatarUrl: true,
+  isVerified: true,
+  role: true,
+  status: true,
+  bio: true,
+  language: true,
+  timezone: true,
+});
+
 export type User = z.infer<typeof UserSchema>;
+export type CreateUserRequest = z.infer<typeof CreateUserRequestSchema>;
+export type UpdateUserRequest = z.infer<typeof UpdateUserRequestSchema>;
 
 export interface AuthUser {
   serialNum: string;
@@ -48,4 +79,11 @@ export enum TokenStatus {
   Valid = 'Valid',
   Expired = 'Expired',
   Invalid = 'Invalid',
+}
+
+export interface UserQuery {
+  serial_num?: string;
+  email?: string;
+  phone?: string;
+  name?: string;
 }

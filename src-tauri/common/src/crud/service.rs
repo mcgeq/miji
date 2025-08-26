@@ -25,6 +25,7 @@ use crate::{
     log::logger::OperationLogger,
     paginations::{Filter, PagedQuery, PagedResult, Sortable},
 };
+use tracing::info;
 
 /// 重构后的 CRUD 服务 trait
 #[async_trait]
@@ -199,7 +200,6 @@ where
     async fn create(&self, db: &DatabaseConnection, data: C) -> MijiResult<E::Model> {
         // 验证数据
         self.validate_data(&data)?;
-
         let tx = db.begin().await?;
 
         // 前置钩子
@@ -207,9 +207,9 @@ where
 
         // 转换为 ActiveModel
         let active_model = self.converter.create_to_active_model(data)?;
-
         // 插入数据库
         let model = active_model.insert(&tx).await.map_err(AppError::from)?;
+        info!("insert");
 
         // 记录日志
         let record_id = self.converter.primary_key_to_string(&model);

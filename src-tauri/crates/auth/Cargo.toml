@@ -13,3 +13,4 @@ validator = { workspace = true }
 entity = { workspace = true }
 sea-orm = { workspace = true }
 tauri = { workspace = true }
+tracing = { workspace = true }

@@ -9,6 +9,7 @@
 // Modified   By:  mcgeq <mcgeq@outlook.com>
 // -----------------------------------------------------------------------------
 
+use auth::commands as auth_cmd;
 use chrono::{Duration, Utc};
 use common::{
     AppState, TokenResponse, TokenStatus,
@@ -29,6 +30,8 @@ pub fn init_commands(builder: Builder<Wry>) -> Builder<Wry> {
         check_pwd,
         generate_token,
         is_verify_token,
+        auth_cmd::exists_user,
+        auth_cmd::create_user,
         todo_cmd::list,
         todo_cmd::list_paged,
         todo_cmd::create,
