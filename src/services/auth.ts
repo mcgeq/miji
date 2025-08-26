@@ -1,14 +1,11 @@
 import { TokenStatus } from '@/schema/user';
 import { invokeCommand, isBusinessError, isSystemError } from '@/types/api';
-import { getDb } from '../db';
-import { toCamelCase } from '../utils/common';
 import { DateUtils } from '../utils/date';
 import { Lg } from '../utils/debugLog';
-import { MoneyDb } from './money/money';
-import type { FamilyMember } from '@/schema/money';
 import type {
   CreateUserRequest,
   TokenResponse,
+  UpdateUserRequest,
   User,
   UserQuery,
 } from '@/schema/user';
@@ -31,20 +28,18 @@ export async function login(
   rememberMe = false,
 ): Promise<User> {
   try {
-    const db = await getDb();
     const { email, password } = credentials;
 
-    const rows = await db.select<User[]>(
-      'SELECT * FROM users WHERE email = ?',
-      [email],
-    );
-
-    if (rows.length === 0) {
-      throw new AuthError('USER_NOT_FOUND', 'User not found');
+    const exists = await invokeCommand<boolean>('exists_user', {
+      query: { email } as UserQuery,
+    });
+    if (!exists) {
+      throw new AuthError('EMAIL_EXISTS', 'User is not found');
     }
 
-    const user = toCamelCase(rows[0]);
-
+    const user = await invokeCommand<User>('get_user_with_email', {
+      email,
+    });
     // 使用新的 API 调用方式
     const isValidPassword = await checkPassword(password, user.password);
     if (!isValidPassword) {
@@ -58,13 +53,16 @@ export async function login(
     });
     // Update auth store
     await loginUser(user, tokenResponse, rememberMe);
-
     const now = DateUtils.getLocalISODateTimeWithOffset();
-    await db.execute(
-      'UPDATE users SET last_login_at = ?, last_active_at = ? WHERE serial_num = ?',
-      [now, now, user.serialNum],
-    );
-    return user;
+    const updateUser: UpdateUserRequest = {
+      lastActiveAt: now,
+      lastLoginAt: now,
+    };
+    const u = await invokeCommand<User>('update_user', {
+      serialNum: user.serialNum,
+      data: updateUser,
+    });
+    return u;
   } catch (error) {
     const authError = handleAuthError(error);
     Lg.e('Api Login', authError);

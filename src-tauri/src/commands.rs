@@ -32,6 +32,8 @@ pub fn init_commands(builder: Builder<Wry>) -> Builder<Wry> {
         is_verify_token,
         auth_cmd::exists_user,
         auth_cmd::create_user,
+        auth_cmd::get_user_with_email,
+        auth_cmd::update_user,
         todo_cmd::list,
         todo_cmd::list_paged,
         todo_cmd::create,

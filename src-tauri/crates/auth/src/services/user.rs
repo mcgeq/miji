@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use common::{
     crud::service::{CrudConverter, CrudService, GenericCrudService},
-    error::MijiResult,
+    error::{AppError, MijiResult},
     log::logger::{NoopLogger, OperationLogger},
     paginations::{Filter, PagedQuery, PagedResult},
     utils::date::DateUtils,
@@ -129,14 +129,14 @@ impl CrudService<entity::users::Entity, UserFilter, CreateUserDto, UpdateUserDto
     async fn update(
         &self,
         db: &DatabaseConnection,
-        id: String,
+        serial_num: String,
         data: UpdateUserDto,
     ) -> MijiResult<entity::users::Model> {
-        self.inner.update(db, id, data).await
+        self.inner.update(db, serial_num, data).await
     }
 
-    async fn delete(&self, db: &DatabaseConnection, id: String) -> MijiResult<()> {
-        self.inner.delete(db, id).await
+    async fn delete(&self, db: &DatabaseConnection, serial_num: String) -> MijiResult<()> {
+        self.inner.delete(db, serial_num).await
     }
 
     async fn list(&self, db: &DatabaseConnection) -> MijiResult<Vec<entity::users::Model>> {
@@ -219,5 +219,23 @@ impl UserService {
             .await?
             .is_some();
         Ok(exists)
+    }
+
+    pub async fn get_user_with_email(
+        &self,
+        db: &DatabaseConnection,
+        email: String,
+    ) -> MijiResult<entity::users::Model> {
+        entity::users::Entity::find()
+            .filter(entity::users::Column::Email.eq(email))
+            .one(db)
+            .await
+            .map_err(AppError::from)?
+            .ok_or_else(|| {
+                AppError::simple(
+                    common::BusinessCode::NotFound,
+                    "User with given email not found",
+                )
+            })
     }
 }

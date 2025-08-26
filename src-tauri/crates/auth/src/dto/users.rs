@@ -99,8 +99,6 @@ pub struct CreateUserDto {
 #[derive(Debug, Serialize, Deserialize, Validate)]
 #[serde(rename_all = "camelCase")]
 pub struct UpdateUserDto {
-    #[validate(length(equal = 38))]
-    pub serial_num: Option<String>,
     #[validate(length(min = 1, max = 100))]
     pub name: Option<String>,
     #[validate(email)]
@@ -215,10 +213,6 @@ impl TryFrom<UpdateUserDto> for entity::users::ActiveModel {
         };
 
         // 更新提供的字段
-        if let Some(serial_num) = data.serial_num {
-            active_model.serial_num = ActiveValue::set(serial_num);
-        }
-
         if let Some(name) = data.name {
             active_model.name = ActiveValue::set(name);
         }

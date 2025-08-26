@@ -52,7 +52,9 @@ export const UpdateUserRequestSchema = UserSchema.pick({
   bio: true,
   language: true,
   timezone: true,
-});
+  lastLoginAt: true,
+  lastActiveAt: true,
+}).partial();
 
 export type User = z.infer<typeof UserSchema>;
 export type CreateUserRequest = z.infer<typeof CreateUserRequestSchema>;

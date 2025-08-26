@@ -40,6 +40,20 @@ pub async fn get_user(
     ))
 }
 
+#[tauri::command]
+pub async fn get_user_with_email(
+    state: State<'_, AppState>,
+    email: String,
+) -> Result<ApiResponse<User>, String> {
+    let service = UserService::get_user_service();
+    Ok(ApiResponse::from_result(
+        service
+            .get_user_with_email(&state.db, email)
+            .await
+            .map(User::from),
+    ))
+}
+
 // 更新用户
 #[tauri::command]
 pub async fn update_user(
