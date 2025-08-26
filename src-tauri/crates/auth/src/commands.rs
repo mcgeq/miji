@@ -5,6 +5,7 @@ use common::{
     paginations::{PagedQuery, PagedResult},
 };
 use tauri::State;
+use tracing::info;
 
 use crate::{
     dto::users::{CreateUserDto, UpdateUserDto, User, UserQuery},
@@ -18,6 +19,7 @@ pub async fn create_user(
     data: CreateUserDto,
 ) -> Result<ApiResponse<User>, String> {
     let service = UserService::get_user_service();
+    info!("create_user role : {}", data.role);
     Ok(ApiResponse::from_result(
         service.create(&state.db, data).await.map(User::from),
     ))

@@ -207,9 +207,9 @@ where
 
         // 转换为 ActiveModel
         let active_model = self.converter.create_to_active_model(data)?;
+        info!("active_model: {:?}", active_model);
         // 插入数据库
         let model = active_model.insert(&tx).await.map_err(AppError::from)?;
-        info!("insert");
 
         // 记录日志
         let record_id = self.converter.primary_key_to_string(&model);

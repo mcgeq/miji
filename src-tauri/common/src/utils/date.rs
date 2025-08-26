@@ -104,6 +104,14 @@ impl DateUtils {
         DateTime::parse_from_str(datetime_str, fmt).map(|dt| dt.with_timezone(&Utc))
     }
 
+    pub fn parse_rfc3339_to_local(dt: Option<String>) -> Option<DateTime<Local>> {
+        dt.and_then(|f| {
+            DateTime::parse_from_rfc3339(&f)
+                .ok()
+                .map(|dt| dt.with_timezone(&Local))
+        })
+    }
+
     /// 获取本周开始时间（周一）
     pub fn start_of_week(zone: &str) -> NaiveDateTime {
         let now = match zone.to_uppercase().as_str() {
@@ -220,7 +228,7 @@ impl DateUtils {
         let abs_days = days.abs();
 
         while days_added < abs_days {
-            result = result + Duration::days(direction);
+            result += Duration::days(direction);
             let weekday = result.weekday();
             if weekday != Weekday::Sat && weekday != Weekday::Sun {
                 days_added += 1;
@@ -229,7 +237,6 @@ impl DateUtils {
 
         result
     }
-
     /// 计算两个日期之间的天数差
     pub fn days_between(start: NaiveDateTime, end: NaiveDateTime) -> i64 {
         (end.date() - start.date()).num_days()

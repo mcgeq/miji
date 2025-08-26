@@ -41,10 +41,10 @@ impl MigrationTrait for Migration {
                         ColumnDef::new(Users::Role)
                             .string()
                             .not_null()
-                            .default("Users")
+                            .default("User")
                             .check(Expr::col(Users::Role).is_in(vec![
                                 "Admin",
-                                "Users",
+                                "User",
                                 "Moderator",
                                 "Editor",
                                 "Guest",

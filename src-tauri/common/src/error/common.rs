@@ -2,6 +2,7 @@ use crate::{BusinessCode, error::EnvError};
 use sea_orm::DbErr;
 use serde_json::Value;
 use snafu::{Backtrace, GenerateImplicitData};
+use tracing::{debug, error, info};
 use validator::ValidationErrors;
 
 /// 业务错误特征
@@ -32,7 +33,9 @@ pub struct AppError(Box<dyn ErrorExt>);
 impl AppError {
     /// 创建新错误
     pub fn new<E: ErrorExt + 'static>(error: E) -> Self {
-        AppError(Box::new(error))
+        let err = AppError(Box::new(error));
+        error!("New error created: {:?}", err);
+        err
     }
 
     /// 获取内部错误
@@ -42,6 +45,8 @@ impl AppError {
 
     /// 创建简单的业务错误
     pub fn simple(code: BusinessCode, message: impl Into<String>) -> Self {
+        let msg = message.into();
+        info!("SimpleError: code={}, message={}", code.as_str(), msg);
         struct SimpleError {
             code: BusinessCode,
             message: String,
@@ -70,10 +75,7 @@ impl AppError {
             }
         }
 
-        AppError::new(SimpleError {
-            code,
-            message: message.into(),
-        })
+        AppError::new(SimpleError { code, message: msg })
     }
 
     /// 创建验证错误
@@ -82,6 +84,13 @@ impl AppError {
         message: impl Into<String>,
         errors: Option<Value>,
     ) -> Self {
+        let msg = message.into();
+        error!(
+            "Validation failed: code={}, message={}, errors={:?}",
+            code.as_str(),
+            msg,
+            errors
+        );
         struct ValidationError {
             code: BusinessCode,
             message: String,
@@ -118,13 +127,14 @@ impl AppError {
 
         AppError::new(ValidationError {
             code,
-            message: message.into(),
+            message: msg,
             errors,
         })
     }
 
     /// 从验证错误创建
     pub fn from_validation_errors(errors: ValidationErrors) -> Self {
+        debug!("Converting ValidationErrors: {:?}", errors);
         let message = "Validation failed";
         let code = BusinessCode::ValidationError;
 
@@ -158,6 +168,8 @@ impl AppError {
 
     /// 创建内部服务器错误
     pub fn internal_server_error(message: impl Into<String>) -> Self {
+        let msg = message.into();
+        error!("Internal server error: {}", msg);
         struct InternalServerError {
             code: BusinessCode,
             message: String,
@@ -192,7 +204,7 @@ impl AppError {
 
         AppError::new(InternalServerError {
             code: BusinessCode::SystemError,
-            message: message.into(),
+            message: msg,
         })
     }
 }
@@ -311,29 +323,32 @@ impl ErrorExt for CommonError {
 // 实现 From 转换
 impl From<DbErr> for AppError {
     fn from(error: DbErr) -> Self {
-        println!("{:?}", error);
-        CommonError::Database {
+        let common = CommonError::Database {
             source: error,
             backtrace: snafu::Backtrace::generate(),
             context: None,
-        }
-        .into()
+        };
+        error!("Database error: {:?}", common);
+        common.into()
     }
 }
 
 impl From<std::io::Error> for AppError {
     fn from(error: std::io::Error) -> Self {
-        CommonError::File {
-            path: "".to_string(), // 实际使用中应替换为实际路径
+        let common = CommonError::File {
+            path: "".to_string(),
             source: error,
             backtrace: snafu::Backtrace::generate(),
-        }
-        .into()
+        };
+        error!("File IO error: {:?}", common);
+        common.into()
     }
 }
 
 impl From<ValidationErrors> for AppError {
     fn from(errors: ValidationErrors) -> Self {
-        AppError::from_validation_errors(errors)
+        let app_error = AppError::from_validation_errors(errors);
+        debug!("ValidationErrors converted: {:?}", app_error);
+        app_error
     }
 }

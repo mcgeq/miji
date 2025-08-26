@@ -3,17 +3,16 @@ use common::{
     BusinessCode,
     error::AppError,
     utils::{
+        date::DateUtils,
         serde_helper::{deserialize_bool_as_i32, serialize_i32_as_bool},
         uuid::McgUuid,
     },
 };
 use sea_orm::ActiveValue;
 use serde::{Deserialize, Serialize};
-use tracing::info;
 use validator::Validate;
 
 #[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
 pub enum UserStatus {
     Active,
     Inactive,
@@ -24,7 +23,6 @@ pub enum UserStatus {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
 pub enum UserRole {
     Admin,
     User,
@@ -36,7 +34,6 @@ pub enum UserRole {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
 pub enum MemberUserRole {
     Owner,
     Admin,
@@ -60,7 +57,7 @@ pub struct User {
     pub email: String,
     pub phone: Option<String>,
     pub avatar_url: Option<String>,
-    pub last_login_at: DateTime<Local>,
+    pub last_login_at: Option<DateTime<Local>>,
     pub is_verified: bool,
     pub role: UserRole,
     pub status: UserStatus,
@@ -136,17 +133,11 @@ impl From<entity::users::Model> for User {
             email: model.email,
             phone: model.phone,
             avatar_url: model.avatar_url,
-            last_login_at: chrono::DateTime::parse_from_rfc3339(&model.last_login_at.unwrap())
-                .map(|dt| dt.with_timezone(&Local))
-                .unwrap_or(chrono::Local::now()),
+            last_login_at: DateUtils::parse_rfc3339_to_local(model.last_login_at),
             is_verified: model.is_verified != 0,
             role: serde_json::from_str(&model.role).unwrap_or(UserRole::User),
             status: serde_json::from_str(&model.status).unwrap_or(UserStatus::Active),
-            email_verified_at: model.email_verified_at.map(|dt| {
-                chrono::DateTime::parse_from_rfc3339(&dt)
-                    .map(|dt| dt.with_timezone(&Local))
-                    .unwrap_or(chrono::Local::now())
-            }),
+            email_verified_at: DateUtils::parse_rfc3339_to_local(model.email_verified_at),
             phone_verified_at: model.phone_verified_at.map(|dt| {
                 chrono::DateTime::parse_from_rfc3339(&dt)
                     .map(|dt| dt.with_timezone(&Local))
@@ -155,24 +146,10 @@ impl From<entity::users::Model> for User {
             bio: model.bio,
             language: model.language,
             timezone: model.timezone,
-            last_active_at: model.last_active_at.map(|dt| {
-                chrono::DateTime::parse_from_rfc3339(&dt)
-                    .map(|dt| dt.with_timezone(&Local))
-                    .unwrap_or(chrono::Local::now())
-            }),
-            deleted_at: model.deleted_at.map(|dt| {
-                chrono::DateTime::parse_from_rfc3339(&dt)
-                    .map(|dt| dt.with_timezone(&Local))
-                    .unwrap_or(chrono::Local::now())
-            }),
-            created_at: chrono::DateTime::parse_from_rfc3339(&model.created_at)
-                .map(|dt| dt.with_timezone(&Local))
-                .unwrap_or(chrono::Local::now()),
-            updated_at: model.updated_at.map(|dt| {
-                chrono::DateTime::parse_from_rfc3339(&dt)
-                    .map(|dt| dt.with_timezone(&Local))
-                    .unwrap_or(chrono::Local::now())
-            }),
+            last_active_at: DateUtils::parse_rfc3339_to_local(model.last_active_at),
+            deleted_at: DateUtils::parse_rfc3339_to_local(model.deleted_at),
+            created_at: DateUtils::parse_rfc3339_to_local(Some(model.created_at)).unwrap(),
+            updated_at: DateUtils::parse_rfc3339_to_local(model.updated_at),
         }
     }
 }
