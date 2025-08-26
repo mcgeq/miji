@@ -1,5 +1,8 @@
-use common::{crud::hooks::Hooks, error::MijiResult};
-use sea_orm::{DatabaseTransaction, prelude::async_trait::async_trait};
+use common::{crud::hooks::Hooks, error::MijiResult, utils::date::DateUtils};
+use entity::family_member;
+use sea_orm::{
+    ActiveModelTrait, ActiveValue::Set, DatabaseTransaction, prelude::async_trait::async_trait,
+};
 
 use crate::dto::users::{CreateUserDto, UpdateUserDto};
 
@@ -17,9 +20,19 @@ impl Hooks<entity::users::Entity, CreateUserDto, UpdateUserDto> for UserHooks {
 
     async fn after_create(
         &self,
-        _tx: &DatabaseTransaction,
-        _model: &entity::users::Model,
+        tx: &DatabaseTransaction,
+        model: &entity::users::Model,
     ) -> MijiResult<()> {
+        let family_member_model = family_member::ActiveModel {
+            serial_num: Set(model.serial_num.clone()),
+            name: Set(model.name.clone()),
+            role: Set("Admin".to_string()),
+            is_primary: Set(0),
+            permissions: Set("".to_string()),
+            created_at: Set(DateUtils::local_rfc3339()),
+            updated_at: Set(None),
+        };
+        family_member_model.insert(tx).await?;
         Ok(())
     }
 

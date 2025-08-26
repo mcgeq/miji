@@ -106,16 +106,6 @@ export async function register(
 
     const result = await invokeCommand<User>('create_user', { data: user });
 
-    const familyMember: FamilyMember = {
-      serialNum: result.serialNum,
-      name: result.name,
-      role: 'Admin',
-      isPrimary: false,
-      permissions: '',
-      createdAt: result.createdAt,
-    };
-    await MoneyDb.createFamilyMember(familyMember);
-
     if (rememberMe) {
       const tokenResponse = await invokeCommand<TokenResponse>(
         'generate_token',
