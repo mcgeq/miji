@@ -4,7 +4,6 @@ use common::{
     error::AppError,
     utils::{
         date::DateUtils,
-        serde_helper::{deserialize_bool_as_i32, serialize_i32_as_bool},
         uuid::McgUuid,
     },
 };
@@ -84,12 +83,7 @@ pub struct CreateUserDto {
     #[validate(length(min = 8))]
     pub password: String,
     pub avatar_url: Option<String>,
-    #[validate(range(min = 0, max = 1))]
-    #[serde(
-        serialize_with = "serialize_i32_as_bool",
-        deserialize_with = "deserialize_bool_as_i32"
-    )]
-    pub is_verified: i32,
+        pub is_verified: bool,
     pub role: String,
     pub status: String,
     pub bio: Option<String>,
@@ -108,8 +102,7 @@ pub struct UpdateUserDto {
     #[validate(length(min = 8))]
     pub password: Option<String>,
     pub avatar_url: Option<String>,
-    #[validate(range(min = 0, max = 1))]
-    pub is_verified: Option<i32>,
+    pub is_verified: Option<bool>,
     pub role: Option<String>,
     pub status: Option<String>,
     pub bio: Option<String>,
@@ -133,7 +126,7 @@ impl From<entity::users::Model> for User {
             phone: model.phone,
             avatar_url: model.avatar_url,
             last_login_at: DateUtils::parse_rfc3339_to_local(model.last_login_at),
-            is_verified: model.is_verified != 0,
+            is_verified: model.is_verified,
             role: serde_json::from_str(&model.role).unwrap_or(UserRole::User),
             status: serde_json::from_str(&model.status).unwrap_or(UserStatus::Active),
             email_verified_at: DateUtils::parse_rfc3339_to_local(model.email_verified_at),

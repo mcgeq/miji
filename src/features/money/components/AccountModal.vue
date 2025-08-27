@@ -9,10 +9,10 @@ import { DateUtils } from '@/utils/date';
 import { Lg } from '@/utils/debugLog';
 import { toast } from '@/utils/toast';
 import type { Currency } from '@/schema/common';
-import type { AccountResponseWithRelations, CreateAccountRequest, UpdateAccountRequest } from '@/schema/money';
+import type { Account, CreateAccountRequest, UpdateAccountRequest } from '@/schema/money';
 
 interface Props {
-  account: AccountResponseWithRelations | null;
+  account: Account | null;
 }
 
 interface User {
@@ -22,7 +22,7 @@ interface User {
 }
 
 const props = defineProps<Props>();
-const emit = defineEmits(['close', 'save']);
+const emit = defineEmits(['close', 'save', 'update']);
 const { t } = useI18n();
 
 // 响应式数据
@@ -76,7 +76,7 @@ async function loadCurrencies() {
 loadCurrencies();
 
 // 默认账户
-const defaultAccount: AccountResponseWithRelations = props.account || {
+const defaultAccount: Account = props.account || {
   serialNum: '',
   name: '',
   description: '',
@@ -98,7 +98,7 @@ const defaultAccount: AccountResponseWithRelations = props.account || {
 };
 
 // 初始化表单
-const form = reactive<AccountResponseWithRelations>({
+const form = reactive<Account>({
   ...defaultAccount,
   ...(props.account ? JSON.parse(JSON.stringify(props.account)) : {}),
 });
@@ -143,14 +143,13 @@ async function saveAccount() {
     const requestData: CreateAccountRequest | UpdateAccountRequest = isUpdate
       ? {
           ...commonRequestFields,
-          serialNum: props.account.serialNum,
         }
       : commonRequestFields;
 
     const schemaToUse = isUpdate ? UpdateAccountRequestSchema : CreateAccountRequestSchema;
 
     const validationRequest = schemaToUse.safeParse(requestData);
-    
+
     if (!validationRequest.success) {
       toast.error('数据校验失败');
       Lg.e('AccountModal', validationRequest.error);
@@ -158,7 +157,11 @@ async function saveAccount() {
       return;
     }
 
-    emit('save', requestData);
+    if (!props.account) {
+      emit('save', requestData);
+    } else {
+      emit('update', props.account.serialNum, requestData);
+    }
     closeModal();
   } catch (err: unknown) {
     toast.error(t('financial.account.saveFailed'));
@@ -168,7 +171,7 @@ async function saveAccount() {
   }
 }
 
-function buildCommonRequestFields(form: AccountResponseWithRelations) {
+function buildCommonRequestFields(form: Account) {
   return {
     name: form.name,
     description: form.description,

@@ -9,7 +9,7 @@ import type {
   PageQuery,
 } from '@/schema/common';
 import type {
-  AccountResponseWithRelations,
+  Account,
   CreateAccountRequest,
   UpdateAccountRequest,
 } from '@/schema/money';
@@ -32,59 +32,44 @@ export interface AccountFilters {
 export class AccountMapper extends BaseMapper<
   CreateAccountRequest,
   UpdateAccountRequest,
-  AccountResponseWithRelations
+  Account
 > {
   protected tableName = 'account';
   protected entityName = 'Account';
 
-  async create(
-    account: CreateAccountRequest,
-  ): Promise<AccountResponseWithRelations> {
+  async create(account: CreateAccountRequest): Promise<Account> {
     try {
-      return await invokeCommand<AccountResponseWithRelations>(
-        'create_account',
-        { data: account },
-      );
+      return await invokeCommand<Account>('create_account', { data: account });
     } catch (error) {
       this.handleError('create', error);
     }
   }
 
-  async getById(
-    serialNum: string,
-  ): Promise<AccountResponseWithRelations | null> {
+  async getById(serialNum: string): Promise<Account | null> {
     try {
-      const account = await invokeCommand<AccountResponseWithRelations>(
-        'get_account',
-        {
-          serialNum,
-        },
-      );
+      const account = await invokeCommand<Account>('get_account', {
+        serialNum,
+      });
       return account;
     } catch (error) {
       this.handleError('getById', error);
     }
   }
 
-  async list(): Promise<AccountResponseWithRelations[]> {
+  async list(): Promise<Account[]> {
     try {
-      return await invokeCommand<AccountResponseWithRelations[]>(
-        'list_accounts',
-        { filter: {} },
-      );
+      return await invokeCommand<Account[]>('list_accounts', { filter: {} });
     } catch (error) {
       this.handleError('list', error);
     }
   }
 
-  async update(
-    account: UpdateAccountRequest,
-  ): Promise<AccountResponseWithRelations> {
+  async update(account: UpdateAccountRequest): Promise<Account> {
     try {
-      const result = await invokeCommand<AccountResponseWithRelations>(
-        'update_account',
-        { serialNum: account.serialNum, data: account },
-      );
+      const result = await invokeCommand<Account>('update_account', {
+        serialNum: account.serialNum,
+        data: account,
+      });
       Lg.d('MoneyDb', 'Account updated:', account.serialNum);
       return result;
     } catch (error) {
@@ -95,12 +80,11 @@ export class AccountMapper extends BaseMapper<
   async updateAccountActive(
     serialNum: string,
     isActive: boolean,
-  ): Promise<AccountResponseWithRelations> {
+  ): Promise<Account> {
     try {
-      const account = await invokeCommand<AccountResponseWithRelations>(
-        'update_account_active',
-        { isActive },
-      );
+      const account = await invokeCommand<Account>('update_account_active', {
+        isActive,
+      });
       Lg.d('MoneyDb', 'Account isActive updated:', { serialNum, isActive });
       return account;
     } catch (error) {
@@ -123,9 +107,9 @@ export class AccountMapper extends BaseMapper<
       sortOptions: {},
       filter: {},
     },
-  ): Promise<PagedResult<AccountResponseWithRelations>> {
+  ): Promise<PagedResult<Account>> {
     try {
-      const result = invokeCommand<PagedResult<AccountResponseWithRelations>>(
+      const result = invokeCommand<PagedResult<Account>>(
         'list_accounts_paged_with_relations',
         { query },
       );

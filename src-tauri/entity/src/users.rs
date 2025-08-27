@@ -17,7 +17,8 @@ pub struct Model {
     pub password: String,
     pub avatar_url: Option<String>,
     pub last_login_at: Option<String>,
-    pub is_verified: i32,
+    #[sea_orm(column_type = "Integer")]
+    pub is_verified: bool,
     pub role: String,
     pub status: String,
     pub email_verified_at: Option<String>,

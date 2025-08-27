@@ -305,7 +305,7 @@ pub fn convert_to_account(
         Option<entity::family_member::Model>,
     )>,
 ) -> Vec<AccountResponseWithRelations> {
-    let rows = paged
+    paged
         .rows
         .into_iter()
         .map(|(account, currency, owner)| AccountResponseWithRelations {
@@ -334,8 +334,7 @@ pub fn convert_to_account(
             created_at: account.created_at,
             updated_at: account.updated_at,
         })
-        .collect();
-    return rows;
+        .collect()
 }
 
 pub fn convert_to_response(

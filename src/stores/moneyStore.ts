@@ -10,7 +10,6 @@ import { uuid } from '@/utils/uuid';
 import type { Category, IncomeExpense, TransactionType } from '@/schema/common';
 import type {
   Account,
-  AccountResponseWithRelations,
   BilReminder,
   Budget,
   CreateAccountRequest,
@@ -213,7 +212,7 @@ export const useMoneyStore = defineStore('money', () => {
 
   const createAccount = async (
     account: CreateAccountRequest,
-  ): Promise<AccountResponseWithRelations> => {
+  ): Promise<Account> => {
     loading.value = true;
     error.value = null;
     try {
@@ -235,7 +234,7 @@ export const useMoneyStore = defineStore('money', () => {
 
   const updateAccount = async (
     account: UpdateAccountRequest,
-  ): Promise<AccountResponseWithRelations> => {
+  ): Promise<Account> => {
     loading.value = true;
     error.value = null;
 

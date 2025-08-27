@@ -79,11 +79,6 @@ const accounts = ref<Account[]>([]);
 const budgets = ref<Budget[]>([]);
 const reminders = ref<BilReminder[]>([]);
 
-// const totalAssets = computed(() => {
-//   return accounts.value
-//     .filter(account => account.isActive)
-//     .reduce((sum, account) => sum + Number.parseFloat(account.balance), 0);
-// });
 const totalAssets = ref(0);
 const yearlyIncome = ref(0);
 const yearlyExpense = ref(0);
@@ -424,18 +419,28 @@ function closeAccountModal() {
   selectedAccount.value = null;
 }
 
-async function saveAccount(account: CreateAccountRequest | UpdateAccountRequest) {
+async function saveAccount(account: CreateAccountRequest) {
+  try {
+    await moneyStore.createAccount(account);
+    toast.success('添加成功');
+    closeAccountModal();
+    loadAccounts();
+    await syncAccountBalanceSummary();
+  } catch (err) {
+    Lg.e('saveAccount', err);
+    toast.error('保存失败');
+  }
+}
+
+async function updateAccount(serialNum: string, account: UpdateAccountRequest) {
   try {
     if (selectedAccount.value && isUpdateAccountRequest(account)) {
       await moneyStore.updateAccount(account);
       toast.success('更新成功');
-    } else {
-      await moneyStore.createAccount(account);
-      toast.success('添加成功');
+      closeAccountModal();
+      loadAccounts();
+      await syncAccountBalanceSummary();
     }
-    closeAccountModal();
-    loadAccounts();
-    await syncAccountBalanceSummary();
   } catch (err) {
     Lg.e('saveAccount', err);
     toast.error('保存失败');
@@ -742,7 +747,7 @@ onMounted(async () => {
       @save-transfer="saveTransfer"
     />
 
-    <AccountModal v-if="showAccount" :account="selectedAccount" @close="closeAccountModal" @save="saveAccount" />
+    <AccountModal v-if="showAccount" :account="selectedAccount" @close="closeAccountModal" @save="saveAccount" @update="updateAccount" />
 
     <BudgetModal v-if="showBudget" :budget="selectedBudget" @close="closeBudgetModal" @save="saveBudget" />
 

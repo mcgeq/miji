@@ -485,7 +485,7 @@ impl AccountService {
             .count(db)
             .await
             .map_err(AppError::from)? as usize;
-        let total_pages = (total_count + page_size as usize - 1) / page_size as usize;
+        let total_pages = total_count.div_ceil(page_size as usize);
         let offset = (current_page.saturating_sub(1)).saturating_mul(page_size);
 
         let rows_with_currency = query_builder
