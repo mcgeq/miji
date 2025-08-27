@@ -62,7 +62,6 @@ export async function login(
       serialNum: user.serialNum,
       data: updateUser,
     });
-    console.log('loginUser ', u);
     return u;
   } catch (error) {
     const authError = handleAuthError(error);

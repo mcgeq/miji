@@ -104,4 +104,12 @@ export default antfu({
       'allowTemplateLiterals': 'never'
     }]
   }
+}, {
+  files: ['src/utils/debugLog.ts'],
+  rules: {
+    // 允许 debugLog.ts 中使用指定的 console 方法
+    "no-console": ["error", {
+      "allow": ['info', 'debug', "warn", "error", "log", "group", "groupCollapsed", "table", "trace", 'groupEnd']
+    }]
+  }
 });

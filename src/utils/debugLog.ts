@@ -1,24 +1,30 @@
 // src/utils/debugLog.ts
-type LogType = 'info' | 'warn' | 'error' | 'debug';
+import { debug, error, info, trace, warn } from '@tauri-apps/plugin-log';
+
+type LogType = 'info' | 'warn' | 'error' | 'debug' | 'trace';
 
 // 日志级别优先级
 const levelPriority: Record<LogType, number> = {
-  error: 1,
-  warn: 2,
-  info: 3,
-  debug: 4,
+  trace: 1,
+  error: 2,
+  warn: 3,
+  info: 4,
+  debug: 5,
 };
 
 // 日志类型图标
 const emojiMap: Record<LogType, string> = {
-  info: 'i',
-  warn: '!',
+  trace: '↳',
+  info: 'ℹ',
+  warn: '⚠',
   error: '❌',
   debug: '🐛',
 };
 
 // 日志类型样式，模拟 UnoCSS 风格
 const styleMap: Record<LogType, string> = {
+  trace:
+    'color: #94a3b8; background: #f1f5f9; padding: 4px 8px; border-radius: 4px; font-weight: 500; font-family: monospace;',
   info: 'color: #3b82f6; background: #dbeafe; padding: 4px 8px; border-radius: 4px; font-weight: 500; font-family: monospace;',
   warn: 'color: #f59e0b; background: #fef3c7; padding: 4px 8px; border-radius: 4px; font-weight: 500; font-family: monospace;',
   error:
@@ -34,22 +40,24 @@ const isDebugEnabled =
 const logLevel = (import.meta.env.VITE_LOG_LEVEL as LogType) || 'info';
 
 // 时间戳格式化
-const getTimestamp = (locale: string = 'en-US'): string => {
+function getTimestamp(locale: string = 'en-US'): string {
   const formatter = new Intl.DateTimeFormat(locale, {
     hour12: false,
     hour: '2-digit',
     minute: '2-digit',
     second: '2-digit',
-    // @ts-ignore
+    // @ts-expect-error - 显式说明：fractionalSecondDigits 在现代浏览器中已支持，用于精确到毫秒的时间戳
     fractionalSecondDigits: 3,
   });
   return formatter.format(new Date());
-};
+}
 
 // 数据格式化
-const formatData = (
-  data: unknown,
-): { formatted: string; isObject: boolean; isTableFriendly: boolean } => {
+function formatData(data: unknown): {
+  formatted: string;
+  isObject: boolean;
+  isTableFriendly: boolean;
+} {
   if (data == null) {
     return { formatted: String(data), isObject: false, isTableFriendly: false };
   }
@@ -86,13 +94,13 @@ const formatData = (
   }
 
   return { formatted: String(data), isObject: false, isTableFriendly: false };
-};
+}
 
 // 核心日志函数
 function debugLog(
   label: string,
   type: LogType = 'info',
-  args: unknown[],
+  args: any[],
   options: {
     locale?: string;
     collapse?: boolean;
@@ -102,58 +110,86 @@ function debugLog(
 ) {
   if (!isDebugEnabled || levelPriority[type] > levelPriority[logLevel]) return;
 
-  const emoji = emojiMap[type] ?? 'i';
-  const style =
-    styleMap[type] ??
-    'color: gray; padding: 4px 8px; border-radius: 4px; font-family: monospace;';
+  const emoji = emojiMap[type]!;
+  const style = styleMap[type]!;
   const timestamp = getTimestamp(options.locale);
   const category = options.category ? `${options.category.toUpperCase()}/` : '';
-  const prefix = `%c${emoji} [${category}${label.toUpperCase()}] ${timestamp}`;
+  const prefix = `%c[${timestamp}] ${emoji} ${category}${label.toUpperCase()}`;
 
-  const groupFn = options.collapse ? console.groupCollapsed : console.group;
-  groupFn(prefix, style);
-
-  for (const item of args) {
-    if (item instanceof Promise) {
-      item
-        .then((resolved) => debugLog(label, type, [resolved], options))
-        .catch((err) => debugLog(label, 'error', [err], options));
-      continue;
-    }
-
-    const { formatted, isObject, isTableFriendly } = formatData(item);
-    const output = options.formatter ? options.formatter(item) : formatted;
-
-    if (isObject && isTableFriendly && item != null) {
-      console.table(item);
-    } else {
-      console[type](
-        `%c${output}`,
-        'font-family: monospace; white-space: pre-wrap; padding-left: 8px;',
-      );
-    }
+  // ------------------------------
+  // 1. 调用 tauri-plugin-log 输出日志（核心）
+  // ------------------------------
+  // 直接传递原始参数（tauri 支持多参数和对象格式化）
+  switch (type) {
+    case 'trace':
+      trace(prefix, ...args);
+      break;
+    case 'debug':
+      debug(prefix, ...args);
+      break;
+    case 'info':
+      info(prefix, ...args);
+      break;
+    case 'warn':
+      warn(prefix, ...args);
+      break;
+    case 'error':
+      error(prefix, ...args);
+      break;
   }
+  // ------------------------------
+  // 2. 保留原有 console 样式输出（开发环境专属）
+  // ------------------------------
+  if (import.meta.env.DEV) {
+    const groupFn = options.collapse ? console.groupCollapsed : console.group;
+    groupFn(prefix, style);
 
-  if (type === 'error' || type === 'debug') {
+    // 遍历参数并输出（支持对象展开和表格）
+    args.forEach(item => {
+      const { formatted, isObject } = formatData(item);
+
+      if (isObject && item != null) {
+        // 对象/数组使用 console.table 展示
+        if (Array.isArray(item)) {
+          console.table(item);
+        } else {
+          console.table({ [label]: item }); // 包装为对象便于表格展示
+        }
+      } else {
+        // 基础类型使用带样式的 console 输出
+        console[type](
+          `%c${formatted}`,
+          'font-family: monospace; white-space: pre-wrap; padding-left: 8px;',
+        );
+      }
+    });
+
+    // 错误/调试日志附加堆栈跟踪
+    if (type === 'error' || type === 'debug') {
+      console.groupCollapsed(
+        '%cStack Trace',
+        'color: #6b7280; font-size: 0.8em;',
+      );
+      console.trace();
+      console.groupEnd();
+    }
+
+    // 环境信息（模式、Node 版本）
     console.groupCollapsed(
-      '%cStack Trace',
-      'color: #6b7280; font-size: 0.9em; font-family: monospace;',
+      '%cEnvironment',
+      'color: #6b7280; font-size: 0.8em;',
     );
-    console.trace();
+    console.log(`%cMode: ${import.meta.env.MODE}`, 'color: #6b7280;');
+    // const isNodeEnv = typeof window === 'undefined';
+    // if (isNodeEnv) {
+    //   if (process?.version) {
+    //     console.log(`%cNode: ${process.version}`, 'color: #6b7280;');
+    //   }
+    // }
+    console.groupEnd();
+
     console.groupEnd();
   }
-
-  console.groupCollapsed(
-    '%cEnvironment',
-    'color: #6b7280; font-size: 0.9em; font-family: monospace;',
-  );
-  console.log(`%cMode: ${import.meta.env.MODE}`, 'color: #6b7280;');
-  if (typeof process !== 'undefined' && process.version) {
-    console.log(`%cNode: ${process.version}`, 'color: #6b7280;');
-  }
-  console.groupEnd();
-
-  console.groupEnd();
 }
 
 // 快捷调用
