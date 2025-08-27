@@ -566,12 +566,8 @@ function handleCardChange(index: number, card: any) {
   Lg.d('handleCardChange', '卡片切换:', index, card.title);
 }
 
-function handleCardClick(_index: number, card: any) {
+function handleCardClick(_index: number, _card: any) {
   // 如果有模态框打开，不执行任何操作
-  if (hasModalOpen.value) {
-    return;
-  }
-  Lg.i('MoneyView', card);
 }
 
 async function syncIncomeExpense() {

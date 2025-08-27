@@ -1,6 +1,7 @@
 import { createStore } from '@tauri-store/vue';
 import { defineStore } from 'pinia';
 import { verifyToken } from '@/services/auth';
+import { Lg } from '@/utils/debugLog';
 import { toAuthUser } from '../utils/user';
 import type { AuthUser, TokenResponse, User } from '@/schema/user';
 
@@ -127,7 +128,7 @@ export const useAuthStore = defineStore('auth', () => {
 
       return true;
     } catch (error) {
-      console.error('Logout failed:', error);
+      Lg.e('Auth', 'Logout failed:', error);
       throw error;
     } finally {
       isLoading.value = false;
@@ -171,7 +172,7 @@ export const useAuthStore = defineStore('auth', () => {
       }
       return result;
     } catch (error) {
-      console.error('Auth check failed:', error);
+      Lg.e('Auth', 'Auth check failed:', error);
       return false;
     }
   };
@@ -224,7 +225,7 @@ export const useAuthStore = defineStore('auth', () => {
 
       return updatedUserData;
     } catch (error) {
-      console.error('更新用户资料错误:', error);
+      Lg.e('Auth', '更新用户资料错误:', error);
       throw error;
     } finally {
       isLoading.value = false;
@@ -263,7 +264,7 @@ export const useAuthStore = defineStore('auth', () => {
 
       return avatarUrl;
     } catch (error) {
-      console.error('上传头像错误:', error);
+      Lg.e('Auth', '上传头像错误:', error);
       throw error;
     } finally {
       isLoading.value = false;
@@ -301,7 +302,7 @@ export const useAuthStore = defineStore('auth', () => {
 
       return true;
     } catch (error) {
-      console.error('邮箱验证错误:', error);
+      Lg.e('Auth', '邮箱验证错误:', error);
       throw error;
     } finally {
       isLoading.value = false;
@@ -331,7 +332,7 @@ export const useAuthStore = defineStore('auth', () => {
 
       return true;
     } catch (error) {
-      console.error('发送邮箱验证错误:', error);
+      Lg.e('Auth', '发送邮箱验证错误:', error);
       throw error;
     } finally {
       isLoading.value = false;
@@ -369,7 +370,7 @@ export const useAuthStore = defineStore('auth', () => {
 
       return true;
     } catch (error) {
-      console.error('修改密码错误:', error);
+      Lg.e('Auth', '修改密码错误:', error);
       throw error;
     } finally {
       isLoading.value = false;
