@@ -2,10 +2,11 @@ use common::{crud::hooks::Hooks, error::MijiResult};
 use sea_orm::{DatabaseTransaction, prelude::async_trait::async_trait};
 
 use crate::dto::account::{CreateAccountRequest, UpdateAccountRequest};
-
+/// 空操作钩子
+pub struct AccountHooks;
 /// 账户操作钩子
 #[async_trait]
-impl Hooks<entity::account::Entity, CreateAccountRequest, UpdateAccountRequest> for NoOpHooks {
+impl Hooks<entity::account::Entity, CreateAccountRequest, UpdateAccountRequest> for AccountHooks {
     async fn before_create(
         &self,
         _tx: &DatabaseTransaction,
@@ -56,5 +57,4 @@ impl Hooks<entity::account::Entity, CreateAccountRequest, UpdateAccountRequest> 
     }
 }
 
-/// 空操作钩子
-pub struct NoOpHooks;
+

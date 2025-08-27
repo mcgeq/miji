@@ -435,7 +435,7 @@ async function saveAccount(account: CreateAccountRequest) {
 async function updateAccount(serialNum: string, account: UpdateAccountRequest) {
   try {
     if (selectedAccount.value && isUpdateAccountRequest(account)) {
-      await moneyStore.updateAccount(account);
+      await moneyStore.updateAccount(serialNum, account);
       toast.success('更新成功');
       closeAccountModal();
       loadAccounts();
