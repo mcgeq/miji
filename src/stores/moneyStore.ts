@@ -7,6 +7,7 @@ import { MoneyDbError } from '@/services/money/baseManager';
 import { MoneyDb } from '@/services/money/money';
 import { invokeCommand } from '@/types/api';
 import { DateUtils } from '@/utils/date';
+import { Lg } from '@/utils/debugLog';
 import { uuid } from '@/utils/uuid';
 import type { Category, IncomeExpense, TransactionType } from '@/schema/common';
 import type {
@@ -217,9 +218,7 @@ export const useMoneyStore = defineStore('money', () => {
     loading.value = true;
     error.value = null;
     try {
-      const result = await invokeCommand<Account>('create_account', {
-        data: account,
-      });
+      const result = await MoneyDb.createAccount(account);
       await updateLocalAccounts();
       return result;
     } catch (err) {
@@ -487,12 +486,12 @@ export const useMoneyStore = defineStore('money', () => {
 
       const fromTrans =
         relatedTransactions[0].transactionType ===
-        TransactionTypeSchema.enum.Expense
+          TransactionTypeSchema.enum.Expense
           ? relatedTransactions[0]
           : relatedTransactions[1];
       const toTrans =
         relatedTransactions[0].transactionType ===
-        TransactionTypeSchema.enum.Income
+          TransactionTypeSchema.enum.Income
           ? relatedTransactions[0]
           : relatedTransactions[1];
 
@@ -612,12 +611,12 @@ export const useMoneyStore = defineStore('money', () => {
 
       const fromTrans =
         relatedTransactions[0].transactionType ===
-        TransactionTypeSchema.enum.Expense
+          TransactionTypeSchema.enum.Expense
           ? relatedTransactions[0]
           : relatedTransactions[1];
       const toTrans =
         relatedTransactions[0].transactionType ===
-        TransactionTypeSchema.enum.Income
+          TransactionTypeSchema.enum.Income
           ? relatedTransactions[0]
           : relatedTransactions[1];
 

@@ -4,7 +4,6 @@ use common::{
     paginations::{PagedQuery, PagedResult},
 };
 use tauri::State;
-use tracing::info;
 
 use crate::{
     dto::{
@@ -146,10 +145,8 @@ pub async fn create_account(
     data: CreateAccountRequest,
 ) -> Result<ApiResponse<AccountResponseWithRelations>, String> {
     let service = get_account_service();
-    info!("{:?}", data);
-
     // 先创建账户，然后获取完整信息
-    let result = match service.base().create(&state.db, data).await {
+    let result = match service.create(&state.db, data).await {
         Ok(created_account) => service
             .get_account_with_relations(&state.db, created_account.serial_num)
             .await
@@ -170,11 +167,7 @@ pub async fn update_account(
     let service = get_account_service();
 
     // 先更新账户，然后获取完整信息
-    let result = match service
-        .base()
-        .update(&state.db, serial_num.clone(), data)
-        .await
-    {
+    let result = match service.update(&state.db, serial_num.clone(), data).await {
         Ok(_) => service
             .get_account_with_relations(&state.db, serial_num)
             .await
@@ -193,7 +186,7 @@ pub async fn delete_account(
 ) -> Result<ApiResponse<()>, String> {
     let service = get_account_service();
     Ok(ApiResponse::from_result(
-        service.base().delete(&state.db, serial_num).await,
+        service.delete(&state.db, serial_num).await,
     ))
 }
 

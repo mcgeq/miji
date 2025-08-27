@@ -15,7 +15,7 @@ export const SerialNumSchema = z
 
 export const NameSchema = z
   .string()
-  .min(3, { error: 'Name must be at least 3 characters long' })
+  .min(2, { error: 'Name must be at least 3 characters long' })
   .max(20, { error: 'Name must be no more than 20 characters long' });
 
 export const DescriptionSchema = z.string().max(1000, {

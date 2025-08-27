@@ -10,8 +10,8 @@
 // ----------------------------------------------------------------------------
 
 use sea_orm::{
-    ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, FromQueryResult,
-    IntoActiveModel, PaginatorTrait, PrimaryKeyTrait, QueryFilter, QuerySelect, TransactionTrait,
+    ActiveModelTrait, ColumnTrait, DbConn, EntityTrait, FromQueryResult, IntoActiveModel,
+    PaginatorTrait, PrimaryKeyTrait, QueryFilter, QuerySelect, TransactionTrait,
     prelude::async_trait::async_trait,
 };
 use serde::Serialize;
@@ -41,57 +41,49 @@ where
     U: Validate + Send + Sync,
 {
     // 基础 CRUD 操作
-    async fn create(&self, db: &DatabaseConnection, data: C) -> MijiResult<E::Model>;
+    async fn create(&self, db: &DbConn, data: C) -> MijiResult<E::Model>;
     async fn get_by_id(
         &self,
-        db: &DatabaseConnection,
+        db: &DbConn,
         id: <E::PrimaryKey as PrimaryKeyTrait>::ValueType,
     ) -> MijiResult<E::Model>;
     async fn update(
         &self,
-        db: &DatabaseConnection,
+        db: &DbConn,
         id: <E::PrimaryKey as PrimaryKeyTrait>::ValueType,
         data: U,
     ) -> MijiResult<E::Model>;
     async fn delete(
         &self,
-        db: &DatabaseConnection,
+        db: &DbConn,
         id: <E::PrimaryKey as PrimaryKeyTrait>::ValueType,
     ) -> MijiResult<()>;
 
     // 查询操作
-    async fn list(&self, db: &DatabaseConnection) -> MijiResult<Vec<E::Model>>;
-    async fn list_with_filter(
-        &self,
-        db: &DatabaseConnection,
-        filter: F,
-    ) -> MijiResult<Vec<E::Model>>;
+    async fn list(&self, db: &DbConn) -> MijiResult<Vec<E::Model>>;
+    async fn list_with_filter(&self, db: &DbConn, filter: F) -> MijiResult<Vec<E::Model>>;
     async fn list_paged(
         &self,
-        db: &DatabaseConnection,
+        db: &DbConn,
         query: PagedQuery<F>,
     ) -> MijiResult<PagedResult<E::Model>>;
 
     // 批量操作
-    async fn create_batch(
-        &self,
-        db: &DatabaseConnection,
-        data: Vec<C>,
-    ) -> MijiResult<Vec<E::Model>>;
+    async fn create_batch(&self, db: &DbConn, data: Vec<C>) -> MijiResult<Vec<E::Model>>;
     async fn delete_batch(
         &self,
-        db: &DatabaseConnection,
+        db: &DbConn,
         ids: Vec<<E::PrimaryKey as PrimaryKeyTrait>::ValueType>,
     ) -> MijiResult<u64>;
 
     // 存在性检查
     async fn exists(
         &self,
-        db: &DatabaseConnection,
+        db: &DbConn,
         id: <E::PrimaryKey as PrimaryKeyTrait>::ValueType,
     ) -> MijiResult<bool>;
-    async fn count(&self, db: &DatabaseConnection) -> MijiResult<u64>;
-    async fn count_with_filter(&self, db: &DatabaseConnection, filter: F) -> MijiResult<u64>;
+    async fn count(&self, db: &DbConn) -> MijiResult<u64>;
+    async fn count_with_filter(&self, db: &DbConn, filter: F) -> MijiResult<u64>;
 
     // 可选的钩子方法
     async fn before_create(&self, _data: &C) -> MijiResult<()> {
@@ -197,7 +189,7 @@ where
     Conv: CrudConverter<E, C, U> + Send + Sync,
     H: Hooks<E, C, U> + Send + Sync,
 {
-    async fn create(&self, db: &DatabaseConnection, data: C) -> MijiResult<E::Model> {
+    async fn create(&self, db: &DbConn, data: C) -> MijiResult<E::Model> {
         // 验证数据
         self.validate_data(&data)?;
         let tx = db.begin().await?;
@@ -237,7 +229,7 @@ where
 
     async fn get_by_id(
         &self,
-        db: &DatabaseConnection,
+        db: &DbConn,
         id: <E::PrimaryKey as PrimaryKeyTrait>::ValueType,
     ) -> MijiResult<E::Model> {
         E::find_by_id(id)
@@ -249,7 +241,7 @@ where
 
     async fn update(
         &self,
-        db: &DatabaseConnection,
+        db: &DbConn,
         id: <E::PrimaryKey as PrimaryKeyTrait>::ValueType,
         data: U,
     ) -> MijiResult<E::Model> {
@@ -305,7 +297,7 @@ where
 
     async fn delete(
         &self,
-        db: &DatabaseConnection,
+        db: &DbConn,
         id: <E::PrimaryKey as PrimaryKeyTrait>::ValueType,
     ) -> MijiResult<()> {
         let tx = db.begin().await?;
@@ -347,15 +339,11 @@ where
         Ok(())
     }
 
-    async fn list(&self, db: &DatabaseConnection) -> MijiResult<Vec<E::Model>> {
+    async fn list(&self, db: &DbConn) -> MijiResult<Vec<E::Model>> {
         E::find().all(db).await.map_err(AppError::from)
     }
 
-    async fn list_with_filter(
-        &self,
-        db: &DatabaseConnection,
-        filter: F,
-    ) -> MijiResult<Vec<E::Model>> {
+    async fn list_with_filter(&self, db: &DbConn, filter: F) -> MijiResult<Vec<E::Model>> {
         E::find()
             .filter(filter.to_condition())
             .all(db)
@@ -365,7 +353,7 @@ where
 
     async fn list_paged(
         &self,
-        db: &DatabaseConnection,
+        db: &DbConn,
         query: PagedQuery<F>,
     ) -> MijiResult<PagedResult<E::Model>> {
         // 验证查询参数
@@ -408,11 +396,7 @@ where
         })
     }
 
-    async fn create_batch(
-        &self,
-        db: &DatabaseConnection,
-        data: Vec<C>,
-    ) -> MijiResult<Vec<E::Model>> {
+    async fn create_batch(&self, db: &DbConn, data: Vec<C>) -> MijiResult<Vec<E::Model>> {
         if data.is_empty() {
             return Ok(Vec::new());
         }
@@ -466,7 +450,7 @@ where
 
     async fn delete_batch(
         &self,
-        db: &DatabaseConnection,
+        db: &DbConn,
         ids: Vec<<E::PrimaryKey as PrimaryKeyTrait>::ValueType>,
     ) -> MijiResult<u64> {
         if ids.is_empty() {
@@ -523,18 +507,18 @@ where
 
     async fn exists(
         &self,
-        db: &DatabaseConnection,
+        db: &DbConn,
         id: <E::PrimaryKey as PrimaryKeyTrait>::ValueType,
     ) -> MijiResult<bool> {
         let count = E::find_by_id(id).count(db).await.map_err(AppError::from)?;
         Ok(count > 0)
     }
 
-    async fn count(&self, db: &DatabaseConnection) -> MijiResult<u64> {
+    async fn count(&self, db: &DbConn) -> MijiResult<u64> {
         E::find().count(db).await.map_err(AppError::from)
     }
 
-    async fn count_with_filter(&self, db: &DatabaseConnection, filter: F) -> MijiResult<u64> {
+    async fn count_with_filter(&self, db: &DbConn, filter: F) -> MijiResult<u64> {
         E::find()
             .filter(filter.to_condition())
             .count(db)
@@ -652,16 +636,12 @@ where
     U: Validate + Send + Sync,
 {
     /// 在事务中创建
-    async fn create_in_txn(
-        &self,
-        txn: &sea_orm::DatabaseTransaction,
-        data: C,
-    ) -> MijiResult<E::Model>;
+    async fn create_in_txn(&self, txn: &sea_orm::DbConn, data: C) -> MijiResult<E::Model>;
 
     /// 在事务中更新
     async fn update_in_txn(
         &self,
-        txn: &sea_orm::DatabaseTransaction,
+        txn: &sea_orm::DbConn,
         id: <E::PrimaryKey as PrimaryKeyTrait>::ValueType,
         data: U,
     ) -> MijiResult<E::Model>;
@@ -669,7 +649,7 @@ where
     /// 在事务中删除
     async fn delete_in_txn(
         &self,
-        txn: &sea_orm::DatabaseTransaction,
+        txn: &sea_orm::DbConn,
         id: <E::PrimaryKey as PrimaryKeyTrait>::ValueType,
     ) -> MijiResult<()>;
 }

@@ -1,4 +1,4 @@
-use sea_orm_migration::prelude::*;
+use sea_orm_migration::{prelude::*, sea_orm::prelude::Decimal};
 
 use crate::schema::{Account, Currency, FamilyMember};
 
@@ -46,15 +46,15 @@ impl MigrationTrait for Migration {
                     ))
                     .col(
                         ColumnDef::new(Account::Balance)
-                            .decimal()
+                            .decimal_len(16, 4)
                             .not_null()
-                            .default(0),
+                            .default(Decimal::ZERO),
                     )
                     .col(
                         ColumnDef::new(Account::InitialBalance)
-                            .decimal()
+                            .decimal_len(16, 4)
                             .not_null()
-                            .default(0),
+                            .default(Decimal::ZERO),
                     )
                     .col(ColumnDef::new(Account::Currency).string_len(3).not_null())
                     .col(

@@ -147,7 +147,6 @@ async function saveAccount() {
       : commonRequestFields;
 
     const schemaToUse = isUpdate ? UpdateAccountRequestSchema : CreateAccountRequestSchema;
-
     const validationRequest = schemaToUse.safeParse(requestData);
 
     if (!validationRequest.success) {

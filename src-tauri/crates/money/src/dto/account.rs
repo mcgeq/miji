@@ -3,7 +3,7 @@ use common::{
     utils::{date::DateUtils, uuid::McgUuid},
 };
 use entity::account;
-use sea_orm::{prelude::Decimal, ActiveValue::Set, FromQueryResult};
+use sea_orm::{ActiveValue::Set, FromQueryResult, prelude::Decimal};
 use serde::{Deserialize, Serialize};
 use validator::{Validate, ValidationError};
 
@@ -338,40 +338,36 @@ pub fn convert_to_account(
 }
 
 pub fn convert_to_response(
-    paged: PagedResult<(
-        entity::account::Model,
-        entity::currency::Model,
-        Option<entity::family_member::Model>,
-    )>,
+    paged: PagedResult<AccountWithRelations>,
 ) -> PagedResult<AccountResponseWithRelations> {
     let rows = paged
         .rows
         .into_iter()
-        .map(|(account, currency, owner)| AccountResponseWithRelations {
-            serial_num: account.serial_num,
-            name: account.name,
-            description: account.description,
-            r#type: account.r#type,
-            balance: account.balance,
-            initial_balance: account.initial_balance,
+        .map(|account_with_relations| AccountResponseWithRelations {
+            serial_num: account_with_relations.account.serial_num,
+            name: account_with_relations.account.name,
+            description: account_with_relations.account.description,
+            r#type: account_with_relations.account.r#type,
+            balance: account_with_relations.account.balance,
+            initial_balance: account_with_relations.account.initial_balance,
             currency: CurrencyInfo {
-                code: currency.code,
-                locale: currency.locale,
-                symbol: currency.symbol,
-                created_at: currency.created_at,
-                updated_at: currency.updated_at,
+                code: account_with_relations.currency.code,
+                locale: account_with_relations.currency.locale,
+                symbol: account_with_relations.currency.symbol,
+                created_at: account_with_relations.currency.created_at,
+                updated_at: account_with_relations.currency.updated_at,
             },
-            is_shared: account.is_shared != 0,
-            owner_id: account.owner_id,
-            owner: owner.map(|o| OwnerInfo {
+            is_shared: account_with_relations.account.is_shared != 0,
+            owner_id: account_with_relations.account.owner_id,
+            owner: account_with_relations.owner.map(|o| OwnerInfo {
                 serial_num: o.serial_num,
                 name: o.name,
                 role: Some(o.role),
             }),
-            color: account.color,
-            is_active: account.is_active != 0,
-            created_at: account.created_at,
-            updated_at: account.updated_at,
+            color: account_with_relations.account.color,
+            is_active: account_with_relations.account.is_active != 0,
+            created_at: account_with_relations.account.created_at,
+            updated_at: account_with_relations.account.updated_at,
         })
         .collect();
 
@@ -385,37 +381,31 @@ pub fn convert_to_response(
 }
 
 // Helper function to convert tuple to AccountResponseWithRelations
-pub fn tuple_to_response(
-    (account, currency, owner): (
-        entity::account::Model,
-        entity::currency::Model,
-        Option<entity::family_member::Model>,
-    ),
-) -> AccountResponseWithRelations {
+pub fn tuple_to_response(account_response: AccountWithRelations) -> AccountResponseWithRelations {
     AccountResponseWithRelations {
-        serial_num: account.serial_num,
-        name: account.name,
-        description: account.description,
-        r#type: account.r#type,
-        balance: account.balance,
-        initial_balance: account.initial_balance,
+        serial_num: account_response.account.serial_num,
+        name: account_response.account.name,
+        description: account_response.account.description,
+        r#type: account_response.account.r#type,
+        balance: account_response.account.balance,
+        initial_balance: account_response.account.initial_balance,
         currency: CurrencyInfo {
-            code: currency.code,
-            locale: currency.locale,
-            symbol: currency.symbol,
-            created_at: currency.created_at,
-            updated_at: currency.updated_at,
+            code: account_response.currency.code,
+            locale: account_response.currency.locale,
+            symbol: account_response.currency.symbol,
+            created_at: account_response.currency.created_at,
+            updated_at: account_response.currency.updated_at,
         },
-        is_shared: account.is_shared != 0,
-        owner_id: account.owner_id,
-        owner: owner.map(|o| OwnerInfo {
+        is_shared: account_response.account.is_shared != 0,
+        owner_id: account_response.account.owner_id,
+        owner: account_response.owner.map(|o| OwnerInfo {
             serial_num: o.serial_num,
             name: o.name,
             role: Some(o.role),
         }),
-        color: account.color,
-        is_active: account.is_active != 0,
-        created_at: account.created_at,
-        updated_at: account.updated_at,
+        color: account_response.account.color,
+        is_active: account_response.account.is_active != 0,
+        created_at: account_response.account.created_at,
+        updated_at: account_response.account.updated_at,
     }
 }

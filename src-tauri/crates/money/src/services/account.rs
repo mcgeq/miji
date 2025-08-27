@@ -1,23 +1,24 @@
 use common::{
-    crud::service::{CrudConverter, CrudService, GenericCrudService},
-    error::{AppError, MijiResult}, log::logger::{NoopLogger, OperationLogger},
+    BusinessCode,
+    crud::service::{CrudConverter, CrudService, GenericCrudService, TransactionalCrudService},
+    error::{AppError, MijiResult},
+    log::logger::{NoopLogger, OperationLogger},
     paginations::{DateRange, Filter, PagedQuery, PagedResult},
-    utils::date::DateUtils, BusinessCode
+    utils::date::DateUtils,
 };
-
 use sea_orm::{
-    prelude::{async_trait::async_trait, Decimal},
-    sea_query::{Expr, Func, SimpleExpr }, ActiveModelTrait,
-    ActiveValue::Set, ColumnTrait, Condition, DatabaseConnection,
-    EntityTrait, IntoActiveModel, PaginatorTrait, QueryFilter,
-    QueryOrder, QuerySelect, SelectTwo, TransactionTrait
+    ActiveModelTrait,
+    ActiveValue::Set,
+    ColumnTrait, Condition, DatabaseConnection, DbConn, EntityTrait, IntoActiveModel,
+    PaginatorTrait, QueryFilter, QueryOrder, QuerySelect, SelectTwo,
+    prelude::{Decimal, async_trait::async_trait},
+    sea_query::{Alias, Expr, ExprTrait, Func, SimpleExpr},
 };
 use serde::{Deserialize, Serialize};
-
 use std::sync::Arc;
 use std::{collections::HashMap, str::FromStr};
-use validator::Validate;
 use tracing::info;
+use validator::Validate;
 
 use crate::{
     dto::account::{AccountBalanceSummary, CreateAccountRequest, UpdateAccountRequest},
@@ -25,8 +26,10 @@ use crate::{
 };
 use entity::{
     account::{Column as AccountColumn, Entity as AccountEntity, Model as AccountModel},
-    currency::{Entity as CurrencyEntity, Model as CurrencyModel},
-    family_member::{Column as FamilyMemberColumn, Entity as FamilyMemberEntity, Model as FamilyMemberModel}
+    currency::{Column as CurrencyColumn, Entity as CurrencyEntity, Model as CurrencyModel},
+    family_member::{
+        Column as FamilyMemberColumn, Entity as FamilyMemberEntity, Model as FamilyMemberModel,
+    },
 };
 
 /// 账户过滤器
@@ -42,63 +45,72 @@ pub struct AccountFilter {
     pub updated_at_range: Option<DateRange>,
 }
 
-/// 包含完整关联信息的账户数据结构
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct AccountWithRelations {
-    pub account: entity::account::Model,
-    pub currency: entity::currency::Model,
-    pub owner: Option<entity::family_member::Model>,
-}
-
 impl Filter<entity::account::Entity> for AccountFilter {
     fn to_condition(&self) -> Condition {
         let mut condition = Condition::all();
-
         if let Some(name) = &self.name {
-            condition = condition.add(entity::account::Column::Name.eq(name));
+            condition = condition.add(AccountColumn::Name.eq(Self::sanitize_input(name)));
         }
         if let Some(r#type) = &self.r#type {
-            condition = condition.add(entity::account::Column::Type.eq(r#type));
+            condition = condition.add(AccountColumn::Type.eq(Self::sanitize_input(r#type)));
         }
         if let Some(currency) = &self.currency {
-            condition = condition.add(entity::account::Column::Currency.eq(currency));
+            condition = condition.add(AccountColumn::Currency.eq(Self::sanitize_input(currency)));
         }
         if let Some(is_shared) = self.is_shared {
-            condition = condition.add(entity::account::Column::IsShared.eq(is_shared as i32));
+            condition = condition.add(AccountColumn::IsShared.eq(is_shared as i32));
         }
         if let Some(owner_id) = &self.owner_id {
-            condition = condition.add(entity::account::Column::OwnerId.eq(owner_id));
+            condition = condition.add(AccountColumn::OwnerId.eq(Self::sanitize_input(owner_id)));
         }
         if let Some(is_active) = self.is_active {
-            condition = condition.add(entity::account::Column::IsActive.eq(is_active as i32));
+            condition = condition.add(AccountColumn::IsActive.eq(is_active as i32));
         }
         if let Some(created_range) = &self.created_at_range {
             if let Some(start) = &created_range.start {
-                condition = condition.add(entity::account::Column::CreatedAt.gte(start.clone()));
+                condition = condition.add(AccountColumn::CreatedAt.gte(start.clone()));
             }
             if let Some(end) = &created_range.end {
-                condition = condition.add(entity::account::Column::CreatedAt.lte(end.clone()));
+                condition = condition.add(AccountColumn::CreatedAt.lte(end.clone()));
             }
         }
         if let Some(updated_range) = &self.updated_at_range {
             if let Some(start) = &updated_range.start {
-                condition = condition.add(entity::account::Column::UpdatedAt.gte(start.clone()));
+                condition = condition.add(AccountColumn::UpdatedAt.gte(start.clone()));
             }
             if let Some(end) = &updated_range.end {
-                condition = condition.add(entity::account::Column::UpdatedAt.lte(end.clone()));
+                condition = condition.add(AccountColumn::UpdatedAt.lte(end.clone()));
             }
         }
         condition
     }
 }
 
+impl AccountFilter {
+    /// 输入清理，防止 SQL 注入
+    fn sanitize_input(input: &str) -> String {
+        input
+            .trim()
+            .replace(';', "")
+            .replace("--", "")
+            .replace("/*", "")
+            .replace("*/", "")
+    }
+}
+
+/// 包含完整关联信息的账户数据结构
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AccountWithRelations {
+    pub account: AccountModel,
+    pub currency: CurrencyModel,
+    pub owner: Option<FamilyMemberModel>,
+}
+
 /// 账户转换器
 #[derive(Debug)]
 pub struct AccountConverter;
 
-impl CrudConverter<entity::account::Entity, CreateAccountRequest, UpdateAccountRequest>
-    for AccountConverter
-{
+impl CrudConverter<AccountEntity, CreateAccountRequest, UpdateAccountRequest> for AccountConverter {
     fn create_to_active_model(
         &self,
         data: CreateAccountRequest,
@@ -108,24 +120,20 @@ impl CrudConverter<entity::account::Entity, CreateAccountRequest, UpdateAccountR
 
     fn update_to_active_model(
         &self,
-        model: entity::account::Model,
+        model: AccountModel,
         data: UpdateAccountRequest,
     ) -> MijiResult<entity::account::ActiveModel> {
         entity::account::ActiveModel::try_from(data)
             .map(|mut active_model| {
-                // 保留主键和创建时间等不可变字段
                 active_model.serial_num = Set(model.serial_num.clone());
                 active_model.created_at = Set(model.created_at.clone());
-
-                // 设置更新时间
                 active_model.updated_at = Set(Some(DateUtils::local_rfc3339()));
-
                 active_model
             })
             .map_err(AppError::from_validation_errors)
     }
 
-    fn primary_key_to_string(&self, model: &entity::account::Model) -> String {
+    fn primary_key_to_string(&self, model: &AccountModel) -> String {
         model.serial_num.clone()
     }
 
@@ -134,77 +142,110 @@ impl CrudConverter<entity::account::Entity, CreateAccountRequest, UpdateAccountR
     }
 }
 
-// 账户加载器(关联查询)
+/// 关联加载器 trait
 #[async_trait]
-pub trait AccountLoader {
-    /// Load account currency
-    async fn load_currency(
-        db: &DatabaseConnection,
-        account: &AccountModel
-    ) -> MijiResult<Option<CurrencyModel>>;
-
-    /// Load account owner
-    async fn load_owner(
-        db: &DatabaseConnection,
-        account: &AccountModel,
-    ) -> MijiResult<Option<FamilyMemberModel>>;
-
-    /// 批量获取所有者信息
-    async fn batch_fetch_owners(
-        db: &DatabaseConnection,
-        owner_ids: &[String],
-    ) -> MijiResult<HashMap<String, FamilyMemberModel>>;
+pub trait RelationLoader<E: EntityTrait> {
+    type Model: Send + Sync;
+    async fn load(&self, db: &DbConn, model: &E::Model) -> MijiResult<Option<Self::Model>>;
+    async fn batch_load(
+        &self,
+        db: &DbConn,
+        ids: &[String],
+    ) -> MijiResult<HashMap<String, Self::Model>>;
 }
 
-/// Default Account Load
-pub struct DefaultAccountLoader;
+/// 默认账户加载器
+pub struct CurrencyLoader;
 
 #[async_trait]
-impl AccountLoader for DefaultAccountLoader {
-    async fn load_currency(
-        db: &DatabaseConnection,
-        account: &AccountModel,
-    ) -> MijiResult<Option<CurrencyModel>> {
-        let currency_id = account.currency.clone();
-        CurrencyEntity::find_by_id(currency_id.clone())
+impl RelationLoader<AccountEntity> for CurrencyLoader {
+    type Model = CurrencyModel;
+    async fn load(&self, db: &DbConn, account: &AccountModel) -> MijiResult<Option<CurrencyModel>> {
+        CurrencyEntity::find_by_id(account.currency.clone())
             .one(db)
             .await
-            .map_err(Into::into)
+            .map_err(AppError::from)
     }
 
-    async fn load_owner(
-        db: &DatabaseConnection,
-        account: &AccountModel,
-    ) -> MijiResult<Option<FamilyMemberModel>> {
-        let owner_id = account.owner_id.as_ref().ok_or_else(|| AppError::simple(BusinessCode::NotFound, "Owner ID missing"))?;
-        FamilyMemberEntity::find_by_id(owner_id.clone())
-            .one(db)
-            .await
-            .map_err(Into::into)
-    }
-
-    async fn batch_fetch_owners(
-        db: &DatabaseConnection,
-        owner_ids: &[String],
-    ) -> MijiResult<HashMap<String, FamilyMemberModel>> {
-        if owner_ids.is_empty() {
+    async fn batch_load(
+        &self,
+        db: &DbConn,
+        ids: &[String],
+    ) -> MijiResult<HashMap<String, CurrencyModel>> {
+        if ids.is_empty() {
             return Ok(HashMap::new());
         }
+        const CHUNK_SIZE: usize = 1000;
+        let mut result = HashMap::new();
+        for chunk in ids.chunks(CHUNK_SIZE) {
+            let models = CurrencyEntity::find()
+                .filter(CurrencyColumn::Code.is_in(chunk))
+                .all(db)
+                .await
+                .map_err(AppError::from)?;
+            result.extend(models.into_iter().map(|m| (m.code.clone(), m)));
+        }
+        Ok(result)
+    }
+}
 
-        let owners = FamilyMemberEntity::find()
-            .filter(FamilyMemberColumn::SerialNum.is_in(owner_ids))
-            .all(db)
-            .await?;
+pub struct FamilyMemberLoader;
+#[async_trait]
+impl RelationLoader<FamilyMemberEntity> for FamilyMemberLoader {
+    type Model = FamilyMemberModel;
+    async fn load(
+        &self,
+        db: &DbConn,
+        family_member: &FamilyMemberModel,
+    ) -> MijiResult<Option<FamilyMemberModel>> {
+        FamilyMemberEntity::find_by_id(family_member.serial_num.clone())
+            .one(db)
+            .await
+            .map_err(AppError::from)
+    }
 
-        Ok(owners.into_iter()
-            .map(|owner| (owner.serial_num.clone(), owner))
-            .collect())
+    async fn batch_load(
+        &self,
+        db: &DbConn,
+        ids: &[String],
+    ) -> MijiResult<HashMap<String, FamilyMemberModel>> {
+        if ids.is_empty() {
+            return Ok(HashMap::new());
+        }
+        const CHUNK_SIZE: usize = 1000;
+        let mut result = HashMap::new();
+        for chunk in ids.chunks(CHUNK_SIZE) {
+            let owners = FamilyMemberEntity::find()
+                .filter(FamilyMemberColumn::SerialNum.is_in(chunk))
+                .all(db)
+                .await
+                .map_err(AppError::from)?;
+            result.extend(
+                owners
+                    .into_iter()
+                    .map(|owner| (owner.serial_num.clone(), owner)),
+            );
+        }
+        Ok(result)
+    }
+}
+
+impl FamilyMemberLoader {
+    async fn load_by_id(
+        &self,
+        db: &DbConn,
+        serial_num: &str,
+    ) -> MijiResult<Option<FamilyMemberModel>> {
+        FamilyMemberEntity::find_by_id(AccountFilter::sanitize_input(serial_num))
+            .one(db)
+            .await
+            .map_err(AppError::from)
     }
 }
 
 /// 账户服务类型别名
 pub type BaseAccountService = GenericCrudService<
-    entity::account::Entity,
+    AccountEntity,
     AccountFilter,
     CreateAccountRequest,
     UpdateAccountRequest,
@@ -214,12 +255,11 @@ pub type BaseAccountService = GenericCrudService<
 
 pub struct AccountService {
     inner: BaseAccountService,
-    logger: Arc<dyn OperationLogger>,
 }
 
-/// 账户计算规则（用于总资产计算）
-struct AccountCalculator {
-    name_type: String,
+/// 账户类型配置，用于动态处理 total_assets
+struct AccountTypeConfig {
+    name: &'static str,
     condition: Condition,
     balance_expr: SimpleExpr,
 }
@@ -233,275 +273,326 @@ impl AccountService {
         let lg = logger.unwrap_or_else(|| Arc::new(NoopLogger));
         Self {
             inner: GenericCrudService::new(AccountConverter, AccountHooks, lg.clone()),
-            logger: lg,
         }
+    }
+
+    /// account type configs
+    fn account_type_configs() -> Vec<AccountTypeConfig> {
+        vec![
+            AccountTypeConfig {
+                name: "bank_savings_balance",
+                condition: Condition::all().add(AccountColumn::Type.eq("Savings")),
+                balance_expr: cast_decimal(Expr::col(AccountColumn::Balance)),
+            },
+            AccountTypeConfig {
+                name: "cash_balance",
+                condition: Condition::all().add(AccountColumn::Type.eq("Cash")),
+                balance_expr: cast_decimal(Expr::col(AccountColumn::Balance)),
+            },
+            AccountTypeConfig {
+                name: "credit_card_balance",
+                condition: Condition::all().add(AccountColumn::Type.eq("CreditCard")),
+                balance_expr: cast_decimal(SimpleExpr::FunctionCall(Func::abs(Expr::col(
+                    AccountColumn::Balance,
+                )))),
+            },
+            AccountTypeConfig {
+                name: "investment_balance",
+                condition: Condition::all().add(AccountColumn::Type.eq("Investment")),
+                balance_expr: cast_decimal(Expr::col(AccountColumn::Balance)),
+            },
+            AccountTypeConfig {
+                name: "alipay_balance",
+                condition: Condition::all().add(AccountColumn::Type.eq("Alipay")),
+                balance_expr: cast_decimal(Expr::col(AccountColumn::Balance)),
+            },
+            AccountTypeConfig {
+                name: "wechat_balance",
+                condition: Condition::all().add(AccountColumn::Type.eq("WeChat")),
+                balance_expr: cast_decimal(Expr::col(AccountColumn::Balance)),
+            },
+            AccountTypeConfig {
+                name: "cloud_quick_pass_balance",
+                condition: Condition::all().add(AccountColumn::Type.eq("CloudQuickPass")),
+                balance_expr: cast_decimal(Expr::col(AccountColumn::Balance)),
+            },
+            AccountTypeConfig {
+                name: "other_balance",
+                condition: Condition::all().add(AccountColumn::Type.eq("Other")),
+                balance_expr: cast_decimal(Expr::col(AccountColumn::Balance)),
+            },
+        ]
     }
 }
 
-// 实现 CrudService 特性
 #[async_trait]
-impl CrudService<entity::account::Entity, AccountFilter, CreateAccountRequest, UpdateAccountRequest> for AccountService {
-    async fn create(
-        &self,
-        db: &DatabaseConnection,
-        data: CreateAccountRequest,
-    ) -> MijiResult<entity::account::Model> {
+impl CrudService<AccountEntity, AccountFilter, CreateAccountRequest, UpdateAccountRequest>
+    for AccountService
+{
+    async fn create(&self, db: &DbConn, data: CreateAccountRequest) -> MijiResult<AccountModel> {
         self.inner.create(db, data).await
     }
 
-    async fn get_by_id(
-        &self,
-        db: &DatabaseConnection,
-        id: String,
-    ) -> MijiResult<entity::account::Model> {
+    async fn get_by_id(&self, db: &DbConn, id: String) -> MijiResult<AccountModel> {
         self.inner.get_by_id(db, id).await
     }
 
     async fn update(
         &self,
-        db: &DatabaseConnection,
+        db: &DbConn,
         serial_num: String,
         data: UpdateAccountRequest,
-    ) -> MijiResult<entity::account::Model> {
+    ) -> MijiResult<AccountModel> {
         self.inner.update(db, serial_num, data).await
     }
 
-    async fn delete(&self, db: &DatabaseConnection, serial_num: String) -> MijiResult<()> {
+    async fn delete(&self, db: &DbConn, serial_num: String) -> MijiResult<()> {
         self.inner.delete(db, serial_num).await
     }
 
-    async fn list(&self, db: &DatabaseConnection) -> MijiResult<Vec<entity::account::Model>> {
+    async fn list(&self, db: &DbConn) -> MijiResult<Vec<AccountModel>> {
         self.inner.list(db).await
     }
 
     async fn list_with_filter(
         &self,
-        db: &DatabaseConnection,
+        db: &DbConn,
         filter: AccountFilter,
-    ) -> MijiResult<Vec<entity::account::Model>> {
+    ) -> MijiResult<Vec<AccountModel>> {
         self.inner.list_with_filter(db, filter).await
     }
 
     async fn list_paged(
         &self,
-        db: &DatabaseConnection,
+        db: &DbConn,
         query: PagedQuery<AccountFilter>,
-    ) -> MijiResult<PagedResult<entity::account::Model>> {
+    ) -> MijiResult<PagedResult<AccountModel>> {
         self.inner.list_paged(db, query).await
     }
 
     async fn create_batch(
         &self,
-        db: &DatabaseConnection,
+        db: &DbConn,
         data: Vec<CreateAccountRequest>,
-    ) -> MijiResult<Vec<entity::account::Model>> {
+    ) -> MijiResult<Vec<AccountModel>> {
         self.inner.create_batch(db, data).await
     }
 
-    async fn delete_batch(&self, db: &DatabaseConnection, ids: Vec<String>) -> MijiResult<u64> {
+    async fn delete_batch(&self, db: &DbConn, ids: Vec<String>) -> MijiResult<u64> {
         self.inner.delete_batch(db, ids).await
     }
 
-    async fn exists(&self, db: &DatabaseConnection, id: String) -> MijiResult<bool> {
+    async fn exists(&self, db: &DbConn, id: String) -> MijiResult<bool> {
         self.inner.exists(db, id).await
     }
 
-    async fn count(&self, db: &DatabaseConnection) -> MijiResult<u64> {
+    async fn count(&self, db: &DbConn) -> MijiResult<u64> {
         self.inner.count(db).await
     }
 
-    async fn count_with_filter(
-        &self,
-        db: &DatabaseConnection,
-        filter: AccountFilter,
-    ) -> MijiResult<u64> {
+    async fn count_with_filter(&self, db: &DbConn, filter: AccountFilter) -> MijiResult<u64> {
         self.inner.count_with_filter(db, filter).await
     }
+}
 
+#[async_trait]
+impl
+    TransactionalCrudService<
+        AccountEntity,
+        AccountFilter,
+        CreateAccountRequest,
+        UpdateAccountRequest,
+    > for AccountService
+{
+    async fn create_in_txn(
+        &self,
+        txn: &DbConn,
+        data: CreateAccountRequest,
+    ) -> MijiResult<AccountModel> {
+        self.inner.create(txn, data).await
+    }
+
+    async fn update_in_txn(
+        &self,
+        txn: &DbConn,
+        id: String,
+        data: UpdateAccountRequest,
+    ) -> MijiResult<AccountModel> {
+        self.inner.update(txn, id, data).await
+    }
+
+    async fn delete_in_txn(&self, txn: &DbConn, id: String) -> MijiResult<()> {
+        self.inner.delete(txn, id).await
+    }
 }
 
 impl AccountService {
-
     pub async fn create_account(
         &self,
         db: &DatabaseConnection,
-        data: CreateAccountRequest
+        data: CreateAccountRequest,
     ) -> MijiResult<AccountWithRelations> {
-        let tx = db.begin().await?;
-        let account = self.inner.create(tx, data).await?;
-        let account_with_relations = self.get_account_with_relations(tx, account.serial_num).await?;
-        tx.commit().await?;
+        let account = self.inner.create(db, data).await?;
+        let account_with_relations = self
+            .get_account_with_relations(db, account.serial_num.clone())
+            .await?;
         Ok(account_with_relations)
     }
-    /// 获取账户详情（带货币信息）
+
     pub async fn get_account_with_currency(
         &self,
         db: &DatabaseConnection,
         id: String,
-    ) -> MijiResult<(entity::account::Model, entity::currency::Model)> {
-        entity::account::Entity::find_by_id(id)
-            .find_also_related(entity::currency::Entity)
+    ) -> MijiResult<(AccountModel, CurrencyModel)> {
+        info!("[AccountService get_account_with_currency] start...");
+        AccountEntity::find_by_id(AccountFilter::sanitize_input(&id))
+            .find_also_related(CurrencyEntity)
             .one(db)
             .await
             .map_err(AppError::from)?
             .and_then(|(account, currency)| currency.map(|c| (account, c)))
             .ok_or_else(|| {
-                AppError::simple(
-                    BusinessCode::NotFound,
-                    "Account not found or currency missing",
-                )
+                AppError::simple(BusinessCode::NotFound, "Account or currency not found")
             })
     }
 
-    /// 获取账户详情（带完整关联信息：货币和所有者）
     pub async fn get_account_with_relations(
         &self,
         db: &DatabaseConnection,
         serial_num: String,
     ) -> MijiResult<AccountWithRelations> {
-        // 首先获取账户和货币信息
+        info!("AccountService start....");
         let (account, currency) = self
             .get_account_with_currency(db, serial_num.clone())
             .await?;
-
-        // 如果有 owner_id，获取所有者信息
-        let owner = DefaultAccountLoader::load_owner(db, &account).await?;
-
-        Ok(AccountWithRelations { account, currency, owner })
+        let owner = if let Some(owner_id) = &account.owner_id {
+            FamilyMemberLoader.load_by_id(db, owner_id).await?
+        } else {
+            None
+        };
+        Ok(AccountWithRelations {
+            account,
+            currency,
+            owner,
+        })
     }
 
-    /// 使用自定义查询获取账户和所有关联信息（更高效的方法）
     pub async fn get_account_with_relations_optimized(
+        &self,
         db: &DatabaseConnection,
         serial_num: String,
     ) -> MijiResult<AccountWithRelations> {
-        let result = entity::account::Entity::find_by_id(serial_num)
-            .find_also_related(entity::currency::Entity)
-            .find_also_related(entity::family_member::Entity)
+        let result = AccountEntity::find_by_id(AccountFilter::sanitize_input(&serial_num))
+            .select_only()
+            .columns([
+                AccountColumn::SerialNum,
+                AccountColumn::Name,
+                AccountColumn::Currency,
+            ])
+            .find_also_related(CurrencyEntity)
+            .select_only()
+            .columns([CurrencyColumn::Code, CurrencyColumn::Symbol])
+            .find_also_related(FamilyMemberEntity)
+            .select_only()
+            .columns([FamilyMemberColumn::SerialNum, FamilyMemberColumn::Name])
             .one(db)
             .await
             .map_err(AppError::from)?
             .ok_or_else(|| AppError::simple(BusinessCode::NotFound, "Account not found"))?;
-
         let (account, currency, owner) = result;
         let currency = currency.ok_or_else(|| {
             AppError::simple(BusinessCode::NotFound, "Currency information missing")
         })?;
-
-        Ok(AccountWithRelations { account, currency, owner })
+        Ok(AccountWithRelations {
+            account,
+            currency,
+            owner,
+        })
     }
 
-    /// 分页查询账户列表（带完整关联信息）
     pub async fn list_accounts_paged_with_relations(
         &self,
         db: &DatabaseConnection,
         query: PagedQuery<AccountFilter>,
-    ) -> MijiResult<
-        PagedResult<AccountWithRelations>,
-    > {
-        // 验证查询参数
-        query.validate().map_err(AppError::from_validation_errors)?;
-        let base_query = entity::account::Entity::find()
-            .find_also_related(entity::currency::Entity)
-            .filter(query.filter.to_condition());
-
-        Self::paginate_with_relations(
+    ) -> MijiResult<PagedResult<AccountWithRelations>> {
+        Self::paginate_with_relations_base(
             db,
-            base_query,
-            query.page_size as u64,
-            query.current_page as u64,
-            |(account, currency)| currency.map(|c| (account, c)),
-        ).await
+            AccountEntity::find().find_also_related(CurrencyEntity),
+            query,
+            |(account, currency, owner)| AccountWithRelations {
+                account,
+                currency,
+                owner,
+            },
+        )
+        .await
     }
 
-/// 通用分页查询处理器（带关联加载）
-    async fn paginate_with_relations<F>(
-        db: &DatabaseConnection,
-        base_query: SelectTwo<AccountEntity, CurrencyEntity>,
-        page_size: u64,
-        current_page: u64,
-        filter_fn: F,
-    ) -> MijiResult<PagedResult<AccountWithRelations>>
-    where
-        F: Fn((AccountModel, Option<CurrencyModel>)) -> Option<(AccountModel, CurrencyModel)> + Clone,
-    {
-        // 计算总数和分页参数
-        let total_count = base_query.clone().count(db).await?.max(0) as usize;
-        let total_pages = (total_count + page_size as usize - 1) / page_size as usize;
-        let offset = (current_page.saturating_sub(1)).saturating_mul(page_size as u64);
-
-        // 执行分页查询
-        let rows_with_currency = base_query
-            .clone()
-            .offset(offset as u64)
-            .limit(page_size)
-            .all(db)
-            .await?;
-
-        // 提取需要加载的owner_id并批量查询
-        let owner_ids: Vec<String> = rows_with_currency
-            .iter()
-            .filter_map(|(account, _)| account.owner_id.clone())
-            .collect();
-        let owners_map = DefaultAccountLoader::batch_fetch_owners(db, &owner_ids).await?;
-
-        // 组装最终结果
-        let filtered_rows = rows_with_currency
-            .into_iter()
-            .filter_map(|row| filter_fn(row));
-
-        let rows = filtered_rows
-            .into_iter()
-            .map(|(account, currency)| {
-                let owner = account.owner_id.as_ref()
-                    .and_then(|id| owners_map.get(id))
-                    .cloned();
-                AccountWithRelations { account, currency, owner }
-            })
-            .collect();
-
-        Ok(PagedResult {
-            rows,
-            total_count,
-            current_page: current_page as usize,
-            page_size: page_size as usize,
-            total_pages,
-        })
-    }
-
-    /// 分页查询账户列表（带货币信息）
     pub async fn list_accounts_paged_with_currency(
         &self,
         db: &DatabaseConnection,
         query: PagedQuery<AccountFilter>,
-    ) -> MijiResult<PagedResult<(entity::account::Model, entity::currency::Model)>> {
-        // 验证查询参数
+    ) -> MijiResult<PagedResult<(AccountModel, CurrencyModel)>> {
+        Self::paginate_with_relations_base(
+            db,
+            AccountEntity::find().find_also_related(CurrencyEntity),
+            query,
+            |(account, currency, _)| (account, currency),
+        )
+        .await
+    }
+
+    async fn paginate_with_relations_base<T, F>(
+        db: &DatabaseConnection,
+        base_query: SelectTwo<AccountEntity, CurrencyEntity>,
+        query: PagedQuery<AccountFilter>,
+        transform: F,
+    ) -> MijiResult<PagedResult<T>>
+    where
+        T: Send + Sync + Serialize,
+        F: Fn((AccountModel, CurrencyModel, Option<FamilyMemberModel>)) -> T + Clone,
+    {
         query.validate().map_err(AppError::from_validation_errors)?;
-
-        let mut query_builder = entity::account::Entity::find()
-            .find_also_related(entity::currency::Entity)
-            .filter(query.filter.to_condition());
-
-        // 应用排序
-        query_builder = Self::apply_sort_to_select_two(
-            query_builder,
+        let query_builder = Self::apply_sort_to_select_two(
+            base_query.filter(query.filter.to_condition()),
             &query.sort_options.sort_by,
             query.sort_options.desc,
         );
 
-        let (rows_with_currency, total_count, total_pages) = Self::paginate_query(
-            query_builder,
-            db,
-            query.page_size as u64,
-            query.current_page as u64,
-            // 强制过滤无货币的记录（核心差异点）
-            |(account, currency)| currency.map(|c| (account, c)),
-        )
-        .await?;
+        let total_count = query_builder
+            .clone()
+            .count(db)
+            .await
+            .map_err(AppError::from)? as usize;
+        let total_pages = total_count.div_ceil(query.page_size);
+        let offset = (query.current_page - 1) * query.page_size;
 
-        let rows: Vec<_> = rows_with_currency
+        let rows_with_currency = query_builder
+            .offset(offset as u64)
+            .limit(query.page_size as u64)
+            .all(db)
+            .await
+            .map_err(AppError::from)?;
+
+        let owner_ids: Vec<String> = rows_with_currency
+            .iter()
+            .filter_map(|(account, _)| account.owner_id.clone())
+            .map(|id| AccountFilter::sanitize_input(&id))
+            .collect();
+        let owners_map = FamilyMemberLoader.batch_load(db, &owner_ids).await?;
+
+        let rows = rows_with_currency
             .into_iter()
-            .map(|(a, c, _)| (a, c))
+            .filter_map(|(account, currency)| {
+                currency.map(|c| {
+                    let owner = account
+                        .owner_id
+                        .as_ref()
+                        .and_then(|id| owners_map.get(id))
+                        .cloned();
+                    transform((account, c, owner))
+                })
+            })
             .collect();
 
         Ok(PagedResult {
@@ -513,65 +604,48 @@ impl AccountService {
         })
     }
 
-/// 批量获取所有者信息（优化版）
-    async fn batch_fetch_owners(
-        db: &DatabaseConnection,
-        owner_ids: &[String],
-    ) -> MijiResult<HashMap<String, entity::family_member::Model>> {
-        if owner_ids.is_empty() {
-            return Ok(HashMap::new());
-        }
-
-        let owners = entity::family_member::Entity::find()
-            .filter(entity::family_member::Column::SerialNum.is_in(owner_ids))
-            .all(db)
-            .await?;
-
-        Ok(owners.into_iter()
-            .map(|owner| (owner.serial_num.clone(), owner))
-            .collect())
-    }
-
     pub async fn list_with_filter(
         &self,
         db: &DatabaseConnection,
         query: AccountFilter,
-    ) -> MijiResult<
-        PagedResult<(
-            entity::account::Model,
-            entity::currency::Model,
-            Option<entity::family_member::Model>,
-        )>,
-    > {
+    ) -> MijiResult<PagedResult<(AccountModel, CurrencyModel, Option<FamilyMemberModel>)>> {
         query.validate().map_err(AppError::from_validation_errors)?;
-
-        let mut query_builder = entity::account::Entity::find()
-            .find_also_related(entity::currency::Entity)
-            .filter(query.to_condition());
-
-        query_builder = Self::apply_sort_to_select_two(query_builder, &None, true);
+        let query_builder = Self::apply_sort_to_select_two(
+            AccountEntity::find()
+                .find_also_related(CurrencyEntity)
+                .filter(query.to_condition()),
+            &None,
+            true,
+        );
 
         let rows_with_currency = query_builder.all(db).await.map_err(AppError::from)?;
 
         let owner_ids: Vec<String> = rows_with_currency
             .iter()
-            .filter_map(|(account, _)| account.owner_id.as_ref())
-            .cloned()
+            .filter_map(|(account, _)| account.owner_id.clone())
+            .map(|id| AccountFilter::sanitize_input(&id))
             .collect();
-        let owners_map = Self::batch_fetch_owners(db, &owner_ids).await?;
+        let owners_map = FamilyMemberLoader.batch_load(db, &owner_ids).await?;
 
-        let assemble_row = Self::assemble_account_row(&owners_map);
-        let rows: Vec<(
-            entity::account::Model,
-            entity::currency::Model,
-            Option<entity::family_member::Model>,
-        )> = rows_with_currency
-            .into_iter()
-            .filter_map(|row| row.1.map(|currency| assemble_row((row.0, currency))))
-            .collect();
+        let rows: Vec<(AccountModel, CurrencyModel, Option<FamilyMemberModel>)> =
+            rows_with_currency
+                .into_iter()
+                .filter_map(|(account, currency)| {
+                    currency.map(|c| {
+                        (
+                            account.clone(),
+                            c,
+                            account
+                                .owner_id
+                                .as_ref()
+                                .and_then(|id| owners_map.get(id))
+                                .cloned(),
+                        )
+                    })
+                })
+                .collect();
 
         let total_count = rows.len();
-        // 构造 PagedResult（无分页时，当前页为 1，每页大小为总记录数，总页数为 1）
         Ok(PagedResult {
             rows,
             total_count,
@@ -587,210 +661,139 @@ impl AccountService {
         serial_num: String,
         is_active: bool,
     ) -> MijiResult<AccountWithRelations> {
-        let account = entity::account::Entity::find_by_id(serial_num.clone())
+        let account = AccountEntity::find_by_id(AccountFilter::sanitize_input(&serial_num))
             .one(db)
             .await
             .map_err(AppError::from)?
             .ok_or_else(|| {
                 AppError::simple(
                     BusinessCode::NotFound,
-                    format!("Account with SerialNum {}", serial_num.clone()),
+                    format!("Account with serial_num: {}", serial_num),
                 )
             })?;
 
         let mut active_model = account.into_active_model();
         active_model.is_active = Set(is_active as i32);
         active_model.updated_at = Set(Some(DateUtils::local_rfc3339()));
-
         active_model.update(db).await.map_err(AppError::from)?;
+
         self.get_account_with_relations(db, serial_num).await
-
     }
 
-    /// 结果组装闭包
-    fn assemble_account_row(
-        owners_map: &HashMap<String, entity::family_member::Model>,
-    ) -> impl Fn(
-        (entity::account::Model, entity::currency::Model),
-    ) -> (
-        entity::account::Model,
-        entity::currency::Model,
-        Option<entity::family_member::Model>,
-    ) {
-        move |(account, currency)| {
-            let owner = account
-                .owner_id
-                .as_ref()
-                .and_then(|id| owners_map.get(id))
-                .cloned();
-            (account, currency, owner)
+    pub async fn total_assets(&self, db: &DatabaseConnection) -> MijiResult<AccountBalanceSummary> {
+        let mut query = AccountEntity::find()
+            .select_only()
+            .filter(AccountColumn::IsActive.eq(1));
+
+        for config in Self::account_type_configs() {
+            let expr = Expr::val(Decimal::ZERO).add(
+                SimpleExpr::FunctionCall(Func::coalesce(vec![
+                    SimpleExpr::FunctionCall(Func::sum(
+                        Expr::case(config.condition, config.balance_expr)
+                            .finally(Decimal::ZERO)
+                            .cast_as(Alias::new("DECIMAL(16,4)")),
+                    )),
+                    Expr::val(Decimal::ZERO).into(),
+                ]))
+                .cast_as(Alias::new("DECIMAL(16,4)")),
+            );
+            query = query.expr_as(expr, config.name);
         }
+
+        // 计算 total_balance, adjusted_net_worth, total_assets
+        let total_balance_expr = Expr::val(Decimal::ZERO)
+            .add(Expr::col(Alias::new("bank_savings_balance")))
+            .add(Expr::col(Alias::new("cash_balance")))
+            .add(Expr::col(Alias::new("credit_card_balance")))
+            .add(Expr::col(Alias::new("investment_balance")))
+            .add(Expr::col(Alias::new("alipay_balance")))
+            .add(Expr::col(Alias::new("wechat_balance")))
+            .add(Expr::col(Alias::new("cloud_quick_pass_balance")))
+            .add(Expr::col(Alias::new("other_balance")))
+            .cast_as(Alias::new("DECIMAL"));
+
+        let adjusted_net_worth_expr = Expr::val(Decimal::ZERO)
+            .add(Expr::col(Alias::new("bank_savings_balance")))
+            .add(Expr::col(Alias::new("cash_balance")))
+            .sub(Expr::col(Alias::new("credit_card_balance"))) // 信用卡负向计算
+            .add(Expr::col(Alias::new("investment_balance")))
+            .add(Expr::col(Alias::new("alipay_balance")))
+            .add(Expr::col(Alias::new("wechat_balance")))
+            .add(Expr::col(Alias::new("cloud_quick_pass_balance")))
+            .add(Expr::col(Alias::new("other_balance")))
+            .cast_as(Alias::new("DECIMAL"));
+
+        let total_assets_expr = Expr::val(Decimal::ZERO)
+            .add(Expr::col(Alias::new("bank_savings_balance")))
+            .add(Expr::col(Alias::new("cash_balance")))
+            .add(Expr::col(Alias::new("investment_balance")))
+            .add(Expr::col(Alias::new("alipay_balance")))
+            .add(Expr::col(Alias::new("wechat_balance")))
+            .add(Expr::col(Alias::new("cloud_quick_pass_balance")))
+            .add(Expr::col(Alias::new("other_balance")))
+            .cast_as(Alias::new("DECIMAL"));
+
+        query = query
+            .expr_as(total_balance_expr, "total_balance")
+            .expr_as(adjusted_net_worth_expr, "adjusted_net_worth")
+            .expr_as(total_assets_expr, "total_assets");
+
+        let result = query
+            .into_model::<AccountBalanceSummary>()
+            .one(db)
+            .await
+            .map_err(AppError::from)?
+            .unwrap_or_default();
+
+        Ok(result)
     }
 
-    /// 通用分页查询处理器
-    async fn paginate_query<F>(
-        query_builder: SelectTwo<entity::account::Entity, entity::currency::Entity>,
-        db: &DatabaseConnection,
-        page_size: u64,
-        current_page: u64,
-        filter_fn: F,
-    ) -> MijiResult<(
-        Vec<(
-            entity::account::Model,
-            entity::currency::Model,
-            Option<entity::family_member::Model>,
-        )>,
-        usize,
-        usize,
-    )>
-    where
-        F: Fn(
-                (entity::account::Model, Option<entity::currency::Model>),
-            ) -> Option<(entity::account::Model, entity::currency::Model)>
-            + Clone,
-    {
-        let total_count = query_builder
-            .clone()
-            .count(db)
-            .await
-            .map_err(AppError::from)? as usize;
-        let total_pages = total_count.div_ceil(page_size as usize);
-        let offset = (current_page.saturating_sub(1)).saturating_mul(page_size);
-
-        let rows_with_currency = query_builder
-            .clone()
-            .offset(offset)
-            .limit(page_size)
-            .all(db)
-            .await
-            .map_err(AppError::from)?;
-
-        let owner_ids: Vec<String> = rows_with_currency
-            .iter()
-            .filter_map(|(account, _)| account.owner_id.clone())
-            .collect();
-        let owners_map = Self::batch_fetch_owners(db, &owner_ids).await?;
-
-        let assemble_row = Self::assemble_account_row(&owners_map);
-        let rows = rows_with_currency
-            .into_iter()
-            .filter_map(|row| filter_fn(row).map(&assemble_row))
-            .collect();
-
-        Ok((rows, total_count, total_pages))
-    }
-
-pub async fn total_assets(&self, db: &DatabaseConnection) -> MijiResult<AccountBalanceSummary> {
-    let mut sum_columns = HashMap::new();
-
-    // 辅助函数：构建类型条件表达式（确保与数据库值一致）
-    let build_type_condition = |type_str: &str| {
-        AccountColumn::Type.eq(type_str.to_string())
-    };
-
-    // 构建所有计算列的 Expr（使用官方推荐的 case 语法）
-    let bank_savings_expr = Expr::case(
-        build_type_condition("Savings"),
-        Expr::col(AccountColumn::Balance),
-    ).finally(Expr::val(Decimal::ZERO));
-
-    let cash_expr = Expr::case(
-        build_type_condition("Cash"),
-        Expr::col(AccountColumn::Balance),
-    ).finally(Expr::val(Decimal::ZERO));
-
-    let credit_card_expr = Expr::case(
-        build_type_condition("CreditCard"),
-        Func::abs(Expr::col(AccountColumn::Balance)),
-    ).finally(Expr::val(Decimal::ZERO));
-
-    let alipay_expr = Expr::case(
-        build_type_condition("Alipay"),
-        Expr::col(AccountColumn::Balance),
-    ).finally(Expr::val(Decimal::ZERO));
-
-    let wechat_expr = Expr::case(
-        build_type_condition("WeChat"),
-        Expr::col(AccountColumn::Balance),
-    ).finally(Expr::val(Decimal::ZERO));
-
-    let cloud_quick_pass_expr = Expr::case(
-        build_type_condition("CloudQuickPass"),
-        Expr::col(AccountColumn::Balance),
-    ).finally(Expr::val(Decimal::ZERO));
-
-    let other_expr = Expr::case(
-        build_type_condition("Other"),
-        Expr::col(AccountColumn::Balance),
-    ).finally(Expr::val(Decimal::ZERO));
-
-    // 存储别名与 Expr 的映射（用于后续动态添加列）
-    sum_columns.insert("bank_savings_balance".to_string(), bank_savings_expr);
-    sum_columns.insert("cash_balance".to_string(), cash_expr);
-    sum_columns.insert("credit_card_balance".to_string(), credit_card_expr);
-    sum_columns.insert("alipay_balance".to_string(), alipay_expr);
-    sum_columns.insert("wechat_balance".to_string(), wechat_expr);
-    sum_columns.insert("cloud_quick_pass_balance".to_string(), cloud_quick_pass_expr);
-    sum_columns.insert("other_balance".to_string(), other_expr);
-
-    // 构建查询：动态添加计算列（关键修复点）
-    let query = AccountEntity::find()
-        .select_only() // 仅选择需要的列
-        .filter(AccountColumn::IsActive.eq(1)) // 过滤活跃账户
-        // 动态添加每个计算列（使用 expr_as 方法）
-        .expr_as(sum_columns.remove("bank_savings_balance").unwrap(), "bank_savings_balance")
-        .expr_as(sum_columns.remove("cash_balance").unwrap(), "cash_balance")
-        .expr_as(sum_columns.remove("credit_card_balance").unwrap(), "credit_card_balance")
-        .expr_as(sum_columns.remove("alipay_balance").unwrap(), "alipay_balance")
-        .expr_as(sum_columns.remove("wechat_balance").unwrap(), "wechat_balance")
-        .expr_as(sum_columns.remove("cloud_quick_pass_balance").unwrap(), "cloud_quick_pass_balance")
-        .expr_as(sum_columns.remove("other_balance").unwrap(), "other_balance");
-
-    // 执行聚合查询（确保 AccountBalanceSummary 字段与别名匹配）
-    let result = query
-        .into_model::<AccountBalanceSummary>()
-        .one(db)
-        .await?
-        .unwrap_or_default();
-
-    Ok(result)
-}
-    
-    /// 自定义排序方法处理 SelectTwo 类型
     fn apply_sort_to_select_two(
-        query_builder: SelectTwo<entity::account::Entity, entity::currency::Entity>,
+        query_builder: SelectTwo<AccountEntity, CurrencyEntity>,
         sort_by: &Option<String>,
         desc: bool,
-    ) -> SelectTwo<entity::account::Entity, entity::currency::Entity> {
-        if let Some(sort_by) = sort_by {
-            // 尝试解析为账户字段
-            if let Ok(column) = entity::account::Column::from_str(sort_by) {
-                return if desc {
+    ) -> SelectTwo<AccountEntity, CurrencyEntity> {
+        let Some(sort_by) = sort_by else {
+            return query_builder;
+        };
+
+        let sort_by = AccountFilter::sanitize_input(sort_by);
+
+        match AccountColumn::from_str(&sort_by) {
+            Ok(column) => {
+                if desc {
                     query_builder.order_by_desc(column)
                 } else {
                     query_builder.order_by_asc(column)
-                };
-            }
-
-            // 尝试解析为货币字段 (格式: currency.field)
-            if let Some(("currency", field)) = sort_by.split_once('.') {
-                if let Ok(column) = entity::currency::Column::from_str(field) {
-                    return if desc {
-                        query_builder.order_by_desc(column)
-                    } else {
-                        query_builder.order_by_asc(column)
-                    };
-                } else {
-                    info!("currency query failed");
                 }
             }
+            Err(_) => match sort_by.split_once('.') {
+                Some(("currency", field)) => match CurrencyColumn::from_str(field) {
+                    Ok(column) => {
+                        if desc {
+                            query_builder.order_by_desc(column)
+                        } else {
+                            query_builder.order_by_asc(column)
+                        }
+                    }
+                    Err(_) => {
+                        info!("Invalid sort field: {}", sort_by);
+                        query_builder
+                    }
+                },
+                _ => {
+                    info!("Invalid sort field: {}", sort_by);
+                    query_builder
+                }
+            },
         }
-        query_builder
     }
 }
 
-// ------------------------------ 服务实例获取 ------------------------------
-/// 获取账户服务实例
+fn cast_decimal<T: Into<SimpleExpr>>(expr: T) -> SimpleExpr {
+    expr.into().cast_as(Alias::new("DECIMAL(16,4)"))
+}
+
 pub fn get_account_service() -> AccountService {
     AccountService::get_service()
 }
