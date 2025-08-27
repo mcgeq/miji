@@ -9,7 +9,7 @@
 // Modified   By:  mcgeq <mcgeq@outlook.com>
 // -----------------------------------------------------------------------------
 
-use auth::commands as auth_cmd;
+use auth::{commands as auth_cmd, services::user::UserService};
 use chrono::{Duration, Utc};
 use common::{
     AppState, TokenResponse, TokenStatus,
@@ -18,10 +18,10 @@ use common::{
     jwt::JwtHelper,
     response::ApiResponse,
 };
-use log::info;
 use money::command as money_cmd;
 use tauri::{Builder, State, Wry};
 use todos::command as todo_cmd;
+use tracing::info;
 
 pub fn init_commands(builder: Builder<Wry>) -> Builder<Wry> {
     builder.invoke_handler(tauri::generate_handler![
@@ -82,9 +82,11 @@ async fn pwd_hash(pwd: String) -> ApiResponse<String> {
 }
 
 #[tauri::command]
-async fn check_pwd(pwd: String, pwd_hash: String) -> ApiResponse<bool> {
-    let result = check_password_hash(&pwd, &pwd_hash);
-    ApiResponse::from_result(result)
+async fn check_pwd(state: State<'_, AppState>, pwd: String, user_id: String) -> Result<ApiResponse<bool>, String> {
+    let service = UserService::get_user_service();
+    let pwd_hash = service.get_user_password(&state.db, user_id).await;
+    let result = check_password_hash(&pwd, &pwd_hash.ok().unwrap());
+    Ok(ApiResponse::from_result(result))
 }
 
 #[tauri::command]

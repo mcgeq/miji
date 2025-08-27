@@ -51,6 +51,7 @@ pub struct UserQuery {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct User {
     pub serial_num: String,
     pub name: String,

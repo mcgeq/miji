@@ -80,8 +80,7 @@ export async function isAuthenticated(): Promise<boolean> {
       await logoutUser();
       return false;
     }
-  }
-  catch {
+  } catch {
     await logoutUser();
     return false;
   }
@@ -102,8 +101,7 @@ export const useAuthStore = defineStore('auth', () => {
   const isAuthenticatedComputed = computed(() => !!user.value && !!token.value);
 
   const isTokenExpired = computed(() => {
-    if (!tokenExpiresAt.value)
-      return false;
+    if (!tokenExpiresAt.value) return false;
     return tokenExpiresAt.value < Date.now() / 1000;
   });
 
@@ -128,12 +126,10 @@ export const useAuthStore = defineStore('auth', () => {
       syncFromTauriStore();
 
       return true;
-    }
-    catch (error) {
+    } catch (error) {
       console.error('Logout failed:', error);
       throw error;
-    }
-    finally {
+    } finally {
       isLoading.value = false;
     }
   };
@@ -157,12 +153,10 @@ export const useAuthStore = defineStore('auth', () => {
       syncFromTauriStore();
 
       return true;
-    }
-    catch (error) {
+    } catch (error) {
       console.error('Login failed:', error);
       throw error;
-    }
-    finally {
+    } finally {
       isLoading.value = false;
     }
   };
@@ -176,8 +170,7 @@ export const useAuthStore = defineStore('auth', () => {
         syncFromTauriStore();
       }
       return result;
-    }
-    catch (error) {
+    } catch (error) {
       console.error('Auth check failed:', error);
       return false;
     }
@@ -185,8 +178,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   // 更新用户信息
   const updateUser = async (updatedUser: Partial<AuthUser>) => {
-    if (!user.value)
-      return;
+    if (!user.value) return;
 
     const newUser = { ...user.value, ...updatedUser };
 
@@ -215,7 +207,7 @@ export const useAuthStore = defineStore('auth', () => {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token.value}`,
+          Authorization: `Bearer ${token.value}`,
         },
         body: JSON.stringify(profileData),
       });
@@ -231,12 +223,10 @@ export const useAuthStore = defineStore('auth', () => {
       await updateUser(updatedUserData);
 
       return updatedUserData;
-    }
-    catch (error) {
+    } catch (error) {
       console.error('更新用户资料错误:', error);
       throw error;
-    }
-    finally {
+    } finally {
       isLoading.value = false;
     }
   };
@@ -272,12 +262,10 @@ export const useAuthStore = defineStore('auth', () => {
       await updateUser({ avatarUrl });
 
       return avatarUrl;
-    }
-    catch (error) {
+    } catch (error) {
       console.error('上传头像错误:', error);
       throw error;
-    }
-    finally {
+    } finally {
       isLoading.value = false;
     }
   };
@@ -295,7 +283,7 @@ export const useAuthStore = defineStore('auth', () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token.value}`,
+          Authorization: `Bearer ${token.value}`,
         },
         body: JSON.stringify({ code: verificationCode }),
       });
@@ -312,12 +300,10 @@ export const useAuthStore = defineStore('auth', () => {
       });
 
       return true;
-    }
-    catch (error) {
+    } catch (error) {
       console.error('邮箱验证错误:', error);
       throw error;
-    }
-    finally {
+    } finally {
       isLoading.value = false;
     }
   };
@@ -344,12 +330,10 @@ export const useAuthStore = defineStore('auth', () => {
       }
 
       return true;
-    }
-    catch (error) {
+    } catch (error) {
       console.error('发送邮箱验证错误:', error);
       throw error;
-    }
-    finally {
+    } finally {
       isLoading.value = false;
     }
   };
@@ -370,7 +354,7 @@ export const useAuthStore = defineStore('auth', () => {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token.value}`,
+          Authorization: `Bearer ${token.value}`,
         },
         body: JSON.stringify({
           currentPassword,
@@ -384,12 +368,10 @@ export const useAuthStore = defineStore('auth', () => {
       }
 
       return true;
-    }
-    catch (error) {
+    } catch (error) {
       console.error('修改密码错误:', error);
       throw error;
-    }
-    finally {
+    } finally {
       isLoading.value = false;
     }
   };

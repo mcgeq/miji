@@ -238,4 +238,9 @@ impl UserService {
                 )
             })
     }
+
+    pub async fn get_user_password(&self, db: &DatabaseConnection, serial_num: String) -> MijiResult<String> {
+        let model = self.get_by_id(db, serial_num).await?;
+        Ok(model.password)
+    }
 }

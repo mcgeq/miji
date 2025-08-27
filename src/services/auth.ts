@@ -41,7 +41,7 @@ export async function login(
       email,
     });
     // 使用新的 API 调用方式
-    const isValidPassword = await checkPassword(password, user.password);
+    const isValidPassword = await checkPassword(password, user.serialNum);
     if (!isValidPassword) {
       throw new AuthError('INVALID_CREDENTIALS', 'Invalid password');
     }
@@ -62,6 +62,7 @@ export async function login(
       serialNum: user.serialNum,
       data: updateUser,
     });
+    console.log('loginUser ', u);
     return u;
   } catch (error) {
     const authError = handleAuthError(error);
@@ -140,12 +141,12 @@ export async function hashPassword(password: string): Promise<string> {
 
 export async function checkPassword(
   password: string,
-  pwdHash: string,
+  user_id: string,
 ): Promise<boolean> {
   try {
     return await invokeCommand<boolean>('check_pwd', {
       pwd: password,
-      pwdHash,
+      userId: user_id,
     });
   } catch (error) {
     if (isBusinessError(error)) {
