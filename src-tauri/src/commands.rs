@@ -43,6 +43,7 @@ pub fn init_commands(builder: Builder<Wry>) -> Builder<Wry> {
         money_cmd::get_account,
         money_cmd::create_account,
         money_cmd::update_account,
+        money_cmd::update_account_active,
         money_cmd::delete_account,
         money_cmd::list_accounts,
         money_cmd::list_accounts_paged,
@@ -82,7 +83,11 @@ async fn pwd_hash(pwd: String) -> ApiResponse<String> {
 }
 
 #[tauri::command]
-async fn check_pwd(state: State<'_, AppState>, pwd: String, user_id: String) -> Result<ApiResponse<bool>, String> {
+async fn check_pwd(
+    state: State<'_, AppState>,
+    pwd: String,
+    user_id: String,
+) -> Result<ApiResponse<bool>, String> {
     let service = UserService::get_user_service();
     let pwd_hash = service.get_user_password(&state.db, user_id).await;
     let result = check_password_hash(&pwd, &pwd_hash.ok().unwrap());

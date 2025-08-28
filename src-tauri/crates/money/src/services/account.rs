@@ -7,11 +7,11 @@ use common::{
     utils::date::DateUtils,
 };
 use sea_orm::{
-    prelude::{async_trait::async_trait},
+    ActiveValue::Set,
+    ColumnTrait, Condition, DatabaseConnection, DbConn, EntityTrait, PaginatorTrait, QueryFilter,
+    QueryOrder, QuerySelect, SelectTwo,
+    prelude::async_trait::async_trait,
     sea_query::{Alias, Expr, ExprTrait, Func, SimpleExpr},
-    ActiveModelTrait, ActiveValue::Set, ColumnTrait,
-    Condition, DatabaseConnection, DbConn,
-    EntityTrait, IntoActiveModel, PaginatorTrait, QueryFilter, QueryOrder, QuerySelect, SelectTwo
 };
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
@@ -670,22 +670,21 @@ impl AccountService {
         serial_num: String,
         is_active: bool,
     ) -> MijiResult<AccountWithRelations> {
-        let account = AccountEntity::find_by_id(AccountFilter::sanitize_input(&serial_num))
-            .one(db)
-            .await
-            .map_err(AppError::from)?
-            .ok_or_else(|| {
-                AppError::simple(
-                    BusinessCode::NotFound,
-                    format!("Account with serial_num: {serial_num}"),
-                )
-            })?;
-
-        let mut active_model = account.into_active_model();
-        active_model.is_active = Set(is_active as i32);
-        active_model.updated_at = Set(Some(DateUtils::local_rfc3339()));
-        active_model.update(db).await.map_err(AppError::from)?;
-
+        update_account_columns(
+            db,
+            std::iter::once(serial_num.clone()),
+            [
+                (
+                    entity::account::Column::IsActive,
+                    Expr::value(is_active as i32),
+                ),
+                (
+                    entity::account::Column::UpdatedAt,
+                    Expr::value(Some(DateUtils::local_rfc3339())),
+                ),
+            ],
+        )
+        .await?;
         self.get_account_with_relations(db, serial_num).await
     }
 
@@ -709,40 +708,39 @@ impl AccountService {
             query = query.expr_as(expr, config.struct_field);
         }
 
-
         // 计算 total_balance, adjusted_net_worth, total_assets
-    let total_balance_expr = Expr::val(0.0)
-        .add(create_sum_expr("Savings", false))
-        .add(create_sum_expr("Cash", false))
-        .add(create_sum_expr("CreditCard", true)) // 对信用卡使用 ABS
-        .add(create_sum_expr("Investment", false))
-        .add(create_sum_expr("Alipay", false))
-        .add(create_sum_expr("WeChat", false))
-        .add(create_sum_expr("CloudQuickPass", false))
-        .add(create_sum_expr("Other", false))
-        .cast_as(Alias::new("DECIMAL(16, 4)"));
+        let total_balance_expr = Expr::val(0.0)
+            .add(create_sum_expr("Savings", false))
+            .add(create_sum_expr("Cash", false))
+            .add(create_sum_expr("CreditCard", true)) // 对信用卡使用 ABS
+            .add(create_sum_expr("Investment", false))
+            .add(create_sum_expr("Alipay", false))
+            .add(create_sum_expr("WeChat", false))
+            .add(create_sum_expr("CloudQuickPass", false))
+            .add(create_sum_expr("Other", false))
+            .cast_as(Alias::new("DECIMAL(16, 4)"));
 
-    let adjusted_net_worth_expr = Expr::val(0.0)
-        .add(create_sum_expr("Savings", false))
-        .add(create_sum_expr("Cash", false))
-        .sub(create_sum_expr("CreditCard", true)) // 信用卡负向计算
-        .add(create_sum_expr("Investment", false))
-        .add(create_sum_expr("Alipay", false))
-        .add(create_sum_expr("WeChat", false))
-        .add(create_sum_expr("CloudQuickPass", false))
-        .add(create_sum_expr("Other", false))
-        .cast_as(Alias::new("DECIMAL(16, 4)"));
+        let adjusted_net_worth_expr = Expr::val(0.0)
+            .add(create_sum_expr("Savings", false))
+            .add(create_sum_expr("Cash", false))
+            .sub(create_sum_expr("CreditCard", true)) // 信用卡负向计算
+            .add(create_sum_expr("Investment", false))
+            .add(create_sum_expr("Alipay", false))
+            .add(create_sum_expr("WeChat", false))
+            .add(create_sum_expr("CloudQuickPass", false))
+            .add(create_sum_expr("Other", false))
+            .cast_as(Alias::new("DECIMAL(16, 4)"));
 
-    let total_assets_expr = Expr::val(0.0)
-        .add(create_sum_expr("Savings", false))
-        .add(create_sum_expr("Cash", false))
-        .add(create_sum_expr("Investment", false))
-        .add(create_sum_expr("Alipay", false))
-        .add(create_sum_expr("WeChat", false))
-        .add(create_sum_expr("CloudQuickPass", false))
-        .add(create_sum_expr("Other", false))
-        .cast_as(Alias::new("DECIMAL(16, 4)"));
-        
+        let total_assets_expr = Expr::val(0.0)
+            .add(create_sum_expr("Savings", false))
+            .add(create_sum_expr("Cash", false))
+            .add(create_sum_expr("Investment", false))
+            .add(create_sum_expr("Alipay", false))
+            .add(create_sum_expr("WeChat", false))
+            .add(create_sum_expr("CloudQuickPass", false))
+            .add(create_sum_expr("Other", false))
+            .cast_as(Alias::new("DECIMAL(16, 4)"));
+
         query = query
             .expr_as(total_balance_expr, "total_balance")
             .expr_as(adjusted_net_worth_expr, "adjusted_net_worth")
@@ -811,7 +809,7 @@ fn create_sum_expr(account_type: &str, use_abs: bool) -> SimpleExpr {
     } else {
         Expr::col(AccountColumn::Balance).into()
     };
-    
+
     SimpleExpr::FunctionCall(Func::coalesce(vec![
         SimpleExpr::FunctionCall(Func::sum(
             Expr::case(condition, balance_expr)
@@ -821,6 +819,41 @@ fn create_sum_expr(account_type: &str, use_abs: bool) -> SimpleExpr {
         Expr::val(0.0).into(),
     ]))
     .cast_as(Alias::new("DECIMAL(16,4)"))
+}
+
+pub async fn update_account_columns<I, E>(
+    db: &DbConn,
+    serial_nums: impl IntoIterator<Item = String>,
+    updates: I,
+) -> MijiResult<u64>
+where
+    I: IntoIterator<Item = (entity::account::Column, E)>,
+    E: Into<SimpleExpr>,
+{
+    let serial_nums: Vec<String> = serial_nums.into_iter().collect();
+
+    if serial_nums.is_empty() {
+        return Err(AppError::simple(
+            BusinessCode::InvalidParameter,
+            "serial_nums cannot be empty".to_string(),
+        ));
+    }
+
+    let mut updater = entity::account::Entity::update_many()
+        .filter(entity::account::Column::SerialNum.is_in(serial_nums.clone()));
+
+    for (col, expr) in updates {
+        updater = updater.col_expr(col, expr.into());
+    }
+
+    let result = updater.exec(db).await.map_err(AppError::from)?;
+    if result.rows_affected == 0 {
+        return Err(AppError::simple(
+            BusinessCode::NotFound,
+            format!("Not found with serial_num: {:?}", serial_nums),
+        ));
+    }
+    Ok(result.rows_affected)
 }
 
 pub fn get_account_service() -> AccountService {

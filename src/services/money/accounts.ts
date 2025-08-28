@@ -1,6 +1,5 @@
 import { invokeCommand } from '@/types/api';
 import { DateUtils } from '@/utils/date';
-import { Lg } from '@/utils/debugLog';
 import { BaseMapper } from './baseManager';
 import type { PagedResult } from './baseManager';
 import type {
@@ -84,11 +83,11 @@ export class AccountMapper extends BaseMapper<
     isActive: boolean,
   ): Promise<Account> {
     try {
-      const account = await invokeCommand<Account>('update_account_active', {
+      console.log('updateAccountActive account ', isActive);
+      return await invokeCommand<Account>('update_account_active', {
+        serialNum,
         isActive,
       });
-      Lg.d('MoneyDb', 'Account isActive updated:', { serialNum, isActive });
-      return account;
     } catch (error) {
       this.handleError('updateAccountActive', error);
     }

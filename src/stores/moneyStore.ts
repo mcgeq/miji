@@ -273,25 +273,15 @@ export const useMoneyStore = defineStore('money', () => {
     }
   };
 
-  const toggleAccountActive = async (serialNum: string): Promise<void> => {
+  const toggleAccountActive = async (
+    serialNum: string,
+    isActive: boolean,
+  ): Promise<void> => {
     loading.value = true;
     error.value = null;
 
     try {
-      const account = accounts.value.find(a => a.serialNum === serialNum);
-      if (!account) {
-        const err = new MoneyStoreError(
-          MoneyStoreErrorCode.ACCOUNT_NOT_FOUND,
-          `账户不存在: ${serialNum}`,
-          { serialNum },
-        );
-        err.log();
-        throw err;
-      }
-
-      const newIsActive = !account.isActive;
-
-      await MoneyDb.updateAccountActive(serialNum, newIsActive);
+      await MoneyDb.updateAccountActive(serialNum, isActive);
     } catch (err) {
       throw handleMoneyStoreError(
         err,
@@ -478,12 +468,12 @@ export const useMoneyStore = defineStore('money', () => {
 
       const fromTrans =
         relatedTransactions[0].transactionType ===
-        TransactionTypeSchema.enum.Expense
+          TransactionTypeSchema.enum.Expense
           ? relatedTransactions[0]
           : relatedTransactions[1];
       const toTrans =
         relatedTransactions[0].transactionType ===
-        TransactionTypeSchema.enum.Income
+          TransactionTypeSchema.enum.Income
           ? relatedTransactions[0]
           : relatedTransactions[1];
 
@@ -603,12 +593,12 @@ export const useMoneyStore = defineStore('money', () => {
 
       const fromTrans =
         relatedTransactions[0].transactionType ===
-        TransactionTypeSchema.enum.Expense
+          TransactionTypeSchema.enum.Expense
           ? relatedTransactions[0]
           : relatedTransactions[1];
       const toTrans =
         relatedTransactions[0].transactionType ===
-        TransactionTypeSchema.enum.Income
+          TransactionTypeSchema.enum.Income
           ? relatedTransactions[0]
           : relatedTransactions[1];
 

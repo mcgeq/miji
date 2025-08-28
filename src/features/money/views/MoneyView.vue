@@ -402,9 +402,9 @@ async function deleteAccount(serialNum: string) {
   }
 }
 
-async function toggleAccountActive(serialNum: string) {
+async function toggleAccountActive(serialNum: string, isActive: boolean) {
   try {
-    await moneyStore.toggleAccountActive(serialNum);
+    await moneyStore.toggleAccountActive(serialNum, isActive);
     toast.success('状态更新成功');
     loadAccounts();
     await syncAccountBalanceSummary();

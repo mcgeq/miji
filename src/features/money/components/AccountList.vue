@@ -33,7 +33,7 @@ const props = defineProps<Props>();
 const emit = defineEmits<{
   edit: [account: Account];
   delete: [serialNum: string];
-  toggleActive: [serialNum: string];
+  toggleActive: [serialNum: string, isActive: boolean];
 }>();
 
 const { t } = useI18n();
@@ -77,8 +77,7 @@ const filteredAccounts = computed(() => {
   // 状态过滤
   if (activeFilter.value === 'active') {
     filtered = filtered.filter(account => account.isActive);
-  }
-  else if (activeFilter.value === 'inactive') {
+  } else if (activeFilter.value === 'inactive') {
     filtered = filtered.filter(account => !account.isActive);
   }
 
@@ -368,7 +367,7 @@ function getAccountTypeName(type: AccountType): string {
             <button
               class="money-option-btn hover:(border-green-500 text-green-500)"
               :title="account.isActive ? t('common.status.stop') : t('common.status.enabled')"
-              @click="emit('toggleActive', account.serialNum)"
+              @click="emit('toggleActive', account.serialNum, !account.isActive)"
             >
               <Ban class="h-4 w-4" />
             </button>

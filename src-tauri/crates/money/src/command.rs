@@ -178,6 +178,21 @@ pub async fn update_account(
     Ok(ApiResponse::from_result(result))
 }
 
+#[tauri::command]
+pub async fn update_account_active(
+    state: State<'_, AppState>,
+    serial_num: String,
+    is_active: bool,
+) -> Result<ApiResponse<AccountResponseWithRelations>, String> {
+    let service = get_account_service();
+    Ok(ApiResponse::from_result(
+        service
+            .update_account_active(&state.db, serial_num, is_active)
+            .await
+            .map(tuple_to_response),
+    ))
+}
+
 // 删除账户
 #[tauri::command]
 pub async fn delete_account(

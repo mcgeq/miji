@@ -11,8 +11,8 @@
 
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, DbConn, EntityTrait, FromQueryResult, IntoActiveModel,
-    PaginatorTrait, PrimaryKeyTrait, QueryFilter, QuerySelect, TransactionTrait,
-    prelude::async_trait::async_trait,
+    PaginatorTrait, PrimaryKeyTrait, QueryFilter, QuerySelect, TransactionTrait, Value,
+    prelude::{Expr, async_trait::async_trait},
 };
 use serde::Serialize;
 use std::{str::FromStr, sync::Arc};
@@ -652,4 +652,47 @@ where
         txn: &sea_orm::DbConn,
         id: <E::PrimaryKey as PrimaryKeyTrait>::ValueType,
     ) -> MijiResult<()>;
+}
+
+/// 通用更新函数
+pub async fn update_entity_columns_simple<E, I, C, V, U>(
+    db: &DbConn,
+    filters: impl IntoIterator<Item = (C, impl IntoIterator<Item = V>)>,
+    updates: I,
+) -> MijiResult<u64>
+where
+    E: EntityTrait,
+    C: Copy + ColumnTrait,          // 条件列
+    V: Clone + Into<Value>,         // 条件值
+    I: IntoIterator<Item = (C, U)>, // 更新列和值
+    U: Clone + Into<Value>,         // 更新值
+{
+    let mut updater = E::update_many();
+
+    // 构建过滤条件
+    for (col, values) in filters {
+        let expr_values: Vec<Value> = values.into_iter().map(|v| v.into()).collect();
+        if expr_values.is_empty() {
+            return Err(AppError::simple(
+                BusinessCode::InvalidParameter,
+                "Filter values cannot be empty".to_string(),
+            ));
+        }
+        updater = updater.filter(col.is_in(expr_values));
+    }
+
+    // 添加更新列（用 Expr::value 包装成 SimpleExpr）
+    for (col, val) in updates {
+        updater = updater.col_expr(col, Expr::value(val)); // ✅ 必须是 Expr::value
+    }
+
+    let result = updater.exec(db).await.map_err(AppError::from)?;
+    if result.rows_affected == 0 {
+        return Err(AppError::simple(
+            BusinessCode::NotFound,
+            "No records matched the filter conditions".to_string(),
+        ));
+    }
+
+    Ok(result.rows_affected)
 }
