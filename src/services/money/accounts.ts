@@ -64,13 +64,15 @@ export class AccountMapper extends BaseMapper<
     }
   }
 
-  async update(account: UpdateAccountRequest): Promise<Account> {
+  async update(
+    serialNum: string,
+    account: UpdateAccountRequest,
+  ): Promise<Account> {
     try {
       const result = await invokeCommand<Account>('update_account', {
-        serialNum: account.serialNum,
+        serialNum,
         data: account,
       });
-      Lg.d('MoneyDb', 'Account updated:', account.serialNum);
       return result;
     } catch (error) {
       this.handleError('update', error);

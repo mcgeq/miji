@@ -68,8 +68,11 @@ export class MoneyDb {
     return this.accountMapper.list();
   }
 
-  static async updateAccount(account: UpdateAccountRequest): Promise<Account> {
-    return this.accountMapper.update(account);
+  static async updateAccount(
+    serialNum: string,
+    account: UpdateAccountRequest,
+  ): Promise<Account> {
+    return this.accountMapper.update(serialNum, account);
   }
 
   static async updateAccountActive(

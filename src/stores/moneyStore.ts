@@ -5,9 +5,7 @@ import { AppError, AppErrorCode, AppErrorSeverity } from '@/errors/appError';
 import { TransactionTypeSchema } from '@/schema/common';
 import { MoneyDbError } from '@/services/money/baseManager';
 import { MoneyDb } from '@/services/money/money';
-import { invokeCommand } from '@/types/api';
 import { DateUtils } from '@/utils/date';
-import { Lg } from '@/utils/debugLog';
 import { uuid } from '@/utils/uuid';
 import type { Category, IncomeExpense, TransactionType } from '@/schema/common';
 import type {
@@ -241,10 +239,7 @@ export const useMoneyStore = defineStore('money', () => {
     error.value = null;
 
     try {
-      const act = await invokeCommand<Account>('update_account', {
-        serialNum,
-        data: account,
-      });
+      const act = await MoneyDb.updateAccount(serialNum, account);
       await updateLocalAccounts();
       return act;
     } catch (err) {
@@ -264,7 +259,7 @@ export const useMoneyStore = defineStore('money', () => {
     error.value = null;
 
     try {
-      await invokeCommand('delete_account', { serialNum });
+      await MoneyDb.deleteAccount(serialNum);
       await updateLocalAccounts();
     } catch (err) {
       throw handleMoneyStoreError(
@@ -297,9 +292,6 @@ export const useMoneyStore = defineStore('money', () => {
       const newIsActive = !account.isActive;
 
       await MoneyDb.updateAccountActive(serialNum, newIsActive);
-
-      account.isActive = newIsActive;
-      account.updatedAt = DateUtils.getLocalISODateTimeWithOffset();
     } catch (err) {
       throw handleMoneyStoreError(
         err,
@@ -486,12 +478,12 @@ export const useMoneyStore = defineStore('money', () => {
 
       const fromTrans =
         relatedTransactions[0].transactionType ===
-          TransactionTypeSchema.enum.Expense
+        TransactionTypeSchema.enum.Expense
           ? relatedTransactions[0]
           : relatedTransactions[1];
       const toTrans =
         relatedTransactions[0].transactionType ===
-          TransactionTypeSchema.enum.Income
+        TransactionTypeSchema.enum.Income
           ? relatedTransactions[0]
           : relatedTransactions[1];
 
@@ -611,12 +603,12 @@ export const useMoneyStore = defineStore('money', () => {
 
       const fromTrans =
         relatedTransactions[0].transactionType ===
-          TransactionTypeSchema.enum.Expense
+        TransactionTypeSchema.enum.Expense
           ? relatedTransactions[0]
           : relatedTransactions[1];
       const toTrans =
         relatedTransactions[0].transactionType ===
-          TransactionTypeSchema.enum.Income
+        TransactionTypeSchema.enum.Income
           ? relatedTransactions[0]
           : relatedTransactions[1];
 
