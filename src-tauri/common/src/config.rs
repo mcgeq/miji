@@ -69,13 +69,9 @@ impl Config {
 }
 
 fn get_app_data_dir(app: &AppHandle) -> MijiResult<PathBuf> {
-    #[cfg(not(any(target_os = "ios", target_os = "android")))]
-    {
-        if let Ok(dir) = env_get_string("DATA_DIR") {
-            return Ok(PathBuf::from(dir));
-        }
-    }
-
+    #[cfg(any(target_os = "ios", target_os = "android"))]
+    let result = get_mobile_data_dir(app);
+    
     #[cfg(any(target_os = "ios", target_os = "android"))]
     let result = get_mobile_data_dir(app);
     #[cfg(not(any(target_os = "ios", target_os = "android")))]
