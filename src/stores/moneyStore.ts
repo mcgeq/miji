@@ -468,12 +468,12 @@ export const useMoneyStore = defineStore('money', () => {
 
       const fromTrans =
         relatedTransactions[0].transactionType ===
-          TransactionTypeSchema.enum.Expense
+        TransactionTypeSchema.enum.Expense
           ? relatedTransactions[0]
           : relatedTransactions[1];
       const toTrans =
         relatedTransactions[0].transactionType ===
-          TransactionTypeSchema.enum.Income
+        TransactionTypeSchema.enum.Income
           ? relatedTransactions[0]
           : relatedTransactions[1];
 
@@ -593,12 +593,12 @@ export const useMoneyStore = defineStore('money', () => {
 
       const fromTrans =
         relatedTransactions[0].transactionType ===
-          TransactionTypeSchema.enum.Expense
+        TransactionTypeSchema.enum.Expense
           ? relatedTransactions[0]
           : relatedTransactions[1];
       const toTrans =
         relatedTransactions[0].transactionType ===
-          TransactionTypeSchema.enum.Income
+        TransactionTypeSchema.enum.Income
           ? relatedTransactions[0]
           : relatedTransactions[1];
 
@@ -779,24 +779,15 @@ export const useMoneyStore = defineStore('money', () => {
     }
   };
 
-  const toggleBudgetActive = async (serialNum: string): Promise<void> => {
+  const toggleBudgetActive = async (
+    serialNum: string,
+    isActive: boolean,
+  ): Promise<void> => {
     loading.value = true;
     error.value = null;
 
     try {
-      const budget = budgets.value.find(b => b.serialNum === serialNum);
-      if (!budget) {
-        const err = new MoneyStoreError(
-          MoneyStoreErrorCode.NOT_FOUND,
-          `预算不存在: ${serialNum}`,
-          { serialNum },
-        );
-        err.log();
-        throw err;
-      }
-      budget.isActive = !budget.isActive;
-      budget.updatedAt = new Date().toISOString();
-      await MoneyDb.updateBudget(budget);
+      await MoneyDb.updateBudgetActive(serialNum, isActive);
       await updateLocalBudgets();
     } catch (err) {
       throw handleMoneyStoreError(

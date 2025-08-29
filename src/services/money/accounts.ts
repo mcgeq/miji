@@ -116,7 +116,7 @@ export class AccountMapper extends BaseMapper<
       );
       return result;
     } catch (err) {
-      this.handleError('totalAssets', err);
+      this.handleError('listPaged', err);
     }
   }
 

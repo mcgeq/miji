@@ -285,7 +285,7 @@ async function saveAccount(account: CreateAccountRequest) {
 }
 async function updateAccount(serialNum: string, account: UpdateAccountRequest) {
   try {
-    if (selectedAccount.value && 'serialNum' in account) {
+    if (selectedAccount.value) {
       await moneyStore.updateAccount(serialNum, account);
       toast.success('更新成功');
       await finalizeAccountChange();
@@ -436,9 +436,9 @@ async function deleteBudget(serialNum: string) {
     }
   }
 }
-async function toggleBudgetActive(serialNum: string) {
+async function toggleBudgetActive(serialNum: string, isActive: boolean) {
   try {
-    await moneyStore.toggleBudgetActive(serialNum);
+    await moneyStore.toggleBudgetActive(serialNum, isActive);
     toast.success('状态更新成功');
     await finalizeBudgetChange();
   } catch (err) {
@@ -539,22 +539,40 @@ onMounted(async () => {
             快捷操作
           </h3>
           <div class="flex flex-wrap justify-end gap-3.75">
-            <button class="flex items-center gap-2 rounded-md bg-purple-50 px-2 py-3 text-sm text-purple-500 hover:opacity-80" @click="showAccountModal">
+            <button
+              class="flex items-center gap-2 rounded-md bg-purple-50 px-2 py-3 text-sm text-purple-500 hover:opacity-80"
+              @click="showAccountModal"
+            >
               <CreditCard class="h-4 w-4" /><span>添加账户</span>
             </button>
-            <button class="flex items-center gap-2 rounded-md bg-green-50 px-2 py-3 text-sm text-green-600 hover:opacity-80" @click="showTransactionModal(TransactionTypeSchema.enum.Income)">
+            <button
+              class="flex items-center gap-2 rounded-md bg-green-50 px-2 py-3 text-sm text-green-600 hover:opacity-80"
+              @click="showTransactionModal(TransactionTypeSchema.enum.Income)"
+            >
               <PlusCircle class="h-4 w-4" /><span>记录收入</span>
             </button>
-            <button class="flex items-center gap-2 rounded-md bg-red-50 px-2 py-3 text-sm text-red-500 hover:opacity-80" @click="showTransactionModal(TransactionTypeSchema.enum.Expense)">
+            <button
+              class="flex items-center gap-2 rounded-md bg-red-50 px-2 py-3 text-sm text-red-500 hover:opacity-80"
+              @click="showTransactionModal(TransactionTypeSchema.enum.Expense)"
+            >
               <MinusCircle class="h-4 w-4" /><span>记录支出</span>
             </button>
-            <button class="flex items-center gap-2 rounded-md bg-blue-50 px-2 py-3 text-sm text-blue-500 hover:opacity-80" @click="showTransactionModal(TransactionTypeSchema.enum.Transfer)">
+            <button
+              class="flex items-center gap-2 rounded-md bg-blue-50 px-2 py-3 text-sm text-blue-500 hover:opacity-80"
+              @click="showTransactionModal(TransactionTypeSchema.enum.Transfer)"
+            >
               <ArrowRightLeft class="h-4 w-4" /><span>记录转账</span>
             </button>
-            <button class="flex items-center gap-2 rounded-md bg-orange-50 px-2 py-3 text-sm text-orange-500 hover:opacity-80" @click="showBudgetModal">
+            <button
+              class="flex items-center gap-2 rounded-md bg-orange-50 px-2 py-3 text-sm text-orange-500 hover:opacity-80"
+              @click="showBudgetModal"
+            >
               <Target class="h-4 w-4" /><span>设置预算</span>
             </button>
-            <button class="flex items-center gap-2 rounded-md bg-yellow-50 px-2 py-3 text-sm text-yellow-600 hover:opacity-80" @click="showReminderModal">
+            <button
+              class="flex items-center gap-2 rounded-md bg-yellow-50 px-2 py-3 text-sm text-yellow-600 hover:opacity-80"
+              @click="showReminderModal"
+            >
               <Bell class="h-4 w-4" /><span>设置提醒</span>
             </button>
           </div>
@@ -568,23 +586,83 @@ onMounted(async () => {
       </div>
 
       <div class="p-5">
-        <AccountList v-if="activeTab === 'accounts'" :accounts="accounts" :loading="accountsLoading" @edit="editAccount" @delete="deleteAccount" @toggle-active="toggleAccountActive" />
-        <TransactionList v-if="activeTab === 'transactions'" ref="transactionListRef" :accounts="accounts" @edit="editTransaction" @delete="deleteTransaction" @view-details="viewTransactionDetails" />
-        <BudgetList v-if="activeTab === 'budgets'" :budgets="budgets" :loading="budgetsLoading" @edit="editBudget" @delete="deleteBudget" @toggle-active="toggleBudgetActive" />
-        <ReminderList v-if="activeTab === 'reminders'" :reminders="reminders" :loading="remindersLoading" @edit="editReminder" @delete="deleteReminder" @mark-paid="markReminderPaid" />
+        <AccountList
+          v-if="activeTab === 'accounts'"
+          :accounts="accounts"
+          :loading="accountsLoading"
+          @edit="editAccount"
+          @delete="deleteAccount"
+          @toggle-active="toggleAccountActive"
+        />
+        <TransactionList
+          v-if="activeTab === 'transactions'"
+          ref="transactionListRef"
+          :accounts="accounts"
+          @edit="editTransaction"
+          @delete="deleteTransaction"
+          @view-details="viewTransactionDetails"
+        />
+        <BudgetList
+          v-if="activeTab === 'budgets'"
+          :budgets="budgets"
+          :loading="budgetsLoading"
+          @edit="editBudget"
+          @delete="deleteBudget"
+          @toggle-active="toggleBudgetActive"
+        />
+        <ReminderList
+          v-if="activeTab === 'reminders'"
+          :reminders="reminders"
+          :loading="remindersLoading"
+          @edit="editReminder"
+          @delete="deleteReminder"
+          @mark-paid="markReminderPaid"
+        />
       </div>
     </div>
 
-    <TransactionModal v-if="showTransaction" :type="transactionType" :transaction="selectedTransaction" :accounts="accounts" @close="closeTransactionModal" @save="saveTransaction" @save-transfer="saveTransfer" />
-    <AccountModal v-if="showAccount" :account="selectedAccount" @close="closeAccountModal" @save="saveAccount" @update="updateAccount" />
-    <BudgetModal v-if="showBudget" :budget="selectedBudget" @close="closeBudgetModal" @save="saveBudget" />
-    <ReminderModal v-if="showReminder" :reminder="selectedReminder" @close="closeReminderModal" @save="saveReminder" />
+    <TransactionModal
+      v-if="showTransaction"
+      :type="transactionType"
+      :transaction="selectedTransaction"
+      :accounts="accounts"
+      @close="closeTransactionModal"
+      @save="saveTransaction"
+      @save-transfer="saveTransfer"
+    />
+    <AccountModal
+      v-if="showAccount"
+      :account="selectedAccount"
+      @close="closeAccountModal"
+      @save="saveAccount"
+      @update="updateAccount"
+    />
+    <BudgetModal
+      v-if="showBudget"
+      :budget="selectedBudget"
+      @close="closeBudgetModal"
+      @save="saveBudget"
+    />
+    <ReminderModal
+      v-if="showReminder"
+      :reminder="selectedReminder"
+      @close="closeReminderModal"
+      @save="saveReminder"
+    />
 
     <ConfirmModal
-      :visible="confirmState.visible" :title="confirmState.title" :message="confirmState.message"
-      :type="confirmState.type" :confirm-text="confirmState.confirmText" :cancel-text="confirmState.cancelText"
-      :confirm-button-type="confirmState.confirmButtonType" :show-cancel="confirmState.showCancel" :loading="confirmState.loading"
-      @confirm="handleConfirm" @cancel="handleCancel" @close="handleClose"
+      :visible="confirmState.visible"
+      :title="confirmState.title"
+      :message="confirmState.message"
+      :type="confirmState.type"
+      :confirm-text="confirmState.confirmText"
+      :cancel-text="confirmState.cancelText"
+      :confirm-button-type="confirmState.confirmButtonType"
+      :show-cancel="confirmState.showCancel"
+      :loading="confirmState.loading"
+      @confirm="handleConfirm"
+      @cancel="handleCancel"
+      @close="handleClose"
     />
   </div>
 </template>

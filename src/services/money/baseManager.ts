@@ -513,7 +513,6 @@ export abstract class BaseMapper<C, U, R> {
   abstract create(entity: C): Promise<R>;
   abstract getById(serialNum: string): Promise<R | null>;
   abstract list(): Promise<R[]>;
-  abstract update(entity: U): Promise<R>;
   abstract update(serialNum: string, entity: U): Promise<R>;
   abstract deleteById(serialNum: string): Promise<void>;
 }

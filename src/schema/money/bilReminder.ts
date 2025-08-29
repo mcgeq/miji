@@ -34,4 +34,30 @@ export const BilReminderSchema = z.object({
   updatedAt: DateTimeSchema.optional().nullable(),
 });
 
+export const BilReminderCreateSchema = BilReminderSchema.pick({
+  name: true,
+  enabled: true,
+  type: true,
+  description: true,
+  category: true,
+  amount: true,
+  dueDate: true,
+  billDate: true,
+  remindDate: true,
+  repeatPeriod: true,
+  isPaid: true,
+  priority: true,
+  advanceValue: true,
+  advanceUnit: true,
+  color: true,
+  relatedTransactionSerialNum: true,
+}).extend({
+  currency: z.string().length(3),
+
+}).strict();
+
+export const BilReminderUpdateSchema = BilReminderCreateSchema.partial();
+
 export type BilReminder = z.infer<typeof BilReminderSchema>;
+export type BilReminderCreate = z.infer<typeof BilReminderCreateSchema>;
+export type BilReminderUpdate = z.infer<typeof BilReminderUpdateSchema>;

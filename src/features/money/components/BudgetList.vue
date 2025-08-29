@@ -16,7 +16,7 @@ const props = defineProps<Props>();
 const emit = defineEmits<{
   edit: [budget: Budget];
   delete: [serialNum: string];
-  toggleActive: [serialNum: string];
+  toggleActive: [serialNum: string, isActive: boolean];
 }>();
 
 const { t } = useI18n();
@@ -304,7 +304,7 @@ function getRemainingAmount(budget: Budget) {
             <button
               class="money-option-btn hover:(border-blue-500 text-blue-500)"
               :title="budget.isActive ? t('common.status.stop') : t('generalOperations.enabled')"
-              @click="emit('toggleActive', budget.serialNum)"
+              @click="emit('toggleActive', budget.serialNum, !budget.isActive)"
             >
               <component :is="budget.isActive ? Ban : StopCircle" class="h-4 w-4" />
             </button>

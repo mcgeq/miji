@@ -1,9 +1,8 @@
-import { db } from '@/utils/dbUtils';
-import { Lg } from '@/utils/debugLog';
+import { invokeCommand } from '@/types/api';
 import { BaseMapper } from './baseManager';
 import type { PagedResult } from './baseManager';
-import type { DateRange, SortOptions } from '@/schema/common';
-import type { BilReminder } from '@/schema/money';
+import type { DateRange, PageQuery } from '@/schema/common';
+import type { BilReminder, BilReminderCreate, BilReminderUpdate } from '@/schema/money';
 
 export interface BilReminderFilters {
   type?: string;
@@ -18,63 +17,12 @@ export interface BilReminderFilters {
 /**
  * 账单提醒数据映射器
  */
-export class BilReminderMapper extends BaseMapper<BilReminder> {
-  protected tableName = 'bil_reminder';
-  protected entityName = 'BilReminder';
+export class BilReminderMapper extends BaseMapper<BilReminderCreate, BilReminderUpdate, BilReminder> {
 
-  async create(reminder: BilReminder): Promise<void> {
+  async create(reminder: BilReminderCreate): Promise<BilReminder> {
     try {
-      const {
-        serialNum,
-        name,
-        enabled,
-        type,
-        description,
-        category,
-        amount,
-        currency,
-        dueDate,
-        billDate,
-        remindDate,
-        repeatPeriod,
-        isPaid,
-        priority,
-        advanceValue,
-        advanceUnit,
-        color,
-        relatedTransactionSerialNum,
-        createdAt,
-        updatedAt,
-      } = reminder;
-
-      await db.execute(
-        `INSERT INTO ${this.tableName} (serial_num, name, enabled, type, description, category, amount, currency, due_date, bill_date, remind_date, repeat_period, is_paid, priority, advance_value, advance_unit, color, related_transaction_serial_num, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [
-          serialNum,
-          name,
-          enabled,
-          type,
-          description,
-          category,
-          amount,
-          JSON.stringify(currency),
-          dueDate,
-          billDate,
-          remindDate,
-          JSON.stringify(repeatPeriod),
-          isPaid,
-          priority,
-          advanceValue,
-          advanceUnit,
-          color,
-          relatedTransactionSerialNum,
-          createdAt,
-          updatedAt,
-        ],
-      );
-
-      Lg.d('MoneyDb', 'BilReminder created:', { serialNum });
+      const result = await invokeCommand<BilReminder>('bil_reminder_create', { data: reminder });
+      return result;
     } catch (error) {
       this.handleError('create', error);
     }
@@ -82,20 +30,8 @@ export class BilReminderMapper extends BaseMapper<BilReminder> {
 
   async getById(serialNum: string): Promise<BilReminder | null> {
     try {
-      const result = await db.select<any[]>(
-        `SELECT * FROM ${this.tableName} WHERE serial_num = ?`,
-        [serialNum],
-        true,
-      );
-
-      if (result.length === 0) return null;
-
-      const reminder = result[0];
-      return {
-        ...reminder,
-        repeat_period: JSON.parse(reminder.repeat_period || '{}'),
-        currency: JSON.parse(reminder.currency),
-      } as BilReminder;
+      const result = await invokeCommand<BilReminder>('bil_reminder_get', { serialNum });
+      return result;
     } catch (error) {
       this.handleError('getById', error);
     }
@@ -103,72 +39,17 @@ export class BilReminderMapper extends BaseMapper<BilReminder> {
 
   async list(): Promise<BilReminder[]> {
     try {
-      const result = await db.select<any[]>(
-        `SELECT * FROM ${this.tableName}`,
-        [],
-        true,
-      );
-      return result.map(r => ({
-        ...r,
-        repeat_period: JSON.parse(r.repeat_period || '{}'),
-        currency: JSON.parse(r.currency),
-      })) as BilReminder[];
+      const result = await invokeCommand<BilReminder[]>('bil_reminder_list', { filter: {} });
+      return result;
     } catch (error) {
       this.handleError('list', error);
     }
   }
 
-  async update(reminder: BilReminder): Promise<void> {
+  async update(serialNum: string, reminder: BilReminderUpdate): Promise<BilReminder> {
     try {
-      const {
-        serialNum,
-        name,
-        enabled,
-        type,
-        description,
-        category,
-        amount,
-        currency,
-        dueDate,
-        billDate,
-        remindDate,
-        repeatPeriod,
-        isPaid,
-        priority,
-        advanceValue,
-        advanceUnit,
-        color,
-        relatedTransactionSerialNum,
-        updatedAt,
-      } = reminder;
-
-      await db.execute(
-        `UPDATE ${this.tableName} SET name = ?, enabled = ?, type = ?, description = ?, category = ?, amount = ?, currency = ?, due_date = ?, bill_date = ?, remind_date = ?, repeat_period = ?, is_paid = ?, priority = ?, advance_value = ?, advance_unit = ?, color = ?, related_transaction_serial_num = ?, updated_at = ?
-         WHERE serial_num = ?`,
-        [
-          name,
-          enabled,
-          type,
-          description,
-          category,
-          amount,
-          JSON.stringify(currency),
-          dueDate,
-          billDate,
-          remindDate,
-          JSON.stringify(repeatPeriod),
-          isPaid,
-          priority,
-          advanceValue,
-          advanceUnit,
-          color,
-          relatedTransactionSerialNum,
-          updatedAt,
-          serialNum,
-        ],
-      );
-
-      Lg.d('MoneyDb', 'BilReminder updated:', { serialNum });
+      const result = await invokeCommand<BilReminder>('bil_reminder_update', { serialNum, data: reminder });
+      return result;
     } catch (error) {
       this.handleError('update', error);
     }
@@ -176,34 +57,26 @@ export class BilReminderMapper extends BaseMapper<BilReminder> {
 
   async deleteById(serialNum: string): Promise<void> {
     try {
-      await db.execute(`DELETE FROM ${this.tableName} WHERE serial_num = ?`, [
-        serialNum,
-      ]);
-      Lg.d('MoneyDb', 'BilReminder deleted:', { serialNum });
+      await invokeCommand('bil_reminder_delete', { serialNum });
     } catch (error) {
       this.handleError('deleteById', error);
     }
   }
 
   async listPaged(
-    filters: BilReminderFilters = {},
-    page = 1,
-    pageSize = 10,
-    sortOptions: SortOptions = {},
+    query: PageQuery<BilReminderFilters> = {
+      currentPage: 1,
+      pageSize: 10,
+      sortOptions: {},
+      filter: {},
+    },
+
   ): Promise<PagedResult<BilReminder>> {
-    const baseQuery = `SELECT * FROM ${this.tableName}`;
-    return await this.queryPaged(
-      baseQuery,
-      filters,
-      page,
-      pageSize,
-      sortOptions,
-      'due_date ASC, created_at DESC',
-      row => ({
-        ...row,
-        repeat_period: JSON.parse(row.repeat_period || '{}'),
-        currency: JSON.parse(row.currency),
-      }),
-    );
+    try {
+      const result = await invokeCommand<PagedResult<BilReminder>>('bil_reminder_list_paged', { query });
+      return result;
+    } catch (error) {
+      this.handleError('listPaged', error);
+    }
   }
 }

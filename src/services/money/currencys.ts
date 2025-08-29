@@ -10,28 +10,28 @@ import type {
 /**
  * 货币数据映射器
  */
-export class CurrencyMapper extends BaseMapper<Currency> {
-  protected tableName = 'currency';
-  protected entityName = 'Currency';
+export class CurrencyMapper extends BaseMapper<CreateCurrencyRequest, UpdateCurrencyRequest, Currency> {
 
-  async create(currency: CreateCurrencyRequest): Promise<void> {
+  async create(currency: CreateCurrencyRequest): Promise<Currency> {
     try {
-      const cny = await invokeCommand<Currency>('create_currency', {
+      const cny = await invokeCommand<Currency>('currency_create', {
         data: currency,
       });
       Lg.d('MoneyDb', 'Currency created:', { cny });
+      return cny;
     } catch (error) {
       this.handleError('create', error);
     }
   }
 
-  async update(currency: UpdateCurrencyRequest): Promise<void> {
+  async update(serialNum: string, currency: UpdateCurrencyRequest): Promise<Currency> {
     try {
-      const cny = await invokeCommand<Currency>('update_currency', {
-        id: currency.code,
+      const cny = await invokeCommand<Currency>('currency_update', {
+        id: serialNum,
         data: currency,
       });
       Lg.d('MoneyDb', 'Currency updated:', { cny });
+      return cny;
     } catch (error) {
       this.handleError('update', error);
     }
@@ -39,7 +39,7 @@ export class CurrencyMapper extends BaseMapper<Currency> {
 
   async getById(code: string): Promise<Currency | null> {
     try {
-      const cny = await invokeCommand<Currency>('get_currency', { id: code });
+      const cny = await invokeCommand<Currency>('currency_get', { id: code });
       return cny;
     } catch (error) {
       this.handleError('getById', error);
@@ -49,7 +49,7 @@ export class CurrencyMapper extends BaseMapper<Currency> {
   async list(): Promise<Currency[]> {
     try {
       const tauriCurrencies = await invokeCommand<Currency[]>(
-        'list_currencies',
+        'currencies_list',
         {
           filter: {},
         },
@@ -62,7 +62,7 @@ export class CurrencyMapper extends BaseMapper<Currency> {
 
   async deleteById(code: string): Promise<void> {
     try {
-      await invokeCommand('delete_currency', { id: code });
+      await invokeCommand('currency_delete', { id: code });
       Lg.d('MoneyDb', 'Currency deleted:', { code });
     } catch (error) {
       this.handleError('deleteById', error);

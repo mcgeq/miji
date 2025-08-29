@@ -30,4 +30,26 @@ export const BudgetSchema = z.object({
   updatedAt: DateTimeSchema.optional().nullable(),
 });
 
+export const BudgetCreateSchema = BudgetSchema.pick({
+  description: true,
+  accountSerialNum: true,
+  name: true,
+  category: true,
+  amount: true,
+  repeatPeriod: true,
+  startDate: true,
+  endDate: true,
+  usedAmount: true,
+  isActive: true,
+  alertEnabled: true,
+  alertThreshold: true,
+  color: true,
+}).extend({
+  currency: z.string().length(3),
+}).strict();
+
+export const BudgetUpdateSchema = BudgetCreateSchema.partial();
+
 export type Budget = z.infer<typeof BudgetSchema>;
+export type BudgetCreate = z.infer<typeof BudgetCreateSchema>;
+export type BudgetUpdate = z.infer<typeof BudgetUpdateSchema>;
