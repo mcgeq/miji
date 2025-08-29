@@ -1,11 +1,14 @@
 use common::{
     BusinessCode,
-    crud::service::{CrudConverter, CrudService, GenericCrudService, TransactionalCrudService},
+    crud::service::{
+        CrudConverter, CrudService, GenericCrudService, TransactionalCrudService, sanitize_input,
+    },
     error::{AppError, MijiResult},
     log::logger::{NoopLogger, OperationLogger},
     paginations::{DateRange, Filter, PagedQuery, PagedResult},
     utils::date::DateUtils,
 };
+use once_cell::sync::Lazy;
 use sea_orm::{
     ActiveValue::Set,
     ColumnTrait, Condition, DatabaseConnection, DbConn, EntityTrait, PaginatorTrait, QueryFilter,
@@ -20,7 +23,9 @@ use tracing::info;
 use validator::Validate;
 
 use crate::{
-    dto::account::{AccountBalanceSummary, CreateAccountRequest, UpdateAccountRequest},
+    dto::account::{
+        AccountBalanceSummary, AccountType, CreateAccountRequest, UpdateAccountRequest,
+    },
     services::account_hooks::AccountHooks,
 };
 use entity::{
@@ -30,6 +35,76 @@ use entity::{
         Column as FamilyMemberColumn, Entity as FamilyMemberEntity, Model as FamilyMemberModel,
     },
 };
+
+/// 账户类型配置，用于动态处理 total_assets
+#[derive(Debug, Clone)]
+struct AccountTypeConfig {
+    struct_field: &'static str,
+    condition: Condition,
+    balance_expr: SimpleExpr,
+    #[allow(dead_code)]
+    include_in_total_assets: bool,
+}
+
+static ACCOUNT_TYPE_CONFIGS: Lazy<Vec<AccountTypeConfig>> = Lazy::new(|| {
+    vec![
+        AccountTypeConfig {
+            struct_field: "bank_savings_balance",
+            condition: Condition::any()
+                .add(AccountColumn::Type.eq(AccountType::Savings.as_ref()))
+                .add(AccountColumn::Type.eq(AccountType::Bank.as_ref())),
+            balance_expr: cast_decimal(Expr::col(AccountColumn::Balance)),
+            include_in_total_assets: true,
+        },
+        AccountTypeConfig {
+            struct_field: "cash_balance",
+            condition: Condition::all().add(AccountColumn::Type.eq(AccountType::Cash.as_ref())),
+            balance_expr: cast_decimal(Expr::col(AccountColumn::Balance)),
+            include_in_total_assets: true,
+        },
+        AccountTypeConfig {
+            struct_field: "credit_card_balance",
+            condition: Condition::all()
+                .add(AccountColumn::Type.eq(AccountType::CreditCard.as_ref())),
+            balance_expr: cast_decimal(SimpleExpr::FunctionCall(Func::abs(Expr::col(
+                AccountColumn::Balance,
+            )))),
+            include_in_total_assets: true,
+        },
+        AccountTypeConfig {
+            struct_field: "investment_balance",
+            condition: Condition::all()
+                .add(AccountColumn::Type.eq(AccountType::Investment.as_ref())),
+            balance_expr: cast_decimal(Expr::col(AccountColumn::Balance)),
+            include_in_total_assets: true,
+        },
+        AccountTypeConfig {
+            struct_field: "alipay_balance",
+            condition: Condition::all().add(AccountColumn::Type.eq(AccountType::Alipay.as_ref())),
+            balance_expr: cast_decimal(Expr::col(AccountColumn::Balance)),
+            include_in_total_assets: true,
+        },
+        AccountTypeConfig {
+            struct_field: "wechat_balance",
+            condition: Condition::all().add(AccountColumn::Type.eq(AccountType::WeChat.as_ref())),
+            balance_expr: cast_decimal(Expr::col(AccountColumn::Balance)),
+            include_in_total_assets: true,
+        },
+        AccountTypeConfig {
+            struct_field: "cloud_quick_pass_balance",
+            condition: Condition::all()
+                .add(AccountColumn::Type.eq(AccountType::CloudQuickPass.as_ref())),
+            balance_expr: cast_decimal(Expr::col(AccountColumn::Balance)),
+            include_in_total_assets: true,
+        },
+        AccountTypeConfig {
+            struct_field: "other_balance",
+            condition: Condition::all().add(AccountColumn::Type.eq(AccountType::Other.as_ref())),
+            balance_expr: cast_decimal(Expr::col(AccountColumn::Balance)),
+            include_in_total_assets: true,
+        },
+    ]
+});
 
 /// 账户过滤器
 #[derive(Debug, Validate, Deserialize)]
@@ -48,19 +123,19 @@ impl Filter<entity::account::Entity> for AccountFilter {
     fn to_condition(&self) -> Condition {
         let mut condition = Condition::all();
         if let Some(name) = &self.name {
-            condition = condition.add(AccountColumn::Name.eq(Self::sanitize_input(name)));
+            condition = condition.add(AccountColumn::Name.eq(sanitize_input(name)));
         }
         if let Some(r#type) = &self.r#type {
-            condition = condition.add(AccountColumn::Type.eq(Self::sanitize_input(r#type)));
+            condition = condition.add(AccountColumn::Type.eq(sanitize_input(r#type)));
         }
         if let Some(currency) = &self.currency {
-            condition = condition.add(AccountColumn::Currency.eq(Self::sanitize_input(currency)));
+            condition = condition.add(AccountColumn::Currency.eq(sanitize_input(currency)));
         }
         if let Some(is_shared) = self.is_shared {
             condition = condition.add(AccountColumn::IsShared.eq(is_shared as i32));
         }
         if let Some(owner_id) = &self.owner_id {
-            condition = condition.add(AccountColumn::OwnerId.eq(Self::sanitize_input(owner_id)));
+            condition = condition.add(AccountColumn::OwnerId.eq(sanitize_input(owner_id)));
         }
         if let Some(is_active) = self.is_active {
             condition = condition.add(AccountColumn::IsActive.eq(is_active as i32));
@@ -82,18 +157,6 @@ impl Filter<entity::account::Entity> for AccountFilter {
             }
         }
         condition
-    }
-}
-
-impl AccountFilter {
-    /// 输入清理，防止 SQL 注入
-    fn sanitize_input(input: &str) -> String {
-        input
-            .trim()
-            .replace(';', "")
-            .replace("--", "")
-            .replace("/*", "")
-            .replace("*/", "")
     }
 }
 
@@ -235,7 +298,7 @@ impl FamilyMemberLoader {
         db: &DbConn,
         serial_num: &str,
     ) -> MijiResult<Option<FamilyMemberModel>> {
-        FamilyMemberEntity::find_by_id(AccountFilter::sanitize_input(serial_num))
+        FamilyMemberEntity::find_by_id(sanitize_input(serial_num))
             .one(db)
             .await
             .map_err(AppError::from)
@@ -256,15 +319,6 @@ pub struct AccountService {
     inner: BaseAccountService,
 }
 
-/// 账户类型配置，用于动态处理 total_assets
-#[derive(Debug, Clone)]
-struct AccountTypeConfig {
-    struct_field: &'static str,
-    condition: Condition,
-    balance_expr: SimpleExpr,
-    include_in_total_assets: bool,
-}
-
 impl AccountService {
     pub fn get_service() -> Self {
         Self::new(None)
@@ -278,59 +332,8 @@ impl AccountService {
     }
 
     /// account type configs
-    fn account_type_configs() -> Vec<AccountTypeConfig> {
-        vec![
-            AccountTypeConfig {
-                struct_field: "bank_savings_balance",
-                condition: Condition::all().add(AccountColumn::Type.eq("Savings")),
-                balance_expr: cast_decimal(Expr::col(AccountColumn::Balance)),
-                include_in_total_assets: true,
-            },
-            AccountTypeConfig {
-                struct_field: "cash_balance",
-                condition: Condition::all().add(AccountColumn::Type.eq("Cash")),
-                balance_expr: cast_decimal(Expr::col(AccountColumn::Balance)),
-                include_in_total_assets: true,
-            },
-            AccountTypeConfig {
-                struct_field: "credit_card_balance",
-                condition: Condition::all().add(AccountColumn::Type.eq("CreditCard")),
-                balance_expr: cast_decimal(SimpleExpr::FunctionCall(Func::abs(Expr::col(
-                    AccountColumn::Balance,
-                )))),
-                include_in_total_assets: true,
-            },
-            AccountTypeConfig {
-                struct_field: "investment_balance",
-                condition: Condition::all().add(AccountColumn::Type.eq("Investment")),
-                balance_expr: cast_decimal(Expr::col(AccountColumn::Balance)),
-                include_in_total_assets: true,
-            },
-            AccountTypeConfig {
-                struct_field: "alipay_balance",
-                condition: Condition::all().add(AccountColumn::Type.eq("Alipay")),
-                balance_expr: cast_decimal(Expr::col(AccountColumn::Balance)),
-                include_in_total_assets: true,
-            },
-            AccountTypeConfig {
-                struct_field: "wechat_balance",
-                condition: Condition::all().add(AccountColumn::Type.eq("WeChat")),
-                balance_expr: cast_decimal(Expr::col(AccountColumn::Balance)),
-                include_in_total_assets: true,
-            },
-            AccountTypeConfig {
-                struct_field: "cloud_quick_pass_balance",
-                condition: Condition::all().add(AccountColumn::Type.eq("CloudQuickPass")),
-                balance_expr: cast_decimal(Expr::col(AccountColumn::Balance)),
-                include_in_total_assets: true,
-            },
-            AccountTypeConfig {
-                struct_field: "other_balance",
-                condition: Condition::all().add(AccountColumn::Type.eq("Other")),
-                balance_expr: cast_decimal(Expr::col(AccountColumn::Balance)),
-                include_in_total_assets: true,
-            },
-        ]
+    fn account_type_configs() -> &'static [AccountTypeConfig] {
+        &ACCOUNT_TYPE_CONFIGS
     }
 }
 
@@ -454,7 +457,7 @@ impl AccountService {
         id: String,
     ) -> MijiResult<(AccountModel, CurrencyModel)> {
         info!("[AccountService get_account_with_currency] start...");
-        AccountEntity::find_by_id(AccountFilter::sanitize_input(&id))
+        AccountEntity::find_by_id(sanitize_input(&id))
             .find_also_related(CurrencyEntity)
             .one(db)
             .await
@@ -491,7 +494,7 @@ impl AccountService {
         db: &DatabaseConnection,
         serial_num: String,
     ) -> MijiResult<AccountWithRelations> {
-        let result = AccountEntity::find_by_id(AccountFilter::sanitize_input(&serial_num))
+        let result = AccountEntity::find_by_id(sanitize_input(&serial_num))
             .select_only()
             .columns([
                 AccountColumn::SerialNum,
@@ -586,7 +589,7 @@ impl AccountService {
         let owner_ids: Vec<String> = rows_with_currency
             .iter()
             .filter_map(|(account, _)| account.owner_id.clone())
-            .map(|id| AccountFilter::sanitize_input(&id))
+            .map(|id| sanitize_input(&id))
             .collect();
         let owners_map = FamilyMemberLoader.batch_load(db, &owner_ids).await?;
 
@@ -632,7 +635,7 @@ impl AccountService {
         let owner_ids: Vec<String> = rows_with_currency
             .iter()
             .filter_map(|(account, _)| account.owner_id.clone())
-            .map(|id| AccountFilter::sanitize_input(&id))
+            .map(|id| sanitize_input(&id))
             .collect();
         let owners_map = FamilyMemberLoader.batch_load(db, &owner_ids).await?;
 
@@ -697,7 +700,7 @@ impl AccountService {
             let expr = Expr::val(0.0).add(
                 SimpleExpr::FunctionCall(Func::coalesce(vec![
                     SimpleExpr::FunctionCall(Func::sum(
-                        Expr::case(config.condition, config.balance_expr)
+                        Expr::case(config.condition.clone(), config.balance_expr.clone())
                             .finally(0.0)
                             .cast_as(Alias::new("DECIMAL(16,4)")),
                     )),
@@ -710,35 +713,38 @@ impl AccountService {
 
         // 计算 total_balance, adjusted_net_worth, total_assets
         let total_balance_expr = Expr::val(0.0)
-            .add(create_sum_expr("Savings", false))
-            .add(create_sum_expr("Cash", false))
-            .add(create_sum_expr("CreditCard", true)) // 对信用卡使用 ABS
-            .add(create_sum_expr("Investment", false))
-            .add(create_sum_expr("Alipay", false))
-            .add(create_sum_expr("WeChat", false))
-            .add(create_sum_expr("CloudQuickPass", false))
-            .add(create_sum_expr("Other", false))
+            .add(create_sum_expr(AccountType::Savings, false))
+            .add(create_sum_expr(AccountType::Bank, false))
+            .add(create_sum_expr(AccountType::Cash, false))
+            .add(create_sum_expr(AccountType::CreditCard, true)) // 信用卡取绝对值
+            .add(create_sum_expr(AccountType::Investment, false))
+            .add(create_sum_expr(AccountType::Alipay, false))
+            .add(create_sum_expr(AccountType::WeChat, false))
+            .add(create_sum_expr(AccountType::CloudQuickPass, false))
+            .add(create_sum_expr(AccountType::Other, false))
             .cast_as(Alias::new("DECIMAL(16, 4)"));
 
         let adjusted_net_worth_expr = Expr::val(0.0)
-            .add(create_sum_expr("Savings", false))
-            .add(create_sum_expr("Cash", false))
-            .sub(create_sum_expr("CreditCard", true)) // 信用卡负向计算
-            .add(create_sum_expr("Investment", false))
-            .add(create_sum_expr("Alipay", false))
-            .add(create_sum_expr("WeChat", false))
-            .add(create_sum_expr("CloudQuickPass", false))
-            .add(create_sum_expr("Other", false))
+            .add(create_sum_expr(AccountType::Savings, false))
+            .add(create_sum_expr(AccountType::Bank, false))
+            .add(create_sum_expr(AccountType::Cash, false))
+            .sub(create_sum_expr(AccountType::CreditCard, true)) // 信用卡负向计算
+            .add(create_sum_expr(AccountType::Investment, false))
+            .add(create_sum_expr(AccountType::Alipay, false))
+            .add(create_sum_expr(AccountType::WeChat, false))
+            .add(create_sum_expr(AccountType::CloudQuickPass, false))
+            .add(create_sum_expr(AccountType::Other, false))
             .cast_as(Alias::new("DECIMAL(16, 4)"));
 
         let total_assets_expr = Expr::val(0.0)
-            .add(create_sum_expr("Savings", false))
-            .add(create_sum_expr("Cash", false))
-            .add(create_sum_expr("Investment", false))
-            .add(create_sum_expr("Alipay", false))
-            .add(create_sum_expr("WeChat", false))
-            .add(create_sum_expr("CloudQuickPass", false))
-            .add(create_sum_expr("Other", false))
+            .add(create_sum_expr(AccountType::Savings, false))
+            .add(create_sum_expr(AccountType::Bank, false))
+            .add(create_sum_expr(AccountType::Cash, false))
+            .add(create_sum_expr(AccountType::Investment, false))
+            .add(create_sum_expr(AccountType::Alipay, false))
+            .add(create_sum_expr(AccountType::WeChat, false))
+            .add(create_sum_expr(AccountType::CloudQuickPass, false))
+            .add(create_sum_expr(AccountType::Other, false))
             .cast_as(Alias::new("DECIMAL(16, 4)"));
 
         query = query
@@ -764,7 +770,7 @@ impl AccountService {
             return query_builder;
         };
 
-        let sort_by = AccountFilter::sanitize_input(sort_by);
+        let sort_by = sanitize_input(sort_by);
 
         match AccountColumn::from_str(&sort_by) {
             Ok(column) => {
@@ -802,8 +808,8 @@ fn cast_decimal<T: Into<SimpleExpr>>(expr: T) -> SimpleExpr {
 }
 
 // 辅助函数：创建 SUM 表达式
-fn create_sum_expr(account_type: &str, use_abs: bool) -> SimpleExpr {
-    let condition = Condition::all().add(AccountColumn::Type.eq(account_type));
+fn create_sum_expr(account_type: AccountType, use_abs: bool) -> SimpleExpr {
+    let condition = Condition::all().add(AccountColumn::Type.eq(account_type.as_ref()));
     let balance_expr = if use_abs {
         SimpleExpr::FunctionCall(Func::abs(Expr::col(AccountColumn::Balance)))
     } else {

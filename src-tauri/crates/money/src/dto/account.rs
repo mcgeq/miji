@@ -68,27 +68,27 @@ pub struct UpdateAccountRequest {
 #[serde(rename_all = "camelCase")]
 pub struct AccountBalanceSummary {
     #[sea_orm(alias = "bank_savings_balance")]
-    pub bank_savings_balance: Decimal,     // 银行/储蓄余额
+    pub bank_savings_balance: Decimal, // 银行/储蓄余额
     #[sea_orm(alias = "cash_balance")]
-    pub cash_balance: Decimal,             // 现金余额
+    pub cash_balance: Decimal, // 现金余额
     #[sea_orm(alias = "credit_card_balance")]
-    pub credit_card_balance: Decimal,      // 信用卡余额（绝对值）
+    pub credit_card_balance: Decimal, // 信用卡余额（绝对值）
     #[sea_orm(alias = "investment_balance")]
-    pub investment_balance: Decimal,       // 投资余额
+    pub investment_balance: Decimal, // 投资余额
     #[sea_orm(alias = "alipay_balance")]
-    pub alipay_balance: Decimal,           // 支付宝余额
+    pub alipay_balance: Decimal, // 支付宝余额
     #[sea_orm(alias = "wechat_balance")]
-    pub wechat_balance: Decimal,           // 微信余额
+    pub wechat_balance: Decimal, // 微信余额
     #[sea_orm(alias = "cloud_quick_pass_balance")]
     pub cloud_quick_pass_balance: Decimal, // 云闪付余额
     #[sea_orm(alias = "other_balance")]
-    pub other_balance: Decimal,            // 其他余额
+    pub other_balance: Decimal, // 其他余额
     #[sea_orm(alias = "total_balance")]
-    pub total_balance: Decimal,            // 总余额
+    pub total_balance: Decimal, // 总余额
     #[sea_orm(alias = "adjusted_net_worth")]
-    pub adjusted_net_worth: Decimal,       // 调整后净资产（信用卡负向计算）
+    pub adjusted_net_worth: Decimal, // 调整后净资产（信用卡负向计算）
     #[sea_orm(alias = "total_assets")]
-    pub total_assets: Decimal,             // 总资产（不含信用卡）
+    pub total_assets: Decimal, // 总资产（不含信用卡）
 }
 
 impl Default for AccountBalanceSummary {
@@ -165,6 +165,35 @@ pub struct OwnerInfo {
     pub serial_num: String,
     pub name: String,
     pub role: Option<String>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum AccountType {
+    Savings,
+    Bank,
+    Cash,
+    CreditCard,
+    Investment,
+    Alipay,
+    WeChat,
+    CloudQuickPass,
+    Other,
+}
+
+impl AsRef<str> for AccountType {
+    fn as_ref(&self) -> &str {
+        match self {
+            AccountType::Savings => "Savings",
+            AccountType::Bank => "Bank",
+            AccountType::Cash => "Cash",
+            AccountType::CreditCard => "CreditCard",
+            AccountType::Investment => "Investment",
+            AccountType::Alipay => "Alipay",
+            AccountType::WeChat => "WeChat",
+            AccountType::CloudQuickPass => "CloudQuickPass",
+            AccountType::Other => "Other",
+        }
+    }
 }
 
 /// 实现从 (account, currency) 元组到 AccountResponse 的转换

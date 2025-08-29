@@ -2908,6 +2908,7 @@ dependencies = [
  "entity",
  "lazy_static",
  "num-traits",
+ "once_cell",
  "regex",
  "sea-orm",
  "serde",

@@ -696,3 +696,13 @@ where
 
     Ok(result.rows_affected)
 }
+
+/// 输入清理，防止 SQL 注入
+pub fn sanitize_input(input: &str) -> String {
+    input
+        .trim()
+        .replace(';', "")
+        .replace("--", "")
+        .replace("/*", "")
+        .replace("*/", "")
+}
