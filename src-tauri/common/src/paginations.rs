@@ -4,6 +4,8 @@ use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 use validator::Validate;
 
+use crate::crud::service::sanitize_input;
+
 /// 分页查询参数
 #[derive(Debug, Clone, Deserialize, Validate)]
 pub struct PagedQuery<F> {
@@ -38,6 +40,19 @@ fn default_page_size() -> usize {
 pub struct DateRange {
     pub start: Option<String>,
     pub end: Option<String>,
+}
+
+impl DateRange {
+    pub fn to_condition<C: ColumnTrait>(&self, column: C) -> Condition {
+        let mut condition = Condition::all();
+        if let Some(start) = &self.start {
+            condition = condition.add(column.gte(sanitize_input(start)));
+        }
+        if let Some(end) = &self.end {
+            condition = condition.add(column.lte(sanitize_input(end)));
+        }
+        condition
+    }
 }
 
 /// 排序方向

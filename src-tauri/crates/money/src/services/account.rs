@@ -36,7 +36,10 @@ use entity::{
     },
 };
 
+/// ---------------------------------------------
+/// 配置部分
 /// 账户类型配置，用于动态处理 total_assets
+/// ---------------------------------------------
 #[derive(Debug, Clone)]
 struct AccountTypeConfig {
     struct_field: &'static str,
@@ -106,7 +109,9 @@ static ACCOUNT_TYPE_CONFIGS: Lazy<Vec<AccountTypeConfig>> = Lazy::new(|| {
     ]
 });
 
+/// ---------------------------------------------
 /// 账户过滤器
+/// ---------------------------------------------
 #[derive(Debug, Validate, Deserialize)]
 pub struct AccountFilter {
     pub name: Option<String>,
@@ -140,27 +145,19 @@ impl Filter<entity::account::Entity> for AccountFilter {
         if let Some(is_active) = self.is_active {
             condition = condition.add(AccountColumn::IsActive.eq(is_active as i32));
         }
-        if let Some(created_range) = &self.created_at_range {
-            if let Some(start) = &created_range.start {
-                condition = condition.add(AccountColumn::CreatedAt.gte(start.clone()));
-            }
-            if let Some(end) = &created_range.end {
-                condition = condition.add(AccountColumn::CreatedAt.lte(end.clone()));
-            }
+        if let Some(range) = &self.created_at_range {
+            condition = condition.add(range.to_condition(AccountColumn::CreatedAt));
         }
         if let Some(updated_range) = &self.updated_at_range {
-            if let Some(start) = &updated_range.start {
-                condition = condition.add(AccountColumn::UpdatedAt.gte(start.clone()));
-            }
-            if let Some(end) = &updated_range.end {
-                condition = condition.add(AccountColumn::UpdatedAt.lte(end.clone()));
-            }
+            condition = condition.add(updated_range.to_condition(AccountColumn::UpdatedAt));
         }
         condition
     }
 }
 
-/// 包含完整关联信息的账户数据结构
+/// ---------------------------------------------
+/// 账户关联结构
+/// ---------------------------------------------
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AccountWithRelations {
     pub account: AccountModel,
@@ -168,7 +165,9 @@ pub struct AccountWithRelations {
     pub owner: Option<FamilyMemberModel>,
 }
 
-/// 账户转换器
+/// ---------------------------------------------
+/// 转换器
+/// ---------------------------------------------
 #[derive(Debug)]
 pub struct AccountConverter;
 
@@ -204,7 +203,9 @@ impl CrudConverter<AccountEntity, CreateAccountRequest, UpdateAccountRequest> fo
     }
 }
 
+/// ---------------------------------------------
 /// 关联加载器 trait
+/// ---------------------------------------------
 #[async_trait]
 pub trait RelationLoader<E: EntityTrait> {
     type Model: Send + Sync;
@@ -305,7 +306,10 @@ impl FamilyMemberLoader {
     }
 }
 
+/// ---------------------------------------------
+/// Account Service
 /// 账户服务类型别名
+/// ---------------------------------------------
 pub type BaseAccountService = GenericCrudService<
     AccountEntity,
     AccountFilter,
@@ -803,6 +807,9 @@ impl AccountService {
     }
 }
 
+/// ---------------------------------------------
+/// 辅助函数
+/// ---------------------------------------------
 fn cast_decimal<T: Into<SimpleExpr>>(expr: T) -> SimpleExpr {
     expr.into().cast_as(Alias::new("DECIMAL(16,4)"))
 }
@@ -862,6 +869,9 @@ where
     Ok(result.rows_affected)
 }
 
+/// ---------------------------------------------
+/// 获取服务实例
+/// ---------------------------------------------
 pub fn get_account_service() -> AccountService {
     AccountService::get_service()
 }
