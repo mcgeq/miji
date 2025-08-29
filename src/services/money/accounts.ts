@@ -1,5 +1,4 @@
 import { invokeCommand } from '@/types/api';
-import { DateUtils } from '@/utils/date';
 import { BaseMapper } from './baseManager';
 import type { PagedResult } from './baseManager';
 import type {
@@ -33,12 +32,11 @@ export class AccountMapper extends BaseMapper<
   UpdateAccountRequest,
   Account
 > {
-  protected tableName = 'account';
   protected entityName = 'Account';
 
   async create(account: CreateAccountRequest): Promise<Account> {
     try {
-      return await invokeCommand<Account>('create_account', { data: account });
+      return await invokeCommand<Account>('account_create', { data: account });
     } catch (error) {
       this.handleError('create', error);
     }
@@ -46,7 +44,7 @@ export class AccountMapper extends BaseMapper<
 
   async getById(serialNum: string): Promise<Account | null> {
     try {
-      const account = await invokeCommand<Account>('get_account', {
+      const account = await invokeCommand<Account>('account_get', {
         serialNum,
       });
       return account;
@@ -57,7 +55,7 @@ export class AccountMapper extends BaseMapper<
 
   async list(): Promise<Account[]> {
     try {
-      return await invokeCommand<Account[]>('list_accounts', { filter: {} });
+      return await invokeCommand<Account[]>('account_list', { filter: {} });
     } catch (error) {
       this.handleError('list', error);
     }
@@ -68,7 +66,7 @@ export class AccountMapper extends BaseMapper<
     account: UpdateAccountRequest,
   ): Promise<Account> {
     try {
-      const result = await invokeCommand<Account>('update_account', {
+      const result = await invokeCommand<Account>('account_update', {
         serialNum,
         data: account,
       });
@@ -83,8 +81,7 @@ export class AccountMapper extends BaseMapper<
     isActive: boolean,
   ): Promise<Account> {
     try {
-      console.log('updateAccountActive account ', isActive);
-      return await invokeCommand<Account>('update_account_active', {
+      return await invokeCommand<Account>('account_update_active', {
         serialNum,
         isActive,
       });
@@ -95,7 +92,7 @@ export class AccountMapper extends BaseMapper<
 
   async deleteById(serialNum: string): Promise<void> {
     try {
-      await invokeCommand('delete_account', { serialNum });
+      await invokeCommand('account_delete', { serialNum });
     } catch (error) {
       this.handleError('deleteById', error);
     }
@@ -110,10 +107,9 @@ export class AccountMapper extends BaseMapper<
     },
   ): Promise<PagedResult<Account>> {
     try {
-      const result = invokeCommand<PagedResult<Account>>(
-        'list_accounts_paged_with_relations',
-        { query },
-      );
+      const result = invokeCommand<PagedResult<Account>>('account_list_paged', {
+        query,
+      });
       return result;
     } catch (err) {
       this.handleError('listPaged', err);
@@ -127,27 +123,5 @@ export class AccountMapper extends BaseMapper<
     } catch (err) {
       this.handleError('totalAssets', err);
     }
-  }
-
-  /**
-   * 构建更新账户余额的 SQL 操作
-   * @param serialNum 账户序列号
-   * @param amountDelta 余额变化量（正数为增加，负数为减少）
-   */
-  buildUpdateBalanceOperation(
-    serialNum: string,
-    amountDelta: number,
-  ): { sql: string; params: any[] } {
-    return {
-      sql: `UPDATE ${this.tableName} 
-            SET balance = CAST(balance AS REAL) + ?, 
-                updated_at = ? 
-            WHERE serial_num = ?`,
-      params: [
-        amountDelta,
-        DateUtils.getLocalISODateTimeWithOffset(), // 使用当前时间戳
-        serialNum,
-      ],
-    };
   }
 }

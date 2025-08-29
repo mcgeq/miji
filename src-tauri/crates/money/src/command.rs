@@ -28,7 +28,7 @@ use crate::{
 // start 货币
 // 创建货币
 #[tauri::command]
-pub async fn create_currency(
+pub async fn currency_create(
     state: State<'_, AppState>,
     data: CreateCurrencyRequest,
 ) -> Result<ApiResponse<CurrencyResponse>, String> {
@@ -43,7 +43,7 @@ pub async fn create_currency(
 
 // 获取单个货币（按 ID）
 #[tauri::command]
-pub async fn get_currency(
+pub async fn currency_get(
     state: State<'_, AppState>,
     serial_num: String,
 ) -> Result<ApiResponse<CurrencyResponse>, String> {
@@ -58,7 +58,7 @@ pub async fn get_currency(
 
 // 更新货币
 #[tauri::command]
-pub async fn update_currency(
+pub async fn currency_update(
     state: State<'_, AppState>,
     serial_num: String,
     data: UpdateCurrencyRequest,
@@ -73,7 +73,7 @@ pub async fn update_currency(
 }
 // 删除货币
 #[tauri::command]
-pub async fn delete_currency(
+pub async fn currency_delete(
     state: State<'_, AppState>,
     serial_num: String,
 ) -> Result<ApiResponse<()>, String> {
@@ -85,7 +85,7 @@ pub async fn delete_currency(
 
 // 列出货币（带过滤条件）
 #[tauri::command]
-pub async fn list_currencies(
+pub async fn currencies_list(
     state: State<'_, AppState>,
     filter: CurrencyFilter,
 ) -> Result<ApiResponse<Vec<CurrencyResponse>>, String> {
@@ -100,7 +100,7 @@ pub async fn list_currencies(
 
 // 分页列出货币
 #[tauri::command]
-pub async fn list_currencies_paged(
+pub async fn currencies_list_paged(
     state: State<'_, AppState>,
     query: PagedQuery<CurrencyFilter>,
 ) -> Result<ApiResponse<PagedResult<CurrencyResponse>>, String> {
@@ -125,7 +125,7 @@ pub async fn list_currencies_paged(
 // start 账户相关
 // 获取单个账户（基本响应）
 #[tauri::command]
-pub async fn get_account(
+pub async fn account_get(
     state: State<'_, AppState>,
     serial_num: String,
 ) -> Result<ApiResponse<AccountResponseWithRelations>, String> {
@@ -140,7 +140,7 @@ pub async fn get_account(
 
 // 创建账户
 #[tauri::command]
-pub async fn create_account(
+pub async fn account_create(
     state: State<'_, AppState>,
     data: CreateAccountRequest,
 ) -> Result<ApiResponse<AccountResponseWithRelations>, String> {
@@ -159,7 +159,7 @@ pub async fn create_account(
 
 // 更新账户
 #[tauri::command]
-pub async fn update_account(
+pub async fn account_update(
     state: State<'_, AppState>,
     serial_num: String,
     data: UpdateAccountRequest,
@@ -179,7 +179,7 @@ pub async fn update_account(
 }
 
 #[tauri::command]
-pub async fn update_account_active(
+pub async fn account_update_active(
     state: State<'_, AppState>,
     serial_num: String,
     is_active: bool,
@@ -195,7 +195,7 @@ pub async fn update_account_active(
 
 // 删除账户
 #[tauri::command]
-pub async fn delete_account(
+pub async fn account_delete(
     state: State<'_, AppState>,
     serial_num: String,
 ) -> Result<ApiResponse<()>, String> {
@@ -207,7 +207,7 @@ pub async fn delete_account(
 
 // 分页获取账户列表（简化版本）
 #[tauri::command]
-pub async fn list_accounts_paged(
+pub async fn account_list_paged(
     state: State<'_, AppState>,
     query: common::paginations::PagedQuery<crate::services::account::AccountFilter>,
 ) -> Result<ApiResponse<common::paginations::PagedResult<AccountResponseWithRelations>>, String> {
@@ -221,7 +221,7 @@ pub async fn list_accounts_paged(
 }
 
 #[tauri::command]
-pub async fn list_accounts(
+pub async fn account_list(
     state: State<'_, AppState>,
     filter: AccountFilter,
 ) -> Result<ApiResponse<Vec<AccountResponseWithRelations>>, String> {
@@ -250,7 +250,7 @@ pub async fn total_assets(
 // ============================================================================
 // -- Transaction
 #[tauri::command]
-pub async fn create_transaction(
+pub async fn transaction_create(
     state: State<'_, AppState>,
     data: CreateTransactionRequest,
 ) -> Result<ApiResponse<TransactionResponse>, String> {
@@ -282,7 +282,7 @@ pub async fn transfer(
 
 // 获取单个交易（按 ID）
 #[tauri::command]
-pub async fn get_transaction(
+pub async fn transaction_get(
     state: State<'_, AppState>,
     serial_num: String,
 ) -> Result<ApiResponse<TransactionResponse>, String> {
@@ -298,7 +298,7 @@ pub async fn get_transaction(
 
 // 更新交易
 #[tauri::command]
-pub async fn update_transaction(
+pub async fn transaction_update(
     state: State<'_, AppState>,
     serial_num: String,
     data: UpdateTransactionRequest,
@@ -315,7 +315,7 @@ pub async fn update_transaction(
 
 // 删除交易
 #[tauri::command]
-pub async fn delete_transaction(
+pub async fn transaction_delete(
     state: State<'_, AppState>,
     serial_num: String,
 ) -> Result<ApiResponse<()>, String> {
@@ -328,7 +328,7 @@ pub async fn delete_transaction(
 
 // 列出交易（带过滤条件）
 #[tauri::command]
-pub async fn list_transactions(
+pub async fn transaction_list(
     state: State<'_, AppState>,
     filter: TransactionFilter,
 ) -> Result<ApiResponse<Vec<TransactionResponse>>, String> {
@@ -344,7 +344,7 @@ pub async fn list_transactions(
 
 // 分页列出交易
 #[tauri::command]
-pub async fn list_paged_transactions(
+pub async fn transaction_list_paged(
     state: State<'_, AppState>,
     query: PagedQuery<TransactionFilter>,
 ) -> Result<ApiResponse<PagedResult<TransactionResponse>>, String> {

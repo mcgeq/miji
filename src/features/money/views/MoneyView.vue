@@ -35,7 +35,7 @@ import type {
   BilReminder,
   Budget,
   CreateAccountRequest,
-  TransactionWithAccount,
+  Transaction,
   UpdateAccountRequest,
 } from '@/schema/money';
 
@@ -58,7 +58,7 @@ const showAccount = ref(false);
 const showBudget = ref(false);
 const showReminder = ref(false);
 
-const selectedTransaction = ref<TransactionWithAccount | null>(null);
+const selectedTransaction = ref<Transaction | null>(null);
 const selectedAccount = ref<Account | null>(null);
 const selectedBudget = ref<Budget | null>(null);
 const selectedReminder = ref<BilReminder | null>(null);
@@ -324,7 +324,7 @@ function showTransactionModal(type: TransactionType) {
   selectedTransaction.value = null;
   showTransaction.value = true;
 }
-function editTransaction(transaction: TransactionWithAccount) {
+function editTransaction(transaction: Transaction) {
   selectedTransaction.value = transaction;
   transactionType.value = transaction.transactionType;
   showTransaction.value = true;
@@ -333,7 +333,7 @@ function closeTransactionModal() {
   showTransaction.value = false;
   selectedTransaction.value = null;
 }
-async function saveTransaction(transaction: TransactionWithAccount) {
+async function saveTransaction(transaction: Transaction) {
   try {
     if (selectedTransaction.value) {
       await moneyStore.updateTransaction(transaction);
@@ -348,7 +348,7 @@ async function saveTransaction(transaction: TransactionWithAccount) {
     toast.error('保存失败');
   }
 }
-async function saveTransfer(fromTransaction: TransactionWithAccount, toTransaction: TransactionWithAccount) {
+async function saveTransfer(fromTransaction: Transaction, toTransaction: Transaction) {
   try {
     const isEdit = !!selectedTransaction.value;
     const fromSerialNum = isEdit ? fromTransaction.serialNum : uuid(38);
@@ -375,7 +375,7 @@ async function saveTransfer(fromTransaction: TransactionWithAccount, toTransacti
     toast.error('转账保存失败');
   }
 }
-async function deleteTransaction(transaction: TransactionWithAccount) {
+async function deleteTransaction(transaction: Transaction) {
   if (!(await confirmDelete('此交易记录'))) return;
   try {
     if (transaction.category === CategorySchema.enum.Transfer) {
@@ -392,7 +392,7 @@ async function deleteTransaction(transaction: TransactionWithAccount) {
     toast.error(error?.message || '删除失败');
   }
 }
-function viewTransactionDetails(transaction: TransactionWithAccount) {
+function viewTransactionDetails(transaction: Transaction) {
   Lg.d('viewTransactionDetails', '查看交易详情:', transaction);
 }
 

@@ -18,16 +18,17 @@ export const TransactionSchema = z.object({
   serialNum: SerialNumSchema,
   transactionType: TransactionTypeSchema,
   transactionStatus: TransactionStatusSchema,
-  date: DateSchema, // ISO date string (e.g., "2025-06-12")
-  amount: z.number(), // decimal as string, e.g., "1234.56"
+  date: DateSchema,
+  amount: z.number(),
+  account: AccountSchema,
   currency: CurrencySchema,
   description: z.string().max(1000).optional(),
   notes: z.string().optional().nullable(),
   accountSerialNum: SerialNumSchema,
   category: CategorySchema,
   subCategory: SubCategorySchema.optional().nullable(),
-  tags: z.array(TagsSchema), // JSON value, recommend defining more strictly if needed
-  splitMembers: z.array(FamilyMemberSchema).optional(), // JSON value, can be array of { member: string, amount: string } etc.
+  tags: z.array(TagsSchema),
+  splitMembers: z.array(FamilyMemberSchema).optional(),
   paymentMethod: PaymentMethodSchema,
   actualPayerAccount: AccountTypeSchema,
   relatedTransactionSerialNum: SerialNumSchema.optional(),
@@ -36,11 +37,30 @@ export const TransactionSchema = z.object({
   updatedAt: DateTimeSchema.optional().nullable(),
 });
 
-export const TransactionWithAccountSchema = TransactionSchema.extend({
-  account: AccountSchema,
-});
+export const TransactionCreateSchema = TransactionSchema.pick(
+  {
+    transactionType: true,
+    transactionStatus: true,
+    date: true,
+    amount: true,
+    description: true,
+    notes: true,
+    accountSerialNum: true,
+    category: true,
+    subCategory: true,
+    tags: true,
+    splitMembers: true,
+    paymentMethod: true,
+    actualPayerAccount: true,
+    relatedTransactionSerialNum: true,
+    idDeleted: true,
+  },
+).extend({
+  currency: z.string().length(3),
+}).strict();
+
+export const TransactionUpdateSchema = TransactionCreateSchema.partial();
 
 export type Transaction = z.infer<typeof TransactionSchema>;
-export type TransactionWithAccount = z.infer<
-  typeof TransactionWithAccountSchema
->;
+export type TransactionCreate = z.infer<typeof TransactionCreateSchema>;
+export type TransactionUpdate = z.infer<typeof TransactionUpdateSchema>;

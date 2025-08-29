@@ -1,18 +1,19 @@
 import { invokeCommand } from '@/types/api';
 import { Lg } from '@/utils/debugLog';
 import { BaseMapper } from './baseManager';
-import type {
-  CreateCurrencyRequest,
-  Currency,
-  UpdateCurrencyRequest,
-} from '@/schema/common';
+import type { Currency, CurrencyCrate, CurrencyUpdate } from '@/schema/common';
 
 /**
  * 货币数据映射器
  */
-export class CurrencyMapper extends BaseMapper<CreateCurrencyRequest, UpdateCurrencyRequest, Currency> {
+export class CurrencyMapper extends BaseMapper<
+  CurrencyCrate,
+  CurrencyUpdate,
+  Currency
+> {
+  protected entityName = 'currency';
 
-  async create(currency: CreateCurrencyRequest): Promise<Currency> {
+  async create(currency: CurrencyCrate): Promise<Currency> {
     try {
       const cny = await invokeCommand<Currency>('currency_create', {
         data: currency,
@@ -24,10 +25,10 @@ export class CurrencyMapper extends BaseMapper<CreateCurrencyRequest, UpdateCurr
     }
   }
 
-  async update(serialNum: string, currency: UpdateCurrencyRequest): Promise<Currency> {
+  async update(code: string, currency: CurrencyUpdate): Promise<Currency> {
     try {
       const cny = await invokeCommand<Currency>('currency_update', {
-        id: serialNum,
+        id: code,
         data: currency,
       });
       Lg.d('MoneyDb', 'Currency updated:', { cny });

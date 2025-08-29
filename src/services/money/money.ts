@@ -1,4 +1,3 @@
-import { db } from '@/utils/dbUtils';
 import { AccountMapper } from './accounts';
 import { MoneyDbError } from './baseManager';
 import { BilReminderMapper } from './billReminder';
@@ -16,27 +15,40 @@ import type { AccountFilters } from './accounts';
 import type { PagedResult } from './baseManager';
 import type { BilReminderFilters } from './billReminder';
 import type { BudgetFilters } from './budgets';
+import type { FamilyLedgerFilters } from './family';
 import type { TransactionFilters } from './transactions';
 import type {
   AccountBalanceSummary,
   Currency,
+  CurrencyUpdate,
   IncomeExpense,
   PageQuery,
-  SortOptions,
 } from '@/schema/common';
 import type {
   Account,
   BilReminder,
+  BilReminderCreate,
+  BilReminderUpdate,
   Budget,
   BudgetCreate,
   BudgetUpdate,
   CreateAccountRequest,
   FamilyLedger,
+  FamilyLedgerAccount,
+  FamilyLedgerAccountCreate,
+  FamilyLedgerAccountUpdate,
+  FamilyLedgerCreate,
   FamilyLedgerMember,
+  FamilyLedgerMemberCreate,
   FamilyLedgerTransaction,
+  FamilyLedgerTransactionCreate,
+  FamilyLedgerUpdate,
   FamilyMember,
+  FamilyMemberCreate,
+  FamilyMemberUpdate,
   Transaction,
-  TransactionWithAccount,
+  TransactionCreate,
+  TransactionUpdate,
   UpdateAccountRequest,
 } from '@/schema/money';
 
@@ -107,7 +119,9 @@ export class MoneyDb {
 
   // ========================= Transaction Start=========================
   // Transaction 操作
-  static async createTransaction(transaction: Transaction): Promise<void> {
+  static async createTransaction(
+    transaction: TransactionCreate,
+  ): Promise<Transaction> {
     return this.transactionMapper.create(transaction);
   }
 
@@ -133,80 +147,30 @@ export class MoneyDb {
     }
   }
 
-  static async getTransferRelatedTransactionWithAccount(
-    relatedTransactionSerialNum: string,
-  ): Promise<TransactionWithAccount[] | null> {
-    try {
-      return await this.transactionMapper.getTransferRelatedTransactionWithAccount(
-        relatedTransactionSerialNum,
-      );
-    } catch (error) {
-      throw new MoneyDbError(
-        'Failed to get related transfer transaction',
-        'getTransferRelatedTransaction',
-        'Transaction',
-        error as Error,
-      );
-    }
-  }
-
   static async listTransactions(): Promise<Transaction[]> {
     return this.transactionMapper.list();
   }
 
-  static async updateTransaction(transaction: Transaction): Promise<void> {
-    return this.transactionMapper.update(transaction);
+  static async updateTransaction(
+    serialNum: string,
+    transaction: TransactionUpdate,
+  ): Promise<Transaction> {
+    return this.transactionMapper.update(serialNum, transaction);
   }
 
   static async deleteTransaction(serialNum: string): Promise<void> {
     return this.transactionMapper.deleteById(serialNum);
   }
 
-  static async updateTransactionSmart(
-    newTransaction: Transaction,
-  ): Promise<void> {
-    return this.transactionMapper.updateSmart(newTransaction);
-  }
-
-  static async updateTransactionPartial(
-    serialNum: string,
-    updates: Partial<Transaction>,
-  ): Promise<void> {
-    return this.transactionMapper.updateTransactionPartial(serialNum, updates);
-  }
-
   static async listTransactionsPaged(
-    filters: TransactionFilters = {},
-    page = 1,
-    pageSize = 10,
-    sortOptions: SortOptions = {},
+    query: PageQuery<TransactionFilters> = {
+      currentPage: 1,
+      pageSize: 10,
+      sortOptions: {},
+      filter: {},
+    },
   ): Promise<PagedResult<Transaction>> {
-    return this.transactionMapper.listPaged(
-      filters,
-      page,
-      pageSize,
-      sortOptions,
-    );
-  }
-
-  static async listTransactionsWithAccountPaged(
-    filters: TransactionFilters = {},
-    page = 1,
-    pageSize = 10,
-    sortOptions: SortOptions = {},
-  ): Promise<PagedResult<TransactionWithAccount>> {
-    return await this.transactionMapper.listWithAccountPaged(
-      filters,
-      page,
-      pageSize,
-      sortOptions,
-    );
-  }
-
-  static async getTransactionWithAccount(
-    serialNum: string,
-  ): Promise<TransactionWithAccount | null> {
-    return await this.transactionMapper.getTransactionWithAccount(serialNum);
+    return this.transactionMapper.listPaged(query);
   }
 
   static async monthlyIncomeAndExpense(): Promise<IncomeExpense> {
@@ -224,41 +188,11 @@ export class MoneyDb {
   static async lastYearIncomeAndExpense(): Promise<IncomeExpense> {
     return this.transactionMapper.lastYearIncomeAndExpense();
   }
-
-  /**
-   * 构建删除转账交易的批处理操作;
-   * @param fromTransaction 转出交易;
-   * @param toTransaction 转入交易;
-   */
-  static buildDeleteTransferOperations(
-    fromTransaction: TransactionWithAccount,
-    toTransaction: TransactionWithAccount,
-  ): Array<{ sql: string; params: any[] }> {
-    return [
-      // 恢复转出账户余额
-      this.accountMapper.buildUpdateBalanceOperation(
-        fromTransaction.account.serialNum,
-        fromTransaction.amount, // 正数增加（因为是支出，删除后要加回）
-      ),
-
-      // 恢复转入账户余额
-      this.accountMapper.buildUpdateBalanceOperation(
-        toTransaction.account.serialNum,
-        -toTransaction.amount, // 负数减少（因为是收入，删除后要扣除）
-      ),
-
-      // 删除转出交易
-      this.transactionMapper.buildDeleteOperation(fromTransaction.serialNum),
-
-      // 删除转入交易
-      this.transactionMapper.buildDeleteOperation(toTransaction.serialNum),
-    ];
-  }
   // ========================= Transaction End =========================
 
   // ========================= Budget Start=========================
   // Budget 操作
-  static async createBudget(budget: BudgetCreate): Promise<void> {
+  static async createBudget(budget: BudgetCreate): Promise<Budget> {
     return this.budgetMapper.create(budget);
   }
 
@@ -266,14 +200,17 @@ export class MoneyDb {
     return this.budgetMapper.getById(serialNum);
   }
 
-  static async updateBudget(budget: BudgetUpdate): Promise<void> {
-    return this.budgetMapper.update(budget);
+  static async updateBudget(
+    serialNum: string,
+    budget: BudgetUpdate,
+  ): Promise<Budget> {
+    return this.budgetMapper.update(serialNum, budget);
   }
 
   static async updateBudgetActive(
     serialNum: string,
     isActive: boolean,
-  ): Promise<void> {
+  ): Promise<Budget> {
     return this.budgetMapper.updateActive(serialNum, isActive);
   }
 
@@ -281,34 +218,27 @@ export class MoneyDb {
     return this.budgetMapper.deleteById(serialNum);
   }
 
-  static async updateBudgetSmart(newBudget: Budget): Promise<void> {
-    return this.budgetMapper.updateSmart(newBudget);
-  }
-
-  static async updateBudgetPartial(
-    serialNum: string,
-    updates: Partial<Budget>,
-  ): Promise<void> {
-    return this.budgetMapper.updateBudgetPartial(serialNum, updates);
-  }
-
   static async listBudgets(): Promise<Budget[]> {
     return this.budgetMapper.list();
   }
 
   static async listBudgetsPaged(
-    filters: BudgetFilters = {},
-    page = 1,
-    pageSize = 10,
-    sortOptions: SortOptions = {},
+    query: PageQuery<BudgetFilters> = {
+      currentPage: 1,
+      pageSize: 10,
+      sortOptions: {},
+      filter: {},
+    },
   ): Promise<PagedResult<Budget>> {
-    return this.budgetMapper.listPaged(filters, page, pageSize, sortOptions);
+    return this.budgetMapper.listPaged(query);
   }
   // ========================= Budget End=========================
 
   // ========================= BilReminder Start =========================
   // BilReminder 操作
-  static async createBilReminder(reminder: BilReminder): Promise<void> {
+  static async createBilReminder(
+    reminder: BilReminderCreate,
+  ): Promise<BilReminder> {
     return this.bilReminderMapper.create(reminder);
   }
 
@@ -316,14 +246,17 @@ export class MoneyDb {
     return this.bilReminderMapper.getById(serialNum);
   }
 
-  static async updateBilReminder(reminder: BilReminder): Promise<void> {
-    return this.bilReminderMapper.update(reminder);
+  static async updateBilReminder(
+    serialNum: string,
+    reminder: BilReminderUpdate,
+  ): Promise<BilReminder> {
+    return this.bilReminderMapper.update(serialNum, reminder);
   }
 
   static async updateBilReminderActive(
     serialNum: string,
     isActive: boolean,
-  ): Promise<void> {
+  ): Promise<BilReminder> {
     return this.bilReminderMapper.updateActive(serialNum, isActive);
   }
 
@@ -336,23 +269,20 @@ export class MoneyDb {
   }
 
   static async listBilRemindersPaged(
-    filters: BilReminderFilters = {},
-    page = 1,
-    pageSize = 10,
-    sortOptions: SortOptions = {},
+    query: PageQuery<BilReminderFilters> = {
+      currentPage: 1,
+      pageSize: 10,
+      sortOptions: {},
+      filter: {},
+    },
   ): Promise<PagedResult<BilReminder>> {
-    return this.bilReminderMapper.listPaged(
-      filters,
-      page,
-      pageSize,
-      sortOptions,
-    );
+    return this.bilReminderMapper.listPaged(query);
   }
   // ========================= BilReminder End =========================
 
   // ========================= Currency Start =========================
   // Currency 操作
-  static async createCurrency(currency: Currency): Promise<void> {
+  static async createCurrency(currency: Currency): Promise<Currency> {
     return this.currencyMapper.create(currency);
   }
 
@@ -360,8 +290,11 @@ export class MoneyDb {
     return this.currencyMapper.getById(code);
   }
 
-  static async updateCurrency(currency: Currency): Promise<void> {
-    return this.currencyMapper.update(currency);
+  static async updateCurrency(
+    code: string,
+    currency: CurrencyUpdate,
+  ): Promise<Currency> {
+    return this.currencyMapper.update(code, currency);
   }
 
   static async deleteCurrency(code: string): Promise<void> {
@@ -378,7 +311,9 @@ export class MoneyDb {
   // ========================= Currency End =========================
 
   // FamilyMember 操作
-  static async createFamilyMember(member: FamilyMember): Promise<void> {
+  static async createFamilyMember(
+    member: FamilyMemberCreate,
+  ): Promise<FamilyMember> {
     return this.familyMemberMapper.create(member);
   }
 
@@ -392,8 +327,11 @@ export class MoneyDb {
     return this.familyMemberMapper.list();
   }
 
-  static async updateFamilyMember(member: FamilyMember): Promise<void> {
-    return this.familyMemberMapper.update(member);
+  static async updateFamilyMember(
+    serialNum: string,
+    member: FamilyMemberUpdate,
+  ): Promise<FamilyMember> {
+    return this.familyMemberMapper.update(serialNum, member);
   }
 
   static async deleteFamilyMember(serialNum: string): Promise<void> {
@@ -401,21 +339,20 @@ export class MoneyDb {
   }
 
   static async listFamilyMembersPaged(
-    filters: Record<string, any> = {},
-    page = 1,
-    pageSize = 10,
-    sortOptions: SortOptions = {},
+    query: PageQuery<BilReminderFilters> = {
+      currentPage: 1,
+      pageSize: 10,
+      sortOptions: {},
+      filter: {},
+    },
   ): Promise<PagedResult<FamilyMember>> {
-    return this.familyMemberMapper.listPaged(
-      filters,
-      page,
-      pageSize,
-      sortOptions,
-    );
+    return this.familyMemberMapper.listPaged(query);
   }
 
   // FamilyLedger 操作
-  static async createFamilyLedger(ledger: FamilyLedger): Promise<void> {
+  static async createFamilyLedger(
+    ledger: FamilyLedgerCreate,
+  ): Promise<FamilyLedger> {
     return this.familyLedgerMapper.create(ledger);
   }
 
@@ -429,8 +366,11 @@ export class MoneyDb {
     return this.familyLedgerMapper.list();
   }
 
-  static async updateFamilyLedger(ledger: FamilyLedger): Promise<void> {
-    return this.familyLedgerMapper.update(ledger);
+  static async updateFamilyLedger(
+    serialNum: string,
+    ledger: FamilyLedgerUpdate,
+  ): Promise<FamilyLedger> {
+    return this.familyLedgerMapper.update(serialNum, ledger);
   }
 
   static async deleteFamilyLedger(serialNum: string): Promise<void> {
@@ -438,25 +378,20 @@ export class MoneyDb {
   }
 
   static async listFamilyLedgersPaged(
-    filters: Record<string, any> = {},
-    page = 1,
-    pageSize = 10,
-    sortOptions: SortOptions = {},
+    query: PageQuery<FamilyLedgerFilters> = {
+      currentPage: 1,
+      pageSize: 10,
+      sortOptions: {},
+      filter: {},
+    },
   ): Promise<PagedResult<FamilyLedger>> {
-    return this.familyLedgerMapper.listPaged(
-      filters,
-      page,
-      pageSize,
-      sortOptions,
-    );
+    return this.familyLedgerMapper.listPaged(query);
   }
 
   // FamilyLedgerAccount 操作
-  static async createFamilyLedgerAccount(assoc: {
-    serialNum: string;
-    familyLedgerSerialNum: string;
-    accountSerialNum: string;
-  }): Promise<void> {
+  static async createFamilyLedgerAccount(
+    assoc: FamilyLedgerAccountCreate,
+  ): Promise<FamilyLedgerAccount> {
     return this.familyLedgerAccountMapper.create(assoc);
   }
 
@@ -478,12 +413,11 @@ export class MoneyDb {
     return this.familyLedgerAccountMapper.list();
   }
 
-  static async updateFamilyLedgerAccount(assoc: {
-    serialNum: string;
-    familyLedgerSerialNum: string;
-    accountSerialNum: string;
-  }): Promise<void> {
-    return this.familyLedgerAccountMapper.update(assoc);
+  static async updateFamilyLedgerAccount(
+    serialNum: string,
+    assoc: FamilyLedgerAccountUpdate,
+  ): Promise<FamilyLedgerAccount> {
+    return this.familyLedgerAccountMapper.update(serialNum, assoc);
   }
 
   static async deleteFamilyLedgerAccount(serialNum: string): Promise<void> {
@@ -492,8 +426,8 @@ export class MoneyDb {
 
   // FamilyLedgerTransaction 操作
   static async createFamilyLedgerTransaction(
-    assoc: FamilyLedgerTransaction,
-  ): Promise<void> {
+    assoc: FamilyLedgerTransactionCreate,
+  ): Promise<FamilyLedgerTransaction> {
     return this.familyLedgerTransactionMapper.create(assoc);
   }
 
@@ -516,8 +450,8 @@ export class MoneyDb {
 
   // FamilyLedgerMember 操作
   static async createFamilyLedgerMember(
-    assoc: FamilyLedgerMember,
-  ): Promise<void> {
+    assoc: FamilyLedgerMemberCreate,
+  ): Promise<FamilyLedgerMember> {
     return this.familyLedgerMemberMapper.create(assoc);
   }
 
@@ -536,38 +470,5 @@ export class MoneyDb {
 
   static async deleteFamilyLedgerMember(serialNum: string): Promise<void> {
     return this.familyLedgerMemberMapper.deleteById(serialNum);
-  }
-
-  // 批量操作
-  static async executeBatch(
-    operations: Array<{ sql: string; params: any[] }>,
-  ): Promise<void> {
-    return db.executeBatch(operations);
-  }
-
-  // 事务操作
-  static async executeInTransaction<T>(callback: () => Promise<T>): Promise<T> {
-    return db.transaction(async () => {
-      return await callback();
-    });
-  }
-
-  // 统计信息
-  static async getStats(): Promise<{
-    cacheSize: number;
-    dbPath: string;
-    isConnected: boolean;
-  }> {
-    return db.getStats();
-  }
-
-  // 清理缓存
-  static cleanCache(): void {
-    db.cleanCache();
-  }
-
-  // 关闭连接
-  static async close(): Promise<void> {
-    return db.closeAll();
   }
 }

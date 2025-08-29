@@ -53,10 +53,17 @@ export interface FamilyLedgerMemberFilters {
 /**
  * 家庭成员数据映射器
  */
-export class FamilyMemberMapper extends BaseMapper<FamilyMemberCreate, FamilyMemberUpdate, FamilyMember> {
+export class FamilyMemberMapper extends BaseMapper<
+  FamilyMemberCreate,
+  FamilyMemberUpdate,
+  FamilyMember
+> {
+  protected entityName = 'family_member';
   async create(member: FamilyMemberCreate): Promise<FamilyMember> {
     try {
-      const result = await invokeCommand<FamilyMember>('family_member_create', { data: member });
+      const result = await invokeCommand<FamilyMember>('family_member_create', {
+        data: member,
+      });
       return result;
     } catch (error) {
       this.handleError('create', error);
@@ -65,7 +72,9 @@ export class FamilyMemberMapper extends BaseMapper<FamilyMemberCreate, FamilyMem
 
   async getById(serialNum: string): Promise<FamilyMember | null> {
     try {
-      const result = await invokeCommand<FamilyMember>('family_member_get', { serialNum });
+      const result = await invokeCommand<FamilyMember>('family_member_get', {
+        serialNum,
+      });
       return result;
     } catch (error) {
       this.handleError('getById', error);
@@ -74,16 +83,24 @@ export class FamilyMemberMapper extends BaseMapper<FamilyMemberCreate, FamilyMem
 
   async list(): Promise<FamilyMember[]> {
     try {
-      const result = await invokeCommand<FamilyMember[]>('family_member_list', { filter: {} });
+      const result = await invokeCommand<FamilyMember[]>('family_member_list', {
+        filter: {},
+      });
       return result;
     } catch (error) {
       this.handleError('list', error);
     }
   }
 
-  async update(serialNum: string, member: FamilyMemberUpdate): Promise<FamilyMember> {
+  async update(
+    serialNum: string,
+    member: FamilyMemberUpdate,
+  ): Promise<FamilyMember> {
     try {
-      const result = await invokeCommand<FamilyMember>('family_member_update', { serialNum, data: member });
+      const result = await invokeCommand<FamilyMember>('family_member_update', {
+        serialNum,
+        data: member,
+      });
       Lg.d('MoneyDb', 'FamilyMember updated:', { serialNum });
       return result;
     } catch (error) {
@@ -123,10 +140,17 @@ export class FamilyMemberMapper extends BaseMapper<FamilyMemberCreate, FamilyMem
 /**
  * 家庭账本数据映射器
  */
-export class FamilyLedgerMapper extends BaseMapper<FamilyLedgerCreate, FamilyLedgerUpdate, FamilyLedger> {
+export class FamilyLedgerMapper extends BaseMapper<
+  FamilyLedgerCreate,
+  FamilyLedgerUpdate,
+  FamilyLedger
+> {
+  protected entityName = 'family_ledger';
   async create(ledger: FamilyLedgerCreate): Promise<FamilyLedger> {
     try {
-      const result = await invokeCommand<FamilyLedger>('family_ledger_create', { data: ledger });
+      const result = await invokeCommand<FamilyLedger>('family_ledger_create', {
+        data: ledger,
+      });
       Lg.d('MoneyDb', `FamilyLedger created:, ${result.serialNum}`);
       return result;
     } catch (error) {
@@ -136,7 +160,9 @@ export class FamilyLedgerMapper extends BaseMapper<FamilyLedgerCreate, FamilyLed
 
   async getById(serialNum: string): Promise<FamilyLedger | null> {
     try {
-      const result = await invokeCommand<FamilyLedger>('family_ledger_get', { serialNum });
+      const result = await invokeCommand<FamilyLedger>('family_ledger_get', {
+        serialNum,
+      });
       return result;
     } catch (error) {
       this.handleError('getById', error);
@@ -145,16 +171,24 @@ export class FamilyLedgerMapper extends BaseMapper<FamilyLedgerCreate, FamilyLed
 
   async list(): Promise<FamilyLedger[]> {
     try {
-      const result = await invokeCommand<FamilyLedger[]>('family_ledger_list', { filter: {} });
+      const result = await invokeCommand<FamilyLedger[]>('family_ledger_list', {
+        filter: {},
+      });
       return result;
     } catch (error) {
       this.handleError('list', error);
     }
   }
 
-  async update(serialNum: string, ledger: FamilyLedgerUpdate): Promise<FamilyLedger> {
+  async update(
+    serialNum: string,
+    ledger: FamilyLedgerUpdate,
+  ): Promise<FamilyLedger> {
     try {
-      const result = await invokeCommand<FamilyLedger>('family_ledger_update', { serialNum, data: ledger });
+      const result = await invokeCommand<FamilyLedger>('family_ledger_update', {
+        serialNum,
+        data: ledger,
+      });
       Lg.d('MoneyDb', `FamilyLedger updated:, ${result.serialNum}`);
       return result;
     } catch (error) {
@@ -180,7 +214,10 @@ export class FamilyLedgerMapper extends BaseMapper<FamilyLedgerCreate, FamilyLed
     },
   ): Promise<PagedResult<FamilyLedger>> {
     try {
-      const result = await invokeCommand<PagedResult<FamilyLedger>>('family_ledger_list_paged', { query });
+      const result = await invokeCommand<PagedResult<FamilyLedger>>(
+        'family_ledger_list_paged',
+        { query },
+      );
       return result;
     } catch (error) {
       this.handleError('listPaged', error);
@@ -191,10 +228,18 @@ export class FamilyLedgerMapper extends BaseMapper<FamilyLedgerCreate, FamilyLed
 /**
  * 家庭账本账户关联数据映射器
  */
-export class FamilyLedgerAccountMapper extends BaseMapper<FamilyLedgerAccountCreate, FamilyLedgerAccountUpdate, FamilyLedgerAccount> {
+export class FamilyLedgerAccountMapper extends BaseMapper<
+  FamilyLedgerAccountCreate,
+  FamilyLedgerAccountUpdate,
+  FamilyLedgerAccount
+> {
+  protected entityName = 'family_ledger_account';
   async create(assoc: FamilyLedgerAccountCreate): Promise<FamilyLedgerAccount> {
     try {
-      const result = await invokeCommand<FamilyLedgerAccount>('family_ledger_account_create', { data: assoc });
+      const result = await invokeCommand<FamilyLedgerAccount>(
+        'family_ledger_account_create',
+        { data: assoc },
+      );
       Lg.d('MoneyDb', `FamilyLedgerAccount created:, ${result.serialNum}`);
       return result;
     } catch (error) {
@@ -204,26 +249,36 @@ export class FamilyLedgerAccountMapper extends BaseMapper<FamilyLedgerAccountCre
 
   async getById(serialNum: string): Promise<FamilyLedgerAccount | null> {
     try {
-      return await invokeCommand<FamilyLedgerAccount>('family_ledger_account_get', { serialNum });
+      return await invokeCommand<FamilyLedgerAccount>(
+        'family_ledger_account_get',
+        { serialNum },
+      );
     } catch (error) {
       this.handleError('getById', error);
     }
   }
 
-  async list(): Promise<
-    FamilyLedgerAccount[]
-  > {
+  async list(): Promise<FamilyLedgerAccount[]> {
     try {
-      const result = await invokeCommand<FamilyLedgerAccount[]>('family_ledger_account_list', { filter: {} });
+      const result = await invokeCommand<FamilyLedgerAccount[]>(
+        'family_ledger_account_list',
+        { filter: {} },
+      );
       return result;
     } catch (error) {
       this.handleError('list', error);
     }
   }
 
-  async update(serialNum: string, assoc: FamilyLedgerAccountUpdate): Promise<FamilyLedgerAccount> {
+  async update(
+    serialNum: string,
+    assoc: FamilyLedgerAccountUpdate,
+  ): Promise<FamilyLedgerAccount> {
     try {
-      const result = await invokeCommand<FamilyLedgerAccount>('family_ledger_account_update', { serialNum, data: assoc });
+      const result = await invokeCommand<FamilyLedgerAccount>(
+        'family_ledger_account_update',
+        { serialNum, data: assoc },
+      );
       Lg.d('MoneyDb', `FamilyLedgerAccount updated:, ${result.serialNum}`);
       return result;
     } catch (error) {
@@ -247,11 +302,12 @@ export class FamilyLedgerAccountMapper extends BaseMapper<FamilyLedgerAccountCre
       sortOptions: {},
       filter: {},
     },
-  ): Promise<
-    PagedResult<FamilyLedgerAccount>
-  > {
+  ): Promise<PagedResult<FamilyLedgerAccount>> {
     try {
-      return await invokeCommand<PagedResult<FamilyLedgerAccount>>('family_ledger_account_list_paged', { query });
+      return await invokeCommand<PagedResult<FamilyLedgerAccount>>(
+        'family_ledger_account_list_paged',
+        { query },
+      );
     } catch (error) {
       this.handleError('listPaged', error);
     }
@@ -261,10 +317,20 @@ export class FamilyLedgerAccountMapper extends BaseMapper<FamilyLedgerAccountCre
 /**
  * 家庭账本交易关联数据映射器
  */
-export class FamilyLedgerTransactionMapper extends BaseMapper<FamilyLedgerTransactionCreate, FamilyLedgerTransactionUpdate, FamilyLedgerTransaction> {
-  async create(assoc: FamilyLedgerTransactionCreate): Promise<FamilyLedgerTransaction> {
+export class FamilyLedgerTransactionMapper extends BaseMapper<
+  FamilyLedgerTransactionCreate,
+  FamilyLedgerTransactionUpdate,
+  FamilyLedgerTransaction
+> {
+  protected entityName = 'family_ledger_transaction';
+  async create(
+    assoc: FamilyLedgerTransactionCreate,
+  ): Promise<FamilyLedgerTransaction> {
     try {
-      const result = await invokeCommand<FamilyLedgerTransaction>('family_ledger_transaction_create', { data: assoc });
+      const result = await invokeCommand<FamilyLedgerTransaction>(
+        'family_ledger_transaction_create',
+        { data: assoc },
+      );
       Lg.d('MoneyDb', `FamilyLedgerTransaction created:, ${result.serialNum}`);
       return result;
     } catch (error) {
@@ -274,7 +340,10 @@ export class FamilyLedgerTransactionMapper extends BaseMapper<FamilyLedgerTransa
 
   async getById(serialNum: string): Promise<FamilyLedgerTransaction | null> {
     try {
-      const result = await invokeCommand<FamilyLedgerTransaction>('family_ledger_transaction_get', { serialNum });
+      const result = await invokeCommand<FamilyLedgerTransaction>(
+        'family_ledger_transaction_get',
+        { serialNum },
+      );
       return result;
     } catch (error) {
       this.handleError('getById', error);
@@ -283,7 +352,10 @@ export class FamilyLedgerTransactionMapper extends BaseMapper<FamilyLedgerTransa
 
   async list(): Promise<FamilyLedgerTransaction[]> {
     try {
-      const result = await invokeCommand<FamilyLedgerTransaction[]>('family_ledger_transaction_list', { filter: {} });
+      const result = await invokeCommand<FamilyLedgerTransaction[]>(
+        'family_ledger_transaction_list',
+        { filter: {} },
+      );
       return result;
     } catch (error) {
       this.handleError('list', error);
@@ -301,9 +373,15 @@ export class FamilyLedgerTransactionMapper extends BaseMapper<FamilyLedgerTransa
     }
   }
 
-  async update(serialNum: string, assoc: FamilyLedgerTransaction): Promise<FamilyLedgerTransaction> {
+  async update(
+    serialNum: string,
+    assoc: FamilyLedgerTransaction,
+  ): Promise<FamilyLedgerTransaction> {
     try {
-      const result = await invokeCommand<FamilyLedgerTransaction>('family_ledger_transaction_update', { serialNum, data: assoc });
+      const result = await invokeCommand<FamilyLedgerTransaction>(
+        'family_ledger_transaction_update',
+        { serialNum, data: assoc },
+      );
       Lg.d('MoneyDb', `FamilyLedgerTransaction updated:, ${result.serialNum}`);
       return result;
     } catch (error) {
@@ -320,7 +398,10 @@ export class FamilyLedgerTransactionMapper extends BaseMapper<FamilyLedgerTransa
     },
   ): Promise<PagedResult<FamilyLedgerTransaction>> {
     try {
-      const result = await invokeCommand<PagedResult<FamilyLedgerTransaction>>('family_ledger_transaction_list_paged', { query });
+      const result = await invokeCommand<PagedResult<FamilyLedgerTransaction>>(
+        'family_ledger_transaction_list_paged',
+        { query },
+      );
       return result;
     } catch (error) {
       this.handleError('listPaged', error);
@@ -331,10 +412,18 @@ export class FamilyLedgerTransactionMapper extends BaseMapper<FamilyLedgerTransa
 /**
  * 家庭账本成员关联数据映射器
  */
-export class FamilyLedgerMemberMapper extends BaseMapper<FamilyLedgerMemberCreate, FamilyLedgerMemberUpdate, FamilyLedgerMember> {
+export class FamilyLedgerMemberMapper extends BaseMapper<
+  FamilyLedgerMemberCreate,
+  FamilyLedgerMemberUpdate,
+  FamilyLedgerMember
+> {
+  protected entityName = 'family_ledger_member';
   async create(assoc: FamilyLedgerMemberCreate): Promise<FamilyLedgerMember> {
     try {
-      const result = await invokeCommand<FamilyLedgerMember>('family_ledger_member_create', { data: assoc });
+      const result = await invokeCommand<FamilyLedgerMember>(
+        'family_ledger_member_create',
+        { data: assoc },
+      );
       Lg.d('MoneyDb', `FamilyLedgerMember created:, ${result.serialNum}`);
       return result;
     } catch (error) {
@@ -344,7 +433,10 @@ export class FamilyLedgerMemberMapper extends BaseMapper<FamilyLedgerMemberCreat
 
   async getById(serialNum: string): Promise<FamilyLedgerMember | null> {
     try {
-      const result = await invokeCommand<FamilyLedgerMember>('family_ledger_member_get', { serialNum });
+      const result = await invokeCommand<FamilyLedgerMember>(
+        'family_ledger_member_get',
+        { serialNum },
+      );
       return result;
     } catch (error) {
       this.handleError('getById', error);
@@ -353,7 +445,10 @@ export class FamilyLedgerMemberMapper extends BaseMapper<FamilyLedgerMemberCreat
 
   async list(): Promise<FamilyLedgerMember[]> {
     try {
-      const result = await invokeCommand<FamilyLedgerMember[]>('family_ledger_member_list', { filter: {} });
+      const result = await invokeCommand<FamilyLedgerMember[]>(
+        'family_ledger_member_list',
+        { filter: {} },
+      );
       return result;
     } catch (error) {
       this.handleError('list', error);
@@ -369,9 +464,15 @@ export class FamilyLedgerMemberMapper extends BaseMapper<FamilyLedgerMemberCreat
     }
   }
 
-  async update(serialNum: string, assoc: FamilyLedgerMember): Promise<FamilyLedgerMember> {
+  async update(
+    serialNum: string,
+    assoc: FamilyLedgerMember,
+  ): Promise<FamilyLedgerMember> {
     try {
-      const result = await invokeCommand<FamilyLedgerMember>('family_ledger_member_update', { serialNum, data: assoc });
+      const result = await invokeCommand<FamilyLedgerMember>(
+        'family_ledger_member_update',
+        { serialNum, data: assoc },
+      );
       Lg.d('MoneyDb', 'FamilyLedgerMember updated:', { serialNum });
       return result;
     } catch (error) {
@@ -388,7 +489,10 @@ export class FamilyLedgerMemberMapper extends BaseMapper<FamilyLedgerMemberCreat
     },
   ): Promise<PagedResult<FamilyLedgerMember>> {
     try {
-      const result = await invokeCommand<PagedResult<FamilyLedgerMember>>('family_ledger_member_list_paged', { query });
+      const result = await invokeCommand<PagedResult<FamilyLedgerMember>>(
+        'family_ledger_member_list_paged',
+        { query },
+      );
       return result;
     } catch (error) {
       this.handleError('listPaged', error);

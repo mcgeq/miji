@@ -21,6 +21,7 @@ export class BudgetMapper extends BaseMapper<
   BudgetUpdate,
   Budget
 > {
+  protected entityName = 'budget';
   async create(budget: BudgetCreate): Promise<Budget> {
     try {
       const result = await invokeCommand<Budget>('budget_create', {
@@ -53,6 +54,17 @@ export class BudgetMapper extends BaseMapper<
     }
   }
 
+  async updateActive(serialNum: string, isActive: boolean): Promise<Budget> {
+    try {
+      return await invokeCommand<Budget>('budget_update_active', {
+        serialNum,
+        isActive,
+      });
+    } catch (error) {
+      this.handleError('updateBudgetActive', error);
+    }
+  }
+
   async deleteById(serialNum: string): Promise<void> {
     try {
       await invokeCommand('budget_delete', { serialNum });
@@ -60,9 +72,10 @@ export class BudgetMapper extends BaseMapper<
       this.handleError('deleteById', error);
     }
   }
+
   async list(): Promise<Budget[]> {
     try {
-      const result = await invokeCommand<Budget[]>('budget_lists', {
+      const result = await invokeCommand<Budget[]>('budget_list', {
         filter: {},
       });
       return result;

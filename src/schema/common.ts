@@ -37,12 +37,20 @@ export const CurrencySchema = z.object({
   createdAt: DateTimeSchema,
   updatedAt: DateTimeSchema.optional().nullable(),
 });
+export const CurrencyCreateSchema = CurrencySchema.pick({
+  locale: true,
+  code: true,
+  symbol: true,
+}).strict();
+export const CurrencyUpdateSchema = CurrencySchema.pick({
+  locale: true,
+  symbol: true
+}).partial();
 
 export type Currency = z.infer<typeof CurrencySchema>;
-export type CreateCurrencyRequest = Omit<Currency, 'createdAt' | 'updatedAt'>;
-export type UpdateCurrencyRequest = Partial<Omit<Currency, 'createdAt'>> & {
-  code: string;
-};
+export type CurrencyCrate = z.infer<typeof CurrencyCreateSchema>;
+export type CurrencyUpdate = z.infer<typeof CurrencyUpdateSchema>;
+
 export const weekdays = [
   'Mon',
   'Tue',
