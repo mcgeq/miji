@@ -1,4 +1,5 @@
 pub mod account;
 pub mod currency;
-pub mod transactions;
+pub mod family_member;
 pub mod reminder;
+pub mod transactions;

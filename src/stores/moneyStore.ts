@@ -13,7 +13,9 @@ import type {
   BilReminder,
   Budget,
   CreateAccountRequest,
-  TransactionWithAccount,
+  Transaction,
+  TransactionCreate,
+  TransactionUpdate,
   UpdateAccountRequest,
 } from '@/schema/money';
 
@@ -77,7 +79,7 @@ export class MoneyStoreError extends AppError {
 export const useMoneyStore = defineStore('money', () => {
   // 状态
   const accounts = ref<Account[]>([]);
-  const transactions = ref<TransactionWithAccount[]>([]);
+  const transactions = ref<Transaction[]>([]);
   const budgets = ref<Budget[]>([]);
   const reminders = ref<BilReminder[]>([]);
 
@@ -306,7 +308,7 @@ export const useMoneyStore = defineStore('money', () => {
       dateTo?: string;
     } = {},
   ): Promise<{
-    items: TransactionWithAccount[];
+    items: Transaction[];
     total: number;
     page: number;
     pageSize: number;
@@ -356,13 +358,13 @@ export const useMoneyStore = defineStore('money', () => {
   };
 
   const createTransaction = async (
-    transaction: Omit<TransactionWithAccount, 'createdAt' | 'updatedAt'>,
-  ): Promise<TransactionWithAccount> => {
+    transaction: TransactionCreate,
+  ): Promise<Transaction> => {
     loading.value = true;
     error.value = null;
     const serialNum = transaction.serialNum || uuid(38);
     try {
-      const newTransaction: TransactionWithAccount = {
+      const newTransaction: Transaction= {
         ...transaction,
         serialNum,
         createdAt: DateUtils.getLocalISODateTimeWithOffset(),
@@ -389,8 +391,8 @@ export const useMoneyStore = defineStore('money', () => {
   };
 
   const updateTransaction = async (
-    transaction: TransactionWithAccount,
-  ): Promise<TransactionWithAccount> => {
+    transaction: TransactionUpdate,
+  ): Promise<Transaction> => {
     loading.value = true;
     error.value = null;
 
@@ -437,7 +439,7 @@ export const useMoneyStore = defineStore('money', () => {
   };
 
   const updateTransferToTransaction = async (
-    transaction: TransactionWithAccount,
+    transaction: Transaction,
   ) => {
     loading.value = true;
     error.value = null;

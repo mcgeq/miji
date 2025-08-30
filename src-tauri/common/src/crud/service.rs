@@ -25,7 +25,7 @@ use crate::{
     log::logger::OperationLogger,
     paginations::{Filter, PagedQuery, PagedResult, Sortable},
 };
-use tracing::info;
+use tracing::{error, info};
 
 /// 重构后的 CRUD 服务 trait
 #[async_trait]
@@ -705,4 +705,24 @@ pub fn sanitize_input(input: &str) -> String {
         .replace("--", "")
         .replace("/*", "")
         .replace("*/", "")
+}
+
+// 枚举序列化辅助函数
+pub fn serialize_enum<T: serde::Serialize>(value: &T) -> String {
+    serde_json::to_string(value).unwrap_or_else(|e| {
+        error!("Failed to serialize enum: {}", e);
+        String::new()
+    })
+}
+
+pub fn parse_json_field<T: serde::de::DeserializeOwned>(
+    value: &str,
+    field_name: &str,
+    default: T,
+) -> T {
+    serde_json::from_str(value).unwrap_or_else(|e| {
+        #[cfg(debug_assertions)]
+        error!("Failed to parse {} '{}': {}", field_name, value, e);
+        default
+    })
 }

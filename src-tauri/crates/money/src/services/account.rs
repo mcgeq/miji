@@ -24,7 +24,8 @@ use validator::Validate;
 
 use crate::{
     dto::account::{
-        AccountBalanceSummary, AccountType, CreateAccountRequest, UpdateAccountRequest,
+        AccountBalanceSummary, AccountType, AccountWithRelations, CreateAccountRequest,
+        UpdateAccountRequest,
     },
     services::account_hooks::AccountHooks,
 };
@@ -153,16 +154,6 @@ impl Filter<entity::account::Entity> for AccountFilter {
         }
         condition
     }
-}
-
-/// ---------------------------------------------
-/// 账户关联结构
-/// ---------------------------------------------
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct AccountWithRelations {
-    pub account: AccountModel,
-    pub currency: CurrencyModel,
-    pub owner: Option<FamilyMemberModel>,
 }
 
 /// ---------------------------------------------

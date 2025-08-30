@@ -1,4 +1,7 @@
+use std::str::FromStr;
+
 use common::{
+    error::AppError,
     paginations::PagedResult,
     utils::{date::DateUtils, uuid::McgUuid},
 };
@@ -6,8 +9,6 @@ use entity::account;
 use sea_orm::{ActiveValue::Set, FromQueryResult, prelude::Decimal};
 use serde::{Deserialize, Serialize};
 use validator::{Validate, ValidationError};
-
-use crate::services::account::AccountWithRelations;
 
 #[derive(Debug, Clone, Deserialize, Validate)]
 #[serde(rename_all = "camelCase")]
@@ -109,24 +110,6 @@ impl Default for AccountBalanceSummary {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct AccountResponse {
-    pub serial_num: String,
-    pub name: String,
-    pub description: String,
-    pub r#type: String,
-    pub balance: Decimal,
-    pub initial_balance: Decimal,
-    pub currency: CurrencyInfo,
-    pub is_shared: bool,
-    pub owner_id: Option<String>,
-    pub color: Option<String>,
-    pub is_active: bool,
-    pub created_at: String,
-    pub updated_at: Option<String>,
-}
-
 /// 包含完整关联信息的账户响应
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -167,7 +150,17 @@ pub struct OwnerInfo {
     pub role: Option<String>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// ---------------------------------------------
+/// 账户关联结构
+/// ---------------------------------------------
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AccountWithRelations {
+    pub account: entity::account::Model,
+    pub currency: entity::currency::Model,
+    pub owner: Option<entity::family_member::Model>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum AccountType {
     Savings,
     Bank,
@@ -196,23 +189,24 @@ impl AsRef<str> for AccountType {
     }
 }
 
-/// 实现从 (account, currency) 元组到 AccountResponse 的转换
-impl From<(entity::account::Model, entity::currency::Model)> for AccountResponse {
-    fn from((account, currency): (entity::account::Model, entity::currency::Model)) -> Self {
-        Self {
-            serial_num: account.serial_num,
-            name: account.name,
-            description: account.description,
-            r#type: account.r#type,
-            balance: account.balance,
-            initial_balance: account.initial_balance,
-            currency: CurrencyInfo::from(currency),
-            is_shared: account.is_shared != 0,
-            owner_id: account.owner_id,
-            color: account.color,
-            is_active: account.is_active != 0,
-            created_at: account.created_at,
-            updated_at: account.updated_at,
+impl FromStr for AccountType {
+    type Err = AppError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "Savings" => Ok(AccountType::Savings),
+            "Bank" => Ok(AccountType::Bank),
+            "Cash" => Ok(AccountType::Cash),
+            "CreditCard" => Ok(AccountType::CreditCard),
+            "Investment" => Ok(AccountType::Investment),
+            "Alipay" => Ok(AccountType::Alipay),
+            "WeChat" => Ok(AccountType::WeChat),
+            "CloudQuickPass" => Ok(AccountType::CloudQuickPass),
+            "Other" => Ok(AccountType::Other),
+            _ => Err(AppError::simple(
+                common::BusinessCode::MoneyInvalidAmount,
+                format!("无效的账户类型: {}", s),
+            )),
         }
     }
 }
