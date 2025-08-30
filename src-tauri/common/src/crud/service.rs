@@ -9,6 +9,7 @@
 // Modified   By:  mcgeq <mcgeq@outlook.com>
 // ----------------------------------------------------------------------------
 
+use core::fmt;
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, DbConn, EntityTrait, FromQueryResult, IntoActiveModel,
     PaginatorTrait, PrimaryKeyTrait, QueryFilter, QuerySelect, TransactionTrait, Value,
@@ -708,11 +709,11 @@ pub fn sanitize_input(input: &str) -> String {
 }
 
 // 枚举序列化辅助函数
-pub fn serialize_enum<T: serde::Serialize>(value: &T) -> String {
-    serde_json::to_string(value).unwrap_or_else(|e| {
-        error!("Failed to serialize enum: {}", e);
-        String::new()
-    })
+pub fn serialize_enum<T>(value: &T) -> String
+where
+    T: serde::Serialize + fmt::Display,
+{
+    value.to_string()
 }
 
 pub fn parse_json_field<T: serde::de::DeserializeOwned>(

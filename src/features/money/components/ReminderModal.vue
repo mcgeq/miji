@@ -19,7 +19,7 @@ import type { BilReminder } from '@/schema/money';
 
 const props = defineProps<Props>();
 
-const emit = defineEmits(['close', 'save']);
+const emit = defineEmits(['close', 'save', 'update']);
 
 const colorNameMap = ref(COLORS_MAP);
 

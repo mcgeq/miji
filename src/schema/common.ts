@@ -44,7 +44,7 @@ export const CurrencyCreateSchema = CurrencySchema.pick({
 }).strict();
 export const CurrencyUpdateSchema = CurrencySchema.pick({
   locale: true,
-  symbol: true
+  symbol: true,
 }).partial();
 
 export type Currency = z.infer<typeof CurrencySchema>;

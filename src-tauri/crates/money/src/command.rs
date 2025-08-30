@@ -4,6 +4,7 @@ use common::{
     paginations::{PagedQuery, PagedResult},
 };
 use tauri::State;
+use tracing::info;
 
 use crate::{
     dto::{
@@ -255,23 +256,62 @@ pub async fn transaction_create(
     data: CreateTransactionRequest,
 ) -> Result<ApiResponse<TransactionResponse>, String> {
     let service = get_transaction_service();
-
     Ok(ApiResponse::from_result(
         service
-            .create(&state.db, data)
+            .trans_create_with_relations(&state.db, data)
             .await
             .map(TransactionResponse::from),
     ))
 }
 
 #[tauri::command]
-pub async fn transfer(
+pub async fn transaction_transfer_create(
     state: State<'_, AppState>,
     data: TransferRequest,
 ) -> Result<ApiResponse<(TransactionResponse, TransactionResponse)>, String> {
     let service = get_transaction_service();
 
-    match service.transfer(&state.db, data).await {
+    match service
+        .trans_transfer_create_with_relations(&state.db, data)
+        .await
+    {
+        Ok((from_tx, to_tx)) => Ok(ApiResponse::success((
+            TransactionResponse::from(from_tx),
+            TransactionResponse::from(to_tx),
+        ))),
+        Err(e) => Ok(ApiResponse::from_error(e)),
+    }
+}
+
+#[tauri::command]
+pub async fn transaction_transfer_delete(
+    state: State<'_, AppState>,
+    serial_num: String,
+) -> Result<ApiResponse<(TransactionResponse, TransactionResponse)>, String> {
+    let service = get_transaction_service();
+    match service
+        .trans_transfer_delete_with_relations(&state.db, &serial_num)
+        .await
+    {
+        Ok((from_tx, to_tx)) => Ok(ApiResponse::success((
+            TransactionResponse::from(from_tx),
+            TransactionResponse::from(to_tx),
+        ))),
+        Err(e) => Ok(ApiResponse::from_error(e)),
+    }
+}
+
+#[tauri::command]
+pub async fn transaction_transfer_update(
+    state: State<'_, AppState>,
+    serial_num: String,
+    transfer: TransferRequest,
+) -> Result<ApiResponse<(TransactionResponse, TransactionResponse)>, String> {
+    let service = get_transaction_service();
+    match service
+        .trans_transfer_update_with_relations(&state.db, &serial_num, transfer)
+        .await
+    {
         Ok((from_tx, to_tx)) => Ok(ApiResponse::success((
             TransactionResponse::from(from_tx),
             TransactionResponse::from(to_tx),
@@ -290,7 +330,7 @@ pub async fn transaction_get(
 
     Ok(ApiResponse::from_result(
         service
-            .get_by_id(&state.db, serial_num)
+            .trans_get_with_relations(&state.db, serial_num)
             .await
             .map(TransactionResponse::from),
     ))
@@ -307,7 +347,7 @@ pub async fn transaction_update(
 
     Ok(ApiResponse::from_result(
         service
-            .update(&state.db, serial_num, data)
+            .trans_update_with_relations(&state.db, serial_num, data)
             .await
             .map(TransactionResponse::from),
     ))
@@ -336,7 +376,7 @@ pub async fn transaction_list(
 
     Ok(ApiResponse::from_result(
         service
-            .list_with_filter(&state.db, filter)
+            .trans_list_with_relations(&state.db, filter)
             .await
             .map(|models| models.into_iter().map(TransactionResponse::from).collect()),
     ))
@@ -349,10 +389,9 @@ pub async fn transaction_list_paged(
     query: PagedQuery<TransactionFilter>,
 ) -> Result<ApiResponse<PagedResult<TransactionResponse>>, String> {
     let service = get_transaction_service();
-
     Ok(ApiResponse::from_result(
         service
-            .list_paged(&state.db, query)
+            .trans_list_paged_with_relations(&state.db, query)
             .await
             .map(|paged| PagedResult {
                 rows: paged

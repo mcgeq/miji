@@ -18,7 +18,7 @@ interface Props {
 const props = defineProps<Props>();
 
 // 定义 emits
-const emit = defineEmits(['close', 'save']);
+const emit = defineEmits(['close', 'save', 'update']);
 
 const colorNameMap = ref(COLORS_MAP);
 const currency = ref(CURRENCY_CNY);

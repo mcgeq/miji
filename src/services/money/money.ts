@@ -1,5 +1,4 @@
 import { AccountMapper } from './accounts';
-import { MoneyDbError } from './baseManager';
 import { BilReminderMapper } from './billReminder';
 import { BudgetMapper } from './budgets';
 import { CurrencyMapper } from './currencys';
@@ -49,6 +48,7 @@ import type {
   Transaction,
   TransactionCreate,
   TransactionUpdate,
+  TransferCreate,
   UpdateAccountRequest,
 } from '@/schema/money';
 
@@ -129,28 +129,6 @@ export class MoneyDb {
     return this.transactionMapper.getById(serialNum);
   }
 
-  static async getTransferRelatedTransaction(
-    serialNum: string,
-  ): Promise<Transaction | null> {
-    try {
-      const transaction =
-        await this.transactionMapper.getTransferRelatedTransaction(serialNum);
-      if (!transaction) return null;
-      return transaction;
-    } catch (error) {
-      throw new MoneyDbError(
-        'Failed to get related transfer transaction',
-        'getTransferRelatedTransaction',
-        'Transaction',
-        error as Error,
-      );
-    }
-  }
-
-  static async listTransactions(): Promise<Transaction[]> {
-    return this.transactionMapper.list();
-  }
-
   static async updateTransaction(
     serialNum: string,
     transaction: TransactionUpdate,
@@ -160,6 +138,29 @@ export class MoneyDb {
 
   static async deleteTransaction(serialNum: string): Promise<void> {
     return this.transactionMapper.deleteById(serialNum);
+  }
+
+  static async transferCreate(
+    transfer: TransferCreate,
+  ): Promise<[Transaction, Transaction]> {
+    return this.transactionMapper.transfer(transfer);
+  }
+
+  static async transferUpdate(
+    serialNum: string,
+    transfer: TransferCreate,
+  ): Promise<[Transaction, Transaction]> {
+    return this.transactionMapper.transferUpdate(serialNum, transfer);
+  }
+
+  static async transferDelete(
+    serialNum: string,
+  ): Promise<[Transaction, Transaction]> {
+    return this.transactionMapper.transferDelete(serialNum);
+  }
+
+  static async listTransactions(): Promise<Transaction[]> {
+    return this.transactionMapper.list();
   }
 
   static async listTransactionsPaged(

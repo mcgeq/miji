@@ -10,8 +10,8 @@ use common::{
 use sea_orm::{
     ActiveModelTrait,
     ActiveValue::Set,
-    ColumnTrait, Condition, DatabaseConnection, DatabaseTransaction, EntityTrait, IntoActiveModel,
-    QuerySelect, TransactionTrait,
+    ColumnTrait, Condition, DatabaseConnection, DatabaseTransaction, DbConn, EntityTrait,
+    IntoActiveModel, QueryFilter, QuerySelect, TransactionTrait,
     prelude::{Decimal, async_trait::async_trait},
 };
 use serde::{Deserialize, Serialize};
@@ -23,11 +23,13 @@ use crate::{
         account::AccountType,
         transactions::{
             CreateTransactionRequest, PaymentMethod, TransactionStatus, TransactionType,
-            TransferRequest, UpdateTransactionRequest,
+            TransactionWithRelations, TransferRequest, UpdateTransactionRequest,
         },
     },
     error::MoneyError,
-    services::transaction_hooks::NoOpHooks,
+    services::{
+        account::get_account_service, currency::get_currency_service, transaction_hooks::NoOpHooks,
+    },
 };
 
 // 交易服务实现
@@ -68,12 +70,12 @@ impl TransactionService {
     async fn update_account_balance(
         &self,
         tx: &DatabaseTransaction,
-        account: entity::account::Model,
+        account: &entity::account::Model,
         new_balance: Decimal,
         operation_type: &str,
     ) -> MijiResult<entity::account::Model> {
         let original_account = account.clone();
-        let mut account_active = account.into_active_model();
+        let mut account_active = account.clone().into_active_model();
         account_active.balance = Set(new_balance);
         let updated_account = account_active.update(tx).await?;
         self.account_update_log(tx, &updated_account, &original_account, operation_type)
@@ -89,8 +91,8 @@ impl TransactionService {
         data.validate().map_err(AppError::from_validation_errors)?;
         let tx = db.begin().await?;
 
-        let from_account = self.fetch_account(&tx, &data.from_account).await?;
-        let to_account = self.fetch_account(&tx, &data.to_account).await?;
+        let from_account = self.fetch_account(&tx, &data.account_serial_num).await?;
+        let to_account = self.fetch_account(&tx, &data.to_account_serial_num).await?;
 
         let amount = data.amount;
         if from_account.balance < amount {
@@ -101,75 +103,120 @@ impl TransactionService {
             .into());
         }
 
-        let new_from_balance = from_account.balance - amount;
-        let new_to_balance = to_account.balance + amount;
-
-        let _updated_from_account = self
-            .update_account_balance(
-                &tx,
-                from_account.clone(),
-                new_from_balance,
-                "BALANCE_UPDATE_FROM",
-            )
-            .await?;
-        let _updated_to_account = self
-            .update_account_balance(&tx, to_account.clone(), new_to_balance, "BALANCE_UPDATE_TO")
+        self.apply_balances(&tx, &from_account, &to_account, amount)
             .await?;
 
-        let from_request = CreateTransactionRequest {
-            transaction_type: TransactionType::Expense,
-            transaction_status: TransactionStatus::Completed,
-            date: data.date.clone().unwrap_or_else(DateUtils::local_rfc3339),
-            amount: -data.amount,
-            currency: data.currency.clone(),
-            description: data.description.clone(),
-            notes: data.notes.clone(),
-            account_serial_num: data.from_account.clone(),
-            category: "Transfer".to_string(),
-            sub_category: None,
-            tags: None,
-            split_members: None,
-            payment_method: data.payment_method.clone(),
-            actual_payer_account: AccountType::from_str(&from_account.r#type)?,
-            related_transaction_serial_num: None,
-        };
+        let (from_request, mut to_request) =
+            self.build_transfer_requests(&data, &from_account, &to_account)?;
 
         let converter = TransactionConverter;
         let from_model = converter
             .create_to_active_model(from_request)?
             .insert(&tx)
             .await?;
-
-        let to_request = CreateTransactionRequest {
-            transaction_type: TransactionType::Income,
-            transaction_status: TransactionStatus::Completed,
-            date: data.date.clone().unwrap_or_else(DateUtils::local_rfc3339),
-            amount: data.amount,
-            currency: data.currency.clone(),
-            description: data.description.clone(),
-            notes: data.notes.clone(),
-            account_serial_num: data.to_account.clone(),
-            category: "Transfer".to_string(),
-            sub_category: None,
-            tags: None,
-            split_members: None,
-            payment_method: data.payment_method.clone(),
-            actual_payer_account: AccountType::from_str(&to_account.r#type)?, // Adjust based on context or derive from from_account
-            related_transaction_serial_num: Some(from_model.serial_num.clone()),
-        };
-
+        to_request.related_transaction_serial_num = Some(from_model.serial_num.clone());
         let to_model = converter
             .create_to_active_model(to_request)?
             .insert(&tx)
             .await?;
 
-        self.transaction_operation_log(&tx, &from_model, None, "TRANSFER_OUT")
-            .await?;
-        self.transaction_operation_log(&tx, &to_model, None, "TRANSFER_IN")
+        self.log_transfer(&tx, &from_model, &to_model, None, None)
             .await?;
 
         tx.commit().await?;
         Ok((from_model, to_model))
+    }
+
+    pub async fn transfer_update(
+        &self,
+        db: &DatabaseConnection,
+        transaction_id: &str,
+        data: TransferRequest,
+    ) -> MijiResult<(entity::transactions::Model, entity::transactions::Model)> {
+        // Validate the input data
+        data.validate().map_err(AppError::from_validation_errors)?;
+        let tx = db.begin().await?;
+
+        // Fetch the original transfer pair
+        let (original_outgoing, original_incoming) =
+            self.fetch_related_transfer(&tx, transaction_id).await?;
+
+        // Fetch the accounts involved
+        let from_account = self.fetch_account(&tx, &data.account_serial_num).await?;
+        let to_account = self.fetch_account(&tx, &data.to_account_serial_num).await?;
+
+        // Validate the new amount
+        let new_amount = data.amount;
+        if new_amount.is_sign_negative() {
+            return Err(AppError::simple(
+                BusinessCode::InvalidParameter,
+                "Transfer amount must be non-negative",
+            ));
+        }
+
+        // Calculate the difference in amount
+        let original_amount = original_outgoing.amount.abs();
+
+        // Revert original balances
+        self.revert_balances(&tx, &original_outgoing, &original_incoming, original_amount)
+            .await?;
+
+        // Check if the from_account has sufficient balance for the new amount
+        if from_account.balance < new_amount {
+            return Err(MoneyError::InsufficientFunds {
+                balance: new_amount,
+                backtrace: snafu::Backtrace::generate(),
+            }
+            .into());
+        }
+
+        // Apply new balances
+        self.apply_balances(&tx, &from_account, &to_account, new_amount)
+            .await?;
+
+        // Build updated transaction requests
+        let (mut from_request, mut to_request) =
+            self.build_transfer_requests(&data, &from_account, &to_account)?;
+
+        // Set the serial numbers to match the original transactions
+        from_request.transaction_status = TransactionStatus::Completed; // Ensure status remains Completed
+        to_request.transaction_status = TransactionStatus::Completed;
+        from_request.related_transaction_serial_num = Some(original_incoming.serial_num.clone());
+        to_request.related_transaction_serial_num = Some(original_outgoing.serial_num.clone());
+
+        // Convert to ActiveModel for updates
+        let mut from_active_model = entity::transactions::ActiveModel::try_from(from_request)
+            .map_err(AppError::from_validation_errors)?;
+        from_active_model.serial_num = Set(original_outgoing.serial_num.clone());
+        from_active_model.created_at = Set(original_outgoing.created_at.clone());
+
+        let mut to_active_model = entity::transactions::ActiveModel::try_from(to_request)
+            .map_err(AppError::from_validation_errors)?;
+        to_active_model.serial_num = Set(original_incoming.serial_num.clone());
+        to_active_model.created_at = Set(original_incoming.created_at.clone());
+
+        // Update the transactions
+        let updated_outgoing = from_active_model.update(&tx).await?;
+        let updated_incoming = to_active_model.update(&tx).await?;
+
+        // Log the update operations
+        self.transaction_operation_log(
+            &tx,
+            &updated_outgoing,
+            Some(self.serialize_model(&original_outgoing)?),
+            "TRANSFER_UPDATE_OUT",
+        )
+        .await?;
+        self.transaction_operation_log(
+            &tx,
+            &updated_incoming,
+            Some(self.serialize_model(&original_incoming)?),
+            "TRANSFER_UPDATE_IN",
+        )
+        .await?;
+
+        tx.commit().await?;
+        Ok((updated_outgoing, updated_incoming))
     }
 
     pub async fn transfer_delete(
@@ -178,162 +225,60 @@ impl TransactionService {
         transaction_id: &str,
     ) -> MijiResult<(entity::transactions::Model, entity::transactions::Model)> {
         let tx = db.begin().await?;
-
-        let original_outgoing = entity::transactions::Entity::find_by_id(transaction_id)
-            .lock_exclusive()
-            .one(&tx)
-            .await?
-            .ok_or_else(|| AppError::simple(BusinessCode::NotFound, "Transaction not found"))?;
-
-        if original_outgoing.category != "Transfer" {
-            return Err(AppError::simple(
-                BusinessCode::NotFound,
-                "Only transfer transactions can be reversed",
-            ));
-        }
-
-        let related_id = original_outgoing
-            .related_transaction_serial_num
-            .as_ref()
-            .ok_or_else(|| {
-                AppError::simple(
-                    BusinessCode::NotFound,
-                    "Transfer transaction missing related transaction",
-                )
-            })?
-            .clone();
-
-        let original_incoming = entity::transactions::Entity::find_by_id(&related_id)
-            .lock_exclusive()
-            .one(&tx)
-            .await?
-            .ok_or_else(|| {
-                AppError::simple(BusinessCode::NotFound, "Related transaction not found")
-            })?;
-
-        if original_incoming.related_transaction_serial_num.as_deref() != Some(transaction_id) {
-            return Err(AppError::simple(
-                BusinessCode::NotFound,
-                "Transactions are not properly related",
-            ));
-        }
-
-        let from_account = self
-            .fetch_account(&tx, &original_outgoing.account_serial_num)
-            .await?;
-        let to_account = self
-            .fetch_account(&tx, &original_incoming.account_serial_num)
-            .await?;
+        let (original_outgoing, original_incoming) =
+            self.fetch_related_transfer(&tx, transaction_id).await?;
 
         let amount = original_outgoing.amount.abs();
-        let new_from_balance = from_account.balance + amount;
-        let new_to_balance = to_account.balance - amount;
-
-        let _updated_from_account = self
-            .update_account_balance(&tx, from_account, new_from_balance, "BALANCE_REVERSE_FROM")
-            .await?;
-        let _updated_to_account = self
-            .update_account_balance(&tx, to_account, new_to_balance, "BALANCE_REVERSE_TO")
+        self.revert_balances(&tx, &original_outgoing, &original_incoming, amount)
             .await?;
 
-        let mut original_outgoing_active = original_outgoing.clone().into_active_model();
-        original_outgoing_active.is_deleted = Set(1);
-        let updated_outgoing = original_outgoing_active.update(&tx).await?;
+        let updated_outgoing = self
+            .mark_transaction_deleted(&tx, original_outgoing.clone())
+            .await?;
+        let updated_incoming = self
+            .mark_transaction_deleted(&tx, original_incoming.clone())
+            .await?;
 
-        let mut original_incoming_active = original_incoming.clone().into_active_model();
-        original_incoming_active.is_deleted = Set(1);
-        let updated_incoming = original_incoming_active.update(&tx).await?;
-
+        // 记录软删除操作日志
         self.transaction_operation_log(
             &tx,
             &updated_outgoing,
             Some(self.serialize_model(&original_outgoing)?),
-            "TRANSFER_REVERSE_OUT",
+            "TRANSFER_REVERSE_OUT_MARK_DELETED",
         )
         .await?;
         self.transaction_operation_log(
             &tx,
             &updated_incoming,
             Some(self.serialize_model(&original_incoming)?),
-            "TRANSFER_REVERSE_IN",
+            "TRANSFER_REVERSE_IN_MARK_DELETED",
         )
         .await?;
 
-        let reverse_out_serial_num = McgUuid::uuid(38);
-        let reverse_in_serial_num = McgUuid::uuid(38);
-        let date = DateUtils::local_rfc3339();
-        let reverse_out_request = CreateTransactionRequest {
-            transaction_type: TransactionType::Expense,
-            transaction_status: TransactionStatus::Reversed,
-            date: date.clone(),
-            amount: -amount,
-            currency: original_outgoing.currency.clone(),
-            description: format!("Reversal of {}", original_outgoing.description),
-            notes: original_outgoing.notes.clone(),
-            account_serial_num: original_incoming.account_serial_num.clone(),
-            category: "Transfer".to_string(),
-            sub_category: None,
-            tags: None,
-            split_members: None,
-            payment_method: parse_json_field(
-                &original_outgoing.payment_method,
-                "payment_method",
-                PaymentMethod::Other,
-            ),
-            actual_payer_account: parse_json_field(
-                &original_outgoing.actual_payer_account,
-                "actual_payer_account",
-                AccountType::Savings,
-            ),
-            related_transaction_serial_num: Some(reverse_in_serial_num.clone()),
-        };
-
-        let reverse_in_request = CreateTransactionRequest {
-            transaction_type: TransactionType::Income,
-            transaction_status: TransactionStatus::Reversed,
-            date,
-            amount,
-            currency: original_outgoing.currency.clone(),
-            description: format!("Reversal of {}", original_incoming.description),
-            notes: original_incoming.notes.clone(),
-            account_serial_num: original_outgoing.account_serial_num.clone(),
-            category: "Transfer".to_string(),
-            sub_category: None,
-            tags: None,
-            split_members: None,
-            payment_method: parse_json_field(
-                &original_outgoing.payment_method,
-                "payment_method",
-                PaymentMethod::Other,
-            ),
-            actual_payer_account: parse_json_field(
-                &original_outgoing.actual_payer_account,
-                "actual_payer_account",
-                AccountType::Savings,
-            ),
-            related_transaction_serial_num: Some(reverse_out_serial_num.clone()),
-        };
+        let (reverse_out_request, mut reverse_in_request) =
+            self.build_reversal_requests(&original_outgoing, &original_incoming, amount);
 
         let converter = TransactionConverter;
         let reverse_out_model = converter
             .create_to_active_model(reverse_out_request)?
             .insert(&tx)
             .await?;
+        reverse_in_request.related_transaction_serial_num =
+            Some(reverse_out_model.serial_num.clone());
         let reverse_in_model = converter
             .create_to_active_model(reverse_in_request)?
             .insert(&tx)
             .await?;
-
-        self.transaction_operation_log(
+        let outgoing_snapshot = self.serialize_model(&original_outgoing)?;
+        let incoming_snapshot = self.serialize_model(&original_incoming)?;
+        self.log_transfer(
             &tx,
             &reverse_out_model,
-            None,
-            "TRANSFER_REVERSE_OUT_CREATE",
+            &reverse_in_model,
+            Some(outgoing_snapshot.to_string()),
+            Some(incoming_snapshot.to_string()),
         )
         .await?;
-        self.transaction_operation_log(&tx, &reverse_in_model, None, "TRANSFER_REVERSE_IN_CREATE")
-            .await?;
-
         tx.commit().await?;
         Ok((reverse_out_model, reverse_in_model))
     }
@@ -401,20 +346,19 @@ impl TransactionService {
         out_snapshot: Option<String>,
         in_snapshot: Option<String>,
     ) -> MijiResult<()> {
-        self.transaction_operation_log(
-            tx,
-            out_model,
-            out_snapshot.as_ref().map(|s| s.as_str()),
-            "TRANSFER_OUT",
-        )
-        .await?;
-        self.transaction_operation_log(
-            tx,
-            in_model,
-            in_snapshot.as_ref().map(|s| s.as_str()),
-            "TRANSFER_IN",
-        )
-        .await?;
+        let out_before: Option<serde_json::Value> = match out_snapshot {
+            Some(s) => Some(parse_json(&s, "out_snapshot")?),
+            None => None,
+        };
+
+        let in_before: Option<serde_json::Value> = match in_snapshot {
+            Some(s) => Some(parse_json(&s, "in_snapshot")?),
+            None => None,
+        };
+        self.transaction_operation_log(tx, out_model, out_before, "TRANSFER_OUT")
+            .await?;
+        self.transaction_operation_log(tx, in_model, in_before, "TRANSFER_IN")
+            .await?;
         Ok(())
     }
 
@@ -431,7 +375,7 @@ impl TransactionService {
         let _ = self
             .update_account_balance(
                 tx,
-                from_account.clone(),
+                from_account,
                 from_account.balance - amount,
                 "BALANCE_UPDATE_FROM",
             )
@@ -439,7 +383,7 @@ impl TransactionService {
         let _ = self
             .update_account_balance(
                 tx,
-                to_account.clone(),
+                to_account,
                 to_account.balance + amount,
                 "BALANCE_UPDATE_TO",
             )
@@ -459,7 +403,7 @@ impl TransactionService {
         let _ = self
             .update_account_balance(
                 tx,
-                from_account,
+                &from_account,
                 from_account.balance + amount,
                 "BALANCE_REVERSE_FROM",
             )
@@ -467,7 +411,7 @@ impl TransactionService {
         let _ = self
             .update_account_balance(
                 tx,
-                to_account,
+                &to_account,
                 to_account.balance - amount,
                 "BALANCE_REVERSE_TO",
             )
@@ -506,10 +450,10 @@ impl TransactionService {
             amount: -data.amount,
             currency: data.currency.clone(),
             description: data.description.clone(),
-            notes: data.notes.clone(),
-            account_serial_num: data.from_account.clone(),
+            account_serial_num: data.account_serial_num.clone(),
             category: "Transfer".to_string(),
-            sub_category: None,
+            notes: Some(data.description.clone()),
+            sub_category: data.sub_category.clone(),
             tags: None,
             split_members: None,
             payment_method: data.payment_method.clone(),
@@ -524,10 +468,10 @@ impl TransactionService {
             amount: data.amount,
             currency: data.currency.clone(),
             description: data.description.clone(),
-            notes: data.notes.clone(),
-            account_serial_num: data.to_account.clone(),
+            notes: Some(data.description.clone()),
+            account_serial_num: data.to_account_serial_num.clone(),
             category: "Transfer".to_string(),
-            sub_category: None,
+            sub_category: data.sub_category.clone(),
             tags: None,
             split_members: None,
             payment_method: data.payment_method.clone(),
@@ -634,7 +578,8 @@ impl TransactionService {
                 AppError::simple(BusinessCode::NotFound, "Missing related transaction")
             })?;
 
-        let incoming = entity::transactions::Entity::find_by_id(&related_id)
+        let incoming = entity::transactions::Entity::find()
+            .filter(entity::transactions::Column::RelatedTransactionSerialNum.eq(related_id))
             .lock_exclusive()
             .one(tx)
             .await?
@@ -642,14 +587,11 @@ impl TransactionService {
                 AppError::simple(BusinessCode::NotFound, "Related transaction not found")
             })?;
 
-        if incoming.related_transaction_serial_num.as_deref() != Some(transaction_id) {
-            return Err(AppError::simple(
-                BusinessCode::NotFound,
-                "Transactions are not properly related",
-            ));
+        if outgoing.transaction_type == "Expense" {
+            Ok((outgoing, incoming))
+        } else {
+            Ok((incoming, outgoing))
         }
-
-        Ok((outgoing, incoming))
     }
 
     fn serialize_model(
@@ -711,6 +653,39 @@ impl CrudConverter<entity::transactions::Entity, CreateTransactionRequest, Updat
 
     fn table_name(&self) -> &'static str {
         "transactions"
+    }
+}
+
+impl TransactionConverter {
+    pub async fn model_to_with_relations(
+        &self,
+        db: &DbConn,
+        model: entity::transactions::Model,
+    ) -> MijiResult<TransactionWithRelations> {
+        let account_service = get_account_service();
+        let cny_service = get_currency_service();
+
+        let (account, currency, family_member) = tokio::try_join!(
+            async {
+                account_service
+                    .get_account_with_relations(db, model.account_serial_num.clone())
+                    .await
+            },
+            async { cny_service.get_by_id(db, model.currency.clone()).await },
+            async {
+                entity::family_member::Entity::find()
+                    .filter(entity::family_member::Column::SerialNum.is_in(&model.split_members))
+                    .all(db)
+                    .await
+                    .map_err(Into::into)
+            }
+        )?;
+        Ok(TransactionWithRelations {
+            transaction: model,
+            account,
+            currency,
+            family_member,
+        })
     }
 }
 
@@ -800,40 +775,36 @@ impl
 {
     async fn create(
         &self,
-        db: &DatabaseConnection,
+        db: &DbConn,
         data: CreateTransactionRequest,
     ) -> MijiResult<entity::transactions::Model> {
         self.inner.create(db, data).await
     }
 
-    async fn get_by_id(
-        &self,
-        db: &DatabaseConnection,
-        id: String,
-    ) -> MijiResult<entity::transactions::Model> {
+    async fn get_by_id(&self, db: &DbConn, id: String) -> MijiResult<entity::transactions::Model> {
         self.inner.get_by_id(db, id).await
     }
 
     async fn update(
         &self,
-        db: &DatabaseConnection,
+        db: &DbConn,
         id: String,
         data: UpdateTransactionRequest,
     ) -> MijiResult<entity::transactions::Model> {
         self.inner.update(db, id, data).await
     }
 
-    async fn delete(&self, db: &DatabaseConnection, id: String) -> MijiResult<()> {
+    async fn delete(&self, db: &DbConn, id: String) -> MijiResult<()> {
         self.inner.delete(db, id).await
     }
 
-    async fn list(&self, db: &DatabaseConnection) -> MijiResult<Vec<entity::transactions::Model>> {
+    async fn list(&self, db: &DbConn) -> MijiResult<Vec<entity::transactions::Model>> {
         self.inner.list(db).await
     }
 
     async fn list_with_filter(
         &self,
-        db: &DatabaseConnection,
+        db: &DbConn,
         filter: TransactionFilter,
     ) -> MijiResult<Vec<entity::transactions::Model>> {
         self.inner.list_with_filter(db, filter).await
@@ -841,7 +812,7 @@ impl
 
     async fn list_paged(
         &self,
-        db: &DatabaseConnection,
+        db: &DbConn,
         query: PagedQuery<TransactionFilter>,
     ) -> MijiResult<PagedResult<entity::transactions::Model>> {
         self.inner.list_paged(db, query).await
@@ -849,30 +820,146 @@ impl
 
     async fn create_batch(
         &self,
-        db: &DatabaseConnection,
+        db: &DbConn,
         data: Vec<CreateTransactionRequest>,
     ) -> MijiResult<Vec<entity::transactions::Model>> {
         self.inner.create_batch(db, data).await
     }
 
-    async fn delete_batch(&self, db: &DatabaseConnection, ids: Vec<String>) -> MijiResult<u64> {
+    async fn delete_batch(&self, db: &DbConn, ids: Vec<String>) -> MijiResult<u64> {
         self.inner.delete_batch(db, ids).await
     }
 
-    async fn exists(&self, db: &DatabaseConnection, id: String) -> MijiResult<bool> {
+    async fn exists(&self, db: &DbConn, id: String) -> MijiResult<bool> {
         self.inner.exists(db, id).await
     }
 
-    async fn count(&self, db: &DatabaseConnection) -> MijiResult<u64> {
+    async fn count(&self, db: &DbConn) -> MijiResult<u64> {
         self.inner.count(db).await
     }
 
-    async fn count_with_filter(
+    async fn count_with_filter(&self, db: &DbConn, filter: TransactionFilter) -> MijiResult<u64> {
+        self.inner.count_with_filter(db, filter).await
+    }
+}
+
+// =======================================
+// 新增带关联方法
+// =======================================
+impl TransactionService {
+    pub async fn trans_create_with_relations(
+        &self,
+        db: &DbConn,
+        data: CreateTransactionRequest,
+    ) -> MijiResult<TransactionWithRelations> {
+        let model = self.create(db, data).await?;
+        self.converter().model_to_with_relations(db, model).await
+    }
+
+    pub async fn trans_get_with_relations(
+        &self,
+        db: &DbConn,
+        id: String,
+    ) -> MijiResult<TransactionWithRelations> {
+        let model = self.get_by_id(db, id).await?;
+        self.converter().model_to_with_relations(db, model).await
+    }
+
+    pub async fn trans_update_with_relations(
+        &self,
+        db: &DbConn,
+        id: String,
+        data: UpdateTransactionRequest,
+    ) -> MijiResult<TransactionWithRelations> {
+        let model = self.update(db, id, data).await?;
+        self.converter().model_to_with_relations(db, model).await
+    }
+
+    pub async fn trans_transfer_create_with_relations(
+        &self,
+        db: &DbConn,
+        data: TransferRequest,
+    ) -> MijiResult<(TransactionWithRelations, TransactionWithRelations)> {
+        let (from_model, to_model) = self.transfer(db, data).await?;
+        let f = self
+            .converter()
+            .model_to_with_relations(db, from_model)
+            .await?;
+        let t = self
+            .converter()
+            .model_to_with_relations(db, to_model)
+            .await?;
+        Ok((f, t))
+    }
+
+    pub async fn trans_transfer_update_with_relations(
         &self,
         db: &DatabaseConnection,
-        filter: TransactionFilter,
-    ) -> MijiResult<u64> {
-        self.inner.count_with_filter(db, filter).await
+        transaction_id: &str,
+        data: TransferRequest,
+    ) -> MijiResult<(TransactionWithRelations, TransactionWithRelations)> {
+        let (from_model, to_model) = self.transfer_update(db, transaction_id, data).await?;
+        let from_rel = self
+            .converter()
+            .model_to_with_relations(db, from_model)
+            .await?;
+        let to_rel = self
+            .converter()
+            .model_to_with_relations(db, to_model)
+            .await?;
+        Ok((from_rel, to_rel))
+    }
+
+    pub async fn trans_transfer_delete_with_relations(
+        &self,
+        db: &DatabaseConnection,
+        serial_num: &str,
+    ) -> MijiResult<(TransactionWithRelations, TransactionWithRelations)> {
+        let (from_model, to_model) = self.transfer_delete(db, serial_num).await?;
+        let f = self
+            .converter()
+            .model_to_with_relations(db, from_model)
+            .await?;
+        let t = self
+            .converter()
+            .model_to_with_relations(db, to_model)
+            .await?;
+        Ok((f, t))
+    }
+
+    pub async fn trans_list_with_relations(
+        &self,
+        db: &DbConn,
+        filters: TransactionFilter,
+    ) -> MijiResult<Vec<TransactionWithRelations>> {
+        let models = self.list_with_filter(db, filters).await?;
+        let mut result = Vec::with_capacity(models.len());
+        for m in models {
+            result.push(self.converter().model_to_with_relations(db, m).await?);
+        }
+        Ok(result)
+    }
+
+    pub async fn trans_list_paged_with_relations(
+        &self,
+        db: &DbConn,
+        query: PagedQuery<TransactionFilter>,
+    ) -> MijiResult<PagedResult<TransactionWithRelations>> {
+        let paged = self.inner.list_paged(db, query).await?;
+        let mut rows_with_relations = Vec::with_capacity(paged.rows.len());
+
+        for m in paged.rows {
+            let tx_with_rel = self.converter().model_to_with_relations(db, m).await?;
+            rows_with_relations.push(tx_with_rel);
+        }
+
+        Ok(PagedResult {
+            rows: rows_with_relations,
+            total_count: paged.total_count,
+            current_page: paged.current_page,
+            page_size: paged.page_size,
+            total_pages: paged.total_pages,
+        })
     }
 }
 
@@ -883,4 +970,10 @@ pub fn get_transaction_service() -> TransactionService {
         NoOpHooks,
         Arc::new(common::log::logger::NoopLogger),
     )
+}
+
+fn parse_json<T: serde::de::DeserializeOwned>(s: &str, field: &str) -> MijiResult<T> {
+    serde_json::from_str(s).map_err(|e| {
+        AppError::internal_server_error(format!("Failed to parse JSON field '{}': {}", field, e))
+    })
 }

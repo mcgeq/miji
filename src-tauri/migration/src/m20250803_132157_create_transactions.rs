@@ -123,6 +123,7 @@ impl MigrationTrait for Migration {
                             .not_null()
                             .default("Cash")
                             .check(Expr::col(Transactions::PaymentMethod).is_in(vec![
+                                "Savings",
                                 "Cash",
                                 "BankTransfer",
                                 "CreditCard",

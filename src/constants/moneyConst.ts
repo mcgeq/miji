@@ -19,4 +19,5 @@ export const CURRENCY_CNY: Currency = {
   code: 'CNY',
   symbol: '¥',
   createdAt: DateUtils.getLocalISODateTimeWithOffset(),
+  updatedAt: null,
 };

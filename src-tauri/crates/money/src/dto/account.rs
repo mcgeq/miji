@@ -1,4 +1,4 @@
-use std::str::FromStr;
+use std::{fmt, str::FromStr};
 
 use common::{
     error::AppError,
@@ -186,6 +186,12 @@ impl AsRef<str> for AccountType {
             AccountType::CloudQuickPass => "CloudQuickPass",
             AccountType::Other => "Other",
         }
+    }
+}
+
+impl fmt::Display for AccountType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.as_ref())
     }
 }
 

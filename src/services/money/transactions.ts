@@ -9,6 +9,7 @@ import type {
   Transaction,
   TransactionCreate,
   TransactionUpdate,
+  TransferCreate,
 } from '@/schema/money';
 
 export interface TransactionFilters {
@@ -52,19 +53,6 @@ export class TransactionMapper extends BaseMapper<
       return result;
     } catch (error) {
       this.handleError('getById', error);
-    }
-  }
-
-  async getTransferRelatedTransaction(
-    serialNum: string,
-  ): Promise<Transaction | null> {
-    try {
-      const result = await invokeCommand<Transaction>('transaction_get', {
-        serialNum,
-      });
-      return result;
-    } catch (error) {
-      this.handleError('getTransferRelatedTransaction', error);
     }
   }
 
@@ -120,6 +108,47 @@ export class TransactionMapper extends BaseMapper<
       return result;
     } catch (err) {
       this.handleError('listPaged', err);
+    }
+  }
+
+  async transfer(
+    transfer: TransferCreate,
+  ): Promise<[Transaction, Transaction]> {
+    try {
+      const result = await invokeCommand<[Transaction, Transaction]>(
+        'transaction_transfer_create',
+        { data: transfer },
+      );
+      return result;
+    } catch (err) {
+      this.handleError('transfer', err);
+    }
+  }
+
+  async transferUpdate(
+    serialNum: string,
+    transfer: TransferCreate,
+  ): Promise<[Transaction, Transaction]> {
+    try {
+      const result = await invokeCommand<[Transaction, Transaction]>(
+        'trans_transfer_update_with_relations',
+        { serialNum, transfer },
+      );
+      return result;
+    } catch (err) {
+      this.handleError('transfer', err);
+    }
+  }
+
+  async transferDelete(serialNum: string): Promise<[Transaction, Transaction]> {
+    try {
+      const result = await invokeCommand<[Transaction, Transaction]>(
+        'trans_transfer_delete_with_relations',
+        { serialNum },
+      );
+      return result;
+    } catch (err) {
+      this.handleError('transfer', err);
     }
   }
 

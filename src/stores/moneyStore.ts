@@ -1,23 +1,25 @@
 // stores/moneyStore.ts
-
 import { defineStore } from 'pinia';
 import { AppError, AppErrorCode, AppErrorSeverity } from '@/errors/appError';
-import { TransactionTypeSchema } from '@/schema/common';
 import { MoneyDbError } from '@/services/money/baseManager';
 import { MoneyDb } from '@/services/money/money';
-import { DateUtils } from '@/utils/date';
-import { uuid } from '@/utils/uuid';
-import type { Category, IncomeExpense, TransactionType } from '@/schema/common';
+import type { IncomeExpense, PageQuery } from '@/schema/common';
 import type {
   Account,
   BilReminder,
+  BilReminderCreate,
+  BilReminderUpdate,
   Budget,
+  BudgetCreate,
+  BudgetUpdate,
   CreateAccountRequest,
   Transaction,
   TransactionCreate,
   TransactionUpdate,
+  TransferCreate,
   UpdateAccountRequest,
 } from '@/schema/money';
+import type { TransactionFilters } from '@/services/money/transactions';
 
 export enum MoneyStoreErrorCode {
   ACCOUNT_NOT_FOUND = 'ACCOUNT_NOT_FOUND',
@@ -154,9 +156,9 @@ export const useMoneyStore = defineStore('money', () => {
     }
   };
 
-  const updateLocalTransactions = async (params: any = {}) => {
+  const updateLocalTransactions = async () => {
     try {
-      const { rows } = await MoneyDb.listTransactionsWithAccountPaged(params);
+      const rows = await MoneyDb.listTransactions();
       transactions.value = rows;
     } catch (err) {
       handleMoneyStoreError(
@@ -296,17 +298,15 @@ export const useMoneyStore = defineStore('money', () => {
     }
   };
 
+  // ------------------------------ 交易 ------------------------------
   // 交易相关方法
   const getTransactions = async (
-    params: {
-      page?: number;
-      pageSize?: number;
-      type?: TransactionType;
-      category?: Category;
-      accountSerialNum?: string;
-      dateFrom?: string;
-      dateTo?: string;
-    } = {},
+    query: PageQuery<TransactionFilters> = {
+      currentPage: 1,
+      pageSize: 10,
+      sortOptions: {},
+      filter: {},
+    },
   ): Promise<{
     items: Transaction[];
     total: number;
@@ -317,26 +317,7 @@ export const useMoneyStore = defineStore('money', () => {
     error.value = null;
 
     try {
-      const filters: any = {};
-      if (params.type) filters.transactionType = params.type;
-      if (params.category) {
-        filters.category = params.category;
-      }
-      if (params.accountSerialNum)
-        filters.accountSerialNum = params.accountSerialNum;
-      if (params.dateFrom || params.dateTo) {
-        filters.dateRange = { start: params.dateFrom, end: params.dateTo };
-      }
-
-      const page = params.page || 1;
-      const pageSize = params.pageSize || 20;
-
-      const result = await MoneyDb.listTransactionsWithAccountPaged(
-        filters,
-        page,
-        pageSize,
-        { sortBy: 'date', sortDir: 'DESC' },
-      );
+      const result = await MoneyDb.listTransactionsPaged(query);
       transactions.value = result.rows;
 
       return {
@@ -362,22 +343,10 @@ export const useMoneyStore = defineStore('money', () => {
   ): Promise<Transaction> => {
     loading.value = true;
     error.value = null;
-    const serialNum = transaction.serialNum || uuid(38);
     try {
-      const newTransaction: Transaction= {
-        ...transaction,
-        serialNum,
-        createdAt: DateUtils.getLocalISODateTimeWithOffset(),
-        updatedAt: null,
-      };
-      await MoneyDb.createTransaction(newTransaction);
-      await updateAccountBalance(
-        newTransaction.accountSerialNum,
-        newTransaction.transactionType,
-        newTransaction.amount,
-      );
+      const result = await MoneyDb.createTransaction(transaction);
       await updateLocalTransactions();
-      return newTransaction;
+      return result;
     } catch (err) {
       throw handleMoneyStoreError(
         err,
@@ -391,41 +360,16 @@ export const useMoneyStore = defineStore('money', () => {
   };
 
   const updateTransaction = async (
+    serialNum: string,
     transaction: TransactionUpdate,
   ): Promise<Transaction> => {
     loading.value = true;
     error.value = null;
 
     try {
-      const oldTransaction = await MoneyDb.getTransactionWithAccount(
-        transaction.serialNum,
-      );
-      if (!oldTransaction) {
-        const err = new MoneyStoreError(
-          MoneyStoreErrorCode.TRANSACTION_NOT_FOUND,
-          `交易不存在: ${transaction.serialNum}`,
-          { serialNum: transaction.serialNum },
-        );
-        err.log();
-        throw err;
-      }
-
-      await updateAccountBalance(
-        oldTransaction.accountSerialNum,
-        oldTransaction.transactionType,
-        -oldTransaction.amount,
-      );
-
-      await MoneyDb.updateTransaction(transaction);
-
-      await updateAccountBalance(
-        transaction.accountSerialNum,
-        transaction.transactionType,
-        transaction.amount,
-      );
-
+      const result = await MoneyDb.updateTransaction(serialNum, transaction);
       await updateLocalTransactions();
-      return transaction;
+      return result;
     } catch (err) {
       throw handleMoneyStoreError(
         err,
@@ -438,99 +382,34 @@ export const useMoneyStore = defineStore('money', () => {
     }
   };
 
-  const updateTransferToTransaction = async (
-    transaction: Transaction,
-  ) => {
+  const deleteTransaction = async (serialNum: string): Promise<void> => {
     loading.value = true;
     error.value = null;
 
     try {
-      if (!transaction.relatedTransactionSerialNum) {
-        const err = new MoneyStoreError(
-          MoneyStoreErrorCode.RELATED_TRANSACTION_NOT_FOUND,
-          '未找到关联的转账交易',
-          { serialNum: transaction.serialNum },
-        );
-        err.log();
-        throw err;
-      }
-      const relatedTransactions =
-        await MoneyDb.getTransferRelatedTransactionWithAccount(
-          transaction.relatedTransactionSerialNum,
-        );
-      if (!relatedTransactions) {
-        const err = new MoneyStoreError(
-          MoneyStoreErrorCode.RELATED_TRANSACTION_NOT_FOUND,
-          '未找到关联的转账交易',
-          { serialNum: transaction.relatedTransactionSerialNum },
-        );
-        err.log();
-        throw err;
-      }
-
-      const fromTrans =
-        relatedTransactions[0].transactionType ===
-        TransactionTypeSchema.enum.Expense
-          ? relatedTransactions[0]
-          : relatedTransactions[1];
-      const toTrans =
-        relatedTransactions[0].transactionType ===
-        TransactionTypeSchema.enum.Income
-          ? relatedTransactions[0]
-          : relatedTransactions[1];
-
-      await updateAccountBalance(
-        fromTrans.accountSerialNum,
-        fromTrans.transactionType,
-        -fromTrans.amount,
-      );
-      await updateAccountBalance(
-        toTrans.accountSerialNum,
-        toTrans.transactionType,
-        -toTrans.amount,
-      );
-
-      await MoneyDb.executeInTransaction(async () => {
-        await updateAccountBalance(
-          fromTrans.account.serialNum,
-          fromTrans.transactionType,
-          -fromTrans.amount,
-        );
-        await updateAccountBalance(
-          toTrans.account.serialNum,
-          toTrans.transactionType,
-          -toTrans.amount,
-        );
-
-        const updatedRelatedTransaction: TransactionWithAccount = {
-          ...toTrans,
-          amount: transaction.amount,
-          currency: transaction.currency,
-          description: transaction.description,
-          notes: transaction.notes,
-          category: transaction.category,
-          subCategory: transaction.subCategory,
-          paymentMethod: transaction.paymentMethod,
-          transactionType:
-            transaction.transactionType === 'Expense' ? 'Income' : 'Expense',
-          updatedAt: DateUtils.getLocalISODateTimeWithOffset(),
-        };
-        await MoneyDb.updateTransaction(transaction);
-        await MoneyDb.updateTransaction(updatedRelatedTransaction);
-
-        await updateAccountBalance(
-          transaction.accountSerialNum,
-          transaction.transactionType,
-          transaction.amount,
-        );
-        await updateAccountBalance(
-          updatedRelatedTransaction.accountSerialNum,
-          updatedRelatedTransaction.transactionType,
-          updatedRelatedTransaction.amount,
-        );
-      });
-
+      const result = await MoneyDb.deleteTransaction(serialNum);
       await updateLocalTransactions();
+      return result;
+    } catch (err) {
+      throw handleMoneyStoreError(
+        err,
+        '删除交易失败',
+        'deleteTransaction',
+        'Transaction',
+      );
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  const createTransfer = async (transfer: TransferCreate) => {
+    loading.value = true;
+    error.value = null;
+
+    try {
+      const result = await MoneyDb.transferCreate(transfer);
+      await updateLocalTransactions();
+      return result;
     } catch (err) {
       throw handleMoneyStoreError(
         err,
@@ -543,136 +422,42 @@ export const useMoneyStore = defineStore('money', () => {
     }
   };
 
-  const getTransferRelatedTransactionWithAccountOrThrow = async (
-    releatedSerialNum: string,
-    errorMsg: string,
-  ): Promise<TransactionWithAccount[]> => {
-    try {
-      const trans =
-        await MoneyDb.getTransferRelatedTransactionWithAccount(
-          releatedSerialNum,
-        );
-      if (!trans) {
-        const err = new MoneyStoreError(
-          MoneyStoreErrorCode.RELATED_TRANSACTION_NOT_FOUND,
-          errorMsg,
-          { releatedSerialNum },
-        );
-        err.log();
-        throw err;
-      }
-      return trans;
-    } catch (err) {
-      throw handleMoneyStoreError(
-        err,
-        errorMsg,
-        'getTransferRelatedTransaction',
-        'Transaction',
-      );
-    }
-  };
-
-  const deleteTransferTransaction = async (
-    relatedTransactionSerialNum: string,
+  const updateTransfer = async (
+    serialNum: string,
+    transfer: TransferCreate,
   ) => {
     loading.value = true;
     error.value = null;
 
     try {
-      const relatedTransactions =
-        await getTransferRelatedTransactionWithAccountOrThrow(
-          relatedTransactionSerialNum,
-          '交易不存在',
-        );
-      if (relatedTransactions.length !== 2) {
-        throw handleMoneyStoreError(
-          '',
-          '无法删除转账交易',
-          'deleteTransferTransaction',
-          'Transaction',
-        );
-      }
-
-      const fromTrans =
-        relatedTransactions[0].transactionType ===
-        TransactionTypeSchema.enum.Expense
-          ? relatedTransactions[0]
-          : relatedTransactions[1];
-      const toTrans =
-        relatedTransactions[0].transactionType ===
-        TransactionTypeSchema.enum.Income
-          ? relatedTransactions[0]
-          : relatedTransactions[1];
-
-      const operations = MoneyDb.buildDeleteTransferOperations(
-        fromTrans,
-        toTrans,
-      );
-      await MoneyDb.executeBatch(operations);
+      const result = await MoneyDb.transferUpdate(serialNum, transfer);
       await updateLocalTransactions();
+      return result;
+    } catch (err) {
+      throw handleMoneyStoreError(
+        err,
+        '更新转账交易失败',
+        'updateTransferTransaction',
+        'Transaction',
+      );
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  const deleteTransfer = async (relatedTransactionSerialNum: string) => {
+    loading.value = true;
+    error.value = null;
+
+    try {
+      const result = await MoneyDb.transferDelete(relatedTransactionSerialNum);
+      await updateLocalTransactions();
+      return result;
     } catch (err) {
       throw handleMoneyStoreError(
         err,
         '删除转账交易失败',
         'deleteTransferTransaction',
-        'Transaction',
-      );
-    } finally {
-      loading.value = false;
-    }
-  };
-
-  const getTransferRelatedTransaction = async (
-    serialNum: string,
-  ): Promise<TransactionWithAccount[] | null> => {
-    loading.value = true;
-    error.value = null;
-
-    try {
-      const relatedTransaction =
-        await MoneyDb.getTransferRelatedTransactionWithAccount(serialNum);
-      return relatedTransaction;
-    } catch (err) {
-      throw handleMoneyStoreError(
-        err,
-        '获取关联转账交易失败',
-        'getTransferRelatedTransaction',
-        'Transaction',
-      );
-    } finally {
-      loading.value = false;
-    }
-  };
-
-  const deleteTransaction = async (serialNum: string): Promise<void> => {
-    loading.value = true;
-    error.value = null;
-
-    try {
-      const transaction = await MoneyDb.getTransactionWithAccount(serialNum);
-      if (!transaction) {
-        const err = new MoneyStoreError(
-          MoneyStoreErrorCode.TRANSACTION_NOT_FOUND,
-          `交易不存在: ${serialNum}`,
-          { serialNum },
-        );
-        err.log();
-        throw err;
-      }
-
-      await updateAccountBalance(
-        transaction.accountSerialNum,
-        transaction.transactionType,
-        -transaction.amount,
-      );
-
-      await MoneyDb.deleteTransaction(serialNum);
-      await updateLocalTransactions();
-    } catch (err) {
-      throw handleMoneyStoreError(
-        err,
-        '删除交易失败',
-        'deleteTransaction',
         'Transaction',
       );
     } finally {
@@ -714,22 +499,14 @@ export const useMoneyStore = defineStore('money', () => {
     }
   };
 
-  const createBudget = async (
-    budget: Omit<Budget, 'serialNum' | 'createdAt' | 'updatedAt'>,
-  ): Promise<Budget> => {
+  const createBudget = async (budget: BudgetCreate): Promise<Budget> => {
     loading.value = true;
     error.value = null;
 
     try {
-      const newBudget: Budget = {
-        ...budget,
-        serialNum: uuid(38),
-        createdAt: new Date().toISOString(),
-        updatedAt: null,
-      };
-      await MoneyDb.createBudget(newBudget);
+      const result = await MoneyDb.createBudget(budget);
       await updateLocalBudgets();
-      return newBudget;
+      return result;
     } catch (err) {
       throw handleMoneyStoreError(
         err,
@@ -742,14 +519,17 @@ export const useMoneyStore = defineStore('money', () => {
     }
   };
 
-  const updateBudget = async (budget: Budget): Promise<Budget> => {
+  const updateBudget = async (
+    serialNum: string,
+    budget: BudgetUpdate,
+  ): Promise<Budget> => {
     loading.value = true;
     error.value = null;
 
     try {
-      await MoneyDb.updateBudget(budget);
+      const result = await MoneyDb.updateBudget(serialNum, budget);
       await updateLocalBudgets();
-      return budget;
+      return result;
     } catch (err) {
       throw handleMoneyStoreError(
         err,
@@ -825,21 +605,15 @@ export const useMoneyStore = defineStore('money', () => {
   };
 
   const createReminder = async (
-    reminder: Omit<BilReminder, 'serialNum' | 'createdAt' | 'updatedAt'>,
+    reminder: BilReminderCreate,
   ): Promise<BilReminder> => {
     loading.value = true;
     error.value = null;
 
     try {
-      const newReminder: BilReminder = {
-        ...reminder,
-        serialNum: uuid(38),
-        createdAt: new Date().toISOString(),
-        updatedAt: null,
-      };
-      await MoneyDb.createBilReminder(newReminder);
+      const result = await MoneyDb.createBilReminder(reminder);
       await updateLocalReminders();
-      return newReminder;
+      return result;
     } catch (err) {
       throw handleMoneyStoreError(
         err,
@@ -853,15 +627,16 @@ export const useMoneyStore = defineStore('money', () => {
   };
 
   const updateReminder = async (
-    reminder: BilReminder,
+    serialNum: string,
+    reminder: BilReminderUpdate,
   ): Promise<BilReminder> => {
     loading.value = true;
     error.value = null;
 
     try {
-      await MoneyDb.updateBilReminder(reminder);
+      const result = await MoneyDb.updateBilReminder(serialNum, reminder);
       await updateLocalReminders();
-      return reminder;
+      return result;
     } catch (err) {
       throw handleMoneyStoreError(
         err,
@@ -893,7 +668,10 @@ export const useMoneyStore = defineStore('money', () => {
     }
   };
 
-  const markReminderPaid = async (serialNum: string): Promise<void> => {
+  const markReminderPaid = async (
+    serialNum: string,
+    isPaid: boolean,
+  ): Promise<void> => {
     loading.value = true;
     error.value = null;
 
@@ -910,7 +688,7 @@ export const useMoneyStore = defineStore('money', () => {
       }
       reminder.isPaid = true;
       reminder.updatedAt = new Date().toISOString();
-      await MoneyDb.updateBilReminder(reminder);
+      await MoneyDb.updateBilReminderActive(serialNum, isPaid);
       await updateLocalReminders();
     } catch (err) {
       throw handleMoneyStoreError(
@@ -925,83 +703,6 @@ export const useMoneyStore = defineStore('money', () => {
   };
 
   // 辅助方法
-  async function updateAccountBalance(
-    accountSerialNum: string,
-    transactionType: TransactionType,
-    amount: number,
-  ): Promise<void> {
-    const account = await MoneyDb.getAccount(accountSerialNum);
-    if (!account) {
-      const err = new MoneyStoreError(
-        MoneyStoreErrorCode.ACCOUNT_NOT_FOUND,
-        `账户不存在: ${accountSerialNum}`,
-        { accountSerialNum },
-      );
-      err.log();
-      throw err;
-    }
-
-    const currentBalance = Number.parseFloat(account.balance);
-    const initialBalance = Number.parseFloat(account.initialBalance);
-
-    let newBalance: number;
-
-    switch (transactionType) {
-      case TransactionTypeSchema.enum.Income:
-        newBalance = currentBalance + amount;
-        break;
-      case TransactionTypeSchema.enum.Expense:
-        newBalance = currentBalance - amount;
-        break;
-      case TransactionTypeSchema.enum.Transfer:
-        newBalance = currentBalance - amount;
-        break;
-      default: {
-        const err = new MoneyStoreError(
-          MoneyStoreErrorCode.INVALID_TRANSACTION_TYPE,
-          `无效的交易类型: ${transactionType}`,
-          { transactionType },
-        );
-        err.log();
-        throw err;
-      }
-    }
-
-    if (account.type === 'CreditCard') {
-      if (newBalance < 0) {
-        const err = new MoneyStoreError(
-          MoneyStoreErrorCode.CREDIT_CARD_BALANCE_INVALID,
-          '信用卡余额不能低于 0',
-          { newBalance },
-        );
-        err.log();
-        throw err;
-      }
-      if (newBalance > initialBalance) {
-        const err = new MoneyStoreError(
-          MoneyStoreErrorCode.CREDIT_CARD_BALANCE_INVALID,
-          `信用卡余额不能超过初始余额 ${initialBalance}`,
-          { newBalance, initialBalance },
-        );
-        err.log();
-        throw err;
-      }
-    }
-
-    account.balance = newBalance.toFixed(2);
-    account.updatedAt = new Date().toISOString();
-    // try {
-    //   await MoneyDb.updateAccount(account);
-    // } catch (err) {
-    //   handleMoneyStoreError(
-    //     err,
-    //     '更新账户余额失败',
-    //     'updateAccount',
-    //     'Account',
-    //   );
-    // }
-  }
-
   const clearError = () => {
     error.value = null;
   };
@@ -1032,9 +733,9 @@ export const useMoneyStore = defineStore('money', () => {
     createTransaction,
     updateTransaction,
     deleteTransaction,
-    updateTransferToTransaction,
-    deleteTransferTransaction,
-    getTransferRelatedTransaction,
+    createTransfer,
+    updateTransfer,
+    deleteTransfer,
     monthlyIncomeAndExpense,
 
     getBudgets,

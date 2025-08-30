@@ -25,6 +25,7 @@ export const TransactionSchema = z.object({
   description: z.string().max(1000).optional(),
   notes: z.string().optional().nullable(),
   accountSerialNum: SerialNumSchema,
+  toAccountSerialNum: SerialNumSchema.optional().nullable(),
   category: CategorySchema,
   subCategory: SubCategorySchema.optional().nullable(),
   tags: z.array(TagsSchema),
@@ -32,35 +33,52 @@ export const TransactionSchema = z.object({
   paymentMethod: PaymentMethodSchema,
   actualPayerAccount: AccountTypeSchema,
   relatedTransactionSerialNum: SerialNumSchema.optional(),
-  idDeleted: z.boolean().default(false),
+  isDeleted: z.boolean().default(false),
   createdAt: DateTimeSchema,
   updatedAt: DateTimeSchema.optional().nullable(),
 });
 
-export const TransactionCreateSchema = TransactionSchema.pick(
-  {
-    transactionType: true,
-    transactionStatus: true,
-    date: true,
-    amount: true,
-    description: true,
-    notes: true,
-    accountSerialNum: true,
-    category: true,
-    subCategory: true,
-    tags: true,
-    splitMembers: true,
-    paymentMethod: true,
-    actualPayerAccount: true,
-    relatedTransactionSerialNum: true,
-    idDeleted: true,
-  },
-).extend({
-  currency: z.string().length(3),
-}).strict();
+export const TransactionCreateSchema = TransactionSchema.pick({
+  transactionType: true,
+  amount: true,
+  accountSerialNum: true,
+  paymentMethod: true,
+  category: true,
+  subCategory: true,
+  date: true,
+  transactionStatus: true,
+  description: true,
+  notes: true,
+  tags: true,
+  splitMembers: true,
+  actualPayerAccount: true,
+  relatedTransactionSerialNum: true,
+  isDeleted: true,
+})
+  .extend({
+    currency: z.string().length(3),
+  })
+  .strict();
 
 export const TransactionUpdateSchema = TransactionCreateSchema.partial();
+
+export const TransferCreateSchema = TransactionSchema.pick({
+  transactionType: true,
+  amount: true,
+  accountSerialNum: true,
+  toAccountSerialNum: true,
+  paymentMethod: true,
+  category: true,
+  subCategory: true,
+  date: true,
+  description: true,
+})
+  .extend({
+    currency: z.string().length(3),
+  })
+  .strict();
 
 export type Transaction = z.infer<typeof TransactionSchema>;
 export type TransactionCreate = z.infer<typeof TransactionCreateSchema>;
 export type TransactionUpdate = z.infer<typeof TransactionUpdateSchema>;
+export type TransferCreate = z.infer<typeof TransferCreateSchema>;

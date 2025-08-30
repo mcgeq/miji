@@ -15,19 +15,21 @@ import { formatCurrency } from '../utils/money';
 import type {
   TransactionType,
 } from '@/schema/common';
-import type { Account, TransactionWithAccount } from '@/schema/money';
+import type { Account, Transaction, TransactionCreate, TransactionUpdate, TransferCreate } from '@/schema/money';
 
 interface Props {
   type: TransactionType;
-  transaction?: TransactionWithAccount | null;
+  transaction?: Transaction | null;
   accounts: Account[];
 }
 
 const props = defineProps<Props>();
 const emit = defineEmits<{
   close: [];
-  save: [transaction: TransactionWithAccount];
-  saveTransfer: [fromTransaction: TransactionWithAccount, toTransaction: TransactionWithAccount];
+  save: [transaction: TransactionCreate];
+  update: [serialNum: string, transaction: TransactionUpdate];
+  saveTransfer: [transfer: TransferCreate];
+  updateTransfer: [serialNum: string, transfer: TransferCreate];
 }>();
 
 const { t } = useI18n();
@@ -54,15 +56,16 @@ const trans = props.transaction || {
   paymentMethod: PaymentMethodSchema.enum.Cash,
   actualPayerAccount: AccountTypeSchema.enum.Bank,
   transactionStatus: TransactionStatusSchema.enum.Completed,
-  idDeleted: false,
+  isDeleted: false,
   createdAt: DateUtils.getLocalISODateTimeWithOffset(),
   updatedAt: null,
   account: props.accounts[0] || ({} as Account),
 };
 
-const form = ref<TransactionWithAccount & { toAccountSerialNum?: string }>({
+const form = ref<Transaction>({
   ...trans,
   amount: trans.amount || 0,
+  currency: trans.currency || CURRENCY_CNY,
   toAccountSerialNum: '',
 });
 
@@ -82,17 +85,12 @@ const availablePaymentMethods = computed(() => {
         PaymentMethodSchema.enum.CloudQuickPass,
       ];
     }
-    // else if (selectedAccount?.type === AccountTypeSchema.enum.Savings || selectedAccount?.type === AccountTypeSchema.enum.Bank) {
-    //   return [PaymentMethodSchema.enum.BankTransfer, PaymentMethodSchema.enum.Savings];
-    // }
   }
   return PaymentMethodSchema.options;
 });
 
 // Determine if payment method should be editable
-const isPaymentMethodEditable = computed(() => {
-  return availablePaymentMethods.value.length > 1;
-});
+const isPaymentMethodEditable = computed(() => availablePaymentMethods.value.length > 1);
 
 function mapSubToCategory(sub: string): string {
   if (['Restaurant', 'Groceries', 'Snacks'].includes(sub)) return 'Food';
@@ -136,15 +134,14 @@ const filteredCategories = computed(() => {
   const category = categories.value.filter(c => {
     if (props.transaction?.category === CategorySchema.enum.Transfer) {
       return c.type === CategorySchema.enum.Transfer;
-    } else {
-      return c.type === form.value.transactionType;
     }
+    return c.type === form.value.transactionType;
   });
 
   return category.map(item => ({
     name: item.name,
     type: item.type,
-    option: t(`financial.transactionCategories.${item.name.toLocaleLowerCase()}`),
+    option: t(`financial.transactionCategories.${item.name.toLowerCase()}`),
   }));
 });
 
@@ -156,7 +153,7 @@ const filteredSubcategories = computed(() => {
   return sub.map(item => ({
     name: item.name,
     category: item.category,
-    option: t(`financial.transactionSubCategories.${item.name.toLocaleLowerCase()}`),
+    option: t(`financial.transactionSubCategories.${item.name.toLowerCase()}`),
   }));
 });
 
@@ -165,17 +162,15 @@ const selectToAccounts = computed(() => {
 });
 
 function getModalTitle() {
-  const titles = {
+  const titles: Record<TransactionType, string> = {
     Income: 'financial.transaction.recordIncome',
     Expense: 'financial.transaction.recordExpense',
     Transfer: 'financial.transaction.recordTransfer',
   };
 
-  if (props.transaction) {
-    return t('financial.transaction.editTransaction');
-  }
-
-  return t(titles[props.type]);
+  return props.transaction
+    ? t('financial.transaction.editTransaction')
+    : t(titles[props.type]);
 }
 
 function handleOverlayClick() {
@@ -192,10 +187,10 @@ function handleSubmit() {
   const fromAccount = props.accounts.find(acc => acc.serialNum === form.value.accountSerialNum);
   if (!fromAccount) {
     console.error('未找到转出账户');
+    toast.error('未找到转出账户');
     return;
   }
 
-  // 校验 1: 如果转出账户是信用卡，检查转出金额是否超过授信额度
   // Validate credit card transactions
   if (fromAccount.type === AccountTypeSchema.enum.CreditCard) {
     const initialBalance = Number.parseFloat(fromAccount.initialBalance);
@@ -205,8 +200,8 @@ function handleSubmit() {
       toast.error('账户余额数据无效');
       return;
     }
-    const availableCredit = amount - initialBalance;
-    if (availableCredit > 0) {
+    const availableCredit = initialBalance - balance;
+    if (amount > availableCredit) {
       toast.error('转出金额超过信用卡可用额度');
       return;
     }
@@ -219,7 +214,6 @@ function handleSubmit() {
     }
   }
 
-  const transactionDateTime = DateUtils.getLocalISODateTimeWithOffset();
   if (form.value.transactionType === TransactionTypeSchema.enum.Transfer) {
     const toAccount = props.accounts.find(acc => acc.serialNum === form.value.toAccountSerialNum);
     if (!toAccount) {
@@ -227,7 +221,6 @@ function handleSubmit() {
       return;
     }
 
-    // 校验 2: 如果转入账户是信用卡，检查转入金额是否导致余额超过授信额度
     // Validate credit card for transfer-in
     if (toAccount.type === AccountTypeSchema.enum.CreditCard) {
       const newBalance = Number.parseFloat(toAccount.balance) + amount;
@@ -237,60 +230,50 @@ function handleSubmit() {
         return;
       }
     }
-    const fromTransaction: TransactionWithAccount = {
-      serialNum: props.transaction?.serialNum || '',
-      transactionType: TransactionTypeSchema.enum.Expense,
+
+    const fromTransaction: TransferCreate = {
       amount: form.value.amount,
+      transactionType: form.value.transactionType,
       accountSerialNum: form.value.accountSerialNum,
-      category: CategorySchema.enum.Transfer,
+      toAccountSerialNum: form.value.toAccountSerialNum!,
+      currency: form.value.currency.code,
+      paymentMethod: form.value.paymentMethod,
+      category: form.value.category,
       subCategory: form.value.subCategory,
-      currency: form.value.currency || CURRENCY_CNY,
       date: form.value.date,
       description: `转账至 ${toAccount.name}${form.value.description ? ` - ${form.value.description}` : ''}`,
-      notes: form.value.notes,
-      tags: form.value.tags || [],
-      paymentMethod: form.value.paymentMethod || 'Cash',
-      actualPayerAccount: form.value.actualPayerAccount || 'Bank',
-      transactionStatus: form.value.transactionStatus || 'Completed',
-      createdAt: props.transaction?.createdAt || transactionDateTime,
-      idDeleted: props.transaction?.idDeleted || false,
-      updatedAt: transactionDateTime,
-      account: fromAccount,
     };
 
-    const toTransaction: TransactionWithAccount = {
-      serialNum: '',
-      transactionType: TransactionTypeSchema.enum.Income,
-      amount: form.value.amount,
-      accountSerialNum: form.value.toAccountSerialNum!,
-      category: CategorySchema.enum.Transfer,
-      subCategory: form.value.subCategory,
-      currency: form.value.currency || CURRENCY_CNY,
-      date: form.value.date,
-      description: `来自 ${fromAccount.name}${form.value.description ? ` - ${form.value.description}` : ''}`,
-      notes: form.value.notes,
-      tags: form.value.tags || [],
-      paymentMethod: form.value.paymentMethod || 'Cash',
-      actualPayerAccount: form.value.actualPayerAccount || 'Bank',
-      transactionStatus: form.value.transactionStatus || 'Completed',
-      idDeleted: form.value.idDeleted || false,
-      createdAt: transactionDateTime,
-      updatedAt: transactionDateTime,
-      account: toAccount,
-    };
-
-    emit('saveTransfer', fromTransaction, toTransaction);
+    if (props.transaction) {
+      emit('updateTransfer', props.transaction.serialNum, fromTransaction);
+    } else {
+      emit('saveTransfer', fromTransaction);
+    }
   } else {
-    const transaction: TransactionWithAccount = {
-      ...form.value,
-      serialNum: props.transaction?.serialNum || '',
-      updatedAt: transactionDateTime,
-      createdAt: props.transaction?.createdAt || transactionDateTime,
+    const transaction: TransactionCreate = {
+      transactionType: form.value.transactionType,
+      transactionStatus: form.value.transactionStatus,
+      date: form.value.date,
+      amount: form.value.amount,
+      description: form.value.description,
+      notes: form.value.notes,
+      accountSerialNum: form.value.accountSerialNum,
+      category: form.value.category,
+      subCategory: form.value.subCategory,
+      tags: form.value.tags,
+      splitMembers: form.value.splitMembers,
+      paymentMethod: form.value.paymentMethod,
+      actualPayerAccount: form.value.actualPayerAccount,
+      relatedTransactionSerialNum: form.value.relatedTransactionSerialNum,
+      isDeleted: false,
+      currency: form.value.currency.code,
     };
 
-    delete (transaction as any).toAccountSerialNum;
-
-    emit('save', transaction);
+    if (props.transaction) {
+      emit('update', props.transaction.serialNum, transaction);
+    } else {
+      emit('save', transaction);
+    }
   }
 }
 
@@ -298,26 +281,20 @@ function handleAmountInput(event: Event) {
   const input = event.target as HTMLInputElement;
   const value = input.value;
 
-  // 允许空字符串（用户清除输入）
   if (value === '') {
     form.value.amount = 0;
     return;
   }
 
   const numValue = Number.parseFloat(value);
-
-  // 仅处理有效数字
   if (!Number.isNaN(numValue)) {
     form.value.amount = numValue;
   }
-  // 无效输入保持当前值（不清除用户输入）
 }
 
 watch(
   () => form.value.category,
-  () => {
-    form.value.subCategory = SubCategorySchema.enum.Other;
-  },
+  () => form.value.subCategory = SubCategorySchema.enum.Other,
 );
 
 watch(
@@ -329,31 +306,19 @@ watch(
 );
 
 watch(
-  () => [form.value.accountSerialNum],
-  ([newAccountSerialNum]) => {
+  () => form.value.accountSerialNum,
+  newAccountSerialNum => {
     const selectedAccount = props.accounts.find(acc => acc.serialNum === newAccountSerialNum);
-
-    // Reset payment method to a default value
     form.value.paymentMethod = PaymentMethodSchema.enum.Cash;
 
-    if (form.value.transactionType !== TransactionTypeSchema.enum.Income) {
-      if (selectedAccount?.type === AccountTypeSchema.enum.Alipay) {
+    if (form.value.transactionType !== TransactionTypeSchema.enum.Income && selectedAccount) {
+      if (selectedAccount.type === AccountTypeSchema.enum.Alipay) {
         form.value.paymentMethod = PaymentMethodSchema.enum.Alipay;
-      } else if (selectedAccount?.type === AccountTypeSchema.enum.WeChat) {
+      } else if (selectedAccount.type === AccountTypeSchema.enum.WeChat) {
         form.value.paymentMethod = PaymentMethodSchema.enum.WeChat;
-      } else if (selectedAccount?.type === AccountTypeSchema.enum.CreditCard) {
+      } else if (selectedAccount.type === AccountTypeSchema.enum.CreditCard) {
         form.value.paymentMethod = PaymentMethodSchema.enum.CreditCard;
       }
-      // else if (selectedAccount?.type === AccountTypeSchema.enum.CloudQuickPass) {
-      //   form.value.paymentMethod = PaymentMethodSchema.enum.CloudQuickPass;
-      // }
-
-      // else if (
-      //   selectedAccount?.type === AccountTypeSchema.enum.Savings ||
-      //   selectedAccount?.type === AccountTypeSchema.enum.Bank
-      // ) {
-      //   form.value.paymentMethod = PaymentMethodSchema.enum.BankTransfer;
-      // }
     }
 
     if (newAccountSerialNum === form.value.toAccountSerialNum) {
@@ -365,51 +330,33 @@ watch(
 watch(
   () => props.transaction,
   transaction => {
-    if (transaction) {
-      form.value = {
-        ...transaction,
-        serialNum: transaction.serialNum,
-        transactionType: transaction.transactionType,
-        amount: transaction.amount || 0,
-        accountSerialNum: transaction.accountSerialNum,
-        toAccountSerialNum: '',
-        category: transaction.category,
-        subCategory: transaction.subCategory || SubCategorySchema.enum.Other,
-        currency: transaction.currency || CURRENCY_CNY,
-        date: transaction.date,
-        description: transaction.description || '',
-        notes: transaction.notes || null,
-        tags: transaction.tags || [],
-        paymentMethod: transaction.paymentMethod || 'Cash',
-        actualPayerAccount: transaction.actualPayerAccount || 'Bank',
-        transactionStatus: transaction.transactionStatus || 'Completed',
-        createdAt: transaction.createdAt,
-        updatedAt: transaction.updatedAt || null,
-        account: transaction.account,
-      };
-    } else {
-      form.value = {
-        serialNum: '',
-        transactionType: props.type,
-        amount: 0,
-        accountSerialNum: '',
-        toAccountSerialNum: '',
-        category: CategorySchema.enum.Others,
-        subCategory: SubCategorySchema.enum.Other,
-        currency: CURRENCY_CNY,
-        date: new Date().toISOString().split('T')[0],
-        description: '',
-        notes: null,
-        tags: [],
-        paymentMethod: 'Cash',
-        actualPayerAccount: 'Bank',
-        transactionStatus: 'Completed',
-        createdAt: DateUtils.getLocalISODateTimeWithOffset(),
-        idDeleted: false,
-        updatedAt: null,
-        account: props.accounts[0] || ({} as Account),
-      };
-    }
+    form.value = transaction
+      ? {
+          ...transaction,
+          currency: transaction.currency || CURRENCY_CNY,
+          subCategory: transaction.subCategory || SubCategorySchema.enum.Other,
+        }
+      : {
+          serialNum: '',
+          transactionType: props.type,
+          amount: 0,
+          accountSerialNum: '',
+          toAccountSerialNum: '',
+          category: CategorySchema.enum.Others,
+          subCategory: SubCategorySchema.enum.Other,
+          currency: CURRENCY_CNY,
+          date: new Date().toISOString().split('T')[0],
+          description: '',
+          notes: null,
+          tags: [],
+          paymentMethod: PaymentMethodSchema.enum.Cash,
+          actualPayerAccount: AccountTypeSchema.enum.Bank,
+          transactionStatus: TransactionStatusSchema.enum.Completed,
+          createdAt: DateUtils.getLocalISODateTimeWithOffset(),
+          isDeleted: false,
+          updatedAt: null,
+          account: props.accounts[0] || ({} as Account),
+        };
   },
   { immediate: true },
 );
@@ -418,7 +365,6 @@ watch(
   () => form.value.amount,
   newVal => {
     if (newVal === 0) {
-      // 当用户主动清除后重置为0时，保持输入框为空
       nextTick(() => {
         const input = document.querySelector('input[type="number"]') as HTMLInputElement;
         if (input && input.value === '0') input.value = '';
@@ -518,11 +464,11 @@ watch(
                 {{ t('common.placeholders.selectOption') }}
               </option>
               <option v-for="method in availablePaymentMethods" :key="method" :value="method">
-                {{ t(`financial.paymentMethods.${method.toLocaleLowerCase()}`) }}
+                {{ t(`financial.paymentMethods.${method.toLowerCase()}`) }}
               </option>
             </select>
             <span v-else>
-              {{ t(`financial.paymentMethods.${form.paymentMethod.toLocaleLowerCase()}`) }}
+              {{ t(`financial.paymentMethods.${form.paymentMethod.toLowerCase()}`) }}
             </span>
           </div>
         </div>
@@ -562,7 +508,9 @@ watch(
         <!-- 备注 -->
         <div class="mb-2">
           <textarea
-            v-model="form.description" class="w-full modal-input-select" rows="3"
+            v-model="form.description"
+            class="w-full modal-input-select"
+            rows="3"
             :placeholder="`${t('common.misc.remark')}（${t('common.misc.optional')}）`"
           />
         </div>

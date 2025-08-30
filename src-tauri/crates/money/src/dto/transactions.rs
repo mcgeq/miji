@@ -126,16 +126,16 @@ pub struct CreateTransactionRequest {
     #[validate(custom(function = "validate_amount"))]
     pub amount: Decimal,
 
-    #[validate(length(min = 1, max = 16))]
+    #[validate(length(equal = 3))]
     pub currency: String,
 
-    #[validate(length(min = 1, max = 1024))]
+    #[validate(length(min = 0, max = 1024))]
     pub description: String,
 
     #[validate(length(max = 1024))]
     pub notes: Option<String>,
 
-    #[validate(length(min = 1, max = 64))]
+    #[validate(length(equal = 38))]
     pub account_serial_num: String,
 
     #[validate(length(min = 1, max = 64))]
@@ -145,9 +145,9 @@ pub struct CreateTransactionRequest {
     pub sub_category: Option<String>,
 
     #[validate(length(max = 1000))]
-    pub tags: Option<String>,
+    pub tags: Option<Vec<String>>,
     #[validate(length(max = 1000))]
-    pub split_members: Option<String>,
+    pub split_members: Option<Vec<String>>,
 
     pub payment_method: PaymentMethod,
 
@@ -178,8 +178,10 @@ impl TryFrom<CreateTransactionRequest> for entity::transactions::ActiveModel {
             account_serial_num: Set(value.account_serial_num),
             category: Set(value.category),
             sub_category: Set(value.sub_category),
-            tags: Set(value.tags),
-            split_members: Set(value.split_members),
+            tags: Set(value.tags.map(|v| serde_json::to_string(&v).unwrap())),
+            split_members: Set(value
+                .split_members
+                .map(|v| serde_json::to_string(&v).unwrap())),
             payment_method: Set(serialize_enum(&value.payment_method)),
             actual_payer_account: Set(serialize_enum(&value.actual_payer_account)),
             related_transaction_serial_num: Set(value.related_transaction_serial_num),
@@ -308,30 +310,32 @@ impl TryFrom<UpdateTransactionRequest> for entity::transactions::ActiveModel {
 #[derive(Debug, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TransferRequest {
-    #[validate(length(equal = 38))]
-    pub from_account: String,
-
-    #[validate(length(equal = 38))]
-    pub to_account: String,
-
+    transaction_type: TransactionType,
     #[validate(custom(function = "validate_amount"))]
     pub amount: Decimal,
 
-    #[validate(length(equal = 3))]
-    pub currency: String,
+    #[validate(length(equal = 38))]
+    pub account_serial_num: String,
 
-    #[validate(length(min = 0, max = 1024))]
-    pub description: String,
-
-    #[validate(length(max = 1024))]
-    pub notes: Option<String>,
+    #[validate(length(equal = 38))]
+    pub to_account_serial_num: String,
 
     pub payment_method: PaymentMethod,
 
+    #[validate(length(equal = 3))]
+    pub currency: String,
+    #[validate(length(min = 1, max = 64))]
+    pub category: Option<String>,
+
+    #[validate(length(max = 64))]
+    pub sub_category: Option<String>,
+
     pub date: Option<String>,
+    #[validate(length(min = 0, max = 1024))]
+    pub description: String,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TransactionWithRelations {
     pub transaction: entity::transactions::Model,
     pub account: AccountWithRelations,

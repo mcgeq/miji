@@ -24,7 +24,7 @@ const props = defineProps<Props>();
 const emit = defineEmits<{
   edit: [reminder: BilReminder];
   delete: [serialNum: string];
-  markPaid: [serialNum: string];
+  markPaid: [serialNum: string, isPaid: boolean];
 }>();
 
 const { t } = useI18n();
@@ -326,7 +326,7 @@ function getStatusText(reminder: BilReminder) {
             <div class="flex gap-1">
               <button
                 v-if="!reminder.isPaid" class="money-option-btn hover:(border-green-500 text-green-500)"
-                :title="t('financial.transaction.markPaid')" @click="emit('markPaid', reminder.serialNum)"
+                :title="t('financial.transaction.markPaid')" @click="emit('markPaid', reminder.serialNum, !reminder.isPaid)"
               >
                 <CheckCircle class="h-4 w-4" />
               </button>

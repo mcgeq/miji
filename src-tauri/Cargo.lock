@@ -2915,6 +2915,7 @@ dependencies = [
  "serde_json",
  "snafu",
  "tauri",
+ "tokio",
  "tracing",
  "validator",
 ]
