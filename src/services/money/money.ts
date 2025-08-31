@@ -164,12 +164,7 @@ export class MoneyDb {
   }
 
   static async listTransactionsPaged(
-    query: PageQuery<TransactionFilters> = {
-      currentPage: 1,
-      pageSize: 10,
-      sortOptions: {},
-      filter: {},
-    },
+    query: PageQuery<TransactionFilters>,
   ): Promise<PagedResult<Transaction>> {
     return this.transactionMapper.listPaged(query);
   }

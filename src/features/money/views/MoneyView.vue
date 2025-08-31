@@ -364,8 +364,8 @@ async function updateTransaction(serialNum: string, transaction: TransactionUpda
 async function deleteTransaction(transaction: Transaction) {
   if (!(await confirmDelete('此交易记录'))) return;
   try {
-    if (transaction.category === CategorySchema.enum.Transfer) {
-      await moneyStore.deleteTransfer(transaction.serialNum);
+    if (transaction.category === CategorySchema.enum.Transfer && transaction.relatedTransactionSerialNum) {
+      await moneyStore.deleteTransfer(transaction.relatedTransactionSerialNum);
       toast.success('转账记录删除成功');
     } else {
       await moneyStore.deleteTransaction(transaction.serialNum);

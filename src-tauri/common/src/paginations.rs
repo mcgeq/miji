@@ -8,6 +8,7 @@ use crate::crud::service::sanitize_input;
 
 /// 分页查询参数
 #[derive(Debug, Clone, Deserialize, Validate)]
+#[serde(rename_all = "camelCase")]
 pub struct PagedQuery<F> {
     /// 当前页码（从 1 开始）
     #[serde(default = "default_current_page")]
@@ -57,7 +58,7 @@ impl DateRange {
 
 /// 排序方向
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
-#[serde(rename_all = "lowercase")]
+#[serde(rename_all = "PascalCase")]
 pub enum SortDirection {
     Asc,
     Desc,
@@ -74,18 +75,15 @@ impl From<SortDirection> for Order {
 
 /// 排序选项
 #[derive(Debug, Clone, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
 pub struct SortOptions {
     /// 自定义排序 SQL
-    #[serde(rename = "customOrderBy")]
     pub custom_order_by: Option<String>,
-
     /// 排序字段
-    #[serde(rename = "sortBy")]
     pub sort_by: Option<String>,
     /// 是否降序
     pub desc: bool,
     /// 排序方向
-    #[serde(rename = "sortDir")]
     pub sort_dir: Option<SortDirection>,
 }
 

@@ -37,6 +37,9 @@ const emit = defineEmits<{
 const { t } = useI18n();
 
 const selectAccounts = computed(() => {
+  if (props.transaction?.category === CategorySchema.enum.Transfer) {
+    return props.accounts.filter(account => account.isActive);
+  }
   if (props.type === TransactionTypeSchema.enum.Income) {
     return props.accounts.filter(account => account.type !== AccountTypeSchema.enum.CreditCard && account.isActive);
   }
@@ -268,8 +271,8 @@ function emitTransfer(amount: number) {
     description: form.value.description,
   };
 
-  if (props.transaction) {
-    emit('updateTransfer', props.transaction.serialNum, fromTransaction);
+  if (props.transaction && props.transaction.relatedTransactionSerialNum) {
+    emit('updateTransfer', props.transaction.relatedTransactionSerialNum, fromTransaction);
   } else {
     emit('saveTransfer', fromTransaction);
   }
@@ -454,7 +457,7 @@ watch(
             {{ isTransferReadonly || form.transactionType === TransactionTypeSchema.enum.Transfer ? t('financial.transaction.fromAccount')
               : t('financial.account.account') }}
           </label>
-          <select v-model="form.accountSerialNum" class="w-2/3 modal-input-select" required>
+          <select v-model="form.accountSerialNum" class="w-2/3 modal-input-select" required :disabled="isTransferReadonly">
             <option value="">
               {{ t('common.placeholders.selectAccount') }}
             </option>

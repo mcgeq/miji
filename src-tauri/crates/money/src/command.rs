@@ -407,6 +407,7 @@ pub async fn transaction_list_paged(
     state: State<'_, AppState>,
     query: PagedQuery<TransactionFilter>,
 ) -> Result<ApiResponse<PagedResult<TransactionResponse>>, String> {
+    info!("transaction_list_paged {:?}", query);
     let service = get_transaction_service();
     Ok(ApiResponse::from_result(
         service

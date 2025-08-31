@@ -11,13 +11,14 @@ import {
   TrendingUp,
 } from 'lucide-vue-next';
 import SimplePagination from '@/components/common/SimplePagination.vue';
-import { CategorySchema, TransactionTypeSchema } from '@/schema/common';
+import { CategorySchema, SortDirection, TransactionTypeSchema } from '@/schema/common';
 import { useMoneyStore } from '@/stores/moneyStore';
 import { DateUtils } from '@/utils/date';
 import { Lg } from '@/utils/debugLog';
 import { formatCurrency } from '../utils/money';
-import type { TransactionType } from '@/schema/common';
+import type { PageQuery, SortOptions, TransactionType } from '@/schema/common';
 import type { Account, Transaction } from '@/schema/money';
+import type { TransactionFilters } from '@/services/money/transactions';
 
 interface Props {
   accounts: Account[];
@@ -47,14 +48,6 @@ const disabledTransactions = computed(() => {
       .map(t => t.serialNum),
   );
 });
-// 过滤器状态
-const filters = ref({
-  transactionType: '',
-  account: '',
-  category: '',
-  dateFrom: '',
-  dateTo: '',
-});
 
 // 分页状态
 const pagination = ref({
@@ -62,6 +55,32 @@ const pagination = ref({
   totalPages: 1,
   totalItems: 0,
   pageSize: 20,
+});
+
+// 过滤器状态
+const filters = ref<TransactionFilters>({
+  serialNum: undefined,
+  transactionType: undefined,
+  transactionStatus: undefined,
+  dateStart: undefined,
+  dateEnd: undefined,
+  amountMin: undefined,
+  amountMax: undefined,
+  currency: undefined,
+  accountSerialNum: undefined,
+  category: undefined,
+  subCategory: undefined,
+  paymentMethod: undefined,
+  actualPayerAccount: undefined,
+  isDeleted: false,
+});
+
+// 排序选项状态
+const sortOptions = ref<SortOptions>({
+  customOrderBy: undefined,
+  sortBy: undefined,
+  sortDir: SortDirection.Desc,
+  desc: true,
 });
 
 const isMobile = ref(window.innerWidth < 768);
@@ -72,13 +91,28 @@ function updateIsMobile() {
 // 重置过滤器
 function resetFilters() {
   filters.value = {
-    transactionType: '',
-    account: '',
-    category: '',
-    dateFrom: '',
-    dateTo: '',
+    serialNum: undefined,
+    transactionType: undefined,
+    transactionStatus: undefined,
+    dateStart: undefined,
+    dateEnd: undefined,
+    amountMin: undefined,
+    amountMax: undefined,
+    currency: undefined,
+    accountSerialNum: undefined,
+    category: undefined,
+    subCategory: undefined,
+    paymentMethod: undefined,
+    actualPayerAccount: undefined,
+    isDeleted: false,
   };
   pagination.value.currentPage = 1;
+  sortOptions.value = {
+    customOrderBy: undefined,
+    sortBy: undefined,
+    sortDir: undefined,
+    desc: true,
+  };
   loadTransactions();
 }
 
@@ -97,28 +131,33 @@ const uniqueCategories = computed(() => {
 async function loadTransactions() {
   loading.value = true;
   try {
-    const params: any = {
-      page: pagination.value.currentPage,
+    const params: PageQuery<TransactionFilters> = {
+      currentPage: pagination.value.currentPage,
       pageSize: pagination.value.pageSize,
+      sortOptions: {
+        customOrderBy: sortOptions.value.customOrderBy || undefined,
+        sortBy: sortOptions.value.sortBy || undefined,
+        desc: sortOptions.value.desc,
+        sortDir: sortOptions.value.sortDir || SortDirection.Desc,
+      },
+      filter: {
+        transactionType: filters.value.transactionType || undefined,
+        transactionStatus: filters.value.transactionStatus || undefined,
+        dateStart: filters.value.dateStart || undefined,
+        dateEnd: filters.value.dateEnd || undefined,
+        amountMin: filters.value.amountMin || undefined,
+        amountMax: filters.value.amountMax || undefined,
+        currency: filters.value.currency || undefined,
+        accountSerialNum: filters.value.accountSerialNum || undefined,
+        category: filters.value.category || undefined,
+        subCategory: filters.value.subCategory || undefined,
+        paymentMethod: filters.value.paymentMethod || undefined,
+        actualPayerAccount: filters.value.actualPayerAccount || undefined,
+        isDeleted: filters.value.isDeleted ?? false,
+      },
     };
-
-    // 添加过滤条件
-    if (filters.value.transactionType) {
-      params.type = filters.value.transactionType;
-    }
-    if (filters.value.account) {
-      params.accountSerialNum = filters.value.account;
-    }
-    if (filters.value.category) {
-      params.category = filters.value.category;
-    }
-    if (filters.value.dateFrom) {
-      params.dateFrom = filters.value.dateFrom;
-    }
-    if (filters.value.dateTo) {
-      params.dateTo = filters.value.dateTo;
-    }
     const result = await moneyStore.getTransactions(params);
+    console.log('loadTransactions ', result.items);
     transactions.value = result.items;
     pagination.value.totalItems = result.total;
     pagination.value.totalPages = Math.ceil(
@@ -223,7 +262,7 @@ defineExpose({
       <div class="filter-flex-wrap">
         <label class="show-on-desktop text-sm text-gray-700 font-medium">{{ t('financial.account.account') }}</label>
         <select
-          v-model="filters.account"
+          v-model="filters.accountSerialNum"
           class="border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <option value="">
@@ -253,7 +292,7 @@ defineExpose({
       <div class="filter-flex-wrap">
         <label class="show-on-desktop text-sm text-gray-700 font-medium">{{ t('date.startDate') }}</label>
         <input
-          v-model="filters.dateFrom" type="date"
+          v-model="filters.dateStart" type="date"
           class="border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
       </div>
@@ -261,7 +300,7 @@ defineExpose({
       <div class="filter-flex-wrap">
         <label class="show-on-desktop text-sm text-gray-700 font-medium">{{ t('date.endDate') }}</label>
         <input
-          v-model="filters.dateTo" type="date"
+          v-model="filters.dateEnd" type="date"
           class="border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
       </div>

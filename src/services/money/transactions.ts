@@ -3,7 +3,7 @@ import { DateUtils } from '@/utils/date';
 import { Lg } from '@/utils/debugLog';
 import { BaseMapper } from './baseManager';
 import type { PagedResult } from './baseManager';
-import type { DateRange, IncomeExpense, PageQuery } from '@/schema/common';
+import type { IncomeExpense, PageQuery } from '@/schema/common';
 import type {
   Transaction,
   TransactionCreate,
@@ -12,15 +12,20 @@ import type {
 } from '@/schema/money';
 
 export interface TransactionFilters {
+  serialNum?: string;
   transactionType?: string;
   transactionStatus?: string;
+  dateStart?: string;
+  dateEnd?: string;
+  amountMin?: number;
+  amountMax?: number;
+  currency?: string;
   accountSerialNum?: string;
   category?: string;
   subCategory?: string;
   paymentMethod?: string;
-  dateRange?: DateRange;
-  amountRange?: { min?: number; max?: number };
-  createdAtRange?: DateRange;
+  actualPayerAccount?: string;
+  isDeleted?: boolean;
 }
 
 /**
@@ -96,9 +101,10 @@ export class TransactionMapper extends BaseMapper<
       currentPage: 1,
       pageSize: 10,
       sortOptions: {},
-      filter: {},
+      filter: { isDeleted: false },
     },
   ): Promise<PagedResult<Transaction>> {
+    console.log('transaction_list_paged ', query);
     try {
       const result = await invokeCommand<PagedResult<Transaction>>(
         'transaction_list_paged',

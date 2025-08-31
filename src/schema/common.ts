@@ -303,10 +303,17 @@ export interface QueryFilters {
   orQuery?: boolean;
 }
 
+// SortDirection 枚举，匹配后端的 SortDirection
+export enum SortDirection {
+  Asc = 'Asc',
+  Desc = 'Desc',
+}
+
 export interface SortOptions {
   customOrderBy?: string; // 新增：完整排序 SQL
   sortBy?: string;
-  sortDir?: 'ASC' | 'DESC';
+  sortDir?: SortDirection;
+  desc?: boolean;
 }
 
 export interface UsageDetail {

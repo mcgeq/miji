@@ -301,12 +301,7 @@ export const useMoneyStore = defineStore('money', () => {
   // ------------------------------ 交易 ------------------------------
   // 交易相关方法
   const getTransactions = async (
-    query: PageQuery<TransactionFilters> = {
-      currentPage: 1,
-      pageSize: 10,
-      sortOptions: {},
-      filter: {},
-    },
+    query: PageQuery<TransactionFilters>,
   ): Promise<{
     items: Transaction[];
     total: number;

@@ -5,7 +5,7 @@ use common::{
     crud::service::{CrudConverter, CrudService, GenericCrudService, parse_enum_filed},
     error::{AppError, MijiResult},
     paginations::{Filter, PagedQuery, PagedResult},
-    utils::{date::DateUtils, uuid::McgUuid},
+    utils::date::DateUtils,
 };
 use entity::transactions::Column as TransactionColumn;
 use once_cell::sync::Lazy;
@@ -19,7 +19,7 @@ use sea_orm::{
 };
 use serde::{Deserialize, Serialize};
 use snafu::GenerateImplicitData;
-use tracing::info;
+use tracing::{error, info};
 use validator::Validate;
 
 use crate::{
@@ -205,6 +205,15 @@ impl TransactionService {
         transaction_id: &str,
         data: TransferRequest,
     ) -> MijiResult<(entity::transactions::Model, entity::transactions::Model)> {
+        // Validate the new amount
+        let new_amount = data.amount;
+        if new_amount.is_sign_negative() {
+            return Err(AppError::simple(
+                BusinessCode::InvalidParameter,
+                "Transfer amount must be non-negative",
+            ));
+        }
+
         // Validate the input data
         data.validate().map_err(AppError::from_validation_errors)?;
         let tx = db.begin().await?;
@@ -217,22 +226,6 @@ impl TransactionService {
         let from_account = self.fetch_account(&tx, &data.account_serial_num).await?;
         let to_account = self.fetch_account(&tx, &data.to_account_serial_num).await?;
 
-        // Validate the new amount
-        let new_amount = data.amount;
-        if new_amount.is_sign_negative() {
-            return Err(AppError::simple(
-                BusinessCode::InvalidParameter,
-                "Transfer amount must be non-negative",
-            ));
-        }
-
-        // Calculate the difference in amount
-        let original_amount = original_outgoing.amount.abs();
-
-        // Revert original balances
-        self.revert_balances(&tx, &original_outgoing, &original_incoming, original_amount)
-            .await?;
-
         // Check if the from_account has sufficient balance for the new amount
         if from_account.balance < new_amount {
             return Err(MoneyError::InsufficientFunds {
@@ -241,6 +234,13 @@ impl TransactionService {
             }
             .into());
         }
+
+        // Calculate the difference in amount
+        let original_amount = original_outgoing.amount.abs();
+
+        // Revert original balances
+        self.revert_balances(&tx, &original_outgoing, &original_incoming, original_amount)
+            .await?;
 
         // Apply new balances
         self.apply_balances(&tx, &from_account, &to_account, new_amount)
@@ -259,13 +259,17 @@ impl TransactionService {
         // Convert to ActiveModel for updates
         let mut from_active_model = entity::transactions::ActiveModel::try_from(from_request)
             .map_err(AppError::from_validation_errors)?;
-        from_active_model.serial_num = Set(original_outgoing.serial_num.clone());
-        from_active_model.created_at = Set(original_outgoing.created_at.clone());
+        from_active_model.related_transaction_serial_num =
+            Set(original_outgoing.related_transaction_serial_num.clone());
+        // from_active_model.serial_num = Set(original_outgoing.serial_num.clone());
+        // from_active_model.created_at = Set(original_outgoing.created_at.clone());
 
         let mut to_active_model = entity::transactions::ActiveModel::try_from(to_request)
             .map_err(AppError::from_validation_errors)?;
-        to_active_model.serial_num = Set(original_incoming.serial_num.clone());
-        to_active_model.created_at = Set(original_incoming.created_at.clone());
+        to_active_model.related_transaction_serial_num =
+            Set(original_outgoing.related_transaction_serial_num.clone());
+        // to_active_model.serial_num = Set(original_incoming.serial_num.clone());
+        // to_active_model.created_at = Set(original_incoming.created_at.clone());
 
         // Update the transactions
         let updated_outgoing = from_active_model.update(&tx).await?;
@@ -297,62 +301,108 @@ impl TransactionService {
         transaction_id: &str,
     ) -> MijiResult<(entity::transactions::Model, entity::transactions::Model)> {
         let tx = db.begin().await?;
-        let (original_outgoing, original_incoming) =
-            self.fetch_related_transfer(&tx, transaction_id).await?;
+        info!("开始删除转账，交易ID: {}", transaction_id);
 
-        let amount = original_outgoing.amount.abs();
-        self.revert_balances(&tx, &original_outgoing, &original_incoming, amount)
+        let result = async {
+            // 步骤1：获取转账交易对
+            info!("获取交易ID为 {} 的转账对", transaction_id);
+            let (original_outgoing, original_incoming) =
+                self.fetch_related_transfer(&tx, transaction_id).await?;
+            info!("获取到转出交易: {:?}", original_outgoing);
+            info!("获取到转入交易: {:?}", original_incoming);
+
+            // 步骤2：恢复账户余额
+            let amount = original_outgoing.amount.abs();
+            info!("恢复余额，金额: {}", amount);
+            self.revert_balances(&tx, &original_outgoing, &original_incoming, amount)
+                .await?;
+
+            // 步骤3：标记原始交易为删除
+            let updated_outgoing = self
+                .mark_transaction_deleted(&tx, original_outgoing.clone())
+                .await?;
+            let updated_incoming = self
+                .mark_transaction_deleted(&tx, original_incoming.clone())
+                .await?;
+            info!(
+                "转出交易已标记删除: serial_num={}, is_deleted={}",
+                updated_outgoing.serial_num, updated_outgoing.is_deleted
+            );
+            info!(
+                "转入交易已标记删除: serial_num={}, is_deleted={}",
+                updated_incoming.serial_num, updated_incoming.is_deleted
+            );
+
+            // 步骤4：创建并插入反向交易
+            let (reverse_out_request, mut reverse_in_request) =
+                self.build_reversal_requests(&original_outgoing, &original_incoming, amount);
+            info!("反向转出请求: {:?}", reverse_out_request);
+            info!("反向转入请求: {:?}", reverse_in_request);
+
+            let converter = TransactionConverter;
+            let reverse_out_model = converter
+                .create_to_active_model(reverse_out_request)
+                .map_err(|e| {
+                    error!("转换反向转出请求失败: {:?}", e);
+                    e
+                })?
+                .insert(&tx)
+                .await
+                .map_err(|e| {
+                    error!("插入反向转出交易失败: {:?}", e);
+                    e
+                })?;
+            info!(
+                "插入反向转出交易: serial_num={}",
+                reverse_out_model.serial_num
+            );
+
+            reverse_in_request.related_transaction_serial_num =
+                Some(reverse_out_model.serial_num.clone());
+            let reverse_in_model = converter
+                .create_to_active_model(reverse_in_request)
+                .map_err(|e| {
+                    info!("转换反向转入请求失败: {:?}", e);
+                    e
+                })?
+                .insert(&tx)
+                .await
+                .map_err(|e| {
+                    info!("插入反向转入交易失败: {:?}", e);
+                    e
+                })?;
+            info!(
+                "插入反向转入交易: serial_num={}",
+                reverse_in_model.serial_num
+            );
+
+            // 步骤5：记录日志
+            let outgoing_snapshot = self.serialize_model(&original_outgoing)?;
+            let incoming_snapshot = self.serialize_model(&original_incoming)?;
+            self.log_transfer(
+                &tx,
+                &reverse_out_model,
+                &reverse_in_model,
+                Some(outgoing_snapshot.to_string()),
+                Some(incoming_snapshot.to_string()),
+            )
             .await?;
 
-        let updated_outgoing = self
-            .mark_transaction_deleted(&tx, original_outgoing.clone())
-            .await?;
-        let updated_incoming = self
-            .mark_transaction_deleted(&tx, original_incoming.clone())
-            .await?;
+            Ok((reverse_out_model, reverse_in_model))
+        }
+        .await;
 
-        // 记录软删除操作日志
-        self.transaction_operation_log(
-            &tx,
-            &updated_outgoing,
-            Some(self.serialize_model(&original_outgoing)?),
-            "TRANSFER_REVERSE_OUT_MARK_DELETED",
-        )
-        .await?;
-        self.transaction_operation_log(
-            &tx,
-            &updated_incoming,
-            Some(self.serialize_model(&original_incoming)?),
-            "TRANSFER_REVERSE_IN_MARK_DELETED",
-        )
-        .await?;
-
-        let (reverse_out_request, mut reverse_in_request) =
-            self.build_reversal_requests(&original_outgoing, &original_incoming, amount);
-
-        let converter = TransactionConverter;
-        let reverse_out_model = converter
-            .create_to_active_model(reverse_out_request)?
-            .insert(&tx)
-            .await?;
-        reverse_in_request.related_transaction_serial_num =
-            Some(reverse_out_model.serial_num.clone());
-        let reverse_in_model = converter
-            .create_to_active_model(reverse_in_request)?
-            .insert(&tx)
-            .await?;
-        let outgoing_snapshot = self.serialize_model(&original_outgoing)?;
-        let incoming_snapshot = self.serialize_model(&original_incoming)?;
-        self.log_transfer(
-            &tx,
-            &reverse_out_model,
-            &reverse_in_model,
-            Some(outgoing_snapshot.to_string()),
-            Some(incoming_snapshot.to_string()),
-        )
-        .await?;
-        tx.commit().await?;
-        Ok((reverse_out_model, reverse_in_model))
+        match result {
+            Ok(models) => {
+                tx.commit().await?;
+                Ok(models)
+            }
+            Err(e) => {
+                error!("transfer_delete 错误: {:?}", e);
+                tx.rollback().await?;
+                Err(e)
+            }
+        }
     }
 
     // ----- Log
@@ -499,7 +549,8 @@ impl TransactionService {
         tx: &DatabaseTransaction,
         model: entity::transactions::Model,
     ) -> MijiResult<entity::transactions::Model> {
-        let mut active = model.into_active_model();
+        let mut active = model.clone().into_active_model();
+        active.serial_num = Set(model.serial_num.clone());
         active.is_deleted = Set(1);
         Ok(active.update(tx).await?)
     }
@@ -586,21 +637,43 @@ impl TransactionService {
         incoming: &entity::transactions::Model,
         amount: Decimal,
     ) -> (CreateTransactionRequest, CreateTransactionRequest) {
-        let reverse_out_serial_num = McgUuid::uuid(38);
-        let reverse_in_serial_num = McgUuid::uuid(38);
         let date = DateUtils::local_rfc3339();
 
-        // 处理 description，如果为空则生成默认
+        // 解析原交易描述
+        fn swap_transfer_description(desc: &str) -> String {
+            let desc = desc.trim();
+            let mut from = "";
+            let mut to = "";
+            for part in desc.split_whitespace() {
+                if part.starts_with("转账至") {
+                    to = part.trim_start_matches("转账至");
+                } else if part.starts_with("转账来自") {
+                    from = part.trim_start_matches("转账来自");
+                }
+            }
+            if from.is_empty() && to.is_empty() {
+                format!("冲正：{}", desc) // 如果无法解析，则直接加“冲正：”
+            } else {
+                format!("冲正：转账来自 {} 转账至 {}", from, to)
+            }
+        }
+
         let reverse_out_description = if outgoing.description.trim().is_empty() {
-            format!("冲正：转账至 {}", incoming.account_serial_num) // 也可用 incoming.account_name，如果你有
+            format!(
+                "冲正：转账来自 {} 转账至 {}",
+                incoming.account_serial_num, outgoing.account_serial_num
+            )
         } else {
-            format!("冲正：{}", outgoing.description)
+            swap_transfer_description(&outgoing.description)
         };
 
         let reverse_in_description = if incoming.description.trim().is_empty() {
-            format!("冲正：转账来自 {}", outgoing.account_serial_num) // 也可用 outgoing.account_name
+            format!(
+                "冲正：转账来自 {} 转账至 {}",
+                outgoing.account_serial_num, incoming.account_serial_num
+            )
         } else {
-            format!("冲正：{}", incoming.description)
+            swap_transfer_description(&incoming.description)
         };
 
         let reverse_out_request = CreateTransactionRequest {
@@ -627,7 +700,7 @@ impl TransactionService {
                 "actual_payer_account",
                 AccountType::Savings,
             ),
-            related_transaction_serial_num: Some(reverse_in_serial_num.clone()),
+            related_transaction_serial_num: None,
         };
 
         let reverse_in_request = CreateTransactionRequest {
@@ -654,7 +727,7 @@ impl TransactionService {
                 "actual_payer_account",
                 AccountType::Savings,
             ),
-            related_transaction_serial_num: Some(reverse_out_serial_num.clone()),
+            related_transaction_serial_num: None,
         };
 
         (reverse_out_request, reverse_in_request)
@@ -680,8 +753,6 @@ impl TransactionService {
                 "Only transfer transactions can be reversed",
             ));
         }
-
-        info!("fetch_related_transfer {:?}", outgoing);
 
         // 单向关联
         // let related_id = outgoing
@@ -804,6 +875,7 @@ impl TransactionConverter {
 
 // 交易过滤器
 #[derive(Debug, Clone, Validate, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct TransactionFilter {
     pub serial_num: Option<String>,
     pub transaction_type: Option<String>,
@@ -818,7 +890,7 @@ pub struct TransactionFilter {
     pub sub_category: Option<String>,
     pub payment_method: Option<String>,
     pub actual_payer_account: Option<String>,
-    pub is_deleted: Option<i32>,
+    pub is_deleted: Option<bool>,
 }
 
 impl Filter<entity::transactions::Entity> for TransactionFilter {
@@ -869,9 +941,8 @@ impl Filter<entity::transactions::Entity> for TransactionFilter {
             condition = condition
                 .add(entity::transactions::Column::ActualPayerAccount.eq(actual_payer_account));
         }
-        if let Some(is_deleted) = self.is_deleted {
-            condition = condition.add(entity::transactions::Column::IsDeleted.eq(is_deleted));
-        }
+        let is_deleted = self.is_deleted.unwrap_or_default();
+        condition = condition.add(entity::transactions::Column::IsDeleted.eq(is_deleted as i32));
 
         condition
     }
@@ -1060,8 +1131,6 @@ impl TransactionService {
     ) -> MijiResult<PagedResult<TransactionWithRelations>> {
         let paged = self.inner.list_paged(db, query).await?;
         let mut rows_with_relations = Vec::with_capacity(paged.rows.len());
-        info!("trans_list_paged_with_relations paged {:?}", paged);
-
         for m in paged.rows {
             let tx_with_rel = self.converter().model_to_with_relations(db, m).await?;
             rows_with_relations.push(tx_with_rel);
