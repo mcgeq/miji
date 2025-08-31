@@ -157,7 +157,6 @@ async function loadTransactions() {
       },
     };
     const result = await moneyStore.getTransactions(params);
-    console.log('loadTransactions ', result.items);
     transactions.value = result.items;
     pagination.value.totalItems = result.total;
     pagination.value.totalPages = Math.ceil(

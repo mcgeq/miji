@@ -104,7 +104,6 @@ export class TransactionMapper extends BaseMapper<
       filter: { isDeleted: false },
     },
   ): Promise<PagedResult<Transaction>> {
-    console.log('transaction_list_paged ', query);
     try {
       const result = await invokeCommand<PagedResult<Transaction>>(
         'transaction_list_paged',

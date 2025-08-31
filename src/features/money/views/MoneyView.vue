@@ -392,6 +392,7 @@ async function saveTransfer(transfer: TransferCreate) {
 
 async function updateTransfer(serialNum: string, transfer: TransferCreate) {
   try {
+      console.log('updateTransfer ', serialNum, transfer);
     await moneyStore.updateTransfer(serialNum, transfer);
     toast.success('转账更新成功');
     await finalizeTransactionChange();

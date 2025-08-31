@@ -434,7 +434,7 @@ impl TryFrom<UpdateTransactionRequest> for entity::transactions::ActiveModel {
     }
 }
 
-#[derive(Debug, Validate, Serialize, Deserialize)]
+#[derive(Debug, Clone, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TransferRequest {
     transaction_type: TransactionType,

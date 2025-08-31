@@ -205,77 +205,91 @@ impl TransactionService {
         transaction_id: &str,
         data: TransferRequest,
     ) -> MijiResult<(entity::transactions::Model, entity::transactions::Model)> {
-        // Validate the new amount
-        let new_amount = data.amount;
-        if new_amount.is_sign_negative() {
+        info!(
+            "Starting transfer update for transaction_id: {}",
+            transaction_id
+        );
+
+        // Step 1: Validate input data
+        data.validate().map_err(|e| {
+            error!("Validation failed for transfer update: {:?}", e);
+            AppError::from_validation_errors(e)
+        })?;
+        if data.amount.is_sign_negative() {
             return Err(AppError::simple(
                 BusinessCode::InvalidParameter,
                 "Transfer amount must be non-negative",
             ));
         }
 
-        // Validate the input data
-        data.validate().map_err(AppError::from_validation_errors)?;
         let tx = db.begin().await?;
 
-        // Fetch the original transfer pair
+        // Step 2: Fetch original transfer pair
         let (original_outgoing, original_incoming) =
             self.fetch_related_transfer(&tx, transaction_id).await?;
 
-        // Fetch the accounts involved
+        if original_incoming.category != "Transfer" {
+            return Err(AppError::simple(
+                BusinessCode::InvalidParameter,
+                "Only Income Transfer transactions can be updated",
+            ));
+        }
+
+        // Step 3: Validate refund amount
+        let original_amount = original_outgoing.amount.abs();
+        let refund_amount = data.amount;
+        if refund_amount > original_amount {
+            return Err(AppError::simple(
+                BusinessCode::InvalidParameter,
+                "Refund amount cannot exceed original transaction amount",
+            ));
+        }
+
+        // Step 4: Fetch accounts
         let from_account = self.fetch_account(&tx, &data.account_serial_num).await?;
         let to_account = self.fetch_account(&tx, &data.to_account_serial_num).await?;
 
-        // Check if the from_account has sufficient balance for the new amount
-        if from_account.balance < new_amount {
+        // Step 5: Revert original balances (完全回滚原交易金额)
+        self.revert_balances(&tx, &original_outgoing, &original_incoming, original_amount)
+            .await?;
+
+        // Step 6: Re-fetch from_account for balance check
+        let from_account = self.fetch_account(&tx, &data.account_serial_num).await?;
+        if from_account.balance < refund_amount {
             return Err(MoneyError::InsufficientFunds {
-                balance: new_amount,
+                balance: refund_amount,
                 backtrace: snafu::Backtrace::generate(),
             }
             .into());
         }
 
-        // Calculate the difference in amount
-        let original_amount = original_outgoing.amount.abs();
-
-        // Revert original balances
-        self.revert_balances(&tx, &original_outgoing, &original_incoming, original_amount)
+        // Step 7: Apply refund_amount to accounts
+        self.apply_balances(&tx, &from_account, &to_account, refund_amount)
             .await?;
 
-        // Apply new balances
-        self.apply_balances(&tx, &from_account, &to_account, new_amount)
-            .await?;
+        // Step 8: Build and update transaction requests
+        let mut data_clone = data.clone();
+        data_clone.amount = refund_amount; // 使用退金额
 
-        // Build updated transaction requests
         let (mut from_request, mut to_request) =
-            self.build_transfer_requests(&data, &from_account, &to_account)?;
-
-        // Set the serial numbers to match the original transactions
-        from_request.transaction_status = TransactionStatus::Completed; // Ensure status remains Completed
+            self.build_transfer_requests(&data_clone, &from_account, &to_account)?;
+        from_request.transaction_status = TransactionStatus::Completed;
         to_request.transaction_status = TransactionStatus::Completed;
         from_request.related_transaction_serial_num = Some(original_incoming.serial_num.clone());
         to_request.related_transaction_serial_num = Some(original_outgoing.serial_num.clone());
 
-        // Convert to ActiveModel for updates
-        let mut from_active_model = entity::transactions::ActiveModel::try_from(from_request)
-            .map_err(AppError::from_validation_errors)?;
-        from_active_model.related_transaction_serial_num =
-            Set(original_outgoing.related_transaction_serial_num.clone());
-        // from_active_model.serial_num = Set(original_outgoing.serial_num.clone());
-        // from_active_model.created_at = Set(original_outgoing.created_at.clone());
+        let mut from_active_model = entity::transactions::ActiveModel::try_from(from_request)?;
+        from_active_model.serial_num = Set(original_outgoing.serial_num.clone());
+        from_active_model.created_at = Set(original_outgoing.created_at.clone());
 
-        let mut to_active_model = entity::transactions::ActiveModel::try_from(to_request)
-            .map_err(AppError::from_validation_errors)?;
-        to_active_model.related_transaction_serial_num =
-            Set(original_outgoing.related_transaction_serial_num.clone());
-        // to_active_model.serial_num = Set(original_incoming.serial_num.clone());
-        // to_active_model.created_at = Set(original_incoming.created_at.clone());
+        let mut to_active_model = entity::transactions::ActiveModel::try_from(to_request)?;
+        to_active_model.serial_num = Set(original_incoming.serial_num.clone());
+        to_active_model.created_at = Set(original_incoming.created_at.clone());
 
-        // Update the transactions
         let updated_outgoing = from_active_model.update(&tx).await?;
         let updated_incoming = to_active_model.update(&tx).await?;
 
-        // Log the update operations
+        // Step 9: Log updates
         self.transaction_operation_log(
             &tx,
             &updated_outgoing,
@@ -291,7 +305,13 @@ impl TransactionService {
         )
         .await?;
 
+        // Step 10: Commit transaction
         tx.commit().await?;
+
+        info!(
+            "Transfer update completed successfully for transaction_id: {}",
+            transaction_id
+        );
         Ok((updated_outgoing, updated_incoming))
     }
 
