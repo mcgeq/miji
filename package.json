@@ -30,6 +30,7 @@
     "@tauri-store/vue": "^1.0.0",
     "@unocss/reset": "^66.3.3",
     "@vee-validate/zod": "^4.15.1",
+    "@vuepic/vue-datepicker": "^11.0.2",
     "@vueuse/core": "^13.5.0",
     "date-fns": "^4.1.0",
     "lru-cache": "^11.1.0",

@@ -17,7 +17,7 @@ import { DateUtils } from '@/utils/date';
 import { Lg } from '@/utils/debugLog';
 import { formatCurrency } from '../utils/money';
 import type { TransactionType } from '@/schema/common';
-import type { Account, TransactionWithAccount } from '@/schema/money';
+import type { Account, Transaction } from '@/schema/money';
 
 interface Props {
   accounts: Account[];
@@ -26,9 +26,9 @@ interface Props {
 const props = defineProps<Props>();
 
 const emit = defineEmits<{
-  edit: [transaction: TransactionWithAccount];
-  delete: [transaction: TransactionWithAccount];
-  viewDetails: [transaction: TransactionWithAccount];
+  edit: [transaction: Transaction];
+  delete: [transaction: Transaction];
+  viewDetails: [transaction: Transaction];
 }>();
 
 const { t } = useI18n();
@@ -36,12 +36,12 @@ const moneyStore = useMoneyStore();
 
 // 数据状态
 const loading = ref(false);
-const transactions = ref<TransactionWithAccount[]>([]);
+const transactions = ref<Transaction[]>([]);
 const disabledTransactions = computed(() => {
   return new Set(
     transactions.value
       .filter(t =>
-        t.transactionType === TransactionTypeSchema.enum.Income &&
+        t.transactionType === TransactionTypeSchema.enum.Expense &&
         t.category === CategorySchema.enum.Transfer,
       )
       .map(t => t.serialNum),
@@ -124,14 +124,12 @@ async function loadTransactions() {
     pagination.value.totalPages = Math.ceil(
       result.total / pagination.value.pageSize,
     );
-  }
-  catch (error) {
+  } catch (error) {
     transactions.value = [];
     pagination.value.totalItems = 0;
     pagination.value.totalPages = 0;
     Lg.e('Transaction', error);
-  }
-  finally {
+  } finally {
     loading.value = false;
   }
 }
@@ -176,14 +174,6 @@ function getTransactionTypeName(type: TransactionType) {
     Transfer: t('financial.transaction.transfer'),
   };
   return names[type] || t('financial.transaction.unknown');
-}
-
-function formatTime(dateStr: string) {
-  return new Date(dateStr).toLocaleTimeString('zh-CN', {
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-  });
 }
 
 // 组件挂载时加载数据
@@ -382,11 +372,8 @@ defineExpose({
         <div class="flex justify-between p-4 text-sm md:items-center md:justify-end">
           <span class="text-gray-600 font-semibold md:hidden">{{ t('date.date') }}</span>
           <div class="md:text-right">
-            <div class="text-gray-800 font-medium">
-              {{ DateUtils.formatDate(transaction.date) }}
-            </div>
             <div class="text-xs text-gray-600">
-              {{ formatTime(transaction.createdAt) }}
+              {{ DateUtils.formatDateTime(transaction.date) }}
             </div>
           </div>
         </div>

@@ -283,6 +283,7 @@ pub enum Transactions {
     Description,
     Notes,
     AccountSerialNum,
+    ToAccountSerialNum,
     Category,
     SubCategory,
     Tags,
@@ -364,3 +365,4 @@ pub enum BilReminder {
     CreatedAt,
     UpdatedAt,
 }
+

@@ -14,7 +14,7 @@ use crate::{
         },
         currency::{CreateCurrencyRequest, CurrencyResponse, UpdateCurrencyRequest},
         transactions::{
-            CreateTransactionRequest, TransactionResponse, TransferRequest,
+            CreateTransactionRequest, IncomeExpense, TransactionResponse, TransferRequest,
             UpdateTransactionRequest,
         },
     },
@@ -256,6 +256,7 @@ pub async fn transaction_create(
     data: CreateTransactionRequest,
 ) -> Result<ApiResponse<TransactionResponse>, String> {
     let service = get_transaction_service();
+    info!("transaction_create {:?}", data);
     Ok(ApiResponse::from_result(
         service
             .trans_create_with_relations(&state.db, data)
@@ -284,6 +285,20 @@ pub async fn transaction_transfer_create(
 }
 
 #[tauri::command]
+pub async fn transaction_query_income_and_expense(
+    state: State<'_, AppState>,
+    start_date: String,
+    end_date: String,
+) -> Result<ApiResponse<IncomeExpense>, String> {
+    let service = get_transaction_service();
+    Ok(ApiResponse::from_result(
+        service
+            .query_income_and_expense(&state.db, start_date, end_date)
+            .await,
+    ))
+}
+
+#[tauri::command]
 pub async fn transaction_transfer_delete(
     state: State<'_, AppState>,
     serial_num: String,
@@ -307,6 +322,10 @@ pub async fn transaction_transfer_update(
     serial_num: String,
     transfer: TransferRequest,
 ) -> Result<ApiResponse<(TransactionResponse, TransactionResponse)>, String> {
+    info!(
+        "transaction_transfer_update {:?} {:?}",
+        serial_num, transfer
+    );
     let service = get_transaction_service();
     match service
         .trans_transfer_update_with_relations(&state.db, &serial_num, transfer)

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import VueDatePicker from '@vuepic/vue-datepicker';
 import { Check, X } from 'lucide-vue-next';
 import CurrencySelector from '@/components/common/money/CurrencySelector.vue';
 import { CURRENCY_CNY } from '@/constants/moneyConst';
@@ -16,6 +17,7 @@ import type {
   TransactionType,
 } from '@/schema/common';
 import type { Account, Transaction, TransactionCreate, TransactionUpdate, TransferCreate } from '@/schema/money';
+import '@vuepic/vue-datepicker/dist/main.css';
 
 interface Props {
   type: TransactionType;
@@ -48,7 +50,7 @@ const trans = props.transaction || {
   subCategory: SubCategorySchema.enum.Other,
   amount: 0,
   currency: CURRENCY_CNY,
-  date: DateUtils.getLocalISODateTimeWithOffset().split('T')[0],
+  date: DateUtils.getLocalISODateTimeWithOffset(),
   description: '',
   notes: null,
   accountSerialNum: '',
@@ -67,6 +69,11 @@ const form = ref<Transaction>({
   amount: trans.amount || 0,
   currency: trans.currency || CURRENCY_CNY,
   toAccountSerialNum: '',
+  date: trans.date || DateUtils.getLocalISODateTimeWithOffset(),
+});
+
+const isTransferReadonly = computed(() => {
+  return !!(props.transaction && form.value.category === CategorySchema.enum.Transfer);
 });
 
 // Compute available payment methods based on selected account and transaction type
@@ -183,7 +190,6 @@ function handleSubmit() {
     toast.error('请输入有效的金额');
     return;
   }
-
   const fromAccount = props.accounts.find(acc => acc.serialNum === form.value.accountSerialNum);
   if (!fromAccount) {
     console.error('未找到转出账户');
@@ -191,89 +197,110 @@ function handleSubmit() {
     return;
   }
 
-  // Validate credit card transactions
-  if (fromAccount.type === AccountTypeSchema.enum.CreditCard) {
-    const initialBalance = Number.parseFloat(fromAccount.initialBalance);
-    const balance = Number.parseFloat(fromAccount.balance);
-    if (Number.isNaN(initialBalance) || Number.isNaN(balance)) {
-      console.error('Invalid balance data:', { initialBalance, balance });
-      toast.error('账户余额数据无效');
-      return;
-    }
-    const availableCredit = initialBalance - balance;
-    if (amount > availableCredit) {
-      toast.error('转出金额超过信用卡可用额度');
-      return;
-    }
-  } else {
-    // Non-credit card accounts, check balance
-    const balance = Number.parseFloat(fromAccount.balance);
-    if (Number.isNaN(balance) || amount > balance) {
-      toast.error('转出金额超过账户余额');
-      return;
-    }
+  const fromBalance = parseBalance(fromAccount);
+  if (fromBalance === null) {
+    toast.error('转出账户余额数据无效');
+    return;
   }
 
-  if (form.value.transactionType === TransactionTypeSchema.enum.Transfer) {
+  // 转出校验
+  if (!canWithdraw(fromAccount, amount, fromBalance)) {
+    toast.error(fromAccount.type === AccountTypeSchema.enum.CreditCard
+      ? '信用卡转出金额不能大于账户余额'
+      : '转出金额超过账户余额');
+    return;
+  }
+  if (form.value.category === TransactionTypeSchema.enum.Transfer) {
     const toAccount = props.accounts.find(acc => acc.serialNum === form.value.toAccountSerialNum);
     if (!toAccount) {
       toast.error('未找到转入账户');
       return;
     }
 
-    // Validate credit card for transfer-in
-    if (toAccount.type === AccountTypeSchema.enum.CreditCard) {
-      const newBalance = Number.parseFloat(toAccount.balance) + amount;
-      const initialBalance = Number.parseFloat(toAccount.initialBalance);
-      if (newBalance > initialBalance) {
-        toast.error('转入金额将导致信用卡余额超过授信额度');
-        return;
-      }
+    // 转入校验
+    if (!canDeposit(toAccount, amount)) {
+      toast.error('转入金额将导致信用卡余额超过授信额度');
+      return;
     }
 
-    const fromTransaction: TransferCreate = {
-      amount: form.value.amount,
-      transactionType: form.value.transactionType,
-      accountSerialNum: form.value.accountSerialNum,
-      toAccountSerialNum: form.value.toAccountSerialNum!,
-      currency: form.value.currency.code,
-      paymentMethod: form.value.paymentMethod,
-      category: form.value.category,
-      subCategory: form.value.subCategory,
-      date: form.value.date,
-      description: `转账至 ${toAccount.name}${form.value.description ? ` - ${form.value.description}` : ''}`,
-    };
-
-    if (props.transaction) {
-      emit('updateTransfer', props.transaction.serialNum, fromTransaction);
-    } else {
-      emit('saveTransfer', fromTransaction);
-    }
+    emitTransfer(amount);
   } else {
-    const transaction: TransactionCreate = {
-      transactionType: form.value.transactionType,
-      transactionStatus: form.value.transactionStatus,
-      date: form.value.date,
-      amount: form.value.amount,
-      description: form.value.description,
-      notes: form.value.notes,
-      accountSerialNum: form.value.accountSerialNum,
-      category: form.value.category,
-      subCategory: form.value.subCategory,
-      tags: form.value.tags,
-      splitMembers: form.value.splitMembers,
-      paymentMethod: form.value.paymentMethod,
-      actualPayerAccount: form.value.actualPayerAccount,
-      relatedTransactionSerialNum: form.value.relatedTransactionSerialNum,
-      isDeleted: false,
-      currency: form.value.currency.code,
-    };
+    emitTransaction(amount);
+  }
+}
 
-    if (props.transaction) {
-      emit('update', props.transaction.serialNum, transaction);
-    } else {
-      emit('save', transaction);
-    }
+// 解析余额，credit=true时返回初始额度
+function parseBalance(account: any, credit: boolean = false): number | null {
+  const value = credit ? account.initialBalance : account.balance;
+  const num = Number.parseFloat(value);
+  return Number.isNaN(num) ? null : num;
+}
+
+// 校验是否可以转出
+function canWithdraw(account: any, amount: number, balance: number): boolean {
+  return amount <= balance;
+}
+
+// 校验是否可以转入
+function canDeposit(account: any, amount: number): boolean {
+  if (account.type === AccountTypeSchema.enum.CreditCard) {
+    const balance = parseBalance(account);
+    const initialBalance = parseBalance(account, true);
+    if (balance === null || initialBalance === null) return false;
+    return balance + amount <= initialBalance;
+  }
+  // 非信用卡账户不限制转入
+  return true;
+}
+
+// 发射转账事件
+function emitTransfer(amount: number) {
+  const fromTransaction: TransferCreate = {
+    amount,
+    transactionType: form.value.transactionType,
+    accountSerialNum: form.value.accountSerialNum,
+    toAccountSerialNum: form.value.toAccountSerialNum!,
+    currency: form.value.currency.code,
+    paymentMethod: form.value.paymentMethod,
+    category: form.value.category,
+    subCategory: form.value.subCategory,
+    date: DateUtils.formatDateToBackend(typeof form.value.date === 'string' ? new Date(form.value.date) : form.value.date),
+    description: form.value.description,
+  };
+
+  if (props.transaction) {
+    emit('updateTransfer', props.transaction.serialNum, fromTransaction);
+  } else {
+    emit('saveTransfer', fromTransaction);
+  }
+}
+
+// 发射普通交易事件
+function emitTransaction(amount: number) {
+  const transaction: TransactionCreate = {
+    transactionType: form.value.transactionType,
+    transactionStatus: form.value.transactionStatus,
+    date: DateUtils.formatDateToBackend(typeof form.value.date === 'string' ? new Date(form.value.date) : form.value.date),
+    amount,
+    description: form.value.description,
+    notes: form.value.notes,
+    accountSerialNum: form.value.accountSerialNum,
+    toAccountSerialNum: null,
+    category: form.value.category,
+    subCategory: form.value.subCategory,
+    tags: form.value.tags,
+    splitMembers: form.value.splitMembers,
+    paymentMethod: form.value.paymentMethod,
+    actualPayerAccount: form.value.actualPayerAccount,
+    relatedTransactionSerialNum: form.value.relatedTransactionSerialNum,
+    isDeleted: false,
+    currency: form.value.currency.code,
+  };
+
+  if (props.transaction) {
+    emit('update', props.transaction.serialNum, transaction);
+  } else {
+    emit('save', transaction);
   }
 }
 
@@ -335,6 +362,8 @@ watch(
           ...transaction,
           currency: transaction.currency || CURRENCY_CNY,
           subCategory: transaction.subCategory || SubCategorySchema.enum.Other,
+          toAccountSerialNum: transaction.toAccountSerialNum || null,
+          date: transaction.date || DateUtils.getLocalISODateTimeWithOffset(),
         }
       : {
           serialNum: '',
@@ -345,7 +374,7 @@ watch(
           category: CategorySchema.enum.Others,
           subCategory: SubCategorySchema.enum.Other,
           currency: CURRENCY_CNY,
-          date: new Date().toISOString().split('T')[0],
+          date: DateUtils.getLocalISODateTimeWithOffset(),
           description: '',
           notes: null,
           tags: [],
@@ -416,13 +445,13 @@ watch(
         <!-- 币种 -->
         <div class="mt-4 flex items-center justify-between">
           <label class="mb-1 text-sm font-medium">{{ t('financial.currency') }}</label>
-          <CurrencySelector v-model="form.currency" class="w-2/3" />
+          <CurrencySelector v-model="form.currency" class="w-2/3" :disabled="isTransferReadonly" />
         </div>
 
         <!-- 转出账户 -->
         <div class="flex items-center justify-between">
           <label class="mb-1 text-sm font-medium">
-            {{ form.transactionType === TransactionTypeSchema.enum.Transfer ? t('financial.transaction.fromAccount')
+            {{ isTransferReadonly || form.transactionType === TransactionTypeSchema.enum.Transfer ? t('financial.transaction.fromAccount')
               : t('financial.account.account') }}
           </label>
           <select v-model="form.accountSerialNum" class="w-2/3 modal-input-select" required>
@@ -436,11 +465,11 @@ watch(
         </div>
 
         <!-- 转入账户（仅转账时显示） -->
-        <div v-if="form.transactionType === TransactionTypeSchema.enum.Transfer" class="flex items-center justify-between">
+        <div v-if="isTransferReadonly || form.transactionType === TransactionTypeSchema.enum.Transfer" class="flex items-center justify-between">
           <label class="mb-1 text-sm font-medium">
             {{ t('financial.transaction.toAccount') }}
           </label>
-          <select v-model="form.toAccountSerialNum" class="w-2/3 modal-input-select" required>
+          <select v-model="form.toAccountSerialNum" class="w-2/3 modal-input-select" required :disabled="isTransferReadonly">
             <option value="">
               {{ t('common.placeholders.selectAccount') }}
             </option>
@@ -458,6 +487,7 @@ watch(
               v-if="isPaymentMethodEditable"
               v-model="form.paymentMethod"
               class="w-full"
+              :disabled="isTransferReadonly"
               required
             >
               <option value="">
@@ -476,7 +506,7 @@ watch(
         <!-- 分类 -->
         <div class="flex items-center justify-between">
           <label class="mb-1 block text-sm font-medium">{{ t('categories.category') }}</label>
-          <select v-model="form.category" class="w-2/3 modal-input-select" required>
+          <select v-model="form.category" class="w-2/3 modal-input-select" required :disabled="isTransferReadonly">
             <option value="">
               {{ t('common.placeholders.selectCategory') }}
             </option>
@@ -501,8 +531,14 @@ watch(
 
         <!-- 日期 -->
         <div class="flex items-center justify-between">
-          <label class="mb-1 text-sm font-medium">{{ t('date.transactionDate') }}</label>
-          <input v-model="form.date" type="date" class="w-2/3 modal-input-select" required>
+          <label class="mb-1 w-1/3 text-sm font-medium">{{ t('date.transactionDate') }}</label>
+          <VueDatePicker
+            v-model="form.date"
+            :enable-time-picker="true"
+            :is-24="true"
+            format="yyyy-MM-dd HH:mm:ss"
+            required
+          />
         </div>
 
         <!-- 备注 -->

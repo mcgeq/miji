@@ -2,28 +2,33 @@ use std::{str::FromStr, sync::Arc};
 
 use common::{
     BusinessCode,
-    crud::service::{CrudConverter, CrudService, GenericCrudService, parse_json_field},
+    crud::service::{CrudConverter, CrudService, GenericCrudService, parse_enum_filed},
     error::{AppError, MijiResult},
     paginations::{Filter, PagedQuery, PagedResult},
     utils::{date::DateUtils, uuid::McgUuid},
 };
+use entity::transactions::Column as TransactionColumn;
+use once_cell::sync::Lazy;
 use sea_orm::{
     ActiveModelTrait,
     ActiveValue::Set,
     ColumnTrait, Condition, DatabaseConnection, DatabaseTransaction, DbConn, EntityTrait,
     IntoActiveModel, QueryFilter, QuerySelect, TransactionTrait,
-    prelude::{Decimal, async_trait::async_trait},
+    prelude::{Decimal, Expr, async_trait::async_trait},
+    sea_query::{Alias, ExprTrait, Func, SimpleExpr},
 };
 use serde::{Deserialize, Serialize};
 use snafu::GenerateImplicitData;
+use tracing::info;
 use validator::Validate;
 
 use crate::{
     dto::{
         account::AccountType,
         transactions::{
-            CreateTransactionRequest, PaymentMethod, TransactionStatus, TransactionType,
-            TransactionWithRelations, TransferRequest, UpdateTransactionRequest,
+            CreateTransactionRequest, IncomeExpense, IncomeExpenseRaw, PaymentMethod,
+            TransactionStatus, TransactionType, TransactionWithRelations, TransferRequest,
+            UpdateTransactionRequest,
         },
     },
     error::MoneyError,
@@ -31,6 +36,64 @@ use crate::{
         account::get_account_service, currency::get_currency_service, transaction_hooks::NoOpHooks,
     },
 };
+
+#[derive(Debug, Clone)]
+struct TransactionTypeConfig {
+    field: &'static str,
+    account_type: &'static str,
+    #[allow(dead_code)]
+    include_in_total: bool,
+}
+
+static TRANSACTION_TYPE_CONFIGS: Lazy<Vec<TransactionTypeConfig>> = Lazy::new(|| {
+    vec![
+        TransactionTypeConfig {
+            field: "bank_savings",
+            account_type: "Savings",
+            include_in_total: true,
+        },
+        TransactionTypeConfig {
+            field: "bank_savings",
+            account_type: "Bank",
+            include_in_total: true,
+        },
+        TransactionTypeConfig {
+            field: "cash",
+            account_type: "Cash",
+            include_in_total: true,
+        },
+        TransactionTypeConfig {
+            field: "credit_card",
+            account_type: "CreditCard",
+            include_in_total: true,
+        },
+        TransactionTypeConfig {
+            field: "investment",
+            account_type: "Investment",
+            include_in_total: true,
+        },
+        TransactionTypeConfig {
+            field: "alipay",
+            account_type: "Alipay",
+            include_in_total: true,
+        },
+        TransactionTypeConfig {
+            field: "wechat",
+            account_type: "WeChat",
+            include_in_total: true,
+        },
+        TransactionTypeConfig {
+            field: "cloud_quick_pass",
+            account_type: "CloudQuickPass",
+            include_in_total: true,
+        },
+        TransactionTypeConfig {
+            field: "other",
+            account_type: "Other",
+            include_in_total: true,
+        },
+    ]
+});
 
 // 交易服务实现
 pub struct TransactionService {
@@ -106,8 +169,14 @@ impl TransactionService {
         self.apply_balances(&tx, &from_account, &to_account, amount)
             .await?;
 
+        info!("from_account {:?}", from_account);
+        info!("to_account {:?}", to_account);
+
         let (from_request, mut to_request) =
             self.build_transfer_requests(&data, &from_account, &to_account)?;
+
+        info!("from_request {:?}", from_request);
+        info!("to_request {:?}", to_request);
 
         let converter = TransactionConverter;
         let from_model = converter
@@ -119,6 +188,9 @@ impl TransactionService {
             .create_to_active_model(to_request)?
             .insert(&tx)
             .await?;
+
+        info!("from_model {:?}", from_model);
+        info!("to_model {:?}", to_model);
 
         self.log_transfer(&tx, &from_model, &to_model, None, None)
             .await?;
@@ -443,16 +515,38 @@ impl TransactionService {
     ) -> MijiResult<(CreateTransactionRequest, CreateTransactionRequest)> {
         let date = data.date.clone().unwrap_or_else(DateUtils::local_rfc3339);
 
+        // 根据是否为空生成默认描述
+        let from_description = if let Some(desc) = &data.description {
+            if desc.trim().is_empty() {
+                format!("转账至 {}", to_account.name)
+            } else {
+                desc.clone()
+            }
+        } else {
+            format!("转账至 {}", to_account.name)
+        };
+
+        let to_description = if let Some(desc) = &data.description {
+            if desc.trim().is_empty() {
+                format!("转账来自 {}", from_account.name)
+            } else {
+                desc.clone()
+            }
+        } else {
+            format!("转账来自 {}", from_account.name)
+        };
+
         let from_request = CreateTransactionRequest {
             transaction_type: TransactionType::Expense,
             transaction_status: TransactionStatus::Completed,
             date: date.clone(),
-            amount: -data.amount,
+            amount: data.amount,
             currency: data.currency.clone(),
-            description: data.description.clone(),
-            account_serial_num: data.account_serial_num.clone(),
+            description: from_description,
+            account_serial_num: from_account.serial_num.clone(),
+            to_account_serial_num: Some(to_account.serial_num.clone()),
             category: "Transfer".to_string(),
-            notes: Some(data.description.clone()),
+            notes: data.description.clone(),
             sub_category: data.sub_category.clone(),
             tags: None,
             split_members: None,
@@ -467,9 +561,10 @@ impl TransactionService {
             date,
             amount: data.amount,
             currency: data.currency.clone(),
-            description: data.description.clone(),
-            notes: Some(data.description.clone()),
-            account_serial_num: data.to_account_serial_num.clone(),
+            description: to_description,
+            notes: data.description.clone(),
+            account_serial_num: to_account.serial_num.clone(),
+            to_account_serial_num: Some(from_account.serial_num.clone()),
             category: "Transfer".to_string(),
             sub_category: data.sub_category.clone(),
             tags: None,
@@ -495,25 +590,39 @@ impl TransactionService {
         let reverse_in_serial_num = McgUuid::uuid(38);
         let date = DateUtils::local_rfc3339();
 
+        // 处理 description，如果为空则生成默认
+        let reverse_out_description = if outgoing.description.trim().is_empty() {
+            format!("冲正：转账至 {}", incoming.account_serial_num) // 也可用 incoming.account_name，如果你有
+        } else {
+            format!("冲正：{}", outgoing.description)
+        };
+
+        let reverse_in_description = if incoming.description.trim().is_empty() {
+            format!("冲正：转账来自 {}", outgoing.account_serial_num) // 也可用 outgoing.account_name
+        } else {
+            format!("冲正：{}", incoming.description)
+        };
+
         let reverse_out_request = CreateTransactionRequest {
             transaction_type: TransactionType::Expense,
             transaction_status: TransactionStatus::Reversed,
             date: date.clone(),
-            amount: -amount,
+            amount,
             currency: outgoing.currency.clone(),
-            description: format!("Reversal of {}", outgoing.description),
+            description: reverse_out_description,
             notes: outgoing.notes.clone(),
             account_serial_num: incoming.account_serial_num.clone(),
+            to_account_serial_num: Some(outgoing.account_serial_num.clone()),
             category: "Transfer".to_string(),
             sub_category: None,
             tags: None,
             split_members: None,
-            payment_method: parse_json_field(
+            payment_method: parse_enum_filed(
                 &outgoing.payment_method,
                 "payment_method",
                 PaymentMethod::Other,
             ),
-            actual_payer_account: parse_json_field(
+            actual_payer_account: parse_enum_filed(
                 &outgoing.actual_payer_account,
                 "actual_payer_account",
                 AccountType::Savings,
@@ -527,19 +636,20 @@ impl TransactionService {
             date,
             amount,
             currency: outgoing.currency.clone(),
-            description: format!("Reversal of {}", incoming.description),
+            description: reverse_in_description,
             notes: incoming.notes.clone(),
             account_serial_num: outgoing.account_serial_num.clone(),
+            to_account_serial_num: Some(incoming.account_serial_num.clone()),
             category: "Transfer".to_string(),
             sub_category: None,
             tags: None,
             split_members: None,
-            payment_method: parse_json_field(
+            payment_method: parse_enum_filed(
                 &outgoing.payment_method,
                 "payment_method",
                 PaymentMethod::Other,
             ),
-            actual_payer_account: parse_json_field(
+            actual_payer_account: parse_enum_filed(
                 &outgoing.actual_payer_account,
                 "actual_payer_account",
                 AccountType::Savings,
@@ -571,15 +681,18 @@ impl TransactionService {
             ));
         }
 
-        let related_id = outgoing
-            .related_transaction_serial_num
-            .clone()
-            .ok_or_else(|| {
-                AppError::simple(BusinessCode::NotFound, "Missing related transaction")
-            })?;
+        info!("fetch_related_transfer {:?}", outgoing);
+
+        // 单向关联
+        // let related_id = outgoing
+        //     .related_transaction_serial_num
+        //     .clone()
+        //     .ok_or_else(|| {
+        //         AppError::simple(BusinessCode::NotFound, "Missing related transaction")
+        //     })?;
 
         let incoming = entity::transactions::Entity::find()
-            .filter(entity::transactions::Column::RelatedTransactionSerialNum.eq(related_id))
+            .filter(entity::transactions::Column::RelatedTransactionSerialNum.eq(transaction_id))
             .lock_exclusive()
             .one(tx)
             .await?
@@ -947,6 +1060,7 @@ impl TransactionService {
     ) -> MijiResult<PagedResult<TransactionWithRelations>> {
         let paged = self.inner.list_paged(db, query).await?;
         let mut rows_with_relations = Vec::with_capacity(paged.rows.len());
+        info!("trans_list_paged_with_relations paged {:?}", paged);
 
         for m in paged.rows {
             let tx_with_rel = self.converter().model_to_with_relations(db, m).await?;
@@ -960,6 +1074,142 @@ impl TransactionService {
             page_size: paged.page_size,
             total_pages: paged.total_pages,
         })
+    }
+
+    pub async fn query_income_and_expense(
+        &self,
+        db: &DatabaseConnection,
+        start_date: String,
+        end_date: String,
+    ) -> MijiResult<IncomeExpense> {
+        let mut query = entity::transactions::Entity::find()
+            .select_only()
+            .filter(TransactionColumn::IsDeleted.eq(0))
+            .filter(TransactionColumn::Date.gte(start_date))
+            .filter(TransactionColumn::Date.lt(end_date));
+
+        // Total income and expense
+        let total_income_expr = Expr::val(0.0).add(
+            SimpleExpr::FunctionCall(Func::coalesce(vec![
+                SimpleExpr::FunctionCall(Func::sum(
+                    Expr::case(
+                        Condition::all().add(TransactionColumn::TransactionType.eq("Income")),
+                        Expr::col(TransactionColumn::Amount),
+                    )
+                    .finally(0.0)
+                    .cast_as(Alias::new("DECIMAL(16,4)")),
+                )),
+                Expr::val(0.0).into(),
+            ]))
+            .cast_as(Alias::new("DECIMAL(16,4)")),
+        );
+
+        let total_expense_expr = Expr::val(0.0).add(
+            SimpleExpr::FunctionCall(Func::coalesce(vec![
+                SimpleExpr::FunctionCall(Func::sum(
+                    Expr::case(
+                        Condition::all().add(TransactionColumn::TransactionType.eq("Expense")),
+                        Expr::col(TransactionColumn::Amount),
+                    )
+                    .finally(0.0)
+                    .cast_as(Alias::new("DECIMAL(16,4)")),
+                )),
+                Expr::val(0.0).into(),
+            ]))
+            .cast_as(Alias::new("DECIMAL(16,4)")),
+        );
+
+        // Transfer income and expense
+        let transfer_income_expr = Expr::val(0.0).add(
+            SimpleExpr::FunctionCall(Func::coalesce(vec![
+                SimpleExpr::FunctionCall(Func::sum(
+                    Expr::case(
+                        Condition::all()
+                            .add(TransactionColumn::TransactionType.eq("Income"))
+                            .add(TransactionColumn::Category.eq("Transfer")),
+                        Expr::col(TransactionColumn::Amount),
+                    )
+                    .finally(0.0)
+                    .cast_as(Alias::new("DECIMAL(16,4)")),
+                )),
+                Expr::val(0.0).into(),
+            ]))
+            .cast_as(Alias::new("DECIMAL(16,4)")),
+        );
+
+        let transfer_expense_expr = Expr::val(0.0).add(
+            SimpleExpr::FunctionCall(Func::coalesce(vec![
+                SimpleExpr::FunctionCall(Func::sum(
+                    Expr::case(
+                        Condition::all()
+                            .add(TransactionColumn::TransactionType.eq("Expense"))
+                            .add(TransactionColumn::Category.eq("Transfer")),
+                        Expr::col(TransactionColumn::Amount),
+                    )
+                    .finally(0.0)
+                    .cast_as(Alias::new("DECIMAL(16,4)")),
+                )),
+                Expr::val(0.0).into(),
+            ]))
+            .cast_as(Alias::new("DECIMAL(16,4)")),
+        );
+
+        query = query
+            .expr_as(total_income_expr, "total")
+            .expr_as(total_expense_expr, "total_expense")
+            .expr_as(transfer_income_expr, "transfer_income")
+            .expr_as(transfer_expense_expr, "transfer_expense");
+
+        // Add account type specific sums
+        for config in TRANSACTION_TYPE_CONFIGS.iter() {
+            let income_expr = Expr::val(0.0).add(
+                SimpleExpr::FunctionCall(Func::coalesce(vec![
+                    SimpleExpr::FunctionCall(Func::sum(
+                        Expr::case(
+                            Condition::all()
+                                .add(TransactionColumn::TransactionType.eq("Income"))
+                                .add(TransactionColumn::ActualPayerAccount.eq(config.account_type)),
+                            Expr::col(TransactionColumn::Amount),
+                        )
+                        .finally(0.0)
+                        .cast_as(Alias::new("DECIMAL(16,4)")),
+                    )),
+                    Expr::val(0.0).into(),
+                ]))
+                .cast_as(Alias::new("DECIMAL(16,4)")),
+            );
+
+            let expense_expr = Expr::val(0.0).add(
+                SimpleExpr::FunctionCall(Func::coalesce(vec![
+                    SimpleExpr::FunctionCall(Func::sum(
+                        Expr::case(
+                            Condition::all()
+                                .add(TransactionColumn::TransactionType.eq("Expense"))
+                                .add(TransactionColumn::ActualPayerAccount.eq(config.account_type)),
+                            Expr::col(TransactionColumn::Amount),
+                        )
+                        .finally(0.0)
+                        .cast_as(Alias::new("DECIMAL(16,4)")),
+                    )),
+                    Expr::val(0.0).into(),
+                ]))
+                .cast_as(Alias::new("DECIMAL(16,4)")),
+            );
+
+            query = query
+                .expr_as(income_expr, format!("{}_income", config.field))
+                .expr_as(expense_expr, format!("{}_expense", config.field));
+        }
+
+        let result = query
+            .into_model::<IncomeExpenseRaw>()
+            .one(db)
+            .await
+            .map_err(AppError::from)?
+            .map(IncomeExpense::from)
+            .unwrap_or(IncomeExpense::default());
+
+        Ok(result)
     }
 }
 

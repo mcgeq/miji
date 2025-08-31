@@ -1,6 +1,5 @@
 import { invokeCommand } from '@/types/api';
 import { DateUtils } from '@/utils/date';
-import { db } from '@/utils/dbUtils';
 import { Lg } from '@/utils/debugLog';
 import { BaseMapper } from './baseManager';
 import type { PagedResult } from './baseManager';
@@ -131,7 +130,7 @@ export class TransactionMapper extends BaseMapper<
   ): Promise<[Transaction, Transaction]> {
     try {
       const result = await invokeCommand<[Transaction, Transaction]>(
-        'trans_transfer_update_with_relations',
+        'transaction_transfer_update',
         { serialNum, transfer },
       );
       return result;
@@ -143,7 +142,7 @@ export class TransactionMapper extends BaseMapper<
   async transferDelete(serialNum: string): Promise<[Transaction, Transaction]> {
     try {
       const result = await invokeCommand<[Transaction, Transaction]>(
-        'trans_transfer_delete_with_relations',
+        'transaction_transfer_delete',
         { serialNum },
       );
       return result;
@@ -184,49 +183,19 @@ export class TransactionMapper extends BaseMapper<
     return this.queryIncomeAndExpense(startDate, endDate);
   }
 
-  /**
-   * 构建删除交易的 SQL 操作
-   * @param serialNum 交易序列号
-   */
-  buildDeleteOperation(serialNum: string): { sql: string; params: any[] } {
-    return {
-      sql: 'DELETE FROM transactions WHERE serial_num = ?',
-      params: [serialNum],
-    };
-  }
-
   private async queryIncomeAndExpense(
     startDate: string,
     endDate: string,
   ): Promise<IncomeExpense> {
-    const query = `
-    SELECT
-      SUM(CASE WHEN transaction_type = 'Income' THEN amount ELSE 0 END) AS totalIncome,
-      SUM(CASE WHEN transaction_type = 'Expense' THEN amount ELSE 0 END) AS totalExpense,
-      SUM(CASE
-            WHEN category = 'Transfer' AND transaction_type = 'Income' THEN amount ELSE 0 END) AS transferIncome,
-      SUM(CASE
-            WHEN category = 'Transfer' AND transaction_type = 'Expense' THEN amount ELSE 0 END) AS transferExpense
-    FROM transactions
-    WHERE date >= ? AND date < ? and is_deleted = 0;
-  `;
     try {
-      const result = await db.select(query, [startDate, endDate], false);
-      const row = result[0];
-      return {
-        income: {
-          total: row?.totalIncome || 0,
-          transfer: row?.transferIncome || 0,
+      const result = await invokeCommand<IncomeExpense>(
+        'transaction_query_income_and_expense',
+        {
+          startDate,
+          endDate,
         },
-        expense: {
-          total: row?.totalExpense || 0,
-          transfer: row?.transferExpense || 0,
-        },
-        transfer: {
-          income: 0,
-          expense: 0,
-        },
-      };
+      );
+      return result;
     } catch (error) {
       this.handleError('queryIncomeAndExpense', error);
     }

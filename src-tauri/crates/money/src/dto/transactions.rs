@@ -3,11 +3,11 @@ use std::{fmt, str::FromStr};
 use chrono::NaiveDate;
 use common::{
     BusinessCode,
-    crud::service::{parse_json_field, serialize_enum},
+    crud::service::{parse_enum_filed, parse_json_field, serialize_enum},
     error::AppError,
     utils::{date::DateUtils, uuid::McgUuid},
 };
-use sea_orm::{ActiveValue::Set, prelude::Decimal};
+use sea_orm::{ActiveValue::Set, FromQueryResult, prelude::Decimal};
 use serde::{Deserialize, Serialize};
 use validator::Validate;
 
@@ -15,6 +15,105 @@ use crate::dto::{
     account::{AccountResponseWithRelations, AccountType, AccountWithRelations, CurrencyInfo},
     family_member::FamilyMemberResponse,
 };
+
+#[derive(Debug, Deserialize, Serialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct IncomeExpense {
+    pub income: AccountTypeSummary,
+    pub expense: AccountTypeSummary,
+    pub transfer: TransferSummary,
+}
+
+#[derive(Debug, Deserialize, Serialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct AccountTypeSummary {
+    pub total: Decimal,
+    pub transfer: Decimal,
+    #[serde(default)]
+    pub bank_savings: Decimal,
+    #[serde(default)]
+    pub cash: Decimal,
+    #[serde(default)]
+    pub credit_card: Decimal,
+    #[serde(default)]
+    pub investment: Decimal,
+    #[serde(default)]
+    pub alipay: Decimal,
+    #[serde(default)]
+    pub wechat: Decimal,
+    #[serde(default)]
+    pub cloud_quick_pass: Decimal,
+    #[serde(default)]
+    pub other: Decimal,
+}
+
+#[derive(Debug, Deserialize, Serialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct TransferSummary {
+    pub income: Decimal,
+    pub expense: Decimal,
+}
+
+// Intermediate struct to map flat query results
+#[derive(Debug, Serialize, Deserialize, FromQueryResult, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct IncomeExpenseRaw {
+    total: Decimal,
+    total_expense: Decimal,
+    transfer_income: Decimal,
+    transfer_expense: Decimal,
+    bank_savings_income: Decimal,
+    bank_savings_expense: Decimal,
+    cash_income: Decimal,
+    cash_expense: Decimal,
+    credit_card_income: Decimal,
+    credit_card_expense: Decimal,
+    investment_income: Decimal,
+    investment_expense: Decimal,
+    alipay_income: Decimal,
+    alipay_expense: Decimal,
+    wechat_income: Decimal,
+    wechat_expense: Decimal,
+    cloud_quick_pass_income: Decimal,
+    cloud_quick_pass_expense: Decimal,
+    other_income: Decimal,
+    other_expense: Decimal,
+}
+
+impl From<IncomeExpenseRaw> for IncomeExpense {
+    fn from(raw: IncomeExpenseRaw) -> Self {
+        IncomeExpense {
+            income: AccountTypeSummary {
+                total: raw.total,
+                transfer: raw.transfer_income,
+                bank_savings: raw.bank_savings_income,
+                cash: raw.cash_income,
+                credit_card: raw.credit_card_income,
+                investment: raw.investment_income,
+                alipay: raw.alipay_income,
+                wechat: raw.wechat_income,
+                cloud_quick_pass: raw.cloud_quick_pass_income,
+                other: raw.other_income,
+            },
+            expense: AccountTypeSummary {
+                total: raw.total_expense,
+                transfer: raw.transfer_expense,
+                bank_savings: raw.bank_savings_expense,
+                cash: raw.cash_expense,
+                credit_card: raw.credit_card_expense,
+                investment: raw.investment_expense,
+                alipay: raw.alipay_expense,
+                wechat: raw.wechat_expense,
+                cloud_quick_pass: raw.cloud_quick_pass_expense,
+                other: raw.other_expense,
+            },
+            transfer: TransferSummary {
+                income: raw.transfer_income,
+                expense: raw.transfer_expense,
+            },
+        }
+    }
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "PascalCase")] // 注意要和前端 z.enum 值匹配大小写
@@ -115,12 +214,30 @@ impl fmt::Display for PaymentMethod {
     }
 }
 
+impl FromStr for PaymentMethod {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "Savings" => Ok(PaymentMethod::Savings),
+            "Cash" => Ok(PaymentMethod::Cash),
+            "BankTransfer" => Ok(PaymentMethod::BankTransfer),
+            "CreditCard" => Ok(PaymentMethod::CreditCard),
+            "WeChat" => Ok(PaymentMethod::WeChat),
+            "Alipay" => Ok(PaymentMethod::Alipay),
+            "CloudQuickPass" => Ok(PaymentMethod::CloudQuickPass),
+            "Other" => Ok(PaymentMethod::Other),
+            _ => Err(format!("Unknown PaymentMethod: {}", s)),
+        }
+    }
+}
+
 #[derive(Debug, Clone, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CreateTransactionRequest {
     pub transaction_type: TransactionType,
     pub transaction_status: TransactionStatus,
-    #[validate(custom(function = "validate_date"))]
+    #[validate(custom(function = "validate_date_time"))]
     pub date: String,
 
     #[validate(custom(function = "validate_amount"))]
@@ -137,6 +254,9 @@ pub struct CreateTransactionRequest {
 
     #[validate(length(equal = 38))]
     pub account_serial_num: String,
+
+    #[validate(length(equal = 38))]
+    pub to_account_serial_num: Option<String>,
 
     #[validate(length(min = 1, max = 64))]
     pub category: String,
@@ -176,6 +296,7 @@ impl TryFrom<CreateTransactionRequest> for entity::transactions::ActiveModel {
             description: Set(value.description),
             notes: Set(value.notes),
             account_serial_num: Set(value.account_serial_num),
+            to_account_serial_num: Set(value.to_account_serial_num),
             category: Set(value.category),
             sub_category: Set(value.sub_category),
             tags: Set(value.tags.map(|v| serde_json::to_string(&v).unwrap())),
@@ -198,7 +319,7 @@ pub struct UpdateTransactionRequest {
     pub transaction_type: Option<TransactionType>,
     pub transaction_status: Option<TransactionStatus>,
 
-    #[validate(custom(function = "validate_date"))]
+    #[validate(custom(function = "validate_date_time"))]
     pub date: Option<String>,
 
     #[validate(custom(function = "validate_amount"))]
@@ -213,8 +334,11 @@ pub struct UpdateTransactionRequest {
     #[validate(length(max = 1024))]
     pub notes: Option<String>,
 
-    #[validate(length(min = 1, max = 64))]
+    #[validate(length(equal = 38))]
     pub account_serial_num: Option<String>,
+
+    #[validate(length(equal = 38))]
+    pub to_account_serial_num: Option<String>,
 
     #[validate(length(min = 1, max = 64))]
     pub category: Option<String>,
@@ -275,6 +399,9 @@ impl TryFrom<UpdateTransactionRequest> for entity::transactions::ActiveModel {
         if let Some(account_serial_num) = value.account_serial_num {
             model.account_serial_num = Set(account_serial_num);
         }
+        if let Some(to_account_serial_num) = value.to_account_serial_num {
+            model.to_account_serial_num = Set(Some(to_account_serial_num));
+        }
         if let Some(category) = value.category {
             model.category = Set(category);
         }
@@ -332,7 +459,7 @@ pub struct TransferRequest {
 
     pub date: Option<String>,
     #[validate(length(min = 0, max = 1024))]
-    pub description: String,
+    pub description: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -356,6 +483,7 @@ pub struct TransactionResponse {
     pub description: String,
     pub notes: Option<String>,
     pub account_serial_num: String,
+    pub to_account_serial_num: Option<String>,
     pub category: String,
     pub sub_category: Option<String>,
     pub tags: Vec<String>,
@@ -376,12 +504,12 @@ impl From<TransactionWithRelations> for TransactionResponse {
         let family_member = model.family_member;
         Self {
             serial_num: trans.serial_num,
-            transaction_type: parse_json_field(
+            transaction_type: parse_enum_filed(
                 &trans.transaction_type,
                 "transaction_type",
                 TransactionType::Income,
             ),
-            transaction_status: parse_json_field(
+            transaction_status: parse_enum_filed(
                 &trans.transaction_status,
                 "transaction_status",
                 TransactionStatus::Pending,
@@ -393,6 +521,7 @@ impl From<TransactionWithRelations> for TransactionResponse {
             description: trans.description,
             notes: trans.notes,
             account_serial_num: trans.account_serial_num,
+            to_account_serial_num: trans.to_account_serial_num,
             category: trans.category,
             sub_category: trans.sub_category,
             tags: trans
@@ -410,12 +539,12 @@ impl From<TransactionWithRelations> for TransactionResponse {
                         .collect::<Vec<FamilyMemberResponse>>(),
                 )
             },
-            payment_method: parse_json_field(
+            payment_method: parse_enum_filed(
                 &trans.payment_method,
                 "payment_method",
                 PaymentMethod::Other,
             ),
-            actual_payer_account: parse_json_field(
+            actual_payer_account: parse_enum_filed(
                 &trans.actual_payer_account,
                 "actual_payer_account",
                 AccountType::Savings,
@@ -438,8 +567,15 @@ fn validate_amount(amount: &Decimal) -> Result<(), validator::ValidationError> {
 }
 
 // 日期格式验证 - 修复参数类型
+#[allow(dead_code)]
 fn validate_date(date: &str) -> Result<(), validator::ValidationError> {
     NaiveDate::parse_from_str(date, "%Y-%m-%d")
+        .map(|_| ())
+        .map_err(|_| validator::ValidationError::new("invalid_date_format"))
+}
+
+fn validate_date_time(date: &str) -> Result<(), validator::ValidationError> {
+    NaiveDate::parse_from_str(date, "%Y-%m-%dT%H:%M:%S%.f%:z")
         .map(|_| ())
         .map_err(|_| validator::ValidationError::new("invalid_date_format"))
 }

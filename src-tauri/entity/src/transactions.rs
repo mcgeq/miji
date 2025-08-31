@@ -18,6 +18,7 @@ pub struct Model {
     #[sea_orm(column_type = "Text", nullable)]
     pub notes: Option<String>,
     pub account_serial_num: String,
+    pub to_account_serial_num: Option<String>,
     pub category: String,
     pub sub_category: Option<String>,
     pub tags: Option<String>,

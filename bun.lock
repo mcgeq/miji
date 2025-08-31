@@ -17,6 +17,7 @@
         "@tauri-store/vue": "^1.0.0",
         "@unocss/reset": "^66.3.3",
         "@vee-validate/zod": "^4.15.1",
+        "@vuepic/vue-datepicker": "^11.0.2",
         "@vueuse/core": "^13.5.0",
         "date-fns": "^4.1.0",
         "lru-cache": "^11.1.0",
@@ -585,6 +586,8 @@
     "@vue/server-renderer": ["@vue/server-renderer@3.5.17", "https://mirrors.cloud.tencent.com/npm/@vue/server-renderer/-/server-renderer-3.5.17.tgz", { "dependencies": { "@vue/compiler-ssr": "3.5.17", "@vue/shared": "3.5.17" }, "peerDependencies": { "vue": "3.5.17" } }, "sha512-BOHhm8HalujY6lmC3DbqF6uXN/K00uWiEeF22LfEsm9Q93XeJ/plHTepGwf6tqFcF7GA5oGSSAAUock3VvzaCA=="],
 
     "@vue/shared": ["@vue/shared@3.5.17", "https://mirrors.cloud.tencent.com/npm/@vue/shared/-/shared-3.5.17.tgz", {}, "sha512-CabR+UN630VnsJO/jHWYBC1YVXyMq94KKp6iF5MQgZJs5I8cmjw6oVMO1oDbtBkENSHSSn/UadWlW/OAgdmKrg=="],
+
+    "@vuepic/vue-datepicker": ["@vuepic/vue-datepicker@11.0.2", "", { "dependencies": { "date-fns": "^4.1.0" }, "peerDependencies": { "vue": ">=3.3.0" } }, "sha512-uHh78mVBXCEjam1uVfTzZ/HkyDwut/H6b2djSN9YTF+l/EA+XONfdCnOVSi1g+qVGSy65DcQAwyBNidAssnudQ=="],
 
     "@vueuse/core": ["@vueuse/core@13.5.0", "https://mirrors.cloud.tencent.com/npm/@vueuse/core/-/core-13.5.0.tgz", { "dependencies": { "@types/web-bluetooth": "^0.0.21", "@vueuse/metadata": "13.5.0", "@vueuse/shared": "13.5.0" }, "peerDependencies": { "vue": "^3.5.0" } }, "sha512-wV7z0eUpifKmvmN78UBZX8T7lMW53Nrk6JP5+6hbzrB9+cJ3jr//hUlhl9TZO/03bUkMK6gGkQpqOPWoabr72g=="],
 

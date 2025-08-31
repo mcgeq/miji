@@ -9,6 +9,8 @@
 // Modified   By:  mcgeq <mcgeq@outlook.com>
 // -----------------------------------------------------------------------------
 
+import { format } from 'date-fns';
+
 export class DateUtils {
   /**
    * 获取当前本地时间的ISO格式字符串，可选偏移时间。
@@ -27,7 +29,7 @@ export class DateUtils {
     seconds?: number;
     milliseconds?: number;
   }): string {
-    return DateUtils.generateISOWithOffset(options, () => { });
+    return DateUtils.generateISOWithOffset(options, () => {});
   }
 
   /**
@@ -242,6 +244,14 @@ export class DateUtils {
     return `${dt[0]} ${t}`;
   }
 
+  static formatTime(dateStr: string) {
+    return new Date(dateStr).toLocaleTimeString('zh-CN', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    });
+  }
+
   /**
    * 验证给定字符串是否为合法日期
    * @param dateString - 日期字符串（推荐 ISO 格式，如 "YYYY-MM-DD"）
@@ -316,7 +326,7 @@ export class DateUtils {
       seconds?: number;
       milliseconds?: number;
     } = {},
-    setTimeFn: (date: Date) => void = () => { },
+    setTimeFn: (date: Date) => void = () => {},
   ): string {
     let now = new Date();
 
@@ -385,5 +395,12 @@ export class DateUtils {
     const offsetHours = String(Math.floor(absOffset / 60)).padStart(2, '0');
     const offsetMins = String(absOffset % 60).padStart(2, '0');
     return `${sign}${offsetHours}:${offsetMins}`;
+  }
+
+  static formatDateToBackend(date: Date): string {
+    // 格式化到毫秒
+    const formatted = format(date, "yyyy-MM-dd'T'HH:mm:ss.SSSxxx");
+    // 把 .SSS 变成 .SSSSSS（微秒），补 3 个 0
+    return formatted.replace(/(\.\d{3})/, m => `${m}000`);
   }
 }

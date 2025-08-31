@@ -64,6 +64,7 @@ impl MigrationTrait for Migration {
                             .string_len(38)
                             .not_null(),
                     )
+                    .col(ColumnDef::new(Transactions::ToAccountSerialNum).string_len(38))
                     .col(
                         ColumnDef::new(Transactions::Category)
                             .string()

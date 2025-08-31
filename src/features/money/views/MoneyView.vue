@@ -382,21 +382,22 @@ async function deleteTransaction(transaction: Transaction) {
 async function saveTransfer(transfer: TransferCreate) {
   try {
     await moneyStore.createTransfer(transfer);
+    toast.success('转账成功');
     await finalizeTransactionChange();
   } catch (err) {
     Lg.e('saveTransfer', err);
-    toast.error('转账保存失败');
+    toast.error('转账失败');
   }
 }
 
 async function updateTransfer(serialNum: string, transfer: TransferCreate) {
   try {
     await moneyStore.updateTransfer(serialNum, transfer);
-    toast.success('更新成功');
+    toast.success('转账更新成功');
     await finalizeTransactionChange();
   } catch (err) {
     Lg.e('updateTransfer', err);
-    toast.error('转账保存失败');
+    toast.error('转账失败');
   }
 }
 

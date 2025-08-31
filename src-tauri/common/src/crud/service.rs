@@ -716,6 +716,18 @@ where
     value.to_string()
 }
 
+pub fn parse_enum_filed<T>(value: &str, field_name: &str, default: T) -> T
+where
+    T: FromStr,
+    <T as FromStr>::Err: std::fmt::Display,
+{
+    value.parse().unwrap_or_else(|e| {
+        #[cfg(debug_assertions)]
+        error!("Failed to parse {} '{}': {}", field_name, value, e);
+        default
+    })
+}
+
 pub fn parse_json_field<T: serde::de::DeserializeOwned>(
     value: &str,
     field_name: &str,

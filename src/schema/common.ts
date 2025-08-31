@@ -321,18 +321,27 @@ export interface DefaultColors {
 }
 
 export interface IncomeExpense {
-  income: {
-    total: number;
-    transfer: number;
-  };
-  expense: {
-    total: number;
-    transfer: number;
-  };
-  transfer?: {
-    income: number;
-    expense: number;
-  };
+  income: AccountTypeSummary;
+  expense: AccountTypeSummary;
+  transfer: TransferSummary;
+}
+
+export interface AccountTypeSummary {
+  total: number;
+  transfer: number;
+  bankSavings?: number;
+  cash?: number;
+  creditCard?: number;
+  investment?: number;
+  alipay?: number;
+  wechat?: number;
+  cloudQuickPass?: number;
+  other?: number;
+}
+
+export interface TransferSummary {
+  income: number;
+  expense: number;
 }
 
 export const AccountBalanceSummarySchema = z.object({
