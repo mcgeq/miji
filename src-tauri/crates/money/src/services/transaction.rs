@@ -139,6 +139,7 @@ impl TransactionService {
     ) -> MijiResult<entity::account::Model> {
         let original_account = account.clone();
         let mut account_active = account.clone().into_active_model();
+        account_active.serial_num = Set(account.serial_num.clone());
         account_active.balance = Set(new_balance);
         let updated_account = account_active.update(tx).await?;
         self.account_update_log(tx, &updated_account, &original_account, operation_type)
@@ -224,17 +225,17 @@ impl TransactionService {
 
         let tx = db.begin().await?;
 
-        // Step 2: Fetch original transfer pair
+        // Step 2: Fetch original transfer pair Model
         let (original_outgoing, original_incoming) =
             self.fetch_related_transfer(&tx, transaction_id).await?;
 
-        if original_incoming.category != "Transfer" {
+        if original_incoming.category != "Transfer" || TransactionType::from_str(&original_incoming.transaction_type)?  != TransactionType::Income{
             return Err(AppError::simple(
                 BusinessCode::InvalidParameter,
                 "Only Income Transfer transactions can be updated",
             ));
         }
-
+        
         // Step 3: Validate refund amount
         let original_amount = original_outgoing.amount.abs();
         let refund_amount = data.amount;
@@ -244,16 +245,8 @@ impl TransactionService {
                 "Refund amount cannot exceed original transaction amount",
             ));
         }
-
-        // Step 4: Fetch accounts
-        let from_account = self.fetch_account(&tx, &data.account_serial_num).await?;
-        let to_account = self.fetch_account(&tx, &data.to_account_serial_num).await?;
-
-        // Step 5: Revert original balances (完全回滚原交易金额)
-        self.revert_balances(&tx, &original_outgoing, &original_incoming, original_amount)
-            .await?;
-
-        // Step 6: Re-fetch from_account for balance check
+        
+        // Step 4: Re-fetch from_account for balance check
         let from_account = self.fetch_account(&tx, &data.account_serial_num).await?;
         if from_account.balance < refund_amount {
             return Err(MoneyError::InsufficientFunds {
@@ -263,31 +256,52 @@ impl TransactionService {
             .into());
         }
 
-        // Step 7: Apply refund_amount to accounts
+        // Step 5: Fetch accounts
+        // let from_account = self.fetch_account(&tx, &data.account_serial_num).await?;
+        let to_account = self.fetch_account(&tx, &data.to_account_serial_num).await?;
+
+        // Step 6: Apply refund_amount to accounts
         self.apply_balances(&tx, &from_account, &to_account, refund_amount)
             .await?;
 
-        // Step 8: Build and update transaction requests
-        let mut data_clone = data.clone();
-        data_clone.amount = refund_amount; // 使用退金额
+        // Step 7: Update original_incoming refund_amount and notes
+        let update_at = DateUtils::local_rfc3339();
+        let refund_amount_all = original_incoming.refund_amount + data.amount;
+        let active_original_incoming = entity::transactions::ActiveModel {
+            serial_num: Set(original_incoming.serial_num.clone()),
+            refund_amount: Set(refund_amount_all),
+            notes: Set(Some(format!("退 {refund_amount_all}"))),
+            updated_at: Set(Some(update_at.clone())),
+            ..Default::default()
+        };
+        let update_original_incoming = active_original_incoming.update(&tx).await?;
+        info!("Original_incoming update {:?}", update_original_incoming);
+        let refund_amount_all = original_outgoing.refund_amount + data.amount;
+        let active_original_outgoing = entity::transactions::ActiveModel {
+            serial_num: Set(original_outgoing.serial_num.clone()),
+            refund_amount: Set(refund_amount_all),
+            notes: Set(Some(format!("进 {refund_amount_all}"))),
+            updated_at: Set(Some(update_at)),
+            ..Default::default()
+        };
+        let update_original_outgoing = active_original_outgoing.update(&tx).await?;
+        info!("Original_incoming update {:?}", update_original_outgoing);
 
+        // Step 8: Build and update transaction requests
         let (mut from_request, mut to_request) =
-            self.build_transfer_requests(&data_clone, &from_account, &to_account)?;
+            self.build_transfer_requests(&data, &from_account, &to_account)?;
         from_request.transaction_status = TransactionStatus::Completed;
         to_request.transaction_status = TransactionStatus::Completed;
         from_request.related_transaction_serial_num = Some(original_incoming.serial_num.clone());
         to_request.related_transaction_serial_num = Some(original_outgoing.serial_num.clone());
 
         let mut from_active_model = entity::transactions::ActiveModel::try_from(from_request)?;
-        from_active_model.serial_num = Set(original_outgoing.serial_num.clone());
-        from_active_model.created_at = Set(original_outgoing.created_at.clone());
-
+        from_active_model.related_transaction_serial_num = Set(original_incoming.related_transaction_serial_num.clone());
         let mut to_active_model = entity::transactions::ActiveModel::try_from(to_request)?;
-        to_active_model.serial_num = Set(original_incoming.serial_num.clone());
-        to_active_model.created_at = Set(original_incoming.created_at.clone());
+        to_active_model.related_transaction_serial_num = Set(original_incoming.related_transaction_serial_num.clone());
 
-        let updated_outgoing = from_active_model.update(&tx).await?;
-        let updated_incoming = to_active_model.update(&tx).await?;
+        let updated_outgoing = from_active_model.insert(&tx).await?;
+        let updated_incoming = to_active_model.insert(&tx).await?;
 
         // Step 9: Log updates
         self.transaction_operation_log(
@@ -672,9 +686,9 @@ impl TransactionService {
                 }
             }
             if from.is_empty() && to.is_empty() {
-                format!("冲正：{}", desc) // 如果无法解析，则直接加“冲正：”
+                format!("冲正：{desc}") // 如果无法解析，则直接加“冲正：”
             } else {
-                format!("冲正：转账来自 {} 转账至 {}", from, to)
+                format!("冲正：转账来自 {from} 转账至 {to}")
             }
         }
 
@@ -1150,6 +1164,7 @@ impl TransactionService {
         query: PagedQuery<TransactionFilter>,
     ) -> MijiResult<PagedResult<TransactionWithRelations>> {
         let paged = self.inner.list_paged(db, query).await?;
+        info!("trans_list_paged_with_relations {:?}", paged.rows.clone());
         let mut rows_with_relations = Vec::with_capacity(paged.rows.len());
         for m in paged.rows {
             let tx_with_rel = self.converter().model_to_with_relations(db, m).await?;
@@ -1313,6 +1328,6 @@ pub fn get_transaction_service() -> TransactionService {
 
 fn parse_json<T: serde::de::DeserializeOwned>(s: &str, field: &str) -> MijiResult<T> {
     serde_json::from_str(s).map_err(|e| {
-        AppError::internal_server_error(format!("Failed to parse JSON field '{}': {}", field, e))
+        AppError::internal_server_error(format!("Failed to parse JSON field '{field}': {e}"))
     })
 }

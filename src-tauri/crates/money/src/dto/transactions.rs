@@ -130,7 +130,7 @@ impl fmt::Display for TransactionStatus {
             TransactionStatus::Completed => "Completed",
             TransactionStatus::Reversed => "Reversed",
         };
-        write!(f, "{}", s)
+        write!(f, "{s}")
     }
 }
 
@@ -144,7 +144,7 @@ impl FromStr for TransactionStatus {
             "Reversed" => Ok(TransactionStatus::Reversed),
             _ => Err(AppError::simple(
                 BusinessCode::InvalidParameter,
-                format!("无效的交易状态: {}", s),
+                format!("无效的交易状态: {s}"),
             )),
         }
     }
@@ -165,7 +165,7 @@ impl fmt::Display for TransactionType {
             TransactionType::Expense => "Expense",
             TransactionType::Transfer => "Transfer",
         };
-        write!(f, "{}", s)
+        write!(f, "{s}")
     }
 }
 
@@ -179,7 +179,7 @@ impl FromStr for TransactionType {
             "Transfer" => Ok(TransactionType::Transfer),
             _ => Err(AppError::simple(
                 BusinessCode::InvalidParameter,
-                format!("无效的交易类型: {}", s),
+                format!("无效的交易类型: {s}"),
             )),
         }
     }
@@ -210,7 +210,7 @@ impl fmt::Display for PaymentMethod {
             PaymentMethod::CloudQuickPass => "CloudQuickPass",
             PaymentMethod::Other => "Other",
         };
-        write!(f, "{}", s)
+        write!(f, "{s}")
     }
 }
 
@@ -227,7 +227,7 @@ impl FromStr for PaymentMethod {
             "Alipay" => Ok(PaymentMethod::Alipay),
             "CloudQuickPass" => Ok(PaymentMethod::CloudQuickPass),
             "Other" => Ok(PaymentMethod::Other),
-            _ => Err(format!("Unknown PaymentMethod: {}", s)),
+            _ => Err(format!("Unknown PaymentMethod: {s}")),
         }
     }
 }
@@ -292,6 +292,7 @@ impl TryFrom<CreateTransactionRequest> for entity::transactions::ActiveModel {
             transaction_status: Set(serialize_enum(&value.transaction_status)),
             date: Set(value.date),
             amount: Set(value.amount),
+            refund_amount: Set(Decimal::ZERO),
             currency: Set(value.currency),
             description: Set(value.description),
             notes: Set(value.notes),
@@ -478,6 +479,7 @@ pub struct TransactionResponse {
     pub transaction_status: TransactionStatus,
     pub date: String,
     pub amount: Decimal,
+    pub refund_amount: Decimal,
     pub account: AccountResponseWithRelations,
     pub currency: CurrencyInfo,
     pub description: String,
@@ -516,6 +518,7 @@ impl From<TransactionWithRelations> for TransactionResponse {
             ),
             date: trans.date,
             amount: trans.amount,
+            refund_amount: trans.refund_amount,
             account: AccountResponseWithRelations::from(acct),
             currency: CurrencyInfo::from(cny),
             description: trans.description,

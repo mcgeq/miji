@@ -12,6 +12,7 @@ pub struct Model {
     pub transaction_status: String,
     pub date: String,
     pub amount: Decimal,
+    pub refund_amount: Decimal,
     pub currency: String,
     #[sea_orm(column_type = "Text")]
     pub description: String,

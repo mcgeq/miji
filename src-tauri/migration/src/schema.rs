@@ -279,6 +279,7 @@ pub enum Transactions {
     TransactionStatus,
     Date,
     Amount,
+    RefundAmount,
     Currency,
     Description,
     Notes,

@@ -19,6 +19,7 @@ export const TransactionSchema = z.object({
   transactionStatus: TransactionStatusSchema,
   date: DateTimeSchema,
   amount: z.number(),
+  refundAmount: z.number().default(0.0),
   account: AccountSchema,
   currency: CurrencySchema,
   description: z.string().max(1000).optional(),

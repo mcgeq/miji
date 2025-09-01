@@ -41,7 +41,8 @@ impl MigrationTrait for Migration {
                             ])),
                     )
                     .col(ColumnDef::new(Transactions::Date).string().not_null())
-                    .col(ColumnDef::new(Transactions::Amount).decimal().not_null())
+                    .col(ColumnDef::new(Transactions::Amount).decimal_len(16, 4).not_null())
+                    .col(ColumnDef::new(Transactions::RefundAmount).decimal_len(16, 4).not_null().default(0.0))
                     .col(
                         ColumnDef::new(Transactions::Currency)
                             .string()
