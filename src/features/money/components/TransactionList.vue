@@ -157,11 +157,9 @@ async function loadTransactions() {
       },
     };
     const result = await moneyStore.getTransactions(params);
-    transactions.value = result.items;
-    pagination.value.totalItems = result.total;
-    pagination.value.totalPages = Math.ceil(
-      result.total / pagination.value.pageSize,
-    );
+    transactions.value = result.rows;
+    pagination.value.totalItems = result.totalCount;
+    pagination.value.totalPages = result.totalPages;
   } catch (error) {
     transactions.value = [];
     pagination.value.totalItems = 0;

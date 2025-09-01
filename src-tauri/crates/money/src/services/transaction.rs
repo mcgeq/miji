@@ -255,50 +255,50 @@ impl TransactionService {
             }
             .into());
         }
-
-        // Step 5: Fetch accounts
-        // let from_account = self.fetch_account(&tx, &data.account_serial_num).await?;
         let to_account = self.fetch_account(&tx, &data.to_account_serial_num).await?;
 
-        // Step 6: Apply refund_amount to accounts
+        // Step 5: Apply refund_amount to accounts
         self.apply_balances(&tx, &from_account, &to_account, refund_amount)
             .await?;
 
-        // Step 7: Update original_incoming refund_amount and notes
+        // Step 6: Update original_incoming refund_amount and notes
         let update_at = DateUtils::local_rfc3339();
-        let refund_amount_all = original_incoming.refund_amount + data.amount;
-        let active_original_incoming = entity::transactions::ActiveModel {
-            serial_num: Set(original_incoming.serial_num.clone()),
-            refund_amount: Set(refund_amount_all),
-            notes: Set(Some(format!("退 {refund_amount_all}"))),
-            updated_at: Set(Some(update_at.clone())),
-            ..Default::default()
+        let update_refund = |model: &entity::transactions::Model, prefix: &str| {
+            let refund_amount_all = model.refund_amount + data.amount;
+            entity::transactions::ActiveModel {
+                serial_num: Set(model.serial_num.clone()),
+                refund_amount: Set(refund_amount_all),
+                notes: Set(Some(format!("{prefix} {refund_amount_all}"))),
+                updated_at: Set(Some(update_at.clone())),
+                ..Default::default()
+            }
         };
-        let update_original_incoming = active_original_incoming.update(&tx).await?;
-        info!("Original_incoming update {:?}", update_original_incoming);
-        let refund_amount_all = original_outgoing.refund_amount + data.amount;
-        let active_original_outgoing = entity::transactions::ActiveModel {
-            serial_num: Set(original_outgoing.serial_num.clone()),
-            refund_amount: Set(refund_amount_all),
-            notes: Set(Some(format!("进 {refund_amount_all}"))),
-            updated_at: Set(Some(update_at)),
-            ..Default::default()
-        };
-        let update_original_outgoing = active_original_outgoing.update(&tx).await?;
-        info!("Original_incoming update {:?}", update_original_outgoing);
+
+        let update_original_incoming =  update_refund(&original_incoming, "退").update(&tx).await?;
+        info!("Original_outgoing update {:?}", update_original_incoming);
+        let update_original_outgoing =  update_refund(&original_outgoing, "进").update(&tx).await?;
+        info!("Original_outgoing update {:?}", update_original_outgoing);
 
         // Step 8: Build and update transaction requests
         let (mut from_request, mut to_request) =
             self.build_transfer_requests(&data, &from_account, &to_account)?;
-        from_request.transaction_status = TransactionStatus::Completed;
-        to_request.transaction_status = TransactionStatus::Completed;
+        let set_completed = |req: &mut CreateTransactionRequest| {
+            req.transaction_status = TransactionStatus::Completed;
+        };
+        set_completed(&mut from_request);
+        set_completed(&mut to_request);
+
         from_request.related_transaction_serial_num = Some(original_incoming.serial_num.clone());
         to_request.related_transaction_serial_num = Some(original_outgoing.serial_num.clone());
 
-        let mut from_active_model = entity::transactions::ActiveModel::try_from(from_request)?;
-        from_active_model.related_transaction_serial_num = Set(original_incoming.related_transaction_serial_num.clone());
-        let mut to_active_model = entity::transactions::ActiveModel::try_from(to_request)?;
-        to_active_model.related_transaction_serial_num = Set(original_incoming.related_transaction_serial_num.clone());
+        let to_active_model = |request: CreateTransactionRequest| -> MijiResult<entity::transactions::ActiveModel> {
+            let mut model = entity::transactions::ActiveModel::try_from(request)?;
+            model.related_transaction_serial_num = Set(original_incoming.related_transaction_serial_num.clone());
+            Ok(model)
+        };
+
+        let from_active_model = to_active_model(from_request)?;
+        let to_active_model = to_active_model(to_request)?;
 
         let updated_outgoing = from_active_model.insert(&tx).await?;
         let updated_incoming = to_active_model.insert(&tx).await?;

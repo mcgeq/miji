@@ -1,7 +1,7 @@
 // stores/moneyStore.ts
 import { defineStore } from 'pinia';
 import { AppError, AppErrorCode, AppErrorSeverity } from '@/errors/appError';
-import { MoneyDbError } from '@/services/money/baseManager';
+import { MoneyDbError, type PagedResult } from '@/services/money/baseManager';
 import { MoneyDb } from '@/services/money/money';
 import type { IncomeExpense, PageQuery } from '@/schema/common';
 import type {
@@ -302,25 +302,34 @@ export const useMoneyStore = defineStore('money', () => {
   // 交易相关方法
   const getTransactions = async (
     query: PageQuery<TransactionFilters>,
-  ): Promise<{
-    items: Transaction[];
-    total: number;
-    page: number;
-    pageSize: number;
-  }> => {
+  ): Promise<PagedResult<Transaction>> => {
+    loading.value = true;
+    error.value = null;
+    console.log('getTransactions ', query);
+    try {
+      const result = await MoneyDb.listTransactionsPaged(query);
+      transactions.value = result.rows;
+      return result;
+    } catch (err) {
+      throw handleMoneyStoreError(
+        err,
+        '获取交易列表失败',
+        'listTransactions',
+        'Transaction',
+      );
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  const getAllTransactions = async () => {
     loading.value = true;
     error.value = null;
 
     try {
-      const result = await MoneyDb.listTransactionsPaged(query);
-      transactions.value = result.rows;
-
-      return {
-        items: result.rows,
-        total: result.totalCount,
-        page: result.currentPage,
-        pageSize: result.pageSize,
-      };
+      const result = await MoneyDb.listTransactions();
+      transactions.value = result;
+      return result;
     } catch (err) {
       throw handleMoneyStoreError(
         err,
@@ -725,6 +734,7 @@ export const useMoneyStore = defineStore('money', () => {
     toggleAccountActive,
 
     getTransactions,
+    getAllTransactions,
     createTransaction,
     updateTransaction,
     deleteTransaction,
