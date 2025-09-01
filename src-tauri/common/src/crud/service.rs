@@ -9,14 +9,13 @@
 // Modified   By:  mcgeq <mcgeq@outlook.com>
 // ----------------------------------------------------------------------------
 
-use core::fmt;
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, DbConn, EntityTrait, FromQueryResult, IntoActiveModel,
     PaginatorTrait, PrimaryKeyTrait, QueryFilter, QuerySelect, TransactionTrait, Value,
     prelude::{Expr, async_trait::async_trait},
 };
 use serde::Serialize;
-use std::{str::FromStr, sync::Arc};
+use std::{fmt, str::FromStr, sync::Arc};
 use validator::Validate;
 
 use crate::{
@@ -184,7 +183,7 @@ where
     E::PrimaryKey: PrimaryKeyTrait,
     <E::PrimaryKey as PrimaryKeyTrait>::ValueType: Clone + Send + Sync + 'static + PartialEq,
     E::Column: ColumnTrait + FromStr,
-    F: Filter<E> + Send + Sync + Validate,
+    F: Filter<E> + Send + Sync + Validate + std::fmt::Debug,
     C: Validate + Send + Sync + Clone,
     U: Validate + Send + Sync,
     Conv: CrudConverter<E, C, U> + Send + Sync,
@@ -357,6 +356,7 @@ where
         db: &DbConn,
         query: PagedQuery<F>,
     ) -> MijiResult<PagedResult<E::Model>> {
+        info!("list_paged start Query {:?}", query);
         // 验证查询参数
         self.validate_paged_query(&query)?;
 
@@ -368,7 +368,7 @@ where
 
         // 应用排序
         query_builder = query.sort_options.apply_sort(query_builder);
-
+        info!("query_builder {:?}", query_builder);
         // 计算总数
         let total_count = query_builder
             .clone()

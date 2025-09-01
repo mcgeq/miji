@@ -229,13 +229,16 @@ impl TransactionService {
         let (original_outgoing, original_incoming) =
             self.fetch_related_transfer(&tx, transaction_id).await?;
 
-        if original_incoming.category != "Transfer" || TransactionType::from_str(&original_incoming.transaction_type)?  != TransactionType::Income{
+        if original_incoming.category != "Transfer"
+            || TransactionType::from_str(&original_incoming.transaction_type)?
+                != TransactionType::Income
+        {
             return Err(AppError::simple(
                 BusinessCode::InvalidParameter,
                 "Only Income Transfer transactions can be updated",
             ));
         }
-        
+
         // Step 3: Validate refund amount
         let original_amount = original_outgoing.amount.abs();
         let refund_amount = data.amount;
@@ -245,7 +248,7 @@ impl TransactionService {
                 "Refund amount cannot exceed original transaction amount",
             ));
         }
-        
+
         // Step 4: Re-fetch from_account for balance check
         let from_account = self.fetch_account(&tx, &data.account_serial_num).await?;
         if from_account.balance < refund_amount {
@@ -274,9 +277,9 @@ impl TransactionService {
             }
         };
 
-        let update_original_incoming =  update_refund(&original_incoming, "退").update(&tx).await?;
+        let update_original_incoming = update_refund(&original_incoming, "退").update(&tx).await?;
         info!("Original_outgoing update {:?}", update_original_incoming);
-        let update_original_outgoing =  update_refund(&original_outgoing, "进").update(&tx).await?;
+        let update_original_outgoing = update_refund(&original_outgoing, "进").update(&tx).await?;
         info!("Original_outgoing update {:?}", update_original_outgoing);
 
         // Step 8: Build and update transaction requests
@@ -291,11 +294,13 @@ impl TransactionService {
         from_request.related_transaction_serial_num = Some(original_incoming.serial_num.clone());
         to_request.related_transaction_serial_num = Some(original_outgoing.serial_num.clone());
 
-        let to_active_model = |request: CreateTransactionRequest| -> MijiResult<entity::transactions::ActiveModel> {
-            let mut model = entity::transactions::ActiveModel::try_from(request)?;
-            model.related_transaction_serial_num = Set(original_incoming.related_transaction_serial_num.clone());
-            Ok(model)
-        };
+        let to_active_model =
+            |request: CreateTransactionRequest| -> MijiResult<entity::transactions::ActiveModel> {
+                let mut model = entity::transactions::ActiveModel::try_from(request)?;
+                model.related_transaction_serial_num =
+                    Set(original_incoming.related_transaction_serial_num.clone());
+                Ok(model)
+            };
 
         let from_active_model = to_active_model(from_request)?;
         let to_active_model = to_active_model(to_request)?;
@@ -911,7 +916,6 @@ impl TransactionConverter {
 #[derive(Debug, Clone, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TransactionFilter {
-    pub serial_num: Option<String>,
     pub transaction_type: Option<String>,
     pub transaction_status: Option<String>,
     pub date_start: Option<String>,
@@ -931,9 +935,6 @@ impl Filter<entity::transactions::Entity> for TransactionFilter {
     fn to_condition(&self) -> Condition {
         let mut condition = Condition::all();
 
-        if let Some(serial_num) = &self.serial_num {
-            condition = condition.add(entity::transactions::Column::SerialNum.eq(serial_num));
-        }
         if let Some(transaction_type) = &self.transaction_type {
             condition =
                 condition.add(entity::transactions::Column::TransactionType.eq(transaction_type));
@@ -1164,7 +1165,6 @@ impl TransactionService {
         query: PagedQuery<TransactionFilter>,
     ) -> MijiResult<PagedResult<TransactionWithRelations>> {
         let paged = self.inner.list_paged(db, query).await?;
-        info!("trans_list_paged_with_relations {:?}", paged.rows.clone());
         let mut rows_with_relations = Vec::with_capacity(paged.rows.len());
         for m in paged.rows {
             let tx_with_rel = self.converter().model_to_with_relations(db, m).await?;

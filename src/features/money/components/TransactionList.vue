@@ -37,7 +37,7 @@ const moneyStore = useMoneyStore();
 
 // 数据状态
 const loading = ref(false);
-const transactions = ref<Transaction[]>([]);
+const transactions = computed<Transaction[]>(() => moneyStore.transactions);
 const disabledTransactions = computed(() => {
   return new Set(
     transactions.value
@@ -91,7 +91,6 @@ function updateIsMobile() {
 // 重置过滤器
 function resetFilters() {
   filters.value = {
-    serialNum: undefined,
     transactionType: undefined,
     transactionStatus: undefined,
     dateStart: undefined,
@@ -157,11 +156,9 @@ async function loadTransactions() {
       },
     };
     const result = await moneyStore.getTransactions(params);
-    transactions.value = result.rows;
     pagination.value.totalItems = result.totalCount;
     pagination.value.totalPages = result.totalPages;
   } catch (error) {
-    transactions.value = [];
     pagination.value.totalItems = 0;
     pagination.value.totalPages = 0;
     Lg.e('Transaction', error);
