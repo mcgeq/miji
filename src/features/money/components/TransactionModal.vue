@@ -58,7 +58,7 @@ const trans = props.transaction || {
   notes: null,
   accountSerialNum: '',
   tags: [],
-  paymentMethod: PaymentMethodSchema.enum.Cash,
+  paymentMethod: PaymentMethodSchema.enum.Other,
   actualPayerAccount: AccountTypeSchema.enum.Bank,
   transactionStatus: TransactionStatusSchema.enum.Completed,
   isDeleted: false,
@@ -104,7 +104,10 @@ const availablePaymentMethods = computed(() => {
 });
 
 // Determine if payment method should be editable
-const isPaymentMethodEditable = computed(() => availablePaymentMethods.value.length > 1);
+const isPaymentMethodEditable = computed(() => {
+  if (form.value.transactionType === TransactionTypeSchema.enum.Income) return false;
+  return availablePaymentMethods.value.length > 1;
+});
 
 function mapSubToCategory(sub: string): string {
   if (['Restaurant', 'Groceries', 'Snacks'].includes(sub)) return 'Food';
@@ -342,18 +345,20 @@ watch(
   () => form.value.accountSerialNum,
   newAccountSerialNum => {
     const selectedAccount = props.accounts.find(acc => acc.serialNum === newAccountSerialNum);
-    form.value.paymentMethod = PaymentMethodSchema.enum.Cash;
-
-    if (form.value.transactionType !== TransactionTypeSchema.enum.Income && selectedAccount) {
-      if (selectedAccount.type === AccountTypeSchema.enum.Alipay) {
-        form.value.paymentMethod = PaymentMethodSchema.enum.Alipay;
-      } else if (selectedAccount.type === AccountTypeSchema.enum.WeChat) {
-        form.value.paymentMethod = PaymentMethodSchema.enum.WeChat;
-      } else if (selectedAccount.type === AccountTypeSchema.enum.CreditCard) {
-        form.value.paymentMethod = PaymentMethodSchema.enum.CreditCard;
+    if (form.value.transactionType === TransactionTypeSchema.enum.Income) {
+      form.value.paymentMethod = PaymentMethodSchema.enum.Other;
+    } else {
+      form.value.paymentMethod = PaymentMethodSchema.enum.Cash;
+      if (selectedAccount) {
+        if (selectedAccount.type === AccountTypeSchema.enum.Alipay) {
+          form.value.paymentMethod = PaymentMethodSchema.enum.Alipay;
+        } else if (selectedAccount.type === AccountTypeSchema.enum.WeChat) {
+          form.value.paymentMethod = PaymentMethodSchema.enum.WeChat;
+        } else if (selectedAccount.type === AccountTypeSchema.enum.CreditCard) {
+          form.value.paymentMethod = PaymentMethodSchema.enum.CreditCard;
+        }
       }
     }
-
     if (newAccountSerialNum === form.value.toAccountSerialNum) {
       form.value.toAccountSerialNum = '';
     }
@@ -386,7 +391,7 @@ watch(
           description: '',
           notes: null,
           tags: [],
-          paymentMethod: PaymentMethodSchema.enum.Cash,
+          paymentMethod: PaymentMethodSchema.enum.Other,
           actualPayerAccount: AccountTypeSchema.enum.Bank,
           transactionStatus: TransactionStatusSchema.enum.Completed,
           createdAt: DateUtils.getLocalISODateTimeWithOffset(),
