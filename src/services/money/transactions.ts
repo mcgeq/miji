@@ -99,7 +99,6 @@ export class TransactionMapper extends BaseMapper<
     query: PageQuery<TransactionFilters>,
   ): Promise<PagedResult<Transaction>> {
     try {
-      console.log('listPaged', query);
       const result = await invokeCommand<PagedResult<Transaction>>(
         'transaction_list_paged',
         { query },

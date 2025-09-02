@@ -71,6 +71,7 @@ const form = ref<Transaction>({
   ...trans,
   amount: trans.amount || 0,
   currency: trans.currency || CURRENCY_CNY,
+  refundAmount: 0,
   toAccountSerialNum: '',
   date: trans.date || DateUtils.getLocalISODateTimeWithOffset(),
 });
@@ -79,7 +80,10 @@ const isTransferReadonly = computed(() => {
   return !!(props.transaction && form.value.category === CategorySchema.enum.Transfer);
 });
 
-// Compute available payment methods based on selected account and transaction type
+const isEditabled = computed<boolean>(() => !!props.transaction);
+const isDisabled = computed<boolean>(() => isTransferReadonly.value || isEditabled.value);
+
+// Compute available payment methods based on selected account and transaction typ
 const availablePaymentMethods = computed(() => {
   const selectedAccount = props.accounts.find(acc => acc.serialNum === form.value.accountSerialNum);
   if (form.value.transactionType !== TransactionTypeSchema.enum.Income) {
@@ -205,9 +209,8 @@ function handleSubmit() {
     toast.error('转出账户余额数据无效');
     return;
   }
-
   // 转出校验
-  if (!canWithdraw(fromAccount, amount, fromBalance)) {
+  if (form.value.transactionType === TransactionTypeSchema.enum.Expense && !canWithdraw(fromAccount, amount, fromBalance)) {
     toast.error(fromAccount.type === AccountTypeSchema.enum.CreditCard
       ? '信用卡转出金额不能大于账户余额'
       : '转出金额超过账户余额');
@@ -366,12 +369,14 @@ watch(
           currency: transaction.currency || CURRENCY_CNY,
           subCategory: transaction.subCategory || SubCategorySchema.enum.Other,
           toAccountSerialNum: transaction.toAccountSerialNum || null,
+          refundAmount: 0,
           date: transaction.date || DateUtils.getLocalISODateTimeWithOffset(),
         }
       : {
           serialNum: '',
           transactionType: props.type,
           amount: 0,
+          refundAmount: 0,
           accountSerialNum: '',
           toAccountSerialNum: '',
           category: CategorySchema.enum.Others,
@@ -457,7 +462,7 @@ watch(
             {{ isTransferReadonly || form.transactionType === TransactionTypeSchema.enum.Transfer ? t('financial.transaction.fromAccount')
               : t('financial.account.account') }}
           </label>
-          <select v-model="form.accountSerialNum" class="w-2/3 modal-input-select" required :disabled="isTransferReadonly">
+          <select v-model="form.accountSerialNum" class="w-2/3 modal-input-select" required :disabled="isDisabled">
             <option value="">
               {{ t('common.placeholders.selectAccount') }}
             </option>
@@ -472,7 +477,7 @@ watch(
           <label class="mb-1 text-sm font-medium">
             {{ t('financial.transaction.toAccount') }}
           </label>
-          <select v-model="form.toAccountSerialNum" class="w-2/3 modal-input-select" required :disabled="isTransferReadonly">
+          <select v-model="form.toAccountSerialNum" class="w-2/3 modal-input-select" required :disabled="isDisabled">
             <option value="">
               {{ t('common.placeholders.selectAccount') }}
             </option>
