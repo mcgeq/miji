@@ -1197,7 +1197,8 @@ impl TransactionService {
             SimpleExpr::FunctionCall(Func::coalesce(vec![
                 SimpleExpr::FunctionCall(Func::sum(
                     Expr::case(
-                        Condition::all().add(TransactionColumn::TransactionType.eq("Income")),
+                        Condition::all().add(TransactionColumn::TransactionType.eq("Income")).
+                        add(TransactionColumn::ActualPayerAccount.ne("CreditCard")),
                         Expr::col(TransactionColumn::Amount),
                     )
                     .finally(0.0)
@@ -1221,6 +1222,21 @@ impl TransactionService {
                 Expr::val(0.0).into(),
             ]))
             .cast_as(Alias::new("DECIMAL(16,4)")),
+        ).sub(SimpleExpr::FunctionCall(Func::coalesce(vec![
+                SimpleExpr::FunctionCall(Func::sum(
+                    Expr::case(
+                        Condition::all()
+                        .add(TransactionColumn::TransactionType.eq("Income"))
+                        .add(TransactionColumn::Category.eq("Transfer"))
+                        .add(TransactionColumn::ActualPayerAccount.eq("CreditCard")),
+                        Expr::col(TransactionColumn::Amount),
+                    )
+                    .finally(0.0)
+                    .cast_as(Alias::new("DECIMAL(16,4)")),
+                )),
+                Expr::val(0.0).into(),
+            ]))
+            .cast_as(Alias::new("DECIMAL(16,4)")),
         );
 
         // Transfer income and expense
@@ -1230,7 +1246,8 @@ impl TransactionService {
                     Expr::case(
                         Condition::all()
                             .add(TransactionColumn::TransactionType.eq("Income"))
-                            .add(TransactionColumn::Category.eq("Transfer")),
+                            .add(TransactionColumn::Category.eq("Transfer"))
+                        .add(TransactionColumn::ActualPayerAccount.ne("CreditCard")),
                         Expr::col(TransactionColumn::Amount),
                     )
                     .finally(0.0)
@@ -1247,7 +1264,8 @@ impl TransactionService {
                     Expr::case(
                         Condition::all()
                             .add(TransactionColumn::TransactionType.eq("Expense"))
-                            .add(TransactionColumn::Category.eq("Transfer")),
+                            .add(TransactionColumn::Category.eq("Transfer"))
+                        .add(TransactionColumn::ActualPayerAccount.ne("CreditCard")),
                         Expr::col(TransactionColumn::Amount),
                     )
                     .finally(0.0)

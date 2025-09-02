@@ -291,6 +291,7 @@ pub enum Transactions {
     SplitMembers,
     PaymentMethod,
     ActualPayerAccount,
+    PayeeAccountType,
     RelatedTransactionSerialNum,
     IsDeleted,
     CreatedAt,
