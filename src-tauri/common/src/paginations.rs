@@ -1,8 +1,9 @@
 use sea_orm::sea_query::Expr;
-use sea_orm::{ColumnTrait, Condition, EntityTrait, Order, QueryOrder, Select};
+use sea_orm::{ColumnTrait, Iterable, Condition, EntityTrait, Order, QueryOrder, Select};
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 use validator::Validate;
+use tracing::{info,warn,error};
 
 use crate::crud::service::sanitize_input;
 
@@ -44,12 +45,18 @@ impl SortOptions {
     }
 
     /// 获取排序方向，优先使用 sort_dir，其次使用 desc 字段
-    fn effective_sort_direction(&self) -> SortDirection {
-        self.sort_dir.unwrap_or(if self.desc {
-            SortDirection::Desc
-        } else {
-            SortDirection::Asc
-        })
+    fn effective_sort_direction(&self) -> Order{
+        match self.sort_dir {
+            Some(SortDirection::Asc) => Order::Asc,
+            Some(SortDirection::Desc) => Order::Desc,
+            None => {
+                if self.desc {
+                    Order::Desc
+                } else {
+                    Order::Asc
+                }
+            }
+        }
     }
 }
 
@@ -65,18 +72,40 @@ where
     E::Column: ColumnTrait + FromStr,
 {
     fn apply_sort(&self, query: Select<E>) -> Select<E> {
+        info!("Applying sort options: {:?}", self);
         if let Some(order_by) = &self.custom_order_by {
-            let direction = self.effective_sort_direction().into();
+            let direction = self.effective_sort_direction();
             return query.order_by(Expr::cust(order_by), direction);
         }
 
-        match E::Column::from_str(self.effective_sort_field()) {
+        // 获取有效的排序字段
+        let sort_field = self.effective_sort_field();
+
+        // 尝试解析为列枚举
+        match E::Column::from_str(sort_field) {
             Ok(column) => {
-                let direction = self.effective_sort_direction().into();
+                let direction = self.effective_sort_direction();
                 query.order_by(column, direction)
             }
-            Err(_) => query,
+            Err(_) => {
+                // 回退到默认排序：按创建时间降序
+                warn!("Failed to parse sort field: {}, using default sort", sort_field);
+                if let Ok(created_at) = E::Column::from_str("created_at") {
+                    query.order_by(created_at, Order::Desc)
+                } else {
+                    // 如果还没有，则使用第一个列
+                    let mut columns = E::Column::iter();
+                    if let Some(first_column) = columns.next() {
+                        warn!("Using first column as fallback sort: {:?}", first_column);
+                        query.order_by(first_column, Order::Desc)
+                    } else {
+                        error!("No columns available for sorting");
+                        query
+                    }
+                }
+            }
         }
+    
     }
 }
 

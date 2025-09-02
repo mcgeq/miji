@@ -366,9 +366,10 @@ where
         // 应用过滤条件
         query_builder = query_builder.filter(query.filter.to_condition());
 
+        info!("Before sort_options query_builder {:?}", query_builder);
         // 应用排序
         query_builder = query.sort_options.apply_sort(query_builder);
-        info!("query_builder {:?}", query_builder);
+        info!("After sort_options query_builder {:?}", query_builder);
         // 计算总数
         let total_count = query_builder
             .clone()

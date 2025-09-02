@@ -59,16 +59,15 @@ const pagination = ref({
 
 // 过滤器状态
 const filters = ref<TransactionFilters>({
-  serialNum: undefined,
-  transactionType: undefined,
-  transactionStatus: undefined,
+  transactionType: '',
+  transactionStatus: '',
   dateStart: undefined,
   dateEnd: undefined,
   amountMin: undefined,
   amountMax: undefined,
   currency: undefined,
-  accountSerialNum: undefined,
-  category: undefined,
+  accountSerialNum: '',
+  category: '',
   subCategory: undefined,
   paymentMethod: undefined,
   actualPayerAccount: undefined,
@@ -91,14 +90,14 @@ function updateIsMobile() {
 // 重置过滤器
 function resetFilters() {
   filters.value = {
-    transactionType: undefined,
-    transactionStatus: undefined,
+    transactionType: '',
+    transactionStatus: '',
     dateStart: undefined,
     dateEnd: undefined,
     amountMin: undefined,
     amountMax: undefined,
     currency: undefined,
-    accountSerialNum: undefined,
+    accountSerialNum: '',
     category: undefined,
     subCategory: undefined,
     paymentMethod: undefined,
