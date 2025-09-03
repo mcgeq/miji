@@ -3,7 +3,7 @@ use std::sync::Arc;
 use common::{
     crud::service::{CrudConverter, CrudService, GenericCrudService},
     error::{AppError, MijiResult},
-    paginations::{Filter, PagedQuery, PagedResult},
+    paginations::{DateRange, Filter, PagedQuery, PagedResult},
     utils::date::DateUtils,
 };
 use sea_orm::{
@@ -29,8 +29,8 @@ pub struct BudgetFilter {
     pub category: Option<String>,
     pub amount: Option<Decimal>,
     pub repeat_period: Option<String>,
-    pub start_date: Option<String>,
-    pub end_date: Option<String>,
+    pub start_date: Option<DateRange>,
+    pub end_date: Option<DateRange>,
     pub used_amount: Option<Decimal>,
     pub is_active: Option<bool>,
     pub alert_enabled: Option<bool>,
@@ -65,12 +65,22 @@ impl Filter<entity::budget::Entity> for BudgetFilter {
 
         // Start Date (assuming ISO 8601 format)
         if let Some(start_date) = &self.start_date {
-            condition = condition.add(entity::budget::Column::StartDate.gte(start_date));
+            if let Some(start) = &start_date.start {
+                condition = condition.add(entity::budget::Column::StartDate.gte(start));
+            }
+            if let Some(end) = &start_date.end {
+                condition = condition.add(entity::budget::Column::StartDate.lte(end))
+            }
         }
 
         // End Date (assuming ISO 8601 format)
         if let Some(end_date) = &self.end_date {
-            condition = condition.add(entity::budget::Column::EndDate.lte(end_date));
+            if let Some(start) = &end_date.start {
+                condition = condition.add(entity::budget::Column::EndDate.gte(start));
+            }
+            if let Some(end) = &end_date.end {
+                condition = condition.add(entity::budget::Column::EndDate.lte(end))
+            }
         }
 
         // Used Amount
@@ -92,6 +102,7 @@ impl Filter<entity::budget::Entity> for BudgetFilter {
         if let Some(alert_threshold) = &self.alert_threshold {
             condition = condition.add(entity::budget::Column::AlertThreshold.eq(alert_threshold));
         }
+
         condition
     }
 }
@@ -169,6 +180,18 @@ pub struct BudgetService {
     >,
 }
 
+impl BudgetService {
+    pub fn new(
+        converter: BudgetConverter,
+        hooks: BudgetHooks,
+        logger: Arc<dyn common::log::logger::OperationLogger>,
+    ) -> Self {
+        Self {
+            inner: GenericCrudService::new(converter, hooks, logger),
+        }
+    }
+}
+
 impl std::ops::Deref for BudgetService {
     type Target = GenericCrudService<
         entity::budget::Entity,
@@ -184,28 +207,16 @@ impl std::ops::Deref for BudgetService {
     }
 }
 
-impl BudgetService {
-    pub fn new(
-        converter: BudgetConverter,
-        hooks: BudgetHooks,
-        logger: Arc<dyn common::log::logger::OperationLogger>,
-    ) -> Self {
-        Self {
-            inner: GenericCrudService::new(converter, hooks, logger),
-        }
-    }
-}
-
 #[async_trait]
 impl CrudService<entity::budget::Entity, BudgetFilter, BudgetCreate, BudgetUpdate>
     for BudgetService
 {
     async fn create(&self, db: &DbConn, data: BudgetCreate) -> MijiResult<entity::budget::Model> {
-        self.create(db, data).await
+        self.inner.create(db, data).await
     }
 
     async fn get_by_id(&self, db: &DbConn, id: String) -> MijiResult<entity::budget::Model> {
-        self.get_by_id(db, id).await
+        self.inner.get_by_id(db, id).await
     }
 
     async fn update(
@@ -214,15 +225,15 @@ impl CrudService<entity::budget::Entity, BudgetFilter, BudgetCreate, BudgetUpdat
         id: String,
         data: BudgetUpdate,
     ) -> MijiResult<entity::budget::Model> {
-        self.update(db, id, data).await
+        self.inner.update(db, id, data).await
     }
 
     async fn delete(&self, db: &DbConn, id: String) -> MijiResult<()> {
-        self.delete(db, id).await
+        self.inner.delete(db, id).await
     }
 
     async fn list(&self, db: &DbConn) -> MijiResult<Vec<entity::budget::Model>> {
-        self.list(db).await
+        self.inner.list(db).await
     }
 
     async fn list_with_filter(
@@ -230,7 +241,7 @@ impl CrudService<entity::budget::Entity, BudgetFilter, BudgetCreate, BudgetUpdat
         db: &DbConn,
         filter: BudgetFilter,
     ) -> MijiResult<Vec<entity::budget::Model>> {
-        self.list_with_filter(db, filter).await
+        self.inner.list_with_filter(db, filter).await
     }
 
     async fn list_paged(
@@ -238,7 +249,7 @@ impl CrudService<entity::budget::Entity, BudgetFilter, BudgetCreate, BudgetUpdat
         db: &DbConn,
         query: PagedQuery<BudgetFilter>,
     ) -> MijiResult<PagedResult<entity::budget::Model>> {
-        self.list_paged(db, query).await
+        self.inner.list_paged(db, query).await
     }
 
     async fn create_batch(
@@ -246,23 +257,23 @@ impl CrudService<entity::budget::Entity, BudgetFilter, BudgetCreate, BudgetUpdat
         db: &DbConn,
         data: Vec<BudgetCreate>,
     ) -> MijiResult<Vec<entity::budget::Model>> {
-        self.create_batch(db, data).await
+        self.inner.create_batch(db, data).await
     }
 
     async fn delete_batch(&self, db: &DbConn, ids: Vec<String>) -> MijiResult<u64> {
-        self.delete_batch(db, ids).await
+        self.inner.delete_batch(db, ids).await
     }
 
     async fn exists(&self, db: &DbConn, id: String) -> MijiResult<bool> {
-        self.exists(db, id).await
+        self.inner.exists(db, id).await
     }
 
     async fn count(&self, db: &DbConn) -> MijiResult<u64> {
-        self.count(db).await
+        self.inner.count(db).await
     }
 
     async fn count_with_filter(&self, db: &DbConn, filter: BudgetFilter) -> MijiResult<u64> {
-        self.count_with_filter(db, filter).await
+        self.inner.count_with_filter(db, filter).await
     }
 }
 
@@ -302,7 +313,7 @@ impl BudgetService {
         let paged = self.list_paged(db, query).await?;
         let mut rows_with_relations = Vec::with_capacity(paged.rows.len());
         for m in paged.rows {
-            let tx_with_rel = self.converter().model_with_relations(db, m).await?;
+            let tx_with_rel = self.inner.converter().model_with_relations(db, m).await?;
             rows_with_relations.push(tx_with_rel);
         }
 

@@ -475,6 +475,18 @@ pub async fn budget_update(
 }
 
 #[tauri::command]
+pub async fn budget_delete(
+    state: State<'_, AppState>,
+    serial_num: String,
+) -> Result<ApiResponse<()>, String> {
+    let service = get_budget_service();
+
+    Ok(ApiResponse::from_result(
+        service.delete(&state.db, serial_num).await,
+    ))
+}
+
+#[tauri::command]
 pub async fn budget_list_paged(
     state: State<'_, AppState>,
     query: PagedQuery<BudgetFilter>,

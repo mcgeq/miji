@@ -219,12 +219,7 @@ export class MoneyDb {
   }
 
   static async listBudgetsPaged(
-    query: PageQuery<BudgetFilters> = {
-      currentPage: 1,
-      pageSize: 10,
-      sortOptions: {},
-      filter: {},
-    },
+    query: PageQuery<BudgetFilters>,
   ): Promise<PagedResult<Budget>> {
     return this.budgetMapper.listPaged(query);
   }

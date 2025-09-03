@@ -47,6 +47,7 @@ import type {
 
 // ------------------ Refs ------------------
 const transactionListRef = ref<InstanceType<typeof TransactionList> | null>(null);
+const budgetListRef = ref<InstanceType<typeof BudgetList> | null>(null);
 const stackedCardsRef = ref<InstanceType<typeof StackedStatCards> | null>(null);
 
 const moneyStore = useMoneyStore();
@@ -56,7 +57,6 @@ const activeTab = ref('accounts');
 const baseCurrency = ref(CURRENCY_CNY.symbol);
 
 const accountsLoading = ref(false);
-const budgetsLoading = ref(false);
 const remindersLoading = ref(false);
 
 const showTransaction = ref(false);
@@ -81,7 +81,6 @@ const tabs = [
 ];
 
 const accounts = ref<Account[]>([]);
-const budgets = ref<Budget[]>([]);
 const reminders = ref<BilReminder[]>([]);
 
 const totalAssets = ref(0);
@@ -94,14 +93,7 @@ const monthlyExpense = ref(0);
 const prevMonthlyIncome = ref(0);
 const prevMonthlyExpense = ref(0);
 
-const budgetRemaining = computed(() =>
-  budgets.value
-    .filter(b => b.isActive)
-    .reduce(
-      (sum, b) => sum + (Number.parseFloat(b.amount) - Number.parseFloat(b.usedAmount)),
-      0,
-    ),
-);
+const budgetRemaining = ref(0);
 
 const statCards = computed<CardData[]>(() => [
   {
@@ -207,13 +199,18 @@ function finalizeTransactionChange() {
     syncIncomeExpense,
   ]);
 }
-const finalizeBudgetChange = () => finalizeChange(closeBudgetModal, [loadBudgets]);
+function finalizeBudgetChange() {
+  return finalizeChange(closeBudgetModal, [
+    async () => budgetListRef.value?.refresh(),
+  ]);
+}
+
 const finalizeReminderChange = () => finalizeChange(closeReminderModal, [loadReminders]);
 
 // ------------------ Load & Sync ------------------
 async function loadData() {
   try {
-    await Promise.all([loadAccounts(), loadBudgets(), loadReminders(), syncIncomeExpense()]);
+    await Promise.all([loadAccounts(), loadReminders(), syncIncomeExpense()]);
   } catch (err) {
     Lg.e('loadData', err);
     toast.error('加载数据失败');
@@ -226,14 +223,6 @@ async function loadAccounts() {
     accounts.value = await moneyStore.getAccounts();
   } finally {
     accountsLoading.value = false;
-  }
-}
-async function loadBudgets() {
-  budgetsLoading.value = true;
-  try {
-    budgets.value = await moneyStore.getBudgets();
-  } finally {
-    budgetsLoading.value = false;
   }
 }
 async function loadReminders() {
@@ -627,8 +616,7 @@ onMounted(async () => {
         />
         <BudgetList
           v-if="activeTab === 'budgets'"
-          :budgets="budgets"
-          :loading="budgetsLoading"
+          ref="budgetListRef"
           @edit="editBudget"
           @delete="deleteBudget"
           @toggle-active="toggleBudgetActive"

@@ -5,12 +5,20 @@ import type { DateRange, PageQuery } from '@/schema/common';
 import type { Budget, BudgetCreate, BudgetUpdate } from '@/schema/money';
 
 export interface BudgetFilters {
+  // status?: string;
+  accountSerialNum?: string;
+  name?: string;
+  amount?: number;
+  repeatPeriod?: string;
+  startDate?: DateRange;
+  endDate?: DateRange;
+  usedAmount?: number;
+  alertThreshold?: string;
   category?: string;
   isActive?: boolean;
-  accountSerialNum?: string;
   alertEnabled?: boolean;
-  dateRange?: DateRange;
-  createdAtRange?: DateRange;
+  // completion?: string; // ✅ 对应 filters.completion
+  // period?: string;
 }
 
 /**
@@ -85,12 +93,7 @@ export class BudgetMapper extends BaseMapper<
   }
 
   async listPaged(
-    query: PageQuery<BudgetFilters> = {
-      currentPage: 1,
-      pageSize: 10,
-      sortOptions: {},
-      filter: {},
-    },
+    query: PageQuery<BudgetFilters>,
   ): Promise<PagedResult<Budget>> {
     try {
       const result = await invokeCommand<PagedResult<Budget>>(

@@ -1,17 +1,14 @@
 <script setup lang="ts">
 import { Ban, Edit, Repeat, RotateCcw, StopCircle, Trash } from 'lucide-vue-next';
 import SimplePagination from '@/components/common/SimplePagination.vue';
+import { SortDirection } from '@/schema/common';
 import { getRepeatTypeName } from '@/utils/common';
 import { DateUtils } from '@/utils/date';
+import { Lg } from '@/utils/debugLog';
 import { formatCurrency } from '../utils/money';
+import type { PageQuery, SortOptions } from '@/schema/common';
 import type { Budget } from '@/schema/money';
-
-interface Props {
-  budgets: Budget[];
-  loading: boolean;
-}
-
-const props = defineProps<Props>();
+import type { BudgetFilters } from '@/services/money/budgets';
 
 const emit = defineEmits<{
   edit: [budget: Budget];
@@ -20,14 +17,42 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n();
+const moneyStore = useMoneyStore();
 
-// 过滤器状态
-const filters = ref({
-  status: '',
-  completion: '',
-  period: '',
-  category: '',
+const loading = ref(false);
+const budgets = computed<Budget[]>(() => moneyStore.budgets);
+// 分页状态
+const pagination = ref({
+  currentPage: 1,
+  totalPages: 1,
+  totalItems: 0,
+  pageSize: 20,
 });
+
+// 排序选项状态
+const sortOptions = ref<SortOptions>({
+  customOrderBy: undefined,
+  sortBy: undefined,
+  sortDir: SortDirection.Desc,
+  desc: true,
+});
+
+// 初始 filters
+const initialFilters: BudgetFilters = {
+  category: '',
+  accountSerialNum: '',
+  name: '',
+  amount: undefined,
+  repeatPeriod: '',
+  startDate: { start: undefined, end: undefined },
+  endDate: { start: undefined, end: undefined },
+  usedAmount: undefined,
+  alertThreshold: '',
+  isActive: undefined,
+  alertEnabled: undefined,
+};
+// 过滤器状态
+const filters = ref<BudgetFilters>({ ...initialFilters });
 
 // 分页状态
 const currentPage = ref(1);
@@ -35,55 +60,100 @@ const pageSize = ref(4);
 
 // 重置过滤器
 function resetFilters() {
-  filters.value = {
-    status: '',
-    completion: '',
-    period: '',
-    category: '',
-  };
+  filters.value = JSON.parse(JSON.stringify(initialFilters));
   currentPage.value = 1;
+}
+
+// 加载交易数据
+async function loadBudgets() {
+  loading.value = true;
+  try {
+    const params: PageQuery<BudgetFilters> = {
+      currentPage: pagination.value.currentPage,
+      pageSize: pagination.value.pageSize,
+      sortOptions: {
+        customOrderBy: sortOptions.value?.customOrderBy,
+        sortBy: sortOptions.value?.sortBy,
+        desc: sortOptions.value?.desc,
+        sortDir: sortOptions.value?.sortDir ?? SortDirection.Desc,
+      },
+      filter: {
+        category: filters.value.category || undefined,
+        accountSerialNum: filters.value.accountSerialNum || undefined,
+        name: filters.value.name || undefined,
+        amount: filters.value.amount || undefined,
+        repeatPeriod: filters.value.repeatPeriod || undefined,
+        startDate: filters.value.startDate?.start || filters.value.startDate?.end
+          ? { ...filters.value.startDate }
+          : undefined,
+        endDate: filters.value.endDate?.start || filters.value.endDate?.end
+          ? { ...filters.value.endDate }
+          : undefined,
+        usedAmount: filters.value.usedAmount || undefined,
+        alertThreshold: filters.value.alertThreshold || undefined,
+        isActive: filters.value.isActive,
+        alertEnabled: filters.value.alertEnabled,
+      },
+    };
+
+    const result = await moneyStore.getBudgets(params);
+
+    pagination.value.totalItems = result.totalCount ?? 0;
+    pagination.value.totalPages = result.totalPages ?? 1;
+
+    // 可选：当前页超出总页数时重置
+    if (pagination.value.currentPage > pagination.value.totalPages) {
+      pagination.value.currentPage = pagination.value.totalPages || 1;
+    }
+  } catch (error) {
+    pagination.value.totalItems = 0;
+    pagination.value.totalPages = 0;
+    Lg.e('Transaction', error);
+  } finally {
+    loading.value = false;
+  }
 }
 
 // 获取唯一分类
 const uniqueCategories = computed(() => {
-  const categories = props.budgets.map(budget => budget.category);
+  const categories = budgets.value.map(budget => budget.category);
   return [...new Set(categories)].filter(Boolean);
 });
 
 // 过滤后的预算
 const filteredBudgets = computed(() => {
-  let filtered = [...props.budgets];
+  let filtered = [...budgets.value];
 
   // 状态过滤
-  if (filters.value.status) {
+  if (filters.value.isActive) {
     filtered = filtered.filter(budget =>
-      filters.value.status === 'active' ? budget.isActive : !budget.isActive,
+      filters.value.isActive ? budget.isActive : !budget.isActive,
     );
   }
 
-  // 完成状态过滤
-  if (filters.value.completion) {
-    filtered = filtered.filter(budget => {
-      const isOver = isOverBudget(budget);
-      const isLow = isLowOnBudget(budget);
-
-      switch (filters.value.completion) {
-        case 'normal':
-          return !isOver && !isLow;
-        case 'warning':
-          return isLow && !isOver;
-        case 'exceeded':
-          return isOver;
-        default:
-          return true;
-      }
-    });
-  }
+  // // 完成状态过滤
+  // if (filters.value.completion) {
+  //   filtered = filtered.filter(budget => {
+  //     const isOver = isOverBudget(budget);
+  //     const isLow = isLowOnBudget(budget);
+  //
+  //     switch (filters.value.completion) {
+  //       case 'normal':
+  //         return !isOver && !isLow;
+  //       case 'warning':
+  //         return isLow && !isOver;
+  //       case 'exceeded':
+  //         return isOver;
+  //       default:
+  //         return true;
+  //     }
+  //   });
+  // }
 
   // 周期类型过滤 - 修复：比较 repeatPeriod.type 而不是 repeatPeriod 本身
-  if (filters.value.period) {
+  if (filters.value.repeatPeriod) {
     filtered = filtered.filter(
-      budget => budget.repeatPeriod.type === filters.value.period,
+      budget => budget.repeatPeriod.type === filters.value.repeatPeriod,
     );
   }
 
@@ -125,14 +195,14 @@ watch(
 
 // 原有的方法
 function getProgressPercent(budget: Budget) {
-  const used = Number.parseFloat(budget.usedAmount);
-  const total = Number.parseFloat(budget.amount);
+  const used = budget.usedAmount;
+  const total = budget.amount;
   return Math.min(Math.round((used / total) * 100), 100);
 }
 
 function isOverBudget(budget: Budget) {
-  const used = Number.parseFloat(budget.usedAmount);
-  const total = Number.parseFloat(budget.amount);
+  const used = budget.usedAmount;
+  const total = budget.amount;
   return used > total;
 }
 
@@ -146,10 +216,19 @@ function shouldHighlightRed(budget: Budget) {
 }
 
 function getRemainingAmount(budget: Budget) {
-  const used = Number.parseFloat(budget.usedAmount);
-  const total = Number.parseFloat(budget.amount);
+  const used = budget.usedAmount;
+  const total = budget.amount;
   return (total - used).toString();
 }
+// 组件挂载时加载数据
+onMounted(() => {
+  loadBudgets();
+});
+
+// 暴露刷新方法给父组件
+defineExpose({
+  refresh: loadBudgets,
+});
 </script>
 
 <template>
@@ -159,7 +238,7 @@ function getRemainingAmount(budget: Budget) {
       <div class="filter-flex-wrap">
         <label class="show-on-desktop text-sm text-gray-700 font-medium">{{ t('common.status.status') }}</label>
         <select
-          v-model="filters.status"
+          v-model="filters.isActive"
           class="border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <option value="">
@@ -174,32 +253,32 @@ function getRemainingAmount(budget: Budget) {
         </select>
       </div>
 
-      <div class="filter-flex-wrap">
-        <label class="show-on-desktop text-sm text-gray-700 font-medium"> {{ t('common.status.completed') }}{{
-          t('common.status.status') }} </label>
-        <select
-          v-model="filters.completion"
-          class="border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          <option value="">
-            {{ t('common.actions.all') }}
-          </option>
-          <option value="normal">
-            {{ t('common.status.normal') }}
-          </option>
-          <option value="warning">
-            {{ t('common.status.warning') }}(>70%)
-          </option>
-          <option value="exceeded">
-            {{ t('common.status.exceeded') }}
-          </option>
-        </select>
-      </div>
+      <!-- <div class="filter-flex-wrap"> -->
+      <!--   <label class="show-on-desktop text-sm text-gray-700 font-medium"> {{ t('common.status.completed') }}{{ -->
+      <!--     t('common.status.status') }} </label> -->
+      <!--   <select -->
+      <!--     v-model="filters.completion" -->
+      <!--     class="border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" -->
+      <!--   > -->
+      <!--     <option value=""> -->
+      <!--       {{ t('common.actions.all') }} -->
+      <!--     </option> -->
+      <!--     <option value="normal"> -->
+      <!--       {{ t('common.status.normal') }} -->
+      <!--     </option> -->
+      <!--     <option value="warning"> -->
+      <!--       {{ t('common.status.warning') }}(>70%) -->
+      <!--     </option> -->
+      <!--     <option value="exceeded"> -->
+      <!--       {{ t('common.status.exceeded') }} -->
+      <!--     </option> -->
+      <!--   </select> -->
+      <!-- </div> -->
 
       <div class="filter-flex-wrap">
         <label class="show-on-desktop text-sm text-gray-700 font-medium">{{ t('todos.repeat.periodType') }}</label>
         <select
-          v-model="filters.period"
+          v-model="filters.repeatPeriod"
           class="border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <option value="">

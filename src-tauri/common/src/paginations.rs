@@ -1,9 +1,9 @@
 use sea_orm::sea_query::Expr;
-use sea_orm::{ColumnTrait, Iterable, Condition, EntityTrait, Order, QueryOrder, Select};
+use sea_orm::{ColumnTrait, Condition, EntityTrait, Iterable, Order, QueryOrder, Select};
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
+use tracing::{error, info, warn};
 use validator::Validate;
-use tracing::{info,warn,error};
 
 use crate::crud::service::sanitize_input;
 
@@ -45,7 +45,7 @@ impl SortOptions {
     }
 
     /// 获取排序方向，优先使用 sort_dir，其次使用 desc 字段
-    fn effective_sort_direction(&self) -> Order{
+    fn effective_sort_direction(&self) -> Order {
         match self.sort_dir {
             Some(SortDirection::Asc) => Order::Asc,
             Some(SortDirection::Desc) => Order::Desc,
@@ -89,7 +89,10 @@ where
             }
             Err(_) => {
                 // 回退到默认排序：按创建时间降序
-                warn!("Failed to parse sort field: {}, using default sort", sort_field);
+                warn!(
+                    "Failed to parse sort field: {}, using default sort",
+                    sort_field
+                );
                 if let Ok(created_at) = E::Column::from_str("created_at") {
                     query.order_by(created_at, Order::Desc)
                 } else {
@@ -105,7 +108,6 @@ where
                 }
             }
         }
-    
     }
 }
 
@@ -140,7 +142,7 @@ fn default_page_size() -> usize {
 }
 
 /// 日期范围
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DateRange {
     pub start: Option<String>,

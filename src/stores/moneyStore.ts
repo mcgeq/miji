@@ -21,6 +21,7 @@ import type {
 } from '@/schema/money';
 import type { PagedResult } from '@/services/money/baseManager';
 import type { TransactionFilters } from '@/services/money/transactions';
+import { BudgetFilters } from '@/services/money/budgets';
 
 export enum MoneyStoreErrorCode {
   ACCOUNT_NOT_FOUND = 'ACCOUNT_NOT_FOUND',
@@ -416,10 +417,22 @@ export const useMoneyStore = defineStore('money', () => {
 
   // ==================== Budget Operations ====================
   const budgetOperations = {
-    async getAll(): Promise<Budget[]> {
+    async getListPaged(
+      query: PageQuery<BudgetFilters>,
+    ): Promise<PagedResult<Budget>> {
       return withLoading(async () => {
-        await updateLocalState.budgets();
-        return state.budgets;
+        try {
+          const result = await MoneyDb.listBudgetsPaged(query);
+          state.budgets = result.rows;
+          return result;
+        } catch (err) {
+          throw handleError(
+            err,
+            '获取交易列表失败',
+            'listTransactions',
+            'Transaction',
+          );
+        }
       });
     },
 
@@ -642,7 +655,7 @@ export const useMoneyStore = defineStore('money', () => {
     deleteTransfer: transferOperations.delete,
 
     // Budget operations
-    getBudgets: budgetOperations.getAll,
+    getBudgets: budgetOperations.getListPaged,
     createBudget: budgetOperations.create,
     updateBudget: budgetOperations.update,
     deleteBudget: budgetOperations.delete,
