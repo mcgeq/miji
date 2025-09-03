@@ -11,5 +11,6 @@
 
 pub mod date;
 pub mod files;
-pub mod uuid;
 pub mod serde_helper;
+pub mod uuid;
+pub mod validate;

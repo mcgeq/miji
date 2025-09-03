@@ -1,4 +1,3 @@
-use chrono::Utc;
 use common::utils::date::DateUtils;
 use lazy_static::lazy_static;
 use regex::Regex;
@@ -125,7 +124,7 @@ impl UpdateCurrencyRequest {
         }
 
         // 设置更新时间
-        model.updated_at = Set(Some(Utc::now().to_rfc3339()));
+        model.updated_at = Set(Some(DateUtils::local_rfc3339()));
     }
 }
 

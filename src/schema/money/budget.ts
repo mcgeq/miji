@@ -9,6 +9,7 @@ import {
   RepeatPeriodSchema,
   SerialNumSchema,
 } from '../common';
+import { AccountSchema } from './account';
 
 export const BudgetSchema = z.object({
   serialNum: SerialNumSchema,
@@ -16,16 +17,17 @@ export const BudgetSchema = z.object({
   accountSerialNum: SerialNumSchema,
   name: NameSchema,
   category: CategorySchema,
-  amount: z.string(),
+  amount: z.number(),
   currency: CurrencySchema,
   repeatPeriod: RepeatPeriodSchema,
   startDate: DateSchema,
   endDate: DateSchema,
-  usedAmount: z.string(),
+  usedAmount: z.number(),
   isActive: z.boolean(),
   alertEnabled: z.boolean(),
   alertThreshold: z.string().optional(),
   color: z.string(),
+  account: AccountSchema,
   createdAt: DateTimeSchema,
   updatedAt: DateTimeSchema.optional().nullable(),
 });
@@ -44,9 +46,11 @@ export const BudgetCreateSchema = BudgetSchema.pick({
   alertEnabled: true,
   alertThreshold: true,
   color: true,
-}).extend({
-  currency: z.string().length(3),
-}).strict();
+})
+  .extend({
+    currency: z.string().length(3),
+  })
+  .strict();
 
 export const BudgetUpdateSchema = BudgetCreateSchema.partial();
 

@@ -30,6 +30,7 @@ impl MigrationTrait for Migration {
                             .not_null()
                             .check(Expr::cust("LENGTH(name) <= 200")),
                     )
+                    .col(ColumnDef::new(Budget::Description).string())
                     .col(ColumnDef::new(Budget::Category).string().not_null().check(
                         Expr::col(Budget::Category).is_in(vec![
                             "Food",

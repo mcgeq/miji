@@ -256,6 +256,7 @@ pub enum Budget {
     SerialNum,
     AccountSerialNum,
     Name,
+    Description,
     Category,
     Amount,
     Currency,
@@ -367,4 +368,3 @@ pub enum BilReminder {
     CreatedAt,
     UpdatedAt,
 }
-

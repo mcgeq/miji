@@ -12,6 +12,7 @@ use crate::{
             AccountBalanceSummary, AccountResponseWithRelations, CreateAccountRequest,
             UpdateAccountRequest, convert_to_account, convert_to_response, tuple_to_response,
         },
+        budget::{Budget, BudgetCreate, BudgetUpdate},
         currency::{CreateCurrencyRequest, CurrencyResponse, UpdateCurrencyRequest},
         transactions::{
             CreateTransactionRequest, IncomeExpense, TransactionResponse, TransferRequest,
@@ -20,6 +21,7 @@ use crate::{
     },
     services::{
         account::{AccountFilter, get_account_service},
+        budget::{BudgetFilter, get_budget_service},
         currency::{CurrencyFilter, get_currency_service},
         transaction::{TransactionFilter, get_transaction_service},
     },
@@ -425,3 +427,71 @@ pub async fn transaction_list_paged(
             }),
     ))
 }
+
+// ============================================================================
+// start 预算相关
+
+#[tauri::command]
+pub async fn budget_get(
+    state: State<'_, AppState>,
+    serial_num: String,
+) -> Result<ApiResponse<Budget>, String> {
+    let service = get_budget_service();
+    Ok(ApiResponse::from_result(
+        service
+            .get_budget_with_relations(&state.db, serial_num)
+            .await
+            .map(Budget::from),
+    ))
+}
+
+#[tauri::command]
+pub async fn budget_create(
+    state: State<'_, AppState>,
+    data: BudgetCreate,
+) -> Result<ApiResponse<Budget>, String> {
+    let service = get_budget_service();
+    Ok(ApiResponse::from_result(
+        service
+            .create_with_relations(&state.db, data)
+            .await
+            .map(Budget::from),
+    ))
+}
+
+#[tauri::command]
+pub async fn budget_update(
+    state: State<'_, AppState>,
+    serial_num: String,
+    data: BudgetUpdate,
+) -> Result<ApiResponse<Budget>, String> {
+    let service = get_budget_service();
+    Ok(ApiResponse::from_result(
+        service
+            .update_with_relations(&state.db, serial_num, data)
+            .await
+            .map(Budget::from),
+    ))
+}
+
+#[tauri::command]
+pub async fn budget_list_paged(
+    state: State<'_, AppState>,
+    query: PagedQuery<BudgetFilter>,
+) -> Result<ApiResponse<PagedResult<Budget>>, String> {
+    let service = get_budget_service();
+    Ok(ApiResponse::from_result(
+        service
+            .budget_list_paged(&state.db, query)
+            .await
+            .map(|paged| PagedResult {
+                rows: paged.rows.into_iter().map(Budget::from).collect(),
+                total_count: paged.total_count,
+                current_page: paged.current_page,
+                page_size: paged.page_size,
+                total_pages: paged.total_pages,
+            }),
+    ))
+}
+// end   预算相关
+// ============================================================================

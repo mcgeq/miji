@@ -10,6 +10,7 @@ pub struct Model {
     pub serial_num: String,
     pub account_serial_num: String,
     pub name: String,
+    pub description: Option<String>,
     pub category: String,
     pub amount: Decimal,
     pub currency: String,

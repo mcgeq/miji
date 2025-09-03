@@ -5,7 +5,7 @@ use common::{
     BusinessCode,
     crud::service::{parse_enum_filed, parse_json_field, serialize_enum},
     error::AppError,
-    utils::{date::DateUtils, uuid::McgUuid},
+    utils::{date::DateUtils, uuid::McgUuid, validate::validate_date_time},
 };
 use sea_orm::{ActiveValue::Set, FromQueryResult, prelude::Decimal};
 use serde::{Deserialize, Serialize};
@@ -573,12 +573,6 @@ fn validate_amount(amount: &Decimal) -> Result<(), validator::ValidationError> {
 #[allow(dead_code)]
 fn validate_date(date: &str) -> Result<(), validator::ValidationError> {
     NaiveDate::parse_from_str(date, "%Y-%m-%d")
-        .map(|_| ())
-        .map_err(|_| validator::ValidationError::new("invalid_date_format"))
-}
-
-fn validate_date_time(date: &str) -> Result<(), validator::ValidationError> {
-    NaiveDate::parse_from_str(date, "%Y-%m-%dT%H:%M:%S%.f%:z")
         .map(|_| ())
         .map_err(|_| validator::ValidationError::new("invalid_date_format"))
 }
