@@ -127,8 +127,8 @@ impl CrudConverter<entity::budget::Entity, BudgetCreate, BudgetUpdate> for Budge
         entity::budget::ActiveModel::try_from(data)
             .map(|mut active_model| {
                 active_model.serial_num = ActiveValue::Set(model.serial_num.clone());
-                active_model.created_at = ActiveValue::Set(model.created_at.clone());
-                active_model.updated_at = ActiveValue::Set(Some(DateUtils::local_rfc3339()));
+                active_model.created_at = ActiveValue::Set(model.created_at);
+                active_model.updated_at = ActiveValue::Set(Some(DateUtils::local_now()));
                 active_model
             })
             .map_err(AppError::from_validation_errors)
@@ -154,9 +154,13 @@ impl BudgetConverter {
 
         let (account, currency) = tokio::try_join!(
             async {
-                account_service
-                    .get_account_with_relations(db, model.account_serial_num.clone())
-                    .await
+                match model.account_serial_num.clone() {
+                    Some(account_serial_num) => account_service
+                        .get_account_with_relations(db, account_serial_num)
+                        .await
+                        .map(Some),
+                    None => Ok(None),
+                }
             },
             async { cny_service.get_by_id(db, model.currency.clone()).await },
         )?;

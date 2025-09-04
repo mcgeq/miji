@@ -22,6 +22,14 @@ impl DateUtils {
         Local::now().to_rfc3339_opts(chrono::SecondsFormat::Micros, false)
     }
 
+    pub fn local_now() -> DateTime<FixedOffset> {
+        Local::now().fixed_offset()
+    }
+
+    pub fn local_now_naivedate() -> NaiveDate {
+        Local::now().date_naive()
+    }
+
     pub fn datetime_local_fixed(datetime: Option<NaiveDateTime>) -> DateTime<FixedOffset> {
         if let Some(n) = datetime {
             n.and_utc().fixed_offset()

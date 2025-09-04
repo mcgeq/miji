@@ -12,7 +12,9 @@ pub struct Model {
     #[sea_orm(column_type = "Text")]
     pub description: String,
     pub r#type: String,
+    #[sea_orm(column_type = "Decimal(Some((16, 4)))")]
     pub balance: Decimal,
+    #[sea_orm(column_type = "Decimal(Some((16, 4)))")]
     pub initial_balance: Decimal,
     pub currency: String,
     pub is_shared: i32,

@@ -8,22 +8,45 @@ use serde::{Deserialize, Serialize};
 pub struct Model {
     #[sea_orm(primary_key, auto_increment = false)]
     pub serial_num: String,
-    pub account_serial_num: String,
+    pub account_serial_num: Option<String>,
     pub name: String,
     pub description: Option<String>,
     pub category: String,
+    #[sea_orm(column_type = "Decimal(Some((15, 2)))")]
     pub amount: Decimal,
     pub currency: String,
-    pub repeat_period: String,
-    pub start_date: String,
-    pub end_date: String,
+    #[sea_orm(column_type = "JsonBinary")]
+    pub repeat_period: Json,
+    pub start_date: DateTimeWithTimeZone,
+    pub end_date: DateTimeWithTimeZone,
+    #[sea_orm(column_type = "Decimal(Some((15, 2)))")]
     pub used_amount: Decimal,
-    pub is_active: i32,
-    pub alert_enabled: i32,
-    pub alert_threshold: Option<String>,
+    pub is_active: bool,
+    pub alert_enabled: bool,
+    #[sea_orm(column_type = "JsonBinary", nullable)]
+    pub alert_threshold: Option<Json>,
     pub color: Option<String>,
-    pub created_at: String,
-    pub updated_at: Option<String>,
+    pub created_at: DateTimeWithTimeZone,
+    pub updated_at: Option<DateTimeWithTimeZone>,
+    #[sea_orm(column_type = "Decimal(Some((15, 2)))")]
+    pub current_period_used: Decimal,
+    pub current_period_start: Date,
+    pub last_reset_at: DateTimeWithTimeZone,
+    pub budget_type: String,
+    #[sea_orm(column_type = "Decimal(Some((3, 2)))")]
+    pub progress: Decimal,
+    pub linked_goal: Option<String>,
+    #[sea_orm(column_type = "JsonBinary", nullable)]
+    pub reminders: Option<Json>,
+    pub priority: i8,
+    pub tags: Option<Json>,
+    pub auto_rollover: bool,
+    #[sea_orm(column_type = "JsonBinary", nullable)]
+    pub rollover_history: Option<Json>,
+    #[sea_orm(column_type = "JsonBinary", nullable)]
+    pub sharing_settings: Option<Json>,
+    #[sea_orm(column_type = "JsonBinary", nullable)]
+    pub attachments: Option<Json>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
@@ -45,3 +68,4 @@ impl Related<super::account::Entity> for Entity {
 }
 
 impl ActiveModelBehavior for ActiveModel {}
+

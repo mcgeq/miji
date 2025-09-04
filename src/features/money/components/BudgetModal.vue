@@ -3,7 +3,7 @@ import { Check, X } from 'lucide-vue-next';
 import ColorSelector from '@/components/common/ColorSelector.vue';
 import RepeatPeriodSelector from '@/components/common/RepeatPeriodSelector.vue';
 import { COLORS_MAP, CURRENCY_CNY } from '@/constants/moneyConst';
-import { CategorySchema } from '@/schema/common';
+import { BudgetTypeSchema, CategorySchema } from '@/schema/common';
 import { DateUtils } from '@/utils/date';
 import { uuid } from '@/utils/uuid';
 import { getLocalCurrencyInfo } from '../utils/money';
@@ -36,45 +36,15 @@ const validationErrors = reactive({
   priority: '',
 });
 
-const budget = props.budget || {
-  serialNum: '',
-  name: '',
-  description: '',
-  accountSerialNum: '',
-  category: CategorySchema.enum.Others,
-  amount: '',
-  currency: currency.value,
-  repeatPeriod: { type: 'None' },
-  startDate: '',
-  endDate: '',
-  usedAmount: '',
-  isActive: true,
-  alertEnabled: false,
-  alertThreshold: '0',
-  color: COLORS_MAP[0].code,
-  createdAt: DateUtils.getLocalISODateTimeWithOffset(),
-  updatedAt: '',
-};
+const budget = props.budget || getDefaultBudget();
 
 // 响应式数据
 const form = reactive<Budget>({
-  serialNum: budget.serialNum,
-  accountSerialNum: budget.accountSerialNum,
-  name: budget.name,
-  description: budget.description,
-  category: budget.category,
-  amount: budget.amount,
-  currency: budget.currency,
-  repeatPeriod: budget.repeatPeriod,
+  ...budget,
+  // 特殊处理日期字段
   startDate: budget.startDate,
   endDate: budget.endDate,
-  usedAmount: budget.usedAmount,
-  isActive: budget.isActive,
-  alertEnabled: budget.alertEnabled,
-  alertThreshold: budget.alertThreshold,
-  color: budget.color,
-  createdAt: budget.createdAt,
-  updatedAt: budget.updatedAt,
+  currentPeriodStart: budget.currentPeriodStart ? budget.currentPeriodStart : undefined,
 });
 
 function closeModal() {
@@ -100,10 +70,46 @@ function handleRepeatPeriodChange(_value: RepeatPeriod) {
 function handleRepeatPeriodValidation(isValid: boolean) {
   if (!isValid) {
     validationErrors.repeatPeriod = t('validation.repeatPeriodIncomplete');
-  }
-  else {
+  } else {
     validationErrors.repeatPeriod = '';
   }
+}
+
+function getDefaultBudget(): Budget {
+  const day = DateUtils.getTodayDate();
+  return {
+    serialNum: '',
+    accountSerialNum: '',
+    name: '',
+    description: '',
+    category: CategorySchema.enum.Others,
+    amount: 0, // 修正为数字类型
+    currency: currency.value,
+    repeatPeriod: { type: 'None' },
+    startDate: day, // 使用日期专用函数
+    endDate: DateUtils.addDays(day, 30), // 默认1个月后
+    usedAmount: 0, // 修正为数字类型
+    isActive: true,
+    alertEnabled: false,
+    alertThreshold: undefined, // 修正为数字类型
+    color: COLORS_MAP[0].code,
+    account: null, // 添加必需字段
+    createdAt: DateUtils.getLocalISODateTimeWithOffset(),
+    updatedAt: null,
+    // 可选字段提供合理默认值
+    currentPeriodUsed: 0,
+    currentPeriodStart: DateUtils.getLocalISODateTimeWithOffset(),
+    budgetType: BudgetTypeSchema.enum.Standard,
+    progress: 0,
+    linkedGoal: '',
+    reminders: [],
+    priority: 0,
+    tags: [],
+    autoRollover: false,
+    rolloverHistory: [],
+    sharingSettings: { sharedWith: [], permissionLevel: 'ViewOnly' },
+    attachments: [],
+  };
 }
 
 watch(
