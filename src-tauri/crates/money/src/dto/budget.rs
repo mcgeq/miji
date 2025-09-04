@@ -7,7 +7,9 @@ use sea_orm::{ActiveValue, prelude::Decimal};
 use serde::{Deserialize, Serialize};
 use validator::Validate;
 
-use crate::dto::account::{AccountResponseWithRelations, AccountWithRelations, CurrencyInfo};
+use crate::dto::account::{
+    AccountResponseWithRelations, AccountType, AccountWithRelations, CurrencyInfo,
+};
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "PascalCase")] // 注意要和前端 z.enum 值匹配大小写
@@ -115,6 +117,49 @@ pub struct Attachment {
     pub uploaded_at: DateTime<Utc>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "PascalCase")]
+pub enum BudgetScopeType {
+    Category,  // 仅分类
+    Account,   // 仅账户
+    Hybrid,    // 混合模式
+    RuleBased, // 规则引擎
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AccountScope {
+    pub included_accounts: Vec<String>,
+    pub excluded_accounts: Option<Vec<String>>,
+    pub account_types: Option<Vec<AccountType>>,
+    pub include_all_of_type: Option<bool>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CategoryScope {
+    pub included_categories: Vec<String>,
+    pub excluded_categories: Option<Vec<String>>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum BudgetRuleType {
+    DescriptionContains,
+    AmountGreaterThan,
+    AmountLessThan,
+    HasTag,
+    PaymentMethod,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BudgetRule {
+    pub rule_type: BudgetRuleType,
+    pub value: String,         // 或 serde_json::Value 根据具体类型
+    pub inverse: Option<bool>, // 是否反向匹配
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 #[serde(rename_all = "camelCase")]
 pub struct BudgetBase {
@@ -125,7 +170,6 @@ pub struct BudgetBase {
     #[validate(length(min = 2, max = 20))]
     pub name: String,
     pub description: Option<String>,
-    pub category: String,
     pub amount: Decimal,
     pub repeat_period: serde_json::Value,
     pub start_date: DateTime<FixedOffset>,
@@ -148,6 +192,10 @@ pub struct BudgetBase {
     pub rollover_history: Option<serde_json::Value>,
     pub sharing_settings: Option<serde_json::Value>,
     pub attachments: Option<serde_json::Value>,
+    pub budget_scope_type: String,
+    pub account_scope: Option<serde_json::Value>,
+    pub category_scope: Option<serde_json::Value>,
+    pub advanced_rules: Option<serde_json::Value>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -205,6 +253,10 @@ pub struct BudgetUpdate {
     pub rollover_history: Option<serde_json::Value>,
     pub sharing_settings: Option<serde_json::Value>,
     pub attachments: Option<serde_json::Value>,
+    pub budget_scope_type: Option<String>,
+    pub account_scope: Option<serde_json::Value>,
+    pub category_scope: Option<serde_json::Value>,
+    pub advanced_rules: Option<serde_json::Value>,
 }
 
 impl BudgetUpdate {
@@ -215,9 +267,6 @@ impl BudgetUpdate {
         }
         if let Some(name) = self.name {
             model.name = ActiveValue::Set(name);
-        }
-        if let Some(category) = self.category {
-            model.category = ActiveValue::Set(category);
         }
         if let Some(amount) = self.amount {
             model.amount = ActiveValue::Set(amount);
@@ -294,6 +343,18 @@ impl BudgetUpdate {
         if let Some(attachments) = self.attachments {
             model.attachments = ActiveValue::Set(Some(attachments));
         }
+        if let Some(budget_scope_type) = self.budget_scope_type {
+            model.budget_scope_type = ActiveValue::Set(budget_scope_type);
+        }
+        if let Some(account_scope) = self.account_scope {
+            model.account_scope = ActiveValue::Set(Some(account_scope));
+        }
+        if let Some(category_scope) = self.category_scope {
+            model.category_scope = ActiveValue::Set(Some(category_scope));
+        }
+        if let Some(advanced_rules) = self.advanced_rules {
+            model.advanced_rules = ActiveValue::Set(Some(advanced_rules));
+        }
         model.updated_at = ActiveValue::Set(Some(DateUtils::local_now()))
     }
 }
@@ -310,7 +371,6 @@ impl TryFrom<BudgetCreate> for entity::budget::ActiveModel {
             serial_num: ActiveValue::Set(serial_num),
             account_serial_num: ActiveValue::Set(budget.account_serial_num),
             name: ActiveValue::Set(budget.name),
-            category: ActiveValue::Set(budget.category),
             description: ActiveValue::Set(budget.description),
             amount: ActiveValue::Set(budget.amount),
             used_amount: ActiveValue::Set(budget.used_amount),
@@ -335,6 +395,10 @@ impl TryFrom<BudgetCreate> for entity::budget::ActiveModel {
             rollover_history: ActiveValue::Set(None),
             sharing_settings: ActiveValue::Set(None),
             attachments: ActiveValue::Set(None),
+            budget_scope_type: ActiveValue::Set(budget.budget_scope_type),
+            account_scope: ActiveValue::Set(budget.account_scope),
+            category_scope: ActiveValue::Set(budget.category_scope),
+            advanced_rules: ActiveValue::Set(budget.advanced_rules),
             created_at: ActiveValue::Set(now),
             updated_at: ActiveValue::Set(Some(now)),
         })
@@ -355,7 +419,6 @@ impl TryFrom<BudgetUpdate> for entity::budget::ActiveModel {
             account_serial_num: value
                 .account_serial_num
                 .map_or(ActiveValue::NotSet, |val| ActiveValue::Set(Some(val))),
-            category: value.category.map_or(ActiveValue::NotSet, ActiveValue::Set),
             amount: value.amount.map_or(ActiveValue::NotSet, ActiveValue::Set),
             used_amount: value
                 .used_amount
@@ -401,7 +464,18 @@ impl TryFrom<BudgetUpdate> for entity::budget::ActiveModel {
             rollover_history: ActiveValue::Set(None),
             sharing_settings: ActiveValue::Set(None),
             attachments: ActiveValue::Set(None),
-
+            budget_scope_type: value
+                .budget_scope_type
+                .map_or(ActiveValue::NotSet, ActiveValue::Set),
+            account_scope: value
+                .account_scope
+                .map_or(ActiveValue::NotSet, |val| ActiveValue::Set(Some(val))),
+            category_scope: value
+                .category_scope
+                .map_or(ActiveValue::NotSet, |val| ActiveValue::Set(Some(val))),
+            advanced_rules: value
+                .advanced_rules
+                .map_or(ActiveValue::NotSet, |val| ActiveValue::Set(Some(val))),
             created_at: ActiveValue::NotSet,
             updated_at: ActiveValue::Set(Some(now)),
         })
@@ -419,7 +493,6 @@ impl From<BudgetWithAccount> for Budget {
                 name: budget.name,
                 description: budget.description,
                 account_serial_num: budget.account_serial_num,
-                category: budget.category,
                 amount: budget.amount,
                 used_amount: budget.used_amount,
                 repeat_period: budget.repeat_period,
@@ -441,6 +514,10 @@ impl From<BudgetWithAccount> for Budget {
                 rollover_history: budget.rollover_history,
                 sharing_settings: budget.sharing_settings,
                 attachments: budget.attachments,
+                budget_scope_type: budget.budget_scope_type,
+                account_scope: budget.account_scope,
+                category_scope: budget.category_scope,
+                advanced_rules: budget.advanced_rules,
             },
             account,
             currency: CurrencyInfo::from(cny),

@@ -17,12 +17,49 @@ import {
 } from '../common';
 import { AccountSchema } from './account';
 
+// 新增预算范围类型定义
+export const BudgetScopeTypeSchema = z.enum([
+  'Category',
+  'Account',
+  'Hybrid',
+  'RuleBased',
+]);
+
+// 新增账户范围定义
+export const AccountScopeSchema = z.object({
+  includedAccounts: z.array(SerialNumSchema),
+  excludedAccounts: z.array(SerialNumSchema).optional(),
+  accountTypes: z.array(z.string()).optional(),
+  includeAllOfType: z.boolean().optional(),
+});
+
+// 新增分类范围定义
+export const CategoryScopeSchema = z.object({
+  includedCategories: z.array(CategorySchema),
+  excludedCategories: z.array(CategorySchema).optional(),
+});
+
+// 新增预算规则类型定义
+export const BudgetRuleTypeSchema = z.enum([
+  'DescriptionContains',
+  'AmountGreaterThan',
+  'AmountLessThan',
+  'HasTag',
+  'PaymentMethod',
+]);
+
+// 新增预算规则定义
+export const BudgetRuleSchema = z.object({
+  ruleType: BudgetRuleTypeSchema,
+  value: z.string(),
+  inverse: z.boolean().optional(),
+});
+
 export const BudgetSchema = z.object({
   serialNum: SerialNumSchema,
   accountSerialNum: SerialNumSchema,
   name: NameSchema,
   description: DescriptionSchema,
-  category: CategorySchema,
   amount: z.number(),
   currency: CurrencySchema,
   repeatPeriod: RepeatPeriodSchema,
@@ -46,6 +83,10 @@ export const BudgetSchema = z.object({
   rolloverHistory: z.array(RolloverRecordSchema).optional(),
   sharingSettings: SharingSettingsSchema.optional(),
   attachments: z.array(AttachmentSchema).optional(),
+  budgetScopeType: BudgetScopeTypeSchema,
+  accountScope: AccountScopeSchema.optional().nullable(),
+  categoryScope: CategoryScopeSchema,
+  advancedRules: z.array(BudgetRuleSchema).optional().nullable(),
   createdAt: DateTimeSchema,
   updatedAt: DateTimeSchema.optional().nullable(),
 });
@@ -54,7 +95,6 @@ export const BudgetCreateSchema = BudgetSchema.pick({
   description: true,
   accountSerialNum: true,
   name: true,
-  category: true,
   amount: true,
   repeatPeriod: true,
   startDate: true,
@@ -64,6 +104,11 @@ export const BudgetCreateSchema = BudgetSchema.pick({
   alertEnabled: true,
   alertThreshold: true,
   color: true,
+  budgetType: true,
+  budgetScopeType: true, // 新增
+  accountScope: true, // 新增
+  categoryScope: true, // 新增
+  advancedRules: true, // 新增
 })
   .extend({
     currency: z.string().length(3),

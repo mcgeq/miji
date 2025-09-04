@@ -49,10 +49,6 @@ impl Filter<entity::budget::Entity> for BudgetFilter {
             condition = condition.add(entity::budget::Column::Name.eq(name));
         }
 
-        if let Some(category) = &self.category {
-            condition = condition.add(entity::budget::Column::Category.eq(category));
-        }
-
         // Amount
         if let Some(amount) = self.amount {
             condition = condition.add(entity::budget::Column::Amount.eq(amount));

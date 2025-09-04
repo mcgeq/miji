@@ -4,6 +4,7 @@ import ColorSelector from '@/components/common/ColorSelector.vue';
 import RepeatPeriodSelector from '@/components/common/RepeatPeriodSelector.vue';
 import { COLORS_MAP, CURRENCY_CNY } from '@/constants/moneyConst';
 import { BudgetTypeSchema, CategorySchema } from '@/schema/common';
+import { BudgetScopeTypeSchema } from '@/schema/money';
 import { DateUtils } from '@/utils/date';
 import { uuid } from '@/utils/uuid';
 import { getLocalCurrencyInfo } from '../utils/money';
@@ -42,10 +43,22 @@ const budget = props.budget || getDefaultBudget();
 const form = reactive<Budget>({
   ...budget,
   // 特殊处理日期字段
+  categoryScope: budget.categoryScope || {
+    includedCategories: [],
+    excludedCategories: [],
+  },
   startDate: budget.startDate,
   endDate: budget.endDate,
   currentPeriodStart: budget.currentPeriodStart ? budget.currentPeriodStart : undefined,
 });
+const categoryOptions = Object.values(CategorySchema.enum).map(type => ({
+  original: type,
+  snake: toCamelCase(type),
+}));
+const types = Object.values(BudgetScopeTypeSchema.enum).map(type => ({
+  original: type,
+  snake: toCamelCase(type),
+}));
 
 function closeModal() {
   emit('close');
@@ -82,7 +95,6 @@ function getDefaultBudget(): Budget {
     accountSerialNum: '',
     name: '',
     description: '',
-    category: CategorySchema.enum.Others,
     amount: 0, // 修正为数字类型
     currency: currency.value,
     repeatPeriod: { type: 'None' },
@@ -109,7 +121,41 @@ function getDefaultBudget(): Budget {
     rolloverHistory: [],
     sharingSettings: { sharedWith: [], permissionLevel: 'ViewOnly' },
     attachments: [],
+    budgetScopeType: BudgetScopeTypeSchema.enum.Category,
+    accountScope: null,
+    categoryScope: {
+      includedCategories: [],
+      excludedCategories: [],
+    },
+    advancedRules: null,
   };
+}
+
+// 添加分类到包含列表
+function _addToIncludedCategories(category: typeof CategorySchema.enum[keyof typeof CategorySchema.enum]) {
+  if (!form.categoryScope?.includedCategories.includes(category)) {
+    form.categoryScope?.includedCategories.push(category);
+    form.categoryScope.excludedCategories = form.categoryScope.excludedCategories?.filter(c => c !== category);
+  }
+}
+// 添加分类到排除列表
+function _addToExcludedCategories(category: typeof CategorySchema.enum[keyof typeof CategorySchema.enum]) {
+  if (!form.categoryScope.excludedCategories?.includes(category)) {
+    form.categoryScope.excludedCategories?.push(category);
+    form.categoryScope.includedCategories = form.categoryScope.includedCategories.filter(c => c !== category);
+  }
+}
+// 从包含列表中移除分类
+function _removeFromIncludedCategories(category: typeof CategorySchema.enum[keyof typeof CategorySchema.enum]) {
+  form.categoryScope.includedCategories = form.categoryScope.includedCategories.filter(c => c !== category);
+}
+// 从排除列表中移除分类
+function _removeFromExcludedCategories(category: typeof CategorySchema.enum[keyof typeof CategorySchema.enum]) {
+  form.categoryScope.excludedCategories = form.categoryScope.excludedCategories?.filter(c => c !== category);
+}
+
+function toCamelCase(str: string) {
+  return str.charAt(0).toLowerCase() + str.slice(1);
 }
 
 watch(
@@ -117,6 +163,12 @@ watch(
   newVal => {
     if (newVal) {
       const clonedAccount = JSON.parse(JSON.stringify(newVal));
+      if (!clonedAccount.categoryScope) {
+        clonedAccount.categoryScope = {
+          includedCategories: [],
+          excludedCategories: [],
+        };
+      }
       Object.assign(form, clonedAccount);
     }
   },
@@ -155,44 +207,47 @@ onMounted(async () => {
 
         <div class="mb-2 flex items-center justify-between">
           <label class="mb-2 text-sm text-gray-700 font-medium">
-            {{ t('financial.budget.budgetCategory') }}
+            {{ t('financial.budget.budgetScopeType') }}
           </label>
-          <select v-model="form.category" required class="w-2/3 modal-input-select">
-            <option value="">
-              {{ t('common.placeholders.selectCategory') }}
+          <select v-model="form.budgetScopeType" required class="w-2/3 modal-input-select">
+            <option
+              v-for="ty in types"
+              :key="ty.original"
+              :value="ty.snake"
+            >
+              {{ t(`financial.budgetScopeTypes.${ty.snake}`) }}
             </option>
-            <option value="food">
-              {{ t('financial.budgetCategories.food') }}
+          </select>
+        </div>
+
+        <!-- 分类范围设置（包含的分类） -->
+        <div v-if="form.budgetScopeType === 'Category' || form.budgetScopeType === 'Hybrid'" class="mb-2">
+          <label class="mb-2 text-sm text-gray-700 font-medium">
+            {{ t('financial.budget.includedCategories') }}
+          </label>
+          <select
+            v-model="form.categoryScope.includedCategories"
+            multiple
+            class="h-32 w-full modal-input-select"
+          >
+            <option v-for="category in categoryOptions" :key="category.original" :value="category">
+              {{ t(`financial.budgetCategories.${category.snake}`) }}
             </option>
-            <option value="transport">
-              {{ t('financial.budgetCategories.transport') }}
-            </option>
-            <option value="shopping">
-              {{ t('financial.budgetCategories.shopping') }}
-            </option>
-            <option value="entertainment">
-              {{ t('financial.budgetCategories.entertainment') }}
-            </option>
-            <option value="health">
-              {{ t('financial.budgetCategories.health') }}
-            </option>
-            <option value="education">
-              {{ t('financial.budgetCategories.education') }}
-            </option>
-            <option value="housing">
-              {{ t('financial.budgetCategories.housing') }}
-            </option>
-            <option value="utilities">
-              {{ t('financial.budgetCategories.utilities') }}
-            </option>
-            <option value="insurance">
-              {{ t('financial.budgetCategories.insurance') }}
-            </option>
-            <option value="investment">
-              {{ t('financial.budgetCategories.investment') }}
-            </option>
-            <option value="other">
-              {{ t('financial.budgetCategories.other') }}
+          </select>
+        </div>
+
+        <!-- 分类范围设置（排除的分类） -->
+        <div v-if="form.budgetScopeType === 'Category' || form.budgetScopeType === 'Hybrid'" class="mb-2">
+          <label class="mb-2 text-sm text-gray-700 font-medium">
+            {{ t('financial.budget.excludedCategories') }}
+          </label>
+          <select
+            v-model="form.categoryScope.excludedCategories"
+            multiple
+            class="h-32 w-full modal-input-select"
+          >
+            <option v-for="category in categoryOptions" :key="category.original" :value="category">
+              {{ t(`financial.budgetCategories.${category.snake}`) }}
             </option>
           </select>
         </div>

@@ -31,18 +31,6 @@ impl MigrationTrait for Migration {
                             .check(Expr::cust("LENGTH(name) <= 200")),
                     )
                     .col(ColumnDef::new(Budget::Description).string())
-                    .col(ColumnDef::new(Budget::Category).string().not_null().check(
-                        Expr::col(Budget::Category).is_in(vec![
-                            "Food",
-                            "Transport",
-                            "Entertainment",
-                            "Utilities",
-                            "Shopping",
-                            "Salary",
-                            "Investment",
-                            "Others",
-                        ]),
-                    ))
                     .col(
                         ColumnDef::new(Budget::Amount)
                             .decimal_len(15, 2)
@@ -137,6 +125,15 @@ impl MigrationTrait for Migration {
                     .col(ColumnDef::new(Budget::RolloverHistory).json_binary().null())
                     .col(ColumnDef::new(Budget::SharingSettings).json_binary().null())
                     .col(ColumnDef::new(Budget::Attachments).json_binary().null())
+                    .col(
+                        ColumnDef::new(Budget::BudgetScopeType)
+                            .string_len(20)
+                            .not_null()
+                            .default("Category"),
+                    )
+                    .col(ColumnDef::new(Budget::AccountScope).json_binary().null())
+                    .col(ColumnDef::new(Budget::CategoryScope).json_binary().null())
+                    .col(ColumnDef::new(Budget::AdvancedRules).json_binary().null())
                     .foreign_key(
                         ForeignKey::create()
                             .name("fk_budget_account")
@@ -148,85 +145,81 @@ impl MigrationTrait for Migration {
                     .to_owned(),
             )
             .await?;
+        // 创建索引
+        let indexes = vec![
+            ("idx_budget_account", Budget::AccountSerialNum),
+            ("idx_budget_type", Budget::BudgetType),
+            ("idx_budget_active", Budget::IsActive),
+            ("idx_budget_start_date", Budget::StartDate),
+            ("idx_budget_scope_type", Budget::BudgetScopeType),
+        ];
+        for (name, column) in indexes {
+            manager
+                .create_index(
+                    Index::create()
+                        .name(name)
+                        .table(Budget::Table)
+                        .col(column)
+                        .if_not_exists()
+                        .to_owned(),
+                )
+                .await?;
+        }
+        // 为JSON字段创建GIN索引
+        let json_indexes = vec![
+            ("idx_budget_account_scope", Budget::AccountScope),
+            ("idx_budget_category_scope", Budget::CategoryScope),
+            ("idx_budget_advanced_rules", Budget::AdvancedRules),
+        ];
 
-        manager
-            .create_index(
-                Index::create()
-                    .name("idx_budget_account")
-                    .table(Budget::Table)
-                    .col(Budget::AccountSerialNum)
-                    .if_not_exists()
-                    .to_owned(),
-            )
-            .await?;
-
-        manager
-            .create_index(
-                Index::create()
-                    .name("idx_budget_category")
-                    .table(Budget::Table)
-                    .col(Budget::Category)
-                    .if_not_exists()
-                    .to_owned(),
-            )
-            .await?;
-
-        manager
-            .create_index(
-                Index::create()
-                    .name("idx_budget_type")
-                    .table(Budget::Table)
-                    .col(Budget::BudgetType)
-                    .if_not_exists()
-                    .to_owned(),
-            )
-            .await?;
-
-        manager
-            .create_index(
-                Index::create()
-                    .name("idx_budget_active")
-                    .table(Budget::Table)
-                    .col(Budget::IsActive)
-                    .if_not_exists()
-                    .to_owned(),
-            )
-            .await?;
-
-        manager
-            .create_index(
-                Index::create()
-                    .name("idx_budget_start_date")
-                    .table(Budget::Table)
-                    .col(Budget::StartDate)
-                    .if_not_exists()
-                    .to_owned(),
-            )
-            .await?;
+        for (name, column) in json_indexes {
+            manager
+                .create_index(
+                    Index::create()
+                        .name(name)
+                        .table(Budget::Table)
+                        .col(column)
+                        .index_type(IndexType::Custom(SeaRc::new(GinIndex)))
+                        .if_not_exists()
+                        .to_owned(),
+                )
+                .await?;
+        }
 
         Ok(())
     }
 
     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
-        manager
-            .drop_index(Index::drop().name("idx_budget_account").to_owned())
-            .await?;
-        manager
-            .drop_index(Index::drop().name("idx_budget_category").to_owned())
-            .await?;
-        manager
-            .drop_index(Index::drop().name("idx_budget_type").to_owned())
-            .await?;
-        manager
-            .drop_index(Index::drop().name("idx_budget_active").to_owned())
-            .await?;
-        manager
-            .drop_index(Index::drop().name("idx_budget_start_date").to_owned())
-            .await?;
+        let indexes = vec![
+            "idx_budget_account",
+            "idx_budget_type",
+            "idx_budget_active",
+            "idx_budget_start_date",
+            "idx_budget_scope_type",
+            "idx_budget_account_scope",
+            "idx_budget_category_scope",
+            "idx_budget_advanced_rules",
+        ];
+
+        for name in indexes {
+            manager
+                .drop_index(Index::drop().name(name).to_owned())
+                .await?;
+        }
+
+        // 删除表
         manager
             .drop_table(Table::drop().table(Budget::Table).to_owned())
             .await?;
-
         Ok(())
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct GinIndex;
+
+impl Iden for GinIndex {
+    fn unquoted(&self, s: &mut dyn std::fmt::Write) {
+        write!(s, "gin").unwrap();
     }
 }

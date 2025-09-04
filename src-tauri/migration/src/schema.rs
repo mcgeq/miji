@@ -257,7 +257,6 @@ pub enum Budget {
     AccountSerialNum,
     Name,
     Description,
-    Category,
     Amount,
     Currency,
     RepeatPeriod,
@@ -271,18 +270,23 @@ pub enum Budget {
     CreatedAt,
     UpdatedAt,
     CurrentPeriodUsed,  // 当前周期已用金额
-    CurrentPeriodStart,  // 当前周期开始日期
-    LastResetAt,  // 最后重置时间
-    BudgetType,  // 预算类型（标准/储蓄/债务等）
-    Progress,  // 进度百分比
-    LinkedGoal,  // 关联目标
-    Reminders,  // 提醒设置
-    Priority,  // 优先级（1-5）
-    Tags,  // 标签
-    AutoRollover,  // 是否自动滚动
-    RolloverHistory,  // 滚动历史记录
-    SharingSettings,  // 共享设置
-    Attachments,  // 附件信息
+    CurrentPeriodStart, // 当前周期开始日期
+    LastResetAt,        // 最后重置时间
+    BudgetType,         // 预算类型（标准/储蓄/债务等）
+    Progress,           // 进度百分比
+    LinkedGoal,         // 关联目标
+    Reminders,          // 提醒设置
+    Priority,           // 优先级（1-5）
+    Tags,               // 标签
+    AutoRollover,       // 是否自动滚动
+    RolloverHistory,    // 滚动历史记录
+    SharingSettings,    // 共享设置
+    Attachments,        // 附件信息
+    // 新增字段 - 预算范围系统
+    BudgetScopeType, // 预算范围类型: Category/Account/Hybrid/RuleBased
+    AccountScope,    // JSONB 账户范围配置
+    CategoryScope,   // JSONB 分类范围配置
+    AdvancedRules,   // JSONB 高级规则数组
 }
 
 #[derive(DeriveIden)]

@@ -397,26 +397,165 @@ export const DEFAULT_REMINDER_TYPES: ReminderTypeI18[] = [
   },
 ];
 
+// 定义分类接口
+export interface CategoryDefinition {
+  code: string; // 分类代码
+  nameZh: string; // 中文名称
+  nameEn: string; // 英文名称
+  icon?: string; // 可选图标
+  description?: string; // 可选描述
+}
+
+// 定义默认预算分类
+export const DEFAULT_BUDGET_CATEGORIES: CategoryDefinition[] = [
+  {
+    code: 'food',
+    nameZh: '🍽 餐饮',
+    nameEn: '🍽 Food',
+    description: '与餐饮相关的支出和收入',
+  },
+  {
+    code: 'transport',
+    nameZh: '🚗 交通',
+    nameEn: '🚗 Transport',
+    description: '交通费用，如加油、公共交通',
+  },
+  {
+    code: 'entertainment',
+    nameZh: '🎬 娱乐',
+    nameEn: '🎬 Entertainment',
+    description: '娱乐活动和消遣支出',
+  },
+  {
+    code: 'utilities',
+    nameZh: '💡 公共事业',
+    nameEn: '💡 Utilities',
+    description: '水电费、燃气等公共事业费用',
+  },
+  {
+    code: 'shopping',
+    nameZh: '🛒 购物',
+    nameEn: '🛒 Shopping',
+    description: '日常购物和消费品购买',
+  },
+  {
+    code: 'salary',
+    nameZh: '💵 工资收入',
+    nameEn: '💵 Salary Income',
+    description: '工资、奖金等收入来源',
+  },
+  {
+    code: 'investment',
+    nameZh: '📈 投资收入',
+    nameEn: '📈 Investment Income',
+    description: '股票、基金等投资收益',
+  },
+  {
+    code: 'transfer',
+    nameZh: '💸 转账',
+    nameEn: '💸 Transfer',
+    description: '账户间转账记录',
+  },
+  {
+    code: 'education',
+    nameZh: '🎓 教育支出',
+    nameEn: '🎓 Education Expense',
+    description: '学费、培训等教育相关费用',
+  },
+  {
+    code: 'healthcare',
+    nameZh: '🏥 医疗支出',
+    nameEn: '🏥 Healthcare Expense',
+    description: '医疗费用和健康保险',
+  },
+  {
+    code: 'insurance',
+    nameZh: '🛡 保险支出',
+    nameEn: '🛡 Insurance Expense',
+    description: '保险保费支付',
+  },
+  {
+    code: 'savings',
+    nameZh: '🏦 储蓄收入',
+    nameEn: '🏦 Savings Income',
+    description: '存款或储蓄增加',
+  },
+  {
+    code: 'gift',
+    nameZh: '🎁 礼品',
+    nameEn: '🎁 Gift',
+    description: '礼物相关收支',
+  },
+  {
+    code: 'loan',
+    nameZh: '💰 贷款',
+    nameEn: '💰 Loan',
+    description: '贷款还款或借贷记录',
+  },
+  {
+    code: 'business',
+    nameZh: '💼 商业支出',
+    nameEn: '💼 Business Expense',
+    description: '商业活动相关费用',
+  },
+  {
+    code: 'travel',
+    nameZh: '✈ 出行',
+    nameEn: '✈ Travel',
+    description: '旅行和出差费用',
+  },
+  {
+    code: 'charity',
+    nameZh: '❤ 慈善捐赠',
+    nameEn: '❤ Charity Donation',
+    description: '慈善捐款或公益支出',
+  },
+  {
+    code: 'subscription',
+    nameZh: '📡 订阅费',
+    nameEn: '📡 Subscription',
+    description: '订阅服务费用',
+  },
+  {
+    code: 'pet',
+    nameZh: '🐶 宠物',
+    nameEn: '🐶 Pet',
+    description: '宠物相关开支',
+  },
+  {
+    code: 'home',
+    nameZh: '🏠 家居用品',
+    nameEn: '🏠 Home Supplies',
+    description: '家居用品和装修费用',
+  },
+  {
+    code: 'others',
+    nameZh: '🌐 其他',
+    nameEn: '🌐 Others',
+    description: '未分类的其他支出或收入',
+  },
+];
+
 // 按分类分组的提醒类型
 export const REMINDER_TYPES_BY_CATEGORY = {
-  finance: DEFAULT_REMINDER_TYPES.filter((type) => type.category === 'finance'),
-  goals: DEFAULT_REMINDER_TYPES.filter((type) => type.category === 'goals'),
-  health: DEFAULT_REMINDER_TYPES.filter((type) => type.category === 'health'),
-  work: DEFAULT_REMINDER_TYPES.filter((type) => type.category === 'work'),
+  finance: DEFAULT_REMINDER_TYPES.filter(type => type.category === 'finance'),
+  goals: DEFAULT_REMINDER_TYPES.filter(type => type.category === 'goals'),
+  health: DEFAULT_REMINDER_TYPES.filter(type => type.category === 'health'),
+  work: DEFAULT_REMINDER_TYPES.filter(type => type.category === 'work'),
   education: DEFAULT_REMINDER_TYPES.filter(
-    (type) => type.category === 'education',
+    type => type.category === 'education',
   ),
   lifestyle: DEFAULT_REMINDER_TYPES.filter(
-    (type) => type.category === 'lifestyle',
+    type => type.category === 'lifestyle',
   ),
-  social: DEFAULT_REMINDER_TYPES.filter((type) => type.category === 'social'),
+  social: DEFAULT_REMINDER_TYPES.filter(type => type.category === 'social'),
   documents: DEFAULT_REMINDER_TYPES.filter(
-    (type) => type.category === 'documents',
+    type => type.category === 'documents',
   ),
-  family: DEFAULT_REMINDER_TYPES.filter((type) => type.category === 'family'),
-  hobbies: DEFAULT_REMINDER_TYPES.filter((type) => type.category === 'hobbies'),
-  tech: DEFAULT_REMINDER_TYPES.filter((type) => type.category === 'tech'),
-  general: DEFAULT_REMINDER_TYPES.filter((type) => type.category === 'general'),
+  family: DEFAULT_REMINDER_TYPES.filter(type => type.category === 'family'),
+  hobbies: DEFAULT_REMINDER_TYPES.filter(type => type.category === 'hobbies'),
+  tech: DEFAULT_REMINDER_TYPES.filter(type => type.category === 'tech'),
+  general: DEFAULT_REMINDER_TYPES.filter(type => type.category === 'general'),
 };
 
 // 分类名称映射
@@ -435,8 +574,33 @@ export const CATEGORY_NAMES = {
   general: { zh: '📌 通用分类', en: '📌 General' },
 };
 
+// 财务相关分类名称映射
+export const BUDGET_CATEGORY_NAMES = {
+  food: { zh: '🍽 餐饮', en: '🍽 Food' },
+  transport: { zh: '🚗 交通', en: '🚗 Transport' },
+  entertainment: { zh: '🎬 娱乐', en: '🎬 Entertainment' },
+  utilities: { zh: '💡 公共事业', en: '💡 Utilities' },
+  shopping: { zh: '🛒 购物', en: '🛒 Shopping' },
+  salary: { zh: '💵 工资收入', en: '💵 Salary Income' },
+  investment: { zh: '📈 投资收入', en: '📈 Investment Income' },
+  transfer: { zh: '💸 转账', en: '💸 Transfer' },
+  education: { zh: '🎓 教育支出', en: '🎓 Education Expense' },
+  healthcare: { zh: '🏥 医疗支出', en: '🏥 Healthcare Expense' },
+  insurance: { zh: '🛡 保险支出', en: '🛡 Insurance Expense' },
+  savings: { zh: '🏦 储蓄收入', en: '🏦 Savings Income' },
+  gift: { zh: '🎁 礼品', en: '🎁 Gift' },
+  loan: { zh: '💰 贷款', en: '💰 Loan' },
+  business: { zh: '💼 商业支出', en: '💼 Business Expense' },
+  travel: { zh: '✈ 出行', en: '✈ Travel' },
+  charity: { zh: '❤ 慈善捐赠', en: '❤ Charity Donation' },
+  subscription: { zh: '📡 订阅费', en: '📡 Subscription' },
+  pet: { zh: '🐶 宠物', en: '🐶 Pet' },
+  home: { zh: '🏠 家居用品', en: '🏠 Home Supplies' },
+  others: { zh: '🌐 其他', en: '🌐 Others' },
+};
+
 // 获取热门提醒类型（使用频率较高的）
-export const POPULAR_REMINDER_TYPES = DEFAULT_REMINDER_TYPES.filter((type) =>
+export const POPULAR_REMINDER_TYPES = DEFAULT_REMINDER_TYPES.filter(type =>
   [
     'Bill',
     'Income',
@@ -450,30 +614,30 @@ export const POPULAR_REMINDER_TYPES = DEFAULT_REMINDER_TYPES.filter((type) =>
 );
 
 // 工具函数：根据代码获取提醒类型
-export const getReminderTypeByCode = (
+export function getReminderTypeByCode(
   code: string,
-): ReminderTypeI18 | undefined => {
-  return DEFAULT_REMINDER_TYPES.find((type) => type.code === code);
-};
+): ReminderTypeI18 | undefined {
+  return DEFAULT_REMINDER_TYPES.find(type => type.code === code);
+}
 
 // 工具函数：根据分类获取提醒类型
-export const getReminderTypesByCategory = (
+export function getReminderTypesByCategory(
   category: string,
-): ReminderTypeI18[] => {
-  return DEFAULT_REMINDER_TYPES.filter((type) => type.category === category);
-};
+): ReminderTypeI18[] {
+  return DEFAULT_REMINDER_TYPES.filter(type => type.category === category);
+}
 
 // 工具函数：搜索提醒类型
-export const searchReminderTypes = (
+export function searchReminderTypes(
   keyword: string,
   locale: 'zh-CN' | 'en' = 'zh-CN',
-): ReminderTypeI18[] => {
+): ReminderTypeI18[] {
   const searchTerm = keyword.toLowerCase();
-  return DEFAULT_REMINDER_TYPES.filter((type) => {
+  return DEFAULT_REMINDER_TYPES.filter(type => {
     const name = locale === 'zh-CN' ? type.nameZh : type.nameEn;
     return (
       name.toLowerCase().includes(searchTerm) ||
       (type.description && type.description.toLowerCase().includes(searchTerm))
     );
   });
-};
+}

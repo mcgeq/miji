@@ -50,7 +50,7 @@ const reminder = props.reminder || {
   serialNum: '',
   name: '',
   enabled: true,
-  type: ReminderTypeSchema.enum.Notification,
+  type: ReminderTypeSchema.enum.ResetReminder,
   description: '',
   category: CategorySchema.enum.Food,
   amount: 0,
@@ -121,8 +121,7 @@ const descriptionPlaceholder = computed(() => {
 
   try {
     return t(placeholderKey);
-  }
-  catch {
+  } catch {
     return t(defaultKey);
   }
 });
@@ -147,14 +146,11 @@ const isFormValid = computed(() => {
 function validateName() {
   if (!form.name.trim()) {
     validationErrors.name = t('validation.reminderTitle');
-  }
-  else if (form.name.trim().length < 2) {
+  } else if (form.name.trim().length < 2) {
     validationErrors.name = t('validation.titleMinLength');
-  }
-  else if (form.name.trim().length > 50) {
+  } else if (form.name.trim().length > 50) {
     validationErrors.name = t('validation.titleMaxLength');
-  }
-  else {
+  } else {
     validationErrors.name = '';
   }
 }
@@ -163,15 +159,12 @@ function validateAmount() {
   if (isFinanceType.value) {
     if (!form.amount || form.amount <= 0) {
       validationErrors.amount = t('validation.financeTypeAmount');
-    }
-    else if (form.amount > 999999999) {
+    } else if (form.amount > 999999999) {
       validationErrors.amount = t('validation.maxAmount');
-    }
-    else {
+    } else {
       validationErrors.amount = '';
     }
-  }
-  else {
+  } else {
     validationErrors.amount = '';
   }
 }
@@ -179,16 +172,14 @@ function validateAmount() {
 function validateRemindDate() {
   if (!form.remindDate) {
     validationErrors.remindDate = t('validation.reminderDate');
-  }
-  else {
+  } else {
     const selectedDate = new Date(form.remindDate);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
     if (selectedDate < today) {
       validationErrors.remindDate = t('validation.dateNotPast');
-    }
-    else {
+    } else {
       validationErrors.remindDate = '';
     }
   }
@@ -264,8 +255,7 @@ function handleTypeChange(value: string) {
 function handleTypeValidation(isValid: boolean) {
   if (!isValid) {
     validationErrors.type = t('validation.selectReminderType');
-  }
-  else {
+  } else {
     validationErrors.type = '';
   }
 }
@@ -278,13 +268,11 @@ function handleRepeatPeriodChange(value: RepeatPeriod) {
   if (value.type === 'Daily' && currentAdvanceValue > 12) {
     form.advanceValue = 1;
     form.advanceUnit = 'hours';
-  }
-  else if (value.type === 'Weekly' && currentAdvanceValue > 168) {
+  } else if (value.type === 'Weekly' && currentAdvanceValue > 168) {
     // 168小时 = 7天
     form.advanceValue = 1;
     form.advanceUnit = 'days';
-  }
-  else if (value.type === 'Monthly' && currentAdvanceValue > 720) {
+  } else if (value.type === 'Monthly' && currentAdvanceValue > 720) {
     // 720小时 = 30天
     form.advanceValue = 3;
     form.advanceUnit = 'days';
@@ -297,8 +285,7 @@ function handleRepeatPeriodChange(value: RepeatPeriod) {
 function handleRepeatPeriodValidation(isValid: boolean) {
   if (!isValid) {
     validationErrors.repeatPeriod = t('validation.repeatPeriodIncomplete');
-  }
-  else {
+  } else {
     validationErrors.repeatPeriod = '';
   }
 }
@@ -345,8 +332,7 @@ function handlePriorityChange(value: Priority) {
 function handlePriorityValidation(isValid: boolean) {
   if (!isValid) {
     validationErrors.priority = t('validation.selectPriority');
-  }
-  else {
+  } else {
     validationErrors.priority = '';
   }
 }
@@ -378,12 +364,10 @@ async function saveReminder() {
 
     emit('save', reminderData);
     closeModal();
-  }
-  catch (error) {
+  } catch (error) {
     console.error(t('messages.saveFailed'), error);
     // 可以添加错误提示
-  }
-  finally {
+  } finally {
     isSubmitting.value = false;
   }
 }
