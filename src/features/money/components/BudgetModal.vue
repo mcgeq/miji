@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { Check, X } from 'lucide-vue-next';
+import CategorySelector from '@/components/common/CategorySelector.vue';
 import ColorSelector from '@/components/common/ColorSelector.vue';
 import RepeatPeriodSelector from '@/components/common/RepeatPeriodSelector.vue';
 import { COLORS_MAP, CURRENCY_CNY } from '@/constants/moneyConst';
-import { BudgetTypeSchema, CategorySchema } from '@/schema/common';
+import { BudgetTypeSchema } from '@/schema/common';
 import { BudgetScopeTypeSchema } from '@/schema/money';
 import { DateUtils } from '@/utils/date';
 import { uuid } from '@/utils/uuid';
@@ -42,27 +43,11 @@ const budget = props.budget || getDefaultBudget();
 // 响应式数据
 const form = reactive<Budget>({
   ...budget,
-  // 特殊处理日期字段
-  categoryScope: budget.categoryScope || {
-    includedCategories: [],
-    excludedCategories: [],
-  },
-  startDate: budget.startDate,
-  endDate: budget.endDate,
-  currentPeriodStart: budget.currentPeriodStart ? budget.currentPeriodStart : undefined,
 });
-const categoryOptions = Object.values(CategorySchema.enum).map(type => ({
-  original: type,
-  snake: toCamelCase(type),
-}));
 const types = Object.values(BudgetScopeTypeSchema.enum).map(type => ({
   original: type,
   snake: toCamelCase(type),
 }));
-
-function closeModal() {
-  emit('close');
-}
 
 function saveBudget() {
   const budgetData: Budget = {
@@ -123,39 +108,29 @@ function getDefaultBudget(): Budget {
     attachments: [],
     budgetScopeType: BudgetScopeTypeSchema.enum.Category,
     accountScope: null,
-    categoryScope: {
-      includedCategories: [],
-      excludedCategories: [],
-    },
+    categoryScope: [],
     advancedRules: null,
   };
 }
 
-// 添加分类到包含列表
-function _addToIncludedCategories(category: typeof CategorySchema.enum[keyof typeof CategorySchema.enum]) {
-  if (!form.categoryScope?.includedCategories.includes(category)) {
-    form.categoryScope?.includedCategories.push(category);
-    form.categoryScope.excludedCategories = form.categoryScope.excludedCategories?.filter(c => c !== category);
+// 分类错误信息
+const categoryError = ref('');
+
+// 处理分类验证
+function handleCategoryValidation(isValid: boolean) {
+  if (!isValid) {
+    categoryError.value = '请至少选择一个分类';
+  } else {
+    categoryError.value = '';
   }
-}
-// 添加分类到排除列表
-function _addToExcludedCategories(category: typeof CategorySchema.enum[keyof typeof CategorySchema.enum]) {
-  if (!form.categoryScope.excludedCategories?.includes(category)) {
-    form.categoryScope.excludedCategories?.push(category);
-    form.categoryScope.includedCategories = form.categoryScope.includedCategories.filter(c => c !== category);
-  }
-}
-// 从包含列表中移除分类
-function _removeFromIncludedCategories(category: typeof CategorySchema.enum[keyof typeof CategorySchema.enum]) {
-  form.categoryScope.includedCategories = form.categoryScope.includedCategories.filter(c => c !== category);
-}
-// 从排除列表中移除分类
-function _removeFromExcludedCategories(category: typeof CategorySchema.enum[keyof typeof CategorySchema.enum]) {
-  form.categoryScope.excludedCategories = form.categoryScope.excludedCategories?.filter(c => c !== category);
 }
 
 function toCamelCase(str: string) {
   return str.charAt(0).toLowerCase() + str.slice(1);
+}
+
+function closeModal() {
+  emit('close');
 }
 
 watch(
@@ -163,12 +138,6 @@ watch(
   newVal => {
     if (newVal) {
       const clonedAccount = JSON.parse(JSON.stringify(newVal));
-      if (!clonedAccount.categoryScope) {
-        clonedAccount.categoryScope = {
-          includedCategories: [],
-          excludedCategories: [],
-        };
-      }
       Object.assign(form, clonedAccount);
     }
   },
@@ -213,43 +182,25 @@ onMounted(async () => {
             <option
               v-for="ty in types"
               :key="ty.original"
-              :value="ty.snake"
+              :value="ty.original"
             >
               {{ t(`financial.budgetScopeTypes.${ty.snake}`) }}
             </option>
           </select>
         </div>
 
-        <!-- 分类范围设置（包含的分类） -->
-        <div v-if="form.budgetScopeType === 'Category' || form.budgetScopeType === 'Hybrid'" class="mb-2">
-          <label class="mb-2 text-sm text-gray-700 font-medium">
-            {{ t('financial.budget.includedCategories') }}
-          </label>
-          <select
-            v-model="form.categoryScope.includedCategories"
-            multiple
-            class="h-32 w-full modal-input-select"
-          >
-            <option v-for="category in categoryOptions" :key="category.original" :value="category">
-              {{ t(`financial.budgetCategories.${category.snake}`) }}
-            </option>
-          </select>
-        </div>
-
-        <!-- 分类范围设置（排除的分类） -->
-        <div v-if="form.budgetScopeType === 'Category' || form.budgetScopeType === 'Hybrid'" class="mb-2">
-          <label class="mb-2 text-sm text-gray-700 font-medium">
-            {{ t('financial.budget.excludedCategories') }}
-          </label>
-          <select
-            v-model="form.categoryScope.excludedCategories"
-            multiple
-            class="h-32 w-full modal-input-select"
-          >
-            <option v-for="category in categoryOptions" :key="category.original" :value="category">
-              {{ t(`financial.budgetCategories.${category.snake}`) }}
-            </option>
-          </select>
+        <div
+          v-if="form.budgetScopeType === 'Category' || form.budgetScopeType === 'Hybrid'"
+        >
+          <CategorySelector
+            v-model="form.categoryScope"
+            :required="true"
+            label="预算分类"
+            placeholder="请选择分类"
+            help-text="选择适用于此预算的分类"
+            :error-message="categoryError"
+            @validate="handleCategoryValidation"
+          />
         </div>
 
         <div class="mb-2 flex items-center justify-between">

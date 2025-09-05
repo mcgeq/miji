@@ -33,12 +33,6 @@ export const AccountScopeSchema = z.object({
   includeAllOfType: z.boolean().optional(),
 });
 
-// 新增分类范围定义
-export const CategoryScopeSchema = z.object({
-  includedCategories: z.array(CategorySchema),
-  excludedCategories: z.array(CategorySchema).optional(),
-});
-
 // 新增预算规则类型定义
 export const BudgetRuleTypeSchema = z.enum([
   'DescriptionContains',
@@ -85,7 +79,7 @@ export const BudgetSchema = z.object({
   attachments: z.array(AttachmentSchema).optional(),
   budgetScopeType: BudgetScopeTypeSchema,
   accountScope: AccountScopeSchema.optional().nullable(),
-  categoryScope: CategoryScopeSchema,
+  categoryScope: z.array(CategorySchema),
   advancedRules: z.array(BudgetRuleSchema).optional().nullable(),
   createdAt: DateTimeSchema,
   updatedAt: DateTimeSchema.optional().nullable(),

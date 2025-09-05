@@ -1,39 +1,11 @@
 <script setup lang="ts">
-import { computed, ref, watch, useId } from 'vue';
-import { DEFAULT_BUDGET_CATEGORIES } from '@/schema/common';
-import type { CategoryDefinition } from '@/schema/common';
-
-const { t } = useI18n();
-// Props 接口
-export interface CategorySelectorProps {
-  modelValue: {
-    includedCategories: string[];
-    excludedCategories: string[];
-  };
-  label?: string;
-  placeholder?: string;
-  helpText?: string;
-  required?: boolean;
-  disabled?: boolean;
-  locale?: 'zh-CN' | 'en';
-  categories?: CategoryDefinition[];
-  errorMessage?: string;
-  size?: 'sm' | 'base' | 'lg';
-  width?: 'full' | 'auto' | '2/3' | '1/2' | '1/3';
-  showIcons?: boolean;
-  multiple?: boolean;
-}
-
-// Emits 接口
-export interface CategorySelectorEmits {
-  (e: 'update:modelValue', value: { includedCategories: string[]; excludedCategories: string[] }): void;
-  (e: 'change', value: { includedCategories: string[]; excludedCategories: string[] }): void;
-  (e: 'validate', isValid: boolean): void;
-}
+import { DEFAULT_BUDGET_CATEGORIES } from '@/constants/commonConstant';
+import type { CategoryDefinition } from '@/constants/commonConstant';
+import type { Category } from '@/schema/common';
 
 // Props 默认值
 const props = withDefaults(defineProps<CategorySelectorProps>(), {
-  modelValue: () => ({ includedCategories: [], excludedCategories: [] }),
+  modelValue: () => ([]),
   label: '分类',
   placeholder: '请选择分类',
   helpText: '',
@@ -46,97 +18,109 @@ const props = withDefaults(defineProps<CategorySelectorProps>(), {
   width: 'full',
   showIcons: true,
   multiple: true,
+  showQuickSelect: true,
+  quickSelectLabel: '常用分类',
+  customQuickCategories: () => DEFAULT_BUDGET_CATEGORIES.slice(0, 6),
 });
-
 // 事件定义
-const emit = defineEmits<CategorySelectorEmits>();
+const emit = defineEmits<{
+  (e: 'update:modelValue', value: string[]): void;
+  (e: 'change', value: string[]): void;
+  (e: 'validate', isValid: boolean): void;
+}>();
+// Props 接口
+export interface CategorySelectorProps {
+  modelValue?: Category[];
+  label?: string;
+  placeholder?: string;
+  helpText?: string;
+  required?: boolean;
+  disabled?: boolean;
+  locale?: 'zh-CN' | 'en';
+  categories?: CategoryDefinition[];
+  errorMessage?: string;
+  size?: 'sm' | 'base' | 'lg';
+  width?: 'full' | 'auto' | '2/3' | '1/2' | '1/3';
+  showIcons?: boolean;
+  multiple?: boolean;
+  showQuickSelect?: boolean;
+  quickSelectLabel?: string;
+  customQuickCategories?: CategoryDefinition[];
+}
 
 // 响应式状态
-const includedCategories = ref<string[]>(props.modelValue.includedCategories);
-const excludedCategories = ref<string[]>(props.modelValue.excludedCategories);
+const selectedCategories = ref<string[]>(props.modelValue);
 const inputId = useId();
 
-// 计算属性：选择框样式
-const selectClasses = computed(() => {
-  const baseClasses = ['modal-input-select', 'transition-normal'];
-  const sizeClasses = {
-    sm: 'input-sm',
-    base: '',
-    lg: 'input-lg',
-  };
-  const widthClasses = {
-    'full': 'w-full',
-    'auto': 'w-auto',
-    '2/3': 'w-2/3',
-    '1/2': 'w-1/2',
-    '1/3': 'w-1/3',
-  };
-
-  const classes = [...baseClasses, sizeClasses[props.size], widthClasses[props.width]];
-
-  if (props.errorMessage) classes.push('border-red-500', 'focus:ring-red-500');
-  if (props.disabled) classes.push('opacity-50', 'cursor-not-allowed');
-
-  return classes.filter(Boolean).join(' ');
-});
-
-// 计算属性：显示的分类选项
-const displayCategories = computed(() => {
-  return props.categories.map(category => ({
-    code: category.code,
-    name: props.locale === 'zh-CN' ? category.nameZh : category.nameEn,
-    icon: category.icon,
-  }));
+// 计算属性：快捷选择分类
+const quickSelectCategories = computed<CategoryDefinition[]>(() => {
+  return props.customQuickCategories.length > 0
+    ? props.customQuickCategories
+    : props.categories;
 });
 
 // 计算属性：验证状态
 const isValid = computed(() => {
   if (!props.required) return true;
   return props.multiple
-    ? includedCategories.value.length > 0 || excludedCategories.value.length > 0
-    : includedCategories.value.length > 0;
+    ? selectedCategories.value.length > 0
+    : selectedCategories.value.length > 0;
 });
 
-// 工具方法：获取显示名称
-function getDisplayName(category: { code: string; name: string; icon?: string }): string {
-  return props.showIcons && category.icon ? `${category.icon} ${category.name}` : category.name;
-}
+// 事件处理：选择/取消选择分类
+function toggleCategory(categoryCode: string) {
+  if (props.disabled) return;
 
-// 事件处理
-function handleIncludedChange(event: Event) {
-  const target = event.target as HTMLSelectElement;
-  const values = props.multiple ? Array.from(target.selectedOptions).map(option => option.value) : [target.value];
+  const index = selectedCategories.value.indexOf(categoryCode);
 
-  includedCategories.value = values;
-  // 确保包含和排除分类互斥
-  excludedCategories.value = excludedCategories.value.filter(c => !values.includes(c));
+  if (index === -1) {
+    // 添加分类
+    if (props.multiple) {
+      selectedCategories.value.push(categoryCode);
+    } else {
+      selectedCategories.value = [categoryCode];
+    }
+  } else {
+    // 移除分类
+    if (props.multiple) {
+      selectedCategories.value.splice(index, 1);
+    } else {
+      selectedCategories.value = [];
+    }
+  }
 
-  const newValue = { includedCategories: includedCategories.value, excludedCategories: excludedCategories.value };
-  emit('update:modelValue', newValue);
-  emit('change', newValue);
+  // 触发事件
+  emit('update:modelValue', selectedCategories.value);
+  emit('change', selectedCategories.value);
   emit('validate', isValid.value);
 }
 
-function handleExcludedChange(event: Event) {
-  const target = event.target as HTMLSelectElement;
-  const values = props.multiple ? Array.from(target.selectedOptions).map(option => option.value) : [target.value];
+// 事件处理：选择快捷分类
+function selectQuickCategory(categoryCode: string) {
+  if (props.disabled) return;
 
-  excludedCategories.value = values;
-  // 确保包含和排除分类互斥
-  includedCategories.value = includedCategories.value.filter(c => !values.includes(c));
+  if (props.multiple) {
+    // 多选模式：切换选择状态
+    toggleCategory(categoryCode);
+  } else {
+    // 单选模式：直接选择
+    selectedCategories.value = [categoryCode];
+    emit('update:modelValue', selectedCategories.value);
+    emit('change', selectedCategories.value);
+    emit('validate', isValid.value);
+  }
+}
 
-  const newValue = { includedCategories: includedCategories.value, excludedCategories: excludedCategories.value };
-  emit('update:modelValue', newValue);
-  emit('change', newValue);
-  emit('validate', isValid.value);
+// 检查分类是否已选择
+function isCategorySelected(categoryCode: string): boolean {
+  return selectedCategories.value.includes(categoryCode);
 }
 
 // 监听器
 watch(
   () => props.modelValue,
   newValue => {
-    includedCategories.value = newValue.includedCategories;
-    excludedCategories.value = newValue.excludedCategories;
+    selectedCategories.value = newValue;
   },
   { immediate: true, deep: true },
 );
@@ -154,10 +138,9 @@ watch(
 defineExpose({
   validate: () => isValid.value,
   reset: () => {
-    includedCategories.value = [];
-    excludedCategories.value = [];
-    emit('update:modelValue', { includedCategories: [], excludedCategories: [] });
-    emit('change', { includedCategories: [], excludedCategories: [] });
+    selectedCategories.value = [];
+    emit('update:modelValue', []);
+    emit('change', []);
     emit('validate', isValid.value);
   },
 });
@@ -165,56 +148,36 @@ defineExpose({
 
 <template>
   <div class="category-selector">
-    <!-- 包含的分类 -->
-    <div class="mb-4">
-      <label :for="`${inputId}-included`" class="mb-2 text-sm text-gray-700 font-medium dark:text-gray-300">
-        {{ t('financial.budget.includedCategories') }}
-        <span v-if="required" class="ml-1 text-red-500" aria-label="必填">*</span>
-      </label>
-      <select
-        :id="`${inputId}-included`"
-        v-model="includedCategories"
-        :multiple="multiple"
-        :required="required"
-        :disabled="disabled"
-        :class="selectClasses"
-        :aria-invalid="!!errorMessage"
-        :aria-describedby="errorMessage ? `${inputId}-error` : undefined"
-        @change="handleIncludedChange"
-      >
-        <option value="" disabled>
-          {{ placeholder }}
-        </option>
-        <option v-for="category in displayCategories" :key="category.code" :value="category.code">
-          {{ getDisplayName(category) }}
-        </option>
-      </select>
-    </div>
+    <!-- 标签 -->
+    <!-- <label :for="`${inputId}-included`" class="mb-2 text-sm text-gray-700 font-medium dark:text-gray-300"> -->
+    <!--   {{ t('financial.budget.includedCategories') }} -->
+    <!--   <span v-if="required" class="ml-1 text-red-500" aria-label="必填">*</span> -->
+    <!-- </label> -->
 
-    <!-- 排除的分类 -->
-    <div class="mb-4">
-      <label :for="`${inputId}-excluded`" class="mb-2 text-sm text-gray-700 font-medium dark:text-gray-300">
-        {{ t('financial.budget.excludedCategories') }}
-        <span v-if="required" class="ml-1 text-red-500" aria-label="必填">*</span>
-      </label>
-      <select
-        :id="`${inputId}-excluded`"
-        v-model="excludedCategories"
-        :multiple="multiple"
-        :required="required"
-        :disabled="disabled"
-        :class="selectClasses"
-        :aria-invalid="!!errorMessage"
-        :aria-describedby="errorMessage ? `${inputId}-error` : undefined"
-        @change="handleExcludedChange"
-      >
-        <option value="" disabled>
-          {{ placeholder }}
-        </option>
-        <option v-for="category in displayCategories" :key="category.code" :value="category.code">
-          {{ getDisplayName(category) }}
-        </option>
-      </select>
+    <!-- 快捷选择区域 -->
+    <div
+      v-if="showQuickSelect && quickSelectCategories.length > 0"
+      class="mb-3"
+      role="group"
+      :aria-label="quickSelectLabel"
+    >
+      <div class="flex flex-wrap gap-2">
+        <button
+          v-for="category in quickSelectCategories"
+          :key="category.code"
+          type="button"
+          class="quick-select-btn"
+          :class="{
+            'quick-select-btn-active': isCategorySelected(category.code),
+            'quick-select-btn-multiple': multiple && isCategorySelected(category.code),
+          }"
+          :disabled="disabled"
+          :title="category.nameZh"
+          @click="selectQuickCategory(category.code)"
+        >
+          {{ category.icon }}
+        </button>
+      </div>
     </div>
 
     <!-- 错误提示 -->
@@ -230,10 +193,40 @@ defineExpose({
 </template>
 
 <style scoped lang="postcss">
+.category-selector {
+  @apply mb-4;
+}
+
 .category-selector select {
   @apply h-32;
 }
 
+/* 快捷选择按钮样式 */
+.quick-select-btn {
+  @apply text-xs px-3 py-2 rounded-md border border-gray-200 dark:border-gray-600
+         bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300
+         hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-300 dark:hover:border-gray-500
+         focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
+         transition-all duration-200 cursor-pointer
+         disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+.quick-select-btn-active {
+  @apply bg-blue-50 dark:bg-blue-900/30 border-blue-200 dark:border-blue-600
+         text-blue-700 dark:text-blue-300;
+}
+
+.quick-select-btn-multiple {
+  @apply relative;
+}
+
+.quick-select-btn-multiple::after {
+  content: "✓";
+  @apply absolute -top-1 -right-1 bg-blue-500 text-white rounded-full w-4 h-4
+         flex items-center justify-center text-xs;
+}
+
+/* 选择框样式优化 */
 .category-selector select:focus {
   outline: none;
 }
@@ -251,6 +244,10 @@ defineExpose({
 @media (max-width: 640px) {
   .category-selector select {
     width: 100% !important;
+  }
+
+  .quick-select-btn {
+    @apply text-xs px-2 py-1;
   }
 }
 
