@@ -164,8 +164,6 @@ pub struct BudgetRule {
 #[serde(rename_all = "camelCase")]
 pub struct BudgetBase {
     #[validate(length(equal = 38))]
-    pub serial_num: String,
-    #[validate(length(equal = 38))]
     pub account_serial_num: Option<String>,
     #[validate(length(min = 2, max = 20))]
     pub name: String,
@@ -208,6 +206,8 @@ pub struct BudgetWithAccount {
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 #[serde(rename_all = "camelCase")]
 pub struct Budget {
+    #[validate(length(equal = 38))]
+    pub serial_num: String,
     #[serde(flatten)]
     pub core: BudgetBase,
     pub account: Option<AccountResponseWithRelations>,
@@ -488,8 +488,8 @@ impl From<BudgetWithAccount> for Budget {
         let account = value.account.map(AccountResponseWithRelations::from);
         let cny = value.currency;
         Self {
+            serial_num: budget.serial_num,
             core: BudgetBase {
-                serial_num: budget.serial_num,
                 name: budget.name,
                 description: budget.description,
                 account_serial_num: budget.account_serial_num,

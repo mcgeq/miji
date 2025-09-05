@@ -66,7 +66,7 @@ export const DescriptionSchema = z.string().max(1000, {
 export const DateTimeSchema = z.iso.datetime({
   offset: true,
   local: true,
-  precision: 6,
+  precision: 3,
 });
 
 export const DateSchema = z.iso.date();

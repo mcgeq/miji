@@ -51,32 +51,32 @@ export const BudgetRuleSchema = z.object({
 
 export const BudgetSchema = z.object({
   serialNum: SerialNumSchema,
-  accountSerialNum: SerialNumSchema,
+  accountSerialNum: SerialNumSchema.optional().nullable(),
   name: NameSchema,
   description: DescriptionSchema,
   amount: z.number(),
   currency: CurrencySchema,
   repeatPeriod: RepeatPeriodSchema,
-  startDate: DateSchema,
-  endDate: DateSchema,
+  startDate: DateTimeSchema,
+  endDate: DateTimeSchema,
   usedAmount: z.number(),
   isActive: z.boolean(),
   alertEnabled: z.boolean(),
-  alertThreshold: AlertThresholdSchema.optional(),
+  alertThreshold: AlertThresholdSchema.optional().nullable(),
   color: z.string(),
   account: AccountSchema.optional().nullable(),
-  currentPeriodUsed: z.number().min(0).optional(),
-  currentPeriodStart: DateSchema.optional(),
-  budgetType: BudgetTypeSchema.optional(),
-  progress: z.number().min(0).max(100).optional(),
-  linkedGoal: SerialNumSchema.optional(),
-  reminders: z.array(ReminderSchema).optional(),
-  priority: z.number().int().min(-128).max(127).optional(),
-  tags: z.array(z.string()).optional(),
-  autoRollover: z.boolean().optional(),
-  rolloverHistory: z.array(RolloverRecordSchema).optional(),
-  sharingSettings: SharingSettingsSchema.optional(),
-  attachments: z.array(AttachmentSchema).optional(),
+  currentPeriodUsed: z.number().min(0).optional().nullable(),
+  currentPeriodStart: DateSchema.optional().nullable(),
+  budgetType: BudgetTypeSchema.optional().nullable(),
+  progress: z.number().min(0).max(100).optional().nullable(),
+  linkedGoal: SerialNumSchema.optional().nullable(),
+  reminders: z.array(ReminderSchema).optional().nullable(),
+  priority: z.number().int().min(-128).max(127).optional().nullable(),
+  tags: z.array(z.string()).optional().nullable(),
+  autoRollover: z.boolean().optional().nullable(),
+  rolloverHistory: z.array(RolloverRecordSchema).optional().nullable(),
+  sharingSettings: SharingSettingsSchema.optional().nullable(),
+  attachments: z.array(AttachmentSchema).optional().nullable(),
   budgetScopeType: BudgetScopeTypeSchema,
   accountScope: AccountScopeSchema.optional().nullable(),
   categoryScope: z.array(CategorySchema),
@@ -85,31 +85,10 @@ export const BudgetSchema = z.object({
   updatedAt: DateTimeSchema.optional().nullable(),
 });
 
-export const BudgetCreateSchema = BudgetSchema.pick({
-  description: true,
-  accountSerialNum: true,
-  name: true,
-  amount: true,
-  repeatPeriod: true,
-  startDate: true,
-  endDate: true,
-  usedAmount: true,
-  isActive: true,
-  alertEnabled: true,
-  alertThreshold: true,
-  color: true,
-  budgetType: true,
-  budgetScopeType: true, // 新增
-  accountScope: true, // 新增
-  categoryScope: true, // 新增
-  advancedRules: true, // 新增
-})
-  .extend({
-    currency: z.string().length(3),
-  })
-  .strict();
-
-export const BudgetUpdateSchema = BudgetSchema.omit({
+// ----------------------
+// BudgetCreateSchema
+// ----------------------
+export const BudgetCreateSchema = BudgetSchema.omit({
   serialNum: true,
   currency: true,
   createdAt: true,
@@ -118,7 +97,12 @@ export const BudgetUpdateSchema = BudgetSchema.omit({
   .extend({
     currency: z.string().length(3),
   })
-  .partial();
+  .strict();
+
+// ----------------------
+// BudgetUpdateSchema
+// ----------------------
+export const BudgetUpdateSchema = BudgetCreateSchema.partial();
 
 export type Budget = z.infer<typeof BudgetSchema>;
 export type BudgetCreate = z.infer<typeof BudgetCreateSchema>;

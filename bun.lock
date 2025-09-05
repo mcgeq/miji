@@ -20,6 +20,7 @@
         "@vuepic/vue-datepicker": "^11.0.2",
         "@vueuse/core": "^13.5.0",
         "date-fns": "^4.1.0",
+        "lodash": "^4.17.21",
         "lru-cache": "^11.1.0",
         "lucide-vue-next": "^0.525.0",
         "pinia": "^3.0.3",
@@ -36,6 +37,7 @@
         "@biomejs/biome": "2.1.1",
         "@commitlint/config-conventional": "^19.8.1",
         "@tauri-apps/cli": "^2",
+        "@types/lodash": "^4.17.20",
         "@types/node": "^24.0.13",
         "@unocss/core": "^66.3.3",
         "@unocss/eslint-config": "^66.3.3",
@@ -440,6 +442,8 @@
     "@types/estree": ["@types/estree@1.0.8", "https://mirrors.cloud.tencent.com/npm/@types/estree/-/estree-1.0.8.tgz", {}, "sha512-dWHzHa2WqEXI/O1E9OjrocMTKJl2mSrEolh1Iomrv6U+JuNwaHXsXx9bLu5gG7BUWFIN0skIQJQ/L1rIex4X6w=="],
 
     "@types/json-schema": ["@types/json-schema@7.0.15", "https://mirrors.cloud.tencent.com/npm/@types/json-schema/-/json-schema-7.0.15.tgz", {}, "sha512-5+fP8P8MFNC+AyZCDxrB2pkZFPGzqQWUzpSeuuVLvm8VMcorNYavBqoFcxK8bQz4Qsbn4oUEEem4wDLfcysGHA=="],
+
+    "@types/lodash": ["@types/lodash@4.17.20", "", {}, "sha512-H3MHACvFUEiujabxhaI/ImO6gUrd8oOurg7LQtS7mbwIXA/cUqWrvBsaeJ23aZEPk1TAYkurjfMbSELfoCXlGA=="],
 
     "@types/mdast": ["@types/mdast@4.0.4", "https://mirrors.cloud.tencent.com/npm/@types/mdast/-/mdast-4.0.4.tgz", { "dependencies": { "@types/unist": "*" } }, "sha512-kGaNbPh1k7AFzgpud/gMdvIm5xuECykRR+JnWKQno9TAXVa6WIVCGTPvYGekIDL4uwCZQSYbUxNBSb1aUo79oA=="],
 

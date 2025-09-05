@@ -125,6 +125,18 @@ export class DateUtils {
     });
   }
 
+  static toLocalISOFromDateInput(dateStr: string, endOfDay = false): string {
+    const date = new Date(`${dateStr}T00:00:00`); // yyyy-MM-dd → Date
+    return DateUtils.generateISOWithOffset({}, d => {
+      d.setTime(date.getTime());
+      if (endOfDay) {
+        d.setHours(23, 59, 59, 999);
+      } else {
+        d.setHours(0, 0, 0, 0);
+      }
+    });
+  }
+
   /**
    * 将日期字符串解析为标准ISO格式
    * @param dt - 日期时间字符串（如 "2025-04-05 22:30"）
@@ -381,8 +393,7 @@ export class DateUtils {
     const min = String(date.getMinutes()).padStart(2, '0');
     const ss = String(date.getSeconds()).padStart(2, '0');
     const ms = String(date.getMilliseconds()).padStart(3, '0');
-    const micro = `${ms}000`.slice(0, 6); // 补足 6 位微秒
-    return `${hh}:${min}:${ss}.${micro}`;
+    return `${hh}:${min}:${ss}.${ms}`;
   }
 
   /**

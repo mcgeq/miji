@@ -1,16 +1,17 @@
 <script setup lang="ts">
+import _ from 'lodash';
 import { Check, X } from 'lucide-vue-next';
+import z from 'zod';
 import CategorySelector from '@/components/common/CategorySelector.vue';
 import ColorSelector from '@/components/common/ColorSelector.vue';
 import RepeatPeriodSelector from '@/components/common/RepeatPeriodSelector.vue';
 import { COLORS_MAP, CURRENCY_CNY } from '@/constants/moneyConst';
 import { BudgetTypeSchema } from '@/schema/common';
-import { BudgetScopeTypeSchema } from '@/schema/money';
+import { BudgetCreateSchema, BudgetScopeTypeSchema, BudgetUpdateSchema } from '@/schema/money';
 import { DateUtils } from '@/utils/date';
-import { uuid } from '@/utils/uuid';
 import { getLocalCurrencyInfo } from '../utils/money';
 import type { RepeatPeriod } from '@/schema/common';
-import type { Budget } from '@/schema/money';
+import type { Budget, BudgetCreate, BudgetUpdate } from '@/schema/money';
 
 interface Props {
   budget: Budget | null;
@@ -18,14 +19,15 @@ interface Props {
 
 // 定义 props
 const props = defineProps<Props>();
-
-// 定义 emits
-const emit = defineEmits(['close', 'save', 'update']);
+const emit = defineEmits<{
+  close: [];
+  save: [budget: BudgetCreate];
+  update: [serialNum: string, budget: BudgetUpdate];
+}>();
 
 const colorNameMap = ref(COLORS_MAP);
 const currency = ref(CURRENCY_CNY);
 
-// 假设已注入 t 函数
 const { t } = useI18n();
 
 // 验证错误
@@ -40,7 +42,6 @@ const validationErrors = reactive({
 
 const budget = props.budget || getDefaultBudget();
 
-// 响应式数据
 const form = reactive<Budget>({
   ...budget,
 });
@@ -49,19 +50,136 @@ const types = Object.values(BudgetScopeTypeSchema.enum).map(type => ({
   snake: toCamelCase(type),
 }));
 
-function saveBudget() {
-  const budgetData: Budget = {
-    ...form,
-    serialNum: props.budget?.serialNum || uuid(38),
-    createdAt: props.budget?.createdAt || DateUtils.getLocalISODateTimeWithOffset(),
-    updatedAt: DateUtils.getLocalISODateTimeWithOffset(),
-  };
-  emit('save', budgetData);
-  closeModal();
+function onSubmit() {
+  try {
+    const defaultValues: Record<string, unknown> = {
+      accountSerialNum: null,
+      currency: null,
+      alertThreshold: null,
+      budgetType: null,
+      accountScope: null,
+      advancedRules: null,
+      currentPeriodUsed: 0,
+      currentPeriodStart: null,
+      progress: 0,
+      linkedGoal: null,
+      reminders: [],
+      priority: 0,
+      tags: [],
+      autoRollover: false,
+      rolloverHistory: [],
+      sharingSettings: null,
+      attachments: [],
+    };
+
+    const formattedData = _.mapValues({
+      name: form.name,
+      description: form.description,
+      accountSerialNum: form.accountSerialNum,
+      amount: form.amount,
+      currency: form.currency?.code,
+      repeatPeriod: form.repeatPeriod,
+      startDate: form.startDate,
+      endDate: form.endDate,
+      usedAmount: form.usedAmount,
+      isActive: form.isActive,
+      alertEnabled: form.alertEnabled,
+      alertThreshold: form.alertThreshold,
+      color: form.color,
+      budgetType: form.budgetType,
+      budgetScopeType: form.budgetScopeType,
+      categoryScope: form.categoryScope,
+      accountScope: form.accountScope,
+      advancedRules: form.advancedRules,
+      currentPeriodUsed: form.currentPeriodUsed,
+      currentPeriodStart: form.currentPeriodStart,
+      progress: form.progress,
+      linkedGoal: form.linkedGoal,
+      reminders: form.reminders,
+      priority: form.priority,
+      tags: form.tags,
+      autoRollover: form.autoRollover,
+      rolloverHistory: form.rolloverHistory,
+      sharingSettings: form.sharingSettings,
+      attachments: form.attachments,
+    }, (value: unknown, key: string) => {
+      // 特殊处理日期字段 - 确保传入字符串
+      if (key.endsWith('Date')) {
+        if (value) {
+          const dateValue = typeof value === 'string' ?
+            value :
+            value instanceof Date ?
+                value.toISOString() :
+                String(value);
+          return DateUtils.toLocalISOFromDateInput(dateValue);
+        }
+        return null;
+      }
+      // 应用默认值
+      return _.defaultTo(value, defaultValues[key] ?? null);
+    });
+
+    const createData = _.omit(formattedData, 'serialNum');
+    if (createData.amount) createData.amount = Number(createData.amount);
+    if (createData.usedAmount) createData.usedAmount = Number(createData.usedAmount);
+    if (createData.currentPeriodUsed) createData.currentPeriodUsed = Number(createData.currentPeriodUsed);
+    if (createData.progress) createData.progress = Number(createData.progress);
+    if (createData.priority) createData.priority = Math.round(Number(createData.priority));
+    createData.currentPeriodUsed = createData.currentPeriodUsed || 0;
+    createData.progress = createData.progress || 0;
+    createData.priority = createData.priority || 0;
+    createData.autoRollover = createData.autoRollover || false;
+    createData.reminders = createData.reminders || JSON.stringify([]);
+    createData.tags = createData.tags || JSON.stringify([]);
+    createData.rolloverHistory = createData.rolloverHistory || JSON.stringify([]);
+    createData.attachments = createData.attachments || JSON.stringify([]);
+
+    if (props.budget) {
+      const changes = _.omitBy(formattedData, (value: unknown, key: string) =>
+        _.isEqual(value, _.get(props.budget, key)));
+      const safeChanges = _.omit(changes, 'serialNum');
+      // 特殊处理需要序列化为JSON的字段
+      const jsonFields = [
+        'repeatPeriod',
+        'alertThreshold',
+        'accountScope',
+        'categoryScope',
+        'advancedRules',
+        'reminders',
+        'rolloverHistory',
+        'sharingSettings',
+        'attachments',
+        'tags',
+      ];
+      const serializedChanges = _.mapValues(safeChanges, (value, key) => {
+        if (jsonFields.includes(key) && value !== null && value !== undefined) {
+          try {
+            return JSON.stringify(value);
+          } catch {
+            return value;
+          }
+        }
+        return value;
+      });
+      if (!_.isEmpty(serializedChanges)) {
+        const budgetUpdate = BudgetUpdateSchema.parse(safeChanges);
+        emit('update', props.budget.serialNum, budgetUpdate);
+      }
+    } else {
+      const budgetCreate = BudgetCreateSchema.parse(createData);
+      emit('save', budgetCreate);
+    }
+    closeModal();
+  } catch (err: unknown) {
+    if (err instanceof z.ZodError) {
+      console.error('Validation failed:', err.issues);
+    } else {
+      console.error('Unexpected error:', err);
+    }
+  }
 }
 
 function handleRepeatPeriodChange(_value: RepeatPeriod) {
-  // 清除验证错误
   validationErrors.repeatPeriod = '';
 }
 
@@ -77,28 +195,27 @@ function getDefaultBudget(): Budget {
   const day = DateUtils.getTodayDate();
   return {
     serialNum: '',
-    accountSerialNum: '',
+    accountSerialNum: null,
     name: '',
     description: '',
-    amount: 0, // 修正为数字类型
+    amount: 0,
     currency: currency.value,
     repeatPeriod: { type: 'None' },
-    startDate: day, // 使用日期专用函数
-    endDate: DateUtils.addDays(day, 30), // 默认1个月后
-    usedAmount: 0, // 修正为数字类型
+    startDate: day,
+    endDate: DateUtils.addDays(day, 30),
+    usedAmount: 0,
     isActive: true,
     alertEnabled: false,
-    alertThreshold: undefined, // 修正为数字类型
+    alertThreshold: null,
     color: COLORS_MAP[0].code,
-    account: null, // 添加必需字段
+    account: null,
     createdAt: DateUtils.getLocalISODateTimeWithOffset(),
     updatedAt: null,
-    // 可选字段提供合理默认值
     currentPeriodUsed: 0,
-    currentPeriodStart: DateUtils.getLocalISODateTimeWithOffset(),
+    currentPeriodStart: DateUtils.getTodayDate(),
     budgetType: BudgetTypeSchema.enum.Standard,
     progress: 0,
-    linkedGoal: '',
+    linkedGoal: null,
     reminders: [],
     priority: 0,
     tags: [],
@@ -113,10 +230,8 @@ function getDefaultBudget(): Budget {
   };
 }
 
-// 分类错误信息
 const categoryError = ref('');
 
-// 处理分类验证
 function handleCategoryValidation(isValid: boolean) {
   if (!isValid) {
     categoryError.value = '请至少选择一个分类';
@@ -163,7 +278,7 @@ onMounted(async () => {
           </svg>
         </button>
       </div>
-      <form @submit.prevent="saveBudget">
+      <form @submit.prevent="onSubmit">
         <div class="mb-2 flex items-center justify-between">
           <label class="mb-2 text-sm text-gray-700 font-medium">
             {{ t('financial.budget.budgetName') }}
@@ -195,7 +310,7 @@ onMounted(async () => {
           <CategorySelector
             v-model="form.categoryScope"
             :required="true"
-            label="预算分类"
+            label="预算类别"
             placeholder="请选择分类"
             help-text="选择适用于此预算的分类"
             :error-message="categoryError"

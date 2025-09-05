@@ -148,12 +148,6 @@ defineExpose({
 
 <template>
   <div class="category-selector">
-    <!-- 标签 -->
-    <!-- <label :for="`${inputId}-included`" class="mb-2 text-sm text-gray-700 font-medium dark:text-gray-300"> -->
-    <!--   {{ t('financial.budget.includedCategories') }} -->
-    <!--   <span v-if="required" class="ml-1 text-red-500" aria-label="必填">*</span> -->
-    <!-- </label> -->
-
     <!-- 快捷选择区域 -->
     <div
       v-if="showQuickSelect && quickSelectCategories.length > 0"
