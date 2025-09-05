@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import _ from 'lodash';
+import * as _ from 'es-toolkit/compat';
 import { Check, X } from 'lucide-vue-next';
 import z from 'zod';
 import CategorySelector from '@/components/common/CategorySelector.vue';
@@ -25,10 +25,10 @@ const emit = defineEmits<{
   update: [serialNum: string, budget: BudgetUpdate];
 }>();
 
+const { t } = useI18n();
 const colorNameMap = ref(COLORS_MAP);
 const currency = ref(CURRENCY_CNY);
-
-const { t } = useI18n();
+const categoryError = ref('');
 
 // 验证错误
 const validationErrors = reactive({
@@ -40,11 +40,7 @@ const validationErrors = reactive({
   priority: '',
 });
 
-const budget = props.budget || getDefaultBudget();
-
-const form = reactive<Budget>({
-  ...budget,
-});
+const form = reactive<Budget>(props.budget ? { ...props.budget } : getDefaultBudget());
 const types = Object.values(BudgetScopeTypeSchema.enum).map(type => ({
   original: type,
   snake: toCamelCase(type),
@@ -230,8 +226,6 @@ function getDefaultBudget(): Budget {
   };
 }
 
-const categoryError = ref('');
-
 function handleCategoryValidation(isValid: boolean) {
   if (!isValid) {
     categoryError.value = '请至少选择一个分类';
@@ -253,6 +247,12 @@ watch(
   newVal => {
     if (newVal) {
       const clonedAccount = JSON.parse(JSON.stringify(newVal));
+      if (clonedAccount.startDate) {
+        clonedAccount.startDate = clonedAccount.startDate.split('T')[0];
+      }
+      if (clonedAccount.endDate) {
+        clonedAccount.endDate = clonedAccount.endDate.split('T')[0];
+      }
       Object.assign(form, clonedAccount);
     }
   },

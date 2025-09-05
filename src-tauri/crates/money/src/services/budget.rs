@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use chrono::Local;
 use common::{
     crud::service::{CrudConverter, CrudService, GenericCrudService},
     error::{AppError, MijiResult},
@@ -147,10 +148,29 @@ impl BudgetConverter {
     ) -> MijiResult<BudgetWithAccount> {
         let account_service = get_account_service();
         let cny_service = get_currency_service();
+        // 使用 Local 获取当前运行环境的时区偏移
+        let local_offset = *Local::now().offset();
+
+        // 将时间戳转换为本地时区
+        let start_date_local = model.start_date.with_timezone(&local_offset);
+        let end_date_local = model.end_date.with_timezone(&local_offset);
+        let created_at_local = model.created_at.with_timezone(&local_offset);
+        let updated_at_local = model.updated_at.map(|dt| dt.with_timezone(&local_offset));
+        let last_reset_at_local = model.last_reset_at.with_timezone(&local_offset);
+
+        // 创建调整后的模型
+        let adjusted_model = entity::budget::Model {
+            start_date: start_date_local,
+            end_date: end_date_local,
+            created_at: created_at_local,
+            updated_at: updated_at_local,
+            last_reset_at: last_reset_at_local,
+            ..model
+        };
 
         let (account, currency) = tokio::try_join!(
             async {
-                match model.account_serial_num.clone() {
+                match adjusted_model.account_serial_num.clone() {
                     Some(account_serial_num) => account_service
                         .get_account_with_relations(db, account_serial_num)
                         .await
@@ -158,11 +178,15 @@ impl BudgetConverter {
                     None => Ok(None),
                 }
             },
-            async { cny_service.get_by_id(db, model.currency.clone()).await },
+            async {
+                cny_service
+                    .get_by_id(db, adjusted_model.currency.clone())
+                    .await
+            },
         )?;
 
         Ok(BudgetWithAccount {
-            budget: model,
+            budget: adjusted_model,
             account,
             currency,
         })
