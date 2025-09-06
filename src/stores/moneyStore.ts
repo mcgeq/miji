@@ -90,97 +90,113 @@ interface MoneyStoreState {
   error: string | null;
 }
 
-export const useMoneyStore = defineStore('money', () => {
-  // ==================== State ====================
-  const state = reactive<MoneyStoreState>({
+export const useMoneyStore = defineStore('money', {
+  state: (): MoneyStoreState => ({
     accounts: [],
     transactions: [],
     budgets: [],
     reminders: [],
     loading: false,
     error: null,
-  });
-
-  // ==================== Computed Properties ====================
-  const totalBalance = computed(() => {
-    return state.accounts
-      .filter(account => account.isActive)
-      .reduce((sum, account) => sum + Number.parseFloat(account.balance), 0);
-  });
-
-  const activeAccounts = computed(() =>
-    state.accounts.filter(account => account.isActive),
-  );
-  const activeBudgets = computed(() =>
-    state.budgets.filter(budget => budget.isActive),
-  );
-  const unpaidReminders = computed(() =>
-    state.reminders.filter(reminder => !reminder.isPaid),
-  );
-
-  // 错误处理辅助函数
-  // Returns never because it always throws an error
-  const handleError = (
-    err: unknown,
-    defaultMessage: string,
-    operation?: string,
-    entity?: string,
-  ): AppError => {
-    let appError: AppError;
-    if (err instanceof MoneyDbError) {
-      appError = new MoneyStoreError(
-        MoneyStoreErrorCode.DATABASE_OPERATION_FAILED,
-        `${defaultMessage}: ${err.message}`,
-        {
-          operation: operation || err.operation,
-          entity: entity || err.entity,
-          originalError: err.originalError,
-        },
+  }),
+  // ==================== Getters ====================
+  getters: {
+    totalBalance: state => {
+      return state.accounts
+        .filter(account => account.isActive)
+        .reduce((sum, account) => sum + Number.parseFloat(account.balance), 0);
+    },
+    activeAccounts: state => state.accounts.filter(account => account.isActive),
+    activeBudgets: state => state.budgets.filter(budget => budget.isActive),
+    unpaidReminders: state =>
+      state.reminders.filter(reminder => !reminder.isPaid),
+    findAccount: state => (serialNum: string) => {
+      return state.accounts.find(account => account.serialNum === serialNum);
+    },
+    findTransaction: state => (serialNum: string) => {
+      return state.transactions.find(
+        transaction => transaction.serialNum === serialNum,
       );
-    } else if (err instanceof MoneyStoreError) {
-      appError = err;
-    } else {
-      appError = AppError.wrap(
-        'money',
-        err,
-        MoneyStoreErrorCode.DATABASE_OPERATION_FAILED,
-        defaultMessage,
-      );
-    }
-    state.error = appError.getUserMessage();
-    appError.log();
-    return appError;
-  };
-
-  const withLoading = async <T>(operation: () => Promise<T>): Promise<T> => {
-    state.loading = true;
-    state.error = null;
-    try {
-      return await operation();
-    } finally {
-      state.loading = false;
-    }
-  };
-
-  // ==================== Local State Update Utilities ====================
-  const updateLocalState = {
-    async accounts() {
+    },
+    findBudget: state => (serialNum: string) => {
+      return state.budgets.find(budget => budget.serialNum === serialNum);
+    },
+    findReminder: state => (serialNum: string) => {
+      return state.reminders.find(reminder => reminder.serialNum === serialNum);
+    },
+  },
+  // ==================== Actions ====================
+  actions: {
+    // 错误处理辅助函数
+    handleError(
+      err: unknown,
+      defaultMessage: string,
+      operation?: string,
+      entity?: string,
+    ): AppError {
+      let appError: AppError;
+      if (err instanceof MoneyDbError) {
+        appError = new MoneyStoreError(
+          MoneyStoreErrorCode.DATABASE_OPERATION_FAILED,
+          `${defaultMessage}: ${err.message}`,
+          {
+            operation: operation || err.operation,
+            entity: entity || err.entity,
+            originalError: err.originalError,
+          },
+        );
+      } else if (err instanceof MoneyStoreError) {
+        appError = err;
+      } else {
+        appError = AppError.wrap(
+          'money',
+          err,
+          MoneyStoreErrorCode.DATABASE_OPERATION_FAILED,
+          defaultMessage,
+        );
+      }
+      this.error = appError.getUserMessage();
+      appError.log();
+      return appError;
+    },
+    async withLoading<T>(operation: () => Promise<T>): Promise<T> {
+      this.loading = true;
+      this.error = null;
       try {
-        state.accounts = await MoneyDb.listAccounts();
-      } catch (err) {
-        throw handleError(err, '获取账户列表失败', 'listAccounts', 'Account');
+        return await operation();
+      } finally {
+        this.loading = false;
       }
     },
 
-    async transactions() {
+    // ==================== Local State Update Utilities ====================
+    async updateAccounts() {
       try {
-        state.transactions = await MoneyDb.listTransactions();
+        this.accounts = await MoneyDb.listAccounts();
       } catch (err) {
-        handleError(err, '获取交易列表失败', 'listTransactions', 'Transaction');
+        throw this.handleError(
+          err,
+          '获取账户列表失败',
+          'listAccounts',
+          'Account',
+        );
       }
     },
 
-    async budgets() {
+    async updateTransactions() {
+      try {
+        this.transactions = await MoneyDb.listTransactions();
+      } catch (err) {
+        this.handleError(
+          err,
+          '获取交易列表失败',
+          'listTransactions',
+          'Transaction',
+        );
+      }
+    },
+
+    async updateBudgets() {
       const query: PageQuery<BudgetFilters> = {
         currentPage: 1,
         pageSize: 10,
@@ -189,75 +205,96 @@ export const useMoneyStore = defineStore('money', () => {
       };
 
       try {
-        state.budgets = (await MoneyDb.listBudgetsPaged(query)).rows;
+        this.budgets = (await MoneyDb.listBudgetsPaged(query)).rows;
       } catch (err) {
-        handleError(err, '获取预算列表失败', 'listBudgets', 'Budget');
+        this.handleError(err, '获取预算列表失败', 'listBudgets', 'Budget');
       }
     },
 
-    async reminders() {
+    async updateReminders() {
       try {
-        state.reminders = await MoneyDb.listBilReminders();
+        this.reminders = await MoneyDb.listBilReminders();
       } catch (err) {
-        handleError(err, '获取提醒列表失败', 'listBilReminders', 'BilReminder');
+        this.handleError(
+          err,
+          '获取提醒列表失败',
+          'listBilReminders',
+          'BilReminder',
+        );
       }
     },
-  };
 
-  // ==================== Account Operations ====================
-  const accountOperations = {
-    async getAll(): Promise<Account[]> {
-      return withLoading(async () => {
-        await updateLocalState.accounts();
-        return state.accounts;
+    // ==================== Account Operations ====================
+    async getAllAccounts(): Promise<Account[]> {
+      return this.withLoading(async () => {
+        await this.updateAccounts();
+        return this.accounts;
       });
     },
 
-    async create(account: CreateAccountRequest): Promise<Account> {
-      return withLoading(async () => {
+    async createAccount(account: CreateAccountRequest): Promise<Account> {
+      return this.withLoading(async () => {
         try {
           const result = await MoneyDb.createAccount(account);
-          await updateLocalState.accounts();
+          await this.updateAccounts();
           return result;
         } catch (err) {
-          throw handleError(err, '创建账户失败', 'createAccount', 'Account');
+          throw this.handleError(
+            err,
+            '创建账户失败',
+            'createAccount',
+            'Account',
+          );
         }
       });
     },
 
-    async update(
+    async updateAccount(
       serialNum: string,
       account: UpdateAccountRequest,
     ): Promise<Account> {
-      return withLoading(async () => {
+      return this.withLoading(async () => {
         try {
           const result = await MoneyDb.updateAccount(serialNum, account);
-          await updateLocalState.accounts();
+          await this.updateAccounts();
           return result;
         } catch (err) {
-          throw handleError(err, '更新账户失败', 'updateAccount', 'Account');
+          throw this.handleError(
+            err,
+            '更新账户失败',
+            'updateAccount',
+            'Account',
+          );
         }
       });
     },
 
-    async delete(serialNum: string): Promise<void> {
-      return withLoading(async () => {
+    async deleteAccount(serialNum: string): Promise<void> {
+      return this.withLoading(async () => {
         try {
           await MoneyDb.deleteAccount(serialNum);
-          await updateLocalState.accounts();
+          await this.updateAccounts();
         } catch (err) {
-          throw handleError(err, '删除账户失败', 'deleteAccount', 'Account');
+          throw this.handleError(
+            err,
+            '删除账户失败',
+            'deleteAccount',
+            'Account',
+          );
         }
       });
     },
 
-    async toggleActive(serialNum: string, isActive: boolean): Promise<void> {
-      return withLoading(async () => {
+    async toggleAccountActive(
+      serialNum: string,
+      isActive: boolean,
+    ): Promise<void> {
+      return this.withLoading(async () => {
         try {
           await MoneyDb.updateAccountActive(serialNum, isActive);
-          await updateLocalState.accounts();
+          await this.updateAccounts();
         } catch (err) {
-          throw handleError(
+          throw this.handleError(
             err,
             '切换账户状态失败',
             'updateAccountActive',
@@ -266,20 +303,17 @@ export const useMoneyStore = defineStore('money', () => {
         }
       });
     },
-  };
-
-  // ==================== Transaction Operations ====================
-  const transactionOperations = {
-    async getPagedList(
+    // ==================== Transaction Operations ====================
+    async getPagedTransactions(
       query: PageQuery<TransactionFilters>,
     ): Promise<PagedResult<Transaction>> {
-      return withLoading(async () => {
+      return this.withLoading(async () => {
         try {
           const result = await MoneyDb.listTransactionsPaged(query);
-          state.transactions = result.rows;
+          this.transactions = result.rows;
           return result;
         } catch (err) {
-          throw handleError(
+          throw this.handleError(
             err,
             '获取交易列表失败',
             'listTransactions',
@@ -289,21 +323,23 @@ export const useMoneyStore = defineStore('money', () => {
       });
     },
 
-    async getAll(): Promise<Transaction[]> {
-      return withLoading(async () => {
-        await updateLocalState.transactions();
-        return state.transactions;
+    async getAllTransactions(): Promise<Transaction[]> {
+      return this.withLoading(async () => {
+        await this.updateTransactions();
+        return this.transactions;
       });
     },
 
-    async create(transaction: TransactionCreate): Promise<Transaction> {
-      return withLoading(async () => {
+    async createTransaction(
+      transaction: TransactionCreate,
+    ): Promise<Transaction> {
+      return this.withLoading(async () => {
         try {
           const result = await MoneyDb.createTransaction(transaction);
-          await updateLocalState.transactions();
+          await this.updateTransactions();
           return result;
         } catch (err) {
-          throw handleError(
+          throw this.handleError(
             err,
             '创建交易失败',
             'createTransaction',
@@ -313,20 +349,20 @@ export const useMoneyStore = defineStore('money', () => {
       });
     },
 
-    async update(
+    async updateTransaction(
       serialNum: string,
       transaction: TransactionUpdate,
     ): Promise<Transaction> {
-      return withLoading(async () => {
+      return this.withLoading(async () => {
         try {
           const result = await MoneyDb.updateTransaction(
             serialNum,
             transaction,
           );
-          await updateLocalState.transactions();
+          await this.updateTransactions();
           return result;
         } catch (err) {
-          throw handleError(
+          throw this.handleError(
             err,
             '更新交易失败',
             'updateTransaction',
@@ -336,13 +372,13 @@ export const useMoneyStore = defineStore('money', () => {
       });
     },
 
-    async delete(serialNum: string): Promise<void> {
-      return withLoading(async () => {
+    async deleteTransaction(serialNum: string): Promise<void> {
+      return this.withLoading(async () => {
         try {
           await MoneyDb.deleteTransaction(serialNum);
-          await updateLocalState.transactions();
+          await this.updateTransactions();
         } catch (err) {
-          throw handleError(
+          throw this.handleError(
             err,
             '删除交易失败',
             'deleteTransaction',
@@ -356,7 +392,7 @@ export const useMoneyStore = defineStore('money', () => {
       try {
         return await MoneyDb.monthlyIncomeAndExpense();
       } catch (err) {
-        throw handleError(
+        throw this.handleError(
           err,
           '获取月度收支失败',
           'monthlyIncomeAndExpense',
@@ -364,18 +400,16 @@ export const useMoneyStore = defineStore('money', () => {
         );
       }
     },
-  };
 
-  // ==================== Transfer Operations ====================
-  const transferOperations = {
-    async create(transfer: TransferCreate) {
-      return withLoading(async () => {
+    // ==================== Transfer Operations ====================
+    async createTransfer(transfer: TransferCreate) {
+      return this.withLoading(async () => {
         try {
           const result = await MoneyDb.transferCreate(transfer);
-          await updateLocalState.transactions();
+          await this.updateTransactions();
           return result;
         } catch (err) {
-          throw handleError(
+          throw this.handleError(
             err,
             '创建转账失败',
             'transferCreate',
@@ -385,14 +419,14 @@ export const useMoneyStore = defineStore('money', () => {
       });
     },
 
-    async update(serialNum: string, transfer: TransferCreate) {
-      return withLoading(async () => {
+    async updateTransfer(serialNum: string, transfer: TransferCreate) {
+      return this.withLoading(async () => {
         try {
           const result = await MoneyDb.transferUpdate(serialNum, transfer);
-          await updateLocalState.transactions();
+          await this.updateTransactions();
           return result;
         } catch (err) {
-          throw handleError(
+          throw this.handleError(
             err,
             '更新转账失败',
             'transferUpdate',
@@ -402,16 +436,16 @@ export const useMoneyStore = defineStore('money', () => {
       });
     },
 
-    async delete(relatedTransactionSerialNum: string) {
-      return withLoading(async () => {
+    async deleteTransfer(relatedTransactionSerialNum: string) {
+      return this.withLoading(async () => {
         try {
           const result = await MoneyDb.transferDelete(
             relatedTransactionSerialNum,
           );
-          await updateLocalState.transactions();
+          await this.updateTransactions();
           return result;
         } catch (err) {
-          throw handleError(
+          throw this.handleError(
             err,
             '删除转账失败',
             'transferDelete',
@@ -420,93 +454,100 @@ export const useMoneyStore = defineStore('money', () => {
         }
       });
     },
-  };
 
-  // ==================== Budget Operations ====================
-  const budgetOperations = {
-    async getListPaged(
+    // ==================== Budget Operations ====================
+    async getPagedBudgets(
       query: PageQuery<BudgetFilters>,
     ): Promise<PagedResult<Budget>> {
-      return withLoading(async () => {
+      return this.withLoading(async () => {
         try {
           const result = await MoneyDb.listBudgetsPaged(query);
-          state.budgets = result.rows;
+          this.budgets = result.rows;
           return result;
         } catch (err) {
-          throw handleError(
+          throw this.handleError(
             err,
-            '获取交易列表失败',
-            'listTransactions',
-            'Transaction',
+            '获取预算列表失败',
+            'listBudgets',
+            'Budget',
           );
         }
       });
     },
 
-    async create(budget: BudgetCreate): Promise<Budget> {
-      return withLoading(async () => {
+    async createBudget(budget: BudgetCreate): Promise<Budget> {
+      return this.withLoading(async () => {
         try {
           const result = await MoneyDb.createBudget(budget);
-          await updateLocalState.budgets();
+          await this.updateBudgets();
           return result;
         } catch (err) {
-          throw handleError(err, '创建预算失败', 'createBudget', 'Budget');
+          throw this.handleError(err, '创建预算失败', 'createBudget', 'Budget');
         }
       });
     },
 
-    async update(serialNum: string, budget: BudgetUpdate): Promise<Budget> {
-      return withLoading(async () => {
+    async updateBudget(
+      serialNum: string,
+      budget: BudgetUpdate,
+    ): Promise<Budget> {
+      return this.withLoading(async () => {
         try {
           const result = await MoneyDb.updateBudget(serialNum, budget);
-          await updateLocalState.budgets();
+          await this.updateBudgets();
           return result;
         } catch (err) {
-          throw handleError(err, '更新预算失败', 'updateBudget', 'Budget');
+          throw this.handleError(err, '更新预算失败', 'updateBudget', 'Budget');
         }
       });
     },
 
-    async delete(serialNum: string): Promise<void> {
-      return withLoading(async () => {
+    async deleteBudget(serialNum: string): Promise<void> {
+      return this.withLoading(async () => {
         try {
           await MoneyDb.deleteBudget(serialNum);
-          await updateLocalState.budgets();
+          await this.updateBudgets();
         } catch (err) {
-          throw handleError(err, '删除预算失败', 'deleteBudget', 'Budget');
+          throw this.handleError(err, '删除预算失败', 'deleteBudget', 'Budget');
         }
       });
     },
 
-    async toggleActive(serialNum: string, isActive: boolean): Promise<void> {
-      return withLoading(async () => {
+    async toggleBudgetActive(
+      serialNum: string,
+      isActive: boolean,
+    ): Promise<void> {
+      return this.withLoading(async () => {
         try {
           await MoneyDb.updateBudgetActive(serialNum, isActive);
-          await updateLocalState.budgets();
+          await this.updateBudgets();
         } catch (err) {
-          throw handleError(err, '切换预算状态失败', 'updateBudget', 'Budget');
+          throw this.handleError(
+            err,
+            '切换预算状态失败',
+            'updateBudget',
+            'Budget',
+          );
         }
       });
     },
-  };
 
-  // ==================== Reminder Operations ====================
-  const reminderOperations = {
-    async getAll(): Promise<BilReminder[]> {
-      return withLoading(async () => {
-        await updateLocalState.reminders();
-        return state.reminders;
+    // ==================== Reminder Operations ====================
+    async getAllReminders(): Promise<BilReminder[]> {
+      return this.withLoading(async () => {
+        await this.updateReminders();
+        return this.reminders;
       });
     },
 
-    async create(reminder: BilReminderCreate): Promise<BilReminder> {
-      return withLoading(async () => {
+    async createReminder(reminder: BilReminderCreate): Promise<BilReminder> {
+      return this.withLoading(async () => {
         try {
           const result = await MoneyDb.createBilReminder(reminder);
-          await updateLocalState.reminders();
+          await this.updateReminders();
           return result;
         } catch (err) {
-          throw handleError(
+          throw this.handleError(
             err,
             '创建提醒失败',
             'createBilReminder',
@@ -516,17 +557,17 @@ export const useMoneyStore = defineStore('money', () => {
       });
     },
 
-    async update(
+    async updateReminder(
       serialNum: string,
       reminder: BilReminderUpdate,
     ): Promise<BilReminder> {
-      return withLoading(async () => {
+      return this.withLoading(async () => {
         try {
           const result = await MoneyDb.updateBilReminder(serialNum, reminder);
-          await updateLocalState.reminders();
+          await this.updateReminders();
           return result;
         } catch (err) {
-          throw handleError(
+          throw this.handleError(
             err,
             '更新提醒失败',
             'updateBilReminder',
@@ -536,13 +577,13 @@ export const useMoneyStore = defineStore('money', () => {
       });
     },
 
-    async delete(serialNum: string): Promise<void> {
-      return withLoading(async () => {
+    async deleteReminder(serialNum: string): Promise<void> {
+      return this.withLoading(async () => {
         try {
           await MoneyDb.deleteBilReminder(serialNum);
-          await updateLocalState.reminders();
+          await this.updateReminders();
         } catch (err) {
-          throw handleError(
+          throw this.handleError(
             err,
             '删除提醒失败',
             'deleteBilReminder',
@@ -552,10 +593,10 @@ export const useMoneyStore = defineStore('money', () => {
       });
     },
 
-    async markPaid(serialNum: string, isPaid: boolean): Promise<void> {
-      return withLoading(async () => {
+    async markReminderPaid(serialNum: string, isPaid: boolean): Promise<void> {
+      return this.withLoading(async () => {
         try {
-          const reminder = state.reminders.find(r => r.serialNum === serialNum);
+          const reminder = this.reminders.find(r => r.serialNum === serialNum);
           if (!reminder) {
             const err = new MoneyStoreError(
               MoneyStoreErrorCode.NOT_FOUND,
@@ -571,11 +612,11 @@ export const useMoneyStore = defineStore('money', () => {
           reminder.updatedAt = new Date().toISOString();
 
           await MoneyDb.updateBilReminderActive(serialNum, isPaid);
-          await updateLocalState.reminders();
+          await this.updateReminders();
         } catch (err) {
           // 回滚乐观更新
-          await updateLocalState.reminders();
-          throw handleError(
+          await this.updateReminders();
+          throw this.handleError(
             err,
             '标记支付状态失败',
             'updateBilReminder',
@@ -584,105 +625,28 @@ export const useMoneyStore = defineStore('money', () => {
         }
       });
     },
-  };
 
-  // ==================== Utility Functions ====================
-  const clearError = () => {
-    state.error = null;
-  };
+    // ==================== Utility Functions ====================
+    clearError() {
+      this.error = null;
+    },
 
-  const findAccount = (serialNum: string): Account | undefined => {
-    return state.accounts.find(account => account.serialNum === serialNum);
-  };
-
-  const findTransaction = (serialNum: string): Transaction | undefined => {
-    return state.transactions.find(
-      transaction => transaction.serialNum === serialNum,
-    );
-  };
-
-  const findBudget = (serialNum: string): Budget | undefined => {
-    return state.budgets.find(budget => budget.serialNum === serialNum);
-  };
-
-  const findReminder = (serialNum: string): BilReminder | undefined => {
-    return state.reminders.find(reminder => reminder.serialNum === serialNum);
-  };
-
-  // ==================== Batch Operations ====================
-  const batchOperations = {
+    // ==================== Batch Operations ====================
     async refreshAll(): Promise<void> {
-      return withLoading(async () => {
+      return this.withLoading(async () => {
         await Promise.all([
-          updateLocalState.accounts(),
-          updateLocalState.transactions(),
-          updateLocalState.budgets(),
-          updateLocalState.reminders(),
+          this.updateAccounts(),
+          this.updateTransactions(),
+          this.updateBudgets(),
+          this.updateReminders(),
         ]);
       });
     },
 
     async refreshAccountsAndTransactions(): Promise<void> {
-      await Promise.all([
-        updateLocalState.accounts(),
-        updateLocalState.transactions(),
-      ]);
+      return this.withLoading(async () => {
+        await Promise.all([this.updateAccounts(), this.updateTransactions()]);
+      });
     },
-  };
-
-  // ==================== Public API ====================
-  return {
-    // State (using toRefs for reactivity)
-    ...toRefs(state),
-
-    // Computed
-    totalBalance,
-    activeAccounts,
-    activeBudgets,
-    unpaidReminders,
-
-    // Account operations
-    getAccounts: accountOperations.getAll,
-    createAccount: accountOperations.create,
-    updateAccount: accountOperations.update,
-    deleteAccount: accountOperations.delete,
-    toggleAccountActive: accountOperations.toggleActive,
-
-    // Transaction operations
-    getTransactions: transactionOperations.getPagedList,
-    getAllTransactions: transactionOperations.getAll,
-    createTransaction: transactionOperations.create,
-    updateTransaction: transactionOperations.update,
-    deleteTransaction: transactionOperations.delete,
-    monthlyIncomeAndExpense: transactionOperations.getMonthlyIncomeExpense,
-    // Transfer operations
-    createTransfer: transferOperations.create,
-    updateTransfer: transferOperations.update,
-    deleteTransfer: transferOperations.delete,
-
-    // Budget operations
-    getBudgets: budgetOperations.getListPaged,
-    createBudget: budgetOperations.create,
-    updateBudget: budgetOperations.update,
-    deleteBudget: budgetOperations.delete,
-    toggleBudgetActive: budgetOperations.toggleActive,
-    // Reminder operations
-    getReminders: reminderOperations.getAll,
-    createReminder: reminderOperations.create,
-    updateReminder: reminderOperations.update,
-    deleteReminder: reminderOperations.delete,
-    markReminderPaid: reminderOperations.markPaid,
-
-    // Utilities
-    clearError,
-    findAccount,
-    findTransaction,
-    findBudget,
-    findReminder,
-
-    // Batch operations
-    refreshAll: batchOperations.refreshAll,
-    refreshAccountsAndTransactions:
-      batchOperations.refreshAccountsAndTransactions,
-  };
+  },
 });

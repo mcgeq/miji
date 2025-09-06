@@ -220,7 +220,7 @@ async function loadData() {
 async function loadAccounts() {
   accountsLoading.value = true;
   try {
-    accounts.value = await moneyStore.getAccounts();
+    accounts.value = await moneyStore.getAllAccounts();
   } finally {
     accountsLoading.value = false;
   }
@@ -228,7 +228,7 @@ async function loadAccounts() {
 async function loadReminders() {
   remindersLoading.value = true;
   try {
-    reminders.value = await moneyStore.getReminders();
+    reminders.value = await moneyStore.getAllReminders();
   } finally {
     remindersLoading.value = false;
   }

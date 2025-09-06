@@ -154,7 +154,7 @@ async function loadTransactions() {
         isDeleted: filters.value.isDeleted ?? false,
       },
     };
-    const result = await moneyStore.getTransactions(params);
+    const result = await moneyStore.getPagedTransactions(params);
     pagination.value.totalItems = result.totalCount;
     pagination.value.totalPages = result.totalPages;
   } catch (error) {
