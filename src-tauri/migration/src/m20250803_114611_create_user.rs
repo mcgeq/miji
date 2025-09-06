@@ -29,13 +29,16 @@ impl MigrationTrait for Migration {
                     .col(ColumnDef::new(Users::Phone).string().unique_key())
                     .col(ColumnDef::new(Users::Password).string().not_null())
                     .col(ColumnDef::new(Users::AvatarUrl).string())
-                    .col(ColumnDef::new(Users::LastLoginAt).string())
+                    .col(
+                        ColumnDef::new(Users::LastLoginAt)
+                            .timestamp_with_time_zone()
+                            .null(),
+                    )
                     .col(
                         ColumnDef::new(Users::IsVerified)
-                            .integer()
+                            .boolean()
                             .not_null()
-                            .default(0)
-                            .check(Expr::col(Users::IsVerified).is_in(vec![0, 1])),
+                            .default(false),
                     )
                     .col(
                         ColumnDef::new(Users::Role)
@@ -66,15 +69,39 @@ impl MigrationTrait for Migration {
                                 "Deleted",
                             ])),
                     )
-                    .col(ColumnDef::new(Users::EmailVerifiedAt).string())
-                    .col(ColumnDef::new(Users::PhoneVerifiedAt).string())
+                    .col(
+                        ColumnDef::new(Users::EmailVerifiedAt)
+                            .timestamp_with_time_zone()
+                            .null(),
+                    )
+                    .col(
+                        ColumnDef::new(Users::PhoneVerifiedAt)
+                            .timestamp_with_time_zone()
+                            .null(),
+                    )
                     .col(ColumnDef::new(Users::Bio).text())
                     .col(ColumnDef::new(Users::Language).string())
                     .col(ColumnDef::new(Users::Timezone).string())
-                    .col(ColumnDef::new(Users::LastActiveAt).string())
-                    .col(ColumnDef::new(Users::DeletedAt).string())
-                    .col(ColumnDef::new(Users::CreatedAt).string().not_null())
-                    .col(ColumnDef::new(Users::UpdatedAt).string())
+                    .col(
+                        ColumnDef::new(Users::LastActiveAt)
+                            .timestamp_with_time_zone()
+                            .null(),
+                    )
+                    .col(
+                        ColumnDef::new(Users::DeletedAt)
+                            .timestamp_with_time_zone()
+                            .null(),
+                    )
+                    .col(
+                        ColumnDef::new(Users::CreatedAt)
+                            .timestamp_with_time_zone()
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(Users::UpdatedAt)
+                            .timestamp_with_time_zone()
+                            .null(),
+                    )
                     .to_owned(),
             )
             .await?;

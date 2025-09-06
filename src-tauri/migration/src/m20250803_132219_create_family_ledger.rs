@@ -22,23 +22,29 @@ impl MigrationTrait for Migration {
                     .col(ColumnDef::new(FamilyLedger::Name).string())
                     .col(
                         ColumnDef::new(FamilyLedger::Description)
-                            .text()
-                            .not_null()
-                            .check(Expr::cust("LENGTH(description) <= 1000")),
+                            .string_len(1000)
+                            .not_null(),
                     )
                     .col(
                         ColumnDef::new(FamilyLedger::BaseCurrency)
-                            .string()
-                            .not_null()
-                            .check(Expr::cust("LENGTH(base_currency) <= 10")),
+                            .string_len(3)
+                            .not_null(),
                     )
                     .col(ColumnDef::new(FamilyLedger::Members).string())
                     .col(ColumnDef::new(FamilyLedger::Accounts).string())
                     .col(ColumnDef::new(FamilyLedger::Transactions).string())
                     .col(ColumnDef::new(FamilyLedger::Budgets).string())
                     .col(ColumnDef::new(FamilyLedger::AuditLogs).string().not_null())
-                    .col(ColumnDef::new(FamilyLedger::CreatedAt).string().not_null())
-                    .col(ColumnDef::new(FamilyLedger::UpdatedAt).string())
+                    .col(
+                        ColumnDef::new(FamilyLedger::CreatedAt)
+                            .timestamp_with_time_zone()
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(FamilyLedger::UpdatedAt)
+                            .timestamp_with_time_zone()
+                            .null(),
+                    )
                     .foreign_key(
                         ForeignKey::create()
                             .name("fk_family_ledger_currency")

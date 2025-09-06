@@ -25,10 +25,14 @@ impl MigrationTrait for Migration {
                     )
                     .col(
                         ColumnDef::new(FamilyLedgerTransaction::CreatedAt)
-                            .string()
+                            .timestamp_with_time_zone()
                             .not_null(),
                     )
-                    .col(ColumnDef::new(FamilyLedgerTransaction::UpdatedAt).string())
+                    .col(
+                        ColumnDef::new(FamilyLedgerTransaction::UpdatedAt)
+                            .timestamp_with_time_zone()
+                            .null(),
+                    )
                     .primary_key(
                         Index::create()
                             .col(FamilyLedgerTransaction::FamilyLedgerSerialNum)

@@ -26,20 +26,24 @@ impl MigrationTrait for Migration {
                     )
                     .col(
                         ColumnDef::new(PeriodPmsRecords::StartDate)
-                            .string()
+                            .timestamp_with_time_zone()
                             .not_null(),
                     )
                     .col(
                         ColumnDef::new(PeriodPmsRecords::EndDate)
-                            .string()
+                            .timestamp_with_time_zone()
                             .not_null(),
                     )
                     .col(
                         ColumnDef::new(PeriodPmsRecords::CreatedAt)
-                            .string()
+                            .timestamp_with_time_zone()
                             .not_null(),
                     )
-                    .col(ColumnDef::new(PeriodPmsRecords::UpdatedAt).string())
+                    .col(
+                        ColumnDef::new(PeriodPmsRecords::UpdatedAt)
+                            .timestamp_with_time_zone()
+                            .null(),
+                    )
                     .foreign_key(
                         ForeignKey::create()
                             .name("fk_period_pms_records_period")

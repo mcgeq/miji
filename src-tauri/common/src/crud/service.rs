@@ -9,15 +9,6 @@
 // Modified   By:  mcgeq <mcgeq@outlook.com>
 // ----------------------------------------------------------------------------
 
-use sea_orm::{
-    ActiveModelTrait, ColumnTrait, DbConn, EntityTrait, FromQueryResult, IntoActiveModel,
-    PaginatorTrait, PrimaryKeyTrait, QueryFilter, QuerySelect, TransactionTrait, Value,
-    prelude::{Expr, async_trait::async_trait},
-};
-use serde::Serialize;
-use std::{fmt, str::FromStr, sync::Arc};
-use validator::Validate;
-
 use crate::{
     BusinessCode,
     crud::hooks::Hooks,
@@ -25,7 +16,15 @@ use crate::{
     log::logger::OperationLogger,
     paginations::{Filter, PagedQuery, PagedResult, Sortable},
 };
+use sea_orm::{
+    ActiveModelTrait, ColumnTrait, DbConn, EntityTrait, FromQueryResult, IntoActiveModel,
+    PaginatorTrait, PrimaryKeyTrait, QueryFilter, QuerySelect, TransactionTrait, Value,
+    prelude::{Expr, async_trait::async_trait},
+};
+use serde::{Serialize, de::DeserializeOwned};
+use std::{fmt, str::FromStr, sync::Arc};
 use tracing::{error, info};
+use validator::Validate;
 
 /// 重构后的 CRUD 服务 trait
 #[async_trait]
@@ -739,4 +738,42 @@ pub fn parse_json_field<T: serde::de::DeserializeOwned>(
         error!("Failed to parse {} '{}': {}", field_name, value, e);
         default
     })
+}
+
+/// 统一解析 JSON 字段（高效版）
+pub fn parse_json<T: DeserializeOwned, V>(value: V, field_name: &str, default: T) -> T
+where
+    V: JsonInput,
+{
+    value.parse_json(field_name, default)
+}
+
+/// Trait 用于抽象不同输入类型
+pub trait JsonInput {
+    fn parse_json<T: DeserializeOwned>(self, field_name: &str, default: T) -> T;
+}
+
+/// 实现针对 &str
+impl JsonInput for &str {
+    fn parse_json<T: DeserializeOwned>(self, field_name: &str, default: T) -> T {
+        serde_json::from_str(self).unwrap_or_else(|e| {
+            #[cfg(debug_assertions)]
+            eprintln!("Failed to parse {} '{}': {}", field_name, self, e);
+            default
+        })
+    }
+}
+
+/// 实现针对 Option<JsonValue>，直接用 from_value 避免字符串中转
+impl JsonInput for &Option<serde_json::Value> {
+    fn parse_json<T: DeserializeOwned>(self, field_name: &str, default: T) -> T {
+        match self {
+            Some(json_val) => serde_json::from_value(json_val.clone()).unwrap_or_else(|e| {
+                #[cfg(debug_assertions)]
+                eprintln!("Failed to parse {} '{:?}': {}", field_name, json_val, e);
+                default
+            }),
+            None => default,
+        }
+    }
 }

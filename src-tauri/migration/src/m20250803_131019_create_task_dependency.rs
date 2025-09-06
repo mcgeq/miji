@@ -25,10 +25,14 @@ impl MigrationTrait for Migration {
                     )
                     .col(
                         ColumnDef::new(TaskDependency::CreatedAt)
-                            .string()
+                            .timestamp_with_time_zone()
                             .not_null(),
                     )
-                    .col(ColumnDef::new(TaskDependency::UpdatedAt).string())
+                    .col(
+                        ColumnDef::new(TaskDependency::UpdatedAt)
+                            .timestamp_with_time_zone()
+                            .null(),
+                    )
                     .primary_key(
                         Index::create()
                             .col(TaskDependency::TaskSerialNum)

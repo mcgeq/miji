@@ -71,7 +71,7 @@ impl Hooks<entity::transactions::Entity, CreateTransactionRequest, UpdateTransac
         model: &entity::transactions::Model,
         data: &UpdateTransactionRequest,
     ) -> MijiResult<()> {
-        if model.is_deleted == 1 {
+        if model.is_deleted {
             return Err(AppError::simple(
                 BusinessCode::MoneyInsufficientFunds,
                 "无法更新已删除的交易",
@@ -132,7 +132,7 @@ impl Hooks<entity::transactions::Entity, CreateTransactionRequest, UpdateTransac
                     .one(tx)
                     .await?
                     .ok_or_else(|| AppError::simple(BusinessCode::NotFound, "关联交易不存在"))?;
-                if related_transaction.is_deleted == 0 {
+                if !related_transaction.is_deleted {
                     return Err(AppError::simple(
                         BusinessCode::MoneyTransactionDeclined,
                         "无法删除转账交易，需先删除关联交易",
@@ -153,7 +153,7 @@ impl Hooks<entity::transactions::Entity, CreateTransactionRequest, UpdateTransac
             .await?
             .ok_or_else(|| AppError::simple(BusinessCode::NotFound, "交易不存在"))?;
 
-        if transaction.category != "Transfer" && transaction.is_deleted == 1 {
+        if transaction.category != "Transfer" && transaction.is_deleted {
             let transaction_type = TransactionType::from_str(&transaction.transaction_type)?;
             update_account_balance(
                 tx,
@@ -172,7 +172,7 @@ impl Hooks<entity::transactions::Entity, CreateTransactionRequest, UpdateTransac
                     .await?
                     .ok_or_else(|| AppError::simple(BusinessCode::NotFound, "关联交易不存在"))?
                     .into_active_model();
-                related_active.is_deleted = sea_orm::ActiveValue::Set(1);
+                related_active.is_deleted = sea_orm::ActiveValue::Set(true);
                 related_active.update(tx).await?;
             }
         }

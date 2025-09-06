@@ -1,6 +1,7 @@
 // stores/moneyStore.ts
 import { defineStore } from 'pinia';
 import { AppError, AppErrorCode, AppErrorSeverity } from '@/errors/appError';
+import { SortDirection } from '@/schema/common';
 import { MoneyDbError } from '@/services/money/baseManager';
 import { MoneyDb } from '@/services/money/money';
 import type { IncomeExpense, PageQuery } from '@/schema/common';
@@ -19,6 +20,7 @@ import type {
   TransferCreate,
   UpdateAccountRequest,
 } from '@/schema/money';
+import type { AccountFilters } from '@/services/money/accounts';
 import type { PagedResult } from '@/services/money/baseManager';
 import type { BudgetFilters } from '@/services/money/budgets';
 import type { TransactionFilters } from '@/services/money/transactions';
@@ -171,8 +173,17 @@ export const useMoneyStore = defineStore('money', {
 
     // ==================== Local State Update Utilities ====================
     async updateAccounts() {
+      const query: PageQuery<AccountFilters> = {
+        currentPage: 1,
+        pageSize: 20,
+        sortOptions: {
+          desc: true,
+          sortDir: SortDirection.Desc,
+        },
+        filter: {},
+      };
       try {
-        this.accounts = await MoneyDb.listAccounts();
+        this.accounts = (await MoneyDb.listAccountsPaged(query)).rows;
       } catch (err) {
         throw this.handleError(
           err,
@@ -184,8 +195,18 @@ export const useMoneyStore = defineStore('money', {
     },
 
     async updateTransactions() {
+      const query: PageQuery<TransactionFilters> = {
+        currentPage: 1,
+        pageSize: 10,
+        sortOptions: {
+          desc: true,
+          sortDir: SortDirection.Desc,
+        },
+        filter: {},
+      };
+
       try {
-        this.transactions = await MoneyDb.listTransactions();
+        this.transactions = (await MoneyDb.listTransactionsPaged(query)).rows;
       } catch (err) {
         this.handleError(
           err,
@@ -200,7 +221,10 @@ export const useMoneyStore = defineStore('money', {
       const query: PageQuery<BudgetFilters> = {
         currentPage: 1,
         pageSize: 10,
-        sortOptions: {},
+        sortOptions: {
+          desc: true,
+          sortDir: SortDirection.Desc,
+        },
         filter: {},
       };
 

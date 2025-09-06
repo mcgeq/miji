@@ -21,16 +21,11 @@ impl MigrationTrait for Migration {
                     )
                     .col(
                         ColumnDef::new(Account::Name)
-                            .string()
+                            .string_len(200)
                             .not_null()
-                            .check(Expr::cust("LENGTH(name) <= 200")),
+                            .unique_key(),
                     )
-                    .col(
-                        ColumnDef::new(Account::Description)
-                            .text()
-                            .not_null()
-                            .check(Expr::cust("LENGTH(description) <= 1000")),
-                    )
+                    .col(ColumnDef::new(Account::Description).string_len(1000).null())
                     .col(ColumnDef::new(Account::Type).string().not_null().check(
                         Expr::col(Account::Type).is_in(vec![
                             "Savings",
@@ -59,22 +54,28 @@ impl MigrationTrait for Migration {
                     .col(ColumnDef::new(Account::Currency).string_len(3).not_null())
                     .col(
                         ColumnDef::new(Account::IsShared)
-                            .integer()
-                            .not_null()
-                            .default(0)
-                            .check(Expr::col(Account::IsShared).is_in(vec![0, 1])),
+                            .boolean()
+                            .null()
+                            .default(false),
                     )
                     .col(ColumnDef::new(Account::OwnerId).string_len(38))
-                    .col(ColumnDef::new(Account::Color).string())
+                    .col(ColumnDef::new(Account::Color).string_len(7))
                     .col(
                         ColumnDef::new(Account::IsActive)
-                            .integer()
+                            .boolean()
                             .not_null()
-                            .default(1)
-                            .check(Expr::col(Account::IsActive).is_in(vec![0, 1])),
+                            .default(true),
                     )
-                    .col(ColumnDef::new(Account::CreatedAt).string().not_null())
-                    .col(ColumnDef::new(Account::UpdatedAt).string())
+                    .col(
+                        ColumnDef::new(Account::CreatedAt)
+                            .timestamp_with_time_zone()
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(Account::UpdatedAt)
+                            .timestamp_with_time_zone()
+                            .null(),
+                    )
                     .foreign_key(
                         ForeignKey::create()
                             .name("fk_account_currency")

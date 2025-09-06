@@ -40,26 +40,33 @@ impl MigrationTrait for Migration {
                                 "Reversed",
                             ])),
                     )
-                    .col(ColumnDef::new(Transactions::Date).string().not_null())
-                    .col(ColumnDef::new(Transactions::Amount).decimal_len(16, 4).not_null())
-                    .col(ColumnDef::new(Transactions::RefundAmount).decimal_len(16, 4).not_null().default(0.0))
+                    .col(
+                        ColumnDef::new(Transactions::Date)
+                            .timestamp_with_time_zone()
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(Transactions::Amount)
+                            .decimal_len(16, 4)
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(Transactions::RefundAmount)
+                            .decimal_len(16, 4)
+                            .not_null()
+                            .default(0.0),
+                    )
                     .col(
                         ColumnDef::new(Transactions::Currency)
-                            .string()
-                            .not_null()
-                            .check(Expr::cust("LENGTH(currency) <= 10")),
+                            .string_len(3)
+                            .not_null(),
                     )
                     .col(
                         ColumnDef::new(Transactions::Description)
-                            .text()
-                            .not_null()
-                            .check(Expr::cust("LENGTH(description) <= 1000")),
+                            .string_len(1000)
+                            .not_null(),
                     )
-                    .col(
-                        ColumnDef::new(Transactions::Notes)
-                            .text()
-                            .check(Expr::cust("LENGTH(notes) <= 2000")),
-                    )
+                    .col(ColumnDef::new(Transactions::Notes).string_len(2000))
                     .col(
                         ColumnDef::new(Transactions::AccountSerialNum)
                             .string_len(38)
@@ -113,12 +120,12 @@ impl MigrationTrait for Migration {
                                 .or(Expr::col(Transactions::SubCategory).is_null()),
                         ),
                     )
+                    .col(ColumnDef::new(Transactions::Tags).json_binary().null())
                     .col(
-                        ColumnDef::new(Transactions::Tags)
-                            .string()
-                            .check(Expr::cust("LENGTH(tags) <= 500")),
+                        ColumnDef::new(Transactions::SplitMembers)
+                            .json_binary()
+                            .null(),
                     )
-                    .col(ColumnDef::new(Transactions::SplitMembers).string())
                     .col(
                         ColumnDef::new(Transactions::PaymentMethod)
                             .string()
@@ -136,24 +143,30 @@ impl MigrationTrait for Migration {
                     )
                     .col(
                         ColumnDef::new(Transactions::ActualPayerAccount)
-                            .string()
-                            .not_null()
-                            .check(Expr::cust("LENGTH(actual_payer_account) <= 38")),
+                            .string_len(38)
+                            .not_null(),
                     )
                     .col(
                         ColumnDef::new(Transactions::RelatedTransactionSerialNum)
-                            .string()
-                            .check(Expr::cust("LENGTH(related_transaction_serial_num) <= 38")),
+                            .string_len(38)
+                            .null(),
                     )
                     .col(
                         ColumnDef::new(Transactions::IsDeleted)
-                            .integer()
+                            .boolean()
                             .not_null()
-                            .default(0)
-                            .check(Expr::col(Transactions::IsDeleted).is_in(vec![0, 1])),
+                            .default(false),
                     )
-                    .col(ColumnDef::new(Transactions::CreatedAt).string().not_null())
-                    .col(ColumnDef::new(Transactions::UpdatedAt).string())
+                    .col(
+                        ColumnDef::new(Transactions::CreatedAt)
+                            .timestamp_with_time_zone()
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(Transactions::UpdatedAt)
+                            .timestamp_with_time_zone()
+                            .null(),
+                    )
                     .foreign_key(
                         ForeignKey::create()
                             .name("fk_transaction_currency")

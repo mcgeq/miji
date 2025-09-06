@@ -27,9 +27,9 @@ impl Hooks<entity::users::Entity, CreateUserDto, UpdateUserDto> for UserHooks {
             serial_num: Set(model.serial_num.clone()),
             name: Set(model.name.clone()),
             role: Set("Admin".to_string()),
-            is_primary: Set(0),
+            is_primary: Set(false),
             permissions: Set("".to_string()),
-            created_at: Set(DateUtils::local_rfc3339()),
+            created_at: Set(DateUtils::local_now()),
             updated_at: Set(None),
         };
         family_member_model.insert(tx).await?;

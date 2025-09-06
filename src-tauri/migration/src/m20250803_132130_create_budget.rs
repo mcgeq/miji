@@ -24,13 +24,8 @@ impl MigrationTrait for Migration {
                             .string_len(38)
                             .null(),
                     )
-                    .col(
-                        ColumnDef::new(Budget::Name)
-                            .string()
-                            .not_null()
-                            .check(Expr::cust("LENGTH(name) <= 200")),
-                    )
-                    .col(ColumnDef::new(Budget::Description).string())
+                    .col(ColumnDef::new(Budget::Name).string_len(20).not_null())
+                    .col(ColumnDef::new(Budget::Description).string_len(400))
                     .col(
                         ColumnDef::new(Budget::Amount)
                             .decimal_len(15, 2)

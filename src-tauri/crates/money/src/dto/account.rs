@@ -1,5 +1,6 @@
 use std::{fmt, str::FromStr};
 
+use chrono::{DateTime, FixedOffset};
 use common::{
     error::AppError,
     paginations::PagedResult,
@@ -31,10 +32,10 @@ pub struct CreateAccountRequest {
     #[validate(required(message = "是否共享必须指定"))]
     pub is_shared: Option<bool>,
 
-    #[validate(length(max = 100, message = "所有者ID长度不能超过100字符"))]
+    #[validate(length(max = 38, message = "所有者ID长度不能超过38字符"))]
     pub owner_id: Option<String>,
 
-    #[validate(length(max = 20, message = "颜色代码长度不能超过20字符"))]
+    #[validate(length(max = 7, message = "颜色代码长度不能超过7字符"))]
     pub color: Option<String>,
 }
 
@@ -55,10 +56,10 @@ pub struct UpdateAccountRequest {
 
     pub is_shared: Option<bool>,
 
-    #[validate(length(max = 100, message = "所有者ID长度不能超过100字符"))]
+    #[validate(length(max = 38, message = "所有者ID长度不能超过38字符"))]
     pub owner_id: Option<String>,
 
-    #[validate(length(max = 20, message = "颜色代码长度不能超过20字符"))]
+    #[validate(length(max = 7, message = "颜色代码长度不能超过7字符"))]
     pub color: Option<String>,
 
     pub is_active: Option<bool>,
@@ -116,18 +117,18 @@ impl Default for AccountBalanceSummary {
 pub struct AccountResponseWithRelations {
     pub serial_num: String,
     pub name: String,
-    pub description: String,
+    pub description: Option<String>,
     pub r#type: String,
     pub balance: Decimal,
     pub initial_balance: Decimal,
     pub currency: CurrencyInfo,
-    pub is_shared: bool,
+    pub is_shared: Option<bool>,
     pub owner_id: Option<String>,
     pub owner: Option<OwnerInfo>,
     pub color: Option<String>,
     pub is_active: bool,
-    pub created_at: String,
-    pub updated_at: Option<String>,
+    pub created_at: DateTime<FixedOffset>,
+    pub updated_at: Option<DateTime<FixedOffset>>,
 }
 
 /// 货币信息
@@ -137,8 +138,8 @@ pub struct CurrencyInfo {
     pub code: String,
     pub locale: String,
     pub symbol: String,
-    pub created_at: String,
-    pub updated_at: Option<String>,
+    pub created_at: DateTime<FixedOffset>,
+    pub updated_at: Option<DateTime<FixedOffset>>,
 }
 
 /// 所有者信息
@@ -228,11 +229,11 @@ impl From<AccountWithRelations> for AccountResponseWithRelations {
             balance: data.account.balance,
             initial_balance: data.account.initial_balance,
             currency: CurrencyInfo::from(data.currency),
-            is_shared: data.account.is_shared != 0,
+            is_shared: data.account.is_shared,
             owner_id: data.account.owner_id,
             owner: data.owner.map(OwnerInfo::from),
             color: data.account.color,
-            is_active: data.account.is_active != 0,
+            is_active: data.account.is_active,
             created_at: data.account.created_at,
             updated_at: data.account.updated_at,
         }
@@ -272,21 +273,21 @@ impl TryFrom<CreateAccountRequest> for account::ActiveModel {
         let serial_num = McgUuid::uuid(38);
 
         // 获取当前时间
-        let now = DateUtils::local_rfc3339();
+        let now = DateUtils::local_now();
 
         Ok(account::ActiveModel {
             serial_num: Set(serial_num),
             name: Set(dto.name),
-            description: Set(dto.description),
+            description: Set(Some(dto.description)),
             r#type: Set(dto.r#type),
             balance: Set(dto.initial_balance),
             initial_balance: Set(dto.initial_balance),
             currency: Set(dto.currency),
-            is_shared: Set(dto.is_shared.unwrap_or(false) as i32),
+            is_shared: Set(dto.is_shared),
             owner_id: Set(dto.owner_id),
             color: Set(dto.color),
-            is_active: Set(1), // 默认激活
-            created_at: Set(now.clone()),
+            is_active: Set(true), // 默认激活
+            created_at: Set(now),
             updated_at: Set(Some(now)),
         })
     }
@@ -306,7 +307,9 @@ impl TryFrom<UpdateAccountRequest> for account::ActiveModel {
                 .map_or(sea_orm::ActiveValue::NotSet, sea_orm::ActiveValue::Set),
             description: request
                 .description
-                .map_or(sea_orm::ActiveValue::NotSet, sea_orm::ActiveValue::Set),
+                .map_or(sea_orm::ActiveValue::NotSet, |val| {
+                    sea_orm::ActiveValue::Set(Some(val))
+                }),
             r#type: request
                 .r#type
                 .map_or(sea_orm::ActiveValue::NotSet, sea_orm::ActiveValue::Set),
@@ -318,7 +321,7 @@ impl TryFrom<UpdateAccountRequest> for account::ActiveModel {
             is_shared: request
                 .is_shared
                 .map_or(sea_orm::ActiveValue::NotSet, |val| {
-                    sea_orm::ActiveValue::Set(val as i32)
+                    sea_orm::ActiveValue::Set(Some(val))
                 }),
             owner_id: match request.owner_id {
                 Some(id) => sea_orm::ActiveValue::Set(Some(id)),
@@ -330,9 +333,9 @@ impl TryFrom<UpdateAccountRequest> for account::ActiveModel {
             },
             is_active: sea_orm::ActiveValue::NotSet,
             created_at: sea_orm::ActiveValue::NotSet,
-            updated_at: sea_orm::ActiveValue::Set(Some(
-                common::utils::date::DateUtils::local_rfc3339(),
-            )),
+            updated_at: sea_orm::ActiveValue::Set(
+                Some(common::utils::date::DateUtils::local_now()),
+            ),
         })
     }
 }
@@ -368,7 +371,7 @@ pub fn convert_to_account(
                 created_at: currency.created_at,
                 updated_at: currency.updated_at,
             },
-            is_shared: account.is_shared != 0,
+            is_shared: account.is_shared,
             owner_id: account.owner_id,
             owner: owner.map(|o| OwnerInfo {
                 serial_num: o.serial_num,
@@ -376,7 +379,7 @@ pub fn convert_to_account(
                 role: Some(o.role),
             }),
             color: account.color,
-            is_active: account.is_active != 0,
+            is_active: account.is_active,
             created_at: account.created_at,
             updated_at: account.updated_at,
         })
@@ -403,7 +406,7 @@ pub fn convert_to_response(
                 created_at: account_with_relations.currency.created_at,
                 updated_at: account_with_relations.currency.updated_at,
             },
-            is_shared: account_with_relations.account.is_shared != 0,
+            is_shared: account_with_relations.account.is_shared,
             owner_id: account_with_relations.account.owner_id,
             owner: account_with_relations.owner.map(|o| OwnerInfo {
                 serial_num: o.serial_num,
@@ -411,7 +414,7 @@ pub fn convert_to_response(
                 role: Some(o.role),
             }),
             color: account_with_relations.account.color,
-            is_active: account_with_relations.account.is_active != 0,
+            is_active: account_with_relations.account.is_active,
             created_at: account_with_relations.account.created_at,
             updated_at: account_with_relations.account.updated_at,
         })
@@ -442,7 +445,7 @@ pub fn tuple_to_response(account_response: AccountWithRelations) -> AccountRespo
             created_at: account_response.currency.created_at,
             updated_at: account_response.currency.updated_at,
         },
-        is_shared: account_response.account.is_shared != 0,
+        is_shared: account_response.account.is_shared,
         owner_id: account_response.account.owner_id,
         owner: account_response.owner.map(|o| OwnerInfo {
             serial_num: o.serial_num,
@@ -450,7 +453,7 @@ pub fn tuple_to_response(account_response: AccountWithRelations) -> AccountRespo
             role: Some(o.role),
         }),
         color: account_response.account.color,
-        is_active: account_response.account.is_active != 0,
+        is_active: account_response.account.is_active,
         created_at: account_response.account.created_at,
         updated_at: account_response.account.updated_at,
     }

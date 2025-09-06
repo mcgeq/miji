@@ -1,11 +1,8 @@
-use chrono::{DateTime, Local};
+use chrono::{DateTime, FixedOffset};
 use common::{
     BusinessCode,
     error::AppError,
-    utils::{
-        date::DateUtils,
-        uuid::McgUuid,
-    },
+    utils::{date::DateUtils, uuid::McgUuid},
 };
 use sea_orm::ActiveValue;
 use serde::{Deserialize, Serialize};
@@ -57,19 +54,19 @@ pub struct User {
     pub email: String,
     pub phone: Option<String>,
     pub avatar_url: Option<String>,
-    pub last_login_at: Option<DateTime<Local>>,
+    pub last_login_at: Option<DateTime<FixedOffset>>,
     pub is_verified: bool,
     pub role: UserRole,
     pub status: UserStatus,
-    pub email_verified_at: Option<DateTime<Local>>,
-    pub phone_verified_at: Option<DateTime<Local>>,
+    pub email_verified_at: Option<DateTime<FixedOffset>>,
+    pub phone_verified_at: Option<DateTime<FixedOffset>>,
     pub bio: Option<String>,
     pub language: Option<String>,
     pub timezone: Option<String>,
-    pub last_active_at: Option<DateTime<Local>>,
-    pub deleted_at: Option<DateTime<Local>>,
-    pub created_at: DateTime<Local>,
-    pub updated_at: Option<DateTime<Local>>,
+    pub last_active_at: Option<DateTime<FixedOffset>>,
+    pub deleted_at: Option<DateTime<FixedOffset>>,
+    pub created_at: DateTime<FixedOffset>,
+    pub updated_at: Option<DateTime<FixedOffset>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
@@ -83,7 +80,7 @@ pub struct CreateUserDto {
     #[validate(length(min = 8))]
     pub password: String,
     pub avatar_url: Option<String>,
-        pub is_verified: bool,
+    pub is_verified: bool,
     pub role: String,
     pub status: String,
     pub bio: Option<String>,
@@ -125,23 +122,19 @@ impl From<entity::users::Model> for User {
             email: model.email,
             phone: model.phone,
             avatar_url: model.avatar_url,
-            last_login_at: DateUtils::parse_rfc3339_to_local(model.last_login_at),
+            last_login_at: model.last_login_at,
             is_verified: model.is_verified,
             role: serde_json::from_str(&model.role).unwrap_or(UserRole::User),
             status: serde_json::from_str(&model.status).unwrap_or(UserStatus::Active),
-            email_verified_at: DateUtils::parse_rfc3339_to_local(model.email_verified_at),
-            phone_verified_at: model.phone_verified_at.map(|dt| {
-                chrono::DateTime::parse_from_rfc3339(&dt)
-                    .map(|dt| dt.with_timezone(&Local))
-                    .unwrap_or(chrono::Local::now())
-            }),
+            email_verified_at: model.email_verified_at,
+            phone_verified_at: model.phone_verified_at,
             bio: model.bio,
             language: model.language,
             timezone: model.timezone,
-            last_active_at: DateUtils::parse_rfc3339_to_local(model.last_active_at),
-            deleted_at: DateUtils::parse_rfc3339_to_local(model.deleted_at),
-            created_at: DateUtils::parse_rfc3339_to_local(Some(model.created_at)).unwrap(),
-            updated_at: DateUtils::parse_rfc3339_to_local(model.updated_at),
+            last_active_at: model.last_active_at,
+            deleted_at: model.deleted_at,
+            created_at: model.created_at,
+            updated_at: model.updated_at,
         }
     }
 }
@@ -168,7 +161,7 @@ impl TryFrom<CreateUserDto> for entity::users::ActiveModel {
                 None,
             ));
         }
-
+        let now = DateUtils::local_now();
         Ok(entity::users::ActiveModel {
             serial_num: ActiveValue::set(McgUuid::uuid(38)),
             name: ActiveValue::set(data.name),
@@ -187,8 +180,8 @@ impl TryFrom<CreateUserDto> for entity::users::ActiveModel {
             timezone: ActiveValue::set(data.timezone),
             last_active_at: ActiveValue::set(None),
             deleted_at: ActiveValue::set(None),
-            created_at: ActiveValue::set(chrono::Local::now().to_rfc3339()),
-            updated_at: ActiveValue::set(None),
+            created_at: ActiveValue::set(now),
+            updated_at: ActiveValue::set(Some(now)),
         })
     }
 }
@@ -254,7 +247,7 @@ impl TryFrom<UpdateUserDto> for entity::users::ActiveModel {
         if data.timezone.is_some() {
             active_model.timezone = ActiveValue::set(data.timezone);
         }
-        active_model.updated_at = ActiveValue::set(Some(chrono::Local::now().to_rfc3339()));
+        active_model.updated_at = ActiveValue::set(Some(DateUtils::local_now()));
 
         Ok(active_model)
     }

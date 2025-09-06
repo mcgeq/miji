@@ -7,7 +7,7 @@ use common::{
     paginations::{Filter, PagedQuery, PagedResult},
     utils::date::DateUtils,
 };
-use entity::transactions::Column as TransactionColumn;
+use entity::{localize::LocalizeModel, transactions::Column as TransactionColumn};
 use once_cell::sync::Lazy;
 use sea_orm::{
     ActiveModelTrait,
@@ -265,14 +265,14 @@ impl TransactionService {
             .await?;
 
         // Step 6: Update original_incoming refund_amount and notes
-        let update_at = DateUtils::local_rfc3339();
+        let update_at = DateUtils::local_now();
         let update_refund = |model: &entity::transactions::Model, prefix: &str| {
             let refund_amount_all = model.refund_amount + data.amount;
             entity::transactions::ActiveModel {
                 serial_num: Set(model.serial_num.clone()),
                 refund_amount: Set(refund_amount_all),
                 notes: Set(Some(format!("{prefix} {refund_amount_all}"))),
-                updated_at: Set(Some(update_at.clone())),
+                updated_at: Set(Some(update_at)),
                 ..Default::default()
             }
         };
@@ -592,7 +592,7 @@ impl TransactionService {
     ) -> MijiResult<entity::transactions::Model> {
         let mut active = model.clone().into_active_model();
         active.serial_num = Set(model.serial_num.clone());
-        active.is_deleted = Set(1);
+        active.is_deleted = Set(true);
         Ok(active.update(tx).await?)
     }
 
@@ -605,7 +605,7 @@ impl TransactionService {
         from_account: &entity::account::Model,
         to_account: &entity::account::Model,
     ) -> MijiResult<(CreateTransactionRequest, CreateTransactionRequest)> {
-        let date = data.date.clone().unwrap_or_else(DateUtils::local_rfc3339);
+        let date = data.date.unwrap_or(DateUtils::local_now());
 
         // 根据是否为空生成默认描述
         let from_description = if let Some(desc) = &data.description {
@@ -631,7 +631,7 @@ impl TransactionService {
         let from_request = CreateTransactionRequest {
             transaction_type: TransactionType::Expense,
             transaction_status: TransactionStatus::Completed,
-            date: date.clone(),
+            date,
             amount: data.amount,
             currency: data.currency.clone(),
             description: from_description,
@@ -678,7 +678,7 @@ impl TransactionService {
         incoming: &entity::transactions::Model,
         amount: Decimal,
     ) -> (CreateTransactionRequest, CreateTransactionRequest) {
-        let date = DateUtils::local_rfc3339();
+        let date = DateUtils::local_now();
 
         // 解析原交易描述
         fn swap_transfer_description(desc: &str) -> String {
@@ -720,7 +720,7 @@ impl TransactionService {
         let reverse_out_request = CreateTransactionRequest {
             transaction_type: TransactionType::Expense,
             transaction_status: TransactionStatus::Reversed,
-            date: date.clone(),
+            date,
             amount,
             currency: outgoing.currency.clone(),
             description: reverse_out_description,
@@ -865,8 +865,8 @@ impl CrudConverter<entity::transactions::Entity, CreateTransactionRequest, Updat
         entity::transactions::ActiveModel::try_from(data)
             .map(|mut active_model| {
                 active_model.serial_num = Set(model.serial_num.clone());
-                active_model.created_at = Set(model.created_at.clone());
-                active_model.updated_at = Set(Some(DateUtils::local_rfc3339()));
+                active_model.created_at = Set(model.created_at);
+                active_model.updated_at = Set(Some(DateUtils::local_now()));
                 active_model
             })
             .map_err(AppError::from_validation_errors)
@@ -898,18 +898,23 @@ impl TransactionConverter {
             },
             async { cny_service.get_by_id(db, model.currency.clone()).await },
             async {
+                let serial_nums: Vec<String> = model
+                    .split_members
+                    .iter()
+                    .filter_map(|v| v.as_str().map(|s| s.to_string()))
+                    .collect();
                 entity::family_member::Entity::find()
-                    .filter(entity::family_member::Column::SerialNum.is_in(&model.split_members))
+                    .filter(entity::family_member::Column::SerialNum.is_in(serial_nums))
                     .all(db)
                     .await
                     .map_err(Into::into)
             }
         )?;
         Ok(TransactionWithRelations {
-            transaction: model,
+            transaction: model.to_local(),
             account,
-            currency,
-            family_member,
+            currency: currency.to_local(),
+            family_member: family_member.into_iter().map(|f| f.to_local()).collect(),
         })
     }
 }

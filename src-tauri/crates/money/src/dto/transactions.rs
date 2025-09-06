@@ -1,11 +1,11 @@
 use std::{fmt, str::FromStr};
 
-use chrono::NaiveDate;
+use chrono::{DateTime, FixedOffset, NaiveDate};
 use common::{
     BusinessCode,
-    crud::service::{parse_enum_filed, parse_json_field, serialize_enum},
+    crud::service::{parse_enum_filed, parse_json, serialize_enum},
     error::AppError,
-    utils::{date::DateUtils, uuid::McgUuid, validate::validate_date_time},
+    utils::{date::DateUtils, uuid::McgUuid},
 };
 use sea_orm::{ActiveValue::Set, FromQueryResult, prelude::Decimal};
 use serde::{Deserialize, Serialize};
@@ -237,8 +237,7 @@ impl FromStr for PaymentMethod {
 pub struct CreateTransactionRequest {
     pub transaction_type: TransactionType,
     pub transaction_status: TransactionStatus,
-    #[validate(custom(function = "validate_date_time"))]
-    pub date: String,
+    pub date: DateTime<FixedOffset>,
 
     #[validate(custom(function = "validate_amount"))]
     pub amount: Decimal,
@@ -264,16 +263,14 @@ pub struct CreateTransactionRequest {
     #[validate(length(max = 64))]
     pub sub_category: Option<String>,
 
-    #[validate(length(max = 1000))]
-    pub tags: Option<Vec<String>>,
-    #[validate(length(max = 1000))]
-    pub split_members: Option<Vec<String>>,
+    pub tags: Option<serde_json::Value>,
+    pub split_members: Option<serde_json::Value>,
 
     pub payment_method: PaymentMethod,
 
     pub actual_payer_account: AccountType,
 
-    #[validate(length(max = 64))]
+    #[validate(length(max = 38))]
     pub related_transaction_serial_num: Option<String>,
 }
 
@@ -284,7 +281,7 @@ impl TryFrom<CreateTransactionRequest> for entity::transactions::ActiveModel {
         let serial_num = McgUuid::uuid(38);
 
         // 获取当前时间
-        let now = DateUtils::local_rfc3339();
+        let now = DateUtils::local_now();
 
         Ok(entity::transactions::ActiveModel {
             serial_num: Set(serial_num),
@@ -300,15 +297,21 @@ impl TryFrom<CreateTransactionRequest> for entity::transactions::ActiveModel {
             to_account_serial_num: Set(value.to_account_serial_num),
             category: Set(value.category),
             sub_category: Set(value.sub_category),
-            tags: Set(value.tags.map(|v| serde_json::to_string(&v).unwrap())),
-            split_members: Set(value
-                .split_members
-                .map(|v| serde_json::to_string(&v).unwrap())),
+            tags: Set(Some(parse_json(
+                &value.tags,
+                "tags",
+                serde_json::Value::Null,
+            ))),
+            split_members: Set(Some(parse_json(
+                &value.split_members,
+                "split_members",
+                serde_json::Value::Null,
+            ))),
             payment_method: Set(serialize_enum(&value.payment_method)),
             actual_payer_account: Set(serialize_enum(&value.actual_payer_account)),
             related_transaction_serial_num: Set(value.related_transaction_serial_num),
-            is_deleted: Set(0),
-            created_at: Set(now.clone()),
+            is_deleted: Set(false),
+            created_at: Set(now),
             updated_at: Set(Some(now)),
         })
     }
@@ -320,8 +323,7 @@ pub struct UpdateTransactionRequest {
     pub transaction_type: Option<TransactionType>,
     pub transaction_status: Option<TransactionStatus>,
 
-    #[validate(custom(function = "validate_date_time"))]
-    pub date: Option<String>,
+    pub date: Option<DateTime<FixedOffset>>,
 
     #[validate(custom(function = "validate_amount"))]
     pub amount: Option<Decimal>,
@@ -347,21 +349,18 @@ pub struct UpdateTransactionRequest {
     #[validate(length(max = 64))]
     pub sub_category: Option<String>,
 
-    #[validate(length(max = 256))]
-    pub tags: Option<String>,
+    pub tags: Option<serde_json::Value>,
 
-    #[validate(length(max = 1000))]
-    pub split_members: Option<String>,
+    pub split_members: Option<serde_json::Value>,
 
     pub payment_method: Option<PaymentMethod>,
 
     pub actual_payer_account: Option<AccountType>,
 
-    #[validate(length(max = 64))]
+    #[validate(length(max = 38))]
     pub related_transaction_serial_num: Option<String>,
 
-    #[validate(range(min = 0, max = 1))]
-    pub is_deleted: Option<i32>,
+    pub is_deleted: Option<bool>,
 }
 
 impl TryFrom<UpdateTransactionRequest> for entity::transactions::ActiveModel {
@@ -369,7 +368,7 @@ impl TryFrom<UpdateTransactionRequest> for entity::transactions::ActiveModel {
     fn try_from(value: UpdateTransactionRequest) -> Result<Self, Self::Error> {
         value.validate()?;
         // 获取当前时间
-        let now = DateUtils::local_rfc3339();
+        let now = DateUtils::local_now();
 
         let mut model = entity::transactions::ActiveModel {
             ..Default::default() // 初始化为空模型
@@ -458,7 +457,7 @@ pub struct TransferRequest {
     #[validate(length(max = 64))]
     pub sub_category: Option<String>,
 
-    pub date: Option<String>,
+    pub date: Option<DateTime<FixedOffset>>,
     #[validate(length(min = 0, max = 1024))]
     pub description: Option<String>,
 }
@@ -477,7 +476,7 @@ pub struct TransactionResponse {
     pub serial_num: String,
     pub transaction_type: TransactionType,
     pub transaction_status: TransactionStatus,
-    pub date: String,
+    pub date: DateTime<FixedOffset>,
     pub amount: Decimal,
     pub refund_amount: Decimal,
     pub account: AccountResponseWithRelations,
@@ -488,14 +487,14 @@ pub struct TransactionResponse {
     pub to_account_serial_num: Option<String>,
     pub category: String,
     pub sub_category: Option<String>,
-    pub tags: Vec<String>,
+    pub tags: Option<serde_json::Value>,
     pub split_members: Option<Vec<FamilyMemberResponse>>,
     pub payment_method: PaymentMethod,
     pub actual_payer_account: AccountType,
     pub related_transaction_serial_num: Option<String>,
     pub is_deleted: bool,
-    pub created_at: String,
-    pub updated_at: Option<String>,
+    pub created_at: DateTime<FixedOffset>,
+    pub updated_at: Option<DateTime<FixedOffset>>,
 }
 
 impl From<TransactionWithRelations> for TransactionResponse {
@@ -527,11 +526,7 @@ impl From<TransactionWithRelations> for TransactionResponse {
             to_account_serial_num: trans.to_account_serial_num,
             category: trans.category,
             sub_category: trans.sub_category,
-            tags: trans
-                .tags
-                .as_ref()
-                .map(|t| parse_json_field(t, "tags", vec![]))
-                .unwrap_or_default(),
+            tags: trans.tags,
             split_members: if family_member.is_empty() {
                 None
             } else {
@@ -553,7 +548,7 @@ impl From<TransactionWithRelations> for TransactionResponse {
                 AccountType::Savings,
             ),
             related_transaction_serial_num: trans.related_transaction_serial_num,
-            is_deleted: trans.is_deleted != 0,
+            is_deleted: trans.is_deleted,
             created_at: trans.created_at,
             updated_at: trans.updated_at,
         }

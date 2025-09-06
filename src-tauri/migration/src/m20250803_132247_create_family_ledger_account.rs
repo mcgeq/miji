@@ -26,16 +26,19 @@ impl MigrationTrait for Migration {
                     )
                     .col(
                         ColumnDef::new(FamilyLedgerAccount::AccountSerialNum)
-                            .string()
-                            .not_null()
-                            .check(Expr::cust("LENGTH(account_serial_num) <= 38")),
+                            .string_len(38)
+                            .not_null(),
                     )
                     .col(
                         ColumnDef::new(FamilyLedgerAccount::CreatedAt)
-                            .string()
+                            .timestamp_with_time_zone()
                             .not_null(),
                     )
-                    .col(ColumnDef::new(FamilyLedgerAccount::UpdatedAt).string())
+                    .col(
+                        ColumnDef::new(FamilyLedgerAccount::UpdatedAt)
+                            .timestamp_with_time_zone()
+                            .null(),
+                    )
                     .foreign_key(
                         ForeignKey::create()
                             .name("fk_family_ledger_account_ledger")

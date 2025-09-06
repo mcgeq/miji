@@ -20,14 +20,22 @@ impl MigrationTrait for Migration {
                             .primary_key(),
                     )
                     .col(ColumnDef::new(Todo::Title).string().not_null())
+                    .col(ColumnDef::new(Todo::Description).string_len(400))
                     .col(
-                        ColumnDef::new(Todo::Description)
-                            .text()
-                            .check(Expr::cust("LENGTH(description) <= 1000")),
+                        ColumnDef::new(Todo::CreatedAt)
+                            .timestamp_with_time_zone()
+                            .not_null(),
                     )
-                    .col(ColumnDef::new(Todo::CreatedAt).string().not_null())
-                    .col(ColumnDef::new(Todo::UpdatedAt).string())
-                    .col(ColumnDef::new(Todo::DueAt).string().not_null())
+                    .col(
+                        ColumnDef::new(Todo::UpdatedAt)
+                            .timestamp_with_time_zone()
+                            .null(),
+                    )
+                    .col(
+                        ColumnDef::new(Todo::DueAt)
+                            .timestamp_with_time_zone()
+                            .not_null(),
+                    )
                     .col(
                         ColumnDef::new(Todo::Priority)
                             .string()
@@ -52,12 +60,8 @@ impl MigrationTrait for Migration {
                             ])),
                     )
                     .col(ColumnDef::new(Todo::Repeat).string())
-                    .col(ColumnDef::new(Todo::CompletedAt).string())
-                    .col(
-                        ColumnDef::new(Todo::AssigneeId)
-                            .string()
-                            .check(Expr::cust("LENGTH(assignee_id) <= 38")),
-                    )
+                    .col(ColumnDef::new(Todo::CompletedAt).timestamp_with_time_zone())
+                    .col(ColumnDef::new(Todo::AssigneeId).string_len(38))
                     .col(
                         ColumnDef::new(Todo::Progress)
                             .integer()
@@ -66,24 +70,18 @@ impl MigrationTrait for Migration {
                             .check(Expr::cust("progress BETWEEN 0 AND 100")),
                     )
                     .col(ColumnDef::new(Todo::Location).string())
-                    .col(
-                        ColumnDef::new(Todo::OwnerId)
-                            .string()
-                            .check(Expr::cust("LENGTH(owner_id) <= 38")),
-                    )
+                    .col(ColumnDef::new(Todo::OwnerId).string_len(38))
                     .col(
                         ColumnDef::new(Todo::IsArchived)
-                            .integer()
+                            .boolean()
                             .not_null()
-                            .default(0)
-                            .check(Expr::col(Todo::IsArchived).is_in(vec![0, 1])),
+                            .default(false),
                     )
                     .col(
                         ColumnDef::new(Todo::IsPinned)
-                            .integer()
+                            .boolean()
                             .not_null()
-                            .default(0)
-                            .check(Expr::col(Todo::IsPinned).is_in(vec![0, 1])),
+                            .default(false),
                     )
                     .col(ColumnDef::new(Todo::EstimateMinutes).integer())
                     .col(
@@ -92,11 +90,7 @@ impl MigrationTrait for Migration {
                             .not_null()
                             .default(0),
                     )
-                    .col(
-                        ColumnDef::new(Todo::ParentId)
-                            .string()
-                            .check(Expr::cust("LENGTH(parent_id) <= 38")),
-                    )
+                    .col(ColumnDef::new(Todo::ParentId).string_len(38))
                     .col(ColumnDef::new(Todo::SubtaskOrder).integer())
                     .foreign_key(
                         ForeignKey::create()

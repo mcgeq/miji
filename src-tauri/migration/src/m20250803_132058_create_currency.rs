@@ -20,14 +20,17 @@ impl MigrationTrait for Migration {
                             .primary_key(),
                     )
                     .col(ColumnDef::new(Currency::Locale).string().not_null())
+                    .col(ColumnDef::new(Currency::Symbol).string_len(10).not_null())
                     .col(
-                        ColumnDef::new(Currency::Symbol)
-                            .string()
-                            .not_null()
-                            .check(Expr::cust("LENGTH(symbol) <= 10")),
+                        ColumnDef::new(Currency::CreatedAt)
+                            .timestamp_with_time_zone()
+                            .not_null(),
                     )
-                    .col(ColumnDef::new(Currency::CreatedAt).string().not_null())
-                    .col(ColumnDef::new(Currency::UpdatedAt).string())
+                    .col(
+                        ColumnDef::new(Currency::UpdatedAt)
+                            .timestamp_with_time_zone()
+                            .null(),
+                    )
                     .to_owned(),
             )
             .await?;

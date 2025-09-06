@@ -24,7 +24,11 @@ impl MigrationTrait for Migration {
                             .string_len(38)
                             .not_null(),
                     )
-                    .col(ColumnDef::new(PeriodDailyRecords::Date).string().not_null())
+                    .col(
+                        ColumnDef::new(PeriodDailyRecords::Date)
+                            .timestamp_with_time_zone()
+                            .not_null(),
+                    )
                     .col(
                         ColumnDef::new(PeriodDailyRecords::FlowLevel)
                             .string()
@@ -45,9 +49,9 @@ impl MigrationTrait for Migration {
                     )
                     .col(
                         ColumnDef::new(PeriodDailyRecords::SexualActivity)
-                            .integer()
+                            .boolean()
                             .not_null()
-                            .check(Expr::col(PeriodDailyRecords::SexualActivity).is_in(vec![0, 1])),
+                            .default(false),
                     )
                     .col(
                         ColumnDef::new(PeriodDailyRecords::ContraceptionMethod)
@@ -60,9 +64,8 @@ impl MigrationTrait for Migration {
                     )
                     .col(
                         ColumnDef::new(PeriodDailyRecords::Diet)
-                            .text()
-                            .not_null()
-                            .check(Expr::cust("LENGTH(diet) <= 1000")),
+                            .string_len(1000)
+                            .not_null(),
                     )
                     .col(ColumnDef::new(PeriodDailyRecords::Mood).string().check(
                         Expr::col(PeriodDailyRecords::Mood).is_in(vec![
@@ -91,10 +94,14 @@ impl MigrationTrait for Migration {
                     )
                     .col(
                         ColumnDef::new(PeriodDailyRecords::CreatedAt)
-                            .string()
+                            .timestamp_with_time_zone()
                             .not_null(),
                     )
-                    .col(ColumnDef::new(PeriodDailyRecords::UpdatedAt).string())
+                    .col(
+                        ColumnDef::new(PeriodDailyRecords::UpdatedAt)
+                            .timestamp_with_time_zone()
+                            .null(),
+                    )
                     .foreign_key(
                         ForeignKey::create()
                             .name("fk_period_daily_records_period")

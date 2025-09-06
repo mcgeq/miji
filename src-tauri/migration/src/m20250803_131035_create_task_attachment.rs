@@ -29,8 +29,16 @@ impl MigrationTrait for Migration {
                     .col(ColumnDef::new(Attachment::FileName).string())
                     .col(ColumnDef::new(Attachment::MimeType).string())
                     .col(ColumnDef::new(Attachment::Size).integer())
-                    .col(ColumnDef::new(Attachment::CreatedAt).string().not_null())
-                    .col(ColumnDef::new(Attachment::UpdatedAt).string())
+                    .col(
+                        ColumnDef::new(Attachment::CreatedAt)
+                            .timestamp_with_time_zone()
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(Attachment::UpdatedAt)
+                            .timestamp_with_time_zone()
+                            .null(),
+                    )
                     .foreign_key(
                         ForeignKey::create()
                             .name("fk_attachment_todo")

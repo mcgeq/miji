@@ -24,17 +24,28 @@ impl MigrationTrait for Migration {
                             .string_len(38)
                             .not_null(),
                     )
-                    .col(ColumnDef::new(Reminder::RemindAt).date_time().not_null())
+                    .col(
+                        ColumnDef::new(Reminder::RemindAt)
+                            .timestamp_with_time_zone()
+                            .not_null(),
+                    )
                     .col(ColumnDef::new(Reminder::Type).integer())
                     .col(
                         ColumnDef::new(Reminder::IsSent)
-                            .integer()
+                            .boolean()
                             .not_null()
-                            .default(0)
-                            .check(Expr::col(Reminder::IsSent).is_in(vec![0, 1])),
+                            .default(false),
                     )
-                    .col(ColumnDef::new(Reminder::CreatedAt).string().not_null())
-                    .col(ColumnDef::new(Reminder::UpdatedAt).string())
+                    .col(
+                        ColumnDef::new(Reminder::CreatedAt)
+                            .timestamp_with_time_zone()
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(Reminder::UpdatedAt)
+                            .timestamp_with_time_zone()
+                            .null(),
+                    )
                     .foreign_key(
                         ForeignKey::create()
                             .name("fk_reminder_todo")

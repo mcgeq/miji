@@ -20,13 +20,17 @@ impl MigrationTrait for Migration {
                             .primary_key(),
                     )
                     .col(ColumnDef::new(Tag::Name).string().not_null().unique_key())
+                    .col(ColumnDef::new(Tag::Description).string_len(1000))
                     .col(
-                        ColumnDef::new(Tag::Description)
-                            .text()
-                            .check(Expr::cust("LENGTH(description) <= 1000")),
+                        ColumnDef::new(Tag::CreatedAt)
+                            .timestamp_with_time_zone()
+                            .not_null(),
                     )
-                    .col(ColumnDef::new(Tag::CreatedAt).string().not_null())
-                    .col(ColumnDef::new(Tag::UpdatedAt).string())
+                    .col(
+                        ColumnDef::new(Tag::UpdatedAt)
+                            .timestamp_with_time_zone()
+                            .null(),
+                    )
                     .to_owned(),
             )
             .await?;

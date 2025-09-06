@@ -20,26 +20,25 @@ impl MigrationTrait for Migration {
                             .primary_key(),
                     )
                     .col(ColumnDef::new(Project::Name).string().not_null())
-                    .col(
-                        ColumnDef::new(Project::Description)
-                            .text()
-                            .check(Expr::cust("LENGTH(description) <= 1000")),
-                    )
-                    .col(
-                        ColumnDef::new(Project::OwnerId)
-                            .string()
-                            .check(Expr::cust("LENGTH(owner_id) <= 38")),
-                    )
-                    .col(ColumnDef::new(Project::Color).string())
+                    .col(ColumnDef::new(Project::Description).string_len(1000))
+                    .col(ColumnDef::new(Project::OwnerId).string_len(38))
+                    .col(ColumnDef::new(Project::Color).string_len(7))
                     .col(
                         ColumnDef::new(Project::IsArchived)
-                            .integer()
+                            .boolean()
                             .not_null()
-                            .default(0)
-                            .check(Expr::col(Project::IsArchived).is_in(vec![0, 1])),
+                            .default(false),
                     )
-                    .col(ColumnDef::new(Project::CreatedAt).string().not_null())
-                    .col(ColumnDef::new(Project::UpdatedAt).string())
+                    .col(
+                        ColumnDef::new(Project::CreatedAt)
+                            .timestamp_with_time_zone()
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(Project::UpdatedAt)
+                            .timestamp_with_time_zone()
+                            .null(),
+                    )
                     .to_owned(),
             )
             .await?;

@@ -75,8 +75,8 @@ impl CrudConverter<entity::users::Entity, CreateUserDto, UpdateUserDto> for User
     ) -> MijiResult<entity::users::ActiveModel> {
         let mut active_model = entity::users::ActiveModel::try_from(data)?;
         active_model.serial_num = Set(model.serial_num.clone());
-        active_model.created_at = Set(model.created_at.clone());
-        active_model.updated_at = Set(Some(DateUtils::local_rfc3339()));
+        active_model.created_at = Set(model.created_at);
+        active_model.updated_at = Set(Some(DateUtils::local_now()));
         Ok(active_model)
     }
 
@@ -239,7 +239,11 @@ impl UserService {
             })
     }
 
-    pub async fn get_user_password(&self, db: &DatabaseConnection, serial_num: String) -> MijiResult<String> {
+    pub async fn get_user_password(
+        &self,
+        db: &DatabaseConnection,
+        serial_num: String,
+    ) -> MijiResult<String> {
         let model = self.get_by_id(db, serial_num).await?;
         Ok(model.password)
     }

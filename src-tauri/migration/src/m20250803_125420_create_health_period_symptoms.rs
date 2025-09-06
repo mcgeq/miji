@@ -36,10 +36,14 @@ impl MigrationTrait for Migration {
                     )
                     .col(
                         ColumnDef::new(PeriodSymptoms::CreatedAt)
-                            .string()
+                            .timestamp_with_time_zone()
                             .not_null(),
                     )
-                    .col(ColumnDef::new(PeriodSymptoms::UpdatedAt).string())
+                    .col(
+                        ColumnDef::new(PeriodSymptoms::UpdatedAt)
+                            .timestamp_with_time_zone()
+                            .null(),
+                    )
                     .foreign_key(
                         ForeignKey::create()
                             .name("fk_period_symptoms_daily_records")

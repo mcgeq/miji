@@ -21,9 +21,8 @@ impl MigrationTrait for Migration {
                     )
                     .col(
                         ColumnDef::new(FamilyMember::Name)
-                            .string()
-                            .not_null()
-                            .check(Expr::cust("LENGTH(name) <= 100")),
+                            .string_len(200)
+                            .not_null(),
                     )
                     .col(
                         ColumnDef::new(FamilyMember::Role)
@@ -37,19 +36,25 @@ impl MigrationTrait for Migration {
                     )
                     .col(
                         ColumnDef::new(FamilyMember::IsPrimary)
-                            .integer()
+                            .boolean()
                             .not_null()
-                            .default(0)
-                            .check(Expr::col(FamilyMember::IsPrimary).is_in(vec![0, 1])),
+                            .default(false),
                     )
                     .col(
                         ColumnDef::new(FamilyMember::Permissions)
-                            .string()
-                            .not_null()
-                            .check(Expr::cust("LENGTH(permissions) <= 500")),
+                            .string_len(500)
+                            .not_null(),
                     )
-                    .col(ColumnDef::new(FamilyMember::CreatedAt).string().not_null())
-                    .col(ColumnDef::new(FamilyMember::UpdatedAt).string())
+                    .col(
+                        ColumnDef::new(FamilyMember::CreatedAt)
+                            .timestamp_with_time_zone()
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(FamilyMember::UpdatedAt)
+                            .timestamp_with_time_zone()
+                            .null(),
+                    )
                     .to_owned(),
             )
             .await?;

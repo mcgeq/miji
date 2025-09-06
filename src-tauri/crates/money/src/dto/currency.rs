@@ -1,3 +1,4 @@
+use chrono::{DateTime, FixedOffset};
 use common::utils::date::DateUtils;
 use lazy_static::lazy_static;
 use regex::Regex;
@@ -26,10 +27,10 @@ pub struct CurrencyResponse {
     pub symbol: String,
 
     /// 创建时间 (ISO 8601格式)
-    pub created_at: String,
+    pub created_at: DateTime<FixedOffset>,
 
     /// 最后更新时间 (ISO 8601格式)
-    pub updated_at: Option<String>,
+    pub updated_at: Option<DateTime<FixedOffset>>,
 }
 
 // 实体模型到响应DTO的转换
@@ -72,13 +73,13 @@ pub struct CreateCurrencyRequest {
 // 创建请求到实体模型的转换
 impl From<CreateCurrencyRequest> for entity::currency::ActiveModel {
     fn from(request: CreateCurrencyRequest) -> Self {
-        let now = DateUtils::local_rfc3339();
+        let now = DateUtils::local_now();
 
         entity::currency::ActiveModel {
             code: Set(request.code),
             locale: Set(request.locale),
             symbol: Set(request.symbol),
-            created_at: Set(now.clone()),
+            created_at: Set(now),
             updated_at: Set(Some(now)),
         }
     }
@@ -124,7 +125,7 @@ impl UpdateCurrencyRequest {
         }
 
         // 设置更新时间
-        model.updated_at = Set(Some(DateUtils::local_rfc3339()));
+        model.updated_at = Set(Some(DateUtils::local_now()));
     }
 }
 

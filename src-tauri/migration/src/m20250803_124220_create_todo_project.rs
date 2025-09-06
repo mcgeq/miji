@@ -24,8 +24,16 @@ impl MigrationTrait for Migration {
                             .not_null(),
                     )
                     .col(ColumnDef::new(TodoProject::OrderIndex).integer())
-                    .col(ColumnDef::new(TodoProject::CreatedAt).string().not_null())
-                    .col(ColumnDef::new(TodoProject::UpdatedAt).string())
+                    .col(
+                        ColumnDef::new(TodoProject::CreatedAt)
+                            .timestamp_with_time_zone()
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(TodoProject::UpdatedAt)
+                            .timestamp_with_time_zone()
+                            .null(),
+                    )
                     .primary_key(
                         Index::create()
                             .col(TodoProject::TodoSerialNum)

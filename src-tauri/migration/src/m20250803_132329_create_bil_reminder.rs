@@ -22,10 +22,9 @@ impl MigrationTrait for Migration {
                     .col(ColumnDef::new(BilReminder::Name).string().not_null())
                     .col(
                         ColumnDef::new(BilReminder::Enabled)
-                            .integer()
+                            .boolean()
                             .not_null()
-                            .default(1)
-                            .check(Expr::col(BilReminder::Enabled).is_in(vec![0, 1])),
+                            .default(true),
                     )
                     .col(ColumnDef::new(BilReminder::Type).string().not_null().check(
                         Expr::col(BilReminder::Type).is_in(vec!["Notification", "Email", "Popup"]),
@@ -53,9 +52,9 @@ impl MigrationTrait for Migration {
                     )
                     .col(
                         ColumnDef::new(BilReminder::Amount)
-                            .string()
+                            .decimal_len(16, 4)
                             .not_null()
-                            .check(Expr::cust("amount GLOB '[0-9]*\\.?[0-9]*'")),
+                            .default(0.0),
                     )
                     .col(
                         ColumnDef::new(BilReminder::Currency)
@@ -63,9 +62,21 @@ impl MigrationTrait for Migration {
                             .not_null()
                             .check(Expr::cust("LENGTH(currency) <= 10")),
                     )
-                    .col(ColumnDef::new(BilReminder::DueAt).string().not_null())
-                    .col(ColumnDef::new(BilReminder::BillDate).string().not_null())
-                    .col(ColumnDef::new(BilReminder::RemindDate).string().not_null())
+                    .col(
+                        ColumnDef::new(BilReminder::DueAt)
+                            .timestamp_with_time_zone()
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(BilReminder::BillDate)
+                            .timestamp_with_time_zone()
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(BilReminder::RemindDate)
+                            .timestamp_with_time_zone()
+                            .not_null(),
+                    )
                     .col(
                         ColumnDef::new(BilReminder::RepeatPeriod)
                             .string()
@@ -73,10 +84,9 @@ impl MigrationTrait for Migration {
                     )
                     .col(
                         ColumnDef::new(BilReminder::IsPaid)
-                            .integer()
+                            .boolean()
                             .not_null()
-                            .default(1)
-                            .check(Expr::col(BilReminder::IsPaid).is_in(vec![0, 1])),
+                            .default(true),
                     )
                     .col(
                         ColumnDef::new(BilReminder::Priority)
@@ -94,13 +104,16 @@ impl MigrationTrait for Migration {
                     .col(ColumnDef::new(BilReminder::Color).string())
                     .col(
                         ColumnDef::new(BilReminder::IsDeleted)
-                            .integer()
+                            .boolean()
                             .not_null()
-                            .default(0)
-                            .check(Expr::col(BilReminder::IsDeleted).is_in(vec![0, 1])),
+                            .default(false),
                     )
-                    .col(ColumnDef::new(BilReminder::CreatedAt).string().not_null())
-                    .col(ColumnDef::new(BilReminder::UpdatedAt).string())
+                    .col(
+                        ColumnDef::new(BilReminder::CreatedAt)
+                            .timestamp_with_time_zone()
+                            .not_null(),
+                    )
+                    .col(ColumnDef::new(BilReminder::UpdatedAt).timestamp_with_time_zone())
                     .foreign_key(
                         ForeignKey::create()
                             .name("fk_bil_reminder_transaction")

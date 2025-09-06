@@ -1,3 +1,4 @@
+use chrono::{DateTime, FixedOffset};
 use common::utils::{date::DateUtils, uuid::McgUuid};
 use sea_orm::ActiveValue::Set;
 use serde::{Deserialize, Serialize};
@@ -11,8 +12,8 @@ pub struct FamilyMemberResponse {
     pub role: String,
     pub is_primary: bool,
     pub permissions: String,
-    pub created_at: String,
-    pub updated_at: Option<String>,
+    pub created_at: DateTime<FixedOffset>,
+    pub updated_at: Option<DateTime<FixedOffset>>,
 }
 
 impl From<entity::family_member::Model> for FamilyMemberResponse {
@@ -21,7 +22,7 @@ impl From<entity::family_member::Model> for FamilyMemberResponse {
             serial_num: model.serial_num,
             name: model.name,
             role: model.role,
-            is_primary: model.is_primary != 0,
+            is_primary: model.is_primary,
             permissions: model.permissions,
             created_at: model.created_at,
             updated_at: model.updated_at,
@@ -35,7 +36,7 @@ impl From<&entity::family_member::Model> for FamilyMemberResponse {
             serial_num: model.serial_num.clone(),
             name: model.name.clone(),
             role: model.role.clone(),
-            is_primary: model.is_primary != 0,
+            is_primary: model.is_primary,
             permissions: model.permissions.clone(),
             created_at: model.created_at.clone(),
             updated_at: model.updated_at.clone(),
@@ -62,16 +63,16 @@ impl TryFrom<CreateFamilyMemberRequest> for entity::family_member::ActiveModel {
 
     fn try_from(request: CreateFamilyMemberRequest) -> Result<Self, Self::Error> {
         request.validate()?;
-        let now = DateUtils::local_rfc3339();
+        let now = DateUtils::local_now();
         let serial_num = McgUuid::uuid(38); // 假设使用与 Account 相同的 UUID 生成逻辑
 
         Ok(entity::family_member::ActiveModel {
             serial_num: Set(serial_num),
             name: Set(request.name),
             role: Set(request.role),
-            is_primary: Set(request.is_primary as i32),
+            is_primary: Set(request.is_primary),
             permissions: Set(request.permissions),
-            created_at: Set(now.clone()),
+            created_at: Set(now),
             updated_at: Set(Some(now)),
         })
     }
@@ -95,7 +96,7 @@ pub struct UpdateFamilyMemberRequest {
 
 impl UpdateFamilyMemberRequest {
     pub fn apply_to_model(self, model: &mut entity::family_member::ActiveModel) {
-        let now = DateUtils::local_rfc3339();
+        let now = DateUtils::local_now();
 
         if let Some(name) = self.name {
             model.name = Set(name);
@@ -104,7 +105,7 @@ impl UpdateFamilyMemberRequest {
             model.role = Set(role);
         }
         if let Some(is_primary) = self.is_primary {
-            model.is_primary = Set(is_primary as i32);
+            model.is_primary = Set(is_primary);
         }
         if let Some(permissions) = self.permissions {
             model.permissions = Set(permissions);

@@ -19,7 +19,11 @@ impl MigrationTrait for Migration {
                             .not_null()
                             .primary_key(),
                     )
-                    .col(ColumnDef::new(OperationLog::RecordedAt).string().not_null())
+                    .col(
+                        ColumnDef::new(OperationLog::RecordedAt)
+                            .timestamp_with_time_zone()
+                            .not_null(),
+                    )
                     .col(
                         ColumnDef::new(OperationLog::Operation)
                             .string()
@@ -44,8 +48,8 @@ impl MigrationTrait for Migration {
                             .not_null()
                             .check(Expr::cust("LENGTH(actor_id) > 0")),
                     )
-                    .col(ColumnDef::new(OperationLog::ChangesJson).text())
-                    .col(ColumnDef::new(OperationLog::SnapshotJson).text())
+                    .col(ColumnDef::new(OperationLog::ChangesJson).json_binary())
+                    .col(ColumnDef::new(OperationLog::SnapshotJson).json_binary())
                     .col(
                         ColumnDef::new(OperationLog::DeviceId)
                             .string()

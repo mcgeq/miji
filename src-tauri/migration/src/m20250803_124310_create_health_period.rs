@@ -19,15 +19,27 @@ impl MigrationTrait for Migration {
                             .not_null()
                             .primary_key(),
                     )
+                    .col(ColumnDef::new(PeriodRecords::Notes).string_len(1000))
                     .col(
-                        ColumnDef::new(PeriodRecords::Notes)
-                            .text()
-                            .check(Expr::cust("LENGTH(notes) <= 1000")),
+                        ColumnDef::new(PeriodRecords::StartDate)
+                            .timestamp_with_time_zone()
+                            .not_null(),
                     )
-                    .col(ColumnDef::new(PeriodRecords::StartDate).string().not_null())
-                    .col(ColumnDef::new(PeriodRecords::EndDate).string().not_null())
-                    .col(ColumnDef::new(PeriodRecords::CreatedAt).string().not_null())
-                    .col(ColumnDef::new(PeriodRecords::UpdatedAt).string())
+                    .col(
+                        ColumnDef::new(PeriodRecords::EndDate)
+                            .timestamp_with_time_zone()
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(PeriodRecords::CreatedAt)
+                            .timestamp_with_time_zone()
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(PeriodRecords::UpdatedAt)
+                            .timestamp_with_time_zone()
+                            .null(),
+                    )
                     .to_owned(),
             )
             .await?;
