@@ -1,4 +1,3 @@
-
 pub mod prelude;
 
 pub mod account;
@@ -26,3 +25,5 @@ pub mod todo_project;
 pub mod todo_tag;
 pub mod transactions;
 pub mod users;
+
+pub mod localize;

@@ -1412,6 +1412,9 @@ checksum = "a3d8a32ae18130a3c84dd492d4215c3d913c3b07c6b63c2eb3eb7ff1101ab7bf"
 name = "entity"
 version = "0.1.0"
 dependencies = [
+ "chrono",
+ "chrono-tz",
+ "localize_model_derive",
  "sea-orm",
  "serde",
 ]
@@ -2711,6 +2714,16 @@ name = "litemap"
 version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "241eaef5fd12c88705a01fc1066c48c4b36e0dd4377dcdc7ec3942cea7a69956"
+
+[[package]]
+name = "localize_model_derive"
+version = "0.1.0"
+dependencies = [
+ "chrono-tz",
+ "proc-macro2",
+ "quote",
+ "syn 2.0.104",
+]
 
 [[package]]
 name = "lock_api"

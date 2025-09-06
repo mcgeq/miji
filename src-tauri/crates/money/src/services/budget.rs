@@ -1,17 +1,16 @@
-use std::sync::Arc;
-
-use chrono::Local;
 use common::{
     crud::service::{CrudConverter, CrudService, GenericCrudService},
     error::{AppError, MijiResult},
     paginations::{DateRange, Filter, PagedQuery, PagedResult},
     utils::date::DateUtils,
 };
+use entity::localize::LocalizeModel;
 use sea_orm::{
     ActiveValue, ColumnTrait, Condition, DbConn,
     prelude::{Decimal, async_trait::async_trait},
 };
 use serde::{Deserialize, Serialize};
+use std::sync::Arc;
 use validator::Validate;
 
 use crate::{
@@ -148,26 +147,9 @@ impl BudgetConverter {
     ) -> MijiResult<BudgetWithAccount> {
         let account_service = get_account_service();
         let cny_service = get_currency_service();
-        // 使用 Local 获取当前运行环境的时区偏移
-        let local_offset = *Local::now().offset();
-
-        // 将时间戳转换为本地时区
-        let start_date_local = model.start_date.with_timezone(&local_offset);
-        let end_date_local = model.end_date.with_timezone(&local_offset);
-        let created_at_local = model.created_at.with_timezone(&local_offset);
-        let updated_at_local = model.updated_at.map(|dt| dt.with_timezone(&local_offset));
-        let last_reset_at_local = model.last_reset_at.with_timezone(&local_offset);
 
         // 创建调整后的模型
-        let adjusted_model = entity::budget::Model {
-            start_date: start_date_local,
-            end_date: end_date_local,
-            created_at: created_at_local,
-            updated_at: updated_at_local,
-            last_reset_at: last_reset_at_local,
-            ..model
-        };
-
+        let adjusted_model = model.to_local();
         let (account, currency) = tokio::try_join!(
             async {
                 match adjusted_model.account_serial_num.clone() {
@@ -329,16 +311,18 @@ impl BudgetService {
         self.converter().model_with_relations(db, model).await
     }
 
-    pub async fn budget_list(&self, db: &DbConn, filters: BudgetFilter) -> MijiResult<Vec<BudgetWithAccount>>{
+    pub async fn budget_list(
+        &self,
+        db: &DbConn,
+        filters: BudgetFilter,
+    ) -> MijiResult<Vec<BudgetWithAccount>> {
         let models = self.list_with_filter(db, filters).await?;
         let mut result = Vec::with_capacity(models.len());
         for m in models {
             result.push(self.converter().model_with_relations(db, m).await?);
         }
         Ok(result)
-
     }
-
 
     pub async fn budget_list_paged(
         &self,

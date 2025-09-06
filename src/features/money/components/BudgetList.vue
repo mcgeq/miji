@@ -97,7 +97,6 @@ async function loadBudgets() {
     };
 
     const result = await moneyStore.getPagedBudgets(params);
-
     pagination.value.totalItems = result.totalCount ?? 0;
     pagination.value.totalPages = result.totalPages ?? 1;
 
