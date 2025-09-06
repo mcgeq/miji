@@ -93,8 +93,8 @@ where
                     "Failed to parse sort field: {}, using default sort",
                     sort_field
                 );
-                if let Ok(created_at) = E::Column::from_str("created_at") {
-                    query.order_by(created_at, Order::Desc)
+                if let Ok(updated_at) = E::Column::from_str("updated_at") {
+                    query.order_by(updated_at, Order::Desc)
                 } else {
                     // 如果还没有，则使用第一个列
                     let mut columns = E::Column::iter();

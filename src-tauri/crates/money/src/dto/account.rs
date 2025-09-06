@@ -286,8 +286,8 @@ impl TryFrom<CreateAccountRequest> for account::ActiveModel {
             owner_id: Set(dto.owner_id),
             color: Set(dto.color),
             is_active: Set(1), // 默认激活
-            created_at: Set(now),
-            updated_at: Set(None),
+            created_at: Set(now.clone()),
+            updated_at: Set(Some(now)),
         })
     }
 }

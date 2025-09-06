@@ -560,7 +560,6 @@ declare module 'vue' {
     readonly useMenuStore: UnwrapRef<typeof import('./stores/menuStore')['useMenuStore']>
     readonly useModel: UnwrapRef<typeof import('vue')['useModel']>
     readonly useMoneyStore: UnwrapRef<typeof import('./stores/moneyStore')['useMoneyStore']>
-    readonly useMoneyStores: UnwrapRef<typeof import('./stores/moneyStore')['useMoneyStores']>
     readonly useMounted: UnwrapRef<typeof import('@vueuse/core')['useMounted']>
     readonly useMouse: UnwrapRef<typeof import('@vueuse/core')['useMouse']>
     readonly useMouseInElement: UnwrapRef<typeof import('@vueuse/core')['useMouseInElement']>
