@@ -475,6 +475,21 @@ pub async fn budget_update(
 }
 
 #[tauri::command]
+pub async fn budget_update_active(
+    state: State<'_, AppState>,
+    serial_num: String,
+    is_active: bool,
+) -> Result<ApiResponse<Budget>, String> {
+    let service = get_budget_service();
+    Ok(ApiResponse::from_result(
+        service
+            .budget_update_active_with_relations(&state.db, serial_num, is_active)
+            .await
+            .map(Budget::from),
+    ))
+}
+
+#[tauri::command]
 pub async fn budget_delete(
     state: State<'_, AppState>,
     serial_num: String,

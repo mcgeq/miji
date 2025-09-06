@@ -66,6 +66,7 @@ pub fn init_commands(builder: Builder<Wry>) -> Builder<Wry> {
         money_cmd::budget_get,
         money_cmd::budget_create,
         money_cmd::budget_update,
+        money_cmd::budget_update_active,
         money_cmd::budget_delete,
         money_cmd::budget_list_paged,
     ])

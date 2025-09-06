@@ -365,10 +365,10 @@ defineExpose({
             <span class="text-lg font-semibold">{{ budget.name }}</span>
             <!-- 状态标签 -->
             <span v-if="!budget.isActive" class="ml-2 rounded bg-gray-200 px-2 py-0.5 text-xs text-gray-600">
-              {{ t('optionsAndStatus.inactive') }}
+              {{ t('common.status.inactive') }}
             </span>
             <span v-else-if="isOverBudget(budget)" class="ml-2 rounded bg-red-100 px-2 py-0.5 text-xs text-red-600">
-              {{ t('optionsAndStatus.exceeded') }}
+              {{ t('common.status.exceeded') }}
             </span>
             <span
               v-else-if="isLowOnBudget(budget)"
@@ -382,7 +382,7 @@ defineExpose({
           <div class="flex items-center gap-1 md:self-end">
             <button
               class="money-option-btn hover:(border-green-500 text-green-500)" :title="t('common.actions.edit')"
-              @click="emit('edit', budget)"
+              @click="budget.isActive && emit('edit', budget)"
             >
               <Edit class="h-4 w-4" />
             </button>

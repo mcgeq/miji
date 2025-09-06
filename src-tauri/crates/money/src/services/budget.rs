@@ -1,13 +1,13 @@
 use common::{
-    crud::service::{CrudConverter, CrudService, GenericCrudService},
+    crud::service::{CrudConverter, CrudService, GenericCrudService, update_entity_columns_simple},
     error::{AppError, MijiResult},
     paginations::{DateRange, Filter, PagedQuery, PagedResult},
     utils::date::DateUtils,
 };
 use entity::localize::LocalizeModel;
 use sea_orm::{
-    ActiveValue, ColumnTrait, Condition, DbConn,
-    prelude::{Decimal, async_trait::async_trait},
+    ActiveValue, ColumnTrait, Condition, DbConn, EntityTrait, QueryFilter,
+    prelude::{Decimal, Expr, async_trait::async_trait},
 };
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
@@ -309,6 +309,41 @@ impl BudgetService {
     ) -> MijiResult<BudgetWithAccount> {
         let model = self.update(db, serial_num, data).await?;
         self.converter().model_with_relations(db, model).await
+    }
+
+    pub async fn budget_update_active_with_relations(
+        &self,
+        db: &DbConn,
+        serial_num: String,
+        is_active: bool,
+    ) -> MijiResult<BudgetWithAccount> {
+        update_entity_columns_simple::<entity::budget::Entity, _>(
+            db,
+            vec![(entity::budget::Column::SerialNum, vec![serial_num.clone()])],
+            vec![
+                (entity::budget::Column::IsActive, Expr::value(is_active)),
+                (
+                    entity::budget::Column::UpdatedAt,
+                    Expr::value(DateUtils::local_now()),
+                ),
+            ],
+        )
+        .await?;
+
+        let updated_model = entity::budget::Entity::find()
+            .filter(entity::budget::Column::SerialNum.eq(serial_num))
+            .one(db)
+            .await?
+            .ok_or_else(|| {
+                AppError::simple(
+                    common::BusinessCode::NotFound,
+                    "Budget not found after update".to_string(),
+                )
+            })?;
+
+        self.converter()
+            .model_with_relations(db, updated_model)
+            .await
     }
 
     pub async fn budget_list(

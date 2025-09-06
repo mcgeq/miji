@@ -19,7 +19,7 @@ use crate::{
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, DbConn, EntityTrait, FromQueryResult, IntoActiveModel,
     PaginatorTrait, PrimaryKeyTrait, QueryFilter, QuerySelect, TransactionTrait, Value,
-    prelude::{Expr, async_trait::async_trait},
+    prelude::async_trait::async_trait, sea_query::SimpleExpr,
 };
 use serde::{Serialize, de::DeserializeOwned};
 use std::{fmt, str::FromStr, sync::Arc};
@@ -656,22 +656,38 @@ where
 }
 
 /// 通用更新函数
-pub async fn update_entity_columns_simple<E, I, C, V, U>(
+pub async fn update_entity_columns_simple<E, C>(
     db: &DbConn,
-    filters: impl IntoIterator<Item = (C, impl IntoIterator<Item = V>)>,
-    updates: I,
+    filters: impl IntoIterator<Item = (C, impl IntoIterator<Item = impl Into<Value>>)>,
+    updates: impl IntoIterator<Item = (C, SimpleExpr)>,
 ) -> MijiResult<u64>
 where
     E: EntityTrait,
-    C: Copy + ColumnTrait,          // 条件列
-    V: Clone + Into<Value>,         // 条件值
-    I: IntoIterator<Item = (C, U)>, // 更新列和值
-    U: Clone + Into<Value>,         // 更新值
+    C: Copy + ColumnTrait,
 {
-    let mut updater = E::update_many();
+    // 处理过滤条件
+    let mut filters_iter = filters.into_iter();
+    let first_filter = match filters_iter.next() {
+        Some((col, values)) => {
+            let expr_values: Vec<Value> = values.into_iter().map(|v| v.into()).collect();
+            if expr_values.is_empty() {
+                return Err(AppError::simple(
+                    BusinessCode::InvalidParameter,
+                    "Filter values cannot be empty".to_string(),
+                ));
+            }
+            col.is_in(expr_values)
+        }
+        None => {
+            return Err(AppError::simple(
+                BusinessCode::InvalidParameter,
+                "Filters cannot be empty".to_string(),
+            ));
+        }
+    };
 
-    // 构建过滤条件
-    for (col, values) in filters {
+    let mut filter_expr = first_filter;
+    for (col, values) in filters_iter {
         let expr_values: Vec<Value> = values.into_iter().map(|v| v.into()).collect();
         if expr_values.is_empty() {
             return Err(AppError::simple(
@@ -679,23 +695,10 @@ where
                 "Filter values cannot be empty".to_string(),
             ));
         }
-        updater = updater.filter(col.is_in(expr_values));
+        filter_expr = filter_expr.and(col.is_in(expr_values));
     }
 
-    // 添加更新列（用 Expr::value 包装成 SimpleExpr）
-    for (col, val) in updates {
-        updater = updater.col_expr(col, Expr::value(val)); // ✅ 必须是 Expr::value
-    }
-
-    let result = updater.exec(db).await.map_err(AppError::from)?;
-    if result.rows_affected == 0 {
-        return Err(AppError::simple(
-            BusinessCode::NotFound,
-            "No records matched the filter conditions".to_string(),
-        ));
-    }
-
-    Ok(result.rows_affected)
+    update_table_columns::<E, C>(db, filter_expr, updates).await
 }
 
 /// 输入清理，防止 SQL 注入
@@ -776,4 +779,33 @@ impl JsonInput for &Option<serde_json::Value> {
             None => default,
         }
     }
+}
+
+/// 通用批量更新函数：
+/// - `E`: 表对应的 Entity
+/// - `C`: 表对应的 Column 枚举
+pub async fn update_table_columns<E, C>(
+    db: &DbConn,
+    filter: SimpleExpr,
+    updates: impl IntoIterator<Item = (C, SimpleExpr)>,
+) -> MijiResult<u64>
+where
+    E: EntityTrait,
+    C: ColumnTrait,
+{
+    let mut updater = E::update_many().filter(filter);
+
+    for (col, expr) in updates {
+        updater = updater.col_expr(col, expr);
+    }
+
+    let result = updater.exec(db).await.map_err(AppError::from)?;
+    if result.rows_affected == 0 {
+        return Err(AppError::simple(
+            BusinessCode::NotFound,
+            "No rows matched filter".to_string(),
+        ));
+    }
+
+    Ok(result.rows_affected)
 }
