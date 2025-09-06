@@ -1,7 +1,7 @@
 import { invokeCommand } from '@/types/api';
 import { BaseMapper } from './baseManager';
 import type { PagedResult } from './baseManager';
-import type { DateRange, PageQuery } from '@/schema/common';
+import type { Category, DateRange, PageQuery } from '@/schema/common';
 import type { Budget, BudgetCreate, BudgetUpdate } from '@/schema/money';
 
 export interface BudgetFilters {
@@ -14,7 +14,7 @@ export interface BudgetFilters {
   endDate?: DateRange;
   usedAmount?: number;
   alertThreshold?: string;
-  category?: string;
+  category?: Category | null;
   isActive?: boolean;
   alertEnabled?: boolean;
   // completion?: string; // ✅ 对应 filters.completion

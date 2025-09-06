@@ -20,8 +20,8 @@ import type {
   UpdateAccountRequest,
 } from '@/schema/money';
 import type { PagedResult } from '@/services/money/baseManager';
+import type { BudgetFilters } from '@/services/money/budgets';
 import type { TransactionFilters } from '@/services/money/transactions';
-import { BudgetFilters } from '@/services/money/budgets';
 
 export enum MoneyStoreErrorCode {
   ACCOUNT_NOT_FOUND = 'ACCOUNT_NOT_FOUND',
@@ -181,8 +181,15 @@ export const useMoneyStore = defineStore('money', () => {
     },
 
     async budgets() {
+      const query: PageQuery<BudgetFilters> = {
+        currentPage: 1,
+        pageSize: 10,
+        sortOptions: {},
+        filter: {},
+      };
+
       try {
-        state.budgets = await MoneyDb.listBudgets();
+        state.budgets = (await MoneyDb.listBudgetsPaged(query)).rows;
       } catch (err) {
         handleError(err, '获取预算列表失败', 'listBudgets', 'Budget');
       }
@@ -648,7 +655,6 @@ export const useMoneyStore = defineStore('money', () => {
     updateTransaction: transactionOperations.update,
     deleteTransaction: transactionOperations.delete,
     monthlyIncomeAndExpense: transactionOperations.getMonthlyIncomeExpense,
-
     // Transfer operations
     createTransfer: transferOperations.create,
     updateTransfer: transferOperations.update,
@@ -660,7 +666,6 @@ export const useMoneyStore = defineStore('money', () => {
     updateBudget: budgetOperations.update,
     deleteBudget: budgetOperations.delete,
     toggleBudgetActive: budgetOperations.toggleActive,
-
     // Reminder operations
     getReminders: reminderOperations.getAll,
     createReminder: reminderOperations.create,

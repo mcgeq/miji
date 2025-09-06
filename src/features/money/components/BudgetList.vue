@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { Ban, Edit, Repeat, RotateCcw, StopCircle, Trash } from 'lucide-vue-next';
 import SimplePagination from '@/components/common/SimplePagination.vue';
-import { SortDirection } from '@/schema/common';
+import { CategorySchema, SortDirection } from '@/schema/common';
 import { getRepeatTypeName } from '@/utils/common';
 import { DateUtils } from '@/utils/date';
 import { Lg } from '@/utils/debugLog';
 import { formatCurrency } from '../utils/money';
-import type { PageQuery, SortOptions } from '@/schema/common';
+import type { Category, PageQuery, SortOptions } from '@/schema/common';
 import type { Budget } from '@/schema/money';
 import type { BudgetFilters } from '@/services/money/budgets';
 
@@ -39,7 +39,7 @@ const sortOptions = ref<SortOptions>({
 
 // 初始 filters
 const initialFilters: BudgetFilters = {
-  category: '',
+  category: null,
   accountSerialNum: '',
   name: '',
   amount: undefined,
@@ -116,8 +116,14 @@ async function loadBudgets() {
 
 // 获取唯一分类
 const uniqueCategories = computed(() => {
-  const categories = budgets.value.map(budget => budget.category);
-  return [...new Set(categories)].filter(Boolean);
+  const categorySet = new Set<Category>();
+  for (const budget of budgets.value) {
+    for (const category of budget.categoryScope) {
+      categorySet.add(category);
+    }
+  }
+  const allCategories = CategorySchema.options;
+  return Array.from(categorySet).sort((a, b) => allCategories.indexOf(a) - allCategories.indexOf(b));
 });
 
 // 过滤后的预算
@@ -159,8 +165,9 @@ const filteredBudgets = computed(() => {
 
   // 分类过滤
   if (filters.value.category) {
+    const category = filters.value.category as Category;
     filtered = filtered.filter(
-      budget => budget.category === filters.value.category,
+      budget => budget.categoryScope.includes(category),
     );
   }
 
@@ -432,7 +439,7 @@ defineExpose({
         <div class="border-t border-gray-200 pt-2">
           <div class="mb-1 flex justify-between text-sm">
             <span class="text-gray-600 font-medium"> {{ t('categories.category') }} </span>
-            <span class="text-gray-800 font-medium">{{ budget.category }}</span>
+            <span class="text-gray-800 font-medium">{{ budget.categoryScope }}</span>
           </div>
           <div class="mb-1 flex justify-between text-sm">
             <span class="text-gray-600"> {{ t('date.createDate') }} </span>

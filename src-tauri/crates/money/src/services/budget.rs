@@ -329,6 +329,17 @@ impl BudgetService {
         self.converter().model_with_relations(db, model).await
     }
 
+    pub async fn budget_list(&self, db: &DbConn, filters: BudgetFilter) -> MijiResult<Vec<BudgetWithAccount>>{
+        let models = self.list_with_filter(db, filters).await?;
+        let mut result = Vec::with_capacity(models.len());
+        for m in models {
+            result.push(self.converter().model_with_relations(db, m).await?);
+        }
+        Ok(result)
+
+    }
+
+
     pub async fn budget_list_paged(
         &self,
         db: &DbConn,
