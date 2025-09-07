@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import { Ban, Edit, Repeat, RotateCcw, StopCircle, Trash } from 'lucide-vue-next';
 import SimplePagination from '@/components/common/SimplePagination.vue';
+import { useSort } from '@/composables/useSortable';
 import { CategorySchema, SortDirection } from '@/schema/common';
 import { getRepeatTypeName } from '@/utils/common';
 import { DateUtils } from '@/utils/date';
 import { Lg } from '@/utils/debugLog';
+import { mapUIFiltersToAPIFilters, useBudgetFilters } from '../composables/useBudgetFilters';
 import { formatCurrency } from '../utils/money';
-import type { Category, PageQuery, SortOptions } from '@/schema/common';
+import type { Category, PageQuery } from '@/schema/common';
 import type { Budget } from '@/schema/money';
 import type { BudgetFilters } from '@/services/money/budgets';
 
@@ -18,95 +20,43 @@ const emit = defineEmits<{
 
 const { t } = useI18n();
 const moneyStore = useMoneyStore();
-
 const loading = ref(false);
 const budgets = computed<Budget[]>(() => moneyStore.budgets);
-// 分页状态
-const pagination = ref({
-  currentPage: 1,
-  totalPages: 1,
-  totalItems: 0,
-  pageSize: 20,
-});
 
-// 排序选项状态
-const sortOptions = ref<SortOptions>({
-  customOrderBy: undefined,
+const { filters, resetFilters, filteredBudgets, pagination } = useBudgetFilters(
+  () => budgets.value,
+  4,
+);
+
+const { sortOptions } = useSort({
   sortBy: undefined,
   sortDir: SortDirection.Desc,
   desc: true,
+  customOrderBy: undefined,
 });
-
-// 初始 filters
-const initialFilters: BudgetFilters = {
-  category: null,
-  accountSerialNum: '',
-  name: '',
-  amount: undefined,
-  repeatPeriod: '',
-  startDate: { start: undefined, end: undefined },
-  endDate: { start: undefined, end: undefined },
-  usedAmount: undefined,
-  alertThreshold: '',
-  isActive: undefined,
-  alertEnabled: undefined,
-};
-// 过滤器状态
-const filters = ref<BudgetFilters>({ ...initialFilters });
-
-// 分页状态
-const currentPage = ref(1);
-const pageSize = ref(4);
-
-// 重置过滤器
-function resetFilters() {
-  filters.value = JSON.parse(JSON.stringify(initialFilters));
-  currentPage.value = 1;
-}
 
 // 加载交易数据
 async function loadBudgets() {
   loading.value = true;
   try {
     const params: PageQuery<BudgetFilters> = {
-      currentPage: pagination.value.currentPage,
-      pageSize: pagination.value.pageSize,
-      sortOptions: {
-        customOrderBy: sortOptions.value?.customOrderBy,
-        sortBy: sortOptions.value?.sortBy,
-        desc: sortOptions.value?.desc,
-        sortDir: sortOptions.value?.sortDir ?? SortDirection.Desc,
-      },
-      filter: {
-        category: filters.value.category || undefined,
-        accountSerialNum: filters.value.accountSerialNum || undefined,
-        name: filters.value.name || undefined,
-        amount: filters.value.amount || undefined,
-        repeatPeriod: filters.value.repeatPeriod || undefined,
-        startDate: filters.value.startDate?.start || filters.value.startDate?.end
-          ? { ...filters.value.startDate }
-          : undefined,
-        endDate: filters.value.endDate?.start || filters.value.endDate?.end
-          ? { ...filters.value.endDate }
-          : undefined,
-        usedAmount: filters.value.usedAmount || undefined,
-        alertThreshold: filters.value.alertThreshold || undefined,
-        isActive: filters.value.isActive,
-        alertEnabled: filters.value.alertEnabled,
-      },
+      currentPage: pagination.currentPage.value,
+      pageSize: pagination.pageSize.value,
+      sortOptions: sortOptions.value,
+      filter: mapUIFiltersToAPIFilters(filters.value),
     };
 
     const result = await moneyStore.getPagedBudgets(params);
-    pagination.value.totalItems = result.totalCount ?? 0;
-    pagination.value.totalPages = result.totalPages ?? 1;
+    pagination.totalItems.value = result.totalCount ?? 0;
+    pagination.totalPages.value = result.totalPages ?? 1;
 
     // 可选：当前页超出总页数时重置
-    if (pagination.value.currentPage > pagination.value.totalPages) {
-      pagination.value.currentPage = pagination.value.totalPages || 1;
+    if (pagination.currentPage.value > pagination.totalPages.value) {
+      pagination.currentPage.value = pagination.totalPages.value || 1;
     }
   } catch (error) {
-    pagination.value.totalItems = 0;
-    pagination.value.totalPages = 0;
+    pagination.totalItems.value = 0;
+    pagination.totalPages.value = 0;
     Lg.e('Transaction', error);
   } finally {
     loading.value = false;
@@ -125,80 +75,6 @@ const uniqueCategories = computed(() => {
   return Array.from(categorySet).sort((a, b) => allCategories.indexOf(a) - allCategories.indexOf(b));
 });
 
-// 过滤后的预算
-const filteredBudgets = computed(() => {
-  let filtered = [...budgets.value];
-
-  // 状态过滤
-  if (filters.value.isActive) {
-    filtered = filtered.filter(budget =>
-      filters.value.isActive ? budget.isActive : !budget.isActive,
-    );
-  }
-
-  // // 完成状态过滤
-  // if (filters.value.completion) {
-  //   filtered = filtered.filter(budget => {
-  //     const isOver = isOverBudget(budget);
-  //     const isLow = isLowOnBudget(budget);
-  //
-  //     switch (filters.value.completion) {
-  //       case 'normal':
-  //         return !isOver && !isLow;
-  //       case 'warning':
-  //         return isLow && !isOver;
-  //       case 'exceeded':
-  //         return isOver;
-  //       default:
-  //         return true;
-  //     }
-  //   });
-  // }
-
-  // 周期类型过滤 - 修复：比较 repeatPeriod.type 而不是 repeatPeriod 本身
-  if (filters.value.repeatPeriod) {
-    filtered = filtered.filter(
-      budget => budget.repeatPeriod.type === filters.value.repeatPeriod,
-    );
-  }
-
-  // 分类过滤
-  if (filters.value.category) {
-    const category = filters.value.category as Category;
-    filtered = filtered.filter(
-      budget => budget.categoryScope.includes(category),
-    );
-  }
-
-  return filtered;
-});
-
-// 总页数
-const totalPages = computed(() => {
-  return Math.ceil(filteredBudgets.value.length / pageSize.value);
-});
-
-// 当前页的预算
-const paginatedBudgets = computed(() => {
-  const start = (currentPage.value - 1) * pageSize.value;
-  const end = start + pageSize.value;
-  return filteredBudgets.value.slice(start, end);
-});
-
-// 处理页码变化
-function handlePageChange(page: number) {
-  currentPage.value = page;
-}
-
-// 监听过滤器变化，重置到第一页
-watch(
-  filters,
-  () => {
-    currentPage.value = 1;
-  },
-  { deep: true },
-);
-
 // 原有的方法
 function getProgressPercent(budget: Budget) {
   const used = budget.usedAmount;
@@ -207,9 +83,7 @@ function getProgressPercent(budget: Budget) {
 }
 
 function isOverBudget(budget: Budget) {
-  const used = budget.usedAmount;
-  const total = budget.amount;
-  return used > total;
+  return budget.usedAmount > budget.amount;
 }
 
 function isLowOnBudget(budget: Budget) {
@@ -222,9 +96,7 @@ function shouldHighlightRed(budget: Budget) {
 }
 
 function getRemainingAmount(budget: Budget) {
-  const used = budget.usedAmount;
-  const total = budget.amount;
-  return (total - used).toString();
+  return (budget.amount - budget.usedAmount).toString();
 }
 // 组件挂载时加载数据
 onMounted(() => {
@@ -340,7 +212,7 @@ defineExpose({
     </div>
 
     <!-- 空状态 -->
-    <div v-else-if="paginatedBudgets.length === 0" class="h-25 flex-justify-center flex-col text-#999">
+    <div v-else-if="pagination.paginatedItems.value.length === 0" class="h-25 flex-justify-center flex-col text-#999">
       <div class="mb-2 text-sm opacity-50">
         <i class="icon-target" />
       </div>
@@ -352,7 +224,7 @@ defineExpose({
     <!-- 预算网格 -->
     <div v-else class="budget-grid grid mb-6 w-full gap-5">
       <div
-        v-for="budget in paginatedBudgets" :key="budget.serialNum" class="border rounded-md bg-white p-1.5 transition-all hover:shadow-md" :class="[
+        v-for="budget in pagination.paginatedItems.value" :key="budget.serialNum" class="border rounded-md bg-white p-1.5 transition-all hover:shadow-md" :class="[
           { 'opacity-60 bg-gray-100': !budget.isActive },
         ]" :style="{
           borderColor: budget.color || '#E5E7EB',
@@ -388,7 +260,7 @@ defineExpose({
             </button>
             <button
               class="money-option-btn hover:(border-blue-500 text-blue-500)"
-              :title="budget.isActive ? t('common.status.stop') : t('generalOperations.enabled')"
+              :title="budget.isActive ? t('common.status.stop') : t('common.status.enabled')"
               @click="emit('toggleActive', budget.serialNum, !budget.isActive)"
             >
               <component :is="budget.isActive ? Ban : StopCircle" class="h-4 w-4" />
@@ -453,10 +325,13 @@ defineExpose({
     </div>
 
     <!-- 分页组件 -->
-    <div v-if="filteredBudgets.length > pageSize" class="flex justify-center">
+    <div v-if="filteredBudgets.length > pagination.pageSize.value" class="flex justify-center">
       <SimplePagination
-        :current-page="currentPage" :total-pages="totalPages" :total-items="filteredBudgets.length"
-        :page-size="pageSize" @page-change="handlePageChange"
+        :current-page="pagination.currentPage.value"
+        :total-pages="pagination.totalPages.value"
+        :total-items="filteredBudgets.length"
+        :page-size="pagination.pageSize.value"
+        @page-change="pagination.setPage"
       />
     </div>
   </div>
