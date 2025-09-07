@@ -4,6 +4,7 @@ import { Check, X } from 'lucide-vue-next';
 import z from 'zod';
 import CategorySelector from '@/components/common/CategorySelector.vue';
 import ColorSelector from '@/components/common/ColorSelector.vue';
+import AccountSelector from '@/components/common/money/AccountSelector.vue';
 import RepeatPeriodSelector from '@/components/common/RepeatPeriodSelector.vue';
 import { COLORS_MAP, CURRENCY_CNY } from '@/constants/moneyConst';
 import { BudgetTypeSchema } from '@/schema/common';
@@ -29,6 +30,7 @@ const { t } = useI18n();
 const colorNameMap = ref(COLORS_MAP);
 const currency = ref(CURRENCY_CNY);
 const categoryError = ref('');
+const accountError = ref('');
 
 // 验证错误
 const validationErrors = reactive({
@@ -178,6 +180,9 @@ function onSubmit() {
 function handleRepeatPeriodChange(_value: RepeatPeriod) {
   validationErrors.repeatPeriod = '';
 }
+function handleAccountValidation(isValid: boolean) {
+  accountError.value = isValid ? '' : '请至少选择一个账户';
+}
 
 function handleRepeatPeriodValidation(isValid: boolean) {
   if (!isValid) {
@@ -259,6 +264,18 @@ watch(
   { immediate: true, deep: true },
 );
 
+watch(
+  () => form.alertEnabled,
+  enabled => {
+    if (enabled && !form.alertThreshold) {
+      form.alertThreshold = { type: 'Percentage', value: 80 };
+    }
+    if (!enabled) {
+      form.alertThreshold = null;
+    }
+  },
+);
+
 onMounted(async () => {
   const cny = await getLocalCurrencyInfo();
   currency.value = cny;
@@ -318,6 +335,19 @@ onMounted(async () => {
           />
         </div>
 
+        <div
+          v-if="form.budgetScopeType === 'Account'"
+        >
+          <AccountSelector
+            v-model="form.accountSerialNum"
+            :required="true"
+            label="账户选择"
+            placeholder="请选择账户"
+            help-text="选择适用于此预算的账户"
+            @validate="handleAccountValidation"
+          />
+        </div>
+
         <div class="mb-2 flex items-center justify-between">
           <label class="mb-2 text-sm text-gray-700 font-medium">
             {{ t('financial.budget.budgetAmount') }}
@@ -355,8 +385,8 @@ onMounted(async () => {
           </label>
           <ColorSelector v-model="form.color" :color-names="colorNameMap" />
         </div>
-
-        <div class="mb-4 h-8 flex items-center justify-between">
+        <div class="mb-4 flex items-center justify-between">
+          <!-- 左边复选框 -->
           <div class="w-1/3">
             <label class="flex items-center">
               <input v-model="form.alertEnabled" type="checkbox" class="mr-2 modal-input-select">
@@ -366,14 +396,32 @@ onMounted(async () => {
             </label>
           </div>
 
-          <div v-if="form.alertEnabled" class="w-2/3">
+          <!-- 右边 阈值设置 -->
+          <div v-if="form.alertEnabled && form.alertThreshold" class="w-2/3 flex items-center gap-2">
+            <!-- 阈值类型选择 -->
+            <select
+              v-model="form.alertThreshold.type"
+              class="w-2/3 modal-input-select"
+            >
+              <option value="Percentage">
+                {{ t('financial.budget.threshold.percentage') }}
+              </option>
+              <option value="FixedAmount">
+                {{ t('financial.budget.threshold.fixedAmount') }}
+              </option>
+            </select>
+
+            <!-- 阈值输入框 -->
             <input
-              v-model.number="form.alertThreshold" type="number" min="1" max="100"
-              class="w-full modal-input-select" placeholder="80"
+              v-model.number="form.alertThreshold.value"
+              type="number"
+              class="w-1/3 modal-input-select"
+              :min="form.alertThreshold.type === 'Percentage' ? 0 : 1"
+              :max="form.alertThreshold.type === 'Percentage' ? 100 : undefined"
+              :placeholder="form.alertThreshold.type === 'Percentage' ? '80%' : '100.00'"
             >
           </div>
         </div>
-
         <div class="mb-2">
           <textarea
             v-model="form.description" rows="3" class="w-full modal-input-select"

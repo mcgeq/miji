@@ -315,7 +315,11 @@
       "alertThreshold": "提醒阈值",
       "overBudgetAlert": "超支提醒",
       "includedCategories": "包含分类",
-      "excludedCategories": "排除分类"
+      "excludedCategories": "排除分类",
+      "threshold": {
+        "percentage": "百分比",
+        "fixedAmount": "金额"
+      }
     },
     "budgetCategories": {
       "food": "餐饮",

@@ -52,6 +52,7 @@ const trans = props.transaction || {
   category: CategorySchema.enum.Others,
   subCategory: SubCategorySchema.enum.Other,
   amount: 0,
+  refundAmount: 0,
   currency: CURRENCY_CNY,
   date: DateUtils.getLocalISODateTimeWithOffset(),
   description: '',
@@ -291,6 +292,7 @@ function emitTransaction(amount: number) {
     transactionStatus: form.value.transactionStatus,
     date: DateUtils.formatDateToBackend(typeof form.value.date === 'string' ? new Date(form.value.date) : form.value.date),
     amount,
+    refundAmount: props.transaction ? props.transaction.amount : 0,
     description: form.value.description,
     notes: form.value.notes,
     accountSerialNum: form.value.accountSerialNum,
@@ -307,7 +309,10 @@ function emitTransaction(amount: number) {
   };
 
   if (props.transaction) {
-    emit('update', props.transaction.serialNum, transaction);
+    const updateTransaction: TransactionUpdate = {
+      ...transaction,
+    };
+    emit('update', props.transaction.serialNum, updateTransaction);
   } else {
     emit('save', transaction);
   }

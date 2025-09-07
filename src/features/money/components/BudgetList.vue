@@ -12,6 +12,11 @@ import type { Category, PageQuery } from '@/schema/common';
 import type { Budget } from '@/schema/money';
 import type { BudgetFilters } from '@/services/money/budgets';
 
+type BudgetVM = Budget & {
+  displayCategories: string;
+  tooltipCategories: string;
+};
+
 const emit = defineEmits<{
   edit: [budget: Budget];
   delete: [serialNum: string];
@@ -75,15 +80,25 @@ const uniqueCategories = computed(() => {
   return Array.from(categorySet).sort((a, b) => allCategories.indexOf(a) - allCategories.indexOf(b));
 });
 
+const decoratedBudgets = computed<BudgetVM[]>(() =>
+  pagination.paginatedItems.value.map(b => {
+    const cats = Array.isArray(b.categoryScope) ? b.categoryScope : [];
+    return {
+      ...b,
+      displayCategories: cats.slice(0, 2).join(', '),
+      tooltipCategories: cats.join(', '),
+    };
+  }),
+);
+
 // 原有的方法
 function getProgressPercent(budget: Budget) {
-  const used = budget.usedAmount;
-  const total = budget.amount;
-  return Math.min(Math.round((used / total) * 100), 100);
+  const progress = Number(budget.progress ?? 0);
+  return progress;
 }
 
 function isOverBudget(budget: Budget) {
-  return budget.usedAmount > budget.amount;
+  return Number(budget.usedAmount) > Number(budget.amount);
 }
 
 function isLowOnBudget(budget: Budget) {
@@ -96,7 +111,7 @@ function shouldHighlightRed(budget: Budget) {
 }
 
 function getRemainingAmount(budget: Budget) {
-  return (budget.amount - budget.usedAmount).toString();
+  return (Number(budget.amount) - Number(budget.usedAmount)).toString();
 }
 // 组件挂载时加载数据
 onMounted(() => {
@@ -189,7 +204,7 @@ defineExpose({
           v-model="filters.category"
           class="border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
-          <option value="">
+          <option :value="null">
             {{ t('categories.allCategory') }}
           </option>
           <option v-for="category in uniqueCategories" :key="category" :value="category">
@@ -224,7 +239,7 @@ defineExpose({
     <!-- 预算网格 -->
     <div v-else class="budget-grid grid mb-6 w-full gap-5">
       <div
-        v-for="budget in pagination.paginatedItems.value" :key="budget.serialNum" class="border rounded-md bg-white p-1.5 transition-all hover:shadow-md" :class="[
+        v-for="budget in decoratedBudgets" :key="budget.serialNum" class="border rounded-md bg-white p-1.5 transition-all hover:shadow-md" :class="[
           { 'opacity-60 bg-gray-100': !budget.isActive },
         ]" :style="{
           borderColor: budget.color || '#E5E7EB',
@@ -310,7 +325,12 @@ defineExpose({
         <div class="border-t border-gray-200 pt-2">
           <div class="mb-1 flex justify-between text-sm">
             <span class="text-gray-600 font-medium"> {{ t('categories.category') }} </span>
-            <span class="text-gray-800 font-medium">{{ budget.categoryScope }}</span>
+            <span
+              class="text-gray-800 font-medium"
+              :title="budget.tooltipCategories"
+            >
+              {{ budget.displayCategories || '' }}
+            </span>
           </div>
           <div class="mb-1 flex justify-between text-sm">
             <span class="text-gray-600"> {{ t('date.createDate') }} </span>

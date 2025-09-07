@@ -68,7 +68,7 @@ export const BudgetSchema = z.object({
   currentPeriodUsed: z.number().min(0).optional().nullable(),
   currentPeriodStart: DateSchema.optional().nullable(),
   budgetType: BudgetTypeSchema.optional().nullable(),
-  progress: z.number().min(0).max(100).optional().nullable(),
+  progress: z.number().min(0).optional().nullable(),
   linkedGoal: SerialNumSchema.optional().nullable(),
   reminders: z.array(ReminderSchema).optional().nullable(),
   priority: z.number().int().min(-128).max(127).optional().nullable(),

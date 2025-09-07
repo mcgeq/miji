@@ -41,6 +41,7 @@ export const TransactionSchema = z.object({
 export const TransactionCreateSchema = TransactionSchema.pick({
   transactionType: true,
   amount: true,
+  refundAmount: true,
   accountSerialNum: true,
   toAccountSerialNum: true,
   paymentMethod: true,

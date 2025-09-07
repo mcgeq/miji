@@ -328,10 +328,11 @@ pub struct UpdateTransactionRequest {
     #[validate(custom(function = "validate_amount"))]
     pub amount: Option<Decimal>,
 
-    #[validate(length(min = 1, max = 16))]
+    pub refund_amount: Option<Decimal>,
+    #[validate(length(equal = 3))]
     pub currency: Option<String>,
 
-    #[validate(length(min = 1, max = 1024))]
+    #[validate(length(max = 1024))]
     pub description: Option<String>,
 
     #[validate(length(max = 1024))]
@@ -343,7 +344,7 @@ pub struct UpdateTransactionRequest {
     #[validate(length(equal = 38))]
     pub to_account_serial_num: Option<String>,
 
-    #[validate(length(min = 1, max = 64))]
+    #[validate(length(max = 64))]
     pub category: Option<String>,
 
     #[validate(length(max = 64))]
@@ -386,6 +387,9 @@ impl TryFrom<UpdateTransactionRequest> for entity::transactions::ActiveModel {
         }
         if let Some(amount) = value.amount {
             model.amount = Set(amount);
+        }
+        if let Some(refund_amount) = value.refund_amount {
+            model.refund_amount = Set(refund_amount);
         }
         if let Some(currency) = value.currency {
             model.currency = Set(currency);

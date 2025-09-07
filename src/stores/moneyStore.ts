@@ -207,6 +207,7 @@ export const useMoneyStore = defineStore('money', {
 
       try {
         this.transactions = (await MoneyDb.listTransactionsPaged(query)).rows;
+        await this.updateBudgets();
       } catch (err) {
         this.handleError(
           err,

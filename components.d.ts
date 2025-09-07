@@ -8,6 +8,7 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
+    AccountSelector: typeof import('./src/components/common/money/AccountSelector.vue')['default']
     CategorySelector: typeof import('./src/components/common/CategorySelector.vue')['default']
     ColorSelector: typeof import('./src/components/common/ColorSelector.vue')['default']
     ConfirmDialog: typeof import('./src/components/common/ConfirmDialog.vue')['default']
