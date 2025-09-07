@@ -71,18 +71,18 @@ const isNextDisabled = computed(() =>
 );
 
 // 可见卡片索引计算（用于未来的虚拟化优化）
-const _visibleCardIndices = computed(() => {
-  const indices = [];
-  const total = props.cards.length;
-  const maxVisible = Math.min(props.maxVisibleCards, total);
-
-  for (let i = 0; i < maxVisible; i++) {
-    const index = (selectedIndex.value + i - Math.floor(maxVisible / 2) + total) % total;
-    indices.push(index);
-  }
-
-  return indices;
-});
+// const _visibleCardIndices = computed(() => {
+//   const indices = [];
+//   const total = props.cards.length;
+//   const maxVisible = Math.min(props.maxVisibleCards, total);
+//
+//   for (let i = 0; i < maxVisible; i++) {
+//     const index = (selectedIndex.value + i - Math.floor(maxVisible / 2) + total) % total;
+//     indices.push(index);
+//   }
+//
+//   return indices;
+// });
 
 // 性能优化：使用计算属性缓存卡片位置
 const cardPositions = computed(() => {
@@ -109,22 +109,19 @@ const cardPositions = computed(() => {
       zIndex = 30;
       opacity = 1;
       scale = 1;
-    }
-    else if (absDiff === 1) {
+    } else if (absDiff === 1) {
       left = baseLeft + (adjustedDiff > 0 ? 6 : -6);
       rotation = adjustedDiff > 0 ? 2 : -2;
       zIndex = 25;
       opacity = 0.9;
       scale = 0.96;
-    }
-    else if (absDiff === 2) {
+    } else if (absDiff === 2) {
       left = baseLeft + (adjustedDiff > 0 ? 10 : -10);
       rotation = adjustedDiff > 0 ? 4 : -4;
       zIndex = 20;
       opacity = 0.75;
       scale = 0.92;
-    }
-    else {
+    } else {
       left = baseLeft + (adjustedDiff > 0 ? 14 : -14);
       rotation = adjustedDiff > 0 ? 6 : -6;
       zIndex = 15;
@@ -260,8 +257,7 @@ function handleSwipe() {
 
   if (diff > 0) {
     nextCard();
-  }
-  else {
+  } else {
     previousCard();
   }
 }
@@ -348,8 +344,7 @@ function toggleAutoPlay() {
 
   if (isAutoPlaying.value) {
     stopAutoPlay();
-  }
-  else {
+  } else {
     startAutoPlay();
   }
 }
@@ -367,8 +362,7 @@ watch(() => props.autoPlay, newValue => {
 
   if (newValue) {
     startAutoPlay();
-  }
-  else {
+  } else {
     stopAutoPlay();
   }
 });
@@ -377,8 +371,7 @@ watch(() => props.autoPlay, newValue => {
 watch(() => props.disabled, newValue => {
   if (newValue) {
     stopAutoPlay();
-  }
-  else if (props.autoPlay) {
+  } else if (props.autoPlay) {
     startAutoPlay();
   }
 });

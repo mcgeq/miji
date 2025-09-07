@@ -214,7 +214,7 @@ function handleSubmit() {
     return;
   }
   // 转出校验
-  if (form.value.transactionType === TransactionTypeSchema.enum.Expense && !canWithdraw(fromAccount, amount, fromBalance)) {
+  if (form.value.transactionType === TransactionTypeSchema.enum.Expense && !canWithdraw(amount, fromBalance)) {
     toast.error(fromAccount.type === AccountTypeSchema.enum.CreditCard
       ? '信用卡转出金额不能大于账户余额'
       : '转出金额超过账户余额');
@@ -247,7 +247,7 @@ function parseBalance(account: any, credit: boolean = false): number | null {
 }
 
 // 校验是否可以转出
-function canWithdraw(account: any, amount: number, balance: number): boolean {
+function canWithdraw(amount: number, balance: number): boolean {
   return amount <= balance;
 }
 

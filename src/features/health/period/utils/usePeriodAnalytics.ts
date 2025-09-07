@@ -19,7 +19,7 @@ export interface PeriodAnalytics {
 
   // 预测
   nextPeriodDate: string;
-  fertilityWindow: {start: string; end: string};
+  fertilityWindow: { start: string; end: string };
   ovulationDate: string;
 
   // 健康指标
@@ -91,7 +91,7 @@ export function usePeriodAnalytics(
 
   // 经期长度数组
   const periodLengths = computed(() => {
-    return sortedRecords.value.map((record) => calculatePeriodLength(record));
+    return sortedRecords.value.map(record => calculatePeriodLength(record));
   });
 
   // 基础统计
@@ -175,7 +175,7 @@ export function usePeriodAnalytics(
         index > 0 ? calculateCycleLength(record, records[index - 1]) : 0;
 
       // 获取该周期的日常记录
-      const periodDailyRecords = dailyRecords.filter((daily) => {
+      const periodDailyRecords = dailyRecords.filter(daily => {
         const dailyDate = new Date(daily.date);
         const periodStart = new Date(record.startDate);
         const periodEnd = new Date(record.endDate);
@@ -215,7 +215,7 @@ export function usePeriodAnalytics(
       }
     > = {};
 
-    sortedRecords.value.forEach((record) => {
+    sortedRecords.value.forEach(record => {
       const month = record.startDate.substring(0, 7); // YYYY-MM
 
       if (!stats[month]) {
@@ -231,17 +231,17 @@ export function usePeriodAnalytics(
       stats[month].averagePeriodLength += calculatePeriodLength(record);
 
       // 统计症状
-      const monthlyDailyRecords = dailyRecords.filter((daily) =>
-        daily.date.startsWith(month),
-      );
-
-      monthlyDailyRecords.forEach((daily) => {
-        // 这里可以添加症状统计逻辑
-      });
+      // const monthlyDailyRecords = dailyRecords.filter(daily =>
+      //   daily.date.startsWith(month),
+      // );
+      //
+      // monthlyDailyRecords.forEach(daily => {
+      //   // 这里可以添加症状统计逻辑
+      // });
     });
 
     // 计算平均值
-    Object.keys(stats).forEach((month) => {
+    Object.keys(stats).forEach(month => {
       if (stats[month].periodCount > 0) {
         stats[month].averagePeriodLength /= stats[month].periodCount;
       }
@@ -256,8 +256,7 @@ export function usePeriodAnalytics(
 
     const mean = values.reduce((sum, val) => sum + val, 0) / values.length;
     const variance =
-      values.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) /
-      values.length;
+      values.reduce((sum, val) => sum + (val - mean) ** 2, 0) / values.length;
     const standardDeviation = Math.sqrt(variance);
 
     return mean > 0 ? standardDeviation / mean : 0;
@@ -300,7 +299,7 @@ export function usePeriodAnalytics(
 
   function calculateOvulationDate(
     nextPeriodDate: string,
-    cycleLength: number,
+    _cycleLength: number,
   ): string {
     if (!nextPeriodDate) return '';
 
@@ -315,7 +314,7 @@ export function usePeriodAnalytics(
     start: string;
     end: string;
   } {
-    if (!ovulationDate) return {start: '', end: ''};
+    if (!ovulationDate) return { start: '', end: '' };
 
     const ovulation = new Date(ovulationDate);
     const start = new Date(ovulation);
@@ -355,7 +354,7 @@ export function usePeriodAnalytics(
     return Math.max(0, score);
   }
 
-  function calculateSymptomsScore(dailyRecords: PeriodDailyRecords[]): number {
+  function calculateSymptomsScore(_dailyRecords: PeriodDailyRecords[]): number {
     // 基于症状频率和严重程度计算分数
     // 这里简化处理，实际应该根据具体症状数据
     return 0;
@@ -364,7 +363,7 @@ export function usePeriodAnalytics(
   function identifyRiskFactors(
     cycles: number[],
     periods: number[],
-    dailyRecords: PeriodDailyRecords[],
+    _dailyRecords: PeriodDailyRecords[],
   ): string[] {
     const risks: string[] = [];
 
@@ -449,7 +448,7 @@ export function usePeriodAnalytics(
     // 从日常记录中提取症状信息
     const symptoms = new Set<string>();
 
-    dailyRecords.forEach((record) => {
+    dailyRecords.forEach(record => {
       if (record.notes) {
         // 简单的关键词匹配，实际应该更复杂
         if (record.notes.includes('疼痛') || record.notes.includes('痛')) {
@@ -469,12 +468,12 @@ export function usePeriodAnalytics(
 
   function calculateAverageFlow(dailyRecords: PeriodDailyRecords[]): string {
     const flowLevels = dailyRecords
-      .map((record) => record.flowLevel)
-      .filter((level) => level !== null);
+      .map(record => record.flowLevel)
+      .filter(level => level !== null);
 
     if (flowLevels.length === 0) return '未记录';
 
-    const flowValues = {Light: 1, Medium: 2, Heavy: 3};
+    const flowValues = { Light: 1, Medium: 2, Heavy: 3 };
     const average =
       flowLevels.reduce(
         (sum, level) =>
@@ -489,8 +488,8 @@ export function usePeriodAnalytics(
 
   function extractMoodData(dailyRecords: PeriodDailyRecords[]): string[] {
     const moods = dailyRecords
-      .map((record) => record.mood)
-      .filter((mood) => mood !== null) as string[];
+      .map(record => record.mood)
+      .filter(mood => mood !== null) as string[];
 
     return Array.from(new Set(moods));
   }
@@ -501,16 +500,19 @@ export function usePeriodAnalytics(
     endDate: string,
   ): PeriodCalendarEvent[] {
     const events: PeriodCalendarEvent[] = [];
-    const start = new Date(startDate);
-    const end = new Date(endDate);
 
     // 添加已记录的经期
-    sortedRecords.value.forEach((record) => {
+    sortedRecords.value.forEach(record => {
       const periodStart = new Date(record.startDate);
       const periodEnd = new Date(record.endDate);
+      const dayCount = Math.ceil(
+        (periodEnd.getTime() - periodStart.getTime()) / (1000 * 60 * 60 * 24),
+      );
 
-      for (let d = periodStart; d <= periodEnd; d.setDate(d.getDate() + 1)) {
-        const dateStr = d.toISOString().split('T')[0];
+      for (let i = 0; i <= dayCount; i++) {
+        const currentDate = new Date(periodStart);
+        currentDate.setDate(currentDate.getDate() + i);
+        const dateStr = currentDate.toISOString().split('T')[0];
         if (dateStr >= startDate && dateStr <= endDate) {
           events.push({
             date: dateStr,
@@ -523,12 +525,11 @@ export function usePeriodAnalytics(
 
     // 添加预测的排卵期
     const avgCycleLength = analytics.value.averageCycleLength;
-    sortedRecords.value.forEach((record) => {
+    sortedRecords.value.forEach(record => {
       const ovulationDate = new Date(record.startDate);
       ovulationDate.setDate(
         ovulationDate.getDate() + Math.floor(avgCycleLength / 2),
       );
-
       const dateStr = ovulationDate.toISOString().split('T')[0];
       if (dateStr >= startDate && dateStr <= endDate) {
         events.push({

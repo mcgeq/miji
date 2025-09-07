@@ -9,7 +9,7 @@
 // Modified   By:  mcgeq <mcgeq@outlook.com>
 // -----------------------------------------------------------------------------
 
-import {RepeatPeriod} from '@/schema/common';
+import { RepeatPeriod } from '@/schema/common';
 
 export function toCamelCase<T = any>(obj: any): T {
   if (Array.isArray(obj)) {
@@ -28,7 +28,7 @@ export function toCamelCase<T = any>(obj: any): T {
 }
 
 export const toSnakeCase = (str: string): string =>
-  str.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`);
+  str.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
 
 export const buildRepeatPeriod = (
   input: Partial<RepeatPeriod>,
@@ -72,7 +72,7 @@ export const buildRepeatPeriod = (
         description: input.description ?? '',
       };
     default:
-      return {type: 'None'};
+      return { type: 'None' };
   }
 };
 
@@ -98,7 +98,7 @@ export const getRepeatTypeName = (period: RepeatPeriod): string => {
         ? `每${period.interval}周 (${period.daysOfWeek.join(',')})`
         : `每周 (${period.daysOfWeek.join(',')})`;
     case 'Monthly':
-      const day = period.day === 'last' ? '最后一天' : `第${period.day}天`;
+      const day = period.day === 'Last' ? '最后一天' : `第${period.day}天`;
       return period.interval > 1
         ? `每${period.interval}月，${day}`
         : `每月，${day}`;

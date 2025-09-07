@@ -190,7 +190,7 @@ function handleMonthlyDayChange(event: Event) {
 
   const target = event.target as HTMLSelectElement;
   const day
-    = target.value === 'last' ? ('last' as const) : Number.parseInt(target.value) || 1;
+    = target.value === 'Last' ? ('Last' as const) : Number.parseInt(target.value) || 1;
   const newValue: RepeatPeriod = { ...props.modelValue, day };
   emit('update:modelValue', newValue);
   emit('change', newValue);
