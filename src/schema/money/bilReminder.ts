@@ -57,7 +57,14 @@ export const BilReminderCreateSchema = BilReminderSchema.pick({
 }).strict();
 
 export const BilReminderUpdateSchema = BilReminderCreateSchema.partial();
+export const BilReminderFiltersSchema = BilReminderSchema.omit({
+  serialNum: true,
+  amount: true,
+  createdAt: true,
+  updatedAt: true,
+}).partial();
 
 export type BilReminder = z.infer<typeof BilReminderSchema>;
 export type BilReminderCreate = z.infer<typeof BilReminderCreateSchema>;
 export type BilReminderUpdate = z.infer<typeof BilReminderUpdateSchema>;
+export type BilReminderFilters = z.infer<typeof BilReminderFiltersSchema>;

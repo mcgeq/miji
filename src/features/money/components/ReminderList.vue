@@ -13,6 +13,8 @@ import { getRepeatTypeName } from '@/utils/common';
 import { DateUtils } from '@/utils/date';
 import { formatCurrency } from '../utils/money';
 import type { BilReminder } from '@/schema/money';
+import { useSort } from '@/composables/useSortable';
+import { SortDirection } from '@/schema/common';
 
 interface Props {
   reminders: BilReminder[];
@@ -28,6 +30,14 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n();
+const { sortOptions } = useSort({
+  sortBy: undefined,
+  sortDir: SortDirection.Desc,
+  desc: true,
+  customOrderBy: undefined,
+});
+
+
 // 过滤器状态
 const filters = ref({
   status: '',
