@@ -1,26 +1,9 @@
 use chrono::{DateTime, FixedOffset};
 use common::utils::{date::DateUtils, uuid::McgUuid};
+use macros::{set_active_value_opt, set_active_value_t};
 use sea_orm::{ActiveValue, prelude::Decimal};
 use serde::{Deserialize, Serialize};
 use validator::Validate;
-
-macro_rules! set_if_some {
-    // 基础版本：直接赋值 Some(value)
-    ($model:expr, $self:expr, $field:ident) => {{
-        if let Some(value) = $self.$field {
-            $model.$field = ActiveValue::Set(value);
-        }
-    }};
-}
-
-macro_rules! set_if_some_v {
-    // 基础版本：直接赋值 Some(value)
-    ($model:expr, $self:expr, $field:ident) => {{
-        if let Some(value) = $self.$field {
-            $model.$field = ActiveValue::Set(Some(value));
-        }
-    }};
-}
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 #[serde(rename_all = "camelCase")]
@@ -167,24 +150,24 @@ impl TryFrom<BilReminderUpdate> for entity::bil_reminder::ActiveModel {
 
 impl BilReminderUpdate {
     pub fn apply_to_model(self, model: &mut entity::bil_reminder::ActiveModel) {
-        set_if_some!(model, self, name);
-        set_if_some!(model, self, enabled);
-        set_if_some!(model, self, r#type);
-        set_if_some!(model, self, description);
-        set_if_some!(model, self, category);
-        set_if_some!(model, self, amount);
-        set_if_some!(model, self, currency);
-        set_if_some!(model, self, due_at);
-        set_if_some!(model, self, bill_date);
-        set_if_some!(model, self, remind_date);
-        set_if_some!(model, self, repeat_period);
-        set_if_some!(model, self, is_paid);
-        set_if_some!(model, self, priority);
-        set_if_some!(model, self, is_deleted);
-        set_if_some_v!(model, self, advance_unit);
-        set_if_some_v!(model, self, advance_value);
-        set_if_some_v!(model, self, related_transaction_serial_num);
-        set_if_some_v!(model, self, color);
+        set_active_value_t!(model, self, name);
+        set_active_value_t!(model, self, enabled);
+        set_active_value_t!(model, self, r#type);
+        set_active_value_t!(model, self, description);
+        set_active_value_t!(model, self, category);
+        set_active_value_t!(model, self, amount);
+        set_active_value_t!(model, self, currency);
+        set_active_value_t!(model, self, due_at);
+        set_active_value_t!(model, self, bill_date);
+        set_active_value_t!(model, self, remind_date);
+        set_active_value_t!(model, self, repeat_period);
+        set_active_value_t!(model, self, is_paid);
+        set_active_value_t!(model, self, priority);
+        set_active_value_t!(model, self, is_deleted);
+        set_active_value_opt!(model, self, advance_unit);
+        set_active_value_opt!(model, self, advance_value);
+        set_active_value_opt!(model, self, related_transaction_serial_num);
+        set_active_value_opt!(model, self, color);
         model.updated_at = ActiveValue::Set(Some(DateUtils::local_now()));
     }
 }

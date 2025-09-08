@@ -1,8 +1,10 @@
 pub mod account;
 pub mod account_hooks;
+pub mod bil_reminder;
+pub mod bil_reminder_hooks;
+pub mod budget;
+pub mod budget_hook;
 pub mod currency;
 pub mod currency_hooks;
 pub mod transaction;
 pub mod transaction_hooks;
-pub mod budget;
-pub mod budget_hook;

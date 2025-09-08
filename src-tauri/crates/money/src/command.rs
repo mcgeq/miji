@@ -12,6 +12,7 @@ use crate::{
             AccountBalanceSummary, AccountResponseWithRelations, CreateAccountRequest,
             UpdateAccountRequest, convert_to_account, convert_to_response, tuple_to_response,
         },
+        bil_reminder::{BilReminder, BilReminderCreate, BilReminderUpdate},
         budget::{Budget, BudgetCreate, BudgetUpdate},
         currency::{CreateCurrencyRequest, CurrencyResponse, UpdateCurrencyRequest},
         transactions::{
@@ -21,6 +22,7 @@ use crate::{
     },
     services::{
         account::{AccountFilter, get_account_service},
+        bil_reminder::{BilReminderFilters, get_bil_reminder_service},
         budget::{BudgetFilter, get_budget_service},
         currency::{CurrencyFilter, get_currency_service},
         transaction::{TransactionFilter, get_transaction_service},
@@ -521,4 +523,95 @@ pub async fn budget_list_paged(
     ))
 }
 // end   预算相关
+// ============================================================================
+
+// start 提醒
+// ============================================================================
+#[tauri::command]
+pub async fn bil_reminder_get(
+    state: State<'_, AppState>,
+    serial_num: String,
+) -> Result<ApiResponse<BilReminder>, String> {
+    let service = get_bil_reminder_service();
+    Ok(ApiResponse::from_result(
+        service
+            .get_by_id(&state.db, serial_num)
+            .await
+            .map(BilReminder::from),
+    ))
+}
+
+#[tauri::command]
+pub async fn bil_reminder_create(
+    state: State<'_, AppState>,
+    data: BilReminderCreate,
+) -> Result<ApiResponse<BilReminder>, String> {
+    let service = get_bil_reminder_service();
+    Ok(ApiResponse::from_result(
+        service.create(&state.db, data).await.map(BilReminder::from),
+    ))
+}
+
+#[tauri::command]
+pub async fn bil_reminder_update(
+    state: State<'_, AppState>,
+    serial_num: String,
+    data: BilReminderUpdate,
+) -> Result<ApiResponse<BilReminder>, String> {
+    let service = get_bil_reminder_service();
+    Ok(ApiResponse::from_result(
+        service
+            .update(&state.db, serial_num, data)
+            .await
+            .map(BilReminder::from),
+    ))
+}
+
+#[tauri::command]
+pub async fn bil_reminder_delete(
+    state: State<'_, AppState>,
+    serial_num: String,
+) -> Result<ApiResponse<()>, String> {
+    let service = get_bil_reminder_service();
+    Ok(ApiResponse::from_result(
+        service.delete(&state.db, serial_num).await,
+    ))
+}
+
+#[tauri::command]
+pub async fn bil_reminder_list(
+    state: State<'_, AppState>,
+    filter: BilReminderFilters,
+) -> Result<ApiResponse<Vec<BilReminder>>, String> {
+    let service = get_bil_reminder_service();
+
+    Ok(ApiResponse::from_result(
+        service
+            .list_with_filter(&state.db, filter)
+            .await
+            .map(|models| models.into_iter().map(BilReminder::from).collect()),
+    ))
+}
+
+#[tauri::command]
+pub async fn bil_reminder_list_paged(
+    state: State<'_, AppState>,
+    query: PagedQuery<BilReminderFilters>,
+) -> Result<ApiResponse<PagedResult<BilReminder>>, String> {
+    let service = get_bil_reminder_service();
+    Ok(ApiResponse::from_result(
+        service
+            .list_paged(&state.db, query)
+            .await
+            .map(|paged| PagedResult {
+                rows: paged.rows.into_iter().map(BilReminder::from).collect(),
+                total_count: paged.total_count,
+                current_page: paged.current_page,
+                page_size: paged.page_size,
+                total_pages: paged.total_pages,
+            }),
+    ))
+}
+// en
+// end 提醒
 // ============================================================================

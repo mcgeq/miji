@@ -17,6 +17,7 @@ members = [
   "entity",
   "crates/auth",
   "localize_model_derive",
+  "macros",
 ]
 
 [lib]
@@ -90,6 +91,7 @@ common = { path = "./common" }
 miji_derive = { path = "./miji_derive" }
 entity = { path = "./entity" }
 localize_model_derive = { path = "./localize_model_derive" }
+macros = { path = "./macros" }
 
 [dependencies]
 tauri = { workspace = true }
