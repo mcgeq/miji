@@ -79,7 +79,7 @@ impl MigrationTrait for Migration {
                     )
                     .col(
                         ColumnDef::new(BilReminder::RepeatPeriod)
-                            .string()
+                            .json_binary()
                             .not_null(),
                     )
                     .col(

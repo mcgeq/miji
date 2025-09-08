@@ -546,6 +546,7 @@ pub async fn bil_reminder_create(
     state: State<'_, AppState>,
     data: BilReminderCreate,
 ) -> Result<ApiResponse<BilReminder>, String> {
+    info!("bil_reminder_create {:?}", data);
     let service = get_bil_reminder_service();
     Ok(ApiResponse::from_result(
         service.create(&state.db, data).await.map(BilReminder::from),

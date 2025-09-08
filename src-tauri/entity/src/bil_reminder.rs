@@ -22,7 +22,8 @@ pub struct Model {
     pub due_at: DateTimeWithTimeZone,
     pub bill_date: DateTimeWithTimeZone,
     pub remind_date: DateTimeWithTimeZone,
-    pub repeat_period: String,
+    #[sea_orm(column_type = "JsonBinary")]
+    pub repeat_period: Json,
     pub is_paid: bool,
     pub priority: String,
     pub advance_value: Option<i32>,

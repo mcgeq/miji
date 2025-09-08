@@ -1,5 +1,7 @@
 <script setup lang="ts">
+import * as _ from 'es-toolkit/compat';
 import { Check, X } from 'lucide-vue-next';
+import z from 'zod';
 import ColorSelector from '@/components/common/ColorSelector.vue';
 import CurrencySelector from '@/components/common/money/CurrencySelector.vue';
 import PrioritySelector from '@/components/common/PrioritySelector.vue';
@@ -12,8 +14,8 @@ import {
   PrioritySchema,
   ReminderTypeSchema,
 } from '@/schema/common';
+import { BilReminderCreateSchema, BilReminderUpdateSchema } from '@/schema/money';
 import { DateUtils } from '@/utils/date';
-import { uuid } from '@/utils/uuid';
 import type { Priority, RepeatPeriod } from '@/schema/common';
 import type { BilReminder } from '@/schema/money';
 
@@ -354,19 +356,90 @@ async function saveReminder() {
   isSubmitting.value = true;
 
   try {
-    const reminderData = {
-      ...form,
-      serialNum: props.reminder?.serialNum || uuid(38),
-      createdAt: props.reminder?.createdAt || DateUtils.getLocalISODateTimeWithOffset(),
-      updatedAt: DateUtils.getLocalISODateTimeWithOffset(),
-      advanceValue: form.advanceValue || 0, // 确保不为undefined
+    const defaultValues: Record<string, unknown> = {
+      name: null,
+      enabled: true,
+      type: null,
+      description: null,
+      category: null,
+      amount: 0,
+      currency: null,
+      dueDate: null,
+      billDate: null,
+      remindDate: null,
+      repeatPeriod: null,
+      isPaid: false,
+      priority: null,
+      advanceValue: 0,
+      advanceUnit: null,
+      color: null,
+      relatedTransactionSerialNum: null,
     };
-
-    emit('save', reminderData);
+    const formattedData = _.mapValues({
+      name: form.name,
+      enabled: form.enabled,
+      type: form.type,
+      description: form.description,
+      category: form.category,
+      amount: form.amount,
+      currency: form.currency.code,
+      dueDate: form.dueDate,
+      billDate: form.billDate,
+      remindDate: form.remindDate,
+      repeatPeriod: form.repeatPeriod,
+      isPaid: form.isPaid,
+      priority: form.priority,
+      advanceValue: form.advanceValue ?? 0,
+      advanceUnit: form.advanceUnit,
+      color: form.color,
+      relatedTransactionSerialNum: form.relatedTransactionSerialNum,
+    }, (value: unknown, key: string) => {
+      if (key.endsWith('Date')) {
+        if (value) {
+          const dateValue = typeof value === 'string' ?
+            value :
+            value instanceof Date ?
+                value.toISOString() :
+                String(value);
+          return DateUtils.toLocalISOFromDateInput(dateValue);
+        }
+        return null;
+      }
+      // 应用默认值
+      return _.defaultTo(value, defaultValues[key] ?? null);
+    });
+    if (props.reminder) {
+      const changes = _.omitBy(formattedData, (value: unknown, key: string) =>
+        _.isEqual(value, _.get(props.reminder, key)));
+      // 特殊处理需要序列化为JSON的字段
+      const jsonFields = [
+        'repeatPeriod',
+      ];
+      const serializedChanges = _.mapValues(changes, (value, key) => {
+        if (jsonFields.includes(key) && value !== null && value !== undefined) {
+          try {
+            return JSON.stringify(value);
+          } catch {
+            return value;
+          }
+        }
+        return value;
+      });
+      if (!_.isEmpty(serializedChanges)) {
+        const bilReminderUpdate = BilReminderCreateSchema.parse(changes);
+        emit('update', props.reminder.serialNum, bilReminderUpdate);
+      }
+    } else {
+      const createBilReminder = BilReminderUpdateSchema.parse(formattedData);
+      emit('save', createBilReminder);
+    }
     closeModal();
-  } catch (error) {
-    console.error(t('messages.saveFailed'), error);
-    // 可以添加错误提示
+  } catch (err: unknown) {
+    if (err instanceof z.ZodError) {
+      console.error('Validation failed:', err.issues);
+    } else {
+      console.error('Unexpected error:', err);
+    }
   } finally {
     isSubmitting.value = false;
   }

@@ -834,7 +834,8 @@
       "Birthday": "如：生日礼物准备、庆祝计划等",
       "Travel": "如：行程安排、注意事项、携带物品等",
       "default": "请输入提醒的详细描述信息",
-      "Notification": "提醒描述（可选）"
+      "Notification": "提醒描述（可选）",
+      "ResetReminder": "描述"
     },
     "budgetDescription": "预算描述（可选）",
     "amountOptional": "0.00（可选）"
