@@ -1,12 +1,10 @@
 import { resolve } from 'node:path';
 import { FileSystemIconLoader } from '@iconify/utils/lib/loader/node-loaders';
-import presetAttributify from '@unocss/preset-attributify';
 import presetIcons from '@unocss/preset-icons';
 import presetWebFonts from '@unocss/preset-web-fonts';
 import { createLocalFontProcessor } from '@unocss/preset-web-fonts/local';
-import presetWind3 from '@unocss/preset-wind3';
 import { defineConfig } from '@unocss/vite';
-import { transformerDirectives, transformerVariantGroup } from 'unocss';
+import { presetAttributify, presetWind4, transformerDirectives, transformerVariantGroup } from 'unocss';
 
 const iconDirectory = resolve(__dirname, 'icons');
 
@@ -161,18 +159,18 @@ export default defineConfig({
       'wh-8 bg-white rounded cursor-pointer flex-center transition-all text-xs hover:bg-gray-50',
     ],
     // filter
-    ['filter-flex-wrap', 'flex p-2 border border-gray-200 rounded-md items-center gap-2']
+    ['filter-flex-wrap', 'flex p-2 border border-gray-200 rounded-md items-center gap-2'],
   ],
   rules: [
     [/^scrollbar-width-(.+)$/, ([, c]) => ({ 'scrollbar-width': c })],
     [/^-ms-overflow-style-(.+)$/, ([, c]) => ({ '-ms-overflow-style': c })],
   ],
   presets: [
-    presetWind3(),
+    presetWind4(),
     presetAttributify(),
     presetIcons({
       extraProperties: {
-        display: 'inline-block',
+        'display': 'inline-block',
         'vertical-align': 'middle',
       },
       collections: {
