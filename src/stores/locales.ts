@@ -80,8 +80,7 @@ function updateHTMLLang(localeCode: string): void {
     if (typeof document !== 'undefined') {
       document.documentElement.lang = localeCode;
     }
-  }
-  catch (error) {
+  } catch (error) {
     console.error('Failed to update HTML lang attribute:', error);
   }
 }
@@ -95,8 +94,7 @@ async function loadLocaleMessages(localeCode: string): Promise<void> {
     // const messages = await import(`@/locales/${localeCode}.json`)
     // 设置到 i18n 实例中
     safeLog(`Loading locale messages for: ${localeCode}`);
-  }
-  catch (error) {
+  } catch (error) {
     console.error(`Failed to load locale messages for ${localeCode}:`, error);
   }
 }
@@ -116,8 +114,7 @@ export async function startLocaleStore(): Promise<void> {
       isInitialized = true;
       safeLog('Locale store initialized successfully');
     }
-  }
-  catch (error) {
+  } catch (error) {
     console.error('Failed to start locale store:', error);
     // 设置默认值
     locale.value = { currentLocale: DEFAULT_LOCALE };
@@ -156,8 +153,7 @@ export function getBrowserLocale(): string {
     );
 
     return matchedLocale?.code || DEFAULT_LOCALE;
-  }
-  catch (error) {
+  } catch (error) {
     console.error('Failed to get browser locale:', error);
     return DEFAULT_LOCALE;
   }
@@ -189,8 +185,7 @@ export function updateLocale(newLocale: string | null): void {
     updateHTMLLang(targetLocale);
 
     safeLog(`Locale updated to: ${targetLocale}`);
-  }
-  catch (error) {
+  } catch (error) {
     console.error('Failed to update locale:', error);
   }
 }
@@ -286,12 +281,10 @@ export const useLocaleStore = defineStore('locale', () => {
 
       safeLog(`Locale set to: ${newLocale}`);
       return true;
-    }
-    catch (error) {
+    } catch (error) {
       console.error('Failed to set locale:', error);
       return false;
-    }
-    finally {
+    } finally {
       isLoading.value = false;
     }
   };
@@ -311,20 +304,17 @@ export const useLocaleStore = defineStore('locale', () => {
       if (savedLocale && isSupportedLocale(savedLocale)) {
         // 语言已经通过 startLocaleStore 加载
         updateHTMLLang(savedLocale);
-      }
-      else {
+      } else {
         // 尝试从浏览器获取语言设置
         const browserLocale = getBrowserLocale();
         await setLocale(browserLocale);
       }
 
       safeLog('Pinia locale store initialized successfully');
-    }
-    catch (error) {
+    } catch (error) {
       console.error('Pinia locale store initialization failed:', error);
       await setLocale(DEFAULT_LOCALE);
-    }
-    finally {
+    } finally {
       isLoading.value = false;
       isInitializing.value = false;
     }

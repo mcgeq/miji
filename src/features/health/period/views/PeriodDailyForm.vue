@@ -219,11 +219,9 @@ async function handleSubmit() {
     };
 
     emit('submit', record);
-  }
-  catch (error) {
+  } catch (error) {
     Lg.e('Period', 'Failed to save daily record:', error);
-  }
-  finally {
+  } finally {
     loading.value = false;
   }
 }
@@ -259,8 +257,7 @@ function initializeForm() {
       contraceptionMethod: props.record.contraceptionMethod ?? 'None', // Add this line
       notes: props.record.notes || '',
     };
-  }
-  else if (props.date) {
+  } else if (props.date) {
     // 尝试加载该日期的现有记录
     const existingRecord = periodStore.getDailyRecord(props.date);
     if (existingRecord) {
@@ -309,8 +306,8 @@ defineExpose({
 </script>
 
 <template>
-  <div class="period-daily-form card-base p-6">
-    <h2 class="mb-6 text-lg text-gray-900 font-semibold dark:text-white">
+  <div class="period-daily-form p-6 card-base">
+    <h2 class="text-lg text-gray-900 font-semibold mb-6 dark:text-white">
       {{ isEditing ? t('period.forms.editDaily') : t('period.forms.recordDaily') }}
     </h2>
 
@@ -321,7 +318,7 @@ defineExpose({
           <CalendarCheck class="wh-5" />
         </label>
         <input
-          v-model="formData.date" type="date" class="w-3/4 modal-input-select" :max="today" required
+          v-model="formData.date" type="date" class="modal-input-select w-3/4" :max="today" required
           :disabled="isEditing"
         >
         <div v-if="getFieldErrors('date').length > 0" class="form-error">
@@ -334,9 +331,9 @@ defineExpose({
         <label class="form-label" :title="t('period.fields.flowLevel')">
           <Droplet class="wh-5" />
         </label>
-        <div class="w-3/4 flex gap-2">
+        <div class="flex gap-2 w-3/4">
           <button
-            v-for="level in flowLevels" :key="level.value" type="button" class="flex-1 border rounded-lg p-3 transition-all"
+            v-for="level in flowLevels" :key="level.value" type="button" class="p-3 border rounded-lg flex-1 transition-all"
             :class="[
               formData.flowLevel === level.value
                 ? 'border-red-500 bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400'
@@ -355,9 +352,9 @@ defineExpose({
         <label class="form-label" :title="t('period.fields.mood')">
           <Smile class="wh-5" />
         </label>
-        <div class="grid grid-cols-6 gap-2">
+        <div class="gap-2 grid grid-cols-6">
           <button
-            v-for="mood in moods" :key="mood.value" type="button" class="border rounded-lg p-1 text-center transition-all"
+            v-for="mood in moods" :key="mood.value" type="button" class="p-1 text-center border rounded-lg transition-all"
             :class="[
               formData.mood === mood.value
                 ? 'border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
@@ -380,7 +377,7 @@ defineExpose({
           <div class="flex gap-2">
             <button
               v-for="intensity in exerciseIntensities" :key="intensity.value" type="button"
-              class="flex-1 justify-center border rounded-lg p-1 transition-all"
+              class="p-1 border rounded-lg flex-1 transition-all justify-center"
               :class="[
                 formData.exerciseIntensity === intensity.value
                   ? 'border-green-500 bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-400'
@@ -401,7 +398,7 @@ defineExpose({
           <Utensils class="wh-5" />
         </label>
         <textarea
-          v-model="formData.diet" class="h-20 w-full resize-none input-base"
+          v-model="formData.diet" class="input-base h-20 w-full resize-none"
           :placeholder="t('period.placeholders.dietRecord')" required
         />
         <div v-if="getFieldErrors('diet').length > 0" class="form-error">
@@ -420,10 +417,10 @@ defineExpose({
             :placeholder="t('period.placeholders.waterIntakeExample')" min="0" max="5000" step="100"
           >
         </div>
-        <div class="flex items-center gap-4">
+        <div class="flex gap-4 items-center">
           <div class="flex gap-1">
             <button
-              v-for="preset in waterPresets" :key="preset" type="button" class="btn-secondary px-2 py-1 text-sm"
+              v-for="preset in waterPresets" :key="preset" type="button" class="text-sm btn-secondary px-2 py-1"
               @click="formData.waterIntake = preset"
             >
               {{ preset }}ml
@@ -440,14 +437,14 @@ defineExpose({
         <label class="form-label w-1/8" :title="t('period.fields.sleepHours')">
           <BedDouble class="wh-5" />
         </label>
-        <div class="flex items-center gap-1">
+        <div class="flex gap-1 items-center">
           <input
-            v-model.number="formData.sleepHours" type="number" class="flex-1 input-base"
+            v-model.number="formData.sleepHours" type="number" class="input-base flex-1"
             :placeholder="t('period.placeholders.sleepExample')" min="0" max="24" step="0.5"
           >
           <div class="flex gap-1">
             <button
-              v-for="preset in sleepPresets" :key="preset" type="button" class="btn-secondary px-3 py-1 text-sm"
+              v-for="preset in sleepPresets" :key="preset" type="button" class="text-sm btn-secondary px-3 py-1"
               @click="formData.sleepHours = preset"
             >
               {{ preset }}h
@@ -466,11 +463,11 @@ defineExpose({
             <VenusAndMars class="wh-5" />
           </label>
           <div class="flex gap-4">
-            <label class="flex cursor-pointer items-center gap-2">
+            <label class="flex gap-2 cursor-pointer items-center">
               <input v-model="formData.sexualActivity" type="radio" :value="true" class="radio-base">
               <span class="text-sm">{{ t('common.misc.yes') }}</span>
             </label>
-            <label class="flex cursor-pointer items-center gap-2">
+            <label class="flex gap-2 cursor-pointer items-center">
               <input v-model="formData.sexualActivity" type="radio" :value="false" class="radio-base">
               <span class="text-sm">{{ t('common.misc.no') }}</span>
             </label>
@@ -478,14 +475,14 @@ defineExpose({
         </div>
 
         <!-- 避孕措施选项 - 仅在有性生活时显示 -->
-        <div v-if="formData.sexualActivity" class="ml-6 border-l-2 border-gray-200 pl-4 space-y-2 dark:border-gray-600">
-          <div class="mb-1 text-xs text-gray-600 font-medium dark:text-gray-400">
+        <div v-if="formData.sexualActivity" class="ml-6 pl-4 border-l-2 border-gray-200 space-y-2 dark:border-gray-600">
+          <div class="text-xs text-gray-600 font-medium mb-1 dark:text-gray-400">
             {{ t('period.fields.contraceptionMethod') }}
           </div>
-          <div class="grid grid-cols-3 gap-1">
+          <div class="gap-1 grid grid-cols-3">
             <label
               v-for="method in contraceptionMethods" :key="method.value" :title="method.label"
-              class="flex cursor-pointer items-center justify-center border rounded p-1.5 transition-colors" :class="[
+              class="p-1.5 border rounded flex cursor-pointer transition-colors items-center justify-center" :class="[
                 formData.contraceptionMethod === method.value
                   ? 'border-purple-500 bg-purple-50 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'
                   : 'border-gray-300 hover:border-gray-400 dark:border-gray-600 dark:hover:border-gray-500',
@@ -503,10 +500,10 @@ defineExpose({
       <!-- 备注 -->
       <div class="form-group">
         <textarea
-          v-model="formData.notes" class="h-20 w-full resize-none input-base"
+          v-model="formData.notes" class="input-base h-20 w-full resize-none"
           :placeholder="t('period.placeholders.notesPlaceholder')" maxlength="500"
         />
-        <div class="mt-1 flex justify-between text-sm text-gray-500">
+        <div class="text-sm text-gray-500 mt-1 flex justify-between">
           <div v-if="getFieldErrors('notes').length > 0" class="form-error">
             {{ getFieldErrors('notes')[0] }}
           </div>
@@ -517,7 +514,7 @@ defineExpose({
       </div>
 
       <!-- 操作按钮 -->
-      <div class="flex justify-center pt-2 space-x-6">
+      <div class="pt-2 flex justify-center space-x-6">
         <button type="button" class="btn-secondary" :disabled="loading" @click="$emit('cancel')">
           <X class="wh-5" />
         </button>

@@ -155,64 +155,64 @@ function resetToDefault() {
   <div class="max-w-4xl">
     <!-- 数据隐私 -->
     <div class="mb-10">
-      <h3 class="mb-6 border-b-2 border-slate-200 pb-2 text-xl text-slate-800 font-semibold">
+      <h3 class="text-xl text-slate-800 font-semibold mb-6 pb-2 border-b-2 border-slate-200">
         数据隐私
       </h3>
 
       <div class="space-y-6">
-        <div class="flex flex-col border-b border-slate-100 py-6 sm:flex-row sm:items-center sm:justify-between">
+        <div class="py-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between">
           <div class="mb-4 sm:mb-0">
-            <label class="mb-1 block text-slate-700 font-medium">数据收集</label>
+            <label class="text-slate-700 font-medium mb-1 block">数据收集</label>
             <p class="text-sm text-slate-500">
               允许收集匿名使用数据以改善产品
             </p>
           </div>
           <div class="sm:ml-8">
-            <label class="relative inline-flex cursor-pointer items-center">
+            <label class="inline-flex cursor-pointer items-center relative">
               <input
                 v-model="dataCollection"
                 type="checkbox"
                 class="peer sr-only"
               >
-              <div class="peer relative h-6 w-12 rounded-full bg-slate-300 after:absolute after:left-0.5 after:top-0.5 after:h-5 after:w-5 after:rounded-full after:bg-white peer-checked:bg-blue-500 peer-focus:ring-2 peer-focus:ring-blue-500 after:transition-all after:content-[''] peer-checked:after:translate-x-6 peer-checked:after:border-white" />
+              <div class="peer rounded-full bg-slate-300 h-6 w-12 relative after:rounded-full after:bg-white peer-checked:bg-blue-500 after:h-5 after:w-5 after:content-[''] peer-focus:ring-2 peer-focus:ring-blue-500 after:transition-all after:left-0.5 after:top-0.5 after:absolute peer-checked:after:border-white peer-checked:after:translate-x-6" />
             </label>
           </div>
         </div>
 
-        <div class="flex flex-col border-b border-slate-100 py-6 sm:flex-row sm:items-center sm:justify-between">
+        <div class="py-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between">
           <div class="mb-4 sm:mb-0">
-            <label class="mb-1 block text-slate-700 font-medium">使用分析</label>
+            <label class="text-slate-700 font-medium mb-1 block">使用分析</label>
             <p class="text-sm text-slate-500">
               帮助我们了解功能使用情况
             </p>
           </div>
           <div class="sm:ml-8">
-            <label class="relative inline-flex cursor-pointer items-center">
+            <label class="inline-flex cursor-pointer items-center relative">
               <input
                 v-model="analytics"
                 type="checkbox"
                 class="peer sr-only"
               >
-              <div class="peer relative h-6 w-12 rounded-full bg-slate-300 after:absolute after:left-0.5 after:top-0.5 after:h-5 after:w-5 after:rounded-full after:bg-white peer-checked:bg-blue-500 peer-focus:ring-2 peer-focus:ring-blue-500 after:transition-all after:content-[''] peer-checked:after:translate-x-6 peer-checked:after:border-white" />
+              <div class="peer rounded-full bg-slate-300 h-6 w-12 relative after:rounded-full after:bg-white peer-checked:bg-blue-500 after:h-5 after:w-5 after:content-[''] peer-focus:ring-2 peer-focus:ring-blue-500 after:transition-all after:left-0.5 after:top-0.5 after:absolute peer-checked:after:border-white peer-checked:after:translate-x-6" />
             </label>
           </div>
         </div>
 
-        <div class="flex flex-col border-b border-slate-100 py-6 sm:flex-row sm:items-center sm:justify-between">
+        <div class="py-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between">
           <div class="mb-4 sm:mb-0">
-            <label class="mb-1 block text-slate-700 font-medium">崩溃报告</label>
+            <label class="text-slate-700 font-medium mb-1 block">崩溃报告</label>
             <p class="text-sm text-slate-500">
               自动发送崩溃报告以帮助修复问题
             </p>
           </div>
           <div class="sm:ml-8">
-            <label class="relative inline-flex cursor-pointer items-center">
+            <label class="inline-flex cursor-pointer items-center relative">
               <input
                 v-model="crashReports"
                 type="checkbox"
                 class="peer sr-only"
               >
-              <div class="peer relative h-6 w-12 rounded-full bg-slate-300 after:absolute after:left-0.5 after:top-0.5 after:h-5 after:w-5 after:rounded-full after:bg-white peer-checked:bg-blue-500 peer-focus:ring-2 peer-focus:ring-blue-500 after:transition-all after:content-[''] peer-checked:after:translate-x-6 peer-checked:after:border-white" />
+              <div class="peer rounded-full bg-slate-300 h-6 w-12 relative after:rounded-full after:bg-white peer-checked:bg-blue-500 after:h-5 after:w-5 after:content-[''] peer-focus:ring-2 peer-focus:ring-blue-500 after:transition-all after:left-0.5 after:top-0.5 after:absolute peer-checked:after:border-white peer-checked:after:translate-x-6" />
             </label>
           </div>
         </div>
@@ -221,14 +221,14 @@ function resetToDefault() {
 
     <!-- 个人信息 -->
     <div class="mb-10">
-      <h3 class="mb-6 border-b-2 border-slate-200 pb-2 text-xl text-slate-800 font-semibold">
+      <h3 class="text-xl text-slate-800 font-semibold mb-6 pb-2 border-b-2 border-slate-200">
         个人信息
       </h3>
 
       <div class="space-y-6">
-        <div class="flex flex-col border-b border-slate-100 py-6 sm:flex-row sm:items-center sm:justify-between">
+        <div class="py-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between">
           <div class="mb-4 sm:mb-0">
-            <label class="mb-1 block text-slate-700 font-medium">个人资料可见性</label>
+            <label class="text-slate-700 font-medium mb-1 block">个人资料可见性</label>
             <p class="text-sm text-slate-500">
               控制谁可以查看您的个人资料
             </p>
@@ -236,7 +236,7 @@ function resetToDefault() {
           <div class="sm:ml-8">
             <select
               v-model="profileVisibility"
-              class="w-full border border-slate-300 rounded-lg bg-white px-4 py-2 transition-all duration-200 sm:w-40 focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
+              class="px-4 py-2 border border-slate-300 rounded-lg bg-white w-full transition-all duration-200 focus:border-blue-500 sm:w-40 focus:ring-2 focus:ring-blue-500"
             >
               <option value="public">
                 公开
@@ -251,59 +251,59 @@ function resetToDefault() {
           </div>
         </div>
 
-        <div class="flex flex-col border-b border-slate-100 py-6 sm:flex-row sm:items-center sm:justify-between">
+        <div class="py-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between">
           <div class="mb-4 sm:mb-0">
-            <label class="mb-1 block text-slate-700 font-medium">在线状态</label>
+            <label class="text-slate-700 font-medium mb-1 block">在线状态</label>
             <p class="text-sm text-slate-500">
               显示您的在线/离线状态
             </p>
           </div>
           <div class="sm:ml-8">
-            <label class="relative inline-flex cursor-pointer items-center">
+            <label class="inline-flex cursor-pointer items-center relative">
               <input
                 v-model="showOnlineStatus"
                 type="checkbox"
                 class="peer sr-only"
               >
-              <div class="peer relative h-6 w-12 rounded-full bg-slate-300 after:absolute after:left-0.5 after:top-0.5 after:h-5 after:w-5 after:rounded-full after:bg-white peer-checked:bg-blue-500 peer-focus:ring-2 peer-focus:ring-blue-500 after:transition-all after:content-[''] peer-checked:after:translate-x-6 peer-checked:after:border-white" />
+              <div class="peer rounded-full bg-slate-300 h-6 w-12 relative after:rounded-full after:bg-white peer-checked:bg-blue-500 after:h-5 after:w-5 after:content-[''] peer-focus:ring-2 peer-focus:ring-blue-500 after:transition-all after:left-0.5 after:top-0.5 after:absolute peer-checked:after:border-white peer-checked:after:translate-x-6" />
             </label>
           </div>
         </div>
 
-        <div class="flex flex-col border-b border-slate-100 py-6 sm:flex-row sm:items-center sm:justify-between">
+        <div class="py-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between">
           <div class="mb-4 sm:mb-0">
-            <label class="mb-1 block text-slate-700 font-medium">最后活跃时间</label>
+            <label class="text-slate-700 font-medium mb-1 block">最后活跃时间</label>
             <p class="text-sm text-slate-500">
               允许他人查看您最后的活跃时间
             </p>
           </div>
           <div class="sm:ml-8">
-            <label class="relative inline-flex cursor-pointer items-center">
+            <label class="inline-flex cursor-pointer items-center relative">
               <input
                 v-model="showLastActive"
                 type="checkbox"
                 class="peer sr-only"
               >
-              <div class="peer relative h-6 w-12 rounded-full bg-slate-300 after:absolute after:left-0.5 after:top-0.5 after:h-5 after:w-5 after:rounded-full after:bg-white peer-checked:bg-blue-500 peer-focus:ring-2 peer-focus:ring-blue-500 after:transition-all after:content-[''] peer-checked:after:translate-x-6 peer-checked:after:border-white" />
+              <div class="peer rounded-full bg-slate-300 h-6 w-12 relative after:rounded-full after:bg-white peer-checked:bg-blue-500 after:h-5 after:w-5 after:content-[''] peer-focus:ring-2 peer-focus:ring-blue-500 after:transition-all after:left-0.5 after:top-0.5 after:absolute peer-checked:after:border-white peer-checked:after:translate-x-6" />
             </label>
           </div>
         </div>
 
-        <div class="flex flex-col border-b border-slate-100 py-6 sm:flex-row sm:items-center sm:justify-between">
+        <div class="py-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between">
           <div class="mb-4 sm:mb-0">
-            <label class="mb-1 block text-slate-700 font-medium">搜索引擎索引</label>
+            <label class="text-slate-700 font-medium mb-1 block">搜索引擎索引</label>
             <p class="text-sm text-slate-500">
               允许搜索引擎索引您的公开资料
             </p>
           </div>
           <div class="sm:ml-8">
-            <label class="relative inline-flex cursor-pointer items-center">
+            <label class="inline-flex cursor-pointer items-center relative">
               <input
                 v-model="searchIndexing"
                 type="checkbox"
                 class="peer sr-only"
               >
-              <div class="peer relative h-6 w-12 rounded-full bg-slate-300 after:absolute after:left-0.5 after:top-0.5 after:h-5 after:w-5 after:rounded-full after:bg-white peer-checked:bg-blue-500 peer-focus:ring-2 peer-focus:ring-blue-500 after:transition-all after:content-[''] peer-checked:after:translate-x-6 peer-checked:after:border-white" />
+              <div class="peer rounded-full bg-slate-300 h-6 w-12 relative after:rounded-full after:bg-white peer-checked:bg-blue-500 after:h-5 after:w-5 after:content-[''] peer-focus:ring-2 peer-focus:ring-blue-500 after:transition-all after:left-0.5 after:top-0.5 after:absolute peer-checked:after:border-white peer-checked:after:translate-x-6" />
             </label>
           </div>
         </div>
@@ -312,21 +312,21 @@ function resetToDefault() {
 
     <!-- 数据管理 -->
     <div class="mb-10">
-      <h3 class="mb-6 border-b-2 border-slate-200 pb-2 text-xl text-slate-800 font-semibold">
+      <h3 class="text-xl text-slate-800 font-semibold mb-6 pb-2 border-b-2 border-slate-200">
         数据管理
       </h3>
 
       <div class="space-y-6">
-        <div class="flex flex-col border-b border-slate-100 py-6 sm:flex-row sm:items-center sm:justify-between">
+        <div class="py-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between">
           <div class="mb-4 sm:mb-0">
-            <label class="mb-1 block text-slate-700 font-medium">下载我的数据</label>
+            <label class="text-slate-700 font-medium mb-1 block">下载我的数据</label>
             <p class="text-sm text-slate-500">
               下载您的个人数据副本
             </p>
           </div>
           <div class="sm:ml-8">
             <button
-              class="flex items-center gap-2 rounded-lg bg-blue-500 px-4 py-2 text-white transition-all duration-200 hover:bg-blue-600"
+              class="text-white px-4 py-2 rounded-lg bg-blue-500 flex gap-2 transition-all duration-200 items-center hover:bg-blue-600"
               @click="requestDataExport"
             >
               <Download class="h-4 w-4" />
@@ -335,16 +335,16 @@ function resetToDefault() {
           </div>
         </div>
 
-        <div class="flex flex-col border-b border-slate-100 py-6 sm:flex-row sm:items-center sm:justify-between">
+        <div class="py-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between">
           <div class="mb-4 sm:mb-0">
-            <label class="mb-1 block text-slate-700 font-medium">清除浏览数据</label>
+            <label class="text-slate-700 font-medium mb-1 block">清除浏览数据</label>
             <p class="text-sm text-slate-500">
               清除缓存、历史记录等本地数据
             </p>
           </div>
           <div class="sm:ml-8">
             <button
-              class="flex items-center gap-2 border border-slate-300 rounded-lg bg-slate-100 px-4 py-2 text-slate-700 transition-all duration-200 hover:bg-slate-200"
+              class="text-slate-700 px-4 py-2 border border-slate-300 rounded-lg bg-slate-100 flex gap-2 transition-all duration-200 items-center hover:bg-slate-200"
               @click="showClearData = true"
             >
               <Trash class="h-4 w-4" />
@@ -357,18 +357,18 @@ function resetToDefault() {
 
     <!-- 权限管理 -->
     <div class="mb-10">
-      <h3 class="mb-6 border-b-2 border-slate-200 pb-2 text-xl text-slate-800 font-semibold">
+      <h3 class="text-xl text-slate-800 font-semibold mb-6 pb-2 border-b-2 border-slate-200">
         权限管理
       </h3>
 
-      <div class="rounded-xl bg-slate-50 p-6 space-y-4">
+      <div class="p-6 rounded-xl bg-slate-50 space-y-4">
         <div
           v-for="permission in permissions"
           :key="permission.id"
-          class="flex items-center justify-between border border-slate-200 rounded-lg bg-white p-4"
+          class="p-4 border border-slate-200 rounded-lg bg-white flex items-center justify-between"
         >
-          <div class="flex items-center gap-4">
-            <component :is="permission.icon" class="h-5 w-5 text-slate-500" />
+          <div class="flex gap-4 items-center">
+            <component :is="permission.icon" class="text-slate-500 h-5 w-5" />
             <div>
               <div class="text-slate-800 font-medium">
                 {{ permission.name }}
@@ -378,15 +378,15 @@ function resetToDefault() {
               </div>
             </div>
           </div>
-          <div class="flex items-center gap-2">
+          <div class="flex gap-2 items-center">
             <span
-              class="rounded px-2 py-1 text-xs font-medium"
+              class="text-xs font-medium px-2 py-1 rounded"
               :class="getPermissionStatusClass(permission.status)"
             >
               {{ getPermissionStatusText(permission.status) }}
             </span>
             <button
-              class="rounded px-2 py-1 text-sm text-blue-600 font-medium transition-all duration-200 hover:bg-blue-50 hover:text-blue-800"
+              class="text-sm text-blue-600 font-medium px-2 py-1 rounded transition-all duration-200 hover:text-blue-800 hover:bg-blue-50"
               @click="togglePermission(permission.id)"
             >
               {{ permission.status === 'granted' ? '撤销' : '授权' }}
@@ -397,16 +397,16 @@ function resetToDefault() {
     </div>
 
     <!-- 操作按钮 -->
-    <div class="flex flex-col gap-4 border-t border-slate-200 pt-8 sm:flex-row">
+    <div class="pt-8 border-t border-slate-200 flex flex-col gap-4 sm:flex-row">
       <button
-        class="flex items-center justify-center gap-2 rounded-lg bg-blue-500 px-6 py-3 text-white font-medium transition-all duration-200 hover:bg-blue-600"
+        class="text-white font-medium px-6 py-3 rounded-lg bg-blue-500 flex gap-2 transition-all duration-200 items-center justify-center hover:bg-blue-600"
         @click="handleSave"
       >
         <Save class="h-4 w-4" />
         保存设置
       </button>
       <button
-        class="flex items-center justify-center gap-2 border border-slate-300 rounded-lg bg-slate-100 px-6 py-3 text-slate-700 font-medium transition-all duration-200 hover:bg-slate-200"
+        class="text-slate-700 font-medium px-6 py-3 border border-slate-300 rounded-lg bg-slate-100 flex gap-2 transition-all duration-200 items-center justify-center hover:bg-slate-200"
         @click="resetToDefault"
       >
         <RotateCcw class="h-4 w-4" />
@@ -415,12 +415,12 @@ function resetToDefault() {
     </div>
 
     <!-- 清除数据对话框 -->
-    <div v-if="showClearData" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div class="max-w-md w-full rounded-xl bg-white p-6">
-        <h3 class="mb-4 text-xl text-slate-800 font-semibold">
+    <div v-if="showClearData" class="p-4 bg-black/50 flex items-center inset-0 justify-center fixed z-50">
+      <div class="p-6 rounded-xl bg-white max-w-md w-full">
+        <h3 class="text-xl text-slate-800 font-semibold mb-4">
           清除浏览数据
         </h3>
-        <p class="mb-4 text-slate-600">
+        <p class="text-slate-600 mb-4">
           选择要清除的数据类型：
         </p>
 
@@ -428,13 +428,13 @@ function resetToDefault() {
           <label
             v-for="dataType in clearDataTypes"
             :key="dataType.id"
-            class="flex cursor-pointer items-center gap-3"
+            class="flex gap-3 cursor-pointer items-center"
           >
             <input
               v-model="selectedClearTypes"
               :value="dataType.id"
               type="checkbox"
-              class="h-4 w-4 border-gray-300 rounded bg-gray-100 text-blue-600 focus:ring-blue-500"
+              class="text-blue-600 border-gray-300 rounded bg-gray-100 h-4 w-4 focus:ring-blue-500"
             >
             <div>
               <div class="text-slate-700 font-medium">{{ dataType.name }}</div>
@@ -445,13 +445,13 @@ function resetToDefault() {
 
         <div class="flex gap-3">
           <button
-            class="flex-1 rounded-lg bg-slate-100 px-4 py-2 text-slate-700 transition-all duration-200 hover:bg-slate-200"
+            class="text-slate-700 px-4 py-2 rounded-lg bg-slate-100 flex-1 transition-all duration-200 hover:bg-slate-200"
             @click="showClearData = false"
           >
             取消
           </button>
           <button
-            class="flex-1 rounded-lg bg-red-500 px-4 py-2 text-white transition-all duration-200 hover:bg-red-600"
+            class="text-white px-4 py-2 rounded-lg bg-red-500 flex-1 transition-all duration-200 hover:bg-red-600"
             @click="clearSelectedData"
           >
             清除

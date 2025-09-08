@@ -297,20 +297,20 @@ onMounted(async () => {
       </div>
       <form @submit.prevent="onSubmit">
         <div class="mb-2 flex items-center justify-between">
-          <label class="mb-2 text-sm text-gray-700 font-medium">
+          <label class="text-sm text-gray-700 font-medium mb-2">
             {{ t('financial.budget.budgetName') }}
           </label>
           <input
-            v-model="form.name" type="text" required class="w-2/3 modal-input-select"
+            v-model="form.name" type="text" required class="modal-input-select w-2/3"
             :placeholder="t('validation.budgetName')"
           >
         </div>
 
         <div class="mb-2 flex items-center justify-between">
-          <label class="mb-2 text-sm text-gray-700 font-medium">
+          <label class="text-sm text-gray-700 font-medium mb-2">
             {{ t('financial.budget.budgetScopeType') }}
           </label>
-          <select v-model="form.budgetScopeType" required class="w-2/3 modal-input-select">
+          <select v-model="form.budgetScopeType" required class="modal-input-select w-2/3">
             <option
               v-for="ty in types"
               :key="ty.original"
@@ -349,11 +349,11 @@ onMounted(async () => {
         </div>
 
         <div class="mb-2 flex items-center justify-between">
-          <label class="mb-2 text-sm text-gray-700 font-medium">
+          <label class="text-sm text-gray-700 font-medium mb-2">
             {{ t('financial.budget.budgetAmount') }}
           </label>
           <input
-            v-model.number="form.amount" type="number" step="0.01" required class="w-2/3 modal-input-select"
+            v-model.number="form.amount" type="number" step="0.01" required class="modal-input-select w-2/3"
             placeholder="0.00"
           >
         </div>
@@ -366,21 +366,21 @@ onMounted(async () => {
         />
 
         <div class="mb-2 mt-2 flex items-center justify-between">
-          <label class="mb-2 text-sm text-gray-700 font-medium">
+          <label class="text-sm text-gray-700 font-medium mb-2">
             {{ t('date.startDate') }}
           </label>
-          <input v-model="form.startDate" type="date" required class="w-2/3 modal-input-select">
+          <input v-model="form.startDate" type="date" required class="modal-input-select w-2/3">
         </div>
 
         <div class="mb-2 flex items-center justify-between">
-          <label class="mb-2 text-sm text-gray-700 font-medium">
+          <label class="text-sm text-gray-700 font-medium mb-2">
             {{ t('date.endDate') }}
           </label>
-          <input v-model="form.endDate" type="date" class="w-2/3 modal-input-select">
+          <input v-model="form.endDate" type="date" class="modal-input-select w-2/3">
         </div>
 
         <div class="mb-2 flex items-center justify-between">
-          <label class="mb-2 text-sm text-gray-700 font-medium">
+          <label class="text-sm text-gray-700 font-medium mb-2">
             {{ t('common.misc.color') }}
           </label>
           <ColorSelector v-model="form.color" :color-names="colorNameMap" />
@@ -389,7 +389,7 @@ onMounted(async () => {
           <!-- 左边复选框 -->
           <div class="w-1/3">
             <label class="flex items-center">
-              <input v-model="form.alertEnabled" type="checkbox" class="mr-2 modal-input-select">
+              <input v-model="form.alertEnabled" type="checkbox" class="modal-input-select mr-2">
               <span class="text-sm text-gray-700 font-medium">
                 {{ t('financial.budget.overBudgetAlert') }}
               </span>
@@ -397,11 +397,11 @@ onMounted(async () => {
           </div>
 
           <!-- 右边 阈值设置 -->
-          <div v-if="form.alertEnabled && form.alertThreshold" class="w-2/3 flex items-center gap-2">
+          <div v-if="form.alertEnabled && form.alertThreshold" class="flex gap-2 w-2/3 items-center">
             <!-- 阈值类型选择 -->
             <select
               v-model="form.alertThreshold.type"
-              class="w-2/3 modal-input-select"
+              class="modal-input-select w-2/3"
             >
               <option value="Percentage">
                 {{ t('financial.budget.threshold.percentage') }}
@@ -415,7 +415,7 @@ onMounted(async () => {
             <input
               v-model.number="form.alertThreshold.value"
               type="number"
-              class="w-1/3 modal-input-select"
+              class="modal-input-select w-1/3"
               :min="form.alertThreshold.type === 'Percentage' ? 0 : 1"
               :max="form.alertThreshold.type === 'Percentage' ? 100 : undefined"
               :placeholder="form.alertThreshold.type === 'Percentage' ? '80%' : '100.00'"
@@ -424,7 +424,7 @@ onMounted(async () => {
         </div>
         <div class="mb-2">
           <textarea
-            v-model="form.description" rows="3" class="w-full modal-input-select"
+            v-model="form.description" rows="3" class="modal-input-select w-full"
             :placeholder="t('placeholders.budgetDescription')"
           />
         </div>

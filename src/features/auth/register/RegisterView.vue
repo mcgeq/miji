@@ -1,58 +1,3 @@
-<template>
-  <div class="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900 px-4">
-    <div
-      class="w-full max-w-md p-6 sm:p-8 bg-white/90 dark:bg-gray-800/80 backdrop-blur-xl border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg space-y-6">
-      <h2 class="text-center text-3xl font-bold text-gray-900 dark:text-white tracking-tight">
-        {{ t('auth.register') }}
-      </h2>
-
-      <form @submit.prevent="onSubmit" class="space-y-4">
-        <div>
-          <input v-model="username" name="username" type="text" :placeholder="t('auth.username')" class="input" />
-          <p v-if="errors.username" class="text-red-600 text-sm mt-1">{{ errors.username }}</p>
-        </div>
-
-        <div>
-          <input v-model="email" name="email" type="email" :placeholder="t('auth.email')" class="input" />
-          <p v-if="errors.email" class="text-red-600 text-sm mt-1">{{ errors.email }}</p>
-        </div>
-
-        <div>
-          <input v-model="password" name="password" type="password" :placeholder="t('auth.password')" class="input" />
-          <p v-if="errors.password" class="text-red-600 text-sm mt-1">{{ errors.password }}</p>
-        </div>
-
-        <div>
-          <input v-model="code" name="code" type="text" :placeholder="t('auth.code')" class="input" />
-          <p v-if="errors.code" class="text-red-600 text-sm mt-1">{{ errors.code }}</p>
-        </div>
-
-        <button type="submit" :disabled="isSubmitting"
-          class="w-full py-2 px-4 rounded-md bg-gradient-to-r from-blue-600 to-indigo-600 hover:brightness-110 text-white font-semibold shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-          style="color: white !important; background: linear-gradient(to right, #2563eb, #4f46e5);">
-          <template v-if="isSubmitting">
-            {{ t('auth.loading.registering') }}
-          </template>
-          <template v-else>
-            {{ t('auth.register') }}
-          </template>
-        </button>
-      </form>
-
-      <p class="text-center text-sm text-gray-600 dark:text-gray-400">
-        {{ t('auth.haveAccount') }}
-        <router-link to="/auth/login" class="text-blue-600 dark:text-blue-400 hover:underline ml-1 font-medium">
-          {{ t('auth.login') }}
-        </router-link>
-      </p>
-
-      <p v-if="success" class="text-center text-green-600 text-sm font-semibold select-text">
-        {{ t('auth.messages.registerSuccess') }}
-      </p>
-    </div>
-  </div>
-</template>
-
 <script lang="ts" setup>
 import { toTypedSchema } from '@vee-validate/zod';
 import { useField, useForm } from 'vee-validate';
@@ -79,7 +24,7 @@ const { value: email } = useField('email');
 const { value: password } = useField('password');
 const { value: code } = useField('code');
 
-const onSubmit = handleSubmit(async (values) => {
+const onSubmit = handleSubmit(async values => {
   try {
     await register({ ...values, code: values.code ?? '' }, rememberMe.value);
     success.value = true;
@@ -90,6 +35,72 @@ const onSubmit = handleSubmit(async (values) => {
   }
 });
 </script>
+
+<template>
+  <div class="px-4 bg-gray-100 flex min-h-screen items-center justify-center dark:bg-gray-900">
+    <div
+      class="p-6 border border-gray-200 rounded-xl bg-white/90 max-w-md w-full shadow-lg backdrop-blur-xl space-y-6 sm:p-8 dark:border-gray-700 dark:bg-gray-800/80"
+    >
+      <h2 class="text-3xl text-gray-900 tracking-tight font-bold text-center dark:text-white">
+        {{ t('auth.register') }}
+      </h2>
+
+      <form class="space-y-4" @submit.prevent="onSubmit">
+        <div>
+          <input v-model="username" name="username" type="text" :placeholder="t('auth.username')" class="input">
+          <p v-if="errors.username" class="text-sm text-red-600 mt-1">
+            {{ errors.username }}
+          </p>
+        </div>
+
+        <div>
+          <input v-model="email" name="email" type="email" :placeholder="t('auth.email')" class="input">
+          <p v-if="errors.email" class="text-sm text-red-600 mt-1">
+            {{ errors.email }}
+          </p>
+        </div>
+
+        <div>
+          <input v-model="password" name="password" type="password" :placeholder="t('auth.password')" class="input">
+          <p v-if="errors.password" class="text-sm text-red-600 mt-1">
+            {{ errors.password }}
+          </p>
+        </div>
+
+        <div>
+          <input v-model="code" name="code" type="text" :placeholder="t('auth.code')" class="input">
+          <p v-if="errors.code" class="text-sm text-red-600 mt-1">
+            {{ errors.code }}
+          </p>
+        </div>
+
+        <button
+          type="submit" :disabled="isSubmitting"
+          class="bg-gradient-to-r text-white font-semibold px-4 py-2 rounded-md w-full shadow-md transition-all from-blue-600 to-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed hover:brightness-110"
+          style="color: white !important; background: linear-gradient(to right, #2563eb, #4f46e5);"
+        >
+          <template v-if="isSubmitting">
+            {{ t('auth.loading.registering') }}
+          </template>
+          <template v-else>
+            {{ t('auth.register') }}
+          </template>
+        </button>
+      </form>
+
+      <p class="text-sm text-gray-600 text-center dark:text-gray-400">
+        {{ t('auth.haveAccount') }}
+        <router-link to="/auth/login" class="text-blue-600 font-medium ml-1 dark:text-blue-400 hover:underline">
+          {{ t('auth.login') }}
+        </router-link>
+      </p>
+
+      <p v-if="success" class="text-sm text-green-600 font-semibold text-center select-text">
+        {{ t('auth.messages.registerSuccess') }}
+      </p>
+    </div>
+  </div>
+</template>
 
 <style scoped>
 .input {

@@ -137,8 +137,7 @@ function validateValue(value: Priority): boolean {
   try {
     PrioritySchema.parse(value);
     return true;
-  }
-  catch {
+  } catch {
     return false;
   }
 }
@@ -153,8 +152,7 @@ function handleChange(event: Event) {
     emit('update:modelValue', value);
     emit('change', value);
     emit('validate', true);
-  }
-  else {
+  } else {
     emit('validate', false);
   }
 }
@@ -217,10 +215,10 @@ defineExpose({
   <div class="mb-2 flex items-center justify-between">
     <label
       :for="inputId"
-      class="mb-2 text-sm text-gray-700 font-medium dark:text-gray-300"
+      class="text-sm text-gray-700 font-medium mb-2 dark:text-gray-300"
     >
       {{ label }}
-      <span v-if="required" class="ml-1 text-red-500" aria-label="必填">*</span>
+      <span v-if="required" class="text-red-500 ml-1" aria-label="必填">*</span>
     </label>
     <div class="flex flex-col" :class="widthClass">
       <select
@@ -248,14 +246,14 @@ defineExpose({
       </select>
       <div
         v-if="hasError && errorMessage"
-        class="mt-1 text-sm text-red-600 dark:text-red-400"
+        class="text-sm text-red-600 mt-1 dark:text-red-400"
         role="alert"
       >
         {{ errorMessage }}
       </div>
       <div
         v-if="helpText && !hasError"
-        class="mt-2 flex justify-end text-xs text-gray-500 dark:text-gray-400"
+        class="text-xs text-gray-500 mt-2 flex justify-end dark:text-gray-400"
       >
         {{ helpText }}
       </div>

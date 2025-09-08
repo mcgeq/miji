@@ -229,13 +229,13 @@ defineExpose({
 <template>
   <div class="min-h-25">
     <!-- 过滤器区域 -->
-    <div class="mb-5 flex flex-wrap items-center justify-center gap-3 rounded-lg bg-gray-50 p-4">
+    <div class="mb-5 p-4 rounded-lg bg-gray-50 flex flex-wrap gap-3 items-center justify-center">
       <div class="filter-flex-wrap">
-        <label class="show-on-desktop text-sm text-gray-700 font-medium">{{ t('financial.transaction.transType')
+        <label class="text-sm text-gray-700 font-medium show-on-desktop">{{ t('financial.transaction.transType')
         }}</label>
         <select
           v-model="filters.transactionType"
-          class="border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          class="text-sm px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <option value="">
             {{ t('common.actions.all') }}
@@ -253,10 +253,10 @@ defineExpose({
       </div>
 
       <div class="filter-flex-wrap">
-        <label class="show-on-desktop text-sm text-gray-700 font-medium">{{ t('financial.account.account') }}</label>
+        <label class="text-sm text-gray-700 font-medium show-on-desktop">{{ t('financial.account.account') }}</label>
         <select
           v-model="filters.accountSerialNum"
-          class="border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          class="text-sm px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <option value="">
             {{ t('common.actions.all') }}{{ t('financial.account.account') }}
@@ -268,10 +268,10 @@ defineExpose({
       </div>
 
       <div class="filter-flex-wrap">
-        <label class="show-on-desktop text-sm text-gray-700 font-medium">{{ t('categories.category') }}</label>
+        <label class="text-sm text-gray-700 font-medium show-on-desktop">{{ t('categories.category') }}</label>
         <select
           v-model="filters.category"
-          class="border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          class="text-sm px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <option value="">
             {{ t('categories.allCategory') }}
@@ -283,23 +283,23 @@ defineExpose({
       </div>
 
       <div class="filter-flex-wrap">
-        <label class="show-on-desktop text-sm text-gray-700 font-medium">{{ t('date.startDate') }}</label>
+        <label class="text-sm text-gray-700 font-medium show-on-desktop">{{ t('date.startDate') }}</label>
         <input
           v-model="filters.dateStart" type="date"
-          class="border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          class="text-sm px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
       </div>
 
       <div class="filter-flex-wrap">
-        <label class="show-on-desktop text-sm text-gray-700 font-medium">{{ t('date.endDate') }}</label>
+        <label class="text-sm text-gray-700 font-medium show-on-desktop">{{ t('date.endDate') }}</label>
         <input
           v-model="filters.dateEnd" type="date"
-          class="border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          class="text-sm px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
       </div>
 
       <button
-        class="rounded-md bg-gray-200 px-3 py-1.5 text-sm text-gray-700 transition-colors hover:bg-gray-300"
+        class="text-sm text-gray-700 px-3 py-1.5 rounded-md bg-gray-200 transition-colors hover:bg-gray-300"
         @click="resetFilters"
       >
         <RotateCcw class="mr-1 wh-5" />
@@ -307,13 +307,13 @@ defineExpose({
     </div>
 
     <!-- 加载状态 -->
-    <div v-if="loading" class="h-25 flex-justify-center text-gray-600">
+    <div v-if="loading" class="text-gray-600 flex-justify-center h-25">
       {{ t('common.loading') }}
     </div>
 
     <!-- 空状态 -->
-    <div v-else-if="transactions.length === 0" class="h-25 flex-justify-center flex-col text-#999">
-      <div class="mb-4 text-6xl opacity-50">
+    <div v-else-if="transactions.length === 0" class="text-#999 flex-justify-center flex-col h-25">
+      <div class="text-6xl mb-4 opacity-50">
         <i class="icon-list" />
       </div>
       <div class="text-base">
@@ -322,27 +322,27 @@ defineExpose({
     </div>
 
     <!-- 交易列表 -->
-    <div v-else class="mb-6 overflow-hidden border border-gray-200 rounded-lg">
+    <div v-else class="mb-6 border border-gray-200 rounded-lg overflow-hidden">
       <!-- 表头 - 桌面版 -->
       <div
-        class="hidden border-b border-gray-200 bg-gray-100 text-gray-800 font-semibold md:grid md:grid-cols-[120px_140px_180px_140px_140px_120px]"
+        class="text-gray-800 font-semibold border-b border-gray-200 bg-gray-100 hidden md:grid md:grid-cols-[120px_140px_180px_140px_140px_120px]"
       >
-        <div class="grid place-items-end p-4 text-sm">
+        <div class="text-sm p-4 grid place-items-end">
           {{ t('common.misc.types') }}
         </div>
-        <div class="grid place-items-end p-4 text-sm">
+        <div class="text-sm p-4 grid place-items-end">
           {{ t('financial.money') }}
         </div>
-        <div class="grid place-items-end p-4 text-sm">
+        <div class="text-sm p-4 grid place-items-end">
           {{ t('financial.account.account') }}
         </div>
-        <div class="grid place-items-end p-4 text-sm">
+        <div class="text-sm p-4 grid place-items-end">
           {{ t('categories.category') }}
         </div>
-        <div class="grid place-items-end p-4 text-sm">
+        <div class="text-sm p-4 grid place-items-end">
           {{ t('date.date') }}
         </div>
-        <div class="grid place-items-end p-4 text-sm">
+        <div class="text-sm p-4 grid place-items-end">
           {{ t('common.misc.options') }}
         </div>
       </div>
@@ -350,19 +350,19 @@ defineExpose({
       <!-- 交易行 -->
       <div
         v-for="transaction in transactions" :key="transaction.serialNum"
-        class="grid grid-cols-1 border-b border-gray-200 transition-colors md:grid-cols-[120px_140px_180px_140px_140px_120px] hover:bg-gray-50"
+        class="border-b border-gray-200 grid grid-cols-1 transition-colors hover:bg-gray-50 md:grid-cols-[120px_140px_180px_140px_140px_120px]"
       >
         <!-- 类型列 -->
-        <div class="flex justify-between p-4 text-sm md:items-center md:justify-end">
+        <div class="text-sm p-4 flex justify-between md:items-center md:justify-end">
           <span class="text-gray-600 font-semibold md:hidden">{{ t('categories.category') }}</span>
-          <div class="flex items-center gap-2">
+          <div class="flex gap-2 items-center">
             <component :is="getTransactionTypeIcon(transaction.transactionType)" class="h-4 w-4" />
             <span class="font-medium">{{ getTransactionTypeName(transaction.transactionType) }}</span>
           </div>
         </div>
 
         <!-- 金额列 -->
-        <div class="flex justify-between p-4 text-sm md:items-center md:justify-end">
+        <div class="text-sm p-4 flex justify-between md:items-center md:justify-end">
           <span class="text-gray-600 font-semibold md:hidden">{{ t('financial.money') }}</span>
           <div
             class="text-lg font-semibold" :class="[
@@ -377,20 +377,20 @@ defineExpose({
         </div>
 
         <!-- 账户列 -->
-        <div class="flex justify-between p-4 text-sm md:items-center md:justify-end">
+        <div class="text-sm p-4 flex justify-between md:items-center md:justify-end">
           <span class="text-gray-600 font-semibold md:hidden">{{ t('financial.account.account') }}</span>
           <div class="md:text-right">
             <div class="text-gray-800 font-medium">
               {{ transaction.account.name }}
             </div>
-            <div v-if="transaction.description" class="mt-1 text-xs text-gray-600">
+            <div v-if="transaction.description" class="text-xs text-gray-600 mt-1">
               {{ transaction.description }}
             </div>
           </div>
         </div>
 
         <!-- 分类列 -->
-        <div class="flex justify-between p-4 text-sm md:items-center md:justify-end">
+        <div class="text-sm p-4 flex justify-between md:items-center md:justify-end">
           <span class="text-gray-600 font-semibold md:hidden">{{ t('categories.category') }}</span>
           <div class="md:text-right">
             <span class="text-gray-800 font-medium">{{ t(`financial.transactionCategories.${transaction.category.toLocaleLowerCase()}`) }}</span>
@@ -401,7 +401,7 @@ defineExpose({
         </div>
 
         <!-- 时间列 -->
-        <div class="flex justify-between p-4 text-sm md:items-center md:justify-end">
+        <div class="text-sm p-4 flex justify-between md:items-center md:justify-end">
           <span class="text-gray-600 font-semibold md:hidden">{{ t('date.date') }}</span>
           <div class="md:text-right">
             <div class="text-xs text-gray-600">
@@ -411,17 +411,17 @@ defineExpose({
         </div>
 
         <!-- 操作列 -->
-        <div class="flex items-center justify-between p-4 md:justify-end">
+        <div class="p-4 flex items-center justify-between md:justify-end">
           <span class="text-gray-600 font-semibold md:hidden">{{ t('common.misc.options') }}</span>
           <div class="flex gap-1">
             <button
-              class="money-option-btn hover:(border-green-500 text-green-500)"
+              class="money-option-btn hover:(text-green-500 border-green-500)"
               :title="t('common.actions.view')" @click="emit('viewDetails', transaction)"
             >
               <Eye class="h-4 w-4" />
             </button>
             <button
-              class="money-option-btn hover:(border-blue-500 text-blue-500)" :title="t('common.actions.edit')"
+              class="money-option-btn hover:(text-blue-500 border-blue-500)" :title="t('common.actions.edit')"
               :disabled="disabledTransactions.has(transaction.serialNum)"
               :class="{
                 'text-gray-500 bg-gray-200': disabledTransactions.has(transaction.serialNum),
@@ -431,7 +431,7 @@ defineExpose({
               <Edit class="h-4 w-4" />
             </button>
             <button
-              class="money-option-btn hover:(border-red-500 text-red-500)"
+              class="money-option-btn hover:(text-red-500 border-red-500)"
               :title="t('common.actions.delete')"
               :disabled="disabledTransactions.has(transaction.serialNum)"
               @click="emit('delete', transaction)"
@@ -446,24 +446,24 @@ defineExpose({
     <!-- 分页组件 - 移动端优化版 -->
     <div v-if="pagination.totalItems > 0" class="mt-4 flex justify-center">
       <!-- 移动端紧凑分页 -->
-      <div v-if="isMobile" class="flex items-center justify-center gap-2 border rounded-lg bg-white p-2 shadow-sm md:hidden">
+      <div v-if="isMobile" class="p-2 border rounded-lg bg-white flex gap-2 shadow-sm items-center justify-center md:hidden">
         <!-- 上一页 -->
         <button
-          :disabled="pagination.currentPage <= 1" class="border border-gray-300 rounded-md p-1.5 text-gray-600 disabled:cursor-not-allowed hover:bg-gray-50 disabled:opacity-50"
+          :disabled="pagination.currentPage <= 1" class="text-gray-600 p-1.5 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
           @click="handlePageChange(pagination.currentPage - 1)"
         >
           <ChevronLeft class="h-4 w-4" />
         </button>
 
         <!-- 页码信息 -->
-        <span class="px-2 text-sm text-gray-700">
+        <span class="text-sm text-gray-700 px-2">
           {{ pagination.currentPage }}/{{ pagination.totalPages }}
         </span>
 
         <!-- 下一页 -->
         <button
           :disabled="pagination.currentPage >= pagination.totalPages"
-          class="border border-gray-300 rounded-md p-1.5 text-gray-600 disabled:cursor-not-allowed hover:bg-gray-50 disabled:opacity-50"
+          class="text-gray-600 p-1.5 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
           @click="handlePageChange(pagination.currentPage + 1)"
         >
           <ChevronRight class="h-4 w-4" />
@@ -472,7 +472,7 @@ defineExpose({
         <!-- 每页大小选择 -->
         <select
           :value="pagination.pageSize"
-          class="border border-gray-300 rounded bg-white px-1 py-0.5 text-xs"
+          class="text-xs px-1 py-0.5 border border-gray-300 rounded bg-white"
           @change="handlePageSizeChange(Number(($event.target as HTMLSelectElement).value))"
         >
           <option value="10">

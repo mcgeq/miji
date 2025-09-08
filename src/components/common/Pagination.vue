@@ -79,8 +79,7 @@ export default defineComponent({
       if (value >= 1 && value <= props.totalPages) {
         modelCurrentPage.value = value;
         props.onPageJump(value);
-      }
-      else {
+      } else {
         pageInput.value = props.currentPage;
       }
     };
@@ -107,7 +106,7 @@ export default defineComponent({
 
 <template>
   <div
-    class="flex flex-wrap items-center justify-between gap-4 rounded-lg bg-white p-4 shadow-md sm:flex-nowrap"
+    class="p-4 rounded-lg bg-white flex flex-wrap gap-4 shadow-md items-center justify-between sm:flex-nowrap"
   >
     <!-- First / Prev -->
     <div class="flex gap-2">
@@ -130,7 +129,7 @@ export default defineComponent({
     </div>
 
     <!-- Page Info -->
-    <div class="flex items-center gap-3">
+    <div class="flex gap-3 items-center">
       <span class="text-sm text-gray-700">{{ modelCurrentPage }}/{{ totalPages }}</span>
       <input
         v-model.number="pageInput"
@@ -170,7 +169,7 @@ export default defineComponent({
       disabled
 
       hidden aria-label="Select items per page"
-      class="border border-gray-300 rounded-md px-2 py-1 text-sm"
+      class="text-sm px-2 py-1 border border-gray-300 rounded-md"
       @change="handlePageSizeChange"
     >
       <option v-for="size in modelPageSize" :key="size" :value="size">

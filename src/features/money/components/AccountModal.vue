@@ -225,7 +225,7 @@ watch(() => form.initialBalance, newBalance => {
       <form @submit.prevent="saveAccount">
         <!-- 账户名称 -->
         <div class="mb-2 flex items-center justify-between">
-          <label class="mb-2 text-sm text-gray-700 font-medium">
+          <label class="text-sm text-gray-700 font-medium mb-2">
             {{ t('financial.account.accountName') }}
           </label>
           <div class="w-2/3">
@@ -233,7 +233,7 @@ watch(() => form.initialBalance, newBalance => {
               v-model="form.name"
               type="text"
               required
-              class="w-full modal-input-select"
+              class="modal-input-select w-full"
               :placeholder="t('common.placeholders.enterName')"
             >
             <span v-if="formErrors.name" class="text-xs text-red-500">{{ formErrors.name }}</span>
@@ -242,11 +242,11 @@ watch(() => form.initialBalance, newBalance => {
 
         <!-- 账户类型 -->
         <div class="mb-2 flex items-center justify-between">
-          <label class="mb-2 text-sm text-gray-700 font-medium">
+          <label class="text-sm text-gray-700 font-medium mb-2">
             {{ t('financial.account.accountType') }}
           </label>
           <div class="w-2/3">
-            <select v-model="form.type" required class="w-full modal-input-select">
+            <select v-model="form.type" required class="modal-input-select w-full">
               <option v-for="type in accountTypes" :key="type" :value="type">
                 {{ t(`financial.accountTypes.${type.toLowerCase()}`) }}
               </option>
@@ -257,7 +257,7 @@ watch(() => form.initialBalance, newBalance => {
 
         <!-- 初始余额 -->
         <div class="mb-2 flex items-center justify-between">
-          <label class="mb-2 text-sm text-gray-700 font-medium">
+          <label class="text-sm text-gray-700 font-medium mb-2">
             {{ t('financial.initialBalance') }}
           </label>
           <div class="w-2/3">
@@ -265,7 +265,7 @@ watch(() => form.initialBalance, newBalance => {
               v-model="form.initialBalance"
               type="text"
               required
-              class="w-full modal-input-select"
+              class="modal-input-select w-full"
               placeholder="0.00"
               @input="form.initialBalance = formatBalance(($event.target as HTMLInputElement).value)"
             >
@@ -275,11 +275,11 @@ watch(() => form.initialBalance, newBalance => {
 
         <!-- 货币 -->
         <div class="mb-2 flex items-center justify-between">
-          <label class="mb-2 text-sm text-gray-700 font-medium">
+          <label class="text-sm text-gray-700 font-medium mb-2">
             {{ t('financial.currency') }}
           </label>
           <div class="w-2/3">
-            <select v-model="form.currency.code" required class="w-full modal-input-select">
+            <select v-model="form.currency.code" required class="modal-input-select w-full">
               <option v-for="currency in currencies" :key="currency.code" :value="currency.code">
                 {{ t(`currency.${currency.code}`) }}
               </option>
@@ -290,11 +290,11 @@ watch(() => form.initialBalance, newBalance => {
 
         <!-- 所有者 -->
         <div class="mb-2 flex items-center justify-between">
-          <label class="mb-2 text-sm text-gray-700 font-medium">
+          <label class="text-sm text-gray-700 font-medium mb-2">
             {{ t('financial.account.owner') }}
           </label>
           <div class="w-2/3">
-            <select v-model="form.ownerId" required class="w-full modal-input-select">
+            <select v-model="form.ownerId" required class="modal-input-select w-full">
               <option v-for="user in users" :key="user.serialNum" :value="user.serialNum">
                 {{ user.name }}
               </option>
@@ -307,13 +307,13 @@ watch(() => form.initialBalance, newBalance => {
         <div class="mb-2 flex items-center justify-between">
           <div class="w-1/2">
             <label class="flex items-center">
-              <input v-model="form.isShared" type="checkbox" class="mr-2 modal-input-select">
+              <input v-model="form.isShared" type="checkbox" class="modal-input-select mr-2">
               <span class="text-sm text-gray-700 font-medium">{{ t('financial.account.shared') }}</span>
             </label>
           </div>
           <div class="w-1/2">
             <label class="flex items-center">
-              <input v-model="form.isActive" type="checkbox" class="mr-2 modal-input-select">
+              <input v-model="form.isActive" type="checkbox" class="modal-input-select mr-2">
               <span class="text-sm text-gray-700 font-medium">{{ t('financial.account.activate') }}</span>
             </label>
           </div>
@@ -321,7 +321,7 @@ watch(() => form.initialBalance, newBalance => {
 
         <!-- 颜色 -->
         <div class="mb-2 flex items-center justify-between">
-          <label class="mb-2 text-sm text-gray-700 font-medium">
+          <label class="text-sm text-gray-700 font-medium mb-2">
             {{ t('common.misc.color') }}
           </label>
           <ColorSelector v-model="form.color" :color-names="colorNameMap" />
@@ -332,7 +332,7 @@ watch(() => form.initialBalance, newBalance => {
           <textarea
             v-model="form.description"
             rows="3"
-            class="w-full modal-input-select"
+            class="modal-input-select w-full"
             :placeholder="`${t('common.misc.description')}（${t('common.misc.optional')}）`"
           />
           <span v-if="formErrors.description" class="text-xs text-red-500">{{ formErrors.description }}</span>

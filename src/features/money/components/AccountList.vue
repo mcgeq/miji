@@ -223,48 +223,48 @@ function getAccountTypeName(type: AccountType): string {
 <template>
   <div class="min-h-50">
     <!-- 过滤选项区域 -->
-    <div class="mb-6 border border-gray-200 rounded-lg bg-white p-4 shadow-sm">
-      <div class="flex flex-wrap items-center gap-3">
+    <div class="mb-6 p-4 border border-gray-200 rounded-lg bg-white shadow-sm">
+      <div class="flex flex-wrap gap-3 items-center">
         <!-- 账户状态过滤 -->
         <div class="filter-flex-wrap">
           <div class="flex gap-1">
             <button
-              class="border rounded-full px-3 py-1.5 text-xs font-medium transition-all" :class="[
+              class="text-xs font-medium px-3 py-1.5 border rounded-full transition-all" :class="[
                 activeFilter === 'all'
                   ? 'bg-blue-500 text-white border-blue-500'
                   : 'bg-white text-gray-600 border-gray-300 hover:border-blue-400',
               ]" @click="setActiveFilter('all')"
             >
-              {{ t('common.actions.all') }}<span class="ml-1 text-xs opacity-75">[{{ totalAccounts }}]</span>
+              {{ t('common.actions.all') }}<span class="text-xs ml-1 opacity-75">[{{ totalAccounts }}]</span>
             </button>
             <button
-              class="border rounded-full px-3 py-1.5 text-xs font-medium transition-all" :class="[
+              class="text-xs font-medium px-3 py-1.5 border rounded-full transition-all" :class="[
                 activeFilter === 'active'
                   ? 'bg-green-500 text-white border-green-500'
                   : 'bg-white text-gray-600 border-gray-300 hover:border-green-400',
               ]" @click="setActiveFilter('active')"
             >
               <CheckCircle class="mr-1 h-3 w-3" />
-              {{ t('common.status.active') }}<span class="ml-1 text-xs opacity-75">({{ activeAccounts }})</span>
+              {{ t('common.status.active') }}<span class="text-xs ml-1 opacity-75">({{ activeAccounts }})</span>
             </button>
             <button
-              class="border rounded-full px-3 py-1.5 text-xs font-medium transition-all" :class="[
+              class="text-xs font-medium px-3 py-1.5 border rounded-full transition-all" :class="[
                 activeFilter === 'inactive'
                   ? 'bg-gray-500 text-white border-gray-500'
                   : 'bg-white text-gray-600 border-gray-300 hover:border-gray-400',
               ]" @click="setActiveFilter('inactive')"
             >
               <XCircle class="mr-1 h-3 w-3" />
-              {{ t('common.status.inactive') }}<span class="ml-1 text-xs opacity-75">({{ inactiveAccounts }})</span>
+              {{ t('common.status.inactive') }}<span class="text-xs ml-1 opacity-75">({{ inactiveAccounts }})</span>
             </button>
           </div>
         </div>
 
         <!-- 账户类型过滤 -->
         <div class="filter-flex-wrap">
-          <span class="show-on-desktop text-sm text-gray-700 font-medium">{{ t('common.misc.types') }}</span>
+          <span class="text-sm text-gray-700 font-medium show-on-desktop">{{ t('common.misc.types') }}</span>
           <select
-            v-model="selectedType" class="border border-gray-300 rounded-md px-3 py-1.5 text-xs focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
+            v-model="selectedType" class="text-xs px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:border-transparent focus:ring-2 focus:ring-blue-500"
             @change="handleTypeFilter"
           >
             <option value="">
@@ -278,9 +278,9 @@ function getAccountTypeName(type: AccountType): string {
 
         <!-- 币种过滤 -->
         <div class="filter-flex-wrap">
-          <span class="show-on-desktop text-sm text-gray-700 font-medium">{{ t('financial.currency') }}</span>
+          <span class="text-sm text-gray-700 font-medium show-on-desktop">{{ t('financial.currency') }}</span>
           <select
-            v-model="selectedCurrency" class="border border-gray-300 rounded-md px-3 py-1.5 text-xs focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
+            v-model="selectedCurrency" class="text-xs px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:border-transparent focus:ring-2 focus:ring-blue-500"
             @change="handleCurrencyFilter"
           >
             <option value="">
@@ -294,9 +294,9 @@ function getAccountTypeName(type: AccountType): string {
 
         <!-- 排序选项 -->
         <div class="filter-flex-wrap">
-          <span class="show-on-desktop text-sm text-gray-700 font-medium"> {{ t('common.sorting.sort') }} </span>
+          <span class="text-sm text-gray-700 font-medium show-on-desktop"> {{ t('common.sorting.sort') }} </span>
           <select
-            v-model="sortBy" class="border border-gray-300 rounded-md px-3 py-1.5 text-xs focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
+            v-model="sortBy" class="text-xs px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:border-transparent focus:ring-2 focus:ring-blue-500"
             @change="handleSortChange"
           >
             <option value="createdAt">
@@ -313,7 +313,7 @@ function getAccountTypeName(type: AccountType): string {
             </option>
           </select>
           <button
-            class="p-1.5 text-gray-600 transition-colors hover:text-blue-500" :title="sortOrder === 'asc' ? t('common.sorting.asc') : t('common.sorting.desc')"
+            class="text-gray-600 p-1.5 transition-colors hover:text-blue-500" :title="sortOrder === 'asc' ? t('common.sorting.asc') : t('common.sorting.desc')"
             @click="toggleSortOrder"
           >
             <ArrowUpDown class="h-4 w-4" :class="sortOrder === 'desc' && 'rotate-180'" />
@@ -322,7 +322,7 @@ function getAccountTypeName(type: AccountType): string {
 
         <!-- 清空过滤器 -->
         <button
-          class="rounded-md bg-gray-200 px-3 py-1.5 text-sm text-gray-700 transition-colors hover:bg-gray-300"
+          class="text-sm text-gray-700 px-3 py-1.5 rounded-md bg-gray-200 transition-colors hover:bg-gray-300"
           @click="resetFilters"
         >
           <RotateCcw class="mr-1 wh-5" />
@@ -331,12 +331,12 @@ function getAccountTypeName(type: AccountType): string {
     </div>
 
     <!-- 账户列表区域 -->
-    <div v-if="loading" class="h-50 flex-justify-center text-gray-500">
+    <div v-if="loading" class="text-gray-500 flex-justify-center h-50">
       {{ t('common.loading') }}
     </div>
 
-    <div v-else-if="paginatedAccounts.length === 0" class="h-50 flex-justify-center flex-col text-gray-400">
-      <div class="mb-4 text-6xl opacity-50">
+    <div v-else-if="paginatedAccounts.length === 0" class="text-gray-400 flex-justify-center flex-col h-50">
+      <div class="text-6xl mb-4 opacity-50">
         <CreditCard class="wh-5" />
       </div>
       <div class="text-base">
@@ -344,41 +344,41 @@ function getAccountTypeName(type: AccountType): string {
       </div>
     </div>
 
-    <div v-else class="grid mb-6 gap-5" style="grid-template-columns: repeat(auto-fill, minmax(320px, 1fr))">
+    <div v-else class="mb-6 gap-5 grid" style="grid-template-columns: repeat(auto-fill, minmax(320px, 1fr))">
       <div
-        v-for="account in paginatedAccounts" :key="account.serialNum" class="border rounded-lg bg-white p-5 transition-all hover:shadow-md"
+        v-for="account in paginatedAccounts" :key="account.serialNum" class="p-5 border rounded-lg bg-white transition-all hover:shadow-md"
         :class="{
           'opacity-60 bg-gray-100': !account.isActive,
         }" :style="{
           borderColor: account.color || '#E5E7EB',
         }"
       >
-        <div class="mb-4 flex flex-wrap items-center justify-between gap-2">
+        <div class="mb-4 flex flex-wrap gap-2 items-center justify-between">
           <!-- 类型图标 + 类型名称 + 账户名称 + 币种 -->
-          <div class="flex items-center gap-3 text-gray-800">
-            <component :is="getAccountTypeIcon(account.type)" class="h-4 w-4 text-blue-500" />
+          <div class="text-gray-800 flex gap-3 items-center">
+            <component :is="getAccountTypeIcon(account.type)" class="text-blue-500 h-4 w-4" />
             <span class="text-lg text-gray-800 font-semibold">{{ account.name }}</span>
             <span class="text-sm text-gray-700">{{ getAccountTypeName(account.type) }}</span>
             <span class="text-xs text-gray-600">{{ account.currency?.code }}</span>
           </div>
 
           <!-- 操作按钮 -->
-          <div class="flex items-center self-end gap-1.5">
+          <div class="flex gap-1.5 items-center self-end">
             <button
-              class="money-option-btn hover:(border-green-500 text-green-500)"
+              class="money-option-btn hover:(text-green-500 border-green-500)"
               :title="account.isActive ? t('common.status.stop') : t('common.status.enabled')"
               @click="emit('toggleActive', account.serialNum, !account.isActive)"
             >
               <Ban class="h-4 w-4" />
             </button>
             <button
-              class="money-option-btn hover:(border-blue-500 text-blue-500)" :title="t('common.actions.edit')"
+              class="money-option-btn hover:(text-blue-500 border-blue-500)" :title="t('common.actions.edit')"
               @click="emit('edit', account)"
             >
               <Edit class="h-4 w-4" />
             </button>
             <button
-              class="money-option-btn hover:(border-red-500 text-red-500)"
+              class="money-option-btn hover:(text-red-500 border-red-500)"
               :title="t('common.actions.delete')" @click="emit('delete', account.serialNum)"
             >
               <Trash class="h-4 w-4" />
@@ -386,16 +386,16 @@ function getAccountTypeName(type: AccountType): string {
           </div>
         </div>
 
-        <div class="mb-4 flex items-baseline gap-2">
+        <div class="mb-4 flex gap-2 items-baseline">
           <span class="text-2xl text-gray-800 font-semibold">{{ formatCurrency(account.balance) }}</span>
         </div>
 
-        <div class="border-t border-gray-200 pt-4">
-          <div class="mb-2 flex justify-between text-sm">
+        <div class="pt-4 border-t border-gray-200">
+          <div class="text-sm mb-2 flex justify-between">
             <span class="text-gray-600"> {{ t('date.createDate') }} </span>
             <span class="text-gray-800">{{ DateUtils.formatDate(account.createdAt) }}</span>
           </div>
-          <div v-if="account.description" class="mb-2 flex justify-between text-sm">
+          <div v-if="account.description" class="text-sm mb-2 flex justify-between">
             <span class="text-gray-600"> {{ t('common.misc.remark') }} </span>
             <span class="text-gray-800"> {{ account.description }} </span>
           </div>

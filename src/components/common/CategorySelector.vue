@@ -175,12 +175,12 @@ defineExpose({
     </div>
 
     <!-- 错误提示 -->
-    <div v-if="errorMessage" :id="`${inputId}-error`" class="mt-1 text-sm text-red-600 dark:text-red-400" role="alert" aria-live="polite">
+    <div v-if="errorMessage" :id="`${inputId}-error`" class="text-sm text-red-600 mt-1 dark:text-red-400" role="alert" aria-live="polite">
       {{ errorMessage }}
     </div>
 
     <!-- 帮助文本 -->
-    <div v-if="helpText" class="mt-2 text-xs text-gray-500 dark:text-gray-400">
+    <div v-if="helpText" class="text-xs text-gray-500 mt-2 dark:text-gray-400">
       {{ helpText }}
     </div>
   </div>

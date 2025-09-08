@@ -442,17 +442,17 @@ watch(
       <form @submit.prevent="saveReminder">
         <!-- 提醒标题 -->
         <div class="mb-2 flex items-center justify-between">
-          <label class="mb-2 text-sm text-gray-700 font-medium dark:text-gray-300">
+          <label class="text-sm text-gray-700 font-medium mb-2 dark:text-gray-300">
             {{ t('financial.reminder.reminderTitle') }}
-            <span class="ml-1 text-red-500" aria-label="必填">*</span>
+            <span class="text-red-500 ml-1" aria-label="必填">*</span>
           </label>
           <input
-            v-model="form.name" type="text" required class="w-2/3 modal-input-select"
+            v-model="form.name" type="text" required class="modal-input-select w-2/3"
             :class="{ 'border-red-500': validationErrors.name }" :placeholder="t('validation.reminderTitle')"
             @blur="validateName"
           >
         </div>
-        <div v-if="validationErrors.name" class="mb-2 text-right text-sm text-red-600 dark:text-red-400" role="alert">
+        <div v-if="validationErrors.name" class="text-sm text-red-600 mb-2 text-right dark:text-red-400" role="alert">
           {{ validationErrors.name }}
         </div>
 
@@ -466,15 +466,15 @@ watch(
 
         <!-- 金额 -->
         <div class="mb-2 mt-2 flex items-center justify-between">
-          <label class="mb-2 text-sm text-gray-700 font-medium dark:text-gray-300">
+          <label class="text-sm text-gray-700 font-medium mb-2 dark:text-gray-300">
             {{ t('financial.money') }}
-            <span v-if="isFinanceType" class="ml-1 text-blue-500">*</span>
+            <span v-if="isFinanceType" class="text-blue-500 ml-1">*</span>
           </label>
           <div class="w-2/3">
             <div class="flex items-center space-x-2">
               <div class="flex-1">
                 <input
-                  v-model.number="form.amount" type="number" step="0.01" min="0" class="w-full modal-input-select"
+                  v-model.number="form.amount" type="number" step="0.01" min="0" class="modal-input-select w-full"
                   :class="{ 'border-red-500': validationErrors.amount }" :placeholder="amountPlaceholder"
                   :required="isFinanceType" @blur="validateAmount"
                 >
@@ -485,23 +485,23 @@ watch(
             </div>
           </div>
         </div>
-        <div v-if="validationErrors.amount" class="mb-2 text-right text-sm text-red-600 dark:text-red-400" role="alert">
+        <div v-if="validationErrors.amount" class="text-sm text-red-600 mb-2 text-right dark:text-red-400" role="alert">
           {{ validationErrors.amount }}
         </div>
 
         <!-- 提醒日期 -->
         <div class="mb-2 flex items-center justify-between">
-          <label class="mb-2 text-sm text-gray-700 font-medium dark:text-gray-300">
+          <label class="text-sm text-gray-700 font-medium mb-2 dark:text-gray-300">
             {{ t('date.reminderDate') }}
-            <span class="ml-1 text-red-500" aria-label="必填">*</span>
+            <span class="text-red-500 ml-1" aria-label="必填">*</span>
           </label>
           <input
-            v-model="form.remindDate" type="date" required class="w-2/3 modal-input-select"
+            v-model="form.remindDate" type="date" required class="modal-input-select w-2/3"
             :class="{ 'border-red-500': validationErrors.remindDate }" :min="today" @blur="validateRemindDate"
           >
         </div>
         <div
-          v-if="validationErrors.remindDate" class="mb-2 text-right text-sm text-red-600 dark:text-red-400"
+          v-if="validationErrors.remindDate" class="text-sm text-red-600 mb-2 text-right dark:text-red-400"
           role="alert"
         >
           {{ validationErrors.remindDate }}
@@ -525,13 +525,13 @@ watch(
 
         <!-- 提前提醒 -->
         <div class="mb-2 flex items-center justify-between">
-          <label class="mb-2 block text-sm text-gray-700 font-medium dark:text-gray-300">
+          <label class="text-sm text-gray-700 font-medium mb-2 block dark:text-gray-300">
             {{ t('financial.reminder.advanceReminder') }}
           </label>
-          <div class="w-2/3 flex items-center space-x-1">
+          <div class="flex w-2/3 items-center space-x-1">
             <input
               v-model.number="form.advanceValue" type="number" min="0" max="999"
-              class="w-1/2 flex-1 modal-input-select" placeholder="0"
+              class="modal-input-select flex-1 w-1/2" placeholder="0"
             >
             <select v-model="form.advanceUnit" class="modal-input-select">
               <option value="minutes">
@@ -552,7 +552,7 @@ watch(
 
         <!-- 颜色选择 -->
         <div class="mb-2 flex items-center justify-between">
-          <label class="mb-2 text-sm text-gray-700 font-medium dark:text-gray-300">
+          <label class="text-sm text-gray-700 font-medium mb-2 dark:text-gray-300">
             {{ t('common.misc.colorMark') }}
           </label>
           <ColorSelector v-model="form.color" :color-names="colorNameMap" />
@@ -570,15 +570,15 @@ watch(
 
         <!-- 描述 -->
         <div class="mb-4">
-          <label class="mb-2 block text-sm text-gray-700 font-medium dark:text-gray-300">
+          <label class="text-sm text-gray-700 font-medium mb-2 block dark:text-gray-300">
             {{ t('common.misc.description') }}
             <span class="text-gray-500">({{ t('common.misc.optional') }})</span>
           </label>
           <textarea
-            v-model="form.description" rows="3" class="w-full modal-input-select"
+            v-model="form.description" rows="3" class="modal-input-select w-full"
             :placeholder="descriptionPlaceholder" maxlength="200"
           />
-          <div class="mt-1 text-right text-xs text-gray-500 dark:text-gray-400">
+          <div class="text-xs text-gray-500 mt-1 text-right dark:text-gray-400">
             {{ t('common.misc.maxLength', { current: form.description?.length || 0, max: 200 }) }}
           </div>
         </div>
@@ -593,7 +593,7 @@ watch(
             :class="{ 'opacity-50 cursor-not-allowed': !isFormValid || isSubmitting }"
           >
             <template v-if="isSubmitting">
-              <div class="h-5 w-5 animate-spin border-b-2 border-white rounded-full" />
+              <div class="border-b-2 border-white rounded-full h-5 w-5 animate-spin" />
             </template>
             <template v-else>
               <Check class="wh-5" />

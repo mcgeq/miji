@@ -266,32 +266,28 @@ function showTooltip(event: MouseEvent, day: CalendarDay) {
     position = 'bottom';
     x = mouseX + scrollX + offset;
     y = mouseY + scrollY + offset;
-  }
-  else if (
+  } else if (
     spaceLeft >= tooltipWidth + offset &&
     spaceBottom >= tooltipHeight + offset
   ) {
     position = 'left';
     x = mouseX + scrollX - tooltipWidth - offset;
     y = mouseY + scrollY + offset;
-  }
-  else if (
+  } else if (
     spaceRight >= tooltipWidth + offset &&
     spaceTop >= tooltipHeight + offset
   ) {
     position = 'top';
     x = mouseX + scrollX + offset;
     y = mouseY + scrollY - tooltipHeight - offset;
-  }
-  else if (
+  } else if (
     spaceLeft >= tooltipWidth + offset &&
     spaceTop >= tooltipHeight + offset
   ) {
     position = 'left';
     x = mouseX + scrollX - tooltipWidth - offset;
     y = mouseY + scrollY - tooltipHeight - offset;
-  }
-  else {
+  } else {
     if (spaceRight >= spaceLeft) {
       position = spaceBottom >= spaceTop ? 'bottom' : 'top';
       x = mouseX + scrollX + offset;
@@ -299,8 +295,7 @@ function showTooltip(event: MouseEvent, day: CalendarDay) {
         spaceBottom >= spaceTop
           ? mouseY + scrollY + offset
           : mouseY + scrollY - tooltipHeight - offset;
-    }
-    else {
+    } else {
       position = 'left';
       x = mouseX + scrollX - tooltipWidth - offset;
       y =
@@ -509,8 +504,8 @@ onMounted(() => {
       </div>
 
       <div v-if="calendarDays.filter(d => d.events.length > 0).length === 0" class="empty-state">
-        <i class="i-tabler-calendar-x wh-8 text-gray-400" />
-        <p class="mt-2 text-sm text-gray-500">
+        <i class="i-tabler-calendar-x text-gray-400 wh-8" />
+        <p class="text-sm text-gray-500 mt-2">
           本月暂无记录
         </p>
       </div>

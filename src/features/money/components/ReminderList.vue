@@ -97,12 +97,12 @@ defineExpose({
 <template>
   <div class="min-h-25">
     <!-- 过滤器区域 -->
-    <div class="mb-5 p-4 flex flex-wrap items-center justify-center gap-3 rounded-lg bg-gray-50">
+    <div class="mb-5 p-4 rounded-lg bg-gray-50 flex flex-wrap gap-3 items-center justify-center">
       <div class="filter-flex-wrap">
-        <label class="show-on-desktop text-sm text-gray-700 font-medium">{{ t('common.status.status') }}</label>
+        <label class="text-sm text-gray-700 font-medium show-on-desktop">{{ t('common.status.status') }}</label>
         <select
           v-model="filters.status"
-          class="border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          class="text-sm px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <option value="">
             {{ t('common.actions.all') }}
@@ -120,10 +120,10 @@ defineExpose({
       </div>
 
       <div class="filter-flex-wrap">
-        <label class="show-on-desktop text-sm text-gray-700 font-medium">{{ t('todos.repeat.periodType') }}</label>
+        <label class="text-sm text-gray-700 font-medium show-on-desktop">{{ t('todos.repeat.periodType') }}</label>
         <select
           v-model="filters.period"
-          class="border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          class="text-sm px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <option value="">
             {{ t('common.actions.all') }}
@@ -150,10 +150,10 @@ defineExpose({
       </div>
 
       <div class="filter-flex-wrap">
-        <label class="show-on-desktop text-sm text-gray-700 font-medium"> {{ t('categories.category') }} </label>
+        <label class="text-sm text-gray-700 font-medium show-on-desktop"> {{ t('categories.category') }} </label>
         <select
           v-model="filters.category"
-          class="border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          class="text-sm px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <option value="">
             {{ t('categories.allCategory') }}
@@ -165,10 +165,10 @@ defineExpose({
       </div>
 
       <div class="filter-flex-wrap">
-        <label class="show-on-desktop text-sm text-gray-700 font-medium">{{ t('date.rangeDate') }}</label>
+        <label class="text-sm text-gray-700 font-medium show-on-desktop">{{ t('date.rangeDate') }}</label>
         <select
           v-model="filters.dateRange"
-          class="border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          class="text-sm px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <option value="">
             {{ t('common.actions.all') }}
@@ -189,7 +189,7 @@ defineExpose({
       </div>
 
       <button
-        class="rounded-md bg-gray-200 px-3 py-1.5 text-sm text-gray-700 transition-colors hover:bg-gray-300"
+        class="text-sm text-gray-700 px-3 py-1.5 rounded-md bg-gray-200 transition-colors hover:bg-gray-300"
         @click="resetFilters"
       >
         <RotateCcw class="mr-1 wh-5" />
@@ -212,9 +212,9 @@ defineExpose({
     </div>
 
     <!-- 提醒网格 -->
-    <div v-else class="w-full reminder-grid grid gap-5 mb-6">
+    <div v-else class="reminder-grid mb-6 gap-5 grid w-full">
       <div
-        v-for="reminder in pagination.paginatedItems.value" :key="reminder.serialNum" class="reminder-card border rounded-lg bg-white p-5 shadow-md transition-shadow hover:shadow-lg" :class="[
+        v-for="reminder in pagination.paginatedItems.value" :key="reminder.serialNum" class="reminder-card p-5 border rounded-lg bg-white shadow-md transition-shadow hover:shadow-lg" :class="[
           {
             'border-red-500 bg-red-50': isOverdue(reminder),
             'opacity-80 bg-green-50 border-green-400': reminder.isPaid,
@@ -225,9 +225,9 @@ defineExpose({
           <div class="text-lg text-gray-800 font-semibold">
             {{ reminder.name }}
           </div>
-          <div class="flex items-center gap-2">
+          <div class="flex gap-2 items-center">
             <div
-              class="inline-flex items-center gap-1.5 rounded px-2 py-1 text-xs font-medium" :class="[
+              class="text-xs font-medium px-2 py-1 rounded inline-flex gap-1.5 items-center" :class="[
                 getStatusClass(reminder) === 'paid' ? 'bg-green-100 text-green-600'
                 : getStatusClass(reminder) === 'overdue' ? 'bg-red-100 text-red-600'
                   : 'bg-blue-100 text-blue-600',
@@ -238,19 +238,19 @@ defineExpose({
             </div>
             <div class="flex gap-1">
               <button
-                v-if="!reminder.isPaid" class="money-option-btn hover:(border-green-500 text-green-500)"
+                v-if="!reminder.isPaid" class="money-option-btn hover:(text-green-500 border-green-500)"
                 :title="t('financial.transaction.markPaid')" @click="emit('markPaid', reminder.serialNum, !reminder.isPaid)"
               >
                 <CheckCircle class="h-4 w-4" />
               </button>
               <button
-                class="money-option-btn hover:(border-blue-500 text-blue-500)" :title="t('common.actions.edit')"
+                class="money-option-btn hover:(text-blue-500 border-blue-500)" :title="t('common.actions.edit')"
                 @click="emit('edit', reminder)"
               >
                 <Edit class="h-4 w-4" />
               </button>
               <button
-                class="money-option-btn hover:(border-red-500 text-red-500)"
+                class="money-option-btn hover:(text-red-500 border-red-500)"
                 :title="t('common.actions.delete')" @click="emit('delete', reminder.serialNum)"
               >
                 <Trash class="h-4 w-4" />
@@ -259,7 +259,7 @@ defineExpose({
           </div>
         </div>
 
-        <div class="mb-4 flex items-baseline gap-2">
+        <div class="mb-4 flex gap-2 items-baseline">
           <span class="text-2xl text-gray-800 font-semibold">
             {{ formatCurrency(reminder.amount) }}
           </span>
@@ -269,22 +269,22 @@ defineExpose({
         </div>
 
         <div class="mb-2 space-y-2">
-          <div class="flex justify-between text-sm">
+          <div class="text-sm flex justify-between">
             <span class="text-gray-600">{{ t('financial.billDate') }}</span>
             <span class="text-gray-800">{{ DateUtils.formatDate(reminder.billDate) }}</span>
           </div>
-          <div class="flex justify-between text-sm">
+          <div class="text-sm flex justify-between">
             <span class="text-gray-600">{{ t('date.reminderDate') }}</span>
             <span class="text-gray-800">{{ DateUtils.formatDateTime(reminder.remindDate) }}</span>
           </div>
         </div>
 
-        <div class="mb-2 flex items-center justify-end gap-2 text-sm text-gray-600">
+        <div class="text-sm text-gray-600 mb-2 flex gap-2 items-center justify-end">
           <Repeat class="h-4 w-4" />
           <span>{{ getRepeatTypeName(reminder.repeatPeriod) }}</span>
         </div>
 
-        <div class="border-t border-gray-200 pt-4 text-sm space-y-2">
+        <div class="text-sm pt-4 border-t border-gray-200 space-y-2">
           <div class="flex justify-between">
             <span class="text-gray-600"> {{ t('categories.category') }} </span>
             <span class="text-gray-800">{{ reminder.category }}</span>

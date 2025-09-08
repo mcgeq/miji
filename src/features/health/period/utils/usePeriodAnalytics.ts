@@ -61,7 +61,7 @@ export function usePeriodAnalytics(
     const previousStart = new Date(previous.startDate);
     return Math.ceil(
       (currentStart.getTime() - previousStart.getTime()) /
-        (1000 * 60 * 60 * 24),
+      (1000 * 60 * 60 * 24),
     );
   };
 

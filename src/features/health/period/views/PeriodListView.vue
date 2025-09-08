@@ -207,8 +207,7 @@ function formatDateRange(startDate: string, endDate: string): string {
 
   if (start.getMonth() === end.getMonth()) {
     return `${start.getMonth() + 1}月${start.getDate()}-${end.getDate()}日`;
-  }
-  else {
+  } else {
     return `${start.getMonth() + 1}月${start.getDate()}日-${end.getMonth() + 1}月${end.getDate()}日`;
   }
 }
@@ -248,12 +247,12 @@ watch(
 <template>
   <div class="period-list-view">
     <!-- 过滤和搜索 -->
-    <div class="filters-section mb-6 card-base p-4">
-      <div class="flex flex-col items-start gap-4 sm:flex-row sm:items-center">
+    <div class="filters-section mb-6 p-4 card-base">
+      <div class="flex flex-col gap-4 items-start sm:flex-row sm:items-center">
         <div class="flex-1">
           <div class="relative">
-            <i class="i-tabler-search absolute left-3 top-1/2 wh-4 transform text-gray-400 -translate-y-1/2" />
-            <input v-model="searchQuery" type="text" placeholder="搜索记录..." class="w-full input-base pl-10">
+            <i class="i-tabler-search text-gray-400 wh-4 transform left-3 top-1/2 absolute -translate-y-1/2" />
+            <input v-model="searchQuery" type="text" placeholder="搜索记录..." class="input-base pl-10 w-full">
           </div>
         </div>
         <div class="flex flex-wrap gap-2">
@@ -283,45 +282,45 @@ watch(
             <ListFilterPlus class="ml-2 wh-5" />
           </button>
           <div v-if="showFilters">
-            <button class="btn-secondary self-end text-sm" @click="clearFilters">
+            <button class="text-sm btn-secondary self-end" @click="clearFilters">
               <ListRestart class="ml-2 wh-5" />
             </button>
           </div>
         </div>
       </div>
       <!-- 高级筛选 -->
-      <div v-if="showFilters" class="mt-4 border-t border-gray-200 pt-4 dark:border-gray-700">
-        <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <div v-if="showFilters" class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+        <div class="gap-4 grid grid-cols-1 sm:grid-cols-3">
           <!-- 第一组：日期范围 -->
           <div class="flex flex-col gap-2">
             <label class="filter-label">日期范围</label>
-            <input v-model="filters.startDate" type="date" class="w-full input-base text-sm" placeholder="开始">
-            <input v-model="filters.endDate" type="date" class="w-full input-base text-sm" placeholder="结束">
+            <input v-model="filters.startDate" type="date" class="text-sm input-base w-full" placeholder="开始">
+            <input v-model="filters.endDate" type="date" class="text-sm input-base w-full" placeholder="结束">
           </div>
 
           <!-- 第二组：持续时间 -->
           <div class="flex flex-col gap-2">
             <label class="filter-label">持续时间</label>
             <input
-              v-model.number="filters.minDuration" type="number" class="w-full input-base text-sm" placeholder="最少天数"
+              v-model.number="filters.minDuration" type="number" class="text-sm input-base w-full" placeholder="最少天数"
               min="1"
             >
             <input
-              v-model.number="filters.maxDuration" type="number" class="w-full input-base text-sm" placeholder="最多天数"
+              v-model.number="filters.maxDuration" type="number" class="text-sm input-base w-full" placeholder="最多天数"
               min="1"
             >
           </div>
 
           <!-- 第三组：周期长度 + 按钮 -->
-          <div class="flex flex-col justify-between gap-4">
+          <div class="flex flex-col gap-4 justify-between">
             <div class="flex flex-col gap-2">
               <label class="filter-label">周期长度</label>
               <input
-                v-model.number="filters.minCycle" type="number" class="w-full input-base text-sm" placeholder="最短周期"
+                v-model.number="filters.minCycle" type="number" class="text-sm input-base w-full" placeholder="最短周期"
                 min="1"
               >
               <input
-                v-model.number="filters.maxCycle" type="number" class="w-full input-base text-sm" placeholder="最长周期"
+                v-model.number="filters.maxCycle" type="number" class="text-sm input-base w-full" placeholder="最长周期"
                 min="1"
               >
             </div>
@@ -331,10 +330,10 @@ watch(
     </div>
 
     <!-- 统计概览 -->
-    <div class="stats-overview grid grid-cols-4 mb-2 gap-2">
+    <div class="stats-overview mb-2 gap-2 grid grid-cols-4">
       <div class="stat-card">
         <div class="stat-icon bg-red-100 dark:bg-red-900/30">
-          <i class="i-tabler-calendar-heart wh-5 text-red-600 dark:text-red-400" />
+          <i class="i-tabler-calendar-heart text-red-600 wh-5 dark:text-red-400" />
         </div>
         <div class="stat-content">
           <div class="stat-value">
@@ -347,7 +346,7 @@ watch(
       </div>
       <div class="stat-card">
         <div class="stat-icon bg-blue-100 dark:bg-blue-900/30">
-          <i class="i-tabler-clock wh-5 text-blue-600 dark:text-blue-400" />
+          <i class="i-tabler-clock text-blue-600 wh-5 dark:text-blue-400" />
         </div>
         <div class="stat-content">
           <div class="stat-value">
@@ -360,7 +359,7 @@ watch(
       </div>
       <div class="stat-card">
         <div class="stat-icon bg-green-100 dark:bg-green-900/30">
-          <i class="i-tabler-repeat wh-5 text-green-600 dark:text-green-400" />
+          <i class="i-tabler-repeat text-green-600 wh-5 dark:text-green-400" />
         </div>
         <div class="stat-content">
           <div class="stat-value">
@@ -373,7 +372,7 @@ watch(
       </div>
       <div class="stat-card">
         <div class="stat-icon bg-purple-100 dark:bg-purple-900/30">
-          <i class="i-tabler-trending-up wh-5 text-purple-600 dark:text-purple-400" />
+          <i class="i-tabler-trending-up text-purple-600 wh-5 dark:text-purple-400" />
         </div>
         <div class="stat-content">
           <div class="stat-value">
@@ -388,12 +387,12 @@ watch(
 
     <!-- 记录列表 -->
     <div class="records-list">
-      <div v-if="filteredRecords.length === 0" class="empty-state card-base p-8">
-        <i class="wh-16 i-tabler-calendar-off mx-auto mb-4 text-gray-400" />
-        <h3 class="mb-2 text-lg text-gray-900 font-medium dark:text-white">
+      <div v-if="filteredRecords.length === 0" class="empty-state p-8 card-base">
+        <i class="i-tabler-calendar-off wh-16 text-gray-400 mx-auto mb-4" />
+        <h3 class="text-lg text-gray-900 font-medium mb-2 dark:text-white">
           {{ searchQuery || hasActiveFilters ? '未找到匹配的记录' : '还没有经期记录' }}
         </h3>
-        <p class="mb-4 text-gray-500 dark:text-gray-400">
+        <p class="text-gray-500 mb-4 dark:text-gray-400">
           {{ searchQuery || hasActiveFilters ? '试试调整搜索条件或筛选器' : '开始记录你的经期数据吧' }}
         </p>
         <button v-if="!searchQuery && !hasActiveFilters" class="btn-primary" @click="emit('addRecord')">
@@ -405,7 +404,7 @@ watch(
       <div v-else class="space-y-4">
         <div
           v-for="record in paginatedRecords" :key="record.serialNum"
-          class="record-card cursor-pointer card-base p-4 transition-shadow hover:shadow-md"
+          class="record-card p-4 card-base cursor-pointer transition-shadow hover:shadow-md"
           @click="emit('editRecord', record)"
         >
           <div class="flex items-start justify-between">
@@ -425,11 +424,11 @@ watch(
               </div>
               <div class="record-details">
                 <div class="detail-item">
-                  <i class="i-tabler-calendar wh-4 text-gray-400" />
+                  <i class="i-tabler-calendar text-gray-400 wh-4" />
                   <span>{{ formatDate(record.startDate) }} - {{ formatDate(record.endDate) }}</span>
                 </div>
                 <div v-if="getRecordSymptoms(record).length > 0" class="detail-item">
-                  <i class="i-tabler-medical-cross wh-4 text-gray-400" />
+                  <i class="i-tabler-medical-cross text-gray-400 wh-4" />
                   <span>{{ getRecordSymptoms(record).join(', ') }}</span>
                 </div>
               </div>

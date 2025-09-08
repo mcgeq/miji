@@ -314,10 +314,10 @@ defineExpose({
     <div class="mb-2 flex items-center justify-between">
       <label
         :for="inputId"
-        class="mb-2 text-sm text-gray-700 font-medium dark:text-gray-300"
+        class="text-sm text-gray-700 font-medium mb-2 dark:text-gray-300"
       >
         {{ label }}
-        <span v-if="required" class="ml-1 text-red-500" aria-label="必填">*</span>
+        <span v-if="required" class="text-red-500 ml-1" aria-label="必填">*</span>
       </label>
       <!-- 基础选择器 -->
       <select
@@ -384,7 +384,7 @@ defineExpose({
       role="group"
       :aria-label="quickSelectLabel"
     >
-      <div class="mb-1 text-xs text-gray-500 dark:text-gray-400">
+      <div class="text-xs text-gray-500 mb-1 dark:text-gray-400">
         {{ quickSelectLabel }}：
       </div>
       <div class="flex flex-wrap gap-1">
@@ -405,7 +405,7 @@ defineExpose({
     <div
       v-if="errorMessage"
       :id="`${inputId}-error`"
-      class="mt-1 text-sm text-red-600 dark:text-red-400"
+      class="text-sm text-red-600 mt-1 dark:text-red-400"
       role="alert"
       aria-live="polite"
     >
@@ -414,7 +414,7 @@ defineExpose({
     <!-- 帮助文本 -->
     <div
       v-if="helpText"
-      class="mt-2 flex justify-end text-xs text-gray-500 dark:text-gray-400"
+      class="text-xs text-gray-500 mt-2 flex justify-end dark:text-gray-400"
     >
       {{ helpText }}
     </div>

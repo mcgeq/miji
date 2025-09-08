@@ -36,7 +36,7 @@ const styleMap: Record<LogType, string> = {
 // 缓存环境变量
 const isDebugEnabled =
   import.meta.env.MODE === 'development' ||
-  import.meta.env.VITE_ENABLE_DEBUG === 'true';
+    import.meta.env.VITE_ENABLE_DEBUG === 'true';
 const logLevel = (import.meta.env.VITE_LOG_LEVEL as LogType) || 'info';
 
 // 时间戳格式化

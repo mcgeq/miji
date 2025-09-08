@@ -1,7 +1,3 @@
-<template>
-  <div>projects</div>
-</template>
-
 <script setup lang="ts">
 definePage({
   name: 'projects',
@@ -11,3 +7,7 @@ definePage({
   },
 });
 </script>
+
+<template>
+  <div>projects</div>
+</template>

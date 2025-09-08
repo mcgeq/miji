@@ -116,12 +116,10 @@ async function handleUpload() {
     emit('close');
     clearSelection();
     toast.success('头像上传成功');
-  }
-  catch (error) {
+  } catch (error) {
     toast.error('头像上传失败');
     Lg.e('Settings', error);
-  }
-  finally {
+  } finally {
     isUploading.value = false;
   }
 }
@@ -145,12 +143,10 @@ async function confirmDeleteAvatar() {
     emit('updated', '');
     emit('close');
     toast.success('头像删除成功');
-  }
-  catch (error) {
+  } catch (error) {
     Lg.e('Settings', '删除头像失败:', error);
     toast.error('删除头像失败，请重试');
-  }
-  finally {
+  } finally {
     isUploading.value = false;
     showDeleteConfirm.value = false;
   }
@@ -199,7 +195,7 @@ const userInitial = computed(() => {
     >
       <div
         v-if="props.isOpen"
-        class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+        class="p-4 bg-black/50 flex items-center inset-0 justify-center fixed z-50"
         @click="handleOverlayClick"
       >
         <Transition
@@ -212,7 +208,7 @@ const userInitial = computed(() => {
         >
           <div
             v-if="props.isOpen"
-            class="max-w-md w-full rounded-2xl bg-white p-6 shadow-2xl"
+            class="p-6 rounded-2xl bg-white max-w-md w-full shadow-2xl"
           >
             <!-- Modal 头部 -->
             <div class="mb-6 flex items-center justify-between">
@@ -220,7 +216,7 @@ const userInitial = computed(() => {
                 编辑头像
               </h2>
               <button
-                class="rounded-full p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
+                class="text-gray-400 p-2 rounded-full transition-colors hover:text-gray-600 hover:bg-gray-100"
                 :disabled="isUploading"
                 @click="handleClose"
               >
@@ -231,7 +227,7 @@ const userInitial = computed(() => {
             <!-- 当前头像显示 -->
             <div class="mb-6 flex justify-center">
               <div class="relative">
-                <div class="h-32 w-32 overflow-hidden border-4 border-gray-200 rounded-full">
+                <div class="border-4 border-gray-200 rounded-full h-32 w-32 overflow-hidden">
                   <img
                     v-if="currentAvatarUrl"
                     :src="currentAvatarUrl"
@@ -240,7 +236,7 @@ const userInitial = computed(() => {
                   >
                   <div
                     v-else
-                    class="h-full w-full flex items-center justify-center bg-gray-100 text-2xl text-gray-500 font-semibold"
+                    class="text-2xl text-gray-500 font-semibold bg-gray-100 flex h-full w-full items-center justify-center"
                   >
                     {{ userInitial }}
                   </div>
@@ -249,7 +245,7 @@ const userInitial = computed(() => {
                 <!-- 预览标识 -->
                 <div
                   v-if="previewUrl"
-                  class="absolute rounded-full bg-blue-500 px-2 py-1 text-xs text-white -right-2 -top-2"
+                  class="text-xs text-white px-2 py-1 rounded-full bg-blue-500 absolute -right-2 -top-2"
                 >
                   预览
                 </div>
@@ -258,7 +254,7 @@ const userInitial = computed(() => {
 
             <!-- 文件选择区域 -->
             <div
-              class="mb-6 cursor-pointer border-2 rounded-lg border-dashed p-6 text-center transition-colors"
+              class="mb-6 p-6 text-center border-2 rounded-lg border-dashed cursor-pointer transition-colors"
               :class="dragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-gray-400'"
               @click="triggerFileSelect"
               @dragover="handleDragOver"
@@ -273,9 +269,9 @@ const userInitial = computed(() => {
                 @change="handleFileSelect"
               >
 
-              <div class="flex flex-col items-center gap-3">
-                <div class="rounded-full bg-gray-100 p-3">
-                  <Upload class="h-6 w-6 text-gray-600" />
+              <div class="flex flex-col gap-3 items-center">
+                <div class="p-3 rounded-full bg-gray-100">
+                  <Upload class="text-gray-600 h-6 w-6" />
                 </div>
                 <div>
                   <p class="text-sm text-gray-900 font-medium">
@@ -294,7 +290,7 @@ const userInitial = computed(() => {
               <button
                 v-if="selectedFile"
                 :disabled="isUploading"
-                class="w-full flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-3 text-sm text-white font-medium transition-colors disabled:cursor-not-allowed hover:bg-blue-700 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                class="text-sm text-white font-medium px-4 py-3 rounded-lg bg-blue-600 flex gap-2 w-full transition-colors items-center justify-center focus:outline-none hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed focus:ring-2 focus:ring-blue-500/20"
                 @click="handleUpload"
               >
                 <Camera class="h-4 w-4" />
@@ -306,7 +302,7 @@ const userInitial = computed(() => {
                 <button
                   v-if="selectedFile"
                   :disabled="isUploading"
-                  class="flex-1 border border-gray-300 rounded-lg px-4 py-3 text-sm text-gray-700 font-medium transition-colors disabled:cursor-not-allowed hover:bg-gray-50 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-gray-500/20"
+                  class="text-sm text-gray-700 font-medium px-4 py-3 border border-gray-300 rounded-lg flex-1 transition-colors focus:outline-none hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed focus:ring-2 focus:ring-gray-500/20"
                   @click="clearSelection"
                 >
                   清除选择
@@ -316,7 +312,7 @@ const userInitial = computed(() => {
                 <button
                   v-if="user?.avatarUrl && !selectedFile"
                   :disabled="isUploading"
-                  class="flex flex-1 items-center justify-center gap-2 border border-red-300 rounded-lg px-4 py-3 text-sm text-red-700 font-medium transition-colors disabled:cursor-not-allowed hover:bg-red-50 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-red-500/20"
+                  class="text-sm text-red-700 font-medium px-4 py-3 border border-red-300 rounded-lg flex flex-1 gap-2 transition-colors items-center justify-center focus:outline-none hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed focus:ring-2 focus:ring-red-500/20"
                   @click="showDeleteConfirmDialog"
                 >
                   <Trash2 class="h-4 w-4" />
@@ -326,7 +322,7 @@ const userInitial = computed(() => {
                 <!-- 取消按钮 -->
                 <button
                   :disabled="isUploading"
-                  class="flex-1 border border-gray-300 rounded-lg px-4 py-3 text-sm text-gray-700 font-medium transition-colors disabled:cursor-not-allowed hover:bg-gray-50 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-gray-500/20"
+                  class="text-sm text-gray-700 font-medium px-4 py-3 border border-gray-300 rounded-lg flex-1 transition-colors focus:outline-none hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed focus:ring-2 focus:ring-gray-500/20"
                   @click="handleClose"
                 >
                   {{ selectedFile ? '取消' : '关闭' }}

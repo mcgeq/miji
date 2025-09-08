@@ -7,13 +7,13 @@ const onClose = () => emit('close');
 
 <template>
   <div
-    class="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+    class="bg-black/40 flex items-center inset-0 justify-center fixed z-50"
     @click.self="onClose"
   >
-    <div class="relative max-w-xl w-[90vw] rounded-xl bg-white p-5 shadow-xl dark:bg-gray-900">
+    <div class="p-5 rounded-xl bg-white max-w-xl w-[90vw] shadow-xl relative dark:bg-gray-900">
       <!-- 关闭按钮 -->
       <button
-        class="absolute right-2 top-2 text-gray-500 hover:text-red-500"
+        class="text-gray-500 right-2 top-2 absolute hover:text-red-500"
         @click="onClose"
       >
         <X class="wh-5" />

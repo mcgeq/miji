@@ -46,11 +46,12 @@ async function handleSubmit() {
 </script>
 
 <template>
-  <div class="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900 px-4 overflow-hidden">
+  <div class="px-4 bg-gray-100 flex min-h-screen items-center justify-center overflow-hidden dark:bg-gray-900">
     <div
-      class="w-full max-w-md p6 sm:p8 bg-white/90 dark:bg-gray-800/80 backdrop-blur-xl border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg space-y-6">
+      class="p6 border border-gray-200 rounded-xl bg-white/90 max-w-md w-full shadow-lg backdrop-blur-xl space-y-6 sm:p8 dark:border-gray-700 dark:bg-gray-800/80"
+    >
       <!-- 标题 -->
-      <h2 class="text-center text-3xl font-bold text-gray-900 dark:text-white tracking-tight">
+      <h2 class="text-3xl text-gray-900 tracking-tight font-bold text-center dark:text-white">
         {{ t('auth.login') }}
       </h2>
       <!-- 登录表单 -->
@@ -65,8 +66,9 @@ async function handleSubmit() {
         />
         <!-- 记住我 -->
         <label
-          class="inline-flex items-center gap-2 text-sm text-gray-800 dark:text-gray-200 cursor-pointer select-none">
-          <input type="checkbox" v-model="rememberMe" class="accent-blue-600 dark:accent-blue-500 w-4 h-4" />
+          class="text-sm text-gray-800 inline-flex gap-2 cursor-pointer select-none items-center dark:text-gray-200"
+        >
+          <input v-model="rememberMe" type="checkbox" class="accent-blue-600 h-4 w-4 dark:accent-blue-500">
           <span>{{ t('auth.rememberMe') }}</span>
         </label>
 
@@ -74,16 +76,17 @@ async function handleSubmit() {
         <button
           type="submit"
           :disabled="isSubmitting"
-          class="w-full py-2 px-4 rounded-md bg-gradient-to-r from-blue-600 to-indigo-600 hover:brightness-110 text-white font-semibold shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-          style="color: white !important; background: linear-gradient(to right, #2563eb, #4f46e5);">
+          class="bg-gradient-to-r text-white font-semibold px-4 py-2 rounded-md w-full shadow-md transition-all from-blue-600 to-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed hover:brightness-110"
+          style="color: white !important; background: linear-gradient(to right, #2563eb, #4f46e5);"
+        >
           {{ isSubmitting ? t('auth.loading.loggingIn') : t('auth.login') }}
         </button>
       </form>
 
       <!-- 注册跳转 -->
-      <p class="text-center text-sm text-gray-600 dark:text-gray-400">
+      <p class="text-sm text-gray-600 text-center dark:text-gray-400">
         {{ t('auth.noAccount') }}
-        <router-link to="/auth/register" class="text-blue-600 dark:text-blue-400 hover:underline ml-1 font-medium">
+        <router-link to="/auth/register" class="text-blue-600 font-medium ml-1 dark:text-blue-400 hover:underline">
           {{ t('auth.register') }}
         </router-link>
       </p>

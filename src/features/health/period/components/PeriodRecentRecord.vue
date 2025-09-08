@@ -62,19 +62,19 @@ function calculateCycleFromPrevious(record: PeriodRecords) {
 
 <template>
   <!-- 最近记录 -->
-  <div class="recent-records card-base p-4">
+  <div class="recent-records p-4 card-base">
     <div class="mb-4 flex-between">
       <h3 class="text-lg text-gray-900 font-semibold dark:text-white">
         最近记录
       </h3>
-      <button class="btn-primary text-sm" @click="emit('addRecord')">
+      <button class="text-sm btn-primary" @click="emit('addRecord')">
         <Plus class="wh-5" />
       </button>
     </div>
 
     <div v-if="periodStore.periodRecords.length === 0" class="empty-state">
-      <i class="i-tabler-calendar-off mx-auto mb-3 wh-12 text-gray-400" />
-      <p class="text-center text-gray-500 dark:text-gray-400">
+      <i class="i-tabler-calendar-off text-gray-400 mx-auto mb-3 wh-12" />
+      <p class="text-gray-500 text-center dark:text-gray-400">
         还没有经期记录，<button class="text-blue-500 hover:underline" @click="emit('addRecord')">
           点击添加
         </button>
@@ -103,7 +103,7 @@ function calculateCycleFromPrevious(record: PeriodRecords) {
           </div>
         </div>
         <div class="record-actions">
-          <i class="i-tabler-chevron-right wh-4 text-gray-400" />
+          <i class="i-tabler-chevron-right text-gray-400 wh-4" />
         </div>
       </div>
     </div>

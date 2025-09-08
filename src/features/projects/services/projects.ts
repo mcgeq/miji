@@ -9,14 +9,14 @@
 // Modified   By:  mcgeq <mcgeq@outlook.com>
 // -----------------------------------------------------------------------------
 
-import {getDb} from '@/db';
-import {Projects} from '@/schema/todos';
-import {toCamelCase, toSnakeCase} from '@/utils/common';
-import {Lg} from '@/utils/debugLog';
+import { getDb } from '@/db';
+import { toCamelCase, toSnakeCase } from '@/utils/common';
+import { Lg } from '@/utils/debugLog';
+import type { Projects } from '@/schema/todos';
 
 type UpdatableFields = Partial<Record<keyof Projects, string | boolean | null>>;
 
-const getProject = async (serialNum: string): Promise<Projects | null> => {
+async function getProject(serialNum: string): Promise<Projects | null> {
   try {
     const db = await getDb();
     const rows = (await db.select(
@@ -32,15 +32,15 @@ const getProject = async (serialNum: string): Promise<Projects | null> => {
     Lg.e('ProjectsDb', error);
     throw new Error('Database error');
   }
-};
+}
 
-const list = async (): Promise<Projects[]> => {
+async function list(): Promise<Projects[]> {
   const db = await getDb();
   const rows = await db.select('SELECT * FROM projects');
   return toCamelCase(rows) as Projects[];
-};
+}
 
-const insert = async (project: Projects): Promise<Projects> => {
+async function insert(project: Projects): Promise<Projects> {
   const db = await getDb();
   const values = [
     project.serialNum,
@@ -65,9 +65,9 @@ const insert = async (project: Projects): Promise<Projects> => {
     Lg.e('ProjectsDb', error);
     throw new Error('Failed to insert project');
   }
-};
+}
 
-const update = async (project: Projects): Promise<Projects> => {
+async function update(project: Projects): Promise<Projects> {
   const db = await getDb();
   const values = [
     project.name,
@@ -86,17 +86,14 @@ const update = async (project: Projects): Promise<Projects> => {
     values,
   );
   return project;
-};
+}
 
-const deletes = async (serialNum: string): Promise<void> => {
+async function deletes(serialNum: string): Promise<void> {
   const db = await getDb();
   await db.execute('DELETE FROM projects WHERE serial_num = ?', [serialNum]);
-};
+}
 
-const updatePartial = async (
-  serialNum: string,
-  updates: UpdatableFields,
-): Promise<void> => {
+async function updatePartial(serialNum: string, updates: UpdatableFields): Promise<void> {
   const db = await getDb();
   const fields: string[] = [];
   const values: (string | boolean | null)[] = [];
@@ -111,7 +108,7 @@ const updatePartial = async (
   values.push(serialNum);
   const sql = `UPDATE projects SET ${fields.join(', ')} WHERE serial_num = ?`;
   await db.execute(sql, values);
-};
+}
 
 export const projectsDb = {
   getProject,

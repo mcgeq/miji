@@ -168,7 +168,7 @@ const symptomSeverityText = computed(() => {
     <div class="stats-grid">
       <div class="stat-card current-phase">
         <div class="stat-header">
-          <CalendarHeart class="wh-6 text-pink-500" />
+          <CalendarHeart class="text-pink-500 wh-6" />
           <h3 class="stat-title">
             当前阶段
           </h3>
@@ -188,7 +188,7 @@ const symptomSeverityText = computed(() => {
 
       <div class="stat-card next-period">
         <div class="stat-header">
-          <CalendarClock class="wh-6 text-blue-500" />
+          <CalendarClock class="text-blue-500 wh-6" />
           <h3 class="stat-title">
             下次经期
           </h3>
@@ -219,7 +219,7 @@ const symptomSeverityText = computed(() => {
 
       <div class="stat-card cycle-info">
         <div class="stat-header">
-          <CalendarSync class="wh-6 text-green-500" />
+          <CalendarSync class="text-green-500 wh-6" />
           <h3 class="stat-title">
             周期信息
           </h3>
@@ -240,7 +240,7 @@ const symptomSeverityText = computed(() => {
 
       <div class="stat-card trends">
         <div class="stat-header">
-          <TrendingUp class="wh-6 text-purple-500" />
+          <TrendingUp class="text-purple-500 wh-6" />
           <h3 class="stat-title">
             趋势分析
           </h3>

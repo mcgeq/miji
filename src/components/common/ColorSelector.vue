@@ -66,22 +66,22 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div ref="colorSelectorRef" class="relative w-2/3">
+  <div ref="colorSelectorRef" class="w-2/3 relative">
     <!-- 触发按钮 -->
     <button
       type="button"
-      class="w-full flex items-center justify-between border border-gray-300 rounded-lg bg-white px-3 py-2 transition-all duration-200 focus:border-transparent hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+      class="px-3 py-2 border border-gray-300 rounded-lg bg-white flex w-full transition-all duration-200 items-center justify-between focus:outline-none focus:border-transparent hover:border-gray-400 focus:ring-2 focus:ring-blue-500"
       @click="toggleDropdown"
     >
-      <div class="flex items-center gap-2">
+      <div class="flex gap-2 items-center">
         <div
-          class="h-5 w-5 border-2 border-gray-300 rounded-full"
+          class="border-2 border-gray-300 rounded-full h-5 w-5"
           :style="{ backgroundColor: modelValue }"
         />
         <span class="text-sm text-gray-700">{{ getColorName(modelValue) }}</span>
       </div>
       <svg
-        class="h-4 w-4 text-gray-400 transition-transform duration-200"
+        class="text-gray-400 h-4 w-4 transition-transform duration-200"
         :class="{ 'rotate-180': isOpen }"
         fill="none"
         stroke="currentColor"
@@ -94,14 +94,14 @@ onUnmounted(() => {
     <!-- 颜色网格下拉 -->
     <div
       v-if="isOpen"
-      class="absolute left-0 right-0 top-full z-50 mt-1 border border-gray-200 rounded-lg bg-white p-3 shadow-lg"
+      class="mt-1 p-3 border border-gray-200 rounded-lg bg-white shadow-lg left-0 right-0 top-full absolute z-50"
     >
-      <div class="grid grid-cols-5 gap-2">
+      <div class="gap-2 grid grid-cols-5">
         <button
           v-for="color in colors"
           :key="color"
           type="button"
-          class="h-8 w-8 border-2 rounded-full transition-all duration-200 hover:scale-110 focus:outline-none" :class="[
+          class="border-2 rounded-full h-8 w-8 transition-all duration-200 focus:outline-none hover:scale-110" :class="[
             modelValue === color
               ? 'border-gray-800 shadow-lg ring-2 ring-blue-200'
               : 'border-gray-300 hover:border-gray-500',

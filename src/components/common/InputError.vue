@@ -129,7 +129,7 @@ defineExpose({
       <div class="error-content">
         <!-- 错误图标 -->
         <div class="error-icon">
-          <i :class="iconClass" class="wh-4 flex-shrink-0" />
+          <i :class="iconClass" class="flex-shrink-0 wh-4" />
         </div>
 
         <!-- 错误消息 -->
@@ -152,7 +152,7 @@ defineExpose({
           :aria-label="dismissLabel"
           @click="handleDismiss"
         >
-          <i class="wh-3 i-tabler-x" />
+          <i class="i-tabler-x wh-3" />
         </button>
       </div>
     </div>

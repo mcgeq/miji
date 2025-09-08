@@ -10,13 +10,13 @@
 // -----------------------------------------------------------------------------
 
 import { getDb } from '@/db';
-import { Tags } from '@/schema/tags';
 import { toCamelCase, toSnakeCase } from '@/utils/common';
 import { Lg } from '@/utils/debugLog';
+import type { Tags } from '@/schema/tags';
 
 type UpdatableFields = Partial<Record<keyof Tags, string | null>>;
 
-const getTag = async (serialNum: string): Promise<Tags | null> => {
+async function getTag(serialNum: string): Promise<Tags | null> {
   try {
     const db = await getDb();
     const rows = (await db.select('SELECT * FROM tags WHERE serial_num = ?', [
@@ -30,15 +30,15 @@ const getTag = async (serialNum: string): Promise<Tags | null> => {
     Lg.e('TagsDb', error);
     throw new Error('Database error');
   }
-};
+}
 
-const list = async (): Promise<Tags[]> => {
+async function list(): Promise<Tags[]> {
   const db = await getDb();
   const rows = await db.select('SELECT * FROM tags');
   return toCamelCase(rows) as Tags[];
-};
+}
 
-const insert = async (tag: Tags): Promise<Tags> => {
+async function insert(tag: Tags): Promise<Tags> {
   const db = await getDb();
   const values = [
     tag.serialNum,
@@ -58,27 +58,24 @@ const insert = async (tag: Tags): Promise<Tags> => {
     Lg.e('TagsDb', error);
     throw new Error('Failed to insert tag');
   }
-};
+}
 
-const update = async (tag: Tags): Promise<Tags> => {
+async function update(tag: Tags): Promise<Tags> {
   const db = await getDb();
   const values = [tag.name, tag.description, tag.updatedAt, tag.serialNum];
   await db.execute(
-    `UPDATE tags SET name = ?, description = ?, updated_at = ? WHERE serial_num = ?`,
+    'UPDATE tags SET name = ?, description = ?, updated_at = ? WHERE serial_num = ?',
     values,
   );
   return tag;
-};
+}
 
-const deletes = async (serialNum: string): Promise<void> => {
+async function deletes(serialNum: string): Promise<void> {
   const db = await getDb();
   await db.execute('DELETE FROM tags WHERE serial_num = ?', [serialNum]);
-};
+}
 
-const updatePartial = async (
-  serialNum: string,
-  updates: UpdatableFields,
-): Promise<void> => {
+async function updatePartial(serialNum: string, updates: UpdatableFields): Promise<void> {
   const db = await getDb();
   const fields: string[] = [];
   const values: (string | null)[] = [];
@@ -93,7 +90,7 @@ const updatePartial = async (
   values.push(serialNum);
   const sql = `UPDATE tags SET ${fields.join(', ')} WHERE serial_num = ?`;
   await db.execute(sql, values);
-};
+}
 
 export const tagsDb = {
   getTag,

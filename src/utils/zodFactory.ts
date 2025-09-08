@@ -1,6 +1,7 @@
-import { z, type ZodObject, type ZodRawShape } from 'zod';
+import { RepeatPeriodSchema } from '../schema/common';
 import { Lg } from './debugLog';
-import { RepeatPeriodSchema, type RepeatPeriod } from '../schema/common';
+import type { RepeatPeriod } from '../schema/common';
+import type { z, ZodObject, ZodRawShape } from 'zod';
 
 /**
  * 通用对象工厂：根据 Zod Schema 和默认值生成合法对象

@@ -53,15 +53,15 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="min-h-screen flex">
+  <div class="flex min-h-screen">
     <Sidebar
       v-if="!isMobile"
       :menu="menuItems"
-      class="fixed left-0 top-0 z-10 hidden h-screen md:flex"
+      class="h-screen hidden left-0 top-0 fixed z-10 md:flex"
       @logout="logout"
     />
     <div class="flex flex-1 flex-col md:ml-12">
-      <main class="flex-1 bg-gray-50" :class="{ 'pb-16': isMobile }">
+      <main class="bg-gray-50 flex-1" :class="{ 'pb-16': isMobile }">
         <slot />
       </main>
       <MobileBottomNav v-if="isMobile" :menu="menuItems" />

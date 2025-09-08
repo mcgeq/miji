@@ -1,17 +1,7 @@
-<template>
-  <GenericViewItem
-    :entities="tagsMap"
-    :component="GenericItem"
-    displayKey="name"
-    :readonly="true"
-    @update:entities="val => tagsMap = val"
-  />
-</template>
-
 <script setup lang="ts">
-import type { TagsWithUsageStats } from '@/schema/tags';
-import GenericViewItem from '@/components/common/GenericViewItem.vue';
 import GenericItem from '@/components/common/GenericItem.vue';
+import GenericViewItem from '@/components/common/GenericViewItem.vue';
+import type { TagsWithUsageStats } from '@/schema/tags';
 
 const tagsMap = ref(
   new Map<string, TagsWithUsageStats>([
@@ -58,3 +48,13 @@ const tagsMap = ref(
   ]),
 );
 </script>
+
+<template>
+  <GenericViewItem
+    :entities="tagsMap"
+    :component="GenericItem"
+    display-key="name"
+    :readonly="true"
+    @update:entities="val => tagsMap = val"
+  />
+</template>

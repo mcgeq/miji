@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { Account } from '@/schema/money';
 import { useMoneyStore } from '@/stores/moneyStore';
+import type { Account } from '@/schema/money';
 
 // Props（不包含 modelValue）
 export interface AccountSelectorProps {
@@ -89,16 +89,18 @@ defineExpose({
 </script>
 
 <template>
-  <div class="account-selector" :class="{
-    'w-full': width === 'full',
-    'w-auto': width === 'auto',
-    'w-2/3': width === '2/3',
-    'w-1/2': width === '1/2',
-    'w-1/3': width === '1/3'
-  }">
-    <div class="flex items-center gap-2" :class="showQuickSelect ? 'justify-between' : 'justify-end'">
+  <div
+    class="account-selector" :class="{
+      'w-full': width === 'full',
+      'w-auto': width === 'auto',
+      'w-2/3': width === '2/3',
+      'w-1/2': width === '1/2',
+      'w-1/3': width === '1/3',
+    }"
+  >
+    <div class="flex gap-2 items-center" :class="showQuickSelect ? 'justify-between' : 'justify-end'">
       <!-- 快捷选择 -->
-      <div v-if="showQuickSelect && quickSelectAccounts.length" class="flex items-center gap-2" role="group" :aria-label="quickSelectLabel">
+      <div v-if="showQuickSelect && quickSelectAccounts.length" class="flex gap-2 items-center" role="group" :aria-label="quickSelectLabel">
         <button
           v-for="account in quickSelectAccounts"
           :key="account.serialNum"
@@ -119,7 +121,7 @@ defineExpose({
         :id="inputId"
         v-model="selectedAccount"
         :disabled="disabled"
-        class="block w-2/3 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        class="text-gray-900 border border-gray-300 rounded-md bg-white w-2/3 block dark:text-gray-100 dark:border-gray-600 focus:border-blue-500 dark:bg-gray-800 focus:ring-2 focus:ring-blue-500"
         :class="{
           'text-sm py-1': size === 'sm',
           'text-base py-2': size === 'base',
@@ -128,7 +130,9 @@ defineExpose({
         }"
         :aria-describedby="errorMessage ? `${inputId}-error` : undefined"
       >
-        <option value="" disabled>{{ placeholder }}</option>
+        <option value="" disabled>
+          {{ placeholder }}
+        </option>
         <option v-for="account in availableAccounts" :key="account.serialNum" :value="account.serialNum">
           {{ account.name }} ({{ account.currency.symbol }}{{ account.balance }})
         </option>
@@ -136,12 +140,12 @@ defineExpose({
     </div>
 
     <!-- 错误提示 -->
-    <div v-if="errorMessage" :id="`${inputId}-error`" class="mt-1 text-sm text-red-600 dark:text-red-400" role="alert" aria-live="polite">
+    <div v-if="errorMessage" :id="`${inputId}-error`" class="text-sm text-red-600 mt-1 dark:text-red-400" role="alert" aria-live="polite">
       {{ errorMessage }}
     </div>
 
     <!-- 帮助文本 -->
-    <div v-if="helpText" class="mt-2 text-xs text-gray-500 dark:text-gray-400">
+    <div v-if="helpText" class="text-xs text-gray-500 mt-2 dark:text-gray-400">
       {{ helpText }}
     </div>
   </div>

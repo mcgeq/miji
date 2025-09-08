@@ -28,8 +28,7 @@ async function loadCurrencies() {
   try {
     const fetchedCurrencies = await MoneyDb.listCurrencies();
     currencies.value = fetchedCurrencies;
-  }
-  catch (err: unknown) {
+  } catch (err: unknown) {
     Lg.e('AccountModal', 'Failed to load currencies:', err);
   }
 }
@@ -77,8 +76,7 @@ function closeMemberModal() {
 function saveMember(member: FamilyMember) {
   if (editingMemberIndex.value >= 0) {
     form.members[editingMemberIndex.value] = member;
-  }
-  else {
+  } else {
     form.members.push(member);
   }
   closeMemberModal();
@@ -104,8 +102,7 @@ watch(
   newVal => {
     if (newVal) {
       Object.assign(form, JSON.parse(JSON.stringify(newVal)));
-    }
-    else {
+    } else {
       Object.assign(form, JSON.parse(JSON.stringify(defaultLedger)));
     }
   },
@@ -131,14 +128,14 @@ watch(
           <div class="flex items-center justify-between">
             <label class="text-sm text-gray-700 font-medium">账本名称</label>
             <input
-              v-model="form.description" type="text" required class="w-2/3 modal-input-select"
+              v-model="form.description" type="text" required class="modal-input-select w-2/3"
               placeholder="请输入账本名称"
             >
           </div>
 
           <div class="flex items-center justify-between">
             <label class="text-sm text-gray-700 font-medium">基础币种</label>
-            <select v-model="form.baseCurrency.code" required class="w-2/3 modal-input-select">
+            <select v-model="form.baseCurrency.code" required class="modal-input-select w-2/3">
               <option v-for="currency in currencies" :key="currency.code" :value="currency.code">
                 {{ t(currency.code) }} ({{ currency.code }})
               </option>
@@ -150,7 +147,7 @@ watch(
         <div class="space-y-3">
           <div class="flex items-center justify-between">
             <label class="text-sm text-gray-700 font-medium">成员管理</label>
-            <button type="button" class="btn-secondary px-2 py-1 text-xs" @click="showMemberModal = true">
+            <button type="button" class="text-xs btn-secondary px-2 py-1" @click="showMemberModal = true">
               <Plus class="mr-1 h-3 w-3" />
               添加成员
             </button>
@@ -159,11 +156,11 @@ watch(
           <div class="max-h-40 overflow-y-auto space-y-2">
             <div
               v-for="(member, index) in form.members" :key="member.serialNum"
-              class="flex items-center justify-between rounded-lg bg-gray-50 p-2"
+              class="p-2 rounded-lg bg-gray-50 flex items-center justify-between"
             >
-              <div class="flex items-center gap-2">
-                <Crown v-if="member.isPrimary" class="h-4 w-4 text-yellow-500" />
-                <User v-else class="h-4 w-4 text-gray-500" />
+              <div class="flex gap-2 items-center">
+                <Crown v-if="member.isPrimary" class="text-yellow-500 h-4 w-4" />
+                <User v-else class="text-gray-500 h-4 w-4" />
                 <span class="text-sm font-medium">{{ member.name }}</span>
                 <span class="text-xs text-gray-500">({{ getRoleName(member.role) }})</span>
               </div>
@@ -183,7 +180,7 @@ watch(
         </div>
 
         <!-- 操作按钮 -->
-        <div class="flex justify-center pt-4 space-x-3">
+        <div class="pt-4 flex justify-center space-x-3">
           <button type="button" class="modal-btn-x" @click="closeModal">
             <X class="wh-5" />
           </button>

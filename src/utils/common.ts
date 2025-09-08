@@ -9,7 +9,7 @@
 // Modified   By:  mcgeq <mcgeq@outlook.com>
 // -----------------------------------------------------------------------------
 
-import { RepeatPeriod } from '@/schema/common';
+import type { RepeatPeriod } from '@/schema/common';
 
 export function toCamelCase<T = any>(obj: any): T {
   if (Array.isArray(obj)) {
@@ -18,8 +18,7 @@ export function toCamelCase<T = any>(obj: any): T {
     const newObj: Record<string, any> = {};
     for (const [key, value] of Object.entries(obj)) {
       const camelKey = key.replace(/_([a-z])/g, (_, char) =>
-        char.toUpperCase(),
-      );
+        char.toUpperCase());
       newObj[camelKey] = toCamelCase(value);
     }
     return newObj as T;
@@ -27,12 +26,11 @@ export function toCamelCase<T = any>(obj: any): T {
   return obj;
 }
 
-export const toSnakeCase = (str: string): string =>
-  str.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
+export function toSnakeCase(str: string): string {
+  return str.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
+}
 
-export const buildRepeatPeriod = (
-  input: Partial<RepeatPeriod>,
-): RepeatPeriod => {
+export function buildRepeatPeriod(input: Partial<RepeatPeriod>): RepeatPeriod {
   switch (input.type) {
     case 'Daily':
       return {
@@ -74,7 +72,7 @@ export const buildRepeatPeriod = (
     default:
       return { type: 'None' };
   }
-};
+}
 
 // 类型重载版本
 export function safeGet<T>(arr: T[], index: number): T | undefined;
@@ -87,7 +85,7 @@ export function safeGet<T>(
   return arr[index] ?? fallback;
 }
 
-export const getRepeatTypeName = (period: RepeatPeriod): string => {
+export function getRepeatTypeName(period: RepeatPeriod): string {
   switch (period.type) {
     case 'None':
       return '无周期';
@@ -111,4 +109,4 @@ export const getRepeatTypeName = (period: RepeatPeriod): string => {
     default:
       return '无周期';
   }
-};
+}

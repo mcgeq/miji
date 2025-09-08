@@ -127,12 +127,12 @@ defineExpose({
 <template>
   <div class="min-h-25">
     <!-- 过滤器区域 -->
-    <div class="mb-5 flex flex-wrap items-center justify-center gap-3 rounded-lg bg-gray-50 p-4">
+    <div class="mb-5 p-4 rounded-lg bg-gray-50 flex flex-wrap gap-3 items-center justify-center">
       <div class="filter-flex-wrap">
-        <label class="show-on-desktop text-sm text-gray-700 font-medium">{{ t('common.status.status') }}</label>
+        <label class="text-sm text-gray-700 font-medium show-on-desktop">{{ t('common.status.status') }}</label>
         <select
           v-model="filters.isActive"
-          class="border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          class="text-sm px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <option value="">
             {{ t('common.actions.all') }}
@@ -169,10 +169,10 @@ defineExpose({
       <!-- </div> -->
 
       <div class="filter-flex-wrap">
-        <label class="show-on-desktop text-sm text-gray-700 font-medium">{{ t('todos.repeat.periodType') }}</label>
+        <label class="text-sm text-gray-700 font-medium show-on-desktop">{{ t('todos.repeat.periodType') }}</label>
         <select
           v-model="filters.repeatPeriod"
-          class="border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          class="text-sm px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <option value="">
             {{ t('common.actions.all') }}
@@ -199,10 +199,10 @@ defineExpose({
       </div>
 
       <div class="filter-flex-wrap">
-        <label class="show-on-desktop text-sm text-gray-700 font-medium"> {{ t('categories.category') }} </label>
+        <label class="text-sm text-gray-700 font-medium show-on-desktop"> {{ t('categories.category') }} </label>
         <select
           v-model="filters.category"
-          class="border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          class="text-sm px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <option :value="null">
             {{ t('categories.allCategory') }}
@@ -214,7 +214,7 @@ defineExpose({
       </div>
 
       <button
-        class="rounded-md bg-gray-200 px-3 py-1.5 text-sm text-gray-700 transition-colors hover:bg-gray-300"
+        class="text-sm text-gray-700 px-3 py-1.5 rounded-md bg-gray-200 transition-colors hover:bg-gray-300"
         @click="resetFilters"
       >
         <RotateCcw class="mr-1 wh-5" />
@@ -222,13 +222,13 @@ defineExpose({
     </div>
 
     <!-- 加载状态 -->
-    <div v-if="loading" class="h-25 flex-justify-center text-gray-600">
+    <div v-if="loading" class="text-gray-600 flex-justify-center h-25">
       {{ t('common.loading') }}
     </div>
 
     <!-- 空状态 -->
-    <div v-else-if="pagination.paginatedItems.value.length === 0" class="h-25 flex-justify-center flex-col text-#999">
-      <div class="mb-2 text-sm opacity-50">
+    <div v-else-if="pagination.paginatedItems.value.length === 0" class="text-#999 flex-justify-center flex-col h-25">
+      <div class="text-sm mb-2 opacity-50">
         <i class="icon-target" />
       </div>
       <div class="text-sm">
@@ -237,51 +237,51 @@ defineExpose({
     </div>
 
     <!-- 预算网格 -->
-    <div v-else class="budget-grid grid mb-6 w-full gap-5">
+    <div v-else class="budget-grid mb-6 gap-5 grid w-full">
       <div
-        v-for="budget in decoratedBudgets" :key="budget.serialNum" class="border rounded-md bg-white p-1.5 transition-all hover:shadow-md" :class="[
+        v-for="budget in decoratedBudgets" :key="budget.serialNum" class="p-1.5 border rounded-md bg-white transition-all hover:shadow-md" :class="[
           { 'opacity-60 bg-gray-100': !budget.isActive },
         ]" :style="{
           borderColor: budget.color || '#E5E7EB',
         }"
       >
         <!-- Header -->
-        <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
+        <div class="mb-2 flex flex-wrap gap-2 items-center justify-between">
           <!-- 左侧预算名称 -->
-          <div class="flex items-center text-gray-800">
+          <div class="text-gray-800 flex items-center">
             <span class="text-lg font-semibold">{{ budget.name }}</span>
             <!-- 状态标签 -->
-            <span v-if="!budget.isActive" class="ml-2 rounded bg-gray-200 px-2 py-0.5 text-xs text-gray-600">
+            <span v-if="!budget.isActive" class="text-xs text-gray-600 ml-2 px-2 py-0.5 rounded bg-gray-200">
               {{ t('common.status.inactive') }}
             </span>
-            <span v-else-if="isOverBudget(budget)" class="ml-2 rounded bg-red-100 px-2 py-0.5 text-xs text-red-600">
+            <span v-else-if="isOverBudget(budget)" class="text-xs text-red-600 ml-2 px-2 py-0.5 rounded bg-red-100">
               {{ t('common.status.exceeded') }}
             </span>
             <span
               v-else-if="isLowOnBudget(budget)"
-              class="ml-2 rounded bg-yellow-100 px-2 py-0.5 text-xs text-yellow-600"
+              class="text-xs text-yellow-600 ml-2 px-2 py-0.5 rounded bg-yellow-100"
             >
               {{ t('common.status.warning') }}
             </span>
           </div>
 
           <!-- 右侧按钮组 -->
-          <div class="flex items-center gap-1 md:self-end">
+          <div class="flex gap-1 items-center md:self-end">
             <button
-              class="money-option-btn hover:(border-green-500 text-green-500)" :title="t('common.actions.edit')"
+              class="money-option-btn hover:(text-green-500 border-green-500)" :title="t('common.actions.edit')"
               @click="budget.isActive && emit('edit', budget)"
             >
               <Edit class="h-4 w-4" />
             </button>
             <button
-              class="money-option-btn hover:(border-blue-500 text-blue-500)"
+              class="money-option-btn hover:(text-blue-500 border-blue-500)"
               :title="budget.isActive ? t('common.status.stop') : t('common.status.enabled')"
               @click="emit('toggleActive', budget.serialNum, !budget.isActive)"
             >
               <component :is="budget.isActive ? Ban : StopCircle" class="h-4 w-4" />
             </button>
             <button
-              class="money-option-btn hover:(border-red-500 text-red-500)"
+              class="money-option-btn hover:(text-red-500 border-red-500)"
               :title="t('common.actions.delete')" @click="emit('delete', budget.serialNum)"
             >
               <Trash class="h-4 w-4" />
@@ -290,17 +290,17 @@ defineExpose({
         </div>
 
         <!-- Period -->
-        <div class="mb-1 flex items-center justify-end gap-1 text-sm text-gray-600">
-          <Repeat class="h-4 w-4 text-gray-600" />
+        <div class="text-sm text-gray-600 mb-1 flex gap-1 items-center justify-end">
+          <Repeat class="text-gray-600 h-4 w-4" />
           <span>{{ getRepeatTypeName(budget.repeatPeriod) }}</span>
         </div>
 
         <!-- Progress -->
         <div class="mb-2">
-          <div class="flex items-baseline gap-1">
+          <div class="flex gap-1 items-baseline">
             <span class="text-lg text-gray-800 font-semibold">{{ formatCurrency(budget.usedAmount) }}</span>
             <span class="text-sm text-gray-600">/ {{ formatCurrency(budget.amount) }}</span>
-            <div class="mb-2 ml-auto flex justify-end rounded-md bg-gray-50 p-1.5">
+            <div class="mb-2 ml-auto p-1.5 rounded-md bg-gray-50 flex justify-end">
               <div
                 class="text-lg font-semibold" :class="[
                   shouldHighlightRed(budget) ? 'text-red-500' : 'text-green-500',
@@ -310,20 +310,20 @@ defineExpose({
               </div>
             </div>
           </div>
-          <div class="mb-1 h-1 w-full overflow-hidden rounded-md bg-gray-200">
+          <div class="mb-1 rounded-md bg-gray-200 h-1 w-full overflow-hidden">
             <div
               class="h-full transition-[width] duration-300" :style="{ width: `${getProgressPercent(budget)}%` }"
               :class="isOverBudget(budget) ? 'bg-red-500' : 'bg-blue-500'"
             />
           </div>
-          <div class="text-center text-lg" :class="shouldHighlightRed(budget) ? 'text-red-500' : 'text-gray-600'">
+          <div class="text-lg text-center" :class="shouldHighlightRed(budget) ? 'text-red-500' : 'text-gray-600'">
             {{ getProgressPercent(budget) }}%
           </div>
         </div>
 
         <!-- Info -->
-        <div class="border-t border-gray-200 pt-2">
-          <div class="mb-1 flex justify-between text-sm">
+        <div class="pt-2 border-t border-gray-200">
+          <div class="text-sm mb-1 flex justify-between">
             <span class="text-gray-600 font-medium"> {{ t('categories.category') }} </span>
             <span
               class="text-gray-800 font-medium"
@@ -332,11 +332,11 @@ defineExpose({
               {{ budget.displayCategories || '' }}
             </span>
           </div>
-          <div class="mb-1 flex justify-between text-sm">
+          <div class="text-sm mb-1 flex justify-between">
             <span class="text-gray-600"> {{ t('date.createDate') }} </span>
             <span class="text-gray-800">{{ DateUtils.formatDate(budget.createdAt) }}</span>
           </div>
-          <div v-if="budget.description" class="mb-1 flex justify-between text-sm last:mb-0">
+          <div v-if="budget.description" class="text-sm mb-1 flex justify-between last:mb-0">
             <span class="text-gray-600">{{ t('common.misc.remark') }}</span>
             <span class="text-gray-800">{{ budget.description }}</span>
           </div>

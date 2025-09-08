@@ -44,10 +44,10 @@ function onInput(event: Event) {
 
 <template>
   <div
-    class="relative ml-2 w-26 border border-gray-200 rounded-lg bg-white p-3 shadow-md transition-shadow duration-200 hover:shadow-lg"
+    class="ml-2 p-3 border border-gray-200 rounded-lg bg-white w-26 shadow-md transition-shadow duration-200 relative hover:shadow-lg"
   >
     <div
-      class="absolute h-6 w-6 flex items-center justify-center rounded-full bg-blue-500 text-xs text-white font-bold -left-2 -top-2"
+      class="text-xs text-white font-bold rounded-full bg-blue-500 flex h-6 w-6 items-center justify-center absolute -left-2 -top-2"
     >
       {{ totalUsageCount }}
     </div>
@@ -55,7 +55,7 @@ function onInput(event: Event) {
     <div class="mb-0">
       <input
         :value="modelValue[keyToEdit]"
-        class="w-20 border border-gray-300 rounded-md bg-gray-50 px-3 py-2 text-gray-700 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400"
+        class="text-gray-700 px-3 py-2 border border-gray-300 rounded-md bg-gray-50 w-20 focus:outline-none focus:border-transparent focus:ring-2 focus:ring-blue-500 placeholder-gray-400"
         :readonly="readonly"
         :placeholder="String(keyToEdit)"
         :title="String(modelValue[keyToEdit])"
@@ -65,7 +65,7 @@ function onInput(event: Event) {
 
     <div class="absolute -right-2 -top-2">
       <X
-        class="h-6 w-6 flex cursor-pointer items-center justify-center rounded-full bg-white text-red-500 transition-transform duration-200 hover:scale-110 hover:text-red-700"
+        class="text-red-500 rounded-full bg-white flex h-6 w-6 cursor-pointer transition-transform duration-200 items-center justify-center hover:text-red-700 hover:scale-110"
         @click="$emit('remove')"
       />
     </div>

@@ -58,11 +58,9 @@ export const useTodoStore = defineStore('todo', () => {
       };
       if (filterBtn.value === FilterBtnSchema.enum.TODAY) {
         allTodos = await getTodayTodos(user.serialNum);
-      }
-      else if (filterBtn.value === FilterBtnSchema.enum.YESTERDAY) {
+      } else if (filterBtn.value === FilterBtnSchema.enum.YESTERDAY) {
         allTodos = await getYesterdayTodos(user.serialNum);
-      }
-      else if (filterBtn.value === FilterBtnSchema.enum.TOMORROW) {
+      } else if (filterBtn.value === FilterBtnSchema.enum.TOMORROW) {
         allTodos = await getTomorrowTodos(user.serialNum);
       }
 
@@ -89,8 +87,7 @@ export const useTodoStore = defineStore('todo', () => {
         lastFilterBtn.value = filterBtn.value;
         if (totalPages.value === 0) currentPage.value = 0;
       }
-    }
-    catch (e) {
+    } catch (e) {
       Lg.e('todoStore', 'reloadPage', e);
     }
   };
@@ -131,8 +128,7 @@ export const useTodoStore = defineStore('todo', () => {
     try {
       await todosDb.insert(newTodo);
       await reloadPage();
-    }
-    catch (e) {
+    } catch (e) {
       Lg.e('todoStore', 'addTodo', e);
     }
 
@@ -160,8 +156,7 @@ export const useTodoStore = defineStore('todo', () => {
     try {
       await todosDb.updateSmart(todo);
       await reloadPage();
-    }
-    catch (e) {
+    } catch (e) {
       Lg.e('todoStore', 'setTodo', e);
     }
   }
@@ -174,8 +169,7 @@ export const useTodoStore = defineStore('todo', () => {
 
       await reloadPage();
       if (totalPages.value === 0) currentPage.value = 0;
-    }
-    catch (e) {
+    } catch (e) {
       Lg.e('todoStore', 'removeTodo', e);
     }
   };
@@ -305,8 +299,7 @@ export const useTodoStore = defineStore('todo', () => {
     if (todos.size === 0) {
       totalPages.value = 0;
       currentPage.value = 0;
-    }
-    else {
+    } else {
       totalPages.value = 1;
       currentPage.value = 1;
     }
@@ -328,8 +321,7 @@ export const useTodoStore = defineStore('todo', () => {
         pageSize.value,
         { customOrderBy },
       );
-    }
-    catch (e) {
+    } catch (e) {
       Lg.e('todoStore', 'getTodayTodos', e);
       return { rows: [], totalCount: 0 };
     }
@@ -348,8 +340,7 @@ export const useTodoStore = defineStore('todo', () => {
         pageSize.value,
         { customOrderBy },
       );
-    }
-    catch (e) {
+    } catch (e) {
       Lg.e('todoStore', 'getYesterdayTodos', e);
       return { rows: [], totalCount: 0 };
     }
@@ -369,8 +360,7 @@ export const useTodoStore = defineStore('todo', () => {
         pageSize.value,
         { customOrderBy },
       );
-    }
-    catch (e) {
+    } catch (e) {
       Lg.e('todoStore', 'getTomorrowTodos', e);
       return { rows: [], totalCount: 0 };
     }

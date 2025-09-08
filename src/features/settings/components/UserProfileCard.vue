@@ -81,8 +81,7 @@ async function handleAvatarUpdate(avatarUrl: string) {
   try {
     await authStore.updateUser({ avatarUrl });
     toast.success('头像更新成功');
-  }
-  catch (error) {
+  } catch (error) {
     console.error('头像更新失败:', error);
   }
 }
@@ -108,8 +107,7 @@ async function handleProfileUpdate(data: Partial<AuthUser>) {
 
     // 可以添加成功提示
     // showSuccessMessage('资料更新成功');
-  }
-  catch (error) {
+  } catch (error) {
     console.error('更新资料失败:', error);
     // 可以添加错误提示
     // showErrorMessage('更新资料失败，请重试');
@@ -118,42 +116,42 @@ async function handleProfileUpdate(data: Partial<AuthUser>) {
 </script>
 
 <template>
-  <div class="relative overflow-hidden rounded-2xl from-blue-600 via-purple-600 to-blue-800 bg-gradient-to-br p-8 text-white">
+  <div class="bg-gradient-to-br text-white p-8 rounded-2xl relative overflow-hidden from-blue-600 to-blue-800 via-purple-600">
     <!-- 背景装饰 -->
-    <div class="pointer-events-none absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg%20width%3D%2260%22%20height%3D%2260%22%20viewBox%3D%220%200%2060%2060%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cg%20fill%3D%22none%22%20fill-rule%3D%22evenodd%22%3E%3Cg%20fill%3D%22%23ffffff%22%20fill-opacity%3D%220.1%22%3E%3Ccircle%20cx%3D%2230%22%20cy%3D%2230%22%20r%3D%222%22/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')]" />
+    <div class="bg-[url('data:image/svg+xml,%3Csvg%20width%3D%2260%22%20height%3D%2260%22%20viewBox%3D%220%200%2060%2060%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cg%20fill%3D%22none%22%20fill-rule%3D%22evenodd%22%3E%3Cg%20fill%3D%22%23ffffff%22%20fill-opacity%3D%220.1%22%3E%3Ccircle%20cx%3D%2230%22%20cy%3D%2230%22%20r%3D%222%22/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] pointer-events-none inset-0 absolute" />
 
     <div class="relative z-10">
-      <div class="mb-8 flex flex-col items-center gap-6 md:flex-row md:items-start">
+      <div class="mb-8 flex flex-col gap-6 items-center md:flex-row md:items-start">
         <div class="relative">
-          <div class="relative h-20 w-20">
+          <div class="h-20 w-20 relative">
             <img
               v-if="user?.avatarUrl"
               :src="user.avatarUrl"
               :alt="user.name"
-              class="h-full w-full border-3 border-white/20 rounded-full object-cover"
+              class="border-3 border-white/20 rounded-full h-full w-full object-cover"
             >
-            <div v-else class="h-full w-full flex items-center justify-center border-3 border-white/20 rounded-full bg-white/20 text-2xl font-semibold">
+            <div v-else class="text-2xl font-semibold border-3 border-white/20 rounded-full bg-white/20 flex h-full w-full items-center justify-center">
               {{ getInitials(user?.name || '') }}
             </div>
           </div>
           <button
-            class="absolute border-2 border-white rounded-full bg-blue-500 p-2 transition-all duration-200 -bottom-1 -right-1 hover:scale-110 hover:bg-blue-600"
+            class="p-2 border-2 border-white rounded-full bg-blue-500 transition-all duration-200 absolute hover:bg-blue-600 hover:scale-110 -bottom-1 -right-1"
             @click="handleAvatarEdit"
           >
             <Camera class="h-4 w-4" />
           </button>
         </div>
 
-        <div class="flex-1 text-center md:text-left">
-          <h2 class="mb-1 text-2xl font-bold">
+        <div class="text-center flex-1 md:text-left">
+          <h2 class="text-2xl font-bold mb-1">
             {{ user?.name || '用户' }}
           </h2>
-          <p class="mb-3 text-white/90">
+          <p class="text-white/90 mb-3">
             {{ user?.email || '' }}
           </p>
           <div class="inline-flex items-center">
             <span
-              class="rounded-full px-3 py-1 text-xs font-medium tracking-wide uppercase"
+              class="text-xs tracking-wide font-medium px-3 py-1 rounded-full uppercase"
               :class="getRoleClass(user?.role)"
             >
               {{ getRoleText(user?.role) }}
@@ -162,25 +160,25 @@ async function handleProfileUpdate(data: Partial<AuthUser>) {
         </div>
       </div>
 
-      <div class="grid grid-cols-1 mb-8 gap-4 md:grid-cols-3">
-        <div class="rounded-xl bg-white/10 p-4 text-center backdrop-blur-sm">
-          <div class="mb-1 text-xs text-white/80 tracking-wide uppercase">
+      <div class="mb-8 gap-4 grid grid-cols-1 md:grid-cols-3">
+        <div class="p-4 text-center rounded-xl bg-white/10 backdrop-blur-sm">
+          <div class="text-xs text-white/80 tracking-wide mb-1 uppercase">
             序列号
           </div>
           <div class="text-sm font-semibold">
             {{ formatSerialNum(user?.serialNum) }}
           </div>
         </div>
-        <div class="rounded-xl bg-white/10 p-4 text-center backdrop-blur-sm">
-          <div class="mb-1 text-xs text-white/80 tracking-wide uppercase">
+        <div class="p-4 text-center rounded-xl bg-white/10 backdrop-blur-sm">
+          <div class="text-xs text-white/80 tracking-wide mb-1 uppercase">
             时区
           </div>
           <div class="text-sm font-semibold">
             {{ user?.timezone || 'Asia/Shanghai' }}
           </div>
         </div>
-        <div class="rounded-xl bg-white/10 p-4 text-center backdrop-blur-sm">
-          <div class="mb-1 text-xs text-white/80 tracking-wide uppercase">
+        <div class="p-4 text-center rounded-xl bg-white/10 backdrop-blur-sm">
+          <div class="text-xs text-white/80 tracking-wide mb-1 uppercase">
             语言
           </div>
           <div class="text-sm font-semibold">
@@ -192,7 +190,7 @@ async function handleProfileUpdate(data: Partial<AuthUser>) {
       <!-- 只保留编辑资料按钮，移除退出登录按钮 -->
       <div class="flex justify-center">
         <button
-          class="flex items-center justify-center gap-2 rounded-xl bg-white/20 px-8 py-3 font-medium backdrop-blur-sm transition-all duration-200 hover:bg-white/30"
+          class="font-medium px-8 py-3 rounded-xl bg-white/20 flex gap-2 transition-all duration-200 items-center justify-center backdrop-blur-sm hover:bg-white/30"
           @click="handleEditProfile"
         >
           <Edit class="h-4 w-4" />

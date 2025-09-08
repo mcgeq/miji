@@ -183,8 +183,7 @@ function handleKeyDown(event: KeyboardEvent) {
         event.preventDefault();
         lastElement?.focus();
       }
-    }
-    else {
+    } else {
       if (document.activeElement === lastElement) {
         event.preventDefault();
         firstElement?.focus();
@@ -290,12 +289,12 @@ defineExpose({
           @keydown.esc="handleEscape"
         >
           <!-- 头部 -->
-          <div class="flex items-start justify-between border-b border-gray-200 p-6 pb-4 dark:border-gray-700">
-            <div class="flex flex-1 items-center gap-3">
+          <div class="p-6 pb-4 border-b border-gray-200 flex items-start justify-between dark:border-gray-700">
+            <div class="flex flex-1 gap-3 items-center">
               <component
                 :is="IconComponent"
                 :class="iconColor"
-                class="h-6 w-6 flex-shrink-0"
+                class="flex-shrink-0 h-6 w-6"
               />
               <div class="flex-1">
                 <h3
@@ -322,7 +321,7 @@ defineExpose({
             <button
               v-if="closable"
               type="button"
-              class="flex-shrink-0 rounded-lg p-2 text-gray-400 transition-colors hover:bg-gray-100 dark:text-gray-500 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 dark:hover:bg-gray-700 dark:hover:text-gray-300 dark:focus:ring-offset-gray-800"
+              class="text-gray-400 p-2 rounded-lg flex-shrink-0 transition-colors dark:text-gray-500 hover:text-gray-600 focus:outline-none hover:bg-gray-100 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 dark:hover:text-gray-300 dark:hover:bg-gray-700 dark:focus:ring-offset-gray-800"
               :disabled="loading"
               aria-label="关闭对话框"
               @click="handleCancel"
@@ -332,11 +331,11 @@ defineExpose({
           </div>
 
           <!-- 按钮区域 -->
-          <div class="flex justify-end gap-3 bg-gray-50 px-6 pb-6 pt-4 dark:bg-gray-900/50">
+          <div class="px-6 pb-6 pt-4 bg-gray-50 flex gap-3 justify-end dark:bg-gray-900/50">
             <button
               v-if="showCancel"
               type="button"
-              class="border border-gray-300 rounded-md bg-white px-4 py-2 text-sm text-gray-700 font-medium transition-colors disabled:cursor-not-allowed dark:border-gray-600 dark:bg-gray-800 hover:bg-gray-50 dark:text-gray-300 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 dark:hover:bg-gray-700 dark:focus:ring-offset-gray-800"
+              class="text-sm text-gray-700 font-medium px-4 py-2 border border-gray-300 rounded-md bg-white transition-colors dark:text-gray-300 focus:outline-none dark:border-gray-600 dark:bg-gray-800 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 dark:hover:bg-gray-700 dark:focus:ring-offset-gray-800"
               :disabled="loading"
               @click="handleCancel"
             >
@@ -345,13 +344,13 @@ defineExpose({
             <button
               type="button"
               :class="confirmButtonStyle"
-              class="flex items-center gap-2 rounded-md px-4 py-2 text-sm text-white font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
+              class="text-sm text-white font-medium px-4 py-2 rounded-md flex gap-2 transition-colors items-center focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
               :disabled="loading || !canConfirm"
               @click="handleConfirm"
             >
               <div
                 v-if="loading"
-                class="h-4 w-4 animate-spin border-2 border-white border-t-transparent rounded-full"
+                class="border-2 border-white border-t-transparent rounded-full h-4 w-4 animate-spin"
               />
               <component
                 :is="confirmIcon"

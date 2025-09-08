@@ -14,29 +14,29 @@ const isEditable = computed(
   <transition name="fade">
     <div
       v-if="show"
-      class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm"
+      class="px-4 bg-black/60 flex items-center inset-0 justify-center fixed z-50 backdrop-blur-sm"
       @click="emit('close')"
     >
       <transition name="scale">
         <div
           v-if="show"
-          class="h-auto w-96 flex flex-col border border-white/20 rounded-2xl bg-white/70 p-6 shadow-xl backdrop-blur-lg dark:border-gray-700/30 dark:bg-gray-900/80"
+          class="p-6 border border-white/20 rounded-2xl bg-white/70 flex flex-col h-auto w-96 shadow-xl backdrop-blur-lg dark:border-gray-700/30 dark:bg-gray-900/80"
           @click.stop
         >
           <input
             v-model="localTitle"
-            class="w-full border border-gray-200 rounded-xl p-3 text-base transition-all dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+            class="text-base p-3 border border-gray-200 rounded-xl w-full transition-all dark:text-gray-100 focus:outline-none dark:border-gray-600 dark:bg-gray-800 focus:ring-2 focus:ring-blue-500/50"
             placeholder="输入任务标题"
           >
-          <div class="mt-5 flex justify-center gap-4">
+          <div class="mt-5 flex gap-4 justify-center">
             <button
-              class="rounded-xl bg-gray-100 px-5 py-2 text-sm text-gray-700 font-medium transition-all active:scale-95 hover:scale-105 dark:bg-gray-700 hover:bg-gray-200 dark:text-gray-200 dark:hover:bg-gray-600"
+              class="text-sm text-gray-700 font-medium px-5 py-2 rounded-xl bg-gray-100 transition-all dark:text-gray-200 dark:bg-gray-700 hover:bg-gray-200 active:scale-95 hover:scale-105 dark:hover:bg-gray-600"
               @click="emit('close')"
             >
               <X class="wh-5" />
             </button>
             <button
-              class="rounded-xl bg-blue-600 px-5 py-2 text-sm text-white font-medium transition-all active:scale-95 hover:scale-105 hover:bg-blue-700"
+              class="text-sm text-white font-medium px-5 py-2 rounded-xl bg-blue-600 transition-all hover:bg-blue-700 active:scale-95 hover:scale-105"
               :class="{
                 'bg-blue-600 hover:bg-blue-700': !isEditable,
                 'bg-gray-400 hover:bg-gray-400 cursor-not-allowed': isEditable,

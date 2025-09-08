@@ -67,8 +67,7 @@ function save() {
     const validatedData = RepeatPeriodSchema.parse(form.value);
     emit('save', validatedData);
     emit('close');
-  }
-  catch (error) {
+  } catch (error) {
     console.error('Validation failed:', error);
   }
 }
@@ -82,13 +81,13 @@ function save() {
           <div class="h-80">
             <!-- Repeat Type -->
             <div class="text-center">
-              <label for="repeat-type" class="mb-2 mt-0 block text-sm text-gray-700 font-medium dark:text-gray-300">
+              <label for="repeat-type" class="text-sm text-gray-700 font-medium mb-2 mt-0 block dark:text-gray-300">
                 {{ t('todos.repeat.title') }}
               </label>
               <select
                 id="repeat-type"
                 v-model="form.type"
-                class="mt-1 block w-full border border-gray-300 rounded-lg bg-white p-2 text-gray-900 shadow-sm dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                class="text-gray-900 mt-1 p-2 border border-gray-300 rounded-lg bg-white w-full block shadow-sm dark:text-gray-100 focus:outline-none dark:border-gray-600 dark:bg-gray-700 focus:ring-2 focus:ring-blue-500"
                 @change="resetForm"
               >
                 <option value="None">
@@ -113,7 +112,7 @@ function save() {
             </div>
 
             <!-- Daily -->
-            <div v-if="form.type === 'Daily'" class="mt-4 flex items-center justify-center gap-2">
+            <div v-if="form.type === 'Daily'" class="mt-4 flex gap-2 items-center justify-center">
               <label for="daily-interval" class="text-sm text-gray-700 font-medium dark:text-gray-300">
                 {{ t('todos.repeat.labels.daily') }}
               </label>
@@ -123,13 +122,13 @@ function save() {
                 type="number"
                 min="1"
                 required
-                class="w-20 border border-gray-300 rounded-lg bg-white p-2 text-center text-gray-900 shadow-sm dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                class="text-gray-900 p-2 text-center border border-gray-300 rounded-lg bg-white w-20 shadow-sm dark:text-gray-100 focus:outline-none dark:border-gray-600 dark:bg-gray-700 focus:ring-2 focus:ring-blue-500"
               >
             </div>
 
             <!-- Weekly -->
-            <div v-if="form.type === 'Weekly'" class="mt-4 flex flex-col items-center gap-2">
-              <div class="flex items-center gap-2">
+            <div v-if="form.type === 'Weekly'" class="mt-4 flex flex-col gap-2 items-center">
+              <div class="flex gap-2 items-center">
                 <label for="weekly-interval" class="text-sm text-gray-700 font-medium dark:text-gray-300">
                   {{ t('todos.repeat.labels.weekly') }}
                 </label>
@@ -139,29 +138,29 @@ function save() {
                   type="number"
                   min="1"
                   required
-                  class="w-16 border border-gray-300 rounded-md px-2 py-1 text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500"
+                  class="text-sm px-2 py-1 border border-gray-300 rounded-md w-16 dark:text-white dark:border-gray-600 dark:bg-gray-700 focus:ring-2 focus:ring-blue-500"
                 >
               </div>
-              <div class="mt-1 flex flex-wrap justify-center gap-3">
+              <div class="mt-1 flex flex-wrap gap-3 justify-center">
                 <label
                   v-for="day in weekdays"
                   :key="day"
-                  class="flex cursor-pointer select-none items-center text-sm"
+                  class="text-sm flex cursor-pointer select-none items-center"
                 >
                   <input
                     v-model="form.daysOfWeek"
                     type="checkbox"
                     :value="day"
-                    class="h-4 w-4 border-gray-300 rounded text-blue-600 dark:border-gray-600 dark:bg-gray-700 dark:text-blue-500 focus:ring-blue-500"
+                    class="text-blue-600 border-gray-300 rounded h-4 w-4 dark:text-blue-500 dark:border-gray-600 dark:bg-gray-700 focus:ring-blue-500"
                   >
-                  <span class="ml-2 text-gray-700 dark:text-gray-300">{{ day }}</span>
+                  <span class="text-gray-700 ml-2 dark:text-gray-300">{{ day }}</span>
                 </label>
               </div>
             </div>
 
             <!-- Monthly -->
-            <div v-if="form.type === 'Monthly'" class="mt-4 flex flex-col items-center gap-2">
-              <div class="flex items-center gap-2">
+            <div v-if="form.type === 'Monthly'" class="mt-4 flex flex-col gap-2 items-center">
+              <div class="flex gap-2 items-center">
                 <label for="monthly-interval" class="text-sm text-gray-700 font-medium dark:text-gray-300">
                   {{ t('todos.repeat.labels.monthly') }}
                 </label>
@@ -171,11 +170,11 @@ function save() {
                   type="number"
                   min="1"
                   required
-                  class="w-20 border border-gray-300 rounded-lg bg-white p-2 text-center text-gray-900 shadow-sm dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  class="text-gray-900 p-2 text-center border border-gray-300 rounded-lg bg-white w-20 shadow-sm dark:text-gray-100 focus:outline-none dark:border-gray-600 dark:bg-gray-700 focus:ring-2 focus:ring-blue-500"
                 >
                 <select
                   v-model="form.day"
-                  class="ml-1 border border-gray-300 rounded-lg bg-white p-2 text-gray-900 shadow-sm dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  class="text-gray-900 ml-1 p-2 border border-gray-300 rounded-lg bg-white shadow-sm dark:text-gray-100 focus:outline-none dark:border-gray-600 dark:bg-gray-700 focus:ring-2 focus:ring-blue-500"
                 >
                   <option v-for="n in monthlyDays" :key="n" :value="n">
                     {{ n }}
@@ -188,8 +187,8 @@ function save() {
             </div>
 
             <!-- Yearly -->
-            <div v-if="form.type === 'Yearly'" class="mt-4 flex flex-col items-center gap-2">
-              <div class="flex items-center gap-2">
+            <div v-if="form.type === 'Yearly'" class="mt-4 flex flex-col gap-2 items-center">
+              <div class="flex gap-2 items-center">
                 <label for="yearly-interval" class="text-sm text-gray-700 font-medium dark:text-gray-300">
                   {{ t('todos.repeat.labels.yearly') }}
                 </label>
@@ -199,13 +198,13 @@ function save() {
                   type="number"
                   min="1"
                   required
-                  class="w-20 border border-gray-300 rounded-lg bg-white p-2 text-center text-gray-900 shadow-sm dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  class="text-gray-900 p-2 text-center border border-gray-300 rounded-lg bg-white w-20 shadow-sm dark:text-gray-100 focus:outline-none dark:border-gray-600 dark:bg-gray-700 focus:ring-2 focus:ring-blue-500"
                 >
               </div>
-              <div class="flex items-center gap-2">
+              <div class="flex gap-2 items-center">
                 <select
                   v-model="form.month"
-                  class="border border-gray-300 rounded-lg bg-white p-2 text-gray-900 shadow-sm dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  class="text-gray-900 p-2 border border-gray-300 rounded-lg bg-white shadow-sm dark:text-gray-100 focus:outline-none dark:border-gray-600 dark:bg-gray-700 focus:ring-2 focus:ring-blue-500"
                 >
                   <option v-for="n in 12" :key="n" :value="n">
                     {{ monthNames[n - 1] }}
@@ -213,7 +212,7 @@ function save() {
                 </select>
                 <select
                   v-model="form.day"
-                  class="border border-gray-300 rounded-lg bg-white p-2 text-gray-900 shadow-sm dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  class="text-gray-900 p-2 border border-gray-300 rounded-lg bg-white shadow-sm dark:text-gray-100 focus:outline-none dark:border-gray-600 dark:bg-gray-700 focus:ring-2 focus:ring-blue-500"
                 >
                   <option v-for="n in yearlyMonthDays" :key="n" :value="n">
                     {{ n }}
@@ -224,7 +223,7 @@ function save() {
 
             <!-- Custom -->
             <div v-if="form.type === 'Custom'" class="mt-4 text-center">
-              <label for="custom-description" class="block text-sm text-gray-700 font-medium dark:text-gray-300">
+              <label for="custom-description" class="text-sm text-gray-700 font-medium block dark:text-gray-300">
                 {{ t('todos.repeat.types.custom') }}
               </label>
               <input
@@ -232,21 +231,21 @@ function save() {
                 v-model="form.description"
                 type="text"
                 required
-                class="mt-1 block w-full border border-gray-300 rounded-lg bg-white p-2 text-gray-900 shadow-sm dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                class="text-gray-900 mt-1 p-2 border border-gray-300 rounded-lg bg-white w-full block shadow-sm dark:text-gray-100 focus:outline-none dark:border-gray-600 dark:bg-gray-700 focus:ring-2 focus:ring-blue-500"
               >
             </div>
           </div>
 
           <!-- Buttons -->
-          <div class="mt-6 flex justify-center gap-4">
+          <div class="mt-6 flex gap-4 justify-center">
             <button
-              class="rounded-xl bg-gray-100 px-5 py-2 text-sm text-gray-700 font-medium transition-all active:scale-95 hover:scale-105 dark:bg-gray-700 hover:bg-gray-200 dark:text-gray-200 dark:hover:bg-gray-600"
+              class="text-sm text-gray-700 font-medium px-5 py-2 rounded-xl bg-gray-100 transition-all dark:text-gray-200 dark:bg-gray-700 hover:bg-gray-200 active:scale-95 hover:scale-105 dark:hover:bg-gray-600"
               @click="emit('close')"
             >
               <X class="wh-5" />
             </button>
             <button
-              class="rounded-xl px-5 py-2 transition-all" :class="[
+              class="px-5 py-2 rounded-xl transition-all" :class="[
                 isChanged ? 'bg-gray-400 cursor-not-allowed text-white' : 'bg-blue-600 hover:bg-blue-700 text-white',
               ]"
               :disabled="isChanged"

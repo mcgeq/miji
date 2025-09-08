@@ -9,7 +9,7 @@ defineProps<{
 <template>
   <div
     v-if="visible && message"
-    class="pointer-events-none absolute right-2 top-1/2 z-10 transform select-none whitespace-nowrap text-xs text-red-500 -translate-y-1/2"
+    class="text-xs text-red-500 pointer-events-none select-none whitespace-nowrap transform right-2 top-1/2 absolute z-10 -translate-y-1/2"
   >
     {{ message }}
   </div>

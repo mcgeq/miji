@@ -39,7 +39,7 @@ function onInput(event: Event) {
       :placeholder="placeholder"
       :disabled="disabled"
       :value="modelValue"
-      class="w-full border border-gray-300 rounded-md bg-white px-4 py-2 text-gray-900 shadow-sm transition duration-200 disabled:cursor-not-allowed dark:border-gray-700 focus:border-transparent dark:bg-gray-900 dark:text-white disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400 dark:placeholder-gray-500"
+      class="text-gray-900 px-4 py-2 border border-gray-300 rounded-md bg-white w-full shadow-sm transition duration-200 dark:text-white focus:outline-none dark:border-gray-700 focus:border-transparent dark:bg-gray-900 disabled:opacity-60 disabled:cursor-not-allowed focus:ring-2 focus:ring-blue-500 placeholder-gray-400 dark:placeholder-gray-500"
       @input="onInput"
     >
     <FloatingErrorTip :visible="!!errorMsg" :message="errorMsg" />

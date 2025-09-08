@@ -111,12 +111,12 @@ const formattedValue = computed(() => {
 
 <template>
   <div
-    class="stat-card relative overflow-hidden border-l-4 rounded-xl bg-white p-5 shadow transition-all" :class="[
+    class="stat-card p-5 border-l-4 rounded-xl bg-white shadow transition-all relative overflow-hidden" :class="[
       colorBorderClass,
     ]"
   >
     <div class="mb-4 flex items-center justify-between">
-      <div class="text-sm text-gray-600 font-medium tracking-wide uppercase">
+      <div class="text-sm text-gray-600 tracking-wide font-medium uppercase">
         {{ title }}
       </div>
       <div class="opacity-80 transition group-hover:opacity-100" :class="[iconColorClass]">
@@ -125,10 +125,10 @@ const formattedValue = computed(() => {
     </div>
 
     <div class="relative z-10">
-      <div class="mb-2 flex items-baseline gap-1">
+      <div class="mb-2 flex gap-1 items-baseline">
         <span class="text-lg text-gray-500 font-semibold">{{ currency }}</span>
         <span
-          class="text-3xl font-bold leading-none" :class="[
+          class="text-3xl leading-none font-bold" :class="[
             loading ? 'text-transparent bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 bg-clip-text animate-pulse' : 'text-gray-800',
           ]"
         >
@@ -136,7 +136,7 @@ const formattedValue = computed(() => {
         </span>
       </div>
 
-      <div v-if="subtitle" class="mb-3 text-xs text-gray-500">
+      <div v-if="subtitle" class="text-xs text-gray-500 mb-3">
         {{ subtitle }}
       </div>
 
@@ -145,7 +145,7 @@ const formattedValue = computed(() => {
         <div class="text-xs text-gray-500">
           {{ compareLabel }}: {{ currency }}{{ compareValue }}
         </div>
-        <div class="flex items-center gap-1 text-sm font-medium">
+        <div class="text-sm font-medium flex gap-1 items-center">
           <component :is="changeIcon" :size="16" :class="changeTextClass" />
           <span :class="changeTextClass">
             {{ changeAmount }} ({{ changePercentage }})
@@ -154,14 +154,14 @@ const formattedValue = computed(() => {
       </div>
 
       <!-- Trend (fallback if no comparison) -->
-      <div v-else-if="trend" class="flex items-center gap-1 text-sm font-medium">
+      <div v-else-if="trend" class="text-sm font-medium flex gap-1 items-center">
         <component :is="trendIcon" :size="16" />
         <span :class="trendTextClass">{{ trend }}</span>
       </div>
 
       <!-- Extra Stats -->
       <div v-if="extraStats && extraStats.length" class="mt-3 space-y-1">
-        <div v-for="stat in extraStats" :key="stat.label" class="flex justify-between text-xs">
+        <div v-for="stat in extraStats" :key="stat.label" class="text-xs flex justify-between">
           <span class="text-gray-500">{{ stat.label }}</span>
           <span :class="[stat.color ? colorMap[stat.color].text : 'text-gray-600']">
             {{ stat.value }}
@@ -172,7 +172,7 @@ const formattedValue = computed(() => {
 
     <!-- Decorative overlay -->
     <div
-      class="absolute right-0 top-0 h-24 w-24 translate-x-8 transform rounded-full from-transparent via-white/10 to-transparent bg-gradient-to-br -translate-y-8"
+      class="bg-gradient-to-br rounded-full h-24 w-24 translate-x-8 transform right-0 top-0 absolute from-transparent to-transparent via-white/10 -translate-y-8"
     />
   </div>
 </template>

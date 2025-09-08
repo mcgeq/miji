@@ -1,8 +1,8 @@
 import { z } from 'zod';
 import {
-  SerialNumSchema,
   DateTimeSchema,
   IntensitySchema,
+  SerialNumSchema,
   SymptomsTypeSchema,
 } from '@/schema/common';
 

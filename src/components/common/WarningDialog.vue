@@ -253,8 +253,7 @@ function handleKeyDown(event: KeyboardEvent) {
         event.preventDefault();
         lastElement?.focus();
       }
-    }
-    else {
+    } else {
       if (document.activeElement === lastElement) {
         event.preventDefault();
         firstElement?.focus();
@@ -397,7 +396,7 @@ defineExpose({
                       :key="`warning-${index}`"
                       class="warning-list-item"
                     >
-                      <i class="i-tabler-alert-triangle wh-4 flex-shrink-0 text-amber-500" />
+                      <i class="i-tabler-alert-triangle text-amber-500 flex-shrink-0 wh-4" />
                       <span>{{ warning }}</span>
                     </li>
                   </ul>

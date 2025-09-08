@@ -33,8 +33,7 @@ async function loadCurrencies() {
   try {
     const fetchedCurrencies = await MoneyDb.listCurrencies();
     currencies.value = fetchedCurrencies;
-  }
-  catch (err: unknown) {
+  } catch (err: unknown) {
     Lg.e('AccountModal', 'Failed to load currencies:', err);
   }
 }
@@ -164,19 +163,16 @@ async function handleSubmit() {
     if (isEdit.value) {
       // await familyLedgerStore.updateLedger(ledgerData);
       toast.info('更新账本');
-    }
-    else {
+    } else {
       // await familyLedgerStore.createLedger(ledgerData);
       toast.info('创建账本');
     }
 
     emit('save', ledgerData);
-  }
-  catch (error) {
+  } catch (error) {
     // toast.error(isEdit.value ? t('familyLedger.updateFailed') : t('familyLedger.createFailed'));
     Lg.e('LedgerFormModal', isEdit.value ? '更新账本失败' : '创建账本失败', error);
-  }
-  finally {
+  } finally {
     saving.value = false;
   }
 }
@@ -198,8 +194,7 @@ function initializeForm() {
       createdAt: props.ledger.createdAt || '',
       updatedAt: props.ledger.updatedAt || '',
     };
-  }
-  else {
+  } else {
     // 创建模式：默认值
     form.value = {
       serialNum: '',
@@ -227,12 +222,12 @@ onMounted(() => {
 
 <template>
   <div
-    class="fixed inset-0 z-[60] flex items-center justify-center bg-black bg-opacity-50"
+    class="bg-black bg-opacity-50 flex items-center inset-0 justify-center fixed z-[60]"
     @click.self="$emit('close')"
   >
-    <div class="max-h-[90vh] max-w-2xl w-full overflow-hidden rounded-lg bg-white shadow-2xl">
+    <div class="rounded-lg bg-white max-h-[90vh] max-w-2xl w-full shadow-2xl overflow-hidden">
       <!-- 头部 -->
-      <div class="flex items-center justify-between border-b border-gray-200 bg-gray-50 p-6">
+      <div class="p-6 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
         <h2 class="text-xl text-gray-800 font-bold">
           {{ isEdit ? t('familyLedger.editLedger') : t('familyLedger.createNewLedger') }}
         </h2>
@@ -242,41 +237,41 @@ onMounted(() => {
       </div>
 
       <!-- 表单内容 -->
-      <div class="max-h-[calc(90vh-160px)] overflow-y-auto p-6">
+      <div class="p-6 max-h-[calc(90vh-160px)] overflow-y-auto">
         <form class="space-y-6" @submit.prevent="handleSubmit">
           <!-- 基本信息 -->
           <div class="space-y-4">
-            <h3 class="border-b border-gray-200 pb-2 text-lg text-gray-900 font-medium">
+            <h3 class="text-lg text-gray-900 font-medium pb-2 border-b border-gray-200">
               {{ t('familyLedger.basicInfo')
               }}
             </h3>
 
             <!-- 账本名称 -->
             <div>
-              <label for="name" class="mb-2 block text-sm text-gray-700 font-medium">
+              <label for="name" class="text-sm text-gray-700 font-medium mb-2 block">
                 {{ t('familyLedger.ledgerName') }} <span class="text-red-500">*</span>
               </label>
               <input
                 id="name" v-model="form.name" type="text" required maxlength="50"
                 :placeholder="t('common.placeholders.enterName')"
-                class="w-full border border-gray-300 rounded-md px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                class="px-3 py-2 border border-gray-300 rounded-md w-full focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
               >
-              <p class="mt-1 text-xs text-gray-500">
+              <p class="text-xs text-gray-500 mt-1">
                 {{ form.name.length }}/50
               </p>
             </div>
 
             <!-- 账本描述 -->
             <div>
-              <label for="description" class="mb-2 block text-sm text-gray-700 font-medium">
+              <label for="description" class="text-sm text-gray-700 font-medium mb-2 block">
                 {{ t('familyLedger.ledgerDescription') }}
               </label>
               <textarea
                 id="description" v-model="form.description" rows="3" maxlength="200"
                 :placeholder="t('common.placeholders.enterDescription')"
-                class="w-full border border-gray-300 rounded-md px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                class="px-3 py-2 border border-gray-300 rounded-md w-full focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
               />
-              <p class="mt-1 text-xs text-gray-500">
+              <p class="text-xs text-gray-500 mt-1">
                 {{ form.description.length }}/200
               </p>
             </div>
@@ -284,17 +279,17 @@ onMounted(() => {
 
           <!-- 货币设置 -->
           <div class="space-y-4">
-            <h3 class="border-b border-gray-200 pb-2 text-lg text-gray-900 font-medium">
+            <h3 class="text-lg text-gray-900 font-medium pb-2 border-b border-gray-200">
               {{
                 t('familyLedger.currencySettings') }}
             </h3>
 
             <div>
-              <label for="currency" class="mb-2 block text-sm text-gray-700 font-medium">
+              <label for="currency" class="text-sm text-gray-700 font-medium mb-2 block">
                 {{ t('financial.baseCurrency') }} <span class="text-red-500">*</span>
               </label>
               <select
-                id="currency" v-model="form.baseCurrency.code" required class="w-full border border-gray-300 rounded-md px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                id="currency" v-model="form.baseCurrency.code" required class="px-3 py-2 border border-gray-300 rounded-md w-full focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
                 @change="updateCurrencyInfo"
               >
                 <option value="">
@@ -304,7 +299,7 @@ onMounted(() => {
                   {{ currency.symbol }} {{ currency.code }} - {{ t(currency.code) }}
                 </option>
               </select>
-              <p class="mt-1 text-xs text-gray-500">
+              <p class="text-xs text-gray-500 mt-1">
                 {{ t('messages.selectedAsDefault') }}
               </p>
             </div>
@@ -312,12 +307,12 @@ onMounted(() => {
 
           <!-- 成员管理 -->
           <div class="space-y-4">
-            <div class="flex items-center justify-between border-b border-gray-200 pb-2">
+            <div class="pb-2 border-b border-gray-200 flex items-center justify-between">
               <h3 class="text-lg text-gray-900 font-medium">
                 {{ t('familyLedger.members') }}
               </h3>
               <button
-                type="button" class="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700"
+                type="button" class="text-sm text-blue-600 flex gap-1 items-center hover:text-blue-700"
                 @click="addMember"
               >
                 <Plus class="h-4 w-4" />
@@ -325,8 +320,8 @@ onMounted(() => {
               </button>
             </div>
 
-            <div v-if="form.members.length === 0" class="py-6 text-center text-gray-500">
-              <Users class="mx-auto mb-2 h-12 w-12 text-gray-300" />
+            <div v-if="form.members.length === 0" class="text-gray-500 py-6 text-center">
+              <Users class="text-gray-300 mx-auto mb-2 h-12 w-12" />
               <p>{{ t('familyLedger.noMembers') }}</p>
               <p class="text-sm">
                 {{ t('familyLedger.clickAddMember') }}
@@ -336,19 +331,19 @@ onMounted(() => {
             <div v-else class="space-y-3">
               <div
                 v-for="(member, index) in form.members" :key="index"
-                class="flex items-center gap-3 border border-gray-200 rounded-md p-3"
+                class="p-3 border border-gray-200 rounded-md flex gap-3 items-center"
               >
                 <div class="flex-1">
                   <input
                     v-model="member.name" type="text" :placeholder="t('familyLedger.memberName')" required
                     maxlength="20"
-                    class="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:border-blue-500 focus:outline-none"
+                    class="text-sm px-2 py-1 border border-gray-300 rounded w-full focus:outline-none focus:border-blue-500"
                   >
                 </div>
                 <div class="flex-1">
                   <select
                     v-model="member.role"
-                    class="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:border-blue-500 focus:outline-none"
+                    class="text-sm px-2 py-1 border border-gray-300 rounded w-full focus:outline-none focus:border-blue-500"
                   >
                     <option value="Owner">
                       {{ t('roles.owner') }}
@@ -364,13 +359,13 @@ onMounted(() => {
                     </option>
                   </select>
                 </div>
-                <div class="flex items-center gap-2">
-                  <label class="flex items-center gap-1 text-sm text-gray-600">
+                <div class="flex gap-2 items-center">
+                  <label class="text-sm text-gray-600 flex gap-1 items-center">
                     <input v-model="member.isPrimary" type="checkbox" class="border-gray-300 rounded">
                     {{ t('familyLedger.primaryMember') }}
                   </label>
                   <button
-                    type="button" class="p-1 text-red-500 hover:text-red-700" :disabled="form.members.length === 1"
+                    type="button" class="text-red-500 p-1 hover:text-red-700" :disabled="form.members.length === 1"
                     @click="removeMember(index)"
                   >
                     <Trash2 class="h-4 w-4" />
@@ -383,20 +378,20 @@ onMounted(() => {
       </div>
 
       <!-- 底部操作栏 -->
-      <div class="flex items-center justify-between border-t border-gray-200 bg-gray-50 p-6">
+      <div class="p-6 border-t border-gray-200 bg-gray-50 flex items-center justify-between">
         <div class="text-sm text-gray-600">
           <span v-if="isEdit">{{ t('familyLedger.editLedger') }}</span>
           <span v-else>{{ t('familyLedger.createNewLedger') }}</span>
         </div>
         <div class="flex gap-3">
           <button
-            type="button" class="border border-gray-300 rounded-md px-4 py-2 text-gray-700 transition-colors hover:bg-gray-50"
+            type="button" class="text-gray-700 px-4 py-2 border border-gray-300 rounded-md transition-colors hover:bg-gray-50"
             @click="$emit('close')"
           >
             {{ t('common.actions.cancel') }}
           </button>
           <button
-            :disabled="!isFormValid || saving" class="rounded-md bg-blue-600 px-4 py-2 text-white transition-colors disabled:cursor-not-allowed hover:bg-blue-700 disabled:opacity-50"
+            :disabled="!isFormValid || saving" class="text-white px-4 py-2 rounded-md bg-blue-600 transition-colors hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
             @click="handleSubmit"
           >
             <span v-if="saving">{{ t('common.misc.saving') }}</span>

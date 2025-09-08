@@ -14,16 +14,18 @@ import { useToast } from 'vue-toastification';
 
 const toastInstance = useToast();
 
-const baseClasses = (color: string) => ({
-  toastClassName: [
-    `bg-${color}-500/90 text-white rounded-lg shadow border border-${color}-300/30`,
-    'p-4 flex items-center gap-2 animate__animated animate__fadeInRight',
-  ].join(' '),
+function baseClasses(color: string) {
+  return {
+    toastClassName: [
+      `bg-${color}-500/90 text-white rounded-lg shadow border border-${color}-300/30`,
+      'p-4 flex items-center gap-2 animate__animated animate__fadeInRight',
+    ].join(' '),
 
-  bodyClassName: 'text-sm',
-  titleClassName: 'font-semibold text-white',
+    bodyClassName: 'text-sm',
+    titleClassName: 'font-semibold text-white',
   // you can define more if needed
-});
+  };
+}
 
 export const toast = {
   success: (msg: string) =>

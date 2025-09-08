@@ -1,8 +1,8 @@
-export type TodoInputEvents = {
+export interface TodoInputEvents {
   add: { text: string };
-};
+}
 
-export type TodoListEvents = {
+export interface TodoListEvents {
   toggle: { serialNum: string };
   remove: { serialNum: string };
-};
+}

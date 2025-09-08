@@ -47,8 +47,7 @@ watch(
   newVal => {
     if (newVal) {
       Object.assign(form, JSON.parse(JSON.stringify(newVal)));
-    }
-    else {
+    } else {
       Object.assign(form, JSON.parse(JSON.stringify(defaultMember)));
     }
   },
@@ -58,7 +57,7 @@ watch(
 
 <template>
   <div class="modal-mask" style="z-index: 60;">
-    <div class="max-w-sm modal-content">
+    <div class="modal-content max-w-sm">
       <div class="mb-4 flex items-center justify-between">
         <h4 class="text-lg font-semibold">
           {{ props.member ? '编辑成员' : '添加成员' }}
@@ -71,13 +70,13 @@ watch(
       <form class="space-y-4" @submit.prevent="saveMember">
         <div class="space-y-3">
           <div>
-            <label class="mb-1 block text-sm text-gray-700 font-medium">姓名</label>
-            <input v-model="form.name" type="text" required class="w-full modal-input-select" placeholder="请输入成员姓名">
+            <label class="text-sm text-gray-700 font-medium mb-1 block">姓名</label>
+            <input v-model="form.name" type="text" required class="modal-input-select w-full" placeholder="请输入成员姓名">
           </div>
 
           <div>
-            <label class="mb-1 block text-sm text-gray-700 font-medium">角色</label>
-            <select v-model="form.role" required class="w-full modal-input-select">
+            <label class="text-sm text-gray-700 font-medium mb-1 block">角色</label>
+            <select v-model="form.role" required class="modal-input-select w-full">
               <option value="Owner">
                 所有者
               </option>
@@ -100,9 +99,9 @@ watch(
           </div>
 
           <div>
-            <label class="mb-1 block text-sm text-gray-700 font-medium">权限设置</label>
+            <label class="text-sm text-gray-700 font-medium mb-1 block">权限设置</label>
             <textarea
-              v-model="form.permissions" rows="3" class="w-full modal-input-select"
+              v-model="form.permissions" rows="3" class="modal-input-select w-full"
               placeholder="权限描述（可选）"
             />
           </div>
@@ -115,7 +114,7 @@ watch(
           </div>
         </div>
 
-        <div class="flex justify-center pt-4 space-x-3">
+        <div class="pt-4 flex justify-center space-x-3">
           <button type="button" class="modal-btn-x" @click="closeModal">
             <X class="wh-4" />
           </button>

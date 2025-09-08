@@ -157,8 +157,7 @@ export default defineComponent({
         && targetPage !== props.currentPage
       ) {
         emit('pageChange', targetPage);
-      }
-      else {
+      } else {
         // 如果输入无效，恢复到当前页码
         pageInput.value = props.currentPage;
       }
@@ -193,7 +192,7 @@ export default defineComponent({
 
 <template>
   <div
-    class="flex items-center justify-between gap-4 rounded-lg p-4 shadow-md" :class="[
+    class="p-4 rounded-lg flex gap-4 shadow-md items-center justify-between" :class="[
       compact ? 'bg-transparent shadow-none p-2' : 'bg-white',
       responsive ? 'flex-wrap sm:flex-nowrap' : 'flex-nowrap',
     ]"
@@ -220,7 +219,7 @@ export default defineComponent({
     </div>
 
     <!-- 中间：页码信息和跳转 -->
-    <div class="flex items-center gap-3">
+    <div class="flex gap-3 items-center">
       <!-- 页码显示 -->
       <span :class="compact ? 'text-xs' : 'text-sm'" class="text-gray-700">
         {{ currentPage }}/{{ totalPages }}
@@ -240,7 +239,7 @@ export default defineComponent({
         :max="totalPages"
         :disabled="disabled"
         aria-label="Jump to page"
-        class="border border-gray-300 rounded-lg text-center text-gray-800 shadow-inner transition-all duration-200 ease-in-out disabled:cursor-not-allowed hover:border-gray-400 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+        class="text-gray-800 text-center border border-gray-300 rounded-lg shadow-inner transition-all duration-200 ease-in-out focus:outline-none hover:border-gray-400 disabled:opacity-50 disabled:cursor-not-allowed focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
         :class="[
           compact ? 'w-12 px-2 py-1 text-xs' : 'w-16 px-3 py-1.5 text-sm',
         ]"
@@ -275,7 +274,7 @@ export default defineComponent({
       v-model="internalPageSize"
       :disabled="disabled"
       aria-label="Select items per page"
-      class="border border-gray-300 rounded-md text-gray-700 disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+      class="text-gray-700 border border-gray-300 rounded-md focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
       :class="[
         compact ? 'px-2 py-1 text-xs' : 'px-2 py-1 text-sm',
       ]" @change="handlePageSizeChange"

@@ -199,8 +199,7 @@ function handleKeyDown(event: KeyboardEvent) {
         event.preventDefault();
         lastElement?.focus();
       }
-    }
-    else {
+    } else {
       if (document.activeElement === lastElement) {
         event.preventDefault();
         firstElement?.focus();

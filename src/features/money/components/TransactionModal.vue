@@ -424,7 +424,7 @@ watch(
 <template>
   <div class="modal-mask" @click="handleOverlayClick">
     <div class="modal-mask-window-money" @click.stop>
-      <div class="mb-4 flex items-center justify-between border-b pb-2">
+      <div class="mb-4 pb-2 border-b flex items-center justify-between">
         <h2 class="text-lg text-gray-800 font-semibold dark:text-gray-100">
           {{ getModalTitle() }}
         </h2>
@@ -437,8 +437,8 @@ watch(
       <form class="space-y-4" @submit.prevent="handleSubmit">
         <!-- 交易类型 -->
         <div class="flex items-center justify-between">
-          <label class="mb-1 text-sm font-medium">{{ t('financial.transaction.transType') }}</label>
-          <div class="w-2/3 modal-input-select bg-gray-50 dark:bg-gray-700">
+          <label class="text-sm font-medium mb-1">{{ t('financial.transaction.transType') }}</label>
+          <div class="modal-input-select bg-gray-50 w-2/3 dark:bg-gray-700">
             {{ form.transactionType === 'Income' ? t('financial.transaction.income')
               : form.transactionType === 'Expense' ? t('financial.transaction.expense')
                 : t('financial.transaction.transfer') }}
@@ -447,11 +447,11 @@ watch(
 
         <!-- 金额 -->
         <div class="mt-4 flex items-center justify-between">
-          <label class="mb-1 text-sm font-medium">{{ t('financial.money') }}</label>
+          <label class="text-sm font-medium mb-1">{{ t('financial.money') }}</label>
           <input
             v-model="form.amount"
             type="number"
-            class="w-2/3 modal-input-select"
+            class="modal-input-select w-2/3"
             :placeholder="t('common.placeholders.enterAmount')"
             step="0.01"
             min="0"
@@ -462,17 +462,17 @@ watch(
 
         <!-- 币种 -->
         <div class="mt-4 flex items-center justify-between">
-          <label class="mb-1 text-sm font-medium">{{ t('financial.currency') }}</label>
+          <label class="text-sm font-medium mb-1">{{ t('financial.currency') }}</label>
           <CurrencySelector v-model="form.currency" class="w-2/3" :disabled="isTransferReadonly" />
         </div>
 
         <!-- 转出账户 -->
         <div class="flex items-center justify-between">
-          <label class="mb-1 text-sm font-medium">
+          <label class="text-sm font-medium mb-1">
             {{ isTransferReadonly || form.transactionType === TransactionTypeSchema.enum.Transfer ? t('financial.transaction.fromAccount')
               : t('financial.account.account') }}
           </label>
-          <select v-model="form.accountSerialNum" class="w-2/3 modal-input-select" required :disabled="isDisabled">
+          <select v-model="form.accountSerialNum" class="modal-input-select w-2/3" required :disabled="isDisabled">
             <option value="">
               {{ t('common.placeholders.selectAccount') }}
             </option>
@@ -484,10 +484,10 @@ watch(
 
         <!-- 转入账户（仅转账时显示） -->
         <div v-if="isTransferReadonly || form.transactionType === TransactionTypeSchema.enum.Transfer" class="flex items-center justify-between">
-          <label class="mb-1 text-sm font-medium">
+          <label class="text-sm font-medium mb-1">
             {{ t('financial.transaction.toAccount') }}
           </label>
-          <select v-model="form.toAccountSerialNum" class="w-2/3 modal-input-select" required :disabled="isDisabled">
+          <select v-model="form.toAccountSerialNum" class="modal-input-select w-2/3" required :disabled="isDisabled">
             <option value="">
               {{ t('common.placeholders.selectAccount') }}
             </option>
@@ -499,8 +499,8 @@ watch(
 
         <!-- 支付渠道 -->
         <div class="flex items-center justify-between">
-          <label class="mb-1 text-sm font-medium">{{ t('financial.transaction.paymentMethod') }}</label>
-          <div class="w-2/3 modal-input-select bg-gray-50 dark:bg-gray-700">
+          <label class="text-sm font-medium mb-1">{{ t('financial.transaction.paymentMethod') }}</label>
+          <div class="modal-input-select bg-gray-50 w-2/3 dark:bg-gray-700">
             <select
               v-if="isPaymentMethodEditable"
               v-model="form.paymentMethod"
@@ -523,8 +523,8 @@ watch(
 
         <!-- 分类 -->
         <div class="flex items-center justify-between">
-          <label class="mb-1 block text-sm font-medium">{{ t('categories.category') }}</label>
-          <select v-model="form.category" class="w-2/3 modal-input-select" required :disabled="isTransferReadonly">
+          <label class="text-sm font-medium mb-1 block">{{ t('categories.category') }}</label>
+          <select v-model="form.category" class="modal-input-select w-2/3" required :disabled="isTransferReadonly">
             <option value="">
               {{ t('common.placeholders.selectCategory') }}
             </option>
@@ -536,8 +536,8 @@ watch(
 
         <!-- 子分类 -->
         <div v-if="filteredSubcategories.length > 0" class="flex items-center justify-between">
-          <label class="mb-1 text-sm font-medium">{{ t('categories.subCategory') }}</label>
-          <select v-model="form.subCategory" class="w-2/3 modal-input-select">
+          <label class="text-sm font-medium mb-1">{{ t('categories.subCategory') }}</label>
+          <select v-model="form.subCategory" class="modal-input-select w-2/3">
             <option value="">
               {{ t('common.placeholders.selectOption') }}
             </option>
@@ -549,7 +549,7 @@ watch(
 
         <!-- 日期 -->
         <div class="flex items-center justify-between">
-          <label class="mb-1 w-1/3 text-sm font-medium">{{ t('date.transactionDate') }}</label>
+          <label class="text-sm font-medium mb-1 w-1/3">{{ t('date.transactionDate') }}</label>
           <VueDatePicker
             v-model="form.date"
             :enable-time-picker="true"
@@ -563,14 +563,14 @@ watch(
         <div class="mb-2">
           <textarea
             v-model="form.description"
-            class="w-full modal-input-select"
+            class="modal-input-select w-full"
             rows="3"
             :placeholder="`${t('common.misc.remark')}（${t('common.misc.optional')}）`"
           />
         </div>
 
         <!-- 按钮 -->
-        <div class="flex justify-center gap-3 pt-4">
+        <div class="pt-4 flex gap-3 justify-center">
           <button type="button" class="modal-btn-x" @click="$emit('close')">
             <X class="wh-5" />
           </button>

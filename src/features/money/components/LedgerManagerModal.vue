@@ -76,8 +76,7 @@ function handleSave(savedLedger: FamilyLedger) {
 
   if (editingLedger.value) {
     toast.success('账本更新成功');
-  }
-  else {
+  } else {
     toast.success('账本创建成功');
     // 如果是新创建的账本，自动选择它
     emit('ledgerSelected', savedLedger.serialNum);
@@ -91,8 +90,7 @@ async function handleConfirmClose() {
     toast.success('账本删除成功');
     showConfirmModal.value = false;
     emit('ledgersUpdated');
-  }
-  catch (error) {
+  } catch (error) {
     Lg.e('LedgerManagerModal', error);
     toast.error('删除账本失败');
   }
@@ -108,18 +106,17 @@ function formatDate(dateString?: string) {
     return '未知';
   try {
     return new Date(dateString).toLocaleDateString('zh-CN');
-  }
-  catch {
+  } catch {
     return '未知';
   }
 }
 </script>
 
 <template>
-  <div class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50" @click.self="$emit('close')">
-    <div class="max-h-[90vh] max-w-4xl w-full overflow-hidden rounded-lg bg-white shadow-2xl">
+  <div class="bg-black bg-opacity-50 flex items-center inset-0 justify-center fixed z-50" @click.self="$emit('close')">
+    <div class="rounded-lg bg-white max-h-[90vh] max-w-4xl w-full shadow-2xl overflow-hidden">
       <!-- 头部 -->
-      <div class="flex items-center justify-between border-b border-gray-200 bg-gray-50 p-6">
+      <div class="p-6 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
         <h2 class="text-xl text-gray-800 font-bold">
           家庭账本管理
         </h2>
@@ -129,14 +126,14 @@ function formatDate(dateString?: string) {
       </div>
 
       <!-- 内容 -->
-      <div class="max-h-[calc(90vh-120px)] overflow-y-auto p-6">
+      <div class="p-6 max-h-[calc(90vh-120px)] overflow-y-auto">
         <!-- 操作栏 -->
         <div class="mb-6 flex items-center justify-between">
           <div class="text-sm text-gray-600">
             共 {{ ledgers.length }} 个账本
           </div>
           <button
-            class="flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-white transition-colors hover:bg-blue-700"
+            class="text-white px-4 py-2 rounded-md bg-blue-600 flex gap-2 transition-colors items-center hover:bg-blue-700"
             @click="showCreateForm = true"
           >
             <Plus class="h-4 w-4" />
@@ -145,9 +142,9 @@ function formatDate(dateString?: string) {
         </div>
 
         <!-- 账本列表 -->
-        <div v-if="ledgers.length > 0" class="grid gap-4">
+        <div v-if="ledgers.length > 0" class="gap-4 grid">
           <div
-            v-for="ledger in ledgers" :key="ledger.serialNum" class="cursor-pointer border rounded-lg p-4 transition-all hover:shadow-md" :class="[
+            v-for="ledger in ledgers" :key="ledger.serialNum" class="p-4 border rounded-lg cursor-pointer transition-all hover:shadow-md" :class="[
               currentLedgerId === ledger.serialNum
                 ? 'border-blue-500 bg-blue-50 shadow-md'
                 : 'border-gray-200 hover:border-gray-300',
@@ -155,32 +152,32 @@ function formatDate(dateString?: string) {
           >
             <div class="flex items-start justify-between">
               <div class="flex-1">
-                <div class="mb-2 flex items-center gap-3">
+                <div class="mb-2 flex gap-3 items-center">
                   <h3 class="text-lg text-gray-900 font-semibold">
                     {{ ledger.name }}
                   </h3>
                   <span
                     v-if="currentLedgerId === ledger.serialNum"
-                    class="rounded-full bg-blue-100 px-2 py-1 text-xs text-blue-800 font-medium"
+                    class="text-xs text-blue-800 font-medium px-2 py-1 rounded-full bg-blue-100"
                   >
                     当前使用
                   </span>
                 </div>
 
-                <p class="mb-3 text-sm text-gray-600">
+                <p class="text-sm text-gray-600 mb-3">
                   {{ ledger.description || '暂无描述' }}
                 </p>
 
-                <div class="flex items-center gap-6 text-xs text-gray-500">
-                  <div class="flex items-center gap-1">
+                <div class="text-xs text-gray-500 flex gap-6 items-center">
+                  <div class="flex gap-1 items-center">
                     <CreditCard class="h-3 w-3" />
                     <span>货币: {{ ledger.baseCurrency?.symbol || '¥' }} {{ ledger.baseCurrency?.code || 'CNY' }}</span>
                   </div>
-                  <div class="flex items-center gap-1">
+                  <div class="flex gap-1 items-center">
                     <Users class="h-3 w-3" />
                     <span>成员: {{ ledger.members?.length || 0 }}人</span>
                   </div>
-                  <div class="flex items-center gap-1">
+                  <div class="flex gap-1 items-center">
                     <Calendar class="h-3 w-3" />
                     <span>创建: {{ formatDate(ledger.createdAt) }}</span>
                   </div>
@@ -189,14 +186,14 @@ function formatDate(dateString?: string) {
 
               <div class="ml-4 flex gap-2">
                 <button
-                  class="rounded-md p-2 text-gray-400 transition-colors hover:bg-blue-50 hover:text-blue-600"
+                  class="text-gray-400 p-2 rounded-md transition-colors hover:text-blue-600 hover:bg-blue-50"
                   title="编辑账本"
                   @click.stop="editLedger(ledger)"
                 >
                   <Edit class="h-4 w-4" />
                 </button>
                 <button
-                  class="rounded-md p-2 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600"
+                  class="text-gray-400 p-2 rounded-md transition-colors hover:text-red-600 hover:bg-red-50"
                   title="删除账本" :disabled="currentLedgerId === ledger.serialNum"
                   @click.stop="handleDeleteLedger(ledger)"
                 >
@@ -209,15 +206,15 @@ function formatDate(dateString?: string) {
 
         <!-- 空状态 -->
         <div v-else class="py-16 text-center">
-          <HandCoins class="mx-auto mb-6 h-20 w-20 text-gray-300" />
-          <h3 class="mb-3 text-xl text-gray-900 font-medium">
+          <HandCoins class="text-gray-300 mx-auto mb-6 h-20 w-20" />
+          <h3 class="text-xl text-gray-900 font-medium mb-3">
             还没有账本
           </h3>
-          <p class="mx-auto mb-8 max-w-md text-gray-500">
+          <p class="text-gray-500 mx-auto mb-8 max-w-md">
             创建您的第一个家庭账本，开始管理家庭财务。每个账本可以有不同的成员和货币设置。
           </p>
           <button
-            class="rounded-md bg-blue-600 px-6 py-3 text-white transition-colors hover:bg-blue-700"
+            class="text-white px-6 py-3 rounded-md bg-blue-600 transition-colors hover:bg-blue-700"
             @click="showCreateForm = true"
           >
             创建第一个账本
@@ -226,7 +223,7 @@ function formatDate(dateString?: string) {
       </div>
 
       <!-- 底部操作栏 -->
-      <div class="flex items-center justify-between border-t border-gray-200 bg-gray-50 p-6">
+      <div class="p-6 border-t border-gray-200 bg-gray-50 flex items-center justify-between">
         <div class="text-sm text-gray-600">
           <span v-if="currentLedgerId">
             当前使用: <strong>{{ currentLedger?.name }}</strong>
@@ -237,13 +234,13 @@ function formatDate(dateString?: string) {
         </div>
         <div class="flex gap-3">
           <button
-            class="border border-gray-300 rounded-md px-4 py-2 text-gray-700 transition-colors hover:bg-gray-50"
+            class="text-gray-700 px-4 py-2 border border-gray-300 rounded-md transition-colors hover:bg-gray-50"
             @click="$emit('close')"
           >
             关闭
           </button>
           <button
-            v-if="currentLedgerId && currentLedgerId !== props.currentLedgerId" class="rounded-md bg-blue-600 px-4 py-2 text-white transition-colors hover:bg-blue-700"
+            v-if="currentLedgerId && currentLedgerId !== props.currentLedgerId" class="text-white px-4 py-2 rounded-md bg-blue-600 transition-colors hover:bg-blue-700"
             @click="confirmSelection"
           >
             确认选择

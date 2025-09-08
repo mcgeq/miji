@@ -10,48 +10,9 @@
   Modified   By:  mcge <mcgeq@outlook.com>
   -----------------------------------------------------------------------------
 -->
-<template>
-  <button
-    :class="[
-      'absolute left-1 top-1 w-5 h-5 rounded-full flex items-center justify-center text-xs font-semibold transition-all duration-300 ease-out hover:scale-125 hover:shadow-lg bg-opacity-90 backdrop-blur-md border border-white/30 shadow-[0_0_10px_rgba(0,0,0,0.15)] dark:shadow-[0_0_10px_rgba(255,255,255,0.15)] animate-pulse-subtle',
-      `bg-gradient-to-br ${priorityClasses.gradient}`,
-      priorityClasses.text
-    ]"
-    :title="priorityLabel"
-    :aria-label="priorityLabel"
-    :disabled="completed"
-    @click="showMenu = !showMenu"
-  >
-    <span class="drop-shadow-sm">{{ priorityLabel }}</span>
-  </button>
-
-  <div
-    v-if="showMenu"
-    class="absolute top-7 left-0 z-50 w-10 bg-white dark:bg-neutral-800 rounded-lg border border-gray-200 dark:border-neutral-700 shadow-md dark:shadow-lg p-1 backdrop-blur-md"
-  >
-    <button
-      v-for="p in priorities"
-      :key="p"
-      @click="selectPriority(serialNum, p)"
-      :class="[
-        'block w-full px-2.5 py-1 text-[13px] font-medium tracking-wide rounded-md transition-colors duration-150 ease-in-out',
-        'hover:bg-gray-100 dark:hover:bg-neutral-700 active:scale-[0.98]',
-        p === priority ? 'bg-gray-200 dark:bg-neutral-600 font-semibold text-black dark:text-white' : 'text-gray-800 dark:text-gray-100'
-      ]"
-    >
-      {{ t(priorityKeyMap[p.toUpperCase() as keyof typeof priorityKeyMap] || priorityKeyMap.LOW) }}
-    </button>
-  </div>
-</template>
-
 <script setup lang="ts">
-import { Priority, PrioritySchema } from '@/schema/common';
-
-const priorities: Priority[] = PrioritySchema.options;
-
-const emit = defineEmits<{
-  (e: 'changePriority', serialNum: string, priority: Priority): void;
-}>();
+import { PrioritySchema } from '@/schema/common';
+import type { Priority } from '@/schema/common';
 
 const props = defineProps<{
   serialNum: string;
@@ -59,6 +20,12 @@ const props = defineProps<{
   completed: boolean;
   onChangePriority: (serialNum: string, p: Priority) => void;
 }>();
+
+const emit = defineEmits<{
+  (e: 'changePriority', serialNum: string, priority: Priority): void;
+}>();
+
+const priorities: Priority[] = PrioritySchema.options;
 
 const showMenu = ref(false);
 const { t } = useI18n();
@@ -102,6 +69,37 @@ function selectPriority(serialNum: string, p: Priority) {
   emit('changePriority', serialNum, p);
 }
 </script>
+
+<template>
+  <button
+    class="animate-pulse-subtle text-xs font-semibold border border-white/30 rounded-full bg-opacity-90 flex h-5 w-5 shadow-[0_0_10px_rgba(0,0,0,0.15)] transition-all duration-300 ease-out items-center left-1 top-1 justify-center absolute backdrop-blur-md dark:shadow-[0_0_10px_rgba(255,255,255,0.15)] hover:shadow-lg hover:scale-125" :class="[
+      `bg-gradient-to-br ${priorityClasses.gradient}`,
+      priorityClasses.text,
+    ]"
+    :title="priorityLabel"
+    :aria-label="priorityLabel"
+    :disabled="completed"
+    @click="showMenu = !showMenu"
+  >
+    <span class="drop-shadow-sm">{{ priorityLabel }}</span>
+  </button>
+
+  <div
+    v-if="showMenu"
+    class="p-1 border border-gray-200 rounded-lg bg-white w-10 shadow-md left-0 top-7 absolute z-50 backdrop-blur-md dark:border-neutral-700 dark:bg-neutral-800 dark:shadow-lg"
+  >
+    <button
+      v-for="p in priorities"
+      :key="p"
+      class="text-[13px] tracking-wide font-medium px-2.5 py-1 rounded-md w-full block transition-colors duration-150 ease-in-out hover:bg-gray-100 active:scale-[0.98] dark:hover:bg-neutral-700" :class="[
+        p === priority ? 'bg-gray-200 dark:bg-neutral-600 font-semibold text-black dark:text-white' : 'text-gray-800 dark:text-gray-100',
+      ]"
+      @click="selectPriority(serialNum, p)"
+    >
+      {{ t(priorityKeyMap[p.toUpperCase() as keyof typeof priorityKeyMap] || priorityKeyMap.LOW) }}
+    </button>
+  </div>
+</template>
 
 <style scoped>
 .animate-pulse-subtle:hover {

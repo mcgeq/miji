@@ -225,8 +225,7 @@ function validateSingleField(key: keyof FormData) {
   const error = validateField(field, formData.value[key]);
   if (error) {
     errors.value[key] = error;
-  }
-  else {
+  } else {
     delete errors.value[key];
   }
 }
@@ -294,12 +293,10 @@ async function handleSubmit() {
 
     emit('update', changedData);
     emit('close');
-  }
-  catch (error) {
+  } catch (error) {
     console.error('更新资料失败:', error);
     // 可以在这里添加错误提示
-  }
-  finally {
+  } finally {
     isSubmitting.value = false;
   }
 }
@@ -348,8 +345,7 @@ function handleInput(key: keyof FormData, value: string) {
 function handleKeydown(event: KeyboardEvent) {
   if (event.key === 'Escape') {
     handleClose();
-  }
-  else if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {
+  } else if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {
     handleSubmit();
   }
 }
@@ -388,7 +384,7 @@ onUnmounted(() => {
     >
       <div
         v-if="isOpen"
-        class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
+        class="p-4 bg-black/50 flex items-center inset-0 justify-center fixed z-50 backdrop-blur-sm"
         @click="handleOverlayClick"
       >
         <Transition
@@ -402,17 +398,17 @@ onUnmounted(() => {
         >
           <div
             v-if="isOpen"
-            class="max-h-[90vh] max-w-2xl modal-content w-full rounded-2xl bg-white shadow-2xl"
+            class="modal-content rounded-2xl bg-white max-h-[90vh] max-w-2xl w-full shadow-2xl"
             role="dialog"
             aria-modal="true"
             aria-labelledby="modal-title"
           >
             <!-- Modal 头部 -->
-            <div class="sticky top-0 z-10 border-b border-gray-200 rounded-t-2xl bg-white px-6 py-4">
+            <div class="px-6 py-4 border-b border-gray-200 rounded-t-2xl bg-white top-0 sticky z-10">
               <div class="flex items-center justify-between">
-                <div class="flex items-center gap-3">
-                  <div class="rounded-lg bg-blue-100 p-2">
-                    <User class="h-5 w-5 text-blue-600" />
+                <div class="flex gap-3 items-center">
+                  <div class="p-2 rounded-lg bg-blue-100">
+                    <User class="text-blue-600 h-5 w-5" />
                   </div>
                   <div>
                     <h2 id="modal-title" class="text-xl text-gray-900 font-bold">
@@ -424,7 +420,7 @@ onUnmounted(() => {
                   </div>
                 </div>
                 <button
-                  class="rounded-full p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                  class="text-gray-400 p-2 rounded-full transition-colors hover:text-gray-600 focus:outline-none hover:bg-gray-100 focus:ring-2 focus:ring-blue-500/20"
                   :disabled="isSubmitting"
                   aria-label="关闭对话框"
                   @click="handleClose"
@@ -439,27 +435,27 @@ onUnmounted(() => {
               <form class="space-y-8" @submit.prevent="handleSubmit">
                 <!-- 基本信息 -->
                 <section class="space-y-6">
-                  <div class="flex items-center gap-2">
-                    <User class="h-5 w-5 text-gray-600" />
+                  <div class="flex gap-2 items-center">
+                    <User class="text-gray-600 h-5 w-5" />
                     <h3 class="text-lg text-gray-900 font-semibold">
                       基本信息
                     </h3>
                   </div>
 
-                  <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+                  <div class="gap-6 grid grid-cols-1 md:grid-cols-2">
                     <!-- 动态渲染基本信息字段 -->
                     <template v-for="field in FORM_FIELDS.slice(0, 4)" :key="field.key">
                       <div :class="field.type === 'textarea' ? 'md:col-span-2' : ''">
-                        <label class="mb-2 block text-sm text-gray-700 font-medium">
+                        <label class="text-sm text-gray-700 font-medium mb-2 block">
                           {{ field.label }}
-                          <span v-if="field.required" class="ml-1 text-red-500">*</span>
+                          <span v-if="field.required" class="text-red-500 ml-1">*</span>
                         </label>
 
                         <!-- 文本输入框 -->
                         <div v-if="field.type === 'text' || field.type === 'email' || field.type === 'tel'" class="relative">
                           <component
                             :is="field.icon"
-                            class="absolute left-3 top-1/2 h-4 w-4 text-gray-400 -translate-y-1/2"
+                            class="text-gray-400 h-4 w-4 left-3 top-1/2 absolute -translate-y-1/2"
                           />
                           <input
                             :ref="field.key === 'name' ? (el) => { nameInputRef = el as HTMLInputElement } : undefined"
@@ -468,7 +464,7 @@ onUnmounted(() => {
                             :maxlength="field.maxLength"
                             :value="formData[field.key]"
                             :data-field="field.key"
-                            class="w-full border border-gray-300 rounded-lg py-3 pl-10 pr-4 text-sm transition-colors focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                            class="text-sm py-3 pl-10 pr-4 border border-gray-300 rounded-lg w-full transition-colors disabled:text-gray-500 focus:outline-none focus:border-blue-500 disabled:bg-gray-50 focus:ring-2 focus:ring-blue-500/20"
                             :class="{ 'border-red-500 focus:border-red-500 focus:ring-red-500/20': errors[field.key] }"
                             @input="handleInput(field.key, ($event.target as HTMLInputElement).value)"
                             @blur="validateSingleField(field.key)"
@@ -479,7 +475,7 @@ onUnmounted(() => {
                         <div v-else-if="field.type === 'textarea'" class="relative">
                           <component
                             :is="field.icon"
-                            class="absolute left-3 top-3 h-4 w-4 text-gray-400"
+                            class="text-gray-400 h-4 w-4 left-3 top-3 absolute"
                           />
                           <textarea
                             :placeholder="field.placeholder"
@@ -487,7 +483,7 @@ onUnmounted(() => {
                             :rows="field.rows"
                             :value="formData[field.key]"
                             :data-field="field.key"
-                            class="w-full resize-none border border-gray-300 rounded-lg py-3 pl-10 pr-4 text-sm transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                            class="text-sm py-3 pl-10 pr-4 border border-gray-300 rounded-lg w-full resize-none transition-colors focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
                             :class="{ 'border-red-500 focus:border-red-500 focus:ring-red-500/20': errors[field.key] }"
                             @input="handleInput(field.key, ($event.target as HTMLTextAreaElement).value)"
                             @blur="validateSingleField(field.key)"
@@ -496,13 +492,13 @@ onUnmounted(() => {
 
                         <!-- 错误信息和字符计数 -->
                         <div v-if="errors[field.key] || field.maxLength" class="mt-1 flex justify-between">
-                          <p v-if="errors[field.key]" class="flex items-center gap-1 text-sm text-red-500">
+                          <p v-if="errors[field.key]" class="text-sm text-red-500 flex gap-1 items-center">
                             <AlertCircle class="h-3 w-3" />
                             {{ errors[field.key] }}
                           </p>
                           <p
                             v-if="field.maxLength"
-                            class="ml-auto text-sm"
+                            class="text-sm ml-auto"
                             :class="formData[field.key].length > field.maxLength * 0.8 ? 'text-amber-500' : 'text-gray-500'"
                           >
                             {{ formData[field.key].length }}/{{ field.maxLength }}
@@ -515,29 +511,29 @@ onUnmounted(() => {
 
                 <!-- 偏好设置 -->
                 <section class="space-y-6">
-                  <div class="flex items-center gap-2">
-                    <Globe class="h-5 w-5 text-gray-600" />
+                  <div class="flex gap-2 items-center">
+                    <Globe class="text-gray-600 h-5 w-5" />
                     <h3 class="text-lg text-gray-900 font-semibold">
                       偏好设置
                     </h3>
                   </div>
 
-                  <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+                  <div class="gap-6 grid grid-cols-1 md:grid-cols-2">
                     <!-- 动态渲染偏好设置字段 -->
                     <template v-for="field in FORM_FIELDS.slice(4)" :key="field.key">
                       <div>
-                        <label class="mb-2 block text-sm text-gray-700 font-medium">
+                        <label class="text-sm text-gray-700 font-medium mb-2 block">
                           {{ field.label }}
                         </label>
                         <div class="relative">
                           <component
                             :is="field.icon"
-                            class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 text-gray-400 -translate-y-1/2"
+                            class="text-gray-400 h-4 w-4 pointer-events-none left-3 top-1/2 absolute -translate-y-1/2"
                           />
                           <select
                             :value="formData[field.key]"
                             :data-field="field.key"
-                            class="w-full border border-gray-300 rounded-lg bg-white py-3 pl-10 pr-4 text-sm transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                            class="text-sm py-3 pl-10 pr-4 border border-gray-300 rounded-lg bg-white w-full transition-colors focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
                             @change="handleInput(field.key, ($event.target as HTMLSelectElement).value)"
                           >
                             <option
@@ -557,12 +553,12 @@ onUnmounted(() => {
             </div>
 
             <!-- 底部操作栏 -->
-            <div class="sticky bottom-0 border-t border-gray-200 rounded-b-2xl bg-white px-6 py-4">
+            <div class="px-6 py-4 border-t border-gray-200 rounded-b-2xl bg-white bottom-0 sticky">
               <div class="flex flex-col gap-3 sm:flex-row-reverse sm:gap-3">
                 <button
                   type="button"
                   :disabled="!canSubmit"
-                  class="flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-6 py-3 text-sm text-white font-medium transition-colors disabled:cursor-not-allowed disabled:bg-gray-300 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                  class="text-sm text-white font-medium px-6 py-3 rounded-lg bg-blue-600 flex gap-2 transition-colors items-center justify-center focus:outline-none disabled:bg-gray-300 hover:bg-blue-700 disabled:cursor-not-allowed focus:ring-2 focus:ring-blue-500/20"
                   @click="handleSubmit"
                 >
                   <Save class="h-4 w-4" />
@@ -571,7 +567,7 @@ onUnmounted(() => {
                 <button
                   type="button"
                   :disabled="isSubmitting"
-                  class="border border-gray-300 rounded-lg px-6 py-3 text-sm text-gray-700 font-medium transition-colors disabled:cursor-not-allowed hover:bg-gray-50 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-gray-500/20"
+                  class="text-sm text-gray-700 font-medium px-6 py-3 border border-gray-300 rounded-lg transition-colors focus:outline-none hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed focus:ring-2 focus:ring-gray-500/20"
                   @click="handleClose"
                 >
                   取消
@@ -579,8 +575,8 @@ onUnmounted(() => {
               </div>
 
               <!-- 状态指示器 -->
-              <div v-if="isDirty" class="mt-3 flex items-center gap-2 text-sm text-amber-600">
-                <div class="h-2 w-2 rounded-full bg-amber-500" />
+              <div v-if="isDirty" class="text-sm text-amber-600 mt-3 flex gap-2 items-center">
+                <div class="rounded-full bg-amber-500 h-2 w-2" />
                 有未保存的更改
               </div>
             </div>

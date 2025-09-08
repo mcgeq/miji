@@ -112,14 +112,11 @@ export const usePeriodStore = defineStore('period', () => {
 
     if (daysSinceLastPeriod <= averagePeriodLength) {
       currentPhase = 'Menstrual';
-    }
-    else if (daysSinceLastPeriod <= averageCycleLength / 2) {
+    } else if (daysSinceLastPeriod <= averageCycleLength / 2) {
       currentPhase = 'Follicular';
-    }
-    else if (daysSinceLastPeriod <= averageCycleLength / 2 + 3) {
+    } else if (daysSinceLastPeriod <= averageCycleLength / 2 + 3) {
       currentPhase = 'Ovulation';
-    }
-    else {
+    } else {
       currentPhase = 'Luteal';
     }
 
@@ -303,14 +300,12 @@ export const usePeriodStore = defineStore('period', () => {
         'Predicted next period:',
         periodStats.value.nextPredictedDate,
       );
-    }
-    catch (e) {
+    } catch (e) {
       const errorMessage
         = e instanceof Error ? e.message : 'Failed to fetch period records';
       setError(errorMessage);
       throw new Error(errorMessage);
-    }
-    finally {
+    } finally {
       setLoading(false);
     }
   };
@@ -369,14 +364,12 @@ export const usePeriodStore = defineStore('period', () => {
       ];
 
       dailyRecords.value = mockDailyData;
-    }
-    catch (e) {
+    } catch (e) {
       const errorMessage
         = e instanceof Error ? e.message : 'Failed to fetch daily records';
       setError(errorMessage);
       throw new Error(errorMessage);
-    }
-    finally {
+    } finally {
       setLoading(false);
     }
   };
@@ -397,14 +390,12 @@ export const usePeriodStore = defineStore('period', () => {
       );
 
       Lg.i('Period', 'Daily record deleted:', serialNum);
-    }
-    catch (e) {
+    } catch (e) {
       const errorMessage
         = e instanceof Error ? e.message : 'Failed to delete daily record';
       setError(errorMessage);
       throw new Error(errorMessage);
-    }
-    finally {
+    } finally {
       setLoading(false);
     }
   };
@@ -435,14 +426,12 @@ export const usePeriodStore = defineStore('period', () => {
       lastFetch.value = null;
 
       return newRecord;
-    }
-    catch (e) {
+    } catch (e) {
       const errorMessage
         = e instanceof Error ? e.message : 'Failed to add period record';
       setError(errorMessage);
       throw new Error(errorMessage);
-    }
-    finally {
+    } finally {
       setLoading(false);
     }
   };
@@ -471,14 +460,12 @@ export const usePeriodStore = defineStore('period', () => {
           updatedAt: new Date().toISOString(),
         };
       }
-    }
-    catch (e) {
+    } catch (e) {
       const errorMessage
         = e instanceof Error ? e.message : 'Failed to update period record';
       setError(errorMessage);
       throw new Error(errorMessage);
-    }
-    finally {
+    } finally {
       setLoading(false);
     }
   };
@@ -501,8 +488,7 @@ export const usePeriodStore = defineStore('period', () => {
         dailyRecords.value = dailyRecords.value.filter(
           record => record.serialNum !== serialNum,
         );
-      }
-      else {
+      } else {
         // 如果是经期记录，删除经期记录和相关的日常记录
         periodRecords.value = periodRecords.value.filter(
           record => record.serialNum !== serialNum,
@@ -513,14 +499,12 @@ export const usePeriodStore = defineStore('period', () => {
           record => record.periodSerialNum !== serialNum,
         );
       }
-    }
-    catch (e) {
+    } catch (e) {
       const errorMessage
         = e instanceof Error ? e.message : 'Failed to delete record';
       setError(errorMessage);
       throw new Error(errorMessage);
-    }
-    finally {
+    } finally {
       setLoading(false);
     }
   };
@@ -548,8 +532,7 @@ export const usePeriodStore = defineStore('period', () => {
 
         // 使用 splice 确保响应式更新
         dailyRecords.value.splice(existingIndex, 1, updatedRecord);
-      }
-      else {
+      } else {
         // 创建新记录
         const newRecord: PeriodDailyRecords = {
           serialNum: `daily_${Date.now()}`.padEnd(38, '0'),
@@ -572,14 +555,12 @@ export const usePeriodStore = defineStore('period', () => {
 
       // 强制触发响应式更新
       dailyRecords.value = [...dailyRecords.value];
-    }
-    catch (e) {
+    } catch (e) {
       const errorMessage
         = e instanceof Error ? e.message : 'Failed to save daily record';
       setError(errorMessage);
       throw new Error(errorMessage);
-    }
-    finally {
+    } finally {
       setLoading(false);
     }
   };
@@ -606,14 +587,12 @@ export const usePeriodStore = defineStore('period', () => {
         ...settings.value,
         ...newSettings,
       };
-    }
-    catch (e) {
+    } catch (e) {
       const errorMessage
         = e instanceof Error ? e.message : 'Failed to update settings';
       setError(errorMessage);
       throw new Error(errorMessage);
-    }
-    finally {
+    } finally {
       setLoading(false);
     }
   };
@@ -635,14 +614,12 @@ export const usePeriodStore = defineStore('period', () => {
       pmsRecords.value = [];
       pmsSymptoms.value = [];
       lastFetch.value = null;
-    }
-    catch (e) {
+    } catch (e) {
       const errorMessage
         = e instanceof Error ? e.message : 'Failed to reset data';
       setError(errorMessage);
       throw new Error(errorMessage);
-    }
-    finally {
+    } finally {
       setLoading(false);
     }
   };
@@ -661,14 +638,12 @@ export const usePeriodStore = defineStore('period', () => {
 
       // 强制触发响应式更新
       dailyRecords.value = [...dailyRecords.value];
-    }
-    catch (e) {
+    } catch (e) {
       const errorMessage
         = e instanceof Error ? e.message : 'Failed to refresh daily records';
       setError(errorMessage);
       throw new Error(errorMessage);
-    }
-    finally {
+    } finally {
       setLoading(false);
     }
   };

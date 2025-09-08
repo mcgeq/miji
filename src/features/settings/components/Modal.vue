@@ -21,11 +21,11 @@ function handleBackdropClick() {
 <template>
   <Teleport to="body">
     <div
-      class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 transition-opacity duration-300"
+      class="p-4 bg-black/50 flex transition-opacity duration-300 items-center inset-0 justify-center fixed z-50"
       @click="handleBackdropClick"
     >
       <div
-        class="max-h-[90vh] max-w-md w-full scale-100 transform overflow-y-auto rounded-xl bg-white shadow-2xl transition-all duration-300"
+        class="rounded-xl bg-white max-h-[90vh] max-w-md w-full shadow-2xl scale-100 transform transition-all duration-300 overflow-y-auto"
         @click.stop
       >
         <slot />

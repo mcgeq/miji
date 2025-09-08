@@ -155,10 +155,10 @@ function closeMenu() {
 </script>
 
 <template>
-  <div class="relative mb-2 h-18 flex flex-col border border-gray-200 rounded-2xl bg-white p-4" @mouseenter="showActions = true" @mouseleave="showActions = false">
+  <div class="mb-2 p-4 border border-gray-200 rounded-2xl bg-white flex flex-col h-18 relative" @mouseenter="showActions = true" @mouseleave="showActions = false">
     <!-- Left Section with Checkbox, Priority, and Title -->
     <div class="flex flex-1 items-center justify-between">
-      <div class="flex items-center gap-2">
+      <div class="flex gap-2 items-center">
         <PriorityBadge
           v-if="todoCopy.priority"
           :serial-num="todoCopy.serialNum"
@@ -181,7 +181,7 @@ function closeMenu() {
     </div>
 
     <!-- Due Date -->
-    <div v-if="todoCopy.dueAt" class="absolute bottom-1 right-4 text-xs text-gray-500">
+    <div v-if="todoCopy.dueAt" class="text-xs text-gray-500 bottom-1 right-4 absolute">
       {{ todoCopy.remainingTime }}
     </div>
 

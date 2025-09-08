@@ -135,8 +135,7 @@ async function handleDailySubmit(record: PeriodDailyRecords) {
       'Daily record saved, total records:',
       periodStore.dailyRecords.length,
     );
-  }
-  catch (error) {
+  } catch (error) {
     Lg.e('PeriodManagement', `${t('period.saveFailed')}:`, error);
   }
 }
@@ -176,8 +175,7 @@ async function confirmDelete() {
       'Delete completed, records count:',
       periodStore.dailyRecords.length,
     );
-  }
-  catch (error) {
+  } catch (error) {
     console.error(`${t('messages.deleteFailed')}:`, error);
   }
 }
@@ -212,8 +210,7 @@ onMounted(async () => {
   periodStore.initialize();
   try {
     await periodStore.fetchPeriodRecords();
-  }
-  catch (error) {
+  } catch (error) {
     Lg.e('PeriodManagement', 'Failed to load period data:', error);
   }
 });
@@ -223,9 +220,9 @@ onMounted(async () => {
   <div class="period-management">
     <!-- 头部导航 -->
     <div class="header-section">
-      <div class="container mx-auto px-4 lg:px-6">
-        <div class="flex items-center justify-end py-1">
-          <div class="flex items-center gap-1 rounded-lg bg-gray-100 p-1 dark:bg-gray-700">
+      <div class="mx-auto px-4 container lg:px-6">
+        <div class="py-1 flex items-center justify-end">
+          <div class="p-1 rounded-lg bg-gray-100 flex gap-1 items-center dark:bg-gray-700">
             <button
               class="nav-tab" :class="{ 'nav-tab-active': currentView === 'calendar' }"
               @click="currentView = 'calendar'"
@@ -254,7 +251,7 @@ onMounted(async () => {
 
     <!-- 主要内容区域 -->
     <div class="main-content">
-      <div class="container mx-auto px-4 py-6 lg:px-6">
+      <div class="mx-auto px-4 py-6 container lg:px-6">
         <!-- 统计仪表板视图 -->
         <div v-if="currentView === 'stats'" class="stats-view">
           <PeriodStatsDashboard />
@@ -263,21 +260,21 @@ onMounted(async () => {
         <!-- 日历视图 -->
         <div v-else-if="currentView === 'calendar'" class="calendar-view space-y-6">
           <!-- 第一行：日历占1/2，今日信息+快速操作占1/2 -->
-          <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <div class="gap-6 grid grid-cols-1 lg:grid-cols-2">
             <!-- 日历组件 -->
-            <div class="card-base p-6">
+            <div class="p-6 card-base">
               <PeriodCalendar :selected-date="selectedDate" @date-select="handleDateSelect" />
             </div>
 
             <!-- 今日信息和快速操作 -->
-            <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div class="gap-4 grid grid-cols-1 md:grid-cols-2">
               <!-- 今日信息 -->
-              <div class="card-base p-6">
-                <div class="mb-6 flex items-center gap-3">
+              <div class="p-6 card-base">
+                <div class="mb-6 flex gap-3 items-center">
                   <div
-                    class="h-10 w-10 flex items-center justify-center rounded-full from-blue-500 to-cyan-500 bg-gradient-to-r"
+                    class="bg-gradient-to-r rounded-full flex h-10 w-10 items-center justify-center from-blue-500 to-cyan-500"
                   >
-                    <CalendarCheck class="h-5 w-5 text-white" />
+                    <CalendarCheck class="text-white h-5 w-5" />
                   </div>
                   <h3 class="text-lg text-gray-900 font-semibold dark:text-white">
                     {{ t('period.todayInfo.title') }}
@@ -296,7 +293,7 @@ onMounted(async () => {
                   </div>
                   <div v-if="todayRecord" class="info-item">
                     <span class="info-label">{{ t('period.todayInfo.todayRecord') }}</span>
-                    <div class="flex items-center gap-2">
+                    <div class="flex gap-2 items-center">
                       <button class="action-icon-btn view-btn" title="查看记录" @click="openDailyForm(todayRecord)">
                         <Eye class="wh-4" />
                       </button>
@@ -329,7 +326,7 @@ onMounted(async () => {
 
         <!-- 设置视图 -->
         <div v-else-if="currentView === 'settings'" class="settings-view">
-          <div class="card-base p-6">
+          <div class="p-6 card-base">
             <PeriodSettings />
           </div>
         </div>
@@ -358,28 +355,28 @@ onMounted(async () => {
 
     <!-- 删除确认弹窗 -->
     <div v-if="showDeleteConfirm" class="modal-overlay" @click.self="closeDeleteConfirm">
-      <div class="max-w-sm modal-content">
+      <div class="modal-content max-w-sm">
         <div class="p-6">
-          <div class="mb-4 flex items-center gap-3">
-            <div class="h-8 w-8 flex items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30">
-              <Trash class="wh-4 text-red-600 dark:text-red-400" />
+          <div class="mb-4 flex gap-3 items-center">
+            <div class="rounded-full bg-red-100 flex h-8 w-8 items-center justify-center dark:bg-red-900/30">
+              <Trash class="text-red-600 wh-4 dark:text-red-400" />
             </div>
             <h3 class="text-lg text-gray-900 font-semibold dark:text-white">
               {{ t('period.confirmations.deleteRecord') }}
             </h3>
           </div>
-          <p class="mb-6 text-sm text-gray-600 dark:text-gray-400">
+          <p class="text-sm text-gray-600 mb-6 dark:text-gray-400">
             {{ t('period.confirmations.deleteWarning') }}
           </p>
-          <div class="flex items-center gap-3">
+          <div class="flex gap-3 items-center">
             <button
-              class="flex-1 rounded-lg bg-red-500 px-4 py-2 text-sm text-white font-medium transition-colors hover:bg-red-600"
+              class="text-sm text-white font-medium px-4 py-2 rounded-lg bg-red-500 flex-1 transition-colors hover:bg-red-600"
               @click="confirmDelete"
             >
               <Check class="wh-5" />
             </button>
             <button
-              class="flex-1 rounded-lg bg-gray-100 px-4 py-2 text-sm text-gray-700 font-medium transition-colors dark:bg-gray-700 hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-gray-600"
+              class="text-sm text-gray-700 font-medium px-4 py-2 rounded-lg bg-gray-100 flex-1 transition-colors dark:text-gray-300 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600"
               @click="closeDeleteConfirm"
             >
               <X class="wh-5" />
@@ -390,27 +387,27 @@ onMounted(async () => {
     </div>
 
     <!-- 加载状态 -->
-    <div v-if="periodStore.loading" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div class="flex items-center gap-3 rounded-lg bg-white p-6 shadow-xl dark:bg-gray-800">
-        <div class="h-6 w-6 animate-spin border-2 border-blue-500 border-t-transparent rounded-full" />
+    <div v-if="periodStore.loading" class="bg-black/50 flex items-center inset-0 justify-center fixed z-50">
+      <div class="p-6 rounded-lg bg-white flex gap-3 shadow-xl items-center dark:bg-gray-800">
+        <div class="border-2 border-blue-500 border-t-transparent rounded-full h-6 w-6 animate-spin" />
         <span class="text-gray-700 dark:text-gray-300"> {{ t('common.processing') }} </span>
       </div>
     </div>
 
     <!-- 错误提示 -->
-    <div v-if="periodStore.error" class="fixed bottom-4 right-4 z-50 max-w-sm">
-      <div class="border border-red-200 rounded-lg bg-red-50 p-4 shadow-lg dark:border-red-800 dark:bg-red-900/20">
-        <div class="flex items-start gap-3">
+    <div v-if="periodStore.error" class="max-w-sm bottom-4 right-4 fixed z-50">
+      <div class="p-4 border border-red-200 rounded-lg bg-red-50 shadow-lg dark:border-red-800 dark:bg-red-900/20">
+        <div class="flex gap-3 items-start">
           <div
-            class="h-8 w-8 flex flex-shrink-0 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30"
+            class="rounded-full bg-red-100 flex flex-shrink-0 h-8 w-8 items-center justify-center dark:bg-red-900/30"
           >
-            <i class="i-tabler-alert-circle h-4 w-4 text-red-500" />
+            <i class="i-tabler-alert-circle text-red-500 h-4 w-4" />
           </div>
           <div class="flex-1">
             <p class="text-sm text-red-900 font-medium dark:text-red-400">
               {{ t('period.messages.operationFailed') }}
             </p>
-            <p class="mt-1 text-xs text-red-700 dark:text-red-400">
+            <p class="text-xs text-red-700 mt-1 dark:text-red-400">
               {{ periodStore.error }}
             </p>
           </div>
@@ -425,21 +422,21 @@ onMounted(async () => {
     </div>
 
     <!-- 成功提示 -->
-    <div v-if="showSuccessMessage" class="fixed bottom-4 right-4 z-50 max-w-sm">
+    <div v-if="showSuccessMessage" class="max-w-sm bottom-4 right-4 fixed z-50">
       <div
-        class="border border-green-200 rounded-lg bg-green-50 p-4 shadow-lg dark:border-green-800 dark:bg-green-900/20"
+        class="p-4 border border-green-200 rounded-lg bg-green-50 shadow-lg dark:border-green-800 dark:bg-green-900/20"
       >
-        <div class="flex items-start gap-3">
+        <div class="flex gap-3 items-start">
           <div
-            class="h-8 w-8 flex flex-shrink-0 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30"
+            class="rounded-full bg-green-100 flex flex-shrink-0 h-8 w-8 items-center justify-center dark:bg-green-900/30"
           >
-            <i class="i-tabler-check h-4 w-4 text-green-500" />
+            <i class="i-tabler-check text-green-500 h-4 w-4" />
           </div>
           <div class="flex-1">
             <p class="text-sm text-green-900 font-medium dark:text-green-400">
               {{ t('period.messages.operationSuccess') }}
             </p>
-            <p class="mt-1 text-xs text-green-700 dark:text-green-400">
+            <p class="text-xs text-green-700 mt-1 dark:text-green-400">
               {{ successMessage }}
             </p>
           </div>

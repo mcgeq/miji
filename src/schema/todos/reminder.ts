@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { DateTimeSchema, ReminderTypeSchema, SerialNumSchema } from '../common';
+
 export const ReminderSchema = z.object({
   serialNum: SerialNumSchema,
   todoSerialNum: SerialNumSchema,

@@ -1,11 +1,11 @@
 import { z } from 'zod';
 import {
-  SerialNumSchema,
   DateTimeSchema,
-  PrioritySchema,
-  StatusSchema,
   NullableStringSchema,
+  PrioritySchema,
   RepeatPeriodSchema,
+  SerialNumSchema,
+  StatusSchema,
 } from '../common';
 
 export const TodoSchema = z.object({

@@ -5,6 +5,8 @@ import {
   DescriptionSchema,
   NameSchema,
   SerialNumSchema,
+} from '../common';
+import type {
   UsageDetail,
 } from '../common';
 

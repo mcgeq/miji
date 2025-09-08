@@ -164,11 +164,9 @@ export class PeriodDateUtils {
 
     if (this.isSameDay(dateStr, today.toISOString().split('T')[0])) {
       return '今天';
-    }
-    else if (this.isSameDay(dateStr, yesterday.toISOString().split('T')[0])) {
+    } else if (this.isSameDay(dateStr, yesterday.toISOString().split('T')[0])) {
       return '昨天';
-    }
-    else if (this.isSameDay(dateStr, tomorrow.toISOString().split('T')[0])) {
+    } else if (this.isSameDay(dateStr, tomorrow.toISOString().split('T')[0])) {
       return '明天';
     }
 
@@ -178,8 +176,7 @@ export class PeriodDateUtils {
     );
     if (daysDiff > 0) {
       return `${daysDiff}天后`;
-    }
-    else {
+    } else {
       return `${Math.abs(daysDiff)}天前`;
     }
   }
@@ -331,29 +328,25 @@ export class PeriodFormatter {
         color: 'green',
         description: '经期健康状况很好，请继续保持',
       };
-    }
-    else if (score >= 80) {
+    } else if (score >= 80) {
       return {
         level: '良好',
         color: 'blue',
         description: '经期健康状况良好，注意保持规律',
       };
-    }
-    else if (score >= 70) {
+    } else if (score >= 70) {
       return {
         level: '一般',
         color: 'yellow',
         description: '经期健康状况一般，建议关注生活习惯',
       };
-    }
-    else if (score >= 60) {
+    } else if (score >= 60) {
       return {
         level: '需要改善',
         color: 'orange',
         description: '经期健康需要改善，建议调整生活方式',
       };
-    }
-    else {
+    } else {
       return {
         level: '需要关注',
         color: 'red',
@@ -434,15 +427,13 @@ export class PeriodValidator {
 
     if (!record.startDate) {
       errors.push('开始日期不能为空');
-    }
-    else if (!this.isValidDate(record.startDate)) {
+    } else if (!this.isValidDate(record.startDate)) {
       errors.push('开始日期格式不正确');
     }
 
     if (!record.endDate) {
       errors.push('结束日期不能为空');
-    }
-    else if (!this.isValidDate(record.endDate)) {
+    } else if (!this.isValidDate(record.endDate)) {
       errors.push('结束日期格式不正确');
     }
 
@@ -472,11 +463,9 @@ export class PeriodValidator {
 
     if (!record.date) {
       errors.push('日期不能为空');
-    }
-    else if (!this.isValidDate(record.date)) {
+    } else if (!this.isValidDate(record.date)) {
       errors.push('日期格式不正确');
-    }
-    else if (new Date(record.date) > new Date()) {
+    } else if (new Date(record.date) > new Date()) {
       errors.push('日期不能超过今天');
     }
 
@@ -986,8 +975,7 @@ export class HealthTipsManager {
 
     if (phase) {
       allTips.push(...(this.PHASE_SPECIFIC_TIPS[phase] || []));
-    }
-    else {
+    } else {
       // 包含所有阶段的提示
       Object.values(this.PHASE_SPECIFIC_TIPS).forEach(phaseTips => {
         allTips.push(...phaseTips);
@@ -1191,14 +1179,11 @@ export class PeriodCalculator {
 
     if (daysSinceLastPeriod <= averagePeriodLength) {
       return 'Menstrual';
-    }
-    else if (daysSinceLastPeriod <= averageCycleLength / 2 - 3) {
+    } else if (daysSinceLastPeriod <= averageCycleLength / 2 - 3) {
       return 'Follicular';
-    }
-    else if (daysSinceLastPeriod <= averageCycleLength / 2 + 3) {
+    } else if (daysSinceLastPeriod <= averageCycleLength / 2 + 3) {
       return 'Ovulation';
-    }
-    else {
+    } else {
       return 'Luteal';
     }
   }

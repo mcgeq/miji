@@ -28,8 +28,7 @@ async function getTodo(serialNum: string): Promise<Todo | null> {
     );
     const typedRows = rows as Todo[];
     return typedRows.length > 0 ? toCamelCase(typedRows[0]) : null;
-  }
-  catch (error) {
+  } catch (error) {
     Lg.e('TodoDb', error);
     throw new Error('Database error');
   }
@@ -49,8 +48,7 @@ async function list(userSerialNum: string, status?: Status): Promise<Todo[]> {
   if (status) {
     sql = 'SELECT * FROM todo WHERE status = ?';
     params = [status];
-  }
-  else {
+  } else {
     sql = 'SELECT * FROM todo WHERE ownerId = ?';
     params = [userSerialNum];
   }
@@ -175,8 +173,7 @@ async function insert(todo: Todo): Promise<Todo> {
       values,
     );
     return todo;
-  }
-  catch (error) {
+  } catch (error) {
     Lg.e('TodoDb', error);
     throw new Error('Failed to insert todo into database');
   }
@@ -274,8 +271,7 @@ async function updatePartial(
       !(value instanceof Date)
     ) {
       values.push(JSON.stringify(value));
-    }
-    else {
+    } else {
       values.push(value as string | number | boolean | null);
     }
   }

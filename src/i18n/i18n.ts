@@ -20,8 +20,7 @@ async function loadLocaleMessages(locales: LocaleType) {
     const locale = locales.split('-')[0];
     const messages = await import(`@/locales/${locale}.json`);
     return messages.default;
-  }
-  catch (error) {
+  } catch (error) {
     Lg.e('I18', `Failed to load locale messages for ${locales}:`, error);
     return null;
   }
@@ -46,8 +45,7 @@ export async function initI18n() {
     updateLocale(initialLocale);
 
     return i18nInstance;
-  }
-  catch (error) {
+  } catch (error) {
     toast.error('语言初始化失败，将使用默认语言');
     console.error('i18n init error:', error);
 
@@ -75,8 +73,7 @@ export async function switchLocale(newLocale: LocaleType) {
     }
     updateLocale(newLocale);
     toast.success('语言切换成功');
-  }
-  catch (error) {
+  } catch (error) {
     toast.error('切换语言失败');
     Lg.e('I18', `Failed to switch to locale ${newLocale}:`, error);
   }

@@ -9,7 +9,7 @@ const completed = computed(() => props.completed);
 </script>
 
 <template>
-  <div v-if="show" class="flex items-center gap-3">
+  <div v-if="show" class="flex gap-3 items-center">
     <button
       type="button"
       :disabled="completed"

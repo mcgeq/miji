@@ -15,12 +15,12 @@ const healthTips = computed(() => {
 
 <template>
   <!-- 健康建议 -->
-  <div class="health-tips card-base p-4">
-    <div class="mb-4 flex items-center gap-2">
+  <div class="health-tips p-4 card-base">
+    <div class="mb-4 flex gap-2 items-center">
       <div
-        class="h-10 w-10 flex items-center justify-center rounded-full from-green-500 to-emerald-500 bg-gradient-to-r"
+        class="bg-gradient-to-r rounded-full flex h-10 w-10 items-center justify-center from-green-500 to-emerald-500"
       >
-        <Heart class="wh-5 text-white" />
+        <Heart class="text-white wh-5" />
       </div>
       <h3 class="text-lg text-gray-900 font-semibold dark:text-white">
         健康建议
@@ -31,9 +31,9 @@ const healthTips = computed(() => {
       <div
         v-for="tip in healthTips"
         :key="tip.id"
-        class="flex items-center gap-3 rounded-lg bg-blue-50 p-3 dark:bg-blue-900/30"
+        class="p-3 rounded-lg bg-blue-50 flex gap-3 items-center dark:bg-blue-900/30"
       >
-        <component :is="tip.icon" class="wh-5 text-blue-600 dark:text-blue-400" />
+        <component :is="tip.icon" class="text-blue-600 wh-5 dark:text-blue-400" />
         <span class="text-sm text-gray-800 leading-relaxed dark:text-gray-200">
           {{ tip.text }}
         </span>

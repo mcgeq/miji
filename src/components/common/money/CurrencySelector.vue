@@ -218,14 +218,14 @@ defineExpose({
       </select>
       <div
         v-if="hasError && errorMessage"
-        class="mt-1 text-sm text-red-600 dark:text-red-400"
+        class="text-sm text-red-600 mt-1 dark:text-red-400"
         role="alert"
       >
         {{ errorMessage }}
       </div>
       <div
         v-if="helpText && !hasError"
-        class="mt-2 flex justify-end text-xs text-gray-500 dark:text-gray-400"
+        class="text-xs text-gray-500 mt-2 flex justify-end dark:text-gray-400"
       >
         {{ helpText }}
       </div>

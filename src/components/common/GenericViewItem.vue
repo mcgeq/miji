@@ -41,7 +41,7 @@ function removeEntity(key: string) {
 </script>
 
 <template>
-  <div class="flex flex-wrap gap-3 bg-gray-100 p-4">
+  <div class="p-4 bg-gray-100 flex flex-wrap gap-3">
     <component
       :is="component"
       v-for="([key, entity]) in entityList"

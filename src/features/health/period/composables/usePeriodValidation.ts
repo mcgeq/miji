@@ -13,8 +13,7 @@ export function usePeriodValidation() {
       // 基本验证
       if (!record.date) {
         addValidationError('date', '日期不能为空');
-      }
-      else {
+      } else {
         const date = new Date(record.date);
         const today = new Date();
         if (date > today) {
@@ -45,8 +44,7 @@ export function usePeriodValidation() {
       }
 
       return Object.keys(validationErrors.value).length === 0;
-    }
-    catch (error) {
+    } catch (error) {
       Lg.e('usePeriodValidation: ', error);
       addValidationError('general', '数据格式错误');
       return false;
@@ -82,8 +80,7 @@ export function usePeriodValidation() {
       }
 
       return Object.keys(validationErrors.value).length === 0;
-    }
-    catch (error) {
+    } catch (error) {
       Lg.e('usePeriodValidation: ', error);
       addValidationError('general', '数据格式错误');
       return false;

@@ -240,8 +240,7 @@ function onStartDateChange() {
 function updateSymptom(type: SymptomsType, intensity: Intensity) {
   if (symptoms.value[type] === intensity) {
     symptoms.value[type] = null; // 取消选择
-  }
-  else {
+  } else {
     symptoms.value[type] = intensity;
   }
 }
@@ -312,19 +311,16 @@ async function submitForm() {
       };
 
       emit('submit', updatedRecord);
-    }
-    else {
+    } else {
       const record = await periodStore.addPeriodRecord({
         ...formData.value,
         // 这里可以添加症状数据的保存逻辑
       });
       emit('submit', record);
     }
-  }
-  catch (error) {
+  } catch (error) {
     console.error('Failed to save period record:', error);
-  }
-  finally {
+  } finally {
     loading.value = false;
   }
 }
@@ -338,11 +334,9 @@ async function handleDelete() {
   try {
     await periodStore.deletePeriodRecord(props.record.serialNum);
     emit('delete', props.record.serialNum);
-  }
-  catch (error) {
+  } catch (error) {
     console.error('Failed to delete period record:', error);
-  }
-  finally {
+  } finally {
     loading.value = false;
     showDeleteConfirm.value = false;
   }
@@ -351,8 +345,7 @@ async function handleDelete() {
 function handleCancel() {
   if (hasUnsavedChanges()) {
     emit('cancel');
-  }
-  else {
+  } else {
     emit('cancel');
   }
 }
@@ -395,8 +388,7 @@ function initializeForm() {
       notes: props.record.notes || '',
     };
     // 这里可以初始化症状数据
-  }
-  else {
+  } else {
     resetForm();
   }
 }
@@ -433,7 +425,7 @@ defineExpose({
       <div class="header-content">
         <div class="title-section">
           <h2 class="form-title">
-            <i class="i-tabler-calendar-heart mr-2 wh-5 text-red-500" />
+            <i class="i-tabler-calendar-heart text-red-500 mr-2 wh-5" />
             {{ isEditing ? '编辑经期记录' : '添加经期记录' }}
           </h2>
           <p class="form-subtitle">
@@ -452,7 +444,7 @@ defineExpose({
         <!-- 日期设置区域 -->
         <div class="section-card">
           <div class="section-header">
-            <i class="i-tabler-calendar wh-4 text-blue-500" />
+            <i class="i-tabler-calendar text-blue-500 wh-4" />
             <h3 class="section-title">
               日期设置
             </h3>
@@ -471,7 +463,7 @@ defineExpose({
                   @change="onStartDateChange"
                 >
                 <div class="input-icon">
-                  <i class="i-tabler-calendar-event wh-4 text-gray-400" />
+                  <i class="i-tabler-calendar-event text-gray-400 wh-4" />
                 </div>
               </div>
               <InputError :errors="getFieldErrors('startDate')" />
@@ -489,7 +481,7 @@ defineExpose({
                   @change="validateDates"
                 >
                 <div class="input-icon">
-                  <i class="i-tabler-calendar-check wh-4 text-gray-400" />
+                  <i class="i-tabler-calendar-check text-gray-400 wh-4" />
                 </div>
               </div>
               <InputError :errors="getFieldErrors('endDate')" />
@@ -538,7 +530,7 @@ defineExpose({
         <!-- 症状记录区域 -->
         <div class="section-card">
           <div class="section-header">
-            <i class="i-tabler-medical-cross wh-4 text-green-500" />
+            <i class="i-tabler-medical-cross text-green-500 wh-4" />
             <h3 class="section-title">
               症状记录
             </h3>
@@ -637,7 +629,7 @@ defineExpose({
       </p>
       <div class="overlap-details">
         <div class="overlap-record">
-          <i class="i-tabler-calendar wh-4 text-red-500" />
+          <i class="i-tabler-calendar text-red-500 wh-4" />
           <span>{{ overlapInfo.dateRange }}</span>
         </div>
       </div>

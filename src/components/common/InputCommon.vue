@@ -54,13 +54,13 @@ export default defineComponent({
 
 <template>
   <div
-    class="flex items-center gap-3 rounded-xl bg-white p-3 shadow-md transition-all duration-200 dark:bg-gray-800 hover:shadow-lg"
+    class="p-3 rounded-xl bg-white flex gap-3 shadow-md transition-all duration-200 items-center dark:bg-gray-800 hover:shadow-lg"
   >
     <input
-      v-model="newT" maxlength="1000" type="text" :placeholder="t('todos.inputPlace')" class="flex-1 border border-gray-300 rounded-lg bg-transparent px-3 py-1 text-base outline-none transition-all duration-200 dark:border-gray-600 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:focus:border-blue-400 dark:focus:ring-blue-900/30 placeholder-gray-400"
+      v-model="newT" maxlength="1000" type="text" :placeholder="t('todos.inputPlace')" class="text-base px-3 py-1 outline-none border border-gray-300 rounded-lg bg-transparent flex-1 transition-all duration-200 dark:border-gray-600 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:focus:border-blue-400 dark:focus:ring-blue-900/30 placeholder-gray-400"
     >
     <button
-      :disabled="!newT.trim()" class="flex items-center gap-1.5 rounded-full bg-blue-500 px-3 py-1.5 text-sm text-white font-semibold shadow-md transition-transform duration-150 active:scale-95 disabled:cursor-not-allowed hover:bg-blue-600 disabled:opacity-60" @click="handleAdd"
+      :disabled="!newT.trim()" class="text-sm text-white font-semibold px-3 py-1.5 rounded-full bg-blue-500 flex gap-1.5 shadow-md transition-transform duration-150 items-center hover:bg-blue-600 disabled:opacity-60 disabled:cursor-not-allowed active:scale-95" @click="handleAdd"
     >
       <Plus class="h-5 w-5" />
     </button>

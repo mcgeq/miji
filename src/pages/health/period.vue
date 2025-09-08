@@ -1,7 +1,3 @@
-<template>
-  <PeriodManagement />
-</template>
-
 <script setup lang="ts">
 import PeriodManagement from '@/features/health/period/views/PeriodManagement.vue';
 
@@ -13,3 +9,7 @@ definePage({
   },
 });
 </script>
+
+<template>
+  <PeriodManagement />
+</template>

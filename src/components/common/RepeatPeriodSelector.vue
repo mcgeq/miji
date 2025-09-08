@@ -285,13 +285,13 @@ watch(
 <template>
   <div class="repeat-period-selector">
     <div class="mb-2 flex items-center justify-between">
-      <label class="mb-2 text-sm text-gray-700 font-medium dark:text-gray-300">
+      <label class="text-sm text-gray-700 font-medium mb-2 dark:text-gray-300">
         {{ label }}
-        <span v-if="required" class="ml-1 text-red-500" aria-label="必填">*</span>
+        <span v-if="required" class="text-red-500 ml-1" aria-label="必填">*</span>
       </label>
       <select
         :model-value="modelValue.type"
-        class="w-2/3 modal-input-select"
+        class="modal-input-select w-2/3"
         :class="{ 'border-red-500': errorMessage }"
         @change="handleTypeChange"
       >
@@ -318,7 +318,7 @@ watch(
 
     <div
       v-if="errorMessage"
-      class="mb-2 text-right text-sm text-red-600 dark:text-red-400"
+      class="text-sm text-red-600 mb-2 text-right dark:text-red-400"
       role="alert"
     >
       {{ errorMessage }}
@@ -326,15 +326,15 @@ watch(
 
     <div v-if="modelValue.type !== 'None'" class="space-y-3">
       <div v-if="modelValue.type === 'Daily'" class="flex items-center justify-between">
-        <label class="ml-4 text-sm text-gray-600 dark:text-gray-400">间隔天数</label>
-        <div class="w-2/3 flex items-center space-x-1">
+        <label class="text-sm text-gray-600 ml-4 dark:text-gray-400">间隔天数</label>
+        <div class="flex w-2/3 items-center space-x-1">
           <span class="text-sm text-gray-500">每</span>
           <input
             :value="getDailyInterval()"
             type="number"
             min="1"
             max="365"
-            class="flex-1 modal-input-select"
+            class="modal-input-select flex-1"
             placeholder="1"
             @input="handleDailyIntervalChange"
           >
@@ -344,15 +344,15 @@ watch(
 
       <div v-if="modelValue.type === 'Weekly'" class="space-y-3">
         <div class="flex items-center justify-between">
-          <label class="ml-4 text-sm text-gray-600 dark:text-gray-400">间隔周数</label>
-          <div class="w-2/3 flex items-center space-x-2">
+          <label class="text-sm text-gray-600 ml-4 dark:text-gray-400">间隔周数</label>
+          <div class="flex w-2/3 items-center space-x-2">
             <span class="text-sm text-gray-500">每</span>
             <input
               :value="getWeeklyInterval()"
               type="number"
               min="1"
               max="52"
-              class="flex-1 modal-input-select"
+              class="modal-input-select flex-1"
               placeholder="1"
               @input="handleWeeklyIntervalChange"
             >
@@ -361,14 +361,14 @@ watch(
         </div>
         <div class="space-y-2">
           <div class="flex items-start justify-between">
-            <label class="ml-4 pt-2 text-sm text-gray-600 dark:text-gray-400">重复星期</label>
+            <label class="text-sm text-gray-600 ml-4 pt-2 dark:text-gray-400">重复星期</label>
             <div class="w-2/3">
-              <div class="grid grid-cols-7 gap-2">
+              <div class="gap-2 grid grid-cols-7">
                 <button
                   v-for="day in weekdayOptions"
                   :key="day.value"
                   type="button"
-                  class="h-0.25rem w-0.25rem flex items-center justify-center rounded-3xl bg-gray-100 text-xs text-gray-700 font-medium transition-colors dark:bg-gray-700 hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-gray-600"
+                  class="text-xs text-gray-700 font-medium rounded-3xl bg-gray-100 flex h-0.25rem w-0.25rem transition-colors items-center justify-center dark:text-gray-300 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600"
                   :class="{
                     '!bg-blue-500 !text-gray-700': isWeekdaySelected(day.value),
                   }"
@@ -384,15 +384,15 @@ watch(
 
       <div v-if="modelValue.type === 'Monthly'" class="space-y-3">
         <div class="flex items-center justify-between">
-          <label class="ml-4 text-sm text-gray-600 dark:text-gray-400">间隔月数</label>
-          <div class="w-2/3 flex items-center space-x-2">
+          <label class="text-sm text-gray-600 ml-4 dark:text-gray-400">间隔月数</label>
+          <div class="flex w-2/3 items-center space-x-2">
             <span class="text-sm text-gray-500">每</span>
             <input
               :value="getMonthlyInterval()"
               type="number"
               min="1"
               max="12"
-              class="flex-1 modal-input-select"
+              class="modal-input-select flex-1"
               placeholder="1"
               @input="handleMonthlyIntervalChange"
             >
@@ -400,11 +400,11 @@ watch(
           </div>
         </div>
         <div class="flex items-center justify-between">
-          <label class="ml-4 text-sm text-gray-600 dark:text-gray-400">日期</label>
+          <label class="text-sm text-gray-600 ml-4 dark:text-gray-400">日期</label>
           <div class="w-2/3">
             <select
               :value="getMonthlyDay()"
-              class="w-full modal-input-select"
+              class="modal-input-select w-full"
               @change="handleMonthlyDayChange"
             >
               <option
@@ -424,15 +424,15 @@ watch(
 
       <div v-if="modelValue.type === 'Yearly'" class="space-y-3">
         <div class="flex items-center justify-between">
-          <label class="ml-4 text-sm text-gray-600 dark:text-gray-400">间隔年数</label>
-          <div class="w-2/3 flex items-center space-x-2">
+          <label class="text-sm text-gray-600 ml-4 dark:text-gray-400">间隔年数</label>
+          <div class="flex w-2/3 items-center space-x-2">
             <span class="text-sm text-gray-500">每</span>
             <input
               :value="getYearlyInterval()"
               type="number"
               min="1"
               max="10"
-              class="flex-1 modal-input-select"
+              class="modal-input-select flex-1"
               placeholder="1"
               @input="handleYearlyIntervalChange"
             >
@@ -440,11 +440,11 @@ watch(
           </div>
         </div>
         <div class="flex items-center justify-between">
-          <label class="ml-4 text-sm text-gray-600 dark:text-gray-400">月份</label>
+          <label class="text-sm text-gray-600 ml-4 dark:text-gray-400">月份</label>
           <div class="w-2/3">
             <select
               :value="getYearlyMonth()"
-              class="w-full modal-input-select"
+              class="modal-input-select w-full"
               @change="handleYearlyMonthChange"
             >
               <option
@@ -458,11 +458,11 @@ watch(
           </div>
         </div>
         <div class="flex items-center justify-between">
-          <label class="ml-4 text-sm text-gray-600 dark:text-gray-400">日期</label>
+          <label class="text-sm text-gray-600 ml-4 dark:text-gray-400">日期</label>
           <div class="w-2/3">
             <select
               :value="getYearlyDay()"
-              class="w-full modal-input-select"
+              class="modal-input-select w-full"
               @change="handleYearlyDayChange"
             >
               <option
@@ -480,17 +480,17 @@ watch(
       <!-- 自定义重复配置 -->
       <div v-if="modelValue.type === 'Custom'" class="space-y-3">
         <div class="flex items-start justify-between">
-          <label class="pt-2 text-sm text-gray-600 dark:text-gray-400">自定义描述</label>
+          <label class="text-sm text-gray-600 pt-2 dark:text-gray-400">自定义描述</label>
           <div class="w-2/3">
             <textarea
               :value="getCustomDescription()"
               rows="2"
-              class="w-full modal-input-select"
+              class="modal-input-select w-full"
               placeholder="请描述重复规则，如：每月第二个周一、每季度末等"
               maxlength="100"
               @input="handleCustomDescriptionChange"
             />
-            <div class="mt-1 text-right text-xs text-gray-500 dark:text-gray-400">
+            <div class="text-xs text-gray-500 mt-1 text-right dark:text-gray-400">
               {{ getCustomDescription()?.length || 0 }}/100
             </div>
           </div>
@@ -498,7 +498,7 @@ watch(
       </div>
     </div>
 
-    <div v-if="helpText" class="mt-2 flex justify-end text-xs text-gray-500 dark:text-gray-400">
+    <div v-if="helpText" class="text-xs text-gray-500 mt-2 flex justify-end dark:text-gray-400">
       {{ helpText }}
     </div>
   </div>

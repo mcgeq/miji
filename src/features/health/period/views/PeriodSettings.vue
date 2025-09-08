@@ -172,15 +172,13 @@ function validateAndUpdate() {
   // 验证数据范围
   if (localSettings.averageCycleLength < 21) {
     localSettings.averageCycleLength = 21;
-  }
-  else if (localSettings.averageCycleLength > 35) {
+  } else if (localSettings.averageCycleLength > 35) {
     localSettings.averageCycleLength = 35;
   }
 
   if (localSettings.averagePeriodLength < 2) {
     localSettings.averagePeriodLength = 2;
-  }
-  else if (localSettings.averagePeriodLength > 8) {
+  } else if (localSettings.averagePeriodLength > 8) {
     localSettings.averagePeriodLength = 8;
   }
 
@@ -190,8 +188,7 @@ function validateAndUpdate() {
 async function updateSettings() {
   try {
     await periodStore.updateSettings(localSettings);
-  }
-  catch (error) {
+  } catch (error) {
     console.error('Failed to update settings:', error);
     // 恢复到原来的设置
     Object.assign(localSettings, periodStore.settings);
@@ -214,8 +211,7 @@ function exportData() {
       settings: periodStore.settings,
     });
     showMessage('数据导出成功', true);
-  }
-  catch (error) {
+  } catch (error) {
     console.error('Export failed:', error);
     showMessage('数据导出失败', false);
   }
@@ -243,14 +239,12 @@ async function handleFileImport(event: Event) {
     // await periodStore.importData(data);
 
     showMessage(`成功导入 ${data.periodRecords.length} 条经期记录`, true);
-  }
-  catch (error) {
+  } catch (error) {
     console.error('Import failed:', error);
     const errorMessage
       = error instanceof Error ? error.message : '文件格式错误或数据损坏';
     showMessage(errorMessage, false);
-  }
-  finally {
+  } finally {
     loading.value = false;
     // 清空文件选择
     target.value = '';
@@ -272,12 +266,10 @@ async function confirmReset() {
     showResetModal.value = false;
     resetConfirmText.value = '';
     showMessage('所有数据已清空', true);
-  }
-  catch (error) {
+  } catch (error) {
     console.error('Reset failed:', error);
     showMessage('重置失败，请重试', false);
-  }
-  finally {
+  } finally {
     loading.value = false;
   }
 }
@@ -325,7 +317,7 @@ onMounted(() => {
               <input
                 v-model.number="localSettings.averageCycleLength"
                 type="number"
-                class="w-20 input-base"
+                class="input-base w-20"
                 min="21"
                 max="35"
                 @change="validateAndUpdate"
@@ -349,7 +341,7 @@ onMounted(() => {
                 v-if="calculatedStats.averageCycleLength && calculatedStats.averageCycleLength !== localSettings.averageCycleLength"
                 class="calculated-hint"
               >
-                <Lightbulb class="h-4 w-4 text-amber-500" />
+                <Lightbulb class="text-amber-500 h-4 w-4" />
                 <span class="text-sm text-amber-700 dark:text-amber-400">
                   根据历史数据计算：{{ calculatedStats.averageCycleLength }}天
                 </span>
@@ -371,7 +363,7 @@ onMounted(() => {
               <input
                 v-model.number="localSettings.averagePeriodLength"
                 type="number"
-                class="w-20 input-base"
+                class="input-base w-20"
                 min="2"
                 max="8"
                 @change="validateAndUpdate"
@@ -395,7 +387,7 @@ onMounted(() => {
                 v-if="calculatedStats.averagePeriodLength && calculatedStats.averagePeriodLength !== localSettings.averagePeriodLength"
                 class="calculated-hint"
               >
-                <Lightbulb class="h-4 w-4 text-amber-500" />
+                <Lightbulb class="text-amber-500 h-4 w-4" />
                 <span class="text-sm text-amber-700 dark:text-amber-400">
                   根据历史数据计算：{{ calculatedStats.averagePeriodLength }}天
                 </span>
@@ -582,7 +574,7 @@ onMounted(() => {
           数据管理
         </h2>
         <div class="settings-grid">
-          <div class="grid grid-cols-2 gap-4">
+          <div class="gap-4 grid grid-cols-2">
             <div class="setting-item">
               <label class="setting-label">导出数据</label>
               <button class="btn-secondary" :disabled="loading" @click="exportData">
@@ -609,7 +601,7 @@ onMounted(() => {
           </div>
 
           <div class="setting-item mt-4">
-            <div class="flex items-center gap-2">
+            <div class="flex gap-2 items-center">
               <button class="btn-danger" :disabled="loading" @click="showResetModal = true">
                 <Trash class="wh-5" />
               </button>
@@ -624,23 +616,23 @@ onMounted(() => {
 
     <!-- 重置确认弹窗 -->
     <div
-      v-if="showResetModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+      v-if="showResetModal" class="bg-black/50 flex items-center inset-0 justify-center fixed z-50"
       @click.self="showResetModal = false"
     >
-      <div class="mx-4 max-w-sm rounded-lg bg-white p-6 dark:bg-gray-800">
-        <h3 class="mb-4 text-lg text-gray-900 font-semibold dark:text-white">
+      <div class="mx-4 p-6 rounded-lg bg-white max-w-sm dark:bg-gray-800">
+        <h3 class="text-lg text-gray-900 font-semibold mb-4 dark:text-white">
           确认重置
         </h3>
-        <p class="mb-6 text-gray-600 dark:text-gray-400">
+        <p class="text-gray-600 mb-6 dark:text-gray-400">
           确定要清空所有数据吗？此操作将删除所有经期记录、日常记录和设置，且无法撤销。
         </p>
         <div class="space-y-3">
-          <input v-model="resetConfirmText" type="text" placeholder="输入 '确认重置' 来确认操作" class="w-full input-base">
+          <input v-model="resetConfirmText" type="text" placeholder="输入 '确认重置' 来确认操作" class="input-base w-full">
           <div class="flex gap-3">
-            <button class="flex-1 btn-secondary" @click="showResetModal = false">
+            <button class="btn-secondary flex-1" @click="showResetModal = false">
               <X class="wh-5" />
             </button>
-            <button class="flex-1 btn-danger" :disabled="resetConfirmText !== '确认重置' || loading" @click="confirmReset">
+            <button class="btn-danger flex-1" :disabled="resetConfirmText !== '确认重置' || loading" @click="confirmReset">
               <ListRestart class="=wh-5" />
             </button>
           </div>
@@ -651,18 +643,18 @@ onMounted(() => {
     <!-- 导入结果提示 -->
     <div
       v-if="importMessage"
-      class="fixed bottom-4 right-4 max-w-sm border border-gray-200 rounded-lg bg-white p-4 shadow-lg dark:border-gray-700 dark:bg-gray-800"
+      class="p-4 border border-gray-200 rounded-lg bg-white max-w-sm shadow-lg bottom-4 right-4 fixed dark:border-gray-700 dark:bg-gray-800"
     >
-      <div class="flex items-start gap-3">
+      <div class="flex gap-3 items-start">
         <i
           :class="importSuccess ? 'i-tabler-check text-green-500' : 'i-tabler-x text-red-500'"
-          class="mt-0.5 wh-5 flex-shrink-0"
+          class="mt-0.5 flex-shrink-0 wh-5"
         />
         <div>
           <p class="text-sm text-gray-900 font-medium dark:text-white">
             {{ importSuccess ? '导入成功' : '导入失败' }}
           </p>
-          <p class="mt-1 text-xs text-gray-600 dark:text-gray-400">
+          <p class="text-xs text-gray-600 mt-1 dark:text-gray-400">
             {{ importMessage }}
           </p>
         </div>

@@ -208,7 +208,7 @@ export const useAuthStore = defineStore('auth', () => {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token.value}`,
+          'Authorization': `Bearer ${token.value}`,
         },
         body: JSON.stringify(profileData),
       });
@@ -284,7 +284,7 @@ export const useAuthStore = defineStore('auth', () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token.value}`,
+          'Authorization': `Bearer ${token.value}`,
         },
         body: JSON.stringify({ code: verificationCode }),
       });
@@ -355,7 +355,7 @@ export const useAuthStore = defineStore('auth', () => {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token.value}`,
+          'Authorization': `Bearer ${token.value}`,
         },
         body: JSON.stringify({
           currentPassword,

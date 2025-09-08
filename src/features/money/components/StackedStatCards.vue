@@ -421,14 +421,14 @@ defineExpose({
   >
     <!-- 卡片容器 -->
     <div
-      class="cards-wrapper relative h-full w-full"
+      class="cards-wrapper h-full w-full relative"
       :style="{ height: `${cardHeight}px` }"
     >
       <div
         v-for="(card, index) in cards"
         :key="card.id"
         ref="cardRefs"
-        class="stat-card-stacked absolute top-0"
+        class="stat-card-stacked top-0 absolute"
         :class="[
           getCardClasses(index),
           disabled ? 'pointer-events-none opacity-75' : 'cursor-pointer',
@@ -459,14 +459,14 @@ defineExpose({
 
     <!-- 导航指示器 -->
     <div
-      class="mt-4 flex justify-center gap-2"
+      class="mt-4 flex gap-2 justify-center"
       role="tablist"
       aria-label="卡片导航指示器"
     >
       <button
         v-for="(card, index) in cards"
         :key="`indicator-${index}`"
-        class="indicator-dot h-3 w-3 rounded-full transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+        class="indicator-dot rounded-full h-3 w-3 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
         :class="[
           selectedIndex === index
             ? 'bg-blue-500 scale-110 shadow-md'
@@ -484,7 +484,7 @@ defineExpose({
     <Transition name="nav-fade">
       <button
         v-if="showNavButtons && cards.length > 1"
-        class="nav-btn nav-btn-prev absolute left-4 top-1/2 z-50 -translate-y-1/2"
+        class="nav-btn nav-btn-prev left-4 top-1/2 absolute z-50 -translate-y-1/2"
         :aria-label="isPrevDisabled ? '已是第一张卡片' : '上一张卡片'"
         :disabled="isTransitioning || isPrevDisabled"
         @click="previousCard"
@@ -496,7 +496,7 @@ defineExpose({
     <Transition name="nav-fade">
       <button
         v-if="showNavButtons && cards.length > 1"
-        class="nav-btn nav-btn-next absolute right-4 top-1/2 z-50 -translate-y-1/2"
+        class="nav-btn nav-btn-next right-4 top-1/2 absolute z-50 -translate-y-1/2"
         :aria-label="isNextDisabled ? '已是最后一张卡片' : '下一张卡片'"
         :disabled="isTransitioning || isNextDisabled"
         @click="nextCard"
@@ -508,7 +508,7 @@ defineExpose({
     <!-- 播放/暂停控制（可选） -->
     <button
       v-if="showPlayControl"
-      class="play-control absolute right-4 top-4 z-50 h-8 w-8 flex items-center justify-center border border-gray-200 rounded-full bg-white/80 text-gray-600 backdrop-blur-sm transition-colors duration-200 hover:text-blue-500"
+      class="play-control text-gray-600 border border-gray-200 rounded-full bg-white/80 flex h-8 w-8 transition-colors duration-200 items-center right-4 top-4 justify-center absolute z-50 backdrop-blur-sm hover:text-blue-500"
       :aria-label="isAutoPlaying ? '暂停自动播放' : '开始自动播放'"
       :disabled="disabled"
       @click="toggleAutoPlay"

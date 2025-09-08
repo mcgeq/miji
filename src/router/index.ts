@@ -19,8 +19,7 @@ router.beforeEach(async (to, _from) => {
   let isAuth = false;
   try {
     isAuth = await isAuthenticated();
-  }
-  catch (error) {
+  } catch (error) {
     Lg.e('Router', 'Failed to check auth:', error);
   }
   const routeName = typeof to.name === 'string' ? to.name : '';

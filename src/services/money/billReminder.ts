@@ -86,6 +86,7 @@ export class BilReminderMapper extends BaseMapper<
       this.handleError('deleteById', error);
     }
   }
+
   async list(): Promise<BilReminder[]> {
     try {
       const result = await invokeCommand<BilReminder[]>('bil_reminder_list', {

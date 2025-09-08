@@ -26,5 +26,5 @@ export function uuid(len: number): string {
 }
 
 function pad(n: number) {
-  return n < 10 ? '0' + n : n.toString();
+  return n < 10 ? `0${n}` : n.toString();
 }

@@ -39,7 +39,7 @@ const confirmState = ref<ConfirmState>({
 export function useConfirm() {
   // 显示确认框
   const confirm = (options: ConfirmOptions): Promise<boolean> => {
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       confirmState.value = {
         visible: true,
         title: options.title || '',

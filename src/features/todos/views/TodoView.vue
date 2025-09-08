@@ -108,22 +108,22 @@ watch(currentPage, val => todoStore.setPage(val));
 watch(pageSize, val => todoStore.setPageSize(val));
 watch(
   () => todoStore.currentPage,
-  (val) => {
+  val => {
     currentPage.value = val;
   },
 );
-watch(currentPage, (val) => {
+watch(currentPage, val => {
   todoStore.setPage(val);
 });
 </script>
 
 <template>
-  <main class="relative mx-auto max-w-xl min-h-screen flex flex-col p-4">
+  <main class="mx-auto p-4 flex flex-col max-w-xl min-h-screen relative">
     <!-- 输入框容器 -->
-    <div class="relative mb-4 h-[60px]">
+    <div class="mb-4 h-[60px] relative">
       <!-- 切换按钮 -->
       <button
-        v-if="showBtn" class="absolute left-0 top-1/2 z-10 h-8 w-8 flex items-center justify-center rounded-full bg-white text-blue-600 shadow-md ring-1 ring-blue-300 transition-all duration-300 -translate-y-1/2 active:scale-95 hover:bg-blue-50 hover:text-blue-700" aria-label="Toggle Input" @click="toggleInput"
+        v-if="showBtn" class="text-blue-600 rounded-full bg-white flex h-8 w-8 ring-1 ring-blue-300 shadow-md transition-all duration-300 items-center left-0 top-1/2 justify-center absolute z-10 hover:text-blue-700 hover:bg-blue-50 -translate-y-1/2 active:scale-95" aria-label="Toggle Input" @click="toggleInput"
       >
         <component
           :is="showInput ? X : Plus" class="h-4 w-4"
@@ -141,14 +141,14 @@ watch(currentPage, (val) => {
       <!-- 过滤按钮 -->
       <Transition name="fade-slide">
         <div
-          v-show="!showInput" class="absolute left-0 right-0 top-0 h-full flex items-center justify-center bg-white transition-opacity duration-300 ease-in-out dark:bg-gray-800"
+          v-show="!showInput" class="bg-white flex h-full transition-opacity duration-300 ease-in-out items-center left-0 right-0 top-0 justify-center absolute dark:bg-gray-800"
         >
           <div
-            class="inline-flex gap-2 border border-gray-300 rounded-full bg-white px-3 py-2 shadow-sm transition-all duration-300 dark:border-gray-700 dark:bg-gray-800"
+            class="px-3 py-2 border border-gray-300 rounded-full bg-white inline-flex gap-2 shadow-sm transition-all duration-300 dark:border-gray-700 dark:bg-gray-800"
           >
             <button
               v-for="item in filterButtons" :key="item.value" :data-active="filterBtn === item.value"
-              :class="{ 'bg-blue-500 text-white': filterBtn === item.value }" class="border border-transparent rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-700 font-semibold shadow-sm transition-all duration-300 dark:bg-gray-700 data-[active=true]:bg-blue-500 hover:bg-blue-100 dark:text-gray-300 data-[active=true]:text-white hover:text-blue-700 dark:hover:bg-blue-800 dark:hover:text-white" @click="changeFilter(item.value)"
+              :class="{ 'bg-blue-500 text-white': filterBtn === item.value }" class="text-sm text-gray-700 font-semibold px-3 py-1 border border-transparent rounded-full bg-gray-100 shadow-sm transition-all duration-300 dark:text-gray-300 data-[active=true]:text-white hover:text-blue-700 dark:bg-gray-700 data-[active=true]:bg-blue-500 hover:bg-blue-100 dark:hover:text-white dark:hover:bg-blue-800" @click="changeFilter(item.value)"
             >
               {{ item.label }}
             </button>
