@@ -9,6 +9,7 @@ import type {
   Account,
   BilReminder,
   BilReminderCreate,
+  BilReminderFilters,
   BilReminderUpdate,
   Budget,
   BudgetCreate,
@@ -558,6 +559,25 @@ export const useMoneyStore = defineStore('money', {
     },
 
     // ==================== Reminder Operations ====================
+    async getPagedBilReminders(
+      query: PageQuery<BilReminderFilters>,
+    ): Promise<PagedResult<BilReminder>> {
+      return this.withLoading(async () => {
+        try {
+          const result = await MoneyDb.listBilRemindersPaged(query);
+          this.reminders = result.rows;
+          return result;
+        } catch (err) {
+          throw this.handleError(
+            err,
+            '获取预算列表失败',
+            'listBudgets',
+            'Budget',
+          );
+        }
+      });
+    },
+
     async getAllReminders(): Promise<BilReminder[]> {
       return this.withLoading(async () => {
         await this.updateReminders();

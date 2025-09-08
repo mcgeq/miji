@@ -9,19 +9,15 @@ import {
   Trash,
 } from 'lucide-vue-next';
 import SimplePagination from '@/components/common/SimplePagination.vue';
-import { getRepeatTypeName } from '@/utils/common';
-import { DateUtils } from '@/utils/date';
-import { formatCurrency } from '../utils/money';
-import type { BilReminder } from '@/schema/money';
 import { useSort } from '@/composables/useSortable';
 import { SortDirection } from '@/schema/common';
-
-interface Props {
-  reminders: BilReminder[];
-  loading: boolean;
-}
-
-const props = defineProps<Props>();
+import { getRepeatTypeName } from '@/utils/common';
+import { DateUtils } from '@/utils/date';
+import { Lg } from '@/utils/debugLog';
+import { useBilReminderFilters } from '../composables/useBilReminderFilters';
+import { formatCurrency } from '../utils/money';
+import type { PageQuery } from '@/schema/common';
+import type { BilReminder, BilReminderFilters } from '@/schema/money';
 
 const emit = defineEmits<{
   edit: [reminder: BilReminder];
@@ -30,6 +26,20 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n();
+const loading = ref(false);
+const moneyStore = useMoneyStore();
+const reminders = computed(() => moneyStore.reminders);
+
+const {
+  filters,
+  resetFilters,
+  uniqueCategories,
+  filteredReminders,
+  pagination,
+  getStatusClass,
+  isOverdue,
+} = useBilReminderFilters(() => reminders.value, 4);
+
 const { sortOptions } = useSort({
   sortBy: undefined,
   sortDir: SortDirection.Desc,
@@ -37,141 +47,29 @@ const { sortOptions } = useSort({
   customOrderBy: undefined,
 });
 
+async function loadReminders() {
+  loading.value = true;
+  try {
+    const params: PageQuery<BilReminderFilters> = {
+      currentPage: pagination.currentPage.value,
+      pageSize: pagination.pageSize.value,
+      sortOptions: sortOptions.value,
+      filter: {},
+    };
 
-// 过滤器状态
-const filters = ref({
-  status: '',
-  period: '',
-  category: '',
-  dateRange: '',
-});
-
-// 分页状态
-const currentPage = ref(1);
-const pageSize = ref(4);
-
-// 重置过滤器
-function resetFilters() {
-  filters.value = {
-    status: '',
-    period: '',
-    category: '',
-    dateRange: '',
-  };
-  currentPage.value = 1;
-}
-
-// 获取唯一分类
-const uniqueCategories = computed(() => {
-  const categories = props.reminders.map(reminder => reminder.category);
-  return [...new Set(categories)].filter(Boolean);
-});
-
-// 日期范围过滤辅助函数
-function isInDateRange(reminder: BilReminder, range: string): boolean {
-  const now = new Date();
-  const remindDate = new Date(reminder.remindDate);
-
-  switch (range) {
-    case 'today':
-      return remindDate.toDateString() === now.toDateString();
-    case 'week':
-    {
-      const weekStart = new Date(now);
-      weekStart.setDate(now.getDate() - now.getDay());
-      const weekEnd = new Date(weekStart);
-      weekEnd.setDate(weekStart.getDate() + 6);
-      return remindDate >= weekStart && remindDate <= weekEnd;
+    const result = await moneyStore.getPagedBilReminders(params);
+    pagination.totalItems.value = result.totalCount ?? 0;
+    pagination.totalPages.value = result.totalPages ?? 1;
+    if (pagination.currentPage.value > pagination.totalPages.value) {
+      pagination.currentPage.value = pagination.totalPages.value || 1;
     }
-    case 'month':
-      return (
-        remindDate.getMonth() === now.getMonth()
-        && remindDate.getFullYear() === now.getFullYear()
-      );
-    case 'overdue':
-      return !reminder.isPaid && remindDate < now;
-    default:
-      return true;
+  } catch (error) {
+    pagination.totalItems.value = 0;
+    pagination.totalPages.value = 0;
+    Lg.e('BilReminder', error);
+  } finally {
+    loading.value = false;
   }
-}
-
-// 过滤后的提醒
-const filteredReminders = computed(() => {
-  let filtered = [...props.reminders];
-
-  // 状态过滤
-  if (filters.value.status) {
-    filtered = filtered.filter(reminder => {
-      const status = getStatusClass(reminder);
-      return status === filters.value.status;
-    });
-  }
-
-  // 周期类型过滤
-  if (filters.value.period) {
-    filtered = filtered.filter(
-      reminder => reminder.repeatPeriod.type === filters.value.period,
-    );
-  }
-
-  // 分类过滤
-  if (filters.value.category) {
-    filtered = filtered.filter(
-      reminder => reminder.category === filters.value.category,
-    );
-  }
-
-  // 日期范围过滤
-  if (filters.value.dateRange) {
-    filtered = filtered.filter(reminder =>
-      isInDateRange(reminder, filters.value.dateRange),
-    );
-  }
-
-  return filtered;
-});
-
-// 总页数
-const totalPages = computed(() => {
-  return Math.ceil(filteredReminders.value.length / pageSize.value);
-});
-
-// 当前页的提醒
-const paginatedReminders = computed(() => {
-  const start = (currentPage.value - 1) * pageSize.value;
-  const end = start + pageSize.value;
-  return filteredReminders.value.slice(start, end);
-});
-
-// 处理页码变化
-function handlePageChange(page: number) {
-  currentPage.value = page;
-}
-
-// 监听过滤器变化，重置到第一页
-watch(
-  filters,
-  () => {
-    currentPage.value = 1;
-  },
-  { deep: true },
-);
-
-// 原有的方法
-function isOverdue(reminder: BilReminder) {
-  if (reminder.isPaid)
-    return false;
-  const now = new Date();
-  const remindDate = new Date(reminder.remindDate);
-  return remindDate < now;
-}
-
-function getStatusClass(reminder: BilReminder) {
-  if (reminder.isPaid)
-    return 'paid';
-  if (isOverdue(reminder))
-    return 'overdue';
-  return 'pending';
 }
 
 function getStatusIcon(reminder: BilReminder) {
@@ -189,12 +87,17 @@ function getStatusText(reminder: BilReminder) {
     return t('common.status.overdue');
   return t('common.status.pending');
 }
+
+// 暴露刷新方法给父组件
+defineExpose({
+  refresh: loadReminders,
+});
 </script>
 
 <template>
   <div class="min-h-25">
     <!-- 过滤器区域 -->
-    <div class="mb-5 flex flex-wrap items-center justify-center gap-3 rounded-lg bg-gray-50 p-4">
+    <div class="mb-5 p-4 flex flex-wrap items-center justify-center gap-3 rounded-lg bg-gray-50">
       <div class="filter-flex-wrap">
         <label class="show-on-desktop text-sm text-gray-700 font-medium">{{ t('common.status.status') }}</label>
         <select
@@ -294,13 +197,13 @@ function getStatusText(reminder: BilReminder) {
     </div>
 
     <!-- 加载状态 -->
-    <div v-if="loading" class="h-25 flex-justify-center text-gray-600">
+    <div v-if="loading" class="text-gray-600 flex-justify-center h-25">
       {{ t('common.loading') }}
     </div>
 
     <!-- 空状态 -->
-    <div v-else-if="paginatedReminders.length === 0" class="h-25 flex-justify-center flex-col text-#999">
-      <div class="mb-2 text-sm opacity-50">
+    <div v-else-if="pagination.paginatedItems.value.length === 0" class="text-#999 flex-justify-center flex-col h-25">
+      <div class="text-sm mb-2 opacity-50">
         <i class="icon-bell" />
       </div>
       <div class="text-sm">
@@ -309,9 +212,9 @@ function getStatusText(reminder: BilReminder) {
     </div>
 
     <!-- 提醒网格 -->
-    <div v-else class="reminder-grid grid mb-6 w-full gap-5">
+    <div v-else class="w-full reminder-grid grid gap-5 mb-6">
       <div
-        v-for="reminder in paginatedReminders" :key="reminder.serialNum" class="reminder-card border rounded-lg bg-white p-5 shadow-md transition-shadow hover:shadow-lg" :class="[
+        v-for="reminder in pagination.paginatedItems.value" :key="reminder.serialNum" class="reminder-card border rounded-lg bg-white p-5 shadow-md transition-shadow hover:shadow-lg" :class="[
           {
             'border-red-500 bg-red-50': isOverdue(reminder),
             'opacity-80 bg-green-50 border-green-400': reminder.isPaid,
@@ -399,10 +302,15 @@ function getStatusText(reminder: BilReminder) {
     </div>
 
     <!-- 分页组件 -->
-    <div v-if="filteredReminders.length > pageSize" class="flex justify-center">
+    <div
+      v-if="filteredReminders.length > pagination.pageSize.value"
+      class="flex justify-center"
+    >
       <SimplePagination
-        :current-page="currentPage" :total-pages="totalPages" :total-items="filteredReminders.length"
-        :page-size="pageSize" @page-change="handlePageChange"
+        :current-page="pagination.currentPage.value"
+        :total-pages="pagination.totalPages.value"
+        :total-items="filteredReminders.length"
+        :page-size="pagination.pageSize.value" @page-change="pagination.setPage"
       />
     </div>
   </div>

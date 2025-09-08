@@ -48,6 +48,7 @@ import type {
 // ------------------ Refs ------------------
 const transactionListRef = ref<InstanceType<typeof TransactionList> | null>(null);
 const budgetListRef = ref<InstanceType<typeof BudgetList> | null>(null);
+const reminderListRef = ref<InstanceType<typeof ReminderList> | null>(null);
 const stackedCardsRef = ref<InstanceType<typeof StackedStatCards> | null>(null);
 
 const moneyStore = useMoneyStore();
@@ -57,7 +58,6 @@ const activeTab = ref('accounts');
 const baseCurrency = ref(CURRENCY_CNY.symbol);
 
 const accountsLoading = ref(false);
-const remindersLoading = ref(false);
 
 const showTransaction = ref(false);
 const showAccount = ref(false);
@@ -81,7 +81,6 @@ const tabs = [
 ];
 
 const accounts = ref<Account[]>([]);
-const reminders = ref<BilReminder[]>([]);
 
 const totalAssets = ref(0);
 const yearlyIncome = ref(0);
@@ -205,12 +204,16 @@ function finalizeBudgetChange() {
   ]);
 }
 
-const finalizeReminderChange = () => finalizeChange(closeReminderModal, [loadReminders]);
+function finalizeReminderChange() {
+  return finalizeChange(closeReminderModal, [
+    async () => reminderListRef.value?.refresh(),
+  ]);
+}
 
 // ------------------ Load & Sync ------------------
 async function loadData() {
   try {
-    await Promise.all([loadAccounts(), loadReminders(), syncIncomeExpense()]);
+    await Promise.all([loadAccounts(), syncIncomeExpense()]);
   } catch (err) {
     Lg.e('loadData', err);
     toast.error('加载数据失败');
@@ -223,14 +226,6 @@ async function loadAccounts() {
     accounts.value = await moneyStore.getAllAccounts();
   } finally {
     accountsLoading.value = false;
-  }
-}
-async function loadReminders() {
-  remindersLoading.value = true;
-  try {
-    reminders.value = await moneyStore.getAllReminders();
-  } finally {
-    remindersLoading.value = false;
   }
 }
 
@@ -526,7 +521,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="mx-auto max-w-1200px p-5">
+  <div class="mx-auto p-5 max-w-1200px">
     <StackedStatCards
       ref="stackedCardsRef"
       :cards="statCards"
@@ -544,45 +539,45 @@ onMounted(async () => {
       @card-click="handleCardClick"
     />
 
-    <div class="overflow-hidden rounded-lg bg-white shadow-[0_2px_4px_rgba(0,0,0,0.1)]">
-      <div class="border-b border-gray-200 p-5">
-        <div class="mb-3.75 flex flex-wrap items-center justify-between gap-y-3">
-          <h3 class="m-0 text-gray-800">
+    <div class="rounded-lg bg-white shadow-[0_2px_4px_rgba(0,0,0,0.1)] overflow-hidden">
+      <div class="p-5 border-b border-gray-200">
+        <div class="mb-3.75 flex flex-wrap gap-y-3 items-center justify-between">
+          <h3 class="text-gray-800 m-0">
             快捷操作
           </h3>
-          <div class="flex flex-wrap justify-end gap-3.75">
+          <div class="flex flex-wrap gap-3.75 justify-end">
             <button
-              class="flex items-center gap-2 rounded-md bg-purple-50 px-2 py-3 text-sm text-purple-500 hover:opacity-80"
+              class="text-sm text-purple-500 px-2 py-3 rounded-md bg-purple-50 flex gap-2 items-center hover:opacity-80"
               @click="showAccountModal"
             >
               <CreditCard class="h-4 w-4" /><span>添加账户</span>
             </button>
             <button
-              class="flex items-center gap-2 rounded-md bg-green-50 px-2 py-3 text-sm text-green-600 hover:opacity-80"
+              class="text-sm text-green-600 px-2 py-3 rounded-md bg-green-50 flex gap-2 items-center hover:opacity-80"
               @click="showTransactionModal(TransactionTypeSchema.enum.Income)"
             >
               <PlusCircle class="h-4 w-4" /><span>记录收入</span>
             </button>
             <button
-              class="flex items-center gap-2 rounded-md bg-red-50 px-2 py-3 text-sm text-red-500 hover:opacity-80"
+              class="text-sm text-red-500 px-2 py-3 rounded-md bg-red-50 flex gap-2 items-center hover:opacity-80"
               @click="showTransactionModal(TransactionTypeSchema.enum.Expense)"
             >
               <MinusCircle class="h-4 w-4" /><span>记录支出</span>
             </button>
             <button
-              class="flex items-center gap-2 rounded-md bg-blue-50 px-2 py-3 text-sm text-blue-500 hover:opacity-80"
+              class="text-sm text-blue-500 px-2 py-3 rounded-md bg-blue-50 flex gap-2 items-center hover:opacity-80"
               @click="showTransactionModal(TransactionTypeSchema.enum.Transfer)"
             >
               <ArrowRightLeft class="h-4 w-4" /><span>记录转账</span>
             </button>
             <button
-              class="flex items-center gap-2 rounded-md bg-orange-50 px-2 py-3 text-sm text-orange-500 hover:opacity-80"
+              class="text-sm text-orange-500 px-2 py-3 rounded-md bg-orange-50 flex gap-2 items-center hover:opacity-80"
               @click="showBudgetModal"
             >
               <Target class="h-4 w-4" /><span>设置预算</span>
             </button>
             <button
-              class="flex items-center gap-2 rounded-md bg-yellow-50 px-2 py-3 text-sm text-yellow-600 hover:opacity-80"
+              class="text-sm text-yellow-600 px-2 py-3 rounded-md bg-yellow-50 flex gap-2 items-center hover:opacity-80"
               @click="showReminderModal"
             >
               <Bell class="h-4 w-4" /><span>设置提醒</span>
@@ -591,8 +586,8 @@ onMounted(async () => {
         </div>
       </div>
 
-      <div class="flex justify-center overflow-x-auto border-b border-gray-200">
-        <button v-for="tab in tabs" :key="tab.key" :class="[activeTab === tab.key ? 'text-blue-600 border-b-[3px] border-blue-600 bg-blue-50 rounded-t-md' : 'text-gray-600']" class="border-b-2 border-transparent px-6 py-3 text-sm font-medium transition-all duration-200" @click="activeTab = tab.key">
+      <div class="border-b border-gray-200 flex justify-center overflow-x-auto">
+        <button v-for="tab in tabs" :key="tab.key" :class="[activeTab === tab.key ? 'text-blue-600 border-b-[3px] border-blue-600 bg-blue-50 rounded-t-md' : 'text-gray-600']" class="text-sm font-medium px-6 py-3 border-b-2 border-transparent transition-all duration-200" @click="activeTab = tab.key">
           {{ tab.label }}
         </button>
       </div>
@@ -623,8 +618,7 @@ onMounted(async () => {
         />
         <ReminderList
           v-if="activeTab === 'reminders'"
-          :reminders="reminders"
-          :loading="remindersLoading"
+          ref="reminderListRef"
           @edit="editReminder"
           @delete="deleteReminder"
           @mark-paid="markReminderPaid"
