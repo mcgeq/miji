@@ -133,7 +133,7 @@ function validateRemindDate() {
     validationErrors.remindDate = t('validation.reminderDate');
   } else {
     const selectedDate = new Date(form.remindDate);
-    form.dueDate = form.remindDate;
+    form.dueAt = form.remindDate;
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -322,11 +322,12 @@ async function saveReminder() {
       category: null,
       amount: 0,
       currency: null,
-      dueDate: null,
+      dueAt: null,
       billDate: null,
       remindDate: null,
       repeatPeriod: null,
       isPaid: false,
+      isDeleted: false,
       priority: null,
       advanceValue: 0,
       advanceUnit: null,
@@ -340,8 +341,8 @@ async function saveReminder() {
       description: form.description,
       category: form.category,
       amount: form.amount,
-      currency: form.currency.code,
-      dueDate: form.dueDate,
+      currency: form.currency?.code || CURRENCY_CNY.code,
+      dueAt: form.dueAt,
       billDate: form.billDate,
       remindDate: form.remindDate,
       repeatPeriod: form.repeatPeriod,
@@ -351,8 +352,9 @@ async function saveReminder() {
       advanceUnit: form.advanceUnit,
       color: form.color,
       relatedTransactionSerialNum: form.relatedTransactionSerialNum,
+      isDeleted: form.isDeleted,
     }, (value: unknown, key: string) => {
-      if (key.endsWith('Date')) {
+      if (key.endsWith('Date') || key === 'dueAt') {
         if (value) {
           const dateValue = typeof value === 'string' ?
             value :
@@ -384,11 +386,11 @@ async function saveReminder() {
         return value;
       });
       if (!_.isEmpty(serializedChanges)) {
-        const bilReminderUpdate = BilReminderCreateSchema.parse(changes);
+        const bilReminderUpdate = BilReminderUpdateSchema.parse(changes);
         emit('update', props.reminder.serialNum, bilReminderUpdate);
       }
     } else {
-      const createBilReminder = BilReminderUpdateSchema.parse(formattedData);
+      const createBilReminder = BilReminderCreateSchema.parse(formattedData);
       emit('save', createBilReminder);
     }
     closeModal();
@@ -411,6 +413,9 @@ watch(
       const clonedReminder = JSON.parse(JSON.stringify(newVal));
       // 确保 advanceValue 有默认值，使用空值合并运算符
       clonedReminder.advanceValue = clonedReminder.advanceValue ?? 0;
+      if (!clonedReminder.currency) {
+        clonedReminder.currency = CURRENCY_CNY;
+      }
       Object.assign(form, clonedReminder);
     }
   },
@@ -428,7 +433,7 @@ function getBilReminderDefault(): BilReminder {
     category: CategorySchema.enum.Food,
     amount: 0,
     currency: CURRENCY_CNY,
-    dueDate: DateUtils.getEndOfTodayISOWithOffset(),
+    dueAt: DateUtils.getEndOfTodayISOWithOffset(),
     billDate: today,
     remindDate: today,
     repeatPeriod: { type: 'None' } as RepeatPeriod,
@@ -438,6 +443,7 @@ function getBilReminderDefault(): BilReminder {
     advanceUnit: 'hours',
     color: COLORS_MAP[0].code,
     relatedTransactionSerialNum: null,
+    isDeleted: false,
     createdAt: '',
     updatedAt: '',
 

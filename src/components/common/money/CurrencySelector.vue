@@ -14,7 +14,7 @@ interface PriorityOption {
 }
 
 interface Props {
-  modelValue: Currency;
+  modelValue: Currency | null | undefined;
   label?: string;
   required?: boolean;
   disabled?: boolean;
@@ -168,8 +168,8 @@ function getCurrentCurrencyInfo() {
 watch(
   () => props.modelValue,
   newValue => {
-    if (newValue.code !== currentValue.value?.code) {
-      currentValue.value = newValue;
+    if (newValue === null || !newValue || newValue.code !== currentValue.value?.code) {
+      currentValue.value = newValue && validateValue(newValue) ? newValue : CURRENCY_CNY;
     }
   },
   { immediate: true },
@@ -177,7 +177,7 @@ watch(
 
 // 监听 currentValue 变化
 watch(currentValue, newValue => {
-  if (newValue.code !== props.modelValue.code) {
+  if (newValue && newValue.code !== props.modelValue?.code) {
     emit('update:modelValue', newValue);
   }
 });
@@ -186,7 +186,10 @@ defineExpose({
   focus,
   reset,
   getCurrentCurrencyInfo,
-  validate: () => validateValue(currentValue.value),
+  validate: () => {
+    const val = currentValue.value;
+    return validateValue(val);
+  },
 });
 </script>
 

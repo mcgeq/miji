@@ -259,11 +259,17 @@ defineExpose({
           </div>
         </div>
 
-        <div class="mb-4 flex gap-2 items-baseline">
+        <div
+          v-if="reminder.amount"
+          class="mb-4 flex gap-2 items-baseline"
+        >
           <span class="text-2xl text-gray-800 font-semibold">
             {{ formatCurrency(reminder.amount) }}
           </span>
-          <span class="text-sm text-gray-800">
+          <span
+            v-if="reminder.currency"
+            class="text-sm text-gray-800"
+          >
             {{ reminder.currency.code }}
           </span>
         </div>
