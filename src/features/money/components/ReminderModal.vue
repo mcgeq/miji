@@ -10,24 +10,22 @@ import RepeatPeriodSelector from '@/components/common/RepeatPeriodSelector.vue';
 import { COLORS_MAP, CURRENCY_CNY } from '@/constants/moneyConst';
 import {
   CategorySchema,
-
   PrioritySchema,
-  ReminderTypeSchema,
 } from '@/schema/common';
-import { BilReminderCreateSchema, BilReminderUpdateSchema } from '@/schema/money';
+import { BilReminderCreateSchema, BilReminderUpdateSchema, ReminderTypesSchema } from '@/schema/money';
 import { DateUtils } from '@/utils/date';
 import type { Priority, RepeatPeriod } from '@/schema/common';
-import type { BilReminder } from '@/schema/money';
+import type { BilReminder, ReminderTypes } from '@/schema/money';
+
+interface Props {
+  reminder: BilReminder | null;
+}
 
 const props = defineProps<Props>();
 
 const emit = defineEmits(['close', 'save', 'update']);
 
 const colorNameMap = ref(COLORS_MAP);
-
-interface Props {
-  reminder: BilReminder | null;
-}
 
 // 假设已注入 t 函数
 const { t } = useI18n();
@@ -47,66 +45,25 @@ const validationErrors = reactive({
   priority: '',
 });
 
-// 表单数据
-const reminder = props.reminder || {
-  serialNum: '',
-  name: '',
-  enabled: true,
-  type: ReminderTypeSchema.enum.ResetReminder,
-  description: '',
-  category: CategorySchema.enum.Food,
-  amount: 0,
-  currency: CURRENCY_CNY,
-  dueDate: '',
-  billDate: '',
-  remindDate: '',
-  repeatPeriod: { type: 'None' } as RepeatPeriod,
-  isPaid: false,
-  priority: PrioritySchema.enum.Medium,
-  advanceValue: 0,
-  advanceUnit: 'hours',
-  color: COLORS_MAP[0].code,
-  relatedTransactionSerialNum: '',
-  createdAt: '',
-  updatedAt: '',
-};
+const financeTypes: ReminderTypes[] = [
+  ReminderTypesSchema.enum.Bill,
+  ReminderTypesSchema.enum.Income,
+  ReminderTypesSchema.enum.Budget,
+  ReminderTypesSchema.enum.Investment,
+  ReminderTypesSchema.enum.Savings,
+  ReminderTypesSchema.enum.Tax,
+  ReminderTypesSchema.enum.Insurance,
+  ReminderTypesSchema.enum.Loan,
+];
 
-const form = reactive<BilReminder>({
-  serialNum: reminder.serialNum,
-  name: reminder.name,
-  enabled: reminder.enabled,
-  type: reminder.type,
-  description: reminder.description,
-  category: reminder.category,
-  amount: reminder.amount,
-  currency: reminder.currency,
-  dueDate: reminder.dueDate,
-  billDate: reminder.billDate,
-  remindDate: reminder.remindDate,
-  repeatPeriod: reminder.repeatPeriod,
-  isPaid: reminder.isPaid,
-  priority: reminder.priority,
-  advanceValue: reminder.advanceValue ?? 0,
-  advanceUnit: reminder.advanceUnit,
-  color: reminder.color,
-  relatedTransactionSerialNum: reminder.relatedTransactionSerialNum,
-  createdAt: reminder.createdAt,
-  updatedAt: reminder.updatedAt,
-});
+const form = reactive<BilReminder>(props.reminder ? { ...props.reminder } : getBilReminderDefault());
 
 // 计算属性
 const isFinanceType = computed(() => {
-  const financeTypes = [
-    'Bill',
-    'Income',
-    'Budget',
-    'Investment',
-    'Savings',
-    'Tax',
-    'Insurance',
-    'Loan',
-  ];
-  return financeTypes.includes(form.type);
+  if (ReminderTypesSchema.options.includes(form.type)) {
+    return financeTypes.includes(form.type);
+  }
+  return false;
 });
 
 const amountPlaceholder = computed(() => {
@@ -176,6 +133,7 @@ function validateRemindDate() {
     validationErrors.remindDate = t('validation.reminderDate');
   } else {
     const selectedDate = new Date(form.remindDate);
+    form.dueDate = form.remindDate;
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -459,6 +417,32 @@ watch(
   { immediate: true, deep: true },
 );
 
+function getBilReminderDefault(): BilReminder {
+  return {
+    serialNum: '',
+    name: '',
+    enabled: true,
+    type: ReminderTypesSchema.enum.Bill,
+    description: '',
+    category: CategorySchema.enum.Food,
+    amount: 0,
+    currency: CURRENCY_CNY,
+    dueDate: DateUtils.getEndOfTodayISOWithOffset(),
+    billDate: null,
+    remindDate: DateUtils.getTodayDate(),
+    repeatPeriod: { type: 'None' } as RepeatPeriod,
+    isPaid: false,
+    priority: PrioritySchema.enum.Medium,
+    advanceValue: 0,
+    advanceUnit: 'hours',
+    color: COLORS_MAP[0].code,
+    relatedTransactionSerialNum: null,
+    createdAt: '',
+    updatedAt: '',
+
+  };
+}
+
 // 监听类型变化，自动验证金额
 watch(
   () => form.type,
@@ -497,6 +481,20 @@ watch(
     }
   },
 );
+
+watch(
+  () => props.reminder,
+  newVal => {
+    if (newVal) {
+      const clonedAccount = JSON.parse(JSON.stringify(newVal));
+      if (clonedAccount.remindDate) {
+        clonedAccount.remindDate = clonedAccount.remindDate.split('T')[0];
+      }
+      Object.assign(form, clonedAccount);
+    }
+  },
+  { immediate: true, deep: true },
+);
 </script>
 
 <template>
@@ -530,10 +528,19 @@ watch(
         </div>
 
         <ReminderSelector
-          v-model="form.type" :label="t('financial.reminder.reminderType')"
-          :placeholder="t('common.placeholders.selectType')" :required="true" :error-message="validationErrors.type"
-          :show-grouped="true" :show-quick-select="true" :show-icons="true" :popular-only="false" :locale="locale"
-          width="2/3" quick-select-label="常用类型" :help-text="t('helpTexts.reminderType')" @change="handleTypeChange"
+          v-model="form.type"
+          :label="t('financial.reminder.reminderType')"
+          :placeholder="t('common.placeholders.selectType')"
+          :required="true"
+          :error-message="validationErrors.type"
+          :show-grouped="true"
+          :show-quick-select="true"
+          :show-icons="true"
+          :popular-only="false"
+          :locale="locale"
+          width="2/3" quick-select-label="常用类型"
+          :help-text="t('helpTexts.reminderType')"
+          @change="handleTypeChange"
           @validate="handleTypeValidation"
         />
 
@@ -569,7 +576,10 @@ watch(
             <span class="text-red-500 ml-1" aria-label="必填">*</span>
           </label>
           <input
-            v-model="form.remindDate" type="date" required class="modal-input-select w-2/3"
+            v-model="form.remindDate"
+            type="date"
+            required
+            class="modal-input-select w-2/3"
             :class="{ 'border-red-500': validationErrors.remindDate }" :min="today" @blur="validateRemindDate"
           >
         </div>

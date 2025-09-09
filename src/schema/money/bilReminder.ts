@@ -6,22 +6,100 @@ import {
   DescriptionSchema,
   NameSchema,
   PrioritySchema,
-  ReminderTypeSchema,
   RepeatPeriodSchema,
   SerialNumSchema,
 } from '../common';
+
+export const ReminderTypesSchema = z.enum([
+  // 财务相关
+  'Bill',
+  'Income',
+  'Budget',
+  'Investment',
+  'Savings',
+  'Tax',
+  'Insurance',
+  'Loan',
+
+  // 目标与计划
+  'Goal',
+  'Milestone',
+  'Review',
+
+  // 健康生活
+  'Health',
+  'Exercise',
+  'Medicine',
+  'Diet',
+  'Sleep',
+
+  // 工作学习
+  'Work',
+  'Deadline',
+  'Meeting',
+  'Study',
+  'Exam',
+  'Training',
+
+  // 生活事务
+  'Shopping',
+  'Maintenance',
+  'Renewal',
+  'Travel',
+  'Event',
+  'Birthday',
+  'Anniversary',
+  'Call',
+
+  // 文档证件
+  'Document',
+  'Passport',
+  'License',
+
+  // 家庭生活
+  'Family',
+  'Pet',
+  'Chores',
+
+  // 兴趣爱好
+  'Hobby',
+  'Reading',
+  'Music',
+
+  // 技术相关
+  'Backup',
+  'Security',
+
+  // 通用分类
+  'Important',
+  'Urgent',
+  'Routine',
+  'Custom',
+  'Other',
+]);
+
+export const FinanceTypesSchema = z.enum([
+  'Bill',
+  'Income',
+  'Budget',
+  'Investment',
+  'Savings',
+  'Tax',
+  'Insurance',
+  'Loan',
+]);
 
 export const BilReminderSchema = z.object({
   serialNum: SerialNumSchema,
   name: NameSchema,
   enabled: z.boolean(),
-  type: ReminderTypeSchema,
+  type: ReminderTypesSchema,
   description: DescriptionSchema,
   category: CategorySchema,
   amount: z.number(),
   currency: CurrencySchema,
   dueDate: DateTimeSchema,
-  billDate: DateTimeSchema,
+  billDate: DateTimeSchema.optional().nullable(),
   remindDate: DateTimeSchema,
   repeatPeriod: RepeatPeriodSchema,
   isPaid: z.boolean(),
@@ -29,7 +107,7 @@ export const BilReminderSchema = z.object({
   advanceValue: z.number().optional(),
   advanceUnit: z.string().optional(),
   color: z.string(),
-  relatedTransactionSerialNum: SerialNumSchema,
+  relatedTransactionSerialNum: SerialNumSchema.optional().nullable(),
   createdAt: DateTimeSchema,
   updatedAt: DateTimeSchema.optional().nullable(),
 });
@@ -51,10 +129,11 @@ export const BilReminderCreateSchema = BilReminderSchema.pick({
   advanceUnit: true,
   color: true,
   relatedTransactionSerialNum: true,
-}).extend({
-  currency: z.string().length(3),
-
-}).strict();
+})
+  .extend({
+    currency: z.string().length(3),
+  })
+  .strict();
 
 export const BilReminderUpdateSchema = BilReminderCreateSchema.partial();
 export const BilReminderFiltersSchema = BilReminderSchema.omit({
@@ -68,3 +147,4 @@ export type BilReminder = z.infer<typeof BilReminderSchema>;
 export type BilReminderCreate = z.infer<typeof BilReminderCreateSchema>;
 export type BilReminderUpdate = z.infer<typeof BilReminderUpdateSchema>;
 export type BilReminderFilters = z.infer<typeof BilReminderFiltersSchema>;
+export type ReminderTypes = z.infer<typeof ReminderTypesSchema>;
