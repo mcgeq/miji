@@ -1,4 +1,4 @@
-use sea_orm_migration::prelude::*;
+use sea_orm_migration::{prelude::*, sea_orm::JsonValue};
 
 use crate::schema::{BilReminder, Transactions};
 
@@ -26,42 +26,19 @@ impl MigrationTrait for Migration {
                             .not_null()
                             .default(true),
                     )
-                    .col(ColumnDef::new(BilReminder::Type).string().not_null().check(
-                        Expr::col(BilReminder::Type).is_in(vec!["Notification", "Email", "Popup"]),
-                    ))
+                    .col(ColumnDef::new(BilReminder::Type).string().not_null())
                     .col(
                         ColumnDef::new(BilReminder::Description)
-                            .text()
-                            .not_null()
-                            .check(Expr::cust("LENGTH(description) <= 1000")),
+                            .string_len(1000)
+                            .null(),
                     )
-                    .col(
-                        ColumnDef::new(BilReminder::Category)
-                            .string()
-                            .not_null()
-                            .check(Expr::col(BilReminder::Category).is_in(vec![
-                                "Food",
-                                "Transport",
-                                "Entertainment",
-                                "Utilities",
-                                "Shopping",
-                                "Salary",
-                                "Investment",
-                                "Others",
-                            ])),
-                    )
+                    .col(ColumnDef::new(BilReminder::Category).string().not_null())
                     .col(
                         ColumnDef::new(BilReminder::Amount)
                             .decimal_len(16, 4)
-                            .not_null()
                             .default(0.0),
                     )
-                    .col(
-                        ColumnDef::new(BilReminder::Currency)
-                            .string()
-                            .not_null()
-                            .check(Expr::cust("LENGTH(currency) <= 10")),
-                    )
+                    .col(ColumnDef::new(BilReminder::Currency).string_len(3).null())
                     .col(
                         ColumnDef::new(BilReminder::DueAt)
                             .timestamp_with_time_zone()
@@ -70,12 +47,13 @@ impl MigrationTrait for Migration {
                     .col(
                         ColumnDef::new(BilReminder::BillDate)
                             .timestamp_with_time_zone()
-                            .not_null(),
+                            .null(),
                     )
                     .col(
                         ColumnDef::new(BilReminder::RemindDate)
                             .timestamp_with_time_zone()
-                            .not_null(),
+                            .not_null()
+                            .default(JsonValue::Null),
                     )
                     .col(
                         ColumnDef::new(BilReminder::RepeatPeriod)
@@ -86,7 +64,7 @@ impl MigrationTrait for Migration {
                         ColumnDef::new(BilReminder::IsPaid)
                             .boolean()
                             .not_null()
-                            .default(true),
+                            .default(false),
                     )
                     .col(
                         ColumnDef::new(BilReminder::Priority)
@@ -98,10 +76,14 @@ impl MigrationTrait for Migration {
                                     .is_in(vec!["Low", "Medium", "High", "Urgent"]),
                             ),
                     )
-                    .col(ColumnDef::new(BilReminder::AdvanceValue).integer())
-                    .col(ColumnDef::new(BilReminder::AdvanceUnit).string())
-                    .col(ColumnDef::new(BilReminder::RelatedTransactionSerialNum).string_len(38))
-                    .col(ColumnDef::new(BilReminder::Color).string())
+                    .col(ColumnDef::new(BilReminder::AdvanceValue).integer().null())
+                    .col(ColumnDef::new(BilReminder::AdvanceUnit).string().null())
+                    .col(
+                        ColumnDef::new(BilReminder::RelatedTransactionSerialNum)
+                            .string_len(38)
+                            .null(),
+                    )
+                    .col(ColumnDef::new(BilReminder::Color).string().null())
                     .col(
                         ColumnDef::new(BilReminder::IsDeleted)
                             .boolean()
@@ -113,7 +95,11 @@ impl MigrationTrait for Migration {
                             .timestamp_with_time_zone()
                             .not_null(),
                     )
-                    .col(ColumnDef::new(BilReminder::UpdatedAt).timestamp_with_time_zone())
+                    .col(
+                        ColumnDef::new(BilReminder::UpdatedAt)
+                            .timestamp_with_time_zone()
+                            .null(),
+                    )
                     .foreign_key(
                         ForeignKey::create()
                             .name("fk_bil_reminder_transaction")

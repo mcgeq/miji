@@ -11,12 +11,12 @@ pub struct BilReminderBase {
     pub name: String,
     pub enabled: bool,
     pub r#type: String,
-    pub description: String,
+    pub description: Option<String>,
     pub category: String,
-    pub amount: Decimal,
-    pub currency: String,
+    pub amount: Option<Decimal>,
+    pub currency: Option<String>,
     pub due_at: DateTime<FixedOffset>,
-    pub bill_date: DateTime<FixedOffset>,
+    pub bill_date: Option<DateTime<FixedOffset>>,
     pub remind_date: DateTime<FixedOffset>,
     pub repeat_period: serde_json::Value,
     pub is_paid: bool,
@@ -111,14 +111,18 @@ impl TryFrom<BilReminderUpdate> for entity::bil_reminder::ActiveModel {
             r#type: value.r#type.map_or(ActiveValue::NotSet, ActiveValue::Set),
             description: value
                 .description
-                .map_or(ActiveValue::NotSet, ActiveValue::Set),
+                .map_or(ActiveValue::NotSet, |v| ActiveValue::Set(Some(v))),
             category: value.category.map_or(ActiveValue::NotSet, ActiveValue::Set),
-            amount: value.amount.map_or(ActiveValue::NotSet, ActiveValue::Set),
-            currency: value.currency.map_or(ActiveValue::NotSet, ActiveValue::Set),
+            amount: value
+                .amount
+                .map_or(ActiveValue::NotSet, |v| ActiveValue::Set(Some(v))),
+            currency: value
+                .currency
+                .map_or(ActiveValue::NotSet, |v| ActiveValue::Set(Some(v))),
             due_at: value.due_at.map_or(ActiveValue::NotSet, ActiveValue::Set),
             bill_date: value
                 .bill_date
-                .map_or(ActiveValue::NotSet, ActiveValue::Set),
+                .map_or(ActiveValue::NotSet, |v| ActiveValue::Set(Some(v))),
             remind_date: value
                 .remind_date
                 .map_or(ActiveValue::NotSet, ActiveValue::Set),
@@ -153,12 +157,12 @@ impl BilReminderUpdate {
         set_active_value_t!(model, self, name);
         set_active_value_t!(model, self, enabled);
         set_active_value_t!(model, self, r#type);
-        set_active_value_t!(model, self, description);
+        set_active_value_opt!(model, self, description);
         set_active_value_t!(model, self, category);
-        set_active_value_t!(model, self, amount);
-        set_active_value_t!(model, self, currency);
+        set_active_value_opt!(model, self, amount);
+        set_active_value_opt!(model, self, currency);
         set_active_value_t!(model, self, due_at);
-        set_active_value_t!(model, self, bill_date);
+        set_active_value_opt!(model, self, bill_date);
         set_active_value_t!(model, self, remind_date);
         set_active_value_t!(model, self, repeat_period);
         set_active_value_t!(model, self, is_paid);

@@ -8,7 +8,7 @@ export default antfu({
     semi: true,
     commaDangle: 'always-multiline',
     braceStyle: '1tbs',
-    maxLen: 100,
+    maxLen: 80,
   },
   // 框架支持
   typescript: true,

@@ -11,9 +11,9 @@
     "tauri": "tauri",
     "test": "vitest",
     "commit": "git add . && cz",
-    "format": "biome format --write src",
-    "lint": "biome check src",
-    "lint:fix": "biome check --write --unsafe src",
+    "format": "biome format --write src && eslint --fix src",
+    "lint": "biome check src && eslint src",
+    "lint:fix": "biome check --write --unsafe src && eslint --fix src",
     "prepare": "husky"
   },
   "dependencies": {

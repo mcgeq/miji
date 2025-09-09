@@ -418,6 +418,7 @@ watch(
 );
 
 function getBilReminderDefault(): BilReminder {
+  const today = DateUtils.getTodayDate();
   return {
     serialNum: '',
     name: '',
@@ -428,8 +429,8 @@ function getBilReminderDefault(): BilReminder {
     amount: 0,
     currency: CURRENCY_CNY,
     dueDate: DateUtils.getEndOfTodayISOWithOffset(),
-    billDate: null,
-    remindDate: DateUtils.getTodayDate(),
+    billDate: today,
+    remindDate: today,
     repeatPeriod: { type: 'None' } as RepeatPeriod,
     isPaid: false,
     priority: PrioritySchema.enum.Medium,
@@ -459,6 +460,17 @@ watch(
   () => {
     if (validationErrors.name) {
       validateName();
+    }
+  },
+);
+
+watch(
+  () => form.type,
+  () => {
+    if (isFinanceType.value) {
+      form.billDate = DateUtils.getTodayDate();
+    } else {
+      form.billDate = null;
     }
   },
 );
@@ -545,16 +557,23 @@ watch(
         />
 
         <!-- 金额 -->
-        <div class="mb-2 mt-2 flex items-center justify-between">
+        <div
+          v-if="isFinanceType"
+          class="mb-2 mt-2 flex items-center justify-between"
+        >
           <label class="text-sm text-gray-700 font-medium mb-2 dark:text-gray-300">
             {{ t('financial.money') }}
-            <span v-if="isFinanceType" class="text-blue-500 ml-1">*</span>
+            <span v-if="isFinanceType" class="text-red-500 ml-1">*</span>
           </label>
           <div class="w-2/3">
             <div class="flex items-center space-x-2">
               <div class="flex-1">
                 <input
-                  v-model.number="form.amount" type="number" step="0.01" min="0" class="modal-input-select w-full"
+                  v-model.number="form.amount"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  class="modal-input-select w-full"
                   :class="{ 'border-red-500': validationErrors.amount }" :placeholder="amountPlaceholder"
                   :required="isFinanceType" @blur="validateAmount"
                 >
@@ -565,8 +584,22 @@ watch(
             </div>
           </div>
         </div>
-        <div v-if="validationErrors.amount" class="text-sm text-red-600 mb-2 text-right dark:text-red-400" role="alert">
-          {{ validationErrors.amount }}
+        <!-- 账单日期 -->
+        <div
+          v-if="isFinanceType"
+          class="mb-2 flex items-center justify-between"
+        >
+          <label class="text-sm text-gray-700 font-medium mb-2 dark:text-gray-300">
+            {{ t('date.billDate') }}
+            <span class="text-red-500 ml-1" aria-label="必填">*</span>
+          </label>
+          <input
+            v-model="form.billDate"
+            type="date"
+            required
+            class="modal-input-select w-2/3"
+            :class="{ 'border-red-500': validationErrors.remindDate }" :min="today" @blur="validateRemindDate"
+          >
         </div>
 
         <!-- 提醒日期 -->

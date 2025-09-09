@@ -827,6 +827,10 @@
   },
   "placeholders": {
     "reminderDetails": {
+      "Work": "如：工作内容等等",
+      "Budget": "如: 信用卡预算、月度预算...",
+      "Deadline": "如：计划截止...",
+      "Investment": "如：投资、股市收入...",
       "Bill": "如：信用卡账单、水电费等详细信息",
       "Income": "如：工资、奖金、投资收益等来源",
       "Health": "如：体检项目、医院科室、注意事项等",
@@ -834,6 +838,7 @@
       "Birthday": "如：生日礼物准备、庆祝计划等",
       "Travel": "如：行程安排、注意事项、携带物品等",
       "default": "请输入提醒的详细描述信息",
+      "Insurance": "如：保险保费...",
       "Notification": "提醒描述（可选）",
       "ResetReminder": "描述"
     },

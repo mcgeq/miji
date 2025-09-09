@@ -269,7 +269,7 @@ defineExpose({
         </div>
 
         <div class="mb-2 space-y-2">
-          <div class="text-sm flex justify-between">
+          <div v-if="reminder.billDate" class="text-sm flex justify-between">
             <span class="text-gray-600">{{ t('financial.billDate') }}</span>
             <span class="text-gray-800">{{ DateUtils.formatDate(reminder.billDate) }}</span>
           </div>

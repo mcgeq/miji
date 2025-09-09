@@ -13,14 +13,13 @@ pub struct Model {
     pub name: String,
     pub enabled: bool,
     pub r#type: String,
-    #[sea_orm(column_type = "Text")]
-    pub description: String,
+    pub description: Option<String>,
     pub category: String,
-    #[sea_orm(column_type = "Decimal(Some((16, 4)))")]
-    pub amount: Decimal,
-    pub currency: String,
+    #[sea_orm(column_type = "Decimal(Some((16, 4)))", nullable)]
+    pub amount: Option<Decimal>,
+    pub currency: Option<String>,
     pub due_at: DateTimeWithTimeZone,
-    pub bill_date: DateTimeWithTimeZone,
+    pub bill_date: Option<DateTimeWithTimeZone>,
     pub remind_date: DateTimeWithTimeZone,
     #[sea_orm(column_type = "JsonBinary")]
     pub repeat_period: Json,
