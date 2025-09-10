@@ -1,12 +1,6 @@
 <script setup lang="ts">
 import {
-  ChevronLeft,
-  ChevronRight,
-  Edit,
-  Eye,
   Repeat,
-  RotateCcw,
-  Trash,
   TrendingDown,
   TrendingUp,
 } from 'lucide-vue-next';
@@ -302,7 +296,7 @@ defineExpose({
         class="text-sm text-gray-700 px-3 py-1.5 rounded-md bg-gray-200 transition-colors hover:bg-gray-300"
         @click="resetFilters"
       >
-        <RotateCcw class="mr-1 wh-5" />
+        <LucideRotateCcw class="mr-1 wh-5" />
       </button>
     </div>
 
@@ -418,7 +412,7 @@ defineExpose({
               class="money-option-btn hover:(text-green-500 border-green-500)"
               :title="t('common.actions.view')" @click="emit('viewDetails', transaction)"
             >
-              <Eye class="h-4 w-4" />
+              <LucideEye class="h-4 w-4" />
             </button>
             <button
               class="money-option-btn hover:(text-blue-500 border-blue-500)" :title="t('common.actions.edit')"
@@ -428,7 +422,7 @@ defineExpose({
               }"
               @click="emit('edit', transaction)"
             >
-              <Edit class="h-4 w-4" />
+              <LucideEdit class="h-4 w-4" />
             </button>
             <button
               class="money-option-btn hover:(text-red-500 border-red-500)"
@@ -436,7 +430,7 @@ defineExpose({
               :disabled="disabledTransactions.has(transaction.serialNum)"
               @click="emit('delete', transaction)"
             >
-              <Trash class="h-4 w-4" />
+              <LucideTrash class="h-4 w-4" />
             </button>
           </div>
         </div>
@@ -452,7 +446,7 @@ defineExpose({
           :disabled="pagination.currentPage <= 1" class="text-gray-600 p-1.5 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
           @click="handlePageChange(pagination.currentPage - 1)"
         >
-          <ChevronLeft class="h-4 w-4" />
+          <LucideChevronLeft class="h-4 w-4" />
         </button>
 
         <!-- 页码信息 -->
@@ -466,7 +460,7 @@ defineExpose({
           class="text-gray-600 p-1.5 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
           @click="handlePageChange(pagination.currentPage + 1)"
         >
-          <ChevronRight class="h-4 w-4" />
+          <LucideChevronRight class="h-4 w-4" />
         </button>
 
         <!-- 每页大小选择 -->

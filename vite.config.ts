@@ -11,6 +11,15 @@ import { defineConfig } from 'vite';
 import vueDevTools from 'vite-plugin-vue-devtools';
 
 const host = env.TAURI_DEV_HOST;
+function LucideResolver(componentName: string) {
+  if (componentName.startsWith('Lucide')) {
+    return {
+      name: componentName.slice(6), // e.g. LucideHome -> Home
+      from: 'lucide-vue-next',
+    };
+  }
+  return null;
+};
 
 // https://vitejs.dev/config/
 export default defineConfig(async () => ({
@@ -22,7 +31,8 @@ export default defineConfig(async () => ({
     }),
     Vue(),
     Components({
-      dts: true
+      dts: true,
+      resolvers: [LucideResolver],
     }),
     AutoImport({
       include: [/\.[jt]sx?$/, /\.vue$/, /\.vue\?vue/, /\.md$/],

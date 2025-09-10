@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Plus } from 'lucide-vue-next';
+import { Lg } from '@/utils/debugLog';
 import { toast } from '@/utils/toast';
 import FamilyLedgerList from '../components/FamilyLedgerList.vue';
 import FamilyLedgerModal from '../components/FamilyLedgerModal.vue';
@@ -18,7 +18,7 @@ async function loadLedgers() {
 
     // 临时示例数据
     ledgers.value = [];
-  } catch (error) {
+  } catch (_error) {
     toast.error('加载家庭账本失败');
   } finally {
     loading.value = false;
@@ -27,7 +27,7 @@ async function loadLedgers() {
 
 function enterLedger(ledger: FamilyLedger) {
   // 进入特定账本，跳转到 MoneyView 并设置当前账本上下文
-  console.log('进入账本:', ledger);
+  Lg.i('进入账本:', ledger);
   // 这里可以设置全局状态或路由跳转
   // router.push({ name: 'MoneyView', params: { ledgerId: ledger.serialNum } });
 }
@@ -38,13 +38,14 @@ function editLedger(ledger: FamilyLedger) {
 }
 
 async function deleteLedger(serialNum: string) {
-  if (confirm('确定删除此家庭账本吗？此操作不可恢复！')) {
+// confirm('确定删除此家庭账本吗？此操作不可恢复！')
+  if (true) {
     try {
       // await familyLedgerStore.deleteLedger(serialNum);
-      console.log('删除账本:', serialNum);
+      Lg.i('删除账本:', serialNum);
       toast.success('删除成功');
       loadLedgers();
-    } catch (error) {
+    } catch (_error) {
       toast.error('删除失败');
     }
   }
@@ -59,16 +60,16 @@ async function saveLedger(ledger: FamilyLedger) {
   try {
     if (selectedLedger.value) {
       // await familyLedgerStore.updateLedger(ledger);
-      console.log('更新账本:', ledger);
+      Lg.i('更新账本:', ledger);
       toast.success('更新成功');
     } else {
       // await familyLedgerStore.createLedger(ledger);
-      console.log('创建账本:', ledger);
+      Lg.i('创建账本:', ledger);
       toast.success('创建成功');
     }
     closeLedgerModal();
     loadLedgers();
-  } catch (error) {
+  } catch (_error) {
     toast.error('保存失败');
   }
 }
@@ -86,7 +87,7 @@ onMounted(() => {
         家庭账本管理
       </h2>
       <button class="btn-primary" @click="showLedgerModal = true">
-        <Plus class="mr-2 h-4 w-4" />
+        <LucidePlus class="mr-2 h-4 w-4" />
         创建账本
       </button>
     </div>

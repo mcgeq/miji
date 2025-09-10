@@ -1,12 +1,4 @@
 <script setup lang="ts">
-import {
-  ArrowRightLeft,
-  Bell,
-  CreditCard,
-  MinusCircle,
-  PlusCircle,
-  Target,
-} from 'lucide-vue-next';
 import ConfirmModal from '@/components/common/ConfirmModal.vue';
 import { useConfirm } from '@/composables/useConfirm';
 import { CURRENCY_CNY } from '@/constants/moneyConst';
@@ -550,37 +542,37 @@ onMounted(async () => {
               class="text-sm text-purple-500 px-2 py-3 rounded-md bg-purple-50 flex gap-2 items-center hover:opacity-80"
               @click="showAccountModal"
             >
-              <CreditCard class="h-4 w-4" /><span>添加账户</span>
+              <LucideCreditCard class="h-4 w-4" /><span>添加账户</span>
             </button>
             <button
               class="text-sm text-green-600 px-2 py-3 rounded-md bg-green-50 flex gap-2 items-center hover:opacity-80"
               @click="showTransactionModal(TransactionTypeSchema.enum.Income)"
             >
-              <PlusCircle class="h-4 w-4" /><span>记录收入</span>
+              <LucidePlusCircle class="h-4 w-4" /><span>记录收入</span>
             </button>
             <button
               class="text-sm text-red-500 px-2 py-3 rounded-md bg-red-50 flex gap-2 items-center hover:opacity-80"
               @click="showTransactionModal(TransactionTypeSchema.enum.Expense)"
             >
-              <MinusCircle class="h-4 w-4" /><span>记录支出</span>
+              <LucideMinusCircle class="h-4 w-4" /><span>记录支出</span>
             </button>
             <button
               class="text-sm text-blue-500 px-2 py-3 rounded-md bg-blue-50 flex gap-2 items-center hover:opacity-80"
               @click="showTransactionModal(TransactionTypeSchema.enum.Transfer)"
             >
-              <ArrowRightLeft class="h-4 w-4" /><span>记录转账</span>
+              <LucideArrowRightLeft class="h-4 w-4" /><span>记录转账</span>
             </button>
             <button
               class="text-sm text-orange-500 px-2 py-3 rounded-md bg-orange-50 flex gap-2 items-center hover:opacity-80"
               @click="showBudgetModal"
             >
-              <Target class="h-4 w-4" /><span>设置预算</span>
+              <LucideTarget class="h-4 w-4" /><span>设置预算</span>
             </button>
             <button
               class="text-sm text-yellow-600 px-2 py-3 rounded-md bg-yellow-50 flex gap-2 items-center hover:opacity-80"
               @click="showReminderModal"
             >
-              <Bell class="h-4 w-4" /><span>设置提醒</span>
+              <LucideBell class="h-4 w-4" /><span>设置提醒</span>
             </button>
           </div>
         </div>

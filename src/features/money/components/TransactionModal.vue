@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import VueDatePicker from '@vuepic/vue-datepicker';
-import { Check, X } from 'lucide-vue-next';
 import CurrencySelector from '@/components/common/money/CurrencySelector.vue';
 import { CURRENCY_CNY } from '@/constants/moneyConst';
 import {
@@ -572,10 +571,10 @@ watch(
         <!-- 按钮 -->
         <div class="pt-4 flex gap-3 justify-center">
           <button type="button" class="modal-btn-x" @click="$emit('close')">
-            <X class="wh-5" />
+            <LucideX class="wh-5" />
           </button>
           <button type="submit" class="modal-btn-check">
-            <Check class="wh-5" />
+            <LucideCheck class="wh-5" />
           </button>
         </div>
       </form>

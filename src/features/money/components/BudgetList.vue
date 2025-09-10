@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { Ban, Edit, Repeat, RotateCcw, StopCircle, Trash } from 'lucide-vue-next';
 import SimplePagination from '@/components/common/SimplePagination.vue';
 import { useSort } from '@/composables/useSortable';
 import { CategorySchema, SortDirection } from '@/schema/common';
@@ -217,7 +216,7 @@ defineExpose({
         class="text-sm text-gray-700 px-3 py-1.5 rounded-md bg-gray-200 transition-colors hover:bg-gray-300"
         @click="resetFilters"
       >
-        <RotateCcw class="mr-1 wh-5" />
+        <LucideRotateCcw class="mr-1 wh-5" />
       </button>
     </div>
 
@@ -271,27 +270,30 @@ defineExpose({
               class="money-option-btn hover:(text-green-500 border-green-500)" :title="t('common.actions.edit')"
               @click="budget.isActive && emit('edit', budget)"
             >
-              <Edit class="h-4 w-4" />
+              <LucideEdit class="wh-4" />
             </button>
             <button
               class="money-option-btn hover:(text-blue-500 border-blue-500)"
               :title="budget.isActive ? t('common.status.stop') : t('common.status.enabled')"
               @click="emit('toggleActive', budget.serialNum, !budget.isActive)"
             >
-              <component :is="budget.isActive ? Ban : StopCircle" class="h-4 w-4" />
+              <!-- <component :is="budget.isActive ? Ban : StopCircle" class="h-4 w-4" /> -->
+
+              <LucideBan v-if="budget.isActive" class="wh-4" />
+              <LucideStopCircle v-else class="wh-4" />
             </button>
             <button
               class="money-option-btn hover:(text-red-500 border-red-500)"
               :title="t('common.actions.delete')" @click="emit('delete', budget.serialNum)"
             >
-              <Trash class="h-4 w-4" />
+              <LucideTrash class="wh-4" />
             </button>
           </div>
         </div>
 
         <!-- Period -->
         <div class="text-sm text-gray-600 mb-1 flex gap-1 items-center justify-end">
-          <Repeat class="text-gray-600 h-4 w-4" />
+          <LucideRepeat class="text-gray-600 h-4 w-4" />
           <span>{{ getRepeatTypeName(budget.repeatPeriod) }}</span>
         </div>
 
