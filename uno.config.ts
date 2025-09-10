@@ -1,10 +1,9 @@
 import { resolve } from 'node:path';
 import { FileSystemIconLoader } from '@iconify/utils/lib/loader/node-loaders';
-import presetIcons from '@unocss/preset-icons';
 import presetWebFonts from '@unocss/preset-web-fonts';
 import { createLocalFontProcessor } from '@unocss/preset-web-fonts/local';
 import { defineConfig } from '@unocss/vite';
-import { presetAttributify, presetWind4, transformerDirectives, transformerVariantGroup } from 'unocss';
+import { presetAttributify, presetWind4, transformerDirectives, transformerVariantGroup, presetIcons } from 'unocss';
 
 const iconDirectory = resolve(__dirname, 'icons');
 
