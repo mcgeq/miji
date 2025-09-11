@@ -151,7 +151,7 @@ defineExpose({
           v-model="filters.category"
           class="text-sm px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
-          <option value="">
+          <option value="null">
             {{ t('categories.allCategory') }}
           </option>
           <option v-for="category in uniqueCategories" :key="category" :value="category">
