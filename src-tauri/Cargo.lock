@@ -2110,6 +2110,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "healths"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "common",
+ "entity",
+ "lazy_static",
+ "macros",
+ "num-traits",
+ "once_cell",
+ "regex",
+ "sea-orm",
+ "serde",
+ "serde_json",
+ "snafu",
+ "tauri",
+ "tokio",
+ "tracing",
+ "validator",
+]
+
+[[package]]
 name = "heck"
 version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2853,6 +2875,7 @@ dependencies = [
  "dotenvy",
  "entity",
  "futures",
+ "healths",
  "log",
  "migration",
  "money",
