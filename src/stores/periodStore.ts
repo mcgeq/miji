@@ -70,8 +70,8 @@ export const usePeriodStore = defineStore('period', () => {
       );
     });
 
-    const averageCycleLength
-      = cycles.length > 0
+    const averageCycleLength =
+      cycles.length > 0
         ? Math.round(
             cycles.reduce((sum, cycle) => sum + cycle, 0) / cycles.length,
           )
@@ -87,8 +87,8 @@ export const usePeriodStore = defineStore('period', () => {
     });
 
     const averagePeriodLength = Math.round(
-      periodLengths.reduce((sum, length) => sum + length, 0)
-      / periodLengths.length,
+      periodLengths.reduce((sum, length) => sum + length, 0) /
+      periodLengths.length,
     );
 
     // 预测下次经期
@@ -139,9 +139,9 @@ export const usePeriodStore = defineStore('period', () => {
       const end = new Date(record.endDate);
 
       // Calculate number of days in the period
-      const daysDiff
-        = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24))
-          + 1;
+      const daysDiff =
+        Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) +
+        1;
 
       for (let i = 0; i < daysDiff; i++) {
         const currentDate = new Date(start);
@@ -211,8 +211,7 @@ export const usePeriodStore = defineStore('period', () => {
 
   // 检查缓存是否有效
   const isCacheValid = (): boolean => {
-    if (!lastFetch.value)
-      return false;
+    if (!lastFetch.value) return false;
     return Date.now() - lastFetch.value.getTime() < CACHE_DURATION;
   };
 
@@ -301,8 +300,8 @@ export const usePeriodStore = defineStore('period', () => {
         periodStats.value.nextPredictedDate,
       );
     } catch (e) {
-      const errorMessage
-        = e instanceof Error ? e.message : 'Failed to fetch period records';
+      const errorMessage =
+        e instanceof Error ? e.message : 'Failed to fetch period records';
       setError(errorMessage);
       throw new Error(errorMessage);
     } finally {
@@ -365,8 +364,8 @@ export const usePeriodStore = defineStore('period', () => {
 
       dailyRecords.value = mockDailyData;
     } catch (e) {
-      const errorMessage
-        = e instanceof Error ? e.message : 'Failed to fetch daily records';
+      const errorMessage =
+        e instanceof Error ? e.message : 'Failed to fetch daily records';
       setError(errorMessage);
       throw new Error(errorMessage);
     } finally {
@@ -391,8 +390,8 @@ export const usePeriodStore = defineStore('period', () => {
 
       Lg.i('Period', 'Daily record deleted:', serialNum);
     } catch (e) {
-      const errorMessage
-        = e instanceof Error ? e.message : 'Failed to delete daily record';
+      const errorMessage =
+        e instanceof Error ? e.message : 'Failed to delete daily record';
       setError(errorMessage);
       throw new Error(errorMessage);
     } finally {
@@ -427,8 +426,8 @@ export const usePeriodStore = defineStore('period', () => {
 
       return newRecord;
     } catch (e) {
-      const errorMessage
-        = e instanceof Error ? e.message : 'Failed to add period record';
+      const errorMessage =
+        e instanceof Error ? e.message : 'Failed to add period record';
       setError(errorMessage);
       throw new Error(errorMessage);
     } finally {
@@ -461,8 +460,8 @@ export const usePeriodStore = defineStore('period', () => {
         };
       }
     } catch (e) {
-      const errorMessage
-        = e instanceof Error ? e.message : 'Failed to update period record';
+      const errorMessage =
+        e instanceof Error ? e.message : 'Failed to update period record';
       setError(errorMessage);
       throw new Error(errorMessage);
     } finally {
@@ -500,8 +499,8 @@ export const usePeriodStore = defineStore('period', () => {
         );
       }
     } catch (e) {
-      const errorMessage
-        = e instanceof Error ? e.message : 'Failed to delete record';
+      const errorMessage =
+        e instanceof Error ? e.message : 'Failed to delete record';
       setError(errorMessage);
       throw new Error(errorMessage);
     } finally {
@@ -556,8 +555,8 @@ export const usePeriodStore = defineStore('period', () => {
       // 强制触发响应式更新
       dailyRecords.value = [...dailyRecords.value];
     } catch (e) {
-      const errorMessage
-        = e instanceof Error ? e.message : 'Failed to save daily record';
+      const errorMessage =
+        e instanceof Error ? e.message : 'Failed to save daily record';
       setError(errorMessage);
       throw new Error(errorMessage);
     } finally {
@@ -588,8 +587,8 @@ export const usePeriodStore = defineStore('period', () => {
         ...newSettings,
       };
     } catch (e) {
-      const errorMessage
-        = e instanceof Error ? e.message : 'Failed to update settings';
+      const errorMessage =
+        e instanceof Error ? e.message : 'Failed to update settings';
       setError(errorMessage);
       throw new Error(errorMessage);
     } finally {
@@ -615,8 +614,8 @@ export const usePeriodStore = defineStore('period', () => {
       pmsSymptoms.value = [];
       lastFetch.value = null;
     } catch (e) {
-      const errorMessage
-        = e instanceof Error ? e.message : 'Failed to reset data';
+      const errorMessage =
+        e instanceof Error ? e.message : 'Failed to reset data';
       setError(errorMessage);
       throw new Error(errorMessage);
     } finally {
@@ -639,8 +638,8 @@ export const usePeriodStore = defineStore('period', () => {
       // 强制触发响应式更新
       dailyRecords.value = [...dailyRecords.value];
     } catch (e) {
-      const errorMessage
-        = e instanceof Error ? e.message : 'Failed to refresh daily records';
+      const errorMessage =
+        e instanceof Error ? e.message : 'Failed to refresh daily records';
       setError(errorMessage);
       throw new Error(errorMessage);
     } finally {
@@ -685,9 +684,9 @@ export const usePeriodStore = defineStore('period', () => {
       const end = new Date(period.endDate);
 
       // Calculate number of days in the period
-      const daysDiff
-        = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24))
-          + 1;
+      const daysDiff =
+        Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) +
+        1;
 
       for (let i = 0; i < daysDiff; i++) {
         const currentDate = new Date(start);
@@ -709,8 +708,8 @@ export const usePeriodStore = defineStore('period', () => {
     periodRecords.value.forEach(period => {
       const ovulationDate = new Date(period.startDate);
       ovulationDate.setDate(
-        ovulationDate.getDate()
-        + Math.floor(settings.value.averageCycleLength / 2),
+        ovulationDate.getDate() +
+        Math.floor(settings.value.averageCycleLength / 2),
       );
       const dateStr = ovulationDate.toISOString().split('T')[0];
 
@@ -723,8 +722,7 @@ export const usePeriodStore = defineStore('period', () => {
 
         // 排卵期前后各1天为易孕期
         for (let i = -1; i <= 1; i++) {
-          if (i === 0)
-            continue; // 排卵日已添加
+          if (i === 0) continue; // 排卵日已添加
           const fertileDate = new Date(ovulationDate);
           fertileDate.setDate(fertileDate.getDate() + i);
           const fertileDateStr = fertileDate.toISOString().split('T')[0];
@@ -769,8 +767,8 @@ export const usePeriodStore = defineStore('period', () => {
         // 预测排卵期
         const predictedOvulationDate = new Date(predictedStart);
         predictedOvulationDate.setDate(
-          predictedOvulationDate.getDate()
-          + Math.floor(stats.averageCycleLength / 2),
+          predictedOvulationDate.getDate() +
+          Math.floor(stats.averageCycleLength / 2),
         );
         const ovulationDateStr = predictedOvulationDate
           .toISOString()
@@ -785,8 +783,7 @@ export const usePeriodStore = defineStore('period', () => {
 
           // 预测易孕期
           for (let i = -1; i <= 1; i++) {
-            if (i === 0)
-              continue;
+            if (i === 0) continue;
             const fertileDate = new Date(predictedOvulationDate);
             fertileDate.setDate(fertileDate.getDate() + i);
             const fertileDateStr = fertileDate.toISOString().split('T')[0];

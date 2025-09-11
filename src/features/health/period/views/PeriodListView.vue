@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { ListFilterPlus, ListRestart } from 'lucide-vue-next';
 import { usePeriodStore } from '@/stores/periodStore';
 import type { PeriodRecords } from '@/schema/health/period';
 
@@ -279,11 +278,11 @@ watch(
             class="btn-secondary" :class="{ 'bg-blue-50 dark:bg-blue-900/30': hasActiveFilters }"
             @click="showFilters = !showFilters"
           >
-            <ListFilterPlus class="ml-2 wh-5" />
+            <LucideListFilterPlus class="ml-2 wh-5" />
           </button>
           <div v-if="showFilters">
             <button class="text-sm btn-secondary self-end" @click="clearFilters">
-              <ListRestart class="ml-2 wh-5" />
+              <LucideListRestart class="ml-2 wh-5" />
             </button>
           </div>
         </div>
@@ -388,7 +387,6 @@ watch(
     <!-- 记录列表 -->
     <div class="records-list">
       <div v-if="filteredRecords.length === 0" class="empty-state p-8 card-base">
-        <i class="i-tabler-calendar-off wh-16 text-gray-400 mx-auto mb-4" />
         <h3 class="text-lg text-gray-900 font-medium mb-2 dark:text-white">
           {{ searchQuery || hasActiveFilters ? '未找到匹配的记录' : '还没有经期记录' }}
         </h3>

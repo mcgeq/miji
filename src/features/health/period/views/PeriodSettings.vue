@@ -1,17 +1,4 @@
 <script setup lang="ts">
-import {
-  Bell,
-  ChartNoAxesCombined,
-  Database,
-  FileDown,
-  FileUp,
-  Lightbulb,
-  ListRestart,
-  Settings,
-  ShieldUser,
-  Trash,
-  X,
-} from 'lucide-vue-next';
 import { usePeriodStore } from '@/stores/periodStore';
 import { PeriodDataManager } from '../utils/periodUtils';
 import type { PeriodSettings } from '@/schema/health/period';
@@ -304,7 +291,7 @@ onMounted(() => {
       <!-- 周期设置 -->
       <div class="settings-section card-base">
         <h2 class="section-title">
-          <Settings class="mr-2 wh-5" />
+          <LucideSettings class="mr-2 wh-5" />
           周期设置
         </h2>
 
@@ -341,7 +328,7 @@ onMounted(() => {
                 v-if="calculatedStats.averageCycleLength && calculatedStats.averageCycleLength !== localSettings.averageCycleLength"
                 class="calculated-hint"
               >
-                <Lightbulb class="text-amber-500 h-4 w-4" />
+                <LucideLightbulb class="text-amber-500 h-4 w-4" />
                 <span class="text-sm text-amber-700 dark:text-amber-400">
                   根据历史数据计算：{{ calculatedStats.averageCycleLength }}天
                 </span>
@@ -387,7 +374,7 @@ onMounted(() => {
                 v-if="calculatedStats.averagePeriodLength && calculatedStats.averagePeriodLength !== localSettings.averagePeriodLength"
                 class="calculated-hint"
               >
-                <Lightbulb class="text-amber-500 h-4 w-4" />
+                <LucideLightbulb class="text-amber-500 h-4 w-4" />
                 <span class="text-sm text-amber-700 dark:text-amber-400">
                   根据历史数据计算：{{ calculatedStats.averagePeriodLength }}天
                 </span>
@@ -404,7 +391,7 @@ onMounted(() => {
           <!-- 智能分析卡片 -->
           <div v-if="periodStore.periodRecords.length >= 2" class="analysis-card">
             <div class="analysis-header">
-              <ChartNoAxesCombined class="mr-2 wh-5" />
+              <LucideChartNoAxesCombined class="mr-2 wh-5" />
               <span class="text-sm text-gray-700 font-medium dark:text-gray-300">智能分析</span>
             </div>
             <div class="analysis-content">
@@ -428,7 +415,7 @@ onMounted(() => {
       <!-- 提醒设置 -->
       <div class="settings-section card-base">
         <h2 class="section-title">
-          <Bell class="mr-2 wh-5" />
+          <LucideBell class="mr-2 wh-5" />
           提醒设置
         </h2>
         <div class="settings-grid">
@@ -526,7 +513,7 @@ onMounted(() => {
       <!-- 隐私设置 -->
       <div class="settings-section card-base">
         <h2 class="section-title">
-          <ShieldUser class="mr-2 wh-5" />
+          <LucideShieldUser class="mr-2 wh-5" />
           隐私设置
         </h2>
         <div class="settings-grid">
@@ -570,7 +557,7 @@ onMounted(() => {
       <!-- 数据管理 -->
       <div class="settings-section card-base">
         <h2 class="section-title">
-          <Database class="mr-2 wh-5" />
+          <LucideDatabase class="mr-2 wh-5" />
           数据管理
         </h2>
         <div class="settings-grid">
@@ -578,7 +565,7 @@ onMounted(() => {
             <div class="setting-item">
               <label class="setting-label">导出数据</label>
               <button class="btn-secondary" :disabled="loading" @click="exportData">
-                <FileDown class="mr-2 wh-5" />
+                <LucideFileDown class="mr-2 wh-5" />
                 导出为JSON
               </button>
               <p class="setting-description">
@@ -590,7 +577,7 @@ onMounted(() => {
               <div class="import-control">
                 <input ref="fileInput" type="file" accept=".json" class="hidden" @change="handleFileImport">
                 <button class="btn-secondary" :disabled="loading" @click="triggerFileInput">
-                  <FileUp class="mr-2 wh-5" />
+                  <LucideFileUp class="mr-2 wh-5" />
                   选择文件
                 </button>
               </div>
@@ -603,7 +590,7 @@ onMounted(() => {
           <div class="setting-item mt-4">
             <div class="flex gap-2 items-center">
               <button class="btn-danger" :disabled="loading" @click="showResetModal = true">
-                <Trash class="wh-5" />
+                <LucideTrash class="wh-5" />
               </button>
             </div>
             <p class="setting-description">
@@ -630,10 +617,10 @@ onMounted(() => {
           <input v-model="resetConfirmText" type="text" placeholder="输入 '确认重置' 来确认操作" class="input-base w-full">
           <div class="flex gap-3">
             <button class="btn-secondary flex-1" @click="showResetModal = false">
-              <X class="wh-5" />
+              <LucideX class="wh-5" />
             </button>
             <button class="btn-danger flex-1" :disabled="resetConfirmText !== '确认重置' || loading" @click="confirmReset">
-              <ListRestart class="=wh-5" />
+              <LucideListRestart class="=wh-5" />
             </button>
           </div>
         </div>
@@ -659,7 +646,7 @@ onMounted(() => {
           </p>
         </div>
         <button class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" @click="importMessage = ''">
-          <X class="wh-5" />
+          <LucideX class="wh-5" />
         </button>
       </div>
     </div>

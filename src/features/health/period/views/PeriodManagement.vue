@@ -1,15 +1,4 @@
 <script setup lang="ts">
-import {
-  Activity,
-  CalendarCheck,
-  Check,
-  Eye,
-  Plus,
-  Settings,
-  Trash,
-  X,
-} from 'lucide-vue-next';
-import { usePeriodStore } from '@/stores/periodStore';
 import { DateUtils } from '@/utils/date';
 import { Lg } from '@/utils/debugLog';
 import PeriodCalendar from '../components/PeriodCalendar.vue';
@@ -227,21 +216,21 @@ onMounted(async () => {
               class="nav-tab" :class="{ 'nav-tab-active': currentView === 'calendar' }"
               @click="currentView = 'calendar'"
             >
-              <CalendarCheck class="wh-4" />
+              <LucideCalendarCheck class="wh-4" />
               <span class="hidden sm:inline">{{ t('period.navigation.calendar') }}</span>
             </button>
             <button
               class="nav-tab" :class="{ 'nav-tab-active': currentView === 'stats' }"
               @click="currentView = 'stats'"
             >
-              <Activity class="wh-4" />
+              <LucideActivity class="wh-4" />
               <span class="hidden sm:inline">{{ t('period.navigation.statistics') }}</span>
             </button>
             <button
               class="nav-tab" :class="{ 'nav-tab-active': currentView === 'settings' }"
               @click="currentView = 'settings'"
             >
-              <Settings class="wh-4" />
+              <LucideSettings class="wh-4" />
               <span class="hidden sm:inline">{{ t('period.navigation.settings') }}</span>
             </button>
           </div>
@@ -274,7 +263,7 @@ onMounted(async () => {
                   <div
                     class="bg-gradient-to-r rounded-full flex h-10 w-10 items-center justify-center from-blue-500 to-cyan-500"
                   >
-                    <CalendarCheck class="text-white h-5 w-5" />
+                    <LucideCalendarCheck class="text-white h-5 w-5" />
                   </div>
                   <h3 class="text-lg text-gray-900 font-semibold dark:text-white">
                     {{ t('period.todayInfo.title') }}
@@ -295,13 +284,13 @@ onMounted(async () => {
                     <span class="info-label">{{ t('period.todayInfo.todayRecord') }}</span>
                     <div class="flex gap-2 items-center">
                       <button class="action-icon-btn view-btn" title="查看记录" @click="openDailyForm(todayRecord)">
-                        <Eye class="wh-4" />
+                        <LucideEye class="wh-4" />
                       </button>
                       <button
                         class="action-icon-btn delete-btn" :title="t('common.actions.delete')"
                         @click="handleDeleteDailyRecord(todayRecord.serialNum)"
                       >
-                        <Trash class="wh-4" />
+                        <LucideTrash class="wh-4" />
                       </button>
                     </div>
                   </div>
@@ -310,7 +299,7 @@ onMounted(async () => {
                     <span class="text-sm text-gray-500 dark:text-gray-400">{{ t('period.todayInfo.noRecord') }}</span>
 
                     <div class="period-btn cursor-pointer" @click="openDailyForm()">
-                      <Plus class="wh-5" />
+                      <LucidePlus class="wh-5" />
                     </div>
                   </div>
                 </div>
@@ -359,7 +348,7 @@ onMounted(async () => {
         <div class="p-6">
           <div class="mb-4 flex gap-3 items-center">
             <div class="rounded-full bg-red-100 flex h-8 w-8 items-center justify-center dark:bg-red-900/30">
-              <Trash class="text-red-600 wh-4 dark:text-red-400" />
+              <LucideTrash class="text-red-600 wh-4 dark:text-red-400" />
             </div>
             <h3 class="text-lg text-gray-900 font-semibold dark:text-white">
               {{ t('period.confirmations.deleteRecord') }}
@@ -373,13 +362,13 @@ onMounted(async () => {
               class="text-sm text-white font-medium px-4 py-2 rounded-lg bg-red-500 flex-1 transition-colors hover:bg-red-600"
               @click="confirmDelete"
             >
-              <Check class="wh-5" />
+              <LucideCheck class="wh-5" />
             </button>
             <button
               class="text-sm text-gray-700 font-medium px-4 py-2 rounded-lg bg-gray-100 flex-1 transition-colors dark:text-gray-300 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600"
               @click="closeDeleteConfirm"
             >
-              <X class="wh-5" />
+              <LucideX class="wh-5" />
             </button>
           </div>
         </div>
@@ -415,7 +404,7 @@ onMounted(async () => {
             class="text-red-400 transition-colors hover:text-red-600 dark:hover:text-red-300"
             @click="periodStore.clearError()"
           >
-            <X class="h-4 w-4" />
+            <LucideX class="h-4 w-4" />
           </button>
         </div>
       </div>
@@ -444,7 +433,7 @@ onMounted(async () => {
             class="text-green-400 transition-colors hover:text-green-600 dark:hover:text-green-300"
             @click="hideSuccessMessage"
           >
-            <Check class="h-4 w-4" />
+            <LucideCheck class="h-4 w-4" />
           </button>
         </div>
       </div>

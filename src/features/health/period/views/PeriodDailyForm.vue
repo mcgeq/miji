@@ -5,8 +5,6 @@ import {
   Annoyed,
   BedDouble,
   Bike,
-  CalendarCheck,
-  Check,
   Cross,
   Droplet,
   DropletOff,
@@ -19,10 +17,6 @@ import {
   Shield,
   ShieldX,
   Smile,
-  Utensils,
-  VenusAndMars,
-  Waves,
-  X,
 } from 'lucide-vue-next';
 import { usePeriodStore } from '@/stores/periodStore';
 import { DateUtils } from '@/utils/date';
@@ -315,7 +309,7 @@ defineExpose({
       <!-- 日期选择 -->
       <div class="form-group flex items-center justify-between" :title="t('period.fields.date')">
         <label class="form-label">
-          <CalendarCheck class="wh-5" />
+          <LucideCalendarCheck class="wh-5" />
         </label>
         <input
           v-model="formData.date" type="date" class="modal-input-select w-3/4" :max="today" required
@@ -329,7 +323,7 @@ defineExpose({
       <!-- 经期流量 -->
       <div class="form-group flex items-center justify-between">
         <label class="form-label" :title="t('period.fields.flowLevel')">
-          <Droplet class="wh-5" />
+          <LucideDroplet class="wh-5" />
         </label>
         <div class="flex gap-2 w-3/4">
           <button
@@ -350,7 +344,7 @@ defineExpose({
       <!-- 心情状态 -->
       <div class="form-group flex justify-center justify-between">
         <label class="form-label" :title="t('period.fields.mood')">
-          <Smile class="wh-5" />
+          <LucideSmile class="wh-5" />
         </label>
         <div class="gap-2 grid grid-cols-6">
           <button
@@ -372,7 +366,7 @@ defineExpose({
       <div class="form-group">
         <div class="flex items-center justify-between">
           <label class="form-label" :title="t('period.fields.exerciseIntensity')">
-            <Dumbbell class="wh-5" />
+            <LucideDumbbell class="wh-5" />
           </label>
           <div class="flex gap-2">
             <button
@@ -395,7 +389,7 @@ defineExpose({
       <!-- 饮食记录 -->
       <div class="form-group">
         <label class="form-label" :title="t('period.fields.diet')">
-          <Utensils class="wh-5" />
+          <LucideUtensils class="wh-5" />
         </label>
         <textarea
           v-model="formData.diet" class="input-base h-20 w-full resize-none"
@@ -410,7 +404,7 @@ defineExpose({
       <div class="form-group">
         <div class="flex items-center justify-between">
           <label class="form-label w-1/3" :title="t('period.fields.waterIntake')">
-            <Waves class="wh-5" />
+            <LucideWaves class="wh-5" />
           </label>
           <input
             v-model.number="formData.waterIntake" type="number" class="input-base"
@@ -435,7 +429,7 @@ defineExpose({
       <!-- 睡眠时间 -->
       <div class="form-group flex items-center justify-between">
         <label class="form-label w-1/8" :title="t('period.fields.sleepHours')">
-          <BedDouble class="wh-5" />
+          <LucideBedDouble class="wh-5" />
         </label>
         <div class="flex gap-1 items-center">
           <input
@@ -460,7 +454,7 @@ defineExpose({
       <div class="form-group">
         <div class="mb-3 flex items-center justify-between">
           <label class="form-label" :title="t('period.fields.sexualActivity')">
-            <VenusAndMars class="wh-5" />
+            <LucideVenusAndMars class="wh-5" />
           </label>
           <div class="flex gap-4">
             <label class="flex gap-2 cursor-pointer items-center">
@@ -516,10 +510,10 @@ defineExpose({
       <!-- 操作按钮 -->
       <div class="pt-2 flex justify-center space-x-6">
         <button type="button" class="btn-secondary" :disabled="loading" @click="$emit('cancel')">
-          <X class="wh-5" />
+          <LucideX class="wh-5" />
         </button>
         <button type="submit" class="btn-primary" :disabled="loading || hasErrors()">
-          <Check class="wh-5" />
+          <LucideCheck class="wh-5" />
         </button>
       </div>
     </form>

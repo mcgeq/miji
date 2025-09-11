@@ -1,10 +1,4 @@
 <script setup lang="ts">
-import {
-  CalendarClock,
-  CalendarHeart,
-  CalendarSync,
-  TrendingUp,
-} from 'lucide-vue-next';
 import { usePeriodStore as usePeriodStores } from '@/stores/periodStore';
 import PeriodListView from './PeriodListView.vue';
 
@@ -168,7 +162,7 @@ const symptomSeverityText = computed(() => {
     <div class="stats-grid">
       <div class="stat-card current-phase">
         <div class="stat-header">
-          <CalendarHeart class="text-pink-500 wh-6" />
+          <LucideCalendarHeart class="text-pink-500 wh-6" />
           <h3 class="stat-title">
             当前阶段
           </h3>
@@ -188,7 +182,7 @@ const symptomSeverityText = computed(() => {
 
       <div class="stat-card next-period">
         <div class="stat-header">
-          <CalendarClock class="text-blue-500 wh-6" />
+          <LucideCalendarClock class="text-blue-500 wh-6" />
           <h3 class="stat-title">
             下次经期
           </h3>
@@ -219,7 +213,7 @@ const symptomSeverityText = computed(() => {
 
       <div class="stat-card cycle-info">
         <div class="stat-header">
-          <CalendarSync class="text-green-500 wh-6" />
+          <LucideCalendarSync class="text-green-500 wh-6" />
           <h3 class="stat-title">
             周期信息
           </h3>
@@ -240,7 +234,7 @@ const symptomSeverityText = computed(() => {
 
       <div class="stat-card trends">
         <div class="stat-header">
-          <TrendingUp class="text-purple-500 wh-6" />
+          <LucideTrendingUp class="text-purple-500 wh-6" />
           <h3 class="stat-title">
             趋势分析
           </h3>

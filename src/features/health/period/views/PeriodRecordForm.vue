@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { Edit, Info, Trash, Triangle, X } from 'lucide-vue-next';
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue';
 import InputError from '@/components/common/InputError.vue';
 import WarningDialog from '@/components/common/WarningDialog.vue';
@@ -506,7 +505,7 @@ defineExpose({
         <!-- 经期信息显示 -->
         <div v-if="showPeriodInfo" class="info-card">
           <div class="info-header">
-            <Info class="mr-2 wh-5" />
+            <LucideInfo class="mr-2 wh-5" />
             <span class="info-title">经期信息</span>
           </div>
           <div class="info-grid">
@@ -579,16 +578,16 @@ defineExpose({
               v-if="isEditing" type="button" class="btn-danger" :disabled="loading"
               @click="showDeleteConfirm = true"
             >
-              <Trash class="wh-5" />
+              <LucideTrash class="wh-5" />
             </button>
           </div>
           <div class="actions-right">
             <button type="button" class="btn-secondary" :disabled="loading" @click="handleCancel">
-              <X class="wh-5" />
+              <LucideX class="wh-5" />
             </button>
             <button type="submit" class="btn-primary" :disabled="!canSubmit || loading">
               <i v-if="loading" class="i-tabler-loader-2 mr-2 wh-4 animate-spin" />
-              <Edit class="wh-5" />
+              <LucideEdit class="wh-5" />
             </button>
           </div>
         </div>
@@ -614,7 +613,7 @@ defineExpose({
         </div>
       </div>
       <div class="warning-note">
-        <Triangle class="wh-5" />
+        <LucideTriangle class="wh-5" />
         <span>此操作无法撤销，请谨慎操作</span>
       </div>
     </ConfirmDialog>
