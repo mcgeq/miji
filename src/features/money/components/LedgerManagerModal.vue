@@ -1,14 +1,4 @@
 <script setup lang="ts">
-import {
-  Calendar,
-  CreditCard,
-  Edit,
-  HandCoins,
-  Plus,
-  Trash2,
-  Users,
-  X,
-} from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import { Lg } from '@/utils/debugLog';
 import { toast } from '@/utils/toast';
@@ -121,7 +111,7 @@ function formatDate(dateString?: string) {
           家庭账本管理
         </h2>
         <button class="text-gray-400 transition-colors hover:text-gray-600" @click="$emit('close')">
-          <X class="h-6 w-6" />
+          <LucideX class="h-6 w-6" />
         </button>
       </div>
 
@@ -136,7 +126,7 @@ function formatDate(dateString?: string) {
             class="text-white px-4 py-2 rounded-md bg-blue-600 flex gap-2 transition-colors items-center hover:bg-blue-700"
             @click="showCreateForm = true"
           >
-            <Plus class="h-4 w-4" />
+            <LucidePlus class="h-4 w-4" />
             创建新账本
           </button>
         </div>
@@ -170,15 +160,15 @@ function formatDate(dateString?: string) {
 
                 <div class="text-xs text-gray-500 flex gap-6 items-center">
                   <div class="flex gap-1 items-center">
-                    <CreditCard class="h-3 w-3" />
+                    <LucideCreditCard class="h-3 w-3" />
                     <span>货币: {{ ledger.baseCurrency?.symbol || '¥' }} {{ ledger.baseCurrency?.code || 'CNY' }}</span>
                   </div>
                   <div class="flex gap-1 items-center">
-                    <Users class="h-3 w-3" />
+                    <LucideUsers class="h-3 w-3" />
                     <span>成员: {{ ledger.members?.length || 0 }}人</span>
                   </div>
                   <div class="flex gap-1 items-center">
-                    <Calendar class="h-3 w-3" />
+                    <LucideCalendar class="h-3 w-3" />
                     <span>创建: {{ formatDate(ledger.createdAt) }}</span>
                   </div>
                 </div>
@@ -190,14 +180,14 @@ function formatDate(dateString?: string) {
                   title="编辑账本"
                   @click.stop="editLedger(ledger)"
                 >
-                  <Edit class="h-4 w-4" />
+                  <LucideEdit class="h-4 w-4" />
                 </button>
                 <button
                   class="text-gray-400 p-2 rounded-md transition-colors hover:text-red-600 hover:bg-red-50"
                   title="删除账本" :disabled="currentLedgerId === ledger.serialNum"
                   @click.stop="handleDeleteLedger(ledger)"
                 >
-                  <Trash2 class="h-4 w-4" />
+                  <LucideTrash2 class="h-4 w-4" />
                 </button>
               </div>
             </div>
@@ -206,7 +196,7 @@ function formatDate(dateString?: string) {
 
         <!-- 空状态 -->
         <div v-else class="py-16 text-center">
-          <HandCoins class="text-gray-300 mx-auto mb-6 h-20 w-20" />
+          <LucideHandCoins class="text-gray-300 mx-auto mb-6 h-20 w-20" />
           <h3 class="text-xl text-gray-900 font-medium mb-3">
             还没有账本
           </h3>

@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { Plus, Trash2, Users, X } from 'lucide-vue-next';
-import { computed, onMounted, ref } from 'vue';
 import { CURRENCY_CNY } from '@/constants/moneyConst';
 import { MoneyDb } from '@/services/money/money';
 import { DateUtils } from '@/utils/date';
@@ -232,7 +230,7 @@ onMounted(() => {
           {{ isEdit ? t('familyLedger.editLedger') : t('familyLedger.createNewLedger') }}
         </h2>
         <button class="text-gray-400 transition-colors hover:text-gray-600" @click="$emit('close')">
-          <X class="h-6 w-6" />
+          <LucideX class="h-6 w-6" />
         </button>
       </div>
 
@@ -315,13 +313,13 @@ onMounted(() => {
                 type="button" class="text-sm text-blue-600 flex gap-1 items-center hover:text-blue-700"
                 @click="addMember"
               >
-                <Plus class="h-4 w-4" />
+                <LucidePlus class="h-4 w-4" />
                 {{ t('familyLedger.addMember') }}
               </button>
             </div>
 
             <div v-if="form.members.length === 0" class="text-gray-500 py-6 text-center">
-              <Users class="text-gray-300 mx-auto mb-2 h-12 w-12" />
+              <LucideUsers class="text-gray-300 mx-auto mb-2 h-12 w-12" />
               <p>{{ t('familyLedger.noMembers') }}</p>
               <p class="text-sm">
                 {{ t('familyLedger.clickAddMember') }}
@@ -368,7 +366,7 @@ onMounted(() => {
                     type="button" class="text-red-500 p-1 hover:text-red-700" :disabled="form.members.length === 1"
                     @click="removeMember(index)"
                   >
-                    <Trash2 class="h-4 w-4" />
+                    <LucideTrash2 class="h-4 w-4" />
                   </button>
                 </div>
               </div>

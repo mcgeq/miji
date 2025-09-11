@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { Crown, Edit, LogIn, Trash, User, Users } from 'lucide-vue-next';
 import { DateUtils } from '@/utils/date';
 import { getRoleName } from '../utils/family';
 import type { FamilyLedger } from '@/schema/money';
@@ -53,7 +52,7 @@ function getBudgetCount(budgets: string): number {
 
     <div v-else-if="ledgers.length === 0" class="text-gray-400 flex-justify-center flex-col h-50">
       <div class="text-6xl mb-4 opacity-50">
-        <Users class="wh-5" />
+        <LucideUsers class="wh-5" />
       </div>
       <div class="text-base">
         暂无家庭账本
@@ -77,13 +76,13 @@ function getBudgetCount(budgets: string): number {
           <!-- 操作按钮 -->
           <div class="flex gap-1.5 items-center">
             <button class="action-btn" title="进入账本" @click="emit('enter', ledger)">
-              <LogIn class="h-4 w-4" />
+              <LucideLogIn class="h-4 w-4" />
             </button>
             <button class="action-btn" title="编辑" @click="emit('edit', ledger)">
-              <Edit class="h-4 w-4" />
+              <LucideEdit class="h-4 w-4" />
             </button>
             <button class="action-btn-danger" title="删除" @click="emit('delete', ledger.serialNum)">
-              <Trash class="h-4 w-4" />
+              <LucideTrash class="h-4 w-4" />
             </button>
           </div>
         </div>
@@ -98,8 +97,8 @@ function getBudgetCount(budgets: string): number {
               v-for="member in ledger.members.slice(0, 4)" :key="member.serialNum"
               class="text-xs px-2 py-1 rounded-full bg-gray-100 flex gap-1 items-center"
             >
-              <Crown v-if="member.isPrimary" class="text-yellow-500 h-3 w-3" />
-              <User v-else class="text-gray-500 h-3 w-3" />
+              <LucideCrown v-if="member.isPrimary" class="text-yellow-500 h-3 w-3" />
+              <LucideUser v-else class="text-gray-500 h-3 w-3" />
               <span>{{ member.name }}</span>
               <span class="text-gray-500">({{ getRoleName(member.role) }})</span>
             </div>

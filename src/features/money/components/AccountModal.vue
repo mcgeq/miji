@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { Check, X } from 'lucide-vue-next';
 import { useI18n } from 'vue-i18n';
 import ColorSelector from '@/components/common/ColorSelector.vue';
 import { COLORS_MAP } from '@/constants/moneyConst';
@@ -341,10 +340,10 @@ watch(() => form.initialBalance, newBalance => {
         <!-- 按钮 -->
         <div class="flex justify-center space-x-3">
           <button type="button" class="modal-btn-x" :disabled="isSubmitting" @click="closeModal">
-            <X class="wh-5" />
+            <LucideX class="wh-5" />
           </button>
           <button type="submit" class="modal-btn-check" :disabled="isSubmitting">
-            <Check class="wh-5" />
+            <LucideCheck class="wh-5" />
             <span v-if="isSubmitting">{{ t('common.actions.saving') }}</span>
           </button>
         </div>

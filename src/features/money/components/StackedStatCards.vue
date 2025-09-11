@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { ChevronLeft, ChevronRight, Pause, Play } from 'lucide-vue-next';
 import StatCard from './StatCard.vue';
 import type { CardData } from '../common/moneyCommon';
 import type { ComponentPublicInstance } from 'vue';
@@ -489,7 +488,7 @@ defineExpose({
         :disabled="isTransitioning || isPrevDisabled"
         @click="previousCard"
       >
-        <ChevronLeft class="h-5 w-5" />
+        <LucideChevronLeft class="h-5 w-5" />
       </button>
     </Transition>
 
@@ -501,7 +500,7 @@ defineExpose({
         :disabled="isTransitioning || isNextDisabled"
         @click="nextCard"
       >
-        <ChevronRight class="h-5 w-5" />
+        <LucideChevronRight class="h-5 w-5" />
       </button>
     </Transition>
 
@@ -513,8 +512,8 @@ defineExpose({
       :disabled="disabled"
       @click="toggleAutoPlay"
     >
-      <Pause v-if="isAutoPlaying" class="h-4 w-4" />
-      <Play v-else class="h-4 w-4" />
+      <LucidePause v-if="isAutoPlaying" class="h-4 w-4" />
+      <LucidePlay v-else class="h-4 w-4" />
     </button>
   </div>
 </template>

@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { Check, X } from 'lucide-vue-next';
 import { MemberUserRoleSchema } from '@/schema/userRole';
 import { DateUtils } from '@/utils/date';
 import { uuid } from '@/utils/uuid';
@@ -63,7 +62,7 @@ watch(
           {{ props.member ? '编辑成员' : '添加成员' }}
         </h4>
         <button class="text-gray-500 hover:text-gray-700" @click="closeModal">
-          <X class="h-5 w-5" />
+          <LucideX class="h-5 w-5" />
         </button>
       </div>
 
@@ -116,10 +115,10 @@ watch(
 
         <div class="pt-4 flex justify-center space-x-3">
           <button type="button" class="modal-btn-x" @click="closeModal">
-            <X class="wh-4" />
+            <LucideX class="wh-4" />
           </button>
           <button type="submit" class="modal-btn-check">
-            <Check class="wh-4" />
+            <LucideCheck class="wh-4" />
           </button>
         </div>
       </form>

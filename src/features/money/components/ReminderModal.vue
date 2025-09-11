@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import * as _ from 'es-toolkit/compat';
-import { Check, X } from 'lucide-vue-next';
 import z from 'zod';
 import ColorSelector from '@/components/common/ColorSelector.vue';
 import CurrencySelector from '@/components/common/money/CurrencySelector.vue';
@@ -708,7 +707,7 @@ watch(
         <!-- 操作按钮 -->
         <div class="flex justify-center space-x-3">
           <button type="button" class="modal-btn-x" :disabled="isSubmitting" @click="closeModal">
-            <X class="wh-5" />
+            <LucideX class="wh-5" />
           </button>
           <button
             type="submit" class="modal-btn-check" :disabled="!isFormValid || isSubmitting"
@@ -718,7 +717,7 @@ watch(
               <div class="border-b-2 border-white rounded-full h-5 w-5 animate-spin" />
             </template>
             <template v-else>
-              <Check class="wh-5" />
+              <LucideCheck class="wh-5" />
             </template>
           </button>
         </div>

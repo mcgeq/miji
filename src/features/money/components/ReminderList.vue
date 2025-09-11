@@ -3,10 +3,6 @@ import {
   AlertCircle,
   CheckCircle,
   Clock,
-  Edit,
-  Repeat,
-  RotateCcw,
-  Trash,
 } from 'lucide-vue-next';
 import SimplePagination from '@/components/common/SimplePagination.vue';
 import { useSort } from '@/composables/useSortable';
@@ -192,7 +188,7 @@ defineExpose({
         class="text-sm text-gray-700 px-3 py-1.5 rounded-md bg-gray-200 transition-colors hover:bg-gray-300"
         @click="resetFilters"
       >
-        <RotateCcw class="mr-1 wh-5" />
+        <LucideRotateCcw class="mr-1 wh-5" />
       </button>
     </div>
 
@@ -241,19 +237,19 @@ defineExpose({
                 v-if="!reminder.isPaid" class="money-option-btn hover:(text-green-500 border-green-500)"
                 :title="t('financial.transaction.markPaid')" @click="emit('markPaid', reminder.serialNum, !reminder.isPaid)"
               >
-                <CheckCircle class="h-4 w-4" />
+                <LucideCheckCircle class="h-4 w-4" />
               </button>
               <button
                 class="money-option-btn hover:(text-blue-500 border-blue-500)" :title="t('common.actions.edit')"
                 @click="emit('edit', reminder)"
               >
-                <Edit class="h-4 w-4" />
+                <LucideEdit class="h-4 w-4" />
               </button>
               <button
                 class="money-option-btn hover:(text-red-500 border-red-500)"
                 :title="t('common.actions.delete')" @click="emit('delete', reminder.serialNum)"
               >
-                <Trash class="h-4 w-4" />
+                <LucideTrash class="h-4 w-4" />
               </button>
             </div>
           </div>
@@ -286,7 +282,7 @@ defineExpose({
         </div>
 
         <div class="text-sm text-gray-600 mb-2 flex gap-2 items-center justify-end">
-          <Repeat class="h-4 w-4" />
+          <LucideRepeat class="h-4 w-4" />
           <span>{{ getRepeatTypeName(reminder.repeatPeriod) }}</span>
         </div>
 

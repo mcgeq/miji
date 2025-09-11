@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { Check, Crown, Edit, Plus, Trash, User, X } from 'lucide-vue-next';
 import { CURRENCY_CNY } from '@/constants/moneyConst';
 import { MoneyDb } from '@/services/money/money';
 import { DateUtils } from '@/utils/date';
@@ -118,7 +117,7 @@ watch(
           {{ props.ledger ? '编辑家庭账本' : '创建家庭账本' }}
         </h3>
         <button class="text-gray-500 hover:text-gray-700" @click="closeModal">
-          <X class="h-6 w-6" />
+          <LucideX class="h-6 w-6" />
         </button>
       </div>
 
@@ -148,7 +147,7 @@ watch(
           <div class="flex items-center justify-between">
             <label class="text-sm text-gray-700 font-medium">成员管理</label>
             <button type="button" class="text-xs btn-secondary px-2 py-1" @click="showMemberModal = true">
-              <Plus class="mr-1 h-3 w-3" />
+              <LucidePlus class="mr-1 h-3 w-3" />
               添加成员
             </button>
           </div>
@@ -159,20 +158,20 @@ watch(
               class="p-2 rounded-lg bg-gray-50 flex items-center justify-between"
             >
               <div class="flex gap-2 items-center">
-                <Crown v-if="member.isPrimary" class="text-yellow-500 h-4 w-4" />
-                <User v-else class="text-gray-500 h-4 w-4" />
+                <LucideCrown v-if="member.isPrimary" class="text-yellow-500 h-4 w-4" />
+                <LucideUser v-else class="text-gray-500 h-4 w-4" />
                 <span class="text-sm font-medium">{{ member.name }}</span>
                 <span class="text-xs text-gray-500">({{ getRoleName(member.role) }})</span>
               </div>
               <div class="flex gap-1">
                 <button type="button" class="action-btn" title="编辑" @click="editMember(index)">
-                  <Edit class="h-3 w-3" />
+                  <LucideEdit class="h-3 w-3" />
                 </button>
                 <button
                   type="button" class="action-btn-danger" title="移除" :disabled="member.isPrimary"
                   @click="removeMember(index)"
                 >
-                  <Trash class="h-3 w-3" />
+                  <LucideTrash class="h-3 w-3" />
                 </button>
               </div>
             </div>
@@ -182,10 +181,10 @@ watch(
         <!-- 操作按钮 -->
         <div class="pt-4 flex justify-center space-x-3">
           <button type="button" class="modal-btn-x" @click="closeModal">
-            <X class="wh-5" />
+            <LucideX class="wh-5" />
           </button>
           <button type="submit" class="modal-btn-check">
-            <Check class="wh-5" />
+            <LucideCheck class="wh-5" />
           </button>
         </div>
       </form>

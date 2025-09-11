@@ -1,19 +1,12 @@
 <script setup lang="ts">
 import {
-  ArrowUpDown,
-  Ban,
-  CheckCircle,
   Cloud,
   CreditCard,
   DollarSign,
-  Edit,
   PiggyBank,
-  RotateCcw,
-  Trash,
   TrendingUp,
   Wallet,
   Wallet2,
-  XCircle,
 } from 'lucide-vue-next';
 import SimplePagination from '@/components/common/SimplePagination.vue';
 import { DateUtils } from '@/utils/date';
@@ -244,7 +237,7 @@ function getAccountTypeName(type: AccountType): string {
                   : 'bg-white text-gray-600 border-gray-300 hover:border-green-400',
               ]" @click="setActiveFilter('active')"
             >
-              <CheckCircle class="mr-1 h-3 w-3" />
+              <LucideCheckCircle class="mr-1 h-3 w-3" />
               {{ t('common.status.active') }}<span class="text-xs ml-1 opacity-75">({{ activeAccounts }})</span>
             </button>
             <button
@@ -254,7 +247,7 @@ function getAccountTypeName(type: AccountType): string {
                   : 'bg-white text-gray-600 border-gray-300 hover:border-gray-400',
               ]" @click="setActiveFilter('inactive')"
             >
-              <XCircle class="mr-1 h-3 w-3" />
+              <LucideXCircle class="mr-1 h-3 w-3" />
               {{ t('common.status.inactive') }}<span class="text-xs ml-1 opacity-75">({{ inactiveAccounts }})</span>
             </button>
           </div>
@@ -316,7 +309,7 @@ function getAccountTypeName(type: AccountType): string {
             class="text-gray-600 p-1.5 transition-colors hover:text-blue-500" :title="sortOrder === 'asc' ? t('common.sorting.asc') : t('common.sorting.desc')"
             @click="toggleSortOrder"
           >
-            <ArrowUpDown class="h-4 w-4" :class="sortOrder === 'desc' && 'rotate-180'" />
+            <LucideArrowUpDown class="h-4 w-4" :class="sortOrder === 'desc' && 'rotate-180'" />
           </button>
         </div>
 
@@ -325,7 +318,7 @@ function getAccountTypeName(type: AccountType): string {
           class="text-sm text-gray-700 px-3 py-1.5 rounded-md bg-gray-200 transition-colors hover:bg-gray-300"
           @click="resetFilters"
         >
-          <RotateCcw class="mr-1 wh-5" />
+          <LucideRotateCcw class="mr-1 wh-5" />
         </button>
       </div>
     </div>
@@ -337,7 +330,7 @@ function getAccountTypeName(type: AccountType): string {
 
     <div v-else-if="paginatedAccounts.length === 0" class="text-gray-400 flex-justify-center flex-col h-50">
       <div class="text-6xl mb-4 opacity-50">
-        <CreditCard class="wh-5" />
+        <LucideCreditCard class="wh-5" />
       </div>
       <div class="text-base">
         {{ filteredAccounts.length === 0 ? t('financial.messages.noPatternAccount') : t('financial.noAccount') }}
@@ -369,19 +362,19 @@ function getAccountTypeName(type: AccountType): string {
               :title="account.isActive ? t('common.status.stop') : t('common.status.enabled')"
               @click="emit('toggleActive', account.serialNum, !account.isActive)"
             >
-              <Ban class="h-4 w-4" />
+              <LucideBan class="h-4 w-4" />
             </button>
             <button
               class="money-option-btn hover:(text-blue-500 border-blue-500)" :title="t('common.actions.edit')"
               @click="emit('edit', account)"
             >
-              <Edit class="h-4 w-4" />
+              <LucideEdit class="h-4 w-4" />
             </button>
             <button
               class="money-option-btn hover:(text-red-500 border-red-500)"
               :title="t('common.actions.delete')" @click="emit('delete', account.serialNum)"
             >
-              <Trash class="h-4 w-4" />
+              <LucideTrash class="h-4 w-4" />
             </button>
           </div>
         </div>
@@ -406,9 +399,15 @@ function getAccountTypeName(type: AccountType): string {
     <!-- 分页组件 -->
     <div v-if="totalPages > 1" class="mt-6 flex justify-center">
       <SimplePagination
-        :current-page="currentPage" :total-pages="totalPages" :total-items="filteredAccounts.length"
-        :page-size="pageSize" :show-total="false" :show-page-size="true" :page-size-options="[4, 8, 12, 20]"
-        @page-change="handlePageChange" @page-size-change="handlePageSizeChange"
+        :current-page="currentPage"
+        :total-pages="totalPages"
+        :total-items="filteredAccounts.length"
+        :page-size="pageSize"
+        :show-total="false"
+        :show-page-size="true"
+        :page-size-options="[4, 8, 12, 20]"
+        @page-change="handlePageChange"
+        @page-size-change="handlePageSizeChange"
       />
     </div>
   </div>
