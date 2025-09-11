@@ -1,0 +1,22 @@
+[package]
+name = "healths"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+tauri = { workspace = true }
+serde = { workspace = true }
+chrono = { workspace = true }
+validator = { workspace = true }
+entity = { workspace = true }
+common = { workspace = true }
+sea-orm = { workspace = true }
+lazy_static = { workspace = true }
+regex = { workspace = true }
+snafu = { workspace = true }
+serde_json = { workspace = true }
+num-traits = { workspace = true }
+tracing = { workspace = true }
+once_cell = { workspace = true }
+tokio = { workspace = true }
+macros = { workspace = true }
