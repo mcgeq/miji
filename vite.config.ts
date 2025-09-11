@@ -40,6 +40,7 @@ export default defineConfig(async () => ({
         'vue',
         'vue-i18n',
         '@vueuse/core',
+        'pinia',
         VueRouterAutoImports,
         {
           // add any other imports you were relying on
@@ -47,7 +48,7 @@ export default defineConfig(async () => ({
         },
       ],
       dts: 'src/auto-imports.d.ts',
-      dirs: ['src/stores'],
+      dirs: ['src/stores', 'src/composables'],
       vueTemplate: true,
     }),
     // https://github.com/intlify/bundle-tools/tree/main/packages/unplugin-vue-i18n
