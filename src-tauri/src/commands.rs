@@ -18,6 +18,7 @@ use common::{
     jwt::JwtHelper,
     response::ApiResponse,
 };
+use healths::command as health_cmd;
 use money::command as money_cmd;
 use tauri::{Builder, State, Wry};
 use todos::command as todo_cmd;
@@ -75,6 +76,14 @@ pub fn init_commands(builder: Builder<Wry>) -> Builder<Wry> {
         money_cmd::bil_reminder_delete,
         money_cmd::bil_reminder_list,
         money_cmd::bil_reminder_list_paged,
+        health_cmd::period_record_create,
+        health_cmd::period_record_update,
+        health_cmd::period_record_delete,
+        health_cmd::period_record_list_paged,
+        health_cmd::period_daily_record_create,
+        health_cmd::period_daily_record_update,
+        health_cmd::period_daily_record_delete,
+        health_cmd::period_daily_record_list_paged,
     ])
 }
 
