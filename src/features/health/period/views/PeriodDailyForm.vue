@@ -191,7 +191,7 @@ async function handleSubmit() {
   loading.value = true;
 
   try {
-    await periodStore.upsertDailyRecord(formData.value);
+    await periodStore.updateDailyRecord(formData.value);
     const recordDateTime = DateUtils.getLocalISODateTimeWithOffset();
     // 模拟创建完整记录对象用于回调
     const record: PeriodDailyRecords = {
@@ -253,7 +253,7 @@ function initializeForm() {
     };
   } else if (props.date) {
     // 尝试加载该日期的现有记录
-    const existingRecord = periodStore.getDailyRecord(props.date);
+    const existingRecord = periodStore.periodDailyRecordGet(props.date);
     if (existingRecord) {
       // 递归调用，但这次 props.record 会有值
       formData.value = {
@@ -279,7 +279,7 @@ watch(
   newDate => {
     if (newDate && !props.record) {
       formData.value.date = newDate;
-      const existingRecord = periodStore.getDailyRecord(newDate);
+      const existingRecord = periodStore.periodDailyRecordGet(newDate);
       if (existingRecord) {
         initializeForm();
       }

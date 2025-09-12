@@ -21,7 +21,7 @@
   "formatter": {
     "enabled": true,
     "indentStyle": "space",
-    "lineWidth": 80,
+    "lineWidth": 100,
     "indentWidth": 2,
     "lineEnding": "lf",
     "useEditorconfig": true,
@@ -86,7 +86,7 @@
     },
     "formatter": {
       "quoteStyle": "single",
-      "lineWidth": 80,
+      "lineWidth": 100,
       "trailingCommas": "all",
       "bracketSameLine": true,
       "semicolons": "always",

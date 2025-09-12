@@ -194,7 +194,7 @@ function exportData() {
   try {
     PeriodDataManager.exportToJSON({
       periodRecords: periodStore.periodRecords,
-      dailyRecords: periodStore.dailyRecords,
+      dailyRecords: periodStore.periodDailyRecords,
       settings: periodStore.settings,
     });
     showMessage('数据导出成功', true);

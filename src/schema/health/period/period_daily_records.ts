@@ -8,14 +8,7 @@ import {
 } from '@/schema/common';
 
 // 扩展经期相关类型定义
-export const MoodSchema = z.enum([
-  'Happy',
-  'Sad',
-  'Angry',
-  'Anxious',
-  'Calm',
-  'Irritable',
-]);
+export const MoodSchema = z.enum(['Happy', 'Sad', 'Angry', 'Anxious', 'Calm', 'Irritable']);
 export type Mood = z.infer<typeof MoodSchema>;
 
 export const PainTypeSchema = z.enum([
@@ -26,20 +19,9 @@ export const PainTypeSchema = z.enum([
   'Bloating',
 ]);
 export type PainType = z.infer<typeof PainTypeSchema>;
-export const ContraceptionMethodSchema = z.enum([
-  'None',
-  'Condom',
-  'Pill',
-  'Iud',
-  'Other',
-]);
+export const ContraceptionMethodSchema = z.enum(['None', 'Condom', 'Pill', 'Iud', 'Other']);
 export type ContraceptionMethod = z.infer<typeof ContraceptionMethodSchema>;
-export const PeriodPhaseSchema = z.enum([
-  'Menstrual',
-  'Follicular',
-  'Ovulation',
-  'Luteal',
-]);
+export const PeriodPhaseSchema = z.enum(['Menstrual', 'Follicular', 'Ovulation', 'Luteal']);
 export type PeriodPhase = z.infer<typeof PeriodPhaseSchema>;
 
 // 增强的经期记录类型
@@ -59,4 +41,13 @@ export const PeriodDailyRecordsSchema = z.object({
   createdAt: DateTimeSchema,
   updatedAt: DateTimeSchema.optional().nullable(),
 });
+export const PeriodDailyRecordCreateSchema = PeriodDailyRecordsSchema.omit({
+  serialNum: true,
+  createdAt: true,
+  updatedAt: true,
+}).strict();
+export const PeriodDailyRecordUpdateSchema = PeriodDailyRecordCreateSchema.partial().nullable();
+
 export type PeriodDailyRecords = z.infer<typeof PeriodDailyRecordsSchema>;
+export type PeriodDailyRecordCreate = z.infer<typeof PeriodDailyRecordCreateSchema>;
+export type PeriodDailyRecordUpdate = z.infer<typeof PeriodDailyRecordUpdateSchema>;

@@ -12,6 +12,14 @@ export const PeriodRecordsSchema = z.object({
   updatedAt: DateTimeSchema.optional().nullable(),
 });
 
+export const PeriodRecordCreateSchema = PeriodRecordsSchema.pick({
+  notes: true,
+  startDate: true,
+  endDate: true,
+}).strict();
+
+export const PeriodRecordUpdateSchema = PeriodRecordCreateSchema.partial();
+
 // 经期统计数据类型
 export interface PeriodStats {
   averageCycleLength: number;
@@ -53,3 +61,5 @@ export interface PeriodSettings {
   };
 }
 export type PeriodRecords = z.infer<typeof PeriodRecordsSchema>;
+export type PeriodRecordCreate = z.infer<typeof PeriodRecordCreateSchema>;
+export type PeriodRecordUpdate = z.infer<typeof PeriodRecordUpdateSchema>;

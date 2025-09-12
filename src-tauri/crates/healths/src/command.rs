@@ -19,6 +19,19 @@ use crate::{
 
 // ========================== Start ==========================
 // Period Records
+pub async fn period_record_get(
+    state: State<'_, AppState>,
+    serial_num: String,
+) -> Result<ApiResponse<PeriodRecords>, String> {
+    let service = get_period_record_service();
+    Ok(ApiResponse::from_result(
+        service
+            .period_record_get(&state.db, serial_num)
+            .await
+            .map(PeriodRecords::from),
+    ))
+}
+
 #[tauri::command]
 pub async fn period_record_create(
     state: State<'_, AppState>,
@@ -81,6 +94,20 @@ pub async fn period_record_list_paged(
 // ========================== End ==========================
 
 // ========================== Start ==========================
+#[tauri::command]
+pub async fn period_daily_record_get(
+    state: State<'_, AppState>,
+    serial_num: String,
+) -> Result<ApiResponse<PeriodDailyRecord>, String> {
+    let service = get_period_daily_record_service();
+    Ok(ApiResponse::from_result(
+        service
+            .period_daily_record_get(&state.db, serial_num)
+            .await
+            .map(PeriodDailyRecord::from),
+    ))
+}
+
 #[tauri::command]
 pub async fn period_daily_record_create(
     state: State<'_, AppState>,

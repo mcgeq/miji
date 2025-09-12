@@ -80,6 +80,7 @@ pub fn init_commands(builder: Builder<Wry>) -> Builder<Wry> {
         health_cmd::period_record_update,
         health_cmd::period_record_delete,
         health_cmd::period_record_list_paged,
+        health_cmd::period_daily_record_get,
         health_cmd::period_daily_record_create,
         health_cmd::period_daily_record_update,
         health_cmd::period_daily_record_delete,

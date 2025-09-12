@@ -51,7 +51,7 @@ const daysUntilNext = computed(() => {
 });
 
 const todayRecord = computed(() => {
-  const records = periodStore.dailyRecords;
+  const records = periodStore.periodDailyRecords;
   const today = selectedDate.value;
 
   // 每次都重新查找，确保获取最新数据
@@ -122,7 +122,7 @@ async function handleDailySubmit(record: PeriodDailyRecords) {
     Lg.i(
       'PeriodManagement',
       'Daily record saved, total records:',
-      periodStore.dailyRecords.length,
+      periodStore.periodDailyRecords.length,
     );
   } catch (error) {
     Lg.e('PeriodManagement', `${t('period.saveFailed')}:`, error);
@@ -148,7 +148,7 @@ async function confirmDelete() {
     Lg.i('PeriodManagement', 'Deleting record:', deletingId);
 
     // 使用专门的删除日常记录方法
-    await periodStore.deleteDailyRecord(deletingId);
+    await periodStore.periodDailyRecordDelete(deletingId);
 
     // 等待一个 tick 确保状态更新完成
     await nextTick();
@@ -162,7 +162,7 @@ async function confirmDelete() {
     Lg.i(
       'PeriodManagement',
       'Delete completed, records count:',
-      periodStore.dailyRecords.length,
+      periodStore.periodDailyRecords.length,
     );
   } catch (error) {
     console.error(`${t('messages.deleteFailed')}:`, error);
@@ -183,7 +183,7 @@ function hideSuccessMessage() {
 }
 
 watch(
-  () => periodStore.dailyRecords,
+  () => periodStore.periodDailyRecords,
   (newRecords, oldRecords) => {
     Lg.i('PeriodManagement', 'Daily records changed:', {
       oldCount: oldRecords?.length || 0,

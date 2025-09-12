@@ -298,7 +298,7 @@ async function submitForm() {
 
   try {
     if (isEditing.value && props.record) {
-      await periodStore.updatePeriodRecord(props.record.serialNum, {
+      await periodStore.periodRecordUpdate(props.record.serialNum, {
         ...formData.value,
         // 这里可以添加症状数据的保存逻辑
       });
@@ -311,7 +311,7 @@ async function submitForm() {
 
       emit('submit', updatedRecord);
     } else {
-      const record = await periodStore.addPeriodRecord({
+      const record = await periodStore.periodRecordCreate({
         ...formData.value,
         // 这里可以添加症状数据的保存逻辑
       });
@@ -331,7 +331,7 @@ async function handleDelete() {
   loading.value = true;
 
   try {
-    await periodStore.deletePeriodRecord(props.record.serialNum);
+    await periodStore.periodRecordDelete(props.record.serialNum);
     emit('delete', props.record.serialNum);
   } catch (error) {
     console.error('Failed to delete period record:', error);
