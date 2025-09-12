@@ -323,10 +323,16 @@ onMounted(async () => {
     </div>
 
     <!-- 经期记录表单弹窗 -->
-    <div v-if="showRecordForm" class="modal-overlay" @click.self="closeRecordForm">
+    <div
+      v-if="showRecordForm"
+      class="modal-overlay"
+      @click.self="closeRecordForm"
+    >
       <div class="modal-content">
         <PeriodRecordForm
-          :record="editingRecord" @submit="handleRecordSubmit" @delete="handleRecordDelete"
+          :record="editingRecord"
+          @submit="handleRecordSubmit"
+          @delete="handleRecordDelete"
           @cancel="closeRecordForm"
         />
       </div>

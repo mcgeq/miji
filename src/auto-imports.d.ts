@@ -7,6 +7,8 @@
 export {}
 declare global {
   const EffectScope: typeof import('vue')['EffectScope']
+  const HealthDbError: typeof import('./stores/periodStore')['HealthDbError']
+  const HealthStoreErrorCode: typeof import('./stores/periodStore')['HealthStoreErrorCode']
   const MoneyStoreError: typeof import('./stores/moneyStore')['MoneyStoreError']
   const MoneyStoreErrorCode: typeof import('./stores/moneyStore')['MoneyStoreErrorCode']
   const acceptHMRUpdate: typeof import('pinia')['acceptHMRUpdate']
@@ -351,6 +353,9 @@ declare global {
   // @ts-ignore
   export type { MoneyStoreErrorCode, MoneyStoreError } from './stores/moneyStore'
   import('./stores/moneyStore')
+  // @ts-ignore
+  export type { HealthStoreErrorCode, HealthDbError } from './stores/periodStore'
+  import('./stores/periodStore')
 }
 
 // for vue template auto import
@@ -359,6 +364,8 @@ declare module 'vue' {
   interface GlobalComponents {}
   interface ComponentCustomProperties {
     readonly EffectScope: UnwrapRef<typeof import('vue')['EffectScope']>
+    readonly HealthDbError: UnwrapRef<typeof import('./stores/periodStore')['HealthDbError']>
+    readonly HealthStoreErrorCode: UnwrapRef<typeof import('./stores/periodStore')['HealthStoreErrorCode']>
     readonly MoneyStoreError: UnwrapRef<typeof import('./stores/moneyStore')['MoneyStoreError']>
     readonly MoneyStoreErrorCode: UnwrapRef<typeof import('./stores/moneyStore')['MoneyStoreErrorCode']>
     readonly acceptHMRUpdate: UnwrapRef<typeof import('pinia')['acceptHMRUpdate']>
