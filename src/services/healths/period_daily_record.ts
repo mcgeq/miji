@@ -31,10 +31,10 @@ export class PeriodDailyRecordMapper extends BaseMapper<
 > {
   protected entityName = 'periodRecord';
 
-  async create(account: PeriodDailyRecordCreate): Promise<PeriodDailyRecords> {
+  async create(periodDailyRecord: PeriodDailyRecordCreate): Promise<PeriodDailyRecords> {
     try {
       return await invokeCommand<PeriodDailyRecords>('period_daily_record_create', {
-        data: account,
+        data: periodDailyRecord,
       });
     } catch (error) {
       this.handleError('period_daily_record_create', error);
@@ -43,7 +43,7 @@ export class PeriodDailyRecordMapper extends BaseMapper<
 
   async getById(serialNum: string): Promise<PeriodDailyRecords | null> {
     try {
-      const account = await invokeCommand<PeriodDailyRecords>('period_daaily_record_get', {
+      const account = await invokeCommand<PeriodDailyRecords>('period_daily_record_get', {
         serialNum,
       });
       return account;
@@ -62,11 +62,14 @@ export class PeriodDailyRecordMapper extends BaseMapper<
     }
   }
 
-  async update(serialNum: string, account: PeriodDailyRecordUpdate): Promise<PeriodDailyRecords> {
+  async update(
+    serialNum: string,
+    periodDailyRecord: PeriodDailyRecordUpdate,
+  ): Promise<PeriodDailyRecords> {
     try {
       const result = await invokeCommand<PeriodDailyRecords>('period_daily_record_update', {
         serialNum,
-        data: account,
+        data: periodDailyRecord,
       });
       return result;
     } catch (error) {

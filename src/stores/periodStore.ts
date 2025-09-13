@@ -323,6 +323,12 @@ export const usePeriodStore = defineStore('period', {
     },
 
     // ==================== PeriodDailyRecord Start ====================
+    async periodDailyRecorAll() {
+      return this.withLoadingAndError(async () => {
+        await this.updatePeriodDailyRecords();
+      }, 'Failed to get daily period record');
+    },
+
     async periodDailyRecordGet(serialNum: string) {
       return this.withLoadingAndError(async () => {
         const result = await HealthsDb.getPeriodDailyRecord(serialNum);
@@ -338,7 +344,7 @@ export const usePeriodStore = defineStore('period', {
         await this.updatePeriodDailyRecords();
         this.lastFetch = null;
         return result;
-      }, 'Failed to add period record');
+      }, 'Failed to create period record');
     },
 
     async periodDailyRecordUpdate(serialNum: string, updates: PeriodDailyRecordUpdate) {
@@ -359,6 +365,13 @@ export const usePeriodStore = defineStore('period', {
     // ==================== PeriodDailyRecord End====================
 
     // ==================== PeriodRecord  Start ====================
+    async periodRecordAll() {
+      return this.withLoadingAndError(async () => {
+        await this.updatePeriodRecords();
+        this.lastFetch = null;
+      }, 'Failed to get period record');
+    },
+
     async periodRecordGet(serialNum: string) {
       return this.withLoadingAndError(async () => {
         const result = await HealthsDb.getPeriodRecord(serialNum);
@@ -374,7 +387,7 @@ export const usePeriodStore = defineStore('period', {
         await this.updatePeriodRecords();
         this.lastFetch = null;
         return result;
-      }, 'Failed to add period record');
+      }, 'Failed to create period record');
     },
 
     async periodRecordUpdate(serialNum: string, updates: PeriodRecordUpdate) {

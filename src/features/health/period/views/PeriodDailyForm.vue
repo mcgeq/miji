@@ -18,18 +18,21 @@ import {
   ShieldX,
   Smile,
 } from 'lucide-vue-next';
-import { usePeriodStore } from '@/stores/periodStore';
 import { DateUtils } from '@/utils/date';
 import { Lg } from '@/utils/debugLog';
-import { uuid } from '@/utils/uuid';
 import { usePeriodValidation } from '../composables/usePeriodValidation';
-import type { ExerciseIntensity, FlowLevel } from '@/schema/common';
 import type {
-  ContraceptionMethod,
-  Mood,
+  PeriodDailyRecordCreate,
   PeriodDailyRecords,
+  PeriodDailyRecordUpdate,
 } from '@/schema/health/period';
+import type { Component } from 'vue';
 
+interface PeriodOption<T extends string | number> {
+  value: T;
+  label: string;
+  icon: Component;
+}
 // Props
 interface Props {
   date?: string;
@@ -43,39 +46,31 @@ const props = withDefaults(defineProps<Props>(), {
 
 // Emits
 const emit = defineEmits<{
-  submit: [record: PeriodDailyRecords];
+  create: [record: PeriodDailyRecordCreate];
+  update: [serialNum: string, record: PeriodDailyRecordUpdate];
   cancel: [];
 }>();
 
 const { t } = useI18n();
 
 // Store & Composables
-const periodStore = usePeriodStore();
 const { validateDailyRecord, getFieldErrors, hasErrors, clearValidationErrors }
   = usePeriodValidation();
 
 // Reactive state
 const loading = ref(false);
-const today = computed(() => new Date().toISOString().split('T')[0]);
+const today = computed(() => DateUtils.getTodayDate());
 
 const isEditing = computed(() => !!props.record);
 
 // Form data
-const formData = ref({
-  date: props.date || today.value,
-  flowLevel: null as FlowLevel | null,
-  mood: null as Mood | null,
-  exerciseIntensity: 'None' as ExerciseIntensity,
-  diet: '',
-  waterIntake: undefined as number | undefined,
-  sleepHours: undefined as number | undefined,
-  sexualActivity: false,
-  contraceptionMethod: 'None' as ContraceptionMethod, // This was missing!
-  notes: '',
+const formData = reactive<PeriodDailyRecords>({
+  ...getPeriodDailyRecordDefault(),
+  ...(props.record ? structuredClone(props.record) : {}),
 });
 
 // Options
-const flowLevels = [
+const FLOW_LEVELS: PeriodOption<'Light' | 'Medium' | 'Heavy'>[] = [
   {
     value: 'Light' as const,
     label: t('period.flowLevels.light'),
@@ -93,7 +88,7 @@ const flowLevels = [
   },
 ];
 
-const moods = [
+const MOODS: PeriodOption<'Happy' | 'Calm' | 'Sad' | 'Angry' | 'Anxious' | 'Irritable'>[] = [
   {
     value: 'Happy' as const,
     label: t('period.moods.happy'),
@@ -126,7 +121,7 @@ const moods = [
   },
 ];
 
-const exerciseIntensities = [
+const EXERCISE_INTENSITIES: PeriodOption<'None' | 'Light' | 'Medium' | 'Heavy'>[] = [
   {
     value: 'None' as const,
     label: t('period.exerciseIntensities.none'),
@@ -149,7 +144,7 @@ const exerciseIntensities = [
   },
 ];
 
-const contraceptionMethods = [
+const CONTRACEPTION_METHODS: PeriodOption<'None' | 'Condom' | 'Pill' | 'Iud' | 'Other'>[] = [
   {
     value: 'None' as const,
     label: t('period.contraceptionMethods.none'),
@@ -177,42 +172,41 @@ const contraceptionMethods = [
   },
 ];
 
-const waterPresets = [1000, 1500, 2000, 2500];
-const sleepPresets = [6, 7, 8, 9];
+const WATER_PRESETS = [1000, 1500, 2000, 2500] as const;
+const SLEEP_PRESETS = [6, 7, 8, 9] as const;
 
 // Methods
 async function handleSubmit() {
   clearValidationErrors();
 
-  if (!validateDailyRecord(formData.value)) {
+  if (!validateDailyRecord(formData)) {
     return;
   }
 
   loading.value = true;
 
   try {
-    await periodStore.updateDailyRecord(formData.value);
-    const recordDateTime = DateUtils.getLocalISODateTimeWithOffset();
     // 模拟创建完整记录对象用于回调
-    const record: PeriodDailyRecords = {
-      serialNum: props.record?.serialNum || uuid(38),
+    const record: PeriodDailyRecordCreate = {
       periodSerialNum:
         props.record?.periodSerialNum || 'period_current'.padEnd(38, '0'),
-      date: formData.value.date,
-      flowLevel: formData.value.flowLevel,
-      mood: formData.value.mood,
-      exerciseIntensity: formData.value.exerciseIntensity,
-      diet: formData.value.diet,
-      waterIntake: formData.value.waterIntake,
-      sleepHours: formData.value.sleepHours,
-      sexualActivity: formData.value.sexualActivity,
-      contraceptionMethod: formData.value.contraceptionMethod,
-      notes: formData.value.notes || '',
-      createdAt: props.record?.createdAt || recordDateTime,
-      updatedAt: recordDateTime,
+      date: formData.date,
+      flowLevel: formData.flowLevel,
+      mood: formData.mood,
+      exerciseIntensity: formData.exerciseIntensity,
+      diet: formData.diet,
+      waterIntake: formData.waterIntake,
+      sleepHours: formData.sleepHours,
+      sexualActivity: formData.sexualActivity,
+      contraceptionMethod: formData.contraceptionMethod,
+      notes: formData.notes || '',
     };
 
-    emit('submit', record);
+    if (props.record) {
+      emit('update', props.record.serialNum, record);
+    } else {
+      emit('create', record);
+    }
   } catch (error) {
     Lg.e('Period', 'Failed to save daily record:', error);
   } finally {
@@ -220,82 +214,38 @@ async function handleSubmit() {
   }
 }
 
-function resetForm() {
-  formData.value = {
-    date: props.date || today.value,
+function getPeriodDailyRecordDefault(): PeriodDailyRecords {
+  return {
+    serialNum: '',
+    periodSerialNum: '',
+    date: DateUtils.getTodayDate(),
     flowLevel: null,
-    mood: null,
-    exerciseIntensity: 'None',
-    diet: '',
-    waterIntake: undefined,
-    sleepHours: undefined,
     sexualActivity: false,
     contraceptionMethod: 'None',
-    notes: '',
+    exerciseIntensity: 'None',
+    diet: '',
+    mood: 'Happy',
+    waterIntake: 0,
+    sleepHours: 0,
+    notes: null,
+    createdAt: '',
+    updatedAt: null,
   };
-  clearValidationErrors();
-}
-
-// Initialize form data from existing record
-function initializeForm() {
-  if (props.record) {
-    formData.value = {
-      date: props.record.date,
-      flowLevel: props.record.flowLevel ?? null,
-      mood: props.record.mood ?? null,
-      exerciseIntensity: props.record.exerciseIntensity,
-      diet: props.record.diet,
-      waterIntake: props.record.waterIntake,
-      sleepHours: props.record.sleepHours,
-      sexualActivity: props.record.sexualActivity,
-      contraceptionMethod: props.record.contraceptionMethod ?? 'None', // Add this line
-      notes: props.record.notes || '',
-    };
-  } else if (props.date) {
-    // 尝试加载该日期的现有记录
-    const existingRecord = periodStore.periodDailyRecordGet(props.date);
-    if (existingRecord) {
-      // 递归调用，但这次 props.record 会有值
-      formData.value = {
-        date: existingRecord.date,
-        flowLevel: existingRecord.flowLevel ?? null,
-        mood: existingRecord.mood ?? null,
-        exerciseIntensity: existingRecord.exerciseIntensity,
-        diet: existingRecord.diet,
-        waterIntake: existingRecord.waterIntake,
-        sleepHours: existingRecord.sleepHours,
-        sexualActivity: existingRecord.sexualActivity,
-        contraceptionMethod: existingRecord.contraceptionMethod ?? 'None',
-        notes: existingRecord.notes || '',
-      };
-    }
-  }
 }
 
 // Watchers
-watch(() => props.record, initializeForm, { immediate: true });
 watch(
   () => props.date,
   newDate => {
     if (newDate && !props.record) {
-      formData.value.date = newDate;
-      const existingRecord = periodStore.periodDailyRecordGet(newDate);
-      if (existingRecord) {
-        initializeForm();
-      }
+      formData.date = newDate;
     }
   },
 );
 
-// Lifecycle
-onMounted(() => {
-  initializeForm();
-});
-
 // Expose methods for parent component
 defineExpose({
-  resetForm,
-  validateForm: () => validateDailyRecord(formData.value),
+  validateForm: () => validateDailyRecord(formData),
 });
 </script>
 
@@ -327,7 +277,7 @@ defineExpose({
         </label>
         <div class="flex gap-2 w-3/4">
           <button
-            v-for="level in flowLevels" :key="level.value" type="button" class="p-3 border rounded-lg flex-1 transition-all"
+            v-for="level in FLOW_LEVELS" :key="level.value" type="button" class="p-3 border rounded-lg flex-1 transition-all"
             :class="[
               formData.flowLevel === level.value
                 ? 'border-red-500 bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400'
@@ -348,7 +298,7 @@ defineExpose({
         </label>
         <div class="gap-2 grid grid-cols-6">
           <button
-            v-for="mood in moods" :key="mood.value" type="button" class="p-1 text-center border rounded-lg transition-all"
+            v-for="mood in MOODS" :key="mood.value" type="button" class="p-1 text-center border rounded-lg transition-all"
             :class="[
               formData.mood === mood.value
                 ? 'border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
@@ -370,7 +320,7 @@ defineExpose({
           </label>
           <div class="flex gap-2">
             <button
-              v-for="intensity in exerciseIntensities" :key="intensity.value" type="button"
+              v-for="intensity in EXERCISE_INTENSITIES" :key="intensity.value" type="button"
               class="p-1 border rounded-lg flex-1 transition-all justify-center"
               :class="[
                 formData.exerciseIntensity === intensity.value
@@ -414,7 +364,7 @@ defineExpose({
         <div class="flex gap-4 items-center">
           <div class="flex gap-1">
             <button
-              v-for="preset in waterPresets" :key="preset" type="button" class="text-sm btn-secondary px-2 py-1"
+              v-for="preset in WATER_PRESETS" :key="preset" type="button" class="text-sm btn-secondary px-2 py-1"
               @click="formData.waterIntake = preset"
             >
               {{ preset }}ml
@@ -438,7 +388,7 @@ defineExpose({
           >
           <div class="flex gap-1">
             <button
-              v-for="preset in sleepPresets" :key="preset" type="button" class="text-sm btn-secondary px-3 py-1"
+              v-for="preset in SLEEP_PRESETS" :key="preset" type="button" class="text-sm btn-secondary px-3 py-1"
               @click="formData.sleepHours = preset"
             >
               {{ preset }}h
@@ -475,7 +425,7 @@ defineExpose({
           </div>
           <div class="gap-1 grid grid-cols-3">
             <label
-              v-for="method in contraceptionMethods" :key="method.value" :title="method.label"
+              v-for="method in CONTRACEPTION_METHODS" :key="method.value" :title="method.label"
               class="p-1.5 border rounded flex cursor-pointer transition-colors items-center justify-center" :class="[
                 formData.contraceptionMethod === method.value
                   ? 'border-purple-500 bg-purple-50 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'

@@ -37,7 +37,7 @@ export const PeriodDailyRecordsSchema = z.object({
   mood: MoodSchema.optional().nullable(),
   waterIntake: z.number().min(0).max(5000).optional(), // ml
   sleepHours: z.number().min(0).max(24).optional(),
-  notes: z.string().max(500).optional(),
+  notes: z.string().max(500).optional().nullable(),
   createdAt: DateTimeSchema,
   updatedAt: DateTimeSchema.optional().nullable(),
 });

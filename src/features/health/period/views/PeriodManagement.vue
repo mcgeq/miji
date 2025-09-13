@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { HealthsDb } from '@/services/healths/healths';
 import { DateUtils } from '@/utils/date';
 import { Lg } from '@/utils/debugLog';
 import PeriodCalendar from '../components/PeriodCalendar.vue';
@@ -8,7 +9,7 @@ import PeriodDailyForm from './PeriodDailyForm.vue';
 import PeriodRecordForm from './PeriodRecordForm.vue';
 import PeriodSettings from './PeriodSettings.vue';
 import PeriodStatsDashboard from './PeriodStatsDashboard.vue';
-import type { PeriodDailyRecords, PeriodRecords } from '@/schema/health/period';
+import type { PeriodDailyRecordCreate, PeriodDailyRecords, PeriodDailyRecordUpdate, PeriodRecordCreate, PeriodRecords, PeriodRecordUpdate } from '@/schema/health/period';
 
 // Store
 const periodStore = usePeriodStore();
@@ -75,11 +76,35 @@ function closeRecordForm() {
   editingRecord.value = undefined;
 }
 
+async function handlePeriodRecordCreate(periodRecord: PeriodRecordCreate) {
+  await HealthsDb.createPeriodRecord(periodRecord);
+  closeDailyForm();
+  showSuccessToast(t('period.messages.periodRecordSaved'));
+}
+
+async function handlePeriodRecordUpdate(serialNum: string, periodRecord: PeriodRecordUpdate) {
+  await HealthsDb.updatePeriodRecord(serialNum, periodRecord);
+  closeDailyForm();
+  showSuccessToast(t('period.messages.periodRecordSaved'));
+}
+
+async function handlePeriodDailyRecordCreate(periodDailyRecord: PeriodDailyRecordCreate) {
+  await HealthsDb.createPeriodDailyRecord(periodDailyRecord);
+  closeDailyForm();
+  showSuccessToast(t('period.messages.periodRecordSaved'));
+}
+
+async function handlePeriodDailyRecordUpdate(serialNum: string, periodDailyRecord: PeriodDailyRecordUpdate) {
+  await HealthsDb.updatePeriodDailyRecord(serialNum, periodDailyRecord);
+  closeDailyForm();
+  showSuccessToast(t('period.messages.periodRecordSaved'));
+}
+
 async function handleRecordSubmit(record: PeriodRecords) {
   closeRecordForm();
 
   // 刷新数据以更新UI
-  await periodStore.fetchPeriodRecords();
+  await periodStore.periodRecordAll();
 
   showSuccessToast(t('period.messages.periodRecordSaved'));
   Lg.i('PeriodManagement', 'Record submitted:', record);
@@ -89,7 +114,7 @@ async function handleRecordDelete(serialNum: string) {
   closeRecordForm();
 
   // 刷新数据以更新UI
-  await periodStore.fetchPeriodRecords();
+  await periodStore.periodRecordAll();
 
   showSuccessToast(t('period.messages.periodRecordDeleted'));
   Lg.i('PeriodManagement', 'Record deleted:', serialNum);
@@ -103,30 +128,6 @@ function openDailyForm(record?: PeriodDailyRecords) {
 function closeDailyForm() {
   showDailyForm.value = false;
   editingDailyRecord.value = undefined;
-}
-
-async function handleDailySubmit(record: PeriodDailyRecords) {
-  try {
-    Lg.i('PeriodManagement', 'Submitting daily record:', record);
-
-    closeDailyForm();
-
-    // 等待保存完成
-    await periodStore.upsertDailyRecord(record);
-
-    // 等待一个 tick 确保状态更新
-    await nextTick();
-
-    showSuccessToast(t('period.messages.dailyRecordSaved'));
-
-    Lg.i(
-      'PeriodManagement',
-      'Daily record saved, total records:',
-      periodStore.periodDailyRecords.length,
-    );
-  } catch (error) {
-    Lg.e('PeriodManagement', `${t('period.saveFailed')}:`, error);
-  }
 }
 
 // 删除相关方法
@@ -198,7 +199,7 @@ watch(
 onMounted(async () => {
   periodStore.initialize();
   try {
-    await periodStore.fetchPeriodRecords();
+    await periodStore.periodRecordAll();
   } catch (error) {
     Lg.e('PeriodManagement', 'Failed to load period data:', error);
   }
@@ -332,6 +333,8 @@ onMounted(async () => {
         <PeriodRecordForm
           :record="editingRecord"
           @submit="handleRecordSubmit"
+          @create="handlePeriodRecordCreate"
+          @update="handlePeriodRecordUpdate"
           @delete="handleRecordDelete"
           @cancel="closeRecordForm"
         />
@@ -342,7 +345,11 @@ onMounted(async () => {
     <div v-if="showDailyForm" class="modal-overlay" @click.self="closeDailyForm">
       <div class="modal-content">
         <PeriodDailyForm
-          :date="selectedDate" :record="editingDailyRecord" @submit="handleDailySubmit"
+          :date="selectedDate"
+          :record="editingDailyRecord"
+          @create="handlePeriodDailyRecordCreate"
+          @update="handlePeriodDailyRecordUpdate"
+          @delete="handleRecordDelete"
           @cancel="closeDailyForm"
         />
       </div>

@@ -12,7 +12,7 @@ import {
   PeriodValidator,
 } from '../utils/periodUtils';
 import type { Intensity, SymptomsType } from '@/schema/common';
-import type { PeriodRecords } from '@/schema/health/period';
+import type { PeriodRecordCreate, PeriodRecords, PeriodRecordUpdate } from '@/schema/health/period';
 
 // Props
 interface Props {
@@ -28,6 +28,8 @@ const props = withDefaults(defineProps<Props>(), {
 // Emits
 const emit = defineEmits<{
   submit: [record: PeriodRecords];
+  create: [periodRecord: PeriodRecordCreate];
+  update: [serialNum: string, periodRecord: PeriodRecordUpdate];
   delete: [serialNum: string];
   cancel: [];
 }>();
