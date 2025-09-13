@@ -51,7 +51,7 @@ impl Config {
             backtrace: snafu::Backtrace::generate(),
         })?;
 
-        let db_file = data_dir.join("db.sqlite");
+        let db_file = data_dir.join("testdb.sqlite");
         let db_url = format!("sqlite:{}?mode=rwc", db_file.display());
         CONFIG
             .set(Config {
@@ -71,7 +71,7 @@ impl Config {
 fn get_app_data_dir(app: &AppHandle) -> MijiResult<PathBuf> {
     #[cfg(any(target_os = "ios", target_os = "android"))]
     let result = get_mobile_data_dir(app);
-    
+
     #[cfg(any(target_os = "ios", target_os = "android"))]
     let result = get_mobile_data_dir(app);
     #[cfg(not(any(target_os = "ios", target_os = "android")))]

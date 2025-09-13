@@ -20,6 +20,7 @@ import {
 } from 'lucide-vue-next';
 import { DateUtils } from '@/utils/date';
 import { Lg } from '@/utils/debugLog';
+import { deepDiff } from '@/utils/diff';
 import { usePeriodValidation } from '../composables/usePeriodValidation';
 import type {
   PeriodDailyRecordCreate,
@@ -203,7 +204,10 @@ async function handleSubmit() {
     };
 
     if (props.record) {
-      emit('update', props.record.serialNum, record);
+      const updatePeriodDailyRecord = deepDiff(props.record, record);
+      if (Object.keys(updatePeriodDailyRecord).length > 0) {
+        emit('update', props.record.serialNum, record);
+      }
     } else {
       emit('create', record);
     }
