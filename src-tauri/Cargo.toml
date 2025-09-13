@@ -131,3 +131,14 @@ snafu = { workspace = true }
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-autostart = "2"
 tauri-plugin-single-instance = "2"
+
+[profile.dev]
+incremental = true
+opt-level = 0      # 开发模式下最小优化，加快编译
+debug = 0          # 禁用调试信息，减少编译开销
+
+[profile.release]
+incremental = true
+opt-level = 3       # 发布模式优化
+strip = "debuginfo" # 移除调试符号
+lto = "thin"        # 启用 Thin LTO，平衡编译速度和性能
