@@ -278,12 +278,17 @@ defineExpose({
 
       <!-- 经期流量 -->
       <div class="form-group flex items-center justify-between">
-        <label class="form-label" :title="t('period.fields.flowLevel')">
+        <label
+          class="form-label"
+          :title="t('period.fields.flowLevel')"
+        >
           <LucideDroplet class="wh-5" />
         </label>
         <div class="flex gap-2 w-3/4">
           <button
-            v-for="level in FLOW_LEVELS" :key="level.value" type="button" class="p-3 border rounded-lg flex-1 transition-all"
+            v-for="level in FLOW_LEVELS" :key="level.value"
+            type="button"
+            class="p-3 border rounded-lg flex-1 transition-all"
             :class="[
               formData.flowLevel === level.value
                 ? 'border-red-500 bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400'
@@ -298,23 +303,31 @@ defineExpose({
       </div>
 
       <!-- 心情状态 -->
-      <div class="form-group flex justify-center justify-between">
-        <label class="form-label" :title="t('period.fields.mood')">
-          <LucideSmile class="wh-5" />
-        </label>
-        <div class="gap-2 grid grid-cols-6">
-          <button
-            v-for="mood in MOODS" :key="mood.value" type="button" class="p-1 text-center border rounded-lg transition-all"
-            :class="[
-              formData.mood === mood.value
-                ? 'border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
-                : 'border-gray-300 hover:border-gray-400 dark:border-gray-600 dark:hover:border-gray-500',
-            ]" @click="formData.mood = mood.value"
+      <div class="form-group">
+        <div class="flex justify-center justify-between">
+          <label
+            class="form-label"
+            :title="t('period.fields.mood')"
           >
-            <div class="flex justify-center" :title="mood.label">
-              <component :is="mood.icon" class="mb-1 wh-5" />
-            </div>
-          </button>
+            <LucideSmile class="wh-5" />
+          </label>
+          <div class="gap-2 grid grid-cols-6 w-2/3">
+            <button
+              v-for="mood in MOODS" :key="mood.value"
+              type="button"
+              class="p-1 text-center border rounded-lg transition-all"
+              :class="[
+                formData.mood === mood.value
+                  ? 'border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
+                  : 'border-gray-300 hover:border-gray-400 dark:border-gray-600 dark:hover:border-gray-500',
+              ]"
+              @click="formData.mood = mood.value"
+            >
+              <div class="flex justify-center" :title="mood.label">
+                <component :is="mood.icon" class="wh-5" />
+              </div>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -332,7 +345,8 @@ defineExpose({
                 formData.exerciseIntensity === intensity.value
                   ? 'border-green-500 bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-400'
                   : 'border-gray-300 hover:border-gray-400 dark:border-gray-600 dark:hover:border-gray-500',
-              ]" @click="formData.exerciseIntensity = intensity.value"
+              ]"
+              @click="formData.exerciseIntensity = intensity.value"
             >
               <div class="flex justify-center" :title="intensity.label">
                 <component :is="intensity.icon" class="wh-5" />
@@ -363,14 +377,28 @@ defineExpose({
             <LucideWaves class="wh-5" />
           </label>
           <input
-            v-model.number="formData.waterIntake" type="number" class="input-base"
-            :placeholder="t('period.placeholders.waterIntakeExample')" min="0" max="5000" step="100"
+            v-model.number="formData.waterIntake"
+            type="number"
+            class="input-base"
+            :placeholder="t('period.placeholders.waterIntakeExample')"
+            min="0"
+            max="5000"
+            step="100"
           >
         </div>
         <div class="flex gap-4 items-center">
           <div class="flex gap-1">
             <button
-              v-for="preset in WATER_PRESETS" :key="preset" type="button" class="text-sm btn-secondary px-2 py-1"
+              v-for="preset in WATER_PRESETS"
+              :key="preset"
+              type="button"
+              class="text-sm btn-secondary px-2 py-1"
+              :class="[
+                formData.waterIntake === preset
+                  ? '!bg-blue-100 !text-blue-700 !border-blue-500 !dark:bg-blue-900/30 !dark:text-blue-400'
+                  : '',
+              ]"
+
               @click="formData.waterIntake = preset"
             >
               {{ preset }}ml
@@ -389,12 +417,25 @@ defineExpose({
         </label>
         <div class="flex gap-1 items-center">
           <input
-            v-model.number="formData.sleepHours" type="number" class="input-base flex-1"
-            :placeholder="t('period.placeholders.sleepExample')" min="0" max="24" step="0.5"
+            v-model.number="formData.sleepHours"
+            type="number"
+            class="input-base flex-1"
+            :placeholder="t('period.placeholders.sleepExample')"
+            min="0"
+            max="24"
+            step="0.5"
           >
           <div class="flex gap-1">
             <button
-              v-for="preset in SLEEP_PRESETS" :key="preset" type="button" class="text-sm btn-secondary px-3 py-1"
+              v-for="preset in SLEEP_PRESETS"
+              :key="preset"
+              type="button"
+              class="text-sm btn-secondary px-3 py-1"
+              :class="[
+                formData.sleepHours === preset
+                  ? '!bg-blue-100 !text-blue-700 !border-blue-500 !dark:bg-blue-900/30 !dark:text-blue-400'
+                  : '',
+              ]"
               @click="formData.sleepHours = preset"
             >
               {{ preset }}h
