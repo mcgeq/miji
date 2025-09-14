@@ -45,21 +45,35 @@ export interface PeriodCalendarEvent {
   isPredicted?: boolean;
 }
 
-// 经期设置类型
-export interface PeriodSettings {
-  averageCycleLength: number;
-  averagePeriodLength: number;
-  notifications: {
-    periodReminder: boolean;
-    ovulationReminder: boolean;
-    pmsReminder: boolean;
-    reminderDays: number;
-  };
-  privacy: {
-    dataSync: boolean;
-    analytics: boolean;
-  };
-}
+export const PeriodSettingsSchema = z.object({
+  serialNum: SerialNumSchema,
+  averageCycleLength: z.number().int().positive(),
+  averagePeriodLength: z.number().int().positive(),
+  notifications: z.object({
+    periodReminder: z.boolean(),
+    ovulationReminder: z.boolean(),
+    pmsReminder: z.boolean(),
+    reminderDays: z.number().int().nonnegative(),
+  }),
+  privacy: z.object({
+    dataSync: z.boolean(),
+    analytics: z.boolean(),
+  }),
+  createdAt: DateTimeSchema,
+  updatedAt: DateTimeSchema.optional().nullable(),
+});
+
+export const PeriodSettingsCreateSchema = PeriodSettingsSchema.omit({
+  serialNum: true,
+  createdAt: true,
+  updatedAt: true,
+}).strict();
+
+export const PeriodSettingsUpdateSchema = PeriodRecordCreateSchema.partial();
+
 export type PeriodRecords = z.infer<typeof PeriodRecordsSchema>;
 export type PeriodRecordCreate = z.infer<typeof PeriodRecordCreateSchema>;
 export type PeriodRecordUpdate = z.infer<typeof PeriodRecordUpdateSchema>;
+export type PeriodSettings = z.infer<typeof PeriodSettingsSchema>;
+export type PeriodSettingsCreate = z.infer<typeof PeriodSettingsCreateSchema>;
+export type PeriodSettingsUpdate = z.infer<typeof PeriodSettingsUpdateSchema>;

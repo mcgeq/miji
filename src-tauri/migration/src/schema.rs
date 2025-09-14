@@ -211,6 +211,22 @@ pub enum PeriodPmsSymptoms {
 }
 
 #[derive(DeriveIden)]
+pub enum PeriodSettings {
+    Table,
+    SerialNum,
+    AverageCycleLength,
+    AveragePeriodLength,
+    PeriodReminder,
+    OvulationReminder,
+    PmsReminder,
+    ReminderDays,
+    DataSync,
+    Analytics,
+    CreatedAt,
+    UpdatedAt,
+}
+
+#[derive(DeriveIden)]
 pub enum Currency {
     Table,
     Code,

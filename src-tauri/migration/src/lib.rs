@@ -25,6 +25,7 @@ mod m20250803_132247_create_family_ledger_account;
 mod m20250803_132301_create_family_ledger_transaction;
 mod m20250803_132314_create_family_ledger_member;
 mod m20250803_132329_create_bil_reminder;
+mod m20250914_212312_create_health_period_settings;
 
 pub mod schema;
 
@@ -59,6 +60,7 @@ impl MigratorTrait for Migrator {
             Box::new(m20250803_132301_create_family_ledger_transaction::Migration),
             Box::new(m20250803_132314_create_family_ledger_member::Migration),
             Box::new(m20250803_132329_create_bil_reminder::Migration),
+            Box::new(m20250914_212312_create_health_period_settings::Migration),
         ]
     }
 }

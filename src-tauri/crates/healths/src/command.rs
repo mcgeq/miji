@@ -19,6 +19,7 @@ use crate::{
 
 // ========================== Start ==========================
 // Period Records
+#[tauri::command]
 pub async fn period_record_get(
     state: State<'_, AppState>,
     serial_num: String,

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { usePeriodStore } from '@/stores/periodStore';
+import { DateUtils } from '@/utils/date';
 import { PeriodDataManager } from '../utils/periodUtils';
 import type { PeriodSettings } from '@/schema/health/period';
 
@@ -16,6 +16,7 @@ const importSuccess = ref(false);
 
 // Local settings (for immediate UI updates)
 const localSettings = reactive<PeriodSettings>({
+  serialNum: '',
   averageCycleLength: 28,
   averagePeriodLength: 5,
   notifications: {
@@ -28,6 +29,8 @@ const localSettings = reactive<PeriodSettings>({
     dataSync: true,
     analytics: false,
   },
+  createdAt: DateUtils.getLocalISODateTimeWithOffset(),
+  updatedAt: null,
 });
 
 // 计算历史数据统计
