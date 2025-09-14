@@ -7,7 +7,6 @@ import PeriodRecentRecord from '../components/PeriodRecentRecord.vue';
 import { usePeriodDailyRecords } from '../composables/usePeriodDailyRecords';
 import { usePeriodPhase } from '../composables/usePeriodPhase';
 import { usePeriodRecords } from '../composables/usePeriodRecords';
-import { useSuccessToast } from '../composables/useSuccessToast';
 import PeriodDailyForm from './PeriodDailyForm.vue';
 import PeriodRecordForm from './PeriodRecordForm.vue';
 import PeriodSettings from './PeriodSettings.vue';
@@ -31,10 +30,9 @@ const uiState = reactive({
   deletingSerialNum: '',
 });
 
-const { showSuccessMessage, successMessage, show: showSuccessToast, hide: hideSuccessMessage } = useSuccessToast();
 const { currentPhase, currentPhaseLabel, daysUntilNext } = usePeriodPhase();
-const periodRecords = usePeriodRecords(showSuccessToast, t);
-const periodDailyRecords = usePeriodDailyRecords(showSuccessToast, t);
+const periodRecords = usePeriodRecords(t);
+const periodDailyRecords = usePeriodDailyRecords(t);
 
 const todayRecord = computed(() => {
   return periodStore.periodDailyRecords.find(r => r.date.startsWith(selectedDate.value)) || null;
@@ -321,62 +319,6 @@ onMounted(async () => {
       <div class="p-6 rounded-lg bg-white flex gap-3 shadow-xl items-center dark:bg-gray-800">
         <div class="border-2 border-blue-500 border-t-transparent rounded-full h-6 w-6 animate-spin" />
         <span class="text-gray-700 dark:text-gray-300"> {{ t('common.processing') }} </span>
-      </div>
-    </div>
-
-    <!-- 错误提示 -->
-    <div v-if="periodStore.error" class="max-w-sm bottom-4 right-4 fixed z-50">
-      <div class="p-4 border border-red-200 rounded-lg bg-red-50 shadow-lg dark:border-red-800 dark:bg-red-900/20">
-        <div class="flex gap-3 items-start">
-          <div
-            class="rounded-full bg-red-100 flex flex-shrink-0 h-8 w-8 items-center justify-center dark:bg-red-900/30"
-          >
-            <i class="i-tabler-alert-circle text-red-500 h-4 w-4" />
-          </div>
-          <div class="flex-1">
-            <p class="text-sm text-red-900 font-medium dark:text-red-400">
-              {{ t('period.messages.operationFailed') }}
-            </p>
-            <p class="text-xs text-red-700 mt-1 dark:text-red-400">
-              {{ periodStore.error }}
-            </p>
-          </div>
-          <button
-            class="text-red-400 transition-colors hover:text-red-600 dark:hover:text-red-300"
-            @click="periodStore.clearError()"
-          >
-            <LucideX class="h-4 w-4" />
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- 成功提示 -->
-    <div v-if="showSuccessMessage" class="max-w-sm bottom-4 right-4 fixed z-50">
-      <div
-        class="p-4 border border-green-200 rounded-lg bg-green-50 shadow-lg dark:border-green-800 dark:bg-green-900/20"
-      >
-        <div class="flex gap-3 items-start">
-          <div
-            class="rounded-full bg-green-100 flex flex-shrink-0 h-8 w-8 items-center justify-center dark:bg-green-900/30"
-          >
-            <i class="i-tabler-check text-green-500 h-4 w-4" />
-          </div>
-          <div class="flex-1">
-            <p class="text-sm text-green-900 font-medium dark:text-green-400">
-              {{ t('period.messages.operationSuccess') }}
-            </p>
-            <p class="text-xs text-green-700 mt-1 dark:text-green-400">
-              {{ successMessage }}
-            </p>
-          </div>
-          <button
-            class="text-green-400 transition-colors hover:text-green-600 dark:hover:text-green-300"
-            @click="hideSuccessMessage"
-          >
-            <LucideCheck class="h-4 w-4" />
-          </button>
-        </div>
       </div>
     </div>
   </div>

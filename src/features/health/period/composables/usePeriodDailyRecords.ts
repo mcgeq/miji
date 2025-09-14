@@ -1,32 +1,57 @@
 import { HealthsDb } from '@/services/healths/healths';
 import { Lg } from '@/utils/debugLog';
+import { toast } from '@/utils/toast';
 import type { PeriodDailyRecordCreate, PeriodDailyRecordUpdate } from '@/schema/health/period';
 import type { ComposerTranslation } from 'vue-i18n';
 
 export function usePeriodDailyRecords(
-  showSuccessToast: (msg: string) => void,
   t: ComposerTranslation<import('vue-i18n').DefineLocaleMessage>,
 ) {
   const periodStore = usePeriodStore();
 
-  async function create(record: PeriodDailyRecordCreate) {
-    await HealthsDb.createPeriodDailyRecord(record);
-    await periodStore.refreshDailyRecords();
-    showSuccessToast(t('period.messages.periodRecordSaved'));
+  // 通用处理函数
+  async function handlePeriodAction<T>(
+    action: () => Promise<T>,
+    successMessageKey: string,
+    errorMessageKey: string,
+  ): Promise<T | undefined> {
+    try {
+      const result = await action();
+      await periodStore.refreshDailyRecords();
+      toast.success(t(successMessageKey));
+      return result;
+    } catch {
+      toast.error(t(errorMessageKey) || '操作失败');
+      return undefined;
+    }
   }
 
-  async function update(serialNum: string, record: PeriodDailyRecordUpdate) {
-    await HealthsDb.updatePeriodDailyRecord(serialNum, record);
-    await periodStore.refreshDailyRecords();
-    showSuccessToast(t('period.messages.periodRecordSaved'));
+  function create(record: PeriodDailyRecordCreate) {
+    return handlePeriodAction(
+      () => HealthsDb.createPeriodDailyRecord(record),
+      'period.messages.periodDailyRecordSaved',
+      'period.messages.periodDailyRecordSaveFailed',
+    );
   }
 
-  async function remove(serialNum: string) {
+  function update(serialNum: string, record: PeriodDailyRecordUpdate) {
+    return handlePeriodAction(
+      () => HealthsDb.updatePeriodDailyRecord(serialNum, record),
+      'period.messages.periodDailyRecordUpdated',
+      'period.messages.periodDailyRecordUpdatedFailed',
+    );
+  }
+
+  function remove(serialNum: string) {
     Lg.i('Deleting record:', serialNum);
-    await periodStore.periodDailyRecordDelete(serialNum);
-    await nextTick();
-    await periodStore.refreshDailyRecords();
-    showSuccessToast(t('period.messages.recordDeleted'));
+    return handlePeriodAction(
+      async () => {
+        await periodStore.periodDailyRecordDelete(serialNum);
+        await nextTick();
+      },
+      'period.messages.recordDailyRecordDeleted',
+      'period.messages.recordDailyRecordDeleteFailed',
+    );
   }
 
   return { create, update, remove };

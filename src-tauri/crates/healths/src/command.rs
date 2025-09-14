@@ -3,7 +3,6 @@ use common::{
     paginations::{PagedQuery, PagedResult},
 };
 use tauri::State;
-use tracing::info;
 
 use crate::{
     dto::{
