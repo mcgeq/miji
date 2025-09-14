@@ -1,6 +1,6 @@
 use sea_orm_migration::prelude::*;
 
-use crate::schema::{PeriodDailyRecords, PeriodRecords};
+use crate::schema::PeriodDailyRecords;
 
 #[derive(DeriveMigrationName)]
 pub struct Migration;
@@ -101,17 +101,6 @@ impl MigrationTrait for Migration {
                         ColumnDef::new(PeriodDailyRecords::UpdatedAt)
                             .timestamp_with_time_zone()
                             .null(),
-                    )
-                    .foreign_key(
-                        ForeignKey::create()
-                            .name("fk_period_daily_records_period")
-                            .from(
-                                PeriodDailyRecords::Table,
-                                PeriodDailyRecords::PeriodSerialNum,
-                            )
-                            .to(PeriodRecords::Table, PeriodRecords::SerialNum)
-                            .on_delete(ForeignKeyAction::Cascade)
-                            .on_update(ForeignKeyAction::Cascade),
                     )
                     .to_owned(),
             )

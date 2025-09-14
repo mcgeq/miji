@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use chrono::{DateTime, FixedOffset};
 use common::{
     crud::service::{CrudConverter, CrudService, GenericCrudService},
     error::{AppError, MijiResult},
@@ -7,8 +8,12 @@ use common::{
     utils::date::DateUtils,
 };
 use entity::localize::LocalizeModel;
-use sea_orm::{ActiveValue, ColumnTrait, Condition, DbConn, prelude::async_trait::async_trait};
+use sea_orm::{
+    ActiveValue, ColumnTrait, Condition, DbConn, EntityTrait, PaginatorTrait, QueryFilter,
+    prelude::async_trait::async_trait,
+};
 use serde::{Deserialize, Serialize};
+use tracing::info;
 use validator::Validate;
 
 use crate::{
@@ -240,6 +245,25 @@ impl PeriodRecordService {
         self.converter().model_with_local(model).await
     }
 
+    pub async fn period_record_find(
+        &self,
+        db: &DbConn,
+        date: DateTime<FixedOffset>,
+    ) -> MijiResult<Option<entity::period_records::Model>> {
+        info!("period_record_find {:?}", date);
+        let model_opt = entity::period_records::Entity::find()
+            .filter(entity::period_records::Column::StartDate.lte(date))
+            .filter(entity::period_records::Column::EndDate.gte(date))
+            .one(db)
+            .await?;
+        if let Some(model) = model_opt {
+            let converted = self.converter().model_with_local(model).await?;
+            Ok(Some(converted))
+        } else {
+            Ok(None)
+        }
+    }
+
     pub async fn period_record_update(
         &self,
         db: &DbConn,
@@ -251,6 +275,17 @@ impl PeriodRecordService {
     }
 
     pub async fn period_record_delete(&self, db: &DbConn, id: String) -> MijiResult<()> {
+        let model = self.get_by_id(db, id.clone()).await?;
+        let count = entity::period_daily_records::Entity::find()
+            .filter(entity::period_daily_records::Column::PeriodSerialNum.eq(model.serial_num))
+            .count(db)
+            .await?;
+        if count > 0 {
+            return Err(AppError::simple(
+                common::BusinessCode::MenstrualPredictionFailed,
+                "当前周期存在记录不允许删除".to_string(),
+            ));
+        }
         self.delete(db, id).await
     }
 

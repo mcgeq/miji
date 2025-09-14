@@ -19,16 +19,8 @@ pub struct Model {
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
-    #[sea_orm(has_many = "super::period_daily_records::Entity")]
-    PeriodDailyRecords,
     #[sea_orm(has_many = "super::period_pms_records::Entity")]
     PeriodPmsRecords,
-}
-
-impl Related<super::period_daily_records::Entity> for Entity {
-    fn to() -> RelationDef {
-        Relation::PeriodDailyRecords.def()
-    }
 }
 
 impl Related<super::period_pms_records::Entity> for Entity {

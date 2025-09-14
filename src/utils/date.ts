@@ -320,6 +320,18 @@ export class DateUtils {
     return [DateUtils.formatDatePart(start), DateUtils.formatDatePart(end)];
   }
 
+  static toBackendDateTimeFromDateOnly(dateStr: string): string {
+    // 拼接当前时间
+    const now = new Date();
+    const hh = String(now.getHours()).padStart(2, '0');
+    const mm = String(now.getMinutes()).padStart(2, '0');
+    const ss = String(now.getSeconds()).padStart(2, '0');
+    const ms = String(now.getMilliseconds()).padStart(3, '0');
+
+    const combined = new Date(`${dateStr}T${hh}:${mm}:${ss}.${ms}`);
+    return DateUtils.formatDateToBackend(combined);
+  }
+
   /**
    * 通用方法，用于生成带偏移的 ISO 日期时间字符串
    * @param options - 偏移配置
@@ -344,13 +356,7 @@ export class DateUtils {
 
     // 1. 处理偏移
     if (options) {
-      const {
-        days = 0,
-        hours = 0,
-        minutes = 0,
-        seconds = 0,
-        milliseconds = 0,
-      } = options;
+      const { days = 0, hours = 0, minutes = 0, seconds = 0, milliseconds = 0 } = options;
 
       const totalMs =
         days * 24 * 60 * 60 * 1000 +

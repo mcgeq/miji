@@ -30,6 +30,10 @@ impl DateUtils {
         Local::now().date_naive()
     }
 
+    pub fn local_now_naivedatetime() -> NaiveDateTime {
+        Local::now().naive_local()
+    }
+
     pub fn datetime_local_fixed(datetime: Option<NaiveDateTime>) -> DateTime<FixedOffset> {
         if let Some(n) = datetime {
             n.and_utc().fixed_offset()
@@ -226,6 +230,11 @@ impl DateUtils {
     /// 添加天数
     pub fn add_days(dt: NaiveDateTime, days: i64) -> NaiveDateTime {
         dt + Duration::days(days)
+    }
+
+    pub fn add_days_offset(dt: NaiveDateTime, days: i64) -> DateTime<FixedOffset> {
+        let new_naive = dt + Duration::days(days);
+        new_naive.and_utc().fixed_offset()
     }
 
     /// 添加工作日（跳过周末）

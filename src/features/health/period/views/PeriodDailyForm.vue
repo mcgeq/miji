@@ -67,7 +67,7 @@ const isEditing = computed(() => !!props.record);
 // Form data
 const formData = reactive<PeriodDailyRecords>({
   ...getPeriodDailyRecordDefault(),
-  ...(props.record ? structuredClone(props.record) : {}),
+  ...(props.record ? { ...toRaw(props.record) } : {}),
 });
 
 // Options
@@ -190,7 +190,7 @@ async function handleSubmit() {
     // 模拟创建完整记录对象用于回调
     const record: PeriodDailyRecordCreate = {
       periodSerialNum:
-        props.record?.periodSerialNum || 'period_current'.padEnd(38, '0'),
+        props.record?.periodSerialNum || '',
       date: formData.date,
       flowLevel: formData.flowLevel,
       mood: formData.mood,
@@ -202,7 +202,7 @@ async function handleSubmit() {
       contraceptionMethod: formData.contraceptionMethod,
       notes: formData.notes || '',
     };
-
+    record.date = DateUtils.toBackendDateTimeFromDateOnly(record.date);
     if (props.record) {
       const updatePeriodDailyRecord = deepDiff(props.record, record);
       if (Object.keys(updatePeriodDailyRecord).length > 0) {
@@ -211,6 +211,7 @@ async function handleSubmit() {
     } else {
       emit('create', record);
     }
+    emit('cancel');
   } catch (error) {
     Lg.e('Period', 'Failed to save daily record:', error);
   } finally {
@@ -239,12 +240,13 @@ function getPeriodDailyRecordDefault(): PeriodDailyRecords {
 
 // Watchers
 watch(
-  () => props.date,
-  newDate => {
-    if (newDate && !props.record) {
-      formData.date = newDate;
+  () => props.record,
+  record => {
+    if (record?.date) {
+      formData.date = record.date.split('T')[0];
     }
   },
+  { deep: true, immediate: true },
 );
 
 // Expose methods for parent component

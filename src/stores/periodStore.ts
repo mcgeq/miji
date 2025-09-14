@@ -302,7 +302,7 @@ export const usePeriodStore = defineStore('period', {
       try {
         this.periodDailyRecords = (await HealthsDb.listPagedPeriodDailyRecord(query)).rows;
       } catch (err) {
-        throw this.handleError(err, '获取账户列表失败', 'listAccounts', 'Account');
+        throw this.handleError(err, '获取每日记录失败', 'listPagedPeriodDailyRecord', 'Period');
       }
     },
     async updatePeriodRecords() {
@@ -318,7 +318,12 @@ export const usePeriodStore = defineStore('period', {
       try {
         this.periodRecords = (await HealthsDb.listPagedPeriodRecord(query)).rows;
       } catch (err) {
-        throw this.handleError(err, '获取账户列表失败', 'listAccounts', 'Account');
+        throw this.handleError(
+          err,
+          '获取经期记录鼠标',
+          'listPagedPeriodDailyRecord',
+          'PeriodRecord',
+        );
       }
     },
 

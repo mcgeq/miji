@@ -23,14 +23,14 @@ function baseClasses(color: string) {
 
     bodyClassName: 'text-sm',
     titleClassName: 'font-semibold text-white',
-  // you can define more if needed
+    // you can define more if needed
   };
 }
 
 export const toast = {
   success: (msg: string) =>
     toastInstance.success(msg, {
-      timeout: 3000,
+      timeout: 2000,
       hideProgressBar: false,
       draggable: true,
       ...baseClasses('green'),
@@ -38,7 +38,7 @@ export const toast = {
 
   error: (msg: string) =>
     toastInstance.error(msg, {
-      timeout: 4000,
+      timeout: 3000,
       hideProgressBar: false,
       draggable: true,
       ...baseClasses('red'),
@@ -46,7 +46,7 @@ export const toast = {
 
   info: (msg: string) =>
     toastInstance.info(msg, {
-      timeout: 3000,
+      timeout: 2000,
       hideProgressBar: false,
       draggable: true,
       ...baseClasses('blue'),
@@ -54,7 +54,7 @@ export const toast = {
 
   warning: (msg: string) =>
     toastInstance.warning(msg, {
-      timeout: 3500,
+      timeout: 2500,
       hideProgressBar: false,
       draggable: true,
       ...baseClasses('yellow'),

@@ -5,10 +5,12 @@ use sea_orm::ActiveValue::{self, Set};
 use serde::{Deserialize, Serialize};
 use validator::Validate;
 
+use crate::dto::period_records::PeriodRecords;
+
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 #[serde(rename_all = "camelCase")]
 pub struct PeriodDailyRecordBase {
-    pub period_serial_num: String,
+    pub period_serial_num: Option<String>,
     pub date: DateTime<FixedOffset>,
     pub flow_level: Option<String>,
     pub exercise_intensity: String,
@@ -30,17 +32,25 @@ pub struct PeriodDailyRecordCreate {
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 #[serde(rename_all = "camelCase")]
-pub struct PeriodDailyRecord{
+pub struct PeriodDailyRecord {
     pub serial_num: String,
     #[serde(flatten)]
     pub core: PeriodDailyRecordBase,
+    period_record: PeriodRecords,
     pub created_at: DateTime<FixedOffset>,
     pub updated_at: Option<DateTime<FixedOffset>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 #[serde(rename_all = "camelCase")]
-pub struct PeriodDailyRecordUpdate{
+pub struct PeriodDailyRecordRelation {
+    pub period_record: entity::period_records::Model,
+    pub period_daily_record: entity::period_daily_records::Model,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+#[serde(rename_all = "camelCase")]
+pub struct PeriodDailyRecordUpdate {
     pub period_serial_num: Option<String>,
     pub date: Option<DateTime<FixedOffset>>,
     pub flow_level: Option<String>,
@@ -60,7 +70,7 @@ impl TryFrom<PeriodDailyRecordCreate> for entity::period_daily_records::ActiveMo
         let now = DateUtils::local_now();
         Ok(entity::period_daily_records::ActiveModel {
             serial_num: Set(McgUuid::uuid(38)),
-            period_serial_num: Set(value.core.period_serial_num),
+            period_serial_num: Set(value.core.period_serial_num.unwrap_or_default()),
             date: Set(value.core.date),
             flow_level: Set(value.core.flow_level),
             exercise_intensity: Set(value.core.exercise_intensity),
@@ -82,17 +92,35 @@ impl TryFrom<PeriodDailyRecordUpdate> for entity::period_daily_records::ActiveMo
     fn try_from(value: PeriodDailyRecordUpdate) -> Result<Self, Self::Error> {
         Ok(entity::period_daily_records::ActiveModel {
             serial_num: ActiveValue::NotSet,
-            period_serial_num: value.period_serial_num.map_or(ActiveValue::NotSet, ActiveValue::Set),
+            period_serial_num: value
+                .period_serial_num
+                .map_or(ActiveValue::NotSet, ActiveValue::Set),
             date: value.date.map_or(ActiveValue::NotSet, ActiveValue::Set),
-            flow_level: value.flow_level.map_or(ActiveValue::NotSet, |v| ActiveValue::Set(Some(v))),
-            exercise_intensity: value.exercise_intensity.map_or(ActiveValue::NotSet, ActiveValue::Set),
-            contraception_method: value.contraception_method.map_or(ActiveValue::NotSet, |v| ActiveValue::Set(Some(v))),
+            flow_level: value
+                .flow_level
+                .map_or(ActiveValue::NotSet, |v| ActiveValue::Set(Some(v))),
+            exercise_intensity: value
+                .exercise_intensity
+                .map_or(ActiveValue::NotSet, ActiveValue::Set),
+            contraception_method: value
+                .contraception_method
+                .map_or(ActiveValue::NotSet, |v| ActiveValue::Set(Some(v))),
             diet: value.diet.map_or(ActiveValue::NotSet, ActiveValue::Set),
-            sexual_activity: value.sexual_activity.map_or(ActiveValue::NotSet, ActiveValue::Set),
-            mood: value.mood.map_or(ActiveValue::NotSet, |v| ActiveValue::Set(Some(v))),
-            water_intake: value.water_intake.map_or(ActiveValue::NotSet, |v| ActiveValue::Set(Some(v))),
-            sleep_hours: value.sleep_hours.map_or(ActiveValue::NotSet, |v| ActiveValue::Set(Some(v))),
-            notes: value.notes.map_or(ActiveValue::NotSet, |v| ActiveValue::Set(Some(v))),
+            sexual_activity: value
+                .sexual_activity
+                .map_or(ActiveValue::NotSet, ActiveValue::Set),
+            mood: value
+                .mood
+                .map_or(ActiveValue::NotSet, |v| ActiveValue::Set(Some(v))),
+            water_intake: value
+                .water_intake
+                .map_or(ActiveValue::NotSet, |v| ActiveValue::Set(Some(v))),
+            sleep_hours: value
+                .sleep_hours
+                .map_or(ActiveValue::NotSet, |v| ActiveValue::Set(Some(v))),
+            notes: value
+                .notes
+                .map_or(ActiveValue::NotSet, |v| ActiveValue::Set(Some(v))),
             created_at: ActiveValue::NotSet,
             updated_at: ActiveValue::Set(Some(DateUtils::local_now())),
         })
@@ -115,25 +143,27 @@ impl PeriodDailyRecordUpdate {
     }
 }
 
-impl From<entity::period_daily_records::Model> for PeriodDailyRecord {
-    fn from(value: entity::period_daily_records::Model) -> Self {
+impl From<PeriodDailyRecordRelation> for PeriodDailyRecord {
+    fn from(value: PeriodDailyRecordRelation) -> Self {
+        let period_daily_record = value.period_daily_record;
         Self {
-            serial_num: value.serial_num,
+            serial_num: period_daily_record.serial_num,
             core: PeriodDailyRecordBase {
-            period_serial_num: value.period_serial_num,
-            date: value.date,
-            flow_level: value.flow_level,
-            exercise_intensity: value.exercise_intensity,
-            sexual_activity: value.sexual_activity,
-            contraception_method: value.contraception_method,
-            diet: value.diet,
-            mood: value.mood,
-            water_intake: value.water_intake,
-            sleep_hours: value.sleep_hours,
-            notes: value.notes,
-        },
-        created_at: value.created_at,
-        updated_at: value.updated_at
+                period_serial_num: Some(period_daily_record.period_serial_num),
+                date: period_daily_record.date,
+                flow_level: period_daily_record.flow_level,
+                exercise_intensity: period_daily_record.exercise_intensity,
+                sexual_activity: period_daily_record.sexual_activity,
+                contraception_method: period_daily_record.contraception_method,
+                diet: period_daily_record.diet,
+                mood: period_daily_record.mood,
+                water_intake: period_daily_record.water_intake,
+                sleep_hours: period_daily_record.sleep_hours,
+                notes: period_daily_record.notes,
+            },
+            period_record: PeriodRecords::from(value.period_record),
+            created_at: period_daily_record.created_at,
+            updated_at: period_daily_record.updated_at,
         }
     }
 }

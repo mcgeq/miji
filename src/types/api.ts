@@ -1,6 +1,9 @@
 // types/api.ts - 创建与后端对应的 API Response 类型
 import { invoke } from '@tauri-apps/api/core';
 
+/////////////////////////
+// API 响应类型
+/////////////////////////
 export interface ApiResponse<T = any> {
   success: boolean;
   code: string; // 6 位错误码
@@ -11,7 +14,7 @@ export interface ApiResponse<T = any> {
 export interface ErrorPayload {
   code: string;
   message: string;
-  details?: any;
+  details?: Record<string, string[] | string>;
   description: string;
   category: string;
   module: string;
@@ -24,7 +27,7 @@ export class BusinessError extends Error {
     public description: string,
     public category: string,
     public module: string,
-    public details?: any,
+    public details?: Record<string, string[] | string>,
     public requestInfo?: {
       command?: string;
       args?: any;
@@ -45,6 +48,59 @@ export class SystemError extends Error {
   }
 }
 
+// 错误类型守卫
+export function isBusinessError(error: unknown): error is BusinessError {
+  return error instanceof BusinessError;
+}
+
+export function isSystemError(error: unknown): error is SystemError {
+  return error instanceof SystemError;
+}
+
+/////////////////////////
+// 响应处理
+/////////////////////////
+function handleApiResponse<T>(response: ApiResponse<T>): T {
+  if (!response.success) {
+    const error = response.error!;
+    // 如果是验证错误且 details 是对象，自动映射到字段
+    let details: Record<string, string[] | string> | undefined;
+    if (
+      error.category === 'Validation' &&
+      typeof error.details === 'object' &&
+      error.details !== null
+    ) {
+      details = error.details as Record<string, string[] | string>;
+    }
+    throw new BusinessError(error.code, error.description, error.category, error.module, details);
+  }
+  return response.data ?? (null as unknown as T);
+}
+
+// 专门处理可能返回空数据的命令
+export async function invokeCommandWithEmptyResponse(
+  command: string,
+  args?: Record<string, any>,
+): Promise<void> {
+  await invokeCommand<void>(command, args);
+}
+
+// 统一的错误处理函数
+export function handleApiError(error: unknown): never {
+  if (isBusinessError(error)) {
+    if (error.category === 'Validation' && error.details) {
+      console.warn('Form Validation Error:', error.details);
+    } else {
+      console.error('Business Error:', error);
+    }
+  } else if (isSystemError(error)) {
+    console.error('System Error:', error.message, error.originalError);
+  } else {
+    console.error('Unknown Error:', error);
+  }
+  throw error;
+}
+
 // API 调用工具函数
 export async function invokeCommand<T = void>(
   command: string,
@@ -58,19 +114,7 @@ export async function invokeCommand<T = void>(
         setTimeout(() => reject(new SystemError('Request timeout')), timeout),
       ),
     ]);
-
-    if (!response.success) {
-      const error = response.error!;
-      throw new BusinessError(
-        error.code,
-        error.description,
-        error.category,
-        error.module,
-        error.details,
-      );
-    }
-
-    return response.data!;
+    return handleApiResponse(response);
   } catch (error) {
     // 如果是 Tauri 层面的错误（比如网络错误、序列化错误等）
     if (!(error instanceof BusinessError)) {
@@ -78,57 +122,4 @@ export async function invokeCommand<T = void>(
     }
     throw error;
   }
-}
-
-// 专门处理可能返回空数据的命令
-export async function invokeCommandWithEmptyResponse(
-  command: string,
-  args?: Record<string, any>,
-): Promise<void> {
-  try {
-    const response = await invoke<ApiResponse<void>>(command, args);
-
-    if (!response.success) {
-      const error = response.error!;
-      throw new BusinessError(
-        error.code,
-        error.description,
-        error.category,
-        error.module,
-        error.details,
-      );
-    }
-  } catch (error) {
-    if (!(error instanceof BusinessError)) {
-      throw new SystemError(`System error: ${error}`);
-    }
-    throw error;
-  }
-}
-
-// 错误类型守卫
-export function isBusinessError(error: unknown): error is BusinessError {
-  return error instanceof BusinessError;
-}
-
-export function isSystemError(error: unknown): error is SystemError {
-  return error instanceof SystemError;
-}
-
-// 统一的错误处理函数
-export function handleApiError(error: unknown): never {
-  if (isBusinessError(error)) {
-    console.error('Business Error:', {
-      code: error.code,
-      description: error.description,
-      category: error.category,
-      module: error.module,
-      details: error.details,
-    });
-  } else if (isSystemError(error)) {
-    console.error('System Error:', error.message, error.originalError);
-  } else {
-    console.error('Unknown Error:', error);
-  }
-  throw error;
 }

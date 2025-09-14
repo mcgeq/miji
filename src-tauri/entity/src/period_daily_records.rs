@@ -28,22 +28,8 @@ pub struct Model {
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
-    #[sea_orm(
-        belongs_to = "super::period_records::Entity",
-        from = "Column::PeriodSerialNum",
-        to = "super::period_records::Column::SerialNum",
-        on_update = "Cascade",
-        on_delete = "Cascade"
-    )]
-    PeriodRecords,
     #[sea_orm(has_many = "super::period_symptoms::Entity")]
     PeriodSymptoms,
-}
-
-impl Related<super::period_records::Entity> for Entity {
-    fn to() -> RelationDef {
-        Relation::PeriodRecords.def()
-    }
 }
 
 impl Related<super::period_symptoms::Entity> for Entity {

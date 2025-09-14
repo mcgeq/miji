@@ -4,7 +4,9 @@ import InputError from '@/components/common/InputError.vue';
 import WarningDialog from '@/components/common/WarningDialog.vue';
 import { usePeriodStore } from '@/stores/periodStore';
 import { DateUtils } from '@/utils/date';
+import { deepDiff } from '@/utils/diff';
 import { usePeriodValidation } from '../composables/usePeriodValidation';
+import { durationPresets, intensityLevels, symptomGroups } from '../constants/periodConstants';
 import {
   PeriodCalculator,
   PeriodDateUtils,
@@ -27,7 +29,6 @@ const props = withDefaults(defineProps<Props>(), {
 
 // Emits
 const emit = defineEmits<{
-  submit: [record: PeriodRecords];
   create: [periodRecord: PeriodRecordCreate];
   update: [serialNum: string, periodRecord: PeriodRecordUpdate];
   delete: [serialNum: string];
@@ -46,10 +47,9 @@ const showOverlapWarning = ref(false);
 const overlapRecord = ref<PeriodRecords | null>(null);
 
 // Form data
-const formData = ref({
-  startDate: '',
-  endDate: '',
-  notes: '',
+const formData = reactive<PeriodRecords>({
+  ...getPeriodRecordDefault(),
+  ...(props.record ? { ...toRaw(props.record) } : {}),
 });
 
 const symptoms = ref<Record<SymptomsType, Intensity | null>>({
@@ -58,68 +58,32 @@ const symptoms = ref<Record<SymptomsType, Intensity | null>>({
   MoodSwing: null,
 });
 
-// Configuration
-const durationPresets = [
-  { days: 3, label: '3天' },
-  { days: 4, label: '4天' },
-  { days: 5, label: '5天' },
-  { days: 6, label: '6天' },
-  { days: 7, label: '7天' },
-];
-
-const symptomGroups = [
-  {
-    type: 'Pain' as const,
-    label: '疼痛程度',
-    icon: 'i-tabler-pain',
-    color: 'text-red-500',
-  },
-  {
-    type: 'Fatigue' as const,
-    label: '疲劳程度',
-    icon: 'i-tabler-battery-low',
-    color: 'text-orange-500',
-  },
-  {
-    type: 'MoodSwing' as const,
-    label: '情绪波动',
-    icon: 'i-tabler-mood-confuzed',
-    color: 'text-blue-500',
-  },
-];
-
-const intensityLevels = [
-  { value: 'Light' as const, label: '轻度' },
-  { value: 'Medium' as const, label: '中度' },
-  { value: 'Heavy' as const, label: '重度' },
-];
-
 // Computed
 const isEditing = computed(() => !!props.record);
 
 const maxDate = computed(() => DateUtils.getTodayDate());
 
 const periodDuration = computed(() => {
-  if (!formData.value.startDate || !formData.value.endDate)
+  if (!formData.startDate || !formData.endDate)
     return 0;
   return (
-    DateUtils.daysBetween(formData.value.startDate, formData.value.endDate) + 1
+    DateUtils.daysBetween(formData.startDate, formData.endDate) + 1
   );
 });
 
 const showPeriodInfo = computed(() => {
   return (
-    formData.value.startDate
-    && formData.value.endDate
+    formData.startDate
+    && formData.endDate
     && periodDuration.value > 0
   );
 });
 
 const cycleLength = computed(() => {
-  if (!formData.value.startDate || periodStore.periodRecords.length === 0)
+  if (!formData.startDate || periodStore.periodRecords.length === 0)
     return 0;
 
-  const currentStart = new Date(formData.value.startDate);
+  const currentStart = new Date(formData.startDate);
   const lastRecord = periodStore.periodRecords
     .filter(record => record.serialNum !== props.record?.serialNum)
     .sort(
@@ -154,12 +118,12 @@ const cycleColorClass = computed(() => {
 });
 
 const predictedNext = computed(() => {
-  if (!formData.value.startDate || !periodStore.periodStats.averageCycleLength)
+  if (!formData.startDate || !periodStore.periodStats.averageCycleLength)
     return '';
 
   const nextDate = PeriodCalculator.predictNextPeriod(
     {
-      ...formData.value,
+      ...formData,
       serialNum: '',
       createdAt: '',
       updatedAt: null,
@@ -170,14 +134,14 @@ const predictedNext = computed(() => {
   return PeriodDateUtils.formatChineseDate(nextDate);
 });
 
-const notesLength = computed(() => (formData.value.notes || '').length);
+const notesLength = computed(() => (formData.notes || '').length);
 
 const hasFieldError = (field: string) => getFieldErrors(field).length > 0;
 
 const canSubmit = computed(() => {
   return (
-    formData.value.startDate
-    && formData.value.endDate
+    formData.startDate
+    && formData.endDate
     && !hasErrors()
     && periodDuration.value > 0
     && periodDuration.value <= 14
@@ -213,16 +177,16 @@ const overlapInfo = computed(() => {
 
 // Methods
 function setDurationPreset(days: number) {
-  if (!formData.value.startDate)
+  if (!formData.startDate)
     return;
 
-  const startDate = new Date(formData.value.startDate);
+  const startDate = new Date(formData.startDate);
   const endDate = new Date(startDate);
   endDate.setDate(endDate.getDate() + days - 1);
 
   const endDateStr = endDate.toISOString().split('T')[0];
   if (endDateStr <= maxDate.value) {
-    formData.value.endDate = endDateStr;
+    formData.endDate = endDateStr;
     validateDates();
   }
 }
@@ -230,8 +194,8 @@ function setDurationPreset(days: number) {
 function onStartDateChange() {
   // 如果结束日期早于开始日期，自动调整
   if (
-    formData.value.endDate
-    && formData.value.startDate > formData.value.endDate
+    formData.endDate
+    && formData.startDate > formData.endDate
   ) {
     setDurationPreset(5); // 默认设置为5天
   }
@@ -250,7 +214,7 @@ async function validateDates() {
   await nextTick();
   clearValidationErrors();
 
-  const validation = PeriodValidator.validatePeriodRecord(formData.value);
+  const validation = PeriodValidator.validatePeriodRecord(formData);
   if (!validation.valid) {
     // 设置验证错误（这里简化处理）
     console.warn('Validation errors:', validation.errors);
@@ -262,10 +226,10 @@ function checkOverlap(): boolean {
     record => record.serialNum !== props.record?.serialNum,
   );
 
-  const overlap = PeriodValidator.hasOverlap(formData.value, existingRecords);
+  const overlap = PeriodValidator.hasOverlap(formData, existingRecords);
   if (overlap) {
     overlapRecord.value = PeriodCalculator.getPeriodForDate(
-      formData.value.startDate,
+      formData.startDate,
       existingRecords,
     );
     return true;
@@ -277,7 +241,7 @@ function checkOverlap(): boolean {
 async function handleSubmit() {
   clearValidationErrors();
 
-  if (!validatePeriodRecord(formData.value)) {
+  if (!validatePeriodRecord(formData)) {
     return;
   }
 
@@ -299,26 +263,20 @@ async function submitForm() {
   loading.value = true;
 
   try {
+    const period_record: PeriodRecordCreate = {
+      notes: formData.notes,
+      startDate: formData.startDate,
+      endDate: formData.endDate,
+    };
+    period_record.startDate = DateUtils.toBackendDateTimeFromDateOnly(period_record.startDate);
+    period_record.endDate = DateUtils.toBackendDateTimeFromDateOnly(period_record.endDate);
     if (isEditing.value && props.record) {
-      await periodStore.periodRecordUpdate(props.record.serialNum, {
-        ...formData.value,
-        // 这里可以添加症状数据的保存逻辑
-      });
-
-      const updatedRecord: PeriodRecords = {
-        ...props.record,
-        ...formData.value,
-        updatedAt: new Date().toISOString(),
-      };
-
-      emit('submit', updatedRecord);
+      const updatedRecord = deepDiff(props.record, period_record);
+      emit('update', props.record.serialNum, updatedRecord as PeriodRecordUpdate);
     } else {
-      const record = await periodStore.periodRecordCreate({
-        ...formData.value,
-        // 这里可以添加症状数据的保存逻辑
-      });
-      emit('submit', record);
+      emit('create', period_record);
     }
+    emit('cancel');
   } catch (error) {
     console.error('Failed to save period record:', error);
   } finally {
@@ -333,8 +291,8 @@ async function handleDelete() {
   loading.value = true;
 
   try {
-    await periodStore.periodRecordDelete(props.record.serialNum);
     emit('delete', props.record.serialNum);
+    emit('cancel');
   } catch (error) {
     console.error('Failed to delete period record:', error);
   } finally {
@@ -354,25 +312,21 @@ function handleCancel() {
 function hasUnsavedChanges(): boolean {
   if (!props.record) {
     return !!(
-      formData.value.startDate
-      || formData.value.endDate
-      || formData.value.notes
+      formData.startDate
+      || formData.endDate
+      || formData.notes
     );
   }
 
   return (
-    formData.value.startDate !== props.record.startDate
-    || formData.value.endDate !== props.record.endDate
-    || formData.value.notes !== (props.record.notes || '')
+    formData.startDate !== props.record.startDate
+    || formData.endDate !== props.record.endDate
+    || formData.notes !== (props.record.notes || '')
   );
 }
 
 function resetForm() {
-  formData.value = {
-    startDate: '',
-    endDate: '',
-    notes: '',
-  };
+  Object.assign(formData, getPeriodRecordDefault());
   symptoms.value = {
     Pain: null,
     Fatigue: null,
@@ -383,15 +337,25 @@ function resetForm() {
 
 function initializeForm() {
   if (props.record) {
-    formData.value = {
-      startDate: props.record.startDate,
-      endDate: props.record.endDate,
-      notes: props.record.notes || '',
-    };
-    // 这里可以初始化症状数据
+    Object.assign(formData, {
+      ...props.record,
+      startDate: props.record.startDate.split('T')[0],
+      endDate: props.record.endDate.split('T')[0],
+    });
   } else {
     resetForm();
   }
+}
+
+function getPeriodRecordDefault() {
+  return {
+    serialNum: '',
+    startDate: '',
+    endDate: '',
+    notes: '',
+    createdAt: DateUtils.getLocalISODateTimeWithOffset(),
+    updatedAt: null,
+  };
 }
 
 // Watchers
@@ -414,7 +378,7 @@ onMounted(() => {
 // Expose methods for parent component
 defineExpose({
   resetForm,
-  validateForm: () => validatePeriodRecord(formData.value),
+  validateForm: () => validatePeriodRecord(formData),
   hasUnsavedChanges,
 });
 </script>
@@ -589,7 +553,7 @@ defineExpose({
             </button>
             <button type="submit" class="btn-primary" :disabled="!canSubmit || loading">
               <i v-if="loading" class="i-tabler-loader-2 mr-2 wh-4 animate-spin" />
-              <LucideEdit class="wh-5" />
+              <LucideCheck class="wh-5" />
             </button>
           </div>
         </div>
