@@ -82,19 +82,6 @@ function closeDeleteConfirm() {
   uiState.deletingSerialNum = '';
 }
 
-watch(
-  () => periodStore.periodDailyRecords,
-  (newRecords, oldRecords) => {
-    Lg.i('PeriodManagement', 'Daily records changed:', {
-      oldCount: oldRecords?.length || 0,
-      newCount: newRecords.length,
-      todayDate: selectedDate.value,
-      hasTodayRecord: !!newRecords.find(r => r.date === selectedDate.value),
-    });
-  },
-  { deep: true },
-);
-
 // 监控 uiState 的变化
 watch(
   () => [uiState.showRecordForm, uiState.showDailyForm, uiState.showDeleteConfirm],
@@ -115,6 +102,22 @@ watch(
     }
   },
   { deep: true },
+);
+
+watch(
+  () => [uiState.deletingSerialNum, selectedDate.value],
+  async ([deletingSerialNum, currentDate]) => {
+    if (deletingSerialNum === '' && currentDate) {
+      const hasMatchingRecord = periodStore.periodRecords.some(record => record.startDate.startsWith(currentDate));
+      if (hasMatchingRecord) {
+        try {
+          await periodStore.periodRecordAll();
+        } catch (error) {
+          Lg.e('PeriodManagement ', error);
+        }
+      }
+    }
+  },
 );
 
 // Lifecycle

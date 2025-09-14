@@ -323,7 +323,7 @@ impl PeriodDailyRecordService {
                         core: PeriodRecordsBase {
                             notes: Some(DateUtils::local_rfc3339()),
                             start_date: now,
-                            end_date: DateUtils::add_days_offset(now_navie, 7),
+                            end_date: DateUtils::add_days_offset(now_navie, 5),
                         },
                     };
                     let period_record_model = period_record_service

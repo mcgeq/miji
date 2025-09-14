@@ -49,8 +49,8 @@ export function usePeriodDailyRecords(
         await periodStore.periodDailyRecordDelete(serialNum);
         await nextTick();
       },
-      'period.messages.recordDailyRecordDeleted',
-      'period.messages.recordDailyRecordDeleteFailed',
+      'period.messages.periodDailyRecordDeleted',
+      'period.messages.recordDailyRecordDeletedFailed',
     );
   }
 
