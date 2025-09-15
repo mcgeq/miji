@@ -10,10 +10,12 @@ use crate::{
             PeriodDailyRecord, PeriodDailyRecordCreate, PeriodDailyRecordUpdate,
         },
         period_records::{PeriodRecords, PeriodRecordsCreate, PeriodRecordsUpdate},
+        period_settings::{PeriodSettings, PeriodSettingsCreate, PeriodSettingsUpdate},
     },
     service::{
         period_daily_records::{PeriodDailyRecordFilter, get_period_daily_record_service},
         period_records::{PeriodRecordFilter, get_period_record_service},
+        period_settings::get_settings_service,
     },
 };
 
@@ -175,3 +177,48 @@ pub async fn period_daily_record_list_paged(
     ))
 }
 // ========================== End ==========================
+
+// ========================== Period Settings Start ========================
+#[tauri::command]
+pub async fn period_settings_get(
+    state: State<'_, AppState>,
+    serial_num: String,
+) -> Result<ApiResponse<PeriodSettings>, String> {
+    let service = get_settings_service();
+    Ok(ApiResponse::from_result(
+        service
+            .period_settings_get(&state.db, serial_num)
+            .await
+            .map(PeriodSettings::from),
+    ))
+}
+
+#[tauri::command]
+pub async fn period_settings_create(
+    state: State<'_, AppState>,
+    data: PeriodSettingsCreate,
+) -> Result<ApiResponse<PeriodSettings>, String> {
+    let service = get_settings_service();
+    Ok(ApiResponse::from_result(
+        service
+            .period_settings_create(&state.db, data)
+            .await
+            .map(PeriodSettings::from),
+    ))
+}
+
+#[tauri::command]
+pub async fn period_settings_update(
+    state: State<'_, AppState>,
+    serial_num: String,
+    data: PeriodSettingsUpdate,
+) -> Result<ApiResponse<PeriodSettings>, String> {
+    let service = get_settings_service();
+    Ok(ApiResponse::from_result(
+        service
+            .period_settings_update(&state.db, serial_num, data)
+            .await
+            .map(PeriodSettings::from),
+    ))
+}
+// ========================== Period Settings End ==========================

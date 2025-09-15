@@ -1,5 +1,6 @@
 import { PeriodDailyRecordMapper } from './period_daily_record';
 import { PeriodRecordMapper } from './period_record';
+import { PeriodSettingsMapper } from './period_settings';
 import type { PagedResult } from '../money/baseManager';
 import type { PeriodDailyRecordFilter } from './period_daily_record';
 import type { PeriodRecordFilter } from './period_record';
@@ -11,11 +12,15 @@ import type {
   PeriodRecordCreate,
   PeriodRecords,
   PeriodRecordUpdate,
+  PeriodSettings,
+  PeriodSettingsCreate,
+  PeriodSettingsUpdate,
 } from '@/schema/health/period';
 
 export class HealthsDb {
   private static periodRecordMapper = new PeriodRecordMapper();
   private static periodDailyRecordMapper = new PeriodDailyRecordMapper();
+  private static periodSettingsMapper = new PeriodSettingsMapper();
 
   // =================== PeriodRecord ===================
   static async getPeriodRecord(serialNum: string): Promise<PeriodRecords | null> {
@@ -83,4 +88,25 @@ export class HealthsDb {
   }
 
   // =================== PeriodDailyRecord ===================
+
+  // =================== PeriodSettings ===================
+  static async getPeriodSettings(serialNum: string): Promise<PeriodSettings | null> {
+    return this.periodSettingsMapper.getById(serialNum);
+  }
+
+  static async createPeriodSettings(periodSettings: PeriodSettingsCreate): Promise<PeriodSettings> {
+    return this.periodSettingsMapper.create(periodSettings);
+  }
+
+  static async updatePeriodSettings(
+    serialNum: string,
+    periodSettings: PeriodSettingsUpdate,
+  ): Promise<PeriodSettings> {
+    return this.periodSettingsMapper.update(serialNum, periodSettings);
+  }
+
+  static async deletePeriodSettings(serialNum: string): Promise<void> {
+    return this.periodSettingsMapper.deleteById(serialNum);
+  }
+  // =================== PeriodSettings ===================
 }
