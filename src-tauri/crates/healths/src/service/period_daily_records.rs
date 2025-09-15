@@ -26,7 +26,7 @@ use crate::{
     },
     service::{
         period_daily_records_hooks::PeriodDailyRecordHooks,
-        period_records::get_period_record_service,
+        period_records::get_period_record_service, period_settings::get_settings_service,
     },
 };
 
@@ -319,11 +319,20 @@ impl PeriodDailyRecordService {
                 {
                     existing_record.serial_num
                 } else {
+                    let service = get_settings_service();
+                    let period_length = service
+                        .period_settings_get(db, "".to_string())
+                        .await
+                        .map(|s| s.average_period_length)
+                        .unwrap_or(7);
                     let period_record_create = PeriodRecordsCreate {
                         core: PeriodRecordsBase {
                             notes: Some(DateUtils::local_rfc3339()),
                             start_date: now,
-                            end_date: DateUtils::add_days_offset(now_navie, 5),
+                            end_date: DateUtils::add_days_offset(
+                                now_navie,
+                                (period_length - 2) as i64,
+                            ),
                         },
                     };
                     let period_record_model = period_record_service

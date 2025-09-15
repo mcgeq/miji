@@ -7,7 +7,7 @@ use common::{
     utils::date::DateUtils,
 };
 use entity::localize::LocalizeModel;
-use sea_orm::{ActiveValue, Condition, DbConn, prelude::async_trait::async_trait};
+use sea_orm::{ActiveValue, Condition, DbConn, EntityTrait, prelude::async_trait::async_trait};
 use serde::{Deserialize, Serialize};
 use validator::Validate;
 
@@ -205,7 +205,17 @@ impl PeriodSettingsService {
         db: &DbConn,
         serial_num: String,
     ) -> MijiResult<entity::period_settings::Model> {
-        let model = self.get_by_id(db, serial_num).await?;
+        let opt_model = if serial_num.is_empty() {
+            entity::period_settings::Entity::find().one(db).await?
+        } else {
+            Some(self.get_by_id(db, serial_num).await?)
+        };
+        let model = opt_model.ok_or_else(|| {
+            AppError::simple(
+                common::BusinessCode::NotFound,
+                "period_settings notfound".to_string(),
+            )
+        })?;
         self.converter().model_with_local(model).await
     }
 

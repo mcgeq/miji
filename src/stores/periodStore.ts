@@ -1,6 +1,7 @@
 import { AppError } from '@/errors/appError';
 import { SortDirection } from '@/schema/common';
 import { HealthsDb } from '@/services/healths/healths';
+import { DateUtils } from '@/utils/date';
 import { Lg } from '@/utils/debugLog';
 import type { PageQuery } from '@/schema/common';
 import type {
@@ -72,8 +73,8 @@ export const usePeriodStore = defineStore('period', {
     pmsRecords: [],
     pmsSymptoms: [],
     settings: {
-      averageCycleLength: 28,
-      averagePeriodLength: 5,
+      averageCycleLength: 30,
+      averagePeriodLength: 7,
       notifications: {
         periodReminder: true,
         ovulationReminder: true,
@@ -84,11 +85,13 @@ export const usePeriodStore = defineStore('period', {
         dataSync: true,
         analytics: false,
       },
+      createdAt: DateUtils.getLocalISODateTimeWithOffset(),
+      updatedAt: null,
     } as PeriodSettings,
     loading: false,
     error: null as string | null,
     lastFetch: null as Date | null,
-    CACHE_DURATION: 5 * 60 * 1000, // 5 minutes cache
+    CACHE_DURATION: 5 * 60 * 1000,
   }),
 
   getters: {
@@ -410,6 +413,22 @@ export const usePeriodStore = defineStore('period', {
       }, 'Failed to delete record');
     },
     // ==================== PeriodRecord  End ====================
+    async periodSettingsGet() {
+      return this.withLoadingAndError(async () => {
+        let result: PeriodSettings | null = null;
+
+        localStorage.removeItem('periodSettings');
+        if (this.settings.serialNum) {
+          result = await HealthsDb.getPeriodSettings(this.settings.serialNum);
+        }
+        if (result === null) {
+          const { serialNum, createdAt, updatedAt, ...periodSettingsCreate } = this.settings;
+          const result = await HealthsDb.createPeriodSettings(periodSettingsCreate);
+          this.settings = result;
+        }
+        localStorage.setItem('periodSettings', JSON.stringify(this.settings));
+      }, 'Failed to get period settings');
+    },
 
     async updateSettings(newSettings: Partial<PeriodSettings>) {
       return this.withLoadingAndError(async () => {

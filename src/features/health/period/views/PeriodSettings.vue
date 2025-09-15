@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { DateUtils } from '@/utils/date';
 import { PeriodDataManager } from '../utils/periodUtils';
+import { mergeSettings } from '../utils/utils';
 import type { PeriodSettings } from '@/schema/health/period';
 
 // Store
@@ -15,23 +15,7 @@ const importMessage = ref('');
 const importSuccess = ref(false);
 
 // Local settings (for immediate UI updates)
-const localSettings = reactive<PeriodSettings>({
-  serialNum: '',
-  averageCycleLength: 28,
-  averagePeriodLength: 5,
-  notifications: {
-    periodReminder: true,
-    ovulationReminder: true,
-    pmsReminder: true,
-    reminderDays: 3,
-  },
-  privacy: {
-    dataSync: true,
-    analytics: false,
-  },
-  createdAt: DateUtils.getLocalISODateTimeWithOffset(),
-  updatedAt: null,
-});
+const localSettings = ref<PeriodSettings>({ ...periodStore.settings });
 
 // 计算历史数据统计
 const calculatedStats = computed(() => {
@@ -160,16 +144,16 @@ const confidenceColor = computed(() => {
 // Methods
 function validateAndUpdate() {
   // 验证数据范围
-  if (localSettings.averageCycleLength < 21) {
-    localSettings.averageCycleLength = 21;
-  } else if (localSettings.averageCycleLength > 35) {
-    localSettings.averageCycleLength = 35;
+  if (localSettings.value.averageCycleLength < 21) {
+    localSettings.value.averageCycleLength = 21;
+  } else if (localSettings.value.averageCycleLength > 35) {
+    localSettings.value.averageCycleLength = 35;
   }
 
-  if (localSettings.averagePeriodLength < 2) {
-    localSettings.averagePeriodLength = 2;
-  } else if (localSettings.averagePeriodLength > 8) {
-    localSettings.averagePeriodLength = 8;
+  if (localSettings.value.averagePeriodLength < 2) {
+    localSettings.value.averagePeriodLength = 2;
+  } else if (localSettings.value.averagePeriodLength > 8) {
+    localSettings.value.averagePeriodLength = 8;
   }
 
   updateSettings();
@@ -177,7 +161,7 @@ function validateAndUpdate() {
 
 async function updateSettings() {
   try {
-    await periodStore.updateSettings(localSettings);
+    await periodStore.updateSettings(localSettings.value);
   } catch (error) {
     console.error('Failed to update settings:', error);
     // 恢复到原来的设置
@@ -188,7 +172,7 @@ async function updateSettings() {
 function useCalculatedValue(field: 'averageCycleLength' | 'averagePeriodLength') {
   const calculatedValue = calculatedStats.value[field];
   if (calculatedValue) {
-    localSettings[field] = calculatedValue;
+    localSettings.value[field] = calculatedValue;
     updateSettings();
   }
 }
@@ -274,12 +258,19 @@ function showMessage(message: string, success: boolean) {
 }
 
 // Initialize local settings from store
-function initializeSettings() {
-  Object.assign(localSettings, periodStore.settings);
+async function initializeSettings() {
+  await periodStore.periodSettingsGet();
+  mergeSettings(localSettings.value, periodStore.settings);
 }
 
 // Watchers
-watch(() => periodStore.settings, initializeSettings, { deep: true });
+watch(
+  () => periodStore.settings,
+  newSettings => {
+    mergeSettings(localSettings.value, newSettings);
+  },
+  { deep: true },
+);
 
 // Lifecycle
 onMounted(() => {
