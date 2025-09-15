@@ -421,7 +421,7 @@ onMounted(() => {
           <LucideBell class="mr-2 wh-5" />
           提醒设置
         </h2>
-        <div class="settings-grid">
+        <div class="settings-grid grid grid-cols-1 sm:grid-cols-2">
           <div class="setting-item">
             <div class="setting-toggle">
               <label class="toggle-label">
@@ -477,9 +477,6 @@ onMounted(() => {
           </div>
 
           <div class="setting-item">
-            <label class="setting-label">
-              提前提醒天数
-            </label>
             <div class="setting-control">
               <select
                 v-model.number="localSettings.notifications.reminderDays"
@@ -663,7 +660,7 @@ onMounted(() => {
 }
 
 .settings-section {
-  @apply bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm p-4 sm:p-6;
+  @apply bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-md p-5 sm:p-6 hover:shadow-lg transition-shadow duration-200;
 }
 
 .section-title {
