@@ -179,14 +179,12 @@ const overlapInfo = computed(() => {
 function setDurationPreset(days: number) {
   if (!formData.startDate)
     return;
-
   const startDate = new Date(formData.startDate);
   const endDate = new Date(startDate);
   endDate.setDate(endDate.getDate() + days - 1);
 
-  const endDateStr = endDate.toISOString().split('T')[0];
-  if (endDateStr <= maxDate.value) {
-    formData.endDate = endDateStr;
+  if (new Date(endDate) > new Date(maxDate.value)) {
+    formData.endDate = endDate.toISOString().split('T')[0];
     validateDates();
   }
 }
@@ -416,7 +414,7 @@ defineExpose({
         <!-- 日期设置区域 -->
         <div class="section-card">
           <div class="section-header">
-            <i class="i-tabler-calendar text-blue-500 wh-4" />
+            <LucideCalendar class="wh-5" />
             <h3 class="section-title">
               日期设置
             </h3>
@@ -465,9 +463,13 @@ defineExpose({
             <span class="quick-label">快速设置:</span>
             <div class="quick-buttons">
               <button
-                v-for="preset in durationPresets" :key="preset.days" type="button"
-                class="preset-btn" :class="{ 'preset-active': periodDuration === preset.days }"
-                :disabled="!formData.startDate" @click="setDurationPreset(preset.days)"
+                v-for="preset in durationPresets"
+                :key="preset.days"
+                type="button"
+                class="preset-btn"
+                :class="{ 'preset-active': periodDuration === preset.days }"
+                :disabled="!formData.startDate"
+                @click="setDurationPreset(preset.days)"
               >
                 {{ preset.label }}
               </button>
