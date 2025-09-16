@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { Plus } from 'lucide-vue-next';
 import { usePeriodStore as usePeriodStores } from '@/stores/periodStore';
 import type { PeriodRecords } from '@/schema/health/period';
 // Emits
@@ -34,7 +33,7 @@ function calculateDuration(record: PeriodRecords) {
   const start = new Date(record.startDate);
   const end = new Date(record.endDate);
   return (
-    Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1
+    Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24))
   );
 }
 
@@ -58,6 +57,13 @@ function calculateCycleFromPrevious(record: PeriodRecords) {
 
   return `周期 ${cycleDays} 天`;
 }
+
+function isPeriodActive(record: PeriodRecords) {
+  const currentDate = new Date();
+  const startDate = new Date(record.startDate);
+  const endDate = new Date(record.endDate);
+  return currentDate >= startDate && currentDate <= endDate;
+}
 </script>
 
 <template>
@@ -68,7 +74,7 @@ function calculateCycleFromPrevious(record: PeriodRecords) {
         最近记录
       </h3>
       <button class="text-sm btn-primary" @click="emit('addRecord')">
-        <Plus class="wh-5" />
+        <LucidePlus class="wh-5" />
       </button>
     </div>
 
@@ -83,7 +89,9 @@ function calculateCycleFromPrevious(record: PeriodRecords) {
 
     <div v-else class="space-y-3">
       <div
-        v-for="record in recentRecords" :key="record.serialNum" class="record-item"
+        v-for="record in recentRecords"
+        :key="record.serialNum"
+        class="record-item"
         @click="$emit('editRecord', record)"
       >
         <div class="record-date">
@@ -94,16 +102,16 @@ function calculateCycleFromPrevious(record: PeriodRecords) {
             {{ formatDay(record.startDate) }}
           </div>
         </div>
-        <div class="record-info">
-          <div class="record-duration">
-            持续 {{ calculateDuration(record) }} 天
+        <div class="record-info flex items-center justify-between">
+          <div class="record-duration text-sm text-gray-700">
+            {{ isPeriodActive(record) ? `预计持续 ${calculateDuration(record)} 天` : `已持续 ${calculateDuration(record)}` }}
           </div>
           <div class="record-cycle">
             {{ calculateCycleFromPrevious(record) }}
           </div>
         </div>
         <div class="record-actions">
-          <i class="i-tabler-chevron-right text-gray-400 wh-4" />
+          <LucideChevronRightCircle class="wh-5" />
         </div>
       </div>
     </div>
@@ -112,7 +120,8 @@ function calculateCycleFromPrevious(record: PeriodRecords) {
 
 <style scoped lang="postcss">
 .card-base {
-  @apply bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm;
+  @apply bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm transition-shadow duration-200;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
 .flex-between {

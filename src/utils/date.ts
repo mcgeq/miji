@@ -10,6 +10,7 @@
 // -----------------------------------------------------------------------------
 
 import { format } from 'date-fns';
+import { isNaN } from 'es-toolkit/compat';
 
 export class DateUtils {
   /**
@@ -280,10 +281,23 @@ export class DateUtils {
    * @param days - 要增加的天数（负值表示减少）
    * @returns 新日期（ISO 格式）
    */
-  static addDays(dateStr: string, days: number): string {
-    const date = new Date(dateStr);
-    date.setDate(date.getDate() + days);
-    return date.toISOString().split('T')[0]; // 返回 YYYY-MM-DD 格式
+  static addDays(dateStr: string | null | undefined, days: number): string {
+    let baseDate: Date;
+
+    if (dateStr == null) {
+      baseDate = new Date();
+    } else {
+      if (dateStr === '' || isNaN(new Date(dateStr).getTime())) {
+        baseDate = new Date();
+      } else {
+        baseDate = new Date(dateStr);
+        if (isNaN(baseDate.getTime())) {
+          baseDate = new Date();
+        }
+      }
+    }
+    baseDate.setDate(baseDate.getDate() + days);
+    return baseDate.toISOString().split('T')[0];
   }
 
   static getCurrentYearRange(): [string, string] {

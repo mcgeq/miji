@@ -325,13 +325,14 @@ impl PeriodDailyRecordService {
                         .await
                         .map(|s| s.average_period_length)
                         .unwrap_or(7);
+                    info!("period_length {:?}", period_length);
                     let period_record_create = PeriodRecordsCreate {
                         core: PeriodRecordsBase {
                             notes: Some(DateUtils::local_rfc3339()),
                             start_date: now,
                             end_date: DateUtils::add_days_offset(
                                 now_navie,
-                                (period_length - 2) as i64,
+                                (period_length - 1) as i64,
                             ),
                         },
                     };

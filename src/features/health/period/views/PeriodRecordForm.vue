@@ -350,8 +350,8 @@ function initializeForm() {
 function getPeriodRecordDefault() {
   return {
     serialNum: '',
-    startDate: '',
-    endDate: '',
+    startDate: DateUtils.getTodayDate(),
+    endDate: DateUtils.addDays(null, periodStore.settings.averagePeriodLength - 1),
     notes: '',
     createdAt: DateUtils.getLocalISODateTimeWithOffset(),
     updatedAt: null,
@@ -366,17 +366,6 @@ watch(
   d => {
     formData.endDate = DateUtils.addDays(d, periodStore.settings.averagePeriodLength - 1);
   },
-);
-
-watch(
-  isEditing,
-  editing => {
-    if (!editing && !props.record) {
-      formData.startDate = DateUtils.getTodayDate();
-      formData.endDate = DateUtils.addDays(formData.startDate, periodStore.settings.averagePeriodLength - 1);
-    }
-  },
-  { immediate: true },
 );
 
 // Lifecycle
