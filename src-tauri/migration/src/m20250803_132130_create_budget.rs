@@ -98,7 +98,7 @@ impl MigrationTrait for Migration {
                     )
                     .col(
                         ColumnDef::new(Budget::Progress)
-                            .decimal_len(3, 2)
+                            .decimal_len(15, 2)
                             .not_null()
                             .default(0.0),
                     )

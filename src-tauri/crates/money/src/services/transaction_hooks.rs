@@ -323,7 +323,7 @@ async fn update_budget_used(
         let new_progress = if budget.amount.is_zero() {
             Decimal::ZERO
         } else {
-            ((new_current_period_used / budget.amount) * Decimal::from(100)).min(Decimal::from(100))
+            (new_current_period_used / budget.amount) * Decimal::from(100)
         };
 
         let mut budget_active = budget.into_active_model();

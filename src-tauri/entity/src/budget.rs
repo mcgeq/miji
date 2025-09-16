@@ -34,7 +34,7 @@ pub struct Model {
     pub current_period_start: Date,
     pub last_reset_at: DateTimeWithTimeZone,
     pub budget_type: String,
-    #[sea_orm(column_type = "Decimal(Some((3, 2)))")]
+    #[sea_orm(column_type = "Decimal(Some((15, 2)))")]
     pub progress: Decimal,
     pub linked_goal: Option<String>,
     #[sea_orm(column_type = "JsonBinary", nullable)]
