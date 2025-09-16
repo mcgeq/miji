@@ -37,11 +37,7 @@ export enum MoneyStoreErrorCode {
 }
 
 export class MoneyStoreError extends AppError {
-  constructor(
-    code: MoneyStoreErrorCode | AppErrorCode,
-    message: string,
-    details?: any,
-  ) {
+  constructor(code: MoneyStoreErrorCode | AppErrorCode, message: string, details?: any) {
     let severity: AppErrorSeverity;
     switch (code) {
       case MoneyStoreErrorCode.DATABASE_OPERATION_FAILED:
@@ -70,12 +66,9 @@ export class MoneyStoreError extends AppError {
     const messages: Record<string, string> = {
       [MoneyStoreErrorCode.ACCOUNT_NOT_FOUND]: 'Account does not exist.',
       [MoneyStoreErrorCode.TRANSACTION_NOT_FOUND]: 'Transaction not found.',
-      [MoneyStoreErrorCode.RELATED_TRANSACTION_NOT_FOUND]:
-        'Related transaction not found.',
-      [MoneyStoreErrorCode.INVALID_TRANSACTION_TYPE]:
-        'Invalid transaction type.',
-      [MoneyStoreErrorCode.CREDIT_CARD_BALANCE_INVALID]:
-        'Credit card balance is invalid.',
+      [MoneyStoreErrorCode.RELATED_TRANSACTION_NOT_FOUND]: 'Related transaction not found.',
+      [MoneyStoreErrorCode.INVALID_TRANSACTION_TYPE]: 'Invalid transaction type.',
+      [MoneyStoreErrorCode.CREDIT_CARD_BALANCE_INVALID]: 'Credit card balance is invalid.',
       [MoneyStoreErrorCode.DATABASE_OPERATION_FAILED]:
         'Database operation failed. Please try again.',
     };
@@ -111,15 +104,12 @@ export const useMoneyStore = defineStore('money', {
     },
     activeAccounts: state => state.accounts.filter(account => account.isActive),
     activeBudgets: state => state.budgets.filter(budget => budget.isActive),
-    unpaidReminders: state =>
-      state.reminders.filter(reminder => !reminder.isPaid),
+    unpaidReminders: state => state.reminders.filter(reminder => !reminder.isPaid),
     findAccount: state => (serialNum: string) => {
       return state.accounts.find(account => account.serialNum === serialNum);
     },
     findTransaction: state => (serialNum: string) => {
-      return state.transactions.find(
-        transaction => transaction.serialNum === serialNum,
-      );
+      return state.transactions.find(transaction => transaction.serialNum === serialNum);
     },
     findBudget: state => (serialNum: string) => {
       return state.budgets.find(budget => budget.serialNum === serialNum);
@@ -186,12 +176,7 @@ export const useMoneyStore = defineStore('money', {
       try {
         this.accounts = (await MoneyDb.listAccountsPaged(query)).rows;
       } catch (err) {
-        throw this.handleError(
-          err,
-          '获取账户列表失败',
-          'listAccounts',
-          'Account',
-        );
+        throw this.handleError(err, '获取账户列表失败', 'listAccounts', 'Account');
       }
     },
 
@@ -210,12 +195,7 @@ export const useMoneyStore = defineStore('money', {
         this.transactions = (await MoneyDb.listTransactionsPaged(query)).rows;
         await this.updateBudgets();
       } catch (err) {
-        this.handleError(
-          err,
-          '获取交易列表失败',
-          'listTransactions',
-          'Transaction',
-        );
+        this.handleError(err, '获取交易列表失败', 'listTransactions', 'Transaction');
       }
     },
 
@@ -241,12 +221,7 @@ export const useMoneyStore = defineStore('money', {
       try {
         this.reminders = await MoneyDb.listBilReminders();
       } catch (err) {
-        this.handleError(
-          err,
-          '获取提醒列表失败',
-          'listBilReminders',
-          'BilReminder',
-        );
+        this.handleError(err, '获取提醒列表失败', 'listBilReminders', 'BilReminder');
       }
     },
 
@@ -265,32 +240,19 @@ export const useMoneyStore = defineStore('money', {
           await this.updateAccounts();
           return result;
         } catch (err) {
-          throw this.handleError(
-            err,
-            '创建账户失败',
-            'createAccount',
-            'Account',
-          );
+          throw this.handleError(err, '创建账户失败', 'createAccount', 'Account');
         }
       });
     },
 
-    async updateAccount(
-      serialNum: string,
-      account: UpdateAccountRequest,
-    ): Promise<Account> {
+    async updateAccount(serialNum: string, account: UpdateAccountRequest): Promise<Account> {
       return this.withLoading(async () => {
         try {
           const result = await MoneyDb.updateAccount(serialNum, account);
           await this.updateAccounts();
           return result;
         } catch (err) {
-          throw this.handleError(
-            err,
-            '更新账户失败',
-            'updateAccount',
-            'Account',
-          );
+          throw this.handleError(err, '更新账户失败', 'updateAccount', 'Account');
         }
       });
     },
@@ -301,31 +263,18 @@ export const useMoneyStore = defineStore('money', {
           await MoneyDb.deleteAccount(serialNum);
           await this.updateAccounts();
         } catch (err) {
-          throw this.handleError(
-            err,
-            '删除账户失败',
-            'deleteAccount',
-            'Account',
-          );
+          throw this.handleError(err, '删除账户失败', 'deleteAccount', 'Account');
         }
       });
     },
 
-    async toggleAccountActive(
-      serialNum: string,
-      isActive: boolean,
-    ): Promise<void> {
+    async toggleAccountActive(serialNum: string, isActive: boolean): Promise<void> {
       return this.withLoading(async () => {
         try {
           await MoneyDb.updateAccountActive(serialNum, isActive);
           await this.updateAccounts();
         } catch (err) {
-          throw this.handleError(
-            err,
-            '切换账户状态失败',
-            'updateAccountActive',
-            'Account',
-          );
+          throw this.handleError(err, '切换账户状态失败', 'updateAccountActive', 'Account');
         }
       });
     },
@@ -339,12 +288,7 @@ export const useMoneyStore = defineStore('money', {
           this.transactions = result.rows;
           return result;
         } catch (err) {
-          throw this.handleError(
-            err,
-            '获取交易列表失败',
-            'listTransactions',
-            'Transaction',
-          );
+          throw this.handleError(err, '获取交易列表失败', 'listTransactions', 'Transaction');
         }
       });
     },
@@ -356,21 +300,14 @@ export const useMoneyStore = defineStore('money', {
       });
     },
 
-    async createTransaction(
-      transaction: TransactionCreate,
-    ): Promise<Transaction> {
+    async createTransaction(transaction: TransactionCreate): Promise<Transaction> {
       return this.withLoading(async () => {
         try {
           const result = await MoneyDb.createTransaction(transaction);
           await this.updateTransactions();
           return result;
         } catch (err) {
-          throw this.handleError(
-            err,
-            '创建交易失败',
-            'createTransaction',
-            'Transaction',
-          );
+          throw this.handleError(err, '创建交易失败', 'createTransaction', 'Transaction');
         }
       });
     },
@@ -381,19 +318,11 @@ export const useMoneyStore = defineStore('money', {
     ): Promise<Transaction> {
       return this.withLoading(async () => {
         try {
-          const result = await MoneyDb.updateTransaction(
-            serialNum,
-            transaction,
-          );
+          const result = await MoneyDb.updateTransaction(serialNum, transaction);
           await this.updateTransactions();
           return result;
         } catch (err) {
-          throw this.handleError(
-            err,
-            '更新交易失败',
-            'updateTransaction',
-            'Transaction',
-          );
+          throw this.handleError(err, '更新交易失败', 'updateTransaction', 'Transaction');
         }
       });
     },
@@ -404,12 +333,7 @@ export const useMoneyStore = defineStore('money', {
           await MoneyDb.deleteTransaction(serialNum);
           await this.updateTransactions();
         } catch (err) {
-          throw this.handleError(
-            err,
-            '删除交易失败',
-            'deleteTransaction',
-            'Transaction',
-          );
+          throw this.handleError(err, '删除交易失败', 'deleteTransaction', 'Transaction');
         }
       });
     },
@@ -418,12 +342,7 @@ export const useMoneyStore = defineStore('money', {
       try {
         return await MoneyDb.monthlyIncomeAndExpense();
       } catch (err) {
-        throw this.handleError(
-          err,
-          '获取月度收支失败',
-          'monthlyIncomeAndExpense',
-          'IncomeExpense',
-        );
+        throw this.handleError(err, '获取月度收支失败', 'monthlyIncomeAndExpense', 'IncomeExpense');
       }
     },
 
@@ -435,12 +354,7 @@ export const useMoneyStore = defineStore('money', {
           await this.updateTransactions();
           return result;
         } catch (err) {
-          throw this.handleError(
-            err,
-            '创建转账失败',
-            'transferCreate',
-            'Transaction',
-          );
+          throw this.handleError(err, '创建转账失败', 'transferCreate', 'Transaction');
         }
       });
     },
@@ -452,12 +366,7 @@ export const useMoneyStore = defineStore('money', {
           await this.updateTransactions();
           return result;
         } catch (err) {
-          throw this.handleError(
-            err,
-            '更新转账失败',
-            'transferUpdate',
-            'Transaction',
-          );
+          throw this.handleError(err, '更新转账失败', 'transferUpdate', 'Transaction');
         }
       });
     },
@@ -465,38 +374,24 @@ export const useMoneyStore = defineStore('money', {
     async deleteTransfer(relatedTransactionSerialNum: string) {
       return this.withLoading(async () => {
         try {
-          const result = await MoneyDb.transferDelete(
-            relatedTransactionSerialNum,
-          );
+          const result = await MoneyDb.transferDelete(relatedTransactionSerialNum);
           await this.updateTransactions();
           return result;
         } catch (err) {
-          throw this.handleError(
-            err,
-            '删除转账失败',
-            'transferDelete',
-            'Transaction',
-          );
+          throw this.handleError(err, '删除转账失败', 'transferDelete', 'Transaction');
         }
       });
     },
 
     // ==================== Budget Operations ====================
-    async getPagedBudgets(
-      query: PageQuery<BudgetFilters>,
-    ): Promise<PagedResult<Budget>> {
+    async getPagedBudgets(query: PageQuery<BudgetFilters>): Promise<PagedResult<Budget>> {
       return this.withLoading(async () => {
         try {
           const result = await MoneyDb.listBudgetsPaged(query);
           this.budgets = result.rows;
           return result;
         } catch (err) {
-          throw this.handleError(
-            err,
-            '获取预算列表失败',
-            'listBudgets',
-            'Budget',
-          );
+          throw this.handleError(err, '获取预算列表失败', 'listBudgets', 'Budget');
         }
       });
     },
@@ -513,10 +408,7 @@ export const useMoneyStore = defineStore('money', {
       });
     },
 
-    async updateBudget(
-      serialNum: string,
-      budget: BudgetUpdate,
-    ): Promise<Budget> {
+    async updateBudget(serialNum: string, budget: BudgetUpdate): Promise<Budget> {
       return this.withLoading(async () => {
         try {
           const result = await MoneyDb.updateBudget(serialNum, budget);
@@ -539,21 +431,13 @@ export const useMoneyStore = defineStore('money', {
       });
     },
 
-    async toggleBudgetActive(
-      serialNum: string,
-      isActive: boolean,
-    ): Promise<void> {
+    async toggleBudgetActive(serialNum: string, isActive: boolean): Promise<void> {
       return this.withLoading(async () => {
         try {
           await MoneyDb.updateBudgetActive(serialNum, isActive);
           await this.updateBudgets();
         } catch (err) {
-          throw this.handleError(
-            err,
-            '切换预算状态失败',
-            'updateBudget',
-            'Budget',
-          );
+          throw this.handleError(err, '切换预算状态失败', 'updateBudget', 'Budget');
         }
       });
     },
@@ -568,12 +452,7 @@ export const useMoneyStore = defineStore('money', {
           this.reminders = result.rows;
           return result;
         } catch (err) {
-          throw this.handleError(
-            err,
-            '获取预算列表失败',
-            'listBudgets',
-            'Budget',
-          );
+          throw this.handleError(err, '获取预算列表失败', 'listBudgets', 'Budget');
         }
       });
     },
@@ -592,32 +471,19 @@ export const useMoneyStore = defineStore('money', {
           await this.updateReminders();
           return result;
         } catch (err) {
-          throw this.handleError(
-            err,
-            '创建提醒失败',
-            'createBilReminder',
-            'BilReminder',
-          );
+          throw this.handleError(err, '创建提醒失败', 'createBilReminder', 'BilReminder');
         }
       });
     },
 
-    async updateReminder(
-      serialNum: string,
-      reminder: BilReminderUpdate,
-    ): Promise<BilReminder> {
+    async updateReminder(serialNum: string, reminder: BilReminderUpdate): Promise<BilReminder> {
       return this.withLoading(async () => {
         try {
           const result = await MoneyDb.updateBilReminder(serialNum, reminder);
           await this.updateReminders();
           return result;
         } catch (err) {
-          throw this.handleError(
-            err,
-            '更新提醒失败',
-            'updateBilReminder',
-            'BilReminder',
-          );
+          throw this.handleError(err, '更新提醒失败', 'updateBilReminder', 'BilReminder');
         }
       });
     },
@@ -628,12 +494,7 @@ export const useMoneyStore = defineStore('money', {
           await MoneyDb.deleteBilReminder(serialNum);
           await this.updateReminders();
         } catch (err) {
-          throw this.handleError(
-            err,
-            '删除提醒失败',
-            'deleteBilReminder',
-            'BilReminder',
-          );
+          throw this.handleError(err, '删除提醒失败', 'deleteBilReminder', 'BilReminder');
         }
       });
     },
@@ -661,12 +522,7 @@ export const useMoneyStore = defineStore('money', {
         } catch (err) {
           // 回滚乐观更新
           await this.updateReminders();
-          throw this.handleError(
-            err,
-            '标记支付状态失败',
-            'updateBilReminder',
-            'BilReminder',
-          );
+          throw this.handleError(err, '标记支付状态失败', 'updateBilReminder', 'BilReminder');
         }
       });
     },

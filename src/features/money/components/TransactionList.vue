@@ -149,6 +149,7 @@ async function loadTransactions() {
       },
     };
     const result = await moneyStore.getPagedTransactions(params);
+
     pagination.value.totalItems = result.totalCount;
     pagination.value.totalPages = result.totalPages;
   } catch (error) {
