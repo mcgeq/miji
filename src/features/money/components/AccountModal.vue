@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { isNaN } from 'es-toolkit/compat';
 import { useI18n } from 'vue-i18n';
 import ColorSelector from '@/components/common/ColorSelector.vue';
 import { COLORS_MAP } from '@/constants/moneyConst';
@@ -121,6 +122,19 @@ function syncCurrency(code: string) {
 function formatBalance(value: string | number): string {
   const num = Number.parseFloat(value.toString());
   return Number.isNaN(num) ? '0.00' : num.toFixed(2);
+}
+
+function handleBalanceInput(event: Event) {
+  const input = event.target as HTMLInputElement;
+  const value = input.value.replace(/[^0-9.]/g, '');
+  if (value === '.' || value === '') {
+    form.initialBalance = value;
+  } else {
+    const num = Number.parseFloat(value);
+    if (!isNaN(num)) {
+      form.initialBalance = value;
+    }
+  }
 }
 
 // 关闭模态框
@@ -266,7 +280,8 @@ watch(() => form.initialBalance, newBalance => {
               required
               class="modal-input-select w-full"
               placeholder="0.00"
-              @input="form.initialBalance = formatBalance(($event.target as HTMLInputElement).value)"
+              @input="handleBalanceInput($event)"
+              @blur="form.initialBalance = formatBalance(form.initialBalance)"
             >
             <span v-if="formErrors.initialBalance" class="text-xs text-red-500">{{ formErrors.initialBalance }}</span>
           </div>

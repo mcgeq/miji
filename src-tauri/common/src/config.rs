@@ -51,7 +51,7 @@ impl Config {
             backtrace: snafu::Backtrace::generate(),
         })?;
 
-        let db_file = data_dir.join("testdb.sqlite");
+        let db_file = data_dir.join("db.sqlite");
         let db_url = format!("sqlite:{}?mode=rwc", db_file.display());
         CONFIG
             .set(Config {
