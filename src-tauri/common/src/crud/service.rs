@@ -17,9 +17,9 @@ use crate::{
     paginations::{Filter, PagedQuery, PagedResult, Sortable},
 };
 use sea_orm::{
-    ActiveModelTrait, ColumnTrait, DbConn, EntityTrait, FromQueryResult, IntoActiveModel,
-    PaginatorTrait, PrimaryKeyTrait, QueryFilter, QuerySelect, TransactionTrait, Value,
-    prelude::async_trait::async_trait, sea_query::SimpleExpr,
+    ActiveModelTrait, ColumnTrait, ConnectionTrait, DbConn, EntityTrait, FromQueryResult,
+    IntoActiveModel, PaginatorTrait, PrimaryKeyTrait, QueryFilter, QuerySelect, TransactionTrait,
+    Value, prelude::async_trait::async_trait, sea_query::SimpleExpr,
 };
 use serde::{Serialize, de::DeserializeOwned};
 use std::{fmt, str::FromStr, sync::Arc};
@@ -655,7 +655,7 @@ where
 
 /// 通用更新函数
 pub async fn update_entity_columns_simple<E, C>(
-    db: &DbConn,
+    db: &impl ConnectionTrait,
     filters: impl IntoIterator<Item = (C, impl IntoIterator<Item = impl Into<Value>>)>,
     updates: impl IntoIterator<Item = (C, SimpleExpr)>,
 ) -> MijiResult<u64>
@@ -783,7 +783,7 @@ impl JsonInput for &Option<serde_json::Value> {
 /// - `E`: 表对应的 Entity
 /// - `C`: 表对应的 Column 枚举
 pub async fn update_table_columns<E, C>(
-    db: &DbConn,
+    db: &impl ConnectionTrait,
     filter: SimpleExpr,
     updates: impl IntoIterator<Item = (C, SimpleExpr)>,
 ) -> MijiResult<u64>
