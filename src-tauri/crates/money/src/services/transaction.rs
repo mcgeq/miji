@@ -2,7 +2,10 @@ use std::{str::FromStr, sync::Arc};
 
 use common::{
     BusinessCode,
-    crud::service::{CrudConverter, CrudService, GenericCrudService, parse_enum_filed},
+    crud::service::{
+        CrudConverter, CrudService, GenericCrudService, parse_enum_filed,
+        update_entity_columns_simple,
+    },
     error::{AppError, MijiResult},
     paginations::{Filter, PagedQuery, PagedResult},
     utils::date::DateUtils,
@@ -1099,6 +1102,26 @@ impl TransactionService {
     ) -> MijiResult<TransactionWithRelations> {
         let model = self.update(db, id, data).await?;
         self.converter().model_to_with_relations(db, model).await
+    }
+
+    pub async fn trans_delete_with_relations(
+        &self,
+        db: &DbConn,
+        serial_num: &str,
+    ) -> MijiResult<()> {
+        update_entity_columns_simple::<entity::transactions::Entity, _>(
+            db,
+            vec![(entity::transactions::Column::SerialNum, vec![serial_num])],
+            vec![
+                (entity::transactions::Column::IsDeleted, Expr::value(true)),
+                (
+                    entity::transactions::Column::UpdatedAt,
+                    Expr::value(DateUtils::local_now()),
+                ),
+            ],
+        )
+        .await
+        .map(|_| ())
     }
 
     pub async fn trans_transfer_create_with_relations(

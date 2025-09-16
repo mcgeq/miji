@@ -61,7 +61,11 @@ impl Hooks<entity::users::Entity, CreateUserDto, UpdateUserDto> for UserHooks {
         Ok(())
     }
 
-    async fn after_delete(&self, _tx: &DatabaseTransaction, _id: &String) -> MijiResult<()> {
+    async fn after_delete(
+        &self,
+        _tx: &DatabaseTransaction,
+        _model: &entity::users::Model,
+    ) -> MijiResult<()> {
         Ok(())
     }
 }

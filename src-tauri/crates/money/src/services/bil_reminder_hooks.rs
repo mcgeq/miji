@@ -46,7 +46,7 @@ impl Hooks<entity::bil_reminder::Entity, BilReminderCreate, BilReminderUpdate>
     ) -> MijiResult<()> {
         Ok(())
     }
-    async fn after_delete(&self, _tx: &DatabaseTransaction, _id: &String) -> MijiResult<()> {
+    async fn after_delete(&self, _tx: &DatabaseTransaction, _model: &entity::bil_reminder::Model) -> MijiResult<()> {
         Ok(())
     }
 }

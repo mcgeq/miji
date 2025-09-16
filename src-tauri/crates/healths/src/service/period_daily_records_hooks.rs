@@ -46,7 +46,11 @@ impl Hooks<entity::period_daily_records::Entity, PeriodDailyRecordCreate, Period
     ) -> MijiResult<()> {
         Ok(())
     }
-    async fn after_delete(&self, _tx: &DatabaseTransaction, _id: &String) -> MijiResult<()> {
+    async fn after_delete(
+        &self,
+        _tx: &DatabaseTransaction,
+        _model: &entity::period_daily_records::Model,
+    ) -> MijiResult<()> {
         Ok(())
     }
 }

@@ -44,7 +44,11 @@ impl Hooks<entity::budget::Entity, BudgetCreate, BudgetUpdate> for BudgetHooks {
     ) -> MijiResult<()> {
         Ok(())
     }
-    async fn after_delete(&self, _tx: &DatabaseTransaction, _id: &String) -> MijiResult<()> {
+    async fn after_delete(
+        &self,
+        _tx: &DatabaseTransaction,
+        _model: &entity::budget::Model,
+    ) -> MijiResult<()> {
         Ok(())
     }
 }

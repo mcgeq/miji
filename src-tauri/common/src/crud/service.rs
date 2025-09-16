@@ -329,7 +329,7 @@ where
         E::delete_by_id(id.clone()).exec(&tx).await?;
 
         // 后置钩子
-        self.hooks.after_delete(&tx, &id).await?;
+        self.hooks.after_delete(&tx, &model).await?;
 
         tx.commit().await?;
 
@@ -481,7 +481,7 @@ where
                 deleted_count += delete_result.rows_affected;
 
                 // 执行后置钩子
-                self.hooks.after_delete(&tx, id).await?;
+                self.hooks.after_delete(&tx, &model).await?;
             }
         }
 
@@ -759,7 +759,7 @@ impl JsonInput for &str {
     fn parse_json<T: DeserializeOwned>(self, field_name: &str, default: T) -> T {
         serde_json::from_str(self).unwrap_or_else(|e| {
             #[cfg(debug_assertions)]
-            eprintln!("Failed to parse {} '{}': {}", field_name, self, e);
+            eprintln!("Failed to parse {field_name} '{self}': {e}");
             default
         })
     }
@@ -771,7 +771,7 @@ impl JsonInput for &Option<serde_json::Value> {
         match self {
             Some(json_val) => serde_json::from_value(json_val.clone()).unwrap_or_else(|e| {
                 #[cfg(debug_assertions)]
-                eprintln!("Failed to parse {} '{:?}': {}", field_name, json_val, e);
+                eprintln!("Failed to parse {field_name} '{json_val:?}': {e}");
                 default
             }),
             None => default,

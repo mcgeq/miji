@@ -7,8 +7,8 @@ use common::{
     utils::date::DateUtils,
 };
 use sea_orm::{
-    ActiveModelTrait, ColumnTrait, DatabaseTransaction, EntityTrait, IntoActiveModel,
-    PrimaryKeyTrait, QueryFilter, QuerySelect,
+    ActiveModelTrait, ColumnTrait, DatabaseTransaction, EntityTrait, IntoActiveModel, QueryFilter,
+    QuerySelect,
     prelude::{DateTimeWithTimeZone, Decimal, async_trait::async_trait},
 };
 use snafu::GenerateImplicitData;
@@ -142,14 +142,6 @@ impl Hooks<entity::transactions::Entity, CreateTransactionRequest, UpdateTransac
         tx: &DatabaseTransaction,
         model: &entity::transactions::Model,
     ) -> MijiResult<()> {
-        // Implement pre-delete validation or operations
-        let transaction_status = TransactionStatus::from_str(&model.transaction_status)?;
-        if transaction_status == TransactionStatus::Completed {
-            return Err(AppError::simple(
-                BusinessCode::MoneyTransactionDeclined,
-                "无法删除已完成的交易",
-            ));
-        }
         if model.category == "Transfer"
             && let Some(related_id) = &model.related_transaction_serial_num
         {
@@ -174,33 +166,29 @@ impl Hooks<entity::transactions::Entity, CreateTransactionRequest, UpdateTransac
             )
             .await?;
         }
+
         Ok(())
     }
 
     async fn after_delete(
         &self,
         tx: &DatabaseTransaction,
-        id: &<entity::transactions::PrimaryKey as PrimaryKeyTrait>::ValueType,
+        model: &entity::transactions::Model,
     ) -> MijiResult<()> {
-        let transaction = entity::transactions::Entity::find_by_id(id.clone())
-            .one(tx)
-            .await?
-            .ok_or_else(|| AppError::simple(BusinessCode::NotFound, "交易不存在"))?;
-
-        if transaction.category != "Transfer" && transaction.is_deleted {
-            let transaction_type = TransactionType::from_str(&transaction.transaction_type)?;
+        if model.category != "Transfer" {
+            let transaction_type = TransactionType::from_str(&model.transaction_type)?;
             update_account_balance(
                 tx,
-                &transaction.account_serial_num,
+                &model.account_serial_num,
                 transaction_type,
-                transaction.amount,
+                model.amount,
                 true,
             )
             .await?;
         }
 
-        if transaction.category == "Transfer"
-            && let Some(related_id) = &transaction.related_transaction_serial_num
+        if model.category == "Transfer"
+            && let Some(related_id) = &model.related_transaction_serial_num
         {
             let mut related_active = entity::transactions::Entity::find_by_id(related_id)
                 .one(tx)

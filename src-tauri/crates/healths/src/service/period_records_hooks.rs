@@ -1,5 +1,5 @@
 use common::{crud::hooks::Hooks, error::MijiResult};
-use sea_orm::{prelude::async_trait::async_trait, DatabaseTransaction};
+use sea_orm::{DatabaseTransaction, prelude::async_trait::async_trait};
 
 use crate::dto::period_records::{PeriodRecordsCreate, PeriodRecordsUpdate};
 
@@ -7,7 +7,9 @@ use crate::dto::period_records::{PeriodRecordsCreate, PeriodRecordsUpdate};
 pub struct PeriodRecordsHooks;
 
 #[async_trait]
-impl Hooks<entity::period_records::Entity, PeriodRecordsCreate, PeriodRecordsUpdate> for PeriodRecordsHooks {
+impl Hooks<entity::period_records::Entity, PeriodRecordsCreate, PeriodRecordsUpdate>
+    for PeriodRecordsHooks
+{
     async fn before_create(
         &self,
         _tx: &DatabaseTransaction,
@@ -44,9 +46,11 @@ impl Hooks<entity::period_records::Entity, PeriodRecordsCreate, PeriodRecordsUpd
     ) -> MijiResult<()> {
         Ok(())
     }
-    async fn after_delete(&self, _tx: &DatabaseTransaction, _id: &String) -> MijiResult<()> {
+    async fn after_delete(
+        &self,
+        _tx: &DatabaseTransaction,
+        _model: &entity::period_records::Model,
+    ) -> MijiResult<()> {
         Ok(())
     }
-
 }
-

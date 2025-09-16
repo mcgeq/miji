@@ -1,6 +1,6 @@
-use async_trait::async_trait;
-use sea_orm::{DatabaseTransaction, EntityTrait, PrimaryKeyTrait};
 use crate::error::MijiResult;
+use async_trait::async_trait;
+use sea_orm::{DatabaseTransaction, EntityTrait};
 
 /// CRUD 操作钩子 trait
 #[async_trait]
@@ -8,42 +8,22 @@ pub trait Hooks<E, C, U>
 where
     E: EntityTrait,
 {
-    async fn before_create(
-        &self,
-        tx: &DatabaseTransaction,
-        data: &C
-    ) -> MijiResult<()>;
+    async fn before_create(&self, tx: &DatabaseTransaction, data: &C) -> MijiResult<()>;
 
-    async fn after_create(
-        &self,
-        tx: &DatabaseTransaction,
-        model: &E::Model
-    ) -> MijiResult<()>;
+    async fn after_create(&self, tx: &DatabaseTransaction, model: &E::Model) -> MijiResult<()>;
 
     async fn before_update(
         &self,
         tx: &DatabaseTransaction,
         model: &E::Model,
-        data: &U
+        data: &U,
     ) -> MijiResult<()>;
 
-    async fn after_update(
-        &self,
-        tx: &DatabaseTransaction,
-        model: &E::Model
-    ) -> MijiResult<()>;
+    async fn after_update(&self, tx: &DatabaseTransaction, model: &E::Model) -> MijiResult<()>;
 
-    async fn before_delete(
-        &self,
-        tx: &DatabaseTransaction,
-        model: &E::Model
-    ) -> MijiResult<()>;
+    async fn before_delete(&self, tx: &DatabaseTransaction, model: &E::Model) -> MijiResult<()>;
 
-    async fn after_delete(
-        &self,
-        tx: &DatabaseTransaction,
-        id: &<E::PrimaryKey as PrimaryKeyTrait>::ValueType
-    ) -> MijiResult<()>;
+    async fn after_delete(&self, tx: &DatabaseTransaction, model: &E::Model) -> MijiResult<()>;
 }
 
 /// 空操作钩子
@@ -60,8 +40,12 @@ where
     async fn after_create(&self, _tx: &DatabaseTransaction, _model: &E::Model) -> MijiResult<()> {
         Ok(())
     }
-    async fn before_update(&self, _tx: &DatabaseTransaction, _model: &E::Model,
-        _data: &U) -> MijiResult<()> {
+    async fn before_update(
+        &self,
+        _tx: &DatabaseTransaction,
+        _model: &E::Model,
+        _data: &U,
+    ) -> MijiResult<()> {
         Ok(())
     }
     async fn after_update(&self, _tx: &DatabaseTransaction, _model: &E::Model) -> MijiResult<()> {
@@ -70,8 +54,7 @@ where
     async fn before_delete(&self, _tx: &DatabaseTransaction, _model: &E::Model) -> MijiResult<()> {
         Ok(())
     }
-    async fn after_delete(&self, _tx: &DatabaseTransaction,
-        _id: &<E::PrimaryKey as PrimaryKeyTrait>::ValueType) -> MijiResult<()> {
+    async fn after_delete(&self, _tx: &DatabaseTransaction, _model: &E::Model) -> MijiResult<()> {
         Ok(())
     }
 }

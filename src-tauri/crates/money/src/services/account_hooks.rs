@@ -51,10 +51,8 @@ impl Hooks<entity::account::Entity, CreateAccountRequest, UpdateAccountRequest> 
     async fn after_delete(
         &self,
         _tx: &DatabaseTransaction,
-        _id: &<entity::account::PrimaryKey as sea_orm::PrimaryKeyTrait>::ValueType,
+        _model: &entity::account::Model,
     ) -> MijiResult<()> {
         Ok(())
     }
 }
-
-
