@@ -1,7 +1,9 @@
 pub mod account;
+pub mod bil_reminder;
+pub mod budget;
+pub mod categories;
 pub mod currency;
 pub mod family_member;
 pub mod reminder;
+pub mod sub_categories;
 pub mod transactions;
-pub mod bil_reminder;
-pub mod budget;

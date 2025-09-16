@@ -73,53 +73,8 @@ impl MigrationTrait for Migration {
                             .not_null(),
                     )
                     .col(ColumnDef::new(Transactions::ToAccountSerialNum).string_len(38))
-                    .col(
-                        ColumnDef::new(Transactions::Category)
-                            .string()
-                            .not_null()
-                            .check(Expr::col(Transactions::Category).is_in(vec![
-                                "Food",
-                                "Transport",
-                                "Entertainment",
-                                "Utilities",
-                                "Shopping",
-                                "Salary",
-                                "Investment",
-                                "Transfer",
-                                "Education",
-                                "Healthcare",
-                                "Insurance",
-                                "Savings",
-                                "Gift",
-                                "Loan",
-                                "Business",
-                                "Travel",
-                                "Charity",
-                                "Subscription",
-                                "Pet",
-                                "Home",
-                                "Others",
-                            ])),
-                    )
-                    .col(
-                        ColumnDef::new(Transactions::SubCategory).string().check(
-                            Expr::col(Transactions::SubCategory)
-                                .is_in(vec![
-                                    "Restaurant",
-                                    "Groceries",
-                                    "Snacks",
-                                    "Bus",
-                                    "Taxi",
-                                    "Fuel",
-                                    "Movies",
-                                    "Concerts",
-                                    "MonthlySalary",
-                                    "Bonus",
-                                    "Other",
-                                ])
-                                .or(Expr::col(Transactions::SubCategory).is_null()),
-                        ),
-                    )
+                    .col(ColumnDef::new(Transactions::Category).string().not_null())
+                    .col(ColumnDef::new(Transactions::SubCategory).string())
                     .col(ColumnDef::new(Transactions::Tags).json_binary().null())
                     .col(
                         ColumnDef::new(Transactions::SplitMembers)

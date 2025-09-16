@@ -401,3 +401,20 @@ pub enum BilReminder {
     CreatedAt,
     UpdatedAt,
 }
+
+#[derive(DeriveIden)]
+pub enum Categories {
+    Table,
+    Name,
+    CreatedAt,
+    UpdatedAt,
+}
+
+#[derive(DeriveIden)]
+pub enum SubCategories {
+    Table,
+    Name,
+    CategoryName,
+    CreatedAt,
+    UpdatedAt,
+}
