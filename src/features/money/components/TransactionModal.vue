@@ -44,33 +44,13 @@ const selectAccounts = computed(() => {
   return props.accounts.filter(account => account.isActive);
 });
 
-const trans = props.transaction || {
-  serialNum: '',
-  transactionType: props.type,
-  category: 'other',
-  subCategory: 'other',
-  amount: 0,
-  refundAmount: 0,
-  currency: CURRENCY_CNY,
-  date: DateUtils.getLocalISODateTimeWithOffset(),
-  description: '',
-  notes: null,
-  accountSerialNum: '',
-  tags: [],
-  paymentMethod: PaymentMethodSchema.enum.Other,
-  actualPayerAccount: AccountTypeSchema.enum.Bank,
-  transactionStatus: TransactionStatusSchema.enum.Completed,
-  isDeleted: false,
-  createdAt: DateUtils.getLocalISODateTimeWithOffset(),
-  updatedAt: null,
-  account: props.accounts[0] || ({} as Account),
-};
+const trans = props.transaction || getDefaultTransaction(props.type, props.accounts);
 
 const form = ref<Transaction>({
   ...trans,
   amount: trans.amount || 0,
   currency: trans.currency || CURRENCY_CNY,
-  category: 'other',
+  category: props.type === TransactionTypeSchema.enum.Transfer ? 'Transfer' : 'other',
   refundAmount: 0,
   toAccountSerialNum: '',
   date: trans.date || DateUtils.getLocalISODateTimeWithOffset(),
@@ -295,11 +275,39 @@ function handleAmountInput(event: Event) {
   }
 }
 
+function getDefaultTransaction(type: TransactionType, accounts: Account[]) {
+  return {
+    serialNum: '',
+    transactionType: type,
+    category: type === TransactionTypeSchema.enum.Transfer ? 'Transfer' : 'other',
+    subCategory: 'other',
+    amount: 0,
+    refundAmount: 0,
+    currency: CURRENCY_CNY,
+    date: DateUtils.getLocalISODateTimeWithOffset(),
+    description: '',
+    notes: null,
+    accountSerialNum: '',
+    toAccountSerialNum: '',
+    tags: [],
+    paymentMethod: PaymentMethodSchema.enum.Other,
+    actualPayerAccount: AccountTypeSchema.enum.Bank,
+    transactionStatus: TransactionStatusSchema.enum.Completed,
+    isDeleted: false,
+    createdAt: DateUtils.getLocalISODateTimeWithOffset(),
+    updatedAt: null,
+    account: accounts[0] || ({} as Account),
+  };
+}
+
 watch(
   () => form.value.category,
   newCategory => {
     const subs = categoryMap.value.get(newCategory)?.subs || [];
-    form.value.subCategory = subs.length > 0 ? subs[0] : '';
+    const currentSubCategory = form.value.subCategory ?? '';
+    if (subs.length > 0 && !subs.includes(currentSubCategory)) {
+      form.value.subCategory = subs[0];
+    }
   },
 );
 
@@ -330,37 +338,19 @@ watch(
 watch(
   () => props.transaction,
   transaction => {
-    form.value = transaction
-      ? {
-          ...transaction,
-          currency: transaction.currency || CURRENCY_CNY,
-          subCategory: transaction.subCategory || 'other',
-          toAccountSerialNum: transaction.toAccountSerialNum || null,
-          refundAmount: 0,
-          date: transaction.date || DateUtils.getLocalISODateTimeWithOffset(),
-        }
-      : {
-          serialNum: '',
-          transactionType: props.type,
-          amount: 0,
-          refundAmount: 0,
-          accountSerialNum: '',
-          toAccountSerialNum: '',
-          category: 'other',
-          subCategory: 'other',
-          currency: CURRENCY_CNY,
-          date: DateUtils.getLocalISODateTimeWithOffset(),
-          description: '',
-          notes: null,
-          tags: [],
-          paymentMethod: PaymentMethodSchema.enum.Other,
-          actualPayerAccount: AccountTypeSchema.enum.Bank,
-          transactionStatus: TransactionStatusSchema.enum.Completed,
-          createdAt: DateUtils.getLocalISODateTimeWithOffset(),
-          isDeleted: false,
-          updatedAt: null,
-          account: props.accounts[0] || ({} as Account),
-        };
+    if (transaction) {
+      form.value = {
+        ...getDefaultTransaction(props.type, props.accounts),
+        ...transaction,
+        currency: transaction.currency || CURRENCY_CNY,
+        subCategory: transaction.subCategory || 'other',
+        toAccountSerialNum: transaction.toAccountSerialNum || null,
+        refundAmount: 0,
+        date: transaction.date || DateUtils.getLocalISODateTimeWithOffset(),
+      };
+    } else {
+      form.value = getDefaultTransaction(props.type, props.accounts);
+    }
   },
   { immediate: true },
 );
