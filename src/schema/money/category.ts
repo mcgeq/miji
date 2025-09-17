@@ -1,37 +1,37 @@
 import z from 'zod';
 import { DateTimeSchema, NameSchema } from '../common';
 
-export const CategoreSchema = z.object({
+export const CategorySchema = z.object({
   name: NameSchema,
   createdAt: DateTimeSchema,
   updatedAt: DateTimeSchema.optional().nullable(),
 });
 
-export const CategoreCreateSchema = z.object({
+export const CategoryCreateSchema = z.object({
   name: NameSchema,
 });
 
-export const CategoreUpdateSchema = z.object({
+export const CategoryUpdateSchema = z.object({
   name: NameSchema.optional().nullable(),
 });
 
-export const SubCategoreSchema = z.object({
+export const SubCategorySchema = z.object({
   name: NameSchema,
   categoryName: NameSchema,
   createdAt: DateTimeSchema,
   updatedAt: DateTimeSchema.optional().nullable(),
 });
 
-export const SubCategoreCreateSchema = SubCategoreSchema.pick({
+export const SubCategoryCreateSchema = SubCategorySchema.pick({
   name: true,
   category_name: true,
 }).strict();
 
-export const SubCategoreUpdateSchema = SubCategoreCreateSchema.optional();
+export const SubCategoryUpdateSchema = SubCategoryCreateSchema.optional();
 
-export type Category = z.infer<typeof CategoreSchema>;
-export type CategoryCreate = z.infer<typeof CategoreCreateSchema>;
-export type CategoryUpdate = z.infer<typeof CategoreUpdateSchema>;
-export type SubCategory = z.infer<typeof SubCategoreSchema>;
-export type SubCategoryCreate = z.infer<typeof SubCategoreCreateSchema>;
-export type SubCategoryUpdate = z.infer<typeof SubCategoreUpdateSchema>;
+export type Category = z.infer<typeof CategorySchema>;
+export type CategoryCreate = z.infer<typeof CategoryCreateSchema>;
+export type CategoryUpdate = z.infer<typeof CategoryUpdateSchema>;
+export type SubCategory = z.infer<typeof SubCategorySchema>;
+export type SubCategoryCreate = z.infer<typeof SubCategoryCreateSchema>;
+export type SubCategoryUpdate = z.infer<typeof SubCategoryUpdateSchema>;

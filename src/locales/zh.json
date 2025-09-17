@@ -261,6 +261,7 @@
       "gaming": "游戏消费（线下桌游/电玩城）",
       "streaming": "流媒体订阅（如Netflix/Spotify）",
       "e-sports": "电竞观赛（赛事门票/直播打赏）",
+      "sports": "体育运动消费（健身房/球类/运动课程）",
       "hobbySupplies": "兴趣爱好用品（如乐器/模型）",
       "karaoke": "KTV/包厢消费",
       "concerts": "音乐会/演唱会",
@@ -280,6 +281,8 @@
       "propertyManagement": "物业管理费",
       "garbageDisposal": "垃圾处理费",
       "solarPanel": "太阳能设备维护费",
+      "propertyRental": "房产租赁费用",
+      "activities": "休闲活动（团建/聚会/亲子活动）",
 
       "clothing": "服装服饰",
       "footwear": "鞋类箱包",
@@ -334,6 +337,8 @@
       "courses": "培训课程",
       "tutoring": "课外辅导",
       "examFees": "考试报名费",
+      "books": "书籍购买",
+      "schoolSupplies": "学习文具/校用用品",
 
       "doctorConsultation": "门诊挂号",
       "prescriptionDrugs": "处方药品",
@@ -355,6 +360,7 @@
       "travelInsurance": "旅行保险",
       "petInsurance": "宠物保险",
       "insurancePremium": "保险续费",
+      "insurancePremiums": "保险保费支出",
 
       "bankInterest": "银行存款利息",
       "fixedDeposit": "定期存款收益",
@@ -427,6 +433,9 @@
       "cleaningTools": "清洁用品/工具",
       "gardening": "园艺用品",
       "homeImprovement": "家居改造/维修",
+      "homeDecor": "家居装饰品",
+      "renovation": "房屋装修费用",
+      "homeMaintenance": "房屋维修保养",
 
       "miscellaneous": "未明确分类收支",
       "other": "其他"

@@ -3,8 +3,6 @@ import VueDatePicker from '@vuepic/vue-datepicker';
 import CurrencySelector from '@/components/common/money/CurrencySelector.vue';
 import { CURRENCY_CNY } from '@/constants/moneyConst';
 import {
-  CategorySchema,
-  SubCategorySchema,
   TransactionStatusSchema,
   TransactionTypeSchema,
 } from '@/schema/common';
@@ -37,7 +35,7 @@ const moneyStore = useMoneyStore();
 const { t } = useI18n();
 
 const selectAccounts = computed(() => {
-  if (props.transaction?.category === CategorySchema.enum.Transfer) {
+  if (props.transaction?.category === 'Transfer') {
     return props.accounts.filter(account => account.isActive);
   }
   if (props.type === TransactionTypeSchema.enum.Income) {
@@ -45,28 +43,12 @@ const selectAccounts = computed(() => {
   }
   return props.accounts.filter(account => account.isActive);
 });
-const subcategories = computed(() => {
-  return moneyStore.subCategories.map(sub => ({
-    name: sub.name,
-    category: mapSubToCategory(sub.name),
-  }));
-});
-
-const categories = computed(() => {
-  return moneyStore.subCategories.map(sub => ({
-    name: sub.categoryName,
-    type: sub.categoryName === TransactionTypeSchema.enum.Transfer ? 'Transfer' : ['Salary', 'Investment'].includes(sub.categoryName) ? 'Income' : 'Expense',
-  }));
-},
-);
-
-const subCategoriesMap = new Map<string, string>();
 
 const trans = props.transaction || {
   serialNum: '',
   transactionType: props.type,
-  category: CategorySchema.enum.Others,
-  subCategory: SubCategorySchema.enum.Other,
+  category: 'other',
+  subCategory: 'other',
   amount: 0,
   refundAmount: 0,
   currency: CURRENCY_CNY,
@@ -88,13 +70,35 @@ const form = ref<Transaction>({
   ...trans,
   amount: trans.amount || 0,
   currency: trans.currency || CURRENCY_CNY,
+  category: 'other',
   refundAmount: 0,
   toAccountSerialNum: '',
   date: trans.date || DateUtils.getLocalISODateTimeWithOffset(),
 });
 
+const categoryMap = computed(() => {
+  const map = new Map<string, { name: string; subs: string[] }>();
+  moneyStore.subCategories.forEach(sub => {
+    if (form.value.transactionType === 'Income') {
+      const allowedCategories = ['Salary', 'Investment', 'Savings', 'Gift'];
+      if (allowedCategories.includes(sub.categoryName)) {
+        if (!map.has(sub.categoryName)) {
+          map.set(sub.categoryName, { name: sub.categoryName, subs: [] });
+        }
+        map.get(sub.categoryName)!.subs.push(sub.name);
+      }
+    } else {
+      if (!map.has(sub.categoryName)) {
+        map.set(sub.categoryName, { name: sub.categoryName, subs: [] });
+      }
+      map.get(sub.categoryName)!.subs.push(sub.name);
+    }
+  });
+  return map;
+});
+
 const isTransferReadonly = computed(() => {
-  return !!(props.transaction && form.value.category === CategorySchema.enum.Transfer);
+  return !!(props.transaction && form.value.category === 'Transfer');
 });
 
 const isEditabled = computed<boolean>(() => !!props.transaction);
@@ -124,45 +128,6 @@ const availablePaymentMethods = computed(() => {
 const isPaymentMethodEditable = computed(() => {
   if (form.value.transactionType === TransactionTypeSchema.enum.Income) return false;
   return availablePaymentMethods.value.length > 1;
-});
-
-function mapSubToCategory(sub: string): string {
-  return subCategoriesMap.get(sub) || 'Others';
-}
-
-const filteredCategories = computed(() => {
-  const category = categories.value.filter(c => {
-    if (props.transaction?.category === CategorySchema.enum.Transfer) {
-      return c.type === CategorySchema.enum.Transfer;
-    }
-    return c.type === form.value.transactionType;
-  });
-  const seen = new Set(); // 记录已出现的 "name_type" 组合
-  const uniqueCategory = category.filter(item => {
-    const uniqueKey = `${item.name}_${item.type}`; // 生成唯一标识
-    if (seen.has(uniqueKey)) {
-      return false; // 重复则过滤
-    }
-    seen.add(uniqueKey); // 首次出现则加入 Set
-    return true;
-  });
-  return uniqueCategory.map(item => ({
-    name: item.name,
-    type: item.type,
-    option: t(`financial.transactionCategories.${lowercaseFirstLetter(item.name)}`),
-  }));
-});
-
-const filteredSubcategories = computed(() => {
-  if (form.value.category === TransactionTypeSchema.enum.Transfer) {
-    return [];
-  }
-  const sub = subcategories.value.filter(s => s.category === form.value.category);
-  return sub.map(item => ({
-    name: item.name,
-    category: item.category,
-    option: t(`financial.transactionSubCategories.${lowercaseFirstLetter(item.name)}`),
-  }));
 });
 
 const selectToAccounts = computed(() => {
@@ -323,22 +288,11 @@ function handleAmountInput(event: Event) {
   }
 }
 
-function initializeSubCaregoryMap() {
-  subcategories.value.forEach(sub => {
-    subCategoriesMap.set(sub.name, sub.category);
-  });
-}
-
 watch(
   () => form.value.category,
-  () => form.value.subCategory = SubCategorySchema.enum.Other,
-);
-
-watch(
-  () => form.value.transactionType,
-  () => {
-    form.value.category = CategorySchema.enum.Others;
-    form.value.subCategory = SubCategorySchema.enum.Other;
+  newCategory => {
+    const subs = categoryMap.value.get(newCategory)?.subs || [];
+    form.value.subCategory = subs.length > 0 ? subs[0] : '';
   },
 );
 
@@ -373,7 +327,7 @@ watch(
       ? {
           ...transaction,
           currency: transaction.currency || CURRENCY_CNY,
-          subCategory: transaction.subCategory || SubCategorySchema.enum.Other,
+          subCategory: transaction.subCategory || 'other',
           toAccountSerialNum: transaction.toAccountSerialNum || null,
           refundAmount: 0,
           date: transaction.date || DateUtils.getLocalISODateTimeWithOffset(),
@@ -385,8 +339,8 @@ watch(
           refundAmount: 0,
           accountSerialNum: '',
           toAccountSerialNum: '',
-          category: CategorySchema.enum.Others,
-          subCategory: SubCategorySchema.enum.Other,
+          category: 'other',
+          subCategory: 'other',
           currency: CURRENCY_CNY,
           date: DateUtils.getLocalISODateTimeWithOffset(),
           description: '',
@@ -416,13 +370,8 @@ watch(
   },
 );
 
-watch(subcategories, () => {
-  initializeSubCaregoryMap();
-}, { deep: true });
-
 onMounted(async () => {
   await moneyStore.getAllCategories();
-  initializeSubCaregoryMap();
 });
 </script>
 
@@ -533,25 +482,32 @@ onMounted(async () => {
             <option value="">
               {{ t('common.placeholders.selectCategory') }}
             </option>
-            <option v-for="category in filteredCategories" :key="category.name" :value="category.name">
-              {{ category.option }}
+            <option
+              v-for="[key, category] in categoryMap"
+              :key="key"
+              :value="category.name"
+            >
+              {{ t(`financial.transactionCategories.${lowercaseFirstLetter(category.name)}`) }}
             </option>
           </select>
         </div>
 
         <!-- 子分类 -->
-        <div v-if="filteredSubcategories.length > 0" class="flex items-center justify-between">
+        <div
+          v-if="form.category && categoryMap.get(form.category)?.subs.length"
+          class="flex items-center justify-between"
+        >
           <label class="text-sm font-medium mb-1">{{ t('categories.subCategory') }}</label>
           <select v-model="form.subCategory" class="modal-input-select w-2/3">
             <option value="">
               {{ t('common.placeholders.selectOption') }}
             </option>
             <option
-              v-for="subcategory in filteredSubcategories"
-              :key="subcategory.name"
-              :value="subcategory.name"
+              v-for="sub in categoryMap.get(form.category)?.subs"
+              :key="sub"
+              :value="sub"
             >
-              {{ subcategory.option }}
+              {{ t(`financial.transactionSubCategories.${lowercaseFirstLetter(sub)}`) }}
             </option>
           </select>
         </div>

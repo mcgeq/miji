@@ -1,10 +1,8 @@
 import { z } from 'zod';
 import {
-  CategorySchema,
   CurrencySchema,
   DateTimeSchema,
   SerialNumSchema,
-  SubCategorySchema,
   TransactionStatusSchema,
   TransactionTypeSchema,
 } from '../common';
@@ -26,8 +24,8 @@ export const TransactionSchema = z.object({
   notes: z.string().optional().nullable(),
   accountSerialNum: SerialNumSchema,
   toAccountSerialNum: SerialNumSchema.optional().nullable(),
-  category: CategorySchema,
-  subCategory: SubCategorySchema.optional().nullable(),
+  category: z.string(),
+  subCategory: z.string().optional().nullable(),
   tags: z.array(TagsSchema),
   splitMembers: z.array(FamilyMemberSchema).optional(),
   paymentMethod: PaymentMethodSchema,
