@@ -21,6 +21,7 @@ import type {
   TransferCreate,
   UpdateAccountRequest,
 } from '@/schema/money';
+import type { SubCategory } from '@/schema/money/category';
 import type { AccountFilters } from '@/services/money/accounts';
 import type { PagedResult } from '@/services/money/baseManager';
 import type { BudgetFilters } from '@/services/money/budgets';
@@ -82,6 +83,7 @@ interface MoneyStoreState {
   transactions: Transaction[];
   budgets: Budget[];
   reminders: BilReminder[];
+  categories: SubCategory[];
   loading: boolean;
   error: string | null;
 }
@@ -91,6 +93,7 @@ export const useMoneyStore = defineStore('money', {
     accounts: [],
     transactions: [],
     budgets: [],
+    categories: [],
     reminders: [],
     loading: false,
     error: null,
@@ -116,6 +119,12 @@ export const useMoneyStore = defineStore('money', {
     },
     findReminder: state => (serialNum: string) => {
       return state.reminders.find(reminder => reminder.serialNum === serialNum);
+    },
+    subCategories: state => {
+      return state.categories.map(sub => ({
+        name: sub.name,
+        categoryName: sub.categoryName,
+      }));
     },
   },
   // ==================== Actions ====================
@@ -252,6 +261,17 @@ export const useMoneyStore = defineStore('money', {
         '获取提醒列表失败',
         'listBilReminders',
         'BilReminder',
+      );
+    },
+
+    async updateCategories() {
+      return this.withLoadingSafe(
+        async () => {
+          this.categories = await MoneyDb.listCategory();
+        },
+        '获取分类信息失败',
+        'updateCategories',
+        'Category',
       );
     },
 
@@ -578,6 +598,16 @@ export const useMoneyStore = defineStore('money', {
           throw this.handleError(err, '标记支付状态失败', 'updateBilReminder', 'BilReminder');
         }
       });
+    },
+
+    // Category
+    async getAllCategories(): Promise<SubCategory[]> {
+      return this.withLoading(
+        async () => {
+          await this.updateCategories();
+          return this.categories;
+        },
+      );
     },
 
     // ==================== Utility Functions ====================

@@ -15,6 +15,7 @@ use crate::{
         bil_reminder::{BilReminder, BilReminderCreate, BilReminderUpdate},
         budget::{Budget, BudgetCreate, BudgetUpdate},
         currency::{CreateCurrencyRequest, CurrencyResponse, UpdateCurrencyRequest},
+        sub_categories::{SubCategory, SubCategoryCreate, SubCategoryUpdate},
         transactions::{
             CreateTransactionRequest, IncomeExpense, TransactionResponse, TransferRequest,
             UpdateTransactionRequest,
@@ -25,6 +26,7 @@ use crate::{
         bil_reminder::{BilReminderFilters, get_bil_reminder_service},
         budget::{BudgetFilter, get_budget_service},
         currency::{CurrencyFilter, get_currency_service},
+        sub_categories::{SubCategoryFilter, get_sub_category_service},
         transaction::{TransactionFilter, get_transaction_service},
     },
 };
@@ -616,3 +618,93 @@ pub async fn bil_reminder_list_paged(
 // en
 // end 提醒
 // ============================================================================
+
+// Sub Category Start
+#[tauri::command]
+pub async fn sub_category_get(
+    state: State<'_, AppState>,
+    id: String,
+) -> Result<ApiResponse<SubCategory>, String> {
+    let service = get_sub_category_service();
+    Ok(ApiResponse::from_result(
+        service
+            .sub_category_get(&state.db, id)
+            .await
+            .map(SubCategory::from),
+    ))
+}
+
+#[tauri::command]
+pub async fn sub_category_create(
+    state: State<'_, AppState>,
+    data: SubCategoryCreate,
+) -> Result<ApiResponse<SubCategory>, String> {
+    let service = get_sub_category_service();
+    Ok(ApiResponse::from_result(
+        service
+            .sub_category_create(&state.db, data)
+            .await
+            .map(SubCategory::from),
+    ))
+}
+
+#[tauri::command]
+pub async fn sub_category_update(
+    state: State<'_, AppState>,
+    serial_num: String,
+    data: SubCategoryUpdate,
+) -> Result<ApiResponse<SubCategory>, String> {
+    let service = get_sub_category_service();
+    Ok(ApiResponse::from_result(
+        service
+            .sub_category_update(&state.db, serial_num, data)
+            .await
+            .map(SubCategory::from),
+    ))
+}
+
+#[tauri::command]
+pub async fn sub_category_delete(
+    state: State<'_, AppState>,
+    id: String,
+) -> Result<ApiResponse<()>, String> {
+    let service = get_sub_category_service();
+    Ok(ApiResponse::from_result(
+        service.sub_category_delete(&state.db, id).await,
+    ))
+}
+
+#[tauri::command]
+pub async fn sub_category_list(
+    state: State<'_, AppState>,
+) -> Result<ApiResponse<Vec<SubCategory>>, String> {
+    let service = get_sub_category_service();
+    Ok(ApiResponse::from_result(
+        service
+            .sub_category_list(&state.db)
+            .await
+            .map(|models| models.into_iter().map(SubCategory::from).collect()),
+    ))
+}
+
+#[tauri::command]
+pub async fn sub_category_list_paged(
+    state: State<'_, AppState>,
+    query: PagedQuery<SubCategoryFilter>,
+) -> Result<ApiResponse<PagedResult<SubCategory>>, String> {
+    let service = get_sub_category_service();
+    Ok(ApiResponse::from_result(
+        service
+            .sub_category_list_paged(&state.db, query)
+            .await
+            .map(|paged| PagedResult {
+                rows: paged.rows.into_iter().map(SubCategory::from).collect(),
+                total_count: paged.total_count,
+                current_page: paged.current_page,
+                page_size: paged.page_size,
+                total_pages: paged.total_pages,
+            }),
+    ))
+}
+
+// Sub Category End

@@ -151,6 +151,11 @@ impl SubCategoryService {
         self.converter().model_with_local(model).await
     }
 
+    pub async fn sub_category_delete(&self, db: &DbConn, id: String) -> MijiResult<()> {
+        let id_tuple = SubCategoryConverter::parse_id(&id);
+        self.inner.delete(db, id_tuple).await
+    }
+
     pub async fn sub_category_list_paged(
         &self,
         db: &DbConn,

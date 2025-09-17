@@ -184,6 +184,27 @@ impl CrudService<entity::categories::Entity, CategoryFilter, CategoryCreate, Cat
     }
 }
 
+impl CategoryService {
+    pub async fn category_create(
+        &self,
+        db: &DbConn,
+        data: CategoryCreate,
+    ) -> MijiResult<entity::categories::Model> {
+        let model = self.create(db, data).await?;
+        self.converter().model_with_local(model).await
+    }
+
+    pub async fn category_update(
+        &self,
+        db: &DbConn,
+        serial_num: String,
+        data: CategoryUpdate,
+    ) -> MijiResult<entity::categories::Model> {
+        let model = self.update(db, serial_num, data).await?;
+        self.converter().model_with_local(model).await
+    }
+}
+
 pub fn get_category_service() -> CategoryService {
     CategoryService::new(
         CategoryConverter,

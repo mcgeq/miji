@@ -9,14 +9,15 @@ import {
   TransactionTypeSchema,
 } from '@/schema/common';
 import { AccountTypeSchema, PaymentMethodSchema } from '@/schema/money';
+import { lowercaseFirstLetter } from '@/utils/common';
 import { DateUtils } from '@/utils/date';
 import { toast } from '@/utils/toast';
 import { formatCurrency } from '../utils/money';
 import type {
   TransactionType,
 } from '@/schema/common';
-import type { Account, Transaction, TransactionCreate, TransactionUpdate, TransferCreate } from '@/schema/money';
 import '@vuepic/vue-datepicker/dist/main.css';
+import type { Account, Transaction, TransactionCreate, TransactionUpdate, TransferCreate } from '@/schema/money';
 
 interface Props {
   type: TransactionType;
@@ -32,7 +33,7 @@ const emit = defineEmits<{
   saveTransfer: [transfer: TransferCreate];
   updateTransfer: [serialNum: string, transfer: TransferCreate];
 }>();
-
+const moneyStore = useMoneyStore();
 const { t } = useI18n();
 
 const selectAccounts = computed(() => {
@@ -44,6 +45,22 @@ const selectAccounts = computed(() => {
   }
   return props.accounts.filter(account => account.isActive);
 });
+const subcategories = computed(() => {
+  return moneyStore.subCategories.map(sub => ({
+    name: sub.name,
+    category: mapSubToCategory(sub.name),
+  }));
+});
+
+const categories = computed(() => {
+  return moneyStore.subCategories.map(sub => ({
+    name: sub.categoryName,
+    type: sub.categoryName === TransactionTypeSchema.enum.Transfer ? 'Transfer' : ['Salary', 'Investment'].includes(sub.categoryName) ? 'Income' : 'Expense',
+  }));
+},
+);
+
+const subCategoriesMap = new Map<string, string>();
 
 const trans = props.transaction || {
   serialNum: '',
@@ -110,42 +127,8 @@ const isPaymentMethodEditable = computed(() => {
 });
 
 function mapSubToCategory(sub: string): string {
-  if (['Restaurant', 'Groceries', 'Snacks'].includes(sub)) return 'Food';
-  if (['Bus', 'Taxi', 'Fuel', 'Train', 'Flight', 'Parking'].includes(sub)) return 'Transport';
-  if (['Movies', 'Concerts', 'Sports', 'Gaming', 'Streaming'].includes(sub)) return 'Entertainment';
-  if (['Electricity', 'Water', 'Gas', 'Internet', 'Cable'].includes(sub)) return 'Utilities';
-  if (['Clothing', 'Electronics', 'HomeDecor', 'Furniture', 'Toys'].includes(sub)) return 'Shopping';
-  if (['MonthlySalary', 'Bonus', 'Overtime', 'Commission'].includes(sub)) return 'Salary';
-  if (['StockDividend', 'BondInterest', 'PropertyRental', 'CryptoIncome'].includes(sub)) return 'Investment';
-  if (['AccountTransfer', 'LoanRepayment', 'InvestmentWithdrawal'].includes(sub)) return 'Transfer';
-  if (['Tuition', 'Books', 'Courses', 'SchoolSupplies'].includes(sub)) return 'Education';
-  if (['DoctorVisit', 'Medications', 'Hospitalization', 'Dental', 'InsurancePremiums'].includes(sub)) return 'Healthcare';
-  if (['HealthInsurance', 'CarInsurance', 'LifeInsurance'].includes(sub)) return 'Insurance';
-  if (['BankInterest', 'FixedDeposit'].includes(sub)) return 'Savings';
-  if (['GiftSent', 'GiftReceived'].includes(sub)) return 'Gift';
-  if (['Mortgage', 'PersonalLoan', 'CreditCardPayment'].includes(sub)) return 'Loan';
-  if (['OfficeSupplies', 'TravelExpenses', 'Marketing', 'ConsultingFees'].includes(sub)) return 'Business';
-  if (['Hotel', 'TourPackage', 'Activities'].includes(sub)) return 'Travel';
-  if (['Donation'].includes(sub)) return 'Charity';
-  if (['Netflix', 'Spotify', 'Software'].includes(sub)) return 'Subscription';
-  if (['PetFood', 'PetVet', 'PetToys'].includes(sub)) return 'Pet';
-  if (['Furniture', 'Renovation', 'HomeMaintenance'].includes(sub)) return 'Home';
-  return 'Others';
+  return subCategoriesMap.get(sub) || 'Others';
 }
-
-const categories = ref(
-  CategorySchema.options.map(name => ({
-    name,
-    type: name === TransactionTypeSchema.enum.Transfer ? 'Transfer' : ['Salary', 'Investment'].includes(name) ? 'Income' : 'Expense',
-  })),
-);
-
-const subcategories = ref(
-  SubCategorySchema.options.map(name => ({
-    name,
-    category: mapSubToCategory(name),
-  })),
-);
 
 const filteredCategories = computed(() => {
   const category = categories.value.filter(c => {
@@ -154,11 +137,19 @@ const filteredCategories = computed(() => {
     }
     return c.type === form.value.transactionType;
   });
-
-  return category.map(item => ({
+  const seen = new Set(); // 记录已出现的 "name_type" 组合
+  const uniqueCategory = category.filter(item => {
+    const uniqueKey = `${item.name}_${item.type}`; // 生成唯一标识
+    if (seen.has(uniqueKey)) {
+      return false; // 重复则过滤
+    }
+    seen.add(uniqueKey); // 首次出现则加入 Set
+    return true;
+  });
+  return uniqueCategory.map(item => ({
     name: item.name,
     type: item.type,
-    option: t(`financial.transactionCategories.${item.name.toLowerCase()}`),
+    option: t(`financial.transactionCategories.${lowercaseFirstLetter(item.name)}`),
   }));
 });
 
@@ -170,7 +161,7 @@ const filteredSubcategories = computed(() => {
   return sub.map(item => ({
     name: item.name,
     category: item.category,
-    option: t(`financial.transactionSubCategories.${item.name.toLowerCase()}`),
+    option: t(`financial.transactionSubCategories.${lowercaseFirstLetter(item.name)}`),
   }));
 });
 
@@ -332,6 +323,12 @@ function handleAmountInput(event: Event) {
   }
 }
 
+function initializeSubCaregoryMap() {
+  subcategories.value.forEach(sub => {
+    subCategoriesMap.set(sub.name, sub.category);
+  });
+}
+
 watch(
   () => form.value.category,
   () => form.value.subCategory = SubCategorySchema.enum.Other,
@@ -418,6 +415,15 @@ watch(
     }
   },
 );
+
+watch(subcategories, () => {
+  initializeSubCaregoryMap();
+}, { deep: true });
+
+onMounted(async () => {
+  await moneyStore.getAllCategories();
+  initializeSubCaregoryMap();
+});
 </script>
 
 <template>
@@ -540,7 +546,11 @@ watch(
             <option value="">
               {{ t('common.placeholders.selectOption') }}
             </option>
-            <option v-for="subcategory in filteredSubcategories" :key="subcategory.name" :value="subcategory.name">
+            <option
+              v-for="subcategory in filteredSubcategories"
+              :key="subcategory.name"
+              :value="subcategory.name"
+            >
               {{ subcategory.option }}
             </option>
           </select>

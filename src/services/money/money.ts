@@ -1,6 +1,7 @@
 import { AccountMapper } from './accounts';
 import { BilReminderMapper } from './billReminder';
 import { BudgetMapper } from './budgets';
+import { CategoryMapper } from './categories';
 import { CurrencyMapper } from './currencys';
 import {
   FamilyLedgerAccountMapper,
@@ -51,6 +52,7 @@ import type {
   TransferCreate,
   UpdateAccountRequest,
 } from '@/schema/money';
+import type { SubCategory } from '@/schema/money/category';
 
 /**
  * 主要的 MoneyDb 类 - 使用映射器模式
@@ -64,9 +66,8 @@ export class MoneyDb {
   private static familyMemberMapper = new FamilyMemberMapper();
   private static familyLedgerMapper = new FamilyLedgerMapper();
   private static familyLedgerAccountMapper = new FamilyLedgerAccountMapper();
-  private static familyLedgerTransactionMapper =
-    new FamilyLedgerTransactionMapper();
-
+  private static familyLedgerTransactionMapper = new FamilyLedgerTransactionMapper();
+  private static categoryMapper = new CategoryMapper();
   private static familyLedgerMemberMapper = new FamilyLedgerMemberMapper();
 
   // ========================= Account Start=========================
@@ -83,17 +84,11 @@ export class MoneyDb {
     return this.accountMapper.list();
   }
 
-  static async updateAccount(
-    serialNum: string,
-    account: UpdateAccountRequest,
-  ): Promise<Account> {
+  static async updateAccount(serialNum: string, account: UpdateAccountRequest): Promise<Account> {
     return this.accountMapper.update(serialNum, account);
   }
 
-  static async updateAccountActive(
-    serialNum: string,
-    isActive: boolean,
-  ): Promise<Account> {
+  static async updateAccountActive(serialNum: string, isActive: boolean): Promise<Account> {
     return this.accountMapper.updateAccountActive(serialNum, isActive);
   }
 
@@ -119,9 +114,7 @@ export class MoneyDb {
 
   // ========================= Transaction Start=========================
   // Transaction 操作
-  static async createTransaction(
-    transaction: TransactionCreate,
-  ): Promise<Transaction> {
+  static async createTransaction(transaction: TransactionCreate): Promise<Transaction> {
     return this.transactionMapper.create(transaction);
   }
 
@@ -140,9 +133,7 @@ export class MoneyDb {
     return this.transactionMapper.deleteById(serialNum);
   }
 
-  static async transferCreate(
-    transfer: TransferCreate,
-  ): Promise<[Transaction, Transaction]> {
+  static async transferCreate(transfer: TransferCreate): Promise<[Transaction, Transaction]> {
     return this.transactionMapper.transfer(transfer);
   }
 
@@ -153,9 +144,7 @@ export class MoneyDb {
     return this.transactionMapper.transferUpdate(serialNum, transfer);
   }
 
-  static async transferDelete(
-    serialNum: string,
-  ): Promise<[Transaction, Transaction]> {
+  static async transferDelete(serialNum: string): Promise<[Transaction, Transaction]> {
     return this.transactionMapper.transferDelete(serialNum);
   }
 
@@ -196,17 +185,11 @@ export class MoneyDb {
     return this.budgetMapper.getById(serialNum);
   }
 
-  static async updateBudget(
-    serialNum: string,
-    budget: BudgetUpdate,
-  ): Promise<Budget> {
+  static async updateBudget(serialNum: string, budget: BudgetUpdate): Promise<Budget> {
     return this.budgetMapper.update(serialNum, budget);
   }
 
-  static async updateBudgetActive(
-    serialNum: string,
-    isActive: boolean,
-  ): Promise<Budget> {
+  static async updateBudgetActive(serialNum: string, isActive: boolean): Promise<Budget> {
     return this.budgetMapper.updateActive(serialNum, isActive);
   }
 
@@ -218,18 +201,14 @@ export class MoneyDb {
     return this.budgetMapper.list();
   }
 
-  static async listBudgetsPaged(
-    query: PageQuery<BudgetFilters>,
-  ): Promise<PagedResult<Budget>> {
+  static async listBudgetsPaged(query: PageQuery<BudgetFilters>): Promise<PagedResult<Budget>> {
     return this.budgetMapper.listPaged(query);
   }
   // ========================= Budget End=========================
 
   // ========================= BilReminder Start =========================
   // BilReminder 操作
-  static async createBilReminder(
-    reminder: BilReminderCreate,
-  ): Promise<BilReminder> {
+  static async createBilReminder(reminder: BilReminderCreate): Promise<BilReminder> {
     return this.bilReminderMapper.create(reminder);
   }
 
@@ -244,10 +223,7 @@ export class MoneyDb {
     return this.bilReminderMapper.update(serialNum, reminder);
   }
 
-  static async updateBilReminderActive(
-    serialNum: string,
-    isActive: boolean,
-  ): Promise<BilReminder> {
+  static async updateBilReminderActive(serialNum: string, isActive: boolean): Promise<BilReminder> {
     return this.bilReminderMapper.updateActive(serialNum, isActive);
   }
 
@@ -281,10 +257,7 @@ export class MoneyDb {
     return this.currencyMapper.getById(code);
   }
 
-  static async updateCurrency(
-    code: string,
-    currency: CurrencyUpdate,
-  ): Promise<Currency> {
+  static async updateCurrency(code: string, currency: CurrencyUpdate): Promise<Currency> {
     return this.currencyMapper.update(code, currency);
   }
 
@@ -302,15 +275,11 @@ export class MoneyDb {
   // ========================= Currency End =========================
 
   // FamilyMember 操作
-  static async createFamilyMember(
-    member: FamilyMemberCreate,
-  ): Promise<FamilyMember> {
+  static async createFamilyMember(member: FamilyMemberCreate): Promise<FamilyMember> {
     return this.familyMemberMapper.create(member);
   }
 
-  static async getFamilyMember(
-    serialNum: string,
-  ): Promise<FamilyMember | null> {
+  static async getFamilyMember(serialNum: string): Promise<FamilyMember | null> {
     return this.familyMemberMapper.getById(serialNum);
   }
 
@@ -341,15 +310,11 @@ export class MoneyDb {
   }
 
   // FamilyLedger 操作
-  static async createFamilyLedger(
-    ledger: FamilyLedgerCreate,
-  ): Promise<FamilyLedger> {
+  static async createFamilyLedger(ledger: FamilyLedgerCreate): Promise<FamilyLedger> {
     return this.familyLedgerMapper.create(ledger);
   }
 
-  static async getFamilyLedger(
-    serialNum: string,
-  ): Promise<FamilyLedger | null> {
+  static async getFamilyLedger(serialNum: string): Promise<FamilyLedger | null> {
     return this.familyLedgerMapper.getById(serialNum);
   }
 
@@ -461,5 +426,10 @@ export class MoneyDb {
 
   static async deleteFamilyLedgerMember(serialNum: string): Promise<void> {
     return this.familyLedgerMemberMapper.deleteById(serialNum);
+  }
+
+  // Category
+  static async listCategory(): Promise<SubCategory[]> {
+    return this.categoryMapper.list();
   }
 }
