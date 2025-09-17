@@ -28,6 +28,7 @@ mod m20250803_132329_create_bil_reminder;
 mod m20250914_212312_create_health_period_settings;
 mod m20250916_221212_create_categories;
 mod m20251916_221213_create_sub_categories;
+mod m20251917_223412_create_sub_category_insert;
 
 pub mod schema;
 
@@ -65,6 +66,7 @@ impl MigratorTrait for Migrator {
             Box::new(m20250914_212312_create_health_period_settings::Migration),
             Box::new(m20250916_221212_create_categories::Migration),
             Box::new(m20251916_221213_create_sub_categories::Migration),
+            Box::new(m20251917_223412_create_sub_category_insert::Migration),
         ]
     }
 }

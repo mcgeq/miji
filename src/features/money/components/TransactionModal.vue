@@ -87,6 +87,13 @@ const categoryMap = computed(() => {
         }
         map.get(sub.categoryName)!.subs.push(sub.name);
       }
+    } else if (form.value.transactionType === 'Transfer') {
+      if (sub.categoryName === 'Transfer') {
+        if (!map.has('Transfer')) {
+          map.set('Transfer', { name: 'Transfer', subs: [] });
+        }
+        map.get('Transfer')!.subs.push(sub.name);
+      }
     } else {
       if (!map.has(sub.categoryName)) {
         map.set(sub.categoryName, { name: sub.categoryName, subs: [] });

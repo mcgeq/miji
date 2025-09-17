@@ -319,6 +319,7 @@
 
       "interAccount": "账户间转账",
       "loanRepayment": "贷款还款",
+      "creditCardRepayment": "信用卡还款",
       "investmentWithdrawal": "投资赎回",
       "friendFamilyTransfer": "亲友转账",
       "platformWithdrawal": "平台提现",
