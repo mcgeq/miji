@@ -1,32 +1,7 @@
 <script setup lang="ts">
-import { DEFAULT_BUDGET_CATEGORIES } from '@/constants/commonConstant';
+import { lowercaseFirstLetter } from '@/utils/common';
 import type { CategoryDefinition } from '@/constants/commonConstant';
 
-// Props 默认值
-const props = withDefaults(defineProps<CategorySelectorProps>(), {
-  modelValue: () => ([]),
-  label: '分类',
-  placeholder: '请选择分类',
-  helpText: '',
-  required: false,
-  disabled: false,
-  locale: 'zh-CN',
-  categories: () => DEFAULT_BUDGET_CATEGORIES,
-  errorMessage: '',
-  size: 'base',
-  width: 'full',
-  showIcons: true,
-  multiple: true,
-  showQuickSelect: true,
-  quickSelectLabel: '常用分类',
-  customQuickCategories: () => DEFAULT_BUDGET_CATEGORIES.slice(0, 6),
-});
-// 事件定义
-const emit = defineEmits<{
-  (e: 'update:modelValue', value: string[]): void;
-  (e: 'change', value: string[]): void;
-  (e: 'validate', isValid: boolean): void;
-}>();
 // Props 接口
 export interface CategorySelectorProps {
   modelValue?: string[];
@@ -47,15 +22,49 @@ export interface CategorySelectorProps {
   customQuickCategories?: CategoryDefinition[];
 }
 
+// Props 默认值
+const props = withDefaults(defineProps<CategorySelectorProps>(), {
+  modelValue: () => ([]),
+  label: '分类',
+  placeholder: '请选择分类',
+  helpText: '',
+  required: false,
+  disabled: false,
+  locale: 'zh-CN',
+  categories: undefined,
+  errorMessage: '',
+  size: 'base',
+  width: 'full',
+  showIcons: true,
+  multiple: true,
+  showQuickSelect: true,
+  quickSelectLabel: '常用分类',
+  customQuickCategories: undefined,
+});
+
+// 事件定义
+const emit = defineEmits<{
+  (e: 'update:modelValue', value: string[]): void;
+  (e: 'change', value: string[]): void;
+  (e: 'validate', isValid: boolean): void;
+}>();
+
+const moneyStore = useMoneyStore();
+const mergedCategories = computed(() => {
+  return props.categories ?? moneyStore.uiCategories;
+});
+const mergedQuickCategories = computed(() => {
+  return props.customQuickCategories?.length ? props.customQuickCategories : mergedCategories.value.slice(0, 6);
+});
+
 // 响应式状态
 const selectedCategories = ref<string[]>(props.modelValue);
 const inputId = useId();
 
+const { t } = useI18n();
 // 计算属性：快捷选择分类
 const quickSelectCategories = computed<CategoryDefinition[]>(() => {
-  return props.customQuickCategories.length > 0
-    ? props.customQuickCategories
-    : props.categories;
+  return mergedQuickCategories.value;
 });
 
 // 计算属性：验证状态
@@ -165,7 +174,7 @@ defineExpose({
             'quick-select-btn-multiple': multiple && isCategorySelected(category.code),
           }"
           :disabled="disabled"
-          :title="category.nameZh"
+          :title="t(`common.categories.${lowercaseFirstLetter(category.code)}`)"
           @click="selectQuickCategory(category.code)"
         >
           {{ category.icon }}

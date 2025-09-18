@@ -5,8 +5,8 @@ import {
   TrendingUp,
 } from 'lucide-vue-next';
 import SimplePagination from '@/components/common/SimplePagination.vue';
-import { CategorySchema, SortDirection, TransactionTypeSchema } from '@/schema/common';
-import { useMoneyStore } from '@/stores/moneyStore';
+import { SortDirection, TransactionTypeSchema } from '@/schema/common';
+import { lowercaseFirstLetter } from '@/utils/common';
 import { DateUtils } from '@/utils/date';
 import { Lg } from '@/utils/debugLog';
 import { formatCurrency } from '../utils/money';
@@ -37,7 +37,7 @@ const disabledTransactions = computed(() => {
     transactions.value
       .filter(t =>
         t.transactionType === TransactionTypeSchema.enum.Expense &&
-        t.category === CategorySchema.enum.Transfer,
+        t.category === 'Transfer',
       )
       .map(t => t.serialNum),
   );
@@ -115,7 +115,7 @@ const uniqueCategories = computed(() => {
   ).filter(Boolean);
   return [...new Set(categories)].map(category => ({
     type: category,
-    option: t(`financial.transactionCategories.${category.toLowerCase()}`),
+    option: t(`common.categories.${lowercaseFirstLetter(category)}`),
   }));
 });
 
@@ -382,9 +382,9 @@ defineExpose({
         <div class="text-sm p-4 flex justify-between md:items-center md:justify-end">
           <span class="text-gray-600 font-semibold md:hidden">{{ t('categories.category') }}</span>
           <div class="md:text-right">
-            <span class="text-gray-800 font-medium">{{ t(`financial.transactionCategories.${transaction.category.toLocaleLowerCase()}`) }}</span>
+            <span class="text-gray-800 font-medium">{{ t(`common.categories.${transaction.category.toLocaleLowerCase()}`) }}</span>
             <div v-if="transaction.subCategory" class="text-xs text-gray-600">
-              / {{ t(`financial.transactionSubCategories.${transaction.subCategory.toLocaleLowerCase()}`) }}
+              {{ t(`common.subCategories.${transaction.subCategory.toLocaleLowerCase()}`) }}
             </div>
           </div>
         </div>

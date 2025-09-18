@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { computed, nextTick, ref, useId, watch } from 'vue';
 import {
   CATEGORY_NAMES,
   DEFAULT_REMINDER_TYPES,

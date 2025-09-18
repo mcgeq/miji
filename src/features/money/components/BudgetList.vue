@@ -7,7 +7,7 @@ import { DateUtils } from '@/utils/date';
 import { Lg } from '@/utils/debugLog';
 import { mapUIFiltersToAPIFilters, useBudgetFilters } from '../composables/useBudgetFilters';
 import { formatCurrency } from '../utils/money';
-import type { Category, PageQuery } from '@/schema/common';
+import type { PageQuery } from '@/schema/common';
 import type { Budget } from '@/schema/money';
 import type { BudgetFilters } from '@/services/money/budgets';
 
@@ -70,7 +70,7 @@ async function loadBudgets() {
 const categories = computed(() => moneyStore.subCategories);
 // 获取唯一分类
 const uniqueCategories = computed(() => {
-  const categorySet = new Set<Category>();
+  const categorySet = new Set<string>();
   for (const budget of budgets.value) {
     for (const category of budget.categoryScope) {
       categorySet.add(category);

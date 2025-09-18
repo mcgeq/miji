@@ -114,97 +114,8 @@
       "searchRecords": "搜索记录...",
       "enterNotes": "记录其他想要记录的内容...",
       "selectFile": "选择文件"
-    }
-  },
-  "categories": {
-    "category": "分类",
-    "allCategory": "全部分类",
-    "subCategory": "子分类"
-  },
-  "date": {
-    "date": "时间",
-    "createDate": "创建时间",
-    "reminderDate": "提醒时间",
-    "startDate": "开始日期",
-    "endDate": "结束日期",
-    "rangeDate": "日期范围",
-    "billDate": "账单日期",
-    "transactionDate": "交易日期",
-    "dueDate": "到期日期",
-    "periods": {
-      "today": "今天",
-      "week": "本周",
-      "month": "本月",
-      "year": "本年"
     },
-    "repeat": {
-      "none": "无重复",
-      "daily": "每日",
-      "weekly": "每周",
-      "monthly": "每月",
-      "yearly": "每年",
-      "custom": "自定义",
-      "frequency": "重复频率"
-    }
-  },
-  "financial": {
-    "currency": "币种",
-    "money": "金额",
-    "balance": "余额",
-    "billDate": "账单日期",
-    "initialBalance": "初始余额",
-    "baseCurrency": "基础货币",
-    "account": {
-      "account": "账户",
-      "name": "账户名称",
-      "type": "账户类型",
-      "accountName": "账户名称",
-      "accountType": "账户类型",
-      "createAccount": "创建账户",
-      "editAccount": "编辑账户",
-      "addAccount": "添加账户",
-      "owner": "所属",
-      "shared": "共享",
-      "activate": "激活"
-    },
-    "accountTypes": {
-      "cash": "现金",
-      "bank": "银行卡",
-      "savings": "储蓄账户",
-      "creditcard": "信用卡",
-      "investment": "投资账户",
-      "wechat": "微信",
-      "alipay": "支付宝",
-      "cloudquickpass": "云闪付",
-      "other": "其他"
-    },
-    "transaction": {
-      "income": "收入",
-      "expense": "支出",
-      "transfer": "转账",
-      "transType": "交易类型",
-      "unknown": "未知",
-      "markPaid": "标记已付",
-      "recordIncome": "记录收入",
-      "recordExpense": "记录支出",
-      "recordTransfer": "转账记录",
-      "editTransaction": "编辑交易",
-      "fromAccount": "转出账户",
-      "toAccount": "转入账户",
-      "paymentMethod": "支付渠道"
-    },
-    "paymentMethods": {
-      "cash": "现金",
-      "savings": "储蓄账户",
-      "banktransfer": "银行转账",
-      "creditcard": "信用卡",
-      "wechat": "微信",
-      "alipay": "支付宝",
-      "cloudquickpass": "云闪付",
-      "other": "其他"
-    },
-
-    "transactionCategories": {
+    "categories": {
       "food": "餐饮",
       "transport": "交通",
       "entertainment": "娱乐",
@@ -227,7 +138,7 @@
       "home": "家居",
       "others": "其他"
     },
-    "transactionSubCategories": {
+    "subCategories": {
       "restaurant": "餐厅堂食",
       "takeout": "外卖配送",
       "groceries": "生鲜杂货",
@@ -439,6 +350,94 @@
       "homeMaintenance": "房屋维修保养",
 
       "miscellaneous": "未明确分类收支",
+      "other": "其他"
+    }
+  },
+  "categories": {
+    "category": "分类",
+    "allCategory": "全部分类",
+    "subCategory": "子分类"
+  },
+  "date": {
+    "date": "时间",
+    "createDate": "创建时间",
+    "reminderDate": "提醒时间",
+    "startDate": "开始日期",
+    "endDate": "结束日期",
+    "rangeDate": "日期范围",
+    "billDate": "账单日期",
+    "transactionDate": "交易日期",
+    "dueDate": "到期日期",
+    "periods": {
+      "today": "今天",
+      "week": "本周",
+      "month": "本月",
+      "year": "本年"
+    },
+    "repeat": {
+      "none": "无重复",
+      "daily": "每日",
+      "weekly": "每周",
+      "monthly": "每月",
+      "yearly": "每年",
+      "custom": "自定义",
+      "frequency": "重复频率"
+    }
+  },
+  "financial": {
+    "currency": "币种",
+    "money": "金额",
+    "balance": "余额",
+    "billDate": "账单日期",
+    "initialBalance": "初始余额",
+    "baseCurrency": "基础货币",
+    "account": {
+      "account": "账户",
+      "name": "账户名称",
+      "type": "账户类型",
+      "accountName": "账户名称",
+      "accountType": "账户类型",
+      "createAccount": "创建账户",
+      "editAccount": "编辑账户",
+      "addAccount": "添加账户",
+      "owner": "所属",
+      "shared": "共享",
+      "activate": "激活"
+    },
+    "accountTypes": {
+      "cash": "现金",
+      "bank": "银行卡",
+      "savings": "储蓄账户",
+      "creditcard": "信用卡",
+      "investment": "投资账户",
+      "wechat": "微信",
+      "alipay": "支付宝",
+      "cloudquickpass": "云闪付",
+      "other": "其他"
+    },
+    "transaction": {
+      "income": "收入",
+      "expense": "支出",
+      "transfer": "转账",
+      "transType": "交易类型",
+      "unknown": "未知",
+      "markPaid": "标记已付",
+      "recordIncome": "记录收入",
+      "recordExpense": "记录支出",
+      "recordTransfer": "转账记录",
+      "editTransaction": "编辑交易",
+      "fromAccount": "转出账户",
+      "toAccount": "转入账户",
+      "paymentMethod": "支付渠道"
+    },
+    "paymentMethods": {
+      "cash": "现金",
+      "savings": "储蓄账户",
+      "banktransfer": "银行转账",
+      "creditcard": "信用卡",
+      "wechat": "微信",
+      "alipay": "支付宝",
+      "cloudquickpass": "云闪付",
       "other": "其他"
     },
     "budget": {

@@ -2,9 +2,8 @@
 import ConfirmModal from '@/components/common/ConfirmModal.vue';
 import { useConfirm } from '@/composables/useConfirm';
 import { CURRENCY_CNY } from '@/constants/moneyConst';
-import { CategorySchema, TransactionTypeSchema } from '@/schema/common';
+import { TransactionTypeSchema } from '@/schema/common';
 import { MoneyDb } from '@/services/money/money';
-import { useMoneyStore } from '@/stores/moneyStore';
 import { Lg } from '@/utils/debugLog';
 import { toast } from '@/utils/toast';
 import { createComparisonCard } from '../common/moneyCommon';
@@ -340,7 +339,7 @@ async function updateTransaction(serialNum: string, transaction: TransactionUpda
 async function deleteTransaction(transaction: Transaction) {
   if (!(await confirmDelete('此交易记录'))) return;
   try {
-    if (transaction.category === CategorySchema.enum.Transfer && transaction.relatedTransactionSerialNum) {
+    if (transaction.category === 'Transfer' && transaction.relatedTransactionSerialNum) {
       await moneyStore.deleteTransfer(transaction.relatedTransactionSerialNum);
       toast.success('转账记录删除成功');
     } else {

@@ -138,7 +138,7 @@ export const useMoneyStore = defineStore('money', {
     },
     uiCategories: state => {
       return state.categories.map(category => ({
-        name: category.name,
+        code: category.name,
         icon: category.icon,
       }));
     },

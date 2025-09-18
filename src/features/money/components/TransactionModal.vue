@@ -480,7 +480,7 @@ watch(
               :key="key"
               :value="category.name"
             >
-              {{ t(`financial.transactionCategories.${lowercaseFirstLetter(category.name)}`) }}
+              {{ t(`common.categories.${lowercaseFirstLetter(category.name)}`) }}
             </option>
           </select>
         </div>
@@ -500,7 +500,7 @@ watch(
               :key="sub"
               :value="sub"
             >
-              {{ t(`financial.transactionSubCategories.${lowercaseFirstLetter(sub)}`) }}
+              {{ t(`common.subCategories.${lowercaseFirstLetter(sub)}`) }}
             </option>
           </select>
         </div>

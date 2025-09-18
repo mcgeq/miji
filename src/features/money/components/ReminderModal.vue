@@ -8,7 +8,6 @@ import ReminderSelector from '@/components/common/ReminderSelector.vue';
 import RepeatPeriodSelector from '@/components/common/RepeatPeriodSelector.vue';
 import { COLORS_MAP, CURRENCY_CNY } from '@/constants/moneyConst';
 import {
-  CategorySchema,
   PrioritySchema,
 } from '@/schema/common';
 import { BilReminderCreateSchema, BilReminderUpdateSchema, ReminderTypesSchema } from '@/schema/money';
@@ -429,7 +428,7 @@ function getBilReminderDefault(): BilReminder {
     enabled: true,
     type: ReminderTypesSchema.enum.Bill,
     description: '',
-    category: CategorySchema.enum.Food,
+    category: 'Food',
     amount: 0,
     currency: CURRENCY_CNY,
     dueAt: DateUtils.getEndOfTodayISOWithOffset(),

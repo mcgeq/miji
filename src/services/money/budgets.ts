@@ -1,7 +1,7 @@
 import { invokeCommand } from '@/types/api';
 import { BaseMapper } from './baseManager';
 import type { PagedResult } from './baseManager';
-import type { Category, DateRange, PageQuery } from '@/schema/common';
+import type { DateRange, PageQuery } from '@/schema/common';
 import type { Budget, BudgetCreate, BudgetUpdate } from '@/schema/money';
 
 export interface BudgetFilters {
@@ -14,7 +14,7 @@ export interface BudgetFilters {
   endDate?: DateRange;
   usedAmount?: number;
   alertThreshold?: string;
-  category?: Category | null;
+  category?: string | null;
   isActive?: boolean;
   alertEnabled?: boolean;
   // completion?: string; // ✅ 对应 filters.completion
@@ -24,11 +24,7 @@ export interface BudgetFilters {
 /**
  * 预算数据映射器
  */
-export class BudgetMapper extends BaseMapper<
-  BudgetCreate,
-  BudgetUpdate,
-  Budget
-> {
+export class BudgetMapper extends BaseMapper<BudgetCreate, BudgetUpdate, Budget> {
   protected entityName = 'budget';
   async create(budget: BudgetCreate): Promise<Budget> {
     try {
@@ -92,14 +88,9 @@ export class BudgetMapper extends BaseMapper<
     }
   }
 
-  async listPaged(
-    query: PageQuery<BudgetFilters>,
-  ): Promise<PagedResult<Budget>> {
+  async listPaged(query: PageQuery<BudgetFilters>): Promise<PagedResult<Budget>> {
     try {
-      const result = await invokeCommand<PagedResult<Budget>>(
-        'budget_list_paged',
-        { query },
-      );
+      const result = await invokeCommand<PagedResult<Budget>>('budget_list_paged', { query });
       return result;
     } catch (err) {
       this.handleError('listPaged', err);
