@@ -510,6 +510,10 @@ onMounted(async () => {
   const currency = await getLocalCurrencyInfo();
   baseCurrency.value = currency.symbol;
 });
+
+onMounted(async () => {
+  await moneyStore.getAllCategories();
+});
 </script>
 
 <template>

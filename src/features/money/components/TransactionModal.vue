@@ -366,10 +366,6 @@ watch(
     }
   },
 );
-
-onMounted(async () => {
-  await moneyStore.getAllCategories();
-});
 </script>
 
 <template>

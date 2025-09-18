@@ -84,6 +84,8 @@ interface MoneyStoreState {
   budgets: Budget[];
   reminders: BilReminder[];
   categories: SubCategory[];
+  lastFetchedCategories: Date | null;
+  categoriesCacheExpiry: number;
   loading: boolean;
   error: string | null;
 }
@@ -95,6 +97,8 @@ export const useMoneyStore = defineStore('money', {
     budgets: [],
     categories: [],
     reminders: [],
+    lastFetchedCategories: null,
+    categoriesCacheExpiry: 8 * 60 * 60 * 1000,
     loading: false,
     error: null,
   }),
@@ -264,10 +268,15 @@ export const useMoneyStore = defineStore('money', {
       );
     },
 
-    async updateCategories() {
+    async updateCategories(forceRefresh: boolean = false) {
       return this.withLoadingSafe(
         async () => {
-          this.categories = await MoneyDb.listCategory();
+          const isCacheValid = !this.lastFetchedCategories ||
+            Date.now() - this.lastFetchedCategories.getTime() > this.categoriesCacheExpiry || forceRefresh;
+          if (isCacheValid) {
+            this.categories = await MoneyDb.listCategory();
+            this.lastFetchedCategories = new Date();
+          }
         },
         '获取分类信息失败',
         'updateCategories',
@@ -601,9 +610,9 @@ export const useMoneyStore = defineStore('money', {
     },
 
     // Category
-    async getAllCategories(): Promise<SubCategory[]> {
+    async getAllCategories(forcwRefresh: boolean = false): Promise<SubCategory[]> {
       return this.withLoading(async () => {
-        await this.updateCategories();
+        await this.updateCategories(forcwRefresh);
         return this.categories;
       });
     },
