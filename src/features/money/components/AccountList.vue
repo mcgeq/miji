@@ -255,7 +255,6 @@ function getAccountTypeName(type: AccountType): string {
 
         <!-- 账户类型过滤 -->
         <div class="filter-flex-wrap">
-          <span class="text-sm text-gray-700 font-medium show-on-desktop">{{ t('common.misc.types') }}</span>
           <select
             v-model="selectedType" class="text-xs px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:border-transparent focus:ring-2 focus:ring-blue-500"
             @change="handleTypeFilter"
@@ -271,7 +270,6 @@ function getAccountTypeName(type: AccountType): string {
 
         <!-- 币种过滤 -->
         <div class="filter-flex-wrap">
-          <span class="text-sm text-gray-700 font-medium show-on-desktop">{{ t('financial.currency') }}</span>
           <select
             v-model="selectedCurrency" class="text-xs px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:border-transparent focus:ring-2 focus:ring-blue-500"
             @change="handleCurrencyFilter"
@@ -287,7 +285,6 @@ function getAccountTypeName(type: AccountType): string {
 
         <!-- 排序选项 -->
         <div class="filter-flex-wrap">
-          <span class="text-sm text-gray-700 font-medium show-on-desktop"> {{ t('common.sorting.sort') }} </span>
           <select
             v-model="sortBy" class="text-xs px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:border-transparent focus:ring-2 focus:ring-blue-500"
             @change="handleSortChange"

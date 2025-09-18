@@ -226,8 +226,6 @@ defineExpose({
     <!-- 过滤器区域 -->
     <div class="mb-5 p-4 rounded-lg bg-gray-50 flex flex-wrap gap-3 items-center justify-center">
       <div class="filter-flex-wrap">
-        <label class="text-sm text-gray-700 font-medium show-on-desktop">{{ t('financial.transaction.transType')
-        }}</label>
         <select
           v-model="filters.transactionType"
           class="text-sm px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -248,7 +246,6 @@ defineExpose({
       </div>
 
       <div class="filter-flex-wrap">
-        <label class="text-sm text-gray-700 font-medium show-on-desktop">{{ t('financial.account.account') }}</label>
         <select
           v-model="filters.accountSerialNum"
           class="text-sm px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -263,7 +260,6 @@ defineExpose({
       </div>
 
       <div class="filter-flex-wrap">
-        <label class="text-sm text-gray-700 font-medium show-on-desktop">{{ t('categories.category') }}</label>
         <select
           v-model="filters.category"
           class="text-sm px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -278,7 +274,6 @@ defineExpose({
       </div>
 
       <div class="filter-flex-wrap">
-        <label class="text-sm text-gray-700 font-medium show-on-desktop">{{ t('date.startDate') }}</label>
         <input
           v-model="filters.dateStart" type="date"
           class="text-sm px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -286,7 +281,6 @@ defineExpose({
       </div>
 
       <div class="filter-flex-wrap">
-        <label class="text-sm text-gray-700 font-medium show-on-desktop">{{ t('date.endDate') }}</label>
         <input
           v-model="filters.dateEnd" type="date"
           class="text-sm px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"

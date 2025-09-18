@@ -128,13 +128,12 @@ defineExpose({
     <!-- 过滤器区域 -->
     <div class="mb-5 p-4 rounded-lg bg-gray-50 flex flex-wrap gap-3 items-center justify-center">
       <div class="filter-flex-wrap">
-        <label class="text-sm text-gray-700 font-medium show-on-desktop">{{ t('common.status.status') }}</label>
         <select
           v-model="filters.isActive"
           class="text-sm px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <option value="">
-            {{ t('common.actions.all') }}
+            {{ t('common.actions.all') }}{{ t('common.status.status') }}
           </option>
           <option value="active">
             {{ t('common.status.active') }}
@@ -168,7 +167,6 @@ defineExpose({
       <!-- </div> -->
 
       <div class="filter-flex-wrap">
-        <label class="text-sm text-gray-700 font-medium show-on-desktop">{{ t('todos.repeat.periodType') }}</label>
         <select
           v-model="filters.repeatPeriod"
           class="text-sm px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -198,7 +196,6 @@ defineExpose({
       </div>
 
       <div class="filter-flex-wrap">
-        <label class="text-sm text-gray-700 font-medium show-on-desktop"> {{ t('categories.category') }} </label>
         <select
           v-model="filters.category"
           class="text-sm px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
