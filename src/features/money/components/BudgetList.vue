@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import SimplePagination from '@/components/common/SimplePagination.vue';
 import { useSort } from '@/composables/useSortable';
-import { CategorySchema, SortDirection } from '@/schema/common';
+import { SortDirection } from '@/schema/common';
 import { getRepeatTypeName } from '@/utils/common';
 import { DateUtils } from '@/utils/date';
 import { Lg } from '@/utils/debugLog';
@@ -67,6 +67,7 @@ async function loadBudgets() {
   }
 }
 
+const categories = computed(() => moneyStore.subCategories);
 // 获取唯一分类
 const uniqueCategories = computed(() => {
   const categorySet = new Set<Category>();
@@ -75,7 +76,7 @@ const uniqueCategories = computed(() => {
       categorySet.add(category);
     }
   }
-  const allCategories = CategorySchema.options;
+  const allCategories = [...new Set(categories.value.map(item => item.categoryName))];
   return Array.from(categorySet).sort((a, b) => allCategories.indexOf(a) - allCategories.indexOf(b));
 });
 

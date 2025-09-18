@@ -3,7 +3,6 @@ import {
   AlertThresholdSchema,
   AttachmentSchema,
   BudgetTypeSchema,
-  CategorySchema,
   CurrencySchema,
   DateSchema,
   DateTimeSchema,
@@ -18,12 +17,7 @@ import {
 import { AccountSchema } from './account';
 
 // 新增预算范围类型定义
-export const BudgetScopeTypeSchema = z.enum([
-  'Category',
-  'Account',
-  'Hybrid',
-  'RuleBased',
-]);
+export const BudgetScopeTypeSchema = z.enum(['Category', 'Account', 'Hybrid', 'RuleBased']);
 
 // 新增账户范围定义
 export const AccountScopeSchema = z.object({
@@ -79,7 +73,7 @@ export const BudgetSchema = z.object({
   attachments: z.array(AttachmentSchema).optional().nullable(),
   budgetScopeType: BudgetScopeTypeSchema,
   accountScope: AccountScopeSchema.optional().nullable(),
-  categoryScope: z.array(CategorySchema),
+  categoryScope: z.array(z.string()),
   advancedRules: z.array(BudgetRuleSchema).optional().nullable(),
   createdAt: DateTimeSchema,
   updatedAt: DateTimeSchema.optional().nullable(),
