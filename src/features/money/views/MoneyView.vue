@@ -513,6 +513,7 @@ onMounted(async () => {
 
 onMounted(async () => {
   await moneyStore.getAllCategories();
+  await moneyStore.getAllSubCategories();
 });
 </script>
 

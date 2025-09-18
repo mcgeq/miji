@@ -185,6 +185,15 @@ impl CrudService<entity::categories::Entity, CategoryFilter, CategoryCreate, Cat
 }
 
 impl CategoryService {
+    pub async fn category_get(
+        &self,
+        db: &DbConn,
+        serial_num: String,
+    ) -> MijiResult<entity::categories::Model> {
+        let model = self.get_by_id(db, serial_num).await?;
+        self.converter().model_with_local(model).await
+    }
+
     pub async fn category_create(
         &self,
         db: &DbConn,
@@ -202,6 +211,42 @@ impl CategoryService {
     ) -> MijiResult<entity::categories::Model> {
         let model = self.update(db, serial_num, data).await?;
         self.converter().model_with_local(model).await
+    }
+
+    pub async fn category_delete(&self, db: &DbConn, id: String) -> MijiResult<()> {
+        self.delete(db, id).await
+    }
+
+    pub async fn category_list_paged(
+        &self,
+        db: &DbConn,
+        query: PagedQuery<CategoryFilter>,
+    ) -> MijiResult<PagedResult<entity::categories::Model>> {
+        let paged_result = self.list_paged(db, query).await?;
+
+        // 对 paged_result.items 做本地化
+        let mut local_items = Vec::with_capacity(paged_result.rows.len());
+        for model in paged_result.rows {
+            local_items.push(self.converter().model_with_local(model).await?);
+        }
+
+        Ok(PagedResult {
+            rows: local_items,
+            total_count: paged_result.total_count,
+            total_pages: paged_result.total_pages,
+            current_page: paged_result.current_page,
+            page_size: paged_result.page_size,
+        })
+    }
+
+    pub async fn category_list(&self, db: &DbConn) -> MijiResult<Vec<entity::categories::Model>> {
+        let models = self.list(db).await?;
+        // 对每个 Model 调用 model_with_local
+        let mut local_models = Vec::with_capacity(models.len());
+        for model in models {
+            local_models.push(self.converter().model_with_local(model).await?);
+        }
+        Ok(local_models)
     }
 }
 

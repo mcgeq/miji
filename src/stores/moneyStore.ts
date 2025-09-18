@@ -21,7 +21,7 @@ import type {
   TransferCreate,
   UpdateAccountRequest,
 } from '@/schema/money';
-import type { SubCategory } from '@/schema/money/category';
+import type { Category, SubCategory } from '@/schema/money/category';
 import type { AccountFilters } from '@/services/money/accounts';
 import type { PagedResult } from '@/services/money/baseManager';
 import type { BudgetFilters } from '@/services/money/budgets';
@@ -83,8 +83,11 @@ interface MoneyStoreState {
   transactions: Transaction[];
   budgets: Budget[];
   reminders: BilReminder[];
-  categories: SubCategory[];
+  subCategorys: SubCategory[];
+  categories: Category[];
+  lastFetchedSubCategories: Date | null;
   lastFetchedCategories: Date | null;
+  subCategoriesCacheExpiry: number;
   categoriesCacheExpiry: number;
   loading: boolean;
   error: string | null;
@@ -95,10 +98,13 @@ export const useMoneyStore = defineStore('money', {
     accounts: [],
     transactions: [],
     budgets: [],
+    subCategorys: [],
     categories: [],
     reminders: [],
+    lastFetchedSubCategories: null,
     lastFetchedCategories: null,
     categoriesCacheExpiry: 8 * 60 * 60 * 1000,
+    subCategoriesCacheExpiry: 8 * 60 * 60 * 1000,
     loading: false,
     error: null,
   }),
@@ -125,9 +131,15 @@ export const useMoneyStore = defineStore('money', {
       return state.reminders.find(reminder => reminder.serialNum === serialNum);
     },
     subCategories: state => {
-      return state.categories.map(sub => ({
+      return state.subCategorys.map(sub => ({
         name: sub.name,
         categoryName: sub.categoryName,
+      }));
+    },
+    uiCategories: state => {
+      return state.categories.map(category => ({
+        name: category.name,
+        icon: category.icon,
       }));
     },
   },
@@ -268,11 +280,31 @@ export const useMoneyStore = defineStore('money', {
       );
     },
 
+    async updateSubCategories(forceRefresh: boolean = false) {
+      return this.withLoadingSafe(
+        async () => {
+          const isCacheValid =
+            !this.lastFetchedSubCategories ||
+            Date.now() - this.lastFetchedSubCategories.getTime() > this.subCategoriesCacheExpiry ||
+            forceRefresh;
+          if (isCacheValid) {
+            this.subCategorys = await MoneyDb.listSubCategory();
+            this.lastFetchedSubCategories = new Date();
+          }
+        },
+        '获取子分类信息失败',
+        'updateSubCategories',
+        'SubCategory',
+      );
+    },
+
     async updateCategories(forceRefresh: boolean = false) {
       return this.withLoadingSafe(
         async () => {
-          const isCacheValid = !this.lastFetchedCategories ||
-            Date.now() - this.lastFetchedCategories.getTime() > this.categoriesCacheExpiry || forceRefresh;
+          const isCacheValid =
+            !this.lastFetchedCategories ||
+            Date.now() - this.lastFetchedCategories.getTime() > this.categoriesCacheExpiry ||
+            forceRefresh;
           if (isCacheValid) {
             this.categories = await MoneyDb.listCategory();
             this.lastFetchedCategories = new Date();
@@ -610,10 +642,17 @@ export const useMoneyStore = defineStore('money', {
     },
 
     // Category
-    async getAllCategories(forcwRefresh: boolean = false): Promise<SubCategory[]> {
+    async getAllCategories(forcwRefresh: boolean = false): Promise<Category[]> {
       return this.withLoading(async () => {
         await this.updateCategories(forcwRefresh);
         return this.categories;
+      });
+    },
+
+    async getAllSubCategories(forcwRefresh: boolean = false): Promise<SubCategory[]> {
+      return this.withLoading(async () => {
+        await this.updateSubCategories(forcwRefresh);
+        return this.subCategorys;
       });
     },
 

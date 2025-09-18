@@ -10,6 +10,7 @@ import {
   FamilyLedgerTransactionMapper,
   FamilyMemberMapper,
 } from './family';
+import { SubCategoryMapper } from './sub_categories';
 import { TransactionMapper } from './transactions';
 import type { AccountFilters } from './accounts';
 import type { PagedResult } from './baseManager';
@@ -52,7 +53,7 @@ import type {
   TransferCreate,
   UpdateAccountRequest,
 } from '@/schema/money';
-import type { SubCategory } from '@/schema/money/category';
+import type { Category, SubCategory } from '@/schema/money/category';
 
 /**
  * 主要的 MoneyDb 类 - 使用映射器模式
@@ -67,6 +68,7 @@ export class MoneyDb {
   private static familyLedgerMapper = new FamilyLedgerMapper();
   private static familyLedgerAccountMapper = new FamilyLedgerAccountMapper();
   private static familyLedgerTransactionMapper = new FamilyLedgerTransactionMapper();
+  private static subCategoryMapper = new SubCategoryMapper();
   private static categoryMapper = new CategoryMapper();
   private static familyLedgerMemberMapper = new FamilyLedgerMemberMapper();
 
@@ -429,7 +431,11 @@ export class MoneyDb {
   }
 
   // Category
-  static async listCategory(): Promise<SubCategory[]> {
+  static async listCategory(): Promise<Category[]> {
     return this.categoryMapper.list();
+  }
+
+  static async listSubCategory(): Promise<SubCategory[]> {
+    return this.subCategoryMapper.list();
   }
 }
