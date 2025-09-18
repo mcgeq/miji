@@ -602,12 +602,10 @@ export const useMoneyStore = defineStore('money', {
 
     // Category
     async getAllCategories(): Promise<SubCategory[]> {
-      return this.withLoading(
-        async () => {
-          await this.updateCategories();
-          return this.categories;
-        },
-      );
+      return this.withLoading(async () => {
+        await this.updateCategories();
+        return this.categories;
+      });
     },
 
     // ==================== Utility Functions ====================

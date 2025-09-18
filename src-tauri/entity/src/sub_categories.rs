@@ -12,6 +12,7 @@ pub struct Model {
     pub name: String,
     #[sea_orm(primary_key, auto_increment = false)]
     pub category_name: String,
+    pub icon: Option<String>,
     pub created_at: DateTimeWithTimeZone,
     pub updated_at: Option<DateTimeWithTimeZone>,
 }

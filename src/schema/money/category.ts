@@ -3,20 +3,18 @@ import { DateTimeSchema, NameSchema } from '../common';
 
 export const CategorySchema = z.object({
   name: NameSchema,
+  icon: z.string().optional().nullable(),
   createdAt: DateTimeSchema,
   updatedAt: DateTimeSchema.optional().nullable(),
 });
 
-export const CategoryCreateSchema = z.object({
-  name: NameSchema,
-});
+export const CategoryCreateSchema = CategorySchema.pick({ name: true, icon: true }).strict();
 
-export const CategoryUpdateSchema = z.object({
-  name: NameSchema.optional().nullable(),
-});
+export const CategoryUpdateSchema = CategoryCreateSchema.optional();
 
 export const SubCategorySchema = z.object({
   name: NameSchema,
+  icon: z.string().optional().nullable(),
   categoryName: NameSchema,
   createdAt: DateTimeSchema,
   updatedAt: DateTimeSchema.optional().nullable(),
@@ -24,6 +22,7 @@ export const SubCategorySchema = z.object({
 
 export const SubCategoryCreateSchema = SubCategorySchema.pick({
   name: true,
+  icon: true,
   category_name: true,
 }).strict();
 

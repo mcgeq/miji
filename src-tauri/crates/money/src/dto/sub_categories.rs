@@ -8,6 +8,7 @@ use validator::Validate;
 #[serde(rename_all = "camelCase")]
 pub struct SubCategoryBase {
     pub name: String,
+    pub icon: Option<String>,
     pub category_name: String,
 }
 
@@ -31,6 +32,7 @@ pub struct SubCategoryCreate {
 #[serde(rename_all = "camelCase")]
 pub struct SubCategoryUpdate {
     pub name: Option<String>,
+    pub icon: Option<String>,
     pub category_name: Option<String>,
 }
 
@@ -40,6 +42,7 @@ impl TryFrom<SubCategoryCreate> for entity::sub_categories::ActiveModel {
         let now = DateUtils::local_now();
         Ok(entity::sub_categories::ActiveModel {
             name: ActiveValue::Set(value.core.name),
+            icon: ActiveValue::Set(value.core.icon),
             category_name: ActiveValue::Set(value.core.category_name),
             created_at: ActiveValue::Set(now),
             updated_at: ActiveValue::Set(Some(now)),
@@ -52,6 +55,9 @@ impl TryFrom<SubCategoryUpdate> for entity::sub_categories::ActiveModel {
     fn try_from(value: SubCategoryUpdate) -> Result<Self, Self::Error> {
         Ok(entity::sub_categories::ActiveModel {
             name: value.name.map_or(ActiveValue::NotSet, ActiveValue::Set),
+            icon: value
+                .icon
+                .map_or(ActiveValue::NotSet, |v| ActiveValue::Set(Some(v))),
             category_name: value
                 .category_name
                 .map_or(ActiveValue::NotSet, ActiveValue::Set),
@@ -66,6 +72,7 @@ impl From<entity::sub_categories::Model> for SubCategory {
         Self {
             core: SubCategoryBase {
                 name: value.name,
+                icon: value.icon,
                 category_name: value.category_name,
             },
             created_at: value.created_at,

@@ -406,6 +406,7 @@ pub enum BilReminder {
 pub enum Categories {
     Table,
     Name,
+    Icon,
     CreatedAt,
     UpdatedAt,
 }
@@ -414,6 +415,7 @@ pub enum Categories {
 pub enum SubCategories {
     Table,
     Name,
+    Icon,
     CategoryName,
     CreatedAt,
     UpdatedAt,

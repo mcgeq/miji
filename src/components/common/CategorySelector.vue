@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { DEFAULT_BUDGET_CATEGORIES } from '@/constants/commonConstant';
 import type { CategoryDefinition } from '@/constants/commonConstant';
-import type { Category } from '@/schema/common';
 
 // Props 默认值
 const props = withDefaults(defineProps<CategorySelectorProps>(), {
@@ -30,7 +29,7 @@ const emit = defineEmits<{
 }>();
 // Props 接口
 export interface CategorySelectorProps {
-  modelValue?: Category[];
+  modelValue?: string[];
   label?: string;
   placeholder?: string;
   helpText?: string;
