@@ -8,6 +8,8 @@ pub mod categories;
 pub mod categories_hooks;
 pub mod currency;
 pub mod currency_hooks;
+pub mod family_member;
+pub mod family_member_hooks;
 pub mod sub_categories;
 pub mod sub_categories_hooks;
 pub mod transaction;

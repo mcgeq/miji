@@ -1,6 +1,6 @@
 use chrono::{DateTime, FixedOffset};
 use common::utils::{date::DateUtils, uuid::McgUuid};
-use sea_orm::ActiveValue::Set;
+use sea_orm::ActiveValue::{self, Set};
 use serde::{Deserialize, Serialize};
 use validator::Validate;
 
@@ -38,15 +38,15 @@ impl From<&entity::family_member::Model> for FamilyMemberResponse {
             role: model.role.clone(),
             is_primary: model.is_primary,
             permissions: model.permissions.clone(),
-            created_at: model.created_at.clone(),
-            updated_at: model.updated_at.clone(),
+            created_at: model.created_at,
+            updated_at: model.updated_at,
         }
     }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 #[serde(rename_all = "camelCase")]
-pub struct CreateFamilyMemberRequest {
+pub struct FamilyMemberCreate {
     #[validate(length(min = 1, max = 100, message = "名称长度必须在1-100字符之间"))]
     pub name: String,
 
@@ -58,10 +58,26 @@ pub struct CreateFamilyMemberRequest {
     pub permissions: String,
 }
 
-impl TryFrom<CreateFamilyMemberRequest> for entity::family_member::ActiveModel {
+/// 更新家庭成员请求 DTO
+#[derive(Debug, Clone, Serialize, Deserialize, Validate, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct FamilyMemberUpdate {
+    #[validate(length(min = 1, max = 100, message = "名称长度必须在1-100字符之间"))]
+    pub name: Option<String>,
+
+    #[validate(length(min = 1, max = 50, message = "角色长度必须在1-50字符之间"))]
+    pub role: Option<String>,
+
+    pub is_primary: Option<bool>,
+
+    #[validate(length(min = 1, max = 1000, message = "权限字符串长度必须在1-1000字符之间"))]
+    pub permissions: Option<String>,
+}
+
+impl TryFrom<FamilyMemberCreate> for entity::family_member::ActiveModel {
     type Error = validator::ValidationErrors;
 
-    fn try_from(request: CreateFamilyMemberRequest) -> Result<Self, Self::Error> {
+    fn try_from(request: FamilyMemberCreate) -> Result<Self, Self::Error> {
         request.validate()?;
         let now = DateUtils::local_now();
         let serial_num = McgUuid::uuid(38); // 假设使用与 Account 相同的 UUID 生成逻辑
@@ -78,23 +94,28 @@ impl TryFrom<CreateFamilyMemberRequest> for entity::family_member::ActiveModel {
     }
 }
 
-/// 更新家庭成员请求 DTO
-#[derive(Debug, Clone, Serialize, Deserialize, Validate, Default)]
-#[serde(rename_all = "camelCase")]
-pub struct UpdateFamilyMemberRequest {
-    #[validate(length(min = 1, max = 100, message = "名称长度必须在1-100字符之间"))]
-    pub name: Option<String>,
-
-    #[validate(length(min = 1, max = 50, message = "角色长度必须在1-50字符之间"))]
-    pub role: Option<String>,
-
-    pub is_primary: Option<bool>,
-
-    #[validate(length(min = 1, max = 1000, message = "权限字符串长度必须在1-1000字符之间"))]
-    pub permissions: Option<String>,
+impl TryFrom<FamilyMemberUpdate> for entity::family_member::ActiveModel {
+    type Error = validator::ValidationErrors;
+    fn try_from(value: FamilyMemberUpdate) -> Result<Self, Self::Error> {
+        value.validate()?;
+        let now = DateUtils::local_now();
+        Ok(entity::family_member::ActiveModel {
+            serial_num: ActiveValue::NotSet,
+            name: value.name.map_or(ActiveValue::NotSet, ActiveValue::Set),
+            role: value.role.map_or(ActiveValue::NotSet, ActiveValue::Set),
+            is_primary: value
+                .is_primary
+                .map_or(ActiveValue::NotSet, ActiveValue::Set),
+            permissions: value
+                .permissions
+                .map_or(ActiveValue::NotSet, ActiveValue::Set),
+            created_at: ActiveValue::NotSet,
+            updated_at: ActiveValue::Set(Some(now)),
+        })
+    }
 }
 
-impl UpdateFamilyMemberRequest {
+impl FamilyMemberUpdate {
     pub fn apply_to_model(self, model: &mut entity::family_member::ActiveModel) {
         let now = DateUtils::local_now();
 
