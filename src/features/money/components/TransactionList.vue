@@ -31,6 +31,7 @@ const moneyStore = useMoneyStore();
 
 // 数据状态
 const loading = ref(false);
+const showMoreFilters = ref(false);
 const transactions = computed<Transaction[]>(() => moneyStore.transactions);
 const disabledTransactions = computed(() => {
   return new Set(
@@ -80,6 +81,10 @@ const isMobile = ref(window.innerWidth < 768);
 
 function updateIsMobile() {
   isMobile.value = window.innerWidth < 768;
+}
+
+function toggleFilters() {
+  showMoreFilters.value = !showMoreFilters.value;
 }
 // 重置过滤器
 function resetFilters() {
@@ -225,7 +230,7 @@ defineExpose({
   <div class="min-h-25">
     <!-- 过滤器区域 -->
     <div class="mb-5 p-4 rounded-lg bg-gray-50 flex flex-wrap gap-3 items-center justify-center">
-      <div class="filter-flex-wrap">
+      <div class="filter-flex-wrap flex flex-1 gap-3">
         <select
           v-model="filters.transactionType"
           class="text-sm px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -258,41 +263,49 @@ defineExpose({
           </option>
         </select>
       </div>
+      <template v-if="showMoreFilters">
+        <div class="filter-flex-wrap">
+          <select
+            v-model="filters.category"
+            class="text-sm px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="">
+              {{ t('categories.allCategory') }}
+            </option>
+            <option v-for="category in uniqueCategories" :key="category.type" :value="category.type">
+              {{ category.option }}
+            </option>
+          </select>
+        </div>
 
-      <div class="filter-flex-wrap">
-        <select
-          v-model="filters.category"
-          class="text-sm px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+        <div class="filter-flex-wrap">
+          <input
+            v-model="filters.dateStart" type="date"
+            class="text-sm px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+        </div>
+
+        <div class="filter-flex-wrap">
+          <input
+            v-model="filters.dateEnd" type="date"
+            class="text-sm px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+        </div>
+      </template>
+      <div class="flex flex-col gap-2">
+        <button
+          class="text-sm text-gray-700 px-3 py-1.5 rounded-md bg-gray-200 flex items-center hover:bg-gray-300"
+          @click="toggleFilters"
         >
-          <option value="">
-            {{ t('categories.allCategory') }}
-          </option>
-          <option v-for="category in uniqueCategories" :key="category.type" :value="category.type">
-            {{ category.option }}
-          </option>
-        </select>
-      </div>
-
-      <div class="filter-flex-wrap">
-        <input
-          v-model="filters.dateStart" type="date"
-          class="text-sm px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          <LucideMoreHorizontal class="mr-1 wh-4" />
+        </button>
+        <button
+          class="text-sm text-gray-700 px-3 py-1.5 rounded-md bg-gray-200 transition-colors hover:bg-gray-300"
+          @click="resetFilters"
         >
+          <LucideRotateCcw class="mr-1 wh-4" />
+        </button>
       </div>
-
-      <div class="filter-flex-wrap">
-        <input
-          v-model="filters.dateEnd" type="date"
-          class="text-sm px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-      </div>
-
-      <button
-        class="text-sm text-gray-700 px-3 py-1.5 rounded-md bg-gray-200 transition-colors hover:bg-gray-300"
-        @click="resetFilters"
-      >
-        <LucideRotateCcw class="mr-1 wh-5" />
-      </button>
     </div>
 
     <!-- 加载状态 -->
