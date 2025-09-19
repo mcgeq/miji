@@ -19,16 +19,12 @@ lazy_static! {
 pub struct CurrencyResponse {
     /// ISO 货币代码 (USD, EUR等)
     pub code: String,
-
     /// 区域设置 (en-US, zh-CN等)
     pub locale: String,
-
     /// 货币符号 ($, €, ¥等)
     pub symbol: String,
-
     /// 创建时间 (ISO 8601格式)
     pub created_at: DateTime<FixedOffset>,
-
     /// 最后更新时间 (ISO 8601格式)
     pub updated_at: Option<DateTime<FixedOffset>>,
 }

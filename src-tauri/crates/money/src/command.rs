@@ -9,8 +9,7 @@ use tracing::info;
 use crate::{
     dto::{
         account::{
-            AccountBalanceSummary, AccountResponseWithRelations, CreateAccountRequest,
-            UpdateAccountRequest, convert_to_account, convert_to_response, tuple_to_response,
+            AccountBalanceSummary, AccountCreate, AccountResponseWithRelations, AccountUpdate,
         },
         bil_reminder::{BilReminder, BilReminderCreate, BilReminderUpdate},
         budget::{Budget, BudgetCreate, BudgetUpdate},
@@ -143,7 +142,7 @@ pub async fn account_get(
         service
             .get_account_with_relations(&state.db, serial_num)
             .await
-            .map(tuple_to_response),
+            .map(AccountResponseWithRelations::from),
     ))
 }
 
@@ -151,19 +150,16 @@ pub async fn account_get(
 #[tauri::command]
 pub async fn account_create(
     state: State<'_, AppState>,
-    data: CreateAccountRequest,
+    data: AccountCreate,
 ) -> Result<ApiResponse<AccountResponseWithRelations>, String> {
     let service = get_account_service();
-    // 先创建账户，然后获取完整信息
-    let result = match service.create(&state.db, data).await {
-        Ok(created_account) => service
-            .get_account_with_relations(&state.db, created_account.serial_num)
-            .await
-            .map(tuple_to_response),
-        Err(e) => Err(e),
-    };
 
-    Ok(ApiResponse::from_result(result))
+    Ok(ApiResponse::from_result(
+        service
+            .account_create(&state.db, data)
+            .await
+            .map(AccountResponseWithRelations::from),
+    ))
 }
 
 // 更新账户
@@ -171,20 +167,15 @@ pub async fn account_create(
 pub async fn account_update(
     state: State<'_, AppState>,
     serial_num: String,
-    data: UpdateAccountRequest,
+    data: AccountUpdate,
 ) -> Result<ApiResponse<AccountResponseWithRelations>, String> {
     let service = get_account_service();
-
-    // 先更新账户，然后获取完整信息
-    let result = match service.update(&state.db, serial_num.clone(), data).await {
-        Ok(_) => service
-            .get_account_with_relations(&state.db, serial_num)
+    Ok(ApiResponse::from_result(
+        service
+            .account_update(&state.db, serial_num, data)
             .await
-            .map(tuple_to_response),
-        Err(e) => Err(e),
-    };
-
-    Ok(ApiResponse::from_result(result))
+            .map(AccountResponseWithRelations::from),
+    ))
 }
 
 #[tauri::command]
@@ -198,7 +189,7 @@ pub async fn account_update_active(
         service
             .update_account_active(&state.db, serial_num, is_active)
             .await
-            .map(tuple_to_response),
+            .map(AccountResponseWithRelations::from),
     ))
 }
 
@@ -225,7 +216,17 @@ pub async fn account_list_paged(
         service
             .list_accounts_paged_with_relations(&state.db, query)
             .await
-            .map(convert_to_response),
+            .map(|paged| PagedResult {
+                rows: paged
+                    .rows
+                    .into_iter()
+                    .map(AccountResponseWithRelations::from)
+                    .collect(),
+                total_count: paged.total_count,
+                current_page: paged.current_page,
+                page_size: paged.page_size,
+                total_pages: paged.total_pages,
+            }),
     ))
 }
 
@@ -239,7 +240,13 @@ pub async fn account_list(
         service
             .list_with_filter(&state.db, filter)
             .await
-            .map(convert_to_account),
+            .map(|paged| {
+                paged
+                    .rows
+                    .into_iter()
+                    .map(AccountResponseWithRelations::from)
+                    .collect()
+            }),
     ))
 }
 

@@ -12,7 +12,8 @@ use serde::{Deserialize, Serialize};
 use validator::Validate;
 
 use crate::dto::{
-    account::{AccountResponseWithRelations, AccountType, AccountWithRelations, CurrencyInfo},
+    account::{AccountResponseWithRelations, AccountType, AccountWithRelations},
+    currency::CurrencyResponse,
     family_member::FamilyMemberResponse,
 };
 
@@ -484,7 +485,7 @@ pub struct TransactionResponse {
     pub amount: Decimal,
     pub refund_amount: Decimal,
     pub account: AccountResponseWithRelations,
-    pub currency: CurrencyInfo,
+    pub currency: CurrencyResponse,
     pub description: String,
     pub notes: Option<String>,
     pub account_serial_num: String,
@@ -523,7 +524,7 @@ impl From<TransactionWithRelations> for TransactionResponse {
             amount: trans.amount,
             refund_amount: trans.refund_amount,
             account: AccountResponseWithRelations::from(acct),
-            currency: CurrencyInfo::from(cny),
+            currency: CurrencyResponse::from(cny),
             description: trans.description,
             notes: trans.notes,
             account_serial_num: trans.account_serial_num,

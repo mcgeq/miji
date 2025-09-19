@@ -3,7 +3,6 @@ use std::{fmt, str::FromStr};
 use chrono::{DateTime, FixedOffset};
 use common::{
     error::AppError,
-    paginations::PagedResult,
     utils::{date::DateUtils, uuid::McgUuid},
 };
 use entity::account;
@@ -11,57 +10,45 @@ use sea_orm::{ActiveValue::Set, FromQueryResult, prelude::Decimal};
 use serde::{Deserialize, Serialize};
 use validator::{Validate, ValidationError};
 
+use crate::dto::currency::CurrencyResponse;
+
 #[derive(Debug, Clone, Deserialize, Validate)]
 #[serde(rename_all = "camelCase")]
-pub struct CreateAccountRequest {
+pub struct AccountCreate {
     #[validate(length(min = 1, max = 100, message = "账户名称长度必须在1-100字符之间"))]
     pub name: String,
-
     #[validate(length(max = 1000, message = "描述长度不能超过1000字符"))]
     pub description: String,
-
     #[validate(length(min = 1, max = 50, message = "账户类型长度必须在1-50字符之间"))]
     pub r#type: String,
-
     #[validate(custom(function = "validate_non_negative_amount", message = "金额必须非负数"))]
     pub initial_balance: Decimal,
-
     #[validate(length(min = 3, max = 3, message = "货币代码必须是3个字符"))]
     pub currency: String,
-
     #[validate(required(message = "是否共享必须指定"))]
     pub is_shared: Option<bool>,
-
     #[validate(length(max = 38, message = "所有者ID长度不能超过38字符"))]
     pub owner_id: Option<String>,
-
     #[validate(length(max = 7, message = "颜色代码长度不能超过7字符"))]
     pub color: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize, Validate)]
 #[serde(rename_all = "camelCase")]
-pub struct UpdateAccountRequest {
+pub struct AccountUpdate {
     #[validate(length(min = 1, max = 100, message = "账户名称长度必须在1-100字符之间"))]
     pub name: Option<String>,
-
     #[validate(length(max = 1000, message = "描述长度不能超过1000字符"))]
     pub description: Option<String>,
-
     #[validate(length(min = 1, max = 50, message = "账户类型长度必须在1-50字符之间"))]
     pub r#type: Option<String>,
-
     #[validate(length(min = 3, max = 3, message = "货币代码必须是3个字符"))]
     pub currency: Option<String>,
-
     pub is_shared: Option<bool>,
-
     #[validate(length(max = 38, message = "所有者ID长度不能超过38字符"))]
     pub owner_id: Option<String>,
-
     #[validate(length(max = 7, message = "颜色代码长度不能超过7字符"))]
     pub color: Option<String>,
-
     pub is_active: Option<bool>,
 }
 
@@ -121,23 +108,12 @@ pub struct AccountResponseWithRelations {
     pub r#type: String,
     pub balance: Decimal,
     pub initial_balance: Decimal,
-    pub currency: CurrencyInfo,
+    pub currency: CurrencyResponse,
     pub is_shared: Option<bool>,
     pub owner_id: Option<String>,
     pub owner: Option<OwnerInfo>,
     pub color: Option<String>,
     pub is_active: bool,
-    pub created_at: DateTime<FixedOffset>,
-    pub updated_at: Option<DateTime<FixedOffset>>,
-}
-
-/// 货币信息
-#[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct CurrencyInfo {
-    pub code: String,
-    pub locale: String,
-    pub symbol: String,
     pub created_at: DateTime<FixedOffset>,
     pub updated_at: Option<DateTime<FixedOffset>>,
 }
@@ -228,7 +204,7 @@ impl From<AccountWithRelations> for AccountResponseWithRelations {
             r#type: data.account.r#type,
             balance: data.account.balance,
             initial_balance: data.account.initial_balance,
-            currency: CurrencyInfo::from(data.currency),
+            currency: CurrencyResponse::from(data.currency),
             is_shared: data.account.is_shared,
             owner_id: data.account.owner_id,
             owner: data.owner.map(OwnerInfo::from),
@@ -236,19 +212,6 @@ impl From<AccountWithRelations> for AccountResponseWithRelations {
             is_active: data.account.is_active,
             created_at: data.account.created_at,
             updated_at: data.account.updated_at,
-        }
-    }
-}
-
-/// 实现从 currency model 到 CurrencyInfo 的转换
-impl From<entity::currency::Model> for CurrencyInfo {
-    fn from(currency: entity::currency::Model) -> Self {
-        Self {
-            code: currency.code,
-            locale: currency.locale,
-            symbol: currency.symbol,
-            created_at: currency.created_at,
-            updated_at: currency.updated_at,
         }
     }
 }
@@ -264,10 +227,10 @@ impl From<entity::family_member::Model> for OwnerInfo {
     }
 }
 
-impl TryFrom<CreateAccountRequest> for account::ActiveModel {
+impl TryFrom<AccountCreate> for account::ActiveModel {
     type Error = validator::ValidationErrors;
 
-    fn try_from(dto: CreateAccountRequest) -> Result<Self, Self::Error> {
+    fn try_from(dto: AccountCreate) -> Result<Self, Self::Error> {
         dto.validate()?;
         // 生成唯一序列号
         let serial_num = McgUuid::uuid(38);
@@ -293,10 +256,10 @@ impl TryFrom<CreateAccountRequest> for account::ActiveModel {
     }
 }
 
-impl TryFrom<UpdateAccountRequest> for account::ActiveModel {
+impl TryFrom<AccountUpdate> for account::ActiveModel {
     type Error = validator::ValidationErrors;
 
-    fn try_from(request: UpdateAccountRequest) -> Result<Self, Self::Error> {
+    fn try_from(request: AccountUpdate) -> Result<Self, Self::Error> {
         // 验证 DTO
         request.validate()?;
 
@@ -345,116 +308,4 @@ fn validate_non_negative_amount(amount: &Decimal) -> Result<(), ValidationError>
         return Err(ValidationError::new("non_negative"));
     }
     Ok(())
-}
-
-pub fn convert_to_account(
-    paged: PagedResult<(
-        entity::account::Model,
-        entity::currency::Model,
-        Option<entity::family_member::Model>,
-    )>,
-) -> Vec<AccountResponseWithRelations> {
-    paged
-        .rows
-        .into_iter()
-        .map(|(account, currency, owner)| AccountResponseWithRelations {
-            serial_num: account.serial_num,
-            name: account.name,
-            description: account.description,
-            r#type: account.r#type,
-            balance: account.balance,
-            initial_balance: account.initial_balance,
-            currency: CurrencyInfo {
-                code: currency.code,
-                locale: currency.locale,
-                symbol: currency.symbol,
-                created_at: currency.created_at,
-                updated_at: currency.updated_at,
-            },
-            is_shared: account.is_shared,
-            owner_id: account.owner_id,
-            owner: owner.map(|o| OwnerInfo {
-                serial_num: o.serial_num,
-                name: o.name,
-                role: Some(o.role),
-            }),
-            color: account.color,
-            is_active: account.is_active,
-            created_at: account.created_at,
-            updated_at: account.updated_at,
-        })
-        .collect()
-}
-
-pub fn convert_to_response(
-    paged: PagedResult<AccountWithRelations>,
-) -> PagedResult<AccountResponseWithRelations> {
-    let rows = paged
-        .rows
-        .into_iter()
-        .map(|account_with_relations| AccountResponseWithRelations {
-            serial_num: account_with_relations.account.serial_num,
-            name: account_with_relations.account.name,
-            description: account_with_relations.account.description,
-            r#type: account_with_relations.account.r#type,
-            balance: account_with_relations.account.balance,
-            initial_balance: account_with_relations.account.initial_balance,
-            currency: CurrencyInfo {
-                code: account_with_relations.currency.code,
-                locale: account_with_relations.currency.locale,
-                symbol: account_with_relations.currency.symbol,
-                created_at: account_with_relations.currency.created_at,
-                updated_at: account_with_relations.currency.updated_at,
-            },
-            is_shared: account_with_relations.account.is_shared,
-            owner_id: account_with_relations.account.owner_id,
-            owner: account_with_relations.owner.map(|o| OwnerInfo {
-                serial_num: o.serial_num,
-                name: o.name,
-                role: Some(o.role),
-            }),
-            color: account_with_relations.account.color,
-            is_active: account_with_relations.account.is_active,
-            created_at: account_with_relations.account.created_at,
-            updated_at: account_with_relations.account.updated_at,
-        })
-        .collect();
-
-    PagedResult {
-        rows,
-        total_count: paged.total_count,
-        current_page: paged.current_page,
-        page_size: paged.page_size,
-        total_pages: paged.total_pages,
-    }
-}
-
-// Helper function to convert tuple to AccountResponseWithRelations
-pub fn tuple_to_response(account_response: AccountWithRelations) -> AccountResponseWithRelations {
-    AccountResponseWithRelations {
-        serial_num: account_response.account.serial_num,
-        name: account_response.account.name,
-        description: account_response.account.description,
-        r#type: account_response.account.r#type,
-        balance: account_response.account.balance,
-        initial_balance: account_response.account.initial_balance,
-        currency: CurrencyInfo {
-            code: account_response.currency.code,
-            locale: account_response.currency.locale,
-            symbol: account_response.currency.symbol,
-            created_at: account_response.currency.created_at,
-            updated_at: account_response.currency.updated_at,
-        },
-        is_shared: account_response.account.is_shared,
-        owner_id: account_response.account.owner_id,
-        owner: account_response.owner.map(|o| OwnerInfo {
-            serial_num: o.serial_num,
-            name: o.name,
-            role: Some(o.role),
-        }),
-        color: account_response.account.color,
-        is_active: account_response.account.is_active,
-        created_at: account_response.account.created_at,
-        updated_at: account_response.account.updated_at,
-    }
 }

@@ -24,8 +24,7 @@ use validator::Validate;
 
 use crate::{
     dto::account::{
-        AccountBalanceSummary, AccountType, AccountWithRelations, CreateAccountRequest,
-        UpdateAccountRequest,
+        AccountBalanceSummary, AccountCreate, AccountType, AccountUpdate, AccountWithRelations,
     },
     services::account_hooks::AccountHooks,
 };
@@ -163,10 +162,10 @@ impl Filter<entity::account::Entity> for AccountFilter {
 #[derive(Debug)]
 pub struct AccountConverter;
 
-impl CrudConverter<AccountEntity, CreateAccountRequest, UpdateAccountRequest> for AccountConverter {
+impl CrudConverter<AccountEntity, AccountCreate, AccountUpdate> for AccountConverter {
     fn create_to_active_model(
         &self,
-        data: CreateAccountRequest,
+        data: AccountCreate,
     ) -> MijiResult<entity::account::ActiveModel> {
         entity::account::ActiveModel::try_from(data).map_err(AppError::from_validation_errors)
     }
@@ -174,7 +173,7 @@ impl CrudConverter<AccountEntity, CreateAccountRequest, UpdateAccountRequest> fo
     fn update_to_active_model(
         &self,
         model: AccountModel,
-        data: UpdateAccountRequest,
+        data: AccountUpdate,
     ) -> MijiResult<entity::account::ActiveModel> {
         entity::account::ActiveModel::try_from(data)
             .map(|mut active_model| {
@@ -285,19 +284,6 @@ impl RelationLoader<FamilyMemberEntity> for FamilyMemberLoader {
     }
 }
 
-impl FamilyMemberLoader {
-    async fn load_by_id(
-        &self,
-        db: &DbConn,
-        serial_num: &str,
-    ) -> MijiResult<Option<FamilyMemberModel>> {
-        FamilyMemberEntity::find_by_id(sanitize_input(serial_num))
-            .one(db)
-            .await
-            .map_err(AppError::from)
-    }
-}
-
 /// ---------------------------------------------
 /// Account Service
 /// 账户服务类型别名
@@ -305,8 +291,8 @@ impl FamilyMemberLoader {
 pub type BaseAccountService = GenericCrudService<
     AccountEntity,
     AccountFilter,
-    CreateAccountRequest,
-    UpdateAccountRequest,
+    AccountCreate,
+    AccountUpdate,
     AccountConverter,
     AccountHooks,
 >;
@@ -334,10 +320,8 @@ impl AccountService {
 }
 
 #[async_trait]
-impl CrudService<AccountEntity, AccountFilter, CreateAccountRequest, UpdateAccountRequest>
-    for AccountService
-{
-    async fn create(&self, db: &DbConn, data: CreateAccountRequest) -> MijiResult<AccountModel> {
+impl CrudService<AccountEntity, AccountFilter, AccountCreate, AccountUpdate> for AccountService {
+    async fn create(&self, db: &DbConn, data: AccountCreate) -> MijiResult<AccountModel> {
         self.inner.create(db, data).await
     }
 
@@ -349,7 +333,7 @@ impl CrudService<AccountEntity, AccountFilter, CreateAccountRequest, UpdateAccou
         &self,
         db: &DbConn,
         serial_num: String,
-        data: UpdateAccountRequest,
+        data: AccountUpdate,
     ) -> MijiResult<AccountModel> {
         self.inner.update(db, serial_num, data).await
     }
@@ -381,7 +365,7 @@ impl CrudService<AccountEntity, AccountFilter, CreateAccountRequest, UpdateAccou
     async fn create_batch(
         &self,
         db: &DbConn,
-        data: Vec<CreateAccountRequest>,
+        data: Vec<AccountCreate>,
     ) -> MijiResult<Vec<AccountModel>> {
         self.inner.create_batch(db, data).await
     }
@@ -404,19 +388,10 @@ impl CrudService<AccountEntity, AccountFilter, CreateAccountRequest, UpdateAccou
 }
 
 #[async_trait]
-impl
-    TransactionalCrudService<
-        AccountEntity,
-        AccountFilter,
-        CreateAccountRequest,
-        UpdateAccountRequest,
-    > for AccountService
+impl TransactionalCrudService<AccountEntity, AccountFilter, AccountCreate, AccountUpdate>
+    for AccountService
 {
-    async fn create_in_txn(
-        &self,
-        txn: &DbConn,
-        data: CreateAccountRequest,
-    ) -> MijiResult<AccountModel> {
+    async fn create_in_txn(&self, txn: &DbConn, data: AccountCreate) -> MijiResult<AccountModel> {
         self.inner.create(txn, data).await
     }
 
@@ -424,7 +399,7 @@ impl
         &self,
         txn: &DbConn,
         id: String,
-        data: UpdateAccountRequest,
+        data: AccountUpdate,
     ) -> MijiResult<AccountModel> {
         self.inner.update(txn, id, data).await
     }
@@ -435,117 +410,31 @@ impl
 }
 
 impl AccountService {
-    pub async fn create_account(
-        &self,
-        db: &DatabaseConnection,
-        data: CreateAccountRequest,
-    ) -> MijiResult<AccountWithRelations> {
-        let account = self.inner.create(db, data).await?;
-        let account_with_relations = self
-            .get_account_with_relations(db, account.serial_num.clone())
-            .await?;
-        Ok(account_with_relations)
-    }
-
-    pub async fn get_account_with_currency(
-        &self,
-        db: &DatabaseConnection,
-        id: String,
-    ) -> MijiResult<(AccountModel, CurrencyModel)> {
-        AccountEntity::find_by_id(sanitize_input(&id))
-            .find_also_related(CurrencyEntity)
-            .one(db)
-            .await
-            .map_err(AppError::from)?
-            .and_then(|(account, currency)| currency.map(|c| (account, c)))
-            .ok_or_else(|| {
-                AppError::simple(BusinessCode::NotFound, "Account or currency not found")
-            })
-    }
-
     pub async fn get_account_with_relations(
         &self,
         db: &DatabaseConnection,
         serial_num: String,
     ) -> MijiResult<AccountWithRelations> {
-        let (account, currency) = self
-            .get_account_with_currency(db, serial_num.clone())
-            .await?;
-        let owner = if let Some(owner_id) = &account.owner_id {
-            FamilyMemberLoader.load_by_id(db, owner_id).await?
-        } else {
-            None
-        };
-        Ok(AccountWithRelations {
-            account: account.to_local(),
-            currency: currency.to_local(),
-            owner,
-        })
-    }
-
-    pub async fn get_account_with_relations_optimized(
-        &self,
-        db: &DatabaseConnection,
-        serial_num: String,
-    ) -> MijiResult<AccountWithRelations> {
-        let result = AccountEntity::find_by_id(sanitize_input(&serial_num))
-            .select_only()
-            .columns([
-                AccountColumn::SerialNum,
-                AccountColumn::Name,
-                AccountColumn::Currency,
-            ])
-            .find_also_related(CurrencyEntity)
-            .select_only()
-            .columns([CurrencyColumn::Code, CurrencyColumn::Symbol])
-            .find_also_related(FamilyMemberEntity)
-            .select_only()
-            .columns([FamilyMemberColumn::SerialNum, FamilyMemberColumn::Name])
+        let result = entity::account::Entity::find()
+            .find_also_related(entity::currency::Entity)
+            .find_also_related(entity::family_member::Entity)
+            .filter(entity::account::Column::SerialNum.eq(serial_num))
             .one(db)
-            .await
-            .map_err(AppError::from)?
-            .ok_or_else(|| AppError::simple(BusinessCode::NotFound, "Account not found"))?;
-        let (account, currency, owner) = result;
-        let currency = currency.ok_or_else(|| {
-            AppError::simple(BusinessCode::NotFound, "Currency information missing")
+            .await?;
+        let (account, currency_opt, owner_opt) =
+            result.ok_or_else(|| AppError::simple(BusinessCode::NotFound, "Account not found"))?;
+        let cny = currency_opt.ok_or_else(|| {
+            AppError::simple(
+                BusinessCode::NotFound,
+                "Currency not found for this account",
+            )
         })?;
+
         Ok(AccountWithRelations {
             account: account.to_local(),
-            currency: currency.to_local(),
-            owner,
+            currency: cny.to_local(),
+            owner: owner_opt.map(|o| o.to_local()),
         })
-    }
-
-    pub async fn list_accounts_paged_with_relations(
-        &self,
-        db: &DatabaseConnection,
-        query: PagedQuery<AccountFilter>,
-    ) -> MijiResult<PagedResult<AccountWithRelations>> {
-        Self::paginate_with_relations_base(
-            db,
-            AccountEntity::find().find_also_related(CurrencyEntity),
-            query,
-            |(account, currency, owner)| AccountWithRelations {
-                account: account.to_local(),
-                currency: currency.to_local(),
-                owner,
-            },
-        )
-        .await
-    }
-
-    pub async fn list_accounts_paged_with_currency(
-        &self,
-        db: &DatabaseConnection,
-        query: PagedQuery<AccountFilter>,
-    ) -> MijiResult<PagedResult<(AccountModel, CurrencyModel)>> {
-        Self::paginate_with_relations_base(
-            db,
-            AccountEntity::find().find_also_related(CurrencyEntity),
-            query,
-            |(account, currency, _)| (account.to_local(), currency.to_local()),
-        )
-        .await
     }
 
     async fn paginate_with_relations_base<T, F>(
@@ -610,55 +499,69 @@ impl AccountService {
         })
     }
 
-    pub async fn list_with_filter(
+    fn apply_sort_to_select_two(
+        query_builder: SelectTwo<AccountEntity, CurrencyEntity>,
+        sort_by: &Option<String>,
+        desc: bool,
+    ) -> SelectTwo<AccountEntity, CurrencyEntity> {
+        let Some(sort_by) = sort_by else {
+            return query_builder;
+        };
+
+        let sort_by = sanitize_input(sort_by);
+
+        match AccountColumn::from_str(&sort_by) {
+            Ok(column) => {
+                if desc {
+                    query_builder.order_by_desc(column)
+                } else {
+                    query_builder.order_by_asc(column)
+                }
+            }
+            Err(_) => match sort_by.split_once('.') {
+                Some(("currency", field)) => match CurrencyColumn::from_str(field) {
+                    Ok(column) => {
+                        if desc {
+                            query_builder.order_by_desc(column)
+                        } else {
+                            query_builder.order_by_asc(column)
+                        }
+                    }
+                    Err(_) => {
+                        info!("Invalid sort field: {}", sort_by);
+                        query_builder
+                    }
+                },
+                _ => {
+                    info!("Invalid sort field: {}", sort_by);
+                    query_builder
+                }
+            },
+        }
+    }
+}
+
+impl AccountService {
+    pub async fn account_create(
         &self,
         db: &DatabaseConnection,
-        query: AccountFilter,
-    ) -> MijiResult<PagedResult<(AccountModel, CurrencyModel, Option<FamilyMemberModel>)>> {
-        query.validate().map_err(AppError::from_validation_errors)?;
-        let query_builder = Self::apply_sort_to_select_two(
-            AccountEntity::find()
-                .find_also_related(CurrencyEntity)
-                .filter(query.to_condition()),
-            &None,
-            true,
-        );
+        data: AccountCreate,
+    ) -> MijiResult<AccountWithRelations> {
+        let account = self.inner.create(db, data).await?;
+        let account_with_relations = self
+            .get_account_with_relations(db, account.serial_num.clone())
+            .await?;
+        Ok(account_with_relations)
+    }
 
-        let rows_with_currency = query_builder.all(db).await.map_err(AppError::from)?;
-
-        let owner_ids: Vec<String> = rows_with_currency
-            .iter()
-            .filter_map(|(account, _)| account.owner_id.clone())
-            .map(|id| sanitize_input(&id))
-            .collect();
-        let owners_map = FamilyMemberLoader.batch_load(db, &owner_ids).await?;
-
-        let rows: Vec<(AccountModel, CurrencyModel, Option<FamilyMemberModel>)> =
-            rows_with_currency
-                .into_iter()
-                .filter_map(|(account, currency)| {
-                    currency.map(|c| {
-                        (
-                            account.clone().to_local(),
-                            c.to_local(),
-                            account
-                                .owner_id
-                                .as_ref()
-                                .and_then(|id| owners_map.get(id))
-                                .cloned(),
-                        )
-                    })
-                })
-                .collect();
-
-        let total_count = rows.len();
-        Ok(PagedResult {
-            rows,
-            total_count,
-            current_page: 1,
-            page_size: total_count,
-            total_pages: 1,
-        })
+    pub async fn account_update(
+        &self,
+        db: &DbConn,
+        serial_num: String,
+        data: AccountUpdate,
+    ) -> MijiResult<AccountWithRelations> {
+        let model = self.update(db, serial_num, data).await?;
+        self.get_account_with_relations(db, model.serial_num).await
     }
 
     pub async fn update_account_active(
@@ -683,6 +586,73 @@ impl AccountService {
         )
         .await?;
         self.get_account_with_relations(db, serial_num).await
+    }
+
+    pub async fn list_accounts_paged_with_relations(
+        &self,
+        db: &DatabaseConnection,
+        query: PagedQuery<AccountFilter>,
+    ) -> MijiResult<PagedResult<AccountWithRelations>> {
+        Self::paginate_with_relations_base(
+            db,
+            AccountEntity::find().find_also_related(CurrencyEntity),
+            query,
+            |(account, currency, owner)| AccountWithRelations {
+                account: account.to_local(),
+                currency: currency.to_local(),
+                owner: owner.map(|v| v.to_local()),
+            },
+        )
+        .await
+    }
+
+    pub async fn list_with_filter(
+        &self,
+        db: &DatabaseConnection,
+        query: AccountFilter,
+    ) -> MijiResult<PagedResult<AccountWithRelations>> {
+        query.validate().map_err(AppError::from_validation_errors)?;
+        let query_builder = Self::apply_sort_to_select_two(
+            AccountEntity::find()
+                .find_also_related(CurrencyEntity)
+                .filter(query.to_condition()),
+            &None,
+            true,
+        );
+
+        let rows_with_currency = query_builder.all(db).await.map_err(AppError::from)?;
+
+        let owner_ids: Vec<String> = rows_with_currency
+            .iter()
+            .filter_map(|(account, _)| account.owner_id.clone())
+            .map(|id| sanitize_input(&id))
+            .collect();
+        let owners_map = FamilyMemberLoader.batch_load(db, &owner_ids).await?;
+
+        let rows_converted: Vec<AccountWithRelations> = rows_with_currency
+            .into_iter()
+            .filter_map(|(account, currency_opt)| {
+                let currency = currency_opt?;
+                Some(AccountWithRelations {
+                    account: account.clone().to_local(),
+                    currency: currency.to_local(),
+                    owner: account
+                        .owner_id
+                        .as_ref()
+                        .and_then(|id| owners_map.get(id))
+                        .cloned(),
+                })
+            })
+            .collect();
+
+        let total_count = rows_converted.len();
+        Ok(PagedResult {
+            rows: rows_converted,
+            total_count,
+            current_page: 1,
+            page_size: total_count,
+            total_pages: 1,
+        })
     }
 
     pub async fn total_assets(&self, db: &DatabaseConnection) -> MijiResult<AccountBalanceSummary> {
@@ -753,47 +723,6 @@ impl AccountService {
             .map_err(AppError::from)?
             .unwrap_or_default();
         Ok(result)
-    }
-
-    fn apply_sort_to_select_two(
-        query_builder: SelectTwo<AccountEntity, CurrencyEntity>,
-        sort_by: &Option<String>,
-        desc: bool,
-    ) -> SelectTwo<AccountEntity, CurrencyEntity> {
-        let Some(sort_by) = sort_by else {
-            return query_builder;
-        };
-
-        let sort_by = sanitize_input(sort_by);
-
-        match AccountColumn::from_str(&sort_by) {
-            Ok(column) => {
-                if desc {
-                    query_builder.order_by_desc(column)
-                } else {
-                    query_builder.order_by_asc(column)
-                }
-            }
-            Err(_) => match sort_by.split_once('.') {
-                Some(("currency", field)) => match CurrencyColumn::from_str(field) {
-                    Ok(column) => {
-                        if desc {
-                            query_builder.order_by_desc(column)
-                        } else {
-                            query_builder.order_by_asc(column)
-                        }
-                    }
-                    Err(_) => {
-                        info!("Invalid sort field: {}", sort_by);
-                        query_builder
-                    }
-                },
-                _ => {
-                    info!("Invalid sort field: {}", sort_by);
-                    query_builder
-                }
-            },
-        }
     }
 }
 

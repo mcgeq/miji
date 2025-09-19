@@ -49,7 +49,7 @@ const inputId = useId();
 // 挂载时加载账户
 onMounted(async () => {
   try {
-    fetchedAccounts.value = await moneyStore.getAllAccounts();
+    fetchedAccounts.value = moneyStore.accounts;
   } catch (error) {
     console.error('获取账户失败:', error);
   }

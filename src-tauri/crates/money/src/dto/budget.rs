@@ -7,8 +7,9 @@ use sea_orm::{ActiveValue, prelude::Decimal};
 use serde::{Deserialize, Serialize};
 use validator::Validate;
 
-use crate::dto::account::{
-    AccountResponseWithRelations, AccountType, AccountWithRelations, CurrencyInfo,
+use crate::dto::{
+    account::{AccountResponseWithRelations, AccountType, AccountWithRelations},
+    currency::CurrencyResponse,
 };
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -211,7 +212,7 @@ pub struct Budget {
     #[serde(flatten)]
     pub core: BudgetBase,
     pub account: Option<AccountResponseWithRelations>,
-    pub currency: CurrencyInfo,
+    pub currency: CurrencyResponse,
     pub created_at: DateTime<FixedOffset>,
     pub updated_at: Option<DateTime<FixedOffset>>,
 }
@@ -520,7 +521,7 @@ impl From<BudgetWithAccount> for Budget {
                 advanced_rules: budget.advanced_rules,
             },
             account,
-            currency: CurrencyInfo::from(cny),
+            currency: CurrencyResponse::from(cny),
             created_at: budget.created_at,
             updated_at: budget.updated_at,
         }
