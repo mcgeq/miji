@@ -452,7 +452,6 @@ impl AccountService {
         db: &DatabaseConnection,
         id: String,
     ) -> MijiResult<(AccountModel, CurrencyModel)> {
-        info!("[AccountService get_account_with_currency] start...");
         AccountEntity::find_by_id(sanitize_input(&id))
             .find_also_related(CurrencyEntity)
             .one(db)
@@ -469,7 +468,6 @@ impl AccountService {
         db: &DatabaseConnection,
         serial_num: String,
     ) -> MijiResult<AccountWithRelations> {
-        info!("AccountService start....");
         let (account, currency) = self
             .get_account_with_currency(db, serial_num.clone())
             .await?;
