@@ -71,9 +71,6 @@ impl Config {
 fn get_app_data_dir(app: &AppHandle) -> MijiResult<PathBuf> {
     #[cfg(any(target_os = "ios", target_os = "android"))]
     let result = get_mobile_data_dir(app);
-
-    #[cfg(any(target_os = "ios", target_os = "android"))]
-    let result = get_mobile_data_dir(app);
     #[cfg(not(any(target_os = "ios", target_os = "android")))]
     let result = get_desktop_data_dir(app);
 
@@ -83,19 +80,21 @@ fn get_app_data_dir(app: &AppHandle) -> MijiResult<PathBuf> {
 #[cfg(any(target_os = "ios", target_os = "android"))]
 fn get_mobile_data_dir(app: &AppHandle) -> MijiResult<PathBuf> {
     // iOS
-
     #[cfg(target_os = "ios")]
-    let dir = app.path().document_dir();
+    let dir = app
+        .path()
+        .document_dir()
+        .map_err(|e| EnvError::FileSystem {
+            message: format!("Failed to create directory: {e}"),
+            backtrace: snafu::Backtrace::generate(),
+        })?;
 
     #[cfg(target_os = "android")]
-    let dir = app.path().data_dir();
-
-    dir.map(|d| d.join("data"))
-        .map_err(|e| EnvError::FileSystem {
-            message: format!("Failed to create directory: {data_dir}:{e}"),
-            backtrace: snafu::Backtrace::generate(),
-        })
-        .map_err(AppError::from)
+    let dir = app.path().data_dir().map_err(|e| EnvError::FileSystem {
+        message: format!("Failed to create directory: {e}"),
+        backtrace: snafu::Backtrace::generate(),
+    })?;
+    Ok(dir.join("data"))
 }
 
 #[cfg(not(any(target_os = "ios", target_os = "android")))]

@@ -41,7 +41,7 @@ pub fn run() {
     let builder = builder.init_plugin();
 
     #[cfg(any(target_os = "android", target_os = "ios"))]
-    let builder = builder.plugin(mobiles::init::MijiInit);
+    let builder = builder.init_plugin();
 
     let builder = init_commands(builder);
 
