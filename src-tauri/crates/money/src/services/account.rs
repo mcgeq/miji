@@ -26,14 +26,12 @@ use crate::{
     dto::account::{
         AccountBalanceSummary, AccountCreate, AccountType, AccountUpdate, AccountWithRelations,
     },
-    services::account_hooks::AccountHooks,
+    services::{account_hooks::AccountHooks, family_member::get_family_member_service},
 };
 use entity::{
     account::{Column as AccountColumn, Entity as AccountEntity, Model as AccountModel},
     currency::{Column as CurrencyColumn, Entity as CurrencyEntity, Model as CurrencyModel},
-    family_member::{
-        Column as FamilyMemberColumn, Entity as FamilyMemberEntity, Model as FamilyMemberModel,
-    },
+    family_member::Model as FamilyMemberModel,
     localize::LocalizeModel,
 };
 
@@ -206,82 +204,6 @@ pub trait RelationLoader<E: EntityTrait> {
         db: &DbConn,
         ids: &[String],
     ) -> MijiResult<HashMap<String, Self::Model>>;
-}
-
-/// 默认账户加载器
-pub struct CurrencyLoader;
-
-#[async_trait]
-impl RelationLoader<AccountEntity> for CurrencyLoader {
-    type Model = CurrencyModel;
-    async fn load(&self, db: &DbConn, account: &AccountModel) -> MijiResult<Option<CurrencyModel>> {
-        CurrencyEntity::find_by_id(account.currency.clone())
-            .one(db)
-            .await
-            .map_err(AppError::from)
-    }
-
-    async fn batch_load(
-        &self,
-        db: &DbConn,
-        ids: &[String],
-    ) -> MijiResult<HashMap<String, CurrencyModel>> {
-        if ids.is_empty() {
-            return Ok(HashMap::new());
-        }
-        const CHUNK_SIZE: usize = 1000;
-        let mut result = HashMap::new();
-        for chunk in ids.chunks(CHUNK_SIZE) {
-            let models = CurrencyEntity::find()
-                .filter(CurrencyColumn::Code.is_in(chunk))
-                .all(db)
-                .await
-                .map_err(AppError::from)?;
-            result.extend(models.into_iter().map(|m| (m.code.clone(), m)));
-        }
-        Ok(result)
-    }
-}
-
-pub struct FamilyMemberLoader;
-#[async_trait]
-impl RelationLoader<FamilyMemberEntity> for FamilyMemberLoader {
-    type Model = FamilyMemberModel;
-    async fn load(
-        &self,
-        db: &DbConn,
-        family_member: &FamilyMemberModel,
-    ) -> MijiResult<Option<FamilyMemberModel>> {
-        FamilyMemberEntity::find_by_id(family_member.serial_num.clone())
-            .one(db)
-            .await
-            .map_err(AppError::from)
-    }
-
-    async fn batch_load(
-        &self,
-        db: &DbConn,
-        ids: &[String],
-    ) -> MijiResult<HashMap<String, FamilyMemberModel>> {
-        if ids.is_empty() {
-            return Ok(HashMap::new());
-        }
-        const CHUNK_SIZE: usize = 1000;
-        let mut result = HashMap::new();
-        for chunk in ids.chunks(CHUNK_SIZE) {
-            let owners = FamilyMemberEntity::find()
-                .filter(FamilyMemberColumn::SerialNum.is_in(chunk))
-                .all(db)
-                .await
-                .map_err(AppError::from)?;
-            result.extend(
-                owners
-                    .into_iter()
-                    .map(|owner| (owner.serial_num.clone(), owner.to_local())),
-            );
-        }
-        Ok(result)
-    }
 }
 
 /// ---------------------------------------------
@@ -474,7 +396,10 @@ impl AccountService {
             .filter_map(|(account, _)| account.owner_id.clone())
             .map(|id| sanitize_input(&id))
             .collect();
-        let owners_map = FamilyMemberLoader.batch_load(db, &owner_ids).await?;
+        let family_member_service = get_family_member_service();
+        let owners_map = family_member_service
+            .family_member_batch_get(db, &owner_ids)
+            .await?;
 
         let rows = rows_with_currency
             .into_iter()
@@ -627,7 +552,10 @@ impl AccountService {
             .filter_map(|(account, _)| account.owner_id.clone())
             .map(|id| sanitize_input(&id))
             .collect();
-        let owners_map = FamilyMemberLoader.batch_load(db, &owner_ids).await?;
+        let family_member_service = get_family_member_service();
+        let owners_map = family_member_service
+            .family_member_batch_get(db, &owner_ids)
+            .await?;
 
         let rows_converted: Vec<AccountWithRelations> = rows_with_currency
             .into_iter()
