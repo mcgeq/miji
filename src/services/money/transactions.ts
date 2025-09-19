@@ -70,10 +70,7 @@ export class TransactionMapper extends BaseMapper<
     }
   }
 
-  async update(
-    serialNum: string,
-    transaction: TransactionUpdate,
-  ): Promise<Transaction> {
+  async update(serialNum: string, transaction: TransactionUpdate): Promise<Transaction> {
     try {
       const result = await invokeCommand<Transaction>('transaction_update', {
         serialNum,
@@ -95,23 +92,18 @@ export class TransactionMapper extends BaseMapper<
     }
   }
 
-  async listPaged(
-    query: PageQuery<TransactionFilters>,
-  ): Promise<PagedResult<Transaction>> {
+  async listPaged(query: PageQuery<TransactionFilters>): Promise<PagedResult<Transaction>> {
     try {
-      const result = await invokeCommand<PagedResult<Transaction>>(
-        'transaction_list_paged',
-        { query },
-      );
+      const result = await invokeCommand<PagedResult<Transaction>>('transaction_list_paged', {
+        query,
+      });
       return result;
     } catch (err) {
       this.handleError('listPaged', err);
     }
   }
 
-  async transfer(
-    transfer: TransferCreate,
-  ): Promise<[Transaction, Transaction]> {
+  async transfer(transfer: TransferCreate): Promise<[Transaction, Transaction]> {
     try {
       const result = await invokeCommand<[Transaction, Transaction]>(
         'transaction_transfer_create',
@@ -182,18 +174,12 @@ export class TransactionMapper extends BaseMapper<
     return this.queryIncomeAndExpense(startDate, endDate);
   }
 
-  private async queryIncomeAndExpense(
-    startDate: string,
-    endDate: string,
-  ): Promise<IncomeExpense> {
+  private async queryIncomeAndExpense(startDate: string, endDate: string): Promise<IncomeExpense> {
     try {
-      const result = await invokeCommand<IncomeExpense>(
-        'transaction_query_income_and_expense',
-        {
-          startDate,
-          endDate,
-        },
-      );
+      const result = await invokeCommand<IncomeExpense>('transaction_query_income_and_expense', {
+        startDate,
+        endDate,
+      });
       return result;
     } catch (error) {
       this.handleError('queryIncomeAndExpense', error);

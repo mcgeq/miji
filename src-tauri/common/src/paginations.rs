@@ -129,7 +129,6 @@ pub struct PagedQuery<F> {
     pub sort_options: SortOptions,
 
     /// 过滤条件
-    #[serde(flatten)]
     pub filter: F,
 }
 

@@ -946,6 +946,7 @@ impl Filter<entity::transactions::Entity> for TransactionFilter {
         let mut condition = Condition::all();
 
         if let Some(transaction_type) = &self.transaction_type {
+            info!("TransactionFilter type {:?}", transaction_type);
             condition =
                 condition.add(entity::transactions::Column::TransactionType.eq(transaction_type));
         }
