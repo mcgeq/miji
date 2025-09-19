@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{collections::HashMap, sync::Arc};
 
 use common::{
     crud::service::{CrudConverter, CrudService, GenericCrudService},
@@ -263,22 +263,30 @@ impl FamilyMemberService {
     pub async fn family_member_batch_get(
         &self,
         db: &DbConn,
-        serial_num: &[String],
-    ) -> MijiResult<Vec<entity::family_member::Model>> {
-        if serial_num.is_empty() {
-            return Ok(Vec::new());
+        ids: &[String],
+    ) -> MijiResult<HashMap<String, entity::family_member::Model>> {
+        if ids.is_empty() {
+            return Ok(HashMap::new());
         }
-
-        let models = entity::family_member::Entity::find()
-            .filter(entity::family_member::Column::SerialNum.is_in(serial_num))
-            .all(db)
-            .await?;
-        let local_model = models.into_iter().map(|entity| entity.to_local()).collect();
-        Ok(local_model)
+        const CHUNK_SIZE: usize = 1000;
+        let mut result = HashMap::new();
+        for chunk in ids.chunks(CHUNK_SIZE) {
+            let owners = entity::family_member::Entity::find()
+                .filter(entity::family_member::Column::SerialNum.is_in(chunk))
+                .all(db)
+                .await
+                .map_err(AppError::from)?;
+            result.extend(
+                owners
+                    .into_iter()
+                    .map(|owner| (owner.serial_num.clone(), owner.to_local())),
+            );
+        }
+        Ok(result)
     }
 }
 
-pub fn get_category_service() -> FamilyMemberService {
+pub fn get_family_member_service() -> FamilyMemberService {
     FamilyMemberService::new(
         FamilyMemberConverter,
         FamilyMemberHooks,

@@ -855,7 +855,7 @@ where
     if result.rows_affected == 0 {
         return Err(AppError::simple(
             BusinessCode::NotFound,
-            format!("Not found with serial_num: {:?}", serial_nums),
+            format!("Not found with serial_num: {serial_nums:?}"),
         ));
     }
     Ok(result.rows_affected)
