@@ -17,5 +17,6 @@ pub trait MijiInit {
 impl<R: Runtime> MijiInit for tauri::Builder<R> {
     fn init_plugin(self) -> Self {
         self.plugin(tauri_plugin_vue::init())
+            .plugin(tauri_plugin_log::Builder::new().build())
     }
 }

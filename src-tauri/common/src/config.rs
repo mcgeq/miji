@@ -4,10 +4,10 @@ use snafu::GenerateImplicitData;
 use tauri::{AppHandle, Manager};
 use zeroize::Zeroizing;
 
-use crate::{
-    env::env_get_string,
-    error::{AppError, EnvError, MijiResult},
-};
+use crate::error::{EnvError, MijiResult};
+
+#[cfg(not(any(target_os = "android", target_os = "ios")))]
+use crate::{env::env_get_string, error::AppError};
 
 static CONFIG: OnceLock<Config> = OnceLock::new();
 
@@ -24,26 +24,8 @@ impl Config {
     }
 
     pub fn init(app: &AppHandle) -> MijiResult<()> {
-        let jwt_secret = Zeroizing::new(env_get_string("JWT_SECRET").unwrap_or_else(|_| {
-            log::warn!("JWT_SECRET not set, using default");
-            "mcgeqJWTSECRET".to_string()
-        }));
-
-        let expired_at = env_get_string("EXPIRED_AT")
-            .and_then(|val| {
-                val.parse::<i64>()
-                    .map_err(|e| EnvError::EnvVarParseError {
-                        var_name: "EXPIRED_AT".to_string(),
-                        source: e,
-                        backtrace: snafu::Backtrace::generate(),
-                    })
-                    .map_err(AppError::from)
-            })
-            .unwrap_or_else(|_| {
-                log::warn!("EXPIRED_AT not set, using default (7 days in hours)");
-                7 * 24
-            });
-
+        let jwt_secret = get_jwt_secret();
+        let expired_at = get_expired_at();
         let data_dir = get_app_data_dir(app)?;
 
         std::fs::create_dir_all(&data_dir).map_err(|e| EnvError::FileSystem {
@@ -107,4 +89,46 @@ fn get_desktop_data_dir(app: &AppHandle) -> MijiResult<PathBuf> {
             backtrace: snafu::Backtrace::generate(),
         })
         .map_err(AppError::from)
+}
+
+/// 获取 JWT_SECRET，根据平台决定来源
+fn get_jwt_secret() -> Zeroizing<String> {
+    #[cfg(any(target_os = "android", target_os = "ios"))]
+    {
+        Zeroizing::new("mcgeqJWTSECRET".to_string())
+    }
+
+    #[cfg(not(any(target_os = "android", target_os = "ios")))]
+    {
+        Zeroizing::new(env_get_string("JWT_SECRET").unwrap_or_else(|_| {
+            log::warn!("JWT_SECRET not set, using default");
+            "mcgeqJWTSECRET".to_string()
+        }))
+    }
+}
+
+/// 获取 EXPIRED_AT，根据平台决定来源
+fn get_expired_at() -> i64 {
+    #[cfg(any(target_os = "android", target_os = "ios"))]
+    {
+        7 * 24 // 默认 7 天（小时）
+    }
+
+    #[cfg(not(any(target_os = "android", target_os = "ios")))]
+    {
+        env_get_string("EXPIRED_AT")
+            .and_then(|val| {
+                val.parse::<i64>()
+                    .map_err(|e| EnvError::EnvVarParseError {
+                        var_name: "EXPIRED_AT".to_string(),
+                        source: e,
+                        backtrace: snafu::Backtrace::generate(),
+                    })
+                    .map_err(AppError::from)
+            })
+            .unwrap_or_else(|_| {
+                log::warn!("EXPIRED_AT not set, using default (7 days in hours)");
+                7 * 24
+            })
+    }
 }

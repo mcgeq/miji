@@ -1,9 +1,9 @@
+use crate::{env::env_get_string, error::MijiResult};
+use sea_orm::DatabaseConnection;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use zeroize::{Zeroize, Zeroizing};
-use sea_orm::DatabaseConnection;
-use crate::{env::env_get_string, error::MijiResult};
 
 /// 应用程序全局状态
 #[derive(Debug, Clone)]
@@ -13,7 +13,6 @@ pub struct AppState {
 
     /// API 凭证
     pub credentials: Arc<Mutex<ApiCredentials>>,
-
     // 未来可添加更多全局状态：
     // pub config: Arc<AppConfig>,
     // pub current_user: Arc<Mutex<Option<User>>>,
