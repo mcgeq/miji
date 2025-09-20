@@ -229,8 +229,10 @@
       "dividendReinvestment": "股息再投资",
 
       "interAccount": "账户间转账",
+      "accounttransfer": "账户间转账",
       "loanRepayment": "贷款还款",
       "creditCardRepayment": "信用卡还款",
+      "creditcardrepayment": "信用卡还款",
       "investmentWithdrawal": "投资赎回",
       "friendFamilyTransfer": "亲友转账",
       "platformWithdrawal": "平台提现",
@@ -290,6 +292,7 @@
       "carLoan": "车贷还款",
       "personalLoan": "消费贷款",
       "creditCardPayment": "信用卡还款",
+      "creditcardpayment": "信用卡还款",
       "overduePenalty": "逾期罚息",
       "loanInterest": "贷款利息",
 
