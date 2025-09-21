@@ -71,6 +71,24 @@ const tabs = [
   { key: 'reminders', label: '提醒' },
 ];
 
+// ------------------ 响应式卡片尺寸 ------------------
+const cardDimensions = reactive({
+  width: 320,
+  height: 176,
+});
+
+function updateCardDimensions() {
+  if (window.innerWidth <= 768) {
+    // 移动端
+    cardDimensions.width = 200;
+    cardDimensions.height = 128;
+  } else {
+    // 桌面端
+    cardDimensions.width = 320;
+    cardDimensions.height = 176;
+  }
+};
+
 const accounts = ref<Account[]>([]);
 
 const totalAssets = ref(0);
@@ -514,10 +532,21 @@ onMounted(async () => {
   await moneyStore.getAllCategories();
   await moneyStore.getAllSubCategories();
 });
+
+// 生命周期钩子
+onMounted(() => {
+  updateCardDimensions(); // 初始加载时设置
+  window.addEventListener('resize', updateCardDimensions);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('resize', updateCardDimensions);
+});
 </script>
 
 <template>
-  <div class="mx-auto p-5 max-w-1200px">
+  <div class="container">
+    <!-- 统计卡片轮播 -->
     <StackedStatCards
       ref="stackedCardsRef"
       :cards="statCards"
@@ -525,8 +554,8 @@ onMounted(async () => {
       :auto-play-delay="8000"
       :show-nav-buttons="true"
       :show-play-control="false"
-      :card-width="320"
-      :card-height="176"
+      :card-width="cardDimensions.width"
+      :card-height="cardDimensions.height"
       :enable-keyboard="true"
       :max-visible-cards="4"
       :transition-duration="600"
@@ -535,60 +564,51 @@ onMounted(async () => {
       @card-click="handleCardClick"
     />
 
-    <div class="rounded-lg bg-white shadow-[0_2px_4px_rgba(0,0,0,0.1)] overflow-hidden">
-      <div class="p-5 border-b border-gray-200">
-        <div class="mb-3.75 flex flex-wrap gap-y-3 items-center justify-between">
-          <h3 class="text-gray-800 m-0">
-            快捷操作
-          </h3>
-          <div class="flex flex-wrap gap-3.75 justify-end">
-            <button
-              class="text-sm text-purple-500 px-2 py-3 rounded-md bg-purple-50 flex gap-2 items-center hover:opacity-80"
-              @click="showAccountModal"
-            >
-              <LucideCreditCard class="h-4 w-4" /><span>添加账户</span>
+    <!-- 快捷操作 & Tabs -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="quick-actions-wrapper">
+          <div class="quick-actions scroll-x">
+            <button class="btn btn-purple" @click="showAccountModal">
+              <LucideCreditCard /><span>添加账户</span>
             </button>
-            <button
-              class="text-sm text-green-600 px-2 py-3 rounded-md bg-green-50 flex gap-2 items-center hover:opacity-80"
-              @click="showTransactionModal(TransactionTypeSchema.enum.Income)"
-            >
-              <LucidePlusCircle class="h-4 w-4" /><span>记录收入</span>
+            <button class="btn btn-green" @click="showTransactionModal(TransactionTypeSchema.enum.Income)">
+              <LucidePlusCircle /><span>记录收入</span>
             </button>
-            <button
-              class="text-sm text-red-500 px-2 py-3 rounded-md bg-red-50 flex gap-2 items-center hover:opacity-80"
-              @click="showTransactionModal(TransactionTypeSchema.enum.Expense)"
-            >
-              <LucideMinusCircle class="h-4 w-4" /><span>记录支出</span>
+            <button class="btn btn-red" @click="showTransactionModal(TransactionTypeSchema.enum.Expense)">
+              <LucideMinusCircle /><span>记录支出</span>
             </button>
-            <button
-              class="text-sm text-blue-500 px-2 py-3 rounded-md bg-blue-50 flex gap-2 items-center hover:opacity-80"
-              @click="showTransactionModal(TransactionTypeSchema.enum.Transfer)"
-            >
-              <LucideArrowRightLeft class="h-4 w-4" /><span>记录转账</span>
+            <button class="btn btn-blue" @click="showTransactionModal(TransactionTypeSchema.enum.Transfer)">
+              <LucideArrowRightLeft /><span>记录转账</span>
             </button>
-            <button
-              class="text-sm text-orange-500 px-2 py-3 rounded-md bg-orange-50 flex gap-2 items-center hover:opacity-80"
-              @click="showBudgetModal"
-            >
-              <LucideTarget class="h-4 w-4" /><span>设置预算</span>
+            <button class="btn btn-orange" @click="showBudgetModal">
+              <LucideTarget /><span>设置预算</span>
             </button>
-            <button
-              class="text-sm text-yellow-600 px-2 py-3 rounded-md bg-yellow-50 flex gap-2 items-center hover:opacity-80"
-              @click="showReminderModal"
-            >
-              <LucideBell class="h-4 w-4" /><span>设置提醒</span>
+            <button class="btn btn-yellow" @click="showReminderModal">
+              <LucideBell /><span>设置提醒</span>
             </button>
+            <!-- 可以继续添加按钮 -->
           </div>
+          <!-- 左右渐变遮罩 -->
+          <div class="fade fade-left" />
+          <div class="fade fade-right" />
         </div>
       </div>
-
-      <div class="border-b border-gray-200 flex justify-center overflow-x-auto">
-        <button v-for="tab in tabs" :key="tab.key" :class="[activeTab === tab.key ? 'text-blue-600 border-b-[3px] border-blue-600 bg-blue-50 rounded-t-md' : 'text-gray-600']" class="text-sm font-medium px-6 py-3 border-b-2 border-transparent transition-all duration-200" @click="activeTab = tab.key">
+      <!-- Tabs -->
+      <div class="tabs">
+        <button
+          v-for="tab in tabs"
+          :key="tab.key"
+          class="tab-btn"
+          :class="[activeTab === tab.key ? 'active' : '']"
+          @click="activeTab = tab.key"
+        >
           {{ tab.label }}
         </button>
       </div>
 
-      <div class="p-5">
+      <!-- Tab 内容 -->
+      <div class="tab-content">
         <AccountList
           v-if="activeTab === 'accounts'"
           :accounts="accounts"
@@ -622,6 +642,7 @@ onMounted(async () => {
       </div>
     </div>
 
+    <!-- Modals -->
     <TransactionModal
       v-if="showTransaction"
       :type="transactionType"
@@ -672,7 +693,182 @@ onMounted(async () => {
   </div>
 </template>
 
-<style lang="postcss">
-.main-container { overflow-y: auto; scrollbar-width: none; -ms-overflow-style: none; }
-.main-container::-webkit-scrollbar { display: none; }
+<style>
+/* 快捷操作横向滚动 */
+.scroll-x {
+  display: flex;
+  flex-wrap: nowrap; /* 不换行 */
+  gap: 12px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch; /* 平滑滚动 */
+  scrollbar-width: none; /* Firefox 隐藏滚动条 */
+  position: relative;
+  padding: 8px 0; /* 给渐变遮罩留空间 */
+}
+
+.scroll-x::-webkit-scrollbar {
+  display: none; /* Chrome/Safari 隐藏滚动条 */
+}
+
+/* 容器 */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+/* 面板 */
+.panel {
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  overflow: hidden;
+  margin-top: 2px;
+}
+
+.panel-header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  border-bottom: 1px solid #e5e5e5;
+}
+
+.panel-header h3 {
+  margin: 0;
+  color: #333;
+  margin-right: 20px; /* 标题与按钮之间的间距 */
+}
+
+/* 快捷操作按钮 */
+.quick-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+}
+
+.btn {
+  flex-shrink: 0; /* 防止按钮被压缩 */
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.btn:hover {
+  opacity: 0.8;
+}
+
+.btn-purple { background-color: #f3e8ff; color: #8b5cf6; }
+.btn-green { background-color: #dcfce7; color: #16a34a; }
+.btn-red { background-color: #fee2e2; color: #ef4444; }
+.btn-blue { background-color: #dbeafe; color: #3b82f6; }
+.btn-orange { background-color: #ffedd5; color: #f97316; }
+.btn-yellow { background-color: #fef9c3; color: #ca8a04; }
+
+/* Tabs */
+.tabs {
+  display: flex;
+  overflow-x: auto;
+  border-bottom: 1px solid #e5e5e5;
+  justify-content: center;
+}
+
+.tab-btn {
+  flex-shrink: 0;
+  padding: 12px 24px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #666;
+  background: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.tab-btn.active {
+  color: #2563eb;
+  border-color: #2563eb;
+  background-color: #eff6ff;
+  border-top-left-radius: 6px;
+  border-top-right-radius: 6px;
+}
+
+/* Tab 内容 */
+.tab-content {
+  padding: 20px;
+}
+
+/* 滚动条隐藏 */
+.container::-webkit-scrollbar {
+  display: none;
+}
+.container {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+  .panel-header {
+    flex-direction: column; /* 移动端标题和按钮垂直排列 */
+    text-align: center; /* 标题居中 */
+  }
+
+  .panel-header h3 {
+    margin-right: 0; /* 移除标题与按钮的间距 */
+    margin-bottom: 10px; /* 标题与按钮之间的间距 */
+  }
+
+  .btn {
+    padding: 6px 10px; /* 移动端减少内边距 */
+    font-size: 12px; /* 缩小字体 */
+  }
+
+  .container {
+    padding: 10px; /* 减少内边距 */
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1200px) {
+  .container {
+    max-width: 1000px; /* 中等屏幕适配 */
+  }
+
+  .btn {
+    padding: 8px 14px; /* 适中内边距 */
+  }
+}
+
+/* 渐变遮罩 */
+.quick-actions-wrapper {
+  position: relative;
+}
+
+.fade {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 32px;
+  pointer-events: none; /* 不阻挡滚动 */
+}
+
+.fade-left {
+  left: 0;
+  background: linear-gradient(to right, white 0%, rgba(255,255,255,0) 100%);
+}
+
+.fade-right {
+  right: 0;
+  background: linear-gradient(to left, white 0%, rgba(255,255,255,0) 100%);
+}
 </style>

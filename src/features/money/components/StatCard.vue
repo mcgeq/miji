@@ -188,7 +188,7 @@ const formattedValue = computed(() => props.value);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 16px;
+  margin-bottom: 8px;
 }
 .stat-title {
   font-size: 13px;
@@ -214,7 +214,7 @@ const formattedValue = computed(() => props.value);
   display: flex;
   gap: 4px;
   align-items: baseline;
-  margin-bottom: 8px;
+  margin-bottom: 4px;
 }
 .currency {
   font-size: 15px;
@@ -246,7 +246,7 @@ const formattedValue = computed(() => props.value);
 .subtitle {
   font-size: 12px;
   color: #6b7280;
-  margin-bottom: 12px;
+  margin-bottom: 6px;
 }
 
 /* ---------- 比较数据 ---------- */

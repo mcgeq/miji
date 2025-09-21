@@ -52,8 +52,6 @@ declare module 'vue' {
     LucideListRestart: typeof import('lucide-vue-next')['ListRestart']
     LucideMinusCircle: typeof import('lucide-vue-next')['MinusCircle']
     LucideMoreHorizontal: typeof import('lucide-vue-next')['MoreHorizontal']
-    LucidePause: typeof import('lucide-vue-next')['Pause']
-    LucidePlay: typeof import('lucide-vue-next')['Play']
     LucidePlus: typeof import('lucide-vue-next')['Plus']
     LucidePlusCircle: typeof import('lucide-vue-next')['PlusCircle']
     LucideRepeat: typeof import('lucide-vue-next')['Repeat']
