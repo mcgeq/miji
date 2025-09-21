@@ -1,5 +1,5 @@
 // router/index.ts
-import { createRouter, createWebHistory } from 'vue-router';
+import { createRouter, createWebHashHistory } from 'vue-router';
 import { routes } from 'vue-router/auto-routes';
 import { i18nInstance } from '@/i18n/i18n';
 import { Lg } from '@/utils/debugLog';
@@ -7,7 +7,7 @@ import { toast } from '@/utils/toast';
 import type { Composer } from 'vue-i18n';
 
 const router = createRouter({
-  history: createWebHistory(),
+  history: createWebHashHistory(),
   routes,
 });
 

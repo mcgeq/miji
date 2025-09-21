@@ -24,7 +24,10 @@
       }
     ],
     "security": {
-      "csp": null,
+      "assetProtocol": {
+        "enable": true,
+        "scope": ["*/**"]
+      },
       "capabilities": ["default", "vue"]
     }
   },

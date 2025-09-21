@@ -23,6 +23,7 @@ function LucideResolver(componentName: string) {
 
 // https://vitejs.dev/config/
 export default defineConfig(async () => ({
+  base: './',
   plugins: [
     UnoCSS({
       mode: 'global',
