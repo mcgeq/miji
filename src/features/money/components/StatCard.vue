@@ -10,7 +10,6 @@ import {
   TrendingUp,
   Wallet,
 } from 'lucide-vue-next';
-import { computed } from 'vue';
 
 interface Props {
   title: string;
@@ -69,14 +68,16 @@ const iconComponent = computed(
   () => iconMap[props.icon as keyof typeof iconMap] || Wallet,
 );
 const trendIcon = computed(() => trendIconMap[props.trendType]);
-const changeIcon = computed(() => changeIconMap[props.changeType || 'unchanged']);
+const changeIcon = computed(
+  () => changeIconMap[props.changeType || 'unchanged'],
+);
 
 const colorMap = {
-  primary: { border: 'border-blue-500', text: 'text-blue-500' },
-  success: { border: 'border-green-500', text: 'text-green-500' },
-  danger: { border: 'border-red-500', text: 'text-red-500' },
-  warning: { border: 'border-orange-500', text: 'text-orange-500' },
-  info: { border: 'border-teal-500', text: 'text-teal-500' },
+  primary: { border: 'border-primary', text: 'text-primary' },
+  success: { border: 'border-success', text: 'text-success' },
+  danger: { border: 'border-danger', text: 'text-danger' },
+  warning: { border: 'border-warning', text: 'text-warning' },
+  info: { border: 'border-info', text: 'text-info' },
 };
 
 const colorBorderClass = computed(() => colorMap[props.color].border);
@@ -85,67 +86,57 @@ const iconColorClass = computed(() => colorMap[props.color].text);
 const trendTextClass = computed(() => {
   switch (props.trendType) {
     case 'up':
-      return 'text-green-500';
+      return 'text-success';
     case 'down':
-      return 'text-red-500';
+      return 'text-danger';
     default:
-      return 'text-gray-500';
+      return 'text-gray';
   }
 });
 
 const changeTextClass = computed(() => {
   switch (props.changeType) {
     case 'increase':
-      return 'text-green-500';
+      return 'text-success';
     case 'decrease':
-      return 'text-red-500';
+      return 'text-danger';
     default:
-      return 'text-gray-500';
+      return 'text-gray';
   }
 });
 
-const formattedValue = computed(() => {
-  return props.value;
-});
+const formattedValue = computed(() => props.value);
 </script>
 
 <template>
-  <div
-    class="stat-card p-5 border-l-4 rounded-xl bg-white shadow transition-all relative overflow-hidden" :class="[
-      colorBorderClass,
-    ]"
-  >
-    <div class="mb-4 flex items-center justify-between">
-      <div class="text-sm text-gray-600 tracking-wide font-medium uppercase">
+  <div class="stat-card" :class="[colorBorderClass]">
+    <div class="stat-header">
+      <div class="stat-title">
         {{ title }}
       </div>
-      <div class="opacity-80 transition group-hover:opacity-100" :class="[iconColorClass]">
+      <div class="stat-icon" :class="[iconColorClass]">
         <component :is="iconComponent" :size="24" />
       </div>
     </div>
 
-    <div class="relative z-10">
-      <div class="mb-2 flex gap-1 items-baseline">
-        <span class="text-lg text-gray-500 font-semibold">{{ currency }}</span>
-        <span
-          class="text-3xl leading-none font-bold" :class="[
-            loading ? 'text-transparent bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 bg-clip-text animate-pulse' : 'text-gray-800',
-          ]"
-        >
+    <div class="stat-body">
+      <div class="stat-value">
+        <span class="currency">{{ currency }}</span>
+        <span class="value" :class="[loading ? 'loading' : '']">
           {{ formattedValue }}
         </span>
       </div>
 
-      <div v-if="subtitle" class="text-xs text-gray-500 mb-3">
+      <div v-if="subtitle" class="subtitle">
         {{ subtitle }}
       </div>
 
       <!-- Comparison Mode -->
-      <div v-if="showComparison" class="mb-3">
-        <div class="text-xs text-gray-500">
+      <div v-if="showComparison" class="comparison">
+        <div class="compare-label">
           {{ compareLabel }}: {{ currency }}{{ compareValue }}
         </div>
-        <div class="text-sm font-medium flex gap-1 items-center">
+        <div class="compare-change">
           <component :is="changeIcon" :size="16" :class="changeTextClass" />
           <span :class="changeTextClass">
             {{ changeAmount }} ({{ changePercentage }})
@@ -153,17 +144,23 @@ const formattedValue = computed(() => {
         </div>
       </div>
 
-      <!-- Trend (fallback if no comparison) -->
-      <div v-else-if="trend" class="text-sm font-medium flex gap-1 items-center">
+      <!-- Trend -->
+      <div v-else-if="trend" class="trend">
         <component :is="trendIcon" :size="16" />
         <span :class="trendTextClass">{{ trend }}</span>
       </div>
 
       <!-- Extra Stats -->
-      <div v-if="extraStats && extraStats.length" class="mt-3 space-y-1">
-        <div v-for="stat in extraStats" :key="stat.label" class="text-xs flex justify-between">
-          <span class="text-gray-500">{{ stat.label }}</span>
-          <span :class="[stat.color ? colorMap[stat.color].text : 'text-gray-600']">
+      <div v-if="extraStats && extraStats.length" class="extra-stats">
+        <div
+          v-for="stat in extraStats"
+          :key="stat.label"
+          class="extra-stat"
+        >
+          <span class="extra-label">{{ stat.label }}</span>
+          <span
+            :class="[stat.color ? colorMap[stat.color].text : 'text-gray']"
+          >
             {{ stat.value }}
           </span>
         </div>
@@ -171,8 +168,174 @@ const formattedValue = computed(() => {
     </div>
 
     <!-- Decorative overlay -->
-    <div
-      class="bg-gradient-to-br rounded-full h-24 w-24 translate-x-8 transform right-0 top-0 absolute from-transparent to-transparent via-white/10 -translate-y-8"
-    />
+    <div class="overlay" />
   </div>
 </template>
+
+<style scoped>
+/* ---------- 基础卡片 ---------- */
+.stat-card {
+  position: relative;
+  overflow: hidden;
+  background: #fff;
+  border-radius: 12px;
+  border-left: 4px solid #3b82f6; /* 默认蓝色 */
+  padding: 20px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+}
+.stat-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+.stat-title {
+  font-size: 13px;
+  font-weight: 500;
+  text-transform: uppercase;
+  color: #4b5563;
+  letter-spacing: 0.05em;
+}
+.stat-icon {
+  opacity: 0.8;
+  transition: opacity 0.3s ease;
+}
+.stat-card:hover .stat-icon {
+  opacity: 1;
+}
+
+/* ---------- 数值部分 ---------- */
+.stat-body {
+  position: relative;
+  z-index: 10;
+}
+.stat-value {
+  display: flex;
+  gap: 4px;
+  align-items: baseline;
+  margin-bottom: 8px;
+}
+.currency {
+  font-size: 15px;
+  font-weight: 600;
+  color: #6b7280;
+}
+.value {
+  font-size: 28px;
+  font-weight: bold;
+  line-height: 1;
+  color: #1f2937;
+}
+.value.loading {
+  color: transparent;
+  background: linear-gradient(90deg, #f3f4f6, #e5e7eb, #f3f4f6);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: pulse 1.5s infinite;
+}
+@keyframes pulse {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+.subtitle {
+  font-size: 12px;
+  color: #6b7280;
+  margin-bottom: 12px;
+}
+
+/* ---------- 比较数据 ---------- */
+.comparison {
+  margin-bottom: 12px;
+}
+.compare-label {
+  font-size: 12px;
+  color: #6b7280;
+}
+.compare-change {
+  margin-top: 4px;
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* ---------- 趋势 ---------- */
+.trend {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* ---------- 附加数据 ---------- */
+.extra-stats {
+  margin-top: 12px;
+}
+.extra-stat {
+  font-size: 12px;
+  display: flex;
+  justify-content: space-between;
+}
+.extra-label {
+  color: #6b7280;
+}
+
+/* ---------- 颜色 ---------- */
+.text-primary {
+  color: #3b82f6;
+}
+.text-success {
+  color: #10b981;
+}
+.text-danger {
+  color: #ef4444;
+}
+.text-warning {
+  color: #f59e0b;
+}
+.text-info {
+  color: #14b8a6;
+}
+.text-gray {
+  color: #6b7280;
+}
+.border-primary {
+  border-left-color: #3b82f6 !important;
+}
+.border-success {
+  border-left-color: #10b981 !important;
+}
+.border-danger {
+  border-left-color: #ef4444 !important;
+}
+.border-warning {
+  border-left-color: #f59e0b !important;
+}
+.border-info {
+  border-left-color: #14b8a6 !important;
+}
+
+/* ---------- 装饰 ---------- */
+.overlay {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at center,
+    rgba(255, 255, 255, 0.1),
+    transparent
+  );
+  transform: translate(32px, -32px);
+}
+</style>

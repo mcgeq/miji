@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { LucideChevronLeft, LucideChevronRight, LucidePause, LucidePlay } from 'lucide-vue-next';
 import StatCard from './StatCard.vue';
 import type { CardData } from '../common/moneyCommon';
 import type { ComponentPublicInstance } from 'vue';
@@ -22,10 +23,9 @@ interface Props {
   enableKeyboard?: boolean;
   maxVisibleCards?: number;
   transitionDuration?: number;
-  disabled?: boolean; // 新增：完全禁用组件交互
+  disabled?: boolean;
 }
 
-// Props 定义
 const props = withDefaults(defineProps<Props>(), {
   autoPlay: true,
   autoPlayDelay: 6000,
@@ -36,62 +36,39 @@ const props = withDefaults(defineProps<Props>(), {
   enableKeyboard: true,
   maxVisibleCards: 5,
   transitionDuration: 800,
-  disabled: false, // 新增默认值
+  disabled: false,
 });
 
-// Emits 定义
 const emit = defineEmits<{
   cardChange: [index: number, card: CardData];
   cardClick: [index: number, card: CardData];
 }>();
 
-// 响应式状态
 const selectedIndex = ref(0);
 const isTransitioning = ref(false);
 const isAutoPlaying = ref(props.autoPlay);
 const touchStartX = ref(0);
 const touchEndX = ref(0);
 const cardRefs = ref<ComponentPublicInstance[]>([]);
-
-// 自动播放控制
 const autoPlayInterval = ref<NodeJS.Timeout | null>(null);
 
-// 计算属性
 const containerStyle = computed(() => ({
-  height: `${props.cardHeight + 60}px`, // 卡片高度 + 指示器空间
+  height: `${props.cardHeight + 60}px`,
 }));
 
 const isPrevDisabled = computed(() =>
   props.disabled || (!props.autoPlay && selectedIndex.value === 0),
 );
-
 const isNextDisabled = computed(() =>
   props.disabled || (!props.autoPlay && selectedIndex.value === props.cards.length - 1),
 );
 
-// 可见卡片索引计算（用于未来的虚拟化优化）
-// const _visibleCardIndices = computed(() => {
-//   const indices = [];
-//   const total = props.cards.length;
-//   const maxVisible = Math.min(props.maxVisibleCards, total);
-//
-//   for (let i = 0; i < maxVisible; i++) {
-//     const index = (selectedIndex.value + i - Math.floor(maxVisible / 2) + total) % total;
-//     indices.push(index);
-//   }
-//
-//   return indices;
-// });
-
-// 性能优化：使用计算属性缓存卡片位置
 const cardPositions = computed(() => {
   const positions = new Map<number, CardPosition>();
 
   props.cards.forEach((_, index) => {
     const diff = index - selectedIndex.value;
     const totalCards = props.cards.length;
-
-    // 标准化差值处理循环
     const normalizedDiff = ((diff % totalCards) + totalCards) % totalCards;
     const adjustedDiff = normalizedDiff > totalCards / 2 ? normalizedDiff - totalCards : normalizedDiff;
 
@@ -140,7 +117,6 @@ const cardPositions = computed(() => {
   return positions;
 });
 
-// 方法
 async function selectCard(index: number) {
   if (props.disabled || isTransitioning.value || index === selectedIndex.value || index < 0 || index >= props.cards.length) {
     return;
@@ -149,61 +125,40 @@ async function selectCard(index: number) {
   isTransitioning.value = true;
   selectedIndex.value = index;
 
-  // 触发事件
   emit('cardChange', index, props.cards[index]);
   emit('cardClick', index, props.cards[index]);
 
-  // 重置自动播放
   resetAutoPlay();
 
-  // 焦点管理
   await nextTick();
   const targetCard = cardRefs.value[index];
   if (targetCard?.$el) {
     targetCard.$el.focus();
   }
 
-  // 解锁过渡状态
   setTimeout(() => {
     isTransitioning.value = false;
   }, props.transitionDuration);
 }
 
 function previousCard() {
-  if (props.disabled || isTransitioning.value)
-    return;
-
+  if (props.disabled || isTransitioning.value) return;
   const newIndex = props.autoPlay
     ? (selectedIndex.value - 1 + props.cards.length) % props.cards.length
     : Math.max(0, selectedIndex.value - 1);
-
   selectCard(newIndex);
 }
-
 function nextCard() {
-  if (props.disabled || isTransitioning.value)
-    return;
-
+  if (props.disabled || isTransitioning.value) return;
   const newIndex = props.autoPlay
     ? (selectedIndex.value + 1) % props.cards.length
     : Math.min(props.cards.length - 1, selectedIndex.value + 1);
-
   selectCard(newIndex);
-}
-
-function getCardClasses(index: number) {
-  const position = cardPositions.value.get(index);
-  if (!position)
-    return '';
-
-  return `z-${position.zIndex}`;
 }
 
 function getCardStyle(index: number) {
   const position = cardPositions.value.get(index);
-  if (!position)
-    return {};
-
+  if (!position) return {};
   return {
     left: position.left,
     transform: position.transform,
@@ -215,57 +170,32 @@ function getCardStyle(index: number) {
   };
 }
 
-// 触摸事件处理（防抖优化）
-let touchMoveThrottled = false;
 function handleTouchStart(e: TouchEvent) {
-  if (props.disabled)
-    return;
+  if (props.disabled) return;
   touchStartX.value = e.touches[0].clientX;
   pauseAutoPlay();
 }
-
 function handleTouchMove(e: TouchEvent) {
-  if (props.disabled || touchMoveThrottled)
-    return;
-  touchMoveThrottled = true;
-
-  setTimeout(() => {
-    touchMoveThrottled = false;
-  }, 16); // 60fps
-
+  if (props.disabled) return;
   e.preventDefault();
 }
-
 function handleTouchEnd(e: TouchEvent) {
-  if (props.disabled)
-    return;
+  if (props.disabled) return;
   touchEndX.value = e.changedTouches[0].clientX;
   handleSwipe();
   resetAutoPlay();
 }
-
 function handleSwipe() {
-  if (props.disabled || isTransitioning.value)
-    return;
-
+  if (props.disabled || isTransitioning.value) return;
   const swipeThreshold = 50;
   const diff = touchStartX.value - touchEndX.value;
-
-  if (Math.abs(diff) < swipeThreshold)
-    return;
-
-  if (diff > 0) {
-    nextCard();
-  } else {
-    previousCard();
-  }
+  if (Math.abs(diff) < swipeThreshold) return;
+  if (diff > 0) nextCard();
+  else previousCard();
 }
 
-// 键盘事件处理
 function handleCardKeydown(e: KeyboardEvent, index: number) {
-  if (props.disabled || !props.enableKeyboard || isTransitioning.value)
-    return;
-
+  if (props.disabled || !props.enableKeyboard || isTransitioning.value) return;
   switch (e.key) {
     case 'ArrowLeft':
       e.preventDefault();
@@ -290,31 +220,21 @@ function handleCardKeydown(e: KeyboardEvent, index: number) {
       break;
   }
 }
-
 function handleGlobalKeydown(e: KeyboardEvent) {
-  if (props.disabled || !props.enableKeyboard || isTransitioning.value)
-    return;
-
+  if (props.disabled || !props.enableKeyboard || isTransitioning.value) return;
   if (e.target === document.body || e.target === document.documentElement) {
     handleCardKeydown(e, selectedIndex.value);
   }
 }
 
-// 自动播放控制
 function startAutoPlay() {
-  if (props.disabled || !props.autoPlay || props.cards.length <= 1)
-    return;
-
+  if (props.disabled || !props.autoPlay || props.cards.length <= 1) return;
   stopAutoPlay();
   isAutoPlaying.value = true;
-
   autoPlayInterval.value = setInterval(() => {
-    if (!props.disabled) { // 额外检查
-      nextCard();
-    }
+    if (!props.disabled) nextCard();
   }, props.autoPlayDelay);
 }
-
 function stopAutoPlay() {
   if (autoPlayInterval.value) {
     clearInterval(autoPlayInterval.value);
@@ -322,79 +242,52 @@ function stopAutoPlay() {
   }
   isAutoPlaying.value = false;
 }
-
 function pauseAutoPlay() {
   stopAutoPlay();
 }
-
 function resetAutoPlay() {
-  if (props.disabled || !props.autoPlay)
-    return;
-
+  if (props.disabled || !props.autoPlay) return;
   stopAutoPlay();
   setTimeout(() => {
     startAutoPlay();
   }, 2000);
 }
-
 function toggleAutoPlay() {
-  if (props.disabled)
-    return;
-
-  if (isAutoPlaying.value) {
-    stopAutoPlay();
-  } else {
-    startAutoPlay();
-  }
+  if (props.disabled) return;
+  if (isAutoPlaying.value) stopAutoPlay();
+  else startAutoPlay();
 }
 
-// 监听器
 watch(() => props.cards.length, newLength => {
   if (selectedIndex.value >= newLength) {
     selectedIndex.value = Math.max(0, newLength - 1);
   }
 });
-
 watch(() => props.autoPlay, newValue => {
-  if (props.disabled)
-    return;
-
-  if (newValue) {
-    startAutoPlay();
-  } else {
-    stopAutoPlay();
-  }
+  if (props.disabled) return;
+  if (newValue) startAutoPlay();
+  else stopAutoPlay();
 });
-
-// 监听 disabled 属性变化
 watch(() => props.disabled, newValue => {
-  if (newValue) {
-    stopAutoPlay();
-  } else if (props.autoPlay) {
-    startAutoPlay();
-  }
+  if (newValue) stopAutoPlay();
+  else if (props.autoPlay) startAutoPlay();
 });
 
-// 生命周期
 onMounted(() => {
   if (props.enableKeyboard) {
     window.addEventListener('keydown', handleGlobalKeydown);
   }
-
   if (props.autoPlay && !props.disabled) {
     startAutoPlay();
   }
 });
-
 onUnmounted(() => {
   stopAutoPlay();
-
   if (props.enableKeyboard) {
     window.removeEventListener('keydown', handleGlobalKeydown);
   }
 });
 
-// 暴露方法给父组件
 defineExpose({
   selectCard,
   previousCard,
@@ -409,7 +302,7 @@ defineExpose({
 
 <template>
   <div
-    class="stacked-cards-container relative overflow-hidden"
+    class="stacked-cards-container"
     :style="containerStyle"
     role="tablist"
     :aria-label="`统计卡片轮播，共 ${cards.length} 张`"
@@ -419,19 +312,13 @@ defineExpose({
     @touchend="handleTouchEnd"
   >
     <!-- 卡片容器 -->
-    <div
-      class="cards-wrapper h-full w-full relative"
-      :style="{ height: `${cardHeight}px` }"
-    >
+    <div class="cards-wrapper" :style="{ height: `${cardHeight}px` }">
       <div
         v-for="(card, index) in cards"
         :key="card.id"
         ref="cardRefs"
-        class="stat-card-stacked top-0 absolute"
-        :class="[
-          getCardClasses(index),
-          disabled ? 'pointer-events-none opacity-75' : 'cursor-pointer',
-        ]"
+        class="stat-card-stacked"
+        :class="[disabled ? 'card-disabled' : 'card-active']"
         :style="getCardStyle(index)"
         :tabindex="disabled ? -1 : (selectedIndex === index ? 0 : -1)"
         :aria-selected="selectedIndex === index"
@@ -451,176 +338,251 @@ defineExpose({
           :subtitle="card.subtitle"
           :trend="card.trend"
           :trend-type="card.trendType"
-          class="h-full shadow-lg transition-shadow duration-300 hover:shadow-xl"
+          class="inner-card"
         />
       </div>
     </div>
 
-    <!-- 导航指示器 -->
-    <div
-      class="mt-4 flex gap-2 justify-center"
-      role="tablist"
-      aria-label="卡片导航指示器"
-    >
+    <!-- 底部指示器 -->
+    <div class="indicator-wrapper" role="tablist" aria-label="卡片导航指示器">
       <button
         v-for="(card, index) in cards"
         :key="`indicator-${index}`"
-        class="indicator-dot rounded-full h-3 w-3 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-        :class="[
-          selectedIndex === index
-            ? 'bg-blue-500 scale-110 shadow-md'
-            : 'bg-gray-300 hover:bg-gray-400',
-          disabled && 'opacity-50 pointer-events-none',
-        ]"
+        class="indicator-dot"
+        :class="[selectedIndex === index ? 'indicator-active' : '']"
         :aria-label="`切换到第 ${index + 1} 张卡片: ${card.title}`"
         :aria-pressed="selectedIndex === index"
         :disabled="disabled || isTransitioning"
+        :tabindex="disabled ? -1 : 0"
         @click="selectCard(index)"
       />
     </div>
 
-    <!-- 左右导航按钮 -->
+    <!-- 左右按钮 -->
     <Transition name="nav-fade">
       <button
         v-if="showNavButtons && cards.length > 1"
-        class="nav-btn nav-btn-prev left-4 top-1/2 absolute z-50 -translate-y-1/2"
+        class="nav-btn nav-btn-prev"
         :aria-label="isPrevDisabled ? '已是第一张卡片' : '上一张卡片'"
         :disabled="isTransitioning || isPrevDisabled"
+        :tabindex="disabled ? -1 : 0"
         @click="previousCard"
       >
-        <LucideChevronLeft class="h-5 w-5" />
+        <LucideChevronLeft class="icon" />
       </button>
     </Transition>
 
     <Transition name="nav-fade">
       <button
         v-if="showNavButtons && cards.length > 1"
-        class="nav-btn nav-btn-next right-4 top-1/2 absolute z-50 -translate-y-1/2"
+        class="nav-btn nav-btn-next"
         :aria-label="isNextDisabled ? '已是最后一张卡片' : '下一张卡片'"
         :disabled="isTransitioning || isNextDisabled"
+        :tabindex="disabled ? -1 : 0"
         @click="nextCard"
       >
-        <LucideChevronRight class="h-5 w-5" />
+        <LucideChevronRight class="icon" />
       </button>
     </Transition>
 
-    <!-- 播放/暂停控制（可选） -->
+    <!-- 播放按钮 -->
     <button
       v-if="showPlayControl"
-      class="play-control text-gray-600 border border-gray-200 rounded-full bg-white/80 flex h-8 w-8 transition-colors duration-200 items-center right-4 top-4 justify-center absolute z-50 backdrop-blur-sm hover:text-blue-500"
+      class="play-control"
       :aria-label="isAutoPlaying ? '暂停自动播放' : '开始自动播放'"
       :disabled="disabled"
+      :tabindex="disabled ? -1 : 0"
       @click="toggleAutoPlay"
     >
-      <LucidePause v-if="isAutoPlaying" class="h-4 w-4" />
-      <LucidePlay v-else class="h-4 w-4" />
+      <LucidePause v-if="isAutoPlaying" class="icon-small" />
+      <LucidePlay v-else class="icon-small" />
     </button>
   </div>
 </template>
 
-<style scoped lang="postcss">
+<style scoped>
+/* 容器基础 */
 .stacked-cards-container {
+  position: relative;
+  overflow: hidden;
   perspective: 1200px;
   contain: layout style paint;
 }
-
+.cards-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
 .stat-card-stacked {
+  position: absolute;
+  top: 0;
   transform-style: preserve-3d;
   will-change: transform, opacity, z-index;
   backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
   contain: layout style paint;
 }
+.card-active {
+  cursor: pointer;
+}
+.card-disabled {
+  pointer-events: none;
+  opacity: 0.75;
+}
+.inner-card {
+  height: 100%;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  transition: box-shadow 0.3s ease;
+}
+.inner-card:hover {
+  box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+}
 
+/* 导航按钮 */
 .nav-btn {
-  @apply w-10 h-10 rounded-full bg-white/90 backdrop-blur-sm border border-gray-200
-         flex items-center justify-center text-gray-600 hover:text-blue-500
-         hover:bg-white hover:shadow-md transition-all duration-300
-         disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:text-gray-600
-         focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(59, 130, 246, 0.15);
+  border: 1px solid rgba(59, 130, 246, 0.5);
+  backdrop-filter: blur(6px);
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #4b5563;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s;
 }
-
 .nav-btn:hover:not(:disabled) {
-  transform: translateY(-50%) scale(1.1);
+  background: rgba(59, 130, 246, 0.3); /* Hover 加深背景 */
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  transform: translateY(-50%) scale(1.15);
+}
+.nav-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px #3b82f6, 0 0 0 5px #ffffff; /* 蓝色 focus 环 + 白色间距 */
+}
+.nav-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+.nav-btn-prev {
+  left: 16px;
+}
+.nav-btn-next {
+  right: 16px;
+}
+.icon {
+  width: 20px;
+  height: 20px;
+  color: inherit;
 }
 
+/* focus 高亮 */
+.nav-btn:focus-visible,
+.play-control:focus-visible,
+.indicator-dot:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px #3b82f6, 0 0 0 4px #ffffff;
+}
+
+/* 播放控制 */
 .play-control {
-  @apply focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
-         disabled:opacity-50 disabled:cursor-not-allowed;
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 50;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid #e5e7eb;
+  background: rgba(255,255,255,0.8);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #4b5563;
+  transition: color 0.2s;
+}
+.play-control:hover {
+  color: #3b82f6;
+}
+.play-control:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.icon-small {
+  width: 16px;
+  height: 16px;
 }
 
+/* 指示器 */
+.indicator-wrapper {
+  margin-top: 16px;
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
 .indicator-dot {
-  @apply focus:outline-none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #d1d5db;
+  transition: all 0.3s;
+  box-shadow: none;
+  border: none;
+}
+.indicator-dot:hover {
+  background: #9ca3af;
+}
+.indicator-active {
+  background: #3b82f6;
+  transform: scale(1.1);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
+.indicator-dot:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
-/* 动画过渡 */
+/* 动画 */
 .nav-fade-enter-active,
 .nav-fade-leave-active {
   transition: opacity 0.3s ease;
 }
-
 .nav-fade-enter-from,
 .nav-fade-leave-to {
   opacity: 0;
 }
 
-/* 防止布局抖动 */
-.stat-card-stacked * {
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
-}
-
-/* 性能优化 */
-@media (prefers-reduced-motion: reduce) {
-  .stat-card-stacked {
-    transition-duration: 0.1s !important;
-  }
-
-  .nav-btn {
-    transition-duration: 0.1s !important;
-  }
-}
-
-/* 高对比度模式支持 */
-@media (prefers-contrast: high) {
-  .nav-btn {
-    @apply border-2 border-gray-800;
-  }
-
-  .indicator-dot {
-    @apply border-2 border-gray-800;
-  }
-}
-
-/* 响应式设计 */
+/* 响应式 */
 @media (max-width: 768px) {
   .nav-btn {
-    @apply w-8 h-8;
+    width: 32px;
+    height: 32px;
   }
-
   .nav-btn-prev {
     left: 8px;
   }
-
   .nav-btn-next {
     right: 8px;
   }
 }
-
 @media (max-width: 480px) {
   .nav-btn {
-    @apply w-7 h-7;
+    width: 28px;
+    height: 28px;
   }
 }
 
-/* 打印样式 */
+/* 打印模式 */
 @media print {
   .nav-btn,
   .play-control,
   .indicator-dot {
     display: none !important;
   }
-
   .stat-card-stacked {
     position: static !important;
     transform: none !important;
