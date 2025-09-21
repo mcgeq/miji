@@ -82,6 +82,7 @@ declare module 'vue' {
     RouterView: typeof import('vue-router')['RouterView']
     Sidebar: typeof import('./src/components/common/Sidebar.vue')['default']
     SimplePagination: typeof import('./src/components/common/SimplePagination.vue')['default']
+    Splash: typeof import('./src/components/common/Splash.vue')['default']
     WarningDialog: typeof import('./src/components/common/WarningDialog.vue')['default']
   }
 }

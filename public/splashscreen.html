@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tauri App - 启动中</title>
+  <style>
+    /* 基础重置与全局样式 */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      min-height: 100vh;
+      background: linear-gradient(135deg, #1a2a6c, #b21f1f, #1a2a6c);
+      background-size: 400% 400%;
+      animation: gradientBG 12s ease infinite;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+    }
+
+    /* 主容器 */
+    .container {
+      text-align: center;
+      padding: 2rem 1.5rem;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      border-radius: 16px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      max-width: 90vw;
+      width: 400px;
+      transform: translateY(20px);
+      opacity: 0;
+      animation: fadeInUp 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    }
+
+    h1 {
+      color: white;
+      font-size: 2.25rem;
+      margin-bottom: 1rem;
+      transform: translateY(10px);
+      opacity: 0;
+      animation: slideInTop 0.5s 0.3s ease-out forwards;
+    }
+
+    .row {
+      color: rgba(255, 255, 255, 0.85);
+      font-size: 1.1rem;
+      line-height: 1.6;
+      min-height: 2.5rem; /* 防止切换时跳动 */
+      transform: translateY(10px);
+      opacity: 0;
+      animation: slideInTop 0.5s 0.5s ease-out forwards;
+    }
+
+    .loader {
+      width: 40px;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 2px;
+      margin: 1.5rem auto 0;
+      overflow: hidden;
+    }
+
+    .loader::after {
+      content: '';
+      display: block;
+      height: 100%;
+      width: 30%;
+      background: white;
+      border-radius: 2px;
+      animation: loading 1.2s infinite;
+    }
+
+    @keyframes gradientBG {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    @keyframes fadeInUp {
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    @keyframes slideInTop {
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    @keyframes loading {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(250%); }
+    }
+
+    @media (max-width: 480px) {
+      .container { width: 90vw; padding: 1.5rem 1rem; }
+      h1 { font-size: 1.75rem; }
+      .row { font-size: 1rem; }
+    }
+  </style>
+</head>
+<body>
+  <div id="splash" class="container">
+    <h1>应用启动中 🚀</h1>
+    <div class="row" id="status-text">
+      正在初始化核心模块...
+    </div>
+    <div class="loader"></div>
+  </div>
+
+  <script>
+    // 多状态提示文案
+    const statuses = [
+      "正在初始化核心模块...",
+      "正在加载界面资源...",
+      "正在优化体验配置...",
+      "应用马上就绪 🎉"
+    ];
+
+    let index = 0;
+    const statusEl = document.getElementById("status-text");
+
+    setInterval(() => {
+      index = (index + 1) % statuses.length;
+      statusEl.style.opacity = 0;
+      setTimeout(() => {
+        statusEl.textContent = statuses[index];
+        statusEl.style.opacity = 1;
+      }, 300);
+    }, 2000);
+  </script>
+</body>
+</html>

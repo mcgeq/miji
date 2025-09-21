@@ -26,7 +26,7 @@ export default defineConfig(async () => ({
   plugins: [
     UnoCSS({
       mode: 'global',
-      instanceof: process.env.NODE_ENV === 'development',
+      instanceof: env.NODE_ENV === 'development',
     }),
     VueRouter({
       extensions: ['.vue', '.md'],

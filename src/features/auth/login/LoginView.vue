@@ -46,50 +46,172 @@ async function handleSubmit() {
 </script>
 
 <template>
-  <div class="px-4 bg-gray-100 flex min-h-screen items-center justify-center overflow-hidden dark:bg-gray-900">
-    <div
-      class="p6 border border-gray-200 rounded-xl bg-white/90 max-w-md w-full shadow-lg backdrop-blur-xl space-y-6 sm:p8 dark:border-gray-700 dark:bg-gray-800/80"
-    >
+  <div class="container">
+    <div class="card">
       <!-- 标题 -->
-      <h2 class="text-3xl text-gray-900 tracking-tight font-bold text-center dark:text-white">
+      <h2 class="title">
         {{ t('auth.login') }}
       </h2>
       <!-- 登录表单 -->
-      <form
-        class="space-y-4"
-        @submit.prevent="handleSubmit"
-      >
-        <FormInput v-model="form.email" name="email" :placeholder="t('auth.email')" :error="errors.email" />
+      <form class="form" @submit.prevent="handleSubmit">
         <FormInput
-          v-model="form.password" name="password" type="password" :placeholder="t('auth.password')"
+          v-model="form.email"
+          name="email"
+          :placeholder="t('auth.email')"
+          :error="errors.email"
+        />
+        <FormInput
+          v-model="form.password"
+          name="password"
+          type="password"
+          :placeholder="t('auth.password')"
           :error="errors.password"
         />
         <!-- 记住我 -->
-        <label
-          class="text-sm text-gray-800 inline-flex gap-2 cursor-pointer select-none items-center dark:text-gray-200"
-        >
-          <input v-model="rememberMe" type="checkbox" class="accent-blue-600 h-4 w-4 dark:accent-blue-500">
+        <label class="remember-me">
+          <input v-model="rememberMe" type="checkbox">
           <span>{{ t('auth.rememberMe') }}</span>
         </label>
 
         <!-- 登录按钮 -->
-        <button
-          type="submit"
-          :disabled="isSubmitting"
-          class="bg-gradient-to-r text-white font-semibold px-4 py-2 rounded-md w-full shadow-md transition-all from-blue-600 to-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed hover:brightness-110"
-          style="color: white !important; background: linear-gradient(to right, #2563eb, #4f46e5);"
-        >
+        <button type="submit" :disabled="isSubmitting" class="btn-submit">
           {{ isSubmitting ? t('auth.loading.loggingIn') : t('auth.login') }}
         </button>
       </form>
 
       <!-- 注册跳转 -->
-      <p class="text-sm text-gray-600 text-center dark:text-gray-400">
+      <p class="register-text">
         {{ t('auth.noAccount') }}
-        <router-link to="/auth/register" class="text-blue-600 font-medium ml-1 dark:text-blue-400 hover:underline">
+        <router-link to="/auth/register" class="register-link">
           {{ t('auth.register') }}
         </router-link>
       </p>
     </div>
   </div>
 </template>
+
+<style scoped>
+/* 页面容器 */
+.container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 1rem;
+  background-color: #f3f4f6; /* light gray */
+}
+
+/* 卡片 */
+.card {
+  width: 100%;
+  max-width: 28rem;
+  padding: 2rem;
+  background-color: rgba(255, 255, 255, 0.9);
+  border-radius: 1rem;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 10px 15px rgba(0,0,0,0.1);
+  backdrop-filter: blur(10px);
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* 标题 */
+.title {
+  font-size: 1.875rem; /* 3xl */
+  font-weight: bold;
+  text-align: center;
+  color: #111827;
+  letter-spacing: -0.015em;
+}
+
+/* 表单 */
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* 记住我 */
+.remember-me {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+  color: #1f2937;
+}
+
+.remember-me input[type="checkbox"] {
+  width: 1rem;
+  height: 1rem;
+  accent-color: #2563eb; /* blue-600 */
+}
+
+/* 登录按钮 */
+.btn-submit {
+  width: 100%;
+  padding: 0.5rem 1rem;
+  font-weight: 600;
+  color: white;
+  border: none;
+  border-radius: 0.375rem;
+  background: linear-gradient(to right, #2563eb, #4f46e5);
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-submit:hover:not(:disabled) {
+  filter: brightness(1.1);
+}
+
+.btn-submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* 注册文字 */
+.register-text {
+  text-align: center;
+  font-size: 0.875rem;
+  color: #4b5563;
+}
+
+.register-link {
+  margin-left: 0.25rem;
+  color: #2563eb;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.register-link:hover {
+  text-decoration: underline;
+}
+
+/* dark mode */
+@media (prefers-color-scheme: dark) {
+  .container {
+    background-color: #111827;
+  }
+  .card {
+    background-color: rgba(31, 41, 55, 0.8);
+    border-color: #374151;
+  }
+  .title {
+    color: #ffffff;
+  }
+  .remember-me {
+    color: #e5e7eb;
+  }
+  .register-text {
+    color: #9ca3af;
+  }
+  .register-link {
+    color: #60a5fa;
+  }
+  .remember-me input[type="checkbox"] {
+    accent-color: #3b82f6;
+  }
+}
+</style>

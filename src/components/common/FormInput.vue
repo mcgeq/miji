@@ -1,4 +1,3 @@
-<!-- src/components/FormInput.vue -->
 <script setup lang="ts">
 import FloatingErrorTip from './FloatingErrorTip.vue';
 
@@ -39,9 +38,108 @@ function onInput(event: Event) {
       :placeholder="placeholder"
       :disabled="disabled"
       :value="modelValue"
-      class="text-gray-900 px-4 py-2 border border-gray-300 rounded-md bg-white w-full shadow-sm transition duration-200 dark:text-white focus:outline-none dark:border-gray-700 focus:border-transparent dark:bg-gray-900 disabled:opacity-60 disabled:cursor-not-allowed focus:ring-2 focus:ring-blue-500 placeholder-gray-400 dark:placeholder-gray-500"
+      class="custom-input"
       @input="onInput"
     >
-    <FloatingErrorTip :visible="!!errorMsg" :message="errorMsg" />
+    <FloatingErrorTip
+      :visible="!!errorMsg"
+      :message="errorMsg"
+      class="error-tip"
+    />
   </div>
 </template>
+
+<style scoped>
+/* 容器样式 */
+div.relative {
+  position: relative;
+}
+
+/* 输入框核心样式 */
+.custom-input {
+  /* 基础样式 */
+  width: 100%;
+  padding: 0.5rem 1rem;
+  font-size: 1rem;
+  line-height: 1.5;
+
+  /* 文字样式 */
+  color: #111827; /* text-gray-900 */
+  background-color: #ffffff; /* bg-white */
+
+  /* 边框样式 */
+  border: 1px solid #e5e7eb; /* border-gray-300 */
+  border-radius: 0.375rem; /* rounded-md */
+
+  /* 阴影与过渡 */
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); /* shadow-sm */
+  transition-property: all;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 200ms; /* duration-200 */
+
+  /* 其他状态 */
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+/* 焦点状态 */
+.custom-input:focus {
+  outline: none; /* focus:outline-none */
+  border-color: transparent; /* focus:border-transparent */
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5); /* focus:ring-2 focus:ring-blue-500 */
+}
+
+/* 禁用状态 */
+.custom-input:disabled {
+  opacity: 0.6; /* disabled:opacity-60 */
+  cursor: not-allowed; /* disabled:cursor-not-allowed */
+}
+
+/* 占位符样式 */
+.custom-input::placeholder {
+  color: #9ca3af; /* placeholder-gray-400 */
+  opacity: 1; /* 防止某些浏览器默认淡化 */
+}
+
+/* 黑暗模式适配 */
+@media (prefers-color-scheme: dark) {
+  .custom-input {
+    color: #ffffff; /* dark:text-white */
+    background-color: #1f2937; /* dark:bg-gray-900 */
+    border-color: #4b5563; /* dark:border-gray-700 */
+  }
+
+  .custom-input::placeholder {
+    color: #d1d5db; /* dark:placeholder-gray-500 */
+  }
+}
+
+/* 错误提示样式 */
+.error-tip {
+  /* 定位相关 */
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 0.25rem;
+  z-index: 10; /* 确保显示在输入框上方 */
+
+  /* 文字样式 */
+  font-size: 0.875rem;
+  line-height: 1.25;
+  color: #ef4444; /* 错误提示红 */
+
+  /* 背景与边框 */
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 0.25rem;
+  padding: 0.25rem 0.5rem;
+
+  /* 初始隐藏 */
+  display: none;
+}
+
+/* 显示错误提示 */
+.error-tip[visible] {
+  display: block;
+}
+</style>

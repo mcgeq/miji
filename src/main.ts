@@ -19,6 +19,141 @@ const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test
   navigator.userAgent,
 );
 
+// 创建前端启动画面（用于移动端）
+function createFrontendSplashscreen() {
+  const splashscreen = document.createElement('div');
+  splashscreen.id = 'frontend-splashscreen';
+  splashscreen.innerHTML = `
+    <style>
+      #frontend-splashscreen {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      }
+      
+      .splash-container {
+        text-align: center;
+        color: white;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 2rem;
+      }
+      
+      .logo {
+        width: 80px;
+        height: 80px;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.5rem;
+        font-weight: bold;
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        animation: pulse 2s infinite;
+      }
+      
+      .app-name {
+        font-size: 2rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        opacity: 0.9;
+      }
+      
+      .loading-text {
+        font-size: 0.9rem;
+        opacity: 0.7;
+        margin-bottom: 1rem;
+      }
+      
+      .spinner {
+        width: 40px;
+        height: 40px;
+        border: 3px solid rgba(255, 255, 255, 0.3);
+        border-top: 3px solid white;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+      
+      .progress-bar {
+        width: 200px;
+        height: 4px;
+        background: rgba(255, 255, 255, 0.3);
+        border-radius: 2px;
+        overflow: hidden;
+        margin-top: 1rem;
+      }
+      
+      .progress-fill {
+        height: 100%;
+        background: white;
+        border-radius: 2px;
+        width: 0%;
+        animation: progress 3s ease-in-out forwards;
+      }
+      
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+      
+      @keyframes pulse {
+        0%, 100% { transform: scale(1); opacity: 1; }
+        50% { transform: scale(1.05); opacity: 0.8; }
+      }
+      
+      @keyframes progress {
+        0% { width: 0%; }
+        30% { width: 30%; }
+        60% { width: 60%; }
+        90% { width: 90%; }
+        100% { width: 100%; }
+      }
+      
+      .fade-out {
+        animation: fadeOut 0.5s ease-out forwards;
+      }
+      
+      @keyframes fadeOut {
+        from { opacity: 1; }
+        to { opacity: 0; }
+      }
+    </style>
+    <div class="splash-container">
+      <div class="logo">M</div>
+      <div class="app-name">MiJi</div>
+      <div class="loading-text">正在加载应用...</div>
+      <div class="spinner"></div>
+      <div class="progress-bar">
+        <div class="progress-fill"></div>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(splashscreen);
+  return splashscreen;
+}
+
+// 关闭前端启动画面
+function closeFrontendSplashscreen(splashscreen: HTMLElement | null) {
+  if (splashscreen) {
+    splashscreen.classList.add('fade-out');
+    setTimeout(() => {
+      splashscreen.remove();
+    }, 500); // 等待淡出动画完成
+  }
+}
+
 // 预加载UnoCSS图标
 async function preloadIcons() {
   try {
@@ -49,7 +184,12 @@ function waitForReady(): Promise<void> {
 
 // Initialize i18n and mount the app
 async function bootstrap() {
+  let frontendSplash: HTMLElement | null = null;
   try {
+    // 在移动端创建前端启动画面
+    if (isMobile) {
+      frontendSplash = createFrontendSplashscreen();
+    }
     // 等待DOM准备就绪
     await waitForReady();
     // 在移动端添加额外延迟确保资源加载完成
@@ -91,6 +231,12 @@ async function bootstrap() {
     app.mount('#app');
 
     await handlePostMount();
+    // 发射应用准备完成事件给 Tauri 后端（仅桌面端）
+    // 关闭启动画面
+    if (isMobile) {
+      // 移动端：关闭前端启动画面
+      closeFrontendSplashscreen(frontendSplash);
+    }
   } catch (error) {
     console.error('Failed to bootstrap app:', error);
 

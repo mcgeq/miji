@@ -20,12 +20,13 @@ use common::{
 };
 use healths::command as health_cmd;
 use money::command as money_cmd;
-use tauri::{Builder, State, Wry};
+use tauri::{AppHandle, Builder, Manager, State, Wry};
 use todos::command as todo_cmd;
 use tracing::info;
 
 pub fn init_commands(builder: Builder<Wry>) -> Builder<Wry> {
     builder.invoke_handler(tauri::generate_handler![
+        set_complete,
         greet,
         pwd_hash,
         check_pwd,
@@ -101,6 +102,33 @@ pub fn init_commands(builder: Builder<Wry>) -> Builder<Wry> {
         health_cmd::period_settings_create,
         health_cmd::period_settings_update,
     ])
+}
+
+#[tauri::command]
+pub async fn set_complete(
+    app: AppHandle,
+    state: State<'_, AppState>,
+    task: String,
+) -> Result<(), ()> {
+    #[cfg(desktop)] // 只在桌面平台执行
+    {
+        let mut state_lock = state.task.lock().await;
+        match task.as_str() {
+            "frontend" => state_lock.frontend_task = true,
+            "backend" => state_lock.backend_task = true,
+            _ => panic!("invalid task completed!"),
+        }
+        // Check if both tasks are completed
+        if state_lock.backend_task && state_lock.frontend_task {
+            // Setup is complete, we can close the splashscreen
+            // and unhide the main window!
+            let splash_window = app.get_window("splashscreen").unwrap();
+            let main_window = app.get_window("main").unwrap();
+            splash_window.close().unwrap();
+            main_window.show().unwrap();
+        }
+    }
+    Ok(())
 }
 
 #[tauri::command]

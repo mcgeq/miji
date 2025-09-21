@@ -34,7 +34,7 @@ tauri-build = { version = "2", features = [] }
 [workspace.dependencies]
 base64 = "0.22.1"
 jsonwebtoken = "9.3.1"
-tauri = { version = "2", features = ["tray-icon", "image-png"] }
+tauri = { version = "2", features = ["tray-icon", "image-png", "unstable"] }
 tauri-plugin-dialog = "2"
 tauri-plugin-sql = { version = "2", features = ["sqlite"] }
 serde = { version = "1", features = ["derive"] }

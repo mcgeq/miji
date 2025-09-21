@@ -13,10 +13,17 @@ pub struct AppState {
 
     /// API 凭证
     pub credentials: Arc<Mutex<ApiCredentials>>,
+    pub task: Arc<Mutex<SetupState>>,
     // 未来可添加更多全局状态：
     // pub config: Arc<AppConfig>,
     // pub current_user: Arc<Mutex<Option<User>>>,
     // pub cache: Arc<CacheManager>,
+}
+
+#[derive(Debug, Clone)]
+pub struct SetupState {
+    pub frontend_task: bool,
+    pub backend_task: bool,
 }
 
 /// API 凭证

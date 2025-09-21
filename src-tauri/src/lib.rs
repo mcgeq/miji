@@ -1,5 +1,7 @@
 use migration::{Migrator, MigratorTrait};
-use tauri::Manager;
+#[cfg(desktop)]
+use tauri::async_runtime::spawn;
+use tauri::{AppHandle, Manager};
 
 pub mod logging;
 
@@ -23,12 +25,18 @@ use mobiles::init;
 
 use commands::init_commands;
 use common::{
-    ApiCredentials, AppState, business_code::BusinessCode, config::Config, error::AppError,
+    ApiCredentials, AppState, SetupState, business_code::BusinessCode, config::Config,
+    error::AppError,
 };
 use dotenvy::dotenv;
 use plugins::generic_plugins;
 use std::sync::Arc;
-use tokio::sync::Mutex;
+use tokio::{
+    sync::Mutex,
+    time::{Duration, sleep},
+};
+
+use crate::commands::set_complete;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -50,6 +58,8 @@ pub fn run() {
             // 1. 获取 AppHandle
             let app_handle = app.handle();
 
+            #[cfg(desktop)] // 只在桌面平台执行
+            let cloned_handle = app_handle.clone();
             // 2. 加载配置
             Config::init(app_handle)?;
             let config = Config::get();
@@ -86,13 +96,33 @@ pub fn run() {
             let app_state = AppState {
                 db,
                 credentials: Arc::new(Mutex::new(credentials)),
+                task: Arc::new(Mutex::new(SetupState {
+                    frontend_task: false,
+                    backend_task: true,
+                })),
             };
 
             // 6. 管理应用状态
             app.manage(app_state.clone());
-
+            #[cfg(desktop)] // 只在桌面平台执行
+            {
+                spawn(setup(cloned_handle));
+            }
             Ok(())
         })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
+}
+
+// An async function that does some heavy setup task
+async fn setup(app: AppHandle) -> Result<(), ()> {
+    // Fake performing some heavy action for 3 seconds
+    eprintln!("Performing really heavy backend setup task...");
+    sleep(Duration::from_secs(3)).await;
+    eprintln!("Backend setup task completed!");
+    // Set the backend task as being completed
+    // Commands can be ran as regular functions as long as you take
+    // care of the input arguments yourself
+    set_complete(app.clone(), app.state::<AppState>(), "backend".to_string()).await?;
+    Ok(())
 }
