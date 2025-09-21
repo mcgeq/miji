@@ -49,6 +49,7 @@
     "@antfu/eslint-config": "^5.2.2",
     "@biomejs/biome": "2.2.3",
     "@commitlint/config-conventional": "^19.8.1",
+    "@iconify-json/tabler": "^1.2.23",
     "@tauri-apps/cli": "^2",
     "@types/node": "^24.0.13",
     "@unocss/core": "^66.3.3",
