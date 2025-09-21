@@ -20,27 +20,74 @@ function isActive(item: any) {
 </script>
 
 <template>
-  <nav class="text-white rounded-md bg-gray-600 h-12 shadow-lg bottom-0 left-0 right-0 fixed md:hidden">
-    <ul class="flex h-full items-center justify-around">
+  <nav class="mobile-nav">
+    <ul>
       <li
         v-for="item in menu"
         :key="item.name"
         :title="item.title"
-        class="px-2 py-2 rounded-md flex flex-col cursor-pointer transition-all duration-300 ease-in-out items-center"
-        :class="[
-          isActive(item) ? 'bg-gray-700 shadow-inset ring-1 ring-white/10' : 'hover:bg-gray-700',
-        ]" @click="navigate(item)"
+        :class="{ active: isActive(item) }"
+        @click="navigate(item)"
       >
-        <component
-          :is="item.icon"
-          class="h-5 w-5"
-          :class="isActive(item) ? 'text-white' : 'text-gray-400 group-hover:text-white transition-colors'"
-        />
+        <component :is="item.icon" class="icon" />
       </li>
     </ul>
   </nav>
 </template>
 
-<style scoped>
-/* You can add custom styles here if needed, but Tailwind generally handles most styling. */
+<style scoped lang="postcss">
+.mobile-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3rem;
+  background-color: #4b5563;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 -2px 8px rgba(0,0,0,0.1);
+  border-radius: 0.25rem;
+  z-index: 50;
+}
+
+.mobile-nav ul {
+  display: flex;
+  width: 100%;
+  justify-content: space-around;
+  align-items: center;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.mobile-nav li {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  transition: all 0.3s ease-in-out;
+}
+
+.mobile-nav li:hover {
+  background-color: #374151;
+}
+
+.mobile-nav li.active {
+  background-color: #374151;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.1);
+}
+
+.icon {
+  width: 1.25rem;
+  height: 1.25rem;
+  color: #9ca3af;
+}
+
+.mobile-nav li.active .icon {
+  color: white;
+}
 </style>

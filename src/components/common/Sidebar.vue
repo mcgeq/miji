@@ -1,14 +1,8 @@
 <script setup lang="ts">
 import { LogOut } from 'lucide-vue-next';
 
-const { menu } = defineProps<{
-  menu: Array<{
-    name: string;
-    title: string;
-    icon: any;
-    path: string;
-  }>;
-}>();
+const { menu } = defineProps<{ menu: Array<{ name: string; title: string; icon: any; path: string }> }>();
+
 const emit = defineEmits(['logout']);
 const router = useRouter();
 const route = useRoute();
@@ -27,38 +21,112 @@ function logout() {
 </script>
 
 <template>
-  <aside class="text-white bg-gray-600 flex flex-col h-screen w-12 transition-all duration-300 ease-in-out justify-between">
-    <!-- 顶部头像区域 -->
-    <div class="pb-2 pt-6 flex items-center justify-center">
-      <img src="" class="border border-white/20 rounded-full h-8 w-8">
+  <aside class="sidebar">
+    <div class="sidebar-top">
+      <img src="" alt="avatar" class="avatar">
     </div>
-    <!-- Menu -->
-    <nav class="py-4 flex-1">
-      <ul class="space-y-2">
+
+    <nav class="sidebar-menu">
+      <ul>
         <li
           v-for="item in menu"
           :key="item.name"
           :title="item.title"
-          class="mx2 py-2 rounded-md flex-juster-center cursor-pointer transition-all duration-300 hover:bg-gray-700"
-          :class="[
-            isActive(item) ? 'bg-gray-700 shadow-inset ring-1 ring-white/10' : '',
-          ]" @click="navigate(item)"
+          :class="{ active: isActive(item) }"
+          @click="navigate(item)"
         >
-          <component
-            :is="item.icon" class="h-5 w-5"
-            :class="isActive(item) ? 'text-white' : 'text-gray-400 group-hover:text-white transition-colors'"
-          />
+          <component :is="item.icon" class="icon" />
         </li>
       </ul>
     </nav>
 
-    <!-- Logout -->
-    <button
-      class="border-t border-white/10 flex-juster-center h-16 transition-colors hover:bg-gray-700"
-      title="Logout"
-      @click="logout"
-    >
-      <LogOut class="h-5 w-5" />
+    <button class="logout-btn" title="Logout" @click="logout">
+      <LogOut class="icon" />
     </button>
   </aside>
 </template>
+
+<style scoped lang="postcss">
+.sidebar {
+  background-color: #4b5563; /* gray-600 */
+  color: white;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  width: 3rem; /* 12 */
+  min-height: 100vh;
+  transition: all 0.3s ease-in-out;
+}
+
+.sidebar-top {
+  padding: 1.5rem 0 0.5rem 0;
+  display: flex;
+  justify-content: center;
+}
+
+.avatar {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.2);
+}
+
+.sidebar-menu {
+  flex: 1;
+  padding: 1rem 0;
+}
+
+.sidebar-menu ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.sidebar-menu li {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0.5rem 0;
+  border-radius: 0.375rem; /* rounded-md */
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.sidebar-menu li:hover {
+  background-color: #374151; /* gray-700 */
+}
+
+.sidebar-menu li.active {
+  background-color: #374151;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.1);
+}
+
+.icon {
+  width: 1.25rem;
+  height: 1.25rem;
+  color: #9ca3af; /* gray-400 */
+}
+
+.sidebar-menu li.active .icon {
+  color: white;
+}
+
+.logout-btn {
+  height: 4rem;
+  border-top: 1px solid rgba(255,255,255,0.1);
+  background: none;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.1s ease;
+}
+
+.logout-btn:hover {
+  background-color: #374151;
+  transform: scale(1.05);
+}
+.logout-btn:active {
+  transform: scale(0.95);
+}
+</style>

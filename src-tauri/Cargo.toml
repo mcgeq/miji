@@ -100,7 +100,12 @@ localize_model_derive = { path = "./localize_model_derive" }
 macros = { path = "./macros" }
 
 [dependencies]
-tauri = { workspace = true }
+tauri = { version = "2", features = [
+  "tray-icon",
+  "image-png",
+  "unstable",
+  "protocol-asset",
+] }
 tauri-plugin-opener = "2"
 tauri-plugin-fs = "2"
 tauri-plugin-notification = "2"
