@@ -726,12 +726,7 @@ watch(
 </template>
 
 <style scoped lang="postcss">
-/* 自定义样式 */
-.modal-mask-window-money {
-  max-height: 90vh;
-  overflow-y: auto;
-}
-
+  @import '/assets/styles/modal.css';
 /* 改善表单布局 */
 .modal-input-select:focus {
   @apply ring-2 ring-blue-400 ring-opacity-50 border-blue-500;

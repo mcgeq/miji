@@ -146,7 +146,7 @@ watch(
         <div class="space-y-3">
           <div class="flex items-center justify-between">
             <label class="text-sm text-gray-700 font-medium">成员管理</label>
-            <button type="button" class="text-xs btn-secondary px-2 py-1" @click="showMemberModal = true">
+            <button type="button" class="btn-secondary text-xs px-2 py-1" @click="showMemberModal = true">
               <LucidePlus class="mr-1 h-3 w-3" />
               添加成员
             </button>
@@ -194,3 +194,7 @@ watch(
     <MemberModal v-if="showMemberModal" :member="editingMember" @close="closeMemberModal" @save="saveMember" />
   </div>
 </template>
+
+<style scoped lang="postcss">
+  @import '/assets/styles/modal.css';
+</style>

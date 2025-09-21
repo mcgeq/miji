@@ -540,3 +540,7 @@ watch(
     </div>
   </div>
 </template>
+
+<style scoped lang="css">
+  @import '/assets/styles/modal.css';
+</style>

@@ -442,6 +442,6 @@ onMounted(async () => {
   </div>
 </template>
 
-<style scoped>
-/* 自定义样式 */
+<style scoped lang="postcss">
+  @import '/assets/styles/modal.css';
 </style>
