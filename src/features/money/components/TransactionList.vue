@@ -395,9 +395,9 @@ defineExpose({
         <div class="text-sm p-4 flex justify-between md:items-center md:justify-end">
           <span class="text-gray-600 font-semibold md:hidden">{{ t('categories.category') }}</span>
           <div class="md:text-right">
-            <span class="text-gray-800 font-medium">{{ t(`common.categories.${transaction.category.toLocaleLowerCase()}`) }}</span>
+            <span class="text-gray-800 font-medium">{{ t(`common.categories.${lowercaseFirstLetter(transaction.category)}`) }}</span>
             <div v-if="transaction.subCategory" class="text-xs text-gray-600">
-              {{ t(`common.subCategories.${transaction.subCategory.toLocaleLowerCase()}`) }}
+              {{ t(`common.subCategories.${lowercaseFirstLetter(transaction.subCategory)}`) }}
             </div>
           </div>
         </div>
