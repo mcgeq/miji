@@ -102,6 +102,8 @@ const form = reactive<Account>({
   ...defaultAccount,
   ...(props.account ? JSON.parse(JSON.stringify(props.account)) : {}),
 });
+const isActive = computed(() => form.isActive === true);
+const isShared = computed(() => form.isShared === true);
 
 // 同步 currency 对象的 locale 和 symbol
 function syncCurrency(code: string) {
@@ -321,14 +323,24 @@ watch(() => form.initialBalance, newBalance => {
         <div class="mb-2 flex items-center justify-between">
           <div class="w-1/2">
             <label class="flex items-center">
-              <input v-model="form.isShared" type="checkbox" class="modal-input-select mr-2">
+              <input
+                v-model="form.isShared"
+                type="checkbox"
+                class="text-gray-900 mr-2 px-2 py-0 border border-gray-300 rounded-full h-6 w-6 transition-all duration-200 dark:text-white focus:outline-none dark:border-gray-600 focus:border-transparent dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 placeholder-gray-400 dark:placeholder-gray-500"
+                :class="isShared ? 'bg-blue-500 border-gray-600' : 'bg-white'"
+              >
               <span class="text-sm text-gray-700 font-medium">{{ t('financial.account.shared') }}</span>
             </label>
           </div>
           <div class="w-1/2">
             <label class="flex items-center">
-              <input v-model="form.isActive" type="checkbox" class="modal-input-select mr-2">
-              <span class="text-sm text-gray-700 font-medium">{{ t('financial.account.activate') }}</span>
+              <input
+                v-model="form.isActive"
+                type="checkbox"
+                class="text-gray-900 mr-2 px-2 py-0 border border-gray-300 rounded-full h-6 w-6 transition-all duration-200 dark:text-white focus:outline-none dark:border-gray-600 focus:border-transparent dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 placeholder-gray-400 dark:placeholder-gray-500"
+                :class="isActive ? 'bg-blue-500 border-gray-600' : 'bg-white'"
+              >
+              <span class="text-sm text-gray-500 font-medium">{{ t('financial.account.activate') }}</span>
             </label>
           </div>
         </div>
