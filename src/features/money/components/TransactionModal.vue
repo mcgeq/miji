@@ -542,5 +542,4 @@ watch(
 </template>
 
 <style scoped lang="postcss">
-  @import '@/assets/styles/modal.css';
 </style>

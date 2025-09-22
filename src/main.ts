@@ -9,8 +9,16 @@ import { storeStart } from './stores';
 import '@unocss/reset/tailwind.css';
 import 'uno.css';
 import 'vue-toastification/dist/index.css';
-import '@/assets/styles/btn-base.css';
-import '@/assets/styles/light-theme.css';
+import '@/assets/styles/variables.css';
+import '@/assets/styles/base.css';
+import '@/assets/styles/utilities.css';
+import '@/assets/styles/themes/light.css';
+import '@/assets/styles/themes/dark.css';
+import '@/assets/styles/components/alerts.css';
+import '@/assets/styles/components/buttons.css';
+import '@/assets/styles/components/cards.css';
+import '@/assets/styles/components/input.css';
+import '@/assets/styles/components/modals.css';
 
 z.config({
   localeError: i18nErrorMap,

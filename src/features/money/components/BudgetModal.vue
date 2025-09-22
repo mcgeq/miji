@@ -443,5 +443,4 @@ onMounted(async () => {
 </template>
 
 <style scoped>
-  @import '@/assets/styles/modal.css';
 </style>

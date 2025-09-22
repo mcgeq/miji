@@ -1,9 +1,17 @@
-/* common-base.css */
+/* base.css - 全局基础样式和重置 */
+
+@import "./variables.css";
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
 body {
   font-family: system-ui, sans-serif;
   margin: 0;
   line-height: 1.5;
-  /* 主题变量覆盖（由具体主题文件提供） */
   background-color: var(--color-base-100);
   color: var(--color-base-content);
 }

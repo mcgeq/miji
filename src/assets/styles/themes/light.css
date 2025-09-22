@@ -1,0 +1,29 @@
+/* themes/light.css - 浅色主题变量 */
+
+:root {
+  /* 基础背景分层（从浅到深） */
+  --color-base-100: oklch(91.637% 0.034 90.515); /* 页面最外层背景 */
+  --color-base-200: oklch(88.272% 0.049 91.774); /* 中间层背景（如卡片） */
+  --color-base-300: oklch(84.133% 0.065 90.856); /* 深层背景（较少使用） */
+  --color-base-content: oklch(41% 0.112 45.904); /* 基础背景上的文字色 */
+
+  /* 组件主色系列（含文字色） */
+  --color-primary: oklch(80% 0.114 19.571); /* 主按钮/核心强调色 */
+  --color-primary-content: oklch(39% 0.141 25.723); /* 主色背景上的文字 */
+  --color-secondary: oklch(92% 0.084 155.995); /* 次要按钮/装饰色 */
+  --color-secondary-content: oklch(44% 0.119 151.328); /* 次要色背景上的文字 */
+  --color-accent: oklch(68% 0.162 75.834); /* 警告/高亮操作色 */
+  --color-accent-content: oklch(41% 0.112 45.904); /* 警告色背景上的文字 */
+  --color-neutral: oklch(44% 0.011 73.639); /* 中性按钮/分割线 */
+  --color-neutral-content: oklch(86% 0.005 56.366); /* 中性色背景上的文字 */
+  --color-info: oklch(58% 0.158 241.966); /* 信息提示色（蓝绿系） */
+  --color-info-content: oklch(96% 0.059 95.617); /* 信息色背景上的文字 */
+  --color-success: oklch(51% 0.096 186.391); /* 成功操作色（绿色系） */
+  --color-success-content: oklch(96% 0.059 95.617); /* 成功色背景上的文字 */
+  --color-warning: oklch(64% 0.222 41.116); /* 警告操作色（橙黄色系） */
+  --color-warning-content: oklch(96% 0.059 95.617); /* 警告色背景上的文字 */
+  --color-error: oklch(70% 0.191 22.216); /* 错误操作色（红色系） */
+  --color-error-content: oklch(40% 0.123 38.172); /* 错误色背景上的文字 */
+
+  color-scheme: light; /* 声明为浅色主题 */
+}

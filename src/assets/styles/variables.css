@@ -1,1 +1,12 @@
-/* variables.css */
+/* variables.css - 全局非主题 CSS 变量 */
+
+:root {
+  --radius-selector: 0.25rem;
+  --radius-field: 0.25rem;
+  --radius-box: 0.5rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 0;
+  --noise: 0;
+}

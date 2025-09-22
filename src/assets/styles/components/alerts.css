@@ -1,0 +1,22 @@
+/* components/alerts.css - 提示框样式 */
+
+.info-box {
+  padding: var(--size-field);
+  border-radius: var(--radius-field);
+  margin: 0.5rem 0;
+}
+
+.success-box {
+  background-color: var(--color-success);
+  color: var(--color-success-content);
+}
+
+.error-box {
+  background-color: var(--color-error);
+  color: var(--color-error-content);
+}
+
+.warning-box {
+  background-color: var(--color-warning);
+  color: var(--color-warning-content);
+}

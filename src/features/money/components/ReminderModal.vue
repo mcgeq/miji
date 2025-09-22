@@ -725,8 +725,7 @@ watch(
   </div>
 </template>
 
-<style scoped>
-  @import '@/assets/styles/modal.css';
+<style scoped lang="postcss">
 /* 改善表单布局 */
 .modal-input-select:focus {
   @apply ring-2 ring-blue-400 ring-opacity-50 border-blue-500;

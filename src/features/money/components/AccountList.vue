@@ -214,9 +214,9 @@ function getAccountTypeName(type: AccountType): string {
 </script>
 
 <template>
-  <div class="min-h-50">
+  <div class="min-h-25">
     <!-- 过滤选项区域 -->
-    <div class="mb-6 p-4 border border-gray-200 rounded-lg bg-white shadow-sm">
+    <div class="mb-5 p-4 rounded-lg bg-gray-50 flex flex-wrap gap-3 items-center justify-center">
       <div class="flex flex-wrap gap-3 items-center">
         <!-- 账户状态过滤 -->
         <div class="filter-flex-wrap">

@@ -1,0 +1,37 @@
+/* components/cards.css - 卡片组件样式 */
+
+.card {
+  background-color: var(--color-base-200);
+  border: var(--border) solid var(--color-neutral);
+  border-radius: var(--radius-box);
+  padding: var(--size-field);
+  margin: 1rem 0;
+
+  &-base {
+    background-color: #ffffff;
+    border-radius: 1rem;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    border: 1px solid #e5e7eb;
+    @media (prefers-color-scheme: dark) {
+      background-color: #1f2937;
+      border-color: #374151;
+    }
+  }
+
+  &-hover {
+    transition: box-shadow 200ms ease;
+    &:hover {
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+  }
+
+  &-glass {
+    background-color: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    @media (prefers-color-scheme: dark) {
+      background-color: rgba(17, 24, 39, 0.8);
+      border-color: rgba(55, 65, 81, 0.3);
+    }
+  }
+}

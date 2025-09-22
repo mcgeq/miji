@@ -1,0 +1,61 @@
+/* components/inputs.css - 输入框和选择框样式 */
+
+.input-base {
+  padding: 0.5rem 1rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.75rem;
+  background-color: #ffffff;
+  color: #111827;
+  transition: all 200ms ease;
+  &:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px #3b82f6;
+    border-color: transparent;
+  }
+  &::placeholder {
+    color: #9ca3af;
+  }
+  @media (prefers-color-scheme: dark) {
+    background-color: #1f2937;
+    border-color: #4b5563;
+    color: #ffffff;
+    &::placeholder {
+      color: #6b7280;
+    }
+  }
+}
+
+.input-sm {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+}
+
+.input-lg {
+  padding: 0.75rem 1rem;
+  font-size: 1.125rem;
+}
+
+.modal-input-select {
+  padding: 0.5rem 1rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.75rem;
+  background-color: #ffffff;
+  color: #111827;
+  transition: all 200ms ease;
+  &:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.5);
+    border-color: transparent;
+  }
+  &::placeholder {
+    color: #9ca3af;
+  }
+  @media (prefers-color-scheme: dark) {
+    background-color: #1f2937;
+    border-color: #4b5563;
+    color: #ffffff;
+    &::placeholder {
+      color: #6b7280;
+    }
+  }
+}
