@@ -9,6 +9,7 @@ import { storeStart } from './stores';
 import '@unocss/reset/tailwind.css';
 import 'uno.css';
 import 'vue-toastification/dist/index.css';
+import '@/assets/styles/btn-base.css';
 import '@/assets/styles/light-theme.css';
 
 z.config({

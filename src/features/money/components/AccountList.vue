@@ -306,7 +306,7 @@ function getAccountTypeName(type: AccountType): string {
             class="text-gray-600 p-1.5 transition-colors hover:text-blue-500" :title="sortOrder === 'asc' ? t('common.sorting.asc') : t('common.sorting.desc')"
             @click="toggleSortOrder"
           >
-            <LucideArrowUpDown class="h-4 w-4" :class="sortOrder === 'desc' && 'rotate-180'" />
+            <LucideArrowUpDown class="btn-lucide" :class="sortOrder === 'desc' && 'rotate-180'" />
           </button>
         </div>
 
@@ -315,17 +315,17 @@ function getAccountTypeName(type: AccountType): string {
           class="text-sm text-gray-700 px-3 py-1.5 rounded-md bg-gray-200 transition-colors hover:bg-gray-300"
           @click="resetFilters"
         >
-          <LucideRotateCcw class="mr-1 wh-5" />
+          <LucideRotateCcw class="btn-lucide" />
         </button>
       </div>
     </div>
 
     <!-- 账户列表区域 -->
-    <div v-if="loading" class="text-gray-500 flex-justify-center h-50">
+    <div v-if="loading" class="text-gray-500 h-50 flex-justify-center">
       {{ t('common.loading') }}
     </div>
 
-    <div v-else-if="paginatedAccounts.length === 0" class="text-gray-400 flex-justify-center flex-col h-50">
+    <div v-else-if="paginatedAccounts.length === 0" class="text-gray-400 flex-col h-50 flex-justify-center">
       <div class="text-6xl mb-4 opacity-50">
         <LucideCreditCard class="wh-5" />
       </div>
