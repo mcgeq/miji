@@ -44,7 +44,7 @@ onUnmounted(() => {
   </div>
 </template>
 
-<style scoped lang="postcss">
+<style scoped>
 .app-container {
   display: flex;
   min-height: 100vh;

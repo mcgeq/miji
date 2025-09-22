@@ -1,0 +1,76 @@
+/* retro-theme.css - DaisyUI retro Light 主题纯CSS3实现 */
+
+/* ========== 1. 主题变量定义（:root 生效于整个文档） ========== */
+:root {
+  /* ========== 基础背景分层（从浅到深） ========== */
+  --color-base-100: oklch(91.637% 0.034 90.515);   /* 页面最外层背景 */
+  --color-base-200: oklch(88.272% 0.049 91.774);   /* 中间层背景（如卡片） */
+  --color-base-300: oklch(84.133% 0.065 90.856);   /* 深层背景（较少使用） */
+  --color-base-content: oklch(41% 0.112 45.904);   /* 基础背景上的文字色 */
+
+  /* ========== 组件主色系列（含文字色） ========== */
+  --color-primary: oklch(80% 0.114 19.571);       /* 主按钮/核心强调色 */
+  --color-primary-content: oklch(39% 0.141 25.723); /* 主色背景上的文字 */
+  --color-secondary: oklch(92% 0.084 155.995);    /* 次要按钮/装饰色 */
+  --color-secondary-content: oklch(44% 0.119 151.328); /* 次要色背景上的文字 */
+  --color-accent: oklch(68% 0.162 75.834);       /* 警告/高亮操作色 */
+  --color-accent-content: oklch(41% 0.112 45.904); /* 警告色背景上的文字 */
+  --color-neutral: oklch(44% 0.011 73.639);       /* 中性按钮/分割线 */
+  --color-neutral-content: oklch(86% 0.005 56.366); /* 中性色背景上的文字 */
+  --color-info: oklch(58% 0.158 241.966);          /* 信息提示色（蓝绿系） */
+  --color-info-content: oklch(96% 0.059 95.617);  /* 信息色背景上的文字 */
+  --color-success: oklch(51% 0.096 186.391);      /* 成功操作色（绿色系） */
+  --color-success-content: oklch(96% 0.059 95.617); /* 成功色背景上的文字 */
+  --color-warning: oklch(64% 0.222 41.116);       /* 警告操作色（橙黄色系） */
+  --color-warning-content: oklch(96% 0.059 95.617); /* 警告色背景上的文字 */
+  --color-error: oklch(70% 0.191 22.216);         /* 错误操作色（红色系） */
+  --color-error-content: oklch(40% 0.123 38.172);  /* 错误色背景上的文字 */
+
+  /* ========== 主题方案 + 组件尺寸 ========== */
+  color-scheme: light; /* 声明为浅色主题，辅助浏览器优化（如滚动条、系统控件） */
+  --radius-selector: 0.25rem;   /* 选择器类圆角（如按钮组） */
+  --radius-field: 0.25rem;      /* 输入框/表单圆角 */
+  --radius-box: 0.5rem;         /* 卡片/容器圆角 */
+  --size-selector: 0.25rem;     /* 选择器类内边距 */
+  --size-field: 0.25rem;        /* 输入框/表单内边距 */
+  --border: 1px;                /* 边框宽度 */
+  --depth: 0;                   /* 阴影深度（0 表示无阴影） */
+  --noise: 0;                   /* 噪点纹理（DaisyUI 特有，0 表示无） */
+}
+
+
+
+/* @plugin "daisyui/theme" { */
+/*   name: "lemonade"; */
+/*   default: false; */
+/*   prefersdark: false; */
+/*   color-scheme: "light"; */
+/*   --color-base-100: oklch(98.71% 0.02 123.72); */
+/*   --color-base-200: oklch(91.8% 0.018 123.72); */
+/*   --color-base-300: oklch(84.89% 0.017 123.72); */
+/*   --color-base-content: oklch(19.742% 0.004 123.72); */
+/*   --color-primary: oklch(58.92% 0.199 134.6); */
+/*   --color-primary-content: oklch(11.784% 0.039 134.6); */
+/*   --color-secondary: oklch(77.75% 0.196 111.09); */
+/*   --color-secondary-content: oklch(15.55% 0.039 111.09); */
+/*   --color-accent: oklch(85.39% 0.201 100.73); */
+/*   --color-accent-content: oklch(17.078% 0.04 100.73); */
+/*   --color-neutral: oklch(30.98% 0.075 108.6); */
+/*   --color-neutral-content: oklch(86.196% 0.015 108.6); */
+/*   --color-info: oklch(86.19% 0.047 224.14); */
+/*   --color-info-content: oklch(17.238% 0.009 224.14); */
+/*   --color-success: oklch(86.19% 0.047 157.85); */
+/*   --color-success-content: oklch(17.238% 0.009 157.85); */
+/*   --color-warning: oklch(86.19% 0.047 102.15); */
+/*   --color-warning-content: oklch(17.238% 0.009 102.15); */
+/*   --color-error: oklch(86.19% 0.047 25.85); */
+/*   --color-error-content: oklch(17.238% 0.009 25.85); */
+/*   --radius-selector: 1rem; */
+/*   --radius-field: 0.5rem; */
+/*   --radius-box: 1rem; */
+/*   --size-selector: 0.25rem; */
+/*   --size-field: 0.25rem; */
+/*   --border: 1px; */
+/*   --depth: 0; */
+/*   --noise: 0; */
+/* } */

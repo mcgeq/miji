@@ -1,0 +1,60 @@
+/* common-components.css */
+/* ========== 按钮 ========== */
+.btn {
+  display: inline-block;
+  padding: var(--size-field) var(--size-selector);
+  border: var(--border) solid transparent;
+  border-radius: var(--radius-selector);
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background-color 0.2s ease;
+}
+
+.btn-primary {
+  background-color: var(--color-primary);
+  color: var(--color-primary-content);
+  border-color: var(--color-primary);
+}
+
+.btn-secondary {
+  background-color: var(--color-secondary);
+  color: var(--color-secondary-content);
+  border-color: var(--color-secondary);
+}
+
+.btn-accent {
+  background-color: var(--color-accent);
+  color: var(--color-accent-content);
+  border-color: var(--color-accent);
+}
+
+/* ========== 卡片 ========== */
+.card {
+  background-color: var(--color-base-200);
+  border: var(--border) solid var(--color-neutral);
+  border-radius: var(--radius-box);
+  padding: var(--size-field);
+  margin: 1rem 0;
+}
+
+/* ========== 信息提示框 ========== */
+.info-box {
+  padding: var(--size-field);
+  border-radius: var(--radius-field);
+  margin: 0.5rem 0;
+}
+
+.success-box {
+  background-color: var(--color-success);
+  color: var(--color-success-content);
+}
+
+.error-box {
+  background-color: var(--color-error);
+  color: var(--color-error-content);
+}
+
+.warning-box {
+  background-color: var(--color-warning);
+  color: var(--color-warning-content);
+}

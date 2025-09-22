@@ -541,6 +541,6 @@ watch(
   </div>
 </template>
 
-<style scoped lang="css">
-  @import '/assets/styles/modal.css';
+<style scoped>
+  @import '@/assets/styles/modal.css';
 </style>
