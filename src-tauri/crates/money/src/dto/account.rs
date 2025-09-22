@@ -36,6 +36,8 @@ pub struct AccountCreate {
 #[derive(Debug, Clone, Deserialize, Validate)]
 #[serde(rename_all = "camelCase")]
 pub struct AccountUpdate {
+    #[validate(custom(function = "validate_non_negative_amount", message = "金额必须非负数"))]
+    pub initial_balance: Option<Decimal>,
     #[validate(length(min = 1, max = 100, message = "账户名称长度必须在1-100字符之间"))]
     pub name: Option<String>,
     #[validate(length(max = 1000, message = "描述长度不能超过1000字符"))]
@@ -277,7 +279,9 @@ impl TryFrom<AccountUpdate> for account::ActiveModel {
                 .r#type
                 .map_or(sea_orm::ActiveValue::NotSet, sea_orm::ActiveValue::Set),
             balance: sea_orm::ActiveValue::NotSet, // 余额不能直接通过更新请求修改
-            initial_balance: sea_orm::ActiveValue::NotSet,
+            initial_balance: request
+                .initial_balance
+                .map_or(sea_orm::ActiveValue::NotSet, sea_orm::ActiveValue::Set),
             currency: request
                 .currency
                 .map_or(sea_orm::ActiveValue::NotSet, sea_orm::ActiveValue::Set),

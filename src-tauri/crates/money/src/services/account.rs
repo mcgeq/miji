@@ -485,7 +485,34 @@ impl AccountService {
         serial_num: String,
         data: AccountUpdate,
     ) -> MijiResult<AccountWithRelations> {
-        let model = self.update(db, serial_num, data).await?;
+        info!("account_update {:?}", data);
+        if let Some(new_initial) = data.initial_balance {
+            let old_account = self.get_by_id(db, serial_num.clone()).await?;
+            let old_initial = old_account.initial_balance;
+            let old_balance = old_account.balance;
+
+            let diff = new_initial - old_initial;
+            let new_balance = old_balance + diff;
+            if new_balance.is_sign_negative() {
+                return Err(AppError::simple(
+                    BusinessCode::MoneyInvalidAmount,
+                    "账户余额不能为负数".to_string(),
+                ));
+            }
+            update_account_columns(
+                db,
+                [serial_num.clone()],
+                [
+                    (entity::account::Column::Balance, Expr::value(new_balance)),
+                    (
+                        entity::account::Column::UpdatedAt,
+                        Expr::value(Some(DateUtils::local_now())),
+                    ),
+                ],
+            )
+            .await?;
+        }
+        let model = self.update(db, serial_num.clone(), data).await?;
         self.get_account_with_relations(db, model.serial_num).await
     }
 
