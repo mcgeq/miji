@@ -35,8 +35,6 @@ declare module 'vue' {
     LucideChartNoAxesCombined: typeof import('lucide-vue-next')['ChartNoAxesCombined']
     LucideCheck: typeof import('lucide-vue-next')['Check']
     LucideCheckCircle: typeof import('lucide-vue-next')['CheckCircle']
-    LucideChevronLeft: typeof import('lucide-vue-next')['ChevronLeft']
-    LucideChevronRight: typeof import('lucide-vue-next')['ChevronRight']
     LucideChevronRightCircle: typeof import('lucide-vue-next')['ChevronRightCircle']
     LucideCreditCard: typeof import('lucide-vue-next')['CreditCard']
     LucideDatabase: typeof import('lucide-vue-next')['Database']

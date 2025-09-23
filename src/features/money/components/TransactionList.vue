@@ -342,7 +342,7 @@ defineExpose({
         class="border-b border-gray-200 grid grid-cols-1 transition-colors hover:bg-gray-50 md:grid-cols-[120px_140px_180px_140px_140px_120px]"
       >
         <!-- 类型列 -->
-        <div class="text-sm p-4 flex justify-between md:items-center md:justify-end">
+        <div class="text-sm p-2 flex justify-between md:items-center md:justify-end">
           <span class="text-gray-600 font-semibold md:hidden">{{ t('categories.category') }}</span>
           <div class="flex gap-2 items-center">
             <component :is="getTransactionTypeIcon(transaction.transactionType)" class="h-4 w-4" />
@@ -351,7 +351,7 @@ defineExpose({
         </div>
 
         <!-- 金额列 -->
-        <div class="text-sm p-4 flex justify-between md:items-center md:justify-end">
+        <div class="text-sm p-2 flex justify-between md:items-center md:justify-end">
           <span class="text-gray-600 font-semibold md:hidden">{{ t('financial.money') }}</span>
           <div
             class="text-lg font-semibold" :class="[
@@ -366,7 +366,7 @@ defineExpose({
         </div>
 
         <!-- 账户列 -->
-        <div class="text-sm p-4 flex justify-between md:items-center md:justify-end">
+        <div class="text-sm p-2 flex justify-between md:items-center md:justify-end">
           <span class="text-gray-600 font-semibold md:hidden">{{ t('financial.account.account') }}</span>
           <div class="md:text-right">
             <div class="text-gray-800 font-medium">
@@ -379,7 +379,7 @@ defineExpose({
         </div>
 
         <!-- 分类列 -->
-        <div class="text-sm p-4 flex justify-between md:items-center md:justify-end">
+        <div class="text-sm p-2 flex justify-between md:items-center md:justify-end">
           <span class="text-gray-600 font-semibold md:hidden">{{ t('categories.category') }}</span>
           <div class="md:text-right">
             <span class="text-gray-800 font-medium">{{ t(`common.categories.${lowercaseFirstLetter(transaction.category)}`) }}</span>
@@ -390,7 +390,7 @@ defineExpose({
         </div>
 
         <!-- 时间列 -->
-        <div class="text-sm p-4 flex justify-between md:items-center md:justify-end">
+        <div class="text-sm p-2 flex justify-between md:items-center md:justify-end">
           <span class="text-gray-600 font-semibold md:hidden">{{ t('date.date') }}</span>
           <div class="md:text-right">
             <div class="text-xs text-gray-600">
@@ -400,7 +400,7 @@ defineExpose({
         </div>
 
         <!-- 操作列 -->
-        <div class="p-4 flex items-center justify-between md:justify-end">
+        <div class="p-2 flex items-center justify-between md:justify-end">
           <span class="text-gray-600 font-semibold md:hidden">{{ t('common.misc.options') }}</span>
           <div class="flex gap-1">
             <button

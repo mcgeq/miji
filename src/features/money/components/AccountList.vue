@@ -221,7 +221,7 @@ function getAccountTypeName(type: AccountType): string {
 <template>
   <div class="min-h-25">
     <!-- 过滤选项区域 -->
-    <div class="mb-5 p-4 rounded-lg bg-gray-50 flex flex-wrap gap-3 items-center justify-center">
+    <div class="mb-5 p-2 rounded-lg bg-gray-50 flex flex-wrap gap-3 items-center justify-center">
       <div class="flex flex-wrap gap-3 items-center">
         <!-- 账户状态过滤 -->
         <div class="filter-flex-wrap">
@@ -339,9 +339,13 @@ function getAccountTypeName(type: AccountType): string {
       </div>
     </div>
 
-    <div v-else class="mb-6 gap-5 grid" style="grid-template-columns: repeat(auto-fill, minmax(320px, 1fr))">
+    <div
+      v-else class="mb-6 gap-5 grid"
+    >
       <div
-        v-for="account in paginatedAccounts" :key="account.serialNum" class="p-5 border rounded-lg bg-white transition-all hover:shadow-md"
+        v-for="account in paginatedAccounts"
+        :key="account.serialNum"
+        class="p-2 border rounded-lg bg-white transition-all hover:shadow-md"
         :class="{
           'opacity-60 bg-gray-100': !account.isActive,
         }" :style="{
@@ -358,7 +362,7 @@ function getAccountTypeName(type: AccountType): string {
           </div>
 
           <!-- 操作按钮 -->
-          <div class="flex gap-1.5 items-center self-end">
+          <div class="p-4 flex items-center justify-between md:justify-end">
             <button
               class="money-option-btn hover:(text-green-500 border-green-500)"
               :title="account.isActive ? t('common.status.stop') : t('common.status.enabled')"
@@ -399,7 +403,7 @@ function getAccountTypeName(type: AccountType): string {
     </div>
 
     <!-- 分页组件 -->
-    <div v-if="totalPages > 1" class="mt-6 flex justify-center">
+    <div v-if="totalPages > 1" class="mt-4 flex justify-center">
       <SimplePagination
         :current-page="currentPage"
         :total-pages="totalPages"

@@ -184,17 +184,17 @@ defineExpose({
         class="text-sm text-gray-700 px-3 py-1.5 rounded-md bg-gray-200 transition-colors hover:bg-gray-300"
         @click="resetFilters"
       >
-        <LucideRotateCcw class="mr-1 wh-5" />
+        <LucideRotateCcw class="wh-5 mr-1" />
       </button>
     </div>
 
     <!-- 加载状态 -->
-    <div v-if="loading" class="text-gray-600 flex-justify-center h-25">
+    <div v-if="loading" class="text-gray-600 h-25 flex-justify-center">
       {{ t('common.loading') }}
     </div>
 
     <!-- 空状态 -->
-    <div v-else-if="pagination.paginatedItems.value.length === 0" class="text-#999 flex-justify-center flex-col h-25">
+    <div v-else-if="pagination.paginatedItems.value.length === 0" class="text-#999 flex-col h-25 flex-justify-center">
       <div class="text-sm mb-2 opacity-50">
         <i class="icon-bell" />
       </div>
@@ -317,7 +317,6 @@ defineExpose({
 <style scoped lang="postcss">
 .reminder-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: 20px;
 }
 
