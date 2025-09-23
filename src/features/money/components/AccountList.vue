@@ -10,6 +10,7 @@ import {
 } from 'lucide-vue-next';
 import SimplePagination from '@/components/common/SimplePagination.vue';
 import { DateUtils } from '@/utils/date';
+import { useAccountFilters } from '../composables/useAccountFilters';
 import { formatCurrency } from '../utils/money';
 import type { Account, AccountType } from '@/schema/money';
 import type {
@@ -32,161 +33,40 @@ const emit = defineEmits<{
 const { t } = useI18n();
 
 const mediaQueries = useMediaQueriesStore();
-
 // 过滤和分页状态
-const activeFilter = ref<'all' | 'active' | 'inactive'>('all');
-const selectedType = ref<string>('');
-const selectedCurrency = ref<string>('');
-const sortBy = ref<'createdAt' | 'name' | 'balance' | 'type'>('createdAt');
-const sortOrder = ref<'asc' | 'desc'>('desc');
-const currentPage = ref(1);
-const pageSize = ref(4);
-
-// 计算统计数据
-const totalAccounts = computed(() => props.accounts.length);
-const activeAccounts = computed(
-  () => props.accounts.filter(account => account.isActive).length,
-);
-const inactiveAccounts = computed(
-  () => props.accounts.filter(account => !account.isActive).length,
-);
-
-// 获取所有账户类型
-const accountTypes = computed(() => {
-  const types = new Set(props.accounts.map(account => account.type));
-  return Array.from(types);
-});
-
-// 获取所有币种
-const currencies = computed(() => {
-  const currencies = new Set(
-    props.accounts.map(account => account.currency?.code).filter(Boolean),
-  );
-  return Array.from(currencies);
-});
-
-// 过滤后的账户
-const filteredAccounts = computed(() => {
-  let filtered = props.accounts;
-
-  // 状态过滤
-  if (activeFilter.value === 'active') {
-    filtered = filtered.filter(account => account.isActive);
-  } else if (activeFilter.value === 'inactive') {
-    filtered = filtered.filter(account => !account.isActive);
-  }
-
-  // 类型过滤
-  if (selectedType.value) {
-    filtered = filtered.filter(
-      account => account.type === selectedType.value,
-    );
-  }
-
-  // 币种过滤
-  if (selectedCurrency.value) {
-    filtered = filtered.filter(
-      account => account.currency?.code === selectedCurrency.value,
-    );
-  }
-
-  // 排序
-  filtered.sort((a, b) => {
-    let aValue, bValue;
-
-    switch (sortBy.value) {
-      case 'name':
-        aValue = a.name.toLowerCase();
-        bValue = b.name.toLowerCase();
-        break;
-      case 'balance':
-        aValue = a.balance;
-        bValue = b.balance;
-        break;
-      case 'type':
-        aValue = a.type;
-        bValue = b.type;
-        break;
-      case 'createdAt':
-      default:
-        if (a.updatedAt && b.updatedAt) {
-          aValue = new Date(a.updatedAt).getTime();
-          bValue = new Date(b.updatedAt).getTime();
-        } else {
-          aValue = new Date(a.createdAt).getTime();
-          bValue = new Date(b.createdAt).getTime();
-        }
-        break;
-    }
-
-    if (aValue < bValue)
-      return sortOrder.value === 'asc' ? -1 : 1;
-    if (aValue > bValue)
-      return sortOrder.value === 'asc' ? 1 : -1;
-    return 0;
-  });
-
-  return filtered;
-});
-
-// 分页后的账户
-const paginatedAccounts = computed(() => {
-  const start = (currentPage.value - 1) * pageSize.value;
-  const end = start + pageSize.value;
-  return filteredAccounts.value.slice(start, end);
-});
-
-// 总页数
-const totalPages = computed(() => {
-  return Math.ceil(filteredAccounts.value.length / pageSize.value);
-});
-
-// 过滤器方法
-function setActiveFilter(filter: 'all' | 'active' | 'inactive') {
-  activeFilter.value = filter;
-  currentPage.value = 1;
-}
+const {
+  filters,
+  accountTypes,
+  currencies,
+  pagination,
+  activeAccounts,
+  inactiveAccounts,
+  resetFilters,
+  setActiveFilter,
+  toggleSortOrder,
+} = useAccountFilters(() => props.accounts, 4);
 
 function handleTypeFilter() {
-  currentPage.value = 1;
+  pagination.currentPage.value = 1;
 }
 
 function handleCurrencyFilter() {
-  currentPage.value = 1;
+  pagination.currentPage.value = 1;
 }
 
 function handleSortChange() {
-  currentPage.value = 1;
-}
-
-function toggleSortOrder() {
-  sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc';
-  currentPage.value = 1;
-}
-
-function resetFilters() {
-  activeFilter.value = 'all';
-  selectedType.value = '';
-  selectedCurrency.value = '';
-  sortBy.value = 'createdAt';
-  sortOrder.value = 'desc';
-  currentPage.value = 1;
+  pagination.currentPage.value = 1;
 }
 
 // 分页方法
 function handlePageChange(page: number) {
-  currentPage.value = page;
+  pagination.currentPage.value = page;
 }
 
 function handlePageSizeChange(size: number) {
-  pageSize.value = size;
-  currentPage.value = 1;
+  pagination.pageSize.value = size;
+  pagination.currentPage.value = 1;
 }
-
-// 监听过滤条件变化，重置页码
-watch([activeFilter, selectedType, selectedCurrency], () => {
-  currentPage.value = 1;
-});
 
 // 图标和名称映射函数
 function getAccountTypeIcon(type: AccountType): LucideIcon {
@@ -230,16 +110,16 @@ function getAccountTypeName(type: AccountType): string {
           <div class="flex gap-1">
             <button
               class="text-xs font-medium px-3 py-1.5 border rounded-full transition-all" :class="[
-                activeFilter === 'all'
+                filters.status === 'all'
                   ? 'bg-blue-500 text-white border-blue-500'
                   : 'bg-white text-gray-600 border-gray-300 hover:border-blue-400',
               ]" @click="setActiveFilter('all')"
             >
-              {{ t('common.actions.all') }}<span class="text-xs ml-1 opacity-75">[{{ totalAccounts }}]</span>
+              {{ t('common.actions.all') }}<span class="text-xs ml-1 opacity-75">[{{ pagination.totalItems.value }}]</span>
             </button>
             <button
               class="text-xs font-medium px-3 py-1.5 border rounded-full transition-all" :class="[
-                activeFilter === 'active'
+                filters.status === 'active'
                   ? 'bg-green-500 text-white border-green-500'
                   : 'bg-white text-gray-600 border-gray-300 hover:border-green-400',
               ]" @click="setActiveFilter('active')"
@@ -249,7 +129,7 @@ function getAccountTypeName(type: AccountType): string {
             </button>
             <button
               class="text-xs font-medium px-3 py-1.5 border rounded-full transition-all" :class="[
-                activeFilter === 'inactive'
+                filters.status === 'inactive'
                   ? 'bg-gray-500 text-white border-gray-500'
                   : 'bg-white text-gray-600 border-gray-300 hover:border-gray-400',
               ]" @click="setActiveFilter('inactive')"
@@ -263,7 +143,7 @@ function getAccountTypeName(type: AccountType): string {
         <!-- 账户类型过滤 -->
         <div class="filter-flex-wrap">
           <select
-            v-model="selectedType" class="text-xs px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:border-transparent focus:ring-2 focus:ring-blue-500"
+            v-model="filters.type" class="text-xs px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:border-transparent focus:ring-2 focus:ring-blue-500"
             @change="handleTypeFilter"
           >
             <option value="">
@@ -278,7 +158,7 @@ function getAccountTypeName(type: AccountType): string {
         <!-- 币种过滤 -->
         <div class="filter-flex-wrap">
           <select
-            v-model="selectedCurrency" class="text-xs px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:border-transparent focus:ring-2 focus:ring-blue-500"
+            v-model="filters.currency" class="text-xs px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:border-transparent focus:ring-2 focus:ring-blue-500"
             @change="handleCurrencyFilter"
           >
             <option value="">
@@ -293,12 +173,16 @@ function getAccountTypeName(type: AccountType): string {
         <!-- 排序选项 -->
         <div class="filter-flex-wrap">
           <select
-            v-model="sortBy" class="text-xs px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:border-transparent focus:ring-2 focus:ring-blue-500"
+            v-model="filters.sortBy" class="text-xs px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:border-transparent focus:ring-2 focus:ring-blue-500"
             @change="handleSortChange"
           >
+            <option value="updatedAt">
+              {{ t('date.updatedDate') }}
+            </option>
             <option value="createdAt">
               {{ t('date.createDate') }}
             </option>
+
             <option value="name">
               {{ t('financial.account.name') }}
             </option>
@@ -310,10 +194,10 @@ function getAccountTypeName(type: AccountType): string {
             </option>
           </select>
           <button
-            class="text-gray-600 p-1.5 transition-colors hover:text-blue-500" :title="sortOrder === 'asc' ? t('common.sorting.asc') : t('common.sorting.desc')"
+            class="text-gray-600 p-1.5 transition-colors hover:text-blue-500" :title="filters.sortOrder === 'asc' ? t('common.sorting.asc') : t('common.sorting.desc')"
             @click="toggleSortOrder"
           >
-            <LucideArrowUpDown class="btn-lucide" :class="sortOrder === 'desc' && 'rotate-180'" />
+            <LucideArrowUpDown class="btn-lucide" :class="filters.sortOrder === 'desc' && 'rotate-180'" />
           </button>
         </div>
 
@@ -332,12 +216,12 @@ function getAccountTypeName(type: AccountType): string {
       {{ t('common.loading') }}
     </div>
 
-    <div v-else-if="paginatedAccounts.length === 0" class="text-gray-400 flex-col h-50 flex-justify-center">
+    <div v-else-if="pagination.totalItems.value === 0" class="text-gray-400 flex-col h-50 flex-justify-center">
       <div class="text-6xl mb-4 opacity-50">
         <LucideCreditCard class="wh-5" />
       </div>
       <div class="text-base">
-        {{ filteredAccounts.length === 0 ? t('financial.messages.noPatternAccount') : t('financial.noAccount') }}
+        {{ pagination.totalItems.value === 0 ? t('financial.messages.noPatternAccount') : t('financial.noAccount') }}
       </div>
     </div>
 
@@ -349,7 +233,7 @@ function getAccountTypeName(type: AccountType): string {
       ]"
     >
       <div
-        v-for="account in paginatedAccounts"
+        v-for="account in pagination.paginatedItems.value"
         :key="account.serialNum"
         class="p-2 border rounded-lg bg-white transition-all hover:shadow-md"
         :class="{
@@ -409,12 +293,12 @@ function getAccountTypeName(type: AccountType): string {
     </div>
 
     <!-- 分页组件 -->
-    <div v-if="totalPages > 1" class="mt-4 flex justify-center">
+    <div v-if="pagination.totalPages.value > 1" class="mt-4 flex justify-center">
       <SimplePagination
-        :current-page="currentPage"
-        :total-pages="totalPages"
-        :total-items="filteredAccounts.length"
-        :page-size="pageSize"
+        :current-page="pagination.currentPage.value"
+        :total-pages="pagination.totalPages.value"
+        :total-items="pagination.totalItems.value"
+        :page-size="pagination.pageSize.value"
         :show-total="false"
         :show-page-size="true"
         :page-size-options="[4, 8, 12, 20]"

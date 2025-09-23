@@ -4,36 +4,44 @@ import type { AccountFilters } from '@/services/money/accounts';
 
 type UiAccountFilters = AccountFilters & {
   status?: 'all' | 'active' | 'inactive';
-  sortBy: 'updatedAt' | 'name' | 'balance' | 'type';
+  sortBy: 'updatedAt' | 'createdAt' | 'name' | 'balance' | 'type';
   sortOrder: 'asc' | 'desc';
 };
 
 export function useAccountFilters(accounts: () => Account[], defaultPageSize = 4) {
-  const allAccounts = [...accounts()];
   const filters = ref<UiAccountFilters>({
     status: 'all',
-    sortBy: 'balance',
+    sortBy: 'updatedAt',
     sortOrder: 'desc',
+    type: '',
+    currency: '',
   });
 
+  const allAccounts = computed(() => [...accounts()]);
   // 获取所有账户类型
   const accountTypes = computed(() => {
-    const types = new Set(allAccounts.map(account => account.type));
+    const types = new Set(allAccounts.value.map(account => account.type));
     return Array.from(types);
   });
 
   // 获取所有币种
   const currencies = computed(() => {
-    const currencies = new Set(allAccounts.map(account => account.currency?.code).filter(Boolean));
+    const currencies = new Set(
+      allAccounts.value.map(account => account.currency?.code).filter(Boolean),
+    );
     return Array.from(currencies);
   });
   // 计算统计数据
-  const activeAccounts = computed(() => allAccounts.filter(account => account.isActive).length);
-  const inactiveAccounts = computed(() => allAccounts.filter(account => !account.isActive).length);
+  const activeAccounts = computed(
+    () => allAccounts.value.filter(account => account.isActive).length,
+  );
+  const inactiveAccounts = computed(
+    () => allAccounts.value.filter(account => !account.isActive).length,
+  );
 
   // 过滤后的账户
   const filteredAccounts = computed(() => {
-    let filtered = allAccounts;
+    let filtered = allAccounts.value;
 
     // 状态过滤
     if (filters.value.status === 'active') {
@@ -53,7 +61,7 @@ export function useAccountFilters(accounts: () => Account[], defaultPageSize = 4
     }
 
     // 排序
-    filtered.sort((a, b) => {
+    return [...filtered].sort((a, b) => {
       let aValue, bValue;
 
       switch (filters.value.sortBy) {
@@ -62,8 +70,8 @@ export function useAccountFilters(accounts: () => Account[], defaultPageSize = 4
           bValue = b.name.toLowerCase();
           break;
         case 'balance':
-          aValue = a.balance;
-          bValue = b.balance;
+          aValue = Number.parseFloat(a.balance);
+          bValue = Number.parseFloat(b.balance);
           break;
         case 'type':
           aValue = a.type;
@@ -85,8 +93,6 @@ export function useAccountFilters(accounts: () => Account[], defaultPageSize = 4
       if (aValue > bValue) return filters.value.sortOrder === 'asc' ? 1 : -1;
       return 0;
     });
-
-    return filtered;
   });
   // 过滤器方法
   const setActiveFilter = (status: 'all' | 'active' | 'inactive') => {
@@ -120,7 +126,6 @@ export function useAccountFilters(accounts: () => Account[], defaultPageSize = 4
 
   return {
     filters,
-    filteredAccounts,
     accountTypes,
     currencies,
     pagination,

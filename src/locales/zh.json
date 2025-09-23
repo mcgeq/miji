@@ -364,6 +364,7 @@
   "date": {
     "date": "时间",
     "createDate": "创建时间",
+    "updatedDate": "更新时间",
     "reminderDate": "提醒时间",
     "startDate": "开始日期",
     "endDate": "结束日期",

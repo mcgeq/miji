@@ -25,7 +25,6 @@ const { t } = useI18n();
 const loading = ref(false);
 const moneyStore = useMoneyStore();
 const reminders = computed(() => moneyStore.reminders);
-
 const mediaQueries = useMediaQueriesStore();
 const {
   filters,
@@ -84,6 +83,11 @@ function getStatusText(reminder: BilReminder) {
     return t('common.status.overdue');
   return t('common.status.pending');
 }
+
+onMounted(() => {
+  loadReminders();
+},
+);
 
 // 暴露刷新方法给父组件
 defineExpose({
@@ -149,10 +153,14 @@ defineExpose({
           v-model="filters.category"
           class="text-sm px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
-          <option value="null">
+          <option value="undefined">
             {{ t('categories.allCategory') }}
           </option>
-          <option v-for="category in uniqueCategories" :key="category" :value="category">
+          <option
+            v-for="category in uniqueCategories"
+            :key="category"
+            :value="category"
+          >
             {{ category }}
           </option>
         </select>

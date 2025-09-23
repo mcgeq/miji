@@ -2,11 +2,7 @@ import { invokeCommand } from '@/types/api';
 import { BaseMapper } from './baseManager';
 import type { PagedResult } from './baseManager';
 import type { DateRange, PageQuery } from '@/schema/common';
-import type {
-  BilReminder,
-  BilReminderCreate,
-  BilReminderUpdate,
-} from '@/schema/money';
+import type { BilReminder, BilReminderCreate, BilReminderUpdate } from '@/schema/money';
 
 export interface BilReminderFilters {
   type?: string;
@@ -50,10 +46,7 @@ export class BilReminderMapper extends BaseMapper<
     }
   }
 
-  async update(
-    serialNum: string,
-    reminder: BilReminderUpdate,
-  ): Promise<BilReminder> {
+  async update(serialNum: string, reminder: BilReminderUpdate): Promise<BilReminder> {
     try {
       const result = await invokeCommand<BilReminder>('bil_reminder_update', {
         serialNum,
@@ -65,10 +58,7 @@ export class BilReminderMapper extends BaseMapper<
     }
   }
 
-  async updateActive(
-    serialNum: string,
-    isActive: boolean,
-  ): Promise<BilReminder> {
+  async updateActive(serialNum: string, isActive: boolean): Promise<BilReminder> {
     try {
       return await invokeCommand<BilReminder>('bil_reminder_update_active', {
         serialNum,
@@ -107,10 +97,9 @@ export class BilReminderMapper extends BaseMapper<
     },
   ): Promise<PagedResult<BilReminder>> {
     try {
-      const result = await invokeCommand<PagedResult<BilReminder>>(
-        'bil_reminder_list_paged',
-        { query },
-      );
+      const result = await invokeCommand<PagedResult<BilReminder>>('bil_reminder_list_paged', {
+        query,
+      });
       return result;
     } catch (error) {
       this.handleError('listPaged', error);
