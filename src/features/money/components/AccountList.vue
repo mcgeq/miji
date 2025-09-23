@@ -107,8 +107,13 @@ const filteredAccounts = computed(() => {
         break;
       case 'createdAt':
       default:
-        aValue = new Date(a.createdAt).getTime();
-        bValue = new Date(b.createdAt).getTime();
+        if (a.updatedAt && b.updatedAt) {
+          aValue = new Date(a.updatedAt).getTime();
+          bValue = new Date(b.updatedAt).getTime();
+        } else {
+          aValue = new Date(a.createdAt).getTime();
+          bValue = new Date(b.createdAt).getTime();
+        }
         break;
     }
 
