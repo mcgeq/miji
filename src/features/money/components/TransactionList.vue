@@ -77,12 +77,6 @@ const sortOptions = ref<SortOptions>({
   desc: true,
 });
 
-const isMobile = ref(window.innerWidth < 768);
-
-function updateIsMobile() {
-  isMobile.value = window.innerWidth < 768;
-}
-
 function toggleFilters() {
   showMoreFilters.value = !showMoreFilters.value;
 }
@@ -212,14 +206,7 @@ function getTransactionTypeName(type: TransactionType) {
 onMounted(() => {
   loadTransactions();
 });
-onMounted(() => {
-  window.addEventListener('resize', updateIsMobile);
-  updateIsMobile();
-});
 
-onUnmounted(() => {
-  window.removeEventListener('resize', updateIsMobile);
-});
 // 暴露刷新方法给父组件
 defineExpose({
   refresh: loadTransactions,
@@ -297,24 +284,24 @@ defineExpose({
           class="text-sm text-gray-700 px-3 py-1.5 rounded-md bg-gray-200 flex items-center hover:bg-gray-300"
           @click="toggleFilters"
         >
-          <LucideMoreHorizontal class="mr-1 wh-4" />
+          <LucideMoreHorizontal class="wh-4 mr-1" />
         </button>
         <button
           class="text-sm text-gray-700 px-3 py-1.5 rounded-md bg-gray-200 transition-colors hover:bg-gray-300"
           @click="resetFilters"
         >
-          <LucideRotateCcw class="mr-1 wh-4" />
+          <LucideRotateCcw class="wh-4 mr-1" />
         </button>
       </div>
     </div>
 
     <!-- 加载状态 -->
-    <div v-if="loading" class="text-gray-600 flex-justify-center h-25">
+    <div v-if="loading" class="text-gray-600 h-25 flex-justify-center">
       {{ t('common.loading') }}
     </div>
 
     <!-- 空状态 -->
-    <div v-else-if="transactions.length === 0" class="text-#999 flex-justify-center flex-col h-25">
+    <div v-else-if="transactions.length === 0" class="text-#999 flex-col h-25 flex-justify-center">
       <div class="text-6xl mb-4 opacity-50">
         <i class="icon-list" />
       </div>
@@ -446,70 +433,23 @@ defineExpose({
     </div>
 
     <!-- 分页组件 - 移动端优化版 -->
-    <div v-if="pagination.totalItems > 0" class="mt-4 flex justify-center">
-      <!-- 移动端紧凑分页 -->
-      <div v-if="isMobile" class="p-2 border rounded-lg bg-white flex gap-2 shadow-sm items-center justify-center md:hidden">
-        <!-- 上一页 -->
-        <button
-          :disabled="pagination.currentPage <= 1" class="text-gray-600 p-1.5 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-          @click="handlePageChange(pagination.currentPage - 1)"
-        >
-          <LucideChevronLeft class="h-4 w-4" />
-        </button>
-
-        <!-- 页码信息 -->
-        <span class="text-sm text-gray-700 px-2">
-          {{ pagination.currentPage }}/{{ pagination.totalPages }}
-        </span>
-
-        <!-- 下一页 -->
-        <button
-          :disabled="pagination.currentPage >= pagination.totalPages"
-          class="text-gray-600 p-1.5 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-          @click="handlePageChange(pagination.currentPage + 1)"
-        >
-          <LucideChevronRight class="h-4 w-4" />
-        </button>
-
-        <!-- 每页大小选择 -->
-        <select
-          :value="pagination.pageSize"
-          class="text-xs px-1 py-0.5 border border-gray-300 rounded bg-white"
-          @change="handlePageSizeChange(Number(($event.target as HTMLSelectElement).value))"
-        >
-          <option value="10">
-            10
-          </option>
-          <option value="20">
-            20
-          </option>
-          <option value="50">
-            50
-          </option>
-          <option value="100">
-            100
-          </option>
-        </select>
-      </div>
-
+    <div v-if="pagination.totalItems > pagination.pageSize" class="mt-4 flex justify-center">
       <!-- 桌面端完整分页 -->
-      <div v-else>
-        <SimplePagination
-          :current-page="pagination.currentPage"
-          :total-pages="pagination.totalPages"
-          :total-items="pagination.totalItems"
-          :page-size="pagination.pageSize"
-          :show-page-size="true"
-          :page-size-options="[10, 20, 50, 100]"
-          :compact="false"
-          :responsive="false"
-          :show-total="false"
-          :show-jump="true"
-          :show-first-last="true"
-          @page-change="handlePageChange"
-          @page-size-change="handlePageSizeChange"
-        />
-      </div>
+      <SimplePagination
+        :current-page="pagination.currentPage"
+        :total-pages="pagination.totalPages"
+        :total-items="pagination.totalItems"
+        :page-size="pagination.pageSize"
+        :show-page-size="true"
+        :page-size-options="[10, 20, 50, 100]"
+        :compact="false"
+        :responsive="false"
+        :show-total="false"
+        :show-jump="true"
+        :show-first-last="true"
+        @page-change="handlePageChange"
+        @page-size-change="handlePageSizeChange"
+      />
     </div>
   </div>
 </template>

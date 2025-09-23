@@ -9,6 +9,7 @@ declare global {
   const EffectScope: typeof import('vue')['EffectScope']
   const HealthDbError: typeof import('./stores/periodStore')['HealthDbError']
   const HealthStoreErrorCode: typeof import('./stores/periodStore')['HealthStoreErrorCode']
+  const MEDIA_BREAKPOINTS: typeof import('./stores/mediaQueries')['MEDIA_BREAKPOINTS']
   const MoneyStoreError: typeof import('./stores/moneyStore')['MoneyStoreError']
   const MoneyStoreErrorCode: typeof import('./stores/moneyStore')['MoneyStoreErrorCode']
   const acceptHMRUpdate: typeof import('pinia')['acceptHMRUpdate']
@@ -353,6 +354,9 @@ declare global {
   export type { LocaleState, SupportedLocale } from './stores/locales'
   import('./stores/locales')
   // @ts-ignore
+  export type { MediaBreakpoints } from './stores/mediaQueries'
+  import('./stores/mediaQueries')
+  // @ts-ignore
   export type { MoneyStoreErrorCode, MoneyStoreError } from './stores/moneyStore'
   import('./stores/moneyStore')
   // @ts-ignore
@@ -368,6 +372,7 @@ declare module 'vue' {
     readonly EffectScope: UnwrapRef<typeof import('vue')['EffectScope']>
     readonly HealthDbError: UnwrapRef<typeof import('./stores/periodStore')['HealthDbError']>
     readonly HealthStoreErrorCode: UnwrapRef<typeof import('./stores/periodStore')['HealthStoreErrorCode']>
+    readonly MEDIA_BREAKPOINTS: UnwrapRef<typeof import('./stores/mediaQueries')['MEDIA_BREAKPOINTS']>
     readonly MoneyStoreError: UnwrapRef<typeof import('./stores/moneyStore')['MoneyStoreError']>
     readonly MoneyStoreErrorCode: UnwrapRef<typeof import('./stores/moneyStore')['MoneyStoreErrorCode']>
     readonly acceptHMRUpdate: UnwrapRef<typeof import('pinia')['acceptHMRUpdate']>
