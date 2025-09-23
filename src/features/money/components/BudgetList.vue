@@ -26,6 +26,7 @@ const { t } = useI18n();
 const moneyStore = useMoneyStore();
 const loading = ref(false);
 const budgets = computed<Budget[]>(() => moneyStore.budgets);
+const mediaQueries = useMediaQueriesStore();
 
 const { filters, resetFilters, filteredBudgets, pagination } = useBudgetFilters(
   () => budgets.value,
@@ -234,7 +235,13 @@ defineExpose({
     </div>
 
     <!-- 预算网格 -->
-    <div v-else class="budget-grid mb-6 gap-5 grid w-full">
+    <div
+      v-else
+      class="budget-grid mb-6 gap-5 grid w-full"
+      :class="[
+        { 'grid-template-columns-320': !mediaQueries.isMobile },
+      ]"
+    >
       <div
         v-for="budget in decoratedBudgets"
         :key="budget.serialNum"

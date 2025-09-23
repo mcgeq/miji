@@ -15,3 +15,7 @@ body {
   background-color: var(--color-base-100);
   color: var(--color-base-content);
 }
+
+.grid-template-columns-320 {
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+}

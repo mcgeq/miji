@@ -31,6 +31,8 @@ const emit = defineEmits<{
 
 const { t } = useI18n();
 
+const mediaQueries = useMediaQueriesStore();
+
 // 过滤和分页状态
 const activeFilter = ref<'all' | 'active' | 'inactive'>('all');
 const selectedType = ref<string>('');
@@ -340,7 +342,11 @@ function getAccountTypeName(type: AccountType): string {
     </div>
 
     <div
-      v-else class="mb-6 gap-5 grid"
+      v-else
+      class="mb-6 gap-5 grid"
+      :class="[
+        { 'grid-template-columns-320': !mediaQueries.isMobile },
+      ]"
     >
       <div
         v-for="account in paginatedAccounts"

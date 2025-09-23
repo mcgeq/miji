@@ -26,6 +26,7 @@ const loading = ref(false);
 const moneyStore = useMoneyStore();
 const reminders = computed(() => moneyStore.reminders);
 
+const mediaQueries = useMediaQueriesStore();
 const {
   filters,
   resetFilters,
@@ -204,7 +205,13 @@ defineExpose({
     </div>
 
     <!-- 提醒网格 -->
-    <div v-else class="reminder-grid mb-6 gap-5 grid w-full">
+    <div
+      v-else
+      class="reminder-grid mb-6 gap-5 grid w-full"
+      :class="[
+        { 'grid-template-columns-320': !mediaQueries.isMobile },
+      ]"
+    >
       <div
         v-for="reminder in pagination.paginatedItems.value" :key="reminder.serialNum" class="reminder-card p-5 border rounded-lg bg-white shadow-md transition-shadow hover:shadow-lg" :class="[
           {
