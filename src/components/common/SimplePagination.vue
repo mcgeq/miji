@@ -1,5 +1,5 @@
 <!-- src/components/SimplePagination.vue -->
-<script lang="ts">
+<script lang="ts" setup>
 import {
   ChevronLeft,
   ChevronRight,
@@ -7,187 +7,122 @@ import {
   ChevronsRight,
 } from 'lucide-vue-next';
 import { useI18n } from 'vue-i18n';
+import { useMediaQueriesStore } from '@/stores/mediaQueries';
 
-export default defineComponent({
-  name: 'SimplePagination',
-  components: {
-    ChevronLeft,
-    ChevronRight,
-    ChevronsLeft,
-    ChevronsRight,
-  },
-  props: {
-    // 基础分页属性
-    currentPage: {
-      type: Number,
-      required: true,
-    },
-    totalPages: {
-      type: Number,
-      required: true,
-    },
-    totalItems: {
-      type: Number,
-      default: 0,
-    },
-    pageSize: {
-      type: Number,
-      default: 10,
-    },
+// 定义 props 类型
+interface Props {
+  currentPage: number;
+  totalPages: number;
+  totalItems?: number;
+  pageSize?: number;
+  showPageSize?: boolean;
+  showTotal?: boolean;
+  showJump?: boolean;
+  showFirstLast?: boolean;
+  compact?: boolean;
+  responsive?: boolean;
+  pageSizeOptions?: number[];
+  disabled?: boolean;
+}
 
-    // 显示选项
-    showPageSize: {
-      type: Boolean,
-      default: false,
-    },
-    showTotal: {
-      type: Boolean,
-      default: false,
-    },
-    showJump: {
-      type: Boolean,
-      default: true,
-    },
-    showFirstLast: {
-      type: Boolean,
-      default: true,
-    },
+// 定义 emits 类型
+interface Emits {
+  pageChange: [page: number];
+  pageSizeChange: [size: number];
+}
 
-    // 样式选项
-    compact: {
-      type: Boolean,
-      default: false,
-    },
-    responsive: {
-      type: Boolean,
-      default: true,
-    },
-
-    // 功能选项
-    pageSizeOptions: {
-      type: Array as PropType<number[]>,
-      default: () => [10, 20, 50, 100],
-    },
-    disabled: {
-      type: Boolean,
-      default: false,
-    },
-  },
-  emits: ['pageChange', 'pageSizeChange'],
-  setup(props, { emit }) {
-    const { t } = useI18n();
-
-    // 页码输入框的值
-    const pageInput = ref(props.currentPage);
-
-    // 内部页面大小状态
-    const internalPageSize = ref(props.pageSize);
-
-    // 按钮样式类
-    const buttonClasses = computed(() => [
-      'inline-flex items-center justify-center rounded-xl border border-gray-300',
-      'text-sm font-semibold text-gray-800 bg-gradient-to-b from-white via-gray-100 to-gray-200',
-      'shadow-[inset_0_1px_0_rgba(255,255,255,0.6),_0_2px_4px_rgba(0,0,0,0.1)]',
-      'transition-all duration-200 ease-in-out',
-      'hover:from-gray-100 hover:via-gray-200 hover:to-gray-300',
-      'hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.4),_0_4px_6px_rgba(0,0,0,0.15)]',
-      'active:translate-y-[1px] active:shadow-inner',
-      'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2',
-      'disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none',
-      props.compact ? 'px-2 py-1' : 'px-3 py-2',
-    ]);
-
-    // 监听当前页码变化，同步到输入框
-    watch(
-      () => props.currentPage,
-      newPage => {
-        pageInput.value = newPage;
-      },
-      { immediate: true },
-    );
-
-    // 监听页面大小变化
-    watch(
-      () => props.pageSize,
-      newSize => {
-        internalPageSize.value = newSize;
-      },
-      { immediate: true },
-    );
-
-    // 跳转到第一页
-    const goToFirst = () => {
-      if (props.disabled || props.currentPage <= 1)
-        return;
-      emit('pageChange', 1);
-    };
-
-    // 跳转到上一页
-    const goToPrev = () => {
-      if (props.disabled || props.currentPage <= 1)
-        return;
-      emit('pageChange', props.currentPage - 1);
-    };
-
-    // 跳转到下一页
-    const goToNext = () => {
-      if (props.disabled || props.currentPage >= props.totalPages)
-        return;
-      emit('pageChange', props.currentPage + 1);
-    };
-
-    // 跳转到最后一页
-    const goToLast = () => {
-      if (props.disabled || props.currentPage >= props.totalPages)
-        return;
-      emit('pageChange', props.totalPages);
-    };
-
-    // 处理页码跳转
-    const handlePageJump = () => {
-      if (props.disabled)
-        return;
-
-      const targetPage = pageInput.value;
-
-      // 验证页码范围
-      if (
-        targetPage >= 1
-        && targetPage <= props.totalPages
-        && targetPage !== props.currentPage
-      ) {
-        emit('pageChange', targetPage);
-      } else {
-        // 如果输入无效，恢复到当前页码
-        pageInput.value = props.currentPage;
-      }
-    };
-
-    // 处理每页大小变化
-    const handlePageSizeChange = () => {
-      if (props.disabled)
-        return;
-
-      const newSize = internalPageSize.value;
-      if (newSize !== props.pageSize) {
-        emit('pageSizeChange', newSize);
-      }
-    };
-
-    return {
-      t,
-      pageInput,
-      internalPageSize,
-      buttonClasses,
-      goToFirst,
-      goToPrev,
-      goToNext,
-      goToLast,
-      handlePageJump,
-      handlePageSizeChange,
-    };
-  },
+// 声明 props 和 emits
+const props = withDefaults(defineProps<Props>(), {
+  totalItems: 0,
+  pageSize: 10,
+  showPageSize: false,
+  showTotal: false,
+  showJump: true,
+  showFirstLast: true,
+  compact: false,
+  responsive: true,
+  pageSizeOptions: () => [10, 20, 50, 100],
 });
+
+const emit = defineEmits<Emits>();
+
+// 国际化
+const { t } = useI18n();
+const mediaQueries = useMediaQueriesStore();
+// 响应式状态
+const pageInput = ref(props.currentPage);
+const internalPageSize = ref(props.pageSize);
+
+// 按钮样式类
+const buttonClasses = computed(() => [
+  'inline-flex items-center justify-center rounded-xl border border-gray-300',
+  'text-sm font-semibold text-gray-800 bg-gradient-to-b from-white via-gray-100 to-gray-200',
+  'shadow-[inset_0_1px_0_rgba(255,255,255,0.6),_0_2px_4px_rgba(0,0,0,0.1)]',
+  'transition-all duration-200 ease-in-out',
+  'hover:from-gray-100 hover:via-gray-200 hover:to-gray-300',
+  'hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.4),_0_4px_6px_rgba(0,0,0,0.15)]',
+  'active:translate-y-[1px] active:shadow-inner',
+  'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2',
+  'disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none',
+  props.compact ? 'px-2 py-1' : 'px-3 py-2',
+]);
+
+// 监听当前页码变化
+watch(
+  () => props.currentPage,
+  newPage => {
+    pageInput.value = newPage;
+  },
+  { immediate: true },
+);
+
+// 监听页面大小变化
+watch(
+  () => props.pageSize,
+  newSize => {
+    internalPageSize.value = newSize;
+  },
+  { immediate: true },
+);
+
+// 导航方法
+function goToFirst() {
+  if (props.disabled || props.currentPage <= 1) return;
+  emit('pageChange', 1);
+}
+
+function goToPrev() {
+  if (props.disabled || props.currentPage <= 1) return;
+  emit('pageChange', props.currentPage - 1);
+}
+
+function goToNext() {
+  if (props.disabled || props.currentPage >= props.totalPages) return;
+  emit('pageChange', props.currentPage + 1);
+}
+
+function goToLast() {
+  if (props.disabled || props.currentPage >= props.totalPages) return;
+  emit('pageChange', props.totalPages);
+}
+
+// 跳转处理
+function handlePageJump() {
+  if (props.disabled) return;
+
+  const targetPage = pageInput.value;
+  if (targetPage >= 1 && targetPage <= props.totalPages && targetPage !== props.currentPage) {
+    emit('pageChange', targetPage);
+  } else {
+    pageInput.value = props.currentPage;
+  }
+}
+
+// 页面大小变化处理
+function handlePageSizeChange() {
+  if (props.disabled) return;
+  emit('pageSizeChange', internalPageSize.value);
+}
 </script>
 
 <template>
@@ -199,15 +134,18 @@ export default defineComponent({
   >
     <!-- 左侧：第一页/上一页按钮 -->
     <div class="flex gap-2">
-      <button
-        v-if="showFirstLast"
-        :disabled="currentPage <= 1 || disabled"
-        :aria-label="t('pagination.home')"
-        :class="buttonClasses"
-        @click="goToFirst"
-      >
-        <ChevronsLeft class="h-4 w-4" />
-      </button>
+      <div v-if="!mediaQueries.isMobile">
+        <button
+          v-if="showFirstLast"
+          :disabled="currentPage <= 1 || disabled"
+          :aria-label="t('pagination.home')"
+          :class="buttonClasses"
+          @click="goToFirst"
+        >
+          <ChevronsLeft class="h-4 w-4" />
+        </button>
+      </div>
+
       <button
         :disabled="currentPage <= 1 || disabled"
         :aria-label="t('pagination.prev')"
@@ -257,15 +195,17 @@ export default defineComponent({
       >
         <ChevronRight class="h-4 w-4" />
       </button>
-      <button
-        v-if="showFirstLast"
-        :disabled="currentPage >= totalPages || disabled"
-        :aria-label="t('pagination.last')"
-        :class="buttonClasses"
-        @click="goToLast"
-      >
-        <ChevronsRight class="h-4 w-4" />
-      </button>
+      <div v-if="!mediaQueries.isMobile">
+        <button
+          v-if="showFirstLast"
+          :disabled="currentPage >= totalPages || disabled"
+          :aria-label="t('pagination.last')"
+          :class="buttonClasses"
+          @click="goToLast"
+        >
+          <ChevronsRight class="h-4 w-4" />
+        </button>
+      </div>
     </div>
 
     <!-- 每页大小选择器 -->
@@ -287,5 +227,5 @@ export default defineComponent({
 </template>
 
 <style scoped lang="postcss">
-/* 保持原有样式，现在使用计算属性 */
+/* 保持原有样式 */
 </style>
