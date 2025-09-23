@@ -4,7 +4,6 @@ export function usePagination<T>(items: () => T[], defaultPageSize = 10) {
 
   const totalItems = computed(() => items().length);
   const totalPages = computed(() => Math.ceil(totalItems.value / pageSize.value));
-
   const paginatedItems = computed(() => {
     const start = (currentPage.value - 1) * pageSize.value;
     const end = start + pageSize.value;

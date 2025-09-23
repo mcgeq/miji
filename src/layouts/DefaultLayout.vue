@@ -37,7 +37,11 @@ onUnmounted(() => {
 <template>
   <div class="app-container">
     <Sidebar v-if="!isMobile" :menu="menuItems" @logout="logout" />
-    <div class="main-content" :class="{ 'with-bottom-nav': isMobile }">
+    <div
+      class="main-content"
+      :class="{ 'with-bottom-nav': isMobile }"
+      :style="{ marginLeft: !isMobile ? '3rem' : '0' }"
+    >
       <slot />
     </div>
     <MobileBottomNav v-if="isMobile" :menu="menuItems" />
@@ -56,6 +60,7 @@ onUnmounted(() => {
   flex-direction: column;
   background-color: #f3f4f6;
   min-height: 100vh;
+  transition: margin-left 0.3s ease;
 }
 
 .main-content.with-bottom-nav {

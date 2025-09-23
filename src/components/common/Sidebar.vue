@@ -54,7 +54,11 @@ function logout() {
   flex-direction: column;
   justify-content: space-between;
   width: 3rem; /* 12 */
-  min-height: 100vh;
+  height: 100vh; /* 覆盖整个视口高度 */
+  position: fixed; /* 固定定位 */
+  top: 0; /* 从顶部开始 */
+  left: 0; /* 左侧固定 */
+  z-index: 1000; /* 确保在最上层 */
   transition: all 0.3s ease-in-out;
 }
 

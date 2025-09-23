@@ -28,7 +28,7 @@ const loading = ref(false);
 const budgets = computed<Budget[]>(() => moneyStore.budgets);
 const mediaQueries = useMediaQueriesStore();
 
-const { filters, resetFilters, filteredBudgets, pagination } = useBudgetFilters(
+const { filters, resetFilters, pagination } = useBudgetFilters(
   () => budgets.value,
   4,
 );
@@ -50,18 +50,8 @@ async function loadBudgets() {
       sortOptions: sortOptions.value,
       filter: mapUIFiltersToAPIFilters(filters.value),
     };
-
-    const result = await moneyStore.getPagedBudgets(params);
-    pagination.totalItems.value = result.totalCount ?? 0;
-    pagination.totalPages.value = result.totalPages ?? 1;
-
-    // 可选：当前页超出总页数时重置
-    if (pagination.currentPage.value > pagination.totalPages.value) {
-      pagination.currentPage.value = pagination.totalPages.value || 1;
-    }
+    await moneyStore.getPagedBudgets(params);
   } catch (error) {
-    pagination.totalItems.value = 0;
-    pagination.totalPages.value = 0;
     Lg.e('Transaction', error);
   } finally {
     loading.value = false;
@@ -230,7 +220,7 @@ defineExpose({
         <i class="icon-target" />
       </div>
       <div class="text-sm">
-        {{ filteredBudgets.length === 0 ? t('financial.messages.noBudget') : t('messages.noPatternResult') }}
+        {{ pagination.totalItems.value === 0 ? t('financial.messages.noBudget') : t('messages.noPatternResult') }}
       </div>
     </div>
 
@@ -355,11 +345,11 @@ defineExpose({
     </div>
 
     <!-- 分页组件 -->
-    <div v-if="filteredBudgets.length > pagination.pageSize.value" class="flex justify-center">
+    <div v-if="pagination.totalPages.value > pagination.pageSize.value" class="flex justify-center">
       <SimplePagination
         :current-page="pagination.currentPage.value"
         :total-pages="pagination.totalPages.value"
-        :total-items="filteredBudgets.length"
+        :total-items="pagination.totalItems.value"
         :page-size="pagination.pageSize.value"
         @page-change="pagination.setPage"
       />

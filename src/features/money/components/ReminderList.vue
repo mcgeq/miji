@@ -53,15 +53,8 @@ async function loadReminders() {
       filter: {},
     };
 
-    const result = await moneyStore.getPagedBilReminders(params);
-    pagination.totalItems.value = result.totalCount ?? 0;
-    pagination.totalPages.value = result.totalPages ?? 1;
-    if (pagination.currentPage.value > pagination.totalPages.value) {
-      pagination.currentPage.value = pagination.totalPages.value || 1;
-    }
+    await moneyStore.getPagedBilReminders(params);
   } catch (error) {
-    pagination.totalItems.value = 0;
-    pagination.totalPages.value = 0;
     Lg.e('BilReminder', error);
   } finally {
     loading.value = false;
