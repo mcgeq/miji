@@ -142,7 +142,7 @@ defineExpose({
 
       <div class="filter-flex-wrap">
         <select
-          v-model="filters.repeatPeriod"
+          v-model="filters.repeatPeriodType"
           class="text-sm px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <option value="">

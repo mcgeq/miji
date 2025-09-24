@@ -39,7 +39,7 @@ pub struct BilReminderFilters {
     pub due_at: Option<DateTime<FixedOffset>>,
     pub bill_date: Option<DateTime<FixedOffset>>,
     pub remind_date: Option<DateTime<FixedOffset>>,
-    pub repeat_period: Option<String>,
+    pub repeat_period_type: Option<String>,
     pub is_paid: Option<bool>,
     pub priority: Option<String>,
     pub advance_value: Option<i32>,
@@ -190,8 +190,8 @@ impl Filter<entity::bil_reminder::Entity> for BilReminderFilters {
         add_filter_condition!(
             condition,
             self,
-            repeat_period,
-            entity::bil_reminder::Column::RepeatPeriod,
+            repeat_period_type,
+            entity::bil_reminder::Column::RepeatPeriodType,
             FilterOp::Eq
         );
         add_filter_condition!(

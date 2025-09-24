@@ -7,7 +7,6 @@ import type { PagedResult } from '@/services/money/baseManager';
 type ExtendedBilReminderFilters = BilReminderFilters & {
   status?: 'paid' | 'overdue' | 'pending' | '';
   dateRange?: 'today' | 'week' | 'month' | 'overdue' | '';
-  period?: string;
 };
 
 export function useBilReminderFilters(
@@ -18,7 +17,7 @@ export function useBilReminderFilters(
   const moneyStore = useMoneyStore();
   const filters = ref<ExtendedBilReminderFilters>({
     status: '',
-    period: '',
+    repeatPeriodType: undefined,
     category: undefined,
     dateRange: '',
     description: null,
@@ -77,8 +76,8 @@ export function useBilReminderFilters(
     }
 
     // schema字段：repeatPeriod
-    if (filters.value.period) {
-      result = result.filter(r => r.repeatPeriod.type === filters.value.period);
+    if (filters.value.repeatPeriodType) {
+      result = result.filter(r => r.repeatPeriodType === filters.value.repeatPeriodType);
     }
 
     // schema字段：category
@@ -120,7 +119,7 @@ export function useBilReminderFilters(
   function resetFilters() {
     filters.value = {
       status: '',
-      period: '',
+      repeatPeriodType: undefined,
       category: undefined,
       dateRange: '',
     };

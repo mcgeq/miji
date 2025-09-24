@@ -323,6 +323,7 @@ async function saveReminder() {
       dueAt: null,
       billDate: null,
       remindDate: null,
+      repeatPeriodType: 'None',
       repeatPeriod: null,
       isPaid: false,
       isDeleted: false,
@@ -343,6 +344,7 @@ async function saveReminder() {
       dueAt: form.dueAt,
       billDate: form.billDate,
       remindDate: form.remindDate,
+      repeatPeriodType: form.repeatPeriodType,
       repeatPeriod: form.repeatPeriod,
       isPaid: form.isPaid,
       priority: form.priority,
@@ -434,6 +436,7 @@ function getBilReminderDefault(): BilReminder {
     dueAt: DateUtils.getEndOfTodayISOWithOffset(),
     billDate: today,
     remindDate: today,
+    repeatPeriodType: 'None',
     repeatPeriod: { type: 'None' } as RepeatPeriod,
     isPaid: false,
     priority: PrioritySchema.enum.Medium,
@@ -457,6 +460,10 @@ watch(
     });
   },
 );
+
+watch(() => form.repeatPeriod, repeatPeriod => {
+  form.repeatPeriodType = repeatPeriod.type;
+});
 
 // 清理验证错误
 watch(

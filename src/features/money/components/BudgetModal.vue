@@ -76,6 +76,7 @@ function onSubmit() {
       accountSerialNum: form.accountSerialNum,
       amount: form.amount,
       currency: form.currency?.code,
+      repeatPeriodType: form.repeatPeriodType,
       repeatPeriod: form.repeatPeriod,
       startDate: form.startDate,
       endDate: form.endDate,
@@ -201,6 +202,7 @@ function getDefaultBudget(): Budget {
     description: '',
     amount: 0,
     currency: currency.value,
+    repeatPeriodType: 'None',
     repeatPeriod: { type: 'None' },
     startDate: day,
     endDate: DateUtils.addDays(day, 30),
@@ -264,6 +266,9 @@ watch(
   { immediate: true, deep: true },
 );
 
+watch(() => form.repeatPeriod, repeatPeriodType => {
+  form.repeatPeriodType = repeatPeriodType.type;
+});
 watch(
   () => form.alertEnabled,
   enabled => {

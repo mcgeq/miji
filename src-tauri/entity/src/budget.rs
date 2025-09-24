@@ -16,6 +16,7 @@ pub struct Model {
     #[sea_orm(column_type = "Decimal(Some((15, 2)))")]
     pub amount: Decimal,
     pub currency: String,
+    pub repeat_period_type: String,
     #[sea_orm(column_type = "JsonBinary")]
     pub repeat_period: Json,
     pub start_date: DateTimeWithTimeZone,

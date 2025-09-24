@@ -29,6 +29,8 @@ mod m20250914_212312_create_health_period_settings;
 mod m20250916_221212_create_categories;
 mod m20250918_115414_create_categories_alert;
 mod m20250918_121424_create_sub_categories_alert;
+mod m20250924_184622_create_bil_reminder_alter;
+mod m20250924_185222_create_budget_alert;
 mod m20251916_221213_create_sub_categories;
 mod m20251917_223412_create_sub_category_insert;
 
@@ -71,6 +73,8 @@ impl MigratorTrait for Migrator {
             Box::new(m20251917_223412_create_sub_category_insert::Migration),
             Box::new(m20250918_115414_create_categories_alert::Migration),
             Box::new(m20250918_121424_create_sub_categories_alert::Migration),
+            Box::new(m20250924_184622_create_bil_reminder_alter::Migration),
+            Box::new(m20250924_185222_create_budget_alert::Migration),
         ]
     }
 }

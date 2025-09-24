@@ -61,6 +61,12 @@ watch(filters, async () => {
   await handlePageChange(1);
 }, { deep: true });
 
+watch(() => filters.value.repeatPeriodType, repeatPeriodType => {
+  if (repeatPeriodType === 'undefined') {
+    filters.value.repeatPeriodType = undefined;
+  }
+});
+
 onMounted(() => {
   loadReminders();
 },
@@ -98,10 +104,10 @@ defineExpose({
 
       <div class="filter-flex-wrap">
         <select
-          v-model="filters.period"
+          v-model="filters.repeatPeriodType"
           class="text-sm px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
-          <option value="">
+          <option value="undefined">
             {{ t('common.actions.all') }}{{ t('todos.repeat.periodType') }}
           </option>
           <option value="None">
@@ -276,8 +282,8 @@ defineExpose({
 
         <div class="text-sm pt-4 border-t border-gray-200 space-y-2">
           <div class="flex justify-between">
-            <span class="text-gray-600"> {{ t('categories.category') }} </span>
-            <span class="text-gray-800">{{ reminder.category }}</span>
+            <span class="text-gray-600"> {{ t('common.misc.types') }} </span>
+            <span class="text-gray-800">{{ reminder.type }}</span>
           </div>
           <div class="flex justify-between">
             <span class="text-gray-600"> {{ t('date.createDate') }} </span>

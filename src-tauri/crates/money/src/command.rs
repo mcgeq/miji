@@ -519,6 +519,7 @@ pub async fn budget_list_paged(
     state: State<'_, AppState>,
     query: PagedQuery<BudgetFilter>,
 ) -> Result<ApiResponse<PagedResult<Budget>>, String> {
+    info!("budget_list_paged query {:?}", query);
     let service = get_budget_service();
     Ok(ApiResponse::from_result(
         service

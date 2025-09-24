@@ -50,6 +50,7 @@ export const BudgetSchema = z.object({
   description: DescriptionSchema,
   amount: z.number(),
   currency: CurrencySchema,
+  repeatPeriodType: z.string(),
   repeatPeriod: RepeatPeriodSchema,
   startDate: DateTimeSchema,
   endDate: DateTimeSchema,

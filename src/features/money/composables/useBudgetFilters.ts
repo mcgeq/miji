@@ -11,7 +11,7 @@ export interface UIFilters {
   accountSerialNum: string;
   name: string;
   amount?: number;
-  repeatPeriod: string;
+  repeatPeriodType: string;
   startDate: { start?: string; end?: string };
   endDate: { start?: string; end?: string };
   usedAmount?: number;
@@ -25,7 +25,7 @@ const initialFilters: UIFilters = {
   accountSerialNum: '',
   name: '',
   amount: undefined,
-  repeatPeriod: '',
+  repeatPeriodType: '',
   startDate: { start: undefined, end: undefined },
   endDate: { start: undefined, end: undefined },
   usedAmount: undefined,
@@ -39,7 +39,7 @@ export function mapUIFiltersToAPIFilters(ui: UIFilters): BudgetFilters {
     accountSerialNum: ui.accountSerialNum || undefined,
     name: ui.name || undefined,
     amount: ui.amount || undefined,
-    repeatPeriod: ui.repeatPeriod || undefined,
+    repeatPeriodType: ui.repeatPeriodType || undefined,
     startDate: ui.startDate?.start || ui.startDate?.end ? { ...ui.startDate } : undefined,
     endDate: ui.endDate?.start || ui.endDate?.end ? { ...ui.endDate } : undefined,
     usedAmount: ui.usedAmount || undefined,

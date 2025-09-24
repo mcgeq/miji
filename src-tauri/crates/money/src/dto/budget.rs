@@ -170,6 +170,7 @@ pub struct BudgetBase {
     pub name: String,
     pub description: Option<String>,
     pub amount: Decimal,
+    pub repeat_period_type: String,
     pub repeat_period: serde_json::Value,
     pub start_date: DateTime<FixedOffset>,
     pub end_date: DateTime<FixedOffset>,
@@ -234,6 +235,7 @@ pub struct BudgetUpdate {
     pub category: Option<String>,
     pub amount: Option<Decimal>,
     pub currency: Option<String>,
+    pub repeat_period_type: Option<String>,
     pub repeat_period: Option<String>,
     pub start_date: Option<DateTime<FixedOffset>>,
     pub end_date: Option<DateTime<FixedOffset>>,
@@ -376,6 +378,7 @@ impl TryFrom<BudgetCreate> for entity::budget::ActiveModel {
             amount: ActiveValue::Set(budget.amount),
             used_amount: ActiveValue::Set(budget.used_amount),
             currency: ActiveValue::Set(value.currency),
+            repeat_period_type: ActiveValue::Set(budget.repeat_period_type),
             repeat_period: ActiveValue::Set(budget.repeat_period),
             start_date: ActiveValue::Set(budget.start_date),
             end_date: ActiveValue::Set(budget.end_date),
@@ -425,6 +428,9 @@ impl TryFrom<BudgetUpdate> for entity::budget::ActiveModel {
                 .used_amount
                 .map_or(ActiveValue::NotSet, ActiveValue::Set),
             currency: value.currency.map_or(ActiveValue::NotSet, ActiveValue::Set),
+            repeat_period_type: value
+                .repeat_period_type
+                .map_or(ActiveValue::NotSet, ActiveValue::Set),
             repeat_period: value.repeat_period.map_or(ActiveValue::NotSet, |val| {
                 ActiveValue::Set(parse_json_field(
                     &val,
@@ -496,6 +502,7 @@ impl From<BudgetWithAccount> for Budget {
                 account_serial_num: budget.account_serial_num,
                 amount: budget.amount,
                 used_amount: budget.used_amount,
+                repeat_period_type: budget.repeat_period_type,
                 repeat_period: budget.repeat_period,
                 start_date: budget.start_date,
                 end_date: budget.end_date,

@@ -29,7 +29,7 @@ pub struct BudgetFilter {
     pub name: Option<String>,
     pub category: Option<String>,
     pub amount: Option<Decimal>,
-    pub repeat_period: Option<String>,
+    pub repeat_period_type: Option<String>,
     pub start_date: Option<DateRange>,
     pub end_date: Option<DateRange>,
     pub used_amount: Option<Decimal>,
@@ -56,8 +56,8 @@ impl Filter<entity::budget::Entity> for BudgetFilter {
         }
 
         // Repeat Period
-        if let Some(repeat_period) = &self.repeat_period {
-            condition = condition.add(entity::budget::Column::RepeatPeriod.eq(repeat_period));
+        if let Some(repeat_period) = &self.repeat_period_type {
+            condition = condition.add(entity::budget::Column::RepeatPeriodType.eq(repeat_period));
         }
 
         // Start Date (assuming ISO 8601 format)

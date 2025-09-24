@@ -18,6 +18,7 @@ pub struct BilReminderBase {
     pub due_at: DateTime<FixedOffset>,
     pub bill_date: Option<DateTime<FixedOffset>>,
     pub remind_date: DateTime<FixedOffset>,
+    pub repeat_period_type: String,
     pub repeat_period: serde_json::Value,
     pub is_paid: bool,
     pub priority: String,
@@ -59,6 +60,7 @@ pub struct BilReminderUpdate {
     pub due_at: Option<DateTime<FixedOffset>>,
     pub bill_date: Option<DateTime<FixedOffset>>,
     pub remind_date: Option<DateTime<FixedOffset>>,
+    pub repeat_period_type: Option<String>,
     pub repeat_period: Option<serde_json::Value>,
     pub is_paid: Option<bool>,
     pub priority: Option<String>,
@@ -85,6 +87,7 @@ impl TryFrom<BilReminderCreate> for entity::bil_reminder::ActiveModel {
             due_at: ActiveValue::Set(value.core.due_at),
             bill_date: ActiveValue::Set(value.core.bill_date),
             remind_date: ActiveValue::Set(value.core.remind_date),
+            repeat_period_type: ActiveValue::Set(value.core.repeat_period_type),
             repeat_period: ActiveValue::Set(value.core.repeat_period),
             is_paid: ActiveValue::Set(value.core.is_paid),
             priority: ActiveValue::Set(value.core.priority),
@@ -125,6 +128,9 @@ impl TryFrom<BilReminderUpdate> for entity::bil_reminder::ActiveModel {
                 .map_or(ActiveValue::NotSet, |v| ActiveValue::Set(Some(v))),
             remind_date: value
                 .remind_date
+                .map_or(ActiveValue::NotSet, ActiveValue::Set),
+            repeat_period_type: value
+                .repeat_period_type
                 .map_or(ActiveValue::NotSet, ActiveValue::Set),
             repeat_period: value
                 .repeat_period
@@ -191,6 +197,7 @@ impl From<entity::bil_reminder::Model> for BilReminder {
                 due_at: value.due_at,
                 bill_date: value.bill_date,
                 remind_date: value.remind_date,
+                repeat_period_type: value.repeat_period_type,
                 repeat_period: value.repeat_period,
                 is_paid: value.is_paid,
                 priority: value.priority,

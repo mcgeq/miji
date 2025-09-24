@@ -9,7 +9,7 @@ export interface BudgetFilters {
   accountSerialNum?: string;
   name?: string;
   amount?: number;
-  repeatPeriod?: string;
+  repeatPeriodType?: string;
   startDate?: DateRange;
   endDate?: DateRange;
   usedAmount?: number;
