@@ -112,6 +112,7 @@ static ACCOUNT_TYPE_CONFIGS: Lazy<Vec<AccountTypeConfig>> = Lazy::new(|| {
 /// 账户过滤器
 /// ---------------------------------------------
 #[derive(Debug, Validate, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct AccountFilter {
     pub name: Option<String>,
     pub r#type: Option<String>,

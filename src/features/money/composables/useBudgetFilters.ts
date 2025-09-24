@@ -71,6 +71,7 @@ export function useBudgetFilters(budgets: () => PagedResult<Budget>, defaultPage
         sortOptions: sortOptions.value,
         filter: mapUIFiltersToAPIFilters(filters.value),
       };
+
       await moneyStore.getPagedBudgets(params);
     } catch (error) {
       Lg.e('Transaction', error);

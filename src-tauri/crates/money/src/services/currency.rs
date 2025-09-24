@@ -16,6 +16,7 @@ use crate::{
 
 // Filter struct
 #[derive(Debug, Validate, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct CurrencyFilter {
     pub code: Option<String>,
     pub locale: Option<String>,

@@ -22,6 +22,7 @@ use crate::{
 
 // Filter struct
 #[derive(Debug, Validate, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct BudgetFilter {
     pub account_serial_num: Option<String>,
     #[validate(length(min = 2, max = 20))]
