@@ -5,15 +5,11 @@ import {
   Clock,
 } from 'lucide-vue-next';
 import SimplePagination from '@/components/common/SimplePagination.vue';
-import { useSort } from '@/composables/useSortable';
-import { SortDirection } from '@/schema/common';
 import { getRepeatTypeName } from '@/utils/common';
 import { DateUtils } from '@/utils/date';
-import { Lg } from '@/utils/debugLog';
 import { useBilReminderFilters } from '../composables/useBilReminderFilters';
 import { formatCurrency } from '../utils/money';
-import type { PageQuery } from '@/schema/common';
-import type { BilReminder, BilReminderFilters } from '@/schema/money';
+import type { BilReminder } from '@/schema/money';
 
 const emit = defineEmits<{
   edit: [reminder: BilReminder];
@@ -22,43 +18,27 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n();
-const loading = ref(false);
 const moneyStore = useMoneyStore();
-const reminders = computed(() => moneyStore.reminders);
+const reminders = computed(() => moneyStore.remindersPaged);
 const mediaQueries = useMediaQueriesStore();
 const {
+  loading,
   filters,
   resetFilters,
   uniqueCategories,
-  filteredReminders,
   pagination,
   getStatusClass,
   isOverdue,
+  loadReminders,
 } = useBilReminderFilters(() => reminders.value, 4);
 
-const { sortOptions } = useSort({
-  sortBy: undefined,
-  sortDir: SortDirection.Desc,
-  desc: true,
-  customOrderBy: undefined,
-});
+function handlePageSizeChange(size: number) {
+  pagination.pageSize.value = size;
+}
 
-async function loadReminders() {
-  loading.value = true;
-  try {
-    const params: PageQuery<BilReminderFilters> = {
-      currentPage: pagination.currentPage.value,
-      pageSize: pagination.pageSize.value,
-      sortOptions: sortOptions.value,
-      filter: {},
-    };
-
-    await moneyStore.getPagedBilReminders(params);
-  } catch (error) {
-    Lg.e('BilReminder', error);
-  } finally {
-    loading.value = false;
-  }
+async function handlePageChange(page: number) {
+  pagination.setPage(page);
+  await loadReminders();
 }
 
 function getStatusIcon(reminder: BilReminder) {
@@ -76,6 +56,10 @@ function getStatusText(reminder: BilReminder) {
     return t('common.status.overdue');
   return t('common.status.pending');
 }
+
+watch(filters, async () => {
+  await handlePageChange(1);
+}, { deep: true });
 
 onMounted(() => {
   loadReminders();
@@ -201,7 +185,7 @@ defineExpose({
         <i class="icon-bell" />
       </div>
       <div class="text-sm">
-        {{ filteredReminders.length === 0 ? t('messages.noReminder') : t('messages.noPatternResult') }}
+        {{ pagination.totalItems.value === 0 ? t('messages.noReminder') : t('messages.noPatternResult') }}
       </div>
     </div>
 
@@ -309,14 +293,16 @@ defineExpose({
 
     <!-- 分页组件 -->
     <div
-      v-if="filteredReminders.length > pagination.pageSize.value"
+      v-if="pagination.totalItems.value > pagination.pageSize.value"
       class="flex justify-center"
     >
       <SimplePagination
         :current-page="pagination.currentPage.value"
         :total-pages="pagination.totalPages.value"
-        :total-items="filteredReminders.length"
-        :page-size="pagination.pageSize.value" @page-change="pagination.setPage"
+        :total-items="pagination.totalItems.value"
+        :page-size="pagination.pageSize.value"
+        @page-change="handlePageChange"
+        @page-size-change="handlePageSizeChange"
       />
     </div>
   </div>

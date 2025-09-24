@@ -66,7 +66,6 @@ const buttonClasses = computed(() => [
   'disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none',
   props.compact ? 'px-2 py-1' : 'px-3 py-2',
 ]);
-
 // 监听当前页码变化
 watch(
   () => props.currentPage,
@@ -87,12 +86,12 @@ watch(
 
 // 导航方法
 function goToFirst() {
-  if (props.disabled || props.currentPage <= 1) return;
+  if (props.disabled || pageInput.value <= 1) return;
   emit('pageChange', 1);
 }
 
 function goToPrev() {
-  if (props.disabled || props.currentPage <= 1) return;
+  if (props.disabled || pageInput.value <= 1) return;
   emit('pageChange', props.currentPage - 1);
 }
 

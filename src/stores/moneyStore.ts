@@ -82,6 +82,7 @@ interface MoneyStoreState {
   accounts: Account[];
   transactions: Transaction[];
   budgets: Budget[];
+  remindersPaged: PagedResult<BilReminder>;
   reminders: BilReminder[];
   subCategorys: SubCategory[];
   categories: Category[];
@@ -100,6 +101,7 @@ export const useMoneyStore = defineStore('money', {
     budgets: [],
     subCategorys: [],
     categories: [],
+    remindersPaged: { rows: [], totalPages: 0, currentPage: 1, totalCount: 0, pageSize: 10 },
     reminders: [],
     lastFetchedSubCategories: null,
     lastFetchedCategories: null,
@@ -117,7 +119,7 @@ export const useMoneyStore = defineStore('money', {
     },
     activeAccounts: state => state.accounts.filter(account => account.isActive),
     activeBudgets: state => state.budgets.filter(budget => budget.isActive),
-    unpaidReminders: state => state.reminders.filter(reminder => !reminder.isPaid),
+    unpaidReminders: state => state.remindersPaged?.rows.filter(reminder => !reminder.isPaid),
     findAccount: state => (serialNum: string) => {
       return state.accounts.find(account => account.serialNum === serialNum);
     },
@@ -128,7 +130,7 @@ export const useMoneyStore = defineStore('money', {
       return state.budgets.find(budget => budget.serialNum === serialNum);
     },
     findReminder: state => (serialNum: string) => {
-      return state.reminders.find(reminder => reminder.serialNum === serialNum);
+      return state.remindersPaged?.rows.find(reminder => reminder.serialNum === serialNum);
     },
     subCategories: state => {
       return state.subCategorys.map(sub => ({
@@ -269,10 +271,24 @@ export const useMoneyStore = defineStore('money', {
       );
     },
 
-    async updateReminders() {
+    async updateReminders(paged: boolean) {
+      const query: PageQuery<BilReminderFilters> = {
+        currentPage: 1,
+        pageSize: 10,
+        sortOptions: {
+          desc: true,
+          sortDir: SortDirection.Desc,
+        },
+        filter: {},
+      };
+
       return this.withLoadingSafe(
         async () => {
-          this.reminders = await MoneyDb.listBilReminders();
+          if (paged) {
+            this.remindersPaged = await MoneyDb.listBilRemindersPaged(query);
+          } else {
+            this.reminders = await MoneyDb.listBilReminders();
+          }
         },
         '获取提醒列表失败',
         'listBilReminders',
@@ -559,7 +575,7 @@ export const useMoneyStore = defineStore('money', {
       return this.withLoadingSafe(
         async () => {
           const result = await MoneyDb.listBilRemindersPaged(query);
-          this.reminders = result.rows;
+          this.remindersPaged = result;
           return result;
         },
         '获取预算列表失败',
@@ -570,8 +586,14 @@ export const useMoneyStore = defineStore('money', {
 
     async getAllReminders(): Promise<BilReminder[]> {
       return this.withLoading(async () => {
-        await this.updateReminders();
+        await this.updateReminders(false);
         return this.reminders;
+      });
+    },
+    async getPagedReminders(): Promise<PagedResult<BilReminder>> {
+      return this.withLoading(async () => {
+        await this.updateReminders(true);
+        return this.remindersPaged;
       });
     },
 
@@ -579,7 +601,7 @@ export const useMoneyStore = defineStore('money', {
       return this.withLoadingSafe(
         async () => {
           const result = await MoneyDb.createBilReminder(reminder);
-          await this.updateReminders();
+          await this.updateReminders(true);
           return result;
         },
         '创建提醒失败',
@@ -592,7 +614,7 @@ export const useMoneyStore = defineStore('money', {
       return this.withLoadingSafe(
         async () => {
           const result = await MoneyDb.updateBilReminder(serialNum, reminder);
-          await this.updateReminders();
+          await this.updateReminders(true);
           return result;
         },
         '更新提醒失败',
@@ -605,7 +627,7 @@ export const useMoneyStore = defineStore('money', {
       return this.withLoadingSafe(
         async () => {
           await MoneyDb.deleteBilReminder(serialNum);
-          await this.updateReminders();
+          await this.updateReminders(true);
         },
         '删除提醒失败',
         'deleteBilReminder',
@@ -616,7 +638,7 @@ export const useMoneyStore = defineStore('money', {
     async markReminderPaid(serialNum: string, isPaid: boolean): Promise<void> {
       return this.withLoading(async () => {
         try {
-          const reminder = this.reminders.find(r => r.serialNum === serialNum);
+          const reminder = this.remindersPaged?.rows.find(r => r.serialNum === serialNum);
           if (!reminder) {
             const err = new MoneyStoreError(
               MoneyStoreErrorCode.NOT_FOUND,
@@ -632,10 +654,10 @@ export const useMoneyStore = defineStore('money', {
           reminder.updatedAt = new Date().toISOString();
 
           await MoneyDb.updateBilReminderActive(serialNum, isPaid);
-          await this.updateReminders();
+          await this.updateReminders(true);
         } catch (err) {
           // 回滚乐观更新
-          await this.updateReminders();
+          await this.updateReminders(true);
           throw this.handleError(err, '标记支付状态失败', 'updateBilReminder', 'BilReminder');
         }
       });
@@ -668,7 +690,7 @@ export const useMoneyStore = defineStore('money', {
           this.updateAccounts(),
           this.updateTransactions(),
           this.updateBudgets(),
-          this.updateReminders(),
+          this.updateReminders(false),
         ]);
       });
     },

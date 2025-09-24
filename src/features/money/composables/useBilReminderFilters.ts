@@ -1,5 +1,8 @@
-import { usePagination } from '@/composables/usePagination';
+import { SortDirection } from '@/schema/common';
+import { Lg } from '@/utils/debugLog';
+import type { PageQuery } from '@/schema/common';
 import type { BilReminder, BilReminderFilters } from '@/schema/money';
+import type { PagedResult } from '@/services/money/baseManager';
 
 type ExtendedBilReminderFilters = BilReminderFilters & {
   status?: 'paid' | 'overdue' | 'pending' | '';
@@ -8,14 +11,26 @@ type ExtendedBilReminderFilters = BilReminderFilters & {
 };
 
 export function useBilReminderFilters(
-  bilReminders: () => BilReminder[],
+  bilReminders: () => PagedResult<BilReminder>,
   defaultPageSize = 4,
 ) {
+  const loading = ref(false);
+  const moneyStore = useMoneyStore();
   const filters = ref<ExtendedBilReminderFilters>({
     status: '',
     period: '',
     category: undefined,
     dateRange: '',
+    description: null,
+    currency: null,
+    relatedTransactionSerialNum: null,
+  });
+
+  const { sortOptions } = useSort({
+    sortBy: undefined,
+    sortDir: SortDirection.Desc,
+    desc: true,
+    customOrderBy: undefined,
   });
 
   function isOverdue(reminder: BilReminder) {
@@ -44,8 +59,7 @@ export function useBilReminderFilters(
       }
       case 'month':
         return (
-          remindDate.getMonth() === now.getMonth() &&
-          remindDate.getFullYear() === now.getFullYear()
+          remindDate.getMonth() === now.getMonth() && remindDate.getFullYear() === now.getFullYear()
         );
       case 'overdue':
         return !reminder.isPaid && remindDate < now;
@@ -55,7 +69,7 @@ export function useBilReminderFilters(
   }
 
   const filteredReminders = computed(() => {
-    let result = [...bilReminders()];
+    let result = [...bilReminders().rows];
 
     // UI层：status
     if (filters.value.status) {
@@ -81,14 +95,27 @@ export function useBilReminderFilters(
   });
 
   const uniqueCategories = computed(() => {
-    const categories = bilReminders().map(r => r.category);
+    const categories = bilReminders().rows.map(r => r.category);
     return [...new Set(categories)].filter(Boolean);
   });
 
-  const pagination = usePagination<BilReminder>(
-    () => filteredReminders.value,
-    defaultPageSize,
-  );
+  const pagination = usePaginationFilters<BilReminder>(() => bilReminders(), defaultPageSize);
+  async function loadReminders() {
+    loading.value = true;
+    try {
+      const params: PageQuery<BilReminderFilters> = {
+        currentPage: pagination.currentPage.value,
+        pageSize: pagination.pageSize.value,
+        sortOptions: sortOptions.value,
+        filter: filters.value,
+      };
+      await moneyStore.getPagedBilReminders(params);
+    } catch (error) {
+      Lg.e('BilReminder', error);
+    } finally {
+      loading.value = false;
+    }
+  }
 
   function resetFilters() {
     filters.value = {
@@ -97,18 +124,10 @@ export function useBilReminderFilters(
       category: undefined,
       dateRange: '',
     };
-    pagination.setPage(1);
   }
 
-  watch(
-    filters,
-    () => {
-      pagination.setPage(1);
-    },
-    { deep: true },
-  );
-
   return {
+    loading,
     filters,
     resetFilters,
     uniqueCategories,
@@ -116,5 +135,6 @@ export function useBilReminderFilters(
     pagination,
     getStatusClass,
     isOverdue,
+    loadReminders,
   };
 }
