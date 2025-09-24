@@ -82,6 +82,7 @@ interface MoneyStoreState {
   accounts: Account[];
   transactions: Transaction[];
   budgets: Budget[];
+  budgetsPaged: PagedResult<Budget>;
   remindersPaged: PagedResult<BilReminder>;
   reminders: BilReminder[];
   subCategorys: SubCategory[];
@@ -99,6 +100,7 @@ export const useMoneyStore = defineStore('money', {
     accounts: [],
     transactions: [],
     budgets: [],
+    budgetsPaged: { rows: [], totalPages: 0, currentPage: 1, totalCount: 0, pageSize: 10 },
     subCategorys: [],
     categories: [],
     remindersPaged: { rows: [], totalPages: 0, currentPage: 1, totalCount: 0, pageSize: 10 },
@@ -118,7 +120,7 @@ export const useMoneyStore = defineStore('money', {
         .reduce((sum, account) => sum + Number.parseFloat(account.balance), 0);
     },
     activeAccounts: state => state.accounts.filter(account => account.isActive),
-    activeBudgets: state => state.budgets.filter(budget => budget.isActive),
+    activeBudgets: state => state.budgetsPaged.rows.filter(budget => budget.isActive),
     unpaidReminders: state => state.remindersPaged?.rows.filter(reminder => !reminder.isPaid),
     findAccount: state => (serialNum: string) => {
       return state.accounts.find(account => account.serialNum === serialNum);
@@ -127,7 +129,7 @@ export const useMoneyStore = defineStore('money', {
       return state.transactions.find(transaction => transaction.serialNum === serialNum);
     },
     findBudget: state => (serialNum: string) => {
-      return state.budgets.find(budget => budget.serialNum === serialNum);
+      return state.budgetsPaged.rows.find(budget => budget.serialNum === serialNum);
     },
     findReminder: state => (serialNum: string) => {
       return state.remindersPaged?.rows.find(reminder => reminder.serialNum === serialNum);
@@ -242,7 +244,7 @@ export const useMoneyStore = defineStore('money', {
         async () => {
           const result = await MoneyDb.listTransactionsPaged(query);
           this.transactions = result.rows;
-          await this.updateBudgets();
+          await this.updateBudgets(true);
         },
         '获取交易列表失败',
         'listTransactions',
@@ -250,7 +252,7 @@ export const useMoneyStore = defineStore('money', {
       );
     },
 
-    async updateBudgets() {
+    async updateBudgets(paged: boolean) {
       const query: PageQuery<BudgetFilters> = {
         currentPage: 1,
         pageSize: 10,
@@ -262,8 +264,13 @@ export const useMoneyStore = defineStore('money', {
       };
       return this.withLoadingSafe(
         async () => {
-          const result = await MoneyDb.listBudgetsPaged(query);
-          this.budgets = result.rows;
+          if (paged) {
+            const result = await MoneyDb.listBudgetsPaged(query);
+            this.budgetsPaged = result;
+          } else {
+            const result = await MoneyDb.listBudgets();
+            this.budgets = result;
+          }
         },
         '获取预算列表失败',
         'listBudgets',
@@ -509,7 +516,7 @@ export const useMoneyStore = defineStore('money', {
       return this.withLoadingSafe(
         async () => {
           const result = await MoneyDb.listBudgetsPaged(query);
-          this.budgets = result.rows;
+          this.budgetsPaged = result;
           return result;
         },
         '获取预算列表失败',
@@ -522,7 +529,7 @@ export const useMoneyStore = defineStore('money', {
       return this.withLoadingSafe(
         async () => {
           const result = await MoneyDb.createBudget(budget);
-          await this.updateBudgets();
+          await this.updateBudgets(true);
           return result;
         },
         '创建预算失败',
@@ -535,7 +542,7 @@ export const useMoneyStore = defineStore('money', {
       return this.withLoadingSafe(
         async () => {
           const result = await MoneyDb.updateBudget(serialNum, budget);
-          await this.updateBudgets();
+          await this.updateBudgets(true);
           return result;
         },
         '更新预算失败',
@@ -548,7 +555,7 @@ export const useMoneyStore = defineStore('money', {
       return this.withLoadingSafe(
         async () => {
           await MoneyDb.deleteBudget(serialNum);
-          await this.updateBudgets();
+          await this.updateBudgets(true);
         },
         '删除预算失败',
         'deleteBudget',
@@ -560,7 +567,7 @@ export const useMoneyStore = defineStore('money', {
       return this.withLoadingSafe(
         async () => {
           await MoneyDb.updateBudgetActive(serialNum, isActive);
-          await this.updateBudgets();
+          await this.updateBudgets(true);
         },
         '切换预算状态失败',
         'updateBudget',
@@ -689,7 +696,7 @@ export const useMoneyStore = defineStore('money', {
         await Promise.all([
           this.updateAccounts(),
           this.updateTransactions(),
-          this.updateBudgets(),
+          this.updateBudgets(true),
           this.updateReminders(false),
         ]);
       });

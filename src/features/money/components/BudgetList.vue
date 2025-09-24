@@ -1,15 +1,10 @@
 <script setup lang="ts">
 import SimplePagination from '@/components/common/SimplePagination.vue';
-import { useSort } from '@/composables/useSortable';
-import { SortDirection } from '@/schema/common';
 import { getRepeatTypeName } from '@/utils/common';
 import { DateUtils } from '@/utils/date';
-import { Lg } from '@/utils/debugLog';
-import { mapUIFiltersToAPIFilters, useBudgetFilters } from '../composables/useBudgetFilters';
+import { useBudgetFilters } from '../composables/useBudgetFilters';
 import { formatCurrency } from '../utils/money';
-import type { PageQuery } from '@/schema/common';
 import type { Budget } from '@/schema/money';
-import type { BudgetFilters } from '@/services/money/budgets';
 
 type BudgetVM = Budget & {
   displayCategories: string;
@@ -24,45 +19,19 @@ const emit = defineEmits<{
 
 const { t } = useI18n();
 const moneyStore = useMoneyStore();
-const loading = ref(false);
-const budgets = computed<Budget[]>(() => moneyStore.budgets);
+const budgets = computed(() => moneyStore.budgetsPaged);
 const mediaQueries = useMediaQueriesStore();
 
-const { filters, resetFilters, pagination } = useBudgetFilters(
+const { loading, filters, resetFilters, pagination, loadBudgets } = useBudgetFilters(
   () => budgets.value,
   4,
 );
-
-const { sortOptions } = useSort({
-  sortBy: undefined,
-  sortDir: SortDirection.Desc,
-  desc: true,
-  customOrderBy: undefined,
-});
-
-// 加载交易数据
-async function loadBudgets() {
-  loading.value = true;
-  try {
-    const params: PageQuery<BudgetFilters> = {
-      currentPage: pagination.currentPage.value,
-      pageSize: pagination.pageSize.value,
-      sortOptions: sortOptions.value,
-      filter: mapUIFiltersToAPIFilters(filters.value),
-    };
-    await moneyStore.getPagedBudgets(params);
-  } catch (error) {
-    Lg.e('Transaction', error);
-  } finally {
-    loading.value = false;
-  }
-}
 
 const categories = computed(() => moneyStore.subCategories);
 // 获取唯一分类
 const uniqueCategories = computed(() => {
   const categorySet = new Set<string>();
-  for (const budget of budgets.value) {
+  for (const budget of budgets.value.rows) {
     for (const category of budget.categoryScope) {
       categorySet.add(category);
     }
@@ -104,6 +73,19 @@ function shouldHighlightRed(budget: Budget) {
 function getRemainingAmount(budget: Budget) {
   return (Number(budget.amount) - Number(budget.usedAmount)).toString();
 }
+async function handlePageChange(page: number) {
+  pagination.setPage(page);
+  await loadBudgets();
+}
+
+function handlePageSizeChange(size: number) {
+  pagination.pageSize.value = size;
+}
+
+watch(filters, async () => {
+  await handlePageChange(1);
+}, { deep: true });
+
 // 组件挂载时加载数据
 onMounted(() => {
   loadBudgets();
@@ -345,13 +327,14 @@ defineExpose({
     </div>
 
     <!-- 分页组件 -->
-    <div v-if="pagination.totalPages.value > pagination.pageSize.value" class="flex justify-center">
+    <div v-if="pagination.totalItems.value > pagination.pageSize.value" class="flex justify-center">
       <SimplePagination
         :current-page="pagination.currentPage.value"
         :total-pages="pagination.totalPages.value"
         :total-items="pagination.totalItems.value"
         :page-size="pagination.pageSize.value"
-        @page-change="pagination.setPage"
+        @page-change="handlePageChange"
+        @page-size-change="handlePageSizeChange"
       />
     </div>
   </div>

@@ -1,5 +1,8 @@
-import { usePagination } from '@/composables/usePagination';
+import { SortDirection } from '@/schema/common';
+import { Lg } from '@/utils/debugLog';
+import type { PageQuery } from '@/schema/common';
 import type { Budget } from '@/schema/money';
+import type { PagedResult } from '@/services/money/baseManager';
 import type { BudgetFilters } from '@/services/money/budgets';
 
 export interface UIFilters {
@@ -46,29 +49,35 @@ export function mapUIFiltersToAPIFilters(ui: UIFilters): BudgetFilters {
   };
 }
 
-export function useBudgetFilters(budgets: () => Budget[], defaultPageSize = 4) {
+export function useBudgetFilters(budgets: () => PagedResult<Budget>, defaultPageSize = 4) {
   const filters = ref<UIFilters>({ ...initialFilters });
-
-  const filteredBudgets = computed(() => {
-    let result = [...budgets()] as Budget[];
-
-    if (filters.value.isActive === 'active') result = result.filter(b => b.isActive);
-    else if (filters.value.isActive === 'inactive') result = result.filter(b => !b.isActive);
-
-    if (filters.value.repeatPeriod) {
-      result = result.filter(b => b.repeatPeriod.type === filters.value.repeatPeriod);
-    }
-    if (filters.value.category) {
-      result = result.filter(b => b.categoryScope.includes(filters.value.category ?? ''));
-    }
-    result = result.sort((a, b) => {
-      if (a.isActive === b.isActive) return 0; // 相同时保持原有顺序
-      return a.isActive ? -1 : 1; // true 排前面，false 排后面
-    });
-    return result;
+  const loading = ref(false);
+  const moneyStore = useMoneyStore();
+  const { sortOptions } = useSort({
+    sortBy: undefined,
+    sortDir: SortDirection.Desc,
+    desc: true,
+    customOrderBy: undefined,
   });
 
-  const pagination = usePagination<Budget>(() => filteredBudgets.value, defaultPageSize);
+  const pagination = usePaginationFilters<Budget>(() => budgets(), defaultPageSize);
+  // 加载交易数据
+  async function loadBudgets() {
+    loading.value = true;
+    try {
+      const params: PageQuery<BudgetFilters> = {
+        currentPage: pagination.currentPage.value,
+        pageSize: pagination.pageSize.value,
+        sortOptions: sortOptions.value,
+        filter: mapUIFiltersToAPIFilters(filters.value),
+      };
+      await moneyStore.getPagedBudgets(params);
+    } catch (error) {
+      Lg.e('Transaction', error);
+    } finally {
+      loading.value = false;
+    }
+  }
 
   function resetFilters() {
     filters.value = structuredClone(initialFilters);
@@ -77,9 +86,10 @@ export function useBudgetFilters(budgets: () => Budget[], defaultPageSize = 4) {
 
   return {
     filters,
-    resetFilters,
-    filteredBudgets,
+    loading,
     pagination,
+    loadBudgets,
     mapUIFiltersToAPIFilters,
+    resetFilters,
   };
 }
