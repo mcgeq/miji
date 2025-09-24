@@ -118,25 +118,21 @@ function onSubmit() {
       return _.defaultTo(value, defaultValues[key] ?? null);
     });
 
-    const createData = _.omit(formattedData, 'serialNum');
-    if (createData.amount) createData.amount = Number(createData.amount);
-    if (createData.usedAmount) createData.usedAmount = Number(createData.usedAmount);
-    if (createData.currentPeriodUsed) createData.currentPeriodUsed = Number(createData.currentPeriodUsed);
-    if (createData.progress) createData.progress = Number(createData.progress);
-    if (createData.priority) createData.priority = Math.round(Number(createData.priority));
-    createData.currentPeriodUsed = createData.currentPeriodUsed || 0;
-    createData.progress = createData.progress || 0;
-    createData.priority = createData.priority || 0;
-    createData.autoRollover = createData.autoRollover || false;
-    createData.reminders = createData.reminders || JSON.stringify([]);
-    createData.tags = createData.tags || JSON.stringify([]);
-    createData.rolloverHistory = createData.rolloverHistory || JSON.stringify([]);
-    createData.attachments = createData.attachments || JSON.stringify([]);
+    // 2. 直接基于 formattedData 做类型转换和兜底（替换原 createData 的逻辑）
+    if (formattedData.amount != null) formattedData.amount = Number(formattedData.amount);
+    if (formattedData.usedAmount != null) formattedData.usedAmount = Number(formattedData.usedAmount);
+    if (formattedData.currentPeriodUsed != null) formattedData.currentPeriodUsed = Number(formattedData.currentPeriodUsed);
+    if (formattedData.progress != null) formattedData.progress = Number(formattedData.progress);
+    if (formattedData.priority != null) formattedData.priority = Math.round(Number(formattedData.priority));
 
+    // 兜底默认值（确保字段符合接口要求）
+    formattedData.currentPeriodUsed = formattedData.currentPeriodUsed ?? 0;
+    formattedData.progress = formattedData.progress ?? 0;
+    formattedData.priority = formattedData.priority ?? 0;
+    formattedData.autoRollover = formattedData.autoRollover ?? false;
     if (props.budget) {
       const changes = _.omitBy(formattedData, (value: unknown, key: string) =>
         _.isEqual(value, _.get(props.budget, key)));
-      const safeChanges = _.omit(changes, 'serialNum');
       // 特殊处理需要序列化为JSON的字段
       const jsonFields = [
         'repeatPeriod',
@@ -150,7 +146,7 @@ function onSubmit() {
         'attachments',
         'tags',
       ];
-      const serializedChanges = _.mapValues(safeChanges, (value, key) => {
+      const serializedChanges = _.mapValues(changes, (value, key) => {
         if (jsonFields.includes(key) && value !== null && value !== undefined) {
           try {
             return JSON.stringify(value);
@@ -161,11 +157,11 @@ function onSubmit() {
         return value;
       });
       if (!_.isEmpty(serializedChanges)) {
-        const budgetUpdate = BudgetUpdateSchema.parse(safeChanges);
+        const budgetUpdate = BudgetUpdateSchema.parse(changes);
         emit('update', props.budget.serialNum, budgetUpdate);
       }
     } else {
-      const budgetCreate = BudgetCreateSchema.parse(createData);
+      const budgetCreate = BudgetCreateSchema.parse(formattedData);
       emit('save', budgetCreate);
     }
     closeModal();
