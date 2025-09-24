@@ -7,6 +7,7 @@ use common::{
     paginations::{Filter, PagedQuery, PagedResult},
     utils::date::DateUtils,
 };
+use entity::localize::LocalizeModel;
 use macros::add_filter_condition;
 use sea_orm::{ActiveValue, ColumnTrait, Condition, DbConn, prelude::async_trait::async_trait};
 use serde::{Deserialize, Serialize};
@@ -125,6 +126,15 @@ impl CrudConverter<entity::bil_reminder::Entity, BilReminderCreate, BilReminderU
 
     fn table_name(&self) -> &'static str {
         "bil_reminder"
+    }
+}
+
+impl BilReminderConverter {
+    pub fn model_with_relations(
+        &self,
+        model: entity::bil_reminder::Model,
+    ) -> MijiResult<entity::bil_reminder::Model> {
+        Ok(model.to_local())
     }
 }
 
@@ -254,11 +264,13 @@ impl
         db: &DbConn,
         data: BilReminderCreate,
     ) -> MijiResult<entity::bil_reminder::Model> {
-        self.inner.create(db, data).await
+        let model = self.inner.create(db, data).await?;
+        self.converter().model_with_relations(model)
     }
 
     async fn get_by_id(&self, db: &DbConn, id: String) -> MijiResult<entity::bil_reminder::Model> {
-        self.inner.get_by_id(db, id).await
+        let model = self.inner.get_by_id(db, id).await?;
+        self.converter().model_with_relations(model)
     }
 
     async fn update(
@@ -267,7 +279,8 @@ impl
         id: String,
         data: BilReminderUpdate,
     ) -> MijiResult<entity::bil_reminder::Model> {
-        self.inner.update(db, id, data).await
+        let model = self.inner.update(db, id, data).await?;
+        self.converter().model_with_relations(model)
     }
 
     async fn delete(&self, db: &DbConn, id: String) -> MijiResult<()> {
@@ -275,7 +288,11 @@ impl
     }
 
     async fn list(&self, db: &DbConn) -> MijiResult<Vec<entity::bil_reminder::Model>> {
-        self.inner.list(db).await
+        let models = self.inner.list(db).await?;
+        models
+            .into_iter()
+            .map(|m| self.converter().model_with_relations(m))
+            .collect()
     }
 
     async fn list_with_filter(
@@ -283,7 +300,11 @@ impl
         db: &DbConn,
         filter: BilReminderFilters,
     ) -> MijiResult<Vec<entity::bil_reminder::Model>> {
-        self.inner.list_with_filter(db, filter).await
+        let models = self.inner.list_with_filter(db, filter).await?;
+        models
+            .into_iter()
+            .map(|m| self.converter().model_with_relations(m))
+            .collect()
     }
 
     async fn list_paged(
@@ -291,7 +312,20 @@ impl
         db: &DbConn,
         query: PagedQuery<BilReminderFilters>,
     ) -> MijiResult<PagedResult<entity::bil_reminder::Model>> {
-        self.inner.list_paged(db, query).await
+        let paged = self.inner.list_paged(db, query).await?;
+        let rows_with_relations = paged
+            .rows
+            .into_iter()
+            .map(|m| self.converter().model_with_relations(m))
+            .collect::<MijiResult<Vec<_>>>()?;
+
+        Ok(PagedResult {
+            rows: rows_with_relations,
+            total_count: paged.total_count,
+            current_page: paged.current_page,
+            page_size: paged.page_size,
+            total_pages: paged.total_pages,
+        })
     }
 
     async fn create_batch(

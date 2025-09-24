@@ -20,3 +20,4 @@ tracing = { workspace = true }
 once_cell = { workspace = true }
 tokio = { workspace = true }
 macros = { workspace = true }
+futures = { workspace = true }

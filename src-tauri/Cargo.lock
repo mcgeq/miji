@@ -2966,6 +2966,7 @@ dependencies = [
  "chrono",
  "common",
  "entity",
+ "futures",
  "lazy_static",
  "macros",
  "num-traits",

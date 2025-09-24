@@ -5,7 +5,7 @@ import {
   Clock,
 } from 'lucide-vue-next';
 import SimplePagination from '@/components/common/SimplePagination.vue';
-import { getRepeatTypeName } from '@/utils/common';
+import { getRepeatTypeName, lowercaseFirstLetter } from '@/utils/common';
 import { DateUtils } from '@/utils/date';
 import { useBilReminderFilters } from '../composables/useBilReminderFilters';
 import { formatCurrency } from '../utils/money';
@@ -271,7 +271,7 @@ defineExpose({
           </div>
           <div class="text-sm flex justify-between">
             <span class="text-gray-600">{{ t('date.reminderDate') }}</span>
-            <span class="text-gray-800">{{ DateUtils.formatDateTime(reminder.remindDate) }}</span>
+            <span class="text-gray-800">{{ DateUtils.formatDate(reminder.remindDate) }}</span>
           </div>
         </div>
 
@@ -283,7 +283,7 @@ defineExpose({
         <div class="text-sm pt-4 border-t border-gray-200 space-y-2">
           <div class="flex justify-between">
             <span class="text-gray-600"> {{ t('common.misc.types') }} </span>
-            <span class="text-gray-800">{{ reminder.type }}</span>
+            <span class="text-gray-800">{{ t(`financial.reminder.types.${lowercaseFirstLetter(reminder.type)}`) }}</span>
           </div>
           <div class="flex justify-between">
             <span class="text-gray-600"> {{ t('date.createDate') }} </span>
