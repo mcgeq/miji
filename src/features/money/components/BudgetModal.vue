@@ -391,11 +391,15 @@ onMounted(async () => {
           </label>
           <ColorSelector v-model="form.color" :color-names="colorNameMap" />
         </div>
-        <div class="mb-4 flex items-center justify-between">
+        <div class="mb-2 flex items-center justify-between">
           <!-- 左边复选框 -->
           <div class="w-1/3">
             <label class="flex items-center">
-              <input v-model="form.alertEnabled" type="checkbox" class="modal-input-select mr-2">
+              <input
+                v-model="form.alertEnabled"
+                type="checkbox"
+                class="checkbox-radius"
+              >
               <span class="text-sm text-gray-700 font-medium">
                 {{ t('financial.budget.overBudgetAlert') }}
               </span>

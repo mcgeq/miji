@@ -102,8 +102,6 @@ const form = reactive<Account>({
   ...defaultAccount,
   ...(props.account ? JSON.parse(JSON.stringify(props.account)) : {}),
 });
-const isActive = computed(() => form.isActive === true);
-const isShared = computed(() => form.isShared === true);
 
 // 同步 currency 对象的 locale 和 symbol
 function syncCurrency(code: string) {
@@ -326,8 +324,7 @@ watch(() => form.initialBalance, newBalance => {
               <input
                 v-model="form.isShared"
                 type="checkbox"
-                class="text-gray-900 mr-2 px-2 py-0 border border-gray-300 rounded-full h-6 w-6 transition-all duration-200 dark:text-white focus:outline-none dark:border-gray-600 focus:border-transparent dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 placeholder-gray-400 dark:placeholder-gray-500"
-                :class="isShared ? 'bg-blue-500 border-gray-600' : 'bg-white'"
+                class="checkbox-radius"
               >
               <span class="text-sm text-gray-700 font-medium">{{ t('financial.account.shared') }}</span>
             </label>
@@ -337,8 +334,7 @@ watch(() => form.initialBalance, newBalance => {
               <input
                 v-model="form.isActive"
                 type="checkbox"
-                class="text-gray-900 mr-2 px-2 py-0 border border-gray-300 rounded-full h-6 w-6 transition-all duration-200 dark:text-white focus:outline-none dark:border-gray-600 focus:border-transparent dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 placeholder-gray-400 dark:placeholder-gray-500"
-                :class="isActive ? 'bg-blue-500 border-gray-600' : 'bg-white'"
+                class="checkbox-radius"
               >
               <span class="text-sm text-gray-500 font-medium">{{ t('financial.account.activate') }}</span>
             </label>
@@ -380,4 +376,62 @@ watch(() => form.initialBalance, newBalance => {
 </template>
 
 <style scoped lang="postcss">
+.checkbox-radius {
+  -webkit-appearance: none; /* 去掉浏览器默认样式 */
+  appearance: none;
+  display: inline-block;
+  height: 1.5rem;           /* h-6 */
+  width: 1.5rem;            /* w-6 */
+  border-radius: 50%;        /* rounded-full */
+  margin-left: 0.5rem;      /* ml-2 */
+  margin-right: 0.5rem;     /* mr-2 */
+  padding-top: 0;           /* py-0 */
+  padding-bottom: 0;        /* py-0 */
+  padding-left: 0.5rem;     /* px-2 */
+  padding-right: 0.5rem;    /* px-2 */
+  border: 1px solid #D1D5DB; /* border-gray-300 */
+  color: #111827;           /* text-gray-900 */
+  background-color: #ffffff; /* 默认背景 */
+  cursor: pointer;
+  transition: all 0.2s ease-in-out; /* transition-all duration-200 */
+  vertical-align: middle;
+}
+.checkbox-radius:focus {
+  outline: none; /* 去掉默认轮廓 */
+  border-color: transparent; /* focus:border-transparent */
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5); /* focus:ring-2 focus:ring-blue-500 */
+}
+
+/* placeholder 样式 */
+.checkbox-radius::placeholder {
+  color: #9CA3AF;              /* placeholder-gray-400 */
+}
+
+/* checked 状态 */
+.checkbox-radius:checked {
+  background-color: #3B82F6;  /* bg-blue-500 */
+  border-color: #4B5563;      /* border-gray-600 */
+}
+
+/* checked 状态 */
+.checkbox-radius:checked {
+  background-color: #3B82F6;
+  border-color: #4B5563;
+}
+
+/* dark mode */
+@media (prefers-color-scheme: dark) {
+  .checkbox-radius {
+    color: #ffffff; /* dark:text-white */
+    border-color: #4B5563; /* dark:border-gray-600 */
+    background-color: #1F2937; /* dark:bg-gray-800 */
+  }
+  .checkbox-radius::placeholder {
+    color: #6B7280;            /* dark:placeholder-gray-500 */
+  }
+  .checkbox-radius:checked {
+    background-color: #3B82F6;
+    border-color: #4B5563;
+  }
+}
 </style>
