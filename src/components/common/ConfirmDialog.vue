@@ -279,7 +279,7 @@ defineExpose({
               aria-label="关闭对话框"
               @click="handleCancel"
             >
-              <i class="i-tabler-x wh-5" />
+              <i class="wh-5 i-tabler-x" />
             </button>
           </div>
 
@@ -313,12 +313,12 @@ defineExpose({
               >
                 <i
                   v-if="loading"
-                  class="i-tabler-loader-2 mr-2 wh-4 animate-spin"
+                  class="icon icon--loading"
                 />
                 <i
                   v-else-if="confirmIcon"
-                  :class="confirmIcon"
-                  class="mr-2 wh-4"
+                  class="icon"
+                  :class="[confirmIcon]"
                 />
                 {{ confirmText }}
               </button>
@@ -332,216 +332,366 @@ defineExpose({
 
 <style scoped lang="postcss">
 .dialog-overlay {
-  @apply fixed inset-0 z-50 flex items-center justify-center p-4
-         bg-black/50 backdrop-blur-sm;
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
 }
 
 .dialog-container {
-  @apply relative w-full max-h-[90vh] overflow-hidden
-         bg-white dark:bg-gray-800 rounded-lg shadow-xl
-         focus:outline-none;
+  position: relative;
+  width: 100%;
+  max-height: 90vh;
+  overflow: hidden;
+  background-color: #ffffff;
+  border-radius: 0.5rem;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  outline: none;
 }
 
-.dialog--sm {
-  @apply max-w-sm;
+.dialog-container.dark {
+  background-color: #1f2937; /* gray-800 */
 }
 
-.dialog--md {
-  @apply max-w-md;
-}
-
-.dialog--lg {
-  @apply max-w-lg;
-}
-
-.dialog--xl {
-  @apply max-w-xl;
-}
+.dialog--sm { max-width: 24rem; }
+.dialog--md { max-width: 28rem; }
+.dialog--lg { max-width: 32rem; }
+.dialog--xl { max-width: 36rem; }
 
 .dialog--loading {
-  @apply pointer-events-none select-none;
+  pointer-events: none;
+  user-select: none;
 }
 
 .dialog-header {
-  @apply flex items-start justify-between p-6 pb-4
-         border-b border-gray-200 dark:border-gray-700;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.dark .dialog-header {
+  border-color: #374151;
 }
 
 .dialog-title-section {
-  @apply flex items-center gap-3;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
 }
 
 .dialog-icon-wrapper {
-  @apply flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center;
+  flex-shrink: 0;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .dialog-icon--info {
-  @apply bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400;
+  background-color: #dbeafe;
+  color: #2563eb;
+}
+
+.dark .dialog-icon--info {
+  background-color: rgba(30, 58, 138, 0.3);
+  color: #60a5fa;
 }
 
 .dialog-icon--warning {
-  @apply bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400;
+  background-color: #fef9c3;
+  color: #ca8a04;
+}
+
+.dark .dialog-icon--warning {
+  background-color: rgba(113, 63, 18, 0.3);
+  color: #facc15;
 }
 
 .dialog-icon--danger {
-  @apply bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400;
+  background-color: #fee2e2;
+  color: #dc2626;
+}
+
+.dark .dialog-icon--danger {
+  background-color: rgba(127, 29, 29, 0.3);
+  color: #f87171;
 }
 
 .dialog-icon--success {
-  @apply bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400;
+  background-color: #dcfce7;
+  color: #16a34a;
+}
+
+.dark .dialog-icon--success {
+  background-color: rgba(20, 83, 45, 0.3);
+  color: #4ade80;
 }
 
 .dialog-title {
-  @apply text-lg font-semibold text-gray-900 dark:text-white;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.dark .dialog-title {
+  color: #ffffff;
 }
 
 .dialog-close {
-  @apply flex-shrink-0 p-2 rounded-lg
-         text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300
-         hover:bg-gray-100 dark:hover:bg-gray-700
-         focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2
-         dark:focus:ring-offset-gray-800
-         transition-colors disabled:opacity-50;
+  flex-shrink: 0;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  color: #9ca3af;
+  background: transparent;
+  transition: all 0.2s ease;
+}
+
+.dialog-close:hover {
+  color: #4b5563;
+  background-color: #f3f4f6;
+}
+
+.dark .dialog-close {
+  color: #6b7280;
+}
+
+.dark .dialog-close:hover {
+  color: #d1d5db;
+  background-color: #374151;
 }
 
 .dialog-content {
-  @apply px-6 py-4 max-h-96 overflow-y-auto;
+  padding: 1rem 1.5rem;
+  max-height: 24rem;
+  overflow-y: auto;
 }
 
 .dialog-message {
-  @apply text-gray-700 dark:text-gray-300 leading-relaxed;
+  color: #374151;
+  line-height: 1.625;
+}
+
+.dark .dialog-message {
+  color: #d1d5db;
 }
 
 .dialog-footer {
-  @apply px-6 py-4 bg-gray-50 dark:bg-gray-900/50
-         border-t border-gray-200 dark:border-gray-700;
+  padding: 1rem 1.5rem;
+  background-color: #f9fafb;
+  border-top: 1px solid #e5e7eb;
+}
+
+.dark .dialog-footer {
+  background-color: rgba(17, 24, 39, 0.5);
+  border-color: #374151;
 }
 
 .dialog-actions {
-  @apply flex justify-end gap-3;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
 }
 
 .btn-cancel {
-  @apply px-4 py-2 text-sm font-medium rounded-lg border
-         border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800
-         text-gray-700 dark:text-gray-300
-         hover:bg-gray-50 dark:hover:bg-gray-700
-         focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2
-         dark:focus:ring-offset-gray-800
-         transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-radius: 0.5rem;
+  border: 1px solid #d1d5db;
+  background-color: #ffffff;
+  color: #374151;
+  transition: all 0.2s ease;
+}
+
+.btn-cancel:hover {
+  background-color: #f9fafb;
+}
+
+.dark .btn-cancel {
+  border-color: #4b5563;
+  background-color: #1f2937;
+  color: #d1d5db;
+}
+
+.dark .btn-cancel:hover {
+  background-color: #374151;
 }
 
 .btn-confirm {
-  @apply px-4 py-2 text-sm font-medium rounded-lg border border-transparent
-         focus:outline-none focus:ring-2 focus:ring-offset-2
-         transition-colors disabled:opacity-50 disabled:cursor-not-allowed
-         flex items-center;
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-radius: 0.5rem;
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
+}
+
+.btn-confirm:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .btn-confirm--primary {
-  @apply bg-blue-600 text-white hover:bg-blue-700
-         focus:ring-blue-500 dark:focus:ring-offset-gray-800;
+  background-color: #2563eb;
+  color: #ffffff;
+}
+
+.btn-confirm--primary:hover {
+  background-color: #1d4ed8;
 }
 
 .btn-confirm--danger {
-  @apply bg-red-600 text-white hover:bg-red-700
-         focus:ring-red-500 dark:focus:ring-offset-gray-800;
+  background-color: #dc2626;
+  color: #ffffff;
+}
+
+.btn-confirm--danger:hover {
+  background-color: #b91c1c;
 }
 
 .btn-confirm--warning {
-  @apply bg-yellow-600 text-white hover:bg-yellow-700
-         focus:ring-yellow-500 dark:focus:ring-offset-gray-800;
+  background-color: #ca8a04;
+  color: #ffffff;
+}
+
+.btn-confirm--warning:hover {
+  background-color: #a16207;
 }
 
 .btn-confirm--success {
-  @apply bg-green-600 text-white hover:bg-green-700
-         focus:ring-green-500 dark:focus:ring-offset-gray-800;
+  background-color: #16a34a;
+  color: #ffffff;
+}
+
+.btn-confirm--success:hover {
+  background-color: #15803d;
 }
 
 /* 动画效果 */
 .dialog-fade-enter-active {
-  @apply transition-all duration-200 ease-out;
+  transition: all 0.2s ease-out;
 }
 
 .dialog-fade-leave-active {
-  @apply transition-all duration-150 ease-in;
+  transition: all 0.15s ease-in;
 }
 
 .dialog-fade-enter-from {
-  @apply opacity-0;
+  opacity: 0;
 }
 
 .dialog-fade-enter-from .dialog-container {
-  @apply transform scale-95 translate-y-4;
+  transform: scale(0.95) translateY(1rem);
 }
 
 .dialog-fade-leave-to {
-  @apply opacity-0;
+  opacity: 0;
 }
 
 .dialog-fade-leave-to .dialog-container {
-  @apply transform scale-95 translate-y-4;
+  transform: scale(0.95) translateY(1rem);
 }
 
-/* 响应式设计 */
+.icon {
+  margin-right: 0.5rem; /* 替代 mr-2 */
+  width: 1rem;         /* 替代 wh-4 */
+  height: 1rem;
+  display: inline-block;
+}
+
+/* 加载状态旋转动画 */
+.icon--loading {
+  animation: spin 1s linear infinite;
+}
+
+/* 旋转关键帧 */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* 响应式 */
 @media (max-width: 640px) {
   .dialog-overlay {
-    @apply p-2;
+    padding: 0.5rem;
   }
 
   .dialog-container {
-    @apply max-w-full;
+    max-width: 100%;
   }
 
   .dialog-header {
-    @apply p-4 pb-3;
+    padding: 1rem;
+    padding-bottom: 0.75rem;
   }
 
   .dialog-content {
-    @apply px-4 py-3;
+    padding: 0.75rem 1rem;
   }
 
   .dialog-footer {
-    @apply px-4 py-3;
+    padding: 0.75rem 1rem;
   }
 
   .dialog-actions {
-    @apply flex-col gap-2;
+    flex-direction: column;
+    gap: 0.5rem;
   }
 
   .btn-cancel,
   .btn-confirm {
-    @apply w-full justify-center;
+    width: 100%;
+    justify-content: center;
   }
 }
 
-/* 无障碍访问 */
+/* 无障碍：减少动效 */
 @media (prefers-reduced-motion: reduce) {
   .dialog-fade-enter-active,
   .dialog-fade-leave-active {
-    @apply transition-none;
+    transition: none;
   }
 }
 
 /* 高对比度模式 */
 @media (prefers-contrast: high) {
   .dialog-container {
-    @apply border-2 border-gray-900 dark:border-gray-100;
+    border: 2px solid #111827;
+  }
+
+  .dark .dialog-container {
+    border-color: #f9fafb;
   }
 
   .dialog-header {
-    @apply border-b-2;
+    border-bottom-width: 2px;
   }
 
   .dialog-footer {
-    @apply border-t-2;
+    border-top-width: 2px;
   }
 }
 
-/* 打印样式 */
+/* 打印隐藏对话框 */
 @media print {
   .dialog-overlay {
-    @apply hidden;
+    display: none;
   }
 }
 </style>

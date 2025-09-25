@@ -10,6 +10,7 @@
 
     /* 组件主色（Dark 主题） */
     --color-primary: oklch(71.996% 0.123 62.756); /* 主按钮/强调色 */
+    --color-primary-soft: color-mix(in oklch, var(--color-primary) 20%, black);
     --color-primary-content: oklch(14.399% 0.024 62.756); /* 主色背景上的文字 */
     --color-secondary: oklch(34.465% 0.029 199.194); /* 次要按钮/装饰色 */
     --color-secondary-content: oklch(86.893% 0.005 199.194); /* 次要色背景上的文字 */

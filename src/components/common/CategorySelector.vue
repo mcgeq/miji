@@ -163,7 +163,7 @@ defineExpose({
       role="group"
       :aria-label="quickSelectLabel"
     >
-      <div class="flex flex-wrap gap-2">
+      <div class="quick-select-container">
         <button
           v-for="category in quickSelectCategories"
           :key="category.code"
@@ -183,89 +183,137 @@ defineExpose({
     </div>
 
     <!-- 错误提示 -->
-    <div v-if="errorMessage" :id="`${inputId}-error`" class="text-sm text-red-600 mt-1 dark:text-red-400" role="alert" aria-live="polite">
+    <div
+      v-if="errorMessage"
+      :id="`${inputId}-error`"
+      class="error-message"
+      role="alert"
+      aria-live="polite"
+    >
       {{ errorMessage }}
     </div>
 
     <!-- 帮助文本 -->
-    <div v-if="helpText" class="text-xs text-gray-500 mt-2 dark:text-gray-400">
+    <div v-if="helpText" class="help-text">
       {{ helpText }}
     </div>
   </div>
 </template>
 
-<style scoped lang="postcss">
+<style scoped>
 .category-selector {
-  @apply mb-4;
+  margin-bottom: 1rem;
 }
 
 .category-selector select {
-  @apply h-32;
+  height: 8rem; /* 32 * 0.25rem */
+  outline: none;
 }
 
-/* 快捷选择按钮样式 */
+/* 快捷选择容器 */
+.quick-select-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+/* 快捷选择按钮 */
 .quick-select-btn {
-  @apply text-xs px-3 py-2 rounded-md border border-gray-200 dark:border-gray-600
-         bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300
-         hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-300 dark:hover:border-gray-500
-         focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
-         transition-all duration-200 cursor-pointer
-         disabled:opacity-50 disabled:cursor-not-allowed;
+  font-size: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.375rem;
+  border: 1px solid var(--color-neutral);
+  background-color: var(--color-base-100);
+  color: var(--color-base-content);
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
 }
 
+.quick-select-btn:hover {
+  background-color: var(--color-base-200);
+  border-color: var(--color-neutral);
+}
+
+.quick-select-btn:focus {
+  outline: none;
+  border-color: transparent;
+  box-shadow: 0 0 0 2px var(--color-primary);
+}
+
+.quick-select-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* 激活状态 */
 .quick-select-btn-active {
-  @apply bg-blue-50 dark:bg-blue-900/30 border-blue-200 dark:border-blue-600
-         text-blue-700 dark:text-blue-300;
+  background-color: var(--color-primary-soft);
+  border-color: var(--color-primary);
+  color: var(--color-primary-content);
 }
 
+/* 多选状态 */
 .quick-select-btn-multiple {
-  @apply relative;
+  position: relative;
 }
 
 .quick-select-btn-multiple::after {
   content: "✓";
-  @apply absolute -top-1 -right-1 bg-blue-500 text-white rounded-full w-4 h-4
-         flex items-center justify-center text-xs;
+  position: absolute;
+  top: -0.25rem;
+  right: -0.25rem;
+  background-color: var(--color-primary);
+  color: var(--color-primary-content);
+  border-radius: 9999px;
+  width: 1rem;
+  height: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
 }
 
-/* 选择框样式优化 */
-.category-selector select:focus {
-  outline: none;
+/* 错误提示 */
+.error-message {
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+  color: var(--color-error);
 }
 
-.dark .category-selector select option {
-  background-color: theme('colors.gray.800');
-  color: theme('colors.white');
+/* 帮助文本 */
+.help-text {
+  font-size: 0.75rem;
+  margin-top: 0.5rem;
+  color: var(--color-neutral);
 }
 
-.category-selector select:focus-visible {
-  outline: 2px solid theme('colors.blue.500');
-  outline-offset: 2px;
+/* 滚动条样式 */
+.category-selector select::-webkit-scrollbar {
+  width: 8px;
 }
 
+.category-selector select::-webkit-scrollbar-track {
+  background-color: var(--color-base-200);
+}
+
+.category-selector select::-webkit-scrollbar-thumb {
+  background-color: var(--color-neutral);
+  border-radius: 0.375rem;
+}
+
+.category-selector select::-webkit-scrollbar-thumb:hover {
+  background-color: var(--color-base-content);
+}
+
+/* 响应式：小屏幕 */
 @media (max-width: 640px) {
   .category-selector select {
     width: 100% !important;
   }
 
   .quick-select-btn {
-    @apply text-xs px-2 py-1;
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
   }
-}
-
-.category-selector select::-webkit-scrollbar {
-  width: 8px;
-}
-
-.category-selector select::-webkit-scrollbar-track {
-  @apply bg-gray-100 dark:bg-gray-700;
-}
-
-.category-selector select::-webkit-scrollbar-thumb {
-  @apply bg-gray-300 dark:bg-gray-500 rounded-md;
-}
-
-.category-selector select::-webkit-scrollbar-thumb:hover {
-  @apply bg-gray-400 dark:bg-gray-400;
 }
 </style>

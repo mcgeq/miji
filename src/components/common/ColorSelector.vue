@@ -66,23 +66,23 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div ref="colorSelectorRef" class="w-2/3 relative">
+  <div ref="colorSelectorRef" class="color-selector">
     <!-- 触发按钮 -->
     <button
       type="button"
-      class="px-3 py-2 border border-gray-300 rounded-lg bg-white flex w-full transition-all duration-200 items-center justify-between focus:outline-none focus:border-transparent hover:border-gray-400 focus:ring-2 focus:ring-blue-500"
+      class="color-selector__trigger"
       @click="toggleDropdown"
     >
-      <div class="flex gap-2 items-center">
+      <div class="color-selector__preview">
         <div
-          class="border-2 border-gray-300 rounded-full h-5 w-5"
+          class="color-selector__circle"
           :style="{ backgroundColor: modelValue }"
         />
-        <span class="text-sm text-gray-700">{{ getColorName(modelValue) }}</span>
+        <span class="color-selector__label">{{ getColorName(modelValue) }}</span>
       </div>
       <svg
-        class="text-gray-400 h-4 w-4 transition-transform duration-200"
-        :class="{ 'rotate-180': isOpen }"
+        class="color-selector__arrow"
+        :class="{ rotate: isOpen }"
         fill="none"
         stroke="currentColor"
         viewBox="0 0 24 24"
@@ -94,18 +94,15 @@ onUnmounted(() => {
     <!-- 颜色网格下拉 -->
     <div
       v-if="isOpen"
-      class="mt-1 p-3 border border-gray-200 rounded-lg bg-white shadow-lg left-0 right-0 top-full absolute z-50"
+      class="color-selector__dropdown"
     >
-      <div class="gap-2 grid grid-cols-5">
+      <div class="color-selector__grid">
         <button
           v-for="color in colors"
           :key="color"
           type="button"
-          class="border-2 rounded-full h-8 w-8 transition-all duration-200 focus:outline-none hover:scale-110" :class="[
-            modelValue === color
-              ? 'border-gray-800 shadow-lg ring-2 ring-blue-200'
-              : 'border-gray-300 hover:border-gray-500',
-          ]"
+          class="color-selector__option"
+          :class="{ active: modelValue === color }"
           :style="{ backgroundColor: color }"
           :title="getColorName(color)"
           @click="selectColor(color)"
@@ -114,3 +111,112 @@ onUnmounted(() => {
     </div>
   </div>
 </template>
+
+<style scoped>
+.color-selector {
+  position: relative;
+  width: 66.666%; /* w-2/3 */
+}
+
+/* 触发按钮 */
+.color-selector__trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0.5rem 0.75rem; /* px-3 py-2 */
+  border: 1px solid #d1d5db; /* gray-300 */
+  border-radius: 0.5rem; /* rounded-lg */
+  background-color: #fff;
+  transition: all 0.2s ease-in-out;
+  cursor: pointer;
+}
+
+.color-selector__trigger:hover {
+  border-color: #9ca3af; /* gray-400 */
+}
+
+.color-selector__trigger:focus {
+  outline: none;
+  border-color: transparent;
+  box-shadow: 0 0 0 2px #3b82f6; /* blue-500 */
+}
+
+/* 左侧预览 */
+.color-selector__preview {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.color-selector__circle {
+  width: 1.25rem;  /* h-5 */
+  height: 1.25rem; /* w-5 */
+  border-radius: 9999px;
+  border: 2px solid #d1d5db; /* gray-300 */
+}
+
+.color-selector__label {
+  font-size: 0.875rem; /* text-sm */
+  color: #374151; /* gray-700 */
+}
+
+/* 下拉箭头 */
+.color-selector__arrow {
+  width: 1rem;
+  height: 1rem;
+  color: #9ca3af; /* gray-400 */
+  transition: transform 0.2s ease-in-out;
+}
+
+.color-selector__arrow.rotate {
+  transform: rotate(180deg);
+}
+
+/* 下拉容器 */
+.color-selector__dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 0.25rem; /* mt-1 */
+  padding: 0.75rem; /* p-3 */
+  border: 1px solid #e5e7eb; /* gray-200 */
+  border-radius: 0.5rem;
+  background-color: #fff;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* shadow-lg */
+  z-index: 50;
+}
+
+/* 网格 */
+.color-selector__grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+/* 颜色按钮 */
+.color-selector__option {
+  width: 2rem;  /* h-8 */
+  height: 2rem; /* w-8 */
+  border-radius: 9999px;
+  border: 2px solid #d1d5db; /* gray-300 */
+  transition: all 0.2s ease-in-out;
+  cursor: pointer;
+}
+
+.color-selector__option:hover {
+  transform: scale(1.1);
+  border-color: #6b7280; /* gray-500 */
+}
+
+.color-selector__option:focus {
+  outline: none;
+}
+
+.color-selector__option.active {
+  border-color: #111827; /* gray-800 */
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 0 0 2px #bfdbfe; /* ring-2 ring-blue-200 */
+}
+</style>
