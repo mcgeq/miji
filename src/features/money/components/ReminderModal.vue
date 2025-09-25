@@ -509,11 +509,14 @@ watch(
   () => props.reminder,
   newVal => {
     if (newVal) {
-      const clonedAccount = JSON.parse(JSON.stringify(newVal));
-      if (clonedAccount.remindDate) {
-        clonedAccount.remindDate = clonedAccount.remindDate.split('T')[0];
+      const clonedReminder = JSON.parse(JSON.stringify(newVal));
+      if (clonedReminder.remindDate) {
+        clonedReminder.remindDate = clonedReminder.remindDate.split('T')[0];
       }
-      Object.assign(form, clonedAccount);
+      if (clonedReminder.billDate) {
+        clonedReminder.billDate = clonedReminder.billDate.split('T')[0];
+      }
+      Object.assign(form, clonedReminder);
     }
   },
   { immediate: true, deep: true },
@@ -609,7 +612,8 @@ watch(
             type="date"
             required
             class="modal-input-select w-2/3"
-            :class="{ 'border-red-500': validationErrors.remindDate }" :min="today" @blur="validateRemindDate"
+            :class="{ 'border-red-500': validationErrors.remindDate }" :min="today"
+            @blur="validateRemindDate"
           >
         </div>
 
@@ -624,7 +628,8 @@ watch(
             type="date"
             required
             class="modal-input-select w-2/3"
-            :class="{ 'border-red-500': validationErrors.remindDate }" :min="today" @blur="validateRemindDate"
+            :class="{ 'border-red-500': validationErrors.remindDate }" :min="today"
+            @blur="validateRemindDate"
           >
         </div>
         <div
