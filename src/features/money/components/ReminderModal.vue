@@ -641,9 +641,12 @@ watch(
 
         <!-- 重复频率  -->
         <RepeatPeriodSelector
-          v-model="form.repeatPeriod" :label="t('date.repeat.frequency')"
-          :error-message="validationErrors.repeatPeriod" :help-text="t('helpTexts.repeatPeriod')"
-          @change="handleRepeatPeriodChange" @validate="handleRepeatPeriodValidation"
+          v-model="form.repeatPeriod"
+          :label="t('date.repeat.frequency')"
+          :error-message="validationErrors.repeatPeriod"
+          :help-text="t('helpTexts.repeatPeriod')"
+          @change="handleRepeatPeriodChange"
+          @validate="handleRepeatPeriodValidation"
         />
 
         <!-- 优先级 -->

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import SimplePagination from '@/components/common/SimplePagination.vue';
-import { getRepeatTypeName } from '@/utils/common';
+import { getRepeatTypeName, lowercaseFirstLetter } from '@/utils/common';
 import { DateUtils } from '@/utils/date';
 import { useBudgetFilters } from '../composables/useBudgetFilters';
 import { formatCurrency } from '../utils/money';
@@ -311,7 +311,7 @@ defineExpose({
               class="text-gray-800 font-medium"
               :title="budget.tooltipCategories"
             >
-              {{ budget.displayCategories || '' }}
+              {{ budget.displayCategories ? t(`common.categories.${lowercaseFirstLetter(budget.displayCategories)}`) : '' }}
             </span>
           </div>
           <div class="text-sm mb-1 flex justify-between">

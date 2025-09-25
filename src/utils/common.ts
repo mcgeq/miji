@@ -17,8 +17,7 @@ export function toCamelCase<T = any>(obj: any): T {
   } else if (obj !== null && typeof obj === 'object') {
     const newObj: Record<string, any> = {};
     for (const [key, value] of Object.entries(obj)) {
-      const camelKey = key.replace(/_([a-z])/g, (_, char) =>
-        char.toUpperCase());
+      const camelKey = key.replace(/_([a-z])/g, (_, char) => char.toUpperCase());
       newObj[camelKey] = toCamelCase(value);
     }
     return newObj as T;
@@ -77,12 +76,23 @@ export function buildRepeatPeriod(input: Partial<RepeatPeriod>): RepeatPeriod {
 // 类型重载版本
 export function safeGet<T>(arr: T[], index: number): T | undefined;
 export function safeGet<T>(arr: T[], index: number, fallback: T): T;
-export function safeGet<T>(
-  arr: T[],
-  index: number,
-  fallback?: T,
-): T | undefined {
+export function safeGet<T>(arr: T[], index: number, fallback?: T): T | undefined {
   return arr[index] ?? fallback;
+}
+
+const weeklyEmun = {
+  Mon: '一',
+  Tue: '二',
+  Wed: '三',
+  Thu: '四',
+  Fri: '五',
+  Sat: '六',
+  Sun: '日',
+} as const;
+type DayOfWeek = keyof typeof weeklyEmun;
+
+function mapDaysToChinese(days: DayOfWeek[]): string {
+  return days.map(day => weeklyEmun[day] || day).join(',');
 }
 
 export function getRepeatTypeName(period: RepeatPeriod): string {
@@ -91,15 +101,15 @@ export function getRepeatTypeName(period: RepeatPeriod): string {
       return '无周期';
     case 'Daily':
       return period.interval > 1 ? `每${period.interval}天` : '每日';
-    case 'Weekly':
+    case 'Weekly': {
+      const daysInChinese = mapDaysToChinese(period.daysOfWeek);
       return period.interval > 1
-        ? `每${period.interval}周 (${period.daysOfWeek.join(',')})`
-        : `每周 (${period.daysOfWeek.join(',')})`;
+        ? `每${period.interval}周 (${daysInChinese})`
+        : `每周 (${daysInChinese})`;
+    }
     case 'Monthly': {
       const day = period.day === 'Last' ? '最后一天' : `第${period.day}天`;
-      return period.interval > 1
-        ? `每${period.interval}月，${day}`
-        : `每月，${day}`;
+      return period.interval > 1 ? `每${period.interval}月，${day}` : `每月，${day}`;
     }
     case 'Yearly':
       return period.interval > 1
