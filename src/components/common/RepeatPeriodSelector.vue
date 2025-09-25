@@ -23,7 +23,6 @@ const emit = defineEmits<{
   'change': [value: RepeatPeriod];
   'validate': [isValid: boolean];
 }>();
-
 // 常量定义
 const weekdayOptions: Array<{ value: Weekday; label: string }> = [
   { value: 'Mon', label: '一' },
@@ -291,6 +290,7 @@ watch(
       </label>
       <select
         :model-value="modelValue.type"
+        :value="modelValue.type"
         class="modal-input-select w-2/3"
         :class="{ 'border-red-500': errorMessage }"
         @change="handleTypeChange"

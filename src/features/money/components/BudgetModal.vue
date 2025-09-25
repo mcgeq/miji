@@ -149,7 +149,7 @@ function onSubmit() {
       const serializedChanges = _.mapValues(changes, (value, key) => {
         if (jsonFields.includes(key) && value !== null && value !== undefined) {
           try {
-            return JSON.stringify(value);
+            return JSON.parse(JSON.stringify(value));
           } catch {
             return value;
           }
@@ -157,7 +157,7 @@ function onSubmit() {
         return value;
       });
       if (!_.isEmpty(serializedChanges)) {
-        const budgetUpdate = BudgetUpdateSchema.parse(changes);
+        const budgetUpdate = BudgetUpdateSchema.parse(serializedChanges);
         emit('update', props.budget.serialNum, budgetUpdate);
       }
     } else {
@@ -361,9 +361,12 @@ onMounted(async () => {
 
         <!-- 重复频率  -->
         <RepeatPeriodSelector
-          v-model="form.repeatPeriod" :label="t('date.repeat.frequency')"
-          :error-message="validationErrors.repeatPeriod" :help-text="t('helpTexts.repeatPeriod')"
-          @change="handleRepeatPeriodChange" @validate="handleRepeatPeriodValidation"
+          v-model="form.repeatPeriod"
+          :label="t('date.repeat.frequency')"
+          :error-message="validationErrors.repeatPeriod"
+          :help-text="t('helpTexts.repeatPeriod')"
+          @change="handleRepeatPeriodChange"
+          @validate="handleRepeatPeriodValidation"
         />
 
         <div class="mb-2 mt-2 flex items-center justify-between">

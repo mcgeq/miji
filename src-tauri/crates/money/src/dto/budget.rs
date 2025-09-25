@@ -236,7 +236,7 @@ pub struct BudgetUpdate {
     pub amount: Option<Decimal>,
     pub currency: Option<String>,
     pub repeat_period_type: Option<String>,
-    pub repeat_period: Option<String>,
+    pub repeat_period: Option<serde_json::Value>,
     pub start_date: Option<DateTime<FixedOffset>>,
     pub end_date: Option<DateTime<FixedOffset>>,
     pub used_amount: Option<Decimal>,
@@ -278,11 +278,7 @@ impl BudgetUpdate {
             model.currency = ActiveValue::Set(currency);
         }
         if let Some(repeat_period) = self.repeat_period {
-            model.repeat_period = ActiveValue::Set(parse_json_field(
-                &repeat_period,
-                "repeat_period",
-                serde_json::Value::Null,
-            ));
+            model.repeat_period = ActiveValue::Set(repeat_period);
         }
         if let Some(start_date) = self.start_date {
             model.start_date = ActiveValue::Set(start_date);
@@ -431,13 +427,9 @@ impl TryFrom<BudgetUpdate> for entity::budget::ActiveModel {
             repeat_period_type: value
                 .repeat_period_type
                 .map_or(ActiveValue::NotSet, ActiveValue::Set),
-            repeat_period: value.repeat_period.map_or(ActiveValue::NotSet, |val| {
-                ActiveValue::Set(parse_json_field(
-                    &val,
-                    "repeat_period",
-                    serde_json::Value::Null,
-                ))
-            }),
+            repeat_period: value
+                .repeat_period
+                .map_or(ActiveValue::NotSet, ActiveValue::Set),
             start_date: value
                 .start_date
                 .map_or(ActiveValue::NotSet, ActiveValue::Set),
