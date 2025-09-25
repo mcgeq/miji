@@ -10,6 +10,7 @@ import { COLORS_MAP, CURRENCY_CNY } from '@/constants/moneyConst';
 import { BudgetTypeSchema } from '@/schema/common';
 import { BudgetCreateSchema, BudgetScopeTypeSchema, BudgetUpdateSchema } from '@/schema/money';
 import { DateUtils } from '@/utils/date';
+import { deepDiff } from '@/utils/diffObject';
 import { getLocalCurrencyInfo } from '../utils/money';
 import type { RepeatPeriod } from '@/schema/common';
 import type { Budget, BudgetCreate, BudgetUpdate } from '@/schema/money';
@@ -157,7 +158,8 @@ function onSubmit() {
         return value;
       });
       if (!_.isEmpty(serializedChanges)) {
-        const budgetUpdate = BudgetUpdateSchema.parse(serializedChanges);
+        const updateParital = deepDiff(props.budget, formattedData) as BudgetUpdate;
+        const budgetUpdate = BudgetUpdateSchema.parse(updateParital);
         emit('update', props.budget.serialNum, budgetUpdate);
       }
     } else {

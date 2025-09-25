@@ -11,6 +11,7 @@ use sea_orm::{
 };
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
+use tracing::info;
 use validator::Validate;
 
 use crate::{
@@ -308,6 +309,7 @@ impl BudgetService {
         serial_num: String,
         data: BudgetUpdate,
     ) -> MijiResult<BudgetWithAccount> {
+        info!("Update budget {:?}", data);
         let model = self.update(db, serial_num, data).await?;
         self.converter().model_with_relations(db, model).await
     }

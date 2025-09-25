@@ -41,7 +41,7 @@ pub struct SortOptions {
 impl SortOptions {
     /// 获取排序字段，优先使用 sort_by，否则使用默认字段 "CreatedAt"
     fn effective_sort_field(&self) -> &str {
-        self.sort_by.as_deref().unwrap_or("CreatedAt")
+        self.sort_by.as_deref().unwrap_or("updated_at")
     }
 
     /// 获取排序方向，优先使用 sort_dir，其次使用 desc 字段
