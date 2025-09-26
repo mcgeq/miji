@@ -394,7 +394,7 @@ defineExpose({
           <span class="text-gray-600 font-semibold md:hidden">{{ t('date.date') }}</span>
           <div class="md:text-right">
             <div class="text-xs text-gray-600">
-              {{ DateUtils.formatDateTime(transaction.date) }}
+              {{ DateUtils.formatForDisplay(transaction.date) }}
             </div>
           </div>
         </div>
