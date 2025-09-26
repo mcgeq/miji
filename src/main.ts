@@ -25,6 +25,10 @@ z.config({
   localeError: i18nErrorMap,
 });
 
+if (!Object.hasOwn) {
+  Object.hasOwn = (obj, prop) => Object.prototype.hasOwnProperty.call(obj, prop);
+}
+
 const isTauri = '__TAURI__' in window;
 const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
   navigator.userAgent,
