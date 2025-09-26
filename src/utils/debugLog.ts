@@ -15,8 +15,8 @@ const levelPriority: Record<LogType, number> = {
 // 日志类型图标
 const emojiMap: Record<LogType, string> = {
   trace: '↳',
-  info: 'ℹ',
-  warn: '⚠',
+  info: 'i',
+  warn: '!',
   error: '❌',
   debug: '🐛',
 };
@@ -35,8 +35,7 @@ const styleMap: Record<LogType, string> = {
 
 // 缓存环境变量
 const isDebugEnabled =
-  import.meta.env.MODE === 'development' ||
-    import.meta.env.VITE_ENABLE_DEBUG === 'true';
+  import.meta.env.MODE === 'development' || import.meta.env.VITE_ENABLE_DEBUG === 'true';
 const logLevel = (import.meta.env.VITE_LOG_LEVEL as LogType) || 'info';
 
 // 时间戳格式化
@@ -46,7 +45,6 @@ function getTimestamp(locale: string = 'en-US'): string {
     hour: '2-digit',
     minute: '2-digit',
     second: '2-digit',
-    // @ts-expect-error - 显式说明：fractionalSecondDigits 在现代浏览器中已支持，用于精确到毫秒的时间戳
     fractionalSecondDigits: 3,
   });
   return formatter.format(new Date());
@@ -71,14 +69,12 @@ function formatData(data: unknown): {
       };
     }
 
-    const isTableFriendly =
-      Array.isArray(data) || Object.keys(data).length <= 10;
+    const isTableFriendly = Array.isArray(data) || Object.keys(data).length <= 10;
     try {
       return {
         formatted: JSON.stringify(
           data,
-          (_key, value) =>
-            typeof value === 'bigint' ? value.toString() : value,
+          (_key, value) => (typeof value === 'bigint' ? value.toString() : value),
           2,
         ),
         isObject: true,
@@ -166,19 +162,13 @@ function debugLog(
 
     // 错误/调试日志附加堆栈跟踪
     if (type === 'error' || type === 'debug') {
-      console.groupCollapsed(
-        '%cStack Trace',
-        'color: #6b7280; font-size: 0.8em;',
-      );
+      console.groupCollapsed('%cStack Trace', 'color: #6b7280; font-size: 0.8em;');
       console.trace();
       console.groupEnd();
     }
 
     // 环境信息（模式、Node 版本）
-    console.groupCollapsed(
-      '%cEnvironment',
-      'color: #6b7280; font-size: 0.8em;',
-    );
+    console.groupCollapsed('%cEnvironment', 'color: #6b7280; font-size: 0.8em;');
     console.log(`%cMode: ${import.meta.env.MODE}`, 'color: #6b7280;');
     // const isNodeEnv = typeof window === 'undefined';
     // if (isNodeEnv) {

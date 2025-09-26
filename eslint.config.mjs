@@ -107,9 +107,10 @@ export default antfu({
 }, {
   files: ['src/utils/debugLog.ts'],
   rules: {
+      'no-console': 'off'
     // 允许 debugLog.ts 中使用指定的 console 方法
-    "no-console": ["error", {
-      "allow": ['info', 'debug', "warn", "error", "log", "group", "groupCollapsed", "table", "trace", 'groupEnd']
-    }]
+    // "no-console": ["error", {
+    //   "allow": ['info', 'debug', "warn", "error", "log", "group", "groupCollapsed", "table", "trace", 'groupEnd']
+    // }]
   }
 });

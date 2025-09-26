@@ -2,7 +2,6 @@ import { z } from 'zod';
 import {
   CurrencySchema,
   DateTimeSchema,
-  DecimalLikeSchema,
   DescriptionSchema,
   NameSchema,
   SerialNumSchema,
@@ -14,8 +13,8 @@ export const BaseAccountFields = z.object({
   name: NameSchema,
   description: DescriptionSchema,
   type: AccountTypeSchema,
-  balance: DecimalLikeSchema,
-  initialBalance: DecimalLikeSchema,
+  balance: z.string(),
+  initialBalance: z.string(),
   isShared: z.boolean(),
   ownerId: SerialNumSchema,
   isActive: z.boolean(),

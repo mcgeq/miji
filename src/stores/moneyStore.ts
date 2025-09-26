@@ -118,7 +118,7 @@ export const useMoneyStore = defineStore('money', {
     totalBalance: state => {
       return state.accounts
         .filter(account => account.isActive)
-        .reduce((sum, account) => sum + account.balance, 0);
+        .reduce((sum, account) => sum + Number.parseFloat(account.balance), 0);
     },
     activeAccounts: state => state.accounts.filter(account => account.isActive),
     activeBudgets: state => state.budgetsPaged.rows.filter(budget => budget.isActive),
