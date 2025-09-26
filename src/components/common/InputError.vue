@@ -129,7 +129,7 @@ defineExpose({
       <div class="error-content">
         <!-- 错误图标 -->
         <div class="error-icon">
-          <i :class="iconClass" class="flex-shrink-0 wh-4" />
+          <i :class="iconClass" />
         </div>
 
         <!-- 错误消息 -->
@@ -152,7 +152,7 @@ defineExpose({
           :aria-label="dismissLabel"
           @click="handleDismiss"
         >
-          <i class="i-tabler-x wh-3" />
+          <i class="i-tabler-x" />
         </button>
       </div>
     </div>
@@ -160,167 +160,201 @@ defineExpose({
 </template>
 
 <style scoped lang="postcss">
+/* 容器外层 */
 .input-error-container {
-  @apply mt-1;
+  margin-top: 0.25rem; /* mt-1 */
 }
 
+/* 基础错误框样式 */
 .input-error {
-  @apply rounded-md border-l-4 border-red-400 bg-red-50 dark:bg-red-900/20
-         dark:border-red-500;
+  border-left: 4px solid #F87171; /* border-red-400 */
+  border-radius: 0.375rem; /* rounded-md */
+  background-color: #FEE2E2; /* bg-red-50 */
+  display: block;
 }
 
-.input-error--default {
-  @apply p-3;
+.dark .input-error {
+  border-color: #EF4444; /* dark:border-red-500 */
+  background-color: rgba(220,38,38,0.125); /* dark:bg-red-900/20 */
 }
 
-.input-error--inline {
-  @apply py-2 px-3;
-}
+/* 变体 padding */
+.input-error--default { padding: 0.75rem; }
+.input-error--inline { padding: 0.5rem 0.75rem; }
+.input-error--tooltip { padding: 0.25rem 0.5rem; font-size: 0.75rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+.input-error--badge { display: inline-flex; align-items: center; padding: 0.25rem 0.5rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 500; }
 
-.input-error--tooltip {
-  @apply py-1 px-2 text-xs shadow-lg;
-}
+/* 尺寸 */
+.input-error--sm { font-size: 0.75rem; }
+.input-error--md { font-size: 0.875rem; }
+.input-error--lg { font-size: 1rem; }
 
-.input-error--badge {
-  @apply inline-flex items-center px-2 py-1 rounded-full text-xs font-medium;
-}
+/* 可关闭 padding 调整 */
+.input-error--dismissible { padding-right: 2rem; }
 
-.input-error--sm {
-  @apply text-xs;
-}
-
-.input-error--md {
-  @apply text-sm;
-}
-
-.input-error--lg {
-  @apply text-base;
-}
-
-.input-error--dismissible {
-  @apply pr-8;
-}
-
+/* 内部布局 */
 .error-content {
-  @apply flex items-start gap-2;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
 }
 
+/* 图标 */
 .error-icon {
-  @apply flex-shrink-0 mt-0.5;
+  flex-shrink: 0;
+  margin-top: 0.125rem;
 }
 
 .error-icon i {
-  @apply text-red-500 dark:text-red-400;
+  color: #EF4444; /* red-500 */
 }
 
+.dark .error-icon i {
+  color: #FCA5A5; /* red-400 */
+}
+
+/* 消息内容 */
 .error-messages {
-  @apply flex-1 min-w-0;
+  flex: 1;
+  min-width: 0;
 }
 
 .error-message {
-  @apply text-red-700 dark:text-red-300 font-medium leading-relaxed;
+  color: #B91C1C; /* red-700 */
+  font-weight: 500;
+  line-height: 1.5;
 }
 
+.dark .error-message {
+  color: #FCA5A5; /* red-300 */
+}
+
+/* 可关闭按钮 */
 .error-dismiss {
-  @apply flex-shrink-0 p-1 ml-auto -mr-1 rounded-md
-         text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300
-         hover:bg-red-100 dark:hover:bg-red-800/30
-         focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2
-         dark:focus:ring-offset-red-900
-         transition-colors;
+  flex-shrink: 0;
+  padding: 0.25rem;
+  margin-left: auto;
+  margin-right: -0.25rem;
+  border-radius: 0.375rem;
+  background-color: transparent;
+  color: #EF4444;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
 }
 
-/* 变体特定样式 */
+.error-dismiss:hover {
+  color: #B91C1C;
+  background-color: #FEE2E2;
+}
+
+.dark .error-dismiss {
+  color: #FCA5A5;
+}
+
+.dark .error-dismiss:hover {
+  color: #FECACA;
+  background-color: rgba(255,255,255,0.05);
+}
+
+/* focus ring */
+.error-dismiss:focus {
+  outline: 2px solid #EF4444;
+  outline-offset: 2px;
+}
+
+.dark .error-dismiss:focus {
+  outline-color: #FCA5A5;
+}
+
+/* tooltip 箭头 */
 .input-error--tooltip {
-  @apply relative;
+  position: relative;
 }
 
 .input-error--tooltip::before {
-  @apply content-[''] absolute -top-1 left-4 w-0 h-0
-         border-l-4 border-r-4 border-b-4 border-transparent border-b-red-50
-         dark:border-b-red-900;
+  content: '';
+  position: absolute;
+  top: -0.25rem;
+  left: 1rem;
+  width: 0;
+  height: 0;
+  border-left: 0.25rem solid transparent;
+  border-right: 0.25rem solid transparent;
+  border-bottom: 0.25rem solid #FEE2E2;
 }
 
+.dark .input-error--tooltip::before {
+  border-bottom-color: rgba(220,38,38,0.125);
+}
+
+/* badge 背景色 */
 .input-error--badge {
-  @apply bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300;
+  background-color: #FECACA; /* red-100 */
+  color: #991B1B; /* red-800 */
+}
+
+.dark .input-error--badge {
+  background-color: rgba(220,38,38,0.125); /* red-900/30 */
+  color: #FCA5A5;
 }
 
 /* 动画效果 */
-.error-slide-enter-active {
-  @apply transition-all duration-300 ease-out;
-}
-
+.error-slide-enter-active,
 .error-slide-leave-active {
-  @apply transition-all duration-200 ease-in;
+  transition: all 0.3s ease;
 }
 
 .error-slide-enter-from {
-  @apply opacity-0 transform -translate-y-2 scale-95;
+  opacity: 0;
+  transform: translateY(-0.5rem) scale(0.95);
 }
 
 .error-slide-leave-to {
-  @apply opacity-0 transform -translate-y-1 scale-98;
-}
-
-.error-enter-active {
-  @apply animate-pulse;
-}
-
-.error-leave-active {
-  @apply animate-pulse;
+  opacity: 0;
+  transform: translateY(-0.25rem) scale(0.98);
 }
 
 /* 响应式设计 */
 @media (max-width: 640px) {
-  .input-error--default {
-    @apply p-2;
-  }
-
-  .error-content {
-    @apply gap-1.5;
-  }
-
-  .error-message {
-    @apply text-xs;
-  }
+  .input-error--default { padding: 0.5rem; }
+  .error-content { gap: 0.375rem; }
+  .error-message { font-size: 0.75rem; }
 }
 
-/* 无障碍访问 */
+/* 减少动画 */
 @media (prefers-reduced-motion: reduce) {
   .error-slide-enter-active,
   .error-slide-leave-active {
-    @apply transition-none;
-  }
-
-  .error-enter-active,
-  .error-leave-active {
-    @apply animate-none;
+    transition: none;
   }
 }
 
-/* 高对比度模式 */
+/* 高对比度 */
 @media (prefers-contrast: high) {
   .input-error {
-    @apply border-l-8 border-red-600 bg-red-100 dark:bg-red-800;
+    border-left-width: 8px;
+    border-left-color: #B91C1C;
+    background-color: #FEE2E2;
   }
-
   .error-message {
-    @apply text-red-900 dark:text-red-100 font-bold;
+    color: #7F1D1D;
+    font-weight: 700;
   }
 }
 
-/* 打印样式 */
+/* 打印 */
 @media print {
   .input-error {
-    @apply border-l-2 border-gray-800 bg-gray-100;
+    border-left-width: 2px;
+    border-left-color: #1F2937;
+    background-color: #F3F4F6;
   }
-
   .error-message {
-    @apply text-gray-900;
+    color: #111827;
   }
-
   .error-dismiss {
-    @apply hidden;
+    display: none;
   }
 }
 </style>

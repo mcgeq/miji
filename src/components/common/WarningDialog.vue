@@ -330,8 +330,8 @@ defineExpose({
           <!-- 警告对话框头部 -->
           <div class="warning-header">
             <div class="warning-title-section">
-              <div class="warning-icon" :class="iconClasses">
-                <i :class="iconClass" class="wh-8 animate-pulse" />
+              <div class="warning-icon-wrapper" :class="iconClasses">
+                <i :class="iconClass" />
               </div>
               <div class="warning-title-content">
                 <h3 :id="titleId" class="warning-title">
@@ -350,7 +350,7 @@ defineExpose({
               aria-label="关闭警告对话框"
               @click="handleCancel"
             >
-              <i class="i-tabler-x wh-5" />
+              <i class="icon-close" />
             </button>
           </div>
 
@@ -370,8 +370,8 @@ defineExpose({
                     @click="showDetails = !showDetails"
                   >
                     <i
-                      class="i-tabler-chevron-right wh-4 transition-transform"
-                      :class="{ 'rotate-90': showDetails }"
+                      class="icon-chevron"
+                      :class="{ rotate: showDetails }"
                     />
                     {{ showDetails ? '隐藏详情' : '查看详情' }}
                   </button>
@@ -396,7 +396,7 @@ defineExpose({
                       :key="`warning-${index}`"
                       class="warning-list-item"
                     >
-                      <i class="i-tabler-alert-triangle text-amber-500 flex-shrink-0 wh-4" />
+                      <i class="icon-alert" />
                       <span>{{ warning }}</span>
                     </li>
                   </ul>
@@ -428,7 +428,7 @@ defineExpose({
                 type="button"
                 @click="handleCancel"
               >
-                <i v-if="cancelIcon" :class="cancelIcon" class="mr-2 wh-4" />
+                <i v-if="cancelIcon" :class="cancelIcon" />
                 {{ cancelText }}
               </button>
               <button
@@ -438,15 +438,8 @@ defineExpose({
                 type="button"
                 @click="handleConfirm"
               >
-                <i
-                  v-if="loading"
-                  class="i-tabler-loader-2 mr-2 wh-4 animate-spin"
-                />
-                <i
-                  v-else-if="confirmIcon"
-                  :class="confirmIcon"
-                  class="mr-2 wh-4"
-                />
+                <i v-if="loading" class="icon-loading" />
+                <i v-else-if="confirmIcon" :class="confirmIcon" />
                 {{ confirmText }}
                 <span v-if="countdown > 0" class="countdown-suffix">
                   ({{ countdown }}s)
@@ -461,335 +454,193 @@ defineExpose({
 </template>
 
 <style scoped lang="postcss">
+/* ------------------- Overlay ------------------- */
 .warning-overlay {
-  @apply fixed inset-0 z-50 flex items-center justify-center p-4
-         bg-black/60 backdrop-blur-sm;
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background-color: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
 }
 
+/* ------------------- Container ------------------- */
 .warning-container {
-  @apply relative w-full max-h-[90vh] overflow-hidden
-         bg-white dark:bg-gray-800 rounded-lg shadow-2xl
-         border border-amber-200 dark:border-amber-800
-         focus:outline-none;
+  position: relative;
+  width: 100%;
+  max-height: 90vh;
+  overflow: hidden;
+  background-color: var(--color-base-100);
+  color: var(--color-base-content);
+  border-radius: 0.75rem;
+  border: 1px solid var(--color-accent);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  outline: none;
+  transition: background 0.3s ease, border-color 0.3s ease;
 }
 
-.warning-dialog--sm {
-  @apply max-w-sm;
-}
-
-.warning-dialog--md {
-  @apply max-w-md;
-}
-
-.warning-dialog--lg {
-  @apply max-w-lg;
-}
-
-.warning-dialog--xl {
-  @apply max-w-xl;
-}
-
-.warning-dialog--loading {
-  @apply pointer-events-none select-none;
-}
-
-.warning-dialog--low {
-  @apply border-blue-200 dark:border-blue-800;
-}
-
-.warning-dialog--medium {
-  @apply border-amber-200 dark:border-amber-800;
-}
-
-.warning-dialog--high {
-  @apply border-orange-200 dark:border-orange-800;
-}
-
-.warning-dialog--critical {
-  @apply border-red-200 dark:border-red-800;
-}
-
+/* ------------------- Header ------------------- */
 .warning-header {
-  @apply flex items-start justify-between p-6 pb-4
-         border-b border-amber-200 dark:border-amber-800;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 1.5rem 1.5rem 1rem;
+  border-bottom: 1px solid var(--color-accent);
 }
 
 .warning-title-section {
-  @apply flex items-start gap-4;
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
 }
 
 .warning-icon-wrapper {
-  @apply flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center;
+  flex-shrink: 0;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: pulse 2s infinite;
 }
 
+/* Icon 渐变背景 */
 .warning-icon--low {
-  @apply bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400;
+  background: linear-gradient(135deg, #dbeafe, #93c5fd);
+  color: #1d4ed8;
 }
-
 .warning-icon--medium {
-  @apply bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400;
+  background: linear-gradient(135deg, #fef3c7, #fcd34d);
+  color: #b45309;
 }
-
 .warning-icon--high {
-  @apply bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400;
+  background: linear-gradient(135deg, #ffedd5, #fb923c);
+  color: #9a3412;
 }
-
 .warning-icon--critical {
-  @apply bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400;
+  background: linear-gradient(135deg, #fee2e2, #f87171);
+  color: #b91c1c;
 }
 
-.warning-title-content {
-  @apply flex-1 min-w-0;
-}
+.warning-title-content { flex: 1; min-width: 0; }
+.warning-title { font-size: 1.25rem; font-weight: 700; margin-bottom: 0.25rem; }
+.warning-subtitle { font-size: 0.875rem; color: var(--color-neutral-content); }
 
-.warning-title {
-  @apply text-xl font-bold text-gray-900 dark:text-white mb-1;
-}
-
-.warning-subtitle {
-  @apply text-sm text-gray-600 dark:text-gray-400;
-}
-
-.warning-close {
-  @apply flex-shrink-0 p-2 rounded-lg
-         text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300
-         hover:bg-gray-100 dark:hover:bg-gray-700
-         focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2
-         dark:focus:ring-offset-gray-800
-         transition-colors disabled:opacity-50;
-}
-
+/* ------------------- Content ------------------- */
 .warning-content {
-  @apply px-6 py-4 max-h-96 overflow-y-auto;
+  padding: 1rem 1.5rem;
+  max-height: 24rem;
+  overflow-y: auto;
 }
 
-.warning-message {
-  @apply space-y-4;
-}
+.warning-message { display: flex; flex-direction: column; gap: 1rem; }
+.warning-text { line-height: 1.5; color: var(--color-base-content); }
 
-.warning-text {
-  @apply text-gray-700 dark:text-gray-300 leading-relaxed;
-}
-
-.warning-details {
-  @apply border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden;
-}
-
-.warning-details-toggle {
-  @apply w-full px-4 py-3 text-left text-sm font-medium
-         text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-900/50
-         hover:bg-gray-100 dark:hover:bg-gray-800
-         focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2
-         dark:focus:ring-offset-gray-800
-         transition-colors flex items-center gap-2;
-}
-
-.warning-details-content {
-  @apply px-4 py-3 border-t border-gray-200 dark:border-gray-700;
-}
-
-.warning-details-text {
-  @apply text-sm text-gray-600 dark:text-gray-400 leading-relaxed;
-}
-
-.warning-list {
-  @apply space-y-2;
-}
-
-.warning-list-title {
-  @apply text-sm font-semibold text-gray-900 dark:text-white;
-}
-
-.warning-list-items {
-  @apply space-y-2;
-}
-
-.warning-list-item {
-  @apply flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300;
-}
-
-.warning-countdown {
-  @apply space-y-2;
-}
-
+/* Countdown 进度条渐变 */
+.warning-countdown { display: flex; flex-direction: column; gap: 0.5rem; }
 .countdown-progress {
-  @apply w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden;
+  width: 100%;
+  height: 0.5rem;
+  background-color: var(--color-base-300);
+  border-radius: 9999px;
+  overflow: hidden;
 }
-
 .countdown-bar {
-  @apply h-full bg-amber-500 transition-all duration-1000 ease-linear;
+  height: 100%;
+  background: linear-gradient(90deg, #fbbf24, #f59e0b, #d97706);
+  transition: width 1s linear;
 }
-
 .countdown-text {
-  @apply text-sm text-center text-gray-600 dark:text-gray-400;
+  text-align: center;
+  font-size: 0.875rem;
+  color: var(--color-neutral-content);
 }
 
+/* ------------------- Footer ------------------- */
 .warning-footer {
-  @apply px-6 py-4 bg-amber-50 dark:bg-amber-900/10
-         border-t border-amber-200 dark:border-amber-800;
+  padding: 1rem 1.5rem;
+  background-color: rgba(251, 191, 36, 0.1);
+  border-top: 1px solid var(--color-accent);
 }
 
-.warning-actions {
-  @apply flex justify-end gap-3;
-}
+.warning-actions { display: flex; justify-content: flex-end; gap: 0.75rem; }
 
-.btn-cancel {
-  @apply px-4 py-2 text-sm font-medium rounded-lg border
-         border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800
-         text-gray-700 dark:text-gray-300
-         hover:bg-gray-50 dark:hover:bg-gray-700
-         focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2
-         dark:focus:ring-offset-gray-800
-         transition-colors disabled:opacity-50 disabled:cursor-not-allowed
-         flex items-center;
-}
-
+/* 按钮基础样式 */
+.btn-cancel,
 .btn-confirm {
-  @apply px-4 py-2 text-sm font-medium rounded-lg border border-transparent
-         focus:outline-none focus:ring-2 focus:ring-offset-2
-         dark:focus:ring-offset-gray-800
-         transition-colors disabled:opacity-50 disabled:cursor-not-allowed
-         flex items-center;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-radius: 0.75rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
 }
+.btn-cancel {
+  border: 1px solid var(--color-base-300);
+  background: linear-gradient(145deg, var(--color-base-100), var(--color-base-200));
+  color: var(--color-base-content);
+}
+.btn-cancel:hover {
+  background: linear-gradient(145deg, var(--color-base-200), var(--color-base-300));
+}
+.btn-cancel:disabled { opacity: 0.5; cursor: not-allowed; }
 
+/* Confirm 渐变按钮 */
+.btn-confirm {
+  border: none;
+  color: #fff;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+}
 .btn-confirm--info {
-  @apply bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500;
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
 }
-
+.btn-confirm--info:hover {
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+}
 .btn-confirm--warning {
-  @apply bg-amber-600 text-white hover:bg-amber-700 focus:ring-amber-500;
+  background: linear-gradient(135deg, #fbbf24, #f59e0b);
 }
-
+.btn-confirm--warning:hover {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+}
 .btn-confirm--danger {
-  @apply bg-orange-600 text-white hover:bg-orange-700 focus:ring-orange-500;
+  background: linear-gradient(135deg, #fb923c, #f97316);
 }
-
+.btn-confirm--danger:hover {
+  background: linear-gradient(135deg, #f97316, #ea580c);
+}
 .btn-confirm--critical {
-  @apply bg-red-600 text-white hover:bg-red-700 focus:ring-red-500;
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+}
+.btn-confirm--critical:hover {
+  background: linear-gradient(135deg, #dc2626, #b91c1c);
 }
 
 .countdown-suffix {
-  @apply ml-1 text-xs opacity-75;
+  margin-left: 0.25rem;
+  font-size: 0.75rem;
+  opacity: 0.75;
 }
 
-/* 动画效果 */
-.warning-fade-enter-active {
-  @apply transition-all duration-300 ease-out;
+/* ------------------- Animations ------------------- */
+@keyframes pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.05); opacity: 0.85; }
 }
 
+.warning-fade-enter-active,
 .warning-fade-leave-active {
-  @apply transition-all duration-200 ease-in;
+  transition: opacity 0.3s ease, transform 0.3s ease;
 }
-
-.warning-fade-enter-from {
-  @apply opacity-0;
-}
-
-.warning-fade-enter-from .warning-container {
-  @apply transform scale-95 translate-y-4;
-}
-
+.warning-fade-enter-from,
 .warning-fade-leave-to {
-  @apply opacity-0;
-}
-
-.warning-fade-leave-to .warning-container {
-  @apply transform scale-95 translate-y-4;
-}
-
-.details-slide-enter-active {
-  @apply transition-all duration-200 ease-out;
-}
-
-.details-slide-leave-active {
-  @apply transition-all duration-150 ease-in;
-}
-
-.details-slide-enter-from {
-  @apply opacity-0 transform -translate-y-2;
-}
-
-.details-slide-leave-to {
-  @apply opacity-0 transform -translate-y-2;
-}
-
-/* 响应式设计 */
-@media (max-width: 640px) {
-  .warning-overlay {
-    @apply p-2;
-  }
-
-  .warning-container {
-    @apply max-w-full;
-  }
-
-  .warning-header {
-    @apply p-4 pb-3;
-  }
-
-  .warning-title-section {
-    @apply gap-3;
-  }
-
-  .warning-icon-wrapper {
-    @apply w-10 h-10;
-  }
-
-  .warning-title {
-    @apply text-lg;
-  }
-
-  .warning-content {
-    @apply px-4 py-3;
-  }
-
-  .warning-footer {
-    @apply px-4 py-3;
-  }
-
-  .warning-actions {
-    @apply flex-col gap-2;
-  }
-
-  .btn-cancel,
-  .btn-confirm {
-    @apply w-full justify-center;
-  }
-}
-
-/* 无障碍访问 */
-@media (prefers-reduced-motion: reduce) {
-  .warning-fade-enter-active,
-  .warning-fade-leave-active,
-  .details-slide-enter-active,
-  .details-slide-leave-active {
-    @apply transition-none;
-  }
-
-  .warning-icon-wrapper i {
-    @apply animate-none;
-  }
-}
-
-/* 高对比度模式 */
-@media (prefers-contrast: high) {
-  .warning-container {
-    @apply border-2 border-amber-600;
-  }
-
-  .warning-header {
-    @apply border-b-2;
-  }
-
-  .warning-footer {
-    @apply border-t-2;
-  }
-}
-
-/* 打印样式 */
-@media print {
-  .warning-overlay {
-    @apply hidden;
-  }
+  opacity: 0;
+  transform: scale(0.95) translateY(1rem);
 }
 </style>

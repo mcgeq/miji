@@ -68,46 +68,6 @@ const selectedValue = ref<string>(props.modelValue);
 const inputId = useId();
 const isFirstFocus = ref(true);
 
-// 计算属性
-const selectClasses = computed(() => {
-  const baseClasses = ['modal-input-select', 'transition-normal'];
-  const sizeClasses = {
-    sm: 'input-sm',
-    base: '',
-    lg: 'input-lg',
-  };
-  const widthClasses = {
-    'full': 'w-full',
-    'auto': 'w-auto',
-    '2/3': 'w-2/3',
-    '1/2': 'w-1/2',
-    '1/3': 'w-1/3',
-  };
-
-  const classes = [
-    ...baseClasses,
-    sizeClasses[props.size],
-    widthClasses[props.width],
-  ];
-
-  // 错误状态
-  if (props.errorMessage) {
-    classes.push('border-red-500', 'focus:ring-red-500');
-  }
-
-  // 禁用状态
-  if (props.disabled) {
-    classes.push('opacity-50', 'cursor-not-allowed');
-  }
-
-  // 加载状态
-  if (props.loading) {
-    classes.push('opacity-75', 'cursor-wait');
-  }
-
-  return classes.filter(Boolean).join(' ');
-});
-
 // 显示的提醒类型列表
 const displayTypes = computed(() => {
   if (props.popularOnly) {
@@ -310,14 +270,12 @@ defineExpose({
 
 <template>
   <div class="reminder-selector">
-    <div class="mb-2 flex items-center justify-between">
-      <label
-        :for="inputId"
-        class="text-sm text-gray-700 font-medium mb-2 dark:text-gray-300"
-      >
+    <div class="reminder-selector-row">
+      <label :for="inputId" class="label-text">
         {{ label }}
-        <span v-if="required" class="text-red-500 ml-1" aria-label="必填">*</span>
+        <span v-if="required" class="required-asterisk" aria-label="必填">*</span>
       </label>
+
       <!-- 基础选择器 -->
       <select
         v-if="!showGrouped"
@@ -325,9 +283,12 @@ defineExpose({
         v-model="selectedValue"
         :required="required"
         :disabled="disabled"
-        :class="selectClasses"
-        :aria-invalid="!!errorMessage"
-        :aria-describedby="errorMessage ? `${inputId}-error` : undefined"
+        class="modal-input-select"
+        :data-size="size"
+        :data-width="width"
+        :data-error="!!errorMessage"
+        :data-disabled="disabled"
+        :data-loading="loading"
         @change="handleChange"
         @blur="handleBlur"
         @focus="handleFocus"
@@ -335,11 +296,7 @@ defineExpose({
         <option value="" disabled>
           {{ placeholder }}
         </option>
-        <option
-          v-for="type in displayTypes"
-          :key="type.code"
-          :value="type.code"
-        >
+        <option v-for="type in displayTypes" :key="type.code" :value="type.code">
           {{ getCurrentDisplayName(type) }}
         </option>
       </select>
@@ -351,9 +308,12 @@ defineExpose({
         v-model="selectedValue"
         :required="required"
         :disabled="disabled"
-        :class="selectClasses"
-        :aria-invalid="!!errorMessage"
-        :aria-describedby="errorMessage ? `${inputId}-error` : undefined"
+        class="modal-input-select"
+        :data-size="size"
+        :data-width="width"
+        :data-error="!!errorMessage"
+        :data-disabled="disabled"
+        :data-loading="loading"
         @change="handleChange"
         @blur="handleBlur"
         @focus="handleFocus"
@@ -361,29 +321,17 @@ defineExpose({
         <option value="" disabled>
           {{ placeholder }}
         </option>
-        <optgroup
-          v-for="(types, category) in groupedTypes"
-          :key="category"
-          :label="getCategoryName(category)"
-        >
-          <option
-            v-for="type in types"
-            :key="type.code"
-            :value="type.code"
-          >
+        <optgroup v-for="(types, category) in groupedTypes" :key="category" :label="getCategoryName(category)">
+          <option v-for="type in types" :key="type.code" :value="type.code">
             {{ getCurrentDisplayName(type) }}
           </option>
         </optgroup>
       </select>
     </div>
+
     <!-- 快捷选择按钮 -->
-    <div
-      v-if="showQuickSelect && quickSelectTypes.length > 0"
-      class="mb-2"
-      role="group"
-      :aria-label="quickSelectLabel"
-    >
-      <div class="text-xs text-gray-500 mb-1 dark:text-gray-400">
+    <div v-if="showQuickSelect && quickSelectTypes.length > 0" class="quick-select-group" role="group" :aria-label="quickSelectLabel">
+      <div class="quick-select-label">
         {{ quickSelectLabel }}：
       </div>
       <div class="flex flex-wrap gap-1">
@@ -400,120 +348,122 @@ defineExpose({
         </button>
       </div>
     </div>
+
     <!-- 错误提示 -->
-    <div
-      v-if="errorMessage"
-      :id="`${inputId}-error`"
-      class="text-sm text-red-600 mt-1 dark:text-red-400"
-      role="alert"
-      aria-live="polite"
-    >
+    <div v-if="errorMessage" :id="`${inputId}-error`" class="error-text" role="alert" aria-live="polite">
       {{ errorMessage }}
     </div>
+
     <!-- 帮助文本 -->
-    <div
-      v-if="helpText"
-      class="text-xs text-gray-500 mt-2 flex justify-end dark:text-gray-400"
-    >
+    <div v-if="helpText" class="help-text">
       {{ helpText }}
     </div>
   </div>
 </template>
 
 <style scoped lang="postcss">
-/* 快捷选择按钮样式 */
+/* 基础选择器 */
+.modal-input-select {
+  border: 1px solid #ccc;
+  border-radius: 0.375rem;
+  background-color: #fff;
+  color: #111;
+  transition: all 0.2s ease-in-out;
+  font-family: inherit;
+}
+
+/* 尺寸 */
+.modal-input-select[data-size="sm"] { padding: 0.25rem 0.5rem; font-size: 0.875rem; }
+.modal-input-select[data-size="base"] { padding: 0.5rem 0.75rem; font-size: 1rem; }
+.modal-input-select[data-size="lg"] { padding: 0.75rem 1rem; font-size: 1.125rem; }
+
+/* 宽度 */
+.modal-input-select[data-width="full"] { width: 100%; }
+.modal-input-select[data-width="auto"] { width: auto; }
+.modal-input-select[data-width="2/3"] { width: 66.666%; }
+.modal-input-select[data-width="1/2"] { width: 50%; }
+.modal-input-select[data-width="1/3"] { width: 33.333%; }
+
+/* 错误状态 */
+.modal-input-select[data-error="true"] { border-color: #f56565; }
+.modal-input-select[data-error="true"]:focus { outline: 2px solid #f56565; outline-offset: 2px; }
+
+/* 禁用状态 */
+.modal-input-select[data-disabled="true"] {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background-color: #f5f5f5;
+}
+
+/* 加载状态 */
+.modal-input-select[data-loading="true"] { opacity: 0.75; cursor: wait; }
+
+/* focus 样式 */
+.modal-input-select:focus { outline: 2px solid #3b82f6; outline-offset: 2px; }
+
+/* optgroup 样式 */
+.modal-input-select optgroup { font-weight: 600; color: #4b5563; }
+.modal-input-select optgroup option { font-weight: 400; padding-left: 1rem; }
+
+/* 禁用 option */
+.modal-input-select option:disabled { color: #9ca3af; }
+
+/* 快捷选择按钮 */
 .quick-select-btn {
-  @apply text-xs px-2 py-1 rounded-md border border-gray-200 dark:border-gray-600
-         bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300
-         hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-300 dark:hover:border-gray-500
-         focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
-         transition-all duration-200 cursor-pointer
-         disabled:opacity-50 disabled:cursor-not-allowed;
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.375rem;
+  border: 1px solid #e5e7eb;
+  background-color: #fff;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
 }
+.quick-select-btn:hover { background-color: #f9fafb; border-color: #d1d5db; }
+.quick-select-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
+/* 激活状态 */
 .quick-select-btn-active {
-  @apply bg-blue-50 dark:bg-blue-900/30 border-blue-200 dark:border-blue-600
-         text-blue-700 dark:text-blue-300;
+  background-color: #eff6ff;
+  border-color: #bfdbfe;
+  color: #1d4ed8;
 }
 
-/* 选择框样式优化 */
-select:focus {
-  outline: none;
+/* label */
+.label-text { font-size: 0.875rem; color: #374151; font-weight: 500; }
+.required-asterisk { color: #f56565; margin-left: 0.25rem; }
+
+/* 错误文本 */
+.error-text { font-size: 0.875rem; color: #f56565; margin-top: 0.25rem; }
+
+/* 帮助文本 */
+.help-text { font-size: 0.75rem; color: #6b7280; margin-top: 0.5rem; text-align: right; }
+
+/* 快捷选择组 */
+.quick-select-group { margin-bottom: 0.5rem; }
+.quick-select-label { font-size: 0.75rem; color: #6b7280; margin-bottom: 0.25rem; }
+
+/* 容器基础布局 */
+.reminder-selector-row {
+  display: flex;
+  align-items: center;        /* items-center */
+  justify-content: space-between; /* justify-between */
+  margin-bottom: 0.5rem;      /* mb-2 -> 0.5rem = 8px */
 }
 
-/* 深色主题适配 */
-.dark select option {
-  background-color: theme('colors.gray.800');
-  color: theme('colors.white');
-}
-
-/* 可访问性增强 */
-select:focus-visible {
-  outline: 2px solid theme('colors.blue.500');
-  outline-offset: 2px;
-}
-
-/* 响应式设计 */
+/* 响应式：小屏幕竖直排列 */
 @media (max-width: 640px) {
-  .reminder-selector .flex {
+  .reminder-selector-row {
     flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .reminder-selector select {
-    width: 100% !important;
-    margin-top: 0.5rem;
-  }
-
-  .quick-select-btn {
-    @apply text-xs px-1.5 py-0.5;
+    align-items: flex-start;  /* 左对齐 */
+    margin-bottom: 0.5rem;
   }
 }
 
-/* 加载状态动画 */
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
-}
-
-.reminder-selector select:disabled {
-  animation: pulse 2s infinite;
-}
-
-/* 优化选项组样式 */
-optgroup {
-  @apply font-semibold text-gray-600 dark:text-gray-400;
-}
-
-optgroup option {
-  @apply font-normal pl-4;
-}
-
-/* 错误状态动画 */
-@keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-4px); }
-  75% { transform: translateX(4px); }
-}
-
-.reminder-selector select.border-red-500 {
-  animation: shake 0.3s ease-in-out;
-}
-
-/* 优化滚动条样式 */
-select::-webkit-scrollbar {
-  width: 8px;
-}
-
-select::-webkit-scrollbar-track {
-  @apply bg-gray-100 dark:bg-gray-700;
-}
-
-select::-webkit-scrollbar-thumb {
-  @apply bg-gray-300 dark:bg-gray-500 rounded-md;
-}
-
-select::-webkit-scrollbar-thumb:hover {
-  @apply bg-gray-400 dark:bg-gray-400;
+/* 响应式 */
+@media (max-width: 640px) {
+  .reminder-selector .flex { flex-direction: column; align-items: flex-start; }
+  .modal-input-select { width: 100% !important; margin-top: 0.5rem; }
+  .quick-select-btn { padding: 0.125rem 0.375rem; font-size: 0.6875rem; }
 }
 </style>

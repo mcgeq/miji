@@ -71,28 +71,28 @@ function selectPriority(serialNum: string, p: Priority) {
 </script>
 
 <template>
+  <!-- 优先级按钮 -->
   <button
-    class="animate-pulse-subtle text-xs font-semibold border border-white/30 rounded-full bg-opacity-90 flex h-5 w-5 shadow-[0_0_10px_rgba(0,0,0,0.15)] transition-all duration-300 ease-out items-center left-1 top-1 justify-center absolute backdrop-blur-md dark:shadow-[0_0_10px_rgba(255,255,255,0.15)] hover:shadow-lg hover:scale-125" :class="[
-      `bg-gradient-to-br ${priorityClasses.gradient}`,
-      priorityClasses.text,
-    ]"
+    class="priority-btn"
+    :class="[priorityClasses.gradient, priorityClasses.text]"
     :title="priorityLabel"
     :aria-label="priorityLabel"
     :disabled="completed"
     @click="showMenu = !showMenu"
   >
-    <span class="drop-shadow-sm">{{ priorityLabel }}</span>
+    <span class="priority-label">{{ priorityLabel }}</span>
   </button>
 
-  <div
-    v-if="showMenu"
-    class="p-1 border border-gray-200 rounded-lg bg-white w-10 shadow-md left-0 top-7 absolute z-50 backdrop-blur-md dark:border-neutral-700 dark:bg-neutral-800 dark:shadow-lg"
-  >
+  <!-- 下拉菜单 -->
+  <div v-if="showMenu" class="priority-menu">
     <button
       v-for="p in priorities"
       :key="p"
-      class="text-[13px] tracking-wide font-medium px-2.5 py-1 rounded-md w-full block transition-colors duration-150 ease-in-out hover:bg-gray-100 active:scale-[0.98] dark:hover:bg-neutral-700" :class="[
-        p === priority ? 'bg-gray-200 dark:bg-neutral-600 font-semibold text-black dark:text-white' : 'text-gray-800 dark:text-gray-100',
+      class="priority-option"
+      :class="[
+        p === priority
+          ? 'priority-option--active'
+          : 'priority-option--inactive',
       ]"
       @click="selectPriority(serialNum, p)"
     >
@@ -101,11 +101,45 @@ function selectPriority(serialNum: string, p: Priority) {
   </div>
 </template>
 
-<style scoped>
-.animate-pulse-subtle:hover {
-  animation: pulse-subtle 2s ease-in-out infinite;
+<style scoped lang="postcss">
+/* 优先级按钮 */
+.priority-btn {
+  position: absolute;
+  top: 0.25rem; /* top-1 */
+  left: 0.25rem; /* left-1 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 1.25rem; /* h-5 */
+  width: 1.25rem;  /* w-5 */
+  border: 1px solid rgba(255, 255, 255, 0.3); /* border-white/30 */
+  border-radius: 9999px; /* rounded-full */
+  font-size: 0.75rem; /* text-xs */
+  font-weight: 600; /* font-semibold */
+  background-color: rgba(255, 255, 255, 0.9); /* bg-opacity-90 */
+  backdrop-filter: blur(8px); /* backdrop-blur-md */
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.15);
+  transition: all 0.3s ease-out;
+  cursor: pointer;
+}
+.priority-btn:hover {
+  box-shadow: 0 10px 15px rgba(0, 0, 0, 0.25);
+  transform: scale(1.25);
+}
+.priority-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
 }
 
+/* 内部文字 */
+.priority-label {
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25); /* drop-shadow-sm */
+}
+
+/* 动画 */
+.priority-btn:hover {
+  animation: pulse-subtle 2s ease-in-out infinite;
+}
 @keyframes pulse-subtle {
   0%, 100% {
     transform: scale(1);
@@ -114,6 +148,75 @@ function selectPriority(serialNum: string, p: Priority) {
   50% {
     transform: scale(1.1);
     opacity: 0.8;
+  }
+}
+
+/* 下拉菜单容器 */
+.priority-menu {
+  position: absolute;
+  top: 1.75rem; /* top-7 */
+  left: 0;
+  z-index: 50;
+  width: 2.5rem; /* w-10 */
+  padding: 0.25rem; /* p-1 */
+  border: 1px solid #e5e7eb; /* border-gray-200 */
+  border-radius: 0.5rem; /* rounded-lg */
+  background: #fff;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 4px 6px rgba(0,0,0,0.15);
+}
+
+/* 深色模式 */
+@media (prefers-color-scheme: dark) {
+  .priority-btn {
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.15);
+  }
+  .priority-menu {
+    background: #1f2937; /* neutral-800 */
+    border-color: #374151; /* neutral-700 */
+    box-shadow: 0 8px 16px rgba(0,0,0,0.4);
+  }
+}
+
+/* 菜单项 */
+.priority-option {
+  display: block;
+  width: 100%;
+  padding: 0.25rem 0.625rem; /* px-2.5 py-1 */
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: 0.375rem; /* rounded-md */
+  text-align: left;
+  transition: background-color 0.15s ease-in-out, transform 0.1s ease-in-out;
+}
+.priority-option:hover {
+  background: #f3f4f6; /* hover:bg-gray-100 */
+}
+.priority-option:active {
+  transform: scale(0.98); /* active:scale-[0.98] */
+}
+
+/* 激活状态 */
+.priority-option--active {
+  background: #e5e7eb; /* bg-gray-200 */
+  font-weight: 600;
+  color: #000;
+}
+.priority-option--inactive {
+  color: #1f2937; /* text-gray-800 */
+}
+
+/* 深色模式菜单项 */
+@media (prefers-color-scheme: dark) {
+  .priority-option--active {
+    background: #4b5563; /* neutral-600 */
+    color: #fff;
+  }
+  .priority-option--inactive {
+    color: #f9fafb; /* gray-100 */
+  }
+  .priority-option:hover {
+    background: #374151; /* neutral-700 */
   }
 }
 </style>

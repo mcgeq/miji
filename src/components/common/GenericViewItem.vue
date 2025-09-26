@@ -41,7 +41,7 @@ function removeEntity(key: string) {
 </script>
 
 <template>
-  <div class="p-4 bg-gray-100 flex flex-wrap gap-3">
+  <div class="entity-list-wrapper">
     <component
       :is="component"
       v-for="([key, entity]) in entityList"
@@ -54,3 +54,13 @@ function removeEntity(key: string) {
     />
   </div>
 </template>
+
+<style scoped lang="postcss">
+.entity-list-wrapper {
+  padding: 1rem;                  /* p-4 */
+  background-color: #F3F4F6;       /* bg-gray-100 */
+  display: flex;                   /* flex */
+  flex-wrap: wrap;                 /* flex-wrap */
+  gap: 0.75rem;                    /* gap-3 */
+}
+</style>

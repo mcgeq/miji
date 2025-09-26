@@ -105,18 +105,16 @@ export default defineComponent({
 </script>
 
 <template>
-  <div
-    class="p-4 rounded-lg bg-white flex flex-wrap gap-4 shadow-md items-center justify-between sm:flex-nowrap"
-  >
+  <div class="pagination-container">
     <!-- First / Prev -->
-    <div class="flex gap-2">
+    <div class="pagination-group">
       <button
         :disabled="currentPage <= 1"
         :aria-label="t('pagination.home')"
         class="btn-fancy"
         @click="onFirst"
       >
-        <ChevronsLeft class="h-4 w-4" />
+        <ChevronsLeft class="icon" />
       </button>
       <button
         :disabled="currentPage <= 1"
@@ -124,13 +122,13 @@ export default defineComponent({
         class="btn-fancy"
         @click="onPrev"
       >
-        <ChevronLeft class="h-4 w-4" />
+        <ChevronLeft class="icon" />
       </button>
     </div>
 
     <!-- Page Info -->
-    <div class="flex gap-3 items-center">
-      <span class="text-sm text-gray-700">{{ modelCurrentPage }}/{{ totalPages }}</span>
+    <div class="pagination-info">
+      <span class="page-text">{{ modelCurrentPage }}/{{ totalPages }}</span>
       <input
         v-model.number="pageInput"
         type="number"
@@ -144,14 +142,14 @@ export default defineComponent({
     </div>
 
     <!-- Next / Last -->
-    <div class="flex gap-2">
+    <div class="pagination-group">
       <button
         :disabled="currentPage === totalPages"
         :aria-label="t('pagination.next')"
         class="btn-fancy"
         @click="onNext"
       >
-        <ChevronRight class="h-4 w-4" />
+        <ChevronRight class="icon" />
       </button>
       <button
         :disabled="currentPage === totalPages"
@@ -159,43 +157,120 @@ export default defineComponent({
         class="btn-fancy"
         @click="onLast"
       >
-        <ChevronsRight class="h-4 w-4" />
+        <ChevronsRight class="icon" />
       </button>
     </div>
-
-    <!-- Page size selector (hidden) -->
-    <select
-      v-model="modelPageSize"
-      disabled
-
-      hidden aria-label="Select items per page"
-      class="text-sm px-2 py-1 border border-gray-300 rounded-md"
-      @change="handlePageSizeChange"
-    >
-      <option v-for="size in modelPageSize" :key="size" :value="size">
-        {{ size }}
-      </option>
-    </select>
   </div>
 </template>
 
 <style scoped lang="postcss">
-.btn-fancy {
-  @apply inline-flex items-center justify-center px-3 py-2 rounded-xl border border-gray-300
-    text-sm font-semibold text-gray-800 bg-gradient-to-b from-white via-gray-100 to-gray-200
-    shadow-[inset_0_1px_0_rgba(255,255,255,0.6),_0_2px_4px_rgba(0,0,0,0.1)]
-    transition-all duration-200 ease-in-out
-    hover:from-gray-100 hover:via-gray-200 hover:to-gray-300
-    hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.4),_0_4px_6px_rgba(0,0,0,0.15)]
-    active:translate-y-[1px] active:shadow-inner
-    focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
-    disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none;
+.pagination-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  background: var(--color-base-100);
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+@media (min-width: 640px) {
+  .pagination-container {
+    flex-wrap: nowrap;
+  }
 }
 
+.pagination-group {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.pagination-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.page-text {
+  font-size: 0.875rem;
+  color: var(--color-base-content);
+}
+
+/* 按钮样式 */
+.btn-fancy {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.75rem;
+  border: 1px solid var(--color-neutral);
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-base-content);
+  background: linear-gradient(to bottom,
+    var(--color-base-100),
+    var(--color-base-200),
+    var(--color-base-300)
+  );
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.6),
+              0 2px 4px rgba(0,0,0,0.1);
+  transition: all 0.2s ease-in-out;
+  cursor: pointer;
+}
+.btn-fancy:hover {
+  background: linear-gradient(to bottom,
+    var(--color-base-200),
+    var(--color-base-300)
+  );
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.4),
+              0 4px 6px rgba(0,0,0,0.15);
+}
+.btn-fancy:active {
+  transform: translateY(1px);
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.15);
+}
+.btn-fancy:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-primary),
+              0 0 0 4px var(--color-base-100);
+}
+.btn-fancy:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* 输入框样式 */
 .input-fancy {
-  @apply w-16 text-center text-sm text-gray-800 px-3 py-1.5 rounded-lg border border-gray-300
-    bg-gradient-to-b from-white to-gray-100 shadow-inner
-    focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
-    transition-all duration-200 ease-in-out hover:border-gray-400 disabled:opacity-50;
+  width: 4rem;
+  text-align: center;
+  font-size: 0.875rem;
+  color: var(--color-base-content);
+  padding: 0.375rem 0.75rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--color-neutral);
+  background: linear-gradient(to bottom,
+    var(--color-base-100),
+    var(--color-base-200)
+  );
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.06);
+  transition: all 0.2s ease-in-out;
+}
+.input-fancy:hover {
+  border-color: var(--color-neutral-content);
+}
+.input-fancy:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-primary),
+              0 0 0 4px var(--color-base-100);
+}
+.input-fancy:disabled {
+  opacity: 0.5;
+}
+
+.icon {
+  width: 1rem;
+  height: 1rem;
 }
 </style>

@@ -212,24 +212,21 @@ defineExpose({
 </script>
 
 <template>
-  <div class="mb-2 flex items-center justify-between">
+  <div class="form-group">
     <label
       :for="inputId"
-      class="text-sm text-gray-700 font-medium mb-2 dark:text-gray-300"
+      class="form-label"
     >
       {{ label }}
-      <span v-if="required" class="text-red-500 ml-1" aria-label="必填">*</span>
+      <span v-if="required" class="form-required" aria-label="必填">*</span>
     </label>
-    <div class="flex flex-col" :class="widthClass">
+
+    <div class="form-field" :class="widthClass">
       <select
         :id="inputId"
         v-model="currentValue"
-        class="modal-input-select" :class="[
-          {
-            'border-red-500': hasError,
-            'border-gray-300 dark:border-gray-600': !hasError,
-          },
-        ]"
+        class="modal-input-select"
+        :class="{ 'is-error': hasError }"
         :required="required"
         :disabled="disabled"
         @blur="handleBlur"
@@ -244,16 +241,20 @@ defineExpose({
           {{ option.label }}
         </option>
       </select>
+
+      <!-- 错误提示 -->
       <div
         v-if="hasError && errorMessage"
-        class="text-sm text-red-600 mt-1 dark:text-red-400"
+        class="form-error"
         role="alert"
       >
         {{ errorMessage }}
       </div>
+
+      <!-- 帮助文本 -->
       <div
         v-if="helpText && !hasError"
-        class="text-xs text-gray-500 mt-2 flex justify-end dark:text-gray-400"
+        class="form-help"
       >
         {{ helpText }}
       </div>
@@ -262,49 +263,118 @@ defineExpose({
 </template>
 
 <style scoped lang="postcss">
-/* 基础样式 */
-.modal-input-select {
-  @apply px-3 py-2 border rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors;
+/* 容器 */
+.form-group {
+  margin-bottom: 0.5rem; /* mb-2 */
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
-/* 错误状态 */
-.border-red-500:focus {
-  @apply ring-2 ring-red-400 ring-opacity-50 border-red-500;
+/* 标签 */
+.form-label {
+  font-size: 0.875rem; /* text-sm */
+  font-weight: 500; /* font-medium */
+  color: #374151; /* gray-700 */
+  margin-bottom: 0.5rem;
+}
+.form-required {
+  color: #ef4444; /* red-500 */
+  margin-left: 0.25rem;
+}
+
+/* 字段容器 */
+.form-field {
+  display: flex;
+  flex-direction: column;
+}
+
+/* 下拉框 */
+.modal-input-select {
+  padding: 0.5rem 0.75rem; /* px-3 py-2 */
+  border: 1px solid #d1d5db; /* gray-300 */
+  border-radius: 0.375rem; /* rounded-md */
+  background: #fff;
+  color: #111827; /* gray-900 */
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.modal-input-select:focus {
+  outline: none;
+  border-color: transparent;
+  box-shadow: 0 0 0 2px #3b82f6; /* ring-2 blue-500 */
+}
+.modal-input-select.is-error {
+  border-color: #ef4444; /* red-500 */
+}
+.modal-input-select.is-error:focus {
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.5); /* ring-red-400/50 */
 }
 
 /* 禁用状态 */
 .modal-input-select:disabled {
-  @apply bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed;
+  background: #f3f4f6; /* gray-100 */
+  color: #6b7280; /* gray-500 */
+  cursor: not-allowed;
 }
 
-/* 选项样式 */
+/* 下拉选项 */
 .modal-input-select option {
-  @apply py-2 px-3;
+  padding: 0.5rem 0.75rem;
 }
-
 .modal-input-select option:disabled {
-  @apply text-gray-400 dark:text-gray-500;
+  color: #9ca3af; /* gray-400 */
 }
 
-/* 响应式优化 */
+/* 错误提示 */
+.form-error {
+  margin-top: 0.25rem;
+  font-size: 0.875rem;
+  color: #dc2626; /* red-600 */
+}
+
+/* 帮助文本 */
+.form-help {
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+  color: #6b7280; /* gray-500 */
+  text-align: right;
+}
+
+/* 响应式 */
 @media (max-width: 640px) {
-  .mb-2 .flex {
+  .form-group {
     flex-direction: column;
     align-items: stretch;
   }
-  .mb-2 label {
+  .form-label {
     margin-bottom: 0.25rem;
   }
 }
 
-/* 深色模式优化 */
+/* 暗黑模式 */
 @media (prefers-color-scheme: dark) {
-  .modal-input-select {
-    @apply border-gray-600;
+  .form-label {
+    color: #d1d5db; /* gray-300 */
   }
-
+  .modal-input-select {
+    background: #1f2937; /* gray-800 */
+    color: #f9fafb; /* gray-100 */
+    border-color: #4b5563; /* gray-600 */
+  }
   .modal-input-select:focus {
-    @apply ring-blue-400;
+    box-shadow: 0 0 0 2px #60a5fa; /* ring-blue-400 */
+  }
+  .modal-input-select:disabled {
+    background: #374151; /* gray-700 */
+    color: #9ca3af; /* gray-400 */
+  }
+  .form-error {
+    color: #f87171; /* red-400 */
+  }
+  .form-help {
+    color: #9ca3af; /* gray-400 */
   }
 }
 </style>
