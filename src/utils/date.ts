@@ -126,15 +126,29 @@ export class DateUtils {
     });
   }
 
-  static toLocalISOFromDateInput(dateStr: string, endOfDay = false): string {
-    const date = new Date(`${dateStr}T00:00:00`); // yyyy-MM-dd → Date
-    return DateUtils.generateISOWithOffset({}, d => {
+  static toLocalISOFromDateInput(
+    dateStr: string,
+    endOfDay = false,
+    offsetOptions?: {
+      days?: number;
+      hours?: number;
+      minutes?: number;
+      seconds?: number;
+      milliseconds?: number;
+    },
+  ): string {
+    const [year, month, day] = dateStr.split('-').map(Number);
+    const date = new Date(
+      year,
+      month - 1,
+      day,
+      endOfDay ? 23 : 0,
+      endOfDay ? 59 : 0,
+      endOfDay ? 59 : 0,
+      endOfDay ? 999 : 0,
+    );
+    return DateUtils.generateISOWithOffset(offsetOptions, d => {
       d.setTime(date.getTime());
-      if (endOfDay) {
-        d.setHours(23, 59, 59, 999);
-      } else {
-        d.setHours(0, 0, 0, 0);
-      }
     });
   }
 

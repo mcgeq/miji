@@ -2,6 +2,7 @@ import { z } from 'zod';
 import {
   CurrencySchema,
   DateTimeSchema,
+  DecimalLikeSchema,
   DescriptionSchema,
   NameSchema,
   SerialNumSchema,
@@ -13,8 +14,8 @@ export const BaseAccountFields = z.object({
   name: NameSchema,
   description: DescriptionSchema,
   type: AccountTypeSchema,
-  balance: z.string(),
-  initialBalance: z.string(),
+  balance: DecimalLikeSchema,
+  initialBalance: DecimalLikeSchema,
   isShared: z.boolean(),
   ownerId: SerialNumSchema,
   isActive: z.boolean(),
@@ -25,7 +26,7 @@ export const BaseAccountFields = z.object({
 
 export const AccountSchema = BaseAccountFields.extend({
   currency: CurrencySchema,
-}).strict();
+});
 
 export const CreateAccountRequestSchema = BaseAccountFields.pick({
   name: true,

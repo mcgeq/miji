@@ -63,8 +63,19 @@ export const DescriptionSchema = z.string().max(1000, {
 export const DateTimeSchema = z.iso.datetime({
   offset: true,
   local: true,
-  precision: 3,
 });
+
+export const DecimalLikeSchema = z
+  .union([
+    z.number(),
+    z
+      .string()
+      .refine(val => !Number.isNaN(Number.parseFloat(val)), {
+        message: 'Invalid number format',
+      })
+      .transform(val => Number.parseFloat(val)),
+  ])
+  .transform(val => (typeof val === 'string' ? Number.parseFloat(val) : val));
 
 export const DateSchema = z.iso.date();
 export const TimesSchema = z.iso.time();

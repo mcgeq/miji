@@ -111,7 +111,12 @@ function onSubmit() {
             value instanceof Date ?
                 value.toISOString() :
                 String(value);
-          return DateUtils.toLocalISOFromDateInput(dateValue);
+          if (key === 'startDate') {
+            return DateUtils.toLocalISOFromDateInput(dateValue);
+          }
+          if (key === 'endDate') {
+            return DateUtils.toLocalISOFromDateInput(dateValue, true);
+          }
         }
         return null;
       }
@@ -158,7 +163,7 @@ function onSubmit() {
         return value;
       });
       if (!_.isEmpty(serializedChanges)) {
-        const updateParital = deepDiff(props.budget, formattedData) as BudgetUpdate;
+        const updateParital = deepDiff(props.budget, formattedData, { ignoreKeys: ['repeatPeriod'] }) as BudgetUpdate;
         const budgetUpdate = BudgetUpdateSchema.parse(updateParital);
         emit('update', props.budget.serialNum, budgetUpdate);
       }

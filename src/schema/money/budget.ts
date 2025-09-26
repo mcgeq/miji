@@ -6,6 +6,7 @@ import {
   CurrencySchema,
   DateSchema,
   DateTimeSchema,
+  DecimalLikeSchema,
   DescriptionSchema,
   NameSchema,
   ReminderSchema,
@@ -48,22 +49,22 @@ export const BudgetSchema = z.object({
   accountSerialNum: SerialNumSchema.optional().nullable(),
   name: NameSchema,
   description: DescriptionSchema,
-  amount: z.number(),
+  amount: DecimalLikeSchema,
   currency: CurrencySchema,
   repeatPeriodType: z.string(),
   repeatPeriod: RepeatPeriodSchema,
   startDate: DateTimeSchema,
   endDate: DateTimeSchema,
-  usedAmount: z.number(),
+  usedAmount: DecimalLikeSchema,
   isActive: z.boolean(),
   alertEnabled: z.boolean(),
   alertThreshold: AlertThresholdSchema.optional().nullable(),
   color: z.string(),
   account: AccountSchema.optional().nullable(),
-  currentPeriodUsed: z.number().min(0).optional().nullable(),
+  currentPeriodUsed: DecimalLikeSchema.optional().nullable(),
   currentPeriodStart: DateSchema.optional().nullable(),
   budgetType: BudgetTypeSchema.optional().nullable(),
-  progress: z.number().min(0).optional().nullable(),
+  progress: DecimalLikeSchema.optional().nullable(),
   linkedGoal: SerialNumSchema.optional().nullable(),
   reminders: z.array(ReminderSchema).optional().nullable(),
   priority: z.number().int().min(-128).max(127).optional().nullable(),
@@ -88,11 +89,9 @@ export const BudgetCreateSchema = BudgetSchema.omit({
   currency: true,
   createdAt: true,
   updatedAt: true,
-})
-  .extend({
-    currency: z.string().length(3),
-  })
-  .strict();
+}).extend({
+  currency: z.string().length(3),
+});
 
 // ----------------------
 // BudgetUpdateSchema

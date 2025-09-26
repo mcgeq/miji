@@ -2,6 +2,7 @@
 import { defineStore } from 'pinia';
 import { AppError, AppErrorCode, AppErrorSeverity } from '@/errors/appError';
 import { SortDirection } from '@/schema/common';
+import { AccountSchema, BudgetSchema } from '@/schema/money';
 import { MoneyDbError } from '@/services/money/baseManager';
 import { MoneyDb } from '@/services/money/money';
 import type { IncomeExpense, PageQuery } from '@/schema/common';
@@ -117,7 +118,7 @@ export const useMoneyStore = defineStore('money', {
     totalBalance: state => {
       return state.accounts
         .filter(account => account.isActive)
-        .reduce((sum, account) => sum + Number.parseFloat(account.balance), 0);
+        .reduce((sum, account) => sum + account.balance, 0);
     },
     activeAccounts: state => state.accounts.filter(account => account.isActive),
     activeBudgets: state => state.budgetsPaged.rows.filter(budget => budget.isActive),
@@ -222,7 +223,8 @@ export const useMoneyStore = defineStore('money', {
       return this.withLoadingSafe(
         async () => {
           const result = await MoneyDb.listAccountsPaged(query);
-          this.accounts = result.rows;
+          const parseResult = await AccountSchema.array().parseAsync(result.rows);
+          this.accounts = parseResult;
         },
         '获取账户列表失败',
         'listAccounts',
@@ -266,7 +268,12 @@ export const useMoneyStore = defineStore('money', {
         async () => {
           if (paged) {
             const result = await MoneyDb.listBudgetsPaged(query);
-            this.budgetsPaged = result;
+            const parseResult = await BudgetSchema.array().parseAsync(result.rows);
+            const parseBudget = {
+              ...result,
+              rows: parseResult,
+            };
+            this.budgetsPaged = parseBudget;
           } else {
             const result = await MoneyDb.listBudgets();
             this.budgets = result;
@@ -516,7 +523,12 @@ export const useMoneyStore = defineStore('money', {
       return this.withLoadingSafe(
         async () => {
           const result = await MoneyDb.listBudgetsPaged(query);
-          this.budgetsPaged = result;
+          const parseResult = await BudgetSchema.array().parseAsync(result.rows);
+          const parseBudget = {
+            ...result,
+            rows: parseResult,
+          };
+          this.budgetsPaged = parseBudget;
           return result;
         },
         '获取预算列表失败',
