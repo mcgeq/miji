@@ -24,7 +24,7 @@ function updateTodo(updated: TodoRemain) {
 </script>
 
 <template>
-  <div class="mt-4 rounded-lg bg-white shadow">
+  <div class="todolist-main">
     <TodoItem
       v-for="todo in todoList"
       :key="todo.serialNum"
@@ -38,6 +38,15 @@ function updateTodo(updated: TodoRemain) {
 </template>
 
 <style scoped>
+.todolist-main {
+  -webkit-margin-top: 1rem;
+  margin-top: 1rem;
+  margin-top: 1rem;
+  border-radius: 0.5rem;
+  background-color: #ffffff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
 .slide-fade-enter-active,
 .slide-fade-leave-active {
   transition: opacity 0.5s ease, transform 0.5s ease;
