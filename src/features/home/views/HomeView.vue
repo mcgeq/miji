@@ -1,54 +1,146 @@
 <script setup></script>
 
 <template>
-  <!-- 外层网格：手机 1×4、桌面 2×2，间隙 1rem -->
-  <div
-    class="bg-gradient-to-br p-4 gap-4 grid grid-cols-1 grid-rows-4 min-h-screen from-gray-100 to-gray-200 md:grid-cols-2 md:grid-rows-2"
-  >
-    <!-- 区域 1：红 -->
-    <div
-      class="bg-gradient-to-br home-scoop text-red-600 from-red-50 to-red-100 hover:from-red-100 hover:to-red-200"
-    >
+  <div class="grid-container">
+    <div class="grid-item red">
       区域 1
     </div>
-
-    <!-- 区域 2：蓝 -->
-    <div
-      class="home-scoop bg-gradient-to-br text-blue-600 from-blue-50 to-blue-100 hover:from-blue-100 hover:to-blue-200"
-    >
+    <div class="grid-item blue">
       区域 2
     </div>
-
-    <!-- 区域 3：紫 -->
-    <div
-      class="home-scoop bg-gradient-to-br text-purple-600 from-purple-50 to-purple-100 hover:from-purple-100 hover:to-purple-200"
-    >
+    <div class="grid-item purple">
       区域 3
     </div>
-
-    <!-- 区域 4：黄 -->
-    <div
-      class="home-scoop bg-gradient-to-br text-yellow-600 from-yellow-50 to-yellow-100 hover:from-yellow-100 hover:to-yellow-200"
-    >
+    <div class="grid-item yellow">
       区域 4
     </div>
   </div>
 </template>
 
 <style lang="postcss">
-.home-scoop {
-  @apply
-    rounded-2xl
-    shadow-lg
-    backdrop-blur-sm
-    transition-all-400
-    ease-in-out
-    hover:scale-105
-    hover:shadow-2xl
-    flex
-    items-center
-    justify-center
-    text-2xl
-    font-bold;
+/* 外层网格 */
+.grid-container {
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: repeat(4, 1fr);
+  gap: 1rem;
+  min-height: 100vh;
+  padding: 1rem;
+  background: linear-gradient(135deg, var(--color-base-100), var(--color-base-200));
+}
+
+/* 响应式桌面布局：2×2 */
+@media (min-width: 768px) {
+  .grid-container {
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+  }
+}
+
+/* 公共区域样式 */
+.grid-item {
+  border-radius: 1rem;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  backdrop-filter: blur(8px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 1.5rem;
+  font-weight: bold;
+  transition: all 0.4s ease-in-out;
+}
+
+/* 悬停效果 */
+.grid-item:hover {
+  transform: scale(1.05);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+}
+
+/* 红色区域 */
+.red {
+  color: var(--color-error-content);
+  --gradient-angle: 135deg;
+  --mix-ratio: clamp(15%, 20%, 25%);
+  background: linear-gradient(
+    var(--gradient-angle),
+    var(--color-base-200) 0%,
+    var(--color-error) 100%
+  );
+}
+
+.red:hover {
+  background: linear-gradient(
+    var(--gradient-angle),
+    var(--color-error) 0%,
+    color-mix(in oklch, var(--color-error) var(--mix-ratio), var(--color-base-200)) 100%
+  );
+}
+
+/* 蓝色区域 */
+.blue {
+  color: var(--color-info-content);
+  --gradient-angle: 135deg;
+  --mix-ratio: clamp(15%, 20%, 25%);
+  background: linear-gradient(
+    var(--gradient-angle),
+    var(--color-base-200) 0%,
+    var(--color-info) 100%
+  );
+}
+
+.blue:hover {
+  background: linear-gradient(
+    var(--gradient-angle),
+    var(--color-info) 0%,
+    color-mix(in oklch, var(--color-info) var(--mix-ratio), var(--color-base-200)) 100%
+  );
+}
+
+/* 紫色区域 */
+.purple {
+  color: var(--color-primary-content);
+  --gradient-angle: 135deg;
+  --mix-ratio: clamp(15%, 20%, 25%);
+  background: linear-gradient(
+    var(--gradient-angle),
+    var(--color-base-200) 0%,
+    var(--color-primary) 100%
+  );
+}
+
+.purple:hover {
+  background: linear-gradient(
+    var(--gradient-angle),
+    var(--color-primary) 0%,
+    color-mix(in oklch, var(--color-primary) var(--mix-ratio), var(--color-base-200)) 100%
+  );
+}
+
+/* 黄色区域 */
+.yellow {
+  color: var(--color-warning-content);
+  --gradient-angle: 135deg;
+  --mix-ratio: clamp(15%, 20%, 25%);
+  background: linear-gradient(
+    var(--gradient-angle),
+    var(--color-base-200) 0%,
+    var(--color-warning) 100%
+  );
+}
+
+.yellow:hover {
+  background: linear-gradient(
+    var(--gradient-angle),
+    var(--color-warning) 0%,
+    color-mix(in oklch, var(--color-warning) var(--mix-ratio), var(--color-base-200)) 100%
+  );
+}
+
+/* 大屏幕调整渐变角度 */
+@media (min-width: 768px) {
+  .red { --gradient-angle: 135deg; }
+  .blue { --gradient-angle: 225deg; }
+  .purple { --gradient-angle: 45deg; }
+  .yellow { --gradient-angle: 315deg; }
 }
 </style>
