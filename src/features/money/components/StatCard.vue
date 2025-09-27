@@ -177,7 +177,7 @@ const formattedValue = computed(() => props.value);
 .stat-card {
   position: relative;
   overflow: hidden;
-  background: #fff;
+  background: var(--color-base-100);
   border-radius: 12px;
   border-left: 4px solid #3b82f6; /* 默认蓝色 */
   padding: 20px;
@@ -191,10 +191,10 @@ const formattedValue = computed(() => props.value);
   margin-bottom: 8px;
 }
 .stat-title {
-  font-size: 13px;
-  font-weight: 500;
+  font-size: 0.8rem;
+  font-weight: 600;
   text-transform: uppercase;
-  color: #4b5563;
+  color: var(--color-neutral);
   letter-spacing: 0.05em;
 }
 .stat-icon {
@@ -219,13 +219,13 @@ const formattedValue = computed(() => props.value);
 .currency {
   font-size: 15px;
   font-weight: 600;
-  color: #6b7280;
+  color: var(--color-accent);
 }
 .value {
   font-size: 28px;
   font-weight: bold;
   line-height: 1;
-  color: #1f2937;
+  color: var(--color-accent-content);
 }
 .value.loading {
   color: transparent;
@@ -245,7 +245,7 @@ const formattedValue = computed(() => props.value);
 }
 .subtitle {
   font-size: 12px;
-  color: #6b7280;
+  color: var(--color-neutral);
   margin-bottom: 6px;
 }
 
