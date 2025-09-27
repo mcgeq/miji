@@ -6,3 +6,17 @@ edition = "2024"
 [dependencies]
 tauri = { workspace = true }
 common = { workspace = true }
+chrono = { workspace = true }
+serde = { workspace = true }
+validator = { workspace = true }
+entity = { workspace = true }
+sea-orm = { workspace = true }
+lazy_static = { workspace = true }
+regex = { workspace = true }
+snafu = { workspace = true }
+serde_json = { workspace = true }
+tracing = { workspace = true }
+once_cell = { workspace = true }
+tokio = { workspace = true }
+macros = { workspace = true }
+futures = { workspace = true }

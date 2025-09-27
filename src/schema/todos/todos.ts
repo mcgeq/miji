@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import {
   DateTimeSchema,
+  DecimalLikeSchema,
   NullableStringSchema,
   PrioritySchema,
   RepeatPeriodSchema,
@@ -15,7 +16,7 @@ export const TodoSchema = z.object({
   createdAt: DateTimeSchema,
   updatedAt: DateTimeSchema.nullable(),
   dueAt: DateTimeSchema,
-  priority: PrioritySchema, // 建议改为 z.enum(['Low', 'Medium', ...])
+  priority: PrioritySchema,
   status: StatusSchema,
   repeat: RepeatPeriodSchema,
   completedAt: DateTimeSchema.nullable(),
@@ -23,13 +24,22 @@ export const TodoSchema = z.object({
   progress: z.number().min(0).max(100),
   location: NullableStringSchema,
   ownerId: SerialNumSchema.nullable(),
-  isArchived: z.union([z.literal(0), z.literal(1)]),
-  isPinned: z.union([z.literal(0), z.literal(1)]),
-  estimateMinutes: z.number().int().nonnegative().nullable(),
-  reminderCount: z.number().int().nonnegative(),
+  isArchived: z.boolean(),
+  isPinned: z.boolean(),
+  estimateMinutes: DecimalLikeSchema.nullable(),
+  reminderCount: DecimalLikeSchema,
   parentId: SerialNumSchema.nullable(),
-  subtaskOrder: z.number().int().nullable(),
+  subtaskOrder: DecimalLikeSchema.nullable(),
 });
 
+export const TodoCreateSchema = TodoSchema.omit({
+  serialNum: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export const TodoUpdateSchema = TodoCreateSchema.partial();
+
 export type Todo = z.infer<typeof TodoSchema>;
+export type TodoCreate = z.infer<typeof TodoCreateSchema>;
+export type TodoUpdate = z.infer<typeof TodoUpdateSchema>;
 export type TodoRemain = Todo & { remainingTime: string };

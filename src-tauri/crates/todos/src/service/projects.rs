@@ -1,0 +1,224 @@
+use std::sync::Arc;
+
+use common::{
+    crud::service::{CrudConverter, CrudService, GenericCrudService},
+    error::{AppError, MijiResult},
+    paginations::{Filter, PagedQuery, PagedResult},
+    utils::date::DateUtils,
+};
+use entity::localize::LocalizeModel;
+use sea_orm::{ActiveValue, Condition, DbConn, EntityTrait};
+use serde::{Deserialize, Serialize};
+use validator::Validate;
+
+use crate::{
+    dto::projects::{ProjectCreate, ProjectUpdate},
+    service::projects_hooks::ProjectHooks,
+};
+
+#[derive(Debug, Serialize, Deserialize, Validate)]
+#[serde(rename_all = "camelCase")]
+pub struct ProjectsFilter {}
+
+impl Filter<entity::project::Entity> for ProjectsFilter {
+    fn to_condition(&self) -> sea_orm::Condition {
+        Condition::all()
+    }
+}
+
+#[derive(Debug)]
+pub struct ProjectConverter;
+
+impl CrudConverter<entity::project::Entity, ProjectCreate, ProjectUpdate> for ProjectConverter {
+    fn create_to_active_model(
+        &self,
+        data: ProjectCreate,
+    ) -> MijiResult<entity::project::ActiveModel> {
+        entity::project::ActiveModel::try_from(data).map_err(AppError::from_validation_errors)
+    }
+
+    fn update_to_active_model(
+        &self,
+        model: entity::project::Model,
+        data: ProjectUpdate,
+    ) -> MijiResult<entity::project::ActiveModel> {
+        entity::project::ActiveModel::try_from(data)
+            .map(|mut active_model| {
+                active_model.serial_num = ActiveValue::Set(model.serial_num.clone());
+                active_model.created_at = ActiveValue::Set(model.created_at);
+                active_model.updated_at = ActiveValue::Set(Some(DateUtils::local_now()));
+                active_model
+            })
+            .map_err(AppError::from_validation_errors)
+    }
+
+    fn primary_key_to_string(&self, model: &entity::project::Model) -> String {
+        model.serial_num.clone()
+    }
+
+    fn table_name(&self) -> &'static str {
+        "project"
+    }
+}
+
+impl ProjectConverter {
+    pub async fn model_with_local(
+        &self,
+        model: entity::project::Model,
+    ) -> MijiResult<entity::project::Model> {
+        Ok(model.to_local())
+    }
+
+    pub async fn localize_models(
+        &self,
+        models: Vec<entity::project::Model>,
+    ) -> MijiResult<Vec<entity::project::Model>> {
+        futures::future::try_join_all(models.into_iter().map(|m| self.model_with_local(m))).await
+    }
+}
+
+// 交易服务实现
+pub struct ProjectsService {
+    inner: GenericCrudService<
+        entity::project::Entity,
+        ProjectsFilter,
+        ProjectCreate,
+        ProjectUpdate,
+        ProjectConverter,
+        ProjectHooks,
+    >,
+}
+
+impl ProjectsService {
+    pub fn new(
+        converter: ProjectConverter,
+        hooks: ProjectHooks,
+        logger: Arc<dyn common::log::logger::OperationLogger>,
+    ) -> Self {
+        Self {
+            inner: GenericCrudService::new(converter, hooks, logger),
+        }
+    }
+}
+
+impl std::ops::Deref for ProjectsService {
+    type Target = GenericCrudService<
+        entity::project::Entity,
+        ProjectsFilter,
+        ProjectCreate,
+        ProjectUpdate,
+        ProjectConverter,
+        ProjectHooks,
+    >;
+
+    fn deref(&self) -> &Self::Target {
+        &self.inner
+    }
+}
+
+impl ProjectsService {
+    pub async fn project_get(
+        &self,
+        db: &DbConn,
+        serial_num: String,
+    ) -> MijiResult<entity::project::Model> {
+        let opt_model = if serial_num.is_empty() {
+            entity::project::Entity::find().one(db).await?
+        } else {
+            Some(self.get_by_id(db, serial_num).await?)
+        };
+        let model = opt_model.ok_or_else(|| {
+            AppError::simple(
+                common::BusinessCode::NotFound,
+                "project notfound".to_string(),
+            )
+        })?;
+        self.converter().model_with_local(model).await
+    }
+
+    pub async fn project_create(
+        &self,
+        db: &DbConn,
+        data: ProjectCreate,
+    ) -> MijiResult<entity::project::Model> {
+        let model = self.create(db, data).await?;
+        self.converter().model_with_local(model).await
+    }
+
+    pub async fn project_update(
+        &self,
+        db: &DbConn,
+        serial_num: String,
+        data: ProjectUpdate,
+    ) -> MijiResult<entity::project::Model> {
+        let model = self.update(db, serial_num, data).await?;
+        self.converter().model_with_local(model).await
+    }
+
+    pub async fn project_list(&self, db: &DbConn) -> MijiResult<Vec<entity::project::Model>> {
+        let models = self.list(db).await?;
+        self.converter().localize_models(models).await
+    }
+
+    pub async fn project_list_with_filter(
+        &self,
+        db: &DbConn,
+        filter: ProjectsFilter,
+    ) -> MijiResult<Vec<entity::project::Model>> {
+        let models = self.list_with_filter(db, filter).await?;
+        self.converter().localize_models(models).await
+    }
+
+    pub async fn project_list_paged(
+        &self,
+        db: &DbConn,
+        query: PagedQuery<ProjectsFilter>,
+    ) -> MijiResult<PagedResult<entity::project::Model>> {
+        let paged = self.list_paged(db, query).await?;
+        let models = self.converter().localize_models(paged.rows).await?;
+        Ok(PagedResult {
+            rows: models,
+            total_count: paged.total_count,
+            current_page: paged.current_page,
+            page_size: paged.page_size,
+            total_pages: paged.total_pages,
+        })
+    }
+
+    pub async fn project_create_batch(
+        &self,
+        db: &DbConn,
+        data: Vec<ProjectCreate>,
+    ) -> MijiResult<Vec<entity::project::Model>> {
+        let models = self.create_batch(db, data).await?;
+        self.converter().localize_models(models).await
+    }
+
+    pub async fn project_delete_batch(&self, db: &DbConn, ids: Vec<String>) -> MijiResult<u64> {
+        self.delete_batch(db, ids).await
+    }
+
+    pub async fn project_exists(&self, db: &DbConn, id: String) -> MijiResult<bool> {
+        self.exists(db, id).await
+    }
+
+    pub async fn project_count(&self, db: &DbConn) -> MijiResult<u64> {
+        self.count(db).await
+    }
+
+    pub async fn project_count_with_filter(
+        &self,
+        db: &DbConn,
+        filter: ProjectsFilter,
+    ) -> MijiResult<u64> {
+        self.count_with_filter(db, filter).await
+    }
+}
+
+pub fn get_project_service() -> ProjectsService {
+    ProjectsService::new(
+        ProjectConverter,
+        ProjectHooks,
+        Arc::new(common::log::logger::NoopLogger),
+    )
+}
