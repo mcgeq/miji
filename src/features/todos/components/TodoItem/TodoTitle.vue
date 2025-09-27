@@ -23,16 +23,10 @@ const completed = computed(() => props.completed);
   line-height: 1.375rem; /* snug */
   text-align: left;
 
-  display: -webkit-box;
-  display: box; /* 旧标准，部分兼容 */
-  -webkit-box-orient: vertical;
-  box-orient: vertical;
-
-  -webkit-line-clamp: 1; /* WebKit 浏览器支持 */
-  line-clamp: 1; /* 标准属性，PostCSS 会加前缀 */
-
+  display: block; /* 或 inline-block，根据需求 */
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap; /* 单行省略 */
 
   cursor: pointer;
   color: var(--color-base-content, #374151); /* 默认文字色 */

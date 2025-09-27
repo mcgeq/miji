@@ -864,14 +864,4 @@ onUnmounted(() => {
   width: 32px;
   pointer-events: none; /* 不阻挡滚动 */
 }
-
-.fade-left {
-  left: 0;
-  background: linear-gradient(to right, white 0%, rgba(255,255,255,0) 100%);
-}
-
-.fade-right {
-  right: 0;
-  background: linear-gradient(to left, white 0%, rgba(255,255,255,0) 100%);
-}
 </style>
