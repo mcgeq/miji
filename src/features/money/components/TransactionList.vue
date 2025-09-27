@@ -28,10 +28,10 @@ const emit = defineEmits<{
 
 const { t } = useI18n();
 const moneyStore = useMoneyStore();
-
+const mediaQueries = useMediaQueriesStore();
 // 数据状态
 const loading = ref(false);
-const showMoreFilters = ref(false);
+const showMoreFilters = ref(!mediaQueries.isMobile);
 const transactions = computed<Transaction[]>(() => moneyStore.transactions);
 const disabledTransactions = computed(() => {
   return new Set(
@@ -214,13 +214,13 @@ defineExpose({
 </script>
 
 <template>
-  <div class="min-h-25">
+  <div class="money-tab-25">
     <!-- 过滤器区域 -->
-    <div class="mb-5 p-4 rounded-lg bg-gray-50 flex flex-wrap gap-3 items-center justify-center">
-      <div class="filter-flex-wrap flex flex-1 gap-3">
+    <div class="screening-filtering">
+      <div class="screening-filtering-select">
         <select
           v-model="filters.transactionType"
-          class="text-sm px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          class=""
         >
           <option value="">
             {{ t('common.actions.all') }}
@@ -240,7 +240,7 @@ defineExpose({
       <div class="filter-flex-wrap">
         <select
           v-model="filters.accountSerialNum"
-          class="text-sm px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          class="screening-filtering-select"
         >
           <option value="">
             {{ t('common.actions.all') }}{{ t('financial.account.account') }}
@@ -254,7 +254,7 @@ defineExpose({
         <div class="filter-flex-wrap">
           <select
             v-model="filters.category"
-            class="text-sm px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            class="screening-filtering-select"
           >
             <option value="">
               {{ t('categories.allCategory') }}
@@ -268,26 +268,26 @@ defineExpose({
         <div class="filter-flex-wrap">
           <input
             v-model="filters.dateStart" type="date"
-            class="text-sm px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            class="screening-filtering-select"
           >
         </div>
 
         <div class="filter-flex-wrap">
           <input
             v-model="filters.dateEnd" type="date"
-            class="text-sm px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            class="screening-filtering-select"
           >
         </div>
       </template>
       <div class="flex flex-col gap-2">
         <button
-          class="text-sm text-gray-700 px-3 py-1.5 rounded-md bg-gray-200 flex items-center hover:bg-gray-300"
+          class="screening-filtering-select"
           @click="toggleFilters"
         >
           <LucideMoreHorizontal class="wh-4 mr-1" />
         </button>
         <button
-          class="text-sm text-gray-700 px-3 py-1.5 rounded-md bg-gray-200 transition-colors hover:bg-gray-300"
+          class="screening-filtering-select"
           @click="resetFilters"
         >
           <LucideRotateCcw class="wh-4 mr-1" />
@@ -311,27 +311,27 @@ defineExpose({
     </div>
 
     <!-- 交易列表 -->
-    <div v-else class="mb-6 border border-gray-200 rounded-lg overflow-hidden">
+    <div v-else class="transaction-table-title">
       <!-- 表头 - 桌面版 -->
       <div
-        class="text-gray-800 font-semibold border-b border-gray-200 bg-gray-100 hidden md:grid md:grid-cols-[120px_140px_180px_140px_140px_120px]"
+        class="transaction-table-title-desktop"
       >
-        <div class="text-sm p-4 grid place-items-end">
+        <div class="table-title-option">
           {{ t('common.misc.types') }}
         </div>
-        <div class="text-sm p-4 grid place-items-end">
+        <div class="table-title-option">
           {{ t('financial.money') }}
         </div>
-        <div class="text-sm p-4 grid place-items-end">
+        <div class="table-title-option">
           {{ t('financial.account.account') }}
         </div>
-        <div class="text-sm p-4 grid place-items-end">
+        <div class="table-title-option">
           {{ t('categories.category') }}
         </div>
-        <div class="text-sm p-4 grid place-items-end">
+        <div class="table-title-option">
           {{ t('date.date') }}
         </div>
-        <div class="text-sm p-4 grid place-items-end">
+        <div class="table-title-option">
           {{ t('common.misc.options') }}
         </div>
       </div>
@@ -339,20 +339,20 @@ defineExpose({
       <!-- 交易行 -->
       <div
         v-for="transaction in transactions" :key="transaction.serialNum"
-        class="border-b border-gray-200 grid grid-cols-1 transition-colors hover:bg-gray-50 md:grid-cols-[120px_140px_180px_140px_140px_120px]"
+        class="transaction-rows"
       >
         <!-- 类型列 -->
-        <div class="text-sm p-2 flex justify-between md:items-center md:justify-end">
-          <span class="text-gray-600 font-semibold md:hidden">{{ t('categories.category') }}</span>
+        <div class="transaction-rows-item">
+          <span class="transaction-rows-item-span">{{ t('categories.category') }}</span>
           <div class="flex gap-2 items-center">
-            <component :is="getTransactionTypeIcon(transaction.transactionType)" class="h-4 w-4" />
+            <component :is="getTransactionTypeIcon(transaction.transactionType)" class="wh-4" />
             <span class="font-medium">{{ getTransactionTypeName(transaction.transactionType) }}</span>
           </div>
         </div>
 
         <!-- 金额列 -->
-        <div class="text-sm p-2 flex justify-between md:items-center md:justify-end">
-          <span class="text-gray-600 font-semibold md:hidden">{{ t('financial.money') }}</span>
+        <div class="transaction-rows-item">
+          <span class="transaction-rows-item-span">{{ t('financial.money') }}</span>
           <div
             class="text-lg font-semibold" :class="[
               transaction.transactionType === TransactionTypeSchema.enum.Income ? 'text-green-600'
@@ -366,9 +366,9 @@ defineExpose({
         </div>
 
         <!-- 账户列 -->
-        <div class="text-sm p-2 flex justify-between md:items-center md:justify-end">
-          <span class="text-gray-600 font-semibold md:hidden">{{ t('financial.account.account') }}</span>
-          <div class="md:text-right">
+        <div class="transaction-rows-item">
+          <span class="transaction-rows-item-span">{{ t('financial.account.account') }}</span>
+          <div class="transaction-rows-item-span-md">
             <div class="text-gray-800 font-medium">
               {{ transaction.account.name }}
             </div>
@@ -379,9 +379,9 @@ defineExpose({
         </div>
 
         <!-- 分类列 -->
-        <div class="text-sm p-2 flex justify-between md:items-center md:justify-end">
-          <span class="text-gray-600 font-semibold md:hidden">{{ t('categories.category') }}</span>
-          <div class="md:text-right">
+        <div class="transaction-rows-item">
+          <span class="transaction-rows-item-span">{{ t('categories.category') }}</span>
+          <div class="transaction-rows-item-span-md">
             <span class="text-gray-800 font-medium">{{ t(`common.categories.${lowercaseFirstLetter(transaction.category)}`) }}</span>
             <div v-if="transaction.subCategory" class="text-xs text-gray-600">
               {{ t(`common.subCategories.${lowercaseFirstLetter(transaction.subCategory)}`) }}
@@ -390,9 +390,9 @@ defineExpose({
         </div>
 
         <!-- 时间列 -->
-        <div class="text-sm p-2 flex justify-between md:items-center md:justify-end">
-          <span class="text-gray-600 font-semibold md:hidden">{{ t('date.date') }}</span>
-          <div class="md:text-right">
+        <div class="transaction-rows-item">
+          <span class="transaction-rows-item-span">{{ t('date.date') }}</span>
+          <div class="transaction-rows-item-span-md">
             <div class="text-xs text-gray-600">
               {{ DateUtils.formatForDisplay(transaction.date) }}
             </div>
@@ -400,32 +400,32 @@ defineExpose({
         </div>
 
         <!-- 操作列 -->
-        <div class="p-2 flex items-center justify-between md:justify-end">
-          <span class="text-gray-600 font-semibold md:hidden">{{ t('common.misc.options') }}</span>
+        <div class="transaction-rows-item">
+          <span class="transaction-rows-item-span">{{ t('common.misc.options') }}</span>
           <div class="flex gap-1">
             <button
-              class="money-option-btn hover:(text-green-500 border-green-500)"
+              class="money-option-btn"
               :title="t('common.actions.view')" @click="emit('viewDetails', transaction)"
             >
-              <LucideEye class="h-4 w-4" />
+              <LucideEye class="wh-4" />
             </button>
             <button
-              class="money-option-btn hover:(text-blue-500 border-blue-500)" :title="t('common.actions.edit')"
+              class="money-option-btn" :title="t('common.actions.edit')"
               :disabled="disabledTransactions.has(transaction.serialNum)"
               :class="{
                 'text-gray-500 bg-gray-200': disabledTransactions.has(transaction.serialNum),
               }"
               @click="emit('edit', transaction)"
             >
-              <LucideEdit class="h-4 w-4" />
+              <LucideEdit class="wh-4" />
             </button>
             <button
-              class="money-option-btn hover:(text-red-500 border-red-500)"
+              class="money-option-btn"
               :title="t('common.actions.delete')"
               :disabled="disabledTransactions.has(transaction.serialNum)"
               @click="emit('delete', transaction)"
             >
-              <LucideTrash class="h-4 w-4" />
+              <LucideTrash class="wh-4" />
             </button>
           </div>
         </div>
@@ -456,6 +456,82 @@ defineExpose({
 
 <style scoped lang="postcss">
 .money-option-btn {
-  @apply p-1.5 border border-gray-300 rounded-md text-gray-600 hover:bg-gray-50 transition-colors;
+  padding: 0.375rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+  color: #4b5563;
+  background-color: transparent;
+  transition: background-color 0.2s;
+}
+
+.money-option-btn:hover {
+  color: var(--color-neutral);
+  border-color: var(--color-neutral);
+}
+
+.transaction-table-title {
+  margin-bottom: 1.5rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.transaction-table-title-desktop {
+  color: #1f2937;
+  font-weight: 600;
+  display: none;
+  background-color: var(--color-base-100);
+  border: 1px solid var(--color-base-300);
+}
+
+.transaction-rows {
+  border-bottom: 1px solid #e5e7eb;
+  display: grid;
+  grid-template-columns: 1fr;
+  transition: background-color 0.2s;
+}
+
+.transaction-rows:hover {
+  background-color: #f9fafb;
+}
+
+.transaction-rows-item {
+  font-size: 0.875rem;
+  padding: 0.5rem;
+  display: flex;
+  justify-content: space-between;
+}
+
+.transaction-rows-item-span {
+  color: #4b5563;
+  font-weight: 600;
+}
+
+.table-title-option {
+  font-size: 0.875rem;
+  padding: 1rem;
+  display: grid;
+  place-items: end;
+}
+
+@media (min-width: 768px) {
+  .transaction-table-title-desktop{
+    display: grid;
+    grid-template-columns: 120px 140px 180px 140px 140px 120px;
+  }
+  .transaction-rows {
+    grid-template-columns: 120px 140px 180px 140px 140px 120px;
+  }
+
+  .transaction-rows-item {
+    align-items: center;
+    justify-content: flex-end;
+  }
+  .transaction-rows-item-span {
+    display: none;
+  }
+  .transaction-rows-item-span-md {
+    text-align: right;
+  }
 }
 </style>

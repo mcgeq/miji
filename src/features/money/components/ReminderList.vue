@@ -81,11 +81,11 @@ defineExpose({
 <template>
   <div class="min-h-25">
     <!-- 过滤器区域 -->
-    <div class="mb-5 p-4 rounded-lg bg-gray-50 flex flex-wrap gap-3 items-center justify-center">
+    <div class="screening-filtering">
       <div class="filter-flex-wrap">
         <select
           v-model="filters.status"
-          class="text-sm px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          class="screening-filtering-select"
         >
           <option value="">
             {{ t('common.actions.all') }}{{ t('common.status.status') }}
@@ -105,7 +105,7 @@ defineExpose({
       <div class="filter-flex-wrap">
         <select
           v-model="filters.repeatPeriodType"
-          class="text-sm px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          class="screening-filtering-select"
         >
           <option value="undefined">
             {{ t('common.actions.all') }}{{ t('todos.repeat.periodType') }}
@@ -134,7 +134,7 @@ defineExpose({
       <div class="filter-flex-wrap">
         <select
           v-model="filters.category"
-          class="text-sm px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          class="screening-filtering-select"
         >
           <option value="undefined">
             {{ t('categories.allCategory') }}
@@ -152,7 +152,7 @@ defineExpose({
       <div class="filter-flex-wrap">
         <select
           v-model="filters.dateRange"
-          class="text-sm px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          class="screening-filtering-select"
         >
           <option value="">
             {{ t('common.actions.all') }}
@@ -173,7 +173,7 @@ defineExpose({
       </div>
 
       <button
-        class="text-sm text-gray-700 px-3 py-1.5 rounded-md bg-gray-200 transition-colors hover:bg-gray-300"
+        class="screening-filtering-select"
         @click="resetFilters"
       >
         <LucideRotateCcw class="wh-5 mr-1" />
@@ -204,7 +204,9 @@ defineExpose({
       ]"
     >
       <div
-        v-for="reminder in pagination.paginatedItems.value" :key="reminder.serialNum" class="reminder-card p-5 border rounded-lg bg-white shadow-md transition-shadow hover:shadow-lg" :class="[
+        v-for="reminder in pagination.paginatedItems.value" :key="reminder.serialNum"
+        class="bg-base-100 reminder-card p-5 border rounded-lg bg-white shadow-md transition-shadow hover:shadow-lg"
+        :class="[
           {
             'border-red-500 bg-red-50': isOverdue(reminder),
             'opacity-80 bg-green-50 border-green-400': reminder.isPaid,
@@ -228,22 +230,24 @@ defineExpose({
             </div>
             <div class="flex gap-1">
               <button
-                v-if="!reminder.isPaid" class="money-option-btn hover:(text-green-500 border-green-500)"
-                :title="t('financial.transaction.markPaid')" @click="emit('markPaid', reminder.serialNum, !reminder.isPaid)"
+                v-if="!reminder.isPaid"
+                class="money-option-btn money-option-ben-hover)"
+                :title="t('financial.transaction.markPaid')"
+                @click="emit('markPaid', reminder.serialNum, !reminder.isPaid)"
               >
-                <LucideCheckCircle class="h-4 w-4" />
+                <LucideCheckCircle class="wh-4" />
               </button>
               <button
-                class="money-option-btn hover:(text-blue-500 border-blue-500)" :title="t('common.actions.edit')"
+                class="money-option-btn money-option-edit-hover" :title="t('common.actions.edit')"
                 @click="emit('edit', reminder)"
               >
-                <LucideEdit class="h-4 w-4" />
+                <LucideEdit class="wh-4" />
               </button>
               <button
-                class="money-option-btn hover:(text-red-500 border-red-500)"
+                class="money-option-btn money-option-trash-hover"
                 :title="t('common.actions.delete')" @click="emit('delete', reminder.serialNum)"
               >
-                <LucideTrash class="h-4 w-4" />
+                <LucideTrash class="wh-4" />
               </button>
             </div>
           </div>
@@ -318,9 +322,5 @@ defineExpose({
 .reminder-grid {
   display: grid;
   gap: 20px;
-}
-
-.money-option-btn {
-  @apply p-1.5 border border-gray-300 rounded-md text-gray-600 hover:bg-gray-50 transition-colors;
 }
 </style>

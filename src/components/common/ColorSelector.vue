@@ -125,9 +125,9 @@ onUnmounted(() => {
   justify-content: space-between;
   width: 100%;
   padding: 0.5rem 0.75rem; /* px-3 py-2 */
-  border: 1px solid #d1d5db; /* gray-300 */
+  border: 1px solid var(--color-base-300); /* gray-300 */
   border-radius: 0.5rem; /* rounded-lg */
-  background-color: #fff;
+  background-color: var(--color-base-100);
   transition: all 0.2s ease-in-out;
   cursor: pointer;
 }

@@ -1,4 +1,6 @@
-/* utilities.css - 工具类样式 */
+/* =========================
+   utilities.css - 全局工具类
+========================= */
 
 /* Logo */
 .logo {
@@ -7,36 +9,112 @@
   transition: all 800ms ease;
 }
 
-/* Flexbox Utilities */
+.bg-base-100 {
+  background-color: var(--color-base-100);
+}
+
+.bg-base-200 {
+  background-color: var(--color-base-200);
+}
+
+.bg-base-300 {
+  background-color: var(--color-base-300);
+}
+
+/* Flex & Layout */
+.flex {
+  display: flex;
+}
+.flex-col {
+  flex-direction: column;
+}
+.flex-wrap {
+  flex-wrap: wrap;
+}
+.items-center {
+  align-items: center;
+}
+.items-baseline {
+  align-items: baseline;
+}
+.justify-between {
+  justify-content: space-between;
+}
+.justify-center {
+  justify-content: center;
+}
+
 .flex-center {
   display: flex;
   justify-content: center;
   align-items: center;
 }
-
 .flex-between {
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
-
 .flex-start {
   display: flex;
   justify-content: flex-start;
   align-items: center;
 }
-
 .flex-end {
   display: flex;
   justify-content: flex-end;
   align-items: center;
 }
-
-.flex-juster-center,
 .flex-justify-center {
   display: flex;
   justify-content: center;
   align-items: center;
+}
+
+.gap-1 {
+  gap: 0.25rem;
+}
+.gap-2 {
+  gap: 0.5rem;
+}
+.gap-3 {
+  gap: 0.75rem;
+}
+.gap-5 {
+  gap: 1.25rem;
+}
+
+/* Padding & Margin */
+.p-1_5 {
+  padding: 0.375rem;
+}
+.p-2 {
+  padding: 0.5rem;
+}
+.p-4 {
+  padding: 1rem;
+}
+
+.mb-4 {
+  margin-bottom: 1rem;
+}
+.mb-5 {
+  margin-bottom: 1.25rem;
+}
+.mb-6 {
+  margin-bottom: 1.5rem;
+}
+.ml-1 {
+  margin-left: 0.25rem;
+}
+
+.opacity-50 {
+  opacity: 0.5;
+}
+.opacity-60 {
+  opacity: 0.6;
+}
+.opacity-75 {
+  opacity: 0.75;
 }
 
 /* Responsive Visibility */
@@ -61,77 +139,116 @@
 /* Text Variants */
 .text-muted {
   color: #6b7280;
-  @media (prefers-color-scheme: dark) {
+}
+@media (prefers-color-scheme: dark) {
+  .text-muted {
     color: #9ca3af;
   }
 }
 
 .text-primary {
   color: #2563eb;
-  @media (prefers-color-scheme: dark) {
+}
+@media (prefers-color-scheme: dark) {
+  .text-primary {
     color: #60a5fa;
   }
 }
 
 .text-danger {
   color: #dc2626;
-  @media (prefers-color-scheme: dark) {
+}
+@media (prefers-color-scheme: dark) {
+  .text-danger {
     color: #f87171;
   }
 }
 
 .text-success {
   color: #16a34a;
-  @media (prefers-color-scheme: dark) {
+}
+@media (prefers-color-scheme: dark) {
+  .text-success {
     color: #4ade80;
   }
 }
 
-/* Transition Variants */
+.text-gray-400 {
+  color: #9ca3af;
+}
+.text-gray-500 {
+  color: #6b7280;
+}
+.text-gray-600 {
+  color: #4b5563;
+}
+.text-gray-700 {
+  color: #374151;
+}
+.text-gray-800 {
+  color: #1f2937;
+}
+
+.text-sm {
+  font-size: 0.875rem;
+}
+.text-xs {
+  font-size: 0.75rem;
+}
+.text-lg {
+  font-size: 1.125rem;
+}
+.text-2xl {
+  font-size: 1.5rem;
+}
+.text-6xl {
+  font-size: 3.75rem;
+}
+
+.font-medium {
+  font-weight: 500;
+}
+.font-semibold {
+  font-weight: 600;
+}
+
+/* Transition Utilities */
 .transition-fast {
   transition: all 150ms ease;
 }
-
 .transition-normal {
   transition: all 200ms ease;
 }
-
 .transition-slow {
   transition: all 300ms ease;
 }
 
-/* Size Utilities */
+/* Width/Height Utilities */
 .wh-4 {
   width: 1rem;
   height: 1rem;
 }
-
 .wh-5 {
   width: 1.25rem;
   height: 1.25rem;
 }
-
 .wh-6 {
   width: 1.5rem;
   height: 1.5rem;
 }
-
 .wh-8 {
   width: 2rem;
   height: 2rem;
 }
-
 .wh-10 {
   width: 2.5rem;
   height: 2.5rem;
 }
-
 .wh-12 {
   width: 3rem;
   height: 3rem;
 }
 
-/* 百分比宽度 */
 .w-full {
   width: 100%;
 }
@@ -141,11 +258,11 @@
 .w-half {
   width: 50%;
 }
-.w-third {
-  width: 33.3333%;
-}
 .w-two-thirds {
   width: 66.6666%;
+}
+.w-third {
+  width: 33.3333%;
 }
 .w-quarter {
   width: 25%;
@@ -154,15 +271,14 @@
   width: 75%;
 }
 
-/* Scrollbar and Scroll Behavior */
+/* Scroll Utilities */
 .scrollbar-hide {
   scrollbar-width: none;
   -ms-overflow-style: none;
-  &::-webkit-scrollbar {
-    display: none;
-  }
 }
-
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
 .scroll-smooth {
   scroll-behavior: smooth;
 }

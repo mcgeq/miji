@@ -100,11 +100,11 @@ defineExpose({
 <template>
   <div class="min-h-25">
     <!-- 过滤器区域 -->
-    <div class="mb-5 p-4 rounded-lg bg-gray-50 flex flex-wrap gap-3 items-center justify-center">
+    <div class="screening-filtering">
       <div class="filter-flex-wrap">
         <select
           v-model="filters.isActive"
-          class="text-sm px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          class="screening-filtering-select"
         >
           <option value="">
             {{ t('common.actions.all') }}{{ t('common.status.status') }}
@@ -143,7 +143,7 @@ defineExpose({
       <div class="filter-flex-wrap">
         <select
           v-model="filters.repeatPeriodType"
-          class="text-sm px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          class="screening-filtering-select"
         >
           <option value="">
             {{ t('common.actions.all') }}
@@ -172,7 +172,7 @@ defineExpose({
       <div class="filter-flex-wrap">
         <select
           v-model="filters.category"
-          class="text-sm px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          class="screening-filtering-select"
         >
           <option :value="null">
             {{ t('categories.allCategory') }}
@@ -184,7 +184,7 @@ defineExpose({
       </div>
 
       <button
-        class="text-sm text-gray-700 px-3 py-1.5 rounded-md bg-gray-200 transition-colors hover:bg-gray-300"
+        class="screening-filtering-select"
         @click="resetFilters"
       >
         <LucideRotateCcw class="wh-5 mr-1" />
@@ -217,7 +217,7 @@ defineExpose({
       <div
         v-for="budget in decoratedBudgets"
         :key="budget.serialNum"
-        class="p-1.5 border rounded-md bg-white transition-all hover:shadow-md"
+        class="bg-base-100 p-1.5 border rounded-md bg-white transition-all hover:shadow-md"
         :class="[
           { 'opacity-60 bg-gray-100': !budget.isActive },
         ]" :style="{
@@ -247,13 +247,13 @@ defineExpose({
           <!-- 右侧按钮组 -->
           <div class="flex gap-1 items-center md:self-end">
             <button
-              class="money-option-btn hover:(text-green-500 border-green-500)" :title="t('common.actions.edit')"
+              class="money-option-btn money-option-edit-hover" :title="t('common.actions.edit')"
               @click="budget.isActive && emit('edit', budget)"
             >
               <LucideEdit class="wh-4" />
             </button>
             <button
-              class="money-option-btn hover:(text-blue-500 border-blue-500)"
+              class="money-option-btn money-option-ben-hover"
               :title="budget.isActive ? t('common.status.stop') : t('common.status.enabled')"
               @click="emit('toggleActive', budget.serialNum, !budget.isActive)"
             >
@@ -263,7 +263,7 @@ defineExpose({
               <LucideStopCircle v-else class="wh-4" />
             </button>
             <button
-              class="money-option-btn hover:(text-red-500 border-red-500)"
+              class="money-option-btn money-option-trash-hover"
               :title="t('common.actions.delete')" @click="emit('delete', budget.serialNum)"
             >
               <LucideTrash class="wh-4" />
@@ -282,7 +282,7 @@ defineExpose({
           <div class="flex gap-1 items-baseline">
             <span class="text-lg text-gray-800 font-semibold">{{ formatCurrency(budget.usedAmount) }}</span>
             <span class="text-sm text-gray-600">/ {{ formatCurrency(budget.amount) }}</span>
-            <div class="mb-2 ml-auto p-1.5 rounded-md bg-gray-50 flex justify-end">
+            <div class="bg-base-200 mb-2 ml-auto p-1.5 rounded-md bg-gray-50 flex justify-end">
               <div
                 class="text-lg font-semibold" :class="[
                   shouldHighlightRed(budget) ? 'text-red-500' : 'text-green-500',
@@ -352,9 +352,5 @@ defineExpose({
 .budget-grid {
   display: grid;
   gap: 20px;
-}
-
-.money-option-btn {
-  @apply p-1.5 border border-gray-300 rounded-md text-gray-600 hover:bg-gray-50 transition-colors;
 }
 </style>

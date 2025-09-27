@@ -371,21 +371,22 @@ watch(
 <template>
   <div class="modal-mask" @click="handleOverlayClick">
     <div class="modal-mask-window-money" @click.stop>
-      <div class="mb-4 pb-2 border-b flex items-center justify-between">
-        <h2 class="text-lg text-gray-800 font-semibold dark:text-gray-100">
+      <div class="modal-header">
+        <h2 class="modal-title">
           {{ getModalTitle() }}
         </h2>
-        <button class="text-gray-500 hover:text-gray-700" @click="emit('close')">
-          <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <button class="modal-close-btn" @click="$emit('close')">
+          <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
       </div>
-      <form class="space-y-4" @submit.prevent="handleSubmit">
+
+      <form class="modal-form" @submit.prevent="handleSubmit">
         <!-- 交易类型 -->
-        <div class="flex items-center justify-between">
-          <label class="text-sm font-medium mb-1">{{ t('financial.transaction.transType') }}</label>
-          <div class="modal-input-select bg-gray-50 w-2/3 dark:bg-gray-700">
+        <div class="form-row">
+          <label>{{ t('financial.transaction.transType') }}</label>
+          <div class="form-display">
             {{ form.transactionType === 'Income' ? t('financial.transaction.income')
               : form.transactionType === 'Expense' ? t('financial.transaction.expense')
                 : t('financial.transaction.transfer') }}
@@ -393,12 +394,12 @@ watch(
         </div>
 
         <!-- 金额 -->
-        <div class="mt-4 flex items-center justify-between">
-          <label class="text-sm font-medium mb-1">{{ t('financial.money') }}</label>
+        <div class="form-row">
+          <label>{{ t('financial.money') }}</label>
           <input
             v-model="form.amount"
             type="number"
-            class="modal-input-select w-2/3"
+            class="form-control"
             :placeholder="t('common.placeholders.enterAmount')"
             step="0.01"
             min="0"
@@ -408,18 +409,21 @@ watch(
         </div>
 
         <!-- 币种 -->
-        <div class="mt-4 flex items-center justify-between">
-          <label class="text-sm font-medium mb-1">{{ t('financial.currency') }}</label>
-          <CurrencySelector v-model="form.currency" class="w-2/3" :disabled="isTransferReadonly" />
+        <div class="form-row">
+          <label>{{ t('financial.currency') }}</label>
+          <CurrencySelector
+            v-model="form.currency"
+            class="form-control"
+            :disabled="isTransferReadonly"
+          />
         </div>
 
         <!-- 转出账户 -->
-        <div class="flex items-center justify-between">
-          <label class="text-sm font-medium mb-1">
-            {{ isTransferReadonly || form.transactionType === TransactionTypeSchema.enum.Transfer ? t('financial.transaction.fromAccount')
-              : t('financial.account.account') }}
+        <div class="form-row">
+          <label>
+            {{ isTransferReadonly || form.transactionType === TransactionTypeSchema.enum.Transfer ? t('financial.transaction.fromAccount') : t('financial.account.account') }}
           </label>
-          <select v-model="form.accountSerialNum" class="modal-input-select w-2/3" required :disabled="isDisabled">
+          <select v-model="form.accountSerialNum" class="form-control" required :disabled="isDisabled">
             <option value="">
               {{ t('common.placeholders.selectAccount') }}
             </option>
@@ -429,12 +433,10 @@ watch(
           </select>
         </div>
 
-        <!-- 转入账户（仅转账时显示） -->
-        <div v-if="isTransferReadonly || form.transactionType === TransactionTypeSchema.enum.Transfer" class="flex items-center justify-between">
-          <label class="text-sm font-medium mb-1">
-            {{ t('financial.transaction.toAccount') }}
-          </label>
-          <select v-model="form.toAccountSerialNum" class="modal-input-select w-2/3" required :disabled="isDisabled">
+        <!-- 转入账户 -->
+        <div v-if="isTransferReadonly || form.transactionType === TransactionTypeSchema.enum.Transfer" class="form-row">
+          <label>{{ t('financial.transaction.toAccount') }}</label>
+          <select v-model="form.toAccountSerialNum" class="form-control" required :disabled="isDisabled">
             <option value="">
               {{ t('common.placeholders.selectAccount') }}
             </option>
@@ -445,95 +447,83 @@ watch(
         </div>
 
         <!-- 支付渠道 -->
-        <div class="flex items-center justify-between">
-          <label class="text-sm font-medium mb-1">{{ t('financial.transaction.paymentMethod') }}</label>
-          <div class="modal-input-select bg-gray-50 w-2/3 dark:bg-gray-700">
-            <select
-              v-if="isPaymentMethodEditable"
-              v-model="form.paymentMethod"
-              class="w-full"
-              :disabled="isTransferReadonly"
-              required
-            >
-              <option value="">
-                {{ t('common.placeholders.selectOption') }}
-              </option>
-              <option v-for="method in availablePaymentMethods" :key="method" :value="method">
-                {{ t(`financial.paymentMethods.${method.toLowerCase()}`) }}
-              </option>
-            </select>
-            <span v-else>
-              {{ t(`financial.paymentMethods.${form.paymentMethod.toLowerCase()}`) }}
-            </span>
-          </div>
+        <div class="form-row">
+          <label>{{ t('financial.transaction.paymentMethod') }}</label>
+          <select
+            v-if="isPaymentMethodEditable"
+            v-model="form.paymentMethod"
+            :disabled="isTransferReadonly"
+            class="form-control"
+            required
+          >
+            <option value="">
+              {{ t('common.placeholders.selectOption') }}
+            </option>
+            <option v-for="method in availablePaymentMethods" :key="method" :value="method">
+              {{ t(`financial.paymentMethods.${method.toLowerCase()}`) }}
+            </option>
+          </select>
+          <span v-else>
+            {{ t(`financial.paymentMethods.${form.paymentMethod.toLowerCase()}`) }}
+          </span>
         </div>
 
         <!-- 分类 -->
-        <div class="flex items-center justify-between">
-          <label class="text-sm font-medium mb-1 block">{{ t('categories.category') }}</label>
-          <select v-model="form.category" class="modal-input-select w-2/3" required :disabled="isTransferReadonly">
+        <div class="form-row">
+          <label>{{ t('categories.category') }}</label>
+          <select v-model="form.category" class="form-control" required :disabled="isTransferReadonly">
             <option value="">
               {{ t('common.placeholders.selectCategory') }}
             </option>
-            <option
-              v-for="[key, category] in categoryMap"
-              :key="key"
-              :value="category.name"
-            >
+            <option v-for="[key, category] in categoryMap" :key="key" :value="category.name">
               {{ t(`common.categories.${lowercaseFirstLetter(category.name)}`) }}
             </option>
           </select>
         </div>
 
         <!-- 子分类 -->
-        <div
-          v-if="form.category && categoryMap.get(form.category)?.subs.length"
-          class="flex items-center justify-between"
-        >
-          <label class="text-sm font-medium mb-1">{{ t('categories.subCategory') }}</label>
-          <select v-model="form.subCategory" class="modal-input-select w-2/3">
+        <div v-if="form.category && categoryMap.get(form.category)?.subs.length" class="form-row">
+          <label>{{ t('categories.subCategory') }}</label>
+          <select v-model="form.subCategory" class="form-control">
             <option value="">
               {{ t('common.placeholders.selectOption') }}
             </option>
-            <option
-              v-for="sub in categoryMap.get(form.category)?.subs"
-              :key="sub"
-              :value="sub"
-            >
+            <option v-for="sub in categoryMap.get(form.category)?.subs" :key="sub" :value="sub">
               {{ t(`common.subCategories.${lowercaseFirstLetter(sub)}`) }}
             </option>
           </select>
         </div>
 
         <!-- 日期 -->
-        <div class="flex items-center justify-between">
-          <label class="text-sm font-medium mb-1 w-1/3">{{ t('date.transactionDate') }}</label>
+        <div class="form-row">
+          <label>{{ t('date.transactionDate') }}</label>
           <VueDatePicker
             v-model="form.date"
             :enable-time-picker="true"
             :is-24="true"
+            class="form-control"
             format="yyyy-MM-dd HH:mm:ss"
             required
           />
         </div>
 
         <!-- 备注 -->
-        <div class="mb-2">
+        <div class="form-row">
           <textarea
             v-model="form.description"
-            class="modal-input-select w-full"
+            class="form-control textarea-max"
             rows="3"
             :placeholder="`${t('common.misc.remark')}（${t('common.misc.optional')}）`"
           />
         </div>
 
         <!-- 按钮 -->
-        <div class="pt-4 flex gap-3 justify-center">
-          <button type="button" class="modal-btn-x" @click="$emit('close')">
-            <LucideX class="wh-5" />
+        <div class="modal-actions">
+          <button type="button" class="btn-close" @click="$emit('close')">
+            <LucideX class="icon-btn" />
           </button>
-          <button type="submit" class="modal-btn-check">
-            <LucideCheck class="wh-5" />
+          <button type="submit" class="btn-submit">
+            <LucideCheck class="icon-btn" />
           </button>
         </div>
       </form>
@@ -542,4 +532,88 @@ watch(
 </template>
 
 <style scoped lang="postcss">
+.modal-header {
+  display: flex; justify-content: space-between; align-items: center;
+  border-bottom: 1px solid var(--color-base-200);
+  margin-bottom: 1rem; padding-bottom: 0.5rem;
+}
+
+.modal-title {
+  font-size: 1.125rem; font-weight: 600;
+}
+
+.modal-close-btn {
+  background: transparent; border: none; cursor: pointer;
+  color: var(--color-neutral-content);
+}
+
+.modal-close-btn:hover { color: var(--color-primary); }
+
+.icon { width: 1.5rem; height: 1.5rem; }
+
+/* ==================== 表单行横向布局 ==================== */
+.form-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.form-row label {
+  font-size: 0.875rem; font-weight: 500;
+  margin-bottom: 0;
+  flex: 1; /* label 自适应 */
+}
+
+.form-control, .form-display {
+  width: 66%; /* 对应 Tailwind w-2/3 */
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  border: 1px solid var(--color-base-300);
+  background-color: var(--color-base-200);
+  color: var(--color-base-content);
+  font-size: 0.875rem;
+}
+
+.form-control:disabled {
+  background-color: var(--color-base-300);
+  color: var(--color-neutral-content);
+}
+
+textarea.form-control { resize: vertical; }
+
+.textarea-max {
+  max-width: 400px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* ==================== 按钮 ==================== */
+.modal-actions {
+  display: flex; justify-content: center; gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.btn-close, .btn-submit {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 3rem; height: 3rem; border-radius: 50%; border: none; cursor: pointer;
+}
+
+.btn-close {
+  background-color: var(--color-neutral); color: var(--color-neutral-content);
+}
+
+.btn-close:hover {
+  background-color: var(--color-neutral-content); color: var(--color-neutral);
+}
+
+.btn-submit {
+  background-color: var(--color-primary); color: var(--color-primary-content);
+}
+
+.btn-submit:hover {
+  background-color: var(--color-primary-content); color: var(--color-primary);
+}
+
+.icon-btn { width: 1.25rem; height: 1.25rem; }
 </style>

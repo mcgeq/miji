@@ -66,7 +66,6 @@ declare module 'vue' {
     LucideVenusAndMars: typeof import('lucide-vue-next')['VenusAndMars']
     LucideWaves: typeof import('lucide-vue-next')['Waves']
     LucideX: typeof import('lucide-vue-next')['X']
-    LucideXCircle: typeof import('lucide-vue-next')['XCircle']
     MobileBottomNav: typeof import('./src/components/common/MobileBottomNav.vue')['default']
     Pagination: typeof import('./src/components/common/Pagination.vue')['default']
     PopupWrapper: typeof import('./src/components/common/PopupWrapper.vue')['default']

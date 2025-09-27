@@ -101,40 +101,38 @@ function getAccountTypeName(type: AccountType): string {
 </script>
 
 <template>
-  <div class="min-h-25">
+  <div class="money-tab-25">
     <!-- 过滤选项区域 -->
-    <div class="mb-5 p-2 rounded-lg bg-gray-50 flex flex-wrap gap-3 items-center justify-center">
+    <div class="screening-filtering">
       <div class="flex flex-wrap gap-3 items-center">
         <!-- 账户状态过滤 -->
         <div class="filter-flex-wrap">
           <div class="flex gap-1">
             <button
-              class="text-xs font-medium px-3 py-1.5 border rounded-full transition-all" :class="[
+              class="account-select" :class="[
                 filters.status === 'all'
-                  ? 'bg-blue-500 text-white border-blue-500'
-                  : 'bg-white text-gray-600 border-gray-300 hover:border-blue-400',
+                  ? 'account-select-all'
+                  : 'account-select-gray',
               ]" @click="setActiveFilter('all')"
             >
               {{ t('common.actions.all') }}<span class="text-xs ml-1 opacity-75">[{{ pagination.totalItems.value }}]</span>
             </button>
             <button
-              class="text-xs font-medium px-3 py-1.5 border rounded-full transition-all" :class="[
+              class="account-select" :class="[
                 filters.status === 'active'
-                  ? 'bg-green-500 text-white border-green-500'
-                  : 'bg-white text-gray-600 border-gray-300 hover:border-green-400',
+                  ? 'account-select-green'
+                  : 'account-select-gray',
               ]" @click="setActiveFilter('active')"
             >
-              <LucideCheckCircle class="mr-1 h-3 w-3" />
               {{ t('common.status.active') }}<span class="text-xs ml-1 opacity-75">({{ activeAccounts }})</span>
             </button>
             <button
-              class="text-xs font-medium px-3 py-1.5 border rounded-full transition-all" :class="[
+              class="account-select" :class="[
                 filters.status === 'inactive'
-                  ? 'bg-gray-500 text-white border-gray-500'
-                  : 'bg-white text-gray-600 border-gray-300 hover:border-gray-400',
+                  ? 'account-select-back'
+                  : 'account-select-gray',
               ]" @click="setActiveFilter('inactive')"
             >
-              <LucideXCircle class="mr-1 h-3 w-3" />
               {{ t('common.status.inactive') }}<span class="text-xs ml-1 opacity-75">({{ inactiveAccounts }})</span>
             </button>
           </div>
@@ -143,7 +141,8 @@ function getAccountTypeName(type: AccountType): string {
         <!-- 账户类型过滤 -->
         <div class="filter-flex-wrap">
           <select
-            v-model="filters.type" class="text-xs px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:border-transparent focus:ring-2 focus:ring-blue-500"
+            v-model="filters.type"
+            class="screening-filtering-select"
             @change="handleTypeFilter"
           >
             <option value="">
@@ -158,7 +157,8 @@ function getAccountTypeName(type: AccountType): string {
         <!-- 币种过滤 -->
         <div class="filter-flex-wrap">
           <select
-            v-model="filters.currency" class="text-xs px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:border-transparent focus:ring-2 focus:ring-blue-500"
+            v-model="filters.currency"
+            class="screening-filtering-select"
             @change="handleCurrencyFilter"
           >
             <option value="">
@@ -173,7 +173,8 @@ function getAccountTypeName(type: AccountType): string {
         <!-- 排序选项 -->
         <div class="filter-flex-wrap">
           <select
-            v-model="filters.sortBy" class="text-xs px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:border-transparent focus:ring-2 focus:ring-blue-500"
+            v-model="filters.sortBy"
+            class="screening-filtering-select"
             @change="handleSortChange"
           >
             <option value="updatedAt">
@@ -194,7 +195,8 @@ function getAccountTypeName(type: AccountType): string {
             </option>
           </select>
           <button
-            class="text-gray-600 p-1.5 transition-colors hover:text-blue-500" :title="filters.sortOrder === 'asc' ? t('common.sorting.asc') : t('common.sorting.desc')"
+            class="screening-filtering-select"
+            :title="filters.sortOrder === 'asc' ? t('common.sorting.asc') : t('common.sorting.desc')"
             @click="toggleSortOrder"
           >
             <LucideArrowUpDown class="btn-lucide" :class="filters.sortOrder === 'desc' && 'rotate-180'" />
@@ -203,7 +205,7 @@ function getAccountTypeName(type: AccountType): string {
 
         <!-- 清空过滤器 -->
         <button
-          class="text-sm text-gray-700 px-3 py-1.5 rounded-md bg-gray-200 transition-colors hover:bg-gray-300"
+          class="screening-filtering-select"
           @click="resetFilters"
         >
           <LucideRotateCcw class="btn-lucide" />
@@ -212,11 +214,17 @@ function getAccountTypeName(type: AccountType): string {
     </div>
 
     <!-- 账户列表区域 -->
-    <div v-if="loading" class="text-gray-500 h-50 flex-justify-center">
+    <div
+      v-if="loading"
+      class="text-gray-500 h-50 flex-justify-center"
+    >
       {{ t('common.loading') }}
     </div>
 
-    <div v-else-if="pagination.totalItems.value === 0" class="text-gray-400 flex-col h-50 flex-justify-center">
+    <div
+      v-else-if="pagination.totalItems.value === 0"
+      class="text-gray-400 flex-col h-50 flex-justify-center"
+    >
       <div class="text-6xl mb-4 opacity-50">
         <LucideCreditCard class="wh-5" />
       </div>
@@ -235,7 +243,7 @@ function getAccountTypeName(type: AccountType): string {
       <div
         v-for="account in pagination.paginatedItems.value"
         :key="account.serialNum"
-        class="p-2 border rounded-lg bg-white transition-all hover:shadow-md"
+        class="bg-base-100 p-2 border rounded-lg bg-white transition-all hover:shadow-md"
         :class="{
           'opacity-60 bg-gray-100': !account.isActive,
         }" :style="{
@@ -254,23 +262,23 @@ function getAccountTypeName(type: AccountType): string {
           <!-- 操作按钮 -->
           <div class="p-4 flex items-center justify-between md:justify-end">
             <button
-              class="money-option-btn hover:(text-green-500 border-green-500)"
+              class="money-option-btn money-option-ben-hover"
               :title="account.isActive ? t('common.status.stop') : t('common.status.enabled')"
               @click="emit('toggleActive', account.serialNum, !account.isActive)"
             >
-              <LucideBan class="h-4 w-4" />
+              <LucideBan class="wh-4" />
             </button>
             <button
-              class="money-option-btn hover:(text-blue-500 border-blue-500)" :title="t('common.actions.edit')"
+              class="money-option-btn money-option-edit-hover" :title="t('common.actions.edit')"
               @click="emit('edit', account)"
             >
-              <LucideEdit class="h-4 w-4" />
+              <LucideEdit class="wh-4" />
             </button>
             <button
-              class="money-option-btn hover:(text-red-500 border-red-500)"
+              class="money-option-btn money-option-trash-hover"
               :title="t('common.actions.delete')" @click="emit('delete', account.serialNum)"
             >
-              <LucideTrash class="h-4 w-4" />
+              <LucideTrash class="wh-4" />
             </button>
           </div>
         </div>
@@ -310,7 +318,49 @@ function getAccountTypeName(type: AccountType): string {
 </template>
 
 <style lang="postcss">
-.money-option-btn {
-  @apply inline-flex items-center justify-center w-8 h-8 rounded-lg border border-gray-300 text-gray-600 hover:shadow-md transition-all duration-200 bg-white;
+.account-select {
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 0.375rem 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 9999px;
+  transition: all 0.2s;
+}
+
+.account-select-all {
+  background-color: #3b82f6;
+  color: #ffffff;
+  border: 1px solid #3b82f6;
+}
+
+.account-select-green {
+  background-color: #16a34a;
+  border-color: #16a34a;
+}
+
+.account-select-gray {
+  background-color: var(--color-neutral-content);
+  border-color: var(--color-neutral);
+}
+.account-select-back {
+  background-color: #4b5563;
+  border-color: #4b5563;
+}
+
+.account-select-blue {
+  background-color: #3b82f6;
+  border-color: #3b82f6;
+}
+
+.account-select-green:hover {
+  border-color: #16a34a;
+}
+
+.account-select-blue:hover {
+  border-color: #3b82f6;
+}
+
+.account-select-gray:hover {
+  border-color: #9ca3af;
 }
 </style>

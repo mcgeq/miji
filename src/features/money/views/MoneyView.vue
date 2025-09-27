@@ -733,6 +733,7 @@ onUnmounted(() => {
   align-items: center;
   padding: 20px;
   border-bottom: 1px solid #e5e5e5;
+  background-color: var(--color-base-100);
 }
 
 .panel-header h3 {
@@ -778,8 +779,9 @@ onUnmounted(() => {
 .tabs {
   display: flex;
   overflow-x: auto;
-  border-bottom: 1px solid #e5e5e5;
+  border: 1px solid var(--color-base-300);
   justify-content: center;
+  background-color: var(--color-base-100);
 }
 
 .tab-btn {
@@ -796,9 +798,9 @@ onUnmounted(() => {
 }
 
 .tab-btn.active {
-  color: #2563eb;
-  border-color: #2563eb;
-  background-color: #eff6ff;
+  color: var(--color-base-content);
+  border-color: var(--color-neutral);
+  background-color: var(--color-base-200);
   border-top-left-radius: 6px;
   border-top-right-radius: 6px;
 }
@@ -806,6 +808,7 @@ onUnmounted(() => {
 /* Tab 内容 */
 .tab-content {
   padding: 20px;
+  background-color: var(--color-base-100);
 }
 
 /* 滚动条隐藏 */

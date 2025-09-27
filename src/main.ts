@@ -20,6 +20,7 @@ import '@/assets/styles/components/cards.css';
 import '@/assets/styles/components/input.css';
 import '@/assets/styles/components/modals.css';
 import '@/assets/styles/components/checkbox.css';
+import '@/assets/styles/components/text.css';
 
 z.config({
   localeError: i18nErrorMap,

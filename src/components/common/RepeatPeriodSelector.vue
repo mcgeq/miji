@@ -498,17 +498,20 @@ watch(
   color: #374151;
   margin-bottom: 0.25rem;
 }
-.required { color: #ef4444; margin-left: 0.25rem; }
+.required {
+  color: var(--color-primary);
+  margin-left: 0.25rem;
+}
 
 /* 输入框/选择框/文本域 */
 .input-field {
   width: 66.6667%;
   padding: 0.375rem 0.5rem;
   font-size: 0.875rem;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--color-base-300);
   border-radius: 0.375rem;
   transition: all 0.2s;
-  background-color: #ffffff;
+  background-color: var(--color-base-100);
   color: #374151;
 }
 .input-field:focus {
