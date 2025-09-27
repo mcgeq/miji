@@ -25,6 +25,7 @@ z.config({
   localeError: i18nErrorMap,
 });
 
+// Fix Android error
 if (!Object.hasOwn) {
   Object.hasOwn = (obj, prop) => Object.prototype.hasOwnProperty.call(obj, prop);
 }

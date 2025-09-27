@@ -58,7 +58,7 @@ onUnmounted(() => {
   flex: 1;
   display: flex;
   flex-direction: column;
-  background-color: #f3f4f6;
+  background-color: var(--color-base-200);
   min-height: 100vh;
   transition: margin-left 0.3s ease;
 }

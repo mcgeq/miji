@@ -155,10 +155,14 @@ function closeMenu() {
 </script>
 
 <template>
-  <div class="mb-2 p-4 border border-gray-200 rounded-2xl bg-white flex flex-col h-18 relative" @mouseenter="showActions = true" @mouseleave="showActions = false">
-    <!-- Left Section with Checkbox, Priority, and Title -->
-    <div class="flex flex-1 items-center justify-between">
-      <div class="flex gap-2 items-center">
+  <div
+    class="todo-item"
+    @mouseenter="showActions = true"
+    @mouseleave="showActions = false"
+  >
+    <!-- Left Section: Checkbox, Priority, Title -->
+    <div class="todo-main">
+      <div class="todo-left">
         <PriorityBadge
           v-if="todoCopy.priority"
           :serial-num="todoCopy.serialNum"
@@ -170,7 +174,7 @@ function closeMenu() {
         <TodoTitle :title="todoCopy.title" :completed="completed" @toggle="onToggleHandler" />
       </div>
 
-      <!-- Right Section with Actions -->
+      <!-- Right Section: Actions -->
       <TodoActions
         :completed="completed"
         :show="showActions"
@@ -181,16 +185,12 @@ function closeMenu() {
     </div>
 
     <!-- Due Date -->
-    <div v-if="todoCopy.dueAt" class="text-xs text-gray-500 bottom-1 right-4 absolute">
+    <div v-if="todoCopy.dueAt" class="todo-due-date">
       {{ todoCopy.remainingTime }}
     </div>
 
     <!-- Menus and Modals -->
-    <TodoAddMenus
-      :show="showMenu"
-      @open-popup="openPopup"
-      @close="toggleMenu"
-    />
+    <TodoAddMenus :show="showMenu" @open-popup="openPopup" @close="toggleMenu" />
     <TodoEditOptionsModal
       :show="showEditOptions"
       @edit-title="openEditModal"
@@ -230,7 +230,49 @@ function closeMenu() {
   </div>
 </template>
 
-<style scoped>
+<style scoped lang="postcss">
+.todo-item {
+  margin-bottom: 0.5rem;
+  padding: 1rem;
+  border-radius: 1.25rem;
+  border: 1px solid var(--color-neutral, #e5e7eb);
+  background-color: var(--color-base-200, #fff);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  height: 4.5rem;
+  transition: box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+.todo-item:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+/* 主行容器 */
+.todo-main {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex: 1;
+}
+
+/* 左侧: 优先级、复选框、标题 */
+.todo-left {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* 到期时间 */
+.todo-due-date {
+  position: absolute;
+  bottom: 0.25rem;
+  right: 1rem;
+  font-size: 0.75rem;
+  color: var(--color-neutral-content, #6b7280);
+}
+
+/* 动画类 */
 .rotating {
   animation: rotating 0.5s linear;
 }
@@ -238,6 +280,8 @@ function closeMenu() {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
+
+/* 淡入淡出 */
 .fade-enter-active, .fade-leave-active {
   transition: opacity 0.25s ease-out, transform 0.25s ease-out;
 }
@@ -245,10 +289,24 @@ function closeMenu() {
   opacity: 0;
   transform: translateY(8px);
 }
+
+/* 缩放动画 */
 .scale-enter-active, .scale-leave-active {
   transition: transform 0.2s ease-out;
 }
 .scale-enter-from, .scale-leave-to {
   transform: scale(0.9);
+}
+
+/* Dark Theme 支持 */
+@media (prefers-color-scheme: dark) {
+  .todo-item {
+    border-color: var(--color-neutral, #374151);
+    background-color: var(--color-base-200, #1f2937);
+  }
+
+  .todo-due-date {
+    color: var(--color-neutral-content, #9ca3af);
+  }
 }
 </style>

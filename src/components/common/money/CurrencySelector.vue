@@ -74,13 +74,13 @@ loadCurrencies();
 const widthClass = computed(() => {
   const widthMap: Record<string, string> = {
     'full': 'w-full',
-    '1/2': 'w-1/2',
-    '1/3': 'w-1/3',
-    '2/3': 'w-2/3',
-    '1/4': 'w-1/4',
-    '3/4': 'w-3/4',
+    'half': 'w-half',
+    'third': 'w-third',
+    'two-thirds': 'w-two-thirds',
+    'quarter': 'w-quarter',
+    'three-quarters': 'w-three-quarters',
   };
-  return widthMap[props.width] || 'w-2/3';
+  return widthMap[props.width] || 'w-two-thirds';
 });
 
 // 是否有错误
@@ -194,17 +194,13 @@ defineExpose({
 </script>
 
 <template>
-  <div id="currency-selector" class="mb-2 flex items-center justify-between">
-    <div class="flex flex-col" :class="widthClass">
+  <div id="currency-selector" class="currency-selector">
+    <div class="currency-selector__wrapper" :class="widthClass">
       <select
         :id="inputId"
         v-model="currentValue.code"
-        class="modal-input-select" :class="[
-          {
-            'border-red-500': hasError,
-            'border-gray-300 dark:border-gray-600': !hasError,
-          },
-        ]"
+        class="currency-selector__select"
+        :class="{ 'has-error': hasError }"
         :required="required"
         :disabled="disabled"
         @blur="handleBlur"
@@ -219,17 +215,12 @@ defineExpose({
           {{ option.label }}
         </option>
       </select>
-      <div
-        v-if="hasError && errorMessage"
-        class="text-sm text-red-600 mt-1 dark:text-red-400"
-        role="alert"
-      >
+
+      <div v-if="hasError && errorMessage" class="currency-selector__error" role="alert">
         {{ errorMessage }}
       </div>
-      <div
-        v-if="helpText && !hasError"
-        class="text-xs text-gray-500 mt-2 flex justify-end dark:text-gray-400"
-      >
+
+      <div v-if="helpText && !hasError" class="currency-selector__help">
         {{ helpText }}
       </div>
     </div>
@@ -237,49 +228,91 @@ defineExpose({
 </template>
 
 <style scoped lang="postcss">
-/* 基础样式 */
-.modal-input-select {
-  @apply px-3 py-2 border rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors;
+.currency-selector {
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
-/* 错误状态 */
-.border-red-500:focus {
-  @apply ring-2 ring-red-400 ring-opacity-50 border-red-500;
+.currency-selector__wrapper {
+  display: flex;
+  flex-direction: column;
 }
 
-/* 禁用状态 */
-.modal-input-select:disabled {
-  @apply bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed;
+.w-full {
+  width: 100%;
+}
+.w-half {
+  width: 50%;
+}
+.w-third {
+  width: 33.3333%;
+}
+.w-two-thirds {
+  width: 66.6666%;
+}
+.w-quarter {
+  width: 25%;
+}
+.w-three-quarters {
+  width: 75%;
 }
 
-/* 选项样式 */
-.modal-input-select option {
-  @apply py-2 px-3;
+.currency-selector__select {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--color-neutral);
+  border-radius: 0.375rem;
+  background-color: var(--color-base-100);
+  color: var(--color-base-content);
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
 
-.modal-input-select option:disabled {
-  @apply text-gray-400 dark:text-gray-500;
+.currency-selector__select:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px var(--color-primary-soft);
 }
 
-/* 响应式优化 */
+.currency-selector__select:disabled {
+  background-color: var(--color-base-200);
+  color: var(--color-neutral-content);
+  cursor: not-allowed;
+}
+
+.currency-selector__select.has-error {
+  border-color: var(--color-error);
+}
+
+.currency-selector__select.has-error:focus {
+  box-shadow: 0 0 0 2px var(--color-error);
+}
+
+.currency-selector__select option {
+  padding: 0.5rem 0.75rem;
+}
+
+.currency-selector__select option:disabled {
+  color: var(--color-neutral-content);
+}
+
+.currency-selector__error {
+  margin-top: 0.25rem;
+  font-size: 0.875rem;
+  color: var(--color-error);
+}
+
+.currency-selector__help {
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+  text-align: right;
+  color: var(--color-neutral-content);
+}
+
 @media (max-width: 640px) {
-  .mb-2 .flex {
+  .currency-selector {
     flex-direction: column;
     align-items: stretch;
-  }
-  .mb-2 label {
-    margin-bottom: 0.25rem;
-  }
-}
-
-/* 深色模式优化 */
-@media (prefers-color-scheme: dark) {
-  .modal-input-select {
-    @apply border-gray-600;
-  }
-
-  .modal-input-select:focus {
-    @apply ring-blue-400;
   }
 }
 </style>

@@ -69,12 +69,19 @@ async function handleSubmit() {
         />
         <!-- 记住我 -->
         <label class="remember-me">
-          <input v-model="rememberMe" type="checkbox">
+          <input
+            v-model="rememberMe"
+            type="checkbox"
+          >
           <span>{{ t('auth.rememberMe') }}</span>
         </label>
 
         <!-- 登录按钮 -->
-        <button type="submit" :disabled="isSubmitting" class="btn-submit">
+        <button
+          type="submit"
+          :disabled="isSubmitting"
+          class="btn-submit"
+        >
           {{ isSubmitting ? t('auth.loading.loggingIn') : t('auth.login') }}
         </button>
       </form>
@@ -98,7 +105,7 @@ async function handleSubmit() {
   justify-content: center;
   min-height: 100vh;
   padding: 1rem;
-  background-color: #f3f4f6; /* light gray */
+  background-color: var(--color-base-100);
 }
 
 /* 卡片 */
@@ -106,9 +113,9 @@ async function handleSubmit() {
   width: 100%;
   max-width: 28rem;
   padding: 2rem;
-  background-color: rgba(255, 255, 255, 0.9);
+  background-color: var(--color-base-200);
   border-radius: 1rem;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--color-base-300);
   box-shadow: 0 10px 15px rgba(0,0,0,0.1);
   backdrop-filter: blur(10px);
   display: flex;
@@ -121,7 +128,7 @@ async function handleSubmit() {
   font-size: 1.875rem; /* 3xl */
   font-weight: bold;
   text-align: center;
-  color: #111827;
+  color: var(--color-base-content);
   letter-spacing: -0.015em;
 }
 
@@ -139,13 +146,57 @@ async function handleSubmit() {
   gap: 0.5rem;
   cursor: pointer;
   font-size: 0.875rem;
-  color: #1f2937;
+  color: rgb(0,0,0,0.8);
 }
 
+/* 复选框基础 */
 .remember-me input[type="checkbox"] {
-  width: 1rem;
-  height: 1rem;
-  accent-color: #2563eb; /* blue-600 */
+  appearance: none;         /* 移除系统默认样式 */
+  -webkit-appearance: none;
+  -moz-appearance: none;
+
+  width: 1.1rem;
+  height: 1.1rem;
+  border: 2px solid var(--color-neutral);
+  border-radius: 0.375rem;  /* 圆角方形 */
+  background-color: var(--color-base-100);
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+
+/* hover 效果 */
+.remember-me input[type="checkbox"]:hover {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px color-mix(in oklch, var(--color-primary) 25%, transparent);
+}
+
+/* 选中状态 */
+.remember-me input[type="checkbox"]:checked {
+  background-color: var(--color-info);
+  border-color: var(--color-base-300);
+  box-shadow: 0 0 0 3px color-mix(in oklch, var(--color-base-300) 35%, transparent);
+}
+
+/* 选中时的对勾 */
+.remember-me input[type="checkbox"]:checked::after {
+  content: "√";
+  color: var(--color-primary-content);
+  font-size: 0.75rem;
+  font-weight: bold;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -60%);
+}
+
+/* 禁用状态 */
+.remember-me input[type="checkbox"]:disabled {
+  background-color: var(--color-neutral);
+  border-color: var(--color-neutral);
+  cursor: not-allowed;
+  opacity: 0.6;
 }
 
 /* 登录按钮 */
@@ -156,7 +207,7 @@ async function handleSubmit() {
   color: white;
   border: none;
   border-radius: 0.375rem;
-  background: linear-gradient(to right, #2563eb, #4f46e5);
+  background: var(--color-neutral);
   box-shadow: 0 4px 6px rgba(0,0,0,0.1);
   cursor: pointer;
   transition: all 0.2s;
@@ -175,43 +226,17 @@ async function handleSubmit() {
 .register-text {
   text-align: center;
   font-size: 0.875rem;
-  color: #4b5563;
+  color: var(--color-neutral);
 }
 
 .register-link {
   margin-left: 0.25rem;
-  color: #2563eb;
+  color: var(--color-info);
   font-weight: 500;
   text-decoration: none;
 }
 
 .register-link:hover {
   text-decoration: underline;
-}
-
-/* dark mode */
-@media (prefers-color-scheme: dark) {
-  .container {
-    background-color: #111827;
-  }
-  .card {
-    background-color: rgba(31, 41, 55, 0.8);
-    border-color: #374151;
-  }
-  .title {
-    color: #ffffff;
-  }
-  .remember-me {
-    color: #e5e7eb;
-  }
-  .register-text {
-    color: #9ca3af;
-  }
-  .register-link {
-    color: #60a5fa;
-  }
-  .remember-me input[type="checkbox"] {
-    accent-color: #3b82f6;
-  }
 }
 </style>

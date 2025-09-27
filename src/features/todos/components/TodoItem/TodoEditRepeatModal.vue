@@ -75,19 +75,19 @@ function save() {
 
 <template>
   <transition name="fade">
-    <div v-if="show" class="modal-mask" @click="emit('close')">
+    <div v-if="show" class="modal-overlay" @click="emit('close')">
       <transition name="scale">
-        <div v-if="show" class="modal-mask-window w-80" @click.stop>
-          <div class="h-80">
+        <div v-if="show" class="modal-mask-window" @click.stop>
+          <div class="modal-body">
             <!-- Repeat Type -->
-            <div class="text-center">
-              <label for="repeat-type" class="text-sm text-gray-700 font-medium mb-2 mt-0 block dark:text-gray-300">
+            <div class="form-group">
+              <label for="repeat-type" class="form-label">
                 {{ t('todos.repeat.title') }}
               </label>
               <select
                 id="repeat-type"
                 v-model="form.type"
-                class="text-gray-900 mt-1 p-2 border border-gray-300 rounded-lg bg-white w-full block shadow-sm dark:text-gray-100 focus:outline-none dark:border-gray-600 dark:bg-gray-700 focus:ring-2 focus:ring-blue-500"
+                class="input-select"
                 @change="resetForm"
               >
                 <option value="None">
@@ -112,8 +112,8 @@ function save() {
             </div>
 
             <!-- Daily -->
-            <div v-if="form.type === 'Daily'" class="mt-4 flex gap-2 items-center justify-center">
-              <label for="daily-interval" class="text-sm text-gray-700 font-medium dark:text-gray-300">
+            <div v-if="form.type === 'Daily'" class="repeat-daily">
+              <label for="daily-interval" class="form-label">
                 {{ t('todos.repeat.labels.daily') }}
               </label>
               <input
@@ -122,14 +122,14 @@ function save() {
                 type="number"
                 min="1"
                 required
-                class="text-gray-900 p-2 text-center border border-gray-300 rounded-lg bg-white w-20 shadow-sm dark:text-gray-100 focus:outline-none dark:border-gray-600 dark:bg-gray-700 focus:ring-2 focus:ring-blue-500"
+                class="input-number"
               >
             </div>
 
             <!-- Weekly -->
-            <div v-if="form.type === 'Weekly'" class="mt-4 flex flex-col gap-2 items-center">
-              <div class="flex gap-2 items-center">
-                <label for="weekly-interval" class="text-sm text-gray-700 font-medium dark:text-gray-300">
+            <div v-if="form.type === 'Weekly'" class="repeat-weekly">
+              <div class="week-interval">
+                <label for="weekly-interval" class="form-label">
                   {{ t('todos.repeat.labels.weekly') }}
                 </label>
                 <input
@@ -138,92 +138,73 @@ function save() {
                   type="number"
                   min="1"
                   required
-                  class="text-sm px-2 py-1 border border-gray-300 rounded-md w-16 dark:text-white dark:border-gray-600 dark:bg-gray-700 focus:ring-2 focus:ring-blue-500"
+                  class="input-number"
                 >
               </div>
-              <div class="mt-1 flex flex-wrap gap-3 justify-center">
-                <label
-                  v-for="day in weekdays"
-                  :key="day"
-                  class="text-sm flex cursor-pointer select-none items-center"
-                >
+              <div class="week-days">
+                <label v-for="day in weekdays" :key="day" class="checkbox-label">
                   <input
                     v-model="form.daysOfWeek"
                     type="checkbox"
                     :value="day"
-                    class="text-blue-600 border-gray-300 rounded h-4 w-4 dark:text-blue-500 dark:border-gray-600 dark:bg-gray-700 focus:ring-blue-500"
+                    class="checkbox-input"
                   >
-                  <span class="text-gray-700 ml-2 dark:text-gray-300">{{ day }}</span>
+                  <span>{{ day }}</span>
                 </label>
               </div>
             </div>
 
             <!-- Monthly -->
-            <div v-if="form.type === 'Monthly'" class="mt-4 flex flex-col gap-2 items-center">
-              <div class="flex gap-2 items-center">
-                <label for="monthly-interval" class="text-sm text-gray-700 font-medium dark:text-gray-300">
-                  {{ t('todos.repeat.labels.monthly') }}
-                </label>
-                <input
-                  id="monthly-interval"
-                  v-model.number="form.interval"
-                  type="number"
-                  min="1"
-                  required
-                  class="text-gray-900 p-2 text-center border border-gray-300 rounded-lg bg-white w-20 shadow-sm dark:text-gray-100 focus:outline-none dark:border-gray-600 dark:bg-gray-700 focus:ring-2 focus:ring-blue-500"
-                >
-                <select
-                  v-model="form.day"
-                  class="text-gray-900 ml-1 p-2 border border-gray-300 rounded-lg bg-white shadow-sm dark:text-gray-100 focus:outline-none dark:border-gray-600 dark:bg-gray-700 focus:ring-2 focus:ring-blue-500"
-                >
-                  <option v-for="n in monthlyDays" :key="n" :value="n">
-                    {{ n }}
-                  </option>
-                  <option value="last">
-                    Last day
-                  </option>
-                </select>
-              </div>
+            <div v-if="form.type === 'Monthly'" class="repeat-monthly">
+              <label for="monthly-interval" class="form-label">
+                {{ t('todos.repeat.labels.monthly') }}
+              </label>
+              <input
+                id="monthly-interval"
+                v-model.number="form.interval"
+                type="number"
+                min="1"
+                required
+                class="input-number"
+              >
+              <select v-model="form.day" class="input-select">
+                <option v-for="n in monthlyDays" :key="n" :value="n">
+                  {{ n }}
+                </option>
+                <option value="last">
+                  Last day
+                </option>
+              </select>
             </div>
 
             <!-- Yearly -->
-            <div v-if="form.type === 'Yearly'" class="mt-4 flex flex-col gap-2 items-center">
-              <div class="flex gap-2 items-center">
-                <label for="yearly-interval" class="text-sm text-gray-700 font-medium dark:text-gray-300">
-                  {{ t('todos.repeat.labels.yearly') }}
-                </label>
-                <input
-                  id="yearly-interval"
-                  v-model.number="form.interval"
-                  type="number"
-                  min="1"
-                  required
-                  class="text-gray-900 p-2 text-center border border-gray-300 rounded-lg bg-white w-20 shadow-sm dark:text-gray-100 focus:outline-none dark:border-gray-600 dark:bg-gray-700 focus:ring-2 focus:ring-blue-500"
-                >
-              </div>
-              <div class="flex gap-2 items-center">
-                <select
-                  v-model="form.month"
-                  class="text-gray-900 p-2 border border-gray-300 rounded-lg bg-white shadow-sm dark:text-gray-100 focus:outline-none dark:border-gray-600 dark:bg-gray-700 focus:ring-2 focus:ring-blue-500"
-                >
-                  <option v-for="n in 12" :key="n" :value="n">
-                    {{ monthNames[n - 1] }}
-                  </option>
-                </select>
-                <select
-                  v-model="form.day"
-                  class="text-gray-900 p-2 border border-gray-300 rounded-lg bg-white shadow-sm dark:text-gray-100 focus:outline-none dark:border-gray-600 dark:bg-gray-700 focus:ring-2 focus:ring-blue-500"
-                >
-                  <option v-for="n in yearlyMonthDays" :key="n" :value="n">
-                    {{ n }}
-                  </option>
-                </select>
-              </div>
+            <div v-if="form.type === 'Yearly'" class="repeat-yearly">
+              <label for="yearly-interval" class="form-label">
+                {{ t('todos.repeat.labels.yearly') }}
+              </label>
+              <input
+                id="yearly-interval"
+                v-model.number="form.interval"
+                type="number"
+                min="1"
+                required
+                class="input-number"
+              >
+              <select v-model="form.month" class="input-select">
+                <option v-for="n in 12" :key="n" :value="n">
+                  {{ monthNames[n - 1] }}
+                </option>
+              </select>
+              <select v-model="form.day" class="input-select">
+                <option v-for="n in yearlyMonthDays" :key="n" :value="n">
+                  {{ n }}
+                </option>
+              </select>
             </div>
 
             <!-- Custom -->
-            <div v-if="form.type === 'Custom'" class="mt-4 text-center">
-              <label for="custom-description" class="text-sm text-gray-700 font-medium block dark:text-gray-300">
+            <div v-if="form.type === 'Custom'" class="repeat-custom">
+              <label for="custom-description" class="form-label">
                 {{ t('todos.repeat.types.custom') }}
               </label>
               <input
@@ -231,27 +212,23 @@ function save() {
                 v-model="form.description"
                 type="text"
                 required
-                class="text-gray-900 mt-1 p-2 border border-gray-300 rounded-lg bg-white w-full block shadow-sm dark:text-gray-100 focus:outline-none dark:border-gray-600 dark:bg-gray-700 focus:ring-2 focus:ring-blue-500"
+                class="input-select"
               >
             </div>
           </div>
 
           <!-- Buttons -->
-          <div class="mt-6 flex gap-4 justify-center">
-            <button
-              class="text-sm text-gray-700 font-medium px-5 py-2 rounded-xl bg-gray-100 transition-all dark:text-gray-200 dark:bg-gray-700 hover:bg-gray-200 active:scale-95 hover:scale-105 dark:hover:bg-gray-600"
-              @click="emit('close')"
-            >
-              <X class="wh-5" />
+          <div class="modal-actions">
+            <button class="btn-cancel" @click="emit('close')">
+              <X class="icon" />
             </button>
             <button
-              class="px-5 py-2 rounded-xl transition-all" :class="[
-                isChanged ? 'bg-gray-400 cursor-not-allowed text-white' : 'bg-blue-600 hover:bg-blue-700 text-white',
-              ]"
+              class="btn-save"
+              :class="{ 'btn-disabled': isChanged }"
               :disabled="isChanged"
               @click="save"
             >
-              <Check class="wh-5" />
+              <Check class="icon" />
             </button>
           </div>
         </div>
@@ -261,6 +238,109 @@ function save() {
 </template>
 
 <style scoped lang="postcss">
+/* Form Label */
+.form-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-base-content, #374151);
+  margin-bottom: 0.25rem;
+}
+
+/* Select and Input */
+.input-select, .input-number {
+  width: 100%;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--color-neutral, #d1d5db);
+  background-color: var(--color-base-100, #fff);
+  color: var(--color-base-content, #111827);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.input-select:focus, .input-number:focus {
+  border-color: var(--color-primary, #2563eb);
+  box-shadow: 0 0 0 2px rgba(59,130,246,0.3);
+}
+
+/* Checkbox */
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+  user-select: none;
+}
+
+.checkbox-input {
+  width: 1rem;
+  height: 1rem;
+  border-radius: 0.25rem;
+  border: 1px solid var(--color-neutral, #d1d5db);
+  accent-color: var(--color-primary, #2563eb);
+}
+
+/* Modal Buttons */
+.modal-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin-top: 1.5rem;
+}
+
+.btn-cancel, .btn-save {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1.25rem;
+  border-radius: 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-cancel {
+  background-color: var(--color-neutral, #f3f4f6);
+  color: var(--color-base-content, #374151);
+}
+.btn-cancel:hover {
+  background-color: var(--color-base-200, #e5e7eb);
+  transform: scale(1.05);
+}
+.btn-cancel:active {
+  transform: scale(0.95);
+}
+
+.btn-save {
+  background-color: var(--color-primary, #2563eb);
+  color: var(--color-primary-content, #fff);
+}
+.btn-save:hover:not(:disabled) {
+  background-color: #1e40af;
+  transform: scale(1.05);
+}
+.btn-save:active:not(:disabled) {
+  transform: scale(0.95);
+}
+.btn-disabled {
+  background-color: var(--color-neutral, #9ca3af);
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* Icon size */
+.icon {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+/* Fade animation */
 .fade-enter-active, .fade-leave-active {
   transition: opacity 0.25s ease-out, transform 0.25s ease-out;
 }
@@ -268,6 +348,8 @@ function save() {
   opacity: 0;
   transform: translateY(8px);
 }
+
+/* Scale animation */
 .scale-enter-active, .scale-leave-active {
   transition: transform 0.2s ease-out;
 }
@@ -275,27 +357,35 @@ function save() {
   transform: scale(0.9);
 }
 
-.input-select {
-  @apply rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 p-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500;
-}
-
-.input-number {
-  @apply w-20 mt-4 text-center rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 p-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500;
-}
-
-.label-text {
-  @apply text-sm font-medium mt-4 text-gray-700 dark:text-gray-300;
-}
-
-.modal-button {
-  @apply px-5 py-2 rounded-xl transition-all;
-}
-
-.modal-button-active {
-  @apply bg-blue-600 hover:bg-blue-700 text-white;
-}
-
-.modal-button-disabled {
-  @apply bg-gray-400 hover:bg-gray-400 cursor-not-allowed text-white;
+/* Dark Theme */
+@media (prefers-color-scheme: dark) {
+  .modal-window {
+    background-color: rgba(31,41,55,0.8);
+    border-color: rgba(55,65,81,0.3);
+  }
+  .input-select, .input-number {
+    background-color: var(--color-base-200, #1f2937);
+    border-color: var(--color-neutral, #374151);
+    color: var(--color-base-content, #e5e7eb);
+  }
+  .form-label {
+    color: var(--color-base-content, #e5e7eb);
+  }
+  .checkbox-input {
+    accent-color: var(--color-primary, #2563eb);
+    border-color: var(--color-neutral, #374151);
+    background-color: var(--color-base-200, #1f2937);
+  }
+  .btn-cancel {
+    background-color: var(--color-neutral, #374151);
+    color: var(--color-neutral-content, #e5e7eb);
+  }
+  .btn-cancel:hover {
+    background-color: var(--color-base-200, #4b5563);
+  }
+  .btn-save {
+    background-color: var(--color-primary, #2563eb);
+    color: var(--color-primary-content, #fff);
+  }
 }
 </style>

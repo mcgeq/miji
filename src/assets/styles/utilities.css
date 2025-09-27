@@ -131,6 +131,29 @@
   height: 3rem;
 }
 
+/* 百分比宽度 */
+.w-full {
+  width: 100%;
+}
+.w-auto {
+  width: auto;
+}
+.w-half {
+  width: 50%;
+}
+.w-third {
+  width: 33.3333%;
+}
+.w-two-thirds {
+  width: 66.6666%;
+}
+.w-quarter {
+  width: 25%;
+}
+.w-three-quarters {
+  width: 75%;
+}
+
 /* Scrollbar and Scroll Behavior */
 .scrollbar-hide {
   scrollbar-width: none;

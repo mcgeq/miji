@@ -37,47 +37,45 @@ const onSubmit = handleSubmit(async values => {
 </script>
 
 <template>
-  <div class="px-4 bg-gray-100 flex min-h-screen items-center justify-center dark:bg-gray-900">
-    <div
-      class="p-6 border border-gray-200 rounded-xl bg-white/90 max-w-md w-full shadow-lg backdrop-blur-xl space-y-6 sm:p-8 dark:border-gray-700 dark:bg-gray-800/80"
-    >
-      <h2 class="text-3xl text-gray-900 tracking-tight font-bold text-center dark:text-white">
+  <div class="page-container">
+    <div class="card">
+      <h2 class="card__title">
         {{ t('auth.register') }}
       </h2>
 
-      <form class="space-y-4" @submit.prevent="onSubmit">
-        <div>
+      <form class="form" @submit.prevent="onSubmit">
+        <div class="form__group">
           <input v-model="username" name="username" type="text" :placeholder="t('auth.username')" class="input">
-          <p v-if="errors.username" class="text-sm text-red-600 mt-1">
+          <p v-if="errors.username" class="form__error">
             {{ errors.username }}
           </p>
         </div>
 
-        <div>
+        <div class="form__group">
           <input v-model="email" name="email" type="email" :placeholder="t('auth.email')" class="input">
-          <p v-if="errors.email" class="text-sm text-red-600 mt-1">
+          <p v-if="errors.email" class="form__error">
             {{ errors.email }}
           </p>
         </div>
 
-        <div>
+        <div class="form__group">
           <input v-model="password" name="password" type="password" :placeholder="t('auth.password')" class="input">
-          <p v-if="errors.password" class="text-sm text-red-600 mt-1">
+          <p v-if="errors.password" class="form__error">
             {{ errors.password }}
           </p>
         </div>
 
-        <div>
+        <div class="form__group">
           <input v-model="code" name="code" type="text" :placeholder="t('auth.code')" class="input">
-          <p v-if="errors.code" class="text-sm text-red-600 mt-1">
+          <p v-if="errors.code" class="form__error">
             {{ errors.code }}
           </p>
         </div>
 
         <button
-          type="submit" :disabled="isSubmitting"
-          class="bg-gradient-to-r text-white font-semibold px-4 py-2 rounded-md w-full shadow-md transition-all from-blue-600 to-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed hover:brightness-110"
-          style="color: white !important; background: linear-gradient(to right, #2563eb, #4f46e5);"
+          type="submit"
+          :disabled="isSubmitting"
+          class="btn-submit"
         >
           <template v-if="isSubmitting">
             {{ t('auth.loading.registering') }}
@@ -88,34 +86,138 @@ const onSubmit = handleSubmit(async values => {
         </button>
       </form>
 
-      <p class="text-sm text-gray-600 text-center dark:text-gray-400">
+      <p class="form__text">
         {{ t('auth.haveAccount') }}
-        <router-link to="/auth/login" class="text-blue-600 font-medium ml-1 dark:text-blue-400 hover:underline">
+        <router-link to="/auth/login" class="form__link">
           {{ t('auth.login') }}
         </router-link>
       </p>
 
-      <p v-if="success" class="text-sm text-green-600 font-semibold text-center select-text">
+      <p v-if="success" class="form__success">
         {{ t('auth.messages.registerSuccess') }}
       </p>
     </div>
   </div>
 </template>
 
-<style scoped>
+<style scoped lang="postcss">
+.page-container {
+  padding: 1rem;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-base-100);
+}
+
+.card {
+  width: 100%;
+  max-width: 28rem; /* 等于 max-w-md */
+  padding: 1.5rem;
+  border: 1px solid var(--color-base-200);
+  border-radius: 0.75rem;
+  background-color: var(--color-base-200);
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1),
+              0 4px 6px -4px rgb(0 0 0 / 0.1);
+  backdrop-filter: blur(20px);
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+@media (min-width: 640px) {
+  .card {
+    padding: 2rem;
+  }
+}
+
+.card__title {
+  font-size: 1.875rem; /* text-3xl */
+  font-weight: 700;
+  text-align: center;
+  color: var(--color-base-content);
+  letter-spacing: -0.01em;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.form__group {
+  display: flex;
+  flex-direction: column;
+}
+
 .input {
   width: 100%;
   padding: 0.5rem 0.75rem;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--color-neutral);
   border-radius: 0.375rem;
   font-size: 1rem;
-  color: #374151;
-  background-color: white;
+  color: var(--color-base-content);
+  background-color: var(--color-base-100);
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .input:focus {
   outline: none;
-  border-color: #2563eb;
-  box-shadow: 0 0 0 3px rgb(59 130 246 / 0.5);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-soft);
+}
+
+.form__error {
+  margin-top: 0.25rem;
+  font-size: 0.875rem;
+  color: var(--color-error);
+}
+
+.btn-submit {
+  width: 100%;
+  padding: 0.5rem 1rem;
+  font-weight: 600;
+  color: white;
+  border: none;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  background: var(--color-neutral);
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1),
+              0 2px 4px -2px rgb(0 0 0 / 0.1);
+  transition: filter 0.2s;
+}
+
+.btn-submit:hover:not(:disabled) {
+  filter: brightness(1.1);
+}
+
+.btn-submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.form__text {
+  font-size: 0.875rem;
+  text-align: center;
+  color: var(--color-neutral);
+}
+
+.form__link {
+  margin-left: 0.25rem;
+  color: var(--color-info);
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.form__link:hover {
+  text-decoration: underline;
+}
+
+.form__success {
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-align: center;
+  color: var(--color-success);
+  user-select: text;
 }
 </style>

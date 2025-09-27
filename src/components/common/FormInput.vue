@@ -64,11 +64,11 @@ div.relative {
   line-height: 1.5;
 
   /* 文字样式 */
-  color: #111827; /* text-gray-900 */
-  background-color: #ffffff; /* bg-white */
+  color: var(--color-base-content); /* text-gray-900 */
+  background-color: var(--color-base-100); /* bg-white */
 
   /* 边框样式 */
-  border: 1px solid #e5e7eb; /* border-gray-300 */
+  border: 1px solid var(--color-neutral); /* border-gray-300 */
   border-radius: 0.375rem; /* rounded-md */
 
   /* 阴影与过渡 */

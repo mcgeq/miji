@@ -118,37 +118,40 @@ watch(currentPage, val => {
 </script>
 
 <template>
-  <main class="mx-auto p-4 flex flex-col max-w-xl min-h-screen relative">
+  <main class="main-container">
     <!-- 输入框容器 -->
-    <div class="mb-4 h-[60px] relative">
+    <div class="input-wrapper">
       <!-- 切换按钮 -->
       <button
-        v-if="showBtn" class="text-blue-600 rounded-full bg-white flex h-8 w-8 ring-1 ring-blue-300 shadow-md transition-all duration-300 items-center left-0 top-1/2 justify-center absolute z-10 hover:text-blue-700 hover:bg-blue-50 -translate-y-1/2 active:scale-95" aria-label="Toggle Input" @click="toggleInput"
+        v-if="showBtn"
+        class="toggle-btn"
+        aria-label="Toggle Input"
+        @click="toggleInput"
       >
         <component
-          :is="showInput ? X : Plus" class="h-4 w-4"
-          :class="showInput ? 'text-red-500 hover:text-red-600' : ''"
+          :is="showInput ? X : Plus"
+          class="toggle-icon"
+          :class="showInput ? 'toggle-icon-close' : ''"
         />
       </button>
 
       <!-- 展开输入区域 -->
       <Transition name="fade-slide">
-        <div v-show="showInput" class="pl-10">
+        <div v-show="showInput" class="input-area">
           <InputCommon v-model="newT" @add="handleAdd" />
         </div>
       </Transition>
 
       <!-- 过滤按钮 -->
       <Transition name="fade-slide">
-        <div
-          v-show="!showInput" class="bg-white flex h-full transition-opacity duration-300 ease-in-out items-center left-0 right-0 top-0 justify-center absolute dark:bg-gray-800"
-        >
-          <div
-            class="px-3 py-2 border border-gray-300 rounded-full bg-white inline-flex gap-2 shadow-sm transition-all duration-300 dark:border-gray-700 dark:bg-gray-800"
-          >
+        <div v-show="!showInput" class="filter-container">
+          <div class="filter-group">
             <button
-              v-for="item in filterButtons" :key="item.value" :data-active="filterBtn === item.value"
-              :class="{ 'bg-blue-500 text-white': filterBtn === item.value }" class="text-sm text-gray-700 font-semibold px-3 py-1 border border-transparent rounded-full bg-gray-100 shadow-sm transition-all duration-300 dark:text-gray-300 data-[active=true]:text-white hover:text-blue-700 dark:bg-gray-700 data-[active=true]:bg-blue-500 hover:bg-blue-100 dark:hover:text-white dark:hover:bg-blue-800" @click="changeFilter(item.value)"
+              v-for="item in filterButtons"
+              :key="item.value"
+              :data-active="filterBtn === item.value"
+              class="filter-btn"
+              @click="changeFilter(item.value)"
             >
               {{ item.label }}
             </button>
@@ -158,20 +161,165 @@ watch(currentPage, val => {
     </div>
 
     <!-- 任务列表 -->
-    <TodoList :todos="todos" @toggle="handleToggle" @remove="handleRemove" @edit="handleEdit" />
+    <TodoList
+      :todos="todos"
+      @toggle="handleToggle"
+      @remove="handleRemove"
+      @edit="handleEdit"
+    />
 
     <!-- 分页器 -->
-    <div class="mb-1 mt-auto">
+    <div class="pagination-wrapper">
       <Pagination
-        v-model:current-page="currentPage" v-model:page-size="pageSize" :total-pages="totalPages"
-        @page-jump="handlePageJump" @page-size-change="handlePageSizeChange" @next="handleNext" @prev="handlePrev"
-        @first="handleFirst" @last="handleLast"
+        v-model:current-page="currentPage"
+        v-model:page-size="pageSize"
+        :total-pages="totalPages"
+        @page-jump="handlePageJump"
+        @page-size-change="handlePageSizeChange"
+        @next="handleNext"
+        @prev="handlePrev"
+        @first="handleFirst"
+        @last="handleLast"
       />
     </div>
   </main>
 </template>
 
-<style scoped>
+<style scoped lang="postcss">
+.main-container {
+  margin: 0 auto;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  max-width: 40rem;
+  min-height: 100vh;
+  position: relative;
+  background-color: var(--color-base-200);
+}
+
+/* 输入框容器 */
+.input-wrapper {
+  margin-bottom: 1rem;
+  height: 60px;
+  position: relative;
+}
+
+/* 切换按钮 */
+.toggle-btn {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  z-index: 10;
+  display: flex;
+  height: 2rem;
+  width: 2rem;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--color-base-200, #fff);
+  color: var(--color-info, #2563eb);
+  border-radius: 9999px;
+  border: 1px solid var(--color-info, #93c5fd);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  transform: translateY(-50%);
+  transition: all 0.3s ease;
+}
+
+.toggle-btn:hover {
+  background-color: var(--color-info-soft, #eff6ff);
+  color: var(--color-info, #1d4ed8);
+}
+
+.toggle-btn:active {
+  transform: translateY(-50%) scale(0.95);
+}
+
+/* 按钮里的图标 */
+.toggle-icon {
+  height: 1rem;
+  width: 1rem;
+}
+
+.toggle-icon-close {
+  color: var(--color-error, #ef4444);
+}
+
+/* 输入框展开区域 */
+.input-area {
+  padding-left: 2.5rem;
+}
+
+/* 过滤容器 */
+.filter-container {
+  position: absolute;
+  border-radius: 6rem;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-base-100);
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  transition: opacity 0.3s ease-in-out;
+}
+
+.filter-group {
+  display: inline-flex;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background-color: var(--color-base-200, #fff);
+  border: 1px solid var(--color-neutral, #d1d5db);
+  border-radius: 9999px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  transition: all 0.3s ease;
+}
+
+/* 单个过滤按钮 */
+.filter-btn {
+  font-size: 0.875rem;
+  font-weight: 600;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  border: 1px solid transparent;
+  background-color: var(--color-neutral-content, #f3f4f6);
+  color: var(--color-base-content, #374151);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.filter-btn:hover {
+  background-color: var(--color-info-soft, #e0f2fe);
+  color: var(--color-info, #1d4ed8);
+}
+
+/* 激活状态 */
+.filter-btn[data-active="true"] {
+  background-color: var(--color-info, #2563eb);
+  color: var(--color-primary-content, #fff);
+}
+
+/* 分页容器 */
+.pagination-wrapper {
+  margin-bottom: 0.25rem;
+  margin-top: auto;
+}
+
+/* 动画 */
+.fade-slide-enter-active,
+.fade-slide-leave-active {
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  will-change: opacity, transform;
+}
+
+.fade-slide-enter-from,
+.fade-slide-leave-to {
+  opacity: 0;
+  transform: scale(0.95) translateY(-6px);
+}
+
+.fade-slide-enter-to,
+.fade-slide-leave-from {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+}
 .fade-slide-enter-active,
 .fade-slide-leave-active {
   transition: opacity 0.3s ease, transform 0.3s ease;

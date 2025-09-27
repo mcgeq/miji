@@ -41,7 +41,7 @@ const show = computed(() => props.show);
             class="modal-btn-x"
             @click="emit('close')"
           >
-            <X class="h-4 w-4" />
+            <X class="wh-4" />
           </button>
         </div>
       </transition>

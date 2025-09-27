@@ -90,28 +90,41 @@ defineExpose({
 
 <template>
   <div
-    class="account-selector" :class="{
-      'w-full': width === 'full',
-      'w-auto': width === 'auto',
-      'w-2/3': width === '2/3',
-      'w-1/2': width === '1/2',
-      'w-1/3': width === '1/3',
-    }"
+    class="account-selector"
+    :class="[
+      width === 'full' ? 'w-full' : '',
+      width === 'auto' ? 'w-auto' : '',
+      width === '2/3' ? 'w-two-thirds' : '',
+      width === '1/2' ? 'w-half' : '',
+      width === '1/3' ? 'w-third' : '',
+    ]"
   >
-    <div class="flex gap-2 items-center" :class="showQuickSelect ? 'justify-between' : 'justify-end'">
+    <div
+      class="account-selector__inner"
+      :class="showQuickSelect ? 'justify-between' : 'justify-end'"
+    >
       <!-- 快捷选择 -->
-      <div v-if="showQuickSelect && quickSelectAccounts.length" class="flex gap-2 items-center" role="group" :aria-label="quickSelectLabel">
+      <div
+        v-if="showQuickSelect && quickSelectAccounts.length"
+        class="quick-select-group"
+        role="group"
+        :aria-label="quickSelectLabel"
+      >
         <button
           v-for="account in quickSelectAccounts"
           :key="account.serialNum"
           type="button"
           class="quick-select-btn"
-          :class="{ 'quick-select-btn-active': selectedAccount === account.serialNum }"
+          :class="{ 'quick-select-btn--active': selectedAccount === account.serialNum }"
           :disabled="disabled"
           :title="account.name"
           @click="selectQuickAccount(account.serialNum)"
         >
-          <span v-if="showIcons && account.color" class="mr-2" :style="{ color: account.color }">●</span>
+          <span
+            v-if="showIcons && account.color"
+            class="quick-select-icon"
+            :style="{ color: account.color }"
+          >●</span>
           {{ account.name }}
         </button>
       </div>
@@ -121,32 +134,148 @@ defineExpose({
         :id="inputId"
         v-model="selectedAccount"
         :disabled="disabled"
-        class="text-gray-900 border border-gray-300 rounded-md bg-white w-2/3 block dark:text-gray-100 dark:border-gray-600 focus:border-blue-500 dark:bg-gray-800 focus:ring-2 focus:ring-blue-500"
-        :class="{
-          'text-sm py-1': size === 'sm',
-          'text-base py-2': size === 'base',
-          'text-lg py-3': size === 'lg',
-          'border-red-500': errorMessage,
-        }"
+        class="account-selector__select"
+        :class="[
+          size === 'sm' ? 'account-selector__select--sm' : '',
+          size === 'base' ? 'account-selector__select--base' : '',
+          size === 'lg' ? 'account-selector__select--lg' : '',
+          errorMessage ? 'has-error' : '',
+        ]"
         :aria-describedby="errorMessage ? `${inputId}-error` : undefined"
       >
         <option value="" disabled>
           {{ placeholder }}
         </option>
-        <option v-for="account in availableAccounts" :key="account.serialNum" :value="account.serialNum">
+        <option
+          v-for="account in availableAccounts"
+          :key="account.serialNum"
+          :value="account.serialNum"
+        >
           {{ account.name }} ({{ account.currency.symbol }}{{ account.balance }})
         </option>
       </select>
     </div>
 
     <!-- 错误提示 -->
-    <div v-if="errorMessage" :id="`${inputId}-error`" class="text-sm text-red-600 mt-1 dark:text-red-400" role="alert" aria-live="polite">
+    <div
+      v-if="errorMessage"
+      :id="`${inputId}-error`"
+      class="account-selector__error"
+      role="alert"
+      aria-live="polite"
+    >
       {{ errorMessage }}
     </div>
 
     <!-- 帮助文本 -->
-    <div v-if="helpText" class="text-xs text-gray-500 mt-2 dark:text-gray-400">
+    <div v-if="helpText" class="account-selector__help">
       {{ helpText }}
     </div>
   </div>
 </template>
+
+<style scoped lang="postcss">
+/* 主容器 */
+.account-selector {
+  display: block;
+}
+.account-selector__inner {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+.account-selector__inner.justify-between {
+  justify-content: space-between;
+}
+.account-selector__inner.justify-end {
+  justify-content: flex-end;
+}
+
+/* 快捷选择 */
+.quick-select-group {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+.quick-select-btn {
+  padding: 0.25rem 0.75rem;
+  border: 1px solid var(--color-neutral);
+  border-radius: 0.375rem;
+  background: var(--color-base-100);
+  color: var(--color-base-content);
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+.quick-select-btn:hover:not(:disabled) {
+  background: var(--color-base-200);
+}
+.quick-select-btn:disabled {
+  background: var(--color-base-200);
+  color: var(--color-neutral-content);
+  cursor: not-allowed;
+}
+.quick-select-btn--active {
+  background: var(--color-primary);
+  color: var(--color-primary-content);
+  border-color: var(--color-primary);
+}
+.quick-select-icon {
+  margin-right: 0.5rem;
+}
+
+/* 下拉选择 */
+.account-selector__select {
+  display: block;
+  width: 66.6666%; /* 默认 w-2/3 */
+  border: 1px solid var(--color-neutral);
+  border-radius: 0.375rem;
+  background: var(--color-base-100);
+  color: var(--color-base-content);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.account-selector__select:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px var(--color-primary-soft);
+}
+.account-selector__select:disabled {
+  background: var(--color-base-200);
+  color: var(--color-neutral-content);
+  cursor: not-allowed;
+}
+.account-selector__select.has-error {
+  border-color: var(--color-error);
+}
+.account-selector__select.has-error:focus {
+  box-shadow: 0 0 0 2px var(--color-error);
+}
+
+/* 下拉大小 */
+.account-selector__select--sm {
+  font-size: 0.875rem;
+  padding: 0.25rem 0.5rem;
+}
+.account-selector__select--base {
+  font-size: 1rem;
+  padding: 0.5rem 0.75rem;
+}
+.account-selector__select--lg {
+  font-size: 1.125rem;
+  padding: 0.75rem 1rem;
+}
+
+/* 错误提示 */
+.account-selector__error {
+  margin-top: 0.25rem;
+  font-size: 0.875rem;
+  color: var(--color-error);
+}
+
+/* 帮助文本 */
+.account-selector__help {
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--color-neutral-content);
+}
+</style>
