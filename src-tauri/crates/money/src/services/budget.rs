@@ -101,6 +101,11 @@ impl Filter<entity::budget::Entity> for BudgetFilter {
             condition = condition.add(entity::budget::Column::AlertThreshold.eq(alert_threshold));
         }
 
+        if let Some(category) = &self.category {
+            condition = condition
+                .add(entity::budget::Column::CategoryScope.like(format!("%{}%", category)));
+        }
+
         condition
     }
 }

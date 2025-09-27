@@ -30,14 +30,8 @@ const { loading, filters, resetFilters, pagination, loadBudgets } = useBudgetFil
 const categories = computed(() => moneyStore.subCategories);
 // 获取唯一分类
 const uniqueCategories = computed(() => {
-  const categorySet = new Set<string>();
-  for (const budget of budgets.value.rows) {
-    for (const category of budget.categoryScope) {
-      categorySet.add(category);
-    }
-  }
   const allCategories = [...new Set(categories.value.map(item => item.categoryName))];
-  return Array.from(categorySet).sort((a, b) => allCategories.indexOf(a) - allCategories.indexOf(b));
+  return allCategories;
 });
 
 const decoratedBudgets = computed<BudgetVM[]>(() =>
@@ -45,7 +39,7 @@ const decoratedBudgets = computed<BudgetVM[]>(() =>
     const cats = Array.isArray(b.categoryScope) ? b.categoryScope : [];
     return {
       ...b,
-      displayCategories: cats.slice(0, 2).join(', '),
+      displayCategories: parseSubCategories(cats),
       tooltipCategories: cats.join(', '),
     };
   }),
@@ -80,6 +74,17 @@ async function handlePageChange(page: number) {
 
 function handlePageSizeChange(size: number) {
   pagination.pageSize.value = size;
+}
+
+function parseSubCategories(sub: string[]) {
+  if (!sub)
+    return '';
+  const s = sub.map(item => item.trim());
+  const translated = s.map(item => {
+    const key = lowercaseFirstLetter(item);
+    return t(`common.categories.${key}`);
+  });
+  return translated.join(',');
 }
 
 watch(filters, async () => {
@@ -178,7 +183,7 @@ defineExpose({
             {{ t('categories.allCategory') }}
           </option>
           <option v-for="category in uniqueCategories" :key="category" :value="category">
-            {{ category }}
+            {{ t(`common.categories.${lowercaseFirstLetter(category)}`) }}
           </option>
         </select>
       </div>
@@ -311,7 +316,7 @@ defineExpose({
               class="text-gray-800 font-medium"
               :title="budget.tooltipCategories"
             >
-              {{ budget.displayCategories ? t(`common.categories.${lowercaseFirstLetter(budget.displayCategories)}`) : '' }}
+              {{ budget.displayCategories }}
             </span>
           </div>
           <div class="text-sm mb-1 flex justify-between">

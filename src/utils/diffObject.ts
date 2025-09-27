@@ -61,6 +61,17 @@ function diffArray(
   for (let i = 0; i < maxLength; i++) {
     const oldVal = oldArr[i];
     const newVal = newArr[i];
+
+    if (i >= newArr.length) {
+      hasChanges = true;
+      continue;
+    }
+    if (i >= oldArr.length) {
+      result[i] = newVal;
+      hasChanges = true;
+      continue;
+    }
+
     const diff = deepDiff(oldVal, newVal, options, [...path, i]);
     if (diff === UNCHANGED) {
       result[i] = oldVal;
