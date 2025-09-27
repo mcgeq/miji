@@ -485,14 +485,14 @@ defineExpose({
 }
 
 .transaction-rows {
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--color-neutral-content);
   display: grid;
   grid-template-columns: 1fr;
   transition: background-color 0.2s;
 }
 
 .transaction-rows:hover {
-  background-color: #f9fafb;
+  background-color: var(--color-base-300);
 }
 
 .transaction-rows-item {
