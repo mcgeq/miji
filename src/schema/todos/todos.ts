@@ -42,4 +42,3 @@ export const TodoUpdateSchema = TodoCreateSchema.partial();
 export type Todo = z.infer<typeof TodoSchema>;
 export type TodoCreate = z.infer<typeof TodoCreateSchema>;
 export type TodoUpdate = z.infer<typeof TodoUpdateSchema>;
-export type TodoRemain = Todo & { remainingTime: string };
