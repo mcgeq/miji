@@ -1,5 +1,6 @@
 use chrono::{DateTime, FixedOffset};
 use common::utils::{date::DateUtils, uuid::McgUuid};
+use entity::todo::{Priority, Status};
 use macros::{set_active_value_opt, set_active_value_t};
 use sea_orm::ActiveValue;
 use serde::{Deserialize, Serialize};
@@ -11,8 +12,8 @@ pub struct TodoBase {
     pub title: String,
     pub description: Option<String>,
     pub due_at: DateTime<FixedOffset>,
-    pub priority: String,
-    pub status: String,
+    pub priority: Priority,
+    pub status: Status,
     pub repeat: Option<String>,
     pub completed_at: Option<DateTime<FixedOffset>>,
     pub assignee_id: Option<String>,
@@ -51,8 +52,8 @@ pub struct TodoUpdate {
     pub title: Option<String>,
     pub description: Option<String>,
     pub due_at: Option<DateTime<FixedOffset>>,
-    pub priority: Option<String>,
-    pub status: Option<String>,
+    pub priority: Option<Priority>,
+    pub status: Option<Status>,
     pub repeat: Option<Option<String>>,
     pub completed_at: Option<Option<DateTime<FixedOffset>>>,
     pub assignee_id: Option<Option<String>>,

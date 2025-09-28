@@ -2,6 +2,7 @@ use common::{
     ApiResponse, AppState,
     paginations::{PagedQuery, PagedResult},
 };
+use entity::todo::Status;
 use tauri::State;
 
 use crate::{
@@ -59,6 +60,21 @@ pub async fn todo_delete(
     let service = get_todos_service();
     Ok(ApiResponse::from_result(
         service.todo_delete(&state.db, serial_num).await,
+    ))
+}
+
+#[tauri::command]
+pub async fn todo_toggle(
+    state: State<'_, AppState>,
+    serial_num: String,
+    status: Status,
+) -> Result<ApiResponse<Todo>, String> {
+    let service = get_todos_service();
+    Ok(ApiResponse::from_result(
+        service
+            .todo_toggle(&state.db, serial_num, status)
+            .await
+            .map(Todo::from),
     ))
 }
 

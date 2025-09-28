@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { Check, X } from 'lucide-vue-next';
-
 const props = defineProps<{ title: string; show: boolean }>();
 const emit = defineEmits(['save', 'close']);
 const show = computed(() => props.show);
@@ -30,7 +28,7 @@ const isEditable = computed(
           >
           <div class="modal-actions">
             <button class="btn-cancel" @click="emit('close')">
-              <X class="icon" />
+              <LucideX class="icon" />
             </button>
             <button
               class="btn-save"
@@ -38,7 +36,7 @@ const isEditable = computed(
               :disabled="isEditable"
               @click="emit('save', localTitle)"
             >
-              <Check class="icon" />
+              <LucideCheck class="icon" />
             </button>
           </div>
         </div>

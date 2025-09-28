@@ -2,7 +2,7 @@
 import { defineStore } from 'pinia';
 import { AppError } from '@/errors/appError';
 import { TodoDb } from '@/services/todos';
-import type { PageQuery } from '@/schema/common';
+import type { PageQuery, Status } from '@/schema/common';
 import type { Todo, TodoCreate, TodoUpdate } from '@/schema/todos';
 import type { PagedResult } from '@/services/money/baseManager';
 import type { TodoFilters } from '@/services/todo';
@@ -97,6 +97,14 @@ export const useTodoStore = defineStore('todos', {
     async updateTodo(serialNum: string, todo: TodoUpdate): Promise<Todo> {
       return this.withLoadingSafe(async () => {
         const result = await TodoDb.updateTodo(serialNum, todo);
+        await this.fetchdPagedTodos();
+        return result;
+      }, 'Create todo failed');
+    },
+
+    async toggleTodo(serialNum: string, status: Status): Promise<Todo> {
+      return this.withLoadingSafe(async () => {
+        const result = await TodoDb.toggleTodo(serialNum, status);
         await this.fetchdPagedTodos();
         return result;
       }, 'Create todo failed');

@@ -16,17 +16,17 @@ import TodoEditRepeatModal from './TodoEditRepeatModal.vue';
 import TodoEditTitleModal from './TodoEditTitleModal.vue';
 import TodoTitle from './TodoTitle.vue';
 import type { Priority, RepeatPeriod } from '@/schema/common';
-import type { TodoRemain } from '@/schema/todos';
+import type { Todo } from '@/schema/todos';
 
 const props = defineProps<{
-  todo: TodoRemain;
+  todo: Todo;
 }>();
 const emit = defineEmits(['update:todo', 'toggle', 'remove', 'edit']);
 
 const menuStore = useMenuStore();
 
 // 本地副本，初始值为 props.todo，但后续只通过 updateTodo 更新
-const todoCopy = ref<TodoRemain>({ ...props.todo });
+const todoCopy = ref<Todo>({ ...props.todo });
 
 // UI 状态控制
 const currentPopup = ref('');
@@ -45,27 +45,8 @@ const showMenu = computed(
   () => menuStore.getMenuSerialNum === todoCopy.value.serialNum,
 );
 
-// const showPriorityBar = computed(() => {
-//   return PrioritySchema.safeParse(todoCopy.value.priority).success;
-// });
-//
-// const priorityBarClass = computed(() => {
-//   if (!showPriorityBar.value) return '';
-//
-//   const styleMap: Record<Priority, string> = {
-//     Urgent:
-//       'bg-gradient-to-b from-red-600 to-red-700 shadow-lg shadow-red-500/20',
-//     High: 'bg-gradient-to-b from-red-500 to-red-600 shadow-md shadow-red-500/15',
-//     Medium:
-//       'bg-gradient-to-b from-yellow-500 to-yellow-600 shadow-md shadow-yellow-500/15',
-//     Low: 'bg-gradient-to-b from-blue-500 to-blue-600 shadow-md shadow-blue-500/15',
-//   };
-//
-//   return styleMap[todoCopy.value.priority as Priority];
-// });
-
 // 👇 所有修改 todo 都使用这个函数
-function updateTodo(partial: Partial<TodoRemain>) {
+function updateTodo(partial: Partial<Todo>) {
   todoCopy.value = { ...todoCopy.value, ...partial };
   emit('update:todo', { ...todoCopy.value });
 }
@@ -185,9 +166,9 @@ function closeMenu() {
     </div>
 
     <!-- Due Date -->
-    <div v-if="todoCopy.dueAt" class="todo-due-date">
-      {{ todoCopy.remainingTime }}
-    </div>
+    <!-- <div v-if="todoCopy.dueAt" class="todo-due-date"> -->
+    <!--   {{ todoCopy.remainingTime }} -->
+    <!-- </div> -->
 
     <!-- Menus and Modals -->
     <TodoAddMenus :show="showMenu" @open-popup="openPopup" @close="toggleMenu" />

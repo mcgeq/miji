@@ -5,6 +5,36 @@ use localize_model_derive::LocalizeModel;
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
+#[derive(Debug, Clone, PartialEq, Eq, EnumIter, DeriveActiveEnum, Serialize, Deserialize)]
+#[sea_orm(rs_type = "String", db_type = "Text")]
+#[serde(rename_all = "PascalCase")]
+pub enum Status {
+    #[sea_orm(string_value = "NotStarted")]
+    NotStarted,
+    #[sea_orm(string_value = "InProgress")]
+    InProgress,
+    #[sea_orm(string_value = "Completed")]
+    Completed,
+    #[sea_orm(string_value = "Cancelled")]
+    Cancelled,
+    #[sea_orm(string_value = "Overdue")]
+    Overdue,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, EnumIter, DeriveActiveEnum, Serialize, Deserialize)]
+#[sea_orm(rs_type = "String", db_type = "Text")]
+#[serde(rename_all = "PascalCase")]
+pub enum Priority {
+    #[sea_orm(string_value = "Low")]
+    Low,
+    #[sea_orm(string_value = "Medium")]
+    Medium,
+    #[sea_orm(string_value = "High")]
+    High,
+    #[sea_orm(string_value = "Urgent")]
+    Urgent,
+}
+
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize, LocalizeModel)]
 #[sea_orm(table_name = "todo")]
 pub struct Model {
@@ -13,8 +43,8 @@ pub struct Model {
     pub title: String,
     pub description: Option<String>,
     pub due_at: DateTimeWithTimeZone,
-    pub priority: String,
-    pub status: String,
+    pub priority: Priority,
+    pub status: Status,
     pub repeat: Option<String>,
     pub completed_at: Option<DateTimeWithTimeZone>,
     pub assignee_id: Option<String>,

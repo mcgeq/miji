@@ -1,7 +1,7 @@
 import { TodoMapper } from './todo';
 import type { PagedResult } from './money/baseManager';
 import type { TodoFilters } from './todo';
-import type { PageQuery } from '@/schema/common';
+import type { PageQuery, Status } from '@/schema/common';
 import type { Todo, TodoCreate, TodoUpdate } from '@/schema/todos';
 
 export class TodoDb {
@@ -22,6 +22,10 @@ export class TodoDb {
 
   static async updateTodo(serialNum: string, todo: TodoUpdate): Promise<Todo> {
     return this.todoMapper.update(serialNum, todo);
+  }
+
+  static async toggleTodo(serialNum: string, status: Status): Promise<Todo> {
+    return this.todoMapper.toggle(serialNum, status);
   }
 
   static async deleteTodo(serialNum: string): Promise<void> {

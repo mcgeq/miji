@@ -12,6 +12,7 @@ declare global {
   const MEDIA_BREAKPOINTS: typeof import('./stores/mediaQueries')['MEDIA_BREAKPOINTS']
   const MoneyStoreError: typeof import('./stores/moneyStore')['MoneyStoreError']
   const MoneyStoreErrorCode: typeof import('./stores/moneyStore')['MoneyStoreErrorCode']
+  const TodoStoreErrorCode: typeof import('./stores/todoStore')['TodoStoreErrorCode']
   const acceptHMRUpdate: typeof import('pinia')['acceptHMRUpdate']
   const asyncComputed: typeof import('@vueuse/core')['asyncComputed']
   const authStore: typeof import('./stores/auth')['authStore']
@@ -363,6 +364,9 @@ declare global {
   // @ts-ignore
   export type { HealthStoreErrorCode, HealthDbError } from './stores/periodStore'
   import('./stores/periodStore')
+  // @ts-ignore
+  export type { TodoStoreErrorCode } from './stores/todoStore'
+  import('./stores/todoStore')
 }
 
 // for vue template auto import
@@ -376,6 +380,7 @@ declare module 'vue' {
     readonly MEDIA_BREAKPOINTS: UnwrapRef<typeof import('./stores/mediaQueries')['MEDIA_BREAKPOINTS']>
     readonly MoneyStoreError: UnwrapRef<typeof import('./stores/moneyStore')['MoneyStoreError']>
     readonly MoneyStoreErrorCode: UnwrapRef<typeof import('./stores/moneyStore')['MoneyStoreErrorCode']>
+    readonly TodoStoreErrorCode: UnwrapRef<typeof import('./stores/todoStore')['TodoStoreErrorCode']>
     readonly acceptHMRUpdate: UnwrapRef<typeof import('pinia')['acceptHMRUpdate']>
     readonly asyncComputed: UnwrapRef<typeof import('@vueuse/core')['asyncComputed']>
     readonly authStore: UnwrapRef<typeof import('./stores/auth')['authStore']>

@@ -1,7 +1,7 @@
 // src/lib/api/todos.ts
 import { invokeCommand } from '@/types/api';
 import { BaseMapper } from './money/baseManager';
-import type { PageQuery } from '../schema/common';
+import type { PageQuery, Status } from '../schema/common';
 import type { Todo, TodoCreate, TodoUpdate } from '../schema/todos';
 import type { PagedResult } from './money/baseManager';
 
@@ -46,6 +46,18 @@ export class TodoMapper extends BaseMapper<TodoCreate, TodoUpdate, Todo> {
       const result = await invokeCommand<Todo>('todo_update', {
         serialNum,
         data: account,
+      });
+      return result;
+    } catch (error) {
+      this.handleError('update', error);
+    }
+  }
+
+  async toggle(serialNum: string, status: Status): Promise<Todo> {
+    try {
+      const result = await invokeCommand<Todo>('todo_toggle', {
+        serialNum,
+        status,
       });
       return result;
     } catch (error) {

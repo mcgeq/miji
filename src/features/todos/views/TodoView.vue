@@ -2,28 +2,27 @@
 <script setup lang="ts">
 import { Plus, X } from 'lucide-vue-next';
 import InputCommon from '@/components/common/InputCommon.vue';
-import Pagination from '@/components/common/Pagination.vue';
-import { FilterBtnSchema } from '@/schema/common';
+import { FilterBtnSchema, PrioritySchema, StatusSchema } from '@/schema/common';
+import { DateUtils } from '@/utils/date';
 import TodoList from '../components/TodoList.vue';
-import type { FilterBtn } from '@/schema/common';
-import type { TodoRemain } from '@/schema/todos';
+import { useTodosFilters } from '../composables/useTodosFilters';
+import type { FilterBtn, Status } from '@/schema/common';
+import type { TodoCreate, TodoUpdate } from '@/schema/todos';
 
 const { t } = useI18n();
 
 const todoStore = useTodoStore();
-
 const filterBtn = ref<FilterBtn>(FilterBtnSchema.enum.TODAY);
 const newT = ref('');
 const showInput = ref(false);
-
+const todos = computed(() => todoStore.todosPaged);
 const showBtn = computed(
   () => filterBtn.value !== FilterBtnSchema.enum.YESTERDAY,
 );
-
-const todos = computed(() => todoStore.getPagedTodos());
-const totalPages = computed(() => todoStore.totalPages);
-const currentPage = ref(todoStore.currentPage);
-const pageSize = ref(todoStore.pageSize);
+const { pagination } = useTodosFilters(
+  () => todos.value,
+  4,
+);
 
 const filterButtons = [
   {
@@ -43,78 +42,55 @@ function toggleInput() {
 }
 
 function handleAdd(text: string) {
-  if (text.trim()) {
-    todoStore.addTodo(text);
-    newT.value = '';
-  }
+  const trimmed = text.trim();
+  if (!trimmed) return;
+
+  // 构建符合 TodoCreateSchema 的对象
+  const newTodo: TodoCreate = {
+    title: trimmed,
+    description: null,
+    dueAt: DateUtils.getEndOfTodayISOWithOffset(), // 示例：默认截止时间设为当前
+    priority: PrioritySchema.enum.Medium, // 默认优先级
+    status: StatusSchema.enum.InProgress, // 默认状态
+    repeat: { type: 'None' },
+    completedAt: null,
+    assigneeId: null,
+    progress: 0,
+    location: null,
+    ownerId: null,
+    isArchived: false,
+    isPinned: false,
+    estimateMinutes: null,
+    reminderCount: 0,
+    parentId: null,
+    subtaskOrder: null,
+  };
+  todoStore.createTodo(newTodo);
+  newT.value = '';
 }
 
-function handleToggle(serialNum: string) {
-  todoStore.toggleTodo(serialNum);
+async function handleToggle(serialNum: string, status: Status) {
+  await todoStore.toggleTodo(serialNum, status);
 }
 
-function handleRemove(serialNum: string) {
-  todoStore.removeTodo(serialNum);
+async function handleRemove(serialNum: string) {
+  await todoStore.deleteTodo(serialNum);
 }
 
-function handleEdit(serialNum: string, todo: TodoRemain) {
-  todoStore.editTodo(serialNum, todo);
+async function handleEdit(serialNum: string, todo: TodoUpdate) {
+  await todoStore.updateTodo(serialNum, todo);
+}
+// 处理页码变化
+function handlePageChange(_page: number) {
+  // pagination.value.currentPage = page;
 }
 
-function handlePageJump(page: number) {
-  todoStore.setPage(page);
+// 处理页面大小变化
+function handlePageSizeChange(_pageSize: number) {
+  // pagination.value.pageSize = pageSize;
+  // pagination.value.currentPage = 1; // 重置到第一页
 }
-
-function handlePageSizeChange(size: number) {
-  todoStore.setPageSize(size);
-}
-
-function handleNext() {
-  todoStore.nextPage();
-}
-
-function handlePrev() {
-  todoStore.prevPage();
-}
-
-function handleFirst() {
-  todoStore.setPage(1);
-}
-
-function handleLast() {
-  todoStore.setPage(todoStore.totalPages);
-}
-
-async function changeFilter(value: FilterBtn) {
-  filterBtn.value = value;
-  await todoStore.setFilterBtn(value);
-}
-
-onMounted(async () => {
-  await todoStore.reloadPage();
-  if (totalPages.value !== 0) {
-    todoStore.setPage(1);
-    currentPage.value = 1;
-  }
-  todoStore.startGlobalTimer();
-});
-
-onBeforeUnmount(() => {
-  todoStore.stopGlobalTimer();
-});
-
 // Keep page and size synced with store
-watch(currentPage, val => todoStore.setPage(val));
-watch(pageSize, val => todoStore.setPageSize(val));
-watch(
-  () => todoStore.currentPage,
-  val => {
-    currentPage.value = val;
-  },
-);
-watch(currentPage, val => {
-  todoStore.setPage(val);
-});
 </script>
 
 <template>
@@ -162,7 +138,7 @@ watch(currentPage, val => {
 
     <!-- 任务列表 -->
     <TodoList
-      :todos="todos"
+      :todos="todos.rows"
       @toggle="handleToggle"
       @remove="handleRemove"
       @edit="handleEdit"
@@ -170,16 +146,16 @@ watch(currentPage, val => {
 
     <!-- 分页器 -->
     <div class="pagination-wrapper">
-      <Pagination
-        v-model:current-page="currentPage"
-        v-model:page-size="pageSize"
-        :total-pages="totalPages"
-        @page-jump="handlePageJump"
+      <SimplePagination
+        :current-page="pagination.currentPage.value"
+        :total-pages="pagination.totalPages.value"
+        :total-items="pagination.totalItems.value"
+        :page-size="pagination.pageSize.value"
+        :show-total="false"
+        :show-page-size="true"
+        :page-size-options="[4, 8, 12, 20]"
+        @page-change="handlePageChange"
         @page-size-change="handlePageSizeChange"
-        @next="handleNext"
-        @prev="handlePrev"
-        @first="handleFirst"
-        @last="handleLast"
       />
     </div>
   </main>

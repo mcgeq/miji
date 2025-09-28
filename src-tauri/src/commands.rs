@@ -40,6 +40,7 @@ pub fn init_commands(builder: Builder<Wry>) -> Builder<Wry> {
         todo_cmd::todo_create,
         todo_cmd::todo_update,
         todo_cmd::todo_delete,
+        todo_cmd::todo_toggle,
         todo_cmd::todo_list,
         todo_cmd::todo_list_paged,
         money_cmd::total_assets,

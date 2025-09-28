@@ -1,13 +1,13 @@
 use std::sync::Arc;
 
 use common::{
-    crud::service::{CrudConverter, CrudService, GenericCrudService},
+    crud::service::{CrudConverter, CrudService, GenericCrudService, update_entity_columns_simple},
     error::{AppError, MijiResult},
     paginations::{Filter, PagedQuery, PagedResult},
     utils::date::DateUtils,
 };
-use entity::localize::LocalizeModel;
-use sea_orm::{ActiveValue, Condition, DbConn, EntityTrait};
+use entity::{localize::LocalizeModel, todo::Status};
+use sea_orm::{ActiveValue, Condition, DbConn, EntityTrait, prelude::Expr};
 use serde::{Deserialize, Serialize};
 use validator::Validate;
 
@@ -147,6 +147,31 @@ impl TodosService {
     ) -> MijiResult<entity::todo::Model> {
         let model = self.update(db, serial_num, data).await?;
         self.converter().model_with_local(model).await
+    }
+
+    pub async fn todo_toggle(
+        &self,
+        db: &DbConn,
+        serial_num: String,
+        status: Status,
+    ) -> MijiResult<entity::todo::Model> {
+        let now = DateUtils::local_now();
+        let mut updates = vec![
+            (entity::todo::Column::Status, Expr::value(status.clone())),
+            (entity::todo::Column::UpdatedAt, Expr::value(now)),
+        ];
+
+        if status == Status::Completed {
+            updates.push((entity::todo::Column::CompletedAt, Expr::value(now)));
+        }
+
+        update_entity_columns_simple::<entity::todo::Entity, _>(
+            db,
+            vec![(entity::todo::Column::SerialNum, vec![serial_num.clone()])],
+            updates,
+        )
+        .await?;
+        self.get_by_id(db, serial_num).await
     }
 
     pub async fn todo_delete(&self, db: &DbConn, id: String) -> MijiResult<()> {

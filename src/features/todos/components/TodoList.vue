@@ -1,25 +1,27 @@
 <!-- src/components/TodoList.vue -->
 <script setup lang="ts">
+import { StatusSchema } from '@/schema/common';
 import TodoItem from './TodoItem/TodoItem.vue';
-import type { TodoRemain } from '@/schema/todos';
+import type { Status } from '@/schema/common';
+import type { Todo, TodoUpdate } from '@/schema/todos';
 
 const props = defineProps<{
-  todos: Map<string, TodoRemain>;
+  todos: Map<string, Todo>;
 }>();
 
 const emit = defineEmits<{
-  (e: 'toggle', serialNum: string): void;
+  (e: 'toggle', serialNum: string, status: Status): void;
   (e: 'remove', serialNum: string): void;
-  (e: 'edit', serialNum: string, todo: TodoRemain): void;
+  (e: 'edit', serialNum: string, todo: TodoUpdate): void;
 }>();
 
 // 直接转换Map为数组用于渲染
 const todoList = computed(() => Array.from(props.todos.values()));
 
 // 更新 Map 中的某条 todo，响应式生效
-function updateTodo(updated: TodoRemain) {
-  props.todos.set(updated.serialNum, updated);
-  emit('edit', updated.serialNum, updated);
+function updateTodo(serialNum, updated: TodoUpdate) {
+  props.todos.set(serialNum, updated);
+  emit('edit', serialNum, updated);
 }
 </script>
 
@@ -29,8 +31,8 @@ function updateTodo(updated: TodoRemain) {
       v-for="todo in todoList"
       :key="todo.serialNum"
       :todo="todo"
-      @update:todo="updateTodo"
-      @toggle="() => emit('toggle', todo.serialNum)"
+      @update:todo="updateTodo(todo.serialNum, todo)"
+      @toggle="() => emit('toggle', todo.serialNum, StatusSchema.enum.Completed)"
       @remove="() => emit('remove', todo.serialNum)"
       @edit="() => emit('edit', todo.serialNum, todo)"
     />
