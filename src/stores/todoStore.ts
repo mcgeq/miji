@@ -76,7 +76,7 @@ export const useTodoStore = defineStore('todos', {
     async fetchdPagedTodos(
       query: PageQuery<TodoFilters> = {
         currentPage: 1,
-        pageSize: 10,
+        pageSize: 5,
         sortOptions: {
           desc: true,
           sortDir: SortDirection.Desc,
@@ -85,9 +85,7 @@ export const useTodoStore = defineStore('todos', {
       },
     ) {
       return this.withLoadingSafe(async () => {
-        const result = await TodoDb.listTodosPaged(query);
-        const rowMap = new Map(result.rows.map(item => [item.serialNum, item]));
-        this.todosPaged = { ...result, rows: rowMap };
+        await this.listPagedTodos(query);
       }, '获取TODO信息失败');
     },
 

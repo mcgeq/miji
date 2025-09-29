@@ -57,10 +57,6 @@ function getStatusText(reminder: BilReminder) {
   return t('common.status.pending');
 }
 
-watch(filters, async () => {
-  await handlePageChange(1);
-}, { deep: true });
-
 watch(() => filters.value.repeatPeriodType, repeatPeriodType => {
   if (repeatPeriodType === 'undefined') {
     filters.value.repeatPeriodType = undefined;

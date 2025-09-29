@@ -16,7 +16,7 @@ const showInput = ref(false);
 const todos = computed(() => todoStore.todosPaged);
 const { filterBtn, filterButtons, showBtn, pagination, loadTodos } = useTodosFilters(
   () => todos.value,
-  4,
+  5,
 );
 
 function toggleInput() {
@@ -24,17 +24,16 @@ function toggleInput() {
   filterBtn.value = FilterBtnSchema.enum.TODAY;
 }
 
-function handleAdd(text: string) {
+async function handleAdd(text: string) {
   const trimmed = text.trim();
   if (!trimmed) return;
 
-  // 构建符合 TodoCreateSchema 的对象
   const newTodo: TodoCreate = {
     title: trimmed,
     description: null,
-    dueAt: DateUtils.getEndOfTodayISOWithOffset(), // 示例：默认截止时间设为当前
-    priority: PrioritySchema.enum.Medium, // 默认优先级
-    status: StatusSchema.enum.InProgress, // 默认状态
+    dueAt: DateUtils.getEndOfTodayISOWithOffset(),
+    priority: PrioritySchema.enum.Medium,
+    status: StatusSchema.enum.InProgress,
     repeatPeriodType: 'None',
     repeat: { type: 'None' },
     completedAt: null,
@@ -66,14 +65,13 @@ async function handleEdit(serialNum: string, todo: TodoUpdate) {
   await todoStore.updateTodo(serialNum, todo);
 }
 // 处理页码变化
-function handlePageChange(page: number) {
-  pagination.currentPage.value = page;
+async function handlePageChange(page: number) {
+  pagination.setPage(page);
 }
 
 // 处理页面大小变化
-function handlePageSizeChange(pageSize: number) {
+async function handlePageSizeChange(pageSize: number) {
   pagination.pageSize.value = pageSize;
-  pagination.currentPage.value = 1; // 重置到第一页
 }
 
 async function changeFilter(value: FilterBtn) {
@@ -131,22 +129,25 @@ onMounted(async () => {
 
     <!-- 任务列表 -->
     <TodoList
-      :todos="todos.rows"
+      :todos="pagination.paginatedItems.value"
       @toggle="handleToggle"
       @remove="handleRemove"
       @edit="handleEdit"
     />
 
     <!-- 分页器 -->
-    <div class="pagination-wrapper">
+    <div
+      v-if="pagination.totalItems.value > pagination.pageSize.value"
+      class="pagination-wrapper"
+    >
       <SimplePagination
         :current-page="pagination.currentPage.value"
         :total-pages="pagination.totalPages.value"
         :total-items="pagination.totalItems.value"
         :page-size="pagination.pageSize.value"
         :show-total="false"
-        :show-page-size="true"
-        :page-size-options="[4, 8, 12, 20]"
+        :show-page-size="false"
+        :page-size-options="[5, 10, 15, 20]"
         @page-change="handlePageChange"
         @page-size-change="handlePageSizeChange"
       />

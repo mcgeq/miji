@@ -32,14 +32,7 @@ export class TodoDb {
     return this.todoMapper.deleteById(serialNum);
   }
 
-  static async listTodosPaged(
-    query: PageQuery<TodoFilters> = {
-      currentPage: 1,
-      pageSize: 10,
-      sortOptions: {},
-      filter: {},
-    },
-  ): Promise<PagedResult<Todo>> {
+  static async listTodosPaged(query: PageQuery<TodoFilters>): Promise<PagedResult<Todo>> {
     return this.todoMapper.listPaged(query);
   }
   // ========================= Account End =========================

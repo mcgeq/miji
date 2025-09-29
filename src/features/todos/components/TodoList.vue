@@ -15,7 +15,6 @@ const emit = defineEmits<{
   (e: 'edit', serialNum: string, todo: TodoUpdate): void;
 }>();
 
-// 直接转换Map为数组用于渲染
 const todoList = computed(() => Array.from(props.todos.values()));
 
 function updateTodo(serialNum: string, updated: TodoUpdate) {

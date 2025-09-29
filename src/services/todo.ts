@@ -6,7 +6,9 @@ import type { Todo, TodoCreate, TodoUpdate } from '../schema/todos';
 import type { PagedResult } from './money/baseManager';
 
 // 查询过滤器接口
-export interface TodoFilters {}
+export interface TodoFilters {
+  status?: Status;
+}
 
 /**
  * 账户数据映射器

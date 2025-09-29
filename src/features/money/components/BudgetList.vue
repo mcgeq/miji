@@ -69,7 +69,6 @@ function getRemainingAmount(budget: Budget) {
 }
 async function handlePageChange(page: number) {
   pagination.setPage(page);
-  await loadBudgets();
 }
 
 function handlePageSizeChange(size: number) {
@@ -86,10 +85,6 @@ function parseSubCategories(sub: string[]) {
   });
   return translated.join(',');
 }
-
-watch(filters, async () => {
-  await handlePageChange(1);
-}, { deep: true });
 
 // 组件挂载时加载数据
 onMounted(() => {

@@ -115,6 +115,22 @@ export function useBilReminderFilters(
       loading.value = false;
     }
   }
+  watch(pagination.currentPage, async () => {
+    await loadReminders();
+  });
+
+  watch(pagination.pageSize, async () => {
+    await loadReminders();
+  });
+
+  watch(
+    filters,
+    async () => {
+      pagination.currentPage.value = 1;
+      await loadReminders();
+    },
+    { deep: true },
+  );
 
   function resetFilters() {
     filters.value = {

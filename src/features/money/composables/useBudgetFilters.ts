@@ -84,6 +84,23 @@ export function useBudgetFilters(budgets: () => PagedResult<Budget>, defaultPage
     pagination.currentPage.value = 1;
   }
 
+  watch(pagination.currentPage, async () => {
+    await loadBudgets();
+  });
+
+  watch(pagination.pageSize, async () => {
+    await loadBudgets();
+  });
+
+  watch(
+    filters,
+    async () => {
+      pagination.currentPage.value = 1;
+      await loadBudgets();
+    },
+    { deep: true },
+  );
+
   return {
     filters,
     loading,

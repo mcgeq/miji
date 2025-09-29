@@ -1,4 +1,6 @@
-import { FilterBtnSchema, SortDirection } from '@/schema/common';
+import { usePaginationMapFilters } from '@/composables/usePaginationFilters';
+import { FilterBtnSchema, SortDirection, StatusSchema } from '@/schema/common';
+import { DateUtils } from '@/utils/date';
 import { Lg } from '@/utils/debugLog';
 import type { DateRange, FilterBtn, PageQuery } from '@/schema/common';
 import type { Todo } from '@/schema/todos';
@@ -9,7 +11,7 @@ type UiTodoFilters = TodoFilters & {
   dateRange?: DateRange;
 };
 
-export function useTodosFilters(todos: () => PagedMapResult<Todo>, defaultPageSize = 4) {
+export function useTodosFilters(todos: () => PagedMapResult<Todo>, defaultPageSize = 5) {
   const { sortOptions } = useSort({
     sortBy: undefined,
     sortDir: SortDirection.Desc,
@@ -17,6 +19,7 @@ export function useTodosFilters(todos: () => PagedMapResult<Todo>, defaultPageSi
     customOrderBy: undefined,
   });
 
+  const loading = ref(false);
   const { t } = useI18n();
   const filterButtons = [
     {
@@ -30,15 +33,15 @@ export function useTodosFilters(todos: () => PagedMapResult<Todo>, defaultPageSi
     },
   ] as const;
 
-  const loading = ref(false);
-  const moneyStore = useTodoStore();
+  const todoStore = useTodoStore();
   const filters = ref<UiTodoFilters>({
     dateRange: undefined,
   });
   const filterBtn = ref<FilterBtn>(FilterBtnSchema.enum.TODAY);
   const showBtn = computed(() => filterBtn.value !== FilterBtnSchema.enum.YESTERDAY);
 
-  const pagination = usePaginationFilters<Todo>(() => todos(), defaultPageSize);
+  const pagination = usePaginationMapFilters<Todo>(() => todos(), defaultPageSize);
+
   async function loadTodos() {
     loading.value = true;
     try {
@@ -48,7 +51,7 @@ export function useTodosFilters(todos: () => PagedMapResult<Todo>, defaultPageSi
         sortOptions: sortOptions.value,
         filter: filters.value,
       };
-      await moneyStore.listPagedTodos(params);
+      await todoStore.listPagedTodos(params);
     } catch (error) {
       Lg.e('Todos', error);
     } finally {
@@ -61,6 +64,43 @@ export function useTodosFilters(todos: () => PagedMapResult<Todo>, defaultPageSi
       dateRange: undefined,
     };
   }
+
+  watch(pagination.currentPage, async () => {
+    await loadTodos();
+  });
+
+  watch(pagination.pageSize, async () => {
+    await loadTodos();
+  });
+
+  watch(filterBtn, async () => {
+    if (filterBtn.value === FilterBtnSchema.enum.TODAY) {
+      filters.value.dateRange = {
+        start: DateUtils.getStartOfTodayISOWithOffset({ days: -2 }),
+        end: DateUtils.getEndOfTodayISOWithOffset(),
+      };
+    } else if (filterBtn.value === FilterBtnSchema.enum.TOMORROW) {
+      filters.value.dateRange = {
+        start: DateUtils.getStartOfTodayISOWithOffset({ days: 1 }),
+      };
+    } else if (filterBtn.value === FilterBtnSchema.enum.YESTERDAY) {
+      filters.value.status = StatusSchema.enum.Completed;
+      filters.value.dateRange = {
+        end: DateUtils.getEndOfTodayISOWithOffset({ days: -2 }),
+      };
+    } else {
+      filters.value.dateRange = undefined;
+    }
+    await loadTodos();
+  });
+
+  watch(
+    filters,
+    async () => {
+      await loadTodos();
+    },
+    { deep: true },
+  );
 
   return {
     loading,

@@ -256,6 +256,7 @@ declare global {
   const usePageLeave: typeof import('@vueuse/core')['usePageLeave']
   const usePagination: typeof import('./composables/usePagination')['usePagination']
   const usePaginationFilters: typeof import('./composables/usePaginationFilters')['usePaginationFilters']
+  const usePaginationMapFilters: typeof import('./composables/usePaginationFilters')['usePaginationMapFilters']
   const useParallax: typeof import('@vueuse/core')['useParallax']
   const useParentElement: typeof import('@vueuse/core')['useParentElement']
   const usePerformanceObserver: typeof import('@vueuse/core')['usePerformanceObserver']
@@ -623,6 +624,7 @@ declare module 'vue' {
     readonly usePageLeave: UnwrapRef<typeof import('@vueuse/core')['usePageLeave']>
     readonly usePagination: UnwrapRef<typeof import('./composables/usePagination')['usePagination']>
     readonly usePaginationFilters: UnwrapRef<typeof import('./composables/usePaginationFilters')['usePaginationFilters']>
+    readonly usePaginationMapFilters: UnwrapRef<typeof import('./composables/usePaginationFilters')['usePaginationMapFilters']>
     readonly useParallax: UnwrapRef<typeof import('@vueuse/core')['useParallax']>
     readonly useParentElement: UnwrapRef<typeof import('@vueuse/core')['useParentElement']>
     readonly usePerformanceObserver: UnwrapRef<typeof import('@vueuse/core')['usePerformanceObserver']>
