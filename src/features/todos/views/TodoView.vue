@@ -215,7 +215,8 @@ onMounted(async () => {
 
 /* 输入框展开区域 */
 .input-area {
-  padding-left: 2.5rem;
+  width: 100%;
+  padding-left: 2.1rem;
 }
 
 /* 过滤容器 */
@@ -311,8 +312,7 @@ onMounted(async () => {
 @media (max-width: 768px) {
   .main-container {
     width: 100%;
-    max-width: 100%;
-    padding: 0.75rem;
+    padding: 0.25rem;
   }
 }
 </style>

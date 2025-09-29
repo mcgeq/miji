@@ -76,7 +76,6 @@ export default defineComponent({
 .todo-input-wrapper {
   padding: 0.75rem;
   border-radius: 1rem;
-  width: 100%;
   background-color: var(--color-base-100);
   display: flex;
   align-items: center;
@@ -167,5 +166,14 @@ export default defineComponent({
 .todo-add-btn:disabled {
   opacity: 0.6;                       /* disabled:opacity-60 */
   cursor: not-allowed;                /* disabled:cursor-not-allowed */
+}
+
+@media (max-width: 768px) {
+  .todo-input-wrapper {
+    width: 100%;
+  }
+  .todo-input {
+    width: 100%;
+  }
 }
 </style>
