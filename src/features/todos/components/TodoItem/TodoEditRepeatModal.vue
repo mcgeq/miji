@@ -77,7 +77,7 @@ function save() {
   <transition name="fade">
     <div v-if="show" class="modal-overlay" @click="emit('close')">
       <transition name="scale">
-        <div v-if="show" class="modal-mask-window" @click.stop>
+        <div v-if="show" class="modal-mask-window-money" @click.stop>
           <div class="modal-body">
             <!-- Repeat Type -->
             <div class="form-group">

@@ -18,7 +18,7 @@ const isEditable = computed(
       <transition name="scale">
         <div
           v-if="show"
-          class="modal-content"
+          class="modal-mask-window-money"
           @click.stop
         >
           <input

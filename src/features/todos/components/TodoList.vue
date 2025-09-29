@@ -18,9 +18,7 @@ const emit = defineEmits<{
 // 直接转换Map为数组用于渲染
 const todoList = computed(() => Array.from(props.todos.values()));
 
-// 更新 Map 中的某条 todo，响应式生效
-function updateTodo(serialNum, updated: TodoUpdate) {
-  props.todos.set(serialNum, updated);
+function updateTodo(serialNum: string, updated: TodoUpdate) {
   emit('edit', serialNum, updated);
 }
 </script>
@@ -45,7 +43,7 @@ function updateTodo(serialNum, updated: TodoUpdate) {
   margin-top: 1rem;
   margin-top: 1rem;
   border-radius: 0.5rem;
-  background-color: #ffffff;
+  background-color: var(--color-base-200);
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 

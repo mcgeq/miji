@@ -19,21 +19,19 @@ const completed = computed(() => props.completed);
 
 <style scoped lang="postcss">
 .todo-title {
-  font-size: 0.875rem; /* text-sm */
-  line-height: 1.375rem; /* snug */
+  font-size: 0.875rem;
+  line-height: 1.375rem;
   text-align: left;
-
-  display: block; /* 或 inline-block，根据需求 */
+  display: block;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap; /* 单行省略 */
-
+  white-space: nowrap;
   cursor: pointer;
-  color: var(--color-base-content, #374151); /* 默认文字色 */
+  color: var(--color-neutral);
   transition: color 0.2s ease;
 }
 
 .todo-title-completed {
-  color: var(--color-neutral-content, #9ca3af);
+  color: var(--color-secondary-content, #9ca3af);
 }
 </style>

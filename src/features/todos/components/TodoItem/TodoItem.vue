@@ -216,8 +216,8 @@ function closeMenu() {
   margin-bottom: 0.5rem;
   padding: 1rem;
   border-radius: 1.25rem;
-  border: 1px solid var(--color-neutral, #e5e7eb);
-  background-color: var(--color-base-200, #fff);
+  border: 1px solid var(--color-neutral);
+  background-color: var(--color-base-100, #fff);
   display: flex;
   flex-direction: column;
   position: relative;
