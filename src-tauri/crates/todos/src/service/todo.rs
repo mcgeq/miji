@@ -3,11 +3,11 @@ use std::sync::Arc;
 use common::{
     crud::service::{CrudConverter, CrudService, GenericCrudService, update_entity_columns_simple},
     error::{AppError, MijiResult},
-    paginations::{Filter, PagedQuery, PagedResult},
+    paginations::{DateRange, Filter, PagedQuery, PagedResult},
     utils::date::DateUtils,
 };
 use entity::{localize::LocalizeModel, todo::Status};
-use sea_orm::{ActiveValue, Condition, DbConn, EntityTrait, prelude::Expr};
+use sea_orm::{ActiveValue, ColumnTrait, Condition, DbConn, EntityTrait, prelude::Expr};
 use serde::{Deserialize, Serialize};
 use validator::Validate;
 
@@ -18,11 +18,21 @@ use crate::{
 
 #[derive(Debug, Serialize, Deserialize, Validate)]
 #[serde(rename_all = "camelCase")]
-pub struct TodosFilter {}
+pub struct TodosFilter {
+    status: Option<String>,
+    date_range: Option<DateRange>,
+}
 
 impl Filter<entity::todo::Entity> for TodosFilter {
     fn to_condition(&self) -> sea_orm::Condition {
-        Condition::all()
+        let mut condition = Condition::all();
+        if let Some(status) = &self.status {
+            condition = condition.add(entity::todo::Column::Status.eq(status));
+        }
+        if let Some(range) = &self.date_range {
+            condition = condition.add(range.to_condition(entity::todo::Column::DueAt));
+        }
+        condition
     }
 }
 

@@ -74,6 +74,7 @@ export function useTodosFilters(todos: () => PagedMapResult<Todo>, defaultPageSi
   });
 
   watch(filterBtn, async () => {
+    resetFilters();
     if (filterBtn.value === FilterBtnSchema.enum.TODAY) {
       filters.value.dateRange = {
         start: DateUtils.getStartOfTodayISOWithOffset({ days: -2 }),
@@ -91,7 +92,6 @@ export function useTodosFilters(todos: () => PagedMapResult<Todo>, defaultPageSi
     } else {
       filters.value.dateRange = undefined;
     }
-    await loadTodos();
   });
 
   watch(
