@@ -161,7 +161,7 @@ onMounted(async () => {
   padding: 1rem;
   display: flex;
   flex-direction: column;
-  max-width: 40rem;
+  width: 40rem;
   min-height: 100vh;
   position: relative;
   background-color: var(--color-base-200);
@@ -185,8 +185,8 @@ onMounted(async () => {
   width: 2rem;
   align-items: center;
   justify-content: center;
-  background-color: var(--color-base-200, #fff);
-  color: var(--color-info, #2563eb);
+  background-color: var(--color-base-300);
+  color: var(--color-info);
   border-radius: 9999px;
   border: 1px solid var(--color-info, #93c5fd);
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
@@ -195,8 +195,8 @@ onMounted(async () => {
 }
 
 .toggle-btn:hover {
-  background-color: var(--color-info-soft, #eff6ff);
-  color: var(--color-info, #1d4ed8);
+  background-color: var(--color-neutral);
+  color: var(--color-neutral-content);
 }
 
 .toggle-btn:active {
@@ -306,5 +306,13 @@ onMounted(async () => {
 .fade-slide-leave-from {
   opacity: 1;
   transform: scale(1) translateY(0);
+}
+
+@media (max-width: 768px) {
+  .main-container {
+    width: 100%;
+    max-width: 100%;
+    padding: 0.75rem;
+  }
 }
 </style>

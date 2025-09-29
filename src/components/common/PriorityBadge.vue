@@ -112,11 +112,11 @@ function selectPriority(serialNum: string, p: Priority) {
   justify-content: center;
   height: 1.25rem; /* h-5 */
   width: 1.25rem;  /* w-5 */
-  border: 1px solid rgba(255, 255, 255, 0.3); /* border-white/30 */
+  border: 1px solid var(--color-neutral); /* border-white/30 */
   border-radius: 9999px; /* rounded-full */
   font-size: 0.75rem; /* text-xs */
   font-weight: 600; /* font-semibold */
-  background-color: rgba(255, 255, 255, 0.9); /* bg-opacity-90 */
+  background-color: var(--color-base-300); /* bg-opacity-90 */
   backdrop-filter: blur(8px); /* backdrop-blur-md */
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.15);
   transition: all 0.3s ease-out;
@@ -159,9 +159,9 @@ function selectPriority(serialNum: string, p: Priority) {
   z-index: 50;
   width: 2.5rem; /* w-10 */
   padding: 0.25rem; /* p-1 */
-  border: 1px solid #e5e7eb; /* border-gray-200 */
+  border: 1px solid var(--color-base-300); /* border-gray-200 */
   border-radius: 0.5rem; /* rounded-lg */
-  background: #fff;
+  background: var(--color-base-100);
   backdrop-filter: blur(8px);
   box-shadow: 0 4px 6px rgba(0,0,0,0.15);
 }
@@ -198,7 +198,7 @@ function selectPriority(serialNum: string, p: Priority) {
 
 /* 激活状态 */
 .priority-option--active {
-  background: #e5e7eb; /* bg-gray-200 */
+  background: var(--color-neutral-content); /* bg-gray-200 */
   font-weight: 600;
   color: #000;
 }

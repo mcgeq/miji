@@ -74,14 +74,15 @@ export default defineComponent({
 <style scoped lang="postcss">
 /* 容器样式 */
 .todo-input-wrapper {
-  padding: 0.75rem;                /* p-3 */
-  border-radius: 1rem;             /* rounded-xl */
-  background-color: #ffffff;        /* bg-white */
-  display: flex;                    /* flex */
-  align-items: center;              /* items-center */
-  gap: 0.75rem;                     /* gap-3 */
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1); /* shadow-md */
-  transition: all 0.2s ease-in-out; /* transition-all duration-200 */
+  padding: 0.75rem;
+  border-radius: 1rem;
+  width: 100%;
+  background-color: var(--color-base-100);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  transition: all 0.2s ease-in-out;
 }
 
 .todo-input-wrapper:hover {
@@ -143,8 +144,8 @@ export default defineComponent({
   font-weight: 600;                   /* font-semibold */
   padding: 0.375rem 0.75rem;         /* px-3 py-1.5 */
   border-radius: 9999px;              /* rounded-full */
-  background-color: #3B82F6;          /* bg-blue-500 */
-  color: #ffffff;                     /* text-white */
+  background-color: var(--color-primary);          /* bg-blue-500 */
+  color: var(--color-primary-soft);                     /* text-white */
   box-shadow: 0 2px 4px rgba(0,0,0,0.1); /* shadow-md */
   transition: all 0.15s ease-in-out;  /* transition-transform duration-150 */
   cursor: pointer;
@@ -153,7 +154,7 @@ export default defineComponent({
 
 /* 按钮 hover */
 .todo-add-btn:hover:enabled {
-  background-color: #2563EB;          /* hover:bg-blue-600 */
+  background-color: var(--color-neutral);          /* hover:bg-blue-600 */
   box-shadow: 0 4px 8px rgba(0,0,0,0.15);
 }
 
@@ -166,16 +167,5 @@ export default defineComponent({
 .todo-add-btn:disabled {
   opacity: 0.6;                       /* disabled:opacity-60 */
   cursor: not-allowed;                /* disabled:cursor-not-allowed */
-}
-
-/* 暗黑模式按钮 */
-@media (prefers-color-scheme: dark) {
-  .todo-add-btn {
-    background-color: #2563EB;        /* 可自定义暗色按钮 */
-  }
-
-  .todo-add-btn:hover:enabled {
-    background-color: #1D4ED8;
-  }
 }
 </style>
