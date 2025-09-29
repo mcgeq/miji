@@ -18,7 +18,6 @@ const { filterBtn, filterButtons, showBtn, pagination, loadTodos } = useTodosFil
   () => todos.value,
   5,
 );
-
 function toggleInput() {
   showInput.value = !showInput.value;
   filterBtn.value = FilterBtnSchema.enum.TODAY;

@@ -3,11 +3,14 @@ use std::sync::Arc;
 use common::{
     crud::service::{CrudConverter, CrudService, GenericCrudService, update_entity_columns_simple},
     error::{AppError, MijiResult},
-    paginations::{DateRange, Filter, PagedQuery, PagedResult},
+    paginations::{DateRange, Filter, PagedQuery, PagedResult, Sortable},
     utils::date::DateUtils,
 };
 use entity::{localize::LocalizeModel, todo::Status};
-use sea_orm::{ActiveValue, ColumnTrait, Condition, DbConn, EntityTrait, prelude::Expr};
+use sea_orm::{
+    ActiveValue, ColumnTrait, Condition, DbConn, EntityTrait, Order, PaginatorTrait, QueryFilter,
+    QueryOrder, QuerySelect, prelude::Expr,
+};
 use serde::{Deserialize, Serialize};
 use validator::Validate;
 
@@ -16,7 +19,7 @@ use crate::{
     service::todo_hooks::TodoHooks,
 };
 
-#[derive(Debug, Serialize, Deserialize, Validate)]
+#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 #[serde(rename_all = "camelCase")]
 pub struct TodosFilter {
     status: Option<String>,
@@ -207,14 +210,48 @@ impl TodosService {
         db: &DbConn,
         query: PagedQuery<TodosFilter>,
     ) -> MijiResult<PagedResult<entity::todo::Model>> {
-        let paged = self.list_paged(db, query).await?;
-        let models = self.converter().localize_models(paged.rows).await?;
+        // Step 1: Calculate total count of all todos (with original filter, ignoring status)
+        let mut total_query_builder =
+            entity::todo::Entity::find().filter(query.filter.to_condition());
+        total_query_builder = query.sort_options.apply_sort(total_query_builder);
+        let total_count = total_query_builder
+            .clone()
+            .count(db)
+            .await
+            .map_err(AppError::from)? as usize;
+
+        // Step 2: Query all todos, sorted by status (non-completed first) and Priority DESC
+        let mut query_builder = entity::todo::Entity::find()
+            .filter(query.filter.to_condition())
+            .order_by(
+                sea_orm::sea_query::Expr::cust("CASE WHEN status != 'Completed' THEN 0 ELSE 1 END"),
+                Order::Asc, // Non-completed first, completed last
+            )
+            .order_by(entity::todo::Column::Priority, Order::Desc); // Then sort by Priority DESC
+
+        // Apply additional sorting from sort_options
+        query_builder = query.sort_options.apply_sort(query_builder);
+
+        let offset = (query.current_page - 1) * query.page_size;
+        let rows = query_builder
+            .offset(offset as u64)
+            .limit(query.page_size as u64)
+            .all(db)
+            .await
+            .map_err(AppError::from)?;
+
+        // Apply localization to models
+        let models = self.converter().localize_models(rows).await?;
+
+        // Calculate total pages
+        let total_pages = total_count.div_ceil(query.page_size);
+
         Ok(PagedResult {
             rows: models,
-            total_count: paged.total_count,
-            current_page: paged.current_page,
-            page_size: paged.page_size,
-            total_pages: paged.total_pages,
+            total_count,
+            current_page: query.current_page,
+            page_size: query.page_size,
+            total_pages,
         })
     }
 

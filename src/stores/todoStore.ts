@@ -1,7 +1,7 @@
 // src/stores/todoStore.ts
 import { defineStore } from 'pinia';
 import { AppError } from '@/errors/appError';
-import { SortDirection } from '@/schema/common';
+import { SortDirection, StatusSchema } from '@/schema/common';
 import { TodoDb } from '@/services/todos';
 import type { PageQuery, Status } from '@/schema/common';
 import type { Todo, TodoCreate, TodoUpdate } from '@/schema/todos';
@@ -26,6 +26,39 @@ export enum TodoStoreErrorCode {
   CREDIT_CARD_BALANCE_INVALID = 'CREDIT_CARD_BALANCE_INVALID',
   DATABASE_OPERATION_FAILED = 'DATABASE_OPERATION_FAILED',
   NOT_FOUND = 'NOT_FOUND',
+}
+const priorityOrder: Record<Todo['priority'], number> = {
+  Urgent: 4,
+  High: 3,
+  Medium: 2,
+  Low: 1,
+};
+
+export function compareTodos(a: Todo, b: Todo): number {
+  // 1. pinned 在最前
+  if (a.isPinned && !b.isPinned) return -1;
+  if (!a.isPinned && b.isPinned) return 1;
+
+  // 2. 未完成在前
+  if (a.status === StatusSchema.enum.Completed && b.status !== StatusSchema.enum.Completed)
+    return 1;
+  if (a.status !== StatusSchema.enum.Completed && b.status === StatusSchema.enum.Completed)
+    return -1;
+
+  // 3. 按优先级 (Urgent > High > Medium > Low)
+  const priorityDiff = priorityOrder[b.priority] - priorityOrder[a.priority];
+  if (priorityDiff !== 0) return priorityDiff;
+
+  // 4. 按 dueAt 先到期在前
+  if (a.dueAt && b.dueAt) {
+    const dueDiff = new Date(a.dueAt).getTime() - new Date(b.dueAt).getTime();
+    if (dueDiff !== 0) return dueDiff;
+  }
+
+  // 5. 更新时间倒序
+  const dateA = new Date(a.updatedAt ?? a.createdAt).getTime();
+  const dateB = new Date(b.updatedAt ?? b.createdAt).getTime();
+  return dateB - dateA;
 }
 
 export const useTodoStore = defineStore('todos', {
@@ -124,6 +157,7 @@ export const useTodoStore = defineStore('todos', {
     async listPagedTodos(query: PageQuery<TodoFilters>): Promise<PagedResult<Todo>> {
       return this.withLoadingSafe(async () => {
         const result = await TodoDb.listTodosPaged(query);
+        result.rows.sort(compareTodos);
         const rowMap = new Map(result.rows.map(item => [item.serialNum, item]));
         this.todosPaged = { ...result, rows: rowMap };
         return result;
