@@ -1,6 +1,9 @@
-import type { PagedResult } from '@/services/money/baseManager';
+import type { PagedMapResult, PagedResult } from '@/services/money/baseManager';
 
-export function usePaginationFilters<T>(items: () => PagedResult<T>, defaultPageSize = 10) {
+export function usePaginationFilters<T>(
+  items: () => PagedResult<T> | PagedMapResult<T>,
+  defaultPageSize = 10,
+) {
   const paged = computed(() => items());
   const currentPage = ref(paged.value.currentPage);
   const pageSize = ref(defaultPageSize);

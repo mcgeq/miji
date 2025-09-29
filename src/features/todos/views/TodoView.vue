@@ -3,38 +3,21 @@
 import { Plus, X } from 'lucide-vue-next';
 import InputCommon from '@/components/common/InputCommon.vue';
 import { FilterBtnSchema, PrioritySchema, StatusSchema } from '@/schema/common';
+import { TodoCreateSchema } from '@/schema/todos';
 import { DateUtils } from '@/utils/date';
 import TodoList from '../components/TodoList.vue';
 import { useTodosFilters } from '../composables/useTodosFilters';
 import type { FilterBtn, Status } from '@/schema/common';
 import type { TodoCreate, TodoUpdate } from '@/schema/todos';
 
-const { t } = useI18n();
-
 const todoStore = useTodoStore();
-const filterBtn = ref<FilterBtn>(FilterBtnSchema.enum.TODAY);
 const newT = ref('');
 const showInput = ref(false);
 const todos = computed(() => todoStore.todosPaged);
-const showBtn = computed(
-  () => filterBtn.value !== FilterBtnSchema.enum.YESTERDAY,
-);
-const { pagination } = useTodosFilters(
+const { filterBtn, filterButtons, showBtn, pagination, loadTodos } = useTodosFilters(
   () => todos.value,
   4,
 );
-
-const filterButtons = [
-  {
-    label: t('todos.quickFilter.yesterday'),
-    value: FilterBtnSchema.enum.YESTERDAY,
-  },
-  { label: t('todos.quickFilter.today'), value: FilterBtnSchema.enum.TODAY },
-  {
-    label: t('todos.quickFilter.tomorrow'),
-    value: FilterBtnSchema.enum.TOMORROW,
-  },
-] as const;
 
 function toggleInput() {
   showInput.value = !showInput.value;
@@ -52,6 +35,7 @@ function handleAdd(text: string) {
     dueAt: DateUtils.getEndOfTodayISOWithOffset(), // 示例：默认截止时间设为当前
     priority: PrioritySchema.enum.Medium, // 默认优先级
     status: StatusSchema.enum.InProgress, // 默认状态
+    repeatPeriodType: 'None',
     repeat: { type: 'None' },
     completedAt: null,
     assigneeId: null,
@@ -65,7 +49,8 @@ function handleAdd(text: string) {
     parentId: null,
     subtaskOrder: null,
   };
-  todoStore.createTodo(newTodo);
+  const nCreateTodo = TodoCreateSchema.parse(newTodo);
+  todoStore.createTodo(nCreateTodo);
   newT.value = '';
 }
 
@@ -81,15 +66,23 @@ async function handleEdit(serialNum: string, todo: TodoUpdate) {
   await todoStore.updateTodo(serialNum, todo);
 }
 // 处理页码变化
-function handlePageChange(_page: number) {
-  // pagination.value.currentPage = page;
+function handlePageChange(page: number) {
+  pagination.currentPage.value = page;
 }
 
 // 处理页面大小变化
-function handlePageSizeChange(_pageSize: number) {
-  // pagination.value.pageSize = pageSize;
-  // pagination.value.currentPage = 1; // 重置到第一页
+function handlePageSizeChange(pageSize: number) {
+  pagination.pageSize.value = pageSize;
+  pagination.currentPage.value = 1; // 重置到第一页
 }
+
+async function changeFilter(value: FilterBtn) {
+  filterBtn.value = value;
+}
+
+onMounted(async () => {
+  await loadTodos();
+});
 // Keep page and size synced with store
 </script>
 
@@ -151,7 +144,7 @@ function handlePageSizeChange(_pageSize: number) {
         :total-pages="pagination.totalPages.value"
         :total-items="pagination.totalItems.value"
         :page-size="pagination.pageSize.value"
-        :show-total="false"
+        :show-total="true"
         :show-page-size="true"
         :page-size-options="[4, 8, 12, 20]"
         @page-change="handlePageChange"

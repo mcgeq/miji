@@ -45,7 +45,9 @@ pub struct Model {
     pub due_at: DateTimeWithTimeZone,
     pub priority: Priority,
     pub status: Status,
-    pub repeat: Option<String>,
+    pub repeat_period_type: String,
+    #[sea_orm(column_type = "JsonBinary")]
+    pub repeat: Json,
     pub completed_at: Option<DateTimeWithTimeZone>,
     pub assignee_id: Option<String>,
     pub progress: i32,

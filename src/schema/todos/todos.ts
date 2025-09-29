@@ -18,6 +18,7 @@ export const TodoSchema = z.object({
   dueAt: DateTimeSchema,
   priority: PrioritySchema,
   status: StatusSchema,
+  repeatPeriodType: z.string(),
   repeat: RepeatPeriodSchema,
   completedAt: DateTimeSchema.nullable(),
   assigneeId: NullableStringSchema,

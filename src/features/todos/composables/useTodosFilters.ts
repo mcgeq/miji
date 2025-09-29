@@ -1,29 +1,42 @@
-import { SortDirection } from '@/schema/common';
+import { FilterBtnSchema, SortDirection } from '@/schema/common';
 import { Lg } from '@/utils/debugLog';
-import type { PageQuery } from '@/schema/common';
+import type { DateRange, FilterBtn, PageQuery } from '@/schema/common';
 import type { Todo } from '@/schema/todos';
-import type { PagedResult } from '@/services/money/baseManager';
+import type { PagedMapResult } from '@/services/money/baseManager';
 import type { TodoFilters } from '@/services/todo';
 
 type UiTodoFilters = TodoFilters & {
-  status?: 'paid' | 'overdue' | 'pending' | '';
-  dateRange?: 'today' | 'week' | 'month' | 'overdue' | '';
+  dateRange?: DateRange;
 };
 
-export function useTodosFilters(todos: () => PagedResult<Todo>, defaultPageSize = 4) {
-  const loading = ref(false);
-  const moneyStore = useTodoStore();
-  const filters = ref<UiTodoFilters>({
-    status: '',
-    dateRange: '',
-  });
-
+export function useTodosFilters(todos: () => PagedMapResult<Todo>, defaultPageSize = 4) {
   const { sortOptions } = useSort({
     sortBy: undefined,
     sortDir: SortDirection.Desc,
     desc: true,
     customOrderBy: undefined,
   });
+
+  const { t } = useI18n();
+  const filterButtons = [
+    {
+      label: t('todos.quickFilter.yesterday'),
+      value: FilterBtnSchema.enum.YESTERDAY,
+    },
+    { label: t('todos.quickFilter.today'), value: FilterBtnSchema.enum.TODAY },
+    {
+      label: t('todos.quickFilter.tomorrow'),
+      value: FilterBtnSchema.enum.TOMORROW,
+    },
+  ] as const;
+
+  const loading = ref(false);
+  const moneyStore = useTodoStore();
+  const filters = ref<UiTodoFilters>({
+    dateRange: undefined,
+  });
+  const filterBtn = ref<FilterBtn>(FilterBtnSchema.enum.TODAY);
+  const showBtn = computed(() => filterBtn.value !== FilterBtnSchema.enum.YESTERDAY);
 
   const pagination = usePaginationFilters<Todo>(() => todos(), defaultPageSize);
   async function loadTodos() {
@@ -45,15 +58,18 @@ export function useTodosFilters(todos: () => PagedResult<Todo>, defaultPageSize 
 
   function resetFilters() {
     filters.value = {
-      status: '',
+      dateRange: undefined,
     };
   }
 
   return {
     loading,
     filters,
-    resetFilters,
+    filterBtn,
+    filterButtons,
     pagination,
+    showBtn,
+    resetFilters,
     loadTodos,
   };
 }

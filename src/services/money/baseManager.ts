@@ -8,6 +8,14 @@ export interface PagedResult<T> {
   totalPages: number;
 }
 
+export interface PagedMapResult<T> {
+  rows: Map<string, T>;
+  totalCount: number;
+  currentPage: number;
+  pageSize: number;
+  totalPages: number;
+}
+
 /**
  * 数据库操作错误类
  */

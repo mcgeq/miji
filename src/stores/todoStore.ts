@@ -1,16 +1,17 @@
 // src/stores/todoStore.ts
 import { defineStore } from 'pinia';
 import { AppError } from '@/errors/appError';
+import { SortDirection } from '@/schema/common';
 import { TodoDb } from '@/services/todos';
 import type { PageQuery, Status } from '@/schema/common';
 import type { Todo, TodoCreate, TodoUpdate } from '@/schema/todos';
-import type { PagedResult } from '@/services/money/baseManager';
+import type { PagedMapResult, PagedResult } from '@/services/money/baseManager';
 import type { TodoFilters } from '@/services/todo';
 
 // ==================== Store State Interface ====================
 interface TodoStoreState {
   todos: Todo[];
-  todosPaged: PagedResult<Todo>;
+  todosPaged: PagedMapResult<Todo>;
   loading: boolean;
   lastFetched: Date | null;
   cacheExpiry: number;
@@ -30,7 +31,7 @@ export enum TodoStoreErrorCode {
 export const useTodoStore = defineStore('todos', {
   state: (): TodoStoreState => ({
     todos: [],
-    todosPaged: { rows: [], totalPages: 0, currentPage: 1, totalCount: 0, pageSize: 10 },
+    todosPaged: { rows: new Map(), totalPages: 0, currentPage: 1, totalCount: 0, pageSize: 10 },
     loading: false,
     lastFetched: null,
     cacheExpiry: 8 * 60 * 60 * 1000,
@@ -76,13 +77,17 @@ export const useTodoStore = defineStore('todos', {
       query: PageQuery<TodoFilters> = {
         currentPage: 1,
         pageSize: 10,
-        sortOptions: {},
+        sortOptions: {
+          desc: true,
+          sortDir: SortDirection.Desc,
+        },
         filter: {},
       },
     ) {
       return this.withLoadingSafe(async () => {
         const result = await TodoDb.listTodosPaged(query);
-        this.todosPaged = result;
+        const rowMap = new Map(result.rows.map(item => [item.serialNum, item]));
+        this.todosPaged = { ...result, rows: rowMap };
       }, '获取TODO信息失败');
     },
 
@@ -121,7 +126,8 @@ export const useTodoStore = defineStore('todos', {
     async listPagedTodos(query: PageQuery<TodoFilters>): Promise<PagedResult<Todo>> {
       return this.withLoadingSafe(async () => {
         const result = await TodoDb.listTodosPaged(query);
-        this.todosPaged = result;
+        const rowMap = new Map(result.rows.map(item => [item.serialNum, item]));
+        this.todosPaged = { ...result, rows: rowMap };
         return result;
       }, '获取TODO信息失败');
     },

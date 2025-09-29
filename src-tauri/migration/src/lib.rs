@@ -31,6 +31,9 @@ mod m20250918_115414_create_categories_alert;
 mod m20250918_121424_create_sub_categories_alert;
 mod m20250924_184622_create_bil_reminder_alter;
 mod m20250924_185222_create_budget_alert;
+mod m20250929_110022_create_todo_alert;
+mod m20250929_120022_create_todo_drop;
+mod m20250929_121722_create_todo_repeat_period_type;
 mod m20251916_221213_create_sub_categories;
 mod m20251917_223412_create_sub_category_insert;
 
@@ -75,6 +78,9 @@ impl MigratorTrait for Migrator {
             Box::new(m20250918_121424_create_sub_categories_alert::Migration),
             Box::new(m20250924_184622_create_bil_reminder_alter::Migration),
             Box::new(m20250924_185222_create_budget_alert::Migration),
+            Box::new(m20250929_120022_create_todo_drop::Migration),
+            Box::new(m20250929_110022_create_todo_alert::Migration),
+            Box::new(m20250929_121722_create_todo_repeat_period_type::Migration),
         ]
     }
 }

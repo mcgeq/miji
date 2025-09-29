@@ -65,6 +65,7 @@ pub enum Todo {
     Priority,
     Status,
     Repeat,
+    RepeatPeriodType,
     CompletedAt,
     AssigneeId,
     Progress,
