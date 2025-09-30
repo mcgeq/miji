@@ -225,7 +225,7 @@ impl TodosService {
             .filter(query.filter.to_condition())
             .order_by(
                 sea_orm::sea_query::Expr::cust("CASE WHEN status != 'Completed' THEN 0 ELSE 1 END"),
-                Order::Asc, // Non-completed first, completed last
+                Order::Desc, // Non-completed first, completed last
             )
             .order_by(entity::todo::Column::Priority, Order::Desc); // Then sort by Priority DESC
 

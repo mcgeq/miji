@@ -17,7 +17,7 @@ use sea_orm::{
     ActiveValue::Set,
     ColumnTrait, Condition, DatabaseConnection, DatabaseTransaction, DbConn, EntityTrait,
     IntoActiveModel, QueryFilter, QuerySelect, TransactionTrait,
-    prelude::{Decimal, Expr, async_trait::async_trait},
+    prelude::{Decimal, Expr},
     sea_query::{Alias, ExprTrait, Func, SimpleExpr},
 };
 use serde::{Deserialize, Serialize};
@@ -991,85 +991,6 @@ impl Filter<entity::transactions::Entity> for TransactionFilter {
         condition = condition.add(entity::transactions::Column::IsDeleted.eq(is_deleted as i32));
 
         condition
-    }
-}
-
-#[async_trait]
-impl
-    CrudService<
-        entity::transactions::Entity,
-        TransactionFilter,
-        CreateTransactionRequest,
-        UpdateTransactionRequest,
-    > for TransactionService
-{
-    async fn create(
-        &self,
-        db: &DbConn,
-        data: CreateTransactionRequest,
-    ) -> MijiResult<entity::transactions::Model> {
-        self.inner.create(db, data).await
-    }
-
-    async fn get_by_id(&self, db: &DbConn, id: String) -> MijiResult<entity::transactions::Model> {
-        self.inner.get_by_id(db, id).await
-    }
-
-    async fn update(
-        &self,
-        db: &DbConn,
-        id: String,
-        data: UpdateTransactionRequest,
-    ) -> MijiResult<entity::transactions::Model> {
-        self.inner.update(db, id, data).await
-    }
-
-    async fn delete(&self, db: &DbConn, id: String) -> MijiResult<()> {
-        self.inner.delete(db, id).await
-    }
-
-    async fn list(&self, db: &DbConn) -> MijiResult<Vec<entity::transactions::Model>> {
-        self.inner.list(db).await
-    }
-
-    async fn list_with_filter(
-        &self,
-        db: &DbConn,
-        filter: TransactionFilter,
-    ) -> MijiResult<Vec<entity::transactions::Model>> {
-        self.inner.list_with_filter(db, filter).await
-    }
-
-    async fn list_paged(
-        &self,
-        db: &DbConn,
-        query: PagedQuery<TransactionFilter>,
-    ) -> MijiResult<PagedResult<entity::transactions::Model>> {
-        self.inner.list_paged(db, query).await
-    }
-
-    async fn create_batch(
-        &self,
-        db: &DbConn,
-        data: Vec<CreateTransactionRequest>,
-    ) -> MijiResult<Vec<entity::transactions::Model>> {
-        self.inner.create_batch(db, data).await
-    }
-
-    async fn delete_batch(&self, db: &DbConn, ids: Vec<String>) -> MijiResult<u64> {
-        self.inner.delete_batch(db, ids).await
-    }
-
-    async fn exists(&self, db: &DbConn, id: String) -> MijiResult<bool> {
-        self.inner.exists(db, id).await
-    }
-
-    async fn count(&self, db: &DbConn) -> MijiResult<u64> {
-        self.inner.count(db).await
-    }
-
-    async fn count_with_filter(&self, db: &DbConn, filter: TransactionFilter) -> MijiResult<u64> {
-        self.inner.count_with_filter(db, filter).await
     }
 }
 
