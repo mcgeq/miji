@@ -16,12 +16,12 @@ import TodoEditRepeatModal from './TodoEditRepeatModal.vue';
 import TodoEditTitleModal from './TodoEditTitleModal.vue';
 import TodoTitle from './TodoTitle.vue';
 import type { Priority, RepeatPeriod } from '@/schema/common';
-import type { Todo } from '@/schema/todos';
+import type { Todo, TodoUpdate } from '@/schema/todos';
 
 const props = defineProps<{
   todo: Todo;
 }>();
-const emit = defineEmits(['update:todo', 'toggle', 'remove', 'edit']);
+const emit = defineEmits(['update:todo', 'toggle', 'remove']);
 
 const menuStore = useMenuStore();
 
@@ -46,14 +46,14 @@ const showMenu = computed(
 );
 
 // 👇 所有修改 todo 都使用这个函数
-function updateTodo(partial: Partial<Todo>) {
+function updateTodo(serialNum: string, partial: TodoUpdate) {
   todoCopy.value = { ...todoCopy.value, ...partial };
-  emit('update:todo', { ...todoCopy.value });
+  emit('update:todo', serialNum, { ...partial });
 }
 
 function onToggleHandler() {
   if (!completed.value) {
-    updateTodo({ status: StatusSchema.enum.Completed });
+    updateTodo(todoCopy.value.serialNum, { status: StatusSchema.enum.Completed });
     emit('toggle');
   }
 }
@@ -97,8 +97,7 @@ function openEditRepeatModal() {
 function submitTitleChange(newTitle: string) {
   const trimmed = newTitle.trim();
   if (trimmed && trimmed !== todoCopy.value.title) {
-    updateTodo({ title: trimmed });
-    emit('edit');
+    updateTodo(todoCopy.value.serialNum, { title: trimmed });
   }
   showEditModal.value = false;
 }
@@ -106,22 +105,20 @@ function submitTitleChange(newTitle: string) {
 function submitDueDateChange(newDueAt: string) {
   const newDue = DateUtils.parseToISO(newDueAt);
   if (newDue !== todoCopy.value.dueAt) {
-    updateTodo({ dueAt: newDue });
-    emit('edit');
+    updateTodo(todoCopy.value.serialNum, { dueAt: newDue });
   }
   showDueDateModal.value = false;
 }
 
 function submitRepeatChange(repeat: RepeatPeriod) {
   if (repeat !== todoCopy.value.repeat) {
-    updateTodo({ repeat });
-    emit('edit');
+    updateTodo(todoCopy.value.serialNum, { repeat });
   }
 }
 
 function onChangePriorityHandler(serialNum: string, priority: Priority) {
   if (serialNum === todoCopy.value.serialNum) {
-    updateTodo({ priority });
+    updateTodo(todoCopy.value.serialNum, { priority });
   }
 }
 

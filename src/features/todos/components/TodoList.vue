@@ -28,10 +28,9 @@ function updateTodo(serialNum: string, updated: TodoUpdate) {
       v-for="todo in todoList"
       :key="todo.serialNum"
       :todo="todo"
-      @update:todo="updateTodo(todo.serialNum, todo)"
+      @update:todo="updateTodo"
       @toggle="() => emit('toggle', todo.serialNum, StatusSchema.enum.Completed)"
       @remove="() => emit('remove', todo.serialNum)"
-      @edit="() => emit('edit', todo.serialNum, todo)"
     />
   </div>
 </template>
