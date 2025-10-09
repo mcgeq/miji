@@ -139,10 +139,6 @@ function handleOverlayClick() {
 
 function handleSubmit() {
   const amount = form.value.amount;
-  if (Number.isNaN(amount) || amount <= 0) {
-    toast.error('请输入有效的金额');
-    return;
-  }
   const fromAccount = props.accounts.find(acc => acc.serialNum === form.value.accountSerialNum);
   if (!fromAccount) {
     console.error('未找到转出账户');
