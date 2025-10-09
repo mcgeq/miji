@@ -560,12 +560,12 @@ impl From<TransactionWithRelations> for TransactionResponse {
     }
 }
 
-fn validate_amount(amount: &Decimal) -> Result<(), validator::ValidationError> {
-    if amount.is_sign_negative() {
-        return Err(validator::ValidationError::new(
-            "amount_must_be_non_negative",
-        ));
-    }
+fn validate_amount(_amount: &Decimal) -> Result<(), validator::ValidationError> {
+    // if amount.is_sign_negative() {
+    //     return Err(validator::ValidationError::new(
+    //         "amount_must_be_non_negative",
+    //     ));
+    // }
     Ok(())
 }
 

@@ -402,7 +402,6 @@ watch(
             class="form-control"
             :placeholder="t('common.placeholders.enterAmount')"
             step="0.01"
-            min="0"
             required
             @input="handleAmountInput"
           >

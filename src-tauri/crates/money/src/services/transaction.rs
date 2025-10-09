@@ -1022,6 +1022,16 @@ impl TransactionService {
         id: String,
         data: UpdateTransactionRequest,
     ) -> MijiResult<TransactionWithRelations> {
+        if let Some(amount) = &data.amount
+            && amount.is_sign_negative()
+        {
+            let model = self.get_by_id(db, id.clone()).await?;
+            let mut new_data = data.clone();
+            new_data.amount = Some(new_data.amount.unwrap() + model.amount);
+            let result = self.update(db, id, new_data).await?;
+            return self.converter().model_to_with_relations(db, result).await;
+        }
+
         let model = self.update(db, id, data).await?;
         self.converter().model_to_with_relations(db, model).await
     }
