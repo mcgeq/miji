@@ -6,8 +6,7 @@ import { initI18n } from './i18n/i18n';
 import router from './router';
 import { i18nErrorMap } from './schema/i18nErrorMap';
 import { storeStart } from './stores';
-import '@unocss/reset/tailwind.css';
-import 'uno.css';
+import '@/assets/styles/reset.css';
 import 'vue-toastification/dist/index.css';
 import '@/assets/styles/variables.css';
 import '@/assets/styles/base.css';
@@ -171,14 +170,10 @@ function closeFrontendSplashscreen(splashscreen: HTMLElement | null) {
   }
 }
 
-// 预加载UnoCSS图标
+// 预加载图标（已移除UnoCSS依赖）
 async function preloadIcons() {
-  try {
-    // 直接导入而不是使用window.onload
-    await import('uno:icons.css');
-  } catch (error) {
-    console.warn('Failed to load UnoCSS icons:', error);
-  }
+  // 图标现在通过其他方式加载，不再依赖UnoCSS
+  return Promise.resolve();
 }
 
 // 等待DOM和资源完全准备就绪
@@ -286,12 +281,12 @@ async function bootstrap() {
   }
 }
 
-// 后处应挂理用的载;
+// 后处理应用挂载
 async function handlePostMount() {
-  // 确保UnoCSS样式正确应用
+  // 确保样式正确应用
   await new Promise(resolve => setTimeout(resolve, 100));
 
-  // 检查UnoCSS是否正常工作
+  // 检查基础样式是否正常工作
   const testElement = document.createElement('div');
   testElement.className = 'hidden';
   testElement.style.visibility = 'visible';
@@ -299,17 +294,7 @@ async function handlePostMount() {
 
   const computed = window.getComputedStyle(testElement);
   if (computed.display !== 'none') {
-    console.warn('UnoCSS may not be working correctly');
-
-    // 尝试重新加载CSS
-    try {
-      const link = document.createElement('link');
-      link.rel = 'stylesheet';
-      link.href = 'uno.css';
-      document.head.appendChild(link);
-    } catch (error) {
-      console.error('Failed to reload CSS:', error);
-    }
+    console.warn('CSS utilities may not be working correctly');
   }
 
   document.body.removeChild(testElement);

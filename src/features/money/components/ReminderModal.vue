@@ -538,10 +538,10 @@ watch(
       </div>
       <form @submit.prevent="saveReminder">
         <!-- 提醒标题 -->
-        <div class="mb-2 flex items-center justify-between">
-          <label class="text-sm text-gray-700 font-medium mb-2 dark:text-gray-300">
+        <div class="form-row">
+          <label class="form-label">
             {{ t('financial.reminder.reminderTitle') }}
-            <span class="text-red-500 ml-1" aria-label="必填">*</span>
+            <span class="required-asterisk" aria-label="必填">*</span>
           </label>
           <input
             v-model="form.name" type="text" required class="modal-input-select w-2/3"
@@ -549,7 +549,7 @@ watch(
             @blur="validateName"
           >
         </div>
-        <div v-if="validationErrors.name" class="text-sm text-red-600 mb-2 text-right dark:text-red-400" role="alert">
+        <div v-if="validationErrors.name" class="form-error" role="alert">
           {{ validationErrors.name }}
         </div>
 
@@ -573,15 +573,15 @@ watch(
         <!-- 金额 -->
         <div
           v-if="isFinanceType"
-          class="mb-2 mt-2 flex items-center justify-between"
+          class="form-row form-row-with-margin"
         >
-          <label class="text-sm text-gray-700 font-medium mb-2 dark:text-gray-300">
+          <label class="form-label">
             {{ t('financial.money') }}
-            <span v-if="isFinanceType" class="text-red-500 ml-1">*</span>
+            <span v-if="isFinanceType" class="required-asterisk">*</span>
           </label>
-          <div class="w-2/3">
-            <div class="flex items-center space-x-2">
-              <div class="flex-1">
+          <div class="form-input-2-3">
+            <div class="amount-input-group">
+              <div class="amount-input">
                 <input
                   v-model.number="form.amount"
                   type="number"
@@ -592,7 +592,7 @@ watch(
                   :required="isFinanceType" @blur="validateAmount"
                 >
               </div>
-              <div class="mt-2 flex-1">
+              <div class="currency-selector">
                 <CurrencySelector v-model="form.currency" width="full" />
               </div>
             </div>
@@ -601,11 +601,11 @@ watch(
         <!-- 账单日期 -->
         <div
           v-if="isFinanceType"
-          class="mb-2 flex items-center justify-between"
+          class="form-row"
         >
-          <label class="text-sm text-gray-700 font-medium mb-2 dark:text-gray-300">
+          <label class="form-label">
             {{ t('date.billDate') }}
-            <span class="text-red-500 ml-1" aria-label="必填">*</span>
+            <span class="required-asterisk" aria-label="必填">*</span>
           </label>
           <input
             v-model="form.billDate"
@@ -618,10 +618,10 @@ watch(
         </div>
 
         <!-- 提醒日期 -->
-        <div class="mb-2 flex items-center justify-between">
-          <label class="text-sm text-gray-700 font-medium mb-2 dark:text-gray-300">
+        <div class="form-row">
+          <label class="form-label">
             {{ t('date.reminderDate') }}
-            <span class="text-red-500 ml-1" aria-label="必填">*</span>
+            <span class="required-asterisk" aria-label="必填">*</span>
           </label>
           <input
             v-model="form.remindDate"
@@ -633,7 +633,7 @@ watch(
           >
         </div>
         <div
-          v-if="validationErrors.remindDate" class="text-sm text-red-600 mb-2 text-right dark:text-red-400"
+          v-if="validationErrors.remindDate" class="form-error"
           role="alert"
         >
           {{ validationErrors.remindDate }}
@@ -659,11 +659,11 @@ watch(
         </div>
 
         <!-- 提前提醒 -->
-        <div class="mb-2 flex items-center justify-between">
-          <label class="text-sm text-gray-700 font-medium mb-2 block dark:text-gray-300">
+        <div class="form-row">
+          <label class="form-label form-label-block">
             {{ t('financial.reminder.advanceReminder') }}
           </label>
-          <div class="flex w-2/3 items-center space-x-1">
+          <div class="advance-reminder-group">
             <input
               v-model.number="form.advanceValue" type="number" min="0" max="999"
               class="modal-input-select flex-1 w-1/2" placeholder="0"
@@ -686,34 +686,34 @@ watch(
         </div>
 
         <!-- 颜色选择 -->
-        <div class="mb-2 flex items-center justify-between">
-          <label class="text-sm text-gray-700 font-medium mb-2 dark:text-gray-300">
+        <div class="form-row">
+          <label class="form-label">
             {{ t('common.misc.colorMark') }}
           </label>
           <ColorSelector v-model="form.color" :color-names="colorNameMap" />
         </div>
 
         <!-- 启用状态 -->
-        <div class="mb-2">
-          <label class="flex items-center">
+        <div class="checkbox-section">
+          <label class="checkbox-label">
             <input v-model="form.enabled" type="checkbox" class="mr-2">
-            <span class="text-sm text-gray-700 font-medium dark:text-gray-300">
+            <span class="checkbox-text">
               {{ t('financial.reminder.enabled') }}
             </span>
           </label>
         </div>
 
         <!-- 描述 -->
-        <div class="mb-4">
-          <label class="text-sm text-gray-700 font-medium mb-2 block dark:text-gray-300">
+        <div class="form-textarea">
+          <label class="form-label form-label-block">
             {{ t('common.misc.description') }}
-            <span class="text-gray-500">({{ t('common.misc.optional') }})</span>
+            <span class="optional-text">({{ t('common.misc.optional') }})</span>
           </label>
           <textarea
             v-model="form.description" rows="3" class="modal-input-select w-full"
             :placeholder="descriptionPlaceholder" maxlength="200"
           />
-          <div class="text-xs text-gray-500 mt-1 text-right dark:text-gray-400">
+          <div class="character-count">
             {{ t('common.misc.maxLength', { current: form.description?.length || 0, max: 200 }) }}
           </div>
         </div>
@@ -741,30 +741,133 @@ watch(
 </template>
 
 <style scoped lang="postcss">
-/* 改善表单布局 */
+/* Form Layout */
+.form-row {
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.form-row-with-margin {
+  margin-top: 0.5rem;
+}
+
+.form-label {
+  font-size: 0.875rem;
+  color: #374151;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
+
+.form-label-block {
+  display: block;
+}
+
+.form-input-2-3 {
+  width: 66.666667%;
+}
+
+.form-textarea {
+  margin-bottom: 1rem;
+}
+
+.form-error {
+  font-size: 0.875rem;
+  color: #dc2626;
+  margin-bottom: 0.5rem;
+  text-align: right;
+}
+
+/* Required asterisk */
+.required-asterisk {
+  color: #ef4444;
+  margin-left: 0.25rem;
+}
+
+/* Amount input group */
+.amount-input-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.amount-input {
+  flex: 1;
+}
+
+.currency-selector {
+  flex: 1;
+  margin-top: 0.5rem;
+}
+
+/* Advance reminder group */
+.advance-reminder-group {
+  display: flex;
+  width: 66.666667%;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+/* Checkbox section */
+.checkbox-section {
+  margin-bottom: 0.5rem;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+}
+
+.checkbox-text {
+  font-size: 0.875rem;
+  color: #374151;
+  font-weight: 500;
+}
+
+/* Optional text */
+.optional-text {
+  color: #6b7280;
+}
+
+/* Character count */
+.character-count {
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin-top: 0.25rem;
+  text-align: right;
+}
+
+/* Focus states */
 .modal-input-select:focus {
-  @apply ring-2 ring-blue-400 ring-opacity-50 border-blue-500;
+  ring: 2px;
+  ring-color: #60a5fa;
+  ring-opacity: 0.5;
+  border-color: #3b82f6;
 }
 
-/* 错误状态样式 */
+/* Error state styles */
 .border-red-500:focus {
-  @apply ring-2 ring-red-400 ring-opacity-50 border-red-500;
+  ring: 2px;
+  ring-color: #f87171;
+  ring-opacity: 0.5;
+  border-color: #ef4444;
 }
 
-/* 提交按钮加载状态 */
+/* Submit button loading state */
 .modal-btn-check:disabled {
   background-color: rgb(156 163 175);
   cursor: not-allowed;
 }
 
-/* 响应式优化 */
+/* Responsive optimization */
 @media (max-width: 640px) {
-  .mb-2 .flex {
+  .form-row {
     flex-direction: column;
     align-items: stretch;
   }
 
-  .mb-2 label {
+  .form-label {
     margin-bottom: 0.25rem;
   }
 }

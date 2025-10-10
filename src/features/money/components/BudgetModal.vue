@@ -293,19 +293,19 @@ onMounted(async () => {
 <template>
   <div class="modal-mask">
     <div class="modal-mask-window-money">
-      <div class="mb-4 flex items-center justify-between">
-        <h3 class="text-lg font-semibold">
+      <div class="modal-header">
+        <h3 class="modal-title">
           {{ props.budget ? t('financial.budget.editBudget') : t('financial.budget.addBudget') }}
         </h3>
-        <button class="text-gray-500 hover:text-gray-700" @click="closeModal">
-          <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <button class="modal-close-btn" @click="closeModal">
+          <svg class="close-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
       </div>
       <form @submit.prevent="onSubmit">
-        <div class="mb-2 flex items-center justify-between">
-          <label class="text-sm text-gray-700 font-medium mb-2">
+        <div class="form-row">
+          <label class="form-label">
             {{ t('financial.budget.budgetName') }}
           </label>
           <input
@@ -314,8 +314,8 @@ onMounted(async () => {
           >
         </div>
 
-        <div class="mb-2 flex items-center justify-between">
-          <label class="text-sm text-gray-700 font-medium mb-2">
+        <div class="form-row">
+          <label class="form-label">
             {{ t('financial.budget.budgetScopeType') }}
           </label>
           <select v-model="form.budgetScopeType" required class="modal-input-select w-2/3">
@@ -356,8 +356,8 @@ onMounted(async () => {
           />
         </div>
 
-        <div class="mb-2 flex items-center justify-between">
-          <label class="text-sm text-gray-700 font-medium mb-2">
+        <div class="form-row">
+          <label class="form-label">
             {{ t('financial.budget.budgetAmount') }}
           </label>
           <input
@@ -376,43 +376,43 @@ onMounted(async () => {
           @validate="handleRepeatPeriodValidation"
         />
 
-        <div class="mb-2 mt-2 flex items-center justify-between">
-          <label class="text-sm text-gray-700 font-medium mb-2">
+        <div class="form-row form-row-with-margin">
+          <label class="form-label">
             {{ t('date.startDate') }}
           </label>
           <input v-model="form.startDate" type="date" required class="modal-input-select w-2/3">
         </div>
 
-        <div class="mb-2 flex items-center justify-between">
-          <label class="text-sm text-gray-700 font-medium mb-2">
+        <div class="form-row">
+          <label class="form-label">
             {{ t('date.endDate') }}
           </label>
           <input v-model="form.endDate" type="date" class="modal-input-select w-2/3">
         </div>
 
-        <div class="mb-2 flex items-center justify-between">
-          <label class="text-sm text-gray-700 font-medium mb-2">
+        <div class="form-row">
+          <label class="form-label">
             {{ t('common.misc.color') }}
           </label>
           <ColorSelector v-model="form.color" :color-names="colorNameMap" />
         </div>
-        <div class="mb-2 flex items-center justify-between">
+        <div class="alert-section">
           <!-- 左边复选框 -->
-          <div class="w-1/3">
-            <label class="flex items-center">
+          <div class="alert-checkbox">
+            <label class="checkbox-label">
               <input
                 v-model="form.alertEnabled"
                 type="checkbox"
                 class="checkbox-radius"
               >
-              <span class="text-sm text-gray-700 font-medium">
+              <span class="checkbox-text">
                 {{ t('financial.budget.overBudgetAlert') }}
               </span>
             </label>
           </div>
 
           <!-- 右边 阈值设置 -->
-          <div v-if="form.alertEnabled && form.alertThreshold" class="flex gap-2 w-2/3 items-center">
+          <div v-if="form.alertEnabled && form.alertThreshold" class="threshold-settings">
             <!-- 阈值类型选择 -->
             <select
               v-model="form.alertThreshold.type"
@@ -437,14 +437,14 @@ onMounted(async () => {
             >
           </div>
         </div>
-        <div class="mb-2">
+        <div class="form-textarea">
           <textarea
             v-model="form.description" rows="3" class="modal-input-select w-full"
             :placeholder="t('placeholders.budgetDescription')"
           />
         </div>
 
-        <div class="flex justify-center space-x-3">
+        <div class="modal-actions">
           <button type="button" class="modal-btn-x" @click="closeModal">
             <X class="wh-5" />
           </button>
@@ -458,4 +458,94 @@ onMounted(async () => {
 </template>
 
 <style scoped>
+/* Form Layout */
+.form-row {
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.form-row-with-margin {
+  margin-top: 0.5rem;
+}
+
+.form-label {
+  font-size: 0.875rem;
+  color: #374151;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
+
+.form-textarea {
+  margin-bottom: 0.5rem;
+}
+
+/* Alert Section */
+.alert-section {
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.alert-checkbox {
+  width: 33.333333%;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+}
+
+.checkbox-text {
+  font-size: 0.875rem;
+  color: #374151;
+  font-weight: 500;
+}
+
+.threshold-settings {
+  display: flex;
+  gap: 0.5rem;
+  width: 66.666667%;
+  align-items: center;
+}
+
+/* Modal Header */
+.modal-header {
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.modal-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.modal-close-btn {
+  color: #6b7280;
+  transition: color 0.2s ease-in-out;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.25rem;
+}
+
+.modal-close-btn:hover {
+  color: #374151;
+}
+
+.close-icon {
+  height: 1.5rem;
+  width: 1.5rem;
+}
+
+/* Modal Actions */
+.modal-actions {
+  display: flex;
+  justify-content: center;
+  gap: 0.75rem;
+}
 </style>

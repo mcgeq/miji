@@ -2,7 +2,7 @@ import { resolve } from 'node:path';
 import { env } from 'node:process';
 import VueI18n from '@intlify/unplugin-vue-i18n/vite';
 import Vue from '@vitejs/plugin-vue';
-import UnoCSS from 'unocss/vite';
+// UnoCSS已移除
 import AutoImport from 'unplugin-auto-import/vite';
 import Components from 'unplugin-vue-components/vite';
 import { VueRouterAutoImports } from 'unplugin-vue-router';
@@ -24,7 +24,6 @@ function LucideResolver(componentName: string) {
 // https://vitejs.dev/config/
 export default defineConfig(async () => ({
   plugins: [
-    UnoCSS(),
     VueRouter({
       extensions: ['.vue', '.md'],
       dts: 'src/typed-router.d.ts',
@@ -98,5 +97,27 @@ export default defineConfig(async () => ({
   test: {
     include: ['test/**/*.test.ts'],
     environment: 'jsdom',
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // 核心Vue相关库
+          'vue-vendor': ['vue', 'vue-router', 'pinia'],
+          // UI组件库
+          'ui-vendor': ['lucide-vue-next', '@vueuse/core'],
+          // 国际化相关
+          'i18n-vendor': ['vue-i18n'],
+          // 工具库
+          'utils-vendor': ['date-fns', 'es-toolkit'],
+          // 表单验证相关
+          'form-vendor': ['vee-validate', '@vee-validate/zod', 'zod'],
+          // Tauri相关
+          'tauri-vendor': ['@tauri-apps/api'],
+        },
+      },
+    },
+    // 增加chunk大小警告限制到1MB
+    chunkSizeWarningLimit: 1000,
   },
 }));

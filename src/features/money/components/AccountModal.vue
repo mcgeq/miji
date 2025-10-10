@@ -237,11 +237,11 @@ watch(() => form.initialBalance, newBalance => {
       </div>
       <form @submit.prevent="saveAccount">
         <!-- 账户名称 -->
-        <div class="mb-2 flex items-center justify-between">
-          <label class="text-sm text-gray-700 font-medium mb-2">
+        <div class="form-row">
+          <label class="form-label">
             {{ t('financial.account.accountName') }}
           </label>
-          <div class="w-2/3">
+          <div class="form-input-2-3">
             <input
               v-model="form.name"
               type="text"
@@ -249,31 +249,31 @@ watch(() => form.initialBalance, newBalance => {
               class="modal-input-select w-full"
               :placeholder="t('common.placeholders.enterName')"
             >
-            <span v-if="formErrors.name" class="text-xs text-red-500">{{ formErrors.name }}</span>
+            <span v-if="formErrors.name" class="form-error">{{ formErrors.name }}</span>
           </div>
         </div>
 
         <!-- 账户类型 -->
-        <div class="mb-2 flex items-center justify-between">
-          <label class="text-sm text-gray-700 font-medium mb-2">
+        <div class="form-row">
+          <label class="form-label">
             {{ t('financial.account.accountType') }}
           </label>
-          <div class="w-2/3">
+          <div class="form-input-2-3">
             <select v-model="form.type" required class="modal-input-select w-full">
               <option v-for="type in accountTypes" :key="type" :value="type">
                 {{ t(`financial.accountTypes.${type.toLowerCase()}`) }}
               </option>
             </select>
-            <span v-if="formErrors.type" class="text-xs text-red-500">{{ formErrors.type }}</span>
+            <span v-if="formErrors.type" class="form-error">{{ formErrors.type }}</span>
           </div>
         </div>
 
         <!-- 初始余额 -->
-        <div class="mb-2 flex items-center justify-between">
-          <label class="text-sm text-gray-700 font-medium mb-2">
+        <div class="form-row">
+          <label class="form-label">
             {{ t('financial.initialBalance') }}
           </label>
-          <div class="w-2/3">
+          <div class="form-input-2-3">
             <input
               v-model="form.initialBalance"
               type="text"
@@ -283,81 +283,81 @@ watch(() => form.initialBalance, newBalance => {
               @input="handleBalanceInput($event)"
               @blur="form.initialBalance = formatBalance(form.initialBalance)"
             >
-            <span v-if="formErrors.initialBalance" class="text-xs text-red-500">{{ formErrors.initialBalance }}</span>
+            <span v-if="formErrors.initialBalance" class="form-error">{{ formErrors.initialBalance }}</span>
           </div>
         </div>
 
         <!-- 货币 -->
-        <div class="mb-2 flex items-center justify-between">
-          <label class="text-sm text-gray-700 font-medium mb-2">
+        <div class="form-row">
+          <label class="form-label">
             {{ t('financial.currency') }}
           </label>
-          <div class="w-2/3">
+          <div class="form-input-2-3">
             <select v-model="form.currency.code" required class="modal-input-select w-full">
               <option v-for="currency in currencies" :key="currency.code" :value="currency.code">
                 {{ t(`currency.${currency.code}`) }}
               </option>
             </select>
-            <span v-if="formErrors['currency.code']" class="text-xs text-red-500">{{ formErrors['currency.code'] }}</span>
+            <span v-if="formErrors['currency.code']" class="form-error">{{ formErrors['currency.code'] }}</span>
           </div>
         </div>
 
         <!-- 所有者 -->
-        <div class="mb-2 flex items-center justify-between">
-          <label class="text-sm text-gray-700 font-medium mb-2">
+        <div class="form-row">
+          <label class="form-label">
             {{ t('financial.account.owner') }}
           </label>
-          <div class="w-2/3">
+          <div class="form-input-2-3">
             <select v-model="form.ownerId" required class="modal-input-select w-full">
               <option v-for="user in users" :key="user.serialNum" :value="user.serialNum">
                 {{ user.name }}
               </option>
             </select>
-            <span v-if="formErrors.ownerId" class="text-xs text-red-500">{{ formErrors.ownerId }}</span>
+            <span v-if="formErrors.ownerId" class="form-error">{{ formErrors.ownerId }}</span>
           </div>
         </div>
 
         <!-- 共享和激活 -->
-        <div class="mb-2 flex items-center justify-between">
-          <div class="w-1/2">
-            <label class="flex items-center">
+        <div class="checkbox-row">
+          <div class="checkbox-group">
+            <label class="checkbox-label">
               <input
                 v-model="form.isShared"
                 type="checkbox"
                 class="checkbox-radius"
               >
-              <span class="text-sm text-gray-700 font-medium">{{ t('financial.account.shared') }}</span>
+              <span class="checkbox-text">{{ t('financial.account.shared') }}</span>
             </label>
           </div>
-          <div class="w-1/2">
-            <label class="flex items-center">
+          <div class="checkbox-group">
+            <label class="checkbox-label">
               <input
                 v-model="form.isActive"
                 type="checkbox"
                 class="checkbox-radius"
               >
-              <span class="text-sm text-gray-500 font-medium">{{ t('financial.account.activate') }}</span>
+              <span class="checkbox-text-secondary">{{ t('financial.account.activate') }}</span>
             </label>
           </div>
         </div>
 
         <!-- 颜色 -->
-        <div class="mb-2 flex items-center justify-between">
-          <label class="text-sm text-gray-700 font-medium mb-2">
+        <div class="form-row">
+          <label class="form-label">
             {{ t('common.misc.color') }}
           </label>
           <ColorSelector v-model="form.color" :color-names="colorNameMap" />
         </div>
 
         <!-- 描述 -->
-        <div class="mb-2">
+        <div class="form-textarea">
           <textarea
             v-model="form.description"
             rows="3"
             class="modal-input-select w-full"
             :placeholder="`${t('common.misc.description')}（${t('common.misc.optional')}）`"
           />
-          <span v-if="formErrors.description" class="text-xs text-red-500">{{ formErrors.description }}</span>
+          <span v-if="formErrors.description" class="form-error">{{ formErrors.description }}</span>
         </div>
 
         <!-- 按钮 -->
@@ -376,6 +376,64 @@ watch(() => form.initialBalance, newBalance => {
 </template>
 
 <style scoped lang="postcss">
+/* Form Layout */
+.form-row {
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.form-label {
+  font-size: 0.875rem;
+  color: #374151;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
+
+.form-input-2-3 {
+  width: 66.666667%;
+}
+
+.form-textarea {
+  margin-bottom: 0.5rem;
+}
+
+.form-error {
+  font-size: 0.75rem;
+  color: #ef4444;
+}
+
+/* Checkbox Layout */
+.checkbox-row {
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.checkbox-group {
+  width: 50%;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+}
+
+.checkbox-text {
+  font-size: 0.875rem;
+  color: #374151;
+  font-weight: 500;
+}
+
+.checkbox-text-secondary {
+  font-size: 0.875rem;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+/* Checkbox Styling */
 .checkbox-radius {
   -webkit-appearance: none; /* 去掉浏览器默认样式 */
   appearance: none;
@@ -396,6 +454,7 @@ watch(() => form.initialBalance, newBalance => {
   transition: all 0.2s ease-in-out; /* transition-all duration-200 */
   vertical-align: middle;
 }
+
 .checkbox-radius:focus {
   outline: none; /* 去掉默认轮廓 */
   border-color: transparent; /* focus:border-transparent */
@@ -411,12 +470,6 @@ watch(() => form.initialBalance, newBalance => {
 .checkbox-radius:checked {
   background-color: #3B82F6;  /* bg-blue-500 */
   border-color: #4B5563;      /* border-gray-600 */
-}
-
-/* checked 状态 */
-.checkbox-radius:checked {
-  background-color: #3B82F6;
-  border-color: #4B5563;
 }
 
 /* dark mode */

@@ -264,120 +264,246 @@ const symptomSeverityText = computed(() => {
 
 <style scoped lang="postcss">
 .period-stats-dashboard {
-  @apply max-w-7xl mx-auto;
+  max-width: 80rem;
+  margin: 0 auto;
 }
 
 .stats-grid {
-  @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .stats-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
 }
 
 .stat-card {
-  @apply bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow;
+  background-color: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  transition: box-shadow 0.2s ease-in-out;
+}
+
+.stat-card:hover {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.dark .stat-card {
+  background-color: #1f2937;
+  border-color: #374151;
 }
 
 .stat-header {
-  @apply flex items-center gap-2 mb-3;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
 }
 
 .stat-title {
-  @apply text-sm font-medium text-gray-700 dark:text-gray-300;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+}
+
+.dark .stat-title {
+  color: #d1d5db;
 }
 
 .stat-content {
-  @apply mb-3;
+  margin-bottom: 0.75rem;
 }
 
 .stat-value {
-  @apply text-xl font-bold text-gray-900 dark:text-white;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.dark .stat-value {
+  color: white;
 }
 
 .stat-description {
-  @apply text-sm text-gray-500 dark:text-gray-400 mt-1;
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin-top: 0.25rem;
+}
+
+.dark .stat-description {
+  color: #9ca3af;
 }
 
 .phase-indicator {
-  @apply w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2;
+  width: 100%;
+  background-color: #e5e7eb;
+  border-radius: 9999px;
+  height: 0.5rem;
+}
+
+.dark .phase-indicator {
+  background-color: #374151;
 }
 
 .phase-progress {
-  @apply bg-pink-500 h-2 rounded-full transition-all duration-500;
+  background-color: #ec4899;
+  height: 0.5rem;
+  border-radius: 9999px;
+  transition: all 0.5s ease-in-out;
 }
 
 .countdown-ring {
-  @apply relative flex items-center justify-center;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .countdown-svg {
-  @apply transform -rotate-90;
+  transform: rotate(-90deg);
 }
 
 .countdown-text {
-  @apply absolute text-xs font-bold text-blue-500;
+  position: absolute;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #3b82f6;
 }
 
 .cycle-stats {
-  @apply space-y-2;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 
 .cycle-stat {
-  @apply flex justify-between items-center;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .cycle-label {
-  @apply text-sm text-gray-600 dark:text-gray-400;
+  font-size: 0.875rem;
+  color: #4b5563;
+}
+
+.dark .cycle-label {
+  color: #9ca3af;
 }
 
 .cycle-value {
-  @apply text-lg font-semibold text-gray-900 dark:text-white;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.dark .cycle-value {
+  color: white;
 }
 
 .trend-item {
-  @apply space-y-1 mb-3 last:mb-0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 0.75rem;
+}
+
+.trend-item:last-child {
+  margin-bottom: 0;
 }
 
 .trend-label {
-  @apply text-sm text-gray-600 dark:text-gray-400;
+  font-size: 0.875rem;
+  color: #4b5563;
+}
+
+.dark .trend-label {
+  color: #9ca3af;
 }
 
 .trend-indicator {
-  @apply flex items-center gap-2;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .trend-bar {
-  @apply h-2 bg-purple-500 rounded-full flex-1 transition-all duration-500;
+  height: 0.5rem;
+  background-color: #8b5cf6;
+  border-radius: 9999px;
+  flex: 1;
+  transition: all 0.5s ease-in-out;
 }
 
 .trend-bar.severity {
-  @apply bg-orange-500;
+  background-color: #f97316;
 }
 
 .trend-text {
-  @apply text-xs text-gray-500 dark:text-gray-400 flex-shrink-0;
+  font-size: 0.75rem;
+  color: #6b7280;
+  flex-shrink: 0;
+}
+
+.dark .trend-text {
+  color: #9ca3af;
 }
 
 .flex-between {
-  @apply flex items-center justify-between;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .btn-primary {
-  @apply px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 transition-colors flex items-center;
+  padding: 0.375rem 0.75rem;
+  background-color: #2563eb;
+  color: white;
+  border-radius: 0.5rem;
+  transition: all 0.2s ease-in-out;
+  display: flex;
+  align-items: center;
+}
+
+.btn-primary:hover {
+  background-color: #1d4ed8;
+}
+
+.btn-primary:focus {
+  outline: none;
+  ring: 2px;
+  ring-color: #3b82f6;
 }
 
 .empty-state {
-  @apply flex flex-col items-center py-8;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2rem 0;
 }
 
 @media (max-width: 768px) {
   .stats-grid {
-    @apply grid-cols-1;
+    grid-template-columns: 1fr;
   }
 
   .stat-card {
-    @apply p-3;
+    padding: 0.75rem;
   }
 
   .stat-value {
-    @apply text-lg;
+    font-size: 1.125rem;
   }
 }
 </style>

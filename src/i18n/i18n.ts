@@ -1,17 +1,18 @@
 // src/i18n/i18n.ts
 
 import { createI18n } from 'vue-i18n';
-import zhCNMessages from '@/locales/zh.json';
 import { Lg } from '@/utils/debugLog';
 import { toast } from '@/utils/toast';
 import { getCurrentLocale, updateLocale } from '../stores/locales';
 
 type LocaleType = 'zh-CN' | 'en-US' | 'es-ES';
+
+// 初始化时使用空消息，稍后动态加载
 const i18nInstance = createI18n({
   legacy: false,
   locale: 'zh-CN',
   fallbackLocale: 'zh-CN',
-  messages: { 'zh-CN': zhCNMessages, 'en-US': {}, 'es-ES': {} },
+  messages: { 'zh-CN': {}, 'en-US': {}, 'es-ES': {} },
   globalInjection: true,
 });
 
@@ -34,11 +35,19 @@ export async function initI18n() {
     const validLocale = ['zh-CN', 'en-US', 'es-ES'].includes(initialLocale)
       ? (initialLocale as LocaleType)
       : ('zh-CN' as LocaleType);
+
+    // 加载所有语言包
+    const messages = await loadLocaleMessages(validLocale);
+    if (messages) {
+      i18nInstance.global.setLocaleMessage(validLocale, messages);
+      i18nInstance.global.locale.value = validLocale;
+    }
+
+    // 如果是中文，也加载中文语言包作为默认
     if (validLocale !== 'zh-CN') {
-      const messages = await loadLocaleMessages(validLocale);
-      if (messages) {
-        i18nInstance.global.setLocaleMessage(validLocale, messages);
-        i18nInstance.global.locale.value = validLocale;
+      const zhMessages = await loadLocaleMessages('zh-CN');
+      if (zhMessages) {
+        i18nInstance.global.setLocaleMessage('zh-CN', zhMessages);
       }
     }
 

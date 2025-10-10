@@ -45,36 +45,36 @@ function getBudgetCount(budgets: string): number {
 </script>
 
 <template>
-  <div class="min-h-50">
-    <div v-if="loading" class="text-gray-500 flex-justify-center h-50">
+  <div class="ledger-container">
+    <div v-if="loading" class="loading-container">
       加载中...
     </div>
 
-    <div v-else-if="ledgers.length === 0" class="text-gray-400 flex-justify-center flex-col h-50">
-      <div class="text-6xl mb-4 opacity-50">
+    <div v-else-if="ledgers.length === 0" class="empty-state-container">
+      <div class="empty-state-icon">
         <LucideUsers class="wh-5" />
       </div>
-      <div class="text-base">
+      <div class="empty-state-text">
         暂无家庭账本
       </div>
     </div>
 
-    <div v-else class="gap-5 grid" style="grid-template-columns: repeat(auto-fill, minmax(380px, 1fr))">
-      <div v-for="ledger in ledgers" :key="ledger.serialNum" class="p-5 card-hover transition-all duration-200">
+    <div v-else class="ledger-grid">
+      <div v-for="ledger in ledgers" :key="ledger.serialNum" class="ledger-card">
         <!-- 账本头部信息 -->
-        <div class="mb-4 flex items-start justify-between">
-          <div class="flex-1">
-            <h3 class="text-lg text-gray-800 font-semibold mb-1">
+        <div class="ledger-header">
+          <div class="ledger-info">
+            <h3 class="ledger-title">
               {{ ledger.description }}
             </h3>
-            <div class="text-sm text-gray-600 flex gap-2 items-center">
+            <div class="ledger-meta">
               <span>基础币种: {{ t(ledger.baseCurrency.code) }}</span>
-              <span class="text-gray-400">|</span>
+              <span class="meta-separator">|</span>
               <span>{{ ledger.members.length }} 位成员</span>
             </div>
           </div>
           <!-- 操作按钮 -->
-          <div class="flex gap-1.5 items-center">
+          <div class="ledger-actions">
             <button class="action-btn" title="进入账本" @click="emit('enter', ledger)">
               <LucideLogIn class="h-4 w-4" />
             </button>
@@ -88,23 +88,23 @@ function getBudgetCount(budgets: string): number {
         </div>
 
         <!-- 成员列表 -->
-        <div class="mb-4">
-          <div class="text-sm text-gray-700 font-medium mb-2">
+        <div class="members-section">
+          <div class="members-title">
             成员
           </div>
-          <div class="flex flex-wrap gap-2">
+          <div class="members-list">
             <div
               v-for="member in ledger.members.slice(0, 4)" :key="member.serialNum"
-              class="text-xs px-2 py-1 rounded-full bg-gray-100 flex gap-1 items-center"
+              class="member-tag"
             >
-              <LucideCrown v-if="member.isPrimary" class="text-yellow-500 h-3 w-3" />
-              <LucideUser v-else class="text-gray-500 h-3 w-3" />
+              <LucideCrown v-if="member.isPrimary" class="member-icon member-icon-primary" />
+              <LucideUser v-else class="member-icon member-icon-secondary" />
               <span>{{ member.name }}</span>
-              <span class="text-gray-500">({{ getRoleName(member.role) }})</span>
+              <span class="member-role">({{ getRoleName(member.role) }})</span>
             </div>
             <div
               v-if="ledger.members.length > 4"
-              class="text-xs text-gray-500 px-2 py-1 rounded-full bg-gray-100 flex items-center"
+              class="member-tag member-tag-more"
             >
               +{{ ledger.members.length - 4 }}
             </div>
@@ -112,36 +112,36 @@ function getBudgetCount(budgets: string): number {
         </div>
 
         <!-- 统计信息 -->
-        <div class="pt-3 border-t border-gray-200 gap-3 grid grid-cols-3">
-          <div class="text-center">
-            <div class="text-xs text-gray-500">
+        <div class="stats-section">
+          <div class="stat-item">
+            <div class="stat-label">
               账户
             </div>
-            <div class="text-sm font-medium">
+            <div class="stat-value">
               {{ getAccountCount(ledger.accounts) }}
             </div>
           </div>
-          <div class="text-center">
-            <div class="text-xs text-gray-500">
+          <div class="stat-item">
+            <div class="stat-label">
               交易
             </div>
-            <div class="text-sm font-medium">
+            <div class="stat-value">
               {{ getTransactionCount(ledger.transactions) }}
             </div>
           </div>
-          <div class="text-center">
-            <div class="text-xs text-gray-500">
+          <div class="stat-item">
+            <div class="stat-label">
               预算
             </div>
-            <div class="text-sm font-medium">
+            <div class="stat-value">
               {{ getBudgetCount(ledger.budgets) }}
             </div>
           </div>
         </div>
 
         <!-- 创建时间 -->
-        <div class="mt-3 pt-3 border-t border-gray-200">
-          <div class="text-xs text-gray-500">
+        <div class="created-time">
+          <div class="created-time-text">
             创建于 {{ DateUtils.formatDate(ledger.createdAt) }}
           </div>
         </div>
@@ -149,3 +149,212 @@ function getBudgetCount(budgets: string): number {
     </div>
   </div>
 </template>
+
+<style scoped lang="postcss">
+/* Container */
+.ledger-container {
+  min-height: 12.5rem;
+}
+
+/* Loading and Empty States */
+.loading-container {
+  color: #6b7280;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 12.5rem;
+}
+
+.empty-state-container {
+  color: #9ca3af;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 12.5rem;
+}
+
+.empty-state-icon {
+  font-size: 3.75rem;
+  margin-bottom: 1rem;
+  opacity: 0.5;
+}
+
+.empty-state-text {
+  font-size: 1rem;
+}
+
+/* Ledger Grid */
+.ledger-grid {
+  gap: 1.25rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+}
+
+/* Ledger Card */
+.ledger-card {
+  padding: 1.25rem;
+  transition: all 0.2s ease-in-out;
+  border-radius: 0.5rem;
+  background-color: white;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+}
+
+.ledger-card:hover {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  transform: translateY(-1px);
+}
+
+/* Ledger Header */
+.ledger-header {
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.ledger-info {
+  flex: 1;
+}
+
+.ledger-title {
+  font-size: 1.125rem;
+  color: #1f2937;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.ledger-meta {
+  font-size: 0.875rem;
+  color: #4b5563;
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.meta-separator {
+  color: #9ca3af;
+}
+
+.ledger-actions {
+  display: flex;
+  gap: 0.375rem;
+  align-items: center;
+}
+
+/* Action Buttons */
+.action-btn {
+  padding: 0.5rem;
+  border-radius: 0.375rem;
+  border: 1px solid #d1d5db;
+  background-color: white;
+  color: #374151;
+  transition: all 0.2s ease-in-out;
+  cursor: pointer;
+}
+
+.action-btn:hover {
+  background-color: #f9fafb;
+  border-color: #9ca3af;
+}
+
+.action-btn-danger {
+  padding: 0.5rem;
+  border-radius: 0.375rem;
+  border: 1px solid #fca5a5;
+  background-color: white;
+  color: #dc2626;
+  transition: all 0.2s ease-in-out;
+  cursor: pointer;
+}
+
+.action-btn-danger:hover {
+  background-color: #fef2f2;
+  border-color: #f87171;
+}
+
+/* Members Section */
+.members-section {
+  margin-bottom: 1rem;
+}
+
+.members-title {
+  font-size: 0.875rem;
+  color: #374151;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
+
+.members-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.member-tag {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 9999px;
+  background-color: #f3f4f6;
+  display: flex;
+  gap: 0.25rem;
+  align-items: center;
+}
+
+.member-tag-more {
+  color: #6b7280;
+}
+
+.member-icon {
+  height: 0.75rem;
+  width: 0.75rem;
+}
+
+.member-icon-primary {
+  color: #d97706;
+}
+
+.member-icon-secondary {
+  color: #6b7280;
+}
+
+.member-role {
+  color: #6b7280;
+}
+
+/* Stats Section */
+.stats-section {
+  padding-top: 0.75rem;
+  border-top: 1px solid #e5e7eb;
+  gap: 0.75rem;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.stat-item {
+  text-align: center;
+}
+
+.stat-label {
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+.stat-value {
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+/* Created Time */
+.created-time {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.created-time-text {
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+</style>

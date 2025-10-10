@@ -15,7 +15,7 @@ export default antfu({
   vue: true,
   svelte: true,
   astro: true,
-  unocss: true,
+  unocss: false,
   // 文件类型支持
   jsonc: false,
   yaml: true,

@@ -136,29 +136,29 @@ onMounted(async () => {
   <div class="period-management">
     <!-- 头部导航 -->
     <div class="header-section">
-      <div class="mx-auto px-4 container lg:px-6">
-        <div class="py-1 flex items-center justify-end">
-          <div class="p-1 rounded-lg bg-gray-100 flex gap-1 items-center dark:bg-gray-700">
+      <div class="header-container">
+        <div class="header-content">
+          <div class="nav-tabs-container">
             <button
               class="nav-tab" :class="{ 'nav-tab-active': currentView === 'calendar' }"
               @click="currentView = 'calendar'"
             >
-              <LucideCalendarCheck class="wh-4" />
-              <span class="hidden sm:inline">{{ t('period.navigation.calendar') }}</span>
+              <LucideCalendarCheck class="nav-tab-icon" />
+              <span class="nav-tab-text">{{ t('period.navigation.calendar') }}</span>
             </button>
             <button
               class="nav-tab" :class="{ 'nav-tab-active': currentView === 'stats' }"
               @click="currentView = 'stats'"
             >
-              <LucideActivity class="wh-4" />
-              <span class="hidden sm:inline">{{ t('period.navigation.statistics') }}</span>
+              <LucideActivity class="nav-tab-icon" />
+              <span class="nav-tab-text">{{ t('period.navigation.statistics') }}</span>
             </button>
             <button
               class="nav-tab" :class="{ 'nav-tab-active': currentView === 'settings' }"
               @click="currentView = 'settings'"
             >
-              <LucideSettings class="wh-4" />
-              <span class="hidden sm:inline">{{ t('period.navigation.settings') }}</span>
+              <LucideSettings class="nav-tab-icon" />
+              <span class="nav-tab-text">{{ t('period.navigation.settings') }}</span>
             </button>
           </div>
         </div>
@@ -174,29 +174,27 @@ onMounted(async () => {
         </div>
 
         <!-- 日历视图 -->
-        <div v-else-if="currentView === 'calendar'" class="calendar-view space-y-6">
+        <div v-else-if="currentView === 'calendar'" class="calendar-view">
           <!-- 第一行：日历占1/2，今日信息+快速操作占1/2 -->
-          <div class="gap-6 grid grid-cols-1 lg:grid-cols-2">
+          <div class="calendar-grid">
             <!-- 日历组件 -->
-            <div class="p-6 card-base">
+            <div class="calendar-card">
               <PeriodCalendar :selected-date="selectedDate" @date-select="handleDateSelect" />
             </div>
 
             <!-- 今日信息和快速操作 -->
-            <div class="gap-4 grid grid-cols-1 md:grid-cols-2">
+            <div class="today-info-grid">
               <!-- 今日信息 -->
-              <div class="p-6 card-base">
-                <div class="mb-6 flex gap-3 items-center">
-                  <div
-                    class="bg-gradient-to-r rounded-full flex h-10 w-10 items-center justify-center from-blue-500 to-cyan-500"
-                  >
-                    <LucideCalendarCheck class="text-white h-5 w-5" />
+              <div class="today-info-card">
+                <div class="today-info-header">
+                  <div class="today-info-icon">
+                    <LucideCalendarCheck class="today-info-icon-svg" />
                   </div>
-                  <h3 class="text-lg text-gray-900 font-semibold dark:text-white">
+                  <h3 class="today-info-title">
                     {{ t('period.todayInfo.title') }}
                   </h3>
                 </div>
-                <div class="space-y-4">
+                <div class="today-info-content">
                   <div class="info-item">
                     <span class="info-label">{{ t('period.todayInfo.currentPhase') }}</span>
                     <span class="info-value phase-badge">
@@ -209,7 +207,7 @@ onMounted(async () => {
                   </div>
                   <div v-if="todayRecord" class="info-item">
                     <span class="info-label">{{ t('period.todayInfo.todayRecord') }}</span>
-                    <div class="flex gap-2 items-center">
+                    <div class="info-actions">
                       <button class="action-icon-btn view-btn" title="查看记录" @click="openDailyForm(todayRecord)">
                         <LucideEye class="wh-4" />
                       </button>
@@ -223,7 +221,7 @@ onMounted(async () => {
                   </div>
                   <div v-else class="info-item">
                     <span class="info-label">{{ t('period.todayInfo.todayRecord') }}</span>
-                    <span class="text-sm text-gray-500 dark:text-gray-400">{{ t('period.todayInfo.noRecord') }}</span>
+                    <span class="info-no-record">{{ t('period.todayInfo.noRecord') }}</span>
 
                     <div class="period-btn cursor-pointer" @click="openDailyForm()">
                       <LucidePlus class="wh-5" />
@@ -242,7 +240,7 @@ onMounted(async () => {
 
         <!-- 设置视图 -->
         <div v-else-if="currentView === 'settings'" class="settings-view">
-          <div class="p-6 card-base">
+          <div class="settings-card">
             <PeriodSettings />
           </div>
         </div>
@@ -288,26 +286,26 @@ onMounted(async () => {
     <div v-if="uiState.showDeleteConfirm" class="modal-overlay" @click.self="closeDeleteConfirm">
       <div class="modal-content max-w-sm">
         <div class="p-6">
-          <div class="mb-4 flex gap-3 items-center">
-            <div class="rounded-full bg-red-100 flex h-8 w-8 items-center justify-center dark:bg-red-900/30">
-              <LucideTrash class="text-red-600 wh-4 dark:text-red-400" />
+          <div class="modal-header">
+            <div class="modal-icon">
+              <LucideTrash class="modal-icon-svg" />
             </div>
-            <h3 class="text-lg text-gray-900 font-semibold dark:text-white">
+            <h3 class="modal-title">
               {{ t('period.confirmations.deleteRecord') }}
             </h3>
           </div>
-          <p class="text-sm text-gray-600 mb-6 dark:text-gray-400">
+          <p class="modal-description">
             {{ t('period.confirmations.deleteWarning') }}
           </p>
-          <div class="flex gap-3 items-center">
+          <div class="modal-actions">
             <button
-              class="text-sm text-white font-medium px-4 py-2 rounded-lg bg-red-500 flex-1 transition-colors hover:bg-red-600"
+              class="btn-danger flex-1"
               @click="confirmDelete"
             >
               <LucideCheck class="wh-5" />
             </button>
             <button
-              class="text-sm text-gray-700 font-medium px-4 py-2 rounded-lg bg-gray-100 flex-1 transition-colors dark:text-gray-300 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600"
+              class="btn-secondary flex-1"
               @click="closeDeleteConfirm"
             >
               <LucideX class="wh-5" />
@@ -318,10 +316,10 @@ onMounted(async () => {
     </div>
 
     <!-- 加载状态 -->
-    <div v-if="periodStore.loading" class="bg-black/50 flex items-center inset-0 justify-center fixed z-50">
-      <div class="p-6 rounded-lg bg-white flex gap-3 shadow-xl items-center dark:bg-gray-800">
-        <div class="border-2 border-blue-500 border-t-transparent rounded-full h-6 w-6 animate-spin" />
-        <span class="text-gray-700 dark:text-gray-300"> {{ t('common.processing') }} </span>
+    <div v-if="periodStore.loading" class="loading-overlay">
+      <div class="loading-content">
+        <div class="loading-spinner" />
+        <span class="loading-text"> {{ t('common.processing') }} </span>
       </div>
     </div>
   </div>
@@ -329,89 +327,550 @@ onMounted(async () => {
 
 <style scoped lang="postcss">
 .period-management {
-  @apply min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800;
+  min-height: 100vh;
+}
+
+.dark .period-management {
+  background: linear-gradient(to bottom right, #111827, #1f2937);
 }
 
 .header-section {
-  @apply bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10;
+  background-color: var(--color-base-200);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid #e5e7eb;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.dark .header-section {
+  background-color: rgba(31, 41, 55, 0.8);
+  border-bottom-color: #374151;
 }
 
 .container {
-  @apply max-w-7xl;
+  max-width: 80rem;
+}
+
+/* 头部容器 */
+.header-container {
+  margin: 0 auto;
+  padding: 0 1rem;
+  max-width: 80rem;
+}
+
+@media (min-width: 1024px) {
+  .header-container {
+    padding: 0 1.5rem;
+  }
+}
+
+/* 头部内容 */
+.header-content {
+  padding: 0.25rem 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+/* 导航标签容器 */
+.nav-tabs-container {
+  padding: 0.25rem;
+  border-radius: 0.5rem;
+  background-color: var(--color-base-200);
+  display: flex;
+  gap: 0.25rem;
+  align-items: center;
+}
+
+/* 日历视图 */
+.calendar-view {
+  padding: 1.5rem 0;
+}
+
+.calendar-view > * + * {
+  margin-top: 1.5rem;
+}
+
+/* 日历网格 */
+.calendar-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+
+@media (min-width: 1024px) {
+  .calendar-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* 日历卡片 */
+.calendar-card {
+  padding: 1.5rem;
+  background-color: var(--color-base-100);
+  border: 1px solid var(--color-base-300);
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+/* 今日信息网格 */
+.today-info-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  .today-info-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* 今日信息卡片 */
+.today-info-card {
+  padding: 1.5rem;
+  background-color: var(--color-base-100);
+  border: 1px solid var(--color-base-300);
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+/* 今日信息头部 */
+.today-info-header {
+  margin-bottom: 1.5rem;
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+/* 今日信息图标 */
+.today-info-icon {
+  background: linear-gradient(to right, var(--color-info), var(--color-info));
+  border-radius: 50%;
+  display: flex;
+  height: 2.5rem;
+  width: 2.5rem;
+  align-items: center;
+  justify-content: center;
+}
+
+.today-info-icon-svg {
+  color: var(--color-info-content);
+  height: 1.25rem;
+  width: 1.25rem;
+}
+
+/* 今日信息标题 */
+.today-info-title {
+  font-size: 1.125rem;
+  color: var(--color-base-content);
+  font-weight: 600;
+}
+
+/* 今日信息内容 */
+.today-info-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* 信息操作 */
+.info-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+/* 信息无记录 */
+.info-no-record {
+  font-size: 0.875rem;
+  color: var(--color-neutral-content);
+}
+
+/* 设置卡片 */
+.settings-card {
+  padding: 1.5rem;
+  background-color: var(--color-base-100);
+  border: 1px solid var(--color-base-300);
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+/* 模态框头部 */
+.modal-header {
+  margin-bottom: 1rem;
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+/* 模态框图标 */
+.modal-icon {
+  border-radius: 50%;
+  background-color: var(--color-error);
+  display: flex;
+  height: 2rem;
+  width: 2rem;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-icon-svg {
+  color: var(--color-error-content);
+  width: 1rem;
+  height: 1rem;
+}
+
+/* 模态框标题 */
+.modal-title {
+  font-size: 1.125rem;
+  color: var(--color-base-content);
+  font-weight: 600;
+}
+
+/* 模态框描述 */
+.modal-description {
+  font-size: 0.875rem;
+  color: var(--color-neutral-content);
+  margin-bottom: 1.5rem;
+}
+
+/* 模态框操作 */
+.modal-actions {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+/* 加载覆盖层 */
+.loading-overlay {
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  inset: 0;
+  justify-content: center;
+  position: fixed;
+  z-index: 50;
+}
+
+/* 加载内容 */
+.loading-content {
+  padding: 1.5rem;
+  border-radius: 0.5rem;
+  background-color: var(--color-base-100);
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* 加载旋转器 */
+.loading-spinner {
+  border: 2px solid var(--color-info);
+  border-top-color: transparent;
+  border-radius: 50%;
+  height: 1.5rem;
+  width: 1.5rem;
+  animation: spin 1s linear infinite;
+}
+
+/* 加载文本 */
+.loading-text {
+  color: var(--color-base-content);
+}
+
+/* 旋转动画 */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .nav-tab {
-  @apply px-3 py-2 text-sm font-medium rounded-md transition-all duration-200 flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-radius: 0.375rem;
+  transition: all 0.2s ease-in-out;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #4b5563;
 }
 
-.nav-tab-active {
-  @apply bg-white dark:bg-gray-600 text-blue-600 dark:text-blue-400 shadow-sm;
+.nav-tab:hover {
+  color: #111827;
+}
+
+.dark .nav-tab {
+  color: #9ca3af;
+}
+
+.dark .nav-tab:hover {
+  color: white;
 }
 
 .main-content {
-  @apply flex-1;
+  flex: 1;
 }
 
 .card-base {
-  @apply bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm hover:shadow-md transition-shadow duration-200;
+  backdrop-filter: blur(8px);
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  transition: box-shadow 0.2s ease-in-out;
+}
+
+.card-base:hover {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.dark .card-base {
+  border-color: #374151;
 }
 
 .action-btn {
-  @apply w-full flex items-center gap-3 px-4 py-3 rounded-lg border-2 transition-all duration-200 hover:shadow-md focus:ring-2 focus:ring-offset-2 text-sm font-medium;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  border: 2px solid;
+  transition: all 0.2s ease-in-out;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.action-btn:hover {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.action-btn:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px, 0 0 0 4px rgba(0, 0, 0, 0.1);
 }
 
 .period-btn {
-  @apply border-green-200 dark:border-green-800 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 text-green-700 dark:text-green-400 hover:from-green-100 hover:to-emerald-100 dark:hover:from-green-900/30 dark:hover:to-emerald-900/30 focus:ring-green-500;
+  border-color: #bbf7d0;
+  background: linear-gradient(to right, #f0fdf4, #ecfdf5);
+  color: #15803d;
+}
+
+.period-btn:hover {
+  background: linear-gradient(to right, #dcfce7, #d1fae5);
+}
+
+.dark .period-btn {
+  border-color: #166534;
+  background: linear-gradient(to right, rgba(69, 26, 3, 0.2), rgba(69, 26, 3, 0.2));
+  color: #4ade80;
+}
+
+.dark .period-btn:hover {
+  background: linear-gradient(to right, rgba(69, 26, 3, 0.3), rgba(69, 26, 3, 0.3));
+}
+
+.period-btn:focus {
+  box-shadow: 0 0 0 2px #22c55e, 0 0 0 4px rgba(34, 197, 94, 0.1);
 }
 
 .daily-btn {
-  @apply border-blue-200 dark:border-blue-800 bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 text-blue-700 dark:text-blue-400 hover:from-blue-100 hover:to-cyan-100 dark:hover:from-blue-900/30 dark:hover:to-cyan-900/30 focus:ring-blue-500;
+  border-color: #bfdbfe;
+  background: linear-gradient(to right, #eff6ff, #dbeafe);
+  color: #1d4ed8;
+}
+
+.daily-btn:hover {
+  background: linear-gradient(to right, #dbeafe, #bfdbfe);
+}
+
+.dark .daily-btn {
+  border-color: #1e3a8a;
+  background: linear-gradient(to right, rgba(30, 58, 138, 0.2), rgba(30, 58, 138, 0.2));
+  color: #60a5fa;
+}
+
+.dark .daily-btn:hover {
+  background: linear-gradient(to right, rgba(30, 58, 138, 0.3), rgba(30, 58, 138, 0.3));
+}
+
+.daily-btn:focus {
+  box-shadow: 0 0 0 2px #3b82f6, 0 0 0 4px rgba(59, 130, 246, 0.1);
 }
 
 .stats-btn {
-  @apply border-green-200 dark:border-green-800 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 text-green-700 dark:text-green-400 hover:from-green-100 hover:to-emerald-100 dark:hover:from-green-900/30 dark:hover:to-emerald-900/30 focus:ring-green-500;
+  border-color: #bbf7d0;
+  background: linear-gradient(to right, #f0fdf4, #ecfdf5);
+  color: #15803d;
+}
+
+.stats-btn:hover {
+  background: linear-gradient(to right, #dcfce7, #d1fae5);
+}
+
+.dark .stats-btn {
+  border-color: #166534;
+  background: linear-gradient(to right, rgba(69, 26, 3, 0.2), rgba(69, 26, 3, 0.2));
+  color: #4ade80;
+}
+
+.dark .stats-btn:hover {
+  background: linear-gradient(to right, rgba(69, 26, 3, 0.3), rgba(69, 26, 3, 0.3));
+}
+
+.stats-btn:focus {
+  box-shadow: 0 0 0 2px #22c55e, 0 0 0 4px rgba(34, 197, 94, 0.1);
 }
 
 .action-icon-btn {
-  @apply w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-200 hover:scale-110 focus:ring-2 focus:ring-offset-2;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease-in-out;
+}
+
+.action-icon-btn:hover {
+  transform: scale(1.1);
+}
+
+.action-icon-btn:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px, 0 0 0 4px rgba(0, 0, 0, 0.1);
 }
 
 .view-btn {
-  @apply bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50 focus:ring-blue-500;
+  background-color: #eff6ff;
+  color: #2563eb;
+}
+
+.view-btn:hover {
+  background-color: #dbeafe;
+}
+
+.dark .view-btn {
+  background-color: rgba(30, 58, 138, 0.3);
+  color: #60a5fa;
+}
+
+.dark .view-btn:hover {
+  background-color: rgba(30, 58, 138, 0.5);
+}
+
+.view-btn:focus {
+  box-shadow: 0 0 0 2px #3b82f6, 0 0 0 4px rgba(59, 130, 246, 0.1);
 }
 
 .delete-btn {
-  @apply bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/50 focus:ring-red-500;
+  background-color: #fef2f2;
+  color: #dc2626;
+}
+
+.delete-btn:hover {
+  background-color: #fee2e2;
+}
+
+.dark .delete-btn {
+  background-color: rgba(69, 10, 10, 0.3);
+  color: #f87171;
+}
+
+.dark .delete-btn:hover {
+  background-color: rgba(69, 10, 10, 0.5);
+}
+
+.delete-btn:focus {
+  box-shadow: 0 0 0 2px #ef4444, 0 0 0 4px rgba(239, 68, 68, 0.1);
 }
 
 .info-item {
-  @apply flex justify-between items-center;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .info-label {
-  @apply text-sm font-medium text-gray-600 dark:text-gray-400;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #4b5563;
+}
+
+.dark .info-label {
+  color: #9ca3af;
 }
 
 .info-value {
-  @apply text-sm font-semibold text-gray-900 dark:text-white;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.dark .info-value {
+  color: white;
 }
 
 .phase-badge {
-  @apply px-3 py-1 bg-gradient-to-r from-pink-100 to-purple-100 dark:from-pink-900/30 dark:to-purple-900/30 text-pink-700 dark:text-pink-400 rounded-full text-xs font-medium;
+  padding: 0.25rem 0.75rem;
+  background: linear-gradient(to right, #fce7f3, #f3e8ff);
+  color: #be185d;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.dark .phase-badge {
+  background: linear-gradient(to right, rgba(157, 23, 77, 0.3), rgba(147, 51, 234, 0.3));
+  color: #f472b6;
 }
 
 .tip-item {
-  @apply p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-100 dark:border-gray-600 hover:shadow-sm transition-shadow duration-200;
+  padding: 1rem;
+  background-color: #f9fafb;
+  border-radius: 0.5rem;
+  border: 1px solid #f3f4f6;
+  transition: box-shadow 0.2s ease-in-out;
+}
+
+.tip-item:hover {
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+.dark .tip-item {
+  background-color: rgba(55, 65, 81, 0.5);
+  border-color: #4b5563;
 }
 
 .modal-overlay {
-  @apply fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4;
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  padding: 1rem;
   animation: fadeIn 0.2s ease-out;
 }
 
 .modal-content {
-  @apply bg-white dark:bg-gray-800 rounded-xl max-w-md w-full max-h-[90vh] overflow-y-auto shadow-2xl;
+  background-color: white;
+  border-radius: 0.75rem;
+  max-width: 28rem;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
   animation: slideUp 0.2s ease-out;
+}
+
+.dark .modal-content {
+  background-color: #1f2937;
 }
 
 @keyframes fadeIn {
@@ -439,33 +898,38 @@ onMounted(async () => {
 /* 响应式设计 */
 @media (max-width: 1024px) {
   .grid.lg\\:grid-cols-2 {
-    @apply grid-cols-1 gap-4;
+    grid-template-columns: 1fr;
+    gap: 1rem;
   }
 
   .nav-tab {
-    @apply px-2 py-1.5 text-xs;
+    padding: 0.375rem 0.5rem;
+    font-size: 0.75rem;
   }
 }
 
 @media (max-width: 768px) {
   .grid.md\\:grid-cols-2 {
-    @apply grid-cols-1 gap-4;
+    grid-template-columns: 1fr;
+    gap: 1rem;
   }
 
   .container {
-    @apply px-3;
+    padding: 0 0.75rem;
   }
 
   .card-base {
-    @apply p-4;
+    padding: 1rem;
   }
 
   .action-btn {
-    @apply py-2.5 text-xs;
+    padding: 0.625rem 0;
+    font-size: 0.75rem;
   }
 
   .modal-content {
-    @apply mx-2 max-w-none;
+    margin: 0 0.5rem;
+    max-width: none;
   }
 }
 
@@ -474,61 +938,76 @@ onMounted(async () => {
 
   /* 确保头部容器保持水平布局 */
   .header-section .container>.flex {
-    @apply flex-row items-center justify-between gap-2;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
   }
 
   /* 左侧标题区域 */
   .header-section .flex.items-center.gap-2 {
-    @apply gap-1 flex-shrink-0;
+    gap: 0.25rem;
+    flex-shrink: 0;
   }
 
   .header-section h1 {
-    @apply text-base;
+    font-size: 1rem;
   }
 
   /* 右侧导航区域 - 保持水平排列 */
   .header-section .flex.items-center.gap-1.bg-gray-100 {
-    @apply flex-1 max-w-[180px] gap-0.5 p-0.5;
+    flex: 1;
+    max-width: 180px;
+    gap: 0.125rem;
+    padding: 0.125rem;
   }
 
   /* 导航标签 - 水平排列 */
   .nav-tab {
-    @apply px-1 py-1.5 text-xs flex-1 justify-center min-w-0;
+    padding: 0.375rem 0.25rem;
+    font-size: 0.75rem;
+    flex: 1;
+    justify-content: center;
+    min-width: 0;
   }
 
   /* 只在移动端隐藏文字 */
   .nav-tab span.hidden.sm\\:inline {
-    @apply hidden;
+    display: none;
   }
 
   /* 确保图标居中 */
   .nav-tab .w-4.h-4 {
-    @apply mx-auto;
+    margin: 0 auto;
   }
 
   /* 主要内容区域调整 */
   .main-content .container {
-    @apply py-4 px-3;
+    padding: 1rem 0.75rem;
   }
 
   /* 卡片内边距调整 */
   .card-base {
-    @apply p-3;
+    padding: 0.75rem;
   }
 
   /* 按钮调整 */
   .action-btn {
-    @apply py-2 text-xs gap-2;
+    padding: 0.5rem 0;
+    font-size: 0.75rem;
+    gap: 0.5rem;
   }
 
   /* 图标按钮调整 */
   .action-icon-btn {
-    @apply w-7 h-7;
+    width: 1.75rem;
+    height: 1.75rem;
   }
 
   /* 提示卡片在移动端堆叠 */
   .tip-item {
-    @apply p-3;
+    padding: 0.75rem;
   }
 }
 

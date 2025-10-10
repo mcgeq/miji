@@ -561,18 +561,18 @@ watch(
 }
 
 .form-control, .form-display {
-  width: 66%; /* 对应 Tailwind w-2/3 */
+  width: 66%;
   padding: 0.5rem 0.75rem;
   border-radius: 6px;
   border: 1px solid var(--color-base-300);
   background-color: var(--color-base-200);
-  color: var(--color-base-content);
+  color: var(--color-neutral);
   font-size: 0.875rem;
 }
 
 .form-control:disabled {
   background-color: var(--color-base-300);
-  color: var(--color-neutral-content);
+  color: var(--color-neutral);
 }
 
 textarea.form-control { resize: vertical; }

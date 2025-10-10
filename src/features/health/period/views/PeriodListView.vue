@@ -478,146 +478,363 @@ watch(
 
 <style scoped lang="postcss">
 .card-base {
-  @apply bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm;
+  background-color: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+.dark .card-base {
+  background-color: #1f2937;
+  border-color: #374151;
 }
 
 .input-base {
-  @apply px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:focus:ring-blue-400 dark:focus:border-blue-400 transition-colors;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  transition: all 0.2s ease-in-out;
+}
+
+.input-base:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px #3b82f6;
+  border-color: #3b82f6;
+}
+
+.dark .input-base {
+  border-color: #4b5563;
+  background-color: #1f2937;
+  color: white;
+}
+
+.dark .input-base:focus {
+  box-shadow: 0 0 0 2px #60a5fa;
+  border-color: #60a5fa;
 }
 
 .select-base {
-  @apply px-3 py-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:focus:ring-blue-400 dark:focus:border-blue-400 transition-colors;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  background-color: white;
+  transition: all 0.2s ease-in-out;
+}
+
+.select-base:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px #3b82f6;
+  border-color: #3b82f6;
+}
+
+.dark .select-base {
+  border-color: #4b5563;
+  background-color: #1f2937;
+  color: white;
+}
+
+.dark .select-base:focus {
+  box-shadow: 0 0 0 2px #60a5fa;
+  border-color: #60a5fa;
 }
 
 .btn-secondary {
-  @apply px-3 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 focus:ring-2 focus:ring-gray-500 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600 transition-colors flex items-center;
+  padding: 0.5rem 0.75rem;
+  background-color: #e5e7eb;
+  color: #374151;
+  border-radius: 0.5rem;
+  transition: all 0.2s ease-in-out;
+  display: flex;
+  align-items: center;
+}
+
+.btn-secondary:hover {
+  background-color: #d1d5db;
+}
+
+.btn-secondary:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px #6b7280;
+}
+
+.dark .btn-secondary {
+  background-color: #374151;
+  color: #d1d5db;
+}
+
+.dark .btn-secondary:hover {
+  background-color: #4b5563;
 }
 
 .btn-primary {
-  @apply px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 transition-colors flex items-center;
+  padding: 0.5rem 1rem;
+  background-color: #2563eb;
+  color: white;
+  border-radius: 0.5rem;
+  transition: all 0.2s ease-in-out;
+  display: flex;
+  align-items: center;
+}
+
+.btn-primary:hover {
+  background-color: #1d4ed8;
+}
+
+.btn-primary:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px #3b82f6;
 }
 
 .filter-label {
-  @apply block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1;
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 0.25rem;
+}
+
+.dark .filter-label {
+  color: #d1d5db;
 }
 
 .stats-overview .stat-card {
-  @apply bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 flex items-center gap-3;
+  background-color: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.dark .stats-overview .stat-card {
+  background-color: #1f2937;
+  border-color: #374151;
 }
 
 .stat-icon {
-  @apply w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
 .stat-content {
-  @apply flex-1;
+  flex: 1;
 }
 
 .stat-value {
-  @apply text-lg font-bold text-gray-900 dark:text-white;
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.dark .stat-value {
+  color: white;
 }
 
 .stat-label {
-  @apply text-xs text-gray-500 dark:text-gray-400;
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+.dark .stat-label {
+  color: #9ca3af;
 }
 
 .empty-state {
-  @apply text-center;
+  text-align: center;
 }
 
 .record-card {
-  @apply transition-all duration-200;
+  transition: all 0.2s ease-in-out;
 }
 
 .record-card:hover {
-  @apply transform -translate-y-1;
+  transform: translateY(-0.25rem);
 }
 
 .record-header {
-  @apply flex items-start justify-between mb-2;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
 }
 
 .record-title {
-  @apply text-lg font-semibold text-gray-900 dark:text-white;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.dark .record-title {
+  color: white;
 }
 
 .record-badges {
-  @apply flex gap-2;
+  display: flex;
+  gap: 0.5rem;
 }
 
 .duration-badge {
-  @apply px-2 py-1 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded-full text-xs font-medium;
+  padding: 0.25rem 0.5rem;
+  background-color: #fee2e2;
+  color: #dc2626;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.dark .duration-badge {
+  background-color: rgba(69, 10, 10, 0.3);
+  color: #f87171;
 }
 
 .cycle-badge {
-  @apply px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded-full text-xs font-medium;
+  padding: 0.25rem 0.5rem;
+  background-color: #dbeafe;
+  color: #1d4ed8;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.dark .cycle-badge {
+  background-color: rgba(30, 58, 138, 0.3);
+  color: #60a5fa;
 }
 
 .record-details {
-  @apply space-y-1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
 }
 
 .detail-item {
-  @apply flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: #4b5563;
+}
+
+.dark .detail-item {
+  color: #9ca3af;
 }
 
 .record-actions {
-  @apply flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity;
+  display: flex;
+  gap: 0.25rem;
+  opacity: 0;
+  transition: opacity 0.2s ease-in-out;
 }
 
 .record-card:hover .record-actions {
-  @apply opacity-100;
+  opacity: 1;
 }
 
 .action-btn {
-  @apply p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 transition-colors;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  transition: all 0.2s ease-in-out;
+  color: #6b7280;
+}
+
+.action-btn:hover {
+  background-color: #f3f4f6;
+  color: #374151;
+}
+
+.dark .action-btn {
+  color: #9ca3af;
+}
+
+.dark .action-btn:hover {
+  background-color: #374151;
+  color: #d1d5db;
 }
 
 .pagination-section {
-  @apply flex items-center justify-center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .pagination-btn {
-  @apply p-2 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  border: 1px solid #d1d5db;
+  transition: all 0.2s ease-in-out;
+}
+
+.pagination-btn:hover {
+  background-color: #f9fafb;
+}
+
+.pagination-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.dark .pagination-btn {
+  border-color: #4b5563;
+}
+
+.dark .pagination-btn:hover {
+  background-color: #374151;
 }
 
 .pagination-info {
-  @apply px-3 py-2 text-sm text-gray-600 dark:text-gray-400;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  color: #4b5563;
+}
+
+.dark .pagination-info {
+  color: #9ca3af;
 }
 
 @media (max-width: 640px) {
   .stats-overview {
-    @apply grid-cols-2 gap-2;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
   }
 
   .stat-card {
-    @apply p-3;
+    padding: 0.75rem;
   }
 
   .stat-value {
-    @apply text-base;
+    font-size: 1rem;
   }
 
   .record-header {
-    @apply flex-col items-start gap-2;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
   }
 
   .record-actions {
-    @apply opacity-100;
+    opacity: 1;
   }
 
   .filters-section .flex {
-    @apply flex-col items-stretch;
+    flex-direction: column;
+    align-items: stretch;
   }
 
   .filters-section .grid {
-    @apply grid-cols-1 gap-2;
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
   }
 }
 
 @media (max-width: 768px) {
   .stats-overview {
-    @apply grid-cols-1;
+    grid-template-columns: 1fr;
   }
 }
 </style>

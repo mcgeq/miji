@@ -75,7 +75,7 @@ defineExpose({
 </script>
 
 <template>
-  <div class="min-h-25">
+  <div class="reminder-container">
     <!-- 过滤器区域 -->
     <div class="screening-filtering">
       <div class="filter-flex-wrap">
@@ -177,16 +177,16 @@ defineExpose({
     </div>
 
     <!-- 加载状态 -->
-    <div v-if="loading" class="text-gray-600 h-25 flex-justify-center">
+    <div v-if="loading" class="loading-container">
       {{ t('common.loading') }}
     </div>
 
     <!-- 空状态 -->
-    <div v-else-if="pagination.paginatedItems.value.length === 0" class="text-#999 flex-col h-25 flex-justify-center">
-      <div class="text-sm mb-2 opacity-50">
+    <div v-else-if="pagination.paginatedItems.value.length === 0" class="empty-state-container">
+      <div class="empty-state-icon">
         <i class="icon-bell" />
       </div>
-      <div class="text-sm">
+      <div class="empty-state-text">
         {{ pagination.totalItems.value === 0 ? t('messages.noReminder') : t('messages.noPatternResult') }}
       </div>
     </div>
@@ -194,37 +194,37 @@ defineExpose({
     <!-- 提醒网格 -->
     <div
       v-else
-      class="reminder-grid mb-6 gap-5 grid w-full"
+      class="reminder-grid"
       :class="[
         { 'grid-template-columns-320': !mediaQueries.isMobile },
       ]"
     >
       <div
         v-for="reminder in pagination.paginatedItems.value" :key="reminder.serialNum"
-        class="bg-base-100 reminder-card p-5 border rounded-lg bg-white shadow-md transition-shadow hover:shadow-lg"
+        class="reminder-card"
         :class="[
           {
-            'border-red-500 bg-red-50': isOverdue(reminder),
-            'opacity-80 bg-green-50 border-green-400': reminder.isPaid,
+            'reminder-card-overdue': isOverdue(reminder),
+            'reminder-card-paid': reminder.isPaid,
           },
         ]"
       >
-        <div class="mb-4 flex items-center justify-between">
-          <div class="text-lg text-gray-800 font-semibold">
+        <div class="reminder-header">
+          <div class="reminder-title">
             {{ reminder.name }}
           </div>
-          <div class="flex gap-2 items-center">
+          <div class="reminder-actions">
             <div
-              class="text-xs font-medium px-2 py-1 rounded inline-flex gap-1.5 items-center" :class="[
-                getStatusClass(reminder) === 'paid' ? 'bg-green-100 text-green-600'
-                : getStatusClass(reminder) === 'overdue' ? 'bg-red-100 text-red-600'
-                  : 'bg-blue-100 text-blue-600',
+              class="status-badge" :class="[
+                getStatusClass(reminder) === 'paid' ? 'status-badge-paid'
+                : getStatusClass(reminder) === 'overdue' ? 'status-badge-overdue'
+                  : 'status-badge-pending',
               ]"
             >
-              <component :is="getStatusIcon(reminder)" class="h-4 w-4" />
+              <component :is="getStatusIcon(reminder)" class="status-icon" />
               <span>{{ getStatusText(reminder) }}</span>
             </div>
-            <div class="flex gap-1">
+            <div class="action-buttons">
               <button
                 v-if="!reminder.isPaid"
                 class="money-option-btn money-option-ben-hover)"
@@ -251,47 +251,47 @@ defineExpose({
 
         <div
           v-if="reminder.amount"
-          class="mb-4 flex gap-2 items-baseline"
+          class="reminder-amount"
         >
-          <span class="text-2xl text-gray-800 font-semibold">
+          <span class="amount-value">
             {{ formatCurrency(reminder.amount) }}
           </span>
           <span
             v-if="reminder.currency"
-            class="text-sm text-gray-800"
+            class="amount-currency"
           >
             {{ reminder.currency.code }}
           </span>
         </div>
 
-        <div class="mb-2 space-y-2">
-          <div v-if="reminder.billDate" class="text-sm flex justify-between">
-            <span class="text-gray-600">{{ t('financial.billDate') }}</span>
-            <span class="text-gray-800">{{ DateUtils.formatDate(reminder.billDate) }}</span>
+        <div class="reminder-dates">
+          <div v-if="reminder.billDate" class="date-row">
+            <span class="date-label">{{ t('financial.billDate') }}</span>
+            <span class="date-value">{{ DateUtils.formatDate(reminder.billDate) }}</span>
           </div>
-          <div class="text-sm flex justify-between">
-            <span class="text-gray-600">{{ t('date.reminderDate') }}</span>
-            <span class="text-gray-800">{{ DateUtils.formatDate(reminder.remindDate) }}</span>
+          <div class="date-row">
+            <span class="date-label">{{ t('date.reminderDate') }}</span>
+            <span class="date-value">{{ DateUtils.formatDate(reminder.remindDate) }}</span>
           </div>
         </div>
 
-        <div class="text-sm text-gray-600 mb-2 flex gap-2 items-center justify-end">
-          <LucideRepeat class="h-4 w-4" />
+        <div class="reminder-period">
+          <LucideRepeat class="period-icon" />
           <span>{{ getRepeatTypeName(reminder.repeatPeriod) }}</span>
         </div>
 
-        <div class="text-sm pt-4 border-t border-gray-200 space-y-2">
-          <div class="flex justify-between">
-            <span class="text-gray-600"> {{ t('common.misc.types') }} </span>
-            <span class="text-gray-800">{{ t(`financial.reminder.types.${lowercaseFirstLetter(reminder.type)}`) }}</span>
+        <div class="reminder-info">
+          <div class="info-row">
+            <span class="info-label"> {{ t('common.misc.types') }} </span>
+            <span class="info-value">{{ t(`financial.reminder.types.${lowercaseFirstLetter(reminder.type)}`) }}</span>
           </div>
-          <div class="flex justify-between">
-            <span class="text-gray-600"> {{ t('date.createDate') }} </span>
-            <span class="text-gray-800">{{ DateUtils.formatDate(reminder.createdAt) }}</span>
+          <div class="info-row">
+            <span class="info-label"> {{ t('date.createDate') }} </span>
+            <span class="info-value">{{ DateUtils.formatDate(reminder.createdAt) }}</span>
           </div>
-          <div v-if="reminder.description" class="flex justify-between">
-            <span class="text-gray-600"> {{ t('common.misc.remark') }} </span>
-            <span class="text-gray-800">{{ reminder.description }}</span>
+          <div v-if="reminder.description" class="info-row">
+            <span class="info-label"> {{ t('common.misc.remark') }} </span>
+            <span class="info-value">{{ reminder.description }}</span>
           </div>
         </div>
       </div>
@@ -315,8 +315,211 @@ defineExpose({
 </template>
 
 <style scoped lang="postcss">
+/* Container */
+.reminder-container {
+  min-height: 6.25rem;
+}
+
+/* Loading and Empty States */
+.loading-container {
+  color: #4b5563;
+  height: 6.25rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.empty-state-container {
+  color: #999;
+  display: flex;
+  flex-direction: column;
+  height: 6.25rem;
+  justify-content: center;
+  align-items: center;
+}
+
+.empty-state-icon {
+  font-size: 0.875rem;
+  margin-bottom: 0.5rem;
+  opacity: 0.5;
+}
+
+.empty-state-text {
+  font-size: 0.875rem;
+}
+
+/* Reminder Grid */
 .reminder-grid {
+  margin-bottom: 0.5rem;
+  gap: 0.5rem;
   display: grid;
-  gap: 20px;
+  width: 100%;
+}
+
+/* Ensure grid-template-columns-320 works properly */
+.reminder-grid.grid-template-columns-320 {
+  grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr));
+}
+
+/* Reminder Card */
+.reminder-card {
+  background-color: var(--color-base-100);
+  padding: 0.5rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  transition: box-shadow 0.2s ease-in-out;
+}
+
+.reminder-card:hover {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+.reminder-card-overdue {
+  border-color: #ef4444;
+  background-color: #fef2f2;
+}
+
+.reminder-card-paid {
+  opacity: 0.8;
+  background-color: #f0fdf4;
+  border-color: #4ade80;
+}
+
+/* Reminder Header */
+.reminder-header {
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.reminder-title {
+  font-size: 1.125rem;
+  color: #1f2937;
+  font-weight: 600;
+}
+
+.reminder-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+/* Status Badge */
+.status-badge {
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  display: inline-flex;
+  gap: 0.375rem;
+  align-items: center;
+}
+
+.status-badge-paid {
+  background-color: #dcfce7;
+  color: #16a34a;
+}
+
+.status-badge-overdue {
+  background-color: #fee2e2;
+  color: #dc2626;
+}
+
+.status-badge-pending {
+  background-color: #dbeafe;
+  color: #2563eb;
+}
+
+.status-icon {
+  height: 1rem;
+  width: 1rem;
+}
+
+/* Action Buttons */
+.action-buttons {
+  display: flex;
+  gap: 0.25rem;
+}
+
+/* Reminder Amount */
+.reminder-amount {
+  margin-bottom: 1rem;
+  display: flex;
+  gap: 0.5rem;
+  align-items: baseline;
+}
+
+.amount-value {
+  font-size: 1.5rem;
+  color: #1f2937;
+  font-weight: 600;
+}
+
+.amount-currency {
+  font-size: 0.875rem;
+  color: #1f2937;
+}
+
+/* Reminder Dates */
+.reminder-dates {
+  margin-bottom: 0.5rem;
+  gap: 0.5rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.date-row {
+  font-size: 0.875rem;
+  display: flex;
+  justify-content: space-between;
+}
+
+.date-label {
+  color: #4b5563;
+}
+
+.date-value {
+  color: #1f2937;
+}
+
+/* Reminder Period */
+.reminder-period {
+  font-size: 0.875rem;
+  color: #4b5563;
+  margin-bottom: 0.5rem;
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.period-icon {
+  height: 1rem;
+  width: 1rem;
+}
+
+/* Reminder Info */
+.reminder-info {
+  font-size: 0.875rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e5e7eb;
+  gap: 0.5rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+}
+
+.info-label {
+  color: #4b5563;
+}
+
+.info-value {
+  color: #1f2937;
 }
 </style>

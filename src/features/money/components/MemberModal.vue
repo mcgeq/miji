@@ -56,26 +56,26 @@ watch(
 
 <template>
   <div class="modal-mask" style="z-index: 60;">
-    <div class="modal-content max-w-sm">
-      <div class="mb-4 flex items-center justify-between">
-        <h4 class="text-lg font-semibold">
+    <div class="modal-content modal-content-sm">
+      <div class="modal-header">
+        <h4 class="modal-title">
           {{ props.member ? '编辑成员' : '添加成员' }}
         </h4>
-        <button class="text-gray-500 hover:text-gray-700" @click="closeModal">
-          <LucideX class="h-5 w-5" />
+        <button class="modal-close-btn" @click="closeModal">
+          <LucideX class="modal-icon" />
         </button>
       </div>
 
-      <form class="space-y-4" @submit.prevent="saveMember">
-        <div class="space-y-3">
-          <div>
-            <label class="text-sm text-gray-700 font-medium mb-1 block">姓名</label>
-            <input v-model="form.name" type="text" required class="modal-input-select w-full" placeholder="请输入成员姓名">
+      <form class="modal-form" @submit.prevent="saveMember">
+        <div class="form-fields">
+          <div class="form-field">
+            <label class="form-label">姓名</label>
+            <input v-model="form.name" type="text" required class="modal-input-select" placeholder="请输入成员姓名">
           </div>
 
-          <div>
-            <label class="text-sm text-gray-700 font-medium mb-1 block">角色</label>
-            <select v-model="form.role" required class="modal-input-select w-full">
+          <div class="form-field">
+            <label class="form-label">角色</label>
+            <select v-model="form.role" required class="modal-input-select">
               <option value="Owner">
                 所有者
               </option>
@@ -97,28 +97,28 @@ watch(
             </select>
           </div>
 
-          <div>
-            <label class="text-sm text-gray-700 font-medium mb-1 block">权限设置</label>
+          <div class="form-field">
+            <label class="form-label">权限设置</label>
             <textarea
-              v-model="form.permissions" rows="3" class="modal-input-select w-full"
+              v-model="form.permissions" rows="3" class="modal-input-select"
               placeholder="权限描述（可选）"
             />
           </div>
 
-          <div>
-            <label class="flex items-center">
-              <input v-model="form.isPrimary" type="checkbox" class="mr-2">
-              <span class="text-sm text-gray-700 font-medium">设为主要成员</span>
+          <div class="form-field">
+            <label class="checkbox-label">
+              <input v-model="form.isPrimary" type="checkbox" class="checkbox-input">
+              <span class="checkbox-text">设为主要成员</span>
             </label>
           </div>
         </div>
 
-        <div class="pt-4 flex justify-center space-x-3">
+        <div class="modal-actions">
           <button type="button" class="modal-btn-x" @click="closeModal">
-            <LucideX class="wh-4" />
+            <LucideX class="modal-icon" />
           </button>
           <button type="submit" class="modal-btn-check">
-            <LucideCheck class="wh-4" />
+            <LucideCheck class="modal-icon" />
           </button>
         </div>
       </form>
@@ -127,5 +127,84 @@ watch(
 </template>
 
 <style scoped>
-  @import '@/assets/styles/modal.css';
+/* 模态框容器 */
+.modal-content-sm {
+  max-width: 24rem;
+}
+
+.modal-header {
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.modal-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.modal-close-btn {
+  color: #6b7280;
+  transition: color 0.2s ease-in-out;
+}
+
+.modal-close-btn:hover {
+  color: #374151;
+}
+
+.modal-icon {
+  height: 1.25rem;
+  width: 1.25rem;
+}
+
+/* 表单样式 */
+.modal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.form-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-label {
+  font-size: 0.875rem;
+  color: #374151;
+  font-weight: 500;
+  margin-bottom: 0.25rem;
+  display: block;
+}
+
+/* 复选框样式 */
+.checkbox-label {
+  display: flex;
+  align-items: center;
+}
+
+.checkbox-input {
+  margin-right: 0.5rem;
+}
+
+.checkbox-text {
+  font-size: 0.875rem;
+  color: #374151;
+  font-weight: 500;
+}
+
+/* 模态框操作按钮 */
+.modal-actions {
+  padding-top: 1rem;
+  display: flex;
+  justify-content: center;
+  gap: 0.75rem;
+}
 </style>

@@ -216,26 +216,26 @@ function getAccountTypeName(type: AccountType): string {
     <!-- 账户列表区域 -->
     <div
       v-if="loading"
-      class="text-gray-500 h-50 flex-justify-center"
+      class="loading-container"
     >
       {{ t('common.loading') }}
     </div>
 
     <div
       v-else-if="pagination.totalItems.value === 0"
-      class="text-gray-400 flex-col h-50 flex-justify-center"
+      class="empty-state-container"
     >
-      <div class="text-6xl mb-4 opacity-50">
-        <LucideCreditCard class="wh-5" />
+      <div class="empty-state-icon">
+        <LucideCreditCard class="empty-icon" />
       </div>
-      <div class="text-base">
+      <div class="empty-state-text">
         {{ pagination.totalItems.value === 0 ? t('financial.messages.noPatternAccount') : t('financial.noAccount') }}
       </div>
     </div>
 
     <div
       v-else
-      class="mb-6 gap-5 grid"
+      class="accounts-grid"
       :class="[
         { 'grid-template-columns-320': !mediaQueries.isMobile },
       ]"
@@ -243,24 +243,24 @@ function getAccountTypeName(type: AccountType): string {
       <div
         v-for="account in pagination.paginatedItems.value"
         :key="account.serialNum"
-        class="bg-base-100 p-2 border rounded-lg bg-white transition-all hover:shadow-md"
+        class="account-card"
         :class="{
-          'opacity-60 bg-gray-100': !account.isActive,
+          'account-card-inactive': !account.isActive,
         }" :style="{
           borderColor: account.color || '#E5E7EB',
         }"
       >
-        <div class="mb-4 flex flex-wrap gap-2 items-center justify-between">
+        <div class="account-header">
           <!-- 类型图标 + 类型名称 + 账户名称 + 币种 -->
-          <div class="text-gray-800 flex gap-3 items-center">
-            <component :is="getAccountTypeIcon(account.type)" class="text-blue-500 h-4 w-4" />
-            <span class="text-lg text-gray-800 font-semibold">{{ account.name }}</span>
-            <span class="text-sm text-gray-700">{{ getAccountTypeName(account.type) }}</span>
-            <span class="text-xs text-gray-600">{{ account.currency?.code }}</span>
+          <div class="account-info">
+            <component :is="getAccountTypeIcon(account.type)" class="account-type-icon" />
+            <span class="account-name">{{ account.name }}</span>
+            <span class="account-type-name">{{ getAccountTypeName(account.type) }}</span>
+            <span class="account-currency">{{ account.currency?.code }}</span>
           </div>
 
           <!-- 操作按钮 -->
-          <div class="p-4 flex items-center justify-between md:justify-end">
+          <div class="account-actions">
             <button
               class="money-option-btn money-option-ben-hover"
               :title="account.isActive ? t('common.status.stop') : t('common.status.enabled')"
@@ -283,18 +283,18 @@ function getAccountTypeName(type: AccountType): string {
           </div>
         </div>
 
-        <div class="mb-4 flex gap-2 items-baseline">
-          <span class="text-2xl text-gray-800 font-semibold">{{ formatCurrency(account.balance) }}</span>
+        <div class="account-balance">
+          <span class="balance-amount">{{ formatCurrency(account.balance) }}</span>
         </div>
 
-        <div class="pt-4 border-t border-gray-200">
-          <div class="text-sm mb-2 flex justify-between">
-            <span class="text-gray-600"> {{ t('date.createDate') }} </span>
-            <span class="text-gray-800">{{ DateUtils.formatDate(account.createdAt) }}</span>
+        <div class="account-details">
+          <div class="detail-row">
+            <span class="detail-label"> {{ t('date.createDate') }} </span>
+            <span class="detail-value">{{ DateUtils.formatDate(account.createdAt) }}</span>
           </div>
-          <div v-if="account.description" class="text-sm mb-2 flex justify-between">
-            <span class="text-gray-600"> {{ t('common.misc.remark') }} </span>
-            <span class="text-gray-800"> {{ account.description }} </span>
+          <div v-if="account.description" class="detail-row">
+            <span class="detail-label"> {{ t('common.misc.remark') }} </span>
+            <span class="detail-value"> {{ account.description }} </span>
           </div>
         </div>
       </div>
@@ -318,6 +318,152 @@ function getAccountTypeName(type: AccountType): string {
 </template>
 
 <style lang="postcss">
+/* Loading and Empty States */
+.loading-container {
+  color: #6b7280;
+  height: 12.5rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.empty-state-container {
+  color: #9ca3af;
+  display: flex;
+  flex-direction: column;
+  height: 12.5rem;
+  justify-content: center;
+  align-items: center;
+}
+
+.empty-state-icon {
+  font-size: 3.75rem;
+  margin-bottom: 1rem;
+  opacity: 0.5;
+}
+
+.empty-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.empty-state-text {
+  font-size: 1rem;
+}
+
+/* Accounts Grid */
+.accounts-grid {
+  margin-bottom: 0.5rem;
+  gap: 0.5rem;
+  display: grid;
+}
+
+/* Account Card */
+.account-card {
+  background-color: var(--color-base-100);
+  padding: 0.5rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  transition: all 0.2s ease-in-out;
+}
+
+.account-card:hover {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.account-card-inactive {
+  opacity: 0.6;
+  background-color: #f3f4f6;
+}
+
+/* Account Header */
+.account-header {
+  margin-bottom: 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.account-info {
+  color: #1f2937;
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.account-type-icon {
+  color: #3b82f6;
+  height: 1rem;
+  width: 1rem;
+}
+
+.account-name {
+  font-size: 1.125rem;
+  color: #1f2937;
+  font-weight: 600;
+}
+
+.account-type-name {
+  font-size: 0.875rem;
+  color: #374151;
+}
+
+.account-currency {
+  font-size: 0.75rem;
+  color: #4b5563;
+}
+
+.account-actions {
+  padding: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+@media (min-width: 768px) {
+  .account-actions {
+    justify-content: flex-end;
+  }
+}
+
+/* Account Balance */
+.account-balance {
+  margin-bottom: 1rem;
+  display: flex;
+  gap: 0.5rem;
+  align-items: baseline;
+}
+
+.balance-amount {
+  font-size: 1.5rem;
+  color: #1f2937;
+  font-weight: 600;
+}
+
+/* Account Details */
+.account-details {
+  padding-top: 1rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.detail-row {
+  font-size: 0.875rem;
+  margin-bottom: 0.5rem;
+  display: flex;
+  justify-content: space-between;
+}
+
+.detail-label {
+  color: #4b5563;
+}
+
+.detail-value {
+  color: #1f2937;
+}
+
+/* Account Select Buttons */
 .account-select {
   font-size: 0.75rem;
   font-weight: 500;

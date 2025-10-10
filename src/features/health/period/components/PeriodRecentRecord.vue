@@ -68,50 +68,50 @@ function isPeriodActive(record: PeriodRecords) {
 
 <template>
   <!-- 最近记录 -->
-  <div class="recent-records p-4 card-base">
-    <div class="mb-4 flex-between">
-      <h3 class="text-lg text-gray-900 font-semibold dark:text-white">
+  <div class="recent-records">
+    <div class="recent-records-header">
+      <h3 class="recent-records-title">
         最近记录
       </h3>
-      <button class="text-sm btn-primary" @click="emit('addRecord')">
-        <LucidePlus class="wh-5" />
+      <button class="recent-records-add-btn" @click="emit('addRecord')">
+        <LucidePlus class="recent-records-add-icon" />
       </button>
     </div>
 
-    <div v-if="periodStore.periodRecords.length === 0" class="empty-state">
-      <i class="i-tabler-calendar-off text-gray-400 mx-auto mb-3 wh-12" />
-      <p class="text-gray-500 text-center dark:text-gray-400">
-        还没有经期记录，<button class="text-blue-500 hover:underline" @click="emit('addRecord')">
+    <div v-if="periodStore.periodRecords.length === 0" class="recent-records-empty">
+      <i class="recent-records-empty-icon" />
+      <p class="recent-records-empty-text">
+        还没有经期记录，<button class="recent-records-empty-link" @click="emit('addRecord')">
           点击添加
         </button>
       </p>
     </div>
 
-    <div v-else class="space-y-3">
+    <div v-else class="recent-records-list">
       <div
         v-for="record in recentRecords"
         :key="record.serialNum"
-        class="record-item"
+        class="recent-record-item"
         @click="$emit('editRecord', record)"
       >
-        <div class="record-date">
-          <div class="record-month">
+        <div class="recent-record-date">
+          <div class="recent-record-month">
             {{ formatMonth(record.startDate) }}
           </div>
-          <div class="record-day">
+          <div class="recent-record-day">
             {{ formatDay(record.startDate) }}
           </div>
         </div>
-        <div class="record-info flex items-center justify-between">
-          <div class="record-duration text-sm text-gray-700">
+        <div class="recent-record-info">
+          <div class="recent-record-duration">
             {{ isPeriodActive(record) ? `预计持续 ${calculateDuration(record)} 天` : `已持续 ${calculateDuration(record)}` }}
           </div>
-          <div class="record-cycle">
+          <div class="recent-record-cycle">
             {{ calculateCycleFromPrevious(record) }}
           </div>
         </div>
-        <div class="record-actions">
-          <LucideChevronRightCircle class="wh-5" />
+        <div class="recent-record-actions">
+          <LucideChevronRightCircle class="recent-record-arrow" />
         </div>
       </div>
     </div>
@@ -119,70 +119,175 @@ function isPeriodActive(record: PeriodRecords) {
 </template>
 
 <style scoped lang="postcss">
-.card-base {
-  @apply bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm transition-shadow duration-200;
+/* 最近记录容器 */
+.recent-records {
+  padding: 1rem;
+  background-color: var(--color-base-100);
+  border: 1px solid var(--color-base-300);
+  border-radius: 0.75rem;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  transition: box-shadow 0.2s ease-in-out;
 }
 
-.flex-between {
-  @apply flex items-center justify-between;
+/* 最近记录头部 */
+.recent-records-header {
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
-.btn-primary {
-  @apply px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 transition-colors flex items-center;
+/* 最近记录标题 */
+.recent-records-title {
+  font-size: 1.125rem;
+  color: var(--color-base-content);
+  font-weight: 600;
 }
 
-.empty-state {
-  @apply flex flex-col items-center py-8;
+/* 添加记录按钮 */
+.recent-records-add-btn {
+  padding: 0.375rem 0.75rem;
+  background-color: var(--color-primary);
+  color: var(--color-primary-content);
+  border-radius: 0.5rem;
+  transition: all 0.2s ease-in-out;
+  display: flex;
+  align-items: center;
+  font-size: 0.875rem;
+  border: none;
+  cursor: pointer;
 }
 
-.record-item {
-  @apply flex items-center gap-4 p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors;
+.recent-records-add-btn:hover {
+  background-color: var(--color-primary-soft);
 }
 
-.record-date {
-  @apply text-center flex-shrink-0;
+/* 添加记录按钮图标 */
+.recent-records-add-icon {
+  width: 1.25rem;
+  height: 1.25rem;
 }
 
-.record-month {
-  @apply text-xs text-gray-500 dark:text-gray-400;
+/* 空状态 */
+.recent-records-empty {
+  text-align: center;
+  padding: 2rem 1rem;
 }
 
-.record-day {
-  @apply text-lg font-bold text-gray-900 dark:text-white;
+.recent-records-empty-icon {
+  display: block;
+  width: 3rem;
+  height: 3rem;
+  margin: 0 auto 0.75rem;
+  background-color: var(--color-neutral);
+  border-radius: 50%;
 }
 
-.record-info {
-  @apply flex-1;
+.recent-records-empty-text {
+  color: var(--color-neutral-content);
+  text-align: center;
 }
 
-.record-duration {
-  @apply text-sm font-medium text-gray-900 dark:text-white;
+.recent-records-empty-link {
+  color: var(--color-info);
+  text-decoration: underline;
+  background: none;
+  border: none;
+  cursor: pointer;
 }
 
-.record-cycle {
-  @apply text-xs text-gray-500 dark:text-gray-400;
+.recent-records-empty-link:hover {
+  color: var(--color-info-content);
 }
 
-.record-actions {
-  @apply flex-shrink-0;
+/* 记录列表 */
+.recent-records-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
 }
 
-.tip-item {
-  @apply flex items-start gap-2;
+/* 记录项目 */
+.recent-record-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem;
+  background-color: var(--color-base-200);
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
 }
 
-@media (max-width: 768px) {
-  .stats-grid {
-    @apply grid-cols-1;
-  }
+.recent-record-item:hover {
+  background-color: var(--color-base-300);
+  transform: translateY(-1px);
+}
 
-  .stat-card {
-    @apply p-3;
-  }
+/* 记录日期 */
+.recent-record-date {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 3rem;
+}
 
-  .stat-value {
-    @apply text-lg;
-  }
+.recent-record-month {
+  font-size: 0.75rem;
+  color: var(--color-neutral-content);
+  font-weight: 500;
+}
+
+.recent-record-day {
+  font-size: 1.5rem;
+  color: var(--color-base-content);
+  font-weight: 700;
+}
+
+/* 记录信息 */
+.recent-record-info {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.recent-record-duration {
+  font-size: 0.875rem;
+  color: var(--color-base-content);
+}
+
+.recent-record-cycle {
+  font-size: 0.75rem;
+  color: var(--color-neutral-content);
+  background-color: var(--color-neutral);
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+}
+
+/* 记录操作 */
+.recent-record-actions {
+  display: flex;
+  align-items: center;
+}
+
+.recent-record-arrow {
+  width: 1.25rem;
+  height: 1.25rem;
+  color: var(--color-neutral-content);
+}
+
+/* 深色模式适配 */
+.dark .recent-records {
+  background-color: var(--color-base-200);
+  border-color: var(--color-base-300);
+}
+
+.dark .recent-record-item {
+  background-color: var(--color-base-300);
+}
+
+.dark .recent-record-item:hover {
+  background-color: var(--color-base-content);
 }
 </style>

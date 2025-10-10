@@ -279,13 +279,13 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="period-settings space-y-6">
+  <div class="period-settings">
     <!-- 周期设置和提醒设置 - 并排显示 -->
     <div class="settings-row">
       <!-- 周期设置 -->
       <div class="settings-section card-base">
         <h2 class="section-title">
-          <LucideSettings class="mr-2 wh-5" />
+          <LucideSettings class="section-icon" />
           周期设置
         </h2>
 
@@ -298,7 +298,7 @@ onMounted(() => {
               <input
                 v-model.number="localSettings.averageCycleLength"
                 type="number"
-                class="input-base w-20"
+                class="input-base input-number"
                 min="21"
                 max="35"
                 @change="validateAndUpdate"
@@ -322,8 +322,8 @@ onMounted(() => {
                 v-if="calculatedStats.averageCycleLength && calculatedStats.averageCycleLength !== localSettings.averageCycleLength"
                 class="calculated-hint"
               >
-                <LucideLightbulb class="text-amber-500 h-4 w-4" />
-                <span class="text-sm text-amber-700 dark:text-amber-400">
+                <LucideLightbulb class="calculated-hint-icon" />
+                <span class="calculated-hint-text">
                   根据历史数据计算：{{ calculatedStats.averageCycleLength }}天
                 </span>
                 <button
@@ -344,7 +344,7 @@ onMounted(() => {
               <input
                 v-model.number="localSettings.averagePeriodLength"
                 type="number"
-                class="input-base w-20"
+                class="input-base input-number"
                 min="2"
                 max="8"
                 @change="validateAndUpdate"
@@ -368,8 +368,8 @@ onMounted(() => {
                 v-if="calculatedStats.averagePeriodLength && calculatedStats.averagePeriodLength !== localSettings.averagePeriodLength"
                 class="calculated-hint"
               >
-                <LucideLightbulb class="text-amber-500 h-4 w-4" />
-                <span class="text-sm text-amber-700 dark:text-amber-400">
+                <LucideLightbulb class="calculated-hint-icon" />
+                <span class="calculated-hint-text">
                   根据历史数据计算：{{ calculatedStats.averagePeriodLength }}天
                 </span>
                 <button
@@ -647,137 +647,458 @@ onMounted(() => {
 <style scoped lang="postcss">
 /* Layout and Structure Styles */
 .settings-row {
-  @apply grid grid-cols-1 sm:grid-cols-2 gap-6;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+
+@media (min-width: 640px) {
+  .settings-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 .settings-section {
-  @apply bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-md p-5 sm:p-6 hover:shadow-lg transition-shadow duration-200;
+  background-color: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  padding: 1.25rem;
+  transition: box-shadow 0.2s ease-in-out;
+}
+
+.settings-section:hover {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+.dark .settings-section {
+  background-color: #1f2937;
+  border-color: #374151;
+}
+
+@media (min-width: 640px) {
+  .settings-section {
+    padding: 1.5rem;
+  }
 }
 
 .section-title {
-  @apply flex items-center text-lg font-semibold text-gray-900 dark:text-white mb-6;
+  display: flex;
+  align-items: center;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 1.5rem;
+}
+
+.dark .section-title {
+  color: white;
 }
 
 .settings-grid {
-  @apply space-y-4 sm:space-y-6;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+@media (min-width: 640px) {
+  .settings-grid {
+    gap: 1.5rem;
+  }
 }
 
 .setting-item {
-  @apply space-y-2;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 
 .analysis-card {
-  @apply mt-4 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600;
+  margin-top: 1rem;
+  padding: 0.75rem;
+  background-color: #f9fafb;
+  border-radius: 0.5rem;
+  border: 1px solid #e5e7eb;
+}
+
+.dark .analysis-card {
+  background-color: rgba(55, 65, 81, 0.5);
+  border-color: #4b5563;
 }
 
 .analysis-header {
-  @apply flex items-center gap-2 mb-2;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
 }
 
 .analysis-content {
-  @apply space-y-1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
 }
 
 .analysis-item {
-  @apply flex justify-between items-center text-xs;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.75rem;
 }
 
 /* Typography and Colors */
 .setting-label {
-  @apply block text-sm font-medium text-gray-700 dark:text-gray-300;
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+}
+
+.dark .setting-label {
+  color: #d1d5db;
 }
 
 .setting-description {
-  @apply text-xs text-gray-500 dark:text-gray-400;
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+.dark .setting-description {
+  color: #9ca3af;
 }
 
 .analysis-label {
-  @apply text-gray-600 dark:text-gray-400;
+  color: #4b5563;
+}
+
+.dark .analysis-label {
+  color: #9ca3af;
 }
 
 .analysis-value {
-  @apply font-medium;
+  font-weight: 500;
 }
 
 .toggle-text {
-  @apply text-sm font-medium text-gray-700 dark:text-gray-300;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+}
+
+.dark .toggle-text {
+  color: #d1d5db;
 }
 
 /* Form Controls */
 .setting-control {
-  @apply flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:gap-4;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+@media (min-width: 640px) {
+  .setting-control {
+    flex-direction: row;
+    align-items: center;
+    gap: 1rem;
+  }
 }
 
 .setting-range {
-  @apply w-full sm:flex-1;
+  width: 100%;
+}
+
+@media (min-width: 640px) {
+  .setting-range {
+    flex: 1;
+  }
 }
 
 .input-base {
-  @apply px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:focus:ring-blue-400 dark:focus:border-blue-400 transition-colors;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  transition: all 0.2s ease-in-out;
+}
+
+.input-base:focus {
+  outline: none;
+  ring: 2px;
+  ring-color: #3b82f6;
+  border-color: #3b82f6;
+}
+
+.dark .input-base {
+  border-color: #4b5563;
+  background-color: #1f2937;
+  color: white;
+}
+
+.dark .input-base:focus {
+  ring-color: #60a5fa;
+  border-color: #60a5fa;
 }
 
 .select-base {
-  @apply px-3 py-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:focus:ring-blue-400 dark:focus:border-blue-400 transition-colors;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  background-color: white;
+  transition: all 0.2s ease-in-out;
+}
+
+.select-base:focus {
+  outline: none;
+  ring: 2px;
+  ring-color: #3b82f6;
+  border-color: #3b82f6;
+}
+
+.dark .select-base {
+  border-color: #4b5563;
+  background-color: #1f2937;
+  color: white;
+}
+
+.dark .select-base:focus {
+  ring-color: #60a5fa;
+  border-color: #60a5fa;
 }
 
 .range-slider {
-  @apply w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer;
+  width: 100%;
+  height: 0.5rem;
+  background-color: #e5e7eb;
+  border-radius: 0.5rem;
+  appearance: none;
+  cursor: pointer;
+}
+
+.dark .range-slider {
+  background-color: #374151;
 }
 
 .range-slider::-webkit-slider-thumb {
-  @apply appearance-none w-4 h-4 bg-blue-500 rounded-full cursor-pointer;
+  appearance: none;
+  width: 1rem;
+  height: 1rem;
+  background-color: #3b82f6;
+  border-radius: 50%;
+  cursor: pointer;
 }
 
 .range-slider::-moz-range-thumb {
-  @apply w-4 h-4 bg-blue-500 rounded-full cursor-pointer border-0;
+  width: 1rem;
+  height: 1rem;
+  background-color: #3b82f6;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 0;
 }
 
 .setting-toggle {
-  @apply flex items-center;
+  display: flex;
+  align-items: center;
 }
 
 .toggle-label {
-  @apply flex items-center gap-3 cursor-pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
 }
 
 .toggle-input {
-  @apply sr-only;
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .toggle-slider {
-  @apply relative inline-block w-11 h-6 bg-gray-200 dark:bg-gray-700 rounded-full transition-colors duration-200 ease-in-out;
+  position: relative;
+  display: inline-block;
+  width: 2.75rem;
+  height: 1.5rem;
+  background-color: #e5e7eb;
+  border-radius: 9999px;
+  transition: background-color 0.2s ease-in-out;
+}
+
+.dark .toggle-slider {
+  background-color: #374151;
 }
 
 .toggle-slider::after {
-  @apply absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200 ease-in-out content-[''];
+  content: '';
+  position: absolute;
+  top: 0.125rem;
+  left: 0.125rem;
+  width: 1.25rem;
+  height: 1.25rem;
+  background-color: white;
+  border-radius: 50%;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  transition: transform 0.2s ease-in-out;
 }
 
 .toggle-input:checked + .toggle-slider {
-  @apply bg-blue-500;
+  background-color: #3b82f6;
 }
 
 .toggle-input:checked + .toggle-slider::after {
-  @apply translate-x-5;
+  transform: translateX(1.25rem);
 }
 
 /* Buttons and Hints */
 .calculated-hint {
-  @apply flex flex-col items-start gap-2 sm:flex-row sm:items-center p-2 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  background-color: #fef3c7;
+  border-radius: 0.5rem;
+  border: 1px solid #f59e0b;
+}
+
+@media (min-width: 640px) {
+  .calculated-hint {
+    flex-direction: row;
+    align-items: center;
+  }
+}
+
+.dark .calculated-hint {
+  background-color: rgba(146, 64, 14, 0.2);
+  border-color: #92400e;
 }
 
 .btn-hint {
-  @apply px-2 py-1 text-xs bg-amber-100 hover:bg-amber-200 dark:bg-amber-800 dark:hover:bg-amber-700 text-amber-800 dark:text-amber-200 rounded transition-colors;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  background-color: #fef3c7;
+  color: #92400e;
+  border-radius: 0.25rem;
+  transition: all 0.2s ease-in-out;
+}
+
+.btn-hint:hover {
+  background-color: #fde68a;
+}
+
+.dark .btn-hint {
+  background-color: #92400e;
+  color: #fef3c7;
+}
+
+.dark .btn-hint:hover {
+  background-color: #b45309;
+}
+
+/* 计算提示图标 */
+.calculated-hint-icon {
+  color: var(--color-warning);
+  height: 1rem;
+  width: 1rem;
+}
+
+/* 计算提示文本 */
+.calculated-hint-text {
+  font-size: 0.875rem;
+  color: var(--color-warning-content);
+}
+
+/* 数字输入框 */
+.input-number {
+  width: 5rem;
 }
 
 .btn-secondary {
-  @apply px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 focus:ring-2 focus:ring-gray-500 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600 transition-colors flex items-center;
+  padding: 0.5rem 1rem;
+  background-color: #e5e7eb;
+  color: #374151;
+  border-radius: 0.5rem;
+  transition: all 0.2s ease-in-out;
+  display: flex;
+  align-items: center;
+}
+
+.btn-secondary:hover {
+  background-color: #d1d5db;
+}
+
+.btn-secondary:focus {
+  outline: none;
+  ring: 2px;
+  ring-color: #6b7280;
+}
+
+.btn-secondary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.dark .btn-secondary {
+  background-color: #374151;
+  color: #d1d5db;
+}
+
+.dark .btn-secondary:hover {
+  background-color: #4b5563;
 }
 
 .btn-danger {
-  @apply px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 focus:ring-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center;
+  padding: 0.5rem 1rem;
+  background-color: #dc2626;
+  color: white;
+  border-radius: 0.5rem;
+  transition: all 0.2s ease-in-out;
+  display: flex;
+  align-items: center;
+}
+
+.btn-danger:hover {
+  background-color: #b91c1c;
+}
+
+.btn-danger:focus {
+  outline: none;
+  ring: 2px;
+  ring-color: #ef4444;
+}
+
+.btn-danger:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .import-control {
-  @apply flex items-center gap-2;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* 模板样式 */
+.period-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.section-icon {
+  margin-right: 0.5rem;
+  height: 1.25rem;
+  width: 1.25rem;
+}
+
+.input-number {
+  width: 5rem;
 }
 </style>

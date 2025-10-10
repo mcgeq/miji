@@ -217,10 +217,10 @@ defineExpose({
   <div class="money-tab-25">
     <!-- 过滤器区域 -->
     <div class="screening-filtering">
-      <div class="screening-filtering-select">
+      <div class="filter-flex-wrap">
         <select
           v-model="filters.transactionType"
-          class=""
+          class="screening-filtering-select"
         >
           <option value="">
             {{ t('common.actions.all') }}
@@ -485,7 +485,8 @@ defineExpose({
 }
 
 .transaction-rows {
-  border-bottom: 1px solid var(--color-neutral-content);
+  border: 1px solid var(--color-base-300);
+margin-bottom: 0.1rem;
   display: grid;
   grid-template-columns: 1fr;
   transition: background-color 0.2s;

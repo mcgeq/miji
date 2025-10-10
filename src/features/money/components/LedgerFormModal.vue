@@ -220,74 +220,74 @@ onMounted(() => {
 
 <template>
   <div
-    class="bg-black bg-opacity-50 flex items-center inset-0 justify-center fixed z-[60]"
+    class="modal-overlay"
     @click.self="$emit('close')"
   >
-    <div class="rounded-lg bg-white max-h-[90vh] max-w-2xl w-full shadow-2xl overflow-hidden">
+    <div class="modal-container">
       <!-- 头部 -->
-      <div class="p-6 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
-        <h2 class="text-xl text-gray-800 font-bold">
+      <div class="modal-header">
+        <h2 class="modal-title">
           {{ isEdit ? t('familyLedger.editLedger') : t('familyLedger.createNewLedger') }}
         </h2>
-        <button class="text-gray-400 transition-colors hover:text-gray-600" @click="$emit('close')">
-          <LucideX class="h-6 w-6" />
+        <button class="modal-close-btn" @click="$emit('close')">
+          <LucideX class="modal-icon" />
         </button>
       </div>
 
       <!-- 表单内容 -->
-      <div class="p-6 max-h-[calc(90vh-160px)] overflow-y-auto">
-        <form class="space-y-6" @submit.prevent="handleSubmit">
+      <div class="modal-body">
+        <form class="modal-form" @submit.prevent="handleSubmit">
           <!-- 基本信息 -->
-          <div class="space-y-4">
-            <h3 class="text-lg text-gray-900 font-medium pb-2 border-b border-gray-200">
+          <div class="form-section">
+            <h3 class="section-title">
               {{ t('familyLedger.basicInfo')
               }}
             </h3>
 
             <!-- 账本名称 -->
-            <div>
-              <label for="name" class="text-sm text-gray-700 font-medium mb-2 block">
-                {{ t('familyLedger.ledgerName') }} <span class="text-red-500">*</span>
+            <div class="form-field">
+              <label for="name" class="form-label">
+                {{ t('familyLedger.ledgerName') }} <span class="required-mark">*</span>
               </label>
               <input
                 id="name" v-model="form.name" type="text" required maxlength="50"
                 :placeholder="t('common.placeholders.enterName')"
-                class="px-3 py-2 border border-gray-300 rounded-md w-full focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
+                class="form-input"
               >
-              <p class="text-xs text-gray-500 mt-1">
+              <p class="form-help">
                 {{ form.name.length }}/50
               </p>
             </div>
 
             <!-- 账本描述 -->
-            <div>
-              <label for="description" class="text-sm text-gray-700 font-medium mb-2 block">
+            <div class="form-field">
+              <label for="description" class="form-label">
                 {{ t('familyLedger.ledgerDescription') }}
               </label>
               <textarea
                 id="description" v-model="form.description" rows="3" maxlength="200"
                 :placeholder="t('common.placeholders.enterDescription')"
-                class="px-3 py-2 border border-gray-300 rounded-md w-full focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
+                class="form-input"
               />
-              <p class="text-xs text-gray-500 mt-1">
+              <p class="form-help">
                 {{ form.description.length }}/200
               </p>
             </div>
           </div>
 
           <!-- 货币设置 -->
-          <div class="space-y-4">
-            <h3 class="text-lg text-gray-900 font-medium pb-2 border-b border-gray-200">
+          <div class="form-section">
+            <h3 class="section-title">
               {{
                 t('familyLedger.currencySettings') }}
             </h3>
 
-            <div>
-              <label for="currency" class="text-sm text-gray-700 font-medium mb-2 block">
-                {{ t('financial.baseCurrency') }} <span class="text-red-500">*</span>
+            <div class="form-field">
+              <label for="currency" class="form-label">
+                {{ t('financial.baseCurrency') }} <span class="required-mark">*</span>
               </label>
               <select
-                id="currency" v-model="form.baseCurrency.code" required class="px-3 py-2 border border-gray-300 rounded-md w-full focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
+                id="currency" v-model="form.baseCurrency.code" required class="form-input"
                 @change="updateCurrencyInfo"
               >
                 <option value="">
@@ -297,7 +297,7 @@ onMounted(() => {
                   {{ currency.symbol }} {{ currency.code }} - {{ t(currency.code) }}
                 </option>
               </select>
-              <p class="text-xs text-gray-500 mt-1">
+              <p class="form-help">
                 {{ t('messages.selectedAsDefault') }}
               </p>
             </div>
@@ -423,49 +423,234 @@ onMounted(() => {
 
 /* 表单样式优化 */
 .form-section {
-  @apply space-y-4;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }
 
 .form-section h3 {
-  @apply text-lg font-medium text-gray-900 border-b border-gray-200 pb-2;
+  font-size: 1.125rem;
+  font-weight: 500;
+  color: #111827;
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: 0.5rem;
 }
 
 .form-field {
-  @apply space-y-2;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 
 .form-label {
-  @apply block text-sm font-medium text-gray-700;
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
 }
 
 .form-input {
-  @apply w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+  transition: all 0.2s ease-in-out;
+}
+
+.form-input:focus {
+  outline: none;
+  ring: 2px;
+  ring-color: #3b82f6;
+  border-color: #3b82f6;
 }
 
 .form-help {
-  @apply text-xs text-gray-500;
+  font-size: 0.75rem;
+  color: #6b7280;
 }
 
 /* 成员卡片样式 */
 .member-card {
-  @apply flex items-center gap-3 p-3 border border-gray-200 rounded-md hover:border-gray-300 transition-colors;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.375rem;
+  transition: all 0.2s ease-in-out;
+}
+
+.member-card:hover {
+  border-color: #d1d5db;
 }
 
 .member-card input,
 .member-card select {
-  @apply px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:border-blue-500;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.25rem;
+  font-size: 0.875rem;
+  transition: all 0.2s ease-in-out;
+}
+
+.member-card input:focus,
+.member-card select:focus {
+  outline: none;
+  border-color: #3b82f6;
 }
 
 /* 按钮样式 */
 .btn-primary {
-  @apply px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+  padding: 0.5rem 1rem;
+  background-color: #2563eb;
+  color: white;
+  border-radius: 0.375rem;
+  transition: all 0.2s ease-in-out;
+}
+
+.btn-primary:hover {
+  background-color: #1d4ed8;
+}
+
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .btn-secondary {
-  @apply px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors;
+  padding: 0.5rem 1rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+  color: #374151;
+  transition: all 0.2s ease-in-out;
+}
+
+.btn-secondary:hover {
+  background-color: #f9fafb;
 }
 
 .btn-danger {
-  @apply text-red-500 hover:text-red-700 p-1;
+  color: #ef4444;
+  padding: 0.25rem;
+  transition: all 0.2s ease-in-out;
+}
+
+.btn-danger:hover {
+  color: #b91c1c;
+}
+
+/* 模态框样式 */
+.modal-overlay {
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  inset: 0;
+  justify-content: center;
+  position: fixed;
+  z-index: 60;
+}
+
+.modal-container {
+  border-radius: 0.5rem;
+  background-color: white;
+  max-height: 90vh;
+  max-width: 42rem;
+  width: 100%;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+}
+
+.modal-header {
+  padding: 1.5rem;
+  border-bottom: 1px solid #e5e7eb;
+  background-color: #f9fafb;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.modal-title {
+  font-size: 1.25rem;
+  color: #1f2937;
+  font-weight: 700;
+}
+
+.modal-close-btn {
+  color: #9ca3af;
+  transition: color 0.2s ease-in-out;
+}
+
+.modal-close-btn:hover {
+  color: #4b5563;
+}
+
+.modal-icon {
+  height: 1.5rem;
+  width: 1.5rem;
+}
+
+.modal-body {
+  padding: 1.5rem;
+  max-height: calc(90vh - 160px);
+  overflow-y: auto;
+}
+
+.modal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.form-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.section-title {
+  font-size: 1.125rem;
+  color: #111827;
+  font-weight: 500;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.form-label {
+  font-size: 0.875rem;
+  color: #374151;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+  display: block;
+}
+
+.required-mark {
+  color: #ef4444;
+}
+
+.form-input {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+  width: 100%;
+  transition: all 0.2s ease-in-out;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  ring: 2px;
+  ring-color: #3b82f6;
+}
+
+.form-help {
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin-top: 0.25rem;
 }
 </style>

@@ -98,7 +98,7 @@ defineExpose({
 </script>
 
 <template>
-  <div class="min-h-25">
+  <div class="budget-container">
     <!-- 过滤器区域 -->
     <div class="screening-filtering">
       <div class="filter-flex-wrap">
@@ -192,16 +192,16 @@ defineExpose({
     </div>
 
     <!-- 加载状态 -->
-    <div v-if="loading" class="text-gray-600 h-25 flex-justify-center">
+    <div v-if="loading" class="loading-container">
       {{ t('common.loading') }}
     </div>
 
     <!-- 空状态 -->
-    <div v-else-if="pagination.paginatedItems.value.length === 0" class="text-#999 flex-col h-25 flex-justify-center">
-      <div class="text-sm mb-2 opacity-50">
+    <div v-else-if="pagination.paginatedItems.value.length === 0" class="empty-state-container">
+      <div class="empty-state-icon">
         <i class="icon-target" />
       </div>
-      <div class="text-sm">
+      <div class="empty-state-text">
         {{ pagination.totalItems.value === 0 ? t('financial.messages.noBudget') : t('messages.noPatternResult') }}
       </div>
     </div>
@@ -209,7 +209,7 @@ defineExpose({
     <!-- 预算网格 -->
     <div
       v-else
-      class="budget-grid mb-6 gap-5 grid w-full"
+      class="budget-grid"
       :class="[
         { 'grid-template-columns-320': !mediaQueries.isMobile },
       ]"
@@ -217,35 +217,35 @@ defineExpose({
       <div
         v-for="budget in decoratedBudgets"
         :key="budget.serialNum"
-        class="bg-base-100 p-1.5 border rounded-md bg-white transition-all hover:shadow-md"
+        class="budget-card"
         :class="[
-          { 'opacity-60 bg-gray-100': !budget.isActive },
+          { 'budget-card-inactive': !budget.isActive },
         ]" :style="{
           borderColor: budget.color || '#E5E7EB',
         }"
       >
         <!-- Header -->
-        <div class="mb-2 flex flex-wrap gap-2 items-center justify-between">
+        <div class="budget-header">
           <!-- 左侧预算名称 -->
-          <div class="text-gray-800 flex items-center">
-            <span class="text-lg font-semibold">{{ budget.name }}</span>
+          <div class="budget-info">
+            <span class="budget-name">{{ budget.name }}</span>
             <!-- 状态标签 -->
-            <span v-if="!budget.isActive" class="text-xs text-gray-600 ml-2 px-2 py-0.5 rounded bg-gray-200">
+            <span v-if="!budget.isActive" class="status-tag status-inactive">
               {{ t('common.status.inactive') }}
             </span>
-            <span v-else-if="isOverBudget(budget)" class="text-xs text-red-600 ml-2 px-2 py-0.5 rounded bg-red-100">
+            <span v-else-if="isOverBudget(budget)" class="status-tag status-exceeded">
               {{ t('common.status.exceeded') }}
             </span>
             <span
               v-else-if="isLowOnBudget(budget)"
-              class="text-xs text-yellow-600 ml-2 px-2 py-0.5 rounded bg-yellow-100"
+              class="status-tag status-warning"
             >
               {{ t('common.status.warning') }}
             </span>
           </div>
 
           <!-- 右侧按钮组 -->
-          <div class="flex gap-1 items-center md:self-end">
+          <div class="budget-actions">
             <button
               class="money-option-btn money-option-edit-hover" :title="t('common.actions.edit')"
               @click="budget.isActive && emit('edit', budget)"
@@ -257,8 +257,6 @@ defineExpose({
               :title="budget.isActive ? t('common.status.stop') : t('common.status.enabled')"
               @click="emit('toggleActive', budget.serialNum, !budget.isActive)"
             >
-              <!-- <component :is="budget.isActive ? Ban : StopCircle" class="h-4 w-4" /> -->
-
               <LucideBan v-if="budget.isActive" class="wh-4" />
               <LucideStopCircle v-else class="wh-4" />
             </button>
@@ -272,19 +270,19 @@ defineExpose({
         </div>
 
         <!-- Period -->
-        <div class="text-sm text-gray-600 mb-1 flex gap-1 items-center justify-end">
-          <LucideRepeat class="text-gray-600 h-4 w-4" />
+        <div class="budget-period">
+          <LucideRepeat class="period-icon" />
           <span>{{ getRepeatTypeName(budget.repeatPeriod) }}</span>
         </div>
 
         <!-- Progress -->
-        <div class="mb-2">
-          <div class="flex gap-1 items-baseline">
-            <span class="text-lg text-gray-800 font-semibold">{{ formatCurrency(budget.usedAmount) }}</span>
-            <span class="text-sm text-gray-600">/ {{ formatCurrency(budget.amount) }}</span>
-            <div class="bg-base-200 mb-2 ml-auto p-1.5 rounded-md bg-gray-50 flex justify-end">
+        <div class="budget-progress">
+          <div class="progress-header">
+            <span class="used-amount">{{ formatCurrency(budget.usedAmount) }}</span>
+            <span class="total-amount">/ {{ formatCurrency(budget.amount) }}</span>
+            <div class="remaining-amount-container">
               <div
-                class="text-lg font-semibold" :class="[
+                class="remaining-amount" :class="[
                   shouldHighlightRed(budget) ? 'text-red-500' : 'text-green-500',
                 ]"
               >
@@ -292,35 +290,35 @@ defineExpose({
               </div>
             </div>
           </div>
-          <div class="mb-1 rounded-md bg-gray-200 h-1 w-full overflow-hidden">
+          <div class="progress-bar">
             <div
-              class="h-full transition-[width] duration-300" :style="{ width: `${getProgressPercent(budget)}%` }"
+              class="progress-fill" :style="{ width: `${getProgressPercent(budget)}%` }"
               :class="isOverBudget(budget) ? 'bg-red-500' : 'bg-blue-500'"
             />
           </div>
-          <div class="text-lg text-center" :class="shouldHighlightRed(budget) ? 'text-red-500' : 'text-gray-600'">
+          <div class="progress-percentage" :class="shouldHighlightRed(budget) ? 'text-red-500' : 'text-gray-600'">
             {{ getProgressPercent(budget) }}%
           </div>
         </div>
 
         <!-- Info -->
-        <div class="pt-2 border-t border-gray-200">
-          <div class="text-sm mb-1 flex justify-between">
-            <span class="text-gray-600 font-medium"> {{ t('categories.category') }} </span>
+        <div class="budget-info-section">
+          <div class="info-row">
+            <span class="info-label"> {{ t('categories.category') }} </span>
             <span
-              class="text-gray-800 font-medium"
+              class="info-value"
               :title="budget.tooltipCategories"
             >
               {{ budget.displayCategories }}
             </span>
           </div>
-          <div class="text-sm mb-1 flex justify-between">
-            <span class="text-gray-600"> {{ t('date.createDate') }} </span>
-            <span class="text-gray-800">{{ DateUtils.formatDate(budget.createdAt) }}</span>
+          <div class="info-row">
+            <span class="info-label"> {{ t('date.createDate') }} </span>
+            <span class="info-value">{{ DateUtils.formatDate(budget.createdAt) }}</span>
           </div>
-          <div v-if="budget.description" class="text-sm mb-1 flex justify-between last:mb-0">
-            <span class="text-gray-600">{{ t('common.misc.remark') }}</span>
-            <span class="text-gray-800">{{ budget.description }}</span>
+          <div v-if="budget.description" class="info-row info-row-last">
+            <span class="info-label">{{ t('common.misc.remark') }}</span>
+            <span class="info-value">{{ budget.description }}</span>
           </div>
         </div>
       </div>
@@ -341,16 +339,219 @@ defineExpose({
 </template>
 
 <style scoped lang="postcss">
-.loading {
+/* Container */
+.budget-container {
+  min-height: 6.25rem;
+}
+
+/* Loading and Empty States */
+.loading-container {
+  color: #4b5563;
+  height: 6.25rem;
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 200px;
-  color: #666;
 }
 
+.empty-state-container {
+  color: #999;
+  display: flex;
+  flex-direction: column;
+  height: 6.25rem;
+  justify-content: center;
+  align-items: center;
+}
+
+.empty-state-icon {
+  font-size: 0.875rem;
+  margin-bottom: 0.5rem;
+  opacity: 0.5;
+}
+
+.empty-state-text {
+  font-size: 0.875rem;
+}
+
+/* Budget Grid */
 .budget-grid {
+  margin-bottom: 0.5rem;
+  gap: 0.5rem;
   display: grid;
-  gap: 20px;
+  width: 100%;
+}
+
+/* Budget Card */
+.budget-card {
+  background-color: var(--color-base-100);
+  padding: 0.5rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.375rem;
+  transition: all 0.2s ease-in-out;
+}
+
+.budget-card:hover {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.budget-card-inactive {
+  opacity: 0.6;
+  background-color: #f3f4f6;
+}
+
+/* Budget Header */
+.budget-header {
+  margin-bottom: 0.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.budget-info {
+  color: #1f2937;
+  display: flex;
+  align-items: center;
+}
+
+.budget-name {
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+/* Status Tags */
+.status-tag {
+  font-size: 0.75rem;
+  margin-left: 0.5rem;
+  padding: 0.125rem 0.5rem;
+  border-radius: 0.25rem;
+}
+
+.status-inactive {
+  color: #4b5563;
+  background-color: #e5e7eb;
+}
+
+.status-exceeded {
+  color: #dc2626;
+  background-color: #fee2e2;
+}
+
+.status-warning {
+  color: #d97706;
+  background-color: #fef3c7;
+}
+
+/* Budget Actions */
+.budget-actions {
+  display: flex;
+  gap: 0.25rem;
+  align-items: center;
+}
+
+@media (min-width: 768px) {
+  .budget-actions {
+    align-self: flex-end;
+  }
+}
+
+/* Budget Period */
+.budget-period {
+  font-size: 0.875rem;
+  color: #4b5563;
+  margin-bottom: 0.25rem;
+  display: flex;
+  gap: 0.25rem;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.period-icon {
+  color: #4b5563;
+  height: 1rem;
+  width: 1rem;
+}
+
+/* Budget Progress */
+.budget-progress {
+  margin-bottom: 0.5rem;
+}
+
+.progress-header {
+  display: flex;
+  gap: 0.25rem;
+  align-items: baseline;
+}
+
+.used-amount {
+  font-size: 1.125rem;
+  color: #1f2937;
+  font-weight: 600;
+}
+
+.total-amount {
+  font-size: 0.875rem;
+  color: #4b5563;
+}
+
+.remaining-amount-container {
+  background-color: var(--color-base-200);
+  margin-bottom: 0.5rem;
+  margin-left: auto;
+  padding: 0.375rem;
+  border-radius: 0.375rem;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.remaining-amount {
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.progress-bar {
+  margin-bottom: 0.25rem;
+  border-radius: 0.375rem;
+  background-color: #e5e7eb;
+  height: 0.25rem;
+  width: 100%;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  transition: width 0.3s ease;
+}
+
+.progress-percentage {
+  font-size: 1.125rem;
+  text-align: center;
+}
+
+/* Budget Info Section */
+.budget-info-section {
+  padding-top: 0.5rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.info-row {
+  font-size: 0.875rem;
+  margin-bottom: 0.25rem;
+  display: flex;
+  justify-content: space-between;
+}
+
+.info-row-last {
+  margin-bottom: 0;
+}
+
+.info-label {
+  color: #4b5563;
+  font-weight: 500;
+}
+
+.info-value {
+  color: #1f2937;
+  font-weight: 500;
 }
 </style>

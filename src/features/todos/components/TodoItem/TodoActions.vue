@@ -18,7 +18,6 @@ const completed = computed(() => props.completed);
       @click="emit('edit')"
     >
       <Pencil class="icon" />
-      <span class="sr-only">Edit</span>
     </button>
 
     <button
@@ -28,7 +27,6 @@ const completed = computed(() => props.completed);
       @click="emit('add')"
     >
       <Plus class="icon" />
-      <span class="sr-only">Add</span>
     </button>
 
     <button
@@ -39,7 +37,6 @@ const completed = computed(() => props.completed);
       @click="emit('remove')"
     >
       <Trash2 class="icon" />
-      <span class="sr-only">Delete</span>
     </button>
   </div>
 </template>
