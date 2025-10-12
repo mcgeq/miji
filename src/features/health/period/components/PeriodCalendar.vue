@@ -78,7 +78,7 @@ const calendarDays = computed((): CalendarDay[] => {
 
   // 使用 storeToRefs 的响应式引用来确保依赖追踪
   // 访问 .value 以触发响应式更新
-  const _triggerUpdate = periodRecords.value.length + periodDailyRecords.value.length;
+  void (periodRecords.value.length + periodDailyRecords.value.length);
 
   const events = periodStore.getCalendarEvents(
     startDate.toISOString().split('T')[0],
