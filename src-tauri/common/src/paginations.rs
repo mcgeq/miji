@@ -172,8 +172,54 @@ pub struct PagedResult<T: Serialize> {
     pub total_pages: usize,
 }
 
+impl<T: Serialize> PagedResult<T> {
+    /// 异步映射分页结果中的行数据
+    ///
+    /// 用于在分页查询后对数据进行转换，例如本地化或添加关联数据
+    ///
+    /// # 示例
+    /// ```rust,ignore
+    /// let paged = service.list_paged(db, query).await?
+    ///     .map_async(|rows| converter.localize_models(rows))
+    ///     .await?;
+    /// ```
+    pub async fn map_async<U, F, Fut>(self, f: F) -> crate::error::MijiResult<PagedResult<U>>
+    where
+        U: Serialize,
+        F: FnOnce(Vec<T>) -> Fut,
+        Fut: std::future::Future<Output = crate::error::MijiResult<Vec<U>>>,
+    {
+        let rows = f(self.rows).await?;
+        Ok(PagedResult {
+            rows,
+            total_count: self.total_count,
+            current_page: self.current_page,
+            page_size: self.page_size,
+            total_pages: self.total_pages,
+        })
+    }
+}
+
 /// 过滤 trait
 pub trait Filter<E: EntityTrait> {
     /// 转换为查询条件
     fn to_condition(&self) -> Condition;
+}
+
+/// 空过滤器 - 不应用任何过滤条件
+/// 适用于不需要过滤的场景，避免每个模块都定义空的 Filter 结构
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct EmptyFilter;
+
+impl<E: EntityTrait> Filter<E> for EmptyFilter {
+    fn to_condition(&self) -> Condition {
+        Condition::all()
+    }
+}
+
+// EmptyFilter 不需要验证，因为它没有字段
+impl Validate for EmptyFilter {
+    fn validate(&self) -> Result<(), validator::ValidationErrors> {
+        Ok(())
+    }
 }

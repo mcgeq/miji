@@ -1,36 +1,26 @@
 use std::sync::Arc;
 
 use common::{
-    crud::service::{CrudConverter, CrudService, GenericCrudService},
+    crud::service::{CrudConverter, CrudService, GenericCrudService, LocalizableConverter},
     error::{AppError, MijiResult},
-    paginations::{Filter, PagedQuery, PagedResult},
+    paginations::{EmptyFilter, PagedQuery, PagedResult},
     utils::date::DateUtils,
 };
 use entity::localize::LocalizeModel;
-use sea_orm::{ActiveValue, Condition, DbConn, EntityTrait};
-use serde::{Deserialize, Serialize};
-use validator::Validate;
+use sea_orm::{ActiveValue, DbConn, EntityTrait, prelude::async_trait::async_trait};
 
 use crate::{
     dto::todo_reminder::{ReminderCreate, ReminderUpdate},
     service::todo_reminder_hooks::TodoReminderHooks,
 };
 
-#[derive(Debug, Serialize, Deserialize, Validate)]
-#[serde(rename_all = "camelCase")]
-pub struct TodoReminderFilter {}
-
-impl Filter<entity::reminder::Entity> for TodoReminderFilter {
-    fn to_condition(&self) -> sea_orm::Condition {
-        Condition::all()
-    }
-}
+pub type TodoReminderFilter = EmptyFilter;
 
 #[derive(Debug)]
-pub struct PeriodSettingsConverter;
+pub struct TodoReminderConverter;
 
 impl CrudConverter<entity::reminder::Entity, ReminderCreate, ReminderUpdate>
-    for PeriodSettingsConverter
+    for TodoReminderConverter
 {
     fn create_to_active_model(
         &self,
@@ -63,37 +53,31 @@ impl CrudConverter<entity::reminder::Entity, ReminderCreate, ReminderUpdate>
     }
 }
 
-impl PeriodSettingsConverter {
-    pub async fn model_with_local(
+#[async_trait]
+impl LocalizableConverter<entity::reminder::Model> for TodoReminderConverter {
+    async fn model_with_local(
         &self,
         model: entity::reminder::Model,
     ) -> MijiResult<entity::reminder::Model> {
         Ok(model.to_local())
     }
-
-    pub async fn localize_models(
-        &self,
-        models: Vec<entity::reminder::Model>,
-    ) -> MijiResult<Vec<entity::reminder::Model>> {
-        futures::future::try_join_all(models.into_iter().map(|m| self.model_with_local(m))).await
-    }
 }
 
-// 交易服务实现
+// 待办事项提醒服务实现
 pub struct TodoRemindersService {
     inner: GenericCrudService<
         entity::reminder::Entity,
         TodoReminderFilter,
         ReminderCreate,
         ReminderUpdate,
-        PeriodSettingsConverter,
+        TodoReminderConverter,
         TodoReminderHooks,
     >,
 }
 
 impl TodoRemindersService {
     pub fn new(
-        converter: PeriodSettingsConverter,
+        converter: TodoReminderConverter,
         hooks: TodoReminderHooks,
         logger: Arc<dyn common::log::logger::OperationLogger>,
     ) -> Self {
@@ -109,7 +93,7 @@ impl std::ops::Deref for TodoRemindersService {
         TodoReminderFilter,
         ReminderCreate,
         ReminderUpdate,
-        PeriodSettingsConverter,
+        TodoReminderConverter,
         TodoReminderHooks,
     >;
 
@@ -180,15 +164,10 @@ impl TodoRemindersService {
         db: &DbConn,
         query: PagedQuery<TodoReminderFilter>,
     ) -> MijiResult<PagedResult<entity::reminder::Model>> {
-        let paged = self.list_paged(db, query).await?;
-        let models = self.converter().localize_models(paged.rows).await?;
-        Ok(PagedResult {
-            rows: models,
-            total_count: paged.total_count,
-            current_page: paged.current_page,
-            page_size: paged.page_size,
-            total_pages: paged.total_pages,
-        })
+        self.list_paged(db, query)
+            .await?
+            .map_async(|rows| self.converter().localize_models(rows))
+            .await
     }
 
     pub async fn reminder_create_batch(
@@ -223,7 +202,7 @@ impl TodoRemindersService {
 
 pub fn get_reminder_service() -> TodoRemindersService {
     TodoRemindersService::new(
-        PeriodSettingsConverter,
+        TodoReminderConverter,
         TodoReminderHooks,
         Arc::new(common::log::logger::NoopLogger),
     )

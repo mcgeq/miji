@@ -181,7 +181,7 @@ impl BudgetConverter {
         })
     }
 }
-// 交易服务实现
+// 预算服务实现
 pub struct BudgetService {
     inner: GenericCrudService<
         entity::budget::Entity,

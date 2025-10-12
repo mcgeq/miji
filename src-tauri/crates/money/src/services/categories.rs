@@ -1,30 +1,20 @@
 use std::sync::Arc;
 
 use common::{
-    crud::service::{CrudConverter, CrudService, GenericCrudService},
+    crud::service::{CrudConverter, CrudService, GenericCrudService, LocalizableConverter},
     error::{AppError, MijiResult},
-    paginations::{Filter, PagedQuery, PagedResult},
+    paginations::{EmptyFilter, PagedQuery, PagedResult},
     utils::date::DateUtils,
 };
 use entity::localize::LocalizeModel;
-use sea_orm::{ActiveValue, Condition, DbConn, prelude::async_trait::async_trait};
-use serde::{Deserialize, Serialize};
-use validator::Validate;
+use sea_orm::{ActiveValue, DbConn, prelude::async_trait::async_trait};
 
 use crate::{
     dto::categories::{CategoryCreate, CategoryUpdate},
     services::categories_hooks::CategoryHooks,
 };
 
-#[derive(Debug, Serialize, Deserialize, Validate)]
-#[serde(rename_all = "camelCase")]
-pub struct CategoryFilter {}
-
-impl Filter<entity::categories::Entity> for CategoryFilter {
-    fn to_condition(&self) -> sea_orm::Condition {
-        Condition::all()
-    }
-}
+pub type CategoryFilter = EmptyFilter;
 
 #[derive(Debug)]
 pub struct CategoryConverter;
@@ -63,8 +53,9 @@ impl CrudConverter<entity::categories::Entity, CategoryCreate, CategoryUpdate>
     }
 }
 
-impl CategoryConverter {
-    pub async fn model_with_local(
+#[async_trait]
+impl LocalizableConverter<entity::categories::Model> for CategoryConverter {
+    async fn model_with_local(
         &self,
         model: entity::categories::Model,
     ) -> MijiResult<entity::categories::Model> {
@@ -222,21 +213,10 @@ impl CategoryService {
         db: &DbConn,
         query: PagedQuery<CategoryFilter>,
     ) -> MijiResult<PagedResult<entity::categories::Model>> {
-        let paged_result = self.list_paged(db, query).await?;
-
-        // 对 paged_result.items 做本地化
-        let mut local_items = Vec::with_capacity(paged_result.rows.len());
-        for model in paged_result.rows {
-            local_items.push(self.converter().model_with_local(model).await?);
-        }
-
-        Ok(PagedResult {
-            rows: local_items,
-            total_count: paged_result.total_count,
-            total_pages: paged_result.total_pages,
-            current_page: paged_result.current_page,
-            page_size: paged_result.page_size,
-        })
+        self.list_paged(db, query)
+            .await?
+            .map_async(|rows| self.converter().localize_models(rows))
+            .await
     }
 
     pub async fn category_list(&self, db: &DbConn) -> MijiResult<Vec<entity::categories::Model>> {

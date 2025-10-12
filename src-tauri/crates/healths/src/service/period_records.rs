@@ -37,20 +37,20 @@ impl Filter<entity::period_records::Entity> for PeriodRecordFilter {
         }
         if let Some(start_date) = &self.start_date {
             if let Some(start) = &start_date.start {
-                condition = condition.add(entity::budget::Column::StartDate.gte(start));
+                condition = condition.add(entity::period_records::Column::StartDate.gte(start));
             }
             if let Some(end) = &start_date.end {
-                condition = condition.add(entity::budget::Column::StartDate.lte(end))
+                condition = condition.add(entity::period_records::Column::StartDate.lte(end))
             }
         }
 
         // End Date (assuming ISO 8601 format)
         if let Some(end_date) = &self.end_date {
             if let Some(start) = &end_date.start {
-                condition = condition.add(entity::budget::Column::EndDate.gte(start));
+                condition = condition.add(entity::period_records::Column::EndDate.gte(start));
             }
             if let Some(end) = &end_date.end {
-                condition = condition.add(entity::budget::Column::EndDate.lte(end))
+                condition = condition.add(entity::period_records::Column::EndDate.lte(end))
             }
         }
         condition
@@ -104,7 +104,7 @@ impl PeriodRecordConverter {
     }
 }
 
-// 交易服务实现
+// 经期记录服务实现
 pub struct PeriodRecordService {
     inner: GenericCrudService<
         entity::period_records::Entity,

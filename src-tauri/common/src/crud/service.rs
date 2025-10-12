@@ -127,6 +127,25 @@ where
     fn table_name(&self) -> &'static str;
 }
 
+/// 本地化转换器 trait - 用于统一模型本地化逻辑
+/// 
+/// 用于将数据库模型转换为本地时区，避免每个 Converter 重复实现相同的逻辑
+#[async_trait]
+pub trait LocalizableConverter<Model>
+where
+    Model: Send + Sync + 'static,
+{
+    /// 将单个模型转换为本地时区
+    async fn model_with_local(&self, model: Model) -> MijiResult<Model>;
+
+    /// 批量将模型转换为本地时区（默认使用并行处理以提高性能）
+    async fn localize_models(&self, models: Vec<Model>) -> MijiResult<Vec<Model>> {
+        futures::future::try_join_all(
+            models.into_iter().map(|m| self.model_with_local(m))
+        ).await
+    }
+}
+
 /// 通用 CRUD 服务实现
 pub struct GenericCrudService<E, F, C, U, Conv, H> {
     converter: Conv,

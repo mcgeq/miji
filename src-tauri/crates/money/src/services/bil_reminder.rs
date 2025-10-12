@@ -54,7 +54,7 @@ pub struct BilReminderFilters {
 #[derive(Debug)]
 pub struct BilReminderConverter;
 
-// 交易服务实现
+// 账单提醒服务实现
 pub struct BilReminderService {
     inner: GenericCrudService<
         entity::bil_reminder::Entity,

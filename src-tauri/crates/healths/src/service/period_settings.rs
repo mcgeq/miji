@@ -1,30 +1,20 @@
 use std::sync::Arc;
 
 use common::{
-    crud::service::{CrudConverter, CrudService, GenericCrudService},
+    crud::service::{CrudConverter, CrudService, GenericCrudService, LocalizableConverter},
     error::{AppError, MijiResult},
-    paginations::{Filter, PagedQuery, PagedResult},
+    paginations::{EmptyFilter, PagedQuery, PagedResult},
     utils::date::DateUtils,
 };
 use entity::localize::LocalizeModel;
-use sea_orm::{ActiveValue, Condition, DbConn, EntityTrait, prelude::async_trait::async_trait};
-use serde::{Deserialize, Serialize};
-use validator::Validate;
+use sea_orm::{ActiveValue, DbConn, EntityTrait, prelude::async_trait::async_trait};
 
 use crate::{
     dto::period_settings::{PeriodSettingsCreate, PeriodSettingsUpdate},
     service::period_settings_hooks::PeriodSettingsHooks,
 };
 
-#[derive(Debug, Serialize, Deserialize, Validate)]
-#[serde(rename_all = "camelCase")]
-pub struct PeriodSettingsFilter {}
-
-impl Filter<entity::period_settings::Entity> for PeriodSettingsFilter {
-    fn to_condition(&self) -> sea_orm::Condition {
-        Condition::all()
-    }
-}
+pub type PeriodSettingsFilter = EmptyFilter;
 
 #[derive(Debug)]
 pub struct PeriodSettingsConverter;
@@ -64,8 +54,9 @@ impl CrudConverter<entity::period_settings::Entity, PeriodSettingsCreate, Period
     }
 }
 
-impl PeriodSettingsConverter {
-    pub async fn model_with_local(
+#[async_trait]
+impl LocalizableConverter<entity::period_settings::Model> for PeriodSettingsConverter {
+    async fn model_with_local(
         &self,
         model: entity::period_settings::Model,
     ) -> MijiResult<entity::period_settings::Model> {
@@ -73,7 +64,7 @@ impl PeriodSettingsConverter {
     }
 }
 
-// 交易服务实现
+// 经期设置服务实现
 pub struct PeriodSettingsService {
     inner: GenericCrudService<
         entity::period_settings::Entity,

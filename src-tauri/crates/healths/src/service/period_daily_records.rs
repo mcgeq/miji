@@ -167,7 +167,7 @@ impl PeriodDailyRecordConverter {
     }
 }
 
-// 交易服务实现
+// 经期日常记录服务实现
 pub struct PeriodDailyRecordService {
     inner: GenericCrudService<
         entity::period_daily_records::Entity,

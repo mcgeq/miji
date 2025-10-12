@@ -874,6 +874,7 @@ dependencies = [
  "base64 0.22.1",
  "chrono",
  "chrono-tz",
+ "futures",
  "jsonwebtoken",
  "log",
  "miji_derive",

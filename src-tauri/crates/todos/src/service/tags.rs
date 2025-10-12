@@ -1,30 +1,20 @@
 use std::sync::Arc;
 
 use common::{
-    crud::service::{CrudConverter, CrudService, GenericCrudService},
+    crud::service::{CrudConverter, CrudService, GenericCrudService, LocalizableConverter},
     error::{AppError, MijiResult},
-    paginations::{Filter, PagedQuery, PagedResult},
+    paginations::{EmptyFilter, PagedQuery, PagedResult},
     utils::date::DateUtils,
 };
 use entity::localize::LocalizeModel;
-use sea_orm::{ActiveValue, Condition, DbConn, EntityTrait};
-use serde::{Deserialize, Serialize};
-use validator::Validate;
+use sea_orm::{ActiveValue, DbConn, EntityTrait, prelude::async_trait::async_trait};
 
 use crate::{
     dto::tags::{TagCreate, TagUpdate},
     service::tags_hooks::TagsHooks,
 };
 
-#[derive(Debug, Serialize, Deserialize, Validate)]
-#[serde(rename_all = "camelCase")]
-pub struct TagsFilter {}
-
-impl Filter<entity::tag::Entity> for TagsFilter {
-    fn to_condition(&self) -> sea_orm::Condition {
-        Condition::all()
-    }
-}
+pub type TagsFilter = EmptyFilter;
 
 #[derive(Debug)]
 pub struct TagsConverter;
@@ -58,23 +48,17 @@ impl CrudConverter<entity::tag::Entity, TagCreate, TagUpdate> for TagsConverter 
     }
 }
 
-impl TagsConverter {
-    pub async fn model_with_local(
+#[async_trait]
+impl LocalizableConverter<entity::tag::Model> for TagsConverter {
+    async fn model_with_local(
         &self,
         model: entity::tag::Model,
     ) -> MijiResult<entity::tag::Model> {
         Ok(model.to_local())
     }
-
-    pub async fn localize_models(
-        &self,
-        models: Vec<entity::tag::Model>,
-    ) -> MijiResult<Vec<entity::tag::Model>> {
-        futures::future::try_join_all(models.into_iter().map(|m| self.model_with_local(m))).await
-    }
 }
 
-// 交易服务实现
+// 标签服务实现
 pub struct TagsService {
     inner: GenericCrudService<
         entity::tag::Entity,
@@ -166,15 +150,10 @@ impl TagsService {
         db: &DbConn,
         query: PagedQuery<TagsFilter>,
     ) -> MijiResult<PagedResult<entity::tag::Model>> {
-        let paged = self.list_paged(db, query).await?;
-        let models = self.converter().localize_models(paged.rows).await?;
-        Ok(PagedResult {
-            rows: models,
-            total_count: paged.total_count,
-            current_page: paged.current_page,
-            page_size: paged.page_size,
-            total_pages: paged.total_pages,
-        })
+        self.list_paged(db, query)
+            .await?
+            .map_async(|rows| self.converter().localize_models(rows))
+            .await
     }
 
     // ✅ 批量创建

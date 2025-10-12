@@ -1,7 +1,10 @@
 use std::sync::Arc;
 
 use common::{
-    crud::service::{CrudConverter, CrudService, GenericCrudService, update_entity_columns_simple},
+    crud::service::{
+        CrudConverter, CrudService, GenericCrudService, LocalizableConverter,
+        update_entity_columns_simple,
+    },
     error::{AppError, MijiResult},
     paginations::{DateRange, Filter, PagedQuery, PagedResult, Sortable},
     utils::date::DateUtils,
@@ -9,7 +12,8 @@ use common::{
 use entity::{localize::LocalizeModel, todo::Status};
 use sea_orm::{
     ActiveValue, ColumnTrait, Condition, DbConn, EntityTrait, Order, PaginatorTrait, QueryFilter,
-    QueryOrder, QuerySelect, prelude::Expr,
+    QueryOrder, QuerySelect,
+    prelude::{Expr, async_trait::async_trait},
 };
 use serde::{Deserialize, Serialize};
 use validator::Validate;
@@ -71,23 +75,17 @@ impl CrudConverter<entity::todo::Entity, TodoCreate, TodoUpdate> for TodosConver
     }
 }
 
-impl TodosConverter {
-    pub async fn model_with_local(
+#[async_trait]
+impl LocalizableConverter<entity::todo::Model> for TodosConverter {
+    async fn model_with_local(
         &self,
         model: entity::todo::Model,
     ) -> MijiResult<entity::todo::Model> {
         Ok(model.to_local())
     }
-
-    pub async fn localize_models(
-        &self,
-        models: Vec<entity::todo::Model>,
-    ) -> MijiResult<Vec<entity::todo::Model>> {
-        futures::future::try_join_all(models.into_iter().map(|m| self.model_with_local(m))).await
-    }
 }
 
-// 交易服务实现
+// 待办事项服务实现
 pub struct TodosService {
     inner: GenericCrudService<
         entity::todo::Entity,
@@ -240,19 +238,18 @@ impl TodosService {
             .await
             .map_err(AppError::from)?;
 
-        // Apply localization to models
-        let models = self.converter().localize_models(rows).await?;
-
         // Calculate total pages
         let total_pages = total_count.div_ceil(query.page_size);
 
-        Ok(PagedResult {
-            rows: models,
+        PagedResult {
+            rows,
             total_count,
             current_page: query.current_page,
             page_size: query.page_size,
             total_pages,
-        })
+        }
+        .map_async(|rows| self.converter().localize_models(rows))
+        .await
     }
 
     pub async fn todo_create_batch(

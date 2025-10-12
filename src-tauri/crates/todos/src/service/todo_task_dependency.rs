@@ -1,30 +1,20 @@
 use std::sync::Arc;
 
 use common::{
-    crud::service::{CrudConverter, CrudService, GenericCrudService},
+    crud::service::{CrudConverter, CrudService, GenericCrudService, LocalizableConverter},
     error::{AppError, MijiResult},
-    paginations::Filter,
+    paginations::EmptyFilter,
     utils::date::DateUtils,
 };
 use entity::localize::LocalizeModel;
-use sea_orm::{ActiveValue, Condition, DbConn, EntityTrait};
-use serde::{Deserialize, Serialize};
-use validator::Validate;
+use sea_orm::{ActiveValue, DbConn, EntityTrait, prelude::async_trait::async_trait};
 
 use crate::{
     dto::todo_task_dependency::{TaskDependencyCreate, TaskDependencyUpdate},
     service::todo_task_dependency_hooks::TodoTaskDependencyHooks,
 };
 
-#[derive(Debug, Serialize, Deserialize, Validate)]
-#[serde(rename_all = "camelCase")]
-pub struct TodoTaskDependencyFilter {}
-
-impl Filter<entity::task_dependency::Entity> for TodoTaskDependencyFilter {
-    fn to_condition(&self) -> sea_orm::Condition {
-        Condition::all()
-    }
-}
+pub type TodoTaskDependencyFilter = EmptyFilter;
 
 #[derive(Debug)]
 pub struct TodoTaskDependencyConverter;
@@ -65,25 +55,21 @@ impl CrudConverter<entity::task_dependency::Entity, TaskDependencyCreate, TaskDe
     }
 
     fn table_name(&self) -> &'static str {
-        "period_settings"
+        "task_dependency"
     }
 }
 
-impl TodoTaskDependencyConverter {
-    pub async fn model_with_local(
+#[async_trait]
+impl LocalizableConverter<entity::task_dependency::Model> for TodoTaskDependencyConverter {
+    async fn model_with_local(
         &self,
         model: entity::task_dependency::Model,
     ) -> MijiResult<entity::task_dependency::Model> {
         Ok(model.to_local())
     }
+}
 
-    pub async fn localize_models(
-        &self,
-        models: Vec<entity::task_dependency::Model>,
-    ) -> MijiResult<Vec<entity::task_dependency::Model>> {
-        futures::future::try_join_all(models.into_iter().map(|m| self.model_with_local(m))).await
-    }
-
+impl TodoTaskDependencyConverter {
     pub fn parse_id(id: &str) -> (String, String) {
         let mut parts = id.splitn(2, ':');
         let category_name = parts.next().unwrap_or_default().to_string();
@@ -92,8 +78,8 @@ impl TodoTaskDependencyConverter {
     }
 }
 
-// 交易服务实现
-pub struct PeriodSettingsService {
+// 任务依赖服务实现
+pub struct TodoTaskDependencyService {
     inner: GenericCrudService<
         entity::task_dependency::Entity,
         TodoTaskDependencyFilter,
@@ -104,7 +90,7 @@ pub struct PeriodSettingsService {
     >,
 }
 
-impl PeriodSettingsService {
+impl TodoTaskDependencyService {
     pub fn new(
         converter: TodoTaskDependencyConverter,
         hooks: TodoTaskDependencyHooks,
@@ -116,7 +102,7 @@ impl PeriodSettingsService {
     }
 }
 
-impl std::ops::Deref for PeriodSettingsService {
+impl std::ops::Deref for TodoTaskDependencyService {
     type Target = GenericCrudService<
         entity::task_dependency::Entity,
         TodoTaskDependencyFilter,
@@ -131,8 +117,8 @@ impl std::ops::Deref for PeriodSettingsService {
     }
 }
 
-impl PeriodSettingsService {
-    pub async fn period_settings_get(
+impl TodoTaskDependencyService {
+    pub async fn task_dependency_get(
         &self,
         db: &DbConn,
         serial_num: String,
@@ -146,13 +132,13 @@ impl PeriodSettingsService {
         let model = opt_model.ok_or_else(|| {
             AppError::simple(
                 common::BusinessCode::NotFound,
-                "period_settings notfound".to_string(),
+                "task_dependency not found".to_string(),
             )
         })?;
         self.converter().model_with_local(model).await
     }
 
-    pub async fn period_settings_create(
+    pub async fn task_dependency_create(
         &self,
         db: &DbConn,
         data: TaskDependencyCreate,
@@ -161,7 +147,7 @@ impl PeriodSettingsService {
         self.converter().model_with_local(model).await
     }
 
-    pub async fn period_settings_update(
+    pub async fn task_dependency_update(
         &self,
         db: &DbConn,
         serial_num: String,
@@ -173,8 +159,8 @@ impl PeriodSettingsService {
     }
 }
 
-pub fn get_settings_service() -> PeriodSettingsService {
-    PeriodSettingsService::new(
+pub fn get_task_dependency_service() -> TodoTaskDependencyService {
+    TodoTaskDependencyService::new(
         TodoTaskDependencyConverter,
         TodoTaskDependencyHooks,
         Arc::new(common::log::logger::NoopLogger),

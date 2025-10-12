@@ -11,7 +11,6 @@ use sea_orm::{
     ActiveValue::Set, ColumnTrait, Condition, DatabaseConnection, EntityTrait, QueryFilter,
     prelude::async_trait::async_trait, sea_query::IntoCondition,
 };
-use tracing::info;
 use validator::Validate;
 
 use crate::{
@@ -212,7 +211,6 @@ impl UserService {
         if conditions.is_empty() {
             return Ok(false);
         }
-        info!("{}", &query.email.clone().unwrap());
         let exists = UserEntity::find()
             .filter(conditions.into_condition())
             .one(db)
