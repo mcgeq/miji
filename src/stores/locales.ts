@@ -1,15 +1,9 @@
 // stores/locales.ts
-import { createStore } from '@tauri-store/vue';
 import { defineStore } from 'pinia';
 
 // =============================================================================
 // 类型定义
 // =============================================================================
-
-interface LocaleState {
-  currentLocale: string | null;
-  [key: string]: any;
-}
 
 interface SupportedLocale {
   code: string;
@@ -32,21 +26,6 @@ const SUPPORTED_LOCALES: readonly SupportedLocale[] = Object.freeze([
 ] as const);
 
 const SUPPORTED_LOCALE_CODES = SUPPORTED_LOCALES.map(l => l.code);
-
-// =============================================================================
-// Tauri Store 核心实现 (保持原有API不变)
-// =============================================================================
-
-// 创建持久化 store，默认值
-const localeStore = createStore<LocaleState>('locale', {
-  currentLocale: null,
-});
-
-// 本地响应式引用
-const locale = ref({ ...localeStore.value });
-
-// 初始化状态
-let isInitialized = false;
 
 // =============================================================================
 // 工具函数
@@ -99,29 +78,6 @@ async function loadLocaleMessages(localeCode: string): Promise<void> {
   }
 }
 
-// =============================================================================
-// 核心API函数 (保持原有接口不变)
-// =============================================================================
-
-/**
- * 初始化函数，加载持久化数据
- */
-export async function startLocaleStore(): Promise<void> {
-  try {
-    if (!isInitialized) {
-      await localeStore.$tauri.start();
-      locale.value = { ...localeStore.value };
-      isInitialized = true;
-      safeLog('Locale store initialized successfully');
-    }
-  } catch (error) {
-    console.error('Failed to start locale store:', error);
-    // 设置默认值
-    locale.value = { currentLocale: DEFAULT_LOCALE };
-    isInitialized = true;
-  }
-}
-
 /**
  * 检查是否为支持的语言
  */
@@ -160,37 +116,6 @@ export function getBrowserLocale(): string {
 }
 
 /**
- * 获取当前语言
- */
-export function getCurrentLocale(): string {
-  return locale.value.currentLocale || DEFAULT_LOCALE;
-}
-
-/**
- * 更新语言，并同步到持久化 store
- */
-export function updateLocale(newLocale: string | null): void {
-  try {
-    const targetLocale = newLocale || DEFAULT_LOCALE;
-
-    if (!isSupportedLocale(targetLocale)) {
-      console.warn(`Unsupported locale: ${targetLocale}, fallback to default`);
-      return;
-    }
-
-    localeStore.value.currentLocale = targetLocale;
-    locale.value = { ...localeStore.value };
-
-    // 更新HTML语言属性
-    updateHTMLLang(targetLocale);
-
-    safeLog(`Locale updated to: ${targetLocale}`);
-  } catch (error) {
-    console.error('Failed to update locale:', error);
-  }
-}
-
-/**
  * 获取语言显示名称
  */
 export function getLocaleName(localeCode: string): string {
@@ -213,58 +138,73 @@ export function getSupportedLocales(): readonly SupportedLocale[] {
   return SUPPORTED_LOCALES;
 }
 
-/**
- * 重置为默认语言
- */
-export function resetLocale(): void {
-  updateLocale(DEFAULT_LOCALE);
-}
-
 // =============================================================================
-// 响应式监听
-// =============================================================================
-
-// 监听 store 变化，更新本地响应式数据
-watchEffect(() => {
-  if (isInitialized) {
-    locale.value = { ...localeStore.value };
-  }
-});
-
-// =============================================================================
-// Pinia Store 集成
+// Pinia Store with Tauri Persistence
 // =============================================================================
 
 /**
- * Pinia store for locale management
- * 提供更丰富的响应式API和组合式函数支持
+ * Pinia store for locale management with Tauri persistence
+ * 使用 @tauri-store/pinia 提供持久化和响应式支持
  */
 export const useLocaleStore = defineStore('locale', () => {
   // 状态
-  const isLoading = ref(false);
-  const isInitializing = ref(false);
+  const currentLocale = ref<string>(DEFAULT_LOCALE);
+  const isLoading = ref<boolean>(false);
+  const isInitializing = ref<boolean>(false);
 
   // 计算属性
-  const currentLocale = computed(() => getCurrentLocale());
-
-  const currentLocaleInfo = computed(() => {
-    const code = currentLocale.value;
-    return SUPPORTED_LOCALES.find(l => l.code === code) || SUPPORTED_LOCALES[0];
+  const currentLocaleInfo = computed((): SupportedLocale => {
+    return SUPPORTED_LOCALES.find(l => l.code === currentLocale.value) || SUPPORTED_LOCALES[0];
   });
 
-  const currentLocaleName = computed(() => currentLocaleInfo.value.name);
-  const currentLocaleFlag = computed(() => currentLocaleInfo.value.flag);
+  const currentLocaleName = computed((): string => {
+    return currentLocaleInfo.value.name;
+  });
 
-  const supportedLocales = computed(() => SUPPORTED_LOCALES);
+  const currentLocaleFlag = computed((): string => {
+    return currentLocaleInfo.value.flag;
+  });
 
-  const isRTL = computed(() => {
+  const supportedLocales = computed((): readonly SupportedLocale[] => {
+    return SUPPORTED_LOCALES;
+  });
+
+  const isRTL = computed((): boolean => {
     // 如果需要支持 RTL 语言，可以在这里添加逻辑
     // const rtlLocales = ['ar', 'he', 'fa'];
     // return rtlLocales.some(lang => currentLocale.value.startsWith(lang));
     return false;
   });
 
-  const setLocale = async (newLocale: string): Promise<boolean> => {
+  // 方法
+  async function init(): Promise<void> {
+    if (isInitializing.value)
+      return;
+
+    try {
+      isInitializing.value = true;
+      isLoading.value = true;
+
+      // @tauri-store/pinia 会自动加载持久化的数据
+      // 如果没有保存的语言或语言不受支持，使用浏览器语言
+      if (!currentLocale.value || !isSupportedLocale(currentLocale.value)) {
+        const browserLocale = getBrowserLocale();
+        await setLocale(browserLocale);
+      } else {
+        updateHTMLLang(currentLocale.value);
+      }
+
+      safeLog('Locale store initialized successfully', { currentLocale: currentLocale.value });
+    } catch (error) {
+      console.error('Locale store initialization failed:', error);
+      await setLocale(DEFAULT_LOCALE);
+    } finally {
+      isLoading.value = false;
+      isInitializing.value = false;
+    }
+  }
+
+  async function setLocale(newLocale: string): Promise<boolean> {
     if (!isSupportedLocale(newLocale)) {
       console.warn(`Unsupported locale: ${newLocale}`);
       return false;
@@ -273,8 +213,11 @@ export const useLocaleStore = defineStore('locale', () => {
     try {
       isLoading.value = true;
 
-      // 更新核心store
-      updateLocale(newLocale);
+      // 更新状态（会自动持久化）
+      currentLocale.value = newLocale;
+
+      // 更新HTML语言属性
+      updateHTMLLang(newLocale);
 
       // 加载语言包
       await loadLocaleMessages(newLocale);
@@ -287,40 +230,9 @@ export const useLocaleStore = defineStore('locale', () => {
     } finally {
       isLoading.value = false;
     }
-  };
+  }
 
-  // 方法
-  const init = async (): Promise<void> => {
-    if (isInitializing.value)
-      return;
-
-    try {
-      isInitializing.value = true;
-      isLoading.value = true;
-
-      await startLocaleStore();
-
-      const savedLocale = getCurrentLocale();
-      if (savedLocale && isSupportedLocale(savedLocale)) {
-        // 语言已经通过 startLocaleStore 加载
-        updateHTMLLang(savedLocale);
-      } else {
-        // 尝试从浏览器获取语言设置
-        const browserLocale = getBrowserLocale();
-        await setLocale(browserLocale);
-      }
-
-      safeLog('Pinia locale store initialized successfully');
-    } catch (error) {
-      console.error('Pinia locale store initialization failed:', error);
-      await setLocale(DEFAULT_LOCALE);
-    } finally {
-      isLoading.value = false;
-      isInitializing.value = false;
-    }
-  };
-
-  const switchToNextLocale = async (): Promise<void> => {
+  async function switchToNextLocale(): Promise<void> {
     const currentIndex = SUPPORTED_LOCALES.findIndex(
       l => l.code === currentLocale.value,
     );
@@ -328,42 +240,39 @@ export const useLocaleStore = defineStore('locale', () => {
     const nextLocale = SUPPORTED_LOCALES[nextIndex].code;
 
     await setLocale(nextLocale);
-  };
+  }
 
-  const resetToDefault = async (): Promise<void> => {
+  async function resetToDefault(): Promise<void> {
     await setLocale(DEFAULT_LOCALE);
-  };
+  }
 
-  // 监听语言变化
-  watch(currentLocale, (newLocale, oldLocale) => {
-    if (newLocale !== oldLocale) {
-      safeLog(`Locale changed from ${oldLocale} to ${newLocale}`);
-      // 这里可以添加语言变化的副作用
-      // 例如：触发全局事件、更新第三方库配置等
-    }
-  });
+  function getCurrentLocale(): string {
+    return currentLocale.value || DEFAULT_LOCALE;
+  }
 
   return {
-    // 状态 (只读)
+    // 状态（不使用 readonly，因为 @tauri-store/pinia 需要写入权限来加载持久化数据）
     currentLocale,
-    supportedLocales,
-    currentLocaleInfo,
-    isLoading: computed(() => isLoading.value),
-    isInitializing: computed(() => isInitializing.value),
+    isLoading,
+    isInitializing,
 
     // 计算属性
+    currentLocaleInfo,
     currentLocaleName,
     currentLocaleFlag,
+    supportedLocales,
     isRTL,
 
     // 方法
     init,
     setLocale,
-    getCurrentLocale, // 兼容性方法
-    isSupportedLocale,
-    getBrowserLocale,
     switchToNextLocale,
     resetToDefault,
+    getCurrentLocale,
+
+    // 工具方法
+    isSupportedLocale,
+    getBrowserLocale,
     getLocaleName,
     getLocaleFlag,
     getSupportedLocales,
@@ -374,14 +283,44 @@ export const useLocaleStore = defineStore('locale', () => {
 // 向后兼容性导出
 // =============================================================================
 
-// 导出只读状态防止误修改
-export const localeState = readonly(locale);
+/**
+ * @deprecated 使用 useLocaleStore() 替代
+ * 为了向后兼容而保留
+ */
+export async function startLocaleStore(): Promise<void> {
+  const store = useLocaleStore();
+  // 启动 Tauri store 持久化和同步
+  await store.$tauri.start();
+  // 初始化 store 逻辑
+  await store.init();
+}
 
-// 导出 store 实例（向后兼容）
-export { localeStore };
+/**
+ * @deprecated 使用 useLocaleStore().getCurrentLocale() 替代
+ */
+export function getCurrentLocale(): string {
+  const store = useLocaleStore();
+  return store.getCurrentLocale();
+}
+
+/**
+ * @deprecated 使用 useLocaleStore().setLocale() 替代
+ */
+export function updateLocale(newLocale: string | null): void {
+  const store = useLocaleStore();
+  store.setLocale(newLocale || DEFAULT_LOCALE);
+}
+
+/**
+ * @deprecated 使用 useLocaleStore().resetToDefault() 替代
+ */
+export function resetLocale(): void {
+  const store = useLocaleStore();
+  store.resetToDefault();
+}
 
 // 导出类型定义
-export type { LocaleState, SupportedLocale };
+export type { SupportedLocale };
 
 // 兼容性别名
 export const useLocaleStores = useLocaleStore;

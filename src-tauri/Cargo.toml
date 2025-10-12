@@ -72,6 +72,7 @@ sea-orm = { version = "1.1.14", features = [
   "macros",
   "with-rust_decimal",
 ] }
+tauri-plugin-pinia = "4.1.0"
 validator = { version = "0.20.0", features = ["derive"] }
 zeroize = { version = "1.8.1", features = ["serde", "zeroize_derive"] }
 lazy_static = "1.5.0"
@@ -117,14 +118,13 @@ serde_json = { workspace = true }
 sea-orm = { workspace = true }
 log = { workspace = true }
 tauri-plugin-log = { workspace = true }
+tauri-plugin-pinia = { workspace = true }
 migration = { path = "./migration" }
 common = { workspace = true }
 tokio = { workspace = true }
 darling = { workspace = true }
 dotenvy.workspace = true
-tauri-plugin-svelte = "2.6.0"
 chrono = { workspace = true }
-tauri-plugin-vue = "1.0.0"
 futures = { workspace = true, features = ["futures-executor"] }
 entity = { workspace = true }
 validator.workspace = true

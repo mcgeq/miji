@@ -1,7 +1,7 @@
 // src/lib/stores/index.ts
 import { Lg } from '../utils/debugLog';
-import { authStore } from './auth';
-import { localeStore } from './locales';
+import { useAuthStore } from './auth';
+import { useLocaleStore } from './locales';
 
 let isStarted = false;
 
@@ -10,8 +10,16 @@ export async function storeStart() {
   isStarted = true;
 
   try {
-    // 初始化 authStore 和 localeStore
-    await Promise.all([authStore.$tauri.start(), localeStore.$tauri.start()]);
+    // 获取 store 实例
+    const authStore = useAuthStore();
+    const localeStore = useLocaleStore();
+
+    // 初始化所有 stores 的持久化和同步
+    await Promise.all([
+      authStore.$tauri.start(),
+      localeStore.$tauri.start(),
+    ]);
+
     Lg.i('Store', 'Stores initialized successfully');
   } catch (error) {
     Lg.e('Store', 'Store initialization failed:', error);

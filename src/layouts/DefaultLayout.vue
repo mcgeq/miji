@@ -2,6 +2,8 @@
 import { CircleCheckBig, Droplet, FolderDot, HandCoins, Home, Settings, Tags } from 'lucide-vue-next';
 import MobileBottomNav from '@/components/common/MobileBottomNav.vue';
 import Sidebar from '@/components/common/Sidebar.vue';
+import { useAuthStore } from '@/stores/auth';
+import { toast } from '@/utils/toast';
 
 const isMobile = ref(window.innerWidth < 768);
 
@@ -20,9 +22,22 @@ const menuItems = [
 ];
 
 const router = useRouter();
+const authStore = useAuthStore();
+
 async function logout() {
-  // await logoutUser();
-  router.replace({ name: 'auth-login' });
+  try {
+    // 调用 auth store 的 logout 方法清除用户数据
+    await authStore.logout();
+
+    // 显示退出成功提示
+    toast.success('退出登录成功');
+
+    // 跳转到登录页
+    router.replace({ name: 'auth-login' });
+  } catch (error) {
+    console.error('Logout failed:', error);
+    toast.error('退出登录失败');
+  }
 }
 
 onMounted(() => {

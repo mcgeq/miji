@@ -1,3 +1,4 @@
+import { createPlugin } from '@tauri-store/pinia';
 import { createPinia } from 'pinia';
 import Toast from 'vue-toastification';
 import z from 'zod';
@@ -210,6 +211,10 @@ async function bootstrap() {
     }
     const app = createApp(App);
     const pinia = createPinia();
+
+    // 使用 Tauri Pinia 插件实现持久化
+    pinia.use(createPlugin());
+
     app.use(pinia);
     app.use(router);
 

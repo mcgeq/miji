@@ -9,9 +9,16 @@
 // Modified   By:  mcgeq <mcgeq@outlook.com>
 // -----------------------------------------------------------------------------
 
+use common::utils::files::MijiFiles;
 use tauri::{Builder, Wry};
 
 pub fn generic_plugins(builder: Builder<Wry>) -> Builder<Wry> {
+    // 获取应用根目录
+    let root_dir = MijiFiles::root_path().unwrap_or_else(|_| ".".into());
+
+    // 配置 pinia store 路径
+    let pinia_store_path = format!("{}/stores", root_dir);
+
     builder
         .plugin(tauri_plugin_sql::Builder::new().build())
         .plugin(tauri_plugin_os::init())
@@ -19,4 +26,9 @@ pub fn generic_plugins(builder: Builder<Wry>) -> Builder<Wry> {
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_opener::init())
+        .plugin(
+            tauri_plugin_pinia::Builder::new()
+                .path(&pinia_store_path)
+                .build(),
+        )
 }

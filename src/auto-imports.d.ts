@@ -355,7 +355,10 @@ declare global {
   export type { Component, Slot, Slots, ComponentPublicInstance, ComputedRef, DirectiveBinding, ExtractDefaultPropTypes, ExtractPropTypes, ExtractPublicPropTypes, InjectionKey, PropType, Ref, MaybeRef, MaybeRefOrGetter, VNode, WritableComputedRef } from 'vue'
   import('vue')
   // @ts-ignore
-  export type { LocaleState, SupportedLocale } from './stores/locales'
+  export type { AuthUser, TokenResponse, User } from './stores/auth'
+  import('./stores/auth')
+  // @ts-ignore
+  export type { SupportedLocale } from './stores/locales'
   import('./stores/locales')
   // @ts-ignore
   export type { MediaBreakpoints } from './stores/mediaQueries'
@@ -385,7 +388,6 @@ declare module 'vue' {
     readonly TodoStoreErrorCode: UnwrapRef<typeof import('./stores/todoStore')['TodoStoreErrorCode']>
     readonly acceptHMRUpdate: UnwrapRef<typeof import('pinia')['acceptHMRUpdate']>
     readonly asyncComputed: UnwrapRef<typeof import('@vueuse/core')['asyncComputed']>
-    readonly authStore: UnwrapRef<typeof import('./stores/auth')['authStore']>
     readonly autoResetRef: UnwrapRef<typeof import('@vueuse/core')['autoResetRef']>
     readonly compareTodos: UnwrapRef<typeof import('./stores/todoStore')['compareTodos']>
     readonly computed: UnwrapRef<typeof import('vue')['computed']>
@@ -435,8 +437,6 @@ declare module 'vue' {
     readonly isReadonly: UnwrapRef<typeof import('vue')['isReadonly']>
     readonly isRef: UnwrapRef<typeof import('vue')['isRef']>
     readonly isSupportedLocale: UnwrapRef<typeof import('./stores/locales')['isSupportedLocale']>
-    readonly localeState: UnwrapRef<typeof import('./stores/locales')['localeState']>
-    readonly localeStore: UnwrapRef<typeof import('./stores/locales')['localeStore']>
     readonly loginUser: UnwrapRef<typeof import('./stores/auth')['loginUser']>
     readonly logoutUser: UnwrapRef<typeof import('./stores/auth')['logoutUser']>
     readonly makeDestructurable: UnwrapRef<typeof import('@vueuse/core')['makeDestructurable']>

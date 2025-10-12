@@ -1,15 +1,23 @@
 <script setup lang="ts">
 import { Monitor, Moon, RotateCcw, Save, Sun } from 'lucide-vue-next';
-import { useLocaleStores } from '@/stores/locales';
+import { useLocaleStore } from '@/stores/locales';
 
-const localeStore = useLocaleStores();
+const localeStore = useLocaleStore();
 
-const selectedLocale = ref(localeStore.getCurrentLocale());
+// 使用响应式引用，初始值从 store 获取
+const selectedLocale = ref(localeStore.currentLocale || 'zh-CN');
 const selectedTimezone = ref('Asia/Shanghai');
 const selectedTheme = ref('system');
 const compactMode = ref(false);
 const autoStart = ref(false);
 const minimizeToTray = ref(true);
+
+// 监听 store 的变化，同步到 selectedLocale
+watch(() => localeStore.currentLocale, newLocale => {
+  if (newLocale && newLocale !== selectedLocale.value) {
+    selectedLocale.value = newLocale;
+  }
+}, { immediate: true });
 
 const availableLocales = [
   { code: 'zh-CN', name: '简体中文' },
@@ -66,10 +74,6 @@ function handleReset() {
   autoStart.value = false;
   minimizeToTray.value = true;
 }
-
-onMounted(() => {
-  selectedLocale.value = localeStore.getCurrentLocale();
-});
 </script>
 
 <template>

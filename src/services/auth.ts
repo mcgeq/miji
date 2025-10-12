@@ -1,4 +1,5 @@
 import { TokenStatus } from '@/schema/user';
+import { loginUser, useAuthStore } from '@/stores/auth';
 import { invokeCommand, isBusinessError, isSystemError } from '@/types/api';
 import { DateUtils } from '../utils/date';
 import { Lg } from '../utils/debugLog';
@@ -190,14 +191,16 @@ export async function verifyToken(token: string): Promise<TokenStatus> {
 }
 
 export async function maybeLogoutOnExit() {
-  if (authStore.value.token && !authStore.value.rememberMe) {
-    await logoutUser();
+  const authStore = useAuthStore();
+  if (authStore.token && !authStore.rememberMe) {
+    await authStore.logout();
   }
 }
 
 export async function checkAndCleanSession() {
-  if (authStore.value.token && !authStore.value.rememberMe) {
-    await logoutUser();
+  const authStore = useAuthStore();
+  if (authStore.token && !authStore.rememberMe) {
+    await authStore.logout();
   }
 }
 

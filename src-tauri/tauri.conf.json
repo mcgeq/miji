@@ -28,7 +28,7 @@
         "enable": true,
         "scope": ["*/**"]
       },
-      "capabilities": ["default", "vue"]
+      "capabilities": ["default", "pinia"]
     }
   },
   "bundle": {

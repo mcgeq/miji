@@ -46,7 +46,6 @@ impl<R: Runtime> MijiInit for tauri::Builder<R> {
             tauri_plugin_autostart::MacosLauncher::LaunchAgent,
             Some(vec!["--flag1", "--flag2"]),
         ))
-        .plugin(tauri_plugin_vue::Builder::new().path(&root_dir).build())
         .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
             let _ = app
                 .get_webview_window("main")
