@@ -104,10 +104,10 @@ function getAccountTypeName(type: AccountType): string {
   <div class="money-tab-25">
     <!-- 过滤选项区域 -->
     <div class="screening-filtering">
-      <div class="flex flex-wrap gap-3 items-center">
+      <div class="filter-main-group">
         <!-- 账户状态过滤 -->
         <div class="filter-flex-wrap">
-          <div class="flex gap-1">
+          <div class="filter-status-buttons">
             <button
               class="account-select" :class="[
                 filters.status === 'all'
@@ -301,7 +301,7 @@ function getAccountTypeName(type: AccountType): string {
     </div>
 
     <!-- 分页组件 -->
-    <div v-if="pagination.totalPages.value > 1" class="mt-4 flex justify-center">
+    <div v-if="pagination.totalPages.value > 1" class="pagination-container">
       <SimplePagination
         :current-page="pagination.currentPage.value"
         :total-pages="pagination.totalPages.value"
@@ -508,5 +508,24 @@ function getAccountTypeName(type: AccountType): string {
 
 .account-select-gray:hover {
   border-color: #9ca3af;
+}
+
+/* Additional utility styles */
+.filter-main-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.filter-status-buttons {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.pagination-container {
+  margin-top: 1rem;
+  display: flex;
+  justify-content: center;
 }
 </style>

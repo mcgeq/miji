@@ -279,7 +279,7 @@ defineExpose({
           >
         </div>
       </template>
-      <div class="flex flex-col gap-2">
+      <div class="filter-button-group">
         <button
           class="screening-filtering-select"
           @click="toggleFilters"
@@ -296,12 +296,12 @@ defineExpose({
     </div>
 
     <!-- 加载状态 -->
-    <div v-if="loading" class="text-gray-600 h-25 flex-justify-center">
+    <div v-if="loading" class="loading-state">
       {{ t('common.loading') }}
     </div>
 
     <!-- 空状态 -->
-    <div v-else-if="transactions.length === 0" class="text-#999 flex-col h-25 flex-justify-center">
+    <div v-else-if="transactions.length === 0" class="empty-state">
       <div class="text-6xl mb-4 opacity-50">
         <i class="icon-list" />
       </div>
@@ -344,7 +344,7 @@ defineExpose({
         <!-- 类型列 -->
         <div class="transaction-rows-item">
           <span class="transaction-rows-item-span">{{ t('categories.category') }}</span>
-          <div class="flex gap-2 items-center">
+          <div class="transaction-type-content">
             <component :is="getTransactionTypeIcon(transaction.transactionType)" class="wh-4" />
             <span class="font-medium">{{ getTransactionTypeName(transaction.transactionType) }}</span>
           </div>
@@ -354,10 +354,10 @@ defineExpose({
         <div class="transaction-rows-item">
           <span class="transaction-rows-item-span">{{ t('financial.money') }}</span>
           <div
-            class="text-lg font-semibold" :class="[
-              transaction.transactionType === TransactionTypeSchema.enum.Income ? 'text-green-600'
-              : transaction.transactionType === TransactionTypeSchema.enum.Expense ? 'text-red-500'
-                : 'text-blue-500',
+            class="transaction-amount" :class="[
+              transaction.transactionType === TransactionTypeSchema.enum.Income ? 'amount-income'
+              : transaction.transactionType === TransactionTypeSchema.enum.Expense ? 'amount-expense'
+                : 'amount-transfer',
             ]"
           >
             {{ transaction.transactionType === TransactionTypeSchema.enum.Expense ? '-' : '+' }}{{
@@ -369,10 +369,10 @@ defineExpose({
         <div class="transaction-rows-item">
           <span class="transaction-rows-item-span">{{ t('financial.account.account') }}</span>
           <div class="transaction-rows-item-span-md">
-            <div class="text-gray-800 font-medium">
+            <div class="transaction-account-name">
               {{ transaction.account.name }}
             </div>
-            <div v-if="transaction.description" class="text-xs text-gray-600 mt-1">
+            <div v-if="transaction.description" class="transaction-description">
               {{ transaction.description }}
             </div>
           </div>
@@ -382,8 +382,8 @@ defineExpose({
         <div class="transaction-rows-item">
           <span class="transaction-rows-item-span">{{ t('categories.category') }}</span>
           <div class="transaction-rows-item-span-md">
-            <span class="text-gray-800 font-medium">{{ t(`common.categories.${lowercaseFirstLetter(transaction.category)}`) }}</span>
-            <div v-if="transaction.subCategory" class="text-xs text-gray-600">
+            <span class="transaction-category-main">{{ t(`common.categories.${lowercaseFirstLetter(transaction.category)}`) }}</span>
+            <div v-if="transaction.subCategory" class="transaction-category-sub">
               {{ t(`common.subCategories.${lowercaseFirstLetter(transaction.subCategory)}`) }}
             </div>
           </div>
@@ -393,7 +393,7 @@ defineExpose({
         <div class="transaction-rows-item">
           <span class="transaction-rows-item-span">{{ t('date.date') }}</span>
           <div class="transaction-rows-item-span-md">
-            <div class="text-xs text-gray-600">
+            <div class="transaction-date">
               {{ DateUtils.formatForDisplay(transaction.date) }}
             </div>
           </div>
@@ -402,7 +402,7 @@ defineExpose({
         <!-- 操作列 -->
         <div class="transaction-rows-item">
           <span class="transaction-rows-item-span">{{ t('common.misc.options') }}</span>
-          <div class="flex gap-1">
+          <div class="transaction-action-buttons">
             <button
               class="money-option-btn"
               :title="t('common.actions.view')" @click="emit('viewDetails', transaction)"
@@ -413,7 +413,7 @@ defineExpose({
               class="money-option-btn" :title="t('common.actions.edit')"
               :disabled="disabledTransactions.has(transaction.serialNum)"
               :class="{
-                'text-gray-500 bg-gray-200': disabledTransactions.has(transaction.serialNum),
+                'disabled-btn': disabledTransactions.has(transaction.serialNum),
               }"
               @click="emit('edit', transaction)"
             >
@@ -433,7 +433,7 @@ defineExpose({
     </div>
 
     <!-- 分页组件 - 移动端优化版 -->
-    <div v-if="pagination.totalItems > pagination.pageSize" class="mt-4 flex justify-center">
+    <div v-if="pagination.totalItems > pagination.pageSize" class="pagination-container">
       <!-- 桌面端完整分页 -->
       <SimplePagination
         :current-page="pagination.currentPage"
@@ -534,5 +534,94 @@ margin-bottom: 0.1rem;
   .transaction-rows-item-span-md {
     text-align: right;
   }
+}
+
+/* Transaction specific styles */
+.filter-button-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.loading-state {
+  color: #4b5563;
+  height: 6.25rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.empty-state {
+  color: #999;
+  display: flex;
+  flex-direction: column;
+  height: 6.25rem;
+  justify-content: center;
+  align-items: center;
+}
+
+.transaction-type-content {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.transaction-action-buttons {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.transaction-amount {
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.amount-income {
+  color: #16a34a;
+}
+
+.amount-expense {
+  color: #ef4444;
+}
+
+.amount-transfer {
+  color: #3b82f6;
+}
+
+.transaction-description {
+  font-size: 0.75rem;
+  color: #4b5563;
+  margin-top: 0.25rem;
+}
+
+.transaction-category-main {
+  color: #1f2937;
+  font-weight: 500;
+}
+
+.transaction-category-sub {
+  font-size: 0.75rem;
+  color: #4b5563;
+}
+
+.transaction-date {
+  font-size: 0.75rem;
+  color: #4b5563;
+}
+
+.transaction-account-name {
+  color: #1f2937;
+  font-weight: 500;
+}
+
+.pagination-container {
+  margin-top: 1rem;
+  display: flex;
+  justify-content: center;
+}
+
+.disabled-btn {
+  color: #6b7280;
+  background-color: #e5e7eb;
 }
 </style>

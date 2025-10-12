@@ -283,7 +283,7 @@ defineExpose({
             <div class="remaining-amount-container">
               <div
                 class="remaining-amount" :class="[
-                  shouldHighlightRed(budget) ? 'text-red-500' : 'text-green-500',
+                  shouldHighlightRed(budget) ? 'remaining-amount-error' : 'remaining-amount-success',
                 ]"
               >
                 {{ formatCurrency(getRemainingAmount(budget)) }}
@@ -293,10 +293,10 @@ defineExpose({
           <div class="progress-bar">
             <div
               class="progress-fill" :style="{ width: `${getProgressPercent(budget)}%` }"
-              :class="isOverBudget(budget) ? 'bg-red-500' : 'bg-blue-500'"
+              :class="isOverBudget(budget) ? 'progress-fill-error' : 'progress-fill-primary'"
             />
           </div>
-          <div class="progress-percentage" :class="shouldHighlightRed(budget) ? 'text-red-500' : 'text-gray-600'">
+          <div class="progress-percentage" :class="shouldHighlightRed(budget) ? 'progress-percentage-error' : 'progress-percentage-normal'">
             {{ getProgressPercent(budget) }}%
           </div>
         </div>
@@ -325,7 +325,7 @@ defineExpose({
     </div>
 
     <!-- 分页组件 -->
-    <div v-if="pagination.totalItems.value > pagination.pageSize.value" class="flex justify-center">
+    <div v-if="pagination.totalItems.value > pagination.pageSize.value" class="pagination-container">
       <SimplePagination
         :current-page="pagination.currentPage.value"
         :total-pages="pagination.totalPages.value"
@@ -552,5 +552,35 @@ defineExpose({
 .info-value {
   color: #1f2937;
   font-weight: 500;
+}
+
+/* Additional utility styles */
+.pagination-container {
+  display: flex;
+  justify-content: center;
+}
+
+.progress-fill-error {
+  background-color: #ef4444;
+}
+
+.progress-fill-primary {
+  background-color: #3b82f6;
+}
+
+.remaining-amount-error {
+  color: #ef4444;
+}
+
+.remaining-amount-success {
+  color: #16a34a;
+}
+
+.progress-percentage-error {
+  color: #ef4444;
+}
+
+.progress-percentage-normal {
+  color: #4b5563;
 }
 </style>

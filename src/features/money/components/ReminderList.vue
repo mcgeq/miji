@@ -300,7 +300,7 @@ defineExpose({
     <!-- 分页组件 -->
     <div
       v-if="pagination.totalItems.value > pagination.pageSize.value"
-      class="flex justify-center"
+      class="pagination-container"
     >
       <SimplePagination
         :current-page="pagination.currentPage.value"
@@ -515,5 +515,11 @@ defineExpose({
 
 .info-value {
   color: #1f2937;
+}
+
+/* Additional utility styles */
+.pagination-container {
+  display: flex;
+  justify-content: center;
 }
 </style>
