@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { storeToRefs } from 'pinia';
 import { usePeriodStore as usePeriodStores } from '@/stores/periodStore';
 import type { PeriodRecords } from '@/schema/health/period';
 // Emits
@@ -7,9 +8,10 @@ const emit = defineEmits<{
   editRecord: [record: PeriodRecords];
 }>();
 const periodStore = usePeriodStores();
+const { periodRecords } = storeToRefs(periodStore);
 
 const recentRecords = computed(() => {
-  return periodStore.periodRecords
+  return periodRecords.value
     .slice()
     .sort(
       (a, b) =>
@@ -38,7 +40,7 @@ function calculateDuration(record: PeriodRecords) {
 }
 
 function calculateCycleFromPrevious(record: PeriodRecords) {
-  const records = periodStore.periodRecords
+  const records = periodRecords.value
     .slice()
     .sort(
       (a, b) =>
@@ -78,7 +80,7 @@ function isPeriodActive(record: PeriodRecords) {
       </button>
     </div>
 
-    <div v-if="periodStore.periodRecords.length === 0" class="recent-records-empty">
+    <div v-if="periodRecords.length === 0" class="recent-records-empty">
       <i class="recent-records-empty-icon" />
       <p class="recent-records-empty-text">
         还没有经期记录，<button class="recent-records-empty-link" @click="emit('addRecord')">

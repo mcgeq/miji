@@ -207,11 +207,14 @@ async function handleSubmit() {
       const updatePeriodDailyRecord = deepDiff(props.record, record);
       if (Object.keys(updatePeriodDailyRecord).length > 0) {
         emit('update', props.record.serialNum, record);
+      } else {
+        // 如果没有更改，直接关闭表单
+        emit('cancel');
       }
     } else {
       emit('create', record);
     }
-    emit('cancel');
+    // 移除了 emit('cancel')，让父组件在操作完成后再关闭
   } catch (error) {
     Lg.e('Period', 'Failed to save daily record:', error);
   } finally {

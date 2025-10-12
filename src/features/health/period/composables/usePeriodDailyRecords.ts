@@ -17,7 +17,11 @@ export function usePeriodDailyRecords(
   ): Promise<T | undefined> {
     try {
       const result = await action();
-      await periodStore.refreshDailyRecords();
+      // 同时刷新经期记录和日常记录，因为它们可能相互影响
+      await Promise.all([
+        periodStore.periodRecordAll(),
+        periodStore.periodDailyRecorAll(),
+      ]);
       toast.success(t(successMessageKey));
       return result;
     } catch {

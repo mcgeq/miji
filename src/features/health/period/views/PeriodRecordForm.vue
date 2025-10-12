@@ -270,11 +270,16 @@ async function submitForm() {
     period_record.endDate = DateUtils.toBackendDateTimeFromDateOnly(period_record.endDate);
     if (isEditing.value && props.record) {
       const updatedRecord = deepDiff(props.record, period_record);
-      emit('update', props.record.serialNum, updatedRecord as PeriodRecordUpdate);
+      if (Object.keys(updatedRecord).length > 0) {
+        emit('update', props.record.serialNum, updatedRecord as PeriodRecordUpdate);
+      } else {
+        // 如果没有更改，直接关闭表单
+        emit('cancel');
+      }
     } else {
       emit('create', period_record);
     }
-    emit('cancel');
+    // 移除了 emit('cancel')，让父组件在操作完成后再关闭
   } catch (error) {
     console.error('Failed to save period record:', error);
   } finally {
@@ -290,7 +295,7 @@ async function handleDelete() {
 
   try {
     emit('delete', props.record.serialNum);
-    emit('cancel');
+    // 移除了 emit('cancel')，让父组件在操作完成后再关闭
   } catch (error) {
     console.error('Failed to delete period record:', error);
   } finally {

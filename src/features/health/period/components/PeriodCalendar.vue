@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ChevronDown, ChevronUp } from 'lucide-vue-next';
+import { storeToRefs } from 'pinia';
 import { usePeriodStore } from '@/stores/periodStore';
 import { DateUtils } from '@/utils/date';
 import type { PeriodCalendarEvent } from '@/schema/health/period';
@@ -32,6 +33,7 @@ const emit = defineEmits<{
 }>();
 
 const periodStore = usePeriodStore();
+const { periodRecords, periodDailyRecords } = storeToRefs(periodStore);
 
 const currentDate = ref(DateUtils.getCurrentDate());
 const viewMode = ref<'calendar' | 'list'>('calendar');
@@ -73,6 +75,10 @@ const calendarDays = computed((): CalendarDay[] => {
 
   const days: CalendarDay[] = [];
   const today = DateUtils.getTodayDate();
+
+  // 使用 storeToRefs 的响应式引用来确保依赖追踪
+  // 访问 .value 以触发响应式更新
+  const _triggerUpdate = periodRecords.value.length + periodDailyRecords.value.length;
 
   const events = periodStore.getCalendarEvents(
     startDate.toISOString().split('T')[0],

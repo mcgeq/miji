@@ -63,10 +63,42 @@ function closeDailyForm() {
   editingDailyRecord.value = undefined;
 }
 
-// 1. 修改 confirmDelete 方法
-function confirmDelete() {
+// 处理日常记录的创建和更新
+async function handleDailyRecordCreate(record: any) {
+  await periodDailyRecords.create(record);
+  closeDailyForm();
+}
+
+async function handleDailyRecordUpdate(serialNum: string, record: any) {
+  await periodDailyRecords.update(serialNum, record);
+  closeDailyForm();
+}
+
+async function handleDailyRecordDelete(serialNum: string) {
+  await periodDailyRecords.remove(serialNum);
+  closeDailyForm();
+}
+
+// 处理经期记录的创建和更新
+async function handleRecordCreate(record: any) {
+  await periodRecords.create(record);
+  closeRecordForm();
+}
+
+async function handleRecordUpdate(serialNum: string, record: any) {
+  await periodRecords.update(serialNum, record);
+  closeRecordForm();
+}
+
+async function handleRecordDelete(serialNum: string) {
+  await periodRecords.remove(serialNum);
+  closeRecordForm();
+}
+
+// 删除确认处理
+async function confirmDelete() {
   if (uiState.deletingSerialNum) {
-    periodDailyRecords.remove(uiState.deletingSerialNum);
+    await periodDailyRecords.remove(uiState.deletingSerialNum);
     uiState.showDeleteConfirm = false;
     uiState.deletingSerialNum = '';
   }
@@ -81,44 +113,6 @@ function closeDeleteConfirm() {
   uiState.showDeleteConfirm = false;
   uiState.deletingSerialNum = '';
 }
-
-// 监控 uiState 的变化
-watch(
-  () => [uiState.showRecordForm, uiState.showDailyForm, uiState.showDeleteConfirm],
-  async ([newShowRecordForm, newShowDailyForm, newShowDeleteConfirm], [oldShowRecordForm, oldShowDailyForm, oldShowDeleteConfirm]) => {
-    // 检查是否有任一状态从 true 变为 false
-    if (
-      (oldShowRecordForm && !newShowRecordForm) ||
-      (oldShowDailyForm && !newShowDailyForm) ||
-      (oldShowDeleteConfirm && !newShowDeleteConfirm)
-    ) {
-      try {
-        Lg.i('PeriodManagement', 'Refreshing data due to UI state change');
-        await periodStore.periodRecordAll();
-        await periodStore.periodDailyRecorAll();
-      } catch (error) {
-        Lg.e('PeriodManagement', 'Failed to refresh period data:', error);
-      }
-    }
-  },
-  { deep: true },
-);
-
-watch(
-  () => [uiState.deletingSerialNum, selectedDate.value],
-  async ([deletingSerialNum, currentDate]) => {
-    if (deletingSerialNum === '' && currentDate) {
-      const hasMatchingRecord = periodStore.periodRecords.some(record => record.startDate.startsWith(currentDate));
-      if (hasMatchingRecord) {
-        try {
-          await periodStore.periodRecordAll();
-        } catch (error) {
-          Lg.e('PeriodManagement ', error);
-        }
-      }
-    }
-  },
-);
 
 // Lifecycle
 onMounted(async () => {
@@ -256,9 +250,9 @@ onMounted(async () => {
       <div class="modal-content">
         <PeriodRecordForm
           :record="editingRecord"
-          @create="periodRecords.create"
-          @update="periodRecords.update"
-          @delete="periodRecords.remove"
+          @create="handleRecordCreate"
+          @update="handleRecordUpdate"
+          @delete="handleRecordDelete"
           @cancel="closeRecordForm"
         />
       </div>
@@ -274,41 +268,47 @@ onMounted(async () => {
         <PeriodDailyForm
           :date="selectedDate"
           :record="editingDailyRecord"
-          @create="periodDailyRecords.create"
-          @update="periodDailyRecords.update"
-          @delete="periodDailyRecords.remove"
+          @create="handleDailyRecordCreate"
+          @update="handleDailyRecordUpdate"
+          @delete="handleDailyRecordDelete"
           @cancel="closeDailyForm"
         />
       </div>
     </div>
 
     <!-- 删除确认弹窗 -->
-    <div v-if="uiState.showDeleteConfirm" class="modal-overlay" @click.self="closeDeleteConfirm">
-      <div class="modal-content max-w-sm">
-        <div class="p-6">
-          <div class="modal-header">
-            <div class="modal-icon">
-              <LucideTrash class="modal-icon-svg" />
+    <div v-if="uiState.showDeleteConfirm" class="delete-modal-overlay" @click.self="closeDeleteConfirm">
+      <div class="delete-modal-content">
+        <div class="delete-modal-body">
+          <!-- 图标 -->
+          <div class="delete-modal-icon-wrapper">
+            <div class="delete-modal-icon-bg">
+              <LucideTrash class="delete-modal-icon" />
             </div>
-            <h3 class="modal-title">
-              {{ t('period.confirmations.deleteRecord') }}
-            </h3>
           </div>
-          <p class="modal-description">
+          <!-- 标题 -->
+          <h3 class="delete-modal-title">
+            {{ t('period.confirmations.deleteRecord') }}
+          </h3>
+          <!-- 描述 -->
+          <p class="delete-modal-description">
             {{ t('period.confirmations.deleteWarning') }}
           </p>
-          <div class="modal-actions">
+          <!-- 操作按钮 -->
+          <div class="delete-modal-actions">
             <button
-              class="btn-danger flex-1"
-              @click="confirmDelete"
-            >
-              <LucideCheck class="wh-5" />
-            </button>
-            <button
-              class="btn-secondary flex-1"
+              class="delete-modal-btn delete-modal-btn-cancel"
               @click="closeDeleteConfirm"
             >
-              <LucideX class="wh-5" />
+              <LucideX class="delete-modal-btn-icon" />
+              <span>取消</span>
+            </button>
+            <button
+              class="delete-modal-btn delete-modal-btn-confirm"
+              @click="confirmDelete"
+            >
+              <LucideCheck class="delete-modal-btn-icon" />
+              <span>确认</span>
             </button>
           </div>
         </div>
@@ -497,50 +497,217 @@ onMounted(async () => {
   box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
 }
 
-/* 模态框头部 */
-.modal-header {
-  margin-bottom: 1rem;
+/* ==================== 删除确认弹窗样式 ==================== */
+.delete-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
   display: flex;
-  gap: 0.75rem;
-  align-items: center;
-}
-
-/* 模态框图标 */
-.modal-icon {
-  border-radius: 50%;
-  background-color: var(--color-error);
-  display: flex;
-  height: 2rem;
-  width: 2rem;
   align-items: center;
   justify-content: center;
+  z-index: 9999;
+  padding: 1rem;
+  animation: modalFadeIn 0.2s ease-out;
 }
 
-.modal-icon-svg {
-  color: var(--color-error-content);
-  width: 1rem;
-  height: 1rem;
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
-/* 模态框标题 */
-.modal-title {
-  font-size: 1.125rem;
-  color: var(--color-base-content);
-  font-weight: 600;
+.delete-modal-content {
+  background-color: var(--color-base-100);
+  border-radius: 1rem;
+  max-width: 400px;
+  width: 100%;
+  box-shadow: 0 20px 25px -5px color-mix(in oklch, var(--color-base-content) 10%, transparent),
+              0 10px 10px -5px color-mix(in oklch, var(--color-base-content) 4%, transparent);
+  animation: modalSlideUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  overflow: hidden;
+  border: 1px solid var(--color-base-300);
 }
 
-/* 模态框描述 */
-.modal-description {
-  font-size: 0.875rem;
-  color: var(--color-neutral-content);
+@keyframes modalSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.delete-modal-body {
+  padding: 2rem;
+  text-align: center;
+}
+
+/* 图标样式 */
+.delete-modal-icon-wrapper {
+  display: flex;
+  justify-content: center;
   margin-bottom: 1.5rem;
 }
 
-/* 模态框操作 */
-.modal-actions {
+.delete-modal-icon-bg {
+  width: 4rem;
+  height: 4rem;
+  border-radius: 50%;
+  background: color-mix(in oklch, var(--color-error) 15%, var(--color-base-100));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  animation: iconPulse 2s ease-in-out infinite;
+}
+
+@keyframes iconPulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 color-mix(in oklch, var(--color-error) 40%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 10px color-mix(in oklch, var(--color-error) 0%, transparent);
+  }
+}
+
+.delete-modal-icon {
+  width: 2rem;
+  height: 2rem;
+  color: var(--color-error);
+}
+
+/* 标题样式 */
+.delete-modal-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--color-base-content);
+  margin-bottom: 0.75rem;
+  line-height: 1.4;
+}
+
+/* 描述样式 */
+.delete-modal-description {
+  font-size: 0.9375rem;
+  color: var(--color-base-content);
+  opacity: 0.8;
+  margin-bottom: 2rem;
+  line-height: 1.6;
+}
+
+/* 按钮容器 */
+.delete-modal-actions {
   display: flex;
   gap: 0.75rem;
+}
+
+/* 按钮基础样式 */
+.delete-modal-btn {
+  flex: 1;
+  display: flex;
   align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.delete-modal-btn::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: color-mix(in oklch, var(--color-base-100) 30%, transparent);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s;
+}
+
+.delete-modal-btn:hover::before {
+  width: 300px;
+  height: 300px;
+}
+
+.delete-modal-btn-icon {
+  width: 1.125rem;
+  height: 1.125rem;
+  position: relative;
+  z-index: 1;
+}
+
+.delete-modal-btn span {
+  position: relative;
+  z-index: 1;
+}
+
+/* 取消按钮 */
+.delete-modal-btn-cancel {
+  background-color: var(--color-neutral);
+  color: var(--color-neutral-content);
+}
+
+.delete-modal-btn-cancel:hover {
+  background-color: color-mix(in oklch, var(--color-neutral) 80%, black);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px color-mix(in oklch, var(--color-neutral) 30%, transparent);
+}
+
+.delete-modal-btn-cancel:active {
+  transform: translateY(0);
+}
+
+/* 确认按钮 */
+.delete-modal-btn-confirm {
+  background-color: var(--color-error);
+  color: var(--color-error-content);
+}
+
+.delete-modal-btn-confirm:hover {
+  background-color: color-mix(in oklch, var(--color-error) 85%, black);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px color-mix(in oklch, var(--color-error) 40%, transparent);
+}
+
+.delete-modal-btn-confirm:active {
+  transform: translateY(0);
+}
+
+/* 响应式 */
+@media (max-width: 640px) {
+  .delete-modal-body {
+    padding: 1.5rem;
+  }
+
+  .delete-modal-title {
+    font-size: 1.125rem;
+  }
+
+  .delete-modal-description {
+    font-size: 0.875rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .delete-modal-actions {
+    flex-direction: column-reverse;
+  }
+
+  .delete-modal-btn {
+    width: 100%;
+  }
 }
 
 /* 加载覆盖层 */
