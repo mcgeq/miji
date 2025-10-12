@@ -216,7 +216,7 @@ function handleDeleteAccount() {
         >
           <div class="session-info">
             <Monitor class="session-icon" />
-            <div>
+            <div class="session-details">
               <div class="session-device">
                 {{ session.device }}
               </div>

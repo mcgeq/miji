@@ -67,7 +67,7 @@ const currentTabComponent = computed(() => {
       </div>
 
       <!-- 设置内容区域 - 下方铺满 -->
-      <div class="settings-content-card">
+      <div class="settings-content-card" :class="{ 'settings-content-card-account': activeTab === 'account' }">
         <component :is="currentTabComponent" />
       </div>
     </div>
