@@ -277,6 +277,14 @@ export const useLocaleStore = defineStore('locale', () => {
     getLocaleFlag,
     getSupportedLocales,
   };
+}, {
+  // 官方推荐：启用 saveOnChange
+  // 文档：https://tb.dev.br/tauri-store/plugin-pinia/guide/persisting-state
+  tauri: {
+    saveOnChange: true, // 状态变化时自动保存
+    saveStrategy: 'debounce', // 使用防抖策略
+    saveInterval: 300, // 300ms 防抖延迟
+  },
 });
 
 // =============================================================================

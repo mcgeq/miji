@@ -58,7 +58,15 @@ export const useAuthStore = defineStore('auth', () => {
         }
       }
 
-      Lg.i('Auth', 'User logged in successfully');
+      Lg.i('Auth', 'User logged in successfully', {
+        hasUser: !!user.value,
+        hasToken: !!token.value,
+        rememberMe: rememberMe.value,
+      });
+
+      // 注意：autosave 已在 storeStart() 中启用
+      // 状态变化后会在 300ms 内自动保存到磁盘
+
       return true;
     } catch (error) {
       Lg.e('Auth', 'Login failed:', error);
@@ -365,6 +373,14 @@ export const useAuthStore = defineStore('auth', () => {
     sendEmailVerification,
     changePassword,
   };
+}, {
+  // 官方推荐：启用 saveOnChange
+  // 文档：https://tb.dev.br/tauri-store/plugin-pinia/guide/persisting-state
+  tauri: {
+    saveOnChange: true, // 状态变化时自动保存
+    saveStrategy: 'debounce', // 使用防抖策略
+    saveInterval: 300, // 300ms 防抖延迟
+  },
 });
 
 // =============================================================================

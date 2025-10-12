@@ -3,6 +3,7 @@ import { storeToRefs } from 'pinia';
 import DefaultLayout from './layouts/DefaultLayout.vue';
 import EmptyLayout from './layouts/EmptyLayout.vue';
 import { checkAndCleanSession } from './services/auth';
+import { useAuthStore } from './stores/auth';
 import { Lg } from './utils/debugLog';
 import { toast } from './utils/toast';
 import type { RouteLocationNormalizedLoaded } from 'vue-router';
@@ -12,10 +13,31 @@ const router = useRouter();
 const { t } = useI18n();
 const transitionStore = useTransitionsStore();
 const { name: transitionName } = storeToRefs(transitionStore);
+const authStore = useAuthStore();
+
+// 检测是否为移动端
+const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+  navigator.userAgent,
+);
 
 onMounted(async () => {
   try {
-    await checkAndCleanSession(); // 可选
+    // 等待 store 数据从持久化存储加载完成
+    // storeStart() 在 main.ts 中已经调用了 $tauri.start()
+    // 但我们需要等待数据实际加载完成
+    await nextTick();
+
+    // 给一个短暂的延迟，确保 Tauri 插件已经完成数据加载
+    // 这对移动端尤其重要，因为磁盘 I/O 可能较慢
+    await new Promise(resolve => setTimeout(resolve, 150));
+
+    Lg.i('App', 'Auth check - token:', authStore.token ? 'exists' : 'null', 'rememberMe:', authStore.rememberMe);
+
+    // 仅在桌面端清理 session（移动端保持登录状态）
+    if (!isMobile) {
+      await checkAndCleanSession();
+    }
+
     const auth = await isAuthenticated();
 
     if (!auth && router.currentRoute.value.path !== '/auth/login') {

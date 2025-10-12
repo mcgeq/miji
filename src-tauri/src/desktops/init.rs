@@ -36,6 +36,9 @@ impl<R: Runtime> MijiInit for tauri::Builder<R> {
     fn init_plugin(self) -> Self {
         let root_dir = MijiFiles::root_path().unwrap();
         eprintln!("🚀 Miji root directory: {root_dir}");
+        // 配置 pinia store 路径
+        let pinia_store_path = format!("{}/stores", root_dir);
+
         init_tracing_subscriber();
         // 清理 30 天前日志
         let _ = cleanup_old_logs(Path::new(&root_dir), "logs/tracing", 30);
@@ -52,6 +55,11 @@ impl<R: Runtime> MijiInit for tauri::Builder<R> {
                 .expect("no main window")
                 .set_focus();
         }))
+        .plugin(
+            tauri_plugin_pinia::Builder::new()
+                .path(&pinia_store_path)
+                .build(),
+        )
         .plugin(tauri_plugin_log::Builder::default().skip_logger().build())
     }
 }

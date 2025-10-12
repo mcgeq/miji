@@ -9,6 +9,11 @@ import { toast } from '@/utils/toast';
 const { t } = useI18n();
 const router = useRouter();
 
+// 检测是否为移动端
+const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+  navigator.userAgent,
+);
+
 const form = reactive({
   email: '',
   password: '',
@@ -33,7 +38,10 @@ async function handleSubmit() {
   isSubmitting.value = true;
 
   try {
-    await login(result.data, rememberMe.value);
+    // 移动端强制使用 rememberMe = true 以保持登录状态
+    const shouldRemember = isMobile ? true : rememberMe.value;
+    Lg.i('Login', 'Attempting login', { isMobile, shouldRemember });
+    await login(result.data, shouldRemember);
     toast.success(t('auth.messages.loginSuccess'));
     router.push('/todos');
   } catch (e) {
@@ -67,8 +75,8 @@ async function handleSubmit() {
           :placeholder="t('auth.password')"
           :error="errors.password"
         />
-        <!-- 记住我 -->
-        <label class="remember-me">
+        <!-- 记住我（移动端自动记住，不显示） -->
+        <label v-if="!isMobile" class="remember-me">
           <input
             v-model="rememberMe"
             type="checkbox"
