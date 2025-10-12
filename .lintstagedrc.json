@@ -2,7 +2,7 @@
   "src/**/*.{js,jsx,ts,tsx,vue,svelte,astro,mjs}": [
     "eslint --fix"
   ],
-  "*.{md,yaml,yml,json}": [
+  "*.{yaml,yml,json}": [
     "eslint --fix"
   ]
 }
