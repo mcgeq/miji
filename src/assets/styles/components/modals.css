@@ -81,6 +81,7 @@
 }
 
 .screening-filtering {
+  width: 100%;
   margin-bottom: 1.25rem;
   padding: 1rem;
   border-radius: 0.5rem;
@@ -91,6 +92,14 @@
   gap: 0.75rem;
   align-items: center;
   justify-content: center;
+}
+
+/* 桌面端固定宽度 */
+@media (min-width: 768px) {
+  .screening-filtering {
+    width: 55rem;
+    max-width: 100%;
+  }
 }
 
 .screening-filtering-select {

@@ -377,7 +377,6 @@ defineExpose({
   margin-bottom: 0.5rem;
   gap: 0.5rem;
   display: grid;
-  width: 100%;
 }
 
 /* Budget Card */

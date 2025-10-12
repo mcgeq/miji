@@ -321,7 +321,7 @@
 }
 
 /* Action Buttons */
-.action-buttons {
+.setting-action-buttons {
   padding-top: 2rem;
   border-top: var(--border) solid var(--color-neutral);
   display: flex;
@@ -330,7 +330,7 @@
 }
 
 @media (min-width: 640px) {
-  .action-buttons {
+  .setting-action-buttons {
     flex-direction: row;
   }
 }

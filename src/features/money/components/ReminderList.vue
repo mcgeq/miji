@@ -353,12 +353,6 @@ defineExpose({
   margin-bottom: 0.5rem;
   gap: 0.5rem;
   display: grid;
-  width: 100%;
-}
-
-/* Ensure grid-template-columns-320 works properly */
-.reminder-grid.grid-template-columns-320 {
-  grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr));
 }
 
 /* Reminder Card */

@@ -239,7 +239,7 @@ function handleReset() {
     </div>
 
     <!-- 操作按钮 -->
-    <div class="action-buttons">
+    <div class="setting-action-buttons">
       <button
         class="action-button-primary"
         @click="handleSave"
