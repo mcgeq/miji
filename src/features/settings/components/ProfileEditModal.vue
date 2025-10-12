@@ -384,7 +384,7 @@ onUnmounted(() => {
     >
       <div
         v-if="isOpen"
-        class="p-4 bg-black/50 flex items-center inset-0 justify-center fixed z-50 backdrop-blur-sm"
+        class="profile-modal-overlay"
         @click="handleOverlayClick"
       >
         <Transition
@@ -398,64 +398,64 @@ onUnmounted(() => {
         >
           <div
             v-if="isOpen"
-            class="modal-content rounded-2xl bg-white max-h-[90vh] max-w-2xl w-full shadow-2xl"
+            class="profile-modal-content"
             role="dialog"
             aria-modal="true"
             aria-labelledby="modal-title"
           >
             <!-- Modal 头部 -->
-            <div class="px-6 py-4 border-b border-gray-200 rounded-t-2xl bg-white top-0 sticky z-10">
-              <div class="flex items-center justify-between">
-                <div class="flex gap-3 items-center">
-                  <div class="p-2 rounded-lg bg-blue-100">
-                    <User class="text-blue-600 h-5 w-5" />
+            <div class="profile-modal-header">
+              <div class="profile-modal-header-content">
+                <div class="profile-modal-header-info">
+                  <div class="profile-modal-header-icon-wrapper">
+                    <User class="profile-modal-header-icon" />
                   </div>
                   <div>
-                    <h2 id="modal-title" class="text-xl text-gray-900 font-bold">
+                    <h2 id="modal-title" class="profile-modal-title">
                       编辑资料
                     </h2>
-                    <p class="text-sm text-gray-500">
+                    <p class="profile-modal-subtitle">
                       更新您的个人信息和偏好设置
                     </p>
                   </div>
                 </div>
                 <button
-                  class="text-gray-400 p-2 rounded-full transition-colors hover:text-gray-600 focus:outline-none hover:bg-gray-100 focus:ring-2 focus:ring-blue-500/20"
+                  class="profile-modal-close-button"
                   :disabled="isSubmitting"
                   aria-label="关闭对话框"
                   @click="handleClose"
                 >
-                  <X class="h-5 w-5" />
+                  <X class="profile-modal-close-icon" />
                 </button>
               </div>
             </div>
 
             <!-- 表单内容 -->
-            <div class="modal-body p-6">
-              <form class="space-y-8" @submit.prevent="handleSubmit">
+            <div class="profile-modal-body">
+              <form class="profile-modal-form" @submit.prevent="handleSubmit">
                 <!-- 基本信息 -->
-                <section class="space-y-6">
-                  <div class="flex gap-2 items-center">
-                    <User class="text-gray-600 h-5 w-5" />
-                    <h3 class="text-lg text-gray-900 font-semibold">
+                <section class="profile-modal-section">
+                  <div class="profile-modal-section-header">
+                    <User class="profile-modal-section-icon" />
+                    <h3 class="profile-modal-section-title">
                       基本信息
                     </h3>
                   </div>
 
-                  <div class="gap-6 grid grid-cols-1 md:grid-cols-2">
+                  <div class="profile-modal-fields-grid">
                     <!-- 动态渲染基本信息字段 -->
                     <template v-for="field in FORM_FIELDS.slice(0, 4)" :key="field.key">
-                      <div :class="field.type === 'textarea' ? 'md:col-span-2' : ''">
-                        <label class="text-sm text-gray-700 font-medium mb-2 block">
+                      <div :class="field.type === 'textarea' ? 'profile-modal-field-full' : ''">
+                        <label class="profile-modal-label">
                           {{ field.label }}
-                          <span v-if="field.required" class="text-red-500 ml-1">*</span>
+                          <span v-if="field.required" class="profile-modal-label-required">*</span>
                         </label>
 
                         <!-- 文本输入框 -->
-                        <div v-if="field.type === 'text' || field.type === 'email' || field.type === 'tel'" class="relative">
+                        <div v-if="field.type === 'text' || field.type === 'email' || field.type === 'tel'" class="profile-modal-input-wrapper">
                           <component
                             :is="field.icon"
-                            class="text-gray-400 h-4 w-4 left-3 top-1/2 absolute -translate-y-1/2"
+                            class="profile-modal-input-icon"
                           />
                           <input
                             :ref="field.key === 'name' ? (el) => { nameInputRef = el as HTMLInputElement } : undefined"
@@ -464,18 +464,18 @@ onUnmounted(() => {
                             :maxlength="field.maxLength"
                             :value="formData[field.key]"
                             :data-field="field.key"
-                            class="text-sm py-3 pl-10 pr-4 border border-gray-300 rounded-lg w-full transition-colors disabled:text-gray-500 focus:outline-none focus:border-blue-500 disabled:bg-gray-50 focus:ring-2 focus:ring-blue-500/20"
-                            :class="{ 'border-red-500 focus:border-red-500 focus:ring-red-500/20': errors[field.key] }"
+                            class="profile-modal-input"
+                            :class="{ 'profile-modal-input-error': errors[field.key] }"
                             @input="handleInput(field.key, ($event.target as HTMLInputElement).value)"
                             @blur="validateSingleField(field.key)"
                           >
                         </div>
 
                         <!-- 文本域 -->
-                        <div v-else-if="field.type === 'textarea'" class="relative">
+                        <div v-else-if="field.type === 'textarea'" class="profile-modal-input-wrapper">
                           <component
                             :is="field.icon"
-                            class="text-gray-400 h-4 w-4 left-3 top-3 absolute"
+                            class="profile-modal-textarea-icon"
                           />
                           <textarea
                             :placeholder="field.placeholder"
@@ -483,23 +483,23 @@ onUnmounted(() => {
                             :rows="field.rows"
                             :value="formData[field.key]"
                             :data-field="field.key"
-                            class="text-sm py-3 pl-10 pr-4 border border-gray-300 rounded-lg w-full resize-none transition-colors focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
-                            :class="{ 'border-red-500 focus:border-red-500 focus:ring-red-500/20': errors[field.key] }"
+                            class="profile-modal-textarea"
+                            :class="{ 'profile-modal-textarea-error': errors[field.key] }"
                             @input="handleInput(field.key, ($event.target as HTMLTextAreaElement).value)"
                             @blur="validateSingleField(field.key)"
                           />
                         </div>
 
                         <!-- 错误信息和字符计数 -->
-                        <div v-if="errors[field.key] || field.maxLength" class="mt-1 flex justify-between">
-                          <p v-if="errors[field.key]" class="text-sm text-red-500 flex gap-1 items-center">
-                            <AlertCircle class="h-3 w-3" />
+                        <div v-if="errors[field.key] || field.maxLength" class="field-footer">
+                          <p v-if="errors[field.key]" class="profile-modal-error-message">
+                            <AlertCircle class="profile-modal-error-icon" />
                             {{ errors[field.key] }}
                           </p>
                           <p
                             v-if="field.maxLength"
-                            class="text-sm ml-auto"
-                            :class="formData[field.key].length > field.maxLength * 0.8 ? 'text-amber-500' : 'text-gray-500'"
+                            class="profile-modal-char-count"
+                            :class="formData[field.key].length > field.maxLength * 0.8 ? 'profile-modal-char-count-warning' : 'profile-modal-char-count-normal'"
                           >
                             {{ formData[field.key].length }}/{{ field.maxLength }}
                           </p>
@@ -510,30 +510,30 @@ onUnmounted(() => {
                 </section>
 
                 <!-- 偏好设置 -->
-                <section class="space-y-6">
-                  <div class="flex gap-2 items-center">
-                    <Globe class="text-gray-600 h-5 w-5" />
-                    <h3 class="text-lg text-gray-900 font-semibold">
+                <section class="profile-modal-section">
+                  <div class="profile-modal-section-header">
+                    <Globe class="profile-modal-section-icon" />
+                    <h3 class="profile-modal-section-title">
                       偏好设置
                     </h3>
                   </div>
 
-                  <div class="gap-6 grid grid-cols-1 md:grid-cols-2">
+                  <div class="profile-modal-fields-grid">
                     <!-- 动态渲染偏好设置字段 -->
                     <template v-for="field in FORM_FIELDS.slice(4)" :key="field.key">
                       <div>
-                        <label class="text-sm text-gray-700 font-medium mb-2 block">
+                        <label class="profile-modal-label">
                           {{ field.label }}
                         </label>
-                        <div class="relative">
+                        <div class="profile-modal-select-wrapper">
                           <component
                             :is="field.icon"
-                            class="text-gray-400 h-4 w-4 pointer-events-none left-3 top-1/2 absolute -translate-y-1/2"
+                            class="profile-modal-select-icon"
                           />
                           <select
                             :value="formData[field.key]"
                             :data-field="field.key"
-                            class="text-sm py-3 pl-10 pr-4 border border-gray-300 rounded-lg bg-white w-full transition-colors focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                            class="profile-modal-select"
                             @change="handleInput(field.key, ($event.target as HTMLSelectElement).value)"
                           >
                             <option
@@ -553,21 +553,21 @@ onUnmounted(() => {
             </div>
 
             <!-- 底部操作栏 -->
-            <div class="px-6 py-4 border-t border-gray-200 rounded-b-2xl bg-white bottom-0 sticky">
-              <div class="flex flex-col gap-3 sm:flex-row-reverse sm:gap-3">
+            <div class="profile-modal-footer">
+              <div class="profile-modal-footer-actions">
                 <button
                   type="button"
                   :disabled="!canSubmit"
-                  class="text-sm text-white font-medium px-6 py-3 rounded-lg bg-blue-600 flex gap-2 transition-colors items-center justify-center focus:outline-none disabled:bg-gray-300 hover:bg-blue-700 disabled:cursor-not-allowed focus:ring-2 focus:ring-blue-500/20"
+                  class="profile-modal-button profile-modal-button-primary"
                   @click="handleSubmit"
                 >
-                  <Save class="h-4 w-4" />
+                  <Save class="profile-modal-button-icon" />
                   {{ isSubmitting ? '保存中...' : '保存更改' }}
                 </button>
                 <button
                   type="button"
                   :disabled="isSubmitting"
-                  class="text-sm text-gray-700 font-medium px-6 py-3 border border-gray-300 rounded-lg transition-colors focus:outline-none hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed focus:ring-2 focus:ring-gray-500/20"
+                  class="profile-modal-button profile-modal-button-secondary"
                   @click="handleClose"
                 >
                   取消
@@ -575,8 +575,8 @@ onUnmounted(() => {
               </div>
 
               <!-- 状态指示器 -->
-              <div v-if="isDirty" class="text-sm text-amber-600 mt-3 flex gap-2 items-center">
-                <div class="rounded-full bg-amber-500 h-2 w-2" />
+              <div v-if="isDirty" class="profile-modal-dirty-indicator">
+                <div class="profile-modal-dirty-dot" />
                 有未保存的更改
               </div>
             </div>
@@ -587,7 +587,7 @@ onUnmounted(() => {
 
     <!-- 确认关闭模态框 -->
     <ConfirmModal
-      :visible="showConfirmModal"
+      v-model:visible="showConfirmModal"
       title="确认关闭"
       message="您有未保存的更改，确定要关闭吗？关闭后所有更改将丢失。"
       type="warning"
@@ -596,54 +596,14 @@ onUnmounted(() => {
       confirm-button-type="warning"
       @confirm="handleConfirmClose"
       @cancel="handleCancelClose"
-      @close="handleCancelClose"
     />
   </Teleport>
 </template>
 
-<style scoped>
-/* 隐藏滚动条但保持滚动功能 */
-.modal-content {
-  overflow-y: auto;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-
-.modal-content::-webkit-scrollbar {
-  display: none;
-}
-
-.modal-body {
-  max-height: calc(90vh - 140px); /* 减去头部和底部的高度 */
-  overflow-y: auto;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-
-.modal-body::-webkit-scrollbar {
-  display: none;
-}
-
-/* 过渡动画优化 */
-.modal-overlay-enter-active,
-.modal-overlay-leave-active {
-  transition: opacity 0.3s ease;
-}
-
-.modal-enter-active,
-.modal-leave-active {
-  transition: all 0.3s ease;
-}
-
-/* 焦点样式优化 */
-input:focus,
-textarea:focus,
-select:focus {
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-}
-
-/* 错误状态样式 */
-.border-red-500:focus {
-  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+<style scoped lang="postcss">
+.field-footer {
+  margin-top: 0.25rem;
+  display: flex;
+  justify-content: space-between;
 }
 </style>

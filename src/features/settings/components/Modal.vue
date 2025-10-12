@@ -21,11 +21,11 @@ function handleBackdropClick() {
 <template>
   <Teleport to="body">
     <div
-      class="p-4 bg-black/50 flex transition-opacity duration-300 items-center inset-0 justify-center fixed z-50"
+      class="modal-overlay-wrapper"
       @click="handleBackdropClick"
     >
       <div
-        class="rounded-xl bg-white max-h-[90vh] max-w-md w-full shadow-2xl scale-100 transform transition-all duration-300 overflow-y-auto"
+        class="modal-content-wrapper"
         @click.stop
       >
         <slot />
@@ -33,3 +33,18 @@ function handleBackdropClick() {
     </div>
   </Teleport>
 </template>
+
+<style scoped lang="postcss">
+.modal-overlay-wrapper {
+  transition: opacity 300ms;
+}
+
+.modal-content-wrapper {
+  max-height: 90vh;
+  max-width: 28rem;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  transform: scale(1);
+  transition: all 300ms;
+  overflow-y: auto;
+}
+</style>

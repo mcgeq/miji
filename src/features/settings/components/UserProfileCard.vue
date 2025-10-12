@@ -22,17 +22,8 @@ function getInitials(name: string): string {
     .slice(0, 2);
 }
 
-function getRoleClass(role?: string): string {
-  const roleClasses = {
-    Admin: 'bg-red-500/20 text-red-100',
-    Owner: 'bg-amber-500/20 text-amber-100',
-    Developer: 'bg-emerald-500/20 text-emerald-100',
-    Moderator: 'bg-purple-500/20 text-purple-100',
-    Editor: 'bg-blue-500/20 text-blue-100',
-    User: 'bg-gray-500/20 text-gray-100',
-    Guest: 'bg-gray-600/20 text-gray-100',
-  };
-  return roleClasses[role as keyof typeof roleClasses] || 'bg-gray-500/20 text-gray-100';
+function getRoleClass(_role?: string): string {
+  return 'user-profile-role-badge';
 }
 
 function getRoleText(role?: string): string {
@@ -116,42 +107,42 @@ async function handleProfileUpdate(data: Partial<AuthUser>) {
 </script>
 
 <template>
-  <div class="bg-gradient-to-br text-white p-8 rounded-2xl relative overflow-hidden from-blue-600 to-blue-800 via-purple-600">
+  <div class="user-profile-card">
     <!-- 背景装饰 -->
-    <div class="bg-[url('data:image/svg+xml,%3Csvg%20width%3D%2260%22%20height%3D%2260%22%20viewBox%3D%220%200%2060%2060%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cg%20fill%3D%22none%22%20fill-rule%3D%22evenodd%22%3E%3Cg%20fill%3D%22%23ffffff%22%20fill-opacity%3D%220.1%22%3E%3Ccircle%20cx%3D%2230%22%20cy%3D%2230%22%20r%3D%222%22/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] pointer-events-none inset-0 absolute" />
+    <div class="user-profile-pattern" />
 
-    <div class="relative z-10">
-      <div class="mb-8 flex flex-col gap-6 items-center md:flex-row md:items-start">
-        <div class="relative">
-          <div class="h-20 w-20 relative">
+    <div class="user-profile-content">
+      <div class="user-profile-header">
+        <div class="user-profile-avatar-wrapper">
+          <div class="user-profile-avatar-container">
             <img
               v-if="user?.avatarUrl"
               :src="user.avatarUrl"
               :alt="user.name"
-              class="border-3 border-white/20 rounded-full h-full w-full object-cover"
+              class="user-profile-avatar-image"
             >
-            <div v-else class="text-2xl font-semibold border-3 border-white/20 rounded-full bg-white/20 flex h-full w-full items-center justify-center">
+            <div v-else class="user-profile-avatar-fallback">
               {{ getInitials(user?.name || '') }}
             </div>
           </div>
           <button
-            class="p-2 border-2 border-white rounded-full bg-blue-500 transition-all duration-200 absolute hover:bg-blue-600 hover:scale-110 -bottom-1 -right-1"
+            class="user-profile-avatar-edit"
             @click="handleAvatarEdit"
           >
-            <Camera class="h-4 w-4" />
+            <Camera class="user-profile-avatar-edit-icon" />
           </button>
         </div>
 
-        <div class="text-center flex-1 md:text-left">
-          <h2 class="text-2xl font-bold mb-1">
+        <div class="user-profile-info">
+          <h2 class="user-profile-name">
             {{ user?.name || '用户' }}
           </h2>
-          <p class="text-white/90 mb-3">
+          <p class="user-profile-email">
             {{ user?.email || '' }}
           </p>
-          <div class="inline-flex items-center">
+          <div>
             <span
-              class="text-xs tracking-wide font-medium px-3 py-1 rounded-full uppercase"
+              class="user-profile-role-badge badge-with-bg"
               :class="getRoleClass(user?.role)"
             >
               {{ getRoleText(user?.role) }}
@@ -160,40 +151,40 @@ async function handleProfileUpdate(data: Partial<AuthUser>) {
         </div>
       </div>
 
-      <div class="mb-8 gap-4 grid grid-cols-1 md:grid-cols-3">
-        <div class="p-4 text-center rounded-xl bg-white/10 backdrop-blur-sm">
-          <div class="text-xs text-white/80 tracking-wide mb-1 uppercase">
+      <div class="user-profile-stats">
+        <div class="user-profile-stat">
+          <div class="user-profile-stat-label">
             序列号
           </div>
-          <div class="text-sm font-semibold">
+          <div class="user-profile-stat-value">
             {{ formatSerialNum(user?.serialNum) }}
           </div>
         </div>
-        <div class="p-4 text-center rounded-xl bg-white/10 backdrop-blur-sm">
-          <div class="text-xs text-white/80 tracking-wide mb-1 uppercase">
+        <div class="user-profile-stat">
+          <div class="user-profile-stat-label">
             时区
           </div>
-          <div class="text-sm font-semibold">
+          <div class="user-profile-stat-value">
             {{ user?.timezone || 'Asia/Shanghai' }}
           </div>
         </div>
-        <div class="p-4 text-center rounded-xl bg-white/10 backdrop-blur-sm">
-          <div class="text-xs text-white/80 tracking-wide mb-1 uppercase">
+        <div class="user-profile-stat">
+          <div class="user-profile-stat-label">
             语言
           </div>
-          <div class="text-sm font-semibold">
+          <div class="user-profile-stat-value">
             {{ getLanguageText(user?.language) }}
           </div>
         </div>
       </div>
 
       <!-- 只保留编辑资料按钮，移除退出登录按钮 -->
-      <div class="flex justify-center">
+      <div class="user-profile-actions">
         <button
-          class="font-medium px-8 py-3 rounded-xl bg-white/20 flex gap-2 transition-all duration-200 items-center justify-center backdrop-blur-sm hover:bg-white/30"
+          class="user-profile-edit-button"
           @click="handleEditProfile"
         >
-          <Edit class="h-4 w-4" />
+          <Edit class="user-profile-edit-icon" />
           编辑资料
         </button>
       </div>
@@ -214,3 +205,9 @@ async function handleProfileUpdate(data: Partial<AuthUser>) {
     />
   </div>
 </template>
+
+<style scoped lang="postcss">
+.badge-with-bg {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+</style>

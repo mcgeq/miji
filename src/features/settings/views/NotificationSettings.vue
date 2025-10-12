@@ -118,78 +118,82 @@ function handleSave() {
 </script>
 
 <template>
-  <div class="max-w-4xl">
+  <div class="general-settings-container">
     <!-- 通知偏好 -->
-    <div class="mb-10">
-      <h3 class="text-xl text-slate-800 font-semibold mb-6 pb-2 border-b-2 border-slate-200">
+    <div class="general-settings-section">
+      <h3 class="general-settings-title">
         通知偏好
       </h3>
 
-      <div class="space-y-6">
-        <div class="py-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between">
-          <div class="mb-4 sm:mb-0">
-            <label class="text-slate-700 font-medium mb-1 block">启用通知</label>
-            <p class="text-sm text-slate-500">
+      <div class="general-settings-items">
+        <div class="general-setting-item">
+          <div class="general-setting-label-wrapper">
+            <label class="general-setting-label">启用通知</label>
+            <p class="general-setting-description">
               接收应用和系统通知
             </p>
           </div>
-          <div class="sm:ml-8">
-            <label class="inline-flex cursor-pointer items-center relative">
+          <div class="general-setting-control">
+            <label class="toggle-switch">
               <input
                 v-model="notificationsEnabled"
                 type="checkbox"
-                class="peer sr-only"
+                class="toggle-switch-input"
               >
-              <div class="peer rounded-full bg-slate-300 h-6 w-12 relative after:rounded-full after:bg-white peer-checked:bg-blue-500 after:h-5 after:w-5 after:content-[''] peer-focus:ring-2 peer-focus:ring-blue-500 after:transition-all after:left-0.5 after:top-0.5 after:absolute peer-checked:after:border-white peer-checked:after:translate-x-6" />
+              <div class="toggle-switch-track">
+                <div class="toggle-switch-thumb" />
+              </div>
             </label>
           </div>
         </div>
 
-        <div v-if="notificationsEnabled" class="p-6 rounded-xl bg-slate-50 space-y-6">
+        <div v-if="notificationsEnabled" class="dnd-schedule general-settings-items">
           <div
             v-for="type in notificationTypes"
             :key="type.id"
-            class="p-6 border border-slate-200 rounded-lg bg-white"
+            class="notification-type-card"
           >
-            <div class="mb-4 flex items-center justify-between">
-              <div class="flex gap-4 items-center">
-                <component :is="type.icon" class="text-blue-500 h-5 w-5" />
+            <div class="notification-type-header">
+              <div class="notification-type-info">
+                <component :is="type.icon" class="notification-type-icon" />
                 <div>
-                  <h4 class="text-slate-800 font-medium">
+                  <h4 class="notification-type-title">
                     {{ type.name }}
                   </h4>
-                  <p class="text-sm text-slate-500">
+                  <p class="notification-type-description">
                     {{ type.description }}
                   </p>
                 </div>
               </div>
-              <label class="inline-flex cursor-pointer items-center relative">
+              <label class="toggle-switch">
                 <input
                   v-model="type.enabled"
                   type="checkbox"
-                  class="peer sr-only"
+                  class="toggle-switch-input"
                 >
-                <div class="peer rounded-full bg-slate-300 h-6 w-12 relative after:rounded-full after:bg-white peer-checked:bg-blue-500 after:h-5 after:w-5 after:content-[''] peer-focus:ring-2 peer-focus:ring-blue-500 after:transition-all after:left-0.5 after:top-0.5 after:absolute peer-checked:after:border-white peer-checked:after:translate-x-6" />
+                <div class="toggle-switch-track">
+                  <div class="toggle-switch-thumb" />
+                </div>
               </label>
             </div>
 
-            <div v-if="type.enabled" class="pt-4 border-t border-slate-100">
-              <div class="flex flex-col gap-4 sm:flex-row sm:items-center">
-                <span class="text-sm text-slate-600 font-medium whitespace-nowrap">通知方式:</span>
-                <div class="flex flex-wrap gap-2">
+            <div v-if="type.enabled" class="notification-type-methods">
+              <div class="notification-methods-label">
+                <span>通知方式:</span>
+                <div class="notification-methods-options">
                   <label
                     v-for="method in notificationMethods"
                     :key="method.id"
-                    class="flex gap-2 cursor-pointer items-center"
+                    class="notification-method-checkbox"
                   >
                     <input
                       v-model="type.methods"
                       :value="method.id"
                       type="checkbox"
-                      class="text-blue-600 border-gray-300 rounded bg-gray-100 h-4 w-4 focus:ring-blue-500"
+                      class="notification-method-checkbox-input"
                     >
-                    <component :is="method.icon" class="text-slate-500 h-4 w-4" />
-                    <span class="text-sm text-slate-700">{{ method.name }}</span>
+                    <component :is="method.icon" class="notification-method-checkbox-icon" />
+                    <span class="notification-method-checkbox-label">{{ method.name }}</span>
                   </label>
                 </div>
               </div>
@@ -200,84 +204,86 @@ function handleSave() {
     </div>
 
     <!-- 推送设置 -->
-    <div v-if="notificationsEnabled" class="mb-10">
-      <h3 class="text-xl text-slate-800 font-semibold mb-6 pb-2 border-b-2 border-slate-200">
+    <div v-if="notificationsEnabled" class="general-settings-section">
+      <h3 class="general-settings-title">
         推送设置
       </h3>
 
-      <div class="space-y-6">
-        <div class="py-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between">
-          <div class="mb-4 sm:mb-0">
-            <label class="text-slate-700 font-medium mb-1 block">免打扰模式</label>
-            <p class="text-sm text-slate-500">
+      <div class="general-settings-items">
+        <div class="general-setting-item">
+          <div class="general-setting-label-wrapper">
+            <label class="general-setting-label">免打扰模式</label>
+            <p class="general-setting-description">
               在指定时间段内静音所有通知
             </p>
           </div>
-          <div class="sm:ml-8">
-            <label class="inline-flex cursor-pointer items-center relative">
+          <div class="general-setting-control">
+            <label class="toggle-switch">
               <input
                 v-model="doNotDisturbEnabled"
                 type="checkbox"
-                class="peer sr-only"
+                class="toggle-switch-input"
               >
-              <div class="peer rounded-full bg-slate-300 h-6 w-12 relative after:rounded-full after:bg-white peer-checked:bg-blue-500 after:h-5 after:w-5 after:content-[''] peer-focus:ring-2 peer-focus:ring-blue-500 after:transition-all after:left-0.5 after:top-0.5 after:absolute peer-checked:after:border-white peer-checked:after:translate-x-6" />
+              <div class="toggle-switch-track">
+                <div class="toggle-switch-thumb" />
+              </div>
             </label>
           </div>
         </div>
 
-        <div v-if="doNotDisturbEnabled" class="p-6 rounded-xl bg-slate-50">
-          <div class="mb-6 gap-4 grid grid-cols-1 md:grid-cols-2">
-            <div>
-              <label class="text-sm text-slate-700 font-medium mb-2 block">开始时间</label>
+        <div v-if="doNotDisturbEnabled" class="dnd-schedule">
+          <div class="dnd-time-inputs">
+            <div class="dnd-time-input-wrapper">
+              <label>开始时间</label>
               <input
                 v-model="dndSchedule.start"
                 type="time"
-                class="px-3 py-2 border border-slate-300 rounded-lg w-full focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
+                class="dnd-time-input"
               >
             </div>
-            <div>
-              <label class="text-sm text-slate-700 font-medium mb-2 block">结束时间</label>
+            <div class="dnd-time-input-wrapper">
+              <label>结束时间</label>
               <input
                 v-model="dndSchedule.end"
                 type="time"
-                class="px-3 py-2 border border-slate-300 rounded-lg w-full focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
+                class="dnd-time-input"
               >
             </div>
           </div>
           <div>
-            <div class="mb-3">
-              <span class="text-sm text-slate-700 font-medium">重复:</span>
+            <div class="dnd-days-label">
+              <span>重复:</span>
             </div>
-            <div class="flex flex-wrap gap-2">
+            <div class="dnd-days-options">
               <label
                 v-for="day in weekDays"
                 :key="day.id"
-                class="flex gap-2 cursor-pointer items-center"
+                class="notification-method-checkbox"
               >
                 <input
                   v-model="dndSchedule.days"
                   :value="day.id"
                   type="checkbox"
-                  class="text-blue-600 border-gray-300 rounded bg-gray-100 h-4 w-4 focus:ring-blue-500"
+                  class="notification-method-checkbox-input"
                 >
-                <span class="text-sm text-slate-700">{{ day.name }}</span>
+                <span class="notification-method-checkbox-label">{{ day.name }}</span>
               </label>
             </div>
           </div>
         </div>
 
-        <div class="py-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between">
-          <div class="mb-4 sm:mb-0">
-            <label class="text-slate-700 font-medium mb-1 block">通知声音</label>
-            <p class="text-sm text-slate-500">
+        <div class="general-setting-item">
+          <div class="general-setting-label-wrapper">
+            <label class="general-setting-label">通知声音</label>
+            <p class="general-setting-description">
               选择通知提示音
             </p>
           </div>
-          <div class="sm:ml-8">
-            <div class="flex gap-2">
+          <div class="general-setting-control">
+            <div class="sound-selection">
               <select
                 v-model="selectedSound"
-                class="px-4 py-2 border border-slate-300 rounded-lg bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
+                class="sound-select"
               >
                 <option
                   v-for="sound in notificationSounds"
@@ -288,27 +294,27 @@ function handleSave() {
                 </option>
               </select>
               <button
-                class="text-slate-700 px-4 py-2 border border-slate-300 rounded-lg bg-slate-100 flex gap-2 transition-all duration-200 items-center hover:bg-slate-200"
+                class="sound-play-button"
                 @click="playSound"
               >
-                <Volume2 class="h-4 w-4" />
+                <Volume2 class="sound-play-icon" />
                 试听
               </button>
             </div>
           </div>
         </div>
 
-        <div class="py-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between">
-          <div class="mb-4 sm:mb-0">
-            <label class="text-slate-700 font-medium mb-1 block">通知持续时间</label>
-            <p class="text-sm text-slate-500">
+        <div class="general-setting-item">
+          <div class="general-setting-label-wrapper">
+            <label class="general-setting-label">通知持续时间</label>
+            <p class="general-setting-description">
               通知在屏幕上显示的时间
             </p>
           </div>
-          <div class="sm:ml-8">
+          <div class="general-setting-control">
             <select
               v-model="notificationDuration"
-              class="px-4 py-2 border border-slate-300 rounded-lg bg-white w-full focus:border-blue-500 sm:w-40 focus:ring-2 focus:ring-blue-500"
+              class="general-select"
             >
               <option :value="3">
                 3 秒
@@ -329,23 +335,23 @@ function handleSave() {
     </div>
 
     <!-- 邮件通知 -->
-    <div v-if="notificationsEnabled" class="mb-10">
-      <h3 class="text-xl text-slate-800 font-semibold mb-6 pb-2 border-b-2 border-slate-200">
+    <div v-if="notificationsEnabled" class="general-settings-section">
+      <h3 class="general-settings-title">
         邮件通知
       </h3>
 
-      <div class="space-y-6">
-        <div class="py-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between">
-          <div class="mb-4 sm:mb-0">
-            <label class="text-slate-700 font-medium mb-1 block">邮件摘要</label>
-            <p class="text-sm text-slate-500">
+      <div class="general-settings-items">
+        <div class="general-setting-item">
+          <div class="general-setting-label-wrapper">
+            <label class="general-setting-label">邮件摘要</label>
+            <p class="general-setting-description">
               定期发送活动摘要到您的邮箱
             </p>
           </div>
-          <div class="sm:ml-8">
+          <div class="general-setting-control">
             <select
               v-model="emailSummaryFrequency"
-              class="px-4 py-2 border border-slate-300 rounded-lg bg-white w-full focus:border-blue-500 sm:w-40 focus:ring-2 focus:ring-blue-500"
+              class="general-select"
             >
               <option value="never">
                 从不
@@ -363,21 +369,23 @@ function handleSave() {
           </div>
         </div>
 
-        <div class="py-6 flex flex-col sm:flex-row sm:items-center sm:justify-between">
-          <div class="mb-4 sm:mb-0">
-            <label class="text-slate-700 font-medium mb-1 block">营销邮件</label>
-            <p class="text-sm text-slate-500">
+        <div class="general-setting-item">
+          <div class="general-setting-label-wrapper">
+            <label class="general-setting-label">营销邮件</label>
+            <p class="general-setting-description">
               接收产品更新和营销信息
             </p>
           </div>
-          <div class="sm:ml-8">
-            <label class="inline-flex cursor-pointer items-center relative">
+          <div class="general-setting-control">
+            <label class="toggle-switch">
               <input
                 v-model="marketingEmails"
                 type="checkbox"
-                class="peer sr-only"
+                class="toggle-switch-input"
               >
-              <div class="peer rounded-full bg-slate-300 h-6 w-12 relative after:rounded-full after:bg-white peer-checked:bg-blue-500 after:h-5 after:w-5 after:content-[''] peer-focus:ring-2 peer-focus:ring-blue-500 after:transition-all after:left-0.5 after:top-0.5 after:absolute peer-checked:after:border-white peer-checked:after:translate-x-6" />
+              <div class="toggle-switch-track">
+                <div class="toggle-switch-thumb" />
+              </div>
             </label>
           </div>
         </div>
@@ -385,18 +393,18 @@ function handleSave() {
     </div>
 
     <!-- 操作按钮 -->
-    <div class="pt-8 border-t border-slate-200 flex flex-col gap-4 sm:flex-row">
+    <div class="action-buttons">
       <button
-        class="text-white font-medium px-6 py-3 rounded-lg bg-blue-500 flex gap-2 transition-all duration-200 items-center justify-center hover:bg-blue-600"
+        class="action-button-primary"
         @click="handleSave"
       >
-        <Save class="h-4 w-4" />
+        <Save class="action-button-primary-icon" />
         保存设置
       </button>
       <button
-        class="text-slate-700 font-medium px-6 py-3 border border-slate-300 rounded-lg bg-slate-100 flex gap-2 transition-all duration-200 items-center justify-center hover:bg-slate-200"
+        class="action-button-secondary"
       >
-        <Bell class="h-4 w-4" />
+        <Bell class="action-button-secondary-icon" />
         测试通知
       </button>
     </div>

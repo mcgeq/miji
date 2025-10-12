@@ -77,25 +77,25 @@ function handleReset() {
 </script>
 
 <template>
-  <div class="max-w-4xl">
+  <div class="general-settings-container">
     <!-- 语言和地区 -->
-    <div class="mb-10">
-      <h3 class="text-xl text-slate-800 font-semibold mb-6 pb-2 border-b-2 border-slate-200">
+    <div class="general-settings-section">
+      <h3 class="general-settings-title">
         语言和地区
       </h3>
 
-      <div class="space-y-6">
-        <div class="py-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between">
-          <div class="mb-4 sm:mb-0">
-            <label class="text-slate-700 font-medium mb-1 block">界面语言</label>
-            <p class="text-sm text-slate-500">
+      <div class="general-settings-items">
+        <div class="general-setting-item">
+          <div class="general-setting-label-wrapper">
+            <label class="general-setting-label">界面语言</label>
+            <p class="general-setting-description">
               选择您偏好的界面语言
             </p>
           </div>
-          <div class="sm:ml-8">
+          <div class="general-setting-control">
             <select
               v-model="selectedLocale"
-              class="px-4 py-2 border border-slate-300 rounded-lg bg-white w-full transition-all duration-200 focus:border-blue-500 sm:w-48 focus:ring-2 focus:ring-blue-500"
+              class="general-select"
               @change="handleLocaleChange"
             >
               <option
@@ -109,17 +109,17 @@ function handleReset() {
           </div>
         </div>
 
-        <div class="py-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between">
-          <div class="mb-4 sm:mb-0">
-            <label class="text-slate-700 font-medium mb-1 block">时区</label>
-            <p class="text-sm text-slate-500">
+        <div class="general-setting-item">
+          <div class="general-setting-label-wrapper">
+            <label class="general-setting-label">时区</label>
+            <p class="general-setting-description">
               设置您所在的时区
             </p>
           </div>
-          <div class="sm:ml-8">
+          <div class="general-setting-control">
             <select
               v-model="selectedTimezone"
-              class="px-4 py-2 border border-slate-300 rounded-lg bg-white w-full transition-all duration-200 focus:border-blue-500 sm:w-48 focus:ring-2 focus:ring-blue-500"
+              class="general-select"
             >
               <option
                 v-for="timezone in availableTimezones"
@@ -135,53 +135,52 @@ function handleReset() {
     </div>
 
     <!-- 显示设置 -->
-    <div class="mb-10">
-      <h3 class="text-xl text-slate-800 font-semibold mb-6 pb-2 border-b-2 border-slate-200">
+    <div class="general-settings-section">
+      <h3 class="general-settings-title">
         显示设置
       </h3>
 
-      <div class="space-y-6">
-        <div class="py-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between">
-          <div class="mb-4 sm:mb-0">
-            <label class="text-slate-700 font-medium mb-1 block">主题模式</label>
-            <p class="text-sm text-slate-500">
+      <div class="general-settings-items">
+        <div class="general-setting-item">
+          <div class="general-setting-label-wrapper">
+            <label class="general-setting-label">主题模式</label>
+            <p class="general-setting-description">
               选择浅色或深色主题
             </p>
           </div>
-          <div class="sm:ml-8">
-            <div class="flex gap-2">
+          <div class="general-setting-control">
+            <div class="theme-buttons">
               <button
                 v-for="theme in themes"
                 :key="theme.value"
-                class="text-sm font-medium px-4 py-2 border rounded-lg flex gap-2 transition-all duration-200 items-center" :class="[
-                  selectedTheme === theme.value
-                    ? 'border-blue-500 bg-blue-500 text-white'
-                    : 'border-slate-300 bg-white text-slate-700 hover:border-blue-300 hover:bg-slate-50',
-                ]"
+                class="theme-button"
+                :class="selectedTheme === theme.value ? 'theme-button-active' : 'theme-button-inactive'"
                 @click="selectedTheme = theme.value"
               >
-                <component :is="theme.icon" class="h-4 w-4" />
+                <component :is="theme.icon" class="theme-button-icon" />
                 {{ theme.label }}
               </button>
             </div>
           </div>
         </div>
 
-        <div class="py-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between">
-          <div class="mb-4 sm:mb-0">
-            <label class="text-slate-700 font-medium mb-1 block">紧凑模式</label>
-            <p class="text-sm text-slate-500">
+        <div class="general-setting-item">
+          <div class="general-setting-label-wrapper">
+            <label class="general-setting-label">紧凑模式</label>
+            <p class="general-setting-description">
               使用更紧凑的界面布局
             </p>
           </div>
-          <div class="sm:ml-8">
-            <label class="inline-flex cursor-pointer items-center relative">
+          <div class="general-setting-control">
+            <label class="toggle-switch">
               <input
                 v-model="compactMode"
                 type="checkbox"
-                class="peer sr-only"
+                class="toggle-switch-input"
               >
-              <div class="peer rounded-full bg-slate-300 h-6 w-12 relative after:rounded-full after:bg-white peer-checked:bg-blue-500 after:h-5 after:w-5 after:content-[''] peer-focus:ring-2 peer-focus:ring-blue-500 after:transition-all after:left-0.5 after:top-0.5 after:absolute peer-checked:after:border-white peer-checked:after:translate-x-6" />
+              <div class="toggle-switch-track">
+                <div class="toggle-switch-thumb" />
+              </div>
             </label>
           </div>
         </div>
@@ -189,46 +188,50 @@ function handleReset() {
     </div>
 
     <!-- 系统设置 -->
-    <div class="mb-10">
-      <h3 class="text-xl text-slate-800 font-semibold mb-6 pb-2 border-b-2 border-slate-200">
+    <div class="general-settings-section">
+      <h3 class="general-settings-title">
         系统设置
       </h3>
 
-      <div class="space-y-6">
-        <div class="py-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between">
-          <div class="mb-4 sm:mb-0">
-            <label class="text-slate-700 font-medium mb-1 block">开机自启动</label>
-            <p class="text-sm text-slate-500">
+      <div class="general-settings-items">
+        <div class="general-setting-item">
+          <div class="general-setting-label-wrapper">
+            <label class="general-setting-label">开机自启动</label>
+            <p class="general-setting-description">
               系统启动时自动运行应用
             </p>
           </div>
-          <div class="sm:ml-8">
-            <label class="inline-flex cursor-pointer items-center relative">
+          <div class="general-setting-control">
+            <label class="toggle-switch">
               <input
                 v-model="autoStart"
                 type="checkbox"
-                class="peer sr-only"
+                class="toggle-switch-input"
               >
-              <div class="peer rounded-full bg-slate-300 h-6 w-12 relative after:rounded-full after:bg-white peer-checked:bg-blue-500 after:h-5 after:w-5 after:content-[''] peer-focus:ring-2 peer-focus:ring-blue-500 after:transition-all after:left-0.5 after:top-0.5 after:absolute peer-checked:after:border-white peer-checked:after:translate-x-6" />
+              <div class="toggle-switch-track">
+                <div class="toggle-switch-thumb" />
+              </div>
             </label>
           </div>
         </div>
 
-        <div class="py-6 flex flex-col sm:flex-row sm:items-center sm:justify-between">
-          <div class="mb-4 sm:mb-0">
-            <label class="text-slate-700 font-medium mb-1 block">最小化到系统托盘</label>
-            <p class="text-sm text-slate-500">
+        <div class="general-setting-item">
+          <div class="general-setting-label-wrapper">
+            <label class="general-setting-label">最小化到系统托盘</label>
+            <p class="general-setting-description">
               关闭窗口时最小化到系统托盘
             </p>
           </div>
-          <div class="sm:ml-8">
-            <label class="inline-flex cursor-pointer items-center relative">
+          <div class="general-setting-control">
+            <label class="toggle-switch">
               <input
                 v-model="minimizeToTray"
                 type="checkbox"
-                class="peer sr-only"
+                class="toggle-switch-input"
               >
-              <div class="peer rounded-full bg-slate-300 h-6 w-12 relative after:rounded-full after:bg-white peer-checked:bg-blue-500 after:h-5 after:w-5 after:content-[''] peer-focus:ring-2 peer-focus:ring-blue-500 after:transition-all after:left-0.5 after:top-0.5 after:absolute peer-checked:after:border-white peer-checked:after:translate-x-6" />
+              <div class="toggle-switch-track">
+                <div class="toggle-switch-thumb" />
+              </div>
             </label>
           </div>
         </div>
@@ -236,19 +239,19 @@ function handleReset() {
     </div>
 
     <!-- 操作按钮 -->
-    <div class="pt-8 border-t border-slate-200 flex flex-col gap-4 sm:flex-row">
+    <div class="action-buttons">
       <button
-        class="text-white font-medium px-6 py-3 rounded-lg bg-blue-500 flex gap-2 transition-all duration-200 items-center justify-center hover:bg-blue-600"
+        class="action-button-primary"
         @click="handleSave"
       >
-        <Save class="h-4 w-4" />
+        <Save class="action-button-primary-icon" />
         保存设置
       </button>
       <button
-        class="text-slate-700 font-medium px-6 py-3 border border-slate-300 rounded-lg bg-slate-100 flex gap-2 transition-all duration-200 items-center justify-center hover:bg-slate-200"
+        class="action-button-secondary"
         @click="handleReset"
       >
-        <RotateCcw class="h-4 w-4" />
+        <RotateCcw class="action-button-secondary-icon" />
         重置为默认
       </button>
     </div>

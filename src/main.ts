@@ -21,6 +21,7 @@ import '@/assets/styles/components/input.css';
 import '@/assets/styles/components/modals.css';
 import '@/assets/styles/components/checkbox.css';
 import '@/assets/styles/components/text.css';
+import '@/assets/styles/components/settings.css';
 
 z.config({
   localeError: i18nErrorMap,

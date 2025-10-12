@@ -195,7 +195,7 @@ const userInitial = computed(() => {
     >
       <div
         v-if="props.isOpen"
-        class="p-4 bg-black/50 flex items-center inset-0 justify-center fixed z-50"
+        class="avatar-modal-overlay"
         @click="handleOverlayClick"
       >
         <Transition
@@ -208,35 +208,35 @@ const userInitial = computed(() => {
         >
           <div
             v-if="props.isOpen"
-            class="p-6 rounded-2xl bg-white max-w-md w-full shadow-2xl"
+            class="avatar-modal-content"
           >
             <!-- Modal 头部 -->
-            <div class="mb-6 flex items-center justify-between">
-              <h2 class="text-xl text-gray-900 font-bold">
+            <div class="avatar-modal-header">
+              <h2 class="avatar-modal-title">
                 编辑头像
               </h2>
               <button
-                class="text-gray-400 p-2 rounded-full transition-colors hover:text-gray-600 hover:bg-gray-100"
+                class="avatar-modal-close-button"
                 :disabled="isUploading"
                 @click="handleClose"
               >
-                <X class="h-5 w-5" />
+                <X class="avatar-modal-close-icon" />
               </button>
             </div>
 
             <!-- 当前头像显示 -->
-            <div class="mb-6 flex justify-center">
-              <div class="relative">
-                <div class="border-4 border-gray-200 rounded-full h-32 w-32 overflow-hidden">
+            <div class="avatar-modal-preview">
+              <div class="avatar-modal-preview-wrapper">
+                <div class="avatar-modal-preview-container">
                   <img
                     v-if="currentAvatarUrl"
                     :src="currentAvatarUrl"
                     :alt="user?.name || '用户头像'"
-                    class="h-full w-full object-cover"
+                    class="avatar-modal-preview-image"
                   >
                   <div
                     v-else
-                    class="text-2xl text-gray-500 font-semibold bg-gray-100 flex h-full w-full items-center justify-center"
+                    class="avatar-modal-preview-fallback"
                   >
                     {{ userInitial }}
                   </div>
@@ -245,7 +245,7 @@ const userInitial = computed(() => {
                 <!-- 预览标识 -->
                 <div
                   v-if="previewUrl"
-                  class="text-xs text-white px-2 py-1 rounded-full bg-blue-500 absolute -right-2 -top-2"
+                  class="avatar-modal-preview-badge"
                 >
                   预览
                 </div>
@@ -254,8 +254,8 @@ const userInitial = computed(() => {
 
             <!-- 文件选择区域 -->
             <div
-              class="mb-6 p-6 text-center border-2 rounded-lg border-dashed cursor-pointer transition-colors"
-              :class="dragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-gray-400'"
+              class="avatar-modal-dropzone"
+              :class="dragActive ? 'avatar-modal-dropzone-active' : 'avatar-modal-dropzone-inactive'"
               @click="triggerFileSelect"
               @dragover="handleDragOver"
               @dragleave="handleDragLeave"
@@ -265,19 +265,19 @@ const userInitial = computed(() => {
                 ref="fileInput"
                 type="file"
                 accept="image/*"
-                class="hidden"
+                style="display: none;"
                 @change="handleFileSelect"
               >
 
-              <div class="flex flex-col gap-3 items-center">
-                <div class="p-3 rounded-full bg-gray-100">
-                  <Upload class="text-gray-600 h-6 w-6" />
+              <div class="avatar-modal-dropzone-content">
+                <div class="avatar-modal-upload-icon-wrapper">
+                  <Upload class="avatar-modal-upload-icon" />
                 </div>
                 <div>
-                  <p class="text-sm text-gray-900 font-medium">
+                  <p class="avatar-modal-upload-text">
                     点击或拖拽上传图片
                   </p>
-                  <p class="text-xs text-gray-500">
+                  <p class="avatar-modal-upload-hint">
                     支持 JPG、PNG、GIF，最大 5MB
                   </p>
                 </div>
@@ -285,24 +285,24 @@ const userInitial = computed(() => {
             </div>
 
             <!-- 操作按钮 -->
-            <div class="space-y-3">
+            <div class="avatar-modal-actions">
               <!-- 上传按钮 -->
               <button
                 v-if="selectedFile"
                 :disabled="isUploading"
-                class="text-sm text-white font-medium px-4 py-3 rounded-lg bg-blue-600 flex gap-2 w-full transition-colors items-center justify-center focus:outline-none hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed focus:ring-2 focus:ring-blue-500/20"
+                class="avatar-modal-button avatar-modal-button-primary"
                 @click="handleUpload"
               >
-                <Camera class="h-4 w-4" />
+                <Camera class="avatar-modal-button-icon" />
                 {{ isUploading ? '上传中...' : '确认上传' }}
               </button>
 
-              <div class="flex gap-3">
+              <div class="avatar-modal-button-group">
                 <!-- 清除选择 -->
                 <button
                   v-if="selectedFile"
                   :disabled="isUploading"
-                  class="text-sm text-gray-700 font-medium px-4 py-3 border border-gray-300 rounded-lg flex-1 transition-colors focus:outline-none hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed focus:ring-2 focus:ring-gray-500/20"
+                  class="avatar-modal-button avatar-modal-button-secondary"
                   @click="clearSelection"
                 >
                   清除选择
@@ -312,17 +312,17 @@ const userInitial = computed(() => {
                 <button
                   v-if="user?.avatarUrl && !selectedFile"
                   :disabled="isUploading"
-                  class="text-sm text-red-700 font-medium px-4 py-3 border border-red-300 rounded-lg flex flex-1 gap-2 transition-colors items-center justify-center focus:outline-none hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed focus:ring-2 focus:ring-red-500/20"
+                  class="avatar-modal-button avatar-modal-button-danger"
                   @click="showDeleteConfirmDialog"
                 >
-                  <Trash2 class="h-4 w-4" />
+                  <Trash2 class="avatar-modal-button-icon" />
                   删除头像
                 </button>
 
                 <!-- 取消按钮 -->
                 <button
                   :disabled="isUploading"
-                  class="text-sm text-gray-700 font-medium px-4 py-3 border border-gray-300 rounded-lg flex-1 transition-colors focus:outline-none hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed focus:ring-2 focus:ring-gray-500/20"
+                  class="avatar-modal-button avatar-modal-button-secondary"
                   @click="handleClose"
                 >
                   {{ selectedFile ? '取消' : '关闭' }}
@@ -336,7 +336,7 @@ const userInitial = computed(() => {
 
     <!-- 删除确认对话框 -->
     <ConfirmModal
-      v-model:show="showDeleteConfirm"
+      v-model:visible="showDeleteConfirm"
       title="删除头像"
       message="确定要删除当前头像吗？删除后将显示默认头像。"
       type="danger"

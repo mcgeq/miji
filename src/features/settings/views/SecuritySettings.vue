@@ -99,48 +99,48 @@ function handleDeleteAccount() {
 </script>
 
 <template>
-  <div class="max-w-4xl">
+  <div class="general-settings-container">
     <!-- 密码安全 -->
-    <div class="mb-10">
-      <h3 class="text-xl text-slate-800 font-semibold mb-6 pb-2 border-b-2 border-slate-200">
+    <div class="general-settings-section">
+      <h3 class="general-settings-title">
         密码安全
       </h3>
 
-      <div class="space-y-6">
-        <div class="py-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between">
-          <div class="mb-4 sm:mb-0">
-            <label class="text-slate-700 font-medium mb-1 block">修改密码</label>
-            <p class="text-sm text-slate-500">
+      <div class="general-settings-items">
+        <div class="general-setting-item">
+          <div class="general-setting-label-wrapper">
+            <label class="general-setting-label">修改密码</label>
+            <p class="general-setting-description">
               定期更改密码以保护账户安全
             </p>
           </div>
-          <div class="sm:ml-8">
+          <div class="general-setting-control">
             <button
-              class="text-white px-4 py-2 rounded-lg bg-blue-500 flex gap-2 transition-all duration-200 items-center hover:bg-blue-600"
+              class="action-button-primary button-compact"
               @click="showChangePassword = true"
             >
-              <KeyIcon class="h-4 w-4" />
+              <KeyIcon class="action-button-primary-icon" />
               修改密码
             </button>
           </div>
         </div>
 
-        <div class="py-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between">
-          <div class="mb-4 sm:mb-0">
-            <label class="text-slate-700 font-medium mb-1 block">密码强度</label>
-            <p class="text-sm text-slate-500">
+        <div class="general-setting-item">
+          <div class="general-setting-label-wrapper">
+            <label class="general-setting-label">密码强度</label>
+            <p class="general-setting-description">
               您的密码安全强度评估
             </p>
           </div>
-          <div class="sm:ml-8">
-            <div class="flex gap-4 items-center">
-              <div class="rounded-full bg-slate-200 h-2 w-32 overflow-hidden">
+          <div class="general-setting-control">
+            <div class="password-strength">
+              <div class="password-strength-bar-wrapper">
                 <div
-                  class="rounded-full bg-green-500 h-full transition-all duration-300"
+                  class="password-strength-bar"
                   style="width: 60%"
                 />
               </div>
-              <span class="text-sm text-green-600 font-medium">良好</span>
+              <span class="password-strength-text">良好</span>
             </div>
           </div>
         </div>
@@ -148,89 +148,93 @@ function handleDeleteAccount() {
     </div>
 
     <!-- 两步验证 -->
-    <div class="mb-10">
-      <h3 class="text-xl text-slate-800 font-semibold mb-6 pb-2 border-b-2 border-slate-200">
+    <div class="general-settings-section">
+      <h3 class="general-settings-title">
         两步验证
       </h3>
 
-      <div class="space-y-6">
-        <div class="py-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between">
-          <div class="mb-4 sm:mb-0">
-            <label class="text-slate-700 font-medium mb-1 block">启用两步验证</label>
-            <p class="text-sm text-slate-500">
+      <div class="general-settings-items">
+        <div class="general-setting-item">
+          <div class="general-setting-label-wrapper">
+            <label class="general-setting-label">启用两步验证</label>
+            <p class="general-setting-description">
               使用手机应用或短信验证码增强账户安全
             </p>
           </div>
-          <div class="sm:ml-8">
-            <label class="inline-flex cursor-pointer items-center relative">
+          <div class="general-setting-control">
+            <label class="toggle-switch">
               <input
                 v-model="twoFactorEnabled"
                 type="checkbox"
-                class="peer sr-only"
+                class="toggle-switch-input"
               >
-              <div class="peer rounded-full bg-slate-300 h-6 w-12 relative after:rounded-full after:bg-white peer-checked:bg-blue-500 after:h-5 after:w-5 after:content-[''] peer-focus:ring-2 peer-focus:ring-blue-500 after:transition-all after:left-0.5 after:top-0.5 after:absolute peer-checked:after:border-white peer-checked:after:translate-x-6" />
+              <div class="toggle-switch-track">
+                <div class="toggle-switch-thumb" />
+              </div>
             </label>
           </div>
         </div>
 
-        <div v-if="twoFactorEnabled" class="py-6 border-b border-slate-100">
-          <div class="mb-4">
-            <label class="text-slate-700 font-medium mb-1 block">验证方式</label>
-            <p class="text-sm text-slate-500">
+        <div v-if="twoFactorEnabled" class="general-setting-item">
+          <div class="general-setting-label-wrapper">
+            <label class="general-setting-label">验证方式</label>
+            <p class="general-setting-description">
               选择接收验证码的方式
             </p>
           </div>
-          <div class="flex flex-wrap gap-2">
-            <button class="text-sm text-white font-medium px-4 py-2 border border-blue-500 rounded-lg bg-blue-500 flex gap-2 items-center">
-              <Smartphone class="h-4 w-4" />
-              验证器应用
-            </button>
-            <button class="text-sm text-slate-700 font-medium px-4 py-2 border border-slate-300 rounded-lg bg-white flex gap-2 items-center hover:border-blue-300">
-              <Phone class="h-4 w-4" />
-              短信验证
-            </button>
-            <button class="text-sm text-slate-700 font-medium px-4 py-2 border border-slate-300 rounded-lg bg-white flex gap-2 items-center hover:border-blue-300">
-              <Mail class="h-4 w-4" />
-              邮箱验证
-            </button>
+          <div class="general-setting-control no-margin">
+            <div class="verification-methods">
+              <button class="verification-method-button verification-method-active">
+                <Smartphone class="verification-method-button-icon" />
+                验证器应用
+              </button>
+              <button class="verification-method-button verification-method-inactive">
+                <Phone class="verification-method-button-icon" />
+                短信验证
+              </button>
+              <button class="verification-method-button verification-method-inactive">
+                <Mail class="verification-method-button-icon" />
+                邮箱验证
+              </button>
+            </div>
           </div>
         </div>
       </div>
     </div>
 
     <!-- 登录历史 -->
-    <div class="mb-10">
-      <h3 class="text-xl text-slate-800 font-semibold mb-6 pb-2 border-b-2 border-slate-200">
+    <div class="general-settings-section">
+      <h3 class="general-settings-title">
         登录历史
       </h3>
 
-      <div class="p-4 rounded-xl bg-slate-50 space-y-3">
+      <div class="dnd-schedule general-settings-items">
         <div
           v-for="session in loginSessions"
           :key="session.id"
-          class="p-4 border border-slate-200 rounded-lg bg-white flex items-center justify-between"
+          class="session-card"
         >
-          <div class="flex gap-4 items-center">
-            <Monitor class="text-slate-500 h-5 w-5" />
+          <div class="session-info">
+            <Monitor class="session-icon" />
             <div>
-              <div class="text-slate-800 font-medium">
+              <div class="session-device">
                 {{ session.device }}
               </div>
-              <div class="text-sm text-slate-500">
+              <div class="session-location">
                 {{ session.location }}
               </div>
             </div>
-            <div class="text-sm text-slate-400">
+            <div class="session-time">
               {{ getSessionTimeText(session.timestamp) }}
             </div>
           </div>
           <div>
-            <span v-if="session.current" class="text-xs text-green-800 font-medium px-3 py-1 rounded-full bg-green-100 inline-flex items-center">
+            <span v-if="session.current" class="session-current-badge">
               当前会话
             </span>
             <button
               v-else
-              class="text-sm text-red-600 font-medium px-2 py-1 rounded transition-all duration-200 hover:text-red-800 hover:bg-red-50"
+              class="session-terminate-button"
               @click="handleTerminateSession(session.id)"
             >
               终止
@@ -241,23 +245,23 @@ function handleDeleteAccount() {
     </div>
 
     <!-- 账户安全 -->
-    <div class="mb-10">
-      <h3 class="text-xl text-slate-800 font-semibold mb-6 pb-2 border-b-2 border-slate-200">
+    <div class="general-settings-section">
+      <h3 class="general-settings-title">
         账户安全
       </h3>
 
-      <div class="space-y-6">
-        <div class="py-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between">
-          <div class="mb-4 sm:mb-0">
-            <label class="text-slate-700 font-medium mb-1 block">自动锁定</label>
-            <p class="text-sm text-slate-500">
+      <div class="general-settings-items">
+        <div class="general-setting-item">
+          <div class="general-setting-label-wrapper">
+            <label class="general-setting-label">自动锁定</label>
+            <p class="general-setting-description">
               闲置指定时间后自动锁定应用
             </p>
           </div>
-          <div class="sm:ml-8">
+          <div class="general-setting-control">
             <select
               v-model="autoLockTime"
-              class="px-4 py-2 border border-slate-300 rounded-lg bg-white w-full transition-all duration-200 focus:border-blue-500 sm:w-40 focus:ring-2 focus:ring-blue-500"
+              class="general-select"
             >
               <option value="0">
                 从不
@@ -278,19 +282,19 @@ function handleDeleteAccount() {
           </div>
         </div>
 
-        <div class="py-6 flex flex-col sm:flex-row sm:items-center sm:justify-between">
-          <div class="mb-4 sm:mb-0">
-            <label class="text-slate-700 font-medium mb-1 block">删除账户</label>
-            <p class="text-sm text-slate-500">
+        <div class="general-setting-item">
+          <div class="general-setting-label-wrapper">
+            <label class="general-setting-label">删除账户</label>
+            <p class="general-setting-description">
               永久删除您的账户和所有数据
             </p>
           </div>
-          <div class="sm:ml-8">
+          <div class="general-setting-control">
             <button
-              class="text-white px-4 py-2 rounded-lg bg-red-500 flex gap-2 transition-all duration-200 items-center hover:bg-red-600"
+              class="modal-button-danger delete-account-button"
               @click="showDeleteAccount = true"
             >
-              <Trash2 class="h-4 w-4" />
+              <Trash2 class="action-button-primary-icon" />
               删除账户
             </button>
           </div>
@@ -299,50 +303,50 @@ function handleDeleteAccount() {
     </div>
 
     <!-- 修改密码对话框 -->
-    <div v-if="showChangePassword" class="p-4 bg-black/50 flex items-center inset-0 justify-center fixed z-50">
-      <div class="p-6 rounded-xl bg-white max-w-md w-full">
-        <h3 class="text-xl text-slate-800 font-semibold mb-4">
+    <div v-if="showChangePassword" class="modal-overlay">
+      <div class="modal-content">
+        <h3 class="modal-title">
           修改密码
         </h3>
-        <form class="space-y-4" @submit.prevent="handleChangePassword">
-          <div>
-            <label class="text-sm text-slate-700 font-medium mb-2 block">当前密码</label>
+        <form class="modal-form" @submit.prevent="handleChangePassword">
+          <div class="modal-form-group">
+            <label>当前密码</label>
             <input
               v-model="passwordForm.current"
               type="password"
-              class="px-3 py-2 border border-slate-300 rounded-lg w-full focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
+              class="modal-form-input"
               required
             >
           </div>
-          <div>
-            <label class="text-sm text-slate-700 font-medium mb-2 block">新密码</label>
+          <div class="modal-form-group">
+            <label>新密码</label>
             <input
               v-model="passwordForm.new"
               type="password"
-              class="px-3 py-2 border border-slate-300 rounded-lg w-full focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
+              class="modal-form-input"
               required
             >
           </div>
-          <div>
-            <label class="text-sm text-slate-700 font-medium mb-2 block">确认新密码</label>
+          <div class="modal-form-group">
+            <label>确认新密码</label>
             <input
               v-model="passwordForm.confirm"
               type="password"
-              class="px-3 py-2 border border-slate-300 rounded-lg w-full focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
+              class="modal-form-input"
               required
             >
           </div>
-          <div class="pt-4 flex gap-3">
+          <div class="modal-actions">
             <button
               type="button"
-              class="text-slate-700 px-4 py-2 rounded-lg bg-slate-100 flex-1 transition-all duration-200 hover:bg-slate-200"
+              class="modal-button modal-button-cancel"
               @click="showChangePassword = false"
             >
               取消
             </button>
             <button
               type="submit"
-              class="text-white px-4 py-2 rounded-lg bg-blue-500 flex-1 transition-all duration-200 hover:bg-blue-600"
+              class="modal-button modal-button-confirm"
             >
               确认修改
             </button>
@@ -352,32 +356,32 @@ function handleDeleteAccount() {
     </div>
 
     <!-- 删除账户确认对话框 -->
-    <div v-if="showDeleteAccount" class="p-4 bg-black/50 flex items-center inset-0 justify-center fixed z-50">
-      <div class="p-6 rounded-xl bg-white max-w-md w-full">
-        <h3 class="text-xl text-red-600 font-semibold mb-4">
+    <div v-if="showDeleteAccount" class="modal-overlay">
+      <div class="modal-content">
+        <h3 class="modal-title modal-title-danger">
           删除账户
         </h3>
-        <p class="text-slate-600 leading-relaxed mb-4">
+        <p class="modal-description-warning">
           此操作无法撤销。删除账户将永久移除您的所有数据，包括设置、文件和历史记录。
         </p>
-        <div class="mb-6">
-          <label class="text-sm text-slate-700 font-medium mb-2 block">请输入您的邮箱地址确认删除</label>
+        <div class="modal-form-group confirm-email-group">
+          <label>请输入您的邮箱地址确认删除</label>
           <input
             v-model="deleteConfirmEmail"
             type="email"
-            class="px-3 py-2 border border-slate-300 rounded-lg w-full focus:border-red-500 focus:ring-2 focus:ring-red-500"
+            class="modal-form-input modal-form-input-danger"
             :placeholder="user?.email || ''"
           >
         </div>
-        <div class="flex gap-3">
+        <div class="modal-actions-full">
           <button
-            class="text-slate-700 px-4 py-2 rounded-lg bg-slate-100 flex-1 transition-all duration-200 hover:bg-slate-200"
+            class="modal-button modal-button-cancel"
             @click="showDeleteAccount = false"
           >
             取消
           </button>
           <button
-            class="text-white px-4 py-2 rounded-lg bg-red-500 flex-1 transition-all duration-200 disabled:bg-red-300 hover:bg-red-600 disabled:cursor-not-allowed"
+            class="modal-button modal-button-danger"
             :disabled="deleteConfirmEmail !== user?.email"
             @click="handleDeleteAccount"
           >
@@ -388,3 +392,24 @@ function handleDeleteAccount() {
     </div>
   </div>
 </template>
+
+<style scoped lang="postcss">
+.button-compact {
+  padding: 0.5rem 1rem;
+}
+
+.no-margin {
+  margin-left: 0;
+}
+
+.delete-account-button {
+  padding: 0.5rem 1rem;
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.confirm-email-group {
+  margin-bottom: 1.5rem;
+}
+</style>
