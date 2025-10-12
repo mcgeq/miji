@@ -1,8 +1,6 @@
 use common::{
     BusinessCode,
-    crud::service::{
-        CrudConverter, CrudService, GenericCrudService, TransactionalCrudService, sanitize_input,
-    },
+    crud::service::{CrudConverter, CrudService, GenericCrudService, sanitize_input},
     error::{AppError, MijiResult},
     log::logger::{NoopLogger, OperationLogger},
     paginations::{DateRange, Filter, PagedQuery, PagedResult},
@@ -13,10 +11,10 @@ use sea_orm::{
     ActiveValue::Set,
     ColumnTrait, Condition, DatabaseConnection, DbConn, EntityTrait, PaginatorTrait, QueryFilter,
     QueryOrder, QuerySelect, SelectTwo,
-    prelude::async_trait::async_trait,
     sea_query::{Alias, Expr, ExprTrait, Func, SimpleExpr},
 };
 use serde::{Deserialize, Serialize};
+use std::ops::Deref;
 use std::sync::Arc;
 use std::{collections::HashMap, str::FromStr};
 use tracing::info;
@@ -36,6 +34,12 @@ use entity::{
 };
 
 /// ---------------------------------------------
+/// 常量定义
+/// ---------------------------------------------
+const BOOL_TRUE_I32: i32 = 1;
+const BOOL_FALSE_I32: i32 = 0;
+
+/// ---------------------------------------------
 /// 配置部分
 /// 账户类型配置，用于动态处理 total_assets
 /// ---------------------------------------------
@@ -44,8 +48,12 @@ struct AccountTypeConfig {
     struct_field: &'static str,
     condition: Condition,
     balance_expr: SimpleExpr,
-    #[allow(dead_code)]
+    /// 是否包含在总资产中（不包含负债类账户）
     include_in_total_assets: bool,
+    /// 是否使用绝对值
+    use_abs: bool,
+    /// 在调整后净值中是否为负向（如信用卡）
+    negative_in_net_worth: bool,
 }
 
 static ACCOUNT_TYPE_CONFIGS: Lazy<Vec<AccountTypeConfig>> = Lazy::new(|| {
@@ -57,12 +65,16 @@ static ACCOUNT_TYPE_CONFIGS: Lazy<Vec<AccountTypeConfig>> = Lazy::new(|| {
                 .add(AccountColumn::Type.eq(AccountType::Bank.as_ref())),
             balance_expr: cast_decimal(Expr::col(AccountColumn::Balance)),
             include_in_total_assets: true,
+            use_abs: false,
+            negative_in_net_worth: false,
         },
         AccountTypeConfig {
             struct_field: "cash_balance",
             condition: Condition::all().add(AccountColumn::Type.eq(AccountType::Cash.as_ref())),
             balance_expr: cast_decimal(Expr::col(AccountColumn::Balance)),
             include_in_total_assets: true,
+            use_abs: false,
+            negative_in_net_worth: false,
         },
         AccountTypeConfig {
             struct_field: "credit_card_balance",
@@ -71,7 +83,9 @@ static ACCOUNT_TYPE_CONFIGS: Lazy<Vec<AccountTypeConfig>> = Lazy::new(|| {
             balance_expr: cast_decimal(SimpleExpr::FunctionCall(Func::abs(Expr::col(
                 AccountColumn::Balance,
             )))),
-            include_in_total_assets: true,
+            include_in_total_assets: false, // 信用卡是负债，不计入总资产
+            use_abs: true,
+            negative_in_net_worth: true, // 信用卡在净值中是负向的
         },
         AccountTypeConfig {
             struct_field: "investment_balance",
@@ -79,18 +93,24 @@ static ACCOUNT_TYPE_CONFIGS: Lazy<Vec<AccountTypeConfig>> = Lazy::new(|| {
                 .add(AccountColumn::Type.eq(AccountType::Investment.as_ref())),
             balance_expr: cast_decimal(Expr::col(AccountColumn::Balance)),
             include_in_total_assets: true,
+            use_abs: false,
+            negative_in_net_worth: false,
         },
         AccountTypeConfig {
             struct_field: "alipay_balance",
             condition: Condition::all().add(AccountColumn::Type.eq(AccountType::Alipay.as_ref())),
             balance_expr: cast_decimal(Expr::col(AccountColumn::Balance)),
             include_in_total_assets: true,
+            use_abs: false,
+            negative_in_net_worth: false,
         },
         AccountTypeConfig {
             struct_field: "wechat_balance",
             condition: Condition::all().add(AccountColumn::Type.eq(AccountType::WeChat.as_ref())),
             balance_expr: cast_decimal(Expr::col(AccountColumn::Balance)),
             include_in_total_assets: true,
+            use_abs: false,
+            negative_in_net_worth: false,
         },
         AccountTypeConfig {
             struct_field: "cloud_quick_pass_balance",
@@ -98,12 +118,16 @@ static ACCOUNT_TYPE_CONFIGS: Lazy<Vec<AccountTypeConfig>> = Lazy::new(|| {
                 .add(AccountColumn::Type.eq(AccountType::CloudQuickPass.as_ref())),
             balance_expr: cast_decimal(Expr::col(AccountColumn::Balance)),
             include_in_total_assets: true,
+            use_abs: false,
+            negative_in_net_worth: false,
         },
         AccountTypeConfig {
             struct_field: "other_balance",
             condition: Condition::all().add(AccountColumn::Type.eq(AccountType::Other.as_ref())),
             balance_expr: cast_decimal(Expr::col(AccountColumn::Balance)),
             include_in_total_assets: true,
+            use_abs: false,
+            negative_in_net_worth: false,
         },
     ]
 });
@@ -137,13 +161,23 @@ impl Filter<entity::account::Entity> for AccountFilter {
             condition = condition.add(AccountColumn::Currency.eq(sanitize_input(currency)));
         }
         if let Some(is_shared) = self.is_shared {
-            condition = condition.add(AccountColumn::IsShared.eq(is_shared as i32));
+            let value = if is_shared {
+                BOOL_TRUE_I32
+            } else {
+                BOOL_FALSE_I32
+            };
+            condition = condition.add(AccountColumn::IsShared.eq(value));
         }
         if let Some(owner_id) = &self.owner_id {
             condition = condition.add(AccountColumn::OwnerId.eq(sanitize_input(owner_id)));
         }
         if let Some(is_active) = self.is_active {
-            condition = condition.add(AccountColumn::IsActive.eq(is_active as i32));
+            let value = if is_active {
+                BOOL_TRUE_I32
+            } else {
+                BOOL_FALSE_I32
+            };
+            condition = condition.add(AccountColumn::IsActive.eq(value));
         }
         if let Some(range) = &self.created_at_range {
             condition = condition.add(range.to_condition(AccountColumn::CreatedAt));
@@ -194,20 +228,6 @@ impl CrudConverter<AccountEntity, AccountCreate, AccountUpdate> for AccountConve
 }
 
 /// ---------------------------------------------
-/// 关联加载器 trait
-/// ---------------------------------------------
-#[async_trait]
-pub trait RelationLoader<E: EntityTrait> {
-    type Model: Send + Sync;
-    async fn load(&self, db: &DbConn, model: &E::Model) -> MijiResult<Option<Self::Model>>;
-    async fn batch_load(
-        &self,
-        db: &DbConn,
-        ids: &[String],
-    ) -> MijiResult<HashMap<String, Self::Model>>;
-}
-
-/// ---------------------------------------------
 /// Account Service
 /// 账户服务类型别名
 /// ---------------------------------------------
@@ -242,97 +262,39 @@ impl AccountService {
     }
 }
 
-#[async_trait]
-impl CrudService<AccountEntity, AccountFilter, AccountCreate, AccountUpdate> for AccountService {
-    async fn create(&self, db: &DbConn, data: AccountCreate) -> MijiResult<AccountModel> {
-        self.inner.create(db, data).await
-    }
+/// 实现 Deref，让 AccountService 可以自动解引用到 BaseAccountService
+/// 这样可以直接调用 CrudService 的所有方法，无需手动转发
+impl Deref for AccountService {
+    type Target = BaseAccountService;
 
-    async fn get_by_id(&self, db: &DbConn, id: String) -> MijiResult<AccountModel> {
-        self.inner.get_by_id(db, id).await
-    }
-
-    async fn update(
-        &self,
-        db: &DbConn,
-        serial_num: String,
-        data: AccountUpdate,
-    ) -> MijiResult<AccountModel> {
-        self.inner.update(db, serial_num, data).await
-    }
-
-    async fn delete(&self, db: &DbConn, serial_num: String) -> MijiResult<()> {
-        self.inner.delete(db, serial_num).await
-    }
-
-    async fn list(&self, db: &DbConn) -> MijiResult<Vec<AccountModel>> {
-        self.inner.list(db).await
-    }
-
-    async fn list_with_filter(
-        &self,
-        db: &DbConn,
-        filter: AccountFilter,
-    ) -> MijiResult<Vec<AccountModel>> {
-        self.inner.list_with_filter(db, filter).await
-    }
-
-    async fn list_paged(
-        &self,
-        db: &DbConn,
-        query: PagedQuery<AccountFilter>,
-    ) -> MijiResult<PagedResult<AccountModel>> {
-        self.inner.list_paged(db, query).await
-    }
-
-    async fn create_batch(
-        &self,
-        db: &DbConn,
-        data: Vec<AccountCreate>,
-    ) -> MijiResult<Vec<AccountModel>> {
-        self.inner.create_batch(db, data).await
-    }
-
-    async fn delete_batch(&self, db: &DbConn, ids: Vec<String>) -> MijiResult<u64> {
-        self.inner.delete_batch(db, ids).await
-    }
-
-    async fn exists(&self, db: &DbConn, id: String) -> MijiResult<bool> {
-        self.inner.exists(db, id).await
-    }
-
-    async fn count(&self, db: &DbConn) -> MijiResult<u64> {
-        self.inner.count(db).await
-    }
-
-    async fn count_with_filter(&self, db: &DbConn, filter: AccountFilter) -> MijiResult<u64> {
-        self.inner.count_with_filter(db, filter).await
-    }
-}
-
-#[async_trait]
-impl TransactionalCrudService<AccountEntity, AccountFilter, AccountCreate, AccountUpdate>
-    for AccountService
-{
-    async fn create_in_txn(&self, txn: &DbConn, data: AccountCreate) -> MijiResult<AccountModel> {
-        self.inner.create(txn, data).await
-    }
-
-    async fn update_in_txn(
-        &self,
-        txn: &DbConn,
-        id: String,
-        data: AccountUpdate,
-    ) -> MijiResult<AccountModel> {
-        self.inner.update(txn, id, data).await
-    }
-
-    async fn delete_in_txn(&self, txn: &DbConn, id: String) -> MijiResult<()> {
-        self.inner.delete(txn, id).await
+    fn deref(&self) -> &Self::Target {
+        &self.inner
     }
 }
 
 impl AccountService {
+    /// 批量加载账户的 owner (family_member) 信息
+    /// 返回 owner_id -> FamilyMemberModel 的映射
+    async fn batch_load_owners(
+        db: &DatabaseConnection,
+        accounts: &[(AccountModel, Option<CurrencyModel>)],
+    ) -> MijiResult<HashMap<String, FamilyMemberModel>> {
+        let owner_ids: Vec<String> = accounts
+            .iter()
+            .filter_map(|(account, _)| account.owner_id.clone())
+            .map(|id| sanitize_input(&id))
+            .collect();
+
+        if owner_ids.is_empty() {
+            return Ok(HashMap::new());
+        }
+
+        let family_member_service = get_family_member_service();
+        family_member_service
+            .family_member_batch_get(db, &owner_ids)
+            .await
+    }
+
     pub async fn get_account_with_relations(
         &self,
         db: &DatabaseConnection,
@@ -392,15 +354,7 @@ impl AccountService {
             .await
             .map_err(AppError::from)?;
 
-        let owner_ids: Vec<String> = rows_with_currency
-            .iter()
-            .filter_map(|(account, _)| account.owner_id.clone())
-            .map(|id| sanitize_input(&id))
-            .collect();
-        let family_member_service = get_family_member_service();
-        let owners_map = family_member_service
-            .family_member_batch_get(db, &owner_ids)
-            .await?;
+        let owners_map = Self::batch_load_owners(db, &rows_with_currency).await?;
 
         let rows = rows_with_currency
             .into_iter()
@@ -523,17 +477,19 @@ impl AccountService {
         serial_num: String,
         is_active: bool,
     ) -> MijiResult<AccountWithRelations> {
+        let value = if is_active {
+            BOOL_TRUE_I32
+        } else {
+            BOOL_FALSE_I32
+        };
         update_account_columns(
             db,
             std::iter::once(serial_num.clone()),
             [
-                (
-                    entity::account::Column::IsActive,
-                    Expr::value(is_active as i32),
-                ),
+                (entity::account::Column::IsActive, Expr::value(value)),
                 (
                     entity::account::Column::UpdatedAt,
-                    Expr::value(Some(DateUtils::local_rfc3339())),
+                    Expr::value(Some(DateUtils::local_now())),
                 ),
             ],
         )
@@ -575,28 +531,21 @@ impl AccountService {
 
         let rows_with_currency = query_builder.all(db).await.map_err(AppError::from)?;
 
-        let owner_ids: Vec<String> = rows_with_currency
-            .iter()
-            .filter_map(|(account, _)| account.owner_id.clone())
-            .map(|id| sanitize_input(&id))
-            .collect();
-        let family_member_service = get_family_member_service();
-        let owners_map = family_member_service
-            .family_member_batch_get(db, &owner_ids)
-            .await?;
+        let owners_map = Self::batch_load_owners(db, &rows_with_currency).await?;
 
         let rows_converted: Vec<AccountWithRelations> = rows_with_currency
             .into_iter()
             .filter_map(|(account, currency_opt)| {
                 let currency = currency_opt?;
+                let owner = account
+                    .owner_id
+                    .as_ref()
+                    .and_then(|id| owners_map.get(id))
+                    .cloned();
                 Some(AccountWithRelations {
-                    account: account.clone().to_local(),
+                    account: account.to_local(),
                     currency: currency.to_local(),
-                    owner: account
-                        .owner_id
-                        .as_ref()
-                        .and_then(|id| owners_map.get(id))
-                        .cloned(),
+                    owner,
                 })
             })
             .collect();
@@ -614,8 +563,9 @@ impl AccountService {
     pub async fn total_assets(&self, db: &DatabaseConnection) -> MijiResult<AccountBalanceSummary> {
         let mut query = AccountEntity::find()
             .select_only()
-            .filter(AccountColumn::IsActive.eq(1));
+            .filter(AccountColumn::IsActive.eq(BOOL_TRUE_I32));
 
+        // 为每种账户类型创建求和表达式
         for config in Self::account_type_configs() {
             let expr = Expr::val(0.0).add(
                 SimpleExpr::FunctionCall(Func::coalesce(vec![
@@ -631,41 +581,26 @@ impl AccountService {
             query = query.expr_as(expr, config.struct_field);
         }
 
-        // 计算 total_balance, adjusted_net_worth, total_assets
-        let total_balance_expr = Expr::val(0.0)
-            .add(create_sum_expr(AccountType::Savings, false))
-            .add(create_sum_expr(AccountType::Bank, false))
-            .add(create_sum_expr(AccountType::Cash, false))
-            .add(create_sum_expr(AccountType::CreditCard, true)) // 信用卡取绝对值
-            .add(create_sum_expr(AccountType::Investment, false))
-            .add(create_sum_expr(AccountType::Alipay, false))
-            .add(create_sum_expr(AccountType::WeChat, false))
-            .add(create_sum_expr(AccountType::CloudQuickPass, false))
-            .add(create_sum_expr(AccountType::Other, false))
-            .cast_as(Alias::new("DECIMAL(16, 4)"));
+        // 使用配置驱动的方式计算三个总计字段
+        let total_balance_expr = Self::build_aggregate_expr(
+            Self::account_type_configs(),
+            |config| config.use_abs, // total_balance: 所有账户的绝对值之和
+            |_| false,               // 所有账户都是正向加
+        );
 
-        let adjusted_net_worth_expr = Expr::val(0.0)
-            .add(create_sum_expr(AccountType::Savings, false))
-            .add(create_sum_expr(AccountType::Bank, false))
-            .add(create_sum_expr(AccountType::Cash, false))
-            .sub(create_sum_expr(AccountType::CreditCard, true)) // 信用卡负向计算
-            .add(create_sum_expr(AccountType::Investment, false))
-            .add(create_sum_expr(AccountType::Alipay, false))
-            .add(create_sum_expr(AccountType::WeChat, false))
-            .add(create_sum_expr(AccountType::CloudQuickPass, false))
-            .add(create_sum_expr(AccountType::Other, false))
-            .cast_as(Alias::new("DECIMAL(16, 4)"));
+        let adjusted_net_worth_expr = Self::build_aggregate_expr(
+            Self::account_type_configs(),
+            |config| config.use_abs,               // 按配置使用绝对值
+            |config| config.negative_in_net_worth, // 信用卡等负债类账户是负向的
+        );
 
-        let total_assets_expr = Expr::val(0.0)
-            .add(create_sum_expr(AccountType::Savings, false))
-            .add(create_sum_expr(AccountType::Bank, false))
-            .add(create_sum_expr(AccountType::Cash, false))
-            .add(create_sum_expr(AccountType::Investment, false))
-            .add(create_sum_expr(AccountType::Alipay, false))
-            .add(create_sum_expr(AccountType::WeChat, false))
-            .add(create_sum_expr(AccountType::CloudQuickPass, false))
-            .add(create_sum_expr(AccountType::Other, false))
-            .cast_as(Alias::new("DECIMAL(16, 4)"));
+        // total_assets: 只包含非负债类账户，完全不包含信用卡等负债
+        let total_assets_expr = Self::build_aggregate_expr_with_filter(
+            Self::account_type_configs(),
+            |config| config.include_in_total_assets, // 只处理 include_in_total_assets = true 的账户
+            |_| false,                               // 不使用绝对值
+            |_| false,                               // 全部使用加法
+        );
 
         query = query
             .expr_as(total_balance_expr, "total_balance")
@@ -680,6 +615,71 @@ impl AccountService {
             .unwrap_or_default();
         Ok(result)
     }
+
+    /// 构建聚合表达式（用于 total_balance、adjusted_net_worth）
+    ///
+    /// # 参数
+    /// - `configs`: 账户类型配置
+    /// - `should_use_abs`: 判断是否对该配置使用绝对值的函数
+    /// - `should_subtract`: 判断是否对该配置使用减法（而非加法）的函数
+    fn build_aggregate_expr<F1, F2>(
+        configs: &[AccountTypeConfig],
+        should_use_abs: F1,
+        should_subtract: F2,
+    ) -> SimpleExpr
+    where
+        F1: Fn(&AccountTypeConfig) -> bool,
+        F2: Fn(&AccountTypeConfig) -> bool,
+    {
+        Self::build_aggregate_expr_with_filter(
+            configs,
+            |_| true, // 不过滤，处理所有配置
+            should_use_abs,
+            should_subtract,
+        )
+    }
+
+    /// 构建聚合表达式（带过滤功能，用于 total_assets）
+    ///
+    /// # 参数
+    /// - `configs`: 账户类型配置
+    /// - `should_include`: 判断是否应该包含该配置的函数（过滤器）
+    /// - `should_use_abs`: 判断是否对该配置使用绝对值的函数
+    /// - `should_subtract`: 判断是否对该配置使用减法（而非加法）的函数
+    fn build_aggregate_expr_with_filter<F1, F2, F3>(
+        configs: &[AccountTypeConfig],
+        should_include: F1,
+        should_use_abs: F2,
+        should_subtract: F3,
+    ) -> SimpleExpr
+    where
+        F1: Fn(&AccountTypeConfig) -> bool,
+        F2: Fn(&AccountTypeConfig) -> bool,
+        F3: Fn(&AccountTypeConfig) -> bool,
+    {
+        let mut expr: SimpleExpr = Expr::val(0.0).into();
+
+        for config in configs {
+            // 如果不应该包含这个配置，跳过
+            if !should_include(config) {
+                continue;
+            }
+
+            let sum_expr = if should_use_abs(config) {
+                create_sum_expr_from_condition(config.condition.clone(), true)
+            } else {
+                create_sum_expr_from_condition(config.condition.clone(), false)
+            };
+
+            expr = if should_subtract(config) {
+                expr.sub(sum_expr)
+            } else {
+                expr.add(sum_expr)
+            };
+        }
+
+        expr.cast_as(Alias::new("DECIMAL(16, 4)"))
+    }
 }
 
 /// ---------------------------------------------
@@ -689,9 +689,8 @@ fn cast_decimal<T: Into<SimpleExpr>>(expr: T) -> SimpleExpr {
     expr.into().cast_as(Alias::new("DECIMAL(16,4)"))
 }
 
-// 辅助函数：创建 SUM 表达式
-fn create_sum_expr(account_type: AccountType, use_abs: bool) -> SimpleExpr {
-    let condition = Condition::all().add(AccountColumn::Type.eq(account_type.as_ref()));
+/// 从条件创建 SUM 表达式（更通用的版本）
+fn create_sum_expr_from_condition(condition: Condition, use_abs: bool) -> SimpleExpr {
     let balance_expr = if use_abs {
         SimpleExpr::FunctionCall(Func::abs(Expr::col(AccountColumn::Balance)))
     } else {
