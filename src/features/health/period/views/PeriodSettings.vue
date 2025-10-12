@@ -659,8 +659,8 @@ onMounted(() => {
 }
 
 .settings-section {
-  background-color: white;
-  border: 1px solid #e5e7eb;
+  background-color: var(--color-base-100);
+  border: 1px solid var(--color-base-300);
   border-radius: 0.75rem;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
   padding: 1.25rem;
@@ -672,8 +672,8 @@ onMounted(() => {
 }
 
 .dark .settings-section {
-  background-color: #1f2937;
-  border-color: #374151;
+  background-color: var(--color-base-200);
+  border-color: var(--color-base-300);
 }
 
 @media (min-width: 640px) {
@@ -687,12 +687,12 @@ onMounted(() => {
   align-items: center;
   font-size: 1.125rem;
   font-weight: 600;
-  color: #111827;
+  color: var(--color-base-content);
   margin-bottom: 1.5rem;
 }
 
 .dark .section-title {
-  color: white;
+  color: var(--color-base-content);
 }
 
 .settings-grid {
@@ -716,14 +716,14 @@ onMounted(() => {
 .analysis-card {
   margin-top: 1rem;
   padding: 0.75rem;
-  background-color: #f9fafb;
+  background-color: var(--color-base-200);
   border-radius: 0.5rem;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--color-base-300);
 }
 
 .dark .analysis-card {
-  background-color: rgba(55, 65, 81, 0.5);
-  border-color: #4b5563;
+  background-color: var(--color-base-300);
+  border-color: var(--color-neutral);
 }
 
 .analysis-header {
@@ -751,28 +751,28 @@ onMounted(() => {
   display: block;
   font-size: 0.875rem;
   font-weight: 500;
-  color: #374151;
+  color: var(--color-base-content);
 }
 
 .dark .setting-label {
-  color: #d1d5db;
+  color: var(--color-base-content);
 }
 
 .setting-description {
   font-size: 0.75rem;
-  color: #6b7280;
+  color: var(--color-neutral);
 }
 
 .dark .setting-description {
-  color: #9ca3af;
+  color: var(--color-neutral-content);
 }
 
 .analysis-label {
-  color: #4b5563;
+  color: var(--color-neutral);
 }
 
 .dark .analysis-label {
-  color: #9ca3af;
+  color: var(--color-neutral-content);
 }
 
 .analysis-value {
@@ -782,11 +782,11 @@ onMounted(() => {
 .toggle-text {
   font-size: 0.875rem;
   font-weight: 500;
-  color: #374151;
+  color: var(--color-base-content);
 }
 
 .dark .toggle-text {
-  color: #d1d5db;
+  color: var(--color-base-content);
 }
 
 /* Form Controls */
@@ -817,73 +817,76 @@ onMounted(() => {
 
 .input-base {
   padding: 0.5rem 0.75rem;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--color-base-300);
   border-radius: 0.5rem;
+  background-color: var(--color-base-100);
+  color: var(--color-base-content);
   transition: all 0.2s ease-in-out;
 }
 
 .input-base:focus {
   outline: none;
   ring: 2px;
-  ring-color: #3b82f6;
-  border-color: #3b82f6;
+  ring-color: var(--color-primary);
+  border-color: var(--color-primary);
 }
 
 .dark .input-base {
-  border-color: #4b5563;
-  background-color: #1f2937;
-  color: white;
+  border-color: var(--color-base-300);
+  background-color: var(--color-base-200);
+  color: var(--color-base-content);
 }
 
 .dark .input-base:focus {
-  ring-color: #60a5fa;
-  border-color: #60a5fa;
+  ring-color: var(--color-primary);
+  border-color: var(--color-primary);
 }
 
 .select-base {
   padding: 0.5rem 0.75rem;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--color-base-300);
   border-radius: 0.5rem;
-  background-color: white;
+  background-color: var(--color-base-100);
+  color: var(--color-base-content);
   transition: all 0.2s ease-in-out;
 }
 
 .select-base:focus {
   outline: none;
   ring: 2px;
-  ring-color: #3b82f6;
-  border-color: #3b82f6;
+  ring-color: var(--color-primary);
+  border-color: var(--color-primary);
 }
 
 .dark .select-base {
-  border-color: #4b5563;
-  background-color: #1f2937;
-  color: white;
+  border-color: var(--color-base-300);
+  background-color: var(--color-base-200);
+  color: var(--color-base-content);
 }
 
 .dark .select-base:focus {
-  ring-color: #60a5fa;
-  border-color: #60a5fa;
+  ring-color: var(--color-primary);
+  border-color: var(--color-primary);
 }
 
 .range-slider {
   width: 100%;
   height: 0.5rem;
-  background-color: #e5e7eb;
+  background-color: var(--color-base-300);
   border-radius: 0.5rem;
   appearance: none;
   cursor: pointer;
 }
 
 .dark .range-slider {
-  background-color: #374151;
+  background-color: var(--color-neutral);
 }
 
 .range-slider::-webkit-slider-thumb {
   appearance: none;
   width: 1rem;
   height: 1rem;
-  background-color: #3b82f6;
+  background-color: var(--color-primary);
   border-radius: 50%;
   cursor: pointer;
 }
@@ -891,7 +894,7 @@ onMounted(() => {
 .range-slider::-moz-range-thumb {
   width: 1rem;
   height: 1rem;
-  background-color: #3b82f6;
+  background-color: var(--color-primary);
   border-radius: 50%;
   cursor: pointer;
   border: 0;
@@ -926,13 +929,13 @@ onMounted(() => {
   display: inline-block;
   width: 2.75rem;
   height: 1.5rem;
-  background-color: #e5e7eb;
+  background-color: var(--color-base-300);
   border-radius: 9999px;
   transition: background-color 0.2s ease-in-out;
 }
 
 .dark .toggle-slider {
-  background-color: #374151;
+  background-color: var(--color-neutral);
 }
 
 .toggle-slider::after {
@@ -942,14 +945,14 @@ onMounted(() => {
   left: 0.125rem;
   width: 1.25rem;
   height: 1.25rem;
-  background-color: white;
+  background-color: var(--color-base-100);
   border-radius: 50%;
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
   transition: transform 0.2s ease-in-out;
 }
 
 .toggle-input:checked + .toggle-slider {
-  background-color: #3b82f6;
+  background-color: var(--color-primary);
 }
 
 .toggle-input:checked + .toggle-slider::after {
@@ -963,9 +966,9 @@ onMounted(() => {
   align-items: flex-start;
   gap: 0.5rem;
   padding: 0.5rem;
-  background-color: #fef3c7;
+  background-color: var(--color-warning);
   border-radius: 0.5rem;
-  border: 1px solid #f59e0b;
+  border: 1px solid var(--color-warning-content);
 }
 
 @media (min-width: 640px) {
@@ -976,35 +979,35 @@ onMounted(() => {
 }
 
 .dark .calculated-hint {
-  background-color: rgba(146, 64, 14, 0.2);
-  border-color: #92400e;
+  background-color: color-mix(in oklch, var(--color-warning) 20%, transparent);
+  border-color: var(--color-warning-content);
 }
 
 .btn-hint {
   padding: 0.25rem 0.5rem;
   font-size: 0.75rem;
-  background-color: #fef3c7;
-  color: #92400e;
+  background-color: var(--color-warning);
+  color: var(--color-warning-content);
   border-radius: 0.25rem;
   transition: all 0.2s ease-in-out;
 }
 
 .btn-hint:hover {
-  background-color: #fde68a;
+  background-color: color-mix(in oklch, var(--color-warning) 80%, white);
 }
 
 .dark .btn-hint {
-  background-color: #92400e;
-  color: #fef3c7;
+  background-color: var(--color-warning-content);
+  color: var(--color-warning);
 }
 
 .dark .btn-hint:hover {
-  background-color: #b45309;
+  background-color: color-mix(in oklch, var(--color-warning-content) 80%, white);
 }
 
 /* 计算提示图标 */
 .calculated-hint-icon {
-  color: var(--color-warning);
+  color: var(--color-warning-content);
   height: 1rem;
   width: 1rem;
 }
@@ -1022,8 +1025,8 @@ onMounted(() => {
 
 .btn-secondary {
   padding: 0.5rem 1rem;
-  background-color: #e5e7eb;
-  color: #374151;
+  background-color: var(--color-secondary);
+  color: var(--color-secondary-content);
   border-radius: 0.5rem;
   transition: all 0.2s ease-in-out;
   display: flex;
@@ -1031,13 +1034,13 @@ onMounted(() => {
 }
 
 .btn-secondary:hover {
-  background-color: #d1d5db;
+  background-color: color-mix(in oklch, var(--color-secondary) 80%, black);
 }
 
 .btn-secondary:focus {
   outline: none;
   ring: 2px;
-  ring-color: #6b7280;
+  ring-color: var(--color-secondary);
 }
 
 .btn-secondary:disabled {
@@ -1046,18 +1049,18 @@ onMounted(() => {
 }
 
 .dark .btn-secondary {
-  background-color: #374151;
-  color: #d1d5db;
+  background-color: var(--color-secondary);
+  color: var(--color-secondary-content);
 }
 
 .dark .btn-secondary:hover {
-  background-color: #4b5563;
+  background-color: color-mix(in oklch, var(--color-secondary) 70%, white);
 }
 
 .btn-danger {
   padding: 0.5rem 1rem;
-  background-color: #dc2626;
-  color: white;
+  background-color: var(--color-error);
+  color: var(--color-error-content);
   border-radius: 0.5rem;
   transition: all 0.2s ease-in-out;
   display: flex;
@@ -1065,13 +1068,13 @@ onMounted(() => {
 }
 
 .btn-danger:hover {
-  background-color: #b91c1c;
+  background-color: color-mix(in oklch, var(--color-error) 80%, black);
 }
 
 .btn-danger:focus {
   outline: none;
   ring: 2px;
-  ring-color: #ef4444;
+  ring-color: var(--color-error);
 }
 
 .btn-danger:disabled {
@@ -1096,9 +1099,5 @@ onMounted(() => {
   margin-right: 0.5rem;
   height: 1.25rem;
   width: 1.25rem;
-}
-
-.input-number {
-  width: 5rem;
 }
 </style>

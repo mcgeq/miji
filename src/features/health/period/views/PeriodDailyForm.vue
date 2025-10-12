@@ -256,75 +256,75 @@ defineExpose({
 </script>
 
 <template>
-  <div class="period-daily-form p-6 card-base">
-    <h2 class="text-lg text-gray-900 font-semibold mb-6 dark:text-white">
+  <div class="period-daily-form">
+    <h2 class="form-title">
       {{ isEditing ? t('period.forms.editDaily') : t('period.forms.recordDaily') }}
     </h2>
 
-    <form class="space-y-6" @submit.prevent="handleSubmit">
+    <form class="form-container" @submit.prevent="handleSubmit">
       <!-- 日期选择 -->
-      <div class="form-group flex items-center justify-between" :title="t('period.fields.date')">
-        <label class="form-label">
-          <LucideCalendarCheck class="wh-5" />
-        </label>
-        <input
-          v-model="formData.date" type="date" class="modal-input-select w-3/4" :max="today" required
-          :disabled="isEditing"
-        >
+      <div class="form-group" :title="t('period.fields.date')">
+        <div class="form-row">
+          <label class="form-label">
+            <LucideCalendarCheck class="icon-size" />
+          </label>
+          <input
+            v-model="formData.date" type="date" class="form-input form-input-wide" :max="today" required
+            :disabled="isEditing"
+          >
+        </div>
         <div v-if="getFieldErrors('date').length > 0" class="form-error">
           {{ getFieldErrors('date')[0] }}
         </div>
       </div>
 
       <!-- 经期流量 -->
-      <div class="form-group flex items-center justify-between">
-        <label
-          class="form-label"
-          :title="t('period.fields.flowLevel')"
-        >
-          <LucideDroplet class="wh-5" />
-        </label>
-        <div class="flex gap-2 w-3/4">
-          <button
-            v-for="level in FLOW_LEVELS" :key="level.value"
-            type="button"
-            class="p-3 border rounded-lg flex-1 transition-all"
-            :class="[
-              formData.flowLevel === level.value
-                ? 'border-red-500 bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400'
-                : 'border-gray-300 hover:border-gray-400 dark:border-gray-600 dark:hover:border-gray-500',
-            ]" @click="formData.flowLevel = level.value"
+      <div class="form-group">
+        <div class="form-row">
+          <label
+            class="form-label"
+            :title="t('period.fields.flowLevel')"
           >
-            <div class="flex justify-center" :title="level.label">
-              <component :is="level.icon" class="wh-5" />
-            </div>
-          </button>
+            <LucideDroplet class="icon-size" />
+          </label>
+          <div class="option-buttons option-buttons-wide">
+            <button
+              v-for="level in FLOW_LEVELS" :key="level.value"
+              type="button"
+              class="option-button"
+              :class="[
+                formData.flowLevel === level.value ? 'option-button-active option-button-error' : '',
+              ]" @click="formData.flowLevel = level.value"
+            >
+              <div class="option-button-content" :title="level.label">
+                <component :is="level.icon" class="icon-size" />
+              </div>
+            </button>
+          </div>
         </div>
       </div>
 
       <!-- 心情状态 -->
       <div class="form-group">
-        <div class="flex justify-center justify-between">
+        <div class="form-row">
           <label
             class="form-label"
             :title="t('period.fields.mood')"
           >
-            <LucideSmile class="wh-5" />
+            <LucideSmile class="icon-size" />
           </label>
-          <div class="gap-2 grid grid-cols-6 w-2/3">
+          <div class="mood-grid">
             <button
               v-for="mood in MOODS" :key="mood.value"
               type="button"
-              class="p-1 text-center border rounded-lg transition-all"
+              class="option-button option-button-small"
               :class="[
-                formData.mood === mood.value
-                  ? 'border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
-                  : 'border-gray-300 hover:border-gray-400 dark:border-gray-600 dark:hover:border-gray-500',
+                formData.mood === mood.value ? 'option-button-active option-button-info' : '',
               ]"
               @click="formData.mood = mood.value"
             >
-              <div class="flex justify-center" :title="mood.label">
-                <component :is="mood.icon" class="wh-5" />
+              <div class="option-button-content" :title="mood.label">
+                <component :is="mood.icon" class="icon-size" />
               </div>
             </button>
           </div>
@@ -333,23 +333,21 @@ defineExpose({
 
       <!-- 运动强度 -->
       <div class="form-group">
-        <div class="flex items-center justify-between">
+        <div class="form-row">
           <label class="form-label" :title="t('period.fields.exerciseIntensity')">
-            <LucideDumbbell class="wh-5" />
+            <LucideDumbbell class="icon-size" />
           </label>
-          <div class="flex gap-2">
+          <div class="option-buttons option-buttons-wide">
             <button
               v-for="intensity in EXERCISE_INTENSITIES" :key="intensity.value" type="button"
-              class="p-1 border rounded-lg flex-1 transition-all justify-center"
+              class="option-button option-button-small"
               :class="[
-                formData.exerciseIntensity === intensity.value
-                  ? 'border-green-500 bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-                  : 'border-gray-300 hover:border-gray-400 dark:border-gray-600 dark:hover:border-gray-500',
+                formData.exerciseIntensity === intensity.value ? 'option-button-active option-button-success' : '',
               ]"
               @click="formData.exerciseIntensity = intensity.value"
             >
-              <div class="flex justify-center" :title="intensity.label">
-                <component :is="intensity.icon" class="wh-5" />
+              <div class="option-button-content" :title="intensity.label">
+                <component :is="intensity.icon" class="icon-size" />
               </div>
             </button>
           </div>
@@ -359,10 +357,10 @@ defineExpose({
       <!-- 饮食记录 -->
       <div class="form-group">
         <label class="form-label" :title="t('period.fields.diet')">
-          <LucideUtensils class="wh-5" />
+          <LucideUtensils class="icon-size" />
         </label>
         <textarea
-          v-model="formData.diet" class="input-base h-20 w-full resize-none"
+          v-model="formData.diet" class="form-textarea"
           :placeholder="t('period.placeholders.dietRecord')" required
         />
         <div v-if="getFieldErrors('diet').length > 0" class="form-error">
@@ -372,33 +370,30 @@ defineExpose({
 
       <!-- 饮水量 -->
       <div class="form-group">
-        <div class="flex items-center justify-between">
-          <label class="form-label w-1/3" :title="t('period.fields.waterIntake')">
-            <LucideWaves class="wh-5" />
+        <div class="form-row">
+          <label class="form-label form-label-narrow" :title="t('period.fields.waterIntake')">
+            <LucideWaves class="icon-size" />
           </label>
           <input
             v-model.number="formData.waterIntake"
             type="number"
-            class="input-base"
+            class="form-input"
             :placeholder="t('period.placeholders.waterIntakeExample')"
             min="0"
             max="5000"
             step="100"
           >
         </div>
-        <div class="flex gap-4 items-center">
-          <div class="flex gap-1">
+        <div class="preset-buttons-container">
+          <div class="preset-buttons">
             <button
               v-for="preset in WATER_PRESETS"
               :key="preset"
               type="button"
-              class="text-sm btn-secondary px-2 py-1"
+              class="preset-button"
               :class="[
-                formData.waterIntake === preset
-                  ? '!bg-blue-100 !text-blue-700 !border-blue-500 !dark:bg-blue-900/30 !dark:text-blue-400'
-                  : '',
+                formData.waterIntake === preset ? 'preset-button-active' : '',
               ]"
-
               @click="formData.waterIntake = preset"
             >
               {{ preset }}ml
@@ -411,35 +406,35 @@ defineExpose({
       </div>
 
       <!-- 睡眠时间 -->
-      <div class="form-group flex items-center justify-between">
-        <label class="form-label w-1/8" :title="t('period.fields.sleepHours')">
-          <LucideBedDouble class="wh-5" />
-        </label>
-        <div class="flex gap-1 items-center">
-          <input
-            v-model.number="formData.sleepHours"
-            type="number"
-            class="input-base flex-1"
-            :placeholder="t('period.placeholders.sleepExample')"
-            min="0"
-            max="24"
-            step="0.5"
-          >
-          <div class="flex gap-1">
-            <button
-              v-for="preset in SLEEP_PRESETS"
-              :key="preset"
-              type="button"
-              class="text-sm btn-secondary px-3 py-1"
-              :class="[
-                formData.sleepHours === preset
-                  ? '!bg-blue-100 !text-blue-700 !border-blue-500 !dark:bg-blue-900/30 !dark:text-blue-400'
-                  : '',
-              ]"
-              @click="formData.sleepHours = preset"
+      <div class="form-group">
+        <div class="form-row">
+          <label class="form-label form-label-narrow" :title="t('period.fields.sleepHours')">
+            <LucideBedDouble class="icon-size" />
+          </label>
+          <div class="sleep-input-group">
+            <input
+              v-model.number="formData.sleepHours"
+              type="number"
+              class="form-input form-input-flex"
+              :placeholder="t('period.placeholders.sleepExample')"
+              min="0"
+              max="24"
+              step="0.5"
             >
-              {{ preset }}h
-            </button>
+            <div class="preset-buttons">
+              <button
+                v-for="preset in SLEEP_PRESETS"
+                :key="preset"
+                type="button"
+                class="preset-button"
+                :class="[
+                  formData.sleepHours === preset ? 'preset-button-active' : '',
+                ]"
+                @click="formData.sleepHours = preset"
+              >
+                {{ preset }}h
+              </button>
+            </div>
           </div>
         </div>
         <div v-if="getFieldErrors('sleepHours').length > 0" class="form-error">
@@ -449,39 +444,38 @@ defineExpose({
 
       <!-- 性生活 -->
       <div class="form-group">
-        <div class="mb-3 flex items-center justify-between">
+        <div class="sexual-activity-header">
           <label class="form-label" :title="t('period.fields.sexualActivity')">
-            <LucideVenusAndMars class="wh-5" />
+            <LucideVenusAndMars class="icon-size" />
           </label>
-          <div class="flex gap-4">
-            <label class="flex gap-2 cursor-pointer items-center">
-              <input v-model="formData.sexualActivity" type="radio" :value="true" class="radio-base">
-              <span class="text-sm">{{ t('common.misc.yes') }}</span>
+          <div class="radio-group">
+            <label class="radio-label">
+              <input v-model="formData.sexualActivity" type="radio" :value="true" class="radio-input">
+              <span class="radio-text">{{ t('common.misc.yes') }}</span>
             </label>
-            <label class="flex gap-2 cursor-pointer items-center">
-              <input v-model="formData.sexualActivity" type="radio" :value="false" class="radio-base">
-              <span class="text-sm">{{ t('common.misc.no') }}</span>
+            <label class="radio-label">
+              <input v-model="formData.sexualActivity" type="radio" :value="false" class="radio-input">
+              <span class="radio-text">{{ t('common.misc.no') }}</span>
             </label>
           </div>
         </div>
 
         <!-- 避孕措施选项 - 仅在有性生活时显示 -->
-        <div v-if="formData.sexualActivity" class="ml-6 pl-4 border-l-2 border-gray-200 space-y-2 dark:border-gray-600">
-          <div class="text-xs text-gray-600 font-medium mb-1 dark:text-gray-400">
+        <div v-if="formData.sexualActivity" class="contraception-section">
+          <div class="contraception-title">
             {{ t('period.fields.contraceptionMethod') }}
           </div>
-          <div class="gap-1 grid grid-cols-3">
+          <div class="contraception-grid">
             <label
               v-for="method in CONTRACEPTION_METHODS" :key="method.value" :title="method.label"
-              class="p-1.5 border rounded flex cursor-pointer transition-colors items-center justify-center" :class="[
-                formData.contraceptionMethod === method.value
-                  ? 'border-purple-500 bg-purple-50 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'
-                  : 'border-gray-300 hover:border-gray-400 dark:border-gray-600 dark:hover:border-gray-500',
+              class="contraception-option"
+              :class="[
+                formData.contraceptionMethod === method.value ? 'contraception-option-active' : '',
               ]"
             >
-              <input v-model="formData.contraceptionMethod" type="radio" :value="method.value" class="sr-only">
-              <div class="flex items-center">
-                <component :is="method.icon" class="wh-3.5" />
+              <input v-model="formData.contraceptionMethod" type="radio" :value="method.value" class="visually-hidden">
+              <div class="contraception-icon">
+                <component :is="method.icon" class="icon-size-small" />
               </div>
             </label>
           </div>
@@ -491,26 +485,26 @@ defineExpose({
       <!-- 备注 -->
       <div class="form-group">
         <textarea
-          v-model="formData.notes" class="input-base h-20 w-full resize-none"
+          v-model="formData.notes" class="form-textarea"
           :placeholder="t('period.placeholders.notesPlaceholder')" maxlength="500"
         />
-        <div class="text-sm text-gray-500 mt-1 flex justify-between">
+        <div class="notes-footer">
           <div v-if="getFieldErrors('notes').length > 0" class="form-error">
             {{ getFieldErrors('notes')[0] }}
           </div>
-          <div class="ml-auto">
+          <div class="character-count">
             {{ (formData.notes || '').length }}/500
           </div>
         </div>
       </div>
 
       <!-- 操作按钮 -->
-      <div class="pt-2 flex justify-center space-x-6">
-        <button type="button" class="btn-secondary" :disabled="loading" @click="$emit('cancel')">
-          <LucideX class="wh-5" />
+      <div class="form-actions">
+        <button type="button" class="action-button action-button-secondary" :disabled="loading" @click="$emit('cancel')">
+          <LucideX class="icon-size" />
         </button>
-        <button type="submit" class="btn-primary" :disabled="loading || hasErrors()">
-          <LucideCheck class="wh-5" />
+        <button type="submit" class="action-button action-button-primary" :disabled="loading || hasErrors()">
+          <LucideCheck class="icon-size" />
         </button>
       </div>
     </form>
@@ -518,173 +512,545 @@ defineExpose({
 </template>
 
 <style scoped lang="postcss">
+/* 容器样式 */
 .period-daily-form {
   max-height: 80vh;
-  /* 根据需要调整高度 */
   overflow-y: scroll;
   -ms-overflow-style: none;
-  /* IE 10+ */
   scrollbar-width: none;
-  /* Firefox */
+  padding: 1.5rem;
+  background-color: var(--color-base-100);
+  border: 1px solid var(--color-base-300);
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
 }
 
 .period-daily-form::-webkit-scrollbar {
   display: none;
-  /* Chrome, Safari, Edge */
 }
 
+.dark .period-daily-form {
+  background-color: var(--color-base-200);
+  border-color: var(--color-base-300);
+}
+
+/* 标题 */
+.form-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--color-base-content);
+  margin-bottom: 1.5rem;
+}
+
+.dark .form-title {
+  color: var(--color-base-content);
+}
+
+/* 表单容器 */
+.form-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* 表单组 */
 .form-group {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
 }
 
+.form-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* 标签 */
 .form-label {
   display: flex;
   align-items: center;
   font-size: 0.875rem;
   font-weight: 500;
-  color: #374151;
+  color: var(--color-base-content);
+}
+
+.form-label-narrow {
+  width: 33.333%;
 }
 
 .dark .form-label {
-  color: #d1d5db;
+  color: var(--color-base-content);
 }
 
+/* 图标尺寸 */
+.icon-size {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.icon-size-small {
+  width: 0.875rem;
+  height: 0.875rem;
+}
+
+/* 错误提示 */
 .form-error {
   font-size: 0.875rem;
-  color: #dc2626;
+  color: var(--color-error);
 }
 
 .dark .form-error {
-  color: #f87171;
+  color: var(--color-error-content);
 }
 
-.input-base {
+/* 输入框 */
+.form-input {
   width: 100%;
   padding: 0.5rem 0.75rem;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--color-base-300);
   border-radius: 0.5rem;
+  background-color: var(--color-base-100);
+  color: var(--color-base-content);
   transition: all 0.2s ease-in-out;
 }
 
-.input-base:focus {
+.form-input-wide {
+  width: 75%;
+}
+
+.form-input-flex {
+  flex: 1;
+}
+
+.form-input:focus {
   outline: none;
-  box-shadow: 0 0 0 2px #3b82f6;
-  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px var(--color-primary);
+  border-color: var(--color-primary);
 }
 
-.dark .input-base {
-  border-color: #4b5563;
-  background-color: #1f2937;
-  color: white;
+.dark .form-input {
+  border-color: var(--color-base-300);
+  background-color: var(--color-base-200);
+  color: var(--color-base-content);
 }
 
-.dark .input-base:focus {
-  box-shadow: 0 0 0 2px #60a5fa;
-  border-color: #60a5fa;
+.dark .form-input:focus {
+  box-shadow: 0 0 0 2px var(--color-primary);
+  border-color: var(--color-primary);
 }
 
-.radio-base {
+/* 文本域 */
+.form-textarea {
+  width: 100%;
+  height: 5rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--color-base-300);
+  border-radius: 0.5rem;
+  background-color: var(--color-base-100);
+  color: var(--color-base-content);
+  resize: none;
+  transition: all 0.2s ease-in-out;
+}
+
+.form-textarea:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.dark .form-textarea {
+  border-color: var(--color-base-300);
+  background-color: var(--color-base-200);
+  color: var(--color-base-content);
+}
+
+.dark .form-textarea:focus {
+  box-shadow: 0 0 0 2px var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+/* 选项按钮组 */
+.option-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.option-buttons-wide {
+  width: 75%;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.option-button {
+  padding: 0.75rem;
+  border: 1px solid var(--color-base-300);
+  border-radius: 0.5rem;
+  flex: 1;
+  background-color: var(--color-base-100);
+  transition: all 0.2s ease-in-out;
+  cursor: pointer;
+}
+
+.option-button-small {
+  padding: 0.25rem;
+}
+
+.option-button:hover {
+  border-color: var(--color-neutral);
+}
+
+.dark .option-button {
+  border-color: var(--color-base-300);
+  background-color: var(--color-base-200);
+}
+
+.dark .option-button:hover {
+  border-color: var(--color-neutral-content);
+}
+
+.option-button-active {
+  font-weight: 600;
+}
+
+.option-button-error.option-button-active {
+  border-color: var(--color-error);
+  background-color: var(--color-error);
+  color: var(--color-error-content);
+}
+
+.dark .option-button-error.option-button-active {
+  background-color: color-mix(in oklch, var(--color-error) 30%, transparent);
+  color: var(--color-error-content);
+}
+
+.option-button-info.option-button-active {
+  border-color: var(--color-info);
+  background-color: var(--color-info);
+  color: var(--color-info-content);
+}
+
+.dark .option-button-info.option-button-active {
+  background-color: color-mix(in oklch, var(--color-info) 30%, transparent);
+  color: var(--color-info-content);
+}
+
+.option-button-success.option-button-active {
+  border-color: var(--color-success);
+  background-color: var(--color-success);
+  color: var(--color-success-content);
+}
+
+.dark .option-button-success.option-button-active {
+  background-color: color-mix(in oklch, var(--color-success) 30%, transparent);
+  color: var(--color-success-content);
+}
+
+.option-button-content {
+  display: flex;
+  justify-content: center;
+}
+
+/* 心情网格 */
+.mood-grid {
+  width: 66.666%;
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 0.5rem;
+}
+
+/* 预设按钮 */
+.preset-buttons-container {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.preset-buttons {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.preset-button {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+  background-color: var(--color-secondary);
+  color: var(--color-secondary-content);
+  border-radius: 0.5rem;
+  border: 1px solid var(--color-base-300);
+  transition: all 0.2s ease-in-out;
+  cursor: pointer;
+}
+
+.preset-button:hover {
+  background-color: color-mix(in oklch, var(--color-secondary) 80%, black);
+}
+
+.dark .preset-button {
+  background-color: var(--color-secondary);
+  color: var(--color-secondary-content);
+}
+
+.dark .preset-button:hover {
+  background-color: color-mix(in oklch, var(--color-secondary) 70%, white);
+}
+
+.preset-button-active {
+  background-color: var(--color-info) !important;
+  color: var(--color-info-content) !important;
+  border-color: var(--color-info) !important;
+}
+
+.dark .preset-button-active {
+  background-color: color-mix(in oklch, var(--color-info) 30%, transparent) !important;
+  color: var(--color-info-content) !important;
+}
+
+/* 睡眠输入组 */
+.sleep-input-group {
+  display: flex;
+  gap: 0.25rem;
+  align-items: center;
+  flex: 1;
+}
+
+/* 单选按钮 */
+.radio-group {
+  display: flex;
+  gap: 1rem;
+}
+
+.radio-label {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  cursor: pointer;
+}
+
+.radio-input {
   width: 1rem;
   height: 1rem;
-  color: #2563eb;
-  border: 1px solid #d1d5db;
+  color: var(--color-primary);
+  border: 1px solid var(--color-base-300);
   transition: all 0.2s ease-in-out;
 }
 
-.radio-base:focus {
+.radio-input:focus {
   outline: none;
-  box-shadow: 0 0 0 2px #3b82f6;
+  box-shadow: 0 0 0 2px var(--color-primary);
 }
 
-.dark .radio-base {
-  border-color: #4b5563;
-  background-color: #1f2937;
+.dark .radio-input {
+  border-color: var(--color-base-300);
+  background-color: var(--color-base-200);
 }
 
-.dark .radio-base:focus {
-  box-shadow: 0 0 0 2px #60a5fa;
+.dark .radio-input:focus {
+  box-shadow: 0 0 0 2px var(--color-primary);
 }
 
-.btn-primary {
+.radio-text {
+  font-size: 0.875rem;
+  color: var(--color-base-content);
+}
+
+.dark .radio-text {
+  color: var(--color-base-content);
+}
+
+/* 性活动头部 */
+.sexual-activity-header {
+  margin-bottom: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* 避孕措施部分 */
+.contraception-section {
+  margin-left: 1.5rem;
+  padding-left: 1rem;
+  border-left: 2px solid var(--color-base-300);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.dark .contraception-section {
+  border-color: var(--color-base-300);
+}
+
+.contraception-title {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--color-neutral);
+  margin-bottom: 0.25rem;
+}
+
+.dark .contraception-title {
+  color: var(--color-neutral-content);
+}
+
+.contraception-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.25rem;
+}
+
+.contraception-option {
+  padding: 0.375rem;
+  border: 1px solid var(--color-base-300);
+  border-radius: 0.375rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+.contraception-option:hover {
+  border-color: var(--color-neutral);
+}
+
+.dark .contraception-option {
+  border-color: var(--color-base-300);
+}
+
+.dark .contraception-option:hover {
+  border-color: var(--color-neutral-content);
+}
+
+.contraception-option-active {
+  border-color: var(--color-accent);
+  background-color: var(--color-accent);
+  color: var(--color-accent-content);
+}
+
+.dark .contraception-option-active {
+  background-color: color-mix(in oklch, var(--color-accent) 30%, transparent);
+  color: var(--color-accent-content);
+}
+
+.contraception-icon {
+  display: flex;
+  align-items: center;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* 备注底部 */
+.notes-footer {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.875rem;
+  color: var(--color-neutral);
+  margin-top: 0.25rem;
+}
+
+.dark .notes-footer {
+  color: var(--color-neutral-content);
+}
+
+.character-count {
+  margin-left: auto;
+}
+
+/* 操作按钮 */
+.form-actions {
+  padding-top: 0.5rem;
+  display: flex;
+  justify-content: center;
+  gap: 1.5rem;
+}
+
+.action-button {
   padding: 0.5rem 1rem;
-  background-color: #2563eb;
-  color: white;
   border-radius: 0.5rem;
   transition: all 0.2s ease-in-out;
   display: flex;
   align-items: center;
   justify-content: center;
+  border: none;
+  cursor: pointer;
 }
 
-.btn-primary:hover {
-  background-color: #1d4ed8;
-}
-
-.btn-primary:focus {
-  outline: none;
-  box-shadow: 0 0 0 2px #3b82f6;
-}
-
-.btn-primary:disabled {
+.action-button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-.btn-secondary {
-  padding: 0.5rem 1rem;
-  background-color: #e5e7eb;
-  color: #374151;
-  border-radius: 0.5rem;
-  transition: all 0.2s ease-in-out;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.action-button-primary {
+  background-color: var(--color-primary);
+  color: var(--color-primary-content);
 }
 
-.btn-secondary:hover {
-  background-color: #d1d5db;
+.action-button-primary:hover {
+  background-color: color-mix(in oklch, var(--color-primary) 85%, black);
 }
 
-.btn-secondary:focus {
+.action-button-primary:focus {
   outline: none;
-  box-shadow: 0 0 0 2px #6b7280;
+  box-shadow: 0 0 0 2px var(--color-primary);
 }
 
-.btn-secondary:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+.dark .action-button-primary {
+  background-color: var(--color-primary);
+  color: var(--color-primary-content);
 }
 
-.dark .btn-secondary {
-  background-color: #374151;
-  color: #d1d5db;
+.action-button-secondary {
+  background-color: var(--color-secondary);
+  color: var(--color-secondary-content);
 }
 
-.dark .btn-secondary:hover {
-  background-color: #4b5563;
+.action-button-secondary:hover {
+  background-color: color-mix(in oklch, var(--color-secondary) 80%, black);
 }
 
-.card-base {
-  background-color: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 0.5rem;
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+.action-button-secondary:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-secondary);
 }
 
-.dark .card-base {
-  background-color: #1f2937;
-  border-color: #374151;
+.dark .action-button-secondary {
+  background-color: var(--color-secondary);
+  color: var(--color-secondary-content);
 }
 
+.dark .action-button-secondary:hover {
+  background-color: color-mix(in oklch, var(--color-secondary) 70%, white);
+}
+
+/* 响应式设计 */
 @media (max-width: 640px) {
-  .grid-cols-3 {
+  .contraception-grid {
     grid-template-columns: repeat(2, 1fr);
   }
 
-  .flex-1 {
-    font-size: 0.875rem;
+  .mood-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .form-input-wide {
+    width: 100%;
+  }
+
+  .option-buttons-wide {
+    width: 100%;
+  }
+
+  .mood-grid {
+    width: 100%;
   }
 }
 </style>

@@ -287,8 +287,8 @@ const symptomSeverityText = computed(() => {
 }
 
 .stat-card {
-  background-color: white;
-  border: 1px solid #e5e7eb;
+  background-color: var(--color-base-100);
+  border: 1px solid var(--color-base-300);
   border-radius: 0.5rem;
   padding: 1rem;
   box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
@@ -300,8 +300,8 @@ const symptomSeverityText = computed(() => {
 }
 
 .dark .stat-card {
-  background-color: #1f2937;
-  border-color: #374151;
+  background-color: var(--color-base-200);
+  border-color: var(--color-base-300);
 }
 
 .stat-header {
@@ -314,11 +314,11 @@ const symptomSeverityText = computed(() => {
 .stat-title {
   font-size: 0.875rem;
   font-weight: 500;
-  color: #374151;
+  color: var(--color-base-content);
 }
 
 .dark .stat-title {
-  color: #d1d5db;
+  color: var(--color-base-content);
 }
 
 .stat-content {
@@ -328,36 +328,36 @@ const symptomSeverityText = computed(() => {
 .stat-value {
   font-size: 1.25rem;
   font-weight: 700;
-  color: #111827;
+  color: var(--color-base-content);
 }
 
 .dark .stat-value {
-  color: white;
+  color: var(--color-base-content);
 }
 
 .stat-description {
   font-size: 0.875rem;
-  color: #6b7280;
+  color: var(--color-neutral);
   margin-top: 0.25rem;
 }
 
 .dark .stat-description {
-  color: #9ca3af;
+  color: var(--color-neutral-content);
 }
 
 .phase-indicator {
   width: 100%;
-  background-color: #e5e7eb;
+  background-color: var(--color-base-300);
   border-radius: 9999px;
   height: 0.5rem;
 }
 
 .dark .phase-indicator {
-  background-color: #374151;
+  background-color: var(--color-neutral);
 }
 
 .phase-progress {
-  background-color: #ec4899;
+  background-color: var(--color-accent);
   height: 0.5rem;
   border-radius: 9999px;
   transition: all 0.5s ease-in-out;
@@ -378,7 +378,7 @@ const symptomSeverityText = computed(() => {
   position: absolute;
   font-size: 0.75rem;
   font-weight: 700;
-  color: #3b82f6;
+  color: var(--color-info);
 }
 
 .cycle-stats {
@@ -395,21 +395,21 @@ const symptomSeverityText = computed(() => {
 
 .cycle-label {
   font-size: 0.875rem;
-  color: #4b5563;
+  color: var(--color-neutral);
 }
 
 .dark .cycle-label {
-  color: #9ca3af;
+  color: var(--color-neutral-content);
 }
 
 .cycle-value {
   font-size: 1.125rem;
   font-weight: 600;
-  color: #111827;
+  color: var(--color-base-content);
 }
 
 .dark .cycle-value {
-  color: white;
+  color: var(--color-base-content);
 }
 
 .trend-item {
@@ -425,11 +425,11 @@ const symptomSeverityText = computed(() => {
 
 .trend-label {
   font-size: 0.875rem;
-  color: #4b5563;
+  color: var(--color-neutral);
 }
 
 .dark .trend-label {
-  color: #9ca3af;
+  color: var(--color-neutral-content);
 }
 
 .trend-indicator {
@@ -440,24 +440,24 @@ const symptomSeverityText = computed(() => {
 
 .trend-bar {
   height: 0.5rem;
-  background-color: #8b5cf6;
+  background-color: var(--color-primary);
   border-radius: 9999px;
   flex: 1;
   transition: all 0.5s ease-in-out;
 }
 
 .trend-bar.severity {
-  background-color: #f97316;
+  background-color: var(--color-warning);
 }
 
 .trend-text {
   font-size: 0.75rem;
-  color: #6b7280;
+  color: var(--color-neutral);
   flex-shrink: 0;
 }
 
 .dark .trend-text {
-  color: #9ca3af;
+  color: var(--color-neutral-content);
 }
 
 .flex-between {
@@ -468,8 +468,8 @@ const symptomSeverityText = computed(() => {
 
 .btn-primary {
   padding: 0.375rem 0.75rem;
-  background-color: #2563eb;
-  color: white;
+  background-color: var(--color-primary);
+  color: var(--color-primary-content);
   border-radius: 0.5rem;
   transition: all 0.2s ease-in-out;
   display: flex;
@@ -477,13 +477,13 @@ const symptomSeverityText = computed(() => {
 }
 
 .btn-primary:hover {
-  background-color: #1d4ed8;
+  background-color: color-mix(in oklch, var(--color-primary) 85%, black);
 }
 
 .btn-primary:focus {
   outline: none;
   ring: 2px;
-  ring-color: #3b82f6;
+  ring-color: var(--color-primary);
 }
 
 .empty-state {

@@ -428,7 +428,7 @@ function resetToDefault() {
 
     <!-- 清除数据对话框 -->
     <div v-if="showClearData" class="modal-overlay">
-      <div class="modal-content">
+      <div class="setting-modal-content">
         <h3 class="modal-title">
           清除浏览数据
         </h3>

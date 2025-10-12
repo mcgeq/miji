@@ -852,7 +852,7 @@
   z-index: 50;
 }
 
-.modal-content {
+.setting-modal-content {
   padding: 1.5rem;
   border-radius: var(--radius-box);
   background-color: var(--color-base-200);

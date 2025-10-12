@@ -304,7 +304,7 @@ function handleDeleteAccount() {
 
     <!-- 修改密码对话框 -->
     <div v-if="showChangePassword" class="modal-overlay">
-      <div class="modal-content">
+      <div class="setting-modal-content">
         <h3 class="modal-title">
           修改密码
         </h3>
@@ -357,7 +357,7 @@ function handleDeleteAccount() {
 
     <!-- 删除账户确认对话框 -->
     <div v-if="showDeleteAccount" class="modal-overlay">
-      <div class="modal-content">
+      <div class="setting-modal-content">
         <h3 class="modal-title modal-title-danger">
           删除账户
         </h3>
