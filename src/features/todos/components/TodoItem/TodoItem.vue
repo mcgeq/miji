@@ -44,6 +44,10 @@ const completed = computed(
 const showMenu = computed(
   () => menuStore.getMenuSerialNum === todoCopy.value.serialNum,
 );
+// 判断是否有modal打开
+const hasModalOpen = computed(() => {
+  return showEditOptions.value || showMenu.value || showEditModal.value || showDueDateModal.value || showEditRepeatModal.value || !!currentPopup.value;
+});
 
 // 优先级样式计算
 const priorityClass = computed(() => {
@@ -80,6 +84,8 @@ function onToggleHandler() {
 function onEditClick() {
   if (!completed.value) {
     showEditOptions.value = true;
+    // 打开modal时保持actions显示
+    showActions.value = true;
   }
 }
 
@@ -119,6 +125,7 @@ function submitTitleChange(newTitle: string) {
     updateTodo(todoCopy.value.serialNum, { title: trimmed });
   }
   showEditModal.value = false;
+  showActions.value = false;
 }
 
 function submitDueDateChange(newDueAt: string) {
@@ -127,12 +134,15 @@ function submitDueDateChange(newDueAt: string) {
     updateTodo(todoCopy.value.serialNum, { dueAt: newDue });
   }
   showDueDateModal.value = false;
+  showActions.value = false;
 }
 
 function submitRepeatChange(repeat: RepeatPeriod) {
   if (repeat !== todoCopy.value.repeat) {
     updateTodo(todoCopy.value.serialNum, { repeat });
   }
+  showEditRepeatModal.value = false;
+  showActions.value = false;
 }
 
 function onChangePriorityHandler(serialNum: string, priority: Priority) {
@@ -149,14 +159,54 @@ function closeMenu() {
   currentPopup.value = '';
   toggleMenu();
 }
+
+// 关闭编辑选项modal
+function closeEditOptions() {
+  showEditOptions.value = false;
+  showActions.value = false;
+}
+
+// 关闭编辑标题modal
+function closeEditModal() {
+  showEditModal.value = false;
+  showActions.value = false;
+}
+
+// 关闭编辑日期modal
+function closeDueDateModal() {
+  showDueDateModal.value = false;
+  showActions.value = false;
+}
+
+// 关闭编辑重复modal
+function closeEditRepeatModal() {
+  showEditRepeatModal.value = false;
+  showActions.value = false;
+}
+
+// 处理鼠标进入
+function handleMouseEnter() {
+  // 只有在没有modal打开时才显示actions
+  if (!hasModalOpen.value) {
+    showActions.value = true;
+  }
+}
+
+// 处理鼠标离开
+function handleMouseLeave() {
+  // 只有在没有modal打开时才隐藏actions
+  if (!hasModalOpen.value) {
+    showActions.value = false;
+  }
+}
 </script>
 
 <template>
   <div
     class="todo-item"
     :class="priorityClass"
-    @mouseenter="showActions = true"
-    @mouseleave="showActions = false"
+    @mouseenter="handleMouseEnter"
+    @mouseleave="handleMouseLeave"
   >
     <!-- Left Section: Checkbox, Priority, Title -->
     <div class="todo-main">
@@ -194,25 +244,25 @@ function closeMenu() {
       @edit-title="openEditModal"
       @edit-due-date="openDueDateModal"
       @edit-repeat="openEditRepeatModal"
-      @close="showEditOptions = false"
+      @close="closeEditOptions"
     />
     <TodoEditTitleModal
       :show="showEditModal"
       :title="todoCopy.title"
       @save="submitTitleChange"
-      @close="showEditModal = false"
+      @close="closeEditModal"
     />
     <TodoEditDueDateModal
       :show="showDueDateModal"
       :due-date="todoCopy.dueAt"
       @save="submitDueDateChange"
-      @close="showDueDateModal = false"
+      @close="closeDueDateModal"
     />
     <TodoEditRepeatModal
       :show="showEditRepeatModal"
       :repeat="todoCopy.repeat ?? { type: 'None' }"
       @save="submitRepeatChange"
-      @close="showEditRepeatModal = false"
+      @close="closeEditRepeatModal"
     />
 
     <!-- Popups -->
@@ -231,15 +281,15 @@ function closeMenu() {
 <style scoped lang="postcss">
 .todo-item {
   margin-bottom: 0.5rem;
-  padding: 1rem;
-  border-radius: 1.25rem;
-  border: 1px solid var(--color-neutral);
-  background-color: var(--color-base-100, #fff);
+  padding: 0.875rem;
+  border-radius: 0.875rem;
+  border: 1px solid color-mix(in oklch, var(--color-base-300) 50%, transparent);
+  background-color: color-mix(in oklch, var(--color-base-100) 80%, white);
   display: flex;
   flex-direction: column;
   position: relative;
-  height: 4.5rem;
-  transition: box-shadow 0.2s ease, background-color 0.2s ease;
+  height: 4rem;
+  transition: all 0.2s ease;
   overflow: hidden; /* 保持圆角效果 */
 }
 
@@ -258,27 +308,29 @@ function closeMenu() {
 
 /* 低优先级 - 绿色系 */
 .priority-low::before {
-  background: linear-gradient(to bottom, #10b981, #059669);
+  background: linear-gradient(to bottom, var(--color-success), color-mix(in oklch, var(--color-success) 80%, black));
 }
 
 /* 中等优先级 - 橙色系 */
 .priority-medium::before {
-  background: linear-gradient(to bottom, #f59e0b, #d97706);
+  background: linear-gradient(to bottom, var(--color-warning), color-mix(in oklch, var(--color-warning) 80%, black));
 }
 
 /* 高优先级 - 红色系 */
 .priority-high::before {
-  background: linear-gradient(to bottom, #ef4444, #dc2626);
+  background: linear-gradient(to bottom, var(--color-error), color-mix(in oklch, var(--color-error) 80%, black));
 }
 
 /* 紧急优先级 - 深红色系，更加醒目 */
 .priority-urgent::before {
-  background: linear-gradient(to bottom, #dc2626, #b91c1c);
-  box-shadow: 0 0 8px rgba(220, 38, 38, 0.4); /* 添加发光效果 */
+  background: linear-gradient(to bottom, color-mix(in oklch, var(--color-error) 80%, black), color-mix(in oklch, var(--color-error) 60%, black));
+  box-shadow: 0 0 8px color-mix(in oklch, var(--color-error) 40%, transparent); /* 添加发光效果 */
 }
 
 .todo-item:hover {
-  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  box-shadow: 0 2px 8px color-mix(in oklch, var(--color-neutral) 15%, transparent);
+  border-color: var(--color-base-300);
+  transform: translateY(-1px);
 }
 
 /* 主行容器 */
@@ -294,6 +346,9 @@ function closeMenu() {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  flex: 1;
+  min-width: 0;
+  padding-left: 1rem;
 }
 
 /* 到期时间 */

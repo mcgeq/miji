@@ -445,11 +445,11 @@ onMounted(async () => {
         </div>
 
         <div class="modal-actions">
-          <button type="button" class="modal-btn-x" @click="closeModal">
-            <X class="wh-5" />
+          <button type="button" class="btn-close" @click="closeModal">
+            <X class="icon-btn" />
           </button>
-          <button type="submit" class="modal-btn-check">
-            <Check class="wh-5" />
+          <button type="submit" class="btn-submit">
+            <Check class="icon-btn" />
           </button>
         </div>
       </form>
@@ -540,12 +540,5 @@ onMounted(async () => {
 .close-icon {
   height: 1.5rem;
   width: 1.5rem;
-}
-
-/* Modal Actions */
-.modal-actions {
-  display: flex;
-  justify-content: center;
-  gap: 0.75rem;
 }
 </style>

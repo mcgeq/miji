@@ -37,11 +37,10 @@ function updateTodo(serialNum: string, updated: TodoUpdate) {
 
 <style scoped>
 .todolist-main {
-  -webkit-margin-top: 1rem;
-  margin-top: 0.4rem;
-  border-radius: 0.5rem;
-  background-color: var(--color-base-200);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.25rem;
 }
 
 .slide-fade-enter-active,

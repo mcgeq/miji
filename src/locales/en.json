@@ -575,6 +575,7 @@
     "viewer": "Viewer"
   },
   "todos": {
+    "addTodo": "Add Todo",
     "inputPlace": "Add New Task...",
     "dueAt": "Due In",
     "expired": "Expired",

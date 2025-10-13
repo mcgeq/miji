@@ -7,46 +7,48 @@ const show = computed(() => props.show);
 </script>
 
 <template>
-  <transition name="fade">
-    <div
-      v-if="show"
-      class="modal-mask"
-      @click="emit('close')"
-    >
-      <transition name="scale">
-        <div
-          v-if="show"
-          class="modal-mask-window"
-          @click.stop
-        >
-          <button
-            class="modal-btn-icon"
-            @click="emit('openPopup', 'description')"
+  <Teleport to="body">
+    <transition name="fade">
+      <div
+        v-if="show"
+        class="modal-mask"
+        @click="emit('close')"
+      >
+        <transition name="scale">
+          <div
+            v-if="show"
+            class="modal-mask-window"
+            @click.stop
           >
-            <StickyNote class="wh-5" />
-          </button>
-          <button
-            class="modal-btn-icon"
-            @click="emit('openPopup', 'tags')"
-          >
-            <Tag class="wh-5" />
-          </button>
-          <button
-            class="modal-btn-icon"
-            @click="emit('openPopup', 'projects')"
-          >
-            <Folder class="wh-5" />
-          </button>
-          <button
-            class="modal-btn-x"
-            @click="emit('close')"
-          >
-            <X class="wh-4" />
-          </button>
-        </div>
-      </transition>
-    </div>
-  </transition>
+            <button
+              class="modal-btn-icon"
+              @click="emit('openPopup', 'description')"
+            >
+              <StickyNote class="wh-5" />
+            </button>
+            <button
+              class="modal-btn-icon"
+              @click="emit('openPopup', 'tags')"
+            >
+              <Tag class="wh-5" />
+            </button>
+            <button
+              class="modal-btn-icon"
+              @click="emit('openPopup', 'projects')"
+            >
+              <Folder class="wh-5" />
+            </button>
+            <button
+              class="modal-btn-x"
+              @click="emit('close')"
+            >
+              <X class="wh-4" />
+            </button>
+          </div>
+        </transition>
+      </div>
+    </transition>
+  </Teleport>
 </template>
 
 <style scoped lang="postcss">

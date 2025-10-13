@@ -9,40 +9,42 @@ const isEditable = computed(
 </script>
 
 <template>
-  <transition name="fade">
-    <div
-      v-if="show"
-      class="modal-overlay"
-      @click="emit('close')"
-    >
-      <transition name="scale">
-        <div
-          v-if="show"
-          class="modal-mask-window-money"
-          @click.stop
-        >
-          <input
-            v-model="localTitle"
-            class="modal-input"
-            placeholder="输入任务标题"
+  <Teleport to="body">
+    <transition name="fade">
+      <div
+        v-if="show"
+        class="modal-overlay"
+        @click="emit('close')"
+      >
+        <transition name="scale">
+          <div
+            v-if="show"
+            class="modal-mask-window-money"
+            @click.stop
           >
-          <div class="modal-actions">
-            <button class="btn-cancel" @click="emit('close')">
-              <LucideX class="icon" />
-            </button>
-            <button
-              class="btn-save"
-              :class="{ 'btn-disabled': isEditable }"
-              :disabled="isEditable"
-              @click="emit('save', localTitle)"
+            <input
+              v-model="localTitle"
+              class="modal-input"
+              placeholder="输入任务标题"
             >
-              <LucideCheck class="icon" />
-            </button>
+            <div class="modal-actions">
+              <button class="btn-cancel" @click="emit('close')">
+                <LucideX class="icon" />
+              </button>
+              <button
+                class="btn-save"
+                :class="{ 'btn-disabled': isEditable }"
+                :disabled="isEditable"
+                @click="emit('save', localTitle)"
+              >
+                <LucideCheck class="icon" />
+              </button>
+            </div>
           </div>
-        </div>
-      </transition>
-    </div>
-  </transition>
+        </transition>
+      </div>
+    </transition>
+  </Teleport>
 </template>
 
 <style scoped lang="postcss">
@@ -50,13 +52,13 @@ const isEditable = computed(
 .modal-overlay {
   position: fixed;
   inset: 0;
-  z-index: 50;
+  z-index: 10000;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 1rem;
-  background-color: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(4px);
+  background-color: color-mix(in oklch, var(--color-neutral) 60%, transparent);
+  backdrop-filter: blur(6px);
 }
 
 /* 弹窗内容 */
@@ -64,13 +66,12 @@ const isEditable = computed(
   width: 24rem; /* w-96 */
   padding: 1.5rem; /* p-6 */
   border-radius: 1.25rem; /* rounded-2xl */
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  background-color: rgba(255, 255, 255, 0.7);
+  border: 1px solid var(--color-base-300);
+  background-color: var(--color-base-100);
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
-  box-shadow: 0 10px 20px rgba(0,0,0,0.15);
-  backdrop-filter: blur(12px);
+  box-shadow: 0 10px 20px color-mix(in oklch, var(--color-neutral) 30%, transparent);
   transition: background-color 0.2s ease, border-color 0.2s ease;
 }
 
@@ -184,28 +185,13 @@ const isEditable = computed(
 
 /* Dark theme 支持 */
 @media (prefers-color-scheme: dark) {
-  .modal-overlay {
-    background-color: rgba(0, 0, 0, 0.6);
-  }
   .modal-content {
-    background-color: rgba(31, 41, 55, 0.8);
-    border-color: rgba(55, 65, 81, 0.3);
+    background-color: var(--color-base-200);
+    border-color: var(--color-base-300);
   }
   .modal-input {
-    color: var(--color-base-content, #e5e7eb);
-    background-color: var(--color-base-200, #1f2937);
-    border-color: var(--color-neutral, #374151);
-  }
-  .btn-cancel {
-    background-color: var(--color-neutral, #374151);
-    color: var(--color-neutral-content, #e5e7eb);
-  }
-  .btn-cancel:hover {
-    background-color: var(--color-base-200, #4b5563);
-  }
-  .btn-save {
-    background-color: var(--color-primary, #2563eb);
-    color: var(--color-primary-content, #fff);
+    background-color: var(--color-base-100);
+    border-color: var(--color-base-300);
   }
 }
 </style>

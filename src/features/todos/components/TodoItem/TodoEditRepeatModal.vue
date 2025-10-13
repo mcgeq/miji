@@ -74,66 +74,51 @@ function save() {
 </script>
 
 <template>
-  <transition name="fade">
-    <div v-if="show" class="modal-overlay" @click="emit('close')">
-      <transition name="scale">
-        <div v-if="show" class="modal-mask-window-money" @click.stop>
-          <div class="modal-body">
-            <!-- Repeat Type -->
-            <div class="form-group">
-              <label for="repeat-type" class="form-label">
-                {{ t('todos.repeat.title') }}
-              </label>
-              <select
-                id="repeat-type"
-                v-model="form.type"
-                class="input-select"
-                @change="resetForm"
-              >
-                <option value="None">
-                  {{ t('todos.repeat.types.no') }}
-                </option>
-                <option value="Daily">
-                  {{ t('todos.repeat.types.daily') }}
-                </option>
-                <option value="Weekly">
-                  {{ t('todos.repeat.types.weekly') }}
-                </option>
-                <option value="Monthly">
-                  {{ t('todos.repeat.types.monthly') }}
-                </option>
-                <option value="Yearly">
-                  {{ t('todos.repeat.types.yearly') }}
-                </option>
-                <option value="Custom">
-                  {{ t('todos.repeat.types.custom') }}
-                </option>
-              </select>
-            </div>
+  <Teleport to="body">
+    <transition name="fade">
+      <div v-if="show" class="modal-overlay" @click="emit('close')">
+        <transition name="scale">
+          <div v-if="show" class="modal-mask-window-money" @click.stop>
+            <div class="modal-body">
+              <!-- Repeat Type -->
+              <div class="form-group">
+                <label for="repeat-type" class="form-label">
+                  {{ t('todos.repeat.title') }}
+                </label>
+                <select
+                  id="repeat-type"
+                  v-model="form.type"
+                  class="input-select"
+                  @change="resetForm"
+                >
+                  <option value="None">
+                    {{ t('todos.repeat.types.no') }}
+                  </option>
+                  <option value="Daily">
+                    {{ t('todos.repeat.types.daily') }}
+                  </option>
+                  <option value="Weekly">
+                    {{ t('todos.repeat.types.weekly') }}
+                  </option>
+                  <option value="Monthly">
+                    {{ t('todos.repeat.types.monthly') }}
+                  </option>
+                  <option value="Yearly">
+                    {{ t('todos.repeat.types.yearly') }}
+                  </option>
+                  <option value="Custom">
+                    {{ t('todos.repeat.types.custom') }}
+                  </option>
+                </select>
+              </div>
 
-            <!-- Daily -->
-            <div v-if="form.type === 'Daily'" class="repeat-daily">
-              <label for="daily-interval" class="form-label">
-                {{ t('todos.repeat.labels.daily') }}
-              </label>
-              <input
-                id="daily-interval"
-                v-model.number="form.interval"
-                type="number"
-                min="1"
-                required
-                class="input-number"
-              >
-            </div>
-
-            <!-- Weekly -->
-            <div v-if="form.type === 'Weekly'" class="repeat-weekly">
-              <div class="week-interval">
-                <label for="weekly-interval" class="form-label">
-                  {{ t('todos.repeat.labels.weekly') }}
+              <!-- Daily -->
+              <div v-if="form.type === 'Daily'" class="repeat-daily">
+                <label for="daily-interval" class="form-label">
+                  {{ t('todos.repeat.labels.daily') }}
                 </label>
                 <input
-                  id="weekly-interval"
+                  id="daily-interval"
                   v-model.number="form.interval"
                   type="number"
                   min="1"
@@ -141,103 +126,133 @@ function save() {
                   class="input-number"
                 >
               </div>
-              <div class="week-days">
-                <label v-for="day in weekdays" :key="day" class="checkbox-label">
+
+              <!-- Weekly -->
+              <div v-if="form.type === 'Weekly'" class="repeat-weekly">
+                <div class="week-interval">
+                  <label for="weekly-interval" class="form-label">
+                    {{ t('todos.repeat.labels.weekly') }}
+                  </label>
                   <input
-                    v-model="form.daysOfWeek"
-                    type="checkbox"
-                    :value="day"
-                    class="checkbox-input"
+                    id="weekly-interval"
+                    v-model.number="form.interval"
+                    type="number"
+                    min="1"
+                    required
+                    class="input-number"
                   >
-                  <span>{{ day }}</span>
+                </div>
+                <div class="week-days">
+                  <label v-for="day in weekdays" :key="day" class="checkbox-label">
+                    <input
+                      v-model="form.daysOfWeek"
+                      type="checkbox"
+                      :value="day"
+                      class="checkbox-input"
+                    >
+                    <span>{{ day }}</span>
+                  </label>
+                </div>
+              </div>
+
+              <!-- Monthly -->
+              <div v-if="form.type === 'Monthly'" class="repeat-monthly">
+                <label for="monthly-interval" class="form-label">
+                  {{ t('todos.repeat.labels.monthly') }}
                 </label>
+                <input
+                  id="monthly-interval"
+                  v-model.number="form.interval"
+                  type="number"
+                  min="1"
+                  required
+                  class="input-number"
+                >
+                <select v-model="form.day" class="input-select">
+                  <option v-for="n in monthlyDays" :key="n" :value="n">
+                    {{ n }}
+                  </option>
+                  <option value="last">
+                    Last day
+                  </option>
+                </select>
+              </div>
+
+              <!-- Yearly -->
+              <div v-if="form.type === 'Yearly'" class="repeat-yearly">
+                <label for="yearly-interval" class="form-label">
+                  {{ t('todos.repeat.labels.yearly') }}
+                </label>
+                <input
+                  id="yearly-interval"
+                  v-model.number="form.interval"
+                  type="number"
+                  min="1"
+                  required
+                  class="input-number"
+                >
+                <select v-model="form.month" class="input-select">
+                  <option v-for="n in 12" :key="n" :value="n">
+                    {{ monthNames[n - 1] }}
+                  </option>
+                </select>
+                <select v-model="form.day" class="input-select">
+                  <option v-for="n in yearlyMonthDays" :key="n" :value="n">
+                    {{ n }}
+                  </option>
+                </select>
+              </div>
+
+              <!-- Custom -->
+              <div v-if="form.type === 'Custom'" class="repeat-custom">
+                <label for="custom-description" class="form-label">
+                  {{ t('todos.repeat.types.custom') }}
+                </label>
+                <input
+                  id="custom-description"
+                  v-model="form.description"
+                  type="text"
+                  required
+                  class="input-select"
+                >
               </div>
             </div>
 
-            <!-- Monthly -->
-            <div v-if="form.type === 'Monthly'" class="repeat-monthly">
-              <label for="monthly-interval" class="form-label">
-                {{ t('todos.repeat.labels.monthly') }}
-              </label>
-              <input
-                id="monthly-interval"
-                v-model.number="form.interval"
-                type="number"
-                min="1"
-                required
-                class="input-number"
+            <!-- Buttons -->
+            <div class="modal-actions">
+              <button class="btn-cancel" @click="emit('close')">
+                <X class="icon" />
+              </button>
+              <button
+                class="btn-save"
+                :class="{ 'btn-disabled': isChanged }"
+                :disabled="isChanged"
+                @click="save"
               >
-              <select v-model="form.day" class="input-select">
-                <option v-for="n in monthlyDays" :key="n" :value="n">
-                  {{ n }}
-                </option>
-                <option value="last">
-                  Last day
-                </option>
-              </select>
-            </div>
-
-            <!-- Yearly -->
-            <div v-if="form.type === 'Yearly'" class="repeat-yearly">
-              <label for="yearly-interval" class="form-label">
-                {{ t('todos.repeat.labels.yearly') }}
-              </label>
-              <input
-                id="yearly-interval"
-                v-model.number="form.interval"
-                type="number"
-                min="1"
-                required
-                class="input-number"
-              >
-              <select v-model="form.month" class="input-select">
-                <option v-for="n in 12" :key="n" :value="n">
-                  {{ monthNames[n - 1] }}
-                </option>
-              </select>
-              <select v-model="form.day" class="input-select">
-                <option v-for="n in yearlyMonthDays" :key="n" :value="n">
-                  {{ n }}
-                </option>
-              </select>
-            </div>
-
-            <!-- Custom -->
-            <div v-if="form.type === 'Custom'" class="repeat-custom">
-              <label for="custom-description" class="form-label">
-                {{ t('todos.repeat.types.custom') }}
-              </label>
-              <input
-                id="custom-description"
-                v-model="form.description"
-                type="text"
-                required
-                class="input-select"
-              >
+                <Check class="icon" />
+              </button>
             </div>
           </div>
-
-          <!-- Buttons -->
-          <div class="modal-actions">
-            <button class="btn-cancel" @click="emit('close')">
-              <X class="icon" />
-            </button>
-            <button
-              class="btn-save"
-              :class="{ 'btn-disabled': isChanged }"
-              :disabled="isChanged"
-              @click="save"
-            >
-              <Check class="icon" />
-            </button>
-          </div>
-        </div>
-      </transition>
-    </div>
-  </transition>
+        </transition>
+      </div>
+    </transition>
+  </Teleport>
 </template>
 
 <style scoped lang="postcss">
+/* Overlay */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: color-mix(in oklch, var(--color-neutral) 60%, transparent);
+  backdrop-filter: blur(6px);
+  padding: 1rem;
+}
+
 /* Form Label */
 .form-label {
   display: block;
@@ -359,33 +374,13 @@ function save() {
 
 /* Dark Theme */
 @media (prefers-color-scheme: dark) {
-  .modal-window {
-    background-color: rgba(31,41,55,0.8);
-    border-color: rgba(55,65,81,0.3);
-  }
   .input-select, .input-number {
-    background-color: var(--color-base-200, #1f2937);
-    border-color: var(--color-neutral, #374151);
-    color: var(--color-base-content, #e5e7eb);
-  }
-  .form-label {
-    color: var(--color-base-content, #e5e7eb);
+    background-color: var(--color-base-100);
+    border-color: var(--color-base-300);
   }
   .checkbox-input {
-    accent-color: var(--color-primary, #2563eb);
-    border-color: var(--color-neutral, #374151);
-    background-color: var(--color-base-200, #1f2937);
-  }
-  .btn-cancel {
-    background-color: var(--color-neutral, #374151);
-    color: var(--color-neutral-content, #e5e7eb);
-  }
-  .btn-cancel:hover {
-    background-color: var(--color-base-200, #4b5563);
-  }
-  .btn-save {
-    background-color: var(--color-primary, #2563eb);
-    color: var(--color-primary-content, #fff);
+    border-color: var(--color-base-300);
+    background-color: var(--color-base-100);
   }
 }
 </style>

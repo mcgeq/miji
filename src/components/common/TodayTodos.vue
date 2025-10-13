@@ -1,6 +1,6 @@
 <!-- src/components/common/TodayTodos.vue -->
 <script setup lang="ts">
-import { Plus, X } from 'lucide-vue-next';
+import { Plus } from 'lucide-vue-next';
 import InputCommon from '@/components/common/InputCommon.vue';
 import TodoList from '@/features/todos/components/TodoList.vue';
 import { useTodosFilters } from '@/features/todos/composables/useTodosFilters';
@@ -13,20 +13,25 @@ import type { TodoCreate, TodoUpdate } from '@/schema/todos';
 
 const todoStore = useTodoStore();
 const newT = ref('');
-const showInput = ref(false);
+const showModal = ref(false);
 const todos = computed(() => todoStore.todosPaged);
 
 // 使用今日过滤器
 const { filterBtn, pagination, loadTodos } = useTodosFilters(
   () => todos.value,
-  5, // 增加显示数量，让内容铺满
+  10, // 增加显示数量，让内容铺满
 );
 
 // 设置默认为今日
 filterBtn.value = FilterBtnSchema.enum.TODAY;
 
-function toggleInput() {
-  showInput.value = !showInput.value;
+function openModal() {
+  showModal.value = true;
+}
+
+function closeModal() {
+  showModal.value = false;
+  newT.value = '';
 }
 
 async function handleAdd(text: string) {
@@ -58,7 +63,7 @@ async function handleAdd(text: string) {
     const nCreateTodo = TodoCreateSchema.parse(newTodo);
     await todoStore.createTodo(nCreateTodo);
     newT.value = '';
-    showInput.value = false;
+    closeModal();
   } catch (error) {
     console.error('Todo creation validation error:', error);
   }
@@ -76,8 +81,34 @@ async function handleEdit(serialNum: string, todo: TodoUpdate) {
   await todoStore.updateTodo(serialNum, todo);
 }
 
+// 键盘快捷键：按 'n' 或 '+' 打开添加modal
+function handleKeyPress(event: KeyboardEvent) {
+  // 排除在输入框中的情况
+  const target = event.target as HTMLElement;
+  if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
+    return;
+  }
+
+  // 快捷键 'n' 或 '+'
+  if (event.key === 'n' || event.key === '+') {
+    event.preventDefault();
+    openModal();
+  }
+
+  // ESC 关闭modal
+  if (event.key === 'Escape' && showModal.value) {
+    event.preventDefault();
+    closeModal();
+  }
+}
+
 onMounted(async () => {
   await loadTodos();
+  window.addEventListener('keydown', handleKeyPress);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('keydown', handleKeyPress);
 });
 </script>
 
@@ -86,25 +117,15 @@ onMounted(async () => {
     <div class="todo-header">
       <button
         class="toggle-btn"
-        aria-label="Toggle Input"
-        @click="toggleInput"
+        aria-label="Add Todo"
+        @click="openModal"
       >
-        <component
-          :is="showInput ? X : Plus"
-          class="toggle-icon"
-          :class="showInput ? 'toggle-icon-close' : ''"
-        />
+        <Plus class="toggle-icon" />
       </button>
+      <span class="todo-count">{{ pagination.paginatedItems.value.size }}</span>
     </div>
 
-    <!-- 快速添加输入框 -->
-    <Transition name="fade-slide">
-      <div v-show="showInput" class="input-area">
-        <InputCommon v-model="newT" @add="handleAdd" />
-      </div>
-    </Transition>
-
-    <!-- 今日待办任务列表 -->
+    <!-- 今日待办任务列表 - 支持滚动但隐藏滚动条 -->
     <div class="todo-list-container">
       <TodoList
         :todos="pagination.paginatedItems.value"
@@ -113,6 +134,31 @@ onMounted(async () => {
         @edit="handleEdit"
       />
     </div>
+
+    <!-- Modal弹窗 -->
+    <Teleport to="body">
+      <Transition name="modal-fade">
+        <div
+          v-if="showModal"
+          class="modal-overlay"
+          @click="closeModal"
+        >
+          <div
+            class="modal-content"
+            @click.stop
+          >
+            <div class="modal-header">
+              <h3 class="modal-title">
+                {{ $t('todos.addTodo') || '添加待办' }}
+              </h3>
+            </div>
+            <div class="modal-body">
+              <InputCommon v-model="newT" @add="handleAdd" />
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
   </div>
 </template>
 
@@ -126,21 +172,29 @@ onMounted(async () => {
   padding: 0.25rem;
 }
 
-.todo-title {
-  font-size: 1.25rem;
+.todo-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem;
+}
+
+.todo-count {
+  font-size: 0.875rem;
   font-weight: 600;
-  margin: 0;
   color: var(--color-error-content);
+  opacity: 0.9;
+  margin-left: auto;
 }
 
 .toggle-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 1rem;
-  height: 1rem;
+  width: 1.5rem;
+  height: 1.5rem;
   border-radius: 50%;
-  background-color: rgba(255, 255, 255, 0.2);
+  background-color: color-mix(in oklch, var(--color-error-content) 20%, transparent);
   border: none;
   cursor: pointer;
   transition: all 0.2s ease-in-out;
@@ -148,7 +202,7 @@ onMounted(async () => {
 }
 
 .toggle-btn:hover {
-  background-color: rgba(255, 255, 255, 0.3);
+  background-color: color-mix(in oklch, var(--color-error-content) 30%, transparent);
   transform: scale(1.1);
 }
 
@@ -158,37 +212,100 @@ onMounted(async () => {
   transition: transform 0.2s ease-in-out;
 }
 
-.toggle-icon-close {
-  transform: rotate(45deg);
-}
-
-.input-area {
-  margin-bottom: 0.25rem;
-}
-
+/* 列表容器 - 支持滚动但隐藏滚动条 */
 .todo-list-container {
   flex: 1;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
   display: flex;
   flex-direction: column;
+  /* 隐藏滚动条 - Firefox */
+  scrollbar-width: none;
+  /* 隐藏滚动条 - IE/Edge */
+  -ms-overflow-style: none;
+}
+
+/* 隐藏滚动条 - Chrome/Safari/Opera */
+.todo-list-container::-webkit-scrollbar {
+  display: none;
 }
 
 /* 确保TodoList组件也能铺满容器 */
 .todo-list-container :deep(.todolist-main) {
   display: flex;
   flex-direction: column;
-  overflow: hidden;
 }
 
-/* 过渡动画 */
-.fade-slide-enter-active,
-.fade-slide-leave-active {
+/* Modal 样式 */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: color-mix(in oklch, var(--color-neutral) 60%, transparent);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 1rem;
+}
+
+.modal-content {
+  background-color: var(--color-base-100);
+  border-radius: 1rem;
+  box-shadow: 0 10px 40px color-mix(in oklch, var(--color-neutral) 30%, transparent);
+  border: 1px solid var(--color-base-300);
+  width: 100%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-header {
+  padding: 1.5rem 1.5rem 1rem;
+  border-bottom: 1px solid var(--color-base-300);
+  background-color: var(--color-base-200);
+}
+
+.modal-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin: 0;
+  color: var(--color-base-content);
+}
+
+.modal-body {
+  padding: 1rem 1.5rem 1.5rem;
+  overflow-y: auto;
+  background-color: var(--color-base-100);
+}
+
+/* Modal 过渡动画 */
+.modal-fade-enter-active,
+.modal-fade-leave-active {
   transition: all 0.3s ease-in-out;
 }
 
-.fade-slide-enter-from,
-.fade-slide-leave-to {
+.modal-fade-enter-from,
+.modal-fade-leave-to {
   opacity: 0;
-  transform: translateY(-10px);
+}
+
+.modal-fade-enter-from .modal-content,
+.modal-fade-leave-to .modal-content {
+  transform: scale(0.9) translateY(20px);
+}
+
+.modal-fade-enter-active .modal-content,
+.modal-fade-leave-active .modal-content {
+  transition: transform 0.3s ease-in-out;
+}
+
+/* 响应式 */
+@media (max-width: 640px) {
+  .modal-content {
+    max-width: 90vw;
+  }
 }
 </style>

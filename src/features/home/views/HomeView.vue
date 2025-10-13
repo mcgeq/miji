@@ -4,16 +4,16 @@ import TodayTodos from '@/components/common/TodayTodos.vue';
 
 <template>
   <div class="grid-container">
-    <div class="grid-item red">
+    <div class="grid-item">
       <TodayTodos />
     </div>
-    <div class="grid-item blue">
+    <div class="grid-item">
       区域 2
     </div>
-    <div class="grid-item purple">
+    <div class="grid-item">
       区域 3
     </div>
-    <div class="grid-item yellow">
+    <div class="grid-item">
       区域 4
     </div>
   </div>
@@ -49,77 +49,6 @@ import TodayTodos from '@/components/common/TodayTodos.vue';
   align-items: center;
   font-size: 1.5rem;
   font-weight: bold;
-  transition: all 0.4s ease-in-out;
-}
-
-/* 红色区域 */
-.red {
-  color: var(--color-error-content);
-  --gradient-angle: 135deg;
-  --mix-ratio: clamp(15%, 20%, 25%);
-  flex-direction: column;
-  align-items: stretch;
-  justify-content: flex-start;
-}
-
-/* 蓝色区域 */
-.blue {
-  color: var(--color-info-content);
-  --gradient-angle: 135deg;
-  --mix-ratio: clamp(15%, 20%, 25%);
-  background: linear-gradient(
-    var(--gradient-angle),
-    var(--color-base-200) 0%,
-    var(--color-info) 100%
-  );
-}
-
-.blue:hover {
-  background: linear-gradient(
-    var(--gradient-angle),
-    var(--color-info) 0%,
-    color-mix(in oklch, var(--color-info) var(--mix-ratio), var(--color-base-200)) 100%
-  );
-}
-
-/* 紫色区域 */
-.purple {
-  color: var(--color-primary-content);
-  --gradient-angle: 135deg;
-  --mix-ratio: clamp(15%, 20%, 25%);
-  background: linear-gradient(
-    var(--gradient-angle),
-    var(--color-base-200) 0%,
-    var(--color-primary) 100%
-  );
-}
-
-.purple:hover {
-  background: linear-gradient(
-    var(--gradient-angle),
-    var(--color-primary) 0%,
-    color-mix(in oklch, var(--color-primary) var(--mix-ratio), var(--color-base-200)) 100%
-  );
-}
-
-/* 黄色区域 */
-.yellow {
-  color: var(--color-warning-content);
-  --gradient-angle: 135deg;
-  --mix-ratio: clamp(15%, 20%, 25%);
-  background: linear-gradient(
-    var(--gradient-angle),
-    var(--color-base-200) 0%,
-    var(--color-warning) 100%
-  );
-}
-
-.yellow:hover {
-  background: linear-gradient(
-    var(--gradient-angle),
-    var(--color-warning) 0%,
-    color-mix(in oklch, var(--color-warning) var(--mix-ratio), var(--color-base-200)) 100%
-  );
 }
 
 /* 大屏幕调整渐变角度 */

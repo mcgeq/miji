@@ -133,13 +133,14 @@ function selectPriority(serialNum: string, p: Priority) {
 /* 优先级按钮 */
 .priority-btn {
   position: absolute;
-  top: 0.25rem; /* top-1 */
-  left: 0.5rem; /* 向右移动，避免与颜色条重叠 */
+  top: 0.5rem;
+  left: 0.75rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 1.5rem; /* h-6 */
-  width: 1.5rem;  /* w-6 */
+  height: 1.25rem; /* h-5 */
+  width: 1.25rem;  /* w-5 */
+  flex-shrink: 0;
   border: 2px solid rgba(255, 255, 255, 0.3);
   border-radius: 9999px; /* rounded-full */
   font-size: 0.75rem; /* text-xs */
@@ -150,6 +151,7 @@ function selectPriority(serialNum: string, p: Priority) {
   transition: all 0.3s ease-out;
   cursor: pointer;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  z-index: 10;
 }
 .priority-btn:hover {
   box-shadow: 0 10px 15px rgba(0, 0, 0, 0.25);

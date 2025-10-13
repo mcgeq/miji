@@ -582,33 +582,4 @@ textarea.form-control { resize: vertical; }
   width: 100%;
   box-sizing: border-box;
 }
-
-/* ==================== 按钮 ==================== */
-.modal-actions {
-  display: flex; justify-content: center; gap: 0.75rem;
-  margin-top: 1rem;
-}
-
-.btn-close, .btn-submit {
-  display: inline-flex; align-items: center; justify-content: center;
-  width: 3rem; height: 3rem; border-radius: 50%; border: none; cursor: pointer;
-}
-
-.btn-close {
-  background-color: var(--color-neutral); color: var(--color-neutral-content);
-}
-
-.btn-close:hover {
-  background-color: var(--color-neutral-content); color: var(--color-neutral);
-}
-
-.btn-submit {
-  background-color: var(--color-primary); color: var(--color-primary-content);
-}
-
-.btn-submit:hover {
-  background-color: var(--color-primary-content); color: var(--color-primary);
-}
-
-.icon-btn { width: 1.25rem; height: 1.25rem; }
 </style>

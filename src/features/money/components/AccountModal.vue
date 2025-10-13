@@ -361,13 +361,12 @@ watch(() => form.initialBalance, newBalance => {
         </div>
 
         <!-- 按钮 -->
-        <div class="flex justify-center space-x-3">
-          <button type="button" class="modal-btn-x" :disabled="isSubmitting" @click="closeModal">
-            <LucideX class="wh-5" />
+        <div class="modal-actions">
+          <button type="button" class="btn-close" :disabled="isSubmitting" @click="closeModal">
+            <LucideX class="icon-btn" />
           </button>
-          <button type="submit" class="modal-btn-check" :disabled="isSubmitting">
-            <LucideCheck class="wh-5" />
-            <span v-if="isSubmitting">{{ t('common.actions.saving') }}</span>
+          <button type="submit" class="btn-submit" :disabled="isSubmitting">
+            <LucideCheck class="icon-btn" />
           </button>
         </div>
       </form>

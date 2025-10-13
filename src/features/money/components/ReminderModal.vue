@@ -719,19 +719,19 @@ watch(
         </div>
 
         <!-- 操作按钮 -->
-        <div class="flex justify-center space-x-3">
-          <button type="button" class="modal-btn-x" :disabled="isSubmitting" @click="closeModal">
-            <LucideX class="wh-5" />
+        <div class="modal-actions">
+          <button type="button" class="btn-close" :disabled="isSubmitting" @click="closeModal">
+            <LucideX class="icon-btn" />
           </button>
           <button
-            type="submit" class="modal-btn-check" :disabled="!isFormValid || isSubmitting"
+            type="submit" class="btn-submit" :disabled="!isFormValid || isSubmitting"
             :class="{ 'opacity-50 cursor-not-allowed': !isFormValid || isSubmitting }"
           >
             <template v-if="isSubmitting">
               <div class="border-b-2 border-white rounded-full h-5 w-5 animate-spin" />
             </template>
             <template v-else>
-              <LucideCheck class="wh-5" />
+              <LucideCheck class="icon-btn" />
             </template>
           </button>
         </div>
@@ -836,22 +836,6 @@ watch(
   color: #6b7280;
   margin-top: 0.25rem;
   text-align: right;
-}
-
-/* Focus states */
-.modal-input-select:focus {
-  ring: 2px;
-  ring-color: #60a5fa;
-  ring-opacity: 0.5;
-  border-color: #3b82f6;
-}
-
-/* Error state styles */
-.border-red-500:focus {
-  ring: 2px;
-  ring-color: #f87171;
-  ring-opacity: 0.5;
-  border-color: #ef4444;
 }
 
 /* Submit button loading state */

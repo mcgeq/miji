@@ -627,6 +627,7 @@
     "viewer": "查看者"
   },
   "todos": {
+    "addTodo": "添加待办",
     "inputPlace": "添加新任务...",
     "dueAt": "剩余",
     "expired": "过期",
