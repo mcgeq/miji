@@ -47,9 +47,20 @@ async function handleAdd(text: string) {
     parentId: null,
     subtaskOrder: null,
   };
-  const nCreateTodo = TodoCreateSchema.parse(newTodo);
-  todoStore.createTodo(nCreateTodo);
-  newT.value = '';
+
+  try {
+    const nCreateTodo = TodoCreateSchema.parse(newTodo);
+    todoStore.createTodo(nCreateTodo);
+    newT.value = '';
+  } catch (error) {
+    console.error('Todo creation validation error:', error);
+    // 显示用户友好的错误提示
+    if (error instanceof Error && error.message.includes('max')) {
+      // 如果是因为长度超限，显示友好提示
+      console.warn('标题长度超出限制，请缩短标题');
+    }
+    // 不清空输入框，让用户修改
+  }
 }
 
 async function handleToggle(serialNum: string, status: Status) {
