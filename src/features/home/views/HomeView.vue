@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import QuickMoneyActions from '@/components/common/QuickMoneyActions.vue';
 import TodayPeriod from '@/components/common/TodayPeriod.vue';
 import TodayTodos from '@/components/common/TodayTodos.vue';
 </script>
@@ -6,7 +7,7 @@ import TodayTodos from '@/components/common/TodayTodos.vue';
 <template>
   <div class="grid-container">
     <div class="grid-item">
-      区域 1
+      <QuickMoneyActions />
     </div>
     <div class="grid-item">
       <TodayPeriod />
