@@ -1,17 +1,18 @@
 <script setup lang="ts">
+import TodayPeriod from '@/components/common/TodayPeriod.vue';
 import TodayTodos from '@/components/common/TodayTodos.vue';
 </script>
 
 <template>
   <div class="grid-container">
     <div class="grid-item">
+      区域 1
+    </div>
+    <div class="grid-item">
+      <TodayPeriod />
+    </div>
+    <div class="grid-item">
       <TodayTodos />
-    </div>
-    <div class="grid-item">
-      区域 2
-    </div>
-    <div class="grid-item">
-      区域 3
     </div>
     <div class="grid-item">
       区域 4
@@ -42,20 +43,15 @@ import TodayTodos from '@/components/common/TodayTodos.vue';
   height: 17rem;
   border: 1px solid var(--color-base-300);
   border-radius: 1rem;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 6px color-mix(in oklch, var(--color-neutral) 10%, transparent);
   backdrop-filter: blur(8px);
   display: flex;
   justify-content: center;
   align-items: center;
   font-size: 1.5rem;
   font-weight: bold;
-}
-
-/* 大屏幕调整渐变角度 */
-@media (min-width: 768px) {
-  .red { --gradient-angle: 135deg; }
-  .blue { --gradient-angle: 225deg; }
-  .purple { --gradient-angle: 45deg; }
-  .yellow { --gradient-angle: 315deg; }
+  transition: all 0.4s ease-in-out;
+  --gradient-angle: 135deg;
+  --mix-ratio: clamp(15%, 20%, 25%);
 }
 </style>
