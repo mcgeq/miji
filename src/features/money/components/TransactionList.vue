@@ -32,6 +32,11 @@ const mediaQueries = useMediaQueriesStore();
 // 数据状态
 const loading = ref(false);
 const showMoreFilters = ref(!mediaQueries.isMobile);
+
+// 切换过滤器显示状态
+function toggleFilters() {
+  showMoreFilters.value = !showMoreFilters.value;
+}
 const transactions = computed<Transaction[]>(() => moneyStore.transactions);
 const disabledTransactions = computed(() => {
   return new Set(
@@ -77,9 +82,6 @@ const sortOptions = ref<SortOptions>({
   desc: true,
 });
 
-function toggleFilters() {
-  showMoreFilters.value = !showMoreFilters.value;
-}
 // 重置过滤器
 function resetFilters() {
   filters.value = {
@@ -237,20 +239,21 @@ defineExpose({
         </select>
       </div>
 
-      <div class="filter-flex-wrap">
-        <select
-          v-model="filters.accountSerialNum"
-          class="screening-filtering-select"
-        >
-          <option value="">
-            {{ t('common.actions.all') }}{{ t('financial.account.account') }}
-          </option>
-          <option v-for="account in props.accounts" :key="account.serialNum" :value="account.serialNum">
-            {{ account.name }}
-          </option>
-        </select>
-      </div>
       <template v-if="showMoreFilters">
+        <div class="filter-flex-wrap">
+          <select
+            v-model="filters.accountSerialNum"
+            class="screening-filtering-select"
+          >
+            <option value="">
+              {{ t('common.actions.all') }}{{ t('financial.account.account') }}
+            </option>
+            <option v-for="account in props.accounts" :key="account.serialNum" :value="account.serialNum">
+              {{ account.name }}
+            </option>
+          </select>
+        </div>
+
         <div class="filter-flex-wrap">
           <select
             v-model="filters.category"
@@ -279,6 +282,7 @@ defineExpose({
           >
         </div>
       </template>
+
       <div class="filter-button-group">
         <button
           class="screening-filtering-select"
@@ -612,6 +616,11 @@ margin-bottom: 0.1rem;
 .transaction-account-name {
   color: #1f2937;
   font-weight: 500;
+}
+
+.filter-button-group {
+  display: flex;
+  gap: 0.25rem;
 }
 
 .pagination-container {

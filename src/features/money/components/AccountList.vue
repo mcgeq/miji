@@ -3,7 +3,9 @@ import {
   Cloud,
   CreditCard,
   DollarSign,
+  MoreHorizontal,
   PiggyBank,
+  RotateCcw,
   TrendingUp,
   Wallet,
   Wallet2,
@@ -33,6 +35,9 @@ const emit = defineEmits<{
 const { t } = useI18n();
 
 const mediaQueries = useMediaQueriesStore();
+// 移动端过滤展开状态
+const showMoreFilters = ref(!mediaQueries.isMobile);
+
 // 过滤和分页状态
 const {
   filters,
@@ -45,6 +50,11 @@ const {
   setActiveFilter,
   toggleSortOrder,
 } = useAccountFilters(() => props.accounts, 4);
+
+// 切换过滤器显示状态
+function toggleFilters() {
+  showMoreFilters.value = !showMoreFilters.value;
+}
 
 function handleTypeFilter() {
   pagination.currentPage.value = 1;
@@ -138,78 +148,89 @@ function getAccountTypeName(type: AccountType): string {
           </div>
         </div>
 
-        <!-- 账户类型过滤 -->
-        <div class="filter-flex-wrap">
-          <select
-            v-model="filters.type"
-            class="screening-filtering-select"
-            @change="handleTypeFilter"
-          >
-            <option value="">
-              {{ t('common.actions.all') }}{{ t('common.misc.types') }}
-            </option>
-            <option v-for="type in accountTypes" :key="type" :value="type">
-              {{ getAccountTypeName(type) }}
-            </option>
-          </select>
-        </div>
+        <!-- 移动端展开的额外过滤器 -->
+        <template v-if="showMoreFilters">
+          <!-- 账户类型过滤 -->
+          <div class="filter-flex-wrap">
+            <select
+              v-model="filters.type"
+              class="screening-filtering-select"
+              @change="handleTypeFilter"
+            >
+              <option value="">
+                {{ t('common.actions.all') }}{{ t('common.misc.types') }}
+              </option>
+              <option v-for="type in accountTypes" :key="type" :value="type">
+                {{ getAccountTypeName(type) }}
+              </option>
+            </select>
+          </div>
 
-        <!-- 币种过滤 -->
-        <div class="filter-flex-wrap">
-          <select
-            v-model="filters.currency"
-            class="screening-filtering-select"
-            @change="handleCurrencyFilter"
-          >
-            <option value="">
-              {{ t('common.actions.all') }}{{ t('financial.currency') }}
-            </option>
-            <option v-for="currency in currencies" :key="currency" :value="currency">
-              {{ currency }}
-            </option>
-          </select>
-        </div>
+          <!-- 币种过滤 -->
+          <div class="filter-flex-wrap">
+            <select
+              v-model="filters.currency"
+              class="screening-filtering-select"
+              @change="handleCurrencyFilter"
+            >
+              <option value="">
+                {{ t('common.actions.all') }}{{ t('financial.currency') }}
+              </option>
+              <option v-for="currency in currencies" :key="currency" :value="currency">
+                {{ currency }}
+              </option>
+            </select>
+          </div>
 
-        <!-- 排序选项 -->
-        <div class="filter-flex-wrap">
-          <select
-            v-model="filters.sortBy"
-            class="screening-filtering-select"
-            @change="handleSortChange"
-          >
-            <option value="updatedAt">
-              {{ t('date.updatedDate') }}
-            </option>
-            <option value="createdAt">
-              {{ t('date.createDate') }}
-            </option>
+          <!-- 排序选项 -->
+          <div class="filter-flex-wrap">
+            <select
+              v-model="filters.sortBy"
+              class="screening-filtering-select"
+              @change="handleSortChange"
+            >
+              <option value="updatedAt">
+                {{ t('date.updatedDate') }}
+              </option>
+              <option value="createdAt">
+                {{ t('date.createDate') }}
+              </option>
 
-            <option value="name">
-              {{ t('financial.account.name') }}
-            </option>
-            <option value="balance">
-              {{ t('financial.balance') }}
-            </option>
-            <option value="type">
-              {{ t('financial.account.type') }}
-            </option>
-          </select>
+              <option value="name">
+                {{ t('financial.account.name') }}
+              </option>
+              <option value="balance">
+                {{ t('financial.balance') }}
+              </option>
+              <option value="type">
+                {{ t('financial.account.type') }}
+              </option>
+            </select>
+            <button
+              class="screening-filtering-select"
+              :title="filters.sortOrder === 'asc' ? t('common.sorting.asc') : t('common.sorting.desc')"
+              @click="toggleSortOrder"
+            >
+              <LucideArrowUpDown class="btn-lucide" :class="filters.sortOrder === 'desc' && 'rotate-180'" />
+            </button>
+          </div>
+        </template>
+
+        <!-- 操作按钮组 -->
+        <div class="filter-button-group">
           <button
             class="screening-filtering-select"
-            :title="filters.sortOrder === 'asc' ? t('common.sorting.asc') : t('common.sorting.desc')"
-            @click="toggleSortOrder"
+            @click="toggleFilters"
           >
-            <LucideArrowUpDown class="btn-lucide" :class="filters.sortOrder === 'desc' && 'rotate-180'" />
+            <MoreHorizontal class="wh-4 mr-1" />
+          </button>
+          <button
+            class="screening-filtering-select"
+            @click="resetFilters"
+          >
+            <RotateCcw class="wh-4 mr-1" />
           </button>
         </div>
-
-        <!-- 清空过滤器 -->
-        <button
-          class="screening-filtering-select"
-          @click="resetFilters"
-        >
-          <LucideRotateCcw class="btn-lucide" />
-        </button>
       </div>
     </div>
 
@@ -519,6 +540,11 @@ function getAccountTypeName(type: AccountType): string {
 }
 
 .filter-status-buttons {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.filter-button-group {
   display: flex;
   gap: 0.25rem;
 }

@@ -3,6 +3,8 @@ import {
   AlertCircle,
   CheckCircle,
   Clock,
+  MoreHorizontal,
+  RotateCcw,
 } from 'lucide-vue-next';
 import SimplePagination from '@/components/common/SimplePagination.vue';
 import { getRepeatTypeName, lowercaseFirstLetter } from '@/utils/common';
@@ -21,6 +23,13 @@ const { t } = useI18n();
 const moneyStore = useMoneyStore();
 const reminders = computed(() => moneyStore.remindersPaged);
 const mediaQueries = useMediaQueriesStore();
+// 移动端过滤展开状态
+const showMoreFilters = ref(!mediaQueries.isMobile);
+
+// 切换过滤器显示状态
+function toggleFilters() {
+  showMoreFilters.value = !showMoreFilters.value;
+}
 const {
   loading,
   filters,
@@ -98,82 +107,92 @@ defineExpose({
         </select>
       </div>
 
-      <div class="filter-flex-wrap">
-        <select
-          v-model="filters.repeatPeriodType"
-          class="screening-filtering-select"
-        >
-          <option value="undefined">
-            {{ t('common.actions.all') }}{{ t('todos.repeat.periodType') }}
-          </option>
-          <option value="None">
-            {{ t('date.repeat.none') }}
-          </option>
-          <option value="Daily">
-            {{ t('date.repeat.daily') }}
-          </option>
-          <option value="Weekly">
-            {{ t('date.repeat.weekly') }}
-          </option>
-          <option value="Monthly">
-            {{ t('date.repeat.monthly') }}
-          </option>
-          <option value="Yearly">
-            {{ t('date.repeat.yearly') }}
-          </option>
-          <option value="Custom">
-            {{ t('date.repeat.custom') }}
-          </option>
-        </select>
-      </div>
-
-      <div class="filter-flex-wrap">
-        <select
-          v-model="filters.category"
-          class="screening-filtering-select"
-        >
-          <option value="undefined">
-            {{ t('categories.allCategory') }}
-          </option>
-          <option
-            v-for="category in uniqueCategories"
-            :key="category"
-            :value="category"
+      <template v-if="showMoreFilters">
+        <div class="filter-flex-wrap">
+          <select
+            v-model="filters.repeatPeriodType"
+            class="screening-filtering-select"
           >
-            {{ category }}
-          </option>
-        </select>
-      </div>
+            <option value="undefined">
+              {{ t('common.actions.all') }}{{ t('todos.repeat.periodType') }}
+            </option>
+            <option value="None">
+              {{ t('date.repeat.none') }}
+            </option>
+            <option value="Daily">
+              {{ t('date.repeat.daily') }}
+            </option>
+            <option value="Weekly">
+              {{ t('date.repeat.weekly') }}
+            </option>
+            <option value="Monthly">
+              {{ t('date.repeat.monthly') }}
+            </option>
+            <option value="Yearly">
+              {{ t('date.repeat.yearly') }}
+            </option>
+            <option value="Custom">
+              {{ t('date.repeat.custom') }}
+            </option>
+          </select>
+        </div>
 
-      <div class="filter-flex-wrap">
-        <select
-          v-model="filters.dateRange"
+        <div class="filter-flex-wrap">
+          <select
+            v-model="filters.category"
+            class="screening-filtering-select"
+          >
+            <option value="undefined">
+              {{ t('categories.allCategory') }}
+            </option>
+            <option
+              v-for="category in uniqueCategories"
+              :key="category"
+              :value="category"
+            >
+              {{ category }}
+            </option>
+          </select>
+        </div>
+
+        <div class="filter-flex-wrap">
+          <select
+            v-model="filters.dateRange"
+            class="screening-filtering-select"
+          >
+            <option value="">
+              {{ t('common.actions.all') }}
+            </option>
+            <option value="today">
+              {{ t('date.periods.today') }}
+            </option>
+            <option value="week">
+              {{ t('date.periods.week') }}
+            </option>
+            <option value="month">
+              {{ t('date.periods.month') }}
+            </option>
+            <option value="overdue">
+              {{ t('common.status.overdue') }}
+            </option>
+          </select>
+        </div>
+      </template>
+
+      <div class="filter-button-group">
+        <button
           class="screening-filtering-select"
+          @click="toggleFilters"
         >
-          <option value="">
-            {{ t('common.actions.all') }}
-          </option>
-          <option value="today">
-            {{ t('date.periods.today') }}
-          </option>
-          <option value="week">
-            {{ t('date.periods.week') }}
-          </option>
-          <option value="month">
-            {{ t('date.periods.month') }}
-          </option>
-          <option value="overdue">
-            {{ t('common.status.overdue') }}
-          </option>
-        </select>
+          <MoreHorizontal class="wh-4 mr-1" />
+        </button>
+        <button
+          class="screening-filtering-select"
+          @click="resetFilters"
+        >
+          <RotateCcw class="wh-4 mr-1" />
+        </button>
       </div>
-
-      <button
-        class="screening-filtering-select"
-        @click="resetFilters"
-      >
-        <LucideRotateCcw class="wh-5 mr-1" />
-      </button>
     </div>
 
     <!-- 加载状态 -->
@@ -518,6 +537,11 @@ defineExpose({
 }
 
 /* Additional utility styles */
+.filter-button-group {
+  display: flex;
+  gap: 0.25rem;
+}
+
 .pagination-container {
   display: flex;
   justify-content: center;

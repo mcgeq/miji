@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { MoreHorizontal, RotateCcw } from 'lucide-vue-next';
 import SimplePagination from '@/components/common/SimplePagination.vue';
 import { getRepeatTypeName, lowercaseFirstLetter } from '@/utils/common';
 import { DateUtils } from '@/utils/date';
@@ -21,6 +22,13 @@ const { t } = useI18n();
 const moneyStore = useMoneyStore();
 const budgets = computed(() => moneyStore.budgetsPaged);
 const mediaQueries = useMediaQueriesStore();
+// 移动端过滤展开状态
+const showMoreFilters = ref(!mediaQueries.isMobile);
+
+// 切换过滤器显示状态
+function toggleFilters() {
+  showMoreFilters.value = !showMoreFilters.value;
+}
 
 const { loading, filters, resetFilters, pagination, loadBudgets } = useBudgetFilters(
   () => budgets.value,
@@ -140,55 +148,65 @@ defineExpose({
       <!--   </select> -->
       <!-- </div> -->
 
-      <div class="filter-flex-wrap">
-        <select
-          v-model="filters.repeatPeriodType"
-          class="screening-filtering-select"
-        >
-          <option value="">
-            {{ t('common.actions.all') }}
-          </option>
-          <option value="None">
-            {{ t('date.repeat.none') }}
-          </option>
-          <option value="Daily">
-            {{ t('date.repeat.daily') }}
-          </option>
-          <option value="Weekly">
-            {{ t('date.repeat.weekly') }}
-          </option>
-          <option value="Monthly">
-            {{ t('date.repeat.monthly') }}
-          </option>
-          <option value="Yearly">
-            {{ t('date.repeat.yearly') }}
-          </option>
-          <option value="Custom">
-            {{ t('date.repeat.custom') }}
-          </option>
-        </select>
-      </div>
+      <template v-if="showMoreFilters">
+        <div class="filter-flex-wrap">
+          <select
+            v-model="filters.repeatPeriodType"
+            class="screening-filtering-select"
+          >
+            <option value="">
+              {{ t('common.actions.all') }}
+            </option>
+            <option value="None">
+              {{ t('date.repeat.none') }}
+            </option>
+            <option value="Daily">
+              {{ t('date.repeat.daily') }}
+            </option>
+            <option value="Weekly">
+              {{ t('date.repeat.weekly') }}
+            </option>
+            <option value="Monthly">
+              {{ t('date.repeat.monthly') }}
+            </option>
+            <option value="Yearly">
+              {{ t('date.repeat.yearly') }}
+            </option>
+            <option value="Custom">
+              {{ t('date.repeat.custom') }}
+            </option>
+          </select>
+        </div>
 
-      <div class="filter-flex-wrap">
-        <select
-          v-model="filters.category"
-          class="screening-filtering-select"
-        >
-          <option :value="null">
-            {{ t('categories.allCategory') }}
-          </option>
-          <option v-for="category in uniqueCategories" :key="category" :value="category">
-            {{ t(`common.categories.${lowercaseFirstLetter(category)}`) }}
-          </option>
-        </select>
-      </div>
+        <div class="filter-flex-wrap">
+          <select
+            v-model="filters.category"
+            class="screening-filtering-select"
+          >
+            <option :value="null">
+              {{ t('categories.allCategory') }}
+            </option>
+            <option v-for="category in uniqueCategories" :key="category" :value="category">
+              {{ t(`common.categories.${lowercaseFirstLetter(category)}`) }}
+            </option>
+          </select>
+        </div>
+      </template>
 
-      <button
-        class="screening-filtering-select"
-        @click="resetFilters"
-      >
-        <LucideRotateCcw class="wh-5 mr-1" />
-      </button>
+      <div class="filter-button-group">
+        <button
+          class="screening-filtering-select"
+          @click="toggleFilters"
+        >
+          <MoreHorizontal class="wh-4 mr-1" />
+        </button>
+        <button
+          class="screening-filtering-select"
+          @click="resetFilters"
+        >
+          <RotateCcw class="wh-4 mr-1" />
+        </button>
+      </div>
     </div>
 
     <!-- 加载状态 -->
@@ -582,5 +600,10 @@ defineExpose({
 
 .progress-percentage-normal {
   color: #4b5563;
+}
+
+.filter-button-group {
+  display: flex;
+  gap: 0.25rem;
 }
 </style>
