@@ -30,6 +30,23 @@ const priorities: Priority[] = PrioritySchema.options;
 const showMenu = ref(false);
 const { t } = useI18n();
 
+// 弹窗位置计算
+const menuStyle = computed(() => {
+  if (!showMenu.value) return {};
+
+  // 获取按钮位置
+  const button = document.querySelector(`[data-priority-btn="${props.serialNum}"]`) as HTMLElement;
+  if (!button) return {};
+
+  const rect = button.getBoundingClientRect();
+  return {
+    position: 'fixed',
+    top: `${rect.bottom + 4}px`,
+    left: `${rect.left}px`,
+    zIndex: '10000',
+  };
+});
+
 const priorityKeyMap = {
   LOW: 'todos.priority.low',
   MEDIUM: 'todos.priority.medium',
@@ -38,17 +55,17 @@ const priorityKeyMap = {
 } as const;
 
 const gradientMap = {
-  LOW: 'from-emerald-300 to-teal-200',
-  MEDIUM: 'from-amber-300 to-orange-200',
-  HIGH: 'from-rose-400 to-red-300',
-  URGENT: 'from-purple-400 to-red-400',
+  LOW: 'from-emerald-400 to-emerald-500',
+  MEDIUM: 'from-amber-400 to-amber-500',
+  HIGH: 'from-red-400 to-red-500',
+  URGENT: 'from-red-600 to-red-700', // 更深的红色，更加醒目
 } as const;
 
 const textColorMap = {
-  LOW: 'text-emerald-900',
-  MEDIUM: 'text-amber-900',
-  HIGH: 'text-red-800',
-  URGENT: 'text-purple-800',
+  LOW: 'text-white font-bold',
+  MEDIUM: 'text-white font-bold',
+  HIGH: 'text-white font-bold',
+  URGENT: 'text-white font-bold',
 } as const;
 
 const normalizedPriority = computed(
@@ -74,31 +91,42 @@ function selectPriority(serialNum: string, p: Priority) {
   <!-- 优先级按钮 -->
   <button
     class="priority-btn"
-    :class="[priorityClasses.gradient, priorityClasses.text]"
+    :class="[
+      priorityClasses.gradient,
+      priorityClasses.text,
+      { urgent: normalizedPriority === 'URGENT' },
+    ]"
     :title="priorityLabel"
     :aria-label="priorityLabel"
     :disabled="completed"
+    :data-priority-btn="serialNum"
     @click="showMenu = !showMenu"
   >
     <span class="priority-label">{{ priorityLabel }}</span>
   </button>
 
   <!-- 下拉菜单 -->
-  <div v-if="showMenu" class="priority-menu">
-    <button
-      v-for="p in priorities"
-      :key="p"
-      class="priority-option"
-      :class="[
-        p === priority
-          ? 'priority-option--active'
-          : 'priority-option--inactive',
-      ]"
-      @click="selectPriority(serialNum, p)"
+  <Teleport to="body">
+    <div
+      v-if="showMenu"
+      class="priority-menu"
+      :style="menuStyle"
     >
-      {{ t(priorityKeyMap[p.toUpperCase() as keyof typeof priorityKeyMap] || priorityKeyMap.LOW) }}
-    </button>
-  </div>
+      <button
+        v-for="p in priorities"
+        :key="p"
+        class="priority-option"
+        :class="[
+          p === priority
+            ? 'priority-option--active'
+            : 'priority-option--inactive',
+        ]"
+        @click="selectPriority(serialNum, p)"
+      >
+        {{ t(priorityKeyMap[p.toUpperCase() as keyof typeof priorityKeyMap] || priorityKeyMap.LOW) }}
+      </button>
+    </div>
+  </Teleport>
 </template>
 
 <style scoped lang="postcss">
@@ -106,25 +134,41 @@ function selectPriority(serialNum: string, p: Priority) {
 .priority-btn {
   position: absolute;
   top: 0.25rem; /* top-1 */
-  left: 0.25rem; /* left-1 */
+  left: 0.5rem; /* 向右移动，避免与颜色条重叠 */
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 1.25rem; /* h-5 */
-  width: 1.25rem;  /* w-5 */
-  border: 1px solid var(--color-neutral); /* border-white/30 */
+  height: 1.5rem; /* h-6 */
+  width: 1.5rem;  /* w-6 */
+  border: 2px solid rgba(255, 255, 255, 0.3);
   border-radius: 9999px; /* rounded-full */
   font-size: 0.75rem; /* text-xs */
-  font-weight: 600; /* font-semibold */
-  background-color: var(--color-base-300); /* bg-opacity-90 */
+  font-weight: 700; /* font-bold */
+  background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
   backdrop-filter: blur(8px); /* backdrop-blur-md */
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   transition: all 0.3s ease-out;
   cursor: pointer;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 .priority-btn:hover {
   box-shadow: 0 10px 15px rgba(0, 0, 0, 0.25);
   transform: scale(1.25);
+}
+
+/* 紧急优先级特殊效果 */
+.priority-btn.urgent {
+  animation: urgent-pulse 2s ease-in-out infinite;
+  box-shadow: 0 0 12px rgba(220, 38, 38, 0.5);
+}
+
+@keyframes urgent-pulse {
+  0%, 100% {
+    box-shadow: 0 0 12px rgba(220, 38, 38, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(220, 38, 38, 0.8);
+  }
 }
 .priority-btn:disabled {
   cursor: not-allowed;
@@ -153,17 +197,13 @@ function selectPriority(serialNum: string, p: Priority) {
 
 /* 下拉菜单容器 */
 .priority-menu {
-  position: absolute;
-  top: 1.75rem; /* top-7 */
-  left: 0;
-  z-index: 50;
   width: 2.5rem; /* w-10 */
   padding: 0.25rem; /* p-1 */
   border: 1px solid var(--color-base-300); /* border-gray-200 */
   border-radius: 0.5rem; /* rounded-lg */
   background: var(--color-base-100);
   backdrop-filter: blur(8px);
-  box-shadow: 0 4px 6px rgba(0,0,0,0.15);
+  box-shadow: 0 8px 16px rgba(0,0,0,0.2);
 }
 
 /* 深色模式 */
@@ -174,7 +214,7 @@ function selectPriority(serialNum: string, p: Priority) {
   .priority-menu {
     background: #1f2937; /* neutral-800 */
     border-color: #374151; /* neutral-700 */
-    box-shadow: 0 8px 16px rgba(0,0,0,0.4);
+    box-shadow: 0 12px 24px rgba(0,0,0,0.5);
   }
 }
 

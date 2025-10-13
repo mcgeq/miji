@@ -45,6 +45,25 @@ const showMenu = computed(
   () => menuStore.getMenuSerialNum === todoCopy.value.serialNum,
 );
 
+// 优先级样式计算
+const priorityClass = computed(() => {
+  if (!todoCopy.value.priority) return '';
+
+  const priority = todoCopy.value.priority.toUpperCase();
+  switch (priority) {
+    case 'LOW':
+      return 'priority-low';
+    case 'MEDIUM':
+      return 'priority-medium';
+    case 'HIGH':
+      return 'priority-high';
+    case 'URGENT':
+      return 'priority-urgent';
+    default:
+      return '';
+  }
+});
+
 // 👇 所有修改 todo 都使用这个函数
 function updateTodo(serialNum: string, partial: TodoUpdate) {
   todoCopy.value = { ...todoCopy.value, ...partial };
@@ -135,6 +154,7 @@ function closeMenu() {
 <template>
   <div
     class="todo-item"
+    :class="priorityClass"
     @mouseenter="showActions = true"
     @mouseleave="showActions = false"
   >
@@ -220,6 +240,41 @@ function closeMenu() {
   position: relative;
   height: 4.5rem;
   transition: box-shadow 0.2s ease, background-color 0.2s ease;
+  overflow: hidden; /* 保持圆角效果 */
+}
+
+/* 优先级颜色条 - 作为容器的一部分 */
+.todo-item::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  border-radius: 1.25rem 0 0 1.25rem; /* 左侧圆角与容器匹配 */
+  transition: all 0.3s ease;
+  z-index: 1;
+}
+
+/* 低优先级 - 绿色系 */
+.priority-low::before {
+  background: linear-gradient(to bottom, #10b981, #059669);
+}
+
+/* 中等优先级 - 橙色系 */
+.priority-medium::before {
+  background: linear-gradient(to bottom, #f59e0b, #d97706);
+}
+
+/* 高优先级 - 红色系 */
+.priority-high::before {
+  background: linear-gradient(to bottom, #ef4444, #dc2626);
+}
+
+/* 紧急优先级 - 深红色系，更加醒目 */
+.priority-urgent::before {
+  background: linear-gradient(to bottom, #dc2626, #b91c1c);
+  box-shadow: 0 0 8px rgba(220, 38, 38, 0.4); /* 添加发光效果 */
 }
 
 .todo-item:hover {

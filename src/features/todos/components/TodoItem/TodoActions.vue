@@ -10,9 +10,10 @@ const completed = computed(() => props.completed);
 
 <template>
   <div v-if="show" class="todo-actions">
+    <!-- 编辑按钮：只在未完成时显示 -->
     <button
+      v-if="!completed"
       type="button"
-      :disabled="completed"
       aria-label="Edit task"
       class="action-btn edit"
       @click="emit('edit')"
@@ -20,6 +21,7 @@ const completed = computed(() => props.completed);
       <Pencil class="icon" />
     </button>
 
+    <!-- 添加按钮：始终显示 -->
     <button
       type="button"
       aria-label="Add task"
@@ -29,9 +31,10 @@ const completed = computed(() => props.completed);
       <Plus class="icon" />
     </button>
 
+    <!-- 删除按钮：只在未完成时显示 -->
     <button
+      v-if="!completed"
       type="button"
-      :disabled="completed"
       aria-label="Delete task"
       class="action-btn delete"
       @click="emit('remove')"
