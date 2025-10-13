@@ -5,7 +5,10 @@ import AccountModal from '@/features/money/components/AccountModal.vue';
 import BudgetModal from '@/features/money/components/BudgetModal.vue';
 import ReminderModal from '@/features/money/components/ReminderModal.vue';
 import TransactionModal from '@/features/money/components/TransactionModal.vue';
+import { formatCurrency } from '@/features/money/utils/money';
 import { TransactionTypeSchema } from '@/schema/common';
+import { lowercaseFirstLetter } from '@/utils/common';
+import { DateUtils } from '@/utils/date';
 import { Lg } from '@/utils/debugLog';
 import { toast } from '@/utils/toast';
 import type { TransactionType } from '@/schema/common';
@@ -25,6 +28,7 @@ import type {
   UpdateAccountRequest,
 } from '@/schema/money';
 
+const { t } = useI18n();
 const moneyStore = useMoneyStore();
 const { confirmState, handleConfirm, handleCancel, handleClose } = useConfirm();
 
@@ -41,6 +45,13 @@ const selectedReminder = ref<BilReminder | null>(null);
 
 const transactionType = ref<TransactionType>(TransactionTypeSchema.enum.Expense);
 const accounts = ref<Account[]>([]);
+
+// 标签切换
+type TabType = 'accounts' | 'transactions' | 'budgets' | 'reminders';
+const activeTab = ref<TabType>('accounts');
+const transactions = ref<Transaction[]>([]);
+const budgets = ref<Budget[]>([]);
+const reminders = ref<BilReminder[]>([]);
 
 // ------------------ Transaction ------------------
 function showTransactionModal(type: TransactionType) {
@@ -59,6 +70,8 @@ async function saveTransaction(transaction: TransactionCreate) {
     await moneyStore.createTransaction(transaction);
     toast.success('添加成功');
     closeTransactionModal();
+    await loadTransactions();
+    await loadAccounts();
   } catch (err) {
     Lg.e('saveTransaction', err);
     toast.error('保存失败');
@@ -71,6 +84,8 @@ async function updateTransaction(serialNum: string, transaction: TransactionUpda
       await moneyStore.updateTransaction(serialNum, transaction);
       toast.success('更新成功');
       closeTransactionModal();
+      await loadTransactions();
+      await loadAccounts();
     }
   } catch (err) {
     Lg.e('updateTransaction', err);
@@ -83,6 +98,8 @@ async function saveTransfer(transfer: TransferCreate) {
     await moneyStore.createTransfer(transfer);
     toast.success('转账成功');
     closeTransactionModal();
+    await loadTransactions();
+    await loadAccounts();
   } catch (err) {
     Lg.e('saveTransfer', err);
     toast.error('转账失败');
@@ -94,6 +111,8 @@ async function updateTransfer(serialNum: string, transfer: TransferCreate) {
     await moneyStore.updateTransfer(serialNum, transfer);
     toast.success('转账更新成功');
     closeTransactionModal();
+    await loadTransactions();
+    await loadAccounts();
   } catch (err) {
     Lg.e('updateTransfer', err);
     toast.error('转账失败');
@@ -153,6 +172,7 @@ async function saveBudget(budget: BudgetCreate) {
     await moneyStore.createBudget(budget);
     toast.success('添加成功');
     closeBudgetModal();
+    await loadBudgets();
   } catch (err) {
     Lg.e('saveBudget', err);
     toast.error('保存失败');
@@ -165,6 +185,7 @@ async function updateBudget(serialNum: string, budget: BudgetUpdate) {
       await moneyStore.updateBudget(serialNum, budget);
       toast.success('更新成功');
       closeBudgetModal();
+      await loadBudgets();
     }
   } catch (err) {
     Lg.e('updateBudget', err);
@@ -188,6 +209,7 @@ async function saveReminder(reminder: BilReminderCreate) {
     await moneyStore.createReminder(reminder);
     toast.success('添加成功');
     closeReminderModal();
+    await loadReminders();
   } catch (err) {
     Lg.e('saveReminder', err);
     toast.error('保存失败');
@@ -200,6 +222,7 @@ async function updateReminder(serialNum: string, reminder: BilReminderUpdate) {
       await moneyStore.updateReminder(serialNum, reminder);
       toast.success('更新成功');
       closeReminderModal();
+      await loadReminders();
     }
   } catch (err) {
     Lg.e('updateReminder', err);
@@ -212,6 +235,53 @@ async function loadAccounts() {
     accounts.value = await moneyStore.getAllAccounts();
   } catch (err) {
     Lg.e('loadAccounts', err);
+  }
+}
+
+async function loadTransactions() {
+  try {
+    const allTransactions = await moneyStore.getAllTransactions();
+    transactions.value = allTransactions.slice(0, 10);
+  } catch (err) {
+    Lg.e('loadTransactions', err);
+  }
+}
+
+async function loadBudgets() {
+  try {
+    budgets.value = moneyStore.budgetsPaged.rows;
+    if (budgets.value.length === 0) {
+      await moneyStore.updateBudgets(true);
+      budgets.value = moneyStore.budgetsPaged.rows;
+    }
+  } catch (err) {
+    Lg.e('loadBudgets', err);
+  }
+}
+
+async function loadReminders() {
+  try {
+    reminders.value = await moneyStore.getAllReminders();
+  } catch (err) {
+    Lg.e('loadReminders', err);
+  }
+}
+
+function switchTab(tab: TabType) {
+  activeTab.value = tab;
+  switch (tab) {
+    case 'accounts':
+      loadAccounts();
+      break;
+    case 'transactions':
+      loadTransactions();
+      break;
+    case 'budgets':
+      loadBudgets();
+      break;
+    case 'reminders':
+      loadReminders();
+      break;
   }
 }
 
@@ -288,6 +358,10 @@ onMounted(async () => {
   await moneyStore.getAllCategories();
   await moneyStore.getAllSubCategories();
   window.addEventListener('keydown', handleKeyPress);
+  // 初始加载所有数据
+  await loadTransactions();
+  await loadBudgets();
+  await loadReminders();
 });
 
 onUnmounted(() => {
@@ -337,6 +411,150 @@ onUnmounted(() => {
       <button class="btn btn-yellow" title="设置提醒" @click="showReminderModal">
         <LucideBell :size="12" />
       </button>
+    </div>
+
+    <!-- 标签切换 -->
+    <div class="tabs-container">
+      <button
+        class="tab-btn"
+        :class="{ active: activeTab === 'accounts' }"
+        @click="switchTab('accounts')"
+      >
+        账户
+      </button>
+      <button
+        class="tab-btn"
+        :class="{ active: activeTab === 'transactions' }"
+        @click="switchTab('transactions')"
+      >
+        交易
+      </button>
+      <button
+        class="tab-btn"
+        :class="{ active: activeTab === 'budgets' }"
+        @click="switchTab('budgets')"
+      >
+        预算
+      </button>
+      <button
+        class="tab-btn"
+        :class="{ active: activeTab === 'reminders' }"
+        @click="switchTab('reminders')"
+      >
+        提醒
+      </button>
+    </div>
+
+    <!-- 列表内容 -->
+    <div class="list-container">
+      <!-- 账户列表 -->
+      <div v-if="activeTab === 'accounts'" class="list-content">
+        <div v-if="accounts.length === 0" class="empty-state">
+          暂无账户
+        </div>
+        <div v-else class="list-items">
+          <div v-for="account in accounts" :key="account.serialNum" class="list-item">
+            <div class="item-icon" :style="{ backgroundColor: account.color }">
+              <LucideCreditCard :size="16" />
+            </div>
+            <div class="item-content">
+              <div class="item-name">
+                {{ account.name }}
+              </div>
+              <div class="item-desc">
+                {{ account.type }}
+              </div>
+            </div>
+            <div class="item-value">
+              {{ formatCurrency(account.balance ?? 0) }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 交易列表 -->
+      <div v-if="activeTab === 'transactions'" class="list-content">
+        <div v-if="transactions.length === 0" class="empty-state">
+          暂无交易
+        </div>
+        <div v-else class="list-items">
+          <div v-for="transaction in transactions" :key="transaction.serialNum" class="list-item">
+            <div class="item-icon" :class="`icon-${transaction.transactionType.toLowerCase()}`">
+              <LucidePlusCircle v-if="transaction.transactionType === 'Income'" :size="16" />
+              <LucideMinusCircle v-else-if="transaction.transactionType === 'Expense'" :size="16" />
+              <LucideArrowRightLeft v-else :size="16" />
+            </div>
+            <div class="item-content">
+              <div class="item-name">
+                {{ transaction.description }}
+              </div>
+              <div class="item-desc">
+                {{ t(`common.categories.${lowercaseFirstLetter(transaction.category)}`) }}<template v-if="transaction.subCategory">
+                  -{{ t(`common.subCategories.${lowercaseFirstLetter(transaction.subCategory)}`) }}
+                </template>
+              </div>
+            </div>
+            <div class="item-value-wrapper">
+              <div class="item-value" :class="`value-${transaction.transactionType.toLowerCase()}`">
+                {{ transaction.transactionType === 'Income' ? '+' : '-' }}{{ formatCurrency(transaction.amount ?? 0) }}
+              </div>
+              <div class="item-date">
+                {{ DateUtils.formatDateTime(transaction.date) }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 预算列表 -->
+      <div v-if="activeTab === 'budgets'" class="list-content">
+        <div v-if="budgets.length === 0" class="empty-state">
+          暂无预算
+        </div>
+        <div v-else class="list-items">
+          <div v-for="budget in budgets" :key="budget.serialNum" class="list-item">
+            <div class="item-icon icon-budget">
+              <LucideTarget :size="16" />
+            </div>
+            <div class="item-content">
+              <div class="item-name">
+                {{ budget.name }}
+              </div>
+              <div class="item-desc">
+                {{ budget.description }}
+              </div>
+            </div>
+            <div class="item-value">
+              {{ formatCurrency(budget.amount ?? 0) }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 提醒列表 -->
+      <div v-if="activeTab === 'reminders'" class="list-content">
+        <div v-if="reminders.length === 0" class="empty-state">
+          暂无提醒
+        </div>
+        <div v-else class="list-items">
+          <div v-for="reminder in reminders" :key="reminder.serialNum" class="list-item">
+            <div class="item-icon icon-reminder">
+              <LucideBell :size="16" />
+            </div>
+            <div class="item-content">
+              <div class="item-name">
+                {{ reminder.name }}
+              </div>
+              <div class="item-desc">
+                {{ reminder.billDate }}
+              </div>
+            </div>
+            <div class="item-value">
+              {{ formatCurrency(reminder.amount ?? 0) }}
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Modals - 使用 Teleport 传送到 body，确保覆盖整个页面 -->
@@ -527,6 +745,189 @@ onUnmounted(() => {
   width: 100%;
   align-items: center;
   justify-content: center;
+  margin-bottom: 1rem;
+}
+
+/* 标签切换 */
+.tabs-container {
+  display: flex;
+  gap: 0.25rem;
+  width: 100%;
+  border-bottom: 2px solid var(--color-base-300);
+  margin-bottom: 0.75rem;
+}
+
+.tab-btn {
+  flex: 1;
+  padding: 0.5rem 1rem;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-base-content);
+  opacity: 0.6;
+  transition: all 0.2s;
+  position: relative;
+  border-radius: 0.25rem 0.25rem 0 0;
+}
+
+.tab-btn:hover {
+  opacity: 1;
+  background-color: var(--color-base-200);
+}
+
+.tab-btn.active {
+  opacity: 1;
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.tab-btn.active::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background-color: var(--color-primary);
+}
+
+/* 列表容器 */
+.list-container {
+  width: 100%;
+  flex: 1;
+  overflow-y: auto;
+  max-height: calc(100% - 8rem);
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.list-container::-webkit-scrollbar {
+  display: none;
+}
+
+.list-content {
+  width: 100%;
+}
+
+.list-items {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.list-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background-color: var(--color-base-100);
+  border: 1px solid var(--color-base-300);
+  border-radius: 0.5rem;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.list-item:hover {
+  background-color: var(--color-base-200);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.item-icon {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  flex-shrink: 0;
+}
+
+.icon-income {
+  background-color: #dcfce7;
+  color: #16a34a;
+}
+
+.icon-expense {
+  background-color: #fee2e2;
+  color: #ef4444;
+}
+
+.icon-transfer {
+  background-color: #dbeafe;
+  color: #3b82f6;
+}
+
+.icon-budget {
+  background-color: #ffedd5;
+  color: #f97316;
+}
+
+.icon-reminder {
+  background-color: #fef9c3;
+  color: #ca8a04;
+}
+
+.item-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.item-name {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-base-content);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.item-desc {
+  font-size: 0.75rem;
+  color: var(--color-base-content);
+  opacity: 0.6;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.item-value-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.25rem;
+  flex-shrink: 0;
+}
+
+.item-value {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-base-content);
+}
+
+.item-date {
+  font-size: 0.625rem;
+  color: var(--color-base-content);
+  opacity: 0.5;
+  text-align: right;
+}
+
+.value-income {
+  color: #16a34a;
+}
+
+.value-expense {
+  color: #ef4444;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 2rem 1rem;
+  color: var(--color-base-content);
+  opacity: 0.5;
+  font-size: 0.875rem;
 }
 
 .btn {
@@ -629,6 +1030,37 @@ onUnmounted(() => {
   }
   .quick-actions {
     gap: 0.375rem;
+  }
+
+  .tab-btn {
+    padding: 0.375rem 0.5rem;
+    font-size: 0.75rem;
+  }
+
+  .list-item {
+    padding: 0.5rem;
+    gap: 0.5rem;
+  }
+
+  .item-icon {
+    width: 1.5rem;
+    height: 1.5rem;
+  }
+
+  .item-name {
+    font-size: 0.8125rem;
+  }
+
+  .item-desc {
+    font-size: 0.6875rem;
+  }
+
+  .item-value {
+    font-size: 0.8125rem;
+  }
+
+  .item-date {
+    font-size: 0.5625rem;
   }
 }
 
