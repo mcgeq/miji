@@ -1,9 +1,11 @@
-<script setup></script>
+<script setup lang="ts">
+import TodayTodos from '@/components/common/TodayTodos.vue';
+</script>
 
 <template>
   <div class="grid-container">
     <div class="grid-item red">
-      区域 1
+      <TodayTodos />
     </div>
     <div class="grid-item blue">
       区域 2
@@ -24,9 +26,7 @@
   grid-template-columns: 1fr;
   grid-template-rows: repeat(4, 1fr);
   gap: 1rem;
-  min-height: 100vh;
   padding: 1rem;
-  background: linear-gradient(135deg, var(--color-base-100), var(--color-base-200));
 }
 
 /* 响应式桌面布局：2×2 */
@@ -39,6 +39,8 @@
 
 /* 公共区域样式 */
 .grid-item {
+  height: 17rem;
+  border: 1px solid var(--color-base-300);
   border-radius: 1rem;
   box-shadow: 0 4px 6px rgba(0,0,0,0.1);
   backdrop-filter: blur(8px);
@@ -50,30 +52,14 @@
   transition: all 0.4s ease-in-out;
 }
 
-/* 悬停效果 */
-.grid-item:hover {
-  transform: scale(1.05);
-  box-shadow: 0 10px 20px rgba(0,0,0,0.2);
-}
-
 /* 红色区域 */
 .red {
   color: var(--color-error-content);
   --gradient-angle: 135deg;
   --mix-ratio: clamp(15%, 20%, 25%);
-  background: linear-gradient(
-    var(--gradient-angle),
-    var(--color-base-200) 0%,
-    var(--color-error) 100%
-  );
-}
-
-.red:hover {
-  background: linear-gradient(
-    var(--gradient-angle),
-    var(--color-error) 0%,
-    color-mix(in oklch, var(--color-error) var(--mix-ratio), var(--color-base-200)) 100%
-  );
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
 }
 
 /* 蓝色区域 */
