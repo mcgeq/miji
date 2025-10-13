@@ -78,6 +78,7 @@ declare module 'vue' {
     Sidebar: typeof import('./src/components/common/Sidebar.vue')['default']
     SimplePagination: typeof import('./src/components/common/SimplePagination.vue')['default']
     Splash: typeof import('./src/components/common/Splash.vue')['default']
+    TodayTodos: typeof import('./src/components/common/TodayTodos.vue')['default']
     WarningDialog: typeof import('./src/components/common/WarningDialog.vue')['default']
   }
 }
