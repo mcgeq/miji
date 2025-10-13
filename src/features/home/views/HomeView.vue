@@ -12,7 +12,7 @@ import TodayTodos from '@/components/common/TodayTodos.vue';
     <div class="grid-item">
       <TodayPeriod />
     </div>
-    <div class="grid-item">
+    <div class="grid-item grid-item-scrollable">
       <TodayTodos />
     </div>
     <div class="grid-item">
@@ -31,6 +31,17 @@ import TodayTodos from '@/components/common/TodayTodos.vue';
   padding: 0.75rem;
   box-sizing: border-box;
   width: 100%;
+  /* 移动端：计算高度 = 视口高度 - 底部导航（4rem） */
+  height: calc(100vh - 4rem);
+  overflow-y: auto;
+  overflow-x: hidden;
+  /* 隐藏滚动条 */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.grid-container::-webkit-scrollbar {
+  display: none;
 }
 
 /* 响应式桌面布局：2×2 */
@@ -40,12 +51,13 @@ import TodayTodos from '@/components/common/TodayTodos.vue';
     grid-template-rows: repeat(2, 1fr);
     gap: 1rem;
     padding: 1rem;
+    height: calc(100vh - 2rem);
   }
 }
 
 /* 公共区域样式 */
 .grid-item {
-  height: 17rem;
+  height: 16rem;
   border: 1px solid var(--color-base-300);
   border-radius: 1rem;
   box-shadow: 0 4px 6px color-mix(in oklch, var(--color-neutral) 10%, transparent);
@@ -61,5 +73,12 @@ import TodayTodos from '@/components/common/TodayTodos.vue';
   width: 100%;
   --gradient-angle: 135deg;
   --mix-ratio: clamp(15%, 20%, 25%);
+}
+
+/* 可滚动区域样式 - 用于待办任务等需要滚动的区域 */
+.grid-item-scrollable {
+  align-items: stretch;
+  justify-content: stretch;
+  padding: 0;
 }
 </style>

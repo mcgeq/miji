@@ -97,6 +97,10 @@ function handleClick() {
 .todo-title-container {
   position: relative;
   display: block;
+  flex: 1;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 .todo-title {
@@ -112,6 +116,7 @@ function handleClick() {
   color: var(--color-base-content);
   transition: all 0.2s ease;
   letter-spacing: 0.01em;
+  max-width: 100%;
 }
 
 .todo-title:hover {

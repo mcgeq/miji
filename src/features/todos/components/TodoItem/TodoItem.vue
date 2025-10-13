@@ -296,6 +296,9 @@ function handleMouseLeave() {
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   overflow: hidden;
   box-shadow: 0 1px 3px color-mix(in oklch, var(--color-neutral) 8%, transparent);
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 /* 优先级颜色条 - 作为容器的一部分 */
@@ -416,6 +419,10 @@ function handleMouseLeave() {
   justify-content: space-between;
   align-items: center;
   flex: 1;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
 }
 
 /* 左侧: 优先级、复选框、标题 */
@@ -425,7 +432,21 @@ function handleMouseLeave() {
   gap: 0.5rem;
   flex: 1;
   min-width: 0;
-  padding-left: 1rem;
+  max-width: 100%;
+  padding-left: 0.5rem;
+  overflow: hidden;
+}
+
+/* 移动端减少内边距 */
+@media (max-width: 768px) {
+  .todo-item {
+    padding: 0.75rem 0.5rem;
+  }
+
+  .todo-left {
+    padding-left: 0.25rem;
+    gap: 0.375rem;
+  }
 }
 
 /* 到期时间 */

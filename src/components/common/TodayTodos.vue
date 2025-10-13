@@ -170,6 +170,9 @@ onUnmounted(() => {
   flex-direction: column;
   gap: 0.5rem;
   padding: 0.25rem;
+  max-width: 100%;
+  overflow: hidden;
+  box-sizing: border-box;
 }
 
 .todo-header {
@@ -219,6 +222,9 @@ onUnmounted(() => {
   overflow-x: hidden;
   display: flex;
   flex-direction: column;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
   /* 隐藏滚动条 - Firefox */
   scrollbar-width: none;
   /* 隐藏滚动条 - IE/Edge */
@@ -247,6 +253,8 @@ onUnmounted(() => {
   justify-content: center;
   z-index: 9999;
   padding: 1rem;
+  /* 确保在移动端也能正常滚动 */
+  overflow-y: auto;
 }
 
 .modal-content {
@@ -256,16 +264,19 @@ onUnmounted(() => {
   border: 1px solid var(--color-base-300);
   width: 100%;
   max-width: 500px;
-  max-height: 90vh;
+  max-height: 85vh;
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  /* 移动端优化 */
+  margin: auto;
 }
 
 .modal-header {
-  padding: 1.5rem 1.5rem 1rem;
+  padding: 1rem 1.5rem 0.75rem;
   border-bottom: 1px solid var(--color-base-300);
   background-color: var(--color-base-200);
+  flex-shrink: 0;
 }
 
 .modal-title {
@@ -279,6 +290,8 @@ onUnmounted(() => {
   padding: 1rem 1.5rem 1.5rem;
   overflow-y: auto;
   background-color: var(--color-base-100);
+  flex: 1;
+  min-height: 0;
 }
 
 /* Modal 过渡动画 */
@@ -304,8 +317,27 @@ onUnmounted(() => {
 
 /* 响应式 */
 @media (max-width: 640px) {
+  .modal-overlay {
+    padding: 0.5rem;
+    align-items: flex-start;
+    padding-top: 10vh;
+  }
+
   .modal-content {
-    max-width: 90vw;
+    max-width: 95vw;
+    max-height: 80vh;
+  }
+
+  .modal-header {
+    padding: 0.75rem 1rem 0.5rem;
+  }
+
+  .modal-title {
+    font-size: 1rem;
+  }
+
+  .modal-body {
+    padding: 0.75rem 1rem 1rem;
   }
 }
 </style>

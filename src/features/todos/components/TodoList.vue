@@ -41,6 +41,10 @@ function updateTodo(serialNum: string, updated: TodoUpdate) {
   flex-direction: column;
   gap: 0.5rem;
   padding: 0.25rem;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .slide-fade-enter-active,
