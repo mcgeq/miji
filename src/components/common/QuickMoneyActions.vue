@@ -339,54 +339,56 @@ onUnmounted(() => {
       </button>
     </div>
 
-    <!-- Modals -->
-    <TransactionModal
-      v-if="showTransaction"
-      :type="transactionType"
-      :transaction="selectedTransaction"
-      :accounts="accounts"
-      @close="closeTransactionModal"
-      @save="saveTransaction"
-      @update="updateTransaction"
-      @save-transfer="saveTransfer"
-      @update-transfer="updateTransfer"
-    />
-    <AccountModal
-      v-if="showAccount"
-      :account="selectedAccount"
-      @close="closeAccountModal"
-      @save="saveAccount"
-      @update="updateAccount"
-    />
-    <BudgetModal
-      v-if="showBudget"
-      :budget="selectedBudget"
-      @close="closeBudgetModal"
-      @save="saveBudget"
-      @update="updateBudget"
-    />
-    <ReminderModal
-      v-if="showReminder"
-      :reminder="selectedReminder"
-      @close="closeReminderModal"
-      @save="saveReminder"
-      @update="updateReminder"
-    />
+    <!-- Modals - 使用 Teleport 传送到 body，确保覆盖整个页面 -->
+    <Teleport to="body">
+      <TransactionModal
+        v-if="showTransaction"
+        :type="transactionType"
+        :transaction="selectedTransaction"
+        :accounts="accounts"
+        @close="closeTransactionModal"
+        @save="saveTransaction"
+        @update="updateTransaction"
+        @save-transfer="saveTransfer"
+        @update-transfer="updateTransfer"
+      />
+      <AccountModal
+        v-if="showAccount"
+        :account="selectedAccount"
+        @close="closeAccountModal"
+        @save="saveAccount"
+        @update="updateAccount"
+      />
+      <BudgetModal
+        v-if="showBudget"
+        :budget="selectedBudget"
+        @close="closeBudgetModal"
+        @save="saveBudget"
+        @update="updateBudget"
+      />
+      <ReminderModal
+        v-if="showReminder"
+        :reminder="selectedReminder"
+        @close="closeReminderModal"
+        @save="saveReminder"
+        @update="updateReminder"
+      />
 
-    <ConfirmModal
-      :visible="confirmState.visible"
-      :title="confirmState.title"
-      :message="confirmState.message"
-      :type="confirmState.type"
-      :confirm-text="confirmState.confirmText"
-      :cancel-text="confirmState.cancelText"
-      :confirm-button-type="confirmState.confirmButtonType"
-      :show-cancel="confirmState.showCancel"
-      :loading="confirmState.loading"
-      @confirm="handleConfirm"
-      @cancel="handleCancel"
-      @close="handleClose"
-    />
+      <ConfirmModal
+        :visible="confirmState.visible"
+        :title="confirmState.title"
+        :message="confirmState.message"
+        :type="confirmState.type"
+        :confirm-text="confirmState.confirmText"
+        :cancel-text="confirmState.cancelText"
+        :confirm-button-type="confirmState.confirmButtonType"
+        :show-cancel="confirmState.showCancel"
+        :loading="confirmState.loading"
+        @confirm="handleConfirm"
+        @cancel="handleCancel"
+        @close="handleClose"
+      />
+    </Teleport>
   </div>
 </template>
 

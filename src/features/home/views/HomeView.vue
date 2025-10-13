@@ -52,6 +52,7 @@ import TodayTodos from '@/components/common/TodayTodos.vue';
   font-size: 1.5rem;
   font-weight: bold;
   transition: all 0.4s ease-in-out;
+  overflow: visible;
   --gradient-angle: 135deg;
   --mix-ratio: clamp(15%, 20%, 25%);
 }
