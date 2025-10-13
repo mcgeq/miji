@@ -100,20 +100,29 @@ function handleClick() {
 }
 
 .todo-title {
-  font-size: 0.875rem;
-  line-height: 1.375rem;
+  font-size: 0.9375rem;
+  line-height: 1.5rem;
+  font-weight: 500;
   text-align: left;
   display: block;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   cursor: pointer;
-  color: var(--color-neutral);
-  transition: color 0.2s ease;
+  color: var(--color-base-content);
+  transition: all 0.2s ease;
+  letter-spacing: 0.01em;
+}
+
+.todo-title:hover {
+  color: var(--color-primary);
 }
 
 .todo-title-completed {
-  color: var(--color-secondary-content, #9ca3af);
+  color: color-mix(in oklch, var(--color-base-content) 50%, transparent);
+  text-decoration: line-through;
+  text-decoration-thickness: 1.5px;
+  text-decoration-color: color-mix(in oklch, var(--color-base-content) 40%, transparent);
 }
 
 /* 全屏显示完整标题的样式 */

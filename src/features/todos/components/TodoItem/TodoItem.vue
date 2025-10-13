@@ -281,16 +281,21 @@ function handleMouseLeave() {
 <style scoped lang="postcss">
 .todo-item {
   margin-bottom: 0.5rem;
-  padding: 0.875rem;
-  border-radius: 0.875rem;
-  border: 1px solid color-mix(in oklch, var(--color-base-300) 50%, transparent);
-  background-color: color-mix(in oklch, var(--color-base-100) 80%, white);
+  padding: 0.875rem 1rem;
+  border-radius: 1rem;
+  border: 1px solid color-mix(in oklch, var(--color-base-300) 30%, transparent);
+  background: linear-gradient(
+    135deg,
+    var(--color-base-100) 0%,
+    color-mix(in oklch, var(--color-base-100) 95%, var(--color-primary)) 100%
+  );
   display: flex;
   flex-direction: column;
   position: relative;
   height: 4rem;
-  transition: all 0.2s ease;
-  overflow: hidden; /* 保持圆角效果 */
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+  box-shadow: 0 1px 3px color-mix(in oklch, var(--color-neutral) 8%, transparent);
 }
 
 /* 优先级颜色条 - 作为容器的一部分 */
@@ -300,37 +305,109 @@ function handleMouseLeave() {
   left: 0;
   top: 0;
   bottom: 0;
-  width: 4px;
-  border-radius: 1.25rem 0 0 1.25rem; /* 左侧圆角与容器匹配 */
-  transition: all 0.3s ease;
+  width: 3px;
+  border-radius: 1rem 0 0 1rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 1;
+  opacity: 0.9;
 }
 
 /* 低优先级 - 绿色系 */
 .priority-low::before {
-  background: linear-gradient(to bottom, var(--color-success), color-mix(in oklch, var(--color-success) 80%, black));
+  background: linear-gradient(
+    180deg,
+    var(--color-success) 0%,
+    color-mix(in oklch, var(--color-success) 85%, var(--color-info)) 100%
+  );
+}
+
+.priority-low {
+  background: linear-gradient(
+    135deg,
+    color-mix(in oklch, var(--color-base-100) 98%, var(--color-success)) 0%,
+    color-mix(in oklch, var(--color-base-100) 95%, var(--color-success)) 100%
+  );
 }
 
 /* 中等优先级 - 橙色系 */
 .priority-medium::before {
-  background: linear-gradient(to bottom, var(--color-warning), color-mix(in oklch, var(--color-warning) 80%, black));
+  background: linear-gradient(
+    180deg,
+    var(--color-warning) 0%,
+    color-mix(in oklch, var(--color-warning) 90%, var(--color-error)) 100%
+  );
+}
+
+.priority-medium {
+  background: linear-gradient(
+    135deg,
+    color-mix(in oklch, var(--color-base-100) 98%, var(--color-warning)) 0%,
+    color-mix(in oklch, var(--color-base-100) 95%, var(--color-warning)) 100%
+  );
 }
 
 /* 高优先级 - 红色系 */
 .priority-high::before {
-  background: linear-gradient(to bottom, var(--color-error), color-mix(in oklch, var(--color-error) 80%, black));
+  background: linear-gradient(
+    180deg,
+    var(--color-error) 0%,
+    color-mix(in oklch, var(--color-error) 85%, var(--color-accent)) 100%
+  );
+}
+
+.priority-high {
+  background: linear-gradient(
+    135deg,
+    color-mix(in oklch, var(--color-base-100) 98%, var(--color-error)) 0%,
+    color-mix(in oklch, var(--color-base-100) 95%, var(--color-error)) 100%
+  );
 }
 
 /* 紧急优先级 - 深红色系，更加醒目 */
 .priority-urgent::before {
-  background: linear-gradient(to bottom, color-mix(in oklch, var(--color-error) 80%, black), color-mix(in oklch, var(--color-error) 60%, black));
-  box-shadow: 0 0 8px color-mix(in oklch, var(--color-error) 40%, transparent); /* 添加发光效果 */
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklch, var(--color-error) 90%, var(--color-accent)) 0%,
+    color-mix(in oklch, var(--color-error) 70%, black) 100%
+  );
+  box-shadow: 0 0 10px color-mix(in oklch, var(--color-error) 30%, transparent);
+  animation: urgent-glow 2s ease-in-out infinite;
+}
+
+.priority-urgent {
+  background: linear-gradient(
+    135deg,
+    color-mix(in oklch, var(--color-base-100) 96%, var(--color-error)) 0%,
+    color-mix(in oklch, var(--color-base-100) 92%, var(--color-error)) 100%
+  );
+  border-color: color-mix(in oklch, var(--color-error) 20%, transparent);
+}
+
+@keyframes urgent-glow {
+  0%, 100% {
+    box-shadow: 0 0 10px color-mix(in oklch, var(--color-error) 30%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 16px color-mix(in oklch, var(--color-error) 45%, transparent);
+  }
 }
 
 .todo-item:hover {
-  box-shadow: 0 2px 8px color-mix(in oklch, var(--color-neutral) 15%, transparent);
-  border-color: var(--color-base-300);
-  transform: translateY(-1px);
+  box-shadow:
+    0 4px 12px color-mix(in oklch, var(--color-neutral) 12%, transparent),
+    0 2px 4px color-mix(in oklch, var(--color-neutral) 8%, transparent);
+  border-color: color-mix(in oklch, var(--color-primary) 20%, transparent);
+  transform: translateY(-2px);
+  background: linear-gradient(
+    135deg,
+    var(--color-base-100) 0%,
+    color-mix(in oklch, var(--color-base-100) 92%, var(--color-primary)) 100%
+  );
+}
+
+.todo-item:hover::before {
+  width: 4px;
+  opacity: 1;
 }
 
 /* 主行容器 */
@@ -389,12 +466,56 @@ function handleMouseLeave() {
 /* Dark Theme 支持 */
 @media (prefers-color-scheme: dark) {
   .todo-item {
-    border-color: var(--color-neutral, #374151);
-    background-color: var(--color-base-200, #1f2937);
+    border-color: color-mix(in oklch, var(--color-base-300) 40%, transparent);
+    background: linear-gradient(
+      135deg,
+      var(--color-base-200) 0%,
+      color-mix(in oklch, var(--color-base-200) 95%, var(--color-primary)) 100%
+    );
+  }
+
+  .todo-item:hover {
+    background: linear-gradient(
+      135deg,
+      var(--color-base-200) 0%,
+      color-mix(in oklch, var(--color-base-200) 92%, var(--color-primary)) 100%
+    );
+  }
+
+  .priority-low {
+    background: linear-gradient(
+      135deg,
+      color-mix(in oklch, var(--color-base-200) 98%, var(--color-success)) 0%,
+      color-mix(in oklch, var(--color-base-200) 95%, var(--color-success)) 100%
+    );
+  }
+
+  .priority-medium {
+    background: linear-gradient(
+      135deg,
+      color-mix(in oklch, var(--color-base-200) 98%, var(--color-warning)) 0%,
+      color-mix(in oklch, var(--color-base-200) 95%, var(--color-warning)) 100%
+    );
+  }
+
+  .priority-high {
+    background: linear-gradient(
+      135deg,
+      color-mix(in oklch, var(--color-base-200) 98%, var(--color-error)) 0%,
+      color-mix(in oklch, var(--color-base-200) 95%, var(--color-error)) 100%
+    );
+  }
+
+  .priority-urgent {
+    background: linear-gradient(
+      135deg,
+      color-mix(in oklch, var(--color-base-200) 96%, var(--color-error)) 0%,
+      color-mix(in oklch, var(--color-base-200) 92%, var(--color-error)) 100%
+    );
   }
 
   .todo-due-date {
-    color: var(--color-neutral-content, #9ca3af);
+    color: var(--color-neutral-content);
   }
 }
 </style>
