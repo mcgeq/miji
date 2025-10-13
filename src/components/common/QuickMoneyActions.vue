@@ -621,7 +621,8 @@ onUnmounted(() => {
   height: 100%;
   padding: 1rem;
   padding-top: 1rem;
-  overflow: visible;
+  overflow: hidden;
+  box-sizing: border-box;
 }
 
 /* 快捷键帮助提示框 - 左上角 */
@@ -1009,7 +1010,8 @@ onUnmounted(() => {
 /* 响应式调整 */
 @media (max-width: 768px) {
   .quick-money-container {
-    padding-top: 0.75rem;
+    padding: 0.5rem;
+    padding-top: 0.5rem;
   }
 
   .btn {
@@ -1017,14 +1019,14 @@ onUnmounted(() => {
   }
 
   .help-toggle {
-    top: 0.375rem;
-    right: 0.375rem;
+    top: 0.25rem;
+    right: 0.25rem;
     padding: 0.375rem;
   }
 
   .keyboard-help {
-    top: 0.375rem;
-    left: 0.375rem;
+    top: 0.25rem;
+    left: 0.25rem;
     max-width: 160px;
     font-size: 0.75rem;
   }
@@ -1061,6 +1063,10 @@ onUnmounted(() => {
 
   .item-date {
     font-size: 0.5625rem;
+  }
+
+  .item-value-wrapper {
+    min-width: 0;
   }
 }
 

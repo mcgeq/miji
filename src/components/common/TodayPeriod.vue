@@ -362,13 +362,14 @@ async function handleDailyDelete(serialNum: string) {
 /* 今日信息 */
 .today-info {
   flex-shrink: 0;
-  width: 10rem;
+  width: 8rem;
   border: 1px solid var(--color-base-300);
   background-color: color-mix(in oklch, var(--color-base-200) 50%, transparent);
   border-radius: 0.75rem;
-  padding: 0.75rem;
+  padding: 0.5rem;
   display: flex;
   flex-direction: column;
+  min-width: 0;
 }
 
 .info-header {
@@ -525,5 +526,102 @@ async function handleDailyDelete(serialNum: string) {
 .modal-fade-enter-active .modal-content,
 .modal-fade-leave-active .modal-content {
   transition: transform 0.3s ease-in-out;
+}
+
+/* 移动端响应式 */
+@media (max-width: 768px) {
+  .today-period {
+    gap: 0.5rem;
+    padding: 0.5rem;
+  }
+
+  .today-info {
+    width: 7rem;
+    padding: 0.375rem;
+  }
+
+  .info-header {
+    gap: 0.25rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .header-icon {
+    width: 1rem;
+    height: 1rem;
+  }
+
+  .header-title {
+    font-size: 0.75rem;
+  }
+
+  .info-content {
+    gap: 0.375rem;
+  }
+
+  .info-row {
+    gap: 0.25rem;
+  }
+
+  .info-label {
+    font-size: 0.6875rem;
+    flex-shrink: 0;
+  }
+
+  .info-value {
+    font-size: 0.6875rem;
+  }
+
+  .phase-badge {
+    padding: 0.125rem 0.375rem;
+    font-size: 0.6875rem;
+    white-space: nowrap;
+  }
+
+  .info-action-btn {
+    width: 1.5rem;
+    height: 1.5rem;
+  }
+
+  .info-actions {
+    gap: 0.25rem;
+  }
+
+  .btn-icon {
+    width: 0.875rem;
+    height: 0.875rem;
+  }
+
+  .month-label {
+    font-size: 0.75rem;
+  }
+
+  .calendar-header {
+    margin-bottom: 0.25rem;
+    padding: 0;
+  }
+
+  .weekdays {
+    gap: 0.125rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .weekday {
+    font-size: 0.625rem;
+    padding: 0.125rem 0;
+  }
+
+  .days-grid {
+    gap: 0.125rem;
+  }
+
+  .day-cell {
+    font-size: 0.625rem;
+    min-height: 1.125rem;
+    padding: 0.125rem;
+  }
+
+  .mini-calendar {
+    border: none;
+  }
 }
 </style>
