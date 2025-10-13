@@ -91,6 +91,7 @@ pub fn init_commands(builder: Builder<Wry>) -> Builder<Wry> {
         money_cmd::sub_category_delete,
         money_cmd::sub_category_list,
         money_cmd::sub_category_list_paged,
+        money_cmd::family_member_list,
         health_cmd::period_record_create,
         health_cmd::period_record_update,
         health_cmd::period_record_delete,

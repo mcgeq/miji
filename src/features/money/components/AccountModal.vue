@@ -31,7 +31,14 @@ const accountTypes = computed(() => AccountTypeSchema.options);
 const formErrors = ref<Record<string, string>>({});
 const isSubmitting = ref(false);
 const currentUser = computed(() => getCurrentUser());
-const familyMembers = computedAsync(() => MoneyDb.listFamilyMembers());
+const familyMembers = computedAsync(async () => {
+  try {
+    return await MoneyDb.listFamilyMembers();
+  } catch (error) {
+    Lg.w('AccountModal', 'Failed to load family members, using empty array', error);
+    return [];
+  }
+}, []);
 const users = computed<User[]>(() => {
   const usersSet = new Set('');
   const userList: User[] = [];

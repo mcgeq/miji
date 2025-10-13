@@ -15,6 +15,7 @@ use crate::{
         budget::{Budget, BudgetCreate, BudgetUpdate},
         categories::{Category, CategoryCreate, CategoryUpdate},
         currency::{CreateCurrencyRequest, CurrencyResponse, UpdateCurrencyRequest},
+        family_member::FamilyMemberResponse,
         sub_categories::{SubCategory, SubCategoryCreate, SubCategoryUpdate},
         transactions::{
             CreateTransactionRequest, IncomeExpense, TransactionResponse, TransferRequest,
@@ -27,6 +28,7 @@ use crate::{
         budget::{BudgetFilter, get_budget_service},
         categories::{CategoryFilter, get_category_service},
         currency::{CurrencyFilter, get_currency_service},
+        family_member::get_family_member_service,
         sub_categories::{SubCategoryFilter, get_sub_category_service},
         transaction::{TransactionFilter, get_transaction_service},
     },
@@ -808,3 +810,16 @@ pub async fn sub_category_list_paged(
 }
 
 // Sub Category End
+
+#[tauri::command]
+pub async fn family_member_list(
+    state: State<'_, AppState>,
+) -> Result<ApiResponse<Vec<FamilyMemberResponse>>, String> {
+    let service = get_family_member_service();
+    Ok(ApiResponse::from_result(
+        service
+            .family_member_list(&state.db)
+            .await
+            .map(|models| models.into_iter().map(FamilyMemberResponse::from).collect()),
+    ))
+}

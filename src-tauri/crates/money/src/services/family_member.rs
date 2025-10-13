@@ -8,8 +8,7 @@ use common::{
 };
 use entity::localize::LocalizeModel;
 use sea_orm::{
-    ActiveValue, ColumnTrait, DbConn, EntityTrait, QueryFilter,
-    prelude::async_trait::async_trait,
+    ActiveValue, ColumnTrait, DbConn, EntityTrait, QueryFilter, prelude::async_trait::async_trait,
 };
 
 use crate::{
@@ -101,85 +100,6 @@ impl std::ops::Deref for FamilyMemberService {
 
     fn deref(&self) -> &Self::Target {
         &self.inner
-    }
-}
-
-#[async_trait]
-impl
-    CrudService<
-        entity::family_member::Entity,
-        FamilyMemberFilter,
-        FamilyMemberCreate,
-        FamilyMemberUpdate,
-    > for FamilyMemberService
-{
-    async fn create(
-        &self,
-        db: &DbConn,
-        data: FamilyMemberCreate,
-    ) -> MijiResult<entity::family_member::Model> {
-        self.inner.create(db, data).await
-    }
-
-    async fn get_by_id(&self, db: &DbConn, id: String) -> MijiResult<entity::family_member::Model> {
-        self.inner.get_by_id(db, id).await
-    }
-
-    async fn update(
-        &self,
-        db: &DbConn,
-        id: String,
-        data: FamilyMemberUpdate,
-    ) -> MijiResult<entity::family_member::Model> {
-        self.inner.update(db, id, data).await
-    }
-
-    async fn delete(&self, db: &DbConn, id: String) -> MijiResult<()> {
-        self.inner.delete(db, id).await
-    }
-
-    async fn list(&self, db: &DbConn) -> MijiResult<Vec<entity::family_member::Model>> {
-        self.inner.list(db).await
-    }
-
-    async fn list_with_filter(
-        &self,
-        db: &DbConn,
-        filter: FamilyMemberFilter,
-    ) -> MijiResult<Vec<entity::family_member::Model>> {
-        self.inner.list_with_filter(db, filter).await
-    }
-
-    async fn list_paged(
-        &self,
-        db: &DbConn,
-        query: PagedQuery<FamilyMemberFilter>,
-    ) -> MijiResult<PagedResult<entity::family_member::Model>> {
-        self.inner.list_paged(db, query).await
-    }
-
-    async fn create_batch(
-        &self,
-        db: &DbConn,
-        data: Vec<FamilyMemberCreate>,
-    ) -> MijiResult<Vec<entity::family_member::Model>> {
-        self.inner.create_batch(db, data).await
-    }
-
-    async fn delete_batch(&self, db: &DbConn, ids: Vec<String>) -> MijiResult<u64> {
-        self.inner.delete_batch(db, ids).await
-    }
-
-    async fn exists(&self, db: &DbConn, id: String) -> MijiResult<bool> {
-        self.inner.exists(db, id).await
-    }
-
-    async fn count(&self, db: &DbConn) -> MijiResult<u64> {
-        self.inner.count(db).await
-    }
-
-    async fn count_with_filter(&self, db: &DbConn, filter: FamilyMemberFilter) -> MijiResult<u64> {
-        self.inner.count_with_filter(db, filter).await
     }
 }
 
