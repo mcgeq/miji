@@ -13,6 +13,7 @@
 <script setup lang="ts">
 import { PrioritySchema } from '@/schema/common';
 import type { Priority } from '@/schema/common';
+import type { CSSProperties } from 'vue';
 
 const props = defineProps<{
   serialNum: string;
@@ -31,7 +32,7 @@ const showMenu = ref(false);
 const { t } = useI18n();
 
 // 弹窗位置计算
-const menuStyle = computed(() => {
+const menuStyle = computed<Partial<CSSProperties>>(() => {
   if (!showMenu.value) return {};
 
   // 获取按钮位置
