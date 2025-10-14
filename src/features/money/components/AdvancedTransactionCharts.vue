@@ -264,11 +264,6 @@ const categoryPieOption = computed(() => {
 
   return {
     ...defaultTheme,
-    title: {
-      text: `${categoryTypeName.value}分类占比`,
-      left: 'center',
-      subtext: '饼图展示',
-    },
     tooltip: {
       trigger: 'item',
       formatter: (params: any) => {
@@ -341,11 +336,6 @@ const categoryDoughnutOption = computed(() => {
 
   return {
     ...defaultTheme,
-    title: {
-      text: `${categoryTypeName.value}分类分布`,
-      left: 'center',
-      subtext: '环形图展示',
-    },
     tooltip: {
       trigger: 'item',
       formatter: (params: any) => {
@@ -501,11 +491,6 @@ const radarOption = computed(() => {
 
   return {
     ...defaultTheme,
-    title: {
-      text: '分类雷达图',
-      left: 'center',
-      subtext: '多维度分析',
-    },
     tooltip: {
       trigger: 'item',
       formatter: (params: any) => {
