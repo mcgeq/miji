@@ -74,14 +74,23 @@ async function loadStatsData() {
   try {
     const { start, end } = filters.value.dateRange;
 
+    // 处理转账逻辑：如果选择转账，设置category为Transfer，transactionType为空
+    let requestCategory = filters.value.category || undefined;
+    let requestTransactionType = filters.value.transactionType || undefined;
+
+    if (filters.value.transactionType === 'Transfer') {
+      requestCategory = 'Transfer';
+      requestTransactionType = undefined; // 转账时不需要设置transactionType
+    }
+
     const request: TransactionStatsRequest = {
       startDate: start,
       endDate: end,
       timeDimension: filters.value.timeDimension,
-      category: filters.value.category || undefined,
+      category: requestCategory,
       subCategory: filters.value.subCategory || undefined,
       accountSerialNum: filters.value.accountSerialNum || undefined,
-      transactionType: filters.value.transactionType || undefined,
+      transactionType: requestTransactionType,
       currency: filters.value.currency || undefined,
     };
 

@@ -1343,7 +1343,8 @@ impl TransactionService {
 
         let total_income = income_expense.income.total;
         let total_expense = income_expense.expense.total;
-        let total_transfer = income_expense.transfer.income + income_expense.transfer.expense;
+        // 转账总额只计算支出部分，避免重复计算（转账会产生支出和收入两笔记录）
+        let total_transfer = income_expense.transfer.expense;
         let net_income = total_income - total_expense;
         let transaction_count = transactions.len() as i32;
         let average_transaction = if transaction_count > 0 {
@@ -1487,7 +1488,10 @@ impl TransactionService {
         total_transfer: &Decimal,
     ) -> MijiResult<Vec<CategoryStats>> {
         let mut condition = base_condition.clone();
-        condition = condition.add(TransactionColumn::TransactionType.eq("Transfer"));
+        // 转账是根据分类来筛选的，不是根据交易类型
+        condition = condition.add(TransactionColumn::Category.eq("Transfer"));
+        // 只统计转账的支出部分，避免重复计算（转账会产生支出和收入两笔记录）
+        condition = condition.add(TransactionColumn::TransactionType.eq("Expense"));
 
         let category_stats = entity::transactions::Entity::find()
             .select_only()
