@@ -120,7 +120,7 @@ const presetRanges = [
 
 // 交易类型选项
 const transactionTypes = [
-  { label: '全部', value: '' },
+  { label: '全部类型', value: '' },
   { label: '收入', value: 'Income' },
   { label: '支出', value: 'Expense' },
   { label: '转账', value: 'Transfer' },

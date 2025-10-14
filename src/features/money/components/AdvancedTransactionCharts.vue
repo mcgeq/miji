@@ -1,11 +1,8 @@
 <script setup lang="ts">
 import VChart from 'vue-echarts';
-import { lowercaseFirstLetter } from '@/utils/common';
 import { chartUtils, defaultTheme, initECharts } from '@/utils/echarts';
 
 const props = defineProps<Props>();
-
-const { t } = useI18n();
 
 // 初始化ECharts
 initECharts();
@@ -70,30 +67,30 @@ const currentTrends = computed(() => {
 });
 
 // 根据分类类型获取相应的分类数据
-const currentCategories = computed(() => {
-  switch (categoryType.value) {
-    case 'income':
-      return props.topIncomeCategories || [];
-    case 'transfer':
-      return props.topTransferCategories || [];
-    case 'expense':
-    default:
-      return props.topCategories;
-  }
-});
-
-// 获取分类类型的显示名称
-const categoryTypeName = computed(() => {
-  switch (categoryType.value) {
-    case 'income':
-      return '收入';
-    case 'transfer':
-      return '转账';
-    case 'expense':
-    default:
-      return '支出';
-  }
-});
+// const currentCategories = computed(() => {
+//   switch (categoryType.value) {
+//     case 'income':
+//       return props.topIncomeCategories || [];
+//     case 'transfer':
+//       return props.topTransferCategories || [];
+//     case 'expense':
+//     default:
+//       return props.topCategories;
+//   }
+// });
+//
+// // 获取分类类型的显示名称
+// const categoryTypeName = computed(() => {
+//   switch (categoryType.value) {
+//     case 'income':
+//       return '收入';
+//     case 'transfer':
+//       return '转账';
+//     case 'expense':
+//     default:
+//       return '支出';
+//   }
+// });
 
 // 趋势图配置
 const trendChartOption = computed(() => {
@@ -273,285 +270,6 @@ const trendChartOption = computed(() => {
     animationEasing: 'cubicOut' as const,
   };
 });
-
-// 分类饼图配置
-const categoryPieOption = computed(() => {
-  const categories = currentCategories.value.slice(0, 8).map(cat => cat.category);
-  const amounts = currentCategories.value.slice(0, 8).map(cat => cat.amount);
-  const totalAmount = amounts.reduce((sum, amount) => sum + amount, 0);
-
-  // 国际化分类名称
-  const internationalizedCategories = categories.map(category =>
-    t(`common.categories.${lowercaseFirstLetter(category)}`),
-  );
-
-  return {
-    ...defaultTheme,
-    tooltip: {
-      trigger: 'item',
-      formatter: (params: any) => {
-        const percentage = ((params.value / totalAmount) * 100).toFixed(2);
-        return `${params.name}<br/>金额: ¥${params.value.toFixed(2)}<br/>占比: ${percentage}%`;
-      },
-    },
-    legend: {
-      orient: 'vertical',
-      left: 'left',
-      top: 'middle',
-      data: internationalizedCategories,
-      itemWidth: 12,
-      itemHeight: 12,
-    },
-    series: [
-      {
-        name: `${categoryTypeName.value}分类`,
-        type: 'pie',
-        radius: ['30%', '70%'],
-        center: ['60%', '50%'],
-        avoidLabelOverlap: false,
-        itemStyle: {
-          borderRadius: 8,
-          borderColor: '#fff',
-          borderWidth: 2,
-        },
-        label: {
-          show: true,
-          position: 'outside',
-          formatter: '{b}: {d}%',
-          fontSize: 12,
-        },
-        emphasis: {
-          label: {
-            show: true,
-            fontSize: '16',
-            fontWeight: 'bold',
-            formatter: '{b}\n{c}',
-          },
-          itemStyle: {
-            shadowBlur: 10,
-            shadowOffsetX: 0,
-            shadowColor: 'rgba(0, 0, 0, 0.5)',
-          },
-        },
-        labelLine: {
-          show: true,
-        },
-        data: categories.map((_category, index) => ({
-          value: amounts[index],
-          name: internationalizedCategories[index],
-          itemStyle: {
-            color: chartUtils.getColor(index),
-          },
-        })),
-        animationType: 'scale',
-        animationEasing: 'elasticOut' as const,
-        animationDelay: (_idx: number) => Math.random() * 200,
-      },
-    ],
-  };
-});
-
-// 分类条形图配置
-const categoryBarOption = computed(() => {
-  const categories = currentCategories.value.slice(0, 10).map(cat => cat.category);
-  const amounts = currentCategories.value.slice(0, 10).map(cat => cat.amount);
-  const totalAmount = amounts.reduce((sum, amount) => sum + amount, 0);
-
-  // 国际化分类名称
-  const internationalizedCategories = categories.map(category =>
-    t(`common.categories.${lowercaseFirstLetter(category)}`),
-  );
-
-  return {
-    ...defaultTheme,
-    tooltip: {
-      trigger: 'axis',
-      axisPointer: {
-        type: 'shadow',
-      },
-      formatter: (params: any) => {
-        const param = params[0];
-        const percentage = ((param.value / totalAmount) * 100).toFixed(2);
-        return `${param.name}<br/>金额: ¥${param.value.toFixed(2)}<br/>占比: ${percentage}%`;
-      },
-    },
-    grid: {
-      left: '3%',
-      right: '4%',
-      bottom: '3%',
-      top: '20%',
-      containLabel: true,
-    },
-    xAxis: {
-      type: 'value',
-      axisLabel: {
-        formatter: chartUtils.formatAmount,
-      },
-      splitNumber: 4, // 设置合适的分割数
-      minInterval: 1, // 设置最小间隔
-    },
-    yAxis: {
-      type: 'category',
-      data: internationalizedCategories,
-      axisLabel: {
-        formatter: (value: string) => {
-          return value.length > 8 ? `${value.substring(0, 8)}...` : value;
-        },
-      },
-    },
-    series: [
-      {
-        name: `${categoryTypeName.value}金额`,
-        type: 'bar',
-        data: amounts.map((amount, index) => ({
-          value: amount,
-          name: internationalizedCategories[index], // 添加对应的国际化名称
-          itemStyle: {
-            color: chartUtils.getColor(index),
-          },
-        })),
-        barWidth: '60%',
-        emphasis: {
-          itemStyle: {
-            shadowBlur: 10,
-            shadowOffsetX: 0,
-            shadowColor: 'rgba(0, 0, 0, 0.3)',
-          },
-        },
-        animationDelay: (idx: number) => idx * 100,
-      },
-    ],
-    animation: true,
-    animationDuration: 1000,
-    animationEasing: 'cubicOut' as const,
-  };
-});
-
-// 雷达图配置
-const radarOption = computed(() => {
-  const categories = currentCategories.value.slice(0, 6).map(cat => cat.category);
-  const amounts = currentCategories.value.slice(0, 6).map(cat => cat.amount);
-
-  // 国际化分类名称
-  const internationalizedCategories = categories.map(category =>
-    t(`common.categories.${lowercaseFirstLetter(category)}`),
-  );
-  const maxAmount = Math.max(...amounts);
-
-  // 计算合适的最大值，确保ticks可读
-  const calculateMax = (value: number) => {
-    if (value <= 0) return 100;
-    if (value <= 50) return 100;
-    if (value <= 100) return 150;
-    if (value <= 200) return 250;
-    if (value <= 500) return 600;
-    if (value <= 1000) return 1200;
-    if (value <= 5000) return Math.ceil(value * 1.2);
-    if (value <= 10000) return Math.ceil(value * 1.1);
-    if (value <= 50000) return Math.ceil(value * 1.05);
-    // 对于超大数值，使用更保守的倍数
-    return Math.ceil(value * 1.02);
-  };
-
-  const adjustedMax = calculateMax(maxAmount);
-
-  // 根据最大值动态设置splitNumber，确保刻度可读
-  const getSplitNumber = (max: number) => {
-    if (max <= 100) return 5;
-    if (max <= 200) return 4;
-    if (max <= 300) return 3;
-    if (max <= 500) return 4;
-    if (max <= 600) return 3;
-    if (max <= 1000) return 4;
-    if (max <= 2000) return 4;
-    if (max <= 5000) return 5;
-    if (max <= 10000) return 4;
-    if (max <= 20000) return 4;
-    if (max <= 50000) return 5;
-    // 对于超大数值，使用更少的分割数
-    return 4;
-  };
-
-  return {
-    ...defaultTheme,
-    silent: true, // 抑制ECharts警告
-    tooltip: {
-      trigger: 'item',
-      formatter: (params: any) => {
-        return `${params.name}<br/>金额: ¥${params.value.toFixed(2)}`;
-      },
-    },
-    legend: {
-      data: [`${categoryTypeName.value}分布`],
-      top: 30,
-    },
-    radar: {
-      indicator: internationalizedCategories.map(category => ({
-        name: category,
-        min: 0, // 明确设置最小值
-        max: adjustedMax,
-      })),
-      radius: '60%',
-      splitNumber: getSplitNumber(adjustedMax), // 动态设置分割数
-      alignTicks: false, // 禁用alignTicks避免ticks警告
-      splitLine: {
-        lineStyle: {
-          color: '#e5e7eb',
-        },
-      },
-      splitArea: {
-        show: false, // 隐藏分割区域
-      },
-      axisName: {
-        color: '#666',
-        fontSize: 12,
-      },
-      axisLine: {
-        show: true,
-        lineStyle: {
-          color: '#e5e7eb',
-        },
-      },
-      axisTick: {
-        show: false, // 隐藏刻度线
-      },
-      axisLabel: {
-        show: true,
-        color: '#666',
-        fontSize: 10,
-        formatter: (value: number) => {
-          // 格式化大数值显示
-          if (value >= 10000) {
-            return `${(value / 10000).toFixed(1)}万`;
-          } else if (value >= 1000) {
-            return `${(value / 1000).toFixed(1)}k`;
-          }
-          return value.toString();
-        },
-      },
-    },
-    series: [
-      {
-        name: `${categoryTypeName.value}分布`,
-        type: 'radar',
-        data: [
-          {
-            value: amounts,
-            name: `${categoryTypeName.value}分布`,
-            itemStyle: {
-              color: chartUtils.getColor(0),
-            },
-            areaStyle: {
-              color: chartUtils.getColor(0),
-              opacity: 0.3,
-            },
-          },
-        ],
-        animationDelay: 0,
-      },
-    ],
-  };
-});
 </script>
 
 <template>
@@ -612,156 +330,6 @@ const radarOption = computed(() => {
           />
         </div>
       </div>
-
-      <!-- 分类饼图 -->
-      <div class="chart-card full-width">
-        <div class="chart-header">
-          <h3 class="chart-title">
-            分类占比
-          </h3>
-          <div class="chart-controls">
-            <div class="control-group">
-              <label class="control-label">分类类型:</label>
-              <select v-model="categoryType" class="control-select">
-                <option value="expense">
-                  支出
-                </option>
-                <option value="income">
-                  收入
-                </option>
-                <option value="transfer">
-                  转账
-                </option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        <div class="chart-content">
-          <div v-if="loading" class="chart-loading">
-            <div class="loading-spinner" />
-            <div class="loading-text">
-              加载中...
-            </div>
-          </div>
-
-          <div v-else-if="currentCategories.length === 0" class="chart-empty">
-            <div class="empty-icon">
-              🥧
-            </div>
-            <div class="empty-text">
-              暂无数据
-            </div>
-          </div>
-
-          <VChart
-            v-else
-            :option="categoryPieOption"
-            class="chart"
-            autoresize
-          />
-        </div>
-      </div>
-
-      <!-- 分类条形图 -->
-      <div class="chart-card full-width">
-        <div class="chart-header">
-          <h3 class="chart-title">
-            分类排行
-          </h3>
-          <div class="chart-controls">
-            <div class="control-group">
-              <label class="control-label">分类类型:</label>
-              <select v-model="categoryType" class="control-select">
-                <option value="expense">
-                  支出
-                </option>
-                <option value="income">
-                  收入
-                </option>
-                <option value="transfer">
-                  转账
-                </option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        <div class="chart-content">
-          <div v-if="loading" class="chart-loading">
-            <div class="loading-spinner" />
-            <div class="loading-text">
-              加载中...
-            </div>
-          </div>
-
-          <div v-else-if="currentCategories.length === 0" class="chart-empty">
-            <div class="empty-icon">
-              📊
-            </div>
-            <div class="empty-text">
-              暂无数据
-            </div>
-          </div>
-
-          <VChart
-            v-else
-            :option="categoryBarOption"
-            class="chart"
-            autoresize
-          />
-        </div>
-      </div>
-
-      <!-- 雷达图 -->
-      <div class="chart-card full-width">
-        <div class="chart-header">
-          <h3 class="chart-title">
-            分类雷达图
-          </h3>
-          <div class="chart-controls">
-            <div class="control-group">
-              <label class="control-label">分类类型:</label>
-              <select v-model="categoryType" class="control-select">
-                <option value="expense">
-                  支出
-                </option>
-                <option value="income">
-                  收入
-                </option>
-                <option value="transfer">
-                  转账
-                </option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        <div class="chart-content">
-          <div v-if="loading" class="chart-loading">
-            <div class="loading-spinner" />
-            <div class="loading-text">
-              加载中...
-            </div>
-          </div>
-
-          <div v-else-if="currentCategories.length === 0" class="chart-empty">
-            <div class="empty-icon">
-              🕸
-            </div>
-            <div class="empty-text">
-              暂无数据
-            </div>
-          </div>
-
-          <VChart
-            v-else
-            :option="radarOption"
-            class="chart"
-            autoresize
-          />
-        </div>
-      </div>
     </div>
   </div>
 </template>
@@ -775,12 +343,6 @@ const radarOption = computed(() => {
   display: grid;
   grid-template-columns: 1fr;
   gap: 1.5rem;
-}
-
-@media (min-width: 1024px) {
-  .charts-grid {
-    grid-template-columns: 2fr 1fr;
-  }
 }
 
 .chart-card {

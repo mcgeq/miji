@@ -1,8 +1,11 @@
-use common::{argon2id::helper::Argon2Helper, error::AppError, business_code::BusinessCode};
-use sea_orm::{DatabaseConnection, EntityTrait, QueryFilter, ColumnTrait, ActiveModelBehavior, Set};
+use common::utils::uuid::McgUuid;
+use common::{argon2id::helper::Argon2Helper, business_code::BusinessCode, error::AppError};
+use entity::family_member;
 use entity::prelude::*;
 use entity::users;
-use entity::family_member;
+use sea_orm::{
+    ActiveModelBehavior, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, Set,
+};
 
 const DEFAULT_USER_EMAIL: &str = "miji@miji.com";
 const DEFAULT_USER_NAME: &str = "miji";
@@ -20,7 +23,7 @@ pub async fn check_default_user_exists(db: &DatabaseConnection) -> Result<bool, 
                 format!("Failed to check default user: {e}"),
             )
         })?;
-    
+
     Ok(user.is_some())
 }
 
@@ -45,8 +48,8 @@ pub async fn create_default_user(db: &DatabaseConnection) -> Result<(), AppError
     })?;
 
     // 生成用户序列号
-    let user_serial_num = format!("user-{}", chrono::Utc::now().timestamp_millis());
-    
+    let user_serial_num = McgUuid::uuid(38);
+
     // 创建用户实体
     let mut user = users::ActiveModel::new();
     user.serial_num = Set(user_serial_num.clone());
@@ -80,19 +83,19 @@ pub async fn create_default_user(db: &DatabaseConnection) -> Result<(), AppError
     println!("Default user created successfully");
 
     // 创建对应的家庭成员
-    create_default_family_member(db).await?;
+    create_default_family_member(db, &user_serial_num).await?;
 
     Ok(())
 }
 
 /// 创建默认家庭成员
-async fn create_default_family_member(db: &DatabaseConnection) -> Result<(), AppError> {
-    // 生成家庭成员序列号
-    let member_serial_num = format!("member-{}", chrono::Utc::now().timestamp_millis());
-    
+async fn create_default_family_member(
+    db: &DatabaseConnection,
+    serial_num: &str,
+) -> Result<(), AppError> {
     // 创建家庭成员实体
     let mut family_member = family_member::ActiveModel::new();
-    family_member.serial_num = Set(member_serial_num);
+    family_member.serial_num = Set(serial_num.to_string());
     family_member.name = Set(DEFAULT_USER_NAME.to_string());
     family_member.role = Set("Member".to_string());
     family_member.is_primary = Set(true);
@@ -101,12 +104,15 @@ async fn create_default_family_member(db: &DatabaseConnection) -> Result<(), App
     family_member.updated_at = Set(None);
 
     // 插入家庭成员
-    FamilyMember::insert(family_member).exec(db).await.map_err(|e| {
-        AppError::simple(
-            BusinessCode::DatabaseError,
-            format!("Failed to create default family member: {e}"),
-        )
-    })?;
+    FamilyMember::insert(family_member)
+        .exec(db)
+        .await
+        .map_err(|e| {
+            AppError::simple(
+                BusinessCode::DatabaseError,
+                format!("Failed to create default family member: {e}"),
+            )
+        })?;
 
     println!("Default family member created successfully");
     Ok(())

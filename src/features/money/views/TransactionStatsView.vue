@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import AdvancedTransactionCharts from '@/features/money/components/AdvancedTransactionCharts.vue';
+import CategoryChartsSwitcher from '@/features/money/components/CategoryChartsSwitcher.vue';
 import StatCard from '@/features/money/components/StatCard.vue';
 import TransactionStatsCharts from '@/features/money/components/TransactionStatsCharts.vue';
 import TransactionStatsFilters from '@/features/money/components/TransactionStatsFilters.vue';
@@ -222,28 +223,58 @@ onMounted(() => {
           </label>
         </div>
       </div>
-      <TransactionStatsCharts
-        v-if="!useAdvancedCharts"
-        :monthly-trends="statsData.monthlyTrends"
-        :weekly-trends="statsData.weeklyTrends"
-        :top-categories="statsData.topCategories"
-        :top-income-categories="statsData.topIncomeCategories"
-        :top-transfer-categories="statsData.topTransferCategories"
-        :time-dimension="filters.timeDimension"
-        :transaction-type="filters.transactionType"
-        :loading="loading"
-      />
-      <AdvancedTransactionCharts
-        v-else
-        :monthly-trends="statsData.monthlyTrends"
-        :weekly-trends="statsData.weeklyTrends"
-        :top-categories="statsData.topCategories"
-        :top-income-categories="statsData.topIncomeCategories"
-        :top-transfer-categories="statsData.topTransferCategories"
-        :time-dimension="filters.timeDimension"
-        :transaction-type="filters.transactionType"
-        :loading="loading"
-      />
+      <!-- 基础图表：收支趋势 + 分类图表切换器 -->
+      <div v-if="!useAdvancedCharts" class="basic-charts">
+        <!-- 收支趋势图 -->
+        <div class="trend-chart-section">
+          <TransactionStatsCharts
+            :monthly-trends="statsData.monthlyTrends"
+            :weekly-trends="statsData.weeklyTrends"
+            :top-categories="statsData.topCategories"
+            :top-income-categories="statsData.topIncomeCategories"
+            :top-transfer-categories="statsData.topTransferCategories"
+            :time-dimension="filters.timeDimension"
+            :transaction-type="filters.transactionType"
+            :loading="loading"
+          />
+        </div>
+        <!-- 分类图表切换器 -->
+        <div class="category-charts-section">
+          <CategoryChartsSwitcher
+            :top-categories="statsData.topCategories"
+            :top-income-categories="statsData.topIncomeCategories"
+            :top-transfer-categories="statsData.topTransferCategories"
+            :transaction-type="filters.transactionType"
+            :loading="loading"
+          />
+        </div>
+      </div>
+      <!-- 高级图表：收支趋势 + 分类图表切换器 -->
+      <div v-else class="advanced-charts">
+        <!-- 收支趋势图 -->
+        <div class="trend-chart-section">
+          <AdvancedTransactionCharts
+            :monthly-trends="statsData.monthlyTrends"
+            :weekly-trends="statsData.weeklyTrends"
+            :top-categories="statsData.topCategories"
+            :top-income-categories="statsData.topIncomeCategories"
+            :top-transfer-categories="statsData.topTransferCategories"
+            :time-dimension="filters.timeDimension"
+            :transaction-type="filters.transactionType"
+            :loading="loading"
+          />
+        </div>
+        <!-- 分类图表切换器 -->
+        <div class="category-charts-section">
+          <CategoryChartsSwitcher
+            :top-categories="statsData.topCategories"
+            :top-income-categories="statsData.topIncomeCategories"
+            :top-transfer-categories="statsData.topTransferCategories"
+            :transaction-type="filters.transactionType"
+            :loading="loading"
+          />
+        </div>
+      </div>
     </div>
 
     <!-- 详细统计表格 -->
@@ -284,6 +315,26 @@ onMounted(() => {
 
 .charts-section {
   margin-bottom: 2rem;
+}
+
+.basic-charts {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.trend-chart-section {
+  width: 100%;
+}
+
+.category-charts-section {
+  width: 100%;
+}
+
+.advanced-charts {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
 }
 
 .charts-header {
@@ -341,9 +392,10 @@ onMounted(() => {
   }
 
   .charts-header {
-    flex-direction: column;
+    flex-direction: row;
     gap: 1rem;
-    align-items: flex-start;
+    align-items: center;
+    justify-content: space-between;
   }
 
   .charts-title {
@@ -351,8 +403,8 @@ onMounted(() => {
   }
 
   .charts-toggle {
-    width: 100%;
-    justify-content: flex-start;
+    flex-shrink: 0;
+    justify-content: flex-end;
   }
 }
 
@@ -368,6 +420,14 @@ onMounted(() => {
 
   .charts-title {
     font-size: 1.125rem;
+  }
+
+  .charts-header {
+    gap: 0.5rem;
+  }
+
+  .charts-toggle {
+    flex-shrink: 0;
   }
 }
 </style>

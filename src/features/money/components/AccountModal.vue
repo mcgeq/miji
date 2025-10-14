@@ -51,7 +51,7 @@ const users = computed<User[]>(() => {
     userList.push({
       serialNum: currentUser.value.serialNum,
       name: currentUser.value.name || 'Current User',
-      role: currentUser.value.role || 'user', // Fallback role
+      role: currentUser.value.role || 'user',
     });
     usersSet.add(currentUser.value.serialNum);
   }
