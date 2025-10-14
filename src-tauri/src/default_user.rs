@@ -117,3 +117,76 @@ async fn create_default_family_member(
     println!("Default family member created successfully");
     Ok(())
 }
+
+/// 删除 miji 用户及其家庭成员
+pub async fn delete_miji_user(db: &DatabaseConnection) -> Result<(), AppError> {
+    println!("Deleting miji user and family member...");
+
+    // 查找 miji 用户
+    let user = Users::find()
+        .filter(users::Column::Email.eq(DEFAULT_USER_EMAIL))
+        .one(db)
+        .await
+        .map_err(|e| {
+            AppError::simple(
+                BusinessCode::DatabaseError,
+                format!("Failed to find miji user: {e}"),
+            )
+        })?;
+
+    if let Some(user_model) = user {
+        // 删除对应的家庭成员
+        delete_miji_family_member(db, &user_model.serial_num).await?;
+
+        // 删除用户
+        Users::delete_by_id(&user_model.serial_num)
+            .exec(db)
+            .await
+            .map_err(|e| {
+                AppError::simple(
+                    BusinessCode::DatabaseError,
+                    format!("Failed to delete miji user: {e}"),
+                )
+            })?;
+
+        println!("Miji user and family member deleted successfully");
+    } else {
+        println!("Miji user not found, nothing to delete");
+    }
+
+    Ok(())
+}
+
+/// 删除 miji 家庭成员
+async fn delete_miji_family_member(db: &DatabaseConnection, user_serial_num: &str) -> Result<(), AppError> {
+    // 查找对应的家庭成员
+    let family_member = FamilyMember::find()
+        .filter(family_member::Column::SerialNum.eq(user_serial_num))
+        .one(db)
+        .await
+        .map_err(|e| {
+            AppError::simple(
+                BusinessCode::DatabaseError,
+                format!("Failed to find miji family member: {e}"),
+            )
+        })?;
+
+    if let Some(family_member_model) = family_member {
+        // 删除家庭成员
+        FamilyMember::delete_by_id(&family_member_model.serial_num)
+            .exec(db)
+            .await
+            .map_err(|e| {
+                AppError::simple(
+                    BusinessCode::DatabaseError,
+                    format!("Failed to delete miji family member: {e}"),
+                )
+            })?;
+
+        println!("Miji family member deleted successfully");
+    } else {
+        println!("Miji family member not found, nothing to delete");
+    }
+
+    Ok(())
+}
