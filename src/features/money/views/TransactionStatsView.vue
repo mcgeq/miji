@@ -264,6 +264,8 @@ onMounted(() => {
   max-width: 1200px;
   margin: 0 auto;
   padding: 1rem;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .transaction-stats-view > * + * {
@@ -325,20 +327,47 @@ onMounted(() => {
   margin-bottom: 2rem;
 }
 
+/* 移动端优化 */
 @media (max-width: 768px) {
   .transaction-stats-view {
     padding: 0.5rem;
+    max-width: 100%;
+    margin: 0;
   }
+
   .stats-grid {
     grid-template-columns: 1fr;
+    gap: 0.5rem;
   }
+
   .charts-header {
     flex-direction: column;
     gap: 1rem;
     align-items: flex-start;
   }
+
   .charts-title {
     font-size: 1.25rem;
+  }
+
+  .charts-toggle {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
+
+/* 超小屏幕优化 */
+@media (max-width: 480px) {
+  .transaction-stats-view {
+    padding: 0.25rem;
+  }
+
+  .stats-grid {
+    gap: 0.25rem;
+  }
+
+  .charts-title {
+    font-size: 1.125rem;
   }
 }
 </style>

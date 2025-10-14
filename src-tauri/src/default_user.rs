@@ -70,7 +70,7 @@ pub async fn create_default_user(db: &DatabaseConnection) -> Result<(), AppError
     user.updated_at = Set(None);
 
     // 插入用户
-    let user_result = Users::insert(user).exec(db).await.map_err(|e| {
+    let _user_result = Users::insert(user).exec(db).await.map_err(|e| {
         AppError::simple(
             BusinessCode::DatabaseError,
             format!("Failed to create default user: {e}"),

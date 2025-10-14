@@ -1,6 +1,4 @@
 use migration::{Migrator, MigratorTrait};
-#[cfg(desktop)]
-use tauri::async_runtime::spawn;
 use tauri::{AppHandle, Manager};
 
 pub mod logging;
@@ -9,10 +7,10 @@ pub mod logging;
 mod desktops;
 
 mod commands;
+mod default_user;
 #[cfg(any(target_os = "android", target_os = "ios"))]
 mod mobiles;
 mod plugins;
-mod default_user;
 
 #[cfg(desktop)]
 use desktops::init;
@@ -106,10 +104,19 @@ pub fn run() {
 
             // 6. 管理应用状态
             app.manage(app_state.clone());
-            #[cfg(desktop)] // 只在桌面平台执行
+            
+            #[cfg(desktop)]
             {
-                spawn(setup(cloned_handle));
+                let cloned_handle = app_handle.clone();
+                tauri::async_runtime::spawn(setup(cloned_handle));
             }
+            
+            #[cfg(any(target_os = "android", target_os = "ios"))]
+            {
+                let cloned_handle = app_handle.clone();
+                tauri::async_runtime::spawn(setup(cloned_handle));
+            }
+            
             Ok(())
         })
         .run(tauri::generate_context!())
@@ -121,14 +128,14 @@ async fn setup(app: AppHandle) -> Result<(), ()> {
     // Fake performing some heavy action for 3 seconds
     eprintln!("Performing really heavy backend setup task...");
     sleep(Duration::from_secs(3)).await;
-    
+
     // 创建默认用户
     let app_state = app.state::<AppState>();
     if let Err(e) = create_default_user(&app_state.db).await {
         eprintln!("Failed to create default user: {}", e);
         // 不返回错误，让应用继续启动
     }
-    
+
     eprintln!("Backend setup task completed!");
     // Set the backend task as being completed
     // Commands can be ran as regular functions as long as you take

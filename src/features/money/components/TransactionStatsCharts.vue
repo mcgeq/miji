@@ -493,12 +493,15 @@ const chartLoading = ref(false);
 <style scoped lang="postcss">
 .transaction-stats-charts {
   margin-bottom: 2rem;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .charts-grid {
   display: grid;
   grid-template-columns: 1fr;
   gap: 1.5rem;
+  width: 100%;
 }
 
 @media (min-width: 1024px) {
@@ -513,6 +516,9 @@ const chartLoading = ref(false);
   border-radius: 0.5rem;
   padding: 1.5rem;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .chart-card.full-width {
@@ -524,24 +530,29 @@ const chartLoading = ref(false);
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }
 
 .chart-controls {
   display: flex;
   gap: 1rem;
   align-items: center;
+  flex-wrap: wrap;
 }
 
 .control-group {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  flex-wrap: wrap;
 }
 
 .control-label {
   font-size: 0.875rem;
   color: var(--color-neutral);
   font-weight: 500;
+  white-space: nowrap;
 }
 
 .control-select {
@@ -552,6 +563,7 @@ const chartLoading = ref(false);
   color: var(--color-accent-content);
   font-size: 0.875rem;
   min-width: 100px;
+  max-width: 150px;
 }
 
 .control-select:focus {
@@ -565,20 +577,25 @@ const chartLoading = ref(false);
   font-weight: 600;
   color: var(--color-accent-content);
   margin-bottom: 0.25rem;
+  word-break: break-word;
 }
 
 .chart-subtitle {
   font-size: 0.875rem;
   color: var(--color-neutral);
+  word-break: break-word;
 }
 
 .chart-content {
   min-height: 400px;
+  width: 100%;
+  overflow: hidden;
 }
 
 .chart {
   width: 100%;
   height: 400px;
+  max-width: 100%;
 }
 
 .chart-loading {
@@ -628,9 +645,41 @@ const chartLoading = ref(false);
   font-size: 0.875rem;
 }
 
+/* 移动端优化 */
 @media (max-width: 768px) {
+  .transaction-stats-charts {
+    margin-bottom: 1rem;
+  }
+
+  .charts-grid {
+    gap: 1rem;
+  }
+
   .chart-card {
     padding: 1rem;
+    margin: 0;
+  }
+
+  .chart-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .chart-controls {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .control-group {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+  }
+
+  .control-select {
+    width: 100%;
+    max-width: 200px;
   }
 
   .chart-content {
@@ -644,6 +693,43 @@ const chartLoading = ref(false);
   .chart-loading,
   .chart-empty {
     height: 300px;
+  }
+
+  .chart-title {
+    font-size: 1rem;
+  }
+}
+
+/* 超小屏幕优化 */
+@media (max-width: 480px) {
+  .chart-card {
+    padding: 0.75rem;
+  }
+
+  .chart-content {
+    min-height: 250px;
+  }
+
+  .chart {
+    height: 250px;
+  }
+
+  .chart-loading,
+  .chart-empty {
+    height: 250px;
+  }
+
+  .chart-title {
+    font-size: 0.875rem;
+  }
+
+  .control-label {
+    font-size: 0.75rem;
+  }
+
+  .control-select {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
   }
 }
 </style>

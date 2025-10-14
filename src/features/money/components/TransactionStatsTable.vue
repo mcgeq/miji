@@ -404,6 +404,26 @@ function getCategoryIcon(category: string) {
 
 .table-wrapper {
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-base-300) transparent;
+}
+
+.table-wrapper::-webkit-scrollbar {
+  height: 6px;
+}
+
+.table-wrapper::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.table-wrapper::-webkit-scrollbar-thumb {
+  background: var(--color-base-300);
+  border-radius: 3px;
+}
+
+.table-wrapper::-webkit-scrollbar-thumb:hover {
+  background: var(--color-base-400);
 }
 
 .stats-table {
@@ -628,11 +648,18 @@ function getCategoryIcon(category: string) {
   background: var(--color-primary-dark);
 }
 
+/* 移动端优化 */
 @media (max-width: 768px) {
+  .transaction-stats-table {
+    margin: 0;
+    border-radius: 0;
+  }
+
   .table-header {
     flex-direction: column;
     gap: 1rem;
     align-items: flex-start;
+    padding: 1rem;
   }
 
   .table-controls {
@@ -640,22 +667,118 @@ function getCategoryIcon(category: string) {
     justify-content: flex-start;
   }
 
+  .control-group {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+    width: 100%;
+  }
+
+  .control-select {
+    width: 100%;
+    max-width: 200px;
+  }
+
   .table-summary {
     flex-direction: column;
     gap: 0.5rem;
+    width: 100%;
+  }
+
+  .summary-item {
+    justify-content: space-between;
   }
 
   .stats-table th,
   .stats-table td {
-    padding: 0.5rem;
+    padding: 0.5rem 0.25rem;
+    font-size: 0.75rem;
+  }
+
+  /* 隐藏部分列以节省空间 */
+  .col-average,
+  .col-trend {
+    display: none;
+  }
+
+  .col-percentage {
+    min-width: 80px;
+  }
+
+  .percentage-text {
+    font-size: 0.625rem;
+    min-width: 30px;
+  }
+
+  .col-count {
+    min-width: 60px;
+  }
+
+  .col-amount {
+    min-width: 80px;
+  }
+
+  .amount-value {
+    font-size: 0.75rem;
   }
 
   .table-actions {
     flex-direction: column;
+    padding: 1rem;
   }
 
   .export-btn {
     justify-content: center;
+    width: 100%;
+  }
+}
+
+/* 超小屏幕优化 */
+@media (max-width: 480px) {
+  .table-header {
+    padding: 0.75rem;
+  }
+
+  .table-title {
+    font-size: 1rem;
+  }
+
+  .stats-table th,
+  .stats-table td {
+    padding: 0.375rem 0.125rem;
+    font-size: 0.625rem;
+  }
+
+  /* 进一步隐藏列 */
+  .col-percentage {
+    display: none;
+  }
+
+  .col-count {
+    min-width: 50px;
+  }
+
+  .col-amount {
+    min-width: 70px;
+  }
+
+  .category-name {
+    font-size: 0.75rem;
+  }
+
+  .rank-badge {
+    width: 20px;
+    height: 20px;
+    font-size: 0.625rem;
+  }
+
+  .table-actions {
+    padding: 0.75rem;
+  }
+
+  .export-btn {
+    font-size: 0.75rem;
+    padding: 0.375rem 0.75rem;
   }
 }
 </style>

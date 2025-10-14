@@ -20,7 +20,7 @@ use common::{
 };
 use healths::command as health_cmd;
 use money::command as money_cmd;
-use tauri::{AppHandle, Builder, Manager, State, Wry};
+use tauri::{AppHandle, Builder, State, Wry};
 use todos::command as todo_cmd;
 use tracing::info;
 
@@ -110,7 +110,7 @@ pub fn init_commands(builder: Builder<Wry>) -> Builder<Wry> {
 
 #[tauri::command]
 pub async fn set_complete(
-    app: AppHandle,
+    _app: AppHandle,
     state: State<'_, AppState>,
     task: String,
 ) -> Result<(), ()> {

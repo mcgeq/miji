@@ -21,5 +21,21 @@ definePage({
 .transaction-stats-page {
   min-height: 100vh;
   background: var(--color-base-50);
+  width: 100%;
+  overflow-x: hidden;
+}
+
+/* 移动端优化 */
+@media (max-width: 768px) {
+  .transaction-stats-page {
+    padding: 0;
+  }
+}
+
+/* 超小屏幕优化 */
+@media (max-width: 480px) {
+  .transaction-stats-page {
+    padding: 0;
+  }
 }
 </style>
