@@ -175,11 +175,6 @@ const trendChartOption = computed(() => {
 
   return {
     ...defaultTheme,
-    title: {
-      text: '收支趋势分析',
-      left: 'center',
-      subtext: `${props.timeDimension === 'week' ? '周度' : '月度'}趋势分析`,
-    },
     tooltip: {
       trigger: 'axis',
       axisPointer: {
