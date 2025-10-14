@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import VChart from 'vue-echarts';
-import { lowercaseFirstLetter } from '@/utils/common';
 import { chartUtils, defaultTheme, initECharts } from '@/utils/echarts';
 
 const props = defineProps<Props>();
@@ -116,30 +115,48 @@ const pieChartOption = computed(() => {
     },
     series: [
       {
-        name: `${paymentMethodTypeName.value}金额`,
+        name: `${paymentMethodTypeName.value}支付渠道`,
         type: 'pie',
         radius: ['40%', '70%'],
         center: ['60%', '50%'],
-        data: amounts.map((amount, index) => ({
-          value: amount,
+        avoidLabelOverlap: false,
+        itemStyle: {
+          borderRadius: 8,
+          borderColor: '#fff',
+          borderWidth: 2,
+        },
+        label: {
+          show: false,
+          position: 'center',
+        },
+        emphasis: {
+          label: {
+            show: true,
+            fontSize: '16',
+            fontWeight: 'bold',
+            formatter: '{b}\n{c}',
+          },
+          itemStyle: {
+            shadowBlur: 10,
+            shadowOffsetX: 0,
+            shadowColor: 'rgba(0, 0, 0, 0.5)',
+          },
+        },
+        labelLine: {
+          show: false,
+        },
+        data: paymentMethods.map((_paymentMethod, index) => ({
+          value: amounts[index],
           name: internationalizedPaymentMethods[index],
           itemStyle: {
             color: chartUtils.getColor(index),
           },
         })),
-        emphasis: {
-          itemStyle: {
-            shadowBlur: 10,
-            shadowOffsetX: 0,
-            shadowColor: 'rgba(0, 0, 0, 0.3)',
-          },
-        },
-        animationDelay: (idx: number) => idx * 100,
+        animationType: 'scale',
+        animationEasing: 'elasticOut' as const,
+        animationDelay: (_idx: number) => Math.random() * 200,
       },
     ],
-    animation: true,
-    animationDuration: 1000,
-    animationEasing: 'cubicOut' as const,
   };
 });
 
@@ -151,7 +168,7 @@ const barChartOption = computed(() => {
 
   // 国际化支付渠道名称
   const internationalizedPaymentMethods = paymentMethods.map(paymentMethod =>
-    t(`financial.paymentMethods.${lowercaseFirstLetter(paymentMethod)}`),
+    t(`financial.paymentMethods.${paymentMethod.toLocaleLowerCase()}`),
   );
 
   return {
@@ -226,22 +243,40 @@ const radarChartOption = computed(() => {
 
   // 国际化支付渠道名称
   const internationalizedPaymentMethods = paymentMethods.map(paymentMethod =>
-    t(`financial.paymentMethods.${lowercaseFirstLetter(paymentMethod)}`),
+    t(`financial.paymentMethods.${paymentMethod.toLocaleLowerCase()}`),
   );
 
-  // 计算最大值，用于雷达图刻度
   const maxAmount = Math.max(...amounts);
-  const adjustedMax = Math.ceil(maxAmount * 1.2);
 
-  // 根据最大值调整分割数
+  // 计算合适的最大值，确保ticks可读
+  const calculateMax = (value: number) => {
+    if (value <= 0) return 100;
+    if (value <= 50) return 100;
+    if (value <= 100) return 150;
+    if (value <= 200) return 250;
+    if (value <= 500) return 600;
+    if (value <= 1000) return 1200;
+    if (value <= 5000) return Math.ceil(value * 1.2);
+    if (value <= 10000) return Math.ceil(value * 1.1);
+    if (value <= 50000) return Math.ceil(value * 1.05);
+    return Math.ceil(value * 1.02);
+  };
+
+  const adjustedMax = calculateMax(maxAmount);
+
+  // 根据最大值动态设置splitNumber，确保刻度可读
   const getSplitNumber = (max: number) => {
-    if (max >= 100000) {
-      return 6;
-    } else if (max >= 10000) {
-      return 5;
-    } else if (max >= 1000) {
-      return 4;
-    }
+    if (max <= 100) return 5;
+    if (max <= 200) return 4;
+    if (max <= 300) return 3;
+    if (max <= 500) return 4;
+    if (max <= 600) return 3;
+    if (max <= 1000) return 4;
+    if (max <= 2000) return 4;
+    if (max <= 5000) return 5;
+    if (max <= 10000) return 4;
+    if (max <= 20000) return 4;
+    if (max <= 50000) return 5;
     return 4;
   };
 
