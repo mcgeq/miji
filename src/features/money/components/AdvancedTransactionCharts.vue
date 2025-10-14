@@ -403,11 +403,6 @@ const categoryBarOption = computed(() => {
 
   return {
     ...defaultTheme,
-    title: {
-      text: '分类排行',
-      left: 'center',
-      subtext: '横向条形图',
-    },
     tooltip: {
       trigger: 'axis',
       axisPointer: {
@@ -445,7 +440,7 @@ const categoryBarOption = computed(() => {
     },
     series: [
       {
-        name: '支出金额',
+        name: `${categoryTypeName.value}金额`,
         type: 'bar',
         data: amounts.map((amount, index) => ({
           value: amount,
@@ -606,9 +601,6 @@ const radarOption = computed(() => {
           <h3 class="chart-title">
             分类占比
           </h3>
-          <div class="chart-subtitle">
-            饼图展示
-          </div>
           <div class="chart-controls">
             <div class="control-group">
               <label class="control-label">分类类型:</label>
@@ -659,9 +651,6 @@ const radarOption = computed(() => {
           <h3 class="chart-title">
             分类分布
           </h3>
-          <div class="chart-subtitle">
-            环形图展示
-          </div>
         </div>
 
         <div class="chart-content">
@@ -696,9 +685,6 @@ const radarOption = computed(() => {
           <h3 class="chart-title">
             分类排行
           </h3>
-          <div class="chart-subtitle">
-            横向条形图
-          </div>
           <div class="chart-controls">
             <div class="control-group">
               <label class="control-label">分类类型:</label>
@@ -749,9 +735,6 @@ const radarOption = computed(() => {
           <h3 class="chart-title">
             分类雷达图
           </h3>
-          <div class="chart-subtitle">
-            多维度分析
-          </div>
           <div class="chart-controls">
             <div class="control-group">
               <label class="control-label">分类类型:</label>
