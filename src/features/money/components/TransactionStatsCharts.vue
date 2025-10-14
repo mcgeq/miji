@@ -36,11 +36,26 @@ interface Props {
   topIncomeCategories?: TopCategory[];
   topTransferCategories?: TopCategory[];
   timeDimension: 'year' | 'month' | 'week';
+  transactionType?: string;
   loading: boolean;
 }
 
 // 分类类型切换
 const categoryType = ref<'expense' | 'income' | 'transfer'>('expense');
+
+// 监听transactionType变化，自动同步categoryType
+watch(() => props.transactionType, newTransactionType => {
+  if (newTransactionType === 'Income') {
+    categoryType.value = 'income';
+  } else if (newTransactionType === 'Transfer') {
+    categoryType.value = 'transfer';
+  } else if (newTransactionType === 'Expense') {
+    categoryType.value = 'expense';
+  } else {
+    // 如果transactionType为空或'全部'，重置为默认值'支出'
+    categoryType.value = 'expense';
+  }
+}, { immediate: true });
 
 // 当前分类数据
 const currentCategories = computed(() => {

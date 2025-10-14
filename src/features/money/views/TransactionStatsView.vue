@@ -221,6 +221,7 @@ onMounted(() => {
         :top-income-categories="statsData.topIncomeCategories"
         :top-transfer-categories="statsData.topTransferCategories"
         :time-dimension="filters.timeDimension"
+        :transaction-type="filters.transactionType"
         :loading="loading"
       />
       <AdvancedTransactionCharts
@@ -231,6 +232,7 @@ onMounted(() => {
         :top-income-categories="statsData.topIncomeCategories"
         :top-transfer-categories="statsData.topTransferCategories"
         :time-dimension="filters.timeDimension"
+        :transaction-type="filters.transactionType"
         :loading="loading"
       />
     </div>
@@ -241,6 +243,7 @@ onMounted(() => {
         :top-categories="statsData.topCategories"
         :top-income-categories="statsData.topIncomeCategories"
         :top-transfer-categories="statsData.topTransferCategories"
+        :transaction-type="filters.transactionType"
         :loading="loading"
       />
     </div>
