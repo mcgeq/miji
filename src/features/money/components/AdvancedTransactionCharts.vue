@@ -414,7 +414,7 @@ const categoryBarOption = computed(() => {
   return {
     ...defaultTheme,
     title: {
-      text: `分类${categoryTypeName.value}排行`,
+      text: '分类排行',
       left: 'center',
       subtext: '横向条形图',
     },
@@ -502,7 +502,7 @@ const radarOption = computed(() => {
   return {
     ...defaultTheme,
     title: {
-      text: `分类${categoryTypeName.value}雷达图`,
+      text: '分类雷达图',
       left: 'center',
       subtext: '多维度分析',
     },
@@ -709,10 +709,26 @@ const radarOption = computed(() => {
       <div class="chart-card full-width">
         <div class="chart-header">
           <h3 class="chart-title">
-            分类支出排行
+            分类排行
           </h3>
           <div class="chart-subtitle">
             横向条形图
+          </div>
+          <div class="chart-controls">
+            <div class="control-group">
+              <label class="control-label">分类类型:</label>
+              <select v-model="categoryType" class="control-select">
+                <option value="expense">
+                  支出
+                </option>
+                <option value="income">
+                  收入
+                </option>
+                <option value="transfer">
+                  转账
+                </option>
+              </select>
+            </div>
           </div>
         </div>
 
@@ -746,10 +762,26 @@ const radarOption = computed(() => {
       <div class="chart-card full-width">
         <div class="chart-header">
           <h3 class="chart-title">
-            分类支出雷达图
+            分类雷达图
           </h3>
           <div class="chart-subtitle">
             多维度分析
+          </div>
+          <div class="chart-controls">
+            <div class="control-group">
+              <label class="control-label">分类类型:</label>
+              <select v-model="categoryType" class="control-select">
+                <option value="expense">
+                  支出
+                </option>
+                <option value="income">
+                  收入
+                </option>
+                <option value="transfer">
+                  转账
+                </option>
+              </select>
+            </div>
           </div>
         </div>
 

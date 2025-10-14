@@ -1,30 +1,62 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 
 interface TopCategory {
   category: string;
   amount: number;
   count: number;
+  percentage: number;
 }
 
 interface Props {
   topCategories: TopCategory[];
+  topIncomeCategories?: TopCategory[];
+  topTransferCategories?: TopCategory[];
   loading: boolean;
 }
 
 const props = defineProps<Props>();
 
+// 分类类型切换
+const categoryType = ref<'expense' | 'income' | 'transfer'>('expense');
+
+// 根据分类类型获取相应的分类数据
+const currentCategories = computed(() => {
+  switch (categoryType.value) {
+    case 'income':
+      return props.topIncomeCategories || [];
+    case 'transfer':
+      return props.topTransferCategories || [];
+    case 'expense':
+    default:
+      return props.topCategories;
+  }
+});
+
+// 获取分类类型的显示名称
+const categoryTypeName = computed(() => {
+  switch (categoryType.value) {
+    case 'income':
+      return '收入';
+    case 'transfer':
+      return '转账';
+    case 'expense':
+    default:
+      return '支出';
+  }
+});
+
 // 计算属性
 const sortedCategories = computed(() => {
-  return [...props.topCategories].sort((a, b) => b.amount - a.amount);
+  return [...currentCategories.value].sort((a, b) => b.amount - a.amount);
 });
 
 const totalAmount = computed(() => {
-  return props.topCategories.reduce((sum, category) => sum + category.amount, 0);
+  return currentCategories.value.reduce((sum, category) => sum + category.amount, 0);
 });
 
 const totalCount = computed(() => {
-  return props.topCategories.reduce((sum, category) => sum + category.count, 0);
+  return currentCategories.value.reduce((sum, category) => sum + category.count, 0);
 });
 
 // 方法
@@ -58,8 +90,24 @@ function getCategoryIcon(category: string) {
   <div class="transaction-stats-table">
     <div class="table-header">
       <h3 class="table-title">
-        分类详细统计
+        {{ categoryTypeName }}分类详细统计
       </h3>
+      <div class="table-controls">
+        <div class="control-group">
+          <label class="control-label">分类类型:</label>
+          <select v-model="categoryType" class="control-select">
+            <option value="expense">
+              支出
+            </option>
+            <option value="income">
+              收入
+            </option>
+            <option value="transfer">
+              转账
+            </option>
+          </select>
+        </div>
+      </div>
       <div class="table-summary">
         <div class="summary-item">
           <span class="summary-label">总金额:</span>
@@ -80,7 +128,7 @@ function getCategoryIcon(category: string) {
         </div>
       </div>
 
-      <div v-else-if="sortedCategories.length === 0" class="table-empty">
+      <div v-else-if="currentCategories.length === 0" class="table-empty">
         <div class="empty-icon">
           📊
         </div>
@@ -225,6 +273,45 @@ function getCategoryIcon(category: string) {
   font-size: 1.125rem;
   font-weight: 600;
   color: var(--color-accent-content);
+}
+
+.table-controls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.control-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.control-label {
+  font-size: 0.875rem;
+  color: var(--color-neutral);
+  font-weight: 500;
+}
+
+.control-select {
+  padding: 0.375rem 0.75rem;
+  border: 1px solid var(--color-base-300);
+  border-radius: 0.25rem;
+  background: var(--color-base-100);
+  color: var(--color-accent-content);
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.control-select:hover {
+  border-color: var(--color-primary);
+}
+
+.control-select:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px var(--color-primary-light);
 }
 
 .table-summary {
@@ -531,6 +618,11 @@ function getCategoryIcon(category: string) {
     flex-direction: column;
     gap: 1rem;
     align-items: flex-start;
+  }
+
+  .table-controls {
+    width: 100%;
+    justify-content: flex-start;
   }
 
   .table-summary {

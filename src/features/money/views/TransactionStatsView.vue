@@ -237,6 +237,8 @@ onMounted(() => {
     <div class="table-section">
       <TransactionStatsTable
         :top-categories="statsData.topCategories"
+        :top-income-categories="statsData.topIncomeCategories"
+        :top-transfer-categories="statsData.topTransferCategories"
         :loading="loading"
       />
     </div>
