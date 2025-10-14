@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
+import { useMoneyStore } from '@/stores/moneyStore';
+import { lowercaseFirstLetter } from '@/utils/common';
+import type { Category } from '@/schema/money/category';
 
 interface TopCategory {
   category: string;
@@ -16,6 +19,9 @@ interface Props {
 }
 
 const props = defineProps<Props>();
+
+const { t } = useI18n();
+const moneyStore = useMoneyStore();
 
 // 分类类型切换
 const categoryType = ref<'expense' | 'income' | 'transfer'>('expense');
@@ -70,18 +76,12 @@ function formatPercentage(amount: number) {
 }
 
 function getCategoryIcon(category: string) {
-  const iconMap: Record<string, string> = {
-    餐饮: '🍽',
-    交通: '🚗',
-    购物: '🛍',
-    娱乐: '🎮',
-    医疗: '🏥',
-    教育: '📚',
-    住房: '🏠',
-    服装: '👕',
-    旅行: '✈',
-    其他: '📦',
-  };
+  // 从MoneyStore中获取分类数据，转换为Record<string, string>格式
+  const iconMap: Record<string, string> = moneyStore.categories.reduce((acc, categoryItem: Category) => {
+    acc[categoryItem.name] = categoryItem.icon;
+    return acc;
+  }, {} as Record<string, string>);
+
   return iconMap[category] || '📦';
 }
 </script>
@@ -181,7 +181,7 @@ function getCategoryIcon(category: string) {
                     {{ getCategoryIcon(category.category) }}
                   </span>
                   <span class="category-name">
-                    {{ category.category }}
+                    {{ t(`common.categories.${lowercaseFirstLetter(category.category)}`) }}
                   </span>
                 </div>
               </td>
