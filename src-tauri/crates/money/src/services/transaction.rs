@@ -1492,7 +1492,7 @@ impl TransactionService {
         // 找到当前周的起始日期
         let weekday = current.weekday();
         let days_from_monday = weekday.num_days_from_monday();
-        current = current - chrono::Duration::days(days_from_monday as i64);
+        current -= chrono::Duration::days(days_from_monday as i64);
 
         while current <= end {
             let week_start = current.format("%Y-%m-%d").to_string();
@@ -1511,7 +1511,7 @@ impl TransactionService {
                 net_income: income_expense.income.total - income_expense.expense.total,
             });
 
-            current = current + chrono::Duration::days(7);
+            current += chrono::Duration::days(7);
         }
 
         Ok(trends)
