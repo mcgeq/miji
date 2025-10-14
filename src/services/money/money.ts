@@ -17,7 +17,11 @@ import type { PagedResult } from './baseManager';
 import type { BilReminderFilters } from './billReminder';
 import type { BudgetFilters } from './budgets';
 import type { FamilyLedgerFilters } from './family';
-import type { TransactionFilters } from './transactions';
+import type {
+  TransactionFilters,
+  TransactionStatsRequest,
+  TransactionStatsResponse,
+} from './transactions';
 import type {
   AccountBalanceSummary,
   Currency,
@@ -174,6 +178,10 @@ export class MoneyDb {
 
   static async lastYearIncomeAndExpense(): Promise<IncomeExpense> {
     return this.transactionMapper.lastYearIncomeAndExpense();
+  }
+
+  static async getTransactionStats(request: TransactionStatsRequest): Promise<TransactionStatsResponse> {
+    return this.transactionMapper.getStats(request);
   }
   // ========================= Transaction End =========================
 

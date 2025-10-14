@@ -1,5 +1,6 @@
 use std::{str::FromStr, sync::Arc};
 
+use chrono::Datelike;
 use common::{
     BusinessCode,
     crud::service::{
@@ -12,11 +13,12 @@ use common::{
 };
 use entity::{localize::LocalizeModel, transactions::Column as TransactionColumn};
 use once_cell::sync::Lazy;
+use sea_orm::FromQueryResult;
 use sea_orm::{
     ActiveModelTrait,
     ActiveValue::Set,
     ColumnTrait, Condition, DatabaseConnection, DatabaseTransaction, DbConn, EntityTrait,
-    IntoActiveModel, QueryFilter, QuerySelect, TransactionTrait,
+    IntoActiveModel, QueryFilter, QueryOrder, QuerySelect, TransactionTrait,
     prelude::{Decimal, Expr},
     sea_query::{Alias, ExprTrait, Func, SimpleExpr},
 };
@@ -25,13 +27,22 @@ use snafu::GenerateImplicitData;
 use tracing::{error, info};
 use validator::Validate;
 
+// 用于分类统计查询结果的结构体
+#[derive(Debug, FromQueryResult)]
+struct CategoryStatsRaw {
+    category: String,
+    amount: Decimal,
+    count: i64,
+}
+
 use crate::{
     dto::{
         account::AccountType,
         transactions::{
-            CreateTransactionRequest, IncomeExpense, IncomeExpenseRaw, PaymentMethod,
-            TransactionStatus, TransactionType, TransactionWithRelations, TransferRequest,
-            UpdateTransactionRequest,
+            CategoryStats, CreateTransactionRequest, IncomeExpense, IncomeExpenseRaw,
+            PaymentMethod, TimeTrendStats, TransactionStatsRequest, TransactionStatsResponse,
+            TransactionStatsSummary, TransactionStatus, TransactionType, TransactionWithRelations,
+            TransferRequest, UpdateTransactionRequest,
         },
     },
     error::MoneyError,
@@ -1282,6 +1293,228 @@ impl TransactionService {
             .unwrap_or(IncomeExpense::default());
 
         Ok(result)
+    }
+
+    /// 获取交易统计数据
+    pub async fn get_transaction_stats(
+        &self,
+        db: &DatabaseConnection,
+        request: TransactionStatsRequest,
+    ) -> MijiResult<TransactionStatsResponse> {
+        let start_date = request.start_date;
+        let end_date = request.end_date;
+
+        // 构建基础查询条件
+        let mut base_condition = Condition::all()
+            .add(TransactionColumn::IsDeleted.eq(false))
+            .add(TransactionColumn::Date.gte(&start_date))
+            .add(TransactionColumn::Date.lte(&end_date));
+
+        // 添加筛选条件
+        if let Some(category) = &request.category {
+            base_condition = base_condition.add(TransactionColumn::Category.eq(category));
+        }
+        if let Some(sub_category) = &request.sub_category {
+            base_condition = base_condition.add(TransactionColumn::SubCategory.eq(sub_category));
+        }
+        if let Some(account_serial_num) = &request.account_serial_num {
+            base_condition =
+                base_condition.add(TransactionColumn::AccountSerialNum.eq(account_serial_num));
+        }
+        if let Some(transaction_type) = &request.transaction_type {
+            base_condition =
+                base_condition.add(TransactionColumn::TransactionType.eq(transaction_type));
+        }
+        if let Some(currency) = &request.currency {
+            base_condition = base_condition.add(TransactionColumn::Currency.eq(currency));
+        }
+
+        // 获取基础统计数据
+        let income_expense = self
+            .query_income_and_expense(db, start_date.clone(), end_date.clone())
+            .await?;
+
+        // 获取交易列表用于统计
+        let transactions = entity::transactions::Entity::find()
+            .filter(base_condition.clone())
+            .all(db)
+            .await
+            .map_err(AppError::from)?;
+
+        let total_income = income_expense.income.total;
+        let total_expense = income_expense.expense.total;
+        let net_income = total_income - total_expense;
+        let transaction_count = transactions.len() as i32;
+        let average_transaction = if transaction_count > 0 {
+            (total_income + total_expense) / Decimal::from(transaction_count)
+        } else {
+            Decimal::ZERO
+        };
+
+        let summary = TransactionStatsSummary {
+            total_income,
+            total_expense,
+            net_income,
+            transaction_count,
+            average_transaction,
+        };
+
+        // 按分类统计
+        let top_categories = self
+            .get_category_stats(db, &base_condition, &total_expense)
+            .await?;
+
+        // 按时间维度统计趋势
+        let monthly_trends = self
+            .get_monthly_trends(db, &start_date, &end_date, &base_condition)
+            .await?;
+        let weekly_trends = self
+            .get_weekly_trends(db, &start_date, &end_date, &base_condition)
+            .await?;
+
+        Ok(TransactionStatsResponse {
+            summary,
+            top_categories,
+            monthly_trends,
+            weekly_trends,
+        })
+    }
+
+    /// 获取分类统计
+    async fn get_category_stats(
+        &self,
+        db: &DatabaseConnection,
+        base_condition: &Condition,
+        total_expense: &Decimal,
+    ) -> MijiResult<Vec<CategoryStats>> {
+        let mut condition = base_condition.clone();
+        condition = condition.add(TransactionColumn::TransactionType.eq("Expense"));
+
+        let category_stats = entity::transactions::Entity::find()
+            .select_only()
+            .column(TransactionColumn::Category)
+            .expr_as(Expr::col(TransactionColumn::Amount).sum(), "amount")
+            .expr_as(Expr::col(TransactionColumn::SerialNum).count(), "count")
+            .filter(condition)
+            .group_by(TransactionColumn::Category)
+            .order_by_desc(Expr::col(TransactionColumn::Amount).sum())
+            .limit(10)
+            .into_model::<CategoryStatsRaw>()
+            .all(db)
+            .await
+            .map_err(AppError::from)?;
+
+        let mut result = Vec::new();
+        for stats in category_stats {
+            let percentage = if *total_expense > Decimal::ZERO {
+                (stats.amount / *total_expense) * Decimal::from(100)
+            } else {
+                Decimal::ZERO
+            };
+
+            result.push(CategoryStats {
+                category: stats.category,
+                amount: stats.amount,
+                count: stats.count as i32,
+                percentage,
+            });
+        }
+
+        Ok(result)
+    }
+
+    /// 获取月度趋势
+    async fn get_monthly_trends(
+        &self,
+        db: &DatabaseConnection,
+        start_date: &str,
+        end_date: &str,
+        _base_condition: &Condition,
+    ) -> MijiResult<Vec<TimeTrendStats>> {
+        let mut trends = Vec::new();
+        let mut current = chrono::NaiveDate::parse_from_str(start_date, "%Y-%m-%d")
+            .map_err(|e| AppError::internal_server_error(format!("Invalid start date: {e}")))?;
+
+        let end = chrono::NaiveDate::parse_from_str(end_date, "%Y-%m-%d")
+            .map_err(|e| AppError::internal_server_error(format!("Invalid end date: {e}")))?;
+
+        while current <= end {
+            let month_start = current.format("%Y-%m-%d").to_string();
+            let month_end = if current.month() == 12 {
+                format!("{}-12-31", current.year())
+            } else {
+                let next_month = current.with_month0(current.month0() + 1).unwrap();
+                (next_month - chrono::Duration::days(1))
+                    .format("%Y-%m-%d")
+                    .to_string()
+            };
+
+            let income_expense = self
+                .query_income_and_expense(db, month_start.clone(), month_end)
+                .await?;
+
+            trends.push(TimeTrendStats {
+                period: current.format("%Y-%m").to_string(),
+                income: income_expense.income.total,
+                expense: income_expense.expense.total,
+                net_income: income_expense.income.total - income_expense.expense.total,
+            });
+
+            current = if current.month() == 12 {
+                current
+                    .with_year(current.year() + 1)
+                    .unwrap()
+                    .with_month0(0)
+                    .unwrap()
+            } else {
+                current.with_month0(current.month0() + 1).unwrap()
+            };
+        }
+
+        Ok(trends)
+    }
+
+    /// 获取周度趋势
+    async fn get_weekly_trends(
+        &self,
+        db: &DatabaseConnection,
+        start_date: &str,
+        end_date: &str,
+        _base_condition: &Condition,
+    ) -> MijiResult<Vec<TimeTrendStats>> {
+        let mut trends = Vec::new();
+        let mut current = chrono::NaiveDate::parse_from_str(start_date, "%Y-%m-%d")
+            .map_err(|e| AppError::internal_server_error(format!("Invalid start date: {e}")))?;
+
+        let end = chrono::NaiveDate::parse_from_str(end_date, "%Y-%m-%d")
+            .map_err(|e| AppError::internal_server_error(format!("Invalid end date: {e}")))?;
+
+        // 找到当前周的起始日期
+        let weekday = current.weekday();
+        let days_from_monday = weekday.num_days_from_monday();
+        current = current - chrono::Duration::days(days_from_monday as i64);
+
+        while current <= end {
+            let week_start = current.format("%Y-%m-%d").to_string();
+            let week_end = (current + chrono::Duration::days(6))
+                .format("%Y-%m-%d")
+                .to_string();
+
+            let income_expense = self
+                .query_income_and_expense(db, week_start.clone(), week_end)
+                .await?;
+
+            trends.push(TimeTrendStats {
+                period: format!("第{}周", current.iso_week().week()),
+                income: income_expense.income.total,
+                expense: income_expense.expense.total,
+                net_income: income_expense.income.total - income_expense.expense.total,
+            });
+
+            current = current + chrono::Duration::days(7);
+        }
+
+        Ok(trends)
     }
 }
 

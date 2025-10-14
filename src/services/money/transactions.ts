@@ -11,6 +11,47 @@ import type {
   TransferCreate,
 } from '@/schema/money';
 
+// 统计相关的类型定义
+export interface TransactionStatsRequest {
+  startDate: string;
+  endDate: string;
+  timeDimension?: string;
+  category?: string;
+  subCategory?: string;
+  accountSerialNum?: string;
+  transactionType?: string;
+  currency?: string;
+}
+
+export interface TransactionStatsSummary {
+  totalIncome: number;
+  totalExpense: number;
+  netIncome: number;
+  transactionCount: number;
+  averageTransaction: number;
+}
+
+export interface CategoryStats {
+  category: string;
+  amount: number;
+  count: number;
+  percentage: number;
+}
+
+export interface TimeTrendStats {
+  period: string;
+  income: number;
+  expense: number;
+  netIncome: number;
+}
+
+export interface TransactionStatsResponse {
+  summary: TransactionStatsSummary;
+  topCategories: CategoryStats[];
+  monthlyTrends: TimeTrendStats[];
+  weeklyTrends: TimeTrendStats[];
+}
+
 export interface TransactionFilters {
   transactionType?: string;
   transactionStatus?: string;
@@ -67,6 +108,15 @@ export class TransactionMapper extends BaseMapper<
       return result;
     } catch (error) {
       this.handleError('list', error);
+    }
+  }
+
+  async getStats(request: TransactionStatsRequest): Promise<TransactionStatsResponse> {
+    try {
+      const result = await invokeCommand<TransactionStatsResponse>('transaction_get_stats', { request });
+      return result;
+    } catch (error) {
+      this.handleError('getStats', error);
     }
   }
 

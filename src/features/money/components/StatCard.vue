@@ -178,10 +178,10 @@ const formattedValue = computed(() => props.value);
   position: relative;
   overflow: hidden;
   background: var(--color-base-100);
-  border-radius: 12px;
-  border-left: 4px solid #3b82f6; /* 默认蓝色 */
-  padding: 20px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  border-radius: 8px;
+  border-left: 3px solid #3b82f6; /* 默认蓝色 */
+  padding: 16px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
   transition: all 0.3s ease;
 }
 .stat-header {
@@ -191,7 +191,7 @@ const formattedValue = computed(() => props.value);
   margin-bottom: 8px;
 }
 .stat-title {
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   font-weight: 600;
   text-transform: uppercase;
   color: var(--color-neutral);
@@ -217,12 +217,12 @@ const formattedValue = computed(() => props.value);
   margin-bottom: 4px;
 }
 .currency {
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 600;
   color: var(--color-accent);
 }
 .value {
-  font-size: 28px;
+  font-size: 24px;
   font-weight: bold;
   line-height: 1;
   color: var(--color-accent-content);
@@ -244,9 +244,9 @@ const formattedValue = computed(() => props.value);
   }
 }
 .subtitle {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--color-neutral);
-  margin-bottom: 6px;
+  margin-bottom: 4px;
 }
 
 /* ---------- 比较数据 ---------- */

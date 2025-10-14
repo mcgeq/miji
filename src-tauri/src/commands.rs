@@ -62,6 +62,7 @@ pub fn init_commands(builder: Builder<Wry>) -> Builder<Wry> {
         money_cmd::transaction_transfer_delete,
         money_cmd::transaction_transfer_update,
         money_cmd::transaction_query_income_and_expense,
+        money_cmd::transaction_get_stats,
         money_cmd::transaction_get,
         money_cmd::transaction_update,
         money_cmd::transaction_delete,

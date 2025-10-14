@@ -28,5 +28,6 @@ declare module 'vue-router/auto-routes' {
     'splashscreen': RouteRecordInfo<'splashscreen', '/splash', Record<never, never>, Record<never, never>>,
     'tags': RouteRecordInfo<'tags', '/tags', Record<never, never>, Record<never, never>>,
     'todos': RouteRecordInfo<'todos', '/todos', Record<never, never>, Record<never, never>>,
+    'transaction-stats': RouteRecordInfo<'transaction-stats', '/transaction-stats', Record<never, never>, Record<never, never>>,
   }
 }

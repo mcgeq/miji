@@ -81,6 +81,57 @@ pub struct IncomeExpenseRaw {
     other_expense: Decimal,
 }
 
+// 统计相关的数据结构
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TransactionStatsSummary {
+    pub total_income: Decimal,
+    pub total_expense: Decimal,
+    pub net_income: Decimal,
+    pub transaction_count: i32,
+    pub average_transaction: Decimal,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CategoryStats {
+    pub category: String,
+    pub amount: Decimal,
+    pub count: i32,
+    pub percentage: Decimal,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TimeTrendStats {
+    pub period: String,
+    pub income: Decimal,
+    pub expense: Decimal,
+    pub net_income: Decimal,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TransactionStatsResponse {
+    pub summary: TransactionStatsSummary,
+    pub top_categories: Vec<CategoryStats>,
+    pub monthly_trends: Vec<TimeTrendStats>,
+    pub weekly_trends: Vec<TimeTrendStats>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TransactionStatsRequest {
+    pub start_date: String,
+    pub end_date: String,
+    pub time_dimension: Option<String>,
+    pub category: Option<String>,
+    pub sub_category: Option<String>,
+    pub account_serial_num: Option<String>,
+    pub transaction_type: Option<String>,
+    pub currency: Option<String>,
+}
+
 impl From<IncomeExpenseRaw> for IncomeExpense {
     fn from(raw: IncomeExpenseRaw) -> Self {
         IncomeExpense {

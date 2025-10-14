@@ -19,7 +19,7 @@ use crate::{
         sub_categories::{SubCategory, SubCategoryCreate, SubCategoryUpdate},
         transactions::{
             CreateTransactionRequest, IncomeExpense, TransactionResponse, TransferRequest,
-            UpdateTransactionRequest,
+            UpdateTransactionRequest, TransactionStatsRequest, TransactionStatsResponse,
         },
     },
     services::{
@@ -821,5 +821,21 @@ pub async fn family_member_list(
             .family_member_list(&state.db)
             .await
             .map(|models| models.into_iter().map(FamilyMemberResponse::from).collect()),
+    ))
+}
+
+// ============================================================================
+// Transaction Statistics API
+// 获取交易统计数据
+#[tauri::command]
+pub async fn transaction_get_stats(
+    state: State<'_, AppState>,
+    request: TransactionStatsRequest,
+) -> Result<ApiResponse<TransactionStatsResponse>, String> {
+    let service = get_transaction_service();
+    Ok(ApiResponse::from_result(
+        service
+            .get_transaction_stats(&state.db, request)
+            .await,
     ))
 }

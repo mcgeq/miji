@@ -261,6 +261,15 @@ export class DateUtils {
   }
 
   /**
+   * 格式化Date对象为 YYYY-MM-DD
+   * @param date - Date对象
+   * @returns 格式化后的日期字符串
+   */
+  static formatDateFromDate(date: Date): string {
+    return DateUtils.formatDatePart(date);
+  }
+
+  /**
    * 格式化ISO字符串为 "YYYY-MM-DD HH:mm:ss"
    * @param dateStr - ISO格式字符串
    * @returns 格式化后的字符串
@@ -447,5 +456,73 @@ export class DateUtils {
     const formatted = format(date, "yyyy-MM-dd'T'HH:mm:ss.SSSxxx");
     // 把 .SSS 变成 .SSSSSS（微秒），补 3 个 0
     return formatted.replace(/(\.\d{3})/, m => `${m}000`);
+  }
+
+  /**
+   * 获取指定日期所在月份的第一天
+   * @param date - 日期对象
+   * @returns 月份第一天的Date对象
+   */
+  static getStartOfMonth(date: Date): Date {
+    return new Date(date.getFullYear(), date.getMonth(), 1);
+  }
+
+  /**
+   * 获取指定日期所在月份的最后一天
+   * @param date - 日期对象
+   * @returns 月份最后一天的Date对象
+   */
+  static getEndOfMonth(date: Date): Date {
+    return new Date(date.getFullYear(), date.getMonth() + 1, 0);
+  }
+
+  /**
+   * 获取指定日期所在周的第一天（周一）
+   * @param date - 日期对象
+   * @returns 周第一天的Date对象
+   */
+  static getStartOfWeek(date: Date): Date {
+    const day = date.getDay();
+    const diff = date.getDate() - day + (day === 0 ? -6 : 1); // 调整到周一
+    return new Date(date.setDate(diff));
+  }
+
+  /**
+   * 获取指定日期所在周的最后一天（周日）
+   * @param date - 日期对象
+   * @returns 周最后一天的Date对象
+   */
+  static getEndOfWeek(date: Date): Date {
+    const startOfWeek = this.getStartOfWeek(new Date(date));
+    return new Date(startOfWeek.getTime() + 6 * 24 * 60 * 60 * 1000);
+  }
+
+  /**
+   * 获取指定日期所在年份的第一天
+   * @param date - 日期对象
+   * @returns 年份第一天的Date对象
+   */
+  static getStartOfYear(date: Date): Date {
+    return new Date(date.getFullYear(), 0, 1);
+  }
+
+  /**
+   * 获取指定日期所在年份的最后一天
+   * @param date - 日期对象
+   * @returns 年份最后一天的Date对象
+   */
+  static getEndOfYear(date: Date): Date {
+    return new Date(date.getFullYear() + 1, 0, 0);
+  }
+
+  /**
+   * 获取指定日期所在年份的第几周
+   * @param date - 日期对象
+   * @returns 周数
+   */
+  static getWeekOfYear(date: Date): number {
+    const startOfYear = new Date(date.getFullYear(), 0, 1);
+    const days = Math.floor((date.getTime() - startOfYear.getTime()) / (24 * 60 * 60 * 1000));
+    return Math.ceil((days + startOfYear.getDay() + 1) / 7);
   }
 }
