@@ -218,6 +218,8 @@ onMounted(() => {
         :monthly-trends="statsData.monthlyTrends"
         :weekly-trends="statsData.weeklyTrends"
         :top-categories="statsData.topCategories"
+        :top-income-categories="statsData.topIncomeCategories"
+        :top-transfer-categories="statsData.topTransferCategories"
         :time-dimension="filters.timeDimension"
         :loading="loading"
       />

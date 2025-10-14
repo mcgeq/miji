@@ -30,9 +30,40 @@ interface Props {
   monthlyTrends: MonthlyTrend[];
   weeklyTrends: WeeklyTrend[];
   topCategories: TopCategory[];
+  topIncomeCategories?: TopCategory[];
+  topTransferCategories?: TopCategory[];
   timeDimension: 'year' | 'month' | 'week';
   loading: boolean;
 }
+
+// 分类类型切换
+const categoryType = ref<'expense' | 'income' | 'transfer'>('expense');
+
+// 当前分类数据
+const currentCategories = computed(() => {
+  switch (categoryType.value) {
+    case 'income':
+      return props.topIncomeCategories || [];
+    case 'transfer':
+      return props.topTransferCategories || [];
+    case 'expense':
+    default:
+      return props.topCategories;
+  }
+});
+
+// 分类类型显示名称
+const categoryTypeName = computed(() => {
+  switch (categoryType.value) {
+    case 'income':
+      return '收入';
+    case 'transfer':
+      return '转账';
+    case 'expense':
+    default:
+      return '支出';
+  }
+});
 
 // 计算属性
 const currentTrends = computed(() => {
@@ -60,11 +91,6 @@ const trendChartOption = computed(() => {
 
   return {
     ...defaultTheme,
-    title: {
-      text: '收支趋势',
-      left: 'center',
-      subtext: `${props.timeDimension === 'week' ? '周度' : '月度'}趋势分析`,
-    },
     tooltip: {
       trigger: 'axis',
       axisPointer: {
@@ -148,17 +174,12 @@ const trendChartOption = computed(() => {
 });
 
 const categoryChartOption = computed(() => {
-  const categories = props.topCategories.slice(0, 8).map(cat => cat.category);
-  const amounts = props.topCategories.slice(0, 8).map(cat => cat.amount);
+  const categories = currentCategories.value.slice(0, 8).map(cat => cat.category);
+  const amounts = currentCategories.value.slice(0, 8).map(cat => cat.amount);
   const totalAmount = amounts.reduce((sum, amount) => sum + amount, 0);
 
   return {
     ...defaultTheme,
-    title: {
-      text: '分类统计',
-      left: 'center',
-      subtext: '支出分类占比',
-    },
     tooltip: {
       trigger: 'item',
       formatter: (params: any) => {
@@ -222,17 +243,12 @@ const categoryChartOption = computed(() => {
 });
 
 const categoryBarOption = computed(() => {
-  const categories = props.topCategories.slice(0, 10).map(cat => cat.category);
-  const amounts = props.topCategories.slice(0, 10).map(cat => cat.amount);
+  const categories = currentCategories.value.slice(0, 10).map(cat => cat.category);
+  const amounts = currentCategories.value.slice(0, 10).map(cat => cat.amount);
   const totalAmount = amounts.reduce((sum, amount) => sum + amount, 0);
 
   return {
     ...defaultTheme,
-    title: {
-      text: '分类支出排行',
-      left: 'center',
-      subtext: '支出金额排名',
-    },
     tooltip: {
       trigger: 'axis',
       axisPointer: {
@@ -309,7 +325,7 @@ const chartLoading = ref(false);
             收支趋势
           </h3>
           <div class="chart-subtitle">
-            {{ timeDimension === 'week' ? '周度' : '月度' }}趋势分析
+            {{ timeDimension === 'week' ? '周度' : timeDimension === 'year' ? '年度' : '月度' }}趋势分析
           </div>
         </div>
 
@@ -344,10 +360,23 @@ const chartLoading = ref(false);
       <div class="chart-card">
         <div class="chart-header">
           <h3 class="chart-title">
-            分类统计
+            {{ categoryTypeName }}分类统计
           </h3>
-          <div class="chart-subtitle">
-            支出分类占比
+          <div class="chart-controls">
+            <div class="control-group">
+              <label class="control-label">分类类型:</label>
+              <select v-model="categoryType" class="control-select">
+                <option value="expense">
+                  支出
+                </option>
+                <option value="income">
+                  收入
+                </option>
+                <option value="transfer">
+                  转账
+                </option>
+              </select>
+            </div>
           </div>
         </div>
 
@@ -359,7 +388,7 @@ const chartLoading = ref(false);
             </div>
           </div>
 
-          <div v-else-if="topCategories.length === 0" class="chart-empty">
+          <div v-else-if="currentCategories.length === 0" class="chart-empty">
             <div class="empty-icon">
               🥧
             </div>
@@ -382,10 +411,23 @@ const chartLoading = ref(false);
       <div class="chart-card full-width">
         <div class="chart-header">
           <h3 class="chart-title">
-            分类支出排行
+            {{ categoryTypeName }}分类排行
           </h3>
-          <div class="chart-subtitle">
-            支出金额排名
+          <div class="chart-controls">
+            <div class="control-group">
+              <label class="control-label">分类类型:</label>
+              <select v-model="categoryType" class="control-select">
+                <option value="expense">
+                  支出
+                </option>
+                <option value="income">
+                  收入
+                </option>
+                <option value="transfer">
+                  转账
+                </option>
+              </select>
+            </div>
           </div>
         </div>
 
@@ -397,7 +439,7 @@ const chartLoading = ref(false);
             </div>
           </div>
 
-          <div v-else-if="topCategories.length === 0" class="chart-empty">
+          <div v-else-if="currentCategories.length === 0" class="chart-empty">
             <div class="empty-icon">
               📊
             </div>
@@ -449,7 +491,44 @@ const chartLoading = ref(false);
 }
 
 .chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 1rem;
+}
+
+.chart-controls {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.control-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.control-label {
+  font-size: 0.875rem;
+  color: var(--color-neutral);
+  font-weight: 500;
+}
+
+.control-select {
+  padding: 0.375rem 0.75rem;
+  border: 1px solid var(--color-base-300);
+  border-radius: 0.375rem;
+  background: var(--color-base-100);
+  color: var(--color-accent-content);
+  font-size: 0.875rem;
+  min-width: 100px;
+}
+
+.control-select:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(var(--color-primary-rgb), 0.1);
 }
 
 .chart-title {
