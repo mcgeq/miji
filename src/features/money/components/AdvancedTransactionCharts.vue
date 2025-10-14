@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import VChart from 'vue-echarts';
+import { lowercaseFirstLetter } from '@/utils/common';
 import { chartUtils, defaultTheme, initECharts } from '@/utils/echarts';
 
 const props = defineProps<Props>();
+
+const { t } = useI18n();
 
 // 初始化ECharts
 initECharts();
@@ -262,6 +265,11 @@ const categoryPieOption = computed(() => {
   const amounts = currentCategories.value.slice(0, 8).map(cat => cat.amount);
   const totalAmount = amounts.reduce((sum, amount) => sum + amount, 0);
 
+  // 国际化分类名称
+  const internationalizedCategories = categories.map(category =>
+    t(`common.categories.${lowercaseFirstLetter(category)}`),
+  );
+
   return {
     ...defaultTheme,
     tooltip: {
@@ -275,7 +283,7 @@ const categoryPieOption = computed(() => {
       orient: 'vertical',
       left: 'left',
       top: 'middle',
-      data: categories,
+      data: internationalizedCategories,
       itemWidth: 12,
       itemHeight: 12,
     },
@@ -313,9 +321,9 @@ const categoryPieOption = computed(() => {
         labelLine: {
           show: true,
         },
-        data: categories.map((category, index) => ({
+        data: categories.map((_category, index) => ({
           value: amounts[index],
-          name: category,
+          name: internationalizedCategories[index],
           itemStyle: {
             color: chartUtils.getColor(index),
           },
@@ -333,6 +341,11 @@ const categoryBarOption = computed(() => {
   const categories = currentCategories.value.slice(0, 10).map(cat => cat.category);
   const amounts = currentCategories.value.slice(0, 10).map(cat => cat.amount);
   const totalAmount = amounts.reduce((sum, amount) => sum + amount, 0);
+
+  // 国际化分类名称
+  const internationalizedCategories = categories.map(category =>
+    t(`common.categories.${lowercaseFirstLetter(category)}`),
+  );
 
   return {
     ...defaultTheme,
@@ -364,7 +377,7 @@ const categoryBarOption = computed(() => {
     },
     yAxis: {
       type: 'category',
-      data: categories,
+      data: internationalizedCategories,
       axisLabel: {
         formatter: (value: string) => {
           return value.length > 8 ? `${value.substring(0, 8)}...` : value;
@@ -377,6 +390,7 @@ const categoryBarOption = computed(() => {
         type: 'bar',
         data: amounts.map((amount, index) => ({
           value: amount,
+          name: internationalizedCategories[index], // 添加对应的国际化名称
           itemStyle: {
             color: chartUtils.getColor(index),
           },
@@ -402,6 +416,11 @@ const categoryBarOption = computed(() => {
 const radarOption = computed(() => {
   const categories = currentCategories.value.slice(0, 6).map(cat => cat.category);
   const amounts = currentCategories.value.slice(0, 6).map(cat => cat.amount);
+
+  // 国际化分类名称
+  const internationalizedCategories = categories.map(category =>
+    t(`common.categories.${lowercaseFirstLetter(category)}`),
+  );
   const maxAmount = Math.max(...amounts);
 
   // 计算合适的最大值，确保ticks可读
@@ -452,7 +471,7 @@ const radarOption = computed(() => {
       top: 30,
     },
     radar: {
-      indicator: categories.map(category => ({
+      indicator: internationalizedCategories.map(category => ({
         name: category,
         min: 0, // 明确设置最小值
         max: adjustedMax,

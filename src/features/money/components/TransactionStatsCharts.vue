@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import VChart from 'vue-echarts';
+import { lowercaseFirstLetter } from '@/utils/common';
 import { chartUtils, defaultTheme, initECharts } from '@/utils/echarts';
 
 const props = defineProps<Props>();
+
+const { t } = useI18n();
 
 // 初始化ECharts
 initECharts();
@@ -178,6 +181,11 @@ const categoryChartOption = computed(() => {
   const amounts = currentCategories.value.slice(0, 8).map(cat => cat.amount);
   const totalAmount = amounts.reduce((sum, amount) => sum + amount, 0);
 
+  // 国际化分类名称
+  const internationalizedCategories = categories.map(category =>
+    t(`common.categories.${lowercaseFirstLetter(category)}`),
+  );
+
   return {
     ...defaultTheme,
     tooltip: {
@@ -191,7 +199,7 @@ const categoryChartOption = computed(() => {
       orient: 'vertical',
       left: 'left',
       top: 'middle',
-      data: categories,
+      data: internationalizedCategories,
       itemWidth: 12,
       itemHeight: 12,
     },
@@ -227,9 +235,9 @@ const categoryChartOption = computed(() => {
         labelLine: {
           show: false,
         },
-        data: categories.map((category, index) => ({
+        data: categories.map((_category, index) => ({
           value: amounts[index],
-          name: category,
+          name: internationalizedCategories[index],
           itemStyle: {
             color: chartUtils.getColor(index),
           },
@@ -246,6 +254,11 @@ const categoryBarOption = computed(() => {
   const categories = currentCategories.value.slice(0, 10).map(cat => cat.category);
   const amounts = currentCategories.value.slice(0, 10).map(cat => cat.amount);
   const totalAmount = amounts.reduce((sum, amount) => sum + amount, 0);
+
+  // 国际化分类名称
+  const internationalizedCategories = categories.map(category =>
+    t(`common.categories.${lowercaseFirstLetter(category)}`),
+  );
 
   return {
     ...defaultTheme,
@@ -277,7 +290,7 @@ const categoryBarOption = computed(() => {
     },
     yAxis: {
       type: 'category',
-      data: categories,
+      data: internationalizedCategories,
       axisLabel: {
         formatter: (value: string) => {
           return value.length > 6 ? `${value.substring(0, 6)}...` : value;
@@ -290,6 +303,7 @@ const categoryBarOption = computed(() => {
         type: 'bar',
         data: amounts.map((amount, index) => ({
           value: amount,
+          name: internationalizedCategories[index], // 添加对应的国际化名称
           itemStyle: {
             color: chartUtils.getColor(index),
           },
