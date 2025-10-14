@@ -408,17 +408,39 @@ const radarOption = computed(() => {
   const calculateMax = (value: number) => {
     if (value <= 0) return 100;
     if (value <= 50) return 100;
-    if (value <= 100) return 200;
-    if (value <= 200) return 300;
+    if (value <= 100) return 150;
+    if (value <= 200) return 250;
     if (value <= 500) return 600;
     if (value <= 1000) return 1200;
-    return Math.ceil(value * 1.2);
+    if (value <= 5000) return Math.ceil(value * 1.2);
+    if (value <= 10000) return Math.ceil(value * 1.1);
+    if (value <= 50000) return Math.ceil(value * 1.05);
+    // 对于超大数值，使用更保守的倍数
+    return Math.ceil(value * 1.02);
   };
 
   const adjustedMax = calculateMax(maxAmount);
 
+  // 根据最大值动态设置splitNumber，确保刻度可读
+  const getSplitNumber = (max: number) => {
+    if (max <= 100) return 5;
+    if (max <= 200) return 4;
+    if (max <= 300) return 3;
+    if (max <= 500) return 4;
+    if (max <= 600) return 3;
+    if (max <= 1000) return 4;
+    if (max <= 2000) return 4;
+    if (max <= 5000) return 5;
+    if (max <= 10000) return 4;
+    if (max <= 20000) return 4;
+    if (max <= 50000) return 5;
+    // 对于超大数值，使用更少的分割数
+    return 4;
+  };
+
   return {
     ...defaultTheme,
+    silent: true, // 抑制ECharts警告
     tooltip: {
       trigger: 'item',
       formatter: (params: any) => {
@@ -432,10 +454,12 @@ const radarOption = computed(() => {
     radar: {
       indicator: categories.map(category => ({
         name: category,
+        min: 0, // 明确设置最小值
         max: adjustedMax,
       })),
       radius: '60%',
-      splitNumber: 4, // 减少分割数，避免ticks过密
+      splitNumber: getSplitNumber(adjustedMax), // 动态设置分割数
+      alignTicks: false, // 禁用alignTicks避免ticks警告
       splitLine: {
         lineStyle: {
           color: '#e5e7eb',
@@ -443,6 +467,33 @@ const radarOption = computed(() => {
       },
       splitArea: {
         show: false, // 隐藏分割区域
+      },
+      axisName: {
+        color: '#666',
+        fontSize: 12,
+      },
+      axisLine: {
+        show: true,
+        lineStyle: {
+          color: '#e5e7eb',
+        },
+      },
+      axisTick: {
+        show: false, // 隐藏刻度线
+      },
+      axisLabel: {
+        show: true,
+        color: '#666',
+        fontSize: 10,
+        formatter: (value: number) => {
+          // 格式化大数值显示
+          if (value >= 10000) {
+            return `${(value / 10000).toFixed(1)}万`;
+          } else if (value >= 1000) {
+            return `${(value / 1000).toFixed(1)}k`;
+          }
+          return value.toString();
+        },
       },
     },
     series: [
