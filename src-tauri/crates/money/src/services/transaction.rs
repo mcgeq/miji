@@ -1334,9 +1334,29 @@ impl TransactionService {
             .query_income_and_expense(db, start_date.clone(), end_date.clone())
             .await?;
 
-        // 获取交易列表用于统计
-        let transactions = entity::transactions::Entity::find()
+        // 获取交易列表用于统计（现在主要用于分类统计，交易笔数使用all_transactions）
+        let _transactions = entity::transactions::Entity::find()
             .filter(base_condition.clone())
+            .all(db)
+            .await
+            .map_err(AppError::from)?;
+
+        // 获取全部交易笔数（不受分类类型筛选影响）
+        let mut all_transactions_condition = Condition::all()
+            .add(TransactionColumn::IsDeleted.eq(false))
+            .add(TransactionColumn::Date.gte(&start_date))
+            .add(TransactionColumn::Date.lte(&end_date));
+        
+        // 添加非分类相关的筛选条件
+        if let Some(account_serial_num) = &request.account_serial_num {
+            all_transactions_condition = all_transactions_condition.add(TransactionColumn::AccountSerialNum.eq(account_serial_num));
+        }
+        if let Some(currency) = &request.currency {
+            all_transactions_condition = all_transactions_condition.add(TransactionColumn::Currency.eq(currency));
+        }
+        
+        let all_transactions = entity::transactions::Entity::find()
+            .filter(all_transactions_condition)
             .all(db)
             .await
             .map_err(AppError::from)?;
@@ -1346,7 +1366,8 @@ impl TransactionService {
         // 转账总额只计算支出部分，避免重复计算（转账会产生支出和收入两笔记录）
         let total_transfer = income_expense.transfer.expense;
         let net_income = total_income - total_expense;
-        let transaction_count = transactions.len() as i32;
+        // 交易笔数使用全部交易的笔数，不受分类类型筛选影响
+        let transaction_count = all_transactions.len() as i32;
         let average_transaction = if transaction_count > 0 {
             (total_income + total_expense) / Decimal::from(transaction_count)
         } else {
