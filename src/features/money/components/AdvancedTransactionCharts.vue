@@ -812,6 +812,9 @@ const radarOption = computed(() => {
 }
 
 .chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 1rem;
 }
 
@@ -831,7 +834,6 @@ const radarOption = computed(() => {
   display: flex;
   gap: 1rem;
   align-items: center;
-  margin-top: 0.5rem;
 }
 
 .control-group {
