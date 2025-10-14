@@ -53,6 +53,18 @@ const presetRanges = [
     }),
   },
   {
+    label: '上周',
+    value: 'lastWeek',
+    getRange: () => {
+      const lastWeek = new Date();
+      lastWeek.setDate(lastWeek.getDate() - 7);
+      return {
+        start: DateUtils.formatDateFromDate(DateUtils.getStartOfWeek(lastWeek)),
+        end: DateUtils.formatDateFromDate(DateUtils.getEndOfWeek(lastWeek)),
+      };
+    },
+  },
+  {
     label: '本月',
     value: 'thisMonth',
     getRange: () => ({
