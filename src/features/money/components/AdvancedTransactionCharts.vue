@@ -26,6 +26,8 @@ interface Props {
   monthlyTrends: ChartData[];
   weeklyTrends: ChartData[];
   topCategories: CategoryData[];
+  topIncomeCategories?: CategoryData[];
+  topTransferCategories?: CategoryData[];
   timeDimension: 'year' | 'month' | 'week';
   loading: boolean;
 }
@@ -33,6 +35,9 @@ interface Props {
 // 图表类型切换
 const chartType = ref<'bar' | 'line' | 'area'>('bar');
 const showNetIncome = ref(true);
+
+// 分类类型切换
+const categoryType = ref<'expense' | 'income' | 'transfer'>('expense');
 
 // 计算属性
 const currentTrends = computed(() => {
@@ -43,6 +48,32 @@ const currentTrends = computed(() => {
     case 'year':
     default:
       return props.monthlyTrends;
+  }
+});
+
+// 根据分类类型获取相应的分类数据
+const currentCategories = computed(() => {
+  switch (categoryType.value) {
+    case 'income':
+      return props.topIncomeCategories || [];
+    case 'transfer':
+      return props.topTransferCategories || [];
+    case 'expense':
+    default:
+      return props.topCategories;
+  }
+});
+
+// 获取分类类型的显示名称
+const categoryTypeName = computed(() => {
+  switch (categoryType.value) {
+    case 'income':
+      return '收入';
+    case 'transfer':
+      return '转账';
+    case 'expense':
+    default:
+      return '支出';
   }
 });
 
@@ -227,14 +258,14 @@ const trendChartOption = computed(() => {
 
 // 分类饼图配置
 const categoryPieOption = computed(() => {
-  const categories = props.topCategories.slice(0, 8).map(cat => cat.category);
-  const amounts = props.topCategories.slice(0, 8).map(cat => cat.amount);
+  const categories = currentCategories.value.slice(0, 8).map(cat => cat.category);
+  const amounts = currentCategories.value.slice(0, 8).map(cat => cat.amount);
   const totalAmount = amounts.reduce((sum, amount) => sum + amount, 0);
 
   return {
     ...defaultTheme,
     title: {
-      text: '支出分类占比',
+      text: `${categoryTypeName.value}分类占比`,
       left: 'center',
       subtext: '饼图展示',
     },
@@ -255,7 +286,7 @@ const categoryPieOption = computed(() => {
     },
     series: [
       {
-        name: '支出分类',
+        name: `${categoryTypeName.value}分类`,
         type: 'pie',
         radius: ['30%', '70%'],
         center: ['60%', '50%'],
@@ -304,14 +335,14 @@ const categoryPieOption = computed(() => {
 
 // 分类环形图配置
 const categoryDoughnutOption = computed(() => {
-  const categories = props.topCategories.slice(0, 6).map(cat => cat.category);
-  const amounts = props.topCategories.slice(0, 6).map(cat => cat.amount);
+  const categories = currentCategories.value.slice(0, 6).map(cat => cat.category);
+  const amounts = currentCategories.value.slice(0, 6).map(cat => cat.amount);
   const totalAmount = amounts.reduce((sum, amount) => sum + amount, 0);
 
   return {
     ...defaultTheme,
     title: {
-      text: '支出分类分布',
+      text: `${categoryTypeName.value}分类分布`,
       left: 'center',
       subtext: '环形图展示',
     },
@@ -376,14 +407,14 @@ const categoryDoughnutOption = computed(() => {
 
 // 分类条形图配置
 const categoryBarOption = computed(() => {
-  const categories = props.topCategories.slice(0, 10).map(cat => cat.category);
-  const amounts = props.topCategories.slice(0, 10).map(cat => cat.amount);
+  const categories = currentCategories.value.slice(0, 10).map(cat => cat.category);
+  const amounts = currentCategories.value.slice(0, 10).map(cat => cat.amount);
   const totalAmount = amounts.reduce((sum, amount) => sum + amount, 0);
 
   return {
     ...defaultTheme,
     title: {
-      text: '分类支出排行',
+      text: `分类${categoryTypeName.value}排行`,
       left: 'center',
       subtext: '横向条形图',
     },
@@ -451,8 +482,8 @@ const categoryBarOption = computed(() => {
 
 // 雷达图配置
 const radarOption = computed(() => {
-  const categories = props.topCategories.slice(0, 6).map(cat => cat.category);
-  const amounts = props.topCategories.slice(0, 6).map(cat => cat.amount);
+  const categories = currentCategories.value.slice(0, 6).map(cat => cat.category);
+  const amounts = currentCategories.value.slice(0, 6).map(cat => cat.amount);
   const maxAmount = Math.max(...amounts);
 
   // 计算合适的最大值，确保ticks可读
@@ -471,7 +502,7 @@ const radarOption = computed(() => {
   return {
     ...defaultTheme,
     title: {
-      text: '分类支出雷达图',
+      text: `分类${categoryTypeName.value}雷达图`,
       left: 'center',
       subtext: '多维度分析',
     },
@@ -482,7 +513,7 @@ const radarOption = computed(() => {
       },
     },
     legend: {
-      data: ['支出分布'],
+      data: [`${categoryTypeName.value}分布`],
       top: 30,
     },
     radar: {
@@ -503,12 +534,12 @@ const radarOption = computed(() => {
     },
     series: [
       {
-        name: '支出分布',
+        name: `${categoryTypeName.value}分布`,
         type: 'radar',
         data: [
           {
             value: amounts,
-            name: '支出分布',
+            name: `${categoryTypeName.value}分布`,
             itemStyle: {
               color: chartUtils.getColor(0),
             },
@@ -593,6 +624,22 @@ const radarOption = computed(() => {
           <div class="chart-subtitle">
             饼图展示
           </div>
+          <div class="chart-controls">
+            <div class="control-group">
+              <label class="control-label">分类类型:</label>
+              <select v-model="categoryType" class="control-select">
+                <option value="expense">
+                  支出
+                </option>
+                <option value="income">
+                  收入
+                </option>
+                <option value="transfer">
+                  转账
+                </option>
+              </select>
+            </div>
+          </div>
         </div>
 
         <div class="chart-content">
@@ -603,7 +650,7 @@ const radarOption = computed(() => {
             </div>
           </div>
 
-          <div v-else-if="topCategories.length === 0" class="chart-empty">
+          <div v-else-if="currentCategories.length === 0" class="chart-empty">
             <div class="empty-icon">
               🥧
             </div>
@@ -640,7 +687,7 @@ const radarOption = computed(() => {
             </div>
           </div>
 
-          <div v-else-if="topCategories.length === 0" class="chart-empty">
+          <div v-else-if="currentCategories.length === 0" class="chart-empty">
             <div class="empty-icon">
               🍩
             </div>
@@ -677,7 +724,7 @@ const radarOption = computed(() => {
             </div>
           </div>
 
-          <div v-else-if="topCategories.length === 0" class="chart-empty">
+          <div v-else-if="currentCategories.length === 0" class="chart-empty">
             <div class="empty-icon">
               📊
             </div>
@@ -714,7 +761,7 @@ const radarOption = computed(() => {
             </div>
           </div>
 
-          <div v-else-if="topCategories.length === 0" class="chart-empty">
+          <div v-else-if="currentCategories.length === 0" class="chart-empty">
             <div class="empty-icon">
               🕸
             </div>

@@ -1343,6 +1343,7 @@ impl TransactionService {
 
         let total_income = income_expense.income.total;
         let total_expense = income_expense.expense.total;
+        let total_transfer = income_expense.transfer.income + income_expense.transfer.expense;
         let net_income = total_income - total_expense;
         let transaction_count = transactions.len() as i32;
         let average_transaction = if transaction_count > 0 {
@@ -1364,6 +1365,16 @@ impl TransactionService {
             .get_category_stats(db, &base_condition, &total_expense)
             .await?;
 
+        // 获取收入分类统计
+        let top_income_categories = self
+            .get_income_category_stats(db, &base_condition, &total_income)
+            .await?;
+
+        // 获取转账分类统计
+        let top_transfer_categories = self
+            .get_transfer_category_stats(db, &base_condition, &total_transfer)
+            .await?;
+
         // 按时间维度统计趋势
         let monthly_trends = self
             .get_monthly_trends(db, &start_date, &end_date, &base_condition)
@@ -1375,6 +1386,8 @@ impl TransactionService {
         Ok(TransactionStatsResponse {
             summary,
             top_categories,
+            top_income_categories,
+            top_transfer_categories,
             monthly_trends,
             weekly_trends,
         })
@@ -1408,6 +1421,92 @@ impl TransactionService {
         for stats in category_stats {
             let percentage = if *total_expense > Decimal::ZERO {
                 (stats.amount / *total_expense) * Decimal::from(100)
+            } else {
+                Decimal::ZERO
+            };
+
+            result.push(CategoryStats {
+                category: stats.category,
+                amount: stats.amount,
+                count: stats.count as i32,
+                percentage,
+            });
+        }
+
+        Ok(result)
+    }
+
+    /// 获取收入分类统计
+    async fn get_income_category_stats(
+        &self,
+        db: &DatabaseConnection,
+        base_condition: &Condition,
+        total_income: &Decimal,
+    ) -> MijiResult<Vec<CategoryStats>> {
+        let mut condition = base_condition.clone();
+        condition = condition.add(TransactionColumn::TransactionType.eq("Income"));
+
+        let category_stats = entity::transactions::Entity::find()
+            .select_only()
+            .column(TransactionColumn::Category)
+            .expr_as(Expr::col(TransactionColumn::Amount).sum(), "amount")
+            .expr_as(Expr::col(TransactionColumn::SerialNum).count(), "count")
+            .filter(condition)
+            .group_by(TransactionColumn::Category)
+            .order_by_desc(Expr::col(TransactionColumn::Amount).sum())
+            .limit(10)
+            .into_model::<CategoryStatsRaw>()
+            .all(db)
+            .await
+            .map_err(AppError::from)?;
+
+        let mut result = Vec::new();
+        for stats in category_stats {
+            let percentage = if *total_income > Decimal::ZERO {
+                (stats.amount / *total_income) * Decimal::from(100)
+            } else {
+                Decimal::ZERO
+            };
+
+            result.push(CategoryStats {
+                category: stats.category,
+                amount: stats.amount,
+                count: stats.count as i32,
+                percentage,
+            });
+        }
+
+        Ok(result)
+    }
+
+    /// 获取转账分类统计
+    async fn get_transfer_category_stats(
+        &self,
+        db: &DatabaseConnection,
+        base_condition: &Condition,
+        total_transfer: &Decimal,
+    ) -> MijiResult<Vec<CategoryStats>> {
+        let mut condition = base_condition.clone();
+        condition = condition.add(TransactionColumn::TransactionType.eq("Transfer"));
+
+        let category_stats = entity::transactions::Entity::find()
+            .select_only()
+            .column(TransactionColumn::Category)
+            .expr_as(Expr::col(TransactionColumn::Amount).sum(), "amount")
+            .expr_as(Expr::col(TransactionColumn::SerialNum).count(), "count")
+            .filter(condition)
+            .group_by(TransactionColumn::Category)
+            .order_by_desc(Expr::col(TransactionColumn::Amount).sum())
+            .limit(10)
+            .into_model::<CategoryStatsRaw>()
+            .all(db)
+            .await
+            .map_err(AppError::from)?;
+
+        let mut result = Vec::new();
+        for stats in category_stats {
+            let percentage = if *total_transfer > Decimal::ZERO {
+                (stats.amount / *total_transfer) * Decimal::from(100)
             } else {
                 Decimal::ZERO
             };

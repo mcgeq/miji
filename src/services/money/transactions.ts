@@ -48,6 +48,8 @@ export interface TimeTrendStats {
 export interface TransactionStatsResponse {
   summary: TransactionStatsSummary;
   topCategories: CategoryStats[];
+  topIncomeCategories: CategoryStats[];
+  topTransferCategories: CategoryStats[];
   monthlyTrends: TimeTrendStats[];
   weeklyTrends: TimeTrendStats[];
 }

@@ -115,6 +115,8 @@ pub struct TimeTrendStats {
 pub struct TransactionStatsResponse {
     pub summary: TransactionStatsSummary,
     pub top_categories: Vec<CategoryStats>,
+    pub top_income_categories: Vec<CategoryStats>,
+    pub top_transfer_categories: Vec<CategoryStats>,
     pub monthly_trends: Vec<TimeTrendStats>,
     pub weekly_trends: Vec<TimeTrendStats>,
 }

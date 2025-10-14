@@ -21,6 +21,8 @@ const statsData = ref({
   transactionCount: 0,
   averageTransaction: 0,
   topCategories: [] as Array<{ category: string; amount: number; count: number; percentage: number }>,
+  topIncomeCategories: [] as Array<{ category: string; amount: number; count: number; percentage: number }>,
+  topTransferCategories: [] as Array<{ category: string; amount: number; count: number; percentage: number }>,
   monthlyTrends: [] as Array<{ month: string; income: number; expense: number; netIncome: number }>,
   weeklyTrends: [] as Array<{ week: string; income: number; expense: number; netIncome: number }>,
 });
@@ -93,6 +95,18 @@ async function loadStatsData() {
       transactionCount: Number(response.summary.transactionCount) || 0,
       averageTransaction: Number(response.summary.averageTransaction) || 0,
       topCategories: response.topCategories.map(cat => ({
+        category: cat.category,
+        amount: Number(cat.amount) || 0,
+        count: Number(cat.count) || 0,
+        percentage: Number(cat.percentage) || 0,
+      })),
+      topIncomeCategories: response.topIncomeCategories.map(cat => ({
+        category: cat.category,
+        amount: Number(cat.amount) || 0,
+        count: Number(cat.count) || 0,
+        percentage: Number(cat.percentage) || 0,
+      })),
+      topTransferCategories: response.topTransferCategories.map(cat => ({
         category: cat.category,
         amount: Number(cat.amount) || 0,
         count: Number(cat.count) || 0,
@@ -212,6 +226,8 @@ onMounted(() => {
         :monthly-trends="statsData.monthlyTrends"
         :weekly-trends="statsData.weeklyTrends"
         :top-categories="statsData.topCategories"
+        :top-income-categories="statsData.topIncomeCategories"
+        :top-transfer-categories="statsData.topTransferCategories"
         :time-dimension="filters.timeDimension"
         :loading="loading"
       />
