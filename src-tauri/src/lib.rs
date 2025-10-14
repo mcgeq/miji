@@ -104,19 +104,18 @@ pub fn run() {
 
             // 6. 管理应用状态
             app.manage(app_state.clone());
-            
+
             #[cfg(desktop)]
             {
-                let cloned_handle = app_handle.clone();
                 tauri::async_runtime::spawn(setup(cloned_handle));
             }
-            
+
             #[cfg(any(target_os = "android", target_os = "ios"))]
             {
                 let cloned_handle = app_handle.clone();
                 tauri::async_runtime::spawn(setup(cloned_handle));
             }
-            
+
             Ok(())
         })
         .run(tauri::generate_context!())

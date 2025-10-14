@@ -656,37 +656,68 @@ function getCategoryIcon(category: string) {
   }
 
   .table-header {
-    flex-direction: column;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
     gap: 1rem;
-    align-items: flex-start;
     padding: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .table-title {
+    font-size: 1rem;
+    white-space: nowrap;
+    flex-shrink: 0;
   }
 
   .table-controls {
-    width: 100%;
-    justify-content: flex-start;
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
   }
 
   .control-group {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.25rem;
-    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .control-label {
+    display: none; /* 移动端隐藏标签 */
   }
 
   .control-select {
-    width: 100%;
-    max-width: 200px;
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+    min-width: 80px;
+    max-width: 100px;
   }
 
   .table-summary {
-    flex-direction: column;
-    gap: 0.5rem;
-    width: 100%;
+    display: flex;
+    flex-direction: row;
+    gap: 1rem;
+    align-items: center;
+    margin-left: auto;
+    flex-shrink: 0;
   }
 
   .summary-item {
-    justify-content: space-between;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    white-space: nowrap;
+  }
+
+  .summary-label {
+    font-size: 0.75rem;
+    color: var(--color-neutral);
+  }
+
+  .summary-value {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--color-accent-content);
   }
 
   .stats-table th,
@@ -737,10 +768,42 @@ function getCategoryIcon(category: string) {
 @media (max-width: 480px) {
   .table-header {
     padding: 0.75rem;
+    gap: 0.5rem;
+    flex-wrap: wrap;
   }
 
   .table-title {
-    font-size: 1rem;
+    font-size: 0.875rem;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .table-controls {
+    flex-shrink: 0;
+  }
+
+  .control-select {
+    font-size: 0.625rem;
+    padding: 0.125rem 0.25rem;
+    min-width: 70px;
+    max-width: 80px;
+  }
+
+  .table-summary {
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .summary-item {
+    gap: 0.125rem;
+  }
+
+  .summary-label {
+    font-size: 0.625rem;
+  }
+
+  .summary-value {
+    font-size: 0.625rem;
   }
 
   .stats-table th,
