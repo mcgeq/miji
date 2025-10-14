@@ -15,8 +15,8 @@ const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test
 );
 
 const form = reactive({
-  email: '',
-  password: '',
+  email: 'miji@miji.com',
+  password: 'miji@4321QW',
 });
 
 const rememberMe = ref(true);

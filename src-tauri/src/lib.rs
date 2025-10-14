@@ -12,6 +12,7 @@ mod commands;
 #[cfg(any(target_os = "android", target_os = "ios"))]
 mod mobiles;
 mod plugins;
+mod default_user;
 
 #[cfg(desktop)]
 use desktops::init;
@@ -37,6 +38,7 @@ use tokio::{
 };
 
 use crate::commands::set_complete;
+use crate::default_user::create_default_user;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -119,6 +121,14 @@ async fn setup(app: AppHandle) -> Result<(), ()> {
     // Fake performing some heavy action for 3 seconds
     eprintln!("Performing really heavy backend setup task...");
     sleep(Duration::from_secs(3)).await;
+    
+    // 创建默认用户
+    let app_state = app.state::<AppState>();
+    if let Err(e) = create_default_user(&app_state.db).await {
+        eprintln!("Failed to create default user: {}", e);
+        // 不返回错误，让应用继续启动
+    }
+    
     eprintln!("Backend setup task completed!");
     // Set the backend task as being completed
     // Commands can be ran as regular functions as long as you take
