@@ -328,73 +328,6 @@ const categoryPieOption = computed(() => {
   };
 });
 
-// 分类环形图配置
-const categoryDoughnutOption = computed(() => {
-  const categories = currentCategories.value.slice(0, 6).map(cat => cat.category);
-  const amounts = currentCategories.value.slice(0, 6).map(cat => cat.amount);
-  const totalAmount = amounts.reduce((sum, amount) => sum + amount, 0);
-
-  return {
-    ...defaultTheme,
-    tooltip: {
-      trigger: 'item',
-      formatter: (params: any) => {
-        const percentage = ((params.value / totalAmount) * 100).toFixed(2);
-        return `${params.name}<br/>金额: ¥${params.value.toFixed(2)}<br/>占比: ${percentage}%`;
-      },
-    },
-    series: [
-      {
-        name: '支出分类',
-        type: 'pie',
-        radius: ['50%', '80%'],
-        center: ['50%', '50%'],
-        avoidLabelOverlap: false,
-        itemStyle: {
-          borderRadius: 10,
-          borderColor: '#fff',
-          borderWidth: 3,
-        },
-        label: {
-          show: true,
-          position: 'outside',
-          formatter: '{b}\n{d}%',
-          fontSize: 11,
-          fontWeight: 'bold',
-        },
-        emphasis: {
-          label: {
-            show: true,
-            fontSize: '18',
-            fontWeight: 'bold',
-            formatter: '{b}\n{c}',
-          },
-          itemStyle: {
-            shadowBlur: 20,
-            shadowOffsetX: 0,
-            shadowColor: 'rgba(0, 0, 0, 0.5)',
-          },
-        },
-        labelLine: {
-          show: true,
-          length: 15,
-          length2: 10,
-        },
-        data: categories.map((category, index) => ({
-          value: amounts[index],
-          name: category,
-          itemStyle: {
-            color: chartUtils.getColor(index),
-          },
-        })),
-        animationType: 'scale',
-        animationEasing: 'elasticOut' as const,
-        animationDelay: (_idx: number) => Math.random() * 200,
-      },
-    ],
-  };
-});
-
 // 分类条形图配置
 const categoryBarOption = computed(() => {
   const categories = currentCategories.value.slice(0, 10).map(cat => cat.category);
@@ -596,7 +529,7 @@ const radarOption = computed(() => {
       </div>
 
       <!-- 分类饼图 -->
-      <div class="chart-card">
+      <div class="chart-card full-width">
         <div class="chart-header">
           <h3 class="chart-title">
             分类占比
@@ -639,40 +572,6 @@ const radarOption = computed(() => {
           <VChart
             v-else
             :option="categoryPieOption"
-            class="chart"
-            autoresize
-          />
-        </div>
-      </div>
-
-      <!-- 分类环形图 -->
-      <div class="chart-card">
-        <div class="chart-header">
-          <h3 class="chart-title">
-            分类分布
-          </h3>
-        </div>
-
-        <div class="chart-content">
-          <div v-if="loading" class="chart-loading">
-            <div class="loading-spinner" />
-            <div class="loading-text">
-              加载中...
-            </div>
-          </div>
-
-          <div v-else-if="currentCategories.length === 0" class="chart-empty">
-            <div class="empty-icon">
-              🍩
-            </div>
-            <div class="empty-text">
-              暂无数据
-            </div>
-          </div>
-
-          <VChart
-            v-else
-            :option="categoryDoughnutOption"
             class="chart"
             autoresize
           />
