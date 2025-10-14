@@ -26,19 +26,7 @@ impl MigrationTrait for Migration {
                             .unique_key(),
                     )
                     .col(ColumnDef::new(Account::Description).string_len(1000).null())
-                    .col(ColumnDef::new(Account::Type).string().not_null().check(
-                        Expr::col(Account::Type).is_in(vec![
-                            "Savings",
-                            "Cash",
-                            "Bank",
-                            "CreditCard",
-                            "Investment",
-                            "Alipay",
-                            "WeChat",
-                            "CloudQuickPass",
-                            "Other",
-                        ]),
-                    ))
+                    .col(ColumnDef::new(Account::Type).string().not_null())
                     .col(
                         ColumnDef::new(Account::Balance)
                             .decimal_len(16, 4)

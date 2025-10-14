@@ -27,12 +27,7 @@ impl MigrationTrait for Migration {
                     .col(
                         ColumnDef::new(PeriodPmsSymptoms::SymptomType)
                             .string()
-                            .not_null()
-                            .check(Expr::col(PeriodPmsSymptoms::SymptomType).is_in(vec![
-                                "Pain",
-                                "Fatigue",
-                                "MoodSwing",
-                            ])),
+                            .not_null(),
                     )
                     .col(
                         ColumnDef::new(PeriodPmsSymptoms::Intensity)

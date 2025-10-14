@@ -70,11 +70,7 @@ impl MigrationTrait for Migration {
                         ColumnDef::new(BilReminder::Priority)
                             .string()
                             .not_null()
-                            .default("Low")
-                            .check(
-                                Expr::col(BilReminder::Priority)
-                                    .is_in(vec!["Low", "Medium", "High", "Urgent"]),
-                            ),
+                            .default("Low"),
                     )
                     .col(ColumnDef::new(BilReminder::AdvanceValue).integer().null())
                     .col(ColumnDef::new(BilReminder::AdvanceUnit).string().null())

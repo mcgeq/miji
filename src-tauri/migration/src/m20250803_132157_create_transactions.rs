@@ -33,12 +33,7 @@ impl MigrationTrait for Migration {
                         ColumnDef::new(Transactions::TransactionStatus)
                             .string()
                             .not_null()
-                            .default("Pending")
-                            .check(Expr::col(Transactions::TransactionStatus).is_in(vec![
-                                "Pending",
-                                "Completed",
-                                "Reversed",
-                            ])),
+                            .default("Pending"),
                     )
                     .col(
                         ColumnDef::new(Transactions::Date)
@@ -85,16 +80,7 @@ impl MigrationTrait for Migration {
                         ColumnDef::new(Transactions::PaymentMethod)
                             .string()
                             .not_null()
-                            .default("Cash")
-                            .check(Expr::col(Transactions::PaymentMethod).is_in(vec![
-                                "Savings",
-                                "Cash",
-                                "BankTransfer",
-                                "CreditCard",
-                                "WeChat",
-                                "Alipay",
-                                "Other",
-                            ])),
+                            .default("Cash"),
                     )
                     .col(
                         ColumnDef::new(Transactions::ActualPayerAccount)

@@ -40,24 +40,13 @@ impl MigrationTrait for Migration {
                         ColumnDef::new(Todo::Priority)
                             .string()
                             .not_null()
-                            .default("Low")
-                            .check(
-                                Expr::col(Todo::Priority)
-                                    .is_in(vec!["Low", "Medium", "High", "Urgent"]),
-                            ),
+                            .default("Low"),
                     )
                     .col(
                         ColumnDef::new(Todo::Status)
                             .string()
                             .not_null()
-                            .default("NotStarted")
-                            .check(Expr::col(Todo::Status).is_in(vec![
-                                "NotStarted",
-                                "InProgress",
-                                "Completed",
-                                "Cancelled",
-                                "Overdue",
-                            ])),
+                            .default("NotStarted"),
                     )
                     .col(ColumnDef::new(Todo::Repeat).string())
                     .col(ColumnDef::new(Todo::CompletedAt).timestamp_with_time_zone())

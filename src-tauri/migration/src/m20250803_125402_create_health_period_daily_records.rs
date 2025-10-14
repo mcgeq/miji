@@ -29,14 +29,7 @@ impl MigrationTrait for Migration {
                             .timestamp_with_time_zone()
                             .not_null(),
                     )
-                    .col(
-                        ColumnDef::new(PeriodDailyRecords::FlowLevel)
-                            .string()
-                            .check(
-                                Expr::col(PeriodDailyRecords::FlowLevel)
-                                    .is_in(vec!["Light", "Medium", "Heavy"]),
-                            ),
-                    )
+                    .col(ColumnDef::new(PeriodDailyRecords::FlowLevel).string())
                     .col(
                         ColumnDef::new(PeriodDailyRecords::ExerciseIntensity)
                             .string()
@@ -56,27 +49,14 @@ impl MigrationTrait for Migration {
                     .col(
                         ColumnDef::new(PeriodDailyRecords::ContraceptionMethod)
                             .string()
-                            .default("None")
-                            .check(
-                                Expr::col(PeriodDailyRecords::ContraceptionMethod)
-                                    .is_in(vec!["None", "Condom", "Pill", "Iud", "Other"]),
-                            ),
+                            .default("None"),
                     )
                     .col(
                         ColumnDef::new(PeriodDailyRecords::Diet)
                             .string_len(1000)
                             .not_null(),
                     )
-                    .col(ColumnDef::new(PeriodDailyRecords::Mood).string().check(
-                        Expr::col(PeriodDailyRecords::Mood).is_in(vec![
-                            "Happy",
-                            "Sad",
-                            "Angry",
-                            "Anxious",
-                            "Calm",
-                            "Irritable",
-                        ]),
-                    ))
+                    .col(ColumnDef::new(PeriodDailyRecords::Mood).string())
                     .col(
                         ColumnDef::new(PeriodDailyRecords::WaterIntake)
                             .integer()
