@@ -206,10 +206,16 @@ async function bootstrap() {
     }
     // 等待DOM准备就绪
     await waitForReady();
-    // 在移动端添加额外延迟确保资源加载完成
+
+    // 移动端优化：减少延迟，增加超时处理
     if (isMobile || isTauri) {
-      await new Promise(resolve => setTimeout(resolve, 200));
+      // 使用Promise.race确保不会无限等待
+      await Promise.race([
+        new Promise(resolve => setTimeout(resolve, 100)), // 减少到100ms
+        new Promise(resolve => setTimeout(resolve, 2000)), // 2秒超时
+      ]);
     }
+
     const app = createApp(App);
     const pinia = createPinia();
 
@@ -235,7 +241,21 @@ async function bootstrap() {
       rtl: false,
     });
 
-    await storeStart();
+    // 移动端优化：使用超时处理storeStart
+    if (isMobile) {
+      try {
+        await Promise.race([
+          storeStart(),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Store start timeout')), 3000)),
+        ]);
+      } catch (error) {
+        console.warn('Store start failed or timed out, continuing with app startup:', error);
+        // 继续启动应用，不阻塞
+      }
+    } else {
+      await storeStart();
+    }
+
     // Wait for i18n to initialize
     const i18n = await initI18n();
 
@@ -252,8 +272,10 @@ async function bootstrap() {
     // 发射应用准备完成事件给 Tauri 后端（仅桌面端）
     // 关闭启动画面
     if (isMobile) {
-      // 移动端：关闭前端启动画面
-      closeFrontendSplashscreen(frontendSplash);
+      // 移动端：延迟关闭前端启动画面，确保应用完全加载
+      setTimeout(() => {
+        closeFrontendSplashscreen(frontendSplash);
+      }, 500);
     }
   } catch (error) {
     console.error('Failed to bootstrap app:', error);

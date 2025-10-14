@@ -124,9 +124,18 @@ pub fn run() {
 
 // An async function that does some heavy setup task
 async fn setup(app: AppHandle) -> Result<(), ()> {
-    // Fake performing some heavy action for 3 seconds
-    eprintln!("Performing really heavy backend setup task...");
-    sleep(Duration::from_secs(3)).await;
+    // 在移动端减少初始化延迟
+    #[cfg(any(target_os = "android", target_os = "ios"))]
+    {
+        eprintln!("Performing mobile backend setup task...");
+        sleep(Duration::from_millis(500)).await; // 移动端减少到500ms
+    }
+    
+    #[cfg(not(any(target_os = "android", target_os = "ios")))]
+    {
+        eprintln!("Performing really heavy backend setup task...");
+        sleep(Duration::from_secs(3)).await; // 桌面端保持3秒
+    }
 
     // 创建默认用户
     let app_state = app.state::<AppState>();

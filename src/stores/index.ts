@@ -16,16 +16,39 @@ export async function storeStart() {
   isStarted = true;
 
   try {
+    // 检测是否为移动端
+    const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+      navigator.userAgent,
+    );
+
     // 获取 store 实例
     const authStore = useAuthStore();
     const localeStore = useLocaleStore();
 
-    // 初始化所有 stores 的持久化和同步
-    // saveOnChange: true 会自动处理状态变化的保存（使用防抖策略）
-    await Promise.all([
-      authStore.$tauri.start(),
-      localeStore.$tauri.start(),
-    ]);
+    // 移动端优化：使用超时处理，避免无限等待
+    if (isMobile) {
+      try {
+        await Promise.race([
+          Promise.all([
+            authStore.$tauri.start(),
+            localeStore.$tauri.start(),
+          ]),
+          new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('Store initialization timeout')), 2000),
+          ),
+        ]);
+      } catch (error) {
+        Lg.w('Store', 'Store initialization timed out or failed, continuing with fallback:', error);
+        // 移动端超时后继续，不阻塞应用启动
+        return;
+      }
+    } else {
+      // 桌面端正常初始化
+      await Promise.all([
+        authStore.$tauri.start(),
+        localeStore.$tauri.start(),
+      ]);
+    }
 
     Lg.i('Store', 'Stores initialized successfully');
     Lg.i('Store', 'Auth store loaded:', {
@@ -35,6 +58,12 @@ export async function storeStart() {
     });
   } catch (error) {
     Lg.e('Store', 'Store initialization failed:', error);
-    throw error;
+    // 移动端不抛出错误，让应用继续启动
+    const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+      navigator.userAgent,
+    );
+    if (!isMobile) {
+      throw error;
+    }
   }
 }

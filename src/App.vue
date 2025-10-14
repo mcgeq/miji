@@ -27,9 +27,17 @@ onMounted(async () => {
     // 但我们需要等待数据实际加载完成
     await nextTick();
 
-    // 给一个短暂的延迟，确保 Tauri 插件已经完成数据加载
-    // 这对移动端尤其重要，因为磁盘 I/O 可能较慢
-    await new Promise(resolve => setTimeout(resolve, 150));
+    // 移动端优化：减少延迟，使用超时处理
+    if (isMobile) {
+      // 移动端使用更短的延迟和超时处理
+      await Promise.race([
+        new Promise(resolve => setTimeout(resolve, 50)), // 减少到50ms
+        new Promise(resolve => setTimeout(resolve, 1000)), // 1秒超时
+      ]);
+    } else {
+      // 桌面端保持原有延迟
+      await new Promise(resolve => setTimeout(resolve, 150));
+    }
 
     Lg.i('App', 'Auth check - token:', authStore.token ? 'exists' : 'null', 'rememberMe:', authStore.rememberMe);
 
@@ -38,7 +46,23 @@ onMounted(async () => {
       await checkAndCleanSession();
     }
 
-    const auth = await isAuthenticated();
+    // 移动端优化：使用超时处理认证检查
+    let auth = false;
+    if (isMobile) {
+      try {
+        auth = await Promise.race([
+          isAuthenticated(),
+          new Promise<boolean>((_, reject) =>
+            setTimeout(() => reject(new Error('Auth check timeout')), 2000),
+          ),
+        ]);
+      } catch (error) {
+        Lg.w('App', 'Auth check timed out, assuming not authenticated:', error);
+        auth = false;
+      }
+    } else {
+      auth = await isAuthenticated();
+    }
 
     if (!auth && router.currentRoute.value.path !== '/auth/login') {
       toast.warning(t('messages.pleaseLogin'));
@@ -46,7 +70,10 @@ onMounted(async () => {
     }
   } catch (error) {
     Lg.e('App', error);
-    toast.error(t('messages.initFailed'));
+    // 移动端不显示错误提示，避免阻塞启动
+    if (!isMobile) {
+      toast.error(t('messages.initFailed'));
+    }
   } finally {
     isLoading.value = false;
   }

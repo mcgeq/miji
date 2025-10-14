@@ -28,7 +28,7 @@
         "enable": true,
         "scope": ["*/**"]
       },
-      "capabilities": ["default", "pinia"]
+      "capabilities": ["default", "pinia", "mobile-capability"]
     }
   },
   "bundle": {

@@ -3,5 +3,17 @@
   "identifier": "mobile-capability",
   "windows": ["main"],
   "platforms": ["iOS", "android"],
-  "permissions": []
+  "permissions": [
+    "core:default",
+    "opener:default",
+    "fs:default",
+    "notification:default",
+    "os:default",
+    "log:default",
+    "sql:default",
+    "sql:allow-execute",
+    "dialog:default",
+    "pinia:default",
+    "core:event:default"
+  ]
 }
