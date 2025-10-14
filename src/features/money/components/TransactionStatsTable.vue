@@ -109,7 +109,7 @@ function getCategoryIcon(category: string) {
       </h3>
       <div class="table-controls">
         <div class="control-group">
-          <label class="control-label">分类类型:</label>
+          <label class="control-label">交易类型:</label>
           <select v-model="categoryType" class="control-select">
             <option value="expense">
               支出

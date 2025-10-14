@@ -11,17 +11,17 @@ const { t } = useI18n();
 // 初始化ECharts
 initECharts();
 
-interface TopCategory {
-  category: string;
+interface TopPaymentMethod {
+  paymentMethod: string;
   amount: number;
   count: number;
   percentage: number;
 }
 
 interface Props {
-  topCategories: TopCategory[];
-  topIncomeCategories?: TopCategory[];
-  topTransferCategories?: TopCategory[];
+  topPaymentMethods: TopPaymentMethod[];
+  topIncomePaymentMethods?: TopPaymentMethod[];
+  topTransferPaymentMethods?: TopPaymentMethod[];
   transactionType?: string;
   loading: boolean;
 }
@@ -29,39 +29,39 @@ interface Props {
 // 图表类型切换
 const chartViewType = ref<'pie' | 'bar' | 'radar'>('pie');
 
-// 分类类型切换
-const categoryType = ref<'expense' | 'income' | 'transfer'>('expense');
+// 支付渠道类型切换
+const paymentMethodType = ref<'expense' | 'income' | 'transfer'>('expense');
 
-// 监听transactionType变化，自动同步categoryType
+// 监听transactionType变化，自动同步paymentMethodType
 watch(() => props.transactionType, newTransactionType => {
   if (newTransactionType === 'Income') {
-    categoryType.value = 'income';
+    paymentMethodType.value = 'income';
   } else if (newTransactionType === 'Transfer') {
-    categoryType.value = 'transfer';
+    paymentMethodType.value = 'transfer';
   } else if (newTransactionType === 'Expense') {
-    categoryType.value = 'expense';
+    paymentMethodType.value = 'expense';
   } else {
     // 如果transactionType为空或'全部'，重置为默认值'支出'
-    categoryType.value = 'expense';
+    paymentMethodType.value = 'expense';
   }
 }, { immediate: true });
 
-// 根据分类类型获取相应的分类数据
-const currentCategories = computed(() => {
-  switch (categoryType.value) {
+// 根据支付渠道类型获取相应的支付渠道数据
+const currentPaymentMethods = computed(() => {
+  switch (paymentMethodType.value) {
     case 'income':
-      return props.topIncomeCategories || [];
+      return props.topIncomePaymentMethods || [];
     case 'transfer':
-      return props.topTransferCategories || [];
+      return props.topTransferPaymentMethods || [];
     case 'expense':
     default:
-      return props.topCategories;
+      return props.topPaymentMethods;
   }
 });
 
-// 获取分类类型的显示名称
-const categoryTypeName = computed(() => {
-  switch (categoryType.value) {
+// 获取支付渠道类型的显示名称
+const paymentMethodTypeName = computed(() => {
+  switch (paymentMethodType.value) {
     case 'income':
       return '收入';
     case 'transfer':
@@ -76,25 +76,25 @@ const categoryTypeName = computed(() => {
 const chartViewTypeName = computed(() => {
   switch (chartViewType.value) {
     case 'pie':
-      return '分类占比';
+      return '支付渠道占比';
     case 'bar':
-      return '分类排行';
+      return '支付渠道排行';
     case 'radar':
-      return '分类雷达图';
+      return '支付渠道雷达图';
     default:
-      return '分类占比';
+      return '支付渠道占比';
   }
 });
 
 // 饼图配置
 const pieChartOption = computed(() => {
-  const categories = currentCategories.value.slice(0, 8).map(cat => cat.category);
-  const amounts = currentCategories.value.slice(0, 8).map(cat => cat.amount);
+  const paymentMethods = currentPaymentMethods.value.slice(0, 8).map(pm => pm.paymentMethod);
+  const amounts = currentPaymentMethods.value.slice(0, 8).map(pm => pm.amount);
   const totalAmount = amounts.reduce((sum, amount) => sum + amount, 0);
 
-  // 国际化分类名称
-  const internationalizedCategories = categories.map(category =>
-    t(`common.categories.${lowercaseFirstLetter(category)}`),
+  // 国际化支付渠道名称
+  const internationalizedPaymentMethods = paymentMethods.map(paymentMethod =>
+    t(`financial.paymentMethods.${paymentMethod.toLocaleLowerCase()}`),
   );
 
   return {
@@ -110,66 +110,48 @@ const pieChartOption = computed(() => {
       orient: 'vertical',
       left: 'left',
       top: 'middle',
-      data: internationalizedCategories,
+      data: internationalizedPaymentMethods,
       itemWidth: 12,
       itemHeight: 12,
     },
     series: [
       {
-        name: `${categoryTypeName.value}分类`,
+        name: `${paymentMethodTypeName.value}金额`,
         type: 'pie',
         radius: ['40%', '70%'],
         center: ['60%', '50%'],
-        avoidLabelOverlap: false,
-        itemStyle: {
-          borderRadius: 8,
-          borderColor: '#fff',
-          borderWidth: 2,
-        },
-        label: {
-          show: false,
-          position: 'center',
-        },
-        emphasis: {
-          label: {
-            show: true,
-            fontSize: '16',
-            fontWeight: 'bold',
-            formatter: '{b}\n{c}',
-          },
-          itemStyle: {
-            shadowBlur: 10,
-            shadowOffsetX: 0,
-            shadowColor: 'rgba(0, 0, 0, 0.5)',
-          },
-        },
-        labelLine: {
-          show: false,
-        },
-        data: categories.map((_category, index) => ({
-          value: amounts[index],
-          name: internationalizedCategories[index],
+        data: amounts.map((amount, index) => ({
+          value: amount,
+          name: internationalizedPaymentMethods[index],
           itemStyle: {
             color: chartUtils.getColor(index),
           },
         })),
-        animationType: 'scale',
-        animationEasing: 'elasticOut' as const,
-        animationDelay: (_idx: number) => Math.random() * 200,
+        emphasis: {
+          itemStyle: {
+            shadowBlur: 10,
+            shadowOffsetX: 0,
+            shadowColor: 'rgba(0, 0, 0, 0.3)',
+          },
+        },
+        animationDelay: (idx: number) => idx * 100,
       },
     ],
+    animation: true,
+    animationDuration: 1000,
+    animationEasing: 'cubicOut' as const,
   };
 });
 
-// 条形图配置
+// 柱状图配置
 const barChartOption = computed(() => {
-  const categories = currentCategories.value.slice(0, 10).map(cat => cat.category);
-  const amounts = currentCategories.value.slice(0, 10).map(cat => cat.amount);
+  const paymentMethods = currentPaymentMethods.value.slice(0, 8).map(pm => pm.paymentMethod);
+  const amounts = currentPaymentMethods.value.slice(0, 8).map(pm => pm.amount);
   const totalAmount = amounts.reduce((sum, amount) => sum + amount, 0);
 
-  // 国际化分类名称
-  const internationalizedCategories = categories.map(category =>
-    t(`common.categories.${lowercaseFirstLetter(category)}`),
+  // 国际化支付渠道名称
+  const internationalizedPaymentMethods = paymentMethods.map(paymentMethod =>
+    t(`financial.paymentMethods.${lowercaseFirstLetter(paymentMethod)}`),
   );
 
   return {
@@ -202,7 +184,7 @@ const barChartOption = computed(() => {
     },
     yAxis: {
       type: 'category',
-      data: internationalizedCategories,
+      data: internationalizedPaymentMethods,
       axisLabel: {
         formatter: (value: string) => {
           return value.length > 6 ? `${value.substring(0, 6)}...` : value;
@@ -211,11 +193,11 @@ const barChartOption = computed(() => {
     },
     series: [
       {
-        name: `${categoryTypeName.value}金额`,
+        name: `${paymentMethodTypeName.value}金额`,
         type: 'bar',
         data: amounts.map((amount, index) => ({
           value: amount,
-          name: internationalizedCategories[index],
+          name: internationalizedPaymentMethods[index],
           itemStyle: {
             color: chartUtils.getColor(index),
           },
@@ -239,44 +221,27 @@ const barChartOption = computed(() => {
 
 // 雷达图配置
 const radarChartOption = computed(() => {
-  const categories = currentCategories.value.slice(0, 6).map(cat => cat.category);
-  const amounts = currentCategories.value.slice(0, 6).map(cat => cat.amount);
+  const paymentMethods = currentPaymentMethods.value.slice(0, 6).map(pm => pm.paymentMethod);
+  const amounts = currentPaymentMethods.value.slice(0, 6).map(pm => pm.amount);
 
-  // 国际化分类名称
-  const internationalizedCategories = categories.map(category =>
-    t(`common.categories.${lowercaseFirstLetter(category)}`),
+  // 国际化支付渠道名称
+  const internationalizedPaymentMethods = paymentMethods.map(paymentMethod =>
+    t(`financial.paymentMethods.${lowercaseFirstLetter(paymentMethod)}`),
   );
+
+  // 计算最大值，用于雷达图刻度
   const maxAmount = Math.max(...amounts);
+  const adjustedMax = Math.ceil(maxAmount * 1.2);
 
-  // 计算合适的最大值，确保ticks可读
-  const calculateMax = (value: number) => {
-    if (value <= 0) return 100;
-    if (value <= 50) return 100;
-    if (value <= 100) return 150;
-    if (value <= 200) return 250;
-    if (value <= 500) return 600;
-    if (value <= 1000) return 1200;
-    if (value <= 5000) return Math.ceil(value * 1.2);
-    if (value <= 10000) return Math.ceil(value * 1.1);
-    if (value <= 50000) return Math.ceil(value * 1.05);
-    return Math.ceil(value * 1.02);
-  };
-
-  const adjustedMax = calculateMax(maxAmount);
-
-  // 根据最大值动态设置splitNumber，确保刻度可读
+  // 根据最大值调整分割数
   const getSplitNumber = (max: number) => {
-    if (max <= 100) return 5;
-    if (max <= 200) return 4;
-    if (max <= 300) return 3;
-    if (max <= 500) return 4;
-    if (max <= 600) return 3;
-    if (max <= 1000) return 4;
-    if (max <= 2000) return 4;
-    if (max <= 5000) return 5;
-    if (max <= 10000) return 4;
-    if (max <= 20000) return 4;
-    if (max <= 50000) return 5;
+    if (max >= 100000) {
+      return 6;
+    } else if (max >= 10000) {
+      return 5;
+    } else if (max >= 1000) {
+      return 4;
+    }
     return 4;
   };
 
@@ -290,12 +255,12 @@ const radarChartOption = computed(() => {
       },
     },
     legend: {
-      data: [`${categoryTypeName.value}分布`],
+      data: [`${paymentMethodTypeName.value}分布`],
       top: 30,
     },
     radar: {
-      indicator: internationalizedCategories.map(category => ({
-        name: category,
+      indicator: internationalizedPaymentMethods.map(paymentMethod => ({
+        name: paymentMethod,
         min: 0,
         max: adjustedMax,
       })),
@@ -339,12 +304,12 @@ const radarChartOption = computed(() => {
     },
     series: [
       {
-        name: `${categoryTypeName.value}分布`,
+        name: `${paymentMethodTypeName.value}分布`,
         type: 'radar',
         data: [
           {
             value: amounts,
-            name: `${categoryTypeName.value}分布`,
+            name: `${paymentMethodTypeName.value}分布`,
             itemStyle: {
               color: chartUtils.getColor(0),
             },
@@ -379,7 +344,7 @@ const chartLoading = ref(false);
 </script>
 
 <template>
-  <div class="category-charts-switcher">
+  <div class="payment-method-charts-switcher">
     <div class="chart-card">
       <div class="chart-header">
         <h3 class="chart-title">
@@ -411,10 +376,13 @@ const chartLoading = ref(false);
             </button>
           </div>
 
-          <!-- 分类类型选择 -->
+          <!-- 支付渠道类型选择 -->
           <div class="control-group">
             <label class="control-label">交易类型:</label>
-            <select v-model="categoryType" class="control-select">
+            <select
+              v-model="paymentMethodType"
+              class="control-select"
+            >
               <option value="expense">
                 支出
               </option>
@@ -437,7 +405,7 @@ const chartLoading = ref(false);
           </div>
         </div>
 
-        <div v-else-if="currentCategories.length === 0" class="chart-empty">
+        <div v-else-if="currentPaymentMethods.length === 0" class="chart-empty">
           <div class="empty-icon">
             {{ chartViewType === 'pie' ? '🥧' : chartViewType === 'bar' ? '📊' : '🕸' }}
           </div>
@@ -459,7 +427,7 @@ const chartLoading = ref(false);
 </template>
 
 <style scoped lang="postcss">
-.category-charts-switcher {
+.payment-method-charts-switcher {
   margin-bottom: 2rem;
   width: 100%;
   box-sizing: border-box;
@@ -635,7 +603,7 @@ const chartLoading = ref(false);
 
 /* 移动端优化 */
 @media (max-width: 768px) {
-  .category-charts-switcher {
+  .payment-method-charts-switcher {
     margin-bottom: 1rem;
   }
 
@@ -663,38 +631,13 @@ const chartLoading = ref(false);
     justify-content: center;
   }
 
-  .view-type-btn {
-    flex: 1;
-    justify-content: center;
-  }
-
   .control-group {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.25rem;
     width: 100%;
-  }
-
-  .control-select {
-    width: 100%;
-    max-width: 200px;
-  }
-
-  .chart-content {
-    min-height: 300px;
+    justify-content: space-between;
   }
 
   .chart {
     height: 300px;
-  }
-
-  .chart-loading,
-  .chart-empty {
-    height: 300px;
-  }
-
-  .chart-title {
-    font-size: 1rem;
   }
 }
 
@@ -704,21 +647,17 @@ const chartLoading = ref(false);
     padding: 0.75rem;
   }
 
-  .chart-content {
-    min-height: 250px;
-  }
-
-  .chart {
-    height: 250px;
-  }
-
-  .chart-loading,
-  .chart-empty {
-    height: 250px;
-  }
-
   .chart-title {
-    font-size: 0.875rem;
+    font-size: 1rem;
+  }
+
+  .view-type-btn {
+    padding: 0.375rem 0.5rem;
+    font-size: 0.75rem;
+  }
+
+  .btn-text {
+    display: none;
   }
 
   .control-label {
@@ -730,12 +669,8 @@ const chartLoading = ref(false);
     padding: 0.25rem 0.5rem;
   }
 
-  .view-type-btn {
-    padding: 0.375rem 0.5rem;
-  }
-
-  .btn-text {
-    font-size: 0.625rem;
+  .chart {
+    height: 250px;
   }
 }
 </style>

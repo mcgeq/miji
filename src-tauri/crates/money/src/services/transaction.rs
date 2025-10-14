@@ -40,9 +40,10 @@ use crate::{
         account::AccountType,
         transactions::{
             CategoryStats, CreateTransactionRequest, IncomeExpense, IncomeExpenseRaw,
-            PaymentMethod, TimeTrendStats, TransactionStatsRequest, TransactionStatsResponse,
-            TransactionStatsSummary, TransactionStatus, TransactionType, TransactionWithRelations,
-            TransferRequest, UpdateTransactionRequest,
+            PaymentMethod, PaymentMethodStats, PaymentMethodStatsRaw, TimeTrendStats,
+            TransactionStatsRequest, TransactionStatsResponse, TransactionStatsSummary,
+            TransactionStatus, TransactionType, TransactionWithRelations, TransferRequest,
+            UpdateTransactionRequest,
         },
     },
     error::MoneyError,
@@ -1346,15 +1347,17 @@ impl TransactionService {
             .add(TransactionColumn::IsDeleted.eq(false))
             .add(TransactionColumn::Date.gte(&start_date))
             .add(TransactionColumn::Date.lte(&end_date));
-        
+
         // 添加非分类相关的筛选条件
         if let Some(account_serial_num) = &request.account_serial_num {
-            all_transactions_condition = all_transactions_condition.add(TransactionColumn::AccountSerialNum.eq(account_serial_num));
+            all_transactions_condition = all_transactions_condition
+                .add(TransactionColumn::AccountSerialNum.eq(account_serial_num));
         }
         if let Some(currency) = &request.currency {
-            all_transactions_condition = all_transactions_condition.add(TransactionColumn::Currency.eq(currency));
+            all_transactions_condition =
+                all_transactions_condition.add(TransactionColumn::Currency.eq(currency));
         }
-        
+
         let all_transactions = entity::transactions::Entity::find()
             .filter(all_transactions_condition)
             .all(db)
@@ -1405,11 +1408,29 @@ impl TransactionService {
             .get_weekly_trends(db, &start_date, &end_date, &base_condition)
             .await?;
 
+        // 按支付渠道统计
+        let top_payment_methods = self
+            .get_payment_method_stats(db, &base_condition, &total_expense)
+            .await?;
+
+        // 获取收入支付渠道统计
+        let top_income_payment_methods = self
+            .get_income_payment_method_stats(db, &base_condition, &total_income)
+            .await?;
+
+        // 获取转账支付渠道统计
+        let top_transfer_payment_methods = self
+            .get_transfer_payment_method_stats(db, &base_condition, &total_transfer)
+            .await?;
+
         Ok(TransactionStatsResponse {
             summary,
             top_categories,
             top_income_categories,
             top_transfer_categories,
+            top_payment_methods,
+            top_income_payment_methods,
+            top_transfer_payment_methods,
             monthly_trends,
             weekly_trends,
         })
@@ -1639,6 +1660,138 @@ impl TransactionService {
         }
 
         Ok(trends)
+    }
+
+    /// 获取支付渠道统计
+    async fn get_payment_method_stats(
+        &self,
+        db: &DatabaseConnection,
+        base_condition: &Condition,
+        total_expense: &Decimal,
+    ) -> MijiResult<Vec<PaymentMethodStats>> {
+        let mut condition = base_condition.clone();
+        condition = condition.add(TransactionColumn::TransactionType.eq("Expense"));
+
+        let payment_method_stats = entity::transactions::Entity::find()
+            .select_only()
+            .column(TransactionColumn::PaymentMethod)
+            .expr_as(Expr::col(TransactionColumn::Amount).sum(), "amount")
+            .expr_as(Expr::col(TransactionColumn::SerialNum).count(), "count")
+            .filter(condition)
+            .group_by(TransactionColumn::PaymentMethod)
+            .order_by_desc(Expr::col(TransactionColumn::Amount).sum())
+            .limit(10)
+            .into_model::<PaymentMethodStatsRaw>()
+            .all(db)
+            .await
+            .map_err(AppError::from)?;
+
+        let mut result = Vec::new();
+        for stats in payment_method_stats {
+            let percentage = if *total_expense > Decimal::ZERO {
+                (stats.amount / *total_expense) * Decimal::from(100)
+            } else {
+                Decimal::ZERO
+            };
+
+            result.push(PaymentMethodStats {
+                payment_method: stats.payment_method,
+                amount: stats.amount,
+                count: stats.count as i32,
+                percentage,
+            });
+        }
+
+        Ok(result)
+    }
+
+    /// 获取收入支付渠道统计
+    async fn get_income_payment_method_stats(
+        &self,
+        db: &DatabaseConnection,
+        base_condition: &Condition,
+        total_income: &Decimal,
+    ) -> MijiResult<Vec<PaymentMethodStats>> {
+        let mut condition = base_condition.clone();
+        condition = condition.add(TransactionColumn::TransactionType.eq("Income"));
+
+        let payment_method_stats = entity::transactions::Entity::find()
+            .select_only()
+            .column(TransactionColumn::PaymentMethod)
+            .expr_as(Expr::col(TransactionColumn::Amount).sum(), "amount")
+            .expr_as(Expr::col(TransactionColumn::SerialNum).count(), "count")
+            .filter(condition)
+            .group_by(TransactionColumn::PaymentMethod)
+            .order_by_desc(Expr::col(TransactionColumn::Amount).sum())
+            .limit(10)
+            .into_model::<PaymentMethodStatsRaw>()
+            .all(db)
+            .await
+            .map_err(AppError::from)?;
+
+        let mut result = Vec::new();
+        for stats in payment_method_stats {
+            let percentage = if *total_income > Decimal::ZERO {
+                (stats.amount / *total_income) * Decimal::from(100)
+            } else {
+                Decimal::ZERO
+            };
+
+            result.push(PaymentMethodStats {
+                payment_method: stats.payment_method,
+                amount: stats.amount,
+                count: stats.count as i32,
+                percentage,
+            });
+        }
+
+        Ok(result)
+    }
+
+    /// 获取转账支付渠道统计
+    async fn get_transfer_payment_method_stats(
+        &self,
+        db: &DatabaseConnection,
+        base_condition: &Condition,
+        total_transfer: &Decimal,
+    ) -> MijiResult<Vec<PaymentMethodStats>> {
+        let mut condition = base_condition.clone();
+        // 转账是根据分类来筛选的，不是根据交易类型
+        condition = condition.add(TransactionColumn::Category.eq("Transfer"));
+        // 只统计转账的支出部分，避免重复计算（转账会产生支出和收入两笔记录）
+        condition = condition.add(TransactionColumn::TransactionType.eq("Expense"));
+
+        let payment_method_stats = entity::transactions::Entity::find()
+            .select_only()
+            .column(TransactionColumn::PaymentMethod)
+            .expr_as(Expr::col(TransactionColumn::Amount).sum(), "amount")
+            .expr_as(Expr::col(TransactionColumn::SerialNum).count(), "count")
+            .filter(condition)
+            .group_by(TransactionColumn::PaymentMethod)
+            .order_by_desc(Expr::col(TransactionColumn::Amount).sum())
+            .limit(10)
+            .into_model::<PaymentMethodStatsRaw>()
+            .all(db)
+            .await
+            .map_err(AppError::from)?;
+
+        let mut result = Vec::new();
+        for stats in payment_method_stats {
+            let percentage = if *total_transfer > Decimal::ZERO {
+                (stats.amount / *total_transfer) * Decimal::from(100)
+            } else {
+                Decimal::ZERO
+            };
+
+            result.push(PaymentMethodStats {
+                payment_method: stats.payment_method,
+                amount: stats.amount,
+                count: stats.count as i32,
+                percentage,
+            });
+        }
+
+        Ok(result)
     }
 }
 

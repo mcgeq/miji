@@ -81,6 +81,23 @@ pub struct IncomeExpenseRaw {
     other_expense: Decimal,
 }
 
+// 原始统计数据结构
+#[derive(Debug, Serialize, Deserialize, FromQueryResult)]
+#[serde(rename_all = "camelCase")]
+pub struct CategoryStatsRaw {
+    pub category: String,
+    pub amount: Decimal,
+    pub count: i64,
+}
+
+#[derive(Debug, Serialize, Deserialize, FromQueryResult)]
+#[serde(rename_all = "camelCase")]
+pub struct PaymentMethodStatsRaw {
+    pub payment_method: String,
+    pub amount: Decimal,
+    pub count: i64,
+}
+
 // 统计相关的数据结构
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -103,6 +120,15 @@ pub struct CategoryStats {
 
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
+pub struct PaymentMethodStats {
+    pub payment_method: String,
+    pub amount: Decimal,
+    pub count: i32,
+    pub percentage: Decimal,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct TimeTrendStats {
     pub period: String,
     pub income: Decimal,
@@ -117,6 +143,9 @@ pub struct TransactionStatsResponse {
     pub top_categories: Vec<CategoryStats>,
     pub top_income_categories: Vec<CategoryStats>,
     pub top_transfer_categories: Vec<CategoryStats>,
+    pub top_payment_methods: Vec<PaymentMethodStats>,
+    pub top_income_payment_methods: Vec<PaymentMethodStats>,
+    pub top_transfer_payment_methods: Vec<PaymentMethodStats>,
     pub monthly_trends: Vec<TimeTrendStats>,
     pub weekly_trends: Vec<TimeTrendStats>,
 }

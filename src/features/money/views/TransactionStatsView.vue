@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import AdvancedTransactionCharts from '@/features/money/components/AdvancedTransactionCharts.vue';
 import CategoryChartsSwitcher from '@/features/money/components/CategoryChartsSwitcher.vue';
+import PaymentMethodChartsSwitcher from '@/features/money/components/PaymentMethodChartsSwitcher.vue';
 import StatCard from '@/features/money/components/StatCard.vue';
 import TransactionStatsCharts from '@/features/money/components/TransactionStatsCharts.vue';
 import TransactionStatsFilters from '@/features/money/components/TransactionStatsFilters.vue';
@@ -24,6 +25,9 @@ const statsData = ref({
   topCategories: [] as Array<{ category: string; amount: number; count: number; percentage: number }>,
   topIncomeCategories: [] as Array<{ category: string; amount: number; count: number; percentage: number }>,
   topTransferCategories: [] as Array<{ category: string; amount: number; count: number; percentage: number }>,
+  topPaymentMethods: [] as Array<{ paymentMethod: string; amount: number; count: number; percentage: number }>,
+  topIncomePaymentMethods: [] as Array<{ paymentMethod: string; amount: number; count: number; percentage: number }>,
+  topTransferPaymentMethods: [] as Array<{ paymentMethod: string; amount: number; count: number; percentage: number }>,
   monthlyTrends: [] as Array<{ month: string; income: number; expense: number; netIncome: number }>,
   weeklyTrends: [] as Array<{ week: string; income: number; expense: number; netIncome: number }>,
 });
@@ -121,6 +125,24 @@ async function loadStatsData() {
         amount: Number(cat.amount) || 0,
         count: Number(cat.count) || 0,
         percentage: Number(cat.percentage) || 0,
+      })),
+      topPaymentMethods: response.topPaymentMethods.map(pm => ({
+        paymentMethod: pm.paymentMethod,
+        amount: Number(pm.amount) || 0,
+        count: Number(pm.count) || 0,
+        percentage: Number(pm.percentage) || 0,
+      })),
+      topIncomePaymentMethods: response.topIncomePaymentMethods.map(pm => ({
+        paymentMethod: pm.paymentMethod,
+        amount: Number(pm.amount) || 0,
+        count: Number(pm.count) || 0,
+        percentage: Number(pm.percentage) || 0,
+      })),
+      topTransferPaymentMethods: response.topTransferPaymentMethods.map(pm => ({
+        paymentMethod: pm.paymentMethod,
+        amount: Number(pm.amount) || 0,
+        count: Number(pm.count) || 0,
+        percentage: Number(pm.percentage) || 0,
       })),
       monthlyTrends: response.monthlyTrends.map(trend => ({
         month: trend.period,
@@ -248,6 +270,16 @@ onMounted(() => {
             :loading="loading"
           />
         </div>
+        <!-- 支付渠道图表切换器 -->
+        <div class="payment-method-charts-section">
+          <PaymentMethodChartsSwitcher
+            :top-payment-methods="statsData.topPaymentMethods"
+            :top-income-payment-methods="statsData.topIncomePaymentMethods"
+            :top-transfer-payment-methods="statsData.topTransferPaymentMethods"
+            :transaction-type="filters.transactionType"
+            :loading="loading"
+          />
+        </div>
       </div>
       <!-- 高级图表：收支趋势 + 分类图表切换器 -->
       <div v-else class="advanced-charts">
@@ -270,6 +302,16 @@ onMounted(() => {
             :top-categories="statsData.topCategories"
             :top-income-categories="statsData.topIncomeCategories"
             :top-transfer-categories="statsData.topTransferCategories"
+            :transaction-type="filters.transactionType"
+            :loading="loading"
+          />
+        </div>
+        <!-- 支付渠道图表切换器 -->
+        <div class="payment-method-charts-section">
+          <PaymentMethodChartsSwitcher
+            :top-payment-methods="statsData.topPaymentMethods"
+            :top-income-payment-methods="statsData.topIncomePaymentMethods"
+            :top-transfer-payment-methods="statsData.topTransferPaymentMethods"
             :transaction-type="filters.transactionType"
             :loading="loading"
           />
@@ -372,6 +414,10 @@ onMounted(() => {
 
 .toggle-text {
   font-weight: 500;
+}
+
+.payment-method-charts-section {
+  margin-bottom: 1.5rem;
 }
 
 .table-section {

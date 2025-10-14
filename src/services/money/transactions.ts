@@ -38,6 +38,13 @@ export interface CategoryStats {
   percentage: number;
 }
 
+export interface PaymentMethodStats {
+  paymentMethod: string;
+  amount: number;
+  count: number;
+  percentage: number;
+}
+
 export interface TimeTrendStats {
   period: string;
   income: number;
@@ -50,6 +57,9 @@ export interface TransactionStatsResponse {
   topCategories: CategoryStats[];
   topIncomeCategories: CategoryStats[];
   topTransferCategories: CategoryStats[];
+  topPaymentMethods: PaymentMethodStats[];
+  topIncomePaymentMethods: PaymentMethodStats[];
+  topTransferPaymentMethods: PaymentMethodStats[];
   monthlyTrends: TimeTrendStats[];
   weeklyTrends: TimeTrendStats[];
 }
