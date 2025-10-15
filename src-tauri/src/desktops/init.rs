@@ -43,6 +43,8 @@ impl<R: Runtime> MijiInit for tauri::Builder<R> {
         // 清理 30 天前日志
         let _ = cleanup_old_logs(Path::new(&root_dir), "logs/tracing", 30);
 
+        // 系统托盘将在setup阶段创建
+
         // 根据构建配置调整日志级别
 
         self.plugin(tauri_plugin_autostart::init(

@@ -1,5 +1,5 @@
 use migration::{Migrator, MigratorTrait};
-use tauri::{AppHandle, Manager};
+use tauri::{AppHandle, Manager, Emitter, menu::{MenuBuilder, MenuItem}, tray::{TrayIconBuilder, TrayIconEvent, MouseButton, MouseButtonState}, WindowEvent};
 
 pub mod logging;
 
@@ -105,8 +105,11 @@ pub fn run() {
             // 6. 管理应用状态
             app.manage(app_state.clone());
 
+            // 7. 创建系统托盘（仅桌面平台）
             #[cfg(desktop)]
             {
+                create_system_tray(&app_handle)?;
+                setup_window_close_handler(&app_handle)?;
                 tauri::async_runtime::spawn(setup(cloned_handle));
             }
 
@@ -149,5 +152,88 @@ async fn setup(app: AppHandle) -> Result<(), ()> {
     // Commands can be ran as regular functions as long as you take
     // care of the input arguments yourself
     set_complete(app.clone(), app.state::<AppState>(), "backend".to_string()).await?;
+    Ok(())
+}
+
+#[cfg(desktop)]
+fn create_system_tray(app: &AppHandle) -> Result<(), Box<dyn std::error::Error>> {
+    // 创建菜单项
+    let settings_item = MenuItem::with_id(app, "settings", "设置", true, None::<&str>)?;
+    let quit_item = MenuItem::with_id(app, "quit", "退出", true, None::<&str>)?;
+
+    // 创建菜单 - 使用官方文档推荐的方式
+    let menu = MenuBuilder::new(app)
+        .item(&settings_item)
+        .separator()
+        .item(&quit_item)
+        .build()?;
+
+    // 创建托盘图标 - 使用官方文档推荐的方式
+    let _tray = TrayIconBuilder::new()
+        .icon(app.default_window_icon().unwrap().clone())
+        .menu(&menu)
+        .show_menu_on_left_click(false) // 防止左键点击时显示菜单
+        .on_menu_event(|app, event| {
+            match event.id.as_ref() {
+                "settings" => {
+                    // 导航到设置页面
+                    if let Some(window) = app.get_webview_window("main") {
+                        let _ = window.show();
+                        let _ = window.set_focus();
+                        let _ = window.eval("window.location.hash = '#/settings'");
+                    }
+                }
+                "quit" => {
+                    app.exit(0);
+                }
+                _ => {}
+            }
+        })
+        .on_tray_icon_event(|tray, event| {
+            match event {
+                TrayIconEvent::Click {
+                    button: MouseButton::Left,
+                    button_state: MouseButtonState::Up,
+                    ..
+                } => {
+                    // 左键点击托盘图标显示/隐藏窗口
+                    let app = tray.app_handle();
+                    if let Some(window) = app.get_webview_window("main") {
+                        if window.is_visible().unwrap_or(false) {
+                            let _ = window.hide();
+                        } else {
+                            let _ = window.unminimize();
+                            let _ = window.show();
+                            let _ = window.set_focus();
+                        }
+                    }
+                }
+                _ => {}
+            }
+        })
+        .build(app)?;
+
+    Ok(())
+}
+
+#[cfg(desktop)]
+fn setup_window_close_handler(app: &AppHandle) -> Result<(), Box<dyn std::error::Error>> {
+    if let Some(window) = app.get_webview_window("main") {
+        let app_handle = app.clone();
+        window.on_window_event(move |event| {
+            match event {
+                WindowEvent::CloseRequested { api, .. } => {
+                    // 阻止默认关闭行为
+                    api.prevent_close();
+                    
+                    // 发送事件到前端显示对话框
+                    if let Some(window) = app_handle.get_webview_window("main") {
+                        let _ = window.emit("show-close-dialog", ());
+                    }
+                }
+                _ => {}
+            }
+        });
+    }
     Ok(())
 }

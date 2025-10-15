@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { storeToRefs } from 'pinia';
+import CloseDialog from './components/common/CloseDialog.vue';
 import DefaultLayout from './layouts/DefaultLayout.vue';
 import EmptyLayout from './layouts/EmptyLayout.vue';
 import { checkAndCleanSession } from './services/auth';
@@ -100,6 +101,9 @@ function layoutComponent(route: RouteLocationNormalizedLoaded) {
       </component>
     </transition>
   </router-view>
+
+  <!-- 关闭对话框 -->
+  <CloseDialog />
 </template>
 
 <style>

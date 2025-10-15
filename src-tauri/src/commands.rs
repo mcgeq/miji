@@ -32,6 +32,10 @@ pub fn init_commands(builder: Builder<Wry>) -> Builder<Wry> {
         check_pwd,
         generate_token,
         is_verify_token,
+        minimize_to_tray,
+        restore_from_tray,
+        toggle_window_visibility,
+        close_app,
         auth_cmd::exists_user,
         auth_cmd::create_user,
         auth_cmd::get_user_with_email,
@@ -238,4 +242,41 @@ fn check_password_hash(password: &str, pwd_hash: &str) -> MijiResult<bool> {
     }
 
     Ok(true)
+}
+
+#[tauri::command]
+async fn minimize_to_tray(app: AppHandle) -> Result<(), String> {
+    if let Some(window) = app.get_webview_window("main") {
+        window.hide().map_err(|e| e.to_string())?;
+    }
+    Ok(())
+}
+
+#[tauri::command]
+async fn restore_from_tray(app: AppHandle) -> Result<(), String> {
+    if let Some(window) = app.get_webview_window("main") {
+        window.show().map_err(|e| e.to_string())?;
+        window.set_focus().map_err(|e| e.to_string())?;
+    }
+    Ok(())
+}
+
+#[tauri::command]
+async fn toggle_window_visibility(app: AppHandle) -> Result<(), String> {
+    if let Some(window) = app.get_webview_window("main") {
+        let is_visible = window.is_visible().map_err(|e| e.to_string())?;
+        if is_visible {
+            window.hide().map_err(|e| e.to_string())?;
+        } else {
+            window.show().map_err(|e| e.to_string())?;
+            window.set_focus().map_err(|e| e.to_string())?;
+        }
+    }
+    Ok(())
+}
+
+#[tauri::command]
+async fn close_app(app: AppHandle) -> Result<(), String> {
+    app.exit(0);
+    Ok(())
 }
