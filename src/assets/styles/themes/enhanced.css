@@ -1,0 +1,261 @@
+/* enhanced.css - 增强主题颜色变体和工具类 */
+
+/* 颜色变体工具类 */
+.color-variants {
+  /* 主色变体 */
+  --color-primary-50: oklch(95% 0.02 25);   /* 最浅主色 */
+  --color-primary-100: oklch(90% 0.04 25);  /* 很浅主色 */
+  --color-primary-200: oklch(85% 0.06 25);  /* 浅主色 */
+  --color-primary-300: oklch(80% 0.08 25);  /* 较浅主色 */
+  --color-primary-400: oklch(75% 0.10 25);  /* 中等浅主色 */
+  --color-primary-500: oklch(65% 0.18 25);  /* 标准主色 */
+  --color-primary-600: oklch(60% 0.20 25);  /* 较深主色 */
+  --color-primary-700: oklch(55% 0.22 25);  /* 深主色 */
+  --color-primary-800: oklch(50% 0.24 25);  /* 很深主色 */
+  --color-primary-900: oklch(45% 0.26 25);  /* 最深主色 */
+  --color-primary-950: oklch(40% 0.28 25);  /* 极深主色 */
+
+  /* 次要色变体 */
+  --color-secondary-50: oklch(95% 0.02 160);
+  --color-secondary-100: oklch(90% 0.04 160);
+  --color-secondary-200: oklch(85% 0.06 160);
+  --color-secondary-300: oklch(80% 0.08 160);
+  --color-secondary-400: oklch(75% 0.10 160);
+  --color-secondary-500: oklch(70% 0.12 160);
+  --color-secondary-600: oklch(65% 0.14 160);
+  --color-secondary-700: oklch(60% 0.16 160);
+  --color-secondary-800: oklch(55% 0.18 160);
+  --color-secondary-900: oklch(50% 0.20 160);
+  --color-secondary-950: oklch(45% 0.22 160);
+
+  /* 成功色变体 */
+  --color-success-50: oklch(95% 0.02 140);
+  --color-success-100: oklch(90% 0.04 140);
+  --color-success-200: oklch(85% 0.06 140);
+  --color-success-300: oklch(80% 0.08 140);
+  --color-success-400: oklch(75% 0.10 140);
+  --color-success-500: oklch(50% 0.15 140);
+  --color-success-600: oklch(45% 0.17 140);
+  --color-success-700: oklch(40% 0.19 140);
+  --color-success-800: oklch(35% 0.21 140);
+  --color-success-900: oklch(30% 0.23 140);
+  --color-success-950: oklch(25% 0.25 140);
+
+  /* 警告色变体 */
+  --color-warning-50: oklch(95% 0.02 50);
+  --color-warning-100: oklch(90% 0.04 50);
+  --color-warning-200: oklch(85% 0.06 50);
+  --color-warning-300: oklch(80% 0.08 50);
+  --color-warning-400: oklch(75% 0.10 50);
+  --color-warning-500: oklch(60% 0.25 50);
+  --color-warning-600: oklch(55% 0.27 50);
+  --color-warning-700: oklch(50% 0.29 50);
+  --color-warning-800: oklch(45% 0.31 50);
+  --color-warning-900: oklch(40% 0.33 50);
+  --color-warning-950: oklch(35% 0.35 50);
+
+  /* 错误色变体 */
+  --color-error-50: oklch(95% 0.02 15);
+  --color-error-100: oklch(90% 0.04 15);
+  --color-error-200: oklch(85% 0.06 15);
+  --color-error-300: oklch(80% 0.08 15);
+  --color-error-400: oklch(75% 0.10 15);
+  --color-error-500: oklch(60% 0.22 15);
+  --color-error-600: oklch(55% 0.24 15);
+  --color-error-700: oklch(50% 0.26 15);
+  --color-error-800: oklch(45% 0.28 15);
+  --color-error-900: oklch(40% 0.30 15);
+  --color-error-950: oklch(35% 0.32 15);
+
+  /* 信息色变体 */
+  --color-info-50: oklch(95% 0.02 240);
+  --color-info-100: oklch(90% 0.04 240);
+  --color-info-200: oklch(85% 0.06 240);
+  --color-info-300: oklch(80% 0.08 240);
+  --color-info-400: oklch(75% 0.10 240);
+  --color-info-500: oklch(55% 0.20 240);
+  --color-info-600: oklch(50% 0.22 240);
+  --color-info-700: oklch(45% 0.24 240);
+  --color-info-800: oklch(40% 0.26 240);
+  --color-info-900: oklch(35% 0.28 240);
+  --color-info-950: oklch(30% 0.30 240);
+}
+
+/* 渐变工具类 */
+.gradient-primary {
+  background: var(--color-primary-gradient);
+}
+
+.gradient-secondary {
+  background: var(--color-secondary-gradient);
+}
+
+.gradient-accent {
+  background: var(--color-accent-gradient);
+}
+
+/* 阴影工具类 */
+.shadow-sm {
+  box-shadow: var(--shadow-sm);
+}
+
+.shadow-md {
+  box-shadow: var(--shadow-md);
+}
+
+.shadow-lg {
+  box-shadow: var(--shadow-lg);
+}
+
+/* 交互状态工具类 */
+.interactive-primary {
+  background-color: var(--color-primary);
+  color: var(--color-primary-content);
+  transition: all 0.2s ease;
+}
+
+.interactive-primary:hover {
+  background-color: var(--color-primary-hover);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.interactive-primary:active {
+  background-color: var(--color-primary-active);
+  transform: translateY(0);
+}
+
+.interactive-secondary {
+  background-color: var(--color-secondary);
+  color: var(--color-secondary-content);
+  transition: all 0.2s ease;
+}
+
+.interactive-secondary:hover {
+  background-color: var(--color-secondary-hover);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.interactive-secondary:active {
+  background-color: var(--color-secondary-active);
+  transform: translateY(0);
+}
+
+/* 状态指示器 */
+.status-success {
+  background-color: var(--color-success);
+  color: var(--color-success-content);
+}
+
+.status-warning {
+  background-color: var(--color-warning);
+  color: var(--color-warning-content);
+}
+
+.status-error {
+  background-color: var(--color-error);
+  color: var(--color-error-content);
+}
+
+.status-info {
+  background-color: var(--color-info);
+  color: var(--color-info-content);
+}
+
+/* 边框工具类 */
+.border-primary {
+  border-color: var(--color-primary);
+}
+
+.border-secondary {
+  border-color: var(--color-secondary);
+}
+
+.border-accent {
+  border-color: var(--color-accent);
+}
+
+.border-neutral {
+  border-color: var(--color-neutral);
+}
+
+/* 文字颜色工具类 */
+.text-primary {
+  color: var(--color-primary);
+}
+
+.text-secondary {
+  color: var(--color-secondary);
+}
+
+.text-accent {
+  color: var(--color-accent);
+}
+
+.text-success {
+  color: var(--color-success);
+}
+
+.text-warning {
+  color: var(--color-warning);
+}
+
+.text-error {
+  color: var(--color-error);
+}
+
+.text-info {
+  color: var(--color-info);
+}
+
+/* 背景颜色工具类 */
+.bg-primary {
+  background-color: var(--color-primary);
+  color: var(--color-primary-content);
+}
+
+.bg-secondary {
+  background-color: var(--color-secondary);
+  color: var(--color-secondary-content);
+}
+
+.bg-accent {
+  background-color: var(--color-accent);
+  color: var(--color-accent-content);
+}
+
+.bg-success {
+  background-color: var(--color-success);
+  color: var(--color-success-content);
+}
+
+.bg-warning {
+  background-color: var(--color-warning);
+  color: var(--color-warning-content);
+}
+
+.bg-error {
+  background-color: var(--color-error);
+  color: var(--color-error-content);
+}
+
+.bg-info {
+  background-color: var(--color-info);
+  color: var(--color-info-content);
+}
+
+/* 响应式颜色调整 */
+@media (prefers-color-scheme: light) {
+  .theme-adaptive {
+    --color-primary: oklch(65% 0.18 25);
+    --color-primary-content: oklch(95% 0.01 25);
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .theme-adaptive {
+    --color-primary: oklch(70% 0.15 25);
+    --color-primary-content: oklch(10% 0.01 25);
+  }
+}

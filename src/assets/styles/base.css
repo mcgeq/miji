@@ -1,6 +1,9 @@
 /* base.css - 全局基础样式和重置 */
 
 @import "./variables.css";
+@import "./themes/light.css";
+@import "./themes/dark.css";
+@import "./themes/enhanced.css";
 
 * {
   box-sizing: border-box;
