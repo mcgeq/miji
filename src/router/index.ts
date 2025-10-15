@@ -31,7 +31,7 @@ router.beforeEach(async (to, _from) => {
   }
 
   if (isAuth && isAuthPage) {
-    return { name: 'todos' };
+    return { name: 'home' };
   }
 
   return true;
