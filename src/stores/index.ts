@@ -2,6 +2,7 @@
 import { Lg } from '../utils/debugLog';
 import { useAuthStore } from './auth';
 import { useLocaleStore } from './locales';
+import { useThemeStore } from './theme';
 
 let isStarted = false;
 
@@ -24,6 +25,7 @@ export async function storeStart() {
     // 获取 store 实例
     const authStore = useAuthStore();
     const localeStore = useLocaleStore();
+    const themeStore = useThemeStore();
 
     // 移动端优化：使用超时处理，避免无限等待
     if (isMobile) {
@@ -32,6 +34,7 @@ export async function storeStart() {
           Promise.all([
             authStore.$tauri.start(),
             localeStore.$tauri.start(),
+            themeStore.$tauri.start(),
           ]),
           new Promise((_, reject) =>
             setTimeout(() => reject(new Error('Store initialization timeout')), 2000),
@@ -47,6 +50,7 @@ export async function storeStart() {
       await Promise.all([
         authStore.$tauri.start(),
         localeStore.$tauri.start(),
+        themeStore.$tauri.start(),
       ]);
     }
 
@@ -55,6 +59,10 @@ export async function storeStart() {
       hasUser: !!authStore.user,
       hasToken: !!authStore.token,
       rememberMe: authStore.rememberMe,
+    });
+    Lg.i('Store', 'Theme store loaded:', {
+      currentTheme: themeStore.currentTheme,
+      effectiveTheme: themeStore.effectiveTheme,
     });
   } catch (error) {
     Lg.e('Store', 'Store initialization failed:', error);

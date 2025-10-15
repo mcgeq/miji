@@ -1,13 +1,15 @@
 <script setup lang="ts">
 import { Monitor, Moon, RotateCcw, Save, Sun } from 'lucide-vue-next';
 import { useLocaleStore } from '@/stores/locales';
+import { useThemeStore } from '@/stores/theme';
 
 const localeStore = useLocaleStore();
+const themeStore = useThemeStore();
 
 // 使用响应式引用，初始值从 store 获取
 const selectedLocale = ref(localeStore.currentLocale || 'zh-CN');
 const selectedTimezone = ref('Asia/Shanghai');
-const selectedTheme = ref('system');
+const selectedTheme = ref(themeStore.currentTheme || 'system');
 const compactMode = ref(false);
 const autoStart = ref(false);
 const minimizeToTray = ref(true);
@@ -16,6 +18,13 @@ const minimizeToTray = ref(true);
 watch(() => localeStore.currentLocale, newLocale => {
   if (newLocale && newLocale !== selectedLocale.value) {
     selectedLocale.value = newLocale;
+  }
+}, { immediate: true });
+
+// 监听主题store的变化，同步到 selectedTheme
+watch(() => themeStore.currentTheme, newTheme => {
+  if (newTheme && newTheme !== selectedTheme.value) {
+    selectedTheme.value = newTheme;
   }
 }, { immediate: true });
 
@@ -47,6 +56,11 @@ async function handleLocaleChange() {
   await localeStore.setLocale(selectedLocale.value);
 }
 
+async function handleThemeChange(theme: string) {
+  selectedTheme.value = theme;
+  await themeStore.setTheme(theme as any);
+}
+
 function handleSave() {
   const settings = {
     locale: selectedLocale.value,
@@ -66,13 +80,17 @@ function handleSave() {
   // await saveUserSettings(settings)
 }
 
-function handleReset() {
+async function handleReset() {
   selectedLocale.value = 'zh-CN';
   selectedTimezone.value = 'Asia/Shanghai';
   selectedTheme.value = 'system';
   compactMode.value = false;
   autoStart.value = false;
   minimizeToTray.value = true;
+
+  // 重置store中的值
+  await localeStore.setLocale('zh-CN');
+  await themeStore.setTheme('system');
 }
 </script>
 
@@ -155,7 +173,7 @@ function handleReset() {
                 :key="theme.value"
                 class="theme-button"
                 :class="selectedTheme === theme.value ? 'theme-button-active' : 'theme-button-inactive'"
-                @click="selectedTheme = theme.value"
+                @click="handleThemeChange(theme.value)"
               >
                 <component :is="theme.icon" class="theme-button-icon" />
                 {{ theme.label }}

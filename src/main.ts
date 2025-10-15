@@ -178,6 +178,44 @@ async function preloadIcons() {
   return Promise.resolve();
 }
 
+// 确保主题被正确应用
+async function ensureThemeApplied() {
+  try {
+    const { useThemeStore } = await import('./stores/theme');
+    const themeStore = useThemeStore();
+
+    // 如果主题store还没有初始化，先初始化
+    if (!themeStore.isInitializing && !themeStore.isLoading) {
+      await themeStore.init();
+    }
+
+    // 确保DOM主题类被正确应用
+    themeStore.getCurrentTheme();
+    const effectiveTheme = themeStore.getEffectiveThemeValue();
+
+    // 应用主题到DOM
+    if (typeof document !== 'undefined') {
+      const root = document.documentElement;
+      root.classList.remove('theme-light', 'theme-dark');
+      root.classList.add(`theme-${effectiveTheme}`);
+      root.style.colorScheme = effectiveTheme;
+
+      // 设置 meta theme-color（用于移动端浏览器）
+      const metaThemeColor = document.querySelector('meta[name="theme-color"]');
+      if (metaThemeColor) {
+        metaThemeColor.setAttribute('content', effectiveTheme === 'dark' ? '#1a1a1a' : '#ffffff');
+      }
+    }
+
+    // 调试信息
+    if (themeStore.debugThemeState) {
+      themeStore.debugThemeState();
+    }
+  } catch (error) {
+    console.error('Failed to ensure theme applied:', error);
+  }
+}
+
 // 等待DOM和资源完全准备就绪
 function waitForReady(): Promise<void> {
   return new Promise(resolve => {
@@ -246,11 +284,21 @@ async function bootstrap() {
       try {
         await Promise.race([
           storeStart(),
-          new Promise((_, reject) => setTimeout(() => reject(new Error('Store start timeout')), 3000)),
+          new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('Store start timeout')), 3000),
+          ),
         ]);
       } catch (error) {
         console.warn('Store start failed or timed out, continuing with app startup:', error);
-        // 继续启动应用，不阻塞
+        // 移动端超时后，至少确保主题store被初始化
+        try {
+          const { useThemeStore } = await import('./stores/theme');
+          const themeStore = useThemeStore();
+          await themeStore.$tauri.start();
+          await themeStore.init();
+        } catch (themeError) {
+          console.warn('Theme store initialization also failed:', themeError);
+        }
       }
     } else {
       await storeStart();
@@ -267,6 +315,9 @@ async function bootstrap() {
 
     // Mount the app
     app.mount('#app');
+
+    // 确保主题在应用挂载后立即应用
+    await ensureThemeApplied();
 
     await handlePostMount();
     // 发射应用准备完成事件给 Tauri 后端（仅桌面端）

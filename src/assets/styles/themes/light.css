@@ -1,6 +1,7 @@
 /* themes/light.css - 浅色主题变量 */
 
-:root {
+:root,
+.theme-light {
   /* 基础背景分层（从浅到深） */
   --color-base-100: oklch(91.637% 0.034 90.515); /* 页面最外层背景 */
   --color-base-200: oklch(88.272% 0.049 91.774); /* 中间层背景（如卡片） */
