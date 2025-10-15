@@ -35,6 +35,7 @@ declare module 'vue' {
     LucideCalendarSync: typeof import('lucide-vue-next')['CalendarSync']
     LucideChartNoAxesCombined: typeof import('lucide-vue-next')['ChartNoAxesCombined']
     LucideCheck: typeof import('lucide-vue-next')['Check']
+    LucideCheckCheck: typeof import('lucide-vue-next')['CheckCheck']
     LucideCheckCircle: typeof import('lucide-vue-next')['CheckCircle']
     LucideChevronLeft: typeof import('lucide-vue-next')['ChevronLeft']
     LucideChevronRight: typeof import('lucide-vue-next')['ChevronRight']

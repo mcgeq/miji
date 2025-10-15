@@ -79,7 +79,7 @@ onMounted(async () => {
   isLoadingSettings.value = true; // 开始加载设置
 
   try {
-    const preference = await invoke('get_close_behavior_preference');
+    const preference = await invoke('get_close_behavior_preference') as string | null;
     if (preference) {
       closeBehaviorPreference.value = preference;
       // 根据偏好设置同步最小化开关
@@ -94,6 +94,28 @@ onMounted(async () => {
   } finally {
     isLoadingSettings.value = false; // 结束加载设置
   }
+
+  // 监听关闭偏好变化事件
+  const handlePreferenceChange = (event: CustomEvent) => {
+    const { preference } = event.detail;
+    isLoadingSettings.value = true; // 防止触发保存
+
+    closeBehaviorPreference.value = preference;
+    if (preference === 'minimize') {
+      minimizeToTray.value = true;
+    } else {
+      minimizeToTray.value = false;
+    }
+
+    isLoadingSettings.value = false;
+  };
+
+  window.addEventListener('close-preference-changed', handlePreferenceChange as EventListener);
+
+  // 组件卸载时移除事件监听器
+  onUnmounted(() => {
+    window.removeEventListener('close-preference-changed', handlePreferenceChange as EventListener);
+  });
 });
 
 const availableLocales = [
@@ -125,8 +147,8 @@ async function handleLocaleChange() {
 }
 
 async function handleThemeChange(theme: string) {
-  selectedTheme.value = theme;
-  await themeStore.setTheme(theme as any);
+  selectedTheme.value = theme as 'light' | 'dark' | 'system';
+  await themeStore.setTheme(theme as 'light' | 'dark' | 'system');
 }
 
 async function handleCloseBehaviorChange() {

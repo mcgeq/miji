@@ -6,6 +6,11 @@ import { toast } from '@/utils/toast';
 const isVisible = ref(false);
 const rememberChoice = ref(false);
 
+// 检测是否为移动端
+const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+  navigator.userAgent,
+);
+
 // 监听来自Rust的关闭事件
 onMounted(async () => {
   // 监听检查认证页面事件
@@ -15,18 +20,23 @@ onMounted(async () => {
     // 检查是否为登录或注册页面
     const isAuthPage = currentPath.includes('/auth/login') || currentPath.includes('/auth/register');
 
-    if (isAuthPage) {
-      // 在登录/注册页面，直接关闭应用
+    if (isAuthPage || isMobile) {
+      // 在登录/注册页面或移动端，直接关闭应用
       invoke('close_app');
     } else {
-      // 不在登录/注册页面，检查用户偏好并处理
+      // 不在登录/注册页面且非移动端，检查用户偏好并处理
       handleCloseWithPreference();
     }
   });
 
   // 监听显示关闭对话框事件（保留兼容性）
   await listen('show-close-dialog', async () => {
-    await handleCloseWithPreference();
+    if (isMobile) {
+      // 移动端直接关闭应用
+      await invoke('close_app');
+    } else {
+      await handleCloseWithPreference();
+    }
   });
 });
 
@@ -58,6 +68,10 @@ async function handleMinimizeToTray() {
     // 如果用户选择记住选择，保存偏好设置
     if (rememberChoice.value) {
       await invoke('set_close_behavior_preference', { preference: 'minimize' });
+      // 发送事件通知设置界面更新
+      window.dispatchEvent(new CustomEvent('close-preference-changed', {
+        detail: { preference: 'minimize' },
+      }));
     }
 
     await invoke('minimize_to_tray');
@@ -74,6 +88,10 @@ async function handleCloseApp() {
     // 如果用户选择记住选择，保存偏好设置
     if (rememberChoice.value) {
       await invoke('set_close_behavior_preference', { preference: 'close' });
+      // 发送事件通知设置界面更新
+      window.dispatchEvent(new CustomEvent('close-preference-changed', {
+        detail: { preference: 'close' },
+      }));
     }
 
     await invoke('close_app');
@@ -92,10 +110,6 @@ function handleCancel() {
   <div v-if="isVisible" class="dialog-overlay" @click="handleCancel">
     <div class="dialog-content" @click.stop>
       <div class="dialog-body">
-        <div class="dialog-message">
-          <p>选择关闭应用的方式：</p>
-        </div>
-
         <div class="remember-choice">
           <label class="checkbox-label">
             <input
@@ -108,12 +122,17 @@ function handleCancel() {
         </div>
 
         <div class="dialog-actions">
-          <button class="action-btn minimize-btn" title="最小化到托盘" @click="handleMinimizeToTray">
+          <button
+            v-if="!isMobile"
+            class="action-btn minimize-btn"
+            title="最小化到托盘"
+            @click="handleMinimizeToTray"
+          >
             <LucideMinimize2 :size="16" />
           </button>
 
           <button class="action-btn close-app-btn" title="关闭应用" @click="handleCloseApp">
-            <LucideX :size="16" />
+            <LucideCheckCheck :size="16" />
           </button>
 
           <button class="action-btn cancel-btn" title="取消" @click="handleCancel">
@@ -176,17 +195,6 @@ function handleCancel() {
 
 .dialog-body {
   padding: 1.5rem;
-}
-
-.dialog-message {
-  margin-bottom: 1rem;
-  text-align: center;
-}
-
-.dialog-message p {
-  margin: 0;
-  color: var(--color-base-700);
-  font-size: 0.875rem;
 }
 
 .remember-choice {
