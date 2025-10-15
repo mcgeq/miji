@@ -522,6 +522,11 @@ function handleCardChange(index: number, card: any) {
 function handleCardClick(_index: number, _card: any) {
 }
 
+// ------------------ Amount Visibility ------------------
+function toggleGlobalAmountVisibility() {
+  moneyStore.toggleGlobalAmountVisibility();
+}
+
 onMounted(async () => {
   loadData();
   const currency = await getLocalCurrencyInfo();
@@ -587,6 +592,15 @@ onUnmounted(() => {
             <button class="btn btn-yellow" @click="showReminderModal">
               <LucideBell /><span>设置提醒</span>
             </button>
+            <button
+              class="btn"
+              :class="moneyStore.globalAmountHidden ? 'btn-gray' : 'btn-blue'"
+              @click="toggleGlobalAmountVisibility"
+            >
+              <LucideEye v-if="!moneyStore.globalAmountHidden" />
+              <LucideEyeOff v-else />
+              <span>{{ moneyStore.globalAmountHidden ? '显示金额' : '隐藏金额' }}</span>
+            </button>
             <!-- 可以继续添加按钮 -->
           </div>
           <!-- 左右渐变遮罩 -->
@@ -599,7 +613,7 @@ onUnmounted(() => {
         <button
           v-for="tab in tabs"
           :key="tab.key"
-          class="tab-btn"
+          class="m-tab-btn"
           :class="[activeTab === tab.key ? 'active' : '']"
           @click="activeTab = tab.key"
         >
@@ -774,6 +788,7 @@ onUnmounted(() => {
 .btn-blue { background-color: #dbeafe; color: #3b82f6; }
 .btn-orange { background-color: #ffedd5; color: #f97316; }
 .btn-yellow { background-color: #fef9c3; color: #ca8a04; }
+.btn-gray { background-color: #f3f4f6; color: #6b7280; }
 
 /* Tabs */
 .tabs {
@@ -784,7 +799,7 @@ onUnmounted(() => {
   background-color: var(--color-base-100);
 }
 
-.tab-btn {
+.m-tab-btn {
   flex-shrink: 0;
   padding: 12px 24px;
   font-size: 14px;
@@ -797,7 +812,7 @@ onUnmounted(() => {
   transition: all 0.2s;
 }
 
-.tab-btn.active {
+.m-tab-btn.active {
   color: var(--color-base-content);
   border-color: var(--color-neutral);
   background-color: var(--color-base-200);

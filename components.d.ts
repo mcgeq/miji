@@ -47,6 +47,7 @@ declare module 'vue' {
     LucideDumbbell: typeof import('lucide-vue-next')['Dumbbell']
     LucideEdit: typeof import('lucide-vue-next')['Edit']
     LucideEye: typeof import('lucide-vue-next')['Eye']
+    LucideEyeOff: typeof import('lucide-vue-next')['EyeOff']
     LucideFileDown: typeof import('lucide-vue-next')['FileDown']
     LucideFileUp: typeof import('lucide-vue-next')['FileUp']
     LucideInfo: typeof import('lucide-vue-next')['Info']

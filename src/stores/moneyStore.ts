@@ -94,25 +94,51 @@ interface MoneyStoreState {
   categoriesCacheExpiry: number;
   loading: boolean;
   error: string | null;
+  // 金额隐藏相关状态
+  globalAmountHidden: boolean;
+  accountAmountHidden: Record<string, boolean>;
 }
 
 export const useMoneyStore = defineStore('money', {
-  state: (): MoneyStoreState => ({
-    accounts: [],
-    transactions: [],
-    budgets: [],
-    budgetsPaged: { rows: [], totalPages: 0, currentPage: 1, totalCount: 0, pageSize: 10 },
-    subCategorys: [],
-    categories: [],
-    remindersPaged: { rows: [], totalPages: 0, currentPage: 1, totalCount: 0, pageSize: 10 },
-    reminders: [],
-    lastFetchedSubCategories: null,
-    lastFetchedCategories: null,
-    categoriesCacheExpiry: 8 * 60 * 60 * 1000,
-    subCategoriesCacheExpiry: 8 * 60 * 60 * 1000,
-    loading: false,
-    error: null,
-  }),
+  state: (): MoneyStoreState => {
+    // 初始化时从本地存储加载金额可见性状态
+    let globalAmountHidden = false;
+    let accountAmountHidden = {};
+
+    try {
+      const stored = localStorage.getItem('money-amount-visibility');
+      if (stored) {
+        const visibilityState = JSON.parse(stored);
+        globalAmountHidden = visibilityState.globalAmountHidden || false;
+        accountAmountHidden = visibilityState.accountAmountHidden || {};
+      }
+    } catch (error) {
+      console.warn(
+        'Failed to load amount visibility from localStorage during initialization:',
+        error,
+      );
+    }
+
+    return {
+      accounts: [],
+      transactions: [],
+      budgets: [],
+      budgetsPaged: { rows: [], totalPages: 0, currentPage: 1, totalCount: 0, pageSize: 10 },
+      subCategorys: [],
+      categories: [],
+      remindersPaged: { rows: [], totalPages: 0, currentPage: 1, totalCount: 0, pageSize: 10 },
+      reminders: [],
+      lastFetchedSubCategories: null,
+      lastFetchedCategories: null,
+      categoriesCacheExpiry: 8 * 60 * 60 * 1000,
+      subCategoriesCacheExpiry: 8 * 60 * 60 * 1000,
+      loading: false,
+      error: null,
+      // 金额隐藏相关状态
+      globalAmountHidden,
+      accountAmountHidden,
+    };
+  },
   // ==================== Getters ====================
   getters: {
     totalBalance: state => {
@@ -700,6 +726,56 @@ export const useMoneyStore = defineStore('money', {
     // ==================== Utility Functions ====================
     clearError() {
       this.error = null;
+    },
+
+    // ==================== Amount Visibility Management ====================
+    toggleGlobalAmountVisibility() {
+      this.globalAmountHidden = !this.globalAmountHidden;
+      this.saveAmountVisibilityToStorage();
+    },
+
+    toggleAccountAmountVisibility(accountSerialNum: string) {
+      this.accountAmountHidden[accountSerialNum] = !this.accountAmountHidden[accountSerialNum];
+      this.saveAmountVisibilityToStorage();
+    },
+
+    isAccountAmountHidden(accountSerialNum: string): boolean {
+      return this.globalAmountHidden || this.accountAmountHidden[accountSerialNum] || false;
+    },
+
+    resetAccountAmountVisibility() {
+      this.accountAmountHidden = {};
+      this.saveAmountVisibilityToStorage();
+    },
+
+    // 保存金额可见性状态到本地存储
+    saveAmountVisibilityToStorage() {
+      try {
+        const visibilityState = {
+          globalAmountHidden: this.globalAmountHidden,
+          accountAmountHidden: this.accountAmountHidden,
+        };
+        localStorage.setItem('money-amount-visibility', JSON.stringify(visibilityState));
+      } catch (error) {
+        console.warn('Failed to save amount visibility to localStorage:', error);
+      }
+    },
+
+    // 从本地存储加载金额可见性状态
+    loadAmountVisibilityFromStorage() {
+      try {
+        const stored = localStorage.getItem('money-amount-visibility');
+        if (stored) {
+          const visibilityState = JSON.parse(stored);
+          this.globalAmountHidden = visibilityState.globalAmountHidden || false;
+          this.accountAmountHidden = visibilityState.accountAmountHidden || {};
+        }
+      } catch (error) {
+        console.warn('Failed to load amount visibility from localStorage:', error);
+        // 重置为默认值
+        this.globalAmountHidden = false;
+        this.accountAmountHidden = {};
+      }
     },
 
     // ==================== Batch Operations ====================

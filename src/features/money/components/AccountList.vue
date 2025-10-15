@@ -33,6 +33,7 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n();
+const moneyStore = useMoneyStore();
 
 const mediaQueries = useMediaQueriesStore();
 // 移动端过滤展开状态
@@ -107,6 +108,11 @@ function getAccountTypeName(type: AccountType): string {
     Other: '其他',
   };
   return names[type] || '未知类型';
+}
+
+// 切换账户金额可见性
+function toggleAccountAmountVisibility(accountSerialNum: string) {
+  moneyStore.toggleAccountAmountVisibility(accountSerialNum);
 }
 </script>
 
@@ -283,6 +289,14 @@ function getAccountTypeName(type: AccountType): string {
           <!-- 操作按钮 -->
           <div class="account-actions">
             <button
+              class="money-option-btn money-option-eye-hover"
+              :title="moneyStore.isAccountAmountHidden(account.serialNum) ? '显示金额' : '隐藏金额'"
+              @click="toggleAccountAmountVisibility(account.serialNum)"
+            >
+              <LucideEye v-if="!moneyStore.isAccountAmountHidden(account.serialNum)" class="wh-4" />
+              <LucideEyeOff v-else class="wh-4" />
+            </button>
+            <button
               class="money-option-btn money-option-ben-hover"
               :title="account.isActive ? t('common.status.stop') : t('common.status.enabled')"
               @click="emit('toggleActive', account.serialNum, !account.isActive)"
@@ -305,7 +319,9 @@ function getAccountTypeName(type: AccountType): string {
         </div>
 
         <div class="account-balance">
-          <span class="balance-amount">{{ formatCurrency(account.balance) }}</span>
+          <span class="balance-amount">
+            {{ moneyStore.isAccountAmountHidden(account.serialNum) ? '***' : formatCurrency(account.balance) }}
+          </span>
         </div>
 
         <div class="account-details">
@@ -441,6 +457,11 @@ function getAccountTypeName(type: AccountType): string {
   display: flex;
   align-items: center;
   justify-content: space-between;
+}
+
+.money-option-eye-hover:hover {
+  background-color: #3b82f6;
+  color: white;
 }
 
 @media (min-width: 768px) {

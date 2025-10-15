@@ -423,7 +423,7 @@ watch(
               {{ t('common.placeholders.selectAccount') }}
             </option>
             <option v-for="account in selectAccounts" :key="account.serialNum" :value="account.serialNum">
-              {{ account.name }} ({{ formatCurrency(account.balance) }})
+              {{ account.name }} ({{ moneyStore.isAccountAmountHidden(account.serialNum) ? '***' : formatCurrency(account.balance) }})
             </option>
           </select>
         </div>
@@ -436,7 +436,7 @@ watch(
               {{ t('common.placeholders.selectAccount') }}
             </option>
             <option v-for="account in selectToAccounts" :key="account.serialNum" :value="account.serialNum">
-              {{ account.name }} ({{ formatCurrency(account.balance) }})
+              {{ account.name }} ({{ moneyStore.isAccountAmountHidden(account.serialNum) ? '***' : formatCurrency(account.balance) }})
             </option>
           </select>
         </div>

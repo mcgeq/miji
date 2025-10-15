@@ -28,6 +28,15 @@ import type {
   UpdateAccountRequest,
 } from '@/schema/money';
 
+// Props
+interface Props {
+  showAmountToggle?: boolean;
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  showAmountToggle: false,
+});
+
 const { t } = useI18n();
 const moneyStore = useMoneyStore();
 const { confirmState, handleConfirm, handleCancel, handleClose } = useConfirm();
@@ -353,6 +362,11 @@ function closeAllModals() {
   closeReminderModal();
 }
 
+// 切换金额可见性
+function toggleAmountVisibility() {
+  moneyStore.toggleGlobalAmountVisibility();
+}
+
 onMounted(async () => {
   await loadAccounts();
   await moneyStore.getAllCategories();
@@ -411,6 +425,17 @@ onUnmounted(() => {
       <button class="qm-btn qm-btn-yellow" title="设置提醒" @click="showReminderModal">
         <LucideBell :size="12" />
       </button>
+      <!-- 隐藏金额按钮 -->
+      <button
+        v-if="props.showAmountToggle"
+        class="qm-btn"
+        :class="moneyStore.globalAmountHidden ? 'qm-btn-gray' : 'qm-btn-blue'"
+        :title="moneyStore.globalAmountHidden ? '显示金额' : '隐藏金额'"
+        @click="toggleAmountVisibility"
+      >
+        <LucideEye v-if="!moneyStore.globalAmountHidden" :size="12" />
+        <LucideEyeOff v-else :size="12" />
+      </button>
     </div>
 
     <!-- 标签切换 -->
@@ -466,7 +491,7 @@ onUnmounted(() => {
               </div>
             </div>
             <div class="qm-item-value">
-              {{ formatCurrency(account.balance ?? 0) }}
+              {{ moneyStore.globalAmountHidden ? '***' : formatCurrency(account.balance ?? 0) }}
             </div>
           </div>
         </div>
@@ -1005,6 +1030,15 @@ onUnmounted(() => {
 
 .qm-btn-yellow:hover {
   background-color: #fef08a;
+}
+
+.qm-btn-gray {
+  background-color: #f3f4f6;
+  color: #6b7280;
+}
+
+.qm-btn-gray:hover {
+  background-color: #e5e7eb;
 }
 
 /* 响应式调整 */

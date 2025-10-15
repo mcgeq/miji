@@ -9,6 +9,9 @@ type TabType = 'money' | 'period' | 'todos' | 'stats';
 // 当前激活的tab
 const activeTab = ref<TabType>('money');
 
+// Money store
+const moneyStore = useMoneyStore();
+
 // Tab配置
 const tabs = [
   { id: 'money' as TabType, label: '财务' },
@@ -20,6 +23,11 @@ const tabs = [
 // 切换tab
 function switchTab(tab: TabType) {
   activeTab.value = tab;
+}
+
+// 切换全局金额可见性
+function toggleGlobalAmountVisibility() {
+  moneyStore.toggleGlobalAmountVisibility();
 }
 </script>
 
@@ -41,7 +49,10 @@ function switchTab(tab: TabType) {
     <!-- Tab内容 -->
     <div class="tab-content">
       <div v-if="activeTab === 'money'" class="tab-panel">
-        <QuickMoneyActions />
+        <QuickMoneyActions
+          :show-amount-toggle="true"
+          @toggle-amount-visibility="toggleGlobalAmountVisibility"
+        />
       </div>
       <div v-if="activeTab === 'period'" class="tab-panel">
         <TodayPeriod />

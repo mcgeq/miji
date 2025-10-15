@@ -151,7 +151,7 @@ defineExpose({
           :key="account.serialNum"
           :value="account.serialNum"
         >
-          {{ account.name }} ({{ account.currency.symbol }}{{ account.balance }})
+          {{ account.name }} ({{ account.currency.symbol }}{{ moneyStore.isAccountAmountHidden(account.serialNum) ? '***' : account.balance }})
         </option>
       </select>
     </div>
