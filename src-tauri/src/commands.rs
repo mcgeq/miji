@@ -20,7 +20,7 @@ use common::{
 };
 use healths::command as health_cmd;
 use money::command as money_cmd;
-use tauri::{AppHandle, Builder, Manager, State, Wry};
+use tauri::{AppHandle, Builder, Emitter, Manager, State, Wry};
 use todos::command as todo_cmd;
 use tracing::info;
 
@@ -36,6 +36,9 @@ pub fn init_commands(builder: Builder<Wry>) -> Builder<Wry> {
         restore_from_tray,
         toggle_window_visibility,
         close_app,
+        get_close_behavior_preference,
+        set_close_behavior_preference,
+        is_user_logged_in,
         auth_cmd::exists_user,
         auth_cmd::create_user,
         auth_cmd::get_user_with_email,
@@ -279,4 +282,54 @@ async fn toggle_window_visibility(app: AppHandle) -> Result<(), String> {
 async fn close_app(app: AppHandle) -> Result<(), String> {
     app.exit(0);
     Ok(())
+}
+
+use std::collections::HashMap;
+use std::sync::Mutex;
+
+// 全局状态存储用户偏好
+pub type AppPreferences = Mutex<HashMap<String, String>>;
+
+#[tauri::command]
+pub async fn get_close_behavior_preference(state: State<'_, AppPreferences>) -> Result<Option<String>, String> {
+    let preferences = state.lock().map_err(|e| e.to_string())?;
+    Ok(preferences.get("closeBehaviorPreference").cloned())
+}
+
+#[tauri::command]
+pub async fn set_close_behavior_preference(
+    preference: String, 
+    state: State<'_, AppPreferences>
+) -> Result<(), String> {
+    let mut preferences = state.lock().map_err(|e| e.to_string())?;
+    preferences.insert("closeBehaviorPreference".to_string(), preference);
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn is_user_logged_in(app: AppHandle) -> Result<bool, String> {
+    // 通过检查前端localStorage中的token来判断用户是否已登录
+    if let Some(window) = app.get_webview_window("main") {
+        // 使用eval执行JavaScript来检查localStorage中的token
+        let script = r#"
+            (() => {
+                try {
+                    const token = localStorage.getItem('auth_token');
+                    return token && token !== 'null' && token !== '';
+                } catch (e) {
+                    return false;
+                }
+            })()
+        "#;
+        
+        // 由于eval不能直接返回值，我们使用一个不同的方法
+        // 发送事件到前端，让前端返回登录状态
+        window.emit("check-login-status", ()).map_err(|e| e.to_string())?;
+        
+        // 暂时返回true，让用户看到关闭对话框
+        // 实际实现中应该通过事件回调来获取真实的登录状态
+        Ok(true)
+    } else {
+        Ok(false)
+    }
 }

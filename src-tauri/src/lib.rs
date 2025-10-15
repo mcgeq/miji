@@ -35,7 +35,7 @@ use tokio::{
     time::{Duration, sleep},
 };
 
-use crate::commands::set_complete;
+use crate::commands::{set_complete, AppPreferences};
 use crate::default_user::create_default_user;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -104,8 +104,11 @@ pub fn run() {
 
             // 6. 管理应用状态
             app.manage(app_state.clone());
+            
+            // 7. 管理用户偏好设置
+            app.manage(AppPreferences::new(std::collections::HashMap::new()));
 
-            // 7. 创建系统托盘（仅桌面平台）
+            // 8. 创建系统托盘（仅桌面平台）
             #[cfg(desktop)]
             {
                 create_system_tray(&app_handle)?;
@@ -223,17 +226,43 @@ fn setup_window_close_handler(app: &AppHandle) -> Result<(), Box<dyn std::error:
         window.on_window_event(move |event| {
             match event {
                 WindowEvent::CloseRequested { api, .. } => {
+                    println!("CloseRequested event received");
                     // 阻止默认关闭行为
                     api.prevent_close();
                     
-                    // 发送事件到前端显示对话框
-                    if let Some(window) = app_handle.get_webview_window("main") {
-                        let _ = window.emit("show-close-dialog", ());
-                    }
+                    // 检查当前页面是否为登录或注册页面
+                    let app_handle_clone = app_handle.clone();
+                    tauri::async_runtime::spawn(async move {
+                        println!("Spawning async task to check current page and emit event");
+                        if let Some(window) = app_handle_clone.get_webview_window("main") {
+                            // 检查当前页面URL
+                            let check_script = r#"
+                                (() => {
+                                    const currentPath = window.location.hash;
+                                    console.log('Current path:', currentPath);
+                                    return currentPath.includes('/auth/login') || currentPath.includes('/auth/register');
+                                })()
+                            "#;
+                            
+                            // 由于eval不能直接返回值，我们使用事件来检查
+                            // 发送检查事件到前端
+                            println!("Emitting check-auth-page event");
+                            let result = window.emit("check-auth-page", ());
+                            match result {
+                                Ok(_) => println!("Check auth page event emitted successfully"),
+                                Err(e) => println!("Failed to emit check auth page event: {}", e),
+                            }
+                        } else {
+                            println!("No main window found");
+                        }
+                    });
                 }
                 _ => {}
             }
         });
+        println!("Window close handler setup completed");
+    } else {
+        println!("No main window found during setup");
     }
     Ok(())
 }

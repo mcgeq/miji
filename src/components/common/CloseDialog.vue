@@ -4,16 +4,62 @@ import { listen } from '@tauri-apps/api/event';
 import { toast } from '@/utils/toast';
 
 const isVisible = ref(false);
+const rememberChoice = ref(false);
 
 // 监听来自Rust的关闭事件
 onMounted(async () => {
-  await listen('show-close-dialog', () => {
-    isVisible.value = true;
+  // 监听检查认证页面事件
+  await listen('check-auth-page', () => {
+    const currentPath = window.location.hash;
+
+    // 检查是否为登录或注册页面
+    const isAuthPage = currentPath.includes('/auth/login') || currentPath.includes('/auth/register');
+
+    if (isAuthPage) {
+      // 在登录/注册页面，直接关闭应用
+      invoke('close_app');
+    } else {
+      // 不在登录/注册页面，检查用户偏好并处理
+      handleCloseWithPreference();
+    }
+  });
+
+  // 监听显示关闭对话框事件（保留兼容性）
+  await listen('show-close-dialog', async () => {
+    await handleCloseWithPreference();
   });
 });
 
+async function handleCloseWithPreference() {
+  // 检查用户的关闭行为偏好
+  try {
+    const preference = await invoke('get_close_behavior_preference');
+
+    if (preference === 'close') {
+      // 用户偏好直接关闭
+      await invoke('close_app');
+      return;
+    } else if (preference === 'minimize') {
+      // 用户偏好最小化到托盘
+      await invoke('minimize_to_tray');
+      toast.info('应用已最小化到系统托盘');
+      return;
+    }
+  } catch (error) {
+    console.error('Failed to get close behavior preference:', error);
+  }
+
+  // 显示关闭对话框
+  isVisible.value = true;
+}
+
 async function handleMinimizeToTray() {
   try {
+    // 如果用户选择记住选择，保存偏好设置
+    if (rememberChoice.value) {
+      await invoke('set_close_behavior_preference', { preference: 'minimize' });
+    }
+
     await invoke('minimize_to_tray');
     toast.info('应用已最小化到系统托盘');
     isVisible.value = false;
@@ -25,6 +71,11 @@ async function handleMinimizeToTray() {
 
 async function handleCloseApp() {
   try {
+    // 如果用户选择记住选择，保存偏好设置
+    if (rememberChoice.value) {
+      await invoke('set_close_behavior_preference', { preference: 'close' });
+    }
+
     await invoke('close_app');
   } catch (error) {
     console.error('Failed to close app:', error);
@@ -41,6 +92,21 @@ function handleCancel() {
   <div v-if="isVisible" class="dialog-overlay" @click="handleCancel">
     <div class="dialog-content" @click.stop>
       <div class="dialog-body">
+        <div class="dialog-message">
+          <p>选择关闭应用的方式：</p>
+        </div>
+
+        <div class="remember-choice">
+          <label class="checkbox-label">
+            <input
+              v-model="rememberChoice"
+              type="checkbox"
+              class="checkbox-input"
+            >
+            <span class="checkbox-text">记住我的选择</span>
+          </label>
+        </div>
+
         <div class="dialog-actions">
           <button class="action-btn minimize-btn" title="最小化到托盘" @click="handleMinimizeToTray">
             <LucideMinimize2 :size="16" />
@@ -112,6 +178,42 @@ function handleCancel() {
   padding: 1.5rem;
 }
 
+.dialog-message {
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+.dialog-message p {
+  margin: 0;
+  color: var(--color-base-700);
+  font-size: 0.875rem;
+}
+
+.remember-choice {
+  margin-bottom: 1.5rem;
+  display: flex;
+  justify-content: center;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+  color: var(--color-base-600);
+}
+
+.checkbox-input {
+  width: 1rem;
+  height: 1rem;
+  accent-color: var(--color-primary-500);
+}
+
+.checkbox-text {
+  user-select: none;
+}
+
 .dialog-actions {
   display: flex;
   flex-direction: row;
@@ -124,16 +226,16 @@ function handleCancel() {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.25rem;
-  padding: 0.5rem 0.75rem;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
   border-radius: 0.375rem;
-  font-size: 0.75rem;
+  font-size: 0.875rem;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
   border: none;
-  min-width: 2.5rem;
-  height: 2.5rem;
+  min-width: 5rem;
+  height: 2.75rem;
 }
 
 .minimize-btn {

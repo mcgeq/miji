@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { invoke } from '@tauri-apps/api/core';
 import { Monitor, Moon, RotateCcw, Save, Sun } from 'lucide-vue-next';
 import { useLocaleStore } from '@/stores/locales';
 import { useThemeStore } from '@/stores/theme';
@@ -12,7 +13,24 @@ const selectedTimezone = ref('Asia/Shanghai');
 const selectedTheme = ref(themeStore.currentTheme || 'system');
 const compactMode = ref(false);
 const autoStart = ref(false);
-const minimizeToTray = ref(true);
+const minimizeToTray = ref(false); // 默认关闭最小化到托盘
+const closeBehaviorPreference = ref('ask'); // 默认每次询问
+const isLoadingSettings = ref(false); // 标志是否正在加载设置
+
+// 关闭行为选项
+const closeBehaviorOptions = computed(() => {
+  const options = [
+    { value: 'ask', label: '每次询问' },
+    { value: 'close', label: '直接关闭' },
+  ];
+
+  // 如果启用了最小化到托盘，添加最小化选项
+  if (minimizeToTray.value) {
+    options.splice(1, 0, { value: 'minimize', label: '最小化到托盘' });
+  }
+
+  return options;
+});
 
 // 监听 store 的变化，同步到 selectedLocale
 watch(() => localeStore.currentLocale, newLocale => {
@@ -27,6 +45,56 @@ watch(() => themeStore.currentTheme, newTheme => {
     selectedTheme.value = newTheme;
   }
 }, { immediate: true });
+
+// 监听最小化到托盘开关的变化
+watch(minimizeToTray, async newValue => {
+  if (isLoadingSettings.value) return; // 加载设置时不触发保存
+
+  if (newValue) {
+    // 如果开启了最小化到托盘，则关闭行为偏好应选择最小化到托盘
+    closeBehaviorPreference.value = 'minimize';
+  } else {
+    // 如果关闭了最小化到托盘，则关闭行为偏好应选择每次询问
+    closeBehaviorPreference.value = 'ask';
+  }
+  await handleCloseBehaviorChange(); // 保存新的偏好设置
+});
+
+// 监听关闭行为偏好的变化
+watch(closeBehaviorPreference, async newValue => {
+  if (isLoadingSettings.value) return; // 加载设置时不触发保存
+
+  if (newValue === 'minimize') {
+    // 如果选择最小化到托盘，则开启最小化到托盘开关
+    minimizeToTray.value = true;
+  } else if (newValue === 'ask' || newValue === 'close') {
+    // 如果选择每次询问或直接关闭，则关闭最小化到托盘开关
+    minimizeToTray.value = false;
+  }
+  await handleCloseBehaviorChange(); // 保存新的偏好设置
+});
+
+// 组件挂载时加载关闭行为偏好
+onMounted(async () => {
+  isLoadingSettings.value = true; // 开始加载设置
+
+  try {
+    const preference = await invoke('get_close_behavior_preference');
+    if (preference) {
+      closeBehaviorPreference.value = preference;
+      // 根据偏好设置同步最小化开关
+      if (preference === 'minimize') {
+        minimizeToTray.value = true;
+      } else {
+        minimizeToTray.value = false;
+      }
+    }
+  } catch (error) {
+    console.error('Failed to load close behavior preference:', error);
+  } finally {
+    isLoadingSettings.value = false; // 结束加载设置
+  }
+});
 
 const availableLocales = [
   { code: 'zh-CN', name: '简体中文' },
@@ -61,6 +129,14 @@ async function handleThemeChange(theme: string) {
   await themeStore.setTheme(theme as any);
 }
 
+async function handleCloseBehaviorChange() {
+  try {
+    await invoke('set_close_behavior_preference', { preference: closeBehaviorPreference.value });
+  } catch (error) {
+    console.error('Failed to save close behavior preference:', error);
+  }
+}
+
 function handleSave() {
   const settings = {
     locale: selectedLocale.value,
@@ -69,6 +145,7 @@ function handleSave() {
     compactMode: compactMode.value,
     autoStart: autoStart.value,
     minimizeToTray: minimizeToTray.value,
+    closeBehaviorPreference: closeBehaviorPreference.value,
   };
 
   // 在开发环境下显示设置信息
@@ -86,11 +163,19 @@ async function handleReset() {
   selectedTheme.value = 'system';
   compactMode.value = false;
   autoStart.value = false;
-  minimizeToTray.value = true;
+  minimizeToTray.value = false; // 重置为关闭状态
+  closeBehaviorPreference.value = 'ask'; // 重置为每次询问
 
   // 重置store中的值
   await localeStore.setLocale('zh-CN');
   await themeStore.setTheme('system');
+
+  // 重置关闭行为偏好
+  try {
+    await invoke('set_close_behavior_preference', { preference: 'ask' });
+  } catch (error) {
+    console.error('Failed to reset close behavior preference:', error);
+  }
 }
 </script>
 
@@ -251,6 +336,30 @@ async function handleReset() {
                 <div class="toggle-switch-thumb" />
               </div>
             </label>
+          </div>
+        </div>
+
+        <div class="general-setting-item">
+          <div class="general-setting-label-wrapper">
+            <label class="general-setting-label">关闭行为偏好</label>
+            <p class="general-setting-description">
+              设置点击关闭按钮时的默认行为
+            </p>
+          </div>
+          <div class="general-setting-control">
+            <select
+              v-model="closeBehaviorPreference"
+              class="general-select"
+              @change="handleCloseBehaviorChange"
+            >
+              <option
+                v-for="option in closeBehaviorOptions"
+                :key="option.value"
+                :value="option.value"
+              >
+                {{ option.label }}
+              </option>
+            </select>
           </div>
         </div>
       </div>
