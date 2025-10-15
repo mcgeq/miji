@@ -263,8 +263,8 @@ defineExpose({
   blur,
   validate,
   reset,
-  selectedType: readonly(selectedType),
-  isValid: readonly(isValid),
+  selectedType,
+  isValid,
 });
 </script>
 

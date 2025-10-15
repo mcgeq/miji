@@ -143,7 +143,7 @@ export function useConfirm() {
 
   return {
     // 状态
-    confirmState: readonly(confirmState),
+    confirmState,
 
     // 方法
     confirm,

@@ -249,30 +249,39 @@ fn check_password_hash(password: &str, pwd_hash: &str) -> MijiResult<bool> {
 
 #[tauri::command]
 async fn minimize_to_tray(app: AppHandle) -> Result<(), String> {
-    if let Some(window) = app.get_webview_window("main") {
-        window.hide().map_err(|e| e.to_string())?;
+    #[cfg(desktop)]
+    {
+        if let Some(window) = app.get_webview_window("main") {
+            window.hide().map_err(|e| e.to_string())?;
+        }
     }
     Ok(())
 }
 
 #[tauri::command]
 async fn restore_from_tray(app: AppHandle) -> Result<(), String> {
-    if let Some(window) = app.get_webview_window("main") {
-        window.show().map_err(|e| e.to_string())?;
-        window.set_focus().map_err(|e| e.to_string())?;
+    #[cfg(desktop)]
+    {
+        if let Some(window) = app.get_webview_window("main") {
+            window.show().map_err(|e| e.to_string())?;
+            window.set_focus().map_err(|e| e.to_string())?;
+        }
     }
     Ok(())
 }
 
 #[tauri::command]
 async fn toggle_window_visibility(app: AppHandle) -> Result<(), String> {
-    if let Some(window) = app.get_webview_window("main") {
-        let is_visible = window.is_visible().map_err(|e| e.to_string())?;
-        if is_visible {
-            window.hide().map_err(|e| e.to_string())?;
-        } else {
-            window.show().map_err(|e| e.to_string())?;
-            window.set_focus().map_err(|e| e.to_string())?;
+    #[cfg(desktop)]
+    {
+        if let Some(window) = app.get_webview_window("main") {
+            let is_visible = window.is_visible().map_err(|e| e.to_string())?;
+            if is_visible {
+                window.hide().map_err(|e| e.to_string())?;
+            } else {
+                window.show().map_err(|e| e.to_string())?;
+                window.set_focus().map_err(|e| e.to_string())?;
+            }
         }
     }
     Ok(())
@@ -291,15 +300,17 @@ use std::sync::Mutex;
 pub type AppPreferences = Mutex<HashMap<String, String>>;
 
 #[tauri::command]
-pub async fn get_close_behavior_preference(state: State<'_, AppPreferences>) -> Result<Option<String>, String> {
+pub async fn get_close_behavior_preference(
+    state: State<'_, AppPreferences>,
+) -> Result<Option<String>, String> {
     let preferences = state.lock().map_err(|e| e.to_string())?;
     Ok(preferences.get("closeBehaviorPreference").cloned())
 }
 
 #[tauri::command]
 pub async fn set_close_behavior_preference(
-    preference: String, 
-    state: State<'_, AppPreferences>
+    preference: String,
+    state: State<'_, AppPreferences>,
 ) -> Result<(), String> {
     let mut preferences = state.lock().map_err(|e| e.to_string())?;
     preferences.insert("closeBehaviorPreference".to_string(), preference);
@@ -311,7 +322,7 @@ pub async fn is_user_logged_in(app: AppHandle) -> Result<bool, String> {
     // 通过检查前端localStorage中的token来判断用户是否已登录
     if let Some(window) = app.get_webview_window("main") {
         // 使用eval执行JavaScript来检查localStorage中的token
-        let script = r#"
+        let _script = r#"
             (() => {
                 try {
                     const token = localStorage.getItem('auth_token');
@@ -321,11 +332,13 @@ pub async fn is_user_logged_in(app: AppHandle) -> Result<bool, String> {
                 }
             })()
         "#;
-        
+
         // 由于eval不能直接返回值，我们使用一个不同的方法
         // 发送事件到前端，让前端返回登录状态
-        window.emit("check-login-status", ()).map_err(|e| e.to_string())?;
-        
+        window
+            .emit("check-login-status", ())
+            .map_err(|e| e.to_string())?;
+
         // 暂时返回true，让用户看到关闭对话框
         // 实际实现中应该通过事件回调来获取真实的登录状态
         Ok(true)

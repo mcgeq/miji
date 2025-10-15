@@ -3,9 +3,13 @@ import { invoke } from '@tauri-apps/api/core';
 import { Monitor, Moon, RotateCcw, Save, Sun } from 'lucide-vue-next';
 import { useLocaleStore } from '@/stores/locales';
 import { useThemeStore } from '@/stores/theme';
+import { isDesktop } from '@/utils/platform';
 
 const localeStore = useLocaleStore();
 const themeStore = useThemeStore();
+
+// 平台检测
+const isDesktopPlatform = ref(isDesktop());
 
 // 使用响应式引用，初始值从 store 获取
 const selectedLocale = ref(localeStore.currentLocale || 'zh-CN');
@@ -340,50 +344,53 @@ async function handleReset() {
           </div>
         </div>
 
-        <div class="general-setting-item">
-          <div class="general-setting-label-wrapper">
-            <label class="general-setting-label">最小化到系统托盘</label>
-            <p class="general-setting-description">
-              关闭窗口时最小化到系统托盘
-            </p>
+        <!-- 只在桌面端显示托盘相关设置 -->
+        <template v-if="isDesktopPlatform">
+          <div class="general-setting-item">
+            <div class="general-setting-label-wrapper">
+              <label class="general-setting-label">最小化到系统托盘</label>
+              <p class="general-setting-description">
+                关闭窗口时最小化到系统托盘
+              </p>
+            </div>
+            <div class="general-setting-control">
+              <label class="toggle-switch">
+                <input
+                  v-model="minimizeToTray"
+                  type="checkbox"
+                  class="toggle-switch-input"
+                >
+                <div class="toggle-switch-track">
+                  <div class="toggle-switch-thumb" />
+                </div>
+              </label>
+            </div>
           </div>
-          <div class="general-setting-control">
-            <label class="toggle-switch">
-              <input
-                v-model="minimizeToTray"
-                type="checkbox"
-                class="toggle-switch-input"
-              >
-              <div class="toggle-switch-track">
-                <div class="toggle-switch-thumb" />
-              </div>
-            </label>
-          </div>
-        </div>
 
-        <div class="general-setting-item">
-          <div class="general-setting-label-wrapper">
-            <label class="general-setting-label">关闭行为偏好</label>
-            <p class="general-setting-description">
-              设置点击关闭按钮时的默认行为
-            </p>
-          </div>
-          <div class="general-setting-control">
-            <select
-              v-model="closeBehaviorPreference"
-              class="general-select"
-              @change="handleCloseBehaviorChange"
-            >
-              <option
-                v-for="option in closeBehaviorOptions"
-                :key="option.value"
-                :value="option.value"
+          <div class="general-setting-item">
+            <div class="general-setting-label-wrapper">
+              <label class="general-setting-label">关闭行为偏好</label>
+              <p class="general-setting-description">
+                设置点击关闭按钮时的默认行为
+              </p>
+            </div>
+            <div class="general-setting-control">
+              <select
+                v-model="closeBehaviorPreference"
+                class="general-select"
+                @change="handleCloseBehaviorChange"
               >
-                {{ option.label }}
-              </option>
-            </select>
+                <option
+                  v-for="option in closeBehaviorOptions"
+                  :key="option.value"
+                  :value="option.value"
+                >
+                  {{ option.label }}
+                </option>
+              </select>
+            </div>
           </div>
-        </div>
+        </template>
       </div>
     </div>
 

@@ -1,5 +1,12 @@
 use migration::{Migrator, MigratorTrait};
-use tauri::{AppHandle, Manager, Emitter, menu::{MenuBuilder, MenuItem}, tray::{TrayIconBuilder, TrayIconEvent, MouseButton, MouseButtonState}, WindowEvent};
+use tauri::{AppHandle, Manager};
+
+#[cfg(desktop)]
+use tauri::{
+    Emitter, WindowEvent,
+    menu::{MenuBuilder, MenuItem},
+    tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
+};
 
 pub mod logging;
 
@@ -35,7 +42,7 @@ use tokio::{
     time::{Duration, sleep},
 };
 
-use crate::commands::{set_complete, AppPreferences};
+use crate::commands::{AppPreferences, set_complete};
 use crate::default_user::create_default_user;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -104,15 +111,15 @@ pub fn run() {
 
             // 6. 管理应用状态
             app.manage(app_state.clone());
-            
+
             // 7. 管理用户偏好设置
             app.manage(AppPreferences::new(std::collections::HashMap::new()));
 
             // 8. 创建系统托盘（仅桌面平台）
             #[cfg(desktop)]
             {
-                create_system_tray(&app_handle)?;
-                setup_window_close_handler(&app_handle)?;
+                create_system_tray(app_handle)?;
+                setup_window_close_handler(app_handle)?;
                 tauri::async_runtime::spawn(setup(cloned_handle));
             }
 
@@ -136,7 +143,7 @@ async fn setup(app: AppHandle) -> Result<(), ()> {
         eprintln!("Performing mobile backend setup task...");
         sleep(Duration::from_millis(500)).await; // 移动端减少到500ms
     }
-    
+
     #[cfg(not(any(target_os = "android", target_os = "ios")))]
     {
         eprintln!("Performing really heavy backend setup task...");
@@ -193,25 +200,23 @@ fn create_system_tray(app: &AppHandle) -> Result<(), Box<dyn std::error::Error>>
             }
         })
         .on_tray_icon_event(|tray, event| {
-            match event {
-                TrayIconEvent::Click {
-                    button: MouseButton::Left,
-                    button_state: MouseButtonState::Up,
-                    ..
-                } => {
-                    // 左键点击托盘图标显示/隐藏窗口
-                    let app = tray.app_handle();
-                    if let Some(window) = app.get_webview_window("main") {
-                        if window.is_visible().unwrap_or(false) {
-                            let _ = window.hide();
-                        } else {
-                            let _ = window.unminimize();
-                            let _ = window.show();
-                            let _ = window.set_focus();
-                        }
+            if let TrayIconEvent::Click {
+                button: MouseButton::Left,
+                button_state: MouseButtonState::Up,
+                ..
+            } = event
+            {
+                // 左键点击托盘图标显示/隐藏窗口
+                let app = tray.app_handle();
+                if let Some(window) = app.get_webview_window("main") {
+                    if window.is_visible().unwrap_or(false) {
+                        let _ = window.hide();
+                    } else {
+                        let _ = window.unminimize();
+                        let _ = window.show();
+                        let _ = window.set_focus();
                     }
                 }
-                _ => {}
             }
         })
         .build(app)?;
@@ -224,45 +229,29 @@ fn setup_window_close_handler(app: &AppHandle) -> Result<(), Box<dyn std::error:
     if let Some(window) = app.get_webview_window("main") {
         let app_handle = app.clone();
         window.on_window_event(move |event| {
-            match event {
-                WindowEvent::CloseRequested { api, .. } => {
-                    println!("CloseRequested event received");
-                    // 阻止默认关闭行为
-                    api.prevent_close();
-                    
-                    // 检查当前页面是否为登录或注册页面
-                    let app_handle_clone = app_handle.clone();
-                    tauri::async_runtime::spawn(async move {
-                        println!("Spawning async task to check current page and emit event");
-                        if let Some(window) = app_handle_clone.get_webview_window("main") {
-                            // 检查当前页面URL
-                            let check_script = r#"
-                                (() => {
-                                    const currentPath = window.location.hash;
-                                    console.log('Current path:', currentPath);
-                                    return currentPath.includes('/auth/login') || currentPath.includes('/auth/register');
-                                })()
-                            "#;
-                            
-                            // 由于eval不能直接返回值，我们使用事件来检查
-                            // 发送检查事件到前端
-                            println!("Emitting check-auth-page event");
-                            let result = window.emit("check-auth-page", ());
-                            match result {
-                                Ok(_) => println!("Check auth page event emitted successfully"),
-                                Err(e) => println!("Failed to emit check auth page event: {}", e),
-                            }
-                        } else {
-                            println!("No main window found");
+            if let WindowEvent::CloseRequested { api, .. } = event {
+                println!("CloseRequested event received");
+                // 阻止默认关闭行为
+                api.prevent_close();
+
+                // 检查当前页面是否为登录或注册页面
+                let app_handle_clone = app_handle.clone();
+                tauri::async_runtime::spawn(async move {
+                    if let Some(window) = app_handle_clone.get_webview_window("main") {
+                        // 发送检查事件到前端
+                        let result = window.emit("check-auth-page", ());
+                        match result {
+                            Ok(_) => println!("Check auth page event emitted successfully"),
+                            Err(e) => println!("Failed to emit check auth page event: {}", e),
                         }
-                    });
-                }
-                _ => {}
+                    } else {
+                        println!("No main window found");
+                    }
+                });
             }
         });
-        println!("Window close handler setup completed");
     } else {
-        println!("No main window found during setup");
+        eprintln!("No main window found during setup");
     }
     Ok(())
 }

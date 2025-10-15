@@ -1,15 +1,15 @@
 <script setup lang="ts">
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
+import { isDesktop } from '@/utils/platform';
 import { toast } from '@/utils/toast';
 
 const isVisible = ref(false);
 const rememberChoice = ref(false);
 
-// 检测是否为移动端
-const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
-  navigator.userAgent,
-);
+// 平台检测
+const isDesktopPlatform = ref(isDesktop());
+const isMobile = ref(!isDesktop());
 
 // 监听来自Rust的关闭事件
 onMounted(async () => {
@@ -20,7 +20,7 @@ onMounted(async () => {
     // 检查是否为登录或注册页面
     const isAuthPage = currentPath.includes('/auth/login') || currentPath.includes('/auth/register');
 
-    if (isAuthPage || isMobile) {
+    if (isAuthPage || isMobile.value) {
       // 在登录/注册页面或移动端，直接关闭应用
       invoke('close_app');
     } else {
@@ -31,7 +31,7 @@ onMounted(async () => {
 
   // 监听显示关闭对话框事件（保留兼容性）
   await listen('show-close-dialog', async () => {
-    if (isMobile) {
+    if (isMobile.value) {
       // 移动端直接关闭应用
       await invoke('close_app');
     } else {
@@ -123,7 +123,7 @@ function handleCancel() {
 
         <div class="dialog-actions">
           <button
-            v-if="!isMobile"
+            v-if="isDesktopPlatform"
             class="action-btn minimize-btn"
             title="最小化到托盘"
             @click="handleMinimizeToTray"

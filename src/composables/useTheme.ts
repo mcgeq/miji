@@ -10,12 +10,12 @@ export function useTheme() {
 
   return {
     // 状态
-    currentTheme: readonly(themeStore.currentTheme),
-    effectiveTheme: readonly(themeStore.effectiveTheme),
-    isDarkMode: readonly(themeStore.isDarkMode),
-    isLightMode: readonly(themeStore.isLightMode),
-    isSystemMode: readonly(themeStore.isSystemMode),
-    isLoading: readonly(themeStore.isLoading),
+    currentTheme: themeStore.currentTheme,
+    effectiveTheme: themeStore.effectiveTheme,
+    isDarkMode: themeStore.isDarkMode,
+    isLightMode: themeStore.isLightMode,
+    isSystemMode: themeStore.isSystemMode,
+    isLoading: themeStore.isLoading,
 
     // 方法
     setTheme: themeStore.setTheme,

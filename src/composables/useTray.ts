@@ -1,9 +1,26 @@
 import { invoke } from '@tauri-apps/api/core';
+import { isDesktop } from '@/utils/platform';
 
 /**
  * 系统托盘相关功能
+ * 仅在桌面端可用
  */
 export function useTray() {
+  // 检查是否为桌面端
+  if (!isDesktop()) {
+    console.warn('useTray: 系统托盘功能仅在桌面端可用');
+    return {
+      minimizeToTray: async () => {
+        console.warn('系统托盘功能仅在桌面端可用');
+      },
+      restoreFromTray: async () => {
+        console.warn('系统托盘功能仅在桌面端可用');
+      },
+      toggleWindowVisibility: async () => {
+        console.warn('系统托盘功能仅在桌面端可用');
+      },
+    };
+  }
   /**
    * 最小化到系统托盘
    */
