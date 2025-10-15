@@ -592,15 +592,6 @@ onUnmounted(() => {
             <button class="btn btn-yellow" @click="showReminderModal">
               <LucideBell /><span>设置提醒</span>
             </button>
-            <button
-              class="btn"
-              :class="moneyStore.globalAmountHidden ? 'btn-gray' : 'btn-blue'"
-              @click="toggleGlobalAmountVisibility"
-            >
-              <LucideEye v-if="!moneyStore.globalAmountHidden" />
-              <LucideEyeOff v-else />
-              <span>{{ moneyStore.globalAmountHidden ? '显示金额' : '隐藏金额' }}</span>
-            </button>
             <!-- 可以继续添加按钮 -->
           </div>
           <!-- 左右渐变遮罩 -->
@@ -618,6 +609,14 @@ onUnmounted(() => {
           @click="activeTab = tab.key"
         >
           {{ tab.label }}
+        </button>
+        <button
+          class="btn-hide"
+          :class="moneyStore.globalAmountHidden ? 'btn-gray' : 'btn-blue'"
+          @click="toggleGlobalAmountVisibility"
+        >
+          <LucideEye v-if="!moneyStore.globalAmountHidden" />
+          <LucideEyeOff v-else />
         </button>
       </div>
 
@@ -789,6 +788,19 @@ onUnmounted(() => {
 .btn-orange { background-color: #ffedd5; color: #f97316; }
 .btn-yellow { background-color: #fef9c3; color: #ca8a04; }
 .btn-gray { background-color: #f3f4f6; color: #6b7280; }
+
+.btn-hide {
+  flex-shrink: 0; /* 防止按钮被压缩 */
+  padding: 0.5rem 1rem;
+  font-weight: 500;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.btn-hide:hover {
+  opacity: 0.8;
+}
 
 /* Tabs */
 .tabs {
