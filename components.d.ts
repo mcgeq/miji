@@ -26,6 +26,7 @@ declare module 'vue' {
     LucideArrowRightLeft: typeof import('lucide-vue-next')['ArrowRightLeft']
     LucideArrowUpDown: typeof import('lucide-vue-next')['ArrowUpDown']
     LucideBan: typeof import('lucide-vue-next')['Ban']
+    LucideBarChart3: typeof import('lucide-vue-next')['BarChart3']
     LucideBedDouble: typeof import('lucide-vue-next')['BedDouble']
     LucideBell: typeof import('lucide-vue-next')['Bell']
     LucideCalendar: typeof import('lucide-vue-next')['Calendar']

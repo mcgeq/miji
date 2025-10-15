@@ -370,74 +370,74 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="quick-money-container">
+  <div class="qm-quick-money-container">
     <!-- 快捷键帮助提示 - 左上角 -->
-    <div class="keyboard-help" :class="{ show: showKeyboardHelp }">
-      <div class="help-header">
+    <div class="qm-keyboard-help" :class="{ show: showKeyboardHelp }">
+      <div class="qm-help-header">
         <h4>快捷键</h4>
-        <button class="close-btn" @click="showKeyboardHelp = false">
+        <button class="qm-close-btn" @click="showKeyboardHelp = false">
           <LucideX :size="16" />
         </button>
       </div>
-      <div class="shortcuts-list">
-        <div v-for="shortcut in keyboardShortcuts" :key="shortcut.key" class="shortcut-item">
-          <kbd class="shortcut-key">{{ shortcut.key }}</kbd>
-          <span class="shortcut-label">{{ shortcut.label }}</span>
+      <div class="qm-shortcuts-list">
+        <div v-for="shortcut in keyboardShortcuts" :key="shortcut.key" class="qm-shortcut-item">
+          <kbd class="qm-shortcut-key">{{ shortcut.key }}</kbd>
+          <span class="qm-shortcut-label">{{ shortcut.label }}</span>
         </div>
       </div>
     </div>
 
     <!-- 快捷键提示按钮 - 右上角 -->
-    <button class="help-toggle" title="快捷键帮助 (?)" @click="showKeyboardHelp = !showKeyboardHelp">
+    <button class="qm-help-toggle" title="快捷键帮助 (?)" @click="showKeyboardHelp = !showKeyboardHelp">
       <LucideKeyboard :size="20" />
     </button>
 
-    <div class="quick-actions">
-      <button class="btn btn-purple" title="添加账户" @click="showAccountModal">
+    <div class="qm-quick-actions">
+      <button class="qm-btn qm-btn-purple" title="添加账户" @click="showAccountModal">
         <LucideCreditCard :size="12" />
       </button>
-      <button class="btn btn-green" title="记录收入" @click="showTransactionModal(TransactionTypeSchema.enum.Income)">
+      <button class="qm-btn qm-btn-green" title="记录收入" @click="showTransactionModal(TransactionTypeSchema.enum.Income)">
         <LucidePlusCircle :size="12" />
       </button>
-      <button class="btn btn-red" title="记录支出" @click="showTransactionModal(TransactionTypeSchema.enum.Expense)">
+      <button class="qm-btn qm-btn-red" title="记录支出" @click="showTransactionModal(TransactionTypeSchema.enum.Expense)">
         <LucideMinusCircle :size="12" />
       </button>
-      <button class="btn btn-blue" title="记录转账" @click="showTransactionModal(TransactionTypeSchema.enum.Transfer)">
+      <button class="qm-btn qm-btn-blue" title="记录转账" @click="showTransactionModal(TransactionTypeSchema.enum.Transfer)">
         <LucideArrowRightLeft :size="12" />
       </button>
-      <button class="btn btn-orange" title="设置预算" @click="showBudgetModal">
+      <button class="qm-btn qm-btn-orange" title="设置预算" @click="showBudgetModal">
         <LucideTarget :size="12" />
       </button>
-      <button class="btn btn-yellow" title="设置提醒" @click="showReminderModal">
+      <button class="qm-btn qm-btn-yellow" title="设置提醒" @click="showReminderModal">
         <LucideBell :size="12" />
       </button>
     </div>
 
     <!-- 标签切换 -->
-    <div class="tabs-container">
+    <div class="qm-tabs-container">
       <button
-        class="tab-btn"
+        class="qm-tab-btn"
         :class="{ active: activeTab === 'accounts' }"
         @click="switchTab('accounts')"
       >
         账户
       </button>
       <button
-        class="tab-btn"
+        class="qm-tab-btn"
         :class="{ active: activeTab === 'transactions' }"
         @click="switchTab('transactions')"
       >
         交易
       </button>
       <button
-        class="tab-btn"
+        class="qm-tab-btn"
         :class="{ active: activeTab === 'budgets' }"
         @click="switchTab('budgets')"
       >
         预算
       </button>
       <button
-        class="tab-btn"
+        class="qm-tab-btn"
         :class="{ active: activeTab === 'reminders' }"
         @click="switchTab('reminders')"
       >
@@ -446,26 +446,26 @@ onUnmounted(() => {
     </div>
 
     <!-- 列表内容 -->
-    <div class="list-container">
+    <div class="qm-list-container">
       <!-- 账户列表 -->
-      <div v-if="activeTab === 'accounts'" class="list-content">
-        <div v-if="accounts.length === 0" class="empty-state">
+      <div v-if="activeTab === 'accounts'" class="qm-list-content">
+        <div v-if="accounts.length === 0" class="qm-empty-state">
           暂无账户
         </div>
-        <div v-else class="list-items">
-          <div v-for="account in accounts" :key="account.serialNum" class="list-item">
-            <div class="item-icon" :style="{ backgroundColor: account.color }">
+        <div v-else class="qm-list-items">
+          <div v-for="account in accounts" :key="account.serialNum" class="qm-list-item">
+            <div class="qm-item-icon" :style="{ backgroundColor: account.color }">
               <LucideCreditCard :size="16" />
             </div>
-            <div class="item-content">
-              <div class="item-name">
+            <div class="qm-item-content">
+              <div class="qm-item-name">
                 {{ account.name }}
               </div>
-              <div class="item-desc">
+              <div class="qm-item-desc">
                 {{ account.type }}
               </div>
             </div>
-            <div class="item-value">
+            <div class="qm-item-value">
               {{ formatCurrency(account.balance ?? 0) }}
             </div>
           </div>
@@ -473,32 +473,32 @@ onUnmounted(() => {
       </div>
 
       <!-- 交易列表 -->
-      <div v-if="activeTab === 'transactions'" class="list-content">
-        <div v-if="transactions.length === 0" class="empty-state">
+      <div v-if="activeTab === 'transactions'" class="qm-list-content">
+        <div v-if="transactions.length === 0" class="qm-empty-state">
           暂无交易
         </div>
-        <div v-else class="list-items">
-          <div v-for="transaction in transactions" :key="transaction.serialNum" class="list-item">
-            <div class="item-icon" :class="`icon-${transaction.transactionType.toLowerCase()}`">
+        <div v-else class="qm-list-items">
+          <div v-for="transaction in transactions" :key="transaction.serialNum" class="qm-list-item">
+            <div class="qm-item-icon" :class="`qm-icon-${transaction.transactionType.toLowerCase()}`">
               <LucidePlusCircle v-if="transaction.transactionType === 'Income'" :size="16" />
               <LucideMinusCircle v-else-if="transaction.transactionType === 'Expense'" :size="16" />
               <LucideArrowRightLeft v-else :size="16" />
             </div>
-            <div class="item-content">
-              <div class="item-name">
+            <div class="qm-item-content">
+              <div class="qm-item-name">
                 {{ transaction.description }}
               </div>
-              <div class="item-desc">
+              <div class="qm-item-desc">
                 {{ t(`common.categories.${lowercaseFirstLetter(transaction.category)}`) }}<template v-if="transaction.subCategory">
                   -{{ t(`common.subCategories.${lowercaseFirstLetter(transaction.subCategory)}`) }}
                 </template>
               </div>
             </div>
-            <div class="item-value-wrapper">
-              <div class="item-value" :class="`value-${transaction.transactionType.toLowerCase()}`">
+            <div class="qm-item-value-wrapper">
+              <div class="qm-item-value" :class="`value-${transaction.transactionType.toLowerCase()}`">
                 {{ transaction.transactionType === 'Income' ? '+' : '-' }}{{ formatCurrency(transaction.amount ?? 0) }}
               </div>
-              <div class="item-date">
+              <div class="qm-item-date">
                 {{ DateUtils.formatDateTime(transaction.date) }}
               </div>
             </div>
@@ -507,24 +507,24 @@ onUnmounted(() => {
       </div>
 
       <!-- 预算列表 -->
-      <div v-if="activeTab === 'budgets'" class="list-content">
-        <div v-if="budgets.length === 0" class="empty-state">
+      <div v-if="activeTab === 'budgets'" class="qm-list-content">
+        <div v-if="budgets.length === 0" class="qm-empty-state">
           暂无预算
         </div>
-        <div v-else class="list-items">
-          <div v-for="budget in budgets" :key="budget.serialNum" class="list-item">
+        <div v-else class="qm-list-items">
+          <div v-for="budget in budgets" :key="budget.serialNum" class="qm-list-item">
             <div class="item-icon icon-budget">
               <LucideTarget :size="16" />
             </div>
-            <div class="item-content">
-              <div class="item-name">
+            <div class="qm-item-content">
+              <div class="qm-item-name">
                 {{ budget.name }}
               </div>
-              <div class="item-desc">
+              <div class="qm-item-desc">
                 {{ budget.description }}
               </div>
             </div>
-            <div class="item-value">
+            <div class="qm-item-value">
               {{ formatCurrency(budget.amount ?? 0) }}
             </div>
           </div>
@@ -532,24 +532,24 @@ onUnmounted(() => {
       </div>
 
       <!-- 提醒列表 -->
-      <div v-if="activeTab === 'reminders'" class="list-content">
-        <div v-if="reminders.length === 0" class="empty-state">
+      <div v-if="activeTab === 'reminders'" class="qm-list-content">
+        <div v-if="reminders.length === 0" class="qm-empty-state">
           暂无提醒
         </div>
-        <div v-else class="list-items">
-          <div v-for="reminder in reminders" :key="reminder.serialNum" class="list-item">
+        <div v-else class="qm-list-items">
+          <div v-for="reminder in reminders" :key="reminder.serialNum" class="qm-list-item">
             <div class="item-icon icon-reminder">
               <LucideBell :size="16" />
             </div>
-            <div class="item-content">
-              <div class="item-name">
+            <div class="qm-item-content">
+              <div class="qm-item-name">
                 {{ reminder.name }}
               </div>
-              <div class="item-desc">
+              <div class="qm-item-desc">
                 {{ reminder.billDate }}
               </div>
             </div>
-            <div class="item-value">
+            <div class="qm-item-value">
               {{ formatCurrency(reminder.amount ?? 0) }}
             </div>
           </div>
@@ -611,7 +611,7 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
-.quick-money-container {
+.qm-quick-money-container {
   width: 100%;
   position: relative;
   display: flex;
@@ -626,7 +626,7 @@ onUnmounted(() => {
 }
 
 /* 快捷键帮助提示框 - 左上角 */
-.keyboard-help {
+.qm-keyboard-help {
   position: absolute;
   top: 0.5rem;
   left: 0.5rem;
@@ -643,13 +643,13 @@ onUnmounted(() => {
   max-width: 200px;
 }
 
-.keyboard-help.show {
+.qm-keyboard-help.show {
   opacity: 1;
   transform: translateY(0);
   pointer-events: auto;
 }
 
-.help-header {
+.qm-help-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -658,14 +658,14 @@ onUnmounted(() => {
   border-bottom: 1px solid var(--color-base-300);
 }
 
-.help-header h4 {
+.qm-help-header h4 {
   margin: 0;
   font-size: 0.875rem;
   font-weight: 600;
   color: var(--color-base-content);
 }
 
-.close-btn {
+.qm-close-btn {
   padding: 0.25rem;
   background: transparent;
   border: none;
@@ -678,24 +678,24 @@ onUnmounted(() => {
   justify-content: center;
 }
 
-.close-btn:hover {
+.qm-close-btn:hover {
   opacity: 1;
 }
 
-.shortcuts-list {
+.qm-shortcuts-list {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
 }
 
-.shortcut-item {
+.qm-shortcut-item {
   display: flex;
   align-items: center;
   gap: 0.5rem;
   font-size: 0.75rem;
 }
 
-.shortcut-key {
+.qm-shortcut-key {
   min-width: 1.5rem;
   padding: 0.125rem 0.375rem;
   font-size: 0.75rem;
@@ -708,12 +708,12 @@ onUnmounted(() => {
   text-align: center;
 }
 
-.shortcut-label {
+.qm-shortcut-label {
   color: var(--color-base-content);
 }
 
 /* 快捷键帮助按钮 - 右上角 */
-.help-toggle {
+.qm-help-toggle {
   position: absolute;
   top: 0.5rem;
   right: 0.5rem;
@@ -732,14 +732,14 @@ onUnmounted(() => {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
-.help-toggle:hover {
+.qm-help-toggle:hover {
   opacity: 1;
   background-color: var(--color-base-200);
   transform: scale(1.05);
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
 }
 
-.quick-actions {
+.qm-quick-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
@@ -750,7 +750,7 @@ onUnmounted(() => {
 }
 
 /* 标签切换 */
-.tabs-container {
+.qm-tabs-container {
   display: flex;
   gap: 0.25rem;
   width: 100%;
@@ -758,9 +758,9 @@ onUnmounted(() => {
   margin-bottom: 0.75rem;
 }
 
-.tab-btn {
+.qm-tab-btn {
   flex: 1;
-  padding: 0.5rem 1rem;
+  padding: 0.2rem;
   background: transparent;
   border: none;
   cursor: pointer;
@@ -773,29 +773,29 @@ onUnmounted(() => {
   border-radius: 0.25rem 0.25rem 0 0;
 }
 
-.tab-btn:hover {
+.qm-tab-btn:hover {
   opacity: 1;
   background-color: var(--color-base-200);
 }
 
-.tab-btn.active {
+.qm-tab-btn.active {
   opacity: 1;
-  color: var(--color-primary);
+  color: var(--color-neutral);
   font-weight: 600;
 }
 
-.tab-btn.active::after {
+.qm-tab-btn.active::after {
   content: '';
   position: absolute;
   bottom: -2px;
   left: 0;
   right: 0;
   height: 2px;
-  background-color: var(--color-primary);
+  background-color: var(--color-neutral);
 }
 
 /* 列表容器 */
-.list-container {
+.qm-list-container {
   width: 100%;
   flex: 1;
   overflow-y: auto;
@@ -804,21 +804,21 @@ onUnmounted(() => {
   -ms-overflow-style: none;
 }
 
-.list-container::-webkit-scrollbar {
+.qm-list-container::-webkit-scrollbar {
   display: none;
 }
 
-.list-content {
+.qm-list-content {
   width: 100%;
 }
 
-.list-items {
+.qm-list-items {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
 }
 
-.list-item {
+.qm-list-item {
   display: flex;
   align-items: center;
   gap: 0.75rem;
@@ -830,12 +830,12 @@ onUnmounted(() => {
   cursor: pointer;
 }
 
-.list-item:hover {
+.qm-list-item:hover {
   background-color: var(--color-base-200);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.item-icon {
+.qm-item-icon {
   width: 2rem;
   height: 2rem;
   border-radius: 0.5rem;
@@ -846,37 +846,37 @@ onUnmounted(() => {
   flex-shrink: 0;
 }
 
-.icon-income {
+.qm-icon-income {
   background-color: #dcfce7;
   color: #16a34a;
 }
 
-.icon-expense {
+.qm-icon-expense {
   background-color: #fee2e2;
   color: #ef4444;
 }
 
-.icon-transfer {
+.qm-icon-transfer {
   background-color: #dbeafe;
   color: #3b82f6;
 }
 
-.icon-budget {
+.qm-icon-budget {
   background-color: #ffedd5;
   color: #f97316;
 }
 
-.icon-reminder {
+.qm-icon-reminder {
   background-color: #fef9c3;
   color: #ca8a04;
 }
 
-.item-content {
+.qm-item-content {
   flex: 1;
   min-width: 0;
 }
 
-.item-name {
+.qm-item-name {
   font-size: 0.875rem;
   font-weight: 600;
   color: var(--color-base-content);
@@ -885,7 +885,7 @@ onUnmounted(() => {
   text-overflow: ellipsis;
 }
 
-.item-desc {
+.qm-item-desc {
   font-size: 0.75rem;
   color: var(--color-base-content);
   opacity: 0.6;
@@ -894,7 +894,7 @@ onUnmounted(() => {
   text-overflow: ellipsis;
 }
 
-.item-value-wrapper {
+.qm-item-value-wrapper {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
@@ -902,28 +902,28 @@ onUnmounted(() => {
   flex-shrink: 0;
 }
 
-.item-value {
+.qm-item-value {
   font-size: 0.875rem;
   font-weight: 600;
   color: var(--color-base-content);
 }
 
-.item-date {
+.qm-item-date {
   font-size: 0.625rem;
   color: var(--color-base-content);
   opacity: 0.5;
   text-align: right;
 }
 
-.value-income {
+.qm-value-income {
   color: #16a34a;
 }
 
-.value-expense {
+.qm-value-expense {
   color: #ef4444;
 }
 
-.empty-state {
+.qm-empty-state {
   text-align: center;
   padding: 2rem 1rem;
   color: var(--color-base-content);
@@ -931,7 +931,7 @@ onUnmounted(() => {
   font-size: 0.875rem;
 }
 
-.btn {
+.qm-btn {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -944,134 +944,134 @@ onUnmounted(() => {
   flex-shrink: 0;
 }
 
-.btn:hover {
+.qm-btn:hover {
   transform: translateY(-1px);
   box-shadow: 0 3px 6px rgba(0, 0, 0, 0.12);
 }
 
-.btn:active {
+.qm-btn:active {
   transform: translateY(0);
 }
 
-.btn-purple {
+.qm-btn-purple {
   background-color: #f3e8ff;
   color: #8b5cf6;
 }
 
-.btn-purple:hover {
+.qm-btn-purple:hover {
   background-color: #e9d5ff;
 }
 
-.btn-green {
+.qm-btn-green {
   background-color: #dcfce7;
   color: #16a34a;
 }
 
-.btn-green:hover {
+.qm-btn-green:hover {
   background-color: #bbf7d0;
 }
 
-.btn-red {
+.qm-btn-red {
   background-color: #fee2e2;
   color: #ef4444;
 }
 
-.btn-red:hover {
+.qm-btn-red:hover {
   background-color: #fecaca;
 }
 
-.btn-blue {
+.qm-btn-blue {
   background-color: #dbeafe;
   color: #3b82f6;
 }
 
-.btn-blue:hover {
+.qm-btn-blue:hover {
   background-color: #bfdbfe;
 }
 
-.btn-orange {
+.qm-btn-orange {
   background-color: #ffedd5;
   color: #f97316;
 }
 
-.btn-orange:hover {
+.qm-btn-orange:hover {
   background-color: #fed7aa;
 }
 
-.btn-yellow {
+.qm-btn-yellow {
   background-color: #fef9c3;
   color: #ca8a04;
 }
 
-.btn-yellow:hover {
+.qm-btn-yellow:hover {
   background-color: #fef08a;
 }
 
 /* 响应式调整 */
 @media (max-width: 768px) {
-  .quick-money-container {
+  .qm-quick-money-container {
     padding: 0.5rem;
     padding-top: 0.5rem;
   }
 
-  .btn {
+  .qm-btn {
     padding: 0.75rem;
   }
 
-  .help-toggle {
+  .qm-help-toggle {
     top: 0.25rem;
     right: 0.25rem;
     padding: 0.375rem;
   }
 
-  .keyboard-help {
+  .qm-keyboard-help {
     top: 0.25rem;
     left: 0.25rem;
     max-width: 160px;
     font-size: 0.75rem;
   }
-  .quick-actions {
+  .qm-quick-actions {
     gap: 0.375rem;
   }
 
-  .tab-btn {
+  .qm-tab-btn {
     padding: 0.375rem 0.5rem;
     font-size: 0.75rem;
   }
 
-  .list-item {
+  .qm-list-item {
     padding: 0.5rem;
     gap: 0.5rem;
   }
 
-  .item-icon {
+  .qm-item-icon {
     width: 1.5rem;
     height: 1.5rem;
   }
 
-  .item-name {
+  .qm-item-name {
     font-size: 0.8125rem;
   }
 
-  .item-desc {
+  .qm-item-desc {
     font-size: 0.6875rem;
   }
 
-  .item-value {
+  .qm-item-value {
     font-size: 0.8125rem;
   }
 
-  .item-date {
+  .qm-item-date {
     font-size: 0.5625rem;
   }
 
-  .item-value-wrapper {
+  .qm-item-value-wrapper {
     min-width: 0;
   }
 }
 
 @media (min-width: 1024px) {
-  .btn {
+  .qm-btn {
     padding: 1rem;
   }
 }
