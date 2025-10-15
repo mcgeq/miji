@@ -229,6 +229,15 @@ async function handleDailyDelete(serialNum: string) {
   overflow: hidden;
 }
 
+/* 移动端布局：上下排列 */
+@media (max-width: 768px) {
+  .today-period {
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0.5rem;
+  }
+}
+
 /* 迷你日历 */
 .mini-calendar {
   flex: 1;
@@ -362,7 +371,7 @@ async function handleDailyDelete(serialNum: string) {
 /* 今日信息 */
 .today-info {
   flex-shrink: 0;
-  width: 8rem;
+  width: 20rem;
   border: 1px solid var(--color-base-300);
   background-color: color-mix(in oklch, var(--color-base-200) 50%, transparent);
   border-radius: 0.75rem;
@@ -370,6 +379,14 @@ async function handleDailyDelete(serialNum: string) {
   display: flex;
   flex-direction: column;
   min-width: 0;
+}
+
+/* 移动端今日信息卡片 */
+@media (max-width: 768px) {
+  .today-info {
+    width: 100%;
+    flex-shrink: 1;
+  }
 }
 
 .info-header {
@@ -530,65 +547,59 @@ async function handleDailyDelete(serialNum: string) {
 
 /* 移动端响应式 */
 @media (max-width: 768px) {
-  .today-period {
-    gap: 0.5rem;
-    padding: 0.5rem;
-  }
-
   .today-info {
-    width: 7rem;
-    padding: 0.375rem;
+    padding: 0.75rem;
   }
 
   .info-header {
-    gap: 0.25rem;
-    margin-bottom: 0.5rem;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
   }
 
   .header-icon {
-    width: 1rem;
-    height: 1rem;
+    width: 1.125rem;
+    height: 1.125rem;
   }
 
   .header-title {
-    font-size: 0.75rem;
+    font-size: 0.875rem;
   }
 
   .info-content {
-    gap: 0.375rem;
+    gap: 0.75rem;
   }
 
   .info-row {
-    gap: 0.25rem;
+    gap: 0.5rem;
   }
 
   .info-label {
-    font-size: 0.6875rem;
+    font-size: 0.8125rem;
     flex-shrink: 0;
   }
 
   .info-value {
-    font-size: 0.6875rem;
+    font-size: 0.8125rem;
   }
 
   .phase-badge {
-    padding: 0.125rem 0.375rem;
-    font-size: 0.6875rem;
+    padding: 0.125rem 0.5rem;
+    font-size: 0.75rem;
     white-space: nowrap;
   }
 
   .info-action-btn {
-    width: 1.5rem;
-    height: 1.5rem;
+    width: 1.75rem;
+    height: 1.75rem;
   }
 
   .info-actions {
-    gap: 0.25rem;
+    gap: 0.375rem;
   }
 
   .btn-icon {
-    width: 0.875rem;
-    height: 0.875rem;
+    width: 1rem;
+    height: 1rem;
   }
 
   .month-label {
