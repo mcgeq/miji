@@ -78,6 +78,9 @@ watch(closeBehaviorPreference, async newValue => {
   await handleCloseBehaviorChange(); // 保存新的偏好设置
 });
 
+// 事件处理器引用，用于清理
+let handlePreferenceChange: ((event: CustomEvent) => void) | null = null;
+
 // 组件挂载时加载关闭行为偏好
 onMounted(async () => {
   isLoadingSettings.value = true; // 开始加载设置
@@ -100,7 +103,7 @@ onMounted(async () => {
   }
 
   // 监听关闭偏好变化事件
-  const handlePreferenceChange = (event: CustomEvent) => {
+  handlePreferenceChange = (event: CustomEvent) => {
     const { preference } = event.detail;
     isLoadingSettings.value = true; // 防止触发保存
 
@@ -115,11 +118,13 @@ onMounted(async () => {
   };
 
   window.addEventListener('close-preference-changed', handlePreferenceChange as EventListener);
+});
 
-  // 组件卸载时移除事件监听器
-  onUnmounted(() => {
+// 组件卸载时移除事件监听器
+onUnmounted(() => {
+  if (handlePreferenceChange) {
     window.removeEventListener('close-preference-changed', handlePreferenceChange as EventListener);
-  });
+  }
 });
 
 const availableLocales = [
