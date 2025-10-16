@@ -105,7 +105,7 @@ onMounted(() => {
           </div>
           <div class="installment-actions">
             <button
-              v-for="detail in installment.details.filter(d => d.status === 'PENDING')"
+              v-for="detail in installment.details.filter((d: any) => d.status === 'PENDING')"
               :key="detail.serial_num"
               class="pay-btn"
               :disabled="isPaying"

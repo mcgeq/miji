@@ -39,15 +39,9 @@ export function useTransactionActions() {
   // 保存交易
   async function saveTransaction(transaction: TransactionCreate) {
     try {
-      if (transaction.isInstallment) {
-        // 分期交易：使用专门的分期交易创建方法
-        await moneyStore.createInstallmentTransaction(transaction);
-        toast.success('分期付款创建成功');
-      } else {
-        // 普通交易：使用标准交易创建方法
-        await moneyStore.createTransaction(transaction);
-        toast.success('添加成功');
-      }
+      // 创建交易
+      await moneyStore.createTransaction(transaction);
+      toast.success('添加成功');
 
       closeTransactionModal();
       return true;
