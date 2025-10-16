@@ -31,6 +31,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 const { t } = useI18n();
 const moneyStore = useMoneyStore();
+const mediaQueries = useMediaQueriesStore();
 const { confirmState, handleConfirm, handleCancel, handleClose } = useConfirm();
 
 // 使用各个功能模块的 hooks
@@ -224,7 +225,7 @@ onMounted(async () => {
     </div>
 
     <!-- 快捷键提示按钮 - 右上角 -->
-    <button class="qm-help-toggle" title="快捷键帮助 (?)" @click="showKeyboardHelp = !showKeyboardHelp">
+    <button v-if="!mediaQueries.isMobile" class="qm-help-toggle" title="快捷键帮助 (?)" @click="showKeyboardHelp = !showKeyboardHelp">
       <LucideKeyboard :size="20" />
     </button>
 
