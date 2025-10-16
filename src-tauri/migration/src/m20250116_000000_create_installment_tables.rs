@@ -1,6 +1,6 @@
 use sea_orm_migration::prelude::*;
 
-use crate::schema::{InstallmentDetails, InstallmentPlans, Transactions};
+use crate::schema::{Account, InstallmentDetails, InstallmentPlans, Transactions};
 
 #[derive(DeriveMigrationName)]
 pub struct Migration;
@@ -22,6 +22,11 @@ impl MigrationTrait for Migration {
                     )
                     .col(
                         ColumnDef::new(InstallmentPlans::TransactionSerialNum)
+                            .string_len(38)
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(InstallmentPlans::AccountSerialNum)
                             .string_len(38)
                             .not_null(),
                     )
@@ -70,6 +75,13 @@ impl MigrationTrait for Migration {
                             .to(Transactions::Table, Transactions::SerialNum)
                             .on_delete(ForeignKeyAction::Cascade),
                     )
+                    .foreign_key(
+                        ForeignKey::create()
+                            .name("fk_installment_plans_account_id")
+                            .from(InstallmentPlans::Table, InstallmentPlans::AccountSerialNum)
+                            .to(Account::Table, Account::SerialNum)
+                            .on_delete(ForeignKeyAction::Cascade),
+                    )
                     .to_owned(),
             )
             .await?;
@@ -107,6 +119,11 @@ impl MigrationTrait for Migration {
                             .not_null(),
                     )
                     .col(
+                        ColumnDef::new(InstallmentDetails::AccountSerialNum)
+                            .string_len(38)
+                            .not_null(),
+                    )
+                    .col(
                         ColumnDef::new(InstallmentDetails::Status)
                             .string()
                             .default("PENDING"),
@@ -136,6 +153,13 @@ impl MigrationTrait for Migration {
                             .name("fk_installment_details_plan_id")
                             .from(InstallmentDetails::Table, InstallmentDetails::PlanSerialNum)
                             .to(InstallmentPlans::Table, InstallmentPlans::SerialNum)
+                            .on_delete(ForeignKeyAction::Cascade),
+                    )
+                    .foreign_key(
+                        ForeignKey::create()
+                            .name("fk_installment_details_account_id")
+                            .from(InstallmentDetails::Table, InstallmentDetails::AccountSerialNum)
+                            .to(Account::Table, Account::SerialNum)
                             .on_delete(ForeignKeyAction::Cascade),
                     )
                     .to_owned(),
@@ -172,4 +196,3 @@ impl MigrationTrait for Migration {
         Ok(())
     }
 }
-

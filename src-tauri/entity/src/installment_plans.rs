@@ -7,6 +7,7 @@ pub struct Model {
     #[sea_orm(primary_key, auto_increment = false)]
     pub serial_num: String,
     pub transaction_serial_num: String,
+    pub account_serial_num: String,
     #[sea_orm(column_type = "Decimal(Some((15, 2)))")]
     pub total_amount: Decimal,
     pub total_periods: i32,
@@ -27,6 +28,13 @@ pub enum Relation {
     )]
     Transaction,
 
+    #[sea_orm(
+        belongs_to = "super::account::Entity",
+        from = "Column::AccountSerialNum",
+        to = "super::account::Column::SerialNum"
+    )]
+    Account,
+
     #[sea_orm(has_many = "super::installment_details::Entity")]
     InstallmentDetails,
 }
@@ -34,6 +42,12 @@ pub enum Relation {
 impl Related<super::transactions::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::Transaction.def()
+    }
+}
+
+impl Related<super::account::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::Account.def()
     }
 }
 

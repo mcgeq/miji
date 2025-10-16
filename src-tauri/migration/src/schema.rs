@@ -306,65 +306,92 @@ pub enum Budget {
     CategoryScope,   // JSONB 分类范围配置
     AdvancedRules,   // JSONB 高级规则数组
 }
-
 #[derive(DeriveIden)]
 pub enum Transactions {
-    Table,
-    SerialNum,
-    TransactionType,
-    TransactionStatus,
-    Date,
-    Amount,
-    RefundAmount,
-    Currency,
-    Description,
-    Notes,
-    AccountSerialNum,
-    ToAccountSerialNum,
-    Category,
-    SubCategory,
-    Tags,
-    SplitMembers,
-    PaymentMethod,
-    ActualPayerAccount,
-    PayeeAccountType,
-    RelatedTransactionSerialNum,
-    IsDeleted,
-    CreatedAt,
-    UpdatedAt,
-    // 分期相关字段
-    IsInstallment,
-    TotalPeriods,
-    RemainingPeriods,
-    InstallmentPlanSerialNum,
+    Table,                       // 表名：交易记录主表（核心交易流水存储）
+    SerialNum,                   // 主键：交易唯一标识（全局唯一序列号，如UUID或雪花ID）
+    TransactionType,             // 交易类型（枚举值：消费/收入/转账/退款/代付/分摊等）
+    TransactionStatus,           // 交易状态（枚举值：待处理/已完成/失败/已撤销/退款中）
+    Date,                        // 交易日期（业务发生日期，如消费刷卡日；区别于创建时间）
+    Amount,           // 交易金额（数值型：正数=收入/出账，负数=支出/入账，需结合业务规则解读）
+    RefundAmount,     // 退款金额（仅退款交易或原交易的退款部分填写，非必填）
+    Currency,         // 货币类型（ISO 4217标准：如CNY/USD/EUR，默认CNY）
+    Description,      // 交易描述（系统自动生成或手动填写，如"美团外卖-午餐"）
+    Notes,            // 备注（用户/系统补充说明，如"客户报销款"、"项目备用金"）
+    AccountSerialNum, // 外键：当前交易所属账户（关联账户表主键，标识资金来源/去向）
+    ToAccountSerialNum, // 外键：交易对方账户（如转账接收方、消费商户账户，可选）
+    Category,         // 交易一级分类（如"餐饮"、"交通"、"工资"、"娱乐"）
+    SubCategory,      // 交易二级分类（如"餐饮"下的"快餐"、"奶茶"，可选）
+    Tags,             // 交易标签（自定义标签，如"#出差"、"#日常消费"、"#会员充值"，支持多标签）
+    SplitMembers,     // 分摊成员（多人分摊交易时的参与用户，如JSON数组存储用户ID）
+    PaymentMethod,    // 支付方式（如"微信支付"、"支付宝"、"银行卡"、"现金"、"信用卡"）
+    ActualPayerAccount, // 外键：实际付款账户（代付场景下，与所属账户不同的实际付款人，可选）
+    PayeeAccountType, // 收款方账户类型（枚举值：个人/企业/平台/商户，辅助分类）
+    RelatedTransactionSerialNum, // 外键：关联交易记录（如退款关联原交易、转账的对方流水，可选）
+    IsDeleted,        // 软删除标记（布尔值：true=已逻辑删除，false=未删除；避免物理删除）
+    CreatedAt,        // 创建时间（交易记录入库时间，时间戳）
+    UpdatedAt,        // 最后更新时间（交易状态/金额变更的时间，时间戳）
+
+    // ---------------------- 分期业务扩展字段 ----------------------
+    IsInstallment, // 是否为分期交易（布尔值：true=该交易是分期首期/后续期，false=普通交易）
+    TotalPeriods,  // 分期总期数（仅分期交易有效：如"12期"）
+    RemainingPeriods, // 剩余未还期数（仅分期交易有效：随每期还款递减，0表示已结清）
+    InstallmentPlanSerialNum, // 外键：关联分期计划（指向InstallmentPlans表的主键，绑定分期规则）
 }
 
+/// 分期付款计划表 (installment_plans)
 #[derive(DeriveIden)]
 pub enum InstallmentPlans {
+    /// 表名
     Table,
+    /// 序列号 (唯一标识)
     SerialNum,
+    /// 关联的交易序列号
     TransactionSerialNum,
+    /// 关联的账户序列号
+    AccountSerialNum,
+    /// 总金额
     TotalAmount,
+    /// 总期数
     TotalPeriods,
+    /// 每期还款金额
     InstallmentAmount,
+    /// 首期应还日期
     FirstDueDate,
+    /// 当前状态 (如: 未开始/还款中/已完成)
     Status,
+    /// 创建时间
     CreatedAt,
+    /// 更新时间
     UpdatedAt,
 }
 
+/// 分期付款详情表 (installment_details)
 #[derive(DeriveIden)]
 pub enum InstallmentDetails {
+    /// 表名
     Table,
+    /// 序列号 (唯一标识)
     SerialNum,
+    /// 关联的分期计划序列号
     PlanSerialNum,
+    /// 当前期数
     PeriodNumber,
+    /// 本期应还日期
     DueDate,
+    /// 本期应还金额
     Amount,
+    /// 关联的账户序列号
+    AccountSerialNum,
+    /// 当前状态 (如: 待支付/已支付/逾期)
     Status,
+    /// 实际还款日期
     PaidDate,
+    /// 实际还款金额
     PaidAmount,
+    /// 创建时间
     CreatedAt,
+    /// 更新时间
     UpdatedAt,
 }
 

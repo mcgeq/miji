@@ -360,7 +360,7 @@ pub struct CreateTransactionRequest {
     pub is_installment: Option<bool>,
     pub total_periods: Option<i32>,
     pub remaining_periods: Option<i32>,
-    pub installment_plan_id: Option<String>,
+    pub installment_plan_serial_num: Option<String>,
 }
 
 impl TryFrom<CreateTransactionRequest> for entity::transactions::ActiveModel {
@@ -406,7 +406,7 @@ impl TryFrom<CreateTransactionRequest> for entity::transactions::ActiveModel {
             is_installment: Set(value.is_installment),
             total_periods: Set(value.total_periods),
             remaining_periods: Set(value.remaining_periods),
-            installment_plan_serial_num: Set(value.installment_plan_id),
+            installment_plan_serial_num: Set(value.installment_plan_serial_num),
         })
     }
 }

@@ -11,6 +11,7 @@ pub mod currency_hooks;
 pub mod family_member;
 pub mod family_member_hooks;
 pub mod installment;
+pub mod installment_hooks;
 pub mod sub_categories;
 pub mod sub_categories_hooks;
 pub mod transaction;

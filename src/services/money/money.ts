@@ -127,6 +127,10 @@ export class MoneyDb {
     return this.transactionMapper.create(transaction);
   }
 
+  static async createInstallmentTransaction(transaction: TransactionCreate): Promise<Transaction[]> {
+    return this.transactionMapper.createInstallmentTransaction(transaction);
+  }
+
   static async getTransaction(serialNum: string): Promise<Transaction | null> {
     return this.transactionMapper.getById(serialNum);
   }

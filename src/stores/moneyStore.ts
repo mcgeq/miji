@@ -26,12 +26,7 @@ import type { Category, SubCategory } from '@/schema/money/category';
 import type { AccountFilters } from '@/services/money/accounts';
 import type { PagedResult } from '@/services/money/baseManager';
 import type { BudgetFilters } from '@/services/money/budgets';
-import type {
-  CreateInstallmentPlanRequest,
-  InstallmentPlanResponse,
-  PayInstallmentRequest,
-  TransactionFilters,
-} from '@/services/money/transactions';
+import type { InstallmentPlanResponse, TransactionFilters } from '@/services/money/transactions';
 
 export enum MoneyStoreErrorCode {
   ACCOUNT_NOT_FOUND = 'ACCOUNT_NOT_FOUND',
@@ -817,21 +812,6 @@ export const useMoneyStore = defineStore('money', {
     // ==================== 分期付款相关方法 ====================
 
     /**
-     * 创建分期付款计划
-     */
-    async createInstallmentPlan(data: CreateInstallmentPlanRequest): Promise<InstallmentPlanResponse> {
-      return this.withLoadingSafe(
-        async () => {
-          const result = await MoneyDb.createInstallmentPlan(data);
-          return result;
-        },
-        '创建分期计划失败',
-        'createInstallmentPlan',
-        'InstallmentPlan',
-      );
-    },
-
-    /**
      * 获取分期付款计划
      */
     async getInstallmentPlan(planId: string): Promise<InstallmentPlanResponse> {
@@ -842,23 +822,6 @@ export const useMoneyStore = defineStore('money', {
         },
         '获取分期计划失败',
         'getInstallmentPlan',
-        'InstallmentPlan',
-      );
-    },
-
-    /**
-     * 处理分期还款
-     */
-    async payInstallment(data: PayInstallmentRequest): Promise<InstallmentPlanResponse> {
-      return this.withLoadingSafe(
-        async () => {
-          const result = await MoneyDb.payInstallment(data);
-          // 还款成功后刷新数据
-          await this.refreshAccountsAndTransactions();
-          return result;
-        },
-        '分期还款失败',
-        'payInstallment',
         'InstallmentPlan',
       );
     },

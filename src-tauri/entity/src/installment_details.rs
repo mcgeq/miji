@@ -11,6 +11,7 @@ pub struct Model {
     pub due_date: DateTimeWithTimeZone,
     #[sea_orm(column_type = "Decimal(Some((15, 2)))")]
     pub amount: Decimal,
+    pub account_serial_num: String,
     pub status: String,
     pub paid_date: Option<DateTimeWithTimeZone>,
     #[sea_orm(column_type = "Decimal(Some((15, 2)))", nullable)]
@@ -27,11 +28,24 @@ pub enum Relation {
         to = "super::installment_plans::Column::SerialNum"
     )]
     InstallmentPlan,
+
+    #[sea_orm(
+        belongs_to = "super::account::Entity",
+        from = "Column::AccountSerialNum",
+        to = "super::account::Column::SerialNum"
+    )]
+    Account,
 }
 
 impl Related<super::installment_plans::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::InstallmentPlan.def()
+    }
+}
+
+impl Related<super::account::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::Account.def()
     }
 }
 

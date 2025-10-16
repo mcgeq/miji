@@ -16,13 +16,11 @@ use crate::{
         categories::{Category, CategoryCreate, CategoryUpdate},
         currency::{CreateCurrencyRequest, CurrencyResponse, UpdateCurrencyRequest},
         family_member::FamilyMemberResponse,
-        installment::{
-            CreateInstallmentPlanRequest, InstallmentDetailResponse, InstallmentPlanResponse, PayInstallmentRequest,
-        },
+        installment::{InstallmentDetailResponse, InstallmentPlanResponse, InstallmentPlanCreate, InstallmentPlanUpdate, PayInstallmentCreate},
         sub_categories::{SubCategory, SubCategoryCreate, SubCategoryUpdate},
         transactions::{
-            CreateTransactionRequest, IncomeExpense, TransactionResponse, TransferRequest,
-            UpdateTransactionRequest, TransactionStatsRequest, TransactionStatsResponse,
+            CreateTransactionRequest, IncomeExpense, TransactionResponse, TransactionStatsRequest,
+            TransactionStatsResponse, TransferRequest, UpdateTransactionRequest,
         },
     },
     services::{
@@ -32,7 +30,7 @@ use crate::{
         categories::{CategoryFilter, get_category_service},
         currency::{CurrencyFilter, get_currency_service},
         family_member::get_family_member_service,
-        installment::InstallmentService,
+        installment::get_installment_service,
         sub_categories::{SubCategoryFilter, get_sub_category_service},
         transaction::{TransactionFilter, get_transaction_service},
     },
@@ -40,27 +38,63 @@ use crate::{
 
 // ============================================================================
 // start 分期付款相关
-// 创建分期付款计划
-#[tauri::command]
-pub async fn installment_plan_create(
-    state: State<'_, AppState>,
-    data: CreateInstallmentPlanRequest,
-) -> Result<ApiResponse<InstallmentPlanResponse>, String> {
-    let service = InstallmentService;
-    Ok(ApiResponse::from_result(
-        service.create_installment_plan(&state.db, data).await,
-    ))
-}
-
 // 获取分期付款计划
 #[tauri::command]
 pub async fn installment_plan_get(
     state: State<'_, AppState>,
     plan_id: String,
 ) -> Result<ApiResponse<InstallmentPlanResponse>, String> {
-    let service = InstallmentService;
+    let service = get_installment_service();
     Ok(ApiResponse::from_result(
         service.get_installment_plan(&state.db, &plan_id).await,
+    ))
+}
+
+// 创建分期付款计划
+#[tauri::command]
+pub async fn installment_plan_create(
+    state: State<'_, AppState>,
+    data: InstallmentPlanCreate,
+) -> Result<ApiResponse<InstallmentPlanResponse>, String> {
+    let service = get_installment_service();
+    Ok(ApiResponse::from_result(
+        service.create_installment_plan_with_details(&state.db, data).await,
+    ))
+}
+
+// 更新分期付款计划
+#[tauri::command]
+pub async fn installment_plan_update(
+    state: State<'_, AppState>,
+    plan_id: String,
+    data: InstallmentPlanUpdate,
+) -> Result<ApiResponse<entity::installment_plans::Model>, String> {
+    let service = get_installment_service();
+    Ok(ApiResponse::from_result(
+        service.installment_plan_update(&state.db, plan_id, data).await,
+    ))
+}
+
+// 删除分期付款计划
+#[tauri::command]
+pub async fn installment_plan_delete(
+    state: State<'_, AppState>,
+    plan_id: String,
+) -> Result<ApiResponse<()>, String> {
+    let service = get_installment_service();
+    Ok(ApiResponse::from_result(
+        service.installment_plan_delete(&state.db, plan_id).await,
+    ))
+}
+
+// 获取分期付款计划列表
+#[tauri::command]
+pub async fn installment_plan_list(
+    state: State<'_, AppState>,
+) -> Result<ApiResponse<Vec<entity::installment_plans::Model>>, String> {
+    let service = get_installment_service();
+    Ok(ApiResponse::from_result(
+        service.installment_plan_list(&state.db).await,
     ))
 }
 
@@ -68,9 +102,9 @@ pub async fn installment_plan_get(
 #[tauri::command]
 pub async fn installment_pay(
     state: State<'_, AppState>,
-    data: PayInstallmentRequest,
+    data: PayInstallmentCreate,
 ) -> Result<ApiResponse<InstallmentDetailResponse>, String> {
-    let service = InstallmentService;
+    let service = get_installment_service();
     Ok(ApiResponse::from_result(
         service.pay_installment(&state.db, data).await,
     ))
@@ -80,10 +114,11 @@ pub async fn installment_pay(
 #[tauri::command]
 pub async fn installment_pending_list(
     state: State<'_, AppState>,
+    plan_serial_num: String,
 ) -> Result<ApiResponse<Vec<InstallmentDetailResponse>>, String> {
-    let service = InstallmentService;
+    let service = get_installment_service();
     Ok(ApiResponse::from_result(
-        service.get_pending_installments(&state.db).await,
+        service.get_pending_installments(&state.db, &plan_serial_num).await,
     ))
 }
 // end 分期付款相关
@@ -889,8 +924,6 @@ pub async fn transaction_get_stats(
 ) -> Result<ApiResponse<TransactionStatsResponse>, String> {
     let service = get_transaction_service();
     Ok(ApiResponse::from_result(
-        service
-            .get_transaction_stats(&state.db, request)
-            .await,
+        service.get_transaction_stats(&state.db, request).await,
     ))
 }

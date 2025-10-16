@@ -1,30 +1,195 @@
-use chrono::{DateTime, FixedOffset};
-use sea_orm::{
-    ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, IntoActiveModel, QueryFilter,
-    QueryOrder, Set, TransactionTrait, prelude::Decimal,
-};
-use tracing::info;
+use std::sync::Arc;
 
+use chrono::{DateTime, FixedOffset};
 use common::{
+    crud::service::{CrudConverter, CrudService, GenericCrudService, LocalizableConverter},
     error::{AppError, MijiResult},
+    paginations::{EmptyFilter, PagedQuery, PagedResult},
     utils::{date::DateUtils, uuid::McgUuid},
 };
+use sea_orm::{
+    ActiveModelTrait, ActiveValue, ColumnTrait, DatabaseConnection, DbConn, EntityTrait,
+    IntoActiveModel, QueryFilter, QueryOrder, Set, TransactionTrait, prelude::Decimal,
+    prelude::async_trait::async_trait,
+};
+use tracing::info;
+use validator::Validate;
 
 use crate::dto::installment::{
-    CreateInstallmentPlanRequest, InstallmentDetailResponse, InstallmentDetailStatus,
-    InstallmentPlanResponse, InstallmentStatus, PayInstallmentRequest,
+    InstallmentDetailResponse, InstallmentDetailStatus, InstallmentPlanCreate,
+    InstallmentPlanResponse, InstallmentPlanUpdate, InstallmentStatus, PayInstallmentCreate,
 };
+use crate::services::installment_hooks::InstallmentHooks;
 use entity::{installment_details, installment_plans, transactions};
 
-/// 分期付款服务
-pub struct InstallmentService;
+pub type InstallmentFilter = EmptyFilter;
+
+#[derive(Debug)]
+pub struct InstallmentConverter;
+
+impl CrudConverter<entity::installment_plans::Entity, InstallmentPlanCreate, InstallmentPlanUpdate>
+    for InstallmentConverter
+{
+    fn create_to_active_model(
+        &self,
+        data: InstallmentPlanCreate,
+    ) -> MijiResult<entity::installment_plans::ActiveModel> {
+        entity::installment_plans::ActiveModel::try_from(data).map_err(|errors| {
+            AppError::simple(
+                common::BusinessCode::InvalidParameter,
+                format!("failed {errors}"),
+            )
+        })
+    }
+
+    fn update_to_active_model(
+        &self,
+        model: entity::installment_plans::Model,
+        data: InstallmentPlanUpdate,
+    ) -> MijiResult<entity::installment_plans::ActiveModel> {
+        data.validate().map_err(AppError::from_validation_errors)?;
+
+        let mut active_model = entity::installment_plans::ActiveModel {
+            serial_num: ActiveValue::Set(model.serial_num.clone()),
+            transaction_serial_num: ActiveValue::Set(model.transaction_serial_num.clone()),
+            account_serial_num: ActiveValue::Set(model.account_serial_num.clone()),
+            total_amount: ActiveValue::Set(model.total_amount),
+            total_periods: ActiveValue::Set(model.total_periods),
+            installment_amount: ActiveValue::Set(model.installment_amount),
+            first_due_date: ActiveValue::Set(model.first_due_date),
+            status: ActiveValue::Set(model.status.clone()),
+            created_at: ActiveValue::Set(model.created_at),
+            updated_at: ActiveValue::Set(Some(DateUtils::local_now())),
+        };
+
+        // 只更新提供的字段
+        if let Some(status) = data.status {
+            active_model.status = ActiveValue::Set(status);
+        }
+
+        Ok(active_model)
+    }
+
+    fn primary_key_to_string(&self, model: &entity::installment_plans::Model) -> String {
+        model.serial_num.clone()
+    }
+
+    fn table_name(&self) -> &'static str {
+        "installment_plans"
+    }
+}
+
+#[async_trait]
+impl LocalizableConverter<entity::installment_plans::Model> for InstallmentConverter {
+    async fn model_with_local(
+        &self,
+        model: entity::installment_plans::Model,
+    ) -> MijiResult<entity::installment_plans::Model> {
+        Ok(model)
+    }
+}
+
+pub struct InstallmentService {
+    inner: GenericCrudService<
+        entity::installment_plans::Entity,
+        InstallmentFilter,
+        InstallmentPlanCreate,
+        InstallmentPlanUpdate,
+        InstallmentConverter,
+        InstallmentHooks,
+    >,
+}
 
 impl InstallmentService {
-    /// 创建分期付款计划
-    pub async fn create_installment_plan(
+    pub fn new(
+        converter: InstallmentConverter,
+        hooks: InstallmentHooks,
+        logger: Arc<dyn common::log::logger::OperationLogger>,
+    ) -> Self {
+        Self {
+            inner: GenericCrudService::new(converter, hooks, logger),
+        }
+    }
+}
+
+impl std::ops::Deref for InstallmentService {
+    type Target = GenericCrudService<
+        entity::installment_plans::Entity,
+        InstallmentFilter,
+        InstallmentPlanCreate,
+        InstallmentPlanUpdate,
+        InstallmentConverter,
+        InstallmentHooks,
+    >;
+
+    fn deref(&self) -> &Self::Target {
+        &self.inner
+    }
+}
+
+impl InstallmentService {
+    // 基础 CRUD 操作
+    pub async fn installment_plan_get(
+        &self,
+        db: &DbConn,
+        id: String,
+    ) -> MijiResult<entity::installment_plans::Model> {
+        let model = self.get_by_id(db, id).await?;
+        self.converter().model_with_local(model).await
+    }
+
+    pub async fn installment_plan_create(
+        &self,
+        db: &DbConn,
+        data: InstallmentPlanCreate,
+    ) -> MijiResult<entity::installment_plans::Model> {
+        let model = self.create(db, data).await?;
+        self.converter().model_with_local(model).await
+    }
+
+    pub async fn installment_plan_update(
+        &self,
+        db: &DbConn,
+        id: String,
+        data: InstallmentPlanUpdate,
+    ) -> MijiResult<entity::installment_plans::Model> {
+        let model = self.update(db, id, data).await?;
+        self.converter().model_with_local(model).await
+    }
+
+    pub async fn installment_plan_delete(&self, db: &DbConn, id: String) -> MijiResult<()> {
+        self.delete(db, id).await
+    }
+
+    pub async fn installment_plan_list_paged(
+        &self,
+        db: &DbConn,
+        query: PagedQuery<InstallmentFilter>,
+    ) -> MijiResult<PagedResult<entity::installment_plans::Model>> {
+        self.list_paged(db, query)
+            .await?
+            .map_async(|rows| self.converter().localize_models(rows))
+            .await
+    }
+
+    pub async fn installment_plan_list(
+        &self,
+        db: &DbConn,
+    ) -> MijiResult<Vec<entity::installment_plans::Model>> {
+        let models = self.list(db).await?;
+        let mut local_models = Vec::with_capacity(models.len());
+        for model in models {
+            local_models.push(self.converter().model_with_local(model).await?);
+        }
+        Ok(local_models)
+    }
+
+    // 业务逻辑方法
+    /// 创建分期付款计划（包含分期明细）
+    pub async fn create_installment_plan_with_details(
         &self,
         db: &DatabaseConnection,
-        request: CreateInstallmentPlanRequest,
+        request: InstallmentPlanCreate,
     ) -> MijiResult<InstallmentPlanResponse> {
         let tx = db.begin().await?;
 
@@ -33,6 +198,7 @@ impl InstallmentService {
         let plan = installment_plans::ActiveModel {
             serial_num: Set(plan_id.clone()),
             transaction_serial_num: Set(request.transaction_serial_num.clone()),
+            account_serial_num: Set(request.account_serial_num.clone()),
             total_amount: Set(request.total_amount),
             total_periods: Set(request.total_periods),
             installment_amount: Set(request.installment_amount),
@@ -62,6 +228,7 @@ impl InstallmentService {
                 period_number: Set(period),
                 due_date: Set(due_date),
                 amount: Set(amount),
+                account_serial_num: Set(request.account_serial_num.clone()),
                 status: Set(InstallmentDetailStatus::Pending.to_string()),
                 paid_date: Set(None),
                 paid_amount: Set(None),
@@ -125,7 +292,7 @@ impl InstallmentService {
     pub async fn pay_installment(
         &self,
         db: &DatabaseConnection,
-        request: PayInstallmentRequest,
+        request: PayInstallmentCreate,
     ) -> MijiResult<InstallmentDetailResponse> {
         let tx = db.begin().await?;
 
@@ -206,16 +373,16 @@ impl InstallmentService {
     /// 获取分期付款计划
     pub async fn get_installment_plan(
         &self,
-        db: &DatabaseConnection,
-        plan_id: &str,
+        db: &DbConn,
+        installment_plan_serial_num: &str,
     ) -> MijiResult<InstallmentPlanResponse> {
-        let plan = installment_plans::Entity::find_by_id(plan_id)
+        let plan = installment_plans::Entity::find_by_id(installment_plan_serial_num)
             .one(db)
             .await?
             .ok_or_else(|| AppError::simple(common::BusinessCode::NotFound, "分期计划不存在"))?;
 
         let details = installment_details::Entity::find()
-            .filter(installment_details::Column::PlanSerialNum.eq(plan_id))
+            .filter(installment_details::Column::PlanSerialNum.eq(&plan.serial_num))
             .order_by_asc(installment_details::Column::PeriodNumber)
             .all(db)
             .await?;
@@ -254,8 +421,10 @@ impl InstallmentService {
     pub async fn get_pending_installments(
         &self,
         db: &DatabaseConnection,
+        plan_serial_num: &str,
     ) -> MijiResult<Vec<InstallmentDetailResponse>> {
         let details = installment_details::Entity::find()
+            .filter(installment_details::Column::PlanSerialNum.eq(plan_serial_num))
             .filter(
                 installment_details::Column::Status
                     .eq(InstallmentDetailStatus::Pending.to_string()),
@@ -298,4 +467,12 @@ impl InstallmentService {
         let days_to_add = (period - 1) * 30;
         Ok(first_due_date + chrono::Duration::days(days_to_add as i64))
     }
+}
+
+pub fn get_installment_service() -> InstallmentService {
+    InstallmentService::new(
+        InstallmentConverter,
+        InstallmentHooks,
+        Arc::new(common::log::logger::NoopLogger),
+    )
 }

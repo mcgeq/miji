@@ -39,23 +39,12 @@ export function useTransactionActions() {
   // 保存交易
   async function saveTransaction(transaction: TransactionCreate) {
     try {
-      // 如果是分期付款，需要先创建交易，然后创建分期计划
       if (transaction.isInstallment) {
-        // 1. 创建交易（不更新账户余额）
-        const createdTransaction = await moneyStore.createTransaction(transaction);
-
-        // 2. 创建分期计划
-        await moneyStore.createInstallmentPlan({
-          transaction_serial_num: createdTransaction.serialNum,
-          total_amount: transaction.amount,
-          total_periods: transaction.totalPeriods || 0,
-          installment_amount: transaction.amount / (transaction.totalPeriods || 1),
-          first_due_date: transaction.date,
-        });
-
+        // 分期交易：使用专门的分期交易创建方法
+        await moneyStore.createInstallmentTransaction(transaction);
         toast.success('分期付款创建成功');
       } else {
-        // 普通交易
+        // 普通交易：使用标准交易创建方法
         await moneyStore.createTransaction(transaction);
         toast.success('添加成功');
       }
