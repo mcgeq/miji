@@ -6,6 +6,7 @@ import EmptyLayout from './layouts/EmptyLayout.vue';
 import { checkAndCleanSession } from './services/auth';
 import { useAuthStore } from './stores/auth';
 import { Lg } from './utils/debugLog';
+import { detectMobileDevice } from './utils/platform';
 import { toast } from './utils/toast';
 import type { RouteLocationNormalizedLoaded } from 'vue-router';
 
@@ -16,10 +17,8 @@ const transitionStore = useTransitionsStore();
 const { name: transitionName } = storeToRefs(transitionStore);
 const authStore = useAuthStore();
 
-// 检测是否为移动端
-const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
-  navigator.userAgent,
-);
+// 检测是否为移动设备（用于系统功能控制）
+const isMobileDevice = detectMobileDevice();
 
 onMounted(async () => {
   try {
@@ -28,9 +27,9 @@ onMounted(async () => {
     // 但我们需要等待数据实际加载完成
     await nextTick();
 
-    // 移动端优化：减少延迟，使用超时处理
-    if (isMobile) {
-      // 移动端使用更短的延迟和超时处理
+    // 移动设备优化：减少延迟，使用超时处理
+    if (isMobileDevice) {
+      // 移动设备使用更短的延迟和超时处理
       await Promise.race([
         new Promise(resolve => setTimeout(resolve, 50)), // 减少到50ms
         new Promise(resolve => setTimeout(resolve, 1000)), // 1秒超时
@@ -42,14 +41,14 @@ onMounted(async () => {
 
     Lg.i('App', 'Auth check - token:', authStore.token ? 'exists' : 'null', 'rememberMe:', authStore.rememberMe);
 
-    // 仅在桌面端清理 session（移动端保持登录状态）
-    if (!isMobile) {
+    // 仅在桌面端清理 session（移动设备保持登录状态）
+    if (!isMobileDevice) {
       await checkAndCleanSession();
     }
 
-    // 移动端优化：使用超时处理认证检查
+    // 移动设备优化：使用超时处理认证检查
     let auth = false;
-    if (isMobile) {
+    if (isMobileDevice) {
       try {
         auth = await Promise.race([
           isAuthenticated(),
@@ -71,8 +70,8 @@ onMounted(async () => {
     }
   } catch (error) {
     Lg.e('App', error);
-    // 移动端不显示错误提示，避免阻塞启动
-    if (!isMobile) {
+    // 移动设备不显示错误提示，避免阻塞启动
+    if (!isMobileDevice) {
       toast.error(t('messages.initFailed'));
     }
   } finally {

@@ -1,32 +1,34 @@
 /**
  * 平台检测工具函数
+ * 用于检测设备类型（而非屏幕尺寸）
+ * 主要用于系统功能控制，如系统托盘、关闭行为等
  */
+
+/**
+ * 统一的移动设备检测函数
+ * 避免在多个文件中重复相同的检测逻辑
+ * @returns {boolean} 是否为移动设备
+ */
+export function detectMobileDevice(): boolean {
+  if (typeof window === 'undefined') return false;
+  const userAgent = navigator.userAgent.toLowerCase();
+  return /android|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent);
+}
 
 /**
  * 检测是否为桌面端
  * @returns {boolean} 是否为桌面端
  */
 export function isDesktop(): boolean {
-  // 在Tauri环境中，可以通过检查window.__TAURI__来判断
-  if (typeof window !== 'undefined' && '__TAURI__' in window) {
-    // 在Tauri环境中，通过检查用户代理字符串来判断平台
-    const userAgent = navigator.userAgent.toLowerCase();
-    const isMobile = /android|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent);
-    return !isMobile;
-  }
-
-  // 在非Tauri环境中，通过用户代理字符串判断
-  const userAgent = navigator.userAgent.toLowerCase();
-  const isMobile = /android|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent);
-  return !isMobile;
+  return !detectMobileDevice();
 }
 
 /**
- * 检测是否为移动端
- * @returns {boolean} 是否为移动端
+ * 检测是否为移动设备
+ * @returns {boolean} 是否为移动设备
  */
 export function isMobile(): boolean {
-  return !isDesktop();
+  return detectMobileDevice();
 }
 
 /**

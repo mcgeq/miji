@@ -7,6 +7,7 @@ import { initI18n } from './i18n/i18n';
 import router from './router';
 import { i18nErrorMap } from './schema/i18nErrorMap';
 import { storeStart } from './stores';
+import { detectMobileDevice } from './utils/platform';
 import '@/assets/styles/reset.css';
 import 'vue-toastification/dist/index.css';
 import '@/assets/styles/variables.css';
@@ -33,9 +34,7 @@ if (!Object.hasOwn) {
 }
 
 const isTauri = '__TAURI__' in window;
-const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
-  navigator.userAgent,
-);
+const isMobileDevice = detectMobileDevice();
 
 // 创建前端启动画面（用于移动端）
 function createFrontendSplashscreen() {
@@ -238,15 +237,15 @@ function waitForReady(): Promise<void> {
 async function bootstrap() {
   let frontendSplash: HTMLElement | null = null;
   try {
-    // 在移动端创建前端启动画面
-    if (isMobile) {
+    // 在移动设备上创建前端启动画面
+    if (isMobileDevice) {
       frontendSplash = createFrontendSplashscreen();
     }
     // 等待DOM准备就绪
     await waitForReady();
 
-    // 移动端优化：减少延迟，增加超时处理
-    if (isMobile || isTauri) {
+    // 移动设备优化：减少延迟，增加超时处理
+    if (isMobileDevice || isTauri) {
       // 使用Promise.race确保不会无限等待
       await Promise.race([
         new Promise(resolve => setTimeout(resolve, 100)), // 减少到100ms
@@ -279,8 +278,8 @@ async function bootstrap() {
       rtl: false,
     });
 
-    // 移动端优化：使用超时处理storeStart
-    if (isMobile) {
+    // 移动设备优化：使用超时处理storeStart
+    if (isMobileDevice) {
       try {
         await Promise.race([
           storeStart(),
@@ -322,8 +321,8 @@ async function bootstrap() {
     await handlePostMount();
     // 发射应用准备完成事件给 Tauri 后端（仅桌面端）
     // 关闭启动画面
-    if (isMobile) {
-      // 移动端：延迟关闭前端启动画面，确保应用完全加载
+    if (isMobileDevice) {
+      // 移动设备：延迟关闭前端启动画面，确保应用完全加载
       setTimeout(() => {
         closeFrontendSplashscreen(frontendSplash);
       }, 500);
@@ -380,8 +379,8 @@ async function handlePostMount() {
 
   // 在Tauri环境中的额外处理
   if (isTauri) {
-    // 防止右键菜单（移动端不需要）
-    if (!isMobile) {
+    // 防止右键菜单（移动设备不需要）
+    if (!isMobileDevice) {
       document.addEventListener('contextmenu', e => {
         e.preventDefault();
         return false;

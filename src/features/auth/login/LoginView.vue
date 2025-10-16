@@ -4,15 +4,14 @@ import FormInput from '@/components/common/FormInput.vue';
 import { LoginSchema } from '@/schema/auth';
 import { login } from '@/services/auth';
 import { Lg } from '@/utils/debugLog';
+import { detectMobileDevice } from '@/utils/platform';
 import { toast } from '@/utils/toast';
 
 const { t } = useI18n();
 const router = useRouter();
 
-// 检测是否为移动端
-const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
-  navigator.userAgent,
-);
+// 检测是否为移动设备（用于登录行为控制）
+const isMobileDevice = detectMobileDevice();
 
 const form = reactive({
   email: 'miji@miji.com',
@@ -38,9 +37,9 @@ async function handleSubmit() {
   isSubmitting.value = true;
 
   try {
-    // 移动端强制使用 rememberMe = true 以保持登录状态
-    const shouldRemember = isMobile ? true : rememberMe.value;
-    Lg.i('Login', 'Attempting login', { isMobile, shouldRemember });
+    // 移动设备强制使用 rememberMe = true 以保持登录状态
+    const shouldRemember = isMobileDevice ? true : rememberMe.value;
+    Lg.i('Login', 'Attempting login', { isMobileDevice, shouldRemember });
     await login(result.data, shouldRemember);
     toast.success(t('auth.messages.loginSuccess'));
     router.push('/todos');
@@ -75,8 +74,8 @@ async function handleSubmit() {
           :placeholder="t('auth.password')"
           :error="errors.password"
         />
-        <!-- 记住我（移动端自动记住，不显示） -->
-        <label v-if="!isMobile" class="remember-me">
+        <!-- 记住我（移动设备自动记住，不显示） -->
+        <label v-if="!isMobileDevice" class="remember-me">
           <input
             v-model="rememberMe"
             type="checkbox"
