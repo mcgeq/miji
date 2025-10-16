@@ -40,10 +40,10 @@ const {
   transactionType,
   showTransactionModal,
   closeTransactionModal,
-  saveTransaction,
-  updateTransaction,
-  saveTransfer,
-  updateTransfer,
+  handleSaveTransaction: saveTransaction,
+  handleUpdateTransaction: updateTransaction,
+  handleSaveTransfer: saveTransfer,
+  handleUpdateTransfer: updateTransfer,
 } = useTransactionActions();
 
 const {
@@ -52,8 +52,8 @@ const {
   accounts,
   showAccountModal,
   closeAccountModal,
-  saveAccount,
-  updateAccount,
+  handleSaveAccount: saveAccount,
+  handleUpdateAccount: updateAccount,
   loadAccounts,
 } = useAccountActions();
 
@@ -63,8 +63,8 @@ const {
   budgets,
   showBudgetModal,
   closeBudgetModal,
-  saveBudget,
-  updateBudget,
+  handleSaveBudget: saveBudget,
+  handleUpdateBudget: updateBudget,
   loadBudgets,
 } = useBudgetActions();
 
@@ -74,8 +74,8 @@ const {
   reminders,
   showReminderModal,
   closeReminderModal,
-  saveReminder,
-  updateReminder,
+  handleSaveReminder: saveReminder,
+  handleUpdateReminder: updateReminder,
   loadReminders,
 } = useReminderActions();
 
@@ -106,79 +106,62 @@ function toggleAmountVisibility() {
   moneyStore.toggleGlobalAmountVisibility();
 }
 
-// 包装保存方法，添加数据刷新逻辑
+// 数据刷新函数
+async function refreshTransactionData() {
+  await Promise.all([loadTransactions(), loadAccounts()]);
+}
+
+async function refreshAccountData() {
+  await loadAccounts();
+}
+
+async function refreshBudgetData() {
+  await loadBudgets();
+}
+
+async function refreshReminderData() {
+  await loadReminders();
+}
+
+// 使用composables中的handle方法，通过回调实现数据刷新
 async function handleSaveTransaction(transaction: TransactionCreate) {
-  const success = await saveTransaction(transaction);
-  if (success) {
-    await loadTransactions();
-    await loadAccounts();
-  }
+  return await saveTransaction(transaction, refreshTransactionData);
 }
 
 async function handleUpdateTransaction(serialNum: string, transaction: TransactionUpdate) {
-  const success = await updateTransaction(serialNum, transaction);
-  if (success) {
-    await loadTransactions();
-    await loadAccounts();
-  }
+  return await updateTransaction(serialNum, transaction, refreshTransactionData);
 }
 
 async function handleSaveTransfer(transfer: TransferCreate) {
-  const success = await saveTransfer(transfer);
-  if (success) {
-    await loadTransactions();
-    await loadAccounts();
-  }
+  return await saveTransfer(transfer, refreshTransactionData);
 }
 
 async function handleUpdateTransfer(serialNum: string, transfer: TransferCreate) {
-  const success = await updateTransfer(serialNum, transfer);
-  if (success) {
-    await loadTransactions();
-    await loadAccounts();
-  }
+  return await updateTransfer(serialNum, transfer, refreshTransactionData);
 }
 
 async function handleSaveAccount(account: CreateAccountRequest) {
-  const success = await saveAccount(account);
-  if (success) {
-    await loadAccounts();
-  }
+  return await saveAccount(account, refreshAccountData);
 }
 
 async function handleUpdateAccount(serialNum: string, account: UpdateAccountRequest) {
-  const success = await updateAccount(serialNum, account);
-  if (success) {
-    await loadAccounts();
-  }
+  return await updateAccount(serialNum, account, refreshAccountData);
 }
 
 async function handleSaveBudget(budget: BudgetCreate) {
-  const success = await saveBudget(budget);
-  if (success) {
-    await loadBudgets();
-  }
+  return await saveBudget(budget, refreshBudgetData);
 }
 
 async function handleUpdateBudget(serialNum: string, budget: BudgetUpdate) {
-  const success = await updateBudget(serialNum, budget);
-  if (success) {
-    await loadBudgets();
-  }
+  return await updateBudget(serialNum, budget, refreshBudgetData);
 }
 
 async function handleSaveReminder(reminder: BilReminderCreate) {
-  const success = await saveReminder(reminder);
-  if (success) {
-    await loadReminders();
-  }
+  return await saveReminder(reminder, refreshReminderData);
 }
 
 async function handleUpdateReminder(serialNum: string, reminder: BilReminderUpdate) {
-  const success = await updateReminder(serialNum, reminder);
-  if (success) {
-    await loadReminders();
-  }
+  return await updateReminder(serialNum, reminder, refreshReminderData);
 }
 
 // 创建键盘事件处理器
