@@ -44,7 +44,9 @@
       "clearFilter": "清除筛选",
       "export": "导出",
       "import": "导入",
-      "use": "采用"
+      "use": "采用",
+      "expand": "展开",
+      "collapse": "收起"
     },
     "sorting": {
       "sort": "排序",
@@ -461,7 +463,7 @@
       "installment": "分期付款",
       "totalPeriods": "总期数",
       "installmentAmount": "每期金额",
-      "firstDueDate": "首期还款日期",
+      "firstDueDate": "首期日期",
       "relatedTransaction": "关联交易",
       "installmentPlan": "分期计划",
       "period": "第{period}期",

@@ -44,7 +44,9 @@
       "clearFilter": "Clear Filter",
       "export": "Export",
       "import": "Import",
-      "use": "Use"
+      "use": "Use",
+      "expand": "Expand",
+      "collapse": "Collapse"
     },
     "sorting": {
       "sort": "Sort",

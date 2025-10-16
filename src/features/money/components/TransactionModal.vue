@@ -60,6 +60,8 @@ const form = ref<Transaction>({
   totalPeriods: 0,
   remainingPeriods: 0,
   installmentPlanId: null,
+  installmentAmount: 0,
+  firstDueDate: '',
 });
 
 const categoryMap = computed(() => {
@@ -106,6 +108,14 @@ function calculateInstallmentAmount(totalAmount: number, totalPeriods: number): 
   return baseAmount;
 }
 
+// 计算每期金额（用于显示在输入框中）
+const calculatedInstallmentAmount = computed(() => {
+  if (!form.value.isInstallment || form.value.totalPeriods <= 0 || form.value.amount <= 0) {
+    return 0;
+  }
+  return calculateInstallmentAmount(form.value.amount, form.value.totalPeriods);
+});
+
 // 获取分期金额详情（用于显示）
 const installmentDetails = computed(() => {
   if (!form.value.isInstallment || form.value.totalPeriods <= 0 || form.value.amount <= 0) {
@@ -116,8 +126,10 @@ const installmentDetails = computed(() => {
   const totalPeriods = form.value.totalPeriods;
   const baseAmount = calculateInstallmentAmount(totalAmount, totalPeriods);
 
-  // 计算首期还款日期（使用交易日期）
-  const firstDueDate = new Date(form.value.date);
+  // 使用用户设置的首期还款日期，如果没有设置则使用交易日期
+  const firstDueDate = form.value.firstDueDate
+    ? new Date(form.value.firstDueDate)
+    : new Date(form.value.date);
 
   const details = [];
   for (let i = 1; i <= totalPeriods; i++) {
@@ -171,11 +183,15 @@ watch(() => form.value.isInstallment, newValue => {
     form.value.totalPeriods = 12;
     form.value.remainingPeriods = 12;
     form.value.transactionStatus = TransactionStatusSchema.enum.Pending;
+    // 设置默认首期还款日期为交易日期
+    form.value.firstDueDate = new Date(form.value.date).toISOString().split('T')[0];
   } else {
     // 禁用分期时，重置相关字段
     form.value.totalPeriods = 0;
     form.value.remainingPeriods = 0;
     form.value.installmentPlanId = null;
+    form.value.installmentAmount = 0;
+    form.value.firstDueDate = '';
     form.value.transactionStatus = TransactionStatusSchema.enum.Completed;
   }
 });
@@ -185,6 +201,32 @@ watch(() => form.value.totalPeriods, () => {
   if (form.value.isInstallment) {
     form.value.remainingPeriods = form.value.totalPeriods;
   }
+});
+
+// 监听金额和期数变化，更新每期金额
+watch([() => form.value.amount, () => form.value.totalPeriods], () => {
+  if (form.value.isInstallment) {
+    form.value.installmentAmount = calculatedInstallmentAmount.value;
+  }
+});
+
+// 分期计划展开/收起状态
+const isInstallmentPlanExpanded = ref(false);
+
+// 获取显示的分期详情（默认显示前2期）
+const visibleInstallmentDetails = computed(() => {
+  if (!installmentDetails.value) return null;
+
+  if (isInstallmentPlanExpanded.value) {
+    return installmentDetails.value;
+  } else {
+    return installmentDetails.value.slice(0, 2);
+  }
+});
+
+// 是否有更多期数需要收起
+const hasMorePeriods = computed(() => {
+  return installmentDetails.value && installmentDetails.value.length > 2;
 });
 
 // Compute available payment methods based on selected account and transaction typ
@@ -399,6 +441,8 @@ function getDefaultTransaction(type: TransactionType, accounts: Account[]) {
     totalPeriods: 0,
     remainingPeriods: 0,
     installmentPlanId: null,
+    installmentAmount: 0,
+    firstDueDate: '',
   };
 }
 
@@ -636,32 +680,20 @@ watch(
           <div class="form-row">
             <label>{{ t('financial.transaction.installmentAmount') }}</label>
             <input
-              v-model="form.installmentAmount"
-              type="number"
+              :value="calculatedInstallmentAmount.toFixed(2)"
+              type="text"
               readonly
               class="form-control"
             >
           </div>
 
-          <!-- 分期计划详情 -->
-          <div v-if="installmentDetails" class="installment-plan">
-            <h4>{{ t('financial.transaction.installmentPlan') }}</h4>
-            <div class="plan-list">
-              <div
-                v-for="detail in installmentDetails"
-                :key="detail.period"
-                class="plan-item"
-              >
-                <div class="period-info">
-                  <span class="period-label">{{ t('financial.transaction.period', { period: detail.period }) }}</span>
-                  <span class="due-date">{{ detail.dueDate }}</span>
-                </div>
-                <span class="amount-label">¥{{ detail.amount.toFixed(2) }}</span>
-              </div>
-            </div>
-            <div class="plan-summary">
-              <strong>{{ t('financial.transaction.totalAmount') }}: ¥{{ form.amount.toFixed(2) }}</strong>
-            </div>
+          <div class="form-row">
+            <label>{{ t('financial.transaction.firstDueDate') }}</label>
+            <input
+              v-model="form.firstDueDate"
+              type="date"
+              class="form-control"
+            >
           </div>
 
           <div class="form-row">
@@ -672,6 +704,49 @@ watch(
               class="form-control"
               :placeholder="t('common.misc.optional')"
             >
+          </div>
+
+          <!-- 分期计划详情 -->
+          <div v-if="installmentDetails" class="installment-plan">
+            <div class="plan-header">
+              <h4>{{ t('financial.transaction.installmentPlan') }}</h4>
+              <button
+                v-if="hasMorePeriods"
+                type="button"
+                class="toggle-btn"
+                @click="isInstallmentPlanExpanded = !isInstallmentPlanExpanded"
+              >
+                {{ isInstallmentPlanExpanded ? t('common.actions.collapse') : t('common.actions.expand') }}
+              </button>
+            </div>
+
+            <div class="plan-list">
+              <div
+                v-for="detail in visibleInstallmentDetails"
+                :key="detail.period"
+                class="plan-item"
+              >
+                <div class="period-info">
+                  <span class="period-label">{{ t('financial.transaction.period', { period: detail.period }) }}</span>
+                  <span class="due-date">{{ detail.dueDate }}</span>
+                </div>
+                <span class="amount-label">¥{{ detail.amount.toFixed(2) }}</span>
+              </div>
+            </div>
+
+            <div class="plan-summary">
+              <div class="total-amount">
+                <strong>{{ t('financial.transaction.totalAmount') }}: ¥{{ form.amount.toFixed(2) }}</strong>
+                <button
+                  v-if="hasMorePeriods"
+                  type="button"
+                  class="toggle-btn"
+                  @click="isInstallmentPlanExpanded = !isInstallmentPlanExpanded"
+                >
+                  {{ isInstallmentPlanExpanded ? t('common.actions.collapse') : t('common.actions.expand') }}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -758,8 +833,15 @@ watch(
   border: 1px solid var(--color-base-300);
 }
 
-.installment-plan h4 {
-  margin: 0 0 1rem 0;
+.plan-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.plan-header h4 {
+  margin: 0;
   font-size: 0.875rem;
   font-weight: 600;
   color: var(--color-base-content);
@@ -810,10 +892,47 @@ watch(
 }
 
 .plan-summary {
-  text-align: center;
   padding-top: 0.5rem;
   border-top: 1px solid var(--color-base-300);
   color: var(--color-base-content);
+}
+
+.total-amount {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--color-base-200);
+}
+
+.toggle-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: transparent;
+  border: 1px solid var(--color-base-300);
+  border-radius: 0.375rem;
+  padding: 0.5rem 1rem;
+  color: var(--color-base-content);
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.toggle-btn:hover {
+  background: var(--color-base-100);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.toggle-icon {
+  width: 1rem;
+  height: 1rem;
+  transition: transform 0.2s ease;
+}
+
+.toggle-icon.expanded {
+  transform: rotate(180deg);
 }
 
 .modal-close-btn:hover { color: var(--color-primary); }
