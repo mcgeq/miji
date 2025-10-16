@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 /// 分期付款计划创建请求
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CreateInstallmentPlanRequest {
-    pub transaction_id: String,
+    pub transaction_serial_num: String,
     pub total_amount: Decimal,
     pub total_periods: i32,
     pub installment_amount: Decimal,
@@ -15,8 +15,8 @@ pub struct CreateInstallmentPlanRequest {
 /// 分期付款计划响应
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct InstallmentPlanResponse {
-    pub id: String,
-    pub transaction_id: String,
+    pub serial_num: String,
+    pub transaction_serial_num: String,
     pub total_amount: Decimal,
     pub total_periods: i32,
     pub installment_amount: Decimal,
@@ -30,7 +30,7 @@ pub struct InstallmentPlanResponse {
 /// 分期付款明细创建请求
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CreateInstallmentDetailRequest {
-    pub plan_id: String,
+    pub plan_serial_num: String,
     pub period_number: i32,
     pub due_date: DateTime<FixedOffset>,
     pub amount: Decimal,
@@ -39,8 +39,8 @@ pub struct CreateInstallmentDetailRequest {
 /// 分期付款明细响应
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct InstallmentDetailResponse {
-    pub id: String,
-    pub plan_id: String,
+    pub serial_num: String,
+    pub plan_serial_num: String,
     pub period_number: i32,
     pub due_date: DateTime<FixedOffset>,
     pub amount: Decimal,
@@ -54,7 +54,7 @@ pub struct InstallmentDetailResponse {
 /// 分期付款还款请求
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PayInstallmentRequest {
-    pub detail_id: String,
+    pub detail_serial_num: String,
     pub paid_amount: Decimal,
     pub paid_date: Option<DateTime<FixedOffset>>,
 }

@@ -1,7 +1,7 @@
 use chrono::{DateTime, FixedOffset};
 use sea_orm::{
-    ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait,
-    QueryFilter, Set, TransactionTrait, prelude::Decimal, IntoActiveModel, QueryOrder,
+    ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, IntoActiveModel, QueryFilter,
+    QueryOrder, Set, TransactionTrait, prelude::Decimal,
 };
 use tracing::info;
 
@@ -11,8 +11,8 @@ use common::{
 };
 
 use crate::dto::installment::{
-    CreateInstallmentPlanRequest, InstallmentDetailResponse,
-    InstallmentDetailStatus, InstallmentPlanResponse, InstallmentStatus, PayInstallmentRequest,
+    CreateInstallmentPlanRequest, InstallmentDetailResponse, InstallmentDetailStatus,
+    InstallmentPlanResponse, InstallmentStatus, PayInstallmentRequest,
 };
 use entity::{installment_details, installment_plans, transactions};
 
@@ -31,8 +31,8 @@ impl InstallmentService {
         // 1. 创建分期计划
         let plan_id = McgUuid::uuid(38);
         let plan = installment_plans::ActiveModel {
-            id: Set(plan_id.clone()),
-            transaction_id: Set(request.transaction_id.clone()),
+            serial_num: Set(plan_id.clone()),
+            transaction_serial_num: Set(request.transaction_serial_num.clone()),
             total_amount: Set(request.total_amount),
             total_periods: Set(request.total_periods),
             installment_amount: Set(request.installment_amount),
@@ -57,8 +57,8 @@ impl InstallmentService {
 
             let detail_id = McgUuid::uuid(38);
             let detail = installment_details::ActiveModel {
-                id: Set(detail_id),
-                plan_id: Set(plan_id.clone()),
+                serial_num: Set(detail_id),
+                plan_serial_num: Set(plan_id.clone()),
                 period_number: Set(period),
                 due_date: Set(due_date),
                 amount: Set(amount),
@@ -74,13 +74,14 @@ impl InstallmentService {
         }
 
         // 3. 更新交易记录
-        let mut transaction_active = transactions::Entity::find_by_id(&request.transaction_id)
-            .one(&tx)
-            .await?
-            .ok_or_else(|| AppError::simple(common::BusinessCode::NotFound, "交易不存在"))?
-            .into_active_model();
+        let mut transaction_active =
+            transactions::Entity::find_by_id(&request.transaction_serial_num)
+                .one(&tx)
+                .await?
+                .ok_or_else(|| AppError::simple(common::BusinessCode::NotFound, "交易不存在"))?
+                .into_active_model();
 
-        transaction_active.installment_plan_id = Set(Some(plan_id.clone()));
+        transaction_active.installment_plan_serial_num = Set(Some(plan_id.clone()));
         transaction_active.is_installment = Set(Some(true));
         transaction_active.total_periods = Set(Some(request.total_periods));
         transaction_active.remaining_periods = Set(Some(request.total_periods));
@@ -93,8 +94,8 @@ impl InstallmentService {
         let detail_responses: Vec<InstallmentDetailResponse> = details
             .into_iter()
             .map(|detail| InstallmentDetailResponse {
-                id: detail.id,
-                plan_id: detail.plan_id,
+                serial_num: detail.serial_num,
+                plan_serial_num: detail.plan_serial_num,
                 period_number: detail.period_number,
                 due_date: detail.due_date,
                 amount: detail.amount,
@@ -107,8 +108,8 @@ impl InstallmentService {
             .collect();
 
         Ok(InstallmentPlanResponse {
-            id: plan_model.id,
-            transaction_id: plan_model.transaction_id,
+            serial_num: plan_model.serial_num,
+            transaction_serial_num: plan_model.transaction_serial_num,
             total_amount: plan_model.total_amount,
             total_periods: plan_model.total_periods,
             installment_amount: plan_model.installment_amount,
@@ -129,7 +130,7 @@ impl InstallmentService {
         let tx = db.begin().await?;
 
         // 1. 查找分期明细
-        let mut detail = installment_details::Entity::find_by_id(&request.detail_id)
+        let mut detail = installment_details::Entity::find_by_id(&request.detail_serial_num)
             .one(&tx)
             .await?
             .ok_or_else(|| AppError::simple(common::BusinessCode::NotFound, "分期明细不存在"))?
@@ -157,12 +158,12 @@ impl InstallmentService {
         info!("更新账户余额: -{}", request.paid_amount);
 
         // 5. 更新交易的剩余期数
-        let plan = installment_plans::Entity::find_by_id(&updated_detail.plan_id)
+        let plan = installment_plans::Entity::find_by_id(&updated_detail.plan_serial_num)
             .one(&tx)
             .await?
             .ok_or_else(|| AppError::simple(common::BusinessCode::NotFound, "分期计划不存在"))?;
 
-        let mut transaction_active = transactions::Entity::find_by_id(&plan.transaction_id)
+        let mut transaction_active = transactions::Entity::find_by_id(&plan.transaction_serial_num)
             .one(&tx)
             .await?
             .ok_or_else(|| AppError::simple(common::BusinessCode::NotFound, "交易不存在"))?
@@ -189,8 +190,8 @@ impl InstallmentService {
 
         // 7. 构建响应
         Ok(InstallmentDetailResponse {
-            id: updated_detail.id,
-            plan_id: updated_detail.plan_id,
+            serial_num: updated_detail.serial_num,
+            plan_serial_num: updated_detail.plan_serial_num,
             period_number: updated_detail.period_number,
             due_date: updated_detail.due_date,
             amount: updated_detail.amount,
@@ -214,7 +215,7 @@ impl InstallmentService {
             .ok_or_else(|| AppError::simple(common::BusinessCode::NotFound, "分期计划不存在"))?;
 
         let details = installment_details::Entity::find()
-            .filter(installment_details::Column::PlanId.eq(plan_id))
+            .filter(installment_details::Column::PlanSerialNum.eq(plan_id))
             .order_by_asc(installment_details::Column::PeriodNumber)
             .all(db)
             .await?;
@@ -222,8 +223,8 @@ impl InstallmentService {
         let detail_responses: Vec<InstallmentDetailResponse> = details
             .into_iter()
             .map(|detail| InstallmentDetailResponse {
-                id: detail.id,
-                plan_id: detail.plan_id,
+                serial_num: detail.serial_num,
+                plan_serial_num: detail.plan_serial_num,
                 period_number: detail.period_number,
                 due_date: detail.due_date,
                 amount: detail.amount,
@@ -236,8 +237,8 @@ impl InstallmentService {
             .collect();
 
         Ok(InstallmentPlanResponse {
-            id: plan.id,
-            transaction_id: plan.transaction_id,
+            serial_num: plan.serial_num,
+            transaction_serial_num: plan.transaction_serial_num,
             total_amount: plan.total_amount,
             total_periods: plan.total_periods,
             installment_amount: plan.installment_amount,
@@ -266,8 +267,8 @@ impl InstallmentService {
         let responses: Vec<InstallmentDetailResponse> = details
             .into_iter()
             .map(|detail| InstallmentDetailResponse {
-                id: detail.id,
-                plan_id: detail.plan_id,
+                serial_num: detail.serial_num,
+                plan_serial_num: detail.plan_serial_num,
                 period_number: detail.period_number,
                 due_date: detail.due_date,
                 amount: detail.amount,

@@ -336,14 +336,14 @@ pub enum Transactions {
     IsInstallment,
     TotalPeriods,
     RemainingPeriods,
-    InstallmentPlanId,
+    InstallmentPlanSerialNum,
 }
 
 #[derive(DeriveIden)]
 pub enum InstallmentPlans {
     Table,
-    Id,
-    TransactionId,
+    SerialNum,
+    TransactionSerialNum,
     TotalAmount,
     TotalPeriods,
     InstallmentAmount,
@@ -356,8 +356,8 @@ pub enum InstallmentPlans {
 #[derive(DeriveIden)]
 pub enum InstallmentDetails {
     Table,
-    Id,
-    PlanId,
+    SerialNum,
+    PlanSerialNum,
     PeriodNumber,
     DueDate,
     Amount,

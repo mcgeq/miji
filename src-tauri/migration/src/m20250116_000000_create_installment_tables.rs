@@ -8,33 +8,6 @@ pub struct Migration;
 #[async_trait::async_trait]
 impl MigrationTrait for Migration {
     async fn up(&self, manager: &SchemaManager) -> Result<(), DbErr> {
-        // 修改交易表，添加新的分期相关字段
-        manager
-            .alter_table(
-                Table::alter()
-                    .table(Transactions::Table)
-                    .add_column(
-                        ColumnDef::new(Transactions::RemainingPeriods)
-                            .integer()
-                            .null(),
-                    )
-                    .to_owned(),
-            )
-            .await?;
-
-        manager
-            .alter_table(
-                Table::alter()
-                    .table(Transactions::Table)
-                    .add_column(
-                        ColumnDef::new(Transactions::InstallmentPlanId)
-                            .string_len(38)
-                            .null(),
-                    )
-                    .to_owned(),
-            )
-            .await?;
-
         // 创建分期付款计划表
         manager
             .create_table(
@@ -42,13 +15,13 @@ impl MigrationTrait for Migration {
                     .table(InstallmentPlans::Table)
                     .if_not_exists()
                     .col(
-                        ColumnDef::new(InstallmentPlans::Id)
+                        ColumnDef::new(InstallmentPlans::SerialNum)
                             .string_len(38)
                             .not_null()
                             .primary_key(),
                     )
                     .col(
-                        ColumnDef::new(InstallmentPlans::TransactionId)
+                        ColumnDef::new(InstallmentPlans::TransactionSerialNum)
                             .string_len(38)
                             .not_null(),
                     )
@@ -90,7 +63,10 @@ impl MigrationTrait for Migration {
                     .foreign_key(
                         ForeignKey::create()
                             .name("fk_installment_plans_transaction_id")
-                            .from(InstallmentPlans::Table, InstallmentPlans::TransactionId)
+                            .from(
+                                InstallmentPlans::Table,
+                                InstallmentPlans::TransactionSerialNum,
+                            )
                             .to(Transactions::Table, Transactions::SerialNum)
                             .on_delete(ForeignKeyAction::Cascade),
                     )
@@ -105,13 +81,13 @@ impl MigrationTrait for Migration {
                     .table(InstallmentDetails::Table)
                     .if_not_exists()
                     .col(
-                        ColumnDef::new(InstallmentDetails::Id)
+                        ColumnDef::new(InstallmentDetails::SerialNum)
                             .string_len(38)
                             .not_null()
                             .primary_key(),
                     )
                     .col(
-                        ColumnDef::new(InstallmentDetails::PlanId)
+                        ColumnDef::new(InstallmentDetails::PlanSerialNum)
                             .string_len(38)
                             .not_null(),
                     )
@@ -158,8 +134,8 @@ impl MigrationTrait for Migration {
                     .foreign_key(
                         ForeignKey::create()
                             .name("fk_installment_details_plan_id")
-                            .from(InstallmentDetails::Table, InstallmentDetails::PlanId)
-                            .to(InstallmentPlans::Table, InstallmentPlans::Id)
+                            .from(InstallmentDetails::Table, InstallmentDetails::PlanSerialNum)
+                            .to(InstallmentPlans::Table, InstallmentPlans::SerialNum)
                             .on_delete(ForeignKeyAction::Cascade),
                     )
                     .to_owned(),
@@ -172,7 +148,7 @@ impl MigrationTrait for Migration {
                 Index::create()
                     .name("idx_installment_details_plan_period")
                     .table(InstallmentDetails::Table)
-                    .col(InstallmentDetails::PlanId)
+                    .col(InstallmentDetails::PlanSerialNum)
                     .col(InstallmentDetails::PeriodNumber)
                     .unique()
                     .to_owned(),
@@ -193,25 +169,7 @@ impl MigrationTrait for Migration {
             .drop_table(Table::drop().table(InstallmentPlans::Table).to_owned())
             .await?;
 
-        // 删除交易表中的新分期相关字段
-        manager
-            .alter_table(
-                Table::alter()
-                    .table(Transactions::Table)
-                    .drop_column(Transactions::InstallmentPlanId)
-                    .to_owned(),
-            )
-            .await?;
-
-        manager
-            .alter_table(
-                Table::alter()
-                    .table(Transactions::Table)
-                    .drop_column(Transactions::RemainingPeriods)
-                    .to_owned(),
-            )
-            .await?;
-
         Ok(())
     }
 }
+

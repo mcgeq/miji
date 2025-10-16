@@ -38,7 +38,7 @@ pub struct Model {
     pub is_installment: Option<bool>,
     pub total_periods: Option<i32>,
     pub remaining_periods: Option<i32>,
-    pub installment_plan_id: Option<String>,
+    pub installment_plan_serial_num: Option<String>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

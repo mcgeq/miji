@@ -5,8 +5,8 @@ use serde::{Deserialize, Serialize};
 #[sea_orm(table_name = "installment_details")]
 pub struct Model {
     #[sea_orm(primary_key, auto_increment = false)]
-    pub id: String,
-    pub plan_id: String,
+    pub serial_num: String,
+    pub plan_serial_num: String,
     pub period_number: i32,
     pub due_date: DateTimeWithTimeZone,
     #[sea_orm(column_type = "Decimal(Some((15, 2)))")]
@@ -23,8 +23,8 @@ pub struct Model {
 pub enum Relation {
     #[sea_orm(
         belongs_to = "super::installment_plans::Entity",
-        from = "Column::PlanId",
-        to = "super::installment_plans::Column::Id"
+        from = "Column::PlanSerialNum",
+        to = "super::installment_plans::Column::SerialNum"
     )]
     InstallmentPlan,
 }

@@ -406,7 +406,7 @@ impl TryFrom<CreateTransactionRequest> for entity::transactions::ActiveModel {
             is_installment: Set(value.is_installment),
             total_periods: Set(value.total_periods),
             remaining_periods: Set(value.remaining_periods),
-            installment_plan_id: Set(value.installment_plan_id),
+            installment_plan_serial_num: Set(value.installment_plan_id),
         })
     }
 }
@@ -542,7 +542,7 @@ impl TryFrom<UpdateTransactionRequest> for entity::transactions::ActiveModel {
             model.remaining_periods = Set(Some(remaining_periods));
         }
         if let Some(installment_plan_id) = value.installment_plan_id {
-            model.installment_plan_id = Set(Some(installment_plan_id));
+            model.installment_plan_serial_num = Set(Some(installment_plan_id));
         }
 
         // 更新 updated_at 字段
@@ -678,7 +678,7 @@ impl From<TransactionWithRelations> for TransactionResponse {
             is_installment: trans.is_installment,
             total_periods: trans.total_periods,
             remaining_periods: trans.remaining_periods,
-            installment_plan_id: trans.installment_plan_id,
+            installment_plan_id: trans.installment_plan_serial_num,
         }
     }
 }
