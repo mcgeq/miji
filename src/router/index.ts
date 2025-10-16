@@ -2,6 +2,7 @@
 import { createRouter, createWebHashHistory } from 'vue-router';
 import { routes } from 'vue-router/auto-routes';
 import { i18nInstance } from '@/i18n/i18n';
+import { useAuthStore } from '@/stores/auth';
 import { Lg } from '@/utils/debugLog';
 import { toast } from '@/utils/toast';
 import type { Composer } from 'vue-i18n';
@@ -16,9 +17,10 @@ router.beforeEach(async (to, _from) => {
     return true;
   }
   const t = (i18nInstance.global as Composer).t;
+  const authStore = useAuthStore();
   let isAuth = false;
   try {
-    isAuth = await isAuthenticated();
+    isAuth = await authStore.checkAuthStatus();
   } catch (error) {
     Lg.e('Router', 'Failed to check auth:', error);
   }

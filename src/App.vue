@@ -51,7 +51,7 @@ onMounted(async () => {
     if (isMobileDevice) {
       try {
         auth = await Promise.race([
-          isAuthenticated(),
+          authStore.checkAuthStatus(),
           new Promise<boolean>((_, reject) =>
             setTimeout(() => reject(new Error('Auth check timeout')), 2000),
           ),
@@ -61,7 +61,7 @@ onMounted(async () => {
         auth = false;
       }
     } else {
-      auth = await isAuthenticated();
+      auth = await authStore.checkAuthStatus();
     }
 
     if (!auth && router.currentRoute.value.path !== '/auth/login') {
