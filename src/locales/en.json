@@ -428,7 +428,27 @@
       "editTransaction": "Edit Transaction",
       "fromAccount": "From Account",
       "toAccount": "To Account",
-      "paymentMethod": "Payment Method"
+      "paymentMethod": "Payment Method",
+      "status": "Transaction Status",
+      "installment": "Installment Payment",
+      "totalPeriods": "Total Periods",
+      "installmentAmount": "Installment Amount",
+      "firstDueDate": "First Due Date",
+      "relatedTransaction": "Related Transaction",
+      "installmentPlan": "Installment Plan",
+      "period": "Period {period}",
+      "totalAmount": "Total Amount",
+      "installmentStatusHint": "Installment payment in progress, status limited to Pending or Reversed",
+      "reverseInstallment": "Reverse Installment",
+      "noRelatedTransaction": "No transaction serial number",
+      "confirmReverseInstallment": "Are you sure you want to reverse this installment payment? This will reverse all completed installments and create reverse transactions.",
+      "reverseSuccess": "Installment payment reversed successfully",
+      "reverseFailed": "Failed to reverse installment payment",
+      "statusOptions": {
+        "pending": "Pending",
+        "completed": "Completed",
+        "reversed": "Reversed"
+      }
     },
     "paymentMethods": {
       "cash": "Cash",

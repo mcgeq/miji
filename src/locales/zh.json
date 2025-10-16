@@ -432,7 +432,27 @@
       "editTransaction": "编辑交易",
       "fromAccount": "转出账户",
       "toAccount": "转入账户",
-      "paymentMethod": "支付渠道"
+      "paymentMethod": "支付渠道",
+      "status": "交易状态",
+      "installment": "分期付款",
+      "totalPeriods": "总期数",
+      "installmentAmount": "每期金额",
+      "firstDueDate": "首期还款日期",
+      "relatedTransaction": "关联交易",
+      "installmentPlan": "分期计划",
+      "period": "第{period}期",
+      "totalAmount": "总金额",
+      "installmentStatusHint": "分期付款进行中，状态限制为待处理或已撤销",
+      "reverseInstallment": "撤销分期付款",
+      "noRelatedTransaction": "没有交易序列号",
+      "confirmReverseInstallment": "确定要撤销此分期付款吗？这将撤销所有已完成的分期并创建反向交易。",
+      "reverseSuccess": "分期付款撤销成功",
+      "reverseFailed": "分期付款撤销失败",
+      "statusOptions": {
+        "pending": "待处理",
+        "completed": "已完成",
+        "reversed": "已撤销"
+      }
     },
     "paymentMethods": {
       "cash": "现金",

@@ -34,6 +34,11 @@ export const TransactionSchema = z.object({
   isDeleted: z.boolean().default(false),
   createdAt: DateTimeSchema,
   updatedAt: DateTimeSchema.optional().nullable(),
+  // 分期相关字段
+  isInstallment: z.boolean().optional().default(false),
+  totalPeriods: z.number().optional().default(0),
+  installmentAmount: z.number().optional().default(0),
+  firstDueDate: z.string().optional().default(''),
 });
 
 export const TransactionCreateSchema = TransactionSchema.pick({
@@ -54,6 +59,11 @@ export const TransactionCreateSchema = TransactionSchema.pick({
   actualPayerAccount: true,
   relatedTransactionSerialNum: true,
   isDeleted: true,
+  // 分期相关字段
+  isInstallment: true,
+  totalPeriods: true,
+  installmentAmount: true,
+  firstDueDate: true,
 })
   .extend({
     currency: z.string().length(3),

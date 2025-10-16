@@ -37,6 +37,7 @@ mod m20250929_121722_create_todo_repeat_period_type;
 mod m20251916_221213_create_sub_categories;
 mod m20251917_223412_create_sub_category_insert;
 mod m20250101_000000_insert_default_user;
+mod m20250102_000000_add_installment_fields_to_transactions;
 
 pub mod schema;
 
@@ -83,6 +84,7 @@ impl MigratorTrait for Migrator {
             Box::new(m20250929_110022_create_todo_alert::Migration),
             Box::new(m20250929_121722_create_todo_repeat_period_type::Migration),
             Box::new(m20250101_000000_insert_default_user::Migration),
+            Box::new(m20250102_000000_add_installment_fields_to_transactions::Migration),
         ]
     }
 }

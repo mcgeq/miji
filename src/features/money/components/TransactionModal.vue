@@ -30,6 +30,7 @@ const emit = defineEmits<{
   update: [serialNum: string, transaction: TransactionUpdate];
   saveTransfer: [transfer: TransferCreate];
   updateTransfer: [serialNum: string, transfer: TransferCreate];
+  refresh: [];
 }>();
 const moneyStore = useMoneyStore();
 const { t } = useI18n();
@@ -54,6 +55,12 @@ const form = ref<Transaction>({
   refundAmount: 0,
   toAccountSerialNum: '',
   date: trans.date || DateUtils.getLocalISODateTimeWithOffset(),
+  // 分期相关字段
+  isInstallment: false,
+  totalPeriods: 0,
+  installmentAmount: 0,
+  firstDueDate: '',
+  relatedTransactionSerialNum: '',
 });
 
 const categoryMap = computed(() => {
@@ -90,6 +97,105 @@ const isTransferReadonly = computed(() => {
 
 const isEditabled = computed<boolean>(() => !!props.transaction);
 const isDisabled = computed<boolean>(() => isTransferReadonly.value || isEditabled.value);
+
+// 分期相关计算
+const installmentAmount = computed(() => {
+  if (form.value.isInstallment && form.value.totalPeriods > 0 && form.value.amount > 0) {
+    return calculateInstallmentAmount(form.value.amount, form.value.totalPeriods);
+  }
+  return 0;
+});
+
+// 计算分期金额，处理小数精度问题
+function calculateInstallmentAmount(totalAmount: number, totalPeriods: number): number {
+  // 计算每期基础金额（向上取整到2位小数）
+  const baseAmount = Math.ceil((totalAmount * 100) / totalPeriods) / 100;
+
+  // 返回基础金额（前n-1期使用）
+  return baseAmount;
+}
+
+// 获取分期金额详情（用于显示）
+const installmentDetails = computed(() => {
+  if (!form.value.isInstallment || form.value.totalPeriods <= 0 || form.value.amount <= 0) {
+    return null;
+  }
+
+  const totalAmount = form.value.amount;
+  const totalPeriods = form.value.totalPeriods;
+  const baseAmount = calculateInstallmentAmount(totalAmount, totalPeriods);
+
+  // 计算首期还款日期
+  const firstDueDate = form.value.firstDueDate ? new Date(form.value.firstDueDate) : new Date();
+
+  const details = [];
+  for (let i = 1; i <= totalPeriods; i++) {
+    // 计算每期的还款日期（每月递增）
+    const dueDate = new Date(firstDueDate);
+    dueDate.setMonth(dueDate.getMonth() + (i - 1));
+
+    if (i === totalPeriods) {
+      // 最后一期
+      const firstNMinusOneAmount = baseAmount * (totalPeriods - 1);
+      const lastAmount = totalAmount - firstNMinusOneAmount;
+      details.push({
+        period: i,
+        amount: Number(lastAmount.toFixed(2)),
+        dueDate: dueDate.toISOString().split('T')[0], // 格式化为 YYYY-MM-DD
+      });
+    } else {
+      // 前n-1期
+      details.push({
+        period: i,
+        amount: Number(baseAmount.toFixed(2)),
+        dueDate: dueDate.toISOString().split('T')[0], // 格式化为 YYYY-MM-DD
+      });
+    }
+  }
+
+  return details;
+});
+
+// 可用的交易状态选项
+const availableTransactionStatuses = computed(() => {
+  if (!form.value.isInstallment) {
+    return [
+      { value: TransactionStatusSchema.enum.Pending, label: t('financial.transaction.statusOptions.pending') },
+      { value: TransactionStatusSchema.enum.Completed, label: t('financial.transaction.statusOptions.completed') },
+      { value: TransactionStatusSchema.enum.Reversed, label: t('financial.transaction.statusOptions.reversed') },
+    ];
+  }
+
+  // 分期付款时，只能选择 Pending 或 Reversed，不能选择 Completed
+  return [
+    { value: TransactionStatusSchema.enum.Pending, label: t('financial.transaction.statusOptions.pending') },
+    { value: TransactionStatusSchema.enum.Reversed, label: t('financial.transaction.statusOptions.reversed') },
+  ];
+});
+
+// 监听分期选项变化
+watch(() => form.value.isInstallment, newValue => {
+  if (newValue) {
+    // 启用分期时，设置默认值
+    form.value.totalPeriods = 12;
+    form.value.firstDueDate = DateUtils.getLocalISODateTimeWithOffset();
+    form.value.transactionStatus = TransactionStatusSchema.enum.Pending;
+  } else {
+    // 禁用分期时，重置相关字段
+    form.value.totalPeriods = 0;
+    form.value.installmentAmount = 0;
+    form.value.firstDueDate = '';
+    form.value.relatedTransactionSerialNum = '';
+    form.value.transactionStatus = TransactionStatusSchema.enum.Completed;
+  }
+});
+
+// 监听总期数变化，计算每期金额
+watch(() => form.value.totalPeriods, () => {
+  if (form.value.isInstallment) {
+    form.value.installmentAmount = installmentAmount.value;
+  }
+});
 
 // Compute available payment methods based on selected account and transaction typ
 const availablePaymentMethods = computed(() => {
@@ -293,6 +399,12 @@ function getDefaultTransaction(type: TransactionType, accounts: Account[]) {
     createdAt: DateUtils.getLocalISODateTimeWithOffset(),
     updatedAt: null,
     account: accounts[0] || ({} as Account),
+    // 分期相关字段
+    isInstallment: false,
+    totalPeriods: 0,
+    installmentAmount: 0,
+    firstDueDate: '',
+    relatedTransactionSerialNum: '',
   };
 }
 
@@ -489,6 +601,96 @@ watch(
           </select>
         </div>
 
+        <!-- 交易状态 -->
+        <div class="form-row">
+          <label>{{ t('financial.transaction.status') }}</label>
+          <select
+            v-model="form.transactionStatus"
+            class="form-control"
+          >
+            <option
+              v-for="status in availableTransactionStatuses"
+              :key="status.value"
+              :value="status.value"
+            >
+              {{ status.label }}
+            </option>
+          </select>
+        </div>
+
+        <!-- 分期选项 -->
+        <div v-if="form.transactionType === 'Expense'" class="form-row">
+          <label class="checkbox-label">
+            <input v-model="form.isInstallment" type="checkbox">
+            {{ t('financial.transaction.installment') }}
+          </label>
+        </div>
+
+        <!-- 分期详情 -->
+        <div v-if="form.isInstallment" class="installment-section">
+          <div class="form-row">
+            <label>{{ t('financial.transaction.totalPeriods') }}</label>
+            <input
+              v-model="form.totalPeriods"
+              type="number"
+              min="2"
+              max="24"
+              class="form-control"
+            >
+          </div>
+
+          <div class="form-row">
+            <label>{{ t('financial.transaction.installmentAmount') }}</label>
+            <input
+              v-model="form.installmentAmount"
+              type="number"
+              readonly
+              class="form-control"
+            >
+          </div>
+
+          <!-- 分期计划详情 -->
+          <div v-if="installmentDetails" class="installment-plan">
+            <h4>{{ t('financial.transaction.installmentPlan') }}</h4>
+            <div class="plan-list">
+              <div
+                v-for="detail in installmentDetails"
+                :key="detail.period"
+                class="plan-item"
+              >
+                <div class="period-info">
+                  <span class="period-label">{{ t('financial.transaction.period', { period: detail.period }) }}</span>
+                  <span class="due-date">{{ detail.dueDate }}</span>
+                </div>
+                <span class="amount-label">¥{{ detail.amount.toFixed(2) }}</span>
+              </div>
+            </div>
+            <div class="plan-summary">
+              <strong>{{ t('financial.transaction.totalAmount') }}: ¥{{ form.amount.toFixed(2) }}</strong>
+            </div>
+          </div>
+
+          <div class="form-row first-due-date-row">
+            <label>{{ t('financial.transaction.firstDueDate') }}</label>
+            <VueDatePicker
+              v-model="form.firstDueDate"
+              :enable-time-picker="false"
+              class="form-control"
+              format="yyyy-MM-dd"
+            />
+          </div>
+
+          <div class="form-row">
+            <label>{{ t('financial.transaction.relatedTransaction') }}</label>
+            <input
+              v-model="form.relatedTransactionSerialNum"
+              type="text"
+              class="form-control"
+              :placeholder="t('common.misc.optional')"
+            >
+          </div>
+        </div>
+
         <!-- 日期 -->
         <div class="form-row">
           <label>{{ t('date.transactionDate') }}</label>
@@ -539,7 +741,95 @@ watch(
 
 .modal-close-btn {
   background: transparent; border: none; cursor: pointer;
-  color: var(--color-neutral-content);
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+
+.installment-section {
+  background: var(--color-base-50);
+  border: 1px solid var(--color-base-200);
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin: 0.5rem 0;
+}
+
+.installment-section .form-row {
+  margin-bottom: 0.75rem;
+}
+
+.installment-section .form-row:last-child {
+  margin-bottom: 0;
+}
+
+.installment-plan {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: var(--color-base-100);
+  border-radius: 0.5rem;
+  border: 1px solid var(--color-base-300);
+}
+
+.installment-plan h4 {
+  margin: 0 0 1rem 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-base-content);
+}
+
+.plan-list {
+  margin-bottom: 1rem;
+}
+
+.plan-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--color-base-200);
+}
+
+.plan-item:last-child {
+  border-bottom: none;
+}
+
+.period-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.period-label {
+  font-size: 0.875rem;
+  color: var(--color-base-content);
+  font-weight: 500;
+}
+
+.due-date {
+  font-size: 0.75rem;
+  color: var(--color-base-content-soft);
+  font-family: monospace;
+}
+
+.amount-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-primary);
+}
+
+.first-due-date-row {
+  margin-top: 1.5rem !important;
+}
+
+.plan-summary {
+  text-align: center;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--color-base-300);
+  color: var(--color-base-content);
 }
 
 .modal-close-btn:hover { color: var(--color-primary); }
@@ -573,6 +863,26 @@ watch(
 .form-control:disabled {
   background-color: var(--color-base-300);
   color: var(--color-neutral);
+}
+
+/* VueDatePicker 主题色样式 */
+:deep(.dp__input) {
+  background-color: var(--color-base-200) !important;
+  border-color: var(--color-base-300) !important;
+  color: var(--color-base-content) !important;
+}
+
+:deep(.dp__input:focus) {
+  border-color: var(--color-primary) !important;
+  box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.2) !important;
+}
+
+:deep(.dp__input_icon) {
+  color: var(--color-base-content) !important;
+}
+
+:deep(.dp__input_clear) {
+  color: var(--color-base-content) !important;
 }
 
 textarea.form-control { resize: vertical; }

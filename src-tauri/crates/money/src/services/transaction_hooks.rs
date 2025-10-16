@@ -222,7 +222,7 @@ async fn verify_account_exists(
 /// - `transaction_type`: 交易类型（Income/Expense/Transfer）
 /// - `amount`: 交易金额
 /// - `is_rollback`: 是否为回滚操作
-async fn update_account_balance(
+pub async fn update_account_balance(
     tx: &DatabaseTransaction,
     account_serial_num: &str,
     transaction_type: TransactionType,

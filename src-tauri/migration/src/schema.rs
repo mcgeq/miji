@@ -332,6 +332,11 @@ pub enum Transactions {
     IsDeleted,
     CreatedAt,
     UpdatedAt,
+    // 分期相关字段
+    IsInstallment,
+    TotalPeriods,
+    InstallmentAmount,
+    FirstDueDate,
 }
 
 #[derive(DeriveIden)]

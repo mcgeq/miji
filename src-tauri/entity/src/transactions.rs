@@ -34,6 +34,11 @@ pub struct Model {
     pub is_deleted: bool,
     pub created_at: DateTimeWithTimeZone,
     pub updated_at: Option<DateTimeWithTimeZone>,
+    // 分期相关字段
+    pub is_installment: Option<bool>,
+    pub total_periods: Option<i32>,
+    pub installment_amount: Option<Decimal>,
+    pub first_due_date: Option<DateTimeWithTimeZone>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

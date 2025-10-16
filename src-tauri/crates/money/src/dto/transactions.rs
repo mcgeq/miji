@@ -355,6 +355,12 @@ pub struct CreateTransactionRequest {
 
     #[validate(length(max = 38))]
     pub related_transaction_serial_num: Option<String>,
+
+    // 分期相关字段
+    pub is_installment: Option<bool>,
+    pub total_periods: Option<i32>,
+    pub installment_amount: Option<Decimal>,
+    pub first_due_date: Option<DateTime<FixedOffset>>,
 }
 
 impl TryFrom<CreateTransactionRequest> for entity::transactions::ActiveModel {
@@ -396,6 +402,11 @@ impl TryFrom<CreateTransactionRequest> for entity::transactions::ActiveModel {
             is_deleted: Set(false),
             created_at: Set(now),
             updated_at: Set(Some(now)),
+            // 分期相关字段
+            is_installment: Set(value.is_installment),
+            total_periods: Set(value.total_periods),
+            installment_amount: Set(value.installment_amount),
+            first_due_date: Set(value.first_due_date),
         })
     }
 }
@@ -445,6 +456,12 @@ pub struct UpdateTransactionRequest {
     pub related_transaction_serial_num: Option<String>,
 
     pub is_deleted: Option<bool>,
+
+    // 分期相关字段
+    pub is_installment: Option<bool>,
+    pub total_periods: Option<i32>,
+    pub installment_amount: Option<Decimal>,
+    pub first_due_date: Option<DateTime<FixedOffset>>,
 }
 
 impl TryFrom<UpdateTransactionRequest> for entity::transactions::ActiveModel {
@@ -512,6 +529,20 @@ impl TryFrom<UpdateTransactionRequest> for entity::transactions::ActiveModel {
         }
         if let Some(is_deleted) = value.is_deleted {
             model.is_deleted = Set(is_deleted);
+        }
+
+        // 分期相关字段
+        if let Some(is_installment) = value.is_installment {
+            model.is_installment = Set(Some(is_installment));
+        }
+        if let Some(total_periods) = value.total_periods {
+            model.total_periods = Set(Some(total_periods));
+        }
+        if let Some(installment_amount) = value.installment_amount {
+            model.installment_amount = Set(Some(installment_amount));
+        }
+        if let Some(first_due_date) = value.first_due_date {
+            model.first_due_date = Set(Some(first_due_date));
         }
 
         // 更新 updated_at 字段
@@ -582,6 +613,11 @@ pub struct TransactionResponse {
     pub is_deleted: bool,
     pub created_at: DateTime<FixedOffset>,
     pub updated_at: Option<DateTime<FixedOffset>>,
+    // 分期相关字段
+    pub is_installment: Option<bool>,
+    pub total_periods: Option<i32>,
+    pub installment_amount: Option<Decimal>,
+    pub first_due_date: Option<DateTime<FixedOffset>>,
 }
 
 impl From<TransactionWithRelations> for TransactionResponse {
@@ -638,6 +674,11 @@ impl From<TransactionWithRelations> for TransactionResponse {
             is_deleted: trans.is_deleted,
             created_at: trans.created_at,
             updated_at: trans.updated_at,
+            // 分期相关字段
+            is_installment: trans.is_installment,
+            total_periods: trans.total_periods,
+            installment_amount: trans.installment_amount,
+            first_due_date: trans.first_due_date,
         }
     }
 }

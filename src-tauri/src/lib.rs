@@ -157,6 +157,12 @@ async fn setup(app: AppHandle) -> Result<(), ()> {
         // 不返回错误，让应用继续启动
     }
 
+    // 启动定时任务处理未来交易
+    let app_clone = app.clone();
+    tauri::async_runtime::spawn(async move {
+        start_transaction_scheduler(app_clone).await;
+    });
+
     eprintln!("Backend setup task completed!");
     // Set the backend task as being completed
     // Commands can be ran as regular functions as long as you take
@@ -254,4 +260,29 @@ fn setup_window_close_handler(app: &AppHandle) -> Result<(), Box<dyn std::error:
         eprintln!("No main window found during setup");
     }
     Ok(())
+}
+
+/// 启动交易定时任务
+async fn start_transaction_scheduler(app: AppHandle) {
+    let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(60)); // 每分钟检查一次
+    
+    loop {
+        interval.tick().await;
+        
+        // 处理到期的未来交易
+        let app_state = app.state::<AppState>();
+        let db = app_state.db.clone();
+        let transaction_service = money::services::transaction::get_transaction_service();
+        
+        match transaction_service.process_pending_transactions(&db).await {
+            Ok(processed_transactions) => {
+                if !processed_transactions.is_empty() {
+                    log::info!("处理了 {} 笔到期交易", processed_transactions.len());
+                }
+            }
+            Err(e) => {
+                log::error!("处理到期交易失败: {}", e);
+            }
+        }
+    }
 }
