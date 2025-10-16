@@ -48,7 +48,7 @@ function isActive(item: any) {
   justify-content: center;
   box-shadow: var(--shadow-lg);
   border-top: 1px solid var(--color-neutral);
-  z-index: 50;
+  z-index: 1000; /* 确保在最上层，高于侧边栏 */
 }
 
 .mobile-nav ul {

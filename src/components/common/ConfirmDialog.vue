@@ -334,7 +334,7 @@ defineExpose({
 .dialog-overlay {
   position: fixed;
   inset: 0;
-  z-index: 50;
+  z-index: 1001; /* 确保在移动端底部导航之上 */
   display: flex;
   align-items: center;
   justify-content: center;

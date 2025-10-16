@@ -75,11 +75,12 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   background-color: var(--color-base-200);
-  min-height: 100vh;
+  min-height: 100vh; /* 恢复最小高度，确保内容足够高 */
   transition: margin-left 0.3s ease;
 }
 
 .main-content.with-bottom-nav {
-  padding-bottom: 4rem; /* 给底部导航留空间 */
+  height: calc(100vh - 3rem); /* 移动端：减去底部导航高度 */
+  padding-bottom: 0; /* 移除额外的 padding，因为已经调整了高度 */
 }
 </style>

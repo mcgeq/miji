@@ -78,7 +78,7 @@ function toggleGlobalAmountVisibility() {
   flex-direction: column;
   width: 100%;
   height: 100%;
-  height: calc(100vh - 4rem); /* 移动端：减去底部导航高度 */
+  min-height: 0; /* 允许 flex 子项缩小 */
   box-sizing: border-box;
   overflow: hidden;
 }
@@ -188,6 +188,7 @@ function toggleGlobalAmountVisibility() {
   flex: 1;
   overflow: hidden;
   position: relative;
+  min-height: 0; /* 允许 flex 子项缩小 */
 }
 
 .tab-panel {
@@ -196,6 +197,8 @@ function toggleGlobalAmountVisibility() {
   padding: 0.75rem;
   box-sizing: border-box;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .tab-panel-scrollable {
