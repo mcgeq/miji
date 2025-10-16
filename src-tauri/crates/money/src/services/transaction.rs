@@ -1049,8 +1049,24 @@ impl TransactionService {
         db: &DbConn,
         data: CreateTransactionRequest,
     ) -> MijiResult<TransactionWithRelations> {
-        let model = self.create(db, data).await?;
-        self.converter().model_to_with_relations(db, model).await
+        // 检查是否是分期付款
+        if data.is_installment.unwrap_or(false) {
+            // 分期付款：创建多个Pending状态的交易
+            let transactions = self.create_installment_transaction(db, data).await?;
+            // 返回第一个交易（作为代表）
+            if let Some(first_transaction) = transactions.first() {
+                self.converter().model_to_with_relations(db, first_transaction.clone()).await
+            } else {
+                Err(AppError::simple(
+                    BusinessCode::SystemError,
+                    "分期交易创建失败"
+                ))
+            }
+        } else {
+            // 普通交易：使用标准创建流程
+            let model = self.create(db, data).await?;
+            self.converter().model_to_with_relations(db, model).await
+        }
     }
 
     pub async fn trans_get_with_relations(
@@ -2058,29 +2074,18 @@ impl TransactionService {
         db: &DatabaseConnection,
         parent_serial_num: &str,
     ) -> MijiResult<()> {
-        let tx = db.begin().await?;
-
         // 检查分期是否完成
         let is_completed = self
-            .check_installment_completion(&tx, parent_serial_num)
+            .check_installment_completion_with_connection(db, parent_serial_num)
             .await?;
 
         if is_completed {
-            // 更新父交易状态为已完成
-            let parent_transaction = entity::transactions::Entity::find()
-                .filter(TransactionColumn::SerialNum.eq(parent_serial_num))
-                .one(&tx)
-                .await?
-                .ok_or_else(|| AppError::simple(BusinessCode::NotFound, "父交易不存在"))?;
-
-            let mut parent_active = parent_transaction.into_active_model();
-            parent_active.transaction_status = Set("Completed".to_string());
-            parent_active.updated_at = Set(Some(DateUtils::local_now()));
-
-            parent_active.update(&tx).await?;
+            // 分期付款完成，记录日志
+            info!("分期付款计划 {} 的所有分期已完成", parent_serial_num);
+            // 注意：我们不需要更新父交易状态，因为分期付款没有真正的父交易记录
+            // 所有分期交易都是独立的，通过 related_transaction_serial_num 关联
         }
 
-        tx.commit().await?;
         Ok(())
     }
 
