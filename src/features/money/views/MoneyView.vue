@@ -1,10 +1,5 @@
 <script setup lang="ts">
 import ConfirmModal from '@/components/common/ConfirmModal.vue';
-import { useAccountActions } from '@/composables/useAccountActions';
-import { useBudgetActions } from '@/composables/useBudgetActions';
-import { useConfirm } from '@/composables/useConfirm';
-import { useReminderActions } from '@/composables/useReminderActions';
-import { useTransactionActions } from '@/composables/useTransactionActions';
 import { CURRENCY_CNY } from '@/constants/moneyConst';
 import { TransactionTypeSchema } from '@/schema/common';
 import { MoneyDb } from '@/services/money/money';
@@ -22,19 +17,6 @@ import TransactionList from '../components/TransactionList.vue';
 import TransactionModal from '../components/TransactionModal.vue';
 import { formatCurrency, getLocalCurrencyInfo } from '../utils/money';
 import type { CardData } from '../common/moneyCommon';
-import type { AppError } from '@/errors/appError';
-import type {
-  BilReminder,
-  BilReminderCreate,
-  BilReminderUpdate,
-  Budget,
-  BudgetCreate,
-  BudgetUpdate,
-  Transaction,
-  TransactionCreate,
-  TransactionUpdate,
-  TransferCreate,
-} from '@/schema/money';
 
 // ------------------ Refs ------------------
 const transactionListRef = ref<InstanceType<typeof TransactionList> | null>(null);
@@ -52,10 +34,13 @@ const {
   transactionType,
   showTransactionModal,
   closeTransactionModal,
-  saveTransaction,
-  updateTransaction,
-  saveTransfer,
-  updateTransfer,
+  editTransaction,
+  viewTransactionDetails,
+  handleSaveTransaction,
+  handleUpdateTransaction,
+  handleDeleteTransaction,
+  handleSaveTransfer,
+  handleUpdateTransfer,
 } = useTransactionActions();
 
 const {
@@ -78,8 +63,11 @@ const {
   selectedBudget,
   showBudgetModal,
   closeBudgetModal,
-  saveBudget,
-  updateBudget,
+  editBudget,
+  handleSaveBudget,
+  handleUpdateBudget,
+  handleDeleteBudget,
+  handleToggleBudgetActive,
 } = useBudgetActions();
 
 const {
@@ -87,8 +75,11 @@ const {
   selectedReminder,
   showReminderModal,
   closeReminderModal,
-  saveReminder,
-  updateReminder,
+  editReminder,
+  handleSaveReminder,
+  handleUpdateReminder,
+  handleDeleteReminder,
+  handleMarkReminderPaid,
 } = useReminderActions();
 
 const activeTab = ref('accounts');
@@ -291,149 +282,13 @@ async function syncAccountBalanceSummary() {
 // 账户相关功能现在由 useAccountActions hook 提供
 
 // ------------------ Transaction ------------------
-function editTransaction(transaction: Transaction) {
-  selectedTransaction.value = transaction;
-  transactionType.value = transaction.transactionType;
-  showTransaction.value = true;
-}
-
-async function handleSaveTransaction(transaction: TransactionCreate) {
-  const success = await saveTransaction(transaction);
-  if (success) {
-    await finalizeTransactionChange();
-  }
-}
-
-async function handleUpdateTransaction(serialNum: string, transaction: TransactionUpdate) {
-  const success = await updateTransaction(serialNum, transaction);
-  if (success) {
-    await finalizeTransactionChange();
-  }
-}
-
-async function deleteTransaction(transaction: Transaction) {
-  if (!(await confirmDelete('此交易记录'))) return;
-  try {
-    if (transaction.category === 'Transfer' && transaction.relatedTransactionSerialNum) {
-      await moneyStore.deleteTransfer(transaction.relatedTransactionSerialNum);
-      toast.success('转账记录删除成功');
-    } else {
-      await moneyStore.deleteTransaction(transaction.serialNum);
-      toast.success('删除成功');
-    }
-    await finalizeTransactionChange();
-  } catch (err) {
-    const error = err as AppError;
-    Lg.e('deleteTransaction', err);
-    toast.error(error?.message || '删除失败');
-  }
-}
-
-async function handleSaveTransfer(transfer: TransferCreate) {
-  const success = await saveTransfer(transfer);
-  if (success) {
-    await finalizeTransactionChange();
-  }
-}
-
-async function handleUpdateTransfer(serialNum: string, transfer: TransferCreate) {
-  const success = await updateTransfer(serialNum, transfer);
-  if (success) {
-    await finalizeTransactionChange();
-  }
-}
-
-function viewTransactionDetails(transaction: Transaction) {
-  Lg.d('viewTransactionDetails', '查看交易详情:', transaction);
-}
+// 交易相关功能现在由 useTransactionActions hook 提供
 
 // ------------------ Budget ------------------
-function editBudget(budget: Budget) {
-  selectedBudget.value = budget;
-  showBudget.value = true;
-}
-
-async function handleSaveBudget(budget: BudgetCreate) {
-  const success = await saveBudget(budget);
-  if (success) {
-    await finalizeBudgetChange();
-  }
-}
-
-async function handleUpdateBudget(serialNum: string, budget: BudgetUpdate) {
-  const success = await updateBudget(serialNum, budget);
-  if (success) {
-    await finalizeBudgetChange();
-  }
-}
-
-async function deleteBudget(serialNum: string) {
-  if (await confirmDelete('此预算')) {
-    try {
-      await moneyStore.deleteBudget(serialNum);
-      toast.success('删除成功');
-      await finalizeBudgetChange();
-    } catch (err) {
-      Lg.e('deleteBudget', err);
-      toast.error('删除失败');
-    }
-  }
-}
-
-async function toggleBudgetActive(serialNum: string, isActive: boolean) {
-  try {
-    await moneyStore.toggleBudgetActive(serialNum, isActive);
-    toast.success('状态更新成功');
-    await finalizeBudgetChange();
-  } catch (err) {
-    Lg.e('toggleBudgetActive', err);
-    toast.error('状态更新失败');
-  }
-}
+// 预算相关功能现在由 useBudgetActions hook 提供
 
 // ------------------ Reminder ------------------
-function editReminder(reminder: BilReminder) {
-  selectedReminder.value = reminder;
-  showReminder.value = true;
-}
-
-async function handleSaveReminder(reminder: BilReminderCreate) {
-  const success = await saveReminder(reminder);
-  if (success) {
-    await finalizeReminderChange();
-  }
-}
-
-async function handleUpdateReminder(serialNum: string, reminder: BilReminderUpdate) {
-  const success = await updateReminder(serialNum, reminder);
-  if (success) {
-    await finalizeReminderChange();
-  }
-}
-
-async function deleteReminder(serialNum: string) {
-  if (await confirmDelete('此提醒')) {
-    try {
-      await moneyStore.deleteReminder(serialNum);
-      toast.success('删除成功');
-      await finalizeReminderChange();
-    } catch (err) {
-      Lg.e('deleteReminder', err);
-      toast.error('删除失败');
-    }
-  }
-}
-
-async function markReminderPaid(serialNum: string, isPaid: boolean) {
-  try {
-    await moneyStore.markReminderPaid(serialNum, isPaid);
-    toast.success('标记成功');
-    await finalizeReminderChange();
-  } catch (err) {
-    Lg.e('markReminderPaid', err);
-    toast.error('标记失败');
-  }
-}
+// 提醒相关功能现在由 useReminderActions hook 提供
 
 // ------------------ Card Events ------------------
 function handleCardChange(index: number, card: any) {
@@ -556,22 +411,22 @@ onUnmounted(() => {
           ref="transactionListRef"
           :accounts="accounts"
           @edit="editTransaction"
-          @delete="deleteTransaction"
+          @delete="(transaction) => handleDeleteTransaction(transaction, confirmDelete, finalizeTransactionChange)"
           @view-details="viewTransactionDetails"
         />
         <BudgetList
           v-if="activeTab === 'budgets'"
           ref="budgetListRef"
           @edit="editBudget"
-          @delete="deleteBudget"
-          @toggle-active="toggleBudgetActive"
+          @delete="(serialNum) => handleDeleteBudget(serialNum, confirmDelete, finalizeBudgetChange)"
+          @toggle-active="(serialNum, isActive) => handleToggleBudgetActive(serialNum, isActive, finalizeBudgetChange)"
         />
         <ReminderList
           v-if="activeTab === 'reminders'"
           ref="reminderListRef"
           @edit="editReminder"
-          @delete="deleteReminder"
-          @mark-paid="markReminderPaid"
+          @delete="(serialNum) => handleDeleteReminder(serialNum, confirmDelete, finalizeReminderChange)"
+          @mark-paid="(serialNum, isPaid) => handleMarkReminderPaid(serialNum, isPaid, finalizeReminderChange)"
         />
       </div>
     </div>
@@ -583,10 +438,10 @@ onUnmounted(() => {
       :transaction="selectedTransaction"
       :accounts="accounts"
       @close="closeTransactionModal"
-      @save="handleSaveTransaction"
-      @update="handleUpdateTransaction"
-      @save-transfer="handleSaveTransfer"
-      @update-transfer="handleUpdateTransfer"
+      @save="(transaction) => handleSaveTransaction(transaction, finalizeTransactionChange)"
+      @update="(serialNum, transaction) => handleUpdateTransaction(serialNum, transaction, finalizeTransactionChange)"
+      @save-transfer="(transfer) => handleSaveTransfer(transfer, finalizeTransactionChange)"
+      @update-transfer="(serialNum, transfer) => handleUpdateTransfer(serialNum, transfer, finalizeTransactionChange)"
     />
     <AccountModal
       v-if="showAccount"
@@ -599,15 +454,15 @@ onUnmounted(() => {
       v-if="showBudget"
       :budget="selectedBudget"
       @close="closeBudgetModal"
-      @save="handleSaveBudget"
-      @update="handleUpdateBudget"
+      @save="(budget) => handleSaveBudget(budget, finalizeBudgetChange)"
+      @update="(serialNum, budget) => handleUpdateBudget(serialNum, budget, finalizeBudgetChange)"
     />
     <ReminderModal
       v-if="showReminder"
       :reminder="selectedReminder"
       @close="closeReminderModal"
-      @save="handleSaveReminder"
-      @update="handleUpdateReminder"
+      @save="(reminder) => handleSaveReminder(reminder, finalizeReminderChange)"
+      @update="(serialNum, reminder) => handleUpdateReminder(serialNum, reminder, finalizeReminderChange)"
     />
 
     <ConfirmModal

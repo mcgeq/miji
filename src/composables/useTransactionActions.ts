@@ -1,4 +1,3 @@
-import { ref } from 'vue';
 import { TransactionTypeSchema } from '@/schema/common';
 import { Lg } from '@/utils/debugLog';
 import { toast } from '@/utils/toast';
@@ -28,6 +27,13 @@ export function useTransactionActions() {
   function closeTransactionModal() {
     showTransaction.value = false;
     selectedTransaction.value = null;
+  }
+
+  // 编辑交易
+  function editTransaction(transaction: Transaction) {
+    selectedTransaction.value = transaction;
+    transactionType.value = transaction.transactionType;
+    showTransaction.value = true;
   }
 
   // 保存交易
@@ -61,6 +67,31 @@ export function useTransactionActions() {
     }
   }
 
+  // 删除交易
+  async function deleteTransaction(
+    transaction: Transaction,
+    confirmDelete?: (message: string) => Promise<boolean>,
+  ) {
+    if (confirmDelete && !(await confirmDelete('此交易记录'))) {
+      return false;
+    }
+
+    try {
+      if (transaction.category === 'Transfer' && transaction.relatedTransactionSerialNum) {
+        await moneyStore.deleteTransfer(transaction.relatedTransactionSerialNum);
+        toast.success('转账记录删除成功');
+      } else {
+        await moneyStore.deleteTransaction(transaction.serialNum);
+        toast.success('删除成功');
+      }
+      return true;
+    } catch (err) {
+      Lg.e('deleteTransaction', err);
+      toast.error('删除失败');
+      return false;
+    }
+  }
+
   // 保存转账
   async function saveTransfer(transfer: TransferCreate) {
     try {
@@ -89,18 +120,96 @@ export function useTransactionActions() {
     }
   }
 
+  // 查看交易详情
+  function viewTransactionDetails(transaction: Transaction) {
+    Lg.d('viewTransactionDetails', '查看交易详情:', transaction);
+  }
+
+  // 包装保存方法，支持自定义回调
+  async function handleSaveTransaction(
+    transaction: TransactionCreate,
+    onSuccess?: () => Promise<void> | void,
+  ) {
+    const success = await saveTransaction(transaction);
+    if (success && onSuccess) {
+      await onSuccess();
+    }
+    return success;
+  }
+
+  // 包装更新方法，支持自定义回调
+  async function handleUpdateTransaction(
+    serialNum: string,
+    transaction: TransactionUpdate,
+    onSuccess?: () => Promise<void> | void,
+  ) {
+    const success = await updateTransaction(serialNum, transaction);
+    if (success && onSuccess) {
+      await onSuccess();
+    }
+    return success;
+  }
+
+  // 包装删除方法，支持自定义回调
+  async function handleDeleteTransaction(
+    transaction: Transaction,
+    confirmDelete?: (message: string) => Promise<boolean>,
+    onSuccess?: () => Promise<void> | void,
+  ) {
+    const success = await deleteTransaction(transaction, confirmDelete);
+    if (success && onSuccess) {
+      await onSuccess();
+    }
+    return success;
+  }
+
+  // 包装保存转账方法，支持自定义回调
+  async function handleSaveTransfer(
+    transfer: TransferCreate,
+    onSuccess?: () => Promise<void> | void,
+  ) {
+    const success = await saveTransfer(transfer);
+    if (success && onSuccess) {
+      await onSuccess();
+    }
+    return success;
+  }
+
+  // 包装更新转账方法，支持自定义回调
+  async function handleUpdateTransfer(
+    serialNum: string,
+    transfer: TransferCreate,
+    onSuccess?: () => Promise<void> | void,
+  ) {
+    const success = await updateTransfer(serialNum, transfer);
+    if (success && onSuccess) {
+      await onSuccess();
+    }
+    return success;
+  }
+
   return {
     // 状态
     showTransaction,
     selectedTransaction,
     transactionType,
 
-    // 方法
+    // 基础方法
     showTransactionModal,
     closeTransactionModal,
+    editTransaction,
     saveTransaction,
     updateTransaction,
+    deleteTransaction,
     saveTransfer,
     updateTransfer,
+    viewTransactionDetails,
+
+    // 包装方法（支持回调）
+    handleSaveTransaction,
+    handleUpdateTransaction,
+    handleDeleteTransaction,
+    handleSaveTransfer,
+    handleUpdateTransfer,
   };
 }

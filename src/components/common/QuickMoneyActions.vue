@@ -1,12 +1,5 @@
 <script setup lang="ts">
 import ConfirmModal from '@/components/common/ConfirmModal.vue';
-import { useAccountActions } from '@/composables/useAccountActions';
-import { useBudgetActions } from '@/composables/useBudgetActions';
-import { useConfirm } from '@/composables/useConfirm';
-import { useKeyboardShortcuts } from '@/composables/useKeyboardShortcuts';
-import { useReminderActions } from '@/composables/useReminderActions';
-import { useTabManager } from '@/composables/useTabManager';
-import { useTransactionActions } from '@/composables/useTransactionActions';
 import AccountModal from '@/features/money/components/AccountModal.vue';
 import BudgetModal from '@/features/money/components/BudgetModal.vue';
 import ReminderModal from '@/features/money/components/ReminderModal.vue';

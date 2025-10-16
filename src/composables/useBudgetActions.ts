@@ -1,11 +1,6 @@
-import { ref } from 'vue';
 import { Lg } from '@/utils/debugLog';
 import { toast } from '@/utils/toast';
-import type {
-  Budget,
-  BudgetCreate,
-  BudgetUpdate,
-} from '@/schema/money';
+import type { Budget, BudgetCreate, BudgetUpdate } from '@/schema/money';
 
 export function useBudgetActions() {
   const moneyStore = useMoneyStore();
@@ -24,6 +19,12 @@ export function useBudgetActions() {
   function closeBudgetModal() {
     showBudget.value = false;
     selectedBudget.value = null;
+  }
+
+  // 编辑预算
+  function editBudget(budget: Budget) {
+    selectedBudget.value = budget;
+    showBudget.value = true;
   }
 
   // 保存预算
@@ -57,6 +58,39 @@ export function useBudgetActions() {
     }
   }
 
+  // 删除预算
+  async function deleteBudget(
+    serialNum: string,
+    confirmDelete?: (message: string) => Promise<boolean>,
+  ) {
+    if (confirmDelete && !(await confirmDelete('此预算'))) {
+      return false;
+    }
+
+    try {
+      await moneyStore.deleteBudget(serialNum);
+      toast.success('删除成功');
+      return true;
+    } catch (err) {
+      Lg.e('deleteBudget', err);
+      toast.error('删除失败');
+      return false;
+    }
+  }
+
+  // 切换预算状态
+  async function toggleBudgetActive(serialNum: string, isActive: boolean) {
+    try {
+      await moneyStore.toggleBudgetActive(serialNum, isActive);
+      toast.success('状态更新成功');
+      return true;
+    } catch (err) {
+      Lg.e('toggleBudgetActive', err);
+      toast.error('状态更新失败');
+      return false;
+    }
+  }
+
   // 加载预算列表
   async function loadBudgets() {
     try {
@@ -72,17 +106,74 @@ export function useBudgetActions() {
     }
   }
 
+  // 包装保存方法，支持自定义回调
+  async function handleSaveBudget(budget: BudgetCreate, onSuccess?: () => Promise<void> | void) {
+    const success = await saveBudget(budget);
+    if (success && onSuccess) {
+      await onSuccess();
+    }
+    return success;
+  }
+
+  // 包装更新方法，支持自定义回调
+  async function handleUpdateBudget(
+    serialNum: string,
+    budget: BudgetUpdate,
+    onSuccess?: () => Promise<void> | void,
+  ) {
+    const success = await updateBudget(serialNum, budget);
+    if (success && onSuccess) {
+      await onSuccess();
+    }
+    return success;
+  }
+
+  // 包装删除方法，支持自定义回调
+  async function handleDeleteBudget(
+    serialNum: string,
+    confirmDelete?: (message: string) => Promise<boolean>,
+    onSuccess?: () => Promise<void> | void,
+  ) {
+    const success = await deleteBudget(serialNum, confirmDelete);
+    if (success && onSuccess) {
+      await onSuccess();
+    }
+    return success;
+  }
+
+  // 包装切换状态方法，支持自定义回调
+  async function handleToggleBudgetActive(
+    serialNum: string,
+    isActive: boolean,
+    onSuccess?: () => Promise<void> | void,
+  ) {
+    const success = await toggleBudgetActive(serialNum, isActive);
+    if (success && onSuccess) {
+      await onSuccess();
+    }
+    return success;
+  }
+
   return {
     // 状态
     showBudget,
     selectedBudget,
     budgets,
 
-    // 方法
+    // 基础方法
     showBudgetModal,
     closeBudgetModal,
+    editBudget,
     saveBudget,
     updateBudget,
+    deleteBudget,
+    toggleBudgetActive,
     loadBudgets,
+
+    // 包装方法（支持回调）
+    handleSaveBudget,
+    handleUpdateBudget,
+    handleDeleteBudget,
+    handleToggleBudgetActive,
   };
 }
