@@ -309,7 +309,7 @@ onMounted(async () => {
                 {{ account.name }}
               </div>
               <div class="qm-item-desc">
-                {{ account.type }}
+                {{ t(`financial.accountTypes.${account.type.toLocaleLowerCase()}`) }}
               </div>
             </div>
             <div class="qm-item-value">
