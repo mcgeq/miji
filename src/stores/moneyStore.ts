@@ -731,16 +731,29 @@ export const useMoneyStore = defineStore('money', {
     // ==================== Amount Visibility Management ====================
     toggleGlobalAmountVisibility() {
       this.globalAmountHidden = !this.globalAmountHidden;
+      // 当全局状态改变时，清除所有单个账户的覆盖状态
+      // 让全局状态重新生效
+      this.accountAmountHidden = {};
       this.saveAmountVisibilityToStorage();
     },
 
     toggleAccountAmountVisibility(accountSerialNum: string) {
-      this.accountAmountHidden[accountSerialNum] = !this.accountAmountHidden[accountSerialNum];
+      // 获取当前该账户的显示状态
+      const currentHidden = this.isAccountAmountHidden(accountSerialNum);
+
+      // 如果当前是隐藏的，则设置为显示（覆盖全局隐藏）
+      // 如果当前是显示的，则设置为隐藏（覆盖全局显示）
+      this.accountAmountHidden[accountSerialNum] = !currentHidden;
       this.saveAmountVisibilityToStorage();
     },
 
     isAccountAmountHidden(accountSerialNum: string): boolean {
-      return this.globalAmountHidden || this.accountAmountHidden[accountSerialNum] || false;
+      // 如果单个账户有明确的覆盖设置，则使用该设置
+      if (this.accountAmountHidden[accountSerialNum] !== undefined) {
+        return this.accountAmountHidden[accountSerialNum];
+      }
+      // 否则使用全局状态
+      return this.globalAmountHidden;
     },
 
     resetAccountAmountVisibility() {
