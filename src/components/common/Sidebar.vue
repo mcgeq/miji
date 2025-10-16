@@ -48,8 +48,8 @@ function logout() {
 
 <style scoped lang="postcss">
 .sidebar {
-  background-color: #4b5563; /* gray-600 */
-  color: white;
+  background-color: var(--color-base-300);
+  color: var(--color-base-content);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -60,6 +60,8 @@ function logout() {
   left: 0; /* 左侧固定 */
   z-index: 1000; /* 确保在最上层 */
   transition: all 0.3s ease-in-out;
+  border-right: 1px solid var(--color-base-200);
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.05);
 }
 
 .sidebar-top {
@@ -72,7 +74,7 @@ function logout() {
   width: 2rem;
   height: 2rem;
   border-radius: 50%;
-  border: 1px solid rgba(255,255,255,0.2);
+  border: 1px solid var(--color-neutral);
 }
 
 .sidebar-menu {
@@ -97,37 +99,38 @@ function logout() {
 }
 
 .sidebar-menu li:hover {
-  background-color: #374151; /* gray-700 */
+  background-color: var(--color-base-200);
 }
 
 .sidebar-menu li.active {
-  background-color: #374151;
-  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.1);
+  background-color: var(--color-primary-soft);
+  box-shadow: inset 0 0 0 1px var(--color-primary);
 }
 
 .icon {
   width: 1.25rem;
   height: 1.25rem;
-  color: #9ca3af; /* gray-400 */
+  color: var(--color-neutral);
 }
 
 .sidebar-menu li.active .icon {
-  color: white;
+  color: var(--color-primary);
 }
 
 .logout-btn {
   height: 4rem;
-  border-top: 1px solid rgba(255,255,255,0.1);
+  border-top: 1px solid var(--color-base-200);
   background: none;
   display: flex;
   justify-content: center;
   align-items: center;
   cursor: pointer;
   transition: background-color 0.3s ease, transform 0.1s ease;
+  color: var(--color-base-content);
 }
 
 .logout-btn:hover {
-  background-color: #374151;
+  color: var(--color-error-content);
   transform: scale(1.05);
 }
 .logout-btn:active {

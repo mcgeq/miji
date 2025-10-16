@@ -42,12 +42,12 @@ function isActive(item: any) {
   left: 0;
   right: 0;
   height: 3rem;
-  background-color: #4b5563;
+  background-color: var(--color-base-300);
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 -2px 8px rgba(0,0,0,0.1);
-  border-radius: 0.25rem;
+  box-shadow: var(--shadow-lg);
+  border-top: 1px solid var(--color-neutral);
   z-index: 50;
 }
 
@@ -73,21 +73,21 @@ function isActive(item: any) {
 }
 
 .mobile-nav li:hover {
-  background-color: #374151;
+  background-color: var(--color-base-200);
 }
 
 .mobile-nav li.active {
-  background-color: #374151;
-  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.1);
+  background-color: var(--color-primary-soft);
+  box-shadow: inset 0 0 0 1px var(--color-primary);
 }
 
 .icon {
   width: 1.25rem;
   height: 1.25rem;
-  color: #9ca3af;
+  color: var(--color-neutral);
 }
 
 .mobile-nav li.active .icon {
-  color: white;
+  color: var(--color-primary);
 }
 </style>
