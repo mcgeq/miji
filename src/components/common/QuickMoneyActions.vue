@@ -1,6 +1,12 @@
 <script setup lang="ts">
 import ConfirmModal from '@/components/common/ConfirmModal.vue';
+import { useAccountActions } from '@/composables/useAccountActions';
+import { useBudgetActions } from '@/composables/useBudgetActions';
 import { useConfirm } from '@/composables/useConfirm';
+import { useKeyboardShortcuts } from '@/composables/useKeyboardShortcuts';
+import { useReminderActions } from '@/composables/useReminderActions';
+import { useTabManager } from '@/composables/useTabManager';
+import { useTransactionActions } from '@/composables/useTransactionActions';
 import AccountModal from '@/features/money/components/AccountModal.vue';
 import BudgetModal from '@/features/money/components/BudgetModal.vue';
 import ReminderModal from '@/features/money/components/ReminderModal.vue';
@@ -9,19 +15,12 @@ import { formatCurrency } from '@/features/money/utils/money';
 import { TransactionTypeSchema } from '@/schema/common';
 import { lowercaseFirstLetter } from '@/utils/common';
 import { DateUtils } from '@/utils/date';
-import { Lg } from '@/utils/debugLog';
-import { toast } from '@/utils/toast';
-import type { TransactionType } from '@/schema/common';
 import type {
-  Account,
-  BilReminder,
   BilReminderCreate,
   BilReminderUpdate,
-  Budget,
   BudgetCreate,
   BudgetUpdate,
   CreateAccountRequest,
-  Transaction,
   TransactionCreate,
   TransactionUpdate,
   TransferCreate,
@@ -41,320 +40,67 @@ const { t } = useI18n();
 const moneyStore = useMoneyStore();
 const { confirmState, handleConfirm, handleCancel, handleClose } = useConfirm();
 
-const showTransaction = ref(false);
-const showAccount = ref(false);
-const showBudget = ref(false);
-const showReminder = ref(false);
-const showKeyboardHelp = ref(false);
+// 使用各个功能模块的 hooks
+const {
+  showTransaction,
+  selectedTransaction,
+  transactionType,
+  showTransactionModal,
+  closeTransactionModal,
+  saveTransaction,
+  updateTransaction,
+  saveTransfer,
+  updateTransfer,
+} = useTransactionActions();
 
-const selectedTransaction = ref<Transaction | null>(null);
-const selectedAccount = ref<Account | null>(null);
-const selectedBudget = ref<Budget | null>(null);
-const selectedReminder = ref<BilReminder | null>(null);
+const {
+  showAccount,
+  selectedAccount,
+  accounts,
+  showAccountModal,
+  closeAccountModal,
+  saveAccount,
+  updateAccount,
+  loadAccounts,
+} = useAccountActions();
 
-const transactionType = ref<TransactionType>(TransactionTypeSchema.enum.Expense);
-const accounts = ref<Account[]>([]);
+const {
+  showBudget,
+  selectedBudget,
+  budgets,
+  showBudgetModal,
+  closeBudgetModal,
+  saveBudget,
+  updateBudget,
+  loadBudgets,
+} = useBudgetActions();
 
-// 标签切换
-type TabType = 'accounts' | 'transactions' | 'budgets' | 'reminders';
-const activeTab = ref<TabType>('accounts');
-const transactions = ref<Transaction[]>([]);
-const budgets = ref<Budget[]>([]);
-const reminders = ref<BilReminder[]>([]);
+const {
+  showReminder,
+  selectedReminder,
+  reminders,
+  showReminderModal,
+  closeReminderModal,
+  saveReminder,
+  updateReminder,
+  loadReminders,
+} = useReminderActions();
 
-// ------------------ Transaction ------------------
-function showTransactionModal(type: TransactionType) {
-  transactionType.value = type;
-  selectedTransaction.value = null;
-  showTransaction.value = true;
-}
+const {
+  showKeyboardHelp,
+  keyboardShortcuts,
+  createKeyboardHandler,
+  addKeyboardListener,
+} = useKeyboardShortcuts();
 
-function closeTransactionModal() {
-  showTransaction.value = false;
-  selectedTransaction.value = null;
-}
+const {
+  activeTab,
+  transactions,
+  loadTransactions,
+  switchTab,
+} = useTabManager();
 
-async function saveTransaction(transaction: TransactionCreate) {
-  try {
-    await moneyStore.createTransaction(transaction);
-    toast.success('添加成功');
-    closeTransactionModal();
-    await loadTransactions();
-    await loadAccounts();
-  } catch (err) {
-    Lg.e('saveTransaction', err);
-    toast.error('保存失败');
-  }
-}
-
-async function updateTransaction(serialNum: string, transaction: TransactionUpdate) {
-  try {
-    if (selectedTransaction.value) {
-      await moneyStore.updateTransaction(serialNum, transaction);
-      toast.success('更新成功');
-      closeTransactionModal();
-      await loadTransactions();
-      await loadAccounts();
-    }
-  } catch (err) {
-    Lg.e('updateTransaction', err);
-    toast.error('保存失败');
-  }
-}
-
-async function saveTransfer(transfer: TransferCreate) {
-  try {
-    await moneyStore.createTransfer(transfer);
-    toast.success('转账成功');
-    closeTransactionModal();
-    await loadTransactions();
-    await loadAccounts();
-  } catch (err) {
-    Lg.e('saveTransfer', err);
-    toast.error('转账失败');
-  }
-}
-
-async function updateTransfer(serialNum: string, transfer: TransferCreate) {
-  try {
-    await moneyStore.updateTransfer(serialNum, transfer);
-    toast.success('转账更新成功');
-    closeTransactionModal();
-    await loadTransactions();
-    await loadAccounts();
-  } catch (err) {
-    Lg.e('updateTransfer', err);
-    toast.error('转账失败');
-  }
-}
-
-// ------------------ Account ------------------
-function showAccountModal() {
-  selectedAccount.value = null;
-  showAccount.value = true;
-}
-
-function closeAccountModal() {
-  showAccount.value = false;
-  selectedAccount.value = null;
-}
-
-async function saveAccount(account: CreateAccountRequest) {
-  try {
-    await moneyStore.createAccount(account);
-    toast.success('添加成功');
-    closeAccountModal();
-    await loadAccounts();
-  } catch (err) {
-    Lg.e('saveAccount', err);
-    toast.error('保存失败');
-  }
-}
-
-async function updateAccount(serialNum: string, account: UpdateAccountRequest) {
-  try {
-    if (selectedAccount.value) {
-      await moneyStore.updateAccount(serialNum, account);
-      toast.success('更新成功');
-      closeAccountModal();
-      await loadAccounts();
-    }
-  } catch (err) {
-    Lg.e('updateAccount', err);
-    toast.error('保存失败');
-  }
-}
-
-// ------------------ Budget ------------------
-function showBudgetModal() {
-  selectedBudget.value = null;
-  showBudget.value = true;
-}
-
-function closeBudgetModal() {
-  showBudget.value = false;
-  selectedBudget.value = null;
-}
-
-async function saveBudget(budget: BudgetCreate) {
-  try {
-    await moneyStore.createBudget(budget);
-    toast.success('添加成功');
-    closeBudgetModal();
-    await loadBudgets();
-  } catch (err) {
-    Lg.e('saveBudget', err);
-    toast.error('保存失败');
-  }
-}
-
-async function updateBudget(serialNum: string, budget: BudgetUpdate) {
-  try {
-    if (selectedBudget.value) {
-      await moneyStore.updateBudget(serialNum, budget);
-      toast.success('更新成功');
-      closeBudgetModal();
-      await loadBudgets();
-    }
-  } catch (err) {
-    Lg.e('updateBudget', err);
-    toast.error('保存失败');
-  }
-}
-
-// ------------------ Reminder ------------------
-function showReminderModal() {
-  selectedReminder.value = null;
-  showReminder.value = true;
-}
-
-function closeReminderModal() {
-  showReminder.value = false;
-  selectedReminder.value = null;
-}
-
-async function saveReminder(reminder: BilReminderCreate) {
-  try {
-    await moneyStore.createReminder(reminder);
-    toast.success('添加成功');
-    closeReminderModal();
-    await loadReminders();
-  } catch (err) {
-    Lg.e('saveReminder', err);
-    toast.error('保存失败');
-  }
-}
-
-async function updateReminder(serialNum: string, reminder: BilReminderUpdate) {
-  try {
-    if (selectedReminder.value) {
-      await moneyStore.updateReminder(serialNum, reminder);
-      toast.success('更新成功');
-      closeReminderModal();
-      await loadReminders();
-    }
-  } catch (err) {
-    Lg.e('updateReminder', err);
-    toast.error('保存失败');
-  }
-}
-
-async function loadAccounts() {
-  try {
-    accounts.value = await moneyStore.getAllAccounts();
-  } catch (err) {
-    Lg.e('loadAccounts', err);
-  }
-}
-
-async function loadTransactions() {
-  try {
-    const allTransactions = await moneyStore.getAllTransactions();
-    transactions.value = allTransactions.slice(0, 10);
-  } catch (err) {
-    Lg.e('loadTransactions', err);
-  }
-}
-
-async function loadBudgets() {
-  try {
-    budgets.value = moneyStore.budgetsPaged.rows;
-    if (budgets.value.length === 0) {
-      await moneyStore.updateBudgets(true);
-      budgets.value = moneyStore.budgetsPaged.rows;
-    }
-  } catch (err) {
-    Lg.e('loadBudgets', err);
-  }
-}
-
-async function loadReminders() {
-  try {
-    reminders.value = await moneyStore.getAllReminders();
-  } catch (err) {
-    Lg.e('loadReminders', err);
-  }
-}
-
-function switchTab(tab: TabType) {
-  activeTab.value = tab;
-  switch (tab) {
-    case 'accounts':
-      loadAccounts();
-      break;
-    case 'transactions':
-      loadTransactions();
-      break;
-    case 'budgets':
-      loadBudgets();
-      break;
-    case 'reminders':
-      loadReminders();
-      break;
-  }
-}
-
-// 键盘快捷键：
-const keyboardShortcuts = [
-  { key: 'A', label: '添加账户', action: 'showAccountModal' },
-  { key: 'I', label: '记录收入', action: 'showIncomeModal' },
-  { key: 'E', label: '记录支出', action: 'showExpenseModal' },
-  { key: 'T', label: '记录转账', action: 'showTransferModal' },
-  { key: 'B', label: '设置预算', action: 'showBudgetModal' },
-  { key: 'R', label: '设置提醒', action: 'showReminderModal' },
-  { key: '?', label: '显示帮助', action: 'toggleHelp' },
-];
-
-function handleKeyPress(event: KeyboardEvent) {
-  // 如果任何模态框已打开，只处理 ESC 键
-  const anyModalOpen = showTransaction.value || showAccount.value || showBudget.value || showReminder.value;
-  if (anyModalOpen) {
-    if (event.key === 'Escape') {
-      event.preventDefault();
-      closeAllModals();
-    }
-    return;
-  }
-  // 排除在输入框中的情况
-  const target = event.target as HTMLElement;
-  if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
-    return;
-  }
-
-  const key = event.key.toUpperCase();
-
-  switch (key) {
-    case 'A':
-      event.preventDefault();
-      showAccountModal();
-      break;
-    case 'I':
-      event.preventDefault();
-      showTransactionModal(TransactionTypeSchema.enum.Income);
-      break;
-    case 'E':
-      event.preventDefault();
-      showTransactionModal(TransactionTypeSchema.enum.Expense);
-      break;
-    case 'T':
-      event.preventDefault();
-      showTransactionModal(TransactionTypeSchema.enum.Transfer);
-      break;
-    case 'B':
-      event.preventDefault();
-      showBudgetModal();
-      break;
-    case 'R':
-      event.preventDefault();
-      showReminderModal();
-      break;
-    case '?':
-      event.preventDefault();
-      showKeyboardHelp.value = !showKeyboardHelp.value;
-      break;
-  }
-}
-
+// 关闭所有模态框
 function closeAllModals() {
   closeTransactionModal();
   closeAccountModal();
@@ -367,19 +113,119 @@ function toggleAmountVisibility() {
   moneyStore.toggleGlobalAmountVisibility();
 }
 
+// 包装保存方法，添加数据刷新逻辑
+async function handleSaveTransaction(transaction: TransactionCreate) {
+  const success = await saveTransaction(transaction);
+  if (success) {
+    await loadTransactions();
+    await loadAccounts();
+  }
+}
+
+async function handleUpdateTransaction(serialNum: string, transaction: TransactionUpdate) {
+  const success = await updateTransaction(serialNum, transaction);
+  if (success) {
+    await loadTransactions();
+    await loadAccounts();
+  }
+}
+
+async function handleSaveTransfer(transfer: TransferCreate) {
+  const success = await saveTransfer(transfer);
+  if (success) {
+    await loadTransactions();
+    await loadAccounts();
+  }
+}
+
+async function handleUpdateTransfer(serialNum: string, transfer: TransferCreate) {
+  const success = await updateTransfer(serialNum, transfer);
+  if (success) {
+    await loadTransactions();
+    await loadAccounts();
+  }
+}
+
+async function handleSaveAccount(account: CreateAccountRequest) {
+  const success = await saveAccount(account);
+  if (success) {
+    await loadAccounts();
+  }
+}
+
+async function handleUpdateAccount(serialNum: string, account: UpdateAccountRequest) {
+  const success = await updateAccount(serialNum, account);
+  if (success) {
+    await loadAccounts();
+  }
+}
+
+async function handleSaveBudget(budget: BudgetCreate) {
+  const success = await saveBudget(budget);
+  if (success) {
+    await loadBudgets();
+  }
+}
+
+async function handleUpdateBudget(serialNum: string, budget: BudgetUpdate) {
+  const success = await updateBudget(serialNum, budget);
+  if (success) {
+    await loadBudgets();
+  }
+}
+
+async function handleSaveReminder(reminder: BilReminderCreate) {
+  const success = await saveReminder(reminder);
+  if (success) {
+    await loadReminders();
+  }
+}
+
+async function handleUpdateReminder(serialNum: string, reminder: BilReminderUpdate) {
+  const success = await updateReminder(serialNum, reminder);
+  if (success) {
+    await loadReminders();
+  }
+}
+
+// 创建键盘事件处理器
+const handleKeyPress = createKeyboardHandler(
+  {
+    showTransaction,
+    showAccount,
+    showBudget,
+    showReminder,
+  },
+  {
+    showAccountModal,
+    showTransactionModal,
+    showBudgetModal,
+    showReminderModal,
+    closeAllModals,
+  },
+);
+
+// 添加键盘事件监听器
+addKeyboardListener(handleKeyPress);
+
+// 标签切换处理
+function handleSwitchTab(tab: 'accounts' | 'transactions' | 'budgets' | 'reminders') {
+  switchTab(tab, {
+    loadAccounts,
+    loadTransactions,
+    loadBudgets,
+    loadReminders,
+  });
+}
+
 onMounted(async () => {
   await loadAccounts();
   await moneyStore.getAllCategories();
   await moneyStore.getAllSubCategories();
-  window.addEventListener('keydown', handleKeyPress);
   // 初始加载所有数据
   await loadTransactions();
   await loadBudgets();
   await loadReminders();
-});
-
-onUnmounted(() => {
-  window.removeEventListener('keydown', handleKeyPress);
 });
 </script>
 
@@ -443,28 +289,28 @@ onUnmounted(() => {
       <button
         class="qm-tab-btn"
         :class="{ active: activeTab === 'accounts' }"
-        @click="switchTab('accounts')"
+        @click="handleSwitchTab('accounts')"
       >
         账户
       </button>
       <button
         class="qm-tab-btn"
         :class="{ active: activeTab === 'transactions' }"
-        @click="switchTab('transactions')"
+        @click="handleSwitchTab('transactions')"
       >
         交易
       </button>
       <button
         class="qm-tab-btn"
         :class="{ active: activeTab === 'budgets' }"
-        @click="switchTab('budgets')"
+        @click="handleSwitchTab('budgets')"
       >
         预算
       </button>
       <button
         class="qm-tab-btn"
         :class="{ active: activeTab === 'reminders' }"
-        @click="switchTab('reminders')"
+        @click="handleSwitchTab('reminders')"
       >
         提醒
       </button>
@@ -590,31 +436,31 @@ onUnmounted(() => {
         :transaction="selectedTransaction"
         :accounts="accounts"
         @close="closeTransactionModal"
-        @save="saveTransaction"
-        @update="updateTransaction"
-        @save-transfer="saveTransfer"
-        @update-transfer="updateTransfer"
+        @save="handleSaveTransaction"
+        @update="handleUpdateTransaction"
+        @save-transfer="handleSaveTransfer"
+        @update-transfer="handleUpdateTransfer"
       />
       <AccountModal
         v-if="showAccount"
         :account="selectedAccount"
         @close="closeAccountModal"
-        @save="saveAccount"
-        @update="updateAccount"
+        @save="handleSaveAccount"
+        @update="handleUpdateAccount"
       />
       <BudgetModal
         v-if="showBudget"
         :budget="selectedBudget"
         @close="closeBudgetModal"
-        @save="saveBudget"
-        @update="updateBudget"
+        @save="handleSaveBudget"
+        @update="handleUpdateBudget"
       />
       <ReminderModal
         v-if="showReminder"
         :reminder="selectedReminder"
         @close="closeReminderModal"
-        @save="saveReminder"
-        @update="updateReminder"
+        @save="handleSaveReminder"
+        @update="handleUpdateReminder"
       />
 
       <ConfirmModal

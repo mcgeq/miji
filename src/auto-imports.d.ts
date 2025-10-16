@@ -152,6 +152,7 @@ declare global {
   const until: typeof import('@vueuse/core')['until']
   const updateLocale: typeof import('./stores/locales')['updateLocale']
   const updateTheme: typeof import('./stores/theme')['updateTheme']
+  const useAccountActions: typeof import('./composables/useAccountActions')['useAccountActions']
   const useActiveElement: typeof import('@vueuse/core')['useActiveElement']
   const useAnimate: typeof import('@vueuse/core')['useAnimate']
   const useArrayDifference: typeof import('@vueuse/core')['useArrayDifference']
@@ -176,6 +177,7 @@ declare global {
   const useBreakpoints: typeof import('@vueuse/core')['useBreakpoints']
   const useBroadcastChannel: typeof import('@vueuse/core')['useBroadcastChannel']
   const useBrowserLocation: typeof import('@vueuse/core')['useBrowserLocation']
+  const useBudgetActions: typeof import('./composables/useBudgetActions')['useBudgetActions']
   const useCached: typeof import('@vueuse/core')['useCached']
   const useClipboard: typeof import('@vueuse/core')['useClipboard']
   const useClipboardItems: typeof import('@vueuse/core')['useClipboardItems']
@@ -231,6 +233,7 @@ declare global {
   const useInterval: typeof import('@vueuse/core')['useInterval']
   const useIntervalFn: typeof import('@vueuse/core')['useIntervalFn']
   const useKeyModifier: typeof import('@vueuse/core')['useKeyModifier']
+  const useKeyboardShortcuts: typeof import('./composables/useKeyboardShortcuts')['useKeyboardShortcuts']
   const useLastChanged: typeof import('@vueuse/core')['useLastChanged']
   const useLink: typeof import('vue-router/auto')['useLink']
   const useLocalStorage: typeof import('@vueuse/core')['useLocalStorage']
@@ -279,6 +282,7 @@ declare global {
   const usePrevious: typeof import('@vueuse/core')['usePrevious']
   const useRafFn: typeof import('@vueuse/core')['useRafFn']
   const useRefHistory: typeof import('@vueuse/core')['useRefHistory']
+  const useReminderActions: typeof import('./composables/useReminderActions')['useReminderActions']
   const useResizeObserver: typeof import('@vueuse/core')['useResizeObserver']
   const useRoute: typeof import('vue-router')['useRoute']
   const useRouter: typeof import('vue-router')['useRouter']
@@ -301,6 +305,7 @@ declare global {
   const useStyleTag: typeof import('@vueuse/core')['useStyleTag']
   const useSupported: typeof import('@vueuse/core')['useSupported']
   const useSwipe: typeof import('@vueuse/core')['useSwipe']
+  const useTabManager: typeof import('./composables/useTabManager')['useTabManager']
   const useTemplateRef: typeof import('vue')['useTemplateRef']
   const useTemplateRefsList: typeof import('@vueuse/core')['useTemplateRefsList']
   const useTextDirection: typeof import('@vueuse/core')['useTextDirection']
@@ -322,6 +327,7 @@ declare global {
   const useToString: typeof import('@vueuse/core')['useToString']
   const useTodoStore: typeof import('./stores/todoStore')['useTodoStore']
   const useToggle: typeof import('@vueuse/core')['useToggle']
+  const useTransactionActions: typeof import('./composables/useTransactionActions')['useTransactionActions']
   const useTransition: typeof import('@vueuse/core')['useTransition']
   const useTransitionsStore: typeof import('./stores/transition')['useTransitionsStore']
   const useTray: typeof import('./composables/useTray')['useTray']
@@ -382,6 +388,12 @@ declare global {
   // @ts-ignore
   export type { TodoStoreErrorCode } from './stores/todoStore'
   import('./stores/todoStore')
+  // @ts-ignore
+  export type { KeyboardShortcut } from './composables/useKeyboardShortcuts'
+  import('./composables/useKeyboardShortcuts')
+  // @ts-ignore
+  export type { TabType } from './composables/useTabManager'
+  import('./composables/useTabManager')
 }
 
 // for vue template auto import
@@ -532,6 +544,7 @@ declare module 'vue' {
     readonly until: UnwrapRef<typeof import('@vueuse/core')['until']>
     readonly updateLocale: UnwrapRef<typeof import('./stores/locales')['updateLocale']>
     readonly updateTheme: UnwrapRef<typeof import('./stores/theme')['updateTheme']>
+    readonly useAccountActions: UnwrapRef<typeof import('./composables/useAccountActions')['useAccountActions']>
     readonly useActiveElement: UnwrapRef<typeof import('@vueuse/core')['useActiveElement']>
     readonly useAnimate: UnwrapRef<typeof import('@vueuse/core')['useAnimate']>
     readonly useArrayDifference: UnwrapRef<typeof import('@vueuse/core')['useArrayDifference']>
@@ -556,6 +569,7 @@ declare module 'vue' {
     readonly useBreakpoints: UnwrapRef<typeof import('@vueuse/core')['useBreakpoints']>
     readonly useBroadcastChannel: UnwrapRef<typeof import('@vueuse/core')['useBroadcastChannel']>
     readonly useBrowserLocation: UnwrapRef<typeof import('@vueuse/core')['useBrowserLocation']>
+    readonly useBudgetActions: UnwrapRef<typeof import('./composables/useBudgetActions')['useBudgetActions']>
     readonly useCached: UnwrapRef<typeof import('@vueuse/core')['useCached']>
     readonly useClipboard: UnwrapRef<typeof import('@vueuse/core')['useClipboard']>
     readonly useClipboardItems: UnwrapRef<typeof import('@vueuse/core')['useClipboardItems']>
@@ -611,6 +625,7 @@ declare module 'vue' {
     readonly useInterval: UnwrapRef<typeof import('@vueuse/core')['useInterval']>
     readonly useIntervalFn: UnwrapRef<typeof import('@vueuse/core')['useIntervalFn']>
     readonly useKeyModifier: UnwrapRef<typeof import('@vueuse/core')['useKeyModifier']>
+    readonly useKeyboardShortcuts: UnwrapRef<typeof import('./composables/useKeyboardShortcuts')['useKeyboardShortcuts']>
     readonly useLastChanged: UnwrapRef<typeof import('@vueuse/core')['useLastChanged']>
     readonly useLink: UnwrapRef<typeof import('vue-router/auto')['useLink']>
     readonly useLocalStorage: UnwrapRef<typeof import('@vueuse/core')['useLocalStorage']>
@@ -658,6 +673,7 @@ declare module 'vue' {
     readonly usePrevious: UnwrapRef<typeof import('@vueuse/core')['usePrevious']>
     readonly useRafFn: UnwrapRef<typeof import('@vueuse/core')['useRafFn']>
     readonly useRefHistory: UnwrapRef<typeof import('@vueuse/core')['useRefHistory']>
+    readonly useReminderActions: UnwrapRef<typeof import('./composables/useReminderActions')['useReminderActions']>
     readonly useResizeObserver: UnwrapRef<typeof import('@vueuse/core')['useResizeObserver']>
     readonly useRoute: UnwrapRef<typeof import('vue-router')['useRoute']>
     readonly useRouter: UnwrapRef<typeof import('vue-router')['useRouter']>
@@ -680,6 +696,7 @@ declare module 'vue' {
     readonly useStyleTag: UnwrapRef<typeof import('@vueuse/core')['useStyleTag']>
     readonly useSupported: UnwrapRef<typeof import('@vueuse/core')['useSupported']>
     readonly useSwipe: UnwrapRef<typeof import('@vueuse/core')['useSwipe']>
+    readonly useTabManager: UnwrapRef<typeof import('./composables/useTabManager')['useTabManager']>
     readonly useTemplateRef: UnwrapRef<typeof import('vue')['useTemplateRef']>
     readonly useTemplateRefsList: UnwrapRef<typeof import('@vueuse/core')['useTemplateRefsList']>
     readonly useTextDirection: UnwrapRef<typeof import('@vueuse/core')['useTextDirection']>
@@ -701,6 +718,7 @@ declare module 'vue' {
     readonly useToString: UnwrapRef<typeof import('@vueuse/core')['useToString']>
     readonly useTodoStore: UnwrapRef<typeof import('./stores/todoStore')['useTodoStore']>
     readonly useToggle: UnwrapRef<typeof import('@vueuse/core')['useToggle']>
+    readonly useTransactionActions: UnwrapRef<typeof import('./composables/useTransactionActions')['useTransactionActions']>
     readonly useTransition: UnwrapRef<typeof import('@vueuse/core')['useTransition']>
     readonly useTransitionsStore: UnwrapRef<typeof import('./stores/transition')['useTransitionsStore']>
     readonly useTray: UnwrapRef<typeof import('./composables/useTray')['useTray']>
