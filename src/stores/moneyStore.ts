@@ -820,50 +820,62 @@ export const useMoneyStore = defineStore('money', {
      * 创建分期付款计划
      */
     async createInstallmentPlan(data: CreateInstallmentPlanRequest): Promise<InstallmentPlanResponse> {
-      try {
-        const result = await this.moneyDb.transactions.createInstallmentPlan(data);
-        return result;
-      } catch (error) {
-        throw this.handleError('createInstallmentPlan', error);
-      }
+      return this.withLoadingSafe(
+        async () => {
+          const result = await MoneyDb.createInstallmentPlan(data);
+          return result;
+        },
+        '创建分期计划失败',
+        'createInstallmentPlan',
+        'InstallmentPlan',
+      );
     },
 
     /**
      * 获取分期付款计划
      */
     async getInstallmentPlan(planId: string): Promise<InstallmentPlanResponse> {
-      try {
-        const result = await this.moneyDb.transactions.getInstallmentPlan(planId);
-        return result;
-      } catch (error) {
-        throw this.handleError('getInstallmentPlan', error);
-      }
+      return this.withLoadingSafe(
+        async () => {
+          const result = await MoneyDb.getInstallmentPlan(planId);
+          return result;
+        },
+        '获取分期计划失败',
+        'getInstallmentPlan',
+        'InstallmentPlan',
+      );
     },
 
     /**
      * 处理分期还款
      */
     async payInstallment(data: PayInstallmentRequest): Promise<InstallmentPlanResponse> {
-      try {
-        const result = await this.moneyDb.transactions.payInstallment(data);
-        // 还款成功后刷新数据
-        await this.refreshAccountsAndTransactions();
-        return result;
-      } catch (error) {
-        throw this.handleError('payInstallment', error);
-      }
+      return this.withLoadingSafe(
+        async () => {
+          const result = await MoneyDb.payInstallment(data);
+          // 还款成功后刷新数据
+          await this.refreshAccountsAndTransactions();
+          return result;
+        },
+        '分期还款失败',
+        'payInstallment',
+        'InstallmentPlan',
+      );
     },
 
     /**
      * 获取待还款的分期明细
      */
     async getPendingInstallments(): Promise<InstallmentPlanResponse[]> {
-      try {
-        const result = await this.moneyDb.transactions.getPendingInstallments();
-        return result;
-      } catch (error) {
-        throw this.handleError('getPendingInstallments', error);
-      }
+      return this.withLoadingSafe(
+        async () => {
+          const result = await MoneyDb.getPendingInstallments();
+          return result;
+        },
+        '获取待还款分期失败',
+        'getPendingInstallments',
+        'InstallmentPlan',
+      );
     },
   },
 });

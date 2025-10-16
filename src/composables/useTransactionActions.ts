@@ -46,7 +46,7 @@ export function useTransactionActions() {
 
         // 2. 创建分期计划
         await moneyStore.createInstallmentPlan({
-          transaction_id: createdTransaction.serialNum,
+          transaction_serial_num: createdTransaction.serialNum,
           total_amount: transaction.amount,
           total_periods: transaction.totalPeriods || 0,
           installment_amount: transaction.amount / (transaction.totalPeriods || 1),

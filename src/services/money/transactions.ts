@@ -13,8 +13,8 @@ import type {
 
 // 分期付款相关类型定义
 export interface InstallmentPlanResponse {
-  id: string;
-  transaction_id: string;
+  serial_num: string;
+  transaction_serial_num: string;
   total_amount: number;
   total_periods: number;
   installment_amount: number;
@@ -26,8 +26,8 @@ export interface InstallmentPlanResponse {
 }
 
 export interface InstallmentDetailResponse {
-  id: string;
-  plan_id: string;
+  serial_num: string;
+  plan_serial_num: string;
   period_number: number;
   due_date: string;
   amount: number;
@@ -39,7 +39,7 @@ export interface InstallmentDetailResponse {
 }
 
 export interface CreateInstallmentPlanRequest {
-  transaction_id: string;
+  transaction_serial_num: string;
   total_amount: number;
   total_periods: number;
   installment_amount: number;
@@ -47,7 +47,7 @@ export interface CreateInstallmentPlanRequest {
 }
 
 export interface PayInstallmentRequest {
-  detail_id: string;
+  detail_serial_num: string;
   paid_amount: number;
   paid_date?: string;
 }
@@ -298,7 +298,7 @@ export class TransactionMapper extends BaseMapper<
     try {
       const result = await invokeCommand<InstallmentPlanResponse>(
         'installment_plan_create',
-        data,
+        { data },
       );
       return result;
     } catch (err) {

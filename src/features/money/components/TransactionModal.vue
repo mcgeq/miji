@@ -59,7 +59,7 @@ const form = ref<Transaction>({
   isInstallment: false,
   totalPeriods: 0,
   remainingPeriods: 0,
-  installmentPlanId: null,
+  installmentPlanSerialNum: null,
   installmentAmount: 0,
   firstDueDate: '',
 });
@@ -189,7 +189,7 @@ watch(() => form.value.isInstallment, newValue => {
     // 禁用分期时，重置相关字段
     form.value.totalPeriods = 0;
     form.value.remainingPeriods = 0;
-    form.value.installmentPlanId = null;
+    form.value.installmentPlanSerialNum = null;
     form.value.installmentAmount = 0;
     form.value.firstDueDate = '';
     form.value.transactionStatus = TransactionStatusSchema.enum.Completed;
@@ -386,7 +386,9 @@ function emitTransaction(amount: number) {
     isInstallment: form.value.isInstallment,
     totalPeriods: form.value.totalPeriods,
     remainingPeriods: form.value.remainingPeriods,
-    installmentPlanId: form.value.installmentPlanId,
+    installmentAmount: form.value.installmentAmount,
+    firstDueDate: form.value.firstDueDate,
+    installmentPlanSerialNum: form.value.installmentPlanSerialNum,
   };
 
   if (props.transaction) {
@@ -440,7 +442,7 @@ function getDefaultTransaction(type: TransactionType, accounts: Account[]) {
     isInstallment: false,
     totalPeriods: 0,
     remainingPeriods: 0,
-    installmentPlanId: null,
+    installmentPlanSerialNum: null,
     installmentAmount: 0,
     firstDueDate: '',
   };

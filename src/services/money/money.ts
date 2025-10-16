@@ -18,6 +18,9 @@ import type { BilReminderFilters } from './billReminder';
 import type { BudgetFilters } from './budgets';
 import type { FamilyLedgerFilters } from './family';
 import type {
+  CreateInstallmentPlanRequest,
+  InstallmentPlanResponse,
+  PayInstallmentRequest,
   TransactionFilters,
   TransactionStatsRequest,
   TransactionStatsResponse,
@@ -182,6 +185,23 @@ export class MoneyDb {
 
   static async getTransactionStats(request: TransactionStatsRequest): Promise<TransactionStatsResponse> {
     return this.transactionMapper.getStats(request);
+  }
+
+  // 分期付款相关方法
+  static async createInstallmentPlan(data: CreateInstallmentPlanRequest): Promise<InstallmentPlanResponse> {
+    return this.transactionMapper.createInstallmentPlan(data);
+  }
+
+  static async getInstallmentPlan(planId: string): Promise<InstallmentPlanResponse> {
+    return this.transactionMapper.getInstallmentPlan(planId);
+  }
+
+  static async payInstallment(data: PayInstallmentRequest): Promise<InstallmentPlanResponse> {
+    return this.transactionMapper.payInstallment(data);
+  }
+
+  static async getPendingInstallments(): Promise<InstallmentPlanResponse[]> {
+    return this.transactionMapper.getPendingInstallments();
   }
   // ========================= Transaction End =========================
 

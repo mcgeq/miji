@@ -37,8 +37,10 @@ export const TransactionSchema = z.object({
   // 分期相关字段
   isInstallment: z.boolean().optional().default(false),
   totalPeriods: z.number().optional().default(0),
+  remainingPeriods: z.number().optional().default(0),
   installmentAmount: z.number().optional().default(0),
   firstDueDate: z.string().optional().default(''),
+  installmentPlanSerialNum: z.string().optional().nullable(),
 });
 
 export const TransactionCreateSchema = TransactionSchema.pick({
@@ -62,8 +64,10 @@ export const TransactionCreateSchema = TransactionSchema.pick({
   // 分期相关字段
   isInstallment: true,
   totalPeriods: true,
+  remainingPeriods: true,
   installmentAmount: true,
   firstDueDate: true,
+  installmentPlanSerialNum: true,
 })
   .extend({
     currency: z.string().length(3),

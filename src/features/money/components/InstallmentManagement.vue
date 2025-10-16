@@ -49,7 +49,7 @@ async function confirmPayment() {
 
     await invoke('installment_pay', {
       data: {
-        detail_id: selectedDetail.value.id,
+        detail_serial_num: selectedDetail.value.serial_num,
         paid_amount: paidAmount.value,
         paid_date: new Date().toISOString(),
       },
@@ -90,7 +90,7 @@ onMounted(() => {
       <div v-else class="installment-list">
         <div
           v-for="installment in pendingInstallments"
-          :key="installment.id"
+          :key="installment.serial_num"
           class="installment-item"
         >
           <div class="installment-info">
@@ -106,7 +106,7 @@ onMounted(() => {
           <div class="installment-actions">
             <button
               v-for="detail in installment.details.filter(d => d.status === 'PENDING')"
-              :key="detail.id"
+              :key="detail.serial_num"
               class="pay-btn"
               :disabled="isPaying"
               @click="payInstallment(detail)"
