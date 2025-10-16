@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import ConfirmModal from '@/components/common/ConfirmModal.vue';
+import { useAccountActions } from '@/composables/useAccountActions';
+import { useBudgetActions } from '@/composables/useBudgetActions';
 import { useConfirm } from '@/composables/useConfirm';
+import { useReminderActions } from '@/composables/useReminderActions';
+import { useTransactionActions } from '@/composables/useTransactionActions';
 import { CURRENCY_CNY } from '@/constants/moneyConst';
 import { TransactionTypeSchema } from '@/schema/common';
 import { MoneyDb } from '@/services/money/money';
@@ -19,21 +23,17 @@ import TransactionModal from '../components/TransactionModal.vue';
 import { formatCurrency, getLocalCurrencyInfo } from '../utils/money';
 import type { CardData } from '../common/moneyCommon';
 import type { AppError } from '@/errors/appError';
-import type { TransactionType } from '@/schema/common';
 import type {
-  Account,
   BilReminder,
   BilReminderCreate,
   BilReminderUpdate,
   Budget,
   BudgetCreate,
   BudgetUpdate,
-  CreateAccountRequest,
   Transaction,
   TransactionCreate,
   TransactionUpdate,
   TransferCreate,
-  UpdateAccountRequest,
 } from '@/schema/money';
 
 // ------------------ Refs ------------------
@@ -45,24 +45,54 @@ const stackedCardsRef = ref<InstanceType<typeof StackedStatCards> | null>(null);
 const moneyStore = useMoneyStore();
 const { confirmState, confirmDelete, handleConfirm, handleCancel, handleClose } = useConfirm();
 
+// 使用各个功能模块的 hooks
+const {
+  showTransaction,
+  selectedTransaction,
+  transactionType,
+  showTransactionModal,
+  closeTransactionModal,
+  saveTransaction,
+  updateTransaction,
+  saveTransfer,
+  updateTransfer,
+} = useTransactionActions();
+
+const {
+  showAccount,
+  selectedAccount,
+  accounts,
+  accountsLoading,
+  showAccountModal,
+  closeAccountModal,
+  editAccount,
+  loadAccountsWithLoading,
+  handleSaveAccount,
+  handleUpdateAccount,
+  handleDeleteAccount,
+  handleToggleAccountActive,
+} = useAccountActions();
+
+const {
+  showBudget,
+  selectedBudget,
+  showBudgetModal,
+  closeBudgetModal,
+  saveBudget,
+  updateBudget,
+} = useBudgetActions();
+
+const {
+  showReminder,
+  selectedReminder,
+  showReminderModal,
+  closeReminderModal,
+  saveReminder,
+  updateReminder,
+} = useReminderActions();
+
 const activeTab = ref('accounts');
 const baseCurrency = ref(CURRENCY_CNY.symbol);
-
-const accountsLoading = ref(false);
-
-const showTransaction = ref(false);
-const showAccount = ref(false);
-const showBudget = ref(false);
-const showReminder = ref(false);
-
-const selectedTransaction = ref<Transaction | null>(null);
-const selectedAccount = ref<Account | null>(null);
-const selectedBudget = ref<Budget | null>(null);
-const selectedReminder = ref<BilReminder | null>(null);
-
-const transactionType = ref<TransactionType>(
-  TransactionTypeSchema.enum.Expense,
-);
 
 const tabs = [
   { key: 'accounts', label: '账户' },
@@ -88,8 +118,6 @@ function updateCardDimensions() {
     cardDimensions.height = 176;
   }
 };
-
-const accounts = ref<Account[]>([]);
 
 const totalAssets = ref(0);
 const yearlyIncome = ref(0);
@@ -199,11 +227,20 @@ async function finalizeChange(closeFn: () => void, refreshFns: Array<() => Promi
   }
 }
 
-const finalizeAccountChange = () => finalizeChange(closeAccountModal, [loadAccounts, syncAccountBalanceSummary]);
+function finalizeAccountChange() {
+  return finalizeChange(closeAccountModal, [
+    async () => {
+      await loadAccountsWithLoading();
+    },
+    syncAccountBalanceSummary,
+  ]);
+}
 function finalizeTransactionChange() {
   return finalizeChange(closeTransactionModal, [
     async () => transactionListRef.value?.refresh(),
-    loadAccounts,
+    async () => {
+      await loadAccountsWithLoading();
+    },
     syncIncomeExpense,
   ]);
 }
@@ -222,19 +259,10 @@ function finalizeReminderChange() {
 // ------------------ Load & Sync ------------------
 async function loadData() {
   try {
-    await Promise.all([loadAccounts(), syncIncomeExpense()]);
+    await Promise.all([loadAccountsWithLoading(), syncIncomeExpense()]);
   } catch (err) {
     Lg.e('loadData', err);
     toast.error('加载数据失败');
-  }
-}
-
-async function loadAccounts() {
-  accountsLoading.value = true;
-  try {
-    accounts.value = await moneyStore.getAllAccounts();
-  } finally {
-    accountsLoading.value = false;
   }
 }
 
@@ -260,100 +288,29 @@ async function syncAccountBalanceSummary() {
 }
 
 // ------------------ Account ------------------
-function showAccountModal() {
-  selectedAccount.value = null;
-  showAccount.value = true;
-}
-function editAccount(account: Account) {
-  selectedAccount.value = account;
-  showAccount.value = true;
-}
-function closeAccountModal() {
-  showAccount.value = false;
-  selectedAccount.value = null;
-}
-async function saveAccount(account: CreateAccountRequest) {
-  try {
-    await moneyStore.createAccount(account);
-    toast.success('添加成功');
-    await finalizeAccountChange();
-  } catch (err) {
-    Lg.e('saveAccount', err);
-    toast.error('保存失败');
-  }
-}
-async function updateAccount(serialNum: string, account: UpdateAccountRequest) {
-  try {
-    if (selectedAccount.value) {
-      await moneyStore.updateAccount(serialNum, account);
-      toast.success('更新成功');
-      await finalizeAccountChange();
-    }
-  } catch (err) {
-    Lg.e('updateAccount', err);
-    toast.error('保存失败');
-  }
-}
-async function deleteAccount(serialNum: string) {
-  if (await confirmDelete('此账户')) {
-    try {
-      await moneyStore.deleteAccount(serialNum);
-      toast.success('删除成功');
-      await finalizeAccountChange();
-    } catch (err) {
-      Lg.e('deleteAccount', err);
-      toast.error('删除失败');
-    }
-  }
-}
-async function toggleAccountActive(serialNum: string, isActive: boolean) {
-  try {
-    await moneyStore.toggleAccountActive(serialNum, isActive);
-    toast.success('状态更新成功');
-    await finalizeAccountChange();
-  } catch (err) {
-    Lg.e('toggleAccountActive', err);
-    toast.error('状态更新失败');
-  }
-}
+// 账户相关功能现在由 useAccountActions hook 提供
 
 // ------------------ Transaction ------------------
-function showTransactionModal(type: TransactionType) {
-  transactionType.value = type;
-  selectedTransaction.value = null;
-  showTransaction.value = true;
-}
 function editTransaction(transaction: Transaction) {
   selectedTransaction.value = transaction;
   transactionType.value = transaction.transactionType;
   showTransaction.value = true;
 }
-function closeTransactionModal() {
-  showTransaction.value = false;
-  selectedTransaction.value = null;
-}
-async function saveTransaction(transaction: TransactionCreate) {
-  try {
-    await moneyStore.createTransaction(transaction);
-    toast.success('添加成功');
+
+async function handleSaveTransaction(transaction: TransactionCreate) {
+  const success = await saveTransaction(transaction);
+  if (success) {
     await finalizeTransactionChange();
-  } catch (err) {
-    Lg.e('saveTransaction', err);
-    toast.error('保存失败');
   }
 }
-async function updateTransaction(serialNum: string, transaction: TransactionUpdate) {
-  try {
-    if (selectedTransaction.value) {
-      await moneyStore.updateTransaction(serialNum, transaction);
-      toast.success('更新成功');
-      await finalizeTransactionChange();
-    }
-  } catch (err) {
-    Lg.e('saveTransaction', err);
-    toast.error('保存失败');
+
+async function handleUpdateTransaction(serialNum: string, transaction: TransactionUpdate) {
+  const success = await updateTransaction(serialNum, transaction);
+  if (success) {
+    await finalizeTransactionChange();
   }
 }
+
 async function deleteTransaction(transaction: Transaction) {
   if (!(await confirmDelete('此交易记录'))) return;
   try {
@@ -372,25 +329,17 @@ async function deleteTransaction(transaction: Transaction) {
   }
 }
 
-async function saveTransfer(transfer: TransferCreate) {
-  try {
-    await moneyStore.createTransfer(transfer);
-    toast.success('转账成功');
+async function handleSaveTransfer(transfer: TransferCreate) {
+  const success = await saveTransfer(transfer);
+  if (success) {
     await finalizeTransactionChange();
-  } catch (err) {
-    Lg.e('saveTransfer', err);
-    toast.error('转账失败');
   }
 }
 
-async function updateTransfer(serialNum: string, transfer: TransferCreate) {
-  try {
-    await moneyStore.updateTransfer(serialNum, transfer);
-    toast.success('转账更新成功');
+async function handleUpdateTransfer(serialNum: string, transfer: TransferCreate) {
+  const success = await updateTransfer(serialNum, transfer);
+  if (success) {
     await finalizeTransactionChange();
-  } catch (err) {
-    Lg.e('updateTransfer', err);
-    toast.error('转账失败');
   }
 }
 
@@ -399,40 +348,25 @@ function viewTransactionDetails(transaction: Transaction) {
 }
 
 // ------------------ Budget ------------------
-function showBudgetModal() {
-  selectedBudget.value = null;
-  showBudget.value = true;
-}
 function editBudget(budget: Budget) {
   selectedBudget.value = budget;
   showBudget.value = true;
 }
-function closeBudgetModal() {
-  showBudget.value = false;
-  selectedBudget.value = null;
-}
-async function saveBudget(budget: BudgetCreate) {
-  try {
-    await moneyStore.createBudget(budget);
-    toast.success('添加成功');
+
+async function handleSaveBudget(budget: BudgetCreate) {
+  const success = await saveBudget(budget);
+  if (success) {
     await finalizeBudgetChange();
-  } catch (err) {
-    Lg.e('saveBudget', err);
-    toast.error('保存失败');
   }
 }
-async function updateBudget(serialNum: string, budget: BudgetUpdate) {
-  try {
-    if (selectedBudget.value) {
-      await moneyStore.updateBudget(serialNum, budget);
-      toast.success('更新成功');
-      await finalizeBudgetChange();
-    }
-  } catch (err) {
-    Lg.e('saveBudget', err);
-    toast.error('保存失败');
+
+async function handleUpdateBudget(serialNum: string, budget: BudgetUpdate) {
+  const success = await updateBudget(serialNum, budget);
+  if (success) {
+    await finalizeBudgetChange();
   }
 }
+
 async function deleteBudget(serialNum: string) {
   if (await confirmDelete('此预算')) {
     try {
@@ -445,6 +379,7 @@ async function deleteBudget(serialNum: string) {
     }
   }
 }
+
 async function toggleBudgetActive(serialNum: string, isActive: boolean) {
   try {
     await moneyStore.toggleBudgetActive(serialNum, isActive);
@@ -457,40 +392,25 @@ async function toggleBudgetActive(serialNum: string, isActive: boolean) {
 }
 
 // ------------------ Reminder ------------------
-function showReminderModal() {
-  selectedReminder.value = null;
-  showReminder.value = true;
-}
 function editReminder(reminder: BilReminder) {
   selectedReminder.value = reminder;
   showReminder.value = true;
 }
-function closeReminderModal() {
-  showReminder.value = false;
-  selectedReminder.value = null;
-}
-async function saveReminder(reminder: BilReminderCreate) {
-  try {
-    await moneyStore.createReminder(reminder);
-    toast.success('添加成功');
+
+async function handleSaveReminder(reminder: BilReminderCreate) {
+  const success = await saveReminder(reminder);
+  if (success) {
     await finalizeReminderChange();
-  } catch (err) {
-    Lg.e('saveReminder', err);
-    toast.error('保存失败');
   }
 }
-async function updateReminder(serialNum: string, reminder: BilReminderUpdate) {
-  try {
-    if (selectedReminder.value) {
-      await moneyStore.updateReminder(serialNum, reminder);
-      toast.success('更新成功');
-      await finalizeReminderChange();
-    }
-  } catch (err) {
-    Lg.e('saveReminder', err);
-    toast.error('保存失败');
+
+async function handleUpdateReminder(serialNum: string, reminder: BilReminderUpdate) {
+  const success = await updateReminder(serialNum, reminder);
+  if (success) {
+    await finalizeReminderChange();
   }
 }
+
 async function deleteReminder(serialNum: string) {
   if (await confirmDelete('此提醒')) {
     try {
@@ -503,6 +423,7 @@ async function deleteReminder(serialNum: string) {
     }
   }
 }
+
 async function markReminderPaid(serialNum: string, isPaid: boolean) {
   try {
     await moneyStore.markReminderPaid(serialNum, isPaid);
@@ -627,8 +548,8 @@ onUnmounted(() => {
           :accounts="accounts"
           :loading="accountsLoading"
           @edit="editAccount"
-          @delete="deleteAccount"
-          @toggle-active="toggleAccountActive"
+          @delete="(serialNum) => handleDeleteAccount(serialNum, confirmDelete, finalizeAccountChange)"
+          @toggle-active="(serialNum, isActive) => handleToggleAccountActive(serialNum, isActive, finalizeAccountChange)"
         />
         <TransactionList
           v-if="activeTab === 'transactions'"
@@ -662,31 +583,31 @@ onUnmounted(() => {
       :transaction="selectedTransaction"
       :accounts="accounts"
       @close="closeTransactionModal"
-      @save="saveTransaction"
-      @update="updateTransaction"
-      @save-transfer="saveTransfer"
-      @update-transfer="updateTransfer"
+      @save="handleSaveTransaction"
+      @update="handleUpdateTransaction"
+      @save-transfer="handleSaveTransfer"
+      @update-transfer="handleUpdateTransfer"
     />
     <AccountModal
       v-if="showAccount"
       :account="selectedAccount"
       @close="closeAccountModal"
-      @save="saveAccount"
-      @update="updateAccount"
+      @save="(account) => handleSaveAccount(account, finalizeAccountChange)"
+      @update="(serialNum, account) => handleUpdateAccount(serialNum, account, finalizeAccountChange)"
     />
     <BudgetModal
       v-if="showBudget"
       :budget="selectedBudget"
       @close="closeBudgetModal"
-      @save="saveBudget"
-      @update="updateBudget"
+      @save="handleSaveBudget"
+      @update="handleUpdateBudget"
     />
     <ReminderModal
       v-if="showReminder"
       :reminder="selectedReminder"
       @close="closeReminderModal"
-      @save="saveReminder"
-      @update="updateReminder"
+      @save="handleSaveReminder"
+      @update="handleUpdateReminder"
     />
 
     <ConfirmModal
