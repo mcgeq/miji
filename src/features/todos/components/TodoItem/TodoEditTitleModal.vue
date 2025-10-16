@@ -52,7 +52,7 @@ const isEditable = computed(
 .modal-overlay {
   position: fixed;
   inset: 0;
-  z-index: 10000;
+  z-index: 10001; /* 确保在 modal-mask 之上 */
   display: flex;
   align-items: center;
   justify-content: center;

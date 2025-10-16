@@ -6,17 +6,19 @@ const onClose = () => emit('close');
 </script>
 
 <template>
-  <div class="modal-backdrop" @click.self="onClose">
-    <div class="modal">
-      <!-- 关闭按钮 -->
-      <button class="modal-close" @click="onClose">
-        <X class="icon" />
-      </button>
+  <Teleport to="body">
+    <div class="modal-backdrop" @click.self="onClose">
+      <div class="modal">
+        <!-- 关闭按钮 -->
+        <button class="modal-close" @click="onClose">
+          <X class="icon" />
+        </button>
 
-      <!-- 插槽内容 -->
-      <slot />
+        <!-- 插槽内容 -->
+        <slot />
+      </div>
     </div>
-  </div>
+  </Teleport>
 </template>
 
 <style scoped lang="postcss">
@@ -28,7 +30,7 @@ const onClose = () => emit('close');
   align-items: center;
   justify-content: center;
   background-color: rgba(0, 0, 0, 0.4); /* bg-black/40 */
-  z-index: 1001; /* 确保在移动端底部导航之上 */
+  z-index: 10002; /* 确保在 TodoAddMenus 和移动端底部导航之上 */
 }
 
 /* 内容容器 */

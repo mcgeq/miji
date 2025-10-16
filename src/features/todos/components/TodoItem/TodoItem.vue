@@ -152,6 +152,8 @@ function onChangePriorityHandler(serialNum: string, priority: Priority) {
 }
 
 function openPopup(type: string) {
+  // 先关闭菜单，再打开弹窗
+  menuStore.setMenuSerialNum('');
   currentPopup.value = type;
 }
 
