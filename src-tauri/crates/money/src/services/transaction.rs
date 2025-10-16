@@ -672,8 +672,8 @@ impl TransactionService {
             // 分期相关字段
             is_installment: None,
             total_periods: None,
-            installment_amount: None,
-            first_due_date: None,
+            remaining_periods: None,
+            installment_plan_id: None,
         };
 
         let to_request = CreateTransactionRequest {
@@ -701,8 +701,8 @@ impl TransactionService {
             // 分期相关字段
             is_installment: None,
             total_periods: None,
-            installment_amount: None,
-            first_due_date: None,
+            remaining_periods: None,
+            installment_plan_id: None,
         };
 
         Ok((from_request, to_request))
@@ -784,8 +784,8 @@ impl TransactionService {
             // 分期相关字段
             is_installment: None,
             total_periods: None,
-            installment_amount: None,
-            first_due_date: None,
+            remaining_periods: None,
+            installment_plan_id: None,
         };
 
         let reverse_in_request = CreateTransactionRequest {
@@ -816,8 +816,8 @@ impl TransactionService {
             // 分期相关字段
             is_installment: None,
             total_periods: None,
-            installment_amount: None,
-            first_due_date: None,
+            remaining_periods: None,
+            installment_plan_id: None,
         };
 
         (reverse_out_request, reverse_in_request)
@@ -1049,24 +1049,8 @@ impl TransactionService {
         db: &DbConn,
         data: CreateTransactionRequest,
     ) -> MijiResult<TransactionWithRelations> {
-        // 检查是否是分期付款
-        if data.is_installment.unwrap_or(false) {
-            // 分期付款：创建多个Pending状态的交易
-            let transactions = self.create_installment_transaction(db, data).await?;
-            // 返回第一个交易（作为代表）
-            if let Some(first_transaction) = transactions.first() {
-                self.converter().model_to_with_relations(db, first_transaction.clone()).await
-            } else {
-                Err(AppError::simple(
-                    BusinessCode::SystemError,
-                    "分期交易创建失败"
-                ))
-            }
-        } else {
-            // 普通交易：使用标准创建流程
-            let model = self.create(db, data).await?;
-            self.converter().model_to_with_relations(db, model).await
-        }
+        let model = self.create(db, data).await?;
+        self.converter().model_to_with_relations(db, model).await
     }
 
     pub async fn trans_get_with_relations(
@@ -1882,10 +1866,8 @@ impl TransactionService {
             ));
         }
 
-        let installment_amount = data
-            .installment_amount
-            .unwrap_or(data.amount / Decimal::from(total_periods));
-        let first_due_date = data.first_due_date.unwrap_or(data.date);
+        let installment_amount = data.amount / Decimal::from(total_periods);
+        let first_due_date = data.date;
 
         let tx = db.begin().await?;
         let mut transactions = Vec::new();
@@ -1913,8 +1895,7 @@ impl TransactionService {
             installment_data.related_transaction_serial_num = Some(parent_serial_num.clone());
             installment_data.is_installment = Some(true);
             installment_data.total_periods = Some(total_periods);
-            installment_data.installment_amount = Some(installment_amount);
-            installment_data.first_due_date = Some(first_due_date);
+            installment_data.remaining_periods = Some(total_periods);
 
             let transaction_model: entity::transactions::ActiveModel =
                 installment_data.try_into()?;
@@ -2074,18 +2055,29 @@ impl TransactionService {
         db: &DatabaseConnection,
         parent_serial_num: &str,
     ) -> MijiResult<()> {
+        let tx = db.begin().await?;
+
         // 检查分期是否完成
         let is_completed = self
-            .check_installment_completion_with_connection(db, parent_serial_num)
+            .check_installment_completion(&tx, parent_serial_num)
             .await?;
 
         if is_completed {
-            // 分期付款完成，记录日志
-            info!("分期付款计划 {} 的所有分期已完成", parent_serial_num);
-            // 注意：我们不需要更新父交易状态，因为分期付款没有真正的父交易记录
-            // 所有分期交易都是独立的，通过 related_transaction_serial_num 关联
+            // 更新父交易状态为已完成
+            let parent_transaction = entity::transactions::Entity::find()
+                .filter(TransactionColumn::SerialNum.eq(parent_serial_num))
+                .one(&tx)
+                .await?
+                .ok_or_else(|| AppError::simple(BusinessCode::NotFound, "父交易不存在"))?;
+
+            let mut parent_active = parent_transaction.into_active_model();
+            parent_active.transaction_status = Set("Completed".to_string());
+            parent_active.updated_at = Set(Some(DateUtils::local_now()));
+
+            parent_active.update(&tx).await?;
         }
 
+        tx.commit().await?;
         Ok(())
     }
 
@@ -2147,8 +2139,8 @@ impl TransactionService {
                     related_transaction_serial_num: Some(transaction.serial_num.clone()),
                     is_installment: Some(false),
                     total_periods: None,
-                    installment_amount: None,
-                    first_due_date: None,
+                    remaining_periods: None,
+                    installment_plan_id: None,
                 };
 
                 let reverse_model: entity::transactions::ActiveModel = reverse_data.try_into()?;

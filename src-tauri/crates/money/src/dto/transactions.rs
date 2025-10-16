@@ -359,8 +359,8 @@ pub struct CreateTransactionRequest {
     // 分期相关字段
     pub is_installment: Option<bool>,
     pub total_periods: Option<i32>,
-    pub installment_amount: Option<Decimal>,
-    pub first_due_date: Option<DateTime<FixedOffset>>,
+    pub remaining_periods: Option<i32>,
+    pub installment_plan_id: Option<String>,
 }
 
 impl TryFrom<CreateTransactionRequest> for entity::transactions::ActiveModel {
@@ -405,8 +405,8 @@ impl TryFrom<CreateTransactionRequest> for entity::transactions::ActiveModel {
             // 分期相关字段
             is_installment: Set(value.is_installment),
             total_periods: Set(value.total_periods),
-            installment_amount: Set(value.installment_amount),
-            first_due_date: Set(value.first_due_date),
+            remaining_periods: Set(value.remaining_periods),
+            installment_plan_id: Set(value.installment_plan_id),
         })
     }
 }
@@ -460,8 +460,8 @@ pub struct UpdateTransactionRequest {
     // 分期相关字段
     pub is_installment: Option<bool>,
     pub total_periods: Option<i32>,
-    pub installment_amount: Option<Decimal>,
-    pub first_due_date: Option<DateTime<FixedOffset>>,
+    pub remaining_periods: Option<i32>,
+    pub installment_plan_id: Option<String>,
 }
 
 impl TryFrom<UpdateTransactionRequest> for entity::transactions::ActiveModel {
@@ -538,11 +538,11 @@ impl TryFrom<UpdateTransactionRequest> for entity::transactions::ActiveModel {
         if let Some(total_periods) = value.total_periods {
             model.total_periods = Set(Some(total_periods));
         }
-        if let Some(installment_amount) = value.installment_amount {
-            model.installment_amount = Set(Some(installment_amount));
+        if let Some(remaining_periods) = value.remaining_periods {
+            model.remaining_periods = Set(Some(remaining_periods));
         }
-        if let Some(first_due_date) = value.first_due_date {
-            model.first_due_date = Set(Some(first_due_date));
+        if let Some(installment_plan_id) = value.installment_plan_id {
+            model.installment_plan_id = Set(Some(installment_plan_id));
         }
 
         // 更新 updated_at 字段
@@ -616,8 +616,8 @@ pub struct TransactionResponse {
     // 分期相关字段
     pub is_installment: Option<bool>,
     pub total_periods: Option<i32>,
-    pub installment_amount: Option<Decimal>,
-    pub first_due_date: Option<DateTime<FixedOffset>>,
+    pub remaining_periods: Option<i32>,
+    pub installment_plan_id: Option<String>,
 }
 
 impl From<TransactionWithRelations> for TransactionResponse {
@@ -677,8 +677,8 @@ impl From<TransactionWithRelations> for TransactionResponse {
             // 分期相关字段
             is_installment: trans.is_installment,
             total_periods: trans.total_periods,
-            installment_amount: trans.installment_amount,
-            first_due_date: trans.first_due_date,
+            remaining_periods: trans.remaining_periods,
+            installment_plan_id: trans.installment_plan_id,
         }
     }
 }

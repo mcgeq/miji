@@ -58,9 +58,8 @@ const form = ref<Transaction>({
   // 分期相关字段
   isInstallment: false,
   totalPeriods: 0,
-  installmentAmount: 0,
-  firstDueDate: '',
-  relatedTransactionSerialNum: '',
+  remainingPeriods: 0,
+  installmentPlanId: null,
 });
 
 const categoryMap = computed(() => {
@@ -98,14 +97,6 @@ const isTransferReadonly = computed(() => {
 const isEditabled = computed<boolean>(() => !!props.transaction);
 const isDisabled = computed<boolean>(() => isTransferReadonly.value || isEditabled.value);
 
-// 分期相关计算
-const installmentAmount = computed(() => {
-  if (form.value.isInstallment && form.value.totalPeriods > 0 && form.value.amount > 0) {
-    return calculateInstallmentAmount(form.value.amount, form.value.totalPeriods);
-  }
-  return 0;
-});
-
 // 计算分期金额，处理小数精度问题
 function calculateInstallmentAmount(totalAmount: number, totalPeriods: number): number {
   // 计算每期基础金额（向上取整到2位小数）
@@ -125,8 +116,8 @@ const installmentDetails = computed(() => {
   const totalPeriods = form.value.totalPeriods;
   const baseAmount = calculateInstallmentAmount(totalAmount, totalPeriods);
 
-  // 计算首期还款日期
-  const firstDueDate = form.value.firstDueDate ? new Date(form.value.firstDueDate) : new Date();
+  // 计算首期还款日期（使用交易日期）
+  const firstDueDate = new Date(form.value.date);
 
   const details = [];
   for (let i = 1; i <= totalPeriods; i++) {
@@ -178,22 +169,21 @@ watch(() => form.value.isInstallment, newValue => {
   if (newValue) {
     // 启用分期时，设置默认值
     form.value.totalPeriods = 12;
-    form.value.firstDueDate = DateUtils.getLocalISODateTimeWithOffset();
+    form.value.remainingPeriods = 12;
     form.value.transactionStatus = TransactionStatusSchema.enum.Pending;
   } else {
     // 禁用分期时，重置相关字段
     form.value.totalPeriods = 0;
-    form.value.installmentAmount = 0;
-    form.value.firstDueDate = '';
-    form.value.relatedTransactionSerialNum = '';
+    form.value.remainingPeriods = 0;
+    form.value.installmentPlanId = null;
     form.value.transactionStatus = TransactionStatusSchema.enum.Completed;
   }
 });
 
-// 监听总期数变化，计算每期金额
+// 监听总期数变化，更新剩余期数
 watch(() => form.value.totalPeriods, () => {
   if (form.value.isInstallment) {
-    form.value.installmentAmount = installmentAmount.value;
+    form.value.remainingPeriods = form.value.totalPeriods;
   }
 });
 
@@ -350,6 +340,11 @@ function emitTransaction(amount: number) {
     relatedTransactionSerialNum: form.value.relatedTransactionSerialNum,
     isDeleted: false,
     currency: form.value.currency.code,
+    // 分期相关字段
+    isInstallment: form.value.isInstallment,
+    totalPeriods: form.value.totalPeriods,
+    remainingPeriods: form.value.remainingPeriods,
+    installmentPlanId: form.value.installmentPlanId,
   };
 
   if (props.transaction) {
@@ -402,9 +397,8 @@ function getDefaultTransaction(type: TransactionType, accounts: Account[]) {
     // 分期相关字段
     isInstallment: false,
     totalPeriods: 0,
-    installmentAmount: 0,
-    firstDueDate: '',
-    relatedTransactionSerialNum: '',
+    remainingPeriods: 0,
+    installmentPlanId: null,
   };
 }
 
@@ -668,16 +662,6 @@ watch(
             <div class="plan-summary">
               <strong>{{ t('financial.transaction.totalAmount') }}: ¥{{ form.amount.toFixed(2) }}</strong>
             </div>
-          </div>
-
-          <div class="form-row first-due-date-row">
-            <label>{{ t('financial.transaction.firstDueDate') }}</label>
-            <VueDatePicker
-              v-model="form.firstDueDate"
-              :enable-time-picker="false"
-              class="form-control"
-              format="yyyy-MM-dd"
-            />
           </div>
 
           <div class="form-row">

@@ -11,6 +11,47 @@ import type {
   TransferCreate,
 } from '@/schema/money';
 
+// 分期付款相关类型定义
+export interface InstallmentPlanResponse {
+  id: string;
+  transaction_id: string;
+  total_amount: number;
+  total_periods: number;
+  installment_amount: number;
+  first_due_date: string;
+  status: string;
+  created_at: string;
+  updated_at?: string;
+  details: InstallmentDetailResponse[];
+}
+
+export interface InstallmentDetailResponse {
+  id: string;
+  plan_id: string;
+  period_number: number;
+  due_date: string;
+  amount: number;
+  status: string;
+  paid_date?: string;
+  paid_amount?: number;
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface CreateInstallmentPlanRequest {
+  transaction_id: string;
+  total_amount: number;
+  total_periods: number;
+  installment_amount: number;
+  first_due_date: string;
+}
+
+export interface PayInstallmentRequest {
+  detail_id: string;
+  paid_amount: number;
+  paid_date?: string;
+}
+
 // 统计相关的类型定义
 export interface TransactionStatsRequest {
   startDate: string;
@@ -245,6 +286,72 @@ export class TransactionMapper extends BaseMapper<
       return result;
     } catch (error) {
       this.handleError('queryIncomeAndExpense', error);
+    }
+  }
+
+  // ==================== 分期付款相关方法 ====================
+
+  /**
+   * 创建分期付款计划
+   */
+  async createInstallmentPlan(data: CreateInstallmentPlanRequest): Promise<InstallmentPlanResponse> {
+    try {
+      const result = await invokeCommand<InstallmentPlanResponse>(
+        'installment_plan_create',
+        data,
+      );
+      return result;
+    } catch (err) {
+      this.handleError('createInstallmentPlan', err);
+      throw err;
+    }
+  }
+
+  /**
+   * 获取分期付款计划
+   */
+  async getInstallmentPlan(planId: string): Promise<InstallmentPlanResponse> {
+    try {
+      const result = await invokeCommand<InstallmentPlanResponse>(
+        'installment_plan_get',
+        { planId },
+      );
+      return result;
+    } catch (err) {
+      this.handleError('getInstallmentPlan', err);
+      throw err;
+    }
+  }
+
+  /**
+   * 处理分期还款
+   */
+  async payInstallment(data: PayInstallmentRequest): Promise<InstallmentPlanResponse> {
+    try {
+      const result = await invokeCommand<InstallmentPlanResponse>(
+        'installment_pay',
+        { data },
+      );
+      return result;
+    } catch (err) {
+      this.handleError('payInstallment', err);
+      throw err;
+    }
+  }
+
+  /**
+   * 获取待还款的分期明细
+   */
+  async getPendingInstallments(): Promise<InstallmentPlanResponse[]> {
+    try {
+      const result = await invokeCommand<InstallmentPlanResponse[]>(
+        'installment_pending_list',
+        {},
+      );
+      return result;
+    } catch (err) {
+      this.handleError('getPendingInstallments', err);
+      throw err;
     }
   }
 }

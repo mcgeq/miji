@@ -385,6 +385,30 @@
     }
   },
   "financial": {
+    "installment": {
+      "title": "Installment Management",
+      "pendingPayments": "Pending Payments",
+      "noPendingPayments": "No pending installment payments",
+      "totalAmount": "Total Amount",
+      "remainingPeriods": "Remaining Periods",
+      "payPeriod": "Period {period}",
+      "paymentModal": {
+        "title": "Installment Payment",
+        "period": "Period",
+        "dueDate": "Due Date",
+        "amount": "Amount Due",
+        "paidAmount": "Amount Paid",
+        "enterAmount": "Enter payment amount",
+        "confirmPayment": "Confirm Payment"
+      },
+      "success": {
+        "paymentCompleted": "Payment completed successfully"
+      },
+      "error": {
+        "fetchFailed": "Failed to fetch installment information",
+        "paymentFailed": "Payment failed"
+      }
+    },
     "currency": "Currency",
     "money": "Amount",
     "balance": "Balance",

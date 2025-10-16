@@ -31,34 +31,6 @@ impl MigrationTrait for Migration {
             )
             .await?;
 
-        // 添加 installment_amount 字段
-        manager
-            .alter_table(
-                Table::alter()
-                    .table(Transactions::Table)
-                    .add_column(
-                        ColumnDef::new(Transactions::InstallmentAmount)
-                            .decimal_len(16, 4)
-                            .null(),
-                    )
-                    .to_owned(),
-            )
-            .await?;
-
-        // 添加 first_due_date 字段
-        manager
-            .alter_table(
-                Table::alter()
-                    .table(Transactions::Table)
-                    .add_column(
-                        ColumnDef::new(Transactions::FirstDueDate)
-                            .timestamp_with_time_zone()
-                            .null(),
-                    )
-                    .to_owned(),
-            )
-            .await?;
-
         Ok(())
     }
 
@@ -66,26 +38,6 @@ impl MigrationTrait for Migration {
         // 删除分期相关字段
         // SQLite 不支持在单个 ALTER TABLE 语句中执行多个操作，需要分开执行
         
-        // 删除 first_due_date 字段
-        manager
-            .alter_table(
-                Table::alter()
-                    .table(Transactions::Table)
-                    .drop_column(Transactions::FirstDueDate)
-                    .to_owned(),
-            )
-            .await?;
-
-        // 删除 installment_amount 字段
-        manager
-            .alter_table(
-                Table::alter()
-                    .table(Transactions::Table)
-                    .drop_column(Transactions::InstallmentAmount)
-                    .to_owned(),
-            )
-            .await?;
-
         // 删除 total_periods 字段
         manager
             .alter_table(

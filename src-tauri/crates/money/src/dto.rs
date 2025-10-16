@@ -4,6 +4,7 @@ pub mod budget;
 pub mod categories;
 pub mod currency;
 pub mod family_member;
+pub mod installment;
 pub mod reminder;
 pub mod sub_categories;
 pub mod transactions;

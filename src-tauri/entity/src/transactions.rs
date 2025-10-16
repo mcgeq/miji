@@ -37,8 +37,8 @@ pub struct Model {
     // 分期相关字段
     pub is_installment: Option<bool>,
     pub total_periods: Option<i32>,
-    pub installment_amount: Option<Decimal>,
-    pub first_due_date: Option<DateTimeWithTimeZone>,
+    pub remaining_periods: Option<i32>,
+    pub installment_plan_id: Option<String>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
@@ -63,6 +63,8 @@ pub enum Relation {
     Currency,
     #[sea_orm(has_many = "super::family_ledger_transaction::Entity")]
     FamilyLedgerTransaction,
+    #[sea_orm(has_one = "super::installment_plans::Entity")]
+    InstallmentPlan,
 }
 
 impl Related<super::account::Entity> for Entity {
@@ -86,6 +88,12 @@ impl Related<super::currency::Entity> for Entity {
 impl Related<super::family_ledger_transaction::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::FamilyLedgerTransaction.def()
+    }
+}
+
+impl Related<super::installment_plans::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::InstallmentPlan.def()
     }
 }
 

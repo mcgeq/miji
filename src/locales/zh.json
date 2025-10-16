@@ -389,6 +389,30 @@
     }
   },
   "financial": {
+    "installment": {
+      "title": "分期付款管理",
+      "pendingPayments": "待还款分期",
+      "noPendingPayments": "暂无待还款的分期付款",
+      "totalAmount": "总金额",
+      "remainingPeriods": "剩余期数",
+      "payPeriod": "第{period}期",
+      "paymentModal": {
+        "title": "分期还款",
+        "period": "期数",
+        "dueDate": "还款日期",
+        "amount": "应还金额",
+        "paidAmount": "实还金额",
+        "enterAmount": "请输入还款金额",
+        "confirmPayment": "确认还款"
+      },
+      "success": {
+        "paymentCompleted": "还款成功"
+      },
+      "error": {
+        "fetchFailed": "获取分期信息失败",
+        "paymentFailed": "还款失败"
+      }
+    },
     "currency": "币种",
     "money": "金额",
     "balance": "余额",

@@ -26,7 +26,12 @@ import type { Category, SubCategory } from '@/schema/money/category';
 import type { AccountFilters } from '@/services/money/accounts';
 import type { PagedResult } from '@/services/money/baseManager';
 import type { BudgetFilters } from '@/services/money/budgets';
-import type { TransactionFilters } from '@/services/money/transactions';
+import type {
+  CreateInstallmentPlanRequest,
+  InstallmentPlanResponse,
+  PayInstallmentRequest,
+  TransactionFilters,
+} from '@/services/money/transactions';
 
 export enum MoneyStoreErrorCode {
   ACCOUNT_NOT_FOUND = 'ACCOUNT_NOT_FOUND',
@@ -807,6 +812,58 @@ export const useMoneyStore = defineStore('money', {
       return this.withLoading(async () => {
         await Promise.all([this.updateAccounts(), this.updateTransactions()]);
       });
+    },
+
+    // ==================== 分期付款相关方法 ====================
+
+    /**
+     * 创建分期付款计划
+     */
+    async createInstallmentPlan(data: CreateInstallmentPlanRequest): Promise<InstallmentPlanResponse> {
+      try {
+        const result = await this.moneyDb.transactions.createInstallmentPlan(data);
+        return result;
+      } catch (error) {
+        throw this.handleError('createInstallmentPlan', error);
+      }
+    },
+
+    /**
+     * 获取分期付款计划
+     */
+    async getInstallmentPlan(planId: string): Promise<InstallmentPlanResponse> {
+      try {
+        const result = await this.moneyDb.transactions.getInstallmentPlan(planId);
+        return result;
+      } catch (error) {
+        throw this.handleError('getInstallmentPlan', error);
+      }
+    },
+
+    /**
+     * 处理分期还款
+     */
+    async payInstallment(data: PayInstallmentRequest): Promise<InstallmentPlanResponse> {
+      try {
+        const result = await this.moneyDb.transactions.payInstallment(data);
+        // 还款成功后刷新数据
+        await this.refreshAccountsAndTransactions();
+        return result;
+      } catch (error) {
+        throw this.handleError('payInstallment', error);
+      }
+    },
+
+    /**
+     * 获取待还款的分期明细
+     */
+    async getPendingInstallments(): Promise<InstallmentPlanResponse[]> {
+      try {
+        const result = await this.moneyDb.transactions.getPendingInstallments();
+        return result;
+      } catch (error) {
+        throw this.handleError('getPendingInstallments', error);
+      }
     },
   },
 });

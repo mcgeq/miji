@@ -27,6 +27,8 @@ pub mod todo;
 pub mod todo_project;
 pub mod todo_tag;
 pub mod transactions;
+pub mod installment_plans;
+pub mod installment_details;
 pub mod users;
 
 pub mod localize;

@@ -335,8 +335,37 @@ pub enum Transactions {
     // 分期相关字段
     IsInstallment,
     TotalPeriods,
+    RemainingPeriods,
+    InstallmentPlanId,
+}
+
+#[derive(DeriveIden)]
+pub enum InstallmentPlans {
+    Table,
+    Id,
+    TransactionId,
+    TotalAmount,
+    TotalPeriods,
     InstallmentAmount,
     FirstDueDate,
+    Status,
+    CreatedAt,
+    UpdatedAt,
+}
+
+#[derive(DeriveIden)]
+pub enum InstallmentDetails {
+    Table,
+    Id,
+    PlanId,
+    PeriodNumber,
+    DueDate,
+    Amount,
+    Status,
+    PaidDate,
+    PaidAmount,
+    CreatedAt,
+    UpdatedAt,
 }
 
 #[derive(DeriveIden)]
