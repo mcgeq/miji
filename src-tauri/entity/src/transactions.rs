@@ -36,7 +36,10 @@ pub struct Model {
     pub updated_at: Option<DateTimeWithTimeZone>,
     // 分期相关字段
     pub is_installment: Option<bool>,
+    pub first_due_date: Option<Date>,
     pub total_periods: Option<i32>,
+    pub installment_amount: Option<Decimal>,
+    pub remaining_periods_amount: Option<Decimal>,
     pub remaining_periods: Option<i32>,
     pub installment_plan_serial_num: Option<String>,
 }

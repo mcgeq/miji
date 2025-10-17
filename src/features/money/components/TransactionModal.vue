@@ -16,25 +16,15 @@ import '@vuepic/vue-datepicker/dist/main.css';
 import type {
   TransactionType,
 } from '@/schema/common';
-import type { Account, Transaction, TransactionCreate, TransactionUpdate, TransferCreate } from '@/schema/money';
-
-// 后端API响应类型定义
-interface InstallmentCalculationDetail {
-  period: number;
-  amount: number;
-  due_date: string;
-}
-
-interface InstallmentCalculationResponse {
-  installment_amount: number;
-  details: InstallmentCalculationDetail[];
-}
-
-interface InstallmentCalculationRequest {
-  total_amount: number;
-  total_periods: number;
-  first_due_date: string;
-}
+import type {
+  Account,
+  InstallmentCalculationRequest,
+  InstallmentCalculationResponse,
+  Transaction,
+  TransactionCreate,
+  TransactionUpdate,
+  TransferCreate,
+} from '@/schema/money';
 
 interface Props {
   type: TransactionType;
@@ -77,11 +67,12 @@ const form = ref<Transaction>({
   date: trans.date || DateUtils.getLocalISODateTimeWithOffset(),
   // 分期相关字段
   isInstallment: false,
+  firstDueDate: undefined,
   totalPeriods: 0,
   remainingPeriods: 0,
-  installmentPlanSerialNum: null,
   installmentAmount: 0,
-  firstDueDate: '',
+  remainingPeriodsAmount: 0,
+  installmentPlanSerialNum: null,
 });
 
 const categoryMap = computed(() => {
@@ -414,10 +405,11 @@ function emitTransaction(amount: number) {
     currency: form.value.currency.code,
     // 分期相关字段
     isInstallment: form.value.isInstallment,
+    firstDueDate: form.value.firstDueDate ? form.value.firstDueDate : undefined,
     totalPeriods: form.value.totalPeriods,
     remainingPeriods: form.value.remainingPeriods,
     installmentAmount: amount,
-    firstDueDate: form.value.firstDueDate ? form.value.firstDueDate : undefined,
+    remainingPeriodsAmount: amount,
   };
 
   if (props.transaction) {
@@ -469,11 +461,12 @@ function getDefaultTransaction(type: TransactionType, accounts: Account[]) {
     account: accounts[0] || ({} as Account),
     // 分期相关字段
     isInstallment: false,
+    firstDueDate: undefined,
     totalPeriods: 0,
     remainingPeriods: 0,
     installmentPlanSerialNum: null,
     installmentAmount: 0,
-    firstDueDate: '',
+    remainingPeriodsAmount: 0,
   };
 }
 
@@ -705,7 +698,6 @@ watch(
               v-model="form.totalPeriods"
               type="number"
               min="2"
-              max="24"
               class="form-control"
             >
           </div>

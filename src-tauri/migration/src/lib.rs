@@ -1,5 +1,8 @@
 pub use sea_orm_migration::prelude::*;
 
+mod m20250101_000000_insert_default_user;
+mod m20250102_000000_add_installment_fields_to_transactions;
+mod m20250116_000000_create_installment_tables;
 mod m20250803_114611_create_user;
 mod m20250803_122150_create_tags;
 mod m20250803_122206_create_projects;
@@ -34,11 +37,9 @@ mod m20250924_185222_create_budget_alert;
 mod m20250929_110022_create_todo_alert;
 mod m20250929_120022_create_todo_drop;
 mod m20250929_121722_create_todo_repeat_period_type;
+mod m20251017_160622_create_transaction_alert;
 mod m20251916_221213_create_sub_categories;
 mod m20251917_223412_create_sub_category_insert;
-mod m20250101_000000_insert_default_user;
-mod m20250102_000000_add_installment_fields_to_transactions;
-mod m20250116_000000_create_installment_tables;
 
 pub mod schema;
 
@@ -87,6 +88,7 @@ impl MigratorTrait for Migrator {
             Box::new(m20250101_000000_insert_default_user::Migration),
             Box::new(m20250102_000000_add_installment_fields_to_transactions::Migration),
             Box::new(m20250116_000000_create_installment_tables::Migration),
+            Box::new(m20251017_160622_create_transaction_alert::Migration),
         ]
     }
 }

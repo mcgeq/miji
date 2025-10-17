@@ -358,10 +358,11 @@ pub struct CreateTransactionRequest {
 
     // 分期相关字段
     pub is_installment: Option<bool>,
-    pub total_periods: Option<i32>,
-    pub remaining_periods: Option<i32>,
-    pub installment_amount: Option<Decimal>,
     pub first_due_date: Option<NaiveDate>,
+    pub total_periods: Option<i32>,
+    pub installment_amount: Option<Decimal>,
+    pub remaining_periods_amount: Option<Decimal>,
+    pub remaining_periods: Option<i32>,
 }
 
 impl TryFrom<CreateTransactionRequest> for entity::transactions::ActiveModel {
@@ -406,7 +407,10 @@ impl TryFrom<CreateTransactionRequest> for entity::transactions::ActiveModel {
             updated_at: Set(Some(now)),
             // 分期相关字段
             is_installment: Set(value.is_installment),
+            first_due_date: Set(value.first_due_date),
             total_periods: Set(value.total_periods),
+            installment_amount: Set(value.installment_amount),
+            remaining_periods_amount: Set(value.remaining_periods_amount),
             remaining_periods: Set(value.remaining_periods),
             installment_plan_serial_num: Set(Some(installment_plan_serial_num)),
         })
@@ -461,7 +465,10 @@ pub struct UpdateTransactionRequest {
 
     // 分期相关字段
     pub is_installment: Option<bool>,
+    pub first_due_date: Option<NaiveDate>,
     pub total_periods: Option<i32>,
+    pub installment_amount: Option<Decimal>,
+    pub remaining_periods_amount: Option<Decimal>,
     pub remaining_periods: Option<i32>,
     pub installment_plan_serial_num: Option<String>,
 }
@@ -547,6 +554,17 @@ impl TryFrom<UpdateTransactionRequest> for entity::transactions::ActiveModel {
             model.installment_plan_serial_num = Set(Some(installment_plan_id));
         }
 
+        if let Some(first_due_date) = value.first_due_date {
+            model.first_due_date = Set(Some(first_due_date));
+        }
+
+        if let Some(installment_amount) = value.installment_amount {
+            model.installment_amount = Set(Some(installment_amount));
+        }
+
+        if let Some(remaining_periods_amount) = value.remaining_periods_amount {
+            model.remaining_periods_amount = Set(Some(remaining_periods_amount));
+        }
         // 更新 updated_at 字段
         model.updated_at = Set(Some(now));
 
@@ -617,7 +635,10 @@ pub struct TransactionResponse {
     pub updated_at: Option<DateTime<FixedOffset>>,
     // 分期相关字段
     pub is_installment: Option<bool>,
+    pub first_due_date: Option<NaiveDate>,
     pub total_periods: Option<i32>,
+    pub installment_amount: Option<Decimal>,
+    pub remaining_periods_amount: Option<Decimal>,
     pub remaining_periods: Option<i32>,
     pub installment_plan_serial_num: Option<String>,
 }
@@ -678,7 +699,10 @@ impl From<TransactionWithRelations> for TransactionResponse {
             updated_at: trans.updated_at,
             // 分期相关字段
             is_installment: trans.is_installment,
+            first_due_date: trans.first_due_date,
             total_periods: trans.total_periods,
+            installment_amount: trans.installment_amount,
+            remaining_periods_amount: trans.remaining_periods_amount,
             remaining_periods: trans.remaining_periods,
             installment_plan_serial_num: trans.installment_plan_serial_num,
         }

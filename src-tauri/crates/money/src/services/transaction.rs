@@ -673,7 +673,8 @@ impl TransactionService {
             is_installment: None,
             total_periods: None,
             remaining_periods: None,
-            installment_amount: None,
+            installment_amount: Some(Decimal::ZERO),
+            remaining_periods_amount: Some(Decimal::ZERO),
             first_due_date: None,
         };
 
@@ -703,7 +704,8 @@ impl TransactionService {
             is_installment: None,
             total_periods: None,
             remaining_periods: None,
-            installment_amount: None,
+            installment_amount: Some(Decimal::ZERO),
+            remaining_periods_amount: Some(Decimal::ZERO),
             first_due_date: None,
         };
 
@@ -785,10 +787,11 @@ impl TransactionService {
             related_transaction_serial_num: None,
             // 分期相关字段
             is_installment: None,
+            first_due_date: None,
             total_periods: None,
             remaining_periods: None,
-            installment_amount: None,
-            first_due_date: None,
+            installment_amount: Some(Decimal::ZERO),
+            remaining_periods_amount: Some(Decimal::ZERO),
         };
 
         let reverse_in_request = CreateTransactionRequest {
@@ -820,7 +823,8 @@ impl TransactionService {
             is_installment: None,
             total_periods: None,
             remaining_periods: None,
-            installment_amount: None,
+            installment_amount: Some(Decimal::ZERO),
+            remaining_periods_amount: Some(Decimal::ZERO),
             first_due_date: None,
         };
 
@@ -2142,10 +2146,11 @@ impl TransactionService {
                         })?,
                     related_transaction_serial_num: Some(transaction.serial_num.clone()),
                     is_installment: Some(false),
+                    first_due_date: None,
                     total_periods: None,
+                    remaining_periods_amount: Some(Decimal::ZERO),
                     remaining_periods: None,
                     installment_amount: Some(Decimal::ZERO),
-                    first_due_date: None,
                 };
 
                 let reverse_model: entity::transactions::ActiveModel = reverse_data.try_into()?;

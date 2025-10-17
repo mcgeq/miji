@@ -36,10 +36,11 @@ export const TransactionSchema = z.object({
   updatedAt: DateTimeSchema.optional().nullable(),
   // 分期相关字段
   isInstallment: z.boolean().optional().default(false),
+  firstDueDate: z.string().optional().optional().nullable(),
   totalPeriods: z.number().optional().default(0),
   remainingPeriods: z.number().optional().default(0),
   installmentAmount: z.number().optional().default(0),
-  firstDueDate: z.string().optional().optional().nullable(),
+  remainingPeriodsAmount: z.number().optional().default(0),
   installmentPlanSerialNum: z.string().optional().nullable(),
 });
 
@@ -63,10 +64,11 @@ export const TransactionCreateSchema = TransactionSchema.pick({
   isDeleted: true,
   // 分期相关字段
   isInstallment: true,
+  firstDueDate: true,
   totalPeriods: true,
   remainingPeriods: true,
   installmentAmount: true,
-  firstDueDate: true,
+  remainingPeriodsAmount: true,
 })
   .extend({
     currency: z.string().length(3),
@@ -90,6 +92,24 @@ export const TransferCreateSchema = TransactionSchema.pick({
     currency: z.string().length(3),
   })
   .strict();
+
+// 后端API响应类型定义
+interface InstallmentCalculationDetail {
+  period: number;
+  amount: number;
+  due_date: string;
+}
+
+export interface InstallmentCalculationResponse {
+  installment_amount: number;
+  details: InstallmentCalculationDetail[];
+}
+
+export interface InstallmentCalculationRequest {
+  total_amount: number;
+  total_periods: number;
+  first_due_date: string;
+}
 
 export type Transaction = z.infer<typeof TransactionSchema>;
 export type TransactionCreate = z.infer<typeof TransactionCreateSchema>;

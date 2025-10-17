@@ -334,8 +334,11 @@ pub enum Transactions {
 
     // ---------------------- 分期业务扩展字段 ----------------------
     IsInstallment, // 是否为分期交易（布尔值：true=该交易是分期首期/后续期，false=普通交易）
-    TotalPeriods,  // 分期总期数（仅分期交易有效：如"12期"）
-    RemainingPeriods, // 剩余未还期数（仅分期交易有效：随每期还款递减，0表示已结清）
+    FirstDueDate,
+    InstallmentAmount,
+    RemainingPeriodsAmount,
+    TotalPeriods,             // 分期总期数（仅分期交易有效：如"12期"）
+    RemainingPeriods,         // 剩余未还期数（仅分期交易有效：随每期还款递减，0表示已结清）
     InstallmentPlanSerialNum, // 外键：关联分期计划（指向InstallmentPlans表的主键，绑定分期规则）
 }
 
