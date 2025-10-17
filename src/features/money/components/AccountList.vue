@@ -114,6 +114,16 @@ function getAccountTypeName(type: AccountType): string {
 function toggleAccountAmountVisibility(accountSerialNum: string) {
   moneyStore.toggleAccountAmountVisibility(accountSerialNum);
 }
+
+// 根据项目数量决定网格布局
+const gridLayoutClass = computed(() => {
+  if (mediaQueries.isMobile) return '';
+  const itemCount = pagination.paginatedItems.value.length;
+  // 当有2个项目时，使用充满宽度的布局
+  if (itemCount === 2) return 'grid-template-columns-320-two-items';
+  // 其他情况使用固定宽度布局
+  return 'grid-template-columns-320';
+});
 </script>
 
 <template>
@@ -263,9 +273,7 @@ function toggleAccountAmountVisibility(accountSerialNum: string) {
     <div
       v-else
       class="accounts-grid"
-      :class="[
-        { 'grid-template-columns-320': !mediaQueries.isMobile },
-      ]"
+      :class="gridLayoutClass"
     >
       <div
         v-for="account in pagination.paginatedItems.value"

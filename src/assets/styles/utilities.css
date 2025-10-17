@@ -1353,7 +1353,12 @@
 
 /* Grid Template Columns */
 .grid-template-columns-320 {
-  grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(20rem, 50%));
+}
+
+/* Grid Template Columns - 2条数据时充满宽度 */
+.grid-template-columns-320-two-items {
+  grid-template-columns: repeat(2, 1fr);
 }
 
 /* Grid columns */
