@@ -393,11 +393,18 @@
   "financial": {
     "installment": {
       "title": "分期付款管理",
-      "pendingPayments": "待还款分期",
-      "noPendingPayments": "暂无待还款的分期付款",
+      "pendingPayments": "待入账分期",
+      "noPendingPayments": "暂无待入账的分期付款",
       "totalAmount": "总金额",
       "remainingPeriods": "剩余期数",
       "payPeriod": "第{period}期",
+      "paidOn": "入账日期",
+      "status": {
+        "paid": "已入账",
+        "pending": "待入账",
+        "overdue": "已逾期"
+      },
+      "amountEditDisabled": "已有分期入账记录，金额不可修改",
       "paymentModal": {
         "title": "分期还款",
         "period": "期数",

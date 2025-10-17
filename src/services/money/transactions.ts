@@ -282,10 +282,10 @@ export class TransactionMapper extends BaseMapper<
   /**
    * 获取分期付款计划
    */
-  async getInstallmentPlan(planId: string): Promise<InstallmentPlanResponse> {
+  async getInstallmentPlan(planSerialNum: string): Promise<InstallmentPlanResponse> {
     try {
       const result = await invokeCommand<InstallmentPlanResponse>('installment_plan_get', {
-        planId,
+        planSerialNum,
       });
       return result;
     } catch (err) {

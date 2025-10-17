@@ -389,11 +389,18 @@
   "financial": {
     "installment": {
       "title": "Installment Management",
-      "pendingPayments": "Pending Payments",
-      "noPendingPayments": "No pending installment payments",
+      "pendingPayments": "Pending Records",
+      "noPendingPayments": "No pending installment records",
       "totalAmount": "Total Amount",
       "remainingPeriods": "Remaining Periods",
       "payPeriod": "Period {period}",
+      "paidOn": "Recorded On",
+      "status": {
+        "paid": "Recorded",
+        "pending": "Pending",
+        "overdue": "Overdue"
+      },
+      "amountEditDisabled": "Amount cannot be modified due to existing installment records",
       "paymentModal": {
         "title": "Installment Payment",
         "period": "Period",

@@ -47,7 +47,7 @@ impl MigrationTrait for Migration {
                     )
                     .col(
                         ColumnDef::new(InstallmentPlans::FirstDueDate)
-                            .date_time()
+                            .date()
                             .not_null(),
                     )
                     .col(
@@ -57,12 +57,12 @@ impl MigrationTrait for Migration {
                     )
                     .col(
                         ColumnDef::new(InstallmentPlans::CreatedAt)
-                            .date_time()
+                            .timestamp_with_time_zone()
                             .default(Expr::current_timestamp()),
                     )
                     .col(
                         ColumnDef::new(InstallmentPlans::UpdatedAt)
-                            .date_time()
+                            .timestamp_with_time_zone()
                             .default(Expr::current_timestamp()),
                     )
                     .foreign_key(
@@ -110,7 +110,7 @@ impl MigrationTrait for Migration {
                     )
                     .col(
                         ColumnDef::new(InstallmentDetails::DueDate)
-                            .date_time()
+                            .date()
                             .not_null(),
                     )
                     .col(
@@ -128,11 +128,7 @@ impl MigrationTrait for Migration {
                             .string()
                             .default("PENDING"),
                     )
-                    .col(
-                        ColumnDef::new(InstallmentDetails::PaidDate)
-                            .date_time()
-                            .null(),
-                    )
+                    .col(ColumnDef::new(InstallmentDetails::PaidDate).date().null())
                     .col(
                         ColumnDef::new(InstallmentDetails::PaidAmount)
                             .decimal_len(15, 2)
@@ -140,12 +136,12 @@ impl MigrationTrait for Migration {
                     )
                     .col(
                         ColumnDef::new(InstallmentDetails::CreatedAt)
-                            .date_time()
+                            .timestamp_with_time_zone()
                             .default(Expr::current_timestamp()),
                     )
                     .col(
                         ColumnDef::new(InstallmentDetails::UpdatedAt)
-                            .date_time()
+                            .timestamp_with_time_zone()
                             .default(Expr::current_timestamp()),
                     )
                     .foreign_key(

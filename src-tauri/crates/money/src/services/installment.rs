@@ -11,7 +11,7 @@ use common::{
 };
 use sea_orm::{
     ActiveModelTrait, ActiveValue, ColumnTrait, DatabaseConnection, DbConn, EntityTrait,
-    IntoActiveModel, QueryFilter, QueryOrder, Set, TransactionTrait, prelude::Decimal,
+    IntoActiveModel, PaginatorTrait, QueryFilter, QueryOrder, Set, TransactionTrait, prelude::Decimal,
     prelude::async_trait::async_trait,
 };
 use validator::Validate;
@@ -764,6 +764,33 @@ impl InstallmentService {
         .await?;
 
         Ok(())
+    }
+
+    /// 检查交易是否有已完成的分期付款
+    pub async fn has_paid_installments(
+        &self,
+        db: &DbConn,
+        transaction_serial_num: &str,
+    ) -> MijiResult<bool> {
+        // 首先查找该交易的分期计划
+        let plan = installment_plans::Entity::find()
+            .filter(installment_plans::Column::TransactionSerialNum.eq(transaction_serial_num))
+            .one(db)
+            .await?;
+
+        if let Some(plan) = plan {
+            // 检查是否有状态为PAID的分期明细
+            let paid_count = installment_details::Entity::find()
+                .filter(installment_details::Column::PlanSerialNum.eq(&plan.serial_num))
+                .filter(installment_details::Column::Status.eq("PAID"))
+                .count(db)
+                .await?;
+
+            Ok(paid_count > 0)
+        } else {
+            // 没有分期计划，返回false
+            Ok(false)
+        }
     }
 }
 

@@ -814,10 +814,10 @@ export const useMoneyStore = defineStore('money', {
     /**
      * 获取分期付款计划
      */
-    async getInstallmentPlan(planId: string): Promise<InstallmentPlanResponse> {
+    async getInstallmentPlan(planSerialNum: string): Promise<InstallmentPlanResponse> {
       return this.withLoadingSafe(
         async () => {
-          const result = await MoneyDb.getInstallmentPlan(planId);
+          const result = await MoneyDb.getInstallmentPlan(planSerialNum);
           return result;
         },
         '获取分期计划失败',

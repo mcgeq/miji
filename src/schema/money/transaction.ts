@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import {
   CurrencySchema,
+  DateSchema,
   DateTimeSchema,
   SerialNumSchema,
   TransactionStatusSchema,
@@ -36,7 +37,7 @@ export const TransactionSchema = z.object({
   updatedAt: DateTimeSchema.optional().nullable(),
   // 分期相关字段
   isInstallment: z.boolean().optional().default(false),
-  firstDueDate: z.string().optional().optional().nullable(),
+  firstDueDate: DateSchema.optional().nullable(),
   totalPeriods: z.number().optional().default(0),
   remainingPeriods: z.number().optional().default(0),
   installmentAmount: z.number().optional().default(0),
@@ -97,7 +98,10 @@ export const TransferCreateSchema = TransactionSchema.pick({
 interface InstallmentCalculationDetail {
   period: number;
   amount: number;
-  due_date: string;
+  due_date: string; // YYYY-MM-DD format
+  status?: string;
+  paid_date?: string;
+  paid_amount?: number;
 }
 
 export interface InstallmentCalculationResponse {
@@ -108,7 +112,7 @@ export interface InstallmentCalculationResponse {
 export interface InstallmentCalculationRequest {
   total_amount: number;
   total_periods: number;
-  first_due_date: string;
+  first_due_date: string; // YYYY-MM-DD format
 }
 
 export type Transaction = z.infer<typeof TransactionSchema>;

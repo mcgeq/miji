@@ -17,8 +17,7 @@ use crate::{
         currency::{CreateCurrencyRequest, CurrencyResponse, UpdateCurrencyRequest},
         family_member::FamilyMemberResponse,
         installment::{
-            InstallmentCalculationRequest, InstallmentCalculationResponse,
-            InstallmentDetailResponse, InstallmentPlanResponse,
+            InstallmentCalculationRequest, InstallmentCalculationResponse, InstallmentPlanResponse,
         },
         sub_categories::{SubCategory, SubCategoryCreate, SubCategoryUpdate},
         transactions::{
@@ -45,38 +44,12 @@ use crate::{
 #[tauri::command]
 pub async fn installment_plan_get(
     state: State<'_, AppState>,
-    plan_id: String,
-) -> Result<ApiResponse<InstallmentPlanResponse>, String> {
-    let service = get_installment_service();
-    Ok(ApiResponse::from_result(
-        service.get_installment_plan(&state.db, &plan_id).await,
-    ))
-}
-
-// 获取分期付款计划列表
-#[tauri::command]
-pub async fn installment_plan_list(
-    state: State<'_, AppState>,
-    installment_plan_serial_num: String,
-) -> Result<ApiResponse<InstallmentPlanResponse>, String> {
-    let service = get_installment_service();
-    Ok(ApiResponse::from_result(
-        service
-            .get_installment_plan(&state.db, &installment_plan_serial_num)
-            .await,
-    ))
-}
-
-// 获取待还款的分期明细
-#[tauri::command]
-pub async fn installment_pending_list(
-    state: State<'_, AppState>,
     plan_serial_num: String,
-) -> Result<ApiResponse<Vec<InstallmentDetailResponse>>, String> {
+) -> Result<ApiResponse<InstallmentPlanResponse>, String> {
     let service = get_installment_service();
     Ok(ApiResponse::from_result(
         service
-            .get_pending_installments(&state.db, &plan_serial_num)
+            .get_installment_plan(&state.db, &plan_serial_num)
             .await,
     ))
 }
@@ -89,6 +62,20 @@ pub async fn installment_calculate(
     let service = get_installment_service();
     Ok(ApiResponse::from_result(
         service.calculate_installment_amount(data).await,
+    ))
+}
+
+// 检查交易是否有已完成的分期付款
+#[tauri::command]
+pub async fn installment_has_paid(
+    state: State<'_, AppState>,
+    transaction_serial_num: String,
+) -> Result<ApiResponse<bool>, String> {
+    let service = get_installment_service();
+    Ok(ApiResponse::from_result(
+        service
+            .has_paid_installments(&state.db, &transaction_serial_num)
+            .await,
     ))
 }
 // end 分期付款相关

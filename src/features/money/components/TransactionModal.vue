@@ -10,9 +10,10 @@ import { AccountTypeSchema, PaymentMethodSchema } from '@/schema/money';
 import { invokeCommand } from '@/types/api';
 import { lowercaseFirstLetter } from '@/utils/common';
 import { DateUtils } from '@/utils/date';
+import { Lg } from '@/utils/debugLog';
+import '@vuepic/vue-datepicker/dist/main.css';
 import { toast } from '@/utils/toast';
 import { formatCurrency } from '../utils/money';
-import '@vuepic/vue-datepicker/dist/main.css';
 import type {
   TransactionType,
 } from '@/schema/common';
@@ -25,6 +26,7 @@ import type {
   TransactionUpdate,
   TransferCreate,
 } from '@/schema/money';
+import type { InstallmentPlanResponse } from '@/services/money/transactions';
 
 interface Props {
   type: TransactionType;
@@ -120,6 +122,9 @@ function safeToFixed(value: any, decimals: number = 2): string {
 const installmentCalculationResult = ref<InstallmentCalculationResponse | null>(null);
 const isCalculatingInstallment = ref(false);
 
+// 存储原始的分期详情数据（用于统计计算）
+const rawInstallmentDetails = ref<any[]>([]);
+
 // 调用后端API计算分期金额
 async function calculateInstallmentFromBackend() {
   if (!form.value.isInstallment || form.value.totalPeriods <= 0 || form.value.amount <= 0) {
@@ -134,8 +139,8 @@ async function calculateInstallmentFromBackend() {
       total_amount: form.value.amount,
       total_periods: form.value.totalPeriods,
       first_due_date: form.value.firstDueDate
-        ? DateUtils.formatDateToBackend(new Date(form.value.firstDueDate))
-        : DateUtils.formatDateToBackend(new Date(form.value.date)),
+        ? DateUtils.formatDateOnly(new Date(form.value.firstDueDate))
+        : DateUtils.formatDateOnly(new Date(form.value.date)),
     };
 
     const response = await invokeCommand<InstallmentCalculationResponse>('installment_calculate', {
@@ -152,6 +157,43 @@ async function calculateInstallmentFromBackend() {
   }
 }
 
+// 加载分期计划详情（用于编辑模式）
+async function loadInstallmentPlanDetails(planSerialNum: string) {
+  try {
+    const response = await invokeCommand<InstallmentPlanResponse>('installment_plan_get', {
+      planSerialNum,
+    });
+    if (response && response.details) {
+      // 存储原始数据用于统计计算
+      rawInstallmentDetails.value = response.details;
+
+      // 更新表单中的分期相关字段
+      form.value.totalPeriods = response.total_periods;
+      form.value.remainingPeriods = response.total_periods;
+      form.value.installmentAmount = Number(response.installment_amount);
+      form.value.firstDueDate = response.first_due_date;
+
+      // 将分期计划详情转换为计算结果的格式，以便在UI中显示
+      const details = response.details.map(detail => ({
+        period: detail.period_number,
+        amount: Number(detail.amount),
+        due_date: detail.due_date,
+        status: detail.status,
+        paid_date: detail.paid_date,
+        paid_amount: detail.paid_amount,
+      }));
+
+      installmentCalculationResult.value = {
+        installment_amount: Number(response.installment_amount),
+        details,
+      };
+    }
+  } catch (error) {
+    Lg.e('加载分期计划详情失败:', error);
+    toast.error('加载分期计划详情失败');
+  }
+}
+
 // 计算每期金额（用于显示在输入框中）
 const calculatedInstallmentAmount = computed(() => {
   return installmentCalculationResult.value?.installment_amount || 0;
@@ -163,18 +205,86 @@ const installmentDetails = computed(() => {
     return null;
   }
 
-  return installmentCalculationResult.value.details.map(detail => ({
+  const mappedDetails = installmentCalculationResult.value.details.map(detail => ({
     period: detail.period,
     amount: Number(safeToFixed(detail.amount)),
-    dueDate: detail.due_date.split('T')[0], // 格式化为 YYYY-MM-DD
+    dueDate: detail.due_date,
+    status: detail.status,
+    paidDate: detail.paid_date,
+    paidAmount: detail.paid_amount,
   }));
+  return mappedDetails;
 });
+
+// 后端查询是否有已完成的分期付款
+const hasPaidInstallmentsFromBackend = ref(false);
+
+// 检查交易是否有已完成的分期付款
+async function checkPaidInstallments(transactionSerialNum: string) {
+  if (!transactionSerialNum) {
+    hasPaidInstallmentsFromBackend.value = false;
+    return;
+  }
+
+  try {
+    const response = await invokeCommand<boolean>('installment_has_paid', {
+      transactionSerialNum,
+    });
+    hasPaidInstallmentsFromBackend.value = response;
+  } catch (error) {
+    console.error('检查分期付款状态失败:', error);
+    hasPaidInstallmentsFromBackend.value = false;
+  }
+}
+
+// 判断分期付款相关字段是否应该被禁用
+const isInstallmentFieldsDisabled = computed(() => {
+  return isEditabled.value && hasPaidInstallmentsFromBackend.value;
+});
+
+// 获取状态显示文本
+function getStatusText(status: string): string {
+  if (!status) {
+    return '';
+  }
+  const statusMap: Record<string, string> = {
+    PAID: t('financial.installment.status.paid'),
+    PENDING: t('financial.installment.status.pending'),
+    OVERDUE: t('financial.installment.status.overdue'),
+    paid: t('financial.installment.status.paid'),
+    pending: t('financial.installment.status.pending'),
+    overdue: t('financial.installment.status.overdue'),
+  };
+  const result = statusMap[status] || status;
+  return result;
+}
+
+// 获取已入账期数
+function getPaidPeriodsCount(): number {
+  if (!rawInstallmentDetails.value || rawInstallmentDetails.value.length === 0) {
+    return 0;
+  }
+  const paidCount = rawInstallmentDetails.value.filter(detail => detail.status === 'PAID').length;
+  return paidCount;
+}
+
+// 获取待入账期数
+function getPendingPeriodsCount(): number {
+  if (!rawInstallmentDetails.value || rawInstallmentDetails.value.length === 0) {
+    return 0;
+  }
+  const pendingCount = rawInstallmentDetails.value.filter(detail => detail.status === 'PENDING' || detail.status === 'OVERDUE').length;
+  return pendingCount;
+}
 
 // 可用的交易状态选项
 const availableTransactionStatuses = computed(() => {
   if (!form.value.isInstallment) {
     return [
-      { value: TransactionStatusSchema.enum.Pending, label: t('financial.transaction.statusOptions.pending') },
+      {
+        value: TransactionStatusSchema.enum.Pending,
+        label: t('financial.transaction.statusOptions.pending'),
+      },
       { value: TransactionStatusSchema.enum.Completed, label: t('financial.transaction.statusOptions.completed') },
       { value: TransactionStatusSchema.enum.Reversed, label: t('financial.transaction.statusOptions.reversed') },
     ];
@@ -195,7 +305,7 @@ watch(() => form.value.isInstallment, newValue => {
     form.value.remainingPeriods = 12;
     form.value.transactionStatus = TransactionStatusSchema.enum.Pending;
     // 设置默认首期还款日期为交易日期
-    form.value.firstDueDate = new Date(form.value.date).toISOString().split('T')[0];
+    form.value.firstDueDate = DateUtils.formatDateOnly(new Date(form.value.date));
     // 调用后端计算分期金额
     calculateInstallmentFromBackend();
   } else {
@@ -204,7 +314,7 @@ watch(() => form.value.isInstallment, newValue => {
     form.value.remainingPeriods = 0;
     form.value.installmentPlanSerialNum = null;
     form.value.installmentAmount = 0;
-    form.value.firstDueDate = '';
+    form.value.firstDueDate = undefined;
     form.value.transactionStatus = TransactionStatusSchema.enum.Completed;
     installmentCalculationResult.value = null;
   }
@@ -236,13 +346,14 @@ const isInstallmentPlanExpanded = ref(false);
 
 // 获取显示的分期详情（默认显示前2期）
 const visibleInstallmentDetails = computed(() => {
-  if (!installmentDetails.value) return null;
-
-  if (isInstallmentPlanExpanded.value) {
-    return installmentDetails.value;
-  } else {
-    return installmentDetails.value.slice(0, 2);
+  if (!installmentDetails.value) {
+    return null;
   }
+
+  const result = isInstallmentPlanExpanded.value
+    ? installmentDetails.value
+    : installmentDetails.value.slice(0, 2);
+  return result;
 });
 
 // 是否有更多期数需要收起
@@ -405,7 +516,7 @@ function emitTransaction(amount: number) {
     currency: form.value.currency.code,
     // 分期相关字段
     isInstallment: form.value.isInstallment,
-    firstDueDate: form.value.firstDueDate ? form.value.firstDueDate : undefined,
+    firstDueDate: form.value.firstDueDate || undefined,
     totalPeriods: form.value.totalPeriods,
     remainingPeriods: form.value.remainingPeriods,
     installmentAmount: amount,
@@ -507,7 +618,7 @@ watch(
 
 watch(
   () => props.transaction,
-  transaction => {
+  async transaction => {
     if (transaction) {
       form.value = {
         ...getDefaultTransaction(props.type, props.accounts),
@@ -520,8 +631,19 @@ watch(
         refundAmount: 0,
         date: transaction.date || DateUtils.getLocalISODateTimeWithOffset(),
       };
+
+      // 如果是分期付款交易，加载分期计划详情
+      if (transaction.isInstallment && transaction.installmentPlanSerialNum) {
+        await loadInstallmentPlanDetails(transaction.installmentPlanSerialNum);
+      }
+
+      // 检查是否有已完成的分期付款
+      await checkPaidInstallments(transaction.serialNum);
     } else {
       form.value = getDefaultTransaction(props.type, props.accounts);
+      // 重置分期付款状态
+      hasPaidInstallmentsFromBackend.value = false;
+      rawInstallmentDetails.value = [];
     }
   },
   { immediate: true },
@@ -573,6 +695,7 @@ watch(
             type="number"
             class="form-control"
             :placeholder="t('common.placeholders.enterAmount')"
+            :disabled="isInstallmentFieldsDisabled"
             step="0.01"
             required
             @input="handleAmountInput"
@@ -685,13 +808,22 @@ watch(
         <!-- 分期选项 -->
         <div v-if="form.transactionType === 'Expense'" class="form-row">
           <label class="checkbox-label">
-            <input v-model="form.isInstallment" type="checkbox">
+            <input
+              v-model="form.isInstallment"
+              type="checkbox"
+              :disabled="isInstallmentFieldsDisabled"
+            >
             {{ t('financial.transaction.installment') }}
           </label>
         </div>
 
         <!-- 分期详情 -->
         <div v-if="form.isInstallment" class="installment-section">
+          <!-- 分期计划已开始执行的提示 -->
+          <div v-if="isInstallmentFieldsDisabled" class="installment-warning">
+            <span class="warning-icon">!</span>
+            <span class="warning-text">分期计划已开始执行，部分设置不可修改</span>
+          </div>
           <div class="form-row">
             <label>{{ t('financial.transaction.totalPeriods') }}</label>
             <input
@@ -699,6 +831,7 @@ watch(
               type="number"
               min="2"
               class="form-control"
+              :disabled="isInstallmentFieldsDisabled"
             >
           </div>
 
@@ -718,6 +851,7 @@ watch(
               v-model="form.firstDueDate"
               type="date"
               class="form-control"
+              :disabled="isInstallmentFieldsDisabled"
             >
           </div>
 
@@ -750,16 +884,48 @@ watch(
                 v-for="detail in visibleInstallmentDetails"
                 :key="detail.period"
                 class="plan-item"
+                :class="{ paid: detail.status === 'PAID', pending: detail.status === 'PENDING', overdue: detail.status === 'OVERDUE' }"
               >
                 <div class="period-info">
-                  <span class="period-label">{{ t('financial.transaction.period', { period: detail.period }) }}</span>
+                  <div class="period-header">
+                    <span class="period-label">{{ t('financial.transaction.period', { period: detail.period }) }}</span>
+                    <span v-if="detail.status" class="status-text" :class="`status-${detail.status.toLowerCase()}`">
+                      {{ getStatusText(detail.status) }}
+                    </span>
+                  </div>
                   <span class="due-date">{{ detail.dueDate }}</span>
                 </div>
-                <span class="amount-label">¥{{ safeToFixed(detail.amount) }}</span>
+                <div class="amount-info">
+                  <span class="amount-label">¥{{ safeToFixed(detail.amount) }}</span>
+                  <div v-if="detail.status === 'PAID'" class="payment-details">
+                    <span class="paid-date">入账日期: {{ detail.paidDate }}</span>
+                    <span v-if="detail.paidAmount" class="paid-amount">实付: ¥{{ safeToFixed(detail.paidAmount) }}</span>
+                  </div>
+                  <div v-else-if="detail.status === 'PENDING'" class="pending-info">
+                    <span class="pending-text">{{ t('financial.installment.status.pending') }}</span>
+                  </div>
+                  <div v-else-if="detail.status === 'OVERDUE'" class="overdue-info">
+                    <span class="overdue-text">{{ t('financial.installment.status.overdue') }}</span>
+                  </div>
+                </div>
               </div>
             </div>
 
             <div class="plan-summary">
+              <div class="summary-stats">
+                <div class="stat-item">
+                  <span class="stat-label">已入账:</span>
+                  <span class="stat-value paid">{{ getPaidPeriodsCount() }} 期</span>
+                </div>
+                <div class="stat-item">
+                  <span class="stat-label">待入账:</span>
+                  <span class="stat-value pending">{{ getPendingPeriodsCount() }} 期</span>
+                </div>
+                <div class="stat-item">
+                  <span class="stat-label">总期数:</span>
+                  <span class="stat-value">{{ rawInstallmentDetails?.length || 0 }} 期</span>
+                </div>
+              </div>
               <div class="total-amount">
                 <strong>{{ t('financial.transaction.totalAmount') }}: ¥{{ safeToFixed(form.amount) }}</strong>
                 <button
@@ -832,6 +998,27 @@ watch(
   align-items: center;
   gap: 0.5rem;
   cursor: pointer;
+}
+
+.installment-warning {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  margin-bottom: 1rem;
+  background-color: color-mix(in oklch, var(--color-warning) 10%, transparent);
+  border: 1px solid color-mix(in oklch, var(--color-warning) 30%, transparent);
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+}
+
+.warning-icon {
+  font-size: 1rem;
+}
+
+.warning-text {
+  color: var(--color-warning);
+  font-weight: 500;
 }
 
 .installment-section {
@@ -912,6 +1099,133 @@ watch(
   color: var(--color-primary);
 }
 
+/* 分期计划状态样式 */
+.plan-item.paid {
+  background-color: color-mix(in oklch, var(--color-success) 10%, transparent);
+  border-radius: 0.25rem;
+  padding: 0.5rem;
+  margin: 0.25rem 0;
+}
+
+.plan-item.pending {
+  background-color: color-mix(in oklch, var(--color-warning) 10%, transparent);
+  border-radius: 0.25rem;
+  padding: 0.5rem;
+  margin: 0.25rem 0;
+}
+
+.plan-item.overdue {
+  background-color: color-mix(in oklch, var(--color-error) 10%, transparent);
+  border-radius: 0.25rem;
+  padding: 0.5rem;
+  margin: 0.25rem 0;
+}
+
+.status-badge {
+  font-size: 0.625rem;
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.25rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+.status-badge.status-paid {
+  background-color: var(--color-success);
+  color: white;
+}
+
+.status-badge.status-pending {
+  background-color: var(--color-warning);
+  color: white;
+}
+
+.status-badge.status-overdue {
+  background-color: var(--color-error);
+  color: white;
+}
+
+.period-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.status-text {
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 0.125rem 0.5rem;
+  border-radius: 0.25rem;
+  border: 1px solid;
+}
+
+.status-text.status-paid {
+  color: var(--color-success);
+  background-color: rgba(var(--color-success-rgb), 0.1);
+  border-color: var(--color-success);
+}
+
+.status-text.status-pending {
+  color: var(--color-warning);
+  background-color: rgba(var(--color-warning-rgb), 0.1);
+  border-color: var(--color-warning);
+}
+
+.status-text.status-overdue {
+  color: var(--color-error);
+  background-color: rgba(var(--color-error-rgb), 0.1);
+  border-color: var(--color-error);
+}
+
+.amount-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.25rem;
+}
+
+.payment-details {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.125rem;
+}
+
+.paid-date {
+  font-size: 0.625rem;
+  color: var(--color-success);
+  font-style: italic;
+}
+
+.paid-amount {
+  font-size: 0.625rem;
+  color: var(--color-success);
+  font-weight: 500;
+}
+
+.pending-info {
+  display: flex;
+  align-items: center;
+}
+
+.pending-text {
+  font-size: 0.625rem;
+  color: var(--color-warning);
+  font-weight: 500;
+}
+
+.overdue-info {
+  display: flex;
+  align-items: center;
+}
+
+.overdue-text {
+  font-size: 0.625rem;
+  color: var(--color-error);
+  font-weight: 500;
+}
+
 .first-due-date-row {
   margin-top: 1.5rem !important;
 }
@@ -920,6 +1234,40 @@ watch(
   padding-top: 0.5rem;
   border-top: 1px solid var(--color-base-300);
   color: var(--color-base-content);
+}
+
+.summary-stats {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+  padding: 0.5rem;
+  background-color: var(--color-base-100);
+  border-radius: 0.375rem;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.stat-label {
+  font-size: 0.75rem;
+  color: var(--color-base-content-soft);
+}
+
+.stat-value {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.stat-value.paid {
+  color: var(--color-success);
+}
+
+.stat-value.pending {
+  color: var(--color-warning);
 }
 
 .total-amount {

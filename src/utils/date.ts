@@ -459,6 +459,15 @@ export class DateUtils {
   }
 
   /**
+   * 格式化日期为 YYYY-MM-DD 格式（仅日期，不包含时间）
+   * @param date - 日期对象
+   * @returns YYYY-MM-DD 格式的日期字符串
+   */
+  static formatDateOnly(date: Date): string {
+    return format(date, 'yyyy-MM-dd');
+  }
+
+  /**
    * 获取指定日期所在月份的第一天
    * @param date - 日期对象
    * @returns 月份第一天的Date对象
