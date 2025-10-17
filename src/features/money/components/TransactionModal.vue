@@ -1025,7 +1025,7 @@ watch(
 :deep(.dp__input) {
   background-color: transparent !important;
   border: none !important;
-  color: var(--color-base-content) !important;
+  color: var(--color-neutral) !important; /* 与其他input文字颜色一致 */
   border-radius: 6px !important;
   padding: 0.5rem 0.75rem !important;
   padding-left: 2.5rem !important; /* 为图标留出空间 */
@@ -1047,17 +1047,66 @@ watch(
 }
 
 :deep(.dp__input_icon) {
-  color: var(--color-base-content) !important;
+  color: var(--color-neutral) !important; /* 与其他input文字颜色一致 */
   left: 0.5rem !important; /* 图标更靠左 */
   width: 1rem !important;
   height: 1rem !important;
 }
 
 :deep(.dp__input_clear) {
-  color: var(--color-base-content) !important;
+  color: var(--color-neutral) !important; /* 与其他input文字颜色一致 */
   right: 0.75rem !important; /* 调整清除按钮位置 */
   width: 1rem !important;
   height: 1rem !important;
+}
+
+/* CurrencySelector 样式 - 与普通input保持一致 */
+:deep(.currency-selector) {
+  margin-bottom: 0 !important; /* 移除外边距 */
+  display: block !important; /* 移除flex布局 */
+  width: 66% !important; /* 与form-control保持一致 */
+  background-color: transparent !important; /* 移除外层背景 */
+  border: none !important; /* 移除外层边框 */
+  padding: 0 !important; /* 移除外层内边距 */
+}
+
+:deep(.currency-selector__wrapper) {
+  display: block !important; /* 移除flex布局 */
+  width: 100% !important;
+  background-color: transparent !important; /* 移除包装器背景 */
+  border: none !important; /* 移除包装器边框 */
+  padding: 0 !important; /* 移除包装器内边距 */
+  margin: 0 !important; /* 移除包装器外边距 */
+}
+
+:deep(.currency-selector__select) {
+  background-color: var(--color-base-200) !important; /* 与其他input一致 */
+  border: 1px solid var(--color-base-300) !important; /* 与其他input一致 */
+  color: var(--color-neutral) !important; /* 与其他input文字颜色一致 */
+  border-radius: 6px !important;
+  padding: 0.5rem 0.75rem !important;
+  width: 100% !important;
+  margin: 0 !important;
+  box-sizing: border-box !important;
+}
+
+:deep(.currency-selector__select option) {
+  color: var(--color-neutral) !important; /* 选项文字颜色 */
+  background-color: var(--color-base-200) !important; /* 选项背景色 */
+}
+
+:deep(.currency-selector__select option:disabled) {
+  color: var(--color-neutral) !important; /* 禁用选项文字颜色 */
+}
+
+:deep(.currency-selector__select:focus) {
+  border-color: var(--color-primary) !important;
+  box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.2) !important;
+}
+
+:deep(.currency-selector__select:disabled) {
+  background-color: var(--color-base-300) !important;
+  color: var(--color-neutral) !important;
 }
 
 textarea.form-control { resize: vertical; }
