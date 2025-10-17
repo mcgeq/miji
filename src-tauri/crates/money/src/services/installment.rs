@@ -2,9 +2,9 @@ use std::sync::Arc;
 
 use chrono::{DateTime, FixedOffset};
 use common::{
-    crud::service::{CrudConverter, CrudService, GenericCrudService, LocalizableConverter},
+    crud::service::{CrudConverter, GenericCrudService, LocalizableConverter},
     error::{AppError, MijiResult},
-    paginations::{EmptyFilter, PagedQuery, PagedResult},
+    paginations::EmptyFilter,
     utils::{date::DateUtils, uuid::McgUuid},
 };
 use sea_orm::{
@@ -128,62 +128,6 @@ impl std::ops::Deref for InstallmentService {
 }
 
 impl InstallmentService {
-    // 基础 CRUD 操作
-    pub async fn installment_plan_get(
-        &self,
-        db: &DbConn,
-        id: String,
-    ) -> MijiResult<entity::installment_plans::Model> {
-        let model = self.get_by_id(db, id).await?;
-        self.converter().model_with_local(model).await
-    }
-
-    pub async fn installment_plan_create(
-        &self,
-        db: &DbConn,
-        data: InstallmentPlanCreate,
-    ) -> MijiResult<entity::installment_plans::Model> {
-        let model = self.create(db, data).await?;
-        self.converter().model_with_local(model).await
-    }
-
-    pub async fn installment_plan_update(
-        &self,
-        db: &DbConn,
-        id: String,
-        data: InstallmentPlanUpdate,
-    ) -> MijiResult<entity::installment_plans::Model> {
-        let model = self.update(db, id, data).await?;
-        self.converter().model_with_local(model).await
-    }
-
-    pub async fn installment_plan_delete(&self, db: &DbConn, id: String) -> MijiResult<()> {
-        self.delete(db, id).await
-    }
-
-    pub async fn installment_plan_list_paged(
-        &self,
-        db: &DbConn,
-        query: PagedQuery<InstallmentFilter>,
-    ) -> MijiResult<PagedResult<entity::installment_plans::Model>> {
-        self.list_paged(db, query)
-            .await?
-            .map_async(|rows| self.converter().localize_models(rows))
-            .await
-    }
-
-    pub async fn installment_plan_list(
-        &self,
-        db: &DbConn,
-    ) -> MijiResult<Vec<entity::installment_plans::Model>> {
-        let models = self.list(db).await?;
-        let mut local_models = Vec::with_capacity(models.len());
-        for model in models {
-            local_models.push(self.converter().model_with_local(model).await?);
-        }
-        Ok(local_models)
-    }
-
     // 业务逻辑方法
     /// 创建分期付款计划（包含分期明细）
     pub async fn create_installment_plan_with_details(

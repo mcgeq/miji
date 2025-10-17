@@ -360,7 +360,8 @@ pub struct CreateTransactionRequest {
     pub is_installment: Option<bool>,
     pub total_periods: Option<i32>,
     pub remaining_periods: Option<i32>,
-    pub installment_plan_serial_num: Option<String>,
+    pub installment_amount: Option<Decimal>,
+    pub installment_plan_details: Option<serde_json::Value>,
 }
 
 impl TryFrom<CreateTransactionRequest> for entity::transactions::ActiveModel {
@@ -368,6 +369,7 @@ impl TryFrom<CreateTransactionRequest> for entity::transactions::ActiveModel {
     fn try_from(value: CreateTransactionRequest) -> Result<Self, Self::Error> {
         value.validate()?;
         let serial_num = McgUuid::uuid(38);
+        let installment_plan_serial_num = McgUuid::uuid(38);
 
         // 获取当前时间
         let now = DateUtils::local_now();
@@ -406,7 +408,7 @@ impl TryFrom<CreateTransactionRequest> for entity::transactions::ActiveModel {
             is_installment: Set(value.is_installment),
             total_periods: Set(value.total_periods),
             remaining_periods: Set(value.remaining_periods),
-            installment_plan_serial_num: Set(value.installment_plan_serial_num),
+            installment_plan_serial_num: Set(Some(installment_plan_serial_num)),
         })
     }
 }

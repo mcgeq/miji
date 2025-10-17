@@ -67,7 +67,6 @@ export const TransactionCreateSchema = TransactionSchema.pick({
   remainingPeriods: true,
   installmentAmount: true,
   firstDueDate: true,
-  installmentPlanSerialNum: true,
 })
   .extend({
     currency: z.string().length(3),

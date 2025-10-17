@@ -386,9 +386,8 @@ function emitTransaction(amount: number) {
     isInstallment: form.value.isInstallment,
     totalPeriods: form.value.totalPeriods,
     remainingPeriods: form.value.remainingPeriods,
-    installmentAmount: form.value.installmentAmount,
+    installmentAmount: amount,
     firstDueDate: form.value.firstDueDate,
-    installmentPlanSerialNum: form.value.installmentPlanSerialNum,
   };
 
   if (props.transaction) {

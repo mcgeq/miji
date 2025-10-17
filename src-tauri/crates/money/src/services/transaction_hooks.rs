@@ -19,6 +19,7 @@ use crate::{
     },
     error::MoneyError,
 };
+use tracing::info;
 
 #[derive(Debug)]
 pub struct NoOpHooks;
@@ -51,6 +52,16 @@ impl Hooks<entity::transactions::Entity, CreateTransactionRequest, UpdateTransac
         tx: &DatabaseTransaction,
         model: &entity::transactions::Model,
     ) -> MijiResult<()> {
+        if model.is_installment.unwrap() {
+            info!("is_installment {}", model.is_installment.unwrap());
+            info!(
+                "installment_plan_serial_num {:?}",
+                &model.installment_plan_serial_num
+            );
+            info!("total period {:?}", model.total_periods);
+            info!("remaining_periods {:?}", model.remaining_periods);
+            info!("installment amount {:?}", model.amount);
+        }
         // Only not transfer
         if model.category != "Transfer" {
             let transaction_type = TransactionType::from_str(&model.transaction_type)?;

@@ -673,7 +673,8 @@ impl TransactionService {
             is_installment: None,
             total_periods: None,
             remaining_periods: None,
-            installment_plan_serial_num: None,
+            installment_amount: None,
+            installment_plan_details: None,
         };
 
         let to_request = CreateTransactionRequest {
@@ -702,7 +703,8 @@ impl TransactionService {
             is_installment: None,
             total_periods: None,
             remaining_periods: None,
-            installment_plan_serial_num: None,
+            installment_amount: None,
+            installment_plan_details: None,
         };
 
         Ok((from_request, to_request))
@@ -785,7 +787,8 @@ impl TransactionService {
             is_installment: None,
             total_periods: None,
             remaining_periods: None,
-            installment_plan_serial_num: None,
+            installment_amount: None,
+            installment_plan_details: None,
         };
 
         let reverse_in_request = CreateTransactionRequest {
@@ -817,7 +820,8 @@ impl TransactionService {
             is_installment: None,
             total_periods: None,
             remaining_periods: None,
-            installment_plan_serial_num: None,
+            installment_amount: None,
+            installment_plan_details: None,
         };
 
         (reverse_out_request, reverse_in_request)
@@ -2140,7 +2144,8 @@ impl TransactionService {
                     is_installment: Some(false),
                     total_periods: None,
                     remaining_periods: None,
-                    installment_plan_serial_num: None,
+                    installment_amount: Some(Decimal::ZERO),
+                    installment_plan_details: Some(serde_json::Value::Null),
                 };
 
                 let reverse_model: entity::transactions::ActiveModel = reverse_data.try_into()?;
