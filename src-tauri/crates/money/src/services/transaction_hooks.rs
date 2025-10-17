@@ -61,28 +61,29 @@ impl Hooks<entity::transactions::Entity, CreateTransactionRequest, UpdateTransac
             info!("total period {:?}", model.total_periods);
             info!("remaining_periods {:?}", model.remaining_periods);
             info!("installment amount {:?}", model.amount);
-        }
-        // Only not transfer
-        if model.category != "Transfer" {
-            let transaction_type = TransactionType::from_str(&model.transaction_type)?;
-            update_account_balance(
-                tx,
-                &model.account_serial_num,
-                transaction_type,
-                model.amount,
-                false,
-            )
-            .await?;
-        }
-        if model.transaction_type == "Expense" {
-            update_budget_used(
-                tx,
-                &model.account_serial_num,
-                model.date,
-                model.amount,
-                true,
-            )
-            .await?;
+        } else {
+            // Only not transfer
+            if model.category != "Transfer" {
+                let transaction_type = TransactionType::from_str(&model.transaction_type)?;
+                update_account_balance(
+                    tx,
+                    &model.account_serial_num,
+                    transaction_type,
+                    model.amount,
+                    false,
+                )
+                .await?;
+            }
+            if model.transaction_type == "Expense" {
+                update_budget_used(
+                    tx,
+                    &model.account_serial_num,
+                    model.date,
+                    model.amount,
+                    true,
+                )
+                .await?;
+            }
         }
         Ok(())
     }

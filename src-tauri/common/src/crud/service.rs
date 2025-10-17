@@ -128,7 +128,7 @@ where
 }
 
 /// 本地化转换器 trait - 用于统一模型本地化逻辑
-/// 
+///
 /// 用于将数据库模型转换为本地时区，避免每个 Converter 重复实现相同的逻辑
 #[async_trait]
 pub trait LocalizableConverter<Model>
@@ -140,9 +140,7 @@ where
 
     /// 批量将模型转换为本地时区（默认使用并行处理以提高性能）
     async fn localize_models(&self, models: Vec<Model>) -> MijiResult<Vec<Model>> {
-        futures::future::try_join_all(
-            models.into_iter().map(|m| self.model_with_local(m))
-        ).await
+        futures::future::try_join_all(models.into_iter().map(|m| self.model_with_local(m))).await
     }
 }
 
@@ -372,7 +370,6 @@ where
         db: &DbConn,
         query: PagedQuery<F>,
     ) -> MijiResult<PagedResult<E::Model>> {
-        info!("list_paged start Query {:?}", query);
         // 验证查询参数
         self.validate_paged_query(&query)?;
 
@@ -382,7 +379,6 @@ where
         // 应用过滤条件
         query_builder = query_builder.filter(query.filter.to_condition());
 
-        info!("Before sort_options query_builder {:?}", query_builder);
         // 应用排序
         query_builder = query.sort_options.apply_sort(query_builder);
         info!("After sort_options query_builder {:?}", query_builder);

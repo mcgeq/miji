@@ -2,7 +2,7 @@ use sea_orm::sea_query::Expr;
 use sea_orm::{ColumnTrait, Condition, EntityTrait, Iterable, Order, QueryOrder, Select};
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
-use tracing::{error, info, warn};
+use tracing::{error, warn};
 use validator::Validate;
 
 use crate::crud::service::sanitize_input;
@@ -72,7 +72,6 @@ where
     E::Column: ColumnTrait + FromStr,
 {
     fn apply_sort(&self, query: Select<E>) -> Select<E> {
-        info!("Applying sort options: {:?}", self);
         if let Some(order_by) = &self.custom_order_by {
             let direction = self.effective_sort_direction();
             return query.order_by(Expr::cust(order_by), direction);

@@ -49,7 +49,8 @@ const trans = props.transaction || getDefaultTransaction(props.type, props.accou
 
 const form = ref<Transaction>({
   ...trans,
-  amount: trans.amount || 0,
+  // 确保 amount 是数字类型
+  amount: typeof trans.amount === 'string' ? Number.parseFloat(trans.amount) : (trans.amount || 0),
   currency: trans.currency || CURRENCY_CNY,
   category: props.type === TransactionTypeSchema.enum.Transfer ? 'Transfer' : 'other',
   refundAmount: 0,
@@ -99,6 +100,12 @@ const isTransferReadonly = computed(() => {
 const isEditabled = computed<boolean>(() => !!props.transaction);
 const isDisabled = computed<boolean>(() => isTransferReadonly.value || isEditabled.value);
 
+// 安全的数字格式化函数
+function safeToFixed(value: any, decimals: number = 2): string {
+  const numValue = typeof value === 'string' ? Number.parseFloat(value) : value;
+  return Number.isNaN(numValue) ? '0.00' : numValue.toFixed(decimals);
+}
+
 // 计算分期金额，处理小数精度问题
 function calculateInstallmentAmount(totalAmount: number, totalPeriods: number): number {
   // 计算每期基础金额（向上取整到2位小数）
@@ -143,14 +150,14 @@ const installmentDetails = computed(() => {
       const lastAmount = totalAmount - firstNMinusOneAmount;
       details.push({
         period: i,
-        amount: Number(lastAmount.toFixed(2)),
+        amount: Number(safeToFixed(lastAmount)),
         dueDate: dueDate.toISOString().split('T')[0], // 格式化为 YYYY-MM-DD
       });
     } else {
       // 前n-1期
       details.push({
         period: i,
-        amount: Number(baseAmount.toFixed(2)),
+        amount: Number(safeToFixed(baseAmount)),
         dueDate: dueDate.toISOString().split('T')[0], // 格式化为 YYYY-MM-DD
       });
     }
@@ -489,6 +496,8 @@ watch(
       form.value = {
         ...getDefaultTransaction(props.type, props.accounts),
         ...transaction,
+        // 确保 amount 是数字类型
+        amount: typeof transaction.amount === 'string' ? Number.parseFloat(transaction.amount) : transaction.amount,
         currency: transaction.currency || CURRENCY_CNY,
         subCategory: transaction.subCategory || 'other',
         toAccountSerialNum: transaction.toAccountSerialNum || null,
@@ -681,7 +690,7 @@ watch(
           <div class="form-row">
             <label>{{ t('financial.transaction.installmentAmount') }}</label>
             <input
-              :value="calculatedInstallmentAmount.toFixed(2)"
+              :value="safeToFixed(calculatedInstallmentAmount)"
               type="text"
               readonly
               class="form-control"
@@ -731,13 +740,13 @@ watch(
                   <span class="period-label">{{ t('financial.transaction.period', { period: detail.period }) }}</span>
                   <span class="due-date">{{ detail.dueDate }}</span>
                 </div>
-                <span class="amount-label">¥{{ detail.amount.toFixed(2) }}</span>
+                <span class="amount-label">¥{{ safeToFixed(detail.amount) }}</span>
               </div>
             </div>
 
             <div class="plan-summary">
               <div class="total-amount">
-                <strong>{{ t('financial.transaction.totalAmount') }}: ¥{{ form.amount.toFixed(2) }}</strong>
+                <strong>{{ t('financial.transaction.totalAmount') }}: ¥{{ safeToFixed(form.amount) }}</strong>
                 <button
                   v-if="hasMorePeriods"
                   type="button"
