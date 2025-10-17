@@ -361,7 +361,7 @@ pub struct CreateTransactionRequest {
     pub total_periods: Option<i32>,
     pub remaining_periods: Option<i32>,
     pub installment_amount: Option<Decimal>,
-    pub installment_plan_details: Option<serde_json::Value>,
+    pub first_due_date: Option<NaiveDate>,
 }
 
 impl TryFrom<CreateTransactionRequest> for entity::transactions::ActiveModel {
@@ -463,7 +463,7 @@ pub struct UpdateTransactionRequest {
     pub is_installment: Option<bool>,
     pub total_periods: Option<i32>,
     pub remaining_periods: Option<i32>,
-    pub installment_plan_id: Option<String>,
+    pub installment_plan_serial_num: Option<String>,
 }
 
 impl TryFrom<UpdateTransactionRequest> for entity::transactions::ActiveModel {
@@ -543,7 +543,7 @@ impl TryFrom<UpdateTransactionRequest> for entity::transactions::ActiveModel {
         if let Some(remaining_periods) = value.remaining_periods {
             model.remaining_periods = Set(Some(remaining_periods));
         }
-        if let Some(installment_plan_id) = value.installment_plan_id {
+        if let Some(installment_plan_id) = value.installment_plan_serial_num {
             model.installment_plan_serial_num = Set(Some(installment_plan_id));
         }
 
@@ -619,7 +619,7 @@ pub struct TransactionResponse {
     pub is_installment: Option<bool>,
     pub total_periods: Option<i32>,
     pub remaining_periods: Option<i32>,
-    pub installment_plan_id: Option<String>,
+    pub installment_plan_serial_num: Option<String>,
 }
 
 impl From<TransactionWithRelations> for TransactionResponse {
@@ -680,7 +680,7 @@ impl From<TransactionWithRelations> for TransactionResponse {
             is_installment: trans.is_installment,
             total_periods: trans.total_periods,
             remaining_periods: trans.remaining_periods,
-            installment_plan_id: trans.installment_plan_serial_num,
+            installment_plan_serial_num: trans.installment_plan_serial_num,
         }
     }
 }

@@ -417,7 +417,7 @@ function emitTransaction(amount: number) {
     totalPeriods: form.value.totalPeriods,
     remainingPeriods: form.value.remainingPeriods,
     installmentAmount: amount,
-    firstDueDate: form.value.firstDueDate,
+    firstDueDate: form.value.firstDueDate ? form.value.firstDueDate : undefined,
   };
 
   if (props.transaction) {

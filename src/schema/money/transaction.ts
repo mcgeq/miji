@@ -39,7 +39,7 @@ export const TransactionSchema = z.object({
   totalPeriods: z.number().optional().default(0),
   remainingPeriods: z.number().optional().default(0),
   installmentAmount: z.number().optional().default(0),
-  firstDueDate: z.string().optional().default(''),
+  firstDueDate: z.string().optional().optional().nullable(),
   installmentPlanSerialNum: z.string().optional().nullable(),
 });
 
