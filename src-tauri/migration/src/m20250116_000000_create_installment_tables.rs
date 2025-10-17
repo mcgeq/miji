@@ -158,7 +158,10 @@ impl MigrationTrait for Migration {
                     .foreign_key(
                         ForeignKey::create()
                             .name("fk_installment_details_account_id")
-                            .from(InstallmentDetails::Table, InstallmentDetails::AccountSerialNum)
+                            .from(
+                                InstallmentDetails::Table,
+                                InstallmentDetails::AccountSerialNum,
+                            )
                             .to(Account::Table, Account::SerialNum)
                             .on_delete(ForeignKeyAction::Cascade),
                     )

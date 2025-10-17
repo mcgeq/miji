@@ -275,7 +275,7 @@ async fn start_transaction_scheduler(app: AppHandle) {
         let installment_service = money::services::installment::get_installment_service();
 
         match installment_service
-            .process_transactions_installment_period(&db)
+            .auto_process_due_installments(&db)
             .await
         {
             Ok(processed_transactions) => {

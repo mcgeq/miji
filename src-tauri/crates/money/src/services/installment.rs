@@ -1,7 +1,7 @@
 use std::str::FromStr;
 use std::sync::Arc;
 
-use chrono::{DateTime, Datelike, FixedOffset, NaiveDate};
+use chrono::{Datelike, NaiveDate};
 use common::{
     BusinessCode,
     crud::service::{CrudConverter, GenericCrudService, LocalizableConverter},
@@ -135,13 +135,12 @@ impl std::ops::Deref for InstallmentService {
 
 impl InstallmentService {
     // 业务逻辑方法
-    /// 创建分期付款计划（包含分期明细）
+    /// 在现有事务中创建分期付款计划（包含分期明细）
     pub async fn create_installment_plan_with_details(
         &self,
-        db: &DatabaseConnection,
+        tx: &sea_orm::DatabaseTransaction,
         request: InstallmentPlanCreate,
     ) -> MijiResult<InstallmentPlanResponse> {
-        let tx = db.begin().await?;
         let now = DateUtils::local_now();
         // 1. 创建分期计划
         let plan = installment_plans::ActiveModel {
@@ -157,7 +156,7 @@ impl InstallmentService {
             updated_at: Set(Some(now)),
         };
 
-        let plan_model = plan.insert(&tx).await?;
+        let plan_model = plan.insert(tx).await?;
         let installment_details_c = InstallmentCalculationRequest {
             total_amount: request.total_amount,
             total_periods: request.total_periods,
@@ -187,16 +186,14 @@ impl InstallmentService {
             .collect();
 
         installment_details::Entity::insert_many(detail_models)
-            .exec(&tx)
+            .exec(tx)
             .await?;
-
-        tx.commit().await?;
 
         // 3. 查询插入的分期明细并构建响应
         let details = installment_details::Entity::find()
             .filter(installment_details::Column::PlanSerialNum.eq(&request.serial_num))
             .order_by_asc(installment_details::Column::PeriodNumber)
-            .all(db)
+            .all(tx)
             .await?;
 
         let detail_responses: Vec<InstallmentDetailResponse> = details
@@ -356,11 +353,7 @@ impl InstallmentService {
     }
 
     /// 计算还款日期
-    fn calculate_due_date(
-        &self,
-        first_due_date: DateTime<FixedOffset>,
-        period: i32,
-    ) -> MijiResult<DateTime<FixedOffset>> {
+    fn calculate_due_date(&self, first_due_date: NaiveDate, period: i32) -> MijiResult<NaiveDate> {
         if period == 1 {
             return Ok(first_due_date);
         }
@@ -369,7 +362,7 @@ impl InstallmentService {
         let months_to_add = period - 1;
 
         // 使用chrono的内置方法进行月份计算
-        let mut current_date = first_due_date.date_naive();
+        let mut current_date = first_due_date;
 
         for _ in 0..months_to_add {
             // 获取当前日期的年月日
@@ -408,68 +401,155 @@ impl InstallmentService {
                 })?;
         }
 
-        // 构建新的日期时间，保持原始时间
-        let new_datetime = current_date
-            .and_time(first_due_date.time())
-            .and_local_timezone(first_due_date.timezone())
-            .single()
-            .ok_or_else(|| {
-                AppError::simple(common::BusinessCode::InvalidParameter, "Invalid timezone")
-            })?;
-
-        Ok(new_datetime)
+        Ok(current_date)
     }
 
-    /// 处理定时任务：处理到期的未来交易
-    pub async fn process_transactions_installment_period(
+    /// 自动处理到期的分期付款：获取最小期数的未完成分期明细进行记账
+    pub async fn auto_process_due_installments(
         &self,
         db: &DatabaseConnection,
     ) -> MijiResult<Vec<entity::transactions::Model>> {
-        let tx = db.begin().await?;
         let now = DateUtils::local_now();
 
-        // 查询所有待处理的未来交易
-        let pending_transactions = entity::transactions::Entity::find()
-            .filter(transactions::Column::TransactionStatus.eq("Pending"))
-            .filter(transactions::Column::Date.lte(now))
-            .filter(transactions::Column::IsDeleted.eq(false))
-            .all(&tx)
+        // 1. 查询所有未完成的分期明细，按分期计划分组，获取每组的最小期数
+        let pending_installment_details = installment_details::Entity::find()
+            .filter(
+                installment_details::Column::Status
+                    .eq(InstallmentDetailStatus::Pending.to_string()),
+            )
+            .filter(installment_details::Column::DueDate.lte(now))
+            .order_by_asc(installment_details::Column::PlanSerialNum)
+            .order_by_asc(installment_details::Column::PeriodNumber)
+            .all(db)
             .await?;
 
-        let mut processed_transactions = Vec::new();
-        let mut parent_serial_nums = std::collections::HashSet::new();
-
-        for transaction in pending_transactions {
-            // 更新交易状态为已完成
-            let mut transaction_active = transaction.into_active_model();
-            transaction_active.transaction_status = Set("Completed".to_string());
-            transaction_active.updated_at = Set(Some(now));
-
-            let updated_transaction = transaction_active.update(&tx).await?;
-
-            // 更新账户余额
-            self.update_account_balance_for_transaction(&tx, &updated_transaction)
-                .await?;
-
-            // 如果是分期交易，记录父交易编号
-            if let Some(ref parent_serial_num) = updated_transaction.related_transaction_serial_num
-            {
-                parent_serial_nums.insert(parent_serial_num.clone());
-            }
-
-            processed_transactions.push(updated_transaction);
+        if pending_installment_details.is_empty() {
+            return Ok(Vec::new());
         }
 
-        tx.commit().await?;
-
-        // 检查并更新分期付款的父交易状态
-        for parent_serial_num in parent_serial_nums {
-            if let Err(e) = self
-                .update_installment_parent_status(db, &parent_serial_num)
-                .await
-            {
-                tracing::error!("更新分期付款父交易状态失败: {}", e);
+        // 2. 按分期计划分组，获取每组的最小期数明细
+        let mut plan_min_periods = std::collections::HashMap::new();
+        for detail in &pending_installment_details {
+            let plan_serial_num = &detail.plan_serial_num;
+            if !plan_min_periods.contains_key(plan_serial_num) {
+                plan_min_periods.insert(plan_serial_num.clone(), detail.clone());
             }
+        }
+
+        let mut processed_transactions = Vec::new();
+
+        // 3. 处理每个分期计划的最小期数明细
+        let paid_date_now = DateUtils::local_now_naivedate();
+        for (plan_serial_num, detail) in plan_min_periods {
+            // 获取分期计划信息
+            let plan = installment_plans::Entity::find_by_id(&plan_serial_num)
+                .one(db)
+                .await?
+                .ok_or_else(|| AppError::simple(BusinessCode::NotFound, "分期计划不存在"))?;
+
+            // 获取关联的交易信息
+            let transaction = transactions::Entity::find_by_id(&plan.transaction_serial_num)
+                .one(db)
+                .await?
+                .ok_or_else(|| AppError::simple(BusinessCode::NotFound, "关联交易不存在"))?;
+
+            // 4. 在单个事务中处理所有操作
+            let tx = db.begin().await?;
+
+            // 创建支出交易记录（手动调用 hooks 逻辑）
+            let expense_transaction = CreateTransactionRequest {
+                transaction_type: TransactionType::Expense,
+                transaction_status: TransactionStatus::Completed,
+                date: now,
+                amount: detail.amount,
+                currency: transaction.currency.clone(),
+                description: format!(
+                    "分期付款第{}期 - {}",
+                    detail.period_number, transaction.description
+                ),
+                notes: Some(format!(
+                    "分期计划: {}, 第{}/{}期",
+                    plan_serial_num, detail.period_number, plan.total_periods
+                )),
+                account_serial_num: detail.account_serial_num.clone(),
+                to_account_serial_num: None,
+                category: transaction.category.clone(),
+                sub_category: transaction.sub_category.clone(),
+                tags: None,
+                split_members: None,
+                payment_method: PaymentMethod::from_str(&transaction.payment_method).map_err(
+                    |e| {
+                        AppError::simple(
+                            BusinessCode::InvalidParameter,
+                            format!("无效的支付方式: {e}"),
+                        )
+                    },
+                )?,
+                actual_payer_account: AccountType::from_str(&transaction.actual_payer_account)
+                    .map_err(|e| {
+                        AppError::simple(
+                            BusinessCode::InvalidParameter,
+                            format!("无效的账户类型: {e}"),
+                        )
+                    })?,
+                related_transaction_serial_num: Some(transaction.serial_num.clone()),
+                is_installment: Some(false),
+                first_due_date: None,
+                total_periods: None,
+                remaining_periods_amount: None,
+                remaining_periods: None,
+                installment_amount: None,
+            };
+
+            // 手动调用 before_create hooks
+            self.call_before_create_hooks(&tx, &expense_transaction)
+                .await?;
+
+            // 创建交易记录
+            let transaction_model: entity::transactions::ActiveModel =
+                expense_transaction.try_into()?;
+            let created_transaction = transaction_model.insert(&tx).await?;
+            processed_transactions.push(created_transaction.clone());
+
+            // 手动调用 after_create hooks（更新账户余额）
+            self.call_after_create_hooks(&tx, &created_transaction)
+                .await?;
+
+            // 5. 更新分期明细状态为已支付
+            let mut detail_active = detail.clone().into_active_model();
+            detail_active.status = Set(InstallmentDetailStatus::Paid.to_string());
+            detail_active.paid_date = Set(Some(paid_date_now));
+            detail_active.paid_amount = Set(Some(detail.amount));
+            detail_active.updated_at = Set(Some(now));
+            detail_active.update(&tx).await?;
+
+            // 6. 更新交易记录的剩余期数和金额
+            let mut transaction_active = transaction.clone().into_active_model();
+            let current_remaining = transaction.remaining_periods.unwrap_or(plan.total_periods);
+            let new_remaining = current_remaining - 1;
+            let current_remaining_amount = transaction
+                .remaining_periods_amount
+                .unwrap_or(plan.total_amount);
+            let new_remaining_amount = current_remaining_amount - detail.amount;
+
+            transaction_active.remaining_periods = Set(Some(new_remaining));
+            transaction_active.remaining_periods_amount = Set(Some(new_remaining_amount));
+            transaction_active.updated_at = Set(Some(now));
+
+            // 7. 检查是否为最后一期
+            if new_remaining == 0 {
+                // 更新交易状态为已完成
+                transaction_active.transaction_status = Set("Completed".to_string());
+
+                // 更新分期计划状态为已完成
+                let mut plan_active = plan.into_active_model();
+                plan_active.status = Set(InstallmentStatus::Completed.to_string());
+                plan_active.updated_at = Set(Some(now));
+                plan_active.update(&tx).await?;
+            }
+
+            transaction_active.update(&tx).await?;
+            tx.commit().await?;
         }
 
         Ok(processed_transactions)
@@ -629,6 +709,34 @@ impl InstallmentService {
 
         tx.commit().await?;
         Ok(reversed_transactions)
+    }
+
+    /// 手动调用 before_create hooks
+    async fn call_before_create_hooks(
+        &self,
+        tx: &sea_orm::DatabaseTransaction,
+        data: &CreateTransactionRequest,
+    ) -> MijiResult<()> {
+        use crate::services::transaction_hooks::NoOpHooks;
+        use common::crud::hooks::Hooks;
+
+        let hooks = NoOpHooks;
+        hooks.before_create(tx, data).await?;
+        Ok(())
+    }
+
+    /// 手动调用 after_create hooks
+    async fn call_after_create_hooks(
+        &self,
+        tx: &sea_orm::DatabaseTransaction,
+        model: &entity::transactions::Model,
+    ) -> MijiResult<()> {
+        use crate::services::transaction_hooks::NoOpHooks;
+        use common::crud::hooks::Hooks;
+
+        let hooks = NoOpHooks;
+        hooks.after_create(tx, model).await?;
+        Ok(())
     }
 
     /// 更新账户余额（内部方法）

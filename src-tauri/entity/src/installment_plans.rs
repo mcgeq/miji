@@ -13,7 +13,7 @@ pub struct Model {
     pub total_periods: i32,
     #[sea_orm(column_type = "Decimal(Some((15, 2)))")]
     pub installment_amount: Decimal,
-    pub first_due_date: DateTimeWithTimeZone,
+    pub first_due_date: Date,
     pub status: String,
     pub created_at: DateTimeWithTimeZone,
     pub updated_at: Option<DateTimeWithTimeZone>,

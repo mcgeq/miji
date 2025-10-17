@@ -8,12 +8,12 @@ pub struct Model {
     pub serial_num: String,
     pub plan_serial_num: String,
     pub period_number: i32,
-    pub due_date: DateTimeWithTimeZone,
+    pub due_date: Date,
     #[sea_orm(column_type = "Decimal(Some((15, 2)))")]
     pub amount: Decimal,
     pub account_serial_num: String,
     pub status: String,
-    pub paid_date: Option<DateTimeWithTimeZone>,
+    pub paid_date: Option<Date>,
     #[sea_orm(column_type = "Decimal(Some((15, 2)))", nullable)]
     pub paid_amount: Option<Decimal>,
     pub created_at: DateTimeWithTimeZone,

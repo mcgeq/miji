@@ -1,4 +1,4 @@
-use chrono::{DateTime, FixedOffset};
+use chrono::{DateTime, FixedOffset, NaiveDate};
 use common::utils::date::DateUtils;
 use common::utils::uuid::McgUuid;
 use sea_orm::Set;
@@ -20,7 +20,7 @@ pub struct InstallmentPlanCreate {
     pub total_periods: i32,
     #[validate(custom(function = "validate_positive_amount"))]
     pub installment_amount: Decimal,
-    pub first_due_date: DateTime<FixedOffset>,
+    pub first_due_date: NaiveDate,
 }
 
 /// 分期付款计划更新请求
@@ -37,7 +37,7 @@ pub struct InstallmentPlanResponse {
     pub total_amount: Decimal,
     pub total_periods: i32,
     pub installment_amount: Decimal,
-    pub first_due_date: DateTime<FixedOffset>,
+    pub first_due_date: NaiveDate,
     pub status: String,
     pub created_at: DateTime<FixedOffset>,
     pub updated_at: Option<DateTime<FixedOffset>>,
@@ -53,7 +53,7 @@ pub struct InstallmentDetailCreate {
     pub account_serial_num: String,
     #[validate(range(min = 1, message = "period_number must be greater than zero"))]
     pub period_number: i32,
-    pub due_date: DateTime<FixedOffset>,
+    pub due_date: NaiveDate,
     #[validate(custom(function = "validate_positive_amount"))]
     pub amount: Decimal,
 }
@@ -62,7 +62,7 @@ pub struct InstallmentDetailCreate {
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 pub struct InstallmentDetailUpdate {
     pub status: Option<String>,
-    pub paid_date: Option<DateTime<FixedOffset>>,
+    pub paid_date: Option<NaiveDate>,
     #[validate(custom(function = "validate_positive_amount"))]
     pub paid_amount: Option<Decimal>,
 }
@@ -73,10 +73,10 @@ pub struct InstallmentDetailResponse {
     pub serial_num: String,
     pub plan_serial_num: String,
     pub period_number: i32,
-    pub due_date: DateTime<FixedOffset>,
+    pub due_date: NaiveDate,
     pub amount: Decimal,
     pub status: String,
-    pub paid_date: Option<DateTime<FixedOffset>>,
+    pub paid_date: Option<NaiveDate>,
     pub paid_amount: Option<Decimal>,
     pub created_at: DateTime<FixedOffset>,
     pub updated_at: Option<DateTime<FixedOffset>>,
@@ -89,7 +89,7 @@ pub struct PayInstallmentCreate {
     pub detail_serial_num: String,
     #[validate(custom(function = "validate_positive_amount"))]
     pub paid_amount: Decimal,
-    pub paid_date: Option<DateTime<FixedOffset>>,
+    pub paid_date: Option<NaiveDate>,
 }
 
 /// 分期付款计划查询请求
@@ -106,8 +106,8 @@ pub struct InstallmentPlanQuery {
 pub struct InstallmentDetailQuery {
     pub plan_serial_num: Option<String>,
     pub status: Option<String>,
-    pub due_date_from: Option<DateTime<FixedOffset>>,
-    pub due_date_to: Option<DateTime<FixedOffset>>,
+    pub due_date_from: Option<NaiveDate>,
+    pub due_date_to: Option<NaiveDate>,
 }
 
 /// 分期金额计算请求
@@ -117,7 +117,7 @@ pub struct InstallmentCalculationRequest {
     pub total_amount: Decimal,
     #[validate(range(min = 1, message = "total_periods must be greater than zero"))]
     pub total_periods: i32,
-    pub first_due_date: DateTime<FixedOffset>,
+    pub first_due_date: NaiveDate,
 }
 
 /// 分期金额计算响应
@@ -132,7 +132,7 @@ pub struct InstallmentCalculationResponse {
 pub struct InstallmentCalculationDetail {
     pub period: i32,
     pub amount: Decimal,
-    pub due_date: DateTime<FixedOffset>,
+    pub due_date: NaiveDate,
 }
 
 /// 分期付款状态

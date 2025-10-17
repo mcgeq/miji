@@ -18,7 +18,7 @@ use crate::{
         family_member::FamilyMemberResponse,
         installment::{
             InstallmentCalculationRequest, InstallmentCalculationResponse,
-            InstallmentDetailResponse, InstallmentPlanCreate, InstallmentPlanResponse,
+            InstallmentDetailResponse, InstallmentPlanResponse,
         },
         sub_categories::{SubCategory, SubCategoryCreate, SubCategoryUpdate},
         transactions::{
@@ -50,20 +50,6 @@ pub async fn installment_plan_get(
     let service = get_installment_service();
     Ok(ApiResponse::from_result(
         service.get_installment_plan(&state.db, &plan_id).await,
-    ))
-}
-
-// 创建分期付款计划
-#[tauri::command]
-pub async fn installment_plan_create(
-    state: State<'_, AppState>,
-    data: InstallmentPlanCreate,
-) -> Result<ApiResponse<InstallmentPlanResponse>, String> {
-    let service = get_installment_service();
-    Ok(ApiResponse::from_result(
-        service
-            .create_installment_plan_with_details(&state.db, data)
-            .await,
     ))
 }
 

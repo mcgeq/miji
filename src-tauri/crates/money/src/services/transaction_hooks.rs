@@ -14,12 +14,15 @@ use sea_orm::{
 use snafu::GenerateImplicitData;
 
 use crate::{
-    dto::transactions::{
-        CreateTransactionRequest, TransactionStatus, TransactionType, UpdateTransactionRequest,
+    dto::{
+        installment::InstallmentPlanCreate,
+        transactions::{
+            CreateTransactionRequest, TransactionStatus, TransactionType, UpdateTransactionRequest,
+        },
     },
     error::MoneyError,
+    services::installment::get_installment_service,
 };
-use tracing::info;
 
 #[derive(Debug)]
 pub struct NoOpHooks;
@@ -53,14 +56,19 @@ impl Hooks<entity::transactions::Entity, CreateTransactionRequest, UpdateTransac
         model: &entity::transactions::Model,
     ) -> MijiResult<()> {
         if model.is_installment.unwrap() {
-            info!("is_installment {}", model.is_installment.unwrap());
-            info!(
-                "installment_plan_serial_num {:?}",
-                &model.installment_plan_serial_num
-            );
-            info!("total period {:?}", model.total_periods);
-            info!("remaining_periods {:?}", model.remaining_periods);
-            info!("installment amount {:?}", model.amount);
+            let installment_plan_request = InstallmentPlanCreate {
+                serial_num: model.installment_plan_serial_num.clone().unwrap(),
+                transaction_serial_num: model.serial_num.clone(),
+                account_serial_num: model.account_serial_num.clone(),
+                total_amount: model.installment_amount.unwrap(),
+                total_periods: model.total_periods.unwrap(),
+                installment_amount: model.installment_amount.unwrap(),
+                first_due_date: model.first_due_date.unwrap(),
+            };
+            let installment_service = get_installment_service();
+            installment_service
+                .create_installment_plan_with_details(tx, installment_plan_request)
+                .await?;
         } else {
             // Only not transfer
             if model.category != "Transfer" {
