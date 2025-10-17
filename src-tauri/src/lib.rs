@@ -265,16 +265,19 @@ fn setup_window_close_handler(app: &AppHandle) -> Result<(), Box<dyn std::error:
 /// 启动交易定时任务
 async fn start_transaction_scheduler(app: AppHandle) {
     let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(60)); // 每分钟检查一次
-    
+
     loop {
         interval.tick().await;
-        
+
         // 处理到期的未来交易
         let app_state = app.state::<AppState>();
         let db = app_state.db.clone();
-        let transaction_service = money::services::transaction::get_transaction_service();
-        
-        match transaction_service.process_pending_transactions(&db).await {
+        let installment_service = money::services::installment::get_installment_service();
+
+        match installment_service
+            .process_transactions_installment_period(&db)
+            .await
+        {
             Ok(processed_transactions) => {
                 if !processed_transactions.is_empty() {
                     log::info!("处理了 {} 笔到期交易", processed_transactions.len());

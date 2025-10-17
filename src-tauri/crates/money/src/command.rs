@@ -17,8 +17,8 @@ use crate::{
         currency::{CreateCurrencyRequest, CurrencyResponse, UpdateCurrencyRequest},
         family_member::FamilyMemberResponse,
         installment::{
-            InstallmentCalculationRequest, InstallmentCalculationResponse, InstallmentDetailResponse, 
-            InstallmentPlanCreate, InstallmentPlanResponse, PayInstallmentCreate,
+            InstallmentCalculationRequest, InstallmentCalculationResponse,
+            InstallmentDetailResponse, InstallmentPlanCreate, InstallmentPlanResponse,
         },
         sub_categories::{SubCategory, SubCategoryCreate, SubCategoryUpdate},
         transactions::{
@@ -81,18 +81,6 @@ pub async fn installment_plan_list(
     ))
 }
 
-// 处理分期还款
-#[tauri::command]
-pub async fn installment_pay(
-    state: State<'_, AppState>,
-    data: PayInstallmentCreate,
-) -> Result<ApiResponse<InstallmentDetailResponse>, String> {
-    let service = get_installment_service();
-    Ok(ApiResponse::from_result(
-        service.pay_installment(&state.db, data).await,
-    ))
-}
-
 // 获取待还款的分期明细
 #[tauri::command]
 pub async fn installment_pending_list(
@@ -110,7 +98,6 @@ pub async fn installment_pending_list(
 // 计算分期金额（纯计算，不涉及数据库）
 #[tauri::command]
 pub async fn installment_calculate(
-    state: State<'_, AppState>,
     data: InstallmentCalculationRequest,
 ) -> Result<ApiResponse<InstallmentCalculationResponse>, String> {
     let service = get_installment_service();

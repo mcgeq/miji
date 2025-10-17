@@ -9,6 +9,8 @@ use validator::Validate;
 /// 分期付款计划创建请求
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 pub struct InstallmentPlanCreate {
+    #[validate(length(equal = 38, message = "serial_num is required"))]
+    pub serial_num: String,
     #[validate(length(equal = 38, message = "transaction_serial_num is required"))]
     pub transaction_serial_num: String,
     #[validate(length(equal = 38, message = "account_serial_num is required"))]
@@ -183,7 +185,7 @@ impl TryFrom<InstallmentPlanCreate> for entity::installment_plans::ActiveModel {
         data.validate()?;
         let now = DateUtils::local_now();
         Ok(entity::installment_plans::ActiveModel {
-            serial_num: Set(McgUuid::uuid(38)),
+            serial_num: Set(data.serial_num),
             transaction_serial_num: Set(data.transaction_serial_num),
             account_serial_num: Set(data.account_serial_num),
             total_amount: Set(data.total_amount),
