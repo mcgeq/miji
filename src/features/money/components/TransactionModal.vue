@@ -1001,24 +1001,63 @@ watch(
   color: var(--color-neutral);
 }
 
-/* VueDatePicker 主题色样式 */
-:deep(.dp__input) {
+/* VueDatePicker 主题色样式 - 与普通input保持一致 */
+:deep(.dp__main) {
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  width: 66% !important; /* 与form-control保持一致 */
+  margin: 0 !important; /* 移除所有外边距 */
+  padding: 0 !important; /* 移除所有内边距 */
+}
+
+:deep(.dp__input_wrap) {
   background-color: var(--color-base-200) !important;
-  border-color: var(--color-base-300) !important;
+  border: 1px solid var(--color-base-300) !important;
+  border-radius: 6px !important;
+  box-shadow: none !important;
+  width: 100% !important;
+  min-width: 200px !important; /* 确保有足够宽度 */
+  margin: 0 !important; /* 移除外边距 */
+  padding: 0 !important; /* 移除内边距 */
+}
+
+:deep(.dp__input) {
+  background-color: transparent !important;
+  border: none !important;
   color: var(--color-base-content) !important;
+  border-radius: 6px !important;
+  padding: 0.5rem 0.75rem !important;
+  padding-left: 2.5rem !important; /* 为图标留出空间 */
+  padding-right: 2rem !important; /* 为清除按钮留出空间 */
+  width: 100% !important;
+  margin: 0 !important; /* 移除外边距 */
+  box-sizing: border-box !important; /* 确保padding计算在内 */
 }
 
 :deep(.dp__input:focus) {
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+:deep(.dp__input_wrap:focus-within) {
   border-color: var(--color-primary) !important;
   box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.2) !important;
 }
 
 :deep(.dp__input_icon) {
   color: var(--color-base-content) !important;
+  left: 0.5rem !important; /* 图标更靠左 */
+  width: 1rem !important;
+  height: 1rem !important;
 }
 
 :deep(.dp__input_clear) {
   color: var(--color-base-content) !important;
+  right: 0.75rem !important; /* 调整清除按钮位置 */
+  width: 1rem !important;
+  height: 1rem !important;
 }
 
 textarea.form-control { resize: vertical; }
