@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use chrono::{DateTime, FixedOffset};
+use chrono::{DateTime, FixedOffset, Datelike, NaiveDate};
 use common::{
     crud::service::{CrudConverter, GenericCrudService, LocalizableConverter},
     error::{AppError, MijiResult},
@@ -16,8 +16,9 @@ use tracing::info;
 use validator::Validate;
 
 use crate::dto::installment::{
-    InstallmentDetailResponse, InstallmentDetailStatus, InstallmentPlanCreate,
-    InstallmentPlanResponse, InstallmentPlanUpdate, InstallmentStatus, PayInstallmentCreate,
+    InstallmentCalculationRequest, InstallmentCalculationResponse, InstallmentDetailResponse, 
+    InstallmentDetailStatus, InstallmentPlanCreate, InstallmentPlanResponse, 
+    InstallmentPlanUpdate, InstallmentStatus, PayInstallmentCreate,
 };
 use crate::services::installment_hooks::InstallmentHooks;
 use entity::{installment_details, installment_plans, transactions};
@@ -396,6 +397,48 @@ impl InstallmentService {
         Ok(responses)
     }
 
+    /// 计算分期金额（纯计算，不涉及数据库操作）
+    pub async fn calculate_installment_amount(
+        &self,
+        request: InstallmentCalculationRequest,
+    ) -> MijiResult<InstallmentCalculationResponse> {
+        // 验证输入参数
+        request.validate().map_err(AppError::from_validation_errors)?;
+
+        let total_amount = request.total_amount;
+        let total_periods = request.total_periods;
+        let first_due_date = request.first_due_date;
+
+        // 计算每期基础金额（向上取整到2位小数）
+        // 使用与前端相同的算法：Math.ceil((totalAmount * 100) / totalPeriods) / 100
+        let base_amount = (total_amount * Decimal::from(100) / Decimal::from(total_periods))
+            .ceil() / Decimal::from(100);
+
+        // 生成分期明细
+        let mut details = Vec::new();
+        for period in 1..=total_periods {
+            let due_date = self.calculate_due_date(first_due_date, period)?;
+            
+            let amount = if period == total_periods {
+                // 最后一期：总金额 - 前n-1期金额
+                total_amount - (base_amount * Decimal::from(period - 1))
+            } else {
+                base_amount
+            };
+
+            details.push(crate::dto::installment::InstallmentCalculationDetail {
+                period,
+                amount,
+                due_date,
+            });
+        }
+
+        Ok(InstallmentCalculationResponse {
+            installment_amount: base_amount,
+            details,
+        })
+    }
+
     /// 计算还款日期
     fn calculate_due_date(
         &self,
@@ -406,10 +449,54 @@ impl InstallmentService {
             return Ok(first_due_date);
         }
 
-        // 简化处理：每月递增30天
-        // 实际应用中应该按月份计算
-        let days_to_add = (period - 1) * 30;
-        Ok(first_due_date + chrono::Duration::days(days_to_add as i64))
+        // 按月份递增，保持每月的同一天
+        let months_to_add = period - 1;
+        
+        // 使用chrono的内置方法进行月份计算
+        let mut current_date = first_due_date.date_naive();
+        
+        for _ in 0..months_to_add {
+            // 获取当前日期的年月日
+            let year = current_date.year();
+            let month = current_date.month();
+            let day = current_date.day();
+            
+            // 计算下个月
+            let (next_year, next_month) = if month == 12 {
+                (year + 1, 1)
+            } else {
+                (year, month + 1)
+            };
+            
+            // 获取下个月的最后一天
+            let last_day_of_next_month = if next_month == 12 {
+                NaiveDate::from_ymd_opt(next_year + 1, 1, 1)
+            } else {
+                NaiveDate::from_ymd_opt(next_year, next_month + 1, 1)
+            }
+            .and_then(|date| date.pred_opt())
+            .map(|date| date.day())
+            .unwrap_or(28);
+            
+            // 确定目标日期
+            let target_day = if day > last_day_of_next_month {
+                last_day_of_next_month
+            } else {
+                day
+            };
+            
+            // 创建新的日期
+            current_date = NaiveDate::from_ymd_opt(next_year, next_month, target_day)
+                .ok_or_else(|| AppError::simple(common::BusinessCode::InvalidParameter, "Invalid date"))?;
+        }
+        
+        // 构建新的日期时间，保持原始时间
+        let new_datetime = current_date.and_time(first_due_date.time())
+            .and_local_timezone(first_due_date.timezone())
+            .single()
+            .ok_or_else(|| AppError::simple(common::BusinessCode::InvalidParameter, "Invalid timezone"))?;
+        
+        Ok(new_datetime)
     }
 }
 

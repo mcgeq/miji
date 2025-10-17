@@ -108,6 +108,31 @@ pub struct InstallmentDetailQuery {
     pub due_date_to: Option<DateTime<FixedOffset>>,
 }
 
+/// 分期金额计算请求
+#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+pub struct InstallmentCalculationRequest {
+    #[validate(custom(function = "validate_positive_amount"))]
+    pub total_amount: Decimal,
+    #[validate(range(min = 1, message = "total_periods must be greater than zero"))]
+    pub total_periods: i32,
+    pub first_due_date: DateTime<FixedOffset>,
+}
+
+/// 分期金额计算响应
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct InstallmentCalculationResponse {
+    pub installment_amount: Decimal,
+    pub details: Vec<InstallmentCalculationDetail>,
+}
+
+/// 分期计算明细
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct InstallmentCalculationDetail {
+    pub period: i32,
+    pub amount: Decimal,
+    pub due_date: DateTime<FixedOffset>,
+}
+
 /// 分期付款状态
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum InstallmentStatus {

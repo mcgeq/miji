@@ -7,15 +7,34 @@ import {
   TransactionTypeSchema,
 } from '@/schema/common';
 import { AccountTypeSchema, PaymentMethodSchema } from '@/schema/money';
+import { invokeCommand } from '@/types/api';
 import { lowercaseFirstLetter } from '@/utils/common';
 import { DateUtils } from '@/utils/date';
 import { toast } from '@/utils/toast';
 import { formatCurrency } from '../utils/money';
+import '@vuepic/vue-datepicker/dist/main.css';
 import type {
   TransactionType,
 } from '@/schema/common';
-import '@vuepic/vue-datepicker/dist/main.css';
 import type { Account, Transaction, TransactionCreate, TransactionUpdate, TransferCreate } from '@/schema/money';
+
+// 后端API响应类型定义
+interface InstallmentCalculationDetail {
+  period: number;
+  amount: number;
+  due_date: string;
+}
+
+interface InstallmentCalculationResponse {
+  installment_amount: number;
+  details: InstallmentCalculationDetail[];
+}
+
+interface InstallmentCalculationRequest {
+  total_amount: number;
+  total_periods: number;
+  first_due_date: string;
+}
 
 interface Props {
   type: TransactionType;
@@ -106,64 +125,58 @@ function safeToFixed(value: any, decimals: number = 2): string {
   return Number.isNaN(numValue) ? '0.00' : numValue.toFixed(decimals);
 }
 
-// 计算分期金额，处理小数精度问题
-function calculateInstallmentAmount(totalAmount: number, totalPeriods: number): number {
-  // 计算每期基础金额（向上取整到2位小数）
-  const baseAmount = Math.ceil((totalAmount * 100) / totalPeriods) / 100;
+// 后端计算结果的响应式数据
+const installmentCalculationResult = ref<InstallmentCalculationResponse | null>(null);
+const isCalculatingInstallment = ref(false);
 
-  // 返回基础金额（前n-1期使用）
-  return baseAmount;
+// 调用后端API计算分期金额
+async function calculateInstallmentFromBackend() {
+  if (!form.value.isInstallment || form.value.totalPeriods <= 0 || form.value.amount <= 0) {
+    installmentCalculationResult.value = null;
+    return;
+  }
+
+  try {
+    isCalculatingInstallment.value = true;
+
+    const request: InstallmentCalculationRequest = {
+      total_amount: form.value.amount,
+      total_periods: form.value.totalPeriods,
+      first_due_date: form.value.firstDueDate
+        ? DateUtils.formatDateToBackend(new Date(form.value.firstDueDate))
+        : DateUtils.formatDateToBackend(new Date(form.value.date)),
+    };
+
+    const response = await invokeCommand<InstallmentCalculationResponse>('installment_calculate', {
+      data: request,
+    });
+
+    installmentCalculationResult.value = response;
+  } catch (error) {
+    console.error('计算分期金额失败:', error);
+    toast.error('计算分期金额失败');
+    installmentCalculationResult.value = null;
+  } finally {
+    isCalculatingInstallment.value = false;
+  }
 }
 
 // 计算每期金额（用于显示在输入框中）
 const calculatedInstallmentAmount = computed(() => {
-  if (!form.value.isInstallment || form.value.totalPeriods <= 0 || form.value.amount <= 0) {
-    return 0;
-  }
-  return calculateInstallmentAmount(form.value.amount, form.value.totalPeriods);
+  return installmentCalculationResult.value?.installment_amount || 0;
 });
 
 // 获取分期金额详情（用于显示）
 const installmentDetails = computed(() => {
-  if (!form.value.isInstallment || form.value.totalPeriods <= 0 || form.value.amount <= 0) {
+  if (!installmentCalculationResult.value) {
     return null;
   }
 
-  const totalAmount = form.value.amount;
-  const totalPeriods = form.value.totalPeriods;
-  const baseAmount = calculateInstallmentAmount(totalAmount, totalPeriods);
-
-  // 使用用户设置的首期还款日期，如果没有设置则使用交易日期
-  const firstDueDate = form.value.firstDueDate
-    ? new Date(form.value.firstDueDate)
-    : new Date(form.value.date);
-
-  const details = [];
-  for (let i = 1; i <= totalPeriods; i++) {
-    // 计算每期的还款日期（每月递增）
-    const dueDate = new Date(firstDueDate);
-    dueDate.setMonth(dueDate.getMonth() + (i - 1));
-
-    if (i === totalPeriods) {
-      // 最后一期
-      const firstNMinusOneAmount = baseAmount * (totalPeriods - 1);
-      const lastAmount = totalAmount - firstNMinusOneAmount;
-      details.push({
-        period: i,
-        amount: Number(safeToFixed(lastAmount)),
-        dueDate: dueDate.toISOString().split('T')[0], // 格式化为 YYYY-MM-DD
-      });
-    } else {
-      // 前n-1期
-      details.push({
-        period: i,
-        amount: Number(safeToFixed(baseAmount)),
-        dueDate: dueDate.toISOString().split('T')[0], // 格式化为 YYYY-MM-DD
-      });
-    }
-  }
-
-  return details;
+  return installmentCalculationResult.value.details.map(detail => ({
+    period: detail.period,
+    amount: Number(safeToFixed(detail.amount)),
+    dueDate: detail.due_date.split('T')[0], // 格式化为 YYYY-MM-DD
+  }));
 });
 
 // 可用的交易状态选项
@@ -192,6 +205,8 @@ watch(() => form.value.isInstallment, newValue => {
     form.value.transactionStatus = TransactionStatusSchema.enum.Pending;
     // 设置默认首期还款日期为交易日期
     form.value.firstDueDate = new Date(form.value.date).toISOString().split('T')[0];
+    // 调用后端计算分期金额
+    calculateInstallmentFromBackend();
   } else {
     // 禁用分期时，重置相关字段
     form.value.totalPeriods = 0;
@@ -200,6 +215,7 @@ watch(() => form.value.isInstallment, newValue => {
     form.value.installmentAmount = 0;
     form.value.firstDueDate = '';
     form.value.transactionStatus = TransactionStatusSchema.enum.Completed;
+    installmentCalculationResult.value = null;
   }
 });
 
@@ -210,10 +226,17 @@ watch(() => form.value.totalPeriods, () => {
   }
 });
 
-// 监听金额和期数变化，更新每期金额
-watch([() => form.value.amount, () => form.value.totalPeriods], () => {
+// 监听金额和期数变化，调用后端API计算分期金额
+watch([() => form.value.amount, () => form.value.totalPeriods, () => form.value.firstDueDate], () => {
   if (form.value.isInstallment) {
-    form.value.installmentAmount = calculatedInstallmentAmount.value;
+    calculateInstallmentFromBackend();
+  }
+}, { immediate: false });
+
+// 监听分期计算结果变化，更新表单中的分期金额
+watch(calculatedInstallmentAmount, newAmount => {
+  if (form.value.isInstallment) {
+    form.value.installmentAmount = newAmount;
   }
 });
 

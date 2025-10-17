@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { invoke } from '@tauri-apps/api/core';
 import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { invokeCommand } from '@/types/api';
+import { DateUtils } from '@/utils/date';
 import { toast } from '@/utils/toast';
 
 const { t } = useI18n();
@@ -21,8 +22,10 @@ const canConfirmPayment = computed(() => {
 // 方法
 async function refreshData() {
   try {
-    const response = await invoke('installment_pending_list');
-    pendingInstallments.value = response as any[];
+    const response = await invokeCommand<any[]>('installment_pending_list', {
+      plan_serial_num: '', // 这里可能需要传入正确的plan_serial_num
+    });
+    pendingInstallments.value = response;
   } catch (error) {
     console.error('获取待还款分期失败:', error);
     toast.error(t('financial.installment.error.fetchFailed'));
@@ -47,11 +50,11 @@ async function confirmPayment() {
   try {
     isPaying.value = true;
 
-    await invoke('installment_pay', {
+    await invokeCommand('installment_pay', {
       data: {
         detail_serial_num: selectedDetail.value.serial_num,
         paid_amount: paidAmount.value,
-        paid_date: new Date().toISOString(),
+        paid_date: DateUtils.formatDateToBackend(new Date()),
       },
     });
 
