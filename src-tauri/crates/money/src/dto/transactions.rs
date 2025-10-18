@@ -370,7 +370,13 @@ impl TryFrom<CreateTransactionRequest> for entity::transactions::ActiveModel {
     fn try_from(value: CreateTransactionRequest) -> Result<Self, Self::Error> {
         value.validate()?;
         let serial_num = McgUuid::uuid(38);
-        let installment_plan_serial_num = McgUuid::uuid(38);
+        
+        // 只有当 is_installment 为 true 时才生成分期计划序列号
+        let installment_plan_serial_num = if value.is_installment == Some(true) {
+            Some(McgUuid::uuid(38))
+        } else {
+            None
+        };
 
         // 获取当前时间
         let now = DateUtils::local_now();
@@ -412,7 +418,7 @@ impl TryFrom<CreateTransactionRequest> for entity::transactions::ActiveModel {
             installment_amount: Set(value.installment_amount),
             remaining_periods_amount: Set(value.remaining_periods_amount),
             remaining_periods: Set(value.remaining_periods),
-            installment_plan_serial_num: Set(Some(installment_plan_serial_num)),
+            installment_plan_serial_num: Set(installment_plan_serial_num),
         })
     }
 }

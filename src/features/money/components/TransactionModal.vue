@@ -242,6 +242,34 @@ const isInstallmentFieldsDisabled = computed(() => {
   return isEditabled.value && hasPaidInstallmentsFromBackend.value;
 });
 
+// 检测是否为分期交易（基于notes字段的正则表达式）
+function isInstallmentTransaction(transaction: Transaction): boolean {
+  // 检查基本条件：交易类型为支出，且有relatedTransactionSerialNum
+  if (transaction.transactionType !== 'Expense' || !transaction.relatedTransactionSerialNum) {
+    return false;
+  }
+  // 检查notes字段是否包含分期计划模式
+  if (!transaction.notes) {
+    return false;
+  }
+  // 正则表达式匹配：分期计划:序列号,第X/Y期
+  const installmentPattern = /分期计划:\s*\d+,\s*第\d+\/\d+期/;
+  return installmentPattern.test(transaction.notes);
+}
+
+// 判断当前交易是否为分期交易
+const isCurrentTransactionInstallment = computed(() => {
+  if (!props.transaction) {
+    return false;
+  }
+  return isInstallmentTransaction(props.transaction);
+});
+
+// 判断是否应该禁用某些字段（分期交易时）
+const isInstallmentTransactionFieldsDisabled = computed(() => {
+  return isCurrentTransactionInstallment.value;
+});
+
 // 获取状态显示文本
 function getStatusText(status: string): string {
   if (!status) {
@@ -384,6 +412,7 @@ const availablePaymentMethods = computed(() => {
 // Determine if payment method should be editable
 const isPaymentMethodEditable = computed(() => {
   if (form.value.transactionType === TransactionTypeSchema.enum.Income) return false;
+  if (isInstallmentTransactionFieldsDisabled.value) return false;
   return availablePaymentMethods.value.length > 1;
 });
 
@@ -695,7 +724,7 @@ watch(
             type="number"
             class="form-control"
             :placeholder="t('common.placeholders.enterAmount')"
-            :disabled="isInstallmentFieldsDisabled"
+            :disabled="isInstallmentFieldsDisabled || isInstallmentTransactionFieldsDisabled"
             step="0.01"
             required
             @input="handleAmountInput"
@@ -708,7 +737,7 @@ watch(
           <CurrencySelector
             v-model="form.currency"
             class="form-control"
-            :disabled="isTransferReadonly || isInstallmentFieldsDisabled"
+            :disabled="isTransferReadonly || isInstallmentFieldsDisabled || isInstallmentTransactionFieldsDisabled"
           />
         </div>
 
@@ -794,6 +823,7 @@ watch(
           <select
             v-model="form.transactionStatus"
             class="form-control"
+            :disabled="isInstallmentTransactionFieldsDisabled"
           >
             <option
               v-for="status in availableTransactionStatuses"
@@ -806,7 +836,7 @@ watch(
         </div>
 
         <!-- 分期选项 -->
-        <div v-if="form.transactionType === 'Expense'" class="form-row">
+        <div v-if="form.transactionType === 'Expense' && !isCurrentTransactionInstallment" class="form-row">
           <label class="checkbox-label">
             <input
               v-model="form.isInstallment"
@@ -950,6 +980,7 @@ watch(
             :is-24="true"
             class="form-control"
             format="yyyy-MM-dd HH:mm:ss"
+            :disabled="isInstallmentTransactionFieldsDisabled"
             required
           />
         </div>
