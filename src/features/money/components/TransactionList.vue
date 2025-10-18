@@ -38,15 +38,53 @@ function toggleFilters() {
   showMoreFilters.value = !showMoreFilters.value;
 }
 const transactions = computed<Transaction[]>(() => moneyStore.transactions);
-const disabledTransactions = computed(() => {
+
+// 检测是否为分期交易（基于notes字段的正则表达式）
+function isInstallmentTransaction(transaction: Transaction): boolean {
+  // 检查基本条件：交易类型为支出，且有relatedTransactionSerialNum
+  if (transaction.transactionType !== 'Expense' || !transaction.relatedTransactionSerialNum) {
+    return false;
+  }
+  // 检查notes字段是否包含分期计划模式
+  if (!transaction.notes) {
+    return false;
+  }
+  // 正则表达式匹配：分期计划:序列号,第X/Y期
+  const installmentPattern = /分期计划:\s*\d+,\s*第\d+\/\d+期/;
+  return installmentPattern.test(transaction.notes);
+}
+
+// 禁用转账交易的编辑和删除按钮
+const disabledTransferTransactions = computed(() => {
   return new Set(
     transactions.value
-      .filter(t =>
-        t.transactionType === TransactionTypeSchema.enum.Expense &&
-        t.category === 'Transfer',
-      )
+      .filter(t => t.transactionType === TransactionTypeSchema.enum.Expense && t.category === 'Transfer')
       .map(t => t.serialNum),
   );
+});
+
+// 禁用分期交易的编辑和删除按钮
+const disabledInstallmentTransactions = computed(() => {
+  return new Set(
+    transactions.value
+      .filter(t => isInstallmentTransaction(t))
+      .map(t => t.serialNum),
+  );
+});
+
+// 禁用编辑按钮的交易（只包含转账交易）
+const disabledEditTransactions = computed(() => {
+  return new Set([
+    ...disabledTransferTransactions.value,
+  ]);
+});
+
+// 禁用删除按钮的交易（包含转账交易和分期交易）
+const disabledDeleteTransactions = computed(() => {
+  return new Set([
+    ...disabledTransferTransactions.value,
+    ...disabledInstallmentTransactions.value,
+  ]);
 });
 
 // 分页状态
@@ -415,9 +453,9 @@ defineExpose({
             </button>
             <button
               class="money-option-btn" :title="t('common.actions.edit')"
-              :disabled="disabledTransactions.has(transaction.serialNum)"
+              :disabled="disabledEditTransactions.has(transaction.serialNum)"
               :class="{
-                'disabled-btn': disabledTransactions.has(transaction.serialNum),
+                'disabled-btn': disabledEditTransactions.has(transaction.serialNum),
               }"
               @click="emit('edit', transaction)"
             >
@@ -426,7 +464,7 @@ defineExpose({
             <button
               class="money-option-btn"
               :title="t('common.actions.delete')"
-              :disabled="disabledTransactions.has(transaction.serialNum)"
+              :disabled="disabledDeleteTransactions.has(transaction.serialNum)"
               @click="emit('delete', transaction)"
             >
               <LucideTrash class="wh-4" />
@@ -630,7 +668,30 @@ margin-bottom: 0.1rem;
 }
 
 .disabled-btn {
-  color: #6b7280;
-  background-color: #e5e7eb;
+  color: #6b7280 !important;
+  background-color: #e5e7eb !important;
+  cursor: not-allowed !important;
+  opacity: 0.6 !important;
+}
+
+.disabled-btn:hover {
+  color: #6b7280 !important;
+  background-color: #e5e7eb !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.money-option-btn:disabled {
+  color: #6b7280 !important;
+  background-color: #e5e7eb !important;
+  cursor: not-allowed !important;
+  opacity: 0.6 !important;
+}
+
+.money-option-btn:disabled:hover {
+  color: #6b7280 !important;
+  background-color: #e5e7eb !important;
+  transform: none !important;
+  box-shadow: none !important;
 }
 </style>
