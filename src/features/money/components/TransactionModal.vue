@@ -281,15 +281,22 @@ function getStatusText(status: string): string {
 
 // 获取已入账期数
 function getPaidPeriodsCount(): number {
-  // 如果有后端数据，使用后端数据
-  if (rawInstallmentDetails.value && rawInstallmentDetails.value.length > 0) {
-    const paidCount = rawInstallmentDetails.value.filter(detail => detail.status === 'PAID').length;
-    return paidCount;
-  }
-
   // 如果是创建模式且勾选了分期付款，返回0（因为还没有入账）
   if (form.value.isInstallment && !props.transaction) {
     return 0;
+  }
+
+  // 如果是编辑模式且勾选了分期付款
+  if (form.value.isInstallment && props.transaction) {
+    // 如果还没有入账，返回0
+    if (!hasPaidInstallmentsFromBackend.value) {
+      return 0;
+    }
+    // 如果已经入账，使用后端数据
+    if (rawInstallmentDetails.value && rawInstallmentDetails.value.length > 0) {
+      const paidCount = rawInstallmentDetails.value.filter(detail => detail.status === 'PAID').length;
+      return paidCount;
+    }
   }
 
   return 0;
@@ -297,15 +304,22 @@ function getPaidPeriodsCount(): number {
 
 // 获取待入账期数
 function getPendingPeriodsCount(): number {
-  // 如果有后端数据，使用后端数据
-  if (rawInstallmentDetails.value && rawInstallmentDetails.value.length > 0) {
-    const pendingCount = rawInstallmentDetails.value.filter(detail => detail.status === 'PENDING' || detail.status === 'OVERDUE').length;
-    return pendingCount;
-  }
-
   // 如果是创建模式且勾选了分期付款，返回总期数（因为都待入账）
   if (form.value.isInstallment && !props.transaction) {
     return form.value.totalPeriods || 0;
+  }
+
+  // 如果是编辑模式且勾选了分期付款
+  if (form.value.isInstallment && props.transaction) {
+    // 如果还没有入账，使用表单中的总期数（因为都待入账）
+    if (!hasPaidInstallmentsFromBackend.value) {
+      return form.value.totalPeriods || 0;
+    }
+    // 如果已经入账，使用后端数据
+    if (rawInstallmentDetails.value && rawInstallmentDetails.value.length > 0) {
+      const pendingCount = rawInstallmentDetails.value.filter(detail => detail.status === 'PENDING' || detail.status === 'OVERDUE').length;
+      return pendingCount;
+    }
   }
 
   return 0;
@@ -313,14 +327,21 @@ function getPendingPeriodsCount(): number {
 
 // 获取总期数
 function getTotalPeriodsCount(): number {
-  // 如果有后端数据，使用后端数据
-  if (rawInstallmentDetails.value && rawInstallmentDetails.value.length > 0) {
-    return rawInstallmentDetails.value.length;
-  }
-
   // 如果是创建模式且勾选了分期付款，使用表单中的总期数
   if (form.value.isInstallment && !props.transaction) {
     return form.value.totalPeriods || 0;
+  }
+
+  // 如果是编辑模式且勾选了分期付款
+  if (form.value.isInstallment && props.transaction) {
+    // 如果还没有入账，使用表单中的总期数
+    if (!hasPaidInstallmentsFromBackend.value) {
+      return form.value.totalPeriods || 0;
+    }
+    // 如果已经入账，使用后端数据
+    if (rawInstallmentDetails.value && rawInstallmentDetails.value.length > 0) {
+      return rawInstallmentDetails.value.length;
+    }
   }
 
   return 0;
