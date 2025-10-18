@@ -32,6 +32,7 @@ const {
   showTransaction,
   selectedTransaction,
   transactionType,
+  isViewMode,
   showTransactionModal,
   closeTransactionModal,
   editTransaction,
@@ -437,6 +438,7 @@ onUnmounted(() => {
       :type="transactionType"
       :transaction="selectedTransaction"
       :accounts="accounts"
+      :readonly="isViewMode"
       @close="closeTransactionModal"
       @save="(transaction) => handleSaveTransaction(transaction, finalizeTransactionChange)"
       @update="(serialNum, transaction) => handleUpdateTransaction(serialNum, transaction, finalizeTransactionChange)"

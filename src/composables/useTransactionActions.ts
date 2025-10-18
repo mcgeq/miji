@@ -15,11 +15,13 @@ export function useTransactionActions() {
   const showTransaction = ref(false);
   const selectedTransaction = ref<Transaction | null>(null);
   const transactionType = ref<TransactionType>(TransactionTypeSchema.enum.Expense);
+  const isViewMode = ref(false);
 
   // 显示交易模态框
   function showTransactionModal(type: TransactionType) {
     transactionType.value = type;
     selectedTransaction.value = null;
+    isViewMode.value = false;
     showTransaction.value = true;
   }
 
@@ -27,12 +29,14 @@ export function useTransactionActions() {
   function closeTransactionModal() {
     showTransaction.value = false;
     selectedTransaction.value = null;
+    isViewMode.value = false;
   }
 
   // 编辑交易
   function editTransaction(transaction: Transaction) {
     selectedTransaction.value = transaction;
     transactionType.value = transaction.transactionType;
+    isViewMode.value = false;
     showTransaction.value = true;
   }
 
@@ -125,6 +129,10 @@ export function useTransactionActions() {
   // 查看交易详情
   function viewTransactionDetails(transaction: Transaction) {
     Lg.d('viewTransactionDetails', '查看交易详情:', transaction);
+    selectedTransaction.value = transaction;
+    transactionType.value = transaction.transactionType as TransactionType;
+    isViewMode.value = true;
+    showTransaction.value = true;
   }
 
   // 包装保存方法，支持自定义回调
@@ -195,6 +203,7 @@ export function useTransactionActions() {
     showTransaction,
     selectedTransaction,
     transactionType,
+    isViewMode,
 
     // 基础方法
     showTransactionModal,

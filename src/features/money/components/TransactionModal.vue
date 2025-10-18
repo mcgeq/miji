@@ -32,6 +32,7 @@ interface Props {
   type: TransactionType;
   transaction?: Transaction | null;
   accounts: Account[];
+  readonly?: boolean;
 }
 
 const props = defineProps<Props>();
@@ -270,6 +271,11 @@ const isInstallmentTransactionFieldsDisabled = computed(() => {
   return isCurrentTransactionInstallment.value;
 });
 
+// 判断是否应该禁用所有字段（只读模式）
+const isReadonlyMode = computed(() => {
+  return props.readonly === true;
+});
+
 // 获取状态显示文本
 function getStatusText(status: string): string {
   if (!status) {
@@ -413,6 +419,7 @@ const availablePaymentMethods = computed(() => {
 const isPaymentMethodEditable = computed(() => {
   if (form.value.transactionType === TransactionTypeSchema.enum.Income) return false;
   if (isInstallmentTransactionFieldsDisabled.value) return false;
+  if (isReadonlyMode.value) return false;
   return availablePaymentMethods.value.length > 1;
 });
 
@@ -724,7 +731,7 @@ watch(
             type="number"
             class="form-control"
             :placeholder="t('common.placeholders.enterAmount')"
-            :disabled="isInstallmentFieldsDisabled || isInstallmentTransactionFieldsDisabled"
+            :disabled="isInstallmentFieldsDisabled || isInstallmentTransactionFieldsDisabled || isReadonlyMode"
             step="0.01"
             required
             @input="handleAmountInput"
@@ -737,7 +744,7 @@ watch(
           <CurrencySelector
             v-model="form.currency"
             class="form-control"
-            :disabled="isTransferReadonly || isInstallmentFieldsDisabled || isInstallmentTransactionFieldsDisabled"
+            :disabled="isTransferReadonly || isInstallmentFieldsDisabled || isInstallmentTransactionFieldsDisabled || isReadonlyMode"
           />
         </div>
 
@@ -746,7 +753,7 @@ watch(
           <label>
             {{ isTransferReadonly || form.transactionType === TransactionTypeSchema.enum.Transfer ? t('financial.transaction.fromAccount') : t('financial.account.account') }}
           </label>
-          <select v-model="form.accountSerialNum" class="form-control" required :disabled="isDisabled">
+          <select v-model="form.accountSerialNum" class="form-control" required :disabled="isDisabled || isReadonlyMode">
             <option value="">
               {{ t('common.placeholders.selectAccount') }}
             </option>
@@ -798,7 +805,7 @@ watch(
             v-model="form.category"
             class="form-control"
             required
-            :disabled="isTransferReadonly || isInstallmentTransactionFieldsDisabled"
+            :disabled="isTransferReadonly || isInstallmentTransactionFieldsDisabled || isReadonlyMode"
           >
             <option value="">
               {{ t('common.placeholders.selectCategory') }}
@@ -815,7 +822,7 @@ watch(
           <select
             v-model="form.subCategory"
             class="form-control"
-            :disabled="isTransferReadonly || isInstallmentTransactionFieldsDisabled"
+            :disabled="isTransferReadonly || isInstallmentTransactionFieldsDisabled || isReadonlyMode"
           >
             <option value="">
               {{ t('common.placeholders.selectOption') }}
@@ -832,7 +839,7 @@ watch(
           <select
             v-model="form.transactionStatus"
             class="form-control"
-            :disabled="isInstallmentTransactionFieldsDisabled"
+            :disabled="isInstallmentTransactionFieldsDisabled || isReadonlyMode"
           >
             <option
               v-for="status in availableTransactionStatuses"
@@ -989,7 +996,7 @@ watch(
             :is-24="true"
             class="form-control"
             format="yyyy-MM-dd HH:mm:ss"
-            :disabled="isInstallmentTransactionFieldsDisabled"
+            :disabled="isInstallmentTransactionFieldsDisabled || isReadonlyMode"
             required
           />
         </div>
@@ -1001,6 +1008,7 @@ watch(
             class="form-control textarea-max"
             rows="3"
             :placeholder="`${t('common.misc.remark')}（${t('common.misc.optional')}）`"
+            :disabled="isReadonlyMode"
           />
         </div>
 
@@ -1009,7 +1017,7 @@ watch(
           <button type="button" class="btn-close" @click="$emit('close')">
             <LucideX class="icon-btn" />
           </button>
-          <button type="submit" class="btn-submit">
+          <button v-if="!isReadonlyMode" type="submit" class="btn-submit">
             <LucideCheck class="icon-btn" />
           </button>
         </div>
