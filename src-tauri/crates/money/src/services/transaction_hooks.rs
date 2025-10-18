@@ -15,9 +15,11 @@ use snafu::GenerateImplicitData;
 
 use crate::{
     dto::{
+        account::AccountType,
         installment::InstallmentPlanCreate,
         transactions::{
-            CreateTransactionRequest, TransactionStatus, TransactionType, UpdateTransactionRequest,
+            CreateTransactionRequest, PaymentMethod, TransactionStatus, TransactionType,
+            UpdateTransactionRequest,
         },
     },
     error::MoneyError,
@@ -69,6 +71,15 @@ impl Hooks<entity::transactions::Entity, CreateTransactionRequest, UpdateTransac
             installment_service
                 .create_installment_plan_with_details(tx, installment_plan_request)
                 .await?;
+
+            // 检查是否需要立即处理第1期分期记账
+            if should_process_first_installment_immediately(model)
+                && let Err(e) = process_first_installment_immediately(tx, model).await
+            {
+                // 立即记账失败，记录错误但不回滚整个事务
+                // 让定时任务稍后重试
+                tracing::warn!("立即处理第1期分期记账失败，将由定时任务重试: {}", e);
+            }
         } else {
             // Only not transfer
             if model.category != "Transfer" {
@@ -349,7 +360,7 @@ async fn update_budget_used(
 }
 
 /// 同步更新已记账的分期交易
-/// 
+///
 /// 当原交易的支付渠道、分类、子分类发生变化时，同步更新所有已记账的分期交易
 async fn sync_installment_transactions(
     tx: &DatabaseTransaction,
@@ -357,7 +368,9 @@ async fn sync_installment_transactions(
 ) -> MijiResult<()> {
     // 查找所有已记账的分期交易
     let installment_transactions = entity::transactions::Entity::find()
-        .filter(entity::transactions::Column::RelatedTransactionSerialNum.eq(&parent_model.serial_num))
+        .filter(
+            entity::transactions::Column::RelatedTransactionSerialNum.eq(&parent_model.serial_num),
+        )
         .filter(entity::transactions::Column::IsDeleted.eq(false))
         .filter(entity::transactions::Column::TransactionStatus.eq("Completed"))
         .all(tx)
@@ -370,22 +383,144 @@ async fn sync_installment_transactions(
     // 更新每个已记账的分期交易
     for installment_transaction in installment_transactions {
         let mut installment_active = installment_transaction.into_active_model();
-        
+
         // 同步支付渠道
-        installment_active.payment_method = sea_orm::ActiveValue::Set(parent_model.payment_method.clone());
-        
+        installment_active.payment_method =
+            sea_orm::ActiveValue::Set(parent_model.payment_method.clone());
+
         // 同步分类
         installment_active.category = sea_orm::ActiveValue::Set(parent_model.category.clone());
-        
+
         // 同步子分类
-        installment_active.sub_category = sea_orm::ActiveValue::Set(parent_model.sub_category.clone());
-        
+        installment_active.sub_category =
+            sea_orm::ActiveValue::Set(parent_model.sub_category.clone());
+
         // 更新修改时间
         installment_active.updated_at = sea_orm::ActiveValue::Set(Some(DateUtils::local_now()));
-        
+
         // 执行更新
         installment_active.update(tx).await?;
     }
 
+    Ok(())
+}
+
+/// 判断是否需要立即处理第1期分期记账
+fn should_process_first_installment_immediately(model: &entity::transactions::Model) -> bool {
+    // 检查首期还款日期是否为今天
+    if let Some(first_due_date) = model.first_due_date {
+        let today = DateUtils::local_now_naivedate();
+        return first_due_date == today;
+    }
+    false
+}
+
+/// 立即处理第1期分期记账
+async fn process_first_installment_immediately(
+    tx: &DatabaseTransaction,
+    model: &entity::transactions::Model,
+) -> MijiResult<()> {
+    let now = DateUtils::local_now();
+    let paid_date_now = DateUtils::local_now_naivedate();
+
+    // 1. 查找第1期分期明细
+    let first_period_detail = entity::installment_details::Entity::find()
+        .filter(
+            entity::installment_details::Column::PlanSerialNum
+                .eq(model.installment_plan_serial_num.clone().unwrap()),
+        )
+        .filter(entity::installment_details::Column::PeriodNumber.eq(1))
+        .filter(entity::installment_details::Column::Status.eq("PENDING"))
+        .one(tx)
+        .await?
+        .ok_or_else(|| AppError::simple(BusinessCode::NotFound, "第1期分期明细不存在"))?;
+
+    // 2. 创建第1期支出交易记录
+    let expense_transaction = crate::dto::transactions::CreateTransactionRequest {
+        transaction_type: TransactionType::Expense,
+        transaction_status: TransactionStatus::Completed,
+        date: now,
+        amount: first_period_detail.amount,
+        currency: model.currency.clone(),
+        description: format!("分期付款第1期 - {}", model.description),
+        notes: Some(format!(
+            "分期计划: {}, 第1/{}期",
+            model.installment_plan_serial_num.as_ref().unwrap(),
+            model.total_periods.unwrap()
+        )),
+        account_serial_num: first_period_detail.account_serial_num.clone(),
+        to_account_serial_num: None,
+        category: model.category.clone(),
+        sub_category: model.sub_category.clone(),
+        tags: None,
+        split_members: None,
+        payment_method: PaymentMethod::from_str(&model.payment_method).map_err(|e| {
+            AppError::simple(
+                BusinessCode::InvalidParameter,
+                format!("无效的支付方式: {e}"),
+            )
+        })?,
+        actual_payer_account: AccountType::from_str(&model.actual_payer_account).map_err(|e| {
+            AppError::simple(
+                BusinessCode::InvalidParameter,
+                format!("无效的账户类型: {e}"),
+            )
+        })?,
+        related_transaction_serial_num: Some(model.serial_num.clone()),
+        is_installment: Some(false),
+        first_due_date: None,
+        total_periods: None,
+        remaining_periods_amount: None,
+        remaining_periods: None,
+        installment_amount: None,
+    };
+
+    // 3. 手动调用 before_create hooks
+    let hooks = NoOpHooks;
+    hooks.before_create(tx, &expense_transaction).await?;
+
+    // 4. 创建交易记录
+    let transaction_model: entity::transactions::ActiveModel = expense_transaction.try_into()?;
+    let created_transaction = transaction_model.insert(tx).await?;
+
+    // 5. 手动调用 after_create hooks（更新账户余额）
+    hooks.after_create(tx, &created_transaction).await?;
+
+    // 6. 更新分期明细状态为已支付
+    let mut detail_active = first_period_detail.clone().into_active_model();
+    detail_active.status = sea_orm::ActiveValue::Set("PAID".to_string());
+    detail_active.paid_date = sea_orm::ActiveValue::Set(Some(paid_date_now));
+    detail_active.paid_amount = sea_orm::ActiveValue::Set(Some(first_period_detail.amount));
+    detail_active.updated_at = sea_orm::ActiveValue::Set(Some(now));
+    detail_active.update(tx).await?;
+
+    // 7. 更新主交易记录的剩余期数和金额
+    let mut transaction_active = model.clone().into_active_model();
+    let current_remaining = model
+        .remaining_periods
+        .unwrap_or(model.total_periods.unwrap());
+    let new_remaining = current_remaining - 1;
+    let current_remaining_amount = model
+        .remaining_periods_amount
+        .unwrap_or(model.installment_amount.unwrap());
+    let new_remaining_amount = current_remaining_amount - first_period_detail.amount;
+
+    transaction_active.remaining_periods = sea_orm::ActiveValue::Set(Some(new_remaining));
+    transaction_active.remaining_periods_amount =
+        sea_orm::ActiveValue::Set(Some(new_remaining_amount));
+    transaction_active.updated_at = sea_orm::ActiveValue::Set(Some(now));
+
+    // 8. 检查是否为最后一期
+    if new_remaining == 0 {
+        // 更新交易状态为已完成
+        transaction_active.transaction_status = sea_orm::ActiveValue::Set("Completed".to_string());
+    }
+
+    transaction_active.update(tx).await?;
+
+    tracing::info!(
+        "成功立即处理第1期分期记账，交易序列号: {}",
+        model.serial_num
+    );
     Ok(())
 }
