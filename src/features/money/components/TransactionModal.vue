@@ -281,20 +281,49 @@ function getStatusText(status: string): string {
 
 // 获取已入账期数
 function getPaidPeriodsCount(): number {
-  if (!rawInstallmentDetails.value || rawInstallmentDetails.value.length === 0) {
+  // 如果有后端数据，使用后端数据
+  if (rawInstallmentDetails.value && rawInstallmentDetails.value.length > 0) {
+    const paidCount = rawInstallmentDetails.value.filter(detail => detail.status === 'PAID').length;
+    return paidCount;
+  }
+
+  // 如果是创建模式且勾选了分期付款，返回0（因为还没有入账）
+  if (form.value.isInstallment && !props.transaction) {
     return 0;
   }
-  const paidCount = rawInstallmentDetails.value.filter(detail => detail.status === 'PAID').length;
-  return paidCount;
+
+  return 0;
 }
 
 // 获取待入账期数
 function getPendingPeriodsCount(): number {
-  if (!rawInstallmentDetails.value || rawInstallmentDetails.value.length === 0) {
-    return 0;
+  // 如果有后端数据，使用后端数据
+  if (rawInstallmentDetails.value && rawInstallmentDetails.value.length > 0) {
+    const pendingCount = rawInstallmentDetails.value.filter(detail => detail.status === 'PENDING' || detail.status === 'OVERDUE').length;
+    return pendingCount;
   }
-  const pendingCount = rawInstallmentDetails.value.filter(detail => detail.status === 'PENDING' || detail.status === 'OVERDUE').length;
-  return pendingCount;
+
+  // 如果是创建模式且勾选了分期付款，返回总期数（因为都待入账）
+  if (form.value.isInstallment && !props.transaction) {
+    return form.value.totalPeriods || 0;
+  }
+
+  return 0;
+}
+
+// 获取总期数
+function getTotalPeriodsCount(): number {
+  // 如果有后端数据，使用后端数据
+  if (rawInstallmentDetails.value && rawInstallmentDetails.value.length > 0) {
+    return rawInstallmentDetails.value.length;
+  }
+
+  // 如果是创建模式且勾选了分期付款，使用表单中的总期数
+  if (form.value.isInstallment && !props.transaction) {
+    return form.value.totalPeriods || 0;
+  }
+
+  return 0;
 }
 
 // 可用的交易状态选项
@@ -955,7 +984,7 @@ watch(
                 </div>
                 <div class="stat-item">
                   <span class="stat-label">总期数:</span>
-                  <span class="stat-value">{{ rawInstallmentDetails?.length || 0 }} 期</span>
+                  <span class="stat-value">{{ getTotalPeriodsCount() }} 期</span>
                 </div>
               </div>
               <div class="total-amount">
