@@ -709,7 +709,7 @@ watch(
         <!-- 交易类型 -->
         <div class="form-row">
           <label>{{ t('financial.transaction.transType') }}</label>
-          <div class="form-display">
+          <div class="form-control form-display">
             {{ form.transactionType === 'Income' ? t('financial.transaction.income')
               : form.transactionType === 'Expense' ? t('financial.transaction.expense')
                 : t('financial.transaction.transfer') }}
@@ -786,9 +786,9 @@ watch(
               {{ t(`financial.paymentMethods.${method.toLowerCase()}`) }}
             </option>
           </select>
-          <span v-else>
+          <div v-else class="form-control form-display">
             {{ t(`financial.paymentMethods.${form.paymentMethod.toLowerCase()}`) }}
-          </span>
+          </div>
         </div>
 
         <!-- 分类 -->
