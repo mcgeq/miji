@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { listen } from '@tauri-apps/api/event';
 import ConfirmModal from '@/components/common/ConfirmModal.vue';
 import { CURRENCY_CNY } from '@/constants/moneyConst';
 import { TransactionTypeSchema } from '@/schema/common';
@@ -17,6 +18,16 @@ import TransactionList from '../components/TransactionList.vue';
 import TransactionModal from '../components/TransactionModal.vue';
 import { formatCurrency, getLocalCurrencyInfo } from '../utils/money';
 import type { CardData } from '../common/moneyCommon';
+// 事件类型定义
+interface InstallmentProcessedEvent {
+  processed_count: number;
+  timestamp: number;
+}
+
+interface InstallmentProcessFailedEvent {
+  error: string;
+  timestamp: number;
+}
 
 // ------------------ Refs ------------------
 const transactionListRef = ref<InstanceType<typeof TransactionList> | null>(null);
@@ -308,6 +319,27 @@ onMounted(async () => {
   loadData();
   const currency = await getLocalCurrencyInfo();
   baseCurrency.value = currency.symbol;
+  // 监听分期处理完成事件
+  const unlistenProcessed = await listen<InstallmentProcessedEvent>('installment-processed', event => {
+    Lg.d('installment-processed', '收到分期处理完成事件:', event.payload);
+    // 刷新账户数据
+    loadAccountsWithLoading();
+    // 刷新交易列表
+    transactionListRef.value?.refresh();
+    // 显示通知
+    toast.success(`自动处理了 ${event.payload.processed_count} 笔分期交易`);
+  });
+  // 监听分期处理失败事件
+  const unlistenFailed = await listen<InstallmentProcessFailedEvent>('installment-process-failed', event => {
+    Lg.d('installment-process-failed', '收到分期处理失败事件:', event.payload);
+    // 显示错误通知
+    toast.error(`分期处理失败: ${event.payload.error}`);
+  });
+  // 在组件卸载时清理监听器
+  onUnmounted(() => {
+    unlistenProcessed();
+    unlistenFailed();
+  });
 });
 
 onMounted(async () => {

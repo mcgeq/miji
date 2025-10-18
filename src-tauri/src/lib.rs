@@ -1,4 +1,5 @@
 use migration::{Migrator, MigratorTrait};
+use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Manager};
 
 #[cfg(desktop)]
@@ -9,6 +10,20 @@ use tauri::{
 };
 
 pub mod logging;
+
+/// 分期处理完成事件
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct InstallmentProcessedEvent {
+    pub processed_count: usize,
+    pub timestamp: i64,
+}
+
+/// 分期处理失败事件
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct InstallmentProcessFailedEvent {
+    pub error: String,
+    pub timestamp: i64,
+}
 
 #[cfg(desktop)]
 mod desktops;
@@ -264,7 +279,7 @@ fn setup_window_close_handler(app: &AppHandle) -> Result<(), Box<dyn std::error:
 
 /// 启动交易定时任务
 async fn start_transaction_scheduler(app: AppHandle) {
-    let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(60)); // 每分钟检查一次
+    let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(60 * 60 * 2)); // 每2小时检查一次
 
     loop {
         interval.tick().await;
@@ -274,17 +289,36 @@ async fn start_transaction_scheduler(app: AppHandle) {
         let db = app_state.db.clone();
         let installment_service = money::services::installment::get_installment_service();
 
-        match installment_service
-            .auto_process_due_installments(&db)
-            .await
-        {
+        match installment_service.auto_process_due_installments(&db).await {
             Ok(processed_transactions) => {
                 if !processed_transactions.is_empty() {
                     log::info!("处理了 {} 笔到期交易", processed_transactions.len());
+
+                    // 通知前端刷新数据
+                    if let Err(e) = app.emit(
+                        "installment-processed",
+                        InstallmentProcessedEvent {
+                            processed_count: processed_transactions.len(),
+                            timestamp: chrono::Local::now().timestamp(),
+                        },
+                    ) {
+                        log::error!("发送分期处理完成事件失败: {}", e);
+                    }
                 }
             }
             Err(e) => {
                 log::error!("处理到期交易失败: {}", e);
+
+                // 通知前端处理失败
+                if let Err(emit_err) = app.emit(
+                    "installment-process-failed",
+                    InstallmentProcessFailedEvent {
+                        error: e.to_string(),
+                        timestamp: chrono::Utc::now().timestamp(),
+                    },
+                ) {
+                    log::error!("发送分期处理失败事件失败: {}", emit_err);
+                }
             }
         }
     }
