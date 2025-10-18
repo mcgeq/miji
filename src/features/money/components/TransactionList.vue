@@ -9,6 +9,7 @@ import { SortDirection, TransactionTypeSchema } from '@/schema/common';
 import { lowercaseFirstLetter } from '@/utils/common';
 import { DateUtils } from '@/utils/date';
 import { Lg } from '@/utils/debugLog';
+import { isInstallmentTransaction } from '@/utils/transaction';
 import { formatCurrency } from '../utils/money';
 import type { PageQuery, SortOptions, TransactionType } from '@/schema/common';
 import type { Account, Transaction } from '@/schema/money';
@@ -38,21 +39,6 @@ function toggleFilters() {
   showMoreFilters.value = !showMoreFilters.value;
 }
 const transactions = computed<Transaction[]>(() => moneyStore.transactions);
-
-// 检测是否为分期交易（基于notes字段的正则表达式）
-function isInstallmentTransaction(transaction: Transaction): boolean {
-  // 检查基本条件：交易类型为支出，且有relatedTransactionSerialNum
-  if (transaction.transactionType !== 'Expense' || !transaction.relatedTransactionSerialNum) {
-    return false;
-  }
-  // 检查notes字段是否包含分期计划模式
-  if (!transaction.notes) {
-    return false;
-  }
-  // 正则表达式匹配：分期计划:序列号,第X/Y期
-  const installmentPattern = /分期计划:\s*\d+,\s*第\d+\/\d+期/;
-  return installmentPattern.test(transaction.notes);
-}
 
 // 禁用转账交易的编辑和删除按钮
 const disabledTransferTransactions = computed(() => {
