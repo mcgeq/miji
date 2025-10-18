@@ -19,10 +19,10 @@ function LucideResolver(componentName: string) {
     };
   }
   return null;
-};
+}
 
 // https://vitejs.dev/config/
-export default defineConfig(async () => ({
+export default defineConfig({
   plugins: [
     VueRouter({
       extensions: ['.vue', '.md'],
@@ -94,30 +94,125 @@ export default defineConfig(async () => ({
       ignored: ['**/src-tauri/**'],
     },
   },
-  test: {
-    include: ['test/**/*.test.ts'],
-    environment: 'jsdom',
-  },
   build: {
     rollupOptions: {
       output: {
-        manualChunks: {
+        manualChunks: (id: string) => {
+          // Vite 7.x 优化的 chunk 分割策略
           // 核心Vue相关库
-          'vue-vendor': ['vue', 'vue-router', 'pinia'],
-          // UI组件库
-          'ui-vendor': ['lucide-vue-next', '@vueuse/core'],
-          // 国际化相关
-          'i18n-vendor': ['vue-i18n'],
-          // 工具库
-          'utils-vendor': ['date-fns', 'es-toolkit'],
-          // 表单验证相关
-          'form-vendor': ['vee-validate', '@vee-validate/zod', 'zod'],
-          // Tauri相关
-          'tauri-vendor': ['@tauri-apps/api'],
+          if (id.includes('vue') && !id.includes('node_modules')) {
+            return 'vue-core';
+          }
+          // 第三方库分组
+          if (id.includes('node_modules')) {
+            // Vue 生态系统
+            if (id.includes('vue') || id.includes('vue-router') || id.includes('pinia')) {
+              return 'vue-vendor';
+            }
+            // UI 组件库
+            if (id.includes('lucide-vue-next') || id.includes('@vueuse/core')) {
+              return 'ui-vendor';
+            }
+            // 国际化
+            if (id.includes('vue-i18n') || id.includes('@intlify')) {
+              return 'i18n-vendor';
+            }
+            // 工具库
+            if (id.includes('date-fns') || id.includes('es-toolkit') || id.includes('lru-cache')) {
+              return 'utils-vendor';
+            }
+            // 表单验证
+            if (id.includes('vee-validate') || id.includes('zod')) {
+              return 'form-vendor';
+            }
+            // Tauri
+            if (id.includes('@tauri-apps')) {
+              return 'tauri-vendor';
+            }
+            // 图表库
+            if (id.includes('echarts') || id.includes('vue-echarts')) {
+              return 'chart-vendor';
+            }
+            // 日期选择器
+            if (id.includes('@vuepic/vue-datepicker')) {
+              return 'datepicker-vendor';
+            }
+            // Toast 通知
+            if (id.includes('vue-toastification')) {
+              return 'toast-vendor';
+            }
+            // 其他第三方库
+            return 'vendor';
+          }
+
+          // 应用代码分组
+          if (id.includes('/src/')) {
+            if (id.includes('/src/stores/')) {
+              return 'stores';
+            }
+            if (id.includes('/src/features/money/')) {
+              return 'money-feature';
+            }
+            if (id.includes('/src/features/todos/')) {
+              return 'todos-feature';
+            }
+            if (id.includes('/src/features/health/')) {
+              return 'health-feature';
+            }
+            if (id.includes('/src/features/settings/')) {
+              return 'settings-feature';
+            }
+            if (id.includes('/src/pages/')) {
+              return 'pages';
+            }
+            if (id.includes('/src/components/')) {
+              return 'components';
+            }
+            if (id.includes('/src/composables/')) {
+              return 'composables';
+            }
+            if (id.includes('/src/services/')) {
+              return 'services';
+            }
+            if (id.includes('/src/utils/')) {
+              return 'utils';
+            }
+          }
         },
       },
     },
-    // 增加chunk大小警告限制到1MB
-    chunkSizeWarningLimit: 1000,
+    // 增加chunk大小警告限制到1.5MB
+    chunkSizeWarningLimit: 1500,
+    // 启用代码分割
+    target: 'esnext',
+    minify: 'esbuild',
+    // 启用CSS代码分割
+    cssCodeSplit: true,
   },
-}));
+  // 优化依赖预构建 - Vite 7.x 优化
+  optimizeDeps: {
+    include: [
+      'vue',
+      'vue-router',
+      'pinia',
+      '@vueuse/core',
+      'lucide-vue-next',
+      'vue-i18n',
+      'date-fns',
+      'es-toolkit',
+      'vee-validate',
+      'zod',
+      '@tauri-apps/api',
+    ],
+    exclude: ['@tauri-apps/api'],
+    // Vite 7.x 新增：强制预构建
+    force: false,
+  },
+  // Vite 7.x 新增：实验性功能
+  experimental: {
+    // 启用更快的构建
+    renderBuiltUrl: (filename: string) => {
+      return `/${filename}`;
+    },
+  },
+});

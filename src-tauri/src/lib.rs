@@ -4,11 +4,12 @@ use tauri::{AppHandle, Manager};
 
 #[cfg(desktop)]
 use tauri::{
-    Emitter, WindowEvent,
+    WindowEvent,
     menu::{MenuBuilder, MenuItem},
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
 };
 
+use tauri::Emitter;
 pub mod logging;
 
 /// 分期处理完成事件

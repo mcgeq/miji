@@ -1,5 +1,28 @@
-// 使用更简单的ECharts配置
-import * as echarts from 'echarts';
+import { BarChart, LineChart, PieChart } from 'echarts/charts';
+import {
+  GridComponent,
+  LegendComponent,
+  TitleComponent,
+  TooltipComponent,
+} from 'echarts/components';
+// 使用更简单的ECharts配置 - 按需导入减少包大小
+import { init, use } from 'echarts/core';
+import { CanvasRenderer } from 'echarts/renderers';
+
+// 注册必要的组件
+use([
+  CanvasRenderer,
+  BarChart,
+  LineChart,
+  PieChart,
+  TitleComponent,
+  TooltipComponent,
+  LegendComponent,
+  GridComponent,
+]);
+
+// 创建echarts实例
+const echarts = { init, use };
 
 // 初始化ECharts
 export function initECharts() {

@@ -7,6 +7,7 @@ import { initI18n } from './i18n/i18n';
 import router from './router';
 import { i18nErrorMap } from './schema/i18nErrorMap';
 import { storeStart } from './stores';
+import { useThemeStore } from './stores/theme';
 import { detectMobileDevice } from './utils/platform';
 import '@/assets/styles/reset.css';
 import 'vue-toastification/dist/index.css';
@@ -180,7 +181,7 @@ async function preloadIcons() {
 // 确保主题被正确应用
 async function ensureThemeApplied() {
   try {
-    const { useThemeStore } = await import('./stores/theme');
+    // 使用静态导入的theme store
     const themeStore = useThemeStore();
 
     // 如果主题store还没有初始化，先初始化
@@ -291,7 +292,6 @@ async function bootstrap() {
         console.warn('Store start failed or timed out, continuing with app startup:', error);
         // 移动端超时后，至少确保主题store被初始化
         try {
-          const { useThemeStore } = await import('./stores/theme');
           const themeStore = useThemeStore();
           await themeStore.$tauri.start();
           await themeStore.init();

@@ -73,6 +73,7 @@
     "postcss-nested": "^7.0.2",
     "postcss-preset-env": "^10.4.0",
     "svelte": "^5.37.3",
+    "terser": "^5.44.0",
     "typescript": "~5.8.3",
     "unplugin-auto-import": "^19.3.0",
     "unplugin-vue-router": "^0.14.0",

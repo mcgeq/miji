@@ -403,9 +403,6 @@ onUnmounted(() => {
             </button>
             <!-- 可以继续添加按钮 -->
           </div>
-          <!-- 左右渐变遮罩 -->
-          <div class="fade fade-left" />
-          <div class="fade fade-right" />
         </div>
       </div>
       <!-- Tabs -->
@@ -568,23 +565,38 @@ onUnmounted(() => {
 /* 快捷操作按钮 */
 .quick-actions {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: wrap; /* 允许换行 */
   gap: 12px;
-  justify-content: center;
+  justify-content: center; /* 居中对齐 */
+  padding: 8px 0; /* 给渐变遮罩留空间 */
 }
 
-.btn {
-  flex-shrink: 0; /* 防止按钮被压缩 */
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 16px;
-  font-size: 14px;
-  font-weight: 500;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: opacity 0.2s;
+/* 快速操作按钮样式 - 使用更高优先级的选择器 */
+.quick-actions .btn {
+  flex-shrink: 0 !important; /* 防止按钮被压缩 */
+  display: flex !important; /* 强制使用 flex 布局 */
+  align-items: center !important;
+  justify-content: center !important; /* 水平居中 */
+  gap: 6px !important;
+  padding: 8px 16px !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  border: none !important;
+  border-radius: 6px !important;
+  cursor: pointer !important;
+  transition: opacity 0.2s !important;
+  flex-direction: row !important; /* 确保水平排列 */
+  white-space: nowrap !important; /* 防止文字换行 */
+}
+
+.quick-actions .btn svg {
+  flex-shrink: 0 !important; /* 防止图标被压缩 */
+  width: 18px !important; /* 固定图标大小 */
+  height: 18px !important;
+}
+
+.quick-actions .btn span {
+  flex-shrink: 0 !important; /* 防止文字被压缩 */
 }
 
 .btn:hover {
@@ -669,13 +681,56 @@ onUnmounted(() => {
     margin-bottom: 10px; /* 标题与按钮之间的间距 */
   }
 
-  .btn {
-    padding: 6px 10px; /* 移动端减少内边距 */
-    font-size: 12px; /* 缩小字体 */
+  /* 移动端快捷操作容器 */
+  .quick-actions {
+    flex-wrap: wrap !important; /* 强制换行 */
+    justify-content: center !important; /* 居中对齐 */
+    gap: 8px !important; /* 减少间距 */
+    padding: 8px 0 !important;
+  }
+
+  .quick-actions .btn {
+    padding: 6px 10px !important; /* 移动端减少内边距 */
+    font-size: 12px !important; /* 缩小字体 */
+    display: flex !important; /* 确保 flex 布局 */
+    align-items: center !important; /* 垂直居中对齐 */
+    gap: 4px !important; /* 减少图标和文字间距 */
+    flex-direction: row !important; /* 水平排列图标和文字 */
+    white-space: nowrap !important; /* 防止文字换行 */
+    min-width: auto !important; /* 允许按钮自适应宽度 */
+    flex: 0 0 auto !important; /* 不伸缩，保持原始大小 */
+  }
+
+  .quick-actions .btn svg {
+    flex-shrink: 0 !important; /* 防止图标被压缩 */
+    width: 14px !important; /* 缩小图标 */
+    height: 14px !important;
+  }
+
+  .quick-actions .btn span {
+    flex-shrink: 0 !important; /* 防止文字被压缩 */
   }
 
   .container {
     padding: 10px; /* 减少内边距 */
+  }
+}
+
+/* 小屏幕优化 */
+@media (max-width: 480px) {
+  .quick-actions .btn {
+    padding: 5px 8px !important; /* 更小的内边距 */
+    font-size: 11px !important; /* 更小的字体 */
+    gap: 3px !important; /* 更小的间距 */
+  }
+
+  .quick-actions .btn svg {
+    width: 12px !important; /* 更小的图标 */
+    height: 12px !important;
+  }
+
+  .quick-actions {
+    gap: 6px !important; /* 更小的按钮间距 */
   }
 }
 
@@ -687,18 +742,5 @@ onUnmounted(() => {
   .btn {
     padding: 8px 14px; /* 适中内边距 */
   }
-}
-
-/* 渐变遮罩 */
-.quick-actions-wrapper {
-  position: relative;
-}
-
-.fade {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 32px;
-  pointer-events: none; /* 不阻挡滚动 */
 }
 </style>
