@@ -177,6 +177,7 @@ impl Hooks<entity::transactions::Entity, CreateTransactionRequest, UpdateTransac
         tx: &DatabaseTransaction,
         model: &entity::transactions::Model,
     ) -> MijiResult<()> {
+        // 检查是否为转账交易
         if model.category == "Transfer"
             && let Some(related_id) = &model.related_transaction_serial_num
         {
@@ -191,6 +192,21 @@ impl Hooks<entity::transactions::Entity, CreateTransactionRequest, UpdateTransac
                 ));
             }
         }
+
+        if !model.is_installment.unwrap_or(false) && model.related_transaction_serial_num.is_some()
+        {
+            return Err(AppError::simple(
+                BusinessCode::MoneyTransactionDeclined,
+                "分期交易不支持直接删除，请删除主交易",
+            ));
+        }
+
+        // 检查是否为主分期交易（有分期计划）
+        if let Some(installment_plan_serial_num) = &model.installment_plan_serial_num {
+            // 检查分期状态并处理删除逻辑
+            handle_installment_transaction_deletion(tx, model, installment_plan_serial_num).await?;
+        }
+
         if model.transaction_type == "Expense" {
             update_budget_used(
                 tx,
@@ -210,7 +226,38 @@ impl Hooks<entity::transactions::Entity, CreateTransactionRequest, UpdateTransac
         tx: &DatabaseTransaction,
         model: &entity::transactions::Model,
     ) -> MijiResult<()> {
-        if model.category != "Transfer" {
+        // 检查是否为分期主交易
+        let is_installment_main =
+            model.is_installment.unwrap_or(false) && model.installment_plan_serial_num.is_some();
+
+        // 对于分期主交易，需要检查是否有已记账的分期
+        let should_update_balance = if is_installment_main {
+            // 检查是否有已记账的分期
+            if let Some(installment_plan_serial_num) = &model.installment_plan_serial_num {
+                let details = entity::installment_details::Entity::find()
+                    .filter(
+                        entity::installment_details::Column::PlanSerialNum
+                            .eq(installment_plan_serial_num),
+                    )
+                    .all(tx)
+                    .await?;
+
+                let paid_details: Vec<_> = details
+                    .iter()
+                    .filter(|detail| detail.status == "PAID")
+                    .collect();
+
+                // 只有场景3（所有分期都记账完成）才需要更新账户余额
+                !paid_details.is_empty() && details.len() == paid_details.len()
+            } else {
+                false
+            }
+        } else {
+            // 非分期交易，正常更新账户余额
+            model.category != "Transfer"
+        };
+
+        if should_update_balance {
             let transaction_type = TransactionType::from_str(&model.transaction_type)?;
             update_account_balance(
                 tx,
@@ -233,6 +280,12 @@ impl Hooks<entity::transactions::Entity, CreateTransactionRequest, UpdateTransac
             related_active.is_deleted = sea_orm::ActiveValue::Set(true);
             related_active.update(tx).await?;
         }
+
+        // 处理分期交易删除后的清理工作
+        if let Some(installment_plan_serial_num) = &model.installment_plan_serial_num {
+            cleanup_installment_after_deletion(tx, model, installment_plan_serial_num).await?;
+        }
+
         Ok(())
     }
 }
@@ -522,5 +575,196 @@ async fn process_first_installment_immediately(
         "成功立即处理第1期分期记账，交易序列号: {}",
         model.serial_num
     );
+    Ok(())
+}
+
+/// 处理分期交易删除前的检查和处理逻辑
+async fn handle_installment_transaction_deletion(
+    tx: &DatabaseTransaction,
+    model: &entity::transactions::Model,
+    installment_plan_serial_num: &str,
+) -> MijiResult<()> {
+    // 1. 获取分期计划
+    let _plan = entity::installment_plans::Entity::find_by_id(installment_plan_serial_num)
+        .one(tx)
+        .await?
+        .ok_or_else(|| AppError::simple(BusinessCode::NotFound, "分期计划不存在"))?;
+
+    // 2. 获取所有分期明细
+    let details = entity::installment_details::Entity::find()
+        .filter(entity::installment_details::Column::PlanSerialNum.eq(installment_plan_serial_num))
+        .all(tx)
+        .await?;
+
+    // 3. 检查分期状态
+    let paid_details: Vec<_> = details
+        .iter()
+        .filter(|detail| detail.status == "PAID")
+        .collect();
+
+    let pending_details: Vec<_> = details
+        .iter()
+        .filter(|detail| detail.status == "PENDING")
+        .collect();
+
+    // 4. 根据分期状态处理不同场景
+    if paid_details.is_empty() {
+        // 场景1：分期还没有记账
+        tracing::info!("分期交易删除场景1：分期还没有记账，直接删除分期计划和明细");
+        // 删除分期明细
+        for detail in &details {
+            entity::installment_details::Entity::delete_by_id(&detail.serial_num)
+                .exec(tx)
+                .await?;
+        }
+        // 删除分期计划
+        entity::installment_plans::Entity::delete_by_id(installment_plan_serial_num)
+            .exec(tx)
+            .await?;
+    } else if pending_details.is_empty() {
+        // 场景3：所有分期都记账完成
+        tracing::info!("分期交易删除场景3：所有分期都记账完成，标记主交易为删除并创建反向交易");
+        // 这里不需要额外处理，主交易会被标记为删除
+        // 反向交易会在after_delete中处理
+    } else {
+        // 场景2：分期已记账但未完成
+        tracing::info!("分期交易删除场景2：分期已记账但未完成，删除已记账的分期交易和分期计划");
+
+        // 删除已记账的分期交易
+        let installment_transactions = entity::transactions::Entity::find()
+            .filter(entity::transactions::Column::RelatedTransactionSerialNum.eq(&model.serial_num))
+            .filter(entity::transactions::Column::IsDeleted.eq(false))
+            .filter(entity::transactions::Column::TransactionStatus.eq("Completed"))
+            .all(tx)
+            .await?;
+
+        for installment_tx in installment_transactions {
+            // 保存需要的字段值
+            let account_serial_num = installment_tx.account_serial_num.clone();
+            let transaction_type_str = installment_tx.transaction_type.clone();
+            let amount = installment_tx.amount;
+
+            // 标记分期交易为删除
+            let mut installment_active = installment_tx.into_active_model();
+            installment_active.is_deleted = sea_orm::ActiveValue::Set(true);
+            installment_active.updated_at = sea_orm::ActiveValue::Set(Some(DateUtils::local_now()));
+            installment_active.update(tx).await?;
+
+            // 反向更新账户余额（入账）
+            let transaction_type = TransactionType::from_str(&transaction_type_str)?;
+            update_account_balance(
+                tx,
+                &account_serial_num,
+                transaction_type,
+                amount,
+                true, // 反向操作
+            )
+            .await?;
+        }
+
+        // 删除所有分期明细和分期计划
+        for detail in &details {
+            entity::installment_details::Entity::delete_by_id(&detail.serial_num)
+                .exec(tx)
+                .await?;
+        }
+        entity::installment_plans::Entity::delete_by_id(installment_plan_serial_num)
+            .exec(tx)
+            .await?;
+    }
+
+    Ok(())
+}
+
+/// 处理分期交易删除后的清理工作
+async fn cleanup_installment_after_deletion(
+    tx: &DatabaseTransaction,
+    model: &entity::transactions::Model,
+    installment_plan_serial_num: &str,
+) -> MijiResult<()> {
+    // 获取分期计划
+    let plan = entity::installment_plans::Entity::find_by_id(installment_plan_serial_num)
+        .one(tx)
+        .await?;
+
+    if plan.is_none() {
+        // 分期计划已被删除，说明是场景1或场景2
+        return Ok(());
+    }
+
+    // 获取所有分期明细
+    let details = entity::installment_details::Entity::find()
+        .filter(entity::installment_details::Column::PlanSerialNum.eq(installment_plan_serial_num))
+        .all(tx)
+        .await?;
+
+    let paid_details: Vec<_> = details
+        .iter()
+        .filter(|detail| detail.status == "PAID")
+        .collect();
+
+    // 场景3：所有分期都记账完成，需要创建反向交易
+    if !paid_details.is_empty() && details.len() == paid_details.len() {
+        tracing::info!("分期交易删除场景3：创建反向交易");
+
+        // 创建反向交易（入账）
+        let reverse_transaction = CreateTransactionRequest {
+            transaction_type: TransactionType::Income, // 反向入账
+            transaction_status: TransactionStatus::Completed,
+            date: DateUtils::local_now(),
+            amount: model.amount,
+            currency: model.currency.clone(),
+            description: format!("分期交易删除反向入账 - {}", model.description),
+            notes: Some(format!(
+                "原分期交易: {}, 分期计划: {}",
+                model.serial_num, installment_plan_serial_num
+            )),
+            account_serial_num: model.account_serial_num.clone(),
+            to_account_serial_num: None,
+            category: model.category.clone(),
+            sub_category: model.sub_category.clone(),
+            tags: None,
+            split_members: None,
+            payment_method: PaymentMethod::from_str(&model.payment_method).map_err(|e| {
+                AppError::simple(
+                    BusinessCode::InvalidParameter,
+                    format!("无效的支付方式: {e}"),
+                )
+            })?,
+            actual_payer_account: AccountType::from_str(&model.actual_payer_account).map_err(
+                |e| {
+                    AppError::simple(
+                        BusinessCode::InvalidParameter,
+                        format!("无效的账户类型: {e}"),
+                    )
+                },
+            )?,
+            related_transaction_serial_num: Some(model.serial_num.clone()),
+            is_installment: Some(false),
+            first_due_date: None,
+            total_periods: None,
+            remaining_periods_amount: None,
+            remaining_periods: None,
+            installment_amount: None,
+        };
+
+        // 手动调用 before_create hooks
+        let hooks = NoOpHooks;
+        hooks.before_create(tx, &reverse_transaction).await?;
+
+        // 创建反向交易记录
+        let transaction_model: entity::transactions::ActiveModel =
+            reverse_transaction.try_into()?;
+        let created_transaction = transaction_model.insert(tx).await?;
+
+        // 手动调用 after_create hooks（更新账户余额）
+        hooks.after_create(tx, &created_transaction).await?;
+
+        tracing::info!(
+            "成功创建分期交易删除的反向交易: {}",
+            created_transaction.serial_num
+        );
+    }
+
     Ok(())
 }
