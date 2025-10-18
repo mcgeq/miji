@@ -154,6 +154,10 @@ impl Hooks<entity::transactions::Entity, CreateTransactionRequest, UpdateTransac
             )
             .await?;
         }
+
+        // 同步更新已记账的分期交易
+        sync_installment_transactions(tx, model).await?;
+
         Ok(())
     }
 
@@ -341,5 +345,47 @@ async fn update_budget_used(
         budget_active.updated_at = sea_orm::ActiveValue::Set(Some(DateUtils::local_now()));
         budget_active.update(tx).await?;
     }
+    Ok(())
+}
+
+/// 同步更新已记账的分期交易
+/// 
+/// 当原交易的支付渠道、分类、子分类发生变化时，同步更新所有已记账的分期交易
+async fn sync_installment_transactions(
+    tx: &DatabaseTransaction,
+    parent_model: &entity::transactions::Model,
+) -> MijiResult<()> {
+    // 查找所有已记账的分期交易
+    let installment_transactions = entity::transactions::Entity::find()
+        .filter(entity::transactions::Column::RelatedTransactionSerialNum.eq(&parent_model.serial_num))
+        .filter(entity::transactions::Column::IsDeleted.eq(false))
+        .filter(entity::transactions::Column::TransactionStatus.eq("Completed"))
+        .all(tx)
+        .await?;
+
+    if installment_transactions.is_empty() {
+        return Ok(());
+    }
+
+    // 更新每个已记账的分期交易
+    for installment_transaction in installment_transactions {
+        let mut installment_active = installment_transaction.into_active_model();
+        
+        // 同步支付渠道
+        installment_active.payment_method = sea_orm::ActiveValue::Set(parent_model.payment_method.clone());
+        
+        // 同步分类
+        installment_active.category = sea_orm::ActiveValue::Set(parent_model.category.clone());
+        
+        // 同步子分类
+        installment_active.sub_category = sea_orm::ActiveValue::Set(parent_model.sub_category.clone());
+        
+        // 更新修改时间
+        installment_active.updated_at = sea_orm::ActiveValue::Set(Some(DateUtils::local_now()));
+        
+        // 执行更新
+        installment_active.update(tx).await?;
+    }
+
     Ok(())
 }

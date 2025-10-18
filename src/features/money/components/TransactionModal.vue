@@ -794,7 +794,12 @@ watch(
         <!-- 分类 -->
         <div class="form-row">
           <label>{{ t('categories.category') }}</label>
-          <select v-model="form.category" class="form-control" required :disabled="isTransferReadonly">
+          <select
+            v-model="form.category"
+            class="form-control"
+            required
+            :disabled="isTransferReadonly || isInstallmentTransactionFieldsDisabled"
+          >
             <option value="">
               {{ t('common.placeholders.selectCategory') }}
             </option>
@@ -807,7 +812,11 @@ watch(
         <!-- 子分类 -->
         <div v-if="form.category && categoryMap.get(form.category)?.subs.length" class="form-row">
           <label>{{ t('categories.subCategory') }}</label>
-          <select v-model="form.subCategory" class="form-control">
+          <select
+            v-model="form.subCategory"
+            class="form-control"
+            :disabled="isTransferReadonly || isInstallmentTransactionFieldsDisabled"
+          >
             <option value="">
               {{ t('common.placeholders.selectOption') }}
             </option>
