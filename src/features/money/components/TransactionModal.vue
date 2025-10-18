@@ -708,7 +708,7 @@ watch(
           <CurrencySelector
             v-model="form.currency"
             class="form-control"
-            :disabled="isTransferReadonly"
+            :disabled="isTransferReadonly || isInstallmentFieldsDisabled"
           />
         </div>
 
