@@ -120,12 +120,15 @@ function safeToFixed(value: any, decimals: number = 2): string {
   return Number.isNaN(numValue) ? '0.00' : numValue.toFixed(decimals);
 }
 
-// 后端计算结果的响应式数据
+// 后端计算结果的响应式数据（用于创建交易时）
 const installmentCalculationResult = ref<InstallmentCalculationResponse | null>(null);
 const isCalculatingInstallment = ref(false);
 
 // 存储原始的分期详情数据（用于统计计算）
 const rawInstallmentDetails = ref<any[]>([]);
+
+// 分期计划详情数据（用于编辑交易时）
+const installmentPlanDetails = ref<InstallmentPlanResponse | null>(null);
 
 // 调用后端API计算分期金额
 async function calculateInstallmentFromBackend() {
@@ -149,6 +152,13 @@ async function calculateInstallmentFromBackend() {
       data: request,
     });
 
+    // 确保每个detail都有status字段
+    if (response.details) {
+      response.details = response.details.map(detail => ({
+        ...detail,
+        status: detail.status || 'PENDING', // 如果没有status字段，默认为PENDING
+      }));
+    }
     installmentCalculationResult.value = response;
   } catch (error) {
     console.error('计算分期金额失败:', error);
@@ -168,27 +178,14 @@ async function loadInstallmentPlanDetails(planSerialNum: string) {
     if (response && response.details) {
       // 存储原始数据用于统计计算
       rawInstallmentDetails.value = response.details;
+      // 存储分期计划详情数据
+      installmentPlanDetails.value = response;
 
       // 更新表单中的分期相关字段
       form.value.totalPeriods = response.total_periods;
       form.value.remainingPeriods = response.total_periods;
       form.value.installmentAmount = Number(response.installment_amount);
       form.value.firstDueDate = response.first_due_date;
-
-      // 将分期计划详情转换为计算结果的格式，以便在UI中显示
-      const details = response.details.map(detail => ({
-        period: detail.period_number,
-        amount: Number(detail.amount),
-        due_date: detail.due_date,
-        status: detail.status,
-        paid_date: detail.paid_date,
-        paid_amount: detail.paid_amount,
-      }));
-
-      installmentCalculationResult.value = {
-        installment_amount: Number(response.installment_amount),
-        details,
-      };
     }
   } catch (error) {
     Lg.e('加载分期计划详情失败:', error);
@@ -198,24 +195,39 @@ async function loadInstallmentPlanDetails(planSerialNum: string) {
 
 // 计算每期金额（用于显示在输入框中）
 const calculatedInstallmentAmount = computed(() => {
+  // 编辑模式：使用分期计划详情数据
+  if (installmentPlanDetails.value) {
+    return Number(installmentPlanDetails.value.installment_amount) || 0;
+  }
+  // 创建模式：使用计算结果数据
   return installmentCalculationResult.value?.installment_amount || 0;
 });
 
 // 获取分期金额详情（用于显示）
 const installmentDetails = computed(() => {
-  if (!installmentCalculationResult.value) {
-    return null;
+  // 编辑模式：使用分期计划详情数据
+  if (installmentPlanDetails.value && installmentPlanDetails.value.details) {
+    return installmentPlanDetails.value.details.map(detail => ({
+      period: detail.period_number,
+      amount: Number(safeToFixed(detail.amount)),
+      dueDate: detail.due_date,
+      status: detail.status || 'PENDING', // 确保有status字段
+      paidDate: detail.paid_date,
+      paidAmount: detail.paid_amount,
+    }));
   }
-
-  const mappedDetails = installmentCalculationResult.value.details.map(detail => ({
-    period: detail.period,
-    amount: Number(safeToFixed(detail.amount)),
-    dueDate: detail.due_date,
-    status: detail.status,
-    paidDate: detail.paid_date,
-    paidAmount: detail.paid_amount,
-  }));
-  return mappedDetails;
+  // 创建模式：使用计算结果数据
+  if (installmentCalculationResult.value && installmentCalculationResult.value.details) {
+    return installmentCalculationResult.value.details.map(detail => ({
+      period: detail.period,
+      amount: Number(safeToFixed(detail.amount)),
+      dueDate: detail.due_date,
+      status: detail.status || 'PENDING', // 确保有status字段
+      paidDate: detail.paid_date,
+      paidAmount: detail.paid_amount,
+    }));
+  }
+  return null;
 });
 
 // 后端查询是否有已完成的分期付款
@@ -387,6 +399,7 @@ watch(() => form.value.isInstallment, newValue => {
     form.value.firstDueDate = undefined;
     form.value.transactionStatus = TransactionStatusSchema.enum.Completed;
     installmentCalculationResult.value = null;
+    installmentPlanDetails.value = null;
   }
 });
 
@@ -716,6 +729,8 @@ watch(
       // 重置分期付款状态
       hasPaidInstallmentsFromBackend.value = false;
       rawInstallmentDetails.value = [];
+      installmentPlanDetails.value = null;
+      installmentCalculationResult.value = null;
     }
   },
   { immediate: true },
