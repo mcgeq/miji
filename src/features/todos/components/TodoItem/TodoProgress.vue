@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { CheckCircle, Play } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import type { TodoUpdate } from '@/schema/todos';
 
@@ -25,9 +26,15 @@ const progressColor = computed(() => {
 });
 
 const progressText = computed(() => {
-  if (progressPercentage.value === 0) return '未开始';
-  if (progressPercentage.value === 100) return '已完成';
+  if (progressPercentage.value === 0) return 'play'; // 使用图标标识
+  if (progressPercentage.value === 100) return 'check'; // 使用图标标识
   return `${progressPercentage.value}%`;
+});
+
+const progressIcon = computed(() => {
+  if (progressPercentage.value === 0) return 'play';
+  if (progressPercentage.value === 100) return 'check';
+  return null;
 });
 
 // 预设进度值
@@ -77,7 +84,9 @@ function setQuickProgress(progress: number) {
         />
       </div>
       <div class="progress-text">
-        {{ progressText }}
+        <Play v-if="progressIcon === 'play'" class="progress-icon" size="16" />
+        <CheckCircle v-else-if="progressIcon === 'check'" class="progress-icon" size="16" />
+        <span v-else>{{ progressText }}</span>
       </div>
     </div>
 
@@ -91,7 +100,9 @@ function setQuickProgress(progress: number) {
         :title="value === 0 ? '未开始' : value === 100 ? '已完成' : `${value}%`"
         @click="setQuickProgress(value)"
       >
-        {{ value === 0 ? '0' : value === 100 ? '✓' : `${value}%` }}
+        <Play v-if="value === 0" class="quick-icon" size="14" />
+        <CheckCircle v-else-if="value === 100" class="quick-icon" size="14" />
+        <span v-else>{{ value }}%</span>
       </button>
     </div>
 
@@ -153,7 +164,9 @@ function setQuickProgress(progress: number) {
                   :class="{ active: editingProgress === value }"
                   @click="editingProgress = value"
                 >
-                  {{ value === 0 ? '未开始' : value === 100 ? '已完成' : `${value}%` }}
+                  <Play v-if="value === 0" class="modal-icon" size="16" />
+                  <CheckCircle v-else-if="value === 100" class="modal-icon" size="16" />
+                  <span v-else>{{ value }}%</span>
                 </button>
               </div>
             </div>
@@ -171,7 +184,9 @@ function setQuickProgress(progress: number) {
                 />
               </div>
               <div class="preview-text">
-                {{ editingProgress === 0 ? '未开始' : editingProgress === 100 ? '已完成' : `${editingProgress}%` }}
+                <Play v-if="editingProgress === 0" class="preview-icon" size="16" />
+                <CheckCircle v-else-if="editingProgress === 100" class="preview-icon" size="16" />
+                <span v-else>{{ editingProgress }}%</span>
               </div>
             </div>
           </div>
@@ -255,8 +270,14 @@ function setQuickProgress(progress: number) {
   font-size: 0.75rem;
   font-weight: 500;
   color: var(--color-base-content);
-  min-width: 3rem;
-  text-align: right;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.progress-icon {
+  color: var(--color-base-content);
 }
 
 .quick-progress {
@@ -285,6 +306,10 @@ function setQuickProgress(progress: number) {
   background: var(--color-primary);
   color: var(--color-primary-content);
   border-color: var(--color-primary);
+}
+
+.quick-icon {
+  color: currentColor;
 }
 
 /* 模态框样式 */
@@ -459,6 +484,10 @@ function setQuickProgress(progress: number) {
   border-color: var(--color-primary);
 }
 
+.modal-icon {
+  color: currentColor;
+}
+
 .progress-preview {
   display: flex;
   flex-direction: column;
@@ -487,6 +516,14 @@ function setQuickProgress(progress: number) {
   text-align: center;
   font-weight: 500;
   color: var(--color-base-content);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+}
+
+.preview-icon {
+  color: currentColor;
 }
 
 .modal-footer {

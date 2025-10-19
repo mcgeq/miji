@@ -20,7 +20,7 @@ const editingDays = ref(0);
 // 计算属性
 const hasEstimate = computed(() => !!props.estimateMinutes);
 const estimateDisplay = computed(() => {
-  if (!props.estimateMinutes) return '设置时间';
+  if (!props.estimateMinutes) return '';
   return formatTime(props.estimateMinutes);
 });
 
@@ -133,7 +133,7 @@ watch([editingDays, editingHours, editingMinutes], validateInput);
         hasEstimate,
         readonly,
       }"
-      :title="hasEstimate ? formatTime(props.estimateMinutes!) : '设置时间估算'"
+      :title="hasEstimate ? `时间估算: ${formatTime(props.estimateMinutes!)}` : '设置时间估算'"
       @click="openModal"
     >
       <svg class="icon" viewBox="0 0 24 24" fill="currentColor">

@@ -19,7 +19,7 @@ const showLocationPicker = ref(false);
 // 计算属性
 const hasLocation = computed(() => !!props.location);
 const locationDisplay = computed(() => {
-  if (!props.location) return '设置位置';
+  if (!props.location) return '';
   if (props.location.length > 20) {
     return `${props.location.substring(0, 20)}...`;
   }
@@ -115,7 +115,7 @@ async function getCurrentLocation() {
         hasLocation,
         readonly,
       }"
-      :title="hasLocation ? props.location : '设置位置'"
+      :title="hasLocation ? `位置: ${props.location}` : '设置位置'"
       @click="openModal"
     >
       <svg class="icon" viewBox="0 0 24 24" fill="currentColor">

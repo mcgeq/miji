@@ -162,19 +162,19 @@ function resetToDefaults() {
         hasFeatures: hasSmartFeatures,
         readonly,
       }"
-      :title="hasSmartFeatures ? `智能功能 (${smartFeatureCount})` : '设置智能功能'"
+      :title="hasSmartFeatures ? `智能功能: ${smartFeatureCount}项已启用` : '设置智能功能'"
       @click="openModal"
     >
       <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
         <path d="M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22A10,10 0 0,1 2,12A10,10 0 0,1 12,2M12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4M12,6A6,6 0 0,1 18,12A6,6 0 0,1 12,18A6,6 0 0,1 6,12A6,6 0 0,1 12,6M12,8A4,4 0 0,0 8,12A4,4 0 0,0 12,16A4,4 0 0,0 16,12A4,4 0 0,0 12,8Z" />
       </svg>
       <span class="features-text">
-        {{ hasSmartFeatures ? `智能${smartFeatureCount}` : '智能' }}
+        {{ hasSmartFeatures ? `智能${smartFeatureCount}` : '' }}
       </span>
       <div v-if="hasSmartFeatures" class="feature-indicators">
         <span v-if="smartFeatures.smartReminder" class="indicator" title="智能提醒">🧠</span>
         <span v-if="smartFeatures.locationBased" class="indicator" title="位置提醒">📍</span>
-        <span v-if="smartFeatures.weatherDependent" class="indicator" title="天气提醒">🌤️</span>
+        <span v-if="smartFeatures.weatherDependent" class="indicator" title="天气提醒">🌤</span>
         <span v-if="smartFeatures.priorityBoost" class="indicator" title="优先级增强">⚡</span>
       </div>
     </button>
@@ -292,9 +292,9 @@ function resetToDefaults() {
 
                   <div v-if="weatherInfo.condition" class="weather-display">
                     <div class="weather-icon">
-                      {{ weatherInfo.condition === 'sunny' ? '☀️'
-                        : weatherInfo.condition === 'cloudy' ? '☁️'
-                          : weatherInfo.condition === 'rainy' ? '🌧️' : '❄️' }}
+                      {{ weatherInfo.condition === 'sunny' ? '☀'
+                        : weatherInfo.condition === 'cloudy' ? '☁'
+                          : weatherInfo.condition === 'rainy' ? '🌧' : '❄' }}
                     </div>
                     <div class="weather-details">
                       <span class="temperature">{{ weatherInfo.temperature }}°C</span>
@@ -351,7 +351,7 @@ function resetToDefaults() {
                   <span>位置提醒已启用</span>
                 </div>
                 <div v-if="smartFeatures.weatherDependent" class="preview-item">
-                  <span class="preview-icon">🌤️</span>
+                  <span class="preview-icon">🌤</span>
                   <span>天气提醒已启用</span>
                 </div>
                 <div v-if="smartFeatures.priorityBoost" class="preview-item">

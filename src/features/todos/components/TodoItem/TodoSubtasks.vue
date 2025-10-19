@@ -123,14 +123,14 @@ function moveSubtaskDown(subtask: Todo) {
         hasSubtasks,
         readonly,
       }"
-      :title="hasSubtasks ? `查看子任务 (${subtaskCount})` : '添加子任务'"
+      :title="hasSubtasks ? `子任务: ${completedSubtasks}/${subtaskCount} (${subtaskProgress}%)` : '添加子任务'"
       @click="openModal"
     >
       <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
         <path d="M3,3V21H21V3H3M19,19H5V5H19V19M11,7H13V9H11V7M11,11H13V13H11V11M11,15H13V17H11V15M7,7H9V9H7V7M7,11H9V13H7V11M7,15H9V17H7V15M15,7H17V9H15V7M15,11H17V13H15V11M15,15H17V17H15V15Z" />
       </svg>
       <span class="subtasks-text">
-        {{ hasSubtasks ? `${completedSubtasks}/${subtaskCount}` : '子任务' }}
+        {{ hasSubtasks ? `${completedSubtasks}/${subtaskCount}` : '' }}
       </span>
       <div v-if="hasSubtasks" class="progress-bar">
         <div
