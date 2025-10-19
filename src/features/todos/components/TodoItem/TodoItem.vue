@@ -241,7 +241,7 @@ function handleMouseLeave() {
           @change-priority="onChangePriorityHandler"
         />
         <TodoCheckbox :completed="completed" @toggle="onToggleHandler" />
-        <TodoTitle :title="todoCopy.title" :completed="completed" @toggle="onToggleHandler" />
+        <TodoTitle :title="todoCopy.title" :completed="completed" />
       </div>
 
       <!-- Right Section: Actions -->

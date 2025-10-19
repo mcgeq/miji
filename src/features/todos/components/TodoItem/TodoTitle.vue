@@ -1,6 +1,5 @@
 <script setup lang="ts">
 const props = defineProps<{ title: string; completed: boolean }>();
-const emit = defineEmits(['toggle']);
 
 const title = computed(() => props.title);
 const completed = computed(() => props.completed);
@@ -49,11 +48,9 @@ function hideFullTitle() {
   showFullTitle.value = false;
 }
 
-// 点击切换完成状态
+// 点击处理（仅用于关闭全屏显示）
 function handleClick() {
-  if (!showFullTitle.value) {
-    emit('toggle');
-  } else {
+  if (showFullTitle.value) {
     hideFullTitle();
   }
 }
@@ -65,7 +62,7 @@ function handleClick() {
       class="todo-title"
       :class="{ 'todo-title-completed': completed }"
       :title="shouldShowTooltip ? title : undefined"
-      @click="handleClick"
+      @click="shouldShowTooltip ? handleClick : undefined"
       @touchstart="handleTouchStart"
       @touchend="handleTouchEnd"
       @touchmove="handleTouchMove"
@@ -112,7 +109,6 @@ function handleClick() {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  cursor: pointer;
   color: var(--color-base-content);
   transition: all 0.2s ease;
   letter-spacing: 0.01em;
