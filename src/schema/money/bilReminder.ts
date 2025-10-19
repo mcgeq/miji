@@ -111,6 +111,18 @@ export const BilReminderSchema = z.object({
   isDeleted: z.boolean(),
   createdAt: DateTimeSchema,
   updatedAt: DateTimeSchema.optional().nullable(),
+  // 新增高级提醒功能字段
+  lastReminderSentAt: DateTimeSchema.optional().nullable(),
+  reminderFrequency: z.string().optional().nullable(),
+  snoozeUntil: DateTimeSchema.optional().nullable(),
+  reminderMethods: z.any().optional().nullable(), // JSON对象
+  escalationEnabled: z.boolean(),
+  escalationAfterHours: z.number().optional().nullable(),
+  timezone: z.string().optional().nullable(),
+  smartReminderEnabled: z.boolean(),
+  autoReschedule: z.boolean(),
+  paymentReminderEnabled: z.boolean(),
+  batchReminderId: SerialNumSchema.optional().nullable(),
 });
 
 export const BilReminderCreateSchema = BilReminderSchema.pick({
@@ -132,6 +144,18 @@ export const BilReminderCreateSchema = BilReminderSchema.pick({
   advanceUnit: true,
   color: true,
   relatedTransactionSerialNum: true,
+  // 新增高级提醒功能字段
+  lastReminderSentAt: true,
+  reminderFrequency: true,
+  snoozeUntil: true,
+  reminderMethods: true,
+  escalationEnabled: true,
+  escalationAfterHours: true,
+  timezone: true,
+  smartReminderEnabled: true,
+  autoReschedule: true,
+  paymentReminderEnabled: true,
+  batchReminderId: true,
 })
   .extend({
     currency: z.string().length(3),

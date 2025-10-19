@@ -77,6 +77,20 @@ pub enum Todo {
     ReminderCount,
     ParentId,
     SubtaskOrder,
+    // 新增提醒相关字段
+    ReminderEnabled,
+    ReminderAdvanceValue,
+    ReminderAdvanceUnit,
+    LastReminderSentAt,
+    ReminderFrequency,
+    SnoozeUntil,
+    ReminderMethods,
+    Timezone,
+    SmartReminderEnabled,
+    LocationBasedReminder,
+    WeatherDependent,
+    PriorityBoostEnabled,
+    BatchReminderId,
 }
 
 #[derive(DeriveIden)]
@@ -132,6 +146,13 @@ pub enum Reminder {
     IsSent,
     CreatedAt,
     UpdatedAt,
+    // 新增提醒执行相关字段
+    ReminderMethod,
+    RetryCount,
+    LastRetryAt,
+    SnoozeCount,
+    EscalationLevel,
+    NotificationId,
 }
 
 #[derive(DeriveIden)]
@@ -467,6 +488,18 @@ pub enum BilReminder {
     IsDeleted,
     CreatedAt,
     UpdatedAt,
+    // 新增高级提醒功能字段
+    LastReminderSentAt,
+    ReminderFrequency,
+    SnoozeUntil,
+    ReminderMethods,
+    EscalationEnabled,
+    EscalationAfterHours,
+    Timezone,
+    SmartReminderEnabled,
+    AutoReschedule,
+    PaymentReminderEnabled,
+    BatchReminderId,
 }
 
 #[derive(DeriveIden)]
@@ -484,6 +517,53 @@ pub enum SubCategories {
     Name,
     Icon,
     CategoryName,
+    CreatedAt,
+    UpdatedAt,
+}
+
+// 新增通知系统相关表定义
+#[derive(DeriveIden)]
+pub enum NotificationLogs {
+    Table,
+    SerialNum,
+    ReminderSerialNum,
+    NotificationType,
+    Status,
+    SentAt,
+    ErrorMessage,
+    RetryCount,
+    LastRetryAt,
+    CreatedAt,
+    UpdatedAt,
+}
+
+#[derive(DeriveIden)]
+pub enum NotificationSettings {
+    Table,
+    SerialNum,
+    UserId,
+    NotificationType,
+    Enabled,
+    QuietHoursStart,
+    QuietHoursEnd,
+    QuietDays,
+    SoundEnabled,
+    VibrationEnabled,
+    CreatedAt,
+    UpdatedAt,
+}
+
+#[derive(DeriveIden)]
+pub enum BatchReminders {
+    Table,
+    SerialNum,
+    Name,
+    Description,
+    ScheduledAt,
+    Status,
+    TotalCount,
+    SentCount,
+    FailedCount,
     CreatedAt,
     UpdatedAt,
 }

@@ -14,14 +14,21 @@ import TodoEditDueDateModal from './TodoEditDueDateModal.vue';
 import TodoEditOptionsModal from './TodoEditOptionsModal.vue';
 import TodoEditRepeatModal from './TodoEditRepeatModal.vue';
 import TodoEditTitleModal from './TodoEditTitleModal.vue';
+import TodoEstimate from './TodoEstimate.vue';
+import TodoLocation from './TodoLocation.vue';
+import TodoProgress from './TodoProgress.vue';
+import TodoReminderSettings from './TodoReminderSettings.vue';
+import TodoSmartFeatures from './TodoSmartFeatures.vue';
+import TodoSubtasks from './TodoSubtasks.vue';
 import TodoTitle from './TodoTitle.vue';
 import type { Priority, RepeatPeriod } from '@/schema/common';
 import type { Todo, TodoUpdate } from '@/schema/todos';
 
 const props = defineProps<{
   todo: Todo;
+  subtasks?: Todo[];
 }>();
-const emit = defineEmits(['update:todo', 'toggle', 'remove']);
+const emit = defineEmits(['update:todo', 'toggle', 'remove', 'createSubtask', 'updateSubtask', 'deleteSubtask']);
 
 const menuStore = useMenuStore();
 
@@ -151,6 +158,19 @@ function onChangePriorityHandler(serialNum: string, priority: Priority) {
   }
 }
 
+// 子任务处理方法
+function onCreateSubtask(parentId: string, title: string) {
+  emit('createSubtask', parentId, title);
+}
+
+function onUpdateSubtask(serialNum: string, update: TodoUpdate) {
+  emit('updateSubtask', serialNum, update);
+}
+
+function onDeleteSubtask(serialNum: string) {
+  emit('deleteSubtask', serialNum);
+}
+
 function openPopup(type: string) {
   // 先关闭菜单，再打开弹窗
   menuStore.setMenuSerialNum('');
@@ -234,10 +254,47 @@ function handleMouseLeave() {
       />
     </div>
 
-    <!-- Due Date -->
-    <!-- <div v-if="todoCopy.dueAt" class="todo-due-date"> -->
-    <!--   {{ todoCopy.remainingTime }} -->
-    <!-- </div> -->
+    <!-- 扩展信息区域 -->
+    <div v-if="!completed" class="todo-extended">
+      <!-- 进度条 -->
+      <TodoProgress
+        :progress="todoCopy.progress"
+        @update="(update) => updateTodo(todoCopy.serialNum, update)"
+      />
+
+      <!-- 时间估算 -->
+      <TodoEstimate
+        :estimate-minutes="todoCopy.estimateMinutes"
+        @update="(update) => updateTodo(todoCopy.serialNum, update)"
+      />
+
+      <!-- 位置 -->
+      <TodoLocation
+        :location="todoCopy.location"
+        @update="(update) => updateTodo(todoCopy.serialNum, update)"
+      />
+
+      <!-- 提醒设置 -->
+      <TodoReminderSettings
+        :todo="todoCopy"
+        @update="(update) => updateTodo(todoCopy.serialNum, update)"
+      />
+
+      <!-- 子任务 -->
+      <TodoSubtasks
+        :todo="todoCopy"
+        :subtasks="subtasks"
+        @create-subtask="onCreateSubtask"
+        @update-subtask="onUpdateSubtask"
+        @delete-subtask="onDeleteSubtask"
+      />
+
+      <!-- 智能功能 -->
+      <TodoSmartFeatures
+        :todo="todoCopy"
+        @update="(update) => updateTodo(todoCopy.serialNum, update)"
+      />
+    </div>
 
     <!-- Menus and Modals -->
     <TodoAddMenus :show="showMenu" @open-popup="openPopup" @close="toggleMenu" />
@@ -294,9 +351,9 @@ function handleMouseLeave() {
   display: flex;
   flex-direction: column;
   position: relative;
-  height: 4rem;
+  min-height: 4rem;
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-  overflow: hidden;
+  overflow: visible;
   box-shadow: 0 1px 3px color-mix(in oklch, var(--color-neutral) 8%, transparent);
   width: 100%;
   max-width: 100%;
@@ -449,6 +506,23 @@ function handleMouseLeave() {
     padding-left: 0.25rem;
     gap: 0.375rem;
   }
+
+  .todo-extended {
+    flex-direction: column;
+    gap: 0.375rem;
+  }
+}
+
+/* 扩展信息区域 */
+.todo-extended {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--color-base-300);
+  position: relative;
+  z-index: 1;
 }
 
 /* 到期时间 */

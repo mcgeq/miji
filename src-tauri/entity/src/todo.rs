@@ -61,6 +61,21 @@ pub struct Model {
     pub subtask_order: Option<i32>,
     pub created_at: DateTimeWithTimeZone,
     pub updated_at: Option<DateTimeWithTimeZone>,
+    // 新增提醒相关字段
+    pub reminder_enabled: bool,
+    pub reminder_advance_value: Option<i32>,
+    pub reminder_advance_unit: Option<String>,
+    pub last_reminder_sent_at: Option<DateTimeWithTimeZone>,
+    pub reminder_frequency: Option<String>,
+    pub snooze_until: Option<DateTimeWithTimeZone>,
+    #[sea_orm(column_type = "JsonBinary")]
+    pub reminder_methods: Option<Json>,
+    pub timezone: Option<String>,
+    pub smart_reminder_enabled: bool,
+    pub location_based_reminder: bool,
+    pub weather_dependent: bool,
+    pub priority_boost_enabled: bool,
+    pub batch_reminder_id: Option<String>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

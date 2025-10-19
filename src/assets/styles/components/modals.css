@@ -205,3 +205,132 @@
   width: 1.25rem;
   height: 1.25rem;
 }
+
+/* ==================== Teleport模态框样式 ==================== */
+/* 用于所有Teleport到body的模态框组件 */
+
+/* 覆盖现有的modal-overlay，提供更高的z-index和更好的动画 */
+.modal-overlay.teleport {
+  z-index: 9999;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.modal-overlay.teleport.visible {
+  opacity: 1;
+}
+
+/* 新的模态框内容样式 */
+.modal-content.teleport {
+  background: var(--color-base-100);
+  border-radius: 1rem;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  max-width: 500px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  transform: scale(0.9);
+  transition: transform 0.2s ease;
+  /* 隐藏滚动条但保留滚动功能 */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+.modal-content.teleport::-webkit-scrollbar {
+  display: none; /* Chrome, Safari and Opera */
+}
+
+.modal-overlay.teleport.visible .modal-content.teleport {
+  transform: scale(1);
+}
+
+/* 模态框头部样式 */
+.modal-header.teleport {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem 1.5rem 0;
+}
+
+.modal-header.teleport h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.close-btn.teleport {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: var(--color-base-content);
+  padding: 0.25rem;
+  border-radius: 0.25rem;
+}
+
+.close-btn.teleport:hover {
+  background: var(--color-base-200);
+}
+
+/* 模态框主体样式 */
+.modal-body.teleport {
+  padding: 1.5rem;
+}
+
+/* 模态框底部样式 */
+.modal-footer.teleport {
+  display: flex;
+  justify-content: space-between;
+  padding: 1.5rem;
+  border-top: 1px solid var(--color-base-200);
+}
+
+/* 按钮样式 */
+.btn-secondary.teleport,
+.btn-primary.teleport {
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-secondary.teleport {
+  background: var(--color-base-200);
+  color: var(--color-base-content);
+  border: 1px solid var(--color-base-300);
+}
+
+.btn-secondary.teleport:hover {
+  background: var(--color-base-300);
+}
+
+.btn-primary.teleport {
+  background: var(--color-primary);
+  color: var(--color-primary-content);
+  border: 1px solid var(--color-primary);
+}
+
+.btn-primary.teleport:hover {
+  background: var(--color-primary-focus);
+}
+
+/* Teleport模态框响应式设计 */
+@media (max-width: 768px) {
+  .modal-content.teleport {
+    width: 95%;
+    margin: 1rem;
+  }
+  
+  .modal-footer.teleport {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .btn-secondary.teleport,
+  .btn-primary.teleport {
+    width: 100%;
+  }
+}

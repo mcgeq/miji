@@ -31,6 +31,20 @@ export const TodoSchema = z.object({
   reminderCount: DecimalLikeSchema,
   parentId: SerialNumSchema.nullable(),
   subtaskOrder: DecimalLikeSchema.nullable(),
+  // 新增提醒相关字段
+  reminderEnabled: z.boolean(),
+  reminderAdvanceValue: DecimalLikeSchema.nullable(),
+  reminderAdvanceUnit: NullableStringSchema,
+  lastReminderSentAt: DateTimeSchema.nullable(),
+  reminderFrequency: NullableStringSchema,
+  snoozeUntil: DateTimeSchema.nullable(),
+  reminderMethods: z.any().nullable(), // JSON对象
+  timezone: NullableStringSchema,
+  smartReminderEnabled: z.boolean(),
+  locationBasedReminder: z.boolean(),
+  weatherDependent: z.boolean(),
+  priorityBoostEnabled: z.boolean(),
+  batchReminderId: SerialNumSchema.nullable(),
 });
 
 export const TodoCreateSchema = TodoSchema.omit({

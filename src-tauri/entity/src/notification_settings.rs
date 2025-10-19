@@ -6,41 +6,40 @@ use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize, LocalizeModel)]
-#[sea_orm(table_name = "reminder")]
+#[sea_orm(table_name = "notification_settings")]
 pub struct Model {
     #[sea_orm(primary_key, auto_increment = false)]
     pub serial_num: String,
-    pub todo_serial_num: String,
-    pub remind_at: DateTimeWithTimeZone,
-    pub r#type: Option<i32>,
-    pub is_sent: bool,
+    pub user_id: String,
+    pub notification_type: String,
+    pub enabled: bool,
+    pub quiet_hours_start: Option<Time>,
+    pub quiet_hours_end: Option<Time>,
+    #[sea_orm(column_type = "JsonBinary")]
+    pub quiet_days: Option<Json>,
+    pub sound_enabled: bool,
+    pub vibration_enabled: bool,
     pub created_at: DateTimeWithTimeZone,
     pub updated_at: Option<DateTimeWithTimeZone>,
-    // 新增提醒执行相关字段
-    pub reminder_method: Option<String>,
-    pub retry_count: i32,
-    pub last_retry_at: Option<DateTimeWithTimeZone>,
-    pub snooze_count: i32,
-    pub escalation_level: i32,
-    pub notification_id: Option<String>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
     #[sea_orm(
-        belongs_to = "super::todo::Entity",
-        from = "Column::TodoSerialNum",
-        to = "super::todo::Column::SerialNum",
+        belongs_to = "super::users::Entity",
+        from = "Column::UserId",
+        to = "super::users::Column::SerialNum",
         on_update = "Cascade",
         on_delete = "Cascade"
     )]
-    Todo,
+    Users,
 }
 
-impl Related<super::todo::Entity> for Entity {
+impl Related<super::users::Entity> for Entity {
     fn to() -> RelationDef {
-        Relation::Todo.def()
+        Relation::Users.def()
     }
 }
 
 impl ActiveModelBehavior for ActiveModel {}
+

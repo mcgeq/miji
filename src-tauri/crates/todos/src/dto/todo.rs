@@ -27,6 +27,20 @@ pub struct TodoBase {
     pub reminder_count: i32,
     pub parent_id: Option<String>,
     pub subtask_order: Option<i32>,
+    // 新增提醒相关字段
+    pub reminder_enabled: bool,
+    pub reminder_advance_value: Option<i32>,
+    pub reminder_advance_unit: Option<String>,
+    pub last_reminder_sent_at: Option<DateTime<FixedOffset>>,
+    pub reminder_frequency: Option<String>,
+    pub snooze_until: Option<DateTime<FixedOffset>>,
+    pub reminder_methods: Option<serde_json::Value>,
+    pub timezone: Option<String>,
+    pub smart_reminder_enabled: bool,
+    pub location_based_reminder: bool,
+    pub weather_dependent: bool,
+    pub priority_boost_enabled: bool,
+    pub batch_reminder_id: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
@@ -68,6 +82,20 @@ pub struct TodoUpdate {
     pub reminder_count: Option<i32>,
     pub parent_id: Option<String>,
     pub subtask_order: Option<i32>,
+    // 新增提醒相关字段
+    pub reminder_enabled: Option<bool>,
+    pub reminder_advance_value: Option<i32>,
+    pub reminder_advance_unit: Option<String>,
+    pub last_reminder_sent_at: Option<DateTime<FixedOffset>>,
+    pub reminder_frequency: Option<String>,
+    pub snooze_until: Option<DateTime<FixedOffset>>,
+    pub reminder_methods: Option<serde_json::Value>,
+    pub timezone: Option<String>,
+    pub smart_reminder_enabled: Option<bool>,
+    pub location_based_reminder: Option<bool>,
+    pub weather_dependent: Option<bool>,
+    pub priority_boost_enabled: Option<bool>,
+    pub batch_reminder_id: Option<String>,
 }
 
 impl TryFrom<TodoCreate> for entity::todo::ActiveModel {
@@ -97,6 +125,20 @@ impl TryFrom<TodoCreate> for entity::todo::ActiveModel {
             subtask_order: ActiveValue::Set(value.core.subtask_order),
             created_at: ActiveValue::Set(now),
             updated_at: ActiveValue::Set(Some(now)),
+            // 新增提醒相关字段
+            reminder_enabled: ActiveValue::Set(value.core.reminder_enabled),
+            reminder_advance_value: ActiveValue::Set(value.core.reminder_advance_value),
+            reminder_advance_unit: ActiveValue::Set(value.core.reminder_advance_unit),
+            last_reminder_sent_at: ActiveValue::Set(value.core.last_reminder_sent_at),
+            reminder_frequency: ActiveValue::Set(value.core.reminder_frequency),
+            snooze_until: ActiveValue::Set(value.core.snooze_until),
+            reminder_methods: ActiveValue::Set(value.core.reminder_methods),
+            timezone: ActiveValue::Set(value.core.timezone),
+            smart_reminder_enabled: ActiveValue::Set(value.core.smart_reminder_enabled),
+            location_based_reminder: ActiveValue::Set(value.core.location_based_reminder),
+            weather_dependent: ActiveValue::Set(value.core.weather_dependent),
+            priority_boost_enabled: ActiveValue::Set(value.core.priority_boost_enabled),
+            batch_reminder_id: ActiveValue::Set(value.core.batch_reminder_id),
         })
     }
 }
@@ -151,6 +193,44 @@ impl TryFrom<TodoUpdate> for entity::todo::ActiveModel {
                 .map_or(ActiveValue::NotSet, |v| ActiveValue::Set(Some(v))),
             created_at: ActiveValue::NotSet,
             updated_at: ActiveValue::Set(Some(DateUtils::local_now())),
+            // 新增提醒相关字段
+            reminder_enabled: value.reminder_enabled.map_or(ActiveValue::NotSet, ActiveValue::Set),
+            reminder_advance_value: value
+                .reminder_advance_value
+                .map_or(ActiveValue::NotSet, |v| ActiveValue::Set(Some(v))),
+            reminder_advance_unit: value
+                .reminder_advance_unit
+                .map_or(ActiveValue::NotSet, |v| ActiveValue::Set(Some(v))),
+            last_reminder_sent_at: value
+                .last_reminder_sent_at
+                .map_or(ActiveValue::NotSet, |v| ActiveValue::Set(Some(v))),
+            reminder_frequency: value
+                .reminder_frequency
+                .map_or(ActiveValue::NotSet, |v| ActiveValue::Set(Some(v))),
+            snooze_until: value
+                .snooze_until
+                .map_or(ActiveValue::NotSet, |v| ActiveValue::Set(Some(v))),
+            reminder_methods: value
+                .reminder_methods
+                .map_or(ActiveValue::NotSet, |v| ActiveValue::Set(Some(v))),
+            timezone: value
+                .timezone
+                .map_or(ActiveValue::NotSet, |v| ActiveValue::Set(Some(v))),
+            smart_reminder_enabled: value
+                .smart_reminder_enabled
+                .map_or(ActiveValue::NotSet, ActiveValue::Set),
+            location_based_reminder: value
+                .location_based_reminder
+                .map_or(ActiveValue::NotSet, ActiveValue::Set),
+            weather_dependent: value
+                .weather_dependent
+                .map_or(ActiveValue::NotSet, ActiveValue::Set),
+            priority_boost_enabled: value
+                .priority_boost_enabled
+                .map_or(ActiveValue::NotSet, ActiveValue::Set),
+            batch_reminder_id: value
+                .batch_reminder_id
+                .map_or(ActiveValue::NotSet, |v| ActiveValue::Set(Some(v))),
         })
     }
 }
@@ -175,6 +255,20 @@ impl TodoUpdate {
         set_active_value_t!(model, self, reminder_count);
         set_active_value_opt!(model, self, parent_id);
         set_active_value_opt!(model, self, subtask_order);
+        // 新增提醒相关字段
+        set_active_value_t!(model, self, reminder_enabled);
+        set_active_value_opt!(model, self, reminder_advance_value);
+        set_active_value_opt!(model, self, reminder_advance_unit);
+        set_active_value_opt!(model, self, last_reminder_sent_at);
+        set_active_value_opt!(model, self, reminder_frequency);
+        set_active_value_opt!(model, self, snooze_until);
+        set_active_value_opt!(model, self, reminder_methods);
+        set_active_value_opt!(model, self, timezone);
+        set_active_value_t!(model, self, smart_reminder_enabled);
+        set_active_value_t!(model, self, location_based_reminder);
+        set_active_value_t!(model, self, weather_dependent);
+        set_active_value_t!(model, self, priority_boost_enabled);
+        set_active_value_opt!(model, self, batch_reminder_id);
         model.updated_at = ActiveValue::Set(Some(DateUtils::local_now()));
     }
 }
@@ -202,6 +296,20 @@ impl From<entity::todo::Model> for Todo {
                 reminder_count: value.reminder_count,
                 parent_id: value.parent_id,
                 subtask_order: value.subtask_order,
+                // 新增提醒相关字段
+                reminder_enabled: value.reminder_enabled,
+                reminder_advance_value: value.reminder_advance_value,
+                reminder_advance_unit: value.reminder_advance_unit,
+                last_reminder_sent_at: value.last_reminder_sent_at,
+                reminder_frequency: value.reminder_frequency,
+                snooze_until: value.snooze_until,
+                reminder_methods: value.reminder_methods,
+                timezone: value.timezone,
+                smart_reminder_enabled: value.smart_reminder_enabled,
+                location_based_reminder: value.location_based_reminder,
+                weather_dependent: value.weather_dependent,
+                priority_boost_enabled: value.priority_boost_enabled,
+                batch_reminder_id: value.batch_reminder_id,
             },
             created_at: value.created_at,
             updated_at: value.updated_at,

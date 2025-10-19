@@ -2,6 +2,7 @@ pub mod prelude;
 
 pub mod account;
 pub mod attachment;
+pub mod batch_reminders;
 pub mod bil_reminder;
 pub mod budget;
 pub mod categories;
@@ -11,6 +12,8 @@ pub mod family_ledger_account;
 pub mod family_ledger_member;
 pub mod family_ledger_transaction;
 pub mod family_member;
+pub mod notification_logs;
+pub mod notification_settings;
 pub mod operation_log;
 pub mod period_daily_records;
 pub mod period_pms_records;

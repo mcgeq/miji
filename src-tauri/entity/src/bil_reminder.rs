@@ -33,6 +33,19 @@ pub struct Model {
     pub is_deleted: bool,
     pub created_at: DateTimeWithTimeZone,
     pub updated_at: Option<DateTimeWithTimeZone>,
+    // 新增高级提醒功能字段
+    pub last_reminder_sent_at: Option<DateTimeWithTimeZone>,
+    pub reminder_frequency: Option<String>,
+    pub snooze_until: Option<DateTimeWithTimeZone>,
+    #[sea_orm(column_type = "JsonBinary")]
+    pub reminder_methods: Option<Json>,
+    pub escalation_enabled: bool,
+    pub escalation_after_hours: Option<i32>,
+    pub timezone: Option<String>,
+    pub smart_reminder_enabled: bool,
+    pub auto_reschedule: bool,
+    pub payment_reminder_enabled: bool,
+    pub batch_reminder_id: Option<String>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
