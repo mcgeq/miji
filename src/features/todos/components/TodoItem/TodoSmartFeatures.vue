@@ -403,9 +403,10 @@ function resetToDefaults() {
 }
 
 .smart-features-btn.hasFeatures {
-  background: var(--color-accent);
-  color: var(--color-accent-content);
-  border-color: var(--color-accent);
+  background: var(--color-base-200);
+  color: var(--color-base-content);
+  border-color: var(--color-base-content);
+  font-weight: 600;
 }
 
 .smart-features-btn.readonly {

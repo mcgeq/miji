@@ -19,10 +19,6 @@ const editingDays = ref(0);
 
 // 计算属性
 const hasEstimate = computed(() => !!props.estimateMinutes);
-const estimateDisplay = computed(() => {
-  if (!props.estimateMinutes) return '';
-  return formatTime(props.estimateMinutes);
-});
 
 const totalMinutes = computed(() => {
   return editingDays.value * 24 * 60 + editingHours.value * 60 + editingMinutes.value;
@@ -139,7 +135,6 @@ watch([editingDays, editingHours, editingMinutes], validateInput);
       <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
         <path d="M12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22C6.47,22 2,17.5 2,12A10,10 0 0,1 12,2M12.5,7V12.25L17,14.92L16.25,16.15L11,13V7H12.5Z" />
       </svg>
-      <span class="estimate-text">{{ estimateDisplay }}</span>
     </button>
 
     <!-- 时间估算设置模态框 -->
@@ -282,9 +277,10 @@ watch([editingDays, editingHours, editingMinutes], validateInput);
 }
 
 .estimate-btn.hasEstimate {
-  background: var(--color-warning);
-  color: var(--color-warning-content);
-  border-color: var(--color-warning);
+  background: var(--color-base-200);
+  color: var(--color-base-content);
+  border-color: var(--color-base-content);
+  font-weight: 600;
 }
 
 .estimate-btn.readonly {
@@ -296,13 +292,6 @@ watch([editingDays, editingHours, editingMinutes], validateInput);
   width: 0.875rem;
   height: 0.875rem;
   flex-shrink: 0;
-}
-
-.estimate-text {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 5rem;
 }
 
 /* 模态框样式 - 全局样式，因为使用了Teleport */

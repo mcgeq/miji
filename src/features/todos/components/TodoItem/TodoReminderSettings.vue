@@ -296,9 +296,10 @@ function resetToDefaults() {
 }
 
 .reminder-toggle.active {
-  background: var(--color-primary);
-  color: var(--color-primary-content);
-  border-color: var(--color-primary);
+  background: var(--color-base-200);
+  color: var(--color-base-content);
+  border-color: var(--color-base-content);
+  font-weight: 600;
 }
 
 .icon {

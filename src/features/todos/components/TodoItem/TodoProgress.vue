@@ -83,7 +83,7 @@ function setQuickProgress(progress: number) {
           }"
         />
       </div>
-      <div class="progress-text">
+      <div class="progress-text" :class="{ readonly }">
         <Play v-if="progressIcon === 'play'" class="progress-icon" size="16" />
         <CheckCircle v-else-if="progressIcon === 'check'" class="progress-icon" size="16" />
         <span v-else>{{ progressText }}</span>
@@ -267,13 +267,29 @@ function setQuickProgress(progress: number) {
 }
 
 .progress-text {
-  font-size: 0.75rem;
-  font-weight: 500;
-  color: var(--color-base-content);
-  text-align: center;
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  gap: 0.375rem;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid var(--color-base-300);
+  border-radius: 0.5rem;
+  background: var(--color-base-100);
+  color: var(--color-base-content);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.75rem;
+  min-width: 0;
+  justify-content: center;
+}
+
+.progress-text:hover {
+  background: var(--color-base-200);
+  border-color: var(--color-primary);
+}
+
+.progress-text.readonly {
+  cursor: default;
+  opacity: 0.6;
 }
 
 .progress-icon {
@@ -282,14 +298,14 @@ function setQuickProgress(progress: number) {
 
 .quick-progress {
   display: flex;
-  gap: 0.25rem;
+  gap: 0.375rem;
   justify-content: center;
 }
 
 .quick-btn {
   padding: 0.25rem 0.5rem;
   border: 1px solid var(--color-base-300);
-  border-radius: 0.375rem;
+  border-radius: 0.5rem;
   background: var(--color-base-100);
   color: var(--color-base-content);
   font-size: 0.75rem;
@@ -303,9 +319,10 @@ function setQuickProgress(progress: number) {
 }
 
 .quick-btn.active {
-  background: var(--color-primary);
-  color: var(--color-primary-content);
-  border-color: var(--color-primary);
+  background: var(--color-base-200);
+  color: var(--color-base-content);
+  border-color: var(--color-base-content);
+  font-weight: 600;
 }
 
 .quick-icon {
@@ -479,9 +496,10 @@ function setQuickProgress(progress: number) {
 }
 
 .quick-option.active {
-  background: var(--color-primary);
-  color: var(--color-primary-content);
-  border-color: var(--color-primary);
+  background: var(--color-base-200);
+  color: var(--color-base-content);
+  border-color: var(--color-base-content);
+  font-weight: 600;
 }
 
 .modal-icon {

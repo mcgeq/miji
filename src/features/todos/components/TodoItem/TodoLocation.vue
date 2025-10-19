@@ -250,9 +250,10 @@ async function getCurrentLocation() {
 }
 
 .location-btn.hasLocation {
-  background: var(--color-info);
-  color: var(--color-info-content);
-  border-color: var(--color-info);
+  background: var(--color-base-200);
+  color: var(--color-base-content);
+  border-color: var(--color-base-content);
+  font-weight: 600;
 }
 
 .location-btn.readonly {
