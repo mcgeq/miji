@@ -81,17 +81,45 @@ export function useTodosFilters(todos: () => PagedMapResult<Todo>, defaultPageSi
         start: DateUtils.getStartOfTodayISOWithOffset({ days: -2 }),
         end: DateUtils.getEndOfTodayISOWithOffset(),
       };
+      // 设置TODAY的自定义排序：未完成优先，优先级高的在前，已完成按创建时间排序
+      sortOptions.value.customOrderBy = `
+        CASE 
+          WHEN status = 'Completed' THEN 1 
+          ELSE 0 
+        END,
+        CASE 
+          WHEN status != 'Completed' THEN 
+            CASE priority 
+              WHEN 'Urgent' THEN 0
+              WHEN 'High' THEN 1
+              WHEN 'Medium' THEN 2
+              WHEN 'Low' THEN 3
+              ELSE 4
+            END
+          ELSE 0
+        END,
+        CASE 
+          WHEN status = 'Completed' THEN -EXTRACT(EPOCH FROM createdAt)
+          ELSE 0
+        END
+      `;
     } else if (filterBtn.value === FilterBtnSchema.enum.TOMORROW) {
       filters.value.dateRange = {
         start: DateUtils.getStartOfTodayISOWithOffset({ days: 1 }),
       };
+      // 重置排序为默认
+      sortOptions.value.customOrderBy = undefined;
     } else if (filterBtn.value === FilterBtnSchema.enum.YESTERDAY) {
       filters.value.status = StatusSchema.enum.Completed;
       filters.value.dateRange = {
         end: DateUtils.getEndOfTodayISOWithOffset({ days: -2 }),
       };
+      // 重置排序为默认
+      sortOptions.value.customOrderBy = undefined;
     } else {
       filters.value.dateRange = undefined;
+      // 重置排序为默认
+      sortOptions.value.customOrderBy = undefined;
     }
   });
 

@@ -73,8 +73,9 @@ where
 {
     fn apply_sort(&self, query: Select<E>) -> Select<E> {
         if let Some(order_by) = &self.custom_order_by {
-            let direction = self.effective_sort_direction();
-            return query.order_by(Expr::cust(order_by), direction);
+            // custom_order_by 包含完整的排序逻辑，直接使用 Expr::cust
+            // 注意：这里需要确保 order_by 不包含 ASC/DESC 关键字
+            return query.order_by(Expr::cust(order_by), Order::Asc);
         }
 
         // 获取有效的排序字段

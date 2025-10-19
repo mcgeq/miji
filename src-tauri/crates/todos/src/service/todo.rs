@@ -218,17 +218,23 @@ impl TodosService {
             .await
             .map_err(AppError::from)? as usize;
 
-        // Step 2: Query all todos, sorted by status (non-completed first) and Priority DESC
+        // Step 2: Query all todos with appropriate sorting
         let mut query_builder = entity::todo::Entity::find()
-            .filter(query.filter.to_condition())
-            .order_by(
-                sea_orm::sea_query::Expr::cust("CASE WHEN status != 'Completed' THEN 0 ELSE 1 END"),
-                Order::Desc, // Non-completed first, completed last
-            )
-            .order_by(entity::todo::Column::Priority, Order::Desc); // Then sort by Priority DESC
+            .filter(query.filter.to_condition());
 
-        // Apply additional sorting from sort_options
-        query_builder = query.sort_options.apply_sort(query_builder);
+        // Apply sorting: use custom order if provided, otherwise use default
+        if query.sort_options.custom_order_by.is_some() {
+            // Use custom sorting from frontend
+            query_builder = query.sort_options.apply_sort(query_builder);
+        } else {
+            // Use default sorting: status first, then priority
+            query_builder = query_builder
+                .order_by(
+                    sea_orm::sea_query::Expr::cust("CASE WHEN status != 'Completed' THEN 0 ELSE 1 END"),
+                    Order::Asc, // Non-completed first (0), completed last (1)
+                )
+                .order_by(entity::todo::Column::Priority, Order::Desc); // Then sort by Priority DESC
+        }
 
         let offset = (query.current_page - 1) * query.page_size;
         let rows = query_builder
