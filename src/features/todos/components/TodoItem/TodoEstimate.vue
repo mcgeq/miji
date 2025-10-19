@@ -196,8 +196,8 @@ watch([editingDays, editingHours, editingMinutes], validateInput);
                 <button
                   v-for="estimate in quickEstimates"
                   :key="estimate.minutes"
-                  class="quick-option"
-                  :class="{ active: totalMinutes === estimate.minutes }"
+                  class="todo-btn"
+                  :class="{ 'todo-btn--active': totalMinutes === estimate.minutes }"
                   @click="setQuickEstimate(estimate.minutes)"
                 >
                   {{ estimate.label }}
@@ -362,29 +362,6 @@ watch([editingDays, editingHours, editingMinutes], validateInput);
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 0.5rem;
-}
-
-.quick-option {
-  padding: 0.75rem;
-  border: 1px solid var(--color-base-300);
-  border-radius: 0.5rem;
-  background: var(--color-base-100);
-  color: var(--color-base-content);
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-size: 0.875rem;
-  text-align: center;
-}
-
-.quick-option:hover {
-  background: var(--color-base-200);
-  border-color: var(--color-primary);
-}
-
-.quick-option.active {
-  background: var(--color-primary);
-  color: var(--color-primary-content);
-  border-color: var(--color-primary);
 }
 
 .time-preview {

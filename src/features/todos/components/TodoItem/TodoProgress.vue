@@ -60,33 +60,36 @@ function setQuickProgress(progress: number) {
 
 <template>
   <div class="todo-progress">
-    <!-- 进度条显示 -->
-    <div class="progress-container" :class="{ readonly }" @click="openEditModal">
-      <div class="progress-bar">
-        <div
-          class="progress-fill"
-          :style="{
-            width: `${progressPercentage}%`,
-            backgroundColor: progressColor,
-          }"
-        />
+    <!-- 进度条显示和快速设置按钮 -->
+    <div class="progress-row">
+      <!-- 进度条显示 -->
+      <div class="progress-container" :class="{ readonly }" @click="openEditModal">
+        <div class="progress-bar">
+          <div
+            class="progress-fill"
+            :style="{
+              width: `${progressPercentage}%`,
+              backgroundColor: progressColor,
+            }"
+          />
+        </div>
       </div>
-    </div>
 
-    <!-- 快速设置按钮 -->
-    <div v-if="!readonly" class="quick-progress">
-      <button
-        v-for="value in quickProgressOptions"
-        :key="value"
-        class="todo-btn todo-btn--icon-only"
-        :class="{ 'todo-btn--active': progress === value }"
-        :title="value === 0 ? '未开始' : value === 100 ? '已完成' : `${value}%`"
-        @click="setQuickProgress(value)"
-      >
-        <Play v-if="value === 0" class="quick-icon" :size="14" />
-        <CheckCircle v-else-if="value === 100" class="quick-icon" :size="14" />
-        <span v-else>{{ value }}%</span>
-      </button>
+      <!-- 快速设置按钮 -->
+      <div v-if="!readonly" class="quick-progress">
+        <button
+          v-for="value in quickProgressOptions"
+          :key="value"
+          class="todo-btn todo-btn--icon-only"
+          :class="{ 'todo-btn--active': progress === value }"
+          :title="value === 0 ? '未开始' : value === 100 ? '已完成' : `${value}%`"
+          @click="setQuickProgress(value)"
+        >
+          <Play v-if="value === 0" class="quick-icon" :size="14" />
+          <CheckCircle v-else-if="value === 100" class="quick-icon" :size="14" />
+          <span v-else>{{ value }}%</span>
+        </button>
+      </div>
     </div>
 
     <!-- 进度编辑模态框 -->
@@ -195,21 +198,29 @@ function setQuickProgress(progress: number) {
   gap: 0.5rem;
 }
 
-.progress-container {
+.progress-row {
   display: flex;
   align-items: center;
-  padding: 0.75rem 1rem;
-  border-radius: 0.75rem;
+  gap: 0.5rem;
+}
+
+.progress-container {
+  display: flex;
+  width: 8rem;
+  align-items: center;
+  padding: 0.375rem 0.75rem;
+  border-radius: 0.5rem;
   background: linear-gradient(
     135deg,
     var(--color-base-100) 0%,
     color-mix(in oklch, var(--color-base-100) 95%, var(--color-primary)) 100%
   );
-  border: 1px solid var(--color-base-300);
+  border: 2px solid #d1d5db;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: var(--shadow-sm);
   backdrop-filter: blur(10px);
+  flex: 1;
 }
 
 .progress-container:hover {
@@ -241,21 +252,18 @@ function setQuickProgress(progress: number) {
 
 .progress-bar {
   width: 100%;
-  height: 0.625rem;
-  background: var(--color-base-300);
+  height: 0.75rem;
+  background: #e5e7eb;
   border-radius: 0.375rem;
   overflow: hidden;
   position: relative;
-  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
+  min-height: 0.75rem;
 }
 
 .progress-fill {
   height: 100%;
-  background: linear-gradient(
-    90deg,
-    var(--color-primary) 0%,
-    var(--color-primary-hover) 100%
-  );
+  background: #3b82f6;
   border-radius: 0.375rem;
   transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s ease;
   position: relative;
@@ -286,7 +294,8 @@ function setQuickProgress(progress: number) {
 .quick-progress {
   display: flex;
   gap: 0.375rem;
-  justify-content: center;
+  justify-content: flex-end;
+  flex-shrink: 0;
 }
 
 /* 快速设置按钮样式现在使用全局 .todo-btn 样式 */

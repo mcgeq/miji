@@ -210,7 +210,7 @@
 
 /* 覆盖现有的modal-overlay，提供更高的z-index和更好的动画 */
 .modal-overlay.teleport {
-  z-index: 9999;
+  z-index: 10005;
   background: rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(4px);
   opacity: 0;
