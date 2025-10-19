@@ -25,18 +25,6 @@ const progressColor = computed(() => {
   return 'var(--color-error)';
 });
 
-const progressText = computed(() => {
-  if (progressPercentage.value === 0) return 'play'; // 使用图标标识
-  if (progressPercentage.value === 100) return 'check'; // 使用图标标识
-  return `${progressPercentage.value}%`;
-});
-
-const progressIcon = computed(() => {
-  if (progressPercentage.value === 0) return 'play';
-  if (progressPercentage.value === 100) return 'check';
-  return null;
-});
-
 // 预设进度值
 const quickProgressOptions = [0, 25, 50, 75, 100];
 
@@ -82,11 +70,6 @@ function setQuickProgress(progress: number) {
             backgroundColor: progressColor,
           }"
         />
-      </div>
-      <div class="progress-text" :class="{ readonly }">
-        <Play v-if="progressIcon === 'play'" class="progress-icon" :size="16" />
-        <CheckCircle v-else-if="progressIcon === 'check'" class="progress-icon" :size="16" />
-        <span v-else>{{ progressText }}</span>
       </div>
     </div>
 
@@ -215,34 +198,68 @@ function setQuickProgress(progress: number) {
 .progress-container {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  background: linear-gradient(
+    135deg,
+    var(--color-base-100) 0%,
+    color-mix(in oklch, var(--color-base-100) 95%, var(--color-primary)) 100%
+  );
+  border: 1px solid var(--color-base-300);
   cursor: pointer;
-  transition: opacity 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: var(--shadow-sm);
+  backdrop-filter: blur(10px);
+}
+
+.progress-container:hover {
+  background: linear-gradient(
+    135deg,
+    var(--color-base-100) 0%,
+    color-mix(in oklch, var(--color-base-100) 90%, var(--color-primary)) 100%
+  );
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
 }
 
 .progress-container.readonly {
   cursor: default;
-}
-
-.progress-container:not(.readonly):hover {
   opacity: 0.8;
 }
 
+.progress-container.readonly:hover {
+  background: linear-gradient(
+    135deg,
+    var(--color-base-100) 0%,
+    color-mix(in oklch, var(--color-base-100) 95%, var(--color-primary)) 100%
+  );
+  border-color: var(--color-base-300);
+  box-shadow: var(--shadow-sm);
+  transform: none;
+}
+
 .progress-bar {
-  flex: 1;
-  height: 0.5rem;
+  width: 100%;
+  height: 0.625rem;
   background: var(--color-base-300);
-  border-radius: 0.25rem;
+  border-radius: 0.375rem;
   overflow: hidden;
   position: relative;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .progress-fill {
   height: 100%;
-  background: var(--color-primary);
-  border-radius: 0.25rem;
-  transition: width 0.3s ease, background-color 0.3s ease;
+  background: linear-gradient(
+    90deg,
+    var(--color-primary) 0%,
+    var(--color-primary-hover) 100%
+  );
+  border-radius: 0.375rem;
+  transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s ease;
   position: relative;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
 .progress-fill::after {
@@ -264,36 +281,6 @@ function setQuickProgress(progress: number) {
 @keyframes shimmer {
   0% { transform: translateX(-100%); }
   100% { transform: translateX(100%); }
-}
-
-.progress-text {
-  display: flex;
-  align-items: center;
-  gap: 0.375rem;
-  padding: 0.25rem 0.5rem;
-  border: 1px solid var(--color-base-300);
-  border-radius: 0.5rem;
-  background: var(--color-base-100);
-  color: var(--color-base-content);
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-size: 0.75rem;
-  min-width: 0;
-  justify-content: center;
-}
-
-.progress-text:hover {
-  background: var(--color-base-200);
-  border-color: var(--color-primary);
-}
-
-.progress-text.readonly {
-  cursor: default;
-  opacity: 0.6;
-}
-
-.progress-icon {
-  color: var(--color-base-content);
 }
 
 .quick-progress {

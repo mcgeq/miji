@@ -339,138 +339,126 @@ function handleMouseLeave() {
 
 <style scoped lang="postcss">
 .todo-item {
-  margin-bottom: 0.5rem;
-  padding: 0.875rem 1rem;
-  border-radius: 1rem;
-  border: 1px solid color-mix(in oklch, var(--color-base-300) 30%, transparent);
-  background: linear-gradient(
-    135deg,
-    var(--color-base-100) 0%,
-    color-mix(in oklch, var(--color-base-100) 95%, var(--color-primary)) 100%
-  );
+  margin-bottom: 0.75rem;
+  padding: 1rem 1.25rem;
+  border-radius: 1.25rem;
+  border: 1px solid var(--color-base-300);
+  background: var(--color-base-100);
   display: flex;
   flex-direction: column;
   position: relative;
-  min-height: 4rem;
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  min-height: 4.5rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   overflow: visible;
-  z-index: 1; /* 恢复正常z-index，确保TodoItem可见 */
-  box-shadow: 0 1px 3px color-mix(in oklch, var(--color-neutral) 8%, transparent);
+  z-index: 1;
+  box-shadow: var(--shadow-sm);
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
+  backdrop-filter: blur(10px);
 }
 
-/* 优先级颜色条 - 作为容器的一部分 */
+/* 优先级颜色条 - 现代化设计 */
 .todo-item::before {
   content: '';
   position: absolute;
   left: 0;
-  top: 0;
-  bottom: 0;
-  width: 3px;
-  border-radius: 1rem 0 0 1rem;
+  top: 0.5rem;
+  bottom: 0.5rem;
+  width: 4px;
+  border-radius: 0 0.5rem 0.5rem 0;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 1;
-  opacity: 0.9;
+  opacity: 0.8;
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
 }
 
-/* 低优先级 - 绿色系 */
+/* 低优先级 - 现代化绿色系 */
 .priority-low::before {
-  background: linear-gradient(
-    180deg,
-    var(--color-success) 0%,
-    color-mix(in oklch, var(--color-success) 85%, var(--color-info)) 100%
-  );
+  background: var(--color-success);
+  box-shadow: 0 0 12px var(--color-success);
 }
 
 .priority-low {
   background: linear-gradient(
     135deg,
-    color-mix(in oklch, var(--color-base-100) 98%, var(--color-success)) 0%,
-    color-mix(in oklch, var(--color-base-100) 95%, var(--color-success)) 100%
+    var(--color-base-100) 0%,
+    color-mix(in oklch, var(--color-base-100) 98%, var(--color-success)) 100%
   );
+  border-color: color-mix(in oklch, var(--color-success) 20%, transparent);
 }
 
-/* 中等优先级 - 橙色系 */
+/* 中等优先级 - 现代化橙色系 */
 .priority-medium::before {
-  background: linear-gradient(
-    180deg,
-    var(--color-warning) 0%,
-    color-mix(in oklch, var(--color-warning) 90%, var(--color-error)) 100%
-  );
+  background: var(--color-warning);
+  box-shadow: 0 0 12px var(--color-warning);
 }
 
 .priority-medium {
   background: linear-gradient(
     135deg,
-    color-mix(in oklch, var(--color-base-100) 98%, var(--color-warning)) 0%,
-    color-mix(in oklch, var(--color-base-100) 95%, var(--color-warning)) 100%
+    var(--color-base-100) 0%,
+    color-mix(in oklch, var(--color-base-100) 98%, var(--color-warning)) 100%
   );
+  border-color: color-mix(in oklch, var(--color-warning) 20%, transparent);
 }
 
-/* 高优先级 - 红色系 */
+/* 高优先级 - 现代化红色系 */
 .priority-high::before {
-  background: linear-gradient(
-    180deg,
-    var(--color-error) 0%,
-    color-mix(in oklch, var(--color-error) 85%, var(--color-accent)) 100%
-  );
+  background: var(--color-error);
+  box-shadow: 0 0 12px var(--color-error);
 }
 
 .priority-high {
   background: linear-gradient(
     135deg,
-    color-mix(in oklch, var(--color-base-100) 98%, var(--color-error)) 0%,
-    color-mix(in oklch, var(--color-base-100) 95%, var(--color-error)) 100%
+    var(--color-base-100) 0%,
+    color-mix(in oklch, var(--color-base-100) 98%, var(--color-error)) 100%
   );
+  border-color: color-mix(in oklch, var(--color-error) 20%, transparent);
 }
 
-/* 紧急优先级 - 深红色系，更加醒目 */
+/* 紧急优先级 - 现代化深红色系，更加醒目 */
 .priority-urgent::before {
-  background: linear-gradient(
-    180deg,
-    color-mix(in oklch, var(--color-error) 90%, var(--color-accent)) 0%,
-    color-mix(in oklch, var(--color-error) 70%, black) 100%
-  );
-  box-shadow: 0 0 10px color-mix(in oklch, var(--color-error) 30%, transparent);
-  animation: urgent-glow 2s ease-in-out infinite;
+  background: var(--color-error);
+  box-shadow: 0 0 16px var(--color-error);
+  animation: urgent-pulse 2s ease-in-out infinite;
 }
 
 .priority-urgent {
   background: linear-gradient(
     135deg,
-    color-mix(in oklch, var(--color-base-100) 96%, var(--color-error)) 0%,
-    color-mix(in oklch, var(--color-base-100) 92%, var(--color-error)) 100%
+    var(--color-base-100) 0%,
+    color-mix(in oklch, var(--color-base-100) 96%, var(--color-error)) 100%
   );
-  border-color: color-mix(in oklch, var(--color-error) 20%, transparent);
+  border-color: var(--color-error);
+  box-shadow: var(--shadow-md), 0 0 20px color-mix(in oklch, var(--color-error) 30%, transparent);
 }
 
-@keyframes urgent-glow {
+@keyframes urgent-pulse {
   0%, 100% {
-    box-shadow: 0 0 10px color-mix(in oklch, var(--color-error) 30%, transparent);
+    box-shadow: 0 0 16px var(--color-error);
   }
   50% {
-    box-shadow: 0 0 16px color-mix(in oklch, var(--color-error) 45%, transparent);
+    box-shadow: 0 0 24px var(--color-error);
   }
 }
 
 .todo-item:hover {
-  box-shadow:
-    0 4px 12px color-mix(in oklch, var(--color-neutral) 12%, transparent),
-    0 2px 4px color-mix(in oklch, var(--color-neutral) 8%, transparent);
-  border-color: color-mix(in oklch, var(--color-primary) 20%, transparent);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--color-primary);
   transform: translateY(-2px);
   background: linear-gradient(
     135deg,
     var(--color-base-100) 0%,
-    color-mix(in oklch, var(--color-base-100) 92%, var(--color-primary)) 100%
+    color-mix(in oklch, var(--color-base-100) 95%, var(--color-primary)) 100%
   );
 }
 
 .todo-item:hover::before {
-  width: 4px;
+  width: 6px;
   opacity: 1;
+  box-shadow: 0 0 16px rgba(0, 0, 0, 0.15);
 }
 
 /* 主行容器 */
@@ -497,33 +485,51 @@ function handleMouseLeave() {
   overflow: hidden;
 }
 
-/* 移动端减少内边距 */
+/* 移动端优化 */
 @media (max-width: 768px) {
   .todo-item {
-    padding: 0.75rem 0.5rem;
+    padding: 0.875rem 1rem;
+    margin-bottom: 0.625rem;
+    border-radius: 1rem;
   }
 
   .todo-left {
-    padding-left: 0.25rem;
-    gap: 0.375rem;
+    padding-left: 0.5rem;
+    gap: 0.5rem;
   }
 
   .todo-extended {
     flex-direction: column;
-    gap: 0.375rem;
+    gap: 0.625rem;
+    margin-left: -1rem;
+    margin-right: -1rem;
+    padding-left: 1rem;
+    padding-right: 1rem;
+    border-radius: 0 0 0.75rem 0.75rem;
   }
 }
 
-/* 扩展信息区域 */
+/* 扩展信息区域 - 现代化设计 */
 .todo-extended {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-top: 0.75rem;
-  padding-top: 0.75rem;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
   border-top: 1px solid var(--color-base-300);
   position: relative;
-  z-index: 0; /* 降低z-index，避免遮盖其他内容 */
+  z-index: 0;
+  background: linear-gradient(
+    135deg,
+    color-mix(in oklch, var(--color-base-100) 98%, var(--color-primary)) 0%,
+    var(--color-base-100) 100%
+  );
+  border-radius: 0 0 1rem 1rem;
+  margin-left: -1.25rem;
+  margin-right: -1.25rem;
+  padding-left: 1.25rem;
+  padding-right: 1.25rem;
+  padding-bottom: 0.5rem;
 }
 
 /* 到期时间 */
