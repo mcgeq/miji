@@ -296,6 +296,18 @@
   transition: all 0.2s ease;
 }
 
+/* 圆形图标按钮样式覆盖 */
+.btn-icon.btn-secondary.teleport,
+.btn-icon.btn-primary.teleport {
+  width: 3rem !important;
+  height: 3rem !important;
+  border-radius: 50% !important;
+  padding: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
 .btn-secondary.teleport {
   background: var(--color-base-200);
   color: var(--color-base-content);
@@ -324,12 +336,19 @@
   }
   
   .modal-footer.teleport {
-    flex-direction: column;
-    gap: 0.5rem;
+    flex-direction: row !important;
+    gap: 1.5rem !important;
+    justify-content: center !important;
   }
   
-  .btn-secondary.teleport,
-  .btn-primary.teleport {
+  .btn-icon.btn-secondary.teleport,
+  .btn-icon.btn-primary.teleport {
+    width: 2.5rem !important;
+    height: 2.5rem !important;
+  }
+  
+  .btn-secondary.teleport:not(.btn-icon),
+  .btn-primary.teleport:not(.btn-icon) {
     width: 100%;
   }
 }

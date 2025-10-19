@@ -262,9 +262,93 @@
   }
 }
 
+/* 圆形图标按钮样式 - 用于模态框底部按钮 */
+.btn-icon {
+  width: 3rem !important;
+  height: 3rem !important;
+  border-radius: 50% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+  min-width: auto !important;
+  flex-shrink: 0 !important;
+  border: 1px solid transparent !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  outline: none !important;
+}
+
+/* 确保图标在按钮中正确显示 */
+.btn-icon svg {
+  display: inline-block !important;
+  width: 20px !important;
+  height: 20px !important;
+  color: inherit !important;
+  flex-shrink: 0;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+.btn-icon.btn-secondary {
+  background: var(--color-base-200);
+  color: var(--color-base-content);
+  border: 1px solid var(--color-base-300);
+}
+
+.btn-icon.btn-secondary:hover {
+  background: var(--color-base-300);
+  transform: scale(1.05);
+}
+
+.btn-icon.btn-primary {
+  background: var(--color-primary);
+  color: var(--color-primary-content);
+  border: 1px solid var(--color-primary);
+}
+
+.btn-icon.btn-primary:hover {
+  background: var(--color-primary-focus);
+  transform: scale(1.05);
+}
+
+.btn-icon:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.btn-icon:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* 模态框底部按钮容器样式 */
+.modal-footer {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  gap: 2rem !important;
+  padding: 1.5rem !important;
+  border-top: 1px solid var(--color-base-200) !important;
+  flex-direction: row !important;
+}
+
 @media (max-width: 767px) {
   .btn {
     min-width: 44px;
     min-height: 44px; /* 移动端触摸友好 */
+  }
+  
+  .btn-icon {
+    width: 2.5rem !important;
+    height: 2.5rem !important;
+  }
+  
+  .modal-footer {
+    gap: 1.5rem !important;
+    padding: 1rem !important;
+    flex-direction: row !important;
+    justify-content: center !important;
   }
 }

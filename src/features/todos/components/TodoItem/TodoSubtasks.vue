@@ -684,14 +684,7 @@ function moveSubtaskDown(subtask: Todo) {
   margin-top: 0.5rem;
 }
 
-.modal-footer {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 2rem;
-  padding: 1.5rem;
-  border-top: 1px solid var(--color-base-200);
-}
+/* modal-footer样式已移至全局buttons.css */
 
 .btn-secondary,
 .btn-primary {
@@ -722,40 +715,7 @@ function moveSubtaskDown(subtask: Todo) {
   background: var(--color-primary-focus);
 }
 
-/* 圆形图标按钮样式 */
-.btn-icon {
-  width: 3rem;
-  height: 3rem;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  min-width: auto;
-  flex-shrink: 0;
-}
-
-.btn-icon.btn-secondary {
-  background: var(--color-base-200);
-  color: var(--color-base-content);
-  border: 1px solid var(--color-base-300);
-}
-
-.btn-icon.btn-secondary:hover {
-  background: var(--color-base-300);
-  transform: scale(1.05);
-}
-
-.btn-icon.btn-primary {
-  background: var(--color-primary);
-  color: var(--color-primary-content);
-  border: 1px solid var(--color-primary);
-}
-
-.btn-icon.btn-primary:hover {
-  background: var(--color-primary-focus);
-  transform: scale(1.05);
-}
+/* 圆形图标按钮样式已移至全局buttons.css */
 
 .btn-primary:disabled {
   opacity: 0.5;
