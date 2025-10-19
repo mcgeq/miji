@@ -343,7 +343,7 @@ function handleMouseLeave() {
 <style scoped lang="postcss">
 .todo-item {
   margin-bottom: 0.25rem;
-  padding: 1rem 1.25rem;
+  padding: 1rem 1.5rem;
   border-radius: 1.25rem;
   border: 1px solid var(--color-base-300);
   background: var(--color-base-100);
@@ -522,8 +522,8 @@ function handleMouseLeave() {
   display: flex;
   flex-wrap: wrap;
   gap: 0.75rem;
-  margin-top: 1rem;
-  padding-top: 1rem;
+  margin-top: 0.3rem;
+  padding-top: 0.3rem;
   border-top: 1px solid var(--color-base-300);
   position: relative;
   z-index: 0;
@@ -532,7 +532,8 @@ function handleMouseLeave() {
   margin-right: -1.25rem;
   padding-left: 1.25rem;
   padding-right: 1.25rem;
-  padding-bottom: 0.5rem;
+  justify-content: center;
+  align-items: center;
 }
 
 /* 功能按钮组 */

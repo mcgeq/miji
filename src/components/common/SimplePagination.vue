@@ -175,8 +175,8 @@ function handlePageSizeChange() {
   flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem;
-  border-radius: 0.5rem;
+  padding: 0.5rem;
+  border-radius: 0.8rem;
   background-color: var(--color-base-100);
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
   gap: 0.75rem;

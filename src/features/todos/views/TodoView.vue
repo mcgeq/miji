@@ -298,6 +298,12 @@ onMounted(async () => {
   margin-top: auto;
 }
 
+/* 移除分页组件自身的阴影和背景色 */
+.pagination-wrapper :deep(.pagination-container) {
+  box-shadow: none;
+  background-color: transparent !important;
+}
+
 /* 动画 */
 .fade-slide-enter-active,
 .fade-slide-leave-active {
@@ -338,6 +344,7 @@ onMounted(async () => {
   .main-container {
     width: 100%;
     padding: 0.25rem;
+    padding-bottom: 4rem; /* 为底部导航留出空间 */
   }
   .input-area {
     padding-left: 0.5rem;
@@ -348,6 +355,23 @@ onMounted(async () => {
   }
   .input-wrapper {
     padding: 0.5rem;
+  }
+
+  .pagination-wrapper {
+    margin-bottom: 0;
+    margin-top: 0.5rem;
+    position: sticky;
+    bottom: 0;
+    background-color: transparent;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.5rem;
+    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  /* 移除分页组件自身的阴影和背景色，避免双重阴影 */
+  .pagination-wrapper :deep(.pagination-container) {
+    box-shadow: none;
+    background-color: transparent !important;
   }
 }
 </style>

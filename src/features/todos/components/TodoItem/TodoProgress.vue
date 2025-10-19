@@ -514,9 +514,14 @@ function updateProgress(newProgress: number) {
 
 /* 响应式设计 */
 @media (max-width: 768px) {
+  .todo-progress {
+    width: 100%;
+  }
+
   .progress-container {
     width: 100%;
     flex: none;
+    max-width: none;
   }
 
   .quick-options {
