@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { CheckCircle, Play } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import type { TodoUpdate } from '@/schema/todos';
 
@@ -26,7 +25,7 @@ const progressColor = computed(() => {
 });
 
 // 预设进度值
-const quickProgressOptions = [0, 25, 50, 75, 100];
+const quickProgressOptions: number[] = [];
 
 // 方法
 function openEditModal() {
@@ -52,43 +51,21 @@ function updateProgress(newProgress: number) {
   emit('update', { progress: clampedProgress });
   closeEditModal();
 }
-
-function setQuickProgress(progress: number) {
-  updateProgress(progress);
-}
 </script>
 
 <template>
   <div class="todo-progress">
     <!-- 进度条显示和快速设置按钮 -->
-    <div class="progress-row">
-      <!-- 进度条显示 -->
-      <div class="progress-container" :class="{ readonly }" @click="openEditModal">
-        <div class="progress-bar">
-          <div
-            class="progress-fill"
-            :style="{
-              width: `${progressPercentage}%`,
-              backgroundColor: progressColor,
-            }"
-          />
-        </div>
-      </div>
-
-      <!-- 快速设置按钮 -->
-      <div v-if="!readonly" class="quick-progress">
-        <button
-          v-for="value in quickProgressOptions"
-          :key="value"
-          class="todo-btn todo-btn--icon-only"
-          :class="{ 'todo-btn--active': progress === value }"
-          :title="value === 0 ? '未开始' : value === 100 ? '已完成' : `${value}%`"
-          @click="setQuickProgress(value)"
-        >
-          <Play v-if="value === 0" class="quick-icon" :size="14" />
-          <CheckCircle v-else-if="value === 100" class="quick-icon" :size="14" />
-          <span v-else>{{ value }}%</span>
-        </button>
+    <!-- 进度条显示 -->
+    <div class="progress-container" :class="{ readonly }" @click="openEditModal">
+      <div class="progress-bar">
+        <div
+          class="progress-fill"
+          :style="{
+            width: `${progressPercentage}%`,
+            backgroundColor: progressColor,
+          }"
+        />
       </div>
     </div>
 
@@ -198,12 +175,6 @@ function setQuickProgress(progress: number) {
   gap: 0.5rem;
 }
 
-.progress-row {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
 .progress-container {
   display: flex;
   width: 8rem;
@@ -289,19 +260,6 @@ function setQuickProgress(progress: number) {
 @keyframes shimmer {
   0% { transform: translateX(-100%); }
   100% { transform: translateX(100%); }
-}
-
-.quick-progress {
-  display: flex;
-  gap: 0.375rem;
-  justify-content: flex-end;
-  flex-shrink: 0;
-}
-
-/* 快速设置按钮样式现在使用全局 .todo-btn 样式 */
-
-.quick-icon {
-  color: currentColor;
 }
 
 /* 模态框样式 */
@@ -557,22 +515,9 @@ function setQuickProgress(progress: number) {
 
 /* 响应式设计 */
 @media (max-width: 768px) {
-  .progress-row {
-    flex-direction: column;
-    gap: 0.5rem;
-    align-items: stretch;
-  }
-
   .progress-container {
     width: 100%;
     flex: none;
-  }
-
-  .quick-progress {
-    display: flex;
-    justify-content: center;
-    gap: 0.375rem;
-    flex-wrap: wrap;
   }
 
   .quick-options {

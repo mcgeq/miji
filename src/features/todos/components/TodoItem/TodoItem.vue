@@ -262,38 +262,41 @@ function handleMouseLeave() {
         @update="(update) => updateTodo(todoCopy.serialNum, update)"
       />
 
-      <!-- 时间估算 -->
-      <TodoEstimate
-        :estimate-minutes="todoCopy.estimateMinutes"
-        @update="(update) => updateTodo(todoCopy.serialNum, update)"
-      />
+      <!-- 功能按钮组 -->
+      <div class="todo-actions">
+        <!-- 时间估算 -->
+        <TodoEstimate
+          :estimate-minutes="todoCopy.estimateMinutes"
+          @update="(update) => updateTodo(todoCopy.serialNum, update)"
+        />
 
-      <!-- 位置 -->
-      <TodoLocation
-        :location="todoCopy.location"
-        @update="(update) => updateTodo(todoCopy.serialNum, update)"
-      />
+        <!-- 位置 -->
+        <TodoLocation
+          :location="todoCopy.location"
+          @update="(update) => updateTodo(todoCopy.serialNum, update)"
+        />
 
-      <!-- 提醒设置 -->
-      <TodoReminderSettings
-        :todo="todoCopy"
-        @update="(update) => updateTodo(todoCopy.serialNum, update)"
-      />
+        <!-- 提醒设置 -->
+        <TodoReminderSettings
+          :todo="todoCopy"
+          @update="(update) => updateTodo(todoCopy.serialNum, update)"
+        />
 
-      <!-- 子任务 -->
-      <TodoSubtasks
-        :todo="todoCopy"
-        :subtasks="subtasks"
-        @create-subtask="onCreateSubtask"
-        @update-subtask="onUpdateSubtask"
-        @delete-subtask="onDeleteSubtask"
-      />
+        <!-- 子任务 -->
+        <TodoSubtasks
+          :todo="todoCopy"
+          :subtasks="subtasks"
+          @create-subtask="onCreateSubtask"
+          @update-subtask="onUpdateSubtask"
+          @delete-subtask="onDeleteSubtask"
+        />
 
-      <!-- 智能功能 -->
-      <TodoSmartFeatures
-        :todo="todoCopy"
-        @update="(update) => updateTodo(todoCopy.serialNum, update)"
-      />
+        <!-- 智能功能 -->
+        <TodoSmartFeatures
+          :todo="todoCopy"
+          @update="(update) => updateTodo(todoCopy.serialNum, update)"
+        />
+      </div>
     </div>
 
     <!-- Menus and Modals -->
@@ -499,14 +502,18 @@ function handleMouseLeave() {
   }
 
   .todo-extended {
-    flex-direction: row;
-    flex-wrap: wrap;
+    flex-direction: column;
     gap: 0.5rem;
     margin-left: -0.875rem;
     margin-right: -0.875rem;
     padding-left: 0.875rem;
     padding-right: 0.875rem;
     border-radius: 0 0 0.75rem 0.75rem;
+  }
+
+  .todo-actions {
+    gap: 0.5rem;
+    justify-content: flex-start;
   }
 }
 
@@ -520,17 +527,21 @@ function handleMouseLeave() {
   border-top: 1px solid var(--color-base-300);
   position: relative;
   z-index: 0;
-  background: linear-gradient(
-    135deg,
-    color-mix(in oklch, var(--color-base-100) 98%, var(--color-primary)) 0%,
-    var(--color-base-100) 100%
-  );
   border-radius: 0 0 1rem 1rem;
   margin-left: -1.25rem;
   margin-right: -1.25rem;
   padding-left: 1.25rem;
   padding-right: 1.25rem;
   padding-bottom: 0.5rem;
+}
+
+/* 功能按钮组 */
+.todo-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  justify-content: center;
 }
 
 /* 到期时间 */
