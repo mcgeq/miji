@@ -447,7 +447,18 @@ function getBilReminderDefault(): BilReminder {
     isDeleted: false,
     createdAt: '',
     updatedAt: '',
-
+    // 新增高级提醒功能字段
+    lastReminderSentAt: null,
+    reminderFrequency: null,
+    snoozeUntil: null,
+    reminderMethods: null,
+    escalationEnabled: false,
+    escalationAfterHours: 24,
+    timezone: null,
+    smartReminderEnabled: false,
+    autoReschedule: false,
+    paymentReminderEnabled: false,
+    batchReminderId: null,
   };
 }
 

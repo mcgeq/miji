@@ -46,6 +46,20 @@ async function handleAdd(text: string) {
     reminderCount: 0,
     parentId: null,
     subtaskOrder: null,
+    // 提醒相关字段
+    reminderEnabled: false,
+    reminderAdvanceValue: null,
+    reminderAdvanceUnit: null,
+    lastReminderSentAt: null,
+    reminderFrequency: null,
+    snoozeUntil: null,
+    reminderMethods: null,
+    timezone: null,
+    smartReminderEnabled: false,
+    locationBasedReminder: false,
+    weatherDependent: false,
+    priorityBoostEnabled: false,
+    batchReminderId: null,
   };
 
   try {

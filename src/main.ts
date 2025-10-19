@@ -24,6 +24,7 @@ import '@/assets/styles/components/modals.css';
 import '@/assets/styles/components/checkbox.css';
 import '@/assets/styles/components/text.css';
 import '@/assets/styles/components/settings.css';
+import '@/assets/styles/components/todo-buttons.css';
 
 z.config({
   localeError: i18nErrorMap,

@@ -118,10 +118,10 @@ function moveSubtaskDown(subtask: Todo) {
   <div class="todo-subtasks">
     <!-- 子任务显示按钮 -->
     <button
-      class="subtasks-btn"
+      class="todo-btn"
       :class="{
-        hasSubtasks,
-        readonly,
+        'todo-btn--active': hasSubtasks,
+        'todo-btn--readonly': readonly,
       }"
       :title="hasSubtasks ? `子任务: ${completedSubtasks}/${subtaskCount} (${subtaskProgress}%)` : '添加子任务'"
       @click="openModal"
@@ -325,38 +325,7 @@ function moveSubtaskDown(subtask: Todo) {
   position: relative;
 }
 
-.subtasks-btn {
-  display: flex;
-  align-items: center;
-  gap: 0.375rem;
-  padding: 0.25rem 0.5rem;
-  border: 1px solid var(--color-base-300);
-  border-radius: 0.5rem;
-  background: var(--color-base-100);
-  color: var(--color-base-content);
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-size: 0.75rem;
-  min-width: 0;
-  position: relative;
-}
-
-.subtasks-btn:hover:not(.readonly) {
-  background: var(--color-base-200);
-  border-color: var(--color-primary);
-}
-
-.subtasks-btn.hasSubtasks {
-  background: var(--color-base-200);
-  color: var(--color-base-content);
-  border-color: var(--color-base-content);
-  font-weight: 600;
-}
-
-.subtasks-btn.readonly {
-  cursor: default;
-  opacity: 0.6;
-}
+/* 按钮样式现在使用全局 .todo-btn 样式 */
 
 .icon {
   width: 0.875rem;

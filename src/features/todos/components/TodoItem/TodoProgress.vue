@@ -84,8 +84,8 @@ function setQuickProgress(progress: number) {
         />
       </div>
       <div class="progress-text" :class="{ readonly }">
-        <Play v-if="progressIcon === 'play'" class="progress-icon" size="16" />
-        <CheckCircle v-else-if="progressIcon === 'check'" class="progress-icon" size="16" />
+        <Play v-if="progressIcon === 'play'" class="progress-icon" :size="16" />
+        <CheckCircle v-else-if="progressIcon === 'check'" class="progress-icon" :size="16" />
         <span v-else>{{ progressText }}</span>
       </div>
     </div>
@@ -95,13 +95,13 @@ function setQuickProgress(progress: number) {
       <button
         v-for="value in quickProgressOptions"
         :key="value"
-        class="quick-btn"
-        :class="{ active: progress === value }"
+        class="todo-btn todo-btn--icon-only"
+        :class="{ 'todo-btn--active': progress === value }"
         :title="value === 0 ? '未开始' : value === 100 ? '已完成' : `${value}%`"
         @click="setQuickProgress(value)"
       >
-        <Play v-if="value === 0" class="quick-icon" size="14" />
-        <CheckCircle v-else-if="value === 100" class="quick-icon" size="14" />
+        <Play v-if="value === 0" class="quick-icon" :size="14" />
+        <CheckCircle v-else-if="value === 100" class="quick-icon" :size="14" />
         <span v-else>{{ value }}%</span>
       </button>
     </div>
@@ -164,8 +164,8 @@ function setQuickProgress(progress: number) {
                   :class="{ active: editingProgress === value }"
                   @click="editingProgress = value"
                 >
-                  <Play v-if="value === 0" class="modal-icon" size="16" />
-                  <CheckCircle v-else-if="value === 100" class="modal-icon" size="16" />
+                  <Play v-if="value === 0" class="modal-icon" :size="16" />
+                  <CheckCircle v-else-if="value === 100" class="modal-icon" :size="16" />
                   <span v-else>{{ value }}%</span>
                 </button>
               </div>
@@ -184,8 +184,8 @@ function setQuickProgress(progress: number) {
                 />
               </div>
               <div class="preview-text">
-                <Play v-if="editingProgress === 0" class="preview-icon" size="16" />
-                <CheckCircle v-else-if="editingProgress === 100" class="preview-icon" size="16" />
+                <Play v-if="editingProgress === 0" class="preview-icon" :size="16" />
+                <CheckCircle v-else-if="editingProgress === 100" class="preview-icon" :size="16" />
                 <span v-else>{{ editingProgress }}%</span>
               </div>
             </div>
@@ -302,28 +302,7 @@ function setQuickProgress(progress: number) {
   justify-content: center;
 }
 
-.quick-btn {
-  padding: 0.25rem 0.5rem;
-  border: 1px solid var(--color-base-300);
-  border-radius: 0.5rem;
-  background: var(--color-base-100);
-  color: var(--color-base-content);
-  font-size: 0.75rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.quick-btn:hover {
-  background: var(--color-base-200);
-  border-color: var(--color-primary);
-}
-
-.quick-btn.active {
-  background: var(--color-base-200);
-  color: var(--color-base-content);
-  border-color: var(--color-base-content);
-  font-weight: 600;
-}
+/* 快速设置按钮样式现在使用全局 .todo-btn 样式 */
 
 .quick-icon {
   color: currentColor;

@@ -157,10 +157,10 @@ function resetToDefaults() {
   <div class="todo-smart-features">
     <!-- 智能功能显示按钮 -->
     <button
-      class="smart-features-btn"
+      class="todo-btn"
       :class="{
-        hasFeatures: hasSmartFeatures,
-        readonly,
+        'todo-btn--active': hasSmartFeatures,
+        'todo-btn--readonly': readonly,
       }"
       :title="hasSmartFeatures ? `智能功能: ${smartFeatureCount}项已启用` : '设置智能功能'"
       @click="openModal"
@@ -381,38 +381,7 @@ function resetToDefaults() {
   position: relative;
 }
 
-.smart-features-btn {
-  display: flex;
-  align-items: center;
-  gap: 0.375rem;
-  padding: 0.25rem 0.5rem;
-  border: 1px solid var(--color-base-300);
-  border-radius: 0.5rem;
-  background: var(--color-base-100);
-  color: var(--color-base-content);
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-size: 0.75rem;
-  min-width: 0;
-  position: relative;
-}
-
-.smart-features-btn:hover:not(.readonly) {
-  background: var(--color-base-200);
-  border-color: var(--color-primary);
-}
-
-.smart-features-btn.hasFeatures {
-  background: var(--color-base-200);
-  color: var(--color-base-content);
-  border-color: var(--color-base-content);
-  font-weight: 600;
-}
-
-.smart-features-btn.readonly {
-  cursor: default;
-  opacity: 0.6;
-}
+/* 按钮样式现在使用全局 .todo-btn 样式 */
 
 .icon {
   width: 0.875rem;

@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
 import type { TodoUpdate } from '@/schema/todos';
 
 const props = defineProps<{
@@ -58,12 +57,7 @@ const reminderMethods = [
 ];
 
 // 计算属性
-const _hasAdvancedSettings = computed(() =>
-  reminderSettings.value.smartEnabled ||
-  reminderSettings.value.locationBased ||
-  reminderSettings.value.weatherDependent ||
-  reminderSettings.value.priorityBoost,
-);
+// hasAdvancedSettings 变量暂时未使用，如需要显示高级设置状态可以重新添加
 
 // 方法
 function openModal() {
@@ -124,8 +118,8 @@ function resetToDefaults() {
   <div class="reminder-settings">
     <!-- 提醒开关按钮 -->
     <button
-      class="reminder-toggle"
-      :class="{ active: todo.reminderEnabled }"
+      class="todo-btn"
+      :class="{ 'todo-btn--active': todo.reminderEnabled }"
       :title="todo.reminderEnabled ? '编辑提醒设置' : '设置提醒'"
       @click="openModal"
     >
@@ -276,31 +270,7 @@ function resetToDefaults() {
   position: relative;
 }
 
-.reminder-toggle {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  padding: 0.25rem 0.5rem;
-  border: 1px solid var(--color-base-300);
-  border-radius: 0.5rem;
-  background: var(--color-base-100);
-  color: var(--color-base-content);
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-size: 0.75rem;
-}
-
-.reminder-toggle:hover {
-  background: var(--color-base-200);
-  border-color: var(--color-primary);
-}
-
-.reminder-toggle.active {
-  background: var(--color-base-200);
-  color: var(--color-base-content);
-  border-color: var(--color-base-content);
-  font-weight: 600;
-}
+/* 按钮样式现在使用全局 .todo-btn 样式 */
 
 .icon {
   width: 1rem;
