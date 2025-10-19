@@ -332,6 +332,18 @@ async function saveReminder() {
       advanceUnit: null,
       color: null,
       relatedTransactionSerialNum: null,
+      // 新增高级提醒功能字段默认值
+      lastReminderSentAt: null,
+      reminderFrequency: null,
+      snoozeUntil: null,
+      reminderMethods: null,
+      escalationEnabled: false,
+      escalationAfterHours: 24,
+      timezone: null,
+      smartReminderEnabled: false,
+      autoReschedule: false,
+      paymentReminderEnabled: false,
+      batchReminderId: null,
     };
     const formattedData = _.mapValues({
       name: form.name,
@@ -353,6 +365,18 @@ async function saveReminder() {
       color: form.color,
       relatedTransactionSerialNum: form.relatedTransactionSerialNum,
       isDeleted: form.isDeleted,
+      // 新增高级提醒功能字段
+      lastReminderSentAt: form.lastReminderSentAt,
+      reminderFrequency: form.reminderFrequency,
+      snoozeUntil: form.snoozeUntil,
+      reminderMethods: form.reminderMethods,
+      escalationEnabled: form.escalationEnabled,
+      escalationAfterHours: form.escalationAfterHours,
+      timezone: form.timezone,
+      smartReminderEnabled: form.smartReminderEnabled,
+      autoReschedule: form.autoReschedule,
+      paymentReminderEnabled: form.paymentReminderEnabled,
+      batchReminderId: form.batchReminderId,
     }, (value: unknown, key: string) => {
       if (key.endsWith('Date') || key === 'dueAt') {
         if (value) {
