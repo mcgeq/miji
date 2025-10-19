@@ -315,12 +315,26 @@ function toggleGlobalAmountVisibility() {
   moneyStore.toggleGlobalAmountVisibility();
 }
 
+// 存储监听器清理函数
+let unlistenProcessed: (() => void) | null = null;
+let unlistenFailed: (() => void) | null = null;
+
+// 在组件卸载时清理监听器
+onUnmounted(() => {
+  if (unlistenProcessed) {
+    unlistenProcessed();
+  }
+  if (unlistenFailed) {
+    unlistenFailed();
+  }
+});
+
 onMounted(async () => {
   loadData();
   const currency = await getLocalCurrencyInfo();
   baseCurrency.value = currency.symbol;
   // 监听分期处理完成事件
-  const unlistenProcessed = await listen<InstallmentProcessedEvent>('installment-processed', event => {
+  unlistenProcessed = await listen<InstallmentProcessedEvent>('installment-processed', event => {
     Lg.d('installment-processed', '收到分期处理完成事件:', event.payload);
     // 刷新账户数据
     loadAccountsWithLoading();
@@ -330,15 +344,10 @@ onMounted(async () => {
     toast.success(`自动处理了 ${event.payload.processed_count} 笔分期交易`);
   });
   // 监听分期处理失败事件
-  const unlistenFailed = await listen<InstallmentProcessFailedEvent>('installment-process-failed', event => {
+  unlistenFailed = await listen<InstallmentProcessFailedEvent>('installment-process-failed', event => {
     Lg.d('installment-process-failed', '收到分期处理失败事件:', event.payload);
     // 显示错误通知
     toast.error(`分期处理失败: ${event.payload.error}`);
-  });
-  // 在组件卸载时清理监听器
-  onUnmounted(() => {
-    unlistenProcessed();
-    unlistenFailed();
   });
 });
 

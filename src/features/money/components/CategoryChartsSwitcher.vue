@@ -185,6 +185,9 @@ const barChartOption = computed(() => {
         return `${param.name}<br/>金额: ¥${param.value.toFixed(2)}<br/>占比: ${percentage}%`;
       },
     },
+    legend: {
+      show: false,
+    },
     grid: {
       left: '3%',
       right: '4%',
@@ -248,7 +251,7 @@ const radarChartOption = computed(() => {
   );
   const maxAmount = Math.max(...amounts);
 
-  // 计算合适的最大值，确保ticks可读
+  // 计算合适的最大值，确保ticks可读且数值整洁
   const calculateMax = (value: number) => {
     if (value <= 0) return 100;
     if (value <= 50) return 100;
@@ -262,21 +265,35 @@ const radarChartOption = computed(() => {
     return Math.ceil(value * 1.02);
   };
 
-  const adjustedMax = calculateMax(maxAmount);
+  // 计算整洁的最大值，避免长小数
+  const getCleanMax = (value: number) => {
+    const calculatedMax = calculateMax(value);
 
-  // 根据最大值动态设置splitNumber，确保刻度可读
+    // 如果是整数，直接返回
+    if (calculatedMax % 1 === 0) {
+      return calculatedMax;
+    }
+
+    // 否则向上取整到最近的整数
+    return Math.ceil(calculatedMax);
+  };
+
+  const adjustedMax = getCleanMax(maxAmount);
+
+  // 根据最大值动态设置splitNumber，确保刻度可读且数值整洁
   const getSplitNumber = (max: number) => {
-    if (max <= 100) return 5;
-    if (max <= 200) return 4;
-    if (max <= 300) return 3;
-    if (max <= 500) return 4;
-    if (max <= 600) return 3;
-    if (max <= 1000) return 4;
-    if (max <= 2000) return 4;
-    if (max <= 5000) return 5;
-    if (max <= 10000) return 4;
-    if (max <= 20000) return 4;
-    if (max <= 50000) return 5;
+    // 选择能够产生整洁刻度值的分割数
+    if (max <= 100) return 5; // 0, 20, 40, 60, 80, 100
+    if (max <= 200) return 4; // 0, 50, 100, 150, 200
+    if (max <= 300) return 3; // 0, 100, 200, 300
+    if (max <= 500) return 4; // 0, 125, 250, 375, 500
+    if (max <= 600) return 3; // 0, 200, 400, 600
+    if (max <= 1000) return 4; // 0, 250, 500, 750, 1000
+    if (max <= 2000) return 4; // 0, 500, 1000, 1500, 2000
+    if (max <= 5000) return 5; // 0, 1000, 2000, 3000, 4000, 5000
+    if (max <= 10000) return 4; // 0, 2500, 5000, 7500, 10000
+    if (max <= 20000) return 4; // 0, 5000, 10000, 15000, 20000
+    if (max <= 50000) return 5; // 0, 10000, 20000, 30000, 40000, 50000
     return 4;
   };
 
@@ -290,8 +307,7 @@ const radarChartOption = computed(() => {
       },
     },
     legend: {
-      data: [`${categoryTypeName.value}分布`],
-      top: 30,
+      show: false,
     },
     radar: {
       indicator: internationalizedCategories.map(category => ({
@@ -328,12 +344,19 @@ const radarChartOption = computed(() => {
         color: '#666',
         fontSize: 10,
         formatter: (value: number) => {
-          if (value >= 10000) {
-            return `${(value / 10000).toFixed(1)}万`;
-          } else if (value >= 1000) {
-            return `${(value / 1000).toFixed(1)}k`;
+          // 确保显示整洁的数值
+          const roundedValue = Math.round(value);
+          if (roundedValue >= 10000) {
+            return `${(roundedValue / 10000).toFixed(1)}万`;
+          } else if (roundedValue >= 1000) {
+            return `${(roundedValue / 1000).toFixed(1)}k`;
+          } else if (roundedValue >= 100) {
+            return `${roundedValue}`;
+          } else if (roundedValue >= 10) {
+            return `${roundedValue}`;
+          } else {
+            return `${roundedValue}`;
           }
-          return value.toString();
         },
       },
     },

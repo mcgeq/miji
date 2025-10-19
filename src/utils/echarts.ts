@@ -1,7 +1,8 @@
-import { BarChart, LineChart, PieChart } from 'echarts/charts';
+import { BarChart, LineChart, PieChart, RadarChart } from 'echarts/charts';
 import {
   GridComponent,
   LegendComponent,
+  RadarComponent,
   TitleComponent,
   TooltipComponent,
 } from 'echarts/components';
@@ -15,10 +16,12 @@ use([
   BarChart,
   LineChart,
   PieChart,
+  RadarChart,
   TitleComponent,
   TooltipComponent,
   LegendComponent,
   GridComponent,
+  RadarComponent,
 ]);
 
 // 创建echarts实例
