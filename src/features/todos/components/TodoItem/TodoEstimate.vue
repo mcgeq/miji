@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Check, Clock, Trash2, X } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import type { TodoUpdate } from '@/schema/todos';
 
@@ -132,9 +133,7 @@ watch([editingDays, editingHours, editingMinutes], validateInput);
       :title="hasEstimate ? `时间估算: ${formatTime(props.estimateMinutes!)}` : '设置时间估算'"
       @click="openModal"
     >
-      <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22C6.47,22 2,17.5 2,12A10,10 0 0,1 12,2M12.5,7V12.25L17,14.92L16.25,16.15L11,13V7H12.5Z" />
-      </svg>
+      <Clock class="icon" :size="14" />
     </button>
 
     <!-- 时间估算设置模态框 -->
@@ -144,7 +143,7 @@ watch([editingDays, editingHours, editingMinutes], validateInput);
           <div class="modal-header teleport">
             <h3>设置时间估算</h3>
             <button class="close-btn teleport" @click="closeModal">
-              ×
+              <X :size="20" />
             </button>
           </div>
 
@@ -209,9 +208,7 @@ watch([editingDays, editingHours, editingMinutes], validateInput);
             <div class="time-preview">
               <label>时间预览:</label>
               <div class="preview-content">
-                <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22C6.47,22 2,17.5 2,12A10,10 0 0,1 12,2M12.5,7V12.25L17,14.92L16.25,16.15L11,13V7H12.5Z" />
-                </svg>
+                <Clock class="icon" :size="16" />
                 <span>{{ totalMinutes > 0 ? formatTime(totalMinutes) : '未设置时间' }}</span>
                 <span class="minutes-text">({{ totalMinutes }}分钟)</span>
               </div>
@@ -235,14 +232,14 @@ watch([editingDays, editingHours, editingMinutes], validateInput);
           </div>
 
           <div class="modal-footer teleport">
-            <button class="btn-secondary teleport" @click="clearEstimate">
-              清空
+            <button class="btn-icon btn-secondary teleport" title="清空" @click="clearEstimate">
+              <Trash2 :size="20" />
             </button>
-            <button class="btn-secondary teleport" @click="closeModal">
-              取消
+            <button class="btn-icon btn-secondary teleport" title="取消" @click="closeModal">
+              <X :size="20" />
             </button>
-            <button class="btn-primary teleport" @click="saveEstimate">
-              保存时间
+            <button class="btn-icon btn-primary teleport" title="保存时间" @click="saveEstimate">
+              <Check :size="20" />
             </button>
           </div>
         </div>
@@ -422,7 +419,9 @@ watch([editingDays, editingHours, editingMinutes], validateInput);
 
 .modal-footer {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
+  align-items: center;
+  gap: 2rem;
   padding: 1.5rem;
   border-top: 1px solid var(--color-base-200);
 }
@@ -454,6 +453,41 @@ watch([editingDays, editingHours, editingMinutes], validateInput);
 
 .btn-primary:hover {
   background: var(--color-primary-focus);
+}
+
+/* 圆形图标按钮样式 */
+.btn-icon {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  min-width: auto;
+  flex-shrink: 0;
+}
+
+.btn-icon.btn-secondary {
+  background: var(--color-base-200);
+  color: var(--color-base-content);
+  border: 1px solid var(--color-base-300);
+}
+
+.btn-icon.btn-secondary:hover {
+  background: var(--color-base-300);
+  transform: scale(1.05);
+}
+
+.btn-icon.btn-primary {
+  background: var(--color-primary);
+  color: var(--color-primary-content);
+  border: 1px solid var(--color-primary);
+}
+
+.btn-icon.btn-primary:hover {
+  background: var(--color-primary-focus);
+  transform: scale(1.05);
 }
 
 /* 响应式设计 */

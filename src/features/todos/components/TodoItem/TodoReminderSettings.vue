@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Bell, Check, Settings, X } from 'lucide-vue-next';
 import type { TodoUpdate } from '@/schema/todos';
 
 const props = defineProps<{
@@ -123,12 +124,7 @@ function resetToDefaults() {
       :title="todo.reminderEnabled ? '编辑提醒设置' : '设置提醒'"
       @click="openModal"
     >
-      <svg v-if="todo.reminderEnabled" class="icon" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M12 2C13.1 2 14 2.9 14 4C14 4.74 13.6 5.39 13 5.73V7H14C17.87 7 21 10.13 21 14V22H3V14C3 10.13 6.13 7 10 7H11V5.73C10.4 5.39 10 4.74 10 4C10 2.9 10.9 2 12 2M10 21H14V14C14 11.79 12.21 10 10 10S6 11.79 6 14V21H10Z" />
-      </svg>
-      <svg v-else class="icon" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M12 2C13.1 2 14 2.9 14 4C14 4.74 13.6 5.39 13 5.73V7H14C17.87 7 21 10.13 21 14V22H3V14C3 10.13 6.13 7 10 7H11V5.73C10.4 5.39 10 4.74 10 4C10 2.9 10.9 2 12 2M10 21H14V14C14 11.79 12.21 10 10 10S6 11.79 6 14V21H10Z" />
-      </svg>
+      <Bell class="icon" :size="14" />
       <span v-if="todo.reminderEnabled && todo.reminderAdvanceValue" class="advance-info">
         {{ todo.reminderAdvanceValue }}{{ todo.reminderAdvanceUnit === 'minutes' ? '分钟' : todo.reminderAdvanceUnit === 'hours' ? '小时' : '天' }}前
       </span>
@@ -141,7 +137,7 @@ function resetToDefaults() {
           <div class="modal-header teleport">
             <h3>提醒设置</h3>
             <button class="close-btn teleport" @click="closeModal">
-              ×
+              <X :size="20" />
             </button>
           </div>
 
@@ -251,11 +247,14 @@ function resetToDefaults() {
             </div>
 
             <div class="modal-footer teleport">
-              <button class="btn-secondary teleport" @click="resetToDefaults">
-                重置默认
+              <button class="btn-icon btn-secondary teleport" title="重置默认" @click="resetToDefaults">
+                <Settings :size="20" />
               </button>
-              <button class="btn-primary teleport" @click="saveSettings">
-                保存设置
+              <button class="btn-icon btn-secondary teleport" title="取消" @click="closeModal">
+                <X :size="20" />
+              </button>
+              <button class="btn-icon btn-primary teleport" title="保存设置" @click="saveSettings">
+                <Check :size="20" />
               </button>
             </div>
           </div>
@@ -469,7 +468,9 @@ input:checked + .slider:before {
 /* 模态框底部 */
 .modal-footer {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
+  align-items: center;
+  gap: 2rem;
   padding: 1.5rem;
   border-top: 1px solid var(--color-base-200);
 }
@@ -501,6 +502,41 @@ input:checked + .slider:before {
 
 .btn-primary:hover {
   background: var(--color-primary-focus);
+}
+
+/* 圆形图标按钮样式 */
+.btn-icon {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  min-width: auto;
+  flex-shrink: 0;
+}
+
+.btn-icon.btn-secondary {
+  background: var(--color-base-200);
+  color: var(--color-base-content);
+  border: 1px solid var(--color-base-300);
+}
+
+.btn-icon.btn-secondary:hover {
+  background: var(--color-base-300);
+  transform: scale(1.05);
+}
+
+.btn-icon.btn-primary {
+  background: var(--color-primary);
+  color: var(--color-primary-content);
+  border: 1px solid var(--color-primary);
+}
+
+.btn-icon.btn-primary:hover {
+  background: var(--color-primary-focus);
+  transform: scale(1.05);
 }
 
 /* 响应式设计 */

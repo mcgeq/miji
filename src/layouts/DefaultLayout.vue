@@ -80,7 +80,8 @@ onUnmounted(() => {
 }
 
 .main-content.with-bottom-nav {
-  height: calc(100vh - 3rem); /* 移动端：减去底部导航高度 */
-  padding-bottom: 0; /* 移除额外的 padding，因为已经调整了高度 */
+  min-height: calc(100vh - 3rem); /* 移动端：最小高度减去底部导航高度 */
+  padding-bottom: 4rem; /* 为底部导航栏预留空间，确保内容不被遮挡 */
+  overflow-y: auto; /* 允许垂直滚动 */
 }
 </style>

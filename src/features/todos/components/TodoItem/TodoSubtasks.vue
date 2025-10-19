@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Check, CheckCircle, Edit, ListTodo, Plus, Trash2, X } from 'lucide-vue-next';
 import type { Todo, TodoUpdate } from '@/schema/todos';
 
 const props = defineProps<{
@@ -125,9 +126,7 @@ function moveSubtaskDown(subtask: Todo) {
       :title="hasSubtasks ? `子任务: ${completedSubtasks}/${subtaskCount} (${subtaskProgress}%)` : '添加子任务'"
       @click="openModal"
     >
-      <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M3,3V21H21V3H3M19,19H5V5H19V19M11,7H13V9H11V7M11,11H13V13H11V11M11,15H13V17H11V15M7,7H9V9H7V7M7,11H9V13H7V11M7,15H9V17H7V15M15,7H17V9H15V7M15,11H17V13H15V11M15,15H17V17H15V15Z" />
-      </svg>
+      <ListTodo class="icon" :size="14" />
       <span class="subtasks-text">
         {{ hasSubtasks ? `${completedSubtasks}/${subtaskCount}` : '' }}
       </span>
@@ -150,7 +149,7 @@ function moveSubtaskDown(subtask: Todo) {
                 {{ completedSubtasks }}/{{ subtaskCount }} ({{ subtaskProgress }}%)
               </span>
               <button class="close-btn teleport" @click="closeModal">
-                ×
+                <X :size="20" />
               </button>
             </div>
           </div>
@@ -160,9 +159,7 @@ function moveSubtaskDown(subtask: Todo) {
             <div class="create-section">
               <div v-if="!showCreateForm" class="create-toggle">
                 <button class="create-btn" @click="showCreateSubtaskForm">
-                  <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z" />
-                  </svg>
+                  <Plus class="icon" :size="16" />
                   添加子任务
                 </button>
               </div>
@@ -178,15 +175,16 @@ function moveSubtaskDown(subtask: Todo) {
                     @keyup.escape="cancelCreate"
                   >
                   <div class="form-actions">
-                    <button class="btn-secondary" @click="cancelCreate">
-                      取消
+                    <button class="btn-icon btn-secondary" title="取消" @click="cancelCreate">
+                      <X :size="20" />
                     </button>
                     <button
-                      class="btn-primary"
+                      class="btn-icon btn-primary"
                       :disabled="!newSubtaskTitle.trim()"
+                      title="添加"
                       @click="createSubtask"
                     >
-                      添加
+                      <Plus :size="20" />
                     </button>
                   </div>
                 </div>
@@ -217,11 +215,11 @@ function moveSubtaskDown(subtask: Todo) {
                       @keyup.escape="cancelEdit"
                     >
                     <div class="edit-actions">
-                      <button class="btn-primary" @click="saveSubtaskEdit">
-                        保存
+                      <button class="btn-icon btn-primary" title="保存" @click="saveSubtaskEdit">
+                        <Check :size="20" />
                       </button>
-                      <button class="btn-secondary" @click="cancelEdit">
-                        取消
+                      <button class="btn-icon btn-secondary" title="取消" @click="cancelEdit">
+                        <X :size="20" />
                       </button>
                     </div>
                   </div>
@@ -234,9 +232,7 @@ function moveSubtaskDown(subtask: Todo) {
                         :class="{ completed: subtask.status === 'Completed' }"
                         @click="toggleSubtaskStatus(subtask)"
                       >
-                        <svg v-if="subtask.status === 'Completed'" class="check-icon" viewBox="0 0 24 24" fill="currentColor">
-                          <path d="M9,20.42L2.79,14.21L5.62,11.38L9,14.77L18.88,4.88L21.71,7.71L9,20.42Z" />
-                        </svg>
+                        <CheckCircle v-if="subtask.status === 'Completed'" class="check-icon" :size="16" />
                       </button>
 
                       <span
@@ -254,9 +250,7 @@ function moveSubtaskDown(subtask: Todo) {
                         title="编辑"
                         @click="editSubtask(subtask)"
                       >
-                        <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
-                          <path d="M20.71,7.04C21.1,6.65 21.1,6 20.71,5.63L18.37,3.29C18,2.9 17.35,2.9 16.96,3.29L15.12,5.12L18.87,8.87M3,17.25V21H6.75L17.81,9.93L14.06,6.18L3,17.25Z" />
-                        </svg>
+                        <Edit class="icon" :size="16" />
                       </button>
 
                       <button
@@ -286,9 +280,7 @@ function moveSubtaskDown(subtask: Todo) {
                         title="删除"
                         @click="deleteSubtask(subtask)"
                       >
-                        <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
-                          <path d="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z" />
-                        </svg>
+                        <Trash2 class="icon" :size="16" />
                       </button>
                     </div>
                   </div>
@@ -309,8 +301,11 @@ function moveSubtaskDown(subtask: Todo) {
           </div>
 
           <div class="modal-footer teleport">
-            <button class="btn-secondary teleport" @click="closeModal">
-              关闭
+            <button class="btn-icon btn-secondary teleport" title="取消" @click="closeModal">
+              <X :size="20" />
+            </button>
+            <button class="btn-icon btn-primary teleport" title="完成" @click="closeModal">
+              <Check :size="20" />
             </button>
           </div>
         </div>
@@ -691,7 +686,9 @@ function moveSubtaskDown(subtask: Todo) {
 
 .modal-footer {
   display: flex;
-  justify-content: flex-end;
+  justify-content: center;
+  align-items: center;
+  gap: 2rem;
   padding: 1.5rem;
   border-top: 1px solid var(--color-base-200);
 }
@@ -723,6 +720,41 @@ function moveSubtaskDown(subtask: Todo) {
 
 .btn-primary:hover:not(:disabled) {
   background: var(--color-primary-focus);
+}
+
+/* 圆形图标按钮样式 */
+.btn-icon {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  min-width: auto;
+  flex-shrink: 0;
+}
+
+.btn-icon.btn-secondary {
+  background: var(--color-base-200);
+  color: var(--color-base-content);
+  border: 1px solid var(--color-base-300);
+}
+
+.btn-icon.btn-secondary:hover {
+  background: var(--color-base-300);
+  transform: scale(1.05);
+}
+
+.btn-icon.btn-primary {
+  background: var(--color-primary);
+  color: var(--color-primary-content);
+  border: 1px solid var(--color-primary);
+}
+
+.btn-icon.btn-primary:hover {
+  background: var(--color-primary-focus);
+  transform: scale(1.05);
 }
 
 .btn-primary:disabled {

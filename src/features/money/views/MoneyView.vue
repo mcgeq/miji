@@ -667,6 +667,15 @@ onUnmounted(() => {
 .tab-content {
   padding: 20px;
   background-color: var(--color-base-100);
+  min-height: 100%; /* 确保内容区域有足够的高度 */
+}
+
+/* 移动端Tab内容优化 */
+@media (max-width: 768px) {
+  .tab-content {
+    padding: 10px; /* 移动端减少内边距 */
+    padding-bottom: 2rem; /* 额外的底部空间 */
+  }
 }
 
 /* 滚动条隐藏 */

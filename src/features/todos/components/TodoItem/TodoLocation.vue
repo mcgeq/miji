@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Check, MapPin, Navigation, Trash2, X } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import type { TodoUpdate } from '@/schema/todos';
 
@@ -119,9 +120,7 @@ async function getCurrentLocation() {
       :title="hasLocation ? `位置: ${props.location}` : '设置位置'"
       @click="openModal"
     >
-      <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M12 2C8.13 2 5 5.13 5 9C5 14.25 12 22 12 22S19 14.25 19 9C19 5.13 15.87 2 12 2ZM12 11.5C10.62 11.5 9.5 10.38 9.5 9S10.62 6.5 12 6.5S14.5 7.62 14.5 9S13.38 11.5 12 11.5Z" />
-      </svg>
+      <MapPin class="icon" :size="14" />
       <span class="location-text">{{ locationDisplay }}</span>
     </button>
 
@@ -132,7 +131,7 @@ async function getCurrentLocation() {
           <div class="modal-header teleport">
             <h3>设置位置</h3>
             <button class="close-btn teleport" @click="closeModal">
-              ×
+              <X :size="20" />
             </button>
           </div>
 
@@ -155,7 +154,7 @@ async function getCurrentLocation() {
                   title="清空位置"
                   @click="clearLocation"
                 >
-                  ×
+                  <Trash2 :size="16" />
                 </button>
               </div>
             </div>
@@ -166,9 +165,7 @@ async function getCurrentLocation() {
                 class="current-location-btn"
                 @click="getCurrentLocation"
               >
-                <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M12 8C13.1 8 14 8.9 14 10S13.1 12 12 12 10 11.1 10 10 10.9 8 12 8M12 14C15.31 14 18 11.31 18 8S15.31 2 12 2 6 4.69 6 8 8.69 14 12 14M12 16C7.58 16 4 12.42 4 8S7.58 0 12 0 20 3.58 20 8 16.42 16 12 16M12 4C9.79 4 8 5.79 8 8S9.79 12 12 12 16 10.21 16 8 14.21 4 12 4" />
-                </svg>
+                <Navigation class="icon" :size="16" />
                 获取当前位置
               </button>
             </div>
@@ -203,20 +200,21 @@ async function getCurrentLocation() {
             <div v-if="editingLocation" class="location-preview">
               <label>位置预览:</label>
               <div class="preview-content">
-                <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M12 2C8.13 2 5 5.13 5 9C5 14.25 12 22 12 22S19 14.25 19 9C19 5.13 15.87 2 12 2ZM12 11.5C10.62 11.5 9.5 10.38 9.5 9S10.62 6.5 12 6.5S14.5 7.62 14.5 9S13.38 11.5 12 11.5Z" />
-                </svg>
+                <MapPin class="icon" :size="16" />
                 <span>{{ editingLocation }}</span>
               </div>
             </div>
           </div>
 
           <div class="modal-footer teleport">
-            <button class="btn-secondary teleport" @click="closeModal">
-              取消
+            <button class="btn-icon btn-secondary teleport" title="清空" @click="clearLocation">
+              <Trash2 :size="20" />
             </button>
-            <button class="btn-primary teleport" @click="saveLocation">
-              保存位置
+            <button class="btn-icon btn-secondary teleport" title="取消" @click="closeModal">
+              <X :size="20" />
+            </button>
+            <button class="btn-icon btn-primary teleport" title="保存位置" @click="saveLocation">
+              <Check :size="20" />
             </button>
           </div>
         </div>
@@ -484,7 +482,9 @@ async function getCurrentLocation() {
 
 .modal-footer {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
+  align-items: center;
+  gap: 2rem;
   padding: 1.5rem;
   border-top: 1px solid var(--color-base-200);
 }
@@ -516,6 +516,41 @@ async function getCurrentLocation() {
 
 .btn-primary:hover {
   background: var(--color-primary-focus);
+}
+
+/* 圆形图标按钮样式 */
+.btn-icon {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  min-width: auto;
+  flex-shrink: 0;
+}
+
+.btn-icon.btn-secondary {
+  background: var(--color-base-200);
+  color: var(--color-base-content);
+  border: 1px solid var(--color-base-300);
+}
+
+.btn-icon.btn-secondary:hover {
+  background: var(--color-base-300);
+  transform: scale(1.05);
+}
+
+.btn-icon.btn-primary {
+  background: var(--color-primary);
+  color: var(--color-primary-content);
+  border: 1px solid var(--color-primary);
+}
+
+.btn-icon.btn-primary:hover {
+  background: var(--color-primary-focus);
+  transform: scale(1.05);
 }
 
 /* 响应式设计 */

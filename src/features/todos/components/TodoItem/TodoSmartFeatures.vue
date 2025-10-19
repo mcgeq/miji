@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Brain, Check, Cloud, MapPin, Settings, X } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import type { TodoUpdate } from '@/schema/todos';
 
@@ -165,9 +166,7 @@ function resetToDefaults() {
       :title="hasSmartFeatures ? `智能功能: ${smartFeatureCount}项已启用` : '设置智能功能'"
       @click="openModal"
     >
-      <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22A10,10 0 0,1 2,12A10,10 0 0,1 12,2M12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4M12,6A6,6 0 0,1 18,12A6,6 0 0,1 12,18A6,6 0 0,1 6,12A6,6 0 0,1 12,6M12,8A4,4 0 0,0 8,12A4,4 0 0,0 12,16A4,4 0 0,0 16,12A4,4 0 0,0 12,8Z" />
-      </svg>
+      <Brain class="icon" :size="14" />
       <span class="features-text">
         {{ hasSmartFeatures ? `智能${smartFeatureCount}` : '' }}
       </span>
@@ -186,7 +185,7 @@ function resetToDefaults() {
           <div class="modal-header teleport">
             <h3>智能功能设置</h3>
             <button class="close-btn teleport" @click="closeModal">
-              ×
+              <X :size="20" />
             </button>
           </div>
 
@@ -240,9 +239,7 @@ function resetToDefaults() {
                       class="location-input"
                     >
                     <button class="location-btn" @click="getCurrentLocation">
-                      <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M12 2C8.13 2 5 5.13 5 9C5 14.25 12 22 12 22S19 14.25 19 9C19 5.13 15.87 2 12 2ZM12 11.5 hours" />
-                      </svg>
+                      <MapPin class="icon" :size="16" />
                       获取当前位置
                     </button>
                   </div>
@@ -284,9 +281,7 @@ function resetToDefaults() {
               <div v-if="smartFeatures.weatherDependent" class="weather-settings">
                 <div class="weather-info">
                   <button class="weather-btn" @click="getCurrentWeather">
-                    <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M6.59,0.66C8.93,-1.15 11.47,1.06 12.04,4.5C12.47,4.5 12.89,4.62 13.27,4.84C13.79,5.15 14.2,5.59 14.44,6.13C14.82,5.97 15.24,5.9 15.68,5.9C17.15,5.9 18.4,6.82 18.83,8.14C19.35,8.14 19.8,8.35 20.12,8.7C20.59,9.21 20.59,10 20.12,10.5C19.8,10.85 19.35,11.06 18.83,11.06H5.5C4.67,11.06 4,10.39 4,9.56C4,8.73 4.67,8.06 5.5,8.06C5.5,6.58 6.59,0.66 6.59,0.66M13.5,12H15.5C16.33,12 17,12.67 17,13.5C17,14.33 16.33,15 15.5,15H13.5C12.67,15 12,14.33 12,13.5C12,12.67 12.67,12 13.5,12M9.5,12H11.5C12.33,12 13,12.67 13,13.5C13,14.33 12.33,15 11.5,15H9.5C8.67,15 8,14.33 8,13.5C8,12.67 8.67,12 9.5,12Z" />
-                    </svg>
+                    <Cloud class="icon" :size="16" />
                     获取天气信息
                   </button>
 
@@ -363,11 +358,14 @@ function resetToDefaults() {
           </div>
 
           <div class="modal-footer teleport">
-            <button class="btn-secondary teleport" @click="resetToDefaults">
-              重置默认
+            <button class="btn-icon btn-secondary teleport" title="重置默认" @click="resetToDefaults">
+              <Settings :size="20" />
             </button>
-            <button class="btn-primary teleport" @click="saveSmartFeatures">
-              保存设置
+            <button class="btn-icon btn-secondary teleport" title="取消" @click="closeModal">
+              <X :size="20" />
+            </button>
+            <button class="btn-icon btn-primary teleport" title="保存设置" @click="saveSmartFeatures">
+              <Check :size="20" />
             </button>
           </div>
         </div>
@@ -704,7 +702,9 @@ input:disabled + .slider {
 
 .modal-footer {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
+  align-items: center;
+  gap: 2rem;
   padding: 1.5rem;
   border-top: 1px solid var(--color-base-200);
 }
@@ -736,6 +736,41 @@ input:disabled + .slider {
 
 .btn-primary:hover {
   background: var(--color-primary-focus);
+}
+
+/* 圆形图标按钮样式 */
+.btn-icon {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  min-width: auto;
+  flex-shrink: 0;
+}
+
+.btn-icon.btn-secondary {
+  background: var(--color-base-200);
+  color: var(--color-base-content);
+  border: 1px solid var(--color-base-300);
+}
+
+.btn-icon.btn-secondary:hover {
+  background: var(--color-base-300);
+  transform: scale(1.05);
+}
+
+.btn-icon.btn-primary {
+  background: var(--color-primary);
+  color: var(--color-primary-content);
+  border: 1px solid var(--color-primary);
+}
+
+.btn-icon.btn-primary:hover {
+  background: var(--color-primary-focus);
+  transform: scale(1.05);
 }
 
 /* 响应式设计 */

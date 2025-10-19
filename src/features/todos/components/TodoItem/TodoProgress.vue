@@ -146,19 +146,19 @@ function updateProgress(newProgress: number) {
                 />
               </div>
               <div class="preview-text">
-                <Play v-if="editingProgress === 0" class="preview-icon" :size="16" />
-                <CheckCircle v-else-if="editingProgress === 100" class="preview-icon" :size="16" />
+                <LucidePlay v-if="editingProgress === 0" class="preview-icon" :size="16" />
+                <LucideCheckCircle v-else-if="editingProgress === 100" class="preview-icon" :size="16" />
                 <span v-else>{{ editingProgress }}%</span>
               </div>
             </div>
           </div>
 
           <div class="modal-footer">
-            <button class="btn-secondary" @click="closeEditModal">
-              <LucideX class="wh-5" />
+            <button class="btn-icon btn-secondary" title="取消" @click="closeEditModal">
+              <LucideX :size="20" />
             </button>
-            <button class="btn-primary" @click="updateProgress(editingProgress)">
-              <LucideCheck class="wh-5" />
+            <button class="btn-icon btn-primary" title="保存" @click="updateProgress(editingProgress)">
+              <LucideCheck :size="20" />
             </button>
           </div>
         </div>
@@ -478,7 +478,9 @@ function updateProgress(newProgress: number) {
 
 .modal-footer {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
+  align-items: center;
+  gap: 2rem;
   padding: 1.5rem;
   border-top: 1px solid var(--color-base-200);
 }
@@ -510,6 +512,41 @@ function updateProgress(newProgress: number) {
 
 .btn-primary:hover {
   background: var(--color-primary-focus);
+}
+
+/* 圆形图标按钮样式 */
+.btn-icon {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  min-width: auto;
+  flex-shrink: 0;
+}
+
+.btn-icon.btn-secondary {
+  background: var(--color-base-200);
+  color: var(--color-base-content);
+  border: 1px solid var(--color-base-300);
+}
+
+.btn-icon.btn-secondary:hover {
+  background: var(--color-base-300);
+  transform: scale(1.05);
+}
+
+.btn-icon.btn-primary {
+  background: var(--color-primary);
+  color: var(--color-primary-content);
+  border: 1px solid var(--color-primary);
+}
+
+.btn-icon.btn-primary:hover {
+  background: var(--color-primary-focus);
+  transform: scale(1.05);
 }
 
 /* 响应式设计 */

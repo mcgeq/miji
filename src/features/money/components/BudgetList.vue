@@ -370,6 +370,14 @@ defineExpose({
   min-height: 6.25rem;
 }
 
+/* 移动端滚动优化 */
+@media (max-width: 768px) {
+  .budget-container {
+    min-height: auto; /* 移动端允许内容自适应高度 */
+    padding-bottom: 1rem; /* 额外的底部空间 */
+  }
+}
+
 /* Loading and Empty States */
 .loading-container {
   color: #4b5563;
