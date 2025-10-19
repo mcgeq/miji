@@ -79,12 +79,22 @@ onMounted(() => {
 
 // 根据项目数量决定网格布局
 const gridLayoutClass = computed(() => {
-  if (mediaQueries.isMobile) return '';
   const itemCount = pagination.paginatedItems.value.length;
-  // 当有2个项目时，使用充满宽度的布局
-  if (itemCount === 2) return 'grid-template-columns-320-two-items';
-  // 其他情况使用固定宽度布局
-  return 'grid-template-columns-320';
+
+  if (mediaQueries.isMobile) {
+    // 移动端布局：一行一个，100%宽度
+    return 'grid-template-columns-mobile-single';
+  } else {
+    // 桌面端布局
+    if (itemCount === 1) {
+      return 'grid-template-columns-320-single';
+    } else if (itemCount === 2) {
+      return 'grid-template-columns-320-two-items';
+    } else {
+      // 3个或更多项目时，强制每行最多2个项目
+      return 'grid-template-columns-320-max2';
+    }
+  }
 });
 
 // 暴露刷新方法给父组件

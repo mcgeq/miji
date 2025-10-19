@@ -1353,12 +1353,43 @@
 
 /* Grid Template Columns */
 .grid-template-columns-320 {
-  grid-template-columns: repeat(auto-fit, minmax(20rem, 50%));
+  grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr));
 }
 
 /* Grid Template Columns - 2条数据时充满宽度 */
 .grid-template-columns-320-two-items {
   grid-template-columns: repeat(2, 1fr);
+}
+
+/* Grid Template Columns - 智能布局，确保每行最多2个项目 */
+.grid-template-columns-320-smart {
+  grid-template-columns: repeat(auto-fit, minmax(20rem, calc(50% - 0.25rem)));
+  max-width: 100%;
+}
+
+/* Grid Template Columns - 强制每行最多2个项目 */
+.grid-template-columns-320-max2 {
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.5rem;
+}
+
+/* 当只有1个项目时，居中显示 */
+.grid-template-columns-320-single {
+  grid-template-columns: 1fr;
+  max-width: 50%;
+  margin: 0 auto;
+}
+
+/* 移动端布局 - 两个一行 */
+.grid-template-columns-mobile-two {
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.5rem;
+}
+
+/* 移动端布局 - 单个项目，100%宽度 */
+.grid-template-columns-mobile-single {
+  grid-template-columns: 1fr;
+  width: 100%;
 }
 
 /* Grid columns */
