@@ -557,6 +557,24 @@ function setQuickProgress(progress: number) {
 
 /* 响应式设计 */
 @media (max-width: 768px) {
+  .progress-row {
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: stretch;
+  }
+
+  .progress-container {
+    width: 100%;
+    flex: none;
+  }
+
+  .quick-progress {
+    display: flex;
+    justify-content: center;
+    gap: 0.375rem;
+    flex-wrap: wrap;
+  }
+
   .quick-options {
     grid-template-columns: repeat(3, 1fr);
   }
