@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
 import type { Todo, TodoUpdate } from '@/schema/todos';
 
 const props = defineProps<{

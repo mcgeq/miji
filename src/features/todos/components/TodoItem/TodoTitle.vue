@@ -115,10 +115,6 @@ function handleClick() {
   max-width: 100%;
 }
 
-.todo-title:hover {
-  color: var(--color-primary);
-}
-
 .todo-title-completed {
   color: color-mix(in oklch, var(--color-base-content) 50%, transparent);
   text-decoration: line-through;

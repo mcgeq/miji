@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
 import type { TodoUpdate } from '@/schema/todos';
 
 const props = defineProps<{
@@ -127,8 +126,8 @@ function updateProgress(newProgress: number) {
                   :class="{ active: editingProgress === value }"
                   @click="editingProgress = value"
                 >
-                  <Play v-if="value === 0" class="modal-icon" :size="16" />
-                  <CheckCircle v-else-if="value === 100" class="modal-icon" :size="16" />
+                  <LucidePlay v-if="value === 0" class="modal-icon" :size="16" />
+                  <LucideCheckCircle v-else-if="value === 100" class="modal-icon" :size="16" />
                   <span v-else>{{ value }}%</span>
                 </button>
               </div>
@@ -156,10 +155,10 @@ function updateProgress(newProgress: number) {
 
           <div class="modal-footer">
             <button class="btn-secondary" @click="closeEditModal">
-              取消
+              <LucideX class="wh-5" />
             </button>
             <button class="btn-primary" @click="updateProgress(editingProgress)">
-              保存
+              <LucideCheck class="wh-5" />
             </button>
           </div>
         </div>

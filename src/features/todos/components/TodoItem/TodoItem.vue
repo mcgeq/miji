@@ -342,7 +342,7 @@ function handleMouseLeave() {
 
 <style scoped lang="postcss">
 .todo-item {
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.25rem;
   padding: 1rem 1.25rem;
   border-radius: 1.25rem;
   border: 1px solid var(--color-base-300);
