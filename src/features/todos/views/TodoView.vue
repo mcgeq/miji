@@ -16,7 +16,7 @@ const showInput = ref(false);
 const todos = computed(() => todoStore.todosPaged);
 const { filterBtn, filterButtons, showBtn, pagination, loadTodos } = useTodosFilters(
   () => todos.value,
-  5,
+  4,
 );
 function toggleInput() {
   showInput.value = !showInput.value;
@@ -171,7 +171,7 @@ onMounted(async () => {
         :page-size="pagination.pageSize.value"
         :show-total="false"
         :show-page-size="false"
-        :page-size-options="[5, 10, 15, 20]"
+        :page-size-options="[4, 5, 10, 15, 20]"
         @page-change="handlePageChange"
         @page-size-change="handlePageSizeChange"
       />
