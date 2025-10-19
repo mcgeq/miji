@@ -187,6 +187,7 @@ onUnmounted(() => {
   max-width: 100%;
   overflow: hidden;
   box-sizing: border-box;
+  position: relative; /* 确保z-index生效 */
 }
 
 .todo-header {
@@ -258,17 +259,19 @@ onUnmounted(() => {
 
 /* Modal 样式 */
 .modal-overlay {
-  position: fixed;
-  inset: 0;
+  position: fixed !important;
+  inset: 0 !important;
   background-color: color-mix(in oklch, var(--color-neutral) 60%, transparent);
   backdrop-filter: blur(6px);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 9999;
+  z-index: 2147483647 !important; /* 使用最大可能的z-index值 */
   padding: 1rem;
   /* 确保在移动端也能正常滚动 */
   overflow-y: auto;
+  /* 确保模态框在最顶层 */
+  isolation: isolate;
 }
 
 .modal-content {
@@ -333,13 +336,16 @@ onUnmounted(() => {
 @media (max-width: 640px) {
   .modal-overlay {
     padding: 0.5rem;
-    align-items: flex-start;
-    padding-top: 10vh;
+    align-items: center; /* 垂直居中，避免遮挡输入框 */
+    justify-content: center; /* 水平居中 */
+    padding-top: 0; /* 移除顶部间距 */
+    padding-bottom: 0; /* 移除底部间距 */
   }
 
   .modal-content {
     max-width: 95vw;
-    max-height: 80vh;
+    max-height: 90vh; /* 增加最大高度 */
+    margin: 0; /* 确保没有额外的边距 */
   }
 
   .modal-header {

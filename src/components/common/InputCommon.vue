@@ -130,6 +130,8 @@ export default defineComponent({
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  width: 100%;
+  min-width: 0; /* 防止flex子元素溢出 */
 }
 
 .todo-input-wrapper:hover {
@@ -247,6 +249,32 @@ export default defineComponent({
   gap: 0.25rem;
   flex-shrink: 0;
   min-width: fit-content;
+}
+
+/* 移动端响应式设计 */
+@media (max-width: 768px) {
+  .input-container {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.375rem;
+  }
+
+  .char-counter {
+    align-self: flex-end;
+    order: 1;
+  }
+
+  .todo-input {
+    order: 2;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .todo-add-btn {
+    order: 3;
+    align-self: center;
+    width: fit-content;
+  }
 }
 
 .char-counter-normal {

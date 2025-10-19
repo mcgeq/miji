@@ -196,6 +196,7 @@ onMounted(async () => {
   margin-bottom: 1rem;
   height: 60px;
   position: relative;
+  z-index: 10000; /* 确保输入框在TodoList之上 */
 }
 
 /* 切换按钮 */
@@ -337,6 +338,16 @@ onMounted(async () => {
   .main-container {
     width: 100%;
     padding: 0.25rem;
+  }
+  .input-area {
+    padding-left: 0.5rem;
+    z-index: 10001; /* 确保输入区域在TodoList之上 */
+  }
+  .toggle-btn {
+    left: 0.25rem;
+  }
+  .input-wrapper {
+    padding: 0.5rem;
   }
 }
 </style>

@@ -23,13 +23,12 @@
   bottom: 0;
   background-color: color-mix(in oklch, var(--color-neutral) 60%, transparent);
   backdrop-filter: blur(6px);
-  z-index: 9999;
+  z-index: 10002; /* 提升z-index，确保在TodoView输入框之上 */
   display: flex;
   justify-content: center;
-  align-items: flex-start;
+  align-items: center; /* 改为center，确保内容垂直居中 */
   overflow-y: auto;
-  padding-top: 2rem;
-  padding-bottom: 2rem;
+  padding: 1rem; /* 统一内边距 */
 }
 
 .modal-mask-window {
@@ -40,7 +39,7 @@
   padding: 1rem;
   background-color: transparent;
   position: relative;
-  z-index: 10000;
+  z-index: 10003; /* 提升z-index，确保在TodoView输入框之上 */
 }
 
 .modal-mask-window-money {

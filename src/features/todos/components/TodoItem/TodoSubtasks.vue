@@ -368,7 +368,7 @@ function moveSubtaskDown(subtask: Todo) {
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 9999;
+  z-index: 10001;
   backdrop-filter: blur(4px);
 }
 

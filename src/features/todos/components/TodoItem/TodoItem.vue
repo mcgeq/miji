@@ -354,6 +354,7 @@ function handleMouseLeave() {
   min-height: 4rem;
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   overflow: visible;
+  z-index: 1; /* 恢复正常z-index，确保TodoItem可见 */
   box-shadow: 0 1px 3px color-mix(in oklch, var(--color-neutral) 8%, transparent);
   width: 100%;
   max-width: 100%;
@@ -522,7 +523,7 @@ function handleMouseLeave() {
   padding-top: 0.75rem;
   border-top: 1px solid var(--color-base-300);
   position: relative;
-  z-index: 1;
+  z-index: 0; /* 降低z-index，避免遮盖其他内容 */
 }
 
 /* 到期时间 */
