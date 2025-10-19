@@ -358,7 +358,7 @@ onMounted(async () => {
   }
 
   .pagination-wrapper {
-    margin-bottom: 0;
+    margin-bottom: 4rem; /* 为底部导航栏预留空间 */
     margin-top: 0.5rem;
     position: sticky;
     bottom: 0;

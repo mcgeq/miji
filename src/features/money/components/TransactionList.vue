@@ -653,6 +653,14 @@ margin-bottom: 0.1rem;
   justify-content: center;
 }
 
+/* 移动端分页组件底部安全间距 */
+@media (max-width: 768px) {
+  .pagination-container {
+    margin-bottom: 4rem; /* 为底部导航栏预留空间 */
+    padding-bottom: 1rem; /* 额外的底部内边距 */
+  }
+}
+
 .disabled-btn {
   color: #6b7280 !important;
   background-color: #e5e7eb !important;
