@@ -499,12 +499,13 @@ function handleMouseLeave() {
   }
 
   .todo-extended {
-    flex-direction: column;
-    gap: 0.625rem;
-    margin-left: -1rem;
-    margin-right: -1rem;
-    padding-left: 1rem;
-    padding-right: 1rem;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-left: -0.875rem;
+    margin-right: -0.875rem;
+    padding-left: 0.875rem;
+    padding-right: 0.875rem;
     border-radius: 0 0 0.75rem 0.75rem;
   }
 }
