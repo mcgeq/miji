@@ -1,6 +1,5 @@
 <!-- src/components/common/TodayTodos.vue -->
 <script setup lang="ts">
-import { Plus } from 'lucide-vue-next';
 import InputCommon from '@/components/common/InputCommon.vue';
 import TodoList from '@/features/todos/components/TodoList.vue';
 import { useTodosFilters } from '@/features/todos/composables/useTodosFilters';
@@ -124,21 +123,16 @@ onMounted(async () => {
 onUnmounted(() => {
   window.removeEventListener('keydown', handleKeyPress);
 });
+
+// 暴露方法给父组件
+defineExpose({
+  openModal,
+  getTodoCount: () => pagination.paginatedItems.value.size,
+});
 </script>
 
 <template>
   <div class="today-todos">
-    <div class="todo-header">
-      <button
-        class="toggle-btn"
-        aria-label="Add Todo"
-        @click="openModal"
-      >
-        <Plus class="toggle-icon" />
-      </button>
-      <span class="todo-count">{{ pagination.paginatedItems.value.size }}</span>
-    </div>
-
     <!-- 今日待办任务列表 - 支持滚动但隐藏滚动条 -->
     <div class="todo-list-container">
       <TodoList
@@ -188,46 +182,6 @@ onUnmounted(() => {
   overflow: hidden;
   box-sizing: border-box;
   position: relative; /* 确保z-index生效 */
-}
-
-.todo-header {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.25rem;
-}
-
-.todo-count {
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: var(--color-error-content);
-  opacity: 0.9;
-  margin-left: auto;
-}
-
-.toggle-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 1.5rem;
-  height: 1.5rem;
-  border-radius: 50%;
-  background-color: color-mix(in oklch, var(--color-error-content) 20%, transparent);
-  border: none;
-  cursor: pointer;
-  transition: all 0.2s ease-in-out;
-  color: var(--color-error-content);
-}
-
-.toggle-btn:hover {
-  background-color: color-mix(in oklch, var(--color-error-content) 30%, transparent);
-  transform: scale(1.1);
-}
-
-.toggle-icon {
-  width: 1rem;
-  height: 1rem;
-  transition: transform 0.2s ease-in-out;
 }
 
 /* 列表容器 - 支持滚动但隐藏滚动条 */

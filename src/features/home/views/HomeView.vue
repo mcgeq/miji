@@ -29,6 +29,20 @@ function switchTab(tab: TabType) {
 function toggleGlobalAmountVisibility() {
   moneyStore.toggleGlobalAmountVisibility();
 }
+
+// 添加待办任务（从TodayTodos组件调用）
+const todayTodosRef = ref<InstanceType<typeof TodayTodos>>();
+
+function openTodoModal() {
+  if (todayTodosRef.value) {
+    (todayTodosRef.value as any).openModal();
+  }
+}
+
+// 获取待办任务数量
+const todoCount = computed(() => {
+  return (todayTodosRef.value as any)?.getTodoCount?.() || 0;
+});
 </script>
 
 <template>
@@ -44,6 +58,17 @@ function toggleGlobalAmountVisibility() {
       >
         <span class="tab-label">{{ tab.label }}</span>
       </button>
+      <!-- 待办任务操作区域 - 只在待办tab激活时显示 -->
+      <div v-if="activeTab === 'todos'" class="todo-actions">
+        <button
+          class="todo-header-btn"
+          aria-label="Add Todo"
+          @click="openTodoModal"
+        >
+          <LucidePlus class="todo-header-icon" />
+        </button>
+        <span class="todo-count">{{ todoCount }}</span>
+      </div>
     </div>
 
     <!-- Tab内容 -->
@@ -58,7 +83,7 @@ function toggleGlobalAmountVisibility() {
         <TodayPeriod />
       </div>
       <div v-if="activeTab === 'todos'" class="tab-panel tab-panel-scrollable">
-        <TodayTodos />
+        <TodayTodos ref="todayTodosRef" />
       </div>
       <div v-if="activeTab === 'stats'" class="tab-panel">
         <div class="stats-placeholder">
@@ -104,6 +129,61 @@ function toggleGlobalAmountVisibility() {
 
 .tab-nav::-webkit-scrollbar {
   display: none;
+}
+
+/* 待办任务操作区域 */
+.todo-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+/* 待办任务添加按钮样式 */
+.todo-header-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background-color: var(--color-primary);
+  border: 2px solid var(--color-primary-hover);
+  cursor: pointer;
+  transition: all 0.3s ease-in-out;
+  color: var(--color-primary-content);
+  box-shadow: 0 4px 12px color-mix(in oklch, var(--color-primary) 30%, transparent);
+  position: relative;
+}
+
+.todo-header-btn:hover {
+  background-color: var(--color-primary-hover);
+  border-color: var(--color-primary-active);
+  transform: scale(1.1);
+  box-shadow: 0 6px 16px color-mix(in oklch, var(--color-primary) 40%, transparent);
+}
+
+.todo-header-btn:active {
+  transform: scale(0.95);
+  background-color: var(--color-primary-active);
+}
+
+.todo-header-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+  transition: transform 0.3s ease-in-out;
+}
+
+/* 待办任务数量样式 */
+.todo-count {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-primary);
+  opacity: 0.9;
+  padding: 0.25rem 0.5rem;
+  background-color: color-mix(in oklch, var(--color-primary) 10%, transparent);
+  border-radius: 0.5rem;
+  border: 1px solid color-mix(in oklch, var(--color-primary) 20%, transparent);
 }
 
 .tab-btn {
