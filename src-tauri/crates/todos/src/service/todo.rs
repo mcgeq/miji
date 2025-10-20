@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use chrono::{Datelike, Timelike};
 use common::{
     crud::service::{
@@ -18,6 +16,8 @@ use sea_orm::{
     prelude::{Expr, async_trait::async_trait},
 };
 use serde::{Deserialize, Serialize};
+use std::sync::Arc;
+use tauri::Emitter;
 use validator::Validate;
 
 use crate::{
@@ -100,6 +100,184 @@ pub struct TodosService {
 }
 
 impl TodosService {
+    /// 解析提醒频率字符串为 Duration，例如 "15m"、"1h"、"1d"
+    fn parse_frequency_to_duration(freq: &Option<String>) -> Option<chrono::Duration> {
+        let s = freq.as_ref()?.trim();
+        if s.is_empty() {
+            return None;
+        }
+        let (num_str, unit) = s.split_at(s.len().saturating_sub(1));
+        let Ok(n) = num_str.trim().parse::<i64>() else {
+            return None;
+        };
+        match unit {
+            "m" | "M" => Some(chrono::Duration::minutes(n)),
+            "h" | "H" => Some(chrono::Duration::hours(n)),
+            "d" | "D" => Some(chrono::Duration::days(n)),
+            _ => None,
+        }
+    }
+
+    /// 发送系统通知（跨端）：使用 tauri_plugin_notification
+    pub async fn send_system_notification(
+        &self,
+        app: &tauri::AppHandle,
+        todo: &entity::todo::Model,
+    ) -> MijiResult<()> {
+        // 标题与正文
+        let title = format!("待办提醒: {}", todo.title);
+        let desc = todo
+            .description
+            .clone()
+            .unwrap_or_else(|| "您有一条待办需要关注".to_string());
+
+        // 使用插件 API 构建并发送
+        #[allow(unused_imports)]
+        use tauri_plugin_notification::NotificationExt;
+
+        app
+            .notification()
+            .builder()
+            .title(title)
+            .body(desc)
+            .show()
+            .map_err(|e| AppError::simple(common::BusinessCode::SystemError, e.to_string()))?;
+
+        // 可选：事件回流给前端
+        let _ = app.emit(
+            "todo-reminder-fired",
+            serde_json::json!({
+                "serialNum": todo.serial_num,
+                "dueAt": todo.due_at.timestamp(),
+            }),
+        );
+
+        Ok(())
+    }
+
+    /// 处理到期需要提醒的待办：查询 -> 通知 -> 标记
+    pub async fn process_due_reminders(
+        &self,
+        app: &tauri::AppHandle,
+        db: &DbConn,
+    ) -> MijiResult<usize> {
+        let now = DateUtils::local_now();
+        let todos = self.find_due_reminder_todos(db, now).await?;
+        if todos.is_empty() {
+            return Ok(0);
+        }
+
+        let batch_id = Some(common::utils::uuid::McgUuid::uuid(38));
+        let mut sent = 0usize;
+        for td in todos {
+            match self.send_system_notification(app, &td).await {
+                Ok(_) => {
+                    self.mark_reminded(db, &td.serial_num, now, batch_id.clone())
+                        .await?;
+                    sent += 1;
+                }
+                Err(e) => {
+                    tracing::error!("发送通知失败: {}", e);
+                }
+            }
+        }
+        Ok(sent)
+    }
+    /// 计算提前提醒时长（根据 advance value + unit），默认 0
+    fn calc_advance_duration(value: Option<i32>, unit: Option<String>) -> chrono::Duration {
+        let v = value.unwrap_or(0) as i64;
+        match unit.as_deref() {
+            Some("minute") | Some("minutes") | Some("m") => chrono::Duration::minutes(v),
+            Some("hour") | Some("hours") | Some("h") => chrono::Duration::hours(v),
+            Some("day") | Some("days") | Some("d") => chrono::Duration::days(v),
+            _ => chrono::Duration::zero(),
+        }
+    }
+
+    /// 查询当前需要触发提醒的待办列表
+    pub async fn find_due_reminder_todos(
+        &self,
+        db: &DbConn,
+        now: chrono::DateTime<chrono::FixedOffset>,
+    ) -> MijiResult<Vec<entity::todo::Model>> {
+        // 基础过滤：启用提醒，且未完成/未取消，且未归档
+        let mut todos = entity::todo::Entity::find()
+            .filter(
+                Condition::all()
+                    .add(entity::todo::Column::ReminderEnabled.eq(true))
+                    .add(entity::todo::Column::IsArchived.eq(false))
+                    .add(entity::todo::Column::Status.ne(Status::Completed))
+                    .add(entity::todo::Column::Status.ne(Status::Cancelled)),
+            )
+            .all(db)
+            .await
+            .map_err(AppError::from)?;
+
+        // 内存中过滤：免打扰（snooze）、提前量与频率控制
+        todos.retain(|td| {
+            // 免打扰：如果设置了 snooze_until，要求 now >= snooze_until
+            if let Some(snooze) = td.snooze_until {
+                if now < snooze {
+                    return false;
+                }
+            }
+
+            // 提前提醒：now >= (due_at - advance)
+            let advance = Self::calc_advance_duration(
+                td.reminder_advance_value,
+                td.reminder_advance_unit.clone(),
+            );
+            if now < (td.due_at - advance) {
+                return false;
+            }
+
+            // 频率限制：last + freq <= now
+            if let Some(last) = td.last_reminder_sent_at {
+                if let Some(freq_dur) = Self::parse_frequency_to_duration(&td.reminder_frequency) {
+                    if last + freq_dur > now {
+                        return false;
+                    }
+                }
+            }
+
+            true
+        });
+
+        Ok(todos)
+    }
+
+    /// 标记某条待办已提醒，更新 last_reminder_sent_at / reminder_count / batch_reminder_id
+    pub async fn mark_reminded(
+        &self,
+        db: &DbConn,
+        serial_num: &str,
+        when: chrono::DateTime<chrono::FixedOffset>,
+        batch_id: Option<String>,
+    ) -> MijiResult<()> {
+        // 读取当前值以便自增 reminder_count
+        if let Some(model) = entity::todo::Entity::find_by_id(serial_num.to_string())
+            .one(db)
+            .await
+            .map_err(AppError::from)?
+        {
+            let new_count = model.reminder_count.saturating_add(1);
+            update_entity_columns_simple::<entity::todo::Entity, _>(
+                db,
+                vec![(
+                    entity::todo::Column::SerialNum,
+                    vec![serial_num.to_string()],
+                )],
+                vec![
+                    (entity::todo::Column::LastReminderSentAt, Expr::value(when)),
+                    (entity::todo::Column::ReminderCount, Expr::value(new_count)),
+                    (entity::todo::Column::BatchReminderId, Expr::value(batch_id)),
+                    (entity::todo::Column::UpdatedAt, Expr::value(when)),
+                ],
+            )
+            .await?;
+        }
+        Ok(())
+    }
     pub fn new(
         converter: TodosConverter,
         hooks: TodoHooks,

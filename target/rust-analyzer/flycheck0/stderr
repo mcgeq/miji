@@ -1,42 +1,261 @@
-   1.060461100s  INFO prepare_target{force=false package_id=auth v0.1.0 (F:\projects\miji\miji\src-tauri\crates\auth) target="auth"}: cargo::core::compiler::fingerprint: stale: changed "F:\\projects\\miji\\miji\\src-tauri\\common\\src\\lib.rs"
-   1.060950200s  INFO prepare_target{force=false package_id=auth v0.1.0 (F:\projects\miji\miji\src-tauri\crates\auth) target="auth"}: cargo::core::compiler::fingerprint:           (vs) "F:\\projects\\miji\\miji\\src-tauri\\target\\debug\\.fingerprint\\common-cd60a6fd83338127\\dep-lib-common"
-   1.061118000s  INFO prepare_target{force=false package_id=auth v0.1.0 (F:\projects\miji\miji\src-tauri\crates\auth) target="auth"}: cargo::core::compiler::fingerprint:                FileTime { seconds: 13405361214, nanos: 572017600 } < FileTime { seconds: 13405426768, nanos: 150181200 }
-   1.086233800s  INFO prepare_target{force=false package_id=auth v0.1.0 (F:\projects\miji\miji\src-tauri\crates\auth) target="auth"}: cargo::core::compiler::fingerprint: fingerprint dirty for auth v0.1.0 (F:\projects\miji\miji\src-tauri\crates\auth)/Check { test: false }/TargetInner { name_inferred: true, ..: lib_target("auth", ["lib"], "F:\\projects\\miji\\miji\\src-tauri\\crates\\auth\\src\\lib.rs", Edition2024) }
-   1.087017500s  INFO prepare_target{force=false package_id=auth v0.1.0 (F:\projects\miji\miji\src-tauri\crates\auth) target="auth"}: cargo::core::compiler::fingerprint:     dirty: FsStatusOutdated(StaleDepFingerprint { name: "common" })
-   1.094857300s  INFO prepare_target{force=false package_id=common v0.1.0 (F:\projects\miji\miji\src-tauri\common) target="common"}: cargo::core::compiler::fingerprint: fingerprint dirty for common v0.1.0 (F:\projects\miji\miji\src-tauri\common)/Check { test: false }/TargetInner { name_inferred: true, ..: lib_target("common", ["lib"], "F:\\projects\\miji\\miji\\src-tauri\\common\\src\\lib.rs", Edition2024) }
-   1.094895900s  INFO prepare_target{force=false package_id=common v0.1.0 (F:\projects\miji\miji\src-tauri\common) target="common"}: cargo::core::compiler::fingerprint:     dirty: FsStatusOutdated(StaleItem(ChangedFile { reference: "F:\\projects\\miji\\miji\\src-tauri\\target\\debug\\.fingerprint\\common-cd60a6fd83338127\\dep-lib-common", reference_mtime: FileTime { seconds: 13405361214, nanos: 572017600 }, stale: "F:\\projects\\miji\\miji\\src-tauri\\common\\src\\lib.rs", stale_mtime: FileTime { seconds: 13405426768, nanos: 150181200 } }))
-   1.243029200s  INFO prepare_target{force=false package_id=auth v0.1.0 (F:\projects\miji\miji\src-tauri\crates\auth) target="auth"}: cargo::core::compiler::fingerprint: fingerprint dirty for auth v0.1.0 (F:\projects\miji\miji\src-tauri\crates\auth)/Check { test: true }/TargetInner { name_inferred: true, ..: lib_target("auth", ["lib"], "F:\\projects\\miji\\miji\\src-tauri\\crates\\auth\\src\\lib.rs", Edition2024) }
-   1.243084400s  INFO prepare_target{force=false package_id=auth v0.1.0 (F:\projects\miji\miji\src-tauri\crates\auth) target="auth"}: cargo::core::compiler::fingerprint:     dirty: FsStatusOutdated(StaleDepFingerprint { name: "common" })
-   1.252707200s  INFO prepare_target{force=false package_id=common v0.1.0 (F:\projects\miji\miji\src-tauri\common) target="common"}: cargo::core::compiler::fingerprint: stale: changed "F:\\projects\\miji\\miji\\src-tauri\\common\\src\\lib.rs"
-   1.252729000s  INFO prepare_target{force=false package_id=common v0.1.0 (F:\projects\miji\miji\src-tauri\common) target="common"}: cargo::core::compiler::fingerprint:           (vs) "F:\\projects\\miji\\miji\\src-tauri\\target\\debug\\.fingerprint\\common-f656887ded30dcbe\\dep-test-lib-common"
-   1.252733800s  INFO prepare_target{force=false package_id=common v0.1.0 (F:\projects\miji\miji\src-tauri\common) target="common"}: cargo::core::compiler::fingerprint:                FileTime { seconds: 13405361214, nanos: 580053100 } < FileTime { seconds: 13405426768, nanos: 150181200 }
-   1.262775200s  INFO prepare_target{force=false package_id=common v0.1.0 (F:\projects\miji\miji\src-tauri\common) target="common"}: cargo::core::compiler::fingerprint: fingerprint dirty for common v0.1.0 (F:\projects\miji\miji\src-tauri\common)/Check { test: true }/TargetInner { name_inferred: true, ..: lib_target("common", ["lib"], "F:\\projects\\miji\\miji\\src-tauri\\common\\src\\lib.rs", Edition2024) }
-   1.262810800s  INFO prepare_target{force=false package_id=common v0.1.0 (F:\projects\miji\miji\src-tauri\common) target="common"}: cargo::core::compiler::fingerprint:     dirty: FsStatusOutdated(StaleItem(ChangedFile { reference: "F:\\projects\\miji\\miji\\src-tauri\\target\\debug\\.fingerprint\\common-f656887ded30dcbe\\dep-test-lib-common", reference_mtime: FileTime { seconds: 13405361214, nanos: 580053100 }, stale: "F:\\projects\\miji\\miji\\src-tauri\\common\\src\\lib.rs", stale_mtime: FileTime { seconds: 13405426768, nanos: 150181200 } }))
-   1.296847100s  INFO prepare_target{force=false package_id=healths v0.1.0 (F:\projects\miji\miji\src-tauri\crates\healths) target="healths"}: cargo::core::compiler::fingerprint: fingerprint dirty for healths v0.1.0 (F:\projects\miji\miji\src-tauri\crates\healths)/Check { test: false }/TargetInner { name_inferred: true, ..: lib_target("healths", ["lib"], "F:\\projects\\miji\\miji\\src-tauri\\crates\\healths\\src\\lib.rs", Edition2024) }
-   1.296896500s  INFO prepare_target{force=false package_id=healths v0.1.0 (F:\projects\miji\miji\src-tauri\crates\healths) target="healths"}: cargo::core::compiler::fingerprint:     dirty: FsStatusOutdated(StaleDepFingerprint { name: "common" })
-   1.317702900s  INFO prepare_target{force=false package_id=healths v0.1.0 (F:\projects\miji\miji\src-tauri\crates\healths) target="healths"}: cargo::core::compiler::fingerprint: fingerprint dirty for healths v0.1.0 (F:\projects\miji\miji\src-tauri\crates\healths)/Check { test: true }/TargetInner { name_inferred: true, ..: lib_target("healths", ["lib"], "F:\\projects\\miji\\miji\\src-tauri\\crates\\healths\\src\\lib.rs", Edition2024) }
-   1.317746400s  INFO prepare_target{force=false package_id=healths v0.1.0 (F:\projects\miji\miji\src-tauri\crates\healths) target="healths"}: cargo::core::compiler::fingerprint:     dirty: FsStatusOutdated(StaleDepFingerprint { name: "common" })
-   1.465310800s  INFO prepare_target{force=false package_id=miji v0.1.0 (F:\projects\miji\miji\src-tauri) target="miji_lib"}: cargo::core::compiler::fingerprint: fingerprint dirty for miji v0.1.0 (F:\projects\miji\miji\src-tauri)/Check { test: false }/TargetInner { ..: lib_target("miji_lib", ["staticlib", "cdylib", "rlib"], "F:\\projects\\miji\\miji\\src-tauri\\src\\lib.rs", Edition2024) }
-   1.465349600s  INFO prepare_target{force=false package_id=miji v0.1.0 (F:\projects\miji\miji\src-tauri) target="miji_lib"}: cargo::core::compiler::fingerprint:     dirty: FsStatusOutdated(StaleDepFingerprint { name: "common" })
-   1.499795100s  INFO prepare_target{force=false package_id=money v0.1.0 (F:\projects\miji\miji\src-tauri\crates\money) target="money"}: cargo::core::compiler::fingerprint: fingerprint dirty for money v0.1.0 (F:\projects\miji\miji\src-tauri\crates\money)/Check { test: false }/TargetInner { name_inferred: true, ..: lib_target("money", ["lib"], "F:\\projects\\miji\\miji\\src-tauri\\crates\\money\\src\\lib.rs", Edition2024) }
-   1.499835500s  INFO prepare_target{force=false package_id=money v0.1.0 (F:\projects\miji\miji\src-tauri\crates\money) target="money"}: cargo::core::compiler::fingerprint:     dirty: FsStatusOutdated(StaleDepFingerprint { name: "common" })
-   1.517727200s  INFO prepare_target{force=false package_id=todos v0.1.0 (F:\projects\miji\miji\src-tauri\crates\todos) target="todos"}: cargo::core::compiler::fingerprint: fingerprint dirty for todos v0.1.0 (F:\projects\miji\miji\src-tauri\crates\todos)/Check { test: false }/TargetInner { name_inferred: true, ..: lib_target("todos", ["lib"], "F:\\projects\\miji\\miji\\src-tauri\\crates\\todos\\src\\lib.rs", Edition2024) }
-   1.517774200s  INFO prepare_target{force=false package_id=todos v0.1.0 (F:\projects\miji\miji\src-tauri\crates\todos) target="todos"}: cargo::core::compiler::fingerprint:     dirty: FsStatusOutdated(StaleDepFingerprint { name: "common" })
-   1.527110000s  INFO prepare_target{force=false package_id=miji v0.1.0 (F:\projects\miji\miji\src-tauri) target="miji_lib"}: cargo::core::compiler::fingerprint: fingerprint dirty for miji v0.1.0 (F:\projects\miji\miji\src-tauri)/Check { test: true }/TargetInner { ..: lib_target("miji_lib", ["staticlib", "cdylib", "rlib"], "F:\\projects\\miji\\miji\\src-tauri\\src\\lib.rs", Edition2024) }
-   1.527144700s  INFO prepare_target{force=false package_id=miji v0.1.0 (F:\projects\miji\miji\src-tauri) target="miji_lib"}: cargo::core::compiler::fingerprint:     dirty: FsStatusOutdated(StaleDepFingerprint { name: "common" })
-   1.541027000s  INFO prepare_target{force=false package_id=miji v0.1.0 (F:\projects\miji\miji\src-tauri) target="miji"}: cargo::core::compiler::fingerprint: fingerprint dirty for miji v0.1.0 (F:\projects\miji\miji\src-tauri)/Check { test: false }/TargetInner { name: "miji", doc: true, ..: with_path("F:\\projects\\miji\\miji\\src-tauri\\src\\main.rs", Edition2024) }
-   1.541064900s  INFO prepare_target{force=false package_id=miji v0.1.0 (F:\projects\miji\miji\src-tauri) target="miji"}: cargo::core::compiler::fingerprint:     dirty: FsStatusOutdated(StaleDepFingerprint { name: "miji_lib" })
-   1.547943900s  INFO prepare_target{force=false package_id=miji v0.1.0 (F:\projects\miji\miji\src-tauri) target="miji"}: cargo::core::compiler::fingerprint: fingerprint dirty for miji v0.1.0 (F:\projects\miji\miji\src-tauri)/Check { test: true }/TargetInner { name: "miji", doc: true, ..: with_path("F:\\projects\\miji\\miji\\src-tauri\\src\\main.rs", Edition2024) }
-   1.547968900s  INFO prepare_target{force=false package_id=miji v0.1.0 (F:\projects\miji\miji\src-tauri) target="miji"}: cargo::core::compiler::fingerprint:     dirty: FsStatusOutdated(StaleDepFingerprint { name: "miji_lib" })
-   1.561713600s  INFO prepare_target{force=false package_id=money v0.1.0 (F:\projects\miji\miji\src-tauri\crates\money) target="money"}: cargo::core::compiler::fingerprint: fingerprint dirty for money v0.1.0 (F:\projects\miji\miji\src-tauri\crates\money)/Check { test: true }/TargetInner { name_inferred: true, ..: lib_target("money", ["lib"], "F:\\projects\\miji\\miji\\src-tauri\\crates\\money\\src\\lib.rs", Edition2024) }
-   1.561749900s  INFO prepare_target{force=false package_id=money v0.1.0 (F:\projects\miji\miji\src-tauri\crates\money) target="money"}: cargo::core::compiler::fingerprint:     dirty: FsStatusOutdated(StaleDepFingerprint { name: "common" })
-   1.572084500s  INFO prepare_target{force=false package_id=todos v0.1.0 (F:\projects\miji\miji\src-tauri\crates\todos) target="todos"}: cargo::core::compiler::fingerprint: fingerprint dirty for todos v0.1.0 (F:\projects\miji\miji\src-tauri\crates\todos)/Check { test: true }/TargetInner { name_inferred: true, ..: lib_target("todos", ["lib"], "F:\\projects\\miji\\miji\\src-tauri\\crates\\todos\\src\\lib.rs", Edition2024) }
-   1.572127500s  INFO prepare_target{force=false package_id=todos v0.1.0 (F:\projects\miji\miji\src-tauri\crates\todos) target="todos"}: cargo::core::compiler::fingerprint:     dirty: FsStatusOutdated(StaleDepFingerprint { name: "common" })
+   0.526063600s  INFO prepare_target{force=false package_id=auth v0.1.0 (F:\projects\miji\miji\src-tauri\crates\auth) target="auth"}: cargo::core::compiler::fingerprint: stale: changed "F:\\projects\\miji\\miji\\src-tauri\\Cargo.toml"
+   0.526097400s  INFO prepare_target{force=false package_id=auth v0.1.0 (F:\projects\miji\miji\src-tauri\crates\auth) target="auth"}: cargo::core::compiler::fingerprint:           (vs) "F:\\projects\\miji\\miji\\src-tauri\\target\\debug\\.fingerprint\\miji_derive-8a4c42bd6a1b8c84\\dep-lib-miji_derive"
+   0.526103800s  INFO prepare_target{force=false package_id=auth v0.1.0 (F:\projects\miji\miji\src-tauri\crates\auth) target="auth"}: cargo::core::compiler::fingerprint:                FileTime { seconds: 13405224539, nanos: 978261900 } < FileTime { seconds: 13405432175, nanos: 128598100 }
+   0.576576100s  INFO prepare_target{force=false package_id=auth v0.1.0 (F:\projects\miji\miji\src-tauri\crates\auth) target="auth"}: cargo::core::compiler::fingerprint: stale: changed "F:\\projects\\miji\\miji\\src-tauri\\Cargo.toml"
+   0.576595400s  INFO prepare_target{force=false package_id=auth v0.1.0 (F:\projects\miji\miji\src-tauri\crates\auth) target="auth"}: cargo::core::compiler::fingerprint:           (vs) "F:\\projects\\miji\\miji\\src-tauri\\target\\debug\\.fingerprint\\localize_model_derive-221f6e7472529fda\\dep-lib-localize_model_derive"
+   0.576600800s  INFO prepare_target{force=false package_id=auth v0.1.0 (F:\projects\miji\miji\src-tauri\crates\auth) target="auth"}: cargo::core::compiler::fingerprint:                FileTime { seconds: 13405224539, nanos: 965264000 } < FileTime { seconds: 13405432175, nanos: 128598100 }
+   0.589921900s  INFO prepare_target{force=false package_id=auth v0.1.0 (F:\projects\miji\miji\src-tauri\crates\auth) target="auth"}: cargo::core::compiler::fingerprint: fingerprint dirty for auth v0.1.0 (F:\projects\miji\miji\src-tauri\crates\auth)/Check { test: false }/TargetInner { name_inferred: true, ..: lib_target("auth", ["lib"], "F:\\projects\\miji\\miji\\src-tauri\\crates\\auth\\src\\lib.rs", Edition2024) }
+   0.589973400s  INFO prepare_target{force=false package_id=auth v0.1.0 (F:\projects\miji\miji\src-tauri\crates\auth) target="auth"}: cargo::core::compiler::fingerprint:     dirty: FsStatusOutdated(StaleDepFingerprint { name: "common" })
+   0.608987000s  INFO prepare_target{force=false package_id=common v0.1.0 (F:\projects\miji\miji\src-tauri\common) target="common"}: cargo::core::compiler::fingerprint: fingerprint dirty for common v0.1.0 (F:\projects\miji\miji\src-tauri\common)/Check { test: false }/TargetInner { name_inferred: true, ..: lib_target("common", ["lib"], "F:\\projects\\miji\\miji\\src-tauri\\common\\src\\lib.rs", Edition2024) }
+   0.609023700s  INFO prepare_target{force=false package_id=common v0.1.0 (F:\projects\miji\miji\src-tauri\common) target="common"}: cargo::core::compiler::fingerprint:     dirty: FsStatusOutdated(StaleDepFingerprint { name: "miji_derive" })
+   0.624886900s  INFO prepare_target{force=false package_id=miji_derive v0.1.0 (F:\projects\miji\miji\src-tauri\miji_derive) target="miji_derive"}: cargo::core::compiler::fingerprint: fingerprint dirty for miji_derive v0.1.0 (F:\projects\miji\miji\src-tauri\miji_derive)/Build/TargetInner { name_inferred: true, for_host: true, proc_macro: true, ..: lib_target("miji_derive", ["proc-macro"], "F:\\projects\\miji\\miji\\src-tauri\\miji_derive\\src\\lib.rs", Edition2024) }
+   0.624909700s  INFO prepare_target{force=false package_id=miji_derive v0.1.0 (F:\projects\miji\miji\src-tauri\miji_derive) target="miji_derive"}: cargo::core::compiler::fingerprint:     dirty: FsStatusOutdated(StaleItem(ChangedFile { reference: "F:\\projects\\miji\\miji\\src-tauri\\target\\debug\\.fingerprint\\miji_derive-8a4c42bd6a1b8c84\\dep-lib-miji_derive", reference_mtime: FileTime { seconds: 13405224539, nanos: 978261900 }, stale: "F:\\projects\\miji\\miji\\src-tauri\\Cargo.toml", stale_mtime: FileTime { seconds: 13405432175, nanos: 128598100 } }))
+   0.695129200s  INFO prepare_target{force=false package_id=entity v0.1.0 (F:\projects\miji\miji\src-tauri\entity) target="entity"}: cargo::core::compiler::fingerprint: fingerprint dirty for entity v0.1.0 (F:\projects\miji\miji\src-tauri\entity)/Check { test: false }/TargetInner { name_inferred: true, ..: lib_target("entity", ["lib"], "F:\\projects\\miji\\miji\\src-tauri\\entity\\src\\lib.rs", Edition2024) }
+   0.695153700s  INFO prepare_target{force=false package_id=entity v0.1.0 (F:\projects\miji\miji\src-tauri\entity) target="entity"}: cargo::core::compiler::fingerprint:     dirty: FsStatusOutdated(StaleDepFingerprint { name: "localize_model_derive" })
+   0.731387000s  INFO prepare_target{force=false package_id=localize_model_derive v0.1.0 (F:\projects\miji\miji\src-tauri\localize_model_derive) target="localize_model_derive"}: cargo::core::compiler::fingerprint: fingerprint dirty for localize_model_derive v0.1.0 (F:\projects\miji\miji\src-tauri\localize_model_derive)/Build/TargetInner { name_inferred: true, for_host: true, proc_macro: true, ..: lib_target("localize_model_derive", ["proc-macro"], "F:\\projects\\miji\\miji\\src-tauri\\localize_model_derive\\src\\lib.rs", Edition2024) }
+   0.731450000s  INFO prepare_target{force=false package_id=localize_model_derive v0.1.0 (F:\projects\miji\miji\src-tauri\localize_model_derive) target="localize_model_derive"}: cargo::core::compiler::fingerprint:     dirty: FsStatusOutdated(StaleItem(ChangedFile { reference: "F:\\projects\\miji\\miji\\src-tauri\\target\\debug\\.fingerprint\\localize_model_derive-221f6e7472529fda\\dep-lib-localize_model_derive", reference_mtime: FileTime { seconds: 13405224539, nanos: 965264000 }, stale: "F:\\projects\\miji\\miji\\src-tauri\\Cargo.toml", stale_mtime: FileTime { seconds: 13405432175, nanos: 128598100 } }))
+   0.733016100s  INFO prepare_target{force=false package_id=auth v0.1.0 (F:\projects\miji\miji\src-tauri\crates\auth) target="auth"}: cargo::core::compiler::fingerprint: fingerprint dirty for auth v0.1.0 (F:\projects\miji\miji\src-tauri\crates\auth)/Check { test: true }/TargetInner { name_inferred: true, ..: lib_target("auth", ["lib"], "F:\\projects\\miji\\miji\\src-tauri\\crates\\auth\\src\\lib.rs", Edition2024) }
+   0.733043000s  INFO prepare_target{force=false package_id=auth v0.1.0 (F:\projects\miji\miji\src-tauri\crates\auth) target="auth"}: cargo::core::compiler::fingerprint:     dirty: FsStatusOutdated(StaleDepFingerprint { name: "common" })
+   0.735533400s  INFO prepare_target{force=false package_id=common v0.1.0 (F:\projects\miji\miji\src-tauri\common) target="common"}: cargo::core::compiler::fingerprint: fingerprint dirty for common v0.1.0 (F:\projects\miji\miji\src-tauri\common)/Check { test: true }/TargetInner { name_inferred: true, ..: lib_target("common", ["lib"], "F:\\projects\\miji\\miji\\src-tauri\\common\\src\\lib.rs", Edition2024) }
+   0.735556600s  INFO prepare_target{force=false package_id=common v0.1.0 (F:\projects\miji\miji\src-tauri\common) target="common"}: cargo::core::compiler::fingerprint:     dirty: FsStatusOutdated(StaleDepFingerprint { name: "miji_derive" })
+   0.737833600s  INFO prepare_target{force=false package_id=entity v0.1.0 (F:\projects\miji\miji\src-tauri\entity) target="entity"}: cargo::core::compiler::fingerprint: fingerprint dirty for entity v0.1.0 (F:\projects\miji\miji\src-tauri\entity)/Check { test: true }/TargetInner { name_inferred: true, ..: lib_target("entity", ["lib"], "F:\\projects\\miji\\miji\\src-tauri\\entity\\src\\lib.rs", Edition2024) }
+   0.737855100s  INFO prepare_target{force=false package_id=entity v0.1.0 (F:\projects\miji\miji\src-tauri\entity) target="entity"}: cargo::core::compiler::fingerprint:     dirty: FsStatusOutdated(StaleDepFingerprint { name: "localize_model_derive" })
+   0.738929500s  INFO prepare_target{force=false package_id=healths v0.1.0 (F:\projects\miji\miji\src-tauri\crates\healths) target="healths"}: cargo::core::compiler::fingerprint: stale: changed "F:\\projects\\miji\\miji\\src-tauri\\Cargo.toml"
+   0.738940900s  INFO prepare_target{force=false package_id=healths v0.1.0 (F:\projects\miji\miji\src-tauri\crates\healths) target="healths"}: cargo::core::compiler::fingerprint:           (vs) "F:\\projects\\miji\\miji\\src-tauri\\target\\debug\\.fingerprint\\macros-0ffbd9327051e8bd\\dep-lib-macros"
+   0.738945700s  INFO prepare_target{force=false package_id=healths v0.1.0 (F:\projects\miji\miji\src-tauri\crates\healths) target="healths"}: cargo::core::compiler::fingerprint:                FileTime { seconds: 13405224541, nanos: 69708300 } < FileTime { seconds: 13405432175, nanos: 128598100 }
+   0.746341000s  INFO prepare_target{force=false package_id=healths v0.1.0 (F:\projects\miji\miji\src-tauri\crates\healths) target="healths"}: cargo::core::compiler::fingerprint: fingerprint dirty for healths v0.1.0 (F:\projects\miji\miji\src-tauri\crates\healths)/Check { test: false }/TargetInner { name_inferred: true, ..: lib_target("healths", ["lib"], "F:\\projects\\miji\\miji\\src-tauri\\crates\\healths\\src\\lib.rs", Edition2024) }
+   0.746386600s  INFO prepare_target{force=false package_id=healths v0.1.0 (F:\projects\miji\miji\src-tauri\crates\healths) target="healths"}: cargo::core::compiler::fingerprint:     dirty: FsStatusOutdated(StaleDepFingerprint { name: "common" })
+   0.748985800s  INFO prepare_target{force=false package_id=macros v0.1.0 (F:\projects\miji\miji\src-tauri\macros) target="macros"}: cargo::core::compiler::fingerprint: fingerprint dirty for macros v0.1.0 (F:\projects\miji\miji\src-tauri\macros)/Check { test: false }/TargetInner { name_inferred: true, ..: lib_target("macros", ["lib"], "F:\\projects\\miji\\miji\\src-tauri\\macros\\src\\lib.rs", Edition2024) }
+   0.749021300s  INFO prepare_target{force=false package_id=macros v0.1.0 (F:\projects\miji\miji\src-tauri\macros) target="macros"}: cargo::core::compiler::fingerprint:     dirty: FsStatusOutdated(StaleItem(ChangedFile { reference: "F:\\projects\\miji\\miji\\src-tauri\\target\\debug\\.fingerprint\\macros-0ffbd9327051e8bd\\dep-lib-macros", reference_mtime: FileTime { seconds: 13405224541, nanos: 69708300 }, stale: "F:\\projects\\miji\\miji\\src-tauri\\Cargo.toml", stale_mtime: FileTime { seconds: 13405432175, nanos: 128598100 } }))
+   0.752770700s  INFO prepare_target{force=false package_id=healths v0.1.0 (F:\projects\miji\miji\src-tauri\crates\healths) target="healths"}: cargo::core::compiler::fingerprint: fingerprint dirty for healths v0.1.0 (F:\projects\miji\miji\src-tauri\crates\healths)/Check { test: true }/TargetInner { name_inferred: true, ..: lib_target("healths", ["lib"], "F:\\projects\\miji\\miji\\src-tauri\\crates\\healths\\src\\lib.rs", Edition2024) }
+   0.752802300s  INFO prepare_target{force=false package_id=healths v0.1.0 (F:\projects\miji\miji\src-tauri\crates\healths) target="healths"}: cargo::core::compiler::fingerprint:     dirty: FsStatusOutdated(StaleDepFingerprint { name: "common" })
+   0.756314000s  INFO prepare_target{force=false package_id=localize_model_derive v0.1.0 (F:\projects\miji\miji\src-tauri\localize_model_derive) target="localize_model_derive"}: cargo::core::compiler::fingerprint: stale: changed "F:\\projects\\miji\\miji\\src-tauri\\Cargo.toml"
+   0.756337200s  INFO prepare_target{force=false package_id=localize_model_derive v0.1.0 (F:\projects\miji\miji\src-tauri\localize_model_derive) target="localize_model_derive"}: cargo::core::compiler::fingerprint:           (vs) "F:\\projects\\miji\\miji\\src-tauri\\target\\debug\\.fingerprint\\localize_model_derive-0667231575c65751\\dep-lib-localize_model_derive"
+   0.756342300s  INFO prepare_target{force=false package_id=localize_model_derive v0.1.0 (F:\projects\miji\miji\src-tauri\localize_model_derive) target="localize_model_derive"}: cargo::core::compiler::fingerprint:                FileTime { seconds: 13405224555, nanos: 934967500 } < FileTime { seconds: 13405432175, nanos: 128598100 }
+   0.756881300s  INFO prepare_target{force=false package_id=localize_model_derive v0.1.0 (F:\projects\miji\miji\src-tauri\localize_model_derive) target="localize_model_derive"}: cargo::core::compiler::fingerprint: fingerprint dirty for localize_model_derive v0.1.0 (F:\projects\miji\miji\src-tauri\localize_model_derive)/Check { test: false }/TargetInner { name_inferred: true, for_host: true, proc_macro: true, ..: lib_target("localize_model_derive", ["proc-macro"], "F:\\projects\\miji\\miji\\src-tauri\\localize_model_derive\\src\\lib.rs", Edition2024) }
+   0.756924900s  INFO prepare_target{force=false package_id=localize_model_derive v0.1.0 (F:\projects\miji\miji\src-tauri\localize_model_derive) target="localize_model_derive"}: cargo::core::compiler::fingerprint:     dirty: FsStatusOutdated(StaleItem(ChangedFile { reference: "F:\\projects\\miji\\miji\\src-tauri\\target\\debug\\.fingerprint\\localize_model_derive-0667231575c65751\\dep-lib-localize_model_derive", reference_mtime: FileTime { seconds: 13405224555, nanos: 934967500 }, stale: "F:\\projects\\miji\\miji\\src-tauri\\Cargo.toml", stale_mtime: FileTime { seconds: 13405432175, nanos: 128598100 } }))
+   0.758729800s  INFO prepare_target{force=false package_id=localize_model_derive v0.1.0 (F:\projects\miji\miji\src-tauri\localize_model_derive) target="localize_model_derive"}: cargo::core::compiler::fingerprint: stale: changed "F:\\projects\\miji\\miji\\src-tauri\\Cargo.toml"
+   0.758743000s  INFO prepare_target{force=false package_id=localize_model_derive v0.1.0 (F:\projects\miji\miji\src-tauri\localize_model_derive) target="localize_model_derive"}: cargo::core::compiler::fingerprint:           (vs) "F:\\projects\\miji\\miji\\src-tauri\\target\\debug\\.fingerprint\\localize_model_derive-724532afc5f72de8\\dep-test-lib-localize_model_derive"
+   0.758747500s  INFO prepare_target{force=false package_id=localize_model_derive v0.1.0 (F:\projects\miji\miji\src-tauri\localize_model_derive) target="localize_model_derive"}: cargo::core::compiler::fingerprint:                FileTime { seconds: 13405224555, nanos: 934967500 } < FileTime { seconds: 13405432175, nanos: 128598100 }
+   0.758939400s  INFO prepare_target{force=false package_id=localize_model_derive v0.1.0 (F:\projects\miji\miji\src-tauri\localize_model_derive) target="localize_model_derive"}: cargo::core::compiler::fingerprint: fingerprint dirty for localize_model_derive v0.1.0 (F:\projects\miji\miji\src-tauri\localize_model_derive)/Check { test: true }/TargetInner { name_inferred: true, for_host: true, proc_macro: true, ..: lib_target("localize_model_derive", ["proc-macro"], "F:\\projects\\miji\\miji\\src-tauri\\localize_model_derive\\src\\lib.rs", Edition2024) }
+   0.758961000s  INFO prepare_target{force=false package_id=localize_model_derive v0.1.0 (F:\projects\miji\miji\src-tauri\localize_model_derive) target="localize_model_derive"}: cargo::core::compiler::fingerprint:     dirty: FsStatusOutdated(StaleItem(ChangedFile { reference: "F:\\projects\\miji\\miji\\src-tauri\\target\\debug\\.fingerprint\\localize_model_derive-724532afc5f72de8\\dep-test-lib-localize_model_derive", reference_mtime: FileTime { seconds: 13405224555, nanos: 934967500 }, stale: "F:\\projects\\miji\\miji\\src-tauri\\Cargo.toml", stale_mtime: FileTime { seconds: 13405432175, nanos: 128598100 } }))
+   0.759610100s  INFO prepare_target{force=false package_id=macros v0.1.0 (F:\projects\miji\miji\src-tauri\macros) target="macros"}: cargo::core::compiler::fingerprint: stale: changed "F:\\projects\\miji\\miji\\src-tauri\\Cargo.toml"
+   0.759620200s  INFO prepare_target{force=false package_id=macros v0.1.0 (F:\projects\miji\miji\src-tauri\macros) target="macros"}: cargo::core::compiler::fingerprint:           (vs) "F:\\projects\\miji\\miji\\src-tauri\\target\\debug\\.fingerprint\\macros-160328c8cd686d89\\dep-test-lib-macros"
+   0.759624200s  INFO prepare_target{force=false package_id=macros v0.1.0 (F:\projects\miji\miji\src-tauri\macros) target="macros"}: cargo::core::compiler::fingerprint:                FileTime { seconds: 13405224545, nanos: 546510100 } < FileTime { seconds: 13405432175, nanos: 128598100 }
+   0.759761600s  INFO prepare_target{force=false package_id=macros v0.1.0 (F:\projects\miji\miji\src-tauri\macros) target="macros"}: cargo::core::compiler::fingerprint: fingerprint dirty for macros v0.1.0 (F:\projects\miji\miji\src-tauri\macros)/Check { test: true }/TargetInner { name_inferred: true, ..: lib_target("macros", ["lib"], "F:\\projects\\miji\\miji\\src-tauri\\macros\\src\\lib.rs", Edition2024) }
+   0.759775200s  INFO prepare_target{force=false package_id=macros v0.1.0 (F:\projects\miji\miji\src-tauri\macros) target="macros"}: cargo::core::compiler::fingerprint:     dirty: FsStatusOutdated(StaleItem(ChangedFile { reference: "F:\\projects\\miji\\miji\\src-tauri\\target\\debug\\.fingerprint\\macros-160328c8cd686d89\\dep-test-lib-macros", reference_mtime: FileTime { seconds: 13405224545, nanos: 546510100 }, stale: "F:\\projects\\miji\\miji\\src-tauri\\Cargo.toml", stale_mtime: FileTime { seconds: 13405432175, nanos: 128598100 } }))
+   0.763318700s  INFO prepare_target{force=false package_id=migration v0.1.0 (F:\projects\miji\miji\src-tauri\migration) target="migration"}: cargo::core::compiler::fingerprint: stale: changed "F:\\projects\\miji\\miji\\src-tauri\\Cargo.toml"
+   0.763335700s  INFO prepare_target{force=false package_id=migration v0.1.0 (F:\projects\miji\miji\src-tauri\migration) target="migration"}: cargo::core::compiler::fingerprint:           (vs) "F:\\projects\\miji\\miji\\src-tauri\\target\\debug\\.fingerprint\\migration-5559f0e6ed43aa72\\dep-lib-migration"
+   0.763342500s  INFO prepare_target{force=false package_id=migration v0.1.0 (F:\projects\miji\miji\src-tauri\migration) target="migration"}: cargo::core::compiler::fingerprint:                FileTime { seconds: 13405431711, nanos: 336751400 } < FileTime { seconds: 13405432175, nanos: 128598100 }
+   0.763501600s  INFO prepare_target{force=false package_id=migration v0.1.0 (F:\projects\miji\miji\src-tauri\migration) target="migration"}: cargo::core::compiler::fingerprint: fingerprint dirty for migration v0.1.0 (F:\projects\miji\miji\src-tauri\migration)/Check { test: false }/TargetInner { name_inferred: true, ..: lib_target("migration", ["lib"], "F:\\projects\\miji\\miji\\src-tauri\\migration\\src\\lib.rs", Edition2024) }
+   0.763522100s  INFO prepare_target{force=false package_id=migration v0.1.0 (F:\projects\miji\miji\src-tauri\migration) target="migration"}: cargo::core::compiler::fingerprint:     dirty: FsStatusOutdated(StaleItem(ChangedFile { reference: "F:\\projects\\miji\\miji\\src-tauri\\target\\debug\\.fingerprint\\migration-5559f0e6ed43aa72\\dep-lib-migration", reference_mtime: FileTime { seconds: 13405431711, nanos: 336751400 }, stale: "F:\\projects\\miji\\miji\\src-tauri\\Cargo.toml", stale_mtime: FileTime { seconds: 13405432175, nanos: 128598100 } }))
+   0.769972100s  INFO prepare_target{force=false package_id=migration v0.1.0 (F:\projects\miji\miji\src-tauri\migration) target="migration"}: cargo::core::compiler::fingerprint: stale: changed "F:\\projects\\miji\\miji\\src-tauri\\Cargo.toml"
+   0.769990200s  INFO prepare_target{force=false package_id=migration v0.1.0 (F:\projects\miji\miji\src-tauri\migration) target="migration"}: cargo::core::compiler::fingerprint:           (vs) "F:\\projects\\miji\\miji\\src-tauri\\target\\debug\\.fingerprint\\migration-24bab9013389bc35\\dep-test-lib-migration"
+   0.769994600s  INFO prepare_target{force=false package_id=migration v0.1.0 (F:\projects\miji\miji\src-tauri\migration) target="migration"}: cargo::core::compiler::fingerprint:                FileTime { seconds: 13405431711, nanos: 337753900 } < FileTime { seconds: 13405432175, nanos: 128598100 }
+   0.770079200s  INFO prepare_target{force=false package_id=migration v0.1.0 (F:\projects\miji\miji\src-tauri\migration) target="migration"}: cargo::core::compiler::fingerprint: fingerprint dirty for migration v0.1.0 (F:\projects\miji\miji\src-tauri\migration)/Check { test: true }/TargetInner { name_inferred: true, ..: lib_target("migration", ["lib"], "F:\\projects\\miji\\miji\\src-tauri\\migration\\src\\lib.rs", Edition2024) }
+   0.770097600s  INFO prepare_target{force=false package_id=migration v0.1.0 (F:\projects\miji\miji\src-tauri\migration) target="migration"}: cargo::core::compiler::fingerprint:     dirty: FsStatusOutdated(StaleItem(ChangedFile { reference: "F:\\projects\\miji\\miji\\src-tauri\\target\\debug\\.fingerprint\\migration-24bab9013389bc35\\dep-test-lib-migration", reference_mtime: FileTime { seconds: 13405431711, nanos: 337753900 }, stale: "F:\\projects\\miji\\miji\\src-tauri\\Cargo.toml", stale_mtime: FileTime { seconds: 13405432175, nanos: 128598100 } }))
+   0.773797500s  INFO prepare_target{force=false package_id=miji v0.1.0 (F:\projects\miji\miji\src-tauri) target="miji_lib"}: cargo::core::compiler::fingerprint: stale: changed "F:\\projects\\miji\\miji\\src-tauri\\Cargo.toml"
+   0.773817900s  INFO prepare_target{force=false package_id=miji v0.1.0 (F:\projects\miji\miji\src-tauri) target="miji_lib"}: cargo::core::compiler::fingerprint:           (vs) "F:\\projects\\miji\\miji\\src-tauri\\target\\debug\\.fingerprint\\miji-6331c12faadbf850\\dep-build-script-build-script-build"
+   0.773822100s  INFO prepare_target{force=false package_id=miji v0.1.0 (F:\projects\miji\miji\src-tauri) target="miji_lib"}: cargo::core::compiler::fingerprint:                FileTime { seconds: 13405224545, nanos: 384470300 } < FileTime { seconds: 13405432175, nanos: 128598100 }
+   0.779519600s  INFO prepare_target{force=false package_id=miji v0.1.0 (F:\projects\miji\miji\src-tauri) target="miji_lib"}: cargo::core::compiler::fingerprint: fingerprint error for miji v0.1.0 (F:\projects\miji\miji\src-tauri)/Check { test: false }/TargetInner { ..: lib_target("miji_lib", ["staticlib", "cdylib", "rlib"], "F:\\projects\\miji\\miji\\src-tauri\\src\\lib.rs", Edition2024) }
+   0.779552500s  INFO prepare_target{force=false package_id=miji v0.1.0 (F:\projects\miji\miji\src-tauri) target="miji_lib"}: cargo::core::compiler::fingerprint:     err: failed to read `F:\projects\miji\miji\src-tauri\target\debug\.fingerprint\miji-e1ecd513a4ad8ec6\lib-miji_lib`
+
+Caused by:
+    系统找不到指定的文件。 (os error 2)
+
+Stack backtrace:
+   0: git_midx_writer_dump
+   1: git_midx_writer_dump
+   2: git_midx_writer_dump
+   3: git_midx_writer_dump
+   4: git_filter_source_repo
+   5: git_filter_source_repo
+   6: git_filter_source_repo
+   7: git_filter_source_repo
+   8: git_filter_source_repo
+   9: git_filter_source_repo
+  10: git_filter_source_repo
+  11: git_libgit2_prerelease
+  12: <unknown>
+  13: <unknown>
+  14: <unknown>
+  15: <unknown>
+  16: git_midx_writer_dump
+  17: git_filter_source_repo
+  18: git_midx_writer_dump
+  19: BaseThreadInitThunk
+  20: RtlUserThreadStart
+   0.801619100s  INFO prepare_target{force=false package_id=miji v0.1.0 (F:\projects\miji\miji\src-tauri) target="build-script-build"}: cargo::core::compiler::fingerprint: fingerprint dirty for miji v0.1.0 (F:\projects\miji\miji\src-tauri)/RunCustomBuild/TargetInner { ..: custom_build_target("build-script-build", "F:\\projects\\miji\\miji\\src-tauri\\build.rs", Edition2024) }
+   0.801664400s  INFO prepare_target{force=false package_id=miji v0.1.0 (F:\projects\miji\miji\src-tauri) target="build-script-build"}: cargo::core::compiler::fingerprint:     dirty: FsStatusOutdated(StaleDepFingerprint { name: "build_script_build" })
+   0.802325300s  INFO prepare_target{force=false package_id=miji v0.1.0 (F:\projects\miji\miji\src-tauri) target="build-script-build"}: cargo::core::compiler::fingerprint: fingerprint dirty for miji v0.1.0 (F:\projects\miji\miji\src-tauri)/Build/TargetInner { ..: custom_build_target("build-script-build", "F:\\projects\\miji\\miji\\src-tauri\\build.rs", Edition2024) }
+   0.802339800s  INFO prepare_target{force=false package_id=miji v0.1.0 (F:\projects\miji\miji\src-tauri) target="build-script-build"}: cargo::core::compiler::fingerprint:     dirty: FsStatusOutdated(StaleItem(ChangedFile { reference: "F:\\projects\\miji\\miji\\src-tauri\\target\\debug\\.fingerprint\\miji-6331c12faadbf850\\dep-build-script-build-script-build", reference_mtime: FileTime { seconds: 13405224545, nanos: 384470300 }, stale: "F:\\projects\\miji\\miji\\src-tauri\\Cargo.toml", stale_mtime: FileTime { seconds: 13405432175, nanos: 128598100 } }))
+   0.817693600s  INFO prepare_target{force=false package_id=money v0.1.0 (F:\projects\miji\miji\src-tauri\crates\money) target="money"}: cargo::core::compiler::fingerprint: fingerprint dirty for money v0.1.0 (F:\projects\miji\miji\src-tauri\crates\money)/Check { test: false }/TargetInner { name_inferred: true, ..: lib_target("money", ["lib"], "F:\\projects\\miji\\miji\\src-tauri\\crates\\money\\src\\lib.rs", Edition2024) }
+   0.817737400s  INFO prepare_target{force=false package_id=money v0.1.0 (F:\projects\miji\miji\src-tauri\crates\money) target="money"}: cargo::core::compiler::fingerprint:     dirty: FsStatusOutdated(StaleDepFingerprint { name: "common" })
+   0.823910600s  INFO prepare_target{force=false package_id=todos v0.1.0 (F:\projects\miji\miji\src-tauri\crates\todos) target="todos"}: cargo::core::compiler::fingerprint: fingerprint error for todos v0.1.0 (F:\projects\miji\miji\src-tauri\crates\todos)/Check { test: false }/TargetInner { name_inferred: true, ..: lib_target("todos", ["lib"], "F:\\projects\\miji\\miji\\src-tauri\\crates\\todos\\src\\lib.rs", Edition2024) }
+   0.823936100s  INFO prepare_target{force=false package_id=todos v0.1.0 (F:\projects\miji\miji\src-tauri\crates\todos) target="todos"}: cargo::core::compiler::fingerprint:     err: failed to read `F:\projects\miji\miji\src-tauri\target\debug\.fingerprint\todos-2678318322d3996b\lib-todos`
+
+Caused by:
+    系统找不到指定的文件。 (os error 2)
+
+Stack backtrace:
+   0: git_midx_writer_dump
+   1: git_midx_writer_dump
+   2: git_midx_writer_dump
+   3: git_midx_writer_dump
+   4: git_filter_source_repo
+   5: git_filter_source_repo
+   6: git_filter_source_repo
+   7: git_filter_source_repo
+   8: git_filter_source_repo
+   9: git_filter_source_repo
+  10: git_filter_source_repo
+  11: git_filter_source_repo
+  12: git_libgit2_prerelease
+  13: <unknown>
+  14: <unknown>
+  15: <unknown>
+  16: <unknown>
+  17: git_midx_writer_dump
+  18: git_filter_source_repo
+  19: git_midx_writer_dump
+  20: BaseThreadInitThunk
+  21: RtlUserThreadStart
+   0.825802600s  INFO prepare_target{force=false package_id=miji v0.1.0 (F:\projects\miji\miji\src-tauri) target="miji_lib"}: cargo::core::compiler::fingerprint: fingerprint error for miji v0.1.0 (F:\projects\miji\miji\src-tauri)/Check { test: true }/TargetInner { ..: lib_target("miji_lib", ["staticlib", "cdylib", "rlib"], "F:\\projects\\miji\\miji\\src-tauri\\src\\lib.rs", Edition2024) }
+   0.825821400s  INFO prepare_target{force=false package_id=miji v0.1.0 (F:\projects\miji\miji\src-tauri) target="miji_lib"}: cargo::core::compiler::fingerprint:     err: failed to read `F:\projects\miji\miji\src-tauri\target\debug\.fingerprint\miji-ff3bc514b5ded62d\test-lib-miji_lib`
+
+Caused by:
+    系统找不到指定的文件。 (os error 2)
+
+Stack backtrace:
+   0: git_midx_writer_dump
+   1: git_midx_writer_dump
+   2: git_midx_writer_dump
+   3: git_midx_writer_dump
+   4: git_filter_source_repo
+   5: git_filter_source_repo
+   6: git_filter_source_repo
+   7: git_filter_source_repo
+   8: git_filter_source_repo
+   9: git_filter_source_repo
+  10: git_filter_source_repo
+  11: git_libgit2_prerelease
+  12: <unknown>
+  13: <unknown>
+  14: <unknown>
+  15: <unknown>
+  16: git_midx_writer_dump
+  17: git_filter_source_repo
+  18: git_midx_writer_dump
+  19: BaseThreadInitThunk
+  20: RtlUserThreadStart
+   0.828064000s  INFO prepare_target{force=false package_id=miji v0.1.0 (F:\projects\miji\miji\src-tauri) target="miji"}: cargo::core::compiler::fingerprint: fingerprint error for miji v0.1.0 (F:\projects\miji\miji\src-tauri)/Check { test: false }/TargetInner { name: "miji", doc: true, ..: with_path("F:\\projects\\miji\\miji\\src-tauri\\src\\main.rs", Edition2024) }
+   0.828086400s  INFO prepare_target{force=false package_id=miji v0.1.0 (F:\projects\miji\miji\src-tauri) target="miji"}: cargo::core::compiler::fingerprint:     err: failed to read `F:\projects\miji\miji\src-tauri\target\debug\.fingerprint\miji-ed021367a967bd3e\bin-miji`
+
+Caused by:
+    系统找不到指定的文件。 (os error 2)
+
+Stack backtrace:
+   0: git_midx_writer_dump
+   1: git_midx_writer_dump
+   2: git_midx_writer_dump
+   3: git_midx_writer_dump
+   4: git_filter_source_repo
+   5: git_filter_source_repo
+   6: git_filter_source_repo
+   7: git_filter_source_repo
+   8: git_filter_source_repo
+   9: git_filter_source_repo
+  10: git_filter_source_repo
+  11: git_libgit2_prerelease
+  12: <unknown>
+  13: <unknown>
+  14: <unknown>
+  15: <unknown>
+  16: git_midx_writer_dump
+  17: git_filter_source_repo
+  18: git_midx_writer_dump
+  19: BaseThreadInitThunk
+  20: RtlUserThreadStart
+   0.830259800s  INFO prepare_target{force=false package_id=miji v0.1.0 (F:\projects\miji\miji\src-tauri) target="miji"}: cargo::core::compiler::fingerprint: fingerprint error for miji v0.1.0 (F:\projects\miji\miji\src-tauri)/Check { test: true }/TargetInner { name: "miji", doc: true, ..: with_path("F:\\projects\\miji\\miji\\src-tauri\\src\\main.rs", Edition2024) }
+   0.830286900s  INFO prepare_target{force=false package_id=miji v0.1.0 (F:\projects\miji\miji\src-tauri) target="miji"}: cargo::core::compiler::fingerprint:     err: failed to read `F:\projects\miji\miji\src-tauri\target\debug\.fingerprint\miji-eef8fde1163dc042\test-bin-miji`
+
+Caused by:
+    系统找不到指定的文件。 (os error 2)
+
+Stack backtrace:
+   0: git_midx_writer_dump
+   1: git_midx_writer_dump
+   2: git_midx_writer_dump
+   3: git_midx_writer_dump
+   4: git_filter_source_repo
+   5: git_filter_source_repo
+   6: git_filter_source_repo
+   7: git_filter_source_repo
+   8: git_filter_source_repo
+   9: git_filter_source_repo
+  10: git_filter_source_repo
+  11: git_libgit2_prerelease
+  12: <unknown>
+  13: <unknown>
+  14: <unknown>
+  15: <unknown>
+  16: git_midx_writer_dump
+  17: git_filter_source_repo
+  18: git_midx_writer_dump
+  19: BaseThreadInitThunk
+  20: RtlUserThreadStart
+   0.833676800s  INFO prepare_target{force=false package_id=miji_derive v0.1.0 (F:\projects\miji\miji\src-tauri\miji_derive) target="miji_derive"}: cargo::core::compiler::fingerprint: stale: changed "F:\\projects\\miji\\miji\\src-tauri\\Cargo.toml"
+   0.833692600s  INFO prepare_target{force=false package_id=miji_derive v0.1.0 (F:\projects\miji\miji\src-tauri\miji_derive) target="miji_derive"}: cargo::core::compiler::fingerprint:           (vs) "F:\\projects\\miji\\miji\\src-tauri\\target\\debug\\.fingerprint\\miji_derive-92e7ac59082a1e37\\dep-lib-miji_derive"
+   0.833697700s  INFO prepare_target{force=false package_id=miji_derive v0.1.0 (F:\projects\miji\miji\src-tauri\miji_derive) target="miji_derive"}: cargo::core::compiler::fingerprint:                FileTime { seconds: 13405224550, nanos: 748805700 } < FileTime { seconds: 13405432175, nanos: 128598100 }
+   0.833904600s  INFO prepare_target{force=false package_id=miji_derive v0.1.0 (F:\projects\miji\miji\src-tauri\miji_derive) target="miji_derive"}: cargo::core::compiler::fingerprint: fingerprint dirty for miji_derive v0.1.0 (F:\projects\miji\miji\src-tauri\miji_derive)/Check { test: false }/TargetInner { name_inferred: true, for_host: true, proc_macro: true, ..: lib_target("miji_derive", ["proc-macro"], "F:\\projects\\miji\\miji\\src-tauri\\miji_derive\\src\\lib.rs", Edition2024) }
+   0.833923700s  INFO prepare_target{force=false package_id=miji_derive v0.1.0 (F:\projects\miji\miji\src-tauri\miji_derive) target="miji_derive"}: cargo::core::compiler::fingerprint:     dirty: FsStatusOutdated(StaleItem(ChangedFile { reference: "F:\\projects\\miji\\miji\\src-tauri\\target\\debug\\.fingerprint\\miji_derive-92e7ac59082a1e37\\dep-lib-miji_derive", reference_mtime: FileTime { seconds: 13405224550, nanos: 748805700 }, stale: "F:\\projects\\miji\\miji\\src-tauri\\Cargo.toml", stale_mtime: FileTime { seconds: 13405432175, nanos: 128598100 } }))
+   0.834509000s  INFO prepare_target{force=false package_id=miji_derive v0.1.0 (F:\projects\miji\miji\src-tauri\miji_derive) target="miji_derive"}: cargo::core::compiler::fingerprint: stale: changed "F:\\projects\\miji\\miji\\src-tauri\\Cargo.toml"
+   0.834520400s  INFO prepare_target{force=false package_id=miji_derive v0.1.0 (F:\projects\miji\miji\src-tauri\miji_derive) target="miji_derive"}: cargo::core::compiler::fingerprint:           (vs) "F:\\projects\\miji\\miji\\src-tauri\\target\\debug\\.fingerprint\\miji_derive-7fff1b11f1196850\\dep-test-lib-miji_derive"
+   0.834526000s  INFO prepare_target{force=false package_id=miji_derive v0.1.0 (F:\projects\miji\miji\src-tauri\miji_derive) target="miji_derive"}: cargo::core::compiler::fingerprint:                FileTime { seconds: 13405224550, nanos: 749804500 } < FileTime { seconds: 13405432175, nanos: 128598100 }
+   0.834697200s  INFO prepare_target{force=false package_id=miji_derive v0.1.0 (F:\projects\miji\miji\src-tauri\miji_derive) target="miji_derive"}: cargo::core::compiler::fingerprint: fingerprint dirty for miji_derive v0.1.0 (F:\projects\miji\miji\src-tauri\miji_derive)/Check { test: true }/TargetInner { name_inferred: true, for_host: true, proc_macro: true, ..: lib_target("miji_derive", ["proc-macro"], "F:\\projects\\miji\\miji\\src-tauri\\miji_derive\\src\\lib.rs", Edition2024) }
+   0.834712500s  INFO prepare_target{force=false package_id=miji_derive v0.1.0 (F:\projects\miji\miji\src-tauri\miji_derive) target="miji_derive"}: cargo::core::compiler::fingerprint:     dirty: FsStatusOutdated(StaleItem(ChangedFile { reference: "F:\\projects\\miji\\miji\\src-tauri\\target\\debug\\.fingerprint\\miji_derive-7fff1b11f1196850\\dep-test-lib-miji_derive", reference_mtime: FileTime { seconds: 13405224550, nanos: 749804500 }, stale: "F:\\projects\\miji\\miji\\src-tauri\\Cargo.toml", stale_mtime: FileTime { seconds: 13405432175, nanos: 128598100 } }))
+   0.843358100s  INFO prepare_target{force=false package_id=money v0.1.0 (F:\projects\miji\miji\src-tauri\crates\money) target="money"}: cargo::core::compiler::fingerprint: fingerprint dirty for money v0.1.0 (F:\projects\miji\miji\src-tauri\crates\money)/Check { test: true }/TargetInner { name_inferred: true, ..: lib_target("money", ["lib"], "F:\\projects\\miji\\miji\\src-tauri\\crates\\money\\src\\lib.rs", Edition2024) }
+   0.843393600s  INFO prepare_target{force=false package_id=money v0.1.0 (F:\projects\miji\miji\src-tauri\crates\money) target="money"}: cargo::core::compiler::fingerprint:     dirty: FsStatusOutdated(StaleDepFingerprint { name: "common" })
+   0.845638500s  INFO prepare_target{force=false package_id=todos v0.1.0 (F:\projects\miji\miji\src-tauri\crates\todos) target="todos"}: cargo::core::compiler::fingerprint: fingerprint error for todos v0.1.0 (F:\projects\miji\miji\src-tauri\crates\todos)/Check { test: true }/TargetInner { name_inferred: true, ..: lib_target("todos", ["lib"], "F:\\projects\\miji\\miji\\src-tauri\\crates\\todos\\src\\lib.rs", Edition2024) }
+   0.845659600s  INFO prepare_target{force=false package_id=todos v0.1.0 (F:\projects\miji\miji\src-tauri\crates\todos) target="todos"}: cargo::core::compiler::fingerprint:     err: failed to read `F:\projects\miji\miji\src-tauri\target\debug\.fingerprint\todos-979b3d85516c8ce8\test-lib-todos`
+
+Caused by:
+    系统找不到指定的文件。 (os error 2)
+
+Stack backtrace:
+   0: git_midx_writer_dump
+   1: git_midx_writer_dump
+   2: git_midx_writer_dump
+   3: git_midx_writer_dump
+   4: git_filter_source_repo
+   5: git_filter_source_repo
+   6: git_filter_source_repo
+   7: git_filter_source_repo
+   8: git_filter_source_repo
+   9: git_filter_source_repo
+  10: git_filter_source_repo
+  11: git_libgit2_prerelease
+  12: <unknown>
+  13: <unknown>
+  14: <unknown>
+  15: <unknown>
+  16: git_midx_writer_dump
+  17: git_filter_source_repo
+  18: git_midx_writer_dump
+  19: BaseThreadInitThunk
+  20: RtlUserThreadStart
+   Compiling miji_derive v0.1.0 (F:\projects\miji\miji\src-tauri\miji_derive)
+   Compiling localize_model_derive v0.1.0 (F:\projects\miji\miji\src-tauri\localize_model_derive)
+    Checking macros v0.1.0 (F:\projects\miji\miji\src-tauri\macros)
+   Compiling miji v0.1.0 (F:\projects\miji\miji\src-tauri)
+    Checking migration v0.1.0 (F:\projects\miji\miji\src-tauri\migration)
+    Checking entity v0.1.0 (F:\projects\miji\miji\src-tauri\entity)
     Checking common v0.1.0 (F:\projects\miji\miji\src-tauri\common)
 error: could not compile `common` (lib test) due to 12 previous errors
 warning: build failed, waiting for other jobs to finish...
+    Checking todos v0.1.0 (F:\projects\miji\miji\src-tauri\crates\todos)
     Checking money v0.1.0 (F:\projects\miji\miji\src-tauri\crates\money)
     Checking healths v0.1.0 (F:\projects\miji\miji\src-tauri\crates\healths)
-    Checking todos v0.1.0 (F:\projects\miji\miji\src-tauri\crates\todos)
     Checking auth v0.1.0 (F:\projects\miji\miji\src-tauri\crates\auth)
-    Checking miji v0.1.0 (F:\projects\miji\miji\src-tauri)
+error: could not compile `todos` (lib test) due to 3 previous errors
+error: could not compile `todos` (lib) due to 3 previous errors

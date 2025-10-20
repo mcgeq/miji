@@ -6345,6 +6345,7 @@ dependencies = [
  "serde_json",
  "snafu",
  "tauri",
+ "tauri-plugin-notification",
  "tokio",
  "tracing",
  "validator",
