@@ -163,6 +163,7 @@ impl TodosService {
     ) -> MijiResult<usize> {
         let now = DateUtils::local_now();
         let todos = self.find_due_reminder_todos(db, now).await?;
+        tracing::debug!("reminder scan at={}, due candidates={}", now, todos.len());
         if todos.is_empty() {
             return Ok(0);
         }
@@ -170,6 +171,7 @@ impl TodosService {
         let batch_id = Some(common::utils::uuid::McgUuid::uuid(38));
         let mut sent = 0usize;
         for td in todos {
+            tracing::debug!("send reminder for todo={}, title='{}'", td.serial_num, td.title);
             match self.send_system_notification(app, &td).await {
                 Ok(_) => {
                     self.mark_reminded(db, &td.serial_num, now, batch_id.clone())
@@ -181,6 +183,7 @@ impl TodosService {
                 }
             }
         }
+        tracing::info!("发送 {} 条待办提醒", sent);
         Ok(sent)
     }
     /// 计算提前提醒时长（根据 advance value + unit），默认 0
@@ -212,9 +215,17 @@ impl TodosService {
             .all(db)
             .await
             .map_err(AppError::from)?;
+        let before = todos.len();
 
-        // 内存中过滤：免打扰（snooze）、提前量与频率控制
+        // 内存中过滤：仅一次频率、免打扰（snooze）、提前量与频率控制、端能力
         todos.retain(|td| {
+            // frequency = once：如果已经提醒过一次，则不再提醒
+            if matches!(td.reminder_frequency.as_deref(), Some("once")) {
+                if td.reminder_count > 0 || td.last_reminder_sent_at.is_some() {
+                    return false;
+                }
+            }
+
             // 免打扰：如果设置了 snooze_until，要求 now >= snooze_until
             if let Some(snooze) = td.snooze_until {
                 if now < snooze {
@@ -231,7 +242,7 @@ impl TodosService {
                 return false;
             }
 
-            // 频率限制：last + freq <= now
+            // 频率限制：last + freq <= now（once 已在上面处理）
             if let Some(last) = td.last_reminder_sent_at {
                 if let Some(freq_dur) = Self::parse_frequency_to_duration(&td.reminder_frequency) {
                     if last + freq_dur > now {
@@ -240,8 +251,20 @@ impl TodosService {
                 }
             }
 
+            // 按端过滤提醒方式
+            let methods_ok = match &td.reminder_methods {
+                Some(v) => {
+                    let desktop = v.get("desktop").and_then(|b| b.as_bool()).unwrap_or(true);
+                    let mobile = v.get("mobile").and_then(|b| b.as_bool()).unwrap_or(true);
+                    if cfg!(any(target_os = "android", target_os = "ios")) { mobile } else { desktop }
+                }
+                None => true,
+            };
+            if !methods_ok { return false; }
+
             true
         });
+        tracing::debug!("reminder filtered: {} -> {}", before, todos.len());
 
         Ok(todos)
     }
@@ -261,18 +284,21 @@ impl TodosService {
             .map_err(AppError::from)?
         {
             let new_count = model.reminder_count.saturating_add(1);
+            let mut updates: Vec<(entity::todo::Column, sea_orm::sea_query::SimpleExpr)> = vec![
+                (entity::todo::Column::LastReminderSentAt, Expr::value(when)),
+                (entity::todo::Column::ReminderCount, Expr::value(new_count)),
+                (entity::todo::Column::BatchReminderId, Expr::value(batch_id.clone())),
+                (entity::todo::Column::UpdatedAt, Expr::value(when)),
+            ];
+            // 如果频率为 once，发送后自动关闭提醒
+            if matches!(model.reminder_frequency.as_deref(), Some("once")) {
+                updates.push((entity::todo::Column::ReminderEnabled, Expr::value(false)));
+            }
+
             update_entity_columns_simple::<entity::todo::Entity, _>(
                 db,
-                vec![(
-                    entity::todo::Column::SerialNum,
-                    vec![serial_num.to_string()],
-                )],
-                vec![
-                    (entity::todo::Column::LastReminderSentAt, Expr::value(when)),
-                    (entity::todo::Column::ReminderCount, Expr::value(new_count)),
-                    (entity::todo::Column::BatchReminderId, Expr::value(batch_id)),
-                    (entity::todo::Column::UpdatedAt, Expr::value(when)),
-                ],
+                vec![(entity::todo::Column::SerialNum, vec![serial_num.to_string()])],
+                updates,
             )
             .await?;
         }
