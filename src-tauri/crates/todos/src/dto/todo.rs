@@ -6,6 +6,17 @@ use sea_orm::ActiveValue;
 use serde::{Deserialize, Serialize};
 use validator::Validate;
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "PascalCase")]
+pub enum RepeatPeriodType {
+    None,
+    Daily,
+    Weekly,
+    Monthly,
+    Yearly,
+    Custom,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 #[serde(rename_all = "camelCase")]
 pub struct TodoBase {
@@ -194,7 +205,9 @@ impl TryFrom<TodoUpdate> for entity::todo::ActiveModel {
             created_at: ActiveValue::NotSet,
             updated_at: ActiveValue::Set(Some(DateUtils::local_now())),
             // 新增提醒相关字段
-            reminder_enabled: value.reminder_enabled.map_or(ActiveValue::NotSet, ActiveValue::Set),
+            reminder_enabled: value
+                .reminder_enabled
+                .map_or(ActiveValue::NotSet, ActiveValue::Set),
             reminder_advance_value: value
                 .reminder_advance_value
                 .map_or(ActiveValue::NotSet, |v| ActiveValue::Set(Some(v))),
