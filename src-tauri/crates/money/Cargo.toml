@@ -5,6 +5,7 @@ edition = "2024"
 
 [dependencies]
 tauri = { workspace = true }
+tauri-plugin-notification = { workspace = true }
 serde = { workspace = true }
 chrono = { workspace = true }
 validator = { workspace = true }

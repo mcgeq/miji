@@ -56,6 +56,15 @@ const financeTypes: ReminderTypes[] = [
 
 const form = reactive<BilReminder>(props.reminder ? { ...props.reminder } : getBilReminderDefault());
 
+// 合并后的提醒方式（系统通知=desktop/mobile 二合一），其余渠道占位
+const methodsState = reactive({
+  system: props.reminder?.reminderMethods
+    ? !!(props.reminder?.reminderMethods.desktop || props.reminder?.reminderMethods.mobile)
+    : true,
+  email: !!props.reminder?.reminderMethods?.email,
+  sms: !!props.reminder?.reminderMethods?.sms,
+});
+
 // 计算属性
 const isFinanceType = computed(() => {
   if (ReminderTypesSchema.options.includes(form.type)) {
@@ -369,7 +378,12 @@ async function saveReminder() {
       lastReminderSentAt: form.lastReminderSentAt,
       reminderFrequency: form.reminderFrequency,
       snoozeUntil: form.snoozeUntil,
-      reminderMethods: form.reminderMethods,
+      reminderMethods: {
+        desktop: methodsState.system,
+        mobile: methodsState.system,
+        email: methodsState.email,
+        sms: methodsState.sms,
+      },
       escalationEnabled: form.escalationEnabled,
       escalationAfterHours: form.escalationAfterHours,
       timezone: form.timezone,
@@ -378,7 +392,7 @@ async function saveReminder() {
       paymentReminderEnabled: form.paymentReminderEnabled,
       batchReminderId: form.batchReminderId,
     }, (value: unknown, key: string) => {
-      if (key.endsWith('Date') || key === 'dueAt') {
+      if (key.endsWith('Date') || key === 'dueAt' || key === 'snoozeUntil') {
         if (value) {
           const dateValue = typeof value === 'string' ?
             value :
@@ -440,6 +454,9 @@ watch(
       if (!clonedReminder.currency) {
         clonedReminder.currency = CURRENCY_CNY;
       }
+      methodsState.system = !!(clonedReminder.reminderMethods?.desktop || clonedReminder.reminderMethods?.mobile);
+      methodsState.email = !!clonedReminder.reminderMethods?.email;
+      methodsState.sms = !!clonedReminder.reminderMethods?.sms;
       Object.assign(form, clonedReminder);
     }
   },
@@ -719,6 +736,72 @@ watch(
             </select>
           </div>
         </div>
+
+        <!-- 提醒频率 -->
+        <div class="form-row">
+          <label class="form-label">
+            {{ t('financial.reminder.frequency') }}
+          </label>
+          <select v-model="form.reminderFrequency" class="modal-input-select w-2/3">
+            <option value="once">
+              {{ t('common.frequency.once') }}
+            </option>
+            <option value="15m">
+              {{ t('common.frequency.q15m') }}
+            </option>
+            <option value="1h">
+              {{ t('common.frequency.hourly') }}
+            </option>
+            <option value="1d">
+              {{ t('common.frequency.daily') }}
+            </option>
+          </select>
+        </div>
+
+        <!-- 稍后提醒（打盹） -->
+        <div class="form-row">
+          <label class="form-label">
+            {{ t('financial.reminder.snoozeUntil') }}
+          </label>
+          <input v-model="form.snoozeUntil" type="datetime-local" class="modal-input-select w-2/3">
+        </div>
+
+        <!-- 提醒方式（系统通知合并） -->
+        <div class="form-row">
+          <label class="form-label form-label-block">{{ t('financial.reminder.methods') }}</label>
+          <div class="form-input-2-3">
+            <label class="checkbox-label"><input v-model="methodsState.system" type="checkbox" class="mr-2">系统通知</label>
+            <div class="mt-1 flex gap-2">
+              <label class="checkbox-label"><input v-model="methodsState.email" type="checkbox" class="mr-1">邮件提醒</label>
+              <label class="checkbox-label"><input v-model="methodsState.sms" type="checkbox" class="mr-1">短信提醒</label>
+            </div>
+          </div>
+        </div>
+
+        <!-- 高级设置（可折叠） -->
+        <details class="mt-2 mb-2">
+          <summary class="form-label">
+            {{ t('financial.reminder.advancedSettings') }}
+          </summary>
+          <div class="mt-2 flex flex-col gap-2">
+            <label class="checkbox-label"><input v-model="form.escalationEnabled" type="checkbox" class="mr-2">升级提醒</label>
+            <div class="form-row">
+              <label class="form-label">升级间隔(小时)</label>
+              <input v-model.number="form.escalationAfterHours" type="number" min="1" class="modal-input-select w-2/3">
+            </div>
+            <label class="checkbox-label"><input v-model="form.smartReminderEnabled" type="checkbox" class="mr-2">智能提醒</label>
+            <label class="checkbox-label"><input v-model="form.autoReschedule" type="checkbox" class="mr-2">自动顺延</label>
+            <label class="checkbox-label"><input v-model="form.paymentReminderEnabled" type="checkbox" class="mr-2">支付提醒</label>
+            <div class="form-row">
+              <label class="form-label">时区</label>
+              <input v-model="form.timezone" type="text" class="modal-input-select w-2/3" placeholder="例如: Asia/Shanghai">
+            </div>
+            <div v-if="form.lastReminderSentAt" class="form-row">
+              <label class="form-label">上次提醒时间</label>
+              <input class="modal-input-select w-2/3" :value="form.lastReminderSentAt" readonly>
+            </div>
+          </div>
+        </details>
 
         <!-- 颜色选择 -->
         <div class="form-row">

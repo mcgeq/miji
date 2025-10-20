@@ -278,6 +278,9 @@ async function bootstrap() {
       closeButton: 'button',
       icon: true,
       rtl: false,
+      // 确保不被页面元素遮挡
+      teleport: 'body',
+      containerClassName: 'z-[2147483647] pointer-events-none',
     });
 
     // 移动设备优化：使用超时处理storeStart

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { listen } from '@tauri-apps/api/event';
 import {
   AlertCircle,
   CheckCircle,
@@ -9,6 +10,7 @@ import {
 import SimplePagination from '@/components/common/SimplePagination.vue';
 import { getRepeatTypeName, lowercaseFirstLetter } from '@/utils/common';
 import { DateUtils } from '@/utils/date';
+import { toast } from '@/utils/toast';
 import { useBilReminderFilters } from '../composables/useBilReminderFilters';
 import { formatCurrency } from '../utils/money';
 import type { BilReminder } from '@/schema/money';
@@ -100,6 +102,34 @@ const gridLayoutClass = computed(() => {
 // 暴露刷新方法给父组件
 defineExpose({
   refresh: loadReminders,
+});
+
+// 监听后端账单提醒事件，自动刷新列表（防抖）
+let unlistenBilReminder: (() => void) | null = null;
+function useDebounceFn<T extends (...args: any[]) => any>(fn: T, wait: number) {
+  let timer: any;
+  return (...args: Parameters<T>) => {
+    clearTimeout(timer);
+    timer = setTimeout(() => fn(...args), wait);
+  };
+}
+const debouncedRefresh = useDebounceFn(async () => {
+  await loadReminders();
+}, 500);
+
+onMounted(async () => {
+  unlistenBilReminder = await listen('bil-reminder-fired', async () => {
+    debouncedRefresh();
+    toast.info('收到系统账单提醒，列表已刷新');
+  });
+});
+
+onUnmounted(() => {
+  try {
+    unlistenBilReminder && unlistenBilReminder();
+  } catch (_) {
+
+  }
 });
 </script>
 
@@ -270,6 +300,14 @@ defineExpose({
               >
                 <LucideCheckCircle class="wh-4" />
               </button>
+              <!-- 稍后提醒（+1小时） -->
+              <button
+                class="money-option-btn money-option-edit-hover"
+                :title="t('financial.reminder.snooze')"
+                @click="$emit('edit', { ...reminder, snoozeUntil: DateUtils.getLocalISODateTimeWithOffset({ hours: 1 }) })"
+              >
+                <LucideClock class="wh-4" />
+              </button>
               <button
                 class="money-option-btn money-option-edit-hover" :title="t('common.actions.edit')"
                 @click="emit('edit', reminder)"
@@ -309,6 +347,10 @@ defineExpose({
           <div class="date-row">
             <span class="date-label">{{ t('date.reminderDate') }}</span>
             <span class="date-value">{{ DateUtils.formatDate(reminder.remindDate) }}</span>
+          </div>
+          <div v-if="reminder.lastReminderSentAt" class="date-row">
+            <span class="date-label">{{ t('financial.reminder.lastReminderSentAt') }}</span>
+            <span class="date-value">{{ DateUtils.formatDateTime(reminder.lastReminderSentAt) }}</span>
           </div>
         </div>
 

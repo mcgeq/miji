@@ -18,12 +18,13 @@ function baseClasses(color: string) {
   return {
     toastClassName: [
       `bg-${color}-500/90 text-white rounded-lg shadow border border-${color}-300/30`,
-      'p-4 flex items-center gap-2 animate__animated animate__fadeInRight',
+      'p-4 flex items-center gap-2 animate__animated animate__fadeInRight pointer-events-auto',
     ].join(' '),
 
     bodyClassName: 'text-sm',
     titleClassName: 'font-semibold text-white',
-    // you can define more if needed
+    // 提升层级，容器不拦截事件，恢复原实现
+    containerClassName: 'z-[2147483647] pointer-events-none',
   };
 }
 

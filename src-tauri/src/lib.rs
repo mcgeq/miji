@@ -191,6 +191,12 @@ async fn setup(app: AppHandle) -> Result<(), ()> {
         start_todo_notification_scheduler(app_clone_notify).await;
     });
 
+    // 启动账单提醒定时任务
+    let app_clone_bil = app.clone();
+    tauri::async_runtime::spawn(async move {
+        start_bil_reminder_scheduler(app_clone_bil).await;
+    });
+
     eprintln!("Backend setup task completed!");
     // Set the backend task as being completed
     // Commands can be ran as regular functions as long as you take
@@ -346,8 +352,6 @@ async fn start_todo_scheduler(app: AppHandle) {
 
         let app_state = app.state::<AppState>();
         let db = app_state.db.clone();
-        let todos_service = todos::service::todo::get_todos_service();
-
         if let Err(e) = todos::service::todo::TodosService::auto_process_create_todo(&db).await {
             log::error!("自动创建重复待办失败: {}", e);
         } else {
@@ -360,11 +364,7 @@ async fn start_todo_scheduler(app: AppHandle) {
 
 /// 启动待办提醒定时任务：定期扫描需要提醒的待办并发送系统通知
 async fn start_todo_notification_scheduler(app: AppHandle) {
-    let interval_secs = if cfg!(any(target_os = "android", target_os = "ios")) {
-        300
-    } else {
-        60
-    };
+    let interval_secs = if cfg!(any(target_os = "android", target_os = "ios")) { 300 } else { 60 };
     let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(interval_secs));
 
     loop {
@@ -378,6 +378,26 @@ async fn start_todo_notification_scheduler(app: AppHandle) {
             Ok(n) if n > 0 => log::info!("发送 {} 条待办提醒", n),
             Ok(_) => {}
             Err(e) => log::error!("待办提醒处理失败: {}", e),
+        }
+    }
+}
+
+/// 启动账单提醒定时任务
+async fn start_bil_reminder_scheduler(app: AppHandle) {
+    let interval_secs = if cfg!(any(target_os = "android", target_os = "ios")) { 300 } else { 60 };
+    let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(interval_secs));
+
+    loop {
+        interval.tick().await;
+
+        let app_state = app.state::<AppState>();
+        let db = app_state.db.clone();
+        let service = money::services::bil_reminder::get_bil_reminder_service();
+
+        match service.process_due_bil_reminders(&app, &db).await {
+            Ok(n) if n > 0 => log::info!("发送 {} 条账单提醒", n),
+            Ok(_) => {}
+            Err(e) => log::error!("账单提醒处理失败: {}", e),
         }
     }
 }

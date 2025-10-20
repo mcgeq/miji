@@ -72,6 +72,12 @@
       "failed": "失败",
       "error": "错误"
     },
+    "frequency": {
+      "once": "仅一次",
+      "q15m": "每15分钟",
+      "hourly": "每小时",
+      "daily": "每天"
+    },
     "misc": {
       "options": "操作",
       "types": "类型",
@@ -556,6 +562,12 @@
       "editReminder": "编辑提醒",
       "addReminder": "添加提醒",
       "advanceReminder": "提前提醒",
+      "frequency": "频率",
+      "snoozeUntil": "稍后提醒至",
+      "methods": "提醒方式",
+      "advancedSettings": "高级设置",
+      "snooze": "稍后提醒",
+      "lastReminderSentAt": "上次提醒时间",
       "enabled": "启用提醒",
       "priority": "优先级",
       "advanceValue": "提前时间值",

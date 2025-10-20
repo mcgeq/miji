@@ -189,6 +189,16 @@ onMounted(async () => {
   min-height: 100vh;
   position: relative;
   background-color: var(--color-base-200);
+  /* 创建较低的层叠上下文，避免覆盖全局 toast */
+  z-index: 0;
+}
+
+:global(.Vue-Toastification__container) {
+  z-index: 2147483647 !important;
+  pointer-events: none !important;
+}
+:global(.Vue-Toastification__toast) {
+  pointer-events: auto !important;
 }
 
 /* 输入框容器 */

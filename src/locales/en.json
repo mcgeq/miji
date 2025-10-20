@@ -72,6 +72,12 @@
       "failed": "Failed",
       "error": "Error"
     },
+    "frequency": {
+      "once": "Once",
+      "q15m": "Every 15 minutes",
+      "hourly": "Hourly",
+      "daily": "Daily"
+    },
     "misc": {
       "options": "Options",
       "types": "Types",
@@ -552,6 +558,12 @@
       "editReminder": "Edit Reminder",
       "addReminder": "Add Reminder",
       "advanceReminder": "Advance Reminder",
+      "frequency": "Frequency",
+      "snoozeUntil": "Snooze Until",
+      "methods": "Methods",
+      "advancedSettings": "Advanced Settings",
+      "snooze": "Snooze",
+      "lastReminderSentAt": "Last Reminder Sent",
       "enabled": "Enable Reminder",
       "priority": "Priority",
       "advanceValue": "Advance Time Value",
