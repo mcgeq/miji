@@ -6,7 +6,7 @@ import ReminderModal from '@/features/money/components/ReminderModal.vue';
 import TransactionModal from '@/features/money/components/TransactionModal.vue';
 import { formatCurrency } from '@/features/money/utils/money';
 import { TransactionTypeSchema } from '@/schema/common';
-import { lowercaseFirstLetter } from '@/utils/common';
+import { getRepeatTypeName, lowercaseFirstLetter } from '@/utils/common';
 import { DateUtils } from '@/utils/date';
 import type {
   BilReminderCreate,
@@ -109,7 +109,7 @@ function toggleAmountVisibility() {
 
 // 数据刷新函数
 async function refreshTransactionData() {
-  await Promise.all([loadTransactions(), loadAccounts()]);
+  await Promise.all([loadTransactions(), loadAccounts(), loadBudgets()]);
 }
 
 async function refreshAccountData() {
@@ -193,6 +193,20 @@ function handleSwitchTab(tab: 'accounts' | 'transactions' | 'budgets' | 'reminde
     loadBudgets,
     loadReminders,
   });
+}
+
+// -------- 预算展示辅助 --------
+function getBudgetProgress(budget: any) {
+  const progress = Number(budget?.progress ?? 0);
+  return Number.isFinite(progress) ? Math.min(Math.max(progress, 0), 100) : 0;
+}
+
+function isBudgetOver(budget: any) {
+  return Number(budget?.usedAmount ?? 0) > Number(budget?.amount ?? 0);
+}
+
+function getBudgetPeriodText(budget: any) {
+  return getRepeatTypeName(budget?.repeatPeriod);
 }
 
 onMounted(async () => {
@@ -360,7 +374,7 @@ onMounted(async () => {
           暂无预算
         </div>
         <div v-else class="qm-list-items">
-          <div v-for="budget in budgets" :key="budget.serialNum" class="qm-list-item">
+          <div v-for="budget in budgets" :key="budget.serialNum" class="qm-list-item qm-budget-item">
             <div class="item-icon icon-budget">
               <LucideTarget :size="16" />
             </div>
@@ -368,12 +382,35 @@ onMounted(async () => {
               <div class="qm-item-name">
                 {{ budget.name }}
               </div>
+              <!-- 周期信息 -->
               <div class="qm-item-desc">
-                {{ budget.description }}
+                {{ getBudgetPeriodText(budget) }}
               </div>
             </div>
-            <div class="qm-item-value">
-              {{ formatCurrency(budget.amount ?? 0) }}
+            <!-- 进度条 -->
+            <div class="qm-budget-progress">
+              <div class="qm-budget-progress-bar">
+                <div
+                  class="qm-budget-progress-fill"
+                  :class="{ over: isBudgetOver(budget) }"
+                  :style="{ width: `${getBudgetProgress(budget)}%` }"
+                />
+              </div>
+              <div class="qm-budget-progress-text" :class="{ over: isBudgetOver(budget) }">
+                {{ getBudgetProgress(budget) }}%
+              </div>
+            </div>
+            <!-- 金额信息 -->
+            <div class="qm-budget-amounts">
+              <div class="qm-budget-total">
+                {{ formatCurrency(budget.amount ?? 0) }}
+              </div>
+              <div class="qm-budget-used" :class="{ over: isBudgetOver(budget) }">
+                已用: {{ formatCurrency(budget.usedAmount ?? 0) }}
+              </div>
+              <div class="qm-budget-remaining" :class="{ over: isBudgetOver(budget) }">
+                剩余: {{ formatCurrency((Number(budget.amount ?? 0) - Number(budget.usedAmount ?? 0))) }}
+              </div>
             </div>
           </div>
         </div>
@@ -740,6 +777,155 @@ onMounted(async () => {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* 预算项目特殊布局 */
+.qm-budget-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+}
+
+/* 预算进度 */
+.qm-budget-progress {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 120px;
+  flex: 1;
+  max-width: 200px;
+}
+
+.qm-budget-progress-bar {
+  flex: 1;
+  height: 8px;
+  background-color: #f3f4f6; /* 未使用部分 - 更明显的浅灰色 */
+  border-radius: 9999px;
+  overflow: hidden;
+  position: relative;
+  border: 1px solid #e5e7eb;
+}
+
+.qm-budget-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #3b82f6 0%, #1d4ed8 100%); /* 已使用部分 - 蓝色渐变 */
+  transition: width 0.3s ease;
+  border-radius: 9999px;
+  box-shadow: 0 1px 2px rgba(59, 130, 246, 0.3);
+}
+
+.qm-budget-progress-fill.over {
+  background: linear-gradient(90deg, #ef4444 0%, #dc2626 100%); /* 超预算 - 红色渐变 */
+  box-shadow: 0 1px 2px rgba(239, 68, 68, 0.3);
+}
+
+.qm-budget-progress-text {
+  font-size: 0.75rem;
+  color: var(--color-base-content);
+  opacity: 0.8;
+  min-width: 2.5rem;
+  height: 1.5rem;
+  text-align: center;
+  line-height: 1.5rem;
+  font-weight: 600;
+  flex-shrink: 0;
+  background-color: rgba(255, 255, 255, 0.9);
+  border-radius: 0.75rem;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  padding: 0 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.qm-budget-progress-text.over {
+  color: #ef4444;
+  opacity: 1;
+  font-weight: 700;
+  background-color: rgba(254, 226, 226, 0.9);
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+/* 预算金额信息 */
+.qm-budget-amounts {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.25rem;
+  min-width: 0;
+  flex-shrink: 0;
+}
+
+.qm-budget-total {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-base-content);
+  white-space: nowrap;
+}
+
+.qm-budget-used {
+  font-size: 0.75rem;
+  color: #3b82f6; /* 已用金额 - 蓝色 */
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.qm-budget-used.over {
+  color: #ef4444; /* 超预算 - 红色 */
+  font-weight: 600;
+}
+
+.qm-budget-remaining {
+  font-size: 0.75rem;
+  color: #16a34a; /* 剩余金额 - 绿色 */
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.qm-budget-remaining.over {
+  color: #ef4444; /* 超预算 - 红色 */
+  font-weight: 600;
+}
+
+/* 移动端响应式布局 */
+@media (max-width: 768px) {
+  .qm-budget-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem;
+  }
+
+  /* 移动端只显示百分比，隐藏进度条 */
+  .qm-budget-progress {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    min-width: auto;
+    max-width: none;
+    flex: 0 0 auto;
+  }
+
+  .qm-budget-progress-bar {
+    display: none; /* 隐藏进度条 */
+  }
+
+  .qm-budget-progress-text {
+    font-size: 0.6875rem;
+    min-width: 2rem;
+    height: 1.25rem;
+    line-height: 1.25rem;
+  }
+
+  .qm-budget-total {
+    font-size: 0.8125rem;
+  }
+
+  .qm-budget-used,
+  .qm-budget-remaining {
+    font-size: 0.6875rem;
+  }
 }
 
 .qm-item-value-wrapper {
