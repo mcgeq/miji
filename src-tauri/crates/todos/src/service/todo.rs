@@ -8,6 +8,7 @@ use common::{
     },
     error::{AppError, MijiResult},
     paginations::{DateRange, Filter, PagedQuery, PagedResult, Sortable},
+    repeat_period_type::RepeatPeriodType,
     utils::date::DateUtils,
 };
 use entity::{localize::LocalizeModel, todo::Status};
@@ -20,7 +21,7 @@ use serde::{Deserialize, Serialize};
 use validator::Validate;
 
 use crate::{
-    dto::todo::{RepeatPeriodType, TodoCreate, TodoUpdate},
+    dto::todo::{TodoCreate, TodoUpdate},
     service::todo_hooks::TodoHooks,
 };
 

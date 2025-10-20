@@ -6,17 +6,6 @@ use sea_orm::ActiveValue;
 use serde::{Deserialize, Serialize};
 use validator::Validate;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "PascalCase")]
-pub enum RepeatPeriodType {
-    None,
-    Daily,
-    Weekly,
-    Monthly,
-    Yearly,
-    Custom,
-}
-
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 #[serde(rename_all = "camelCase")]
 pub struct TodoBase {
