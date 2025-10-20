@@ -364,7 +364,11 @@ async fn start_todo_scheduler(app: AppHandle) {
 
 /// 启动待办提醒定时任务：定期扫描需要提醒的待办并发送系统通知
 async fn start_todo_notification_scheduler(app: AppHandle) {
-    let interval_secs = if cfg!(any(target_os = "android", target_os = "ios")) { 300 } else { 60 };
+    let interval_secs = if cfg!(any(target_os = "android", target_os = "ios")) {
+        300
+    } else {
+        60
+    };
     let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(interval_secs));
 
     loop {
@@ -384,7 +388,11 @@ async fn start_todo_notification_scheduler(app: AppHandle) {
 
 /// 启动账单提醒定时任务
 async fn start_bil_reminder_scheduler(app: AppHandle) {
-    let interval_secs = if cfg!(any(target_os = "android", target_os = "ios")) { 300 } else { 60 };
+    let interval_secs = if cfg!(any(target_os = "android", target_os = "ios")) {
+        300
+    } else {
+        60
+    };
     let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(interval_secs));
 
     loop {

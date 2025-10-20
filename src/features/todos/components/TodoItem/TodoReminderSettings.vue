@@ -2,6 +2,8 @@
 import { Bell, Check, Settings, X } from 'lucide-vue-next';
 import type { TodoUpdate } from '@/schema/todos';
 
+type ReminderMethod = 'system' | 'email' | 'sms';
+type ReminderMethods = Record<ReminderMethod, boolean>;
 const props = defineProps<{
   todo: {
     reminderEnabled: boolean;
@@ -15,20 +17,37 @@ const props = defineProps<{
     priorityBoostEnabled: boolean;
   };
 }>();
-
 const emit = defineEmits<{
   update: [update: TodoUpdate];
 }>();
+const ADVANCE_UNITS = ['minutes', 'hours', 'days'] as const;
+type AdvanceUnit = typeof ADVANCE_UNITS[number];
+const FREQUENCIES = ['once', 'daily', 'weekly', 'custom'] as const;
+type Frequency = typeof FREQUENCIES[number];
 
 const showModal = ref(false);
 const isModalVisible = ref(false);
 
 // 提醒设置状态
-const reminderSettings = ref({
+const reminderSettings = ref<{
+  enabled: boolean;
+  advanceValue: number;
+  advanceUnit: AdvanceUnit;
+  frequency: Frequency;
+  methods: ReminderMethods;
+  smartEnabled: boolean;
+  locationBased: boolean;
+  weatherDependent: boolean;
+  priorityBoost: boolean;
+}>({
   enabled: props.todo.reminderEnabled,
-  advanceValue: props.todo.reminderAdvanceValue || 15,
-  advanceUnit: props.todo.reminderAdvanceUnit || 'minutes',
-  frequency: props.todo.reminderFrequency || 'once',
+  advanceValue: props.todo.reminderAdvanceValue ?? 15,
+  advanceUnit: (ADVANCE_UNITS as readonly string[]).includes(props.todo.reminderAdvanceUnit ?? '')
+    ? (props.todo.reminderAdvanceUnit as AdvanceUnit)
+    : 'minutes',
+  frequency: (FREQUENCIES as readonly string[]).includes(props.todo.reminderFrequency ?? '')
+    ? (props.todo.reminderFrequency as Frequency)
+    : 'once',
   // 将桌面/移动合并为 system（系统通知），保存时再映射为 desktop/mobile
   methods: {
     system: props.todo.reminderMethods
@@ -59,10 +78,10 @@ const frequencyOptions = [
 
 // 合并后的提醒方式选项（系统通知 + 邮件 + 短信）
 const reminderMethods = [
-  { key: 'system', label: '系统通知' },
-  { key: 'email', label: '邮件提醒' },
-  { key: 'sms', label: '短信提醒' },
-];
+  { key: 'system' as const, label: '系统通知' },
+  { key: 'email' as const, label: '邮件提醒' },
+  { key: 'sms' as const, label: '短信提醒' },
+] as const;
 
 // 计算属性
 // hasAdvancedSettings 变量暂时未使用，如需要显示高级设置状态可以重新添加
@@ -106,7 +125,7 @@ function saveSettings() {
   closeModal();
 }
 
-function toggleMethod(method: string) {
+function toggleMethod(method: ReminderMethod) {
   reminderSettings.value.methods = {
     ...reminderSettings.value.methods,
     [method]: !reminderSettings.value.methods[method],
@@ -124,7 +143,7 @@ function resetToDefaults() {
     locationBased: false,
     weatherDependent: false,
     priorityBoost: false,
-  } as any;
+  };
 }
 </script>
 
