@@ -155,7 +155,8 @@ fn cleanup_old_logs(root_dir: &Path, relative_path: &str, days: i64) -> std::io:
 }
 
 pub fn init_tracing_subscriber() {
-    let filter_layer = EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info"));
+    let filter_layer = EnvFilter::try_from_default_env()
+        .unwrap_or_else(|_| EnvFilter::new("info,sqlx=warn"));
 
     // 彩色控制台输出
     let console_layer = fmt::layer()

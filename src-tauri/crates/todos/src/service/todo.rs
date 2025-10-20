@@ -251,12 +251,13 @@ impl TodosService {
                 }
             }
 
-            // 按端过滤提醒方式
+            // 按系统通知方式（桌面/移动合并）过滤：二者视为同一种“系统通知”，任一为 true 即允许
             let methods_ok = match &td.reminder_methods {
                 Some(v) => {
-                    let desktop = v.get("desktop").and_then(|b| b.as_bool()).unwrap_or(true);
-                    let mobile = v.get("mobile").and_then(|b| b.as_bool()).unwrap_or(true);
-                    if cfg!(any(target_os = "android", target_os = "ios")) { mobile } else { desktop }
+                    let desktop = v.get("desktop").and_then(|b| b.as_bool()).unwrap_or(false);
+                    let mobile = v.get("mobile").and_then(|b| b.as_bool()).unwrap_or(false);
+                    // 若两者都未显式勾选，则认为未选择系统通知；任一勾选则允许
+                    desktop || mobile
                 }
                 None => true,
             };

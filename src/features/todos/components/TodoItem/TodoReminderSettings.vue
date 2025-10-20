@@ -29,7 +29,14 @@ const reminderSettings = ref({
   advanceValue: props.todo.reminderAdvanceValue || 15,
   advanceUnit: props.todo.reminderAdvanceUnit || 'minutes',
   frequency: props.todo.reminderFrequency || 'once',
-  methods: props.todo.reminderMethods || { desktop: true, mobile: false, email: false },
+  // 将桌面/移动合并为 system（系统通知），保存时再映射为 desktop/mobile
+  methods: {
+    system: props.todo.reminderMethods
+      ? Boolean((props.todo.reminderMethods.desktop || props.todo.reminderMethods.mobile))
+      : true,
+    email: Boolean(props.todo.reminderMethods?.email ?? false),
+    sms: Boolean(props.todo.reminderMethods?.sms ?? false),
+  },
   smartEnabled: props.todo.smartReminderEnabled,
   locationBased: props.todo.locationBasedReminder,
   weatherDependent: props.todo.weatherDependent,
@@ -50,9 +57,9 @@ const frequencyOptions = [
   { value: 'custom', label: '自定义' },
 ];
 
+// 合并后的提醒方式选项（系统通知 + 邮件 + 短信）
 const reminderMethods = [
-  { key: 'desktop', label: '桌面通知' },
-  { key: 'mobile', label: '移动推送' },
+  { key: 'system', label: '系统通知' },
   { key: 'email', label: '邮件提醒' },
   { key: 'sms', label: '短信提醒' },
 ];
@@ -83,7 +90,13 @@ function saveSettings() {
     reminderAdvanceValue: reminderSettings.value.advanceValue,
     reminderAdvanceUnit: reminderSettings.value.advanceUnit,
     reminderFrequency: reminderSettings.value.frequency,
-    reminderMethods: reminderSettings.value.methods,
+    // 将 system 同步回 desktop/mobile，保持后端兼容
+    reminderMethods: {
+      desktop: reminderSettings.value.methods.system,
+      mobile: reminderSettings.value.methods.system,
+      email: reminderSettings.value.methods.email,
+      sms: reminderSettings.value.methods.sms,
+    },
     smartReminderEnabled: reminderSettings.value.smartEnabled,
     locationBasedReminder: reminderSettings.value.locationBased,
     weatherDependent: reminderSettings.value.weatherDependent,
@@ -106,12 +119,12 @@ function resetToDefaults() {
     advanceValue: 15,
     advanceUnit: 'minutes',
     frequency: 'once',
-    methods: { desktop: true, mobile: false, email: false, sms: false },
+    methods: { system: true, email: false, sms: false },
     smartEnabled: false,
     locationBased: false,
     weatherDependent: false,
     priorityBoost: false,
-  };
+  } as any;
 }
 </script>
 
@@ -185,7 +198,7 @@ function resetToDefaults() {
                   </select>
                 </div>
 
-                <!-- 提醒方式 -->
+                <!-- 提醒方式（系统通知合并） -->
                 <div class="setting-row">
                   <label>提醒方式</label>
                   <div class="methods-grid">
