@@ -427,21 +427,16 @@ impl TodosService {
             .await
             .map_err(AppError::from)?;
         for td in todos {
-            // 仅处理有重复规则的待办
-            let repeat_type = match td.repeat_period_type.as_str() {
-                "None" => RepeatPeriodType::None,
-                "Daily" => RepeatPeriodType::Daily,
-                "Weekly" => RepeatPeriodType::Weekly,
-                "Monthly" => RepeatPeriodType::Monthly,
-                "Yearly" => RepeatPeriodType::Yearly,
-                "Custom" => RepeatPeriodType::Custom,
-                _ => {
+            // 解析重复类型
+            let repeat_type = match RepeatPeriodType::from_string(&td.repeat_period_type) {
+                Some(rt) => rt,
+                None => {
                     tracing::warn!("Unknown repeat period type: {}", td.repeat_period_type);
                     continue;
                 }
             };
 
-            if matches!(repeat_type, RepeatPeriodType::None) {
+            if repeat_type.is_none() {
                 continue;
             }
 
