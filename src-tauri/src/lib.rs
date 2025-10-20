@@ -179,6 +179,12 @@ async fn setup(app: AppHandle) -> Result<(), ()> {
         start_transaction_scheduler(app_clone).await;
     });
 
+    // 启动待办重复任务自动创建定时任务
+    let app_clone_todo = app.clone();
+    tauri::async_runtime::spawn(async move {
+        start_todo_scheduler(app_clone_todo).await;
+    });
+
     eprintln!("Backend setup task completed!");
     // Set the backend task as being completed
     // Commands can be ran as regular functions as long as you take
@@ -321,6 +327,27 @@ async fn start_transaction_scheduler(app: AppHandle) {
                     log::error!("发送分期处理失败事件失败: {}", emit_err);
                 }
             }
+        }
+    }
+}
+
+/// 启动待办定时任务：周期性执行自动创建重复待办
+async fn start_todo_scheduler(app: AppHandle) {
+    let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(60 * 60 * 2)); // 每2小时检查一次
+
+    loop {
+        interval.tick().await;
+
+        let app_state = app.state::<AppState>();
+        let db = app_state.db.clone();
+        let todos_service = todos::service::todo::get_todos_service();
+
+        if let Err(e) = todos_service.auto_process_create_todo(&db).await {
+            log::error!("自动创建重复待办失败: {}", e);
+        } else {
+            log::info!("自动创建重复待办执行完成");
+            // 如需通知前端刷新列表，可在此处 emit 事件
+            // app.emit("todos-auto-created", "ok").ok();
         }
     }
 }
