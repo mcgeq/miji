@@ -425,12 +425,11 @@ impl BilReminderService {
             }
 
             // 频率窗口：last + freq <= now（once 已上面处理）
-            if let Some(last) = br.last_reminder_sent_at {
-                if let Some(freq) = Self::parse_frequency_to_duration(&br.reminder_frequency)
-                    && last + freq > now
-                {
-                    return false;
-                }
+            if let Some(last) = br.last_reminder_sent_at
+                && let Some(freq) = Self::parse_frequency_to_duration(&br.reminder_frequency)
+                && last + freq > now
+            {
+                return false;
             }
 
             // 系统通知选择：desktop 或 mobile 任一为 true 即允许，否则拦截
