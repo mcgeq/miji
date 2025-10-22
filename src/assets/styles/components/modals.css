@@ -1,20 +1,6 @@
-/* components/modals.css - 模态框组件样式 */
+/* components/modals.css - 统一模态框组件样式系统 */
 
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.6);
-  z-index: 1001; /* 确保在移动端底部导航之上 */
-  backdrop-filter: blur(5px);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 1rem;
-}
-
+/* ==================== 原始模态框样式（保持兼容性） ==================== */
 .modal-mask {
   position: fixed;
   top: 0;
@@ -23,12 +9,12 @@
   bottom: 0;
   background-color: color-mix(in oklch, var(--color-neutral) 60%, transparent);
   backdrop-filter: blur(6px);
-  z-index: 10002; /* 提升z-index，确保在TodoView输入框之上 */
+  z-index: 10002;
   display: flex;
   justify-content: center;
-  align-items: center; /* 改为center，确保内容垂直居中 */
+  align-items: center;
   overflow-y: auto;
-  padding: 1rem; /* 统一内边距 */
+  padding: 1rem;
 }
 
 .modal-mask-window {
@@ -39,7 +25,124 @@
   padding: 1rem;
   background-color: transparent;
   position: relative;
-  z-index: 10003; /* 提升z-index，确保在TodoView输入框之上 */
+  z-index: 10003;
+}
+
+/* ==================== 模态框覆盖层 ==================== */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(5px);
+  z-index: 1001;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 1rem;
+}
+
+/* ==================== 模态框内容 ==================== */
+.modal-content {
+  background-color: var(--color-base-100);
+  border-radius: 1rem;
+  box-shadow: var(--shadow-xl);
+  max-width: 500px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  position: relative;
+  z-index: 10002;
+}
+
+.modal-content-sm {
+  max-width: 400px;
+}
+
+.modal-content-md {
+  max-width: 500px;
+}
+
+.modal-content-lg {
+  max-width: 700px;
+}
+
+.modal-content-xl {
+  max-width: 900px;
+}
+
+.modal-content-full {
+  max-width: 95vw;
+  max-height: 95vh;
+}
+
+/* ==================== 模态框结构 ==================== */
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem 1.5rem 0;
+  border-bottom: 1px solid var(--color-neutral);
+  margin-bottom: 1rem;
+}
+
+.modal-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--color-base-content);
+  margin: 0;
+}
+
+.modal-subtitle {
+  font-size: 0.875rem;
+  color: var(--color-gray-600);
+  margin-top: 0.25rem;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: var(--color-gray-500);
+  padding: 0.25rem;
+  border-radius: 0.25rem;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    background-color: var(--color-base-200);
+    color: var(--color-gray-700);
+  }
+  
+  &:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--color-primary-soft);
+  }
+}
+
+.modal-body {
+  padding: 1.5rem;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 1.5rem;
+  border-top: 1px solid var(--color-neutral);
+  margin-top: 1rem;
+}
+
+.modal-footer-center {
+  justify-content: center;
+}
+
+.modal-footer-space-between {
+  justify-content: space-between;
 }
 
 .modal-mask-window-money {
@@ -294,6 +397,45 @@
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
+}
+
+/* ==================== 模态框输入框样式（兼容性） ==================== */
+.modal-input-select {
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--color-base-300);
+  border-radius: 0.75rem;
+  background-color: var(--color-base-100);
+  color: var(--color-base-content);
+  transition: all 200ms ease;
+  font-size: 1rem;
+  line-height: 1.5;
+  outline: none;
+  
+  &::placeholder {
+    color: var(--color-gray-400);
+  }
+  
+  &:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 2px var(--color-primary-soft);
+  }
+  
+  &:disabled {
+    background-color: var(--color-base-200);
+    color: var(--color-gray-500);
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+  
+  @media (prefers-color-scheme: dark) {
+    background-color: var(--color-gray-800);
+    border-color: var(--color-gray-600);
+    color: var(--color-gray-100);
+    
+    &::placeholder {
+      color: var(--color-gray-500);
+    }
+  }
 }
 
 /* 圆形图标按钮样式覆盖 */

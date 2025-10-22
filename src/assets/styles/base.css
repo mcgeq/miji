@@ -20,34 +20,4 @@ body {
 }
 
 
-.text-xs {
-  font-size: 0.75rem;
-}
-
-.text-gray-600 {
-  color: #4b5563;
-}
-
-.text-green-600 {
-  color: #16a34a; /* text-green-600 */
-}
-
-.text-red-500 {
-  color: #ef4444; /* text-red-500 */
-}
-
-.text-blue-500 {
-  color: #3b82f6; /* text-blue-500 */
-}
-
-.text-gray-800 {
-  color: #1f2937; /* text-gray-800 */
-}
-
-.text-lg {
-  font-size: 1.125rem; /* text-lg 对应 18px = 1.125rem */
-}
-
-.font-medium {
-  font-weight: 500;
-}
+/* 这些样式已移动到 utilities.css 中，这里保留作为备用 */

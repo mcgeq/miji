@@ -364,10 +364,10 @@ defineExpose({
 <style scoped lang="postcss">
 /* 基础选择器 */
 .modal-input-select {
-  border: 1px solid #ccc;
+  border: 1px solid var(--color-base-300);
   border-radius: 0.375rem;
-  background-color: #fff;
-  color: #111;
+  background-color: var(--color-base-100);
+  color: var(--color-base-content);
   transition: all 0.2s ease-in-out;
   font-family: inherit;
 }
@@ -392,56 +392,95 @@ defineExpose({
 .modal-input-select[data-disabled="true"] {
   opacity: 0.5;
   cursor: not-allowed;
-  background-color: #f5f5f5;
+  background-color: var(--color-base-200);
 }
 
 /* 加载状态 */
 .modal-input-select[data-loading="true"] { opacity: 0.75; cursor: wait; }
 
 /* focus 样式 */
-.modal-input-select:focus { outline: 2px solid #3b82f6; outline-offset: 2px; }
+.modal-input-select:focus {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
 
 /* optgroup 样式 */
-.modal-input-select optgroup { font-weight: 600; color: #4b5563; }
-.modal-input-select optgroup option { font-weight: 400; padding-left: 1rem; }
+.modal-input-select optgroup {
+  font-weight: 600;
+  color: var(--color-gray-600);
+}
+.modal-input-select optgroup option {
+  font-weight: 400;
+  padding-left: 1rem;
+}
 
 /* 禁用 option */
-.modal-input-select option:disabled { color: #9ca3af; }
+.modal-input-select option:disabled {
+  color: var(--color-gray-400);
+}
 
 /* 快捷选择按钮 */
 .quick-select-btn {
   font-size: 0.75rem;
   padding: 0.25rem 0.5rem;
   border-radius: 0.375rem;
-  border: 1px solid #e5e7eb;
-  background-color: #fff;
-  color: #374151;
+  border: 1px solid var(--color-gray-200);
+  background-color: var(--color-base-100);
+  color: var(--color-gray-700);
   cursor: pointer;
   transition: all 0.2s ease-in-out;
 }
-.quick-select-btn:hover { background-color: #f9fafb; border-color: #d1d5db; }
-.quick-select-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.quick-select-btn:hover {
+  background-color: var(--color-gray-50);
+  border-color: var(--color-gray-300);
+}
+.quick-select-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
 
 /* 激活状态 */
 .quick-select-btn-active {
-  background-color: #eff6ff;
-  border-color: #bfdbfe;
-  color: #1d4ed8;
+  background-color: var(--color-primary-soft);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
 }
 
 /* label */
-.label-text { font-size: 0.875rem; color: #374151; font-weight: 500; }
-.required-asterisk { color: #f56565; margin-left: 0.25rem; }
+.label-text {
+  font-size: 0.875rem;
+  color: var(--color-gray-700);
+  font-weight: 500;
+}
+.required-asterisk {
+  color: var(--color-error);
+  margin-left: 0.25rem;
+}
 
 /* 错误文本 */
-.error-text { font-size: 0.875rem; color: #f56565; margin-top: 0.25rem; }
+.error-text {
+  font-size: 0.875rem;
+  color: var(--color-error);
+  margin-top: 0.25rem;
+}
 
 /* 帮助文本 */
-.help-text { font-size: 0.75rem; color: #6b7280; margin-top: 0.5rem; text-align: right; }
+.help-text {
+  font-size: 0.75rem;
+  color: var(--color-gray-500);
+  margin-top: 0.5rem;
+  text-align: right;
+}
 
 /* 快捷选择组 */
-.quick-select-group { margin-bottom: 0.5rem; }
-.quick-select-label { font-size: 0.75rem; color: #6b7280; margin-bottom: 0.25rem; }
+.quick-select-group {
+  margin-bottom: 0.5rem;
+}
+.quick-select-label {
+  font-size: 0.75rem;
+  color: var(--color-gray-500);
+  margin-bottom: 0.25rem;
+}
 
 /* 容器基础布局 */
 .reminder-selector-row {

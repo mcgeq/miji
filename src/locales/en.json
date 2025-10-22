@@ -1050,6 +1050,7 @@
       "Bill": "e.g., Credit card bill, utility bill details",
       "Income": "e.g., Salary, bonus, investment income sources",
       "Health": "e.g., Checkup items, hospital department, precautions",
+      "Exercise": "e.g., Workout plans, exercise routines, fitness goals",
       "Meeting": "e.g., Meeting agenda, participants, location",
       "Birthday": "e.g., Birthday gift preparation, celebration plans",
       "Travel": "e.g., Itinerary, precautions, items to bring",

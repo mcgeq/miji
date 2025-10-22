@@ -1,58 +1,263 @@
-.checkbox-radius {
-  -webkit-appearance: none; /* 去掉浏览器默认样式 */
+/* components/checkbox.css - 统一复选框组件样式系统 */
+
+/* ==================== 基础复选框样式 ==================== */
+.checkbox-base {
+  -webkit-appearance: none;
   appearance: none;
-  display: inline-block;
-  height: 1.5rem; /* h-6 */
-  width: 1.5rem; /* w-6 */
-  border-radius: 50%; /* rounded-full */
-  margin-left: 0.5rem; /* ml-2 */
-  margin-right: 0.5rem; /* mr-2 */
-  padding-top: 0; /* py-0 */
-  padding-bottom: 0; /* py-0 */
-  padding-left: 0.5rem; /* px-2 */
-  padding-right: 0.5rem; /* px-2 */
-  border: 1px solid #d1d5db; /* border-gray-300 */
-  color: #111827; /* text-gray-900 */
-  background-color: #ffffff; /* 默认背景 */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  border: 2px solid var(--color-gray-300);
+  border-radius: 0.25rem;
+  background-color: var(--color-base-100);
+  color: var(--color-base-content);
   cursor: pointer;
-  transition: all 0.2s ease-in-out; /* transition-all duration-200 */
+  transition: all 0.2s ease;
   vertical-align: middle;
-}
-.checkbox-radius:focus {
-  outline: none; /* 去掉默认轮廓 */
-  border-color: transparent; /* focus:border-transparent */
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5); /* focus:ring-2 focus:ring-blue-500 */
-}
-
-/* placeholder 样式 */
-.checkbox-radius::placeholder {
-  color: #9ca3af; /* placeholder-gray-400 */
-}
-
-/* checked 状态 */
-.checkbox-radius:checked {
-  background-color: #3b82f6; /* bg-blue-500 */
-  border-color: #4b5563; /* border-gray-600 */
-}
-
-/* checked 状态 */
-.checkbox-radius:checked {
-  background-color: #3b82f6;
-  border-color: #4b5563;
-}
-
-/* dark mode */
-@media (prefers-color-scheme: dark) {
-  .checkbox-radius {
-    color: #ffffff; /* dark:text-white */
-    border-color: #4b5563; /* dark:border-gray-600 */
-    background-color: #1f2937; /* dark:bg-gray-800 */
+  position: relative;
+  
+  &:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 2px var(--color-primary-soft);
   }
-  .checkbox-radius::placeholder {
-    color: #6b7280; /* dark:placeholder-gray-500 */
+  
+  &:checked {
+    background-color: var(--color-primary);
+    border-color: var(--color-primary);
+    color: var(--color-primary-content);
   }
-  .checkbox-radius:checked {
-    background-color: #3b82f6;
-    border-color: #4b5563;
+  
+  &:checked::after {
+    content: '✓';
+    position: absolute;
+    font-size: 0.75rem;
+    font-weight: bold;
+    color: var(--color-primary-content);
+  }
+  
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  
+  @media (prefers-color-scheme: dark) {
+    background-color: var(--color-gray-800);
+    border-color: var(--color-gray-600);
+    color: var(--color-gray-100);
+  }
+}
+
+/* ==================== 复选框尺寸变体 ==================== */
+.checkbox-sm {
+  width: 1rem;
+  height: 1rem;
+  border-radius: 0.125rem;
+  
+  &:checked::after {
+    font-size: 0.625rem;
+  }
+}
+
+.checkbox-md {
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 0.25rem;
+  
+  &:checked::after {
+    font-size: 0.75rem;
+  }
+}
+
+.checkbox-lg {
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 0.375rem;
+  
+  &:checked::after {
+    font-size: 0.875rem;
+  }
+}
+
+.checkbox-xl {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.5rem;
+  
+  &:checked::after {
+    font-size: 1rem;
+  }
+}
+
+/* ==================== 复选框形状变体 ==================== */
+.checkbox-rounded {
+  border-radius: 0.25rem;
+}
+
+.checkbox-pill {
+  border-radius: 9999px;
+}
+
+.checkbox-circle {
+  border-radius: 50%;
+}
+
+/* ==================== 复选框状态变体 ==================== */
+.checkbox-success {
+  border-color: var(--color-success);
+  
+  &:checked {
+    background-color: var(--color-success);
+    border-color: var(--color-success);
+    color: var(--color-success-content);
+  }
+  
+  &:focus {
+    border-color: var(--color-success);
+    box-shadow: 0 0 0 2px var(--color-success-soft);
+  }
+}
+
+.checkbox-warning {
+  border-color: var(--color-warning);
+  
+  &:checked {
+    background-color: var(--color-warning);
+    border-color: var(--color-warning);
+    color: var(--color-warning-content);
+  }
+  
+  &:focus {
+    border-color: var(--color-warning);
+    box-shadow: 0 0 0 2px var(--color-warning-soft);
+  }
+}
+
+.checkbox-error {
+  border-color: var(--color-error);
+  
+  &:checked {
+    background-color: var(--color-error);
+    border-color: var(--color-error);
+    color: var(--color-error-content);
+  }
+  
+  &:focus {
+    border-color: var(--color-error);
+    box-shadow: 0 0 0 2px var(--color-error-soft);
+  }
+}
+
+/* ==================== 复选框类型变体 ==================== */
+.checkbox-outlined {
+  background-color: transparent;
+  border: 2px solid var(--color-neutral);
+  
+  &:checked {
+    background-color: var(--color-primary);
+    border-color: var(--color-primary);
+  }
+}
+
+.checkbox-filled {
+  background-color: var(--color-base-200);
+  border: 2px solid transparent;
+  
+  &:checked {
+    background-color: var(--color-primary);
+    border-color: var(--color-primary);
+  }
+}
+
+.checkbox-ghost {
+  background-color: transparent;
+  border: 2px solid transparent;
+  
+  &:checked {
+    background-color: var(--color-primary);
+    border-color: var(--color-primary);
+  }
+}
+
+/* ==================== 复选框组合 ==================== */
+.checkbox-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.checkbox-group-horizontal {
+  flex-direction: row;
+  gap: 1rem;
+}
+
+.checkbox-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  user-select: none;
+}
+
+.checkbox-label {
+  font-size: 0.875rem;
+  color: var(--color-base-content);
+  cursor: pointer;
+  
+  &:hover {
+    color: var(--color-primary);
+  }
+}
+
+.checkbox-description {
+  font-size: 0.75rem;
+  color: var(--color-gray-500);
+  margin-top: 0.25rem;
+  margin-left: 1.75rem;
+}
+
+/* ==================== 复选框动画 ==================== */
+.checkbox-animated {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  
+  &:checked {
+    transform: scale(1.1);
+  }
+  
+  &:checked::after {
+    animation: checkmark 0.3s ease-in-out;
+  }
+}
+
+@keyframes checkmark {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* ==================== 响应式设计 ==================== */
+@media (max-width: 768px) {
+  .checkbox-group-horizontal {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  
+  .checkbox-item {
+    gap: 0.75rem;
+  }
+  
+  .checkbox-label {
+    font-size: 1rem;
   }
 }

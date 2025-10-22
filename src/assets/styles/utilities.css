@@ -2,13 +2,14 @@
    utilities.css - 全局工具类
 ========================= */
 
-/* Logo */
+/* ==================== 基础组件 ==================== */
 .logo {
   width: 6em;
   height: 6em;
   transition: all 800ms ease;
 }
 
+/* ==================== 背景颜色 ==================== */
 .bg-base-100 {
   background-color: var(--color-base-100);
 }
@@ -23,46 +24,46 @@
 
 /* Additional Background Colors */
 .bg-gray-50 {
-  background-color: #f9fafb;
+  background-color: var(--color-gray-50);
 }
 .bg-gray-100 {
-  background-color: #f3f4f6;
+  background-color: var(--color-gray-100);
 }
 .bg-gray-200 {
-  background-color: #e5e7eb;
+  background-color: var(--color-gray-200);
 }
 .bg-red-100 {
-  background-color: #fee2e2;
+  background-color: var(--color-red-100);
 }
 .bg-yellow-100 {
-  background-color: #fef3c7;
+  background-color: var(--color-yellow-100);
 }
 .bg-blue-100 {
-  background-color: #dbeafe;
+  background-color: var(--color-blue-100);
 }
 .bg-green-100 {
-  background-color: #dcfce7;
+  background-color: var(--color-green-100);
 }
 .bg-red-50 {
-  background-color: #fef2f2;
+  background-color: var(--color-red-50);
 }
 .bg-green-50 {
-  background-color: #f0fdf4;
+  background-color: var(--color-green-50);
 }
 .bg-blue-500 {
-  background-color: #3b82f6;
+  background-color: var(--color-blue-500);
 }
 .bg-yellow-500 {
-  background-color: #eab308;
+  background-color: var(--color-yellow-500);
 }
 .bg-orange-500 {
-  background-color: #f97316;
+  background-color: var(--color-orange-500);
 }
 .bg-green-500 {
-  background-color: #22c55e;
+  background-color: var(--color-green-500);
 }
 
-/* Flex & Layout */
+/* ==================== Flexbox 布局 ==================== */
 .flex {
   display: flex;
 }
@@ -142,7 +143,8 @@
   gap: 0.5rem;
 }
 
-/* Padding & Margin */
+/* ==================== 间距工具类 ==================== */
+/* Padding */
 .p-1 {
   padding: 0.25rem;
 }
@@ -381,10 +383,6 @@
   margin-bottom: 1.5rem;
 }
 
-.mb-1 {
-  margin-bottom: 0.25rem;
-}
-
 /* Margin Left */
 .ml-1 {
   margin-left: 0.25rem;
@@ -470,11 +468,11 @@
   opacity: 0.75;
 }
 
-/* Responsive Visibility */
+/* ==================== 响应式显示控制 ==================== */
 .show-on-desktop {
   display: none;
 }
-@media (min-width: 768px) {
+@media (min-width: var(--breakpoint-md)) {
   .show-on-desktop {
     display: block;
   }
@@ -483,8 +481,36 @@
 .show-on-mobile {
   display: block;
 }
-@media (min-width: 768px) {
+@media (min-width: var(--breakpoint-md)) {
   .show-on-mobile {
+    display: none;
+  }
+}
+
+/* 响应式隐藏/显示 */
+.hidden-sm {
+  display: none;
+}
+@media (min-width: var(--breakpoint-sm)) {
+  .hidden-sm {
+    display: block;
+  }
+}
+
+.hidden-md {
+  display: block;
+}
+@media (min-width: var(--breakpoint-md)) {
+  .hidden-md {
+    display: none;
+  }
+}
+
+.hidden-lg {
+  display: block;
+}
+@media (min-width: var(--breakpoint-lg)) {
+  .hidden-lg {
     display: none;
   }
 }
@@ -527,36 +553,36 @@
 }
 
 .text-gray-400 {
-  color: #9ca3af;
+  color: var(--color-gray-400);
 }
 .text-gray-500 {
-  color: #6b7280;
+  color: var(--color-gray-500);
 }
 .text-gray-600 {
-  color: #4b5563;
+  color: var(--color-gray-600);
 }
 .text-gray-700 {
-  color: #374151;
+  color: var(--color-gray-700);
 }
 .text-gray-800 {
-  color: #1f2937;
+  color: var(--color-gray-800);
 }
 
-/* Additional Text Colors */
+/* ==================== 文本颜色 ==================== */
 .text-red-500 {
-  color: #ef4444;
+  color: var(--color-red-500);
 }
 .text-red-600 {
-  color: #dc2626;
+  color: var(--color-red-600);
 }
 .text-yellow-600 {
-  color: #d97706;
+  color: var(--color-yellow-500);
 }
 .text-blue-600 {
-  color: #2563eb;
+  color: var(--color-blue-600);
 }
 .text-green-600 {
-  color: #16a34a;
+  color: var(--color-green-600);
 }
 .text-center {
   text-align: center;

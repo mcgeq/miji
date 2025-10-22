@@ -275,11 +275,11 @@ defineExpose({
 .form-label {
   font-size: 0.875rem; /* text-sm */
   font-weight: 500; /* font-medium */
-  color: #374151; /* gray-700 */
+  color: var(--color-gray-700);
   margin-bottom: 0.5rem;
 }
 .form-required {
-  color: #ef4444; /* red-500 */
+  color: var(--color-error);
   margin-left: 0.25rem;
 }
 
@@ -292,10 +292,10 @@ defineExpose({
 /* 下拉框 */
 .modal-input-select {
   padding: 0.5rem 0.75rem; /* px-3 py-2 */
-  border: 1px solid #d1d5db; /* gray-300 */
+  border: 1px solid var(--color-base-300);
   border-radius: 0.375rem; /* rounded-md */
-  background: #fff;
-  color: #111827; /* gray-900 */
+  background: var(--color-base-100);
+  color: var(--color-base-content);
   font-size: 0.875rem;
   line-height: 1.25rem;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
@@ -303,19 +303,19 @@ defineExpose({
 .modal-input-select:focus {
   outline: none;
   border-color: transparent;
-  box-shadow: 0 0 0 2px #3b82f6; /* ring-2 blue-500 */
+  box-shadow: 0 0 0 2px var(--color-primary);
 }
 .modal-input-select.is-error {
-  border-color: #ef4444; /* red-500 */
+  border-color: var(--color-error);
 }
 .modal-input-select.is-error:focus {
-  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.5); /* ring-red-400/50 */
+  box-shadow: 0 0 0 2px var(--color-error-soft);
 }
 
 /* 禁用状态 */
 .modal-input-select:disabled {
-  background: #f3f4f6; /* gray-100 */
-  color: #6b7280; /* gray-500 */
+  background: var(--color-base-200);
+  color: var(--color-gray-500);
   cursor: not-allowed;
 }
 
@@ -324,21 +324,21 @@ defineExpose({
   padding: 0.5rem 0.75rem;
 }
 .modal-input-select option:disabled {
-  color: #9ca3af; /* gray-400 */
+  color: var(--color-gray-400);
 }
 
 /* 错误提示 */
 .form-error {
   margin-top: 0.25rem;
   font-size: 0.875rem;
-  color: #dc2626; /* red-600 */
+  color: var(--color-error);
 }
 
 /* 帮助文本 */
 .form-help {
   margin-top: 0.5rem;
   font-size: 0.75rem;
-  color: #6b7280; /* gray-500 */
+  color: var(--color-gray-500);
   text-align: right;
 }
 
