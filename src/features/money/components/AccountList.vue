@@ -11,7 +11,6 @@ import {
   Wallet2,
 } from 'lucide-vue-next';
 import SimplePagination from '@/components/common/SimplePagination.vue';
-import { DateUtils } from '@/utils/date';
 import { useAccountFilters } from '../composables/useAccountFilters';
 import { formatCurrency } from '../utils/money';
 import type { Account, AccountType } from '@/schema/money';
@@ -301,7 +300,6 @@ const gridLayoutClass = computed(() => {
             <component :is="getAccountTypeIcon(account.type)" class="account-type-icon" />
             <span class="account-name">{{ account.name }}</span>
             <span class="account-type-name">{{ getAccountTypeName(account.type) }}</span>
-            <span class="account-currency">{{ account.currency?.code }}</span>
           </div>
 
           <!-- 操作按钮 -->
@@ -337,20 +335,10 @@ const gridLayoutClass = computed(() => {
         </div>
 
         <div class="account-balance">
+          <span class="account-currency">{{ account.currency?.code }}</span>
           <span class="balance-amount">
             {{ moneyStore.isAccountAmountHidden(account.serialNum) ? '***' : formatCurrency(account.balance) }}
           </span>
-        </div>
-
-        <div class="account-details">
-          <div class="detail-row">
-            <span class="detail-label"> {{ t('date.createDate') }} </span>
-            <span class="detail-value">{{ DateUtils.formatDate(account.createdAt) }}</span>
-          </div>
-          <div v-if="account.description" class="detail-row">
-            <span class="detail-label"> {{ t('common.misc.remark') }} </span>
-            <span class="detail-value"> {{ account.description }} </span>
-          </div>
         </div>
       </div>
     </div>
@@ -456,13 +444,13 @@ const gridLayoutClass = computed(() => {
 
 .account-name {
   font-size: 1.125rem;
-  color: #1f2937;
+  color: var(--color-neutral);
   font-weight: 600;
 }
 
 .account-type-name {
   font-size: 0.875rem;
-  color: #374151;
+  color: var(--color-neutral);
 }
 
 .account-currency {
@@ -498,29 +486,8 @@ const gridLayoutClass = computed(() => {
 
 .balance-amount {
   font-size: 1.5rem;
-  color: #1f2937;
+  color: var(--color-neutral);
   font-weight: 600;
-}
-
-/* Account Details */
-.account-details {
-  padding-top: 1rem;
-  border-top: 1px solid #e5e7eb;
-}
-
-.detail-row {
-  font-size: 0.875rem;
-  margin-bottom: 0.5rem;
-  display: flex;
-  justify-content: space-between;
-}
-
-.detail-label {
-  color: #4b5563;
-}
-
-.detail-value {
-  color: #1f2937;
 }
 
 /* Account Select Buttons */
