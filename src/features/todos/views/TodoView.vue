@@ -223,7 +223,7 @@ onMounted(async () => {
   background-color: var(--color-base-300);
   color: var(--color-info);
   border-radius: 9999px;
-  border: 1px solid var(--color-info, #93c5fd);
+  border: 1px solid var(--color-info);
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   transform: translateY(-50%);
   transition: all 0.3s ease;
@@ -272,7 +272,7 @@ onMounted(async () => {
   gap: 0.5rem;
   padding: 0.5rem 0.75rem;
   background-color: var(--color-base-200, #fff);
-  border: 1px solid var(--color-neutral, #d1d5db);
+  border: 1px solid var(--color-neutral);
   border-radius: 9999px;
   box-shadow: 0 1px 2px rgba(0,0,0,0.05);
   transition: all 0.3s ease;

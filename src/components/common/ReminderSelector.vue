@@ -385,8 +385,8 @@ defineExpose({
 .modal-input-select[data-width="1/3"] { width: 33.333%; }
 
 /* 错误状态 */
-.modal-input-select[data-error="true"] { border-color: #f56565; }
-.modal-input-select[data-error="true"]:focus { outline: 2px solid #f56565; outline-offset: 2px; }
+.modal-input-select[data-error="true"] { border-color: var(--color-error); }
+.modal-input-select[data-error="true"]:focus { outline: 2px solid var(--color-error); outline-offset: 2px; }
 
 /* 禁用状态 */
 .modal-input-select[data-disabled="true"] {

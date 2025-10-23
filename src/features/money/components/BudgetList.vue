@@ -257,7 +257,7 @@ defineExpose({
         :class="[
           { 'budget-card-inactive': !budget.isActive },
         ]" :style="{
-          borderColor: budget.color || '#E5E7EB',
+          borderColor: budget.color || 'var(--color-gray-200)',
         }"
       >
         <!-- Header -->
@@ -390,7 +390,7 @@ defineExpose({
 
 /* Loading and Empty States */
 .loading-container {
-  color: #4b5563;
+  color: var(--color-gray-600);
   height: 6.25rem;
   display: flex;
   justify-content: center;
@@ -471,7 +471,7 @@ defineExpose({
 }
 
 .status-inactive {
-  color: #4b5563;
+  color: var(--color-gray-600);
   background-color: #e5e7eb;
 }
 
@@ -501,7 +501,7 @@ defineExpose({
 /* Budget Period */
 .budget-period {
   font-size: 0.875rem;
-  color: #4b5563;
+  color: var(--color-gray-600);
   margin-bottom: 0.25rem;
   display: flex;
   gap: 0.25rem;
@@ -510,7 +510,7 @@ defineExpose({
 }
 
 .period-icon {
-  color: #4b5563;
+  color: var(--color-gray-600);
   height: 1rem;
   width: 1rem;
 }
@@ -534,7 +534,7 @@ defineExpose({
 
 .total-amount {
   font-size: 0.875rem;
-  color: #4b5563;
+  color: var(--color-gray-600);
 }
 
 .remaining-amount-container {
@@ -589,7 +589,7 @@ defineExpose({
 }
 
 .info-label {
-  color: #4b5563;
+  color: var(--color-gray-600);
   font-weight: 500;
 }
 
@@ -633,7 +633,7 @@ defineExpose({
 }
 
 .progress-percentage-normal {
-  color: #4b5563;
+  color: var(--color-gray-600);
 }
 
 .filter-button-group {

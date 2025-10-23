@@ -356,25 +356,25 @@ defineExpose({
 /* 暗黑模式 */
 @media (prefers-color-scheme: dark) {
   .form-label {
-    color: #d1d5db; /* gray-300 */
+    color: var(--color-gray-300);
   }
   .modal-input-select {
-    background: #1f2937; /* gray-800 */
-    color: #f9fafb; /* gray-100 */
-    border-color: #4b5563; /* gray-600 */
+    background: var(--color-gray-800);
+    color: var(--color-gray-100);
+    border-color: var(--color-gray-600);
   }
   .modal-input-select:focus {
-    box-shadow: 0 0 0 2px #60a5fa; /* ring-blue-400 */
+    box-shadow: 0 0 0 2px var(--color-info);
   }
   .modal-input-select:disabled {
-    background: #374151; /* gray-700 */
-    color: #9ca3af; /* gray-400 */
+    background: var(--color-gray-700);
+    color: var(--color-gray-400);
   }
   .form-error {
-    color: #f87171; /* red-400 */
+    color: var(--color-error);
   }
   .form-help {
-    color: #9ca3af; /* gray-400 */
+    color: var(--color-gray-400);
   }
 }
 </style>

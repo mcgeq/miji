@@ -139,7 +139,7 @@ const pieChartOption = computed(() => {
           itemStyle: {
             shadowBlur: 10,
             shadowOffsetX: 0,
-            shadowColor: 'rgba(0, 0, 0, 0.5)',
+            shadowColor: 'var(--shadow-lg)',
           },
         },
         labelLine: {
@@ -227,7 +227,7 @@ const barChartOption = computed(() => {
           itemStyle: {
             shadowBlur: 10,
             shadowOffsetX: 0,
-            shadowColor: 'rgba(0, 0, 0, 0.3)',
+            shadowColor: 'var(--shadow-md)',
           },
         },
         animationDelay: (idx: number) => idx * 100,

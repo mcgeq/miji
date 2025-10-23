@@ -732,28 +732,28 @@ onMounted(async () => {
 }
 
 .qm-icon-income {
-  background-color: #dcfce7;
-  color: #16a34a;
+  background-color: var(--color-success-100);
+  color: var(--color-success);
 }
 
 .qm-icon-expense {
-  background-color: #fee2e2;
-  color: #ef4444;
+  background-color: var(--color-error-100);
+  color: var(--color-error);
 }
 
 .qm-icon-transfer {
-  background-color: #dbeafe;
-  color: #3b82f6;
+  background-color: var(--color-info-100);
+  color: var(--color-info);
 }
 
 .qm-icon-budget {
-  background-color: #ffedd5;
-  color: #f97316;
+  background-color: var(--color-warning-100);
+  color: var(--color-warning);
 }
 
 .qm-icon-reminder {
-  background-color: #fef9c3;
-  color: #ca8a04;
+  background-color: var(--color-warning-100);
+  color: var(--color-warning);
 }
 
 .qm-item-content {
@@ -800,23 +800,23 @@ onMounted(async () => {
 .qm-budget-progress-bar {
   flex: 1;
   height: 8px;
-  background-color: #f3f4f6; /* 未使用部分 - 更明显的浅灰色 */
+  background-color: var(--color-gray-100); /* 未使用部分 - 更明显的浅灰色 */
   border-radius: 9999px;
   overflow: hidden;
   position: relative;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--color-gray-200);
 }
 
 .qm-budget-progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, #3b82f6 0%, #1d4ed8 100%); /* 已使用部分 - 蓝色渐变 */
+  background: linear-gradient(90deg, var(--color-info) 0%, var(--color-info-hover) 100%); /* 已使用部分 - 蓝色渐变 */
   transition: width 0.3s ease;
   border-radius: 9999px;
   box-shadow: 0 1px 2px rgba(59, 130, 246, 0.3);
 }
 
 .qm-budget-progress-fill.over {
-  background: linear-gradient(90deg, #ef4444 0%, #dc2626 100%); /* 超预算 - 红色渐变 */
+  background: linear-gradient(90deg, var(--color-error) 0%, var(--color-error-hover) 100%); /* 超预算 - 红色渐变 */
   box-shadow: 0 1px 2px rgba(239, 68, 68, 0.3);
 }
 
@@ -970,15 +970,18 @@ onMounted(async () => {
   align-items: center;
   justify-content: center;
   padding: 0.875rem;
-  border: none;
   border-radius: 0.75rem;
+  border: 1px solid var(--color-base-100);
   cursor: pointer;
   transition: all 0.2s;
+  background-color: var(--color-base-200);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   flex-shrink: 0;
 }
 
 .qm-btn:hover {
+  background-color: var(--color-base-300);
+  border: 1px groove var(--color-base-200);
   transform: translateY(-1px);
   box-shadow: 0 3px 6px rgba(0, 0, 0, 0.12);
 }
@@ -988,66 +991,36 @@ onMounted(async () => {
 }
 
 .qm-btn-purple {
-  background-color: #f3e8ff;
-  color: #8b5cf6;
-}
-
-.qm-btn-purple:hover {
-  background-color: #e9d5ff;
+  color: var(--color-purple-500);
 }
 
 .qm-btn-green {
-  background-color: #dcfce7;
-  color: #16a34a;
-}
-
-.qm-btn-green:hover {
-  background-color: #bbf7d0;
+  color: var(--color-success);
 }
 
 .qm-btn-red {
-  background-color: #fee2e2;
-  color: #ef4444;
-}
-
-.qm-btn-red:hover {
-  background-color: #fecaca;
+  color: var(--color-error);
 }
 
 .qm-btn-blue {
-  background-color: #dbeafe;
-  color: #3b82f6;
-}
-
-.qm-btn-blue:hover {
-  background-color: #bfdbfe;
+  color: var(--color-info);
 }
 
 .qm-btn-orange {
-  background-color: #ffedd5;
-  color: #f97316;
-}
-
-.qm-btn-orange:hover {
-  background-color: #fed7aa;
+  color: var(--color-warning);
 }
 
 .qm-btn-yellow {
-  background-color: #fef9c3;
-  color: #ca8a04;
-}
-
-.qm-btn-yellow:hover {
-  background-color: #fef08a;
+  color: var(--color-warning);
 }
 
 .qm-btn-gray {
-  background-color: #f3f4f6;
-  color: #6b7280;
+  background-color: var(--color-gray-100);
+  color: var(--color-gray-500);
 }
 
 .qm-btn-gray:hover {
-  background-color: #e5e7eb;
+  background-color: var(--color-gray-200);
 }
 
 /* 响应式调整 */

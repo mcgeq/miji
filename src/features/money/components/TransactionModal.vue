@@ -1231,17 +1231,17 @@ watch(
 
 .status-badge.status-paid {
   background-color: var(--color-success);
-  color: white;
+  color: var(--color-base-content);
 }
 
 .status-badge.status-pending {
   background-color: var(--color-warning);
-  color: white;
+  color: var(--color-base-content);
 }
 
 .status-badge.status-overdue {
   background-color: var(--color-error);
-  color: white;
+  color: var(--color-base-content);
 }
 
 .period-header {

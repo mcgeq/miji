@@ -162,51 +162,51 @@ function handleTypeChange(value: string) {
       form.priority = 'High';
       form.advanceValue = 3;
       form.advanceUnit = 'days';
-      form.color = '#EF4444'; // 红色
+      form.color = 'var(--color-error)'; // 红色
       break;
     case 'Income':
       form.priority = 'Medium';
       form.advanceValue = 1;
       form.advanceUnit = 'days';
-      form.color = '#10B981'; // 绿色
+      form.color = 'var(--color-success)'; // 绿色
       break;
     case 'Investment':
       form.priority = 'Medium';
       form.advanceValue = 1;
       form.advanceUnit = 'days';
-      form.color = '#3B82F6'; // 蓝色
+      form.color = 'var(--color-info)'; // 蓝色
       break;
     case 'Health':
       form.priority = 'High';
       form.advanceValue = 1;
       form.advanceUnit = 'days';
-      form.color = '#FFA000'; // 橙色
+      form.color = 'var(--color-warning)'; // 橙色
       break;
     case 'Meeting':
       form.priority = 'Medium';
       form.advanceValue = 30;
       form.advanceUnit = 'minutes';
-      form.color = '#8B5CF6'; // 紫色
+      form.color = 'var(--color-purple-500)'; // 紫色
       break;
     case 'Birthday':
     case 'Anniversary':
       form.priority = 'Medium';
       form.advanceValue = 1;
       form.advanceUnit = 'days';
-      form.color = '#EC4899'; // 粉色
+      form.color = 'var(--color-pink-500)'; // 粉色
       form.repeatPeriod = { type: 'Yearly', interval: 1, month: 1, day: 1 };
       break;
     case 'Exercise':
       form.priority = 'Low';
       form.advanceValue = 1;
       form.advanceUnit = 'hours';
-      form.color = '#06B6D4'; // 青色
+      form.color = 'var(--color-cyan-500)'; // 青色
       break;
     case 'Medicine':
       form.priority = 'Urgent';
       form.advanceValue = 30;
       form.advanceUnit = 'minutes';
-      form.color = '#EF4444'; // 红色
+      form.color = 'var(--color-error)'; // 红色
       break;
     default:
       form.priority = 'Medium';
@@ -873,7 +873,7 @@ watch(
 
 .form-label {
   font-size: 0.875rem;
-  color: #374151;
+  color: var(--color-gray-700);
   font-weight: 500;
   margin-bottom: 0.5rem;
 }
@@ -892,14 +892,14 @@ watch(
 
 .form-error {
   font-size: 0.875rem;
-  color: #dc2626;
+  color: var(--color-error-hover);
   margin-bottom: 0.5rem;
   text-align: right;
 }
 
 /* Required asterisk */
 .required-asterisk {
-  color: #ef4444;
+  color: var(--color-error);
   margin-left: 0.25rem;
 }
 
@@ -939,19 +939,19 @@ watch(
 
 .checkbox-text {
   font-size: 0.875rem;
-  color: #374151;
+  color: var(--color-gray-700);
   font-weight: 500;
 }
 
 /* Optional text */
 .optional-text {
-  color: #6b7280;
+  color: var(--color-gray-500);
 }
 
 /* Character count */
 .character-count {
   font-size: 0.75rem;
-  color: #6b7280;
+  color: var(--color-gray-500);
   margin-top: 0.25rem;
   text-align: right;
 }

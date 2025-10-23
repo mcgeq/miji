@@ -548,7 +548,7 @@ onUnmounted(() => {
 
 /* 面板 */
 .panel {
-  background-color: #fff;
+  background-color: var(--color-base-100);
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   overflow: hidden;

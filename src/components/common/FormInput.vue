@@ -97,20 +97,20 @@ div.relative {
 
 /* 占位符样式 */
 .custom-input::placeholder {
-  color: #9ca3af; /* placeholder-gray-400 */
+  color: var(--color-gray-400); /* placeholder-gray-400 */
   opacity: 1; /* 防止某些浏览器默认淡化 */
 }
 
 /* 黑暗模式适配 */
 @media (prefers-color-scheme: dark) {
   .custom-input {
-    color: #ffffff; /* dark:text-white */
-    background-color: #1f2937; /* dark:bg-gray-900 */
-    border-color: #4b5563; /* dark:border-gray-700 */
+    color: var(--color-base-content); /* dark:text-white */
+    background-color: var(--color-gray-800); /* dark:bg-gray-900 */
+    border-color: var(--color-gray-600); /* dark:border-gray-700 */
   }
 
   .custom-input::placeholder {
-    color: #d1d5db; /* dark:placeholder-gray-500 */
+    color: var(--color-gray-300); /* dark:placeholder-gray-500 */
   }
 }
 
@@ -126,11 +126,11 @@ div.relative {
   /* 文字样式 */
   font-size: 0.875rem;
   line-height: 1.25;
-  color: #ef4444; /* 错误提示红 */
+  color: var(--color-error); /* 错误提示红 */
 
   /* 背景与边框 */
-  background-color: #fef2f2;
-  border: 1px solid #fecaca;
+  background-color: var(--color-error-50);
+  border: 1px solid var(--color-error-200);
   border-radius: 0.25rem;
   padding: 0.25rem 0.5rem;
 

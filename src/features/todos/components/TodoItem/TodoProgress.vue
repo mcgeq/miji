@@ -185,7 +185,7 @@ function updateProgress(newProgress: number) {
     var(--color-base-100) 0%,
     color-mix(in oklch, var(--color-base-100) 95%, var(--color-primary)) 100%
   );
-  border: 2px solid #d1d5db;
+  border: 2px solid var(--color-gray-300);
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: var(--shadow-sm);
@@ -223,7 +223,7 @@ function updateProgress(newProgress: number) {
 .progress-bar {
   width: 100%;
   height: 0.75rem;
-  background: #e5e7eb;
+  background: var(--color-gray-200);
   border-radius: 0.375rem;
   overflow: hidden;
   position: relative;
@@ -233,7 +233,7 @@ function updateProgress(newProgress: number) {
 
 .progress-fill {
   height: 100%;
-  background: #3b82f6;
+  background: var(--color-info);
   border-radius: 0.375rem;
   transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s ease;
   position: relative;

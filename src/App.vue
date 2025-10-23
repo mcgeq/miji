@@ -127,7 +127,7 @@ body::-webkit-scrollbar {
   align-items: center;
   height: 100vh;
   font-size: 1.2rem;
-  color: #333;
+  color: var(--color-base-content);
 }
 
 /* 可以在 App.vue 或全局样式中定义 */

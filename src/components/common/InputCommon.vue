@@ -143,13 +143,13 @@ export default defineComponent({
   flex: 1;                          /* flex-1 */
   font-size: 1rem;                  /* text-base */
   padding: 0.25rem 0.75rem;        /* px-3 py-1 */
-  border: 1px solid #D1D5DB;       /* border-gray-300 */
+  border: 1px solid var(--color-gray-300);       /* border-gray-300 */
   border-radius: 0.5rem;            /* rounded-lg */
   background-color: transparent;    /* bg-transparent */
   outline: none;
   transition: all 0.2s ease-in-out;
-  color: #111827;                   /* 默认文字色 */
-  caret-color: #2563EB;             /* 蓝色光标 */
+  color: var(--color-base-content);                   /* 默认文字色 */
+  caret-color: var(--color-info);             /* 蓝色光标 */
 }
 
 .todo-input::placeholder {

@@ -49,6 +49,15 @@
   
   --color-orange-500: #f97316;
   
+  /* 新增颜色变量 - 用于替换硬编码颜色 */
+  --color-purple-50: #f3e8ff;
+  --color-purple-100: #e9d5ff;
+  --color-purple-500: #8b5cf6;
+  
+  --color-pink-500: #EC4899;
+  
+  --color-cyan-500: #06B6D4;
+  
   /* 响应式断点 */
   --breakpoint-sm: 640px;
   --breakpoint-md: 768px;

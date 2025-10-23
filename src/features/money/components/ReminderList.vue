@@ -409,7 +409,7 @@ onUnmounted(() => {
 
 /* Loading and Empty States */
 .loading-container {
-  color: #4b5563;
+  color: var(--color-gray-600);
   height: 6.25rem;
   display: flex;
   justify-content: center;
@@ -417,7 +417,7 @@ onUnmounted(() => {
 }
 
 .empty-state-container {
-  color: #999;
+  color: var(--color-gray-400);
   display: flex;
   flex-direction: column;
   height: 6.25rem;
@@ -446,7 +446,7 @@ onUnmounted(() => {
 .reminder-card {
   background-color: var(--color-base-100);
   padding: 0.5rem;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--color-gray-200);
   border-radius: 0.5rem;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
   transition: box-shadow 0.2s ease-in-out;
@@ -457,14 +457,14 @@ onUnmounted(() => {
 }
 
 .reminder-card-overdue {
-  border-color: #ef4444;
-  background-color: #fef2f2;
+  border-color: var(--color-error);
+  background-color: var(--color-error-50);
 }
 
 .reminder-card-paid {
   opacity: 0.8;
-  background-color: #f0fdf4;
-  border-color: #4ade80;
+  background-color: var(--color-success-50);
+  border-color: var(--color-success);
 }
 
 /* Reminder Header */
@@ -477,7 +477,7 @@ onUnmounted(() => {
 
 .reminder-title {
   font-size: 1.125rem;
-  color: #1f2937;
+  color: var(--color-gray-800);
   font-weight: 600;
 }
 
@@ -499,18 +499,18 @@ onUnmounted(() => {
 }
 
 .status-badge-paid {
-  background-color: #dcfce7;
-  color: #16a34a;
+  background-color: var(--color-success-100);
+  color: var(--color-success);
 }
 
 .status-badge-overdue {
-  background-color: #fee2e2;
-  color: #dc2626;
+  background-color: var(--color-error-100);
+  color: var(--color-error-hover);
 }
 
 .status-badge-pending {
-  background-color: #dbeafe;
-  color: #2563eb;
+  background-color: var(--color-info-100);
+  color: var(--color-info-hover);
 }
 
 .status-icon {
@@ -534,13 +534,13 @@ onUnmounted(() => {
 
 .amount-value {
   font-size: 1.5rem;
-  color: #1f2937;
+  color: var(--color-gray-800);
   font-weight: 600;
 }
 
 .amount-currency {
   font-size: 0.875rem;
-  color: #1f2937;
+  color: var(--color-gray-800);
 }
 
 /* Reminder Dates */
@@ -558,17 +558,17 @@ onUnmounted(() => {
 }
 
 .date-label {
-  color: #4b5563;
+  color: var(--color-gray-600);
 }
 
 .date-value {
-  color: #1f2937;
+  color: var(--color-gray-800);
 }
 
 /* Reminder Period */
 .reminder-period {
   font-size: 0.875rem;
-  color: #4b5563;
+  color: var(--color-gray-600);
   margin-bottom: 0.5rem;
   display: flex;
   gap: 0.5rem;
@@ -585,7 +585,7 @@ onUnmounted(() => {
 .reminder-info {
   font-size: 0.875rem;
   padding-top: 1rem;
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid var(--color-gray-200);
   gap: 0.5rem;
   display: flex;
   flex-direction: column;
@@ -597,11 +597,11 @@ onUnmounted(() => {
 }
 
 .info-label {
-  color: #4b5563;
+  color: var(--color-gray-600);
 }
 
 .info-value {
-  color: #1f2937;
+  color: var(--color-gray-800);
 }
 
 /* Additional utility styles */

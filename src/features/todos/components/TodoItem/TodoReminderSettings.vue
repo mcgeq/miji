@@ -434,7 +434,7 @@ function resetToDefaults() {
   width: 1rem;
   left: 0.125rem;
   bottom: 0.125rem;
-  background-color: white;
+  background-color: var(--color-base-100);
   transition: 0.2s;
   border-radius: 50%;
 }

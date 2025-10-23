@@ -485,9 +485,9 @@ defineExpose({
 <style scoped lang="postcss">
 .money-option-btn {
   padding: 0.375rem;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--color-gray-300);
   border-radius: 0.375rem;
-  color: #4b5563;
+  color: var(--color-gray-600);
   background-color: transparent;
   transition: background-color 0.2s;
 }
@@ -499,7 +499,7 @@ defineExpose({
 
 .transaction-table-title {
   margin-bottom: 1.5rem;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--color-gray-200);
   border-radius: 0.5rem;
   overflow: hidden;
 }
@@ -532,7 +532,7 @@ margin-bottom: 0.1rem;
 }
 
 .transaction-rows-item-span {
-  color: #4b5563;
+  color: var(--color-gray-600);
   font-weight: 600;
 }
 
@@ -572,7 +572,7 @@ margin-bottom: 0.1rem;
 }
 
 .loading-state {
-  color: #4b5563;
+  color: var(--color-gray-600);
   height: 6.25rem;
   display: flex;
   justify-content: center;
@@ -618,7 +618,7 @@ margin-bottom: 0.1rem;
 
 .transaction-description {
   font-size: 0.75rem;
-  color: #4b5563;
+  color: var(--color-gray-600);
   margin-top: 0.25rem;
 }
 
@@ -629,12 +629,12 @@ margin-bottom: 0.1rem;
 
 .transaction-category-sub {
   font-size: 0.75rem;
-  color: #4b5563;
+  color: var(--color-gray-600);
 }
 
 .transaction-date {
   font-size: 0.75rem;
-  color: #4b5563;
+  color: var(--color-gray-600);
 }
 
 .transaction-account-name {

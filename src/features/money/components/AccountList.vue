@@ -291,7 +291,7 @@ const gridLayoutClass = computed(() => {
         :class="{
           'account-card-inactive': !account.isActive,
         }" :style="{
-          borderColor: account.color || '#E5E7EB',
+          borderColor: account.color || 'var(--color-gray-200)',
         }"
       >
         <div class="account-header">
@@ -363,7 +363,7 @@ const gridLayoutClass = computed(() => {
 <style lang="postcss">
 /* Loading and Empty States */
 .loading-container {
-  color: #6b7280;
+  color: var(--color-gray-500);
   height: 12.5rem;
   display: flex;
   justify-content: center;
@@ -371,7 +371,7 @@ const gridLayoutClass = computed(() => {
 }
 
 .empty-state-container {
-  color: #9ca3af;
+  color: var(--color-gray-400);
   display: flex;
   flex-direction: column;
   height: 12.5rem;
@@ -405,7 +405,7 @@ const gridLayoutClass = computed(() => {
 .account-card {
   background-color: var(--color-base-100);
   padding: 0.5rem;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--color-gray-200);
   border-radius: 0.5rem;
   transition: all 0.2s ease-in-out;
 }
@@ -416,7 +416,7 @@ const gridLayoutClass = computed(() => {
 
 .account-card-inactive {
   opacity: 0.6;
-  background-color: #f3f4f6;
+  background-color: var(--color-gray-100);
 }
 
 /* Account Header */
@@ -430,14 +430,14 @@ const gridLayoutClass = computed(() => {
 }
 
 .account-info {
-  color: #1f2937;
+  color: var(--color-gray-800);
   display: flex;
   gap: 0.75rem;
   align-items: center;
 }
 
 .account-type-icon {
-  color: #3b82f6;
+  color: var(--color-info);
   height: 1rem;
   width: 1rem;
 }
@@ -455,7 +455,7 @@ const gridLayoutClass = computed(() => {
 
 .account-currency {
   font-size: 0.75rem;
-  color: #4b5563;
+  color: var(--color-gray-600);
 }
 
 .account-actions {
@@ -466,8 +466,8 @@ const gridLayoutClass = computed(() => {
 }
 
 .money-option-eye-hover:hover {
-  background-color: #3b82f6;
-  color: white;
+  background-color: var(--color-info);
+  color: var(--color-info-content);
 }
 
 @media (min-width: 768px) {
@@ -495,20 +495,20 @@ const gridLayoutClass = computed(() => {
   font-size: 0.75rem;
   font-weight: 500;
   padding: 0.375rem 0.75rem;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--color-gray-300);
   border-radius: 9999px;
   transition: all 0.2s;
 }
 
 .account-select-all {
-  background-color: #3b82f6;
-  color: #ffffff;
-  border: 1px solid #3b82f6;
+  background-color: var(--color-info);
+  color: var(--color-info-content);
+  border: 1px solid var(--color-info);
 }
 
 .account-select-green {
-  background-color: #16a34a;
-  border-color: #16a34a;
+  background-color: var(--color-success);
+  border-color: var(--color-success);
 }
 
 .account-select-gray {
@@ -516,25 +516,25 @@ const gridLayoutClass = computed(() => {
   border-color: var(--color-neutral);
 }
 .account-select-back {
-  background-color: #4b5563;
-  border-color: #4b5563;
+  background-color: var(--color-gray-600);
+  border-color: var(--color-gray-600);
 }
 
 .account-select-blue {
-  background-color: #3b82f6;
-  border-color: #3b82f6;
+  background-color: var(--color-info);
+  border-color: var(--color-info);
 }
 
 .account-select-green:hover {
-  border-color: #16a34a;
+  border-color: var(--color-success);
 }
 
 .account-select-blue:hover {
-  border-color: #3b82f6;
+  border-color: var(--color-info);
 }
 
 .account-select-gray:hover {
-  border-color: #9ca3af;
+  border-color: var(--color-gray-400);
 }
 
 /* Additional utility styles */
