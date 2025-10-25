@@ -66,6 +66,7 @@ async function handleAdd(text: string) {
     const nCreateTodo = TodoCreateSchema.parse(newTodo);
     todoStore.createTodo(nCreateTodo);
     newT.value = '';
+    await loadTodos();
   } catch (error) {
     console.error('Todo creation validation error:', error);
     // 显示用户友好的错误提示

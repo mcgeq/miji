@@ -84,7 +84,7 @@ export class TodoMapper extends BaseMapper<TodoCreate, TodoUpdate, Todo> {
     },
   ): Promise<PagedResult<Todo>> {
     try {
-      const result = invokeCommand<PagedResult<Todo>>('todo_list_paged', {
+      const result = await invokeCommand<PagedResult<Todo>>('todo_list_paged', {
         query,
       });
       return result;

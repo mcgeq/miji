@@ -24,6 +24,7 @@ use crate::{
     dto::todo::{TodoCreate, TodoUpdate},
     service::todo_hooks::TodoHooks,
 };
+use tracing::info;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 #[serde(rename_all = "camelCase")]
@@ -39,7 +40,24 @@ impl Filter<entity::todo::Entity> for TodosFilter {
             condition = condition.add(entity::todo::Column::Status.eq(status));
         }
         if let Some(range) = &self.date_range {
-            condition = condition.add(range.to_condition(entity::todo::Column::DueAt));
+            // 对于TODAY查询，实现复杂逻辑：
+            // 1. 查询截至dateRange.end的所有未完成待办任务
+            // 2. 查询dateRange期间内的所有待办任务
+            if let Some(end) = &range.end {
+                // 条件1：未完成的任务且due_at <= end
+                let incomplete_condition = Condition::all()
+                    .add(entity::todo::Column::Status.ne("Completed"))
+                    .add(entity::todo::Column::DueAt.lte(end));
+                
+                // 条件2：在dateRange期间内的所有任务
+                let range_condition = range.to_condition(entity::todo::Column::DueAt);
+                
+                // 使用OR连接两个条件
+                condition = condition.add(Condition::any().add(incomplete_condition).add(range_condition));
+            } else {
+                // 如果没有end时间，使用原来的逻辑
+                condition = condition.add(range.to_condition(entity::todo::Column::DueAt));
+            }
         }
         condition
     }
@@ -135,8 +153,7 @@ impl TodosService {
         #[allow(unused_imports)]
         use tauri_plugin_notification::NotificationExt;
 
-        app
-            .notification()
+        app.notification()
             .builder()
             .title(title)
             .body(desc)
@@ -171,7 +188,11 @@ impl TodosService {
         let batch_id = Some(common::utils::uuid::McgUuid::uuid(38));
         let mut sent = 0usize;
         for td in todos {
-            tracing::debug!("send reminder for todo={}, title='{}'", td.serial_num, td.title);
+            tracing::debug!(
+                "send reminder for todo={}, title='{}'",
+                td.serial_num,
+                td.title
+            );
             match self.send_system_notification(app, &td).await {
                 Ok(_) => {
                     self.mark_reminded(db, &td.serial_num, now, batch_id.clone())
@@ -220,17 +241,17 @@ impl TodosService {
         // 内存中过滤：仅一次频率、免打扰（snooze）、提前量与频率控制、端能力
         todos.retain(|td| {
             // frequency = once：如果已经提醒过一次，则不再提醒
-            if matches!(td.reminder_frequency.as_deref(), Some("once")) {
-                if td.reminder_count > 0 || td.last_reminder_sent_at.is_some() {
-                    return false;
-                }
+            if matches!(td.reminder_frequency.as_deref(), Some("once"))
+                && (td.reminder_count > 0 || td.last_reminder_sent_at.is_some())
+            {
+                return false;
             }
 
             // 免打扰：如果设置了 snooze_until，要求 now >= snooze_until
-            if let Some(snooze) = td.snooze_until {
-                if now < snooze {
-                    return false;
-                }
+            if let Some(snooze) = td.snooze_until
+                && now < snooze
+            {
+                return false;
             }
 
             // 提前提醒：now >= (due_at - advance)
@@ -243,12 +264,11 @@ impl TodosService {
             }
 
             // 频率限制：last + freq <= now（once 已在上面处理）
-            if let Some(last) = td.last_reminder_sent_at {
-                if let Some(freq_dur) = Self::parse_frequency_to_duration(&td.reminder_frequency) {
-                    if last + freq_dur > now {
-                        return false;
-                    }
-                }
+            if let Some(last) = td.last_reminder_sent_at
+                && let Some(freq_dur) = Self::parse_frequency_to_duration(&td.reminder_frequency)
+                && last + freq_dur > now
+            {
+                return false;
             }
 
             // 按系统通知方式（桌面/移动合并）过滤：二者视为同一种“系统通知”，任一为 true 即允许
@@ -261,7 +281,9 @@ impl TodosService {
                 }
                 None => true,
             };
-            if !methods_ok { return false; }
+            if !methods_ok {
+                return false;
+            }
 
             true
         });
@@ -288,7 +310,10 @@ impl TodosService {
             let mut updates: Vec<(entity::todo::Column, sea_orm::sea_query::SimpleExpr)> = vec![
                 (entity::todo::Column::LastReminderSentAt, Expr::value(when)),
                 (entity::todo::Column::ReminderCount, Expr::value(new_count)),
-                (entity::todo::Column::BatchReminderId, Expr::value(batch_id.clone())),
+                (
+                    entity::todo::Column::BatchReminderId,
+                    Expr::value(batch_id.clone()),
+                ),
                 (entity::todo::Column::UpdatedAt, Expr::value(when)),
             ];
             // 如果频率为 once，发送后自动关闭提醒
@@ -298,7 +323,10 @@ impl TodosService {
 
             update_entity_columns_simple::<entity::todo::Entity, _>(
                 db,
-                vec![(entity::todo::Column::SerialNum, vec![serial_num.to_string()])],
+                vec![(
+                    entity::todo::Column::SerialNum,
+                    vec![serial_num.to_string()],
+                )],
                 updates,
             )
             .await?;
@@ -415,6 +443,7 @@ impl TodosService {
         db: &DbConn,
         query: PagedQuery<TodosFilter>,
     ) -> MijiResult<PagedResult<entity::todo::Model>> {
+        info!("todo_list_paged {:?}", query);
         // Step 1: Calculate total count of all todos (with original filter, ignoring status)
         let mut total_query_builder =
             entity::todo::Entity::find().filter(query.filter.to_condition());

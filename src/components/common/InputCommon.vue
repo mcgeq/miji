@@ -213,8 +213,8 @@ export default defineComponent({
   font-weight: 600;                   /* font-semibold */
   padding: 0.375rem 0.75rem;         /* px-3 py-1.5 */
   border-radius: 9999px;              /* rounded-full */
-  background-color: var(--color-primary);          /* bg-blue-500 */
-  color: var(--color-primary-soft);                     /* text-white */
+  background-color: var(--color-base-300);          /* bg-blue-500 */
+  color: var(--color-base-content);                     /* text-white */
   box-shadow: 0 2px 4px rgba(0,0,0,0.1); /* shadow-md */
   transition: all 0.15s ease-in-out;  /* transition-transform duration-150 */
   cursor: pointer;
