@@ -114,23 +114,14 @@ function toggleAccountAmountVisibility(accountSerialNum: string) {
   moneyStore.toggleAccountAmountVisibility(accountSerialNum);
 }
 
-// 根据项目数量决定网格布局
+// 根据设备类型决定网格布局
 const gridLayoutClass = computed(() => {
-  const itemCount = pagination.paginatedItems.value.length;
-
   if (mediaQueries.isMobile) {
     // 移动端布局：一行一个，100%宽度
     return 'grid-template-columns-mobile-single';
   } else {
-    // 桌面端布局
-    if (itemCount === 1) {
-      return 'grid-template-columns-320-single';
-    } else if (itemCount === 2) {
-      return 'grid-template-columns-320-two-items';
-    } else {
-      // 3个或更多项目时，强制每行最多2个项目
-      return 'grid-template-columns-320-max2';
-    }
+    // 桌面端布局：一行两个
+    return 'grid-template-columns-desktop-two';
   }
 });
 </script>
@@ -295,14 +286,16 @@ const gridLayoutClass = computed(() => {
         }"
       >
         <div class="account-header">
-          <!-- 类型图标 + 类型名称 + 账户名称 + 币种 -->
+          <!-- 账户信息区域 -->
           <div class="account-info">
-            <component :is="getAccountTypeIcon(account.type)" class="account-type-icon" />
-            <span class="account-name">{{ account.name }}</span>
+            <div class="account-info-top">
+              <component :is="getAccountTypeIcon(account.type)" class="account-type-icon" />
+              <span class="account-name">{{ account.name }}</span>
+            </div>
             <span class="account-type-name">{{ getAccountTypeName(account.type) }}</span>
           </div>
 
-          <!-- 操作按钮 -->
+          <!-- 操作按钮区域 -->
           <div class="account-actions">
             <button
               class="money-option-btn money-option-eye-hover"
@@ -320,20 +313,23 @@ const gridLayoutClass = computed(() => {
               <LucideBan class="wh-4" />
             </button>
             <button
-              class="money-option-btn money-option-edit-hover" :title="t('common.actions.edit')"
+              class="money-option-btn money-option-edit-hover"
+              :title="t('common.actions.edit')"
               @click="emit('edit', account)"
             >
               <LucideEdit class="wh-4" />
             </button>
             <button
               class="money-option-btn money-option-trash-hover"
-              :title="t('common.actions.delete')" @click="emit('delete', account.serialNum)"
+              :title="t('common.actions.delete')"
+              @click="emit('delete', account.serialNum)"
             >
               <LucideTrash class="wh-4" />
             </button>
           </div>
         </div>
 
+        <!-- 账户余额区域 -->
         <div class="account-balance">
           <span class="account-currency">{{ account.currency?.code }}</span>
           <span class="balance-amount">
@@ -394,100 +390,268 @@ const gridLayoutClass = computed(() => {
   font-size: 1rem;
 }
 
-/* Accounts Grid */
+/* Accounts Grid - 优化网格布局 */
 .accounts-grid {
-  margin-bottom: 0.5rem;
-  gap: 0.5rem;
+  margin-bottom: 1rem;
+  gap: 1rem;
   display: grid;
 }
 
-/* Account Card */
+/* 网格布局类 - 响应式设计 */
+.grid-template-columns-mobile-single {
+  grid-template-columns: 1fr;
+}
+
+.grid-template-columns-desktop-two {
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+/* 移动端优化 */
+@media (max-width: 768px) {
+  .accounts-grid {
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .grid-template-columns-mobile-single {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* 桌面端优化 */
+@media (min-width: 769px) {
+  .accounts-grid {
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .grid-template-columns-desktop-two {
+    grid-template-columns: repeat(2, 1fr);
+    max-width: none;
+  }
+}
+
+/* Account Card - 重新设计为更紧凑美观的卡片 */
 .account-card {
-  background-color: var(--color-base-100);
-  padding: 0.5rem;
-  border: 1px solid var(--color-gray-200);
-  border-radius: 0.5rem;
-  transition: all 0.2s ease-in-out;
+  background: linear-gradient(135deg, var(--color-base-100) 0%, var(--color-base-200) 100%);
+  padding: 1rem;
+  border: 1px solid var(--color-primary-soft);
+  border-radius: 0.75rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+
+.account-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--color-primary-gradient);
+  opacity: 0;
+  transition: opacity 0.3s ease;
 }
 
 .account-card:hover {
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--color-primary);
+}
+
+.account-card:hover::before {
+  opacity: 1;
 }
 
 .account-card-inactive {
   opacity: 0.6;
-  background-color: var(--color-gray-100);
+  background: var(--color-gray-100);
+  border-color: var(--color-gray-300);
 }
 
-/* Account Header */
+.account-card-inactive::before {
+  background: var(--color-gray-400);
+}
+
+/* Account Header - 更紧凑的布局 */
 .account-header {
-  margin-bottom: 1rem;
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
+  margin-bottom: 0.75rem;
+  gap: 0.5rem;
 }
 
 .account-info {
-  color: var(--color-gray-800);
   display: flex;
-  gap: 0.75rem;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.account-info-top {
+  display: flex;
   align-items: center;
+  gap: 0.5rem;
 }
 
 .account-type-icon {
-  color: var(--color-info);
-  height: 1rem;
-  width: 1rem;
+  color: var(--color-primary);
+  height: 1.25rem;
+  width: 1.25rem;
+  flex-shrink: 0;
 }
 
 .account-name {
-  font-size: 1.125rem;
-  color: var(--color-neutral);
+  font-size: 1rem;
+  color: var(--color-base-content);
   font-weight: 600;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .account-type-name {
-  font-size: 0.875rem;
-  color: var(--color-neutral);
-}
-
-.account-currency {
   font-size: 0.75rem;
-  color: var(--color-gray-600);
+  color: var(--color-gray-500);
+  font-weight: 500;
+  margin-left: 1.75rem;
 }
 
+/* Account Actions - 更优雅的操作按钮 */
 .account-actions {
-  padding: 1rem;
+  display: flex;
+  gap: 0.25rem;
+  flex-shrink: 0;
+}
+
+.money-option-btn {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--color-gray-200);
+  background: var(--color-base-100);
+  color: var(--color-gray-600);
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.money-option-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--color-primary);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.money-option-btn:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  transform: scale(1.05);
+}
+
+.money-option-btn:hover::before {
+  opacity: 0.1;
+}
+
+.money-option-btn:active {
+  transform: scale(0.95);
 }
 
 .money-option-eye-hover:hover {
   background-color: var(--color-info);
   color: var(--color-info-content);
+  border-color: var(--color-info);
 }
 
-@media (min-width: 768px) {
-  .account-actions {
-    justify-content: flex-end;
-  }
+.money-option-ben-hover:hover {
+  background-color: var(--color-warning);
+  color: var(--color-warning-content);
+  border-color: var(--color-warning);
 }
 
-/* Account Balance */
+.money-option-edit-hover:hover {
+  background-color: var(--color-primary);
+  color: var(--color-primary-content);
+  border-color: var(--color-primary);
+}
+
+.money-option-trash-hover:hover {
+  background-color: var(--color-error);
+  color: var(--color-error-content);
+  border-color: var(--color-error);
+}
+
+/* Account Balance - 更突出的余额显示 */
 .account-balance {
-  margin-bottom: 1rem;
   display: flex;
-  gap: 0.5rem;
   align-items: baseline;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.account-currency {
+  font-size: 0.75rem;
+  color: var(--color-gray-500);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .balance-amount {
   font-size: 1.5rem;
-  color: var(--color-neutral);
-  font-weight: 600;
+  color: var(--color-base-content);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.025em;
+}
+
+/* 移动端优化 */
+@media (max-width: 768px) {
+  .account-card {
+    padding: 0.875rem;
+  }
+
+  .account-header {
+    margin-bottom: 0.625rem;
+  }
+
+  .account-name {
+    font-size: 0.9375rem;
+  }
+
+  .account-type-name {
+    font-size: 0.6875rem;
+    margin-left: 1.5rem;
+  }
+
+  .balance-amount {
+    font-size: 1.375rem;
+  }
+
+  .money-option-btn {
+    width: 1.75rem;
+    height: 1.75rem;
+  }
+
+  .account-type-icon {
+    height: 1.125rem;
+    width: 1.125rem;
+  }
 }
 
 /* Account Select Buttons */

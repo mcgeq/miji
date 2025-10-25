@@ -24,7 +24,6 @@ use crate::{
     dto::todo::{TodoCreate, TodoUpdate},
     service::todo_hooks::TodoHooks,
 };
-use tracing::info;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 #[serde(rename_all = "camelCase")]
@@ -48,12 +47,16 @@ impl Filter<entity::todo::Entity> for TodosFilter {
                 let incomplete_condition = Condition::all()
                     .add(entity::todo::Column::Status.ne("Completed"))
                     .add(entity::todo::Column::DueAt.lte(end));
-                
+
                 // 条件2：在dateRange期间内的所有任务
                 let range_condition = range.to_condition(entity::todo::Column::DueAt);
-                
+
                 // 使用OR连接两个条件
-                condition = condition.add(Condition::any().add(incomplete_condition).add(range_condition));
+                condition = condition.add(
+                    Condition::any()
+                        .add(incomplete_condition)
+                        .add(range_condition),
+                );
             } else {
                 // 如果没有end时间，使用原来的逻辑
                 condition = condition.add(range.to_condition(entity::todo::Column::DueAt));
@@ -443,7 +446,6 @@ impl TodosService {
         db: &DbConn,
         query: PagedQuery<TodosFilter>,
     ) -> MijiResult<PagedResult<entity::todo::Model>> {
-        info!("todo_list_paged {:?}", query);
         // Step 1: Calculate total count of all todos (with original filter, ignoring status)
         let mut total_query_builder =
             entity::todo::Entity::find().filter(query.filter.to_condition());
