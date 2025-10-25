@@ -317,7 +317,7 @@ onMounted(async () => {
         <div v-else class="qm-list-items">
           <div v-for="account in accounts" :key="account.serialNum" class="qm-list-item">
             <div class="qm-item-icon" :style="{ backgroundColor: account.color }">
-              <LucideCreditCard :size="16" />
+              <LucideCreditCard :size="14" />
             </div>
             <div class="qm-item-content">
               <div class="qm-item-name">
@@ -342,9 +342,9 @@ onMounted(async () => {
         <div v-else class="qm-list-items">
           <div v-for="transaction in transactions" :key="transaction.serialNum" class="qm-list-item">
             <div class="qm-item-icon" :class="`qm-icon-${transaction.transactionType.toLowerCase()}`">
-              <LucidePlusCircle v-if="transaction.transactionType === 'Income'" :size="16" />
-              <LucideMinusCircle v-else-if="transaction.transactionType === 'Expense'" :size="16" />
-              <LucideArrowRightLeft v-else :size="16" />
+              <LucidePlusCircle v-if="transaction.transactionType === 'Income'" :size="14" />
+              <LucideMinusCircle v-else-if="transaction.transactionType === 'Expense'" :size="14" />
+              <LucideArrowRightLeft v-else :size="14" />
             </div>
             <div class="qm-item-content">
               <div class="qm-item-name">
@@ -376,7 +376,7 @@ onMounted(async () => {
         <div v-else class="qm-list-items">
           <div v-for="budget in budgets" :key="budget.serialNum" class="qm-list-item qm-budget-item">
             <div class="item-icon icon-budget">
-              <LucideTarget :size="16" />
+              <LucideTarget :size="14" />
             </div>
             <div class="qm-item-content">
               <div class="qm-item-name">
@@ -424,7 +424,7 @@ onMounted(async () => {
         <div v-else class="qm-list-items">
           <div v-for="reminder in reminders" :key="reminder.serialNum" class="qm-list-item">
             <div class="item-icon icon-reminder">
-              <LucideBell :size="16" />
+              <LucideBell :size="14" />
             </div>
             <div class="qm-item-content">
               <div class="qm-item-name">
@@ -504,8 +504,8 @@ onMounted(async () => {
   align-items: center;
   justify-content: flex-start;
   height: 100%;
-  padding: 1rem;
-  padding-top: 1rem;
+  padding: 0.25rem;
+  padding-top: 0.25rem;
   overflow: hidden;
   box-sizing: border-box;
 }
@@ -626,12 +626,20 @@ onMounted(async () => {
 
 .qm-quick-actions {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
+  flex-wrap: nowrap;
+  gap: 0.375rem;
   width: 100%;
   align-items: center;
   justify-content: center;
-  margin-bottom: 1rem;
+  margin-bottom: 0.25rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  padding: 0.125rem 0;
+}
+
+.qm-quick-actions::-webkit-scrollbar {
+  display: none;
 }
 
 /* 标签切换 */
@@ -729,6 +737,8 @@ onMounted(async () => {
   justify-content: center;
   color: white;
   flex-shrink: 0;
+  overflow: hidden;
+  box-sizing: border-box;
 }
 
 .qm-icon-income {
@@ -977,6 +987,8 @@ onMounted(async () => {
   background-color: var(--color-base-200);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   flex-shrink: 0;
+  min-width: 3rem;
+  height: 3rem;
 }
 
 .qm-btn:hover {
@@ -1026,12 +1038,14 @@ onMounted(async () => {
 /* 响应式调整 */
 @media (max-width: 768px) {
   .qm-quick-money-container {
-    padding: 0.5rem;
-    padding-top: 0.5rem;
+    padding: 0.125rem;
+    padding-top: 0.125rem;
   }
 
   .qm-btn {
-    padding: 0.75rem;
+    padding: 0.375rem;
+    min-width: 1.75rem;
+    height: 1.75rem;
   }
 
   .qm-help-toggle {
@@ -1047,34 +1061,48 @@ onMounted(async () => {
     font-size: 0.75rem;
   }
   .qm-quick-actions {
-    gap: 0.375rem;
+    gap: 0.25rem;
+    justify-content: center;
+    padding: 0.0625rem 0;
+    margin-bottom: 0.125rem;
   }
 
   .qm-tab-btn {
-    padding: 0.375rem 0.5rem;
-    font-size: 0.75rem;
+    padding: 0.25rem 0.375rem;
+    font-size: 0.6875rem;
   }
 
   .qm-list-item {
-    padding: 0.5rem;
-    gap: 0.5rem;
+    padding: 0.375rem;
+    gap: 0.375rem;
   }
 
   .qm-item-icon {
     width: 1.5rem;
     height: 1.5rem;
+    min-width: 1.5rem;
+    min-height: 1.5rem;
+    max-width: 1.5rem;
+    max-height: 1.5rem;
+  }
+
+  .qm-item-icon svg {
+    width: 12px !important;
+    height: 12px !important;
+    max-width: 12px !important;
+    max-height: 12px !important;
   }
 
   .qm-item-name {
-    font-size: 0.8125rem;
+    font-size: 0.75rem;
   }
 
   .qm-item-desc {
-    font-size: 0.6875rem;
+    font-size: 0.625rem;
   }
 
   .qm-item-value {
-    font-size: 0.8125rem;
+    font-size: 0.75rem;
   }
 
   .qm-item-date {
@@ -1083,6 +1111,68 @@ onMounted(async () => {
 
   .qm-item-value-wrapper {
     min-width: 0;
+  }
+}
+
+/* 超小屏幕优化 */
+@media (max-width: 480px) {
+  .qm-quick-money-container {
+    padding: 0.0625rem;
+    padding-top: 0.0625rem;
+  }
+
+  .qm-quick-actions {
+    gap: 0.1875rem;
+    padding: 0.03125rem 0;
+    margin-bottom: 0.0625rem;
+  }
+
+  .qm-btn {
+    padding: 0.25rem;
+    min-width: 1.5rem;
+    height: 1.5rem;
+  }
+
+  .qm-tab-btn {
+    padding: 0.1875rem 0.25rem;
+    font-size: 0.625rem;
+  }
+
+  .qm-list-item {
+    padding: 0.25rem;
+    gap: 0.25rem;
+  }
+
+  .qm-item-icon {
+    width: 1.25rem;
+    height: 1.25rem;
+    min-width: 1.25rem;
+    min-height: 1.25rem;
+    max-width: 1.25rem;
+    max-height: 1.25rem;
+  }
+
+  .qm-item-icon svg {
+    width: 10px !important;
+    height: 10px !important;
+    max-width: 10px !important;
+    max-height: 10px !important;
+  }
+
+  .qm-item-name {
+    font-size: 0.6875rem;
+  }
+
+  .qm-item-desc {
+    font-size: 0.5625rem;
+  }
+
+  .qm-item-value {
+    font-size: 0.6875rem;
+  }
+
+  .qm-item-date {
+    font-size: 0.5rem;
   }
 }
 

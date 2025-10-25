@@ -127,6 +127,14 @@ const todoCount = computed(() => {
   box-shadow: 0 2px 8px color-mix(in oklch, var(--color-neutral) 5%, transparent);
 }
 
+/* 移动端Tab导航优化 */
+@media (max-width: 768px) {
+  .tab-nav {
+    padding: 0.5rem;
+    gap: 0.25rem;
+  }
+}
+
 .tab-nav::-webkit-scrollbar {
   display: none;
 }
@@ -210,6 +218,15 @@ const todoCount = computed(() => {
   backdrop-filter: blur(8px);
 }
 
+/* 移动端Tab按钮优化 */
+@media (max-width: 768px) {
+  .tab-btn {
+    padding: 0.5rem 0.75rem;
+    min-width: 2.5rem;
+    gap: 0.125rem;
+  }
+}
+
 .tab-btn:hover {
   opacity: 1;
   background-color: color-mix(in oklch, var(--color-primary) 8%, transparent);
@@ -263,6 +280,14 @@ const todoCount = computed(() => {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* 移动端Tab标签优化 */
+@media (max-width: 768px) {
+  .tab-label {
+    font-size: 0.75rem;
+    line-height: 1.1;
+  }
+}
+
 /* Tab内容 */
 .tab-content {
   flex: 1;
@@ -274,7 +299,7 @@ const todoCount = computed(() => {
 .tab-panel {
   width: 100%;
   height: 100%;
-  padding: 0.75rem;
+  padding: 0.125rem;
   box-sizing: border-box;
   overflow: hidden;
   display: flex;
