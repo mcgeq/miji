@@ -183,7 +183,6 @@ function updatePanelPosition() {
   // 移动端和桌面端使用不同的定位策略
   if (viewportWidth <= 768) {
     // 移动端：水平居中，垂直居中
-    const _panelWidth = viewportWidth - 32; // 减去左右边距
     const panelHeight = 400; // 预估面板高度
     panelPosition.value = {
       top: Math.max(20, (viewportHeight - panelHeight) / 2), // 垂直居中

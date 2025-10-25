@@ -133,10 +133,6 @@ export default defineConfig({
             if (id.includes('echarts') || id.includes('vue-echarts')) {
               return 'chart-vendor';
             }
-            // 日期选择器
-            if (id.includes('@vuepic/vue-datepicker')) {
-              return 'datepicker-vendor';
-            }
             // Toast 通知
             if (id.includes('vue-toastification')) {
               return 'toast-vendor';
