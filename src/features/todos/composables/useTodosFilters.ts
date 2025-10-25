@@ -3,14 +3,10 @@ import { useSort } from '@/composables/useSortable';
 import { FilterBtnSchema, SortDirection, StatusSchema } from '@/schema/common';
 import { DateUtils } from '@/utils/date';
 import { Lg } from '@/utils/debugLog';
-import type { DateRange, FilterBtn, PageQuery } from '@/schema/common';
+import type { FilterBtn, PageQuery } from '@/schema/common';
 import type { Todo } from '@/schema/todos';
 import type { PagedMapResult } from '@/services/money/baseManager';
 import type { TodoFilters } from '@/services/todo';
-
-type UiTodoFilters = TodoFilters & {
-  dateRange?: DateRange;
-};
 
 export function useTodosFilters(todos: () => PagedMapResult<Todo>, defaultPageSize = 5) {
   const { sortOptions } = useSort({
@@ -35,8 +31,8 @@ export function useTodosFilters(todos: () => PagedMapResult<Todo>, defaultPageSi
   ] as const;
 
   const todoStore = useTodoStore();
-  const filters = ref<UiTodoFilters>({
-    dateRange: getCurrentDateRange(),
+  const filters = ref<TodoFilters>({
+    dateRange: DateUtils.getCurrentDateRange(),
   });
   const filterBtn = ref<FilterBtn>(FilterBtnSchema.enum.TODAY);
   const showBtn = computed(() => filterBtn.value !== FilterBtnSchema.enum.YESTERDAY);
@@ -62,14 +58,7 @@ export function useTodosFilters(todos: () => PagedMapResult<Todo>, defaultPageSi
 
   function resetFilters() {
     filters.value = {
-      dateRange: getCurrentDateRange(),
-    };
-  }
-
-  function getCurrentDateRange(): DateRange {
-    return {
-      start: DateUtils.getStartOfTodayISOWithOffset({ days: -2 }),
-      end: DateUtils.getEndOfTodayISOWithOffset(),
+      dateRange: DateUtils.getCurrentDateRange(),
     };
   }
 
@@ -86,7 +75,7 @@ export function useTodosFilters(todos: () => PagedMapResult<Todo>, defaultPageSi
     if (filterBtn.value === FilterBtnSchema.enum.TODAY) {
       // TODAY逻辑：1. 查询截至dateRange.end的所有未完成待办任务
       // 2. 查询dateRange期间内的所有待办任务
-      filters.value.dateRange = getCurrentDateRange();
+      filters.value.dateRange = DateUtils.getCurrentDateRange();
       // 不设置status，这样会查询所有状态的待办任务
       // 使用默认排序，不设置自定义排序
       sortOptions.value.customOrderBy = undefined;

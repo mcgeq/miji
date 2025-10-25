@@ -361,27 +361,6 @@ function handleMouseLeave() {
   backdrop-filter: blur(10px);
 }
 
-/* 优先级颜色条 - 现代化设计 */
-.todo-item::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 0.5rem;
-  bottom: 0.5rem;
-  width: 4px;
-  border-radius: 0 0.5rem 0.5rem 0;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  z-index: 1;
-  opacity: 0.8;
-  box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
-}
-
-/* 低优先级 - 现代化绿色系 */
-.priority-low::before {
-  background: var(--color-success);
-  box-shadow: 0 0 12px var(--color-success);
-}
-
 .priority-low {
   background: linear-gradient(
     135deg,
@@ -389,12 +368,6 @@ function handleMouseLeave() {
     color-mix(in oklch, var(--color-base-100) 98%, var(--color-success)) 100%
   );
   border-color: color-mix(in oklch, var(--color-success) 20%, transparent);
-}
-
-/* 中等优先级 - 现代化橙色系 */
-.priority-medium::before {
-  background: var(--color-warning);
-  box-shadow: 0 0 12px var(--color-warning);
 }
 
 .priority-medium {
@@ -406,12 +379,6 @@ function handleMouseLeave() {
   border-color: color-mix(in oklch, var(--color-warning) 20%, transparent);
 }
 
-/* 高优先级 - 现代化红色系 */
-.priority-high::before {
-  background: var(--color-error);
-  box-shadow: 0 0 12px var(--color-error);
-}
-
 .priority-high {
   background: linear-gradient(
     135deg,
@@ -419,13 +386,6 @@ function handleMouseLeave() {
     color-mix(in oklch, var(--color-base-100) 98%, var(--color-error)) 100%
   );
   border-color: color-mix(in oklch, var(--color-error) 20%, transparent);
-}
-
-/* 紧急优先级 - 现代化深红色系，更加醒目 */
-.priority-urgent::before {
-  background: var(--color-error);
-  box-shadow: 0 0 16px var(--color-error);
-  animation: urgent-pulse 2s ease-in-out infinite;
 }
 
 .priority-urgent {

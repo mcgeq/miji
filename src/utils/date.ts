@@ -11,6 +11,7 @@
 
 import { format } from 'date-fns';
 import { isNaN } from 'es-toolkit/compat';
+import type { DateRange } from '@/schema/common';
 
 export class DateUtils {
   /**
@@ -533,5 +534,12 @@ export class DateUtils {
     const startOfYear = new Date(date.getFullYear(), 0, 1);
     const days = Math.floor((date.getTime() - startOfYear.getTime()) / (24 * 60 * 60 * 1000));
     return Math.ceil((days + startOfYear.getDay() + 1) / 7);
+  }
+
+  static getCurrentDateRange(): DateRange {
+    return {
+      start: DateUtils.getStartOfTodayISOWithOffset({ days: -2 }),
+      end: DateUtils.getEndOfTodayISOWithOffset(),
+    };
   }
 }

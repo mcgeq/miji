@@ -3,6 +3,7 @@ import { defineStore } from 'pinia';
 import { AppError } from '@/errors/appError';
 import { SortDirection, StatusSchema } from '@/schema/common';
 import { TodoDb } from '@/services/todos';
+import { DateUtils } from '@/utils/date';
 import type { PageQuery, Status } from '@/schema/common';
 import type { Todo, TodoCreate, TodoUpdate } from '@/schema/todos';
 import type { PagedMapResult, PagedResult } from '@/services/money/baseManager';
@@ -109,12 +110,14 @@ export const useTodoStore = defineStore('todos', {
     async fetchdPagedTodos(
       query: PageQuery<TodoFilters> = {
         currentPage: 1,
-        pageSize: 5,
+        pageSize: 4,
         sortOptions: {
           desc: true,
           sortDir: SortDirection.Desc,
         },
-        filter: {},
+        filter: {
+          dateRange: DateUtils.getCurrentDateRange(),
+        },
       },
     ) {
       return this.withLoadingSafe(async () => {
