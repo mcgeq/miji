@@ -278,6 +278,14 @@ pub enum PaymentMethod {
     WeChat,         // 微信支付
     Alipay,         // 支付宝支付
     CloudQuickPass, // 云闪付
+    JD,             // 京东支付
+    UnionPay,      // 银联支付
+    PayPal,         // PayPal
+    ApplePay,       // Apple Pay
+    GooglePay,      // Google Pay
+    SamsungPay,     // Samsung Pay
+    HuaweiPay,      // 华为支付
+    MiPay,          // 小米支付
     Other,          // 其他方式
 }
 
@@ -291,6 +299,14 @@ impl fmt::Display for PaymentMethod {
             PaymentMethod::WeChat => "WeChat",
             PaymentMethod::Alipay => "Alipay",
             PaymentMethod::CloudQuickPass => "CloudQuickPass",
+            PaymentMethod::JD => "JD",
+            PaymentMethod::UnionPay => "UnionPay",
+            PaymentMethod::PayPal => "PayPal",
+            PaymentMethod::ApplePay => "ApplePay",
+            PaymentMethod::GooglePay => "GooglePay",
+            PaymentMethod::SamsungPay => "SamsungPay",
+            PaymentMethod::HuaweiPay => "HuaweiPay",
+            PaymentMethod::MiPay => "MiPay",
             PaymentMethod::Other => "Other",
         };
         write!(f, "{s}")
@@ -309,6 +325,14 @@ impl FromStr for PaymentMethod {
             "WeChat" => Ok(PaymentMethod::WeChat),
             "Alipay" => Ok(PaymentMethod::Alipay),
             "CloudQuickPass" => Ok(PaymentMethod::CloudQuickPass),
+            "JD" => Ok(PaymentMethod::JD),
+            "UnionPay" => Ok(PaymentMethod::UnionPay),
+            "PayPal" => Ok(PaymentMethod::PayPal),
+            "ApplePay" => Ok(PaymentMethod::ApplePay),
+            "GooglePay" => Ok(PaymentMethod::GooglePay),
+            "SamsungPay" => Ok(PaymentMethod::SamsungPay),
+            "HuaweiPay" => Ok(PaymentMethod::HuaweiPay),
+            "MiPay" => Ok(PaymentMethod::MiPay),
             "Other" => Ok(PaymentMethod::Other),
             _ => Err(format!("Unknown PaymentMethod: {s}")),
         }

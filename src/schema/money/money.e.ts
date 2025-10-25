@@ -21,6 +21,14 @@ export const PaymentMethodSchema = z.enum([
   'WeChat', // 微信支付
   'Alipay', // 支付宝支付
   'CloudQuickPass', // 云闪付
+  'JD', // 京东支付
+  'UnionPay', // 银联支付
+  'PayPal', // PayPal
+  'ApplePay', // Apple Pay
+  'GooglePay', // Google Pay
+  'SamsungPay', // Samsung Pay
+  'HuaweiPay', // 华为支付
+  'MiPay', // 小米支付
   'Other', // 其他方式
 ]);
 export type PaymentMethod = z.infer<typeof PaymentMethodSchema>;

@@ -102,6 +102,7 @@ impl MigrationTrait for Migration {
             ("GarbageDisposal", "Utilities"),    // 垃圾处理费
             ("Heating", "Utilities"),            // 取暖费（北方冬季）
             ("SolarPanel", "Utilities"),         // 太阳能设备维护费
+            ("PhoneBill", "Utilities"),          // 话费（手机/固话费用）
             // ====================== 购物（Shopping） ======================
             ("Clothing", "Shopping"),       // 服装（上衣/裤子/外套等）
             ("Footwear", "Shopping"),       // 鞋类（运动鞋/皮鞋/凉鞋）

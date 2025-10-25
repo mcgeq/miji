@@ -200,6 +200,7 @@
       "propertyManagement": "Property Management Fee",
       "garbageDisposal": "Garbage Disposal Fee",
       "solarPanel": "Solar Panel Maintenance",
+      "phoneBill": "Phone Bill (Mobile/Landline)",
       "propertyRental": "Property Rental",
       "activities": "Leisure Activities (Team Building/Parties)",
 
@@ -497,6 +498,14 @@
       "wechat": "WeChat",
       "alipay": "Alipay",
       "cloudquickpass": "Cloud QuickPass",
+      "jd": "JD Pay",
+      "unionpay": "UnionPay",
+      "paypal": "PayPal",
+      "applepay": "Apple Pay",
+      "googlepay": "Google Pay",
+      "samsungpay": "Samsung Pay",
+      "huaweipay": "Huawei Pay",
+      "mipay": "Mi Pay",
       "other": "Other"
     },
     "budget": {

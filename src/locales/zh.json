@@ -200,6 +200,7 @@
       "propertyManagement": "物业管理费",
       "garbageDisposal": "垃圾处理费",
       "solarPanel": "太阳能设备维护费",
+      "phoneBill": "话费（手机/固话费用）",
       "propertyRental": "房产租赁费用",
       "activities": "休闲活动（团建/聚会/亲子活动）",
 
@@ -501,6 +502,14 @@
       "wechat": "微信",
       "alipay": "支付宝",
       "cloudquickpass": "云闪付",
+      "jd": "京东支付",
+      "unionpay": "银联支付",
+      "paypal": "PayPal",
+      "applepay": "Apple Pay",
+      "googlepay": "Google Pay",
+      "samsungpay": "Samsung Pay",
+      "huaweipay": "华为支付",
+      "mipay": "小米支付",
       "other": "其他"
     },
     "budget": {

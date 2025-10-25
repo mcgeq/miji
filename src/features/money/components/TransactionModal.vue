@@ -458,6 +458,14 @@ const availablePaymentMethods = computed(() => {
         PaymentMethodSchema.enum.Alipay,
         PaymentMethodSchema.enum.WeChat,
         PaymentMethodSchema.enum.CloudQuickPass,
+        PaymentMethodSchema.enum.JD,
+        PaymentMethodSchema.enum.UnionPay,
+        PaymentMethodSchema.enum.PayPal,
+        PaymentMethodSchema.enum.ApplePay,
+        PaymentMethodSchema.enum.GooglePay,
+        PaymentMethodSchema.enum.SamsungPay,
+        PaymentMethodSchema.enum.HuaweiPay,
+        PaymentMethodSchema.enum.MiPay,
       ];
     }
   }
@@ -1420,9 +1428,13 @@ watch(
 }
 
 .form-row label {
-  font-size: 0.875rem; font-weight: 500;
+  font-size: 0.875rem;
+  font-weight: 500;
   margin-bottom: 0;
   flex: 1; /* label 自适应 */
+  min-width: 0; /* 允许标签收缩 */
+  white-space: nowrap; /* 防止标签换行 */
+  margin-right: 1rem; /* 标签和输入框之间的间距 */
 }
 
 .form-control, .form-display {
@@ -1433,6 +1445,26 @@ watch(
   background-color: var(--color-base-200);
   color: var(--color-neutral);
   font-size: 0.875rem;
+}
+
+/* 移动端响应式布局 - 保持同一行显示 */
+@media (max-width: 768px) {
+  .form-row {
+    flex-direction: row; /* 保持水平布局 */
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .form-row label {
+    flex: 0 0 auto; /* 标签不伸缩，保持固定宽度 */
+    min-width: 4rem; /* 设置最小宽度确保标签不被压缩 */
+    margin-right: 0.5rem; /* 减少间距 */
+    white-space: nowrap; /* 防止标签换行 */
+    font-size: 0.8rem; /* 稍微减小字体以适应移动端 */
+  }
+  .form-control, .form-display {
+    flex: 1; /* 输入框占据剩余空间 */
+    min-width: 0; /* 允许输入框收缩 */
+  }
 }
 
 .form-control:disabled {
@@ -1448,6 +1480,13 @@ watch(
   width: 66% !important; /* 与form-control保持一致 */
   margin: 0 !important; /* 移除所有外边距 */
   padding: 0 !important; /* 移除所有内边距 */
+}
+
+/* VueDatePicker 移动端响应式 */
+@media (max-width: 768px) {
+  :deep(.dp__main) {
+    width: 100% !important; /* 移动端占满宽度 */
+  }
 }
 
 :deep(.dp__input_wrap) {
@@ -1507,6 +1546,13 @@ watch(
   background-color: transparent !important; /* 移除外层背景 */
   border: none !important; /* 移除外层边框 */
   padding: 0 !important; /* 移除外层内边距 */
+}
+
+/* CurrencySelector 移动端响应式 */
+@media (max-width: 768px) {
+  :deep(.currency-selector) {
+    width: 100% !important; /* 移动端占满宽度 */
+  }
 }
 
 :deep(.currency-selector__wrapper) {
