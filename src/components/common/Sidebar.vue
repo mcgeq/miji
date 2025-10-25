@@ -99,12 +99,12 @@ function logout() {
 }
 
 .sidebar-menu li:hover {
-  background-color: var(--color-base-200);
+  background-color: var(--color-base-100);
 }
 
 .sidebar-menu li.active {
-  background-color: var(--color-primary-soft);
-  box-shadow: inset 0 0 0 1px var(--color-primary);
+  background-color: var(--color-base-300);
+  box-shadow: inset 0 0 0 1px var(--color-base-100);
 }
 
 .icon {
@@ -114,7 +114,7 @@ function logout() {
 }
 
 .sidebar-menu li.active .icon {
-  color: var(--color-primary);
+  color: var(--color-base-content);
 }
 
 .logout-btn {
