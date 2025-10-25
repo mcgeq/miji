@@ -46,7 +46,14 @@
       "import": "导入",
       "use": "采用",
       "expand": "展开",
-      "collapse": "收起"
+      "collapse": "收起",
+      "clear": "清除"
+    },
+    "selectDate": "选择日期",
+    "time": {
+      "hour": "时",
+      "minute": "分",
+      "second": "秒"
     },
     "sorting": {
       "sort": "排序",

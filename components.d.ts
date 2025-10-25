@@ -15,6 +15,7 @@ declare module 'vue' {
     ConfirmDialog: typeof import('./src/components/common/ConfirmDialog.vue')['default']
     ConfirmModal: typeof import('./src/components/common/ConfirmModal.vue')['default']
     CurrencySelector: typeof import('./src/components/common/money/CurrencySelector.vue')['default']
+    DateTimePicker: typeof import('./src/components/common/DateTimePicker.vue')['default']
     Descriptions: typeof import('./src/components/common/Descriptions.vue')['default']
     FloatingErrorTip: typeof import('./src/components/common/FloatingErrorTip.vue')['default']
     FormInput: typeof import('./src/components/common/FormInput.vue')['default']

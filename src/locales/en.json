@@ -46,7 +46,14 @@
       "import": "Import",
       "use": "Use",
       "expand": "Expand",
-      "collapse": "Collapse"
+      "collapse": "Collapse",
+      "clear": "Clear"
+    },
+    "selectDate": "Select Date",
+    "time": {
+      "hour": "Hour",
+      "minute": "Minute",
+      "second": "Second"
     },
     "sorting": {
       "sort": "Sort",

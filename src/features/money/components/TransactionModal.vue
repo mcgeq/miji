@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import VueDatePicker from '@vuepic/vue-datepicker';
+import DateTimePicker from '@/components/common/DateTimePicker.vue';
 import CurrencySelector from '@/components/common/money/CurrencySelector.vue';
 import { CURRENCY_CNY } from '@/constants/moneyConst';
 import {
@@ -11,7 +11,6 @@ import { invokeCommand } from '@/types/api';
 import { lowercaseFirstLetter } from '@/utils/common';
 import { DateUtils } from '@/utils/date';
 import { Lg } from '@/utils/debugLog';
-import '@vuepic/vue-datepicker/dist/main.css';
 import { toast } from '@/utils/toast';
 import { isInstallmentTransaction } from '@/utils/transaction';
 import { formatCurrency } from '../utils/money';
@@ -1049,14 +1048,12 @@ watch(
         <!-- 日期 -->
         <div class="form-row">
           <label>{{ t('date.transactionDate') }}</label>
-          <VueDatePicker
+          <DateTimePicker
             v-model="form.date"
-            :enable-time-picker="true"
-            :is-24="true"
             class="form-control"
             format="yyyy-MM-dd HH:mm:ss"
             :disabled="isInstallmentTransactionFieldsDisabled || isReadonlyMode"
-            required
+            :placeholder="t('common.selectDate')"
           />
         </div>
 
@@ -1472,70 +1469,16 @@ watch(
   color: var(--color-neutral);
 }
 
-/* VueDatePicker 主题色样式 - 与普通input保持一致 */
-:deep(.dp__main) {
-  background-color: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
-  width: 66% !important; /* 与form-control保持一致 */
-  margin: 0 !important; /* 移除所有外边距 */
-  padding: 0 !important; /* 移除所有内边距 */
+/* DateTimePicker 样式 - 与普通input保持一致 */
+.datetime-picker {
+  width: 66%; /* 与form-control保持一致 */
 }
 
-/* VueDatePicker 移动端响应式 */
+/* DateTimePicker 移动端响应式 */
 @media (max-width: 768px) {
-  :deep(.dp__main) {
-    width: 100% !important; /* 移动端占满宽度 */
+  .datetime-picker {
+    width: 100%; /* 移动端占满宽度 */
   }
-}
-
-:deep(.dp__input_wrap) {
-  background-color: var(--color-base-200) !important;
-  border: 1px solid var(--color-base-300) !important;
-  border-radius: 6px !important;
-  box-shadow: none !important;
-  width: 100% !important;
-  min-width: 200px !important; /* 确保有足够宽度 */
-  margin: 0 !important; /* 移除外边距 */
-  padding: 0 !important; /* 移除内边距 */
-}
-
-:deep(.dp__input) {
-  background-color: transparent !important;
-  border: none !important;
-  color: var(--color-neutral) !important; /* 与其他input文字颜色一致 */
-  border-radius: 6px !important;
-  padding: 0.5rem 0.75rem !important;
-  padding-left: 2.5rem !important; /* 为图标留出空间 */
-  padding-right: 2rem !important; /* 为清除按钮留出空间 */
-  width: 100% !important;
-  margin: 0 !important; /* 移除外边距 */
-  box-sizing: border-box !important; /* 确保padding计算在内 */
-}
-
-:deep(.dp__input:focus) {
-  border: none !important;
-  box-shadow: none !important;
-  outline: none !important;
-}
-
-:deep(.dp__input_wrap:focus-within) {
-  border-color: var(--color-primary) !important;
-  box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.2) !important;
-}
-
-:deep(.dp__input_icon) {
-  color: var(--color-neutral) !important; /* 与其他input文字颜色一致 */
-  left: 0.5rem !important; /* 图标更靠左 */
-  width: 1rem !important;
-  height: 1rem !important;
-}
-
-:deep(.dp__input_clear) {
-  color: var(--color-neutral) !important; /* 与其他input文字颜色一致 */
-  right: 0.75rem !important; /* 调整清除按钮位置 */
-  width: 1rem !important;
-  height: 1rem !important;
 }
 
 /* CurrencySelector 样式 - 与普通input保持一致 */
