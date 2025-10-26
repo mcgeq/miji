@@ -48,7 +48,7 @@ const reminderSettings = ref<{
   frequency: (FREQUENCIES as readonly string[]).includes(props.todo.reminderFrequency ?? '')
     ? (props.todo.reminderFrequency as Frequency)
     : 'once',
-  // 将桌面/移动合并为 system（系统通知），保存时再映射为 desktop/mobile
+  // 将桌面/移动合并为 system（系统），保存时再映射为 desktop/mobile
   methods: {
     system: props.todo.reminderMethods
       ? Boolean((props.todo.reminderMethods.desktop || props.todo.reminderMethods.mobile))
@@ -76,11 +76,11 @@ const frequencyOptions = [
   { value: 'custom', label: '自定义' },
 ];
 
-// 合并后的提醒方式选项（系统通知 + 邮件 + 短信）
+// 合并后的提醒方式选项（系统 + 邮件 + 短信）
 const reminderMethods = [
-  { key: 'system' as const, label: '系统通知' },
-  { key: 'email' as const, label: '邮件提醒' },
-  { key: 'sms' as const, label: '短信提醒' },
+  { key: 'system' as const, label: '系统' },
+  { key: 'email' as const, label: '邮件' },
+  { key: 'sms' as const, label: '短信' },
 ] as const;
 
 // 计算属性
@@ -217,7 +217,7 @@ function resetToDefaults() {
                   </select>
                 </div>
 
-                <!-- 提醒方式（系统通知合并） -->
+                <!-- 提醒方式（系统合并） -->
                 <div class="setting-row">
                   <label>提醒方式</label>
                   <div class="methods-grid">

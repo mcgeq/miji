@@ -407,7 +407,7 @@ defineExpose({
 /* optgroup 样式 */
 .modal-input-select optgroup {
   font-weight: 600;
-  color: var(--color-gray-600);
+  color: var(--color-base-content);
 }
 .modal-input-select optgroup option {
   font-weight: 400;
@@ -416,7 +416,7 @@ defineExpose({
 
 /* 禁用 option */
 .modal-input-select option:disabled {
-  color: var(--color-gray-400);
+  color: var(--color-neutral);
 }
 
 /* 快捷选择按钮 */
@@ -424,15 +424,15 @@ defineExpose({
   font-size: 0.75rem;
   padding: 0.25rem 0.5rem;
   border-radius: 0.375rem;
-  border: 1px solid var(--color-gray-200);
+  border: 1px solid var(--color-base-300);
   background-color: var(--color-base-100);
-  color: var(--color-gray-700);
+  color: var(--color-base-content);
   cursor: pointer;
   transition: all 0.2s ease-in-out;
 }
 .quick-select-btn:hover {
-  background-color: var(--color-gray-50);
-  border-color: var(--color-gray-300);
+  background-color: var(--color-base-200);
+  border-color: var(--color-base-300);
 }
 .quick-select-btn:disabled {
   opacity: 0.5;
@@ -449,7 +449,7 @@ defineExpose({
 /* label */
 .label-text {
   font-size: 0.875rem;
-  color: var(--color-gray-700);
+  color: var(--color-base-content);
   font-weight: 500;
 }
 .required-asterisk {
@@ -467,7 +467,7 @@ defineExpose({
 /* 帮助文本 */
 .help-text {
   font-size: 0.75rem;
-  color: var(--color-gray-500);
+  color: var(--color-neutral);
   margin-top: 0.5rem;
   text-align: right;
 }
@@ -478,7 +478,7 @@ defineExpose({
 }
 .quick-select-label {
   font-size: 0.75rem;
-  color: var(--color-gray-500);
+  color: var(--color-neutral);
   margin-bottom: 0.25rem;
 }
 

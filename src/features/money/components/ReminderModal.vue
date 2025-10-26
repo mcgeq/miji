@@ -56,7 +56,7 @@ const financeTypes: ReminderTypes[] = [
 
 const form = reactive<BilReminder>(props.reminder ? { ...props.reminder } : getBilReminderDefault());
 
-// 合并后的提醒方式（系统通知=desktop/mobile 二合一），其余渠道占位
+// 合并后的提醒方式（系统=desktop/mobile 二合一），其余渠道占位
 const methodsState = reactive({
   system: props.reminder?.reminderMethods
     ? !!(props.reminder?.reminderMethods.desktop || props.reminder?.reminderMethods.mobile)
@@ -579,10 +579,10 @@ watch(
   <div class="modal-mask">
     <div class="modal-mask-window-money">
       <div class="mb-4 flex items-center justify-between">
-        <h3 class="text-lg font-semibold">
+        <h3 class="text-lg font-semibold text-base-content">
           {{ props.reminder ? t('financial.reminder.editReminder') : t('financial.reminder.addReminder') }}
         </h3>
-        <button class="text-gray-500 hover:text-gray-700" @click="closeModal">
+        <button class="text-neutral hover:text-neutral-content" @click="closeModal">
           <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
           </svg>
@@ -766,14 +766,14 @@ watch(
           <input v-model="form.snoozeUntil" type="datetime-local" class="modal-input-select w-2/3">
         </div>
 
-        <!-- 提醒方式（系统通知合并） -->
+        <!-- 提醒方式（系统合并） -->
         <div class="form-row">
           <label class="form-label form-label-block">{{ t('financial.reminder.methods') }}</label>
           <div class="form-input-2-3">
-            <label class="checkbox-label"><input v-model="methodsState.system" type="checkbox" class="mr-2">系统通知</label>
+            <label class="checkbox-label"><input v-model="methodsState.system" type="checkbox" class="mr-2">系统</label>
             <div class="mt-1 flex gap-2">
-              <label class="checkbox-label"><input v-model="methodsState.email" type="checkbox" class="mr-1">邮件提醒</label>
-              <label class="checkbox-label"><input v-model="methodsState.sms" type="checkbox" class="mr-1">短信提醒</label>
+              <label class="checkbox-label"><input v-model="methodsState.email" type="checkbox" class="mr-1">邮件</label>
+              <label class="checkbox-label"><input v-model="methodsState.sms" type="checkbox" class="mr-1">短信</label>
             </div>
           </div>
         </div>
@@ -873,7 +873,7 @@ watch(
 
 .form-label {
   font-size: 0.875rem;
-  color: var(--color-gray-700);
+  color: var(--color-base-content);
   font-weight: 500;
   margin-bottom: 0;
 }
@@ -939,26 +939,27 @@ watch(
 
 .checkbox-text {
   font-size: 0.875rem;
-  color: var(--color-gray-700);
+  color: var(--color-base-content);
   font-weight: 500;
 }
 
 /* Optional text */
 .optional-text {
-  color: var(--color-gray-500);
+  color: var(--color-neutral);
 }
 
 /* Character count */
 .character-count {
   font-size: 0.75rem;
-  color: var(--color-gray-500);
+  color: var(--color-neutral);
   margin-top: 0.25rem;
   text-align: right;
 }
 
 /* Submit button loading state */
 .modal-btn-check:disabled {
-  background-color: rgb(156 163 175);
+  background-color: var(--color-base-200);
+  color: var(--color-neutral);
   cursor: not-allowed;
 }
 
