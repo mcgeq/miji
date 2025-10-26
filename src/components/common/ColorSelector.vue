@@ -585,7 +585,7 @@ onUnmounted(() => {
   justify-content: space-between;
   width: 100%;
   padding: 0.5rem 0.75rem; /* px-3 py-2 */
-  border: 1px solid var(--color-base-300); /* gray-300 */
+  border: 1px solid var(--color-base-300);
   border-radius: 0.5rem; /* rounded-lg */
   background-color: var(--color-base-100);
   transition: all 0.2s ease-in-out;
@@ -593,13 +593,13 @@ onUnmounted(() => {
 }
 
 .color-selector__trigger:hover {
-  border-color: #9ca3af; /* gray-400 */
+  border-color: var(--color-base-300);
 }
 
 .color-selector__trigger:focus {
   outline: none;
-  border-color: transparent;
-  box-shadow: 0 0 0 2px #3b82f6; /* blue-500 */
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px var(--color-primary-soft);
 }
 
 /* 左侧预览 */
@@ -613,19 +613,19 @@ onUnmounted(() => {
   width: 1.25rem;  /* h-5 */
   height: 1.25rem; /* w-5 */
   border-radius: 9999px;
-  border: 2px solid #d1d5db; /* gray-300 */
+  border: 2px solid var(--color-base-300);
 }
 
 .color-selector__label {
   font-size: 0.875rem; /* text-sm */
-  color: #374151; /* gray-700 */
+  color: var(--color-base-content);
 }
 
 /* 下拉箭头 */
 .color-selector__arrow {
   width: 1rem;
   height: 1rem;
-  color: #9ca3af; /* gray-400 */
+  color: var(--color-base-300);
   transition: transform 0.2s ease-in-out;
 }
 
@@ -641,9 +641,9 @@ onUnmounted(() => {
   right: 0;
   margin-top: 0.25rem; /* mt-1 */
   padding: 0.75rem; /* p-3 */
-  border: 1px solid #e5e7eb; /* gray-200 */
+  border: 1px solid var(--color-base-300);
   border-radius: 0.5rem;
-  background-color: #fff;
+  background-color: var(--color-base-100);
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* shadow-lg */
   z-index: 50;
 }
@@ -659,13 +659,13 @@ onUnmounted(() => {
   gap: 0.25rem;
   margin-bottom: 0.75rem;
   padding-bottom: 0.5rem;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--color-base-300);
 }
 
 .color-selector__category-tab {
   padding: 0.25rem 0.5rem;
   font-size: 0.75rem;
-  color: #6b7280;
+  color: var(--color-base-300);
   background-color: transparent;
   border: 1px solid transparent;
   border-radius: 0.25rem;
@@ -674,14 +674,14 @@ onUnmounted(() => {
 }
 
 .color-selector__category-tab:hover {
-  color: #374151;
-  background-color: #f3f4f6;
+  color: var(--color-base-content);
+  background-color: var(--color-base-200);
 }
 
 .color-selector__category-tab.active {
-  color: #1f2937;
-  background-color: #dbeafe;
-  border-color: #3b82f6;
+  color: var(--color-primary-content);
+  background-color: var(--color-primary-soft);
+  border-color: var(--color-primary);
 }
 
 /* 网格 */
@@ -705,9 +705,26 @@ onUnmounted(() => {
   cursor: pointer;
 }
 
+/* 移动端适配 */
+@media (max-width: 640px) {
+  .color-selector__grid {
+    gap: 0.25rem;
+  }
+
+  .color-selector__option {
+    width: 1.5rem;  /* 移动端缩小 */
+    height: 1.5rem;
+    border-width: 1.5px;
+  }
+
+  .color-selector__grid.extended-grid {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+}
+
 .color-selector__option:hover {
   transform: scale(1.1);
-  border-color: #6b7280; /* gray-500 */
+  border-color: var(--color-base-content);
 }
 
 .color-selector__option:focus {
@@ -715,16 +732,16 @@ onUnmounted(() => {
 }
 
 .color-selector__option.active {
-  border-color: #111827; /* gray-800 */
+  border-color: var(--color-primary);
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
-  box-shadow: 0 0 0 2px #bfdbfe; /* ring-2 ring-blue-200 */
+  box-shadow: 0 0 0 2px var(--color-primary-soft);
 }
 
 /* 自定义颜色选择器 */
 .color-selector__custom {
   margin-top: 0.75rem;
   padding-top: 0.75rem;
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid var(--color-base-300);
 }
 
 .color-selector__custom-toggle {
@@ -734,18 +751,18 @@ onUnmounted(() => {
   width: 100%;
   padding: 0.5rem;
   font-size: 0.875rem;
-  color: #6b7280;
+  color: var(--color-base-300);
   background-color: transparent;
-  border: 1px dashed #d1d5db;
+  border: 1px dashed var(--color-base-300);
   border-radius: 0.375rem;
   cursor: pointer;
   transition: all 0.2s ease-in-out;
 }
 
 .color-selector__custom-toggle:hover {
-  color: #374151;
-  border-color: #9ca3af;
-  background-color: #f9fafb;
+  color: var(--color-base-content);
+  border-color: var(--color-base-content);
+  background-color: var(--color-base-200);
 }
 
 .color-selector__custom-icon {
@@ -763,28 +780,28 @@ onUnmounted(() => {
   flex: 1;
   padding: 0.375rem 0.5rem;
   font-size: 0.875rem;
-  color: #374151;
-  background-color: #fff;
-  border: 1px solid #d1d5db;
+  color: var(--color-base-content);
+  background-color: var(--color-base-100);
+  border: 1px solid var(--color-base-300);
   border-radius: 0.375rem;
   outline: none;
   transition: border-color 0.2s ease-in-out;
 }
 
 .color-selector__hex-input:focus {
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 1px #3b82f6;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 1px var(--color-primary);
 }
 
 .color-selector__hex-input:invalid {
-  border-color: #ef4444;
+  border-color: var(--color-error);
 }
 
 .color-selector__apply-btn {
   padding: 0.375rem 0.75rem;
   font-size: 0.875rem;
-  color: #fff;
-  background-color: #3b82f6;
+  color: var(--color-primary-content);
+  background-color: var(--color-primary);
   border: none;
   border-radius: 0.375rem;
   cursor: pointer;
@@ -792,11 +809,11 @@ onUnmounted(() => {
 }
 
 .color-selector__apply-btn:hover:not(:disabled) {
-  background-color: #2563eb;
+  background-color: var(--color-primary-hover);
 }
 
 .color-selector__apply-btn:disabled {
-  background-color: #9ca3af;
+  background-color: var(--color-base-300);
   cursor: not-allowed;
 }
 
@@ -824,7 +841,7 @@ onUnmounted(() => {
 .color-selector__preview-large {
   width: 100%;
   height: 60px;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--color-base-300);
   border-radius: 0.5rem;
   overflow: hidden;
 }
@@ -844,7 +861,7 @@ onUnmounted(() => {
 .color-selector__input-label {
   font-size: 0.875rem;
   font-weight: 500;
-  color: #374151;
+  color: var(--color-base-content);
 }
 
 .color-selector__input-wrapper {
@@ -856,32 +873,32 @@ onUnmounted(() => {
   flex: 1;
   padding: 0.5rem;
   font-size: 0.875rem;
-  color: #374151;
-  background-color: #fff;
-  border: 1px solid #d1d5db;
+  color: var(--color-base-content);
+  background-color: var(--color-base-100);
+  border: 1px solid var(--color-base-300);
   border-radius: 0.375rem;
   outline: none;
   transition: border-color 0.2s ease-in-out;
 }
 
 .color-selector__hex-input-pro:focus {
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 1px #3b82f6;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 1px var(--color-primary);
 }
 
 .color-selector__copy-btn {
   padding: 0.5rem;
-  color: #6b7280;
+  color: var(--color-base-300);
   background-color: transparent;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--color-base-300);
   border-radius: 0.375rem;
   cursor: pointer;
   transition: all 0.2s ease-in-out;
 }
 
 .color-selector__copy-btn:hover {
-  color: #374151;
-  background-color: #f3f4f6;
+  color: var(--color-base-content);
+  background-color: var(--color-base-200);
 }
 
 .color-selector__copy-icon {
@@ -899,17 +916,17 @@ onUnmounted(() => {
   flex: 1;
   padding: 0.5rem;
   font-size: 0.875rem;
-  color: #374151;
-  background-color: #fff;
-  border: 1px solid #d1d5db;
+  color: var(--color-base-content);
+  background-color: var(--color-base-100);
+  border: 1px solid var(--color-base-300);
   border-radius: 0.375rem;
   outline: none;
   transition: border-color 0.2s ease-in-out;
 }
 
 .color-selector__rgb-input:focus {
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 1px #3b82f6;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 1px var(--color-primary);
 }
 
 /* 基本颜色 */
@@ -929,19 +946,32 @@ onUnmounted(() => {
   width: 1.5rem;
   height: 1.5rem;
   border-radius: 0.25rem;
-  border: 2px solid #d1d5db;
+  border: 2px solid var(--color-base-300);
   cursor: pointer;
   transition: all 0.2s ease-in-out;
 }
 
+/* 移动端基本颜色适配 */
+@media (max-width: 640px) {
+  .color-selector__basic-grid {
+    gap: 0.15rem;
+  }
+
+  .color-selector__basic-color {
+    width: 1.25rem;
+    height: 1.25rem;
+    border-width: 1.5px;
+  }
+}
+
 .color-selector__basic-color:hover {
   transform: scale(1.1);
-  border-color: #6b7280;
+  border-color: var(--color-base-content);
 }
 
 .color-selector__basic-color.active {
-  border-color: #111827;
-  box-shadow: 0 0 0 2px #bfdbfe;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px var(--color-primary-soft);
 }
 
 /* 颜色渐变选择器 */

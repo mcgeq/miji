@@ -96,9 +96,6 @@ export const defaultTheme = {
       color: '#ffffff',
     },
   },
-  grid: {
-    borderColor: '#e5e7eb',
-  },
   categoryAxis: {
     axisLine: {
       lineStyle: {
@@ -183,9 +180,6 @@ export const darkTheme = {
     textStyle: {
       color: '#ffffff',
     },
-  },
-  grid: {
-    borderColor: '#374151',
   },
   categoryAxis: {
     axisLine: {

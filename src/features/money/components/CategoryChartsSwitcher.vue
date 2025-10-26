@@ -193,7 +193,7 @@ const barChartOption = computed(() => {
       right: '4%',
       bottom: '3%',
       top: '20%',
-      outerBounds: true,
+      containLabel: true,
     },
     xAxis: {
       type: 'value',
