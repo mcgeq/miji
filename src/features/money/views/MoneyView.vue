@@ -595,7 +595,7 @@ onUnmounted(() => {
   align-items: center !important;
   justify-content: center !important; /* 水平居中 */
   gap: 6px !important;
-  padding: 8px 16px !important;
+  padding: 0.5rem 1rem !important;
   font-size: 14px !important;
   font-weight: 500 !important;
   border: none !important;
@@ -709,32 +709,34 @@ onUnmounted(() => {
 
   /* 移动端快捷操作容器 */
   .quick-actions {
-    flex-wrap: wrap !important; /* 强制换行 */
+    flex-wrap: nowrap !important; /* 不换行，单行显示 */
     justify-content: center !important; /* 居中对齐 */
-    gap: 8px !important; /* 减少间距 */
+    gap: 6px !important; /* 减少间距 */
     padding: 8px 0 !important;
   }
 
   .quick-actions .btn {
-    padding: 6px 10px !important; /* 移动端减少内边距 */
-    font-size: 12px !important; /* 缩小字体 */
+    padding: 0.5rem !important; /* 移动端圆形按钮，更小 */
+    font-size: 0.8rem !important; /* 缩小字体 */
     display: flex !important; /* 确保 flex 布局 */
     align-items: center !important; /* 垂直居中对齐 */
-    gap: 4px !important; /* 减少图标和文字间距 */
+    gap: 0 !important; /* 无间距（因为没有文字） */
     flex-direction: row !important; /* 水平排列图标和文字 */
     white-space: nowrap !important; /* 防止文字换行 */
     min-width: auto !important; /* 允许按钮自适应宽度 */
     flex: 0 0 auto !important; /* 不伸缩，保持原始大小 */
+    border-radius: 50% !important; /* 圆形按钮 */
+    aspect-ratio: 1 !important; /* 保持正方形 */
   }
 
   .quick-actions .btn svg {
     flex-shrink: 0 !important; /* 防止图标被压缩 */
-    width: 14px !important; /* 缩小图标 */
-    height: 14px !important;
+    width: 1.25rem !important; /* 移动端图标大小 */
+    height: 1.25rem !important;
   }
 
   .quick-actions .btn span {
-    flex-shrink: 0 !important; /* 防止文字被压缩 */
+    display: none !important; /* 移动端隐藏文字 */
   }
 
   .container {
@@ -744,19 +746,22 @@ onUnmounted(() => {
 
 /* 小屏幕优化 */
 @media (max-width: 480px) {
+  .quick-actions {
+    flex-wrap: nowrap !important; /* 不换行，单行显示 */
+    gap: 4px !important; /* 更小的按钮间距 */
+  }
+
   .quick-actions .btn {
-    padding: 5px 8px !important; /* 更小的内边距 */
-    font-size: 11px !important; /* 更小的字体 */
-    gap: 3px !important; /* 更小的间距 */
+    padding: 0.4rem !important; /* 小屏幕圆形按钮，更小 */
+    font-size: 0.85rem !important; /* 更小的字体 */
+    gap: 0 !important; /* 无间距（因为没有文字） */
+    border-radius: 50% !important; /* 圆形按钮 */
+    aspect-ratio: 1 !important; /* 保持正方形 */
   }
 
   .quick-actions .btn svg {
-    width: 12px !important; /* 更小的图标 */
-    height: 12px !important;
-  }
-
-  .quick-actions {
-    gap: 6px !important; /* 更小的按钮间距 */
+    width: 1rem !important; /* 小屏幕图标大小 */
+    height: 1rem !important;
   }
 }
 
