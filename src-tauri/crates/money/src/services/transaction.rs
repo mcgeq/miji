@@ -1215,7 +1215,12 @@ impl TransactionService {
                     Expr::case(
                         Condition::all()
                             .add(TransactionColumn::TransactionType.eq("Income"))
-                            .add(TransactionColumn::Category.ne("Transfer")),
+                            .add(TransactionColumn::Category.ne("Transfer"))
+                            .add(
+                                // 排除分期交易（is_installment = true 或 is_installment IS NULL 为 false/null）
+                                Expr::col(TransactionColumn::IsInstallment).is_null()
+                                .or(Expr::col(TransactionColumn::IsInstallment).eq(false))
+                            ),
                         Expr::col(TransactionColumn::Amount),
                     )
                     .finally(0.0)
@@ -1232,7 +1237,12 @@ impl TransactionService {
                     Expr::case(
                         Condition::all()
                             .add(TransactionColumn::TransactionType.eq("Expense"))
-                            .add(TransactionColumn::Category.ne("Transfer")),
+                            .add(TransactionColumn::Category.ne("Transfer"))
+                            .add(
+                                // 排除分期交易（is_installment = true 或 is_installment IS NULL 为 false/null）
+                                Expr::col(TransactionColumn::IsInstallment).is_null()
+                                .or(Expr::col(TransactionColumn::IsInstallment).eq(false))
+                            ),
                         Expr::col(TransactionColumn::Amount),
                     )
                     .finally(0.0)
@@ -1251,7 +1261,12 @@ impl TransactionService {
                         Condition::all()
                             .add(TransactionColumn::TransactionType.eq("Income"))
                             .add(TransactionColumn::Category.eq("Transfer"))
-                            .add(TransactionColumn::ActualPayerAccount.ne("CreditCard")),
+                            .add(TransactionColumn::ActualPayerAccount.ne("CreditCard"))
+                            .add(
+                                // 排除分期交易
+                                Expr::col(TransactionColumn::IsInstallment).is_null()
+                                .or(Expr::col(TransactionColumn::IsInstallment).eq(false))
+                            ),
                         Expr::col(TransactionColumn::Amount),
                     )
                     .finally(0.0)
@@ -1269,7 +1284,12 @@ impl TransactionService {
                         Condition::all()
                             .add(TransactionColumn::TransactionType.eq("Expense"))
                             .add(TransactionColumn::Category.eq("Transfer"))
-                            .add(TransactionColumn::ActualPayerAccount.ne("CreditCard")),
+                            .add(TransactionColumn::ActualPayerAccount.ne("CreditCard"))
+                            .add(
+                                // 排除分期交易
+                                Expr::col(TransactionColumn::IsInstallment).is_null()
+                                .or(Expr::col(TransactionColumn::IsInstallment).eq(false))
+                            ),
                         Expr::col(TransactionColumn::Amount),
                     )
                     .finally(0.0)
@@ -1294,7 +1314,12 @@ impl TransactionService {
                         Expr::case(
                             Condition::all()
                                 .add(TransactionColumn::TransactionType.eq("Income"))
-                                .add(TransactionColumn::ActualPayerAccount.eq(config.account_type)),
+                                .add(TransactionColumn::ActualPayerAccount.eq(config.account_type))
+                                .add(
+                                    // 排除分期交易
+                                    Expr::col(TransactionColumn::IsInstallment).is_null()
+                                    .or(Expr::col(TransactionColumn::IsInstallment).eq(false))
+                                ),
                             Expr::col(TransactionColumn::Amount),
                         )
                         .finally(0.0)
@@ -1311,7 +1336,12 @@ impl TransactionService {
                         Expr::case(
                             Condition::all()
                                 .add(TransactionColumn::TransactionType.eq("Expense"))
-                                .add(TransactionColumn::ActualPayerAccount.eq(config.account_type)),
+                                .add(TransactionColumn::ActualPayerAccount.eq(config.account_type))
+                                .add(
+                                    // 排除分期交易
+                                    Expr::col(TransactionColumn::IsInstallment).is_null()
+                                    .or(Expr::col(TransactionColumn::IsInstallment).eq(false))
+                                ),
                             Expr::col(TransactionColumn::Amount),
                         )
                         .finally(0.0)
