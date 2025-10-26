@@ -5,6 +5,7 @@ pub mod bil_reminder_hooks;
 pub mod budget;
 pub mod budget_hook;
 pub mod budget_overview;
+pub mod budget_trends;
 pub mod categories;
 pub mod categories_hooks;
 pub mod currency;

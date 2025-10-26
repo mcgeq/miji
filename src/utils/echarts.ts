@@ -31,7 +31,23 @@ const echarts = { init, use };
 export function initECharts() {
   // 确保ECharts已经正确初始化
   if (typeof window !== 'undefined') {
-    // 在浏览器环境中，ECharts应该已经可用
+    // 禁用 ECharts 的实例销毁警告
+    try {
+      // 设置全局配置禁用警告
+      if (window.echarts) {
+        // 重写 console.warn 来过滤 ECharts 相关的警告
+        const originalWarn = console.warn;
+        console.warn = function (...args) {
+          const message = args.join(' ');
+          if (message.includes('[ECharts] Instance') && message.includes('has been disposed')) {
+            return; // 忽略这个特定的警告
+          }
+          originalWarn.apply(console, args);
+        };
+      }
+    } catch (error) {
+      console.warn('设置 ECharts 配置时出错:', error);
+    }
     return echarts;
   }
   return echarts;

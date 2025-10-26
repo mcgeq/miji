@@ -178,6 +178,7 @@ declare global {
   const useBroadcastChannel: typeof import('@vueuse/core')['useBroadcastChannel']
   const useBrowserLocation: typeof import('@vueuse/core')['useBrowserLocation']
   const useBudgetActions: typeof import('./composables/useBudgetActions')['useBudgetActions']
+  const useBudgetStats: typeof import('./composables/useBudgetStats')['useBudgetStats']
   const useCached: typeof import('@vueuse/core')['useCached']
   const useClipboard: typeof import('@vueuse/core')['useClipboard']
   const useClipboardItems: typeof import('@vueuse/core')['useClipboardItems']
@@ -389,6 +390,9 @@ declare global {
   export type { TodoStoreErrorCode } from './stores/todoStore'
   import('./stores/todoStore')
   // @ts-ignore
+  export type { BudgetStatsState, BudgetStatsFilters } from './composables/useBudgetStats'
+  import('./composables/useBudgetStats')
+  // @ts-ignore
   export type { KeyboardShortcut } from './composables/useKeyboardShortcuts'
   import('./composables/useKeyboardShortcuts')
   // @ts-ignore
@@ -570,6 +574,7 @@ declare module 'vue' {
     readonly useBroadcastChannel: UnwrapRef<typeof import('@vueuse/core')['useBroadcastChannel']>
     readonly useBrowserLocation: UnwrapRef<typeof import('@vueuse/core')['useBrowserLocation']>
     readonly useBudgetActions: UnwrapRef<typeof import('./composables/useBudgetActions')['useBudgetActions']>
+    readonly useBudgetStats: UnwrapRef<typeof import('./composables/useBudgetStats')['useBudgetStats']>
     readonly useCached: UnwrapRef<typeof import('@vueuse/core')['useCached']>
     readonly useClipboard: UnwrapRef<typeof import('@vueuse/core')['useClipboard']>
     readonly useClipboardItems: UnwrapRef<typeof import('@vueuse/core')['useClipboardItems']>

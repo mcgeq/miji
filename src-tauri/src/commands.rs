@@ -87,6 +87,8 @@ pub fn init_commands(builder: Builder<Wry>) -> Builder<Wry> {
         money_cmd::budget_overview_calculate,
         money_cmd::budget_overview_by_type,
         money_cmd::budget_overview_by_scope,
+        money_cmd::budget_trends_get,
+        money_cmd::budget_category_stats_get,
         money_cmd::bil_reminder_get,
         money_cmd::bil_reminder_create,
         money_cmd::bil_reminder_update,

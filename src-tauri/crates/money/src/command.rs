@@ -29,6 +29,7 @@ use crate::{
         account::{AccountFilter, get_account_service},
         bil_reminder::{BilReminderFilters, get_bil_reminder_service},
         budget::{BudgetFilter, get_budget_service},
+        budget_trends::{BudgetTrendRequest, BudgetCategoryStats},
         categories::{CategoryFilter, get_category_service},
         currency::{CurrencyFilter, get_currency_service},
         family_member::get_family_member_service,
@@ -903,7 +904,44 @@ pub async fn budget_overview_by_scope(
         crate::services::budget_overview::BudgetOverviewService::calculate_by_scope_type(&state.db, request).await,
     ))
 }
-// end   预算相关
+#[tauri::command]
+pub async fn budget_trends_get(
+    state: State<'_, AppState>,
+    request: BudgetTrendRequest,
+) -> Result<ApiResponse<Vec<crate::services::budget_trends::BudgetTrendData>>, String> {
+    info!("收到预算趋势分析请求: {:?}", request);
+    
+    match crate::services::budget_trends::BudgetTrendService::get_budget_trends(&state.db, request).await {
+        Ok(result) => {
+            info!("预算趋势分析成功: {} 个数据点", result.len() as usize);
+            Ok(ApiResponse::from_result(Ok(result)))
+        },
+        Err(e) => {
+            error!("预算趋势分析失败: {}", e);
+            Err(format!("预算趋势分析失败: {}", e))
+        }
+    }
+}
+
+#[tauri::command]
+pub async fn budget_category_stats_get(
+    state: State<'_, AppState>,
+    base_currency: String,
+    include_inactive: Option<bool>,
+) -> Result<ApiResponse<Vec<BudgetCategoryStats>>, String> {
+    info!("收到预算分类统计请求: currency={}, include_inactive={:?}", base_currency, include_inactive);
+    
+    match crate::services::budget_trends::BudgetTrendService::get_budget_category_stats(&state.db, base_currency, include_inactive).await {
+        Ok(result) => {
+            info!("预算分类统计成功: {} 个分类", result.len() as usize);
+            Ok(ApiResponse::from_result(Ok(result)))
+        },
+        Err(e) => {
+            error!("预算分类统计失败: {}", e);
+            Err(format!("预算分类统计失败: {}", e))
+        }
+    }
+}
 // ============================================================================
 
 // start 提醒

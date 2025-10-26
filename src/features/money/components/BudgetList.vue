@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { MoreHorizontal, RotateCcw } from 'lucide-vue-next';
+import { BarChart3, MoreHorizontal, RotateCcw } from 'lucide-vue-next';
 import SimplePagination from '@/components/common/SimplePagination.vue';
 import { getRepeatTypeName, lowercaseFirstLetter } from '@/utils/common';
 import { DateUtils } from '@/utils/date';
@@ -19,6 +19,7 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n();
+const router = useRouter();
 const moneyStore = useMoneyStore();
 const budgets = computed(() => moneyStore.budgetsPaged);
 const mediaQueries = useMediaQueriesStore();
@@ -28,6 +29,11 @@ const showMoreFilters = ref(!mediaQueries.isMobile);
 // 切换过滤器显示状态
 function toggleFilters() {
   showMoreFilters.value = !showMoreFilters.value;
+}
+
+// 路由跳转到预算统计分析页面
+function navigateToStats() {
+  router.push('/budget-stats');
 }
 
 const { loading, filters, resetFilters, pagination, loadBudgets } = useBudgetFilters(
@@ -129,6 +135,17 @@ defineExpose({
   <div class="budget-container">
     <!-- 过滤器区域 -->
     <div class="screening-filtering">
+      <!-- 统计按钮组 - 移到最前面 -->
+      <div class="stats-button-group">
+        <button
+          class="screening-filtering-select stats-button"
+          :title="t('financial.budget.statsAndTrends')"
+          @click="navigateToStats"
+        >
+          <BarChart3 class="wh-4" />
+        </button>
+      </div>
+
       <div class="filter-flex-wrap">
         <select
           v-model="filters.isActive"
@@ -216,12 +233,14 @@ defineExpose({
       <div class="filter-button-group">
         <button
           class="screening-filtering-select"
+          :title="t('common.actions.moreFilters')"
           @click="toggleFilters"
         >
           <MoreHorizontal class="wh-4 mr-1" />
         </button>
         <button
           class="screening-filtering-select"
+          :title="t('common.actions.reset')"
           @click="resetFilters"
         >
           <RotateCcw class="wh-4 mr-1" />
@@ -618,6 +637,28 @@ defineExpose({
 
 .progress-fill-primary {
   background-color: #3b82f6;
+}
+
+/* 统计按钮组样式 */
+.stats-button-group {
+  display: flex;
+  gap: 8px;
+  margin-right: 16px;
+}
+
+.stats-button {
+  background-color: #1890ff;
+  color: white;
+  font-weight: 500;
+  padding: 8px 12px;
+  min-width: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.stats-button:hover {
+  background-color: #40a9ff;
 }
 
 .remaining-amount-error {
