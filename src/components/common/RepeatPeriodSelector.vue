@@ -496,7 +496,7 @@ watch(
   font-size: 0.875rem;
   font-weight: 500;
   color: #374151;
-  margin-bottom: 0.25rem;
+  margin-bottom: 0;
 }
 .required {
   color: var(--color-primary);
@@ -558,11 +558,22 @@ watch(
 
 /* 响应式 */
 @media (max-width: 640px){
-  .field-row { flex-direction: column; align-items: stretch; gap:0.5rem; }
-  .input-field { width:100%; }
+  .field-row {
+    flex-wrap: wrap;
+  }
+
+  .label {
+    flex-shrink: 0;
+  }
+
+  .input-field {
+    flex: 1;
+    min-width: 0;
+    width: auto;
+  }
+
   .grid-weekdays { gap:0.25rem; }
   .weekday-btn { min-width:2.5rem; min-height:2.5rem; font-size:0.75rem; }
-  .label { text-align:left; margin-bottom:0.25rem; }
 }
 
 /* 暗黑模式 */

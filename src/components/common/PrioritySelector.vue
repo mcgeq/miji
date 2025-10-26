@@ -276,7 +276,7 @@ defineExpose({
   font-size: 0.875rem; /* text-sm */
   font-weight: 500; /* font-medium */
   color: var(--color-gray-700);
-  margin-bottom: 0.5rem;
+  margin-bottom: 0;
 }
 .form-required {
   color: var(--color-error);
@@ -287,6 +287,7 @@ defineExpose({
 .form-field {
   display: flex;
   flex-direction: column;
+  width: 66.666667%;
 }
 
 /* 下拉框 */
@@ -345,11 +346,16 @@ defineExpose({
 /* 响应式 */
 @media (max-width: 640px) {
   .form-group {
-    flex-direction: column;
-    align-items: stretch;
+    flex-wrap: wrap;
   }
+
   .form-label {
-    margin-bottom: 0.25rem;
+    flex-shrink: 0;
+  }
+
+  .form-field {
+    flex: 1;
+    min-width: 0;
   }
 }
 

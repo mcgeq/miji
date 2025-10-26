@@ -875,7 +875,7 @@ watch(
   font-size: 0.875rem;
   color: var(--color-gray-700);
   font-weight: 500;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0;
 }
 
 .form-label-block {
@@ -965,12 +965,17 @@ watch(
 /* Responsive optimization */
 @media (max-width: 640px) {
   .form-row {
-    flex-direction: column;
-    align-items: stretch;
+    flex-wrap: wrap;
   }
 
   .form-label {
     margin-bottom: 0.25rem;
+    flex-shrink: 0;
+  }
+
+  .modal-input-select {
+    flex: 1;
+    min-width: 0;
   }
 }
 </style>

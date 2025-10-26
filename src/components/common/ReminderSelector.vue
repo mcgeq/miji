@@ -490,19 +490,24 @@ defineExpose({
   margin-bottom: 0.5rem;      /* mb-2 -> 0.5rem = 8px */
 }
 
-/* 响应式：小屏幕竖直排列 */
+/* 响应式：小屏幕水平排列 */
 @media (max-width: 640px) {
   .reminder-selector-row {
-    flex-direction: column;
-    align-items: flex-start;  /* 左对齐 */
-    margin-bottom: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .label-text {
+    flex-shrink: 0;
+  }
+
+  .modal-input-select {
+    flex: 1;
+    min-width: 0;
   }
 }
 
-/* 响应式 */
+/* 响应式 - 快捷选择按钮 */
 @media (max-width: 640px) {
-  .reminder-selector .flex { flex-direction: column; align-items: flex-start; }
-  .modal-input-select { width: 100% !important; margin-top: 0.5rem; }
   .quick-select-btn { padding: 0.125rem 0.375rem; font-size: 0.6875rem; }
 }
 </style>
