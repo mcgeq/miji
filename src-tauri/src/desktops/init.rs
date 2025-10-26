@@ -169,6 +169,8 @@ pub fn init_tracing_subscriber() {
 
     // JSON 文件输出，放在 logs/tracing/2025-08-11/app.log
     let root_dir = MijiFiles::root_path().unwrap_or_else(|_| ".".into());
+    
+    // 普通日志文件
     let log_file_path = today_log_path(&root_dir, &["logs", "tracing"], "app.log");
     let file = OpenOptions::new()
         .create(true)
@@ -180,10 +182,24 @@ pub fn init_tracing_subscriber() {
         .event_format(JsonLogFormatter)
         .with_writer(move || file.try_clone().expect("无法克隆日志文件句柄"));
 
+    // 错误日志单独文件
+    let error_log_path = today_log_path(&root_dir, &["logs", "tracing"], "error.log");
+    let error_file = OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(&error_log_path)
+        .expect("无法打开错误日志文件");
+    let error_layer = fmt::layer()
+        .with_ansi(false)
+        .event_format(JsonLogFormatter)
+        .with_writer(move || error_file.try_clone().expect("无法克隆错误日志文件句柄"))
+        .with_filter(EnvFilter::new("error"));
+
     Registry::default()
         .with(filter_layer)
         .with(console_layer)
         .with(file_layer)
+        .with(error_layer)
         .try_init()
         .ok(); // 避免重复初始化冲突
 }

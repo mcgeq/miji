@@ -4,7 +4,7 @@ use common::{
     paginations::{PagedQuery, PagedResult},
 };
 use tauri::State;
-use tracing::info;
+use tracing::{info, warn, error, instrument};
 
 use crate::{
     dto::{
@@ -85,17 +85,32 @@ pub async fn installment_has_paid(
 // start 货币
 // 创建货币
 #[tauri::command]
+#[instrument(skip(state))]
 pub async fn currency_create(
     state: State<'_, AppState>,
     data: CreateCurrencyRequest,
 ) -> Result<ApiResponse<CurrencyResponse>, String> {
+    info!("开始创建货币");
     let service = get_currency_service();
-    Ok(ApiResponse::from_result(
-        service
-            .create(&state.db, data)
-            .await
-            .map(CurrencyResponse::from),
-    ))
+    
+    match service.create(&state.db, data.clone()).await {
+        Ok(result) => {
+            info!(
+                currency_code = %result.code,
+                currency_symbol = %result.symbol,
+                "货币创建成功"
+            );
+            Ok(ApiResponse::from_result(Ok(CurrencyResponse::from(result))))
+        }
+        Err(e) => {
+            error!(
+                error = %e,
+                currency_code = %data.code,
+                "货币创建失败"
+            );
+            Err(e.to_string())
+        }
+    }
 }
 
 // 获取单个货币（按 ID）
@@ -130,14 +145,31 @@ pub async fn currency_update(
 }
 // 删除货币
 #[tauri::command]
+#[instrument(skip(state), fields(currency_serial_num = %serial_num))]
 pub async fn currency_delete(
     state: State<'_, AppState>,
     serial_num: String,
 ) -> Result<ApiResponse<()>, String> {
+    info!("开始删除货币");
     let service = get_currency_service();
-    Ok(ApiResponse::from_result(
-        service.delete(&state.db, serial_num).await,
-    ))
+    
+    match service.delete(&state.db, serial_num.clone()).await {
+        Ok(_) => {
+            info!(
+                currency_serial_num = %serial_num,
+                "货币删除成功"
+            );
+            Ok(ApiResponse::from_result(Ok(())))
+        }
+        Err(e) => {
+            error!(
+                error = %e,
+                currency_serial_num = %serial_num,
+                "货币删除失败"
+            );
+            Err(e.to_string())
+        }
+    }
 }
 
 // 列出货币（带过滤条件）
@@ -197,18 +229,39 @@ pub async fn account_get(
 
 // 创建账户
 #[tauri::command]
+#[instrument(skip(state))]
 pub async fn account_create(
     state: State<'_, AppState>,
     data: AccountCreate,
 ) -> Result<ApiResponse<AccountResponseWithRelations>, String> {
+    info!(
+        account_name = %data.name.clone(),
+        account_type = %data.r#type.clone(),
+        initial_balance = %data.initial_balance,
+        "开始创建账户"
+    );
+    
     let service = get_account_service();
 
-    Ok(ApiResponse::from_result(
-        service
-            .account_create(&state.db, data)
-            .await
-            .map(AccountResponseWithRelations::from),
-    ))
+    match service.account_create(&state.db, data).await {
+        Ok(result) => {
+            info!(
+                account_serial_num = %result.account.serial_num,
+                account_name = %result.account.name,
+                account_type = %result.account.r#type,
+                balance = %result.account.balance,
+                "账户创建成功"
+            );
+            Ok(ApiResponse::from_result(Ok(AccountResponseWithRelations::from(result))))
+        }
+        Err(e) => {
+            error!(
+                error = %e,
+                "账户创建失败"
+            );
+            Err(e.to_string())
+        }
+    }
 }
 
 // 更新账户
@@ -244,14 +297,44 @@ pub async fn account_update_active(
 
 // 删除账户
 #[tauri::command]
+#[instrument(skip(state), fields(account_serial_num = %serial_num))]
 pub async fn account_delete(
     state: State<'_, AppState>,
     serial_num: String,
 ) -> Result<ApiResponse<()>, String> {
+    // 先获取账户信息用于日志
     let service = get_account_service();
-    Ok(ApiResponse::from_result(
-        service.delete(&state.db, serial_num).await,
-    ))
+    
+    // 尝试获取账户信息（用于日志，但不影响删除逻辑）
+    let account_info = service.get_account_with_relations(&state.db, serial_num.clone()).await.ok();
+    
+    if let Some(account) = &account_info {
+        warn!(
+            account_serial_num = %serial_num,
+            account_name = %account.account.name,
+            balance = %account.account.balance,
+            "准备删除账户，账户当前有余额"
+        );
+    }
+    
+    match service.delete(&state.db, serial_num.clone()).await {
+        Ok(_) => {
+            info!(
+                account_serial_num = %serial_num,
+                account_name = account_info.as_ref().map(|a| &a.account.name).unwrap_or(&"未知".to_string()),
+                "账户删除成功"
+            );
+            Ok(ApiResponse::from_result(Ok(())))
+        }
+        Err(e) => {
+            error!(
+                error = %e,
+                account_serial_num = %serial_num,
+                "账户删除失败"
+            );
+            Err(e.to_string())
+        }
+    }
 }
 
 // 分页获取账户列表（简化版本）
@@ -315,168 +398,359 @@ pub async fn total_assets(
 // ============================================================================
 // -- Transaction
 #[tauri::command]
+#[instrument(skip(state))]
 pub async fn transaction_create(
     state: State<'_, AppState>,
     data: CreateTransactionRequest,
 ) -> Result<ApiResponse<TransactionResponse>, String> {
+    info!(
+        amount = %data.amount,
+        transaction_type = %data.transaction_type,
+        account_serial_num = %data.account_serial_num,
+        category = %data.category,
+        "开始创建交易记录"
+    );
+    
     let service = get_transaction_service();
-    info!("transaction_create {:?}", data);
-    Ok(ApiResponse::from_result(
-        service
-            .trans_create_with_relations(&state.db, data)
-            .await
-            .map(TransactionResponse::from),
-    ))
-}
-
-#[tauri::command]
-pub async fn transaction_transfer_create(
-    state: State<'_, AppState>,
-    data: TransferRequest,
-) -> Result<ApiResponse<(TransactionResponse, TransactionResponse)>, String> {
-    let service = get_transaction_service();
-
-    match service
-        .trans_transfer_create_with_relations(&state.db, data)
-        .await
-    {
-        Ok((from_tx, to_tx)) => Ok(ApiResponse::success((
-            TransactionResponse::from(from_tx),
-            TransactionResponse::from(to_tx),
-        ))),
-        Err(e) => Ok(ApiResponse::from_error(e)),
+    
+    match service.trans_create_with_relations(&state.db, data).await {
+        Ok(result) => {
+            info!(
+                transaction_serial_num = %result.transaction.serial_num,
+                amount = %result.transaction.amount,
+                transaction_type = %result.transaction.transaction_type,
+                account_serial_num = %result.transaction.account_serial_num,
+                "交易记录创建成功"
+            );
+            Ok(ApiResponse::from_result(Ok(TransactionResponse::from(result))))
+        }
+        Err(e) => {
+            let error_msg = format!("交易记录创建失败: {}", e);
+            error!(%error_msg);
+            Err(e.to_string())
+        }
     }
 }
 
 #[tauri::command]
+#[instrument(skip(state))]
+pub async fn transaction_transfer_create(
+    state: State<'_, AppState>,
+    data: TransferRequest,
+) -> Result<ApiResponse<(TransactionResponse, TransactionResponse)>, String> {
+    info!(
+        from_account = %data.account_serial_num.clone(),
+        to_account = %data.to_account_serial_num.clone(),
+        amount = %data.amount.clone(),
+        "开始创建转账"
+    );
+    
+    let service = get_transaction_service();
+
+    match service
+        .trans_transfer_create_with_relations(&state.db, data.clone())
+        .await
+    {
+        Ok((from_tx, to_tx)) => {
+            info!(
+                from_transaction_serial_num = %from_tx.transaction.serial_num,
+                to_transaction_serial_num = %to_tx.transaction.serial_num,
+                amount = %from_tx.transaction.amount,
+                "转账创建成功"
+            );
+            Ok(ApiResponse::success((
+                TransactionResponse::from(from_tx),
+                TransactionResponse::from(to_tx),
+            )))
+        }
+        Err(e) => {
+            error!(
+                error = %e,
+                from_account = %data.account_serial_num,
+                to_account = %data.to_account_serial_num,
+                "转账创建失败"
+            );
+            Ok(ApiResponse::from_error(e))
+        }
+    }
+}
+
+#[tauri::command]
+#[instrument(skip(state))]
 pub async fn transaction_query_income_and_expense(
     state: State<'_, AppState>,
     start_date: String,
     end_date: String,
 ) -> Result<ApiResponse<IncomeExpense>, String> {
+    info!(
+        start_date = %start_date,
+        end_date = %end_date,
+        "查询收支统计"
+    );
+    
     let service = get_transaction_service();
-    Ok(ApiResponse::from_result(
-        service
-            .query_income_and_expense(&state.db, start_date, end_date)
-            .await,
-    ))
-}
-
-#[tauri::command]
-pub async fn transaction_transfer_delete(
-    state: State<'_, AppState>,
-    serial_num: String,
-) -> Result<ApiResponse<(TransactionResponse, TransactionResponse)>, String> {
-    let service = get_transaction_service();
+    
     match service
-        .trans_transfer_delete_with_relations(&state.db, &serial_num)
+        .query_income_and_expense(&state.db, start_date.clone(), end_date.clone())
         .await
     {
-        Ok((from_tx, to_tx)) => Ok(ApiResponse::success((
-            TransactionResponse::from(from_tx),
-            TransactionResponse::from(to_tx),
-        ))),
-        Err(e) => Ok(ApiResponse::from_error(e)),
+        Ok(result) => {
+            info!(
+                income_total = %result.income.total,
+                expense_total = %result.expense.total,
+                "查询收支统计成功"
+            );
+            Ok(ApiResponse::from_result(Ok(result)))
+        }
+        Err(e) => {
+            error!(
+                error = %e,
+                start_date = %start_date,
+                end_date = %end_date,
+                "查询收支统计失败"
+            );
+            Err(e.to_string())
+        }
     }
 }
 
 #[tauri::command]
+#[instrument(skip(state), fields(transaction_serial_num = %serial_num))]
+pub async fn transaction_transfer_delete(
+    state: State<'_, AppState>,
+    serial_num: String,
+) -> Result<ApiResponse<(TransactionResponse, TransactionResponse)>, String> {
+    info!(
+        transaction_serial_num = %serial_num,
+        "开始删除转账"
+    );
+    
+    let service = get_transaction_service();
+    
+    match service
+        .trans_transfer_delete_with_relations(&state.db, &serial_num)
+        .await
+    {
+        Ok((from_tx, to_tx)) => {
+            info!(
+                from_transaction_serial_num = %from_tx.transaction.serial_num,
+                to_transaction_serial_num = %to_tx.transaction.serial_num,
+                "转账删除成功"
+            );
+            Ok(ApiResponse::success((
+                TransactionResponse::from(from_tx),
+                TransactionResponse::from(to_tx),
+            )))
+        }
+        Err(e) => {
+            error!(
+                error = %e,
+                transaction_serial_num = %serial_num,
+                "转账删除失败"
+            );
+            Ok(ApiResponse::from_error(e))
+        }
+    }
+}
+
+#[tauri::command]
+#[instrument(skip(state), fields(transaction_serial_num = %serial_num))]
 pub async fn transaction_transfer_update(
     state: State<'_, AppState>,
     serial_num: String,
     transfer: TransferRequest,
 ) -> Result<ApiResponse<(TransactionResponse, TransactionResponse)>, String> {
     info!(
-        "transaction_transfer_update {:?} {:?}",
-        serial_num, transfer
+        transaction_serial_num = %serial_num,
+        amount = %transfer.amount.clone(),
+        "开始更新转账"
     );
+    
     let service = get_transaction_service();
+    
     match service
         .trans_transfer_update_with_relations(&state.db, &serial_num, transfer)
         .await
     {
-        Ok((from_tx, to_tx)) => Ok(ApiResponse::success((
-            TransactionResponse::from(from_tx),
-            TransactionResponse::from(to_tx),
-        ))),
-        Err(e) => Ok(ApiResponse::from_error(e)),
+        Ok((from_tx, to_tx)) => {
+            info!(
+                from_transaction_serial_num = %from_tx.transaction.serial_num,
+                to_transaction_serial_num = %to_tx.transaction.serial_num,
+                amount = %from_tx.transaction.amount,
+                "转账更新成功"
+            );
+            Ok(ApiResponse::success((
+                TransactionResponse::from(from_tx),
+                TransactionResponse::from(to_tx),
+            )))
+        }
+        Err(e) => {
+            error!(
+                error = %e,
+                transaction_serial_num = %serial_num,
+                "转账更新失败"
+            );
+            Ok(ApiResponse::from_error(e))
+        }
     }
 }
 
 // 获取单个交易（按 ID）
 #[tauri::command]
+#[instrument(skip(state), fields(transaction_serial_num = %serial_num))]
 pub async fn transaction_get(
     state: State<'_, AppState>,
     serial_num: String,
 ) -> Result<ApiResponse<TransactionResponse>, String> {
     let service = get_transaction_service();
 
-    Ok(ApiResponse::from_result(
-        service
-            .trans_get_with_relations(&state.db, serial_num)
-            .await
-            .map(TransactionResponse::from),
-    ))
+    match service
+        .trans_get_with_relations(&state.db, serial_num.clone())
+        .await
+    {
+        Ok(result) => {
+            info!(
+                transaction_serial_num = %result.transaction.serial_num,
+                amount = %result.transaction.amount,
+                transaction_type = %result.transaction.transaction_type,
+                "获取交易成功"
+            );
+            Ok(ApiResponse::from_result(Ok(TransactionResponse::from(result))))
+        }
+        Err(e) => {
+            error!(
+                error = %e,
+                transaction_serial_num = %serial_num,
+                "获取交易失败"
+            );
+            Err(e.to_string())
+        }
+    }
 }
 
 // 更新交易
 #[tauri::command]
+#[instrument(skip(state), fields(transaction_serial_num = %serial_num))]
 pub async fn transaction_update(
     state: State<'_, AppState>,
     serial_num: String,
     data: UpdateTransactionRequest,
 ) -> Result<ApiResponse<TransactionResponse>, String> {
+    info!(
+        transaction_serial_num = %serial_num,
+        "开始更新交易"
+    );
+    
     let service = get_transaction_service();
 
-    Ok(ApiResponse::from_result(
-        service
-            .trans_update_with_relations(&state.db, serial_num, data)
-            .await
-            .map(TransactionResponse::from),
-    ))
+    match service
+        .trans_update_with_relations(&state.db, serial_num.clone(), data)
+        .await
+    {
+        Ok(result) => {
+            info!(
+                transaction_serial_num = %result.transaction.serial_num,
+                amount = %result.transaction.amount,
+                transaction_type = %result.transaction.transaction_type,
+                "交易更新成功"
+            );
+            Ok(ApiResponse::from_result(Ok(TransactionResponse::from(result))))
+        }
+        Err(e) => {
+            error!(
+                error = %e,
+                transaction_serial_num = %serial_num,
+                "交易更新失败"
+            );
+            Err(e.to_string())
+        }
+    }
 }
 
 // 删除交易
 #[tauri::command]
+#[instrument(skip(state), fields(transaction_serial_num = %serial_num))]
 pub async fn transaction_delete(
     state: State<'_, AppState>,
     serial_num: String,
 ) -> Result<ApiResponse<()>, String> {
+    info!(
+        transaction_serial_num = %serial_num,
+        "开始删除交易"
+    );
+    
     let service = get_transaction_service();
 
-    Ok(ApiResponse::from_result(
-        service.delete(&state.db, serial_num).await,
-    ))
+    match service.delete(&state.db, serial_num.clone()).await {
+        Ok(_) => {
+            info!(
+                transaction_serial_num = %serial_num,
+                "交易删除成功"
+            );
+            Ok(ApiResponse::from_result(Ok(())))
+        }
+        Err(e) => {
+            error!(
+                error = %e,
+                transaction_serial_num = %serial_num,
+                "交易删除失败"
+            );
+            Err(e.to_string())
+        }
+    }
 }
 
 // 列出交易（带过滤条件）
 #[tauri::command]
+#[instrument(skip(state))]
 pub async fn transaction_list(
     state: State<'_, AppState>,
     filter: TransactionFilter,
 ) -> Result<ApiResponse<Vec<TransactionResponse>>, String> {
     let service = get_transaction_service();
 
-    Ok(ApiResponse::from_result(
-        service
-            .trans_list_with_relations(&state.db, filter)
-            .await
-            .map(|models| models.into_iter().map(TransactionResponse::from).collect()),
-    ))
+    match service
+        .trans_list_with_relations(&state.db, filter)
+        .await
+    {
+        Ok(transactions) => {
+            info!(
+                count = transactions.len(),
+                "列出交易成功"
+            );
+            Ok(ApiResponse::from_result(Ok(transactions.into_iter().map(TransactionResponse::from).collect())))
+        }
+        Err(e) => {
+            error!(
+                error = %e,
+                "列出交易失败"
+            );
+            Err(e.to_string())
+        }
+    }
 }
 
 // 分页列出交易
 #[tauri::command]
+#[instrument(skip(state))]
 pub async fn transaction_list_paged(
     state: State<'_, AppState>,
     query: PagedQuery<TransactionFilter>,
 ) -> Result<ApiResponse<PagedResult<TransactionResponse>>, String> {
     let service = get_transaction_service();
-    Ok(ApiResponse::from_result(
-        service
-            .trans_list_paged_with_relations(&state.db, query)
-            .await
-            .map(|paged| PagedResult {
+    
+    match service
+        .trans_list_paged_with_relations(&state.db, query)
+        .await
+    {
+        Ok(paged) => {
+            info!(
+                total_count = paged.total_count,
+                current_page = paged.current_page,
+                page_size = paged.page_size,
+                "分页列出交易成功"
+            );
+            Ok(ApiResponse::from_result(Ok(PagedResult {
                 rows: paged
                     .rows
                     .into_iter()
@@ -486,8 +760,16 @@ pub async fn transaction_list_paged(
                 current_page: paged.current_page,
                 page_size: paged.page_size,
                 total_pages: paged.total_pages,
-            }),
-    ))
+            })))
+        }
+        Err(e) => {
+            error!(
+                error = %e,
+                "分页列出交易失败"
+            );
+            Err(e.to_string())
+        }
+    }
 }
 
 // ============================================================================
@@ -568,7 +850,6 @@ pub async fn budget_list_paged(
     state: State<'_, AppState>,
     query: PagedQuery<BudgetFilter>,
 ) -> Result<ApiResponse<PagedResult<Budget>>, String> {
-    info!("budget_list_paged query {:?}", query);
     let service = get_budget_service();
     Ok(ApiResponse::from_result(
         service
