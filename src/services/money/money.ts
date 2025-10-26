@@ -181,7 +181,9 @@ export class MoneyDb {
     return this.transactionMapper.lastYearIncomeAndExpense();
   }
 
-  static async getTransactionStats(request: TransactionStatsRequest): Promise<TransactionStatsResponse> {
+  static async getTransactionStats(
+    request: TransactionStatsRequest,
+  ): Promise<TransactionStatsResponse> {
     return this.transactionMapper.getStats(request);
   }
 

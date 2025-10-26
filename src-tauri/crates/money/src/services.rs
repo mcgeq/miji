@@ -4,6 +4,7 @@ pub mod bil_reminder;
 pub mod bil_reminder_hooks;
 pub mod budget;
 pub mod budget_hook;
+pub mod budget_overview;
 pub mod categories;
 pub mod categories_hooks;
 pub mod currency;

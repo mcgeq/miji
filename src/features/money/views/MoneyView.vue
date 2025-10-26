@@ -97,7 +97,7 @@ const {
 const { t } = useI18n();
 
 const activeTab = ref('accounts');
-const baseCurrency = ref(CURRENCY_CNY.symbol);
+const baseCurrency = ref(CURRENCY_CNY.code);
 
 const tabs = computed(() => [
   { key: 'accounts', label: t('financial.quickActions.accounts') },
@@ -134,14 +134,12 @@ const monthlyExpense = ref(0);
 const prevMonthlyIncome = ref(0);
 const prevMonthlyExpense = ref(0);
 
-const budgetRemaining = ref(0);
-
 const statCards = computed<CardData[]>(() => [
   {
     id: 'total-assets',
     title: '总资产',
     value: formatCurrency(totalAssets.value),
-    currency: baseCurrency.value,
+    currency: getCurrencySymbol(baseCurrency.value),
     icon: 'wallet',
     color: 'primary' as const,
   },
@@ -151,7 +149,7 @@ const statCards = computed<CardData[]>(() => [
     formatCurrency(monthlyIncome.value),
     formatCurrency(prevMonthlyIncome.value),
     '上月',
-    baseCurrency.value,
+    getCurrencySymbol(baseCurrency.value),
     'trending-up',
     'success',
   ),
@@ -161,7 +159,7 @@ const statCards = computed<CardData[]>(() => [
     formatCurrency(yearlyIncome.value),
     formatCurrency(prevYearlyIncome.value),
     '去年',
-    baseCurrency.value,
+    getCurrencySymbol(baseCurrency.value),
     'trending-up',
     'primary',
   ),
@@ -171,7 +169,7 @@ const statCards = computed<CardData[]>(() => [
     formatCurrency(monthlyExpense.value),
     formatCurrency(prevMonthlyExpense.value),
     '上月',
-    baseCurrency.value,
+    getCurrencySymbol(baseCurrency.value),
     'trending-up',
     'success',
   ),
@@ -181,23 +179,10 @@ const statCards = computed<CardData[]>(() => [
     formatCurrency(yearlyExpense.value),
     formatCurrency(prevYearlyExpense.value),
     '去年',
-    baseCurrency.value,
+    getCurrencySymbol(baseCurrency.value),
     'trending-up',
     'primary',
   ),
-  {
-    id: 'budget-overview',
-    title: '预算总览',
-    value: formatCurrency(budgetRemaining.value),
-    currency: baseCurrency.value,
-    icon: 'target',
-    color: 'warning',
-    subtitle: '本月剩余',
-    extraStats: [
-      { label: '总预算', value: formatCurrency(20000), color: 'primary' },
-      { label: '已使用', value: formatCurrency(5222), color: 'danger' },
-    ],
-  },
 ]);
 
 const hasModalOpen = computed(() =>
@@ -264,7 +249,10 @@ function finalizeReminderChange() {
 // ------------------ Load & Sync ------------------
 async function loadData() {
   try {
-    await Promise.all([loadAccountsWithLoading(), syncIncomeExpense()]);
+    await Promise.all([
+      loadAccountsWithLoading(),
+      syncIncomeExpense(),
+    ]);
   } catch (err) {
     Lg.e('loadData', err);
     toast.error('加载数据失败');
@@ -317,6 +305,24 @@ function toggleGlobalAmountVisibility() {
   moneyStore.toggleGlobalAmountVisibility();
 }
 
+// 获取货币符号
+function getCurrencySymbol(currencyCode: string): string {
+  switch (currencyCode) {
+    case 'CNY':
+      return '¥';
+    case 'USD':
+      return '$';
+    case 'EUR':
+      return '€';
+    case 'GBP':
+      return '£';
+    case 'JPY':
+      return '¥';
+    default:
+      return currencyCode;
+  }
+}
+
 // 存储监听器清理函数
 let unlistenProcessed: (() => void) | null = null;
 let unlistenFailed: (() => void) | null = null;
@@ -334,7 +340,7 @@ onUnmounted(() => {
 onMounted(async () => {
   loadData();
   const currency = await getLocalCurrencyInfo();
-  baseCurrency.value = currency.symbol;
+  baseCurrency.value = currency.code;
   // 监听分期处理完成事件
   unlistenProcessed = await listen<InstallmentProcessedEvent>('installment-processed', event => {
     Lg.d('installment-processed', '收到分期处理完成事件:', event.payload);

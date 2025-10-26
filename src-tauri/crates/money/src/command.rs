@@ -864,6 +864,45 @@ pub async fn budget_list_paged(
             }),
     ))
 }
+
+#[tauri::command]
+pub async fn budget_overview_calculate(
+    state: State<'_, AppState>,
+    request: crate::services::budget_overview::BudgetOverviewRequest,
+) -> Result<ApiResponse<crate::services::budget_overview::BudgetOverviewSummary>, String> {
+    info!("收到预算总览计算请求: {:?}", request);
+    
+    match crate::services::budget_overview::BudgetOverviewService::calculate_overview(&state.db, request).await {
+        Ok(result) => {
+            info!("预算总览计算成功: {:?}", result);
+            Ok(ApiResponse::from_result(Ok(result)))
+        },
+        Err(e) => {
+            warn!("预算总览计算失败: {}", e);
+            Ok(ApiResponse::from_result(Err(e)))
+        }
+    }
+}
+
+#[tauri::command]
+pub async fn budget_overview_by_type(
+    state: State<'_, AppState>,
+    request: crate::services::budget_overview::BudgetOverviewRequest,
+) -> Result<ApiResponse<std::collections::HashMap<String, crate::services::budget_overview::BudgetOverviewSummary>>, String> {
+    Ok(ApiResponse::from_result(
+        crate::services::budget_overview::BudgetOverviewService::calculate_by_budget_type(&state.db, request).await,
+    ))
+}
+
+#[tauri::command]
+pub async fn budget_overview_by_scope(
+    state: State<'_, AppState>,
+    request: crate::services::budget_overview::BudgetOverviewRequest,
+) -> Result<ApiResponse<std::collections::HashMap<String, crate::services::budget_overview::BudgetOverviewSummary>>, String> {
+    Ok(ApiResponse::from_result(
+        crate::services::budget_overview::BudgetOverviewService::calculate_by_scope_type(&state.db, request).await,
+    ))
+}
 // end   预算相关
 // ============================================================================
 
