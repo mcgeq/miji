@@ -808,7 +808,13 @@ watch(
           <label class="form-label">
             {{ t('common.misc.colorMark') }}
           </label>
-          <ColorSelector v-model="form.color" :color-names="colorNameMap" />
+          <ColorSelector
+            v-model="form.color"
+            :color-names="colorNameMap"
+            :extended="true"
+            :show-categories="true"
+            :show-custom-color="true"
+          />
         </div>
 
         <!-- 启用状态 -->

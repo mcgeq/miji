@@ -353,7 +353,13 @@ watch(() => form.initialBalance, newBalance => {
           <label class="form-label">
             {{ t('common.misc.color') }}
           </label>
-          <ColorSelector v-model="form.color" :color-names="colorNameMap" />
+          <ColorSelector
+            v-model="form.color"
+            :color-names="colorNameMap"
+            :extended="true"
+            :show-categories="true"
+            :show-custom-color="true"
+          />
         </div>
 
         <!-- 描述 -->
