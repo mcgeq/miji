@@ -1,11 +1,10 @@
 <script setup lang="ts">
-import { ArrowLeft, BarChart3, PieChart, TrendingUp } from 'lucide-vue-next';
+import { BarChart3, PieChart, TrendingUp } from 'lucide-vue-next';
 import VChart from 'vue-echarts';
 import { useRouter } from 'vue-router';
 import { useBudgetStats } from '@/composables/useBudgetStats';
 import { initECharts } from '@/utils/echarts';
 
-const { t } = useI18n();
 const router = useRouter();
 
 // 使用预算统计 composable
@@ -131,16 +130,6 @@ function goToBudgetList() {
   router.push('/money');
 }
 
-// 回退到上一个页面
-function goBack() {
-  if (window.history.length > 1) {
-    window.history.back();
-  } else {
-    // 如果没有历史记录，跳转到预算列表页面
-    router.push('/money');
-  }
-}
-
 // 创建测试数据
 async function createTestData() {
   try {
@@ -176,14 +165,6 @@ const trendChartOption = computed(() => {
   const remainingAmounts = state.value.trends.map(item => item.remainingAmount);
 
   const baseOption = {
-    title: {
-      text: '预算趋势分析',
-      left: 'center',
-      textStyle: {
-        fontSize: 16,
-        fontWeight: 'bold',
-      },
-    },
     tooltip: {
       trigger: 'axis',
       axisPointer: {
@@ -256,14 +237,6 @@ const categoryChartOption = computed(() => {
 
   if (categoryChartType.value === 'pie') {
     return {
-      title: {
-        text: '预算分类分析',
-        left: 'center',
-        textStyle: {
-          fontSize: 16,
-          fontWeight: 'bold',
-        },
-      },
       tooltip: {
         trigger: 'item',
         formatter: '{a} <br/>{b}: ¥{c} ({d}%)',
@@ -290,14 +263,6 @@ const categoryChartOption = computed(() => {
   }
 
   return {
-    title: {
-      text: '预算分类分析',
-      left: 'center',
-      textStyle: {
-        fontSize: 16,
-        fontWeight: 'bold',
-      },
-    },
     tooltip: {
       trigger: 'axis',
       axisPointer: {
@@ -348,17 +313,6 @@ const currentChartOption = computed(() => {
 
 <template>
   <div class="budget-stats-container">
-    <!-- 页面头部 -->
-    <div class="page-header">
-      <button class="back-button" :title="t('common.actions.back')" @click="goBack">
-        <ArrowLeft class="w-4 h-4 mr-1" />
-        返回
-      </button>
-      <h2 class="page-title">
-        预算统计分析
-      </h2>
-    </div>
-
     <!-- 加载状态 -->
     <div v-if="state.loading" class="loading-container">
       <div class="loading-spinner" />
@@ -645,18 +599,18 @@ const currentChartOption = computed(() => {
           <button
             class="control-button"
             :class="{ active: chartType === 'trend' }"
+            title="趋势分析"
             @click="chartType = 'trend'"
           >
-            <TrendingUp class="w-4 h-4 mr-1" />
-            趋势分析
+            <TrendingUp class="w-4 h-4" />
           </button>
           <button
             class="control-button"
             :class="{ active: chartType === 'category' }"
+            title="分类分析"
             @click="chartType = 'category'"
           >
-            <PieChart class="w-4 h-4 mr-1" />
-            分类分析
+            <PieChart class="w-4 h-4" />
           </button>
         </div>
       </div>
@@ -690,80 +644,46 @@ const currentChartOption = computed(() => {
 </template>
 
 <style scoped>
+/* 使用现有的 CSS 变量和工具类 */
 .budget-stats-container {
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  background-color: var(--color-base-100);
+  border-radius: var(--radius-box);
+  box-shadow: var(--shadow-md);
   overflow: hidden;
 }
 
-.page-header {
-  display: flex;
-  align-items: center;
-  padding: 16px 20px;
-  border-bottom: 1px solid #f0f0f0;
-  background: #fafafa;
-}
-
-.back-button {
-  display: flex;
-  align-items: center;
-  padding: 8px 12px;
-  background: #f5f5f5;
-  border: 1px solid #d9d9d9;
-  border-radius: 6px;
-  font-size: 14px;
-  color: #666;
-  cursor: pointer;
-  transition: all 0.2s;
-  margin-right: 16px;
-}
-
-.back-button:hover {
-  background: #e6f7ff;
-  border-color: #40a9ff;
-  color: #1890ff;
-}
-
-.page-title {
-  font-size: 20px;
-  font-weight: 600;
-  color: #333;
-  margin: 0;
-}
-
 .stats-overview {
-  padding: 16px;
-  border-bottom: 1px solid #f0f0f0;
+  padding: var(--spacing-4);
+  border-bottom: var(--border) solid var(--color-base-300);
 }
 
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(12.5rem, 1fr));
+  gap: var(--spacing-4);
 }
 
 .stat-card {
   display: flex;
   align-items: center;
-  padding: 16px;
-  background: #fafafa;
-  border-radius: 8px;
-  border: 1px solid #e0e0e0;
-  transition: all 0.2s;
+  padding: var(--spacing-4);
+  background-color: var(--color-base-200);
+  border-radius: var(--radius-box);
+  border: var(--border) solid var(--color-base-300);
+  transition: var(--transition-normal);
 }
 
 .stat-card:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-lg);
 }
 
 .stat-card.warning {
-  background: #fff2f0;
-  border-color: #ffccc7;
+  background-color: var(--color-red-50);
+  border-color: var(--color-red-100);
 }
 
 .stat-icon {
-  margin-right: 12px;
+  margin-right: var(--spacing-3);
   flex-shrink: 0;
 }
 
@@ -772,229 +692,102 @@ const currentChartOption = computed(() => {
 }
 
 .stat-label {
-  font-size: 12px;
-  color: #666;
-  margin-bottom: 4px;
+  font-size: 0.875rem;
+  color: var(--color-gray-600);
+  margin-bottom: var(--spacing-1);
 }
 
 .stat-value {
-  font-size: 18px;
+  font-size: 1.25rem;
   font-weight: bold;
-  color: #333;
-  margin-bottom: 2px;
+  color: var(--color-base-content);
 }
 
-.stat-status {
-  font-size: 11px;
-  font-weight: 500;
+.stat-sub-value {
+  font-size: 0.75rem;
+  color: var(--color-gray-500);
+  margin-top: var(--spacing-1);
 }
 
-.filters-section {
-  border-bottom: 1px solid #f0f0f0;
-}
-
-.filters-header {
+.filter-section {
+  padding: var(--spacing-4);
+  border-bottom: var(--border) solid var(--color-base-300);
   display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-3);
+  align-items: center;
   justify-content: space-between;
-  align-items: center;
-  padding: 16px;
-  background: #fafafa;
-  border-bottom: 1px solid #e0e0e0;
 }
 
-.filters-title {
-  font-size: 16px;
-  font-weight: bold;
-  margin: 0;
-}
-
-.close-button {
-  background: none;
-  border: none;
-  font-size: 18px;
-  cursor: pointer;
-  color: #666;
-  padding: 4px;
-  border-radius: 4px;
-}
-
-.close-button:hover {
-  background: #e0e0e0;
-}
-
-.filters-content {
-  padding: 16px;
-}
-
-.filter-row {
+.filter-group {
   display: flex;
+  gap: var(--spacing-2);
+  flex-wrap: wrap;
   align-items: center;
-  margin-bottom: 16px;
 }
 
 .filter-label {
-  width: 100px;
-  font-size: 14px;
-  color: #333;
-  margin-right: 12px;
-  flex-shrink: 0;
+  font-size: 0.875rem;
+  color: var(--color-base-content);
+  font-weight: 500;
 }
 
 .filter-select,
 .filter-input {
-  flex: 1;
-  padding: 8px 12px;
-  border: 1px solid #d9d9d9;
-  border-radius: 4px;
-  font-size: 14px;
+  padding: var(--spacing-2) var(--spacing-3);
+  border: var(--border) solid var(--color-base-300);
+  border-radius: var(--radius-field);
+  font-size: 0.875rem;
+  color: var(--color-base-content);
+  background-color: var(--color-base-100);
+  transition: var(--transition-normal);
 }
 
-.filter-checkbox {
-  margin-right: 8px;
-}
-
-.date-range {
-  display: flex;
-  align-items: center;
-  flex: 1;
-  gap: 8px;
-}
-
-.date-separator {
-  color: #666;
-  font-size: 14px;
-}
-
-.filter-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-  margin-top: 16px;
+.filter-select:focus,
+.filter-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px var(--color-primary-soft);
 }
 
 .filter-button {
-  padding: 8px 16px;
-  border-radius: 4px;
-  font-size: 14px;
+  display: flex;
+  align-items: center;
+  padding: var(--spacing-2) var(--spacing-4);
+  background-color: var(--color-base-200);
+  border: var(--border) solid var(--color-base-300);
+  border-radius: var(--radius-field);
+  font-size: 0.875rem;
+  color: var(--color-gray-600);
   cursor: pointer;
-  transition: all 0.2s;
+  transition: var(--transition-normal);
+}
+
+.filter-button:hover {
+  background-color: var(--color-blue-100);
+  border-color: var(--color-blue-500);
+  color: var(--color-blue-500);
 }
 
 .filter-button.primary {
-  background: #1890ff;
-  color: white;
-  border: 1px solid #1890ff;
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-primary-content);
 }
 
 .filter-button.primary:hover {
-  background: #40a9ff;
+  background-color: var(--color-primary-hover);
 }
 
 .filter-button.secondary {
-  background: white;
-  color: #666;
-  border: 1px solid #d9d9d9;
+  background-color: var(--color-base-100);
+  color: var(--color-gray-600);
 }
 
 .filter-button.secondary:hover {
-  background: #f5f5f5;
-}
-
-.charts-section {
-  padding: 16px;
-}
-
-.charts-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
-}
-
-.charts-title {
-  font-size: 16px;
-  font-weight: bold;
-  margin: 0;
-}
-
-.charts-actions {
-  display: flex;
-  gap: 8px;
-}
-
-.action-button {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 6px 12px;
-  background: white;
-  border: 1px solid #d9d9d9;
-  border-radius: 4px;
-  font-size: 14px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.action-button:hover {
-  background: #f5f5f5;
-}
-
-.action-button:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.error-message {
-  display: flex;
-  align-items: center;
-  padding: 16px;
-  background: #fff2f0;
-  border: 1px solid #ffccc7;
-  border-radius: 4px;
-  margin-bottom: 16px;
-}
-
-.error-icon {
-  margin-right: 8px;
-  font-size: 16px;
-}
-
-.error-text {
-  color: #ff4d4f;
-  font-size: 14px;
-}
-
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 40px;
-  color: #999;
-}
-
-.empty-icon {
-  font-size: 48px;
-  margin-bottom: 16px;
-}
-
-.empty-text {
-  font-size: 16px;
-  margin-bottom: 16px;
-}
-
-.empty-button {
-  padding: 8px 16px;
-  background: #1890ff;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  font-size: 14px;
-  cursor: pointer;
-}
-
-.empty-button:hover {
-  background: #40a9ff;
+  background-color: var(--color-base-200);
+  border-color: var(--color-blue-500);
+  color: var(--color-blue-500);
 }
 
 .loading-container {
@@ -1002,22 +795,22 @@ const currentChartOption = computed(() => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 40px;
-  color: #999;
+  padding: 2.5rem;
+  color: var(--color-gray-500);
 }
 
 .loading-spinner {
-  width: 32px;
-  height: 32px;
-  border: 3px solid #f3f3f3;
-  border-top: 3px solid #1890ff;
+  width: 2rem;
+  height: 2rem;
+  border: 3px solid var(--color-base-300);
+  border-top: 3px solid var(--color-primary);
   border-radius: 50%;
   animation: spin 1s linear infinite;
-  margin-bottom: 8px;
+  margin-bottom: var(--spacing-2);
 }
 
 .loading-text {
-  font-size: 14px;
+  font-size: 0.875rem;
 }
 
 .empty-state {
@@ -1025,117 +818,103 @@ const currentChartOption = computed(() => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 40px;
-  color: #999;
+  padding: 2.5rem;
+  color: var(--color-gray-500);
 }
 
 .empty-icon {
-  font-size: 48px;
-  margin-bottom: 16px;
+  font-size: 3rem;
+  margin-bottom: var(--spacing-4);
 }
 
 .empty-text {
-  font-size: 16px;
-  margin-bottom: 8px;
+  font-size: 1rem;
+  margin-bottom: var(--spacing-2);
   font-weight: 500;
 }
 
 .empty-description {
-  font-size: 14px;
-  margin-bottom: 16px;
+  font-size: 0.875rem;
+  margin-bottom: var(--spacing-4);
   text-align: center;
-  max-width: 400px;
+  max-width: 25rem;
 }
 
 .empty-description p {
-  margin: 4px 0;
+  margin: var(--spacing-1) 0;
 }
 
 .empty-actions {
   display: flex;
-  gap: 12px;
+  gap: var(--spacing-3);
   justify-content: center;
   flex-wrap: wrap;
 }
 
 .empty-button.primary {
-  padding: 10px 20px;
-  background: #1890ff;
-  color: white;
+  padding: 0.625rem 1.25rem;
+  background-color: var(--color-primary);
+  color: var(--color-primary-content);
   border: none;
-  border-radius: 6px;
-  font-size: 14px;
+  border-radius: var(--radius-field);
+  font-size: 0.875rem;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: var(--transition-normal);
 }
 
 .empty-button.primary:hover {
-  background: #40a9ff;
+  background-color: var(--color-primary-hover);
 }
 
 .empty-button.secondary {
-  padding: 10px 20px;
-  background: white;
-  color: #666;
-  border: 1px solid #d9d9d9;
-  border-radius: 6px;
-  font-size: 14px;
+  padding: 0.625rem 1.25rem;
+  background-color: var(--color-base-100);
+  color: var(--color-gray-600);
+  border: var(--border) solid var(--color-base-300);
+  border-radius: var(--radius-field);
+  font-size: 0.875rem;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: var(--transition-normal);
 }
 
 .empty-button.secondary:hover {
-  background: #f5f5f5;
-  border-color: #40a9ff;
-  color: #40a9ff;
+  background-color: var(--color-base-200);
+  border-color: var(--color-blue-500);
+  color: var(--color-blue-500);
 }
 
 .empty-button.test {
-  padding: 10px 20px;
-  background: #52c41a;
-  color: white;
+  padding: 0.625rem 1.25rem;
+  background-color: var(--color-success);
+  color: var(--color-success-content);
   border: none;
-  border-radius: 6px;
-  font-size: 14px;
+  border-radius: var(--radius-field);
+  font-size: 0.875rem;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: var(--transition-normal);
 }
 
 .empty-button.test:hover {
-  background: #73d13d;
+  background-color: var(--color-success-hover);
 }
 
 .debug-info {
-  background: #f5f5f5;
-  border: 1px solid #e0e0e0;
-  border-radius: 4px;
-  padding: 12px;
-  margin: 16px 0;
-  font-size: 12px;
-  color: #666;
+  background-color: var(--color-base-200);
+  border: var(--border) solid var(--color-base-300);
+  border-radius: var(--radius-selector);
+  padding: var(--spacing-3);
+  margin: var(--spacing-4) 0;
+  font-size: 0.75rem;
+  color: var(--color-gray-600);
   text-align: left;
-  max-width: 300px;
+  max-width: 18.75rem;
 }
 
 .debug-info p {
-  margin: 4px 0;
-}
-
-.empty-button {
-  padding: 8px 16px;
-  background: #1890ff;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  font-size: 14px;
-  cursor: pointer;
-}
-
-.empty-button:hover {
-  background: #40a9ff;
+  margin: var(--spacing-1) 0;
 }
 
 @keyframes spin {
@@ -1145,63 +924,66 @@ const currentChartOption = computed(() => {
 
 /* 图表区域样式 */
 .charts-section {
-  margin-top: 24px;
-  background: white;
-  border-radius: 8px;
-  padding: 20px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-top: 1.5rem;
+  background-color: var(--color-base-100);
+  border-radius: var(--radius-box);
+  padding: 1.25rem;
+  box-shadow: var(--shadow-md);
 }
 
 .charts-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: 1.25rem;
   flex-wrap: wrap;
-  gap: 16px;
+  gap: var(--spacing-4);
 }
 
 .charts-header h3 {
-  font-size: 18px;
+  font-size: 1.125rem;
   font-weight: 600;
-  color: #333;
+  color: var(--color-base-content);
   margin: 0;
 }
 
 .chart-controls {
   display: flex;
-  gap: 8px;
+  gap: var(--spacing-2);
   flex-wrap: wrap;
 }
 
 .control-button {
   display: flex;
   align-items: center;
-  padding: 8px 16px;
-  background: #f5f5f5;
-  border: 1px solid #d9d9d9;
-  border-radius: 6px;
-  font-size: 14px;
-  color: #666;
+  justify-content: center;
+  padding: var(--spacing-2);
+  background-color: var(--color-base-200);
+  border: var(--border) solid var(--color-base-300);
+  border-radius: var(--radius-field);
+  font-size: 0.875rem;
+  color: var(--color-gray-600);
   cursor: pointer;
-  transition: all 0.2s;
+  transition: var(--transition-normal);
+  min-width: 2.5rem;
+  min-height: 2.5rem;
 }
 
 .control-button:hover {
-  background: #e6f7ff;
-  border-color: #40a9ff;
-  color: #1890ff;
+  background-color: var(--color-blue-100);
+  border-color: var(--color-blue-500);
+  color: var(--color-blue-500);
 }
 
 .control-button.active {
-  background: #1890ff;
-  border-color: #1890ff;
-  color: white;
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-primary-content);
 }
 
 .chart-container {
   width: 100%;
-  height: 400px;
+  height: 25rem;
   position: relative;
 }
 
@@ -1215,14 +997,37 @@ const currentChartOption = computed(() => {
   align-items: center;
   justify-content: center;
   height: 100%;
-  color: #999;
+  color: var(--color-gray-500);
 }
 
 .empty-chart-text {
-  font-size: 14px;
+  font-size: 0.875rem;
 }
 
-@media (max-width: 768px) {
+/* 错误消息样式 */
+.error-message {
+  display: flex;
+  align-items: center;
+  padding: var(--spacing-4);
+  background-color: var(--color-red-50);
+  border: var(--border) solid var(--color-red-100);
+  border-radius: var(--radius-box);
+  margin: var(--spacing-4) 0;
+}
+
+.error-icon {
+  font-size: 1.25rem;
+  margin-right: var(--spacing-3);
+  color: var(--color-red-500);
+}
+
+.error-text {
+  color: var(--color-red-600);
+  font-size: 0.875rem;
+}
+
+/* 响应式设计 */
+@media (max-width: var(--breakpoint-md)) {
   .stats-grid {
     grid-template-columns: 1fr;
   }
@@ -1230,17 +1035,21 @@ const currentChartOption = computed(() => {
     flex-direction: column;
     align-items: stretch;
   }
-  .filter-label {
-    width: auto;
-    margin-bottom: 8px;
-    margin-right: 0;
+  .filter-group {
+    width: 100%;
+    justify-content: space-between;
   }
-  .date-range {
+  .filter-button-group {
+    width: 100%;
+    justify-content: flex-end;
+  }
+  .charts-header {
     flex-direction: column;
-    align-items: stretch;
+    align-items: flex-start;
   }
-  .date-separator {
-    text-align: center;
+  .chart-controls {
+    width: 100%;
+    justify-content: center;
   }
 }
 </style>

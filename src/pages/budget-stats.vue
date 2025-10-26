@@ -1,8 +1,11 @@
 <script setup lang="ts">
+import { ArrowLeft, RefreshCw } from 'lucide-vue-next';
+import { useRouter } from 'vue-router';
 import { useBudgetStats } from '@/composables/useBudgetStats';
 import BudgetStatsAnalysis from '@/features/money/components/BudgetStatsAnalysis.vue';
 
 const { t } = useI18n();
+const router = useRouter();
 
 // 页面标题
 const pageTitle = ref(t('financial.budget.stats'));
@@ -13,6 +16,16 @@ const {
   loadAllStats,
   refresh,
 } = useBudgetStats();
+
+// 回退到上一个页面
+function goBack() {
+  if (window.history.length > 1) {
+    window.history.back();
+  } else {
+    // 如果没有历史记录，跳转到预算列表页面
+    router.push('/money');
+  }
+}
 
 // 页面加载时自动加载数据
 onMounted(async () => {
@@ -41,8 +54,13 @@ onUnmounted(() => {
           :disabled="state.loading"
           @click="refresh"
         >
-          <span v-if="state.loading">加载中...</span>
-          <span v-else>刷新数据</span>
+          <RefreshCw
+            class="w-4 h-4"
+            :class="{ 'animate-spin': state.loading }"
+          />
+        </button>
+        <button class="back-button" :title="t('common.actions.back')" @click="goBack">
+          <ArrowLeft class="w-4 h-4 mr-1" />
         </button>
       </div>
     </div>
@@ -117,6 +135,39 @@ onUnmounted(() => {
 .refresh-button:disabled {
   background: #d9d9d9;
   cursor: not-allowed;
+}
+
+/* 旋转动画 */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+.back-button {
+  display: flex;
+  align-items: center;
+  padding: 8px 16px;
+  background: #f5f5f5;
+  border: 1px solid #d9d9d9;
+  border-radius: 4px;
+  font-size: 14px;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.back-button:hover {
+  background: #e6f7ff;
+  border-color: #40a9ff;
+  color: #1890ff;
 }
 
 .error-container {

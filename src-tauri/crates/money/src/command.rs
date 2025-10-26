@@ -4,7 +4,7 @@ use common::{
     paginations::{PagedQuery, PagedResult},
 };
 use tauri::State;
-use tracing::{info, warn, error, instrument};
+use tracing::{error, info, instrument, warn};
 
 use crate::{
     dto::{
@@ -29,7 +29,7 @@ use crate::{
         account::{AccountFilter, get_account_service},
         bil_reminder::{BilReminderFilters, get_bil_reminder_service},
         budget::{BudgetFilter, get_budget_service},
-        budget_trends::{BudgetTrendRequest, BudgetCategoryStats},
+        budget_trends::{BudgetCategoryStats, BudgetTrendData, BudgetTrendRequest},
         categories::{CategoryFilter, get_category_service},
         currency::{CurrencyFilter, get_currency_service},
         family_member::get_family_member_service,
@@ -93,7 +93,7 @@ pub async fn currency_create(
 ) -> Result<ApiResponse<CurrencyResponse>, String> {
     info!("开始创建货币");
     let service = get_currency_service();
-    
+
     match service.create(&state.db, data.clone()).await {
         Ok(result) => {
             info!(
@@ -153,7 +153,7 @@ pub async fn currency_delete(
 ) -> Result<ApiResponse<()>, String> {
     info!("开始删除货币");
     let service = get_currency_service();
-    
+
     match service.delete(&state.db, serial_num.clone()).await {
         Ok(_) => {
             info!(
@@ -241,7 +241,7 @@ pub async fn account_create(
         initial_balance = %data.initial_balance,
         "开始创建账户"
     );
-    
+
     let service = get_account_service();
 
     match service.account_create(&state.db, data).await {
@@ -253,7 +253,9 @@ pub async fn account_create(
                 balance = %result.account.balance,
                 "账户创建成功"
             );
-            Ok(ApiResponse::from_result(Ok(AccountResponseWithRelations::from(result))))
+            Ok(ApiResponse::from_result(Ok(
+                AccountResponseWithRelations::from(result),
+            )))
         }
         Err(e) => {
             error!(
@@ -305,10 +307,13 @@ pub async fn account_delete(
 ) -> Result<ApiResponse<()>, String> {
     // 先获取账户信息用于日志
     let service = get_account_service();
-    
+
     // 尝试获取账户信息（用于日志，但不影响删除逻辑）
-    let account_info = service.get_account_with_relations(&state.db, serial_num.clone()).await.ok();
-    
+    let account_info = service
+        .get_account_with_relations(&state.db, serial_num.clone())
+        .await
+        .ok();
+
     if let Some(account) = &account_info {
         warn!(
             account_serial_num = %serial_num,
@@ -317,7 +322,7 @@ pub async fn account_delete(
             "准备删除账户，账户当前有余额"
         );
     }
-    
+
     match service.delete(&state.db, serial_num.clone()).await {
         Ok(_) => {
             info!(
@@ -411,9 +416,9 @@ pub async fn transaction_create(
         category = %data.category,
         "开始创建交易记录"
     );
-    
+
     let service = get_transaction_service();
-    
+
     match service.trans_create_with_relations(&state.db, data).await {
         Ok(result) => {
             info!(
@@ -423,7 +428,9 @@ pub async fn transaction_create(
                 account_serial_num = %result.transaction.account_serial_num,
                 "交易记录创建成功"
             );
-            Ok(ApiResponse::from_result(Ok(TransactionResponse::from(result))))
+            Ok(ApiResponse::from_result(Ok(TransactionResponse::from(
+                result,
+            ))))
         }
         Err(e) => {
             let error_msg = format!("交易记录创建失败: {}", e);
@@ -445,7 +452,7 @@ pub async fn transaction_transfer_create(
         amount = %data.amount.clone(),
         "开始创建转账"
     );
-    
+
     let service = get_transaction_service();
 
     match service
@@ -488,9 +495,9 @@ pub async fn transaction_query_income_and_expense(
         end_date = %end_date,
         "查询收支统计"
     );
-    
+
     let service = get_transaction_service();
-    
+
     match service
         .query_income_and_expense(&state.db, start_date.clone(), end_date.clone())
         .await
@@ -525,9 +532,9 @@ pub async fn transaction_transfer_delete(
         transaction_serial_num = %serial_num,
         "开始删除转账"
     );
-    
+
     let service = get_transaction_service();
-    
+
     match service
         .trans_transfer_delete_with_relations(&state.db, &serial_num)
         .await
@@ -566,9 +573,9 @@ pub async fn transaction_transfer_update(
         amount = %transfer.amount.clone(),
         "开始更新转账"
     );
-    
+
     let service = get_transaction_service();
-    
+
     match service
         .trans_transfer_update_with_relations(&state.db, &serial_num, transfer)
         .await
@@ -616,7 +623,9 @@ pub async fn transaction_get(
                 transaction_type = %result.transaction.transaction_type,
                 "获取交易成功"
             );
-            Ok(ApiResponse::from_result(Ok(TransactionResponse::from(result))))
+            Ok(ApiResponse::from_result(Ok(TransactionResponse::from(
+                result,
+            ))))
         }
         Err(e) => {
             error!(
@@ -641,7 +650,7 @@ pub async fn transaction_update(
         transaction_serial_num = %serial_num,
         "开始更新交易"
     );
-    
+
     let service = get_transaction_service();
 
     match service
@@ -655,7 +664,9 @@ pub async fn transaction_update(
                 transaction_type = %result.transaction.transaction_type,
                 "交易更新成功"
             );
-            Ok(ApiResponse::from_result(Ok(TransactionResponse::from(result))))
+            Ok(ApiResponse::from_result(Ok(TransactionResponse::from(
+                result,
+            ))))
         }
         Err(e) => {
             error!(
@@ -679,7 +690,7 @@ pub async fn transaction_delete(
         transaction_serial_num = %serial_num,
         "开始删除交易"
     );
-    
+
     let service = get_transaction_service();
 
     match service.delete(&state.db, serial_num.clone()).await {
@@ -710,16 +721,13 @@ pub async fn transaction_list(
 ) -> Result<ApiResponse<Vec<TransactionResponse>>, String> {
     let service = get_transaction_service();
 
-    match service
-        .trans_list_with_relations(&state.db, filter)
-        .await
-    {
+    match service.trans_list_with_relations(&state.db, filter).await {
         Ok(transactions) => {
-            info!(
-                count = transactions.len(),
-                "列出交易成功"
-            );
-            Ok(ApiResponse::from_result(Ok(transactions.into_iter().map(TransactionResponse::from).collect())))
+            info!(count = transactions.len(), "列出交易成功");
+            Ok(ApiResponse::from_result(Ok(transactions
+                .into_iter()
+                .map(TransactionResponse::from)
+                .collect())))
         }
         Err(e) => {
             error!(
@@ -739,7 +747,7 @@ pub async fn transaction_list_paged(
     query: PagedQuery<TransactionFilter>,
 ) -> Result<ApiResponse<PagedResult<TransactionResponse>>, String> {
     let service = get_transaction_service();
-    
+
     match service
         .trans_list_paged_with_relations(&state.db, query)
         .await
@@ -872,12 +880,16 @@ pub async fn budget_overview_calculate(
     request: crate::services::budget_overview::BudgetOverviewRequest,
 ) -> Result<ApiResponse<crate::services::budget_overview::BudgetOverviewSummary>, String> {
     info!("收到预算总览计算请求: {:?}", request);
-    
-    match crate::services::budget_overview::BudgetOverviewService::calculate_overview(&state.db, request).await {
+
+    match crate::services::budget_overview::BudgetOverviewService::calculate_overview(
+        &state.db, request,
+    )
+    .await
+    {
         Ok(result) => {
             info!("预算总览计算成功: {:?}", result);
             Ok(ApiResponse::from_result(Ok(result)))
-        },
+        }
         Err(e) => {
             warn!("预算总览计算失败: {}", e);
             Ok(ApiResponse::from_result(Err(e)))
@@ -889,9 +901,17 @@ pub async fn budget_overview_calculate(
 pub async fn budget_overview_by_type(
     state: State<'_, AppState>,
     request: crate::services::budget_overview::BudgetOverviewRequest,
-) -> Result<ApiResponse<std::collections::HashMap<String, crate::services::budget_overview::BudgetOverviewSummary>>, String> {
+) -> Result<
+    ApiResponse<
+        std::collections::HashMap<String, crate::services::budget_overview::BudgetOverviewSummary>,
+    >,
+    String,
+> {
     Ok(ApiResponse::from_result(
-        crate::services::budget_overview::BudgetOverviewService::calculate_by_budget_type(&state.db, request).await,
+        crate::services::budget_overview::BudgetOverviewService::calculate_by_budget_type(
+            &state.db, request,
+        )
+        .await,
     ))
 }
 
@@ -899,23 +919,33 @@ pub async fn budget_overview_by_type(
 pub async fn budget_overview_by_scope(
     state: State<'_, AppState>,
     request: crate::services::budget_overview::BudgetOverviewRequest,
-) -> Result<ApiResponse<std::collections::HashMap<String, crate::services::budget_overview::BudgetOverviewSummary>>, String> {
+) -> Result<
+    ApiResponse<
+        std::collections::HashMap<String, crate::services::budget_overview::BudgetOverviewSummary>,
+    >,
+    String,
+> {
     Ok(ApiResponse::from_result(
-        crate::services::budget_overview::BudgetOverviewService::calculate_by_scope_type(&state.db, request).await,
+        crate::services::budget_overview::BudgetOverviewService::calculate_by_scope_type(
+            &state.db, request,
+        )
+        .await,
     ))
 }
 #[tauri::command]
 pub async fn budget_trends_get(
     state: State<'_, AppState>,
     request: BudgetTrendRequest,
-) -> Result<ApiResponse<Vec<crate::services::budget_trends::BudgetTrendData>>, String> {
+) -> Result<ApiResponse<Vec<BudgetTrendData>>, String> {
     info!("收到预算趋势分析请求: {:?}", request);
-    
-    match crate::services::budget_trends::BudgetTrendService::get_budget_trends(&state.db, request).await {
+
+    match crate::services::budget_trends::BudgetTrendService::get_budget_trends(&state.db, request)
+        .await
+    {
         Ok(result) => {
-            info!("预算趋势分析成功: {} 个数据点", result.len() as usize);
+            info!("预算趋势分析成功: {} 个数据点", result.len());
             Ok(ApiResponse::from_result(Ok(result)))
-        },
+        }
         Err(e) => {
             error!("预算趋势分析失败: {}", e);
             Err(format!("预算趋势分析失败: {}", e))
@@ -929,13 +959,22 @@ pub async fn budget_category_stats_get(
     base_currency: String,
     include_inactive: Option<bool>,
 ) -> Result<ApiResponse<Vec<BudgetCategoryStats>>, String> {
-    info!("收到预算分类统计请求: currency={}, include_inactive={:?}", base_currency, include_inactive);
-    
-    match crate::services::budget_trends::BudgetTrendService::get_budget_category_stats(&state.db, base_currency, include_inactive).await {
+    info!(
+        "收到预算分类统计请求: currency={}, include_inactive={:?}",
+        base_currency, include_inactive
+    );
+
+    match crate::services::budget_trends::BudgetTrendService::get_budget_category_stats(
+        &state.db,
+        base_currency,
+        include_inactive,
+    )
+    .await
+    {
         Ok(result) => {
-            info!("预算分类统计成功: {} 个分类", result.len() as usize);
+            info!("预算分类统计成功: {} 个分类", result.len());
             Ok(ApiResponse::from_result(Ok(result)))
-        },
+        }
         Err(e) => {
             error!("预算分类统计失败: {}", e);
             Err(format!("预算分类统计失败: {}", e))

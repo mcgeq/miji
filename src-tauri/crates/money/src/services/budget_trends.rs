@@ -1,10 +1,10 @@
 use std::collections::HashMap;
 
-use chrono::{DateTime, FixedOffset, NaiveDate, Datelike};
+use chrono::{DateTime, Datelike, FixedOffset, NaiveDate};
 use common::{error::MijiResult, utils::date::DateUtils};
 use sea_orm::{
-    ColumnTrait, Condition, DatabaseConnection, EntityTrait, QueryFilter, prelude::Decimal,
-    QueryOrder, QuerySelect,
+    ColumnTrait, Condition, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder, QuerySelect,
+    prelude::Decimal,
 };
 use serde::{Deserialize, Serialize};
 use tracing::{debug, info, warn};
@@ -72,21 +72,18 @@ impl BudgetTrendService {
 
         // 构建查询条件
         let mut condition = Condition::all();
-        
+
         // 日期范围过滤
         condition = condition.add(budget::Column::StartDate.lte(request.end_date));
         condition = condition.add(budget::Column::EndDate.gte(request.start_date));
-        
+
         // 激活状态过滤
         if !request.include_inactive.unwrap_or(false) {
             condition = condition.add(budget::Column::IsActive.eq(true));
         }
 
         // 查询预算数据
-        let budgets = budget::Entity::find()
-            .filter(condition)
-            .all(db)
-            .await?;
+        let budgets = budget::Entity::find().filter(condition).all(db).await?;
 
         info!("查询到 {} 个预算", budgets.len());
 
@@ -105,13 +102,15 @@ impl BudgetTrendService {
                     let next_month = if current_date.month() == 12 {
                         NaiveDate::from_ymd_opt(current_date.year() + 1, 1, 1).unwrap()
                     } else {
-                        NaiveDate::from_ymd_opt(current_date.year(), current_date.month() + 1, 1).unwrap()
+                        NaiveDate::from_ymd_opt(current_date.year(), current_date.month() + 1, 1)
+                            .unwrap()
                     };
                     let period_end = next_month.pred_opt().unwrap_or(current_date);
-                    
+
                     // 计算这个月的统计数据
-                    let month_stats = Self::calculate_period_stats(&budgets, current_date, period_end);
-                    
+                    let month_stats =
+                        Self::calculate_period_stats(&budgets, current_date, period_end);
+
                     trends.push(BudgetTrendData {
                         period: format!("{}-{:02}", current_date.year(), current_date.month()),
                         total_budget: month_stats.0,
@@ -119,15 +118,15 @@ impl BudgetTrendService {
                         remaining_amount: month_stats.2,
                         completion_rate: month_stats.3,
                     });
-                    
+
                     next_month
                 }
                 "week" => {
                     let week_end = current_date + chrono::Duration::days(6);
-                    
+
                     // 计算这周的统计数据
                     let week_stats = Self::calculate_period_stats(&budgets, current_date, week_end);
-                    
+
                     let week_num = current_date.iso_week().week();
                     trends.push(BudgetTrendData {
                         period: format!("{}-W{:02}", current_date.year(), week_num),
@@ -136,7 +135,7 @@ impl BudgetTrendService {
                         remaining_amount: week_stats.2,
                         completion_rate: week_stats.3,
                     });
-                    
+
                     current_date + chrono::Duration::days(7)
                 }
                 _ => {
@@ -144,7 +143,7 @@ impl BudgetTrendService {
                     break;
                 }
             };
-            
+
             current_date = period;
         }
 
@@ -162,17 +161,14 @@ impl BudgetTrendService {
 
         // 构建查询条件
         let mut condition = Condition::all();
-        
+
         // 激活状态过滤
         if !include_inactive.unwrap_or(false) {
             condition = condition.add(budget::Column::IsActive.eq(true));
         }
 
         // 查询预算数据
-        let budgets = budget::Entity::find()
-            .filter(condition)
-            .all(db)
-            .await?;
+        let budgets = budget::Entity::find().filter(condition).all(db).await?;
 
         info!("查询到 {} 个预算", budgets.len());
 
@@ -188,13 +184,19 @@ impl BudgetTrendService {
             // 获取分类范围
             if let Some(category_scope) = &budget.category_scope {
                 // 尝试解析 JSON 数组
-                if let Ok(categories) = serde_json::from_value::<Vec<String>>(category_scope.clone()) {
+                if let Ok(categories) =
+                    serde_json::from_value::<Vec<String>>(category_scope.clone())
+                {
                     if categories.is_empty() {
                         continue;
                     }
 
                     for category in categories {
-                        let entry = category_map.entry(category).or_insert((0, Decimal::ZERO, Decimal::ZERO));
+                        let entry = category_map.entry(category).or_insert((
+                            0,
+                            Decimal::ZERO,
+                            Decimal::ZERO,
+                        ));
                         entry.0 += 1; // 预算数量
                         entry.1 += budget.amount; // 总预算
                         entry.2 += budget.current_period_used; // 已使用
@@ -247,7 +249,7 @@ impl BudgetTrendService {
             // 检查预算是否在指定时间段内有效
             let budget_start = budget.start_date.date_naive();
             let budget_end = budget.end_date.date_naive();
-            
+
             if budget_start <= end_date && budget_end >= start_date {
                 total_budget += budget.amount;
                 total_used += budget.current_period_used;
