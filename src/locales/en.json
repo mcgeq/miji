@@ -566,6 +566,18 @@
       "hybrid": "Hybrid",
       "ruleBased": "Rule-Based"
     },
+    "quickActions": {
+      "account": "Account",
+      "income": "Income",
+      "expense": "Expense",
+      "transfer": "Transfer",
+      "budget": "Budget",
+      "reminder": "Reminder",
+      "accounts": "Accounts",
+      "transactions": "Transactions",
+      "budgets": "Budgets",
+      "reminders": "Reminders"
+    },
     "reminder": {
       "reminder": "Reminder",
       "reminderTitle": "Reminder Title",

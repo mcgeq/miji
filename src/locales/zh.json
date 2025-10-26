@@ -570,6 +570,18 @@
       "hybrid": "混合",
       "ruleBased": "规则"
     },
+    "quickActions": {
+      "account": "账户",
+      "income": "收入",
+      "expense": "支出",
+      "transfer": "转账",
+      "budget": "预算",
+      "reminder": "提醒",
+      "accounts": "账户",
+      "transactions": "交易",
+      "budgets": "预算",
+      "reminders": "提醒"
+    },
     "reminder": {
       "reminder": "提醒",
       "reminderTitle": "提醒标题",

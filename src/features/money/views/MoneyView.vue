@@ -94,15 +94,17 @@ const {
   handleMarkReminderPaid,
 } = useReminderActions();
 
+const { t } = useI18n();
+
 const activeTab = ref('accounts');
 const baseCurrency = ref(CURRENCY_CNY.symbol);
 
-const tabs = [
-  { key: 'accounts', label: '账户' },
-  { key: 'transactions', label: '交易' },
-  { key: 'budgets', label: '预算' },
-  { key: 'reminders', label: '提醒' },
-];
+const tabs = computed(() => [
+  { key: 'accounts', label: t('financial.quickActions.accounts') },
+  { key: 'transactions', label: t('financial.quickActions.transactions') },
+  { key: 'budgets', label: t('financial.quickActions.budgets') },
+  { key: 'reminders', label: t('financial.quickActions.reminders') },
+]);
 
 // ------------------ 响应式卡片尺寸 ------------------
 const cardDimensions = reactive({
@@ -393,22 +395,22 @@ onUnmounted(() => {
         <div class="quick-actions-wrapper">
           <div class="quick-actions scroll-x">
             <button class="btn btn-purple" @click="showAccountModal">
-              <LucideCreditCard /><span>添加账户</span>
+              <LucideCreditCard /><span>{{ t('financial.quickActions.account') }}</span>
             </button>
             <button class="btn btn-green" @click="showTransactionModal(TransactionTypeSchema.enum.Income)">
-              <LucidePlusCircle /><span>记录收入</span>
+              <LucidePlusCircle /><span>{{ t('financial.quickActions.income') }}</span>
             </button>
             <button class="btn btn-red" @click="showTransactionModal(TransactionTypeSchema.enum.Expense)">
-              <LucideMinusCircle /><span>记录支出</span>
+              <LucideMinusCircle /><span>{{ t('financial.quickActions.expense') }}</span>
             </button>
             <button class="btn btn-blue" @click="showTransactionModal(TransactionTypeSchema.enum.Transfer)">
-              <LucideArrowRightLeft /><span>记录转账</span>
+              <LucideArrowRightLeft /><span>{{ t('financial.quickActions.transfer') }}</span>
             </button>
             <button class="btn btn-orange" @click="showBudgetModal">
-              <LucideTarget /><span>设置预算</span>
+              <LucideTarget /><span>{{ t('financial.quickActions.budget') }}</span>
             </button>
             <button class="btn btn-yellow" @click="showReminderModal">
-              <LucideBell /><span>设置提醒</span>
+              <LucideBell /><span>{{ t('financial.quickActions.reminder') }}</span>
             </button>
             <!-- 可以继续添加按钮 -->
           </div>
