@@ -182,10 +182,9 @@ function updatePanelPosition() {
   const viewportHeight = window.innerHeight;
   // 移动端和桌面端使用不同的定位策略
   if (viewportWidth <= 768) {
-    // 移动端：水平居中，垂直居中
-    const panelHeight = 400; // 预估面板高度
+    // 移动端：水平居中，靠顶部显示
     panelPosition.value = {
-      top: Math.max(20, (viewportHeight - panelHeight) / 2), // 垂直居中
+      top: 20, // 从顶部显示，保留20px间距
       left: 16,
     };
   } else {
@@ -829,15 +828,15 @@ watch(() => props.modelValue, newValue => {
 .time-picker {
   border-top: 1px solid var(--color-base-300);
   padding-top: 0.5rem;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.25rem;
 }
 
 .time-inputs {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
-  height: 2.5rem; /* 设置固定高度确保对齐 */
+  gap: 0.25rem;
+  height: 2rem; /* 设置固定高度确保对齐 */
 }
 
 .time-separator {
@@ -846,7 +845,7 @@ watch(() => props.modelValue, newValue => {
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 2.5rem; /* 与输入框相同高度 */
+  height: 2rem; /* 与输入框相同高度 */
   line-height: 1;
   font-weight: 500; /* 与输入框字体粗细一致 */
   margin: 0 0.25rem; /* 添加左右间距 */
@@ -917,11 +916,11 @@ watch(() => props.modelValue, newValue => {
 }
 
 .time-input {
-  width: 3rem;
-  height: 2.5rem; /* 设置固定高度 */
-  padding: 0; /* 移除内边距，使用flexbox居中 */
+  width: 4rem;
+  height: 2rem; /* 设置固定高度 */
+  padding: 0;
   border: 1px solid var(--color-base-300);
-  border-radius: 4px;
+  border-radius: 0.2rem;
   text-align: center;
   font-size: 0.875rem;
   font-weight: 500; /* 稍微加粗数字 */
@@ -955,12 +954,6 @@ watch(() => props.modelValue, newValue => {
   background-color: var(--color-base-300);
   color: var(--color-neutral);
   cursor: not-allowed;
-}
-
-.time-separator {
-  font-size: 1.2rem;
-  color: var(--color-base-content-soft);
-  margin-top: 1rem;
 }
 
 .panel-actions {
@@ -1069,10 +1062,6 @@ watch(() => props.modelValue, newValue => {
   }
   .time-inputs {
     flex-wrap: wrap;
-    gap: 0.25rem;
-  }
-  .time-input {
-    width: 2.5rem;
   }
 }
 </style>
