@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { AlertTriangle, CheckCircle, Info, X, XCircle } from 'lucide-vue-next';
+import { AlertTriangle, Check, CheckCircle, Info, X, XCircle } from 'lucide-vue-next';
 
 interface Props {
   visible?: boolean;
@@ -194,19 +194,19 @@ defineExpose({ focus: focusModal, close: handleClose });
           </div>
           <!-- 按钮区域 -->
           <div class="modal-footer">
-            <button v-if="showCancel" class="btn-cancel" :disabled="loading" @click="handleCancel">
-              {{ cancelText }}
+            <button v-if="showCancel" class="btn-cancel btn-icon-only" :disabled="loading" :title="cancelText" @click="handleCancel">
+              <X class="icon" />
             </button>
             <button
               type="button"
-              class="btn-confirm"
+              class="btn-confirm btn-icon-only"
               :class="[confirmButtonStyle]"
               :disabled="loading || !canConfirm"
+              :title="confirmText"
               @click="handleConfirm"
             >
               <div v-if="loading" class="btn-spinner" />
-              <component :is="confirmIcon" v-else-if="confirmIcon" class="btn-icon" />
-              {{ confirmText }}
+              <Check v-else class="icon" />
             </button>
           </div>
         </div>
@@ -223,14 +223,14 @@ defineExpose({ focus: focusModal, close: handleClose });
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0,0,0,0.5);
+  background: rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(4px);
   padding: 1rem;
 }
 
 /* Modal Dialog */
 .modal-dialog {
-  background: #fff;
+  background: var(--color-base-100);
   border-radius: 0.75rem;
   box-shadow: 0 10px 25px rgba(0,0,0,0.2);
   transform: scale(1);
@@ -247,54 +247,188 @@ defineExpose({ focus: focusModal, close: handleClose });
 .modal-xl { max-width: 48rem; }
 
 /* Header */
-.modal-header { padding: 1.5rem 1.5rem 1rem; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: start; }
-.modal-title-container { display: flex; gap: 0.75rem; align-items: center; }
-.modal-icon { flex-shrink: 0; width: 1.5rem; height: 1.5rem; }
-.modal-text { flex: 1; }
-.modal-title { font-size: 1.125rem; font-weight: 600; color: #111827; margin: 0; }
-.modal-content { max-height: 24rem; overflow-y: auto; margin-top: 0.25rem; }
+.modal-header {
+  padding: 1.5rem 1.5rem 1rem;
+  border-bottom: 1px solid var(--color-base-300);
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+}
+.modal-title-container {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+.modal-icon {
+  flex-shrink: 0;
+  width: 1.5rem;
+  height: 1.5rem;
+}
+.modal-text {
+  flex: 1;
+}
+.modal-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--color-base-content);
+  margin: 0;
+}
 
 /* Footer */
-.modal-footer { padding: 1rem 1.5rem 1.5rem; display: flex; gap: 0.75rem; justify-content: flex-end; background: #f9fafb; }
-.btn-cancel { background: #fff; border: 1px solid #d1d5db; padding: 0.5rem 1rem; border-radius: 0.375rem; cursor: pointer; }
-.btn-confirm { padding: 0.5rem 1rem; border-radius: 0.375rem; display: flex; align-items: center; gap: 0.25rem; color: #fff; cursor: pointer; }
+.btn-cancel {
+  background: var(--color-base-100);
+  border: 1px solid var(--color-base-300);
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  color: var(--color-base-content);
+  transition: all 0.2s ease;
+}
+.btn-cancel:hover {
+  background: var(--color-base-200);
+  border-color: var(--color-base-400);
+}
 
-.btn-primary { background: #2563eb; }
-.btn-primary:hover { background: #1d4ed8; }
-.btn-danger { background: #dc2626; }
-.btn-danger:hover { background: #b91c1c; }
-.btn-warning { background: #f97316; }
-.btn-warning:hover { background: #ea580c; }
-.btn-success { background: #16a34a; }
-.btn-success:hover { background: #15803d; }
+/* 圆形图标按钮 */
+.btn-icon-only {
+  width: 3rem !important;
+  height: 3rem !important;
+  padding: 0 !important;
+  border-radius: 50% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border: 1px solid transparent;
+  min-width: 3rem;
+  min-height: 3rem;
+}
+
+.btn-icon-only .icon {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+/* 取消按钮圆形样式 */
+.btn-cancel.btn-icon-only {
+  background: var(--color-base-100);
+  border-color: var(--color-base-300);
+  color: var(--color-base-content);
+}
+
+.btn-cancel.btn-icon-only:hover:not(:disabled) {
+  background: var(--color-base-200);
+  border-color: var(--color-base-400);
+  transform: scale(1.05);
+}
+
+/* 确认按钮圆形样式 */
+.btn-confirm.btn-icon-only {
+  color: var(--color-primary-content);
+  min-width: 3rem !important;
+  min-height: 3rem !important;
+}
+
+.btn-confirm.btn-icon-only:hover:not(:disabled) {
+  transform: scale(1.05);
+}
+
+/* 圆形按钮禁用状态 */
+.btn-icon-only:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+.btn-confirm {
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: var(--color-base-content);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-primary {
+  background: var(--color-primary);
+  color: var(--color-primary-content);
+}
+.btn-primary:hover {
+  background: var(--color-primary-hover);
+}
+.btn-danger {
+  background: var(--color-error);
+  color: var(--color-error-content);
+}
+.btn-danger:hover {
+  background: var(--color-error-hover);
+}
+.btn-warning {
+  background: var(--color-warning);
+  color: var(--color-warning-content);
+}
+.btn-warning:hover {
+  background: var(--color-warning-hover);
+}
+.btn-success {
+  background: var(--color-success);
+  color: var(--color-success-content);
+}
+.btn-success:hover {
+  background: var(--color-success-hover);
+}
 
 /* Icon colors */
-.modal-icon-info { color: #3b82f6; }
-.modal-icon-warning { color: #f59e0b; }
-.modal-icon-error { color: #ef4444; }
-.modal-icon-success { color: #22c55e; }
+.modal-icon-info { color: var(--color-info); }
+.modal-icon-warning { color: var(--color-warning); }
+.modal-icon-error { color: var(--color-error); }
+.modal-icon-success { color: var(--color-success); }
 
 /* Close button */
-.modal-close { background: none; border: none; cursor: pointer; padding: 0.5rem; }
+.modal-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem;
+  color: var(--color-base-content);
+  transition: color 0.2s ease;
+}
+.modal-close:hover {
+  color: var(--color-base-content-soft);
+}
 
 /* Loading spinner */
-.btn-spinner { border: 2px solid #fff; border-top-color: transparent; border-radius: 50%; width: 1rem; height: 1rem; animation: spin 1s linear infinite; }
+.btn-spinner {
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  width: 1rem;
+  height: 1rem;
+  animation: spin 1s linear infinite;
+}
 @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
 /* Responsive */
 @media (max-width: 640px) {
   .modal-overlay { padding: 0.5rem; }
   .modal-sm, .modal-md, .modal-lg, .modal-xl { max-width: 100%; }
-  .modal-footer { flex-direction: column; gap: 0.5rem; }
-  .modal-footer button { width: 100%; justify-content: center; }
-}
-
-/* Dark mode */
-@media (prefers-color-scheme: dark) {
-  .modal-dialog { background: #1f2937; color: #f3f4f6; }
-  .modal-header { border-bottom-color: #374151; }
-  .modal-footer { background: rgba(31,41,55,0.8); }
-  .btn-cancel { background: #111827; border-color: #374151; color: #d1d5db; }
+  .modal-footer {
+    flex-direction: row;
+    gap: 0.5rem;
+    justify-content: flex-end;
+  }
+  /* 圆形按钮在移动端保持圆形 */
+  .modal-footer button.btn-icon-only {
+    width: 2.75rem !important;
+    height: 2.75rem !important;
+    min-width: 2.75rem !important;
+    min-height: 2.75rem !important;
+  }
+  .modal-footer button.btn-icon-only .icon {
+    width: 1.125rem;
+    height: 1.125rem;
+  }
 }
 
 /* Animations */

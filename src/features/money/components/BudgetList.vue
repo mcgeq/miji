@@ -2,7 +2,6 @@
 import { BarChart3, MoreHorizontal, RotateCcw } from 'lucide-vue-next';
 import SimplePagination from '@/components/common/SimplePagination.vue';
 import { getRepeatTypeName, lowercaseFirstLetter } from '@/utils/common';
-import { DateUtils } from '@/utils/date';
 import { useBudgetFilters } from '../composables/useBudgetFilters';
 import { formatCurrency } from '../utils/money';
 import type { Budget } from '@/schema/money';
@@ -115,11 +114,9 @@ const gridLayoutClass = computed(() => {
   } else {
     // 桌面端布局
     if (itemCount === 1) {
-      return 'grid-template-columns-320-single';
-    } else if (itemCount === 2) {
-      return 'grid-template-columns-320-two-items';
+      return 'grid-template-columns-single-50';
     } else {
-      // 3个或更多项目时，强制每行最多2个项目
+      // 2个或更多项目时，强制每行最多2个项目
       return 'grid-template-columns-320-max2';
     }
   }
@@ -367,10 +364,6 @@ defineExpose({
               {{ budget.displayCategories }}
             </span>
           </div>
-          <div class="info-row">
-            <span class="info-label"> {{ t('date.createDate') }} </span>
-            <span class="info-value">{{ DateUtils.formatDate(budget.createdAt) }}</span>
-          </div>
           <div v-if="budget.description" class="info-row info-row-last">
             <span class="info-label">{{ t('common.misc.remark') }}</span>
             <span class="info-value">{{ budget.description }}</span>
@@ -435,147 +428,231 @@ defineExpose({
   font-size: 0.875rem;
 }
 
-/* Budget Grid */
+/* Budget Grid - 优化网格布局 */
 .budget-grid {
-  margin-bottom: 0.5rem;
-  gap: 0.5rem;
+  margin-bottom: 1rem;
+  gap: 1rem;
   display: grid;
 }
 
-/* Budget Card */
+/* 网格布局类 - 响应式设计 */
+.grid-template-columns-mobile-single {
+  grid-template-columns: 1fr;
+}
+
+/* 桌面端单个项目占50%宽度 */
+.grid-template-columns-single-50 {
+  grid-template-columns: 1fr;
+  max-width: 50%;
+}
+
+/* 桌面端布局 */
+.grid-template-columns-320-two-items,
+.grid-template-columns-320-max2 {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+/* 移动端优化 */
+@media (max-width: 768px) {
+  .budget-grid {
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .grid-template-columns-mobile-single,
+  .grid-template-columns-single-50,
+  .grid-template-columns-320-two-items,
+  .grid-template-columns-320-max2 {
+    grid-template-columns: 1fr;
+    max-width: 100%;
+  }
+}
+
+/* 桌面端优化 */
+@media (min-width: 769px) {
+  .budget-grid {
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .grid-template-columns-single-50 {
+    grid-template-columns: 1fr;
+    max-width: 50%;
+  }
+
+  .grid-template-columns-320-max2 {
+    grid-template-columns: repeat(2, 1fr);
+    max-width: none;
+  }
+}
+
+/* Budget Card - 重新设计为更紧凑美观的卡片 */
 .budget-card {
-  background-color: var(--color-base-100);
-  padding: 0.5rem;
-  border: 1px solid #e5e7eb;
-  border-radius: 0.375rem;
-  transition: all 0.2s ease-in-out;
+  background: linear-gradient(135deg, var(--color-base-100) 0%, var(--color-base-200) 100%);
+  padding: 1rem;
+  border: 1px solid var(--color-primary-soft);
+  border-radius: 0.75rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+
+.budget-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--color-primary-gradient);
+  opacity: 0;
+  transition: opacity 0.3s ease;
 }
 
 .budget-card:hover {
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--color-primary);
+}
+
+.budget-card:hover::before {
+  opacity: 1;
 }
 
 .budget-card-inactive {
   opacity: 0.6;
-  background-color: #f3f4f6;
+  background: var(--color-gray-100);
+  border-color: var(--color-gray-300);
 }
 
-/* Budget Header */
+.budget-card-inactive::before {
+  background: var(--color-gray-400);
+}
+
+/* Budget Header - 更紧凑的布局 */
 .budget-header {
-  margin-bottom: 0.5rem;
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
+  margin-bottom: 0.75rem;
+  gap: 0.5rem;
 }
 
 .budget-info {
-  color: #1f2937;
   display: flex;
   align-items: center;
+  gap: 0.5rem;
+  flex: 1;
+  min-width: 0;
 }
 
 .budget-name {
-  font-size: 1.125rem;
+  font-size: 1rem;
+  color: var(--color-base-content);
   font-weight: 600;
+  line-height: 1.2;
 }
 
 /* Status Tags */
 .status-tag {
-  font-size: 0.75rem;
-  margin-left: 0.5rem;
-  padding: 0.125rem 0.5rem;
-  border-radius: 0.25rem;
+  font-size: 0.6875rem;
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.375rem;
+  font-weight: 500;
+  white-space: nowrap;
 }
 
 .status-inactive {
   color: var(--color-gray-600);
-  background-color: #e5e7eb;
+  background-color: var(--color-gray-200);
 }
 
 .status-exceeded {
-  color: #dc2626;
-  background-color: #fee2e2;
+  color: var(--color-error);
+  background-color: var(--color-error-soft);
 }
 
 .status-warning {
-  color: #d97706;
-  background-color: #fef3c7;
+  color: var(--color-warning);
+  background-color: var(--color-warning-soft);
 }
 
-/* Budget Actions */
+/* Budget Actions - 更优雅的操作按钮 */
 .budget-actions {
   display: flex;
   gap: 0.25rem;
-  align-items: center;
+  flex-shrink: 0;
 }
 
-@media (min-width: 768px) {
-  .budget-actions {
-    align-self: flex-end;
-  }
-}
-
-/* Budget Period */
+/* Budget Period - 紧凑布局 */
 .budget-period {
-  font-size: 0.875rem;
-  color: var(--color-gray-600);
-  margin-bottom: 0.25rem;
+  font-size: 0.75rem;
+  color: var(--color-gray-500);
+  margin-bottom: 0.5rem;
   display: flex;
-  gap: 0.25rem;
+  gap: 0.375rem;
   align-items: center;
   justify-content: flex-end;
 }
 
 .period-icon {
-  color: var(--color-gray-600);
-  height: 1rem;
-  width: 1rem;
+  color: var(--color-gray-500);
+  height: 0.875rem;
+  width: 0.875rem;
+  flex-shrink: 0;
 }
 
-/* Budget Progress */
+/* Budget Progress - 优化进度条显示 */
 .budget-progress {
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.75rem;
 }
 
 .progress-header {
   display: flex;
-  gap: 0.25rem;
   align-items: baseline;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
 }
 
 .used-amount {
-  font-size: 1.125rem;
-  color: #1f2937;
-  font-weight: 600;
+  font-size: 1.25rem;
+  color: var(--color-base-content);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.025em;
 }
 
 .total-amount {
   font-size: 0.875rem;
-  color: var(--color-gray-600);
+  color: var(--color-gray-500);
 }
 
 .remaining-amount-container {
-  background-color: var(--color-base-200);
-  margin-bottom: 0.5rem;
   margin-left: auto;
-  padding: 0.375rem;
-  border-radius: 0.375rem;
-  display: flex;
-  justify-content: flex-end;
+  padding: 0.375rem 0.625rem;
+  border-radius: 0.5rem;
+  background: var(--color-base-200);
 }
 
 .remaining-amount {
-  font-size: 1.125rem;
+  font-size: 0.9375rem;
   font-weight: 600;
 }
 
+.remaining-amount-success {
+  color: var(--color-success);
+}
+
+.remaining-amount-error {
+  color: var(--color-error);
+}
+
 .progress-bar {
-  margin-bottom: 0.25rem;
-  border-radius: 0.375rem;
-  background-color: #e5e7eb;
-  height: 0.25rem;
+  margin-bottom: 0.375rem;
+  border-radius: 0.5rem;
+  background-color: var(--color-gray-200);
+  height: 0.5rem;
   width: 100%;
   overflow: hidden;
 }
@@ -585,22 +662,102 @@ defineExpose({
   transition: width 0.3s ease;
 }
 
-.progress-percentage {
-  font-size: 1.125rem;
-  text-align: center;
+.progress-fill-primary {
+  background-color: var(--color-primary);
 }
 
-/* Budget Info Section */
+.progress-fill-error {
+  background-color: var(--color-error);
+}
+
+.progress-percentage {
+  font-size: 0.875rem;
+  text-align: center;
+  font-weight: 600;
+}
+
+.progress-percentage-normal {
+  color: var(--color-gray-600);
+}
+
+.progress-percentage-error {
+  color: var(--color-error);
+}
+
+/* 操作按钮样式 - 与 AccountList 一致 */
+.money-option-btn {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--color-gray-200);
+  background: var(--color-base-100);
+  color: var(--color-gray-600);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.money-option-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--color-primary);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.money-option-btn:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  transform: scale(1.05);
+}
+
+.money-option-btn:hover::before {
+  opacity: 0.1;
+}
+
+.money-option-btn:active {
+  transform: scale(0.95);
+}
+
+.money-option-ben-hover:hover {
+  background-color: var(--color-warning);
+  color: var(--color-warning-content);
+  border-color: var(--color-warning);
+}
+
+.money-option-edit-hover:hover {
+  background-color: var(--color-primary);
+  color: var(--color-primary-content);
+  border-color: var(--color-primary);
+}
+
+.money-option-trash-hover:hover {
+  background-color: var(--color-error);
+  color: var(--color-error-content);
+  border-color: var(--color-error);
+}
+
+/* Budget Info Section - 紧凑布局 */
 .budget-info-section {
-  padding-top: 0.5rem;
-  border-top: 1px solid #e5e7eb;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--color-gray-200);
 }
 
 .info-row {
-  font-size: 0.875rem;
-  margin-bottom: 0.25rem;
+  font-size: 0.8125rem;
+  margin-bottom: 0.375rem;
   display: flex;
   justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
 }
 
 .info-row-last {
@@ -608,13 +765,17 @@ defineExpose({
 }
 
 .info-label {
-  color: var(--color-gray-600);
+  color: var(--color-gray-500);
   font-weight: 500;
+  flex-shrink: 0;
 }
 
 .info-value {
-  color: #1f2937;
+  color: var(--color-base-content);
   font-weight: 500;
+  text-align: right;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Additional utility styles */
@@ -629,14 +790,6 @@ defineExpose({
     margin-bottom: 4rem; /* 为底部导航栏预留空间 */
     padding-bottom: 1rem; /* 额外的底部内边距 */
   }
-}
-
-.progress-fill-error {
-  background-color: #ef4444;
-}
-
-.progress-fill-primary {
-  background-color: #3b82f6;
 }
 
 /* 统计按钮组样式 */
@@ -661,24 +814,44 @@ defineExpose({
   background-color: #40a9ff;
 }
 
-.remaining-amount-error {
-  color: #ef4444;
-}
-
-.remaining-amount-success {
-  color: #16a34a;
-}
-
-.progress-percentage-error {
-  color: #ef4444;
-}
-
-.progress-percentage-normal {
-  color: var(--color-gray-600);
-}
-
 .filter-button-group {
   display: flex;
   gap: 0.25rem;
+}
+
+/* 移动端优化 */
+@media (max-width: 768px) {
+  .budget-card {
+    padding: 0.875rem;
+  }
+
+  .budget-header {
+    margin-bottom: 0.625rem;
+  }
+
+  .budget-name {
+    font-size: 0.9375rem;
+  }
+
+  .money-option-btn {
+    width: 1.75rem;
+    height: 1.75rem;
+  }
+
+  .used-amount {
+    font-size: 1.125rem;
+  }
+
+  .budget-info-section {
+    padding-top: 0.625rem;
+  }
+
+  .info-row {
+    font-size: 0.75rem;
+  }
+
+  .budget-period {
+    font-size: 0.6875rem;
+  }
 }
 </style>

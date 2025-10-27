@@ -2,6 +2,7 @@
 import * as _ from 'es-toolkit/compat';
 import z from 'zod';
 import ColorSelector from '@/components/common/ColorSelector.vue';
+import DateTimePicker from '@/components/common/DateTimePicker.vue';
 import CurrencySelector from '@/components/common/money/CurrencySelector.vue';
 import PrioritySelector from '@/components/common/PrioritySelector.vue';
 import ReminderSelector from '@/components/common/ReminderSelector.vue';
@@ -78,6 +79,26 @@ const amountPlaceholder = computed(() => {
     return t('validation.amountRequired');
   }
   return t('placeholders.amountOptional');
+});
+
+// 处理 snoozeUntil 的 Date 对象转换
+const snoozeUntilDate = computed({
+  get: () => {
+    if (!form.snoozeUntil) return null;
+    try {
+      const date = new Date(form.snoozeUntil);
+      return Number.isNaN(date.getTime()) ? null : date;
+    } catch {
+      return null;
+    }
+  },
+  set: (value: Date | null) => {
+    if (value) {
+      form.snoozeUntil = DateUtils.toLocalISOFromDateInput(value.toISOString());
+    } else {
+      form.snoozeUntil = null;
+    }
+  },
 });
 
 const descriptionPlaceholder = computed(() => {
@@ -763,7 +784,11 @@ watch(
           <label class="form-label">
             {{ t('financial.reminder.snoozeUntil') }}
           </label>
-          <input v-model="form.snoozeUntil" type="datetime-local" class="modal-input-select w-2/3">
+          <DateTimePicker
+            v-model="snoozeUntilDate"
+            class="w-2/3"
+            :placeholder="t('common.selectDate')"
+          />
         </div>
 
         <!-- 提醒方式（系统合并） -->

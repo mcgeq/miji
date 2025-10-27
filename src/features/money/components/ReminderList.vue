@@ -89,11 +89,9 @@ const gridLayoutClass = computed(() => {
   } else {
     // 桌面端布局
     if (itemCount === 1) {
-      return 'grid-template-columns-320-single';
-    } else if (itemCount === 2) {
-      return 'grid-template-columns-320-two-items';
+      return 'grid-template-columns-single-50';
     } else {
-      // 3个或更多项目时，强制每行最多2个项目
+      // 2个或更多项目时，强制每行最多2个项目
       return 'grid-template-columns-320-max2';
     }
   }
@@ -364,10 +362,6 @@ onUnmounted(() => {
             <span class="info-label"> {{ t('common.misc.types') }} </span>
             <span class="info-value">{{ t(`financial.reminder.types.${lowercaseFirstLetter(reminder.type)}`) }}</span>
           </div>
-          <div class="info-row">
-            <span class="info-label"> {{ t('date.createDate') }} </span>
-            <span class="info-value">{{ DateUtils.formatDate(reminder.createdAt) }}</span>
-          </div>
           <div v-if="reminder.description" class="info-row">
             <span class="info-label"> {{ t('common.misc.remark') }} </span>
             <span class="info-value">{{ reminder.description }}</span>
@@ -435,173 +429,292 @@ onUnmounted(() => {
   font-size: 0.875rem;
 }
 
-/* Reminder Grid */
+/* Reminder Grid - 优化网格布局 */
 .reminder-grid {
-  margin-bottom: 0.5rem;
-  gap: 0.5rem;
+  margin-bottom: 1rem;
+  gap: 1rem;
   display: grid;
 }
 
-/* Reminder Card */
+/* 网格布局类 - 响应式设计 */
+.grid-template-columns-mobile-single {
+  grid-template-columns: 1fr;
+}
+
+/* 桌面端单个项目占50%宽度 */
+.grid-template-columns-single-50 {
+  grid-template-columns: 1fr;
+  max-width: 50%;
+}
+
+/* 桌面端布局 */
+.grid-template-columns-320-two-items,
+.grid-template-columns-320-max2 {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+/* 移动端优化 */
+@media (max-width: 768px) {
+  .reminder-grid {
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .grid-template-columns-mobile-single,
+  .grid-template-columns-single-50,
+  .grid-template-columns-320-two-items,
+  .grid-template-columns-320-max2 {
+    grid-template-columns: 1fr;
+    max-width: 100%;
+  }
+}
+
+/* 桌面端优化 */
+@media (min-width: 769px) {
+  .reminder-grid {
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .grid-template-columns-single-50 {
+    grid-template-columns: 1fr;
+    max-width: 50%;
+  }
+
+  .grid-template-columns-320-two-items,
+  .grid-template-columns-320-max2 {
+    grid-template-columns: repeat(2, 1fr);
+    max-width: none;
+  }
+}
+
+/* Reminder Card - 重新设计为更紧凑美观的卡片 */
 .reminder-card {
-  background-color: var(--color-base-100);
-  padding: 0.5rem;
-  border: 1px solid var(--color-gray-200);
-  border-radius: 0.5rem;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  transition: box-shadow 0.2s ease-in-out;
+  background: linear-gradient(135deg, var(--color-base-100) 0%, var(--color-base-200) 100%);
+  padding: 1rem;
+  border: 1px solid var(--color-primary-soft);
+  border-radius: 0.75rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+
+.reminder-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--color-primary-gradient);
+  opacity: 0;
+  transition: opacity 0.3s ease;
 }
 
 .reminder-card:hover {
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--color-primary);
+}
+
+.reminder-card:hover::before {
+  opacity: 1;
 }
 
 .reminder-card-overdue {
+  opacity: 0.9;
   border-color: var(--color-error);
-  background-color: var(--color-error-50);
+  background: linear-gradient(135deg, var(--color-error-50) 0%, var(--color-error-100) 100%);
+}
+
+.reminder-card-overdue::before {
+  background: var(--color-error);
+  opacity: 0;
+}
+
+.reminder-card-overdue:hover::before {
+  opacity: 1;
 }
 
 .reminder-card-paid {
   opacity: 0.8;
-  background-color: var(--color-success-50);
+  background: linear-gradient(135deg, var(--color-success-50) 0%, var(--color-success-100) 100%);
   border-color: var(--color-success);
 }
 
-/* Reminder Header */
+.reminder-card-paid::before {
+  background: var(--color-success);
+  opacity: 0;
+}
+
+.reminder-card-paid:hover::before {
+  opacity: 1;
+}
+
+/* Reminder Header - 更紧凑的布局 */
 .reminder-header {
-  margin-bottom: 1rem;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
+  margin-bottom: 0.75rem;
+  gap: 0.5rem;
 }
 
 .reminder-title {
-  font-size: 1.125rem;
-  color: var(--color-gray-800);
+  font-size: 1rem;
+  color: var(--color-base-content);
   font-weight: 600;
+  line-height: 1.2;
+  flex: 1;
+  min-width: 0;
 }
 
 .reminder-actions {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.25rem;
+  flex-shrink: 0;
   align-items: center;
 }
 
 /* Status Badge */
 .status-badge {
-  font-size: 0.75rem;
+  font-size: 0.6875rem;
   font-weight: 500;
   padding: 0.25rem 0.5rem;
-  border-radius: 0.25rem;
+  border-radius: 0.375rem;
   display: inline-flex;
-  gap: 0.375rem;
+  gap: 0.25rem;
   align-items: center;
+  white-space: nowrap;
 }
 
 .status-badge-paid {
-  background-color: var(--color-success-100);
+  background-color: var(--color-success-soft);
   color: var(--color-success);
 }
 
 .status-badge-overdue {
-  background-color: var(--color-error-100);
-  color: var(--color-error-hover);
+  background-color: var(--color-error-soft);
+  color: var(--color-error);
 }
 
 .status-badge-pending {
-  background-color: var(--color-info-100);
-  color: var(--color-info-hover);
+  background-color: var(--color-info-soft);
+  color: var(--color-info);
 }
 
 .status-icon {
-  height: 1rem;
-  width: 1rem;
+  height: 0.875rem;
+  width: 0.875rem;
+  flex-shrink: 0;
 }
 
-/* Action Buttons */
+/* Action Buttons - 更优雅的按钮 */
 .action-buttons {
   display: flex;
   gap: 0.25rem;
 }
 
-/* Reminder Amount */
+/* Reminder Amount - 突出显示 */
 .reminder-amount {
-  margin-bottom: 1rem;
+  margin-bottom: 0.75rem;
   display: flex;
-  gap: 0.5rem;
   align-items: baseline;
+  gap: 0.5rem;
 }
 
 .amount-value {
-  font-size: 1.5rem;
-  color: var(--color-gray-800);
-  font-weight: 600;
+  font-size: 1.375rem;
+  color: var(--color-base-content);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.025em;
 }
 
 .amount-currency {
-  font-size: 0.875rem;
-  color: var(--color-gray-800);
+  font-size: 0.8125rem;
+  color: var(--color-gray-500);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
-/* Reminder Dates */
+/* Reminder Dates - 紧凑布局 */
 .reminder-dates {
   margin-bottom: 0.5rem;
-  gap: 0.5rem;
   display: flex;
   flex-direction: column;
+  gap: 0.25rem;
 }
 
 .date-row {
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
   display: flex;
   justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
 }
 
 .date-label {
-  color: var(--color-gray-600);
+  color: var(--color-gray-500);
+  font-weight: 500;
+  flex-shrink: 0;
 }
 
 .date-value {
-  color: var(--color-gray-800);
+  color: var(--color-base-content);
+  font-weight: 500;
+  text-align: right;
 }
 
-/* Reminder Period */
+/* Reminder Period - 紧凑布局 */
 .reminder-period {
-  font-size: 0.875rem;
-  color: var(--color-gray-600);
+  font-size: 0.75rem;
+  color: var(--color-gray-500);
   margin-bottom: 0.5rem;
   display: flex;
-  gap: 0.5rem;
+  gap: 0.375rem;
   align-items: center;
   justify-content: flex-end;
 }
 
 .period-icon {
-  height: 1rem;
-  width: 1rem;
+  height: 0.875rem;
+  width: 0.875rem;
+  flex-shrink: 0;
+  color: var(--color-gray-500);
 }
 
-/* Reminder Info */
+/* Reminder Info - 紧凑布局 */
 .reminder-info {
-  font-size: 0.875rem;
-  padding-top: 1rem;
+  padding-top: 0.75rem;
   border-top: 1px solid var(--color-gray-200);
-  gap: 0.5rem;
   display: flex;
   flex-direction: column;
+  gap: 0.25rem;
 }
 
 .info-row {
+  font-size: 0.8125rem;
   display: flex;
   justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
 }
 
 .info-label {
-  color: var(--color-gray-600);
+  color: var(--color-gray-500);
+  font-weight: 500;
+  flex-shrink: 0;
 }
 
 .info-value {
-  color: var(--color-gray-800);
+  color: var(--color-base-content);
+  font-weight: 500;
+  text-align: right;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Additional utility styles */
@@ -610,13 +723,111 @@ onUnmounted(() => {
   gap: 0.25rem;
 }
 
+/* 操作按钮样式 - 与 AccountList 一致 */
+.money-option-btn {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--color-gray-200);
+  background: var(--color-base-100);
+  color: var(--color-gray-600);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.money-option-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--color-primary);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.money-option-btn:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  transform: scale(1.05);
+}
+
+.money-option-btn:hover::before {
+  opacity: 0.1;
+}
+
+.money-option-btn:active {
+  transform: scale(0.95);
+}
+
+.money-option-ben-hover:hover {
+  background-color: var(--color-success);
+  color: var(--color-success-content);
+  border-color: var(--color-success);
+}
+
+.money-option-edit-hover:hover {
+  background-color: var(--color-primary);
+  color: var(--color-primary-content);
+  border-color: var(--color-primary);
+}
+
+.money-option-trash-hover:hover {
+  background-color: var(--color-error);
+  color: var(--color-error-content);
+  border-color: var(--color-error);
+}
+
 .pagination-container {
   display: flex;
   justify-content: center;
 }
 
-/* 移动端分页组件底部安全间距 */
+/* 移动端优化 */
 @media (max-width: 768px) {
+  .reminder-card {
+    padding: 0.875rem;
+  }
+
+  .reminder-header {
+    margin-bottom: 0.625rem;
+  }
+
+  .reminder-title {
+    font-size: 0.9375rem;
+  }
+
+  .money-option-btn {
+    width: 1.75rem;
+    height: 1.75rem;
+  }
+
+  .amount-value {
+    font-size: 1.25rem;
+  }
+
+  .reminder-info {
+    padding-top: 0.625rem;
+  }
+
+  .info-row {
+    font-size: 0.75rem;
+  }
+
+  .date-row {
+    font-size: 0.75rem;
+  }
+
+  .reminder-period {
+    font-size: 0.6875rem;
+  }
+
   .pagination-container {
     margin-bottom: 4rem; /* 为底部导航栏预留空间 */
     padding-bottom: 1rem; /* 额外的底部内边距 */
