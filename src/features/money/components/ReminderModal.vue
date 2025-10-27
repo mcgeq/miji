@@ -94,7 +94,8 @@ const snoozeUntilDate = computed({
   },
   set: (value: Date | null) => {
     if (value) {
-      form.snoozeUntil = DateUtils.toLocalISOFromDateInput(value.toISOString());
+      // 直接使用 ISO 字符串格式，不需要转换
+      form.snoozeUntil = value.toISOString();
     } else {
       form.snoozeUntil = null;
     }
@@ -415,6 +416,12 @@ async function saveReminder() {
     }, (value: unknown, key: string) => {
       if (key.endsWith('Date') || key === 'dueAt' || key === 'snoozeUntil') {
         if (value) {
+          // snoozeUntil 已经是 ISO 格式，不需要转换
+          if (key === 'snoozeUntil') {
+            return value;
+          }
+
+          // 其他日期字段需要格式化
           const dateValue = typeof value === 'string' ?
             value :
             value instanceof Date ?

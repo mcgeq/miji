@@ -384,6 +384,15 @@ impl
     }
 }
 
+/// 提醒类型配置
+struct ReminderTypeConfig {
+    should_use_escalation: bool,
+    should_use_smart_reminder: bool,
+    should_use_auto_reschedule: bool,
+    should_use_payment_reminder: bool,
+    is_finance: bool,
+}
+
 impl BilReminderService {
     // ======= 查询需要提醒的账单 =======
     pub async fn find_due_bil_reminders(
@@ -403,6 +412,9 @@ impl BilReminderService {
 
         let before = rows.len();
         rows.retain(|br| {
+            // 获取类型配置
+            let config = Self::get_type_config(br);
+
             // 仅一次：若已经提醒过一次（存在 last_reminder_sent_at），则不再提醒
             if matches!(br.reminder_frequency.as_deref(), Some("once"))
                 && br.last_reminder_sent_at.is_some()
@@ -417,19 +429,81 @@ impl BilReminderService {
                 return false;
             }
 
-            // 触发时间：优先使用 remind_date，否则使用 due_at - advance
-            let advance = Self::calc_advance_duration(br.advance_value, br.advance_unit.clone());
-            let trigger_at = br.remind_date.max(br.due_at - advance);
-            if now < trigger_at {
-                return false;
-            }
+            // 是否已支付的检查
+            if br.is_paid {
+                // 已支付：只处理支付提醒（如果启用）
+                if !br.payment_reminder_enabled {
+                    return false;
+                }
+                // 支付提醒：需要已支付且有最后一次提醒记录，用于确认支付
+                if br.last_reminder_sent_at.is_none() {
+                    return false;
+                }
+            } else {
+                // 未支付：检查是否已过期并需要升级提醒
+                if now > br.due_at {
+                    // 账单已过期
+                    let should_escalate = br.escalation_enabled || config.should_use_escalation;
 
-            // 频率窗口：last + freq <= now（once 已上面处理）
-            if let Some(last) = br.last_reminder_sent_at
-                && let Some(freq) = Self::parse_frequency_to_duration(&br.reminder_frequency)
-                && last + freq > now
-            {
-                return false;
+                    if should_escalate {
+                        // 启用升级提醒：检查是否超过了升级时间
+                        if let Some(escalation_hours) = br.escalation_after_hours
+                            && let Some(last_reminder) = br.last_reminder_sent_at
+                        {
+                            let escalation_time =
+                                last_reminder + chrono::Duration::hours(escalation_hours as i64);
+                            if now < escalation_time {
+                                return false;
+                            }
+                        }
+                        // 未设置升级时间且已过期，立即提醒
+                    } else if br.payment_reminder_enabled || config.should_use_payment_reminder {
+                        // 启用支付提醒：账单已过期，检查是否需要提醒
+                        // 需要最后一次提醒时间
+                        if br.last_reminder_sent_at.is_none() {
+                            return false;
+                        }
+                        // 检查提醒频率
+                        if let Some(last) = br.last_reminder_sent_at
+                            && let Some(freq) =
+                                Self::parse_frequency_to_duration(&br.reminder_frequency)
+                            && last + freq > now
+                        {
+                            return false;
+                        }
+                    } else {
+                        // 未启用支付提醒，不再提醒已过期的账单
+                        // 但财务类型即使过期也要提醒
+                        if !config.is_finance {
+                            return false;
+                        }
+                    }
+                } else {
+                    // 账单未过期，检查正常的提醒触发时间
+                    let advance =
+                        Self::calc_advance_duration(br.advance_value, br.advance_unit.clone());
+                    let trigger_at = br.remind_date.max(br.due_at - advance);
+                    if now < trigger_at {
+                        return false;
+                    }
+
+                    // 智能提醒：根据支付历史调整频率（仅当启用时）
+                    let should_use_smart =
+                        br.smart_reminder_enabled || config.should_use_smart_reminder;
+                    let freq = if should_use_smart {
+                        Self::adjust_smart_frequency(&br.reminder_frequency, now, br.due_at)
+                    } else {
+                        Self::parse_frequency_to_duration(&br.reminder_frequency)
+                    };
+
+                    // 频率窗口：last + freq <= now（once 已上面处理）
+                    if let Some(last) = br.last_reminder_sent_at
+                        && let Some(freq) = freq
+                        && last + freq > now
+                    {
+                        return false;
+                    }
+                }
             }
 
             // 系统通知选择：desktop 或 mobile 任一为 true 即允许，否则拦截
@@ -451,6 +525,79 @@ impl BilReminderService {
         Ok(rows)
     }
 
+    /// 智能提醒：根据到期时间调整提醒频率
+    /// 距离到期时间越近，提醒频率越高
+    fn adjust_smart_frequency(
+        _freq: &Option<String>,
+        now: chrono::DateTime<chrono::FixedOffset>,
+        due_at: chrono::DateTime<chrono::FixedOffset>,
+    ) -> Option<chrono::Duration> {
+        let time_until_due = due_at.signed_duration_since(now);
+        let hours_until_due = time_until_due.num_hours();
+
+        // 基于距离到期时间调整频率
+        match hours_until_due {
+            h if h < 0 => Some(chrono::Duration::hours(1)), // 已过期：每小时提醒
+            h if h < 24 => Some(chrono::Duration::hours(6)), // 24小时内：每6小时
+            h if h < 72 => Some(chrono::Duration::hours(12)), // 3天内：每12小时
+            _ => Some(chrono::Duration::days(1)),           // 更远：每天
+        }
+    }
+
+    /// 根据提醒类型获取应启用的功能配置
+    fn get_type_config(br: &entity::bil_reminder::Model) -> ReminderTypeConfig {
+        match br.r#type.as_str() {
+            // 财务类型：启用所有高级功能
+            "Bill" | "Tax" | "Insurance" | "Loan" => ReminderTypeConfig {
+                should_use_escalation: true,
+                should_use_smart_reminder: true,
+                should_use_auto_reschedule: true,
+                should_use_payment_reminder: true,
+                is_finance: true,
+            },
+            // 健康类型：用药等紧急类型启用升级
+            "Medicine" | "Health" => ReminderTypeConfig {
+                should_use_escalation: true,
+                should_use_smart_reminder: true,
+                should_use_auto_reschedule: false,
+                should_use_payment_reminder: false,
+                is_finance: false,
+            },
+            // 工作类型：截止日期启用升级
+            "Deadline" | "Work" => ReminderTypeConfig {
+                should_use_escalation: true,
+                should_use_smart_reminder: true,
+                should_use_auto_reschedule: false,
+                should_use_payment_reminder: false,
+                is_finance: false,
+            },
+            // 日常类型：禁用所有高级功能
+            "Exercise" | "Diet" | "Routine" | "Sleep" => ReminderTypeConfig {
+                should_use_escalation: false,
+                should_use_smart_reminder: false,
+                should_use_auto_reschedule: false,
+                should_use_payment_reminder: false,
+                is_finance: false,
+            },
+            // 紧急类型：启用所有高级功能
+            "Urgent" | "Important" => ReminderTypeConfig {
+                should_use_escalation: true,
+                should_use_smart_reminder: true,
+                should_use_auto_reschedule: false,
+                should_use_payment_reminder: false,
+                is_finance: false,
+            },
+            // 默认配置：使用用户设置
+            _ => ReminderTypeConfig {
+                should_use_escalation: br.escalation_enabled,
+                should_use_smart_reminder: br.smart_reminder_enabled,
+                should_use_auto_reschedule: br.auto_reschedule,
+                should_use_payment_reminder: br.payment_reminder_enabled,
+                is_finance: false,
+            },
+        }
+    }
+
     // ======= 发送系统通知 =======
     pub async fn send_bil_system_notification(
         &self,
@@ -460,11 +607,45 @@ impl BilReminderService {
         #[allow(unused_imports)]
         use tauri_plugin_notification::NotificationExt;
 
-        let title = format!("账单提醒: {}", br.name);
-        let body = br
-            .description
-            .clone()
-            .unwrap_or_else(|| "您有一条账单提醒".to_string());
+        let now = DateUtils::local_now();
+        let is_overdue = now > br.due_at;
+        let is_escalation = br.escalation_enabled && is_overdue;
+
+        // 构建标题和内容
+        let (title, body) = if is_escalation {
+            // 升级提醒
+            let urgency = if br.priority == "high" {
+                "紧急"
+            } else if br.priority == "medium" {
+                "重要"
+            } else {
+                ""
+            };
+            (
+                format!("⚠️ {}账单升级提醒: {}", urgency, br.name),
+                self.build_escalation_body(br),
+            )
+        } else if is_overdue && !br.is_paid {
+            // 已过期未支付
+            (
+                format!("💰 账单逾期: {}", br.name),
+                self.build_overdue_body(br),
+            )
+        } else if br.is_paid && br.payment_reminder_enabled {
+            // 支付确认提醒
+            (
+                format!("✅ 支付确认: {}", br.name),
+                "请确认账单已支付完成。".to_string(),
+            )
+        } else {
+            // 正常提醒
+            (
+                format!("账单提醒: {}", br.name),
+                br.description
+                    .clone()
+                    .unwrap_or_else(|| "您有一条账单提醒".to_string()),
+            )
+        };
 
         app.notification()
             .builder()
@@ -478,51 +659,159 @@ impl BilReminderService {
             serde_json::json!({
                 "serialNum": br.serial_num,
                 "dueAt": br.due_at.timestamp(),
+                "isOverdue": is_overdue,
+                "isEscalation": is_escalation,
+                "isPaid": br.is_paid,
             }),
         );
         Ok(())
+    }
+
+    /// 构建升级提醒内容
+    fn build_escalation_body(&self, br: &entity::bil_reminder::Model) -> String {
+        let mut parts = Vec::new();
+
+        if let Some(amount) = &br.amount
+            && let Some(currency) = &br.currency
+        {
+            parts.push(format!("金额: {}{}", currency, amount));
+        }
+
+        let overdue_days = (DateUtils::local_now() - br.due_at).num_days();
+        if overdue_days > 0 {
+            parts.push(format!("逾期 {} 天", overdue_days));
+        }
+
+        parts.push(format!(
+            "优先级: {}",
+            match br.priority.as_str() {
+                "high" => "高",
+                "medium" => "中",
+                _ => "低",
+            }
+        ));
+
+        parts.join(" | ")
+    }
+
+    /// 构建逾期提醒内容
+    fn build_overdue_body(&self, br: &entity::bil_reminder::Model) -> String {
+        let mut parts = Vec::new();
+
+        if let Some(amount) = &br.amount
+            && let Some(currency) = &br.currency
+        {
+            parts.push(format!("金额: {}{}", currency, amount));
+        }
+
+        let overdue_days = (DateUtils::local_now() - br.due_at).num_days();
+        if overdue_days > 0 {
+            parts.push(format!("已逾期 {} 天", overdue_days));
+        }
+
+        if parts.is_empty() {
+            "此账单已逾期，请尽快处理。".to_string()
+        } else {
+            parts.join(" | ")
+        }
     }
 
     // ======= 标记已提醒 =======
     pub async fn mark_bil_reminded(
         &self,
         db: &DbConn,
-        serial_num: &str,
+        br: &entity::bil_reminder::Model,
         when: chrono::DateTime<chrono::FixedOffset>,
         batch_id: Option<String>,
     ) -> MijiResult<()> {
-        if let Some(model) = entity::bil_reminder::Entity::find_by_id(serial_num.to_string())
-            .one(db)
-            .await
-            .map_err(AppError::from)?
-        {
-            let mut updates: Vec<(entity::bil_reminder::Column, sea_orm::sea_query::SimpleExpr)> = vec![
-                (
-                    entity::bil_reminder::Column::LastReminderSentAt,
-                    Expr::value(when),
-                ),
-                (
-                    entity::bil_reminder::Column::BatchReminderId,
-                    Expr::value(batch_id.clone()),
-                ),
-                (entity::bil_reminder::Column::UpdatedAt, Expr::value(when)),
-            ];
-            // 若频率为 once，发送后自动关闭 enabled
-            if model.reminder_frequency.as_deref() == Some("once") {
-                updates.push((entity::bil_reminder::Column::Enabled, Expr::value(false)));
-            }
+        let mut updates: Vec<(entity::bil_reminder::Column, sea_orm::sea_query::SimpleExpr)> = vec![
+            (
+                entity::bil_reminder::Column::LastReminderSentAt,
+                Expr::value(when),
+            ),
+            (
+                entity::bil_reminder::Column::BatchReminderId,
+                Expr::value(batch_id.clone()),
+            ),
+            (entity::bil_reminder::Column::UpdatedAt, Expr::value(when)),
+        ];
 
-            update_entity_columns_simple::<entity::bil_reminder::Entity, _>(
-                db,
-                vec![(
-                    entity::bil_reminder::Column::SerialNum,
-                    vec![serial_num.to_string()],
-                )],
-                updates,
-            )
-            .await?;
+        // 若频率为 once，发送后自动关闭 enabled
+        if br.reminder_frequency.as_deref() == Some("once") {
+            updates.push((entity::bil_reminder::Column::Enabled, Expr::value(false)));
         }
+
+        // 自动重新安排：如果启用且当前已过期，根据重复周期重新安排
+        let config = Self::get_type_config(br);
+        let should_reschedule = br.auto_reschedule || config.should_use_auto_reschedule;
+
+        if should_reschedule
+            && when > br.due_at
+            && let Some(next_due) = self.calculate_next_due_date(br).await?
+        {
+            updates.push((entity::bil_reminder::Column::DueAt, Expr::value(next_due)));
+            updates.push((
+                entity::bil_reminder::Column::RemindDate,
+                Expr::value(
+                    next_due
+                        - Self::calc_advance_duration(br.advance_value, br.advance_unit.clone()),
+                ),
+            ));
+            // 重置提醒状态
+            updates.push((
+                entity::bil_reminder::Column::LastReminderSentAt,
+                Expr::value(None::<chrono::DateTime<chrono::FixedOffset>>),
+            ));
+            updates.push((entity::bil_reminder::Column::IsPaid, Expr::value(false)));
+            updates.push((
+                entity::bil_reminder::Column::SnoozeUntil,
+                Expr::value(None::<chrono::DateTime<chrono::FixedOffset>>),
+            ));
+            tracing::info!("Auto-rescheduled bill {} to {}", br.serial_num, next_due);
+        }
+
+        update_entity_columns_simple::<entity::bil_reminder::Entity, _>(
+            db,
+            vec![(
+                entity::bil_reminder::Column::SerialNum,
+                vec![br.serial_num.clone()],
+            )],
+            updates,
+        )
+        .await?;
+
         Ok(())
+    }
+
+    /// 计算下一个到期日期（根据重复周期）
+    async fn calculate_next_due_date(
+        &self,
+        br: &entity::bil_reminder::Model,
+    ) -> MijiResult<Option<chrono::DateTime<chrono::FixedOffset>>> {
+        // 简单的重复周期处理
+        let current_due = br.due_at;
+
+        match br.repeat_period_type.as_str() {
+            "none" => Ok(None),
+            "daily" => Ok(Some(current_due + chrono::Duration::days(1))),
+            "weekly" => Ok(Some(current_due + chrono::Duration::weeks(1))),
+            "biweekly" => Ok(Some(current_due + chrono::Duration::weeks(2))),
+            "monthly" => {
+                // 月份加法：使用 months(1) 或 days(30)
+                Ok(Some(current_due + chrono::Duration::days(30)))
+            }
+            "quarterly" => Ok(Some(current_due + chrono::Duration::days(90))),
+            "yearly" => Ok(Some(current_due + chrono::Duration::days(365))),
+            _ => {
+                // 尝试从 repeat_period JSON 中解析
+                if let Some(period) = br.repeat_period.get("value")
+                    && let Some(days) = period.get("days").and_then(|v| v.as_u64())
+                {
+                    return Ok(Some(current_due + chrono::Duration::days(days as i64)));
+                }
+                Ok(None)
+            }
+        }
     }
 
     // ======= 处理入口 =======
@@ -536,19 +825,34 @@ impl BilReminderService {
         if rows.is_empty() {
             return Ok(0);
         }
+
         let batch_id = Some(common::utils::uuid::McgUuid::uuid(38));
         let mut sent = 0usize;
+        let mut auto_rescheduled = 0usize;
+
         for br in rows {
             match self.send_bil_system_notification(app, &br).await {
                 Ok(_) => {
-                    self.mark_bil_reminded(db, &br.serial_num, now, batch_id.clone())
+                    // 检查是否需要自动重新安排
+                    let needs_reschedule = br.auto_reschedule && now > br.due_at;
+
+                    self.mark_bil_reminded(db, &br, now, batch_id.clone())
                         .await?;
                     sent += 1;
+
+                    if needs_reschedule {
+                        auto_rescheduled += 1;
+                    }
                 }
                 Err(e) => tracing::error!("发送账单提醒失败: {}", e),
             }
         }
+
         tracing::info!("发送 {} 条账单提醒", sent);
+        if auto_rescheduled > 0 {
+            tracing::info!("自动重新安排了 {} 个过期账单", auto_rescheduled);
+        }
+
         Ok(sent)
     }
 }
