@@ -79,6 +79,7 @@ declare module 'vue' {
     LucideWaves: typeof import('lucide-vue-next')['Waves']
     LucideX: typeof import('lucide-vue-next')['X']
     MobileBottomNav: typeof import('./src/components/common/MobileBottomNav.vue')['default']
+    NumpadKeyboard: typeof import('./src/components/common/NumpadKeyboard.vue')['default']
     Pagination: typeof import('./src/components/common/Pagination.vue')['default']
     PopupWrapper: typeof import('./src/components/common/PopupWrapper.vue')['default']
     PriorityBadge: typeof import('./src/components/common/PriorityBadge.vue')['default']

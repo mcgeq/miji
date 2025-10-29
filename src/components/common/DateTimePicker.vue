@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n';
+import { isMobile } from '@/utils/platform';
+import NumpadKeyboard from './NumpadKeyboard.vue';
 
 // 禁用自动属性继承
 defineOptions({
@@ -39,6 +41,15 @@ const showHourSpinner = ref(false);
 const showMinuteSpinner = ref(false);
 const showSecondSpinner = ref(false);
 const panelPosition = ref({ top: 0, left: 0 });
+
+// 虚拟键盘状态
+const showNumpad = ref(false);
+const activeTimeInput = ref<'hour' | 'minute' | 'second' | null>(null);
+const numpadPosition = ref({ top: 0, left: 0, width: 0 });
+const currentTimeValue = ref('');
+
+// 检测是否为移动设备
+const isMobileDevice = isMobile();
 
 // 星期标题
 const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
@@ -121,6 +132,28 @@ const panelStyle = computed(() => ({
   zIndex: 10004, // 确保高于TransactionModal的z-index (10003)
 }));
 
+// 计算输入框显示值（输入过程中显示currentValue，否则显示实际值）
+const displayHour = computed(() => {
+  if (activeTimeInput.value === 'hour' && currentTimeValue.value !== '') {
+    return currentTimeValue.value;
+  }
+  return selectedHour.value;
+});
+
+const displayMinute = computed(() => {
+  if (activeTimeInput.value === 'minute' && currentTimeValue.value !== '') {
+    return currentTimeValue.value;
+  }
+  return selectedMinute.value;
+});
+
+const displaySecond = computed(() => {
+  if (activeTimeInput.value === 'second' && currentTimeValue.value !== '') {
+    return currentTimeValue.value;
+  }
+  return selectedSecond.value;
+});
+
 // 方法
 function formatDate(date: Date, format: string): string {
   const year = date.getFullYear();
@@ -175,6 +208,7 @@ function openPicker() {
 
 function closePicker() {
   isOpen.value = false;
+  hideNumpadKeyboard();
 }
 
 function updatePanelPosition() {
@@ -383,6 +417,127 @@ function hideSpinner(type: 'hour' | 'minute' | 'second') {
   }
 }
 
+// 虚拟键盘相关函数
+function showNumpadKeyboard(type: 'hour' | 'minute' | 'second', inputElement: HTMLInputElement) {
+  if (props.disabled) return;
+
+  // 桌面端不显示虚拟键盘
+  if (!isMobileDevice) return;
+
+  // 如果点击的是当前活动的输入框，且键盘已显示，则不重复显示
+  if (activeTimeInput.value === type && showNumpad.value) {
+    return;
+  }
+
+  activeTimeInput.value = type;
+  const rect = inputElement.getBoundingClientRect();
+  const keyboardWidth = Math.max(rect.width, 200); // 最小宽度200px
+  const keyboardHeight = 140; // 预估键盘高度
+  const viewportWidth = window.innerWidth;
+  const viewportHeight = window.innerHeight;
+
+  // 计算位置，避免超出视口
+  let left = rect.left;
+  let top = rect.bottom + 5; // 输入框下方5px
+
+  // 如果键盘会超出右边界，调整到左侧
+  if (left + keyboardWidth > viewportWidth) {
+    left = Math.max(5, viewportWidth - keyboardWidth - 5);
+  }
+
+  // 如果键盘会超出下边界，显示在输入框上方
+  if (top + keyboardHeight > viewportHeight) {
+    top = Math.max(5, rect.top - keyboardHeight - 5);
+  }
+
+  numpadPosition.value = {
+    top,
+    left,
+    width: keyboardWidth,
+  };
+
+  // 初始化当前值（显示当前值，用户可以在此基础上编辑）
+  switch (type) {
+    case 'hour':
+      currentTimeValue.value = String(selectedHour.value);
+      break;
+    case 'minute':
+      currentTimeValue.value = String(selectedMinute.value);
+      break;
+    case 'second':
+      currentTimeValue.value = String(selectedSecond.value);
+      break;
+  }
+
+  showNumpad.value = true;
+}
+
+function hideNumpadKeyboard() {
+  showNumpad.value = false;
+  activeTimeInput.value = null;
+  currentTimeValue.value = '';
+}
+
+function handleNumpadInput(value: string) {
+  if (!activeTimeInput.value) return;
+
+  // 限制输入长度（时分秒都是2位数）
+  if (currentTimeValue.value.length >= 2) {
+    currentTimeValue.value = value;
+  } else {
+    currentTimeValue.value += value;
+  }
+
+  // 不立即更新，只更新显示（通过计算属性）
+}
+
+function handleNumpadDelete() {
+  if (!activeTimeInput.value) return;
+
+  // 删除最后一位
+  if (currentTimeValue.value.length > 0) {
+    currentTimeValue.value = currentTimeValue.value.slice(0, -1);
+  }
+}
+
+function handleNumpadConfirm() {
+  if (!activeTimeInput.value) return;
+
+  // 如果输入为空，保持原值不变
+  if (currentTimeValue.value === '') {
+    hideNumpadKeyboard();
+    return;
+  }
+
+  // 应用输入值
+  const numValue = Number.parseInt(currentTimeValue.value, 10);
+  if (!Number.isNaN(numValue)) {
+    switch (activeTimeInput.value) {
+      case 'hour': {
+        const clampedValue = Math.max(0, Math.min(23, numValue));
+        selectedHour.value = clampedValue;
+        updateTime();
+        break;
+      }
+      case 'minute': {
+        const clampedValue = Math.max(0, Math.min(59, numValue));
+        selectedMinute.value = clampedValue;
+        updateTime();
+        break;
+      }
+      case 'second': {
+        const clampedValue = Math.max(0, Math.min(59, numValue));
+        selectedSecond.value = clampedValue;
+        updateTime();
+        break;
+      }
+    }
+  }
+
+  // 关闭键盘
+  hideNumpadKeyboard();
+}
+
 function confirmSelection() {
   if (selectedDate.value) {
     emit('update:modelValue', selectedDate.value);
@@ -404,8 +559,9 @@ function clearValue() {
 // 监听外部点击关闭面板
 function handleClickOutside(event: Event) {
   const target = event.target as HTMLElement;
-  if (!target.closest('.datetime-input') && !target.closest('.datetime-panel')) {
+  if (!target.closest('.datetime-input') && !target.closest('.datetime-panel') && !target.closest('.numpad-keyboard')) {
     closePicker();
+    hideNumpadKeyboard();
   }
 }
 
@@ -524,12 +680,15 @@ watch(() => props.modelValue, newValue => {
           <div class="time-input-group">
             <div class="time-input-container">
               <input
-                v-model="selectedHour"
+                :value="displayHour"
                 type="number"
                 min="0"
                 max="23"
                 class="time-input"
                 :disabled="disabled"
+                :readonly="isMobileDevice"
+                @focus="showNumpadKeyboard('hour', $event.target as HTMLInputElement)"
+                @click="showNumpadKeyboard('hour', $event.target as HTMLInputElement)"
                 @change="updateTime"
                 @wheel="handleHourWheel"
                 @keydown.up="incrementHour"
@@ -565,12 +724,15 @@ watch(() => props.modelValue, newValue => {
           <div class="time-input-group">
             <div class="time-input-container">
               <input
-                v-model="selectedMinute"
+                :value="displayMinute"
                 type="number"
                 min="0"
                 max="59"
                 class="time-input"
                 :disabled="disabled"
+                :readonly="isMobileDevice"
+                @focus="showNumpadKeyboard('minute', $event.target as HTMLInputElement)"
+                @click="showNumpadKeyboard('minute', $event.target as HTMLInputElement)"
                 @change="updateTime"
                 @wheel="handleMinuteWheel"
                 @keydown.up="incrementMinute"
@@ -606,12 +768,15 @@ watch(() => props.modelValue, newValue => {
           <div class="time-input-group">
             <div class="time-input-container">
               <input
-                v-model="selectedSecond"
+                :value="displaySecond"
                 type="number"
                 min="0"
                 max="59"
                 class="time-input"
                 :disabled="disabled"
+                :readonly="isMobileDevice"
+                @focus="showNumpadKeyboard('second', $event.target as HTMLInputElement)"
+                @click="showNumpadKeyboard('second', $event.target as HTMLInputElement)"
                 @change="updateTime"
                 @wheel="handleSecondWheel"
                 @keydown.up="incrementSecond"
@@ -666,6 +831,18 @@ watch(() => props.modelValue, newValue => {
 
   <!-- 遮罩层 -->
   <div v-if="isOpen" class="datetime-overlay" @click="closePicker" />
+
+  <!-- 虚拟数字键盘 -->
+  <NumpadKeyboard
+    :visible="showNumpad"
+    :position="numpadPosition"
+    :current-value="currentTimeValue"
+    :active-type="activeTimeInput"
+    @input="handleNumpadInput"
+    @delete="handleNumpadDelete"
+    @confirm="handleNumpadConfirm"
+    @close="hideNumpadKeyboard"
+  />
 </template>
 
 <style scoped>
