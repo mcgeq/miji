@@ -204,7 +204,33 @@ function updatePanelPosition() {
 function selectDate(day: any) {
   if (props.disabled) return;
 
-  selectedDate.value = day.fullDate;
+  // 保留当前选中的时分秒，只更新日期部分
+  const currentTime = selectedDate.value
+    ? {
+        hour: selectedDate.value.getHours(),
+        minute: selectedDate.value.getMinutes(),
+        second: selectedDate.value.getSeconds(),
+      }
+    : {
+        hour: selectedHour.value,
+        minute: selectedMinute.value,
+        second: selectedSecond.value,
+      };
+
+  selectedDate.value = new Date(
+    day.year,
+    day.month,
+    day.date,
+    currentTime.hour,
+    currentTime.minute,
+    currentTime.second,
+  );
+
+  // 同步更新时分秒的显示值，确保时间选择器显示正确
+  selectedHour.value = currentTime.hour;
+  selectedMinute.value = currentTime.minute;
+  selectedSecond.value = currentTime.second;
+
   currentDate.value = new Date(day.year, day.month, day.date);
 }
 
