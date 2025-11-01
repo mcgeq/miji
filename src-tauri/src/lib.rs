@@ -197,6 +197,12 @@ async fn setup(app: AppHandle) -> Result<(), ()> {
         start_bil_reminder_scheduler(app_clone_bil).await;
     });
 
+    // 启动预算自动创建定时任务
+    let app_clone_budget = app.clone();
+    tauri::async_runtime::spawn(async move {
+        start_budget_scheduler(app_clone_budget).await;
+    });
+
     eprintln!("Backend setup task completed!");
     // Set the backend task as being completed
     // Commands can be ran as regular functions as long as you take
@@ -406,6 +412,29 @@ async fn start_bil_reminder_scheduler(app: AppHandle) {
             Ok(n) if n > 0 => log::info!("发送 {} 条账单提醒", n),
             Ok(_) => {}
             Err(e) => log::error!("账单提醒处理失败: {}", e),
+        }
+    }
+}
+
+/// 启动预算自动创建定时任务：周期性扫描到期的重复预算并创建新的预算周期
+async fn start_budget_scheduler(app: AppHandle) {
+    // 预算自动创建可以每2小时检查一次，因为只需要在结束日期的当天创建即可
+    let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(60 * 60 * 2));
+
+    loop {
+        interval.tick().await;
+
+        let app_state = app.state::<AppState>();
+        let db = app_state.db.clone();
+        let service = money::services::bil_reminder::get_bil_reminder_service();
+
+        match service.auto_create_recurring_budgets(&db).await {
+            Ok(_) => {
+                log::info!("预算自动创建执行完成");
+                // 如需通知前端刷新列表，可在此处 emit 事件
+                // app.emit("budgets-auto-created", "ok").ok();
+            }
+            Err(e) => log::error!("自动创建重复预算失败: {}", e),
         }
     }
 }

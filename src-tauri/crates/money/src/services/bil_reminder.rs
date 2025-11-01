@@ -1,15 +1,17 @@
-use chrono::{DateTime, FixedOffset};
+use chrono::{DateTime, Datelike, FixedOffset, NaiveDate};
 use common::{
     crud::service::{CrudConverter, CrudService, GenericCrudService, update_entity_columns_simple},
     error::{AppError, MijiResult},
     paginations::{Filter, PagedQuery, PagedResult},
+    repeat_period_type::RepeatPeriodType,
     utils::date::DateUtils,
 };
 use entity::localize::LocalizeModel;
 use macros::add_filter_condition;
 use sea_orm::{
-    ActiveValue, ColumnTrait, Condition, DbConn, EntityTrait, QueryFilter, prelude::Expr,
+    ActiveValue, ColumnTrait, Condition, DbConn, EntityTrait, PaginatorTrait, QueryFilter,
     prelude::async_trait::async_trait,
+    prelude::{Decimal, Expr},
 };
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
@@ -812,6 +814,448 @@ impl BilReminderService {
                 Ok(None)
             }
         }
+    }
+
+    /// 自动创建重复预算：根据预算的重复周期创建下一个周期的预算
+    /// 在预算结束日期的当天，根据重复周期类型和配置自动创建新的预算
+    /// 并将原预算标记为 IsActive=false 和 AlertEnabled=false
+    pub async fn auto_create_recurring_budgets(&self, db: &DbConn) -> MijiResult<()> {
+        use crate::dto::budget::BudgetCreate;
+        use crate::services::budget::get_budget_service;
+
+        let now = DateUtils::local_now();
+        let today = now.date_naive();
+        let today_end = today
+            .and_hms_opt(23, 59, 59)
+            .unwrap()
+            .and_utc()
+            .fixed_offset();
+
+        // 查询所有需要处理的预算：
+        // 1. IsActive = true
+        // 2. AlertEnabled = true
+        // 3. RepeatPeriodType != None
+        // 4. end_date <= 今天（已经到期的预算，包括今天和之前到期的）
+        let budgets = entity::budget::Entity::find()
+            .filter(entity::budget::Column::IsActive.eq(true))
+            .filter(entity::budget::Column::RepeatPeriodType.ne(RepeatPeriodType::None.to_string()))
+            .filter(entity::budget::Column::EndDate.lte(today_end))
+            .all(db)
+            .await
+            .map_err(AppError::from)?;
+
+        let budgets_count = budgets.len();
+        tracing::info!(
+            "Found {} budgets that need auto-creation (end_date <= {})",
+            budgets_count,
+            today
+        );
+
+        let budget_service = get_budget_service();
+        let mut created_count = 0;
+        let mut updated_count = 0;
+
+        for budget in budgets {
+            tracing::info!(
+                "Processing budget '{}': start_date={}, end_date={}, repeat_type={}",
+                budget.name,
+                budget.start_date.date_naive(),
+                budget.end_date.date_naive(),
+                budget.repeat_period_type
+            );
+
+            // 检查是否已经创建过下一个周期的预算（避免重复创建）
+            // 使用预算的 start_date 作为基准来计算下一个周期
+            // 例如：当前周期 2025/10/01-2025/10/31，下一个周期应该从 2025/11/01 开始
+            let budget_start_date = budget.start_date.date_naive();
+            let next_start = self.calculate_next_budget_start_date(&budget, budget_start_date)?;
+
+            if next_start.is_none() {
+                tracing::warn!(
+                    "Skipping budget '{}' ({}): cannot calculate next start date",
+                    budget.name,
+                    budget.serial_num
+                );
+                continue;
+            }
+
+            let mut next_start_date = next_start.unwrap();
+
+            tracing::debug!(
+                "Budget '{}': calculated next start date as {} (from base {})",
+                budget.name,
+                next_start_date.date_naive(),
+                budget_start_date
+            );
+
+            // 如果计算出的下一个周期开始日期已经过去，需要继续计算下一个周期
+            // 例如：如果现在是 11/02，但下一个周期应该是 11/01（已经过去），需要再计算一次得到 12/01
+            while next_start_date.date_naive() < today {
+                tracing::debug!(
+                    "Next period start date {} has passed, calculating next cycle",
+                    next_start_date
+                );
+                let next_cycle_start =
+                    self.calculate_next_budget_start_date(&budget, next_start_date.date_naive())?;
+                if next_cycle_start.is_none() {
+                    break;
+                }
+                next_start_date = next_cycle_start.unwrap();
+            }
+
+            // 检查是否已经存在相同周期的预算
+            let existing = entity::budget::Entity::find()
+                .filter(entity::budget::Column::Name.eq(budget.name.clone()))
+                .filter(entity::budget::Column::StartDate.eq(next_start_date))
+                .filter(
+                    entity::budget::Column::RepeatPeriodType.eq(budget.repeat_period_type.clone()),
+                )
+                .count(db)
+                .await
+                .map_err(AppError::from)?;
+
+            if existing > 0 {
+                tracing::debug!(
+                    "Skipping budget {}: next period budget already exists",
+                    budget.serial_num
+                );
+                // 即使已存在，也要更新原预算状态
+                self.deactivate_budget(db, &budget.serial_num).await?;
+                updated_count += 1;
+                continue;
+            }
+
+            // 计算下一个周期的结束日期
+            let duration = budget.end_date.signed_duration_since(budget.start_date);
+            let next_end_date = next_start_date + duration;
+
+            // 创建新的预算
+            let new_budget = BudgetCreate {
+                core: crate::dto::budget::BudgetBase {
+                    account_serial_num: budget.account_serial_num.clone(),
+                    name: budget.name.clone(),
+                    description: budget.description.clone(),
+                    amount: budget.amount,
+                    repeat_period_type: budget.repeat_period_type.clone(),
+                    repeat_period: budget.repeat_period.clone(),
+                    start_date: next_start_date,
+                    end_date: next_end_date,
+                    used_amount: Decimal::ZERO,
+                    is_active: true,
+                    alert_enabled: true,
+                    alert_threshold: budget.alert_threshold.clone(),
+                    color: budget.color.clone(),
+                    current_period_used: Decimal::ZERO,
+                    current_period_start: next_start_date.date_naive(),
+                    budget_type: budget.budget_type.clone(),
+                    progress: Decimal::ZERO,
+                    linked_goal: budget.linked_goal.clone(),
+                    reminders: budget.reminders.clone(),
+                    priority: budget.priority,
+                    tags: budget.tags.clone(),
+                    auto_rollover: budget.auto_rollover,
+                    rollover_history: None,
+                    sharing_settings: budget.sharing_settings.clone(),
+                    attachments: budget.attachments.clone(),
+                    budget_scope_type: budget.budget_scope_type.clone(),
+                    account_scope: budget.account_scope.clone(),
+                    category_scope: budget.category_scope.clone(),
+                    advanced_rules: budget.advanced_rules.clone(),
+                },
+                currency: budget.currency.clone(),
+            };
+
+            tracing::info!(
+                "Creating new budget '{}': next period {} to {} (original: {} to {})",
+                budget.name,
+                next_start_date.date_naive(),
+                next_end_date.date_naive(),
+                budget.start_date.date_naive(),
+                budget.end_date.date_naive()
+            );
+
+            match budget_service.create_with_relations(db, new_budget).await {
+                Ok(_) => {
+                    created_count += 1;
+                    tracing::info!(
+                        "Successfully created new budget '{}' for period starting at {}",
+                        budget.name,
+                        next_start_date.date_naive()
+                    );
+                }
+                Err(e) => {
+                    tracing::error!("Failed to create new budget '{}': {}", budget.name, e);
+                    continue;
+                }
+            }
+
+            // 标记原预算为 IsActive=false 和 AlertEnabled=false
+            self.deactivate_budget(db, &budget.serial_num).await?;
+            updated_count += 1;
+        }
+
+        if created_count > 0 || updated_count > 0 {
+            tracing::info!(
+                "预算自动创建完成: 创建了 {} 个新预算，更新了 {} 个原预算状态",
+                created_count,
+                updated_count
+            );
+        } else if budgets_count > 0 {
+            tracing::debug!(
+                "扫描了 {} 个预算，但没有需要创建的新周期（可能已经创建过）",
+                budgets_count
+            );
+        }
+
+        Ok(())
+    }
+
+    /// 计算下一个预算周期的开始日期
+    fn calculate_next_budget_start_date(
+        &self,
+        budget: &entity::budget::Model,
+        base_date: NaiveDate,
+    ) -> MijiResult<Option<chrono::DateTime<chrono::FixedOffset>>> {
+        use chrono::Weekday;
+
+        let repeat_type = match RepeatPeriodType::from_string(&budget.repeat_period_type) {
+            Some(rt) => rt,
+            None => {
+                tracing::warn!("Unknown repeat period type: {}", budget.repeat_period_type);
+                return Ok(None);
+            }
+        };
+
+        if repeat_type.is_none() {
+            return Ok(None);
+        }
+
+        let repeat_json = &budget.repeat_period;
+        let base = base_date
+            .and_hms_opt(0, 0, 0)
+            .unwrap()
+            .and_utc()
+            .fixed_offset();
+
+        let helper_get_number = |key: &str, default: i64| -> i64 {
+            repeat_json
+                .get(key)
+                .and_then(|v| v.as_i64())
+                .unwrap_or(default)
+                .max(1)
+        };
+
+        let next_start = match repeat_type {
+            RepeatPeriodType::Daily => {
+                let interval = helper_get_number("interval", 1);
+                base + chrono::Duration::days(interval)
+            }
+            RepeatPeriodType::Weekly => {
+                let interval = helper_get_number("interval", 1);
+
+                // 解析 daysOfWeek 数组
+                let days_of_week = if let Some(days_array) =
+                    repeat_json.get("daysOfWeek").and_then(|v| v.as_array())
+                {
+                    days_array
+                        .iter()
+                        .filter_map(|v| v.as_str())
+                        .filter_map(|s| match s.to_lowercase().as_str() {
+                            "mon" | "monday" => Some(Weekday::Mon),
+                            "tue" | "tuesday" => Some(Weekday::Tue),
+                            "wed" | "wednesday" => Some(Weekday::Wed),
+                            "thu" | "thursday" => Some(Weekday::Thu),
+                            "fri" | "friday" => Some(Weekday::Fri),
+                            "sat" | "saturday" => Some(Weekday::Sat),
+                            "sun" | "sunday" => Some(Weekday::Sun),
+                            _ => None,
+                        })
+                        .collect::<Vec<_>>()
+                } else {
+                    vec![base.weekday()]
+                };
+
+                if days_of_week.is_empty() {
+                    base + chrono::Duration::weeks(interval)
+                } else {
+                    let mut next_date = base;
+                    let mut weeks_added = 0;
+
+                    loop {
+                        if days_of_week.contains(&next_date.weekday()) {
+                            break;
+                        }
+                        next_date += chrono::Duration::days(1);
+                        if next_date.weekday() == Weekday::Mon && weeks_added == 0 {
+                            weeks_added = 1;
+                        }
+                    }
+
+                    if next_date == base && weeks_added == 0 {
+                        next_date += chrono::Duration::weeks(interval);
+                        loop {
+                            if days_of_week.contains(&next_date.weekday()) {
+                                break;
+                            }
+                            next_date += chrono::Duration::days(1);
+                        }
+                    } else if weeks_added > 0 {
+                        next_date += chrono::Duration::weeks(interval - 1);
+                    }
+
+                    next_date
+                }
+            }
+            RepeatPeriodType::Monthly => {
+                let interval = helper_get_number("interval", 1) as u32;
+                let mut year = base.year();
+                let mut month = base.month();
+
+                for _ in 0..interval {
+                    if month == 12 {
+                        month = 1;
+                        year += 1;
+                    } else {
+                        month += 1;
+                    }
+                }
+
+                let target_day = if let Some(day_obj) = repeat_json.get("day") {
+                    if let Some(day_type) = day_obj.get("type").and_then(|v| v.as_str()) {
+                        if day_type.eq_ignore_ascii_case("Last") {
+                            DateUtils::days_in_month(year, month)
+                        } else if day_type.eq_ignore_ascii_case("Day") {
+                            day_obj
+                                .get("value")
+                                .and_then(|v| v.as_u64())
+                                .map(|v| v as u32)
+                                .filter(|v| *v >= 1)
+                                .unwrap_or(base.day())
+                                .min(DateUtils::days_in_month(year, month))
+                        } else {
+                            base.day().min(DateUtils::days_in_month(year, month))
+                        }
+                    } else if let Some(day_value) = day_obj.as_u64() {
+                        (day_value as u32)
+                            .max(1)
+                            .min(DateUtils::days_in_month(year, month))
+                    } else {
+                        base.day().min(DateUtils::days_in_month(year, month))
+                    }
+                } else {
+                    base.day().min(DateUtils::days_in_month(year, month))
+                };
+
+                chrono::NaiveDate::from_ymd_opt(year, month, target_day)
+                    .and_then(|date| date.and_hms_opt(0, 0, 0))
+                    .map(|naive| naive.and_utc().fixed_offset())
+                    .unwrap_or_else(|| {
+                        let mut fallback_year = year;
+                        let mut fallback_month = month;
+                        if fallback_month == 12 {
+                            fallback_month = 1;
+                            fallback_year += 1;
+                        } else {
+                            fallback_month += 1;
+                        }
+                        chrono::NaiveDate::from_ymd_opt(fallback_year, fallback_month, 1)
+                            .unwrap()
+                            .and_hms_opt(0, 0, 0)
+                            .unwrap()
+                            .and_utc()
+                            .fixed_offset()
+                    })
+            }
+            RepeatPeriodType::Yearly => {
+                let interval = helper_get_number("interval", 1);
+                let year = base.year() + interval as i32;
+                let mut month = base.month();
+                let mut day = base.day();
+
+                if let Some(m) = repeat_json.get("month").and_then(|v| v.as_u64()) {
+                    month = (m as u32).clamp(1, 12);
+                }
+                if let Some(d) = repeat_json.get("day").and_then(|v| v.as_u64()) {
+                    let maxd = DateUtils::days_in_month(year, month);
+                    day = (d as u32).clamp(1, maxd);
+                } else {
+                    let maxd = DateUtils::days_in_month(year, month);
+                    day = day.min(maxd);
+                }
+
+                chrono::NaiveDate::from_ymd_opt(year, month, day)
+                    .and_then(|date| date.and_hms_opt(0, 0, 0))
+                    .map(|naive| naive.and_utc().fixed_offset())
+                    .unwrap_or_else(|| {
+                        chrono::NaiveDate::from_ymd_opt(year, 3, 1)
+                            .unwrap()
+                            .and_hms_opt(0, 0, 0)
+                            .unwrap()
+                            .and_utc()
+                            .fixed_offset()
+                    })
+            }
+            RepeatPeriodType::Custom => {
+                // Custom 类型：根据描述进行简单处理
+                let description = repeat_json
+                    .get("description")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("");
+
+                if description.to_lowercase().contains("workday")
+                    || description.to_lowercase().contains("工作日")
+                {
+                    let interval = helper_get_number("interval", 1);
+                    let mut next_date = base;
+                    let mut workdays_added = 0;
+
+                    while workdays_added < interval {
+                        next_date += chrono::Duration::days(1);
+                        let weekday = next_date.weekday();
+                        if weekday != Weekday::Sat && weekday != Weekday::Sun {
+                            workdays_added += 1;
+                        }
+                    }
+                    next_date
+                } else {
+                    // 其他自定义类型暂不支持
+                    return Ok(None);
+                }
+            }
+            RepeatPeriodType::None => return Ok(None),
+        };
+
+        Ok(Some(next_start))
+    }
+
+    /// 停用预算：设置 IsActive=false 和 AlertEnabled=false
+    async fn deactivate_budget(&self, db: &DbConn, serial_num: &str) -> MijiResult<()> {
+        use sea_orm::Set;
+
+        let mut budget: entity::budget::ActiveModel =
+            entity::budget::Entity::find_by_id(serial_num)
+                .one(db)
+                .await
+                .map_err(AppError::from)?
+                .ok_or_else(|| {
+                    AppError::simple(
+                        common::BusinessCode::NotFound,
+                        format!("Budget {} not found", serial_num),
+                    )
+                })?
+                .into();
+
+        budget.is_active = Set(false);
+        budget.alert_enabled = Set(false);
+        budget.updated_at = Set(Some(DateUtils::local_now()));
+
+        entity::budget::Entity::update(budget)
+            .exec(db)
+            .await
+            .map_err(AppError::from)?;
+
+        tracing::debug!("Deactivated budget {}", serial_num);
+        Ok(())
     }
 
     // ======= 处理入口 =======
