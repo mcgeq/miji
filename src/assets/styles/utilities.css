@@ -1437,9 +1437,5 @@
 /* Filter Flex Wrap */
 .filter-flex-wrap {
   display: flex;
-  padding: 0.5rem;
-  border: 1px solid var(--color-base-300);
-  border-radius: 0.375rem;
   align-items: center;
-  gap: 0.5rem;
 }
