@@ -92,6 +92,7 @@ pub fn init_commands(builder: Builder<Wry>) -> Builder<Wry> {
         money_cmd::bil_reminder_get,
         money_cmd::bil_reminder_create,
         money_cmd::bil_reminder_update,
+        money_cmd::bil_reminder_update_active,
         money_cmd::bil_reminder_delete,
         money_cmd::bil_reminder_list,
         money_cmd::bil_reminder_list_paged,

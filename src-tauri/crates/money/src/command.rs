@@ -1027,6 +1027,21 @@ pub async fn bil_reminder_update(
 }
 
 #[tauri::command]
+pub async fn bil_reminder_update_active(
+    state: State<'_, AppState>,
+    serial_num: String,
+    is_active: bool,
+) -> Result<ApiResponse<BilReminder>, String> {
+    let service = get_bil_reminder_service();
+    Ok(ApiResponse::from_result(
+        service
+            .update_is_paid(&state.db, serial_num, is_active)
+            .await
+            .map(BilReminder::from),
+    ))
+}
+
+#[tauri::command]
 pub async fn bil_reminder_delete(
     state: State<'_, AppState>,
     serial_num: String,

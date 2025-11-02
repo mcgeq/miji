@@ -682,27 +682,30 @@ export const useMoneyStore = defineStore('money', {
 
     async markReminderPaid(serialNum: string, isPaid: boolean): Promise<void> {
       return this.withLoading(async () => {
-        try {
-          const reminder = this.remindersPaged?.rows.find(r => r.serialNum === serialNum);
-          if (!reminder) {
-            const err = new MoneyStoreError(
-              MoneyStoreErrorCode.NOT_FOUND,
-              `提醒不存在: ${serialNum}`,
-              { serialNum },
-            );
-            err.log();
-            throw err;
-          }
+        const reminder = this.remindersPaged?.rows.find(r => r.serialNum === serialNum);
+        if (!reminder) {
+          const err = new MoneyStoreError(
+            MoneyStoreErrorCode.NOT_FOUND,
+            `提醒不存在: ${serialNum}`,
+            { serialNum },
+          );
+          err.log();
+          throw err;
+        }
 
+        // 保存旧状态用于回滚
+        const oldIsPaid = reminder.isPaid;
+
+        try {
           // 乐观更新
           reminder.isPaid = isPaid;
           reminder.updatedAt = new Date().toISOString();
 
           await MoneyDb.updateBilReminderActive(serialNum, isPaid);
-          await this.updateReminders(true);
+          // 不在这里刷新，让调用方决定是否刷新（保持当前页和过滤条件）
         } catch (err) {
           // 回滚乐观更新
-          await this.updateReminders(true);
+          reminder.isPaid = oldIsPaid;
           throw this.handleError(err, '标记支付状态失败', 'updateBilReminder', 'BilReminder');
         }
       });

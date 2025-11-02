@@ -396,6 +396,39 @@ struct ReminderTypeConfig {
 }
 
 impl BilReminderService {
+    pub async fn update_is_paid(
+        &self,
+        db: &DbConn,
+        serial_num: String,
+        is_paid: bool,
+    ) -> MijiResult<entity::bil_reminder::Model> {
+        update_entity_columns_simple::<entity::bil_reminder::Entity, _>(
+            db,
+            vec![(entity::bil_reminder::Column::SerialNum, vec![serial_num.clone()])],
+            vec![
+                (entity::bil_reminder::Column::IsPaid, Expr::value(is_paid)),
+                (
+                    entity::bil_reminder::Column::UpdatedAt,
+                    Expr::value(Some(DateUtils::local_now())),
+                ),
+            ],
+        )
+        .await?;
+
+        let updated_model = entity::bil_reminder::Entity::find()
+            .filter(entity::bil_reminder::Column::SerialNum.eq(serial_num))
+            .one(db)
+            .await?
+            .ok_or_else(|| {
+                AppError::simple(
+                    common::BusinessCode::NotFound,
+                    "BilReminder not found after update".to_string(),
+                )
+            })?;
+
+        self.converter().model_with_relations(updated_model)
+    }
+
     // ======= 查询需要提醒的账单 =======
     pub async fn find_due_bil_reminders(
         &self,
