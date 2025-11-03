@@ -1,6 +1,7 @@
 pub use sea_orm_migration::prelude::*;
 
 mod m20250101_000000_insert_default_user;
+mod m20250101_120000_add_is_virtual_to_account;
 mod m20250102_000000_add_installment_fields_to_transactions;
 mod m20250115_000001_enhance_todo_reminder_fields;
 mod m20250115_000002_enhance_bil_reminder_fields;
@@ -72,6 +73,7 @@ impl MigratorTrait for Migrator {
             Box::new(m20250803_132058_create_currency::Migration),
             Box::new(m20250803_132113_create_family_member::Migration),
             Box::new(m20250803_132124_create_account::Migration),
+            Box::new(m20250101_120000_add_is_virtual_to_account::Migration),
             Box::new(m20250803_132130_create_budget::Migration),
             Box::new(m20250803_132157_create_transactions::Migration),
             Box::new(m20250803_132219_create_family_ledger::Migration),

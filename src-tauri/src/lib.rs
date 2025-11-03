@@ -30,6 +30,7 @@ pub struct InstallmentProcessFailedEvent {
 mod desktops;
 
 mod commands;
+mod default_account;
 mod default_user;
 #[cfg(any(target_os = "android", target_os = "ios"))]
 mod mobiles;
@@ -46,6 +47,7 @@ use init::MijiInit;
 use mobiles::init;
 
 use commands::init_commands;
+use crate::default_account::create_default_virtual_account;
 use common::{
     ApiCredentials, AppState, SetupState, business_code::BusinessCode, config::Config,
     error::AppError,
@@ -170,6 +172,12 @@ async fn setup(app: AppHandle) -> Result<(), ()> {
     let app_state = app.state::<AppState>();
     if let Err(e) = create_default_user(&app_state.db).await {
         eprintln!("Failed to create default user: {}", e);
+        // 不返回错误，让应用继续启动
+    }
+
+    // 创建默认虚拟账户
+    if let Err(e) = create_default_virtual_account(&app_state.db).await {
+        eprintln!("Failed to create default virtual account: {}", e);
         // 不返回错误，让应用继续启动
     }
 

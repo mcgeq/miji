@@ -56,13 +56,20 @@ struct AccountTypeConfig {
     negative_in_net_worth: bool,
 }
 
+// 辅助函数：为条件添加非虚拟账户过滤
+fn add_non_virtual_condition(mut condition: Condition) -> Condition {
+    condition.add(AccountColumn::IsVirtual.eq(false))
+}
+
 static ACCOUNT_TYPE_CONFIGS: Lazy<Vec<AccountTypeConfig>> = Lazy::new(|| {
     vec![
         AccountTypeConfig {
             struct_field: "bank_savings_balance",
-            condition: Condition::any()
-                .add(AccountColumn::Type.eq(AccountType::Savings.as_ref()))
-                .add(AccountColumn::Type.eq(AccountType::Bank.as_ref())),
+            condition: add_non_virtual_condition(
+                Condition::any()
+                    .add(AccountColumn::Type.eq(AccountType::Savings.as_ref()))
+                    .add(AccountColumn::Type.eq(AccountType::Bank.as_ref()))
+            ),
             balance_expr: cast_decimal(Expr::col(AccountColumn::Balance)),
             include_in_total_assets: true,
             use_abs: false,
@@ -70,7 +77,9 @@ static ACCOUNT_TYPE_CONFIGS: Lazy<Vec<AccountTypeConfig>> = Lazy::new(|| {
         },
         AccountTypeConfig {
             struct_field: "cash_balance",
-            condition: Condition::all().add(AccountColumn::Type.eq(AccountType::Cash.as_ref())),
+            condition: add_non_virtual_condition(
+                Condition::all().add(AccountColumn::Type.eq(AccountType::Cash.as_ref()))
+            ),
             balance_expr: cast_decimal(Expr::col(AccountColumn::Balance)),
             include_in_total_assets: true,
             use_abs: false,
@@ -78,8 +87,10 @@ static ACCOUNT_TYPE_CONFIGS: Lazy<Vec<AccountTypeConfig>> = Lazy::new(|| {
         },
         AccountTypeConfig {
             struct_field: "credit_card_balance",
-            condition: Condition::all()
-                .add(AccountColumn::Type.eq(AccountType::CreditCard.as_ref())),
+            condition: add_non_virtual_condition(
+                Condition::all()
+                    .add(AccountColumn::Type.eq(AccountType::CreditCard.as_ref()))
+            ),
             balance_expr: cast_decimal(SimpleExpr::FunctionCall(Func::abs(Expr::col(
                 AccountColumn::Balance,
             )))),
@@ -89,8 +100,10 @@ static ACCOUNT_TYPE_CONFIGS: Lazy<Vec<AccountTypeConfig>> = Lazy::new(|| {
         },
         AccountTypeConfig {
             struct_field: "investment_balance",
-            condition: Condition::all()
-                .add(AccountColumn::Type.eq(AccountType::Investment.as_ref())),
+            condition: add_non_virtual_condition(
+                Condition::all()
+                    .add(AccountColumn::Type.eq(AccountType::Investment.as_ref()))
+            ),
             balance_expr: cast_decimal(Expr::col(AccountColumn::Balance)),
             include_in_total_assets: true,
             use_abs: false,
@@ -98,7 +111,9 @@ static ACCOUNT_TYPE_CONFIGS: Lazy<Vec<AccountTypeConfig>> = Lazy::new(|| {
         },
         AccountTypeConfig {
             struct_field: "alipay_balance",
-            condition: Condition::all().add(AccountColumn::Type.eq(AccountType::Alipay.as_ref())),
+            condition: add_non_virtual_condition(
+                Condition::all().add(AccountColumn::Type.eq(AccountType::Alipay.as_ref()))
+            ),
             balance_expr: cast_decimal(Expr::col(AccountColumn::Balance)),
             include_in_total_assets: true,
             use_abs: false,
@@ -106,7 +121,9 @@ static ACCOUNT_TYPE_CONFIGS: Lazy<Vec<AccountTypeConfig>> = Lazy::new(|| {
         },
         AccountTypeConfig {
             struct_field: "wechat_balance",
-            condition: Condition::all().add(AccountColumn::Type.eq(AccountType::WeChat.as_ref())),
+            condition: add_non_virtual_condition(
+                Condition::all().add(AccountColumn::Type.eq(AccountType::WeChat.as_ref()))
+            ),
             balance_expr: cast_decimal(Expr::col(AccountColumn::Balance)),
             include_in_total_assets: true,
             use_abs: false,
@@ -114,8 +131,10 @@ static ACCOUNT_TYPE_CONFIGS: Lazy<Vec<AccountTypeConfig>> = Lazy::new(|| {
         },
         AccountTypeConfig {
             struct_field: "cloud_quick_pass_balance",
-            condition: Condition::all()
-                .add(AccountColumn::Type.eq(AccountType::CloudQuickPass.as_ref())),
+            condition: add_non_virtual_condition(
+                Condition::all()
+                    .add(AccountColumn::Type.eq(AccountType::CloudQuickPass.as_ref()))
+            ),
             balance_expr: cast_decimal(Expr::col(AccountColumn::Balance)),
             include_in_total_assets: true,
             use_abs: false,
@@ -123,7 +142,9 @@ static ACCOUNT_TYPE_CONFIGS: Lazy<Vec<AccountTypeConfig>> = Lazy::new(|| {
         },
         AccountTypeConfig {
             struct_field: "other_balance",
-            condition: Condition::all().add(AccountColumn::Type.eq(AccountType::Other.as_ref())),
+            condition: add_non_virtual_condition(
+                Condition::all().add(AccountColumn::Type.eq(AccountType::Other.as_ref()))
+            ),
             balance_expr: cast_decimal(Expr::col(AccountColumn::Balance)),
             include_in_total_assets: true,
             use_abs: false,
@@ -563,7 +584,8 @@ impl AccountService {
     pub async fn total_assets(&self, db: &DatabaseConnection) -> MijiResult<AccountBalanceSummary> {
         let mut query = AccountEntity::find()
             .select_only()
-            .filter(AccountColumn::IsActive.eq(BOOL_TRUE_I32));
+            .filter(AccountColumn::IsActive.eq(BOOL_TRUE_I32))
+            .filter(AccountColumn::IsVirtual.eq(false)); // 排除虚拟账户
 
         // 为每种账户类型创建求和表达式
         for config in Self::account_type_configs() {

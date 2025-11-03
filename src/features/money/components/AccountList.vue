@@ -305,27 +305,30 @@ const gridLayoutClass = computed(() => {
               <LucideEye v-if="!moneyStore.isAccountAmountHidden(account.serialNum)" class="wh-4" />
               <LucideEyeOff v-else class="wh-4" />
             </button>
-            <button
-              class="money-option-btn money-option-ben-hover"
-              :title="account.isActive ? t('common.status.stop') : t('common.status.enabled')"
-              @click="emit('toggleActive', account.serialNum, !account.isActive)"
-            >
-              <LucideBan class="wh-4" />
-            </button>
-            <button
-              class="money-option-btn money-option-edit-hover"
-              :title="t('common.actions.edit')"
-              @click="emit('edit', account)"
-            >
-              <LucideEdit class="wh-4" />
-            </button>
-            <button
-              class="money-option-btn money-option-trash-hover"
-              :title="t('common.actions.delete')"
-              @click="emit('delete', account.serialNum)"
-            >
-              <LucideTrash class="wh-4" />
-            </button>
+            <!-- 虚拟账户不显示禁用、编辑、删除按钮 -->
+            <template v-if="!account.isVirtual">
+              <button
+                class="money-option-btn money-option-ben-hover"
+                :title="account.isActive ? t('common.status.stop') : t('common.status.enabled')"
+                @click="emit('toggleActive', account.serialNum, !account.isActive)"
+              >
+                <LucideBan class="wh-4" />
+              </button>
+              <button
+                class="money-option-btn money-option-edit-hover"
+                :title="t('common.actions.edit')"
+                @click="emit('edit', account)"
+              >
+                <LucideEdit class="wh-4" />
+              </button>
+              <button
+                class="money-option-btn money-option-trash-hover"
+                :title="t('common.actions.delete')"
+                @click="emit('delete', account.serialNum)"
+              >
+                <LucideTrash class="wh-4" />
+              </button>
+            </template>
           </div>
         </div>
 

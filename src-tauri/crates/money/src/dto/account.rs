@@ -31,6 +31,7 @@ pub struct AccountCreate {
     pub owner_id: Option<String>,
     #[validate(length(max = 7, message = "颜色代码长度不能超过7字符"))]
     pub color: Option<String>,
+    pub is_virtual: Option<bool>,
 }
 
 #[derive(Debug, Clone, Deserialize, Validate)]
@@ -52,6 +53,7 @@ pub struct AccountUpdate {
     #[validate(length(max = 7, message = "颜色代码长度不能超过7字符"))]
     pub color: Option<String>,
     pub is_active: Option<bool>,
+    pub is_virtual: Option<bool>,
 }
 
 /// 资产汇总统计结果
@@ -116,6 +118,7 @@ pub struct AccountResponseWithRelations {
     pub owner: Option<OwnerInfo>,
     pub color: Option<String>,
     pub is_active: bool,
+    pub is_virtual: bool,
     pub created_at: DateTime<FixedOffset>,
     pub updated_at: Option<DateTime<FixedOffset>>,
 }
@@ -212,6 +215,7 @@ impl From<AccountWithRelations> for AccountResponseWithRelations {
             owner: data.owner.map(OwnerInfo::from),
             color: data.account.color,
             is_active: data.account.is_active,
+            is_virtual: data.account.is_virtual,
             created_at: data.account.created_at,
             updated_at: data.account.updated_at,
         }
@@ -252,6 +256,7 @@ impl TryFrom<AccountCreate> for account::ActiveModel {
             owner_id: Set(dto.owner_id),
             color: Set(dto.color),
             is_active: Set(true), // 默认激活
+            is_virtual: Set(dto.is_virtual.unwrap_or(false)), // 默认非虚拟账户
             created_at: Set(now),
             updated_at: Set(Some(now)),
         })
@@ -299,6 +304,9 @@ impl TryFrom<AccountUpdate> for account::ActiveModel {
                 None => sea_orm::ActiveValue::NotSet,
             },
             is_active: sea_orm::ActiveValue::NotSet,
+            is_virtual: request
+                .is_virtual
+                .map_or(sea_orm::ActiveValue::NotSet, sea_orm::ActiveValue::Set),
             created_at: sea_orm::ActiveValue::NotSet,
             updated_at: sea_orm::ActiveValue::Set(
                 Some(common::utils::date::DateUtils::local_now()),

@@ -316,7 +316,7 @@ onMounted(async () => {
         </div>
         <div v-else class="qm-list-items">
           <div v-for="account in accounts" :key="account.serialNum" class="qm-list-item">
-            <div class="qm-item-icon" :style="{ backgroundColor: account.color }">
+            <div class="qm-item-icon" :style="account.color ? { backgroundColor: account.color } : undefined">
               <LucideCreditCard :size="14" />
             </div>
             <div class="qm-item-content">

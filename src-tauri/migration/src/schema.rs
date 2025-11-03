@@ -284,6 +284,7 @@ pub enum Account {
     OwnerId,
     Color,
     IsActive,
+    IsVirtual,
     CreatedAt,
     UpdatedAt,
 }

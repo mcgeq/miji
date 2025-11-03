@@ -23,6 +23,7 @@ pub struct Model {
     pub owner_id: Option<String>,
     pub color: Option<String>,
     pub is_active: bool,
+    pub is_virtual: bool,
     pub created_at: DateTimeWithTimeZone,
     pub updated_at: Option<DateTimeWithTimeZone>,
 }

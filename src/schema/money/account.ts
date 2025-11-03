@@ -16,9 +16,10 @@ export const BaseAccountFields = z.object({
   balance: z.string(),
   initialBalance: z.string(),
   isShared: z.boolean(),
-  ownerId: SerialNumSchema,
+  ownerId: SerialNumSchema.nullable().optional(),
   isActive: z.boolean(),
-  color: z.string(),
+  isVirtual: z.boolean().default(false), // 为旧数据提供默认值，migration 已设置默认值
+  color: z.string().nullable().optional(),
   createdAt: DateTimeSchema,
   updatedAt: DateTimeSchema.optional().nullable(),
 });

@@ -99,6 +99,7 @@ const defaultAccount: Account = props.account || {
   color: COLORS_MAP[0].code,
   isShared: false,
   isActive: true,
+  isVirtual: false,
   ownerId: currentUser.value?.serialNum || '',
   createdAt: DateUtils.getLocalISODateTimeWithOffset(),
   updatedAt: null,
@@ -108,6 +109,16 @@ const defaultAccount: Account = props.account || {
 const form = reactive<Account>({
   ...defaultAccount,
   ...(props.account ? JSON.parse(JSON.stringify(props.account)) : {}),
+  // 确保 color 有默认值
+  color: (props.account?.color || defaultAccount.color) ?? COLORS_MAP[0].code,
+});
+
+// 创建 color 的计算属性，确保始终是字符串类型
+const formColor = computed({
+  get: () => form.color || COLORS_MAP[0].code,
+  set: (value: string) => {
+    form.color = value;
+  },
 });
 
 // 同步 currency 对象的 locale 和 symbol
@@ -354,7 +365,7 @@ watch(() => form.initialBalance, newBalance => {
             {{ t('common.misc.color') }}
           </label>
           <ColorSelector
-            v-model="form.color"
+            v-model="formColor"
             :color-names="colorNameMap"
             :extended="true"
             :show-categories="true"
