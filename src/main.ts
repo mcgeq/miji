@@ -1,259 +1,69 @@
 import { createPlugin } from '@tauri-store/pinia';
 import { createPinia } from 'pinia';
+import { createApp } from 'vue';
 import Toast from 'vue-toastification';
 import z from 'zod';
 import App from './App.vue';
+import { AppBootstrapper } from './bootstrap/app-bootstrapper';
 import { initI18n } from './i18n/i18n';
 import router from './router';
 import { i18nErrorMap } from './schema/i18nErrorMap';
-import { storeStart } from './stores';
-import { useThemeStore } from './stores/theme';
-import { showBootstrapErrorPage } from './utils/errorPage';
-import { detectMobileDevice } from './utils/platform';
-import {
-  closeFrontendSplashscreen,
-  createFrontendSplashscreen,
-} from './utils/splashscreen';
-import '@/assets/styles/reset.css';
-import 'vue-toastification/dist/index.css';
-import '@/assets/styles/variables.css';
-import '@/assets/styles/base.css';
-import '@/assets/styles/utilities.css';
-import '@/assets/styles/themes/light.css';
-import '@/assets/styles/themes/dark.css';
-import '@/assets/styles/components/alerts.css';
-import '@/assets/styles/components/buttons.css';
-import '@/assets/styles/components/cards.css';
-import '@/assets/styles/components/input.css';
-import '@/assets/styles/components/modals.css';
-import '@/assets/styles/components/checkbox.css';
-import '@/assets/styles/components/text.css';
-import '@/assets/styles/components/settings.css';
-import '@/assets/styles/components/todo-buttons.css';
-import '@/assets/styles/components/splashscreen.css';
-import '@/assets/styles/components/error-page.css';
 
+// 样式导入
+import '@/assets/styles/index.css';
+import 'vue-toastification/dist/index.css';
+
+// Zod 配置
 z.config({
   localeError: i18nErrorMap,
 });
 
-// Fix Android error
+// Android 兼容性修复
 if (!Object.hasOwn) {
   Object.hasOwn = (obj, prop) => Object.prototype.hasOwnProperty.call(obj, prop);
 }
 
-const isTauri = '__TAURI__' in window;
-const isMobileDevice = detectMobileDevice();
+/**
+ * 应用主入口
+ */
+async function main() {
+  // 创建 Vue 应用
+  const app = createApp(App);
 
-// 预加载图标（已移除UnoCSS依赖）
-async function preloadIcons() {
-  // 图标现在通过其他方式加载，不再依赖UnoCSS
-  return Promise.resolve();
-}
+  // 配置 Pinia
+  const pinia = createPinia();
+  pinia.use(createPlugin());
+  app.use(pinia);
 
-// 确保主题被正确应用
-async function ensureThemeApplied() {
-  try {
-    // 使用静态导入的theme store
-    const themeStore = useThemeStore();
+  // 配置路由
+  app.use(router);
 
-    // 如果主题store还没有初始化，先初始化
-    if (!themeStore.isInitializing && !themeStore.isLoading) {
-      await themeStore.init();
-    }
-
-    // 确保DOM主题类被正确应用
-    themeStore.getCurrentTheme();
-    const effectiveTheme = themeStore.getEffectiveThemeValue();
-
-    // 应用主题到DOM
-    if (typeof document !== 'undefined') {
-      const root = document.documentElement;
-      root.classList.remove('theme-light', 'theme-dark');
-      root.classList.add(`theme-${effectiveTheme}`);
-      root.style.colorScheme = effectiveTheme;
-
-      // 设置 meta theme-color（用于移动端浏览器）
-      const metaThemeColor = document.querySelector('meta[name="theme-color"]');
-      if (metaThemeColor) {
-        metaThemeColor.setAttribute('content', effectiveTheme === 'dark' ? '#1a1a1a' : '#ffffff');
-      }
-    }
-
-    // 调试信息
-    if (themeStore.debugThemeState) {
-      themeStore.debugThemeState();
-    }
-  } catch (error) {
-    console.error('Failed to ensure theme applied:', error);
-  }
-}
-
-// 等待DOM和资源完全准备就绪
-function waitForReady(): Promise<void> {
-  return new Promise(resolve => {
-    if (document.readyState === 'complete') {
-      resolve();
-    } else {
-      const onReady = () => {
-        document.removeEventListener('DOMContentLoaded', onReady);
-        window.removeEventListener('load', onReady);
-        resolve();
-      };
-
-      document.addEventListener('DOMContentLoaded', onReady);
-      window.addEventListener('load', onReady);
-    }
+  // 配置 Toast
+  app.use(Toast, {
+    position: 'top-right',
+    timeout: 5000,
+    closeOnClick: true,
+    pauseOnFocusLoss: true,
+    pauseOnHover: true,
+    draggable: true,
+    draggablePercent: 0.6,
+    showCloseButtonOnHover: false,
+    hideProgressBar: false,
+    closeButton: 'button',
+    icon: true,
+    rtl: false,
+    teleport: 'body',
+    containerClassName: 'z-[2147483647] pointer-events-none',
   });
+
+  // 配置国际化
+  const i18n = await initI18n();
+  app.use(i18n);
+
+  // 启动应用
+  const bootstrapper = new AppBootstrapper();
+  await bootstrapper.bootstrap(app);
 }
 
-// Initialize i18n and mount the app
-async function bootstrap() {
-  let frontendSplash: HTMLElement | null = null;
-  try {
-    // 在移动设备上创建前端启动画面
-    if (isMobileDevice) {
-      frontendSplash = createFrontendSplashscreen();
-    }
-    // 等待DOM准备就绪
-    await waitForReady();
-
-    // 移动设备优化：减少延迟，增加超时处理
-    if (isMobileDevice || isTauri) {
-      // 使用Promise.race确保不会无限等待
-      await Promise.race([
-        new Promise(resolve => setTimeout(resolve, 100)), // 减少到100ms
-        new Promise(resolve => setTimeout(resolve, 2000)), // 2秒超时
-      ]);
-    }
-
-    const app = createApp(App);
-    const pinia = createPinia();
-
-    // 使用 Tauri Pinia 插件实现持久化
-    pinia.use(createPlugin());
-
-    app.use(pinia);
-    app.use(router);
-
-    app.use(Toast, {
-      // Toast配置，避免在移动端出现问题
-      position: 'top-right',
-      timeout: 5000,
-      closeOnClick: true,
-      pauseOnFocusLoss: true,
-      pauseOnHover: true,
-      draggable: true,
-      draggablePercent: 0.6,
-      showCloseButtonOnHover: false,
-      hideProgressBar: false,
-      closeButton: 'button',
-      icon: true,
-      rtl: false,
-      // 确保不被页面元素遮挡
-      teleport: 'body',
-      containerClassName: 'z-[2147483647] pointer-events-none',
-    });
-
-    // 移动设备优化：使用超时处理storeStart
-    if (isMobileDevice) {
-      try {
-        await Promise.race([
-          storeStart(),
-          new Promise((_, reject) =>
-            setTimeout(() => reject(new Error('Store start timeout')), 3000),
-          ),
-        ]);
-      } catch (error) {
-        console.warn('Store start failed or timed out, continuing with app startup:', error);
-        // 移动端超时后，至少确保主题store被初始化
-        try {
-          const themeStore = useThemeStore();
-          await themeStore.$tauri.start();
-          await themeStore.init();
-        } catch (themeError) {
-          console.warn('Theme store initialization also failed:', themeError);
-        }
-      }
-    } else {
-      await storeStart();
-    }
-
-    // Wait for i18n to initialize
-    const i18n = await initI18n();
-
-    // Register i18n with the app
-    app.use(i18n);
-
-    // 预加载图标（不阻塞应用启动）
-    await preloadIcons();
-
-    // Mount the app
-    app.mount('#app');
-
-    // 确保主题在应用挂载后立即应用
-    await ensureThemeApplied();
-
-    await handlePostMount();
-    // 发射应用准备完成事件给 Tauri 后端（仅桌面端）
-    // 关闭启动画面
-    if (isMobileDevice) {
-      // 移动设备：延迟关闭前端启动画面，确保应用完全加载
-      setTimeout(() => {
-        closeFrontendSplashscreen(frontendSplash);
-      }, 500);
-    }
-  } catch (error) {
-    console.error('Failed to bootstrap app:', error);
-
-    // 关闭启动画面（如果存在）
-    if (frontendSplash) {
-      closeFrontendSplashscreen(frontendSplash);
-    }
-
-    // 显示错误页面
-    showBootstrapErrorPage(error, {
-      title: '应用启动失败',
-      message: '应用启动时发生错误，请重新加载应用。',
-      showDetails: import.meta.env.DEV || import.meta.env.MODE === 'development',
-      showReloadButton: true,
-    });
-  }
-}
-
-// 后处理应用挂载
-async function handlePostMount() {
-  // 确保样式正确应用
-  await new Promise(resolve => setTimeout(resolve, 100));
-
-  // 检查基础样式是否正常工作
-  const testElement = document.createElement('div');
-  testElement.className = 'hidden';
-  testElement.style.visibility = 'visible';
-  document.body.appendChild(testElement);
-
-  const computed = window.getComputedStyle(testElement);
-  if (computed.display !== 'none') {
-    console.warn('CSS utilities may not be working correctly');
-  }
-
-  document.body.removeChild(testElement);
-
-  // 在Tauri环境中的额外处理
-  if (isTauri) {
-    // 防止右键菜单（移动设备不需要）
-    if (!isMobileDevice) {
-      document.addEventListener('contextmenu', e => {
-        e.preventDefault();
-        return false;
-      });
-    }
-
-    // 防止拖拽（可选）
-    document.addEventListener('dragover', e => e.preventDefault());
-    document.addEventListener('drop', e => e.preventDefault());
-  }
-}
-
-// Run the bootstrap function
-bootstrap();
+// 运行应用
+main();

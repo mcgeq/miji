@@ -1,6 +1,6 @@
-// src/lib/stores/index.ts
+import { PlatformService } from '../services/platform-service';
+// src/stores/index.ts
 import { Lg } from '../utils/debugLog';
-import { detectMobileDevice } from '../utils/platform';
 import { useAuthStore } from './auth';
 import { useLocaleStore } from './locales';
 import { useThemeStore } from './theme';
@@ -10,38 +10,35 @@ let isStarted = false;
 /**
  * 初始化并启动所有 Tauri stores
  *
- * 使用官方推荐的 saveOnChange 配置来自动保存状态变化
- * 文档：https://tb.dev.br/tauri-store/plugin-pinia/guide/persisting-state
+ * 注意：此函数已被 bootstrap/store-initializer.ts 替代
+ * 保留此函数是为了向后兼容
+ *
+ * @deprecated 请使用 StoreInitializer 类
  */
 export async function storeStart() {
   if (isStarted) return;
   isStarted = true;
 
   try {
-    // 检测是否为移动设备
-    const isMobileDevice = detectMobileDevice();
-
     // 获取 store 实例
     const authStore = useAuthStore();
     const localeStore = useLocaleStore();
     const themeStore = useThemeStore();
 
-    // 移动设备优化：使用超时处理，避免无限等待
-    if (isMobileDevice) {
+    // 移动设备优化：使用超时处理
+    if (PlatformService.isMobile()) {
       try {
-        await Promise.race([
+        await PlatformService.executeWithTimeout(
           Promise.all([
             authStore.$tauri.start(),
             localeStore.$tauri.start(),
             themeStore.$tauri.start(),
           ]),
-          new Promise((_, reject) =>
-            setTimeout(() => reject(new Error('Store initialization timeout')), 2000),
-          ),
-        ]);
+          2000, // 移动端2秒超时
+          5000, // 桌面端5秒超时
+        );
       } catch (error) {
-        Lg.w('Store', 'Store initialization timed out or failed, continuing with fallback:', error);
-        // 移动设备超时后继续，不阻塞应用启动
+        Lg.w('Store', 'Store initialization timed out, continuing with fallback:', error);
         return;
       }
     } else {
@@ -65,9 +62,9 @@ export async function storeStart() {
     });
   } catch (error) {
     Lg.e('Store', 'Store initialization failed:', error);
+
     // 移动设备不抛出错误，让应用继续启动
-    const isMobileDevice = detectMobileDevice();
-    if (!isMobileDevice) {
+    if (!PlatformService.isMobile()) {
       throw error;
     }
   }

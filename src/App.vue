@@ -4,9 +4,9 @@ import CloseDialog from './components/common/CloseDialog.vue';
 import DefaultLayout from './layouts/DefaultLayout.vue';
 import EmptyLayout from './layouts/EmptyLayout.vue';
 import { checkAndCleanSession } from './services/auth';
+import { PlatformService } from './services/platform-service';
 import { useAuthStore } from './stores/auth';
 import { Lg } from './utils/debugLog';
-import { detectMobileDevice } from './utils/platform';
 import { toast } from './utils/toast';
 import type { RouteLocationNormalizedLoaded } from 'vue-router';
 
@@ -17,9 +17,6 @@ const transitionStore = useTransitionsStore();
 const { name: transitionName } = storeToRefs(transitionStore);
 const authStore = useAuthStore();
 
-// 检测是否为移动设备（用于系统功能控制）
-const isMobileDevice = detectMobileDevice();
-
 onMounted(async () => {
   try {
     // 等待 store 数据从持久化存储加载完成
@@ -27,35 +24,25 @@ onMounted(async () => {
     // 但我们需要等待数据实际加载完成
     await nextTick();
 
-    // 移动设备优化：减少延迟，使用超时处理
-    if (isMobileDevice) {
-      // 移动设备使用更短的延迟和超时处理
-      await Promise.race([
-        new Promise(resolve => setTimeout(resolve, 50)), // 减少到50ms
-        new Promise(resolve => setTimeout(resolve, 1000)), // 1秒超时
-      ]);
-    } else {
-      // 桌面端保持原有延迟
-      await new Promise(resolve => setTimeout(resolve, 150));
-    }
+    // 平台特定延迟
+    await PlatformService.delay(50, 150);
 
     Lg.i('App', 'Auth check - token:', authStore.token ? 'exists' : 'null', 'rememberMe:', authStore.rememberMe);
 
     // 仅在桌面端清理 session（移动设备保持登录状态）
-    if (!isMobileDevice) {
+    if (PlatformService.isDesktop()) {
       await checkAndCleanSession();
     }
 
-    // 移动设备优化：使用超时处理认证检查
+    // 认证检查（移动端使用超时处理）
     let auth = false;
-    if (isMobileDevice) {
+    if (PlatformService.isMobile()) {
       try {
-        auth = await Promise.race([
+        auth = await PlatformService.executeWithTimeout(
           authStore.checkAuthStatus(),
-          new Promise<boolean>((_, reject) =>
-            setTimeout(() => reject(new Error('Auth check timeout')), 2000),
-          ),
-        ]);
+          2000, // 移动端2秒超时
+          5000, // 桌面端5秒超时
+        );
       } catch (error) {
         Lg.w('App', 'Auth check timed out, assuming not authenticated:', error);
         auth = false;
@@ -71,7 +58,7 @@ onMounted(async () => {
   } catch (error) {
     Lg.e('App', error);
     // 移动设备不显示错误提示，避免阻塞启动
-    if (!isMobileDevice) {
+    if (PlatformService.isDesktop()) {
       toast.error(t('messages.initFailed'));
     }
   } finally {
