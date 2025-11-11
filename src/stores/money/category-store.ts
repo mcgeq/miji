@@ -58,6 +58,27 @@ export const useCategoryStore = defineStore('money-categories', {
     getSubCategoriesByCategory: state => (categoryName: string) => {
       return state.subCategories.filter(s => s.categoryName === categoryName);
     },
+
+    /**
+     * UI格式的分类列表（用于选择器组件）
+     */
+    uiCategories: state => {
+      return state.categories.map(category => ({
+        code: category.name,
+        icon: category.icon,
+      }));
+    },
+
+    /**
+     * UI格式的子分类列表（用于选择器组件）
+     */
+    uiSubCategories: state => {
+      return state.subCategories.map(sub => ({
+        code: sub.name,
+        icon: sub.icon,
+        categoryName: sub.categoryName,
+      }));
+    },
   },
 
   actions: {

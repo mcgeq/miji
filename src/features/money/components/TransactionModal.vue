@@ -7,6 +7,7 @@ import {
   TransactionTypeSchema,
 } from '@/schema/common';
 import { AccountTypeSchema, PaymentMethodSchema } from '@/schema/money';
+import { useCategoryStore } from '@/stores/money';
 import { invokeCommand } from '@/types/api';
 import { lowercaseFirstLetter } from '@/utils/common';
 import { DateUtils } from '@/utils/date';
@@ -44,7 +45,7 @@ const emit = defineEmits<{
   updateTransfer: [serialNum: string, transfer: TransferCreate];
   refresh: [];
 }>();
-const moneyStore = useMoneyStore();
+const categoryStore = useCategoryStore();
 const { t } = useI18n();
 
 const selectAccounts = computed(() => {
@@ -80,7 +81,7 @@ const form = ref<Transaction>({
 
 const categoryMap = computed(() => {
   const map = new Map<string, { name: string; subs: string[] }>();
-  moneyStore.subCategories.forEach(sub => {
+  categoryStore.subCategories.forEach(sub => {
     if (form.value.transactionType === 'Income') {
       const allowedCategories = ['Salary', 'Investment', 'Savings', 'Gift'];
       if (allowedCategories.includes(sub.categoryName)) {

@@ -132,7 +132,9 @@ export const useBudgetStore = defineStore('money-budgets', {
       await this.fetchBudgetsPaged({
         currentPage: this.budgetsPaged.currentPage,
         pageSize: this.budgetsPaged.pageSize,
-        sortOptions: {},
+        sortOptions: {
+          desc: true,
+        },
         filter: {},
       });
     },

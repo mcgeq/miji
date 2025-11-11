@@ -378,9 +378,6 @@ declare global {
   export type { MediaBreakpoints } from './stores/mediaQueries'
   import('./stores/mediaQueries')
   // @ts-ignore
-  export type { MoneyStoreErrorCode, MoneyStoreError } from './stores/moneyStore'
-  import('./stores/moneyStore')
-  // @ts-ignore
   export type { HealthStoreErrorCode, HealthDbError } from './stores/periodStore'
   import('./stores/periodStore')
   // @ts-ignore
@@ -409,8 +406,6 @@ declare module 'vue' {
     readonly HealthDbError: UnwrapRef<typeof import('./stores/periodStore')['HealthDbError']>
     readonly HealthStoreErrorCode: UnwrapRef<typeof import('./stores/periodStore')['HealthStoreErrorCode']>
     readonly MEDIA_BREAKPOINTS: UnwrapRef<typeof import('./stores/mediaQueries')['MEDIA_BREAKPOINTS']>
-    readonly MoneyStoreError: UnwrapRef<typeof import('./stores/moneyStore')['MoneyStoreError']>
-    readonly MoneyStoreErrorCode: UnwrapRef<typeof import('./stores/moneyStore')['MoneyStoreErrorCode']>
     readonly TodoStoreErrorCode: UnwrapRef<typeof import('./stores/todoStore')['TodoStoreErrorCode']>
     readonly acceptHMRUpdate: UnwrapRef<typeof import('pinia')['acceptHMRUpdate']>
     readonly asyncComputed: UnwrapRef<typeof import('@vueuse/core')['asyncComputed']>
@@ -645,7 +640,6 @@ declare module 'vue' {
     readonly useMemory: UnwrapRef<typeof import('@vueuse/core')['useMemory']>
     readonly useMenuStore: UnwrapRef<typeof import('./stores/menuStore')['useMenuStore']>
     readonly useModel: UnwrapRef<typeof import('vue')['useModel']>
-    readonly useMoneyStore: UnwrapRef<typeof import('./stores/moneyStore')['useMoneyStore']>
     readonly useMounted: UnwrapRef<typeof import('@vueuse/core')['useMounted']>
     readonly useMouse: UnwrapRef<typeof import('@vueuse/core')['useMouse']>
     readonly useMouseInElement: UnwrapRef<typeof import('@vueuse/core')['useMouseInElement']>

@@ -2,6 +2,7 @@
 import QuickMoneyActions from '@/components/common/QuickMoneyActions.vue';
 import TodayPeriod from '@/components/common/TodayPeriod.vue';
 import TodayTodos from '@/components/common/TodayTodos.vue';
+import { useAccountStore } from '@/stores/money';
 
 // Tab 类型定义
 type TabType = 'money' | 'period' | 'todos' | 'stats';
@@ -9,8 +10,8 @@ type TabType = 'money' | 'period' | 'todos' | 'stats';
 // 当前激活的tab
 const activeTab = ref<TabType>('money');
 
-// Money store
-const moneyStore = useMoneyStore();
+// Account store
+const accountStore = useAccountStore();
 
 // Tab配置
 const tabs = [
@@ -27,7 +28,7 @@ function switchTab(tab: TabType) {
 
 // 切换全局金额可见性
 function toggleGlobalAmountVisibility() {
-  moneyStore.toggleGlobalAmountVisibility();
+  accountStore.toggleGlobalAmountHidden();
 }
 
 // 添加待办任务（从TodayTodos组件调用）

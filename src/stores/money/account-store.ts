@@ -69,7 +69,9 @@ export const useAccountStore = defineStore('money-accounts', {
           ? await MoneyDb.listAccountsPaged({
               currentPage: 1,
               pageSize: 1000,
-              sortOptions: {},
+              sortOptions: {
+                desc: true,
+              },
               filter: filters,
             }).then(r => r.rows)
           : await MoneyDb.listAccounts();

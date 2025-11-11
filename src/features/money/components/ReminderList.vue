@@ -8,6 +8,7 @@ import {
   RotateCcw,
 } from 'lucide-vue-next';
 import SimplePagination from '@/components/common/SimplePagination.vue';
+import { useReminderStore } from '@/stores/money';
 import { getRepeatTypeName, lowercaseFirstLetter } from '@/utils/common';
 import { DateUtils } from '@/utils/date';
 import { toast } from '@/utils/toast';
@@ -22,8 +23,8 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n();
-const moneyStore = useMoneyStore();
-const reminders = computed(() => moneyStore.remindersPaged);
+const reminderStore = useReminderStore();
+const reminders = computed(() => reminderStore.remindersPaged);
 const mediaQueries = useMediaQueriesStore();
 // 移动端过滤展开状态
 const showMoreFilters = ref(!mediaQueries.isMobile);

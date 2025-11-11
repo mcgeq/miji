@@ -1,4 +1,5 @@
 import { SortDirection } from '@/schema/common';
+import { useReminderStore } from '@/stores/money';
 import { Lg } from '@/utils/debugLog';
 import type { PageQuery } from '@/schema/common';
 import type { BilReminder, BilReminderFilters } from '@/schema/money';
@@ -14,7 +15,7 @@ export function useBilReminderFilters(
   defaultPageSize = 4,
 ) {
   const loading = ref(false);
-  const moneyStore = useMoneyStore();
+  const reminderStore = useReminderStore();
   const filters = ref<ExtendedBilReminderFilters>({
     status: '',
     repeatPeriodType: undefined,
@@ -108,7 +109,7 @@ export function useBilReminderFilters(
         sortOptions: sortOptions.value,
         filter: filters.value,
       };
-      await moneyStore.getPagedBilReminders(params);
+      await reminderStore.fetchRemindersPaged(params);
     } catch (error) {
       Lg.e('BilReminder', error);
     } finally {

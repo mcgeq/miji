@@ -1,11 +1,12 @@
 import { ref } from 'vue';
+import { useTransactionStore } from '@/stores/money';
 import { Lg } from '@/utils/debugLog';
 import type { Transaction } from '@/schema/money';
 
 export type TabType = 'accounts' | 'transactions' | 'budgets' | 'reminders';
 
 export function useTabManager() {
-  const moneyStore = useMoneyStore();
+  const transactionStore = useTransactionStore();
 
   const activeTab = ref<TabType>('accounts');
   const transactions = ref<Transaction[]>([]);
@@ -13,8 +14,8 @@ export function useTabManager() {
   // 加载交易列表
   async function loadTransactions() {
     try {
-      const allTransactions = await moneyStore.getAllTransactions();
-      transactions.value = allTransactions.slice(0, 10);
+      await transactionStore.fetchTransactions();
+      transactions.value = transactionStore.transactions.slice(0, 10);
       return true;
     } catch (err) {
       Lg.e('loadTransactions', err);

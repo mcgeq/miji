@@ -2,22 +2,24 @@
 /**
  * Money Store 模块导出
  *
- * 原 moneyStore.ts 已拆分为多个子模块：
- * - account-store: 账户管理
- * - budget-store: 预算管理
- * - category-store: 分类管理
- * - transaction-store: 交易管理
- * - reminder-store: 提醒管理
+ * 模块化的 Money Store，按功能领域拆分为：
+ * - account-store: 账户管理（账户CRUD、余额、可见性控制）
+ * - budget-store: 预算管理（预算CRUD、使用情况）
+ * - category-store: 分类管理（分类、子分类、缓存）
+ * - transaction-store: 交易管理（收入、支出、转账、统计）
+ * - reminder-store: 提醒管理（账单提醒、状态管理）
+ * - money-errors: 统一错误处理（错误码、错误类、工具函数）
  *
  * 使用示例：
- * ```ts
- * import { useAccountStore, useBudgetStore, useTransactionStore } from '@/stores/money';
+ * ```typescript
+ * import { useAccountStore, useTransactionStore } from '@/stores/money';
  *
  * const accountStore = useAccountStore();
  * await accountStore.fetchAccounts();
+ * console.log(accountStore.totalBalance);
  *
  * const transactionStore = useTransactionStore();
- * await transactionStore.fetchTransactionsPaged(query);
+ * await transactionStore.createTransaction(data);
  * ```
  */
 

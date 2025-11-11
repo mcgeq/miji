@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { BarChart3, MoreHorizontal, RotateCcw } from 'lucide-vue-next';
 import SimplePagination from '@/components/common/SimplePagination.vue';
+import { useBudgetStore, useCategoryStore } from '@/stores/money';
 import { getRepeatTypeName, lowercaseFirstLetter } from '@/utils/common';
 import { useBudgetFilters } from '../composables/useBudgetFilters';
 import { formatCurrency } from '../utils/money';
@@ -19,8 +20,9 @@ const emit = defineEmits<{
 
 const { t } = useI18n();
 const router = useRouter();
-const moneyStore = useMoneyStore();
-const budgets = computed(() => moneyStore.budgetsPaged);
+const budgetStore = useBudgetStore();
+const categoryStore = useCategoryStore();
+const budgets = computed(() => budgetStore.budgetsPaged);
 const mediaQueries = useMediaQueriesStore();
 // 移动端过滤展开状态
 const showMoreFilters = ref(!mediaQueries.isMobile);
@@ -40,7 +42,7 @@ const { loading, filters, resetFilters, pagination, loadBudgets } = useBudgetFil
   4,
 );
 
-const categories = computed(() => moneyStore.subCategories);
+const categories = computed(() => categoryStore.subCategories);
 // 获取唯一分类
 const uniqueCategories = computed(() => {
   const allCategories = [...new Set(categories.value.map(item => item.categoryName))];

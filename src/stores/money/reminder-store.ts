@@ -165,7 +165,9 @@ export const useReminderStore = defineStore('money-reminders', {
       await this.fetchRemindersPaged({
         currentPage: this.remindersPaged.currentPage,
         pageSize: this.remindersPaged.pageSize,
-        sortOptions: {},
+        sortOptions: {
+          desc: true,
+        },
         filter: {},
       });
     },

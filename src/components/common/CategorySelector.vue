@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useCategoryStore } from '@/stores/money';
 import { lowercaseFirstLetter } from '@/utils/common';
 import type { CategoryDefinition } from '@/constants/commonConstant';
 
@@ -49,9 +50,9 @@ const emit = defineEmits<{
   (e: 'validate', isValid: boolean): void;
 }>();
 
-const moneyStore = useMoneyStore();
+const categoryStore = useCategoryStore();
 const mergedCategories = computed(() => {
-  return props.categories ?? moneyStore.uiCategories;
+  return props.categories ?? categoryStore.uiCategories;
 });
 const mergedQuickCategories = computed(() => {
   return props.customQuickCategories?.length ? props.customQuickCategories : mergedCategories.value.slice(0, 6);

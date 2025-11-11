@@ -1,9 +1,10 @@
+import { useAccountStore } from '@/stores/money';
 import { Lg } from '@/utils/debugLog';
 import { toast } from '@/utils/toast';
 import type { Account, CreateAccountRequest, UpdateAccountRequest } from '@/schema/money';
 
 export function useAccountActions() {
-  const moneyStore = useMoneyStore();
+  const accountStore = useAccountStore();
 
   const showAccount = ref(false);
   const selectedAccount = ref<Account | null>(null);
@@ -31,7 +32,7 @@ export function useAccountActions() {
   // 保存账户
   async function saveAccount(account: CreateAccountRequest) {
     try {
-      await moneyStore.createAccount(account);
+      await accountStore.createAccount(account);
       toast.success('添加成功');
       closeAccountModal();
       return true;
@@ -46,7 +47,7 @@ export function useAccountActions() {
   async function updateAccount(serialNum: string, account: UpdateAccountRequest) {
     try {
       if (selectedAccount.value) {
-        await moneyStore.updateAccount(serialNum, account);
+        await accountStore.updateAccount(serialNum, account);
         toast.success('更新成功');
         closeAccountModal();
         return true;
@@ -69,7 +70,7 @@ export function useAccountActions() {
     }
 
     try {
-      await moneyStore.deleteAccount(serialNum);
+      await accountStore.deleteAccount(serialNum);
       toast.success('删除成功');
       return true;
     } catch (err) {
@@ -80,9 +81,9 @@ export function useAccountActions() {
   }
 
   // 切换账户状态
-  async function toggleAccountActive(serialNum: string, isActive: boolean) {
+  async function toggleAccountActive(serialNum: string) {
     try {
-      await moneyStore.toggleAccountActive(serialNum, isActive);
+      await accountStore.toggleAccountActive(serialNum);
       toast.success('状态更新成功');
       return true;
     } catch (err) {
@@ -95,7 +96,8 @@ export function useAccountActions() {
   // 加载账户列表（基础版本）
   async function loadAccounts() {
     try {
-      accounts.value = await moneyStore.getAllAccounts();
+      await accountStore.fetchAccounts();
+      accounts.value = accountStore.accounts;
       return true;
     } catch (err) {
       Lg.e('loadAccounts', err);
@@ -107,7 +109,8 @@ export function useAccountActions() {
   async function loadAccountsWithLoading() {
     accountsLoading.value = true;
     try {
-      accounts.value = await moneyStore.getAllAccounts();
+      await accountStore.fetchAccounts();
+      accounts.value = accountStore.accounts;
       return true;
     } catch (err) {
       Lg.e('loadAccountsWithLoading', err);
@@ -158,10 +161,9 @@ export function useAccountActions() {
   // 包装切换状态方法，支持自定义回调
   async function handleToggleAccountActive(
     serialNum: string,
-    isActive: boolean,
     onSuccess?: () => Promise<void> | void,
   ) {
-    const success = await toggleAccountActive(serialNum, isActive);
+    const success = await toggleAccountActive(serialNum);
     if (success && onSuccess) {
       await onSuccess();
     }

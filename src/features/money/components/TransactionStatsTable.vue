@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import { useMoneyStore } from '@/stores/moneyStore';
+import { useCategoryStore } from '@/stores/money';
 import { lowercaseFirstLetter } from '@/utils/common';
 import type { Category } from '@/schema/money/category';
 
@@ -22,7 +22,7 @@ interface Props {
 const props = defineProps<Props>();
 
 const { t } = useI18n();
-const moneyStore = useMoneyStore();
+const categoryStore = useCategoryStore();
 
 // 分类类型切换
 const categoryType = ref<'expense' | 'income' | 'transfer'>('expense');
@@ -92,7 +92,7 @@ function formatPercentage(amount: number) {
 
 function getCategoryIcon(category: string) {
   // 从MoneyStore中获取分类数据，转换为Record<string, string>格式
-  const iconMap: Record<string, string> = moneyStore.categories.reduce((acc, categoryItem: Category) => {
+  const iconMap: Record<string, string> = categoryStore.categories.reduce((acc, categoryItem: Category) => {
     acc[categoryItem.name] = categoryItem.icon;
     return acc;
   }, {} as Record<string, string>);

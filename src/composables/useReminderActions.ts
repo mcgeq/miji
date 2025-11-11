@@ -1,9 +1,11 @@
+import { MoneyDb } from '@/services/money/money';
+import { useReminderStore } from '@/stores/money';
 import { Lg } from '@/utils/debugLog';
 import { toast } from '@/utils/toast';
 import type { BilReminder, BilReminderCreate, BilReminderUpdate } from '@/schema/money';
 
 export function useReminderActions() {
-  const moneyStore = useMoneyStore();
+  const reminderStore = useReminderStore();
 
   const showReminder = ref(false);
   const selectedReminder = ref<BilReminder | null>(null);
@@ -30,7 +32,7 @@ export function useReminderActions() {
   // 保存提醒
   async function saveReminder(reminder: BilReminderCreate) {
     try {
-      await moneyStore.createReminder(reminder);
+      await reminderStore.createReminder(reminder);
       toast.success('添加成功');
       closeReminderModal();
       return true;
@@ -45,7 +47,7 @@ export function useReminderActions() {
   async function updateReminder(serialNum: string, reminder: BilReminderUpdate) {
     try {
       if (selectedReminder.value) {
-        await moneyStore.updateReminder(serialNum, reminder);
+        await reminderStore.updateReminder(serialNum, reminder);
         toast.success('更新成功');
         closeReminderModal();
         return true;
@@ -68,7 +70,7 @@ export function useReminderActions() {
     }
 
     try {
-      await moneyStore.deleteReminder(serialNum);
+      await reminderStore.deleteReminder(serialNum);
       toast.success('删除成功');
       return true;
     } catch (err) {
@@ -81,7 +83,8 @@ export function useReminderActions() {
   // 标记提醒已付/未付
   async function markReminderPaid(serialNum: string, isPaid: boolean) {
     try {
-      await moneyStore.markReminderPaid(serialNum, isPaid);
+      // TODO: 添加到reminderStore中
+      await MoneyDb.updateBilReminderActive(serialNum, isPaid);
       toast.success('标记成功');
       return true;
     } catch (err) {
@@ -94,7 +97,8 @@ export function useReminderActions() {
   // 加载提醒列表
   async function loadReminders() {
     try {
-      reminders.value = await moneyStore.getAllReminders();
+      await reminderStore.fetchReminders();
+      reminders.value = reminderStore.reminders;
       return true;
     } catch (err) {
       Lg.e('loadReminders', err);

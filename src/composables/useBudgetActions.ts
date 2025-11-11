@@ -1,9 +1,10 @@
+import { useBudgetStore } from '@/stores/money';
 import { Lg } from '@/utils/debugLog';
 import { toast } from '@/utils/toast';
 import type { Budget, BudgetCreate, BudgetUpdate } from '@/schema/money';
 
 export function useBudgetActions() {
-  const moneyStore = useMoneyStore();
+  const budgetStore = useBudgetStore();
 
   const showBudget = ref(false);
   const selectedBudget = ref<Budget | null>(null);
@@ -30,7 +31,7 @@ export function useBudgetActions() {
   // 保存预算
   async function saveBudget(budget: BudgetCreate) {
     try {
-      await moneyStore.createBudget(budget);
+      await budgetStore.createBudget(budget);
       toast.success('添加成功');
       closeBudgetModal();
       return true;
@@ -45,7 +46,7 @@ export function useBudgetActions() {
   async function updateBudget(serialNum: string, budget: BudgetUpdate) {
     try {
       if (selectedBudget.value) {
-        await moneyStore.updateBudget(serialNum, budget);
+        await budgetStore.updateBudget(serialNum, budget);
         toast.success('更新成功');
         closeBudgetModal();
         return true;
@@ -68,7 +69,7 @@ export function useBudgetActions() {
     }
 
     try {
-      await moneyStore.deleteBudget(serialNum);
+      await budgetStore.deleteBudget(serialNum);
       toast.success('删除成功');
       return true;
     } catch (err) {
@@ -79,9 +80,9 @@ export function useBudgetActions() {
   }
 
   // 切换预算状态
-  async function toggleBudgetActive(serialNum: string, isActive: boolean) {
+  async function toggleBudgetActive(serialNum: string) {
     try {
-      await moneyStore.toggleBudgetActive(serialNum, isActive);
+      await budgetStore.toggleBudgetActive(serialNum);
       toast.success('状态更新成功');
       return true;
     } catch (err) {
@@ -94,10 +95,17 @@ export function useBudgetActions() {
   // 加载预算列表
   async function loadBudgets() {
     try {
-      budgets.value = moneyStore.budgetsPaged.rows;
+      budgets.value = budgetStore.budgetsPaged.rows;
       if (budgets.value.length === 0) {
-        await moneyStore.updateBudgets(true);
-        budgets.value = moneyStore.budgetsPaged.rows;
+        await budgetStore.fetchBudgetsPaged({
+          currentPage: 1,
+          pageSize: 10,
+          sortOptions: {
+            desc: true,
+          },
+          filter: {},
+        });
+        budgets.value = budgetStore.budgetsPaged.rows;
       }
       return true;
     } catch (err) {
@@ -144,10 +152,9 @@ export function useBudgetActions() {
   // 包装切换状态方法，支持自定义回调
   async function handleToggleBudgetActive(
     serialNum: string,
-    isActive: boolean,
     onSuccess?: () => Promise<void> | void,
   ) {
-    const success = await toggleBudgetActive(serialNum, isActive);
+    const success = await toggleBudgetActive(serialNum);
     if (success && onSuccess) {
       await onSuccess();
     }

@@ -4,6 +4,7 @@ import ConfirmModal from '@/components/common/ConfirmModal.vue';
 import { CURRENCY_CNY } from '@/constants/moneyConst';
 import { TransactionTypeSchema } from '@/schema/common';
 import { MoneyDb } from '@/services/money/money';
+import { useAccountStore, useCategoryStore } from '@/stores/money';
 import { Lg } from '@/utils/debugLog';
 import { toast } from '@/utils/toast';
 import { createComparisonCard } from '../common/moneyCommon';
@@ -35,7 +36,8 @@ const budgetListRef = ref<InstanceType<typeof BudgetList> | null>(null);
 const reminderListRef = ref<InstanceType<typeof ReminderList> | null>(null);
 const stackedCardsRef = ref<InstanceType<typeof StackedStatCards> | null>(null);
 
-const moneyStore = useMoneyStore();
+const accountStore = useAccountStore();
+const categoryStore = useCategoryStore();
 const { confirmState, confirmDelete, handleConfirm, handleCancel, handleClose } = useConfirm();
 
 // 使用各个功能模块的 hooks
@@ -302,7 +304,7 @@ function handleCardClick(_index: number, _card: any) {
 
 // ------------------ Amount Visibility ------------------
 function toggleGlobalAmountVisibility() {
-  moneyStore.toggleGlobalAmountVisibility();
+  accountStore.toggleGlobalAmountHidden();
 }
 
 // 获取货币符号
@@ -360,8 +362,8 @@ onMounted(async () => {
 });
 
 onMounted(async () => {
-  await moneyStore.getAllCategories();
-  await moneyStore.getAllSubCategories();
+  await categoryStore.fetchCategories();
+  await categoryStore.fetchSubCategories();
 });
 
 // 生命周期钩子
@@ -435,10 +437,10 @@ onUnmounted(() => {
         </button>
         <button
           class="btn-hide"
-          :class="moneyStore.globalAmountHidden ? 'btn-gray' : 'btn-blue'"
+          :class="accountStore.globalAmountHidden ? 'btn-gray' : 'btn-blue'"
           @click="toggleGlobalAmountVisibility"
         >
-          <LucideEye v-if="!moneyStore.globalAmountHidden" />
+          <LucideEye v-if="!accountStore.globalAmountHidden" />
           <LucideEyeOff v-else />
         </button>
       </div>

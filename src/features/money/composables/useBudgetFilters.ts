@@ -1,4 +1,5 @@
 import { SortDirection } from '@/schema/common';
+import { useBudgetStore } from '@/stores/money';
 import { Lg } from '@/utils/debugLog';
 import type { PageQuery } from '@/schema/common';
 import type { Budget } from '@/schema/money';
@@ -52,7 +53,7 @@ export function mapUIFiltersToAPIFilters(ui: UIFilters): BudgetFilters {
 export function useBudgetFilters(budgets: () => PagedResult<Budget>, defaultPageSize = 4) {
   const filters = ref<UIFilters>({ ...initialFilters });
   const loading = ref(false);
-  const moneyStore = useMoneyStore();
+  const budgetStore = useBudgetStore();
   const { sortOptions } = useSort({
     sortBy: undefined,
     sortDir: SortDirection.Desc,
@@ -71,7 +72,7 @@ export function useBudgetFilters(budgets: () => PagedResult<Budget>, defaultPage
         sortOptions: sortOptions.value,
         filter: mapUIFiltersToAPIFilters(filters.value),
       };
-      await moneyStore.getPagedBudgets(params);
+      await budgetStore.fetchBudgetsPaged(params);
     } catch (error) {
       Lg.e('Transaction', error);
     } finally {

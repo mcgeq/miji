@@ -1,4 +1,5 @@
 import { TransactionTypeSchema } from '@/schema/common';
+import { useTransactionStore } from '@/stores/money';
 import { Lg } from '@/utils/debugLog';
 import { toast } from '@/utils/toast';
 import type { TransactionType } from '@/schema/common';
@@ -10,7 +11,7 @@ import type {
 } from '@/schema/money';
 
 export function useTransactionActions() {
-  const moneyStore = useMoneyStore();
+  const transactionStore = useTransactionStore();
 
   const showTransaction = ref(false);
   const selectedTransaction = ref<Transaction | null>(null);
@@ -44,7 +45,7 @@ export function useTransactionActions() {
   async function saveTransaction(transaction: TransactionCreate) {
     try {
       // 创建交易
-      await moneyStore.createTransaction(transaction);
+      await transactionStore.createTransaction(transaction);
       toast.success('添加成功');
 
       closeTransactionModal();
@@ -60,7 +61,7 @@ export function useTransactionActions() {
   async function updateTransaction(serialNum: string, transaction: TransactionUpdate) {
     try {
       if (selectedTransaction.value) {
-        await moneyStore.updateTransaction(serialNum, transaction);
+        await transactionStore.updateTransaction(serialNum, transaction);
         toast.success('更新成功');
         closeTransactionModal();
         return true;
@@ -84,10 +85,10 @@ export function useTransactionActions() {
 
     try {
       if (transaction.category === 'Transfer' && transaction.relatedTransactionSerialNum) {
-        await moneyStore.deleteTransfer(transaction.relatedTransactionSerialNum);
+        await transactionStore.deleteTransfer(transaction.relatedTransactionSerialNum);
         toast.success('转账记录删除成功');
       } else {
-        await moneyStore.deleteTransaction(transaction.serialNum);
+        await transactionStore.deleteTransaction(transaction.serialNum);
         toast.success('删除成功');
       }
       return true;
@@ -101,7 +102,7 @@ export function useTransactionActions() {
   // 保存转账
   async function saveTransfer(transfer: TransferCreate) {
     try {
-      await moneyStore.createTransfer(transfer);
+      await transactionStore.createTransfer(transfer);
       toast.success('转账成功');
       closeTransactionModal();
       return true;
@@ -115,7 +116,7 @@ export function useTransactionActions() {
   // 更新转账
   async function updateTransfer(serialNum: string, transfer: TransferCreate) {
     try {
-      await moneyStore.updateTransfer(serialNum, transfer);
+      await transactionStore.updateTransfer(serialNum, transfer);
       toast.success('转账更新成功');
       closeTransactionModal();
       return true;

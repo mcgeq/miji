@@ -6,6 +6,7 @@ import ReminderModal from '@/features/money/components/ReminderModal.vue';
 import TransactionModal from '@/features/money/components/TransactionModal.vue';
 import { formatCurrency } from '@/features/money/utils/money';
 import { TransactionTypeSchema } from '@/schema/common';
+import { useAccountStore, useCategoryStore } from '@/stores/money';
 import { getRepeatTypeName, lowercaseFirstLetter } from '@/utils/common';
 import { DateUtils } from '@/utils/date';
 import type {
@@ -30,7 +31,8 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const { t } = useI18n();
-const moneyStore = useMoneyStore();
+const accountStore = useAccountStore();
+const categoryStore = useCategoryStore();
 const mediaQueries = useMediaQueriesStore();
 const { confirmState, handleConfirm, handleCancel, handleClose } = useConfirm();
 
@@ -104,7 +106,7 @@ function closeAllModals() {
 
 // 切换金额可见性
 function toggleAmountVisibility() {
-  moneyStore.toggleGlobalAmountVisibility();
+  accountStore.toggleGlobalAmountHidden();
 }
 
 // 数据刷新函数
@@ -211,8 +213,8 @@ function getBudgetPeriodText(budget: any) {
 
 onMounted(async () => {
   await loadAccounts();
-  await moneyStore.getAllCategories();
-  await moneyStore.getAllSubCategories();
+  await categoryStore.fetchCategories();
+  await categoryStore.fetchSubCategories();
   // 初始加载所有数据
   await loadTransactions();
   await loadBudgets();
@@ -266,11 +268,11 @@ onMounted(async () => {
       <button
         v-if="props.showAmountToggle"
         class="qm-btn"
-        :class="moneyStore.globalAmountHidden ? 'qm-btn-gray' : 'qm-btn-blue'"
-        :title="moneyStore.globalAmountHidden ? '显示金额' : '隐藏金额'"
+        :class="accountStore.globalAmountHidden ? 'qm-btn-gray' : 'qm-btn-blue'"
+        :title="accountStore.globalAmountHidden ? '显示金额' : '隐藏金额'"
         @click="toggleAmountVisibility"
       >
-        <LucideEye v-if="!moneyStore.globalAmountHidden" :size="12" />
+        <LucideEye v-if="!accountStore.globalAmountHidden" :size="12" />
         <LucideEyeOff v-else :size="12" />
       </button>
     </div>
@@ -328,7 +330,7 @@ onMounted(async () => {
               </div>
             </div>
             <div class="qm-item-value">
-              {{ moneyStore.globalAmountHidden ? '***' : formatCurrency(account.balance ?? 0) }}
+              {{ accountStore.globalAmountHidden ? '***' : formatCurrency(account.balance ?? 0) }}
             </div>
           </div>
         </div>

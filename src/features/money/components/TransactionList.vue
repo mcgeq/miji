@@ -6,6 +6,7 @@ import {
 } from 'lucide-vue-next';
 import SimplePagination from '@/components/common/SimplePagination.vue';
 import { SortDirection, TransactionTypeSchema } from '@/schema/common';
+import { useTransactionStore } from '@/stores/money';
 import { lowercaseFirstLetter } from '@/utils/common';
 import { DateUtils } from '@/utils/date';
 import { Lg } from '@/utils/debugLog';
@@ -28,7 +29,7 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n();
-const moneyStore = useMoneyStore();
+const transactionStore = useTransactionStore();
 const mediaQueries = useMediaQueriesStore();
 // 数据状态
 const loading = ref(false);
@@ -38,7 +39,7 @@ const showMoreFilters = ref(!mediaQueries.isMobile);
 function toggleFilters() {
   showMoreFilters.value = !showMoreFilters.value;
 }
-const transactions = computed<Transaction[]>(() => moneyStore.transactions);
+const transactions = computed<Transaction[]>(() => transactionStore.transactions);
 
 // 禁用转账交易的编辑和删除按钮
 const disabledTransferTransactions = computed(() => {
@@ -173,7 +174,8 @@ async function loadTransactions() {
         isDeleted: filters.value.isDeleted ?? false,
       },
     };
-    const result = await moneyStore.getPagedTransactions(params);
+    await transactionStore.fetchTransactionsPaged(params);
+    const result = transactionStore.transactionsPaged;
 
     pagination.value.totalItems = result.totalCount;
     pagination.value.totalPages = result.totalPages;

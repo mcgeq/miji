@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useMoneyStore } from '@/stores/moneyStore';
+import { useAccountStore } from '@/stores/money';
 import type { Account } from '@/schema/money';
 
 // Props（不包含 modelValue）
@@ -42,14 +42,18 @@ const props = withDefaults(defineProps<AccountSelectorProps>(), {
 const selectedAccount = defineModel<string | null>('modelValue', { default: null });
 
 // store
-const moneyStore = useMoneyStore();
+const accountStore = useAccountStore();
 const fetchedAccounts = ref<Account[]>(props.accounts);
 const inputId = useId();
 
 // 挂载时加载账户
 onMounted(async () => {
   try {
-    fetchedAccounts.value = moneyStore.accounts;
+    // 如果 accountStore 还没有账户数据，就加载
+    if (accountStore.accounts.length === 0) {
+      await accountStore.fetchAccounts();
+    }
+    fetchedAccounts.value = accountStore.accounts;
   } catch (error) {
     console.error('获取账户失败:', error);
   }
@@ -151,7 +155,7 @@ defineExpose({
           :key="account.serialNum"
           :value="account.serialNum"
         >
-          {{ account.name }} ({{ account.currency.symbol }}{{ moneyStore.isAccountAmountHidden(account.serialNum) ? '***' : account.balance }})
+          {{ account.name }} ({{ account.currency.symbol }}{{ accountStore.isAccountAmountHidden(account.serialNum) ? '***' : account.balance }})
         </option>
       </select>
     </div>
