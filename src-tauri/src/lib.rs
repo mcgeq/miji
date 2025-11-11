@@ -1,15 +1,5 @@
-use migration::{Migrator, MigratorTrait};
 use serde::{Deserialize, Serialize};
-use tauri::{AppHandle, Manager};
-
-#[cfg(desktop)]
-use tauri::{
-    WindowEvent,
-    menu::{MenuBuilder, MenuItem},
-    tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
-};
-
-use tauri::Emitter;
+use tauri::Manager;
 pub mod logging;
 
 /// 分期处理完成事件
@@ -26,15 +16,21 @@ pub struct InstallmentProcessFailedEvent {
     pub timestamp: i64,
 }
 
+// 模块声明
 #[cfg(desktop)]
 mod desktops;
+#[cfg(any(target_os = "android", target_os = "ios"))]
+mod mobiles;
 
 mod commands;
 mod default_account;
 mod default_user;
-#[cfg(any(target_os = "android", target_os = "ios"))]
-mod mobiles;
 mod plugins;
+mod app_initializer;
+mod scheduler_manager;
+mod system_commands;
+#[cfg(desktop)]
+mod tray_manager;
 
 #[cfg(desktop)]
 use desktops::init;
@@ -47,21 +43,13 @@ use init::MijiInit;
 use mobiles::init;
 
 use commands::init_commands;
-use crate::default_account::create_default_virtual_account;
-use common::{
-    ApiCredentials, AppState, SetupState, business_code::BusinessCode, config::Config,
-    error::AppError,
-};
+use app_initializer::AppInitializer;
 use dotenvy::dotenv;
 use plugins::generic_plugins;
-use std::sync::Arc;
-use tokio::{
-    sync::Mutex,
-    time::{Duration, sleep},
-};
+use crate::commands::AppPreferences;
 
-use crate::commands::{AppPreferences, set_complete};
-use crate::default_user::create_default_user;
+#[cfg(desktop)]
+use tray_manager::{create_system_tray, setup_window_close_handler};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -80,72 +68,32 @@ pub fn run() {
 
     builder
         .setup(|app| {
-            // 1. 获取 AppHandle
             let app_handle = app.handle();
 
-            #[cfg(desktop)] // 只在桌面平台执行
-            let cloned_handle = app_handle.clone();
-            // 2. 加载配置
-            Config::init(app_handle)?;
-            let config = Config::get();
-
-            // 3. 创建 API 凭证
-            let credentials = ApiCredentials {
-                jwt_secret: config.jwt_secret.clone(),
-                expired_at: config.expired_at,
-            };
-
-            // 4. 初始化数据库连接
-            // 使用 tauri 的异步运行时执行数据库连接
-            let db = tauri::async_runtime::block_on(async {
-                sea_orm::Database::connect(&config.db_url).await
-            })
-            .map_err(|e| {
-                AppError::simple(
-                    BusinessCode::DatabaseError,
-                    format!("Database connection failed: {e}"),
-                )
+            // 使用新的初始化器执行初始化
+            let initializer = AppInitializer::new(app_handle.clone());
+            let app_state = tauri::async_runtime::block_on(async {
+                initializer.initialize().await
             })?;
-            tauri::async_runtime::block_on(async { Migrator::up(&db, None).await }).map_err(
-                |e| {
-                    AppError::simple(
-                        BusinessCode::DatabaseError,
-                        format!("Database migration failed: {e}"),
-                    )
-                },
-            )?;
 
-            let db = Arc::new(db);
+            // 管理应用状态
+            app.manage(app_state);
 
-            // 5. 创建应用状态
-            let app_state = AppState {
-                db,
-                credentials: Arc::new(Mutex::new(credentials)),
-                task: Arc::new(Mutex::new(SetupState {
-                    frontend_task: false,
-                    backend_task: true,
-                })),
-            };
-
-            // 6. 管理应用状态
-            app.manage(app_state.clone());
-
-            // 7. 管理用户偏好设置
+            // 管理用户偏好设置
             app.manage(AppPreferences::new(std::collections::HashMap::new()));
 
-            // 8. 创建系统托盘（仅桌面平台）
+            // 桌面平台特定初始化
             #[cfg(desktop)]
             {
-                create_system_tray(app_handle)?;
-                setup_window_close_handler(app_handle)?;
-                tauri::async_runtime::spawn(setup(cloned_handle));
+                create_system_tray(&app_handle)?;
+                setup_window_close_handler(&app_handle)?;
             }
 
-            #[cfg(any(target_os = "android", target_os = "ios"))]
-            {
-                let cloned_handle = app_handle.clone();
-                tauri::async_runtime::spawn(setup(cloned_handle));
-            }
+            // 启动后台任务
+            let background_handle = app_handle.clone();
+            tauri::async_runtime::spawn(async move {
+                AppInitializer::run_background_setup(background_handle).await
+            });
 
             Ok(())
         })
@@ -153,296 +101,3 @@ pub fn run() {
         .expect("error while running tauri application");
 }
 
-// An async function that does some heavy setup task
-async fn setup(app: AppHandle) -> Result<(), ()> {
-    // 在移动端减少初始化延迟
-    #[cfg(any(target_os = "android", target_os = "ios"))]
-    {
-        eprintln!("Performing mobile backend setup task...");
-        sleep(Duration::from_millis(500)).await; // 移动端减少到500ms
-    }
-
-    #[cfg(not(any(target_os = "android", target_os = "ios")))]
-    {
-        eprintln!("Performing really heavy backend setup task...");
-        sleep(Duration::from_secs(3)).await; // 桌面端保持3秒
-    }
-
-    // 创建默认用户
-    let app_state = app.state::<AppState>();
-    if let Err(e) = create_default_user(&app_state.db).await {
-        eprintln!("Failed to create default user: {}", e);
-        // 不返回错误，让应用继续启动
-    }
-
-    // 创建默认虚拟账户
-    if let Err(e) = create_default_virtual_account(&app_state.db).await {
-        eprintln!("Failed to create default virtual account: {}", e);
-        // 不返回错误，让应用继续启动
-    }
-
-    // 启动定时任务处理未来交易
-    let app_clone = app.clone();
-    tauri::async_runtime::spawn(async move {
-        start_transaction_scheduler(app_clone).await;
-    });
-
-    // 启动待办重复任务自动创建定时任务
-    let app_clone_todo = app.clone();
-    tauri::async_runtime::spawn(async move {
-        start_todo_scheduler(app_clone_todo).await;
-    });
-
-    // 启动待办提醒定时任务
-    let app_clone_notify = app.clone();
-    tauri::async_runtime::spawn(async move {
-        start_todo_notification_scheduler(app_clone_notify).await;
-    });
-
-    // 启动账单提醒定时任务
-    let app_clone_bil = app.clone();
-    tauri::async_runtime::spawn(async move {
-        start_bil_reminder_scheduler(app_clone_bil).await;
-    });
-
-    // 启动预算自动创建定时任务
-    let app_clone_budget = app.clone();
-    tauri::async_runtime::spawn(async move {
-        start_budget_scheduler(app_clone_budget).await;
-    });
-
-    eprintln!("Backend setup task completed!");
-    // Set the backend task as being completed
-    // Commands can be ran as regular functions as long as you take
-    // care of the input arguments yourself
-    set_complete(app.clone(), app.state::<AppState>(), "backend".to_string()).await?;
-    Ok(())
-}
-
-#[cfg(desktop)]
-fn create_system_tray(app: &AppHandle) -> Result<(), Box<dyn std::error::Error>> {
-    // 创建菜单项
-    let settings_item = MenuItem::with_id(app, "settings", "设置", true, None::<&str>)?;
-    let quit_item = MenuItem::with_id(app, "quit", "退出", true, None::<&str>)?;
-
-    // 创建菜单 - 使用官方文档推荐的方式
-    let menu = MenuBuilder::new(app)
-        .item(&settings_item)
-        .separator()
-        .item(&quit_item)
-        .build()?;
-
-    // 创建托盘图标 - 使用官方文档推荐的方式
-    let _tray = TrayIconBuilder::new()
-        .icon(app.default_window_icon().unwrap().clone())
-        .menu(&menu)
-        .show_menu_on_left_click(false) // 防止左键点击时显示菜单
-        .on_menu_event(|app, event| {
-            match event.id.as_ref() {
-                "settings" => {
-                    // 导航到设置页面
-                    if let Some(window) = app.get_webview_window("main") {
-                        let _ = window.show();
-                        let _ = window.set_focus();
-                        let _ = window.eval("window.location.hash = '#/settings'");
-                    }
-                }
-                "quit" => {
-                    app.exit(0);
-                }
-                _ => {}
-            }
-        })
-        .on_tray_icon_event(|tray, event| {
-            if let TrayIconEvent::Click {
-                button: MouseButton::Left,
-                button_state: MouseButtonState::Up,
-                ..
-            } = event
-            {
-                // 左键点击托盘图标显示/隐藏窗口
-                let app = tray.app_handle();
-                if let Some(window) = app.get_webview_window("main") {
-                    if window.is_visible().unwrap_or(false) {
-                        let _ = window.hide();
-                    } else {
-                        let _ = window.unminimize();
-                        let _ = window.show();
-                        let _ = window.set_focus();
-                    }
-                }
-            }
-        })
-        .build(app)?;
-
-    Ok(())
-}
-
-#[cfg(desktop)]
-fn setup_window_close_handler(app: &AppHandle) -> Result<(), Box<dyn std::error::Error>> {
-    if let Some(window) = app.get_webview_window("main") {
-        let app_handle = app.clone();
-        window.on_window_event(move |event| {
-            if let WindowEvent::CloseRequested { api, .. } = event {
-                println!("CloseRequested event received");
-                // 阻止默认关闭行为
-                api.prevent_close();
-
-                // 检查当前页面是否为登录或注册页面
-                let app_handle_clone = app_handle.clone();
-                tauri::async_runtime::spawn(async move {
-                    if let Some(window) = app_handle_clone.get_webview_window("main") {
-                        // 发送检查事件到前端
-                        let result = window.emit("check-auth-page", ());
-                        match result {
-                            Ok(_) => println!("Check auth page event emitted successfully"),
-                            Err(e) => println!("Failed to emit check auth page event: {}", e),
-                        }
-                    } else {
-                        println!("No main window found");
-                    }
-                });
-            }
-        });
-    } else {
-        eprintln!("No main window found during setup");
-    }
-    Ok(())
-}
-
-/// 启动交易定时任务
-async fn start_transaction_scheduler(app: AppHandle) {
-    let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(60 * 60 * 2)); // 每2小时检查一次
-
-    loop {
-        interval.tick().await;
-
-        // 处理到期的未来交易
-        let app_state = app.state::<AppState>();
-        let db = app_state.db.clone();
-        let installment_service = money::services::installment::get_installment_service();
-
-        match installment_service.auto_process_due_installments(&db).await {
-            Ok(processed_transactions) => {
-                if !processed_transactions.is_empty() {
-                    log::info!("处理了 {} 笔到期交易", processed_transactions.len());
-
-                    // 通知前端刷新数据
-                    if let Err(e) = app.emit(
-                        "installment-processed",
-                        InstallmentProcessedEvent {
-                            processed_count: processed_transactions.len(),
-                            timestamp: chrono::Local::now().timestamp(),
-                        },
-                    ) {
-                        log::error!("发送分期处理完成事件失败: {}", e);
-                    }
-                }
-            }
-            Err(e) => {
-                log::error!("处理到期交易失败: {}", e);
-
-                // 通知前端处理失败
-                if let Err(emit_err) = app.emit(
-                    "installment-process-failed",
-                    InstallmentProcessFailedEvent {
-                        error: e.to_string(),
-                        timestamp: chrono::Utc::now().timestamp(),
-                    },
-                ) {
-                    log::error!("发送分期处理失败事件失败: {}", emit_err);
-                }
-            }
-        }
-    }
-}
-
-/// 启动待办定时任务：周期性执行自动创建重复待办
-async fn start_todo_scheduler(app: AppHandle) {
-    let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(60 * 60 * 2)); // 每2小时检查一次
-
-    loop {
-        interval.tick().await;
-
-        let app_state = app.state::<AppState>();
-        let db = app_state.db.clone();
-        if let Err(e) = todos::service::todo::TodosService::auto_process_create_todo(&db).await {
-            log::error!("自动创建重复待办失败: {}", e);
-        } else {
-            log::info!("自动创建重复待办执行完成");
-            // 如需通知前端刷新列表，可在此处 emit 事件
-            // app.emit("todos-auto-created", "ok").ok();
-        }
-    }
-}
-
-/// 启动待办提醒定时任务：定期扫描需要提醒的待办并发送系统通知
-async fn start_todo_notification_scheduler(app: AppHandle) {
-    let interval_secs = if cfg!(any(target_os = "android", target_os = "ios")) {
-        300
-    } else {
-        60
-    };
-    let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(interval_secs));
-
-    loop {
-        interval.tick().await;
-
-        let app_state = app.state::<AppState>();
-        let db = app_state.db.clone();
-        let todos_service = todos::service::todo::get_todos_service();
-
-        match todos_service.process_due_reminders(&app, &db).await {
-            Ok(n) if n > 0 => log::info!("发送 {} 条待办提醒", n),
-            Ok(_) => {}
-            Err(e) => log::error!("待办提醒处理失败: {}", e),
-        }
-    }
-}
-
-/// 启动账单提醒定时任务
-async fn start_bil_reminder_scheduler(app: AppHandle) {
-    let interval_secs = if cfg!(any(target_os = "android", target_os = "ios")) {
-        300
-    } else {
-        60
-    };
-    let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(interval_secs));
-
-    loop {
-        interval.tick().await;
-
-        let app_state = app.state::<AppState>();
-        let db = app_state.db.clone();
-        let service = money::services::bil_reminder::get_bil_reminder_service();
-
-        match service.process_due_bil_reminders(&app, &db).await {
-            Ok(n) if n > 0 => log::info!("发送 {} 条账单提醒", n),
-            Ok(_) => {}
-            Err(e) => log::error!("账单提醒处理失败: {}", e),
-        }
-    }
-}
-
-/// 启动预算自动创建定时任务：周期性扫描到期的重复预算并创建新的预算周期
-async fn start_budget_scheduler(app: AppHandle) {
-    // 预算自动创建可以每2小时检查一次，因为只需要在结束日期的当天创建即可
-    let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(60 * 60 * 2));
-
-    loop {
-        interval.tick().await;
-
-        let app_state = app.state::<AppState>();
-        let db = app_state.db.clone();
-        let service = money::services::bil_reminder::get_bil_reminder_service();
-
-        match service.auto_create_recurring_budgets(&db).await {
-            Ok(_) => {
-                log::info!("预算自动创建执行完成");
-                // 如需通知前端刷新列表，可在此处 emit 事件
-                // app.emit("budgets-auto-created", "ok").ok();
-            }
-            Err(e) => log::error!("自动创建重复预算失败: {}", e),
-        }
-    }
-}
