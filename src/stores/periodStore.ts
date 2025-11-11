@@ -263,7 +263,7 @@ export const usePeriodStore = defineStore('period', {
           },
         );
       } else if (err instanceof MoneyStoreError) {
-        appError = err;
+        appError = err as AppError;
       } else {
         appError = AppError.wrap(
           'money',

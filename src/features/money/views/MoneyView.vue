@@ -453,7 +453,7 @@ onUnmounted(() => {
           :loading="accountsLoading"
           @edit="editAccount"
           @delete="(serialNum) => handleDeleteAccount(serialNum, confirmDelete, finalizeAccountChange)"
-          @toggle-active="(serialNum, isActive) => handleToggleAccountActive(serialNum, isActive, finalizeAccountChange)"
+          @toggle-active="(serialNum) => handleToggleAccountActive(serialNum, finalizeAccountChange)"
         />
         <TransactionList
           v-if="activeTab === 'transactions'"

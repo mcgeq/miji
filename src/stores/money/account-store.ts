@@ -149,7 +149,21 @@ export const useAccountStore = defineStore('money-accounts', {
       const account = this.getAccountById(serialNum);
       if (!account) return;
 
-      await this.updateAccount(serialNum, { isActive: !account.isActive });
+      this.loading = true;
+      this.error = null;
+
+      try {
+        const updatedAccount = await MoneyDb.updateAccountActive(serialNum, !account.isActive);
+        const index = this.accounts.findIndex(a => a.serialNum === serialNum);
+        if (index !== -1) {
+          this.accounts[index] = updatedAccount;
+        }
+      } catch (error: any) {
+        this.error = error.message || '更新账户状态失败';
+        throw error;
+      } finally {
+        this.loading = false;
+      }
     },
 
     /**

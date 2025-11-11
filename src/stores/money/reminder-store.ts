@@ -159,17 +159,33 @@ export const useReminderStore = defineStore('money-reminders', {
       const reminder = this.getReminderById(serialNum);
       if (!reminder) return;
 
-      await MoneyDb.updateBilReminderActive(serialNum, !reminder.enabled);
+      this.loading = true;
+      this.error = null;
 
-      // 重新获取列表
-      await this.fetchRemindersPaged({
-        currentPage: this.remindersPaged.currentPage,
-        pageSize: this.remindersPaged.pageSize,
-        sortOptions: {
-          desc: true,
-        },
-        filter: {},
-      });
+      try {
+        const updatedReminder = await MoneyDb.updateBilReminderActive(serialNum, !reminder.enabled);
+
+        // 更新 reminders 数组
+        const index = this.reminders.findIndex(r => r.serialNum === serialNum);
+        if (index !== -1) {
+          this.reminders[index] = updatedReminder;
+        }
+
+        // 重新获取列表
+        await this.fetchRemindersPaged({
+          currentPage: this.remindersPaged.currentPage,
+          pageSize: this.remindersPaged.pageSize,
+          sortOptions: {
+            desc: true,
+          },
+          filter: {},
+        });
+      } catch (error: any) {
+        this.error = error.message || '更新提醒状态失败';
+        throw error;
+      } finally {
+        this.loading = false;
+      }
     },
 
     /**

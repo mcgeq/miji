@@ -124,19 +124,34 @@ export const useBudgetStore = defineStore('money-budgets', {
     /**
      * 切换预算激活状态
      */
-    async toggleBudgetActive(serialNum: string): Promise<void> {
-      const budget = this.getBudgetById(serialNum);
-      if (!budget) return;
+    async toggleBudgetActive(serialNum: string, isActive: boolean): Promise<void> {
+      this.loading = true;
+      this.error = null;
 
-      await MoneyDb.updateBudgetActive(serialNum, !budget.isActive);
-      await this.fetchBudgetsPaged({
-        currentPage: this.budgetsPaged.currentPage,
-        pageSize: this.budgetsPaged.pageSize,
-        sortOptions: {
-          desc: true,
-        },
-        filter: {},
-      });
+      try {
+        const updatedBudget = await MoneyDb.updateBudgetActive(serialNum, isActive);
+
+        // 更新 budgets 数组
+        const index = this.budgets.findIndex(b => b.serialNum === serialNum);
+        if (index !== -1) {
+          this.budgets[index] = updatedBudget;
+        }
+
+        // 刷新分页数据
+        await this.fetchBudgetsPaged({
+          currentPage: this.budgetsPaged.currentPage,
+          pageSize: this.budgetsPaged.pageSize,
+          sortOptions: {
+            desc: true,
+          },
+          filter: {},
+        });
+      } catch (error: any) {
+        this.error = error.message || '更新预算状态失败';
+        throw error;
+      } finally {
+        this.loading = false;
+      }
     },
 
     /**

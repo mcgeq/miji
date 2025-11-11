@@ -80,9 +80,9 @@ export function useBudgetActions() {
   }
 
   // 切换预算状态
-  async function toggleBudgetActive(serialNum: string) {
+  async function toggleBudgetActive(serialNum: string, isActive: boolean) {
     try {
-      await budgetStore.toggleBudgetActive(serialNum);
+      await budgetStore.toggleBudgetActive(serialNum, isActive);
       toast.success('状态更新成功');
       return true;
     } catch (err) {
@@ -152,9 +152,10 @@ export function useBudgetActions() {
   // 包装切换状态方法，支持自定义回调
   async function handleToggleBudgetActive(
     serialNum: string,
+    isActive: boolean,
     onSuccess?: () => Promise<void> | void,
   ) {
-    const success = await toggleBudgetActive(serialNum);
+    const success = await toggleBudgetActive(serialNum, isActive);
     if (success && onSuccess) {
       await onSuccess();
     }
