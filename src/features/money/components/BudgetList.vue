@@ -301,12 +301,6 @@ defineExpose({
           <!-- 右侧按钮组 -->
           <div class="budget-actions">
             <button
-              class="money-option-btn money-option-edit-hover" :title="t('common.actions.edit')"
-              @click="budget.isActive && emit('edit', budget)"
-            >
-              <LucideEdit class="wh-4" />
-            </button>
-            <button
               class="money-option-btn money-option-ben-hover"
               :title="budget.isActive ? t('common.status.stop') : t('common.status.enabled')"
               @click="emit('toggleActive', budget.serialNum, !budget.isActive)"
@@ -314,12 +308,23 @@ defineExpose({
               <LucideBan v-if="budget.isActive" class="wh-4" />
               <LucideStopCircle v-else class="wh-4" />
             </button>
-            <button
-              class="money-option-btn money-option-trash-hover"
-              :title="t('common.actions.delete')" @click="emit('delete', budget.serialNum)"
-            >
-              <LucideTrash class="wh-4" />
-            </button>
+            <!-- 禁用状态的预算不显示编辑、删除按钮 -->
+            <template v-if="budget.isActive">
+              <button
+                class="money-option-btn money-option-edit-hover"
+                :title="t('common.actions.edit')"
+                @click="emit('edit', budget)"
+              >
+                <LucideEdit class="wh-4" />
+              </button>
+              <button
+                class="money-option-btn money-option-trash-hover"
+                :title="t('common.actions.delete')"
+                @click="emit('delete', budget.serialNum)"
+              >
+                <LucideTrash class="wh-4" />
+              </button>
+            </template>
           </div>
         </div>
 

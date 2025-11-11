@@ -315,20 +315,23 @@ const gridLayoutClass = computed(() => {
               >
                 <LucideBan class="wh-4" />
               </button>
-              <button
-                class="money-option-btn money-option-edit-hover"
-                :title="t('common.actions.edit')"
-                @click="emit('edit', account)"
-              >
-                <LucideEdit class="wh-4" />
-              </button>
-              <button
-                class="money-option-btn money-option-trash-hover"
-                :title="t('common.actions.delete')"
-                @click="emit('delete', account.serialNum)"
-              >
-                <LucideTrash class="wh-4" />
-              </button>
+              <!-- 禁用状态的账户不显示编辑、删除按钮 -->
+              <template v-if="account.isActive">
+                <button
+                  class="money-option-btn money-option-edit-hover"
+                  :title="t('common.actions.edit')"
+                  @click="emit('edit', account)"
+                >
+                  <LucideEdit class="wh-4" />
+                </button>
+                <button
+                  class="money-option-btn money-option-trash-hover"
+                  :title="t('common.actions.delete')"
+                  @click="emit('delete', account.serialNum)"
+                >
+                  <LucideTrash class="wh-4" />
+                </button>
+              </template>
             </template>
           </div>
         </div>
