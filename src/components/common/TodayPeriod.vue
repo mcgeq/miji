@@ -456,13 +456,15 @@ async function handleDailyDelete(serialNum: string) {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 1.75rem;
-  height: 1.75rem;
-  border-radius: 0.5rem;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 0.375rem;
   border: none;
   cursor: pointer;
   transition: all 0.2s;
   flex-shrink: 0;
+  overflow: hidden;
+  padding: 0.25rem;
 }
 
 .info-action-btn.add-btn {
@@ -496,8 +498,8 @@ async function handleDailyDelete(serialNum: string) {
 }
 
 .btn-icon {
-  width: 1rem;
-  height: 1rem;
+  width: 0.75rem;
+  height: 0.75rem;
 }
 
 /* Modal 样式 */
@@ -589,8 +591,9 @@ async function handleDailyDelete(serialNum: string) {
   }
 
   .info-action-btn {
-    width: 1.75rem;
-    height: 1.75rem;
+    width: 1.5rem;
+    height: 1.5rem;
+    padding: 0.25rem;
   }
 
   .info-actions {
@@ -598,8 +601,8 @@ async function handleDailyDelete(serialNum: string) {
   }
 
   .btn-icon {
-    width: 1rem;
-    height: 1rem;
+    width: 0.75rem;
+    height: 0.75rem;
   }
 
   .month-label {

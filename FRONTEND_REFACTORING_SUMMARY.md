@@ -34,7 +34,10 @@
 - `account-store.ts` (165 行) - 账户管理
 - `budget-store.ts` (149 行) - 预算管理
 - `category-store.ts` (138 行) - 分类管理（带缓存）
-- `index.ts` (22 行) - 统一导出
+- `transaction-store.ts` (282 行) - 交易管理（收入、支出、转账）
+- `reminder-store.ts` (182 行) - 提醒管理
+- `money-errors.ts` (106 行) - 统一错误处理
+- `index.ts` (33 行) - 统一导出
 
 #### 4. **统一样式入口** (`src/assets/styles/index.css`)
 - 集中管理所有样式导入
@@ -138,10 +141,13 @@ export const useMoneyStore = defineStore('money', {
 **重构后** (模块化):
 ```
 src/stores/money/
-├── index.ts              (22 行) - 统一导出
+├── index.ts              (33 行) - 统一导出
 ├── account-store.ts      (165 行) - 账户管理
 ├── budget-store.ts       (149 行) - 预算管理
-└── category-store.ts     (138 行) - 分类管理
+├── category-store.ts     (138 行) - 分类管理（带缓存）
+├── transaction-store.ts  (282 行) - 交易管理（收入/支出/转账）
+├── reminder-store.ts     (182 行) - 提醒管理
+└── money-errors.ts       (106 行) - 统一错误处理
 ```
 
 **使用方式**:
@@ -150,10 +156,21 @@ src/stores/money/
 import { useMoneyStore } from '@/stores/moneyStore';
 
 // 新方式（推荐）
-import { useAccountStore, useBudgetStore } from '@/stores/money';
+import { 
+  useAccountStore, 
+  useBudgetStore, 
+  useTransactionStore, 
+  useReminderStore 
+} from '@/stores/money';
 
 const accountStore = useAccountStore();
 await accountStore.fetchAccounts();
+
+const transactionStore = useTransactionStore();
+await transactionStore.createTransaction(data);
+
+const reminderStore = useReminderStore();
+const upcoming = reminderStore.upcomingReminders;
 ```
 
 **收益**:
@@ -319,16 +336,70 @@ if (PlatformService.isMobile()) { /* mobile logic */ }
 
 ### 2. 使用拆分的 Money Stores
 
+#### 账户管理迁移
 ```typescript
 // ❌ 旧方式
 import { useMoneyStore } from '@/stores/moneyStore';
 const moneyStore = useMoneyStore();
-await moneyStore.fetchAccounts();
+await moneyStore.getAllAccounts();
 
 // ✅ 新方式
 import { useAccountStore } from '@/stores/money';
 const accountStore = useAccountStore();
 await accountStore.fetchAccounts();
+```
+
+#### 交易管理迁移
+```typescript
+// ❌ 旧方式
+const moneyStore = useMoneyStore();
+await moneyStore.createTransaction(data);
+await moneyStore.updateTransactions();
+
+// ✅ 新方式
+import { useTransactionStore } from '@/stores/money';
+const transactionStore = useTransactionStore();
+await transactionStore.createTransaction(data);
+await transactionStore.fetchTransactions();
+```
+
+#### 预算管理迁移
+```typescript
+// ❌ 旧方式
+const moneyStore = useMoneyStore();
+await moneyStore.updateBudgets(true);
+
+// ✅ 新方式
+import { useBudgetStore } from '@/stores/money';
+const budgetStore = useBudgetStore();
+await budgetStore.fetchBudgetsPaged(query);
+```
+
+#### 提醒管理迁移
+```typescript
+// ❌ 旧方式
+const moneyStore = useMoneyStore();
+await moneyStore.updateReminders(true);
+
+// ✅ 新方式
+import { useReminderStore } from '@/stores/money';
+const reminderStore = useReminderStore();
+await reminderStore.fetchRemindersPaged(query);
+const upcoming = reminderStore.upcomingReminders;
+```
+
+#### 分类管理迁移
+```typescript
+// ❌ 旧方式
+const moneyStore = useMoneyStore();
+await moneyStore.updateCategories();
+await moneyStore.updateSubCategories();
+
+// ✅ 新方式
+import { useCategoryStore } from '@/stores/money';
+const categoryStore = useCategoryStore();
+await categoryStore.fetchCategories();
+await categoryStore.fetchSubCategories();
 ```
 
 ### 3. 自定义启动逻辑
@@ -402,10 +473,11 @@ class CustomBootstrapper extends AppBootstrapper {
 ✅ **main.ts** 从 260 行减少到 **71 行** (-73%)  
 ✅ 创建了 **4 个启动模块** (bootstrap/)  
 ✅ 统一了 **平台判断逻辑** (PlatformService)  
-✅ **moneyStore** 拆分为 **3 个独立 store**  
+✅ **moneyStore** (848行) 拆分为 **5 个独立 store** + 错误处理模块  
 ✅ 消除了 **重复代码** 和 **重复逻辑**  
 ✅ 提升了 **可维护性** 和 **可测试性**  
 ✅ 保持了 **100% 向后兼容**  
+✅ 统一了 **错误处理** (money-errors.ts)  
 
 ### 设计原则体现
 
