@@ -1,6 +1,6 @@
 use chrono::{DateTime, FixedOffset};
 use common::utils::{date::DateUtils, uuid::McgUuid};
-use sea_orm::ActiveValue::{self, Set};
+use sea_orm::{ActiveValue::{self, Set}, prelude::Decimal};
 use serde::{Deserialize, Serialize};
 use validator::Validate;
 
@@ -12,6 +12,16 @@ pub struct FamilyMemberResponse {
     pub role: String,
     pub is_primary: bool,
     pub permissions: String,
+    // 新增字段
+    pub user_id: Option<String>,
+    pub avatar_url: Option<String>,
+    pub color: Option<String>,
+    pub total_paid: Decimal,
+    pub total_owed: Decimal,
+    pub balance: Decimal,
+    pub status: String,
+    pub email: Option<String>,
+    pub phone: Option<String>,
     pub created_at: DateTime<FixedOffset>,
     pub updated_at: Option<DateTime<FixedOffset>>,
 }
@@ -24,6 +34,15 @@ impl From<entity::family_member::Model> for FamilyMemberResponse {
             role: model.role,
             is_primary: model.is_primary,
             permissions: model.permissions,
+            user_id: model.user_id,
+            avatar_url: model.avatar_url,
+            color: model.color,
+            total_paid: model.total_paid,
+            total_owed: model.total_owed,
+            balance: model.balance,
+            status: model.status,
+            email: model.email,
+            phone: model.phone,
             created_at: model.created_at,
             updated_at: model.updated_at,
         }
@@ -38,6 +57,15 @@ impl From<&entity::family_member::Model> for FamilyMemberResponse {
             role: model.role.clone(),
             is_primary: model.is_primary,
             permissions: model.permissions.clone(),
+            user_id: model.user_id.clone(),
+            avatar_url: model.avatar_url.clone(),
+            color: model.color.clone(),
+            total_paid: model.total_paid,
+            total_owed: model.total_owed,
+            balance: model.balance,
+            status: model.status.clone(),
+            email: model.email.clone(),
+            phone: model.phone.clone(),
             created_at: model.created_at,
             updated_at: model.updated_at,
         }
@@ -56,22 +84,35 @@ pub struct FamilyMemberCreate {
 
     #[validate(length(min = 1, max = 1000, message = "权限字符串长度必须在1-1000字符之间"))]
     pub permissions: String,
+    
+    // 新增字段
+    pub user_id: Option<String>,
+    pub avatar_url: Option<String>,
+    pub color: Option<String>,
+    pub status: Option<String>,
+    pub email: Option<String>,
+    pub phone: Option<String>,
 }
 
 /// 更新家庭成员请求 DTO
 #[derive(Debug, Clone, Serialize, Deserialize, Validate, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct FamilyMemberUpdate {
-    #[validate(length(min = 1, max = 100, message = "名称长度必须在1-100字符之间"))]
     pub name: Option<String>,
 
-    #[validate(length(min = 1, max = 50, message = "角色长度必须在1-50字符之间"))]
     pub role: Option<String>,
 
     pub is_primary: Option<bool>,
 
-    #[validate(length(min = 1, max = 1000, message = "权限字符串长度必须在1-1000字符之间"))]
     pub permissions: Option<String>,
+    
+    // 新增字段
+    pub user_id: Option<String>,
+    pub avatar_url: Option<String>,
+    pub color: Option<String>,
+    pub status: Option<String>,
+    pub email: Option<String>,
+    pub phone: Option<String>,
 }
 
 impl TryFrom<FamilyMemberCreate> for entity::family_member::ActiveModel {
@@ -88,6 +129,16 @@ impl TryFrom<FamilyMemberCreate> for entity::family_member::ActiveModel {
             role: Set(request.role),
             is_primary: Set(request.is_primary),
             permissions: Set(request.permissions),
+            // 新增字段
+            user_id: Set(request.user_id),
+            avatar_url: Set(request.avatar_url),
+            color: Set(request.color),
+            total_paid: Set(Decimal::ZERO),
+            total_owed: Set(Decimal::ZERO),
+            balance: Set(Decimal::ZERO),
+            status: Set(request.status.unwrap_or_else(|| "Active".to_string())),
+            email: Set(request.email),
+            phone: Set(request.phone),
             created_at: Set(now),
             updated_at: Set(Some(now)),
         })
@@ -109,6 +160,16 @@ impl TryFrom<FamilyMemberUpdate> for entity::family_member::ActiveModel {
             permissions: value
                 .permissions
                 .map_or(ActiveValue::NotSet, ActiveValue::Set),
+            // 新增字段
+            user_id: value.user_id.map_or(ActiveValue::NotSet, |v| ActiveValue::Set(Some(v))),
+            avatar_url: value.avatar_url.map_or(ActiveValue::NotSet, |v| ActiveValue::Set(Some(v))),
+            color: value.color.map_or(ActiveValue::NotSet, |v| ActiveValue::Set(Some(v))),
+            total_paid: ActiveValue::NotSet, // 统计字段不在更新中修改
+            total_owed: ActiveValue::NotSet,
+            balance: ActiveValue::NotSet,
+            status: value.status.map_or(ActiveValue::NotSet, ActiveValue::Set),
+            email: value.email.map_or(ActiveValue::NotSet, |v| ActiveValue::Set(Some(v))),
+            phone: value.phone.map_or(ActiveValue::NotSet, |v| ActiveValue::Set(Some(v))),
             created_at: ActiveValue::NotSet,
             updated_at: ActiveValue::Set(Some(now)),
         })
@@ -130,6 +191,26 @@ impl FamilyMemberUpdate {
         }
         if let Some(permissions) = self.permissions {
             model.permissions = Set(permissions);
+        }
+        
+        // 新增字段
+        if let Some(user_id) = self.user_id {
+            model.user_id = Set(Some(user_id));
+        }
+        if let Some(avatar_url) = self.avatar_url {
+            model.avatar_url = Set(Some(avatar_url));
+        }
+        if let Some(color) = self.color {
+            model.color = Set(Some(color));
+        }
+        if let Some(status) = self.status {
+            model.status = Set(status);
+        }
+        if let Some(email) = self.email {
+            model.email = Set(Some(email));
+        }
+        if let Some(phone) = self.phone {
+            model.phone = Set(Some(phone));
         }
 
         // 更新 updated_at 字段

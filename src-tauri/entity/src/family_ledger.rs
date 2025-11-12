@@ -18,6 +18,14 @@ pub struct Model {
     pub transactions: Option<String>,
     pub budgets: Option<String>,
     pub audit_logs: String,
+    // 新增字段
+    pub ledger_type: String,
+    pub settlement_cycle: String,
+    pub auto_settlement: bool,
+    pub default_split_rule: Option<Json>,
+    pub last_settlement_at: Option<DateTimeWithTimeZone>,
+    pub next_settlement_at: Option<DateTimeWithTimeZone>,
+    pub status: String,
     pub created_at: DateTimeWithTimeZone,
     pub updated_at: Option<DateTimeWithTimeZone>,
 }
@@ -38,6 +46,14 @@ pub enum Relation {
     FamilyLedgerMember,
     #[sea_orm(has_many = "super::family_ledger_transaction::Entity")]
     FamilyLedgerTransaction,
+    #[sea_orm(has_many = "super::split_rules::Entity")]
+    SplitRules,
+    #[sea_orm(has_many = "super::split_records::Entity")]
+    SplitRecords,
+    #[sea_orm(has_many = "super::debt_relations::Entity")]
+    DebtRelations,
+    #[sea_orm(has_many = "super::settlement_records::Entity")]
+    SettlementRecords,
 }
 
 impl Related<super::currency::Entity> for Entity {
@@ -87,6 +103,30 @@ impl Related<super::transactions::Entity> for Entity {
                 .def()
                 .rev(),
         )
+    }
+}
+
+impl Related<super::split_rules::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::SplitRules.def()
+    }
+}
+
+impl Related<super::split_records::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::SplitRecords.def()
+    }
+}
+
+impl Related<super::debt_relations::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::DebtRelations.def()
+    }
+}
+
+impl Related<super::settlement_records::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::SettlementRecords.def()
     }
 }
 

@@ -266,6 +266,16 @@ pub enum FamilyMember {
     Role,
     IsPrimary,
     Permissions,
+    // 新增字段
+    UserId,
+    AvatarUrl,
+    Color,
+    TotalPaid,
+    TotalOwed,
+    Balance,
+    Status,
+    Email,
+    Phone,
     CreatedAt,
     UpdatedAt,
 }
@@ -432,6 +442,14 @@ pub enum FamilyLedger {
     Transactions,
     Budgets,
     AuditLogs,
+    // 新增字段
+    LedgerType,
+    SettlementCycle,
+    AutoSettlement,
+    DefaultSplitRule,
+    LastSettlementAt,
+    NextSettlementAt,
+    Status,
     CreatedAt,
     UpdatedAt,
 }
@@ -565,6 +583,102 @@ pub enum BatchReminders {
     TotalCount,
     SentCount,
     FailedCount,
+    CreatedAt,
+    UpdatedAt,
+}
+
+// 分摊规则表
+#[derive(DeriveIden)]
+pub enum SplitRules {
+    Table,
+    SerialNum,
+    FamilyLedgerSerialNum,
+    Name,
+    Description,
+    RuleType,
+    RuleConfig,
+    ParticipantMembers,
+    IsTemplate,
+    IsDefault,
+    Category,
+    SubCategory,
+    MinAmount,
+    MaxAmount,
+    Tags,
+    Priority,
+    IsActive,
+    CreatedBy,
+    CreatedAt,
+    UpdatedAt,
+}
+
+// 分摊记录表
+#[derive(DeriveIden)]
+pub enum SplitRecords {
+    Table,
+    SerialNum,
+    TransactionSerialNum,
+    FamilyLedgerSerialNum,
+    SplitRuleSerialNum,
+    PayerMemberSerialNum,
+    OweMemberSerialNum,
+    TotalAmount,
+    SplitAmount,
+    SplitPercentage,
+    Currency,
+    Status,
+    SplitType,
+    Description,
+    Notes,
+    ConfirmedAt,
+    PaidAt,
+    DueDate,
+    ReminderSent,
+    LastReminderAt,
+    CreatedAt,
+    UpdatedAt,
+}
+
+// 债务关系表
+#[derive(DeriveIden)]
+pub enum DebtRelations {
+    Table,
+    SerialNum,
+    FamilyLedgerSerialNum,
+    CreditorMemberSerialNum,
+    DebtorMemberSerialNum,
+    Amount,
+    Currency,
+    Status,
+    LastUpdatedBy,
+    LastCalculatedAt,
+    SettledAt,
+    Notes,
+    CreatedAt,
+    UpdatedAt,
+}
+
+// 结算记录表
+#[derive(DeriveIden)]
+pub enum SettlementRecords {
+    Table,
+    SerialNum,
+    FamilyLedgerSerialNum,
+    SettlementType,
+    PeriodStart,
+    PeriodEnd,
+    TotalAmount,
+    Currency,
+    ParticipantMembers,
+    SettlementDetails,
+    OptimizedTransfers,
+    Status,
+    InitiatedBy,
+    CompletedBy,
+    Description,
+    Notes,
+    CompletedAt,
+    CancelledAt,
     CreatedAt,
     UpdatedAt,
 }

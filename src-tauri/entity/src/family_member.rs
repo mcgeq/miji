@@ -14,6 +14,16 @@ pub struct Model {
     pub role: String,
     pub is_primary: bool,
     pub permissions: String,
+    // 新增字段
+    pub user_id: Option<String>,
+    pub avatar_url: Option<String>,
+    pub color: Option<String>,
+    pub total_paid: Decimal,
+    pub total_owed: Decimal,
+    pub balance: Decimal,
+    pub status: String,
+    pub email: Option<String>,
+    pub phone: Option<String>,
     pub created_at: DateTimeWithTimeZone,
     pub updated_at: Option<DateTimeWithTimeZone>,
 }
@@ -24,6 +34,26 @@ pub enum Relation {
     Account,
     #[sea_orm(has_many = "super::family_ledger_member::Entity")]
     FamilyLedgerMember,
+    #[sea_orm(
+        belongs_to = "super::users::Entity",
+        from = "Column::UserId",
+        to = "super::users::Column::SerialNum",
+        on_update = "Cascade",
+        on_delete = "SetNull"
+    )]
+    Users,
+    #[sea_orm(has_many = "super::split_records::Entity")]
+    PayerSplitRecords,
+    #[sea_orm(has_many = "super::split_records::Entity")]
+    OweSplitRecords,
+    #[sea_orm(has_many = "super::debt_relations::Entity")]
+    CreditorDebtRelations,
+    #[sea_orm(has_many = "super::debt_relations::Entity")]
+    DebtorDebtRelations,
+    #[sea_orm(has_many = "super::settlement_records::Entity")]
+    InitiatedSettlementRecords,
+    #[sea_orm(has_many = "super::settlement_records::Entity")]
+    CompletedSettlementRecords,
 }
 
 impl Related<super::account::Entity> for Entity {
@@ -35,6 +65,12 @@ impl Related<super::account::Entity> for Entity {
 impl Related<super::family_ledger_member::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::FamilyLedgerMember.def()
+    }
+}
+
+impl Related<super::users::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::Users.def()
     }
 }
 

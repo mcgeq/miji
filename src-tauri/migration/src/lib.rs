@@ -46,6 +46,12 @@ mod m20251017_160622_create_transaction_alert;
 mod m20251916_221213_create_sub_categories;
 mod m20251917_223412_create_sub_category_insert;
 mod m20250120_000000_add_phone_bill_subcategory;
+mod m20251112_000001_enhance_family_ledger_fields;
+mod m20251112_000002_enhance_family_member_fields;
+mod m20251112_000003_create_split_rules_table;
+mod m20251112_000004_create_split_records_table;
+mod m20251112_000005_create_debt_relations_table;
+mod m20251112_000006_create_settlement_records_table;
 
 pub mod schema;
 
@@ -101,6 +107,13 @@ impl MigratorTrait for Migrator {
             Box::new(m20250115_000002_enhance_bil_reminder_fields::Migration),
             Box::new(m20250115_000003_enhance_reminder_fields::Migration),
             Box::new(m20250115_000004_create_notification_tables::Migration),
+            // 新增的家庭账本功能迁移
+            Box::new(m20251112_000001_enhance_family_ledger_fields::Migration),
+            Box::new(m20251112_000002_enhance_family_member_fields::Migration),
+            Box::new(m20251112_000003_create_split_rules_table::Migration),
+            Box::new(m20251112_000004_create_split_records_table::Migration),
+            Box::new(m20251112_000005_create_debt_relations_table::Migration),
+            Box::new(m20251112_000006_create_settlement_records_table::Migration),
         ]
     }
 }

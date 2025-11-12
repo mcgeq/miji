@@ -27,3 +27,8 @@ pub use super::todo_project::Entity as TodoProject;
 pub use super::todo_tag::Entity as TodoTag;
 pub use super::transactions::Entity as Transactions;
 pub use super::users::Entity as Users;
+// 新增的分摊和结算相关entity
+pub use super::split_rules::Entity as SplitRules;
+pub use super::split_records::Entity as SplitRecords;
+pub use super::debt_relations::Entity as DebtRelations;
+pub use super::settlement_records::Entity as SettlementRecords;

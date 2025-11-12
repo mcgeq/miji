@@ -33,5 +33,11 @@ pub mod transactions;
 pub mod installment_plans;
 pub mod installment_details;
 pub mod users;
+// 新增的分摊和结算相关模块
+pub mod split_rules;
+pub mod split_records;
+pub mod debt_relations;
+pub mod settlement_records;
 
+pub mod enums;
 pub mod localize;
