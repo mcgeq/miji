@@ -11,8 +11,8 @@ use common::{
 };
 use sea_orm::{
     ActiveModelTrait, ActiveValue, ColumnTrait, DatabaseConnection, DbConn, EntityTrait,
-    IntoActiveModel, PaginatorTrait, QueryFilter, QueryOrder, Set, TransactionTrait, prelude::Decimal,
-    prelude::async_trait::async_trait,
+    IntoActiveModel, PaginatorTrait, QueryFilter, QueryOrder, Set, TransactionTrait,
+    prelude::Decimal, prelude::async_trait::async_trait,
 };
 use validator::Validate;
 

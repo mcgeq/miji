@@ -1,9 +1,11 @@
-use std::collections::{HashMap, VecDeque};
-use sea_orm::prelude::Decimal;
 use common::error::{AppError, MijiResult};
+use sea_orm::prelude::Decimal;
+use std::collections::HashMap;
 
-use crate::dto::settlement_records::{OptimizedTransfer, SettlementSuggestion, SettlementDetailItem};
 use crate::dto::debt_relations::MemberDebtSummary;
+use crate::dto::settlement_records::{
+    OptimizedTransfer, SettlementDetailItem, SettlementSuggestion,
+};
 
 /// 结算优化器
 #[derive(Debug)]
@@ -46,7 +48,7 @@ impl SettlementOptimizer {
 
         // 计算优化转账
         let optimized_transfers = self.calculate_optimized_transfers(&member_balances)?;
-        
+
         // 计算节省的转账次数
         let direct_transfer_count = self.calculate_direct_transfer_count(&member_balances);
         let optimized_transfer_count = optimized_transfers.len() as i32;
@@ -95,7 +97,7 @@ impl SettlementOptimizer {
             .filter(|m| m.net_balance > Decimal::ZERO)
             .cloned()
             .collect();
-            
+
         let mut debtors: Vec<MemberBalance> = member_balances
             .iter()
             .filter(|m| m.net_balance < Decimal::ZERO)
@@ -110,12 +112,15 @@ impl SettlementOptimizer {
         // 验证余额平衡
         let total_credit: Decimal = creditors.iter().map(|c| c.net_balance).sum();
         let total_debt: Decimal = debtors.iter().map(|d| d.net_balance).sum();
-        
+
         if (total_credit - total_debt).abs() > Decimal::new(1, 2) {
-            return Err(AppError::bad_request(&format!(
-                "债权债务不平衡: 债权总额 {} vs 债务总额 {}",
-                total_credit, total_debt
-            )));
+            return Err(AppError::simple(
+                common::BusinessCode::ValidationError,
+                format!(
+                    "债权债务不平衡: 债权总额 {} vs 债务总额 {}",
+                    total_credit, total_debt
+                ),
+            ));
         }
 
         // 按金额降序排序
@@ -135,7 +140,7 @@ impl SettlementOptimizer {
                 creditor_idx += 1;
                 continue;
             }
-            
+
             if debtor.net_balance == Decimal::ZERO {
                 debtor_idx += 1;
                 continue;
@@ -143,7 +148,7 @@ impl SettlementOptimizer {
 
             // 计算转账金额（取较小值）
             let transfer_amount = creditor.net_balance.min(debtor.net_balance);
-            
+
             transfers.push(OptimizedTransfer {
                 from_member: debtor.member_serial_num.clone(),
                 from_member_name: debtor.member_name.clone(),
@@ -179,7 +184,7 @@ impl SettlementOptimizer {
             .iter()
             .filter(|m| m.net_balance > Decimal::ZERO)
             .count() as i32;
-            
+
         let debtor_count = member_balances
             .iter()
             .filter(|m| m.net_balance < Decimal::ZERO)
@@ -196,7 +201,7 @@ impl SettlementOptimizer {
     ) -> MijiResult<Vec<OptimizedTransfer>> {
         // 构建图结构
         let mut graph: HashMap<String, HashMap<String, Decimal>> = HashMap::new();
-        
+
         for transfer in &transfers {
             graph
                 .entry(transfer.from_member.clone())
@@ -207,7 +212,7 @@ impl SettlementOptimizer {
         // 使用Floyd-Warshall算法寻找最短路径
         let members: Vec<String> = graph.keys().cloned().collect();
         let n = members.len();
-        
+
         if n <= 2 {
             return Ok(transfers); // 小规模直接返回
         }
@@ -215,10 +220,10 @@ impl SettlementOptimizer {
         // 初始化距离矩阵
         let mut dist = vec![vec![Decimal::MAX; n]; n];
         let mut next = vec![vec![None; n]; n];
-        
+
         for (i, member_i) in members.iter().enumerate() {
             dist[i][i] = Decimal::ZERO;
-            
+
             if let Some(edges) = graph.get(member_i) {
                 for (member_j, &weight) in edges {
                     if let Some(j) = members.iter().position(|m| m == member_j) {
@@ -246,11 +251,11 @@ impl SettlementOptimizer {
 
         // 重构优化后的转账路径
         let mut optimized_transfers = Vec::new();
-        
+
         for transfer in transfers {
             let from_idx = members.iter().position(|m| m == &transfer.from_member);
             let to_idx = members.iter().position(|m| m == &transfer.to_member);
-            
+
             if let (Some(from), Some(to)) = (from_idx, to_idx) {
                 if let Some(path) = self.reconstruct_path(&next, from, to) {
                     // 如果路径长度 > 2，说明有中间节点，可以优化
@@ -258,7 +263,7 @@ impl SettlementOptimizer {
                         for window in path.windows(2) {
                             let from_member = &members[window[0]];
                             let to_member = &members[window[1]];
-                            
+
                             optimized_transfers.push(OptimizedTransfer {
                                 from_member: from_member.clone(),
                                 from_member_name: from_member.clone(), // 简化处理
@@ -297,7 +302,7 @@ impl SettlementOptimizer {
 
         let mut path = vec![from];
         let mut current = from;
-        
+
         while current != to {
             if let Some(next_node) = next[current][to] {
                 current = next_node;
@@ -320,20 +325,30 @@ impl SettlementOptimizer {
 
         // 计算每个成员的净变化
         for transfer in transfers {
-            *net_changes.entry(transfer.from_member.clone()).or_insert(Decimal::ZERO) -= transfer.amount;
-            *net_changes.entry(transfer.to_member.clone()).or_insert(Decimal::ZERO) += transfer.amount;
+            *net_changes
+                .entry(transfer.from_member.clone())
+                .or_insert(Decimal::ZERO) -= transfer.amount;
+            *net_changes
+                .entry(transfer.to_member.clone())
+                .or_insert(Decimal::ZERO) += transfer.amount;
         }
 
         // 验证每个成员的最终余额是否为0
         for member in member_balances {
-            let net_change = net_changes.get(&member.member_serial_num).copied().unwrap_or(Decimal::ZERO);
+            let net_change = net_changes
+                .get(&member.member_serial_num)
+                .copied()
+                .unwrap_or(Decimal::ZERO);
             let final_balance = member.net_balance + net_change;
-            
+
             if final_balance.abs() > Decimal::new(1, 2) {
-                return Err(AppError::bad_request(&format!(
-                    "成员 {} 的最终余额不为零: {}",
-                    member.member_name, final_balance
-                )));
+                return Err(AppError::simple(
+                    common::BusinessCode::ValidationError,
+                    format!(
+                        "成员 {} 的最终余额不为零: {}",
+                        member.member_name, final_balance
+                    ),
+                ));
             }
         }
 
@@ -349,7 +364,8 @@ impl SettlementOptimizer {
         let direct_count = self.calculate_direct_transfer_count(member_balances);
         let optimized_count = transfers.len() as i32;
         let reduction_rate = if direct_count > 0 {
-            (Decimal::from(direct_count - optimized_count) / Decimal::from(direct_count)) * Decimal::ONE_HUNDRED
+            (Decimal::from(direct_count - optimized_count) / Decimal::from(direct_count))
+                * Decimal::ONE_HUNDRED
         } else {
             Decimal::ZERO
         };

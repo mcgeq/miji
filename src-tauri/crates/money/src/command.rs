@@ -15,10 +15,17 @@ use crate::{
         budget::{Budget, BudgetCreate, BudgetUpdate},
         categories::{Category, CategoryCreate, CategoryUpdate},
         currency::{CreateCurrencyRequest, CurrencyResponse, UpdateCurrencyRequest},
-        family_member::FamilyMemberResponse,
+        debt_relations::{DebtGraph, DebtRelationResponse, DebtStats, MemberDebtSummary},
+        family_member::{FamilyMemberCreate, FamilyMemberResponse, FamilyMemberUpdate},
         installment::{
             InstallmentCalculationRequest, InstallmentCalculationResponse, InstallmentPlanResponse,
         },
+        settlement_records::{SettlementRecordResponse, SettlementStats, SettlementSuggestion},
+        split_records::{
+            SplitRecordConfirm, SplitRecordCreate, SplitRecordPayment, SplitRecordResponse,
+            SplitRecordStats,
+        },
+        split_rules::{SplitRuleCreate, SplitRuleResponse, SplitRuleUpdate},
         sub_categories::{SubCategory, SubCategoryCreate, SubCategoryUpdate},
         transactions::{
             CreateTransactionRequest, IncomeExpense, TransactionResponse, TransactionStatsRequest,
@@ -32,8 +39,13 @@ use crate::{
         budget_trends::{BudgetCategoryStats, BudgetTrendData, BudgetTrendRequest},
         categories::{CategoryFilter, get_category_service},
         currency::{CurrencyFilter, get_currency_service},
+        debt_relations::DebtRelationsService,
         family_member::get_family_member_service,
+        family_statistics::FamilyStatisticsService,
         installment::get_installment_service,
+        settlement_records::SettlementRecordsService,
+        split_records::SplitRecordsService,
+        split_rules::SplitRulesService,
         sub_categories::{SubCategoryFilter, get_sub_category_service},
         transaction::{TransactionFilter, get_transaction_service},
     },
@@ -1270,6 +1282,10 @@ pub async fn sub_category_list_paged(
 
 // Sub Category End
 
+// ============================================================================
+// Family Member API
+
+/// 获取家庭成员列表
 #[tauri::command]
 pub async fn family_member_list(
     state: State<'_, AppState>,
@@ -1280,6 +1296,64 @@ pub async fn family_member_list(
             .family_member_list(&state.db)
             .await
             .map(|models| models.into_iter().map(FamilyMemberResponse::from).collect()),
+    ))
+}
+
+/// 获取家庭成员详情
+#[tauri::command]
+pub async fn family_member_get(
+    state: State<'_, AppState>,
+    serial_num: String,
+) -> Result<ApiResponse<FamilyMemberResponse>, String> {
+    let service = get_family_member_service();
+    Ok(ApiResponse::from_result(
+        service
+            .get_by_id(&state.db, serial_num)
+            .await
+            .map(FamilyMemberResponse::from),
+    ))
+}
+
+/// 创建家庭成员
+#[tauri::command]
+pub async fn family_member_create(
+    state: State<'_, AppState>,
+    data: FamilyMemberCreate,
+) -> Result<ApiResponse<FamilyMemberResponse>, String> {
+    let service = get_family_member_service();
+    Ok(ApiResponse::from_result(
+        service
+            .create(&state.db, data)
+            .await
+            .map(FamilyMemberResponse::from),
+    ))
+}
+
+/// 更新家庭成员
+#[tauri::command]
+pub async fn family_member_update(
+    state: State<'_, AppState>,
+    serial_num: String,
+    data: FamilyMemberUpdate,
+) -> Result<ApiResponse<FamilyMemberResponse>, String> {
+    let service = get_family_member_service();
+    Ok(ApiResponse::from_result(
+        service
+            .update(&state.db, serial_num, data)
+            .await
+            .map(FamilyMemberResponse::from),
+    ))
+}
+
+/// 删除家庭成员
+#[tauri::command]
+pub async fn family_member_delete(
+    state: State<'_, AppState>,
+    serial_num: String,
+) -> Result<ApiResponse<()>, String> {
+    let service = get_family_member_service();
+    Ok(ApiResponse::from_result(
+        service.delete(&state.db, serial_num).await,
     ))
 }
 
@@ -1294,5 +1368,399 @@ pub async fn transaction_get_stats(
     let service = get_transaction_service();
     Ok(ApiResponse::from_result(
         service.get_transaction_stats(&state.db, request).await,
+    ))
+}
+
+// ============================================================================
+// Split Rules API
+
+/// 获取分摊规则列表
+#[tauri::command]
+pub async fn split_rules_list(
+    state: State<'_, AppState>,
+    family_ledger_serial_num: String,
+) -> Result<ApiResponse<Vec<SplitRuleResponse>>, String> {
+    let service = SplitRulesService::default();
+    Ok(ApiResponse::from_result(
+        service
+            .find_by_family_ledger(&state.db, &family_ledger_serial_num)
+            .await,
+    ))
+}
+
+/// 创建分摊规则
+#[tauri::command]
+pub async fn split_rules_create(
+    state: State<'_, AppState>,
+    family_ledger_serial_num: String,
+    data: SplitRuleCreate,
+) -> Result<ApiResponse<SplitRuleResponse>, String> {
+    let service = SplitRulesService::default();
+    Ok(ApiResponse::from_result(
+        service
+            .create_rule(&state.db, &family_ledger_serial_num, data)
+            .await,
+    ))
+}
+
+/// 更新分摊规则
+#[tauri::command]
+pub async fn split_rules_update(
+    state: State<'_, AppState>,
+    rule_serial_num: String,
+    data: SplitRuleUpdate,
+) -> Result<ApiResponse<SplitRuleResponse>, String> {
+    let service = SplitRulesService::default();
+    Ok(ApiResponse::from_result(
+        service
+            .update_by_id(&state.db, &rule_serial_num, data)
+            .await,
+    ))
+}
+
+/// 删除分摊规则
+#[tauri::command]
+pub async fn split_rules_delete(
+    state: State<'_, AppState>,
+    rule_serial_num: String,
+) -> Result<ApiResponse<()>, String> {
+    let service = SplitRulesService::default();
+    Ok(ApiResponse::from_result(
+        service.delete_by_id(&state.db, &rule_serial_num).await,
+    ))
+}
+
+/// 设置默认分摊规则
+#[tauri::command]
+pub async fn split_rules_set_default(
+    state: State<'_, AppState>,
+    family_ledger_serial_num: String,
+    rule_serial_num: String,
+) -> Result<ApiResponse<()>, String> {
+    let service = SplitRulesService::default();
+    Ok(ApiResponse::from_result(
+        service
+            .set_default_rule(&state.db, &family_ledger_serial_num, &rule_serial_num)
+            .await,
+    ))
+}
+
+// ============================================================================
+// Split Records API
+
+/// 获取分摊记录列表
+#[tauri::command]
+pub async fn split_records_list(
+    state: State<'_, AppState>,
+    family_ledger_serial_num: String,
+) -> Result<ApiResponse<Vec<SplitRecordResponse>>, String> {
+    let service = SplitRecordsService::default();
+    Ok(ApiResponse::from_result(
+        service
+            .find_by_family_ledger(&state.db, &family_ledger_serial_num)
+            .await,
+    ))
+}
+
+/// 创建分摊记录
+#[tauri::command]
+pub async fn split_records_create(
+    state: State<'_, AppState>,
+    data: SplitRecordCreate,
+) -> Result<ApiResponse<SplitRecordResponse>, String> {
+    let service = SplitRecordsService::default();
+    Ok(ApiResponse::from_result(
+        service
+            .create(&state.db, data)
+            .await
+            .map(SplitRecordResponse::from),
+    ))
+}
+
+/// 确认分摊记录
+#[tauri::command]
+pub async fn split_records_confirm(
+    state: State<'_, AppState>,
+    confirm_request: SplitRecordConfirm,
+) -> Result<ApiResponse<Vec<SplitRecordResponse>>, String> {
+    let service = SplitRecordsService::default();
+    Ok(ApiResponse::from_result(
+        service.confirm_records(&state.db, confirm_request).await,
+    ))
+}
+
+/// 支付分摊记录
+#[tauri::command]
+pub async fn split_records_pay(
+    state: State<'_, AppState>,
+    payment_request: SplitRecordPayment,
+) -> Result<ApiResponse<Vec<SplitRecordResponse>>, String> {
+    let service = SplitRecordsService::default();
+    Ok(ApiResponse::from_result(
+        service.pay_records(&state.db, payment_request).await,
+    ))
+}
+
+/// 获取分摊统计
+#[tauri::command]
+pub async fn split_records_stats(
+    state: State<'_, AppState>,
+    family_ledger_serial_num: String,
+) -> Result<ApiResponse<SplitRecordStats>, String> {
+    let service = SplitRecordsService::default();
+    Ok(ApiResponse::from_result(
+        service
+            .get_statistics(&state.db, &family_ledger_serial_num)
+            .await,
+    ))
+}
+
+// ============================================================================
+// Debt Relations API
+
+/// 获取债务关系列表
+#[tauri::command]
+pub async fn debt_relations_list(
+    state: State<'_, AppState>,
+    family_ledger_serial_num: String,
+) -> Result<ApiResponse<Vec<DebtRelationResponse>>, String> {
+    let service = DebtRelationsService::default();
+    Ok(ApiResponse::from_result(
+        service
+            .find_by_family_ledger(&state.db, &family_ledger_serial_num)
+            .await,
+    ))
+}
+
+/// 获取债务统计
+#[tauri::command]
+pub async fn debt_relations_stats(
+    state: State<'_, AppState>,
+    family_ledger_serial_num: String,
+) -> Result<ApiResponse<DebtStats>, String> {
+    let service = DebtRelationsService::default();
+    Ok(ApiResponse::from_result(
+        service
+            .get_debt_statistics(&state.db, &family_ledger_serial_num)
+            .await,
+    ))
+}
+
+/// 获取成员债务汇总
+#[tauri::command]
+pub async fn debt_relations_member_summary(
+    state: State<'_, AppState>,
+    family_ledger_serial_num: String,
+    member_serial_num: String,
+) -> Result<ApiResponse<MemberDebtSummary>, String> {
+    let service = DebtRelationsService::default();
+    Ok(ApiResponse::from_result(
+        service
+            .get_member_debt_summary(&state.db, &family_ledger_serial_num, &member_serial_num)
+            .await,
+    ))
+}
+
+/// 获取债务关系图谱
+#[tauri::command]
+pub async fn debt_relations_graph(
+    state: State<'_, AppState>,
+    family_ledger_serial_num: String,
+) -> Result<ApiResponse<DebtGraph>, String> {
+    let service = DebtRelationsService::default();
+    Ok(ApiResponse::from_result(
+        service
+            .get_debt_graph(&state.db, &family_ledger_serial_num)
+            .await,
+    ))
+}
+
+/// 重新计算所有债务关系
+#[tauri::command]
+pub async fn debt_relations_recalculate(
+    state: State<'_, AppState>,
+    family_ledger_serial_num: String,
+    updated_by: String,
+) -> Result<ApiResponse<i64>, String> {
+    let service = DebtRelationsService::default();
+    Ok(ApiResponse::from_result(
+        service
+            .sync_from_split_records(&state.db, &family_ledger_serial_num, &updated_by)
+            .await,
+    ))
+}
+
+// ============================================================================
+// Settlement Records API
+
+/// 生成结算建议
+#[tauri::command]
+pub async fn settlement_generate_suggestion(
+    state: State<'_, AppState>,
+    family_ledger_serial_num: String,
+    period_start: String, // YYYY-MM-DD
+    period_end: String,   // YYYY-MM-DD
+) -> Result<ApiResponse<SettlementSuggestion>, String> {
+    let service = SettlementRecordsService::default();
+    let start_date = period_start
+        .parse()
+        .map_err(|e| format!("Invalid start date: {}", e))?;
+    let end_date = period_end
+        .parse()
+        .map_err(|e| format!("Invalid end date: {}", e))?;
+
+    Ok(ApiResponse::from_result(
+        service
+            .generate_settlement_suggestion(
+                &state.db,
+                &family_ledger_serial_num,
+                start_date,
+                end_date,
+            )
+            .await,
+    ))
+}
+
+/// 获取结算记录列表
+#[tauri::command]
+pub async fn settlement_records_list(
+    state: State<'_, AppState>,
+    family_ledger_serial_num: String,
+) -> Result<ApiResponse<Vec<SettlementRecordResponse>>, String> {
+    let service = SettlementRecordsService::default();
+    Ok(ApiResponse::from_result(
+        service
+            .find_by_family_ledger(&state.db, &family_ledger_serial_num)
+            .await,
+    ))
+}
+
+/// 获取结算统计
+#[tauri::command]
+pub async fn settlement_records_stats(
+    state: State<'_, AppState>,
+    family_ledger_serial_num: String,
+) -> Result<ApiResponse<SettlementStats>, String> {
+    let service = SettlementRecordsService::default();
+    Ok(ApiResponse::from_result(
+        service
+            .get_settlement_statistics(&state.db, &family_ledger_serial_num)
+            .await,
+    ))
+}
+
+// ============================================================================
+// Family Statistics API
+
+/// 获取家庭财务总览
+#[tauri::command]
+pub async fn family_statistics_overview(
+    state: State<'_, AppState>,
+    family_ledger_serial_num: String,
+    period_start: String,
+    period_end: String,
+) -> Result<ApiResponse<crate::services::family_statistics::FamilyFinancialOverview>, String> {
+    let service = FamilyStatisticsService::default();
+    let start_date = period_start
+        .parse()
+        .map_err(|e| format!("Invalid start date: {}", e))?;
+    let end_date = period_end
+        .parse()
+        .map_err(|e| format!("Invalid end date: {}", e))?;
+
+    Ok(ApiResponse::from_result(
+        service
+            .get_financial_overview(&state.db, &family_ledger_serial_num, start_date, end_date)
+            .await,
+    ))
+}
+
+/// 获取成员贡献统计
+#[tauri::command]
+pub async fn family_statistics_member_contributions(
+    state: State<'_, AppState>,
+    family_ledger_serial_num: String,
+    period_start: String,
+    period_end: String,
+) -> Result<ApiResponse<Vec<crate::services::family_statistics::MemberContribution>>, String> {
+    let service = FamilyStatisticsService::default();
+    let start_date = period_start
+        .parse()
+        .map_err(|e| format!("Invalid start date: {}", e))?;
+    let end_date = period_end
+        .parse()
+        .map_err(|e| format!("Invalid end date: {}", e))?;
+
+    Ok(ApiResponse::from_result(
+        service
+            .get_member_contributions(&state.db, &family_ledger_serial_num, start_date, end_date)
+            .await,
+    ))
+}
+
+/// 获取分类统计
+#[tauri::command]
+pub async fn family_statistics_categories(
+    state: State<'_, AppState>,
+    family_ledger_serial_num: String,
+    period_start: String,
+    period_end: String,
+) -> Result<ApiResponse<Vec<crate::services::family_statistics::CategoryStatistics>>, String> {
+    let service = FamilyStatisticsService::default();
+    let start_date = period_start
+        .parse()
+        .map_err(|e| format!("Invalid start date: {}", e))?;
+    let end_date = period_end
+        .parse()
+        .map_err(|e| format!("Invalid end date: {}", e))?;
+
+    Ok(ApiResponse::from_result(
+        service
+            .get_category_statistics(&state.db, &family_ledger_serial_num, start_date, end_date)
+            .await,
+    ))
+}
+
+/// 获取趋势分析
+#[tauri::command]
+pub async fn family_statistics_trends(
+    state: State<'_, AppState>,
+    family_ledger_serial_num: String,
+    period_start: String,
+    period_end: String,
+    granularity: String, // "monthly" or "daily"
+) -> Result<ApiResponse<Vec<crate::services::family_statistics::TrendAnalysis>>, String> {
+    let service = FamilyStatisticsService::default();
+    let start_date = period_start
+        .parse()
+        .map_err(|e| format!("Invalid start date: {}", e))?;
+    let end_date = period_end
+        .parse()
+        .map_err(|e| format!("Invalid end date: {}", e))?;
+
+    Ok(ApiResponse::from_result(
+        service
+            .get_trend_analysis(
+                &state.db,
+                &family_ledger_serial_num,
+                start_date,
+                end_date,
+                &granularity,
+            )
+            .await,
+    ))
+}
+
+/// 获取债务分析
+#[tauri::command]
+pub async fn family_statistics_debt_analysis(
+    state: State<'_, AppState>,
+    family_ledger_serial_num: String,
+) -> Result<ApiResponse<crate::services::family_statistics::DebtAnalysis>, String> {
+    let service = FamilyStatisticsService::default();
+    Ok(ApiResponse::from_result(
+        service
+            .get_debt_analysis(&state.db, &family_ledger_serial_num)
+            .await,
     ))
 }

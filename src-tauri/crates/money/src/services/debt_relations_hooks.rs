@@ -1,15 +1,21 @@
-use common::{crud::service::CrudHooks, error::MijiResult};
-use sea_orm::{prelude::async_trait::async_trait, DbConn};
+use common::{crud::hooks::Hooks, error::MijiResult};
+use sea_orm::{DatabaseTransaction, prelude::async_trait::async_trait};
 
 #[derive(Debug)]
 pub struct DebtRelationsHooks;
 
 #[async_trait]
-impl CrudHooks<entity::debt_relations::Entity> for DebtRelationsHooks {
+impl
+    Hooks<
+        entity::debt_relations::Entity,
+        crate::dto::debt_relations::DebtRelationCreate,
+        crate::dto::debt_relations::DebtRelationUpdate,
+    > for DebtRelationsHooks
+{
     async fn before_create(
         &self,
-        _db: &DbConn,
-        _model: &mut entity::debt_relations::ActiveModel,
+        _tx: &DatabaseTransaction,
+        _data: &crate::dto::debt_relations::DebtRelationCreate,
     ) -> MijiResult<()> {
         // 可以在这里添加创建前的验证逻辑
         // 例如：验证债权人和债务人不能是同一人
@@ -18,7 +24,7 @@ impl CrudHooks<entity::debt_relations::Entity> for DebtRelationsHooks {
 
     async fn after_create(
         &self,
-        _db: &DbConn,
+        _tx: &DatabaseTransaction,
         _model: &entity::debt_relations::Model,
     ) -> MijiResult<()> {
         // 可以在这里添加创建后的处理逻辑
@@ -28,8 +34,9 @@ impl CrudHooks<entity::debt_relations::Entity> for DebtRelationsHooks {
 
     async fn before_update(
         &self,
-        _db: &DbConn,
-        _model: &mut entity::debt_relations::ActiveModel,
+        _tx: &DatabaseTransaction,
+        _model: &entity::debt_relations::Model,
+        _data: &crate::dto::debt_relations::DebtRelationUpdate,
     ) -> MijiResult<()> {
         // 可以在这里添加更新前的验证逻辑
         Ok(())
@@ -37,7 +44,7 @@ impl CrudHooks<entity::debt_relations::Entity> for DebtRelationsHooks {
 
     async fn after_update(
         &self,
-        _db: &DbConn,
+        _tx: &DatabaseTransaction,
         _model: &entity::debt_relations::Model,
     ) -> MijiResult<()> {
         // 可以在这里添加更新后的处理逻辑
@@ -47,7 +54,7 @@ impl CrudHooks<entity::debt_relations::Entity> for DebtRelationsHooks {
 
     async fn before_delete(
         &self,
-        _db: &DbConn,
+        _tx: &DatabaseTransaction,
         _model: &entity::debt_relations::Model,
     ) -> MijiResult<()> {
         // 可以在这里添加删除前的验证逻辑
@@ -56,7 +63,7 @@ impl CrudHooks<entity::debt_relations::Entity> for DebtRelationsHooks {
 
     async fn after_delete(
         &self,
-        _db: &DbConn,
+        _tx: &DatabaseTransaction,
         _model: &entity::debt_relations::Model,
     ) -> MijiResult<()> {
         // 可以在这里添加删除后的清理逻辑

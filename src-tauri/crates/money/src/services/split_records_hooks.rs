@@ -1,15 +1,15 @@
-use common::{crud::service::CrudHooks, error::MijiResult};
-use sea_orm::{prelude::async_trait::async_trait, DbConn};
+use common::{crud::hooks::Hooks, error::MijiResult};
+use sea_orm::{prelude::async_trait::async_trait, DatabaseTransaction};
 
 #[derive(Debug)]
 pub struct SplitRecordsHooks;
 
 #[async_trait]
-impl CrudHooks<entity::split_records::Entity> for SplitRecordsHooks {
+impl Hooks<entity::split_records::Entity, crate::dto::split_records::SplitRecordCreate, crate::dto::split_records::SplitRecordUpdate> for SplitRecordsHooks {
     async fn before_create(
         &self,
-        _db: &DbConn,
-        _model: &mut entity::split_records::ActiveModel,
+        _tx: &DatabaseTransaction,
+        _data: &crate::dto::split_records::SplitRecordCreate,
     ) -> MijiResult<()> {
         // 可以在这里添加创建前的验证逻辑
         // 例如：验证付款人和欠款人不能是同一人
@@ -18,7 +18,7 @@ impl CrudHooks<entity::split_records::Entity> for SplitRecordsHooks {
 
     async fn after_create(
         &self,
-        _db: &DbConn,
+        _tx: &DatabaseTransaction,
         _model: &entity::split_records::Model,
     ) -> MijiResult<()> {
         // 可以在这里添加创建后的处理逻辑
@@ -28,8 +28,9 @@ impl CrudHooks<entity::split_records::Entity> for SplitRecordsHooks {
 
     async fn before_update(
         &self,
-        _db: &DbConn,
-        _model: &mut entity::split_records::ActiveModel,
+        _tx: &DatabaseTransaction,
+        _model: &entity::split_records::Model,
+        _data: &crate::dto::split_records::SplitRecordUpdate,
     ) -> MijiResult<()> {
         // 可以在这里添加更新前的验证逻辑
         Ok(())
@@ -37,7 +38,7 @@ impl CrudHooks<entity::split_records::Entity> for SplitRecordsHooks {
 
     async fn after_update(
         &self,
-        _db: &DbConn,
+        _tx: &DatabaseTransaction,
         _model: &entity::split_records::Model,
     ) -> MijiResult<()> {
         // 可以在这里添加更新后的处理逻辑
@@ -47,7 +48,7 @@ impl CrudHooks<entity::split_records::Entity> for SplitRecordsHooks {
 
     async fn before_delete(
         &self,
-        _db: &DbConn,
+        _tx: &DatabaseTransaction,
         _model: &entity::split_records::Model,
     ) -> MijiResult<()> {
         // 可以在这里添加删除前的验证逻辑
@@ -56,7 +57,7 @@ impl CrudHooks<entity::split_records::Entity> for SplitRecordsHooks {
 
     async fn after_delete(
         &self,
-        _db: &DbConn,
+        _tx: &DatabaseTransaction,
         _model: &entity::split_records::Model,
     ) -> MijiResult<()> {
         // 可以在这里添加删除后的清理逻辑

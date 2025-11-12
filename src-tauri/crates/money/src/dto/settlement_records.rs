@@ -1,7 +1,8 @@
 use chrono::{DateTime, FixedOffset, NaiveDate};
 use common::utils::{date::DateUtils, uuid::McgUuid};
+use common::paginations::Filter;
 use sea_orm::prelude::Decimal;
-use sea_orm::ActiveValue::{self, Set};
+use sea_orm::{ActiveValue::{self, Set}, Condition};
 use serde::{Deserialize, Serialize};
 use serde_json::Value as JsonValue;
 use validator::Validate;
@@ -73,7 +74,6 @@ pub struct SettlementRecordCreate {
     pub period_start: NaiveDate,
     pub period_end: NaiveDate,
     
-    #[validate(range(min = 0.0, message = "结算金额不能为负数"))]
     pub total_amount: Decimal,
     
     #[validate(length(min = 1, max = 3, message = "货币代码长度必须为3位"))]
@@ -250,4 +250,11 @@ pub struct AutoSettlementConfig {
     pub auto_execute: bool, // 是否自动执行，还是仅生成建议
     pub notification_enabled: bool,
     pub notification_days_before: i32,
+}
+
+// Filter trait 实现
+impl Filter<entity::settlement_records::Entity> for SettlementRecordCreate {
+    fn to_condition(&self) -> Condition {
+        Condition::all() // 创建 DTO 不需要过滤条件
+    }
 }

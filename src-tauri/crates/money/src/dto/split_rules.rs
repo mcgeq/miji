@@ -1,7 +1,8 @@
 use chrono::{DateTime, FixedOffset};
 use common::utils::{date::DateUtils, uuid::McgUuid};
+use common::paginations::Filter;
 use sea_orm::prelude::Decimal;
-use sea_orm::ActiveValue::{self, Set};
+use sea_orm::{ActiveValue::{self, Set}, Condition};
 use serde::{Deserialize, Serialize};
 use serde_json::Value as JsonValue;
 use validator::Validate;
@@ -220,4 +221,11 @@ pub struct SplitRuleQuery {
     pub category: Option<String>,
     pub page: Option<u64>,
     pub page_size: Option<u64>,
+}
+
+// Filter trait 实现
+impl Filter<entity::split_rules::Entity> for SplitRuleCreate {
+    fn to_condition(&self) -> Condition {
+        Condition::all() // 创建 DTO 不需要过滤条件
+    }
 }

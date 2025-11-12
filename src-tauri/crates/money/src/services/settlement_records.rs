@@ -1,29 +1,29 @@
-use std::{collections::HashMap, sync::Arc};
+use std::collections::HashMap;
 
+use chrono::{Datelike, NaiveDate};
 use common::{
-    crud::service::{CrudConverter, CrudService, GenericCrudService, LocalizableConverter},
+    crud::service::{CrudConverter, GenericCrudService, LocalizableConverter},
     error::{AppError, MijiResult},
-    paginations::{EmptyFilter, PagedQuery, PagedResult},
+    log::logger::NoopLogger,
+    paginations::{EmptyFilter, PagedResult},
     utils::date::DateUtils,
 };
 use entity::localize::LocalizeModel;
-use sea_orm::{
-    ActiveValue, ColumnTrait, DbConn, EntityTrait, QueryFilter, QueryOrder, QuerySelect,
-    prelude::async_trait::async_trait, Condition, Order,
-};
 use sea_orm::prelude::Decimal;
-use chrono::NaiveDate;
+use sea_orm::{
+    ActiveValue, ColumnTrait, Condition, DbConn, EntityTrait, Order, PaginatorTrait, QueryFilter,
+    QueryOrder, QuerySelect, prelude::async_trait::async_trait,
+};
 
 use crate::{
     dto::settlement_records::{
-        SettlementRecordCreate, SettlementRecordUpdate, SettlementRecordResponse,
-        SettlementRecordQuery, CompleteSettlement, CancelSettlement, SettlementStats,
-        SettlementSuggestion, AutoSettlementConfig
+        AutoSettlementConfig, CancelSettlement, CompleteSettlement, SettlementRecordCreate,
+        SettlementRecordQuery, SettlementRecordResponse, SettlementRecordUpdate, SettlementStats,
+        SettlementSuggestion,
     },
     services::{
+        debt_relations::DebtRelationsService, settlement_optimizer::SettlementOptimizer,
         settlement_records_hooks::SettlementRecordsHooks,
-        settlement_optimizer::SettlementOptimizer,
-        debt_relations::DebtRelationsService,
     },
 };
 
@@ -32,8 +32,12 @@ pub type SettlementRecordsFilter = EmptyFilter;
 #[derive(Debug)]
 pub struct SettlementRecordsConverter;
 
-impl CrudConverter<entity::settlement_records::Entity, SettlementRecordCreate, SettlementRecordUpdate>
-    for SettlementRecordsConverter
+impl
+    CrudConverter<
+        entity::settlement_records::Entity,
+        SettlementRecordCreate,
+        SettlementRecordUpdate,
+    > for SettlementRecordsConverter
 {
     fn create_to_active_model(
         &self,
@@ -55,7 +59,7 @@ impl CrudConverter<entity::settlement_records::Entity, SettlementRecordCreate, S
             created_at: ActiveValue::Set(model.created_at),
             ..Default::default()
         };
-        
+
         data.apply_to_model(&mut active_model);
         Ok(active_model)
     }
@@ -63,30 +67,85 @@ impl CrudConverter<entity::settlement_records::Entity, SettlementRecordCreate, S
     fn primary_key_to_string(&self, model: &entity::settlement_records::Model) -> String {
         model.serial_num.clone()
     }
-}
 
-impl LocalizableConverter<entity::settlement_records::Entity> for SettlementRecordsConverter {
-    fn localize_model(
-        &self,
-        model: entity::settlement_records::Model,
-        _locale: &str,
-    ) -> MijiResult<entity::settlement_records::Model> {
-        Ok(model.localize(_locale))
+    fn table_name(&self) -> &'static str {
+        "settlement_records"
     }
 }
 
-pub type SettlementRecordsService = GenericCrudService<
-    entity::settlement_records::Entity,
-    SettlementRecordCreate,
-    SettlementRecordUpdate,
-    SettlementRecordsFilter,
-    SettlementRecordsConverter,
-    SettlementRecordsHooks,
->;
+#[async_trait]
+impl LocalizableConverter<entity::settlement_records::Model> for SettlementRecordsConverter {
+    async fn model_with_local(
+        &self,
+        model: entity::settlement_records::Model,
+    ) -> MijiResult<entity::settlement_records::Model> {
+        Ok(model.to_local())
+    }
+}
+
+pub struct SettlementRecordsService {
+    inner: GenericCrudService<
+        entity::settlement_records::Entity,
+        SettlementRecordsFilter,
+        SettlementRecordCreate,
+        SettlementRecordUpdate,
+        SettlementRecordsConverter,
+        SettlementRecordsHooks,
+    >,
+}
 
 impl SettlementRecordsService {
-    pub fn new() -> Self {
-        Self::with_converter_and_hooks(SettlementRecordsConverter, SettlementRecordsHooks)
+    pub fn new(
+        converter: SettlementRecordsConverter,
+        hooks: SettlementRecordsHooks,
+        logger: std::sync::Arc<dyn common::log::logger::OperationLogger>,
+    ) -> Self {
+        Self {
+            inner: GenericCrudService::new(converter, hooks, logger),
+        }
+    }
+
+    pub fn default() -> Self {
+        use std::sync::Arc;
+        Self::new(
+            SettlementRecordsConverter,
+            SettlementRecordsHooks,
+            Arc::new(NoopLogger),
+        )
+    }
+}
+
+impl std::ops::Deref for SettlementRecordsService {
+    type Target = GenericCrudService<
+        entity::settlement_records::Entity,
+        SettlementRecordsFilter,
+        SettlementRecordCreate,
+        SettlementRecordUpdate,
+        SettlementRecordsConverter,
+        SettlementRecordsHooks,
+    >;
+
+    fn deref(&self) -> &Self::Target {
+        &self.inner
+    }
+}
+
+impl SettlementRecordsService {
+    /// 根据家庭账本ID查询结算记录
+    pub async fn find_by_family_ledger(
+        &self,
+        db: &DbConn,
+        family_ledger_serial_num: &str,
+    ) -> MijiResult<Vec<SettlementRecordResponse>> {
+        self.find_with_query(
+            db,
+            SettlementRecordQuery {
+                family_ledger_serial_num: Some(family_ledger_serial_num.to_string()),
+                ..Default::default()
+            },
+        )
+        .await
+        .map(|paged| paged.rows)
     }
 
     /// 根据查询条件获取结算记录
@@ -100,30 +159,29 @@ impl SettlementRecordsService {
         // 应用查询条件
         if let Some(family_ledger_serial_num) = &query.family_ledger_serial_num {
             select = select.filter(
-                entity::settlement_records::Column::FamilyLedgerSerialNum.eq(family_ledger_serial_num)
+                entity::settlement_records::Column::FamilyLedgerSerialNum
+                    .eq(family_ledger_serial_num),
             );
         }
-        
+
         if let Some(settlement_type) = &query.settlement_type {
-            select = select.filter(
-                entity::settlement_records::Column::SettlementType.eq(settlement_type)
-            );
+            select = select
+                .filter(entity::settlement_records::Column::SettlementType.eq(settlement_type));
         }
-        
+
         if let Some(status) = &query.status {
             select = select.filter(entity::settlement_records::Column::Status.eq(status));
         }
-        
+
         if let Some(initiated_by) = &query.initiated_by {
-            select = select.filter(
-                entity::settlement_records::Column::InitiatedBy.eq(initiated_by)
-            );
+            select =
+                select.filter(entity::settlement_records::Column::InitiatedBy.eq(initiated_by));
         }
-        
+
         if let Some(start_date) = query.start_date {
             select = select.filter(entity::settlement_records::Column::PeriodStart.gte(start_date));
         }
-        
+
         if let Some(end_date) = query.end_date {
             select = select.filter(entity::settlement_records::Column::PeriodEnd.lte(end_date));
         }
@@ -133,21 +191,50 @@ impl SettlementRecordsService {
 
         let page = query.page.unwrap_or(1);
         let page_size = query.page_size.unwrap_or(20);
-        
-        let paginated_query = PagedQuery::new(page, page_size);
-        let result = self.find_paged(db, select, paginated_query).await?;
-        
-        let responses: Vec<SettlementRecordResponse> = result.data
+
+        // 简化分页实现
+        let offset = (page - 1) * page_size;
+        let models = select
+            .limit(page_size)
+            .offset(offset)
+            .all(db)
+            .await
+            .map_err(|e| {
+                AppError::simple(
+                    common::BusinessCode::DatabaseError,
+                    format!("Database error: {}", e),
+                )
+            })?;
+
+        let total_count = if let Some(family_ledger_serial_num) = &query.family_ledger_serial_num {
+            entity::settlement_records::Entity::find()
+                .filter(
+                    entity::settlement_records::Column::FamilyLedgerSerialNum
+                        .eq(family_ledger_serial_num),
+                )
+                .count(db)
+                .await
+        } else {
+            entity::settlement_records::Entity::find().count(db).await
+        }
+        .map_err(|e| {
+            AppError::simple(
+                common::BusinessCode::DatabaseError,
+                format!("Database error: {}", e),
+            )
+        })? as u64;
+
+        let responses: Vec<SettlementRecordResponse> = models
             .into_iter()
             .map(SettlementRecordResponse::from)
             .collect();
-            
+
         Ok(PagedResult {
-            data: responses,
-            total: result.total,
-            page: result.page,
-            page_size: result.page_size,
-            total_pages: result.total_pages,
+            rows: responses,
+            total_count: total_count as usize,
+            current_page: page as usize,
+            page_size: page_size as usize,
+            total_pages: ((total_count + page_size - 1) / page_size) as usize,
         })
     }
 
@@ -159,7 +246,7 @@ impl SettlementRecordsService {
         period_start: NaiveDate,
         period_end: NaiveDate,
     ) -> MijiResult<SettlementSuggestion> {
-        let debt_service = DebtRelationsService::new();
+        let debt_service = DebtRelationsService::default();
         let optimizer = SettlementOptimizer::new();
 
         // 获取所有成员的债务汇总
@@ -167,15 +254,18 @@ impl SettlementRecordsService {
             .filter(entity::family_member::Column::Status.eq("Active"))
             .all(db)
             .await
-            .map_err(AppError::from_db_error)?;
+            .map_err(|e| {
+                AppError::simple(
+                    common::BusinessCode::DatabaseError,
+                    format!("Database error: {}", e),
+                )
+            })?;
 
         let mut member_summaries = Vec::new();
         for member in members {
-            let summary = debt_service.get_member_debt_summary(
-                db,
-                family_ledger_serial_num,
-                &member.serial_num,
-            ).await?;
+            let summary = debt_service
+                .get_member_debt_summary(db, family_ledger_serial_num, &member.serial_num)
+                .await?;
             member_summaries.push(summary);
         }
 
@@ -199,18 +289,35 @@ impl SettlementRecordsService {
         initiated_by: &str,
         settlement_type: &str,
     ) -> MijiResult<SettlementRecordResponse> {
-        let settlement_details = serde_json::to_value(&suggestion.settlement_details)
-            .map_err(|e| AppError::bad_request(&format!("序列化结算详情失败: {}", e)))?;
-            
-        let optimized_transfers = serde_json::to_value(&suggestion.optimized_transfers)
-            .map_err(|e| AppError::bad_request(&format!("序列化转账建议失败: {}", e)))?;
-            
+        let settlement_details =
+            serde_json::to_value(&suggestion.settlement_details).map_err(|e| {
+                AppError::simple(
+                    common::BusinessCode::ValidationError,
+                    format!("序列化结算详情失败: {}", e),
+                )
+            })?;
+
+        let optimized_transfers =
+            serde_json::to_value(&suggestion.optimized_transfers).map_err(|e| {
+                AppError::simple(
+                    common::BusinessCode::ValidationError,
+                    format!("序列化转账建议失败: {}", e),
+                )
+            })?;
+
         let participant_members = serde_json::to_value(
-            &suggestion.settlement_details
+            &suggestion
+                .settlement_details
                 .iter()
                 .map(|d| &d.member_serial_num)
-                .collect::<Vec<_>>()
-        ).map_err(|e| AppError::bad_request(&format!("序列化参与成员失败: {}", e)))?;
+                .collect::<Vec<_>>(),
+        )
+        .map_err(|e| {
+            AppError::simple(
+                common::BusinessCode::ValidationError,
+                format!("序列化参与成员失败: {}", e),
+            )
+        })?;
 
         let create_data = SettlementRecordCreate {
             settlement_type: settlement_type.to_string(),
@@ -223,20 +330,25 @@ impl SettlementRecordsService {
             optimized_transfers: Some(optimized_transfers),
             description: Some(format!(
                 "系统生成的结算建议 - {} 个参与者，{} 笔转账",
-                suggestion.participant_count,
-                suggestion.transfer_count
+                suggestion.participant_count, suggestion.transfer_count
             )),
             notes: None,
         };
 
-        let mut active_model = self.converter.create_to_active_model(create_data)?;
-        active_model.family_ledger_serial_num = ActiveValue::Set(suggestion.family_ledger_serial_num);
+        let mut active_model = SettlementRecordsConverter.create_to_active_model(create_data)?;
+        active_model.family_ledger_serial_num =
+            ActiveValue::Set(suggestion.family_ledger_serial_num);
         active_model.initiated_by = ActiveValue::Set(initiated_by.to_string());
 
         let settlement = entity::settlement_records::Entity::insert(active_model)
             .exec_with_returning(db)
             .await
-            .map_err(AppError::from_db_error)?;
+            .map_err(|e| {
+                AppError::simple(
+                    common::BusinessCode::DatabaseError,
+                    format!("Database error: {}", e),
+                )
+            })?;
 
         Ok(SettlementRecordResponse::from(settlement))
     }
@@ -248,11 +360,25 @@ impl SettlementRecordsService {
         complete_request: CompleteSettlement,
         completed_by: &str,
     ) -> MijiResult<SettlementRecordResponse> {
-        let settlement = self.find_by_id(db, &complete_request.settlement_serial_num).await?
-            .ok_or_else(|| AppError::not_found("结算记录不存在"))?;
+        let settlement =
+            entity::settlement_records::Entity::find_by_id(&complete_request.settlement_serial_num)
+                .one(db)
+                .await
+                .map_err(|e| {
+                    AppError::simple(
+                        common::BusinessCode::DatabaseError,
+                        format!("Database error: {}", e),
+                    )
+                })?
+                .ok_or_else(|| {
+                    AppError::simple(common::BusinessCode::NotFound, "结算记录不存在")
+                })?;
 
         if settlement.status != "Pending" && settlement.status != "InProgress" {
-            return Err(AppError::bad_request("只能完成待处理或进行中的结算"));
+            return Err(AppError::simple(
+                common::BusinessCode::ValidationError,
+                "只能完成待处理或进行中的结算",
+            ));
         }
 
         let update_data = SettlementRecordUpdate {
@@ -262,16 +388,23 @@ impl SettlementRecordsService {
             notes: complete_request.completion_notes,
         };
 
-        let mut active_model = self.converter.update_to_active_model(settlement, update_data)?;
+        let mut active_model =
+            SettlementRecordsConverter.update_to_active_model(settlement, update_data)?;
         active_model.completed_by = ActiveValue::Set(Some(completed_by.to_string()));
 
         let updated_settlement = entity::settlement_records::Entity::update(active_model)
             .exec(db)
             .await
-            .map_err(AppError::from_db_error)?;
+            .map_err(|e| {
+                AppError::simple(
+                    common::BusinessCode::DatabaseError,
+                    format!("Database error: {}", e),
+                )
+            })?;
 
         // 完成结算后，将相关债务标记为已结算
-        self.settle_related_debts(db, &complete_request.settlement_serial_num).await?;
+        self.settle_related_debts(db, &complete_request.settlement_serial_num)
+            .await?;
 
         Ok(SettlementRecordResponse::from(updated_settlement))
     }
@@ -282,11 +415,25 @@ impl SettlementRecordsService {
         db: &DbConn,
         cancel_request: CancelSettlement,
     ) -> MijiResult<SettlementRecordResponse> {
-        let settlement = self.find_by_id(db, &cancel_request.settlement_serial_num).await?
-            .ok_or_else(|| AppError::not_found("结算记录不存在"))?;
+        let settlement =
+            entity::settlement_records::Entity::find_by_id(&cancel_request.settlement_serial_num)
+                .one(db)
+                .await
+                .map_err(|e| {
+                    AppError::simple(
+                        common::BusinessCode::DatabaseError,
+                        format!("Database error: {}", e),
+                    )
+                })?
+                .ok_or_else(|| {
+                    AppError::simple(common::BusinessCode::NotFound, "结算记录不存在")
+                })?;
 
         if settlement.status == "Completed" {
-            return Err(AppError::bad_request("已完成的结算不能取消"));
+            return Err(AppError::simple(
+                common::BusinessCode::ValidationError,
+                "已完成的结算不能取消",
+            ));
         }
 
         let update_data = SettlementRecordUpdate {
@@ -296,7 +443,18 @@ impl SettlementRecordsService {
             notes: cancel_request.cancellation_reason,
         };
 
-        let updated_settlement = self.update_by_id(db, &cancel_request.settlement_serial_num, update_data).await?;
+        let active_model =
+            SettlementRecordsConverter.update_to_active_model(settlement, update_data)?;
+
+        let updated_settlement = entity::settlement_records::Entity::update(active_model)
+            .exec(db)
+            .await
+            .map_err(|e| {
+                AppError::simple(
+                    common::BusinessCode::DatabaseError,
+                    format!("Database error: {}", e),
+                )
+            })?;
 
         Ok(SettlementRecordResponse::from(updated_settlement))
     }
@@ -308,18 +466,34 @@ impl SettlementRecordsService {
         family_ledger_serial_num: &str,
     ) -> MijiResult<SettlementStats> {
         let settlements = entity::settlement_records::Entity::find()
-            .filter(entity::settlement_records::Column::FamilyLedgerSerialNum.eq(family_ledger_serial_num))
+            .filter(
+                entity::settlement_records::Column::FamilyLedgerSerialNum
+                    .eq(family_ledger_serial_num),
+            )
             .all(db)
             .await
-            .map_err(AppError::from_db_error)?;
+            .map_err(|e| {
+                AppError::simple(
+                    common::BusinessCode::DatabaseError,
+                    format!("Database error: {}", e),
+                )
+            })?;
 
         let total_settlements = settlements.len() as i64;
-        let pending_settlements = settlements.iter().filter(|s| s.status == "Pending").count() as i64;
-        let completed_settlements = settlements.iter().filter(|s| s.status == "Completed").count() as i64;
-        let cancelled_settlements = settlements.iter().filter(|s| s.status == "Cancelled").count() as i64;
+        let pending_settlements =
+            settlements.iter().filter(|s| s.status == "Pending").count() as i64;
+        let completed_settlements = settlements
+            .iter()
+            .filter(|s| s.status == "Completed")
+            .count() as i64;
+        let cancelled_settlements = settlements
+            .iter()
+            .filter(|s| s.status == "Cancelled")
+            .count() as i64;
 
         let total_amount: Decimal = settlements.iter().map(|s| s.total_amount).sum();
-        let completed_amount: Decimal = settlements.iter()
+        let completed_amount: Decimal = settlements
+            .iter()
             .filter(|s| s.status == "Completed")
             .map(|s| s.total_amount)
             .sum();
@@ -353,38 +527,45 @@ impl SettlementRecordsService {
                 let period_start = now - chrono::Duration::days(days_since_monday as i64);
                 let period_end = period_start + chrono::Duration::days(6);
                 (period_start, period_end)
-            },
+            }
             "Monthly" => {
-                let period_start = NaiveDate::from_ymd_opt(now.year(), now.month(), 1)
-                    .ok_or_else(|| AppError::bad_request("无效的日期"))?;
+                let period_start =
+                    NaiveDate::from_ymd_opt(now.year(), now.month(), 1).ok_or_else(|| {
+                        AppError::simple(common::BusinessCode::ValidationError, "无效的日期")
+                    })?;
                 let period_end = if now.month() == 12 {
                     NaiveDate::from_ymd_opt(now.year() + 1, 1, 1)
                 } else {
                     NaiveDate::from_ymd_opt(now.year(), now.month() + 1, 1)
-                }.ok_or_else(|| AppError::bad_request("无效的日期"))? - chrono::Duration::days(1);
+                }
+                .ok_or_else(|| {
+                    AppError::simple(common::BusinessCode::ValidationError, "无效的日期")
+                })? - chrono::Duration::days(1);
                 (period_start, period_end)
-            },
+            }
             "Quarterly" => {
                 let quarter_start_month = ((now.month() - 1) / 3) * 3 + 1;
                 let period_start = NaiveDate::from_ymd_opt(now.year(), quarter_start_month, 1)
-                    .ok_or_else(|| AppError::bad_request("无效的日期"))?;
+                    .ok_or_else(|| {
+                        AppError::simple(common::BusinessCode::ValidationError, "无效的日期")
+                    })?;
                 let period_end = if quarter_start_month + 2 == 12 {
                     NaiveDate::from_ymd_opt(now.year() + 1, 1, 1)
                 } else {
                     NaiveDate::from_ymd_opt(now.year(), quarter_start_month + 3, 1)
-                }.ok_or_else(|| AppError::bad_request("无效的日期"))? - chrono::Duration::days(1);
+                }
+                .ok_or_else(|| {
+                    AppError::simple(common::BusinessCode::ValidationError, "无效的日期")
+                })? - chrono::Duration::days(1);
                 (period_start, period_end)
-            },
+            }
             _ => return Ok(None),
         };
 
         // 生成结算建议
-        let suggestion = self.generate_settlement_suggestion(
-            db,
-            family_ledger_serial_num,
-            period_start,
-            period_end,
-        ).await?;
+        let suggestion = self
+            .generate_settlement_suggestion(db, family_ledger_serial_num, period_start, period_end)
+            .await?;
 
         // 检查是否达到最小金额阈值
         if suggestion.total_amount < config.min_amount_threshold {
@@ -401,35 +582,62 @@ impl SettlementRecordsService {
         settlement_serial_num: &str,
     ) -> MijiResult<()> {
         // 获取结算记录
-        let settlement = self.find_by_id(db, settlement_serial_num).await?
-            .ok_or_else(|| AppError::not_found("结算记录不存在"))?;
+        let settlement = entity::settlement_records::Entity::find_by_id(settlement_serial_num)
+            .one(db)
+            .await
+            .map_err(|e| {
+                AppError::simple(
+                    common::BusinessCode::DatabaseError,
+                    format!("Database error: {}", e),
+                )
+            })?
+            .ok_or_else(|| AppError::simple(common::BusinessCode::NotFound, "结算记录不存在"))?;
 
         // 获取参与成员
-        let participant_members: Vec<String> = serde_json::from_value(settlement.participant_members)
-            .map_err(|e| AppError::bad_request(&format!("解析参与成员失败: {}", e)))?;
+        let participant_members: Vec<String> =
+            serde_json::from_value(settlement.participant_members).map_err(|e| {
+                AppError::simple(
+                    common::BusinessCode::ValidationError,
+                    format!("解析参与成员失败: {}", e),
+                )
+            })?;
 
         // 将这些成员之间的债务标记为已结算
         let now = DateUtils::local_now();
-        
+
         entity::debt_relations::Entity::update_many()
             .col_expr(
                 entity::debt_relations::Column::Status,
-                sea_orm::sea_query::Expr::value("Settled")
+                sea_orm::sea_query::Expr::value("Settled"),
             )
             .col_expr(
                 entity::debt_relations::Column::SettledAt,
-                sea_orm::sea_query::Expr::value(now)
+                sea_orm::sea_query::Expr::value(now),
             )
             .filter(
                 Condition::all()
-                    .add(entity::debt_relations::Column::FamilyLedgerSerialNum.eq(&settlement.family_ledger_serial_num))
-                    .add(entity::debt_relations::Column::CreditorMemberSerialNum.is_in(&participant_members))
-                    .add(entity::debt_relations::Column::DebtorMemberSerialNum.is_in(&participant_members))
-                    .add(entity::debt_relations::Column::Status.eq("Active"))
+                    .add(
+                        entity::debt_relations::Column::FamilyLedgerSerialNum
+                            .eq(&settlement.family_ledger_serial_num),
+                    )
+                    .add(
+                        entity::debt_relations::Column::CreditorMemberSerialNum
+                            .is_in(&participant_members),
+                    )
+                    .add(
+                        entity::debt_relations::Column::DebtorMemberSerialNum
+                            .is_in(&participant_members),
+                    )
+                    .add(entity::debt_relations::Column::Status.eq("Active")),
             )
             .exec(db)
             .await
-            .map_err(AppError::from_db_error)?;
+            .map_err(|e| {
+                AppError::simple(
+                    common::BusinessCode::DatabaseError,
+                    format!("Database error: {}", e),
+                )
+            })?;
 
         Ok(())
     }
@@ -441,23 +649,32 @@ impl SettlementRecordsService {
         family_ledger_serial_num: &str,
         months: i32,
     ) -> MijiResult<Vec<(String, i64, Decimal)>> {
-        let start_date = chrono::Utc::now().date_naive() - chrono::Duration::days((months * 30) as i64);
-        
+        let start_date =
+            chrono::Utc::now().date_naive() - chrono::Duration::days((months * 30) as i64);
+
         let settlements = entity::settlement_records::Entity::find()
             .filter(
                 Condition::all()
-                    .add(entity::settlement_records::Column::FamilyLedgerSerialNum.eq(family_ledger_serial_num))
+                    .add(
+                        entity::settlement_records::Column::FamilyLedgerSerialNum
+                            .eq(family_ledger_serial_num),
+                    )
                     .add(entity::settlement_records::Column::CreatedAt.gte(start_date))
-                    .add(entity::settlement_records::Column::Status.eq("Completed"))
+                    .add(entity::settlement_records::Column::Status.eq("Completed")),
             )
             .order_by(entity::settlement_records::Column::CreatedAt, Order::Asc)
             .all(db)
             .await
-            .map_err(AppError::from_db_error)?;
+            .map_err(|e| {
+                AppError::simple(
+                    common::BusinessCode::DatabaseError,
+                    format!("Database error: {}", e),
+                )
+            })?;
 
         // 按月分组统计
         let mut monthly_stats: HashMap<String, (i64, Decimal)> = HashMap::new();
-        
+
         for settlement in settlements {
             let month_key = settlement.created_at.format("%Y-%m").to_string();
             let (count, amount) = monthly_stats.entry(month_key).or_insert((0, Decimal::ZERO));
@@ -469,9 +686,9 @@ impl SettlementRecordsService {
             .into_iter()
             .map(|(month, (count, amount))| (month, count, amount))
             .collect();
-            
+
         trends.sort_by(|a, b| a.0.cmp(&b.0));
-        
+
         Ok(trends)
     }
 }

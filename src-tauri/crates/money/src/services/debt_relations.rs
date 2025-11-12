@@ -1,22 +1,23 @@
-use std::{collections::HashMap, sync::Arc};
+use std::collections::HashMap;
 
 use common::{
-    crud::service::{CrudConverter, CrudService, GenericCrudService, LocalizableConverter},
+    crud::service::{CrudConverter, GenericCrudService, LocalizableConverter},
     error::{AppError, MijiResult},
-    paginations::{EmptyFilter, PagedQuery, PagedResult},
+    log::logger::NoopLogger,
+    paginations::{EmptyFilter, PagedResult},
     utils::date::DateUtils,
 };
 use entity::localize::LocalizeModel;
-use sea_orm::{
-    ActiveValue, ColumnTrait, DbConn, EntityTrait, QueryFilter, QueryOrder, QuerySelect,
-    prelude::async_trait::async_trait, Condition, Order, JoinType, RelationTrait,
-};
 use sea_orm::prelude::Decimal;
+use sea_orm::{
+    ActiveValue, ColumnTrait, Condition, DbConn, EntityTrait, Order, PaginatorTrait, QueryFilter,
+    QueryOrder, QuerySelect, prelude::async_trait::async_trait,
+};
 
 use crate::{
     dto::debt_relations::{
-        DebtRelationCreate, DebtRelationUpdate, DebtRelationResponse, DebtRelationQuery,
-        DebtSettlement, DebtStats, MemberDebtSummary, DebtGraph, DebtGraphNode, DebtGraphEdge
+        DebtGraph, DebtGraphEdge, DebtGraphNode, DebtRelationCreate, DebtRelationQuery,
+        DebtRelationResponse, DebtRelationUpdate, DebtSettlement, DebtStats, MemberDebtSummary,
     },
     services::debt_relations_hooks::DebtRelationsHooks,
 };
@@ -52,7 +53,7 @@ impl CrudConverter<entity::debt_relations::Entity, DebtRelationCreate, DebtRelat
             created_at: ActiveValue::Set(model.created_at),
             ..Default::default()
         };
-        
+
         data.apply_to_model(&mut active_model);
         Ok(active_model)
     }
@@ -60,30 +61,85 @@ impl CrudConverter<entity::debt_relations::Entity, DebtRelationCreate, DebtRelat
     fn primary_key_to_string(&self, model: &entity::debt_relations::Model) -> String {
         model.serial_num.clone()
     }
-}
 
-impl LocalizableConverter<entity::debt_relations::Entity> for DebtRelationsConverter {
-    fn localize_model(
-        &self,
-        model: entity::debt_relations::Model,
-        _locale: &str,
-    ) -> MijiResult<entity::debt_relations::Model> {
-        Ok(model.localize(_locale))
+    fn table_name(&self) -> &'static str {
+        "debt_relations"
     }
 }
 
-pub type DebtRelationsService = GenericCrudService<
-    entity::debt_relations::Entity,
-    DebtRelationCreate,
-    DebtRelationUpdate,
-    DebtRelationsFilter,
-    DebtRelationsConverter,
-    DebtRelationsHooks,
->;
+#[async_trait]
+impl LocalizableConverter<entity::debt_relations::Model> for DebtRelationsConverter {
+    async fn model_with_local(
+        &self,
+        model: entity::debt_relations::Model,
+    ) -> MijiResult<entity::debt_relations::Model> {
+        Ok(model.to_local())
+    }
+}
+
+pub struct DebtRelationsService {
+    inner: GenericCrudService<
+        entity::debt_relations::Entity,
+        DebtRelationsFilter,
+        DebtRelationCreate,
+        DebtRelationUpdate,
+        DebtRelationsConverter,
+        DebtRelationsHooks,
+    >,
+}
 
 impl DebtRelationsService {
-    pub fn new() -> Self {
-        Self::with_converter_and_hooks(DebtRelationsConverter, DebtRelationsHooks)
+    pub fn new(
+        converter: DebtRelationsConverter,
+        hooks: DebtRelationsHooks,
+        logger: std::sync::Arc<dyn common::log::logger::OperationLogger>,
+    ) -> Self {
+        Self {
+            inner: GenericCrudService::new(converter, hooks, logger),
+        }
+    }
+
+    pub fn default() -> Self {
+        use std::sync::Arc;
+        Self::new(
+            DebtRelationsConverter,
+            DebtRelationsHooks,
+            Arc::new(NoopLogger),
+        )
+    }
+}
+
+impl std::ops::Deref for DebtRelationsService {
+    type Target = GenericCrudService<
+        entity::debt_relations::Entity,
+        DebtRelationsFilter,
+        DebtRelationCreate,
+        DebtRelationUpdate,
+        DebtRelationsConverter,
+        DebtRelationsHooks,
+    >;
+
+    fn deref(&self) -> &Self::Target {
+        &self.inner
+    }
+}
+
+impl DebtRelationsService {
+    /// 根据家庭账本ID查询债务关系
+    pub async fn find_by_family_ledger(
+        &self,
+        db: &DbConn,
+        family_ledger_serial_num: &str,
+    ) -> MijiResult<Vec<DebtRelationResponse>> {
+        self.find_with_query(
+            db,
+            DebtRelationQuery {
+                family_ledger_serial_num: Some(family_ledger_serial_num.to_string()),
+                ..Default::default()
+            },
+        )
+        .await
+        .map(|paged| paged.rows)
     }
 
     /// 根据查询条件获取债务关系
@@ -97,30 +153,31 @@ impl DebtRelationsService {
         // 应用查询条件
         if let Some(family_ledger_serial_num) = &query.family_ledger_serial_num {
             select = select.filter(
-                entity::debt_relations::Column::FamilyLedgerSerialNum.eq(family_ledger_serial_num)
+                entity::debt_relations::Column::FamilyLedgerSerialNum.eq(family_ledger_serial_num),
             );
         }
-        
+
         if let Some(creditor_member_serial_num) = &query.creditor_member_serial_num {
             select = select.filter(
-                entity::debt_relations::Column::CreditorMemberSerialNum.eq(creditor_member_serial_num)
+                entity::debt_relations::Column::CreditorMemberSerialNum
+                    .eq(creditor_member_serial_num),
             );
         }
-        
+
         if let Some(debtor_member_serial_num) = &query.debtor_member_serial_num {
             select = select.filter(
-                entity::debt_relations::Column::DebtorMemberSerialNum.eq(debtor_member_serial_num)
+                entity::debt_relations::Column::DebtorMemberSerialNum.eq(debtor_member_serial_num),
             );
         }
-        
+
         if let Some(status) = &query.status {
             select = select.filter(entity::debt_relations::Column::Status.eq(status));
         }
-        
+
         if let Some(min_amount) = query.min_amount {
             select = select.filter(entity::debt_relations::Column::Amount.gte(min_amount));
         }
-        
+
         if let Some(max_amount) = query.max_amount {
             select = select.filter(entity::debt_relations::Column::Amount.lte(max_amount));
         }
@@ -130,21 +187,48 @@ impl DebtRelationsService {
 
         let page = query.page.unwrap_or(1);
         let page_size = query.page_size.unwrap_or(20);
-        
-        let paginated_query = PagedQuery::new(page, page_size);
-        let result = self.find_paged(db, select, paginated_query).await?;
-        
-        let responses: Vec<DebtRelationResponse> = result.data
-            .into_iter()
-            .map(DebtRelationResponse::from)
-            .collect();
-            
+
+        // 简化分页实现
+        let offset = (page - 1) * page_size;
+        let models = select
+            .limit(page_size)
+            .offset(offset)
+            .all(db)
+            .await
+            .map_err(|e| {
+                AppError::simple(
+                    common::BusinessCode::DatabaseError,
+                    format!("Database error: {}", e),
+                )
+            })?;
+
+        let total_count = if let Some(family_ledger_serial_num) = &query.family_ledger_serial_num {
+            entity::debt_relations::Entity::find()
+                .filter(
+                    entity::debt_relations::Column::FamilyLedgerSerialNum
+                        .eq(family_ledger_serial_num),
+                )
+                .count(db)
+                .await
+        } else {
+            entity::debt_relations::Entity::find().count(db).await
+        }
+        .map_err(|e| {
+            AppError::simple(
+                common::BusinessCode::DatabaseError,
+                format!("Database error: {}", e),
+            )
+        })? as u64;
+
+        let responses: Vec<DebtRelationResponse> =
+            models.into_iter().map(DebtRelationResponse::from).collect();
+
         Ok(PagedResult {
-            data: responses,
-            total: result.total,
-            page: result.page,
-            page_size: result.page_size,
-            total_pages: result.total_pages,
+            rows: responses,
+            total_count: total_count as usize,
+            current_page: page as usize,
+            page_size: page_size as usize,
+            total_pages: ((total_count + page_size - 1) / page_size) as usize,
         })
     }
 
@@ -159,14 +243,28 @@ impl DebtRelationsService {
         let debt_relation = entity::debt_relations::Entity::find()
             .filter(
                 Condition::all()
-                    .add(entity::debt_relations::Column::FamilyLedgerSerialNum.eq(family_ledger_serial_num))
-                    .add(entity::debt_relations::Column::CreditorMemberSerialNum.eq(creditor_member_serial_num))
-                    .add(entity::debt_relations::Column::DebtorMemberSerialNum.eq(debtor_member_serial_num))
-                    .add(entity::debt_relations::Column::Status.eq("Active"))
+                    .add(
+                        entity::debt_relations::Column::FamilyLedgerSerialNum
+                            .eq(family_ledger_serial_num),
+                    )
+                    .add(
+                        entity::debt_relations::Column::CreditorMemberSerialNum
+                            .eq(creditor_member_serial_num),
+                    )
+                    .add(
+                        entity::debt_relations::Column::DebtorMemberSerialNum
+                            .eq(debtor_member_serial_num),
+                    )
+                    .add(entity::debt_relations::Column::Status.eq("Active")),
             )
             .one(db)
             .await
-            .map_err(AppError::from_db_error)?;
+            .map_err(|e| {
+                AppError::simple(
+                    common::BusinessCode::DatabaseError,
+                    format!("Database error: {}", e),
+                )
+            })?;
 
         Ok(debt_relation.map(DebtRelationResponse::from))
     }
@@ -183,12 +281,31 @@ impl DebtRelationsService {
         updated_by: &str,
     ) -> MijiResult<DebtRelationResponse> {
         // 查找现有债务关系
-        let existing_relation = self.get_member_debt_relation(
-            db,
-            family_ledger_serial_num,
-            creditor_member_serial_num,
-            debtor_member_serial_num,
-        ).await?;
+        let existing_relation = entity::debt_relations::Entity::find()
+            .filter(
+                Condition::all()
+                    .add(
+                        entity::debt_relations::Column::FamilyLedgerSerialNum
+                            .eq(family_ledger_serial_num),
+                    )
+                    .add(
+                        entity::debt_relations::Column::CreditorMemberSerialNum
+                            .eq(creditor_member_serial_num),
+                    )
+                    .add(
+                        entity::debt_relations::Column::DebtorMemberSerialNum
+                            .eq(debtor_member_serial_num),
+                    )
+                    .add(entity::debt_relations::Column::Status.eq("Active")),
+            )
+            .one(db)
+            .await
+            .map_err(|e| {
+                AppError::simple(
+                    common::BusinessCode::DatabaseError,
+                    format!("Database error: {}", e),
+                )
+            })?;
 
         if let Some(existing) = existing_relation {
             // 更新现有关系
@@ -197,8 +314,18 @@ impl DebtRelationsService {
                 status: None,
                 notes: None,
             };
-            
-            let updated = self.update_by_id(db, &existing.serial_num, update_data).await?;
+
+            let active_model =
+                DebtRelationsConverter.update_to_active_model(existing, update_data)?;
+            let updated = entity::debt_relations::Entity::update(active_model)
+                .exec(db)
+                .await
+                .map_err(|e| {
+                    AppError::simple(
+                        common::BusinessCode::DatabaseError,
+                        format!("Database error: {}", e),
+                    )
+                })?;
             Ok(DebtRelationResponse::from(updated))
         } else {
             // 创建新关系
@@ -209,16 +336,22 @@ impl DebtRelationsService {
                 currency: currency.to_string(),
                 notes: None,
             };
-            
-            let mut active_model = self.converter.create_to_active_model(create_data)?;
-            active_model.family_ledger_serial_num = ActiveValue::Set(family_ledger_serial_num.to_string());
+
+            let mut active_model = DebtRelationsConverter.create_to_active_model(create_data)?;
+            active_model.family_ledger_serial_num =
+                ActiveValue::Set(family_ledger_serial_num.to_string());
             active_model.last_updated_by = ActiveValue::Set(updated_by.to_string());
-            
+
             let created = entity::debt_relations::Entity::insert(active_model)
                 .exec_with_returning(db)
                 .await
-                .map_err(AppError::from_db_error)?;
-                
+                .map_err(|e| {
+                    AppError::simple(
+                        common::BusinessCode::DatabaseError,
+                        format!("Database error: {}", e),
+                    )
+                })?;
+
             Ok(DebtRelationResponse::from(created))
         }
     }
@@ -230,47 +363,74 @@ impl DebtRelationsService {
         settlement_request: DebtSettlement,
     ) -> MijiResult<Vec<DebtRelationResponse>> {
         let now = DateUtils::local_now();
-        
+
         // 批量更新状态为已结算
         entity::debt_relations::Entity::update_many()
             .col_expr(
                 entity::debt_relations::Column::Status,
-                sea_orm::sea_query::Expr::value("Settled")
+                sea_orm::sea_query::Expr::value("Settled"),
             )
             .col_expr(
                 entity::debt_relations::Column::SettledAt,
-                sea_orm::sea_query::Expr::value(now)
+                sea_orm::sea_query::Expr::value(now),
             )
             .col_expr(
                 entity::debt_relations::Column::UpdatedAt,
-                sea_orm::sea_query::Expr::value(Some(now))
+                sea_orm::sea_query::Expr::value(Some(now)),
             )
-            .filter(entity::debt_relations::Column::SerialNum.is_in(&settlement_request.debt_serial_nums))
+            .filter(
+                entity::debt_relations::Column::SerialNum
+                    .is_in(&settlement_request.debt_serial_nums),
+            )
             .exec(db)
             .await
-            .map_err(AppError::from_db_error)?;
+            .map_err(|e| {
+                AppError::simple(
+                    common::BusinessCode::DatabaseError,
+                    format!("Database error: {}", e),
+                )
+            })?;
 
         // 如果有备注，更新备注
         if let Some(notes) = settlement_request.notes {
             entity::debt_relations::Entity::update_many()
                 .col_expr(
                     entity::debt_relations::Column::Notes,
-                    sea_orm::sea_query::Expr::value(Some(notes))
+                    sea_orm::sea_query::Expr::value(Some(notes)),
                 )
-                .filter(entity::debt_relations::Column::SerialNum.is_in(&settlement_request.debt_serial_nums))
+                .filter(
+                    entity::debt_relations::Column::SerialNum
+                        .is_in(&settlement_request.debt_serial_nums),
+                )
                 .exec(db)
                 .await
-                .map_err(AppError::from_db_error)?;
+                .map_err(|e| {
+                    AppError::simple(
+                        common::BusinessCode::DatabaseError,
+                        format!("Database error: {}", e),
+                    )
+                })?;
         }
 
         // 返回更新后的记录
         let updated_records = entity::debt_relations::Entity::find()
-            .filter(entity::debt_relations::Column::SerialNum.is_in(&settlement_request.debt_serial_nums))
+            .filter(
+                entity::debt_relations::Column::SerialNum
+                    .is_in(&settlement_request.debt_serial_nums),
+            )
             .all(db)
             .await
-            .map_err(AppError::from_db_error)?;
+            .map_err(|e| {
+                AppError::simple(
+                    common::BusinessCode::DatabaseError,
+                    format!("Database error: {}", e),
+                )
+            })?;
 
-        Ok(updated_records.into_iter().map(DebtRelationResponse::from).collect())
+        Ok(updated_records
+            .into_iter()
+            .map(DebtRelationResponse::from)
+            .collect())
     }
 
     /// 获取债务统计
@@ -280,21 +440,30 @@ impl DebtRelationsService {
         family_ledger_serial_num: &str,
     ) -> MijiResult<DebtStats> {
         let debts = entity::debt_relations::Entity::find()
-            .filter(entity::debt_relations::Column::FamilyLedgerSerialNum.eq(family_ledger_serial_num))
+            .filter(
+                entity::debt_relations::Column::FamilyLedgerSerialNum.eq(family_ledger_serial_num),
+            )
             .all(db)
             .await
-            .map_err(AppError::from_db_error)?;
+            .map_err(|e| {
+                AppError::simple(
+                    common::BusinessCode::DatabaseError,
+                    format!("Database error: {}", e),
+                )
+            })?;
 
         let total_debts = debts.len() as i64;
         let active_debts = debts.iter().filter(|d| d.status == "Active").count() as i64;
         let settled_debts = debts.iter().filter(|d| d.status == "Settled").count() as i64;
 
         let total_amount: Decimal = debts.iter().map(|d| d.amount).sum();
-        let active_amount: Decimal = debts.iter()
+        let active_amount: Decimal = debts
+            .iter()
             .filter(|d| d.status == "Active")
             .map(|d| d.amount)
             .sum();
-        let settled_amount: Decimal = debts.iter()
+        let settled_amount: Decimal = debts
+            .iter()
             .filter(|d| d.status == "Settled")
             .map(|d| d.amount)
             .sum();
@@ -320,25 +489,46 @@ impl DebtRelationsService {
         let credit_debts = entity::debt_relations::Entity::find()
             .filter(
                 Condition::all()
-                    .add(entity::debt_relations::Column::FamilyLedgerSerialNum.eq(family_ledger_serial_num))
-                    .add(entity::debt_relations::Column::CreditorMemberSerialNum.eq(member_serial_num))
-                    .add(entity::debt_relations::Column::Status.eq("Active"))
+                    .add(
+                        entity::debt_relations::Column::FamilyLedgerSerialNum
+                            .eq(family_ledger_serial_num),
+                    )
+                    .add(
+                        entity::debt_relations::Column::CreditorMemberSerialNum
+                            .eq(member_serial_num),
+                    )
+                    .add(entity::debt_relations::Column::Status.eq("Active")),
             )
             .all(db)
             .await
-            .map_err(AppError::from_db_error)?;
+            .map_err(|e| {
+                AppError::simple(
+                    common::BusinessCode::DatabaseError,
+                    format!("Database error: {}", e),
+                )
+            })?;
 
         // 获取作为债务人的债务
         let debt_debts = entity::debt_relations::Entity::find()
             .filter(
                 Condition::all()
-                    .add(entity::debt_relations::Column::FamilyLedgerSerialNum.eq(family_ledger_serial_num))
-                    .add(entity::debt_relations::Column::DebtorMemberSerialNum.eq(member_serial_num))
-                    .add(entity::debt_relations::Column::Status.eq("Active"))
+                    .add(
+                        entity::debt_relations::Column::FamilyLedgerSerialNum
+                            .eq(family_ledger_serial_num),
+                    )
+                    .add(
+                        entity::debt_relations::Column::DebtorMemberSerialNum.eq(member_serial_num),
+                    )
+                    .add(entity::debt_relations::Column::Status.eq("Active")),
             )
             .all(db)
             .await
-            .map_err(AppError::from_db_error)?;
+            .map_err(|e| {
+                AppError::simple(
+                    common::BusinessCode::DatabaseError,
+                    format!("Database error: {}", e),
+                )
+            })?;
 
         let total_credit: Decimal = credit_debts.iter().map(|d| d.amount).sum();
         let total_debt: Decimal = debt_debts.iter().map(|d| d.amount).sum();
@@ -350,8 +540,13 @@ impl DebtRelationsService {
         let member = entity::family_member::Entity::find_by_id(member_serial_num)
             .one(db)
             .await
-            .map_err(AppError::from_db_error)?
-            .ok_or_else(|| AppError::not_found("成员不存在"))?;
+            .map_err(|e| {
+                AppError::simple(
+                    common::BusinessCode::DatabaseError,
+                    format!("Database error: {}", e),
+                )
+            })?
+            .ok_or_else(|| AppError::simple(common::BusinessCode::NotFound, "成员不存在"))?;
 
         Ok(MemberDebtSummary {
             member_serial_num: member_serial_num.to_string(),
@@ -374,12 +569,20 @@ impl DebtRelationsService {
         let debts = entity::debt_relations::Entity::find()
             .filter(
                 Condition::all()
-                    .add(entity::debt_relations::Column::FamilyLedgerSerialNum.eq(family_ledger_serial_num))
-                    .add(entity::debt_relations::Column::Status.eq("Active"))
+                    .add(
+                        entity::debt_relations::Column::FamilyLedgerSerialNum
+                            .eq(family_ledger_serial_num),
+                    )
+                    .add(entity::debt_relations::Column::Status.eq("Active")),
             )
             .all(db)
             .await
-            .map_err(AppError::from_db_error)?;
+            .map_err(|e| {
+                AppError::simple(
+                    common::BusinessCode::DatabaseError,
+                    format!("Database error: {}", e),
+                )
+            })?;
 
         // 获取所有相关成员
         let mut member_ids: std::collections::HashSet<String> = std::collections::HashSet::new();
@@ -392,13 +595,22 @@ impl DebtRelationsService {
             .filter(entity::family_member::Column::SerialNum.is_in(member_ids))
             .all(db)
             .await
-            .map_err(AppError::from_db_error)?;
+            .map_err(|e| {
+                AppError::simple(
+                    common::BusinessCode::DatabaseError,
+                    format!("Database error: {}", e),
+                )
+            })?;
 
         // 计算每个成员的净余额
         let mut member_balances: HashMap<String, Decimal> = HashMap::new();
         for debt in &debts {
-            *member_balances.entry(debt.creditor_member_serial_num.clone()).or_insert(Decimal::ZERO) += debt.amount;
-            *member_balances.entry(debt.debtor_member_serial_num.clone()).or_insert(Decimal::ZERO) -= debt.amount;
+            *member_balances
+                .entry(debt.creditor_member_serial_num.clone())
+                .or_insert(Decimal::ZERO) += debt.amount;
+            *member_balances
+                .entry(debt.debtor_member_serial_num.clone())
+                .or_insert(Decimal::ZERO) -= debt.amount;
         }
 
         // 构建节点
@@ -409,7 +621,10 @@ impl DebtRelationsService {
                 member_name: member.name,
                 avatar_url: member.avatar_url,
                 color: member.color,
-                net_balance: member_balances.get(&member.serial_num).copied().unwrap_or(Decimal::ZERO),
+                net_balance: member_balances
+                    .get(&member.serial_num)
+                    .copied()
+                    .unwrap_or(Decimal::ZERO),
             })
             .collect();
 
@@ -446,16 +661,24 @@ impl DebtRelationsService {
         let split_records = entity::split_records::Entity::find()
             .filter(
                 Condition::all()
-                    .add(entity::split_records::Column::FamilyLedgerSerialNum.eq(family_ledger_serial_num))
-                    .add(entity::split_records::Column::Status.ne("Paid"))
+                    .add(
+                        entity::split_records::Column::FamilyLedgerSerialNum
+                            .eq(family_ledger_serial_num),
+                    )
+                    .add(entity::split_records::Column::Status.ne("Paid")),
             )
             .all(db)
             .await
-            .map_err(AppError::from_db_error)?;
+            .map_err(|e| {
+                AppError::simple(
+                    common::BusinessCode::DatabaseError,
+                    format!("Database error: {}", e),
+                )
+            })?;
 
         // 按成员对计算债务
         let mut debt_map: HashMap<(String, String), Decimal> = HashMap::new();
-        
+
         for record in split_records {
             let key = (record.payer_member_serial_num, record.owe_member_serial_num);
             *debt_map.entry(key).or_insert(Decimal::ZERO) += record.split_amount;
@@ -465,12 +688,20 @@ impl DebtRelationsService {
         entity::debt_relations::Entity::delete_many()
             .filter(
                 Condition::all()
-                    .add(entity::debt_relations::Column::FamilyLedgerSerialNum.eq(family_ledger_serial_num))
-                    .add(entity::debt_relations::Column::Status.eq("Active"))
+                    .add(
+                        entity::debt_relations::Column::FamilyLedgerSerialNum
+                            .eq(family_ledger_serial_num),
+                    )
+                    .add(entity::debt_relations::Column::Status.eq("Active")),
             )
             .exec(db)
             .await
-            .map_err(AppError::from_db_error)?;
+            .map_err(|e| {
+                AppError::simple(
+                    common::BusinessCode::DatabaseError,
+                    format!("Database error: {}", e),
+                )
+            })?;
 
         // 创建新的债务关系
         let mut created_count = 0i64;
@@ -484,11 +715,22 @@ impl DebtRelationsService {
                     amount,
                     "CNY", // 默认货币
                     updated_by,
-                ).await?;
+                )
+                .await?;
                 created_count += 1;
             }
         }
 
         Ok(created_count)
+    }
+
+    /// 从分摊记录同步债务关系（别名方法）
+    pub async fn sync_from_split_records(
+        &self,
+        db: &DbConn,
+        family_ledger_serial_num: &str,
+        updated_by: &str,
+    ) -> MijiResult<i64> {
+        self.recalculate_all_debts(db, family_ledger_serial_num, updated_by).await
     }
 }

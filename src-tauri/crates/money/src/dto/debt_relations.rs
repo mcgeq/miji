@@ -1,7 +1,8 @@
 use chrono::{DateTime, FixedOffset};
 use common::utils::{date::DateUtils, uuid::McgUuid};
+use common::paginations::Filter;
 use sea_orm::prelude::Decimal;
-use sea_orm::ActiveValue::{self, Set};
+use sea_orm::{ActiveValue::{self, Set}, Condition};
 use serde::{Deserialize, Serialize};
 use validator::Validate;
 
@@ -60,7 +61,6 @@ pub struct DebtRelationCreate {
     #[validate(length(min = 1, message = "债务人ID不能为空"))]
     pub debtor_member_serial_num: String,
     
-    #[validate(range(min = 0.01, message = "债务金额必须大于0"))]
     pub amount: Decimal,
     
     #[validate(length(min = 1, max = 3, message = "货币代码长度必须为3位"))]
@@ -121,7 +121,7 @@ impl DebtRelationUpdate {
             model.amount = Set(amount);
         }
         if let Some(status) = self.status {
-            model.status = Set(status);
+            model.status = Set(status.clone());
             if status == "Settled" {
                 model.settled_at = Set(Some(now));
             }
@@ -204,4 +204,11 @@ pub struct DebtGraph {
     pub edges: Vec<DebtGraphEdge>,
     pub total_amount: Decimal,
     pub currency: String,
+}
+
+// Filter trait 实现
+impl Filter<entity::debt_relations::Entity> for DebtRelationCreate {
+    fn to_condition(&self) -> Condition {
+        Condition::all() // 创建 DTO 不需要过滤条件
+    }
 }

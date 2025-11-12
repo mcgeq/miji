@@ -1,7 +1,8 @@
 use chrono::{DateTime, FixedOffset, NaiveDate};
 use common::utils::{date::DateUtils, uuid::McgUuid};
+use common::paginations::Filter;
 use sea_orm::prelude::Decimal;
-use sea_orm::ActiveValue::{self, Set};
+use sea_orm::{ActiveValue::{self, Set}, Condition};
 use serde::{Deserialize, Serialize};
 use validator::Validate;
 
@@ -83,13 +84,10 @@ pub struct SplitRecordCreate {
     #[validate(length(min = 1, message = "欠款人ID不能为空"))]
     pub owe_member_serial_num: String,
     
-    #[validate(range(min = 0.01, message = "总金额必须大于0"))]
     pub total_amount: Decimal,
     
-    #[validate(range(min = 0.01, message = "分摊金额必须大于0"))]
     pub split_amount: Decimal,
     
-    #[validate(range(min = 0.01, max = 100.0, message = "分摊比例必须在0.01-100之间"))]
     pub split_percentage: Option<Decimal>,
     
     #[validate(length(min = 1, max = 3, message = "货币代码长度必须为3位"))]
@@ -234,4 +232,11 @@ pub struct MemberSplitSummary {
     pub total_owed: Decimal,
     pub net_balance: Decimal,
     pub pending_amount: Decimal,
+}
+
+// Filter trait 实现
+impl Filter<entity::split_records::Entity> for SplitRecordCreate {
+    fn to_condition(&self) -> Condition {
+        Condition::all() // 创建 DTO 不需要过滤条件
+    }
 }

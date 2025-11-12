@@ -1,15 +1,21 @@
-use common::{crud::service::CrudHooks, error::MijiResult};
-use sea_orm::{prelude::async_trait::async_trait, DbConn};
+use common::{crud::hooks::Hooks, error::MijiResult};
+use sea_orm::{DatabaseTransaction, prelude::async_trait::async_trait};
 
 #[derive(Debug)]
 pub struct SettlementRecordsHooks;
 
 #[async_trait]
-impl CrudHooks<entity::settlement_records::Entity> for SettlementRecordsHooks {
+impl
+    Hooks<
+        entity::settlement_records::Entity,
+        crate::dto::settlement_records::SettlementRecordCreate,
+        crate::dto::settlement_records::SettlementRecordUpdate,
+    > for SettlementRecordsHooks
+{
     async fn before_create(
         &self,
-        _db: &DbConn,
-        _model: &mut entity::settlement_records::ActiveModel,
+        _tx: &DatabaseTransaction,
+        _data: &crate::dto::settlement_records::SettlementRecordCreate,
     ) -> MijiResult<()> {
         // 可以在这里添加创建前的验证逻辑
         // 例如：验证结算周期的合理性
@@ -18,7 +24,7 @@ impl CrudHooks<entity::settlement_records::Entity> for SettlementRecordsHooks {
 
     async fn after_create(
         &self,
-        _db: &DbConn,
+        _tx: &DatabaseTransaction,
         _model: &entity::settlement_records::Model,
     ) -> MijiResult<()> {
         // 可以在这里添加创建后的处理逻辑
@@ -28,8 +34,9 @@ impl CrudHooks<entity::settlement_records::Entity> for SettlementRecordsHooks {
 
     async fn before_update(
         &self,
-        _db: &DbConn,
-        _model: &mut entity::settlement_records::ActiveModel,
+        _tx: &DatabaseTransaction,
+        _model: &entity::settlement_records::Model,
+        _data: &crate::dto::settlement_records::SettlementRecordUpdate,
     ) -> MijiResult<()> {
         // 可以在这里添加更新前的验证逻辑
         Ok(())
@@ -37,7 +44,7 @@ impl CrudHooks<entity::settlement_records::Entity> for SettlementRecordsHooks {
 
     async fn after_update(
         &self,
-        _db: &DbConn,
+        _tx: &DatabaseTransaction,
         _model: &entity::settlement_records::Model,
     ) -> MijiResult<()> {
         // 可以在这里添加更新后的处理逻辑
@@ -47,7 +54,7 @@ impl CrudHooks<entity::settlement_records::Entity> for SettlementRecordsHooks {
 
     async fn before_delete(
         &self,
-        _db: &DbConn,
+        _tx: &DatabaseTransaction,
         _model: &entity::settlement_records::Model,
     ) -> MijiResult<()> {
         // 可以在这里添加删除前的验证逻辑
@@ -56,7 +63,7 @@ impl CrudHooks<entity::settlement_records::Entity> for SettlementRecordsHooks {
 
     async fn after_delete(
         &self,
-        _db: &DbConn,
+        _tx: &DatabaseTransaction,
         _model: &entity::settlement_records::Model,
     ) -> MijiResult<()> {
         // 可以在这里添加删除后的清理逻辑

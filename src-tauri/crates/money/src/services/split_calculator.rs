@@ -1,10 +1,8 @@
-use std::collections::HashMap;
+use common::error::{AppError, MijiResult};
 use sea_orm::prelude::Decimal;
 use serde_json::Value as JsonValue;
-use common::error::{AppError, MijiResult};
-
-use crate::dto::split_rules::{SplitRuleConfig, SplitParticipant};
-use crate::dto::split_records::SplitRecordCreate;
+use std::collections::HashMap;
+use std::str::FromStr;
 
 /// 分摊计算引擎
 #[derive(Debug)]
@@ -74,7 +72,10 @@ impl SplitCalculator {
                 rule_config,
                 participant_members,
             ),
-            _ => Err(AppError::bad_request("不支持的分摊规则类型")),
+            _ => Err(AppError::simple(
+                common::BusinessCode::ValidationError,
+                "不支持的分摊规则类型",
+            )),
         }
     }
 
@@ -86,22 +87,25 @@ impl SplitCalculator {
         participant_members: &JsonValue,
     ) -> MijiResult<SplitCalculationResult> {
         let participants = self.parse_participants(participant_members)?;
-        
+
         if participants.is_empty() {
-            return Err(AppError::bad_request("参与成员不能为空"));
+            return Err(AppError::simple(
+                common::BusinessCode::ValidationError,
+                "参与成员不能为空",
+            ));
         }
 
         let participant_count = Decimal::from(participants.len());
         let base_amount = total_amount / participant_count;
-        
+
         // 处理余数分配
         let remainder = total_amount % participant_count;
         let mut split_records = Vec::new();
         let mut allocated_remainder = Decimal::ZERO;
 
-        for (index, participant) in participants.iter().enumerate() {
+        for (_index, participant) in participants.iter().enumerate() {
             let mut split_amount = base_amount;
-            
+
             // 将余数分配给前几个参与者
             if allocated_remainder < remainder {
                 split_amount += Decimal::new(1, 2); // 加0.01
@@ -138,7 +142,7 @@ impl SplitCalculator {
     ) -> MijiResult<SplitCalculationResult> {
         let participants = self.parse_participants(participant_members)?;
         let percentages = self.parse_percentages(rule_config)?;
-        
+
         let mut split_records = Vec::new();
         let mut validation_errors = Vec::new();
         let mut total_percentage = Decimal::ZERO;
@@ -146,11 +150,11 @@ impl SplitCalculator {
         for participant in &participants {
             if let Some(&percentage) = percentages.get(participant) {
                 total_percentage += percentage;
-                
+
                 // 跳过付款人自己
                 if participant != payer_member_serial_num {
                     let split_amount = total_amount * percentage / Decimal::ONE_HUNDRED;
-                    
+
                     split_records.push(SplitRecordItem {
                         payer_member_serial_num: payer_member_serial_num.to_string(),
                         owe_member_serial_num: participant.clone(),
@@ -190,7 +194,7 @@ impl SplitCalculator {
     ) -> MijiResult<SplitCalculationResult> {
         let participants = self.parse_participants(participant_members)?;
         let amounts = self.parse_amounts(rule_config)?;
-        
+
         let mut split_records = Vec::new();
         let mut validation_errors = Vec::new();
         let mut total_allocated = Decimal::ZERO;
@@ -198,7 +202,7 @@ impl SplitCalculator {
         for participant in &participants {
             if let Some(&amount) = amounts.get(participant) {
                 total_allocated += amount;
-                
+
                 // 跳过付款人自己
                 if participant != payer_member_serial_num {
                     split_records.push(SplitRecordItem {
@@ -240,15 +244,18 @@ impl SplitCalculator {
     ) -> MijiResult<SplitCalculationResult> {
         let participants = self.parse_participants(participant_members)?;
         let weights = self.parse_weights(rule_config)?;
-        
+
         let mut split_records = Vec::new();
         let mut validation_errors = Vec::new();
-        
+
         // 计算总权重
         let total_weight: Decimal = weights.values().sum();
-        
+
         if total_weight == Decimal::ZERO {
-            return Err(AppError::bad_request("权重总和不能为零"));
+            return Err(AppError::simple(
+                common::BusinessCode::ValidationError,
+                "权重总和不能为零",
+            ));
         }
 
         for participant in &participants {
@@ -257,7 +264,7 @@ impl SplitCalculator {
                 if participant != payer_member_serial_num {
                     let percentage = weight / total_weight * Decimal::ONE_HUNDRED;
                     let split_amount = total_amount * weight / total_weight;
-                    
+
                     split_records.push(SplitRecordItem {
                         payer_member_serial_num: payer_member_serial_num.to_string(),
                         owe_member_serial_num: participant.clone(),
@@ -291,7 +298,12 @@ impl SplitCalculator {
         let custom_splits = rule_config
             .get("custom_splits")
             .and_then(|v| v.as_array())
-            .ok_or_else(|| AppError::bad_request("自定义规则缺少分摊配置"))?;
+            .ok_or_else(|| {
+                AppError::simple(
+                    common::BusinessCode::ValidationError,
+                    "自定义规则缺少分摊配置",
+                )
+            })?;
 
         let mut split_records = Vec::new();
         let mut validation_errors = Vec::new();
@@ -301,13 +313,23 @@ impl SplitCalculator {
             let member_id = split_config
                 .get("member_id")
                 .and_then(|v| v.as_str())
-                .ok_or_else(|| AppError::bad_request("自定义分摊缺少成员ID"))?;
-                
+                .ok_or_else(|| {
+                    AppError::simple(
+                        common::BusinessCode::ValidationError,
+                        "自定义分摊缺少成员ID",
+                    )
+                })?;
+
             let amount = split_config
                 .get("amount")
                 .and_then(|v| v.as_str())
                 .and_then(|s| Decimal::from_str(s).ok())
-                .ok_or_else(|| AppError::bad_request("自定义分摊金额格式错误"))?;
+                .ok_or_else(|| {
+                    AppError::simple(
+                        common::BusinessCode::ValidationError,
+                        "自定义分摊金额格式错误",
+                    )
+                })?;
 
             total_allocated += amount;
 
@@ -348,12 +370,14 @@ impl SplitCalculator {
     fn parse_participants(&self, participant_members: &JsonValue) -> MijiResult<Vec<String>> {
         participant_members
             .as_array()
-            .ok_or_else(|| AppError::bad_request("参与成员格式错误"))?
+            .ok_or_else(|| {
+                AppError::simple(common::BusinessCode::ValidationError, "参与成员格式错误")
+            })?
             .iter()
             .map(|v| {
-                v.as_str()
-                    .map(|s| s.to_string())
-                    .ok_or_else(|| AppError::bad_request("参与成员ID格式错误"))
+                v.as_str().map(|s| s.to_string()).ok_or_else(|| {
+                    AppError::simple(common::BusinessCode::ValidationError, "参与成员ID格式错误")
+                })
             })
             .collect()
     }
@@ -363,20 +387,27 @@ impl SplitCalculator {
         let percentages_obj = rule_config
             .get("percentages")
             .and_then(|v| v.as_object())
-            .ok_or_else(|| AppError::bad_request("百分比配置格式错误"))?;
+            .ok_or_else(|| {
+                AppError::simple(common::BusinessCode::ValidationError, "百分比配置格式错误")
+            })?;
 
         let mut percentages = HashMap::new();
         for (member_id, percentage_value) in percentages_obj {
             let percentage = percentage_value
                 .as_str()
                 .and_then(|s| Decimal::from_str(s).ok())
-                .or_else(|| percentage_value.as_f64().map(Decimal::from_f64_retain))
-                .flatten()
-                .ok_or_else(|| AppError::bad_request("百分比值格式错误"))?;
-                
+                .or_else(|| {
+                    percentage_value
+                        .as_f64()
+                        .and_then(|f| Decimal::try_from(f).ok())
+                })
+                .ok_or_else(|| {
+                    AppError::simple(common::BusinessCode::ValidationError, "百分比值格式错误")
+                })?;
+
             percentages.insert(member_id.clone(), percentage);
         }
-        
+
         Ok(percentages)
     }
 
@@ -385,20 +416,27 @@ impl SplitCalculator {
         let amounts_obj = rule_config
             .get("amounts")
             .and_then(|v| v.as_object())
-            .ok_or_else(|| AppError::bad_request("金额配置格式错误"))?;
+            .ok_or_else(|| {
+                AppError::simple(common::BusinessCode::ValidationError, "金额配置格式错误")
+            })?;
 
         let mut amounts = HashMap::new();
         for (member_id, amount_value) in amounts_obj {
             let amount = amount_value
                 .as_str()
                 .and_then(|s| Decimal::from_str(s).ok())
-                .or_else(|| amount_value.as_f64().map(Decimal::from_f64_retain))
-                .flatten()
-                .ok_or_else(|| AppError::bad_request("金额值格式错误"))?;
-                
+                .or_else(|| {
+                    amount_value
+                        .as_f64()
+                        .and_then(|f| Decimal::try_from(f).ok())
+                })
+                .ok_or_else(|| {
+                    AppError::simple(common::BusinessCode::ValidationError, "金额值格式错误")
+                })?;
+
             amounts.insert(member_id.clone(), amount);
         }
-        
+
         Ok(amounts)
     }
 
@@ -407,42 +445,50 @@ impl SplitCalculator {
         let weights_obj = rule_config
             .get("weights")
             .and_then(|v| v.as_object())
-            .ok_or_else(|| AppError::bad_request("权重配置格式错误"))?;
+            .ok_or_else(|| {
+                AppError::simple(common::BusinessCode::ValidationError, "权重配置格式错误")
+            })?;
 
         let mut weights = HashMap::new();
         for (member_id, weight_value) in weights_obj {
             let weight = weight_value
                 .as_str()
                 .and_then(|s| Decimal::from_str(s).ok())
-                .or_else(|| weight_value.as_f64().map(Decimal::from_f64_retain))
-                .flatten()
-                .ok_or_else(|| AppError::bad_request("权重值格式错误"))?;
-                
+                .or_else(|| {
+                    weight_value
+                        .as_f64()
+                        .and_then(|f| Decimal::try_from(f).ok())
+                })
+                .ok_or_else(|| {
+                    AppError::simple(common::BusinessCode::ValidationError, "权重值格式错误")
+                })?;
+
             weights.insert(member_id.clone(), weight);
         }
-        
+
         Ok(weights)
     }
 
     /// 验证分摊结果
     pub fn validate_split_result(&self, result: &SplitCalculationResult) -> MijiResult<()> {
         if !result.validation_errors.is_empty() {
-            return Err(AppError::bad_request(&format!(
-                "分摊计算验证失败: {}",
-                result.validation_errors.join(", ")
-            )));
+            return Err(AppError::simple(
+                common::BusinessCode::ValidationError,
+                format!("分摊计算验证失败: {}", result.validation_errors.join(", ")),
+            ));
         }
 
         // 验证分摊金额总和
-        let total_split: Decimal = result.split_records.iter()
-            .map(|r| r.split_amount)
-            .sum();
-            
+        let total_split: Decimal = result.split_records.iter().map(|r| r.split_amount).sum();
+
         if (total_split - result.total_amount).abs() > Decimal::new(1, 2) {
-            return Err(AppError::bad_request(&format!(
-                "分摊金额总和 {} 与交易金额 {} 不匹配",
-                total_split, result.total_amount
-            )));
+            return Err(AppError::simple(
+                common::BusinessCode::ValidationError,
+                format!(
+                    "分摊金额总和 {} 与交易金额 {} 不匹配",
+                    total_split, result.total_amount
+                ),
+            ));
         }
 
         Ok(())
