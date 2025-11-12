@@ -1,7 +1,10 @@
 import { ref } from 'vue';
+import { SortDirection } from '@/schema/common';
 import { useTransactionStore } from '@/stores/money';
 import { Lg } from '@/utils/debugLog';
+import type { PageQuery } from '@/schema/common';
 import type { Transaction } from '@/schema/money';
+import type { TransactionFilters } from '@/services/money/transactions';
 
 export type TabType = 'accounts' | 'transactions' | 'budgets' | 'reminders';
 
@@ -14,8 +17,20 @@ export function useTabManager() {
   // 加载交易列表
   async function loadTransactions() {
     try {
-      await transactionStore.fetchTransactions();
-      transactions.value = transactionStore.transactions.slice(0, 10);
+      const params: PageQuery<TransactionFilters> = {
+        currentPage: 1,
+        pageSize: 10,
+        sortOptions: {
+          sortBy: 'updated_at',
+          sortDir: SortDirection.Desc,
+          desc: true,
+        },
+        filter: {
+          isDeleted: false,
+        },
+      };
+      await transactionStore.fetchTransactionsPaged(params);
+      transactions.value = transactionStore.transactionsPaged.rows;
       return true;
     } catch (err) {
       Lg.e('loadTransactions', err);

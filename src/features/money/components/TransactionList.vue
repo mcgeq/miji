@@ -39,7 +39,7 @@ const showMoreFilters = ref(!mediaQueries.isMobile);
 function toggleFilters() {
   showMoreFilters.value = !showMoreFilters.value;
 }
-const transactions = computed<Transaction[]>(() => transactionStore.transactions);
+const transactions = computed<Transaction[]>(() => transactionStore.transactionsPaged.rows);
 
 // 禁用转账交易的编辑和删除按钮
 const disabledTransferTransactions = computed(() => {
@@ -102,7 +102,7 @@ const filters = ref<TransactionFilters>({
 // 排序选项状态
 const sortOptions = ref<SortOptions>({
   customOrderBy: undefined,
-  sortBy: undefined,
+  sortBy: 'updated_at',
   sortDir: SortDirection.Desc,
   desc: true,
 });
@@ -127,8 +127,8 @@ function resetFilters() {
   pagination.value.currentPage = 1;
   sortOptions.value = {
     customOrderBy: undefined,
-    sortBy: undefined,
-    sortDir: undefined,
+    sortBy: 'updated_at',
+    sortDir: SortDirection.Desc,
     desc: true,
   };
   loadTransactions();
