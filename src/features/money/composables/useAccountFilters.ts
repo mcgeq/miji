@@ -18,30 +18,33 @@ export function useAccountFilters(accounts: () => Account[], defaultPageSize = 4
   });
 
   const allAccounts = computed(() => [...accounts()]);
-  // 获取所有账户类型
+  // 获取所有账户类型（排除虚账户）
   const accountTypes = computed(() => {
-    const types = new Set(allAccounts.value.map(account => account.type));
+    const types = new Set(allAccounts.value.filter(account => !account.isVirtual).map(account => account.type));
     return Array.from(types);
   });
 
-  // 获取所有币种
+  // 获取所有币种（排除虚账户）
   const currencies = computed(() => {
     const currencies = new Set(
-      allAccounts.value.map(account => account.currency?.code).filter(Boolean),
+      allAccounts.value.filter(account => !account.isVirtual).map(account => account.currency?.code).filter(Boolean),
     );
     return Array.from(currencies);
   });
-  // 计算统计数据
+  // 计算统计数据（排除虚账户）
   const activeAccounts = computed(
-    () => allAccounts.value.filter(account => account.isActive).length,
+    () => allAccounts.value.filter(account => account.isActive && !account.isVirtual).length,
   );
   const inactiveAccounts = computed(
-    () => allAccounts.value.filter(account => !account.isActive).length,
+    () => allAccounts.value.filter(account => !account.isActive && !account.isVirtual).length,
   );
 
   // 过滤后的账户
   const filteredAccounts = computed(() => {
     let filtered = allAccounts.value;
+
+    // 首先排除虚账户
+    filtered = filtered.filter(account => !account.isVirtual);
 
     // 状态过滤
     if (filters.value.status === 'active') {
