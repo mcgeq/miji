@@ -33,7 +33,6 @@ declare module 'vue' {
     LucideBedDouble: typeof import('lucide-vue-next')['BedDouble']
     LucideBell: typeof import('lucide-vue-next')['Bell']
     LucideBook: typeof import('lucide-vue-next')['Book']
-    LucideCalculator: typeof import('lucide-vue-next')['Calculator']
     LucideCalendar: typeof import('lucide-vue-next')['Calendar']
     LucideCalendarCheck: typeof import('lucide-vue-next')['CalendarCheck']
     LucideCalendarClock: typeof import('lucide-vue-next')['CalendarClock']

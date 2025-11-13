@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n';
 import { CURRENCY_CNY } from '@/constants/moneyConst';
 import { MoneyDb } from '@/services/money/money';
 import { DateUtils } from '@/utils/date';
@@ -6,8 +7,7 @@ import { Lg } from '@/utils/debugLog';
 import { toast } from '@/utils/toast';
 import { uuid } from '@/utils/uuid';
 import type { Currency } from '@/schema/common';
-import type { FamilyLedger } from '@/schema/money';
-import type { MemberUserRole } from '@/schema/userRole';
+import type { FamilyLedger, FamilyMember } from '@/schema/money';
 
 interface Props {
   ledger?: FamilyLedger | null;
@@ -44,19 +44,24 @@ const familyLedger = props.ledger || {
   name: '',
   description: '',
   baseCurrency: CURRENCY_CNY,
-  members: [] as Array<{
-    serialNum: string;
-    name: string;
-    role: MemberUserRole;
-    isPrimary: boolean;
-    permissions: string;
-    createdAt: string;
-    updated: string;
-  }>,
+  members: [] as FamilyMember[],
   accounts: '',
   transactions: '',
   budgets: '',
   auditLogs: '',
+  ledgerType: 'FAMILY' as const,
+  settlementCycle: 'MONTHLY' as const,
+  autoSettlement: false,
+  settlementDay: 1,
+  defaultSplitRule: null,
+  totalIncome: 0,
+  totalExpense: 0,
+  sharedExpense: 0,
+  personalExpense: 0,
+  pendingSettlement: 0,
+  memberCount: 0,
+  activeTransactionCount: 0,
+  lastSettlementAt: null,
   createdAt: '',
   updatedAt: '',
 };
@@ -72,6 +77,19 @@ const form = ref<FamilyLedger>({
   transactions: familyLedger.transactions,
   budgets: familyLedger.budgets,
   auditLogs: familyLedger.auditLogs,
+  ledgerType: familyLedger.ledgerType,
+  settlementCycle: familyLedger.settlementCycle,
+  autoSettlement: familyLedger.autoSettlement,
+  settlementDay: familyLedger.settlementDay,
+  defaultSplitRule: familyLedger.defaultSplitRule,
+  totalIncome: familyLedger.totalIncome,
+  totalExpense: familyLedger.totalExpense,
+  sharedExpense: familyLedger.sharedExpense,
+  personalExpense: familyLedger.personalExpense,
+  pendingSettlement: familyLedger.pendingSettlement,
+  memberCount: familyLedger.memberCount,
+  activeTransactionCount: familyLedger.activeTransactionCount,
+  lastSettlementAt: familyLedger.lastSettlementAt,
   createdAt: familyLedger.createdAt,
   updatedAt: familyLedger.updatedAt,
 });
@@ -99,13 +117,23 @@ function updateCurrencyInfo() {
 
 // 添加成员
 function addMember() {
-  const newMember = {
+  const newMember: FamilyMember = {
     serialNum: `temp_${Date.now()}`, // 临时ID，保存时会由后端生成
     name: '',
     role: 'Member' as const,
     isPrimary: form.value.members.length === 0, // 第一个成员默认为主要成员
     permissions: '',
+    userSerialNum: null,
+    avatar: null,
+    colorTag: null,
+    totalPaid: 0,
+    totalOwed: 0,
+    netBalance: 0,
+    transactionCount: 0,
+    splitCount: 0,
+    lastActiveAt: null,
     createdAt: new Date().toISOString(),
+    updatedAt: null,
   };
   form.value.members.push(newMember);
 }
@@ -189,6 +217,19 @@ function initializeForm() {
       transactions: props.ledger.transactions || '',
       budgets: props.ledger.budgets || '',
       auditLogs: props.ledger.auditLogs || '',
+      ledgerType: props.ledger.ledgerType || 'FAMILY',
+      settlementCycle: props.ledger.settlementCycle || 'MONTHLY',
+      autoSettlement: props.ledger.autoSettlement || false,
+      settlementDay: props.ledger.settlementDay || 1,
+      defaultSplitRule: props.ledger.defaultSplitRule || null,
+      totalIncome: props.ledger.totalIncome || 0,
+      totalExpense: props.ledger.totalExpense || 0,
+      sharedExpense: props.ledger.sharedExpense || 0,
+      personalExpense: props.ledger.personalExpense || 0,
+      pendingSettlement: props.ledger.pendingSettlement || 0,
+      memberCount: props.ledger.memberCount || 0,
+      activeTransactionCount: props.ledger.activeTransactionCount || 0,
+      lastSettlementAt: props.ledger.lastSettlementAt || null,
       createdAt: props.ledger.createdAt || '',
       updatedAt: props.ledger.updatedAt || '',
     };
@@ -204,6 +245,19 @@ function initializeForm() {
       budgets: '',
       transactions: '',
       auditLogs: '',
+      ledgerType: 'FAMILY',
+      settlementCycle: 'MONTHLY',
+      autoSettlement: false,
+      settlementDay: 1,
+      defaultSplitRule: null,
+      totalIncome: 0,
+      totalExpense: 0,
+      sharedExpense: 0,
+      personalExpense: 0,
+      pendingSettlement: 0,
+      memberCount: 0,
+      activeTransactionCount: 0,
+      lastSettlementAt: null,
       createdAt: '',
       updatedAt: '',
     };
