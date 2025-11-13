@@ -125,26 +125,39 @@ impl MigrationTrait for Migration {
                             .on_delete(ForeignKeyAction::Cascade)
                             .on_update(ForeignKeyAction::Cascade),
                     )
-                    .index(
-                        Index::create()
-                            .name("idx_split_rules_family_ledger")
-                            .table(SplitRules::Table)
-                            .col(SplitRules::FamilyLedgerSerialNum),
-                    )
-                    .index(
-                        Index::create()
-                            .name("idx_split_rules_category")
-                            .table(SplitRules::Table)
-                            .col(SplitRules::Category)
-                            .col(SplitRules::SubCategory),
-                    )
-                    .index(
-                        Index::create()
-                            .name("idx_split_rules_template")
-                            .table(SplitRules::Table)
-                            .col(SplitRules::IsTemplate)
-                            .col(SplitRules::IsActive),
-                    )
+                    .to_owned(),
+            )
+            .await?;
+
+        // 创建索引
+        manager
+            .create_index(
+                Index::create()
+                    .name("idx_split_rules_family_ledger")
+                    .table(SplitRules::Table)
+                    .col(SplitRules::FamilyLedgerSerialNum)
+                    .to_owned(),
+            )
+            .await?;
+
+        manager
+            .create_index(
+                Index::create()
+                    .name("idx_split_rules_category")
+                    .table(SplitRules::Table)
+                    .col(SplitRules::Category)
+                    .col(SplitRules::SubCategory)
+                    .to_owned(),
+            )
+            .await?;
+
+        manager
+            .create_index(
+                Index::create()
+                    .name("idx_split_rules_template")
+                    .table(SplitRules::Table)
+                    .col(SplitRules::IsTemplate)
+                    .col(SplitRules::IsActive)
                     .to_owned(),
             )
             .await?;

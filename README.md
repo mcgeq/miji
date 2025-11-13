@@ -26,6 +26,7 @@ Built with **Tauri 2**, **Vue 3**, and **Rust**, Miji combines the performance o
 - **Transaction Tracking** - Record income, expenses, and transfers with categories
 - **Budget Planning** - Set and monitor budgets with spending alerts
 - **Bill Reminders** - Never miss a payment with recurring reminders
+- **Family Ledger** - Shared family accounting with member management and expense splitting
 - **Statistics & Charts** - Visualize your financial data with ECharts
 
 ### 📝 Todo & Project Management
@@ -201,6 +202,9 @@ miji/
 │   │   │   ├── budget-store.ts
 │   │   │   ├── reminder-store.ts
 │   │   │   ├── category-store.ts
+│   │   │   ├── family-ledger-store.ts
+│   │   │   ├── family-member-store.ts
+│   │   │   ├── family-split-store.ts
 │   │   │   └── money-errors.ts
 │   │   ├── periodStore.ts      # Health/period store
 │   │   ├── todoStore.ts        # Todo store
@@ -334,6 +338,7 @@ members = [
 - **Schema**:
   - Users & authentication
   - Accounts, transactions, budgets, categories
+  - Family ledgers, members, split rules, debt relations
   - Todos, projects, tags
   - Health records (periods, daily records)
   - System settings

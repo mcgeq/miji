@@ -16,6 +16,7 @@ use crate::{
         categories::{Category, CategoryCreate, CategoryUpdate},
         currency::{CreateCurrencyRequest, CurrencyResponse, UpdateCurrencyRequest},
         debt_relations::{DebtGraph, DebtRelationResponse, DebtStats, MemberDebtSummary},
+        family_ledger::{FamilyLedgerCreate, FamilyLedgerResponse, FamilyLedgerUpdate, FamilyLedgerStats},
         family_member::{FamilyMemberCreate, FamilyMemberResponse, FamilyMemberUpdate},
         installment::{
             InstallmentCalculationRequest, InstallmentCalculationResponse, InstallmentPlanResponse,
@@ -40,6 +41,7 @@ use crate::{
         categories::{CategoryFilter, get_category_service},
         currency::{CurrencyFilter, get_currency_service},
         debt_relations::DebtRelationsService,
+        family_ledger::get_family_ledger_service,
         family_member::get_family_member_service,
         family_statistics::FamilyStatisticsService,
         installment::get_installment_service,
@@ -1764,3 +1766,95 @@ pub async fn family_statistics_debt_analysis(
             .await,
     ))
 }
+
+// ============================================================================
+// start 家庭账本相关
+// ============================================================================
+
+/// 获取家庭账本列表
+#[tauri::command]
+pub async fn family_ledger_list(
+    state: State<'_, AppState>,
+) -> Result<ApiResponse<Vec<FamilyLedgerResponse>>, String> {
+    let service = get_family_ledger_service();
+    Ok(ApiResponse::from_result(
+        service
+            .family_ledger_list(&state.db)
+            .await
+            .map(|models| models.into_iter().map(FamilyLedgerResponse::from).collect()),
+    ))
+}
+
+/// 获取家庭账本详情
+#[tauri::command]
+pub async fn family_ledger_get(
+    state: State<'_, AppState>,
+    serial_num: String,
+) -> Result<ApiResponse<Option<FamilyLedgerResponse>>, String> {
+    let service = get_family_ledger_service();
+    Ok(ApiResponse::from_result(
+        service
+            .get_by_id(&state.db, serial_num)
+            .await
+            .map(|model| model.map(FamilyLedgerResponse::from)),
+    ))
+}
+
+/// 创建家庭账本
+#[tauri::command]
+pub async fn family_ledger_create(
+    state: State<'_, AppState>,
+    data: FamilyLedgerCreate,
+) -> Result<ApiResponse<FamilyLedgerResponse>, String> {
+    let service = get_family_ledger_service();
+    Ok(ApiResponse::from_result(
+        service
+            .create(&state.db, data)
+            .await
+            .map(FamilyLedgerResponse::from),
+    ))
+}
+
+/// 更新家庭账本
+#[tauri::command]
+pub async fn family_ledger_update(
+    state: State<'_, AppState>,
+    serial_num: String,
+    data: FamilyLedgerUpdate,
+) -> Result<ApiResponse<FamilyLedgerResponse>, String> {
+    let service = get_family_ledger_service();
+    Ok(ApiResponse::from_result(
+        service
+            .update(&state.db, serial_num, data)
+            .await
+            .map(FamilyLedgerResponse::from),
+    ))
+}
+
+/// 删除家庭账本
+#[tauri::command]
+pub async fn family_ledger_delete(
+    state: State<'_, AppState>,
+    serial_num: String,
+) -> Result<ApiResponse<()>, String> {
+    let service = get_family_ledger_service();
+    Ok(ApiResponse::from_result(
+        service.delete(&state.db, serial_num).await,
+    ))
+}
+
+/// 获取家庭账本统计信息
+#[tauri::command]
+pub async fn family_ledger_stats(
+    state: State<'_, AppState>,
+    serial_num: String,
+) -> Result<ApiResponse<FamilyLedgerStats>, String> {
+    let service = get_family_ledger_service();
+    Ok(ApiResponse::from_result(
+        service.get_stats(&state.db, serial_num).await,
+    ))
+}
+
+// ============================================================================
+// end 家庭账本相关
+// ============================================================================

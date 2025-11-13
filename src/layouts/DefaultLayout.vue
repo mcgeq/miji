@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { BarChart3, CircleCheckBig, Droplet, FolderDot, HandCoins, Home, Settings, Tags } from 'lucide-vue-next';
+import { BarChart3, CircleCheckBig, Droplet, FolderDot, HandCoins, Home, Settings, Tags, Users } from 'lucide-vue-next';
 import MobileBottomNav from '@/components/common/MobileBottomNav.vue';
 import Sidebar from '@/components/common/Sidebar.vue';
 import { useAuthStore } from '@/stores/auth';
@@ -15,6 +15,7 @@ const menuItems = [
   { name: 'home', title: 'Home', icon: Home, path: '/' },
   { name: 'todos', title: 'Todo', icon: CircleCheckBig, path: '/todos' },
   { name: 'money', title: 'Money', icon: HandCoins, path: '/money' },
+  { name: 'family-ledger', title: 'Family Ledger', icon: Users, path: '/family-ledger' },
   { name: 'transaction-stats', title: 'Statistics', icon: BarChart3, path: '/transaction-stats' },
   { name: 'health-period', title: 'Period', icon: Droplet, path: '/health/period' },
   { name: 'tags', title: 'Tag', icon: Tags, path: '/tags' },

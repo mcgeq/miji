@@ -3,11 +3,10 @@ import { CURRENCY_CNY } from '@/constants/moneyConst';
 import { MoneyDb } from '@/services/money/money';
 import { DateUtils } from '@/utils/date';
 import { Lg } from '@/utils/debugLog';
-import { uuid } from '@/utils/uuid';
 import { getRoleName } from '../utils/family';
 import MemberModal from './MemberModal.vue';
 import type { Currency } from '@/schema/common';
-import type { FamilyLedger, FamilyMember } from '@/schema/money';
+import type { FamilyLedger, FamilyLedgerCreate, FamilyMember } from '@/schema/money';
 
 interface Props {
   ledger: FamilyLedger | null;
@@ -15,7 +14,7 @@ interface Props {
 
 const props = defineProps<Props>();
 const emit = defineEmits(['close', 'save']);
-const { t } = useI18n();
+const { t, te } = useI18n();
 
 const currencies = ref<Currency[]>([]);
 const showMemberModal = ref(false);
@@ -35,6 +34,17 @@ async function loadCurrencies() {
 // Call loadCurrencies on component setup
 loadCurrencies();
 
+// 安全获取货币显示名称
+function getCurrencyDisplayName(currencyCode: string): string {
+  const key = `currency.${currencyCode}`;
+  // 使用 te() 方法检查翻译键是否存在
+  if (te(key)) {
+    return t(key);
+  }
+  // 如果翻译不存在，返回货币代码本身
+  return currencyCode;
+}
+
 const defaultLedger: FamilyLedger = {
   name: '',
   serialNum: '',
@@ -45,6 +55,20 @@ const defaultLedger: FamilyLedger = {
   transactions: '[]',
   budgets: '[]',
   auditLogs: '[]',
+  // 新增字段
+  ledgerType: 'FAMILY',
+  settlementCycle: 'MONTHLY',
+  autoSettlement: false,
+  settlementDay: 1,
+  defaultSplitRule: null,
+  totalIncome: 0,
+  totalExpense: 0,
+  sharedExpense: 0,
+  personalExpense: 0,
+  pendingSettlement: 0,
+  memberCount: 0,
+  activeTransactionCount: 0,
+  lastSettlementAt: null,
   createdAt: DateUtils.getLocalISODateTimeWithOffset(),
   updatedAt: null,
 };
@@ -86,11 +110,20 @@ function closeModal() {
 }
 
 function saveLedger() {
-  const ledgerData: FamilyLedger = {
-    ...form,
-    serialNum: props.ledger?.serialNum || uuid(38),
-    createdAt: props.ledger?.createdAt || DateUtils.getLocalISODateTimeWithOffset(),
-    updatedAt: DateUtils.getLocalISODateTimeWithOffset(),
+  // 构建符合后端API期望的数据格式
+  const ledgerData: FamilyLedgerCreate = {
+    name: form.name,
+    description: form.description,
+    baseCurrency: form.baseCurrency.code, // 只发送货币代码
+    members: form.members,
+    accounts: form.accounts,
+    transactions: form.transactions,
+    budgets: form.budgets,
+    ledgerType: form.ledgerType,
+    settlementCycle: form.settlementCycle,
+    autoSettlement: form.autoSettlement,
+    settlementDay: form.settlementDay,
+    defaultSplitRule: form.defaultSplitRule,
   };
   emit('save', ledgerData);
 }
@@ -133,12 +166,73 @@ watch(
           </div>
 
           <div class="form-row">
+            <label class="form-label">账本类型</label>
+            <select v-model="form.ledgerType" required class="modal-input-select form-input-2-3">
+              <option value="FAMILY">
+                家庭账本
+              </option>
+              <option value="SHARED">
+                共享账本
+              </option>
+              <option value="PROJECT">
+                项目账本
+              </option>
+            </select>
+          </div>
+
+          <div class="form-row">
             <label class="form-label">基础币种</label>
             <select v-model="form.baseCurrency.code" required class="modal-input-select form-input-2-3">
               <option v-for="currency in currencies" :key="currency.code" :value="currency.code">
-                {{ t(currency.code) }} ({{ currency.code }})
+                {{ getCurrencyDisplayName(currency.code) }} ({{ currency.code }})
               </option>
             </select>
+          </div>
+        </div>
+
+        <!-- 结算设置 -->
+        <div class="form-section">
+          <h4 class="section-title">
+            结算设置
+          </h4>
+
+          <div class="form-row">
+            <label class="form-label">结算周期</label>
+            <select v-model="form.settlementCycle" class="modal-input-select form-input-2-3">
+              <option value="WEEKLY">
+                每周
+              </option>
+              <option value="MONTHLY">
+                每月
+              </option>
+              <option value="QUARTERLY">
+                每季度
+              </option>
+              <option value="YEARLY">
+                每年
+              </option>
+              <option value="MANUAL">
+                手动结算
+              </option>
+            </select>
+          </div>
+
+          <div class="form-row">
+            <label class="form-label">结算日</label>
+            <input
+              v-model.number="form.settlementDay" type="number" min="1" max="31"
+              class="modal-input-select form-input-2-3" placeholder="每月几号结算"
+            >
+          </div>
+
+          <div class="form-row">
+            <label class="form-label">自动结算</label>
+            <div class="form-input-2-3">
+              <label class="checkbox-label">
+                <input v-model="form.autoSettlement" type="checkbox" class="checkbox-input">
+                <span class="checkbox-text">启用自动结算</span>
+              </label>
+            </div>
           </div>
         </div>
 
@@ -250,6 +344,33 @@ watch(
 
 .form-input-2-3 {
   width: 66.666667%;
+}
+
+.section-title {
+  font-size: 1rem;
+  color: #374151;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+
+.checkbox-input {
+  width: 1rem;
+  height: 1rem;
+  accent-color: #3b82f6;
+}
+
+.checkbox-text {
+  font-size: 0.875rem;
+  color: #374151;
 }
 
 /* 成员管理样式 */

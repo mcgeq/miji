@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { DateUtils } from '@/utils/date';
-import { getRoleName } from '../utils/family';
 import type { FamilyLedger } from '@/schema/money';
 
 interface Props {
@@ -15,8 +14,6 @@ const emit = defineEmits<{
   edit: [ledger: FamilyLedger];
   delete: [serialNum: string];
 }>();
-
-const { t } = useI18n();
 
 // 这些函数需要根据实际的数据结构来解析
 function getAccountCount(accounts: string): number {
@@ -65,12 +62,12 @@ function getBudgetCount(budgets: string): number {
         <div class="ledger-header">
           <div class="ledger-info">
             <h3 class="ledger-title">
-              {{ ledger.description }}
+              {{ ledger.name || ledger.description || '未命名账本' }}
             </h3>
             <div class="ledger-meta">
-              <span>基础币种: {{ t(ledger.baseCurrency.code) }}</span>
+              <span>基础币种: {{ ledger.baseCurrency }}</span>
               <span class="meta-separator">|</span>
-              <span>{{ ledger.members.length }} 位成员</span>
+              <span>{{ ledger.memberCount || 0 }} 位成员</span>
             </div>
           </div>
           <!-- 操作按钮 -->
@@ -93,20 +90,10 @@ function getBudgetCount(budgets: string): number {
             成员
           </div>
           <div class="members-list">
-            <div
-              v-for="member in ledger.members.slice(0, 4)" :key="member.serialNum"
-              class="member-tag"
-            >
-              <LucideCrown v-if="member.isPrimary" class="member-icon member-icon-primary" />
-              <LucideUser v-else class="member-icon member-icon-secondary" />
-              <span>{{ member.name }}</span>
-              <span class="member-role">({{ getRoleName(member.role) }})</span>
-            </div>
-            <div
-              v-if="ledger.members.length > 4"
-              class="member-tag member-tag-more"
-            >
-              +{{ ledger.members.length - 4 }}
+            <!-- 暂时隐藏成员列表，因为数据结构不匹配 -->
+            <div class="member-tag">
+              <LucideUser class="member-icon member-icon-secondary" />
+              <span>{{ ledger.memberCount || 0 }} 位成员</span>
             </div>
           </div>
         </div>
@@ -153,7 +140,9 @@ function getBudgetCount(budgets: string): number {
 <style scoped lang="postcss">
 /* Container */
 .ledger-container {
-  min-height: 12.5rem;
+  width: 100%;
+  min-height: 300px;
+  height: 100%;
 }
 
 /* Loading and Empty States */
@@ -162,7 +151,8 @@ function getBudgetCount(budgets: string): number {
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 12.5rem;
+  height: 100%;
+  min-height: 200px;
 }
 
 .empty-state-container {
@@ -171,7 +161,8 @@ function getBudgetCount(budgets: string): number {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  height: 12.5rem;
+  height: 100%;
+  min-height: 200px;
 }
 
 .empty-state-icon {
@@ -188,7 +179,8 @@ function getBudgetCount(budgets: string): number {
 .ledger-grid {
   gap: 1.25rem;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  width: 100%;
 }
 
 /* Ledger Card */
@@ -356,5 +348,62 @@ function getBudgetCount(budgets: string): number {
 .created-time-text {
   font-size: 0.75rem;
   color: #6b7280;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .ledger-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .ledger-card {
+    padding: 1rem;
+  }
+
+  .ledger-title {
+    font-size: 1rem;
+  }
+
+  .ledger-meta {
+    font-size: 0.8rem;
+  }
+
+  .stats-section {
+    gap: 0.5rem;
+  }
+
+  .stat-label {
+    font-size: 0.7rem;
+  }
+
+  .stat-value {
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .ledger-card {
+    padding: 0.75rem;
+  }
+
+  .ledger-header {
+    flex-direction: column;
+    gap: 0.75rem;
+    align-items: flex-start;
+  }
+
+  .ledger-actions {
+    align-self: flex-end;
+  }
+
+  .members-list {
+    gap: 0.375rem;
+  }
+
+  .member-tag {
+    font-size: 0.7rem;
+    padding: 0.2rem 0.4rem;
+  }
 }
 </style>

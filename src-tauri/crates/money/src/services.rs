@@ -10,6 +10,7 @@ pub mod categories;
 pub mod categories_hooks;
 pub mod currency;
 pub mod currency_hooks;
+pub mod family_ledger;
 pub mod family_member;
 pub mod family_member_hooks;
 pub mod split_rules;

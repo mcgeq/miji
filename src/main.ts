@@ -5,6 +5,7 @@ import Toast from 'vue-toastification';
 import z from 'zod';
 import App from './App.vue';
 import { AppBootstrapper } from './bootstrap/app-bootstrapper';
+import { vPermission } from './directives/permission';
 import { initI18n } from './i18n/i18n';
 import router from './router';
 import { i18nErrorMap } from './schema/i18nErrorMap';
@@ -59,6 +60,9 @@ async function main() {
   // 配置国际化
   const i18n = await initI18n();
   app.use(i18n);
+
+  // 注册全局指令
+  app.directive('permission', vPermission);
 
   // 启动应用
   const bootstrapper = new AppBootstrapper();

@@ -8,6 +8,7 @@ use validator::Validate;
 
 /// 分期付款计划创建请求
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+#[serde(rename_all = "camelCase")]
 pub struct InstallmentPlanCreate {
     #[validate(length(equal = 38, message = "serial_num is required"))]
     pub serial_num: String,
@@ -25,12 +26,14 @@ pub struct InstallmentPlanCreate {
 
 /// 分期付款计划更新请求
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+#[serde(rename_all = "camelCase")]
 pub struct InstallmentPlanUpdate {
     pub status: Option<String>,
 }
 
 /// 分期付款计划响应
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct InstallmentPlanResponse {
     pub serial_num: String,
     pub transaction_serial_num: String,
@@ -46,6 +49,7 @@ pub struct InstallmentPlanResponse {
 
 /// 分期付款明细创建请求
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+#[serde(rename_all = "camelCase")]
 pub struct InstallmentDetailCreate {
     #[validate(length(equal = 1, message = "plan_serial_num is required"))]
     pub plan_serial_num: String,
@@ -60,6 +64,7 @@ pub struct InstallmentDetailCreate {
 
 /// 分期付款明细更新请求
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+#[serde(rename_all = "camelCase")]
 pub struct InstallmentDetailUpdate {
     pub status: Option<String>,
     pub paid_date: Option<NaiveDate>,
@@ -69,6 +74,7 @@ pub struct InstallmentDetailUpdate {
 
 /// 分期付款明细响应
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct InstallmentDetailResponse {
     pub serial_num: String,
     pub plan_serial_num: String,

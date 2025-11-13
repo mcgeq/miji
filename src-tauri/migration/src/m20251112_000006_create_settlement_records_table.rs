@@ -144,31 +144,48 @@ impl MigrationTrait for Migration {
                             .on_delete(ForeignKeyAction::SetNull)
                             .on_update(ForeignKeyAction::Cascade),
                     )
-                    .index(
-                        Index::create()
-                            .name("idx_settlement_records_family_ledger")
-                            .table(SettlementRecords::Table)
-                            .col(SettlementRecords::FamilyLedgerSerialNum),
-                    )
-                    .index(
-                        Index::create()
-                            .name("idx_settlement_records_period")
-                            .table(SettlementRecords::Table)
-                            .col(SettlementRecords::PeriodStart)
-                            .col(SettlementRecords::PeriodEnd),
-                    )
-                    .index(
-                        Index::create()
-                            .name("idx_settlement_records_status")
-                            .table(SettlementRecords::Table)
-                            .col(SettlementRecords::Status),
-                    )
-                    .index(
-                        Index::create()
-                            .name("idx_settlement_records_type")
-                            .table(SettlementRecords::Table)
-                            .col(SettlementRecords::SettlementType),
-                    )
+                    .to_owned(),
+            )
+            .await?;
+
+        // 创建索引
+        manager
+            .create_index(
+                Index::create()
+                    .name("idx_settlement_records_family_ledger")
+                    .table(SettlementRecords::Table)
+                    .col(SettlementRecords::FamilyLedgerSerialNum)
+                    .to_owned(),
+            )
+            .await?;
+
+        manager
+            .create_index(
+                Index::create()
+                    .name("idx_settlement_records_period")
+                    .table(SettlementRecords::Table)
+                    .col(SettlementRecords::PeriodStart)
+                    .col(SettlementRecords::PeriodEnd)
+                    .to_owned(),
+            )
+            .await?;
+
+        manager
+            .create_index(
+                Index::create()
+                    .name("idx_settlement_records_status")
+                    .table(SettlementRecords::Table)
+                    .col(SettlementRecords::Status)
+                    .to_owned(),
+            )
+            .await?;
+
+        manager
+            .create_index(
+                Index::create()
+                    .name("idx_settlement_records_type")
+                    .table(SettlementRecords::Table)
+                    .col(SettlementRecords::SettlementType)
                     .to_owned(),
             )
             .await?;

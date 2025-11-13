@@ -110,39 +110,60 @@ impl MigrationTrait for Migration {
                             .on_delete(ForeignKeyAction::Cascade)
                             .on_update(ForeignKeyAction::Cascade),
                     )
-                    .index(
-                        Index::create()
-                            .name("idx_debt_relations_family_ledger")
-                            .table(DebtRelations::Table)
-                            .col(DebtRelations::FamilyLedgerSerialNum),
-                    )
-                    .index(
-                        Index::create()
-                            .name("idx_debt_relations_creditor")
-                            .table(DebtRelations::Table)
-                            .col(DebtRelations::CreditorMemberSerialNum),
-                    )
-                    .index(
-                        Index::create()
-                            .name("idx_debt_relations_debtor")
-                            .table(DebtRelations::Table)
-                            .col(DebtRelations::DebtorMemberSerialNum),
-                    )
-                    .index(
-                        Index::create()
-                            .name("idx_debt_relations_status")
-                            .table(DebtRelations::Table)
-                            .col(DebtRelations::Status),
-                    )
-                    .index(
-                        Index::create()
-                            .name("idx_debt_relations_unique_pair")
-                            .table(DebtRelations::Table)
-                            .col(DebtRelations::FamilyLedgerSerialNum)
-                            .col(DebtRelations::CreditorMemberSerialNum)
-                            .col(DebtRelations::DebtorMemberSerialNum)
-                            .unique(),
-                    )
+                    .to_owned(),
+            )
+            .await?;
+
+        // 创建索引
+        manager
+            .create_index(
+                Index::create()
+                    .name("idx_debt_relations_family_ledger")
+                    .table(DebtRelations::Table)
+                    .col(DebtRelations::FamilyLedgerSerialNum)
+                    .to_owned(),
+            )
+            .await?;
+
+        manager
+            .create_index(
+                Index::create()
+                    .name("idx_debt_relations_creditor")
+                    .table(DebtRelations::Table)
+                    .col(DebtRelations::CreditorMemberSerialNum)
+                    .to_owned(),
+            )
+            .await?;
+
+        manager
+            .create_index(
+                Index::create()
+                    .name("idx_debt_relations_debtor")
+                    .table(DebtRelations::Table)
+                    .col(DebtRelations::DebtorMemberSerialNum)
+                    .to_owned(),
+            )
+            .await?;
+
+        manager
+            .create_index(
+                Index::create()
+                    .name("idx_debt_relations_status")
+                    .table(DebtRelations::Table)
+                    .col(DebtRelations::Status)
+                    .to_owned(),
+            )
+            .await?;
+
+        manager
+            .create_index(
+                Index::create()
+                    .name("idx_debt_relations_unique_pair")
+                    .table(DebtRelations::Table)
+                    .col(DebtRelations::FamilyLedgerSerialNum)
+                    .col(DebtRelations::CreditorMemberSerialNum)
+                    .col(DebtRelations::DebtorMemberSerialNum)
+                    .unique()
                     .to_owned(),
             )
             .await?;

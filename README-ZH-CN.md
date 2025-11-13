@@ -1,4 +1,4 @@
-# Miji (米记)
+# 米记 (Miji)
 
 <div align="center">
 
@@ -7,73 +7,74 @@
 [![Vue](https://img.shields.io/badge/Vue-3.5-green.svg)](https://vuejs.org/)
 [![Rust](https://img.shields.io/badge/Rust-2024-orange.svg)](https://www.rust-lang.org/)
 
-一个模块化、跨平台的生产力和健康管理应用，使用 Tauri 和 Rust 构建
+一个基于 Tauri 和 Rust 构建的模块化、跨平台生产力和健康管理应用程序。
 
-[English](./README.md) | [中文](./README.zh-CN.md)
+[English](./README.md) | [中文](./README-ZH-CN.md)
 
 </div>
 
 ## 📖 简介
 
-Miji（米记）是一款现代化的、注重隐私的桌面应用程序，用于管理您的日常生活。追踪财务、监测健康、组织任务和管理项目 - 一切尽在这款美观的跨平台应用中。
+米记 (Miji) 是一个现代化、注重隐私的桌面应用程序，用于管理您的日常生活。追踪财务、监控健康、组织任务和管理项目 - 所有功能都集成在一个美观的跨平台应用程序中。
 
-基于 **Tauri 2**、**Vue 3** 和 **Rust** 构建，Miji 结合了原生应用的性能和现代 Web 技术的灵活性。所有数据都存储在本地 SQLite 中，确保完全的隐私和离线访问。
+使用 **Tauri 2**、**Vue 3** 和 **Rust** 构建，米记结合了原生应用程序的性能和现代 Web 技术的灵活性。所有数据都存储在本地 SQLite 中，确保完全的隐私保护和离线访问。
 
 ## ✨ 功能特性
 
 ### 💰 财务管理
-- **多账户支持** - 管理多个账户，支持不同货币
-- **交易追踪** - 记录收入、支出和转账，包含详细分类
-- **预算规划** - 设置和监控预算，支持超支提醒
-- **账单提醒** - 永不错过任何付款，支持周期性提醒
+- **多账户支持** - 管理多个不同货币的账户
+- **交易追踪** - 记录收入、支出和转账，支持分类
+- **预算规划** - 设置和监控预算，支持支出提醒
+- **账单提醒** - 定期提醒，永不错过付款
+- **家庭账本** - 共享家庭记账，支持成员管理和费用分摊
 - **统计图表** - 使用 ECharts 可视化您的财务数据
 
-### 📝 待办事项与项目管理
-- **任务组织** - 创建、组织和追踪任务，支持优先级
-- **项目层级** - 管理包含嵌套任务的项目
-- **标签分类** - 灵活的标签系统，便于组织
-- **清单列表** - 将复杂任务分解为更小的步骤
+### 📝 待办事项和项目管理
+- **任务组织** - 创建、组织和追踪带优先级的任务
+- **项目层次** - 管理带嵌套任务的项目
+- **标签分类** - 灵活的标签系统，更好地组织内容
+- **检查清单** - 将复杂任务分解为更小的步骤
 
 ### 🏥 健康追踪
-- **经期追踪** - 使用日历视图监测月经周期
+- **生理期追踪** - 使用日历视图监控月经周期
 - **每日健康记录** - 追踪各种健康指标
-- **健康统计** - 可视化趋势和规律
+- **健康统计** - 可视化趋势和模式
 
 ### 🎨 用户体验
-- **现代 UI** - 美观、响应式界面，流畅动画
-- **深色模式** - 护眼模式，支持自动主题切换
-- **多语言** - 全面支持中文和英文
-- **键盘快捷键** - 通过快捷键提升生产力
+- **现代化界面** - 美观、响应式界面，流畅动画
+- **深色模式** - 护眼的深色主题，支持自动切换
+- **多语言** - 完全支持英文和中文
+- **键盘快捷键** - 使用热键提升生产力
 
-### 🔒 隐私与安全
+### 🔒 隐私和安全
 - **本地优先** - 所有数据本地存储，无云同步
-- **安全认证** - 基于 JWT 的认证，Argon2 密码哈希
+- **安全认证** - 基于 JWT 的认证，使用 Argon2 密码哈希
 - **数据加密** - 敏感数据静态加密
-- **离线访问** - 完全支持离线工作
+- **离线访问** - 完全离线工作
 
 ## 🛠️ 技术栈
 
 ### 前端
-- **框架**: Vue 3.5 + Composition API (`<script setup>`)
+- **框架**: Vue 3.5 with Composition API (`<script setup>`)
 - **语言**: TypeScript 5.8 (严格模式)
 - **构建工具**: Vite 7
-- **路由**: Vue Router 4 + unplugin-vue-router (自动导入)
+- **路由**: Vue Router 4 with unplugin-vue-router (自动导入)
 - **状态管理**: Pinia 3 (模块化 stores)
 - **表单验证**: Vee-Validate + Zod
-- **UI 组件**: 自定义组件 + Lucide 图标
+- **UI 组件**: 自定义组件配合 Lucide 图标
 - **图表**: Vue ECharts
 - **日期处理**: date-fns 4
 - **国际化**: Vue I18n 11
-- **工具库**: VueUse、es-toolkit
+- **工具库**: VueUse, es-toolkit
 
 ### 后端
 - **框架**: Tauri 2.5
 - **语言**: Rust 2024 Edition
-- **数据库**: SQLite 3 + SeaORM 1.1
+- **数据库**: SQLite 3 with SeaORM 1.1
 - **认证**: JWT (jsonwebtoken) + Argon2 密码哈希
 - **日志**: tracing + tauri-plugin-log
-- **后台任务**: Tokio 异步运行时 + 定时任务
-- **插件**: Auto-start、Dialog、FS、Notification、OS、SQL
+- **后台任务**: Tokio 异步运行时，支持定时任务
+- **插件**: Auto-start, Dialog, FS, Notification, OS, SQL
 
 ### 开发工具
 - **代码检查**: ESLint 9 (@antfu/eslint-config) + Biome 2.2
@@ -86,24 +87,24 @@ Miji（米记）是一款现代化的、注重隐私的桌面应用程序，用�
 
 ## 📋 环境要求
 
-开始之前，请确保安装以下软件：
+开始之前，请确保已安装以下软件：
 
-- **Node.js**: v20 或更高版本（推荐 v22）
-- **包管理器**: npm、yarn、pnpm 或 bun
-- **Rust**: 1.70 或更高版本（包含 cargo）
-- **系统依赖**: 参考 [Tauri 环境要求指南](https://tauri.app/v2/guides/prerequisites/)
+- **Node.js**: v20 或更高版本 (推荐: v22)
+- **包管理器**: npm, yarn, pnpm, 或 bun
+- **Rust**: 1.70 或更高版本 (包含 cargo)
+- **系统依赖**: 遵循 [Tauri 环境要求指南](https://tauri.app/v2/guides/prerequisites/)
 
 ### 平台特定要求
 
 #### Windows
 - Microsoft Visual Studio C++ Build Tools
-- WebView2（Windows 10/11 通常预装）
+- WebView2 (Windows 10/11 通常预装)
 
 #### macOS
 - Xcode Command Line Tools
 
 #### Linux
-- 依赖因发行版而异。参见 [Tauri Linux 设置](https://tauri.app/v2/guides/prerequisites/#linux)
+- 依赖项因发行版而异。参见 [Tauri Linux 设置](https://tauri.app/v2/guides/prerequisites/#linux)
 
 ## 🚀 快速开始
 
@@ -124,7 +125,7 @@ Miji（米记）是一款现代化的、注重隐私的桌面应用程序，用�
 
 ### 开发
 
-在开发模式下运行应用：
+在开发模式下运行应用程序：
 
 ```bash
 npm run tauri dev
@@ -135,9 +136,9 @@ bun run tauri dev
 这将：
 1. 启动 Vite 开发服务器 (http://localhost:9428)
 2. 启动 Tauri 应用程序
-3. 启用前后端热重载
+3. 启用前端和后端的热重载
 
-**首次运行**: Rust 后端需要编译，可能需要几分钟时间。
+**首次运行**: Rust 后端将进行编译，可能需要几分钟时间。
 
 ### 构建
 
@@ -149,32 +150,32 @@ npm run tauri build
 bun run tauri build
 ```
 
-编译后的应用程序位于：
+编译后的应用程序将位于：
 - **Windows**: `src-tauri/target/release/bundle/msi/` 或 `nsis/`
 - **macOS**: `src-tauri/target/release/bundle/dmg/` 或 `macos/`
-- **Linux**: `src-tauri/target/release/bundle/deb/`、`appimage/` 或 `rpm/`
+- **Linux**: `src-tauri/target/release/bundle/deb/`, `appimage/`, 或 `rpm/`
 
 ## 📂 项目结构
 
 ```
 miji/
 ├── src/                          # 前端 (Vue 3 + TypeScript)
-│   ├── assets/                  # 静态资源 (CSS、图片)
+│   ├── assets/                  # 静态资源 (CSS, 图片)
 │   ├── bootstrap/               # 应用初始化模块
 │   │   ├── stores.ts           # Pinia store 初始化
 │   │   ├── router.ts           # 路由设置
 │   │   └── schedulers.ts       # 后台任务调度器
 │   ├── components/              # 可复用 Vue 组件
 │   │   └── common/             # 通用 UI 组件
-│   ├── composables/             # Vue 组合式函数
+│   ├── composables/             # Vue 组合式函数 (hooks)
 │   │   ├── useAccountActions.ts
 │   │   ├── useTransactionActions.ts
 │   │   ├── useBudgetActions.ts
 │   │   └── ...
-│   ├── features/                # 功能模块（领域逻辑）
-│   │   ├── auth/               # 认证与用户管理
-│   │   ├── health/             # 经期与健康追踪
-│   │   ├── home/               # 仪表板与首页视图
+│   ├── features/                # 功能模块 (领域逻辑)
+│   │   ├── auth/               # 认证和用户管理
+│   │   ├── health/             # 生理期和健康追踪
+│   │   ├── home/               # 仪表板和主页视图
 │   │   ├── money/              # 财务管理
 │   │   │   ├── components/    # 财务相关组件
 │   │   │   ├── composables/   # 财务相关组合式函数
@@ -188,12 +189,12 @@ miji/
 │   ├── layouts/                 # 布局组件
 │   ├── locales/                 # 翻译文件 (en, zh)
 │   ├── pages/                   # 自动生成的页面路由
-│   ├── router/                  # Vue Router 配置
+│   ├── router/                  # Vue Router 设置
 │   ├── schema/                  # Zod schemas 和 TypeScript 类型
 │   ├── services/                # API 服务层
 │   │   ├── money/              # 财务服务 (MoneyDb)
 │   │   ├── healths/            # 健康服务
-│   │   └── todo.ts             # 待办服务
+│   │   └── todo.ts             # 待办事项服务
 │   ├── stores/                  # Pinia stores (状态管理)
 │   │   ├── money/              # 模块化财务 stores
 │   │   │   ├── account-store.ts
@@ -201,14 +202,17 @@ miji/
 │   │   │   ├── budget-store.ts
 │   │   │   ├── reminder-store.ts
 │   │   │   ├── category-store.ts
+│   │   │   ├── family-ledger-store.ts
+│   │   │   ├── family-member-store.ts
+│   │   │   ├── family-split-store.ts
 │   │   │   └── money-errors.ts
-│   │   ├── periodStore.ts      # 健康/经期 store
-│   │   ├── todoStore.ts        # 待办 store
+│   │   ├── periodStore.ts      # 健康/生理期 store
+│   │   ├── todoStore.ts        # 待办事项 store
 │   │   └── ...
 │   ├── types/                   # TypeScript 类型和接口
 │   ├── utils/                   # 工具函数
 │   ├── App.vue                  # 根组件
-│   └── main.ts                  # 应用入口
+│   └── main.ts                  # 应用程序入口点
 │
 ├── src-tauri/                    # 后端 (Rust + Tauri 2)
 │   ├── crates/                  # 模块化 Rust crates
@@ -217,27 +221,27 @@ miji/
 │   │   │   └── src/lib.rs
 │   │   ├── healths/            # 健康追踪模块
 │   │   ├── money/              # 财务模块
-│   │   └── todos/              # 待办模块
+│   │   └── todos/              # 待办事项模块
 │   ├── common/                  # 共享工具
-│   │   ├── db_utils.rs         # 数据库辅助函数
+│   │   ├── db_utils.rs         # 数据库助手
 │   │   ├── error.rs            # 错误处理
-│   │   └── types.rs            # 公共类型
+│   │   └── types.rs            # 通用类型
 │   ├── entity/                  # SeaORM 数据库实体
 │   ├── migration/               # 数据库迁移
 │   ├── src/                     # 主应用程序
-│   │   ├── commands.rs         # Tauri 命令注册
+│   │   ├── commands.rs         # Tauri 命令注册器
 │   │   ├── lib.rs              # 库根文件
-│   │   ├── main.rs             # 应用入口
+│   │   ├── main.rs             # 应用程序入口
 │   │   └── schedulers.rs       # 后台任务调度器
 │   ├── Cargo.toml              # Rust 依赖
 │   └── tauri.conf.json         # Tauri 配置
 │
 ├── public/                       # 公共静态文件
-├── dist/                         # 构建输出（自动生成）
+├── dist/                         # 构建输出 (生成的)
 ├── package.json                  # Node.js 依赖和脚本
 ├── vite.config.ts               # Vite 配置
 ├── tsconfig.json                # TypeScript 配置
-└── README.md                     # 说明文件
+└── README.md                     # 本文件
 ```
 
 ## 🔧 开发脚本
@@ -245,69 +249,72 @@ miji/
 ```bash
 # 开发
 npm run dev              # 仅启动 Vite 开发服务器
-npm run tauri dev        # 启动完整 Tauri 应用（带热重载）
+npm run tauri dev        # 启动完整的 Tauri 应用，支持热重载
 
 # 构建
 npm run build            # 仅构建前端
-npm run tauri build      # 构建完整 Tauri 应用
+npm run tauri build      # 构建完整的 Tauri 应用
 npm run preview          # 预览生产构建
 
 # 代码质量
 npm run lint             # 运行 ESLint + Biome 检查
-npm run lint:fix         # 自动修复代码问题
+npm run lint:fix         # 自动修复代码检查问题
 npm run format           # 使用 Biome 格式化代码
 
 # 测试
 npm run test             # 运行 Vitest 测试
 
 # Git 和提交
-npm run commit           # 使用 Commitizen 提交（交互式）
+npm run commit           # 使用 Commitizen 提交 (交互式)
 npm run prepare          # 设置 Husky git 钩子
 
-# Tauri 相关
+# Tauri 特定
 npm run tauri            # 运行 Tauri CLI 命令
 ```
 
-## 🏗️ 架构设计
+## 🏗️ 架构
 
 ### 前端架构
 
-Miji 采用**模块化、基于特性的架构**，以提高可维护性和可扩展性：
+米记遵循**模块化、基于功能的架构**，以确保可维护性和可扩展性：
 
 #### 核心原则
-1. **功能模块**: 每个领域（财务、健康、待办）都是独立的
-2. **组合式 API**: 利用 Vue 3 的组合式 API 实现逻辑复用
-3. **类型安全**: 严格的 TypeScript + Zod schema 验证
-4. **模块化 Stores**: Pinia stores 按领域拆分（非单体）
-5. **服务层**: UI 和数据访问清晰分离
+1. **功能模块**: 每个领域 (money, health, todos) 都是自包含的
+2. **组合式 API**: 利用 Vue 3 的组合式 API 进行逻辑复用
+3. **类型安全**: 严格的 TypeScript 配合 Zod schema 验证
+4. **模块化 Stores**: Pinia stores 按领域拆分 (非单体式)
+5. **服务层**: UI 和数据访问之间的清晰分离
 
 #### 关键模式
-- **Composables**: 可复用逻辑（如 `useAccountActions`、`useFilters`）
-- **Services**: 通过 Tauri 命令直接访问数据库（如 `MoneyDb`）
-- **Stores**: 响应式状态管理，包含 getters 和 actions
-- **Components**: 展示型组件，具有清晰的 props/events
+- **组合式函数**: 可复用逻辑 (如 `useAccountActions`, `useFilters`)
+- **服务**: 通过 Tauri 命令直接访问数据库 (如 `MoneyDb`)
+- **Stores**: 带有 getters 和 actions 的响应式状态管理
+- **组件**: 具有清晰 props/events 的展示组件
 
 #### 最近改进
-- ✅ **Store 重构**: 将单体 `moneyStore` 拆分为 5 个模块化 stores：
+- ✅ **Store 重构**: 将单体式 `moneyStore` 拆分为 5 个模块化 stores：
   - `account-store` (165 行) - 账户管理
   - `transaction-store` (282 行) - 交易和转账
   - `budget-store` (149 行) - 预算追踪
   - `reminder-store` (182 行) - 账单提醒
-  - `category-store` (138 行) - 分类（带缓存）
-- ✅ **错误处理**: 统一的错误处理 `MoneyStoreError`
-- ✅ **性能**: 优化后性能提升约 20%
+  - `category-store` (138 行) - 带缓存的分类
+  - `family-ledger-store` - 家庭账本管理
+  - `family-member-store` - 家庭成员管理
+  - `family-split-store` - 费用分摊管理
+- ✅ **错误处理**: 使用 `MoneyStoreError` 统一错误处理
+- ✅ **性能**: 通过优化 stores 提升约 20% 性能
 - ✅ **类型安全**: 严格模式下 100% TypeScript 覆盖
 
 ### 后端架构
 
-Rust 后端组织为 **workspace**，包含模块化 crates：
+Rust 后端组织为**工作空间**，包含模块化 crates：
 
-#### Workspace 结构
+#### 工作空间结构
 ```rust
 [workspace]
 members = [
-    "crates/auth",      // JWT 认证、用户管理
-    "crates/todos",     // 待办 CRUD
+    "crates/auth",      // JWT 认证，用户管理
+    "crates/todos",     // 待办事项和项目 CRUD
     "crates/money",     // 财务追踪
     "crates/healths",   // 健康记录
 ]
@@ -316,45 +323,46 @@ members = [
 #### 核心组件
 - **Commands**: 暴露给前端的 Tauri IPC 命令
 - **Services**: 业务逻辑层
-- **Entities**: SeaORM 模型（数据库架构）
+- **Entities**: SeaORM 模型 (数据库 schema)
 - **Migrations**: 版本化数据库迁移
-- **Schedulers**: 后台任务（如分期处理）
+- **Schedulers**: 后台任务 (如分期付款处理)
 
 #### 关键特性
 - **异步运行时**: Tokio 用于并发操作
-- **数据库池**: 高效的连接管理
+- **数据库连接池**: 高效的连接管理
 - **错误传播**: 带上下文的自定义错误类型
 - **日志记录**: 使用 `tracing` 的结构化日志
 
 ### 数据库架构
 
-- **数据库**: SQLite 3（基于文件，可移植）
-- **ORM**: SeaORM 1.1（异步、类型安全）
-- **迁移**: 启动时自动运行（通过 `migration` crate）
-- **架构**:
+- **数据库**: SQLite 3 (基于文件，可移植)
+- **ORM**: SeaORM 1.1 (异步，类型安全)
+- **迁移**: 启动时自动运行 (通过 `migration` crate)
+- **Schema**:
   - 用户和认证
   - 账户、交易、预算、分类
-  - 待办、项目、标签
-  - 健康记录（经期、每日记录）
+  - 家庭账本、成员、分摊规则、债务关系
+  - 待办事项、项目、标签
+  - 健康记录 (生理期、每日记录)
   - 系统设置
 
 ### 性能优化
 
 1. **前端**:
-   - 模块化 stores（减少响应式开销）
-   - 智能缓存（CategoryStore: 5 分钟缓存）
-   - 懒加载（按需加载功能）
-   - 虚拟滚动（大列表）
+   - 模块化 stores (减少响应式开销)
+   - 智能缓存 (CategoryStore: 5分钟缓存)
+   - 懒加载 (按需加载功能)
+   - 虚拟滚动 (大列表)
 
 2. **后端**:
    - 连接池
    - 索引数据库查询
-   - 批量操作（批量插入）
+   - 批量操作 (批量插入)
    - 后台任务调度
 
 ## 🌐 国际化
 
-Miji 使用 Vue I18n 支持多语言：
+米记使用 Vue I18n 支持多语言：
 
 - **English** (en-US)
 - **简体中文** (zh-CN)
@@ -370,21 +378,21 @@ src/locales/
 
 1. 创建翻译文件：
    ```bash
-   cp src/locales/zh.json src/locales/ja.json
+   cp src/locales/en.json src/locales/ja.json
    ```
 
-2. 在 `src/i18n/i18n.ts` 中更新配置：
+2. 更新 `src/i18n/i18n.ts` 中的 i18n 配置：
    ```typescript
    import ja from '@/locales/ja.json'
    
    const i18n = createI18n({
      legacy: false,
-     locale: 'zh',
+     locale: 'en',
      messages: { en, zh, ja },
    })
    ```
 
-3. 在设置 UI 中添加语言选项
+3. 添加到设置界面
 
 ### 在组件中使用
 ```vue
@@ -397,11 +405,11 @@ const { t } = useI18n()
 </template>
 ```
 
-## 🔐 安全性
+## 🔐 安全
 
 ### 认证
-- **密码哈希**: Argon2id（内存困难，抗 GPU 破解）
-- **令牌系统**: JWT + RS256（非对称签名）
+- **密码哈希**: Argon2id (内存困难，抗 GPU)
+- **令牌系统**: JWT 配合 RS256 (非对称签名)
 - **会话管理**: 安全的令牌存储和刷新
 - **速率限制**: 登录暴力破解保护
 
@@ -411,20 +419,20 @@ const { t } = useI18n()
 - **加密**: 敏感字段静态加密
 - **访问控制**: 基于用户的数据隔离
 
-### 应用安全
+### 应用程序安全
 - **CSP**: 启用内容安全策略
 - **输入验证**: Zod schemas 验证所有输入
-- **SQL 注入防护**: SeaORM 防止 SQL 注入
-- **XSS 防护**: Vue.js 自动转义模板
+- **SQL 注入**: SeaORM 防止 SQL 注入
+- **XSS 保护**: Vue.js 自动转义模板
 
 ### 隐私
-- **无分析**: 无使用跟踪或遥测
+- **无分析**: 无使用追踪或遥测
 - **无广告**: 完全无广告
-- **开源**: 透明可审计的代码
+- **开源**: 透明且可审计的代码
 
 ## 🤝 贡献
 
-欢迎贡献！请按照以下步骤：
+欢迎贡献！请遵循以下步骤：
 
 ### 设置
 1. **Fork** 仓库
@@ -444,36 +452,36 @@ const { t } = useI18n()
 
 ### 开发
 1. **进行** 更改
-2. **全面测试**：
+2. **彻底** 测试：
    ```bash
    npm run lint
    npm run test
    npm run tauri dev
    ```
-3. **使用 Commitizen 提交**：
+3. **使用** Commitizen 提交：
    ```bash
    npm run commit
    ```
-   （遵循 Gitmoji 规范）
+   (遵循 Gitmoji 约定)
 
 ### 提交
 1. **推送** 到您的 fork：
    ```bash
    git push origin feature/amazing-feature
    ```
-2. **创建** Pull Request
+2. **打开** Pull Request
 3. **等待** 审查
 
 ### 指南
-- 遵循现有代码风格（ESLint + Biome）
+- 遵循现有代码风格 (ESLint + Biome)
 - 为新功能添加测试
-- 必要时更新文档
-- 保持提交原子化和良好描述
-- 使用 Gitmoji 提交信息
+- 如需要请更新文档
+- 保持提交原子化且描述清晰
+- 使用 Gitmoji 进行提交消息
 
 ## 📝 许可证
 
-本项目采用 MIT 许可证 - 详见 [LICENSE](LICENSE) 文件
+本项目采用 MIT 许可证 - 详见 [LICENSE](LICENSE) 文件。
 
 ## 👨‍💻 作者
 
@@ -482,12 +490,12 @@ const { t } = useI18n()
 ## 🙏 致谢
 
 ### 框架和库
-- [Tauri](https://tauri.app/) - 强大的 Rust 驱动框架
+- [Tauri](https://tauri.app/) - 令人惊叹的 Rust 驱动框架
 - [Vue.js](https://vuejs.org/) - 渐进式 JavaScript 框架
 - [Rust](https://www.rust-lang.org/) - 系统编程语言
 - [SeaORM](https://www.sea-ql.org/SeaORM/) - 优雅的异步 ORM
 - [Pinia](https://pinia.vuejs.org/) - 直观的状态管理
-- [Vite](https://vitejs.dev/) - 极速构建工具
+- [Vite](https://vitejs.dev/) - 闪电般快速的构建工具
 
 ### UI 和图标
 - [Lucide](https://lucide.dev/) - 美观的开源图标
@@ -495,15 +503,15 @@ const { t } = useI18n()
 - [VueUse](https://vueuse.org/) - Vue 组合式工具集合
 
 ### 工具
-- [Biome](https://biomejs.dev/) - 快速的格式化和检查工具
+- [Biome](https://biomejs.dev/) - 快速格式化器和检查器
 - [Vitest](https://vitest.dev/) - 极速单元测试框架
 - [TypeScript](https://www.typescriptlang.org/) - 类型化 JavaScript
 
 ### 特别感谢
-感谢所有让这样的项目成为可能的开源贡献者！
+感谢所有使这样的项目成为可能的开源贡献者！
 
 ---
 
 <div align="center">
-Made with ❤️ by mcgeq
+用 ❤️ 制作，作者 mcgeq
 </div>

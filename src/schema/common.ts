@@ -77,6 +77,16 @@ export const DecimalLikeSchema = z
   ])
   .transform(val => (typeof val === 'string' ? Number.parseFloat(val) : val));
 
+// 金额Schema，用于财务计算，支持负数和小数
+export const AmountSchema = z
+  .number()
+  .refine(val => Number.isFinite(val), {
+    message: 'Amount must be a finite number',
+  })
+  .refine(val => Math.abs(val) <= 999999999.99, {
+    message: 'Amount must be within reasonable range',
+  });
+
 export const DateSchema = z.iso.date();
 export const TimesSchema = z.iso.time();
 

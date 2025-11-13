@@ -170,36 +170,57 @@ impl MigrationTrait for Migration {
                             .on_delete(ForeignKeyAction::Cascade)
                             .on_update(ForeignKeyAction::Cascade),
                     )
-                    .index(
-                        Index::create()
-                            .name("idx_split_records_transaction")
-                            .table(SplitRecords::Table)
-                            .col(SplitRecords::TransactionSerialNum),
-                    )
-                    .index(
-                        Index::create()
-                            .name("idx_split_records_payer")
-                            .table(SplitRecords::Table)
-                            .col(SplitRecords::PayerMemberSerialNum),
-                    )
-                    .index(
-                        Index::create()
-                            .name("idx_split_records_owe")
-                            .table(SplitRecords::Table)
-                            .col(SplitRecords::OweMemberSerialNum),
-                    )
-                    .index(
-                        Index::create()
-                            .name("idx_split_records_status")
-                            .table(SplitRecords::Table)
-                            .col(SplitRecords::Status),
-                    )
-                    .index(
-                        Index::create()
-                            .name("idx_split_records_due_date")
-                            .table(SplitRecords::Table)
-                            .col(SplitRecords::DueDate),
-                    )
+                    .to_owned(),
+            )
+            .await?;
+
+        // 创建索引
+        manager
+            .create_index(
+                Index::create()
+                    .name("idx_split_records_transaction")
+                    .table(SplitRecords::Table)
+                    .col(SplitRecords::TransactionSerialNum)
+                    .to_owned(),
+            )
+            .await?;
+
+        manager
+            .create_index(
+                Index::create()
+                    .name("idx_split_records_payer")
+                    .table(SplitRecords::Table)
+                    .col(SplitRecords::PayerMemberSerialNum)
+                    .to_owned(),
+            )
+            .await?;
+
+        manager
+            .create_index(
+                Index::create()
+                    .name("idx_split_records_owe")
+                    .table(SplitRecords::Table)
+                    .col(SplitRecords::OweMemberSerialNum)
+                    .to_owned(),
+            )
+            .await?;
+
+        manager
+            .create_index(
+                Index::create()
+                    .name("idx_split_records_status")
+                    .table(SplitRecords::Table)
+                    .col(SplitRecords::Status)
+                    .to_owned(),
+            )
+            .await?;
+
+        manager
+            .create_index(
+                Index::create()
+                    .name("idx_split_records_due_date")
+                    .table(SplitRecords::Table)
+                    .col(SplitRecords::DueDate)
                     .to_owned(),
             )
             .await?;

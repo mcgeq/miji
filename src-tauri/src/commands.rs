@@ -108,6 +108,12 @@ pub fn init_commands(builder: Builder<Wry>) -> Builder<Wry> {
         money_cmd::sub_category_list,
         money_cmd::sub_category_list_paged,
         money_cmd::family_member_list,
+        money_cmd::family_ledger_list,
+        money_cmd::family_ledger_get,
+        money_cmd::family_ledger_create,
+        money_cmd::family_ledger_update,
+        money_cmd::family_ledger_delete,
+        money_cmd::family_ledger_stats,
         // 健康命令
         health_cmd::period_record_create,
         health_cmd::period_record_update,

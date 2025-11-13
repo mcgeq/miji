@@ -169,13 +169,11 @@ export class FamilyLedgerMapper extends BaseMapper<
 
   async list(): Promise<FamilyLedger[]> {
     try {
-      const result = await invokeCommand<FamilyLedger[]>('family_ledger_list', {
-        filter: {},
-      });
+      const result = await invokeCommand<FamilyLedger[]>('family_ledger_list');
       return result;
-    } catch (_error) {
-      Lg.w('MoneyDb', 'family_ledger_list command not found, returning empty array');
-      return [];
+    } catch (error) {
+      Lg.e('MoneyDb', 'Failed to fetch family ledgers:', error);
+      throw error;
     }
   }
 

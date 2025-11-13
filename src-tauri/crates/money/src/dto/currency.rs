@@ -131,6 +131,7 @@ impl UpdateCurrencyRequest {
 
 /// 货币查询参数
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct CurrencyQuery {
     /// 按货币代码过滤
     pub code: Option<String>,
