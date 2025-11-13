@@ -20,6 +20,12 @@ pub struct MemberBalance {
     pub is_creditor: bool, // true: 债权人(余额>0), false: 债务人(余额<0)
 }
 
+impl Default for SettlementOptimizer {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl SettlementOptimizer {
     /// 创建新的结算优化器实例
     pub fn new() -> Self {

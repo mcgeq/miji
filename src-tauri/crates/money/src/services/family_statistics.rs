@@ -1,14 +1,13 @@
-use std::collections::HashMap;
-use sea_orm::prelude::Decimal;
-use chrono::{NaiveDate, Datelike};
+use chrono::{Datelike, NaiveDate};
 use common::error::{AppError, MijiResult};
-use sea_orm::{DbConn, EntityTrait, ColumnTrait, QueryFilter, Condition, PaginatorTrait};
+use sea_orm::prelude::Decimal;
+use sea_orm::{ColumnTrait, Condition, DbConn, EntityTrait, PaginatorTrait, QueryFilter};
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 use crate::services::{
+    debt_relations::DebtRelationsService, settlement_records::SettlementRecordsService,
     split_records::SplitRecordsService,
-    debt_relations::DebtRelationsService,
-    settlement_records::SettlementRecordsService,
 };
 
 /// 家庭财务统计服务
@@ -104,6 +103,12 @@ pub struct MemberDebtDistribution {
     pub debt_relationships: i32,
 }
 
+impl Default for FamilyStatisticsService {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl FamilyStatisticsService {
     pub fn new() -> Self {
         Self {
@@ -111,10 +116,6 @@ impl FamilyStatisticsService {
             debt_service: DebtRelationsService::default(),
             settlement_service: SettlementRecordsService::default(),
         }
-    }
-
-    pub fn default() -> Self {
-        Self::new()
     }
 
     /// 获取家庭财务总览
@@ -130,12 +131,20 @@ impl FamilyStatisticsService {
             .find_also_related(entity::family_ledger_transaction::Entity)
             .filter(
                 Condition::all()
-                    .add(entity::family_ledger_transaction::Column::FamilyLedgerSerialNum.eq(family_ledger_serial_num))
-                    .add(entity::transactions::Column::Date.between(period_start, period_end))
+                    .add(
+                        entity::family_ledger_transaction::Column::FamilyLedgerSerialNum
+                            .eq(family_ledger_serial_num),
+                    )
+                    .add(entity::transactions::Column::Date.between(period_start, period_end)),
             )
             .all(db)
             .await
-            .map_err(|e| AppError::simple(common::BusinessCode::DatabaseError, format!("Database error: {}", e)))?;
+            .map_err(|e| {
+                AppError::simple(
+                    common::BusinessCode::DatabaseError,
+                    format!("Database error: {}", e),
+                )
+            })?;
 
         let mut total_income = Decimal::ZERO;
         let mut total_expense = Decimal::ZERO;
@@ -147,14 +156,23 @@ impl FamilyStatisticsService {
                 total_income += transaction.amount;
             } else if transaction.transaction_type == "Expense" {
                 total_expense += transaction.amount;
-                
+
                 // 判断是否为共享支出（有分摊记录）
                 let has_split = entity::split_records::Entity::find()
-                    .filter(entity::split_records::Column::TransactionSerialNum.eq(&transaction.serial_num))
+                    .filter(
+                        entity::split_records::Column::TransactionSerialNum
+                            .eq(&transaction.serial_num),
+                    )
                     .count(db)
                     .await
-                    .map_err(|e| AppError::simple(common::BusinessCode::DatabaseError, format!("Database error: {}", e)))? > 0;
-                
+                    .map_err(|e| {
+                        AppError::simple(
+                            common::BusinessCode::DatabaseError,
+                            format!("Database error: {}", e),
+                        )
+                    })?
+                    > 0;
+
                 if has_split {
                     shared_expense += transaction.amount;
                 } else {
@@ -165,33 +183,59 @@ impl FamilyStatisticsService {
 
         // 获取成员数量
         let member_count = entity::family_ledger_member::Entity::find()
-            .filter(entity::family_ledger_member::Column::FamilyLedgerSerialNum.eq(family_ledger_serial_num))
+            .filter(
+                entity::family_ledger_member::Column::FamilyLedgerSerialNum
+                    .eq(family_ledger_serial_num),
+            )
             .count(db)
             .await
-            .map_err(|e| AppError::simple(common::BusinessCode::DatabaseError, format!("Database error: {}", e)))? as i32;
+            .map_err(|e| {
+                AppError::simple(
+                    common::BusinessCode::DatabaseError,
+                    format!("Database error: {}", e),
+                )
+            })? as i32;
 
         // 获取分摊记录数量
         let split_count = entity::split_records::Entity::find()
             .filter(
                 Condition::all()
-                    .add(entity::split_records::Column::FamilyLedgerSerialNum.eq(family_ledger_serial_num))
-                    .add(entity::split_records::Column::CreatedAt.between(period_start, period_end))
+                    .add(
+                        entity::split_records::Column::FamilyLedgerSerialNum
+                            .eq(family_ledger_serial_num),
+                    )
+                    .add(
+                        entity::split_records::Column::CreatedAt.between(period_start, period_end),
+                    ),
             )
             .count(db)
             .await
-            .map_err(|e| AppError::simple(common::BusinessCode::DatabaseError, format!("Database error: {}", e)))?;
+            .map_err(|e| {
+                AppError::simple(
+                    common::BusinessCode::DatabaseError,
+                    format!("Database error: {}", e),
+                )
+            })?;
 
         // 获取结算记录数量
         let settlement_count = entity::settlement_records::Entity::find()
             .filter(
                 Condition::all()
-                    .add(entity::settlement_records::Column::FamilyLedgerSerialNum.eq(family_ledger_serial_num))
+                    .add(
+                        entity::settlement_records::Column::FamilyLedgerSerialNum
+                            .eq(family_ledger_serial_num),
+                    )
                     .add(entity::settlement_records::Column::PeriodStart.gte(period_start))
-                    .add(entity::settlement_records::Column::PeriodEnd.lte(period_end))
+                    .add(entity::settlement_records::Column::PeriodEnd.lte(period_end)),
             )
             .count(db)
             .await
-            .map_err(|e| AppError::simple(common::BusinessCode::DatabaseError, format!("Database error: {}", e)))?;
+            .map_err(|e| {
+                AppError::simple(
+                    common::BusinessCode::DatabaseError,
+                    format!("Database error: {}", e),
+                )
+            })?;
 
         Ok(FamilyFinancialOverview {
             family_ledger_serial_num: family_ledger_serial_num.to_string(),
@@ -220,24 +264,34 @@ impl FamilyStatisticsService {
         // 获取所有成员
         let members = entity::family_ledger_member::Entity::find()
             .find_also_related(entity::family_member::Entity)
-            .filter(entity::family_ledger_member::Column::FamilyLedgerSerialNum.eq(family_ledger_serial_num))
+            .filter(
+                entity::family_ledger_member::Column::FamilyLedgerSerialNum
+                    .eq(family_ledger_serial_num),
+            )
             .all(db)
             .await
-            .map_err(|e| AppError::simple(common::BusinessCode::DatabaseError, format!("Database error: {}", e)))?;
+            .map_err(|e| {
+                AppError::simple(
+                    common::BusinessCode::DatabaseError,
+                    format!("Database error: {}", e),
+                )
+            })?;
 
         let mut contributions = Vec::new();
         let mut total_contribution = Decimal::ZERO;
 
         for (_, member_opt) in members {
             if let Some(member) = member_opt {
-                let contribution = self.calculate_member_contribution(
-                    db,
-                    family_ledger_serial_num,
-                    &member,
-                    period_start,
-                    period_end,
-                ).await?;
-                
+                let contribution = self
+                    .calculate_member_contribution(
+                        db,
+                        family_ledger_serial_num,
+                        &member,
+                        period_start,
+                        period_end,
+                    )
+                    .await?;
+
                 total_contribution += contribution.net_contribution;
                 contributions.push(contribution);
             }
@@ -246,7 +300,7 @@ impl FamilyStatisticsService {
         // 计算贡献百分比
         for contribution in &mut contributions {
             if total_contribution > Decimal::ZERO {
-                contribution.contribution_percentage = 
+                contribution.contribution_percentage =
                     (contribution.net_contribution / total_contribution) * Decimal::from(100);
             }
         }
@@ -270,19 +324,30 @@ impl FamilyStatisticsService {
             .find_also_related(entity::family_ledger_transaction::Entity)
             .filter(
                 Condition::all()
-                    .add(entity::family_ledger_transaction::Column::FamilyLedgerSerialNum.eq(family_ledger_serial_num))
+                    .add(
+                        entity::family_ledger_transaction::Column::FamilyLedgerSerialNum
+                            .eq(family_ledger_serial_num),
+                    )
                     .add(entity::transactions::Column::Date.between(period_start, period_end))
-                    .add(entity::transactions::Column::TransactionType.eq("Expense"))
+                    .add(entity::transactions::Column::TransactionType.eq("Expense")),
             )
             .all(db)
             .await
-            .map_err(|e| AppError::simple(common::BusinessCode::DatabaseError, format!("Database error: {}", e)))?;
+            .map_err(|e| {
+                AppError::simple(
+                    common::BusinessCode::DatabaseError,
+                    format!("Database error: {}", e),
+                )
+            })?;
 
         let mut category_map: HashMap<(String, Option<String>), CategoryData> = HashMap::new();
         let mut total_amount = Decimal::ZERO;
 
         for (transaction, _) in transactions {
-            let key = (transaction.category.clone(), transaction.sub_category.clone());
+            let key = (
+                transaction.category.clone(),
+                transaction.sub_category.clone(),
+            );
             let entry = category_map.entry(key).or_insert_with(|| CategoryData {
                 total_amount: Decimal::ZERO,
                 transaction_count: 0,
@@ -294,13 +359,22 @@ impl FamilyStatisticsService {
             total_amount += transaction.amount;
 
             // 获取账户所有者（简化处理）
-            if let Some(account) = entity::account::Entity::find_by_id(&transaction.account_serial_num)
-                .one(db)
-                .await
-                .map_err(|e| AppError::simple(common::BusinessCode::DatabaseError, format!("Database error: {}", e)))? 
+            if let Some(account) =
+                entity::account::Entity::find_by_id(&transaction.account_serial_num)
+                    .one(db)
+                    .await
+                    .map_err(|e| {
+                        AppError::simple(
+                            common::BusinessCode::DatabaseError,
+                            format!("Database error: {}", e),
+                        )
+                    })?
             {
                 if let Some(owner_id) = account.owner_id {
-                    *entry.member_distribution.entry(owner_id).or_insert(Decimal::ZERO) += transaction.amount;
+                    *entry
+                        .member_distribution
+                        .entry(owner_id)
+                        .or_insert(Decimal::ZERO) += transaction.amount;
                 }
             }
         }
@@ -349,20 +423,37 @@ impl FamilyStatisticsService {
             .find_also_related(entity::family_ledger_transaction::Entity)
             .filter(
                 Condition::all()
-                    .add(entity::family_ledger_transaction::Column::FamilyLedgerSerialNum.eq(family_ledger_serial_num))
-                    .add(entity::transactions::Column::Date.between(period_start, period_end))
+                    .add(
+                        entity::family_ledger_transaction::Column::FamilyLedgerSerialNum
+                            .eq(family_ledger_serial_num),
+                    )
+                    .add(entity::transactions::Column::Date.between(period_start, period_end)),
             )
             .all(db)
             .await
-            .map_err(|e| AppError::simple(common::BusinessCode::DatabaseError, format!("Database error: {}", e)))?;
+            .map_err(|e| {
+                AppError::simple(
+                    common::BusinessCode::DatabaseError,
+                    format!("Database error: {}", e),
+                )
+            })?;
 
         let mut period_map: HashMap<String, TrendData> = HashMap::new();
 
         for (transaction, _) in transactions {
             let period_key = match granularity {
-                "monthly" => format!("{}-{:02}", transaction.date.year(), transaction.date.month()),
+                "monthly" => format!(
+                    "{}-{:02}",
+                    transaction.date.year(),
+                    transaction.date.month()
+                ),
                 "daily" => transaction.date.format("%Y-%m-%d").to_string(),
-                _ => return Err(AppError::simple(common::BusinessCode::ValidationError, "不支持的时间粒度")),
+                _ => {
+                    return Err(AppError::simple(
+                        common::BusinessCode::ValidationError,
+                        "不支持的时间粒度",
+                    ));
+                }
             };
 
             let entry = period_map.entry(period_key).or_insert_with(|| TrendData {
@@ -382,10 +473,18 @@ impl FamilyStatisticsService {
 
                 // 检查是否有分摊
                 let split_count = entity::split_records::Entity::find()
-                    .filter(entity::split_records::Column::TransactionSerialNum.eq(&transaction.serial_num))
+                    .filter(
+                        entity::split_records::Column::TransactionSerialNum
+                            .eq(&transaction.serial_num),
+                    )
                     .count(db)
                     .await
-                    .map_err(|e| AppError::simple(common::BusinessCode::DatabaseError, format!("Database error: {}", e)))?;
+                    .map_err(|e| {
+                        AppError::simple(
+                            common::BusinessCode::DatabaseError,
+                            format!("Database error: {}", e),
+                        )
+                    })?;
 
                 if split_count > 0 {
                     entry.shared_expense += transaction.amount;
@@ -426,25 +525,38 @@ impl FamilyStatisticsService {
         db: &DbConn,
         family_ledger_serial_num: &str,
     ) -> MijiResult<DebtAnalysis> {
-        let debt_stats = self.debt_service.get_debt_statistics(db, family_ledger_serial_num).await?;
-        let _settlement_stats = self.settlement_service.get_settlement_statistics(db, family_ledger_serial_num).await?;
+        let debt_stats = self
+            .debt_service
+            .get_debt_statistics(db, family_ledger_serial_num)
+            .await?;
+        let _settlement_stats = self
+            .settlement_service
+            .get_settlement_statistics(db, family_ledger_serial_num)
+            .await?;
 
         // 获取成员债务分布
         let members = entity::family_ledger_member::Entity::find()
             .find_also_related(entity::family_member::Entity)
-            .filter(entity::family_ledger_member::Column::FamilyLedgerSerialNum.eq(family_ledger_serial_num))
+            .filter(
+                entity::family_ledger_member::Column::FamilyLedgerSerialNum
+                    .eq(family_ledger_serial_num),
+            )
             .all(db)
             .await
-            .map_err(|e| AppError::simple(common::BusinessCode::DatabaseError, format!("Database error: {}", e)))?;
+            .map_err(|e| {
+                AppError::simple(
+                    common::BusinessCode::DatabaseError,
+                    format!("Database error: {}", e),
+                )
+            })?;
 
         let mut debt_distribution = Vec::new();
         for (_, member_opt) in members {
             if let Some(member) = member_opt {
-                let summary = self.debt_service.get_member_debt_summary(
-                    db,
-                    family_ledger_serial_num,
-                    &member.serial_num,
-                ).await?;
+                let summary = self
+                    .debt_service
+                    .get_member_debt_summary(db, family_ledger_serial_num, &member.serial_num)
+                    .await?;
 
                 debt_distribution.push(MemberDebtDistribution {
                     member_serial_num: member.serial_num,
@@ -459,7 +571,8 @@ impl FamilyStatisticsService {
 
         // 计算结算效率
         let settlement_efficiency = if debt_stats.total_debts > 0 {
-            (Decimal::from(debt_stats.settled_debts) / Decimal::from(debt_stats.total_debts)) * Decimal::from(100)
+            (Decimal::from(debt_stats.settled_debts) / Decimal::from(debt_stats.total_debts))
+                * Decimal::from(100)
         } else {
             Decimal::ZERO
         };
@@ -495,7 +608,12 @@ impl FamilyStatisticsService {
             .filter(entity::account::Column::OwnerId.eq(&member.serial_num))
             .all(db)
             .await
-            .map_err(|e| AppError::simple(common::BusinessCode::DatabaseError, format!("Database error: {}", e)))?;
+            .map_err(|e| {
+                AppError::simple(
+                    common::BusinessCode::DatabaseError,
+                    format!("Database error: {}", e),
+                )
+            })?;
 
         let account_ids: Vec<String> = accounts.iter().map(|a| a.serial_num.clone()).collect();
 
@@ -504,11 +622,16 @@ impl FamilyStatisticsService {
             .filter(
                 Condition::all()
                     .add(entity::transactions::Column::AccountSerialNum.is_in(&account_ids))
-                    .add(entity::transactions::Column::Date.between(period_start, period_end))
+                    .add(entity::transactions::Column::Date.between(period_start, period_end)),
             )
             .all(db)
             .await
-            .map_err(|e| AppError::simple(common::BusinessCode::DatabaseError, format!("Database error: {}", e)))?;
+            .map_err(|e| {
+                AppError::simple(
+                    common::BusinessCode::DatabaseError,
+                    format!("Database error: {}", e),
+                )
+            })?;
 
         let mut total_income = Decimal::ZERO;
         let mut total_expense = Decimal::ZERO;
@@ -523,10 +646,19 @@ impl FamilyStatisticsService {
 
                 // 检查是否有分摊
                 let has_split = entity::split_records::Entity::find()
-                    .filter(entity::split_records::Column::TransactionSerialNum.eq(&transaction.serial_num))
+                    .filter(
+                        entity::split_records::Column::TransactionSerialNum
+                            .eq(&transaction.serial_num),
+                    )
                     .count(db)
                     .await
-                    .map_err(|e| AppError::simple(common::BusinessCode::DatabaseError, format!("Database error: {}", e)))? > 0;
+                    .map_err(|e| {
+                        AppError::simple(
+                            common::BusinessCode::DatabaseError,
+                            format!("Database error: {}", e),
+                        )
+                    })?
+                    > 0;
 
                 if has_split {
                     shared_expense += transaction.amount;
@@ -537,13 +669,16 @@ impl FamilyStatisticsService {
         }
 
         // 获取分摊统计
-        let split_summary = self.split_service.get_member_summary(
-            db,
-            family_ledger_serial_num,
-            &member.serial_num,
-            Some(period_start),
-            Some(period_end),
-        ).await?;
+        let split_summary = self
+            .split_service
+            .get_member_summary(
+                db,
+                family_ledger_serial_num,
+                &member.serial_num,
+                Some(period_start),
+                Some(period_end),
+            )
+            .await?;
 
         Ok(MemberContribution {
             member_serial_num: member.serial_num.clone(),

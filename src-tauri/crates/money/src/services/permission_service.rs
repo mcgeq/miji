@@ -15,6 +15,12 @@ pub struct PermissionCheckResult {
     pub reason: Option<String>,
 }
 
+impl Default for PermissionService {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl PermissionService {
     pub fn new() -> Self {
         Self

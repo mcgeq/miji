@@ -94,6 +94,17 @@ pub struct SettlementRecordsService {
     >,
 }
 
+impl Default for SettlementRecordsService {
+    fn default() -> Self {
+        use std::sync::Arc;
+        Self::new(
+            SettlementRecordsConverter,
+            SettlementRecordsHooks,
+            Arc::new(NoopLogger),
+        )
+    }
+}
+
 impl SettlementRecordsService {
     pub fn new(
         converter: SettlementRecordsConverter,
@@ -103,15 +114,6 @@ impl SettlementRecordsService {
         Self {
             inner: GenericCrudService::new(converter, hooks, logger),
         }
-    }
-
-    pub fn default() -> Self {
-        use std::sync::Arc;
-        Self::new(
-            SettlementRecordsConverter,
-            SettlementRecordsHooks,
-            Arc::new(NoopLogger),
-        )
     }
 }
 

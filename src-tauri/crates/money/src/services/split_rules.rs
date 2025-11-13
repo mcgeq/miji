@@ -106,12 +106,14 @@ impl std::ops::Deref for SplitRulesService {
     }
 }
 
-impl SplitRulesService {
-    pub fn default() -> Self {
+impl Default for SplitRulesService {
+    fn default() -> Self {
         use std::sync::Arc;
         Self::new(SplitRulesConverter, SplitRulesHooks, Arc::new(NoopLogger))
     }
+}
 
+impl SplitRulesService {
     /// 创建分摊规则
     pub async fn create_rule(
         &self,

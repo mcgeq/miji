@@ -84,6 +84,17 @@ pub struct SplitRecordsService {
     >,
 }
 
+impl Default for SplitRecordsService {
+    fn default() -> Self {
+        use std::sync::Arc;
+        Self::new(
+            SplitRecordsConverter,
+            SplitRecordsHooks,
+            Arc::new(NoopLogger),
+        )
+    }
+}
+
 impl SplitRecordsService {
     pub fn new(
         converter: SplitRecordsConverter,
@@ -93,15 +104,6 @@ impl SplitRecordsService {
         Self {
             inner: GenericCrudService::new(converter, hooks, logger),
         }
-    }
-
-    pub fn default() -> Self {
-        use std::sync::Arc;
-        Self::new(
-            SplitRecordsConverter,
-            SplitRecordsHooks,
-            Arc::new(NoopLogger),
-        )
     }
 }
 

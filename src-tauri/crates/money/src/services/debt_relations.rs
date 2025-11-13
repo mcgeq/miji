@@ -88,6 +88,17 @@ pub struct DebtRelationsService {
     >,
 }
 
+impl Default for DebtRelationsService {
+    fn default() -> Self {
+        use std::sync::Arc;
+        Self::new(
+            DebtRelationsConverter,
+            DebtRelationsHooks,
+            Arc::new(NoopLogger),
+        )
+    }
+}
+
 impl DebtRelationsService {
     pub fn new(
         converter: DebtRelationsConverter,
@@ -97,15 +108,6 @@ impl DebtRelationsService {
         Self {
             inner: GenericCrudService::new(converter, hooks, logger),
         }
-    }
-
-    pub fn default() -> Self {
-        use std::sync::Arc;
-        Self::new(
-            DebtRelationsConverter,
-            DebtRelationsHooks,
-            Arc::new(NoopLogger),
-        )
     }
 }
 
@@ -731,6 +733,7 @@ impl DebtRelationsService {
         family_ledger_serial_num: &str,
         updated_by: &str,
     ) -> MijiResult<i64> {
-        self.recalculate_all_debts(db, family_ledger_serial_num, updated_by).await
+        self.recalculate_all_debts(db, family_ledger_serial_num, updated_by)
+            .await
     }
 }

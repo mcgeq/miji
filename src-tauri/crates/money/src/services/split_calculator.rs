@@ -27,6 +27,12 @@ pub struct SplitRecordItem {
     pub description: Option<String>,
 }
 
+impl Default for SplitCalculator {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl SplitCalculator {
     /// 创建新的分摊计算器实例
     pub fn new() -> Self {
