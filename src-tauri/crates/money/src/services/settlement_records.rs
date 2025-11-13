@@ -236,7 +236,7 @@ impl SettlementRecordsService {
             total_count: total_count as usize,
             current_page: page as usize,
             page_size: page_size as usize,
-            total_pages: ((total_count + page_size - 1) / page_size) as usize,
+            total_pages: total_count.div_ceil(page_size) as usize,
         })
     }
 
