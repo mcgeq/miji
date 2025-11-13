@@ -14,8 +14,17 @@ function updateIsMobile() {
 const menuItems = [
   { name: 'home', title: 'Home', icon: Home, path: '/' },
   { name: 'todos', title: 'Todo', icon: CircleCheckBig, path: '/todos' },
-  { name: 'money', title: 'Money', icon: HandCoins, path: '/money' },
-  { name: 'family-ledger', title: 'Family Ledger', icon: Users, path: '/family-ledger' },
+  {
+    name: 'money',
+    title: 'Money',
+    icon: HandCoins,
+    path: '/money',
+    hasSubmenu: true,
+    submenu: [
+      { name: 'money-overview', title: '账本概览', path: '/money', icon: HandCoins },
+      { name: 'family-ledger', title: '家庭记账', path: '/family-ledger', icon: Users },
+    ],
+  },
   { name: 'transaction-stats', title: 'Statistics', icon: BarChart3, path: '/transaction-stats' },
   { name: 'health-period', title: 'Period', icon: Droplet, path: '/health/period' },
   { name: 'tags', title: 'Tag', icon: Tags, path: '/tags' },

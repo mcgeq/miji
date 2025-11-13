@@ -1,23 +1,90 @@
 <script setup lang="ts">
-import { LogOut } from 'lucide-vue-next';
+import { BarChart3, LogOut } from 'lucide-vue-next';
 
-const { menu } = defineProps<{ menu: Array<{ name: string; title: string; icon: any; path: string }> }>();
+interface MenuItem {
+  name: string;
+  title: string;
+  icon: any;
+  path: string;
+  hasSubmenu?: boolean;
+  submenu?: Array<{ name: string; title: string; path: string; icon?: any }>;
+}
+
+const { menu } = defineProps<{ menu: Array<MenuItem> }>();
 
 const emit = defineEmits(['logout']);
 const router = useRouter();
 const route = useRoute();
 
-function navigate(item: any) {
-  if (item.path) router.push(item.path);
+// 展开的子菜单状态
+const expandedMenus = ref<Set<string>>(new Set());
+
+function navigate(item: MenuItem) {
+  if (item.hasSubmenu) {
+    // 切换子菜单展开状态
+    if (expandedMenus.value.has(item.name)) {
+      expandedMenus.value.delete(item.name);
+    } else {
+      expandedMenus.value.add(item.name);
+    }
+  } else if (item.path) {
+    router.push(item.path);
+  }
 }
 
-function isActive(item: any) {
+function navigateSubmenu(submenuItem: { name: string; title: string; path: string }) {
+  router.push(submenuItem.path);
+  // 导航后关闭所有子菜单
+  expandedMenus.value.clear();
+}
+
+function isActive(item: MenuItem) {
+  if (item.hasSubmenu && item.submenu) {
+    // 如果是父菜单，检查子菜单是否有激活的
+    return item.submenu.some(sub => sub.path === route.path);
+  }
   return item.path === route.path;
+}
+
+function isSubmenuActive(submenuItem: { name: string; title: string; path: string }) {
+  return submenuItem.path === route.path;
+}
+
+function isExpanded(itemName: string) {
+  return expandedMenus.value.has(itemName);
 }
 
 function logout() {
   emit('logout');
 }
+
+// 点击外部关闭子菜单
+function handleClickOutside(event: Event) {
+  const target = event.target as Element;
+  if (!target.closest('.sidebar')) {
+    expandedMenus.value.clear();
+  }
+}
+
+// 初始化时展开包含当前路由的菜单
+onMounted(() => {
+  menu.forEach(item => {
+    if (item.hasSubmenu && item.submenu) {
+      const hasActiveSubmenu = item.submenu.some(sub => sub.path === route.path);
+      if (hasActiveSubmenu) {
+        expandedMenus.value.add(item.name);
+      }
+    }
+  });
+
+  // 添加全局点击事件监听
+  document.addEventListener('click', handleClickOutside);
+});
+
+onUnmounted(() => {
+  // 清理事件监听
+  document.removeEventListener('click', handleClickOutside);
+});
 </script>
 
 <template>
@@ -31,11 +98,31 @@ function logout() {
         <li
           v-for="item in menu"
           :key="item.name"
-          :title="item.title"
-          :class="{ active: isActive(item) }"
-          @click="navigate(item)"
+          :class="{ 'active': isActive(item), 'has-submenu': item.hasSubmenu }"
         >
-          <component :is="item.icon" class="icon" />
+          <div
+            class="menu-item"
+            :title="item.title"
+            @click="navigate(item)"
+          >
+            <component :is="item.icon" class="icon" />
+          </div>
+
+          <!-- 子菜单 -->
+          <ul v-if="item.hasSubmenu && isExpanded(item.name)" class="submenu">
+            <li
+              v-for="submenuItem in item.submenu"
+              :key="submenuItem.name"
+              :class="{ active: isSubmenuActive(submenuItem) }"
+              :title="submenuItem.title"
+              @click="navigateSubmenu(submenuItem)"
+            >
+              <component
+                :is="submenuItem.icon || BarChart3"
+                class="submenu-icon"
+              />
+            </li>
+          </ul>
         </li>
       </ul>
     </nav>
@@ -53,15 +140,16 @@ function logout() {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  width: 3rem; /* 12 */
-  height: 100vh; /* 覆盖整个视口高度 */
-  position: fixed; /* 固定定位 */
-  top: 0; /* 从顶部开始 */
-  left: 0; /* 左侧固定 */
-  z-index: 1000; /* 确保在最上层 */
+  width: 3rem; /* 固定宽度，不变化 */
+  height: 100vh;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 1000;
   transition: all 0.3s ease-in-out;
   border-right: 1px solid var(--color-base-200);
   box-shadow: 2px 0 8px rgba(0, 0, 0, 0.05);
+  overflow: visible; /* 允许子菜单溢出 */
 }
 
 .sidebar-top {
@@ -89,22 +177,87 @@ function logout() {
 }
 
 .sidebar-menu li {
+  position: relative;
+  margin: 0.25rem 0;
+}
+
+.menu-item {
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 0.5rem 0;
-  border-radius: 0.375rem; /* rounded-md */
+  padding: 0.75rem;
+  border-radius: 0.375rem;
   cursor: pointer;
   transition: all 0.3s;
+  position: relative;
 }
 
-.sidebar-menu li:hover {
+.menu-item:hover {
   background-color: var(--color-base-100);
 }
 
-.sidebar-menu li.active {
-  background-color: var(--color-base-300);
-  box-shadow: inset 0 0 0 1px var(--color-base-100);
+.sidebar-menu li.active .menu-item {
+  background-color: var(--color-primary);
+  color: var(--color-primary-content);
+}
+
+/* 子菜单样式 */
+.submenu {
+  position: absolute;
+  left: 100%;
+  top: 0;
+  background-color: var(--color-base-200);
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  width: 3rem; /* 固定宽度，与主侧边栏一致 */
+  z-index: 1001;
+  overflow: hidden;
+  animation: slideIn 0.2s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-0.5rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.submenu li {
+  margin: 0;
+  padding: 0.75rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  border-bottom: 1px solid var(--color-base-300);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.submenu li:last-child {
+  border-bottom: none;
+}
+
+.submenu li:hover {
+  background-color: var(--color-base-100);
+}
+
+.submenu li.active {
+  background-color: var(--color-primary);
+  color: var(--color-primary-content);
+}
+
+.submenu-icon {
+  width: 1rem;
+  height: 1rem;
+  color: var(--color-neutral);
+}
+
+.submenu li.active .submenu-icon {
+  color: var(--color-primary-content);
 }
 
 .icon {
