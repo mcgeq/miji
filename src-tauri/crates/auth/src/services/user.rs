@@ -3,7 +3,7 @@ use std::sync::Arc;
 use common::{
     crud::service::{CrudConverter, CrudService, GenericCrudService},
     error::{AppError, MijiResult},
-    log::logger::{NoopLogger, OperationLogger},
+    log::logger::OperationLogger,
     paginations::{Filter, PagedQuery, PagedResult},
     utils::date::DateUtils,
 };
@@ -88,17 +88,13 @@ impl CrudConverter<entity::users::Entity, CreateUserDto, UpdateUserDto> for User
     }
 }
 
-impl UserService {
-    pub fn get_user_service() -> Self {
-        Self {
-            inner: GenericCrudService::new(
-                UserConverter,
-                UserHooks,
-                Arc::new(NoopLogger), // 默认使用 NoopLogger
-            ),
-        }
+impl Default for UserService {
+    fn default() -> Self {
+        Self::new(Arc::new(common::log::logger::NoopLogger))
     }
+}
 
+impl UserService {
     pub fn new(logger: Arc<dyn OperationLogger>) -> Self {
         Self {
             inner: GenericCrudService::new(UserConverter, UserHooks, logger),

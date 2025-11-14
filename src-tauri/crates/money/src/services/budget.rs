@@ -16,9 +16,7 @@ use validator::Validate;
 
 use crate::{
     dto::budget::{BudgetCreate, BudgetUpdate, BudgetWithAccount},
-    services::{
-        account::get_account_service, budget_hook::BudgetHooks, currency::get_currency_service,
-    },
+    services::{account::AccountService, budget_hook::BudgetHooks, currency::get_currency_service},
 };
 
 // Filter struct
@@ -152,7 +150,7 @@ impl BudgetConverter {
         db: &DbConn,
         model: entity::budget::Model,
     ) -> MijiResult<BudgetWithAccount> {
-        let account_service = get_account_service();
+        let account_service = AccountService::default();
         let cny_service = get_currency_service();
 
         // 创建调整后的模型
@@ -191,6 +189,16 @@ pub struct BudgetService {
         BudgetConverter,
         BudgetHooks,
     >,
+}
+
+impl Default for BudgetService {
+    fn default() -> Self {
+        Self::new(
+            BudgetConverter,
+            BudgetHooks,
+            Arc::new(common::log::logger::NoopLogger),
+        )
+    }
 }
 
 impl BudgetService {
@@ -387,12 +395,4 @@ impl BudgetService {
             total_pages: paged.total_pages,
         })
     }
-}
-
-pub fn get_budget_service() -> BudgetService {
-    BudgetService::new(
-        BudgetConverter,
-        BudgetHooks,
-        Arc::new(common::log::logger::NoopLogger),
-    )
 }

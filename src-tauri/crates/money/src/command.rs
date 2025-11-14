@@ -36,22 +36,22 @@ use crate::{
         },
     },
     services::{
-        account::{AccountFilter, get_account_service},
-        bil_reminder::{BilReminderFilters, get_bil_reminder_service},
-        budget::{BudgetFilter, get_budget_service},
+        account::{AccountFilter, AccountService},
+        bil_reminder::{BilReminderFilters, BilReminderService},
+        budget::{BudgetFilter, BudgetService},
         budget_trends::{BudgetCategoryStats, BudgetTrendData, BudgetTrendRequest},
-        categories::{CategoryFilter, get_category_service},
+        categories::{CategoryFilter, CategoryService},
         currency::{CurrencyFilter, get_currency_service},
         debt_relations::DebtRelationsService,
         family_ledger::FamilyLedgerService,
-        family_member::get_family_member_service,
+        family_member::FamilyMemberService,
         family_statistics::FamilyStatisticsService,
-        installment::get_installment_service,
+        installment::InstallmentService,
         settlement_records::SettlementRecordsService,
         split_records::SplitRecordsService,
         split_rules::SplitRulesService,
-        sub_categories::{SubCategoryFilter, get_sub_category_service},
-        transaction::{TransactionFilter, get_transaction_service},
+        sub_categories::{SubCategoryFilter, SubCategoryService},
+        transaction::{TransactionFilter, TransactionService},
     },
 };
 
@@ -63,7 +63,7 @@ pub async fn installment_plan_get(
     state: State<'_, AppState>,
     plan_serial_num: String,
 ) -> Result<ApiResponse<InstallmentPlanResponse>, String> {
-    let service = get_installment_service();
+    let service = InstallmentService::default();
     Ok(ApiResponse::from_result(
         service
             .get_installment_plan(&state.db, &plan_serial_num)
@@ -76,7 +76,7 @@ pub async fn installment_plan_get(
 pub async fn installment_calculate(
     data: InstallmentCalculationRequest,
 ) -> Result<ApiResponse<InstallmentCalculationResponse>, String> {
-    let service = get_installment_service();
+    let service = InstallmentService::default();
     Ok(ApiResponse::from_result(
         service.calculate_installment_amount(data).await,
     ))
@@ -88,7 +88,7 @@ pub async fn installment_has_paid(
     state: State<'_, AppState>,
     transaction_serial_num: String,
 ) -> Result<ApiResponse<bool>, String> {
-    let service = get_installment_service();
+    let service = InstallmentService::default();
     Ok(ApiResponse::from_result(
         service
             .has_paid_installments(&state.db, &transaction_serial_num)
@@ -235,7 +235,7 @@ pub async fn account_get(
     state: State<'_, AppState>,
     serial_num: String,
 ) -> Result<ApiResponse<AccountResponseWithRelations>, String> {
-    let service = get_account_service();
+    let service = AccountService::default();
     Ok(ApiResponse::from_result(
         service
             .get_account_with_relations(&state.db, serial_num)
@@ -258,7 +258,7 @@ pub async fn account_create(
         "开始创建账户"
     );
 
-    let service = get_account_service();
+    let service = AccountService::default();
 
     match service.account_create(&state.db, data).await {
         Ok(result) => {
@@ -290,7 +290,7 @@ pub async fn account_update(
     serial_num: String,
     data: AccountUpdate,
 ) -> Result<ApiResponse<AccountResponseWithRelations>, String> {
-    let service = get_account_service();
+    let service = AccountService::default();
     Ok(ApiResponse::from_result(
         service
             .account_update(&state.db, serial_num, data)
@@ -305,7 +305,7 @@ pub async fn account_update_active(
     serial_num: String,
     is_active: bool,
 ) -> Result<ApiResponse<AccountResponseWithRelations>, String> {
-    let service = get_account_service();
+    let service = AccountService::default();
     Ok(ApiResponse::from_result(
         service
             .update_account_active(&state.db, serial_num, is_active)
@@ -322,7 +322,7 @@ pub async fn account_delete(
     serial_num: String,
 ) -> Result<ApiResponse<()>, String> {
     // 先获取账户信息用于日志
-    let service = get_account_service();
+    let service = AccountService::default();
 
     // 尝试获取账户信息（用于日志，但不影响删除逻辑）
     let account_info = service
@@ -365,7 +365,7 @@ pub async fn account_list_paged(
     state: State<'_, AppState>,
     query: common::paginations::PagedQuery<crate::services::account::AccountFilter>,
 ) -> Result<ApiResponse<common::paginations::PagedResult<AccountResponseWithRelations>>, String> {
-    let service = get_account_service();
+    let service = AccountService::default();
     Ok(ApiResponse::from_result(
         service
             .list_accounts_paged_with_relations(&state.db, query)
@@ -389,7 +389,7 @@ pub async fn account_list(
     state: State<'_, AppState>,
     filter: AccountFilter,
 ) -> Result<ApiResponse<Vec<AccountResponseWithRelations>>, String> {
-    let service = get_account_service();
+    let service = AccountService::default();
     Ok(ApiResponse::from_result(
         service
             .list_with_filter(&state.db, filter)
@@ -408,7 +408,7 @@ pub async fn account_list(
 pub async fn total_assets(
     state: State<'_, AppState>,
 ) -> Result<ApiResponse<AccountBalanceSummary>, String> {
-    let service = get_account_service();
+    let service = AccountService::default();
     Ok(ApiResponse::from_result(
         service.total_assets(&state.db).await,
     ))
@@ -433,7 +433,7 @@ pub async fn transaction_create(
         "开始创建交易记录"
     );
 
-    let service = get_transaction_service();
+    let service = TransactionService::default();
 
     match service.trans_create_with_relations(&state.db, data).await {
         Ok(result) => {
@@ -469,7 +469,7 @@ pub async fn transaction_transfer_create(
         "开始创建转账"
     );
 
-    let service = get_transaction_service();
+    let service = TransactionService::default();
 
     match service
         .trans_transfer_create_with_relations(&state.db, data.clone())
@@ -512,7 +512,7 @@ pub async fn transaction_query_income_and_expense(
         "查询收支统计"
     );
 
-    let service = get_transaction_service();
+    let service = TransactionService::default();
 
     match service
         .query_income_and_expense(&state.db, start_date.clone(), end_date.clone())
@@ -549,7 +549,7 @@ pub async fn transaction_transfer_delete(
         "开始删除转账"
     );
 
-    let service = get_transaction_service();
+    let service = TransactionService::default();
 
     match service
         .trans_transfer_delete_with_relations(&state.db, &serial_num)
@@ -590,7 +590,7 @@ pub async fn transaction_transfer_update(
         "开始更新转账"
     );
 
-    let service = get_transaction_service();
+    let service = TransactionService::default();
 
     match service
         .trans_transfer_update_with_relations(&state.db, &serial_num, transfer)
@@ -626,7 +626,7 @@ pub async fn transaction_get(
     state: State<'_, AppState>,
     serial_num: String,
 ) -> Result<ApiResponse<TransactionResponse>, String> {
-    let service = get_transaction_service();
+    let service = TransactionService::default();
 
     match service
         .trans_get_with_relations(&state.db, serial_num.clone())
@@ -667,7 +667,7 @@ pub async fn transaction_update(
         "开始更新交易"
     );
 
-    let service = get_transaction_service();
+    let service = TransactionService::default();
 
     match service
         .trans_update_with_relations(&state.db, serial_num.clone(), data)
@@ -707,7 +707,7 @@ pub async fn transaction_delete(
         "开始删除交易"
     );
 
-    let service = get_transaction_service();
+    let service = TransactionService::default();
 
     match service.delete(&state.db, serial_num.clone()).await {
         Ok(_) => {
@@ -735,7 +735,7 @@ pub async fn transaction_list(
     state: State<'_, AppState>,
     filter: TransactionFilter,
 ) -> Result<ApiResponse<Vec<TransactionResponse>>, String> {
-    let service = get_transaction_service();
+    let service = TransactionService::default();
 
     match service.trans_list_with_relations(&state.db, filter).await {
         Ok(transactions) => {
@@ -762,7 +762,7 @@ pub async fn transaction_list_paged(
     state: State<'_, AppState>,
     query: PagedQuery<TransactionFilter>,
 ) -> Result<ApiResponse<PagedResult<TransactionResponse>>, String> {
-    let service = get_transaction_service();
+    let service = TransactionService::default();
 
     match service
         .trans_list_paged_with_relations(&state.db, query)
@@ -805,7 +805,7 @@ pub async fn budget_get(
     state: State<'_, AppState>,
     serial_num: String,
 ) -> Result<ApiResponse<Budget>, String> {
-    let service = get_budget_service();
+    let service = BudgetService::default();
     Ok(ApiResponse::from_result(
         service
             .get_budget_with_relations(&state.db, serial_num)
@@ -819,7 +819,7 @@ pub async fn budget_create(
     state: State<'_, AppState>,
     data: BudgetCreate,
 ) -> Result<ApiResponse<Budget>, String> {
-    let service = get_budget_service();
+    let service = BudgetService::default();
     Ok(ApiResponse::from_result(
         service
             .create_with_relations(&state.db, data)
@@ -834,7 +834,7 @@ pub async fn budget_update(
     serial_num: String,
     data: BudgetUpdate,
 ) -> Result<ApiResponse<Budget>, String> {
-    let service = get_budget_service();
+    let service = BudgetService::default();
     Ok(ApiResponse::from_result(
         service
             .update_with_relations(&state.db, serial_num, data)
@@ -849,7 +849,7 @@ pub async fn budget_update_active(
     serial_num: String,
     is_active: bool,
 ) -> Result<ApiResponse<Budget>, String> {
-    let service = get_budget_service();
+    let service = BudgetService::default();
     Ok(ApiResponse::from_result(
         service
             .budget_update_active_with_relations(&state.db, serial_num, is_active)
@@ -863,7 +863,7 @@ pub async fn budget_delete(
     state: State<'_, AppState>,
     serial_num: String,
 ) -> Result<ApiResponse<()>, String> {
-    let service = get_budget_service();
+    let service = BudgetService::default();
 
     Ok(ApiResponse::from_result(
         service.delete(&state.db, serial_num).await,
@@ -875,7 +875,7 @@ pub async fn budget_list_paged(
     state: State<'_, AppState>,
     query: PagedQuery<BudgetFilter>,
 ) -> Result<ApiResponse<PagedResult<Budget>>, String> {
-    let service = get_budget_service();
+    let service = BudgetService::default();
     Ok(ApiResponse::from_result(
         service
             .budget_list_paged(&state.db, query)
@@ -1006,7 +1006,7 @@ pub async fn bil_reminder_get(
     state: State<'_, AppState>,
     serial_num: String,
 ) -> Result<ApiResponse<BilReminder>, String> {
-    let service = get_bil_reminder_service();
+    let service = BilReminderService::default();
     Ok(ApiResponse::from_result(
         service
             .get_by_id(&state.db, serial_num)
@@ -1021,7 +1021,7 @@ pub async fn bil_reminder_create(
     data: BilReminderCreate,
 ) -> Result<ApiResponse<BilReminder>, String> {
     info!("bil_reminder_create {:?}", data);
-    let service = get_bil_reminder_service();
+    let service = BilReminderService::default();
     Ok(ApiResponse::from_result(
         service.create(&state.db, data).await.map(BilReminder::from),
     ))
@@ -1033,7 +1033,7 @@ pub async fn bil_reminder_update(
     serial_num: String,
     data: BilReminderUpdate,
 ) -> Result<ApiResponse<BilReminder>, String> {
-    let service = get_bil_reminder_service();
+    let service = BilReminderService::default();
     Ok(ApiResponse::from_result(
         service
             .update(&state.db, serial_num, data)
@@ -1048,7 +1048,7 @@ pub async fn bil_reminder_update_active(
     serial_num: String,
     is_active: bool,
 ) -> Result<ApiResponse<BilReminder>, String> {
-    let service = get_bil_reminder_service();
+    let service = BilReminderService::default();
     Ok(ApiResponse::from_result(
         service
             .update_is_paid(&state.db, serial_num, is_active)
@@ -1062,7 +1062,7 @@ pub async fn bil_reminder_delete(
     state: State<'_, AppState>,
     serial_num: String,
 ) -> Result<ApiResponse<()>, String> {
-    let service = get_bil_reminder_service();
+    let service = BilReminderService::default();
     Ok(ApiResponse::from_result(
         service.delete(&state.db, serial_num).await,
     ))
@@ -1073,7 +1073,7 @@ pub async fn bil_reminder_list(
     state: State<'_, AppState>,
     filter: BilReminderFilters,
 ) -> Result<ApiResponse<Vec<BilReminder>>, String> {
-    let service = get_bil_reminder_service();
+    let service = BilReminderService::default();
 
     Ok(ApiResponse::from_result(
         service
@@ -1088,7 +1088,7 @@ pub async fn bil_reminder_list_paged(
     state: State<'_, AppState>,
     query: PagedQuery<BilReminderFilters>,
 ) -> Result<ApiResponse<PagedResult<BilReminder>>, String> {
-    let service = get_bil_reminder_service();
+    let service = BilReminderService::default();
     Ok(ApiResponse::from_result(
         service
             .list_paged(&state.db, query)
@@ -1112,7 +1112,7 @@ pub async fn category_get(
     state: State<'_, AppState>,
     id: String,
 ) -> Result<ApiResponse<Category>, String> {
-    let service = get_category_service();
+    let service = CategoryService::default();
     Ok(ApiResponse::from_result(
         service
             .category_get(&state.db, id)
@@ -1126,7 +1126,7 @@ pub async fn category_create(
     state: State<'_, AppState>,
     data: CategoryCreate,
 ) -> Result<ApiResponse<Category>, String> {
-    let service = get_category_service();
+    let service = CategoryService::default();
     Ok(ApiResponse::from_result(
         service
             .category_create(&state.db, data)
@@ -1141,7 +1141,7 @@ pub async fn category_update(
     serial_num: String,
     data: CategoryUpdate,
 ) -> Result<ApiResponse<Category>, String> {
-    let service = get_category_service();
+    let service = CategoryService::default();
     Ok(ApiResponse::from_result(
         service
             .category_update(&state.db, serial_num, data)
@@ -1155,7 +1155,7 @@ pub async fn category_delete(
     state: State<'_, AppState>,
     id: String,
 ) -> Result<ApiResponse<()>, String> {
-    let service = get_category_service();
+    let service = CategoryService::default();
     Ok(ApiResponse::from_result(
         service.category_delete(&state.db, id).await,
     ))
@@ -1165,7 +1165,7 @@ pub async fn category_delete(
 pub async fn category_list(
     state: State<'_, AppState>,
 ) -> Result<ApiResponse<Vec<Category>>, String> {
-    let service = get_category_service();
+    let service = CategoryService::default();
     Ok(ApiResponse::from_result(
         service
             .category_list(&state.db)
@@ -1179,7 +1179,7 @@ pub async fn category_list_paged(
     state: State<'_, AppState>,
     query: PagedQuery<CategoryFilter>,
 ) -> Result<ApiResponse<PagedResult<Category>>, String> {
-    let service = get_category_service();
+    let service = CategoryService::default();
     Ok(ApiResponse::from_result(
         service
             .category_list_paged(&state.db, query)
@@ -1202,7 +1202,7 @@ pub async fn sub_category_get(
     state: State<'_, AppState>,
     id: String,
 ) -> Result<ApiResponse<SubCategory>, String> {
-    let service = get_sub_category_service();
+    let service = SubCategoryService::default();
     Ok(ApiResponse::from_result(
         service
             .sub_category_get(&state.db, id)
@@ -1216,7 +1216,7 @@ pub async fn sub_category_create(
     state: State<'_, AppState>,
     data: SubCategoryCreate,
 ) -> Result<ApiResponse<SubCategory>, String> {
-    let service = get_sub_category_service();
+    let service = SubCategoryService::default();
     Ok(ApiResponse::from_result(
         service
             .sub_category_create(&state.db, data)
@@ -1231,7 +1231,7 @@ pub async fn sub_category_update(
     serial_num: String,
     data: SubCategoryUpdate,
 ) -> Result<ApiResponse<SubCategory>, String> {
-    let service = get_sub_category_service();
+    let service = SubCategoryService::default();
     Ok(ApiResponse::from_result(
         service
             .sub_category_update(&state.db, serial_num, data)
@@ -1245,7 +1245,7 @@ pub async fn sub_category_delete(
     state: State<'_, AppState>,
     id: String,
 ) -> Result<ApiResponse<()>, String> {
-    let service = get_sub_category_service();
+    let service = SubCategoryService::default();
     Ok(ApiResponse::from_result(
         service.sub_category_delete(&state.db, id).await,
     ))
@@ -1255,7 +1255,7 @@ pub async fn sub_category_delete(
 pub async fn sub_category_list(
     state: State<'_, AppState>,
 ) -> Result<ApiResponse<Vec<SubCategory>>, String> {
-    let service = get_sub_category_service();
+    let service = SubCategoryService::default();
     Ok(ApiResponse::from_result(
         service
             .sub_category_list(&state.db)
@@ -1269,7 +1269,7 @@ pub async fn sub_category_list_paged(
     state: State<'_, AppState>,
     query: PagedQuery<SubCategoryFilter>,
 ) -> Result<ApiResponse<PagedResult<SubCategory>>, String> {
-    let service = get_sub_category_service();
+    let service = SubCategoryService::default();
     Ok(ApiResponse::from_result(
         service
             .sub_category_list_paged(&state.db, query)
@@ -1294,7 +1294,7 @@ pub async fn sub_category_list_paged(
 pub async fn family_member_list(
     state: State<'_, AppState>,
 ) -> Result<ApiResponse<Vec<FamilyMemberResponse>>, String> {
-    let service = get_family_member_service();
+    let service = FamilyMemberService::default();
     Ok(ApiResponse::from_result(
         service
             .family_member_list(&state.db)
@@ -1309,7 +1309,7 @@ pub async fn family_member_get(
     state: State<'_, AppState>,
     serial_num: String,
 ) -> Result<ApiResponse<FamilyMemberResponse>, String> {
-    let service = get_family_member_service();
+    let service = FamilyMemberService::default();
     Ok(ApiResponse::from_result(
         service
             .get_by_id(&state.db, serial_num)
@@ -1324,7 +1324,7 @@ pub async fn family_member_create(
     state: State<'_, AppState>,
     data: FamilyMemberCreate,
 ) -> Result<ApiResponse<FamilyMemberResponse>, String> {
-    let service = get_family_member_service();
+    let service = FamilyMemberService::default();
     Ok(ApiResponse::from_result(
         service
             .create(&state.db, data)
@@ -1340,7 +1340,7 @@ pub async fn family_member_update(
     serial_num: String,
     data: FamilyMemberUpdate,
 ) -> Result<ApiResponse<FamilyMemberResponse>, String> {
-    let service = get_family_member_service();
+    let service = FamilyMemberService::default();
     Ok(ApiResponse::from_result(
         service
             .update(&state.db, serial_num, data)
@@ -1355,7 +1355,7 @@ pub async fn family_member_delete(
     state: State<'_, AppState>,
     serial_num: String,
 ) -> Result<ApiResponse<()>, String> {
-    let service = get_family_member_service();
+    let service = FamilyMemberService::default();
     Ok(ApiResponse::from_result(
         service.delete(&state.db, serial_num).await,
     ))
@@ -1369,7 +1369,7 @@ pub async fn transaction_get_stats(
     state: State<'_, AppState>,
     request: TransactionStatsRequest,
 ) -> Result<ApiResponse<TransactionStatsResponse>, String> {
-    let service = get_transaction_service();
+    let service = TransactionService::default();
     Ok(ApiResponse::from_result(
         service.get_transaction_stats(&state.db, request).await,
     ))

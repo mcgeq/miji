@@ -83,6 +83,16 @@ pub struct TodoTagsService {
     >,
 }
 
+impl Default for TodoTagsService {
+    fn default() -> Self {
+        Self::new(
+            TodoTagsConverter,
+            TodoTagHooks,
+            Arc::new(common::log::logger::NoopLogger),
+        )
+    }
+}
+
 impl TodoTagsService {
     pub fn new(
         converter: TodoTagsConverter,
@@ -206,12 +216,4 @@ impl TodoTagsService {
     ) -> MijiResult<u64> {
         self.count_with_filter(db, filter).await
     }
-}
-
-pub fn get_todo_tag_service() -> TodoTagsService {
-    TodoTagsService::new(
-        TodoTagsConverter,
-        TodoTagHooks,
-        Arc::new(common::log::logger::NoopLogger),
-    )
 }

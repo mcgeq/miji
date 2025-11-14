@@ -76,6 +76,16 @@ pub struct FamilyMemberService {
     >,
 }
 
+impl Default for FamilyMemberService {
+    fn default() -> Self {
+        Self::new(
+            FamilyMemberConverter,
+            FamilyMemberHooks,
+            Arc::new(common::log::logger::NoopLogger),
+        )
+    }
+}
+
 impl FamilyMemberService {
     pub fn new(
         converter: FamilyMemberConverter,
@@ -184,12 +194,4 @@ impl FamilyMemberService {
         }
         Ok(result)
     }
-}
-
-pub fn get_family_member_service() -> FamilyMemberService {
-    FamilyMemberService::new(
-        FamilyMemberConverter,
-        FamilyMemberHooks,
-        Arc::new(common::log::logger::NoopLogger),
-    )
 }

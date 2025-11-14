@@ -90,6 +90,16 @@ pub struct TodoTaskDependencyService {
     >,
 }
 
+impl Default for TodoTaskDependencyService {
+    fn default() -> Self {
+        Self::new(
+            TodoTaskDependencyConverter,
+            TodoTaskDependencyHooks,
+            Arc::new(common::log::logger::NoopLogger),
+        )
+    }
+}
+
 impl TodoTaskDependencyService {
     pub fn new(
         converter: TodoTaskDependencyConverter,
@@ -157,12 +167,4 @@ impl TodoTaskDependencyService {
         let model = self.update(db, id_tuple, data).await?;
         self.converter().model_with_local(model).await
     }
-}
-
-pub fn get_task_dependency_service() -> TodoTaskDependencyService {
-    TodoTaskDependencyService::new(
-        TodoTaskDependencyConverter,
-        TodoTaskDependencyHooks,
-        Arc::new(common::log::logger::NoopLogger),
-    )
 }

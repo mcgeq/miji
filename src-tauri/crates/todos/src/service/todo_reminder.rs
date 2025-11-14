@@ -75,6 +75,16 @@ pub struct TodoRemindersService {
     >,
 }
 
+impl Default for TodoRemindersService {
+    fn default() -> Self {
+        Self::new(
+            TodoReminderConverter,
+            TodoReminderHooks,
+            Arc::new(common::log::logger::NoopLogger),
+        )
+    }
+}
+
 impl TodoRemindersService {
     pub fn new(
         converter: TodoReminderConverter,
@@ -198,12 +208,4 @@ impl TodoRemindersService {
     ) -> MijiResult<u64> {
         self.count_with_filter(db, filter).await
     }
-}
-
-pub fn get_reminder_service() -> TodoRemindersService {
-    TodoRemindersService::new(
-        TodoReminderConverter,
-        TodoReminderHooks,
-        Arc::new(common::log::logger::NoopLogger),
-    )
 }

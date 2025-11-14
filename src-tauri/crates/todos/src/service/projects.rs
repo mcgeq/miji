@@ -73,6 +73,16 @@ pub struct ProjectsService {
     >,
 }
 
+impl Default for ProjectsService {
+    fn default() -> Self {
+        Self::new(
+            ProjectConverter,
+            ProjectHooks,
+            Arc::new(common::log::logger::NoopLogger),
+        )
+    }
+}
+
 impl ProjectsService {
     pub fn new(
         converter: ProjectConverter,
@@ -192,12 +202,4 @@ impl ProjectsService {
     ) -> MijiResult<u64> {
         self.count_with_filter(db, filter).await
     }
-}
-
-pub fn get_project_service() -> ProjectsService {
-    ProjectsService::new(
-        ProjectConverter,
-        ProjectHooks,
-        Arc::new(common::log::logger::NoopLogger),
-    )
 }

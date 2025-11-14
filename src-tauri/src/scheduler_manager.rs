@@ -114,16 +114,12 @@ impl SchedulerManager {
         }
 
         let handle = match task_type {
-            SchedulerTask::Transaction => {
-                tokio::spawn(Self::run_transaction_task(app.clone()))
-            }
+            SchedulerTask::Transaction => tokio::spawn(Self::run_transaction_task(app.clone())),
             SchedulerTask::Todo => tokio::spawn(Self::run_todo_task(app.clone())),
             SchedulerTask::TodoNotification => {
                 tokio::spawn(Self::run_todo_notification_task(app.clone()))
             }
-            SchedulerTask::BilReminder => {
-                tokio::spawn(Self::run_bil_reminder_task(app.clone()))
-            }
+            SchedulerTask::BilReminder => tokio::spawn(Self::run_bil_reminder_task(app.clone())),
             SchedulerTask::Budget => tokio::spawn(Self::run_budget_task(app.clone())),
         };
 
@@ -166,12 +162,9 @@ impl SchedulerManager {
 
             let app_state = app.state::<AppState>();
             let db = app_state.db.clone();
-            let installment_service = money::services::installment::get_installment_service();
+            let installment_service = money::services::installment::InstallmentService::default();
 
-            match installment_service
-                .auto_process_due_installments(&db)
-                .await
-            {
+            match installment_service.auto_process_due_installments(&db).await {
                 Ok(processed_transactions) => {
                     if !processed_transactions.is_empty() {
                         log::info!("处理了 {} 笔到期交易", processed_transactions.len());
@@ -234,7 +227,7 @@ impl SchedulerManager {
 
             let app_state = app.state::<AppState>();
             let db = app_state.db.clone();
-            let todos_service = todos::service::todo::get_todos_service();
+            let todos_service = todos::service::todo::TodosService::default();
 
             match todos_service.process_due_reminders(&app, &db).await {
                 Ok(n) if n > 0 => log::info!("发送 {} 条待办提醒", n),
@@ -253,7 +246,7 @@ impl SchedulerManager {
 
             let app_state = app.state::<AppState>();
             let db = app_state.db.clone();
-            let service = money::services::bil_reminder::get_bil_reminder_service();
+            let service = money::services::bil_reminder::BilReminderService::default();
 
             match service.process_due_bil_reminders(&app, &db).await {
                 Ok(n) if n > 0 => log::info!("发送 {} 条账单提醒", n),
@@ -272,7 +265,7 @@ impl SchedulerManager {
 
             let app_state = app.state::<AppState>();
             let db = app_state.db.clone();
-            let service = money::services::bil_reminder::get_bil_reminder_service();
+            let service = money::services::bil_reminder::BilReminderService::default();
 
             match service.auto_create_recurring_budgets(&db).await {
                 Ok(_) => {

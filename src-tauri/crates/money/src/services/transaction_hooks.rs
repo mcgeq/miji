@@ -23,7 +23,7 @@ use crate::{
         },
     },
     error::MoneyError,
-    services::installment::get_installment_service,
+    services::installment::InstallmentService,
 };
 
 #[derive(Debug)]
@@ -67,7 +67,7 @@ impl Hooks<entity::transactions::Entity, CreateTransactionRequest, UpdateTransac
                 installment_amount: model.installment_amount.unwrap(),
                 first_due_date: model.first_due_date.unwrap(),
             };
-            let installment_service = get_installment_service();
+            let installment_service = InstallmentService::default();
             installment_service
                 .create_installment_plan_with_details(tx, installment_plan_request)
                 .await?;

@@ -76,6 +76,16 @@ pub struct PeriodSettingsService {
     >,
 }
 
+impl Default for PeriodSettingsService {
+    fn default() -> Self {
+        Self::new(
+            PeriodSettingsConverter,
+            PeriodSettingsHooks,
+            Arc::new(common::log::logger::NoopLogger),
+        )
+    }
+}
+
 impl PeriodSettingsService {
     pub fn new(
         converter: PeriodSettingsConverter,
@@ -228,12 +238,4 @@ impl PeriodSettingsService {
         let model = self.update(db, serial_num, data).await?;
         self.converter().model_with_local(model).await
     }
-}
-
-pub fn get_settings_service() -> PeriodSettingsService {
-    PeriodSettingsService::new(
-        PeriodSettingsConverter,
-        PeriodSettingsHooks,
-        Arc::new(common::log::logger::NoopLogger),
-    )
 }

@@ -5,7 +5,7 @@ use common::{
     paginations::{PagedQuery, PagedResult},
 };
 use tauri::State;
-use tracing::{info, warn, error, instrument};
+use tracing::{error, info, instrument, warn};
 
 use crate::{
     dto::users::{CreateUserDto, UpdateUserDto, User, UserQuery},
@@ -24,9 +24,9 @@ pub async fn create_user(
         role = %data.role,
         "开始创建用户"
     );
-    
-    let service = UserService::get_user_service();
-    
+
+    let service = UserService::default();
+
     match service.create(&state.db, data.clone()).await {
         Ok(result) => {
             info!(
@@ -56,8 +56,8 @@ pub async fn get_user(
     state: State<'_, AppState>,
     serial_num: String,
 ) -> Result<ApiResponse<User>, String> {
-    let service = UserService::get_user_service();
-    
+    let service = UserService::default();
+
     match service.get_by_id(&state.db, serial_num.clone()).await {
         Ok(result) => {
             info!(
@@ -84,8 +84,8 @@ pub async fn get_user_with_email(
     state: State<'_, AppState>,
     email: String,
 ) -> Result<ApiResponse<User>, String> {
-    let service = UserService::get_user_service();
-    
+    let service = UserService::default();
+
     match service.get_user_with_email(&state.db, email.clone()).await {
         Ok(result) => {
             info!(
@@ -118,9 +118,9 @@ pub async fn update_user(
         user_serial_num = %serial_num,
         "开始更新用户"
     );
-    
-    let service = UserService::get_user_service();
-    
+
+    let service = UserService::default();
+
     match service.update(&state.db, serial_num.clone(), data).await {
         Ok(result) => {
             info!(
@@ -152,9 +152,9 @@ pub async fn delete_user(
         user_serial_num = %serial_num,
         "开始删除用户"
     );
-    
-    let service = UserService::get_user_service();
-    
+
+    let service = UserService::default();
+
     match service.delete(&state.db, serial_num.clone()).await {
         Ok(_) => {
             info!(
@@ -190,15 +190,12 @@ pub async fn exists_user(
             AppError::simple(common::BusinessCode::InvalidParameter, "查询条件有误").to_string(),
         );
     }
-    
-    let service = UserService::get_user_service();
-    
+
+    let service = UserService::default();
+
     match service.exists_user(&state.db, &query).await {
         Ok(exists) => {
-            info!(
-                exists = exists,
-                "检查用户存在性成功"
-            );
+            info!(exists = exists, "检查用户存在性成功");
             Ok(ApiResponse::from_result(Ok(exists)))
         }
         Err(e) => {
@@ -218,15 +215,15 @@ pub async fn list_users(
     state: State<'_, AppState>,
     filter: UserFilter,
 ) -> Result<ApiResponse<Vec<User>>, String> {
-    let service = UserService::get_user_service();
-    
+    let service = UserService::default();
+
     match service.list_with_filter(&state.db, filter).await {
         Ok(users) => {
-            info!(
-                count = users.len(),
-                "列出用户成功"
-            );
-            Ok(ApiResponse::from_result(Ok(users.into_iter().map(User::from).collect())))
+            info!(count = users.len(), "列出用户成功");
+            Ok(ApiResponse::from_result(Ok(users
+                .into_iter()
+                .map(User::from)
+                .collect())))
         }
         Err(e) => {
             error!(
@@ -245,8 +242,8 @@ pub async fn list_users_paged(
     state: State<'_, AppState>,
     query: PagedQuery<UserFilter>,
 ) -> Result<ApiResponse<PagedResult<User>>, String> {
-    let service = UserService::get_user_service();
-    
+    let service = UserService::default();
+
     match service.list_paged(&state.db, query).await {
         Ok(paged) => {
             info!(

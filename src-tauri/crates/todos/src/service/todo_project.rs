@@ -86,6 +86,16 @@ pub struct TodoProjectsService {
     >,
 }
 
+impl Default for TodoProjectsService {
+    fn default() -> Self {
+        Self::new(
+            TodoProjectsConverter,
+            TodoProjectHooks,
+            Arc::new(common::log::logger::NoopLogger),
+        )
+    }
+}
+
 impl TodoProjectsService {
     pub fn new(
         converter: TodoProjectsConverter,
@@ -194,12 +204,4 @@ impl TodoProjectsService {
         let models = self.create_batch(db, data).await?;
         self.converter().localize_models(models).await
     }
-}
-
-pub fn get_todo_project_service() -> TodoProjectsService {
-    TodoProjectsService::new(
-        TodoProjectsConverter,
-        TodoProjectHooks,
-        Arc::new(common::log::logger::NoopLogger),
-    )
 }

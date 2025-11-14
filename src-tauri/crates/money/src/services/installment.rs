@@ -106,6 +106,16 @@ pub struct InstallmentService {
     >,
 }
 
+impl Default for InstallmentService {
+    fn default() -> Self {
+        Self::new(
+            InstallmentConverter,
+            InstallmentHooks,
+            Arc::new(common::log::logger::NoopLogger),
+        )
+    }
+}
+
 impl InstallmentService {
     pub fn new(
         converter: InstallmentConverter,
@@ -792,12 +802,4 @@ impl InstallmentService {
             Ok(false)
         }
     }
-}
-
-pub fn get_installment_service() -> InstallmentService {
-    InstallmentService::new(
-        InstallmentConverter,
-        InstallmentHooks,
-        Arc::new(common::log::logger::NoopLogger),
-    )
 }

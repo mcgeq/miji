@@ -25,8 +25,8 @@ use crate::{
         period_records::{PeriodRecordsBase, PeriodRecordsCreate},
     },
     service::{
-        period_daily_records_hooks::PeriodDailyRecordHooks,
-        period_records::get_period_record_service, period_settings::get_settings_service,
+        period_daily_records_hooks::PeriodDailyRecordHooks, period_records::PeriodRecordService,
+        period_settings::PeriodSettingsService,
     },
 };
 
@@ -155,7 +155,7 @@ impl PeriodDailyRecordConverter {
         db: &DbConn,
         model: entity::period_daily_records::Model,
     ) -> MijiResult<PeriodDailyRecordRelation> {
-        let serive = get_period_record_service();
+        let serive = PeriodRecordService::default();
         let period_record_model = serive
             .get_by_id(db, model.period_serial_num.clone())
             .await?;
@@ -312,14 +312,14 @@ impl PeriodDailyRecordService {
         let period_record_serial = match period_serial_num_opt {
             Some(serial_num) => serial_num,
             None => {
-                let period_record_service = get_period_record_service();
+                let period_record_service = PeriodRecordService::default();
                 if let Some(existing_record) = period_record_service
                     .period_record_find(db, data.core.date)
                     .await?
                 {
                     existing_record.serial_num
                 } else {
-                    let service = get_settings_service();
+                    let service = PeriodSettingsService::default();
                     let period_length = service
                         .period_settings_get(db, "".to_string())
                         .await

@@ -74,6 +74,16 @@ pub struct CategoryService {
     >,
 }
 
+impl Default for CategoryService {
+    fn default() -> Self {
+        Self::new(
+            CategoryConverter,
+            CategoryHooks,
+            Arc::new(common::log::logger::NoopLogger),
+        )
+    }
+}
+
 impl CategoryService {
     pub fn new(
         converter: CategoryConverter,
@@ -228,12 +238,4 @@ impl CategoryService {
         }
         Ok(local_models)
     }
-}
-
-pub fn get_category_service() -> CategoryService {
-    CategoryService::new(
-        CategoryConverter,
-        CategoryHooks,
-        Arc::new(common::log::logger::NoopLogger),
-    )
 }

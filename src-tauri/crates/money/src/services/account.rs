@@ -24,7 +24,7 @@ use crate::{
     dto::account::{
         AccountBalanceSummary, AccountCreate, AccountType, AccountUpdate, AccountWithRelations,
     },
-    services::{account_hooks::AccountHooks, family_member::get_family_member_service},
+    services::{account_hooks::AccountHooks, family_member::FamilyMemberService},
 };
 use entity::{
     account::{Column as AccountColumn, Entity as AccountEntity, Model as AccountModel},
@@ -264,11 +264,13 @@ pub struct AccountService {
     inner: BaseAccountService,
 }
 
-impl AccountService {
-    pub fn get_service() -> Self {
-        Self::new(None)
+impl Default for AccountService {
+    fn default() -> Self {
+        Self::new(Some(Arc::new(common::log::logger::NoopLogger)))
     }
+}
 
+impl AccountService {
     pub fn new(logger: Option<Arc<dyn OperationLogger>>) -> Self {
         let lg = logger.unwrap_or_else(|| Arc::new(NoopLogger));
         Self {
@@ -309,7 +311,7 @@ impl AccountService {
             return Ok(HashMap::new());
         }
 
-        let family_member_service = get_family_member_service();
+        let family_member_service = FamilyMemberService::default();
         family_member_service
             .family_member_batch_get(db, &owner_ids)
             .await
@@ -763,11 +765,4 @@ where
         ));
     }
     Ok(result.rows_affected)
-}
-
-/// ---------------------------------------------
-/// 获取服务实例
-/// ---------------------------------------------
-pub fn get_account_service() -> AccountService {
-    AccountService::get_service()
 }

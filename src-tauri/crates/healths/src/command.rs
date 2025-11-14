@@ -3,7 +3,7 @@ use common::{
     paginations::{PagedQuery, PagedResult},
 };
 use tauri::State;
-use tracing::{info, error, instrument};
+use tracing::{error, info, instrument};
 
 use crate::{
     dto::{
@@ -15,8 +15,8 @@ use crate::{
     },
     service::{
         period_daily_records::{PeriodDailyRecordFilter, get_period_daily_record_service},
-        period_records::{PeriodRecordFilter, get_period_record_service},
-        period_settings::get_settings_service,
+        period_records::{PeriodRecordFilter, PeriodRecordService},
+        period_settings::PeriodSettingsService,
     },
 };
 
@@ -28,9 +28,12 @@ pub async fn period_record_get(
     state: State<'_, AppState>,
     serial_num: String,
 ) -> Result<ApiResponse<PeriodRecords>, String> {
-    let service = get_period_record_service();
-    
-    match service.period_record_get(&state.db, serial_num.clone()).await {
+    let service = PeriodRecordService::default();
+
+    match service
+        .period_record_get(&state.db, serial_num.clone())
+        .await
+    {
         Ok(result) => {
             info!(
                 record_serial_num = %result.serial_num,
@@ -56,9 +59,9 @@ pub async fn period_record_create(
     data: PeriodRecordsCreate,
 ) -> Result<ApiResponse<PeriodRecords>, String> {
     info!("开始创建月经记录");
-    
-    let service = get_period_record_service();
-    
+
+    let service = PeriodRecordService::default();
+
     match service.period_record_create(&state.db, data).await {
         Ok(result) => {
             info!(
@@ -88,10 +91,13 @@ pub async fn period_record_update(
         record_serial_num = %serial_num,
         "开始更新月经记录"
     );
-    
-    let service = get_period_record_service();
-    
-    match service.period_record_update(&state.db, serial_num.clone(), data).await {
+
+    let service = PeriodRecordService::default();
+
+    match service
+        .period_record_update(&state.db, serial_num.clone(), data)
+        .await
+    {
         Ok(result) => {
             info!(
                 record_serial_num = %result.serial_num,
@@ -120,10 +126,13 @@ pub async fn period_record_delete(
         record_serial_num = %serial_num,
         "开始删除月经记录"
     );
-    
-    let service = get_period_record_service();
-    
-    match service.period_record_delete(&state.db, serial_num.clone()).await {
+
+    let service = PeriodRecordService::default();
+
+    match service
+        .period_record_delete(&state.db, serial_num.clone())
+        .await
+    {
         Ok(_) => {
             info!(
                 record_serial_num = %serial_num,
@@ -148,8 +157,8 @@ pub async fn period_record_list_paged(
     state: State<'_, AppState>,
     query: PagedQuery<PeriodRecordFilter>,
 ) -> Result<ApiResponse<PagedResult<PeriodRecords>>, String> {
-    let service = get_period_record_service();
-    
+    let service = PeriodRecordService::default();
+
     match service.period_record_list_paged(&state.db, query).await {
         Ok(paged) => {
             info!(
@@ -185,14 +194,19 @@ pub async fn period_daily_record_get(
     serial_num: String,
 ) -> Result<ApiResponse<PeriodDailyRecord>, String> {
     let service = get_period_daily_record_service();
-    
-    match service.period_daily_record_get(&state.db, serial_num.clone()).await {
+
+    match service
+        .period_daily_record_get(&state.db, serial_num.clone())
+        .await
+    {
         Ok(result) => {
             info!(
                 daily_record_serial_num = %result.period_daily_record.serial_num,
                 "获取每日记录成功"
             );
-            Ok(ApiResponse::from_result(Ok(PeriodDailyRecord::from(result))))
+            Ok(ApiResponse::from_result(Ok(PeriodDailyRecord::from(
+                result,
+            ))))
         }
         Err(e) => {
             error!(
@@ -212,16 +226,18 @@ pub async fn period_daily_record_create(
     data: PeriodDailyRecordCreate,
 ) -> Result<ApiResponse<PeriodDailyRecord>, String> {
     info!("开始创建每日记录");
-    
+
     let service = get_period_daily_record_service();
-    
+
     match service.period_daily_record_create(&state.db, data).await {
         Ok(result) => {
             info!(
                 daily_record_serial_num = %result.period_daily_record.serial_num,
                 "每日记录创建成功"
             );
-            Ok(ApiResponse::from_result(Ok(PeriodDailyRecord::from(result))))
+            Ok(ApiResponse::from_result(Ok(PeriodDailyRecord::from(
+                result,
+            ))))
         }
         Err(e) => {
             error!(
@@ -244,16 +260,21 @@ pub async fn period_daily_record_update(
         daily_record_serial_num = %serial_num,
         "开始更新每日记录"
     );
-    
+
     let service = get_period_daily_record_service();
-    
-    match service.period_daily_record_update(&state.db, serial_num.clone(), data).await {
+
+    match service
+        .period_daily_record_update(&state.db, serial_num.clone(), data)
+        .await
+    {
         Ok(result) => {
             info!(
                 daily_record_serial_num = %result.period_daily_record.serial_num,
                 "每日记录更新成功"
             );
-            Ok(ApiResponse::from_result(Ok(PeriodDailyRecord::from(result))))
+            Ok(ApiResponse::from_result(Ok(PeriodDailyRecord::from(
+                result,
+            ))))
         }
         Err(e) => {
             error!(
@@ -276,10 +297,13 @@ pub async fn period_daily_record_delete(
         daily_record_serial_num = %serial_num,
         "开始删除每日记录"
     );
-    
+
     let service = get_period_daily_record_service();
-    
-    match service.period_daily_record_delete(&state.db, serial_num.clone()).await {
+
+    match service
+        .period_daily_record_delete(&state.db, serial_num.clone())
+        .await
+    {
         Ok(_) => {
             info!(
                 daily_record_serial_num = %serial_num,
@@ -305,8 +329,11 @@ pub async fn period_daily_record_list_paged(
     query: PagedQuery<PeriodDailyRecordFilter>,
 ) -> Result<ApiResponse<PagedResult<PeriodDailyRecord>>, String> {
     let service = get_period_daily_record_service();
-    
-    match service.period_daily_record_list_paged(&state.db, query).await {
+
+    match service
+        .period_daily_record_list_paged(&state.db, query)
+        .await
+    {
         Ok(paged) => {
             info!(
                 total_count = paged.total_count,
@@ -344,9 +371,12 @@ pub async fn period_settings_get(
     state: State<'_, AppState>,
     serial_num: String,
 ) -> Result<ApiResponse<PeriodSettings>, String> {
-    let service = get_settings_service();
-    
-    match service.period_settings_get(&state.db, serial_num.clone()).await {
+    let service = PeriodSettingsService::default();
+
+    match service
+        .period_settings_get(&state.db, serial_num.clone())
+        .await
+    {
         Ok(result) => {
             info!(
                 settings_serial_num = %result.serial_num,
@@ -372,9 +402,9 @@ pub async fn period_settings_create(
     data: PeriodSettingsCreate,
 ) -> Result<ApiResponse<PeriodSettings>, String> {
     info!("开始创建月经设置");
-    
-    let service = get_settings_service();
-    
+
+    let service = PeriodSettingsService::default();
+
     match service.period_settings_create(&state.db, data).await {
         Ok(result) => {
             info!(
@@ -404,10 +434,13 @@ pub async fn period_settings_update(
         settings_serial_num = %serial_num,
         "开始更新月经设置"
     );
-    
-    let service = get_settings_service();
-    
-    match service.period_settings_update(&state.db, serial_num.clone(), data).await {
+
+    let service = PeriodSettingsService::default();
+
+    match service
+        .period_settings_update(&state.db, serial_num.clone(), data)
+        .await
+    {
         Ok(result) => {
             info!(
                 settings_serial_num = %result.serial_num,

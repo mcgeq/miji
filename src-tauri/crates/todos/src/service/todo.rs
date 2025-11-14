@@ -347,6 +347,16 @@ impl TodosService {
     }
 }
 
+impl Default for TodosService {
+    fn default() -> Self {
+        Self::new(
+            TodosConverter,
+            TodoHooks,
+            Arc::new(common::log::logger::NoopLogger),
+        )
+    }
+}
+
 impl std::ops::Deref for TodosService {
     type Target = GenericCrudService<
         entity::todo::Entity,
@@ -999,12 +1009,4 @@ impl TodosService {
         }
         Ok(())
     }
-}
-
-pub fn get_todos_service() -> TodosService {
-    TodosService::new(
-        TodosConverter,
-        TodoHooks,
-        Arc::new(common::log::logger::NoopLogger),
-    )
 }

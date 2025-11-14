@@ -85,6 +85,15 @@ pub struct SubCategoryService {
     >,
 }
 
+impl Default for SubCategoryService {
+    fn default() -> Self {
+        Self::new(
+            SubCategoryConverter,
+            SubCategoryHooks,
+            Arc::new(common::log::logger::NoopLogger),
+        )
+    }
+}
 impl SubCategoryService {
     pub fn new(
         converter: SubCategoryConverter,
@@ -154,7 +163,8 @@ impl SubCategoryService {
         db: &DbConn,
         query: PagedQuery<SubCategoryFilter>,
     ) -> MijiResult<PagedResult<entity::sub_categories::Model>> {
-        self.inner.list_paged(db, query)
+        self.inner
+            .list_paged(db, query)
             .await?
             .map_async(|rows| self.converter().localize_models(rows))
             .await
@@ -172,12 +182,4 @@ impl SubCategoryService {
         }
         Ok(local_models)
     }
-}
-
-pub fn get_sub_category_service() -> SubCategoryService {
-    SubCategoryService::new(
-        SubCategoryConverter,
-        SubCategoryHooks,
-        Arc::new(common::log::logger::NoopLogger),
-    )
 }

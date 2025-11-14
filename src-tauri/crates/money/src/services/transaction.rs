@@ -8,6 +8,7 @@ use common::{
         update_entity_columns_simple,
     },
     error::{AppError, MijiResult},
+    log::logger::NoopLogger,
     paginations::{Filter, PagedQuery, PagedResult},
     utils::date::DateUtils,
 };
@@ -48,7 +49,7 @@ use crate::{
     },
     error::MoneyError,
     services::{
-        account::get_account_service, currency::get_currency_service, transaction_hooks::NoOpHooks,
+        account::AccountService, currency::get_currency_service, transaction_hooks::NoOpHooks,
     },
 };
 
@@ -120,6 +121,12 @@ pub struct TransactionService {
         TransactionConverter,
         NoOpHooks,
     >,
+}
+
+impl Default for TransactionService {
+    fn default() -> Self {
+        Self::new(TransactionConverter, NoOpHooks, Arc::new(NoopLogger))
+    }
 }
 
 impl TransactionService {
@@ -944,7 +951,7 @@ impl TransactionConverter {
         db: &DbConn,
         model: entity::transactions::Model,
     ) -> MijiResult<TransactionWithRelations> {
-        let account_service = get_account_service();
+        let account_service = AccountService::default();
         let cny_service = get_currency_service();
 
         let (account, currency, family_member) = tokio::try_join!(
@@ -1218,8 +1225,9 @@ impl TransactionService {
                             .add(TransactionColumn::Category.ne("Transfer"))
                             .add(
                                 // 排除分期交易（is_installment = true 或 is_installment IS NULL 为 false/null）
-                                Expr::col(TransactionColumn::IsInstallment).is_null()
-                                .or(Expr::col(TransactionColumn::IsInstallment).eq(false))
+                                Expr::col(TransactionColumn::IsInstallment)
+                                    .is_null()
+                                    .or(Expr::col(TransactionColumn::IsInstallment).eq(false)),
                             ),
                         Expr::col(TransactionColumn::Amount),
                     )
@@ -1240,8 +1248,9 @@ impl TransactionService {
                             .add(TransactionColumn::Category.ne("Transfer"))
                             .add(
                                 // 排除分期交易（is_installment = true 或 is_installment IS NULL 为 false/null）
-                                Expr::col(TransactionColumn::IsInstallment).is_null()
-                                .or(Expr::col(TransactionColumn::IsInstallment).eq(false))
+                                Expr::col(TransactionColumn::IsInstallment)
+                                    .is_null()
+                                    .or(Expr::col(TransactionColumn::IsInstallment).eq(false)),
                             ),
                         Expr::col(TransactionColumn::Amount),
                     )
@@ -1264,8 +1273,9 @@ impl TransactionService {
                             .add(TransactionColumn::ActualPayerAccount.ne("CreditCard"))
                             .add(
                                 // 排除分期交易
-                                Expr::col(TransactionColumn::IsInstallment).is_null()
-                                .or(Expr::col(TransactionColumn::IsInstallment).eq(false))
+                                Expr::col(TransactionColumn::IsInstallment)
+                                    .is_null()
+                                    .or(Expr::col(TransactionColumn::IsInstallment).eq(false)),
                             ),
                         Expr::col(TransactionColumn::Amount),
                     )
@@ -1287,8 +1297,9 @@ impl TransactionService {
                             .add(TransactionColumn::ActualPayerAccount.ne("CreditCard"))
                             .add(
                                 // 排除分期交易
-                                Expr::col(TransactionColumn::IsInstallment).is_null()
-                                .or(Expr::col(TransactionColumn::IsInstallment).eq(false))
+                                Expr::col(TransactionColumn::IsInstallment)
+                                    .is_null()
+                                    .or(Expr::col(TransactionColumn::IsInstallment).eq(false)),
                             ),
                         Expr::col(TransactionColumn::Amount),
                     )
@@ -1317,8 +1328,9 @@ impl TransactionService {
                                 .add(TransactionColumn::ActualPayerAccount.eq(config.account_type))
                                 .add(
                                     // 排除分期交易
-                                    Expr::col(TransactionColumn::IsInstallment).is_null()
-                                    .or(Expr::col(TransactionColumn::IsInstallment).eq(false))
+                                    Expr::col(TransactionColumn::IsInstallment)
+                                        .is_null()
+                                        .or(Expr::col(TransactionColumn::IsInstallment).eq(false)),
                                 ),
                             Expr::col(TransactionColumn::Amount),
                         )
@@ -1339,8 +1351,9 @@ impl TransactionService {
                                 .add(TransactionColumn::ActualPayerAccount.eq(config.account_type))
                                 .add(
                                     // 排除分期交易
-                                    Expr::col(TransactionColumn::IsInstallment).is_null()
-                                    .or(Expr::col(TransactionColumn::IsInstallment).eq(false))
+                                    Expr::col(TransactionColumn::IsInstallment)
+                                        .is_null()
+                                        .or(Expr::col(TransactionColumn::IsInstallment).eq(false)),
                                 ),
                             Expr::col(TransactionColumn::Amount),
                         )
@@ -1865,15 +1878,6 @@ impl TransactionService {
 
         Ok(result)
     }
-}
-
-// 获取交易服务实例
-pub fn get_transaction_service() -> TransactionService {
-    TransactionService::new(
-        TransactionConverter,
-        NoOpHooks,
-        Arc::new(common::log::logger::NoopLogger),
-    )
 }
 
 fn parse_json<T: serde::de::DeserializeOwned>(s: &str, field: &str) -> MijiResult<T> {

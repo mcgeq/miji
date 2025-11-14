@@ -116,6 +116,16 @@ pub struct PeriodRecordService {
     >,
 }
 
+impl Default for PeriodRecordService {
+    fn default() -> Self {
+        Self::new(
+            PeriodRecordConverter,
+            PeriodRecordsHooks,
+            Arc::new(common::log::logger::NoopLogger),
+        )
+    }
+}
+
 impl PeriodRecordService {
     pub fn new(
         converter: PeriodRecordConverter,
@@ -309,12 +319,4 @@ impl PeriodRecordService {
             total_pages: paged.total_pages,
         })
     }
-}
-
-pub fn get_period_record_service() -> PeriodRecordService {
-    PeriodRecordService::new(
-        PeriodRecordConverter,
-        PeriodRecordsHooks,
-        Arc::new(common::log::logger::NoopLogger),
-    )
 }

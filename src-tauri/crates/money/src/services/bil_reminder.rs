@@ -20,7 +20,7 @@ use validator::Validate;
 
 use crate::{
     dto::bil_reminder::{BilReminderCreate, BilReminderUpdate},
-    services::bil_reminder_hooks::BilReminderHooks,
+    services::{bil_reminder_hooks::BilReminderHooks, budget::BudgetService},
 };
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -69,6 +69,16 @@ pub struct BilReminderService {
         BilReminderConverter,
         BilReminderHooks,
     >,
+}
+
+impl Default for BilReminderService {
+    fn default() -> Self {
+        Self::new(
+            BilReminderConverter,
+            BilReminderHooks,
+            Arc::new(common::log::logger::NoopLogger),
+        )
+    }
 }
 
 impl BilReminderService {
@@ -404,7 +414,10 @@ impl BilReminderService {
     ) -> MijiResult<entity::bil_reminder::Model> {
         update_entity_columns_simple::<entity::bil_reminder::Entity, _>(
             db,
-            vec![(entity::bil_reminder::Column::SerialNum, vec![serial_num.clone()])],
+            vec![(
+                entity::bil_reminder::Column::SerialNum,
+                vec![serial_num.clone()],
+            )],
             vec![
                 (entity::bil_reminder::Column::IsPaid, Expr::value(is_paid)),
                 (
@@ -854,8 +867,6 @@ impl BilReminderService {
     /// 并将原预算标记为 IsActive=false 和 AlertEnabled=false
     pub async fn auto_create_recurring_budgets(&self, db: &DbConn) -> MijiResult<()> {
         use crate::dto::budget::BudgetCreate;
-        use crate::services::budget::get_budget_service;
-
         let now = DateUtils::local_now();
         let today = now.date_naive();
         let today_end = today
@@ -884,7 +895,7 @@ impl BilReminderService {
             today
         );
 
-        let budget_service = get_budget_service();
+        let budget_service = BudgetService::default();
         let mut created_count = 0;
         let mut updated_count = 0;
 
@@ -1332,12 +1343,4 @@ impl BilReminderService {
 
         Ok(sent)
     }
-}
-
-pub fn get_bil_reminder_service() -> BilReminderService {
-    BilReminderService::new(
-        BilReminderConverter,
-        BilReminderHooks,
-        Arc::new(common::log::logger::NoopLogger),
-    )
 }

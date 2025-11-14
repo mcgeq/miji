@@ -7,6 +7,7 @@
 // Create   Date:  2025-11-11
 // -----------------------------------------------------------------------------
 
+use auth::services::user::UserService;
 use chrono::{Duration, Utc};
 use common::{
     AppState, TokenResponse, TokenStatus,
@@ -20,7 +21,6 @@ use std::collections::HashMap;
 use std::sync::Mutex;
 use tauri::{AppHandle, Emitter, Manager, State};
 use tracing::info;
-use auth::services::user::UserService;
 
 // ==================== 全局状态 ====================
 
@@ -57,7 +57,10 @@ pub async fn set_complete(
 }
 
 #[tauri::command]
-pub async fn greet(name: String, state: State<'_, AppState>) -> Result<ApiResponse<String>, String> {
+pub async fn greet(
+    name: String,
+    state: State<'_, AppState>,
+) -> Result<ApiResponse<String>, String> {
     let _db = state.db.clone();
     info!("Greet {name}");
     Ok(ApiResponse::success(format!(
@@ -90,7 +93,7 @@ pub async fn check_pwd(
     pwd: String,
     user_id: String,
 ) -> Result<ApiResponse<bool>, String> {
-    let service = UserService::get_user_service();
+    let service = UserService::default();
     let pwd_hash = service.get_user_password(&state.db, user_id).await;
     let result = check_password_hash(&pwd, &pwd_hash.ok().unwrap());
     Ok(ApiResponse::from_result(result))

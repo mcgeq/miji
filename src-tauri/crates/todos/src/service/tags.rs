@@ -50,10 +50,7 @@ impl CrudConverter<entity::tag::Entity, TagCreate, TagUpdate> for TagsConverter 
 
 #[async_trait]
 impl LocalizableConverter<entity::tag::Model> for TagsConverter {
-    async fn model_with_local(
-        &self,
-        model: entity::tag::Model,
-    ) -> MijiResult<entity::tag::Model> {
+    async fn model_with_local(&self, model: entity::tag::Model) -> MijiResult<entity::tag::Model> {
         Ok(model.to_local())
     }
 }
@@ -68,6 +65,16 @@ pub struct TagsService {
         TagsConverter,
         TagsHooks,
     >,
+}
+
+impl Default for TagsService {
+    fn default() -> Self {
+        Self::new(
+            TagsConverter,
+            TagsHooks,
+            Arc::new(common::log::logger::NoopLogger),
+        )
+    }
 }
 
 impl TagsService {
@@ -185,12 +192,4 @@ impl TagsService {
     pub async fn tag_count_with_filter(&self, db: &DbConn, filter: TagsFilter) -> MijiResult<u64> {
         self.count_with_filter(db, filter).await
     }
-}
-
-pub fn get_tags_service() -> TagsService {
-    TagsService::new(
-        TagsConverter,
-        TagsHooks,
-        Arc::new(common::log::logger::NoopLogger),
-    )
 }
