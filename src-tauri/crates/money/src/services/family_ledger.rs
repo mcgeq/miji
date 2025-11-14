@@ -1,9 +1,85 @@
+use common::{
+    business_code::BusinessCode,
+    crud::service::{CrudConverter, GenericCrudService},
+    error::{AppError, MijiResult},
+    log::logger::NoopLogger,
+    paginations::EmptyFilter,
+    utils::{date::DateUtils, uuid::McgUuid},
+};
 use entity::{family_ledger, prelude::*};
-use sea_orm::{ActiveModelTrait, DatabaseConnection, EntityTrait, Set};
+use sea_orm::{ActiveModelTrait, ActiveValue, DatabaseConnection, EntityTrait, Set};
+use std::fmt;
 use tracing::{info, instrument};
-use common::{business_code::BusinessCode, error::AppError, utils::{date::DateUtils, uuid::McgUuid}};
 
-use crate::dto::family_ledger::{FamilyLedgerCreate, FamilyLedgerUpdate, FamilyLedgerStats};
+use crate::{
+    dto::family_ledger::{FamilyLedgerCreate, FamilyLedgerStats, FamilyLedgerUpdate},
+    services::family_ledger_hooks::FamilyLedgerHooks,
+};
+
+pub type FamilyLedgerFilter = EmptyFilter;
+
+#[derive(Debug)]
+pub struct FamilyLedgerConverter;
+
+impl CrudConverter<entity::family_ledger::Entity, FamilyLedgerCreate, FamilyLedgerUpdate>
+    for FamilyLedgerConverter
+{
+    fn create_to_active_model(
+        &self,
+        data: FamilyLedgerCreate,
+    ) -> MijiResult<entity::family_ledger::ActiveModel> {
+        entity::family_ledger::ActiveModel::try_from(data).map_err(AppError::from_validation_errors)
+    }
+
+    fn update_to_active_model(
+        &self,
+        model: entity::family_ledger::Model,
+        data: FamilyLedgerUpdate,
+    ) -> MijiResult<entity::family_ledger::ActiveModel> {
+        entity::family_ledger::ActiveModel::try_from(data)
+            .map(|mut active_model| {
+                active_model.name = ActiveValue::Set(model.name.clone());
+                active_model.created_at = ActiveValue::Set(model.created_at);
+                active_model.updated_at = ActiveValue::Set(Some(DateUtils::local_now()));
+                active_model
+            })
+            .map_err(AppError::from_validation_errors)
+    }
+
+    fn primary_key_to_string(&self, model: &entity::family_ledger::Model) -> String {
+        model.serial_num.clone()
+    }
+
+    fn table_name(&self) -> &'static str {
+        "family_ledger"
+    }
+}
+
+pub struct FamilyLedgerService {
+    inner: GenericCrudService<
+        entity::family_ledger::Entity,
+        FamilyLedgerFilter,
+        FamilyLedgerCreate,
+        FamilyLedgerUpdate,
+        FamilyLedgerConverter,
+        FamilyLedgerHooks,
+    >,
+}
+
+impl std::ops::Deref for FamilyLedgerService {
+    type Target = GenericCrudService<
+        entity::family_ledger::Entity,
+        FamilyLedgerFilter,
+        FamilyLedgerCreate,
+        FamilyLedgerUpdate,
+        FamilyLedgerConverter,
+        FamilyLedgerHooks,
+    >;
+
+    fn deref(&self) -> &Self::Target {
+        &self.inner
+    }
+}
 
 /// 转换账本类型为数据库格式
 fn normalize_ledger_type(ledger_type: &str) -> String {
@@ -38,12 +114,25 @@ fn normalize_status(status: &str) -> String {
     }
 }
 
-#[derive(Debug)]
-pub struct FamilyLedgerService;
+impl FamilyLedgerService {
+    pub fn new(
+        converter: FamilyLedgerConverter,
+        hooks: FamilyLedgerHooks,
+        logger: std::sync::Arc<dyn common::log::logger::OperationLogger>,
+    ) -> Self {
+        Self {
+            inner: GenericCrudService::new(converter, hooks, logger),
+        }
+    }
+}
 
 impl Default for FamilyLedgerService {
     fn default() -> Self {
-        Self
+        Self::new(
+            FamilyLedgerConverter,
+            FamilyLedgerHooks,
+            std::sync::Arc::new(NoopLogger),
+        )
     }
 }
 
@@ -55,9 +144,9 @@ impl FamilyLedgerService {
         db: &DatabaseConnection,
     ) -> Result<Vec<family_ledger::Model>, AppError> {
         info!("Getting family ledger list");
-        
+
         let ledgers = FamilyLedger::find().all(db).await?;
-        
+
         info!("Found {} family ledgers", ledgers.len());
         Ok(ledgers)
     }
@@ -70,9 +159,9 @@ impl FamilyLedgerService {
         serial_num: String,
     ) -> Result<Option<family_ledger::Model>, AppError> {
         info!("Getting family ledger by id: {}", serial_num);
-        
+
         let ledger = FamilyLedger::find_by_id(serial_num).one(db).await?;
-        
+
         Ok(ledger)
     }
 
@@ -84,10 +173,10 @@ impl FamilyLedgerService {
         data: FamilyLedgerCreate,
     ) -> Result<family_ledger::Model, AppError> {
         info!("Creating family ledger: {}", data.name);
-        
+
         let serial_num = McgUuid::uuid(38);
         let now = DateUtils::local_now();
-        
+
         let active_model = family_ledger::ActiveModel {
             serial_num: Set(serial_num),
             name: Set(Some(data.name)),
@@ -98,10 +187,18 @@ impl FamilyLedgerService {
             transactions: Set(data.transactions.map(|v| v.to_string())),
             budgets: Set(data.budgets.map(|v| v.to_string())),
             audit_logs: Set("[]".to_string()),
-            ledger_type: Set(normalize_ledger_type(&data.ledger_type.unwrap_or_else(|| "Family".to_string()))),
-            settlement_cycle: Set(normalize_settlement_cycle(&data.settlement_cycle.unwrap_or_else(|| "Monthly".to_string()))),
+            ledger_type: Set(normalize_ledger_type(
+                &data.ledger_type.unwrap_or_else(|| "Family".to_string()),
+            )),
+            settlement_cycle: Set(normalize_settlement_cycle(
+                &data
+                    .settlement_cycle
+                    .unwrap_or_else(|| "Monthly".to_string()),
+            )),
             auto_settlement: Set(data.auto_settlement.unwrap_or(false)),
-            default_split_rule: Set(data.default_split_rule.map(|v| serde_json::from_value(v).unwrap_or_default())),
+            default_split_rule: Set(data
+                .default_split_rule
+                .map(|v| serde_json::from_value(v).unwrap_or_default())),
             last_settlement_at: Set(None),
             next_settlement_at: Set(None),
             status: Set(normalize_status("Active")),
@@ -110,8 +207,11 @@ impl FamilyLedgerService {
         };
 
         let result = active_model.insert(db).await?;
-        
-        info!("Created family ledger with serial_num: {}", result.serial_num);
+
+        info!(
+            "Created family ledger with serial_num: {}",
+            result.serial_num
+        );
         Ok(result)
     }
 
@@ -124,16 +224,16 @@ impl FamilyLedgerService {
         data: FamilyLedgerUpdate,
     ) -> Result<family_ledger::Model, AppError> {
         info!("Updating family ledger: {}", serial_num);
-        
+
         let ledger = FamilyLedger::find_by_id(&serial_num)
             .one(db)
             .await?
             .ok_or_else(|| AppError::simple(BusinessCode::NotFound, "Family ledger not found"))?;
 
         let now = DateUtils::local_now();
-        
+
         let mut active_model: family_ledger::ActiveModel = ledger.into();
-        
+
         if let Some(name) = data.name {
             active_model.name = Set(Some(name));
         }
@@ -152,11 +252,11 @@ impl FamilyLedgerService {
         if let Some(auto_settlement) = data.auto_settlement {
             active_model.auto_settlement = Set(auto_settlement);
         }
-        
+
         active_model.updated_at = Set(Some(now));
 
         let result = active_model.update(db).await?;
-        
+
         info!("Updated family ledger: {}", result.serial_num);
         Ok(result)
     }
@@ -169,14 +269,16 @@ impl FamilyLedgerService {
         serial_num: String,
     ) -> Result<(), AppError> {
         info!("Deleting family ledger: {}", serial_num);
-        
+
         let ledger = FamilyLedger::find_by_id(&serial_num)
             .one(db)
             .await?
             .ok_or_else(|| AppError::simple(BusinessCode::NotFound, "Family ledger not found"))?;
 
-        FamilyLedger::delete_by_id(ledger.serial_num).exec(db).await?;
-        
+        FamilyLedger::delete_by_id(ledger.serial_num)
+            .exec(db)
+            .await?;
+
         info!("Deleted family ledger: {}", serial_num);
         Ok(())
     }
@@ -189,10 +291,12 @@ impl FamilyLedgerService {
         serial_num: String,
     ) -> Result<FamilyLedgerStats, AppError> {
         info!("Getting family ledger stats: {}", serial_num);
-        
-        let _ledger = self.get_by_id(db, serial_num.clone()).await?
+
+        let _ledger = self
+            .get_by_id(db, serial_num.clone())
+            .await?
             .ok_or_else(|| AppError::simple(BusinessCode::NotFound, "Family ledger not found"))?;
-        
+
         // TODO: 实现更详细的统计逻辑，包括成员统计
         // 目前返回基础统计数据，因为实际的统计字段还没有在数据库中实现
         let stats = FamilyLedgerStats {
@@ -206,12 +310,15 @@ impl FamilyLedgerService {
             active_transaction_count: 0,
             member_stats: vec![], // TODO: 实现成员统计
         };
-        
+
         Ok(stats)
     }
 }
 
-/// 获取家庭账本服务实例
-pub fn get_family_ledger_service() -> FamilyLedgerService {
-    FamilyLedgerService
+impl std::fmt::Debug for FamilyLedgerService {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("FamilyLedgerService")
+            .field("inner", &"<GenericCrudService>") // 不打印内部细节
+            .finish()
+    }
 }
