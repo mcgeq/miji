@@ -213,5 +213,5 @@ impl FamilyLedgerService {
 
 /// 获取家庭账本服务实例
 pub fn get_family_ledger_service() -> FamilyLedgerService {
-    FamilyLedgerService::default()
+    FamilyLedgerService
 }

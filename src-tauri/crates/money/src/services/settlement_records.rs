@@ -308,7 +308,7 @@ impl SettlementRecordsService {
             })?;
 
         let participant_members = serde_json::to_value(
-            &suggestion
+            suggestion
                 .settlement_details
                 .iter()
                 .map(|d| &d.member_serial_num)

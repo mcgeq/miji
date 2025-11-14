@@ -173,7 +173,7 @@ impl PermissionService {
             .map(|s| s.to_string())
             .collect(),
 
-            "Member" => vec![
+            "Member" => [
                 // 账本权限（仅查看）
                 "ledger:view",
                 // 成员权限（仅查看）
@@ -195,7 +195,7 @@ impl PermissionService {
             .map(|s| s.to_string())
             .collect(),
 
-            "Viewer" => vec![
+            "Viewer" => [
                 // 仅查看权限
                 "ledger:view",
                 "member:view",
@@ -485,12 +485,11 @@ impl PermissionService {
             })?;
 
         for (_, member_opt) in member_relation {
-            if let Some(member) = member_opt {
-                if let Some(member_user_id) = &member.user_id {
-                    if member_user_id == user_id {
-                        return Ok(Some(member));
-                    }
-                }
+            if let Some(member) = member_opt
+                && let Some(member_user_id) = &member.user_id
+                && member_user_id == user_id
+            {
+                return Ok(Some(member));
             }
         }
 

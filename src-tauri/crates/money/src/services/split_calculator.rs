@@ -109,7 +109,7 @@ impl SplitCalculator {
         let mut split_records = Vec::new();
         let mut allocated_remainder = Decimal::ZERO;
 
-        for (_index, participant) in participants.iter().enumerate() {
+        for participant in participants.iter() {
             let mut split_amount = base_amount;
 
             // 将余数分配给前几个参与者

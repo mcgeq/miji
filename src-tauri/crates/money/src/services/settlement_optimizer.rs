@@ -211,7 +211,7 @@ impl SettlementOptimizer {
         for transfer in &transfers {
             graph
                 .entry(transfer.from_member.clone())
-                .or_insert_with(HashMap::new)
+                .or_default()
                 .insert(transfer.to_member.clone(), transfer.amount);
         }
 
