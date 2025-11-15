@@ -85,9 +85,7 @@ function switchTab(tab: 'overview' | 'records') {
 
 <style scoped>
 .settlement-view {
-  padding: 1rem;
-  max-width: 1200px;
-  margin: 0 auto;
+  padding: 0;
 }
 
 .view-header {

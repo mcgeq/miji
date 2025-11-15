@@ -154,6 +154,7 @@ function getRoleName(role: FamilyMember['role']) {
 
 const currentStats = computed(() => currentLedgerStats.value);
 const memberCount = computed(() => currentLedger.value?.members || members.value.length || 0);
+const accountCount = computed(() => currentLedger.value?.accounts);
 const activeTransactions = computed(() => currentStats.value?.activeTransactionCount || allTransactions.value.length);
 
 function getTabIcon(iconName: string) {
@@ -198,13 +199,13 @@ function getTabIcon(iconName: string) {
                   @click="activeTab = tab.key as 'settlement' | 'statistics'"
                 >
                   <component :is="getTabIcon(tab.icon)" class="tab-icon" />
-                  <span class="tab-label text-sm">{{ tab.label }}</span>
                 </button>
               </div>
               <div class="meta">
-                <span>基础币种：{{ currentLedger.baseCurrency?.code || 'CNY' }}</span>
+                <span>币种：{{ currentLedger.baseCurrency?.code || 'CNY' }}</span>
                 <span>结算周期：{{ currentLedger.settlementCycle }}</span>
                 <span>成员数：{{ memberCount }}</span>
+                <span>账户数：{{ accountCount }}</span>
               </div>
             </div>
           </div>
@@ -476,14 +477,14 @@ function getTabIcon(iconName: string) {
 }
 
 .tab-btn.active {
-  background: var(--color-primary-soft);
-  border-color: var(--color-primary);
-  color: var(--color-primary-content);
+  background: var(--color-base-300);
+  border-color: var(--color-neutral);
+  color: var(--color-accent);
 }
 
 .tab-icon {
-  width: 16px;
-  height: 16px;
+  width: 1rem;
+  height: 1rem;
 }
 
 .meta {
@@ -537,6 +538,23 @@ function getTabIcon(iconName: string) {
   grid-template-columns: minmax(280px, 360px) 1fr;
   gap: 24px;
   margin-top: 32px;
+}
+
+.detail-tabs {
+  margin-top: 1em;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.tab-content {
+  background: var(--color-base-100);
+  border-radius: 1rem;
+  padding: 1rem;
+  box-shadow: 0 10px 30px rgb(15 23 42 / 0.08);
+}
+
+.tab-panel {
+  width: 100%;
 }
 
 .members-panel,
