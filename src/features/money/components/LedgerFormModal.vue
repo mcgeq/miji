@@ -44,10 +44,11 @@ const familyLedger = props.ledger || {
   name: '',
   description: '',
   baseCurrency: CURRENCY_CNY,
-  members: [] as FamilyMember[],
-  accounts: '',
-  transactions: '',
-  budgets: '',
+  memberList: [] as FamilyMember[],
+  members: 0,
+  accounts: 0,
+  transactions: 0,
+  budgets: 0,
   auditLogs: '',
   ledgerType: 'FAMILY' as const,
   settlementCycle: 'MONTHLY' as const,
@@ -59,8 +60,6 @@ const familyLedger = props.ledger || {
   sharedExpense: 0,
   personalExpense: 0,
   pendingSettlement: 0,
-  memberCount: 0,
-  activeTransactionCount: 0,
   lastSettlementAt: null,
   createdAt: '',
   updatedAt: '',
@@ -72,10 +71,11 @@ const form = ref<FamilyLedger>({
   name: familyLedger.name,
   description: familyLedger.description,
   baseCurrency: familyLedger.baseCurrency,
-  members: familyLedger.members,
-  accounts: familyLedger.accounts,
-  transactions: familyLedger.transactions,
-  budgets: familyLedger.budgets,
+  memberList: familyLedger.memberList || [],
+  members: familyLedger.members || 0,
+  accounts: familyLedger.accounts || 0,
+  transactions: familyLedger.transactions || 0,
+  budgets: familyLedger.budgets || 0,
   auditLogs: familyLedger.auditLogs,
   ledgerType: familyLedger.ledgerType,
   settlementCycle: familyLedger.settlementCycle,
@@ -87,8 +87,6 @@ const form = ref<FamilyLedger>({
   sharedExpense: familyLedger.sharedExpense,
   personalExpense: familyLedger.personalExpense,
   pendingSettlement: familyLedger.pendingSettlement,
-  memberCount: familyLedger.memberCount,
-  activeTransactionCount: familyLedger.activeTransactionCount,
   lastSettlementAt: familyLedger.lastSettlementAt,
   createdAt: familyLedger.createdAt,
   updatedAt: familyLedger.updatedAt,
@@ -99,9 +97,9 @@ const isFormValid = computed(() => {
   return (
     form.value.name.trim().length > 0
     && form.value.baseCurrency.code
-    && form.value.members.length > 0
-    && form.value.members.every(member => member.name.trim().length > 0)
-    && form.value.members.some(member => member.isPrimary)
+    && form.value.memberList && form.value.memberList.length > 0
+    && form.value.memberList.every(member => member.name.trim().length > 0)
+    && form.value.memberList.some(member => member.isPrimary)
   );
 });
 
@@ -121,7 +119,7 @@ function addMember() {
     serialNum: `temp_${Date.now()}`, // 临时ID，保存时会由后端生成
     name: '',
     role: 'Member' as const,
-    isPrimary: form.value.members.length === 0, // 第一个成员默认为主要成员
+    isPrimary: form.value.memberList!.length === 0, // 第一个成员默认为主要成员
     permissions: '',
     userSerialNum: null,
     avatar: null,
@@ -135,22 +133,22 @@ function addMember() {
     createdAt: new Date().toISOString(),
     updatedAt: null,
   };
-  form.value.members.push(newMember);
+  form.value.memberList!.push(newMember);
 }
 
 // 删除成员
 function removeMember(index: number) {
-  if (form.value.members.length === 1) {
+  if (form.value.memberList!.length === 1) {
     // 使用 toast 显示警告，实际项目中需要替换为你的 toast 实现
     return;
   }
 
-  const memberToRemove = form.value.members[index];
-  form.value.members.splice(index, 1);
+  const memberToRemove = form.value.memberList![index];
+  form.value.memberList!.splice(index, 1);
 
   // 如果删除的是主要成员，且还有其他成员，则将第一个成员设为主要成员
-  if (memberToRemove.isPrimary && form.value.members.length > 0) {
-    form.value.members[0].isPrimary = true;
+  if (memberToRemove.isPrimary && form.value.memberList!.length > 0) {
+    form.value.memberList![0].isPrimary = true;
   }
 }
 
@@ -163,7 +161,7 @@ async function handleSubmit() {
   }
 
   // 确保只有一个主要成员
-  const primaryMembers = form.value.members.filter(m => m.isPrimary);
+  const primaryMembers = form.value.memberList!.filter(m => m.isPrimary);
   if (primaryMembers.length === 0) {
     // toast.warning(t('messages.atLeastOnePrimary'));
     toast.warning('请至少指定一个主要成员');
@@ -212,10 +210,11 @@ function initializeForm() {
       name: props.ledger.name || '',
       description: props.ledger.description || '',
       baseCurrency: props.ledger.baseCurrency || CURRENCY_CNY,
-      members: props.ledger.members ? [...props.ledger.members] : [],
-      accounts: props.ledger.accounts || '',
-      transactions: props.ledger.transactions || '',
-      budgets: props.ledger.budgets || '',
+      memberList: props.ledger.memberList ? [...props.ledger.memberList] : [],
+      members: props.ledger.members || 0,
+      accounts: props.ledger.accounts || 0,
+      transactions: props.ledger.transactions || 0,
+      budgets: props.ledger.budgets || 0,
       auditLogs: props.ledger.auditLogs || '',
       ledgerType: props.ledger.ledgerType || 'FAMILY',
       settlementCycle: props.ledger.settlementCycle || 'MONTHLY',
@@ -227,8 +226,6 @@ function initializeForm() {
       sharedExpense: props.ledger.sharedExpense || 0,
       personalExpense: props.ledger.personalExpense || 0,
       pendingSettlement: props.ledger.pendingSettlement || 0,
-      memberCount: props.ledger.memberCount || 0,
-      activeTransactionCount: props.ledger.activeTransactionCount || 0,
       lastSettlementAt: props.ledger.lastSettlementAt || null,
       createdAt: props.ledger.createdAt || '',
       updatedAt: props.ledger.updatedAt || '',
@@ -240,10 +237,11 @@ function initializeForm() {
       name: '',
       description: '',
       baseCurrency: CURRENCY_CNY,
-      members: [],
-      accounts: '',
-      budgets: '',
-      transactions: '',
+      memberList: [],
+      members: 0,
+      accounts: 0,
+      budgets: 0,
+      transactions: 0,
       auditLogs: '',
       ledgerType: 'FAMILY',
       settlementCycle: 'MONTHLY',
@@ -255,8 +253,6 @@ function initializeForm() {
       sharedExpense: 0,
       personalExpense: 0,
       pendingSettlement: 0,
-      memberCount: 0,
-      activeTransactionCount: 0,
       lastSettlementAt: null,
       createdAt: '',
       updatedAt: '',
@@ -372,7 +368,7 @@ onMounted(() => {
               </button>
             </div>
 
-            <div v-if="form.members.length === 0" class="text-gray-500 py-6 text-center">
+            <div v-if="form.memberList && form.memberList.length === 0" class="text-gray-500 py-6 text-center">
               <LucideUsers class="text-gray-300 mx-auto mb-2 h-12 w-12" />
               <p>{{ t('familyLedger.noMembers') }}</p>
               <p class="text-sm">
@@ -382,7 +378,7 @@ onMounted(() => {
 
             <div v-else class="space-y-3">
               <div
-                v-for="(member, index) in form.members" :key="index"
+                v-for="(member, index) in form.memberList" :key="index"
                 class="p-3 border border-gray-200 rounded-md flex gap-3 items-center"
               >
                 <div class="flex-1">
@@ -417,7 +413,7 @@ onMounted(() => {
                     {{ t('familyLedger.primaryMember') }}
                   </label>
                   <button
-                    type="button" class="text-red-500 p-1 hover:text-red-700" :disabled="form.members.length === 1"
+                    type="button" class="text-red-500 p-1 hover:text-red-700" :disabled="form.memberList && form.memberList.length === 1"
                     @click="removeMember(index)"
                   >
                     <LucideTrash2 class="h-4 w-4" />

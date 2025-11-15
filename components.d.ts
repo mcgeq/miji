@@ -90,7 +90,6 @@ declare module 'vue' {
     LucideRotateCcw: typeof import('lucide-vue-next')['RotateCcw']
     LucideSearch: typeof import('lucide-vue-next')['Search']
     LucideSettings: typeof import('lucide-vue-next')['Settings']
-    LucideShieldCheck: typeof import('lucide-vue-next')['ShieldCheck']
     LucideShieldUser: typeof import('lucide-vue-next')['ShieldUser']
     LucideShuffle: typeof import('lucide-vue-next')['Shuffle']
     LucideSmile: typeof import('lucide-vue-next')['Smile']

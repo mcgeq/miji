@@ -165,7 +165,7 @@ function formatDate(dateString?: string) {
                   </div>
                   <div class="flex gap-1 items-center">
                     <LucideUsers class="h-3 w-3" />
-                    <span>成员: {{ ledger.members?.length || 0 }}人</span>
+                    <span>成员: {{ ledger.members || 0 }}人</span>
                   </div>
                   <div class="flex gap-1 items-center">
                     <LucideCalendar class="h-3 w-3" />

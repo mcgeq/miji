@@ -297,12 +297,6 @@ function saveLedger() {
   emit('save', ledgerData);
 }
 
-function _resolveCurrency(code?: string): Currency {
-  if (!code) return CURRENCY_CNY;
-  const matched = currencies.value.find(currency => currency.code === code);
-  return matched || { ...CURRENCY_CNY, code };
-}
-
 function buildLedgerForm(source: FamilyLedger | null): FamilyLedger {
   if (!source) {
     // 初始化时清空列表

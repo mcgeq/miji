@@ -215,6 +215,7 @@ declare global {
   const useEventListener: typeof import('@vueuse/core')['useEventListener']
   const useEventSource: typeof import('@vueuse/core')['useEventSource']
   const useEyeDropper: typeof import('@vueuse/core')['useEyeDropper']
+  const useFamilyMemberSearch: typeof import('./composables/useFamilyMemberSearch')['useFamilyMemberSearch']
   const useFavicon: typeof import('@vueuse/core')['useFavicon']
   const useFetch: typeof import('@vueuse/core')['useFetch']
   const useFileDialog: typeof import('@vueuse/core')['useFileDialog']
@@ -390,6 +391,9 @@ declare global {
   // @ts-ignore
   export type { BudgetStatsState, BudgetStatsFilters } from './composables/useBudgetStats'
   import('./composables/useBudgetStats')
+  // @ts-ignore
+  export type { FamilyMember } from './composables/useFamilyMemberSearch'
+  import('./composables/useFamilyMemberSearch')
   // @ts-ignore
   export type { KeyboardShortcut } from './composables/useKeyboardShortcuts'
   import('./composables/useKeyboardShortcuts')
@@ -607,6 +611,7 @@ declare module 'vue' {
     readonly useEventListener: UnwrapRef<typeof import('@vueuse/core')['useEventListener']>
     readonly useEventSource: UnwrapRef<typeof import('@vueuse/core')['useEventSource']>
     readonly useEyeDropper: UnwrapRef<typeof import('@vueuse/core')['useEyeDropper']>
+    readonly useFamilyMemberSearch: UnwrapRef<typeof import('./composables/useFamilyMemberSearch')['useFamilyMemberSearch']>
     readonly useFavicon: UnwrapRef<typeof import('@vueuse/core')['useFavicon']>
     readonly useFetch: UnwrapRef<typeof import('@vueuse/core')['useFetch']>
     readonly useFileDialog: UnwrapRef<typeof import('@vueuse/core')['useFileDialog']>
