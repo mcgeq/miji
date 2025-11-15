@@ -21,6 +21,7 @@ pub struct Model {
     // 新增字段
     pub ledger_type: String,
     pub settlement_cycle: String,
+    pub settlement_day: i32,
     pub auto_settlement: bool,
     pub default_split_rule: Option<Json>,
     pub last_settlement_at: Option<DateTimeWithTimeZone>,

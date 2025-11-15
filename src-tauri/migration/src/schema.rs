@@ -445,6 +445,7 @@ pub enum FamilyLedger {
     // 新增字段
     LedgerType,
     SettlementCycle,
+    SettlementDay,
     AutoSettlement,
     DefaultSplitRule,
     LastSettlementAt,

@@ -6,7 +6,7 @@ import { Lg } from '@/utils/debugLog';
 import { getRoleName } from '../utils/family';
 import MemberModal from './MemberModal.vue';
 import type { Currency } from '@/schema/common';
-import type { FamilyLedger, FamilyLedgerCreate, FamilyMember } from '@/schema/money';
+import type { FamilyLedger, FamilyMember } from '@/schema/money';
 
 interface Props {
   ledger: FamilyLedger | null;
@@ -110,20 +110,11 @@ function closeModal() {
 }
 
 function saveLedger() {
-  // 构建符合后端API期望的数据格式
-  const ledgerData: FamilyLedgerCreate = {
-    name: form.name,
-    description: form.description,
-    baseCurrency: form.baseCurrency.code, // 只发送货币代码
-    members: form.members,
-    accounts: form.accounts,
-    transactions: form.transactions,
-    budgets: form.budgets,
-    ledgerType: form.ledgerType,
-    settlementCycle: form.settlementCycle,
-    autoSettlement: form.autoSettlement,
-    settlementDay: form.settlementDay,
-    defaultSplitRule: form.defaultSplitRule,
+  // 构建数据格式，确保与原始数据结构一致以支持 deepDiff
+  const ledgerData = {
+    ...form,
+    // 规范化 baseCurrency 为字符串格式，保持与后端返回格式一致
+    baseCurrency: form.baseCurrency.code,
   };
   emit('save', ledgerData);
 }
@@ -147,6 +138,8 @@ function buildLedgerForm(source: FamilyLedger | null): FamilyLedger {
   return {
     ...JSON.parse(JSON.stringify(defaultLedger)),
     ...source,
+    // 如果原始账本没有名称但有描述，则用描述预填名称，保证编辑弹窗里能看到列表展示的标题
+    name: source.name || source.description || defaultLedger.name,
     baseCurrency: resolveCurrency(baseCurrencyCode),
     ledgerType: source.ledgerType
       ? source.ledgerType.toUpperCase()
@@ -154,7 +147,7 @@ function buildLedgerForm(source: FamilyLedger | null): FamilyLedger {
     settlementCycle: source.settlementCycle
       ? source.settlementCycle.toUpperCase()
       : defaultLedger.settlementCycle,
-    settlementDay: source.settlementDay ?? defaultLedger.settlementDay,
+    settlementDay: (source.settlementDay && source.settlementDay > 0) ? source.settlementDay : defaultLedger.settlementDay,
   };
 }
 
@@ -191,6 +184,14 @@ watch(
           </div>
 
           <div class="form-row">
+            <label class="form-label">账本描述</label>
+            <input
+              v-model="form.description" type="text" class="modal-input-select form-input-2-3"
+              placeholder="请输入账本描述（可选）"
+            >
+          </div>
+
+          <div class="form-row">
             <label class="form-label">账本类型</label>
             <select v-model="form.ledgerType" required class="modal-input-select form-input-2-3">
               <option value="FAMILY">
@@ -217,10 +218,6 @@ watch(
 
         <!-- 结算设置 -->
         <div class="form-section">
-          <h4 class="section-title">
-            结算设置
-          </h4>
-
           <div class="form-row">
             <label class="form-label">结算周期</label>
             <select v-model="form.settlementCycle" class="modal-input-select form-input-2-3">
@@ -373,15 +370,6 @@ watch(
 
 .form-input-2-3 {
   width: 66.666667%;
-}
-
-.section-title {
-  font-size: 1rem;
-  color: #374151;
-  font-weight: 600;
-  margin-bottom: 0.75rem;
-  padding-bottom: 0.5rem;
-  border-bottom: 1px solid #e5e7eb;
 }
 
 .checkbox-label {

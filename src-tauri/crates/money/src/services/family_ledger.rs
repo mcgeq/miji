@@ -195,6 +195,7 @@ impl FamilyLedgerService {
                     .settlement_cycle
                     .unwrap_or_else(|| "Monthly".to_string()),
             )),
+            settlement_day: Set(data.settlement_day.unwrap_or(1)),
             auto_settlement: Set(data.auto_settlement.unwrap_or(false)),
             default_split_rule: Set(data
                 .default_split_rule
@@ -248,6 +249,9 @@ impl FamilyLedgerService {
         }
         if let Some(settlement_cycle) = data.settlement_cycle {
             active_model.settlement_cycle = Set(normalize_settlement_cycle(&settlement_cycle));
+        }
+        if let Some(settlement_day) = data.settlement_day {
+            active_model.settlement_day = Set(settlement_day);
         }
         if let Some(auto_settlement) = data.auto_settlement {
             active_model.auto_settlement = Set(auto_settlement);

@@ -53,6 +53,7 @@ mod m20251112_000003_create_split_rules_table;
 mod m20251112_000004_create_split_records_table;
 mod m20251112_000005_create_debt_relations_table;
 mod m20251112_000006_create_settlement_records_table;
+mod m20251115_000000_add_settlement_day_to_family_ledger;
 
 pub mod schema;
 
@@ -116,6 +117,7 @@ impl MigratorTrait for Migrator {
             Box::new(m20251112_000004_create_split_records_table::Migration),
             Box::new(m20251112_000005_create_debt_relations_table::Migration),
             Box::new(m20251112_000006_create_settlement_records_table::Migration),
+            Box::new(m20251115_000000_add_settlement_day_to_family_ledger::Migration),
         ]
     }
 }

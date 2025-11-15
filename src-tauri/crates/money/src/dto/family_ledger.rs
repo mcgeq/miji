@@ -69,6 +69,7 @@ impl TryFrom<FamilyLedgerCreate> for family_ledger::ActiveModel {
             settlement_cycle: Set(value
                 .settlement_cycle
                 .unwrap_or_else(|| "Monthly".to_string())),
+            settlement_day: Set(value.settlement_day.unwrap_or(1)),
             auto_settlement: Set(value.auto_settlement.unwrap_or(false)),
             default_split_rule: Set(value
                 .default_split_rule
@@ -117,6 +118,7 @@ impl TryFrom<FamilyLedgerUpdate> for entity::family_ledger::ActiveModel {
             settlement_cycle: value
                 .settlement_cycle
                 .map_or(ActiveValue::NotSet, |v| Set(normalize_settlement_cycle(&v))),
+            settlement_day: value.settlement_day.map_or(ActiveValue::NotSet, Set),
             auto_settlement: value.auto_settlement.map_or(ActiveValue::NotSet, Set),
             default_split_rule: value
                 .default_split_rule
@@ -168,7 +170,7 @@ impl From<family_ledger::Model> for FamilyLedgerResponse {
             ledger_type: model.ledger_type,
             settlement_cycle: model.settlement_cycle,
             auto_settlement: model.auto_settlement,
-            settlement_day: 1,                 // 默认值，因为数据库中没有这个字段
+            settlement_day: model.settlement_day,
             total_income: Some(0.0),           // TODO: 实现真实统计
             total_expense: Some(0.0),          // TODO: 实现真实统计
             shared_expense: Some(0.0),         // TODO: 实现真实统计
