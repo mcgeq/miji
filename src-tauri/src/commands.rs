@@ -118,6 +118,7 @@ pub fn init_commands(builder: Builder<Wry>) -> Builder<Wry> {
         money_cmd::family_ledger_update,
         money_cmd::family_ledger_delete,
         money_cmd::family_ledger_stats,
+        money_cmd::family_ledger_detail,
         money_cmd::family_ledger_account_list,
         money_cmd::family_ledger_account_list_by_ledger,
         money_cmd::family_ledger_account_list_by_account,

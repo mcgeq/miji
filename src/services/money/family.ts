@@ -167,6 +167,21 @@ export class FamilyLedgerMapper extends BaseMapper<
     }
   }
 
+  /**
+   * 获取账本详情（包含成员和账户列表）
+   */
+  async getDetail(serialNum: string): Promise<FamilyLedger> {
+    try {
+      const result = await invokeCommand<FamilyLedger>('family_ledger_detail', {
+        serialNum,
+      });
+      Lg.d('MoneyDb', `FamilyLedger detail loaded: ${result.serialNum}`);
+      return result;
+    } catch (error) {
+      this.handleError('getDetail', error);
+    }
+  }
+
   async list(): Promise<FamilyLedger[]> {
     try {
       const result = await invokeCommand<FamilyLedger[]>('family_ledger_list');

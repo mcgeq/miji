@@ -167,6 +167,34 @@ impl From<family_ledger::Model> for FamilyLedgerResponse {
     }
 }
 
+/// 家庭账本详情响应（包含关联数据）
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct FamilyLedgerDetailResponse {
+    pub serial_num: String,
+    pub name: String,
+    pub description: Option<String>,
+    pub base_currency: String,
+    pub ledger_type: String,
+    pub settlement_cycle: String,
+    pub auto_settlement: bool,
+    pub settlement_day: i32,
+    pub total_income: Option<f64>,
+    pub total_expense: Option<f64>,
+    pub shared_expense: Option<f64>,
+    pub personal_expense: Option<f64>,
+    pub pending_settlement: Option<f64>,
+    pub members: Option<i32>,
+    pub accounts: Option<i32>,
+    pub transactions: Option<i32>,
+    pub budgets: Option<i32>,
+    pub member_list: Vec<super::family_member::FamilyMemberResponse>,
+    pub account_list: Vec<super::account::AccountResponse>,
+    pub last_settlement_at: Option<String>,
+    pub created_at: String,
+    pub updated_at: Option<String>,
+}
+
 /// 家庭账本统计信息
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]

@@ -102,6 +102,47 @@ impl Default for AccountBalanceSummary {
     }
 }
 
+/// 简单的账户响应（不包含关联信息）
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct AccountResponse {
+    pub serial_num: String,
+    pub name: String,
+    pub description: Option<String>,
+    pub r#type: String,
+    pub balance: Decimal,
+    pub initial_balance: Decimal,
+    pub currency: String,
+    pub is_shared: Option<bool>,
+    pub owner_id: Option<String>,
+    pub color: Option<String>,
+    pub is_active: bool,
+    pub is_virtual: bool,
+    pub created_at: DateTime<FixedOffset>,
+    pub updated_at: Option<DateTime<FixedOffset>>,
+}
+
+impl From<entity::account::Model> for AccountResponse {
+    fn from(model: entity::account::Model) -> Self {
+        Self {
+            serial_num: model.serial_num,
+            name: model.name,
+            description: model.description,
+            r#type: model.r#type,
+            balance: model.balance,
+            initial_balance: model.initial_balance,
+            currency: model.currency,
+            is_shared: model.is_shared,
+            owner_id: model.owner_id,
+            color: model.color,
+            is_active: model.is_active,
+            is_virtual: model.is_virtual,
+            created_at: model.created_at,
+            updated_at: model.updated_at,
+        }
+    }
+}
+
 /// 包含完整关联信息的账户响应
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]

@@ -1,6 +1,6 @@
 use common::{
     business_code::BusinessCode,
-    crud::service::{CrudConverter, GenericCrudService},
+    crud::service::{CrudConverter, CrudService, GenericCrudService},
     error::{AppError, MijiResult},
     log::logger::NoopLogger,
     paginations::EmptyFilter,
@@ -12,8 +12,18 @@ use std::fmt;
 use tracing::{info, instrument};
 
 use crate::{
-    dto::family_ledger::{FamilyLedgerCreate, FamilyLedgerStats, FamilyLedgerUpdate},
-    services::family_ledger_hooks::FamilyLedgerHooks,
+    dto::{
+        family_ledger::{FamilyLedgerCreate, FamilyLedgerDetailResponse, FamilyLedgerStats, FamilyLedgerUpdate},
+        family_member::FamilyMemberResponse,
+        account::AccountResponse,
+    },
+    services::{
+        family_ledger_hooks::FamilyLedgerHooks,
+        family_ledger_member::FamilyLedgerMemberService,
+        family_ledger_account::FamilyLedgerAccountService,
+        family_member::FamilyMemberService,
+        account::AccountService,
+    },
 };
 
 pub type FamilyLedgerFilter = EmptyFilter;
@@ -316,6 +326,82 @@ impl FamilyLedgerService {
         };
 
         Ok(stats)
+    }
+
+    /// 获取家庭账本详情（包含成员和账户列表）
+    #[instrument(skip(db))]
+    pub async fn get_detail(
+        &self,
+        db: &DatabaseConnection,
+        serial_num: String,
+    ) -> Result<FamilyLedgerDetailResponse, AppError> {
+        info!("Getting family ledger detail: {}", serial_num);
+
+        // 1. 获取账本基本信息
+        let ledger = self
+            .get_by_id(db, serial_num.clone())
+            .await?
+            .ok_or_else(|| AppError::simple(BusinessCode::NotFound, "Family ledger not found"))?;
+
+        // 2. 获取成员列表
+        let member_service = FamilyLedgerMemberService::default();
+        let member_relations = member_service.list_by_ledger(db, &serial_num).await?;
+        let member_ids: Vec<String> = member_relations
+            .iter()
+            .map(|r| r.family_member_serial_num.clone())
+            .collect();
+
+        let family_member_service = FamilyMemberService::default();
+        let mut member_list = Vec::new();
+        for member_id in member_ids {
+            let member = family_member_service.get_by_id(db, member_id).await?;
+            member_list.push(FamilyMemberResponse::from(member));
+        }
+
+        // 3. 获取账户列表
+        let account_service = FamilyLedgerAccountService::default();
+        let account_relations = account_service.list_by_ledger(db, &serial_num).await?;
+        let account_ids: Vec<String> = account_relations
+            .iter()
+            .map(|r| r.account_serial_num.clone())
+            .collect();
+
+        let acc_service = AccountService::default();
+        let mut account_list = Vec::new();
+        for account_id in account_ids {
+            let account = acc_service.get_by_id(db, account_id).await?;
+            account_list.push(AccountResponse::from(account));
+        }
+
+        // 4. 组装响应
+        Ok(FamilyLedgerDetailResponse {
+            serial_num: ledger.serial_num,
+            name: ledger.name.unwrap_or_else(|| "未命名账本".to_string()),
+            description: if ledger.description.is_empty() {
+                None
+            } else {
+                Some(ledger.description)
+            },
+            base_currency: ledger.base_currency,
+            ledger_type: ledger.ledger_type,
+            settlement_cycle: ledger.settlement_cycle,
+            auto_settlement: ledger.auto_settlement,
+            settlement_day: ledger.settlement_day,
+            total_income: Some(0.0),
+            total_expense: Some(0.0),
+            shared_expense: Some(0.0),
+            personal_expense: Some(0.0),
+            pending_settlement: Some(0.0),
+            members: Some(ledger.members),
+            accounts: Some(ledger.accounts),
+            transactions: Some(ledger.transactions),
+            budgets: Some(ledger.budgets),
+            member_list,
+            account_list,
+            last_settlement_at: ledger.last_settlement_at.map(|dt| dt.to_rfc3339()),
+            created_at: ledger.created_at.to_rfc3339(),
+            updated_at: ledger.updated_at.map(|dt| dt.to_rfc3339()),
+        })
     }
 }
 

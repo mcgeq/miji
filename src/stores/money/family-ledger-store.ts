@@ -186,22 +186,8 @@ export const useFamilyLedgerStore = defineStore('family-ledger', {
      * 切换当前账本
      */
     async switchLedger(serialNum: string): Promise<void> {
-      const ledger = this.getLedgerById(serialNum);
-      if (!ledger) {
-        throw new Error('账本不存在');
-      }
-
-      // 加载成员列表
-      const ledgerMembers = await MoneyDb.listFamilyLedgerMembers();
-      const memberIds = ledgerMembers
-        .filter(lm => lm.familyLedgerSerialNum === serialNum)
-        .map(lm => lm.familyMemberSerialNum);
-
-      const memberPromises = memberIds.map(id => MoneyDb.getFamilyMember(id));
-      const members = await Promise.all(memberPromises);
-
-      // 更新账本的成员列表
-      ledger.memberList = members.filter(m => m !== null);
+      // 使用详情 API，一次获取所有数据（包含成员和账户列表）
+      const ledger = await MoneyDb.getFamilyLedgerDetail(serialNum);
 
       this.currentLedger = ledger;
 

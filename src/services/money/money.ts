@@ -341,6 +341,10 @@ export class MoneyDb {
     return this.familyLedgerMapper.getById(serialNum);
   }
 
+  static async getFamilyLedgerDetail(serialNum: string): Promise<FamilyLedger> {
+    return this.familyLedgerMapper.getDetail(serialNum);
+  }
+
   static async listFamilyLedgers(): Promise<FamilyLedger[]> {
     return this.familyLedgerMapper.list();
   }

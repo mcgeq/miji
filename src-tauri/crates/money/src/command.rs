@@ -17,7 +17,7 @@ use crate::{
         currency::{CreateCurrencyRequest, CurrencyResponse, UpdateCurrencyRequest},
         debt_relations::{DebtGraph, DebtRelationResponse, DebtStats, MemberDebtSummary},
         family_ledger::{
-            FamilyLedgerCreate, FamilyLedgerResponse, FamilyLedgerStats, FamilyLedgerUpdate,
+            FamilyLedgerCreate, FamilyLedgerDetailResponse, FamilyLedgerResponse, FamilyLedgerStats, FamilyLedgerUpdate,
         },
         family_ledger_account::{FamilyLedgerAccountCreate, FamilyLedgerAccountResponse},
         family_ledger_member::{FamilyLedgerMemberCreate, FamilyLedgerMemberResponse},
@@ -2115,6 +2115,18 @@ pub async fn family_ledger_stats(
     let service = FamilyLedgerService::default();
     Ok(ApiResponse::from_result(
         service.get_stats(&state.db, serial_num).await,
+    ))
+}
+
+/// 获取家庭账本详情（包含成员和账户列表）
+#[tauri::command]
+pub async fn family_ledger_detail(
+    state: State<'_, AppState>,
+    serial_num: String,
+) -> Result<ApiResponse<FamilyLedgerDetailResponse>, String> {
+    let service = FamilyLedgerService::default();
+    Ok(ApiResponse::from_result(
+        service.get_detail(&state.db, serial_num).await,
     ))
 }
 
