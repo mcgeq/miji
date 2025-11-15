@@ -240,9 +240,13 @@ watch(
         <div class="members-section">
           <div class="members-header">
             <label class="form-label">成员管理</label>
-            <button type="button" class="add-member-btn" @click="showMemberModal = true">
-              <LucidePlus class="btn-icon" />
-              添加成员
+            <button
+              type="button"
+              class="btn-close add-member-btn"
+              aria-label="添加成员"
+              @click="showMemberModal = true"
+            >
+              <LucidePlus class="icon-btn" />
             </button>
           </div>
 
@@ -274,10 +278,10 @@ watch(
 
         <!-- 操作按钮 -->
         <div class="modal-actions">
-          <button type="button" class="modal-btn-x" @click="closeModal">
+          <button type="button" class="btn-close" @click="closeModal">
             <LucideX class="modal-icon" />
           </button>
-          <button type="submit" class="modal-btn-check">
+          <button type="submit" class="btn-submit">
             <LucideCheck class="modal-icon" />
           </button>
         </div>
@@ -387,19 +391,16 @@ watch(
 }
 
 .add-member-btn {
-  font-size: 0.75rem;
-  padding: 0.25rem 0.5rem;
-  background-color: #e5e7eb;
+  background-color: #f3f4f6;
   color: #374151;
-  border-radius: 0.25rem;
-  transition: all 0.2s ease-in-out;
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
+  border-radius: 50%;
+  padding: 0;
+  width: 3rem;
+  height: 3rem;
 }
 
 .add-member-btn:hover {
-  background-color: #d1d5db;
+  background-color: #e2e6eb;
 }
 
 .btn-icon {

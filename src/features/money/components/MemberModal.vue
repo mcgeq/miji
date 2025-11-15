@@ -65,7 +65,7 @@ watch(
 
 <template>
   <div class="modal-mask" style="z-index: 60;">
-    <div class="modal-content modal-content-sm">
+    <div class="modal-mask-window-money modal-content modal-content-sm">
       <div class="modal-header">
         <h4 class="modal-title">
           {{ props.member ? '编辑成员' : '添加成员' }}
@@ -123,10 +123,10 @@ watch(
         </div>
 
         <div class="modal-actions">
-          <button type="button" class="modal-btn-x" @click="closeModal">
+          <button type="button" class="btn-close" @click="closeModal">
             <LucideX class="modal-icon" />
           </button>
-          <button type="submit" class="modal-btn-check">
+          <button type="submit" class="btn-submit">
             <LucideCheck class="modal-icon" />
           </button>
         </div>
