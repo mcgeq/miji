@@ -374,7 +374,7 @@ export class FamilyLedgerTransactionMapper extends BaseMapper<
   }
 
   async listPaged(
-    query: PageQuery<FamilyMemberFilters> = {
+    query: PageQuery<FamilyLedgerTransactionFilters> = {
       currentPage: 1,
       pageSize: 10,
       sortOptions: {},
@@ -389,6 +389,105 @@ export class FamilyLedgerTransactionMapper extends BaseMapper<
       return result;
     } catch (error) {
       this.handleError('listPaged', error);
+    }
+  }
+
+  /**
+   * 根据账本ID查询所有关联的交易
+   */
+  async listByLedger(ledgerSerialNum: string): Promise<FamilyLedgerTransaction[]> {
+    try {
+      const result = await invokeCommand<FamilyLedgerTransaction[]>(
+        'family_ledger_transaction_list',
+        { filter: { familyLedgerSerialNum: ledgerSerialNum } },
+      );
+      return result;
+    } catch (error) {
+      this.handleError('listByLedger', error);
+      return [];
+    }
+  }
+
+  /**
+   * 根据交易ID查询所有关联的账本
+   */
+  async listByTransaction(transactionSerialNum: string): Promise<FamilyLedgerTransaction[]> {
+    try {
+      const result = await invokeCommand<FamilyLedgerTransaction[]>(
+        'family_ledger_transaction_list',
+        { filter: { transactionSerialNum } },
+      );
+      return result;
+    } catch (error) {
+      this.handleError('listByTransaction', error);
+      return [];
+    }
+  }
+
+  /**
+   * 批量创建交易与账本的关联
+   */
+  async batchCreate(associations: FamilyLedgerTransactionCreate[]): Promise<FamilyLedgerTransaction[]> {
+    try {
+      const result = await invokeCommand<FamilyLedgerTransaction[]>(
+        'family_ledger_transaction_batch_create',
+        { data: associations },
+      );
+      Lg.d('MoneyDb', `Batch created ${result.length} FamilyLedgerTransaction associations`);
+      return result;
+    } catch (error) {
+      this.handleError('batchCreate', error);
+      return [];
+    }
+  }
+
+  /**
+   * 批量删除交易与账本的关联
+   */
+  async batchDelete(serialNums: string[]): Promise<void> {
+    try {
+      await invokeCommand('family_ledger_transaction_batch_delete', { serialNums });
+      Lg.d('MoneyDb', `Batch deleted ${serialNums.length} FamilyLedgerTransaction associations`);
+    } catch (error) {
+      this.handleError('batchDelete', error);
+    }
+  }
+
+  /**
+   * 更新交易的账本关联（先删除旧的，再创建新的）
+   */
+  async updateTransactionLedgers(
+    transactionSerialNum: string,
+    ledgerSerialNums: string[],
+  ): Promise<FamilyLedgerTransaction[]> {
+    try {
+      // 1. 查询现有关联
+      const existing = await this.listByTransaction(transactionSerialNum);
+      const existingLedgerIds = existing.map(e => e.familyLedgerSerialNum);
+
+      // 2. 计算需要删除和新增的
+      const toDelete = existing.filter(e => !ledgerSerialNums.includes(e.familyLedgerSerialNum));
+      const toAdd = ledgerSerialNums.filter(id => !existingLedgerIds.includes(id));
+
+      // 3. 执行删除
+      if (toDelete.length > 0) {
+        await this.batchDelete(toDelete.map(e => e.serialNum));
+      }
+
+      // 4. 执行新增
+      if (toAdd.length > 0) {
+        const newAssociations = toAdd.map(ledgerSerialNum => ({
+          familyLedgerSerialNum: ledgerSerialNum,
+          transactionSerialNum,
+        }));
+        await this.batchCreate(newAssociations);
+      }
+
+      // 5. 返回最新的关联列表
+      return await this.listByTransaction(transactionSerialNum);
+    } catch (error) {
+      this.handleError('updateTransactionLedgers', error);
+      return [];
     }
   }
 }

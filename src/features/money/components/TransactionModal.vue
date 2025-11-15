@@ -14,6 +14,7 @@ import { DateUtils } from '@/utils/date';
 import { Lg } from '@/utils/debugLog';
 import { toast } from '@/utils/toast';
 import { isInstallmentTransaction } from '@/utils/transaction';
+import { useTransactionLedgerLink } from '../composables/useTransactionLedgerLink';
 import { formatCurrency } from '../utils/money';
 import type {
   TransactionType,
@@ -39,14 +40,32 @@ interface Props {
 const props = defineProps<Props>();
 const emit = defineEmits<{
   close: [];
-  save: [transaction: TransactionCreate];
-  update: [serialNum: string, transaction: TransactionUpdate];
+  save: [transaction: TransactionCreate, ledgerIds: string[], memberIds: string[]];
+  update: [serialNum: string, transaction: TransactionUpdate, ledgerIds: string[], memberIds: string[]];
   saveTransfer: [transfer: TransferCreate];
   updateTransfer: [serialNum: string, transfer: TransferCreate];
   refresh: [];
 }>();
 const categoryStore = useCategoryStore();
 const { t } = useI18n();
+
+// 账本和成员关联功能
+const {
+  availableLedgers,
+  selectedLedgers,
+  availableMembers,
+  selectedMembers,
+  loading: _ledgerLinkLoading,
+  loadAvailableLedgers,
+  loadAvailableMembers,
+  getSmartSuggestions,
+  getTransactionLinks,
+} = useTransactionLedgerLink();
+
+// 显示账本选择器
+const showLedgerSelector = ref(false);
+// 显示成员选择器
+const showMemberSelector = ref(false);
 
 const selectAccounts = computed(() => {
   if (props.transaction?.category === 'Transfer') {
@@ -379,6 +398,46 @@ const availableTransactionStatuses = computed(() => {
   ];
 });
 
+// 初始化：加载账本和成员列表
+onMounted(async () => {
+  await Promise.all([
+    loadAvailableLedgers(),
+    loadAvailableMembers(),
+  ]);
+
+  // 如果是编辑模式，加载现有的关联
+  if (props.transaction) {
+    try {
+      const { ledgers, members } = await getTransactionLinks(props.transaction.serialNum);
+      selectedLedgers.value = ledgers.map(l => l.serialNum);
+      selectedMembers.value = members.map(m => m.serialNum);
+    } catch (error) {
+      Lg.e('TransactionModal', 'Failed to load transaction links:', error);
+    }
+  }
+});
+
+// 监听账户变化，智能推荐账本和成员
+watch(() => form.value.accountSerialNum, async accountId => {
+  if (accountId && !props.transaction) {
+    // 只在创建模式下自动推荐
+    try {
+      const { suggestedLedgers, suggestedMembers } = await getSmartSuggestions(accountId);
+
+      // 如果用户还没有手动选择，则使用推荐
+      if (selectedLedgers.value.length === 0 && suggestedLedgers.length > 0) {
+        selectedLedgers.value = suggestedLedgers.map(l => l.serialNum);
+      }
+
+      if (selectedMembers.value.length === 0 && suggestedMembers.length > 0) {
+        selectedMembers.value = suggestedMembers.map(m => m.serialNum);
+      }
+    } catch (error) {
+      Lg.e('TransactionModal', 'Failed to get smart suggestions:', error);
+    }
+  }
+});
+
 // 监听分期选项变化
 watch(() => form.value.isInstallment, newValue => {
   if (newValue) {
@@ -620,9 +679,9 @@ function emitTransaction(amount: number) {
     const updateTransaction: TransactionUpdate = {
       ...transaction,
     };
-    emit('update', props.transaction.serialNum, updateTransaction);
+    emit('update', props.transaction.serialNum, updateTransaction, selectedLedgers.value, selectedMembers.value);
   } else {
-    emit('save', transaction);
+    emit('save', transaction, selectedLedgers.value, selectedMembers.value);
   }
 }
 
@@ -890,6 +949,150 @@ watch(
               {{ t(`common.subCategories.${lowercaseFirstLetter(sub)}`) }}
             </option>
           </select>
+        </div>
+
+        <!-- 关联账本 -->
+        <div v-if="!isReadonlyMode" class="form-row">
+          <label class="label-with-hint">
+            关联账本
+            <span class="label-hint">(可选)</span>
+          </label>
+          <div class="ledger-selector-compact">
+            <div class="selector-row">
+              <div v-if="selectedLedgers.length === 0" class="empty-selection">
+                <LucideInbox class="empty-icon" />
+                <span>未选择账本</span>
+              </div>
+              <div v-else class="selected-items-compact">
+                <span class="selected-item">
+                  {{ availableLedgers.find(l => l.serialNum === selectedLedgers[0])?.name || selectedLedgers[0] }}
+                  <button
+                    type="button"
+                    class="remove-btn"
+                    @click="selectedLedgers = selectedLedgers.filter(id => id !== selectedLedgers[0])"
+                  >
+                    <LucideX />
+                  </button>
+                </span>
+                <span
+                  v-if="selectedLedgers.length > 1"
+                  class="more-count"
+                  :title="selectedLedgers.slice(1).map(id => availableLedgers.find(l => l.serialNum === id)?.name || id).join('\n')"
+                >
+                  +{{ selectedLedgers.length - 1 }}
+                </span>
+              </div>
+              <button
+                type="button"
+                class="btn-add-ledger btn-icon-only"
+                :title="showLedgerSelector ? '收起' : '选择账本'"
+                @click="showLedgerSelector = !showLedgerSelector"
+              >
+                <LucideChevronDown v-if="!showLedgerSelector" />
+                <LucideChevronUp v-else />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 账本选择下拉 -->
+        <div v-if="!isReadonlyMode && showLedgerSelector" class="form-row">
+          <label />
+          <div class="selector-dropdown">
+            <div class="dropdown-header">
+              <span>选择账本</span>
+              <button type="button" @click="showLedgerSelector = false">
+                <LucideX />
+              </button>
+            </div>
+            <div class="dropdown-content">
+              <label
+                v-for="ledger in availableLedgers"
+                :key="ledger.serialNum"
+                class="checkbox-item"
+              >
+                <input
+                  v-model="selectedLedgers"
+                  type="checkbox"
+                  :value="ledger.serialNum"
+                >
+                <span class="item-name">{{ ledger.name }}</span>
+                <span class="item-type">{{ ledger.ledgerType }}</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- 分摊成员 -->
+        <div v-if="!isReadonlyMode && selectedLedgers.length > 0" class="form-row">
+          <label class="label-with-hint">
+            分摊成员
+            <span class="label-hint">(可选)</span>
+          </label>
+          <div class="member-selector-compact">
+            <div class="selector-row">
+              <div v-if="selectedMembers.length === 0" class="empty-selection">
+                <LucideUsers class="empty-icon" />
+                <span>未选择成员</span>
+              </div>
+              <div v-else class="selected-items-compact">
+                <span class="selected-item">
+                  {{ availableMembers.find(m => m.serialNum === selectedMembers[0])?.name || selectedMembers[0] }}
+                  <button
+                    type="button"
+                    class="remove-btn"
+                    @click="selectedMembers = selectedMembers.filter(id => id !== selectedMembers[0])"
+                  >
+                    <LucideX />
+                  </button>
+                </span>
+                <span
+                  v-if="selectedMembers.length > 1"
+                  class="more-count"
+                  :title="selectedMembers.slice(1).map(id => availableMembers.find(m => m.serialNum === id)?.name || id).join('\n')"
+                >
+                  +{{ selectedMembers.length - 1 }}
+                </span>
+              </div>
+              <button
+                type="button"
+                class="btn-add-member btn-icon-only"
+                :title="showMemberSelector ? '收起' : '选择成员'"
+                @click="showMemberSelector = !showMemberSelector"
+              >
+                <LucideChevronDown v-if="!showMemberSelector" />
+                <LucideChevronUp v-else />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 成员选择下拉 -->
+        <div v-if="!isReadonlyMode && selectedLedgers.length > 0 && showMemberSelector" class="form-row">
+          <label />
+          <div class="selector-dropdown">
+            <div class="dropdown-header">
+              <span>选择成员</span>
+              <button type="button" @click="showMemberSelector = false">
+                <LucideX />
+              </button>
+            </div>
+            <div class="dropdown-content">
+              <label
+                v-for="member in availableMembers"
+                :key="member.serialNum"
+                class="checkbox-item"
+              >
+                <input
+                  v-model="selectedMembers"
+                  type="checkbox"
+                  :value="member.serialNum"
+                >
+                <span class="item-name">{{ member.name }}</span>
+                <span class="item-role">{{ member.role }}</span>
+              </label>
+            </div>
+          </div>
         </div>
 
         <!-- 交易状态 -->
@@ -1417,6 +1620,242 @@ watch(
 
 .icon { width: 1.5rem; height: 1.5rem; }
 
+/* ==================== 账本和成员选择器样式 ==================== */
+.label-with-hint {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.label-hint {
+  font-size: 0.75rem;
+  color: var(--color-neutral);
+  font-weight: normal;
+}
+
+.form-row .ledger-selector-compact,
+.form-row .member-selector-compact {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 0.75rem;
+  border: 1px solid var(--color-base-300);
+  border-radius: 0.375rem;
+  background: var(--color-base-200);
+  width: 66%;
+  flex: 0 0 66%;
+}
+
+.selector-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.75rem;
+  flex-wrap: nowrap;
+  width: 100%;
+}
+
+.empty-selection {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--color-neutral);
+  font-size: 0.875rem;
+  flex: 0 1 auto;
+  white-space: nowrap;
+}
+
+.empty-icon {
+  width: 1rem;
+  height: 1rem;
+}
+
+.selected-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+.selected-items-compact {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+.selected-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0.5rem;
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+  border-radius: 0.25rem;
+  font-size: 0.875rem;
+}
+
+.more-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.5rem;
+  height: 1.5rem;
+  padding: 0 0.375rem;
+  background: var(--color-neutral);
+  color: var(--color-neutral-content);
+  border-radius: 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: help;
+  transition: all 0.2s;
+}
+
+.more-count:hover {
+  background: var(--color-primary);
+  color: var(--color-primary-content);
+  transform: scale(1.1);
+}
+
+.remove-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  background: transparent;
+  border: none;
+  color: var(--color-primary);
+  cursor: pointer;
+  width: 1rem;
+  height: 1rem;
+}
+
+.remove-btn:hover {
+  color: var(--color-error);
+}
+
+.btn-add-ledger,
+.btn-add-member {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--color-base-100);
+  border: 1px dashed var(--color-base-300);
+  border-radius: 0.25rem;
+  color: var(--color-base-content);
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.btn-add-ledger:hover,
+.btn-add-member:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  background: var(--color-primary-soft);
+}
+
+.btn-icon-only {
+  padding: 0.5rem;
+  min-width: 2rem;
+  min-height: 2rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.375rem;
+}
+
+.btn-icon-only svg {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.selector-dropdown {
+  width: 100%;
+  padding: 0;
+  background: var(--color-base-100);
+  border: 1px solid var(--color-base-300);
+  border-radius: 0.375rem;
+  box-shadow: var(--shadow-md);
+  max-height: 300px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.dropdown-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--color-base-300);
+  font-weight: 500;
+  background: var(--color-base-200);
+  color: var(--color-base-content);
+}
+
+.dropdown-header button {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--color-neutral);
+  padding: 0.25rem;
+  display: flex;
+  align-items: center;
+  transition: color 0.2s;
+}
+
+.dropdown-header button:hover {
+  color: var(--color-error);
+}
+
+.dropdown-content {
+  overflow-y: auto;
+  max-height: 240px;
+  background: var(--color-base-100);
+}
+
+.checkbox-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  transition: background 0.2s;
+  background: var(--color-base-100);
+}
+
+.checkbox-item:hover {
+  background: var(--color-base-200);
+}
+
+.checkbox-item input[type="checkbox"] {
+  width: 1rem;
+  height: 1rem;
+  cursor: pointer;
+}
+
+.item-name {
+  flex: 1;
+  font-size: 0.875rem;
+  color: var(--color-base-content);
+}
+
+.item-type,
+.item-role {
+  font-size: 0.75rem;
+  padding: 0.125rem 0.5rem;
+  background: var(--color-base-300);
+  border-radius: 0.25rem;
+  color: var(--color-base-content);
+}
+
 /* ==================== 表单行横向布局 ==================== */
 .form-row {
   display: flex;
@@ -1429,8 +1868,9 @@ watch(
   font-size: 0.875rem;
   font-weight: 500;
   margin-bottom: 0;
-  flex: 1; /* label 自适应 */
-  min-width: 0; /* 允许标签收缩 */
+  flex: 0 0 auto; /* 标签不伸缩，保持固定宽度 */
+  width: 6rem; /* 固定标签宽度 */
+  min-width: 6rem; /* 最小宽度 */
   white-space: nowrap; /* 防止标签换行 */
   margin-right: 1rem; /* 标签和输入框之间的间距 */
 }
@@ -1455,6 +1895,7 @@ watch(
   .form-row label {
     flex: 0 0 auto; /* 标签不伸缩，保持固定宽度 */
     min-width: 4rem; /* 设置最小宽度确保标签不被压缩 */
+    width: 4rem; /* 移动端缩小标签宽度 */
     margin-right: 0.5rem; /* 减少间距 */
     white-space: nowrap; /* 防止标签换行 */
     font-size: 0.8rem; /* 稍微减小字体以适应移动端 */
@@ -1462,6 +1903,83 @@ watch(
   .form-control, .form-display {
     flex: 1; /* 输入框占据剩余空间 */
     min-width: 0; /* 允许输入框收缩 */
+  }
+
+  /* 选择器容器移动端优化 */
+  .form-row .ledger-selector-compact,
+  .form-row .member-selector-compact {
+    width: 100%;
+    flex: 1;
+    padding: 0.5rem;
+  }
+
+  /* 选择器行移动端优化 */
+  .selector-row {
+    gap: 0.5rem;
+  }
+
+  /* 空状态文字缩小 */
+  .empty-selection {
+    font-size: 0.75rem;
+  }
+
+  /* 选中项文字缩小 */
+  .selected-item {
+    font-size: 0.75rem;
+    padding: 0.125rem 0.375rem;
+  }
+
+  /* 更多计数徽章缩小 */
+  .more-count {
+    min-width: 1.25rem;
+    height: 1.25rem;
+    font-size: 0.625rem;
+  }
+
+  /* 按钮触摸区域优化 */
+  .btn-add-ledger,
+  .btn-add-member {
+    min-width: 2.5rem;
+    min-height: 2.5rem;
+    padding: 0.625rem;
+  }
+
+  .btn-icon-only {
+    min-width: 2.5rem;
+    min-height: 2.5rem;
+    padding: 0.625rem;
+  }
+
+  .btn-icon-only svg {
+    width: 1rem;
+    height: 1rem;
+  }
+
+  /* 下拉弹窗移动端优化 */
+  .selector-dropdown {
+    max-height: 250px;
+  }
+
+  .dropdown-content {
+    max-height: 190px;
+  }
+
+  /* 复选框项触摸区域优化 */
+  .checkbox-item {
+    padding: 1rem;
+    font-size: 0.875rem;
+  }
+
+  .checkbox-item input[type="checkbox"] {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+
+  /* 移除按钮触摸区域优化 */
+  .remove-btn {
+    width: 1.25rem;
+    height: 1.25rem;
+    padding: 0.125rem;
   }
 }
 

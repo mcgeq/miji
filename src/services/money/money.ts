@@ -427,6 +427,43 @@ export class MoneyDb {
     return this.familyLedgerTransactionMapper.deleteById(serialNum);
   }
 
+  // 新增：根据账本查询关联的交易
+  static async listFamilyLedgerTransactionsByLedger(
+    ledgerSerialNum: string,
+  ): Promise<FamilyLedgerTransaction[]> {
+    return this.familyLedgerTransactionMapper.listByLedger(ledgerSerialNum);
+  }
+
+  // 新增：根据交易查询关联的账本
+  static async listFamilyLedgerTransactionsByTransaction(
+    transactionSerialNum: string,
+  ): Promise<FamilyLedgerTransaction[]> {
+    return this.familyLedgerTransactionMapper.listByTransaction(transactionSerialNum);
+  }
+
+  // 新增：批量创建交易与账本的关联
+  static async batchCreateFamilyLedgerTransactions(
+    associations: FamilyLedgerTransactionCreate[],
+  ): Promise<FamilyLedgerTransaction[]> {
+    return this.familyLedgerTransactionMapper.batchCreate(associations);
+  }
+
+  // 新增：批量删除交易与账本的关联
+  static async batchDeleteFamilyLedgerTransactions(serialNums: string[]): Promise<void> {
+    return this.familyLedgerTransactionMapper.batchDelete(serialNums);
+  }
+
+  // 新增：更新交易的账本关联
+  static async updateTransactionLedgers(
+    transactionSerialNum: string,
+    ledgerSerialNums: string[],
+  ): Promise<FamilyLedgerTransaction[]> {
+    return this.familyLedgerTransactionMapper.updateTransactionLedgers(
+      transactionSerialNum,
+      ledgerSerialNums,
+    );
+  }
+
   // FamilyLedgerMember 操作
   static async createFamilyLedgerMember(
     assoc: FamilyLedgerMemberCreate,
