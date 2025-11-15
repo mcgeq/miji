@@ -398,12 +398,9 @@ const availableTransactionStatuses = computed(() => {
   ];
 });
 
-// 初始化：加载账本和成员列表
+// 初始化：加载账本列表
 onMounted(async () => {
-  await Promise.all([
-    loadAvailableLedgers(),
-    loadAvailableMembers(),
-  ]);
+  await loadAvailableLedgers();
 
   // 如果是编辑模式，加载现有的关联
   if (props.transaction) {
@@ -411,11 +408,27 @@ onMounted(async () => {
       const { ledgers, members } = await getTransactionLinks(props.transaction.serialNum);
       selectedLedgers.value = ledgers.map(l => l.serialNum);
       selectedMembers.value = members.map(m => m.serialNum);
+      // 加载成员列表（基于已选择的账本）
+      await loadAvailableMembers();
     } catch (error) {
       Lg.e('TransactionModal', 'Failed to load transaction links:', error);
     }
   }
 });
+
+// 监听账本选择变化，重新加载成员列表
+watch(() => selectedLedgers.value, async () => {
+  // 当账本选择发生变化时，重新加载成员列表
+  await loadAvailableMembers();
+
+  // 清理不再有效的成员选择
+  if (availableMembers.value.length > 0) {
+    const validMemberIds = new Set(availableMembers.value.map(m => m.serialNum));
+    selectedMembers.value = selectedMembers.value.filter(id => validMemberIds.has(id));
+  } else {
+    selectedMembers.value = [];
+  }
+}, { deep: true });
 
 // 监听账户变化，智能推荐账本和成员
 watch(() => form.value.accountSerialNum, async accountId => {

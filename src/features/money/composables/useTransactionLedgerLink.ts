@@ -31,12 +31,20 @@ export function useTransactionLedgerLink() {
   }
 
   /**
-   * 加载可用的成员列表
+   * 加载可用的成员列表（根据选中的账本）
    */
   async function loadAvailableMembers() {
     try {
-      availableMembers.value = await MoneyDb.listFamilyMembers();
-      Lg.d('useTransactionLedgerLink', `Loaded ${availableMembers.value.length} members`);
+      // 如果没有选择账本，清空成员列表
+      if (selectedLedgers.value.length === 0) {
+        availableMembers.value = [];
+        return;
+      }
+
+      // 根据选中的账本获取成员
+      const members = await getMembersByLedgers(selectedLedgers.value);
+      availableMembers.value = members;
+      Lg.d('useTransactionLedgerLink', `Loaded ${availableMembers.value.length} members for selected ledgers`);
     } catch (error) {
       Lg.e('useTransactionLedgerLink', 'Failed to load members:', error);
       availableMembers.value = [];
