@@ -9,7 +9,7 @@ import { deepDiff } from '@/utils/diffObject';
 import { toast } from '@/utils/toast';
 import FamilyLedgerList from '../components/FamilyLedgerList.vue';
 import FamilyLedgerModal from '../components/FamilyLedgerModal.vue';
-import type { FamilyLedger, FamilyLedgerUpdate } from '@/schema/money';
+import type { FamilyLedger, FamilyLedgerUpdate, FamilyMember } from '@/schema/money';
 
 const router = useRouter();
 const route = useRoute();
@@ -85,17 +85,6 @@ function closeLedgerModal() {
   selectedLedger.value = null;
 }
 
-async function createLedger(ledgerData: any) {
-  try {
-    await familyLedgerStore.createLedger(ledgerData);
-    toast.success('创建成功');
-  } catch (error) {
-    console.error('创建账本失败:', error);
-    toast.error('创建失败');
-    throw error;
-  }
-}
-
 async function updateLedger(serialNum: string, ledgerData: FamilyLedgerUpdate) {
   try {
     if (!selectedLedger.value) return;
@@ -108,21 +97,155 @@ async function updateLedger(serialNum: string, ledgerData: FamilyLedgerUpdate) {
   }
 }
 
-async function saveLedger(ledgerData: FamilyLedger) {
+async function saveLedger(ledgerData: FamilyLedger & { selectedAccounts?: any[] }) {
   try {
-    if (selectedLedger.value) {
+    let ledgerSerialNum: string;
+    const isEditMode = !!selectedLedger.value;
+
+    if (isEditMode && selectedLedger.value) {
+      // 编辑模式
       const original = selectedLedger.value;
       const diff = deepDiff(original, ledgerData) as FamilyLedgerUpdate;
       await updateLedger(selectedLedger.value.serialNum, diff);
+      ledgerSerialNum = selectedLedger.value.serialNum;
     } else {
-      await createLedger(ledgerData);
+      // 创建模式 - 需要转换 baseCurrency 为字符串
+      const createData = {
+        ...ledgerData,
+        baseCurrency: typeof ledgerData.baseCurrency === 'string'
+          ? ledgerData.baseCurrency
+          : ledgerData.baseCurrency.code,
+      };
+      const createdLedger = await familyLedgerStore.createLedger(createData);
+      ledgerSerialNum = createdLedger.serialNum;
+      toast.success('创建成功');
     }
 
+    // 保存成员信息（创建模式下才需要处理成员创建）
+    await saveLedgerMembers(ledgerSerialNum, ledgerData.memberList || [], isEditMode);
+
+    // 保存账户关联
+    if (ledgerData.selectedAccounts) {
+      await saveLedgerAccounts(ledgerSerialNum, ledgerData.selectedAccounts);
+    }
+
+    // 刷新账本列表（后端已同步更新计数）
     await loadLedgers();
     closeLedgerModal();
   } catch (error) {
     console.error('保存失败:', error);
     toast.error('保存失败');
+  }
+}
+
+// 保存账本的成员
+async function saveLedgerMembers(ledgerSerialNum: string, members: FamilyMember[], isEditMode: boolean = false) {
+  try {
+    const { MoneyDb } = await import('@/services/money/money');
+
+    // 获取现有的成员关联
+    const existingLedgerMembers = await MoneyDb.listFamilyLedgerMembers();
+    const existingMemberIds = existingLedgerMembers
+      .filter(lm => lm.familyLedgerSerialNum === ledgerSerialNum)
+      .map(lm => lm.familyMemberSerialNum);
+
+    // 处理每个成员
+    for (const member of members) {
+      let memberSerialNum: string;
+
+      // 判断是否需要创建新成员
+      // 1. 如果没有 serialNum 或者是临时 ID，需要创建
+      // 2. 如果是编辑模式且有 serialNum，使用现有成员
+      // 3. 如果是创建模式且有 serialNum，检查是否存在
+
+      const hasValidId = member.serialNum && !member.serialNum.startsWith('temp_');
+
+      if (!hasValidId) {
+        // 没有有效 ID，创建新成员
+        const createdMember = await MoneyDb.createFamilyMember({
+          name: member.name,
+          role: member.role,
+          isPrimary: member.isPrimary,
+          permissions: member.permissions || '{}',
+          userSerialNum: member.userSerialNum,
+          avatar: member.avatar,
+          colorTag: member.colorTag,
+        });
+        memberSerialNum = createdMember.serialNum;
+      } else if (isEditMode) {
+        // 编辑模式，使用现有 ID
+        memberSerialNum = member.serialNum;
+      } else {
+        // 创建模式，检查成员是否存在
+        try {
+          await MoneyDb.getFamilyMember(member.serialNum);
+          memberSerialNum = member.serialNum;
+        } catch (_error) {
+          // 成员不存在，创建新成员
+          const createdMember = await MoneyDb.createFamilyMember({
+            name: member.name,
+            role: member.role,
+            isPrimary: member.isPrimary,
+            permissions: member.permissions || '{}',
+            userSerialNum: member.userSerialNum,
+            avatar: member.avatar,
+            colorTag: member.colorTag,
+          });
+          memberSerialNum = createdMember.serialNum;
+        }
+      }
+
+      // 创建账本-成员关联（如果还未关联）
+      if (!existingMemberIds.includes(memberSerialNum)) {
+        await MoneyDb.createFamilyLedgerMember({
+          familyLedgerSerialNum: ledgerSerialNum,
+          familyMemberSerialNum: memberSerialNum,
+        });
+      }
+    }
+
+    // 注意：后端已经在创建/删除关联时自动更新了成员数量
+    // 不需要手动调用 updateLedgerMemberCount
+  } catch (error) {
+    console.error('保存成员失败:', error);
+    throw error;
+  }
+}
+
+// 保存账本的账户关联
+async function saveLedgerAccounts(ledgerSerialNum: string, accounts: any[]) {
+  try {
+    const { MoneyDb } = await import('@/services/money/money');
+
+    // 获取现有的账户关联
+    const existingLedgerAccounts = await MoneyDb.listFamilyLedgerAccountsByLedger(ledgerSerialNum);
+    const existingAccountIds = existingLedgerAccounts.map(la => la.accountSerialNum);
+
+    // 获取当前选中的账户ID
+    const selectedAccountIds = accounts.map(a => a.serialNum);
+
+    // 创建新的关联
+    for (const account of accounts) {
+      if (!existingAccountIds.includes(account.serialNum)) {
+        await MoneyDb.createFamilyLedgerAccount({
+          familyLedgerSerialNum: ledgerSerialNum,
+          accountSerialNum: account.serialNum,
+        });
+      }
+    }
+
+    // 删除不再选中的关联
+    for (const existingAccount of existingLedgerAccounts) {
+      if (!selectedAccountIds.includes(existingAccount.accountSerialNum)) {
+        await MoneyDb.deleteFamilyLedgerAccount(
+          ledgerSerialNum,
+          existingAccount.accountSerialNum,
+        );
+      }
+    }
+  } catch (error) {
+    console.error('保存账户关联失败:', error);
+    throw error;
   }
 }
 

@@ -437,10 +437,10 @@ pub enum FamilyLedger {
     Name,
     Description,
     BaseCurrency,
-    Members,
-    Accounts,
-    Transactions,
-    Budgets,
+    Members,      // 字段名不变，但类型从 JSON 字符串改为整数
+    Accounts,     // 字段名不变，但类型从 JSON 字符串改为整数
+    Transactions, // 字段名不变，但类型从 JSON 字符串改为整数
+    Budgets,      // 字段名不变，但类型从 JSON 字符串改为整数
     AuditLogs,
     // 新增字段
     LedgerType,

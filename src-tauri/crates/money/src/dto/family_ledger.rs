@@ -12,10 +12,7 @@ pub struct FamilyLedgerCreate {
     pub name: String,
     pub description: Option<String>,
     pub base_currency: String,
-    pub members: Option<serde_json::Value>,
-    pub accounts: Option<serde_json::Value>,
-    pub transactions: Option<serde_json::Value>,
-    pub budgets: Option<serde_json::Value>,
+    // 注意：计数字段由系统自动管理，创建时不需要传递
     pub ledger_type: Option<String>,
     pub settlement_cycle: Option<String>,
     pub auto_settlement: Option<bool>,
@@ -31,10 +28,7 @@ pub struct FamilyLedgerUpdate {
     pub name: Option<String>,
     pub description: Option<String>,
     pub base_currency: Option<String>,
-    pub members: Option<serde_json::Value>,
-    pub accounts: Option<serde_json::Value>,
-    pub transactions: Option<serde_json::Value>,
-    pub budgets: Option<serde_json::Value>,
+    // 注意：计数字段由系统自动管理，更新时不允许直接修改
     pub ledger_type: Option<String>,
     pub settlement_cycle: Option<String>,
     pub auto_settlement: Option<bool>,
@@ -52,18 +46,10 @@ impl TryFrom<FamilyLedgerCreate> for family_ledger::ActiveModel {
             name: Set(Some(value.name)),
             description: Set(value.description.unwrap_or_default()),
             base_currency: Set(value.base_currency),
-            members: Set(value
-                .members
-                .map(|v| serde_json::to_string(&v).unwrap_or("[]".to_string()))),
-            accounts: Set(value
-                .accounts
-                .map(|v| serde_json::to_string(&v).unwrap_or("[]".to_string()))),
-            transactions: Set(value
-                .transactions
-                .map(|v| serde_json::to_string(&v).unwrap_or("[]".to_string()))),
-            budgets: Set(value
-                .budgets
-                .map(|v| serde_json::to_string(&v).unwrap_or("[]".to_string()))),
+            members: Set(0), // 初始为 0，由关联表更新
+            accounts: Set(0), // 初始为 0，由关联表更新
+            transactions: Set(0), // 初始为 0，由关联表更新
+            budgets: Set(0), // 初始为 0，由关联表更新
             audit_logs: Set("[]".to_string()),
             ledger_type: Set(value.ledger_type.unwrap_or_else(|| "Family".to_string())),
             settlement_cycle: Set(value
@@ -99,18 +85,10 @@ impl TryFrom<FamilyLedgerUpdate> for entity::family_ledger::ActiveModel {
             base_currency: value
                 .base_currency
                 .map_or(ActiveValue::NotSet, ActiveValue::Set),
-            members: value.members.map_or(ActiveValue::NotSet, |v| {
-                Set(Some(serde_json::to_string(&v).unwrap_or("[]".to_string())))
-            }),
-            accounts: value.accounts.map_or(ActiveValue::NotSet, |v| {
-                Set(Some(serde_json::to_string(&v).unwrap_or("[]".to_string())))
-            }),
-            transactions: value.transactions.map_or(ActiveValue::NotSet, |v| {
-                Set(Some(serde_json::to_string(&v).unwrap_or("[]".to_string())))
-            }),
-            budgets: value.budgets.map_or(ActiveValue::NotSet, |v| {
-                Set(Some(serde_json::to_string(&v).unwrap_or("[]".to_string())))
-            }),
+            members: ActiveValue::NotSet, // 不允许直接更新，由关联表触发
+            accounts: ActiveValue::NotSet, // 不允许直接更新，由关联表触发
+            transactions: ActiveValue::NotSet, // 不允许直接更新，由关联表触发
+            budgets: ActiveValue::NotSet, // 不允许直接更新，由关联表触发
             audit_logs: ActiveValue::NotSet,
             ledger_type: value
                 .ledger_type
@@ -149,8 +127,10 @@ pub struct FamilyLedgerResponse {
     pub shared_expense: Option<f64>,
     pub personal_expense: Option<f64>,
     pub pending_settlement: Option<f64>,
-    pub member_count: Option<i32>,
-    pub active_transaction_count: Option<i32>,
+    pub members: Option<i32>,
+    pub accounts: Option<i32>,
+    pub transactions: Option<i32>,
+    pub budgets: Option<i32>,
     pub last_settlement_at: Option<String>,
     pub created_at: String,
     pub updated_at: Option<String>,
@@ -176,8 +156,10 @@ impl From<family_ledger::Model> for FamilyLedgerResponse {
             shared_expense: Some(0.0),         // TODO: 实现真实统计
             personal_expense: Some(0.0),       // TODO: 实现真实统计
             pending_settlement: Some(0.0),     // TODO: 实现真实统计
-            member_count: Some(0),             // TODO: 实现真实统计
-            active_transaction_count: Some(0), // TODO: 实现真实统计
+            members: Some(model.members),
+            accounts: Some(model.accounts),
+            transactions: Some(model.transactions),
+            budgets: Some(model.budgets),
             last_settlement_at: model.last_settlement_at.map(|dt| dt.to_rfc3339()),
             created_at: model.created_at.to_rfc3339(),
             updated_at: model.updated_at.map(|dt| dt.to_rfc3339()),

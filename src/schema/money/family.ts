@@ -63,10 +63,7 @@ export const FamilyLedgerSchema = z.object({
   name: z.string(),
   description: DescriptionSchema,
   baseCurrency: CurrencySchema,
-  members: z.array(FamilyMemberSchema),
-  accounts: z.string(),
-  transactions: z.string(),
-  budgets: z.string(),
+  memberList: z.array(FamilyMemberSchema).optional().default([]), // 前端使用，用于显示成员列表
   auditLogs: z.string(),
   // 扩展字段
   ledgerType: LedgerTypeSchema.default('FAMILY'), // 账本类型
@@ -80,8 +77,10 @@ export const FamilyLedgerSchema = z.object({
   sharedExpense: AmountSchema.default(0), // 共同支出
   personalExpense: AmountSchema.default(0), // 个人支出
   pendingSettlement: AmountSchema.default(0), // 待结算金额
-  memberCount: z.number().int().min(0).default(0), // 成员数量
-  activeTransactionCount: z.number().int().min(0).default(0), // 活跃交易数
+  members: z.number().int().min(0).default(0).optional(), // 成员数量
+  accounts: z.number().int().min(0).default(0).optional(), // 账户数量
+  transactions: z.number().int().min(0).default(0).optional(), // 交易数量
+  budgets: z.number().int().min(0).default(0).optional(), // 预算数量
   lastSettlementAt: DateTimeSchema.optional().nullable(), // 最后结算时间
   createdAt: DateTimeSchema,
   updatedAt: DateTimeSchema.optional().nullable(),
@@ -90,10 +89,7 @@ export const FamilyLedgerSchema = z.object({
 export const FamilyLedgerCreateSchema = FamilyLedgerSchema.pick({
   name: true,
   description: true,
-  members: true,
-  accounts: true,
-  transactions: true,
-  budgets: true,
+  memberList: true, // 前端使用，后端会忽略
   ledgerType: true,
   settlementCycle: true,
   autoSettlement: true,
@@ -103,7 +99,10 @@ export const FamilyLedgerCreateSchema = FamilyLedgerSchema.pick({
   baseCurrency: z.string().length(3),
 }).strict();
 
-export const FamilyLedgerUpdateSchema = FamilyLedgerCreateSchema.partial();
+export const FamilyLedgerUpdateSchema = FamilyLedgerCreateSchema.partial().extend({
+  memberCount: z.number().int().min(0).optional(),
+  activeTransactionCount: z.number().int().min(0).optional(),
+});
 
 export const FamilyLedgerAccountSchema = z.object({
   serialNum: SerialNumSchema,
@@ -132,7 +131,6 @@ export const FamilyLedgerTransactionCreateSchema = FamilyLedgerTransactionSchema
 export const FamilyLedgerTransactionUpdateSchema = FamilyLedgerTransactionCreateSchema.partial();
 
 export const FamilyLedgerMemberSchema = z.object({
-  serialNum: SerialNumSchema, // Added serialNum
   familyLedgerSerialNum: SerialNumSchema,
   familyMemberSerialNum: SerialNumSchema,
   createdAt: DateTimeSchema,

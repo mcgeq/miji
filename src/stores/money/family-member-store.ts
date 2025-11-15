@@ -126,16 +126,28 @@ export const useFamilyMemberStore = defineStore('family-member', {
     /**
      * 获取成员列表
      */
-    async fetchMembers(_ledgerSerialNum?: string) {
+    async fetchMembers(ledgerSerialNum?: string) {
       this.loading = true;
       this.error = null;
 
       try {
-        // TODO: 替换为实际的API调用
-        // this.members = await FamilyApi.listMembers(ledgerSerialNum);
-        // console.log('Fetching family members for ledger:', ledgerSerialNum);
-        // 临时模拟数据
-        this.members = [];
+        const { MoneyDb } = await import('@/services/money/money');
+
+        if (ledgerSerialNum) {
+          // 获取特定账本的成员
+          const ledgerMembers = await MoneyDb.listFamilyLedgerMembers();
+          const memberIds = ledgerMembers
+            .filter(lm => lm.familyLedgerSerialNum === ledgerSerialNum)
+            .map(lm => lm.familyMemberSerialNum);
+
+          // 获取成员详情
+          const memberPromises = memberIds.map(id => MoneyDb.getFamilyMember(id));
+          const members = await Promise.all(memberPromises);
+          this.members = members.filter(m => m !== null) as FamilyMember[];
+        } else {
+          // 获取所有成员
+          this.members = await MoneyDb.listFamilyMembers();
+        }
       } catch (error: any) {
         this.error = error.message || '获取成员列表失败';
         throw error;
@@ -152,31 +164,23 @@ export const useFamilyMemberStore = defineStore('family-member', {
       this.error = null;
 
       try {
-        // TODO: 替换为实际的API调用
-        // const member = await FamilyApi.createMember(data);
-        // console.log('Creating family member:', data);
+        const { MoneyDb } = await import('@/services/money/money');
+        const member = await MoneyDb.createFamilyMember(data);
 
-        // 临时模拟创建
-        const member: FamilyMember = {
-          serialNum: `member_${Date.now()}`,
-          name: data.name,
-          role: data.role,
-          isPrimary: data.isPrimary,
-          permissions: data.permissions,
-          userSerialNum: data.userSerialNum || null,
-          avatar: data.avatar || null,
-          colorTag: data.colorTag || null,
-          totalPaid: 0,
-          totalOwed: 0,
-          netBalance: 0,
-          transactionCount: 0,
-          splitCount: 0,
-          lastActiveAt: null,
-          createdAt: new Date().toISOString(),
-          updatedAt: null,
-        };
-
+        // 添加到本地状态
         this.members.push(member);
+
+        // 如果有当前账本，创建账本-成员关联
+        if (this.currentLedgerSerialNum) {
+          await MoneyDb.createFamilyLedgerMember({
+            familyLedgerSerialNum: this.currentLedgerSerialNum,
+            familyMemberSerialNum: member.serialNum,
+          });
+
+          // 更新账本的成员数量
+          await this.updateLedgerMemberCount(this.currentLedgerSerialNum);
+        }
+
         return member;
       } catch (error: any) {
         this.error = error.message || '创建成员失败';
@@ -194,23 +198,15 @@ export const useFamilyMemberStore = defineStore('family-member', {
       this.error = null;
 
       try {
-        // TODO: 替换为实际的API调用
-        // const member = await FamilyApi.updateMember(serialNum, data);
-        // console.log('Updating family member:', serialNum, data);
+        const { MoneyDb } = await import('@/services/money/money');
+        const updatedMember = await MoneyDb.updateFamilyMember(serialNum, data);
 
+        // 更新本地状态
         const index = this.members.findIndex(m => m.serialNum === serialNum);
-        if (index === -1) {
-          throw new Error('成员不存在');
+        if (index !== -1) {
+          this.members[index] = updatedMember;
         }
 
-        // 临时模拟更新
-        const updatedMember: FamilyMember = {
-          ...this.members[index],
-          ...data,
-          updatedAt: new Date().toISOString(),
-        };
-
-        this.members[index] = updatedMember;
         return updatedMember;
       } catch (error: any) {
         this.error = error.message || '更新成员失败';
@@ -228,14 +224,19 @@ export const useFamilyMemberStore = defineStore('family-member', {
       this.error = null;
 
       try {
-        // TODO: 替换为实际的API调用
-        // await FamilyApi.deleteMember(serialNum);
-        // console.log('Deleting family member:', serialNum);
+        const { MoneyDb } = await import('@/services/money/money');
+        await MoneyDb.deleteFamilyMember(serialNum);
 
+        // 更新本地状态
         this.members = this.members.filter(m => m.serialNum !== serialNum);
 
         // 清理统计数据
         delete this.memberStats[serialNum];
+
+        // 如果有当前账本，更新账本的成员数量
+        if (this.currentLedgerSerialNum) {
+          await this.updateLedgerMemberCount(this.currentLedgerSerialNum);
+        }
       } catch (error: any) {
         this.error = error.message || '删除成员失败';
         throw error;
@@ -331,6 +332,31 @@ export const useFamilyMemberStore = defineStore('family-member', {
       }
 
       await this.deleteMember(serialNum);
+    },
+
+    /**
+     * 更新账本的成员数量
+     */
+    async updateLedgerMemberCount(ledgerSerialNum: string): Promise<void> {
+      try {
+        const { MoneyDb } = await import('@/services/money/money');
+
+        // 获取该账本的所有成员关联
+        const ledgerMembers = await MoneyDb.listFamilyLedgerMembers();
+        const memberCount = ledgerMembers.filter(
+          lm => lm.familyLedgerSerialNum === ledgerSerialNum,
+        ).length;
+
+        // 更新账本的成员数量
+        await MoneyDb.updateFamilyLedger(ledgerSerialNum, { memberCount });
+
+        // 同步更新 ledger store
+        const { useFamilyLedgerStore } = await import('./family-ledger-store');
+        const ledgerStore = useFamilyLedgerStore();
+        await ledgerStore.fetchLedgers();
+      } catch (error) {
+        console.error('Failed to update ledger member count:', error);
+      }
     },
 
     /**

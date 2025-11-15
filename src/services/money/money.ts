@@ -374,22 +374,24 @@ export class MoneyDb {
     return this.familyLedgerAccountMapper.create(assoc);
   }
 
-  static async getFamilyLedgerAccount(serialNum: string): Promise<{
-    serialNum: string;
-    familyLedgerSerialNum: string;
-    accountSerialNum: string;
-  } | null> {
+  static async getFamilyLedgerAccount(serialNum: string): Promise<FamilyLedgerAccount | null> {
     return this.familyLedgerAccountMapper.getById(serialNum);
   }
 
-  static async listFamilyLedgerAccounts(): Promise<
-    {
-      serialNum: string;
-      familyLedgerSerialNum: string;
-      accountSerialNum: string;
-    }[]
-  > {
+  static async listFamilyLedgerAccounts(): Promise<FamilyLedgerAccount[]> {
     return this.familyLedgerAccountMapper.list();
+  }
+
+  static async listFamilyLedgerAccountsByLedger(
+    ledgerSerialNum: string,
+  ): Promise<FamilyLedgerAccount[]> {
+    return this.familyLedgerAccountMapper.listByLedger(ledgerSerialNum);
+  }
+
+  static async listFamilyLedgerAccountsByAccount(
+    accountSerialNum: string,
+  ): Promise<FamilyLedgerAccount[]> {
+    return this.familyLedgerAccountMapper.listByAccount(accountSerialNum);
   }
 
   static async updateFamilyLedgerAccount(
@@ -399,8 +401,11 @@ export class MoneyDb {
     return this.familyLedgerAccountMapper.update(serialNum, assoc);
   }
 
-  static async deleteFamilyLedgerAccount(serialNum: string): Promise<void> {
-    return this.familyLedgerAccountMapper.deleteById(serialNum);
+  static async deleteFamilyLedgerAccount(
+    ledgerSerialNum: string,
+    accountSerialNum: string,
+  ): Promise<void> {
+    return this.familyLedgerAccountMapper.delete(ledgerSerialNum, accountSerialNum);
   }
 
   // FamilyLedgerTransaction 操作

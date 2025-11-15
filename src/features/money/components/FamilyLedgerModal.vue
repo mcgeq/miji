@@ -7,6 +7,7 @@ import { getRoleName } from '../utils/family';
 import MemberModal from './MemberModal.vue';
 import type { Currency } from '@/schema/common';
 import type { FamilyLedger, FamilyMember } from '@/schema/money';
+import type { Account } from '@/schema/money/account';
 
 interface Props {
   ledger: FamilyLedger | null;
@@ -17,9 +18,12 @@ const emit = defineEmits(['close', 'save']);
 const { t, te } = useI18n();
 
 const currencies = ref<Currency[]>([]);
+const accounts = ref<Account[]>([]);
 const showMemberModal = ref(false);
 const editingMember = ref<FamilyMember | null>(null);
 const editingMemberIndex = ref(-1);
+const showAccountSelector = ref(false);
+const selectedAccounts = ref<Account[]>([]);
 
 // Fetch currencies asynchronously
 async function loadCurrencies() {
@@ -31,8 +35,20 @@ async function loadCurrencies() {
   }
 }
 
-// Call loadCurrencies on component setup
+// Load currencies and accounts on component setup
 loadCurrencies();
+
+// Fetch accounts asynchronously
+async function loadAccounts() {
+  try {
+    const fetchedAccounts = await MoneyDb.listAccounts();
+    accounts.value = fetchedAccounts;
+  } catch (err: unknown) {
+    Lg.e('FamilyLedgerModal', 'Failed to load accounts:', err);
+  }
+}
+
+loadAccounts();
 
 // 安全获取货币显示名称
 function getCurrencyDisplayName(currencyCode: string): string {
@@ -237,6 +253,31 @@ function saveMember(member: FamilyMember) {
   closeMemberModal();
 }
 
+// 账户管理方法
+function toggleAccountSelector() {
+  showAccountSelector.value = !showAccountSelector.value;
+}
+
+function toggleAccountSelection(account: Account) {
+  const index = selectedAccounts.value.findIndex(a => a.serialNum === account.serialNum);
+  if (index >= 0) {
+    selectedAccounts.value.splice(index, 1);
+  } else {
+    selectedAccounts.value.push(account);
+  }
+}
+
+function isAccountSelected(account: Account): boolean {
+  return selectedAccounts.value.some(a => a.serialNum === account.serialNum);
+}
+
+function removeAccount(account: Account) {
+  const index = selectedAccounts.value.findIndex(a => a.serialNum === account.serialNum);
+  if (index >= 0) {
+    selectedAccounts.value.splice(index, 1);
+  }
+}
+
 function closeModal() {
   emit('close');
 }
@@ -247,6 +288,8 @@ function saveLedger() {
     ...form,
     // 规范化 baseCurrency 为字符串格式，保持与后端返回格式一致
     baseCurrency: form.baseCurrency.code,
+    // 添加选中的账户信息
+    selectedAccounts: selectedAccounts.value,
   };
   emit('save', ledgerData);
 }
@@ -283,10 +326,61 @@ function buildLedgerForm(source: FamilyLedger | null): FamilyLedger {
   };
 }
 
+// 加载账本的成员
+async function loadLedgerMembers(ledgerSerialNum: string) {
+  try {
+    // 获取账本的成员关联
+    const ledgerMembers = await MoneyDb.listFamilyLedgerMembers();
+    const memberIds = ledgerMembers
+      .filter(lm => lm.familyLedgerSerialNum === ledgerSerialNum)
+      .map(lm => lm.familyMemberSerialNum);
+
+    // 获取成员详情
+    const memberPromises = memberIds.map(id => MoneyDb.getFamilyMember(id));
+    const members = await Promise.all(memberPromises);
+
+    // 更新表单的成员列表
+    form.members = members.filter(m => m !== null) as FamilyMember[];
+  } catch (error) {
+    Lg.e('FamilyLedgerModal', 'Failed to load ledger members:', error);
+    form.members = [];
+  }
+}
+
+// 加载账本的账户
+async function loadLedgerAccounts(ledgerSerialNum: string) {
+  try {
+    // 获取账本的账户关联
+    const ledgerAccounts = await MoneyDb.listFamilyLedgerAccountsByLedger(ledgerSerialNum);
+    const accountIds = ledgerAccounts.map(la => la.accountSerialNum);
+
+    // 获取账户详情
+    const accountPromises = accountIds.map(id => MoneyDb.getAccount(id));
+    const accountsData = await Promise.all(accountPromises);
+
+    // 更新选中的账户列表
+    selectedAccounts.value = accountsData.filter(a => a !== null) as Account[];
+  } catch (error) {
+    Lg.e('FamilyLedgerModal', 'Failed to load ledger accounts:', error);
+    selectedAccounts.value = [];
+  }
+}
+
 watch(
   () => props.ledger,
-  newVal => {
+  async newVal => {
     Object.assign(form, buildLedgerForm(newVal));
+
+    // 如果是编辑模式，加载成员和账户列表
+    if (newVal?.serialNum) {
+      await Promise.all([
+        loadLedgerMembers(newVal.serialNum),
+        loadLedgerAccounts(newVal.serialNum),
+      ]);
+    } else {
+      // 新建模式，清空选中的账户
+      selectedAccounts.value = [];
+    }
   },
   { immediate: true, deep: true },
 );
@@ -449,6 +543,69 @@ watch(
                   <LucideTrash class="action-icon" />
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 账户管理 -->
+        <div class="accounts-section">
+          <div class="accounts-header">
+            <label class="form-label">账户管理</label>
+            <button
+              type="button"
+              class="btn-close add-account-btn"
+              aria-label="选择账户"
+              @click="toggleAccountSelector"
+            >
+              <LucidePlus class="icon-btn" />
+            </button>
+          </div>
+
+          <!-- 已选账户列表 -->
+          <div v-if="selectedAccounts.length > 0" class="accounts-list">
+            <div
+              v-for="account in selectedAccounts"
+              :key="account.serialNum"
+              class="account-item"
+            >
+              <div class="account-info">
+                <LucideWallet class="account-icon" />
+                <span class="account-name">{{ account.name }}</span>
+                <span class="account-type">({{ account.type }})</span>
+              </div>
+              <button
+                type="button"
+                class="action-btn-danger"
+                title="移除"
+                @click="removeAccount(account)"
+              >
+                <LucideTrash class="action-icon" />
+              </button>
+            </div>
+          </div>
+
+          <!-- 账户选择器下拉 -->
+          <div v-if="showAccountSelector" class="account-selector">
+            <div class="selector-header">
+              <span>选择账户</span>
+              <button type="button" class="btn-close-selector" @click="toggleAccountSelector">
+                <LucideX class="icon-sm" />
+              </button>
+            </div>
+            <div class="selector-list">
+              <label
+                v-for="account in accounts"
+                :key="account.serialNum"
+                class="selector-item"
+              >
+                <input
+                  type="checkbox"
+                  :checked="isAccountSelected(account)"
+                  @change="toggleAccountSelection(account)"
+                >
+                <span class="selector-item-name">{{ account.name }}</span>
+                <span class="selector-item-type">({{ account.type }})</span>
+              </label>
             </div>
           </div>
         </div>
@@ -647,6 +804,174 @@ watch(
 .action-icon {
   height: 0.75rem;
   width: 0.75rem;
+}
+
+/* 账户管理样式 */
+.accounts-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.accounts-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.add-account-btn {
+  background-color: var(--color-base-200);
+  color: var(--color-base-content);
+  border-radius: 50%;
+  padding: 0;
+  width: 3rem;
+  height: 3rem;
+  transition: background-color 0.2s;
+}
+
+.add-account-btn:hover {
+  background-color: var(--color-base-300);
+}
+
+.accounts-list {
+  max-height: 10rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  /* 隐藏滚动条但保持滚动功能 */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+
+.accounts-list::-webkit-scrollbar {
+  display: none; /* Chrome/Safari/Opera */
+}
+
+.account-item {
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  background-color: var(--color-base-200);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: background-color 0.2s;
+}
+
+.account-item:hover {
+  background-color: var(--color-base-300);
+}
+
+.account-info {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.account-icon {
+  height: 1rem;
+  width: 1rem;
+  color: var(--color-primary);
+}
+
+.account-name {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-base-content);
+}
+
+.account-type {
+  font-size: 0.75rem;
+  color: var(--color-neutral);
+}
+
+.account-selector {
+  margin-top: 0.5rem;
+  border: 1px solid var(--color-base-300);
+  border-radius: 0.5rem;
+  background-color: var(--color-base-100);
+  max-height: 15rem;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow-md);
+}
+
+.selector-header {
+  padding: 0.75rem;
+  border-bottom: 1px solid var(--color-base-300);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: 500;
+  font-size: 0.875rem;
+  color: var(--color-base-content);
+  background-color: var(--color-base-200);
+}
+
+.btn-close-selector {
+  background: none;
+  border: none;
+  padding: 0.25rem;
+  cursor: pointer;
+  color: var(--color-neutral);
+  transition: color 0.2s;
+}
+
+.btn-close-selector:hover {
+  color: var(--color-base-content);
+}
+
+.icon-sm {
+  height: 1rem;
+  width: 1rem;
+}
+
+.selector-list {
+  overflow-y: auto;
+  padding: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  /* 隐藏滚动条但保持滚动功能 */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+
+.selector-list::-webkit-scrollbar {
+  display: none; /* Chrome/Safari/Opera */
+}
+
+.selector-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.selector-item:hover {
+  background-color: var(--color-base-200);
+}
+
+.selector-item input[type="checkbox"] {
+  width: 1rem;
+  height: 1rem;
+  accent-color: var(--color-primary);
+  cursor: pointer;
+}
+
+.selector-item-name {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-base-content);
+}
+
+.selector-item-type {
+  font-size: 0.75rem;
+  color: var(--color-neutral);
 }
 
 /* 模态框操作按钮 */

@@ -15,30 +15,7 @@ const emit = defineEmits<{
 }>();
 const { ledgers, loading } = toRefs(props);
 
-// 这些函数需要根据实际的数据结构来解析
-function getAccountCount(accounts: string): number {
-  try {
-    return JSON.parse(accounts || '[]').length;
-  } catch {
-    return 0;
-  }
-}
-
-function getTransactionCount(transactions: string): number {
-  try {
-    return JSON.parse(transactions || '[]').length;
-  } catch {
-    return 0;
-  }
-}
-
-function getBudgetCount(budgets: string): number {
-  try {
-    return JSON.parse(budgets || '[]').length;
-  } catch {
-    return 0;
-  }
-}
+// 注意：accounts, transactions, budgets 现在是整数类型，不再是 JSON 字符串
 </script>
 
 <template>
@@ -88,7 +65,7 @@ function getBudgetCount(budgets: string): number {
             <!-- 暂时隐藏成员列表，因为数据结构不匹配 -->
             <div class="member-tag">
               <LucideUser class="member-icon member-icon-secondary" />
-              <span>{{ ledger.memberCount || 0 }} 位成员</span>
+              <span>{{ ledger.members || 0 }} 位成员</span>
             </div>
           </div>
         </div>
@@ -100,7 +77,7 @@ function getBudgetCount(budgets: string): number {
               账户
             </div>
             <div class="stat-value">
-              {{ getAccountCount(ledger.accounts) }}
+              {{ ledger.accounts || 0 }}
             </div>
           </div>
           <div class="stat-item">
@@ -108,7 +85,7 @@ function getBudgetCount(budgets: string): number {
               交易
             </div>
             <div class="stat-value">
-              {{ getTransactionCount(ledger.transactions) }}
+              {{ ledger.transactions || 0 }}
             </div>
           </div>
           <div class="stat-item">
@@ -116,7 +93,7 @@ function getBudgetCount(budgets: string): number {
               预算
             </div>
             <div class="stat-value">
-              {{ getBudgetCount(ledger.budgets) }}
+              {{ ledger.budgets || 0 }}
             </div>
           </div>
         </div>

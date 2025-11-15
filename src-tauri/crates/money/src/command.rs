@@ -19,6 +19,8 @@ use crate::{
         family_ledger::{
             FamilyLedgerCreate, FamilyLedgerResponse, FamilyLedgerStats, FamilyLedgerUpdate,
         },
+        family_ledger_account::{FamilyLedgerAccountCreate, FamilyLedgerAccountResponse},
+        family_ledger_member::{FamilyLedgerMemberCreate, FamilyLedgerMemberResponse},
         family_ledger_transaction::{
             FamilyLedgerTransactionCreate, FamilyLedgerTransactionFilter,
             FamilyLedgerTransactionResponse, FamilyLedgerTransactionUpdate,
@@ -48,6 +50,8 @@ use crate::{
         currency::{CurrencyFilter, get_currency_service},
         debt_relations::DebtRelationsService,
         family_ledger::FamilyLedgerService,
+        family_ledger_account::FamilyLedgerAccountService,
+        family_ledger_member::FamilyLedgerMemberService,
         family_ledger_transaction::FamilyLedgerTransactionService,
         family_member::FamilyMemberService,
         family_statistics::FamilyStatisticsService,
@@ -1363,6 +1367,160 @@ pub async fn family_member_delete(
     let service = FamilyMemberService::default();
     Ok(ApiResponse::from_result(
         service.delete(&state.db, serial_num).await,
+    ))
+}
+
+// ============================================================================
+// Family Ledger Member API
+
+/// 获取所有账本成员关联
+#[tauri::command]
+pub async fn family_ledger_member_list(
+    state: State<'_, AppState>,
+) -> Result<ApiResponse<Vec<FamilyLedgerMemberResponse>>, String> {
+    let service = FamilyLedgerMemberService::default();
+    Ok(ApiResponse::from_result(
+        service
+            .list(&state.db)
+            .await
+            .map(|models| models.into_iter().map(FamilyLedgerMemberResponse::from).collect()),
+    ))
+}
+
+/// 根据账本ID获取成员关联
+#[tauri::command]
+pub async fn family_ledger_member_list_by_ledger(
+    state: State<'_, AppState>,
+    ledger_serial_num: String,
+) -> Result<ApiResponse<Vec<FamilyLedgerMemberResponse>>, String> {
+    let service = FamilyLedgerMemberService::default();
+    Ok(ApiResponse::from_result(
+        service
+            .list_by_ledger(&state.db, &ledger_serial_num)
+            .await
+            .map(|models| models.into_iter().map(FamilyLedgerMemberResponse::from).collect()),
+    ))
+}
+
+/// 根据成员ID获取账本关联
+#[tauri::command]
+pub async fn family_ledger_member_list_by_member(
+    state: State<'_, AppState>,
+    member_serial_num: String,
+) -> Result<ApiResponse<Vec<FamilyLedgerMemberResponse>>, String> {
+    let service = FamilyLedgerMemberService::default();
+    Ok(ApiResponse::from_result(
+        service
+            .list_by_member(&state.db, &member_serial_num)
+            .await
+            .map(|models| models.into_iter().map(FamilyLedgerMemberResponse::from).collect()),
+    ))
+}
+
+/// 创建账本成员关联
+#[tauri::command]
+pub async fn family_ledger_member_create(
+    state: State<'_, AppState>,
+    data: FamilyLedgerMemberCreate,
+) -> Result<ApiResponse<FamilyLedgerMemberResponse>, String> {
+    let service = FamilyLedgerMemberService::default();
+    Ok(ApiResponse::from_result(
+        service
+            .create(&state.db, data.family_ledger_serial_num, data.family_member_serial_num)
+            .await
+            .map(FamilyLedgerMemberResponse::from),
+    ))
+}
+
+/// 删除账本成员关联
+#[tauri::command]
+pub async fn family_ledger_member_delete(
+    state: State<'_, AppState>,
+    ledger_serial_num: String,
+    member_serial_num: String,
+) -> Result<ApiResponse<()>, String> {
+    let service = FamilyLedgerMemberService::default();
+    Ok(ApiResponse::from_result(
+        service
+            .delete(&state.db, &ledger_serial_num, &member_serial_num)
+            .await,
+    ))
+}
+
+// ============================================================================
+// Family Ledger Account API
+
+/// 获取所有账本账户关联
+#[tauri::command]
+pub async fn family_ledger_account_list(
+    state: State<'_, AppState>,
+) -> Result<ApiResponse<Vec<FamilyLedgerAccountResponse>>, String> {
+    let service = FamilyLedgerAccountService::default();
+    Ok(ApiResponse::from_result(
+        service
+            .list(&state.db)
+            .await
+            .map(|models| models.into_iter().map(FamilyLedgerAccountResponse::from).collect()),
+    ))
+}
+
+/// 根据账本ID获取账户关联
+#[tauri::command]
+pub async fn family_ledger_account_list_by_ledger(
+    state: State<'_, AppState>,
+    ledger_serial_num: String,
+) -> Result<ApiResponse<Vec<FamilyLedgerAccountResponse>>, String> {
+    let service = FamilyLedgerAccountService::default();
+    Ok(ApiResponse::from_result(
+        service
+            .list_by_ledger(&state.db, &ledger_serial_num)
+            .await
+            .map(|models| models.into_iter().map(FamilyLedgerAccountResponse::from).collect()),
+    ))
+}
+
+/// 根据账户ID获取账本关联
+#[tauri::command]
+pub async fn family_ledger_account_list_by_account(
+    state: State<'_, AppState>,
+    account_serial_num: String,
+) -> Result<ApiResponse<Vec<FamilyLedgerAccountResponse>>, String> {
+    let service = FamilyLedgerAccountService::default();
+    Ok(ApiResponse::from_result(
+        service
+            .list_by_account(&state.db, &account_serial_num)
+            .await
+            .map(|models| models.into_iter().map(FamilyLedgerAccountResponse::from).collect()),
+    ))
+}
+
+/// 创建账本账户关联
+#[tauri::command]
+pub async fn family_ledger_account_create(
+    state: State<'_, AppState>,
+    data: FamilyLedgerAccountCreate,
+) -> Result<ApiResponse<FamilyLedgerAccountResponse>, String> {
+    let service = FamilyLedgerAccountService::default();
+    Ok(ApiResponse::from_result(
+        service
+            .create(&state.db, data.family_ledger_serial_num, data.account_serial_num)
+            .await
+            .map(FamilyLedgerAccountResponse::from),
+    ))
+}
+
+/// 删除账本账户关联
+#[tauri::command]
+pub async fn family_ledger_account_delete(
+    state: State<'_, AppState>,
+    ledger_serial_num: String,
+    account_serial_num: String,
+) -> Result<ApiResponse<()>, String> {
+    let service = FamilyLedgerAccountService::default();
+    Ok(ApiResponse::from_result(
+        service
+            .delete(&state.db, &ledger_serial_num, &account_serial_num)
+            .await,
     ))
 }
 

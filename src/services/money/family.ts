@@ -281,6 +281,40 @@ export class FamilyLedgerAccountMapper extends BaseMapper<
     }
   }
 
+  async listByLedger(ledgerSerialNum: string): Promise<FamilyLedgerAccount[]> {
+    try {
+      return await invokeCommand<FamilyLedgerAccount[]>('family_ledger_account_list_by_ledger', {
+        ledgerSerialNum,
+      });
+    } catch (_error) {
+      Lg.w('MoneyDb', 'family_ledger_account_list_by_ledger command not found, returning empty array');
+      return [];
+    }
+  }
+
+  async listByAccount(accountSerialNum: string): Promise<FamilyLedgerAccount[]> {
+    try {
+      return await invokeCommand<FamilyLedgerAccount[]>('family_ledger_account_list_by_account', {
+        accountSerialNum,
+      });
+    } catch (_error) {
+      Lg.w('MoneyDb', 'family_ledger_account_list_by_account command not found, returning empty array');
+      return [];
+    }
+  }
+
+  async delete(ledgerSerialNum: string, accountSerialNum: string): Promise<void> {
+    try {
+      await invokeCommand('family_ledger_account_delete', {
+        ledgerSerialNum,
+        accountSerialNum,
+      });
+      Lg.d('MoneyDb', 'FamilyLedgerAccount deleted:', { ledgerSerialNum, accountSerialNum });
+    } catch (error) {
+      this.handleError('delete', error);
+    }
+  }
+
   async listPaged(
     query: PageQuery<FamilyMemberFilters> = {
       currentPage: 1,
@@ -506,7 +540,7 @@ export class FamilyLedgerMemberMapper extends BaseMapper<
       const result = await invokeCommand<FamilyLedgerMember>('family_ledger_member_create', {
         data: assoc,
       });
-      Lg.d('MoneyDb', `FamilyLedgerMember created:, ${result.serialNum}`);
+      Lg.d('MoneyDb', `FamilyLedgerMember created: ${result.familyLedgerSerialNum} - ${result.familyMemberSerialNum}`);
       return result;
     } catch (error) {
       this.handleError('create', error);
