@@ -1,10 +1,9 @@
 <script setup lang="ts">
 import { LucideBarChart3, LucideCalculator, LucidePlus, LucideUsers } from 'lucide-vue-next';
 import { storeToRefs } from 'pinia';
-import { onMounted, ref } from 'vue';
-import ConfirmModal from '@/components/common/ConfirmModal.vue';
+import { computed, onMounted, ref } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { useFamilyLedgerStore } from '@/stores/money';
-import { Lg } from '@/utils/debugLog';
 import { toast } from '@/utils/toast';
 import FamilyLedgerList from '../components/FamilyLedgerList.vue';
 import FamilyLedgerModal from '../components/FamilyLedgerModal.vue';
@@ -12,7 +11,10 @@ import FamilyStatsView from './FamilyStatsView.vue';
 import SettlementView from './SettlementView.vue';
 import type { FamilyLedger } from '@/schema/money';
 
+const router = useRouter();
+const route = useRoute();
 const familyLedgerStore = useFamilyLedgerStore();
+
 const showLedgerModal = ref(false);
 const selectedLedger = ref<FamilyLedger | null>(null);
 
@@ -31,6 +33,7 @@ const tabs = [
 
 // 使用store中的状态
 const { ledgers, loading, currentLedger } = storeToRefs(familyLedgerStore);
+const showingDetail = computed(() => route.name === 'family-ledger-detail');
 
 // 获取标签页图标
 function getTabIcon(iconName: string) {
@@ -53,10 +56,10 @@ async function loadLedgers() {
 async function enterLedger(ledger: FamilyLedger) {
   try {
     await familyLedgerStore.switchLedger(ledger.serialNum);
-    Lg.i('进入账本:', ledger);
     toast.success(`已切换到账本: ${ledger.name}`);
-    // TODO: 跳转到 MoneyView 或其他页面
-    // router.push({ name: 'money', query: { ledgerId: ledger.serialNum } });
+    await router.push({
+      path: `/family-ledger/${ledger.serialNum}`,
+    });
   } catch (_error) {
     toast.error('切换账本失败');
   }
@@ -127,7 +130,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="family-ledger-container">
+  <div v-if="!showingDetail" class="family-ledger-container">
     <!-- 头部 -->
     <div class="header">
       <div class="header-info">
@@ -220,6 +223,7 @@ onMounted(() => {
       @close="cancelDelete"
     />
   </div>
+  <RouterView v-else />
 </template>
 
 <style scoped>

@@ -114,6 +114,12 @@ pub fn init_commands(builder: Builder<Wry>) -> Builder<Wry> {
         money_cmd::family_ledger_update,
         money_cmd::family_ledger_delete,
         money_cmd::family_ledger_stats,
+        money_cmd::family_ledger_transaction_list,
+        money_cmd::family_ledger_transaction_get,
+        money_cmd::family_ledger_transaction_create,
+        money_cmd::family_ledger_transaction_update,
+        money_cmd::family_ledger_transaction_delete,
+        money_cmd::family_ledger_transaction_list_paged,
         // 健康命令
         health_cmd::period_record_create,
         health_cmd::period_record_update,

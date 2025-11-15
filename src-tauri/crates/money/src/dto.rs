@@ -4,6 +4,7 @@ pub mod budget;
 pub mod categories;
 pub mod currency;
 pub mod family_ledger;
+pub mod family_ledger_transaction;
 pub mod family_member;
 pub mod split_rules;
 pub mod split_records;

@@ -14,6 +14,7 @@ pub mod debt_relations;
 pub mod debt_relations_hooks;
 pub mod family_ledger;
 pub mod family_ledger_hooks;
+pub mod family_ledger_transaction;
 pub mod family_member;
 pub mod family_member_hooks;
 pub mod family_statistics;

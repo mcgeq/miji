@@ -19,6 +19,10 @@ use crate::{
         family_ledger::{
             FamilyLedgerCreate, FamilyLedgerResponse, FamilyLedgerStats, FamilyLedgerUpdate,
         },
+        family_ledger_transaction::{
+            FamilyLedgerTransactionCreate, FamilyLedgerTransactionFilter,
+            FamilyLedgerTransactionResponse, FamilyLedgerTransactionUpdate,
+        },
         family_member::{FamilyMemberCreate, FamilyMemberResponse, FamilyMemberUpdate},
         installment::{
             InstallmentCalculationRequest, InstallmentCalculationResponse, InstallmentPlanResponse,
@@ -44,6 +48,7 @@ use crate::{
         currency::{CurrencyFilter, get_currency_service},
         debt_relations::DebtRelationsService,
         family_ledger::FamilyLedgerService,
+        family_ledger_transaction::FamilyLedgerTransactionService,
         family_member::FamilyMemberService,
         family_statistics::FamilyStatisticsService,
         installment::InstallmentService,
@@ -1814,6 +1819,104 @@ pub async fn family_ledger_create(
             .create(&state.db, data)
             .await
             .map(FamilyLedgerResponse::from),
+    ))
+}
+
+/// 获取家庭账本交易关联列表
+#[tauri::command]
+pub async fn family_ledger_transaction_list(
+    state: State<'_, AppState>,
+    filter: Option<FamilyLedgerTransactionFilter>,
+) -> Result<ApiResponse<Vec<FamilyLedgerTransactionResponse>>, String> {
+    let service = FamilyLedgerTransactionService::default();
+    Ok(ApiResponse::from_result(
+        service
+            .list_associations(&state.db, filter)
+            .await
+            .map(|rows| rows.into_iter().map(FamilyLedgerTransactionResponse::from).collect()),
+    ))
+}
+
+/// 创建家庭账本交易关联
+#[tauri::command]
+pub async fn family_ledger_transaction_create(
+    state: State<'_, AppState>,
+    data: FamilyLedgerTransactionCreate,
+) -> Result<ApiResponse<FamilyLedgerTransactionResponse>, String> {
+    let service = FamilyLedgerTransactionService::default();
+    Ok(ApiResponse::from_result(
+        service
+            .create_association(&state.db, data)
+            .await
+            .map(FamilyLedgerTransactionResponse::from),
+    ))
+}
+
+/// 获取家庭账本交易关联详情
+#[tauri::command]
+pub async fn family_ledger_transaction_get(
+    state: State<'_, AppState>,
+    serial_num: String,
+) -> Result<ApiResponse<Option<FamilyLedgerTransactionResponse>>, String> {
+    let service = FamilyLedgerTransactionService::default();
+    Ok(ApiResponse::from_result(
+        service
+            .get_association_by_serial(&state.db, &serial_num)
+            .await
+            .map(|opt| opt.map(FamilyLedgerTransactionResponse::from)),
+    ))
+}
+
+/// 更新家庭账本交易关联
+#[tauri::command]
+pub async fn family_ledger_transaction_update(
+    state: State<'_, AppState>,
+    serial_num: String,
+    data: FamilyLedgerTransactionUpdate,
+) -> Result<ApiResponse<FamilyLedgerTransactionResponse>, String> {
+    let service = FamilyLedgerTransactionService::default();
+    Ok(ApiResponse::from_result(
+        service
+            .update_association(&state.db, serial_num, data)
+            .await
+            .map(FamilyLedgerTransactionResponse::from),
+    ))
+}
+
+/// 删除家庭账本交易关联
+#[tauri::command]
+pub async fn family_ledger_transaction_delete(
+    state: State<'_, AppState>,
+    serial_num: String,
+) -> Result<ApiResponse<()>, String> {
+    let service = FamilyLedgerTransactionService::default();
+    Ok(ApiResponse::from_result(
+        service.delete_association(&state.db, serial_num).await,
+    ))
+}
+
+/// 分页获取家庭账本交易关联
+#[tauri::command]
+pub async fn family_ledger_transaction_list_paged(
+    state: State<'_, AppState>,
+    query: PagedQuery<FamilyLedgerTransactionFilter>,
+) -> Result<ApiResponse<PagedResult<FamilyLedgerTransactionResponse>>, String> {
+    let service = FamilyLedgerTransactionService::default();
+    Ok(ApiResponse::from_result(
+        service
+            .list_associations_paged(&state.db, query)
+            .await
+            .map(|paged| PagedResult {
+                rows: paged
+                    .rows
+                    .into_iter()
+                    .map(FamilyLedgerTransactionResponse::from)
+                    .collect(),
+                total_count: paged.total_count,
+                current_page: paged.current_page,
+                page_size: paged.page_size,
+                total_pages: paged.total_pages,
+            }),
     ))
 }
 
