@@ -4,7 +4,7 @@ import { MoneyDb } from '@/services/money/money';
 import { DateUtils } from '@/utils/date';
 import { Lg } from '@/utils/debugLog';
 import { getRoleName } from '../utils/family';
-import MemberModal from './MemberModal.vue';
+import FamilyMemberModal from './FamilyMemberModal.vue';
 import type { Currency } from '@/schema/common';
 import type { FamilyLedger, FamilyMember } from '@/schema/money';
 import type { Account } from '@/schema/money/account';
@@ -24,6 +24,8 @@ const editingMember = ref<FamilyMember | null>(null);
 const editingMemberIndex = ref(-1);
 const showAccountSelector = ref(false);
 const selectedAccounts = ref<Account[]>([]);
+// 添加用于表单管理的状态
+const memberList = ref<FamilyMember[]>([]);
 
 // Fetch currencies asynchronously
 async function loadCurrencies() {
@@ -66,30 +68,31 @@ const defaultLedger: FamilyLedger = {
   serialNum: '',
   description: '',
   baseCurrency: CURRENCY_CNY,
-  members: [],
-  accounts: '[]',
-  transactions: '[]',
-  budgets: '[]',
+  memberList: [],
   auditLogs: '[]',
-  // 新增字段
+  // 扩展字段
   ledgerType: 'FAMILY',
   settlementCycle: 'MONTHLY',
   autoSettlement: false,
   settlementDay: 1,
   defaultSplitRule: null,
+  // 统计字段
   totalIncome: 0,
   totalExpense: 0,
   sharedExpense: 0,
   personalExpense: 0,
   pendingSettlement: 0,
-  memberCount: 0,
-  activeTransactionCount: 0,
+  members: 0,
+  accounts: 0,
+  transactions: 0,
+  budgets: 0,
   lastSettlementAt: null,
   createdAt: DateUtils.getLocalISODateTimeWithOffset(),
   updatedAt: null,
 };
 
-const form = reactive<FamilyLedger>(buildLedgerForm(props.ledger));
+// 先初始化一个空的 form
+const form = reactive<FamilyLedger>(JSON.parse(JSON.stringify(defaultLedger)));
 
 // 结算日选项计算 - 统一存储方案
 const settlementDayOptions = computed(() => {
@@ -228,14 +231,14 @@ function getDayOfYearDescription(dayOfYear: number): string {
 
 function editMember(index: number) {
   editingMemberIndex.value = index;
-  editingMember.value = { ...form.members[index] };
+  editingMember.value = { ...memberList.value[index] };
   showMemberModal.value = true;
 }
 
 function removeMember(index: number) {
-  if (form.members[index].isPrimary)
+  if (memberList.value[index]?.isPrimary)
     return;
-  form.members.splice(index, 1);
+  memberList.value.splice(index, 1);
 }
 
 function closeMemberModal() {
@@ -246,9 +249,9 @@ function closeMemberModal() {
 
 function saveMember(member: FamilyMember) {
   if (editingMemberIndex.value >= 0) {
-    form.members[editingMemberIndex.value] = member;
+    memberList.value[editingMemberIndex.value] = member;
   } else {
-    form.members.push(member);
+    memberList.value.push(member);
   }
   closeMemberModal();
 }
@@ -294,7 +297,7 @@ function saveLedger() {
   emit('save', ledgerData);
 }
 
-function resolveCurrency(code?: string): Currency {
+function _resolveCurrency(code?: string): Currency {
   if (!code) return CURRENCY_CNY;
   const matched = currencies.value.find(currency => currency.code === code);
   return matched || { ...CURRENCY_CNY, code };
@@ -302,28 +305,34 @@ function resolveCurrency(code?: string): Currency {
 
 function buildLedgerForm(source: FamilyLedger | null): FamilyLedger {
   if (!source) {
+    // 初始化时清空列表
+    memberList.value = [];
     return JSON.parse(JSON.stringify(defaultLedger));
   }
 
-  const baseCurrencyCode =
-    typeof source.baseCurrency === 'string'
-      ? source.baseCurrency
-      : source.baseCurrency?.code;
+  // 填充列表数据
+  memberList.value = source.memberList || [];
 
   return {
-    ...JSON.parse(JSON.stringify(defaultLedger)),
+    ...defaultLedger,
     ...source,
-    // 如果原始账本没有名称但有描述，则用描述预填名称，保证编辑弹窗里能看到列表展示的标题
-    name: source.name || source.description || defaultLedger.name,
-    baseCurrency: resolveCurrency(baseCurrencyCode),
-    ledgerType: source.ledgerType
+    baseCurrency: source.baseCurrency
+      ? source.baseCurrency
+      : defaultLedger.baseCurrency,
+    ledgerType: (source.ledgerType
       ? source.ledgerType.toUpperCase()
-      : defaultLedger.ledgerType,
-    settlementCycle: source.settlementCycle
+      : defaultLedger.ledgerType) as FamilyLedger['ledgerType'],
+    settlementCycle: (source.settlementCycle
       ? source.settlementCycle.toUpperCase()
-      : defaultLedger.settlementCycle,
+      : defaultLedger.settlementCycle) as FamilyLedger['settlementCycle'],
     settlementDay: (source.settlementDay && source.settlementDay > 0) ? source.settlementDay : defaultLedger.settlementDay,
   };
+}
+
+// 初始化表单数据
+function initializeForm(source: FamilyLedger | null) {
+  const newFormData = buildLedgerForm(source);
+  Object.assign(form, newFormData);
 }
 
 // 加载账本的成员
@@ -340,10 +349,10 @@ async function loadLedgerMembers(ledgerSerialNum: string) {
     const members = await Promise.all(memberPromises);
 
     // 更新表单的成员列表
-    form.members = members.filter(m => m !== null) as FamilyMember[];
+    memberList.value = members.filter(m => m !== null) as FamilyMember[];
   } catch (error) {
     Lg.e('FamilyLedgerModal', 'Failed to load ledger members:', error);
-    form.members = [];
+    memberList.value = [];
   }
 }
 
@@ -369,7 +378,7 @@ async function loadLedgerAccounts(ledgerSerialNum: string) {
 watch(
   () => props.ledger,
   async newVal => {
-    Object.assign(form, buildLedgerForm(newVal));
+    initializeForm(newVal);
 
     // 如果是编辑模式，加载成员和账户列表
     if (newVal?.serialNum) {
@@ -384,6 +393,12 @@ watch(
   },
   { immediate: true, deep: true },
 );
+
+// 组件挂载时初始化
+onMounted(() => {
+  loadCurrencies();
+  loadAccounts();
+});
 </script>
 
 <template>
@@ -523,7 +538,7 @@ watch(
 
           <div class="members-list">
             <div
-              v-for="(member, index) in form.members" :key="member.serialNum"
+              v-for="(member, index) in memberList" :key="member.serialNum"
               class="member-item"
             >
               <div class="member-info">
@@ -568,19 +583,22 @@ watch(
               :key="account.serialNum"
               class="account-item"
             >
-              <div class="account-info">
+              <div class="account-info" style="display: flex; flex-direction: row; align-items: center; gap: 0.5rem;">
                 <LucideWallet class="account-icon" />
-                <span class="account-name">{{ account.name }}</span>
-                <span class="account-type">({{ account.type }})</span>
+                <span style="white-space: nowrap; display: inline;">
+                  {{ account.name }} ({{ account.type }})
+                </span>
               </div>
-              <button
-                type="button"
-                class="action-btn-danger"
-                title="移除"
-                @click="removeAccount(account)"
-              >
-                <LucideTrash class="action-icon" />
-              </button>
+              <div class="account-actions">
+                <button
+                  type="button"
+                  class="action-btn-danger"
+                  title="移除"
+                  @click="removeAccount(account)"
+                >
+                  <LucideTrash class="action-icon" />
+                </button>
+              </div>
             </div>
           </div>
 
@@ -623,7 +641,13 @@ watch(
     </div>
 
     <!-- 成员添加/编辑模态框 -->
-    <MemberModal v-if="showMemberModal" :member="editingMember" @close="closeMemberModal" @save="saveMember" />
+    <FamilyMemberModal
+      v-if="showMemberModal"
+      :member="editingMember"
+      :family-ledger-serial-num="props.ledger?.serialNum || ''"
+      @close="closeMemberModal"
+      @save="saveMember"
+    />
   </div>
 </template>
 
@@ -789,11 +813,16 @@ watch(
 .member-name {
   font-size: 0.875rem;
   font-weight: 500;
+  color: var(--color-base-content);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .member-role {
   font-size: 0.75rem;
-  color: #6b7280;
+  color: var(--color-neutral);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .member-actions {
@@ -868,21 +897,22 @@ watch(
   align-items: center;
 }
 
+.account-info span {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-base-content);
+  white-space: nowrap;
+}
+
 .account-icon {
   height: 1rem;
   width: 1rem;
   color: var(--color-primary);
 }
 
-.account-name {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--color-base-content);
-}
-
-.account-type {
-  font-size: 0.75rem;
-  color: var(--color-neutral);
+.account-actions {
+  display: flex;
+  gap: 0.25rem;
 }
 
 .account-selector {
@@ -980,5 +1010,52 @@ watch(
   display: flex;
   justify-content: center;
   gap: 0.75rem;
+}
+
+/* 账户和成员的操作按钮样式 */
+.action-btn {
+  padding: 0.5rem;
+  border-radius: 0.375rem;
+  border: none;
+  background-color: transparent;
+  color: var(--color-neutral);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.action-btn:hover {
+  background-color: var(--color-base-300);
+  color: var(--color-base-content);
+}
+
+.action-btn-danger {
+  padding: 0.5rem;
+  border-radius: 0.375rem;
+  border: none;
+  background-color: transparent;
+  color: var(--color-error);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.action-btn-danger:hover {
+  background-color: var(--color-error);
+  color: var(--color-error-content);
+}
+
+.action-btn-danger:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.action-icon {
+  width: 0.75rem;
+  height: 0.75rem;
 }
 </style>

@@ -95,6 +95,25 @@ pub struct FamilyMemberCreate {
 }
 
 /// 更新家庭成员请求 DTO
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct FamilyMemberSearchQuery {
+    pub keyword: Option<String>, // 关键词搜索，支持姓名、邮箱模糊匹配
+    pub name: Option<String>,    // 按姓名搜索
+    pub email: Option<String>,   // 按邮箱搜索
+    pub status: Option<String>,  // 按状态过滤
+    pub role: Option<String>,    // 按角色过滤
+    pub user_id: Option<String>, // 按关联用户ID过滤
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct FamilyMemberSearchResponse {
+    pub members: Vec<FamilyMemberResponse>,
+    pub total: u64,
+    pub has_more: bool,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, Validate, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct FamilyMemberUpdate {

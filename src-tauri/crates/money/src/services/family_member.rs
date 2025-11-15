@@ -12,7 +12,7 @@ use sea_orm::{
 };
 
 use crate::{
-    dto::family_member::{FamilyMemberCreate, FamilyMemberUpdate},
+    dto::family_member::{FamilyMemberCreate, FamilyMemberUpdate, FamilyMemberSearchQuery},
     services::family_member_hooks::FamilyMemberHooks,
 };
 
@@ -193,5 +193,125 @@ impl FamilyMemberService {
             );
         }
         Ok(result)
+    }
+
+    /// 搜索家庭成员
+    pub async fn search_family_members(
+        &self,
+        db: &DbConn,
+        query: FamilyMemberSearchQuery,
+        limit: Option<u32>,
+    ) -> MijiResult<Vec<entity::family_member::Model>> {
+        use entity::family_member::Entity as FamilyMemberEntity;
+        use sea_orm::{QueryOrder, QuerySelect, Condition};
+        
+        let mut conditions = Condition::all();
+        
+        // 添加基础过滤条件 - 排除已删除成员（如果有deleted_at字段）
+        // 这里假设status字段来标识活跃状态
+        
+        // 关键词搜索 - 支持姓名或邮箱模糊匹配
+        if let Some(keyword) = &query.keyword {
+            if !keyword.trim().is_empty() {
+                let keyword_condition = Condition::any()
+                    .add(entity::family_member::Column::Name.contains(keyword.trim()));
+                
+                // 如果有邮箱字段，也加入搜索
+                if let Some(_) = &query.email {
+                    conditions = conditions.add(
+                        keyword_condition.add(
+                            entity::family_member::Column::Email.contains(keyword.trim())
+                        )
+                    );
+                } else {
+                    conditions = conditions.add(keyword_condition);
+                }
+            }
+        }
+        
+        // 精确姓名搜索
+        if let Some(name) = &query.name {
+            if !name.trim().is_empty() {
+                conditions = conditions.add(entity::family_member::Column::Name.contains(name.trim()));
+            }
+        }
+        
+        // 精确邮箱搜索
+        if let Some(email) = &query.email {
+            if !email.trim().is_empty() {
+                conditions = conditions.add(entity::family_member::Column::Email.contains(email.trim()));
+            }
+        }
+        
+        // 状态过滤
+        if let Some(status) = &query.status {
+            conditions = conditions.add(entity::family_member::Column::Status.eq(status));
+        }
+        
+        // 角色过滤
+        if let Some(role) = &query.role {
+            conditions = conditions.add(entity::family_member::Column::Role.eq(role));
+        }
+        
+        // 用户ID过滤
+        if let Some(user_id) = &query.user_id {
+            conditions = conditions.add(entity::family_member::Column::UserId.eq(user_id));
+        }
+        
+        let mut query_builder = FamilyMemberEntity::find()
+            .filter(conditions)
+            .order_by_desc(entity::family_member::Column::CreatedAt);
+            
+        // 应用限制
+        if let Some(limit) = limit {
+            query_builder = query_builder.limit(limit as u64);
+        }
+        
+        let models = query_builder
+            .all(db)
+            .await
+            .map_err(AppError::from)?;
+            
+        // 应用本地化
+        let mut local_models = Vec::with_capacity(models.len());
+        for model in models {
+            local_models.push(self.converter().model_with_local(model).await?);
+        }
+        
+        Ok(local_models)
+    }
+
+    /// 获取最近创建的家庭成员
+    pub async fn list_recent_family_members(
+        &self,
+        db: &DbConn,
+        limit: Option<u32>,
+        days_back: Option<u32>,
+    ) -> MijiResult<Vec<entity::family_member::Model>> {
+        use entity::family_member::Entity as FamilyMemberEntity;
+        use sea_orm::{QueryOrder, QuerySelect};
+        use chrono::{Duration, Utc};
+        
+        let limit = limit.unwrap_or(10);
+        let days = days_back.unwrap_or(30);
+        
+        // 计算日期范围
+        let cutoff_date = Utc::now() - Duration::days(days as i64);
+        
+        let models = FamilyMemberEntity::find()
+            .filter(entity::family_member::Column::CreatedAt.gte(cutoff_date.with_timezone(&chrono::FixedOffset::east_opt(8 * 3600).unwrap())))
+            .order_by_desc(entity::family_member::Column::CreatedAt)
+            .limit(limit as u64)
+            .all(db)
+            .await
+            .map_err(AppError::from)?;
+            
+        // 应用本地化
+        let mut local_models = Vec::with_capacity(models.len());
+        for model in models {
+            local_models.push(self.converter().model_with_local(model).await?);
+        }
+        
+        Ok(local_models)
     }
 }

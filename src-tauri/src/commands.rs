@@ -38,8 +38,11 @@ pub fn init_commands(builder: Builder<Wry>) -> Builder<Wry> {
         // 认证命令
         auth_cmd::exists_user,
         auth_cmd::create_user,
+        auth_cmd::get_user,
         auth_cmd::get_user_with_email,
         auth_cmd::update_user,
+        auth_cmd::search_users,
+        auth_cmd::list_recent_users,
         // 待办命令
         todo_cmd::todo_get,
         todo_cmd::todo_create,
@@ -112,6 +115,8 @@ pub fn init_commands(builder: Builder<Wry>) -> Builder<Wry> {
         money_cmd::family_member_create,
         money_cmd::family_member_update,
         money_cmd::family_member_delete,
+        money_cmd::search_family_members,
+        money_cmd::list_recent_family_members,
         money_cmd::family_ledger_list,
         money_cmd::family_ledger_get,
         money_cmd::family_ledger_create,

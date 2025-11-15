@@ -25,7 +25,9 @@ use crate::{
             FamilyLedgerTransactionCreate, FamilyLedgerTransactionFilter,
             FamilyLedgerTransactionResponse, FamilyLedgerTransactionUpdate,
         },
-        family_member::{FamilyMemberCreate, FamilyMemberResponse, FamilyMemberUpdate},
+        family_member::{
+            FamilyMemberCreate, FamilyMemberResponse, FamilyMemberUpdate, FamilyMemberSearchQuery, FamilyMemberSearchResponse
+        },
         installment::{
             InstallmentCalculationRequest, InstallmentCalculationResponse, InstallmentPlanResponse,
         },
@@ -1368,6 +1370,88 @@ pub async fn family_member_delete(
     Ok(ApiResponse::from_result(
         service.delete(&state.db, serial_num).await,
     ))
+}
+
+/// 搜索家庭成员
+#[tauri::command]
+#[instrument(skip(state))]
+pub async fn search_family_members(
+    state: State<'_, AppState>,
+    query: FamilyMemberSearchQuery,
+    limit: Option<u32>,
+) -> Result<ApiResponse<FamilyMemberSearchResponse>, String> {
+    info!(
+        keyword = ?query.keyword,
+        name = ?query.name,
+        email = ?query.email,
+        limit = ?limit,
+        "开始搜索家庭成员"
+    );
+
+    let service = FamilyMemberService::default();
+    let search_limit = limit.unwrap_or(20).min(100); // 最大限制100个结果
+
+    match service.search_family_members(&state.db, query, Some(search_limit)).await {
+        Ok(members) => {
+            let member_count = members.len();
+            let response = FamilyMemberSearchResponse {
+                members: members.into_iter().map(FamilyMemberResponse::from).collect(),
+                total: member_count as u64,
+                has_more: member_count >= search_limit as usize,
+            };
+            
+            info!(
+                result_count = member_count,
+                has_more = response.has_more,
+                "家庭成员搜索成功"
+            );
+            Ok(ApiResponse::from_result(Ok(response)))
+        }
+        Err(e) => {
+            error!(
+                error = %e,
+                "家庭成员搜索失败"
+            );
+            Err(e.to_string())
+        }
+    }
+}
+
+/// 获取最近创建的家庭成员
+#[tauri::command]
+#[instrument(skip(state))]
+pub async fn list_recent_family_members(
+    state: State<'_, AppState>,
+    limit: Option<u32>,
+    days_back: Option<u32>,
+) -> Result<ApiResponse<Vec<FamilyMemberResponse>>, String> {
+    info!(
+        limit = ?limit,
+        days_back = ?days_back,
+        "开始获取最近家庭成员"
+    );
+
+    let service = FamilyMemberService::default();
+
+    match service.list_recent_family_members(&state.db, limit, days_back).await {
+        Ok(members) => {
+            info!(
+                count = members.len(),
+                "获取最近家庭成员成功"
+            );
+            Ok(ApiResponse::from_result(Ok(members
+                .into_iter()
+                .map(FamilyMemberResponse::from)
+                .collect())))
+        }
+        Err(e) => {
+            error!(
+                error = %e,
+                "获取最近家庭成员失败"
+            );
+            Err(e.to_string())
+        }
+    }
 }
 
 // ============================================================================

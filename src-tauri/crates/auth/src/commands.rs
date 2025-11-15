@@ -8,7 +8,7 @@ use tauri::State;
 use tracing::{error, info, instrument, warn};
 
 use crate::{
-    dto::users::{CreateUserDto, UpdateUserDto, User, UserQuery},
+    dto::users::{CreateUserDto, UpdateUserDto, User, UserQuery, UserSearchQuery, UserSearchResponse},
     services::user::{UserFilter, UserService},
 };
 
@@ -264,6 +264,88 @@ pub async fn list_users_paged(
             error!(
                 error = %e,
                 "分页列出用户失败"
+            );
+            Err(e.to_string())
+        }
+    }
+}
+
+// 搜索用户
+#[tauri::command]
+#[instrument(skip(state))]
+pub async fn search_users(
+    state: State<'_, AppState>,
+    query: UserSearchQuery,
+    limit: Option<u32>,
+) -> Result<ApiResponse<UserSearchResponse>, String> {
+    info!(
+        keyword = ?query.keyword,
+        name = ?query.name, 
+        email = ?query.email,
+        limit = ?limit,
+        "开始搜索用户"
+    );
+
+    let service = UserService::default();
+    let search_limit = limit.unwrap_or(20).min(100); // 最大限制100个结果
+
+    match service.search_users(&state.db, query, Some(search_limit)).await {
+        Ok(users) => {
+            let user_count = users.len();
+            let response = UserSearchResponse {
+                users: users.into_iter().map(User::from).collect(),
+                total: user_count as u64,
+                has_more: user_count >= search_limit as usize,
+            };
+            
+            info!(
+                result_count = user_count,
+                has_more = response.has_more,
+                "用户搜索成功"
+            );
+            Ok(ApiResponse::from_result(Ok(response)))
+        }
+        Err(e) => {
+            error!(
+                error = %e,
+                "用户搜索失败"
+            );
+            Err(e.to_string())
+        }
+    }
+}
+
+// 获取最近活跃用户
+#[tauri::command]
+#[instrument(skip(state))]
+pub async fn list_recent_users(
+    state: State<'_, AppState>,
+    limit: Option<u32>,
+    days_back: Option<u32>,
+) -> Result<ApiResponse<Vec<User>>, String> {
+    info!(
+        limit = ?limit,
+        days_back = ?days_back,
+        "开始获取最近活跃用户"
+    );
+
+    let service = UserService::default();
+
+    match service.list_recent_users(&state.db, limit, days_back).await {
+        Ok(users) => {
+            info!(
+                count = users.len(),
+                "获取最近活跃用户成功"
+            );
+            Ok(ApiResponse::from_result(Ok(users
+                .into_iter()
+                .map(User::from)
+                .collect())))
+        }
+        Err(e) => {
+            error!(
+                error = %e,
+                "获取最近活跃用户失败"
             );
             Err(e.to_string())
         }

@@ -1,6 +1,10 @@
 <script setup lang="ts">
+import ColorSelector from '@/components/common/ColorSelector.vue';
+import FamilyMemberSelector from '@/components/ui/FamilyMemberSelector.vue';
 import { useFamilyMemberStore } from '@/stores/money';
 import { toast } from '@/utils/toast';
+import { userPreferences } from '@/utils/userPreferences';
+import type { FamilyMember as SearchableFamilyMember } from '@/composables/useFamilyMemberSearch';
 import type { FamilyMember, FamilyMemberCreate, FamilyMemberUpdate } from '@/schema/money';
 
 interface Props {
@@ -16,6 +20,10 @@ const emit = defineEmits<{
 
 const memberStore = useFamilyMemberStore();
 
+// 成员创建模式
+const memberMode = ref<'select_member' | 'create_member'>('select_member');
+const selectedExistingMember = ref<SearchableFamilyMember | null>(null);
+
 // 表单数据
 const form = reactive({
   name: '',
@@ -26,22 +34,6 @@ const form = reactive({
   colorTag: '#3b82f6',
   permissions: '[]',
 });
-
-// 预设颜色
-const presetColors = [
-  '#3b82f6',
-  '#ef4444',
-  '#10b981',
-  '#f59e0b',
-  '#8b5cf6',
-  '#ec4899',
-  '#06b6d4',
-  '#84cc16',
-  '#f97316',
-  '#6366f1',
-  '#14b8a6',
-  '#eab308',
-];
 
 // 权限选项
 const permissionOptions = [
@@ -61,6 +53,7 @@ const permissionOptions = [
 // 初始化表单
 onMounted(() => {
   if (props.member) {
+    // 编辑模式：填充现有成员数据
     form.name = props.member.name;
     form.role = props.member.role;
     form.isPrimary = props.member.isPrimary;
@@ -68,6 +61,9 @@ onMounted(() => {
     form.avatar = props.member.avatar || '';
     form.colorTag = props.member.colorTag || '#3b82f6';
     form.permissions = props.member.permissions;
+  } else {
+    // 新增模式：默认使用选择成员模式
+    memberMode.value = 'select_member';
   }
 });
 
@@ -204,6 +200,32 @@ function generateRandomColor() {
   }
   form.colorTag = color;
 }
+
+// 处理家庭成员选择
+function handleMemberSelect(member: SearchableFamilyMember) {
+  selectedExistingMember.value = member;
+  // 自动填充表单信息
+  form.name = member.name;
+  form.userSerialNum = member.userId || '';
+  form.avatar = member.avatarUrl || '';
+  form.colorTag = member.color || '#3b82f6';
+  // 记录成员选择历史
+  userPreferences.addRecentSelection(member.serialNum);
+  // 切换到基本信息编辑模式
+  memberMode.value = 'create_member';
+}
+
+// 清除成员选择
+function handleMemberClear() {
+  selectedExistingMember.value = null;
+  // 清空相关表单字段
+  if (memberMode.value === 'select_member') {
+    form.name = '';
+    form.userSerialNum = '';
+    form.avatar = '';
+    form.colorTag = '#3b82f6';
+  }
+}
 </script>
 
 <template>
@@ -220,8 +242,55 @@ function generateRandomColor() {
 
       <div class="modal-content">
         <form @submit.prevent="saveMember">
+          <!-- 成员模式选择 -->
+          <div v-if="!props.member" class="form-section">
+            <h4 class="section-title">
+              添加方式
+            </h4>
+
+            <div class="mode-selector">
+              <button
+                type="button"
+                class="mode-btn"
+                :class="{ active: memberMode === 'select_member' }"
+                @click="memberMode = 'select_member'"
+              >
+                <LucideUserCheck class="w-4 h-4" />
+                选择已有成员
+              </button>
+              <button
+                type="button"
+                class="mode-btn"
+                :class="{ active: memberMode === 'create_member' }"
+                @click="memberMode = 'create_member'"
+              >
+                <LucideUserPlus class="w-4 h-4" />
+                创建新成员
+              </button>
+            </div>
+          </div>
+
+          <!-- 成员选择模式 -->
+          <div v-if="!props.member && memberMode === 'select_member'" class="form-section">
+            <h4 class="section-title">
+              选择成员
+            </h4>
+
+            <div class="form-row">
+              <label class="form-label">搜索成员</label>
+              <FamilyMemberSelector
+                :selected-member="selectedExistingMember"
+                placeholder="搜索家庭成员姓名或邮箱"
+                :show-recent-members="true"
+                :show-search-history="true"
+                @select="handleMemberSelect"
+                @clear="handleMemberClear"
+              />
+            </div>
+          </div>
+
           <!-- 基本信息 -->
-          <div class="form-section">
+          <div v-if="props.member || memberMode === 'create_member'" class="form-section">
             <h4 class="section-title">
               基本信息
             </h4>
@@ -262,14 +331,37 @@ function generateRandomColor() {
               </label>
             </div>
 
-            <div class="form-row">
-              <label class="form-label">关联用户ID</label>
-              <input
-                v-model="form.userSerialNum"
-                type="text"
-                class="form-input"
-                placeholder="可选，关联已有用户"
-              >
+            <!-- 关联成员信息显示 -->
+            <div v-if="selectedExistingMember" class="form-row">
+              <label class="form-label">选择的成员</label>
+              <div class="selected-member-info">
+                <div class="member-avatar">
+                  <img
+                    v-if="selectedExistingMember.avatarUrl"
+                    :src="selectedExistingMember.avatarUrl"
+                    :alt="selectedExistingMember.name"
+                    class="avatar-image"
+                  >
+                  <div v-else class="avatar-placeholder" :style="{ backgroundColor: selectedExistingMember.color || '#3b82f6' }">
+                    {{ selectedExistingMember.name.charAt(0).toUpperCase() }}
+                  </div>
+                </div>
+                <div class="member-details">
+                  <div class="member-name">
+                    {{ selectedExistingMember.name }}
+                  </div>
+                  <div class="member-email">
+                    {{ selectedExistingMember.email || selectedExistingMember.phone || selectedExistingMember.serialNum }}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  class="clear-member-btn"
+                  @click="handleMemberClear"
+                >
+                  <LucideX class="w-4 h-4" />
+                </button>
+              </div>
             </div>
           </div>
 
@@ -291,38 +383,20 @@ function generateRandomColor() {
 
             <div class="form-row">
               <label class="form-label">标识颜色</label>
-              <div class="color-picker-container">
-                <input
+              <div class="color-selector-wrapper">
+                <ColorSelector
                   v-model="form.colorTag"
-                  type="color"
-                  class="color-input"
-                >
-                <input
-                  v-model="form.colorTag"
-                  type="text"
-                  class="color-text-input"
-                  placeholder="#3b82f6"
-                >
+                  :extended="true"
+                  :show-custom-color="true"
+                />
                 <button
                   type="button"
                   class="random-color-btn"
+                  title="随机颜色"
                   @click="generateRandomColor"
                 >
                   <LucideShuffle class="w-4 h-4" />
                 </button>
-              </div>
-
-              <!-- 预设颜色 -->
-              <div class="preset-colors">
-                <button
-                  v-for="color in presetColors"
-                  :key="color"
-                  type="button"
-                  class="preset-color"
-                  :style="{ backgroundColor: color }"
-                  :class="{ active: form.colorTag === color }"
-                  @click="form.colorTag = color"
-                />
               </div>
             </div>
 
@@ -380,10 +454,10 @@ function generateRandomColor() {
       <!-- 操作按钮 -->
       <div class="modal-actions">
         <button type="button" class="btn-cancel" @click="closeDialog">
-          取消
+          <LucideX class="icon-btn" />
         </button>
         <button type="button" class="btn-save" @click="saveMember">
-          保存
+          <LucideCheck class="icon-btn" />
         </button>
       </div>
     </div>
@@ -397,7 +471,7 @@ function generateRandomColor() {
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: oklch(0% 0 0 / 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -405,43 +479,62 @@ function generateRandomColor() {
 }
 
 .modal-window {
-  background: white;
-  border-radius: 8px;
+  background: var(--color-base-100);
+  border-radius: 12px;
   width: 90%;
-  max-width: 500px;
+  max-width: 520px;
   max-height: 90vh;
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--color-base-200);
 }
 
 .modal-header {
-  padding: 1rem 1.5rem;
-  border-bottom: 1px solid #e5e7eb;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--color-base-200);
   display: flex;
   align-items: center;
   justify-content: space-between;
+  background: var(--color-base-100);
 }
 
 .modal-title {
   font-size: 1.125rem;
   font-weight: 600;
-  color: #1f2937;
+  color: var(--color-base-content);
 }
 
 .modal-close-btn {
-  color: #6b7280;
+  color: var(--color-neutral);
   transition: color 0.2s;
+  padding: 0.375rem;
+  border-radius: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .modal-close-btn:hover {
-  color: #374151;
+  color: var(--color-neutral-hover);
+  background-color: var(--color-base-200);
 }
 
 .modal-content {
   flex: 1;
   overflow-y: auto;
   padding: 1.5rem;
+  background: var(--color-base-100);
+
+  /* 隐藏滚动条但保持滚动功能 */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* Internet Explorer 10+ */
+}
+
+/* 隐藏 WebKit 浏览器滚动条 */
+.modal-content::-webkit-scrollbar {
+  display: none;
 }
 
 .form-section {
@@ -451,42 +544,58 @@ function generateRandomColor() {
 .section-title {
   font-size: 1rem;
   font-weight: 600;
-  color: #1f2937;
+  color: var(--color-base-content);
   margin-bottom: 0.75rem;
   padding-bottom: 0.5rem;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--color-base-200);
 }
 
 .section-description {
   font-size: 0.875rem;
-  color: #6b7280;
+  color: var(--color-neutral);
   margin-bottom: 1rem;
 }
 
 .form-row {
   margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.form-row.vertical {
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.form-row.vertical .form-label {
+  margin-bottom: 0.5rem;
 }
 
 .form-label {
   display: block;
   font-size: 0.875rem;
   font-weight: 500;
-  color: #374151;
-  margin-bottom: 0.25rem;
+  color: var(--color-base-content);
+  min-width: 6rem;
+  flex-shrink: 0;
 }
 
 .form-input, .form-select {
-  width: 100%;
-  padding: 0.5rem 0.75rem;
-  border: 1px solid #d1d5db;
-  border-radius: 0.375rem;
+  flex: 1;
+  padding: 0.625rem 0.875rem;
+  border: 1px solid var(--color-base-200);
+  border-radius: 0.5rem;
   font-size: 0.875rem;
+  background-color: var(--color-base-100);
+  color: var(--color-base-content);
+  transition: all 0.2s ease;
 }
 
 .form-input:focus, .form-select:focus {
   outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px oklch(from var(--color-primary) l c h / 0.1);
 }
 
 .checkbox-label {
@@ -494,6 +603,7 @@ function generateRandomColor() {
   align-items: center;
   gap: 0.5rem;
   cursor: pointer;
+  flex: 1;
 }
 
 .checkbox {
@@ -501,74 +611,44 @@ function generateRandomColor() {
   height: 1rem;
 }
 
-.color-picker-container {
+.color-selector-wrapper {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.75rem;
+  width: 100%;
 }
 
-.color-input {
-  width: 3rem;
-  height: 2.5rem;
-  border: 1px solid #d1d5db;
-  border-radius: 0.375rem;
-  cursor: pointer;
-}
-
-.color-text-input {
-  flex: 1;
-  padding: 0.5rem 0.75rem;
-  border: 1px solid #d1d5db;
-  border-radius: 0.375rem;
-  font-size: 0.875rem;
-}
+/* 旧的颜色输入框样式已移除，现在使用 ColorSelector 组件 */
 
 .random-color-btn {
-  padding: 0.5rem;
-  border: 1px solid #d1d5db;
-  background-color: white;
-  color: #6b7280;
-  border-radius: 0.375rem;
-  transition: all 0.2s;
+  padding: 0.625rem;
+  border: 1px solid var(--color-base-200);
+  background-color: var(--color-base-100);
+  color: var(--color-neutral);
+  border-radius: 0.5rem;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .random-color-btn:hover {
-  background-color: #f9fafb;
-  border-color: #9ca3af;
+  background-color: var(--color-base-200);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
 }
 
-.preset-colors {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-top: 0.5rem;
-}
-
-.preset-color {
-  width: 2rem;
-  height: 2rem;
-  border-radius: 50%;
-  border: 2px solid transparent;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.preset-color:hover {
-  transform: scale(1.1);
-}
-
-.preset-color.active {
-  border-color: #1f2937;
-  box-shadow: 0 0 0 2px white, 0 0 0 4px #1f2937;
-}
+/* 预设颜色样式已移除，现在使用 ColorSelector 组件 */
 
 .member-preview {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  padding: 0.75rem;
-  background-color: #f9fafb;
-  border-radius: 0.5rem;
+  padding: 1rem;
+  background-color: var(--color-base-200);
+  border-radius: 0.75rem;
+  border: 1px solid var(--color-base-200);
+  flex: 1;
 }
 
 .preview-avatar {
@@ -582,6 +662,7 @@ function generateRandomColor() {
   font-weight: 600;
   position: relative;
   overflow: hidden;
+  box-shadow: var(--shadow-sm);
 }
 
 .preview-avatar-image {
@@ -596,7 +677,7 @@ function generateRandomColor() {
 
 .preview-name {
   font-weight: 500;
-  color: #1f2937;
+  color: var(--color-base-content);
 }
 
 .permissions-grid {
@@ -608,60 +689,186 @@ function generateRandomColor() {
 .permission-item {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem;
-  background-color: #f9fafb;
-  border-radius: 0.375rem;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background-color: var(--color-base-200);
+  border-radius: 0.5rem;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
 }
 
 .permission-item:hover {
-  background-color: #f3f4f6;
+  background-color: var(--color-base-300);
+  border-color: var(--color-primary);
 }
 
 .permission-checkbox {
-  width: 1rem;
-  height: 1rem;
+  width: 1.125rem;
+  height: 1.125rem;
+  accent-color: var(--color-primary);
 }
 
 .permission-label {
   font-size: 0.875rem;
-  color: #374151;
+  color: var(--color-base-content);
+  font-weight: 500;
 }
 
 .modal-actions {
-  padding: 1rem 1.5rem;
-  border-top: 1px solid #e5e7eb;
+  padding-top: 1rem;
   display: flex;
-  justify-content: flex-end;
+  justify-content: center;
   gap: 0.75rem;
 }
 
 .btn-cancel {
-  padding: 0.5rem 1rem;
-  border: 1px solid #d1d5db;
-  background-color: white;
-  color: #374151;
-  border-radius: 0.375rem;
-  font-size: 0.875rem;
-  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  background-color: var(--color-neutral);
+  color: var(--color-neutral-content);
+  transition: all 0.2s ease;
 }
 
 .btn-cancel:hover {
-  background-color: #f9fafb;
+  background-color: var(--color-neutral-content);
+  color: var(--color-neutral);
 }
 
 .btn-save {
-  padding: 0.5rem 1rem;
-  background-color: #3b82f6;
-  color: white;
-  border-radius: 0.375rem;
-  font-size: 0.875rem;
-  transition: background-color 0.2s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  background-color: var(--color-primary);
+  color: var(--color-primary-content);
+  transition: all 0.2s ease;
 }
 
 .btn-save:hover {
-  background-color: #2563eb;
+  background-color: var(--color-primary-content);
+  color: var(--color-primary);
+}
+
+.icon-btn {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+/* 成员模式选择器 */
+.mode-selector {
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.25rem;
+  background-color: var(--color-base-200);
+  border-radius: 0.75rem;
+}
+
+.mode-btn {
+  flex: 1;
+  padding: 0.875rem 1rem;
+  border: none;
+  background-color: transparent;
+  color: var(--color-neutral);
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.mode-btn:hover {
+  color: var(--color-base-content);
+  background-color: var(--color-base-300);
+}
+
+.mode-btn.active {
+  background: var(--color-primary);
+  color: var(--color-primary-content);
+  box-shadow: var(--shadow-sm);
+}
+
+/* 已选择成员信息 */
+.selected-member-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: oklch(from var(--color-primary) l c h / 0.1);
+  border: 1px solid var(--color-primary);
+  border-radius: 0.75rem;
+  flex: 1;
+}
+
+.member-avatar {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  box-shadow: var(--shadow-sm);
+}
+
+.avatar-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatar-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.member-details {
+  flex: 1;
+  min-width: 0;
+}
+
+.member-name {
+  font-weight: 600;
+  color: var(--color-base-content);
+  margin-bottom: 0.125rem;
+}
+
+.member-email {
+  font-size: 0.75rem;
+  color: var(--color-neutral);
+}
+
+.clear-member-btn {
+  padding: 0.375rem;
+  color: var(--color-neutral);
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+  border-radius: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.clear-member-btn:hover {
+  color: var(--color-error);
+  background-color: var(--color-base-200);
 }
 </style>

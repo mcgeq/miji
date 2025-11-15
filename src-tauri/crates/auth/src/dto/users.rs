@@ -48,6 +48,24 @@ pub struct UserQuery {
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+pub struct UserSearchQuery {
+    pub keyword: Option<String>, // 关键词搜索，支持姓名、邮箱模糊匹配
+    pub name: Option<String>,    // 按姓名搜索
+    pub email: Option<String>,   // 按邮箱搜索
+    pub status: Option<String>,  // 按状态过滤
+    pub role: Option<String>,    // 按角色过滤
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct UserSearchResponse {
+    pub users: Vec<User>,
+    pub total: u64,
+    pub has_more: bool,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct User {
     pub serial_num: String,
     pub name: String,
