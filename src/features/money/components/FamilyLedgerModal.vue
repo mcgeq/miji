@@ -73,10 +73,142 @@ const defaultLedger: FamilyLedger = {
   updatedAt: null,
 };
 
-const form = reactive<FamilyLedger>({
-  ...defaultLedger,
-  ...(props.ledger || {}),
+const form = reactive<FamilyLedger>(buildLedgerForm(props.ledger));
+
+// 结算日选项计算 - 统一存储方案
+const settlementDayOptions = computed(() => {
+  switch (form.settlementCycle) {
+    case 'WEEKLY':
+      return {
+        min: 1,
+        max: 7,
+        placeholder: '周几结算',
+        options: [
+          { value: 1, label: '周一' },
+          { value: 2, label: '周二' },
+          { value: 3, label: '周三' },
+          { value: 4, label: '周四' },
+          { value: 5, label: '周五' },
+          { value: 6, label: '周六' },
+          { value: 7, label: '周日' },
+        ],
+      };
+    case 'MONTHLY':
+      return {
+        min: 1,
+        max: 31,
+        placeholder: '每月几号结算',
+        options: Array.from({ length: 31 }, (_, i) => ({
+          value: i + 1,
+          label: `${i + 1}号`,
+        })),
+      };
+    case 'QUARTERLY':
+      return {
+        min: 1,
+        max: 31,
+        placeholder: '每季度第一个月几号结算',
+        options: Array.from({ length: 31 }, (_, i) => ({
+          value: i + 1,
+          label: `${i + 1}号`,
+        })),
+      };
+    case 'YEARLY':
+      return {
+        min: 1,
+        max: 366,
+        placeholder: '输入1-366（每年第几天）',
+        options: [], // 不提供预设选项，让用户直接输入数字
+      };
+    default: // MANUAL
+      return {
+        min: 1,
+        max: 31,
+        placeholder: '手动结算（无固定日期）',
+        options: [],
+      };
+  }
 });
+
+// 当结算周期改变时，重置结算日到合理的默认值
+watch(() => form.settlementCycle, () => {
+  const options = settlementDayOptions.value;
+  if (form.settlementDay < options.min || form.settlementDay > options.max) {
+    form.settlementDay = options.min;
+  }
+});
+
+// 获取结算日提示信息
+function getSettlementDayHint(): string {
+  switch (form.settlementCycle) {
+    case 'WEEKLY':
+      return '选择每周的固定结算日';
+    case 'MONTHLY':
+      return '选择每月的固定结算日期';
+    case 'QUARTERLY':
+      return '选择每季度第一个月的结算日期';
+    case 'YEARLY': {
+      const currentValue = form.settlementDay;
+      const dateStr = getDayOfYearDescription(currentValue);
+      return `输入每年的第几天进行结算（1-366）${dateStr ? ` - 当前：${dateStr}` : ''}`;
+    }
+    case 'MANUAL':
+      return '手动结算模式，无需固定日期';
+    default:
+      return '';
+  }
+}
+
+// 判断是否为闰年
+function isLeapYear(year: number): boolean {
+  return (year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0);
+}
+
+// 将年度天数转换为可读的日期描述
+function getDayOfYearDescription(dayOfYear: number): string {
+  if (dayOfYear < 1 || dayOfYear > 366) return '';
+
+  // 使用当前年份判断是否为闰年
+  const currentYear = new Date().getFullYear();
+  const isCurrentLeapYear = isLeapYear(currentYear);
+
+  // 根据闰年状态设置每月天数
+  const months = [31, isCurrentLeapYear ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+
+  let remainingDays = dayOfYear;
+  let month = 0;
+
+  // 查找对应的月份和日期
+  for (let i = 0; i < months.length; i++) {
+    if (remainingDays <= months[i]) {
+      month = i + 1;
+      break;
+    }
+    remainingDays -= months[i];
+  }
+
+  if (month === 0) {
+    // 超出范围，可能是平年的第366天
+    if (dayOfYear === 366 && !isCurrentLeapYear) {
+      return '12月31日 (平年无第366天，将使用12月31日)';
+    }
+    return '';
+  }
+
+  const dateStr = `${month}月${remainingDays}日`;
+
+  // 添加特殊情况说明
+  if (dayOfYear === 60 && month === 2 && remainingDays === 29) {
+    return `${dateStr} (仅闰年有效)`;
+  } else if (dayOfYear === 366) {
+    return `${dateStr} (仅闰年有效)`;
+  } else if (dayOfYear > 59 && !isCurrentLeapYear && dayOfYear <= 365) {
+    // 平年��况下，显示当前年份的实际日期
+    return `${dateStr} (今年${currentYear}年为平年)`;
+  }
+
+  return dateStr;
+}
 
 function editMember(index: number) {
   editingMemberIndex.value = index;
@@ -241,10 +373,33 @@ watch(
 
           <div class="form-row">
             <label class="form-label">结算日</label>
-            <input
-              v-model.number="form.settlementDay" type="number" min="1" max="31"
-              class="modal-input-select form-input-2-3" placeholder="每月几号结算"
-            >
+            <div class="form-input-2-3 form-input-wrapper">
+              <select
+                v-if="settlementDayOptions.options.length > 0"
+                v-model.number="form.settlementDay"
+                class="modal-input-select full-width"
+              >
+                <option
+                  v-for="option in settlementDayOptions.options"
+                  :key="option.value"
+                  :value="option.value"
+                >
+                  {{ option.label }}
+                </option>
+              </select>
+              <input
+                v-else
+                v-model.number="form.settlementDay"
+                type="number"
+                :min="settlementDayOptions.min"
+                :max="settlementDayOptions.max"
+                class="modal-input-select full-width"
+                :placeholder="settlementDayOptions.placeholder"
+              >
+              <div class="form-hint">
+                {{ getSettlementDayHint() }}
+              </div>
+            </div>
           </div>
 
           <div class="form-row">
@@ -370,6 +525,23 @@ watch(
 
 .form-input-2-3 {
   width: 66.666667%;
+}
+
+.form-input-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.full-width {
+  width: 100%;
+}
+
+.form-hint {
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin-top: 0.25rem;
+  font-style: italic;
 }
 
 .checkbox-label {

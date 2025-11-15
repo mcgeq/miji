@@ -21,7 +21,7 @@ impl MigrationTrait for Migration {
                                 .default(1)
                                 .check(
                                     Expr::col(FamilyLedger::SettlementDay)
-                                        .between(1, 31),
+                                        .between(1, 366),
                                 ),
                         )
                         .to_owned(),
