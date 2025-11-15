@@ -191,6 +191,18 @@ export const useFamilyLedgerStore = defineStore('family-ledger', {
         throw new Error('账本不存在');
       }
 
+      // 加载成员列表
+      const ledgerMembers = await MoneyDb.listFamilyLedgerMembers();
+      const memberIds = ledgerMembers
+        .filter(lm => lm.familyLedgerSerialNum === serialNum)
+        .map(lm => lm.familyMemberSerialNum);
+
+      const memberPromises = memberIds.map(id => MoneyDb.getFamilyMember(id));
+      const members = await Promise.all(memberPromises);
+
+      // 更新账本的成员列表
+      ledger.memberList = members.filter(m => m !== null);
+
       this.currentLedger = ledger;
 
       // 获取账本统计信息
@@ -219,8 +231,8 @@ export const useFamilyLedgerStore = defineStore('family-ledger', {
           sharedExpense: ledger.sharedExpense || 0,
           personalExpense: ledger.personalExpense || 0,
           pendingSettlement: ledger.pendingSettlement || 0,
-          memberCount: ledger.memberCount || 0,
-          activeTransactionCount: ledger.activeTransactionCount || 0,
+          memberCount: ledger.members || 0,
+          activeTransactionCount: ledger.transactions || 0,
           memberStats: [],
         };
 

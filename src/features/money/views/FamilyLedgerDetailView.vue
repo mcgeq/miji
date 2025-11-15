@@ -29,7 +29,7 @@ const tabs = [
   { key: 'statistics', label: '统计报表', icon: 'BarChart3' },
 ];
 
-const members = computed(() => currentLedger.value?.members ?? []);
+const members = computed(() => currentLedger.value?.memberList ?? []);
 
 const selectedMember = computed<FamilyMember | null>(() => {
   if (!members.value.length) return null;
@@ -93,7 +93,7 @@ async function hydrateFromRoute() {
     }
 
     await familyLedgerStore.switchLedger(serialNum);
-    selectedMemberSerial.value = ledger.members?.[0]?.serialNum || null;
+    selectedMemberSerial.value = ledger.memberList?.[0]?.serialNum || null;
     await loadLedgerTransactions(serialNum);
   } catch (error) {
     console.error(error);
@@ -135,9 +135,11 @@ function goBack() {
   router.push('/family-ledger');
 }
 
-function formatCurrency(value?: number | null) {
+function formatCurrency(value?: number | string | null) {
   if (value === undefined || value === null) return '￥0.00';
-  return `￥${value.toFixed(2)}`;
+  const numValue = typeof value === 'string' ? Number.parseFloat(value) : value;
+  if (Number.isNaN(numValue)) return '￥0.00';
+  return `￥${numValue.toFixed(2)}`;
 }
 
 function getRoleName(role: FamilyMember['role']) {
@@ -151,7 +153,7 @@ function getRoleName(role: FamilyMember['role']) {
 }
 
 const currentStats = computed(() => currentLedgerStats.value);
-const memberCount = computed(() => currentLedger.value?.memberCount || members.value.length || 0);
+const memberCount = computed(() => currentLedger.value?.members || members.value.length || 0);
 const activeTransactions = computed(() => currentStats.value?.activeTransactionCount || allTransactions.value.length);
 
 function getTabIcon(iconName: string) {
