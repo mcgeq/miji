@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { LucideBarChart3, LucideCalculator, LucidePlus, LucideUsers } from 'lucide-vue-next';
+import { LucidePlus } from 'lucide-vue-next';
 import { storeToRefs } from 'pinia';
 import { computed, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
@@ -9,8 +9,6 @@ import { deepDiff } from '@/utils/diffObject';
 import { toast } from '@/utils/toast';
 import FamilyLedgerList from '../components/FamilyLedgerList.vue';
 import FamilyLedgerModal from '../components/FamilyLedgerModal.vue';
-import FamilyStatsView from './FamilyStatsView.vue';
-import SettlementView from './SettlementView.vue';
 import type { FamilyLedger, FamilyLedgerUpdate } from '@/schema/money';
 
 const router = useRouter();
@@ -25,27 +23,9 @@ const showDeleteConfirm = ref(false);
 const ledgerToDelete = ref<string | null>(null);
 const deletingLedger = ref(false);
 
-// 标签页状态
-const activeTab = ref('ledgers');
-const tabs = [
-  { key: 'ledgers', label: '账本管理', icon: 'Users' },
-  { key: 'settlement', label: '结算中心', icon: 'Calculator' },
-  { key: 'statistics', label: '统计报表', icon: 'BarChart3' },
-];
-
 // 使用store中的状态
-const { ledgers, loading, currentLedger } = storeToRefs(familyLedgerStore);
+const { ledgers, loading } = storeToRefs(familyLedgerStore);
 const showingDetail = computed(() => route.name === 'family-ledger-detail');
-
-// 获取标签页图标
-function getTabIcon(iconName: string) {
-  const iconMap = {
-    Users: LucideUsers,
-    Calculator: LucideCalculator,
-    BarChart3: LucideBarChart3,
-  };
-  return iconMap[iconName as keyof typeof iconMap] || LucideUsers;
-}
 
 async function loadLedgers() {
   try {
@@ -161,31 +141,16 @@ onMounted(() => {
         </h2>
       </div>
       <div class="header-actions">
-        <button v-if="activeTab === 'ledgers'" class="btn btn-primary" @click="showLedgerModal = true">
+        <button class="btn btn-primary" @click="showLedgerModal = true">
           <LucidePlus class="icon" />
           创建账本
         </button>
       </div>
     </div>
 
-    <!-- 标签页导航 -->
-    <div class="tabs-nav">
-      <button
-        v-for="tab in tabs"
-        :key="tab.key"
-        class="tab-btn"
-        :class="{ active: activeTab === tab.key }"
-        :title="tab.label"
-        @click="activeTab = tab.key"
-      >
-        <component :is="getTabIcon(tab.icon)" class="tab-icon" />
-      </button>
-    </div>
-
-    <!-- 标签页内容 -->
+    <!-- 账本管理列表 -->
     <div class="tab-content">
-      <!-- 账本管理 -->
-      <div v-if="activeTab === 'ledgers'" class="tab-panel">
+      <div class="tab-panel">
         <FamilyLedgerList
           :ledgers="ledgers"
           :loading="loading"
@@ -193,28 +158,6 @@ onMounted(() => {
           @edit="editLedger"
           @delete="deleteLedger"
         />
-      </div>
-
-      <!-- 结算中心 -->
-      <div v-if="activeTab === 'settlement'" class="tab-panel">
-        <div v-if="!currentLedger" class="no-ledger-message">
-          <p>请先选择一个账本</p>
-          <button class="btn btn-primary" @click="activeTab = 'ledgers'">
-            选择账本
-          </button>
-        </div>
-        <SettlementView v-else />
-      </div>
-
-      <!-- 统计报表 -->
-      <div v-if="activeTab === 'statistics'" class="tab-panel">
-        <div v-if="!currentLedger" class="no-ledger-message">
-          <p>请先选择一个账本</p>
-          <button class="btn btn-primary" @click="activeTab = 'ledgers'">
-            选择账本
-          </button>
-        </div>
-        <FamilyStatsView v-else />
       </div>
     </div>
 
@@ -260,7 +203,7 @@ onMounted(() => {
   align-items: center;
   margin-bottom: 24px;
   padding-bottom: 16px;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--color-gray-200);
 }
 
 .header-info {
@@ -272,7 +215,7 @@ onMounted(() => {
 .page-title {
   font-size: 24px;
   font-weight: 700;
-  color: #1f2937;
+  color: var(--color-base-content);
   margin: 0;
 }
 
@@ -284,73 +227,21 @@ onMounted(() => {
 
 .ledger-name {
   font-size: 14px;
-  color: #6b7280;
-  background: #f3f4f6;
+  color: var(--color-gray-500);
+  background: var(--color-gray-100);
   padding: 4px 8px;
   border-radius: 4px;
 }
 
 .ledger-currency {
   font-size: 14px;
-  color: #059669;
+  color: var(--color-success);
   font-weight: 600;
 }
 
 .header-actions {
   display: flex;
   gap: 12px;
-}
-
-.tabs-nav {
-  display: flex;
-  justify-content: center;
-  gap: 4px;
-  margin-bottom: 16px;
-  border-bottom: 1px solid #e5e7eb;
-  padding-bottom: 0;
-}
-
-.tab-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 8px;
-  border: none;
-  background: none;
-  color: #6b7280;
-  cursor: pointer;
-  border-radius: 4px 4px 0 0;
-  transition: all 0.2s ease;
-  position: relative;
-  width: 36px;
-  height: 36px;
-}
-
-.tab-btn:hover {
-  color: #374151;
-  background: #f9fafb;
-  transform: translateY(-1px);
-}
-
-.tab-btn.active {
-  color: #3b82f6;
-  background: #eff6ff;
-}
-
-.tab-btn.active::after {
-  content: '';
-  position: absolute;
-  bottom: -1px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 20px;
-  height: 2px;
-  background: #3b82f6;
-}
-
-.tab-icon {
-  width: 18px;
-  height: 18px;
 }
 
 .tab-content {
@@ -372,7 +263,7 @@ onMounted(() => {
   justify-content: center;
   padding: 60px 20px;
   text-align: center;
-  color: #6b7280;
+  color: var(--color-gray-500);
   height: 100%;
   min-height: 300px;
 }
@@ -396,12 +287,12 @@ onMounted(() => {
 }
 
 .btn-primary {
-  background: #3b82f6;
-  color: white;
+  background: var(--color-primary);
+  color: var(--color-primary-content);
 }
 
 .btn-primary:hover {
-  background: #2563eb;
+  background: var(--color-primary-hover);
 }
 
 .icon {

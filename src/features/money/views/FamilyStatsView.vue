@@ -138,7 +138,7 @@ async function exportData(format: 'csv' | 'excel' | 'pdf') {
 .view-title {
   font-size: 1.5rem;
   font-weight: 600;
-  color: #1f2937;
+  color: var(--color-base-content);
 }
 
 .ledger-info {
@@ -146,14 +146,14 @@ async function exportData(format: 'csv' | 'excel' | 'pdf') {
   align-items: center;
   gap: 0.5rem;
   padding: 0.5rem 1rem;
-  background-color: #f3f4f6;
+  background-color: var(--color-gray-100);
   border-radius: 0.375rem;
 }
 
 .ledger-name {
   font-size: 0.875rem;
   font-weight: 500;
-  color: #374151;
+  color: var(--color-gray-700);
 }
 
 .export-actions {
@@ -169,15 +169,15 @@ async function exportData(format: 'csv' | 'excel' | 'pdf') {
   align-items: center;
   gap: 0.5rem;
   padding: 0.5rem 1rem;
-  background-color: #3b82f6;
-  color: white;
+  background-color: var(--color-primary);
+  color: var(--color-primary-content);
   border-radius: 0.375rem;
   font-size: 0.875rem;
   transition: background-color 0.2s;
 }
 
 .export-btn:hover {
-  background-color: #2563eb;
+  background-color: var(--color-primary-hover);
 }
 
 .dropdown-menu {
@@ -185,10 +185,10 @@ async function exportData(format: 'csv' | 'excel' | 'pdf') {
   top: 100%;
   right: 0;
   margin-top: 0.25rem;
-  background: white;
-  border: 1px solid #e5e7eb;
+  background: var(--color-base-100);
+  border: 1px solid var(--color-gray-200);
   border-radius: 0.375rem;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-md);
   z-index: 10;
   min-width: 150px;
   opacity: 0;
@@ -210,13 +210,13 @@ async function exportData(format: 'csv' | 'excel' | 'pdf') {
   width: 100%;
   padding: 0.75rem 1rem;
   font-size: 0.875rem;
-  color: #374151;
+  color: var(--color-gray-700);
   text-align: left;
   transition: background-color 0.2s;
 }
 
 .dropdown-item:hover {
-  background-color: #f9fafb;
+  background-color: var(--color-base-200);
 }
 
 .dropdown-item:first-child {
@@ -243,19 +243,19 @@ async function exportData(format: 'csv' | 'excel' | 'pdf') {
 .warning-icon {
   width: 3rem;
   height: 3rem;
-  color: #f59e0b;
+  color: var(--color-warning);
   margin-bottom: 1rem;
 }
 
 .warning-title {
   font-size: 1.125rem;
   font-weight: 600;
-  color: #1f2937;
+  color: var(--color-base-content);
   margin-bottom: 0.5rem;
 }
 
 .warning-description {
-  color: #6b7280;
+  color: var(--color-gray-500);
   margin-bottom: 1.5rem;
 }
 
@@ -264,8 +264,8 @@ async function exportData(format: 'csv' | 'excel' | 'pdf') {
   align-items: center;
   gap: 0.5rem;
   padding: 0.75rem 1.5rem;
-  background-color: #3b82f6;
-  color: white;
+  background-color: var(--color-primary);
+  color: var(--color-primary-content);
   border-radius: 0.375rem;
   font-size: 0.875rem;
   font-weight: 500;
@@ -274,6 +274,6 @@ async function exportData(format: 'csv' | 'excel' | 'pdf') {
 }
 
 .select-ledger-btn:hover {
-  background-color: #2563eb;
+  background-color: var(--color-primary-hover);
 }
 </style>

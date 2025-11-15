@@ -128,57 +128,45 @@ onMounted(() => {
       <!-- 总览卡片 -->
       <div class="overview-cards">
         <div class="stat-card income">
-          <div class="card-icon">
+          <div class="card-icon" title="总收入">
             <LucideTrendingUp class="w-6 h-6" />
           </div>
           <div class="card-content">
             <div class="card-value">
               ¥{{ formatAmount(stats.totalIncome) }}
             </div>
-            <div class="card-label">
-              总收入
-            </div>
           </div>
         </div>
 
         <div class="stat-card expense">
-          <div class="card-icon">
+          <div class="card-icon" title="总支出">
             <LucideTrendingDown class="w-6 h-6" />
           </div>
           <div class="card-content">
             <div class="card-value">
               ¥{{ formatAmount(stats.totalExpense) }}
             </div>
-            <div class="card-label">
-              总支出
-            </div>
           </div>
         </div>
 
         <div class="stat-card balance">
-          <div class="card-icon">
+          <div class="card-icon" title="净余额">
             <LucideWallet class="w-6 h-6" />
           </div>
           <div class="card-content">
             <div class="card-value">
               ¥{{ formatAmount(stats.totalIncome - stats.totalExpense) }}
             </div>
-            <div class="card-label">
-              净余额
-            </div>
           </div>
         </div>
 
         <div class="stat-card pending">
-          <div class="card-icon">
+          <div class="card-icon" title="待结算">
             <LucideClock class="w-6 h-6" />
           </div>
           <div class="card-content">
             <div class="card-value">
               ¥{{ formatAmount(stats.pendingSettlement) }}
-            </div>
-            <div class="card-label">
-              待结算
             </div>
           </div>
         </div>
@@ -281,13 +269,13 @@ onMounted(() => {
 .stats-title {
   font-size: 1.25rem;
   font-weight: 600;
-  color: #1f2937;
+  color: var(--color-base-content);
 }
 
 .period-selector {
   display: flex;
   gap: 0.25rem;
-  background-color: #f3f4f6;
+  background-color: var(--color-gray-100);
   border-radius: 0.375rem;
   padding: 0.25rem;
 }
@@ -295,19 +283,19 @@ onMounted(() => {
 .period-btn {
   padding: 0.5rem 1rem;
   font-size: 0.875rem;
-  color: #6b7280;
+  color: var(--color-gray-500);
   border-radius: 0.25rem;
   transition: all 0.2s;
 }
 
 .period-btn:hover {
-  color: #374151;
+  color: var(--color-gray-700);
 }
 
 .period-btn.active {
-  background-color: white;
-  color: #3b82f6;
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  background-color: var(--color-base-100);
+  color: var(--color-primary);
+  box-shadow: var(--shadow-sm);
 }
 
 .loading-container {
@@ -316,14 +304,14 @@ onMounted(() => {
   justify-content: center;
   gap: 0.5rem;
   padding: 2rem;
-  color: #6b7280;
+  color: var(--color-gray-500);
 }
 
 .loading-spinner {
   width: 1rem;
   height: 1rem;
-  border: 2px solid #e5e7eb;
-  border-top-color: #3b82f6;
+  border: 2px solid var(--color-gray-200);
+  border-top-color: var(--color-primary);
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -340,73 +328,80 @@ onMounted(() => {
 
 .overview-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 1rem;
 }
 
 .stat-card {
   display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 1.5rem;
-  background: white;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  background: var(--color-base-200);
   border-radius: 0.5rem;
-  border: 1px solid #e5e7eb;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--color-gray-200);
+  box-shadow: var(--shadow-sm);
 }
 
 .card-icon {
-  padding: 0.75rem;
+  padding: 0.375rem;
   border-radius: 0.5rem;
 }
 
+.card-icon :deep(svg) {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
 .stat-card.income .card-icon {
-  background-color: #dcfce7;
-  color: #16a34a;
+  background-color: var(--color-green-50);
+  color: var(--color-green-600);
 }
 
 .stat-card.expense .card-icon {
-  background-color: #fee2e2;
-  color: #dc2626;
+  background-color: var(--color-red-50);
+  color: var(--color-red-600);
 }
 
 .stat-card.balance .card-icon {
-  background-color: #dbeafe;
-  color: #2563eb;
+  background-color: var(--color-blue-100);
+  color: var(--color-blue-600);
 }
 
 .stat-card.pending .card-icon {
-  background-color: #fef3c7;
-  color: #d97706;
+  background-color: var(--color-yellow-100);
+  color: var(--color-yellow-500);
 }
 
 .card-content {
   flex: 1;
+  min-width: 0;
 }
 
 .card-value {
-  font-size: 1.5rem;
+  font-size: 1.375rem;
   font-weight: 600;
-  color: #1f2937;
+  color: var(--color-base-content);
   margin-bottom: 0.25rem;
+  word-break: break-all;
 }
 
 .card-label {
   font-size: 0.875rem;
-  color: #6b7280;
+  color: var(--color-gray-500);
 }
 
 .expense-analysis, .member-stats, .activity-stats {
-  background: white;
+  background: var(--color-base-100);
   border-radius: 0.5rem;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--color-gray-200);
   padding: 1.5rem;
 }
 
 .section-title {
   font-size: 1.125rem;
   font-weight: 600;
-  color: #1f2937;
+  color: var(--color-base-content);
   margin-bottom: 1rem;
 }
 
@@ -441,7 +436,7 @@ onMounted(() => {
 
 .breakdown-bar {
   height: 0.5rem;
-  background-color: #f3f4f6;
+  background-color: var(--color-gray-100);
   border-radius: 0.25rem;
   overflow: hidden;
 }
@@ -453,17 +448,17 @@ onMounted(() => {
 }
 
 .bar-fill.shared {
-  background-color: #3b82f6;
+  background-color: var(--color-primary);
 }
 
 .bar-fill.personal {
-  background-color: #10b981;
+  background-color: var(--color-green-500);
 }
 
 .breakdown-percentage {
   font-size: 0.875rem;
   font-weight: 500;
-  color: #6b7280;
+  color: var(--color-gray-500);
   text-align: right;
 }
 
@@ -475,9 +470,9 @@ onMounted(() => {
 
 .member-stat-item {
   padding: 1rem;
-  background-color: #f9fafb;
+  background-color: var(--color-base-100);
   border-radius: 0.5rem;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--color-gray-200);
 }
 
 .member-header {
@@ -490,7 +485,7 @@ onMounted(() => {
 .member-name {
   font-size: 1rem;
   font-weight: 600;
-  color: #1f2937;
+  color: var(--color-base-content);
 }
 
 .member-balance {
@@ -501,18 +496,18 @@ onMounted(() => {
 }
 
 .member-balance.positive {
-  background-color: #dcfce7;
-  color: #16a34a;
+  background-color: var(--color-green-50);
+  color: var(--color-green-600);
 }
 
 .member-balance.negative {
-  background-color: #fee2e2;
-  color: #dc2626;
+  background-color: var(--color-red-50);
+  color: var(--color-red-600);
 }
 
 .member-balance.neutral {
-  background-color: #f3f4f6;
-  color: #6b7280;
+  background-color: var(--color-gray-100);
+  color: var(--color-gray-500);
 }
 
 .member-details {
@@ -530,13 +525,13 @@ onMounted(() => {
 
 .detail-label {
   font-size: 0.75rem;
-  color: #6b7280;
+  color: var(--color-gray-500);
 }
 
 .detail-value {
   font-size: 0.75rem;
   font-weight: 500;
-  color: #1f2937;
+  color: var(--color-base-content);
 }
 
 .contribution-bar {
@@ -553,7 +548,7 @@ onMounted(() => {
 
 .bar-container {
   height: 0.375rem;
-  background-color: #e5e7eb;
+  background-color: var(--color-gray-200);
   border-radius: 0.25rem;
   overflow: hidden;
 }
@@ -567,7 +562,7 @@ onMounted(() => {
 .contribution-percentage {
   font-size: 0.75rem;
   font-weight: 500;
-  color: #6b7280;
+  color: var(--color-gray-500);
 }
 
 .activity-grid {
@@ -581,14 +576,14 @@ onMounted(() => {
   align-items: center;
   gap: 0.75rem;
   padding: 1rem;
-  background-color: #f9fafb;
+  background-color: var(--color-base-100);
   border-radius: 0.375rem;
 }
 
 .activity-icon {
   width: 2rem;
   height: 2rem;
-  color: #6b7280;
+  color: var(--color-gray-500);
 }
 
 .activity-content {
@@ -598,12 +593,12 @@ onMounted(() => {
 .activity-value {
   font-size: 1.25rem;
   font-weight: 600;
-  color: #1f2937;
+  color: var(--color-base-content);
 }
 
 .activity-label {
   font-size: 0.75rem;
-  color: #6b7280;
+  color: var(--color-gray-500);
 }
 
 .empty-state {
@@ -618,18 +613,18 @@ onMounted(() => {
 .empty-icon {
   width: 3rem;
   height: 3rem;
-  color: #9ca3af;
+  color: var(--color-gray-400);
   margin-bottom: 1rem;
 }
 
 .empty-title {
   font-size: 1.125rem;
   font-weight: 600;
-  color: #1f2937;
+  color: var(--color-base-content);
   margin-bottom: 0.5rem;
 }
 
 .empty-description {
-  color: #6b7280;
+  color: var(--color-gray-500);
 }
 </style>

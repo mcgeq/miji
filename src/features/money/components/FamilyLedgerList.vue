@@ -65,9 +65,7 @@ function getBudgetCount(budgets: string): number {
               {{ ledger.name || ledger.description || '未命名账本' }}
             </h3>
             <div class="ledger-meta">
-              <span>基础币种: {{ ledger.baseCurrency }}</span>
-              <span class="meta-separator">|</span>
-              <span>{{ ledger.memberCount || 0 }} 位成员</span>
+              <span>币种: {{ ledger.baseCurrency }}</span>
             </div>
           </div>
           <!-- 操作按钮 -->
@@ -86,9 +84,6 @@ function getBudgetCount(budgets: string): number {
 
         <!-- 成员列表 -->
         <div class="members-section">
-          <div class="members-title">
-            成员
-          </div>
           <div class="members-list">
             <!-- 暂时隐藏成员列表，因为数据结构不匹配 -->
             <div class="member-tag">
@@ -147,7 +142,7 @@ function getBudgetCount(budgets: string): number {
 
 /* Loading and Empty States */
 .loading-container {
-  color: #6b7280;
+  color: var(--color-gray-500);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -156,7 +151,7 @@ function getBudgetCount(budgets: string): number {
 }
 
 .empty-state-container {
-  color: #9ca3af;
+  color: var(--color-gray-400);
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -188,13 +183,13 @@ function getBudgetCount(budgets: string): number {
   padding: 1.25rem;
   transition: all 0.2s ease-in-out;
   border-radius: 0.5rem;
-  background-color: white;
-  border: 1px solid #e5e7eb;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  background-color: var(--color-base-100);
+  border: 1px solid var(--color-gray-200);
+  box-shadow: var(--shadow-sm);
 }
 
 .ledger-card:hover {
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  box-shadow: var(--shadow-md);
   transform: translateY(-1px);
 }
 
@@ -212,21 +207,21 @@ function getBudgetCount(budgets: string): number {
 
 .ledger-title {
   font-size: 1.125rem;
-  color: #1f2937;
+  color: var(--color-base-content);
   font-weight: 600;
   margin-bottom: 0.25rem;
 }
 
 .ledger-meta {
   font-size: 0.875rem;
-  color: #4b5563;
+  color: var(--color-gray-600);
   display: flex;
   gap: 0.5rem;
   align-items: center;
 }
 
 .meta-separator {
-  color: #9ca3af;
+  color: var(--color-gray-400);
 }
 
 .ledger-actions {
@@ -239,31 +234,31 @@ function getBudgetCount(budgets: string): number {
 .action-btn {
   padding: 0.5rem;
   border-radius: 0.375rem;
-  border: 1px solid #d1d5db;
-  background-color: white;
-  color: #374151;
+  border: 1px solid var(--color-gray-300);
+  background-color: var(--color-base-100);
+  color: var(--color-gray-700);
   transition: all 0.2s ease-in-out;
   cursor: pointer;
 }
 
 .action-btn:hover {
-  background-color: #f9fafb;
-  border-color: #9ca3af;
+  background-color: var(--color-base-200);
+  border-color: var(--color-gray-400);
 }
 
 .action-btn-danger {
   padding: 0.5rem;
   border-radius: 0.375rem;
-  border: 1px solid #fca5a5;
-  background-color: white;
-  color: #dc2626;
+  border: 1px solid var(--color-gray-300);
+  background-color: var(--color-base-100);
+  color: var(--color-red-600);
   transition: all 0.2s ease-in-out;
   cursor: pointer;
 }
 
 .action-btn-danger:hover {
-  background-color: #fef2f2;
-  border-color: #f87171;
+  background-color: var(--color-red-50);
+  border-color: var(--color-red-400);
 }
 
 /* Members Section */
@@ -273,7 +268,7 @@ function getBudgetCount(budgets: string): number {
 
 .members-title {
   font-size: 0.875rem;
-  color: #374151;
+  color: var(--color-gray-700);
   font-weight: 500;
   margin-bottom: 0.5rem;
 }
@@ -288,14 +283,14 @@ function getBudgetCount(budgets: string): number {
   font-size: 0.75rem;
   padding: 0.25rem 0.5rem;
   border-radius: 9999px;
-  background-color: #f3f4f6;
+  background-color: var(--color-gray-100);
   display: flex;
   gap: 0.25rem;
   align-items: center;
 }
 
 .member-tag-more {
-  color: #6b7280;
+  color: var(--color-gray-500);
 }
 
 .member-icon {
@@ -304,21 +299,21 @@ function getBudgetCount(budgets: string): number {
 }
 
 .member-icon-primary {
-  color: #d97706;
+  color: var(--color-warning);
 }
 
 .member-icon-secondary {
-  color: #6b7280;
+  color: var(--color-gray-500);
 }
 
 .member-role {
-  color: #6b7280;
+  color: var(--color-gray-500);
 }
 
 /* Stats Section */
 .stats-section {
   padding-top: 0.75rem;
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid var(--color-gray-200);
   gap: 0.75rem;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -330,7 +325,7 @@ function getBudgetCount(budgets: string): number {
 
 .stat-label {
   font-size: 0.75rem;
-  color: #6b7280;
+  color: var(--color-gray-500);
 }
 
 .stat-value {
@@ -342,12 +337,12 @@ function getBudgetCount(budgets: string): number {
 .created-time {
   margin-top: 0.75rem;
   padding-top: 0.75rem;
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid var(--color-gray-200);
 }
 
 .created-time-text {
   font-size: 0.75rem;
-  color: #6b7280;
+  color: var(--color-gray-500);
 }
 
 /* 响应式设计 */

@@ -1,8 +1,11 @@
 <script setup lang="ts">
+import { LucideBarChart3, LucideCalculator } from 'lucide-vue-next';
 import { storeToRefs } from 'pinia';
 import { MoneyDb } from '@/services/money/money';
 import { useFamilyLedgerStore } from '@/stores/money';
 import { toast } from '@/utils/toast';
+import FamilyStatsView from './FamilyStatsView.vue';
+import SettlementView from './SettlementView.vue';
 import type { FamilyMember, Transaction } from '@/schema/money';
 
 interface LedgerDetailRouteParams {
@@ -18,6 +21,13 @@ const pageLoading = ref(true);
 const transactionsLoading = ref(false);
 const allTransactions = ref<Transaction[]>([]);
 const selectedMemberSerial = ref<string | null>(null);
+
+// 详情页标签：结算中心 / 统计报表
+const activeTab = ref<'settlement' | 'statistics'>('settlement');
+const tabs = [
+  { key: 'settlement', label: '结算中心', icon: 'Calculator' },
+  { key: 'statistics', label: '统计报表', icon: 'BarChart3' },
+];
 
 const members = computed(() => currentLedger.value?.members ?? []);
 
@@ -143,6 +153,14 @@ function getRoleName(role: FamilyMember['role']) {
 const currentStats = computed(() => currentLedgerStats.value);
 const memberCount = computed(() => currentLedger.value?.memberCount || members.value.length || 0);
 const activeTransactions = computed(() => currentStats.value?.activeTransactionCount || allTransactions.value.length);
+
+function getTabIcon(iconName: string) {
+  const iconMap = {
+    Calculator: LucideCalculator,
+    BarChart3: LucideBarChart3,
+  };
+  return iconMap[iconName as keyof typeof iconMap] || LucideCalculator;
+}
 </script>
 
 <template>
@@ -167,10 +185,25 @@ const activeTransactions = computed(() => currentStats.value?.activeTransactionC
                 {{ currentLedger.description || '暂未填写描述' }}
               </p>
             </div>
-            <div class="meta">
-              <span>基础币种：{{ currentLedger.baseCurrency?.code || 'CNY' }}</span>
-              <span>结算周期：{{ currentLedger.settlementCycle }}</span>
-              <span>成员数：{{ memberCount }}</span>
+            <div class="title-footer">
+              <div class="tabs-nav">
+                <button
+                  v-for="tab in tabs"
+                  :key="tab.key"
+                  class="tab-btn"
+                  :class="{ active: activeTab === tab.key }"
+                  :title="tab.label"
+                  @click="activeTab = tab.key as 'settlement' | 'statistics'"
+                >
+                  <component :is="getTabIcon(tab.icon)" class="tab-icon" />
+                  <span class="tab-label text-sm">{{ tab.label }}</span>
+                </button>
+              </div>
+              <div class="meta">
+                <span>基础币种：{{ currentLedger.baseCurrency?.code || 'CNY' }}</span>
+                <span>结算周期：{{ currentLedger.settlementCycle }}</span>
+                <span>成员数：{{ memberCount }}</span>
+              </div>
             </div>
           </div>
         </header>
@@ -220,6 +253,7 @@ const activeTransactions = computed(() => currentStats.value?.activeTransactionC
           </article>
         </section>
 
+        <!-- 成员概览 / 交易记录 -->
         <section class="detail-body">
           <div class="members-panel">
             <div class="panel-header">
@@ -317,6 +351,18 @@ const activeTransactions = computed(() => currentStats.value?.activeTransactionC
             </div>
           </div>
         </section>
+
+        <!-- 结算中心 / 统计报表 -->
+        <section class="detail-tabs">
+          <div class="tab-content">
+            <div v-if="activeTab === 'settlement'" class="tab-panel">
+              <SettlementView />
+            </div>
+            <div v-else-if="activeTab === 'statistics'" class="tab-panel">
+              <FamilyStatsView />
+            </div>
+          </div>
+        </section>
       </div>
 
       <div v-else class="empty-state">
@@ -393,6 +439,49 @@ const activeTransactions = computed(() => currentStats.value?.activeTransactionC
 
 .title-description {
   margin: 0;
+}
+
+.title-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.tabs-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--color-gray-600);
+  cursor: pointer;
+  font-size: 13px;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.tab-btn:hover {
+  background: var(--color-base-200);
+  border-color: var(--color-gray-200);
+}
+
+.tab-btn.active {
+  background: var(--color-primary-soft);
+  border-color: var(--color-primary);
+  color: var(--color-primary-content);
+}
+
+.tab-icon {
+  width: 16px;
+  height: 16px;
 }
 
 .meta {
@@ -475,7 +564,7 @@ const activeTransactions = computed(() => currentStats.value?.activeTransactionC
 }
 
 .member-card {
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--color-gray-200);
   border-radius: 12px;
   padding: 16px;
   cursor: pointer;
@@ -483,7 +572,7 @@ const activeTransactions = computed(() => currentStats.value?.activeTransactionC
 }
 
 .member-card.active {
-  border-color: #3b82f6;
+  border-color: var(--color-primary);
   box-shadow: 0 10px 20px rgb(59 130 246 / 0.15);
 }
 
@@ -584,6 +673,19 @@ const activeTransactions = computed(() => currentStats.value?.activeTransactionC
 @media (max-width: 1024px) {
   .detail-body {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .title-footer {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .meta {
+    margin-top: 4px;
+    flex-wrap: wrap;
   }
 }
 
