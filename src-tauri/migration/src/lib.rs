@@ -45,6 +45,7 @@ mod m20250929_121722_create_todo_repeat_period_type;
 mod m20251017_160622_create_transaction_alert;
 mod m20251916_221213_create_sub_categories;
 mod m20251917_223412_create_sub_category_insert;
+mod m20251918_120000_add_sub_category_property_rental;
 mod m20250120_000000_add_phone_bill_subcategory;
 mod m20251112_000001_enhance_family_ledger_fields;
 mod m20251112_000002_enhance_family_member_fields;
@@ -91,6 +92,7 @@ impl MigratorTrait for Migrator {
             Box::new(m20250916_221212_create_categories::Migration),
             Box::new(m20251916_221213_create_sub_categories::Migration),
             Box::new(m20251917_223412_create_sub_category_insert::Migration),
+            Box::new(m20251918_120000_add_sub_category_property_rental::Migration),
             Box::new(m20250120_000000_add_phone_bill_subcategory::Migration),
             Box::new(m20250918_115414_create_categories_alert::Migration),
             Box::new(m20250918_121424_create_sub_categories_alert::Migration),
