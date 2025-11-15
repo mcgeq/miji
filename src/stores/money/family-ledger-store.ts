@@ -76,10 +76,11 @@ export const useFamilyLedgerStore = defineStore('family-ledger', {
      * 获取需要自动结算的账本
      */
     autoSettlementLedgers: state => {
-      return state.ledgers.filter(ledger =>
-        ledger.autoSettlement &&
-        ledger.settlementCycle !== 'MANUAL' &&
-        ledger.pendingSettlement > 0,
+      return state.ledgers.filter(
+        ledger =>
+          ledger.autoSettlement &&
+          ledger.settlementCycle !== 'MANUAL' &&
+          ledger.pendingSettlement > 0,
       );
     },
   },

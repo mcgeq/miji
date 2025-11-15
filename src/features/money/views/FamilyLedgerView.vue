@@ -3,13 +3,15 @@ import { LucideBarChart3, LucideCalculator, LucidePlus, LucideUsers } from 'luci
 import { storeToRefs } from 'pinia';
 import { computed, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import ConfirmModal from '@/components/common/ConfirmModal.vue';
 import { useFamilyLedgerStore } from '@/stores/money';
+import { deepDiff } from '@/utils/diffObject';
 import { toast } from '@/utils/toast';
 import FamilyLedgerList from '../components/FamilyLedgerList.vue';
 import FamilyLedgerModal from '../components/FamilyLedgerModal.vue';
 import FamilyStatsView from './FamilyStatsView.vue';
 import SettlementView from './SettlementView.vue';
-import type { FamilyLedger } from '@/schema/money';
+import type { FamilyLedger, FamilyLedgerUpdate } from '@/schema/money';
 
 const router = useRouter();
 const route = useRoute();
@@ -103,20 +105,40 @@ function closeLedgerModal() {
   selectedLedger.value = null;
 }
 
-async function saveLedger(ledgerData: any) {
+async function createLedger(ledgerData: any) {
+  try {
+    await familyLedgerStore.createLedger(ledgerData);
+    toast.success('创建成功');
+  } catch (error) {
+    console.error('创建账本失败:', error);
+    toast.error('创建失败');
+    throw error;
+  }
+}
+
+async function updateLedger(serialNum: string, ledgerData: FamilyLedgerUpdate) {
+  try {
+    if (!selectedLedger.value) return;
+    await familyLedgerStore.updateLedger(serialNum, ledgerData);
+    toast.success('更新成功');
+  } catch (error) {
+    console.error('更新账本失败:', error);
+    toast.error('更新失败');
+    throw error;
+  }
+}
+
+async function saveLedger(ledgerData: FamilyLedger) {
   try {
     if (selectedLedger.value) {
-      await familyLedgerStore.updateLedger(selectedLedger.value.serialNum, ledgerData);
-      toast.success('更新成功');
+      const original = selectedLedger.value;
+      const diff = deepDiff(original, ledgerData) as FamilyLedgerUpdate;
+      await updateLedger(selectedLedger.value.serialNum, diff);
     } else {
-      await familyLedgerStore.createLedger(ledgerData);
-      toast.success('创建成功');
+      await createLedger(ledgerData);
     }
 
-    // 刷新账本列表
     await loadLedgers();
-
-    // 关闭模态框
     closeLedgerModal();
   } catch (error) {
     console.error('保存失败:', error);
@@ -137,10 +159,6 @@ onMounted(() => {
         <h2 class="page-title">
           家庭记账
         </h2>
-        <div v-if="currentLedger" class="current-ledger-info">
-          <span class="ledger-name">{{ currentLedger.name }}</span>
-          <span class="ledger-currency">{{ currentLedger.baseCurrency.symbol }}</span>
-        </div>
       </div>
       <div class="header-actions">
         <button v-if="activeTab === 'ledgers'" class="btn btn-primary" @click="showLedgerModal = true">

@@ -128,15 +128,40 @@ function saveLedger() {
   emit('save', ledgerData);
 }
 
-// 监听 props 变化
+function resolveCurrency(code?: string): Currency {
+  if (!code) return CURRENCY_CNY;
+  const matched = currencies.value.find(currency => currency.code === code);
+  return matched || { ...CURRENCY_CNY, code };
+}
+
+function buildLedgerForm(source: FamilyLedger | null): FamilyLedger {
+  if (!source) {
+    return JSON.parse(JSON.stringify(defaultLedger));
+  }
+
+  const baseCurrencyCode =
+    typeof source.baseCurrency === 'string'
+      ? source.baseCurrency
+      : source.baseCurrency?.code;
+
+  return {
+    ...JSON.parse(JSON.stringify(defaultLedger)),
+    ...source,
+    baseCurrency: resolveCurrency(baseCurrencyCode),
+    ledgerType: source.ledgerType
+      ? source.ledgerType.toUpperCase()
+      : defaultLedger.ledgerType,
+    settlementCycle: source.settlementCycle
+      ? source.settlementCycle.toUpperCase()
+      : defaultLedger.settlementCycle,
+    settlementDay: source.settlementDay ?? defaultLedger.settlementDay,
+  };
+}
+
 watch(
   () => props.ledger,
   newVal => {
-    if (newVal) {
-      Object.assign(form, JSON.parse(JSON.stringify(newVal)));
-    } else {
-      Object.assign(form, JSON.parse(JSON.stringify(defaultLedger)));
-    }
+    Object.assign(form, buildLedgerForm(newVal));
   },
   { immediate: true, deep: true },
 );
@@ -160,7 +185,7 @@ watch(
           <div class="form-row">
             <label class="form-label">账本名称</label>
             <input
-              v-model="form.description" type="text" required class="modal-input-select form-input-2-3"
+              v-model="form.name" type="text" required class="modal-input-select form-input-2-3"
               placeholder="请输入账本名称"
             >
           </div>

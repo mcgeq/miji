@@ -7,13 +7,13 @@ interface Props {
   loading: boolean;
 }
 
-defineProps<Props>();
-
+const props = defineProps<Props>();
 const emit = defineEmits<{
   enter: [ledger: FamilyLedger];
   edit: [ledger: FamilyLedger];
   delete: [serialNum: string];
 }>();
+const { ledgers, loading } = toRefs(props);
 
 // 这些函数需要根据实际的数据结构来解析
 function getAccountCount(accounts: string): number {

@@ -1,18 +1,5 @@
 <script setup lang="ts">
-import {
-  LucideActivity,
-  LucideArrowLeft,
-  LucideLoader2,
-  LucideReceiptText,
-  LucideTrendingDown,
-  LucideTrendingUp,
-  LucideUserCheck,
-  LucideUsers,
-  LucideWallet,
-} from 'lucide-vue-next';
 import { storeToRefs } from 'pinia';
-import { computed, onMounted, ref, watch } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
 import { MoneyDb } from '@/services/money/money';
 import { useFamilyLedgerStore } from '@/stores/money';
 import { toast } from '@/utils/toast';
@@ -170,11 +157,16 @@ const activeTransactions = computed(() => currentStats.value?.activeTransactionC
         <header class="detail-header">
           <button class="ghost-button" @click="goBack">
             <LucideArrowLeft class="icon" />
-            返回列表
           </button>
           <div class="title-block">
-            <h1>{{ currentLedger.name || currentLedger.description || '未命名账本' }}</h1>
-            <p>{{ currentLedger.description || '暂未填写描述' }}</p>
+            <div class="title-main">
+              <h1 class="title-name">
+                {{ currentLedger.name || currentLedger.description || '未命名账本' }}
+              </h1>
+              <p class="title-description text-sm text-muted">
+                {{ currentLedger.description || '暂未填写描述' }}
+              </p>
+            </div>
             <div class="meta">
               <span>基础币种：{{ currentLedger.baseCurrency?.code || 'CNY' }}</span>
               <span>结算周期：{{ currentLedger.settlementCycle }}</span>
@@ -339,7 +331,7 @@ const activeTransactions = computed(() => currentStats.value?.activeTransactionC
 .ledger-detail-view {
   min-height: 100vh;
   padding: 24px;
-  background: #f8fafc;
+  background: var(--color-base-100);
 }
 
 .page-loader,
@@ -347,7 +339,7 @@ const activeTransactions = computed(() => currentStats.value?.activeTransactionC
   display: flex;
   align-items: center;
   gap: 12px;
-  color: #64748b;
+  color: var(--color-gray-500);
 }
 
 .spinner {
@@ -369,11 +361,11 @@ const activeTransactions = computed(() => currentStats.value?.activeTransactionC
   align-items: center;
   gap: 8px;
   padding: 8px 12px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--color-primary-soft);
   border-radius: 8px;
-  background: #fff;
+  background: var(--color-base-100);
   cursor: pointer;
-  color: #1f2937;
+  color: var(--color-base-content);
 }
 
 .icon {
@@ -381,22 +373,33 @@ const activeTransactions = computed(() => currentStats.value?.activeTransactionC
   height: 16px;
 }
 
-.title-block h1 {
-  margin: 0 0 8px;
-  font-size: 28px;
-  color: #0f172a;
+.title-block {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
-.title-block p {
+.title-main {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.title-name {
   margin: 0;
-  color: #475569;
+  font-size: 28px;
+  color: var(--color-base-content);
+}
+
+.title-description {
+  margin: 0;
 }
 
 .meta {
   display: flex;
   gap: 16px;
   margin-top: 12px;
-  color: #64748b;
+  color: var(--color-gray-500);
 }
 
 .summary-grid {
@@ -411,30 +414,31 @@ const activeTransactions = computed(() => currentStats.value?.activeTransactionC
   gap: 16px;
   padding: 16px;
   border-radius: 16px;
-  background: #fff;
+  background: var(--color-base-200);
   box-shadow: 0 1px 3px rgb(15 23 42 / 0.08);
 }
 
 .summary-card p {
   margin: 0;
-  color: #475569;
+  color: var(--color-gray-600);
 }
 
 .summary-card h3 {
   margin: 4px 0 0;
   font-size: 24px;
-  color: #0f172a;
+  color: var(--color-base-content);
 }
 
-.summary-card.income { border-left: 4px solid #10b981; }
-.summary-card.expense { border-left: 4px solid #ef4444; }
-.summary-card.warning { border-left: 4px solid #f59e0b; }
-.summary-card.info { border-left: 4px solid #3b82f6; }
+.summary-card.neutral { border-left: 4px solid var(--color-neutral); }
+.summary-card.income { border-left: 4px solid var(--color-success); }
+.summary-card.expense { border-left: 4px solid var(--color-error); }
+.summary-card.warning { border-left: 4px solid var(--color-warning); }
+.summary-card.info { border-left: 4px solid var(--color-info); }
 
 .card-icon {
   width: 32px;
   height: 32px;
-  color: #475569;
+  color: var(--color-gray-600);
 }
 
 .detail-body {
@@ -446,7 +450,7 @@ const activeTransactions = computed(() => currentStats.value?.activeTransactionC
 
 .members-panel,
 .transactions-panel {
-  background: #fff;
+  background: var(--color-base-100);
   border-radius: 16px;
   padding: 24px;
   box-shadow: 0 10px 30px rgb(15 23 42 / 0.08);
@@ -455,12 +459,12 @@ const activeTransactions = computed(() => currentStats.value?.activeTransactionC
 .panel-header h2 {
   margin: 0;
   font-size: 20px;
-  color: #0f172a;
+  color: var(--color-base-content);
 }
 
 .panel-header p {
   margin: 4px 0 0;
-  color: #64748b;
+  color: var(--color-gray-500);
 }
 
 .members-grid {
@@ -493,35 +497,35 @@ const activeTransactions = computed(() => currentStats.value?.activeTransactionC
   width: 44px;
   height: 44px;
   border-radius: 12px;
-  background: #e2e8f0;
+  background: var(--color-gray-200);
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 600;
-  color: #0f172a;
+  color: var(--color-base-content);
 }
 
 .member-name {
   margin: 0;
   font-weight: 600;
-  color: #0f172a;
+  color: var(--color-base-content);
 }
 
 .member-role {
   margin: 4px 0 0;
-  color: #64748b;
+  color: var(--color-gray-500);
 }
 
 .member-metrics {
   display: flex;
   justify-content: space-between;
   margin-top: 12px;
-  color: #475569;
+  color: var(--color-gray-600);
 }
 
 .member-metrics span {
   font-size: 12px;
-  color: #94a3b8;
+  color: var(--color-gray-400);
 }
 
 .member-metrics strong {
@@ -543,32 +547,32 @@ const activeTransactions = computed(() => currentStats.value?.activeTransactionC
 .transactions-table th,
 .transactions-table td {
   padding: 12px 8px;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--color-gray-200);
   text-align: left;
   font-size: 14px;
 }
 
 .transactions-table th {
-  color: #94a3b8;
+  color: var(--color-gray-400);
   font-weight: 500;
 }
 
 .transactions-table td {
-  color: #0f172a;
+  color: var(--color-base-content);
 }
 
 .transactions-table .positive {
-  color: #10b981;
+  color: var(--color-success);
 }
 
 .transactions-table .negative {
-  color: #ef4444;
+  color: var(--color-error);
 }
 
 .empty-state {
   padding: 32px;
   text-align: center;
-  color: #94a3b8;
+  color: var(--color-gray-400);
 }
 
 .empty-icon {
