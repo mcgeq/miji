@@ -57,6 +57,9 @@ impl Hooks<entity::transactions::Entity, CreateTransactionRequest, UpdateTransac
         tx: &DatabaseTransaction,
         model: &entity::transactions::Model,
     ) -> MijiResult<()> {
+        // 注意：这里无法直接访问原始的 CreateTransactionRequest 数据
+        // family_ledger_serial_num 需要在调用层面处理
+        
         if model.is_installment.unwrap() {
             let installment_plan_request = InstallmentPlanCreate {
                 serial_num: model.installment_plan_serial_num.clone().unwrap(),
@@ -104,6 +107,8 @@ impl Hooks<entity::transactions::Entity, CreateTransactionRequest, UpdateTransac
                 .await?;
             }
         }
+        // 同步家庭记账本统计数据
+        sync_family_ledger_after_create(tx, model).await?;
         Ok(())
     }
 
@@ -286,6 +291,9 @@ impl Hooks<entity::transactions::Entity, CreateTransactionRequest, UpdateTransac
             cleanup_installment_after_deletion(tx, model, installment_plan_serial_num).await?;
         }
 
+        // 同步家庭记账本统计数据
+        sync_family_ledger_after_delete(tx, model).await?;
+
         Ok(())
     }
 }
@@ -298,6 +306,118 @@ async fn verify_account_exists(
         .one(tx)
         .await?
         .ok_or_else(|| AppError::simple(BusinessCode::NotFound, "账户不存在"))
+}
+
+/// 创建交易后同步家庭记账本统计数据
+async fn sync_family_ledger_after_create(
+    tx: &DatabaseTransaction,
+    transaction: &entity::transactions::Model,
+) -> MijiResult<()> {
+    // 查找关联的家庭记账本
+    let associations = entity::family_ledger_transaction::Entity::find()
+        .filter(entity::family_ledger_transaction::Column::TransactionSerialNum.eq(&transaction.serial_num))
+        .all(tx)
+        .await?;
+    
+    if associations.is_empty() {
+        return Ok(());
+    }
+    
+    for association in associations {
+        // 获取记账本
+        let ledger = entity::family_ledger::Entity::find_by_id(&association.family_ledger_serial_num)
+            .one(tx)
+            .await?
+            .ok_or_else(|| AppError::simple(BusinessCode::NotFound, "家庭记账本不存在"))?;
+        
+        let mut ledger_active = ledger.clone().into_active_model();
+        
+        // 1. 更新交易数量
+        let current_transactions = ledger.transactions;
+        ledger_active.transactions = sea_orm::ActiveValue::Set(current_transactions + 1);
+        
+        // 2. 更新收入/支出统计 - TODO: 需要添加数据库字段
+        // let transaction_type = TransactionType::from_str(&transaction.transaction_type)?;
+        // match transaction_type {
+        //     TransactionType::Income => {
+        //         // total_income += transaction.amount
+        //     }
+        //     TransactionType::Expense => {
+        //         // total_expense += transaction.amount
+        //     }
+        //     TransactionType::Transfer => {}
+        // }
+        
+        // 3. 更新时间戳
+        ledger_active.updated_at = sea_orm::ActiveValue::Set(Some(DateUtils::local_now()));
+        
+        // 4. 保存更新
+        ledger_active.update(tx).await?;
+        
+        tracing::info!(
+            "同步家庭记账本统计成功: ledger={}, transaction={}",
+            association.family_ledger_serial_num,
+            transaction.serial_num
+        );
+    }
+    
+    Ok(())
+}
+
+/// 删除交易后同步家庭记账本统计数据
+async fn sync_family_ledger_after_delete(
+    tx: &DatabaseTransaction,
+    transaction: &entity::transactions::Model,
+) -> MijiResult<()> {
+    // 查找关联的家庭记账本
+    let associations = entity::family_ledger_transaction::Entity::find()
+        .filter(entity::family_ledger_transaction::Column::TransactionSerialNum.eq(&transaction.serial_num))
+        .all(tx)
+        .await?;
+    
+    if associations.is_empty() {
+        return Ok(());
+    }
+    
+    for association in associations {
+        // 获取记账本
+        let ledger = entity::family_ledger::Entity::find_by_id(&association.family_ledger_serial_num)
+            .one(tx)
+            .await?
+            .ok_or_else(|| AppError::simple(BusinessCode::NotFound, "家庭记账本不存在"))?;
+        
+        let mut ledger_active = ledger.clone().into_active_model();
+        
+        // 1. 减少交易数量
+        let current_transactions = ledger.transactions;
+        ledger_active.transactions = sea_orm::ActiveValue::Set((current_transactions - 1).max(0));
+        
+        // 2. 减去收入/支出统计 - TODO: 需要添加数据库字段
+        // let transaction_type = TransactionType::from_str(&transaction.transaction_type)?;
+        // match transaction_type {
+        //     TransactionType::Income => {
+        //         // total_income -= transaction.amount (max 0)
+        //     }
+        //     TransactionType::Expense => {
+        //         // total_expense -= transaction.amount (max 0)
+        //     }
+        //     TransactionType::Transfer => {}
+        // }
+        
+        // 3. 更新时间戳
+        ledger_active.updated_at = sea_orm::ActiveValue::Set(Some(DateUtils::local_now()));
+        
+        // 4. 保存更新
+        ledger_active.update(tx).await?;
+        
+        tracing::info!(
+            "同步家庭记账本统计(删除)成功: ledger={}, transaction={}",
+            association.family_ledger_serial_num,
+            transaction.serial_num
+        );
+    }
+    
+    Ok(())
 }
 
 /// 更新账户余额
@@ -526,6 +646,7 @@ async fn process_first_installment_immediately(
         remaining_periods_amount: None,
         remaining_periods: None,
         installment_amount: None,
+        family_ledger_serial_nums: None,
     };
 
     // 3. 手动调用 before_create hooks
@@ -746,6 +867,7 @@ async fn cleanup_installment_after_deletion(
             remaining_periods_amount: None,
             remaining_periods: None,
             installment_amount: None,
+            family_ledger_serial_nums: None,
         };
 
         // 手动调用 before_create hooks

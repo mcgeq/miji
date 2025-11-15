@@ -44,7 +44,7 @@ export function useTransactionActions() {
   // 保存交易
   async function saveTransaction(transaction: TransactionCreate) {
     try {
-      // 创建交易
+      // 创建交易（familyLedgerSerialNums 已经包含在 transaction 中）
       await transactionStore.createTransaction(transaction);
       toast.success('添加成功');
 
@@ -154,6 +154,7 @@ export function useTransactionActions() {
     transaction: TransactionUpdate,
     onSuccess?: () => Promise<void> | void,
   ) {
+    // familyLedgerSerialNums 已经包含在 transaction 中
     const success = await updateTransaction(serialNum, transaction);
     if (success && onSuccess) {
       await onSuccess();

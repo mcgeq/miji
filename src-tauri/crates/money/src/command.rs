@@ -441,6 +441,7 @@ pub async fn transaction_create(
         transaction_type = %data.transaction_type,
         account_serial_num = %data.account_serial_num,
         category = %data.category,
+        family_ledger_serial_nums = ?data.family_ledger_serial_nums,
         "开始创建交易记录"
     );
 

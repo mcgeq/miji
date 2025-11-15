@@ -387,6 +387,9 @@ pub struct CreateTransactionRequest {
     pub installment_amount: Option<Decimal>,
     pub remaining_periods_amount: Option<Decimal>,
     pub remaining_periods: Option<i32>,
+
+    // 家庭记账本关联（支持多个）
+    pub family_ledger_serial_nums: Option<Vec<String>>,
 }
 
 impl TryFrom<CreateTransactionRequest> for entity::transactions::ActiveModel {

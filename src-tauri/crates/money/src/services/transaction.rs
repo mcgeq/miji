@@ -683,6 +683,7 @@ impl TransactionService {
             installment_amount: Some(Decimal::ZERO),
             remaining_periods_amount: Some(Decimal::ZERO),
             first_due_date: None,
+            family_ledger_serial_nums: None,
         };
 
         let to_request = CreateTransactionRequest {
@@ -714,6 +715,7 @@ impl TransactionService {
             installment_amount: Some(Decimal::ZERO),
             remaining_periods_amount: Some(Decimal::ZERO),
             first_due_date: None,
+            family_ledger_serial_nums: None,
         };
 
         Ok((from_request, to_request))
@@ -799,6 +801,7 @@ impl TransactionService {
             remaining_periods: None,
             installment_amount: Some(Decimal::ZERO),
             remaining_periods_amount: Some(Decimal::ZERO),
+            family_ledger_serial_nums: None,
         };
 
         let reverse_in_request = CreateTransactionRequest {
@@ -833,6 +836,7 @@ impl TransactionService {
             installment_amount: Some(Decimal::ZERO),
             remaining_periods_amount: Some(Decimal::ZERO),
             first_due_date: None,
+            family_ledger_serial_nums: None,
         };
 
         (reverse_out_request, reverse_in_request)
@@ -1064,7 +1068,62 @@ impl TransactionService {
         db: &DbConn,
         data: CreateTransactionRequest,
     ) -> MijiResult<TransactionWithRelations> {
+        // 保存 family_ledger_serial_nums 用于后续创建关联
+        let family_ledger_serial_nums = data.family_ledger_serial_nums.clone();
+
+        // 创建交易
         let model = self.create(db, data).await?;
+
+        // 如果指定了家庭记账本，为每个记账本创建关联记录并更新统计
+        if let Some(ledger_serials) = family_ledger_serial_nums {
+            let transaction_serial = model.serial_num.clone();
+
+            for ledger_serial in ledger_serials {
+                if ledger_serial.is_empty() {
+                    continue;
+                }
+
+                // 创建家庭记账本与交易的关联
+                let association = entity::family_ledger_transaction::ActiveModel {
+                    family_ledger_serial_num: sea_orm::ActiveValue::Set(ledger_serial.clone()),
+                    transaction_serial_num: sea_orm::ActiveValue::Set(transaction_serial.clone()),
+                    created_at: sea_orm::ActiveValue::Set(DateUtils::local_now()),
+                    updated_at: sea_orm::ActiveValue::Set(None),
+                };
+                association.insert(db).await?;
+
+                tracing::info!(
+                    "创建交易与家庭记账本关联成功: transaction={}, ledger={}",
+                    transaction_serial,
+                    ledger_serial
+                );
+
+                // 手动更新家庭记账本统计数据
+                let ledger = entity::family_ledger::Entity::find_by_id(&ledger_serial)
+                    .one(db)
+                    .await?
+                    .ok_or_else(|| AppError::simple(BusinessCode::NotFound, "家庭记账本不存在"))?;
+
+                let mut ledger_active = ledger.clone().into_active_model();
+
+                // 更新交易数量
+                let current_transactions = ledger.transactions;
+                ledger_active.transactions = sea_orm::ActiveValue::Set(current_transactions + 1);
+
+                // 更新时间戳
+                ledger_active.updated_at = sea_orm::ActiveValue::Set(Some(DateUtils::local_now()));
+
+                // 保存更新
+                ledger_active.update(db).await?;
+
+                tracing::info!(
+                    "更新家庭记账本统计成功: ledger={}, transactions={}",
+                    ledger_serial,
+                    current_transactions + 1
+                );
+            }
+        }
+
         self.converter().model_to_with_relations(db, model).await
     }
 

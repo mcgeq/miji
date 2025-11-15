@@ -451,6 +451,12 @@ pub enum FamilyLedger {
     LastSettlementAt,
     NextSettlementAt,
     Status,
+    // 财务统计字段
+    TotalIncome,
+    TotalExpense,
+    SharedExpense,
+    PersonalExpense,
+    PendingSettlement,
     CreatedAt,
     UpdatedAt,
 }

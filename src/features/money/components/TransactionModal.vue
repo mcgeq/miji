@@ -40,8 +40,8 @@ interface Props {
 const props = defineProps<Props>();
 const emit = defineEmits<{
   close: [];
-  save: [transaction: TransactionCreate, ledgerIds: string[], memberIds: string[]];
-  update: [serialNum: string, transaction: TransactionUpdate, ledgerIds: string[], memberIds: string[]];
+  save: [transaction: TransactionCreate];
+  update: [serialNum: string, transaction: TransactionUpdate];
   saveTransfer: [transfer: TransferCreate];
   updateTransfer: [serialNum: string, transfer: TransferCreate];
   refresh: [];
@@ -686,15 +686,17 @@ function emitTransaction(amount: number) {
     remainingPeriods: form.value.remainingPeriods,
     installmentAmount: amount,
     remainingPeriodsAmount: amount,
+    // 家庭记账本关联（支持多个）
+    familyLedgerSerialNums: selectedLedgers.value,
   };
 
   if (props.transaction) {
     const updateTransaction: TransactionUpdate = {
       ...transaction,
     };
-    emit('update', props.transaction.serialNum, updateTransaction, selectedLedgers.value, selectedMembers.value);
+    emit('update', props.transaction.serialNum, updateTransaction);
   } else {
-    emit('save', transaction, selectedLedgers.value, selectedMembers.value);
+    emit('save', transaction);
   }
 }
 
@@ -743,6 +745,8 @@ function getDefaultTransaction(type: TransactionType, accounts: Account[]) {
     installmentPlanSerialNum: null,
     installmentAmount: 0,
     remainingPeriodsAmount: 0,
+    // 家庭记账本关联
+    familyLedgerSerialNums: [],
   };
 }
 

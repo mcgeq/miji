@@ -43,6 +43,8 @@ export const TransactionSchema = z.object({
   installmentAmount: z.number().optional().default(0),
   remainingPeriodsAmount: z.number().optional().default(0),
   installmentPlanSerialNum: z.string().optional().nullable(),
+  // 家庭记账本关联（支持多个）
+  familyLedgerSerialNums: z.array(SerialNumSchema).optional().default([]),
 });
 
 export const TransactionCreateSchema = TransactionSchema.pick({
@@ -70,6 +72,8 @@ export const TransactionCreateSchema = TransactionSchema.pick({
   remainingPeriods: true,
   installmentAmount: true,
   remainingPeriodsAmount: true,
+  // 家庭记账本关联（支持多个）
+  familyLedgerSerialNums: true,
 })
   .extend({
     currency: z.string().length(3),

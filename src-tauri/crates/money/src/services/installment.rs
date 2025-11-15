@@ -509,6 +509,7 @@ impl InstallmentService {
                 remaining_periods_amount: None,
                 remaining_periods: None,
                 installment_amount: None,
+                family_ledger_serial_nums: None,
             };
 
             // 手动调用 before_create hooks
@@ -684,6 +685,7 @@ impl InstallmentService {
                     remaining_periods_amount: Some(Decimal::ZERO),
                     remaining_periods: None,
                     installment_amount: Some(Decimal::ZERO),
+                    family_ledger_serial_nums: None,
                 };
 
                 let reverse_model: entity::transactions::ActiveModel = reverse_data.try_into()?;
