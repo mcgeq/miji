@@ -356,6 +356,10 @@ export class MoneyDb {
     return this.familyLedgerMapper.update(serialNum, ledger);
   }
 
+  static async getFamilyLedgerStats(serialNum: string): Promise<any> {
+    return this.familyLedgerMapper.getStats(serialNum);
+  }
+
   static async deleteFamilyLedger(serialNum: string): Promise<void> {
     return this.familyLedgerMapper.deleteById(serialNum);
   }

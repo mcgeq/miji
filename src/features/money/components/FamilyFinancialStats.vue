@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { MoneyDb } from '@/services/money/money';
 import ExpenseChart from './charts/ExpenseChart.vue';
 import MemberContributionChart from './charts/MemberContributionChart.vue';
 import type { FamilyLedgerStats } from '@/schema/money';
@@ -9,66 +10,31 @@ interface Props {
 
 const props = defineProps<Props>();
 
-// 暂时不使用store，使用模拟数据
-
 // 本地状态
 const stats = ref<FamilyLedgerStats | null>(null);
 const loading = ref(false);
 const selectedPeriod = ref<'month' | 'quarter' | 'year'>('month');
 
-// 模拟统计数据
-const mockStats: FamilyLedgerStats = {
-  familyLedgerSerialNum: props.familyLedgerSerialNum,
-  totalIncome: 15000,
-  totalExpense: 12000,
-  sharedExpense: 8000,
-  personalExpense: 4000,
-  pendingSettlement: 500,
-  memberCount: 3,
-  activeTransactionCount: 45,
-  memberStats: [
-    {
-      memberSerialNum: 'member1',
-      memberName: '张三',
-      totalPaid: 5000,
-      totalOwed: 4000,
-      netBalance: 1000,
-      pendingSettlement: 200,
-      transactionCount: 15,
-      splitCount: 8,
-    },
-    {
-      memberSerialNum: 'member2',
-      memberName: '李四',
-      totalPaid: 4000,
-      totalOwed: 4000,
-      netBalance: 0,
-      pendingSettlement: 0,
-      transactionCount: 20,
-      splitCount: 12,
-    },
-    {
-      memberSerialNum: 'member3',
-      memberName: '王五',
-      totalPaid: 3000,
-      totalOwed: 4000,
-      netBalance: -1000,
-      pendingSettlement: 300,
-      transactionCount: 10,
-      splitCount: 6,
-    },
-  ],
-};
-
 // 获取统计数据
 async function fetchStats() {
   loading.value = true;
   try {
-    // TODO: 替换为实际API调用
-    await new Promise(resolve => setTimeout(resolve, 500));
-    stats.value = mockStats;
+    const result = await MoneyDb.getFamilyLedgerStats(props.familyLedgerSerialNum);
+    stats.value = result;
   } catch (error) {
     console.error('获取统计数据失败:', error);
+    // 如果获取失败，设置默认值
+    stats.value = {
+      familyLedgerSerialNum: props.familyLedgerSerialNum,
+      totalIncome: 0,
+      totalExpense: 0,
+      sharedExpense: 0,
+      personalExpense: 0,
+      pendingSettlement: 0,
+      memberCount: 0,
+      activeTransactionCount: 0,
+      memberStats: [],
+    };
   } finally {
     loading.value = false;
   }

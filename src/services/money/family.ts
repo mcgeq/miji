@@ -205,6 +205,21 @@ export class FamilyLedgerMapper extends BaseMapper<
     }
   }
 
+  /**
+   * 获取账本统计信息
+   */
+  async getStats(serialNum: string): Promise<any> {
+    try {
+      const result = await invokeCommand('family_ledger_stats', {
+        serialNum,
+      });
+      Lg.d('MoneyDb', `FamilyLedger stats loaded: ${serialNum}`);
+      return result;
+    } catch (error) {
+      this.handleError('getStats', error);
+    }
+  }
+
   async deleteById(serialNum: string): Promise<void> {
     try {
       await invokeCommand('family_ledger_delete', { serialNum });
