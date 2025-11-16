@@ -1,18 +1,12 @@
 <script setup lang="ts">
-import {
-  Repeat,
-  TrendingDown,
-  TrendingUp,
-} from 'lucide-vue-next';
 import SimplePagination from '@/components/common/SimplePagination.vue';
 import { SortDirection, TransactionTypeSchema } from '@/schema/common';
 import { useTransactionStore } from '@/stores/money';
 import { lowercaseFirstLetter } from '@/utils/common';
-import { DateUtils } from '@/utils/date';
 import { Lg } from '@/utils/debugLog';
 import { isInstallmentTransaction } from '@/utils/transaction';
-import { formatCurrency } from '../utils/money';
-import type { PageQuery, SortOptions, TransactionType } from '@/schema/common';
+import TransactionTable from './TransactionTable.vue';
+import type { PageQuery, SortOptions } from '@/schema/common';
 import type { Account, Transaction } from '@/schema/money';
 import type { TransactionFilters } from '@/services/money/transactions';
 
@@ -211,25 +205,6 @@ watch(
   { deep: true },
 );
 
-// 原有的方法
-function getTransactionTypeIcon(type: TransactionType) {
-  const icons = {
-    Income: TrendingUp,
-    Expense: TrendingDown,
-    Transfer: Repeat,
-  };
-  return icons[type] || 'icon-list';
-}
-
-function getTransactionTypeName(type: TransactionType) {
-  const names = {
-    Income: t('financial.transaction.income'),
-    Expense: t('financial.transaction.expense'),
-    Transfer: t('financial.transaction.transfer'),
-  };
-  return names[type] || t('financial.transaction.unknown');
-}
-
 // 组件挂载时加载数据
 onMounted(() => {
   loadTransactions();
@@ -341,126 +316,18 @@ defineExpose({
     </div>
 
     <!-- 交易列表 -->
-    <div v-else class="transaction-table-title">
-      <!-- 表头 - 桌面版 -->
-      <div
-        class="transaction-table-title-desktop"
-      >
-        <div class="table-title-option">
-          {{ t('common.misc.types') }}
-        </div>
-        <div class="table-title-option">
-          {{ t('financial.money') }}
-        </div>
-        <div class="table-title-option">
-          {{ t('financial.account.account') }}
-        </div>
-        <div class="table-title-option">
-          {{ t('categories.category') }}
-        </div>
-        <div class="table-title-option">
-          {{ t('date.date') }}
-        </div>
-        <div class="table-title-option">
-          {{ t('common.misc.options') }}
-        </div>
-      </div>
-
-      <!-- 交易行 -->
-      <div
-        v-for="transaction in transactions" :key="transaction.serialNum"
-        class="transaction-rows"
-      >
-        <!-- 类型列 -->
-        <div class="transaction-rows-item">
-          <span class="transaction-rows-item-span">{{ t('categories.category') }}</span>
-          <div class="transaction-type-content">
-            <component :is="getTransactionTypeIcon(transaction.transactionType)" class="wh-4" />
-            <span class="font-medium">{{ getTransactionTypeName(transaction.transactionType) }}</span>
-          </div>
-        </div>
-
-        <!-- 金额列 -->
-        <div class="transaction-rows-item">
-          <span class="transaction-rows-item-span">{{ t('financial.money') }}</span>
-          <div
-            class="transaction-amount" :class="[
-              transaction.transactionType === TransactionTypeSchema.enum.Income ? 'amount-income'
-              : transaction.transactionType === TransactionTypeSchema.enum.Expense ? 'amount-expense'
-                : 'amount-transfer',
-            ]"
-          >
-            {{ transaction.transactionType === TransactionTypeSchema.enum.Expense ? '-' : '+' }}{{
-              formatCurrency(transaction.amount) }}
-          </div>
-        </div>
-
-        <!-- 账户列 -->
-        <div class="transaction-rows-item">
-          <span class="transaction-rows-item-span">{{ t('financial.account.account') }}</span>
-          <div class="transaction-rows-item-span-md">
-            <div class="transaction-account-name">
-              {{ transaction.account.name }}
-            </div>
-            <div v-if="transaction.description" class="transaction-description">
-              {{ transaction.description }}
-            </div>
-          </div>
-        </div>
-
-        <!-- 分类列 -->
-        <div class="transaction-rows-item">
-          <span class="transaction-rows-item-span">{{ t('categories.category') }}</span>
-          <div class="transaction-rows-item-span-md">
-            <span class="transaction-category-main">{{ t(`common.categories.${lowercaseFirstLetter(transaction.category)}`) }}</span>
-            <div v-if="transaction.subCategory" class="transaction-category-sub">
-              {{ t(`common.subCategories.${lowercaseFirstLetter(transaction.subCategory)}`) }}
-            </div>
-          </div>
-        </div>
-
-        <!-- 时间列 -->
-        <div class="transaction-rows-item">
-          <span class="transaction-rows-item-span">{{ t('date.date') }}</span>
-          <div class="transaction-rows-item-span-md">
-            <div class="transaction-date">
-              {{ DateUtils.formatForDisplay(transaction.date) }}
-            </div>
-          </div>
-        </div>
-
-        <!-- 操作列 -->
-        <div class="transaction-rows-item">
-          <span class="transaction-rows-item-span">{{ t('common.misc.options') }}</span>
-          <div class="transaction-action-buttons">
-            <button
-              class="money-option-btn"
-              :title="t('common.actions.view')" @click="emit('viewDetails', transaction)"
-            >
-              <LucideEye class="wh-4" />
-            </button>
-            <button
-              class="money-option-btn" :title="t('common.actions.edit')"
-              :disabled="disabledEditTransactions.has(transaction.serialNum)"
-              :class="{
-                'disabled-btn': disabledEditTransactions.has(transaction.serialNum),
-              }"
-              @click="emit('edit', transaction)"
-            >
-              <LucideEdit class="wh-4" />
-            </button>
-            <button
-              class="money-option-btn"
-              :title="t('common.actions.delete')"
-              :disabled="disabledDeleteTransactions.has(transaction.serialNum)"
-              @click="emit('delete', transaction)"
-            >
-              <LucideTrash class="wh-4" />
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+    <TransactionTable
+      v-else
+      :transactions="transactions"
+      :loading="loading"
+      :show-actions="true"
+      layout="card"
+      :disabled-edit-transactions="disabledEditTransactions"
+      :disabled-delete-transactions="disabledDeleteTransactions"
+      @edit="emit('edit', $event)"
+      @delete="emit('delete', $event)"
+      @view="emit('viewDetails', $event)"
+    />
 
     <!-- 分页组件 - 移动端优化版 -->
     <div v-if="pagination.totalItems > pagination.pageSize" class="pagination-container">
@@ -499,149 +366,17 @@ defineExpose({
   border-color: var(--color-neutral);
 }
 
-.transaction-table-title {
-  margin-bottom: 1.5rem;
-  border: 1px solid var(--color-gray-200);
-  border-radius: 0.5rem;
-  overflow: hidden;
-}
-
-.transaction-table-title-desktop {
-  color: #1f2937;
-  font-weight: 600;
-  display: none;
-  background-color: var(--color-base-100);
-  border: 1px solid var(--color-base-300);
-}
-
-.transaction-rows {
-  border: 1px solid var(--color-base-300);
-margin-bottom: 0.1rem;
-  display: grid;
-  grid-template-columns: 1fr;
-  transition: background-color 0.2s;
-}
-
-.transaction-rows:hover {
-  background-color: var(--color-base-300);
-}
-
-.transaction-rows-item {
-  font-size: 0.875rem;
-  padding: 0.5rem;
-  display: flex;
-  justify-content: space-between;
-}
-
-.transaction-rows-item-span {
-  color: var(--color-gray-600);
-  font-weight: 600;
-}
-
-.table-title-option {
-  font-size: 0.875rem;
-  padding: 1rem;
-  display: grid;
-  place-items: end;
-}
-
-@media (min-width: 768px) {
-  .transaction-table-title-desktop{
-    display: grid;
-    grid-template-columns: 120px 140px 180px 140px 140px 120px;
-  }
-  .transaction-rows {
-    grid-template-columns: 120px 140px 180px 140px 140px 120px;
-  }
-
-  .transaction-rows-item {
-    align-items: center;
-    justify-content: flex-end;
-  }
-  .transaction-rows-item-span {
-    display: none;
-  }
-  .transaction-rows-item-span-md {
-    text-align: right;
-  }
-}
-
-/* Transaction specific styles */
-.filter-button-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.loading-state {
-  color: var(--color-gray-600);
-  height: 6.25rem;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
 .empty-state {
-  color: #999;
+  padding: 3rem 1rem;
+  text-align: center;
+  color: var(--color-gray-400);
+}
+
+.loading-wrapper {
   display: flex;
   flex-direction: column;
-  height: 6.25rem;
-  justify-content: center;
-  align-items: center;
-}
-
-.transaction-type-content {
-  display: flex;
   gap: 0.5rem;
   align-items: center;
-}
-
-.transaction-action-buttons {
-  display: flex;
-  gap: 0.25rem;
-}
-
-.transaction-amount {
-  font-size: 1.125rem;
-  font-weight: 600;
-}
-
-.amount-income {
-  color: #16a34a;
-}
-
-.amount-expense {
-  color: #ef4444;
-}
-
-.amount-transfer {
-  color: #3b82f6;
-}
-
-.transaction-description {
-  font-size: 0.75rem;
-  color: var(--color-gray-600);
-  margin-top: 0.25rem;
-}
-
-.transaction-category-main {
-  color: #1f2937;
-  font-weight: 500;
-}
-
-.transaction-category-sub {
-  font-size: 0.75rem;
-  color: var(--color-gray-600);
-}
-
-.transaction-date {
-  font-size: 0.75rem;
-  color: var(--color-gray-600);
-}
-
-.transaction-account-name {
-  color: #1f2937;
-  font-weight: 500;
 }
 
 .filter-button-group {

@@ -629,6 +629,13 @@
     "role": "Role",
     "permissions": "Permissions",
     "permissionsDescription": "Permissions Description",
+    "settlementCycle": {
+      "weekly": "Weekly",
+      "monthly": "Monthly",
+      "quarterly": "Quarterly",
+      "yearly": "Yearly",
+      "manual": "Manual"
+    },
     "noLedgers": "No Ledgers Yet",
     "noMembers": "No Family Members Added Yet",
     "firstLedger": "Create Your First Ledger",

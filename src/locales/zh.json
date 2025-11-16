@@ -689,6 +689,13 @@
     "role": "角色",
     "permissions": "权限设置",
     "permissionsDescription": "权限描述",
+    "settlementCycle": {
+      "weekly": "周",
+      "monthly": "月",
+      "quarterly": "季",
+      "yearly": "年",
+      "manual": "手动"
+    },
     "noLedgers": "还没有账本",
     "noMembers": "还没有添加家庭成员",
     "firstLedger": "创建第一个账本",

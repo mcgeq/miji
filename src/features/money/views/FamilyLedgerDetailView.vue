@@ -1,9 +1,17 @@
 <script setup lang="ts">
-import { LucideBarChart3, LucideCalculator } from 'lucide-vue-next';
+import {
+  LucideBarChart3,
+  LucideCalculator,
+  LucideCalendarClock,
+  LucideCoins,
+  LucideUsers,
+  LucideWallet,
+} from 'lucide-vue-next';
 import { storeToRefs } from 'pinia';
 import { MoneyDb } from '@/services/money/money';
 import { useFamilyLedgerStore } from '@/stores/money';
 import { toast } from '@/utils/toast';
+import TransactionTable from '../components/TransactionTable.vue';
 import FamilyStatsView from './FamilyStatsView.vue';
 import SettlementView from './SettlementView.vue';
 import type { FamilyMember, Transaction } from '@/schema/money';
@@ -14,6 +22,7 @@ interface LedgerDetailRouteParams {
 
 const route = useRoute();
 const router = useRouter();
+const { t } = useI18n();
 const familyLedgerStore = useFamilyLedgerStore();
 const { currentLedger, currentLedgerStats } = storeToRefs(familyLedgerStore);
 
@@ -160,10 +169,46 @@ function getRoleName(role: FamilyMember['role']) {
   return mapper[role] || role;
 }
 
-const currentStats = computed(() => currentLedgerStats.value);
+function getSettlementCycleName(cycle: string) {
+  if (!cycle) return '';
+  const upperCycle = cycle.toUpperCase();
+  const mapper: Record<string, string> = {
+    WEEKLY: t('familyLedger.settlementCycle.weekly'),
+    MONTHLY: t('familyLedger.settlementCycle.monthly'),
+    QUARTERLY: t('familyLedger.settlementCycle.quarterly'),
+    YEARLY: t('familyLedger.settlementCycle.yearly'),
+    MANUAL: t('familyLedger.settlementCycle.manual'),
+  };
+  return mapper[upperCycle] || cycle;
+}
+
+// 基于实际交易数据计算统计信息
+const calculatedStats = computed(() => {
+  const transactions = allTransactions.value;
+  const totalIncome = transactions
+    .filter(t => t.transactionType === 'Income')
+    .reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
+  const totalExpense = transactions
+    .filter(t => t.transactionType === 'Expense')
+    .reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
+
+  return {
+    totalIncome,
+    totalExpense,
+    netBalance: totalIncome - totalExpense,
+    activeTransactionCount: transactions.length,
+  };
+});
+
+const currentStats = computed(() => ({
+  ...currentLedgerStats.value,
+  totalIncome: calculatedStats.value.totalIncome,
+  totalExpense: calculatedStats.value.totalExpense,
+}));
+
 const memberCount = computed(() => currentLedger.value?.members || members.value.length || 0);
 const accountCount = computed(() => currentLedger.value?.accounts);
-const activeTransactions = computed(() => currentStats.value?.activeTransactionCount || allTransactions.value.length);
+const activeTransactions = computed(() => calculatedStats.value.activeTransactionCount);
 
 function getTabIcon(iconName: string) {
   const iconMap = {
@@ -210,10 +255,22 @@ function getTabIcon(iconName: string) {
                 </button>
               </div>
               <div class="meta">
-                <span>币种：{{ currentLedger.baseCurrency?.code || 'CNY' }}</span>
-                <span>结算周期：{{ currentLedger.settlementCycle }}</span>
-                <span>成员数：{{ memberCount }}</span>
-                <span>账户数：{{ accountCount }}</span>
+                <span class="meta-item">
+                  <LucideCoins class="meta-icon" />
+                  {{ currentLedger.baseCurrency?.code || 'CNY' }}
+                </span>
+                <span class="meta-item">
+                  <LucideCalendarClock class="meta-icon" />
+                  {{ getSettlementCycleName(currentLedger.settlementCycle) }}
+                </span>
+                <span class="meta-item">
+                  <LucideUsers class="meta-icon" />
+                  {{ memberCount }}
+                </span>
+                <span class="meta-item">
+                  <LucideWallet class="meta-icon" />
+                  {{ accountCount }}
+                </span>
               </div>
             </div>
           </div>
@@ -238,7 +295,7 @@ function getTabIcon(iconName: string) {
             <LucideWallet class="card-icon" />
             <div>
               <p>净余额</p>
-              <h3>{{ formatCurrency((currentStats?.totalIncome || 0) - (currentStats?.totalExpense || 0)) }}</h3>
+              <h3>{{ formatCurrency(calculatedStats.netBalance) }}</h3>
             </div>
           </article>
           <article class="summary-card warning">
@@ -246,13 +303,6 @@ function getTabIcon(iconName: string) {
             <div>
               <p>待结算</p>
               <h3>{{ formatCurrency(currentStats?.pendingSettlement) }}</h3>
-            </div>
-          </article>
-          <article class="summary-card info">
-            <LucideUsers class="card-icon" />
-            <div>
-              <p>成员数</p>
-              <h3>{{ memberCount }}</h3>
             </div>
           </article>
           <article class="summary-card info">
@@ -322,57 +372,14 @@ function getTabIcon(iconName: string) {
               </div>
             </div>
 
-            <div v-if="transactionsLoading" class="panel-loading">
-              <LucideLoader2 class="spinner" />
-              <span>正在加载交易...</span>
-            </div>
-
-            <div v-else-if="memberTransactions.length === 0" class="empty-state">
-              <LucideReceiptText class="empty-icon" />
-              <p>暂无相关交易记录</p>
-            </div>
-
-            <div v-else class="transactions-table-wrapper">
-              <table class="transactions-table">
-                <thead>
-                  <tr>
-                    <th>日期</th>
-                    <th>类型</th>
-                    <th>金额</th>
-                    <th>账户</th>
-                    <th>说明</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="transaction in memberTransactions" :key="transaction.serialNum">
-                    <td class="date-cell">
-                      {{ new Date(transaction.date).toISOString().split('T')[0] }}
-                    </td>
-                    <td>
-                      <span
-                        class="type-badge"
-                        :class="{
-                          'type-expense': transaction.transactionType === 'Expense',
-                          'type-income': transaction.transactionType === 'Income',
-                          'type-transfer': transaction.transactionType === 'Transfer',
-                        }"
-                      >
-                        {{ transaction.transactionType === 'Expense' ? '支出' : transaction.transactionType === 'Income' ? '收入' : '转账' }}
-                      </span>
-                    </td>
-                    <td :class="transaction.transactionType === 'Expense' ? 'negative' : 'positive'">
-                      {{ transaction.transactionType === 'Expense' ? '-' : '' }}
-                      {{ formatCurrency(transaction.amount) }}
-                    </td>
-                    <td class="account-cell">
-                      {{ transaction.account.name }}
-                    </td>
-                    <td class="description-cell">
-                      {{ transaction.description || '—' }}
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
+            <div class="transactions-scroll-container">
+              <TransactionTable
+                :transactions="memberTransactions"
+                :loading="transactionsLoading"
+                :show-actions="false"
+                :columns="['date', 'type', 'category', 'amount', 'account', 'description']"
+                empty-text="暂无相关交易记录"
+              />
             </div>
           </div>
         </section>
@@ -513,7 +520,31 @@ function getTabIcon(iconName: string) {
   display: flex;
   gap: 16px;
   margin-top: 12px;
-  color: var(--color-gray-500);
+  font-size: 0.875rem;
+  color: var(--color-gray-600);
+}
+
+.meta-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: var(--color-base-100);
+  border-radius: 6px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.meta-item:hover {
+  background: var(--color-base-200);
+  color: var(--color-base-content);
+}
+
+.meta-icon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  color: var(--color-primary);
 }
 
 .summary-grid {
@@ -750,118 +781,31 @@ function getTabIcon(iconName: string) {
   max-width: 100%;
 }
 
-.transactions-table-wrapper {
-  margin-top: 16px;
-  overflow-x: auto;
-  border-radius: 12px;
-  border: 1px solid var(--color-base-300);
-  background: white;
+/* 交易列表滚动容器 */
+.transactions-scroll-container {
+  max-height: 480px; /* 约6条记录的高度 (每条约80px) */
+  overflow-y: auto;
+  overflow-x: hidden;
+  border-radius: 8px;
 }
 
-.transactions-table {
-  width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
+/* 自定义滚动条样式 */
+.transactions-scroll-container::-webkit-scrollbar {
+  width: 8px;
 }
 
-.transactions-table thead {
-  background: linear-gradient(to bottom, var(--color-base-100), var(--color-base-200));
-  border-bottom: 2px solid var(--color-base-300);
-}
-
-.transactions-table th {
-  padding: 14px 16px;
-  text-align: left;
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--color-neutral);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  white-space: nowrap;
-  border-bottom: 2px solid var(--color-base-300);
-}
-
-.transactions-table tbody tr {
-  transition: all 0.2s ease;
-  border-bottom: 1px solid var(--color-base-200);
-}
-
-.transactions-table tbody tr:hover {
+.transactions-scroll-container::-webkit-scrollbar-track {
   background: var(--color-base-100);
-  box-shadow: inset 0 0 0 1px var(--color-primary-soft);
+  border-radius: 4px;
 }
 
-.transactions-table tbody tr:last-child {
-  border-bottom: none;
+.transactions-scroll-container::-webkit-scrollbar-thumb {
+  background: var(--color-base-300);
+  border-radius: 4px;
 }
 
-.transactions-table td {
-  padding: 14px 16px;
-  font-size: 13px;
-  color: var(--color-base-content);
-  border-bottom: 1px solid var(--color-base-200);
-}
-
-.transactions-table tbody tr:last-child td {
-  border-bottom: none;
-}
-
-.transactions-table .positive {
-  color: var(--color-success);
-  font-weight: 600;
-}
-
-.transactions-table .negative {
-  color: var(--color-error);
-  font-weight: 600;
-}
-
-/* 交易类型徽章 */
-.type-badge {
-  display: inline-block;
-  padding: 4px 10px;
-  border-radius: 6px;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.3px;
-  white-space: nowrap;
-}
-
-.type-badge.type-expense {
-  background: oklch(from var(--color-error) l c h / 0.1);
-  color: var(--color-error);
-  border: 1px solid oklch(from var(--color-error) l c h / 0.2);
-}
-
-.type-badge.type-income {
-  background: oklch(from var(--color-success) l c h / 0.1);
-  color: var(--color-success);
-  border: 1px solid oklch(from var(--color-success) l c h / 0.2);
-}
-
-.type-badge.type-transfer {
-  background: oklch(from var(--color-info) l c h / 0.1);
-  color: var(--color-info);
-  border: 1px solid oklch(from var(--color-info) l c h / 0.2);
-}
-
-/* 单元格特殊样式 */
-.date-cell {
-  color: var(--color-neutral);
-  font-weight: 500;
-  font-variant-numeric: tabular-nums;
-}
-
-.account-cell {
-  font-weight: 500;
-}
-
-.description-cell {
-  color: var(--color-gray-500);
-  max-width: 200px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.transactions-scroll-container::-webkit-scrollbar-thumb:hover {
+  background: var(--color-primary-soft);
 }
 
 .empty-state {
@@ -897,6 +841,17 @@ function getTabIcon(iconName: string) {
   .meta {
     margin-top: 4px;
     flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .meta-item {
+    padding: 3px 8px;
+    font-size: 0.8rem;
+  }
+
+  .meta-icon {
+    width: 14px;
+    height: 14px;
   }
 
   .members-grid {
@@ -932,24 +887,9 @@ function getTabIcon(iconName: string) {
     font-size: 12px;
   }
 
-  /* 移动端表格优化 */
-  .transactions-table th,
-  .transactions-table td {
-    padding: 10px 8px;
-    font-size: 12px;
-  }
-
-  .transactions-table th {
-    font-size: 10px;
-  }
-
-  .type-badge {
-    padding: 3px 8px;
-    font-size: 10px;
-  }
-
-  .description-cell {
-    max-width: 120px;
+  /* 移动端交易列表高度调整 */
+  .transactions-scroll-container {
+    max-height: 400px; /* 移动端显示约5条记录 */
   }
 }
 
