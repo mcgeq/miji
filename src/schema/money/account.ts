@@ -26,6 +26,7 @@ export const BaseAccountFields = z.object({
 
 export const AccountSchema = BaseAccountFields.extend({
   currency: CurrencySchema,
+  currencyDetail: CurrencySchema.optional(), // 后端返回的完整币种信息（包含符号、区域等）
 });
 
 export const CreateAccountRequestSchema = BaseAccountFields.pick({

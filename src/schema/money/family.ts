@@ -63,6 +63,7 @@ export const FamilyLedgerSchema = z.object({
   name: z.string(),
   description: DescriptionSchema,
   baseCurrency: CurrencySchema,
+  baseCurrencyDetail: CurrencySchema.optional(), // 后端返回的完整币种信息（包含符号、区域等）
   memberList: z.array(FamilyMemberSchema).optional().default([]), // 前端使用，用于显示成员列表
   auditLogs: z.string(),
   // 扩展字段

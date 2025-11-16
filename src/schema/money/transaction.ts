@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import {
+  AmountSchema,
   CurrencySchema,
   DateSchema,
   DateTimeSchema,
@@ -9,8 +10,26 @@ import {
 } from '../common';
 import { TagsSchema } from '../tags';
 import { AccountSchema } from './account';
-import { FamilyMemberSchema } from './family';
 import { AccountTypeSchema, PaymentMethodSchema } from './money.e';
+
+// 分摊成员 Schema（扩展支持自定义金额和付款人）
+export const SplitMemberSchema = z.object({
+  serialNum: SerialNumSchema,
+  name: z.string(),
+  // 新增：自定义分摊金额（可选，不填则平均分摊）
+  amount: AmountSchema.optional(),
+  // 新增：付款人ID（可选，不填则为自己）
+  payerSerialNum: SerialNumSchema.optional(),
+  // 新增：分摊百分比（可选，用于按百分比分摊）
+  percentage: z.number().min(0).max(100).optional(),
+  // 新增：权重（可选，用于按权重分摊）
+  weight: z.number().int().min(1).optional(),
+  // 扩展字段
+  avatar: z.string().optional().nullable(),
+  colorTag: z.string().optional().nullable(),
+});
+
+export type SplitMember = z.infer<typeof SplitMemberSchema>;
 
 export const TransactionSchema = z.object({
   serialNum: SerialNumSchema,
@@ -28,7 +47,7 @@ export const TransactionSchema = z.object({
   category: z.string(),
   subCategory: z.string().optional().nullable(),
   tags: z.array(TagsSchema),
-  splitMembers: z.array(FamilyMemberSchema).optional(),
+  splitMembers: z.array(SplitMemberSchema).optional(),
   paymentMethod: PaymentMethodSchema,
   actualPayerAccount: AccountTypeSchema,
   relatedTransactionSerialNum: SerialNumSchema.optional(),

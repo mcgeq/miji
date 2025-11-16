@@ -26,8 +26,8 @@ pub struct Model {
     pub sub_category: Option<String>,
     #[sea_orm(column_type = "JsonBinary", nullable)]
     pub tags: Option<Json>,
-    #[sea_orm(column_type = "JsonBinary", nullable)]
-    pub split_members: Option<Json>,
+    // split_members 字段已废弃，使用 split_records 表替代
+    // 对应的数据库列已通过迁移 m20251116_drop_split_members 删除
     pub payment_method: String,
     pub actual_payer_account: String,
     pub related_transaction_serial_num: Option<String>,

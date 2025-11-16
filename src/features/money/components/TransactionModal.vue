@@ -435,16 +435,18 @@ watch(() => form.value.accountSerialNum, async accountId => {
   if (accountId && !props.transaction) {
     // 只在创建模式下自动推荐
     try {
-      const { suggestedLedgers, suggestedMembers } = await getSmartSuggestions(accountId);
+      const { suggestedLedgers } = await getSmartSuggestions(accountId);
 
-      // 如果用户还没有手动选择，则使用推荐
+      // ✅ 账本自动反显：如果账户属于家庭账本，自动选择
       if (selectedLedgers.value.length === 0 && suggestedLedgers.length > 0) {
         selectedLedgers.value = suggestedLedgers.map(l => l.serialNum);
+        // Auto-selected ledgers for account
       }
 
-      if (selectedMembers.value.length === 0 && suggestedMembers.length > 0) {
-        selectedMembers.value = suggestedMembers.map(m => m.serialNum);
-      }
+      // ❌ 成员不自动选择：保持为空，让用户手动选择
+      // 清空之前的选择，避免账户切换时保留旧的成员
+      selectedMembers.value = [];
+      // Members cleared for manual selection
     } catch (error) {
       Lg.e('TransactionModal', 'Failed to get smart suggestions:', error);
     }
@@ -572,6 +574,22 @@ function handleOverlayClick() {
   emit('close');
 }
 
+// 快捷操作：全选成员
+function selectAllMembers() {
+  if (availableMembers.value.length > 0) {
+    selectedMembers.value = availableMembers.value.map(m => m.serialNum);
+    // Selected all members
+    toast.success(`已选择全部 ${availableMembers.value.length} 位成员`);
+  }
+}
+
+// 快捷操作：清空成员
+function clearMembers() {
+  selectedMembers.value = [];
+  // Cleared all members
+  toast.info('已清空成员选择');
+}
+
 function handleSubmit() {
   const amount = form.value.amount;
   const fromAccount = props.accounts.find(acc => acc.serialNum === form.value.accountSerialNum);
@@ -660,6 +678,17 @@ function emitTransfer(amount: number) {
 
 // 发射普通交易事件
 function emitTransaction(amount: number) {
+  // 将 selectedMembers 转换为后端需要的 splitMembers 格式
+  const splitMembers = selectedMembers.value.length > 0
+    ? selectedMembers.value.map(memberId => {
+        const member = availableMembers.value.find(m => m.serialNum === memberId);
+        return {
+          serialNum: memberId,
+          name: member?.name || 'Unknown',
+        };
+      })
+    : undefined;
+
   const transaction: TransactionCreate = {
     transactionType: form.value.transactionType,
     transactionStatus: form.value.transactionStatus,
@@ -673,7 +702,7 @@ function emitTransaction(amount: number) {
     category: form.value.category,
     subCategory: form.value.subCategory,
     tags: form.value.tags,
-    splitMembers: form.value.splitMembers,
+    splitMembers, // ✅ 使用转换后的数据
     paymentMethod: form.value.paymentMethod,
     actualPayerAccount: form.value.actualPayerAccount,
     relatedTransactionSerialNum: form.value.relatedTransactionSerialNum,
@@ -1046,40 +1075,46 @@ watch(
             分摊成员
             <span class="label-hint">(可选)</span>
           </label>
-          <div class="member-selector-compact">
-            <div class="selector-row">
-              <div v-if="selectedMembers.length === 0" class="empty-selection">
-                <LucideUsers class="empty-icon" />
-                <span>未选择成员</span>
-              </div>
-              <div v-else class="selected-items-compact">
-                <span class="selected-item">
-                  {{ availableMembers.find(m => m.serialNum === selectedMembers[0])?.name || selectedMembers[0] }}
-                  <button
-                    type="button"
-                    class="remove-btn"
-                    @click="selectedMembers = selectedMembers.filter(id => id !== selectedMembers[0])"
+          <div class="member-selector-with-hint">
+            <div class="member-selector-compact">
+              <div class="selector-row">
+                <div v-if="selectedMembers.length === 0" class="empty-selection">
+                  <LucideUsers class="empty-icon" />
+                  <span>未选择成员</span>
+                </div>
+                <div v-else class="selected-items-compact">
+                  <span class="selected-item">
+                    {{ availableMembers.find(m => m.serialNum === selectedMembers[0])?.name || selectedMembers[0] }}
+                    <button
+                      type="button"
+                      class="remove-btn"
+                      @click="selectedMembers = selectedMembers.filter(id => id !== selectedMembers[0])"
+                    >
+                      <LucideX />
+                    </button>
+                  </span>
+                  <span
+                    v-if="selectedMembers.length > 1"
+                    class="more-count"
+                    :title="selectedMembers.slice(1).map(id => availableMembers.find(m => m.serialNum === id)?.name || id).join('\n')"
                   >
-                    <LucideX />
-                  </button>
-                </span>
-                <span
-                  v-if="selectedMembers.length > 1"
-                  class="more-count"
-                  :title="selectedMembers.slice(1).map(id => availableMembers.find(m => m.serialNum === id)?.name || id).join('\n')"
+                    +{{ selectedMembers.length - 1 }}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  class="btn-add-member btn-icon-only"
+                  :title="showMemberSelector ? '收起' : '选择成员'"
+                  @click="showMemberSelector = !showMemberSelector"
                 >
-                  +{{ selectedMembers.length - 1 }}
-                </span>
+                  <LucideChevronDown v-if="!showMemberSelector" />
+                  <LucideChevronUp v-else />
+                </button>
               </div>
-              <button
-                type="button"
-                class="btn-add-member btn-icon-only"
-                :title="showMemberSelector ? '收起' : '选择成员'"
-                @click="showMemberSelector = !showMemberSelector"
-              >
-                <LucideChevronDown v-if="!showMemberSelector" />
-                <LucideChevronUp v-else />
-              </button>
+            </div>
+            <!-- 小字提示 -->
+            <div v-if="selectedMembers.length === 0" class="member-hint-text">
+              如不选择成员，则为个人交易
             </div>
           </div>
         </div>
@@ -1090,9 +1125,31 @@ watch(
           <div class="selector-dropdown">
             <div class="dropdown-header">
               <span>选择成员</span>
-              <button type="button" @click="showMemberSelector = false">
-                <LucideX />
-              </button>
+              <div class="quick-actions">
+                <button
+                  v-if="availableMembers.length > 0"
+                  type="button"
+                  class="btn-quick"
+                  title="全选成员"
+                  @click="selectAllMembers"
+                >
+                  <LucideUserPlus class="icon-sm" />
+                  全选
+                </button>
+                <button
+                  v-if="selectedMembers.length > 0"
+                  type="button"
+                  class="btn-quick"
+                  title="清空成员"
+                  @click="clearMembers"
+                >
+                  <LucideX class="icon-sm" />
+                  清空
+                </button>
+                <button type="button" @click="showMemberSelector = false">
+                  <LucideX />
+                </button>
+              </div>
             </div>
             <div class="dropdown-content">
               <label
@@ -1271,7 +1328,7 @@ watch(
           <label>{{ t('date.transactionDate') }}</label>
           <DateTimePicker
             v-model="form.date"
-            class="form-control"
+            class="form-control datetime-picker"
             format="yyyy-MM-dd HH:mm:ss"
             :disabled="isInstallmentTransactionFieldsDisabled || isReadonlyMode"
             :placeholder="t('common.selectDate')"
@@ -1663,11 +1720,16 @@ watch(
   flex: 0 0 66%;
 }
 
+.form-row .member-selector-with-hint {
+  width: 66%;
+  flex: 0 0 66%;
+}
+
 .selector-row {
   display: flex;
   flex-direction: row;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: space-between;
   gap: 0.75rem;
   flex-wrap: nowrap;
   width: 100%;
@@ -1806,6 +1868,26 @@ watch(
   flex-direction: column;
 }
 
+/* 成员选择器包装容器 */
+.member-selector-with-hint {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  gap: 0;
+}
+
+.member-selector-with-hint .member-selector-compact {
+  width: 100%;
+}
+
+/* 成员小字提示 */
+.member-hint-text {
+  font-size: 0.75rem;
+  color: var(--color-base-content-soft);
+  margin-top: 0.375rem;
+  padding-left: 0.25rem;
+}
+
 .dropdown-header {
   display: flex;
   align-items: center;
@@ -1815,6 +1897,13 @@ watch(
   font-weight: 500;
   background: var(--color-base-200);
   color: var(--color-base-content);
+}
+
+/* 快捷操作按钮容器 */
+.dropdown-header .quick-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .dropdown-header button {
@@ -1830,6 +1919,38 @@ watch(
 
 .dropdown-header button:hover {
   color: var(--color-error);
+}
+
+/* 快捷操作按钮 */
+.btn-quick {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.75rem;
+  background: var(--color-primary-soft);
+  border: 1px solid var(--color-primary);
+  border-radius: 0.375rem;
+  color: var(--color-primary);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-quick:hover {
+  background: var(--color-primary);
+  color: var(--color-primary-content);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-quick:active {
+  transform: translateY(0);
+}
+
+.btn-quick .icon-sm {
+  width: 0.875rem;
+  height: 0.875rem;
 }
 
 .dropdown-content {
@@ -1878,7 +1999,7 @@ watch(
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 1rem;
+  margin-bottom: 0.05rem;
 }
 
 .form-row label {
@@ -1928,6 +2049,11 @@ watch(
     width: 100%;
     flex: 1;
     padding: 0.5rem;
+  }
+
+  .form-row .member-selector-with-hint {
+    width: 100%;
+    flex: 1;
   }
 
   /* 选择器行移动端优化 */
@@ -2006,14 +2132,18 @@ watch(
 }
 
 /* DateTimePicker 样式 - 与普通input保持一致 */
-.datetime-picker {
-  width: 66%; /* 与form-control保持一致 */
+.form-row > :deep(.datetime-picker) {
+  width: 66% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  flex: 0 0 66%;
 }
 
 /* DateTimePicker 移动端响应式 */
 @media (max-width: 768px) {
-  .datetime-picker {
-    width: 100%; /* 移动端占满宽度 */
+  .form-row > :deep(.datetime-picker) {
+    width: 100% !important;
+    flex: 1;
   }
 }
 

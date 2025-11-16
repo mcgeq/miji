@@ -16,3 +16,4 @@ pub mod installment;
 pub mod reminder;
 pub mod sub_categories;
 pub mod transactions;
+pub mod migration;

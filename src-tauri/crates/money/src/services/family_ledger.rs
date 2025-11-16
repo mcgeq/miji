@@ -7,7 +7,7 @@ use common::{
     utils::{date::DateUtils, uuid::McgUuid},
 };
 use entity::{family_ledger, prelude::*};
-use sea_orm::{ActiveModelTrait, ActiveValue, DatabaseConnection, EntityTrait, Set};
+use sea_orm::{ActiveModelTrait, ActiveValue, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, Set};
 use std::fmt;
 use tracing::{info, instrument};
 
@@ -351,11 +351,46 @@ impl FamilyLedgerService {
             .map(|r| r.family_member_serial_num.clone())
             .collect();
 
+        // 2.1 统计每个成员的交易数
+        // 现在只使用 split_records 表（已废弃 split_members JSON）
+        use std::collections::{HashMap, HashSet};
+        let mut member_transaction_counts: HashMap<String, i32> = HashMap::new();
+        
+        // 查询该账本下的所有分摊记录
+        let split_records = entity::split_records::Entity::find()
+            .filter(entity::split_records::Column::FamilyLedgerSerialNum.eq(&serial_num))
+            .all(db)
+            .await?;
+        
+        // 使用 split_records 表统计
+        let mut member_transactions: HashMap<String, HashSet<String>> = HashMap::new();
+        
+        for record in split_records {
+            // 付款人参与的交易
+            member_transactions
+                .entry(record.payer_member_serial_num.clone())
+                .or_insert_with(HashSet::new)
+                .insert(record.transaction_serial_num.clone());
+            
+            // 欠款人参与的交易
+            member_transactions
+                .entry(record.owe_member_serial_num)
+                .or_insert_with(HashSet::new)
+                .insert(record.transaction_serial_num);
+        }
+        
+        for (member_id, transactions) in member_transactions {
+            member_transaction_counts.insert(member_id, transactions.len() as i32);
+        }
+
         let family_member_service = FamilyMemberService::default();
         let mut member_list = Vec::new();
         for member_id in member_ids {
-            let member = family_member_service.get_by_id(db, member_id).await?;
-            member_list.push(FamilyMemberResponse::from(member));
+            let member = family_member_service.get_by_id(db, member_id.clone()).await?;
+            let mut member_response = FamilyMemberResponse::from(member);
+            // 设置交易数量统计
+            member_response.transaction_count = *member_transaction_counts.get(&member_id).unwrap_or(&0);
+            member_list.push(member_response);
         }
 
         // 3. 获取账户列表
@@ -373,7 +408,19 @@ impl FamilyLedgerService {
             account_list.push(AccountResponse::from(account));
         }
 
-        // 4. 组装响应
+        // 4. 查询 currency 详情
+        use crate::dto::currency::CurrencyResponse;
+        let base_currency_detail = if let Ok(Some(currency_model)) = Currency::find_by_id(&ledger.base_currency)
+            .one(db)
+            .await 
+        {
+            Some(CurrencyResponse::from(currency_model))
+        } else {
+            tracing::warn!("Currency {} not found", ledger.base_currency);
+            None
+        };
+
+        // 5. 组装响应
         Ok(FamilyLedgerDetailResponse {
             serial_num: ledger.serial_num,
             name: ledger.name.unwrap_or_else(|| "未命名账本".to_string()),
@@ -383,6 +430,7 @@ impl FamilyLedgerService {
                 Some(ledger.description)
             },
             base_currency: ledger.base_currency,
+            base_currency_detail,
             ledger_type: ledger.ledger_type,
             settlement_cycle: ledger.settlement_cycle,
             auto_settlement: ledger.auto_settlement,
@@ -402,6 +450,79 @@ impl FamilyLedgerService {
             created_at: ledger.created_at.to_rfc3339(),
             updated_at: ledger.updated_at.map(|dt| dt.to_rfc3339()),
         })
+    }
+
+    /// 将 Model 转换为 Response，并填充 Currency 详情
+    pub async fn model_to_response(
+        &self,
+        db: &DatabaseConnection,
+        model: family_ledger::Model,
+    ) -> MijiResult<crate::dto::family_ledger::FamilyLedgerResponse> {
+        use crate::dto::{family_ledger::FamilyLedgerResponse, currency::CurrencyResponse};
+        use entity::prelude::*;
+
+        let mut response = FamilyLedgerResponse::from(model.clone());
+        
+        // 查询 currency 详情
+        if let Ok(Some(currency_model)) = Currency::find_by_id(&model.base_currency)
+            .one(db)
+            .await 
+        {
+            response.base_currency_detail = Some(CurrencyResponse::from(currency_model));
+            tracing::debug!("Found currency detail for {}", model.base_currency);
+        } else {
+            tracing::warn!("Currency {} not found in database", model.base_currency);
+        }
+        
+        Ok(response)
+    }
+    
+    /// 批量转换 Models 到 Responses，并填充 Currency 详情（优化版：批量查询）
+    pub async fn models_to_responses(
+        &self,
+        db: &DatabaseConnection,
+        models: Vec<family_ledger::Model>,
+    ) -> MijiResult<Vec<crate::dto::family_ledger::FamilyLedgerResponse>> {
+        use crate::dto::currency::CurrencyResponse;
+        use entity::prelude::*;
+        use std::collections::{HashSet, HashMap};
+
+        // 收集所有不同的 currency code
+        let currency_codes: HashSet<String> = models
+            .iter()
+            .map(|m| m.base_currency.clone())
+            .collect();
+        
+        tracing::debug!("Fetching {} unique currencies", currency_codes.len());
+        
+        // 批量查询所有 currency（避免 N+1 查询）
+        let currencies = Currency::find()
+            .filter(entity::currency::Column::Code.is_in(currency_codes))
+            .all(db)
+            .await?;
+        
+        // 构建 code -> Currency 映射
+        let currency_map: HashMap<String, CurrencyResponse> = currencies
+            .into_iter()
+            .map(|c| (c.code.clone(), CurrencyResponse::from(c)))
+            .collect();
+        
+        tracing::debug!("Found {} currencies in database", currency_map.len());
+        
+        // 转换
+        let mut responses = Vec::with_capacity(models.len());
+        for model in models {
+            let mut response = crate::dto::family_ledger::FamilyLedgerResponse::from(model.clone());
+            response.base_currency_detail = currency_map.get(&model.base_currency).cloned();
+            
+            if response.base_currency_detail.is_none() {
+                tracing::warn!("Currency {} not found", model.base_currency);
+            }
+            
+            responses.push(response);
+        }
+        
+        Ok(responses)
     }
 }
 

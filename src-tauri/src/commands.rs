@@ -140,6 +140,9 @@ pub fn init_commands(builder: Builder<Wry>) -> Builder<Wry> {
         money_cmd::family_ledger_transaction_update,
         money_cmd::family_ledger_transaction_delete,
         money_cmd::family_ledger_transaction_list_paged,
+        // 数据迁移命令
+        money_cmd::migrate_split_records,
+        money_cmd::get_split_records_stats,
         // 健康命令
         health_cmd::period_record_create,
         health_cmd::period_record_update,

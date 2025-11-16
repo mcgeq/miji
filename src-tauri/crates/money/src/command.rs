@@ -1,4 +1,4 @@
-use common::{
+﻿use common::{
     ApiResponse, AppState,
     crud::service::CrudService,
     paginations::{PagedQuery, PagedResult},
@@ -28,6 +28,7 @@ use crate::{
         family_member::{
             FamilyMemberCreate, FamilyMemberResponse, FamilyMemberUpdate, FamilyMemberSearchQuery, FamilyMemberSearchResponse
         },
+        migration::MigrationResult,
         installment::{
             InstallmentCalculationRequest, InstallmentCalculationResponse, InstallmentPlanResponse,
         },
@@ -2028,10 +2029,11 @@ pub async fn family_ledger_list(
 ) -> Result<ApiResponse<Vec<FamilyLedgerResponse>>, String> {
     let service = FamilyLedgerService::default();
     Ok(ApiResponse::from_result(
-        service
-            .family_ledger_list(&state.db)
-            .await
-            .map(|models| models.into_iter().map(FamilyLedgerResponse::from).collect()),
+        async {
+            let models = service.family_ledger_list(&state.db).await?;
+            service.models_to_responses(&state.db, models).await
+        }
+        .await,
     ))
 }
 
@@ -2043,10 +2045,14 @@ pub async fn family_ledger_get(
 ) -> Result<ApiResponse<Option<FamilyLedgerResponse>>, String> {
     let service = FamilyLedgerService::default();
     Ok(ApiResponse::from_result(
-        service
-            .get_by_id(&state.db, serial_num)
-            .await
-            .map(|model| model.map(FamilyLedgerResponse::from)),
+        async {
+            if let Some(model) = service.get_by_id(&state.db, serial_num).await? {
+                Ok(Some(service.model_to_response(&state.db, model).await?))
+            } else {
+                Ok(None)
+            }
+        }
+        .await,
     ))
 }
 
@@ -2058,10 +2064,11 @@ pub async fn family_ledger_create(
 ) -> Result<ApiResponse<FamilyLedgerResponse>, String> {
     let service = FamilyLedgerService::default();
     Ok(ApiResponse::from_result(
-        service
-            .create(&state.db, data)
-            .await
-            .map(FamilyLedgerResponse::from),
+        async {
+            let model = service.create(&state.db, data).await?;
+            service.model_to_response(&state.db, model).await
+        }
+        .await,
     ))
 }
 
@@ -2172,10 +2179,11 @@ pub async fn family_ledger_update(
 ) -> Result<ApiResponse<FamilyLedgerResponse>, String> {
     let service = FamilyLedgerService::default();
     Ok(ApiResponse::from_result(
-        service
-            .update(&state.db, serial_num, data)
-            .await
-            .map(FamilyLedgerResponse::from),
+        async {
+            let model = service.update(&state.db, serial_num, data).await?;
+            service.model_to_response(&state.db, model).await
+        }
+        .await,
     ))
 }
 
@@ -2217,4 +2225,82 @@ pub async fn family_ledger_detail(
 
 // ============================================================================
 // end 家庭账本相关
+// ============================================================================
+
+// ============================================================================
+// 数据迁移相关
+// ============================================================================
+
+/// 迁移历史交易的 split_members 到 split_records 表
+#[tauri::command]
+#[instrument]
+pub async fn migrate_split_records(
+    _state: State<'_, AppState>,
+) -> Result<ApiResponse<MigrationResult>, String> {
+    use std::time::Instant;
+    
+    info!("开始迁移 split_records 数据");
+    let start = Instant::now();
+    
+    let mut result = MigrationResult::new();
+    
+    // split_members 字段已删除，无需迁移
+    // 所有历史数据都是空的，直接返回成功
+    info!("split_members 字段已从数据库中删除，无需迁移");
+    
+    result.duration_ms = start.elapsed().as_millis();
+    
+    Ok(ApiResponse::success(result))
+}
+
+/// 获取 split_records 统计信息（用于监控）
+#[tauri::command]
+#[instrument(skip(state))]
+pub async fn get_split_records_stats(
+    state: State<'_, AppState>,
+) -> Result<ApiResponse<serde_json::Value>, String> {
+    use sea_orm::{EntityTrait, QuerySelect, PaginatorTrait};
+    
+    let db = state.db.as_ref();
+    
+    // 1. 总记录数
+    let total_count = entity::split_records::Entity::find()
+        .count(db)
+        .await
+        .map_err(|e| format!("查询失败: {}", e))?;
+    
+    // 2. 有 split_members 的交易数（字段已删除，返回 0）
+    let transactions_with_split_members: u64 = 0;
+    
+    // 3. 已迁移的交易数（有 split_records 的唯一交易）
+    let migrated_transactions = entity::split_records::Entity::find()
+        .select_only()
+        .column(entity::split_records::Column::TransactionSerialNum)
+        .distinct()
+        .all(db)
+        .await
+        .map_err(|e| format!("查询失败: {}", e))?
+        .len();
+    
+    // 4. 待迁移的交易数
+    let pending_migrations = transactions_with_split_members.saturating_sub(migrated_transactions as u64);
+    
+    let stats = serde_json::json!({
+        "totalSplitRecords": total_count,
+        "transactionsWithSplitMembers": transactions_with_split_members,
+        "migratedTransactions": migrated_transactions,
+        "pendingMigrations": pending_migrations,
+        "progressPercentage": if transactions_with_split_members > 0 {
+            migrated_transactions as f64 / transactions_with_split_members as f64 * 100.0
+        } else {
+            100.0 // 没有需要迁移的数据，进度100%
+        },
+    });
+    
+    info!("Split records stats: {:?}", stats);
+    Ok(ApiResponse::success(stats))
+}
+
+// ============================================================================
+// end 数据迁移相关
 // ============================================================================

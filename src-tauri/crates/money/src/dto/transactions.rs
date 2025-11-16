@@ -427,11 +427,8 @@ impl TryFrom<CreateTransactionRequest> for entity::transactions::ActiveModel {
                 "tags",
                 serde_json::Value::Null,
             ))),
-            split_members: Set(Some(parse_json(
-                &value.split_members,
-                "split_members",
-                serde_json::Value::Null,
-            ))),
+            // split_members 字段已从 entity 中删除
+            // 分摊记录由 split_records 表管理，在 transaction_hooks::after_create 中自动创建
             payment_method: Set(serialize_enum(&value.payment_method)),
             actual_payer_account: Set(serialize_enum(&value.actual_payer_account)),
             related_transaction_serial_num: Set(value.related_transaction_serial_num),
@@ -557,9 +554,11 @@ impl TryFrom<UpdateTransactionRequest> for entity::transactions::ActiveModel {
         if let Some(tags) = value.tags {
             model.tags = Set(Some(tags));
         }
-        if let Some(split_members) = value.split_members {
-            model.split_members = Set(Some(split_members));
-        }
+        // split_members 不再更新 JSON，使用 split_records 表管理
+        // 如需更新分摊，应该直接操作 split_records 表
+        // if let Some(split_members) = value.split_members {
+        //     model.split_members = Set(Some(split_members));
+        // }
         if let Some(payment_method) = value.payment_method {
             model.payment_method = Set(serialize_enum(&payment_method));
         }

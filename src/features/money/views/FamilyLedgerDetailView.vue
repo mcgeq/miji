@@ -42,9 +42,17 @@ const selectedMember = computed<FamilyMember | null>(() => {
 
 const memberTransactions = computed<Transaction[]>(() => {
   if (!selectedMember.value) return [];
-  return allTransactions.value.filter(transaction =>
-    transaction.splitMembers?.some(member => member.serialNum === selectedMember.value!.serialNum),
-  );
+  // 筛选与该成员相关的交易（包括作为分摊成员的交易和该成员账户的交易）
+  return allTransactions.value.filter(transaction => {
+    // 检查是否在分摊成员中
+    const isInSplitMembers = transaction.splitMembers?.some(
+      member => member.serialNum === selectedMember.value!.serialNum,
+    );
+
+    // 检查账户是否属于该成员（如果有账户-成员关联关系）
+    // 暂时先只按分摊成员筛选，如果需要更复杂的逻辑可以后续扩展
+    return isInSplitMembers || false;
+  });
 });
 
 const routeSerialNum = computed(() => (route.params as LedgerDetailRouteParams).serialNum);

@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import {
   Bell,
+  Database,
   Lock,
   Settings,
   Shield,
   User,
 } from 'lucide-vue-next';
+import DataMigration from '../components/DataMigration.vue';
 import UserDisplayCard from '../components/UserDisplayCard.vue';
 import UserProfileCard from '../components/UserProfileCard.vue';
 import GeneralSettings from './GeneralSettings.vue';
@@ -21,6 +23,7 @@ const tabs = [
   { id: 'security', label: '安全', icon: Shield },
   { id: 'notifications', label: '通知', icon: Bell },
   { id: 'privacy', label: '隐私', icon: Lock },
+  { id: 'data', label: '数据', icon: Database },
 ];
 
 const currentTabComponent = computed(() => {
@@ -30,6 +33,7 @@ const currentTabComponent = computed(() => {
     security: SecuritySettings,
     notifications: NotificationSettings,
     privacy: PrivacySettings,
+    data: DataMigration,
   };
   return componentMap[activeTab.value as keyof typeof componentMap] || GeneralSettings;
 });

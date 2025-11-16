@@ -19,6 +19,7 @@ pub struct FamilyMemberResponse {
     pub total_paid: Decimal,
     pub total_owed: Decimal,
     pub balance: Decimal,
+    pub transaction_count: i32, // 参与的交易笔数
     pub status: String,
     pub email: Option<String>,
     pub phone: Option<String>,
@@ -40,6 +41,7 @@ impl From<entity::family_member::Model> for FamilyMemberResponse {
             total_paid: model.total_paid,
             total_owed: model.total_owed,
             balance: model.balance,
+            transaction_count: 0, // 需要后续从关联表统计
             status: model.status,
             email: model.email,
             phone: model.phone,
@@ -63,6 +65,7 @@ impl From<&entity::family_member::Model> for FamilyMemberResponse {
             total_paid: model.total_paid,
             total_owed: model.total_owed,
             balance: model.balance,
+            transaction_count: 0, // 需要后续从关联表统计
             status: model.status.clone(),
             email: model.email.clone(),
             phone: model.phone.clone(),

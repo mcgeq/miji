@@ -122,7 +122,7 @@ async function saveLedger(ledgerData: FamilyLedger & { selectedAccounts?: any[] 
     }
 
     // 保存成员信息（创建模式下才需要处理成员创建）
-    await saveLedgerMembers(ledgerSerialNum, ledgerData.memberList || [], isEditMode);
+    await saveLedgerMembers(ledgerSerialNum, ledgerData.memberList || []);
 
     // 保存账户关联
     if (ledgerData.selectedAccounts) {
@@ -139,7 +139,7 @@ async function saveLedger(ledgerData: FamilyLedger & { selectedAccounts?: any[] 
 }
 
 // 保存账本的成员
-async function saveLedgerMembers(ledgerSerialNum: string, members: FamilyMember[], isEditMode: boolean = false) {
+async function saveLedgerMembers(ledgerSerialNum: string, members: FamilyMember[]) {
   try {
     const { MoneyDb } = await import('@/services/money/money');
 
@@ -149,39 +149,37 @@ async function saveLedgerMembers(ledgerSerialNum: string, members: FamilyMember[
       .filter(lm => lm.familyLedgerSerialNum === ledgerSerialNum)
       .map(lm => lm.familyMemberSerialNum);
 
+    // Existing member IDs loaded
+
     // 处理每个成员
     for (const member of members) {
       let memberSerialNum: string;
 
       // 判断是否需要创建新成员
-      // 1. 如果没有 serialNum 或者是临时 ID，需要创建
-      // 2. 如果是编辑模式且有 serialNum，使用现有成员
-      // 3. 如果是创建模式且有 serialNum，检查是否存在
+      // 1. 如果有有效的 serialNum，直接使用
+      // 2. 如果没有 serialNum，先按 name 搜索
+      // 3. 搜索到了就使用，搜索不到才创建新成员
 
       const hasValidId = member.serialNum && !member.serialNum.startsWith('temp_');
 
-      if (!hasValidId) {
-        // 没有有效 ID，创建新成员
-        const createdMember = await MoneyDb.createFamilyMember({
-          name: member.name,
-          role: member.role,
-          isPrimary: member.isPrimary,
-          permissions: member.permissions || '{}',
-          userSerialNum: member.userSerialNum,
-          avatar: member.avatar,
-          colorTag: member.colorTag,
-        });
-        memberSerialNum = createdMember.serialNum;
-      } else if (isEditMode) {
-        // 编辑模式，使用现有 ID
+      if (hasValidId) {
+        // 有有效 ID，直接使用
         memberSerialNum = member.serialNum;
+        // Using existing member ID
       } else {
-        // 创建模式，检查成员是否存在
-        try {
-          await MoneyDb.getFamilyMember(member.serialNum);
-          memberSerialNum = member.serialNum;
-        } catch (_error) {
-          // 成员不存在，创建新成员
+        // 没有有效 ID，先按 name 搜索是否存在
+        // Searching for member by name
+
+        const allMembers = await MoneyDb.listFamilyMembers();
+        const existingMember = allMembers.find(m => m.name === member.name);
+
+        if (existingMember) {
+          // 找到了同名成员，使用现有成员
+          memberSerialNum = existingMember.serialNum;
+          // Found existing member, reusing
+        } else {
+          // 没找到，创建新成员
+          // Creating new member
           const createdMember = await MoneyDb.createFamilyMember({
             name: member.name,
             role: member.role,
@@ -192,22 +190,29 @@ async function saveLedgerMembers(ledgerSerialNum: string, members: FamilyMember[
             colorTag: member.colorTag,
           });
           memberSerialNum = createdMember.serialNum;
+          // Created new member
         }
       }
 
       // 创建账本-成员关联（如果还未关联）
       if (!existingMemberIds.includes(memberSerialNum)) {
+        // Creating member association
         await MoneyDb.createFamilyLedgerMember({
           familyLedgerSerialNum: ledgerSerialNum,
           familyMemberSerialNum: memberSerialNum,
         });
+        // Member association created
+      } else {
+        // Skipping existing member
       }
     }
+
+    // All members saved successfully
 
     // 注意：后端已经在创建/删除关联时自动更新了成员数量
     // 不需要手动调用 updateLedgerMemberCount
   } catch (error) {
-    console.error('保存成员失败:', error);
+    console.error('❌ 保存成员失败:', error);
     throw error;
   }
 }

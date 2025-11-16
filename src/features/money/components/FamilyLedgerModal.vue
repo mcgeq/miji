@@ -291,9 +291,14 @@ function saveLedger() {
     ...form,
     // 规范化 baseCurrency 为字符串格式，保持与后端返回格式一致
     baseCurrency: form.baseCurrency.code,
+    // ✅ 包含成员列表
+    memberList: memberList.value,
     // 添加选中的账户信息
     selectedAccounts: selectedAccounts.value,
   };
+
+  // 调试日志已移除
+
   emit('save', ledgerData);
 }
 
@@ -307,12 +312,44 @@ function buildLedgerForm(source: FamilyLedger | null): FamilyLedger {
   // 填充列表数据
   memberList.value = source.memberList || [];
 
+  // 处理 baseCurrency：优先使用后端返回的 baseCurrencyDetail
+  let baseCurrencyValue = defaultLedger.baseCurrency;
+
+  if (source.baseCurrencyDetail) {
+    // ✅ 后端返回了完整的 Currency 对象，直接使用
+    baseCurrencyValue = source.baseCurrencyDetail;
+    // baseCurrencyDetail loaded from backend
+  } else if (source.baseCurrency) {
+    // 降级方案：如果后端没有返回 baseCurrencyDetail（兼容旧版本API）
+    if (typeof source.baseCurrency === 'string') {
+      const currencyCode = source.baseCurrency;
+
+      // 尝试从已加载的 currencies 列表中查找
+      const foundCurrency = currencies.value.find(c => c.code === currencyCode);
+
+      if (foundCurrency) {
+        baseCurrencyValue = foundCurrency;
+      } else {
+        // 构造临时对象
+        baseCurrencyValue = {
+          locale: 'zh-CN',
+          code: currencyCode,
+          symbol: currencyCode === 'CNY' ? '¥' : '$',
+          createdAt: DateUtils.getLocalISODateTimeWithOffset(),
+          updatedAt: null,
+        };
+      }
+
+      // Fallback: Converting baseCurrency string to object
+    } else {
+      baseCurrencyValue = source.baseCurrency;
+    }
+  }
+
   return {
     ...defaultLedger,
     ...source,
-    baseCurrency: source.baseCurrency
-      ? source.baseCurrency
-      : defaultLedger.baseCurrency,
+    baseCurrency: baseCurrencyValue,
     ledgerType: (source.ledgerType
       ? source.ledgerType.toUpperCase()
       : defaultLedger.ledgerType) as FamilyLedger['ledgerType'],
@@ -332,11 +369,15 @@ function initializeForm(source: FamilyLedger | null) {
 // 加载账本的成员
 async function loadLedgerMembers(ledgerSerialNum: string) {
   try {
+    // Loading members for ledger
+
     // 获取账本的成员关联
     const ledgerMembers = await MoneyDb.listFamilyLedgerMembers();
     const memberIds = ledgerMembers
       .filter(lm => lm.familyLedgerSerialNum === ledgerSerialNum)
       .map(lm => lm.familyMemberSerialNum);
+
+    // Found member IDs
 
     // 获取成员详情
     const memberPromises = memberIds.map(id => MoneyDb.getFamilyMember(id));
@@ -344,8 +385,11 @@ async function loadLedgerMembers(ledgerSerialNum: string) {
 
     // 更新表单的成员列表
     memberList.value = members.filter(m => m !== null) as FamilyMember[];
+
+    // Members loaded successfully
   } catch (error) {
     Lg.e('FamilyLedgerModal', 'Failed to load ledger members:', error);
+    console.error('❌ Error loading members:', error);
     memberList.value = [];
   }
 }

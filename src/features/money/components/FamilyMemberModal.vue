@@ -166,22 +166,38 @@ async function saveMember() {
       };
       savedMember = await memberStore.updateMember(props.member.serialNum, updateData);
     } else {
-      // 创建成员
-      const createData: FamilyMemberCreate = {
-        name: form.name,
-        role: form.role,
-        isPrimary: form.isPrimary,
-        permissions: form.permissions,
-        userSerialNum: form.userSerialNum || null,
-        avatar: form.avatar || null,
-        colorTag: form.colorTag,
-      };
-      savedMember = await memberStore.createMember(createData);
+      // 创建成员前，先检查名称是否已存在
+      // Checking if member name exists
+      const { MoneyDb } = await import('@/services/money/money');
+      const existingMembers = await MoneyDb.listFamilyMembers();
+      const existingMember = existingMembers.find((m: FamilyMember) => m.name === form.name);
+
+      if (existingMember) {
+        // 成员已存在，直接使用
+        // Member already exists, using existing
+        savedMember = existingMember;
+        toast.info(`成员 "${form.name}" 已存在，将使用现有成员`);
+      } else {
+        // 成员不存在，创建新成员
+        // Creating new member
+        const createData: FamilyMemberCreate = {
+          name: form.name,
+          role: form.role,
+          isPrimary: form.isPrimary,
+          permissions: form.permissions,
+          userSerialNum: form.userSerialNum || null,
+          avatar: form.avatar || null,
+          colorTag: form.colorTag,
+        };
+        savedMember = await memberStore.createMember(createData);
+        // Member created successfully
+      }
     }
 
     toast.success('成员保存成功');
     emit('save', savedMember);
   } catch (error: any) {
+    console.error('❌ Save member failed:', error);
     toast.error(error.message || '保存失败');
   }
 }

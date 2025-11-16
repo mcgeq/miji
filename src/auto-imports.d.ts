@@ -12,6 +12,7 @@ declare global {
   const MEDIA_BREAKPOINTS: typeof import('./stores/mediaQueries')['MEDIA_BREAKPOINTS']
   const MoneyStoreError: typeof import('./stores/moneyStore')['MoneyStoreError']
   const MoneyStoreErrorCode: typeof import('./stores/moneyStore')['MoneyStoreErrorCode']
+  const SplitType: typeof import('./composables/useSplitCalculator')['SplitType']
   const TodoStoreErrorCode: typeof import('./stores/todoStore')['TodoStoreErrorCode']
   const acceptHMRUpdate: typeof import('pinia')['acceptHMRUpdate']
   const asyncComputed: typeof import('@vueuse/core')['asyncComputed']
@@ -301,6 +302,7 @@ declare global {
   const useSorted: typeof import('@vueuse/core')['useSorted']
   const useSpeechRecognition: typeof import('@vueuse/core')['useSpeechRecognition']
   const useSpeechSynthesis: typeof import('@vueuse/core')['useSpeechSynthesis']
+  const useSplitCalculator: typeof import('./composables/useSplitCalculator')['useSplitCalculator']
   const useStepper: typeof import('@vueuse/core')['useStepper']
   const useStorage: typeof import('@vueuse/core')['useStorage']
   const useStorageAsync: typeof import('@vueuse/core')['useStorageAsync']
@@ -398,6 +400,9 @@ declare global {
   export type { KeyboardShortcut } from './composables/useKeyboardShortcuts'
   import('./composables/useKeyboardShortcuts')
   // @ts-ignore
+  export type { SplitType, SplitResult } from './composables/useSplitCalculator'
+  import('./composables/useSplitCalculator')
+  // @ts-ignore
   export type { TabType } from './composables/useTabManager'
   import('./composables/useTabManager')
 }
@@ -411,6 +416,7 @@ declare module 'vue' {
     readonly HealthDbError: UnwrapRef<typeof import('./stores/periodStore')['HealthDbError']>
     readonly HealthStoreErrorCode: UnwrapRef<typeof import('./stores/periodStore')['HealthStoreErrorCode']>
     readonly MEDIA_BREAKPOINTS: UnwrapRef<typeof import('./stores/mediaQueries')['MEDIA_BREAKPOINTS']>
+    readonly SplitType: UnwrapRef<typeof import('./composables/useSplitCalculator')['SplitType']>
     readonly TodoStoreErrorCode: UnwrapRef<typeof import('./stores/todoStore')['TodoStoreErrorCode']>
     readonly acceptHMRUpdate: UnwrapRef<typeof import('pinia')['acceptHMRUpdate']>
     readonly asyncComputed: UnwrapRef<typeof import('@vueuse/core')['asyncComputed']>
@@ -695,6 +701,7 @@ declare module 'vue' {
     readonly useSorted: UnwrapRef<typeof import('@vueuse/core')['useSorted']>
     readonly useSpeechRecognition: UnwrapRef<typeof import('@vueuse/core')['useSpeechRecognition']>
     readonly useSpeechSynthesis: UnwrapRef<typeof import('@vueuse/core')['useSpeechSynthesis']>
+    readonly useSplitCalculator: UnwrapRef<typeof import('./composables/useSplitCalculator')['useSplitCalculator']>
     readonly useStepper: UnwrapRef<typeof import('@vueuse/core')['useStepper']>
     readonly useStorage: UnwrapRef<typeof import('@vueuse/core')['useStorage']>
     readonly useStorageAsync: UnwrapRef<typeof import('@vueuse/core')['useStorageAsync']>

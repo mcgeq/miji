@@ -109,6 +109,12 @@ impl Hooks<entity::transactions::Entity, CreateTransactionRequest, UpdateTransac
         }
         // 同步家庭记账本统计数据
         sync_family_ledger_after_create(tx, model).await?;
+        
+        // TODO: split_records 创建需要从原始请求中获取 split_members 数据
+        // 由于 after_create hook 无法访问 CreateTransactionRequest，
+        // split_records 的创建需要在调用层面手动处理
+        // 参考: transaction service 中创建交易后手动调用 create_split_records
+        
         Ok(())
     }
 
@@ -888,5 +894,134 @@ async fn cleanup_installment_after_deletion(
         );
     }
 
+    Ok(())
+}
+
+/// 从交易的 split_members JSON 创建 split_records 记录
+/// 
+/// TODO: 需要重构此函数
+/// 由于 split_members 字段已从 entity 中删除，此函数暂时禁用
+/// 需要在调用层面手动处理，从 CreateTransactionRequest 中获取 split_members 数据
+/// 
+/// 逻辑：
+/// 1. 查询交易关联的所有家庭账本
+/// 2. 从请求参数获取 split_members 数据（不再从 entity 读取）
+/// 3. 为每个账本和每个成员创建 split_records 记录
+#[allow(dead_code)]
+async fn create_split_records_from_transaction(
+    tx: &DatabaseTransaction,
+    transaction: &entity::transactions::Model,
+    split_members_data: Option<Vec<serde_json::Value>>, // 新增参数
+) -> MijiResult<()> {
+    // 1. 查询交易关联的家庭账本
+    let associations = entity::family_ledger_transaction::Entity::find()
+        .filter(entity::family_ledger_transaction::Column::TransactionSerialNum.eq(&transaction.serial_num))
+        .all(tx)
+        .await?;
+    
+    if associations.is_empty() {
+        tracing::debug!("交易 {} 没有关联账本，跳过创建分摊记录", transaction.serial_num);
+        return Ok(());
+    }
+    
+    // 2. 使用传入的 split_members 数据
+    let split_members = match split_members_data {
+        Some(members) if !members.is_empty() => members,
+        _ => {
+            tracing::debug!("交易 {} 没有分摊成员，跳过创建分摊记录", transaction.serial_num);
+            return Ok(());
+        }
+    };
+    
+    // 3. 为每个账本和每个成员创建 split_records
+    for association in associations {
+        let family_ledger_serial_num = &association.family_ledger_serial_num;
+        
+        // 平均分摊金额（简化版本，后续可以支持更复杂的分摊规则）
+        let split_amount = transaction.amount / Decimal::from(split_members.len() as i64);
+        let split_percentage = Decimal::from(100) / Decimal::from(split_members.len() as i64);
+        
+        for split_member in &split_members {
+            // 提取成员 serial_num
+            let member_serial_num = match split_member.get("serialNum")
+                .or_else(|| split_member.get("serial_num"))
+                .and_then(|v| v.as_str()) 
+            {
+                Some(serial) => serial.to_string(),
+                None => {
+                    tracing::warn!("split_member 缺少 serialNum 字段: {:?}", split_member);
+                    continue;
+                }
+            };
+            
+            // 生成 split_record 的 serial_num
+            let split_record_serial_num = common::utils::uuid::McgUuid::uuid(38);
+            
+            // 提取自定义金额和付款人信息
+            let custom_amount = split_member.get("amount")
+                .and_then(|v| v.as_f64())
+                .map(|a| Decimal::from_f64_retain(a).unwrap_or(split_amount));
+            
+            let payer_serial = split_member.get("payerSerialNum")
+                .or_else(|| split_member.get("payer_serial_num"))
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string())
+                .unwrap_or_else(|| member_serial_num.clone());
+            
+            let final_split_amount = custom_amount.unwrap_or(split_amount);
+            
+            // 保存用于日志的值（因为 insert 会移动所有权）
+            let payer_for_log = payer_serial.clone();
+            
+            // 创建 split_record（区分付款人和欠款人）
+            let split_record = entity::split_records::ActiveModel {
+                serial_num: sea_orm::ActiveValue::Set(split_record_serial_num),
+                transaction_serial_num: sea_orm::ActiveValue::Set(transaction.serial_num.clone()),
+                family_ledger_serial_num: sea_orm::ActiveValue::Set(family_ledger_serial_num.clone()),
+                split_rule_serial_num: sea_orm::ActiveValue::Set(None),
+                payer_member_serial_num: sea_orm::ActiveValue::Set(payer_serial),
+                owe_member_serial_num: sea_orm::ActiveValue::Set(member_serial_num.clone()),
+                total_amount: sea_orm::ActiveValue::Set(transaction.amount),
+                split_amount: sea_orm::ActiveValue::Set(final_split_amount),
+                split_percentage: sea_orm::ActiveValue::Set(Some(split_percentage)),
+                currency: sea_orm::ActiveValue::Set(transaction.currency.clone()),
+                status: sea_orm::ActiveValue::Set("Confirmed".to_string()),
+                split_type: sea_orm::ActiveValue::Set("Equal".to_string()),
+                description: sea_orm::ActiveValue::Set(Some(transaction.description.clone())),
+                notes: sea_orm::ActiveValue::Set(transaction.notes.clone()),
+                confirmed_at: sea_orm::ActiveValue::Set(Some(DateUtils::local_now())),
+                paid_at: sea_orm::ActiveValue::Set(None),
+                due_date: sea_orm::ActiveValue::Set(None),
+                reminder_sent: sea_orm::ActiveValue::Set(false),
+                last_reminder_at: sea_orm::ActiveValue::Set(None),
+                created_at: sea_orm::ActiveValue::Set(DateUtils::local_now()),
+                updated_at: sea_orm::ActiveValue::Set(None),
+            };
+            
+            // 插入数据库
+            match split_record.insert(tx).await {
+                Ok(_) => {
+                    tracing::info!(
+                        "成功创建分摊记录: transaction={}, ledger={}, payer={}, owe={}, amount={}",
+                        transaction.serial_num,
+                        family_ledger_serial_num,
+                        payer_for_log,
+                        member_serial_num,
+                        final_split_amount
+                    );
+                }
+                Err(e) => {
+                    tracing::error!(
+                        "创建分摊记录失败: transaction={}, member={}, error={}",
+                        transaction.serial_num,
+                        member_serial_num,
+                        e
+                    );
+                    // 不阻塞交易创建，记录错误即可
+                }
+            }
+        }
+    }
+    
     Ok(())
 }

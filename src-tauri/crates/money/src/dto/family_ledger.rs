@@ -4,6 +4,8 @@ use sea_orm::ActiveValue::{self, Set};
 use serde::{Deserialize, Serialize};
 use validator::Validate;
 
+use super::currency::CurrencyResponse;
+
 /// 家庭账本创建请求
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 #[serde(rename_all = "camelCase")]
@@ -118,6 +120,9 @@ pub struct FamilyLedgerResponse {
     pub name: String,
     pub description: Option<String>,
     pub base_currency: String,
+    /// 基础币种详细信息（包含符号、区域等）
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub base_currency_detail: Option<CurrencyResponse>,
     pub ledger_type: String,
     pub settlement_cycle: String,
     pub auto_settlement: bool,
@@ -147,6 +152,7 @@ impl From<family_ledger::Model> for FamilyLedgerResponse {
                 Some(model.description)
             },
             base_currency: model.base_currency,
+            base_currency_detail: None, // 在 service 层填充
             ledger_type: model.ledger_type,
             settlement_cycle: model.settlement_cycle,
             auto_settlement: model.auto_settlement,
@@ -175,6 +181,9 @@ pub struct FamilyLedgerDetailResponse {
     pub name: String,
     pub description: Option<String>,
     pub base_currency: String,
+    /// 基础币种详细信息（包含符号、区域等）
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub base_currency_detail: Option<CurrencyResponse>,
     pub ledger_type: String,
     pub settlement_cycle: String,
     pub auto_settlement: bool,

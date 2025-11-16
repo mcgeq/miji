@@ -966,11 +966,25 @@ impl TransactionConverter {
             },
             async { cny_service.get_by_id(db, model.currency.clone()).await },
             async {
-                let serial_nums: Vec<String> = model
-                    .split_members
-                    .iter()
-                    .filter_map(|v| v.as_str().map(|s| s.to_string()))
-                    .collect();
+                // 从 split_records 表获取分摊成员
+                let split_records = entity::split_records::Entity::find()
+                    .filter(entity::split_records::Column::TransactionSerialNum.eq(&model.serial_num))
+                    .all(db)
+                    .await?;
+                
+                // 提取所有相关成员的 serial_num（付款人和欠款人）
+                let mut serial_nums: Vec<String> = Vec::new();
+                for record in split_records {
+                    serial_nums.push(record.payer_member_serial_num);
+                    serial_nums.push(record.owe_member_serial_num);
+                }
+                serial_nums.sort();
+                serial_nums.dedup(); // 去重
+                
+                if serial_nums.is_empty() {
+                    return Ok(Vec::new());
+                }
+                
                 entity::family_member::Entity::find()
                     .filter(entity::family_member::Column::SerialNum.is_in(serial_nums))
                     .all(db)
@@ -1068,8 +1082,9 @@ impl TransactionService {
         db: &DbConn,
         data: CreateTransactionRequest,
     ) -> MijiResult<TransactionWithRelations> {
-        // 保存 family_ledger_serial_nums 用于后续创建关联
+        // 保存 family_ledger_serial_nums 和 split_members 用于后续创建关联
         let family_ledger_serial_nums = data.family_ledger_serial_nums.clone();
+        let split_members = data.split_members.clone();
 
         // 创建交易
         let model = self.create(db, data).await?;
@@ -1124,6 +1139,31 @@ impl TransactionService {
             }
         }
 
+        // 创建 split_records（如果有分摊成员）
+        if let Some(split_members_data) = split_members {
+            if let Ok(members) = serde_json::from_value::<Vec<serde_json::Value>>(split_members_data) {
+                if !members.is_empty() {
+                    if let Err(e) = Self::create_split_records_for_transaction(
+                        db,
+                        &model,
+                        members,
+                    ).await {
+                        tracing::error!(
+                            "创建 split_records 失败: transaction={}, error={}",
+                            model.serial_num,
+                            e
+                        );
+                        // 不阻塞交易创建，只记录错误
+                    } else {
+                        tracing::info!(
+                            "成功创建 split_records: transaction={}",
+                            model.serial_num
+                        );
+                    }
+                }
+            }
+        }
+
         self.converter().model_to_with_relations(db, model).await
     }
 
@@ -1174,6 +1214,102 @@ impl TransactionService {
         )
         .await
         .map(|_| ())
+    }
+
+    /// 为交易创建 split_records
+    /// 
+    /// 根据交易的家庭账本关联和分摊成员信息创建 split_records 记录
+    async fn create_split_records_for_transaction(
+        db: &DbConn,
+        transaction: &entity::transactions::Model,
+        split_members: Vec<serde_json::Value>,
+    ) -> MijiResult<()> {
+        use sea_orm::{ActiveModelTrait, EntityTrait, QueryFilter};
+        use sea_orm::prelude::Decimal;
+        
+        // 1. 查询交易关联的家庭账本
+        let associations = entity::family_ledger_transaction::Entity::find()
+            .filter(entity::family_ledger_transaction::Column::TransactionSerialNum.eq(&transaction.serial_num))
+            .all(db)
+            .await?;
+        
+        if associations.is_empty() {
+            tracing::debug!("交易 {} 没有关联账本，跳过创建分摊记录", transaction.serial_num);
+            return Ok(());
+        }
+        
+        // 2. 为每个账本和每个成员创建 split_records
+        for association in associations {
+            let family_ledger_serial_num = &association.family_ledger_serial_num;
+            
+            // 平均分摊金额（简化版本，后续可以支持更复杂的分摊规则）
+            let split_amount = transaction.amount / Decimal::from(split_members.len() as i64);
+            let split_percentage = Decimal::from(100) / Decimal::from(split_members.len() as i64);
+            
+            for split_member in &split_members {
+                // 提取成员 serial_num
+                let member_serial_num = match split_member.get("serialNum")
+                    .or_else(|| split_member.get("serial_num"))
+                    .and_then(|v| v.as_str()) 
+                {
+                    Some(serial) => serial.to_string(),
+                    None => {
+                        tracing::warn!("split_member 缺少 serialNum 字段: {:?}", split_member);
+                        continue;
+                    }
+                };
+                
+                // 提取自定义金额和付款人信息
+                let custom_amount = split_member.get("amount")
+                    .and_then(|v| v.as_f64())
+                    .map(|a| Decimal::from_f64_retain(a).unwrap_or(split_amount));
+                
+                let payer_serial = split_member.get("payerSerialNum")
+                    .or_else(|| split_member.get("payer_serial_num"))
+                    .and_then(|v| v.as_str())
+                    .map(|s| s.to_string())
+                    .unwrap_or_else(|| member_serial_num.clone());
+                
+                let final_split_amount = custom_amount.unwrap_or(split_amount);
+                
+                // 创建 split_record
+                let split_record = entity::split_records::ActiveModel {
+                    serial_num: sea_orm::ActiveValue::Set(common::utils::uuid::McgUuid::uuid(38)),
+                    transaction_serial_num: sea_orm::ActiveValue::Set(transaction.serial_num.clone()),
+                    family_ledger_serial_num: sea_orm::ActiveValue::Set(family_ledger_serial_num.clone()),
+                    split_rule_serial_num: sea_orm::ActiveValue::Set(None),
+                    payer_member_serial_num: sea_orm::ActiveValue::Set(payer_serial),
+                    owe_member_serial_num: sea_orm::ActiveValue::Set(member_serial_num.clone()),
+                    total_amount: sea_orm::ActiveValue::Set(transaction.amount),
+                    split_amount: sea_orm::ActiveValue::Set(final_split_amount),
+                    split_percentage: sea_orm::ActiveValue::Set(Some(split_percentage)),
+                    currency: sea_orm::ActiveValue::Set(transaction.currency.clone()),
+                    status: sea_orm::ActiveValue::Set("Confirmed".to_string()),
+                    split_type: sea_orm::ActiveValue::Set("Equal".to_string()),
+                    description: sea_orm::ActiveValue::Set(Some(transaction.description.clone())),
+                    notes: sea_orm::ActiveValue::Set(transaction.notes.clone()),
+                    confirmed_at: sea_orm::ActiveValue::Set(Some(DateUtils::local_now())),
+                    paid_at: sea_orm::ActiveValue::Set(None),
+                    due_date: sea_orm::ActiveValue::Set(None),
+                    reminder_sent: sea_orm::ActiveValue::Set(false),
+                    last_reminder_at: sea_orm::ActiveValue::Set(None),
+                    created_at: sea_orm::ActiveValue::Set(DateUtils::local_now()),
+                    updated_at: sea_orm::ActiveValue::Set(None),
+                };
+                
+                split_record.insert(db).await?;
+                
+                tracing::debug!(
+                    "创建分摊记录: transaction={}, ledger={}, member={}, amount={}",
+                    transaction.serial_num,
+                    family_ledger_serial_num,
+                    member_serial_num,
+                    final_split_amount
+                );
+            }
+        }
+        
+        Ok(())
     }
 
     pub async fn trans_transfer_create_with_relations(

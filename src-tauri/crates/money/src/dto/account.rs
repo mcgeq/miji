@@ -113,6 +113,9 @@ pub struct AccountResponse {
     pub balance: Decimal,
     pub initial_balance: Decimal,
     pub currency: String,
+    /// 币种详细信息（包含符号、区域等）
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub currency_detail: Option<CurrencyResponse>,
     pub is_shared: Option<bool>,
     pub owner_id: Option<String>,
     pub color: Option<String>,
@@ -132,6 +135,7 @@ impl From<entity::account::Model> for AccountResponse {
             balance: model.balance,
             initial_balance: model.initial_balance,
             currency: model.currency,
+            currency_detail: None, // 在 service 层填充
             is_shared: model.is_shared,
             owner_id: model.owner_id,
             color: model.color,

@@ -56,6 +56,8 @@ mod m20251112_000006_create_settlement_records_table;
 mod m20251115_000000_add_settlement_day_to_family_ledger;
 mod m20251115_000007_change_family_ledger_counts_to_integer;
 mod m20251116_000001_add_family_ledger_financial_stats;
+mod m20251116_drop_split_members;
+mod m20251116_add_unique_constraint_family_member_name;
 
 pub mod schema;
 
@@ -122,6 +124,10 @@ impl MigratorTrait for Migrator {
             Box::new(m20251115_000000_add_settlement_day_to_family_ledger::Migration),
             Box::new(m20251115_000007_change_family_ledger_counts_to_integer::Migration),
             Box::new(m20251116_000001_add_family_ledger_financial_stats::Migration),
+            // 废弃 split_members JSON 字段，使用 split_records 表
+            Box::new(m20251116_drop_split_members::Migration),
+            // 为 family_member.name 添加唯一约束
+            Box::new(m20251116_add_unique_constraint_family_member_name::Migration),
         ]
     }
 }
