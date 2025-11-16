@@ -351,10 +351,14 @@ impl FamilyLedgerService {
             .map(|r| r.family_member_serial_num.clone())
             .collect();
 
-        // 2.1 统计每个成员的交易数
+        // 2.1 统计每个成员的交易数、总支付和应分摊金额
         // 现在只使用 split_records 表（已废弃 split_members JSON）
         use std::collections::{HashMap, HashSet};
+        use sea_orm::prelude::Decimal;
+        
         let mut member_transaction_counts: HashMap<String, i32> = HashMap::new();
+        let mut member_total_paid: HashMap<String, Decimal> = HashMap::new();
+        let mut member_total_owed: HashMap<String, Decimal> = HashMap::new();
         
         // 查询该账本下的所有分摊记录
         let split_records = entity::split_records::Entity::find()
@@ -374,9 +378,19 @@ impl FamilyLedgerService {
             
             // 欠款人参与的交易
             member_transactions
-                .entry(record.owe_member_serial_num)
+                .entry(record.owe_member_serial_num.clone())
                 .or_insert_with(HashSet::new)
-                .insert(record.transaction_serial_num);
+                .insert(record.transaction_serial_num.clone());
+            
+            // 统计付款人的总支付金额（付款人为欠款人支付的金额）
+            *member_total_paid
+                .entry(record.payer_member_serial_num.clone())
+                .or_insert(Decimal::ZERO) += record.split_amount;
+            
+            // 统计欠款人的应分摊金额（欠款人应该承担的金额）
+            *member_total_owed
+                .entry(record.owe_member_serial_num)
+                .or_insert(Decimal::ZERO) += record.split_amount;
         }
         
         for (member_id, transactions) in member_transactions {
@@ -390,6 +404,12 @@ impl FamilyLedgerService {
             let mut member_response = FamilyMemberResponse::from(member);
             // 设置交易数量统计
             member_response.transaction_count = *member_transaction_counts.get(&member_id).unwrap_or(&0);
+            // 设置总支付金额
+            member_response.total_paid = *member_total_paid.get(&member_id).unwrap_or(&Decimal::ZERO);
+            // 设置应分摊金额
+            member_response.total_owed = *member_total_owed.get(&member_id).unwrap_or(&Decimal::ZERO);
+            // 计算净余额 (总支付 - 应分摊)
+            member_response.balance = member_response.total_paid - member_response.total_owed;
             member_list.push(member_response);
         }
 
