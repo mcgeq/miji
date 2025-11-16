@@ -78,7 +78,7 @@ impl LocalizableConverter<entity::debt_relations::Model> for DebtRelationsConver
 }
 
 pub struct DebtRelationsService {
-    inner: GenericCrudService<
+    pub inner: GenericCrudService<
         entity::debt_relations::Entity,
         DebtRelationsFilter,
         DebtRelationCreate,

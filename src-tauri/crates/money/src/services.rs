@@ -3,6 +3,7 @@ pub mod account_hooks;
 pub mod bil_reminder;
 pub mod bil_reminder_hooks;
 pub mod budget;
+pub mod budget_allocation; // Phase 6: 预算分配服务
 pub mod budget_hook;
 pub mod budget_overview;
 pub mod budget_trends;
@@ -29,6 +30,7 @@ pub mod settlement_records_hooks;
 pub mod split_calculator;
 pub mod split_records;
 pub mod split_records_hooks;
+pub mod split_record_details;
 pub mod split_rules;
 pub mod split_rules_hooks;
 pub mod sub_categories;

@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
 import VChart from 'vue-echarts';
 import { chartUtils, defaultTheme, initECharts } from '@/utils/echarts';
 

@@ -1005,6 +1005,9 @@ impl BilReminderService {
                     account_scope: budget.account_scope.clone(),
                     category_scope: budget.category_scope.clone(),
                     advanced_rules: budget.advanced_rules.clone(),
+                    // Phase 6: 家庭预算字段
+                    family_ledger_serial_num: budget.family_ledger_serial_num.clone(),
+                    created_by: budget.created_by.clone(),
                 },
                 currency: budget.currency.clone(),
             };

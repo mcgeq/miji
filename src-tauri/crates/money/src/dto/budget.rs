@@ -196,6 +196,9 @@ pub struct BudgetBase {
     pub account_scope: Option<serde_json::Value>,
     pub category_scope: Option<serde_json::Value>,
     pub advanced_rules: Option<serde_json::Value>,
+    // Phase 6: 家庭预算扩展字段
+    pub family_ledger_serial_num: Option<String>,
+    pub created_by: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -260,6 +263,9 @@ pub struct BudgetUpdate {
     pub account_scope: Option<serde_json::Value>,
     pub category_scope: Option<serde_json::Value>,
     pub advanced_rules: Option<serde_json::Value>,
+    // Phase 6: 家庭预算扩展字段
+    pub family_ledger_serial_num: Option<String>,
+    pub created_by: Option<String>,
 }
 
 impl BudgetUpdate {
@@ -354,6 +360,13 @@ impl BudgetUpdate {
         if let Some(advanced_rules) = self.advanced_rules {
             model.advanced_rules = ActiveValue::Set(Some(advanced_rules));
         }
+        // Phase 6: 家庭预算扩展字段
+        if let Some(family_ledger_serial_num) = self.family_ledger_serial_num {
+            model.family_ledger_serial_num = ActiveValue::Set(Some(family_ledger_serial_num));
+        }
+        if let Some(created_by) = self.created_by {
+            model.created_by = ActiveValue::Set(Some(created_by));
+        }
         model.updated_at = ActiveValue::Set(Some(DateUtils::local_now()))
     }
 }
@@ -399,6 +412,9 @@ impl TryFrom<BudgetCreate> for entity::budget::ActiveModel {
             account_scope: ActiveValue::Set(budget.account_scope),
             category_scope: ActiveValue::Set(budget.category_scope),
             advanced_rules: ActiveValue::Set(budget.advanced_rules),
+            // Phase 6: 家庭预算扩展字段
+            family_ledger_serial_num: ActiveValue::Set(budget.family_ledger_serial_num),
+            created_by: ActiveValue::Set(budget.created_by),
             created_at: ActiveValue::Set(now),
             updated_at: ActiveValue::Set(Some(now)),
         })
@@ -475,6 +491,13 @@ impl TryFrom<BudgetUpdate> for entity::budget::ActiveModel {
             advanced_rules: value
                 .advanced_rules
                 .map_or(ActiveValue::NotSet, |val| ActiveValue::Set(Some(val))),
+            // Phase 6: 家庭预算扩展字段
+            family_ledger_serial_num: value
+                .family_ledger_serial_num
+                .map_or(ActiveValue::NotSet, |val| ActiveValue::Set(Some(val))),
+            created_by: value
+                .created_by
+                .map_or(ActiveValue::NotSet, |val| ActiveValue::Set(Some(val))),
             created_at: ActiveValue::NotSet,
             updated_at: ActiveValue::Set(Some(now)),
         })
@@ -518,6 +541,9 @@ impl From<BudgetWithAccount> for Budget {
                 account_scope: budget.account_scope,
                 category_scope: budget.category_scope,
                 advanced_rules: budget.advanced_rules,
+                // Phase 6: 家庭预算扩展字段
+                family_ledger_serial_num: budget.family_ledger_serial_num,
+                created_by: budget.created_by,
             },
             account,
             currency: CurrencyResponse::from(cny),

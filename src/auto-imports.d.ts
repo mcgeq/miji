@@ -251,6 +251,7 @@ declare global {
   const useMemory: typeof import('@vueuse/core')['useMemory']
   const useMenuStore: typeof import('./stores/menuStore')['useMenuStore']
   const useModel: typeof import('vue')['useModel']
+  const useMoneyAuth: typeof import('./composables/useMoneyAuth')['useMoneyAuth']
   const useMoneyStore: typeof import('./stores/moneyStore')['useMoneyStore']
   const useMoneyStores: typeof import('./stores/moneyStore')['useMoneyStores']
   const useMounted: typeof import('@vueuse/core')['useMounted']
@@ -652,6 +653,7 @@ declare module 'vue' {
     readonly useMemory: UnwrapRef<typeof import('@vueuse/core')['useMemory']>
     readonly useMenuStore: UnwrapRef<typeof import('./stores/menuStore')['useMenuStore']>
     readonly useModel: UnwrapRef<typeof import('vue')['useModel']>
+    readonly useMoneyAuth: UnwrapRef<typeof import('./composables/useMoneyAuth')['useMoneyAuth']>
     readonly useMounted: UnwrapRef<typeof import('@vueuse/core')['useMounted']>
     readonly useMouse: UnwrapRef<typeof import('@vueuse/core')['useMouse']>
     readonly useMouseInElement: UnwrapRef<typeof import('@vueuse/core')['useMouseInElement']>

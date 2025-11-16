@@ -3,6 +3,7 @@ import {
   LucideEye,
   LucidePencil,
   LucideTrash2,
+  LucideUsers,
   Repeat,
   TrendingDown,
   TrendingUp,
@@ -40,6 +41,7 @@ const emit = defineEmits<{
   edit: [transaction: Transaction];
   delete: [transaction: Transaction];
   view: [transaction: Transaction];
+  viewSplit: [transaction: Transaction];
 }>();
 
 const { t } = useI18n();
@@ -113,6 +115,18 @@ function getAmountClass(type: string) {
   };
   return classMap[type] || '';
 }
+
+// 检查交易是否有分摊
+function hasSplit(_transaction: Transaction): boolean {
+  // TODO: 根据实际数据结构判断
+  // 暂时返回 false，等待后端 API 对接
+  return false;
+}
+
+// 查看分摊详情
+function viewSplitDetail(transaction: Transaction) {
+  emit('viewSplit', transaction);
+}
 </script>
 
 <template>
@@ -147,6 +161,9 @@ function getAmountClass(type: string) {
           </th>
           <th v-if="showColumn('description')">
             说明
+          </th>
+          <th class="split-column">
+            分摊
           </th>
           <th v-if="showActions" class="actions-column">
             操作
@@ -201,6 +218,19 @@ function getAmountClass(type: string) {
             {{ transaction.description || '—' }}
           </td>
 
+          <!-- 分摊标识 -->
+          <td class="split-cell">
+            <button
+              v-if="hasSplit(transaction)"
+              class="split-badge"
+              @click.stop="viewSplitDetail(transaction)"
+            >
+              <LucideUsers class="split-icon" />
+              <span>分摊</span>
+            </button>
+            <span v-else class="no-split">—</span>
+          </td>
+
           <!-- 操作按钮 -->
           <td v-if="showActions" class="actions-cell">
             <div class="action-buttons">
@@ -232,7 +262,7 @@ function getAmountClass(type: string) {
       >
         <!-- 类型列 -->
         <div class="card-row">
-          <span class="card-label">{{ t('categories.category') }}</span>
+          <span class="card-label">类型</span>
           <div class="card-type-content">
             <component :is="getTransactionTypeIcon(transaction.transactionType)" class="type-icon" />
             <span class="type-name">{{ getTransactionTypeName(transaction.transactionType) }}</span>
@@ -241,7 +271,7 @@ function getAmountClass(type: string) {
 
         <!-- 金额列 -->
         <div class="card-row">
-          <span class="card-label">{{ t('financial.money') }}</span>
+          <span class="card-label">金额</span>
           <div class="card-amount" :class="getAmountClass(transaction.transactionType)">
             {{ transaction.transactionType === TransactionTypeSchema.enum.Expense ? '-' : '+' }}
             {{ formatCurrency(transaction.amount) }}
@@ -250,7 +280,7 @@ function getAmountClass(type: string) {
 
         <!-- 账户列 -->
         <div class="card-row">
-          <span class="card-label">{{ t('financial.account.account') }}</span>
+          <span class="card-label">账户</span>
           <div class="card-content">
             <div class="card-account-name">
               {{ transaction.account.name }}
@@ -263,7 +293,7 @@ function getAmountClass(type: string) {
 
         <!-- 分类列 -->
         <div class="card-row">
-          <span class="card-label">{{ t('categories.category') }}</span>
+          <span class="card-label">分类</span>
           <div class="card-content">
             <span class="card-category-main">
               {{ getCategoryName(transaction.category) }}
@@ -276,7 +306,7 @@ function getAmountClass(type: string) {
 
         <!-- 时间列 -->
         <div class="card-row">
-          <span class="card-label">{{ t('date.date') }}</span>
+          <span class="card-label">时间</span>
           <div class="card-content">
             <div class="card-date">
               {{ DateUtils.formatForDisplay(transaction.date) }}
@@ -286,7 +316,7 @@ function getAmountClass(type: string) {
 
         <!-- 操作列 -->
         <div v-if="showActions" class="card-row">
-          <span class="card-label">{{ t('common.misc.options') }}</span>
+          <span class="card-label">操作</span>
           <div class="card-actions">
             <button
               class="card-action-btn"
@@ -630,9 +660,11 @@ function getAmountClass(type: string) {
 }
 
 .card-label {
+  display: inline-block;
   color: var(--color-gray-600);
   font-weight: 600;
   min-width: 80px;
+  flex-shrink: 0;
 }
 
 .card-content {

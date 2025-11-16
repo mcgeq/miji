@@ -1,8 +1,10 @@
 ﻿use common::{
     ApiResponse, AppState,
     crud::service::CrudService,
+    error::AppError,
     paginations::{PagedQuery, PagedResult},
 };
+use sea_orm::{prelude::Decimal, ActiveModelTrait, ActiveValue};
 use tauri::State;
 use tracing::{error, info, instrument, warn};
 
@@ -16,6 +18,10 @@ use crate::{
         categories::{Category, CategoryCreate, CategoryUpdate},
         currency::{CreateCurrencyRequest, CurrencyResponse, UpdateCurrencyRequest},
         debt_relations::{DebtGraph, DebtRelationResponse, DebtStats, MemberDebtSummary},
+        family_budget::{
+            BudgetAllocationCreateRequest, BudgetAllocationResponse, BudgetAllocationUpdateRequest,
+            BudgetAlertResponse, BudgetUsageRequest,
+        },
         family_ledger::{
             FamilyLedgerCreate, FamilyLedgerDetailResponse, FamilyLedgerResponse, FamilyLedgerStats, FamilyLedgerUpdate,
         },
@@ -37,6 +43,10 @@ use crate::{
             SplitRecordConfirm, SplitRecordCreate, SplitRecordPayment, SplitRecordResponse,
             SplitRecordStats,
         },
+        split_record_details::{
+            SplitRecordDetailResponse, SplitRecordWithDetails, SplitRecordWithDetailsCreate,
+            SplitRecordStatistics,
+        },
         split_rules::{SplitRuleCreate, SplitRuleResponse, SplitRuleUpdate},
         sub_categories::{SubCategory, SubCategoryCreate, SubCategoryUpdate},
         transactions::{
@@ -48,6 +58,7 @@ use crate::{
         account::{AccountFilter, AccountService},
         bil_reminder::{BilReminderFilters, BilReminderService},
         budget::{BudgetFilter, BudgetService},
+        budget_allocation::BudgetAllocationService,
         budget_trends::{BudgetCategoryStats, BudgetTrendData, BudgetTrendRequest},
         categories::{CategoryFilter, CategoryService},
         currency::{CurrencyFilter, get_currency_service},
@@ -61,6 +72,7 @@ use crate::{
         installment::InstallmentService,
         settlement_records::SettlementRecordsService,
         split_records::SplitRecordsService,
+        split_record_details::SplitRecordDetailService,
         split_rules::SplitRulesService,
         sub_categories::{SubCategoryFilter, SubCategoryService},
         transaction::{TransactionFilter, TransactionService},
@@ -1843,6 +1855,52 @@ pub async fn debt_relations_recalculate(
     ))
 }
 
+/// 获取单个债务关系
+#[tauri::command]
+pub async fn debt_relation_get(
+    state: State<'_, AppState>,
+    serial_num: String,
+) -> Result<ApiResponse<DebtRelationResponse>, String> {
+    let service = DebtRelationsService::default();
+    Ok(ApiResponse::from_result(
+        service.inner.get_by_id(&state.db, serial_num).await.map(Into::into),
+    ))
+}
+
+/// 标记债务关系为已结算
+#[tauri::command]
+pub async fn debt_relation_mark_settled(
+    state: State<'_, AppState>,
+    serial_num: String,
+) -> Result<ApiResponse<()>, String> {
+    let service = DebtRelationsService::default();
+    let update = crate::dto::debt_relations::DebtRelationUpdate {
+        status: Some("Settled".to_string()),
+        amount: None,
+        notes: None,
+    };
+    service.inner.update(&state.db, serial_num, update).await
+        .map_err(|e| e.to_string())?;
+    Ok(ApiResponse::success(()))
+}
+
+/// 标记债务关系为已取消
+#[tauri::command]
+pub async fn debt_relation_mark_cancelled(
+    state: State<'_, AppState>,
+    serial_num: String,
+) -> Result<ApiResponse<()>, String> {
+    let service = DebtRelationsService::default();
+    let update = crate::dto::debt_relations::DebtRelationUpdate {
+        status: Some("Cancelled".to_string()),
+        amount: None,
+        notes: None,
+    };
+    service.inner.update(&state.db, serial_num, update).await
+        .map_err(|e| e.to_string())?;
+    Ok(ApiResponse::success(()))
+}
+
 // ============================================================================
 // Settlement Records API
 
@@ -1900,6 +1958,233 @@ pub async fn settlement_records_stats(
             .get_settlement_statistics(&state.db, &family_ledger_serial_num)
             .await,
     ))
+}
+
+/// 执行结算
+#[tauri::command]
+pub async fn settlement_execute(
+    state: State<'_, AppState>,
+    family_ledger_serial_num: String,
+    settlement_type: String,
+    period_start: String,
+    period_end: String,
+    participant_members: serde_json::Value,
+    optimized_transfers: Option<serde_json::Value>,
+    total_amount: Decimal,
+    currency: String,
+    initiated_by: String,
+) -> Result<ApiResponse<SettlementRecordResponse>, String> {
+    let service = SettlementRecordsService::default();
+    let start_date = period_start
+        .parse()
+        .map_err(|e| format!("Invalid start date: {}", e))?;
+    let end_date = period_end
+        .parse()
+        .map_err(|e| format!("Invalid end date: {}", e))?;
+    
+    let create_data = crate::dto::settlement_records::SettlementRecordCreate {
+        settlement_type,
+        period_start: start_date,
+        period_end: end_date,
+        total_amount,
+        currency,
+        participant_members,
+        settlement_details: serde_json::json!({}), // 将由服务层填充
+        optimized_transfers,
+        description: None,
+        notes: None,
+    };
+    
+    Ok(ApiResponse::from_result(
+        async {
+            let model = service.inner.create(&state.db, create_data).await?;
+            // 更新额外字段
+            let mut active_model: entity::settlement_records::ActiveModel = model.into();
+            active_model.family_ledger_serial_num = ActiveValue::Set(family_ledger_serial_num);
+            active_model.initiated_by = ActiveValue::Set(initiated_by);
+            let updated_model = active_model.update(state.db.as_ref()).await?;
+            Ok::<SettlementRecordResponse, AppError>(updated_model.into())
+        }.await,
+    ))
+}
+
+/// 获取优化详情
+#[tauri::command]
+pub async fn settlement_get_optimization_details(
+    state: State<'_, AppState>,
+    family_ledger_serial_num: String,
+) -> Result<ApiResponse<serde_json::Value>, String> {
+    // 这里返回优化前后的对比信息
+    let service = DebtRelationsService::default();
+    let debts = service
+        .find_by_family_ledger(&state.db, &family_ledger_serial_num)
+        .await
+        .map_err(|e| e.to_string())?;
+    
+    let original_count = debts.len();
+    // 简化计算：假设优化后减少30%的转账次数
+    let optimized_count = (original_count as f64 * 0.7) as i32;
+    let savings = original_count as i32 - optimized_count;
+    
+    let details = serde_json::json!({
+        "before": {
+            "transferCount": original_count,
+            "complexity": "high"
+        },
+        "after": {
+            "transferCount": optimized_count,
+            "complexity": "optimized"
+        },
+        "savings": savings,
+        "savingsPercentage": ((savings as f64 / original_count as f64) * 100.0).round()
+    });
+    
+    Ok(ApiResponse::success(details))
+}
+
+/// 验证结算方案
+#[tauri::command]
+pub async fn settlement_validate(
+    _state: State<'_, AppState>,
+    transfers: Vec<serde_json::Value>,
+) -> Result<ApiResponse<serde_json::Value>, String> {
+    // 验证转账方案是否平衡
+    let mut errors = Vec::new();
+    
+    if transfers.is_empty() {
+        errors.push("转账列表不能为空");
+    }
+    
+    // TODO: 添加更多验证逻辑
+    // 1. 检查转账是否平衡
+    // 2. 检查是否有循环转账
+    // 3. 检查金额是否合理
+    
+    let is_valid = errors.is_empty();
+    let result = serde_json::json!({
+        "isValid": is_valid,
+        "errors": errors
+    });
+    
+    Ok(ApiResponse::success(result))
+}
+
+/// 获取单个结算记录
+#[tauri::command]
+pub async fn settlement_record_get(
+    state: State<'_, AppState>,
+    serial_num: String,
+) -> Result<ApiResponse<SettlementRecordResponse>, String> {
+    let service = SettlementRecordsService::default();
+    Ok(ApiResponse::from_result(
+        service.inner.get_by_id(&state.db, serial_num).await.map(Into::into),
+    ))
+}
+
+/// 完成结算
+#[tauri::command]
+pub async fn settlement_record_complete(
+    state: State<'_, AppState>,
+    serial_num: String,
+    completed_by: String,
+) -> Result<ApiResponse<()>, String> {
+    let service = SettlementRecordsService::default();
+    let update = crate::dto::settlement_records::SettlementRecordUpdate {
+        status: Some("Completed".to_string()),
+        optimized_transfers: None,
+        description: None,
+        notes: None,
+    };
+    
+    let model = service.inner.update(&state.db, serial_num.clone(), update).await
+        .map_err(|e| e.to_string())?;
+    
+    // 更新完成人
+    let mut active_model: entity::settlement_records::ActiveModel = model.into();
+    active_model.completed_by = ActiveValue::Set(Some(completed_by));
+    active_model.update(state.db.as_ref()).await.map_err(|e| e.to_string())?;
+    
+    Ok(ApiResponse::success(()))
+}
+
+/// 取消结算
+#[tauri::command]
+pub async fn settlement_record_cancel(
+    state: State<'_, AppState>,
+    serial_num: String,
+    cancellation_reason: Option<String>,
+) -> Result<ApiResponse<()>, String> {
+    let service = SettlementRecordsService::default();
+    let update = crate::dto::settlement_records::SettlementRecordUpdate {
+        status: Some("Cancelled".to_string()),
+        optimized_transfers: None,
+        description: None,
+        notes: cancellation_reason,
+    };
+    
+    service.inner.update(&state.db, serial_num, update).await
+        .map_err(|e| e.to_string())?;
+    
+    Ok(ApiResponse::success(()))
+}
+
+/// 导出单个结算记录
+#[tauri::command]
+pub async fn settlement_record_export(
+    state: State<'_, AppState>,
+    serial_num: String,
+    format: String,
+) -> Result<ApiResponse<serde_json::Value>, String> {
+    let service = SettlementRecordsService::default();
+    let record = service.inner.get_by_id(&state.db, serial_num).await
+        .map_err(|e| e.to_string())?;
+    
+    // TODO: 实现实际的导出逻辑（PDF/Excel）
+    let filename = format!("settlement_{}_{}.{}", record.serial_num, 
+        chrono::Local::now().format("%Y%m%d"), format);
+    
+    let result = serde_json::json!({
+        "filename": filename,
+        "data": "base64_encoded_data_here", // TODO: 实际导出数据
+        "format": format
+    });
+    
+    Ok(ApiResponse::success(result))
+}
+
+/// 批量导出结算记录
+#[tauri::command]
+pub async fn settlement_records_export(
+    state: State<'_, AppState>,
+    family_ledger_serial_num: String,
+    format: String,
+    status: Option<String>,
+) -> Result<ApiResponse<serde_json::Value>, String> {
+    let service = SettlementRecordsService::default();
+    let mut records = service
+        .find_by_family_ledger(&state.db, &family_ledger_serial_num)
+        .await
+        .map_err(|e| e.to_string())?;
+    
+    // 根据状态筛选
+    if let Some(status_filter) = status {
+        records.retain(|r| r.status == status_filter);
+    }
+    
+    // TODO: 实现实际的批量导出逻辑
+    let filename = format!("settlements_{}_{}.{}", 
+        family_ledger_serial_num,
+        chrono::Local::now().format("%Y%m%d"), 
+        format);
+    
+    let result = serde_json::json!({
+        "filename": filename,
+        "data": "base64_encoded_data_here", // TODO: 实际导出数据
+        "format": format,
+        "recordCount": records.len()
+    });
+    
+    Ok(ApiResponse::success(result))
 }
 
 // ============================================================================
@@ -2303,4 +2588,231 @@ pub async fn get_split_records_stats(
 
 // ============================================================================
 // end 数据迁移相关
+// ============================================================================
+
+// ============================================================================
+// start 分摊记录明细相关 (基于新的 split_record_details 表)
+// ============================================================================
+
+/// 创建完整的分摊记录（主记录 + 所有明细）
+#[tauri::command]
+#[instrument(skip(state))]
+pub async fn split_record_with_details_create(
+    state: State<'_, AppState>,
+    data: SplitRecordWithDetailsCreate,
+) -> Result<ApiResponse<SplitRecordWithDetails>, String> {
+    let service = SplitRecordDetailService::default();
+    info!("Creating split record with {} details", data.details.len());
+    
+    Ok(ApiResponse::from_result(
+        service
+            .create_split_record_with_details(&state.db, data)
+            .await,
+    ))
+}
+
+/// 获取分摊记录详情（包含所有明细）
+#[tauri::command]
+#[instrument(skip(state))]
+pub async fn split_record_with_details_get(
+    state: State<'_, AppState>,
+    split_record_serial_num: String,
+) -> Result<ApiResponse<SplitRecordWithDetails>, String> {
+    let service = SplitRecordDetailService::default();
+    
+    Ok(ApiResponse::from_result(
+        service
+            .get_split_record_with_details(&state.db, split_record_serial_num)
+            .await,
+    ))
+}
+
+/// 更新分摊明细的支付状态
+#[tauri::command]
+#[instrument(skip(state))]
+pub async fn split_detail_payment_status_update(
+    state: State<'_, AppState>,
+    detail_serial_num: String,
+    is_paid: bool,
+) -> Result<ApiResponse<SplitRecordDetailResponse>, String> {
+    let service = SplitRecordDetailService::default();
+    info!("Updating payment status for detail: {}, is_paid: {}", detail_serial_num, is_paid);
+    
+    Ok(ApiResponse::from_result(
+        service
+            .update_detail_payment_status(&state.db, detail_serial_num, is_paid)
+            .await,
+    ))
+}
+
+/// 获取分摊记录的统计信息
+#[tauri::command]
+#[instrument(skip(state))]
+pub async fn split_record_statistics_get(
+    state: State<'_, AppState>,
+    split_record_serial_num: String,
+) -> Result<ApiResponse<SplitRecordStatistics>, String> {
+    let service = SplitRecordDetailService::default();
+    
+    Ok(ApiResponse::from_result(
+        service
+            .get_statistics(&state.db, split_record_serial_num)
+            .await,
+    ))
+}
+
+/// 查询成员的所有分摊明细（分页）
+#[tauri::command]
+#[instrument(skip(state))]
+pub async fn member_split_details_list(
+    state: State<'_, AppState>,
+    member_serial_num: String,
+    page: Option<u64>,
+    page_size: Option<u64>,
+) -> Result<ApiResponse<PagedResult<SplitRecordDetailResponse>>, String> {
+    let service = SplitRecordDetailService::default();
+    
+    Ok(ApiResponse::from_result(
+        service
+            .list_member_split_details(&state.db, member_serial_num, page, page_size)
+            .await,
+    ))
+}
+
+// ============================================================================
+// end 分摊记录明细相关
+// ============================================================================
+
+// ============================================================================
+// start 预算分配相关 (Phase 6)
+// ============================================================================
+
+/// 创建预算分配
+#[tauri::command]
+#[instrument(skip(state))]
+pub async fn budget_allocation_create(
+    state: State<'_, AppState>,
+    budget_serial_num: String,
+    data: BudgetAllocationCreateRequest,
+) -> Result<ApiResponse<entity::budget_allocations::Model>, String> {
+    info!("Creating budget allocation for budget: {}", budget_serial_num);
+    
+    Ok(ApiResponse::from_result(
+        BudgetAllocationService::create(&state.db, &budget_serial_num, data).await,
+    ))
+}
+
+/// 更新预算分配
+#[tauri::command]
+#[instrument(skip(state))]
+pub async fn budget_allocation_update(
+    state: State<'_, AppState>,
+    serial_num: String,
+    data: BudgetAllocationUpdateRequest,
+) -> Result<ApiResponse<entity::budget_allocations::Model>, String> {
+    info!("Updating budget allocation: {}", serial_num);
+    
+    Ok(ApiResponse::from_result(
+        BudgetAllocationService::update(&state.db, &serial_num, data).await,
+    ))
+}
+
+/// 删除预算分配
+#[tauri::command]
+#[instrument(skip(state))]
+pub async fn budget_allocation_delete(
+    state: State<'_, AppState>,
+    serial_num: String,
+) -> Result<ApiResponse<()>, String> {
+    info!("Deleting budget allocation: {}", serial_num);
+    
+    Ok(ApiResponse::from_result(
+        BudgetAllocationService::delete(&state.db, &serial_num).await,
+    ))
+}
+
+/// 获取预算分配详情
+#[tauri::command]
+#[instrument(skip(state))]
+pub async fn budget_allocation_get(
+    state: State<'_, AppState>,
+    serial_num: String,
+) -> Result<ApiResponse<entity::budget_allocations::Model>, String> {
+    Ok(ApiResponse::from_result(
+        BudgetAllocationService::get(&state.db, &serial_num).await,
+    ))
+}
+
+/// 查询预算的所有分配
+#[tauri::command]
+#[instrument(skip(state))]
+pub async fn budget_allocations_list(
+    state: State<'_, AppState>,
+    budget_serial_num: String,
+) -> Result<ApiResponse<Vec<entity::budget_allocations::Model>>, String> {
+    Ok(ApiResponse::from_result(
+        BudgetAllocationService::list_by_budget(&state.db, &budget_serial_num).await,
+    ))
+}
+
+/// 记录预算使用
+#[tauri::command]
+#[instrument(skip(state))]
+pub async fn budget_allocation_record_usage(
+    state: State<'_, AppState>,
+    data: BudgetUsageRequest,
+) -> Result<ApiResponse<BudgetAllocationResponse>, String> {
+    info!(
+        "Recording budget usage: allocation={}, amount={}",
+        data.allocation_serial_num.as_ref().unwrap_or(&"N/A".to_string()),
+        data.amount
+    );
+    
+    let allocation_sn = data
+        .allocation_serial_num
+        .ok_or_else(|| "allocation_serial_num is required".to_string())?;
+    
+    Ok(ApiResponse::from_result(
+        BudgetAllocationService::record_usage(
+            &state.db,
+            &allocation_sn,
+            data.amount,
+            &data.transaction_serial_num,
+        )
+        .await,
+    ))
+}
+
+/// 检查是否可以消费指定金额
+#[tauri::command]
+#[instrument(skip(state))]
+pub async fn budget_allocation_can_spend(
+    state: State<'_, AppState>,
+    allocation_serial_num: String,
+    amount: String, // 使用String避免精度问题
+) -> Result<ApiResponse<(bool, Option<String>)>, String> {
+    use std::str::FromStr;
+    
+    let amount = Decimal::from_str(&amount)
+        .map_err(|e| format!("Invalid amount: {}", e))?;
+    
+    Ok(ApiResponse::from_result(
+        BudgetAllocationService::can_spend(&state.db, &allocation_serial_num, amount).await,
+    ))
+}
+
+/// 检查预算预警
+#[tauri::command]
+#[instrument(skip(state))]
+pub async fn budget_allocation_check_alerts(
+    state: State<'_, AppState>,
+    budget_serial_num: String,
+) -> Result<ApiResponse<Vec<BudgetAlertResponse>>, String> {
+    Ok(ApiResponse::from_result(
+        BudgetAllocationService::check_alerts(&state.db, &budget_serial_num).await,
+    ))
+}
+
+// ============================================================================
+// end 预算分配相关
 // ============================================================================

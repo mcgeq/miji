@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
 import { useCategoryStore } from '@/stores/money';
 import { lowercaseFirstLetter } from '@/utils/common';
 import type { Category } from '@/schema/money/category';

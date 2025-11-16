@@ -145,7 +145,11 @@ async function loadLedgerTransactions(serialNum: string) {
 }
 
 function selectMember(serialNum: string) {
-  selectedMemberSerial.value = serialNum;
+  // 跳转到成员详情页
+  router.push({
+    name: 'family-member-detail',
+    params: { memberSerialNum: serialNum },
+  });
 }
 
 function goBack() {
@@ -854,6 +858,16 @@ function getTabIcon(iconName: string) {
   .members-grid {
     grid-template-columns: 1fr;
     gap: 12px;
+    /* 限制高度，约显示2个成员卡片 */
+    max-height: 350px;
+    overflow-y: auto;
+    /* 隐藏滚动条 */
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
+  }
+
+  .members-grid::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
   }
 
   .member-card {

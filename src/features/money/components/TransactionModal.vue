@@ -16,6 +16,7 @@ import { toast } from '@/utils/toast';
 import { isInstallmentTransaction } from '@/utils/transaction';
 import { useTransactionLedgerLink } from '../composables/useTransactionLedgerLink';
 import { formatCurrency } from '../utils/money';
+import TransactionSplitSection from './TransactionSplitSection.vue';
 import type {
   TransactionType,
 } from '@/schema/common';
@@ -148,6 +149,24 @@ const rawInstallmentDetails = ref<any[]>([]);
 
 // 分期计划详情数据（用于编辑交易时）
 const installmentPlanDetails = ref<InstallmentPlanResponse | null>(null);
+
+// 分摊配置状态
+const splitConfig = ref<{
+  enabled: boolean;
+  splitType?: string;
+  members?: Array<{
+    memberSerialNum: string;
+    memberName: string;
+    amount: number;
+  }>;
+}>({
+  enabled: false,
+});
+
+// 处理分摊配置更新
+function handleSplitConfigUpdate(config: any) {
+  splitConfig.value = config;
+}
 
 // 调用后端API计算分期金额
 async function calculateInstallmentFromBackend() {
@@ -717,7 +736,14 @@ function emitTransaction(amount: number) {
     remainingPeriodsAmount: amount,
     // 家庭记账本关联（支持多个）
     familyLedgerSerialNums: selectedLedgers.value,
-  };
+    // 分摊配置（新增）
+    splitConfig: splitConfig.value.enabled
+      ? {
+          splitType: splitConfig.value.splitType,
+          members: splitConfig.value.members,
+        }
+      : undefined,
+  } as any;
 
   if (props.transaction) {
     const updateTransaction: TransactionUpdate = {
@@ -911,6 +937,13 @@ watch(
             :disabled="isTransferReadonly || isInstallmentFieldsDisabled || isInstallmentTransactionFieldsDisabled || isReadonlyMode"
           />
         </div>
+
+        <!-- 分摊设置 -->
+        <TransactionSplitSection
+          v-if="form.amount > 0 && form.transactionType !== TransactionTypeSchema.enum.Transfer && !isReadonlyMode"
+          :transaction-amount="form.amount"
+          @update:split-config="handleSplitConfigUpdate"
+        />
 
         <!-- 转出账户 -->
         <div class="form-row">

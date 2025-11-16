@@ -143,6 +143,43 @@ pub fn init_commands(builder: Builder<Wry>) -> Builder<Wry> {
         // 数据迁移命令
         money_cmd::migrate_split_records,
         money_cmd::get_split_records_stats,
+        // 分摊记录明细命令 (新)
+        money_cmd::split_record_with_details_create,
+        money_cmd::split_record_with_details_get,
+        money_cmd::split_detail_payment_status_update,
+        money_cmd::split_record_statistics_get,
+        money_cmd::member_split_details_list,
+        // 债务关系命令
+        money_cmd::debt_relations_list,
+        money_cmd::debt_relations_stats,
+        money_cmd::debt_relations_member_summary,
+        money_cmd::debt_relations_graph,
+        money_cmd::debt_relations_recalculate,
+        money_cmd::debt_relation_get,
+        money_cmd::debt_relation_mark_settled,
+        money_cmd::debt_relation_mark_cancelled,
+        // 结算命令
+        money_cmd::settlement_generate_suggestion,
+        money_cmd::settlement_execute,
+        money_cmd::settlement_get_optimization_details,
+        money_cmd::settlement_validate,
+        // 结算记录命令
+        money_cmd::settlement_records_list,
+        money_cmd::settlement_records_stats,
+        money_cmd::settlement_record_get,
+        money_cmd::settlement_record_complete,
+        money_cmd::settlement_record_cancel,
+        money_cmd::settlement_record_export,
+        money_cmd::settlement_records_export,
+        // Phase 6: 预算分配命令
+        money_cmd::budget_allocation_create,
+        money_cmd::budget_allocation_update,
+        money_cmd::budget_allocation_delete,
+        money_cmd::budget_allocation_get,
+        money_cmd::budget_allocations_list,
+        money_cmd::budget_allocation_record_usage,
+        money_cmd::budget_allocation_can_spend,
+        money_cmd::budget_allocation_check_alerts,
         // 健康命令
         health_cmd::period_record_create,
         health_cmd::period_record_update,

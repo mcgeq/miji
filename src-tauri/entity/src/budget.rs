@@ -56,6 +56,9 @@ pub struct Model {
     pub category_scope: Option<Json>,
     #[sea_orm(column_type = "JsonBinary", nullable)]
     pub advanced_rules: Option<Json>,
+    // Phase 6: 家庭预算扩展字段
+    pub family_ledger_serial_num: Option<String>,
+    pub created_by: Option<String>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

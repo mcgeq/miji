@@ -36,8 +36,11 @@ pub mod users;
 // 新增的分摊和结算相关模块
 pub mod split_rules;
 pub mod split_records;
+pub mod split_record_details;
 pub mod debt_relations;
 pub mod settlement_records;
+// Phase 6: 预算分配模块
+pub mod budget_allocations;
 
 pub mod enums;
 pub mod localize;

@@ -10,8 +10,10 @@ pub mod family_ledger_transaction;
 pub mod family_member;
 pub mod split_rules;
 pub mod split_records;
+pub mod split_record_details;
 pub mod debt_relations;
 pub mod settlement_records;
+pub mod family_budget; // Phase 6: 家庭预算
 pub mod installment;
 pub mod reminder;
 pub mod sub_categories;

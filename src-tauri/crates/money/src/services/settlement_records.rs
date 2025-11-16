@@ -84,7 +84,7 @@ impl LocalizableConverter<entity::settlement_records::Model> for SettlementRecor
 }
 
 pub struct SettlementRecordsService {
-    inner: GenericCrudService<
+    pub inner: GenericCrudService<
         entity::settlement_records::Entity,
         SettlementRecordsFilter,
         SettlementRecordCreate,

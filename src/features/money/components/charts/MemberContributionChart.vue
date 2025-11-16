@@ -484,5 +484,18 @@ function getBalanceClass(balance: number): string {
     padding-left: 0;
     padding-top: 1rem;
   }
+
+  .stats-list {
+    /* 限制高度，约显示2个成员统计 */
+    max-height: 280px;
+    overflow-y: auto;
+    /* 隐藏滚动条 */
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
+  }
+
+  .stats-list::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
+  }
 }
 </style>

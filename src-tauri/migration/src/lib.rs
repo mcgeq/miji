@@ -8,6 +8,7 @@ mod m20250115_000002_enhance_bil_reminder_fields;
 mod m20250115_000003_enhance_reminder_fields;
 mod m20250115_000004_create_notification_tables;
 mod m20250116_000000_create_installment_tables;
+mod m20250120_000000_add_phone_bill_subcategory;
 mod m20250803_114611_create_user;
 mod m20250803_122150_create_tags;
 mod m20250803_122206_create_projects;
@@ -43,10 +44,6 @@ mod m20250929_110022_create_todo_alert;
 mod m20250929_120022_create_todo_drop;
 mod m20250929_121722_create_todo_repeat_period_type;
 mod m20251017_160622_create_transaction_alert;
-mod m20251916_221213_create_sub_categories;
-mod m20251917_223412_create_sub_category_insert;
-mod m20251918_120000_add_sub_category_property_rental;
-mod m20250120_000000_add_phone_bill_subcategory;
 mod m20251112_000001_enhance_family_ledger_fields;
 mod m20251112_000002_enhance_family_member_fields;
 mod m20251112_000003_create_split_rules_table;
@@ -56,8 +53,13 @@ mod m20251112_000006_create_settlement_records_table;
 mod m20251115_000000_add_settlement_day_to_family_ledger;
 mod m20251115_000007_change_family_ledger_counts_to_integer;
 mod m20251116_000001_add_family_ledger_financial_stats;
-mod m20251116_drop_split_members;
+mod m20251116_000007_enhance_budget_for_family;
 mod m20251116_add_unique_constraint_family_member_name;
+mod m20251116_create_split_record_details;
+mod m20251116_drop_split_members;
+mod m20251916_221213_create_sub_categories;
+mod m20251917_223412_create_sub_category_insert;
+mod m20251918_120000_add_sub_category_property_rental;
 
 pub mod schema;
 
@@ -128,6 +130,9 @@ impl MigratorTrait for Migrator {
             Box::new(m20251116_drop_split_members::Migration),
             // 为 family_member.name 添加唯一约束
             Box::new(m20251116_add_unique_constraint_family_member_name::Migration),
+            Box::new(m20251116_create_split_record_details::Migration),
+            // Phase 6: 扩展Budget表支持家庭预算
+            Box::new(m20251116_000007_enhance_budget_for_family::Migration),
         ]
     }
 }
