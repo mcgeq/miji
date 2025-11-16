@@ -8,6 +8,7 @@ import {
   LucideSettings,
   LucideUsers,
 } from 'lucide-vue-next';
+import SplitRuleConfigurator from './SplitRuleConfigurator.vue';
 import type { SplitRuleType } from '@/schema/money';
 
 interface Props {
@@ -157,6 +158,27 @@ function openConfigurator() {
   showConfigurator.value = true;
 }
 
+// 关闭配置器
+function closeConfigurator() {
+  showConfigurator.value = false;
+}
+
+// 保存配置
+function handleConfigSave(config: any) {
+  // 应用配置到 splitConfig
+  splitConfig.splitType = config.ruleType;
+  config.participants.forEach((participant: any) => {
+    const memberId = participant.memberSerialNum;
+    if (!splitConfig.splitParams[memberId]) {
+      splitConfig.splitParams[memberId] = {};
+    }
+    splitConfig.splitParams[memberId].percentage = participant.percentage;
+    splitConfig.splitParams[memberId].amount = participant.fixedAmount;
+    splitConfig.splitParams[memberId].weight = participant.weight;
+  });
+  showConfigurator.value = false;
+}
+
 // 初始化分摊参数
 function initializeSplitParams() {
   const memberCount = splitConfig.selectedMembers.length;
@@ -169,8 +191,28 @@ function initializeSplitParams() {
         amount: splitConfig.splitType === 'FIXED_AMOUNT' ? 0 : undefined,
         weight: splitConfig.splitType === 'WEIGHTED' ? 1 : undefined,
       };
+    } else {
+      // 确保切换到权重模式时，如果没有设置权重，默认为1
+      if (splitConfig.splitType === 'WEIGHTED' && (splitConfig.splitParams[memberId].weight === undefined || splitConfig.splitParams[memberId].weight === 0)) {
+        splitConfig.splitParams[memberId].weight = 1;
+      }
     }
   });
+}
+
+// 计算权重占比
+function getWeightPercentage(memberId: string): string {
+  if (splitConfig.splitType !== 'WEIGHTED') return '';
+
+  const totalWeight = splitConfig.selectedMembers.reduce((sum, id) => {
+    return sum + (splitConfig.splitParams[id]?.weight || 0);
+  }, 0);
+
+  if (totalWeight === 0) return '0%';
+
+  const memberWeight = splitConfig.splitParams[memberId]?.weight || 0;
+  const percentage = (memberWeight / totalWeight) * 100;
+  return `${percentage.toFixed(1)}%`;
 }
 
 // 格式化金额
@@ -391,7 +433,12 @@ watch([enableSplit, splitConfig, splitPreview], () => {
       <!-- 参数配置（按比例、固定金额、按权重） -->
       <div v-if="splitConfig.splitType !== 'EQUAL'" class="params-config">
         <div class="params-header">
-          <label class="section-label">设置分摊参数</label>
+          <div class="header-left">
+            <label class="section-label">设置分摊参数</label>
+            <span v-if="splitConfig.splitType === 'WEIGHTED'" class="helper-text">
+              权重数字越大，分摊金额越多
+            </span>
+          </div>
           <button type="button" class="btn-distribute" @click="distributeEvenly">
             <LucideEqual class="icon-sm" />
             平均分配
@@ -438,6 +485,9 @@ watch([enableSplit, splitConfig, splitPreview], () => {
                 min="0"
                 step="1"
               >
+              <span v-if="splitConfig.splitType === 'WEIGHTED'" class="param-percentage">
+                {{ getWeightPercentage(memberId) }}
+              </span>
             </div>
           </div>
         </div>
@@ -484,13 +534,13 @@ watch([enableSplit, splitConfig, splitPreview], () => {
       </div>
     </div>
 
-    <!-- 配置器弹窗（待集成） -->
-    <!-- <SplitRuleConfigurator
+    <!-- 配置器弹窗 -->
+    <SplitRuleConfigurator
       v-if="showConfigurator"
       :transaction-amount="transactionAmount"
-      @close="showConfigurator = false"
+      @close="closeConfigurator"
       @save="handleConfigSave"
-    /> -->
+    />
   </div>
 </template>
 
@@ -653,6 +703,18 @@ watch([enableSplit, splitConfig, splitPreview], () => {
   align-items: center;
 }
 
+.header-left {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.helper-text {
+  font-size: 0.75rem;
+  color: var(--color-gray-500);
+  font-style: italic;
+}
+
 .btn-distribute {
   display: flex;
   align-items: center;
@@ -729,6 +791,17 @@ watch([enableSplit, splitConfig, splitPreview], () => {
   color: var(--color-gray-500);
   font-weight: 500;
   min-width: 20px;
+}
+
+.param-percentage {
+  font-size: 0.75rem;
+  color: var(--color-primary);
+  font-weight: 600;
+  padding: 0.25rem 0.5rem;
+  background: oklch(from var(--color-primary) l c h / 0.1);
+  border-radius: 4px;
+  min-width: 50px;
+  text-align: center;
 }
 
 /* Validation Hint */
