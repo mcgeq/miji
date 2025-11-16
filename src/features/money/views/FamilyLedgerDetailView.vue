@@ -271,6 +271,10 @@ function getTabIcon(iconName: string) {
                   <LucideWallet class="meta-icon" />
                   {{ accountCount }}
                 </span>
+                <span class="meta-item">
+                  <LucideBarChart3 class="meta-icon" />
+                  {{ activeTransactions }}
+                </span>
               </div>
             </div>
           </div>
@@ -303,13 +307,6 @@ function getTabIcon(iconName: string) {
             <div>
               <p>待结算</p>
               <h3>{{ formatCurrency(currentStats?.pendingSettlement) }}</h3>
-            </div>
-          </article>
-          <article class="summary-card info">
-            <LucideActivity class="card-icon" />
-            <div>
-              <p>活跃交易</p>
-              <h3>{{ activeTransactions }}</h3>
             </div>
           </article>
         </section>
