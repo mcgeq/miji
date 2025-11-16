@@ -3,6 +3,7 @@ import { Lg } from '@/utils/debugLog';
 import type {
   FamilyLedger,
   FamilyMember,
+  SplitMember,
   Transaction,
   TransactionCreate,
 } from '@/schema/money';
@@ -13,7 +14,7 @@ import type {
 export function useTransactionLedgerLink() {
   const availableLedgers = ref<FamilyLedger[]>([]);
   const selectedLedgers = ref<string[]>([]);
-  const availableMembers = ref<FamilyMember[]>([]);
+  const availableMembers = ref<SplitMember[]>([]);
   const selectedMembers = ref<string[]>([]);
   const loading = ref(false);
 
@@ -74,9 +75,20 @@ export function useTransactionLedgerLink() {
   }
 
   /**
+   * 将 FamilyMember 转换为 SplitMember
+   */
+  function convertToSplitMember(member: FamilyMember): SplitMember {
+    return {
+      serialNum: member.serialNum,
+      name: member.name,
+      avatar: member.avatar,
+    };
+  }
+
+  /**
    * 根据账本获取成员列表
    */
-  async function getMembersByLedgers(ledgerSerialNums: string[]): Promise<FamilyMember[]> {
+  async function getMembersByLedgers(ledgerSerialNums: string[]): Promise<SplitMember[]> {
     try {
       if (ledgerSerialNums.length === 0) return [];
 
@@ -93,7 +105,9 @@ export function useTransactionLedgerLink() {
       const memberPromises = Array.from(memberIds).map(id => MoneyDb.getFamilyMember(id));
       const members = await Promise.all(memberPromises);
 
-      return members.filter(m => m !== null) as FamilyMember[];
+      return members
+        .filter(m => m !== null)
+        .map(m => convertToSplitMember(m as FamilyMember));
     } catch (error) {
       Lg.e('useTransactionLedgerLink', 'Failed to get members:', error);
       return [];
@@ -126,9 +140,11 @@ export function useTransactionLedgerLink() {
 
       // 3. 更新交易的分摊成员字段
       if (memberIds.length > 0) {
-        // 获取成员详情
+        // 获取成员详情并转换为 SplitMember
         const memberPromises = memberIds.map(id => MoneyDb.getFamilyMember(id));
-        const members = (await Promise.all(memberPromises)).filter(m => m !== null) as FamilyMember[];
+        const members = (await Promise.all(memberPromises))
+          .filter(m => m !== null)
+          .map(m => convertToSplitMember(m as FamilyMember));
 
         const updatedTransaction = await MoneyDb.updateTransaction(transaction.serialNum, {
           splitMembers: members,
@@ -162,9 +178,11 @@ export function useTransactionLedgerLink() {
 
       // 2. 更新成员关联
       if (memberIds.length > 0) {
-        // 获取成员详情
+        // 获取成员详情并转换为 SplitMember
         const memberPromises = memberIds.map(id => MoneyDb.getFamilyMember(id));
-        const members = (await Promise.all(memberPromises)).filter(m => m !== null) as FamilyMember[];
+        const members = (await Promise.all(memberPromises))
+          .filter(m => m !== null)
+          .map(m => convertToSplitMember(m as FamilyMember));
 
         await MoneyDb.updateTransaction(transactionSerialNum, {
           splitMembers: members,
@@ -184,7 +202,7 @@ export function useTransactionLedgerLink() {
    */
   async function getTransactionLinks(transactionSerialNum: string): Promise<{
     ledgers: FamilyLedger[];
-    members: FamilyMember[];
+    members: SplitMember[];
   }> {
     try {
       // 1. 获取账本关联
@@ -197,7 +215,7 @@ export function useTransactionLedgerLink() {
 
       // 2. 获取成员关联
       const transaction = await MoneyDb.getTransaction(transactionSerialNum);
-      let members: FamilyMember[] = [];
+      let members: SplitMember[] = [];
 
       if (transaction?.splitMembers && Array.isArray(transaction.splitMembers)) {
         members = transaction.splitMembers;
@@ -215,7 +233,7 @@ export function useTransactionLedgerLink() {
    */
   async function getSmartSuggestions(accountSerialNum: string): Promise<{
     suggestedLedgers: FamilyLedger[];
-    suggestedMembers: FamilyMember[];
+    suggestedMembers: SplitMember[];
   }> {
     try {
       // 1. 根据账户推荐账本

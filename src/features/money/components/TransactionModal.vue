@@ -1163,7 +1163,6 @@ watch(
                   :value="member.serialNum"
                 >
                 <span class="item-name">{{ member.name }}</span>
-                <span class="item-role">{{ member.role }}</span>
               </label>
             </div>
           </div>
