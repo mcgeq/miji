@@ -41,7 +41,10 @@ async function fetchStats() {
 }
 
 // 格式化金额
-function formatAmount(amount: number): string {
+function formatAmount(amount: number | undefined | null): string {
+  if (amount === undefined || amount === null || Number.isNaN(amount)) {
+    return '0.00';
+  }
   return amount.toFixed(2);
 }
 
@@ -155,9 +158,9 @@ onMounted(() => {
         <MemberContributionChart
           :data="stats.memberStats.map(member => ({
             name: member.memberName,
-            totalPaid: member.totalPaid,
-            totalOwed: member.totalOwed,
-            netBalance: member.netBalance,
+            totalPaid: member.totalPaid || 0,
+            totalOwed: member.totalOwed || 0,
+            netBalance: member.netBalance || 0,
           }))"
           title="成员贡献度"
           height="400px"

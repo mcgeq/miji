@@ -8,6 +8,7 @@ use common::{
 };
 use entity::{family_ledger, prelude::*};
 use sea_orm::{ActiveModelTrait, ActiveValue, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, Set};
+use std::collections::HashSet;
 use std::fmt;
 use tracing::{info, instrument};
 
@@ -311,18 +312,171 @@ impl FamilyLedgerService {
             .await?
             .ok_or_else(|| AppError::simple(BusinessCode::NotFound, "Family ledger not found"))?;
 
-        // TODO: 实现更详细的统计逻辑，包括成员统计
-        // 目前返回基础统计数据，因为实际的统计字段还没有在数据库中实现
+        use entity::prelude::*;
+        use sea_orm::prelude::Decimal;
+        use std::collections::HashMap;
+
+        // 获取该账本下的所有交易
+        let family_ledger_transactions = FamilyLedgerTransaction::find()
+            .filter(entity::family_ledger_transaction::Column::FamilyLedgerSerialNum.eq(&serial_num))
+            .all(db)
+            .await?;
+
+        let transaction_ids: Vec<String> = family_ledger_transactions
+            .iter()
+            .map(|r| r.transaction_serial_num.clone())
+            .collect();
+
+        // 获取所有交易详情
+        let transactions = if !transaction_ids.is_empty() {
+            Transactions::find()
+                .filter(entity::transactions::Column::SerialNum.is_in(transaction_ids))
+                .all(db)
+                .await?
+        } else {
+            vec![]
+        };
+
+        // 计算收入和支出
+        let mut total_income = Decimal::ZERO;
+        let mut total_expense = Decimal::ZERO;
+
+        for transaction in &transactions {
+            match transaction.transaction_type.as_str() {
+                "Income" => total_income += transaction.amount,
+                "Expense" => total_expense += transaction.amount,
+                _ => {}
+            }
+        }
+
+        // 获取成员数量
+        let member_service = FamilyLedgerMemberService::default();
+        let members = member_service.list_by_ledger(db, &serial_num).await?;
+        let member_count = members.len();
+
+        // 获取分摊记录用于计算共享支出和个人支出
+        let split_records = entity::split_records::Entity::find()
+            .filter(entity::split_records::Column::FamilyLedgerSerialNum.eq(&serial_num))
+            .all(db)
+            .await?;
+
+        // 统计每笔交易的分摊人数
+        let mut transaction_split_counts: HashMap<String, usize> = HashMap::new();
+        for record in &split_records {
+            *transaction_split_counts
+                .entry(record.transaction_serial_num.clone())
+                .or_insert(0) += 1;
+        }
+
+        // 计算共享支出和个人支出
+        let mut shared_expense = Decimal::ZERO;
+        let mut personal_expense = Decimal::ZERO;
+
+        for transaction in &transactions {
+            if transaction.transaction_type == "Expense" {
+                let split_count = transaction_split_counts
+                    .get(&transaction.serial_num)
+                    .unwrap_or(&0);
+                
+                if *split_count > 1 {
+                    shared_expense += transaction.amount;
+                } else if *split_count == 1 {
+                    personal_expense += transaction.amount;
+                }
+            }
+        }
+
+        // 计算待结算金额（所有未支付的分摊记录总额）
+        let pending_settlement: Decimal = split_records
+            .iter()
+            .filter(|r| r.status == "Pending" || r.status == "Confirmed")
+            .map(|r| r.split_amount)
+            .sum();
+
+        // 计算成员统计
+        use crate::dto::family_ledger::MemberStats;
+        let mut member_stats_map: HashMap<String, (String, Decimal, Decimal, HashSet<String>)> = HashMap::new();
+        
+        // 获取所有成员信息
+        let family_member_service = FamilyMemberService::default();
+        for member_relation in &members {
+            let member = family_member_service.get_by_id(db, member_relation.family_member_serial_num.clone()).await?;
+            member_stats_map.insert(
+                member.serial_num.clone(),
+                (member.name, Decimal::ZERO, Decimal::ZERO, HashSet::new())
+            );
+        }
+        
+        // 统计每个成员的支付和应分摊
+        for record in &split_records {
+            // 统计付款人的总支付
+            if let Some((_, total_paid, _, transactions_set)) = member_stats_map.get_mut(&record.payer_member_serial_num) {
+                *total_paid += record.split_amount;
+                transactions_set.insert(record.transaction_serial_num.clone());
+            }
+            
+            // 统计欠款人的总应分摊
+            if let Some((_, _, total_owed, transactions_set)) = member_stats_map.get_mut(&record.owe_member_serial_num) {
+                *total_owed += record.split_amount;
+                transactions_set.insert(record.transaction_serial_num.clone());
+            }
+        }
+        
+        // 计算每个成员的待结算金额
+        let mut member_pending_settlement: HashMap<String, Decimal> = HashMap::new();
+        for record in &split_records {
+            if record.status == "Pending" || record.status == "Confirmed" {
+                *member_pending_settlement
+                    .entry(record.owe_member_serial_num.clone())
+                    .or_insert(Decimal::ZERO) += record.split_amount;
+            }
+        }
+        
+        // 统计每个成员的分摊记录数
+        let mut member_split_counts: HashMap<String, i32> = HashMap::new();
+        for record in &split_records {
+            *member_split_counts
+                .entry(record.owe_member_serial_num.clone())
+                .or_insert(0) += 1;
+        }
+        
+        // 构建成员统计数组
+        let member_stats: Vec<MemberStats> = member_stats_map
+            .into_iter()
+            .map(|(member_serial_num, (member_name, total_paid, total_owed, transactions_set))| {
+                let total_paid_f64 = total_paid.to_string().parse().unwrap_or(0.0);
+                let total_owed_f64 = total_owed.to_string().parse().unwrap_or(0.0);
+                let pending = member_pending_settlement
+                    .get(&member_serial_num)
+                    .unwrap_or(&Decimal::ZERO)
+                    .to_string()
+                    .parse()
+                    .unwrap_or(0.0);
+                let split_count = *member_split_counts.get(&member_serial_num).unwrap_or(&0);
+                
+                MemberStats {
+                    member_serial_num,
+                    member_name,
+                    total_paid: total_paid_f64,
+                    total_owed: total_owed_f64,
+                    net_balance: total_paid_f64 - total_owed_f64,
+                    pending_settlement: pending,
+                    transaction_count: transactions_set.len() as i32,
+                    split_count,
+                }
+            })
+            .collect();
+
         let stats = FamilyLedgerStats {
             family_ledger_serial_num: serial_num,
-            total_income: 0.0,
-            total_expense: 0.0,
-            shared_expense: 0.0,
-            personal_expense: 0.0,
-            pending_settlement: 0.0,
-            member_count: 0,
-            active_transaction_count: 0,
-            member_stats: vec![], // TODO: 实现成员统计
+            total_income: total_income.to_string().parse().unwrap_or(0.0),
+            total_expense: total_expense.to_string().parse().unwrap_or(0.0),
+            shared_expense: shared_expense.to_string().parse().unwrap_or(0.0),
+            personal_expense: personal_expense.to_string().parse().unwrap_or(0.0),
+            pending_settlement: pending_settlement.to_string().parse().unwrap_or(0.0),
+            member_count: member_count as i32,
+            active_transaction_count: transactions.len() as i32,
+            member_stats,
         };
 
         Ok(stats)

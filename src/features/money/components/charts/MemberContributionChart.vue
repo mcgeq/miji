@@ -50,7 +50,10 @@ function getDefaultColor(index: number): string {
 }
 
 // 格式化金额
-function formatAmount(amount: number): string {
+function formatAmount(amount: number | undefined | null): string {
+  if (amount === undefined || amount === null || Number.isNaN(amount)) {
+    return '0.00';
+  }
   return amount.toFixed(2);
 }
 
@@ -380,6 +383,13 @@ function getBalanceClass(balance: number): string {
   gap: 1rem;
   max-height: calc(100% - 3rem);
   overflow-y: auto;
+  /* 隐藏滚动条 */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+.stats-list::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
 }
 
 .stats-item {

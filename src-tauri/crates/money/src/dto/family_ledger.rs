@@ -227,7 +227,10 @@ pub struct MemberStats {
     pub member_name: String,
     pub total_paid: f64,
     pub total_owed: f64,
-    pub balance: f64,
+    pub net_balance: f64,
+    pub pending_settlement: f64,
+    pub transaction_count: i32,
+    pub split_count: i32,
 }
 
 pub fn normalize_ledger_type(s: &str) -> String {
