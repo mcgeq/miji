@@ -319,9 +319,6 @@ function getTabIcon(iconName: string) {
                 <h2>
                   {{ selectedMember ? `${selectedMember.name} 的交易` : '交易记录' }}
                 </h2>
-                <p>
-                  点击左侧成员即可切换查看其交易详情
-                </p>
               </div>
             </div>
 
@@ -348,14 +345,31 @@ function getTabIcon(iconName: string) {
                 </thead>
                 <tbody>
                   <tr v-for="transaction in memberTransactions" :key="transaction.serialNum">
-                    <td>{{ new Date(transaction.date).toLocaleDateString() }}</td>
-                    <td>{{ transaction.transactionType }}</td>
+                    <td class="date-cell">
+                      {{ new Date(transaction.date).toISOString().split('T')[0] }}
+                    </td>
+                    <td>
+                      <span
+                        class="type-badge"
+                        :class="{
+                          'type-expense': transaction.transactionType === 'Expense',
+                          'type-income': transaction.transactionType === 'Income',
+                          'type-transfer': transaction.transactionType === 'Transfer',
+                        }"
+                      >
+                        {{ transaction.transactionType === 'Expense' ? '支出' : transaction.transactionType === 'Income' ? '收入' : '转账' }}
+                      </span>
+                    </td>
                     <td :class="transaction.transactionType === 'Expense' ? 'negative' : 'positive'">
                       {{ transaction.transactionType === 'Expense' ? '-' : '' }}
                       {{ formatCurrency(transaction.amount) }}
                     </td>
-                    <td>{{ transaction.account.name }}</td>
-                    <td>{{ transaction.description || '—' }}</td>
+                    <td class="account-cell">
+                      {{ transaction.account.name }}
+                    </td>
+                    <td class="description-cell">
+                      {{ transaction.description || '—' }}
+                    </td>
                   </tr>
                 </tbody>
               </table>
@@ -585,23 +599,54 @@ function getTabIcon(iconName: string) {
 }
 
 .members-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin-top: 16px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+  margin-top: 20px;
 }
 
 .member-card {
-  border: 1px solid var(--color-gray-200);
-  border-radius: 12px;
-  padding: 16px;
+  position: relative;
+  border: 1px solid var(--color-base-300);
+  border-radius: 16px;
+  padding: 20px;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background: white;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+.member-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: var(--color-primary-gradient);
+  opacity: 0;
+  transition: opacity 0.3s ease;
 }
 
 .member-card.active {
   border-color: var(--color-primary);
-  box-shadow: 0 10px 20px rgb(59 130 246 / 0.15);
+  box-shadow: var(--shadow-lg), 0 0 0 3px oklch(from var(--color-primary) l c h / 0.1);
+  background: linear-gradient(135deg, white 0%, oklch(from var(--color-primary) l c h / 0.02) 100%);
+  transform: translateY(-4px) scale(1.02);
+}
+
+.member-card.active::before {
+  opacity: 1;
+}
+
+.member-card:hover {
+  border-color: var(--color-primary-soft);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
 }
 
 .member-header {
@@ -611,79 +656,212 @@ function getTabIcon(iconName: string) {
 }
 
 .avatar {
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
-  background: var(--color-gray-200);
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  background: var(--color-primary-gradient);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 600;
-  color: var(--color-base-content);
+  font-weight: 700;
+  font-size: 1.35rem;
+  color: var(--color-primary-content);
+  flex-shrink: 0;
+  box-shadow: var(--shadow-sm), inset 0 1px 0 oklch(from var(--color-primary) l c h / 0.2);
+  position: relative;
+  overflow: hidden;
+}
+
+.avatar::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(45deg, transparent, oklch(from var(--color-primary) l c h / 0.15), transparent);
+  transform: rotate(45deg);
 }
 
 .member-name {
   margin: 0;
-  font-weight: 600;
+  font-weight: 700;
+  font-size: 1.05rem;
   color: var(--color-base-content);
+  letter-spacing: -0.01em;
 }
 
 .member-role {
-  margin: 4px 0 0;
-  color: var(--color-gray-500);
+  margin: 6px 0 0;
+  font-size: 0.8rem;
+  color: var(--color-neutral);
+  font-weight: 500;
+  padding: 2px 8px;
+  background: var(--color-base-200);
+  border-radius: 6px;
+  display: inline-block;
+  width: fit-content;
 }
 
 .member-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--color-base-300);
+}
+
+.member-metrics > div {
   display: flex;
-  justify-content: space-between;
-  margin-top: 12px;
-  color: var(--color-gray-600);
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 8px;
+  background: var(--color-base-100);
+  border-radius: 10px;
+  border: 1px solid var(--color-base-200);
+  transition: all 0.2s ease;
+  min-width: 0;
+}
+
+.member-metrics > div:hover {
+  background: var(--color-base-200);
+  transform: translateY(-1px);
 }
 
 .member-metrics span {
-  font-size: 12px;
-  color: var(--color-gray-400);
+  font-size: 9px;
+  color: var(--color-neutral);
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+  text-align: center;
 }
 
 .member-metrics strong {
-  display: block;
-  font-size: 16px;
-  margin-top: 4px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-base-content);
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }
 
 .transactions-table-wrapper {
   margin-top: 16px;
-  overflow: auto;
+  overflow-x: auto;
+  border-radius: 12px;
+  border: 1px solid var(--color-base-300);
+  background: white;
 }
 
 .transactions-table {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
 }
 
-.transactions-table th,
-.transactions-table td {
-  padding: 12px 8px;
-  border-bottom: 1px solid var(--color-gray-200);
-  text-align: left;
-  font-size: 14px;
+.transactions-table thead {
+  background: linear-gradient(to bottom, var(--color-base-100), var(--color-base-200));
+  border-bottom: 2px solid var(--color-base-300);
 }
 
 .transactions-table th {
-  color: var(--color-gray-400);
-  font-weight: 500;
+  padding: 14px 16px;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-neutral);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  border-bottom: 2px solid var(--color-base-300);
+}
+
+.transactions-table tbody tr {
+  transition: all 0.2s ease;
+  border-bottom: 1px solid var(--color-base-200);
+}
+
+.transactions-table tbody tr:hover {
+  background: var(--color-base-100);
+  box-shadow: inset 0 0 0 1px var(--color-primary-soft);
+}
+
+.transactions-table tbody tr:last-child {
+  border-bottom: none;
 }
 
 .transactions-table td {
+  padding: 14px 16px;
+  font-size: 13px;
   color: var(--color-base-content);
+  border-bottom: 1px solid var(--color-base-200);
+}
+
+.transactions-table tbody tr:last-child td {
+  border-bottom: none;
 }
 
 .transactions-table .positive {
   color: var(--color-success);
+  font-weight: 600;
 }
 
 .transactions-table .negative {
   color: var(--color-error);
+  font-weight: 600;
+}
+
+/* 交易类型徽章 */
+.type-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+}
+
+.type-badge.type-expense {
+  background: oklch(from var(--color-error) l c h / 0.1);
+  color: var(--color-error);
+  border: 1px solid oklch(from var(--color-error) l c h / 0.2);
+}
+
+.type-badge.type-income {
+  background: oklch(from var(--color-success) l c h / 0.1);
+  color: var(--color-success);
+  border: 1px solid oklch(from var(--color-success) l c h / 0.2);
+}
+
+.type-badge.type-transfer {
+  background: oklch(from var(--color-info) l c h / 0.1);
+  color: var(--color-info);
+  border: 1px solid oklch(from var(--color-info) l c h / 0.2);
+}
+
+/* 单元格特殊样式 */
+.date-cell {
+  color: var(--color-neutral);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+.account-cell {
+  font-weight: 500;
+}
+
+.description-cell {
+  color: var(--color-gray-500);
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .empty-state {
@@ -702,6 +880,11 @@ function getTabIcon(iconName: string) {
   .detail-body {
     grid-template-columns: 1fr;
   }
+
+  .members-grid {
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 14px;
+  }
 }
 
 @media (max-width: 768px) {
@@ -714,6 +897,59 @@ function getTabIcon(iconName: string) {
   .meta {
     margin-top: 4px;
     flex-wrap: wrap;
+  }
+
+  .members-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .member-card {
+    padding: 16px;
+  }
+
+  .avatar {
+    width: 44px;
+    height: 44px;
+    font-size: 1.15rem;
+  }
+
+  .member-metrics {
+    gap: 8px;
+    margin-top: 14px;
+    padding-top: 14px;
+  }
+
+  .member-metrics > div {
+    padding: 6px 6px;
+  }
+
+  .member-metrics span {
+    font-size: 8px;
+  }
+
+  .member-metrics strong {
+    font-size: 12px;
+  }
+
+  /* 移动端表格优化 */
+  .transactions-table th,
+  .transactions-table td {
+    padding: 10px 8px;
+    font-size: 12px;
+  }
+
+  .transactions-table th {
+    font-size: 10px;
+  }
+
+  .type-badge {
+    padding: 3px 8px;
+    font-size: 10px;
+  }
+
+  .description-cell {
+    max-width: 120px;
   }
 }
 
