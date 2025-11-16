@@ -220,33 +220,6 @@ function formatAmount(amount: number): string {
   return `¥${amount.toFixed(2)}`;
 }
 
-// 计算总和验证
-const totalValidation = computed(() => {
-  if (splitConfig.splitType === 'PERCENTAGE') {
-    const total = splitConfig.selectedMembers.reduce((sum, id) => {
-      return sum + (splitConfig.splitParams[id]?.percentage || 0);
-    }, 0);
-    return {
-      total: Number(total.toFixed(2)),
-      target: 100,
-      isValid: Math.abs(total - 100) < 0.01,
-      unit: '%',
-    };
-  }
-  if (splitConfig.splitType === 'FIXED_AMOUNT') {
-    const total = splitConfig.selectedMembers.reduce((sum, id) => {
-      return sum + (splitConfig.splitParams[id]?.amount || 0);
-    }, 0);
-    return {
-      total: Number(total.toFixed(2)),
-      target: props.transactionAmount,
-      isValid: Math.abs(total - props.transactionAmount) < 0.01,
-      unit: '¥',
-    };
-  }
-  return { total: 0, target: 0, isValid: true, unit: '' };
-});
-
 // 平均分配
 function distributeEvenly() {
   const memberCount = splitConfig.selectedMembers.length;
@@ -490,15 +463,6 @@ watch([enableSplit, splitConfig, splitPreview], () => {
               </span>
             </div>
           </div>
-        </div>
-
-        <!-- 总和验证提示（仅在不正确时显示） -->
-        <div v-if="!totalValidation.isValid" class="validation-hint validation-error">
-          <span class="validation-label">总计：</span>
-          <strong class="validation-value">{{ totalValidation.unit }}{{ totalValidation.total }}</strong>
-          <span class="validation-target">
-            / 目标：{{ totalValidation.unit }}{{ totalValidation.target }}
-          </span>
         </div>
       </div>
 
