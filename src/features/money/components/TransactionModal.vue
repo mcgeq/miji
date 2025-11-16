@@ -933,17 +933,11 @@ watch(
           <label>{{ t('financial.currency') }}</label>
           <CurrencySelector
             v-model="form.currency"
-            class="form-control"
             :disabled="isTransferReadonly || isInstallmentFieldsDisabled || isInstallmentTransactionFieldsDisabled || isReadonlyMode"
           />
         </div>
 
-        <!-- 分摊设置 -->
-        <TransactionSplitSection
-          v-if="form.amount > 0 && form.transactionType !== TransactionTypeSchema.enum.Transfer && !isReadonlyMode"
-          :transaction-amount="form.amount"
-          @update:split-config="handleSplitConfigUpdate"
-        />
+        <!-- 分摊设置已移到分摊成员选择之后 -->
 
         <!-- 转出账户 -->
         <div class="form-row">
@@ -1200,6 +1194,16 @@ watch(
             </div>
           </div>
         </div>
+
+        <!-- 分摊设置 -->
+        <TransactionSplitSection
+          v-if="!isReadonlyMode && selectedLedgers.length > 0 && selectedMembers.length > 0 && form.amount > 0 && form.transactionType !== TransactionTypeSchema.enum.Transfer"
+          :transaction-amount="form.amount"
+          :ledger-serial-num="selectedLedgers[0]"
+          :selected-members="selectedMembers"
+          :available-members="availableMembers"
+          @update:split-config="handleSplitConfigUpdate"
+        />
 
         <!-- 交易状态 -->
         <div class="form-row">

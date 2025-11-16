@@ -8,20 +8,19 @@ import {
   LucideSettings,
   LucideUsers,
 } from 'lucide-vue-next';
-import { useFamilyMemberStore } from '@/stores/money';
 import type { SplitRuleType } from '@/schema/money';
 
 interface Props {
   transactionAmount: number;
   ledgerSerialNum?: string;
+  selectedMembers: string[];
+  availableMembers?: any[];
 }
 
 const props = defineProps<Props>();
 const emit = defineEmits<{
   'update:splitConfig': [config: any];
 }>();
-
-const memberStore = useFamilyMemberStore();
 
 // 分摊开关
 const enableSplit = ref(false);
@@ -32,15 +31,12 @@ const selectedTemplate = ref<any>(null);
 // 分摊配置
 const splitConfig = reactive({
   splitType: 'EQUAL' as SplitRuleType,
-  selectedMembers: [] as string[],
+  selectedMembers: props.selectedMembers || [],
   splitParams: {} as Record<string, { percentage?: number; amount?: number; weight?: number }>,
 });
 
 // 显示配置器
 const showConfigurator = ref(false);
-
-// 可用成员
-const availableMembers = computed(() => memberStore.members);
 
 // 预设模板（快速选择）
 const quickTemplates = [
@@ -86,7 +82,7 @@ const splitPreview = computed(() => {
     case 'EQUAL': {
       const perPerson = props.transactionAmount / splitConfig.selectedMembers.length;
       splitConfig.selectedMembers.forEach(memberId => {
-        const member = availableMembers.value.find(m => m.serialNum === memberId);
+        const member = props.availableMembers?.find((m: any) => m.serialNum === memberId);
         results.push({
           memberSerialNum: memberId,
           memberName: member?.name || 'Unknown',
@@ -98,7 +94,7 @@ const splitPreview = computed(() => {
 
     case 'PERCENTAGE': {
       splitConfig.selectedMembers.forEach(memberId => {
-        const member = availableMembers.value.find(m => m.serialNum === memberId);
+        const member = props.availableMembers?.find((m: any) => m.serialNum === memberId);
         const percentage = splitConfig.splitParams[memberId]?.percentage || 0;
         results.push({
           memberSerialNum: memberId,
@@ -111,7 +107,7 @@ const splitPreview = computed(() => {
 
     case 'FIXED_AMOUNT': {
       splitConfig.selectedMembers.forEach(memberId => {
-        const member = availableMembers.value.find(m => m.serialNum === memberId);
+        const member = props.availableMembers?.find((m: any) => m.serialNum === memberId);
         const amount = splitConfig.splitParams[memberId]?.amount || 0;
         results.push({
           memberSerialNum: memberId,
@@ -129,7 +125,7 @@ const splitPreview = computed(() => {
 
       if (totalWeight > 0) {
         splitConfig.selectedMembers.forEach(memberId => {
-          const member = availableMembers.value.find(m => m.serialNum === memberId);
+          const member = props.availableMembers?.find((m: any) => m.serialNum === memberId);
           const weight = splitConfig.splitParams[memberId]?.weight || 0;
           results.push({
             memberSerialNum: memberId,
@@ -150,10 +146,8 @@ function applyQuickTemplate(template: any) {
   splitConfig.splitType = template.type;
   selectedTemplate.value = template;
 
-  // 如果还没选择成员，默认选择所有成员
-  if (splitConfig.selectedMembers.length === 0) {
-    splitConfig.selectedMembers = availableMembers.value.map(m => m.serialNum);
-  }
+  // 使用父组件传入的已选成员，不再自动选择所有成员
+  // splitConfig.selectedMembers 已经由 watch 同步
 
   initializeSplitParams();
 }
@@ -165,10 +159,13 @@ function openConfigurator() {
 
 // 初始化分摊参数
 function initializeSplitParams() {
+  const memberCount = splitConfig.selectedMembers.length;
+  const defaultPercentage = memberCount > 0 ? Number((100 / memberCount).toFixed(2)) : 0;
+
   splitConfig.selectedMembers.forEach(memberId => {
     if (!splitConfig.splitParams[memberId]) {
       splitConfig.splitParams[memberId] = {
-        percentage: splitConfig.splitType === 'PERCENTAGE' ? 0 : undefined,
+        percentage: splitConfig.splitType === 'PERCENTAGE' ? defaultPercentage : undefined,
         amount: splitConfig.splitType === 'FIXED_AMOUNT' ? 0 : undefined,
         weight: splitConfig.splitType === 'WEIGHTED' ? 1 : undefined,
       };
@@ -181,6 +178,142 @@ function formatAmount(amount: number): string {
   return `¥${amount.toFixed(2)}`;
 }
 
+// 计算总和验证
+const totalValidation = computed(() => {
+  if (splitConfig.splitType === 'PERCENTAGE') {
+    const total = splitConfig.selectedMembers.reduce((sum, id) => {
+      return sum + (splitConfig.splitParams[id]?.percentage || 0);
+    }, 0);
+    return {
+      total: Number(total.toFixed(2)),
+      target: 100,
+      isValid: Math.abs(total - 100) < 0.01,
+      unit: '%',
+    };
+  }
+  if (splitConfig.splitType === 'FIXED_AMOUNT') {
+    const total = splitConfig.selectedMembers.reduce((sum, id) => {
+      return sum + (splitConfig.splitParams[id]?.amount || 0);
+    }, 0);
+    return {
+      total: Number(total.toFixed(2)),
+      target: props.transactionAmount,
+      isValid: Math.abs(total - props.transactionAmount) < 0.01,
+      unit: '¥',
+    };
+  }
+  return { total: 0, target: 0, isValid: true, unit: '' };
+});
+
+// 平均分配
+function distributeEvenly() {
+  const memberCount = splitConfig.selectedMembers.length;
+  if (memberCount === 0) return;
+
+  if (splitConfig.splitType === 'PERCENTAGE') {
+    const perMember = Number((100 / memberCount).toFixed(2));
+    splitConfig.selectedMembers.forEach(memberId => {
+      if (!splitConfig.splitParams[memberId]) {
+        splitConfig.splitParams[memberId] = {};
+      }
+      splitConfig.splitParams[memberId].percentage = perMember;
+    });
+  } else if (splitConfig.splitType === 'FIXED_AMOUNT') {
+    const perMember = Number((props.transactionAmount / memberCount).toFixed(2));
+    splitConfig.selectedMembers.forEach(memberId => {
+      if (!splitConfig.splitParams[memberId]) {
+        splitConfig.splitParams[memberId] = {};
+      }
+      splitConfig.splitParams[memberId].amount = perMember;
+    });
+  } else if (splitConfig.splitType === 'WEIGHTED') {
+    splitConfig.selectedMembers.forEach(memberId => {
+      if (!splitConfig.splitParams[memberId]) {
+        splitConfig.splitParams[memberId] = {};
+      }
+      splitConfig.splitParams[memberId].weight = 1;
+    });
+  }
+}
+
+// 两人联动：按比例（只有2人时自动调整另一人）
+function handlePercentageInput(changedMemberId: string, newValue: number) {
+  // 只有3人或以上才强制限制最大值
+  if (splitConfig.selectedMembers.length > 2) {
+    const maxValue = getMaxPercentage(changedMemberId);
+    if (newValue > maxValue) {
+      splitConfig.splitParams[changedMemberId].percentage = maxValue;
+      return;
+    }
+  }
+
+  // 2人时自动联动
+  if (splitConfig.selectedMembers.length === 2) {
+    // 限制在0-100之间
+    const clampedValue = Math.max(0, Math.min(100, newValue || 0));
+    if (clampedValue !== newValue) {
+      splitConfig.splitParams[changedMemberId].percentage = clampedValue;
+      newValue = clampedValue;
+    }
+
+    const otherMemberId = splitConfig.selectedMembers.find(id => id !== changedMemberId);
+    if (!otherMemberId) return;
+
+    const remaining = 100 - newValue;
+    if (!splitConfig.splitParams[otherMemberId]) {
+      splitConfig.splitParams[otherMemberId] = {};
+    }
+    splitConfig.splitParams[otherMemberId].percentage = Number(remaining.toFixed(2));
+  }
+}
+
+// 两人联动：固定金额（只有2人时自动调整另一人）
+function handleAmountInput(changedMemberId: string, newValue: number) {
+  // 只有3人或以上才强制限制最大值
+  if (splitConfig.selectedMembers.length > 2) {
+    const maxValue = getMaxAmount(changedMemberId);
+    if (newValue > maxValue) {
+      splitConfig.splitParams[changedMemberId].amount = maxValue;
+      return;
+    }
+  }
+
+  // 2人时自动联动
+  if (splitConfig.selectedMembers.length === 2) {
+    // 限制在0到交易金额之间
+    const clampedValue = Math.max(0, Math.min(props.transactionAmount, newValue || 0));
+    if (clampedValue !== newValue) {
+      splitConfig.splitParams[changedMemberId].amount = clampedValue;
+      newValue = clampedValue;
+    }
+
+    const otherMemberId = splitConfig.selectedMembers.find(id => id !== changedMemberId);
+    if (!otherMemberId) return;
+
+    const remaining = props.transactionAmount - newValue;
+    if (!splitConfig.splitParams[otherMemberId]) {
+      splitConfig.splitParams[otherMemberId] = {};
+    }
+    splitConfig.splitParams[otherMemberId].amount = Number(remaining.toFixed(2));
+  }
+}
+
+// 计算每个成员的最大允许值（按比例）
+function getMaxPercentage(memberId: string): number {
+  const othersTotal = splitConfig.selectedMembers
+    .filter(id => id !== memberId)
+    .reduce((sum, id) => sum + (splitConfig.splitParams[id]?.percentage || 0), 0);
+  return Number((100 - othersTotal).toFixed(2));
+}
+
+// 计算每个成员的最大允许值（固定金额）
+function getMaxAmount(memberId: string): number {
+  const othersTotal = splitConfig.selectedMembers
+    .filter(id => id !== memberId)
+    .reduce((sum, id) => sum + (splitConfig.splitParams[id]?.amount || 0), 0);
+  return Number((props.transactionAmount - othersTotal).toFixed(2));
+}
+
 // 获取类型名称
 function getTypeName(type: SplitRuleType): string {
   const typeMap: Record<SplitRuleType, string> = {
@@ -191,6 +324,12 @@ function getTypeName(type: SplitRuleType): string {
   };
   return typeMap[type] || type;
 }
+
+// 监听 selectedMembers prop 变化
+watch(() => props.selectedMembers, newMembers => {
+  splitConfig.selectedMembers = newMembers || [];
+  initializeSplitParams();
+}, { immediate: true });
 
 // 监听配置变化，通知父组件
 watch([enableSplit, splitConfig, splitPreview], () => {
@@ -224,7 +363,7 @@ watch([enableSplit, splitConfig, splitPreview], () => {
         </span>
       </label>
       <span v-if="enableSplit" class="toggle-hint">
-        {{ splitPreview.length }} 人参与分摊
+        {{ splitConfig.selectedMembers.length }} 人参与分摊
       </span>
     </div>
 
@@ -237,6 +376,7 @@ watch([enableSplit, splitConfig, splitPreview], () => {
           <button
             v-for="template in quickTemplates"
             :key="template.id"
+            type="button"
             class="template-btn"
             :class="{ active: selectedTemplate?.id === template.id }"
             :style="{ '--template-color': template.color }"
@@ -248,8 +388,72 @@ watch([enableSplit, splitConfig, splitPreview], () => {
         </div>
       </div>
 
+      <!-- 参数配置（按比例、固定金额、按权重） -->
+      <div v-if="splitConfig.splitType !== 'EQUAL'" class="params-config">
+        <div class="params-header">
+          <label class="section-label">设置分摊参数</label>
+          <button type="button" class="btn-distribute" @click="distributeEvenly">
+            <LucideEqual class="icon-sm" />
+            平均分配
+          </button>
+        </div>
+        <div class="params-list">
+          <div
+            v-for="memberId in splitConfig.selectedMembers"
+            :key="memberId"
+            class="param-item"
+          >
+            <span class="param-member">{{ props.availableMembers?.find((m: any) => m.serialNum === memberId)?.name || 'Unknown' }}</span>
+            <div class="param-input-group">
+              <input
+                v-if="splitConfig.splitType === 'PERCENTAGE'"
+                v-model.number="splitConfig.splitParams[memberId].percentage"
+                type="number"
+                class="param-input"
+                placeholder="比例"
+                min="0"
+                :max="getMaxPercentage(memberId)"
+                step="0.01"
+                @input="handlePercentageInput(memberId, splitConfig.splitParams[memberId].percentage || 0)"
+              >
+              <span v-if="splitConfig.splitType === 'PERCENTAGE'" class="param-unit">%</span>
+              <input
+                v-if="splitConfig.splitType === 'FIXED_AMOUNT'"
+                v-model.number="splitConfig.splitParams[memberId].amount"
+                type="number"
+                class="param-input"
+                placeholder="金额"
+                min="0"
+                :max="getMaxAmount(memberId)"
+                step="0.01"
+                @input="handleAmountInput(memberId, splitConfig.splitParams[memberId].amount || 0)"
+              >
+              <span v-if="splitConfig.splitType === 'FIXED_AMOUNT'" class="param-unit">¥</span>
+              <input
+                v-if="splitConfig.splitType === 'WEIGHTED'"
+                v-model.number="splitConfig.splitParams[memberId].weight"
+                type="number"
+                class="param-input"
+                placeholder="权重"
+                min="0"
+                step="1"
+              >
+            </div>
+          </div>
+        </div>
+
+        <!-- 总和验证提示（仅在不正确时显示） -->
+        <div v-if="!totalValidation.isValid" class="validation-hint validation-error">
+          <span class="validation-label">总计：</span>
+          <strong class="validation-value">{{ totalValidation.unit }}{{ totalValidation.total }}</strong>
+          <span class="validation-target">
+            / 目标：{{ totalValidation.unit }}{{ totalValidation.target }}
+          </span>
+        </div>
+      </div>
+
       <!-- 高级配置按钮 -->
-      <button class="btn-advanced" @click="openConfigurator">
+      <button type="button" class="btn-advanced" @click="openConfigurator">
         <LucideSettings class="icon" />
         高级配置
         <LucideChevronDown class="icon-arrow" />
@@ -434,6 +638,139 @@ watch([enableSplit, splitConfig, splitPreview], () => {
   width: 14px;
   height: 14px;
   margin-left: auto;
+}
+
+/* Params Config */
+.params-config {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.params-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.btn-distribute {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.375rem 0.75rem;
+  background: var(--color-primary);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-distribute:hover {
+  background: oklch(from var(--color-primary) calc(l * 0.9) c h);
+}
+
+.btn-distribute .icon-sm {
+  width: 14px;
+  height: 14px;
+}
+
+.params-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.param-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem;
+  background: white;
+  border: 1px solid var(--color-base-300);
+  border-radius: 8px;
+  gap: 1rem;
+}
+
+.param-member {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-gray-700);
+  min-width: 80px;
+}
+
+.param-input-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1;
+  justify-content: flex-end;
+}
+
+.param-input {
+  width: 100px;
+  padding: 0.5rem;
+  border: 1px solid var(--color-base-300);
+  border-radius: 6px;
+  font-size: 0.875rem;
+  text-align: right;
+  transition: all 0.2s;
+}
+
+.param-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px oklch(from var(--color-primary) l c h / 0.1);
+}
+
+.param-unit {
+  font-size: 0.875rem;
+  color: var(--color-gray-500);
+  font-weight: 500;
+  min-width: 20px;
+}
+
+/* Validation Hint */
+.validation-hint {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background: oklch(from var(--color-primary) l c h / 0.1);
+  border: 1px solid var(--color-primary);
+  border-radius: 8px;
+  font-size: 0.875rem;
+}
+
+.validation-hint.validation-error {
+  background: oklch(from #ef4444 l c h / 0.1);
+  border-color: #ef4444;
+}
+
+.validation-label {
+  color: var(--color-gray-600);
+}
+
+.validation-value {
+  color: var(--color-gray-900);
+  font-size: 1rem;
+}
+
+.validation-error .validation-value {
+  color: #ef4444;
+}
+
+.validation-target {
+  color: var(--color-gray-500);
+  font-size: 0.75rem;
+}
+
+.validation-success {
+  margin-left: auto;
+  color: #10b981;
+  font-size: 1rem;
+  font-weight: bold;
 }
 
 /* Preview */

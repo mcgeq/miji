@@ -63,7 +63,22 @@ export interface SplitRecordListRequest {
 }
 
 // Mock 数据
-const mockTemplates = [
+const mockTemplates: Array<{
+  serial_num: string;
+  name: string;
+  description: string;
+  rule_type: string;
+  is_default: boolean;
+  is_template: boolean;
+  family_ledger_serial_num?: string;
+  participants: Array<{
+    member_serial_num: string;
+    percentage?: number;
+    amount?: number;
+    weight?: number;
+  }>;
+  created_at: string;
+}> = [
   {
     serial_num: 'ST001',
     name: '家庭均摊',
@@ -98,8 +113,13 @@ export const mockSplitService = {
 
     const template = {
       serial_num: `ST${Date.now()}`,
-      ...data,
+      name: data.name,
+      description: data.description || '',
+      rule_type: data.rule_type,
+      is_default: data.is_default || false,
       is_template: true,
+      family_ledger_serial_num: data.family_ledger_serial_num,
+      participants: data.participants || [],
       created_at: new Date().toISOString(),
     };
 
