@@ -78,6 +78,7 @@ pub fn init_commands(builder: Builder<Wry>) -> Builder<Wry> {
         money_cmd::transaction_list,
         money_cmd::transaction_list_paged,
         money_cmd::installment_plan_get,
+        money_cmd::installment_plan_get_by_transaction,
         money_cmd::installment_calculate,
         money_cmd::installment_has_paid,
         money_cmd::budget_get,

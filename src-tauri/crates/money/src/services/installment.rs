@@ -236,7 +236,7 @@ impl InstallmentService {
         })
     }
 
-    /// 获取分期付款计划
+    /// 获取分期付款计划（根据分期计划序列号）
     pub async fn get_installment_plan(
         &self,
         db: &DbConn,
@@ -247,6 +247,30 @@ impl InstallmentService {
             .await?
             .ok_or_else(|| AppError::simple(common::BusinessCode::NotFound, "分期计划不存在"))?;
 
+        self.build_installment_plan_response(db, plan).await
+    }
+
+    /// 获取分期付款计划（根据交易序列号）
+    pub async fn get_installment_plan_by_transaction(
+        &self,
+        db: &DbConn,
+        transaction_serial_num: &str,
+    ) -> MijiResult<InstallmentPlanResponse> {
+        let plan = installment_plans::Entity::find()
+            .filter(installment_plans::Column::TransactionSerialNum.eq(transaction_serial_num))
+            .one(db)
+            .await?
+            .ok_or_else(|| AppError::simple(common::BusinessCode::NotFound, "该交易没有分期计划"))?;
+
+        self.build_installment_plan_response(db, plan).await
+    }
+
+    /// 构建分期计划响应（内部方法）
+    async fn build_installment_plan_response(
+        &self,
+        db: &DbConn,
+        plan: entity::installment_plans::Model,
+    ) -> MijiResult<InstallmentPlanResponse> {
         let details = installment_details::Entity::find()
             .filter(installment_details::Column::PlanSerialNum.eq(&plan.serial_num))
             .order_by_asc(installment_details::Column::PeriodNumber)
@@ -486,7 +510,6 @@ impl InstallmentService {
                 category: transaction.category.clone(),
                 sub_category: transaction.sub_category.clone(),
                 tags: None,
-                split_members: None,
                 payment_method: PaymentMethod::from_str(&transaction.payment_method).map_err(
                     |e| {
                         AppError::simple(
@@ -510,6 +533,8 @@ impl InstallmentService {
                 remaining_periods: None,
                 installment_amount: None,
                 family_ledger_serial_nums: None,
+                split_members: None,
+                split_config: None,
             };
 
             // 手动调用 before_create hooks
@@ -662,7 +687,6 @@ impl InstallmentService {
                     category: transaction.category.clone(),
                     sub_category: transaction.sub_category.clone(),
                     tags: None,
-                    split_members: None,
                     payment_method: PaymentMethod::from_str(&transaction.payment_method).map_err(
                         |e| {
                             AppError::simple(
@@ -686,6 +710,8 @@ impl InstallmentService {
                     remaining_periods: None,
                     installment_amount: Some(Decimal::ZERO),
                     family_ledger_serial_nums: None,
+                    split_members: None,
+                    split_config: None,
                 };
 
                 let reverse_model: entity::transactions::ActiveModel = reverse_data.try_into()?;

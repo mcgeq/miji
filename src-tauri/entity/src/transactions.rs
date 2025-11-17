@@ -68,6 +68,8 @@ pub enum Relation {
     FamilyLedgerTransaction,
     #[sea_orm(has_one = "super::installment_plans::Entity")]
     InstallmentPlan,
+    #[sea_orm(has_many = "super::split_records::Entity")]
+    SplitRecords,
 }
 
 impl Related<super::account::Entity> for Entity {
@@ -97,6 +99,12 @@ impl Related<super::family_ledger_transaction::Entity> for Entity {
 impl Related<super::installment_plans::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::InstallmentPlan.def()
+    }
+}
+
+impl Related<super::split_records::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::SplitRecords.def()
     }
 }
 

@@ -90,13 +90,13 @@ const form = ref<Transaction>({
   toAccountSerialNum: '',
   date: trans.date || DateUtils.getLocalISODateTimeWithOffset(),
   // 分期相关字段
-  isInstallment: false,
-  firstDueDate: undefined,
-  totalPeriods: 0,
-  remainingPeriods: 0,
-  installmentAmount: 0,
-  remainingPeriodsAmount: 0,
-  installmentPlanSerialNum: null,
+  isInstallment: trans.isInstallment || false,
+  firstDueDate: trans.firstDueDate || undefined,
+  totalPeriods: Number(trans.totalPeriods) || 0,
+  remainingPeriods: Number(trans.remainingPeriods) || 0,
+  installmentAmount: Number(trans.installmentAmount) || 0,
+  remainingPeriodsAmount: Number(trans.remainingPeriodsAmount) || 0,
+  installmentPlanSerialNum: trans.installmentPlanSerialNum || null,
 });
 
 const categoryMap = computed(() => {
@@ -158,6 +158,8 @@ const splitConfig = ref<{
     memberSerialNum: string;
     memberName: string;
     amount: number;
+    percentage?: number;
+    weight?: number;
   }>;
 }>({
   enabled: false,
@@ -170,7 +172,14 @@ function handleSplitConfigUpdate(config: any) {
 
 // 调用后端API计算分期金额
 async function calculateInstallmentFromBackend() {
-  if (!form.value.isInstallment || form.value.totalPeriods <= 0 || form.value.amount <= 0) {
+  // 更严格的验证：确保所有必需字段都有效
+  if (
+    !form.value.isInstallment
+    || !form.value.totalPeriods
+    || form.value.totalPeriods <= 0
+    || !form.value.amount
+    || form.value.amount <= 0
+  ) {
     installmentCalculationResult.value = null;
     return;
   }
@@ -179,8 +188,8 @@ async function calculateInstallmentFromBackend() {
     isCalculatingInstallment.value = true;
 
     const request: InstallmentCalculationRequest = {
-      total_amount: form.value.amount,
-      total_periods: form.value.totalPeriods,
+      total_amount: Number(form.value.amount),
+      total_periods: Number(form.value.totalPeriods),
       first_due_date: form.value.firstDueDate
         ? DateUtils.formatDateOnly(new Date(form.value.firstDueDate))
         : DateUtils.formatDateOnly(new Date(form.value.date)),
@@ -213,21 +222,46 @@ async function loadInstallmentPlanDetails(planSerialNum: string) {
     const response = await invokeCommand<InstallmentPlanResponse>('installment_plan_get', {
       planSerialNum,
     });
-    if (response && response.details) {
-      // 存储原始数据用于统计计算
-      rawInstallmentDetails.value = response.details;
-      // 存储分期计划详情数据
-      installmentPlanDetails.value = response;
+    processInstallmentPlanResponse(response);
+  } catch (error) {
+    Lg.e('根据分期计划序列号加载失败:', error);
+    toast.error('加载分期计划详情失败');
+  }
+}
 
-      // 更新表单中的分期相关字段
-      form.value.totalPeriods = response.total_periods;
-      form.value.remainingPeriods = response.total_periods;
+// 加载分期计划详情（根据交易序列号）
+async function loadInstallmentPlanDetailsByTransaction(transactionSerialNum: string) {
+  try {
+    const response = await invokeCommand<InstallmentPlanResponse>('installment_plan_get_by_transaction', {
+      transactionSerialNum,
+    });
+    processInstallmentPlanResponse(response);
+  } catch (error) {
+    Lg.e('根据交易序列号加载分期计划失败:', error);
+    // 如果根据交易序列号查询失败，说明确实没有分期计划，不显示错误提示
+    console.warn('该交易没有分期计划');
+  }
+}
+
+// 处理分期计划响应（共用逻辑）
+function processInstallmentPlanResponse(response: InstallmentPlanResponse | null) {
+  if (response && response.details) {
+    // 存储原始数据用于统计计算
+    rawInstallmentDetails.value = response.details;
+    // 存储分期计划详情数据
+    installmentPlanDetails.value = response;
+
+    // 更新表单中的分期相关字段（如果有值才更新）
+    if (response.total_periods !== undefined && response.total_periods !== null) {
+      form.value.totalPeriods = Number(response.total_periods);
+      form.value.remainingPeriods = Number(response.total_periods);
+    }
+    if (response.installment_amount !== undefined && response.installment_amount !== null) {
       form.value.installmentAmount = Number(response.installment_amount);
+    }
+    if (response.first_due_date) {
       form.value.firstDueDate = response.first_due_date;
     }
-  } catch (error) {
-    Lg.e('加载分期计划详情失败:', error);
-    toast.error('加载分期计划详情失败');
   }
 }
 
@@ -235,7 +269,15 @@ async function loadInstallmentPlanDetails(planSerialNum: string) {
 const calculatedInstallmentAmount = computed(() => {
   // 编辑模式：使用分期计划详情数据
   if (installmentPlanDetails.value) {
-    return Number(installmentPlanDetails.value.installment_amount) || 0;
+    // 优先使用 installment_amount，如果为空则使用第一期的金额
+    if (installmentPlanDetails.value.installment_amount) {
+      return Number(installmentPlanDetails.value.installment_amount);
+    }
+    // 降级方案：使用第一期的金额
+    if (installmentPlanDetails.value.details && installmentPlanDetails.value.details.length > 0) {
+      return Number(installmentPlanDetails.value.details[0].amount) || 0;
+    }
+    return 0;
   }
   // 创建模式：使用计算结果数据
   return installmentCalculationResult.value?.installment_amount || 0;
@@ -245,26 +287,46 @@ const calculatedInstallmentAmount = computed(() => {
 const installmentDetails = computed(() => {
   // 编辑模式：使用分期计划详情数据
   if (installmentPlanDetails.value && installmentPlanDetails.value.details) {
-    return installmentPlanDetails.value.details.map(detail => ({
-      period: detail.period_number,
-      amount: Number(safeToFixed(detail.amount)),
-      dueDate: detail.due_date,
-      status: detail.status || 'PENDING', // 确保有status字段
-      paidDate: detail.paid_date,
-      paidAmount: detail.paid_amount,
-    }));
+    const sourceDetails = installmentPlanDetails.value.details;
+
+    // 获取第一期的金额作为默认值（如果某期金额为0或undefined，使用第一期金额）
+    const firstPeriodAmount = sourceDetails.length > 0 ? Number(sourceDetails[0].amount) : 0;
+
+    const details = sourceDetails.map((detail: any) => {
+      const amount = detail.amount ? Number(detail.amount) : firstPeriodAmount;
+      return {
+        period: detail.periodNumber || detail.period_number, // 支持驼峰和蛇形
+        amount,
+        dueDate: detail.dueDate || detail.due_date || '', // 支持驼峰和蛇形
+        status: detail.status || 'PENDING',
+        paidDate: detail.paidDate || detail.paid_date || null, // 支持驼峰和蛇形
+        paidAmount: (detail.paidAmount || detail.paid_amount) ? Number(detail.paidAmount || detail.paid_amount) : null,
+      };
+    });
+
+    return details;
   }
+
   // 创建模式：使用计算结果数据
   if (installmentCalculationResult.value && installmentCalculationResult.value.details) {
-    return installmentCalculationResult.value.details.map(detail => ({
-      period: detail.period,
-      amount: Number(safeToFixed(detail.amount)),
-      dueDate: detail.due_date,
-      status: detail.status || 'PENDING', // 确保有status字段
-      paidDate: detail.paid_date,
-      paidAmount: detail.paid_amount,
-    }));
+    const sourceDetails = installmentCalculationResult.value.details;
+    const firstPeriodAmount = sourceDetails.length > 0 ? Number(sourceDetails[0].amount) : 0;
+
+    const details = sourceDetails.map(detail => {
+      const amount = detail.amount ? Number(detail.amount) : firstPeriodAmount;
+      return {
+        period: detail.period,
+        amount,
+        dueDate: detail.due_date || '',
+        status: detail.status || 'PENDING',
+        paidDate: detail.paid_date || null,
+        paidAmount: detail.paid_amount ? Number(detail.paid_amount) : null,
+      };
+    });
+
+    return details;
   }
+
   return null;
 });
 
@@ -429,6 +491,19 @@ onMounted(async () => {
       selectedMembers.value = members.map(m => m.serialNum);
       // 加载成员列表（基于已选择的账本）
       await loadAvailableMembers();
+
+      // 恢复分摊配置
+      if (props.transaction.splitConfig && props.transaction.splitConfig.enabled) {
+        splitConfig.value = {
+          enabled: true,
+          splitType: props.transaction.splitConfig.splitType,
+          members: props.transaction.splitConfig.members || [],
+        };
+      } else {
+        splitConfig.value = {
+          enabled: false,
+        };
+      }
     } catch (error) {
       Lg.e('TransactionModal', 'Failed to load transaction links:', error);
     }
@@ -697,17 +772,6 @@ function emitTransfer(amount: number) {
 
 // 发射普通交易事件
 function emitTransaction(amount: number) {
-  // 将 selectedMembers 转换为后端需要的 splitMembers 格式
-  const splitMembers = selectedMembers.value.length > 0
-    ? selectedMembers.value.map(memberId => {
-        const member = availableMembers.value.find(m => m.serialNum === memberId);
-        return {
-          serialNum: memberId,
-          name: member?.name || 'Unknown',
-        };
-      })
-    : undefined;
-
   const transaction: TransactionCreate = {
     transactionType: form.value.transactionType,
     transactionStatus: form.value.transactionStatus,
@@ -721,7 +785,6 @@ function emitTransaction(amount: number) {
     category: form.value.category,
     subCategory: form.value.subCategory,
     tags: form.value.tags,
-    splitMembers, // ✅ 使用转换后的数据
     paymentMethod: form.value.paymentMethod,
     actualPayerAccount: form.value.actualPayerAccount,
     relatedTransactionSerialNum: form.value.relatedTransactionSerialNum,
@@ -736,10 +799,10 @@ function emitTransaction(amount: number) {
     remainingPeriodsAmount: amount,
     // 家庭记账本关联（支持多个）
     familyLedgerSerialNums: selectedLedgers.value,
-    // 分摊配置（新增）
-    splitConfig: splitConfig.value.enabled
+    // 分摊配置
+    splitConfig: splitConfig.value.enabled && splitConfig.value.members && splitConfig.value.members.length > 0
       ? {
-          splitType: splitConfig.value.splitType,
+          splitType: splitConfig.value.splitType || 'EQUAL',
           members: splitConfig.value.members,
         }
       : undefined,
@@ -854,11 +917,23 @@ watch(
         toAccountSerialNum: transaction.toAccountSerialNum || null,
         refundAmount: 0,
         date: transaction.date || DateUtils.getLocalISODateTimeWithOffset(),
+        // 确保分期相关字段都是有效的数字
+        totalPeriods: Number(transaction.totalPeriods) || 0,
+        remainingPeriods: Number(transaction.remainingPeriods) || 0,
+        installmentAmount: Number(transaction.installmentAmount) || 0,
+        remainingPeriodsAmount: Number(transaction.remainingPeriodsAmount) || 0,
+        // 保留firstDueDate（后面可能被loadInstallmentPlanDetails更新）
+        firstDueDate: transaction.firstDueDate || undefined,
       };
 
       // 如果是分期付款交易，加载分期计划详情
-      if (transaction.isInstallment && transaction.installmentPlanSerialNum) {
-        await loadInstallmentPlanDetails(transaction.installmentPlanSerialNum);
+      if (transaction.isInstallment) {
+        if (transaction.installmentPlanSerialNum) {
+          await loadInstallmentPlanDetails(transaction.installmentPlanSerialNum);
+        } else {
+          // 如果没有 installmentPlanSerialNum，尝试根据交易序列号查询
+          await loadInstallmentPlanDetailsByTransaction(transaction.serialNum);
+        }
       }
 
       // 检查是否有已完成的分期付款
@@ -1202,6 +1277,7 @@ watch(
           :ledger-serial-num="selectedLedgers[0]"
           :selected-members="selectedMembers"
           :available-members="availableMembers"
+          :initial-config="splitConfig"
           @update:split-config="handleSplitConfigUpdate"
         />
 
@@ -1299,31 +1375,43 @@ watch(
 
             <div class="plan-list">
               <div
-                v-for="detail in visibleInstallmentDetails"
-                :key="detail.period"
+                v-for="(detail, index) in visibleInstallmentDetails"
+                :key="detail.period || index"
                 class="plan-item"
                 :class="{ paid: detail.status === 'PAID', pending: detail.status === 'PENDING', overdue: detail.status === 'OVERDUE' }"
               >
                 <div class="period-info">
                   <div class="period-header">
-                    <span class="period-label">{{ t('financial.transaction.period', { period: detail.period }) }}</span>
+                    <span class="period-label">第 {{ detail.period || (index + 1) }} 期</span>
                     <span v-if="detail.status" class="status-text" :class="`status-${detail.status.toLowerCase()}`">
                       {{ getStatusText(detail.status) }}
                     </span>
                   </div>
-                  <span class="due-date">{{ detail.dueDate }}</span>
+                  <div class="due-date-wrapper">
+                    <span class="due-date-icon">📅</span>
+                    <span class="due-date-label">应还日:</span>
+                    <span class="due-date-value">{{ detail.dueDate || '未设置' }}</span>
+                  </div>
                 </div>
                 <div class="amount-info">
-                  <span class="amount-label">¥{{ safeToFixed(detail.amount) }}</span>
+                  <span class="amount-label">¥{{ detail.amount ? safeToFixed(detail.amount) : '0.00' }}</span>
                   <div v-if="detail.status === 'PAID'" class="payment-details">
-                    <span class="paid-date">入账日期: {{ detail.paidDate }}</span>
-                    <span v-if="detail.paidAmount" class="paid-amount">实付: ¥{{ safeToFixed(detail.paidAmount) }}</span>
+                    <div class="paid-date-wrapper">
+                      <span class="paid-icon">✓</span>
+                      <span class="paid-label">入账:</span>
+                      <span class="paid-value">{{ detail.paidDate || detail.dueDate || '日期未记录' }}</span>
+                    </div>
+                    <div v-if="detail.paidAmount" class="paid-amount-wrapper">
+                      <span class="amount-icon">💰</span>
+                      <span class="amount-paid-label">实付:</span>
+                      <span class="amount-paid-value">¥{{ safeToFixed(detail.paidAmount) }}</span>
+                    </div>
                   </div>
                   <div v-else-if="detail.status === 'PENDING'" class="pending-info">
-                    <span class="pending-text">{{ t('financial.installment.status.pending') }}</span>
+                    <span class="status-badge pending-badge">⏳ 待入账</span>
                   </div>
                   <div v-else-if="detail.status === 'OVERDUE'" class="overdue-info">
-                    <span class="overdue-text">{{ t('financial.installment.status.overdue') }}</span>
+                    <span class="status-badge overdue-badge">⚠️ 已逾期</span>
                   </div>
                 </div>
               </div>
@@ -1456,8 +1544,8 @@ watch(
 }
 
 .installment-plan {
-  margin-top: 1rem;
-  padding: 1rem;
+  margin-top: 0.75rem;
+  padding: 0.75rem;
   background: var(--color-base-100);
   border-radius: 0.5rem;
   border: 1px solid var(--color-base-300);
@@ -1467,25 +1555,25 @@ watch(
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
 }
 
 .plan-header h4 {
   margin: 0;
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
   font-weight: 600;
   color: var(--color-base-content);
 }
 
 .plan-list {
-  margin-bottom: 1rem;
+  margin-bottom: 0.75rem;
 }
 
 .plan-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0.5rem 0;
+  padding: 0.375rem 0.5rem;
   border-bottom: 1px solid var(--color-base-200);
 }
 
@@ -1496,47 +1584,130 @@ watch(
 .period-info {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0.125rem;
 }
 
 .period-label {
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
   color: var(--color-base-content);
   font-weight: 500;
 }
 
-.due-date {
+.due-date-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.15rem 0.4rem;
+  background: color-mix(in oklch, var(--color-info) 8%, transparent);
+  border-radius: 0.2rem;
+  font-size: 0.6875rem;
+}
+
+.due-date-icon {
   font-size: 0.75rem;
-  color: var(--color-base-content-soft);
-  font-family: monospace;
+}
+
+.due-date-label {
+  color: var(--color-info);
+  font-weight: 500;
+}
+
+.due-date-value {
+  color: var(--color-base-content);
+  font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+  font-weight: 500;
 }
 
 .amount-label {
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
   font-weight: 600;
   color: var(--color-primary);
 }
 
+/* 入账详情样式 */
+.payment-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  font-size: 0.6875rem;
+}
+
+.paid-date-wrapper,
+.paid-amount-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+}
+
+.paid-icon,
+.amount-icon {
+  font-size: 0.75rem;
+}
+
+.paid-icon {
+  color: var(--color-success);
+  font-weight: bold;
+}
+
+.paid-label,
+.amount-paid-label {
+  color: var(--color-success);
+  font-weight: 500;
+}
+
+.paid-value,
+.amount-paid-value {
+  color: var(--color-base-content);
+  font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+  font-weight: 500;
+}
+
+/* 状态徽章样式 */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.15rem 0.4rem;
+  border-radius: 0.2rem;
+  font-size: 0.6875rem;
+  font-weight: 500;
+}
+
+.pending-badge {
+  background: color-mix(in oklch, var(--color-warning) 15%, transparent);
+  color: var(--color-warning);
+  border: 1px solid color-mix(in oklch, var(--color-warning) 30%, transparent);
+}
+
+.overdue-badge {
+  background: color-mix(in oklch, var(--color-error) 15%, transparent);
+  color: var(--color-error);
+  border: 1px solid color-mix(in oklch, var(--color-error) 30%, transparent);
+}
+
 /* 分期计划状态样式 */
 .plan-item.paid {
-  background-color: color-mix(in oklch, var(--color-success) 10%, transparent);
+  background-color: color-mix(in oklch, var(--color-success) 8%, transparent);
+  border: 1px solid color-mix(in oklch, var(--color-success) 25%, transparent);
   border-radius: 0.25rem;
-  padding: 0.5rem;
-  margin: 0.25rem 0;
+  padding: 0.375rem 0.5rem;
+  margin: 0.2rem 0;
 }
 
 .plan-item.pending {
-  background-color: color-mix(in oklch, var(--color-warning) 10%, transparent);
+  background-color: color-mix(in oklch, var(--color-warning) 8%, transparent);
+  border: 1px solid color-mix(in oklch, var(--color-warning) 25%, transparent);
   border-radius: 0.25rem;
-  padding: 0.5rem;
-  margin: 0.25rem 0;
+  padding: 0.375rem 0.5rem;
+  margin: 0.2rem 0;
 }
 
 .plan-item.overdue {
-  background-color: color-mix(in oklch, var(--color-error) 10%, transparent);
+  background-color: color-mix(in oklch, var(--color-error) 8%, transparent);
+  border: 1px solid color-mix(in oklch, var(--color-error) 25%, transparent);
   border-radius: 0.25rem;
-  padding: 0.5rem;
-  margin: 0.25rem 0;
+  padding: 0.375rem 0.5rem;
+  margin: 0.2rem 0;
 }
 
 .status-badge {
@@ -1566,15 +1737,15 @@ watch(
 .period-header {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 0.25rem;
+  gap: 0.375rem;
+  margin-bottom: 0.125rem;
 }
 
 .status-text {
-  font-size: 0.75rem;
+  font-size: 0.6875rem;
   font-weight: 500;
-  padding: 0.125rem 0.5rem;
-  border-radius: 0.25rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: 0.2rem;
   border: 1px solid;
 }
 
@@ -1600,7 +1771,7 @@ watch(
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 0.25rem;
+  gap: 0.15rem;
 }
 
 .payment-details {

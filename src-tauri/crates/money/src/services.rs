@@ -28,6 +28,7 @@ pub mod settlement_optimizer;
 pub mod settlement_records;
 pub mod settlement_records_hooks;
 pub mod split_calculator;
+pub mod split_record;  // 新增的分摊记录辅助服务
 pub mod split_records;
 pub mod split_records_hooks;
 pub mod split_record_details;

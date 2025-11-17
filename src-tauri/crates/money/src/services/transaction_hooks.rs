@@ -632,7 +632,6 @@ async fn process_first_installment_immediately(
         category: model.category.clone(),
         sub_category: model.sub_category.clone(),
         tags: None,
-        split_members: None,
         payment_method: PaymentMethod::from_str(&model.payment_method).map_err(|e| {
             AppError::simple(
                 BusinessCode::InvalidParameter,
@@ -653,6 +652,8 @@ async fn process_first_installment_immediately(
         remaining_periods: None,
         installment_amount: None,
         family_ledger_serial_nums: None,
+        split_members: None,
+        split_config: None,
     };
 
     // 3. 手动调用 before_create hooks
@@ -851,7 +852,6 @@ async fn cleanup_installment_after_deletion(
             category: model.category.clone(),
             sub_category: model.sub_category.clone(),
             tags: None,
-            split_members: None,
             payment_method: PaymentMethod::from_str(&model.payment_method).map_err(|e| {
                 AppError::simple(
                     BusinessCode::InvalidParameter,
@@ -874,6 +874,8 @@ async fn cleanup_installment_after_deletion(
             remaining_periods: None,
             installment_amount: None,
             family_ledger_serial_nums: None,
+            split_members: None,
+            split_config: None,
         };
 
         // 手动调用 before_create hooks

@@ -667,7 +667,6 @@ impl TransactionService {
             notes: data.description.clone(),
             sub_category: data.sub_category.clone(),
             tags: None,
-            split_members: None,
             payment_method: data.payment_method.clone(),
             actual_payer_account: AccountType::from_str(&from_account.r#type).map_err(|e| {
                 AppError::simple(
@@ -684,6 +683,8 @@ impl TransactionService {
             remaining_periods_amount: Some(Decimal::ZERO),
             first_due_date: None,
             family_ledger_serial_nums: None,
+            split_members: None,
+            split_config: None,
         };
 
         let to_request = CreateTransactionRequest {
@@ -699,7 +700,6 @@ impl TransactionService {
             category: "Transfer".to_string(),
             sub_category: data.sub_category.clone(),
             tags: None,
-            split_members: None,
             payment_method: data.payment_method.clone(),
             actual_payer_account: AccountType::from_str(&to_account.r#type).map_err(|e| {
                 AppError::simple(
@@ -716,6 +716,8 @@ impl TransactionService {
             remaining_periods_amount: Some(Decimal::ZERO),
             first_due_date: None,
             family_ledger_serial_nums: None,
+            split_members: None,
+            split_config: None,
         };
 
         Ok((from_request, to_request))
@@ -782,7 +784,6 @@ impl TransactionService {
             category: "Transfer".to_string(),
             sub_category: None,
             tags: None,
-            split_members: None,
             payment_method: parse_enum_filed(
                 &outgoing.payment_method,
                 "payment_method",
@@ -802,6 +803,8 @@ impl TransactionService {
             installment_amount: Some(Decimal::ZERO),
             remaining_periods_amount: Some(Decimal::ZERO),
             family_ledger_serial_nums: None,
+            split_members: None,
+            split_config: None,
         };
 
         let reverse_in_request = CreateTransactionRequest {
@@ -817,7 +820,6 @@ impl TransactionService {
             category: "Transfer".to_string(),
             sub_category: None,
             tags: None,
-            split_members: None,
             payment_method: parse_enum_filed(
                 &outgoing.payment_method,
                 "payment_method",
@@ -837,6 +839,8 @@ impl TransactionService {
             remaining_periods_amount: Some(Decimal::ZERO),
             first_due_date: None,
             family_ledger_serial_nums: None,
+            split_config: None,
+            split_members: None,
         };
 
         (reverse_out_request, reverse_in_request)
@@ -950,6 +954,28 @@ impl CrudConverter<entity::transactions::Entity, CreateTransactionRequest, Updat
 }
 
 impl TransactionConverter {
+    /// 将模型转换为带关联数据的交易响应（包含分摊配置）
+    pub async fn model_to_response(
+        &self,
+        db: &DbConn,
+        model: entity::transactions::Model,
+    ) -> MijiResult<crate::dto::transactions::TransactionResponse> {
+        use crate::dto::transactions::TransactionResponse;
+        
+        // 1. 获取基础关联数据
+        let with_relations = self.model_to_with_relations(db, model).await?;
+        
+        // 2. 转换为 Response
+        let mut response = TransactionResponse::from(with_relations);
+        
+        // 3. 查询分摊配置
+        if let Ok(Some(split_config)) = super::split_record::get_split_config(db, &response.serial_num).await {
+            response.split_config = Some(split_config);
+        }
+        
+        Ok(response)
+    }
+    
     pub async fn model_to_with_relations(
         &self,
         db: &DbConn,
@@ -1082,15 +1108,15 @@ impl TransactionService {
         db: &DbConn,
         data: CreateTransactionRequest,
     ) -> MijiResult<TransactionWithRelations> {
-        // 保存 family_ledger_serial_nums 和 split_members 用于后续创建关联
+        // 保存 family_ledger_serial_nums 和 split_config 用于后续创建关联
         let family_ledger_serial_nums = data.family_ledger_serial_nums.clone();
-        let split_members = data.split_members.clone();
+        let split_config = data.split_config.clone();
 
         // 创建交易
         let model = self.create(db, data).await?;
 
         // 如果指定了家庭记账本，为每个记账本创建关联记录并更新统计
-        if let Some(ledger_serials) = family_ledger_serial_nums {
+        if let Some(ref ledger_serials) = family_ledger_serial_nums {
             let transaction_serial = model.serial_num.clone();
 
             for ledger_serial in ledger_serials {
@@ -1114,7 +1140,7 @@ impl TransactionService {
                 );
 
                 // 手动更新家庭记账本统计数据
-                let ledger = entity::family_ledger::Entity::find_by_id(&ledger_serial)
+                let ledger = entity::family_ledger::Entity::find_by_id(ledger_serial)
                     .one(db)
                     .await?
                     .ok_or_else(|| AppError::simple(BusinessCode::NotFound, "家庭记账本不存在"))?;
@@ -1139,14 +1165,25 @@ impl TransactionService {
             }
         }
 
-        // 创建 split_records（如果有分摊成员）
-        if let Some(split_members_data) = split_members {
-            if let Ok(members) = serde_json::from_value::<Vec<serde_json::Value>>(split_members_data) {
-                if !members.is_empty() {
-                    if let Err(e) = Self::create_split_records_for_transaction(
+        // 创建 split_records（如果启用了分摊配置）
+        if let Some(split_cfg) = split_config {
+            if !split_cfg.members.is_empty() {
+                // 获取第一个关联的账本和付款人
+                if let Some(first_ledger) = family_ledger_serial_nums.as_ref().and_then(|l| l.first()) {
+                    // 假设付款人是交易创建者（可以从账户关联的成员获取）
+                    // TODO: 从账户关联获取实际付款人
+                    let payer_serial = split_cfg.members.first()
+                        .map(|m| m.member_serial_num.clone())
+                        .unwrap_or_default();
+                    
+                    if let Err(e) = super::split_record::create_split_records(
                         db,
-                        &model,
-                        members,
+                        model.serial_num.clone(),
+                        first_ledger.clone(),
+                        payer_serial,
+                        split_cfg,
+                        model.amount,
+                        model.currency.clone(),
                     ).await {
                         tracing::error!(
                             "创建 split_records 失败: transaction={}, error={}",
@@ -1166,6 +1203,24 @@ impl TransactionService {
 
         self.converter().model_to_with_relations(db, model).await
     }
+    
+    /// 创建交易并返回完整响应（包含分摊配置）
+    pub async fn trans_create_response(
+        &self,
+        db: &DbConn,
+        data: CreateTransactionRequest,
+    ) -> MijiResult<crate::dto::transactions::TransactionResponse> {
+        let with_relations = self.trans_create_with_relations(db, data).await?;
+        
+        // 转换为响应并查询分摊配置
+        let mut response = crate::dto::transactions::TransactionResponse::from(with_relations);
+        
+        if let Ok(Some(split_config)) = super::split_record::get_split_config(db, &response.serial_num).await {
+            response.split_config = Some(split_config);
+        }
+        
+        Ok(response)
+    }
 
     pub async fn trans_get_with_relations(
         &self,
@@ -1174,6 +1229,16 @@ impl TransactionService {
     ) -> MijiResult<TransactionWithRelations> {
         let model = self.get_by_id(db, id).await?;
         self.converter().model_to_with_relations(db, model).await
+    }
+    
+    /// 获取交易并返回完整响应（包含分摊配置）
+    pub async fn trans_get_response(
+        &self,
+        db: &DbConn,
+        id: String,
+    ) -> MijiResult<crate::dto::transactions::TransactionResponse> {
+        let model = self.get_by_id(db, id).await?;
+        self.converter().model_to_response(db, model).await
     }
 
     pub async fn trans_update_with_relations(

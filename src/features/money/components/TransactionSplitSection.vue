@@ -16,6 +16,17 @@ interface Props {
   ledgerSerialNum?: string;
   selectedMembers: string[];
   availableMembers?: any[];
+  initialConfig?: {
+    enabled: boolean;
+    splitType?: string;
+    members?: Array<{
+      memberSerialNum: string;
+      memberName: string;
+      amount: number;
+      percentage?: number;
+      weight?: number;
+    }>;
+  };
 }
 
 const props = defineProps<Props>();
@@ -77,7 +88,13 @@ const splitPreview = computed(() => {
     return [];
   }
 
-  const results: Array<{ memberSerialNum: string; memberName: string; amount: number }> = [];
+  const results: Array<{
+    memberSerialNum: string;
+    memberName: string;
+    amount: number;
+    percentage?: number;
+    weight?: number;
+  }> = [];
 
   switch (splitConfig.splitType) {
     case 'EQUAL': {
@@ -101,6 +118,7 @@ const splitPreview = computed(() => {
           memberSerialNum: memberId,
           memberName: member?.name || 'Unknown',
           amount: (props.transactionAmount * percentage) / 100,
+          percentage, // 包含百分比
         });
       });
       break;
@@ -132,6 +150,7 @@ const splitPreview = computed(() => {
             memberSerialNum: memberId,
             memberName: member?.name || 'Unknown',
             amount: (props.transactionAmount * weight) / totalWeight,
+            weight, // 包含权重
           });
         });
       }
@@ -344,6 +363,30 @@ function getTypeName(type: SplitRuleType): string {
 watch(() => props.selectedMembers, newMembers => {
   splitConfig.selectedMembers = newMembers || [];
   initializeSplitParams();
+}, { immediate: true });
+
+// 监听 initialConfig，用于编辑时恢复配置
+watch(() => props.initialConfig, config => {
+  if (config && config.enabled) {
+    enableSplit.value = true;
+    splitConfig.splitType = config.splitType as SplitRuleType || 'EQUAL';
+
+    // 恢复分摊参数
+    if (config.members) {
+      config.members.forEach(member => {
+        if (!splitConfig.splitParams[member.memberSerialNum]) {
+          splitConfig.splitParams[member.memberSerialNum] = {};
+        }
+        splitConfig.splitParams[member.memberSerialNum].amount = member.amount;
+        if (member.percentage !== undefined) {
+          splitConfig.splitParams[member.memberSerialNum].percentage = member.percentage;
+        }
+        if (member.weight !== undefined) {
+          splitConfig.splitParams[member.memberSerialNum].weight = member.weight;
+        }
+      });
+    }
+  }
 }, { immediate: true });
 
 // 监听配置变化，通知父组件

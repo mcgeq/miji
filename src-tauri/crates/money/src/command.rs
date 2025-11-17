@@ -81,7 +81,7 @@ use crate::{
 
 // ============================================================================
 // start 分期付款相关
-// 获取分期付款计划
+// 获取分期付款计划（根据分期计划序列号）
 #[tauri::command]
 pub async fn installment_plan_get(
     state: State<'_, AppState>,
@@ -91,6 +91,20 @@ pub async fn installment_plan_get(
     Ok(ApiResponse::from_result(
         service
             .get_installment_plan(&state.db, &plan_serial_num)
+            .await,
+    ))
+}
+
+// 获取分期付款计划（根据交易序列号）
+#[tauri::command]
+pub async fn installment_plan_get_by_transaction(
+    state: State<'_, AppState>,
+    transaction_serial_num: String,
+) -> Result<ApiResponse<InstallmentPlanResponse>, String> {
+    let service = InstallmentService::default();
+    Ok(ApiResponse::from_result(
+        service
+            .get_installment_plan_by_transaction(&state.db, &transaction_serial_num)
             .await,
     ))
 }

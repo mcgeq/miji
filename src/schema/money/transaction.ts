@@ -31,6 +31,21 @@ export const SplitMemberSchema = z.object({
 
 export type SplitMember = z.infer<typeof SplitMemberSchema>;
 
+// 分摊配置 Schema
+export const SplitConfigSchema = z.object({
+  enabled: z.boolean(),
+  splitType: z.enum(['EQUAL', 'PERCENTAGE', 'FIXED_AMOUNT', 'WEIGHTED']),
+  members: z.array(z.object({
+    memberSerialNum: SerialNumSchema,
+    memberName: z.string(),
+    amount: z.number(),
+    percentage: z.number().optional(),
+    weight: z.number().optional(),
+  })),
+});
+
+export type SplitConfig = z.infer<typeof SplitConfigSchema>;
+
 export const TransactionSchema = z.object({
   serialNum: SerialNumSchema,
   transactionType: TransactionTypeSchema,
@@ -64,6 +79,8 @@ export const TransactionSchema = z.object({
   installmentPlanSerialNum: z.string().optional().nullable(),
   // 家庭记账本关联（支持多个）
   familyLedgerSerialNums: z.array(SerialNumSchema).optional().default([]),
+  // 分摊配置（可选）
+  splitConfig: SplitConfigSchema.optional(),
 });
 
 export const TransactionCreateSchema = TransactionSchema.pick({
@@ -93,6 +110,8 @@ export const TransactionCreateSchema = TransactionSchema.pick({
   remainingPeriodsAmount: true,
   // 家庭记账本关联（支持多个）
   familyLedgerSerialNums: true,
+  // 分摊配置
+  splitConfig: true,
 })
   .extend({
     currency: z.string().length(3),

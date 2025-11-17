@@ -17,6 +17,24 @@ use crate::dto::{
     family_member::FamilyMemberResponse,
 };
 
+// 分摊配置请求结构
+#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+#[serde(rename_all = "camelCase")]
+pub struct SplitConfigRequest {
+    pub split_type: String, // EQUAL, PERCENTAGE, FIXED_AMOUNT, WEIGHTED
+    pub members: Vec<SplitMemberRequest>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+#[serde(rename_all = "camelCase")]
+pub struct SplitMemberRequest {
+    pub member_serial_num: String,
+    pub member_name: String,
+    pub amount: Decimal,
+    pub percentage: Option<Decimal>,
+    pub weight: Option<i32>,
+}
+
 #[derive(Debug, Deserialize, Serialize, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct IncomeExpense {
@@ -390,6 +408,9 @@ pub struct CreateTransactionRequest {
 
     // 家庭记账本关联（支持多个）
     pub family_ledger_serial_nums: Option<Vec<String>>,
+    
+    // 分摊配置（使用独立结构）
+    pub split_config: Option<SplitConfigRequest>,
 }
 
 impl TryFrom<CreateTransactionRequest> for entity::transactions::ActiveModel {
@@ -443,6 +464,8 @@ impl TryFrom<CreateTransactionRequest> for entity::transactions::ActiveModel {
             remaining_periods_amount: Set(value.remaining_periods_amount),
             remaining_periods: Set(value.remaining_periods),
             installment_plan_serial_num: Set(installment_plan_serial_num),
+            // split_config 不再存储在 transactions 表中
+            // 而是通过 transaction_hooks 存储到 split_records 表
         })
     }
 }
@@ -501,6 +524,9 @@ pub struct UpdateTransactionRequest {
     pub remaining_periods_amount: Option<Decimal>,
     pub remaining_periods: Option<i32>,
     pub installment_plan_serial_num: Option<String>,
+    
+    // 分摊配置（使用独立结构）
+    pub split_config: Option<SplitConfigRequest>,
 }
 
 impl TryFrom<UpdateTransactionRequest> for entity::transactions::ActiveModel {
@@ -597,6 +623,10 @@ impl TryFrom<UpdateTransactionRequest> for entity::transactions::ActiveModel {
         if let Some(remaining_periods_amount) = value.remaining_periods_amount {
             model.remaining_periods_amount = Set(Some(remaining_periods_amount));
         }
+        
+        // split_config 不再更新到 transactions 表
+        // 而是通过单独的 API 更新 split_records 表
+        
         // 更新 updated_at 字段
         model.updated_at = Set(Some(now));
 
@@ -673,6 +703,29 @@ pub struct TransactionResponse {
     pub remaining_periods_amount: Option<Decimal>,
     pub remaining_periods: Option<i32>,
     pub installment_plan_serial_num: Option<String>,
+    // 分摊配置（从 split_records 表查询）
+    pub split_config: Option<SplitConfigResponse>,
+}
+
+// 分摊配置响应结构
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SplitConfigResponse {
+    pub enabled: bool,
+    pub split_type: String,
+    pub members: Vec<SplitMemberResponse>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SplitMemberResponse {
+    pub member_serial_num: String,
+    pub member_name: String,
+    pub amount: Decimal,
+    pub percentage: Option<Decimal>,
+    pub weight: Option<i32>,
+    pub is_paid: bool,
+    pub paid_at: Option<DateTime<FixedOffset>>,
 }
 
 impl From<TransactionWithRelations> for TransactionResponse {
@@ -737,6 +790,8 @@ impl From<TransactionWithRelations> for TransactionResponse {
             remaining_periods_amount: trans.remaining_periods_amount,
             remaining_periods: trans.remaining_periods,
             installment_plan_serial_num: trans.installment_plan_serial_num,
+            // 分摊配置需要从 split_records 表查询，在服务层处理
+            split_config: None,
         }
     }
 }
