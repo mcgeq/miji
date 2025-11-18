@@ -1,29 +1,34 @@
 <script setup lang="ts">
 import DateTimePicker from '@/components/common/DateTimePicker.vue';
 import CurrencySelector from '@/components/common/money/CurrencySelector.vue';
-import { CURRENCY_CNY } from '@/constants/moneyConst';
+// 注意：CURRENCY_CNY 已移至 transactionFormUtils
 import {
   TransactionStatusSchema,
   TransactionTypeSchema,
 } from '@/schema/common';
-import { AccountTypeSchema, PaymentMethodSchema } from '@/schema/money';
 import { useCategoryStore } from '@/stores/money';
-import { invokeCommand } from '@/types/api';
 import { lowercaseFirstLetter } from '@/utils/common';
 import { DateUtils } from '@/utils/date';
 import { Lg } from '@/utils/debugLog';
 import { toast } from '@/utils/toast';
 import { isInstallmentTransaction } from '@/utils/transaction';
+import { useAccountFilter } from '../composables/useAccountFilter';
+import { useInstallmentManagement } from '../composables/useInstallmentManagement';
+import { getDefaultPaymentMethod, usePaymentMethods } from '../composables/usePaymentMethods';
+import { useTransactionCategory } from '../composables/useTransactionCategory';
 import { useTransactionLedgerLink } from '../composables/useTransactionLedgerLink';
+import { useTransactionValidation } from '../composables/useTransactionValidation';
+import { INSTALLMENT_CONSTANTS } from '../constants/transactionConstants';
+import { handleAmountInput as handleAmountInputUtil } from '../utils/formUtils';
 import { formatCurrency } from '../utils/money';
+import { safeToFixed } from '../utils/numberUtils';
+import { initializeFormData } from '../utils/transactionFormUtils';
 import TransactionSplitSection from './TransactionSplitSection.vue';
 import type {
   TransactionType,
 } from '@/schema/common';
 import type {
   Account,
-  InstallmentCalculationRequest,
-  InstallmentCalculationResponse,
   Transaction,
   TransactionCreate,
   TransactionUpdate,
@@ -50,6 +55,62 @@ const emit = defineEmits<{
 const categoryStore = useCategoryStore();
 const { t } = useI18n();
 
+// 使用验证 Composable
+const {
+  validateTransfer,
+  validateExpense,
+} = useTransactionValidation();
+
+// 使用工具函数初始化表单（必须先定义，因为其他 composables 依赖它）
+const form = ref<Transaction>(initializeFormData(
+  props.transaction || null,
+  props.type,
+  props.accounts,
+));
+
+// 分期管理功能
+const installmentManager = useInstallmentManagement();
+// 解构常用属性供模板直接使用
+const {
+  // 统计属性
+  paidPeriodsCount,
+  pendingPeriodsCount,
+  totalPeriodsCount,
+  // 计算属性
+  calculatedInstallmentAmount,
+  installmentDetails,
+  visibleDetails,
+  hasMorePeriods,
+  // 状态
+  hasPaidInstallments,
+  isExpanded,
+} = installmentManager;
+
+// 分类管理功能
+const categoryManager = useTransactionCategory(
+  computed(() => form.value.transactionType),
+  computed(() => categoryStore.subCategories),
+);
+// 解构分类相关属性
+const { categoryMap } = categoryManager;
+
+// 账户过滤功能
+const { selectableAccounts: selectAccounts } = useAccountFilter(
+  computed(() => props.accounts),
+  computed(() => form.value.transactionType),
+  computed(() => form.value.category),
+);
+
+// 支付方式管理
+const {
+  availablePaymentMethods,
+  isPaymentMethodEditable: baseIsPaymentMethodEditable,
+} = usePaymentMethods(
+  computed(() => props.accounts),
+  computed(() => form.value.accountSerialNum),
+  computed(() => form.value.transactionType),
+);
+
 // 账本和成员关联功能
 const {
   availableLedgers,
@@ -68,64 +129,9 @@ const showLedgerSelector = ref(false);
 // 显示成员选择器
 const showMemberSelector = ref(false);
 
-const selectAccounts = computed(() => {
-  if (props.transaction?.category === 'Transfer') {
-    return props.accounts.filter(account => account.isActive);
-  }
-  if (props.type === TransactionTypeSchema.enum.Income) {
-    return props.accounts.filter(account => account.type !== AccountTypeSchema.enum.CreditCard && account.isActive);
-  }
-  return props.accounts.filter(account => account.isActive);
-});
+// 注意：selectAccounts 已从 useAccountFilter 解构（原名 selectableAccounts）
 
-const trans = props.transaction || getDefaultTransaction(props.type, props.accounts);
-
-const form = ref<Transaction>({
-  ...trans,
-  // 确保 amount 是数字类型
-  amount: typeof trans.amount === 'string' ? Number.parseFloat(trans.amount) : (trans.amount || 0),
-  currency: trans.currency || CURRENCY_CNY,
-  category: props.type === TransactionTypeSchema.enum.Transfer ? 'Transfer' : 'other',
-  refundAmount: 0,
-  toAccountSerialNum: '',
-  date: trans.date || DateUtils.getLocalISODateTimeWithOffset(),
-  // 分期相关字段
-  isInstallment: trans.isInstallment || false,
-  firstDueDate: trans.firstDueDate || undefined,
-  totalPeriods: Number(trans.totalPeriods) || 0,
-  remainingPeriods: Number(trans.remainingPeriods) || 0,
-  installmentAmount: Number(trans.installmentAmount) || 0,
-  remainingPeriodsAmount: Number(trans.remainingPeriodsAmount) || 0,
-  installmentPlanSerialNum: trans.installmentPlanSerialNum || null,
-});
-
-const categoryMap = computed(() => {
-  const map = new Map<string, { name: string; subs: string[] }>();
-  categoryStore.subCategories.forEach(sub => {
-    if (form.value.transactionType === 'Income') {
-      const allowedCategories = ['Salary', 'Investment', 'Savings', 'Gift'];
-      if (allowedCategories.includes(sub.categoryName)) {
-        if (!map.has(sub.categoryName)) {
-          map.set(sub.categoryName, { name: sub.categoryName, subs: [] });
-        }
-        map.get(sub.categoryName)!.subs.push(sub.name);
-      }
-    } else if (form.value.transactionType === 'Transfer') {
-      if (sub.categoryName === 'Transfer') {
-        if (!map.has('Transfer')) {
-          map.set('Transfer', { name: 'Transfer', subs: [] });
-        }
-        map.get('Transfer')!.subs.push(sub.name);
-      }
-    } else {
-      if (!map.has(sub.categoryName)) {
-        map.set(sub.categoryName, { name: sub.categoryName, subs: [] });
-      }
-      map.get(sub.categoryName)!.subs.push(sub.name);
-    }
-  });
-  return map;
-});
+// 注意：categoryMap 已从 categoryManager 解构
 
 const isTransferReadonly = computed(() => {
   return !!(props.transaction && form.value.category === 'Transfer');
@@ -134,21 +140,19 @@ const isTransferReadonly = computed(() => {
 const isEditabled = computed<boolean>(() => !!props.transaction);
 const isDisabled = computed<boolean>(() => isTransferReadonly.value || isEditabled.value);
 
-// 安全的数字格式化函数
-function safeToFixed(value: any, decimals: number = 2): string {
-  const numValue = typeof value === 'string' ? Number.parseFloat(value) : value;
-  return Number.isNaN(numValue) ? '0.00' : numValue.toFixed(decimals);
-}
+// 注意：safeToFixed 已移至 utils/numberUtils.ts
 
-// 后端计算结果的响应式数据（用于创建交易时）
-const installmentCalculationResult = ref<InstallmentCalculationResponse | null>(null);
-const isCalculatingInstallment = ref(false);
+// 注意：所有分期状态现在直接从 installmentManager 获取
+// 例如：installmentManager.calculationResult.value
+//       installmentManager.isCalculating.value
+//       installmentManager.installmentDetails.value
+//       installmentManager.planDetails.value
+//       installmentManager.hasPaidInstallments.value
 
-// 存储原始的分期详情数据（用于统计计算）
-const rawInstallmentDetails = ref<any[]>([]);
-
-// 分期计划详情数据（用于编辑交易时）
-const installmentPlanDetails = ref<InstallmentPlanResponse | null>(null);
+// 注意：直接使用 composable 提供的计算属性
+// - installmentManager.paidPeriodsCount.value
+// - installmentManager.pendingPeriodsCount.value
+// - installmentManager.totalPeriodsCount.value
 
 // 分摊配置状态
 const splitConfig = ref<{
@@ -171,85 +175,43 @@ function handleSplitConfigUpdate(config: any) {
 }
 
 // 调用后端API计算分期金额
+// 注意：使用 composable 方法
 async function calculateInstallmentFromBackend() {
-  // 更严格的验证：确保所有必需字段都有效
-  if (
-    !form.value.isInstallment
-    || !form.value.totalPeriods
-    || form.value.totalPeriods <= 0
-    || !form.value.amount
-    || form.value.amount <= 0
-  ) {
-    installmentCalculationResult.value = null;
-    return;
-  }
+  // 使用 composable 的方法
+  await installmentManager.calculateInstallment(
+    form.value.amount,
+    form.value.totalPeriods,
+    form.value.firstDueDate || undefined,
+    form.value.date,
+  );
 
-  try {
-    isCalculatingInstallment.value = true;
-
-    const request: InstallmentCalculationRequest = {
-      total_amount: Number(form.value.amount),
-      total_periods: Number(form.value.totalPeriods),
-      first_due_date: form.value.firstDueDate
-        ? DateUtils.formatDateOnly(new Date(form.value.firstDueDate))
-        : DateUtils.formatDateOnly(new Date(form.value.date)),
-    };
-
-    const response = await invokeCommand<InstallmentCalculationResponse>('installment_calculate', {
-      data: request,
-    });
-
-    // 确保每个detail都有status字段
-    if (response.details) {
-      response.details = response.details.map(detail => ({
-        ...detail,
-        status: detail.status || 'PENDING', // 如果没有status字段，默认为PENDING
-      }));
-    }
-    installmentCalculationResult.value = response;
-  } catch (error) {
-    console.error('计算分期金额失败:', error);
-    toast.error('计算分期金额失败');
-    installmentCalculationResult.value = null;
-  } finally {
-    isCalculatingInstallment.value = false;
-  }
+  // 注意：不需要同步，直接使用 installmentManager 的状态
 }
 
 // 加载分期计划详情（用于编辑模式）
+// 注意：使用 composable 方法
 async function loadInstallmentPlanDetails(planSerialNum: string) {
-  try {
-    const response = await invokeCommand<InstallmentPlanResponse>('installment_plan_get', {
-      planSerialNum,
-    });
-    processInstallmentPlanResponse(response);
-  } catch (error) {
-    Lg.e('根据分期计划序列号加载失败:', error);
-    toast.error('加载分期计划详情失败');
+  await installmentManager.loadPlanBySerialNum(planSerialNum);
+  // 同步数据（TODO: Phase 2.6 删除）
+  if (installmentManager.planDetails.value) {
+    processInstallmentPlanResponse(installmentManager.planDetails.value as any);
   }
 }
 
 // 加载分期计划详情（根据交易序列号）
+// 注意：使用 composable 方法
 async function loadInstallmentPlanDetailsByTransaction(transactionSerialNum: string) {
-  try {
-    const response = await invokeCommand<InstallmentPlanResponse>('installment_plan_get_by_transaction', {
-      transactionSerialNum,
-    });
-    processInstallmentPlanResponse(response);
-  } catch (error) {
-    Lg.e('根据交易序列号加载分期计划失败:', error);
-    // 如果根据交易序列号查询失败，说明确实没有分期计划，不显示错误提示
-    console.warn('该交易没有分期计划');
+  await installmentManager.loadPlanByTransaction(transactionSerialNum);
+  // 同步数据（TODO: Phase 2.6 删除）
+  if (installmentManager.planDetails.value) {
+    processInstallmentPlanResponse(installmentManager.planDetails.value as any);
   }
 }
 
 // 处理分期计划响应（共用逻辑）
 function processInstallmentPlanResponse(response: InstallmentPlanResponse | null) {
   if (response && response.details) {
-    // 存储原始数据用于统计计算
-    rawInstallmentDetails.value = response.details;
-    // 存储分期计划详情数据
-    installmentPlanDetails.value = response;
+    // 注意：数据已由 installmentManager 管理，这里只更新表单
 
     // 更新表单中的分期相关字段（如果有值才更新）
     if (response.total_periods !== undefined && response.total_periods !== null) {
@@ -265,95 +227,19 @@ function processInstallmentPlanResponse(response: InstallmentPlanResponse | null
   }
 }
 
-// 计算每期金额（用于显示在输入框中）
-const calculatedInstallmentAmount = computed(() => {
-  // 编辑模式：使用分期计划详情数据
-  if (installmentPlanDetails.value) {
-    // 优先使用 installment_amount，如果为空则使用第一期的金额
-    if (installmentPlanDetails.value.installment_amount) {
-      return Number(installmentPlanDetails.value.installment_amount);
-    }
-    // 降级方案：使用第一期的金额
-    if (installmentPlanDetails.value.details && installmentPlanDetails.value.details.length > 0) {
-      return Number(installmentPlanDetails.value.details[0].amount) || 0;
-    }
-    return 0;
-  }
-  // 创建模式：使用计算结果数据
-  return installmentCalculationResult.value?.installment_amount || 0;
-});
-
-// 获取分期金额详情（用于显示）
-const installmentDetails = computed(() => {
-  // 编辑模式：使用分期计划详情数据
-  if (installmentPlanDetails.value && installmentPlanDetails.value.details) {
-    const sourceDetails = installmentPlanDetails.value.details;
-
-    // 获取第一期的金额作为默认值（如果某期金额为0或undefined，使用第一期金额）
-    const firstPeriodAmount = sourceDetails.length > 0 ? Number(sourceDetails[0].amount) : 0;
-
-    const details = sourceDetails.map((detail: any) => {
-      const amount = detail.amount ? Number(detail.amount) : firstPeriodAmount;
-      return {
-        period: detail.periodNumber || detail.period_number, // 支持驼峰和蛇形
-        amount,
-        dueDate: detail.dueDate || detail.due_date || '', // 支持驼峰和蛇形
-        status: detail.status || 'PENDING',
-        paidDate: detail.paidDate || detail.paid_date || null, // 支持驼峰和蛇形
-        paidAmount: (detail.paidAmount || detail.paid_amount) ? Number(detail.paidAmount || detail.paid_amount) : null,
-      };
-    });
-
-    return details;
-  }
-
-  // 创建模式：使用计算结果数据
-  if (installmentCalculationResult.value && installmentCalculationResult.value.details) {
-    const sourceDetails = installmentCalculationResult.value.details;
-    const firstPeriodAmount = sourceDetails.length > 0 ? Number(sourceDetails[0].amount) : 0;
-
-    const details = sourceDetails.map(detail => {
-      const amount = detail.amount ? Number(detail.amount) : firstPeriodAmount;
-      return {
-        period: detail.period,
-        amount,
-        dueDate: detail.due_date || '',
-        status: detail.status || 'PENDING',
-        paidDate: detail.paid_date || null,
-        paidAmount: detail.paid_amount ? Number(detail.paid_amount) : null,
-      };
-    });
-
-    return details;
-  }
-
-  return null;
-});
-
-// 后端查询是否有已完成的分期付款
-const hasPaidInstallmentsFromBackend = ref(false);
+// 注意：calculatedInstallmentAmount 和 installmentDetails 已从 installmentManager 解构
 
 // 检查交易是否有已完成的分期付款
+// 注意：使用 composable 方法
 async function checkPaidInstallments(transactionSerialNum: string) {
-  if (!transactionSerialNum) {
-    hasPaidInstallmentsFromBackend.value = false;
-    return;
-  }
-
-  try {
-    const response = await invokeCommand<boolean>('installment_has_paid', {
-      transactionSerialNum,
-    });
-    hasPaidInstallmentsFromBackend.value = response;
-  } catch (error) {
-    console.error('检查分期付款状态失败:', error);
-    hasPaidInstallmentsFromBackend.value = false;
-  }
+  // 使用 composable 的方法
+  await installmentManager.checkPaidStatus(transactionSerialNum);
+  // 注意：状态已由 installmentManager 管理
 }
 
-// 判断分期付款相关字段是否应该被禁用
+// 判断分期付款相关字段是否应该被禁用（直接使用 composable）
 const isInstallmentFieldsDisabled = computed(() => {
-  return isEditabled.value && hasPaidInstallmentsFromBackend.value;
+  return isEditabled.value && hasPaidInstallments.value;
 });
 
 // 判断当前交易是否为分期交易
@@ -391,73 +277,8 @@ function getStatusText(status: string): string {
   return result;
 }
 
-// 获取已入账期数
-function getPaidPeriodsCount(): number {
-  // 如果是创建模式且勾选了分期付款，返回0（因为还没有入账）
-  if (form.value.isInstallment && !props.transaction) {
-    return 0;
-  }
-
-  // 如果是编辑模式且勾选了分期付款
-  if (form.value.isInstallment && props.transaction) {
-    // 如果还没有入账，返回0
-    if (!hasPaidInstallmentsFromBackend.value) {
-      return 0;
-    }
-    // 如果已经入账，使用后端数据
-    if (rawInstallmentDetails.value && rawInstallmentDetails.value.length > 0) {
-      const paidCount = rawInstallmentDetails.value.filter(detail => detail.status === 'PAID').length;
-      return paidCount;
-    }
-  }
-
-  return 0;
-}
-
-// 获取待入账期数
-function getPendingPeriodsCount(): number {
-  // 如果是创建模式且勾选了分期付款，返回总期数（因为都待入账）
-  if (form.value.isInstallment && !props.transaction) {
-    return form.value.totalPeriods || 0;
-  }
-
-  // 如果是编辑模式且勾选了分期付款
-  if (form.value.isInstallment && props.transaction) {
-    // 如果还没有入账，使用表单中的总期数（因为都待入账）
-    if (!hasPaidInstallmentsFromBackend.value) {
-      return form.value.totalPeriods || 0;
-    }
-    // 如果已经入账，使用后端数据
-    if (rawInstallmentDetails.value && rawInstallmentDetails.value.length > 0) {
-      const pendingCount = rawInstallmentDetails.value.filter(detail => detail.status === 'PENDING' || detail.status === 'OVERDUE').length;
-      return pendingCount;
-    }
-  }
-
-  return 0;
-}
-
-// 获取总期数
-function getTotalPeriodsCount(): number {
-  // 如果是创建模式且勾选了分期付款，使用表单中的总期数
-  if (form.value.isInstallment && !props.transaction) {
-    return form.value.totalPeriods || 0;
-  }
-
-  // 如果是编辑模式且勾选了分期付款
-  if (form.value.isInstallment && props.transaction) {
-    // 如果还没有入账，使用表单中的总期数
-    if (!hasPaidInstallmentsFromBackend.value) {
-      return form.value.totalPeriods || 0;
-    }
-    // 如果已经入账，使用后端数据
-    if (rawInstallmentDetails.value && rawInstallmentDetails.value.length > 0) {
-      return rawInstallmentDetails.value.length;
-    }
-  }
-
-  return 0;
-}
+// 注意：分期统计属性已从 useInstallmentManagement 中解构
+// paidPeriodsCount, pendingPeriodsCount, totalPeriodsCount 可直接在模板中使用
 
 // 可用的交易状态选项
 const availableTransactionStatuses = computed(() => {
@@ -525,24 +346,43 @@ watch(() => selectedLedgers.value, async () => {
 }, { deep: true });
 
 // 监听账户变化，智能推荐账本和成员
-watch(() => form.value.accountSerialNum, async accountId => {
-  if (accountId && !props.transaction) {
-    // 只在创建模式下自动推荐
+watch(() => form.value.accountSerialNum, async (accountId, oldAccountId) => {
+  // 只在创建模式下处理（编辑模式保持原有关联）
+  if (!props.transaction) {
+    // 如果账户被清空，清除所有关联
+    if (!accountId) {
+      selectedLedgers.value = [];
+      selectedMembers.value = [];
+      return;
+    }
+
+    // 账户切换时，获取新账户的推荐
     try {
       const { suggestedLedgers } = await getSmartSuggestions(accountId);
 
+      // ✅ 账户切换时清除旧的账本和成员选择，避免数据不一致
+      if (oldAccountId && oldAccountId !== accountId) {
+        selectedLedgers.value = [];
+        selectedMembers.value = [];
+      }
+
       // ✅ 账本自动反显：如果账户属于家庭账本，自动选择
-      if (selectedLedgers.value.length === 0 && suggestedLedgers.length > 0) {
+      if (suggestedLedgers.length > 0) {
         selectedLedgers.value = suggestedLedgers.map(l => l.serialNum);
         // Auto-selected ledgers for account
+      } else {
+        // 如果没有推荐的账本，确保清空选择
+        selectedLedgers.value = [];
       }
 
       // ❌ 成员不自动选择：保持为空，让用户手动选择
-      // 清空之前的选择，避免账户切换时保留旧的成员
       selectedMembers.value = [];
       // Members cleared for manual selection
     } catch (error) {
       Lg.e('TransactionModal', 'Failed to get smart suggestions:', error);
+      // 发生错误时也清空选择，避免数据不一致
+      selectedLedgers.value = [];
+      selectedMembers.value = [];
     }
   }
 });
@@ -550,9 +390,9 @@ watch(() => form.value.accountSerialNum, async accountId => {
 // 监听分期选项变化
 watch(() => form.value.isInstallment, newValue => {
   if (newValue) {
-    // 启用分期时，设置默认值
-    form.value.totalPeriods = 12;
-    form.value.remainingPeriods = 12;
+    // 启用分期时，设置默认值（使用常量而非魔法数字）
+    form.value.totalPeriods = INSTALLMENT_CONSTANTS.DEFAULT_PERIODS;
+    form.value.remainingPeriods = INSTALLMENT_CONSTANTS.DEFAULT_PERIODS;
     form.value.transactionStatus = TransactionStatusSchema.enum.Pending;
     // 设置默认首期还款日期为交易日期
     form.value.firstDueDate = DateUtils.formatDateOnly(new Date(form.value.date));
@@ -566,8 +406,8 @@ watch(() => form.value.isInstallment, newValue => {
     form.value.installmentAmount = 0;
     form.value.firstDueDate = undefined;
     form.value.transactionStatus = TransactionStatusSchema.enum.Completed;
-    installmentCalculationResult.value = null;
-    installmentPlanDetails.value = null;
+    // 使用 composable 重置状态
+    installmentManager.resetInstallmentState();
   }
 });
 
@@ -592,60 +432,21 @@ watch(calculatedInstallmentAmount, newAmount => {
   }
 });
 
-// 分期计划展开/收起状态
-const isInstallmentPlanExpanded = ref(false);
+// 注意：visibleDetails 已从 installmentManager 解构，直接使用
 
-// 获取显示的分期详情（默认显示前2期）
-const visibleInstallmentDetails = computed(() => {
-  if (!installmentDetails.value) {
-    return null;
-  }
+// 注意：hasMorePeriods 已从 installmentManager 解构，直接使用
 
-  const result = isInstallmentPlanExpanded.value
-    ? installmentDetails.value
-    : installmentDetails.value.slice(0, 2);
-  return result;
-});
+// 注意：availablePaymentMethods 已从 usePaymentMethods 解构
 
-// 是否有更多期数需要收起
-const hasMorePeriods = computed(() => {
-  return installmentDetails.value && installmentDetails.value.length > 2;
-});
-
-// Compute available payment methods based on selected account and transaction typ
-const availablePaymentMethods = computed(() => {
-  const selectedAccount = props.accounts.find(acc => acc.serialNum === form.value.accountSerialNum);
-  if (form.value.transactionType !== TransactionTypeSchema.enum.Income) {
-    if (selectedAccount?.type === AccountTypeSchema.enum.Alipay) {
-      return [PaymentMethodSchema.enum.Alipay];
-    } else if (selectedAccount?.type === AccountTypeSchema.enum.WeChat) {
-      return [PaymentMethodSchema.enum.WeChat];
-    } else if (selectedAccount?.type === AccountTypeSchema.enum.CreditCard) {
-      return [
-        PaymentMethodSchema.enum.CreditCard,
-        PaymentMethodSchema.enum.Alipay,
-        PaymentMethodSchema.enum.WeChat,
-        PaymentMethodSchema.enum.CloudQuickPass,
-        PaymentMethodSchema.enum.JD,
-        PaymentMethodSchema.enum.UnionPay,
-        PaymentMethodSchema.enum.PayPal,
-        PaymentMethodSchema.enum.ApplePay,
-        PaymentMethodSchema.enum.GooglePay,
-        PaymentMethodSchema.enum.SamsungPay,
-        PaymentMethodSchema.enum.HuaweiPay,
-        PaymentMethodSchema.enum.MiPay,
-      ];
-    }
-  }
-  return PaymentMethodSchema.options;
-});
-
-// Determine if payment method should be editable
+// 判断支付方式是否可编辑（增强版，考虑分期和只读模式）
 const isPaymentMethodEditable = computed(() => {
-  if (form.value.transactionType === TransactionTypeSchema.enum.Income) return false;
+  // 基础判断（收入交易、单一支付方式）
+  if (!baseIsPaymentMethodEditable.value) return false;
+  // 分期交易且字段被禁用时不可编辑
   if (isInstallmentTransactionFieldsDisabled.value) return false;
+  // 只读模式下不可编辑
   if (isReadonlyMode.value) return false;
-  return availablePaymentMethods.value.length > 1;
+  return true;
 });
 
 const selectToAccounts = computed(() => {
@@ -687,66 +488,34 @@ function clearMembers() {
 function handleSubmit() {
   const amount = form.value.amount;
   const fromAccount = props.accounts.find(acc => acc.serialNum === form.value.accountSerialNum);
-  if (!fromAccount) {
-    console.error('未找到转出账户');
-    toast.error('未找到转出账户');
-    return;
-  }
 
-  const fromBalance = parseBalance(fromAccount);
-  if (fromBalance === null) {
-    toast.error('转出账户余额数据无效');
-    return;
-  }
-  // 转出校验
-  if (form.value.transactionType === TransactionTypeSchema.enum.Expense && !canWithdraw(amount, fromBalance)) {
-    toast.error(fromAccount.type === AccountTypeSchema.enum.CreditCard
-      ? '信用卡转出金额不能大于账户余额'
-      : '转出金额超过账户余额');
-    return;
-  }
+  // 转账验证
   if (form.value.category === TransactionTypeSchema.enum.Transfer) {
     const toAccount = props.accounts.find(acc => acc.serialNum === form.value.toAccountSerialNum);
-    if (!toAccount) {
-      toast.error('未找到转入账户');
-      return;
-    }
+    const result = validateTransfer(fromAccount, toAccount, amount);
 
-    // 转入校验
-    if (!canDeposit(toAccount, amount)) {
-      toast.error('转入金额将导致信用卡余额超过授信额度');
+    if (!result.valid) {
+      toast.error(result.error || '转账验证失败');
       return;
     }
 
     emitTransfer(amount);
   } else {
+    // 支出验证
+    if (form.value.transactionType === TransactionTypeSchema.enum.Expense) {
+      const result = validateExpense(fromAccount, amount);
+
+      if (!result.valid) {
+        toast.error(result.error || '支出验证失败');
+        return;
+      }
+    }
+
     emitTransaction(amount);
   }
 }
 
-// 解析余额，credit=true时返回初始额度
-function parseBalance(account: any, credit: boolean = false): number | null {
-  const value = credit ? account.initialBalance : account.balance;
-  const num = Number.parseFloat(value);
-  return Number.isNaN(num) ? null : num;
-}
-
-// 校验是否可以转出
-function canWithdraw(amount: number, balance: number): boolean {
-  return amount <= balance;
-}
-
-// 校验是否可以转入
-function canDeposit(account: any, amount: number): boolean {
-  if (account.type === AccountTypeSchema.enum.CreditCard) {
-    const balance = parseBalance(account);
-    const initialBalance = parseBalance(account, true);
-    if (balance === null || initialBalance === null) return false;
-    return balance + amount <= initialBalance;
-  }
-  // 非信用卡账户不限制转入
-  return true;
-}
+// 注意：parseBalance, canWithdraw, canDeposit 已移至 useTransactionValidation composable
 
 // 发射转账事件
 function emitTransfer(amount: number) {
@@ -818,55 +587,12 @@ function emitTransaction(amount: number) {
   }
 }
 
+// 处理金额输入（使用工具函数）
 function handleAmountInput(event: Event) {
-  const input = event.target as HTMLInputElement;
-  const value = input.value;
-
-  if (value === '') {
-    form.value.amount = 0;
-    return;
-  }
-
-  const numValue = Number.parseFloat(value);
-  if (!Number.isNaN(numValue)) {
-    form.value.amount = numValue;
-  }
+  form.value.amount = handleAmountInputUtil(event);
 }
 
-function getDefaultTransaction(type: TransactionType, accounts: Account[]) {
-  return {
-    serialNum: '',
-    transactionType: type,
-    category: type === TransactionTypeSchema.enum.Transfer ? 'Transfer' : 'other',
-    subCategory: 'other',
-    amount: 0,
-    refundAmount: 0,
-    currency: CURRENCY_CNY,
-    date: DateUtils.getLocalISODateTimeWithOffset(),
-    description: '',
-    notes: null,
-    accountSerialNum: '',
-    toAccountSerialNum: '',
-    tags: [],
-    paymentMethod: PaymentMethodSchema.enum.Other,
-    actualPayerAccount: AccountTypeSchema.enum.Bank,
-    transactionStatus: TransactionStatusSchema.enum.Completed,
-    isDeleted: false,
-    createdAt: DateUtils.getLocalISODateTimeWithOffset(),
-    updatedAt: null,
-    account: accounts[0] || ({} as Account),
-    // 分期相关字段
-    isInstallment: false,
-    firstDueDate: undefined,
-    totalPeriods: 0,
-    remainingPeriods: 0,
-    installmentPlanSerialNum: null,
-    installmentAmount: 0,
-    remainingPeriodsAmount: 0,
-    // 家庭记账本关联
-    familyLedgerSerialNums: [],
-  };
-}
+// 注意：getDefaultTransaction 已移至 utils/transactionFormUtils.ts
 
 watch(
   () => form.value.category,
@@ -879,24 +605,19 @@ watch(
   },
 );
 
+// 监听账户变化，自动设置支付方式
 watch(
   () => form.value.accountSerialNum,
   newAccountSerialNum => {
     const selectedAccount = props.accounts.find(acc => acc.serialNum === newAccountSerialNum);
-    if (form.value.transactionType === TransactionTypeSchema.enum.Income) {
-      form.value.paymentMethod = PaymentMethodSchema.enum.Other;
-    } else {
-      form.value.paymentMethod = PaymentMethodSchema.enum.Cash;
-      if (selectedAccount) {
-        if (selectedAccount.type === AccountTypeSchema.enum.Alipay) {
-          form.value.paymentMethod = PaymentMethodSchema.enum.Alipay;
-        } else if (selectedAccount.type === AccountTypeSchema.enum.WeChat) {
-          form.value.paymentMethod = PaymentMethodSchema.enum.WeChat;
-        } else if (selectedAccount.type === AccountTypeSchema.enum.CreditCard) {
-          form.value.paymentMethod = PaymentMethodSchema.enum.CreditCard;
-        }
-      }
-    }
+
+    // 使用工具函数根据账户类型和交易类型自动设置支付方式
+    form.value.paymentMethod = getDefaultPaymentMethod(
+      selectedAccount,
+      form.value.transactionType,
+    );
+
+    // 防止转账时来源账户和目标账户相同
     if (newAccountSerialNum === form.value.toAccountSerialNum) {
       form.value.toAccountSerialNum = '';
     }
@@ -907,24 +628,12 @@ watch(
   () => props.transaction,
   async transaction => {
     if (transaction) {
-      form.value = {
-        ...getDefaultTransaction(props.type, props.accounts),
-        ...transaction,
-        // 确保 amount 是数字类型
-        amount: typeof transaction.amount === 'string' ? Number.parseFloat(transaction.amount) : transaction.amount,
-        currency: transaction.currency || CURRENCY_CNY,
-        subCategory: transaction.subCategory || 'other',
-        toAccountSerialNum: transaction.toAccountSerialNum || null,
-        refundAmount: 0,
-        date: transaction.date || DateUtils.getLocalISODateTimeWithOffset(),
-        // 确保分期相关字段都是有效的数字
-        totalPeriods: Number(transaction.totalPeriods) || 0,
-        remainingPeriods: Number(transaction.remainingPeriods) || 0,
-        installmentAmount: Number(transaction.installmentAmount) || 0,
-        remainingPeriodsAmount: Number(transaction.remainingPeriodsAmount) || 0,
-        // 保留firstDueDate（后面可能被loadInstallmentPlanDetails更新）
-        firstDueDate: transaction.firstDueDate || undefined,
-      };
+      form.value = initializeFormData(
+        transaction,
+        props.type,
+        props.accounts,
+      );
+      // 注意：初始化已由工具函数处理，数字字段已转换
 
       // 如果是分期付款交易，加载分期计划详情
       if (transaction.isInstallment) {
@@ -939,12 +648,9 @@ watch(
       // 检查是否有已完成的分期付款
       await checkPaidInstallments(transaction.serialNum);
     } else {
-      form.value = getDefaultTransaction(props.type, props.accounts);
+      form.value = initializeFormData(null, props.type, props.accounts);
       // 重置分期付款状态
-      hasPaidInstallmentsFromBackend.value = false;
-      rawInstallmentDetails.value = [];
-      installmentPlanDetails.value = null;
-      installmentCalculationResult.value = null;
+      installmentManager.resetInstallmentState();
     }
   },
   { immediate: true },
@@ -1367,15 +1073,15 @@ watch(
                 v-if="hasMorePeriods"
                 type="button"
                 class="toggle-btn"
-                @click="isInstallmentPlanExpanded = !isInstallmentPlanExpanded"
+                @click="installmentManager.toggleExpanded()"
               >
-                {{ isInstallmentPlanExpanded ? t('common.actions.collapse') : t('common.actions.expand') }}
+                {{ isExpanded ? t('common.actions.collapse') : t('common.actions.expand') }}
               </button>
             </div>
 
             <div class="plan-list">
               <div
-                v-for="(detail, index) in visibleInstallmentDetails"
+                v-for="(detail, index) in visibleDetails"
                 :key="detail.period || index"
                 class="plan-item"
                 :class="{ paid: detail.status === 'PAID', pending: detail.status === 'PENDING', overdue: detail.status === 'OVERDUE' }"
@@ -1421,15 +1127,15 @@ watch(
               <div class="summary-stats">
                 <div class="stat-item">
                   <span class="stat-label">已入账:</span>
-                  <span class="stat-value paid">{{ getPaidPeriodsCount() }} 期</span>
+                  <span class="stat-value paid">{{ paidPeriodsCount }} 期</span>
                 </div>
                 <div class="stat-item">
                   <span class="stat-label">待入账:</span>
-                  <span class="stat-value pending">{{ getPendingPeriodsCount() }} 期</span>
+                  <span class="stat-value pending">{{ pendingPeriodsCount }} 期</span>
                 </div>
                 <div class="stat-item">
                   <span class="stat-label">总期数:</span>
-                  <span class="stat-value">{{ getTotalPeriodsCount() }} 期</span>
+                  <span class="stat-value">{{ totalPeriodsCount }} 期</span>
                 </div>
               </div>
               <div class="total-amount">
@@ -1438,9 +1144,9 @@ watch(
                   v-if="hasMorePeriods"
                   type="button"
                   class="toggle-btn"
-                  @click="isInstallmentPlanExpanded = !isInstallmentPlanExpanded"
+                  @click="installmentManager.toggleExpanded()"
                 >
-                  {{ isInstallmentPlanExpanded ? t('common.actions.collapse') : t('common.actions.expand') }}
+                  {{ isExpanded ? t('common.actions.collapse') : t('common.actions.expand') }}
                 </button>
               </div>
             </div>
