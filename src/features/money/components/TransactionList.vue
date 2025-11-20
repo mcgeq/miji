@@ -353,23 +353,76 @@ defineExpose({
 
 <style scoped lang="postcss">
 .money-option-btn {
-  padding: 0.375rem;
-  border: 1px solid var(--color-gray-300);
-  border-radius: 0.375rem;
-  color: var(--color-gray-600);
-  background-color: transparent;
-  transition: background-color 0.2s;
+  padding: 0.5rem 0.75rem;
+  border: 2px solid var(--color-base-300);
+  border-radius: 0.5rem;
+  color: var(--color-neutral);
+  background-color: var(--color-base-100);
+  transition: all 0.2s ease;
+  font-weight: 500;
+  cursor: pointer;
 }
 
 .money-option-btn:hover {
-  color: var(--color-neutral);
-  border-color: var(--color-neutral);
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+  background-color: var(--color-primary-soft);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+.money-option-btn:active {
+  transform: translateY(0);
 }
 
 .empty-state {
-  padding: 3rem 1rem;
+  padding: 4rem 1rem;
   text-align: center;
-  color: var(--color-gray-400);
+  color: var(--color-neutral);
+  background: linear-gradient(to bottom, var(--color-base-100), var(--color-base-200));
+  border-radius: 1rem;
+  border: 2px dashed var(--color-base-300);
+  margin: 1rem 0;
+}
+
+.empty-state .text-6xl {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  opacity: 0.3;
+}
+
+.empty-state .text-base {
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--color-neutral);
+}
+
+.loading-state {
+  padding: 4rem 1rem;
+  text-align: center;
+  color: var(--color-neutral);
+  background: linear-gradient(to bottom, var(--color-base-100), var(--color-base-200));
+  border-radius: 1rem;
+  border: 2px solid var(--color-base-300);
+  margin: 1rem 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.loading-state::before {
+  content: '';
+  width: 3rem;
+  height: 3rem;
+  border: 3px solid var(--color-base-300);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
 .loading-wrapper {

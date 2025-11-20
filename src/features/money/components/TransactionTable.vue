@@ -315,8 +315,7 @@ function viewSplitDetail(transaction: Transaction) {
         </div>
 
         <!-- 操作列 -->
-        <div v-if="showActions" class="card-row">
-          <span class="card-label">操作</span>
+        <div v-if="showActions" class="card-row card-row-actions">
           <div class="card-actions">
             <button
               class="card-action-btn"
@@ -363,9 +362,10 @@ function viewSplitDetail(transaction: Transaction) {
 /* Table 布局容器 */
 .transaction-wrapper.layout-table {
   overflow-x: auto;
-  border-radius: 12px;
-  border: 1px solid var(--color-base-300);
-  background: var(--color-base-50);
+  border-radius: 0.75rem;
+  border: 2px solid var(--color-base-300);
+  background: var(--color-base-100);
+  box-shadow: var(--shadow-sm);
 }
 
 /* 加载状态 */
@@ -390,14 +390,18 @@ function viewSplitDetail(transaction: Transaction) {
 
 /* 空状态 */
 .table-empty {
-  padding: 48px;
+  padding: 4rem 2rem;
   text-align: center;
-  color: var(--color-gray-400);
+  color: var(--color-neutral);
+  background: linear-gradient(to bottom, var(--color-base-100), var(--color-base-200));
+  border-radius: 0.75rem;
+  margin: 1rem;
 }
 
 .table-empty p {
   margin: 0;
-  font-size: 14px;
+  font-size: 1rem;
+  font-weight: 500;
 }
 
 /* 表格基础样式 */
@@ -633,43 +637,85 @@ function viewSplitDetail(transaction: Transaction) {
 .transaction-cards {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.75rem;
+  padding: 0.5rem 0;
 }
 
 .transaction-card {
-  border: 1px solid var(--color-base-300);
-  background: var(--color-base-50);
-  border-radius: 8px;
-  transition: all 0.2s ease;
+  border: 2px solid var(--color-base-300);
+  background: linear-gradient(to bottom, var(--color-base-100), var(--color-base-200));
+  border-radius: 0.75rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
   overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  position: relative;
+}
+
+.transaction-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: var(--color-primary);
+  opacity: 0;
+  transition: opacity 0.3s ease;
 }
 
 .transaction-card:hover {
-  background-color: var(--color-base-200);
-  border-color: var(--color-primary-soft);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  background: linear-gradient(to bottom, var(--color-base-100), oklch(from var(--color-base-200) l c h / 0.8));
+  border-color: oklch(from var(--color-primary) l c h / 0.6);
+  box-shadow: 0 4px 12px oklch(from var(--color-primary) l c h / 0.15);
+  transform: translateY(-2px);
+}
+
+.transaction-card:hover::before {
+  opacity: 0.8;
+  background: linear-gradient(to bottom, var(--color-primary), var(--color-primary-hover));
+}
+
+.transaction-card:active {
+  transform: translateY(0);
 }
 
 .card-row {
   font-size: 0.875rem;
-  padding: 0.5rem;
+  padding: 0.75rem 1rem;
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
+  border-bottom: 1px solid oklch(from var(--color-base-300) l c h / 0.5);
+  transition: background-color 0.2s ease;
+  gap: 1rem;
+}
+
+.card-row:last-child {
+  border-bottom: none;
+}
+
+.card-row:hover {
+  background-color: oklch(from var(--color-base-200) l c h / 0.5);
 }
 
 .card-label {
   display: inline-block;
-  color: var(--color-gray-600);
-  font-weight: 600;
+  color: var(--color-neutral);
+  font-weight: 700;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
   min-width: 80px;
   flex-shrink: 0;
+  opacity: 0.8;
 }
 
 .card-content {
   flex: 1;
   text-align: right;
+  min-width: 0;
+  word-break: break-word;
 }
 
 /* 类型内容 */
@@ -691,21 +737,26 @@ function viewSplitDetail(transaction: Transaction) {
 
 /* 金额样式 */
 .card-amount {
-  font-weight: 600;
-  font-size: 1rem;
+  font-weight: 700;
+  font-size: 1.125rem;
   text-align: right;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
 }
 
 .card-amount.amount-income {
   color: var(--color-success);
+  text-shadow: 0 1px 2px oklch(from var(--color-success) l c h / 0.2);
 }
 
 .card-amount.amount-expense {
   color: var(--color-error);
+  text-shadow: 0 1px 2px oklch(from var(--color-error) l c h / 0.2);
 }
 
 .card-amount.amount-transfer {
   color: var(--color-info);
+  text-shadow: 0 1px 2px oklch(from var(--color-info) l c h / 0.2);
 }
 
 /* 账户名称 */
@@ -737,34 +788,50 @@ function viewSplitDetail(transaction: Transaction) {
   color: var(--color-base-content);
 }
 
+/* 操作行样式 */
+.card-row-actions {
+  justify-content: flex-end;
+  padding: 0.5rem 1rem 0.75rem;
+}
+
 /* 操作按钮 */
 .card-actions {
   display: flex;
   gap: 0.5rem;
   justify-content: flex-end;
+  flex-shrink: 0;
 }
 
 .card-action-btn {
-  padding: 0.375rem;
-  border: 1px solid var(--color-base-300);
+  padding: 0.5rem;
+  border: 2px solid var(--color-base-300);
   background: var(--color-base-100);
-  border-radius: 6px;
+  border-radius: 0.5rem;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   align-items: center;
   justify-content: center;
+  min-width: 2.5rem;
+  min-height: 2.5rem;
 }
 
 .card-action-btn:hover:not(.disabled-btn) {
   background: var(--color-primary);
   border-color: var(--color-primary);
-  color: white;
+  color: var(--color-primary-content);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.card-action-btn:active:not(.disabled-btn) {
+  transform: translateY(0);
 }
 
 .card-action-btn.disabled-btn {
-  opacity: 0.5;
+  opacity: 0.4;
   cursor: not-allowed;
+  background: var(--color-base-300);
 }
 
 .action-icon {
@@ -776,12 +843,24 @@ function viewSplitDetail(transaction: Transaction) {
 @media (min-width: 769px) {
   .transaction-card {
     display: grid;
-    grid-template-columns: 120px 140px 180px 140px 140px 120px;
+    grid-template-columns: 120px 140px 180px 140px 140px 1fr;
+    align-items: center;
   }
 
   .card-row {
     align-items: center;
     justify-content: flex-end;
+    border-bottom: none;
+    padding: 0.75rem 0.5rem;
+  }
+
+  .card-row:hover {
+    background-color: transparent;
+  }
+
+  .card-row-actions {
+    justify-content: flex-end;
+    padding: 0.75rem 1rem 0.75rem 0.5rem;
   }
 
   .card-label {

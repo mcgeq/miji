@@ -1192,17 +1192,37 @@ watch(
 
 <style scoped lang="postcss">
 .modal-header {
-  display: flex; justify-content: space-between; align-items: center;
-  border-bottom: 1px solid var(--color-base-200);
-  margin-bottom: 1rem; padding-bottom: 0.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.25rem;
 }
 
 .modal-title {
-  font-size: 1.125rem; font-weight: 600;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--color-base-content);
+  letter-spacing: -0.01em;
 }
 
 .modal-close-btn {
-  background: transparent; border: none; cursor: pointer;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0.375rem;
+  border-radius: 0.375rem;
+  transition: all 0.2s ease;
+  color: var(--color-neutral);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-close-btn:hover {
+  background: oklch(from var(--color-base-300) l c h / 0.5);
+  color: var(--color-base-content);
+  transform: scale(1.1);
 }
 
 .checkbox-label {
@@ -1234,11 +1254,18 @@ watch(
 }
 
 .installment-section {
-  background: var(--color-base-50);
-  border: 1px solid var(--color-base-200);
-  border-radius: 0.5rem;
-  padding: 1rem;
-  margin: 0.5rem 0;
+  background: linear-gradient(to bottom, var(--color-base-100), var(--color-base-200));
+  border: 2px solid var(--color-primary-soft);
+  border-radius: 0.75rem;
+  padding: 1.25rem;
+  margin: 1rem 0;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.3s ease;
+}
+
+.installment-section:hover {
+  box-shadow: var(--shadow-md);
+  border-color: var(--color-primary);
 }
 
 .installment-section .form-row {
@@ -1603,9 +1630,10 @@ watch(
   transform: rotate(180deg);
 }
 
-.modal-close-btn:hover { color: var(--color-primary); }
-
-.icon { width: 1.5rem; height: 1.5rem; }
+.icon {
+  width: 1.5rem;
+  height: 1.5rem;
+}
 
 /* ==================== 账本和成员选择器样式 ==================== */
 .label-with-hint {
@@ -1928,12 +1956,32 @@ watch(
 
 .form-control, .form-display {
   width: 66%;
-  padding: 0.5rem 0.75rem;
-  border-radius: 6px;
-  border: 1px solid var(--color-base-300);
+  padding: 0.625rem 0.875rem;
+  border-radius: 0.5rem;
+  border: 2px solid var(--color-base-300);
+  background-color: var(--color-base-100);
+  color: var(--color-base-content);
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
+  font-weight: 500;
+}
+
+.form-control:hover:not(:disabled) {
+  border-color: var(--color-primary-soft);
+  background-color: var(--color-base-200);
+}
+
+.form-control:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  background-color: var(--color-base-100);
+  box-shadow: 0 0 0 3px oklch(from var(--color-primary) l c h / 0.1);
+}
+
+.form-display {
   background-color: var(--color-base-200);
   color: var(--color-neutral);
-  font-size: 0.875rem;
+  font-weight: 600;
 }
 
 /* 移动端响应式布局 - 保持同一行显示 */
@@ -2116,11 +2164,100 @@ watch(
   color: var(--color-neutral) !important;
 }
 
-textarea.form-control { resize: vertical; }
+textarea.form-control {
+  resize: vertical;
+  min-height: 80px;
+}
 
 .textarea-max {
   max-width: 400px;
   width: 100%;
   box-sizing: border-box;
+}
+
+/* ==================== Modal Actions ==================== */
+.modal-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  align-items: center;
+  padding: 0.5rem 1.5rem 0.25rem;
+  margin-top: 0.5rem;
+}
+
+.btn-close,
+.btn-submit {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 50%;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 2px solid;
+  flex-shrink: 0;
+}
+
+.btn-close {
+  background: var(--color-base-100);
+  border-color: var(--color-base-300);
+  color: var(--color-neutral);
+}
+
+.btn-close:hover {
+  background: var(--color-base-200);
+  border-color: var(--color-error);
+  color: var(--color-error);
+  transform: scale(1.1);
+  box-shadow: var(--shadow-md);
+}
+
+.btn-close:active {
+  transform: scale(1.05);
+}
+
+.btn-submit {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-primary-content);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-submit:hover {
+  background: var(--color-primary-hover);
+  border-color: var(--color-primary-hover);
+  transform: scale(1.1);
+  box-shadow: var(--shadow-lg);
+}
+
+.btn-submit:active {
+  transform: scale(1.05);
+}
+
+.icon-btn {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+/* Mobile optimization for action buttons */
+@media (max-width: 768px) {
+  .modal-actions {
+    padding: 1.25rem;
+    gap: 0.75rem;
+  }
+
+  .btn-close,
+  .btn-submit {
+    width: 3rem;
+    height: 3rem;
+  }
+
+  .icon-btn {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
 }
 </style>
