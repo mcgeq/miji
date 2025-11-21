@@ -9,8 +9,7 @@ interface AccountStoreState {
   accounts: Account[];
   loading: boolean;
   error: string | null;
-  // 金额隐藏状态
-  globalAmountHidden: boolean;
+  // 单个账户金额隐藏状态
   accountAmountHidden: Record<string, boolean>;
 }
 
@@ -23,7 +22,6 @@ export const useAccountStore = defineStore('money-accounts', {
     accounts: [],
     loading: false,
     error: null,
-    globalAmountHidden: false,
     accountAmountHidden: {},
   }),
 
@@ -50,10 +48,10 @@ export const useAccountStore = defineStore('money-accounts', {
     },
 
     /**
-     * 检查账户金额是否隐藏
+     * 检查单个账户金额是否隐藏
      */
     isAccountAmountHidden: state => (serialNum: string) => {
-      return state.globalAmountHidden || state.accountAmountHidden[serialNum] || false;
+      return state.accountAmountHidden[serialNum] || false;
     },
   },
 
@@ -165,13 +163,6 @@ export const useAccountStore = defineStore('money-accounts', {
       } finally {
         this.loading = false;
       }
-    },
-
-    /**
-     * 切换全局金额隐藏
-     */
-    toggleGlobalAmountHidden() {
-      this.globalAmountHidden = !this.globalAmountHidden;
     },
 
     /**

@@ -11,7 +11,7 @@ import {
   Wallet2,
 } from 'lucide-vue-next';
 import SimplePagination from '@/components/common/SimplePagination.vue';
-import { useAccountStore } from '@/stores/money';
+import { useAccountStore, useMoneyConfigStore } from '@/stores/money';
 import { useAccountFilters } from '../composables/useAccountFilters';
 import { formatCurrency } from '../utils/money';
 import type { Account, AccountType } from '@/schema/money';
@@ -34,8 +34,14 @@ const emit = defineEmits<{
 
 const { t } = useI18n();
 const accountStore = useAccountStore();
+const moneyConfigStore = useMoneyConfigStore();
 
 const mediaQueries = useMediaQueriesStore();
+
+// 检查账户金额是否隐藏（全局 + 单个）
+function isAccountAmountHidden(serialNum: string) {
+  return moneyConfigStore.globalAmountHidden || accountStore.isAccountAmountHidden(serialNum);
+}
 // 移动端过滤展开状态
 const showMoreFilters = ref(!mediaQueries.isMobile);
 
@@ -300,10 +306,10 @@ const gridLayoutClass = computed(() => {
           <div class="account-actions">
             <button
               class="money-option-btn money-option-eye-hover"
-              :title="accountStore.isAccountAmountHidden(account.serialNum) ? '显示金额' : '隐藏金额'"
+              :title="isAccountAmountHidden(account.serialNum) ? '显示金额' : '隐藏金额'"
               @click="toggleAccountAmountVisibility(account.serialNum)"
             >
-              <LucideEye v-if="!accountStore.isAccountAmountHidden(account.serialNum)" class="wh-4" />
+              <LucideEye v-if="!isAccountAmountHidden(account.serialNum)" class="wh-4" />
               <LucideEyeOff v-else class="wh-4" />
             </button>
             <!-- 虚拟账户不显示禁用、编辑、删除按钮 -->
@@ -340,7 +346,7 @@ const gridLayoutClass = computed(() => {
         <div class="account-balance">
           <span class="account-currency">{{ account.currency?.code }}</span>
           <span class="balance-amount">
-            {{ accountStore.isAccountAmountHidden(account.serialNum) ? '***' : formatCurrency(account.balance) }}
+            {{ isAccountAmountHidden(account.serialNum) ? '***' : formatCurrency(account.balance) }}
           </span>
         </div>
       </div>

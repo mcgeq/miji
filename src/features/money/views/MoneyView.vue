@@ -5,7 +5,7 @@ import { useMoneyStats } from '@/composables/useMoneyStats';
 import { CURRENCY_CNY } from '@/constants/moneyConst';
 import { TransactionTypeSchema } from '@/schema/common';
 import { MoneyDb } from '@/services/money/money';
-import { useAccountStore, useCategoryStore } from '@/stores/money';
+import { useCategoryStore, useMoneyConfigStore } from '@/stores/money';
 import { Lg } from '@/utils/debugLog';
 import { toast } from '@/utils/toast';
 import AccountList from '../components/AccountList.vue';
@@ -35,8 +35,8 @@ const budgetListRef = ref<InstanceType<typeof BudgetList> | null>(null);
 const reminderListRef = ref<InstanceType<typeof ReminderList> | null>(null);
 const stackedCardsRef = ref<InstanceType<typeof StackedStatCards> | null>(null);
 
-const accountStore = useAccountStore();
 const categoryStore = useCategoryStore();
+const moneyConfigStore = useMoneyConfigStore();
 const { confirmState, confirmDelete, handleConfirm, handleCancel, handleClose } = useConfirm();
 
 // 使用各个功能模块的 hooks
@@ -266,7 +266,7 @@ function handleCardClick(_index: number, _card: any) {
 
 // ------------------ Amount Visibility ------------------
 function toggleGlobalAmountVisibility() {
-  accountStore.toggleGlobalAmountHidden();
+  moneyConfigStore.toggleGlobalAmountHidden();
 }
 
 // 存储监听器清理函数
@@ -381,10 +381,10 @@ onUnmounted(() => {
         </button>
         <button
           class="btn-hide"
-          :class="accountStore.globalAmountHidden ? 'btn-gray' : 'btn-blue'"
+          :class="moneyConfigStore.globalAmountHidden ? 'btn-gray' : 'btn-blue'"
           @click="toggleGlobalAmountVisibility"
         >
-          <LucideEye v-if="!accountStore.globalAmountHidden" />
+          <LucideEye v-if="!moneyConfigStore.globalAmountHidden" />
           <LucideEyeOff v-else />
         </button>
       </div>
