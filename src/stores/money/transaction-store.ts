@@ -1,6 +1,7 @@
 // src/stores/money/transaction-store.ts
 import { defineStore } from 'pinia';
 import { MoneyDb } from '@/services/money/money';
+import { emitStoreEvent } from './store-events';
 import type { PageQuery } from '@/schema/common';
 import type {
   Transaction,
@@ -113,6 +114,13 @@ export const useTransactionStore = defineStore('money-transactions', {
       try {
         const transaction = await MoneyDb.createTransaction(data);
         this.transactions.unshift(transaction);
+
+        // 发送交易创建事件，触发账户更新
+        emitStoreEvent('transaction:created', {
+          transactionSerialNum: transaction.serialNum,
+          accountSerialNum: transaction.accountSerialNum,
+        });
+
         return transaction;
       } catch (error: any) {
         this.error = error.message || '创建交易失败';
@@ -135,6 +143,13 @@ export const useTransactionStore = defineStore('money-transactions', {
         if (index !== -1) {
           this.transactions[index] = transaction;
         }
+
+        // 发送交易更新事件，触发账户更新
+        emitStoreEvent('transaction:updated', {
+          transactionSerialNum: transaction.serialNum,
+          accountSerialNum: transaction.accountSerialNum,
+        });
+
         return transaction;
       } catch (error: any) {
         this.error = error.message || '更新交易失败';
@@ -152,8 +167,20 @@ export const useTransactionStore = defineStore('money-transactions', {
       this.error = null;
 
       try {
+        // 先获取交易信息，用于事件发送
+        const transaction = this.getTransactionById(serialNum);
+        const accountSerialNum = transaction?.accountSerialNum;
+
         await MoneyDb.deleteTransaction(serialNum);
         this.transactions = this.transactions.filter(t => t.serialNum !== serialNum);
+
+        // 发送交易删除事件，触发账户更新
+        if (accountSerialNum) {
+          emitStoreEvent('transaction:deleted', {
+            transactionSerialNum: serialNum,
+            accountSerialNum,
+          });
+        }
       } catch (error: any) {
         this.error = error.message || '删除交易失败';
         throw error;
@@ -172,6 +199,15 @@ export const useTransactionStore = defineStore('money-transactions', {
       try {
         const [fromTx, toTx] = await MoneyDb.transferCreate(data);
         this.transactions.unshift(fromTx, toTx);
+
+        // 发送转账创建事件，触发两个账户更新
+        emitStoreEvent('transfer:created', {
+          fromAccountSerialNum: fromTx.accountSerialNum,
+          toAccountSerialNum: toTx.accountSerialNum,
+          fromTransactionSerialNum: fromTx.serialNum,
+          toTransactionSerialNum: toTx.serialNum,
+        });
+
         return [fromTx, toTx];
       } catch (error: any) {
         this.error = error.message || '创建转账失败';
@@ -201,6 +237,14 @@ export const useTransactionStore = defineStore('money-transactions', {
         if (fromIndex !== -1) this.transactions[fromIndex] = fromTx;
         if (toIndex !== -1) this.transactions[toIndex] = toTx;
 
+        // 发送转账更新事件，触发两个账户更新
+        emitStoreEvent('transfer:updated', {
+          fromAccountSerialNum: fromTx.accountSerialNum,
+          toAccountSerialNum: toTx.accountSerialNum,
+          fromTransactionSerialNum: fromTx.serialNum,
+          toTransactionSerialNum: toTx.serialNum,
+        });
+
         return [fromTx, toTx];
       } catch (error: any) {
         this.error = error.message || '更新转账失败';
@@ -224,6 +268,14 @@ export const useTransactionStore = defineStore('money-transactions', {
         this.transactions = this.transactions.filter(
           t => t.serialNum !== fromTx.serialNum && t.serialNum !== toTx.serialNum,
         );
+
+        // 发送转账删除事件，触发两个账户更新
+        emitStoreEvent('transfer:deleted', {
+          fromAccountSerialNum: fromTx.accountSerialNum,
+          toAccountSerialNum: toTx.accountSerialNum,
+          fromTransactionSerialNum: fromTx.serialNum,
+          toTransactionSerialNum: toTx.serialNum,
+        });
 
         return [fromTx, toTx];
       } catch (error: any) {

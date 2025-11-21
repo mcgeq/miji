@@ -9,6 +9,7 @@ import { vPermission } from './directives/permission';
 import { initI18n } from './i18n/i18n';
 import router from './router';
 import { i18nErrorMap } from './schema/i18nErrorMap';
+import { initMoneyStores } from './stores/money';
 
 // 样式导入
 import '@/assets/styles/index.css';
@@ -63,6 +64,9 @@ async function main() {
 
   // 注册全局指令
   app.directive('permission', vPermission);
+
+  // 初始化 Money Store 事件监听器
+  initMoneyStores();
 
   // 启动应用
   const bootstrapper = new AppBootstrapper();

@@ -23,6 +23,10 @@ pub struct CurrencyResponse {
     pub locale: String,
     /// 货币符号 ($, €, ¥等)
     pub symbol: String,
+    /// 是否为默认货币
+    pub is_default: bool,
+    /// 是否激活
+    pub is_active: bool,
     /// 创建时间 (ISO 8601格式)
     pub created_at: DateTime<FixedOffset>,
     /// 最后更新时间 (ISO 8601格式)
@@ -36,6 +40,8 @@ impl From<entity::currency::Model> for CurrencyResponse {
             code: model.code,
             locale: model.locale,
             symbol: model.symbol,
+            is_default: model.is_default,
+            is_active: model.is_active,
             created_at: model.created_at,
             updated_at: model.updated_at,
         }
@@ -64,6 +70,18 @@ pub struct CreateCurrencyRequest {
 
     #[validate(length(min = 1, max = 5, message = "符号长度需在1-5字符之间"))]
     pub symbol: String,
+
+    /// 是否为默认货币（可选，默认false）
+    #[serde(default)]
+    pub is_default: bool,
+
+    /// 是否激活（可选，默认true）
+    #[serde(default = "default_is_active")]
+    pub is_active: bool,
+}
+
+fn default_is_active() -> bool {
+    true
 }
 
 // 创建请求到实体模型的转换
@@ -75,6 +93,8 @@ impl From<CreateCurrencyRequest> for entity::currency::ActiveModel {
             code: Set(request.code),
             locale: Set(request.locale),
             symbol: Set(request.symbol),
+            is_default: Set(request.is_default),
+            is_active: Set(request.is_active),
             created_at: Set(now),
             updated_at: Set(Some(now)),
         }
@@ -97,6 +117,12 @@ pub struct UpdateCurrencyRequest {
 
     #[validate(length(min = 1, max = 5, message = "符号长度需在1-5字符之间"))]
     pub symbol: Option<String>,
+
+    /// 是否为默认货币
+    pub is_default: Option<bool>,
+
+    /// 是否激活
+    pub is_active: Option<bool>,
 }
 
 // 区域格式自定义验证
@@ -118,6 +144,14 @@ impl UpdateCurrencyRequest {
 
         if let Some(symbol) = self.symbol {
             model.symbol = Set(symbol);
+        }
+
+        if let Some(is_default) = self.is_default {
+            model.is_default = Set(is_default);
+        }
+
+        if let Some(is_active) = self.is_active {
+            model.is_active = Set(is_active);
         }
 
         // 设置更新时间

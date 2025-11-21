@@ -57,6 +57,7 @@ mod m20251116_000007_enhance_budget_for_family;
 mod m20251116_add_unique_constraint_family_member_name;
 mod m20251116_create_split_record_details;
 mod m20251116_drop_split_members;
+mod m20251121_000001_add_currency_flags;
 mod m20251916_221213_create_sub_categories;
 mod m20251917_223412_create_sub_category_insert;
 mod m20251918_120000_add_sub_category_property_rental;
@@ -133,6 +134,8 @@ impl MigratorTrait for Migrator {
             Box::new(m20251116_create_split_record_details::Migration),
             // Phase 6: 扩展Budget表支持家庭预算
             Box::new(m20251116_000007_enhance_budget_for_family::Migration),
+            // 为 Currency 表添加 is_default 和 is_active 字段
+            Box::new(m20251121_000001_add_currency_flags::Migration),
         ]
     }
 }

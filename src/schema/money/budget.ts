@@ -3,6 +3,7 @@ import {
   AlertThresholdSchema,
   AttachmentSchema,
   BudgetTypeSchema,
+  CategoryNameSchema,
   CurrencySchema,
   DateSchema,
   DateTimeSchema,
@@ -75,7 +76,8 @@ export const BudgetSchema = z.object({
   attachments: z.array(AttachmentSchema).optional().nullable(),
   budgetScopeType: BudgetScopeTypeSchema,
   accountScope: AccountScopeSchema.optional().nullable(),
-  categoryScope: z.array(z.string()),
+  // 使用 CategoryNameSchema 确保类型约束
+  categoryScope: z.array(CategoryNameSchema),
   advancedRules: z.array(BudgetRuleSchema).optional().nullable(),
   createdAt: DateTimeSchema,
   updatedAt: DateTimeSchema.optional().nullable(),

@@ -1,10 +1,12 @@
 import { z } from 'zod';
 import {
   AmountSchema,
+  CategoryNameSchema,
   CurrencySchema,
   DateSchema,
   DateTimeSchema,
   SerialNumSchema,
+  SubCategoryNameSchema,
   TransactionStatusSchema,
   TransactionTypeSchema,
 } from '../common';
@@ -59,8 +61,9 @@ export const TransactionSchema = z.object({
   notes: z.string().optional().nullable(),
   accountSerialNum: SerialNumSchema,
   toAccountSerialNum: SerialNumSchema.optional().nullable(),
-  category: z.string(),
-  subCategory: z.string().optional().nullable(),
+  // 使用 CategoryNameSchema 确保类型约束
+  category: CategoryNameSchema,
+  subCategory: SubCategoryNameSchema.optional().nullable(),
   tags: z.array(TagsSchema),
   splitMembers: z.array(SplitMemberSchema).optional(),
   paymentMethod: PaymentMethodSchema,

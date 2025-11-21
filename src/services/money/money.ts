@@ -26,6 +26,7 @@ import type {
 import type {
   AccountBalanceSummary,
   Currency,
+  CurrencyCrate,
   CurrencyUpdate,
   IncomeExpense,
   PageQuery,
@@ -272,7 +273,7 @@ export class MoneyDb {
 
   // ========================= Currency Start =========================
   // Currency 操作
-  static async createCurrency(currency: Currency): Promise<Currency> {
+  static async createCurrency(currency: CurrencyCrate): Promise<Currency> {
     return this.currencyMapper.create(currency);
   }
 

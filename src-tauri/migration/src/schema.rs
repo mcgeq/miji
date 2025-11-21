@@ -254,6 +254,8 @@ pub enum Currency {
     Code,
     Locale,
     Symbol,
+    IsDefault,
+    IsActive,
     CreatedAt,
     UpdatedAt,
 }

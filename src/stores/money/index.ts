@@ -27,11 +27,19 @@
 export { useAccountStore } from './account-store';
 export { useBudgetStore } from './budget-store';
 export { useCategoryStore } from './category-store';
+export { useCurrencyStore } from './currency-store';
 export { useFamilyLedgerStore } from './family-ledger-store';
 export { useFamilyMemberStore } from './family-member-store';
 export { useFamilySplitStore } from './family-split-store';
+// 初始化函数导出
+export { initMoneyStores } from './init';
 // 错误类和工具导出
 export { handleMoneyStoreError, MoneyStoreError, MoneyStoreErrorCode } from './money-errors';
+
 export { useReminderStore } from './reminder-store';
+// 事件系统导出
+export { emitStoreEvent, onStoreEvent, storeEventBus } from './store-events';
+
+export type { EventCleanup, StoreEvents } from './store-events';
 
 export { useTransactionStore } from './transaction-store';

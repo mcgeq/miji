@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import {
+  CategoryNameSchema,
   CurrencySchema,
   DateTimeSchema,
   DescriptionSchema,
@@ -94,7 +95,8 @@ export const BilReminderSchema = z.object({
   enabled: z.boolean(),
   type: ReminderTypesSchema,
   description: DescriptionSchema.optional().nullable(),
-  category: z.string(),
+  // 使用 CategoryNameSchema 确保类型约束
+  category: CategoryNameSchema,
   amount: z.number().optional(),
   currency: CurrencySchema.optional().nullable(),
   dueAt: DateTimeSchema,

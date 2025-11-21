@@ -56,6 +56,17 @@ export const NameSchema = z
   .min(2, { error: 'Name must be at least 3 characters long' })
   .max(20, { error: 'Name must be no more than 20 characters long' });
 
+// 分类和子分类名称约束
+export const CategoryNameSchema = z
+  .string()
+  .min(2, { error: 'Category name must be at least 2 characters long' })
+  .max(20, { error: 'Category name must be no more than 20 characters long' });
+
+export const SubCategoryNameSchema = z
+  .string()
+  .min(2, { error: 'SubCategory name must be at least 2 characters long' })
+  .max(20, { error: 'SubCategory name must be no more than 20 characters long' });
+
 export const DescriptionSchema = z.string().max(1000, {
   error: 'Description must be no more than 1000 characters long',
 });
@@ -91,23 +102,100 @@ export const DateSchema = z.iso.date();
 export const TimesSchema = z.iso.time();
 
 // ======================
+// 实体引用系统
+// ======================
+
+/**
+ * 实体引用基础类型
+ * 用于统一处理实体关联，支持响应包含完整数据，创建时仅需标识符
+ */
+export function EntityRefSchema<T extends z.ZodTypeAny>(identifierSchema: z.ZodString, dataSchema: T) {
+  return z.union([
+    // 创建/更新时：仅标识符
+    identifierSchema,
+    // 响应时：完整数据对象
+    dataSchema,
+  ]);
+}
+
+/**
+ * 分类引用类型
+ * 支持字符串名称或完整分类对象
+ */
+export const CategoryRefSchema = z.union([
+  CategoryNameSchema, // 创建时：仅名称
+  z.lazy(() => z.object({
+    name: CategoryNameSchema,
+    icon: z.string(),
+    createdAt: DateTimeSchema.optional(),
+    updatedAt: DateTimeSchema.optional().nullable(),
+  })), // 响应时：完整对象（可选）
+]);
+
+/**
+ * 子分类引用类型
+ * 支持字符串名称或完整子分类对象
+ */
+export const SubCategoryRefSchema = z.union([
+  SubCategoryNameSchema, // 创建时：仅名称
+  z.lazy(() => z.object({
+    name: SubCategoryNameSchema,
+    icon: z.string(),
+    categoryName: CategoryNameSchema,
+    createdAt: DateTimeSchema.optional(),
+    updatedAt: DateTimeSchema.optional().nullable(),
+  })), // 响应时：完整对象（可选）
+]);
+
+// ======================
 // 货币与金融模块
 // ======================
 export const CurrencySchema = z.object({
   locale: z.string(),
   code: z.string().length(3),
   symbol: z.string(),
+  isDefault: z.boolean().optional().default(false),
+  isActive: z.boolean().optional().default(true),
   createdAt: DateTimeSchema,
   updatedAt: DateTimeSchema.optional().nullable(),
 });
-export const CurrencyCreateSchema = CurrencySchema.pick({
-  locale: true,
-  code: true,
-  symbol: true,
+
+/**
+ * 货币引用类型
+ * 创建时传 code (string)，响应时返回完整 Currency 对象
+ */
+export const CurrencyRefSchema = z.union([
+  z.string().length(3), // 创建时：仅 code
+  z.lazy(() => CurrencySchema), // 响应时：完整对象
+]);
+
+/**
+ * 账户引用类型
+ * 创建时传 serialNum，响应时返回完整 Account 对象
+ */
+export const AccountRefSchema = z.union([
+  SerialNumSchema, // 创建时：仅 serialNum
+  z.lazy(() => z.object({
+    serialNum: SerialNumSchema,
+    name: NameSchema,
+    type: z.string(),
+    balance: z.string(),
+    currency: CurrencyRefSchema,
+    isActive: z.boolean(),
+    createdAt: DateTimeSchema.optional(),
+    updatedAt: DateTimeSchema.optional().nullable(),
+  })), // 响应时：完整对象（简化版）
+]);
+
+export const CurrencyCreateSchema = CurrencySchema.omit({
+  createdAt: true,
+  updatedAt: true,
 }).strict();
 export const CurrencyUpdateSchema = CurrencySchema.pick({
   locale: true,
   symbol: true,
+  isDefault: true,
+  isActive: true,
 }).partial();
 
 export const AccountBalanceSummarySchema = z.object({
@@ -361,6 +449,12 @@ export type SymptomsType = z.infer<typeof SymptomsTypeSchema>;
 export type FlowLevel = z.infer<typeof FlowLevelSchema>;
 export type Intensity = z.infer<typeof IntensitySchema>;
 export type ExerciseIntensity = z.infer<typeof ExerciseIntensitySchema>;
+export type CategoryName = z.infer<typeof CategoryNameSchema>;
+export type SubCategoryName = z.infer<typeof SubCategoryNameSchema>;
+export type CurrencyRef = z.infer<typeof CurrencyRefSchema>;
+export type CategoryRef = z.infer<typeof CategoryRefSchema>;
+export type SubCategoryRef = z.infer<typeof SubCategoryRefSchema>;
+export type AccountRef = z.infer<typeof AccountRefSchema>;
 export type Currency = z.infer<typeof CurrencySchema>;
 export type CurrencyCrate = z.infer<typeof CurrencyCreateSchema>;
 export type CurrencyUpdate = z.infer<typeof CurrencyUpdateSchema>;

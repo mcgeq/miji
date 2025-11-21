@@ -12,6 +12,8 @@ pub struct Model {
     pub code: String,
     pub locale: String,
     pub symbol: String,
+    pub is_default: bool,
+    pub is_active: bool,
     pub created_at: DateTimeWithTimeZone,
     pub updated_at: Option<DateTimeWithTimeZone>,
 }

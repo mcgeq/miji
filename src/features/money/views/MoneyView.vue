@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { listen } from '@tauri-apps/api/event';
 import ConfirmModal from '@/components/common/ConfirmModal.vue';
+import { useMoneyStats } from '@/composables/useMoneyStats';
 import { CURRENCY_CNY } from '@/constants/moneyConst';
 import { TransactionTypeSchema } from '@/schema/common';
 import { MoneyDb } from '@/services/money/money';
 import { useAccountStore, useCategoryStore } from '@/stores/money';
 import { Lg } from '@/utils/debugLog';
 import { toast } from '@/utils/toast';
-import { createComparisonCard } from '../common/moneyCommon';
 import AccountList from '../components/AccountList.vue';
 import AccountModal from '../components/AccountModal.vue';
 import BudgetList from '../components/BudgetList.vue';
@@ -17,8 +17,7 @@ import ReminderModal from '../components/ReminderModal.vue';
 import StackedStatCards from '../components/StackedStatCards.vue';
 import TransactionList from '../components/TransactionList.vue';
 import TransactionModal from '../components/TransactionModal.vue';
-import { formatCurrency, getLocalCurrencyInfo } from '../utils/money';
-import type { CardData } from '../common/moneyCommon';
+import { getLocalCurrencyInfo } from '../utils/money';
 // 事件类型定义
 interface InstallmentProcessedEvent {
   processed_count: number;
@@ -136,56 +135,19 @@ const monthlyExpense = ref(0);
 const prevMonthlyIncome = ref(0);
 const prevMonthlyExpense = ref(0);
 
-const statCards = computed<CardData[]>(() => [
-  {
-    id: 'total-assets',
-    title: '总资产',
-    value: formatCurrency(totalAssets.value),
-    currency: getCurrencySymbol(baseCurrency.value),
-    icon: 'wallet',
-    color: 'primary' as const,
-  },
-  createComparisonCard(
-    'monthly-income-comparison',
-    '月度收入',
-    formatCurrency(monthlyIncome.value),
-    formatCurrency(prevMonthlyIncome.value),
-    '上月',
-    getCurrencySymbol(baseCurrency.value),
-    'trending-up',
-    'success',
-  ),
-  createComparisonCard(
-    'yearly-income-comparison',
-    '年度收入',
-    formatCurrency(yearlyIncome.value),
-    formatCurrency(prevYearlyIncome.value),
-    '去年',
-    getCurrencySymbol(baseCurrency.value),
-    'trending-up',
-    'primary',
-  ),
-  createComparisonCard(
-    'monthly-expense-comparison',
-    '月度支出',
-    formatCurrency(monthlyExpense.value),
-    formatCurrency(prevMonthlyExpense.value),
-    '上月',
-    getCurrencySymbol(baseCurrency.value),
-    'trending-up',
-    'success',
-  ),
-  createComparisonCard(
-    'yearly-expense-comparison',
-    '年度支出',
-    formatCurrency(yearlyExpense.value),
-    formatCurrency(prevYearlyExpense.value),
-    '去年',
-    getCurrencySymbol(baseCurrency.value),
-    'trending-up',
-    'primary',
-  ),
-]);
+// 使用 useMoneyStats composable 生成统计卡片
+const { statCards } = useMoneyStats(computed(() => ({
+  totalAssets: totalAssets.value,
+  monthlyIncome: monthlyIncome.value,
+  prevMonthlyIncome: prevMonthlyIncome.value,
+  yearlyIncome: yearlyIncome.value,
+  prevYearlyIncome: prevYearlyIncome.value,
+  monthlyExpense: monthlyExpense.value,
+  prevMonthlyExpense: prevMonthlyExpense.value,
+  yearlyExpense: yearlyExpense.value,
+  prevYearlyExpense: prevYearlyExpense.value,
+  baseCurrency: baseCurrency.value,
+})));
 
 const hasModalOpen = computed(() =>
   showTransaction.value || showAccount.value || showBudget.value || showReminder.value || confirmState.value.visible,
@@ -305,24 +267,6 @@ function handleCardClick(_index: number, _card: any) {
 // ------------------ Amount Visibility ------------------
 function toggleGlobalAmountVisibility() {
   accountStore.toggleGlobalAmountHidden();
-}
-
-// 获取货币符号
-function getCurrencySymbol(currencyCode: string): string {
-  switch (currencyCode) {
-    case 'CNY':
-      return '¥';
-    case 'USD':
-      return '$';
-    case 'EUR':
-      return '€';
-    case 'GBP':
-      return '£';
-    case 'JPY':
-      return '¥';
-    default:
-      return currencyCode;
-  }
 }
 
 // 存储监听器清理函数

@@ -1,6 +1,7 @@
 // src/stores/money/account-store.ts
 import { defineStore } from 'pinia';
 import { MoneyDb } from '@/services/money/money';
+import { onStoreEvent } from './store-events';
 import type { Account, CreateAccountRequest, UpdateAccountRequest } from '@/schema/money';
 import type { AccountFilters } from '@/services/money/accounts';
 
@@ -178,6 +179,74 @@ export const useAccountStore = defineStore('money-accounts', {
      */
     toggleAccountAmountHidden(serialNum: string) {
       this.accountAmountHidden[serialNum] = !this.accountAmountHidden[serialNum];
+    },
+
+    /**
+     * 刷新单个账户（用于交易后更新余额）
+     */
+    async refreshAccount(serialNum: string): Promise<void> {
+      try {
+        const account = await MoneyDb.getAccount(serialNum);
+        if (account) {
+          const index = this.accounts.findIndex(a => a.serialNum === serialNum);
+          if (index !== -1) {
+            this.accounts[index] = account;
+          } else {
+            // 如果账户不在列表中，添加它
+            this.accounts.push(account);
+          }
+        }
+      } catch (error: any) {
+        console.error('刷新账户失败:', error);
+        // 不抛出错误，避免影响主流程
+      }
+    },
+
+    /**
+     * 批量刷新账户（用于转账后更新两个账户）
+     */
+    async refreshAccounts(serialNums: string[]): Promise<void> {
+      try {
+        await Promise.all(serialNums.map(id => this.refreshAccount(id)));
+      } catch (error: any) {
+        console.error('批量刷新账户失败:', error);
+      }
+    },
+
+    /**
+     * 初始化事件监听器
+     * 监听交易相关事件，自动刷新受影响的账户
+     */
+    initEventListeners() {
+      // 监听交易创建事件
+      onStoreEvent('transaction:created', async ({ accountSerialNum }) => {
+        await this.refreshAccount(accountSerialNum);
+      });
+
+      // 监听交易更新事件
+      onStoreEvent('transaction:updated', async ({ accountSerialNum }) => {
+        await this.refreshAccount(accountSerialNum);
+      });
+
+      // 监听交易删除事件
+      onStoreEvent('transaction:deleted', async ({ accountSerialNum }) => {
+        await this.refreshAccount(accountSerialNum);
+      });
+
+      // 监听转账创建事件
+      onStoreEvent('transfer:created', async ({ fromAccountSerialNum, toAccountSerialNum }) => {
+        await this.refreshAccounts([fromAccountSerialNum, toAccountSerialNum]);
+      });
+
+      // 监听转账更新事件
+      onStoreEvent('transfer:updated', async ({ fromAccountSerialNum, toAccountSerialNum }) => {
+        await this.refreshAccounts([fromAccountSerialNum, toAccountSerialNum]);
+      });
+
+      // 监听转账删除事件
+      onStoreEvent('transfer:deleted', async ({ fromAccountSerialNum, toAccountSerialNum }) => {
+        await this.refreshAccounts([fromAccountSerialNum, toAccountSerialNum]);
+      });
     },
 
     /**
