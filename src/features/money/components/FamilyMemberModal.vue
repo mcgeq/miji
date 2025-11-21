@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import BaseModal from '@/components/common/BaseModal.vue';
 import ColorSelector from '@/components/common/ColorSelector.vue';
 import FamilyMemberSelector from '@/components/ui/FamilyMemberSelector.vue';
 import { useFamilyMemberStore } from '@/stores/money';
@@ -19,6 +20,7 @@ const emit = defineEmits<{
 }>();
 
 const memberStore = useFamilyMemberStore();
+const isSubmitting = ref(false);
 
 // 成员创建模式
 const memberMode = ref<'select_member' | 'create_member'>('select_member');
@@ -245,239 +247,222 @@ function handleMemberClear() {
 </script>
 
 <template>
-  <div class="modal-mask">
-    <div class="modal-window">
-      <div class="modal-header">
-        <h3 class="modal-title">
-          {{ props.member ? '编辑成员' : '添加成员' }}
-        </h3>
-        <button class="modal-close-btn" @click="closeDialog">
-          <LucideX class="w-5 h-5" />
-        </button>
+  <BaseModal
+    :title="props.member ? '编辑成员' : '添加成员'"
+    size="md"
+    :confirm-loading="isSubmitting"
+    @close="closeDialog"
+    @confirm="saveMember"
+  >
+    <form @submit.prevent="saveMember">
+      <!-- 成员模式选择 -->
+      <div v-if="!props.member" class="form-section">
+        <h4 class="section-title">
+          添加方式
+        </h4>
+
+        <div class="mode-selector">
+          <button
+            type="button"
+            class="mode-btn"
+            :class="{ active: memberMode === 'select_member' }"
+            @click="memberMode = 'select_member'"
+          >
+            <LucideUserCheck class="w-4 h-4" />
+            选择已有成员
+          </button>
+          <button
+            type="button"
+            class="mode-btn"
+            :class="{ active: memberMode === 'create_member' }"
+            @click="memberMode = 'create_member'"
+          >
+            <LucideUserPlus class="w-4 h-4" />
+            创建新成员
+          </button>
+        </div>
       </div>
 
-      <div class="modal-content">
-        <form @submit.prevent="saveMember">
-          <!-- 成员模式选择 -->
-          <div v-if="!props.member" class="form-section">
-            <h4 class="section-title">
-              添加方式
-            </h4>
+      <!-- 成员选择模式 -->
+      <div v-if="!props.member && memberMode === 'select_member'" class="form-section">
+        <h4 class="section-title">
+          选择成员
+        </h4>
 
-            <div class="mode-selector">
-              <button
-                type="button"
-                class="mode-btn"
-                :class="{ active: memberMode === 'select_member' }"
-                @click="memberMode = 'select_member'"
-              >
-                <LucideUserCheck class="w-4 h-4" />
-                选择已有成员
-              </button>
-              <button
-                type="button"
-                class="mode-btn"
-                :class="{ active: memberMode === 'create_member' }"
-                @click="memberMode = 'create_member'"
-              >
-                <LucideUserPlus class="w-4 h-4" />
-                创建新成员
-              </button>
-            </div>
-          </div>
-
-          <!-- 成员选择模式 -->
-          <div v-if="!props.member && memberMode === 'select_member'" class="form-section">
-            <h4 class="section-title">
-              选择成员
-            </h4>
-
-            <div class="form-row">
-              <label class="form-label">搜索成员</label>
-              <FamilyMemberSelector
-                :selected-member="selectedExistingMember"
-                placeholder="搜索家庭成员姓名或邮箱"
-                :show-recent-members="true"
-                :show-search-history="true"
-                @select="handleMemberSelect"
-                @clear="handleMemberClear"
-              />
-            </div>
-          </div>
-
-          <!-- 基本信息 -->
-          <div v-if="props.member || memberMode === 'create_member'" class="form-section">
-            <h4 class="section-title">
-              基本信息
-            </h4>
-
-            <div class="form-row">
-              <label class="form-label">姓名 *</label>
-              <input
-                v-model="form.name"
-                type="text"
-                class="form-input"
-                placeholder="请输入成员姓名"
-                required
-              >
-            </div>
-
-            <div class="form-row">
-              <label class="form-label">角色</label>
-              <select v-model="form.role" class="form-select">
-                <option value="Owner">
-                  所有者
-                </option>
-                <option value="Admin">
-                  管理员
-                </option>
-                <option value="Member">
-                  成员
-                </option>
-                <option value="Viewer">
-                  查看者
-                </option>
-              </select>
-            </div>
-
-            <div class="form-row">
-              <label class="checkbox-label">
-                <input v-model="form.isPrimary" type="checkbox" class="checkbox">
-                <span>设为主要成员</span>
-              </label>
-            </div>
-
-            <!-- 关联成员信息显示 -->
-            <div v-if="selectedExistingMember" class="form-row">
-              <label class="form-label">选择的成员</label>
-              <div class="selected-member-info">
-                <div class="member-avatar">
-                  <img
-                    v-if="selectedExistingMember.avatarUrl"
-                    :src="selectedExistingMember.avatarUrl"
-                    :alt="selectedExistingMember.name"
-                    class="avatar-image"
-                  >
-                  <div v-else class="avatar-placeholder" :style="{ backgroundColor: selectedExistingMember.color || '#3b82f6' }">
-                    {{ selectedExistingMember.name.charAt(0).toUpperCase() }}
-                  </div>
-                </div>
-                <div class="member-details">
-                  <div class="member-name">
-                    {{ selectedExistingMember.name }}
-                  </div>
-                  <div class="member-email">
-                    {{ selectedExistingMember.email || selectedExistingMember.phone || selectedExistingMember.serialNum }}
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  class="clear-member-btn"
-                  @click="handleMemberClear"
-                >
-                  <LucideX class="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <!-- 外观设置 -->
-          <div class="form-section">
-            <h4 class="section-title">
-              外观设置
-            </h4>
-
-            <div class="form-row">
-              <label class="form-label">头像URL</label>
-              <input
-                v-model="form.avatar"
-                type="url"
-                class="form-input"
-                placeholder="可选，头像图片链接"
-              >
-            </div>
-
-            <div class="form-row">
-              <label class="form-label">标识颜色</label>
-              <div class="color-selector-wrapper">
-                <ColorSelector
-                  v-model="form.colorTag"
-                  :extended="true"
-                  :show-custom-color="true"
-                />
-                <button
-                  type="button"
-                  class="random-color-btn"
-                  title="随机颜色"
-                  @click="generateRandomColor"
-                >
-                  <LucideShuffle class="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-
-            <!-- 预览 -->
-            <div class="form-row">
-              <label class="form-label">预览</label>
-              <div class="member-preview">
-                <div
-                  class="preview-avatar"
-                  :style="{ backgroundColor: form.colorTag }"
-                >
-                  <img
-                    v-if="form.avatar"
-                    :src="form.avatar"
-                    :alt="form.name"
-                    class="preview-avatar-image"
-                  >
-                  <span v-else class="preview-avatar-text">
-                    {{ form.name.charAt(0).toUpperCase() || 'A' }}
-                  </span>
-                </div>
-                <span class="preview-name">{{ form.name || '成员姓名' }}</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- 权限设置 -->
-          <div v-if="form.role !== 'Owner'" class="form-section">
-            <h4 class="section-title">
-              权限设置
-            </h4>
-            <p class="section-description">
-              所有者拥有所有权限，无需单独设置
-            </p>
-
-            <div class="permissions-grid">
-              <label
-                v-for="option in permissionOptions"
-                :key="option.key"
-                class="permission-item"
-              >
-                <input
-                  type="checkbox"
-                  class="permission-checkbox"
-                  :checked="currentPermissions.includes(option.key)"
-                  @change="togglePermission(option.key)"
-                >
-                <span class="permission-label">{{ option.label }}</span>
-              </label>
-            </div>
-          </div>
-        </form>
+        <div class="form-row">
+          <label class="form-label">搜索成员</label>
+          <FamilyMemberSelector
+            :selected-member="selectedExistingMember"
+            placeholder="搜索家庭成员姓名或邮箱"
+            :show-recent-members="true"
+            :show-search-history="true"
+            @select="handleMemberSelect"
+            @clear="handleMemberClear"
+          />
+        </div>
       </div>
 
-      <!-- 操作按钮 -->
-      <div class="modal-actions">
-        <button type="button" class="btn-cancel" @click="closeDialog">
-          <LucideX class="icon-btn" />
-        </button>
-        <button type="button" class="btn-save" @click="saveMember">
-          <LucideCheck class="icon-btn" />
-        </button>
+      <!-- 基本信息 -->
+      <div v-if="props.member || memberMode === 'create_member'" class="form-section">
+        <h4 class="section-title">
+          基本信息
+        </h4>
+
+        <div class="form-row">
+          <label class="form-label">姓名 *</label>
+          <input
+            v-model="form.name"
+            type="text"
+            class="form-input"
+            placeholder="请输入成员姓名"
+            required
+          >
+        </div>
+
+        <div class="form-row">
+          <label class="form-label">角色</label>
+          <select v-model="form.role" class="form-select">
+            <option value="Owner">
+              所有者
+            </option>
+            <option value="Admin">
+              管理员
+            </option>
+            <option value="Member">
+              成员
+            </option>
+            <option value="Viewer">
+              查看者
+            </option>
+          </select>
+        </div>
+
+        <div class="form-row">
+          <label class="checkbox-label">
+            <input v-model="form.isPrimary" type="checkbox" class="checkbox">
+            <span>设为主要成员</span>
+          </label>
+        </div>
+
+        <!-- 关联成员信息显示 -->
+        <div v-if="selectedExistingMember" class="form-row">
+          <label class="form-label">选择的成员</label>
+          <div class="selected-member-info">
+            <div class="member-avatar">
+              <img
+                v-if="selectedExistingMember.avatarUrl"
+                :src="selectedExistingMember.avatarUrl"
+                :alt="selectedExistingMember.name"
+                class="avatar-image"
+              >
+              <div v-else class="avatar-placeholder" :style="{ backgroundColor: selectedExistingMember.color || '#3b82f6' }">
+                {{ selectedExistingMember.name.charAt(0).toUpperCase() }}
+              </div>
+            </div>
+            <div class="member-details">
+              <div class="member-name">
+                {{ selectedExistingMember.name }}
+              </div>
+              <div class="member-email">
+                {{ selectedExistingMember.email || selectedExistingMember.phone || selectedExistingMember.serialNum }}
+              </div>
+            </div>
+            <button
+              type="button"
+              class="clear-member-btn"
+              @click="handleMemberClear"
+            >
+              <LucideX class="w-4 h-4" />
+            </button>
+          </div>
+        </div>
       </div>
-    </div>
-  </div>
+
+      <!-- 外观设置 -->
+      <div class="form-section">
+        <h4 class="section-title">
+          外观设置
+        </h4>
+
+        <div class="form-row">
+          <label class="form-label">头像URL</label>
+          <input
+            v-model="form.avatar"
+            type="url"
+            class="form-input"
+            placeholder="可选，头像图片链接"
+          >
+        </div>
+
+        <div class="form-row">
+          <label class="form-label">标识颜色</label>
+          <div class="color-selector-wrapper">
+            <ColorSelector
+              v-model="form.colorTag"
+              :extended="true"
+              :show-custom-color="true"
+            />
+            <button
+              type="button"
+              class="random-color-btn"
+              title="随机颜色"
+              @click="generateRandomColor"
+            >
+              <LucideShuffle class="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+
+        <!-- 预览 -->
+        <div class="form-row">
+          <label class="form-label">预览</label>
+          <div class="member-preview">
+            <div
+              class="preview-avatar"
+              :style="{ backgroundColor: form.colorTag }"
+            >
+              <img
+                v-if="form.avatar"
+                :src="form.avatar"
+                :alt="form.name"
+                class="preview-avatar-image"
+              >
+              <span v-else class="preview-avatar-text">
+                {{ form.name.charAt(0).toUpperCase() || 'A' }}
+              </span>
+            </div>
+            <span class="preview-name">{{ form.name || '成员姓名' }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 权限设置 -->
+      <div v-if="form.role !== 'Owner'" class="form-section">
+        <h4 class="section-title">
+          权限设置
+        </h4>
+        <p class="section-description">
+          所有者拥有所有权限，无需单独设置
+        </p>
+
+        <div class="permissions-grid">
+          <label
+            v-for="option in permissionOptions"
+            :key="option.key"
+            class="permission-item"
+          >
+            <input
+              type="checkbox"
+              class="permission-checkbox"
+              :checked="currentPermissions.includes(option.key)"
+              @change="togglePermission(option.key)"
+            >
+            <span class="permission-label">{{ option.label }}</span>
+          </label>
+        </div>
+      </div>
+    </form>
+  </BaseModal>
 </template>
 
 <style scoped>

@@ -7,8 +7,8 @@ import {
   LucidePercent,
   LucideScale,
   LucideUsers,
-  LucideX,
 } from 'lucide-vue-next';
+import BaseModal from '@/components/common/BaseModal.vue';
 import type { SplitRuleType } from '@/schema/money';
 
 interface SplitDetail {
@@ -113,150 +113,129 @@ function close() {
 </script>
 
 <template>
-  <div class="split-detail-modal">
-    <div class="modal-overlay" @click="close" />
-
-    <div class="modal-container">
-      <!-- Header -->
-      <div class="modal-header">
-        <div class="header-content">
-          <h3>分摊详情</h3>
-          <div class="split-type-badge" :style="{ '--type-color': splitTypeInfo.color }">
-            <component :is="splitTypeInfo.icon" class="type-icon" />
-            <span>{{ splitTypeInfo.label }}</span>
-          </div>
-        </div>
-        <button class="btn-close" @click="close">
-          <LucideX class="icon" />
-        </button>
-      </div>
-
-      <!-- Content -->
-      <div class="modal-content">
-        <!-- 统计卡片 -->
-        <div class="statistics-grid">
-          <div class="stat-card">
-            <LucideUsers class="stat-icon" />
-            <div class="stat-info">
-              <label>参与人数</label>
-              <strong>{{ statistics.total }} 人</strong>
-            </div>
-          </div>
-
-          <div class="stat-card paid">
-            <LucideCheck class="stat-icon" />
-            <div class="stat-info">
-              <label>已支付</label>
-              <strong>{{ statistics.paid }} 人</strong>
-            </div>
-          </div>
-
-          <div class="stat-card unpaid">
-            <LucideClock class="stat-icon" />
-            <div class="stat-info">
-              <label>待支付</label>
-              <strong>{{ statistics.unpaid }} 人</strong>
-            </div>
-          </div>
-
-          <div class="stat-card amount">
-            <LucideCoins class="stat-icon" />
-            <div class="stat-info">
-              <label>总金额</label>
-              <strong>{{ formatAmount(statistics.totalAmount) }}</strong>
-            </div>
+  <BaseModal
+    title="分摊详情"
+    size="lg"
+    :show-footer="false"
+    @close="close"
+  >
+    <div>
+      <!-- 统计卡片 -->
+      <div class="statistics-grid">
+        <div class="stat-card">
+          <LucideUsers class="stat-icon" />
+          <div class="stat-info">
+            <label>参与人数</label>
+            <strong>{{ statistics.total }} 人</strong>
           </div>
         </div>
 
-        <!-- 进度条 -->
-        <div class="progress-section">
-          <div class="progress-header">
-            <span>支付进度</span>
-            <span class="progress-text">{{ statistics.paidPercentage.toFixed(0) }}%</span>
-          </div>
-          <div class="progress-bar">
-            <div
-              class="progress-fill"
-              :style="{ width: `${statistics.paidPercentage}%` }"
-            />
-          </div>
-          <div class="progress-amounts">
-            <span class="amount-paid">已支付: {{ formatAmount(statistics.paidAmount) }}</span>
-            <span class="amount-unpaid">待支付: {{ formatAmount(statistics.unpaidAmount) }}</span>
+        <div class="stat-card paid">
+          <LucideCheck class="stat-icon" />
+          <div class="stat-info">
+            <label>已支付</label>
+            <strong>{{ statistics.paid }} 人</strong>
           </div>
         </div>
 
-        <!-- 分摊明细列表 -->
-        <div class="details-section">
-          <h4 class="section-title">
-            分摊明细
-          </h4>
-
-          <div class="details-list">
-            <div
-              v-for="detail in splitDetails"
-              :key="detail.memberSerialNum"
-              class="detail-item"
-              :class="{ paid: detail.isPaid }"
-            >
-              <div class="detail-header">
-                <div class="member-info">
-                  <div class="member-avatar">
-                    {{ detail.memberName.charAt(0) }}
-                  </div>
-                  <div class="member-details">
-                    <span class="member-name">{{ detail.memberName }}</span>
-                    <span v-if="detail.percentage" class="member-percentage">
-                      {{ detail.percentage.toFixed(1) }}%
-                    </span>
-                  </div>
-                </div>
-
-                <div class="detail-status">
-                  <strong class="detail-amount">{{ formatAmount(detail.amount) }}</strong>
-                  <button
-                    class="status-badge"
-                    :class="{ paid: detail.isPaid }"
-                    @click="togglePaymentStatus(detail)"
-                  >
-                    <component :is="detail.isPaid ? LucideCheck : LucideClock" class="status-icon" />
-                    <span>{{ detail.isPaid ? '已支付' : '待支付' }}</span>
-                  </button>
-                </div>
-              </div>
-
-              <div v-if="detail.isPaid && detail.paidAt" class="detail-footer">
-                <span class="paid-date">支付时间: {{ formatDate(detail.paidAt) }}</span>
-              </div>
-            </div>
+        <div class="stat-card unpaid">
+          <LucideClock class="stat-icon" />
+          <div class="stat-info">
+            <label>待支付</label>
+            <strong>{{ statistics.unpaid }} 人</strong>
           </div>
         </div>
 
-        <!-- 交易信息 -->
-        <div class="transaction-info">
-          <div class="info-row">
-            <label>交易金额</label>
-            <strong>{{ formatAmount(transactionAmount) }}</strong>
-          </div>
-          <div v-if="transactionDate" class="info-row">
-            <label>交易日期</label>
-            <span>{{ formatDate(transactionDate) }}</span>
-          </div>
-          <div class="info-row">
-            <label>分摊方式</label>
-            <span>{{ splitTypeInfo.description }}</span>
+        <div class="stat-card amount">
+          <LucideCoins class="stat-icon" />
+          <div class="stat-info">
+            <label>总金额</label>
+            <strong>{{ formatAmount(statistics.totalAmount) }}</strong>
           </div>
         </div>
       </div>
 
-      <!-- Footer -->
-      <div class="modal-footer">
-        <button class="btn-close-footer" @click="close">
-          关闭
-        </button>
+      <!-- 进度条 -->
+      <div class="progress-section">
+        <div class="progress-header">
+          <span>支付进度</span>
+          <span class="progress-text">{{ statistics.paidPercentage.toFixed(0) }}%</span>
+        </div>
+        <div class="progress-bar">
+          <div
+            class="progress-fill"
+            :style="{ width: `${statistics.paidPercentage}%` }"
+          />
+        </div>
+        <div class="progress-amounts">
+          <span class="amount-paid">已支付: {{ formatAmount(statistics.paidAmount) }}</span>
+          <span class="amount-unpaid">待支付: {{ formatAmount(statistics.unpaidAmount) }}</span>
+        </div>
+      </div>
+
+      <!-- 分摊明细列表 -->
+      <div class="details-section">
+        <h4 class="section-title">
+          分摊明细
+        </h4>
+
+        <div class="details-list">
+          <div
+            v-for="detail in splitDetails"
+            :key="detail.memberSerialNum"
+            class="detail-item"
+            :class="{ paid: detail.isPaid }"
+          >
+            <div class="detail-header">
+              <div class="member-info">
+                <div class="member-avatar">
+                  {{ detail.memberName.charAt(0) }}
+                </div>
+                <div class="member-details">
+                  <span class="member-name">{{ detail.memberName }}</span>
+                  <span v-if="detail.percentage" class="member-percentage">
+                    {{ detail.percentage.toFixed(1) }}%
+                  </span>
+                </div>
+              </div>
+
+              <div class="detail-status">
+                <strong class="detail-amount">{{ formatAmount(detail.amount) }}</strong>
+                <button
+                  class="status-badge"
+                  :class="{ paid: detail.isPaid }"
+                  @click="togglePaymentStatus(detail)"
+                >
+                  <component :is="detail.isPaid ? LucideCheck : LucideClock" class="status-icon" />
+                  <span>{{ detail.isPaid ? '已支付' : '待支付' }}</span>
+                </button>
+              </div>
+            </div>
+
+            <div v-if="detail.isPaid && detail.paidAt" class="detail-footer">
+              <span class="paid-date">支付时间: {{ formatDate(detail.paidAt) }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 交易信息 -->
+      <div class="transaction-info">
+        <div class="info-row">
+          <label>交易金额</label>
+          <strong>{{ formatAmount(transactionAmount) }}</strong>
+        </div>
+        <div v-if="transactionDate" class="info-row">
+          <label>交易日期</label>
+          <span>{{ formatDate(transactionDate) }}</span>
+        </div>
+        <div class="info-row">
+          <label>分摊方式</label>
+          <span>{{ splitTypeInfo.description }}</span>
+        </div>
       </div>
     </div>
-  </div>
+  </BaseModal>
 </template>
 
 <style scoped>

@@ -2,13 +2,10 @@
 import {
   ArrowRight,
   ArrowRightLeft,
-  CheckCircle2,
   DollarSign,
-  Download,
   Users,
-  X,
 } from 'lucide-vue-next';
-import { toast } from '@/utils/toast';
+import BaseModal from '@/components/common/BaseModal.vue';
 
 // ==================== Props & Emits ====================
 
@@ -47,7 +44,6 @@ const props = defineProps<Props>();
 
 const emit = defineEmits<{
   close: [];
-  complete: [record: SettlementRecord];
 }>();
 
 // ==================== 计算属性 ====================
@@ -63,25 +59,6 @@ const optimizedTransfers = computed<TransferSuggestion[]>(() => {
 
 function handleClose() {
   emit('close');
-}
-
-function handleComplete() {
-  emit('complete', props.record);
-}
-
-function handleDownload() {
-  // eslint-disable-next-line no-console
-  console.log('下载结算详情');
-  toast.info('导出功能开发中...');
-}
-
-function getStatusText(status: string): string {
-  const statusMap: Record<string, string> = {
-    pending: '待确认',
-    completed: '已完成',
-    cancelled: '已取消',
-  };
-  return statusMap[status] || status;
 }
 
 function getTypeText(type: string): string {
@@ -128,182 +105,150 @@ function formatDateTime(dateString: string): string {
 </script>
 
 <template>
-  <div class="modal-overlay" @click.self="handleClose">
-    <div class="modal-container">
-      <!-- 模态框头部 -->
-      <div class="modal-header">
-        <div class="header-left">
-          <h2 class="modal-title">
-            结算详情
-          </h2>
-          <span class="status-badge" :class="`status-${record.status}`">
-            {{ getStatusText(record.status) }}
-          </span>
+  <BaseModal
+    title="结算详情"
+    size="lg"
+    :show-footer="false"
+    @close="handleClose"
+  >
+    <div>
+      <!-- 基本信息 -->
+      <div class="info-section">
+        <h3 class="section-title">
+          基本信息
+        </h3>
+        <div class="info-grid">
+          <div class="info-item">
+            <span class="info-label">结算序号</span>
+            <span class="info-value">{{ record.serialNum }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">结算类型</span>
+            <span class="info-value">{{ getTypeText(record.settlementType) }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">结算周期</span>
+            <span class="info-value">
+              {{ formatDate(record.periodStart) }} ~ {{ formatDate(record.periodEnd) }}
+            </span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">结算金额</span>
+            <span class="info-value amount">¥{{ formatAmount(record.totalAmount) }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">发起人</span>
+            <span class="info-value">{{ record.initiatedBy }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">发起时间</span>
+            <span class="info-value">{{ formatDateTime(record.createdAt) }}</span>
+          </div>
+          <div v-if="record.completedAt" class="info-item">
+            <span class="info-label">完成时间</span>
+            <span class="info-value">{{ formatDateTime(record.completedAt) }}</span>
+          </div>
+          <div v-if="record.completedBy" class="info-item">
+            <span class="info-label">完成人</span>
+            <span class="info-value">{{ record.completedBy }}</span>
+          </div>
         </div>
-        <button class="close-btn" @click="handleClose">
-          <component :is="X" class="w-5 h-5" />
-        </button>
       </div>
 
-      <!-- 模态框主体 -->
-      <div class="modal-body">
-        <!-- 基本信息 -->
-        <div class="info-section">
-          <h3 class="section-title">
-            基本信息
-          </h3>
-          <div class="info-grid">
-            <div class="info-item">
-              <span class="info-label">结算序号</span>
-              <span class="info-value">{{ record.serialNum }}</span>
+      <!-- 参与成员 -->
+      <div class="members-section">
+        <h3 class="section-title">
+          参与成员
+          <span class="count-badge">{{ record.participantMembers.length }}人</span>
+        </h3>
+        <div class="members-grid">
+          <div
+            v-for="(member, index) in record.participantMembers"
+            :key="index"
+            class="member-card"
+          >
+            <div
+              class="member-avatar"
+              :style="{ backgroundColor: getMemberColor(member) }"
+            >
+              {{ getInitials(member) }}
             </div>
-            <div class="info-item">
-              <span class="info-label">结算类型</span>
-              <span class="info-value">{{ getTypeText(record.settlementType) }}</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">结算周期</span>
-              <span class="info-value">
-                {{ formatDate(record.periodStart) }} ~ {{ formatDate(record.periodEnd) }}
-              </span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">结算金额</span>
-              <span class="info-value amount">¥{{ formatAmount(record.totalAmount) }}</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">发起人</span>
-              <span class="info-value">{{ record.initiatedBy }}</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">发起时间</span>
-              <span class="info-value">{{ formatDateTime(record.createdAt) }}</span>
-            </div>
-            <div v-if="record.completedAt" class="info-item">
-              <span class="info-label">完成时间</span>
-              <span class="info-value">{{ formatDateTime(record.completedAt) }}</span>
-            </div>
-            <div v-if="record.completedBy" class="info-item">
-              <span class="info-label">完成人</span>
-              <span class="info-value">{{ record.completedBy }}</span>
-            </div>
+            <span class="member-name">{{ member }}</span>
           </div>
         </div>
+      </div>
 
-        <!-- 参与成员 -->
-        <div class="members-section">
-          <h3 class="section-title">
-            参与成员
-            <span class="count-badge">{{ record.participantMembers.length }}人</span>
-          </h3>
-          <div class="members-grid">
-            <div
-              v-for="(member, index) in record.participantMembers"
-              :key="index"
-              class="member-card"
-            >
-              <div
-                class="member-avatar"
-                :style="{ backgroundColor: getMemberColor(member) }"
-              >
-                {{ getInitials(member) }}
-              </div>
-              <span class="member-name">{{ member }}</span>
+      <!-- 转账明细 -->
+      <div v-if="optimizedTransfers.length > 0" class="transfers-section">
+        <h3 class="section-title">
+          转账明细
+          <span class="count-badge">{{ optimizedTransfers.length }}笔</span>
+        </h3>
+        <div class="transfers-list">
+          <div
+            v-for="(transfer, index) in optimizedTransfers"
+            :key="index"
+            class="transfer-item"
+          >
+            <div class="transfer-index">
+              {{ index + 1 }}
             </div>
-          </div>
-        </div>
-
-        <!-- 转账明细 -->
-        <div v-if="optimizedTransfers.length > 0" class="transfers-section">
-          <h3 class="section-title">
-            转账明细
-            <span class="count-badge">{{ optimizedTransfers.length }}笔</span>
-          </h3>
-          <div class="transfers-list">
-            <div
-              v-for="(transfer, index) in optimizedTransfers"
-              :key="index"
-              class="transfer-item"
-            >
-              <div class="transfer-index">
-                {{ index + 1 }}
-              </div>
-              <div class="transfer-content">
-                <div class="transfer-members">
-                  <div class="transfer-member">
-                    <div
-                      class="mini-avatar"
-                      :style="{ backgroundColor: getMemberColor(transfer.fromName) }"
-                    >
-                      {{ getInitials(transfer.fromName) }}
-                    </div>
-                    <span>{{ transfer.fromName }}</span>
+            <div class="transfer-content">
+              <div class="transfer-members">
+                <div class="transfer-member">
+                  <div
+                    class="mini-avatar"
+                    :style="{ backgroundColor: getMemberColor(transfer.fromName) }"
+                  >
+                    {{ getInitials(transfer.fromName) }}
                   </div>
-                  <component :is="ArrowRight" class="arrow-icon" />
-                  <div class="transfer-member">
-                    <div
-                      class="mini-avatar"
-                      :style="{ backgroundColor: getMemberColor(transfer.toName) }"
-                    >
-                      {{ getInitials(transfer.toName) }}
-                    </div>
-                    <span>{{ transfer.toName }}</span>
-                  </div>
+                  <span>{{ transfer.fromName }}</span>
                 </div>
-                <div class="transfer-amount">
-                  ¥{{ formatAmount(transfer.amount) }}
+                <component :is="ArrowRight" class="arrow-icon" />
+                <div class="transfer-member">
+                  <div
+                    class="mini-avatar"
+                    :style="{ backgroundColor: getMemberColor(transfer.toName) }"
+                  >
+                    {{ getInitials(transfer.toName) }}
+                  </div>
+                  <span>{{ transfer.toName }}</span>
                 </div>
               </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 统计信息 -->
-        <div class="stats-section">
-          <div class="stat-card">
-            <component :is="Users" class="stat-icon" />
-            <div class="stat-content">
-              <span class="stat-label">参与成员</span>
-              <span class="stat-value">{{ record.participantMembers.length }}人</span>
-            </div>
-          </div>
-          <div class="stat-card">
-            <component :is="ArrowRightLeft" class="stat-icon" />
-            <div class="stat-content">
-              <span class="stat-label">转账次数</span>
-              <span class="stat-value">{{ optimizedTransfers.length }}笔</span>
-            </div>
-          </div>
-          <div class="stat-card">
-            <component :is="DollarSign" class="stat-icon" />
-            <div class="stat-content">
-              <span class="stat-label">结算金额</span>
-              <span class="stat-value">¥{{ formatAmount(record.totalAmount) }}</span>
+              <div class="transfer-amount">
+                ¥{{ formatAmount(transfer.amount) }}
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- 模态框底部 -->
-      <div class="modal-footer">
-        <button class="btn-secondary" @click="handleClose">
-          关闭
-        </button>
-        <button
-          v-if="record.status === 'pending'"
-          class="btn-primary"
-          @click="handleComplete"
-        >
-          <component :is="CheckCircle2" class="w-4 h-4" />
-          <span>确认完成</span>
-        </button>
-        <button class="btn-secondary" @click="handleDownload">
-          <component :is="Download" class="w-4 h-4" />
-          <span>导出</span>
-        </button>
+      <!-- 统计信息 -->
+      <div class="stats-section">
+        <div class="stat-card">
+          <component :is="Users" class="stat-icon" />
+          <div class="stat-content">
+            <span class="stat-label">参与成员</span>
+            <span class="stat-value">{{ record.participantMembers.length }}人</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <component :is="ArrowRightLeft" class="stat-icon" />
+          <div class="stat-content">
+            <span class="stat-label">转账次数</span>
+            <span class="stat-value">{{ optimizedTransfers.length }}笔</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <component :is="DollarSign" class="stat-icon" />
+          <div class="stat-content">
+            <span class="stat-label">结算金额</span>
+            <span class="stat-value">¥{{ formatAmount(record.totalAmount) }}</span>
+          </div>
+        </div>
       </div>
     </div>
-  </div>
+  </BaseModal>
 </template>
 
 <style scoped>

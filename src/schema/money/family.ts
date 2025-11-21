@@ -87,23 +87,31 @@ export const FamilyLedgerSchema = z.object({
   updatedAt: DateTimeSchema.optional().nullable(),
 });
 
-export const FamilyLedgerCreateSchema = FamilyLedgerSchema.pick({
-  name: true,
-  description: true,
-  memberList: true, // 前端使用，后端会忽略
-  ledgerType: true,
-  settlementCycle: true,
-  autoSettlement: true,
-  settlementDay: true,
-  defaultSplitRule: true,
-}).extend({
+export const FamilyLedgerCreateSchema = z.object({
+  name: z.string().min(1, 'Name is required'),
+  description: DescriptionSchema,
   baseCurrency: z.string().length(3),
+  memberList: z.array(FamilyMemberSchema).default([]),
+  ledgerType: LedgerTypeSchema.default('FAMILY'),
+  settlementCycle: SettlementCycleSchema.default('MONTHLY'),
+  autoSettlement: z.boolean().default(false),
+  settlementDay: z.number().int().min(1).max(31).default(1),
+  defaultSplitRule: SerialNumSchema.optional().nullable(),
 }).strict();
 
-export const FamilyLedgerUpdateSchema = FamilyLedgerCreateSchema.partial().extend({
+export const FamilyLedgerUpdateSchema = z.object({
+  name: z.string().min(1, 'Name is required').optional(),
+  description: DescriptionSchema.optional(),
+  baseCurrency: z.string().length(3).optional(),
+  memberList: z.array(FamilyMemberSchema).optional(),
+  ledgerType: LedgerTypeSchema.optional(),
+  settlementCycle: SettlementCycleSchema.optional(),
+  autoSettlement: z.boolean().optional(),
+  settlementDay: z.number().int().min(1).max(31).optional(),
+  defaultSplitRule: SerialNumSchema.optional().nullable(),
   memberCount: z.number().int().min(0).optional(),
   activeTransactionCount: z.number().int().min(0).optional(),
-});
+}).strict();
 
 export const FamilyLedgerAccountSchema = z.object({
   serialNum: SerialNumSchema,

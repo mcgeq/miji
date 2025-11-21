@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n';
+import BaseModal from '@/components/common/BaseModal.vue';
 import { CURRENCY_CNY } from '@/constants/moneyConst';
 import { MoneyDb } from '@/services/money/money';
-import { DateUtils } from '@/utils/date';
+import { useFamilyLedgerStore } from '@/stores/money';
 import { Lg } from '@/utils/debugLog';
 import { toast } from '@/utils/toast';
-import { uuid } from '@/utils/uuid';
 import type { Currency } from '@/schema/common';
-import type { FamilyLedger, FamilyMember } from '@/schema/money';
+import type { FamilyLedger, FamilyLedgerCreate, FamilyLedgerUpdate, FamilyMember } from '@/schema/money';
 
 interface Props {
   ledger?: FamilyLedger | null;
@@ -21,8 +21,10 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n();
+const familyLedgerStore = useFamilyLedgerStore();
 
 const saving = ref(false);
+const isSubmitting = ref(false);
 const isEdit = computed(() => !!props.ledger);
 const currencies = ref<Currency[]>([]);
 
@@ -175,27 +177,44 @@ async function handleSubmit() {
 
   saving.value = true;
   try {
-    const localTime = DateUtils.getLocalISODateTimeWithOffset();
-    const ledgerData: FamilyLedger = {
-      ...form.value,
-      serialNum: isEdit.value ? form.value.serialNum : uuid(38),
-      createdAt: isEdit.value ? form.value.createdAt : localTime,
-      updatedAt: localTime,
-    };
+    let savedLedger: FamilyLedger;
 
-    // TODO: 调用实际 API
+    // 提取货币代码（API需要字符串，而不是Currency对象）
+    const currencyCode = typeof form.value.baseCurrency === 'string'
+      ? form.value.baseCurrency
+      : form.value.baseCurrency.code;
+
     if (isEdit.value) {
-      // await familyLedgerStore.updateLedger(ledgerData);
-      toast.info('更新账本');
+      // 更新账本
+      const updateData: FamilyLedgerUpdate = {
+        name: form.value.name,
+        description: form.value.description,
+        baseCurrency: currencyCode,
+      };
+      savedLedger = await familyLedgerStore.updateLedger(form.value.serialNum, updateData);
+      toast.success('账本更新成功');
     } else {
-      // await familyLedgerStore.createLedger(ledgerData);
-      toast.info('创建账本');
+      // 创建账本
+      const createData: FamilyLedgerCreate = {
+        name: form.value.name,
+        description: form.value.description,
+        baseCurrency: currencyCode,
+        memberList: form.value.memberList || [],
+        ledgerType: form.value.ledgerType || 'FAMILY',
+        settlementCycle: form.value.settlementCycle || 'MONTHLY',
+        autoSettlement: form.value.autoSettlement || false,
+        settlementDay: form.value.settlementDay || 1,
+        defaultSplitRule: form.value.defaultSplitRule || null,
+      };
+      savedLedger = await familyLedgerStore.createLedger(createData);
+      toast.success('账本创建成功');
     }
 
-    emit('save', ledgerData);
-  } catch (error) {
-    // toast.error(isEdit.value ? t('familyLedger.updateFailed') : t('familyLedger.createFailed'));
-    Lg.e('LedgerFormModal', isEdit.value ? '更新账本失败' : '创建账本失败', error);
+    emit('save', savedLedger);
+  } catch (error: any) {
+    const errorMsg = isEdit.value ? '更新账本失败' : '创建账本失败';
+    toast.error(error.message || errorMsg);
+    Lg.e('LedgerFormModal', errorMsg, error);
   } finally {
     saving.value = false;
   }
@@ -269,186 +288,151 @@ onMounted(() => {
 </script>
 
 <template>
-  <div
-    class="modal-overlay"
-    @click.self="$emit('close')"
+  <BaseModal
+    :title="isEdit ? t('familyLedger.editLedger') : t('familyLedger.createNewLedger')"
+    size="md"
+    :confirm-loading="isSubmitting || saving"
+    @close="$emit('close')"
+    @confirm="handleSubmit"
   >
-    <div class="modal-container">
-      <!-- 头部 -->
-      <div class="modal-header">
-        <h2 class="modal-title">
-          {{ isEdit ? t('familyLedger.editLedger') : t('familyLedger.createNewLedger') }}
-        </h2>
-        <button class="modal-close-btn" @click="$emit('close')">
-          <LucideX class="modal-icon" />
-        </button>
+    <form @submit.prevent="handleSubmit">
+      <!-- 基本信息 -->
+      <div class="form-section">
+        <h3 class="section-title">
+          {{ t('familyLedger.basicInfo')
+          }}
+        </h3>
+
+        <!-- 账本名称 -->
+        <div class="form-field">
+          <label for="name" class="form-label">
+            {{ t('familyLedger.ledgerName') }} <span class="required-mark">*</span>
+          </label>
+          <input
+            id="name" v-model="form.name" type="text" required maxlength="50"
+            :placeholder="t('common.placeholders.enterName')"
+            class="form-input"
+          >
+          <p class="form-help">
+            {{ form.name.length }}/50
+          </p>
+        </div>
+
+        <!-- 账本描述 -->
+        <div class="form-field">
+          <label for="description" class="form-label">
+            {{ t('familyLedger.ledgerDescription') }}
+          </label>
+          <textarea
+            id="description" v-model="form.description" rows="3" maxlength="200"
+            :placeholder="t('common.placeholders.enterDescription')"
+            class="form-input"
+          />
+          <p class="form-help">
+            {{ form.description.length }}/200
+          </p>
+        </div>
       </div>
 
-      <!-- 表单内容 -->
-      <div class="modal-body">
-        <form class="modal-form" @submit.prevent="handleSubmit">
-          <!-- 基本信息 -->
-          <div class="form-section">
-            <h3 class="section-title">
-              {{ t('familyLedger.basicInfo')
-              }}
-            </h3>
+      <!-- 货币设置 -->
+      <div class="form-section">
+        <h3 class="section-title">
+          {{
+            t('familyLedger.currencySettings') }}
+        </h3>
 
-            <!-- 账本名称 -->
-            <div class="form-field">
-              <label for="name" class="form-label">
-                {{ t('familyLedger.ledgerName') }} <span class="required-mark">*</span>
-              </label>
+        <div class="form-field">
+          <label for="currency" class="form-label">
+            {{ t('financial.baseCurrency') }} <span class="required-mark">*</span>
+          </label>
+          <select
+            id="currency" v-model="form.baseCurrency.code" required class="form-input"
+            @change="updateCurrencyInfo"
+          >
+            <option value="">
+              {{ t('messages.selectCurrency') }}
+            </option>
+            <option v-for="currency in currencies" :key="currency.code" :value="currency.code">
+              {{ currency.symbol }} {{ currency.code }} - {{ t(currency.code) }}
+            </option>
+          </select>
+          <p class="form-help">
+            {{ t('messages.selectedAsDefault') }}
+          </p>
+        </div>
+      </div>
+
+      <!-- 成员管理 -->
+      <div class="space-y-4">
+        <div class="pb-2 border-b border-gray-200 flex items-center justify-between">
+          <h3 class="text-lg text-gray-900 font-medium">
+            {{ t('familyLedger.members') }}
+          </h3>
+          <button
+            type="button" class="text-sm text-blue-600 flex gap-1 items-center hover:text-blue-700"
+            @click="addMember"
+          >
+            <LucidePlus class="h-4 w-4" />
+            {{ t('familyLedger.addMember') }}
+          </button>
+        </div>
+
+        <div v-if="form.memberList && form.memberList.length === 0" class="text-gray-500 py-6 text-center">
+          <LucideUsers class="text-gray-300 mx-auto mb-2 h-12 w-12" />
+          <p>{{ t('familyLedger.noMembers') }}</p>
+          <p class="text-sm">
+            {{ t('familyLedger.clickAddMember') }}
+          </p>
+        </div>
+
+        <div v-else class="space-y-3">
+          <div
+            v-for="(member, index) in form.memberList" :key="index"
+            class="p-3 border border-gray-200 rounded-md flex gap-3 items-center"
+          >
+            <div class="flex-1">
               <input
-                id="name" v-model="form.name" type="text" required maxlength="50"
-                :placeholder="t('common.placeholders.enterName')"
-                class="form-input"
+                v-model="member.name" type="text" :placeholder="t('familyLedger.memberName')" required
+                maxlength="20"
+                class="text-sm px-2 py-1 border border-gray-300 rounded w-full focus:outline-none focus:border-blue-500"
               >
-              <p class="form-help">
-                {{ form.name.length }}/50
-              </p>
             </div>
-
-            <!-- 账本描述 -->
-            <div class="form-field">
-              <label for="description" class="form-label">
-                {{ t('familyLedger.ledgerDescription') }}
-              </label>
-              <textarea
-                id="description" v-model="form.description" rows="3" maxlength="200"
-                :placeholder="t('common.placeholders.enterDescription')"
-                class="form-input"
-              />
-              <p class="form-help">
-                {{ form.description.length }}/200
-              </p>
-            </div>
-          </div>
-
-          <!-- 货币设置 -->
-          <div class="form-section">
-            <h3 class="section-title">
-              {{
-                t('familyLedger.currencySettings') }}
-            </h3>
-
-            <div class="form-field">
-              <label for="currency" class="form-label">
-                {{ t('financial.baseCurrency') }} <span class="required-mark">*</span>
-              </label>
+            <div class="flex-1">
               <select
-                id="currency" v-model="form.baseCurrency.code" required class="form-input"
-                @change="updateCurrencyInfo"
+                v-model="member.role"
+                class="text-sm px-2 py-1 border border-gray-300 rounded w-full focus:outline-none focus:border-blue-500"
               >
-                <option value="">
-                  {{ t('messages.selectCurrency') }}
+                <option value="Owner">
+                  {{ t('roles.owner') }}
                 </option>
-                <option v-for="currency in currencies" :key="currency.code" :value="currency.code">
-                  {{ currency.symbol }} {{ currency.code }} - {{ t(currency.code) }}
+                <option value="Admin">
+                  {{ t('roles.admin') }}
+                </option>
+                <option value="Member">
+                  {{ t('roles.member') }}
+                </option>
+                <option value="Viewer">
+                  {{ t('roles.viewer') }}
                 </option>
               </select>
-              <p class="form-help">
-                {{ t('messages.selectedAsDefault') }}
-              </p>
             </div>
-          </div>
-
-          <!-- 成员管理 -->
-          <div class="space-y-4">
-            <div class="pb-2 border-b border-gray-200 flex items-center justify-between">
-              <h3 class="text-lg text-gray-900 font-medium">
-                {{ t('familyLedger.members') }}
-              </h3>
+            <div class="flex gap-2 items-center">
+              <label class="text-sm text-gray-600 flex gap-1 items-center">
+                <input v-model="member.isPrimary" type="checkbox" class="border-gray-300 rounded">
+                {{ t('familyLedger.primaryMember') }}
+              </label>
               <button
-                type="button" class="text-sm text-blue-600 flex gap-1 items-center hover:text-blue-700"
-                @click="addMember"
+                type="button" class="text-red-500 p-1 hover:text-red-700" :disabled="form.memberList && form.memberList.length === 1"
+                @click="removeMember(index)"
               >
-                <LucidePlus class="h-4 w-4" />
-                {{ t('familyLedger.addMember') }}
+                <LucideTrash2 class="h-4 w-4" />
               </button>
             </div>
-
-            <div v-if="form.memberList && form.memberList.length === 0" class="text-gray-500 py-6 text-center">
-              <LucideUsers class="text-gray-300 mx-auto mb-2 h-12 w-12" />
-              <p>{{ t('familyLedger.noMembers') }}</p>
-              <p class="text-sm">
-                {{ t('familyLedger.clickAddMember') }}
-              </p>
-            </div>
-
-            <div v-else class="space-y-3">
-              <div
-                v-for="(member, index) in form.memberList" :key="index"
-                class="p-3 border border-gray-200 rounded-md flex gap-3 items-center"
-              >
-                <div class="flex-1">
-                  <input
-                    v-model="member.name" type="text" :placeholder="t('familyLedger.memberName')" required
-                    maxlength="20"
-                    class="text-sm px-2 py-1 border border-gray-300 rounded w-full focus:outline-none focus:border-blue-500"
-                  >
-                </div>
-                <div class="flex-1">
-                  <select
-                    v-model="member.role"
-                    class="text-sm px-2 py-1 border border-gray-300 rounded w-full focus:outline-none focus:border-blue-500"
-                  >
-                    <option value="Owner">
-                      {{ t('roles.owner') }}
-                    </option>
-                    <option value="Admin">
-                      {{ t('roles.admin') }}
-                    </option>
-                    <option value="Member">
-                      {{ t('roles.member') }}
-                    </option>
-                    <option value="Viewer">
-                      {{ t('roles.viewer') }}
-                    </option>
-                  </select>
-                </div>
-                <div class="flex gap-2 items-center">
-                  <label class="text-sm text-gray-600 flex gap-1 items-center">
-                    <input v-model="member.isPrimary" type="checkbox" class="border-gray-300 rounded">
-                    {{ t('familyLedger.primaryMember') }}
-                  </label>
-                  <button
-                    type="button" class="text-red-500 p-1 hover:text-red-700" :disabled="form.memberList && form.memberList.length === 1"
-                    @click="removeMember(index)"
-                  >
-                    <LucideTrash2 class="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
-            </div>
           </div>
-        </form>
-      </div>
-
-      <!-- 底部操作栏 -->
-      <div class="p-6 border-t border-gray-200 bg-gray-50 flex items-center justify-between">
-        <div class="text-sm text-gray-600">
-          <span v-if="isEdit">{{ t('familyLedger.editLedger') }}</span>
-          <span v-else>{{ t('familyLedger.createNewLedger') }}</span>
-        </div>
-        <div class="flex gap-3">
-          <button
-            type="button" class="text-gray-700 px-4 py-2 border border-gray-300 rounded-md transition-colors hover:bg-gray-50"
-            @click="$emit('close')"
-          >
-            {{ t('common.actions.cancel') }}
-          </button>
-          <button
-            :disabled="!isFormValid || saving" class="text-white px-4 py-2 rounded-md bg-blue-600 transition-colors hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-            @click="handleSubmit"
-          >
-            <span v-if="saving">{{ t('common.misc.saving') }}</span>
-            <span v-else>{{ isEdit ? t('common.actions.update') : t('common.actions.create') }}</span>
-          </button>
         </div>
       </div>
-    </div>
-  </div>
+    </form>
+  </BaseModal>
 </template>
 
 <style scoped lang="postcss">
@@ -509,9 +493,8 @@ onMounted(() => {
 
 .form-input:focus {
   outline: none;
-  ring: 2px;
-  ring-color: #3b82f6;
   border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
 }
 
 .form-help {
@@ -694,8 +677,7 @@ onMounted(() => {
 .form-input:focus {
   outline: none;
   border-color: #3b82f6;
-  ring: 2px;
-  ring-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
 }
 
 .form-help {

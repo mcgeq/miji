@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import BaseModal from '@/components/common/BaseModal.vue';
 import DateTimePicker from '@/components/common/DateTimePicker.vue';
 import CurrencySelector from '@/components/common/money/CurrencySelector.vue';
 // 注意：CURRENCY_CNY 已移至 transactionFormUtils
@@ -54,6 +55,22 @@ const emit = defineEmits<{
 }>();
 const categoryStore = useCategoryStore();
 const { t } = useI18n();
+
+// 提交状态
+const isSubmitting = ref(false);
+
+// 模态框标题
+const modalTitle = computed(() => {
+  const titles: Record<TransactionType, string> = {
+    Income: 'financial.transaction.recordIncome',
+    Expense: 'financial.transaction.recordExpense',
+    Transfer: 'financial.transaction.recordTransfer',
+  };
+
+  return props.transaction
+    ? t('financial.transaction.editTransaction')
+    : t(titles[props.type]);
+});
 
 // 使用验证 Composable
 const {
@@ -453,39 +470,27 @@ const selectToAccounts = computed(() => {
   return selectAccounts.value.filter(account => account.serialNum !== form.value.accountSerialNum);
 });
 
-function getModalTitle() {
-  const titles: Record<TransactionType, string> = {
-    Income: 'financial.transaction.recordIncome',
-    Expense: 'financial.transaction.recordExpense',
-    Transfer: 'financial.transaction.recordTransfer',
-  };
-
-  return props.transaction
-    ? t('financial.transaction.editTransaction')
-    : t(titles[props.type]);
-}
-
-function handleOverlayClick() {
-  emit('close');
-}
-
-// 快捷操作：全选成员
-function selectAllMembers() {
-  if (availableMembers.value.length > 0) {
-    selectedMembers.value = availableMembers.value.map(m => m.serialNum);
-    // Selected all members
-    toast.success(`已选择全部 ${availableMembers.value.length} 位成员`);
-  }
-}
-
-// 快捷操作：清空成员
-function clearMembers() {
+function clearMemberSelection() {
   selectedMembers.value = [];
-  // Cleared all members
   toast.info('已清空成员选择');
 }
 
-function handleSubmit() {
+// 全选成员
+function selectAllMembers() {
+  if (availableMembers.value.length > 0) {
+    selectedMembers.value = availableMembers.value.map(m => m.serialNum);
+    toast.success('已选择所有成员');
+  }
+}
+
+// 清空成员（别名）
+function clearMembers() {
+  clearMemberSelection();
+}
+
+async function handleSubmit() {
+  if (isSubmitting.value) return;
+
   const amount = form.value.amount;
   const fromAccount = props.accounts.find(acc => acc.serialNum === form.value.accountSerialNum);
 
@@ -499,7 +504,12 @@ function handleSubmit() {
       return;
     }
 
-    emitTransfer(amount);
+    isSubmitting.value = true;
+    try {
+      await emitTransfer(amount);
+    } finally {
+      isSubmitting.value = false;
+    }
   } else {
     // 支出验证
     if (form.value.transactionType === TransactionTypeSchema.enum.Expense) {
@@ -511,7 +521,12 @@ function handleSubmit() {
       }
     }
 
-    emitTransaction(amount);
+    isSubmitting.value = true;
+    try {
+      await emitTransaction(amount);
+    } finally {
+      isSubmitting.value = false;
+    }
   }
 }
 
@@ -670,405 +685,471 @@ watch(
 </script>
 
 <template>
-  <div class="modal-mask" @click="handleOverlayClick">
-    <div class="modal-mask-window-money" @click.stop>
-      <div class="modal-header">
-        <h2 class="modal-title">
-          {{ getModalTitle() }}
-        </h2>
-        <button class="modal-close-btn" @click="$emit('close')">
-          <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
+  <BaseModal
+    :title="modalTitle"
+    size="md"
+    :confirm-loading="isSubmitting"
+    :show-footer="!isReadonlyMode"
+    @close="$emit('close')"
+    @confirm="handleSubmit"
+  >
+    <form @submit.prevent="handleSubmit">
+      <!-- 交易类型 -->
+      <div class="form-row">
+        <label>{{ t('financial.transaction.transType') }}</label>
+        <div class="form-control form-display">
+          {{ form.transactionType === 'Income' ? t('financial.transaction.income')
+            : form.transactionType === 'Expense' ? t('financial.transaction.expense')
+              : t('financial.transaction.transfer') }}
+        </div>
       </div>
 
-      <form class="modal-form" @submit.prevent="handleSubmit">
-        <!-- 交易类型 -->
-        <div class="form-row">
-          <label>{{ t('financial.transaction.transType') }}</label>
-          <div class="form-control form-display">
-            {{ form.transactionType === 'Income' ? t('financial.transaction.income')
-              : form.transactionType === 'Expense' ? t('financial.transaction.expense')
-                : t('financial.transaction.transfer') }}
+      <!-- 金额 -->
+      <div class="form-row">
+        <label>{{ t('financial.money') }}</label>
+        <input
+          v-model="form.amount"
+          type="number"
+          class="form-control"
+          :placeholder="t('common.placeholders.enterAmount')"
+          :disabled="isInstallmentFieldsDisabled || isInstallmentTransactionFieldsDisabled || isReadonlyMode"
+          step="0.01"
+          required
+          @input="handleAmountInput"
+        >
+      </div>
+
+      <!-- 币种 -->
+      <div class="form-row">
+        <label>{{ t('financial.currency') }}</label>
+        <CurrencySelector
+          v-model="form.currency"
+          :disabled="isTransferReadonly || isInstallmentFieldsDisabled || isInstallmentTransactionFieldsDisabled || isReadonlyMode"
+        />
+      </div>
+
+      <!-- 分摊设置已移到分摊成员选择之后 -->
+
+      <!-- 转出账户 -->
+      <div class="form-row">
+        <label>
+          {{ isTransferReadonly || form.transactionType === TransactionTypeSchema.enum.Transfer ? t('financial.transaction.fromAccount') : t('financial.account.account') }}
+        </label>
+        <select v-model="form.accountSerialNum" class="form-control" required :disabled="isDisabled || isReadonlyMode">
+          <option value="">
+            {{ t('common.placeholders.selectAccount') }}
+          </option>
+          <option v-for="account in selectAccounts" :key="account.serialNum" :value="account.serialNum">
+            {{ account.name }} ({{ formatCurrency(account.balance) }})
+          </option>
+        </select>
+      </div>
+
+      <!-- 转入账户 -->
+      <div v-if="isTransferReadonly || form.transactionType === TransactionTypeSchema.enum.Transfer" class="form-row">
+        <label>{{ t('financial.transaction.toAccount') }}</label>
+        <select v-model="form.toAccountSerialNum" class="form-control" required :disabled="isDisabled">
+          <option value="">
+            {{ t('common.placeholders.selectAccount') }}
+          </option>
+          <option v-for="account in selectToAccounts" :key="account.serialNum" :value="account.serialNum">
+            {{ account.name }} ({{ formatCurrency(account.balance) }})
+          </option>
+        </select>
+      </div>
+
+      <!-- 支付渠道 -->
+      <div class="form-row">
+        <label>{{ t('financial.transaction.paymentMethod') }}</label>
+        <select
+          v-if="isPaymentMethodEditable"
+          v-model="form.paymentMethod"
+          :disabled="isTransferReadonly"
+          class="form-control"
+          required
+        >
+          <option value="">
+            {{ t('common.placeholders.selectOption') }}
+          </option>
+          <option v-for="method in availablePaymentMethods" :key="method" :value="method">
+            {{ t(`financial.paymentMethods.${method.toLowerCase()}`) }}
+          </option>
+        </select>
+        <div v-else class="form-control form-display">
+          {{ t(`financial.paymentMethods.${form.paymentMethod.toLowerCase()}`) }}
+        </div>
+      </div>
+
+      <!-- 分类 -->
+      <div class="form-row">
+        <label>{{ t('categories.category') }}</label>
+        <select
+          v-model="form.category"
+          class="form-control"
+          required
+          :disabled="isTransferReadonly || isInstallmentTransactionFieldsDisabled || isReadonlyMode"
+        >
+          <option value="">
+            {{ t('common.placeholders.selectCategory') }}
+          </option>
+          <option v-for="[key, category] in categoryMap" :key="key" :value="category.name">
+            {{ t(`common.categories.${lowercaseFirstLetter(category.name)}`) }}
+          </option>
+        </select>
+      </div>
+
+      <!-- 子分类 -->
+      <div v-if="form.category && categoryMap.get(form.category)?.subs.length" class="form-row">
+        <label>{{ t('categories.subCategory') }}</label>
+        <select
+          v-model="form.subCategory"
+          class="form-control"
+          :disabled="isTransferReadonly || isInstallmentTransactionFieldsDisabled || isReadonlyMode"
+        >
+          <option value="">
+            {{ t('common.placeholders.selectOption') }}
+          </option>
+          <option v-for="sub in categoryMap.get(form.category)?.subs" :key="sub" :value="sub">
+            {{ t(`common.subCategories.${lowercaseFirstLetter(sub)}`) }}
+          </option>
+        </select>
+      </div>
+
+      <!-- 关联账本 -->
+      <div v-if="!isReadonlyMode" class="form-row">
+        <label class="label-with-hint">
+          关联账本
+          <span class="label-hint">(可选)</span>
+        </label>
+        <div class="ledger-selector-compact">
+          <div class="selector-row">
+            <div v-if="selectedLedgers.length === 0" class="empty-selection">
+              <LucideInbox class="empty-icon" />
+              <span>未选择账本</span>
+            </div>
+            <div v-else class="selected-items-compact">
+              <span class="selected-item">
+                {{ availableLedgers.find(l => l.serialNum === selectedLedgers[0])?.name || selectedLedgers[0] }}
+                <button
+                  type="button"
+                  class="remove-btn"
+                  @click="selectedLedgers = selectedLedgers.filter(id => id !== selectedLedgers[0])"
+                >
+                  <LucideX />
+                </button>
+              </span>
+              <span
+                v-if="selectedLedgers.length > 1"
+                class="more-count"
+                :title="selectedLedgers.slice(1).map(id => availableLedgers.find(l => l.serialNum === id)?.name || id).join('\n')"
+              >
+                +{{ selectedLedgers.length - 1 }}
+              </span>
+            </div>
+            <button
+              type="button"
+              class="btn-add-ledger btn-icon-only"
+              :title="showLedgerSelector ? '收起' : '选择账本'"
+              @click="showLedgerSelector = !showLedgerSelector"
+            >
+              <LucideChevronDown v-if="!showLedgerSelector" />
+              <LucideChevronUp v-else />
+            </button>
           </div>
         </div>
+      </div>
 
-        <!-- 金额 -->
-        <div class="form-row">
-          <label>{{ t('financial.money') }}</label>
-          <input
-            v-model="form.amount"
-            type="number"
-            class="form-control"
-            :placeholder="t('common.placeholders.enterAmount')"
-            :disabled="isInstallmentFieldsDisabled || isInstallmentTransactionFieldsDisabled || isReadonlyMode"
-            step="0.01"
-            required
-            @input="handleAmountInput"
-          >
-        </div>
-
-        <!-- 币种 -->
-        <div class="form-row">
-          <label>{{ t('financial.currency') }}</label>
-          <CurrencySelector
-            v-model="form.currency"
-            :disabled="isTransferReadonly || isInstallmentFieldsDisabled || isInstallmentTransactionFieldsDisabled || isReadonlyMode"
-          />
-        </div>
-
-        <!-- 分摊设置已移到分摊成员选择之后 -->
-
-        <!-- 转出账户 -->
-        <div class="form-row">
-          <label>
-            {{ isTransferReadonly || form.transactionType === TransactionTypeSchema.enum.Transfer ? t('financial.transaction.fromAccount') : t('financial.account.account') }}
-          </label>
-          <select v-model="form.accountSerialNum" class="form-control" required :disabled="isDisabled || isReadonlyMode">
-            <option value="">
-              {{ t('common.placeholders.selectAccount') }}
-            </option>
-            <option v-for="account in selectAccounts" :key="account.serialNum" :value="account.serialNum">
-              {{ account.name }} ({{ formatCurrency(account.balance) }})
-            </option>
-          </select>
-        </div>
-
-        <!-- 转入账户 -->
-        <div v-if="isTransferReadonly || form.transactionType === TransactionTypeSchema.enum.Transfer" class="form-row">
-          <label>{{ t('financial.transaction.toAccount') }}</label>
-          <select v-model="form.toAccountSerialNum" class="form-control" required :disabled="isDisabled">
-            <option value="">
-              {{ t('common.placeholders.selectAccount') }}
-            </option>
-            <option v-for="account in selectToAccounts" :key="account.serialNum" :value="account.serialNum">
-              {{ account.name }} ({{ formatCurrency(account.balance) }})
-            </option>
-          </select>
-        </div>
-
-        <!-- 支付渠道 -->
-        <div class="form-row">
-          <label>{{ t('financial.transaction.paymentMethod') }}</label>
-          <select
-            v-if="isPaymentMethodEditable"
-            v-model="form.paymentMethod"
-            :disabled="isTransferReadonly"
-            class="form-control"
-            required
-          >
-            <option value="">
-              {{ t('common.placeholders.selectOption') }}
-            </option>
-            <option v-for="method in availablePaymentMethods" :key="method" :value="method">
-              {{ t(`financial.paymentMethods.${method.toLowerCase()}`) }}
-            </option>
-          </select>
-          <div v-else class="form-control form-display">
-            {{ t(`financial.paymentMethods.${form.paymentMethod.toLowerCase()}`) }}
+      <!-- 账本选择下拉 -->
+      <div v-if="!isReadonlyMode && showLedgerSelector" class="form-row">
+        <label />
+        <div class="selector-dropdown">
+          <div class="dropdown-header">
+            <span>选择账本</span>
+            <button type="button" @click="showLedgerSelector = false">
+              <LucideX />
+            </button>
+          </div>
+          <div class="dropdown-content">
+            <label
+              v-for="ledger in availableLedgers"
+              :key="ledger.serialNum"
+              class="checkbox-item"
+            >
+              <input
+                v-model="selectedLedgers"
+                type="checkbox"
+                :value="ledger.serialNum"
+              >
+              <span class="item-name">{{ ledger.name }}</span>
+              <span class="item-type">{{ ledger.ledgerType }}</span>
+            </label>
           </div>
         </div>
+      </div>
 
-        <!-- 分类 -->
-        <div class="form-row">
-          <label>{{ t('categories.category') }}</label>
-          <select
-            v-model="form.category"
-            class="form-control"
-            required
-            :disabled="isTransferReadonly || isInstallmentTransactionFieldsDisabled || isReadonlyMode"
-          >
-            <option value="">
-              {{ t('common.placeholders.selectCategory') }}
-            </option>
-            <option v-for="[key, category] in categoryMap" :key="key" :value="category.name">
-              {{ t(`common.categories.${lowercaseFirstLetter(category.name)}`) }}
-            </option>
-          </select>
-        </div>
-
-        <!-- 子分类 -->
-        <div v-if="form.category && categoryMap.get(form.category)?.subs.length" class="form-row">
-          <label>{{ t('categories.subCategory') }}</label>
-          <select
-            v-model="form.subCategory"
-            class="form-control"
-            :disabled="isTransferReadonly || isInstallmentTransactionFieldsDisabled || isReadonlyMode"
-          >
-            <option value="">
-              {{ t('common.placeholders.selectOption') }}
-            </option>
-            <option v-for="sub in categoryMap.get(form.category)?.subs" :key="sub" :value="sub">
-              {{ t(`common.subCategories.${lowercaseFirstLetter(sub)}`) }}
-            </option>
-          </select>
-        </div>
-
-        <!-- 关联账本 -->
-        <div v-if="!isReadonlyMode" class="form-row">
-          <label class="label-with-hint">
-            关联账本
-            <span class="label-hint">(可选)</span>
-          </label>
-          <div class="ledger-selector-compact">
+      <!-- 分摊成员 -->
+      <div v-if="!isReadonlyMode && selectedLedgers.length > 0" class="form-row">
+        <label class="label-with-hint">
+          分摊成员
+          <span class="label-hint">(可选)</span>
+        </label>
+        <div class="member-selector-with-hint">
+          <div class="member-selector-compact">
             <div class="selector-row">
-              <div v-if="selectedLedgers.length === 0" class="empty-selection">
-                <LucideInbox class="empty-icon" />
-                <span>未选择账本</span>
+              <div v-if="selectedMembers.length === 0" class="empty-selection">
+                <LucideUsers class="empty-icon" />
+                <span>未选择成员</span>
               </div>
               <div v-else class="selected-items-compact">
                 <span class="selected-item">
-                  {{ availableLedgers.find(l => l.serialNum === selectedLedgers[0])?.name || selectedLedgers[0] }}
+                  {{ availableMembers.find(m => m.serialNum === selectedMembers[0])?.name || selectedMembers[0] }}
                   <button
                     type="button"
                     class="remove-btn"
-                    @click="selectedLedgers = selectedLedgers.filter(id => id !== selectedLedgers[0])"
+                    @click="selectedMembers = selectedMembers.filter(id => id !== selectedMembers[0])"
                   >
                     <LucideX />
                   </button>
                 </span>
                 <span
-                  v-if="selectedLedgers.length > 1"
+                  v-if="selectedMembers.length > 1"
                   class="more-count"
-                  :title="selectedLedgers.slice(1).map(id => availableLedgers.find(l => l.serialNum === id)?.name || id).join('\n')"
+                  :title="selectedMembers.slice(1).map(id => availableMembers.find(m => m.serialNum === id)?.name || id).join('\n')"
                 >
-                  +{{ selectedLedgers.length - 1 }}
+                  +{{ selectedMembers.length - 1 }}
                 </span>
               </div>
               <button
                 type="button"
-                class="btn-add-ledger btn-icon-only"
-                :title="showLedgerSelector ? '收起' : '选择账本'"
-                @click="showLedgerSelector = !showLedgerSelector"
+                class="btn-add-member btn-icon-only"
+                :title="showMemberSelector ? '收起' : '选择成员'"
+                @click="showMemberSelector = !showMemberSelector"
               >
-                <LucideChevronDown v-if="!showLedgerSelector" />
+                <LucideChevronDown v-if="!showMemberSelector" />
                 <LucideChevronUp v-else />
               </button>
             </div>
           </div>
+          <!-- 小字提示 -->
+          <div v-if="selectedMembers.length === 0" class="member-hint-text">
+            如不选择成员，则为个人交易
+          </div>
         </div>
+      </div>
 
-        <!-- 账本选择下拉 -->
-        <div v-if="!isReadonlyMode && showLedgerSelector" class="form-row">
-          <label />
-          <div class="selector-dropdown">
-            <div class="dropdown-header">
-              <span>选择账本</span>
-              <button type="button" @click="showLedgerSelector = false">
+      <!-- 成员选择下拉 -->
+      <div v-if="!isReadonlyMode && selectedLedgers.length > 0 && showMemberSelector" class="form-row">
+        <label />
+        <div class="selector-dropdown">
+          <div class="dropdown-header">
+            <span>选择成员</span>
+            <div class="quick-actions">
+              <button
+                v-if="availableMembers.length > 0"
+                type="button"
+                class="btn-quick"
+                title="全选成员"
+                @click="selectAllMembers"
+              >
+                <LucideUserPlus class="icon-sm" />
+                全选
+              </button>
+              <button
+                v-if="selectedMembers.length > 0"
+                type="button"
+                class="btn-quick"
+                title="清空成员"
+                @click="clearMembers"
+              >
+                <LucideX class="icon-sm" />
+                清空
+              </button>
+              <button type="button" @click="showMemberSelector = false">
                 <LucideX />
               </button>
             </div>
-            <div class="dropdown-content">
-              <label
-                v-for="ledger in availableLedgers"
-                :key="ledger.serialNum"
-                class="checkbox-item"
+          </div>
+          <div class="dropdown-content">
+            <label
+              v-for="member in availableMembers"
+              :key="member.serialNum"
+              class="checkbox-item"
+            >
+              <input
+                v-model="selectedMembers"
+                type="checkbox"
+                :value="member.serialNum"
               >
-                <input
-                  v-model="selectedLedgers"
-                  type="checkbox"
-                  :value="ledger.serialNum"
-                >
-                <span class="item-name">{{ ledger.name }}</span>
-                <span class="item-type">{{ ledger.ledgerType }}</span>
-              </label>
-            </div>
+              <span class="item-name">{{ member.name }}</span>
+            </label>
           </div>
         </div>
+      </div>
 
-        <!-- 分摊成员 -->
-        <div v-if="!isReadonlyMode && selectedLedgers.length > 0" class="form-row">
-          <label class="label-with-hint">
-            分摊成员
-            <span class="label-hint">(可选)</span>
-          </label>
-          <div class="member-selector-with-hint">
-            <div class="member-selector-compact">
-              <div class="selector-row">
-                <div v-if="selectedMembers.length === 0" class="empty-selection">
-                  <LucideUsers class="empty-icon" />
-                  <span>未选择成员</span>
-                </div>
-                <div v-else class="selected-items-compact">
-                  <span class="selected-item">
-                    {{ availableMembers.find(m => m.serialNum === selectedMembers[0])?.name || selectedMembers[0] }}
-                    <button
-                      type="button"
-                      class="remove-btn"
-                      @click="selectedMembers = selectedMembers.filter(id => id !== selectedMembers[0])"
-                    >
-                      <LucideX />
-                    </button>
-                  </span>
-                  <span
-                    v-if="selectedMembers.length > 1"
-                    class="more-count"
-                    :title="selectedMembers.slice(1).map(id => availableMembers.find(m => m.serialNum === id)?.name || id).join('\n')"
-                  >
-                    +{{ selectedMembers.length - 1 }}
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  class="btn-add-member btn-icon-only"
-                  :title="showMemberSelector ? '收起' : '选择成员'"
-                  @click="showMemberSelector = !showMemberSelector"
-                >
-                  <LucideChevronDown v-if="!showMemberSelector" />
-                  <LucideChevronUp v-else />
-                </button>
-              </div>
-            </div>
-            <!-- 小字提示 -->
-            <div v-if="selectedMembers.length === 0" class="member-hint-text">
-              如不选择成员，则为个人交易
-            </div>
-          </div>
-        </div>
+      <!-- 分摊设置 -->
+      <TransactionSplitSection
+        v-if="!isReadonlyMode && selectedLedgers.length > 0 && selectedMembers.length > 0 && form.amount > 0 && form.transactionType !== TransactionTypeSchema.enum.Transfer"
+        :transaction-amount="form.amount"
+        :ledger-serial-num="selectedLedgers[0]"
+        :selected-members="selectedMembers"
+        :available-members="availableMembers"
+        :initial-config="splitConfig"
+        @update:split-config="handleSplitConfigUpdate"
+      />
 
-        <!-- 成员选择下拉 -->
-        <div v-if="!isReadonlyMode && selectedLedgers.length > 0 && showMemberSelector" class="form-row">
-          <label />
-          <div class="selector-dropdown">
-            <div class="dropdown-header">
-              <span>选择成员</span>
-              <div class="quick-actions">
-                <button
-                  v-if="availableMembers.length > 0"
-                  type="button"
-                  class="btn-quick"
-                  title="全选成员"
-                  @click="selectAllMembers"
-                >
-                  <LucideUserPlus class="icon-sm" />
-                  全选
-                </button>
-                <button
-                  v-if="selectedMembers.length > 0"
-                  type="button"
-                  class="btn-quick"
-                  title="清空成员"
-                  @click="clearMembers"
-                >
-                  <LucideX class="icon-sm" />
-                  清空
-                </button>
-                <button type="button" @click="showMemberSelector = false">
-                  <LucideX />
-                </button>
-              </div>
-            </div>
-            <div class="dropdown-content">
-              <label
-                v-for="member in availableMembers"
-                :key="member.serialNum"
-                class="checkbox-item"
-              >
-                <input
-                  v-model="selectedMembers"
-                  type="checkbox"
-                  :value="member.serialNum"
-                >
-                <span class="item-name">{{ member.name }}</span>
-              </label>
-            </div>
-          </div>
-        </div>
-
-        <!-- 分摊设置 -->
-        <TransactionSplitSection
-          v-if="!isReadonlyMode && selectedLedgers.length > 0 && selectedMembers.length > 0 && form.amount > 0 && form.transactionType !== TransactionTypeSchema.enum.Transfer"
-          :transaction-amount="form.amount"
-          :ledger-serial-num="selectedLedgers[0]"
-          :selected-members="selectedMembers"
-          :available-members="availableMembers"
-          :initial-config="splitConfig"
-          @update:split-config="handleSplitConfigUpdate"
-        />
-
-        <!-- 交易状态 -->
-        <div class="form-row">
-          <label>{{ t('financial.transaction.status') }}</label>
-          <select
-            v-model="form.transactionStatus"
-            class="form-control"
-            :disabled="isInstallmentTransactionFieldsDisabled || isReadonlyMode"
+      <!-- 交易状态 -->
+      <div class="form-row">
+        <label>{{ t('financial.transaction.status') }}</label>
+        <select
+          v-model="form.transactionStatus"
+          class="form-control"
+          :disabled="isInstallmentTransactionFieldsDisabled || isReadonlyMode"
+        >
+          <option
+            v-for="status in availableTransactionStatuses"
+            :key="status.value"
+            :value="status.value"
           >
-            <option
-              v-for="status in availableTransactionStatuses"
-              :key="status.value"
-              :value="status.value"
-            >
-              {{ status.label }}
-            </option>
-          </select>
+            {{ status.label }}
+          </option>
+        </select>
+      </div>
+
+      <!-- 分期选项 -->
+      <div v-if="form.transactionType === 'Expense' && !isCurrentTransactionInstallment" class="form-row">
+        <label class="checkbox-label">
+          <input
+            v-model="form.isInstallment"
+            type="checkbox"
+            :disabled="isInstallmentFieldsDisabled"
+          >
+          {{ t('financial.transaction.installment') }}
+        </label>
+      </div>
+
+      <!-- 分期详情 -->
+      <div v-if="form.isInstallment" class="installment-section">
+        <!-- 分期计划已开始执行的提示 -->
+        <div v-if="isInstallmentFieldsDisabled" class="installment-warning">
+          <span class="warning-icon">!</span>
+          <span class="warning-text">分期计划已开始执行，部分设置不可修改</span>
+        </div>
+        <div class="form-row">
+          <label>{{ t('financial.transaction.totalPeriods') }}</label>
+          <input
+            v-model="form.totalPeriods"
+            type="number"
+            min="2"
+            class="form-control"
+            :disabled="isInstallmentFieldsDisabled"
+          >
         </div>
 
-        <!-- 分期选项 -->
-        <div v-if="form.transactionType === 'Expense' && !isCurrentTransactionInstallment" class="form-row">
-          <label class="checkbox-label">
-            <input
-              v-model="form.isInstallment"
-              type="checkbox"
-              :disabled="isInstallmentFieldsDisabled"
-            >
-            {{ t('financial.transaction.installment') }}
-          </label>
+        <div class="form-row">
+          <label>{{ t('financial.transaction.installmentAmount') }}</label>
+          <input
+            :value="safeToFixed(calculatedInstallmentAmount)"
+            type="text"
+            readonly
+            class="form-control"
+          >
         </div>
 
-        <!-- 分期详情 -->
-        <div v-if="form.isInstallment" class="installment-section">
-          <!-- 分期计划已开始执行的提示 -->
-          <div v-if="isInstallmentFieldsDisabled" class="installment-warning">
-            <span class="warning-icon">!</span>
-            <span class="warning-text">分期计划已开始执行，部分设置不可修改</span>
-          </div>
-          <div class="form-row">
-            <label>{{ t('financial.transaction.totalPeriods') }}</label>
-            <input
-              v-model="form.totalPeriods"
-              type="number"
-              min="2"
-              class="form-control"
-              :disabled="isInstallmentFieldsDisabled"
+        <div class="form-row">
+          <label>{{ t('financial.transaction.firstDueDate') }}</label>
+          <input
+            v-model="form.firstDueDate"
+            type="date"
+            class="form-control"
+            :disabled="isInstallmentFieldsDisabled"
+          >
+        </div>
+
+        <div class="form-row">
+          <label>{{ t('financial.transaction.relatedTransaction') }}</label>
+          <input
+            v-model="form.relatedTransactionSerialNum"
+            type="text"
+            class="form-control"
+            :placeholder="t('common.misc.optional')"
+          >
+        </div>
+
+        <!-- 分期计划详情 -->
+        <div v-if="installmentDetails" class="installment-plan">
+          <div class="plan-header">
+            <h4>{{ t('financial.transaction.installmentPlan') }}</h4>
+            <button
+              v-if="hasMorePeriods"
+              type="button"
+              class="toggle-btn"
+              @click="installmentManager.toggleExpanded()"
             >
+              {{ isExpanded ? t('common.actions.collapse') : t('common.actions.expand') }}
+            </button>
           </div>
 
-          <div class="form-row">
-            <label>{{ t('financial.transaction.installmentAmount') }}</label>
-            <input
-              :value="safeToFixed(calculatedInstallmentAmount)"
-              type="text"
-              readonly
-              class="form-control"
+          <div class="plan-list">
+            <div
+              v-for="(detail, index) in visibleDetails"
+              :key="detail.period || index"
+              class="plan-item"
+              :class="{ paid: detail.status === 'PAID', pending: detail.status === 'PENDING', overdue: detail.status === 'OVERDUE' }"
             >
+              <div class="period-info">
+                <div class="period-header">
+                  <span class="period-label">第 {{ detail.period || (index + 1) }} 期</span>
+                  <span v-if="detail.status" class="status-text" :class="`status-${detail.status.toLowerCase()}`">
+                    {{ getStatusText(detail.status) }}
+                  </span>
+                </div>
+                <div class="due-date-wrapper">
+                  <span class="due-date-icon">📅</span>
+                  <span class="due-date-label">应还日:</span>
+                  <span class="due-date-value">{{ detail.dueDate || '未设置' }}</span>
+                </div>
+              </div>
+              <div class="amount-info">
+                <span class="amount-label">¥{{ detail.amount ? safeToFixed(detail.amount) : '0.00' }}</span>
+                <div v-if="detail.status === 'PAID'" class="payment-details">
+                  <div class="paid-date-wrapper">
+                    <span class="paid-icon">✓</span>
+                    <span class="paid-label">入账:</span>
+                    <span class="paid-value">{{ detail.paidDate || detail.dueDate || '日期未记录' }}</span>
+                  </div>
+                  <div v-if="detail.paidAmount" class="paid-amount-wrapper">
+                    <span class="amount-icon">💰</span>
+                    <span class="amount-paid-label">实付:</span>
+                    <span class="amount-paid-value">¥{{ safeToFixed(detail.paidAmount) }}</span>
+                  </div>
+                </div>
+                <div v-else-if="detail.status === 'PENDING'" class="pending-info">
+                  <span class="status-badge pending-badge">⏳ 待入账</span>
+                </div>
+                <div v-else-if="detail.status === 'OVERDUE'" class="overdue-info">
+                  <span class="status-badge overdue-badge">⚠️ 已逾期</span>
+                </div>
+              </div>
+            </div>
           </div>
 
-          <div class="form-row">
-            <label>{{ t('financial.transaction.firstDueDate') }}</label>
-            <input
-              v-model="form.firstDueDate"
-              type="date"
-              class="form-control"
-              :disabled="isInstallmentFieldsDisabled"
-            >
-          </div>
-
-          <div class="form-row">
-            <label>{{ t('financial.transaction.relatedTransaction') }}</label>
-            <input
-              v-model="form.relatedTransactionSerialNum"
-              type="text"
-              class="form-control"
-              :placeholder="t('common.misc.optional')"
-            >
-          </div>
-
-          <!-- 分期计划详情 -->
-          <div v-if="installmentDetails" class="installment-plan">
-            <div class="plan-header">
-              <h4>{{ t('financial.transaction.installmentPlan') }}</h4>
+          <div class="plan-summary">
+            <div class="summary-stats">
+              <div class="stat-item">
+                <span class="stat-label">已入账:</span>
+                <span class="stat-value paid">{{ paidPeriodsCount }} 期</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">待入账:</span>
+                <span class="stat-value pending">{{ pendingPeriodsCount }} 期</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">总期数:</span>
+                <span class="stat-value">{{ totalPeriodsCount }} 期</span>
+              </div>
+            </div>
+            <div class="total-amount">
+              <strong>{{ t('financial.transaction.totalAmount') }}: ¥{{ safeToFixed(form.amount) }}</strong>
               <button
                 v-if="hasMorePeriods"
                 type="button"
@@ -1078,153 +1159,37 @@ watch(
                 {{ isExpanded ? t('common.actions.collapse') : t('common.actions.expand') }}
               </button>
             </div>
-
-            <div class="plan-list">
-              <div
-                v-for="(detail, index) in visibleDetails"
-                :key="detail.period || index"
-                class="plan-item"
-                :class="{ paid: detail.status === 'PAID', pending: detail.status === 'PENDING', overdue: detail.status === 'OVERDUE' }"
-              >
-                <div class="period-info">
-                  <div class="period-header">
-                    <span class="period-label">第 {{ detail.period || (index + 1) }} 期</span>
-                    <span v-if="detail.status" class="status-text" :class="`status-${detail.status.toLowerCase()}`">
-                      {{ getStatusText(detail.status) }}
-                    </span>
-                  </div>
-                  <div class="due-date-wrapper">
-                    <span class="due-date-icon">📅</span>
-                    <span class="due-date-label">应还日:</span>
-                    <span class="due-date-value">{{ detail.dueDate || '未设置' }}</span>
-                  </div>
-                </div>
-                <div class="amount-info">
-                  <span class="amount-label">¥{{ detail.amount ? safeToFixed(detail.amount) : '0.00' }}</span>
-                  <div v-if="detail.status === 'PAID'" class="payment-details">
-                    <div class="paid-date-wrapper">
-                      <span class="paid-icon">✓</span>
-                      <span class="paid-label">入账:</span>
-                      <span class="paid-value">{{ detail.paidDate || detail.dueDate || '日期未记录' }}</span>
-                    </div>
-                    <div v-if="detail.paidAmount" class="paid-amount-wrapper">
-                      <span class="amount-icon">💰</span>
-                      <span class="amount-paid-label">实付:</span>
-                      <span class="amount-paid-value">¥{{ safeToFixed(detail.paidAmount) }}</span>
-                    </div>
-                  </div>
-                  <div v-else-if="detail.status === 'PENDING'" class="pending-info">
-                    <span class="status-badge pending-badge">⏳ 待入账</span>
-                  </div>
-                  <div v-else-if="detail.status === 'OVERDUE'" class="overdue-info">
-                    <span class="status-badge overdue-badge">⚠️ 已逾期</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div class="plan-summary">
-              <div class="summary-stats">
-                <div class="stat-item">
-                  <span class="stat-label">已入账:</span>
-                  <span class="stat-value paid">{{ paidPeriodsCount }} 期</span>
-                </div>
-                <div class="stat-item">
-                  <span class="stat-label">待入账:</span>
-                  <span class="stat-value pending">{{ pendingPeriodsCount }} 期</span>
-                </div>
-                <div class="stat-item">
-                  <span class="stat-label">总期数:</span>
-                  <span class="stat-value">{{ totalPeriodsCount }} 期</span>
-                </div>
-              </div>
-              <div class="total-amount">
-                <strong>{{ t('financial.transaction.totalAmount') }}: ¥{{ safeToFixed(form.amount) }}</strong>
-                <button
-                  v-if="hasMorePeriods"
-                  type="button"
-                  class="toggle-btn"
-                  @click="installmentManager.toggleExpanded()"
-                >
-                  {{ isExpanded ? t('common.actions.collapse') : t('common.actions.expand') }}
-                </button>
-              </div>
-            </div>
           </div>
         </div>
+      </div>
 
-        <!-- 日期 -->
-        <div class="form-row">
-          <label>{{ t('date.transactionDate') }}</label>
-          <DateTimePicker
-            v-model="form.date"
-            class="form-control datetime-picker"
-            format="yyyy-MM-dd HH:mm:ss"
-            :disabled="isInstallmentTransactionFieldsDisabled || isReadonlyMode"
-            :placeholder="t('common.selectDate')"
-          />
-        </div>
+      <!-- 日期 -->
+      <div class="form-row">
+        <label>{{ t('date.transactionDate') }}</label>
+        <DateTimePicker
+          v-model="form.date"
+          class="form-control datetime-picker"
+          format="yyyy-MM-dd HH:mm:ss"
+          :disabled="isInstallmentTransactionFieldsDisabled || isReadonlyMode"
+          :placeholder="t('common.selectDate')"
+        />
+      </div>
 
-        <!-- 备注 -->
-        <div class="form-row">
-          <textarea
-            v-model="form.description"
-            class="form-control textarea-max"
-            rows="3"
-            :placeholder="`${t('common.misc.remark')}（${t('common.misc.optional')}）`"
-            :disabled="isReadonlyMode"
-          />
-        </div>
-
-        <!-- 按钮 -->
-        <div class="modal-actions">
-          <button type="button" class="btn-close" @click="$emit('close')">
-            <LucideX class="icon-btn" />
-          </button>
-          <button v-if="!isReadonlyMode" type="submit" class="btn-submit">
-            <LucideCheck class="icon-btn" />
-          </button>
-        </div>
-      </form>
-    </div>
-  </div>
+      <!-- 备注 -->
+      <div class="form-row">
+        <textarea
+          v-model="form.description"
+          class="form-control textarea-max"
+          rows="3"
+          :placeholder="`${t('common.misc.remark')}（${t('common.misc.optional')}）`"
+          :disabled="isReadonlyMode"
+        />
+      </div>
+    </form>
+  </BaseModal>
 </template>
 
 <style scoped lang="postcss">
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1.25rem 1.5rem;
-  margin-bottom: 1.25rem;
-}
-
-.modal-title {
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: var(--color-base-content);
-  letter-spacing: -0.01em;
-}
-
-.modal-close-btn {
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  padding: 0.375rem;
-  border-radius: 0.375rem;
-  transition: all 0.2s ease;
-  color: var(--color-neutral);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.modal-close-btn:hover {
-  background: oklch(from var(--color-base-300) l c h / 0.5);
-  color: var(--color-base-content);
-  transform: scale(1.1);
-}
-
 .checkbox-label {
   display: flex;
   align-items: center;
@@ -1940,7 +1905,7 @@ watch(
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 0.05rem;
+  margin-bottom: 0.75rem;
 }
 
 .form-row label {
@@ -2173,91 +2138,5 @@ textarea.form-control {
   max-width: 400px;
   width: 100%;
   box-sizing: border-box;
-}
-
-/* ==================== Modal Actions ==================== */
-.modal-actions {
-  display: flex;
-  gap: 1rem;
-  justify-content: center;
-  align-items: center;
-  padding: 0.5rem 1.5rem 0.25rem;
-  margin-top: 0.5rem;
-}
-
-.btn-close,
-.btn-submit {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  width: 3.5rem;
-  height: 3.5rem;
-  border-radius: 50%;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  border: 2px solid;
-  flex-shrink: 0;
-}
-
-.btn-close {
-  background: var(--color-base-100);
-  border-color: var(--color-base-300);
-  color: var(--color-neutral);
-}
-
-.btn-close:hover {
-  background: var(--color-base-200);
-  border-color: var(--color-error);
-  color: var(--color-error);
-  transform: scale(1.1);
-  box-shadow: var(--shadow-md);
-}
-
-.btn-close:active {
-  transform: scale(1.05);
-}
-
-.btn-submit {
-  background: var(--color-primary);
-  border-color: var(--color-primary);
-  color: var(--color-primary-content);
-  box-shadow: var(--shadow-sm);
-}
-
-.btn-submit:hover {
-  background: var(--color-primary-hover);
-  border-color: var(--color-primary-hover);
-  transform: scale(1.1);
-  box-shadow: var(--shadow-lg);
-}
-
-.btn-submit:active {
-  transform: scale(1.05);
-}
-
-.icon-btn {
-  width: 1.5rem;
-  height: 1.5rem;
-}
-
-/* Mobile optimization for action buttons */
-@media (max-width: 768px) {
-  .modal-actions {
-    padding: 1.25rem;
-    gap: 0.75rem;
-  }
-
-  .btn-close,
-  .btn-submit {
-    width: 3rem;
-    height: 3rem;
-  }
-
-  .icon-btn {
-    width: 1.25rem;
-    height: 1.25rem;
-  }
 }
 </style>

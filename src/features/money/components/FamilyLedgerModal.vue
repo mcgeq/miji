@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import BaseModal from '@/components/common/BaseModal.vue';
 import { CURRENCY_CNY } from '@/constants/moneyConst';
 import { MoneyDb } from '@/services/money/money';
 import { DateUtils } from '@/utils/date';
@@ -26,6 +27,7 @@ const showAccountSelector = ref(false);
 const selectedAccounts = ref<Account[]>([]);
 // 添加用于表单管理的状态
 const memberList = ref<FamilyMember[]>([]);
+const isSubmitting = ref(false);
 
 // Fetch currencies asynchronously
 async function loadCurrencies() {
@@ -335,6 +337,8 @@ function buildLedgerForm(source: FamilyLedger | null): FamilyLedger {
           locale: 'zh-CN',
           code: currencyCode,
           symbol: currencyCode === 'CNY' ? '¥' : '$',
+          isDefault: currencyCode === 'CNY',
+          isActive: true,
           createdAt: DateUtils.getLocalISODateTimeWithOffset(),
           updatedAt: null,
         };
@@ -440,243 +444,228 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="modal-mask">
-    <div class="modal-mask-window-money">
-      <div class="modal-header">
-        <h3 class="modal-title">
-          {{ props.ledger ? '编辑家庭账本' : '创建家庭账本' }}
-        </h3>
-        <button class="modal-close-btn" @click="closeModal">
-          <LucideX class="modal-icon" />
-        </button>
+  <BaseModal
+    :title="props.ledger ? '编辑家庭账本' : '创建家庭账本'"
+    size="md"
+    :confirm-loading="isSubmitting"
+    @close="closeModal"
+    @confirm="saveLedger"
+  >
+    <form @submit.prevent="saveLedger">
+      <!-- 基本信息 -->
+      <div class="form-section">
+        <div class="form-row">
+          <label class="form-label">账本名称</label>
+          <input
+            v-model="form.name" type="text" required class="modal-input-select form-input-2-3"
+            placeholder="请输入账本名称"
+          >
+        </div>
+
+        <div class="form-row">
+          <label class="form-label">账本描述</label>
+          <input
+            v-model="form.description" type="text" class="modal-input-select form-input-2-3"
+            placeholder="请输入账本描述（可选）"
+          >
+        </div>
+
+        <div class="form-row">
+          <label class="form-label">账本类型</label>
+          <select v-model="form.ledgerType" required class="modal-input-select form-input-2-3">
+            <option value="FAMILY">
+              家庭账本
+            </option>
+            <option value="SHARED">
+              共享账本
+            </option>
+            <option value="PROJECT">
+              项目账本
+            </option>
+          </select>
+        </div>
+
+        <div class="form-row">
+          <label class="form-label">基础币种</label>
+          <select v-model="form.baseCurrency.code" required class="modal-input-select form-input-2-3">
+            <option v-for="currency in currencies" :key="currency.code" :value="currency.code">
+              {{ getCurrencyDisplayName(currency.code) }} ({{ currency.code }})
+            </option>
+          </select>
+        </div>
       </div>
 
-      <form class="modal-form" @submit.prevent="saveLedger">
-        <!-- 基本信息 -->
-        <div class="form-section">
-          <div class="form-row">
-            <label class="form-label">账本名称</label>
-            <input
-              v-model="form.name" type="text" required class="modal-input-select form-input-2-3"
-              placeholder="请输入账本名称"
-            >
-          </div>
-
-          <div class="form-row">
-            <label class="form-label">账本描述</label>
-            <input
-              v-model="form.description" type="text" class="modal-input-select form-input-2-3"
-              placeholder="请输入账本描述（可选）"
-            >
-          </div>
-
-          <div class="form-row">
-            <label class="form-label">账本类型</label>
-            <select v-model="form.ledgerType" required class="modal-input-select form-input-2-3">
-              <option value="FAMILY">
-                家庭账本
-              </option>
-              <option value="SHARED">
-                共享账本
-              </option>
-              <option value="PROJECT">
-                项目账本
-              </option>
-            </select>
-          </div>
-
-          <div class="form-row">
-            <label class="form-label">基础币种</label>
-            <select v-model="form.baseCurrency.code" required class="modal-input-select form-input-2-3">
-              <option v-for="currency in currencies" :key="currency.code" :value="currency.code">
-                {{ getCurrencyDisplayName(currency.code) }} ({{ currency.code }})
-              </option>
-            </select>
-          </div>
+      <!-- 结算设置 -->
+      <div class="form-section">
+        <div class="form-row">
+          <label class="form-label">结算周期</label>
+          <select v-model="form.settlementCycle" class="modal-input-select form-input-2-3">
+            <option value="WEEKLY">
+              每周
+            </option>
+            <option value="MONTHLY">
+              每月
+            </option>
+            <option value="QUARTERLY">
+              每季度
+            </option>
+            <option value="YEARLY">
+              每年
+            </option>
+            <option value="MANUAL">
+              手动结算
+            </option>
+          </select>
         </div>
 
-        <!-- 结算设置 -->
-        <div class="form-section">
-          <div class="form-row">
-            <label class="form-label">结算周期</label>
-            <select v-model="form.settlementCycle" class="modal-input-select form-input-2-3">
-              <option value="WEEKLY">
-                每周
-              </option>
-              <option value="MONTHLY">
-                每月
-              </option>
-              <option value="QUARTERLY">
-                每季度
-              </option>
-              <option value="YEARLY">
-                每年
-              </option>
-              <option value="MANUAL">
-                手动结算
-              </option>
-            </select>
-          </div>
-
-          <div class="form-row">
-            <label class="form-label">结算日</label>
-            <div class="form-input-2-3 form-input-wrapper">
-              <select
-                v-if="settlementDayOptions.options.length > 0"
-                v-model.number="form.settlementDay"
-                class="modal-input-select full-width"
+        <div class="form-row">
+          <label class="form-label">结算日</label>
+          <div class="form-input-2-3 form-input-wrapper">
+            <select
+              v-if="settlementDayOptions.options.length > 0"
+              v-model.number="form.settlementDay"
+              class="modal-input-select full-width"
+            >
+              <option
+                v-for="option in settlementDayOptions.options"
+                :key="option.value"
+                :value="option.value"
               >
-                <option
-                  v-for="option in settlementDayOptions.options"
-                  :key="option.value"
-                  :value="option.value"
-                >
-                  {{ option.label }}
-                </option>
-              </select>
-              <input
-                v-else
-                v-model.number="form.settlementDay"
-                type="number"
-                :min="settlementDayOptions.min"
-                :max="settlementDayOptions.max"
-                class="modal-input-select full-width"
-                :placeholder="settlementDayOptions.placeholder"
+                {{ option.label }}
+              </option>
+            </select>
+            <input
+              v-else
+              v-model.number="form.settlementDay"
+              type="number"
+              :min="settlementDayOptions.min"
+              :max="settlementDayOptions.max"
+              class="modal-input-select full-width"
+              :placeholder="settlementDayOptions.placeholder"
+            >
+            <div class="form-hint">
+              {{ getSettlementDayHint() }}
+            </div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <label class="form-label">自动结算</label>
+          <div class="form-input-2-3">
+            <label class="checkbox-label">
+              <input v-model="form.autoSettlement" type="checkbox" class="checkbox-input">
+              <span class="checkbox-text">启用自动结算</span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- 成员管理 -->
+      <div class="members-section">
+        <div class="members-header">
+          <label class="form-label">成员管理</label>
+          <button
+            type="button"
+            class="btn-close add-member-btn"
+            aria-label="添加成员"
+            @click="showMemberModal = true"
+          >
+            <LucidePlus class="icon-btn" />
+          </button>
+        </div>
+
+        <div class="members-list">
+          <div
+            v-for="(member, index) in memberList" :key="member.serialNum"
+            class="member-item"
+          >
+            <div class="member-info">
+              <LucideCrown v-if="member.isPrimary" class="member-icon member-icon-primary" />
+              <LucideUser v-else class="member-icon member-icon-default" />
+              <span class="member-name">{{ member.name }}</span>
+              <span class="member-role">({{ getRoleName(member.role) }})</span>
+            </div>
+            <div class="member-actions">
+              <button type="button" class="action-btn" title="编辑" @click="editMember(index)">
+                <LucideEdit class="action-icon" />
+              </button>
+              <button
+                type="button" class="action-btn-danger" title="移除" :disabled="member.isPrimary"
+                @click="removeMember(index)"
               >
-              <div class="form-hint">
-                {{ getSettlementDayHint() }}
-              </div>
-            </div>
-          </div>
-
-          <div class="form-row">
-            <label class="form-label">自动结算</label>
-            <div class="form-input-2-3">
-              <label class="checkbox-label">
-                <input v-model="form.autoSettlement" type="checkbox" class="checkbox-input">
-                <span class="checkbox-text">启用自动结算</span>
-              </label>
-            </div>
-          </div>
-        </div>
-
-        <!-- 成员管理 -->
-        <div class="members-section">
-          <div class="members-header">
-            <label class="form-label">成员管理</label>
-            <button
-              type="button"
-              class="btn-close add-member-btn"
-              aria-label="添加成员"
-              @click="showMemberModal = true"
-            >
-              <LucidePlus class="icon-btn" />
-            </button>
-          </div>
-
-          <div class="members-list">
-            <div
-              v-for="(member, index) in memberList" :key="member.serialNum"
-              class="member-item"
-            >
-              <div class="member-info">
-                <LucideCrown v-if="member.isPrimary" class="member-icon member-icon-primary" />
-                <LucideUser v-else class="member-icon member-icon-default" />
-                <span class="member-name">{{ member.name }}</span>
-                <span class="member-role">({{ getRoleName(member.role) }})</span>
-              </div>
-              <div class="member-actions">
-                <button type="button" class="action-btn" title="编辑" @click="editMember(index)">
-                  <LucideEdit class="action-icon" />
-                </button>
-                <button
-                  type="button" class="action-btn-danger" title="移除" :disabled="member.isPrimary"
-                  @click="removeMember(index)"
-                >
-                  <LucideTrash class="action-icon" />
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 账户管理 -->
-        <div class="accounts-section">
-          <div class="accounts-header">
-            <label class="form-label">账户管理</label>
-            <button
-              type="button"
-              class="btn-close add-account-btn"
-              aria-label="选择账户"
-              @click="toggleAccountSelector"
-            >
-              <LucidePlus class="icon-btn" />
-            </button>
-          </div>
-
-          <!-- 已选账户列表 -->
-          <div v-if="selectedAccounts.length > 0" class="accounts-list">
-            <div
-              v-for="account in selectedAccounts"
-              :key="account.serialNum"
-              class="account-item"
-            >
-              <div class="account-info" style="display: flex; flex-direction: row; align-items: center; gap: 0.5rem;">
-                <LucideWallet class="account-icon" />
-                <span style="white-space: nowrap; display: inline;">
-                  {{ account.name }} ({{ account.type }})
-                </span>
-              </div>
-              <div class="account-actions">
-                <button
-                  type="button"
-                  class="action-btn-danger"
-                  title="移除"
-                  @click="removeAccount(account)"
-                >
-                  <LucideTrash class="action-icon" />
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <!-- 账户选择器下拉 -->
-          <div v-if="showAccountSelector" class="account-selector">
-            <div class="selector-header">
-              <span>选择账户</span>
-              <button type="button" class="btn-close-selector" @click="toggleAccountSelector">
-                <LucideX class="icon-sm" />
+                <LucideTrash class="action-icon" />
               </button>
             </div>
-            <div class="selector-list">
-              <label
-                v-for="account in accounts"
-                :key="account.serialNum"
-                class="selector-item"
+          </div>
+        </div>
+      </div>
+
+      <!-- 账户管理 -->
+      <div class="accounts-section">
+        <div class="accounts-header">
+          <label class="form-label">账户管理</label>
+          <button
+            type="button"
+            class="btn-close add-account-btn"
+            aria-label="选择账户"
+            @click="toggleAccountSelector"
+          >
+            <LucidePlus class="icon-btn" />
+          </button>
+        </div>
+
+        <!-- 已选账户列表 -->
+        <div v-if="selectedAccounts.length > 0" class="accounts-list">
+          <div
+            v-for="account in selectedAccounts"
+            :key="account.serialNum"
+            class="account-item"
+          >
+            <div class="account-info" style="display: flex; flex-direction: row; align-items: center; gap: 0.5rem;">
+              <LucideWallet class="account-icon" />
+              <span style="white-space: nowrap; display: inline;">
+                {{ account.name }} ({{ account.type }})
+              </span>
+            </div>
+            <div class="account-actions">
+              <button
+                type="button"
+                class="action-btn-danger"
+                title="移除"
+                @click="removeAccount(account)"
               >
-                <input
-                  type="checkbox"
-                  :checked="isAccountSelected(account)"
-                  @change="toggleAccountSelection(account)"
-                >
-                <span class="selector-item-name">{{ account.name }}</span>
-                <span class="selector-item-type">({{ account.type }})</span>
-              </label>
+                <LucideTrash class="action-icon" />
+              </button>
             </div>
           </div>
         </div>
 
-        <!-- 操作按钮 -->
-        <div class="modal-actions">
-          <button type="button" class="btn-close" @click="closeModal">
-            <LucideX class="modal-icon" />
-          </button>
-          <button type="submit" class="btn-submit">
-            <LucideCheck class="modal-icon" />
-          </button>
+        <!-- 账户选择器下拉 -->
+        <div v-if="showAccountSelector" class="account-selector">
+          <div class="selector-header">
+            <span>选择账户</span>
+            <button type="button" class="btn-close-selector" @click="toggleAccountSelector">
+              <LucideX class="icon-sm" />
+            </button>
+          </div>
+          <div class="selector-list">
+            <label
+              v-for="account in accounts"
+              :key="account.serialNum"
+              class="selector-item"
+            >
+              <input
+                type="checkbox"
+                :checked="isAccountSelected(account)"
+                @change="toggleAccountSelection(account)"
+              >
+              <span class="selector-item-name">{{ account.name }}</span>
+              <span class="selector-item-type">({{ account.type }})</span>
+            </label>
+          </div>
         </div>
-      </form>
-    </div>
+      </div>
+    </form>
 
     <!-- 成员添加/编辑模态框 -->
     <FamilyMemberModal
@@ -686,7 +675,7 @@ onMounted(() => {
       @close="closeMemberModal"
       @save="saveMember"
     />
-  </div>
+  </BaseModal>
 </template>
 
 <style scoped>

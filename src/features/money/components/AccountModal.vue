@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { isNaN } from 'es-toolkit/compat';
-import { useI18n } from 'vue-i18n';
+import BaseModal from '@/components/common/BaseModal.vue';
 import ColorSelector from '@/components/common/ColorSelector.vue';
+import FormRow from '@/components/common/FormRow.vue';
+import { useFormValidation } from '@/composables/useFormValidation';
 import { COLORS_MAP } from '@/constants/moneyConst';
 import { AccountTypeSchema, CreateAccountRequestSchema, UpdateAccountRequestSchema } from '@/schema/money';
 import { MoneyDb } from '@/services/money/money';
@@ -28,8 +30,12 @@ const { t } = useI18n();
 // 响应式数据
 const colorNameMap = ref(COLORS_MAP);
 const accountTypes = computed(() => AccountTypeSchema.options);
-const formErrors = ref<Record<string, string>>({});
 const isSubmitting = ref(false);
+
+// 表单验证
+const validation = useFormValidation(
+  props.account ? UpdateAccountRequestSchema : CreateAccountRequestSchema,
+);
 const currentUser = computed(() => getCurrentUser());
 const familyMembers = computedAsync(async () => {
   try {
@@ -94,7 +100,10 @@ const defaultAccount: Account = props.account || {
     locale: 'zh-CN',
     code: 'CNY',
     symbol: '¥',
+    isDefault: true,
+    isActive: true,
     createdAt: DateUtils.getLocalISODateTimeWithOffset(),
+    updatedAt: null,
   },
   color: COLORS_MAP[0].code,
   isShared: false,
@@ -131,7 +140,10 @@ function syncCurrency(code: string) {
       locale: 'zh-CN',
       code: 'CNY',
       symbol: '¥',
+      isDefault: true,
+      isActive: true,
       createdAt: DateUtils.getLocalISODateTimeWithOffset(),
+      updatedAt: null,
     };
   }
 }
@@ -163,30 +175,21 @@ function closeModal() {
 // 保存账户
 async function saveAccount() {
   if (isSubmitting.value) return;
-  isSubmitting.value = true;
 
   // 格式化 balance
   form.balance = formatBalance(form.balance);
 
+  const commonRequestFields = buildCommonRequestFields(form);
+  const requestData: CreateAccountRequest | UpdateAccountRequest = commonRequestFields;
+
+  // 使用 useFormValidation 验证
+  if (!validation.validateAll(requestData as any)) {
+    toast.error(t('financial.account.validationFailed'));
+    return;
+  }
+
+  isSubmitting.value = true;
   try {
-    const commonRequestFields = buildCommonRequestFields(form);
-    const isUpdate = !!props.account;
-    const requestData: CreateAccountRequest | UpdateAccountRequest = isUpdate
-      ? {
-          ...commonRequestFields,
-        }
-      : commonRequestFields;
-
-    const schemaToUse = isUpdate ? UpdateAccountRequestSchema : CreateAccountRequestSchema;
-    const validationRequest = schemaToUse.safeParse(requestData);
-
-    if (!validationRequest.success) {
-      toast.error('数据校验失败');
-      Lg.e('AccountModal', validationRequest.error);
-      isSubmitting.value = false;
-      return;
-    }
-
     if (!props.account) {
       emit('save', requestData);
     } else {
@@ -241,129 +244,117 @@ watch(() => form.initialBalance, newBalance => {
 </script>
 
 <template>
-  <div class="modal-mask">
-    <div class="modal-mask-window-money">
-      <div class="mb-4 flex items-center justify-between">
-        <h3 class="text-lg font-semibold">
-          {{ props.account ? t('financial.account.editAccount') : t('financial.account.addAccount') }}
-        </h3>
-        <button class="text-gray-500 hover:text-gray-700" @click="closeModal">
-          <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
+  <BaseModal
+    :title="props.account ? t('financial.account.editAccount') : t('financial.account.addAccount')"
+    size="md"
+    :confirm-text="props.account ? t('common.actions.update') : t('common.actions.create')"
+    :confirm-loading="isSubmitting"
+    :confirm-disabled="validation.hasAnyError.value"
+    @close="closeModal"
+    @confirm="saveAccount"
+  >
+    <form @submit.prevent="saveAccount">
+      <!-- 账户名称 -->
+      <FormRow
+        :label="t('financial.account.accountName')"
+        required
+        :error="validation.shouldShowError('name') ? validation.getError('name') : ''"
+      >
+        <input
+          v-model="form.name"
+          type="text"
+          required
+          class="modal-input-select w-full"
+          :placeholder="t('common.placeholders.enterName')"
+        >
+      </FormRow>
+
+      <!-- 账户类型 -->
+      <FormRow
+        :label="t('financial.account.accountType')"
+        required
+        :error="validation.shouldShowError('type') ? validation.getError('type') : ''"
+      >
+        <select v-model="form.type" required class="modal-input-select w-full">
+          <option v-for="type in accountTypes" :key="type" :value="type">
+            {{ t(`financial.accountTypes.${type.toLowerCase()}`) }}
+          </option>
+        </select>
+      </FormRow>
+
+      <!-- 初始余额 -->
+      <FormRow
+        :label="t('financial.initialBalance')"
+        required
+        :error="validation.shouldShowError('initialBalance') ? validation.getError('initialBalance') : ''"
+      >
+        <input
+          v-model="form.initialBalance"
+          type="text"
+          required
+          class="modal-input-select w-full"
+          placeholder="0.00"
+          @input="handleBalanceInput($event)"
+          @blur="form.initialBalance = formatBalance(form.initialBalance)"
+        >
+      </FormRow>
+
+      <!-- 货币 -->
+      <FormRow
+        :label="t('financial.currency')"
+        required
+        :error="validation.shouldShowError('currency') ? validation.getError('currency') : ''"
+      >
+        <select v-model="form.currency.code" required class="modal-input-select w-full">
+          <option v-for="currency in currencies" :key="currency.code" :value="currency.code">
+            {{ t(`currency.${currency.code}`) }}
+          </option>
+        </select>
+      </FormRow>
+
+      <!-- 所有者 -->
+      <FormRow
+        :label="t('financial.account.owner')"
+        required
+        :error="validation.shouldShowError('ownerId') ? validation.getError('ownerId') : ''"
+      >
+        <select v-model="form.ownerId" required class="modal-input-select w-full">
+          <option v-for="user in users" :key="user.serialNum" :value="user.serialNum">
+            {{ user.name }}
+          </option>
+        </select>
+      </FormRow>
+
+      <!-- 共享和激活 -->
+      <div class="checkbox-row">
+        <div class="checkbox-group">
+          <label class="checkbox-label">
+            <input
+              v-model="form.isShared"
+              type="checkbox"
+              class="checkbox-radius"
+            >
+            <span class="checkbox-text">{{ t('financial.account.shared') }}</span>
+          </label>
+        </div>
+        <div class="checkbox-group">
+          <label class="checkbox-label">
+            <input
+              v-model="form.isActive"
+              type="checkbox"
+              class="checkbox-radius"
+            >
+            <span class="checkbox-text-secondary">{{ t('financial.account.activate') }}</span>
+          </label>
+        </div>
       </div>
-      <form @submit.prevent="saveAccount">
-        <!-- 账户名称 -->
-        <div class="form-row">
-          <label class="form-label">
-            {{ t('financial.account.accountName') }}
-          </label>
-          <div class="form-input-2-3">
-            <input
-              v-model="form.name"
-              type="text"
-              required
-              class="modal-input-select w-full"
-              :placeholder="t('common.placeholders.enterName')"
-            >
-            <span v-if="formErrors.name" class="form-error">{{ formErrors.name }}</span>
-          </div>
-        </div>
 
-        <!-- 账户类型 -->
-        <div class="form-row">
-          <label class="form-label">
-            {{ t('financial.account.accountType') }}
-          </label>
-          <div class="form-input-2-3">
-            <select v-model="form.type" required class="modal-input-select w-full">
-              <option v-for="type in accountTypes" :key="type" :value="type">
-                {{ t(`financial.accountTypes.${type.toLowerCase()}`) }}
-              </option>
-            </select>
-            <span v-if="formErrors.type" class="form-error">{{ formErrors.type }}</span>
-          </div>
-        </div>
-
-        <!-- 初始余额 -->
-        <div class="form-row">
-          <label class="form-label">
-            {{ t('financial.initialBalance') }}
-          </label>
-          <div class="form-input-2-3">
-            <input
-              v-model="form.initialBalance"
-              type="text"
-              required
-              class="modal-input-select w-full"
-              placeholder="0.00"
-              @input="handleBalanceInput($event)"
-              @blur="form.initialBalance = formatBalance(form.initialBalance)"
-            >
-            <span v-if="formErrors.initialBalance" class="form-error">{{ formErrors.initialBalance }}</span>
-          </div>
-        </div>
-
-        <!-- 货币 -->
-        <div class="form-row">
-          <label class="form-label">
-            {{ t('financial.currency') }}
-          </label>
-          <div class="form-input-2-3">
-            <select v-model="form.currency.code" required class="modal-input-select w-full">
-              <option v-for="currency in currencies" :key="currency.code" :value="currency.code">
-                {{ t(`currency.${currency.code}`) }}
-              </option>
-            </select>
-            <span v-if="formErrors['currency.code']" class="form-error">{{ formErrors['currency.code'] }}</span>
-          </div>
-        </div>
-
-        <!-- 所有者 -->
-        <div class="form-row">
-          <label class="form-label">
-            {{ t('financial.account.owner') }}
-          </label>
-          <div class="form-input-2-3">
-            <select v-model="form.ownerId" required class="modal-input-select w-full">
-              <option v-for="user in users" :key="user.serialNum" :value="user.serialNum">
-                {{ user.name }}
-              </option>
-            </select>
-            <span v-if="formErrors.ownerId" class="form-error">{{ formErrors.ownerId }}</span>
-          </div>
-        </div>
-
-        <!-- 共享和激活 -->
-        <div class="checkbox-row">
-          <div class="checkbox-group">
-            <label class="checkbox-label">
-              <input
-                v-model="form.isShared"
-                type="checkbox"
-                class="checkbox-radius"
-              >
-              <span class="checkbox-text">{{ t('financial.account.shared') }}</span>
-            </label>
-          </div>
-          <div class="checkbox-group">
-            <label class="checkbox-label">
-              <input
-                v-model="form.isActive"
-                type="checkbox"
-                class="checkbox-radius"
-              >
-              <span class="checkbox-text-secondary">{{ t('financial.account.activate') }}</span>
-            </label>
-          </div>
-        </div>
-
-        <!-- 颜色 -->
-        <div class="form-row">
-          <label class="form-label">
-            {{ t('common.misc.color') }}
-          </label>
+      <!-- 颜色 -->
+      <div class="form-row">
+        <label class="form-label">
+          {{ t('common.misc.color') }}
+        </label>
+        <div class="form-input-2-3">
           <ColorSelector
             v-model="formColor"
             :color-names="colorNameMap"
@@ -372,59 +363,88 @@ watch(() => form.initialBalance, newBalance => {
             :show-custom-color="true"
           />
         </div>
+      </div>
 
-        <!-- 描述 -->
-        <div class="form-textarea">
-          <textarea
-            v-model="form.description"
-            rows="3"
-            class="modal-input-select w-full"
-            :placeholder="`${t('common.misc.description')}（${t('common.misc.optional')}）`"
-          />
-          <span v-if="formErrors.description" class="form-error">{{ formErrors.description }}</span>
-        </div>
-
-        <!-- 按钮 -->
-        <div class="modal-actions">
-          <button type="button" class="btn-close" :disabled="isSubmitting" @click="closeModal">
-            <LucideX class="icon-btn" />
-          </button>
-          <button type="submit" class="btn-submit" :disabled="isSubmitting">
-            <LucideCheck class="icon-btn" />
-          </button>
-        </div>
-      </form>
-    </div>
-  </div>
+      <!-- 描述 -->
+      <div class="form-textarea">
+        <textarea
+          v-model="form.description"
+          rows="3"
+          class="modal-input-select w-full"
+          :placeholder="`${t('common.misc.description')}（${t('common.misc.optional')}）`"
+        />
+        <span v-if="validation.shouldShowError('description')" class="form-error">{{ validation.getError('description') }}</span>
+      </div>
+    </form>
+  </BaseModal>
 </template>
 
 <style scoped lang="postcss">
+/* 引入共享的 Modal 表单样式 */
+@import '@/assets/styles/modal-forms.css';
+
 /* Form Layout */
 .form-row {
-  margin-bottom: 0.5rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  margin-bottom: 0.75rem;
+  gap: 0;
 }
 
 .form-label {
   font-size: 0.875rem;
-  color: #374151;
   font-weight: 500;
-  margin-bottom: 0.5rem;
+  color: var(--color-base-content);
+  margin-bottom: 0;
+  margin-right: 0;
+  flex: 0 0 6rem;
+  width: 6rem;
+  min-width: 6rem;
+  max-width: 6rem;
+  white-space: nowrap;
+  text-align: left;
 }
 
 .form-input-2-3 {
-  width: 66.666667%;
+  width: 66%;
+  flex: 0 0 66%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-left: 0;
+}
+
+/* 颜色选择器特殊处理 - 移除 flex 布局的影响 */
+.form-row:has(.color-selector) .form-input-2-3 {
+  display: block;
 }
 
 .form-textarea {
-  margin-bottom: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 0.75rem;
 }
 
 .form-error {
-  font-size: 0.75rem;
-  color: #ef4444;
+  font-size: 0.875rem;
+  color: var(--color-error);
+  text-align: right;
+}
+
+/* Color Selector - 覆盖默认宽度并确保对齐 */
+.form-input-2-3 :deep(.color-selector) {
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* ColorSelector 触发按钮 - 与输入框样式保持一致 */
+.form-input-2-3 :deep(.color-selector__trigger) {
+  padding: 0.5rem 1rem !important;
+  border-radius: 0.75rem !important;
 }
 
 /* Checkbox Layout */

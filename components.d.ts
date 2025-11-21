@@ -9,6 +9,7 @@ export {}
 declare module 'vue' {
   export interface GlobalComponents {
     AccountSelector: typeof import('./src/components/common/money/AccountSelector.vue')['default']
+    BaseModal: typeof import('./src/components/common/BaseModal.vue')['default']
     BudgetAlertPanel: typeof import('./src/components/common/money/BudgetAlertPanel.vue')['default']
     BudgetAllocationCard: typeof import('./src/components/common/money/BudgetAllocationCard.vue')['default']
     BudgetAllocationEditor: typeof import('./src/components/common/money/BudgetAllocationEditor.vue')['default']
@@ -25,6 +26,7 @@ declare module 'vue' {
     FamilyMemberSelector: typeof import('./src/components/ui/FamilyMemberSelector.vue')['default']
     FloatingErrorTip: typeof import('./src/components/common/FloatingErrorTip.vue')['default']
     FormInput: typeof import('./src/components/common/FormInput.vue')['default']
+    FormRow: typeof import('./src/components/common/FormRow.vue')['default']
     GenericItem: typeof import('./src/components/common/GenericItem.vue')['default']
     GenericViewItem: typeof import('./src/components/common/GenericViewItem.vue')['default']
     InputCommon: typeof import('./src/components/common/InputCommon.vue')['default']

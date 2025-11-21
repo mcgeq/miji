@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { LucideCheck, LucideX } from 'lucide-vue-next';
+import BaseModal from '@/components/common/BaseModal.vue';
 import type { SplitRuleType } from '@/schema/money';
 
 interface Props {
@@ -15,6 +15,8 @@ const emit = defineEmits<{
   close: [];
   save: [template: any];
 }>();
+
+const isSubmitting = ref(false);
 
 // 表单数据
 const form = reactive({
@@ -88,96 +90,76 @@ function getTypeName(type: SplitRuleType): string {
 </script>
 
 <template>
-  <div class="split-template-modal">
-    <div class="modal-overlay" @click="close" />
-
-    <div class="modal-container">
-      <!-- Header -->
-      <div class="modal-header">
-        <h3>{{ mode === 'create' ? '创建模板' : '编辑模板' }}</h3>
-        <button class="btn-close" @click="close">
-          <LucideX class="icon" />
-        </button>
+  <BaseModal
+    :title="mode === 'create' ? '创建模板' : '编辑模板'"
+    size="md"
+    :confirm-loading="isSubmitting"
+    @close="close"
+    @confirm="save"
+  >
+    <form @submit.prevent="save">
+      <!-- 模板名称 -->
+      <div class="form-group">
+        <label class="form-label required">模板名称</label>
+        <input
+          v-model="form.name"
+          type="text"
+          class="form-input"
+          :class="{ error: errors.name }"
+          placeholder="例如：家庭日常开销"
+          maxlength="50"
+        >
+        <span v-if="errors.name" class="error-message">{{ errors.name }}</span>
+        <span class="form-hint">{{ form.name.length }}/50</span>
       </div>
 
-      <!-- Content -->
-      <div class="modal-content">
-        <form @submit.prevent="save">
-          <!-- 模板名称 -->
-          <div class="form-group">
-            <label class="form-label required">模板名称</label>
+      <!-- 模板描述 -->
+      <div class="form-group">
+        <label class="form-label">模板描述</label>
+        <textarea
+          v-model="form.description"
+          class="form-textarea"
+          placeholder="描述此模板的使用场景（可选）"
+          rows="3"
+          maxlength="200"
+        />
+        <span class="form-hint">{{ form.description.length }}/200</span>
+      </div>
+
+      <!-- 分摊类型 -->
+      <div class="form-group">
+        <label class="form-label required">分摊类型</label>
+        <div class="type-selector">
+          <label
+            v-for="type in ['EQUAL', 'PERCENTAGE', 'FIXED_AMOUNT', 'WEIGHTED'] as SplitRuleType[]"
+            :key="type"
+            class="type-option"
+            :class="{ selected: form.ruleType === type }"
+          >
             <input
-              v-model="form.name"
-              type="text"
-              class="form-input"
-              :class="{ error: errors.name }"
-              placeholder="例如：家庭日常开销"
-              maxlength="50"
+              v-model="form.ruleType"
+              type="radio"
+              :value="type"
+              hidden
             >
-            <span v-if="errors.name" class="error-message">{{ errors.name }}</span>
-            <span class="form-hint">{{ form.name.length }}/50</span>
-          </div>
-
-          <!-- 模板描述 -->
-          <div class="form-group">
-            <label class="form-label">模板描述</label>
-            <textarea
-              v-model="form.description"
-              class="form-textarea"
-              placeholder="描述此模板的使用场景（可选）"
-              rows="3"
-              maxlength="200"
-            />
-            <span class="form-hint">{{ form.description.length }}/200</span>
-          </div>
-
-          <!-- 分摊类型 -->
-          <div class="form-group">
-            <label class="form-label required">分摊类型</label>
-            <div class="type-selector">
-              <label
-                v-for="type in ['EQUAL', 'PERCENTAGE', 'FIXED_AMOUNT', 'WEIGHTED'] as SplitRuleType[]"
-                :key="type"
-                class="type-option"
-                :class="{ selected: form.ruleType === type }"
-              >
-                <input
-                  v-model="form.ruleType"
-                  type="radio"
-                  :value="type"
-                  hidden
-                >
-                <span>{{ getTypeName(type) }}</span>
-              </label>
-            </div>
-          </div>
-
-          <!-- 设为默认 -->
-          <div class="form-group">
-            <label class="checkbox-label">
-              <input
-                v-model="form.isDefault"
-                type="checkbox"
-              >
-              <span>设为默认模板</span>
-              <span class="checkbox-hint">新建交易时自动应用此模板</span>
-            </label>
-          </div>
-        </form>
+            <span>{{ getTypeName(type) }}</span>
+          </label>
+        </div>
       </div>
 
-      <!-- Footer -->
-      <div class="modal-footer">
-        <button class="btn-secondary" @click="close">
-          取消
-        </button>
-        <button class="btn-primary" @click="save">
-          <LucideCheck class="icon" />
-          {{ mode === 'create' ? '创建' : '保存' }}
-        </button>
+      <!-- 设为默认 -->
+      <div class="form-group">
+        <label class="checkbox-label">
+          <input
+            v-model="form.isDefault"
+            type="checkbox"
+          >
+          <span>设为默认模板</span>
+          <span class="checkbox-hint">新建交易时自动应用此模板</span>
+        </label>
       </div>
-    </div>
-  </div>
+    </form>
+  </BaseModal>
 </template>
 
 <style scoped>

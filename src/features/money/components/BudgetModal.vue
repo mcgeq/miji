@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import * as _ from 'es-toolkit/compat';
-import { Check, X } from 'lucide-vue-next';
 import z from 'zod';
+import BaseModal from '@/components/common/BaseModal.vue';
 import CategorySelector from '@/components/common/CategorySelector.vue';
 import ColorSelector from '@/components/common/ColorSelector.vue';
+import FormRow from '@/components/common/FormRow.vue';
 import AccountSelector from '@/components/common/money/AccountSelector.vue';
 import RepeatPeriodSelector from '@/components/common/RepeatPeriodSelector.vue';
 import { COLORS_MAP, CURRENCY_CNY } from '@/constants/moneyConst';
@@ -32,6 +33,7 @@ const colorNameMap = ref(COLORS_MAP);
 const currency = ref(CURRENCY_CNY);
 const categoryError = ref('');
 const accountError = ref('');
+const isSubmitting = ref(false);
 
 // 验证错误
 const validationErrors = reactive({
@@ -291,109 +293,90 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="modal-mask">
-    <div class="modal-mask-window-money">
-      <div class="modal-header">
-        <h3 class="modal-title">
-          {{ props.budget ? t('financial.budget.editBudget') : t('financial.budget.addBudget') }}
-        </h3>
-        <button class="modal-close-btn" @click="closeModal">
-          <svg class="close-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
-      </div>
-      <form @submit.prevent="onSubmit">
-        <div class="form-row">
-          <label class="form-label">
-            {{ t('financial.budget.budgetName') }}
-          </label>
-          <input
-            v-model="form.name" type="text" required class="modal-input-select w-2/3"
-            :placeholder="t('validation.budgetName')"
-          >
-        </div>
-
-        <div class="form-row">
-          <label class="form-label">
-            {{ t('financial.budget.budgetScopeType') }}
-          </label>
-          <select v-model="form.budgetScopeType" required class="modal-input-select w-2/3">
-            <option
-              v-for="ty in types"
-              :key="ty.original"
-              :value="ty.original"
-            >
-              {{ t(`financial.budgetScopeTypes.${ty.snake}`) }}
-            </option>
-          </select>
-        </div>
-
-        <div
-          v-if="form.budgetScopeType === 'Category' || form.budgetScopeType === 'Hybrid'"
+  <BaseModal
+    :title="props.budget ? t('financial.budget.editBudget') : t('financial.budget.addBudget')"
+    size="md"
+    :confirm-loading="isSubmitting"
+    @close="closeModal"
+    @confirm="onSubmit"
+  >
+    <form @submit.prevent="onSubmit">
+      <FormRow :label="t('financial.budget.budgetName')" required>
+        <input
+          v-model="form.name" type="text" required class="modal-input-select w-full"
+          :placeholder="t('validation.budgetName')"
         >
-          <CategorySelector
-            v-model="form.categoryScope"
-            :required="true"
-            label="预算类别"
-            placeholder="请选择分类"
-            help-text="选择适用于此预算的分类"
-            :error-message="categoryError"
-            @validate="handleCategoryValidation"
-          />
-        </div>
+      </FormRow>
 
-        <div
-          v-if="form.budgetScopeType === 'Account'"
-        >
-          <AccountSelector
-            v-model="form.accountSerialNum"
-            :required="true"
-            label="账户选择"
-            placeholder="请选择账户"
-            help-text="选择适用于此预算的账户"
-            @validate="handleAccountValidation"
-          />
-        </div>
-
-        <div class="form-row">
-          <label class="form-label">
-            {{ t('financial.budget.budgetAmount') }}
-          </label>
-          <input
-            v-model.number="form.amount" type="number" step="0.01" required class="modal-input-select w-2/3"
-            placeholder="0.00"
+      <FormRow :label="t('financial.budget.budgetScopeType')" required>
+        <select v-model="form.budgetScopeType" required class="modal-input-select w-full">
+          <option
+            v-for="ty in types"
+            :key="ty.original"
+            :value="ty.original"
           >
-        </div>
+            {{ t(`financial.budgetScopeTypes.${ty.snake}`) }}
+          </option>
+        </select>
+      </FormRow>
 
-        <!-- 重复频率  -->
-        <RepeatPeriodSelector
-          v-model="form.repeatPeriod"
-          :label="t('date.repeat.frequency')"
-          :error-message="validationErrors.repeatPeriod"
-          :help-text="t('helpTexts.repeatPeriod')"
-          @change="handleRepeatPeriodChange"
-          @validate="handleRepeatPeriodValidation"
+      <div
+        v-if="form.budgetScopeType === 'Category' || form.budgetScopeType === 'Hybrid'"
+      >
+        <CategorySelector
+          v-model="form.categoryScope"
+          :required="true"
+          label="预算类别"
+          placeholder="请选择分类"
+          help-text="选择适用于此预算的分类"
+          :error-message="categoryError"
+          @validate="handleCategoryValidation"
         />
+      </div>
 
-        <div class="form-row form-row-with-margin">
-          <label class="form-label">
-            {{ t('date.startDate') }}
-          </label>
-          <input v-model="form.startDate" type="date" required class="modal-input-select w-2/3">
-        </div>
+      <div
+        v-if="form.budgetScopeType === 'Account'"
+      >
+        <AccountSelector
+          v-model="form.accountSerialNum"
+          :required="true"
+          label="账户选择"
+          placeholder="请选择账户"
+          help-text="选择适用于此预算的账户"
+          @validate="handleAccountValidation"
+        />
+      </div>
 
-        <div class="form-row">
-          <label class="form-label">
-            {{ t('date.endDate') }}
-          </label>
-          <input v-model="form.endDate" type="date" class="modal-input-select w-2/3">
-        </div>
+      <FormRow :label="t('financial.budget.budgetAmount')" required>
+        <input
+          v-model.number="form.amount" type="number" step="0.01" required class="modal-input-select w-full"
+          placeholder="0.00"
+        >
+      </FormRow>
 
-        <div class="form-row">
-          <label class="form-label">
-            {{ t('common.misc.color') }}
-          </label>
+      <!-- 重复频率  -->
+      <RepeatPeriodSelector
+        v-model="form.repeatPeriod"
+        :label="t('date.repeat.frequency')"
+        :error-message="validationErrors.repeatPeriod"
+        :help-text="t('helpTexts.repeatPeriod')"
+        @change="handleRepeatPeriodChange"
+        @validate="handleRepeatPeriodValidation"
+      />
+
+      <FormRow :label="t('date.startDate')" required>
+        <input v-model="form.startDate" type="date" required class="modal-input-select w-full">
+      </FormRow>
+
+      <FormRow :label="t('date.endDate')" optional>
+        <input v-model="form.endDate" type="date" class="modal-input-select w-full">
+      </FormRow>
+
+      <div class="form-row">
+        <label class="form-label">
+          {{ t('common.misc.color') }}
+        </label>
+        <div class="form-input-2-3">
           <ColorSelector
             v-model="form.color"
             :color-names="colorNameMap"
@@ -402,85 +385,104 @@ onMounted(async () => {
             :show-custom-color="true"
           />
         </div>
-        <div class="alert-section">
-          <!-- 左边复选框 -->
-          <div class="alert-checkbox">
-            <label class="checkbox-label">
-              <input
-                v-model="form.alertEnabled"
-                type="checkbox"
-                class="checkbox-radius"
-              >
-              <span class="checkbox-text">
-                {{ t('financial.budget.overBudgetAlert') }}
-              </span>
-            </label>
-          </div>
-
-          <!-- 右边 阈值设置 -->
-          <div v-if="form.alertEnabled && form.alertThreshold" class="threshold-settings">
-            <!-- 阈值类型选择 -->
-            <select
-              v-model="form.alertThreshold.type"
-              class="modal-input-select w-2/3"
-            >
-              <option value="Percentage">
-                {{ t('financial.budget.threshold.percentage') }}
-              </option>
-              <option value="FixedAmount">
-                {{ t('financial.budget.threshold.fixedAmount') }}
-              </option>
-            </select>
-
-            <!-- 阈值输入框 -->
+      </div>
+      <div class="alert-section">
+        <!-- 左边复选框 -->
+        <div class="alert-checkbox">
+          <label class="checkbox-label">
             <input
-              v-model.number="form.alertThreshold.value"
-              type="number"
-              class="modal-input-select w-1/3"
-              :min="form.alertThreshold.type === 'Percentage' ? 0 : 1"
-              :max="form.alertThreshold.type === 'Percentage' ? 100 : undefined"
-              :placeholder="form.alertThreshold.type === 'Percentage' ? '80%' : '100.00'"
+              v-model="form.alertEnabled"
+              type="checkbox"
+              class="checkbox-radius"
             >
-          </div>
-        </div>
-        <div class="form-textarea">
-          <textarea
-            v-model="form.description" rows="3" class="modal-input-select w-full"
-            :placeholder="t('placeholders.budgetDescription')"
-          />
+            <span class="checkbox-text">
+              {{ t('financial.budget.overBudgetAlert') }}
+            </span>
+          </label>
         </div>
 
-        <div class="modal-actions">
-          <button type="button" class="btn-close" @click="closeModal">
-            <X class="icon-btn" />
-          </button>
-          <button type="submit" class="btn-submit">
-            <Check class="icon-btn" />
-          </button>
+        <!-- 右边 阈值设置 -->
+        <div v-if="form.alertEnabled && form.alertThreshold" class="threshold-settings">
+          <!-- 阈值类型选择 -->
+          <select
+            v-model="form.alertThreshold.type"
+            class="modal-input-select w-2/3"
+          >
+            <option value="Percentage">
+              {{ t('financial.budget.threshold.percentage') }}
+            </option>
+            <option value="FixedAmount">
+              {{ t('financial.budget.threshold.fixedAmount') }}
+            </option>
+          </select>
+
+          <!-- 阈值输入框 -->
+          <input
+            v-model.number="form.alertThreshold.value"
+            type="number"
+            class="modal-input-select w-1/3"
+            :min="form.alertThreshold.type === 'Percentage' ? 0 : 1"
+            :max="form.alertThreshold.type === 'Percentage' ? 100 : undefined"
+            :placeholder="form.alertThreshold.type === 'Percentage' ? '80%' : '100.00'"
+          >
         </div>
-      </form>
-    </div>
-  </div>
+      </div>
+      <div class="form-textarea">
+        <textarea
+          v-model="form.description" rows="3" class="modal-input-select w-full"
+          :placeholder="t('placeholders.budgetDescription')"
+        />
+      </div>
+    </form>
+  </BaseModal>
 </template>
 
 <style scoped>
 /* Form Layout */
 .form-row {
-  margin-bottom: 0.5rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
-}
-
-.form-row-with-margin {
-  margin-top: 0.5rem;
+  margin-bottom: 0.75rem;
+  gap: 0;
 }
 
 .form-label {
   font-size: 0.875rem;
-  color: #374151;
   font-weight: 500;
-  margin-bottom: 0.5rem;
+  color: var(--color-base-content);
+  margin-bottom: 0;
+  margin-right: 0;
+  flex: 0 0 6rem;
+  width: 6rem;
+  min-width: 6rem;
+  max-width: 6rem;
+  white-space: nowrap;
+  text-align: left;
+}
+
+.form-input-2-3 {
+  width: 66%;
+  flex: 0 0 66%;
+}
+
+/* 颜色选择器特殊处理 */
+.form-row:has(.color-selector) .form-input-2-3 {
+  display: block;
+}
+
+/* Color Selector - 覆盖默认宽度并确保对齐 */
+.form-input-2-3 :deep(.color-selector) {
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* ColorSelector 触发按钮 - 与输入框样式保持一致 */
+.form-input-2-3 :deep(.color-selector__trigger) {
+  padding: 0.5rem 1rem !important;
+  border-radius: 0.75rem !important;
 }
 
 .form-textarea {
