@@ -350,20 +350,17 @@ watch(() => form.initialBalance, newBalance => {
       </div>
 
       <!-- 颜色 -->
-      <div class="form-row">
-        <label class="form-label">
-          {{ t('common.misc.color') }}
-        </label>
-        <div class="form-input-2-3">
-          <ColorSelector
-            v-model="formColor"
-            :color-names="colorNameMap"
-            :extended="true"
-            :show-categories="true"
-            :show-custom-color="true"
-          />
-        </div>
-      </div>
+      <FormRow :label="t('common.misc.color')" optional>
+        <ColorSelector
+          v-model="formColor"
+          width="full"
+          :color-names="colorNameMap"
+          :extended="true"
+          :show-categories="true"
+          :show-custom-color="true"
+          :show-random-button="true"
+        />
+      </FormRow>
 
       <!-- 描述 -->
       <div class="form-textarea">
@@ -383,43 +380,7 @@ watch(() => form.initialBalance, newBalance => {
 /* 引入共享的 Modal 表单样式 */
 @import '@/assets/styles/modal-forms.css';
 
-/* Form Layout */
-.form-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 0.75rem;
-  gap: 0;
-}
-
-.form-label {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--color-base-content);
-  margin-bottom: 0;
-  margin-right: 0;
-  flex: 0 0 6rem;
-  width: 6rem;
-  min-width: 6rem;
-  max-width: 6rem;
-  white-space: nowrap;
-  text-align: left;
-}
-
-.form-input-2-3 {
-  width: 66%;
-  flex: 0 0 66%;
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  margin-left: 0;
-}
-
-/* 颜色选择器特殊处理 - 移除 flex 布局的影响 */
-.form-row:has(.color-selector) .form-input-2-3 {
-  display: block;
-}
-
+/* Form Textarea */
 .form-textarea {
   display: flex;
   flex-direction: column;
@@ -431,20 +392,6 @@ watch(() => form.initialBalance, newBalance => {
   font-size: 0.875rem;
   color: var(--color-error);
   text-align: right;
-}
-
-/* Color Selector - 覆盖默认宽度并确保对齐 */
-.form-input-2-3 :deep(.color-selector) {
-  width: 100% !important;
-  max-width: 100% !important;
-  margin: 0 !important;
-  padding: 0 !important;
-}
-
-/* ColorSelector 触发按钮 - 与输入框样式保持一致 */
-.form-input-2-3 :deep(.color-selector__trigger) {
-  padding: 0.5rem 1rem !important;
-  border-radius: 0.75rem !important;
 }
 
 /* Checkbox Layout */

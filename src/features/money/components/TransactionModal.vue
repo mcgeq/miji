@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import BaseModal from '@/components/common/BaseModal.vue';
 import DateTimePicker from '@/components/common/DateTimePicker.vue';
+import FormRow from '@/components/common/FormRow.vue';
 import CurrencySelector from '@/components/common/money/CurrencySelector.vue';
 // 注意：CURRENCY_CNY 已移至 transactionFormUtils
 import {
@@ -695,47 +696,46 @@ watch(
   >
     <form @submit.prevent="handleSubmit">
       <!-- 交易类型 -->
-      <div class="form-row">
-        <label>{{ t('financial.transaction.transType') }}</label>
-        <div class="form-control form-display">
+      <FormRow :label="t('financial.transaction.transType')" required>
+        <div class="form-display">
           {{ form.transactionType === 'Income' ? t('financial.transaction.income')
             : form.transactionType === 'Expense' ? t('financial.transaction.expense')
               : t('financial.transaction.transfer') }}
         </div>
-      </div>
+      </FormRow>
 
       <!-- 金额 -->
-      <div class="form-row">
-        <label>{{ t('financial.money') }}</label>
+      <FormRow :label="t('financial.money')" required>
         <input
           v-model="form.amount"
+          v-has-value
           type="number"
-          class="form-control"
+          class="modal-input-select w-full"
           :placeholder="t('common.placeholders.enterAmount')"
           :disabled="isInstallmentFieldsDisabled || isInstallmentTransactionFieldsDisabled || isReadonlyMode"
           step="0.01"
           required
           @input="handleAmountInput"
         >
-      </div>
+      </FormRow>
 
       <!-- 币种 -->
-      <div class="form-row">
-        <label>{{ t('financial.currency') }}</label>
+      <FormRow :label="t('financial.currency')" required>
         <CurrencySelector
           v-model="form.currency"
+          width="full"
           :disabled="isTransferReadonly || isInstallmentFieldsDisabled || isInstallmentTransactionFieldsDisabled || isReadonlyMode"
         />
-      </div>
+      </FormRow>
 
       <!-- 分摊设置已移到分摊成员选择之后 -->
 
       <!-- 转出账户 -->
-      <div class="form-row">
-        <label>
-          {{ isTransferReadonly || form.transactionType === TransactionTypeSchema.enum.Transfer ? t('financial.transaction.fromAccount') : t('financial.account.account') }}
-        </label>
-        <select v-model="form.accountSerialNum" class="form-control" required :disabled="isDisabled || isReadonlyMode">
+      <FormRow
+        :label="isTransferReadonly || form.transactionType === TransactionTypeSchema.enum.Transfer ? t('financial.transaction.fromAccount') : t('financial.account.account')"
+        required
+      >
+        <select v-model="form.accountSerialNum" v-has-value class="modal-input-select w-full" required :disabled="isDisabled || isReadonlyMode">
           <option value="">
             {{ t('common.placeholders.selectAccount') }}
           </option>
@@ -743,12 +743,15 @@ watch(
             {{ account.name }} ({{ formatCurrency(account.balance) }})
           </option>
         </select>
-      </div>
+      </FormRow>
 
       <!-- 转入账户 -->
-      <div v-if="isTransferReadonly || form.transactionType === TransactionTypeSchema.enum.Transfer" class="form-row">
-        <label>{{ t('financial.transaction.toAccount') }}</label>
-        <select v-model="form.toAccountSerialNum" class="form-control" required :disabled="isDisabled">
+      <FormRow
+        v-if="isTransferReadonly || form.transactionType === TransactionTypeSchema.enum.Transfer"
+        :label="t('financial.transaction.toAccount')"
+        required
+      >
+        <select v-model="form.toAccountSerialNum" v-has-value class="modal-input-select w-full" required :disabled="isDisabled">
           <option value="">
             {{ t('common.placeholders.selectAccount') }}
           </option>
@@ -756,16 +759,16 @@ watch(
             {{ account.name }} ({{ formatCurrency(account.balance) }})
           </option>
         </select>
-      </div>
+      </FormRow>
 
       <!-- 支付渠道 -->
-      <div class="form-row">
-        <label>{{ t('financial.transaction.paymentMethod') }}</label>
+      <FormRow :label="t('financial.transaction.paymentMethod')" required>
         <select
           v-if="isPaymentMethodEditable"
           v-model="form.paymentMethod"
+          v-has-value
           :disabled="isTransferReadonly"
-          class="form-control"
+          class="modal-input-select w-full"
           required
         >
           <option value="">
@@ -775,17 +778,17 @@ watch(
             {{ t(`financial.paymentMethods.${method.toLowerCase()}`) }}
           </option>
         </select>
-        <div v-else class="form-control form-display">
+        <div v-else class="form-display">
           {{ t(`financial.paymentMethods.${form.paymentMethod.toLowerCase()}`) }}
         </div>
-      </div>
+      </FormRow>
 
       <!-- 分类 -->
-      <div class="form-row">
-        <label>{{ t('categories.category') }}</label>
+      <FormRow :label="t('categories.category')" required>
         <select
           v-model="form.category"
-          class="form-control"
+          v-has-value
+          class="modal-input-select w-full"
           required
           :disabled="isTransferReadonly || isInstallmentTransactionFieldsDisabled || isReadonlyMode"
         >
@@ -796,14 +799,18 @@ watch(
             {{ t(`common.categories.${lowercaseFirstLetter(category.name)}`) }}
           </option>
         </select>
-      </div>
+      </FormRow>
 
       <!-- 子分类 -->
-      <div v-if="form.category && categoryMap.get(form.category)?.subs.length" class="form-row">
-        <label>{{ t('categories.subCategory') }}</label>
+      <FormRow
+        v-if="form.category && categoryMap.get(form.category)?.subs.length"
+        :label="t('categories.subCategory')"
+        optional
+      >
         <select
           v-model="form.subCategory"
-          class="form-control"
+          v-has-value
+          class="modal-input-select w-full"
           :disabled="isTransferReadonly || isInstallmentTransactionFieldsDisabled || isReadonlyMode"
         >
           <option value="">
@@ -813,13 +820,12 @@ watch(
             {{ t(`common.subCategories.${lowercaseFirstLetter(sub)}`) }}
           </option>
         </select>
-      </div>
+      </FormRow>
 
       <!-- 关联账本 -->
       <div v-if="!isReadonlyMode" class="form-row">
         <label class="label-with-hint">
           关联账本
-          <span class="label-hint">(可选)</span>
         </label>
         <div class="ledger-selector-compact">
           <div class="selector-row">
@@ -891,7 +897,6 @@ watch(
       <div v-if="!isReadonlyMode && selectedLedgers.length > 0" class="form-row">
         <label class="label-with-hint">
           分摊成员
-          <span class="label-hint">(可选)</span>
         </label>
         <div class="member-selector-with-hint">
           <div class="member-selector-compact">
@@ -998,11 +1003,11 @@ watch(
       />
 
       <!-- 交易状态 -->
-      <div class="form-row">
-        <label>{{ t('financial.transaction.status') }}</label>
+      <FormRow :label="t('financial.transaction.status')" required>
         <select
           v-model="form.transactionStatus"
-          class="form-control"
+          v-has-value
+          class="modal-input-select w-full"
           :disabled="isInstallmentTransactionFieldsDisabled || isReadonlyMode"
         >
           <option
@@ -1013,7 +1018,7 @@ watch(
             {{ status.label }}
           </option>
         </select>
-      </div>
+      </FormRow>
 
       <!-- 分期选项 -->
       <div v-if="form.transactionType === 'Expense' && !isCurrentTransactionInstallment" class="form-row">
@@ -1034,46 +1039,42 @@ watch(
           <span class="warning-icon">!</span>
           <span class="warning-text">分期计划已开始执行，部分设置不可修改</span>
         </div>
-        <div class="form-row">
-          <label>{{ t('financial.transaction.totalPeriods') }}</label>
+        <FormRow :label="t('financial.transaction.totalPeriods')" required>
           <input
             v-model="form.totalPeriods"
             type="number"
             min="2"
-            class="form-control"
+            class="modal-input-select w-full"
             :disabled="isInstallmentFieldsDisabled"
           >
-        </div>
+        </FormRow>
 
-        <div class="form-row">
-          <label>{{ t('financial.transaction.installmentAmount') }}</label>
+        <FormRow :label="t('financial.transaction.installmentAmount')" required>
           <input
             :value="safeToFixed(calculatedInstallmentAmount)"
             type="text"
             readonly
-            class="form-control"
+            class="modal-input-select w-full"
           >
-        </div>
+        </FormRow>
 
-        <div class="form-row">
-          <label>{{ t('financial.transaction.firstDueDate') }}</label>
+        <FormRow :label="t('financial.transaction.firstDueDate')" required>
           <input
             v-model="form.firstDueDate"
             type="date"
-            class="form-control"
+            class="modal-input-select w-full"
             :disabled="isInstallmentFieldsDisabled"
           >
-        </div>
+        </FormRow>
 
-        <div class="form-row">
-          <label>{{ t('financial.transaction.relatedTransaction') }}</label>
+        <FormRow :label="t('financial.transaction.relatedTransaction')" optional>
           <input
             v-model="form.relatedTransactionSerialNum"
             type="text"
-            class="form-control"
+            class="modal-input-select w-full"
             :placeholder="t('common.misc.optional')"
           >
-        </div>
+        </FormRow>
 
         <!-- 分期计划详情 -->
         <div v-if="installmentDetails" class="installment-plan">
@@ -1164,32 +1165,55 @@ watch(
       </div>
 
       <!-- 日期 -->
-      <div class="form-row">
-        <label>{{ t('date.transactionDate') }}</label>
+      <FormRow :label="t('date.transactionDate')" required>
         <DateTimePicker
           v-model="form.date"
-          class="form-control datetime-picker"
+          class="datetime-picker"
           format="yyyy-MM-dd HH:mm:ss"
           :disabled="isInstallmentTransactionFieldsDisabled || isReadonlyMode"
           :placeholder="t('common.selectDate')"
         />
-      </div>
+      </FormRow>
 
       <!-- 备注 -->
-      <div class="form-row">
-        <textarea
-          v-model="form.description"
-          class="form-control textarea-max"
-          rows="3"
-          :placeholder="`${t('common.misc.remark')}（${t('common.misc.optional')}）`"
-          :disabled="isReadonlyMode"
-        />
-      </div>
+      <textarea
+        v-model="form.description"
+        class="modal-input-select w-full"
+        rows="3"
+        :placeholder="`${t('common.misc.remark')}（${t('common.misc.optional')}）`"
+        :disabled="isReadonlyMode"
+      />
     </form>
   </BaseModal>
 </template>
 
 <style scoped lang="postcss">
+/* CurrencySelector 样式统一 */
+:deep(.currency-selector) {
+  margin-bottom: 0 !important;
+}
+
+:deep(.currency-selector__select) {
+  border: 2px solid var(--color-base-300) !important;
+  border-radius: 0.5rem !important;
+  background-color: var(--color-base-100) !important;
+  transition: all 0.2s ease !important;
+}
+
+:deep(.currency-selector__select:hover:not(:disabled)) {
+  background-color: var(--color-base-200) !important;
+}
+
+:deep(.currency-selector__select:focus) {
+  border-color: var(--color-primary) !important;
+  box-shadow: 0 0 0 3px oklch(from var(--color-primary) l c h / 0.1) !important;
+}
+
+:deep(.currency-selector__select:disabled) {
+  background-color: var(--color-base-300) !important;
+  cursor: not-allowed !important;
+}
+
 .checkbox-label {
   display: flex;
   align-items: center;
@@ -1622,13 +1646,11 @@ watch(
   border: 1px solid var(--color-base-300);
   border-radius: 0.375rem;
   background: var(--color-base-200);
-  width: 66%;
-  flex: 0 0 66%;
+  flex: 1;
 }
 
 .form-row .member-selector-with-hint {
-  width: 66%;
-  flex: 0 0 66%;
+  flex: 1;
 }
 
 .selector-row {
@@ -1900,85 +1922,58 @@ watch(
   color: var(--color-base-content);
 }
 
-/* ==================== 表单行横向布局 ==================== */
+/* ==================== 表单行横向布局（用于复杂区块） ==================== */
 .form-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
   margin-bottom: 0.75rem;
+  gap: 1rem;
 }
 
 .form-row label {
   font-size: 0.875rem;
   font-weight: 500;
   margin-bottom: 0;
-  flex: 0 0 auto; /* 标签不伸缩，保持固定宽度 */
-  width: 6rem; /* 固定标签宽度 */
-  min-width: 6rem; /* 最小宽度 */
-  white-space: nowrap; /* 防止标签换行 */
-  margin-right: 1rem; /* 标签和输入框之间的间距 */
+  flex: 0 0 auto;
+  width: 6rem;
+  min-width: 6rem;
+  white-space: nowrap;
 }
 
-.form-control, .form-display {
-  width: 66%;
+/* 只读显示样式 */
+.form-display {
   padding: 0.625rem 0.875rem;
   border-radius: 0.5rem;
-  border: 2px solid var(--color-base-300);
-  background-color: var(--color-base-100);
-  color: var(--color-base-content);
-  font-size: 0.875rem;
-  transition: all 0.2s ease;
-  font-weight: 500;
-}
-
-.form-control:hover:not(:disabled) {
-  border-color: var(--color-primary-soft);
-  background-color: var(--color-base-200);
-}
-
-.form-control:focus {
-  outline: none;
-  border-color: var(--color-primary);
-  background-color: var(--color-base-100);
-  box-shadow: 0 0 0 3px oklch(from var(--color-primary) l c h / 0.1);
-}
-
-.form-display {
   background-color: var(--color-base-200);
   color: var(--color-neutral);
+  font-size: 0.875rem;
   font-weight: 600;
 }
 
 /* 移动端响应式布局 - 保持同一行显示 */
 @media (max-width: 768px) {
   .form-row {
-    flex-direction: row; /* 保持水平布局 */
+    flex-direction: row;
     align-items: center;
     gap: 0.5rem;
   }
   .form-row label {
-    flex: 0 0 auto; /* 标签不伸缩，保持固定宽度 */
-    min-width: 4rem; /* 设置最小宽度确保标签不被压缩 */
-    width: 4rem; /* 移动端缩小标签宽度 */
-    margin-right: 0.5rem; /* 减少间距 */
-    white-space: nowrap; /* 防止标签换行 */
-    font-size: 0.8rem; /* 稍微减小字体以适应移动端 */
-  }
-  .form-control, .form-display {
-    flex: 1; /* 输入框占据剩余空间 */
-    min-width: 0; /* 允许输入框收缩 */
+    flex: 0 0 auto;
+    min-width: 4rem;
+    width: 4rem;
+    white-space: nowrap;
+    font-size: 0.8rem;
   }
 
   /* 选择器容器移动端优化 */
   .form-row .ledger-selector-compact,
   .form-row .member-selector-compact {
-    width: 100%;
     flex: 1;
     padding: 0.5rem;
   }
 
   .form-row .member-selector-with-hint {
-    width: 100%;
     flex: 1;
   }
 
@@ -2050,88 +2045,6 @@ watch(
     height: 1.25rem;
     padding: 0.125rem;
   }
-}
-
-.form-control:disabled {
-  background-color: var(--color-base-300);
-  color: var(--color-neutral);
-}
-
-/* DateTimePicker 样式 - 与普通input保持一致 */
-.form-row > :deep(.datetime-picker) {
-  width: 66% !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  flex: 0 0 66%;
-}
-
-/* DateTimePicker 移动端响应式 */
-@media (max-width: 768px) {
-  .form-row > :deep(.datetime-picker) {
-    width: 100% !important;
-    flex: 1;
-  }
-}
-
-/* CurrencySelector 样式 - 与普通input保持一致 */
-:deep(.currency-selector) {
-  margin-bottom: 0 !important; /* 移除外边距 */
-  display: block !important; /* 移除flex布局 */
-  width: 66% !important; /* 与form-control保持一致 */
-  background-color: transparent !important; /* 移除外层背景 */
-  border: none !important; /* 移除外层边框 */
-  padding: 0 !important; /* 移除外层内边距 */
-}
-
-/* CurrencySelector 移动端响应式 */
-@media (max-width: 768px) {
-  :deep(.currency-selector) {
-    width: 100% !important; /* 移动端占满宽度 */
-  }
-}
-
-:deep(.currency-selector__wrapper) {
-  display: block !important; /* 移除flex布局 */
-  width: 100% !important;
-  background-color: transparent !important; /* 移除包装器背景 */
-  border: none !important; /* 移除包装器边框 */
-  padding: 0 !important; /* 移除包装器内边距 */
-  margin: 0 !important; /* 移除包装器外边距 */
-}
-
-:deep(.currency-selector__select) {
-  background-color: var(--color-base-200) !important; /* 与其他input一致 */
-  border: 1px solid var(--color-base-300) !important; /* 与其他input一致 */
-  color: var(--color-neutral) !important; /* 与其他input文字颜色一致 */
-  border-radius: 6px !important;
-  padding: 0.5rem 0.75rem !important;
-  width: 100% !important;
-  margin: 0 !important;
-  box-sizing: border-box !important;
-}
-
-:deep(.currency-selector__select option) {
-  color: var(--color-neutral) !important; /* 选项文字颜色 */
-  background-color: var(--color-base-200) !important; /* 选项背景色 */
-}
-
-:deep(.currency-selector__select option:disabled) {
-  color: var(--color-neutral) !important; /* 禁用选项文字颜色 */
-}
-
-:deep(.currency-selector__select:focus) {
-  border-color: var(--color-primary) !important;
-  box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.2) !important;
-}
-
-:deep(.currency-selector__select:disabled) {
-  background-color: var(--color-base-300) !important;
-  color: var(--color-neutral) !important;
-}
-
-textarea.form-control {
-  resize: vertical;
-  min-height: 80px;
 }
 
 .textarea-max {

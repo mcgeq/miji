@@ -501,9 +501,22 @@
     color: var(--color-gray-400);
   }
 
+  /* 悬停状态 - 背景色深一点 */
+  &:hover:not(:disabled):not(:focus) {
+    background-color: var(--color-base-200);
+  }
+
+  /* 有值状态 - 背景色深一点（支持自动检测和手动类） */
+  &:not(:placeholder-shown):not(:focus),
+  &.has-value:not(:focus) {
+    background-color: var(--color-base-200);
+  }
+
+  /* 聚焦状态优先级最高 */
   &:focus {
     border-color: var(--color-primary);
     box-shadow: 0 0 0 2px var(--color-primary-soft);
+    background-color: var(--color-base-100);
   }
 
   &:disabled {
@@ -520,6 +533,17 @@
 
     &::placeholder {
       color: var(--color-gray-500);
+    }
+
+    /* 暗色模式下的悬停和有值状态 */
+    &:hover:not(:disabled):not(:focus),
+    &:not(:placeholder-shown):not(:focus),
+    &.has-value:not(:focus) {
+      background-color: var(--color-gray-700);
+    }
+
+    &:focus {
+      background-color: var(--color-gray-800);
     }
   }
 }

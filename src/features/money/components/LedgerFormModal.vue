@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n';
 import BaseModal from '@/components/common/BaseModal.vue';
+import FormRow from '@/components/common/FormRow.vue';
 import { CURRENCY_CNY } from '@/constants/moneyConst';
 import { MoneyDb } from '@/services/money/money';
 import { useFamilyLedgerStore } from '@/stores/money';
@@ -299,67 +300,72 @@ onMounted(() => {
       <!-- 基本信息 -->
       <div class="form-section">
         <h3 class="section-title">
-          {{ t('familyLedger.basicInfo')
-          }}
+          {{ t('familyLedger.basicInfo') }}
         </h3>
 
-        <!-- 账本名称 -->
-        <div class="form-field">
-          <label for="name" class="form-label">
-            {{ t('familyLedger.ledgerName') }} <span class="required-mark">*</span>
-          </label>
-          <input
-            id="name" v-model="form.name" type="text" required maxlength="50"
-            :placeholder="t('common.placeholders.enterName')"
-            class="form-input"
-          >
-          <p class="form-help">
-            {{ form.name.length }}/50
-          </p>
-        </div>
+        <FormRow :label="t('familyLedger.ledgerName')" required>
+          <div class="input-with-hint">
+            <input
+              id="name"
+              v-model="form.name"
+              v-has-value
+              type="text"
+              required
+              maxlength="50"
+              :placeholder="t('common.placeholders.enterName')"
+              class="modal-input-select w-full"
+            >
+            <p class="form-help">
+              {{ form.name.length }}/50
+            </p>
+          </div>
+        </FormRow>
 
-        <!-- 账本描述 -->
-        <div class="form-field">
-          <label for="description" class="form-label">
-            {{ t('familyLedger.ledgerDescription') }}
-          </label>
-          <textarea
-            id="description" v-model="form.description" rows="3" maxlength="200"
-            :placeholder="t('common.placeholders.enterDescription')"
-            class="form-input"
-          />
-          <p class="form-help">
-            {{ form.description.length }}/200
-          </p>
-        </div>
+        <FormRow :label="t('familyLedger.ledgerDescription')" optional>
+          <div class="input-with-hint">
+            <textarea
+              id="description"
+              v-model="form.description"
+              rows="3"
+              maxlength="200"
+              :placeholder="t('common.placeholders.enterDescription')"
+              class="modal-input-select w-full"
+            />
+            <p class="form-help">
+              {{ form.description.length }}/200
+            </p>
+          </div>
+        </FormRow>
       </div>
 
       <!-- 货币设置 -->
       <div class="form-section">
         <h3 class="section-title">
-          {{
-            t('familyLedger.currencySettings') }}
+          {{ t('familyLedger.currencySettings') }}
         </h3>
 
-        <div class="form-field">
-          <label for="currency" class="form-label">
-            {{ t('financial.baseCurrency') }} <span class="required-mark">*</span>
-          </label>
-          <select
-            id="currency" v-model="form.baseCurrency.code" required class="form-input"
-            @change="updateCurrencyInfo"
-          >
-            <option value="">
-              {{ t('messages.selectCurrency') }}
-            </option>
-            <option v-for="currency in currencies" :key="currency.code" :value="currency.code">
-              {{ currency.symbol }} {{ currency.code }} - {{ t(currency.code) }}
-            </option>
-          </select>
-          <p class="form-help">
-            {{ t('messages.selectedAsDefault') }}
-          </p>
-        </div>
+        <FormRow :label="t('financial.baseCurrency')" required>
+          <div class="input-with-hint">
+            <select
+              id="currency"
+              v-model="form.baseCurrency.code"
+              v-has-value
+              required
+              class="modal-input-select w-full"
+              @change="updateCurrencyInfo"
+            >
+              <option value="">
+                {{ t('messages.selectCurrency') }}
+              </option>
+              <option v-for="currency in currencies" :key="currency.code" :value="currency.code">
+                {{ currency.symbol }} {{ currency.code }} - {{ t(currency.code) }}
+              </option>
+            </select>
+            <p class="form-help">
+              {{ t('messages.selectedAsDefault') }}
+            </p>
+          </div>
+        </FormRow>
       </div>
 
       <!-- 成员管理 -->
@@ -436,208 +442,12 @@ onMounted(() => {
 </template>
 
 <style scoped lang="postcss">
-/* 自定义滚动条样式 */
-.overflow-y-auto::-webkit-scrollbar {
-  width: 6px;
-}
-
-.overflow-y-auto::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 3px;
-}
-
-.overflow-y-auto::-webkit-scrollbar-thumb {
-  background: #c1c1c1;
-  border-radius: 3px;
-}
-
-.overflow-y-auto::-webkit-scrollbar-thumb:hover {
-  background: #a1a1a1;
-}
-
-/* 表单样式优化 */
+/* 表单区块 */
 .form-section {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
-}
-
-.form-section h3 {
-  font-size: 1.125rem;
-  font-weight: 500;
-  color: #111827;
-  border-bottom: 1px solid #e5e7eb;
-  padding-bottom: 0.5rem;
-}
-
-.form-field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.form-label {
-  display: block;
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: #374151;
-}
-
-.form-input {
-  width: 100%;
-  padding: 0.5rem 0.75rem;
-  border: 1px solid #d1d5db;
-  border-radius: 0.375rem;
-  transition: all 0.2s ease-in-out;
-}
-
-.form-input:focus {
-  outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
-}
-
-.form-help {
-  font-size: 0.75rem;
-  color: #6b7280;
-}
-
-/* 成员卡片样式 */
-.member-card {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.75rem;
-  border: 1px solid #e5e7eb;
-  border-radius: 0.375rem;
-  transition: all 0.2s ease-in-out;
-}
-
-.member-card:hover {
-  border-color: #d1d5db;
-}
-
-.member-card input,
-.member-card select {
-  padding: 0.25rem 0.5rem;
-  border: 1px solid #d1d5db;
-  border-radius: 0.25rem;
-  font-size: 0.875rem;
-  transition: all 0.2s ease-in-out;
-}
-
-.member-card input:focus,
-.member-card select:focus {
-  outline: none;
-  border-color: #3b82f6;
-}
-
-/* 按钮样式 */
-.btn-primary {
-  padding: 0.5rem 1rem;
-  background-color: #2563eb;
-  color: white;
-  border-radius: 0.375rem;
-  transition: all 0.2s ease-in-out;
-}
-
-.btn-primary:hover {
-  background-color: #1d4ed8;
-}
-
-.btn-primary:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.btn-secondary {
-  padding: 0.5rem 1rem;
-  border: 1px solid #d1d5db;
-  border-radius: 0.375rem;
-  color: #374151;
-  transition: all 0.2s ease-in-out;
-}
-
-.btn-secondary:hover {
-  background-color: #f9fafb;
-}
-
-.btn-danger {
-  color: #ef4444;
-  padding: 0.25rem;
-  transition: all 0.2s ease-in-out;
-}
-
-.btn-danger:hover {
-  color: #b91c1c;
-}
-
-/* 模态框样式 */
-.modal-overlay {
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  inset: 0;
-  justify-content: center;
-  position: fixed;
-  z-index: 60;
-}
-
-.modal-container {
-  border-radius: 0.5rem;
-  background-color: white;
-  max-height: 90vh;
-  max-width: 42rem;
-  width: 100%;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-  overflow: hidden;
-}
-
-.modal-header {
-  padding: 1.5rem;
-  border-bottom: 1px solid #e5e7eb;
-  background-color: #f9fafb;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.modal-title {
-  font-size: 1.25rem;
-  color: #1f2937;
-  font-weight: 700;
-}
-
-.modal-close-btn {
-  color: #9ca3af;
-  transition: color 0.2s ease-in-out;
-}
-
-.modal-close-btn:hover {
-  color: #4b5563;
-}
-
-.modal-icon {
-  height: 1.5rem;
-  width: 1.5rem;
-}
-
-.modal-body {
-  padding: 1.5rem;
-  max-height: calc(90vh - 160px);
-  overflow-y: auto;
-}
-
-.modal-form {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-.form-section {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
+  gap: 0;
+  margin-bottom: 1.5rem;
 }
 
 .section-title {
@@ -645,39 +455,16 @@ onMounted(() => {
   color: #111827;
   font-weight: 500;
   padding-bottom: 0.5rem;
+  margin-bottom: 0.75rem;
   border-bottom: 1px solid #e5e7eb;
 }
 
-.form-field {
+/* 输入框带提示文字的包装器 */
+.input-with-hint {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-}
-
-.form-label {
-  font-size: 0.875rem;
-  color: #374151;
-  font-weight: 500;
-  margin-bottom: 0.5rem;
-  display: block;
-}
-
-.required-mark {
-  color: #ef4444;
-}
-
-.form-input {
-  padding: 0.5rem 0.75rem;
-  border: 1px solid #d1d5db;
-  border-radius: 0.375rem;
+  gap: 0.25rem;
   width: 100%;
-  transition: all 0.2s ease-in-out;
-}
-
-.form-input:focus {
-  outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
 }
 
 .form-help {

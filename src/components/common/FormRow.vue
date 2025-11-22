@@ -120,9 +120,7 @@ const labelStyle = computed(() => {
 .form-control-wrapper {
   flex: 1;
   width: 66%;
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
+  display: block;
 }
 
 .form-row-full-width .form-control-wrapper {
@@ -130,14 +128,18 @@ const labelStyle = computed(() => {
 }
 
 .form-error {
+  display: block;
   font-size: 0.875rem;
   color: var(--color-error);
   text-align: right;
+  margin-top: 0.25rem;
 }
 
 .form-help {
+  display: block;
   font-size: 0.75rem;
   color: var(--color-neutral);
+  margin-top: 0.25rem;
 }
 
 @media (max-width: 768px) {

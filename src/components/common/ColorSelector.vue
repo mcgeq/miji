@@ -9,6 +9,9 @@ interface Props {
   showCustomColor?: boolean; // 是否显示自定义颜色选择器
   showCategories?: boolean; // 是否显示颜色分类
   professional?: boolean; // 是否使用专业颜色选择器界面
+  showRandomButton?: boolean; // 是否显示随机颜色按钮
+  randomColorMode?: 'full' | 'smart'; // 随机颜色模式：full=完全随机，smart=智能随机（避免极端）
+  width?: string; // 组件宽度：full, 2/3, 1/2 等
 }
 
 // 定义 props
@@ -18,6 +21,9 @@ const props = withDefaults(defineProps<Props>(), {
   showCustomColor: true,
   showCategories: false,
   professional: false,
+  showRandomButton: false,
+  randomColorMode: 'smart',
+  width: '2/3',
 });
 
 // 定义 emits
@@ -312,6 +318,28 @@ function toggleCustomColorInput() {
   }
 }
 
+// 生成随机颜色
+function generateRandomColor() {
+  if (props.randomColorMode === 'full') {
+    // 完全随机（0-F）
+    const chars = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'];
+    let color = '#';
+    for (let i = 0; i < 6; i++) {
+      color += chars[Math.floor(Math.random() * chars.length)];
+    }
+    emit('update:modelValue', color);
+  } else {
+    // 智能随机：避免太暗或太浅的颜色，确保视觉效果好
+    const hue = Math.floor(Math.random() * 360); // 0-360度
+    const saturation = 60 + Math.floor(Math.random() * 30); // 60-90%
+    const lightness = 45 + Math.floor(Math.random() * 20); // 45-65%
+    const rgb = hslToRgb(hue, saturation, lightness);
+    const hex = rgbToHex(rgb.r, rgb.g, rgb.b);
+    emit('update:modelValue', hex);
+  }
+  isOpen.value = false;
+}
+
 // 点击外部关闭下拉
 function handleClickOutside(event: Event) {
   if (
@@ -335,6 +363,20 @@ function getCategoryName(category: string): string {
   return categoryNames[category as keyof typeof categoryNames] || category;
 }
 
+// 计算宽度类
+const widthClass = computed(() => {
+  const widthMap: Record<string, string> = {
+    'full': 'w-full',
+    'half': 'w-half',
+    '1/2': 'w-half',
+    'two-thirds': 'w-two-thirds',
+    '2/3': 'w-two-thirds',
+    'third': 'w-third',
+    '1/3': 'w-third',
+  };
+  return widthMap[props.width] || 'w-two-thirds';
+});
+
 // 监听 modelValue 变化，更新自定义颜色输入框
 watch(() => props.modelValue, newValue => {
   if (showCustomInput.value) {
@@ -353,7 +395,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div ref="colorSelectorRef" class="color-selector">
+  <div ref="colorSelectorRef" class="color-selector" :class="widthClass">
     <!-- 触发按钮 -->
     <button
       type="button"
@@ -509,6 +551,20 @@ onUnmounted(() => {
       </div>
       <!-- 传统颜色选择器 -->
       <div v-else>
+        <!-- 随机颜色按钮 -->
+        <div v-if="showRandomButton" class="color-selector__actions">
+          <button
+            type="button"
+            class="color-selector__random-btn"
+            @click="generateRandomColor"
+          >
+            <svg class="color-selector__random-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            {{ locale === 'zh-CN' ? '随机颜色' : 'Random Color' }}
+          </button>
+        </div>
+
         <!-- 颜色分类标签 -->
         <div v-if="showCategories && extended" class="color-selector__categories">
           <button
@@ -575,7 +631,23 @@ onUnmounted(() => {
 <style scoped>
 .color-selector {
   position: relative;
-  width: 66.666%; /* w-2/3 */
+}
+
+/* 当在 FormRow 中使用 width="full" 时，填充整个宽度 */
+.color-selector.w-full {
+  width: 100%;
+}
+
+.color-selector.w-two-thirds {
+  width: 66.666%;
+}
+
+.color-selector.w-half {
+  width: 50%;
+}
+
+.color-selector.w-third {
+  width: 33.333%;
 }
 
 /* 触发按钮 */
@@ -735,6 +807,39 @@ onUnmounted(() => {
   border-color: var(--color-primary);
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
   box-shadow: 0 0 0 2px var(--color-primary-soft);
+}
+
+/* 随机颜色按钮 */
+.color-selector__actions {
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--color-base-300);
+}
+
+.color-selector__random-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.5rem;
+  font-size: 0.875rem;
+  color: var(--color-primary);
+  background-color: transparent;
+  border: 1px solid var(--color-primary-soft);
+  border-radius: 0.375rem;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+.color-selector__random-btn:hover {
+  background-color: var(--color-primary-soft);
+  border-color: var(--color-primary);
+}
+
+.color-selector__random-icon {
+  width: 1rem;
+  height: 1rem;
 }
 
 /* 自定义颜色选择器 */

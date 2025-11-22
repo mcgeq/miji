@@ -6,6 +6,7 @@ import z from 'zod';
 import App from './App.vue';
 import { AppBootstrapper } from './bootstrap/app-bootstrapper';
 import { vPermission } from './directives/permission';
+import { vHasValue } from './directives/vHasValue';
 import { initI18n } from './i18n/i18n';
 import router from './router';
 import { i18nErrorMap } from './schema/i18nErrorMap';
@@ -64,6 +65,7 @@ async function main() {
 
   // 注册全局指令
   app.directive('permission', vPermission);
+  app.directive('has-value', vHasValue);
 
   // 初始化 Money Store 事件监听器
   initMoneyStores();

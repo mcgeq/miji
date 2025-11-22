@@ -1,4 +1,3 @@
-import { DateUtils } from '@/utils/date';
 import type { Currency, DefaultColors } from '@/schema/common';
 
 // 基础颜色调色板（保持向后兼容）
@@ -70,6 +69,8 @@ export const CURRENCY_CNY: Currency = {
   locale: 'zh-CN',
   code: 'CNY',
   symbol: '¥',
-  createdAt: DateUtils.getLocalISODateTimeWithOffset(),
+  isDefault: true,
+  isActive: true,
+  createdAt: '2023-01-01T00:00:00Z',
   updatedAt: null,
 };

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import BaseModal from '@/components/common/BaseModal.vue';
+import FormRow from '@/components/common/FormRow.vue';
 import { MemberUserRoleSchema } from '@/schema/userRole';
 import { useFamilyMemberStore } from '@/stores/money';
 import { Lg } from '@/utils/debugLog';
@@ -113,134 +114,83 @@ watch(
     @confirm="saveMember"
   >
     <form @submit.prevent="saveMember">
-      <div class="form-fields">
-        <div class="form-field">
-          <label class="form-label">姓名</label>
-          <input v-model="form.name" type="text" required class="modal-input-select" placeholder="请输入成员姓名">
-        </div>
+      <FormRow label="姓名" required>
+        <input
+          v-model="form.name"
+          v-has-value
+          type="text"
+          required
+          class="modal-input-select w-full"
+          placeholder="请输入成员姓名"
+        >
+      </FormRow>
 
-        <div class="form-field">
-          <label class="form-label">角色</label>
-          <select v-model="form.role" required class="modal-input-select">
-            <option value="Owner">
-              所有者
-            </option>
-            <option value="Admin">
-              管理员
-            </option>
-            <option value="User">
-              用户
-            </option>
-            <option value="Moderator">
-              协调员
-            </option>
-            <option value="Editor">
-              编辑者
-            </option>
-            <option value="Guest">
-              访客
-            </option>
-          </select>
-        </div>
+      <FormRow label="角色" required>
+        <select
+          v-model="form.role"
+          v-has-value
+          required
+          class="modal-input-select w-full"
+        >
+          <option value="">
+            请选择角色
+          </option>
+          <option value="Owner">
+            所有者
+          </option>
+          <option value="Admin">
+            管理员
+          </option>
+          <option value="User">
+            用户
+          </option>
+          <option value="Moderator">
+            协调员
+          </option>
+          <option value="Editor">
+            编辑者
+          </option>
+          <option value="Guest">
+            访客
+          </option>
+        </select>
+      </FormRow>
 
-        <div class="form-field">
-          <label class="form-label">权限设置</label>
-          <textarea
-            v-model="form.permissions" rows="3" class="modal-input-select"
-            placeholder="权限描述（可选）"
-          />
-        </div>
+      <FormRow label="权限设置" optional>
+        <textarea
+          v-model="form.permissions"
+          rows="3"
+          class="modal-input-select w-full"
+          placeholder="权限描述（可选）"
+        />
+      </FormRow>
 
-        <div class="form-field">
-          <label class="checkbox-label">
-            <input v-model="form.isPrimary" type="checkbox" class="checkbox-input">
-            <span class="checkbox-text">设为主要成员</span>
-          </label>
-        </div>
-      </div>
+      <FormRow label="" optional>
+        <label class="checkbox-label">
+          <input v-model="form.isPrimary" type="checkbox" class="checkbox-input">
+          <span class="checkbox-text">设为主要成员</span>
+        </label>
+      </FormRow>
     </form>
   </BaseModal>
 </template>
 
 <style scoped>
-/* 模态框容器 */
-.modal-content-sm {
-  max-width: 24rem;
-}
-
-.modal-header {
-  margin-bottom: 1rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.modal-title {
-  font-size: 1.125rem;
-  font-weight: 600;
-}
-
-.modal-close-btn {
-  color: #6b7280;
-  transition: color 0.2s ease-in-out;
-}
-
-.modal-close-btn:hover {
-  color: #374151;
-}
-
-.modal-icon {
-  height: 1.25rem;
-  width: 1.25rem;
-}
-
-/* 表单样式 */
-.modal-form {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.form-fields {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.form-field {
-  display: flex;
-  flex-direction: column;
-}
-
-.form-label {
-  font-size: 0.875rem;
-  color: #374151;
-  font-weight: 500;
-  margin-bottom: 0.25rem;
-  display: block;
-}
-
 /* 复选框样式 */
 .checkbox-label {
   display: flex;
   align-items: center;
+  cursor: pointer;
 }
 
 .checkbox-input {
   margin-right: 0.5rem;
+  cursor: pointer;
 }
 
 .checkbox-text {
   font-size: 0.875rem;
-  color: #374151;
+  color: var(--color-base-content);
   font-weight: 500;
-}
-
-/* 模态框操作按钮 */
-.modal-actions {
-  padding-top: 1rem;
-  display: flex;
-  justify-content: center;
-  gap: 0.75rem;
 }
 </style>

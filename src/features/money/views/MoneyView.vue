@@ -412,7 +412,7 @@ onUnmounted(() => {
           ref="budgetListRef"
           @edit="editBudget"
           @delete="(serialNum) => handleDeleteBudget(serialNum, confirmDelete, finalizeBudgetChange)"
-          @toggle-active="(serialNum, isActive) => handleToggleBudgetActive(serialNum, isActive, finalizeBudgetChange)"
+          @toggle-active="(serialNum) => handleToggleBudgetActive(serialNum, finalizeBudgetChange)"
         />
         <ReminderList
           v-if="activeTab === 'reminders'"

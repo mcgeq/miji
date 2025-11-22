@@ -1,168 +1,99 @@
+import { useCrudActions } from '@/composables/useCrudActions';
 import { useAccountStore } from '@/stores/money';
-import { Lg } from '@/utils/debugLog';
 import { toast } from '@/utils/toast';
 import type { Account, CreateAccountRequest, UpdateAccountRequest } from '@/schema/money';
 
+/**
+ * 账户操作 Composable - 重构版本
+ * 使用 useCrudActions 简化代码
+ */
 export function useAccountActions() {
   const accountStore = useAccountStore();
+  const { t } = useI18n();
 
-  const showAccount = ref(false);
-  const selectedAccount = ref<Account | null>(null);
-  const accounts = ref<Account[]>([]);
+  // 创建 Store 适配器以匹配 CrudStore 接口
+  const storeAdapter = {
+    create: (data: CreateAccountRequest) => accountStore.createAccount(data),
+    update: (id: string, data: UpdateAccountRequest) => accountStore.updateAccount(id, data),
+    delete: (id: string) => accountStore.deleteAccount(id),
+    fetchAll: () => accountStore.fetchAccounts(),
+  };
+
+  // 使用通用 CRUD Actions
+  const crudActions = useCrudActions<Account, CreateAccountRequest, UpdateAccountRequest>(
+    storeAdapter,
+    {
+      successMessages: {
+        create: t('financial.messages.accountCreated'),
+        update: t('financial.messages.accountUpdated'),
+        delete: t('financial.messages.accountDeleted'),
+      },
+      errorMessages: {
+        create: t('financial.messages.accountCreateFailed'),
+        update: t('financial.messages.accountUpdateFailed'),
+        delete: t('financial.messages.accountDeleteFailed'),
+      },
+      autoRefresh: true,
+      autoClose: true,
+    },
+  );
+
+  // 账户列表状态
+  const accounts = computed(() => accountStore.accounts);
   const accountsLoading = ref(false);
 
-  // 显示账户模态框
-  function showAccountModal() {
-    selectedAccount.value = null;
-    showAccount.value = true;
-  }
-
-  // 关闭账户模态框
-  function closeAccountModal() {
-    showAccount.value = false;
-    selectedAccount.value = null;
-  }
-
-  // 编辑账户
-  function editAccount(account: Account) {
-    selectedAccount.value = account;
-    showAccount.value = true;
-  }
-
-  // 保存账户
-  async function saveAccount(account: CreateAccountRequest) {
-    try {
-      await accountStore.createAccount(account);
-      toast.success('添加成功');
-      closeAccountModal();
-      return true;
-    } catch (err) {
-      Lg.e('saveAccount', err);
-      toast.error('保存失败');
-      return false;
-    }
-  }
-
-  // 更新账户
-  async function updateAccount(serialNum: string, account: UpdateAccountRequest) {
-    try {
-      if (selectedAccount.value) {
-        await accountStore.updateAccount(serialNum, account);
-        toast.success('更新成功');
-        closeAccountModal();
-        return true;
-      }
-      return false;
-    } catch (err) {
-      Lg.e('updateAccount', err);
-      toast.error('保存失败');
-      return false;
-    }
-  }
-
-  // 删除账户
-  async function deleteAccount(
-    serialNum: string,
-    confirmDelete?: (message: string) => Promise<boolean>,
-  ) {
-    if (confirmDelete && !(await confirmDelete('此账户'))) {
-      return false;
-    }
-
-    try {
-      await accountStore.deleteAccount(serialNum);
-      toast.success('删除成功');
-      return true;
-    } catch (err) {
-      Lg.e('deleteAccount', err);
-      toast.error('删除失败');
-      return false;
-    }
-  }
-
-  // 切换账户状态
-  async function toggleAccountActive(serialNum: string) {
-    try {
-      await accountStore.toggleAccountActive(serialNum);
-      toast.success('状态更新成功');
-      return true;
-    } catch (err) {
-      Lg.e('toggleAccountActive', err);
-      toast.error('状态更新失败');
-      return false;
-    }
-  }
-
-  // 加载账户列表（基础版本）
-  async function loadAccounts() {
-    try {
-      await accountStore.fetchAccounts();
-      accounts.value = accountStore.accounts;
-      return true;
-    } catch (err) {
-      Lg.e('loadAccounts', err);
-      return false;
-    }
-  }
-
-  // 加载账户列表（带加载状态）
-  async function loadAccountsWithLoading() {
+  /**
+   * 加载账户列表（使用 store 的全局刷新机制）
+   */
+  async function loadAccountsWithLoading(): Promise<boolean> {
     accountsLoading.value = true;
     try {
+      // 直接使用 store 的 fetchAccounts，它会触发全局刷新
       await accountStore.fetchAccounts();
-      accounts.value = accountStore.accounts;
       return true;
-    } catch (err) {
-      Lg.e('loadAccountsWithLoading', err);
+    } catch (error: any) {
+      toast.error(error.message || t('financial.messages.accountLoadFailed'));
       return false;
     } finally {
       accountsLoading.value = false;
     }
   }
 
-  // 包装保存方法，支持自定义回调
-  async function handleSaveAccount(
-    account: CreateAccountRequest,
-    onSuccess?: () => Promise<void> | void,
-  ) {
-    const success = await saveAccount(account);
-    if (success && onSuccess) {
-      await onSuccess();
-    }
-    return success;
-  }
-
-  // 包装更新方法，支持自定义回调
-  async function handleUpdateAccount(
+  /**
+   * 切换账户激活状态
+   * Store 会自动更新状态，无需手动刷新
+   */
+  async function toggleAccountActive(
     serialNum: string,
-    account: UpdateAccountRequest,
-    onSuccess?: () => Promise<void> | void,
-  ) {
-    const success = await updateAccount(serialNum, account);
-    if (success && onSuccess) {
-      await onSuccess();
+  ): Promise<boolean> {
+    try {
+      const account = accountStore.getAccountById(serialNum);
+      // 保存切换前的状态，因为 account 可能是响应式对象
+      const wasActive = account?.isActive ?? false;
+
+      // toggleAccountActive 内部已经更新了 store 中的账户状态
+      await accountStore.toggleAccountActive(serialNum);
+
+      toast.success(
+        wasActive
+          ? t('financial.messages.accountDeactivated')
+          : t('financial.messages.accountActivated'),
+      );
+
+      return true;
+    } catch (error: any) {
+      toast.error(error.message || t('financial.messages.accountToggleFailed'));
+      return false;
     }
-    return success;
   }
 
-  // 包装删除方法，支持自定义回调
-  async function handleDeleteAccount(
-    serialNum: string,
-    confirmDelete?: (message: string) => Promise<boolean>,
-    onSuccess?: () => Promise<void> | void,
-  ) {
-    const success = await deleteAccount(serialNum, confirmDelete);
-    if (success && onSuccess) {
-      await onSuccess();
-    }
-    return success;
-  }
-
-  // 包装切换状态方法，支持自定义回调
+  /**
+   * 包装切换状态方法，支持自定义回调
+   */
   async function handleToggleAccountActive(
     serialNum: string,
     onSuccess?: () => Promise<void> | void,
-  ) {
+  ): Promise<boolean> {
     const success = await toggleAccountActive(serialNum);
     if (success && onSuccess) {
       await onSuccess();
@@ -170,28 +101,55 @@ export function useAccountActions() {
     return success;
   }
 
-  return {
-    // 状态
-    showAccount,
-    selectedAccount,
-    accounts,
-    accountsLoading,
+  // 向后兼容的包装方法
+  const saveAccount = async (data: CreateAccountRequest, onSuccess?: () => void) => {
+    const result = await crudActions.handleSave(data);
+    if (result && onSuccess) onSuccess();
+    return result;
+  };
 
-    // 基础方法
-    showAccountModal,
-    closeAccountModal,
-    editAccount,
+  const updateAccount = async (serialNum: string, data: UpdateAccountRequest, onSuccess?: () => void) => {
+    const result = await crudActions.handleUpdate(serialNum, data);
+    if (result && onSuccess) onSuccess();
+    return result;
+  };
+
+  const deleteAccount = async (serialNum: string, onConfirm?: () => Promise<boolean>, onSuccess?: () => void) => {
+    if (onConfirm && !(await onConfirm())) return false;
+    const result = await crudActions.handleDelete(serialNum);
+    if (result && onSuccess) onSuccess();
+    return result;
+  };
+
+  return {
+    // 从 useCrudActions 继承的状态和方法
+    showAccount: crudActions.show,
+    selectedAccount: computed(() => crudActions.selected.value as Account | null),
+    isViewMode: crudActions.isViewMode,
+    loading: crudActions.loading,
+
+    // 从 useCrudActions 继承的方法
+    showAccountModal: crudActions.showModal,
+    closeAccountModal: crudActions.closeModal,
+    editAccount: crudActions.edit,
+    viewAccount: crudActions.view,
+
+    // 向后兼容的方法
     saveAccount,
     updateAccount,
     deleteAccount,
-    toggleAccountActive,
-    loadAccounts,
-    loadAccountsWithLoading,
+    handleSaveAccount: saveAccount,
+    handleUpdateAccount: updateAccount,
+    handleDeleteAccount: deleteAccount,
+    loadAccounts: loadAccountsWithLoading,
 
-    // 包装方法（支持回调）
-    handleSaveAccount,
-    handleUpdateAccount,
-    handleDeleteAccount,
+    // 账户特有的状态
+    accounts,
+    accountsLoading: readonly(accountsLoading),
+
+    // 账户特有的方法
+    loadAccountsWithLoading,
+    toggleAccountActive,
     handleToggleAccountActive,
   };
 }

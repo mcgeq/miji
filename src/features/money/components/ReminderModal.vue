@@ -818,20 +818,17 @@ watch(
       </details>
 
       <!-- 颜色选择 -->
-      <div class="form-row">
-        <label class="form-label">
-          {{ t('common.misc.colorMark') }}
-        </label>
-        <div class="form-input-2-3">
-          <ColorSelector
-            v-model="form.color"
-            :color-names="colorNameMap"
-            :extended="true"
-            :show-categories="true"
-            :show-custom-color="true"
-          />
-        </div>
-      </div>
+      <FormRow :label="t('common.misc.colorMark')" optional>
+        <ColorSelector
+          v-model="form.color"
+          width="full"
+          :color-names="colorNameMap"
+          :extended="true"
+          :show-categories="true"
+          :show-custom-color="true"
+          :show-random-button="true"
+        />
+      </FormRow>
 
       <!-- 启用状态 -->
       <div class="checkbox-section">
@@ -845,10 +842,6 @@ watch(
 
       <!-- 描述 -->
       <div class="form-textarea">
-        <label class="form-label form-label-block">
-          {{ t('common.misc.description') }}
-          <span class="optional-text">({{ t('common.misc.optional') }})</span>
-        </label>
         <textarea
           v-model="form.description" rows="3" class="modal-input-select w-full"
           :placeholder="descriptionPlaceholder" maxlength="200"
@@ -868,7 +861,7 @@ watch(
   align-items: center;
   justify-content: space-between;
   margin-bottom: 0.75rem;
-  gap: 0;
+  gap: 1rem;
 }
 
 .form-row-with-margin {
@@ -890,28 +883,21 @@ watch(
 }
 
 .form-input-2-3 {
-  width: 66%;
-  flex: 0 0 66%;
+  flex: 1;
 }
 
-/* 颜色选择器特殊处理 */
-.form-row:has(.color-selector) .form-input-2-3 {
-  display: block;
+/* 覆盖 Tailwind w-2/3 类，使其在 form-row 中自适应 */
+.form-row > .w-2\/3 {
+  flex: 1 !important;
+  width: auto !important;
 }
 
-/* Color Selector - 覆盖默认宽度并确保对齐 */
-.form-input-2-3 :deep(.color-selector) {
-  width: 100% !important;
-  max-width: 100% !important;
-  margin: 0 !important;
-  padding: 0 !important;
+.form-row .modal-input-select.w-2\/3 {
+  flex: 1 !important;
+  width: auto !important;
 }
 
-/* ColorSelector 触发按钮 - 与输入框样式保持一致 */
-.form-input-2-3 :deep(.color-selector__trigger) {
-  padding: 0.5rem 1rem !important;
-  border-radius: 0.75rem !important;
-}
+/* ColorSelector 已使用 FormRow，不需要额外样式 */
 
 .form-label-block {
   display: block;
@@ -947,13 +933,110 @@ watch(
 
 .currency-selector {
   flex: 1;
-  margin-top: 0.5rem;
+}
+
+/* CurrencySelector 样式 - 与普通input保持一致 */
+:deep(.currency-selector) {
+  margin-bottom: 0 !important;
+  display: block !important;
+  width: 100% !important;
+  padding: 0 !important;
+}
+
+:deep(.currency-selector__wrapper) {
+  display: block !important;
+  width: 100% !important;
+  background-color: transparent !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+:deep(.currency-selector__select) {
+  background-color: var(--color-base-200) !important;
+  border: 1px solid var(--color-base-300) !important;
+  color: var(--color-neutral) !important;
+  padding: 0.5rem 0.75rem !important;
+  border-radius: 0.75rem !important;
+  width: 100% !important;
+  font-size: 0.875rem !important;
+  box-sizing: border-box !important;
+}
+
+:deep(.currency-selector__select option) {
+  color: var(--color-neutral) !important;
+  background-color: var(--color-base-200) !important;
+}
+
+:deep(.currency-selector__select option:disabled) {
+  color: var(--color-neutral) !important;
+}
+
+:deep(.currency-selector__select:focus) {
+  border-color: var(--color-primary) !important;
+  box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.2) !important;
+}
+
+:deep(.currency-selector__select:disabled) {
+  background-color: var(--color-base-300) !important;
+  color: var(--color-neutral) !important;
+}
+
+/* ReminderSelector 样式统一 */
+:deep(.reminder-selector-row) {
+  gap: 1rem !important;
+}
+
+:deep(.reminder-selector-row .label-text) {
+  flex: 0 0 6rem !important;
+  width: 6rem !important;
+  min-width: 6rem !important;
+  max-width: 6rem !important;
+}
+
+:deep(.reminder-selector-row .modal-input-select) {
+  flex: 1 !important;
+  width: 100% !important;
+}
+
+/* PrioritySelector 样式统一 */
+:deep(.form-group) {
+  gap: 1rem !important;
+}
+
+:deep(.form-group .form-label) {
+  flex: 0 0 6rem !important;
+  width: 6rem !important;
+  min-width: 6rem !important;
+  max-width: 6rem !important;
+}
+
+:deep(.form-group .form-field) {
+  flex: 1 !important;
+  width: 100% !important;
+}
+
+/* RepeatPeriodSelector 样式统一 */
+:deep(.repeat-period-selector .field-row) {
+  gap: 1rem !important;
+  margin-bottom: 0.75rem !important;
+}
+
+:deep(.repeat-period-selector .label) {
+  flex: 0 0 6rem !important;
+  width: 6rem !important;
+  min-width: 6rem !important;
+  max-width: 6rem !important;
+}
+
+:deep(.repeat-period-selector .input-field) {
+  flex: 1 !important;
+  width: 100% !important;
 }
 
 /* Advance reminder group */
 .advance-reminder-group {
   display: flex;
-  width: 66.666667%;
+  flex: 1;
   align-items: center;
   gap: 0.25rem;
 }

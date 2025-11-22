@@ -1,5 +1,7 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n';
 import BaseModal from '@/components/common/BaseModal.vue';
+import FormRow from '@/components/common/FormRow.vue';
 import { CURRENCY_CNY } from '@/constants/moneyConst';
 import { MoneyDb } from '@/services/money/money';
 import { DateUtils } from '@/utils/date';
@@ -454,25 +456,32 @@ onMounted(() => {
     <form @submit.prevent="saveLedger">
       <!-- 基本信息 -->
       <div class="form-section">
-        <div class="form-row">
-          <label class="form-label">账本名称</label>
+        <FormRow label="账本名称" required>
           <input
-            v-model="form.name" type="text" required class="modal-input-select form-input-2-3"
+            v-model="form.name"
+            v-has-value
+            type="text"
+            required
+            class="modal-input-select w-full"
             placeholder="请输入账本名称"
           >
-        </div>
+        </FormRow>
 
-        <div class="form-row">
-          <label class="form-label">账本描述</label>
+        <FormRow label="账本描述" optional>
           <input
-            v-model="form.description" type="text" class="modal-input-select form-input-2-3"
+            v-model="form.description"
+            v-has-value
+            type="text"
+            class="modal-input-select w-full"
             placeholder="请输入账本描述（可选）"
           >
-        </div>
+        </FormRow>
 
-        <div class="form-row">
-          <label class="form-label">账本类型</label>
-          <select v-model="form.ledgerType" required class="modal-input-select form-input-2-3">
+        <FormRow label="账本类型" required>
+          <select v-model="form.ledgerType" v-has-value required class="modal-input-select w-full">
+            <option value="">
+              请选择账本类型
+            </option>
             <option value="FAMILY">
               家庭账本
             </option>
@@ -483,23 +492,24 @@ onMounted(() => {
               项目账本
             </option>
           </select>
-        </div>
+        </FormRow>
 
-        <div class="form-row">
-          <label class="form-label">基础币种</label>
-          <select v-model="form.baseCurrency.code" required class="modal-input-select form-input-2-3">
+        <FormRow label="基础币种" required>
+          <select v-model="form.baseCurrency.code" v-has-value required class="modal-input-select w-full">
+            <option value="">
+              请选择币种
+            </option>
             <option v-for="currency in currencies" :key="currency.code" :value="currency.code">
               {{ getCurrencyDisplayName(currency.code) }} ({{ currency.code }})
             </option>
           </select>
-        </div>
+        </FormRow>
       </div>
 
       <!-- 结算设置 -->
       <div class="form-section">
-        <div class="form-row">
-          <label class="form-label">结算周期</label>
-          <select v-model="form.settlementCycle" class="modal-input-select form-input-2-3">
+        <FormRow label="结算周期" optional>
+          <select v-model="form.settlementCycle" v-has-value class="modal-input-select w-full">
             <option value="WEEKLY">
               每周
             </option>
@@ -516,15 +526,15 @@ onMounted(() => {
               手动结算
             </option>
           </select>
-        </div>
+        </FormRow>
 
-        <div class="form-row">
-          <label class="form-label">结算日</label>
-          <div class="form-input-2-3 form-input-wrapper">
+        <FormRow label="结算日" optional>
+          <div class="settlement-day-wrapper">
             <select
               v-if="settlementDayOptions.options.length > 0"
               v-model.number="form.settlementDay"
-              class="modal-input-select full-width"
+              v-has-value
+              class="modal-input-select w-full"
             >
               <option
                 v-for="option in settlementDayOptions.options"
@@ -537,27 +547,25 @@ onMounted(() => {
             <input
               v-else
               v-model.number="form.settlementDay"
+              v-has-value
               type="number"
               :min="settlementDayOptions.min"
               :max="settlementDayOptions.max"
-              class="modal-input-select full-width"
+              class="modal-input-select w-full"
               :placeholder="settlementDayOptions.placeholder"
             >
             <div class="form-hint">
               {{ getSettlementDayHint() }}
             </div>
           </div>
-        </div>
+        </FormRow>
 
-        <div class="form-row">
-          <label class="form-label">自动结算</label>
-          <div class="form-input-2-3">
-            <label class="checkbox-label">
-              <input v-model="form.autoSettlement" type="checkbox" class="checkbox-input">
-              <span class="checkbox-text">启用自动结算</span>
-            </label>
-          </div>
-        </div>
+        <FormRow label="" optional>
+          <label class="checkbox-label">
+            <input v-model="form.autoSettlement" type="checkbox" class="checkbox-input">
+            <span class="checkbox-text">启用自动结算</span>
+          </label>
+        </FormRow>
       </div>
 
       <!-- 成员管理 -->
@@ -716,32 +724,15 @@ onMounted(() => {
 .form-section {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0;
+  margin-bottom: 1rem;
 }
 
-.form-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.form-label {
-  font-size: 0.875rem;
-  color: #374151;
-  font-weight: 500;
-}
-
-.form-input-2-3 {
-  width: 66.666667%;
-}
-
-.form-input-wrapper {
+/* 结算日包装器 */
+.settlement-day-wrapper {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
-}
-
-.full-width {
   width: 100%;
 }
 

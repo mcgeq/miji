@@ -372,20 +372,17 @@ onMounted(async () => {
         <input v-model="form.endDate" type="date" class="modal-input-select w-full">
       </FormRow>
 
-      <div class="form-row">
-        <label class="form-label">
-          {{ t('common.misc.color') }}
-        </label>
-        <div class="form-input-2-3">
-          <ColorSelector
-            v-model="form.color"
-            :color-names="colorNameMap"
-            :extended="true"
-            :show-categories="true"
-            :show-custom-color="true"
-          />
-        </div>
-      </div>
+      <FormRow :label="t('common.misc.color')" optional>
+        <ColorSelector
+          v-model="form.color"
+          width="full"
+          :color-names="colorNameMap"
+          :extended="true"
+          :show-categories="true"
+          :show-custom-color="true"
+          :show-random-button="true"
+        />
+      </FormRow>
       <div class="alert-section">
         <!-- 左边复选框 -->
         <div class="alert-checkbox">
@@ -438,51 +435,22 @@ onMounted(async () => {
 </template>
 
 <style scoped>
-/* Form Layout */
-.form-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 0.75rem;
-  gap: 0;
+/* RepeatPeriodSelector 样式统一 */
+:deep(.repeat-period-selector .field-row) {
+  gap: 1rem !important;
+  margin-bottom: 0.75rem !important;
 }
 
-.form-label {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--color-base-content);
-  margin-bottom: 0;
-  margin-right: 0;
-  flex: 0 0 6rem;
-  width: 6rem;
-  min-width: 6rem;
-  max-width: 6rem;
-  white-space: nowrap;
-  text-align: left;
+:deep(.repeat-period-selector .label) {
+  flex: 0 0 6rem !important;
+  width: 6rem !important;
+  min-width: 6rem !important;
+  max-width: 6rem !important;
 }
 
-.form-input-2-3 {
-  width: 66%;
-  flex: 0 0 66%;
-}
-
-/* 颜色选择器特殊处理 */
-.form-row:has(.color-selector) .form-input-2-3 {
-  display: block;
-}
-
-/* Color Selector - 覆盖默认宽度并确保对齐 */
-.form-input-2-3 :deep(.color-selector) {
+:deep(.repeat-period-selector .input-field) {
+  flex: 1 !important;
   width: 100% !important;
-  max-width: 100% !important;
-  margin: 0 !important;
-  padding: 0 !important;
-}
-
-/* ColorSelector 触发按钮 - 与输入框样式保持一致 */
-.form-input-2-3 :deep(.color-selector__trigger) {
-  padding: 0.5rem 1rem !important;
-  border-radius: 0.75rem !important;
 }
 
 .form-textarea {
@@ -515,7 +483,7 @@ onMounted(async () => {
 .threshold-settings {
   display: flex;
   gap: 0.5rem;
-  width: 66.666667%;
+  flex: 1;
   align-items: center;
 }
 

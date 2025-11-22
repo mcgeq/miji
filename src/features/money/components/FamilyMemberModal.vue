@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import BaseModal from '@/components/common/BaseModal.vue';
 import ColorSelector from '@/components/common/ColorSelector.vue';
+import FormRow from '@/components/common/FormRow.vue';
 import FamilyMemberSelector from '@/components/ui/FamilyMemberSelector.vue';
 import { useFamilyMemberStore } from '@/stores/money';
 import { toast } from '@/utils/toast';
@@ -209,16 +210,6 @@ function closeDialog() {
   emit('close');
 }
 
-// 生成随机颜色
-function generateRandomColor() {
-  const colors = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'];
-  let color = '#';
-  for (let i = 0; i < 6; i++) {
-    color += colors[Math.floor(Math.random() * colors.length)];
-  }
-  form.colorTag = color;
-}
-
 // 处理家庭成员选择
 function handleMemberSelect(member: SearchableFamilyMember) {
   selectedExistingMember.value = member;
@@ -308,20 +299,22 @@ function handleMemberClear() {
           基本信息
         </h4>
 
-        <div class="form-row">
-          <label class="form-label">姓名 *</label>
+        <FormRow label="姓名" required>
           <input
             v-model="form.name"
+            v-has-value
             type="text"
-            class="form-input"
+            class="modal-input-select w-full"
             placeholder="请输入成员姓名"
             required
           >
-        </div>
+        </FormRow>
 
-        <div class="form-row">
-          <label class="form-label">角色</label>
-          <select v-model="form.role" class="form-select">
+        <FormRow label="角色" required>
+          <select v-model="form.role" v-has-value class="modal-input-select w-full">
+            <option value="">
+              请选择角色
+            </option>
             <option value="Owner">
               所有者
             </option>
@@ -335,14 +328,14 @@ function handleMemberClear() {
               查看者
             </option>
           </select>
-        </div>
+        </FormRow>
 
-        <div class="form-row">
+        <FormRow label="" optional>
           <label class="checkbox-label">
-            <input v-model="form.isPrimary" type="checkbox" class="checkbox">
-            <span>设为主要成员</span>
+            <input v-model="form.isPrimary" type="checkbox" class="checkbox-input">
+            <span class="checkbox-text">设为主要成员</span>
           </label>
-        </div>
+        </FormRow>
 
         <!-- 关联成员信息显示 -->
         <div v-if="selectedExistingMember" class="form-row">
@@ -384,38 +377,28 @@ function handleMemberClear() {
           外观设置
         </h4>
 
-        <div class="form-row">
-          <label class="form-label">头像URL</label>
+        <FormRow label="头像URL" optional>
           <input
             v-model="form.avatar"
+            v-has-value
             type="url"
-            class="form-input"
+            class="modal-input-select w-full"
             placeholder="可选，头像图片链接"
           >
-        </div>
+        </FormRow>
 
-        <div class="form-row">
-          <label class="form-label">标识颜色</label>
-          <div class="color-selector-wrapper">
-            <ColorSelector
-              v-model="form.colorTag"
-              :extended="true"
-              :show-custom-color="true"
-            />
-            <button
-              type="button"
-              class="random-color-btn"
-              title="随机颜色"
-              @click="generateRandomColor"
-            >
-              <LucideShuffle class="w-4 h-4" />
-            </button>
-          </div>
-        </div>
+        <FormRow label="标识颜色" optional>
+          <ColorSelector
+            v-model="form.colorTag"
+            width="full"
+            :extended="true"
+            :show-custom-color="true"
+            :show-random-button="true"
+          />
+        </FormRow>
 
         <!-- 预览 -->
-        <div class="form-row">
-          <label class="form-label">预览</label>
+        <FormRow label="预览" optional>
           <div class="member-preview">
             <div
               class="preview-avatar"
@@ -433,7 +416,7 @@ function handleMemberClear() {
             </div>
             <span class="preview-name">{{ form.name || '成员姓名' }}</span>
           </div>
-        </div>
+        </FormRow>
       </div>
 
       <!-- 权限设置 -->
@@ -557,20 +540,12 @@ function handleMemberClear() {
   margin-bottom: 1rem;
 }
 
+/* 保留已选成员信息的 form-row 样式 */
 .form-row {
   margin-bottom: 1rem;
   display: flex;
   align-items: center;
   gap: 1rem;
-}
-
-.form-row.vertical {
-  flex-direction: column;
-  align-items: flex-start;
-}
-
-.form-row.vertical .form-label {
-  margin-bottom: 0.5rem;
 }
 
 .form-label {
@@ -582,64 +557,25 @@ function handleMemberClear() {
   flex-shrink: 0;
 }
 
-.form-input, .form-select {
-  flex: 1;
-  padding: 0.625rem 0.875rem;
-  border: 1px solid var(--color-base-200);
-  border-radius: 0.5rem;
-  font-size: 0.875rem;
-  background-color: var(--color-base-100);
-  color: var(--color-base-content);
-  transition: all 0.2s ease;
-}
-
-.form-input:focus, .form-select:focus {
-  outline: none;
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px oklch(from var(--color-primary) l c h / 0.1);
-}
-
+/* 复选框样式 */
 .checkbox-label {
   display: flex;
   align-items: center;
   gap: 0.5rem;
   cursor: pointer;
-  flex: 1;
 }
 
-.checkbox {
+.checkbox-input {
   width: 1rem;
   height: 1rem;
+  cursor: pointer;
 }
 
-.color-selector-wrapper {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  width: 100%;
+.checkbox-text {
+  font-size: 0.875rem;
+  color: var(--color-base-content);
+  font-weight: 500;
 }
-
-/* 旧的颜色输入框样式已移除，现在使用 ColorSelector 组件 */
-
-.random-color-btn {
-  padding: 0.625rem;
-  border: 1px solid var(--color-base-200);
-  background-color: var(--color-base-100);
-  color: var(--color-neutral);
-  border-radius: 0.5rem;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.random-color-btn:hover {
-  background-color: var(--color-base-200);
-  border-color: var(--color-primary);
-  color: var(--color-primary);
-}
-
-/* 预设颜色样式已移除，现在使用 ColorSelector 组件 */
 
 .member-preview {
   display: flex;
