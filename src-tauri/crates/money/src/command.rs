@@ -668,19 +668,18 @@ pub async fn transaction_get(
     let service = TransactionService::default();
 
     match service
-        .trans_get_with_relations(&state.db, serial_num.clone())
+        .trans_get_response(&state.db, serial_num.clone())
         .await
     {
         Ok(result) => {
             info!(
-                transaction_serial_num = %result.transaction.serial_num,
-                amount = %result.transaction.amount,
-                transaction_type = %result.transaction.transaction_type,
+                transaction_serial_num = %result.serial_num,
+                amount = %result.amount,
+                transaction_type = ?result.transaction_type,
+                has_split_config = result.split_config.is_some(),
                 "获取交易成功"
             );
-            Ok(ApiResponse::from_result(Ok(TransactionResponse::from(
-                result,
-            ))))
+            Ok(ApiResponse::from_result(Ok(result)))
         }
         Err(e) => {
             error!(

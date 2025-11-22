@@ -8,6 +8,7 @@ import {
   TransactionStatusSchema,
   TransactionTypeSchema,
 } from '@/schema/common';
+import { MoneyDb } from '@/services/money/money';
 import { useCategoryStore } from '@/stores/money';
 import { lowercaseFirstLetter } from '@/utils/common';
 import { DateUtils } from '@/utils/date';
@@ -322,21 +323,29 @@ const availableTransactionStatuses = computed(() => {
 onMounted(async () => {
   await loadAvailableLedgers();
 
-  // 如果是编辑模式，加载现有的关联
+  // 如果是编辑模式，加载现有的关联和完整数据
   if (props.transaction) {
     try {
+      // 重新获取完整的交易数据（包含 splitConfig）
+      const fullTransaction = await MoneyDb.getTransaction(props.transaction.serialNum);
+
+      if (!fullTransaction) {
+        Lg.e('TransactionModal', 'Failed to load full transaction data');
+        return;
+      }
+
       const { ledgers, members } = await getTransactionLinks(props.transaction.serialNum);
       selectedLedgers.value = ledgers.map(l => l.serialNum);
       selectedMembers.value = members.map(m => m.serialNum);
       // 加载成员列表（基于已选择的账本）
       await loadAvailableMembers();
 
-      // 恢复分摊配置
-      if (props.transaction.splitConfig && props.transaction.splitConfig.enabled) {
+      // 恢复分摊配置（使用重新获取的完整数据）
+      if (fullTransaction.splitConfig && fullTransaction.splitConfig.enabled) {
         splitConfig.value = {
           enabled: true,
-          splitType: props.transaction.splitConfig.splitType,
-          members: props.transaction.splitConfig.members || [],
+          splitType: fullTransaction.splitConfig.splitType,
+          members: fullTransaction.splitConfig.members || [],
         };
       } else {
         splitConfig.value = {
@@ -751,7 +760,7 @@ watch(
         :label="t('financial.transaction.toAccount')"
         required
       >
-        <select v-model="form.toAccountSerialNum" v-has-value class="modal-input-select w-full" required :disabled="isDisabled">
+        <select v-model="form.toAccountSerialNum" v-has-value class="modal-input-select w-full" required :disabled="isDisabled || isReadonlyMode">
           <option value="">
             {{ t('common.placeholders.selectAccount') }}
           </option>
@@ -767,7 +776,7 @@ watch(
           v-if="isPaymentMethodEditable"
           v-model="form.paymentMethod"
           v-has-value
-          :disabled="isTransferReadonly"
+          :disabled="isTransferReadonly || isReadonlyMode"
           class="modal-input-select w-full"
           required
         >
@@ -823,7 +832,7 @@ watch(
       </FormRow>
 
       <!-- 关联账本 -->
-      <div v-if="!isReadonlyMode" class="form-row">
+      <div v-if="!isReadonlyMode || selectedLedgers.length > 0" class="form-row">
         <label class="label-with-hint">
           关联账本
         </label>
@@ -837,6 +846,7 @@ watch(
               <span class="selected-item">
                 {{ availableLedgers.find(l => l.serialNum === selectedLedgers[0])?.name || selectedLedgers[0] }}
                 <button
+                  v-if="!isReadonlyMode"
                   type="button"
                   class="remove-btn"
                   @click="selectedLedgers = selectedLedgers.filter(id => id !== selectedLedgers[0])"
@@ -853,6 +863,7 @@ watch(
               </span>
             </div>
             <button
+              v-if="!isReadonlyMode"
               type="button"
               class="btn-add-ledger btn-icon-only"
               :title="showLedgerSelector ? '收起' : '选择账本'"
@@ -894,7 +905,7 @@ watch(
       </div>
 
       <!-- 分摊成员 -->
-      <div v-if="!isReadonlyMode && selectedLedgers.length > 0" class="form-row">
+      <div v-if="selectedLedgers.length > 0 && (!isReadonlyMode || selectedMembers.length > 0)" class="form-row">
         <label class="label-with-hint">
           分摊成员
         </label>
@@ -909,6 +920,7 @@ watch(
                 <span class="selected-item">
                   {{ availableMembers.find(m => m.serialNum === selectedMembers[0])?.name || selectedMembers[0] }}
                   <button
+                    v-if="!isReadonlyMode"
                     type="button"
                     class="remove-btn"
                     @click="selectedMembers = selectedMembers.filter(id => id !== selectedMembers[0])"
@@ -925,6 +937,7 @@ watch(
                 </span>
               </div>
               <button
+                v-if="!isReadonlyMode"
                 type="button"
                 class="btn-add-member btn-icon-only"
                 :title="showMemberSelector ? '收起' : '选择成员'"
@@ -936,7 +949,7 @@ watch(
             </div>
           </div>
           <!-- 小字提示 -->
-          <div v-if="selectedMembers.length === 0" class="member-hint-text">
+          <div v-if="!isReadonlyMode && selectedMembers.length === 0" class="member-hint-text">
             如不选择成员，则为个人交易
           </div>
         </div>
@@ -993,11 +1006,12 @@ watch(
 
       <!-- 分摊设置 -->
       <TransactionSplitSection
-        v-if="!isReadonlyMode && selectedLedgers.length > 0 && selectedMembers.length > 0 && form.amount > 0 && form.transactionType !== TransactionTypeSchema.enum.Transfer"
+        v-if="selectedLedgers.length > 0 && selectedMembers.length > 0 && form.amount > 0 && form.transactionType !== TransactionTypeSchema.enum.Transfer && (!isReadonlyMode || splitConfig.enabled)"
         :transaction-amount="form.amount"
         :ledger-serial-num="selectedLedgers[0]"
         :selected-members="selectedMembers"
         :available-members="availableMembers"
+        :readonly="isReadonlyMode"
         :initial-config="splitConfig"
         @update:split-config="handleSplitConfigUpdate"
       />
@@ -1026,7 +1040,7 @@ watch(
           <input
             v-model="form.isInstallment"
             type="checkbox"
-            :disabled="isInstallmentFieldsDisabled"
+            :disabled="isInstallmentFieldsDisabled || isReadonlyMode"
           >
           {{ t('financial.transaction.installment') }}
         </label>
@@ -1041,11 +1055,11 @@ watch(
         </div>
         <FormRow :label="t('financial.transaction.totalPeriods')" required>
           <input
-            v-model="form.totalPeriods"
+            v-model.number="form.totalPeriods"
             type="number"
             min="2"
             class="modal-input-select w-full"
-            :disabled="isInstallmentFieldsDisabled"
+            :disabled="isInstallmentFieldsDisabled || isReadonlyMode"
           >
         </FormRow>
 
@@ -1063,7 +1077,7 @@ watch(
             v-model="form.firstDueDate"
             type="date"
             class="modal-input-select w-full"
-            :disabled="isInstallmentFieldsDisabled"
+            :disabled="isInstallmentFieldsDisabled || isReadonlyMode"
           >
         </FormRow>
 

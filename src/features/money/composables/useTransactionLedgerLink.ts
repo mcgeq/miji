@@ -217,7 +217,16 @@ export function useTransactionLedgerLink() {
       const transaction = await MoneyDb.getTransaction(transactionSerialNum);
       let members: SplitMember[] = [];
 
-      if (transaction?.splitMembers && Array.isArray(transaction.splitMembers)) {
+      // 优先从 splitConfig 获取分摊成员（从独立表 split_records 查询）
+      if (transaction?.splitConfig?.enabled && transaction.splitConfig.members && Array.isArray(transaction.splitConfig.members)) {
+        members = transaction.splitConfig.members.map(m => ({
+          serialNum: m.memberSerialNum,
+          name: m.memberName,
+          avatar: undefined,
+          colorTag: undefined,
+        }));
+      } else if (transaction?.splitMembers && Array.isArray(transaction.splitMembers)) {
+        // 后备方案：从 splitMembers 获取（保持向后兼容）
         members = transaction.splitMembers;
       }
 
