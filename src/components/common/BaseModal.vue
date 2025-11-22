@@ -154,7 +154,7 @@ function handleDelete() {
 <style lang="postcss">
 /* Modal Mask - 遮罩层 */
 .base-modal-mask {
-  position: fixed;
+  position: fixed !important;
   top: 0;
   left: 0;
   right: 0;
@@ -163,10 +163,11 @@ function handleDelete() {
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 999999 !important;
   padding: 1rem;
-  backdrop-filter: blur(2px);
+  backdrop-filter: blur(4px);
   animation: fadeIn 0.2s ease-out;
+  isolation: isolate;
 }
 
 @keyframes fadeIn {
@@ -188,6 +189,9 @@ function handleDelete() {
   max-height: calc(100vh - 2rem);
   overflow: hidden;
   animation: slideUp 0.3s ease-out;
+  position: relative;
+  z-index: 9999999 !important;
+  isolation: isolate;
 }
 
 @keyframes slideUp {

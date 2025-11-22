@@ -4,6 +4,7 @@ import { Lg } from '@/utils/debugLog';
 import PeriodCalendar from '../components/PeriodCalendar.vue';
 import PeriodHealthTip from '../components/PeriodHealthTip.vue';
 import PeriodRecentRecord from '../components/PeriodRecentRecord.vue';
+import PeriodTodayInfo from '../components/PeriodTodayInfo.vue';
 import { usePeriodDailyRecords } from '../composables/usePeriodDailyRecords';
 import { usePeriodPhase } from '../composables/usePeriodPhase';
 import { usePeriodRecords } from '../composables/usePeriodRecords';
@@ -178,51 +179,15 @@ onMounted(async () => {
 
             <!-- 今日信息和快速操作 -->
             <div class="today-info-grid">
-              <!-- 今日信息 -->
-              <div class="today-info-card">
-                <div class="today-info-header">
-                  <div class="today-info-icon">
-                    <LucideCalendarCheck class="today-info-icon-svg" />
-                  </div>
-                  <h3 class="today-info-title">
-                    {{ t('period.todayInfo.title') }}
-                  </h3>
-                </div>
-                <div class="today-info-content">
-                  <div class="info-item">
-                    <span class="info-label">{{ t('period.todayInfo.currentPhase') }}</span>
-                    <span class="info-value phase-badge">
-                      {{ currentPhaseLabel }}
-                    </span>
-                  </div>
-                  <div class="info-item">
-                    <span class="info-label">{{ t('period.todayInfo.daysUntilNext') }}</span>
-                    <span class="info-value">{{ daysUntilNext }}</span>
-                  </div>
-                  <div v-if="todayRecord" class="info-item">
-                    <span class="info-label">{{ t('period.todayInfo.todayRecord') }}</span>
-                    <div class="info-actions">
-                      <button class="action-icon-btn view-btn" title="查看记录" @click="openDailyForm(todayRecord)">
-                        <LucideEye class="wh-4" />
-                      </button>
-                      <button
-                        class="action-icon-btn delete-btn" :title="t('common.actions.delete')"
-                        @click="handleDeleteDailyRecord(todayRecord.serialNum)"
-                      >
-                        <LucideTrash class="wh-4" />
-                      </button>
-                    </div>
-                  </div>
-                  <div v-else class="info-item">
-                    <span class="info-label">{{ t('period.todayInfo.todayRecord') }}</span>
-                    <span class="info-no-record">{{ t('period.todayInfo.noRecord') }}</span>
-
-                    <div class="period-btn cursor-pointer" @click="openDailyForm()">
-                      <LucidePlus class="wh-5" />
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <!-- 今日信息组件 -->
+              <PeriodTodayInfo
+                :current-phase-label="currentPhaseLabel"
+                :days-until-next="daysUntilNext"
+                :today-record="todayRecord"
+                @view-record="openDailyForm"
+                @delete-record="handleDeleteDailyRecord"
+                @add-record="openDailyForm()"
+              />
 
               <div class="card-base">
                 <PeriodHealthTip :stats="currentPhase" />

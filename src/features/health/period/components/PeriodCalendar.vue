@@ -609,6 +609,10 @@ onMounted(() => {
   border: 1px solid #e5e7eb;
   overflow: hidden;
   position: relative;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
 }
 
 .dark .period-calendar {
@@ -706,8 +710,12 @@ onMounted(() => {
 }
 
 .calendar-container {
-background-color: var(--color-base-200);
+  background-color: var(--color-base-200);
   padding: 0.5rem;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
 .weekdays-header {
@@ -743,6 +751,7 @@ background-color: var(--color-base-200);
   justify-content: center;
   cursor: pointer;
   transition: all 0.15s ease-in-out;
+  border-radius: 0.375rem;
 }
 
 .calendar-cell:hover {
