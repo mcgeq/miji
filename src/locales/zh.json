@@ -1097,6 +1097,7 @@
       "recordSaved": "记录已保存",
       "dailyRecordSaved": "日常记录已保存",
       "recordDeleted": "记录已删除",
+      "recordDailyRecordDeletedFailed": "日常记录删除失败，请稍后重试",
       "periodRecordSaved": "已记录您的经期",
       "periodRecordUpdated": "经期记录已更新",
       "periodRecordDeleted": "经期记录已移除",
