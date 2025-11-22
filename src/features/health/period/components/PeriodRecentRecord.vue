@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { storeToRefs } from 'pinia';
+import { calculatePeriodDuration } from '@/features/health/period/utils/periodUtils';
 import { usePeriodStore as usePeriodStores } from '@/stores/periodStore';
 import type { PeriodRecords } from '@/schema/health/period';
 // Emits
@@ -29,14 +30,6 @@ function formatMonth(dateStr: string) {
 function formatDay(dateStr: string) {
   const date = new Date(dateStr);
   return date.getDate();
-}
-
-function calculateDuration(record: PeriodRecords) {
-  const start = new Date(record.startDate);
-  const end = new Date(record.endDate);
-  return (
-    Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24))
-  );
 }
 
 function calculateCycleFromPrevious(record: PeriodRecords) {
@@ -106,7 +99,7 @@ function isPeriodActive(record: PeriodRecords) {
         </div>
         <div class="recent-record-info">
           <div class="recent-record-duration">
-            {{ isPeriodActive(record) ? `预计持续 ${calculateDuration(record)} 天` : `已持续 ${calculateDuration(record)}` }}
+            {{ isPeriodActive(record) ? `预计持续 ${calculatePeriodDuration(record)} 天` : `已持续 ${calculatePeriodDuration(record)} 天` }}
           </div>
           <div class="recent-record-cycle">
             {{ calculateCycleFromPrevious(record) }}
@@ -235,14 +228,14 @@ function isPeriodActive(record: PeriodRecords) {
 }
 
 .recent-record-month {
-  font-size: 0.75rem;
-  color: var(--color-neutral-content);
-  font-weight: 500;
+  font-size: 0.875rem;
+  color: var(--color-error);
+  font-weight: 600;
 }
 
 .recent-record-day {
   font-size: 1.5rem;
-  color: var(--color-base-content);
+  color: var(--color-error);
   font-weight: 700;
 }
 
@@ -261,10 +254,11 @@ function isPeriodActive(record: PeriodRecords) {
 
 .recent-record-cycle {
   font-size: 0.75rem;
-  color: var(--color-neutral-content);
-  background-color: var(--color-neutral);
+  color: var(--color-primary-content);
+  background-color: var(--color-primary);
   padding: 0.25rem 0.5rem;
   border-radius: 0.25rem;
+  font-weight: 500;
 }
 
 /* 记录操作 */
@@ -274,9 +268,14 @@ function isPeriodActive(record: PeriodRecords) {
 }
 
 .recent-record-arrow {
-  width: 1.25rem;
-  height: 1.25rem;
-  color: var(--color-neutral-content);
+  width: 1.5rem;
+  height: 1.5rem;
+  color: var(--color-primary);
+  transition: color 0.2s ease-in-out;
+}
+
+.recent-record-item:hover .recent-record-arrow {
+  color: var(--color-primary-content);
 }
 
 /* 深色模式适配 */

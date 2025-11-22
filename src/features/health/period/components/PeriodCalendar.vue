@@ -905,26 +905,51 @@ background-color: var(--color-base-200);
   gap: 0.5rem;
   max-height: 12.75rem;
   overflow-y: auto;
+  background-color: var(--color-base-100);
+  border-radius: 0.5rem;
+  /* 隐藏滚动条但保留功能 */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+
+/* Webkit浏览器（Chrome, Safari）隐藏滚动条 */
+.list-container::-webkit-scrollbar {
+  width: 0px;
+  background: transparent;
+}
+
+.dark .list-container {
+  background-color: var(--color-base-200);
 }
 
 .list-item {
-  padding: 0.5rem;
-  border-radius: 0.375rem;
-  border: 1px solid #e5e7eb;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--color-base-300);
+  border-left-width: 4px;
+  border-left-color: var(--color-primary);
+  background-color: var(--color-base-200);
   cursor: pointer;
   transition: all 0.2s ease-in-out;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
 }
 
 .list-item:hover {
-  background-color: #f9fafb;
+  background-color: var(--color-base-300);
+  border-left-color: var(--color-error);
+  transform: translateX(2px);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
 .dark .list-item {
-  border-color: #374151;
+  background-color: var(--color-base-300);
+  border-color: var(--color-base-300);
+  border-left-color: var(--color-primary);
 }
 
 .dark .list-item:hover {
-  background-color: #374151;
+  background-color: var(--color-base-content);
+  border-left-color: var(--color-error);
 }
 
 .list-item-content {
@@ -939,22 +964,24 @@ background-color: var(--color-base-200);
 }
 
 .date-primary {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: #111827;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-base-content);
+  margin-bottom: 0.125rem;
 }
 
 .dark .date-primary {
-  color: white;
+  color: var(--color-base-content);
 }
 
 .date-secondary {
   font-size: 0.75rem;
-  color: #6b7280;
+  color: var(--color-neutral);
+  font-weight: 500;
 }
 
 .dark .date-secondary {
-  color: #9ca3af;
+  color: var(--color-neutral);
 }
 
 .event-badges {
@@ -964,10 +991,16 @@ background-color: var(--color-base-200);
 }
 
 .event-badge {
-  padding: 0.125rem 0.375rem;
-  border-radius: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.375rem;
   font-size: 0.75rem;
-  font-weight: 500;
+  font-weight: 600;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  transition: all 0.15s ease-in-out;
+}
+
+.event-badge:hover {
+  transform: scale(1.05);
 }
 
 .badge-green {

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { calculatePeriodDuration } from '@/features/health/period/utils/periodUtils';
 import { usePeriodStore } from '@/stores/periodStore';
 import type { PeriodRecords } from '@/schema/health/period';
 
@@ -62,12 +63,12 @@ const filteredRecords = computed(() => {
   }
   if (filters.value.minDuration) {
     records = records.filter(
-      record => calculateDuration(record) >= filters.value.minDuration!,
+      record => calculatePeriodDuration(record) >= filters.value.minDuration!,
     );
   }
   if (filters.value.maxDuration) {
     records = records.filter(
-      record => calculateDuration(record) <= filters.value.maxDuration!,
+      record => calculatePeriodDuration(record) <= filters.value.maxDuration!,
     );
   }
   if (filters.value.minCycle) {
@@ -93,8 +94,8 @@ const filteredRecords = computed(() => {
         bValue = new Date(b.startDate).getTime();
         break;
       case 'duration':
-        aValue = calculateDuration(a);
-        bValue = calculateDuration(b);
+        aValue = calculatePeriodDuration(a);
+        bValue = calculatePeriodDuration(b);
         break;
       case 'cycleLength':
         aValue = calculateCycleLength(a);
@@ -125,7 +126,7 @@ const averageDuration = computed(() => {
   if (filteredRecords.value.length === 0)
     return 0;
   const total = filteredRecords.value.reduce(
-    (sum, record) => sum + calculateDuration(record),
+    (sum, record) => sum + calculatePeriodDuration(record),
     0,
   );
   return total / filteredRecords.value.length;
@@ -167,14 +168,6 @@ const regularity = computed(() => {
 });
 
 // Methods
-function calculateDuration(record: PeriodRecords): number {
-  const start = new Date(record.startDate);
-  const end = new Date(record.endDate);
-  return (
-    Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1
-  );
-}
-
 function calculateCycleLength(record: PeriodRecords): number {
   const allRecords = periodStore.periodRecords
     .slice()
@@ -413,7 +406,7 @@ watch(
                 </h3>
                 <div class="record-badges">
                   <span class="duration-badge">
-                    {{ calculateDuration(record) }}天
+                    {{ calculatePeriodDuration(record) }}天
                   </span>
                   <span v-if="calculateCycleLength(record) > 0" class="cycle-badge">
                     周期{{ calculateCycleLength(record) }}天
