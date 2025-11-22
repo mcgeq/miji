@@ -877,7 +877,7 @@ watch([enableSplit, splitConfig, splitPreview], () => {
 .param-input {
   width: 100px;
   padding: 0.5rem;
-  background: color-mix(in srgb, var(--color-base-100) 50%, white);
+  background: var(--color-base-100);
   border: 1px solid var(--color-base-300);
   border-radius: 6px;
   font-size: 0.875rem;

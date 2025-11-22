@@ -3,12 +3,10 @@ import BaseModal from '@/components/common/BaseModal.vue';
 import DateTimePicker from '@/components/common/DateTimePicker.vue';
 import FormRow from '@/components/common/FormRow.vue';
 import CurrencySelector from '@/components/common/money/CurrencySelector.vue';
-// 注意：CURRENCY_CNY 已移至 transactionFormUtils
 import {
   TransactionStatusSchema,
   TransactionTypeSchema,
 } from '@/schema/common';
-import { MoneyDb } from '@/services/money/money';
 import { useCategoryStore } from '@/stores/money';
 import { lowercaseFirstLetter } from '@/utils/common';
 import { DateUtils } from '@/utils/date';
@@ -19,6 +17,7 @@ import { useAccountFilter } from '../composables/useAccountFilter';
 import { useInstallmentManagement } from '../composables/useInstallmentManagement';
 import { getDefaultPaymentMethod, usePaymentMethods } from '../composables/usePaymentMethods';
 import { useTransactionCategory } from '../composables/useTransactionCategory';
+import { useTransactionDataLoader } from '../composables/useTransactionDataLoader';
 import { useTransactionLedgerLink } from '../composables/useTransactionLedgerLink';
 import { useTransactionValidation } from '../composables/useTransactionValidation';
 import { INSTALLMENT_CONSTANTS } from '../constants/transactionConstants';
@@ -143,35 +142,24 @@ const {
   getTransactionLinks,
 } = useTransactionLedgerLink();
 
+// 数据加载器
+const dataLoader = useTransactionDataLoader({
+  loadAvailableLedgers,
+  loadAvailableMembers,
+  getTransactionLinks,
+});
+
 // 显示账本选择器
 const showLedgerSelector = ref(false);
 // 显示成员选择器
 const showMemberSelector = ref(false);
 
-// 注意：selectAccounts 已从 useAccountFilter 解构（原名 selectableAccounts）
-
-// 注意：categoryMap 已从 categoryManager 解构
-
 const isTransferReadonly = computed(() => {
   return !!(props.transaction && form.value.category === 'Transfer');
 });
 
-const isEditabled = computed<boolean>(() => !!props.transaction);
-const isDisabled = computed<boolean>(() => isTransferReadonly.value || isEditabled.value);
-
-// 注意：safeToFixed 已移至 utils/numberUtils.ts
-
-// 注意：所有分期状态现在直接从 installmentManager 获取
-// 例如：installmentManager.calculationResult.value
-//       installmentManager.isCalculating.value
-//       installmentManager.installmentDetails.value
-//       installmentManager.planDetails.value
-//       installmentManager.hasPaidInstallments.value
-
-// 注意：直接使用 composable 提供的计算属性
-// - installmentManager.paidPeriodsCount.value
-// - installmentManager.pendingPeriodsCount.value
-// - installmentManager.totalPeriodsCount.value
+const isEditMode = computed<boolean>(() => !!props.transaction);
+const isAccountDisabled = computed<boolean>(() => isTransferReadonly.value || isEditMode.value);
 
 // 分摊配置状态
 const splitConfig = ref<{
@@ -194,21 +182,16 @@ function handleSplitConfigUpdate(config: any) {
 }
 
 // 调用后端API计算分期金额
-// 注意：使用 composable 方法
 async function calculateInstallmentFromBackend() {
-  // 使用 composable 的方法
   await installmentManager.calculateInstallment(
     form.value.amount,
     form.value.totalPeriods,
     form.value.firstDueDate || undefined,
     form.value.date,
   );
-
-  // 注意：不需要同步，直接使用 installmentManager 的状态
 }
 
 // 加载分期计划详情（用于编辑模式）
-// 注意：使用 composable 方法
 async function loadInstallmentPlanDetails(planSerialNum: string) {
   await installmentManager.loadPlanBySerialNum(planSerialNum);
   // 同步数据（TODO: Phase 2.6 删除）
@@ -218,7 +201,6 @@ async function loadInstallmentPlanDetails(planSerialNum: string) {
 }
 
 // 加载分期计划详情（根据交易序列号）
-// 注意：使用 composable 方法
 async function loadInstallmentPlanDetailsByTransaction(transactionSerialNum: string) {
   await installmentManager.loadPlanByTransaction(transactionSerialNum);
   // 同步数据（TODO: Phase 2.6 删除）
@@ -230,9 +212,7 @@ async function loadInstallmentPlanDetailsByTransaction(transactionSerialNum: str
 // 处理分期计划响应（共用逻辑）
 function processInstallmentPlanResponse(response: InstallmentPlanResponse | null) {
   if (response && response.details) {
-    // 注意：数据已由 installmentManager 管理，这里只更新表单
-
-    // 更新表单中的分期相关字段（如果有值才更新）
+    // 更新表单中的分期相关字段
     if (response.total_periods !== undefined && response.total_periods !== null) {
       form.value.totalPeriods = Number(response.total_periods);
       form.value.remainingPeriods = Number(response.total_periods);
@@ -246,19 +226,14 @@ function processInstallmentPlanResponse(response: InstallmentPlanResponse | null
   }
 }
 
-// 注意：calculatedInstallmentAmount 和 installmentDetails 已从 installmentManager 解构
-
 // 检查交易是否有已完成的分期付款
-// 注意：使用 composable 方法
 async function checkPaidInstallments(transactionSerialNum: string) {
-  // 使用 composable 的方法
   await installmentManager.checkPaidStatus(transactionSerialNum);
-  // 注意：状态已由 installmentManager 管理
 }
 
 // 判断分期付款相关字段是否应该被禁用（直接使用 composable）
 const isInstallmentFieldsDisabled = computed(() => {
-  return isEditabled.value && hasPaidInstallments.value;
+  return isEditMode.value && hasPaidInstallments.value;
 });
 
 // 判断当前交易是否为分期交易
@@ -296,8 +271,68 @@ function getStatusText(status: string): string {
   return result;
 }
 
-// 注意：分期统计属性已从 useInstallmentManagement 中解构
-// paidPeriodsCount, pendingPeriodsCount, totalPeriodsCount 可直接在模板中使用
+// 查找账户
+function findAccount(accountId: string | null | undefined) {
+  if (!accountId) return undefined;
+  return props.accounts.find(acc => acc.serialNum === accountId);
+}
+
+// 清除账本和成员关联
+function clearLedgerAssociations() {
+  selectedLedgers.value = [];
+  selectedMembers.value = [];
+}
+
+// 处理账户变化：智能推荐账本（仅创建模式）
+async function handleAccountChangeForLedgers(accountId: string | null, oldAccountId: string | null) {
+  // 只在创建模式下处理
+  if (props.transaction) return;
+
+  // 清空账户时，清除所有关联
+  if (!accountId) {
+    clearLedgerAssociations();
+    return;
+  }
+
+  // 账户切换时
+  try {
+    const { suggestedLedgers } = await getSmartSuggestions(accountId);
+
+    // 切换到不同账户时，清除旧的关联
+    if (oldAccountId && oldAccountId !== accountId) {
+      clearLedgerAssociations();
+    }
+
+    // 自动反显家庭账本
+    if (suggestedLedgers.length > 0) {
+      selectedLedgers.value = suggestedLedgers.map(l => l.serialNum);
+    } else {
+      selectedLedgers.value = [];
+    }
+
+    // 成员保持为空，让用户手动选择
+    selectedMembers.value = [];
+  } catch (error) {
+    Lg.e('TransactionModal', 'Failed to get smart suggestions:', error);
+    clearLedgerAssociations();
+  }
+}
+
+// 处理账户变化：设置支付方式
+function handleAccountChangeForPayment(accountId: string | null) {
+  const selectedAccount = findAccount(accountId);
+
+  // 自动设置支付方式
+  form.value.paymentMethod = getDefaultPaymentMethod(
+    selectedAccount,
+    form.value.transactionType,
+  );
+
+  // 防止转账时来源账户和目标账户相同
+  if (accountId === form.value.toAccountSerialNum) {
+    form.value.toAccountSerialNum = '';
+  }
+}
 
 // 可用的交易状态选项
 const availableTransactionStatuses = computed(() => {
@@ -319,42 +354,26 @@ const availableTransactionStatuses = computed(() => {
   ];
 });
 
-// 初始化：加载账本列表
+// 初始化：加载必要数据
 onMounted(async () => {
-  await loadAvailableLedgers();
+  try {
+    if (props.transaction) {
+      // 编辑模式：加载完整数据
+      const loadedData = await dataLoader.loadEditModeData(props.transaction);
 
-  // 如果是编辑模式，加载现有的关联和完整数据
-  if (props.transaction) {
-    try {
-      // 重新获取完整的交易数据（包含 splitConfig）
-      const fullTransaction = await MoneyDb.getTransaction(props.transaction.serialNum);
-
-      if (!fullTransaction) {
-        Lg.e('TransactionModal', 'Failed to load full transaction data');
-        return;
-      }
-
-      const { ledgers, members } = await getTransactionLinks(props.transaction.serialNum);
-      selectedLedgers.value = ledgers.map(l => l.serialNum);
-      selectedMembers.value = members.map(m => m.serialNum);
-      // 加载成员列表（基于已选择的账本）
-      await loadAvailableMembers();
-
-      // 恢复分摊配置（使用重新获取的完整数据）
-      if (fullTransaction.splitConfig && fullTransaction.splitConfig.enabled) {
-        splitConfig.value = {
-          enabled: true,
-          splitType: fullTransaction.splitConfig.splitType,
-          members: fullTransaction.splitConfig.members || [],
-        };
-      } else {
-        splitConfig.value = {
-          enabled: false,
-        };
-      }
-    } catch (error) {
-      Lg.e('TransactionModal', 'Failed to load transaction links:', error);
+      // 应用加载的数据到状态
+      dataLoader.applyLoadedData(loadedData, {
+        selectedLedgers,
+        selectedMembers,
+        splitConfig,
+      });
+    } else {
+      // 创建模式：只加载基础数据
+      await dataLoader.loadCreateModeData();
     }
+  } catch (error) {
+    Lg.e('TransactionModal', 'Failed to initialize transaction modal:', error);
+    toast.error('加载交易数据失败');
   }
 });
 
@@ -372,46 +391,13 @@ watch(() => selectedLedgers.value, async () => {
   }
 }, { deep: true });
 
-// 监听账户变化，智能推荐账本和成员
+// 监听账户变化：处理账本推荐和支付方式设置
 watch(() => form.value.accountSerialNum, async (accountId, oldAccountId) => {
-  // 只在创建模式下处理（编辑模式保持原有关联）
-  if (!props.transaction) {
-    // 如果账户被清空，清除所有关联
-    if (!accountId) {
-      selectedLedgers.value = [];
-      selectedMembers.value = [];
-      return;
-    }
+  // 1. 智能推荐账本（仅创建模式）
+  await handleAccountChangeForLedgers(accountId, oldAccountId);
 
-    // 账户切换时，获取新账户的推荐
-    try {
-      const { suggestedLedgers } = await getSmartSuggestions(accountId);
-
-      // ✅ 账户切换时清除旧的账本和成员选择，避免数据不一致
-      if (oldAccountId && oldAccountId !== accountId) {
-        selectedLedgers.value = [];
-        selectedMembers.value = [];
-      }
-
-      // ✅ 账本自动反显：如果账户属于家庭账本，自动选择
-      if (suggestedLedgers.length > 0) {
-        selectedLedgers.value = suggestedLedgers.map(l => l.serialNum);
-        // Auto-selected ledgers for account
-      } else {
-        // 如果没有推荐的账本，确保清空选择
-        selectedLedgers.value = [];
-      }
-
-      // ❌ 成员不自动选择：保持为空，让用户手动选择
-      selectedMembers.value = [];
-      // Members cleared for manual selection
-    } catch (error) {
-      Lg.e('TransactionModal', 'Failed to get smart suggestions:', error);
-      // 发生错误时也清空选择，避免数据不一致
-      selectedLedgers.value = [];
-      selectedMembers.value = [];
-    }
-  }
+  // 2. 设置支付方式
+  handleAccountChangeForPayment(accountId);
 });
 
 // 监听分期选项变化
@@ -459,12 +445,6 @@ watch(calculatedInstallmentAmount, newAmount => {
   }
 });
 
-// 注意：visibleDetails 已从 installmentManager 解构，直接使用
-
-// 注意：hasMorePeriods 已从 installmentManager 解构，直接使用
-
-// 注意：availablePaymentMethods 已从 usePaymentMethods 解构
-
 // 判断支付方式是否可编辑（增强版，考虑分期和只读模式）
 const isPaymentMethodEditable = computed(() => {
   // 基础判断（收入交易、单一支付方式）
@@ -493,54 +473,61 @@ function selectAllMembers() {
   }
 }
 
-// 清空成员（别名）
-function clearMembers() {
-  clearMemberSelection();
-}
-
+// 验证并提交表单
 async function handleSubmit() {
   if (isSubmitting.value) return;
 
+  const isValid = await validateForm();
+  if (!isValid) return;
+
+  await submitForm();
+}
+
+// 验证表单
+async function validateForm(): Promise<boolean> {
   const amount = form.value.amount;
-  const fromAccount = props.accounts.find(acc => acc.serialNum === form.value.accountSerialNum);
+  const fromAccount = findAccount(form.value.accountSerialNum);
 
   // 转账验证
   if (form.value.category === TransactionTypeSchema.enum.Transfer) {
-    const toAccount = props.accounts.find(acc => acc.serialNum === form.value.toAccountSerialNum);
+    const toAccount = findAccount(form.value.toAccountSerialNum);
     const result = validateTransfer(fromAccount, toAccount, amount);
 
     if (!result.valid) {
       toast.error(result.error || '转账验证失败');
-      return;
+      return false;
     }
-
-    isSubmitting.value = true;
-    try {
-      await emitTransfer(amount);
-    } finally {
-      isSubmitting.value = false;
-    }
-  } else {
+  } else if (form.value.transactionType === TransactionTypeSchema.enum.Expense) {
     // 支出验证
-    if (form.value.transactionType === TransactionTypeSchema.enum.Expense) {
-      const result = validateExpense(fromAccount, amount);
+    const result = validateExpense(fromAccount, amount);
 
-      if (!result.valid) {
-        toast.error(result.error || '支出验证失败');
-        return;
-      }
-    }
-
-    isSubmitting.value = true;
-    try {
-      await emitTransaction(amount);
-    } finally {
-      isSubmitting.value = false;
+    if (!result.valid) {
+      toast.error(result.error || '支出验证失败');
+      return false;
     }
   }
+
+  return true;
 }
 
-// 注意：parseBalance, canWithdraw, canDeposit 已移至 useTransactionValidation composable
+// 提交表单
+async function submitForm() {
+  isSubmitting.value = true;
+  try {
+    const amount = form.value.amount;
+
+    if (form.value.category === TransactionTypeSchema.enum.Transfer) {
+      await emitTransfer(amount);
+    } else {
+      await emitTransaction(amount);
+    }
+  } catch (error) {
+    Lg.e('TransactionModal', 'Failed to submit form:', error);
+    toast.error('提交失败，请重试');
+  } finally {
+    isSubmitting.value = false;
+  }
+}
 
 // 发射转账事件
 function emitTransfer(amount: number) {
@@ -617,8 +604,6 @@ function handleAmountInput(event: Event) {
   form.value.amount = handleAmountInputUtil(event);
 }
 
-// 注意：getDefaultTransaction 已移至 utils/transactionFormUtils.ts
-
 watch(
   () => form.value.category,
   newCategory => {
@@ -626,25 +611,6 @@ watch(
     const currentSubCategory = form.value.subCategory ?? '';
     if (subs.length > 0 && !subs.includes(currentSubCategory)) {
       form.value.subCategory = subs[0];
-    }
-  },
-);
-
-// 监听账户变化，自动设置支付方式
-watch(
-  () => form.value.accountSerialNum,
-  newAccountSerialNum => {
-    const selectedAccount = props.accounts.find(acc => acc.serialNum === newAccountSerialNum);
-
-    // 使用工具函数根据账户类型和交易类型自动设置支付方式
-    form.value.paymentMethod = getDefaultPaymentMethod(
-      selectedAccount,
-      form.value.transactionType,
-    );
-
-    // 防止转账时来源账户和目标账户相同
-    if (newAccountSerialNum === form.value.toAccountSerialNum) {
-      form.value.toAccountSerialNum = '';
     }
   },
 );
@@ -744,7 +710,7 @@ watch(
         :label="isTransferReadonly || form.transactionType === TransactionTypeSchema.enum.Transfer ? t('financial.transaction.fromAccount') : t('financial.account.account')"
         required
       >
-        <select v-model="form.accountSerialNum" v-has-value class="modal-input-select w-full" required :disabled="isDisabled || isReadonlyMode">
+        <select v-model="form.accountSerialNum" v-has-value class="modal-input-select w-full" required :disabled="isAccountDisabled || isReadonlyMode">
           <option value="">
             {{ t('common.placeholders.selectAccount') }}
           </option>
@@ -760,7 +726,7 @@ watch(
         :label="t('financial.transaction.toAccount')"
         required
       >
-        <select v-model="form.toAccountSerialNum" v-has-value class="modal-input-select w-full" required :disabled="isDisabled || isReadonlyMode">
+        <select v-model="form.toAccountSerialNum" v-has-value class="modal-input-select w-full" required :disabled="isAccountDisabled || isReadonlyMode">
           <option value="">
             {{ t('common.placeholders.selectAccount') }}
           </option>
@@ -977,7 +943,7 @@ watch(
                 type="button"
                 class="btn-quick"
                 title="清空成员"
-                @click="clearMembers"
+                @click="clearMemberSelection"
               >
                 <LucideX class="icon-sm" />
                 清空
