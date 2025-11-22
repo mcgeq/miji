@@ -71,14 +71,14 @@ impl FamilyLedgerAccountService {
             return Ok(existing_model);
         }
 
-        let now = chrono::Utc::now();
+        let now = common::utils::date::DateUtils::local_now();
         let serial_num = common::utils::uuid::McgUuid::uuid(38);
         
         let active_model = family_ledger_account::ActiveModel {
             serial_num: Set(serial_num),
             family_ledger_serial_num: Set(ledger_serial_num.clone()),
             account_serial_num: Set(account_serial_num),
-            created_at: Set(now.into()),
+            created_at: Set(now),
             updated_at: Set(None),
         };
 

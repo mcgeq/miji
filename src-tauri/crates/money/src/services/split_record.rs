@@ -1,4 +1,4 @@
-use common::{error::AppError, utils::uuid::McgUuid};
+use common::{error::AppError, utils::{date::DateUtils, uuid::McgUuid}};
 use entity::{split_record_details, split_records};
 use sea_orm::{
     ActiveModelTrait, ActiveValue::Set, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter,
@@ -49,7 +49,7 @@ pub async fn create_split_records(
         due_date: Set(None),
         reminder_sent: Set(false),
         last_reminder_at: Set(None),
-        created_at: Set(chrono::Utc::now().into()),
+        created_at: Set(DateUtils::local_now()),
         updated_at: Set(None),
     };
 
@@ -66,7 +66,7 @@ pub async fn create_split_records(
             weight: Set(member.weight),
             is_paid: Set(false),
             paid_at: Set(None),
-            created_at: Set(chrono::Utc::now().into()),
+            created_at: Set(DateUtils::local_now()),
             updated_at: Set(None),
         };
         detail.insert(db).await?;
