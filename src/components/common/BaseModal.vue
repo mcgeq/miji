@@ -1,5 +1,30 @@
 <script setup lang="ts">
-import { LucideCheck, LucideLoader2, LucideX } from 'lucide-vue-next';
+import { LucideCheck, LucideLoader2, LucideTrash, LucideX } from 'lucide-vue-next';
+
+defineOptions({
+  inheritAttrs: false,
+});
+
+const props = withDefaults(defineProps<Props>(), {
+  size: 'md',
+  showFooter: true,
+  closeOnOverlay: true,
+  showCloseButton: true,
+  confirmText: '确认',
+  cancelText: '取消',
+  showConfirm: true,
+  showCancel: true,
+  showDelete: false,
+  confirmLoading: false,
+  confirmDisabled: false,
+});
+
+const emit = defineEmits<{
+  close: [];
+  confirm: [];
+  cancel: [];
+  delete: [];
+}>();
 
 /**
  * 基础 Modal 组件
@@ -24,30 +49,13 @@ interface Props {
   showConfirm?: boolean;
   /** 是否显示取消按钮 */
   showCancel?: boolean;
+  /** 是否显示删除按钮 */
+  showDelete?: boolean;
   /** 确认按钮加载状态 */
   confirmLoading?: boolean;
   /** 确认按钮禁用状态 */
   confirmDisabled?: boolean;
 }
-
-const props = withDefaults(defineProps<Props>(), {
-  size: 'md',
-  showFooter: true,
-  closeOnOverlay: true,
-  showCloseButton: true,
-  confirmText: '确认',
-  cancelText: '取消',
-  showConfirm: true,
-  showCancel: true,
-  confirmLoading: false,
-  confirmDisabled: false,
-});
-
-const emit = defineEmits<{
-  close: [];
-  confirm: [];
-  cancel: [];
-}>();
 
 function handleOverlayClick() {
   if (props.closeOnOverlay) {
@@ -66,6 +74,10 @@ function handleCancel() {
 
 function handleConfirm() {
   emit('confirm');
+}
+
+function handleDelete() {
+  emit('delete');
 }
 </script>
 
@@ -101,10 +113,18 @@ function handleConfirm() {
         </div>
 
         <!-- Footer -->
-        <div v-if="showFooter" class="base-modal-footer">
+        <div v-if="props.showFooter" class="base-modal-footer">
           <slot name="footer">
             <button
-              v-if="showCancel"
+              v-if="props.showDelete"
+              type="button"
+              class="base-modal-btn base-modal-btn-delete"
+              @click="handleDelete"
+            >
+              <LucideTrash />
+            </button>
+            <button
+              v-if="props.showCancel"
               type="button"
               class="base-modal-btn base-modal-btn-cancel"
               @click="handleCancel"
@@ -112,14 +132,14 @@ function handleConfirm() {
               <LucideX />
             </button>
             <button
-              v-if="showConfirm"
+              v-if="props.showConfirm"
               type="button"
               class="base-modal-btn base-modal-btn-confirm"
-              :disabled="confirmDisabled || confirmLoading"
+              :disabled="props.confirmDisabled || props.confirmLoading"
               @click="handleConfirm"
             >
               <LucideLoader2
-                v-if="confirmLoading"
+                v-if="props.confirmLoading"
                 class="base-modal-loading-icon"
               />
               <LucideCheck v-else />
@@ -316,6 +336,17 @@ function handleConfirm() {
 .base-modal-btn-confirm:hover:not(:disabled) {
   background-color: var(--color-primary-content);
   color: var(--color-primary);
+}
+
+.base-modal-btn-delete {
+  background-color: var(--color-error);
+  color: var(--color-error-content);
+  border: none;
+}
+
+.base-modal-btn-delete:hover:not(:disabled) {
+  background-color: var(--color-error-content);
+  color: var(--color-error);
 }
 
 /* 按钮图标 */

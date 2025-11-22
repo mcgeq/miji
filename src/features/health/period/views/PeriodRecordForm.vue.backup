@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import BaseModal from '@/components/common/BaseModal.vue';
-import ConfirmDialog from '@/components/common/ConfirmDialog.vue';
 import FormRow from '@/components/common/FormRow.vue';
 import PresetButtons from '@/components/common/PresetButtons.vue';
+import ConfirmDialog from '@/components/common/ConfirmDialog.vue';
 import WarningDialog from '@/components/common/WarningDialog.vue';
 import { usePeriodStore } from '@/stores/periodStore';
 import { DateUtils } from '@/utils/date';
@@ -137,6 +137,8 @@ const predictedNext = computed(() => {
 });
 
 const notesLength = computed(() => (formData.notes || '').length);
+
+const hasFieldError = (field: string) => getFieldErrors(field).length > 0;
 
 // 持续时间预设值（用于PresetButtons组件）
 const durationPresetValues = computed(() => durationPresets.map(p => p.days));
@@ -397,210 +399,334 @@ defineExpose({
 </script>
 
 <template>
-  <BaseModal
-    :title="isEditing ? '编辑经期记录' : '添加经期记录'"
-    size="md"
-    :confirm-text="isEditing ? '更新' : '创建'"
-    :confirm-loading="loading"
-    :confirm-disabled="!canSubmit"
-    :show-delete="!!isEditing"
-    @confirm="handleSubmit"
-    @delete="showDeleteConfirm = true"
-    @cancel="handleCancel"
-  >
-    <!-- 日期设置区域 -->
-    <div class="section-card">
-      <div class="section-header">
-        <LucideCalendar class="wh-5" />
-        <h3 class="section-title">
-          日期设置
-        </h3>
-      </div>
-
-      <!-- 开始日期 -->
-      <FormRow label="开始日期" required :error="getFieldErrors('startDate')[0]">
-        <input
-          v-model="formData.startDate"
-          type="date"
-          class="modal-input-select w-full"
-          :max="maxDate"
-          required
-          @change="onStartDateChange"
-        >
-      </FormRow>
-
-      <!-- 结束日期 -->
-      <FormRow label="结束日期" required :error="getFieldErrors('endDate')[0]">
-        <input
-          v-model="formData.endDate"
-          type="date"
-          class="modal-input-select w-full"
-          :min="formData.startDate"
-          required
-          @change="validateDates"
-        >
-      </FormRow>
-
-      <!-- 快速设置持续时间 -->
-      <FormRow label="快速设置">
-        <PresetButtons
-          :model-value="periodDuration"
-          :presets="durationPresetValues"
-          suffix="天"
-          :disabled="!formData.startDate"
-          @update:model-value="setDurationPreset"
-        />
-      </FormRow>
-    </div>
-
-    <!-- 经期信息显示 -->
-    <div v-if="showPeriodInfo" class="info-card">
-      <div class="info-header">
-        <LucideInfo class="mr-2 wh-5" />
-        <span class="info-title">经期信息</span>
-      </div>
-      <div class="info-grid">
-        <div class="info-item">
-          <span class="info-label">持续时间</span>
-          <span class="info-value duration">{{ periodDuration }} 天</span>
+  <div class="period-record-form card-base">
+    <!-- 表单头部 -->
+    <div class="form-header">
+      <div class="header-content">
+        <div class="title-section">
+          <h2 class="form-title">
+            <i class="i-tabler-calendar-heart text-red-500 mr-2 wh-5" />
+            {{ isEditing ? '编辑经期记录' : '添加经期记录' }}
+          </h2>
+          <p class="form-subtitle">
+            {{ isEditing ? '修改已有的经期信息' : '记录新的经期开始和结束时间' }}
+          </p>
         </div>
-        <div class="info-item">
-          <span class="info-label">距离上次</span>
-          <span class="info-value cycle" :class="cycleColorClass">
-            {{ cycleText }}
-          </span>
-        </div>
-        <div v-if="predictedNext" class="info-item">
-          <span class="info-label">预测下次</span>
-          <span class="info-value">{{ predictedNext }}</span>
-        </div>
+        <button class="close-btn" type="button" :disabled="loading" @click="handleCancel">
+          <i class="i-tabler-x wh-5" />
+        </button>
       </div>
     </div>
 
-    <!-- 症状记录区域 -->
-    <div class="section-card section-card-success">
-      <div class="section-header">
-        <i class="i-tabler-medical-cross text-green-500 wh-4" />
-        <h3 class="section-title">
-          症状记录
-        </h3>
-        <span class="section-subtitle">选择本次经期的症状程度</span>
-      </div>
-
-      <div class="symptoms-grid">
-        <div v-for="symptomGroup in symptomGroups" :key="symptomGroup.type" class="symptom-card">
-          <div class="symptom-header">
-            <i :class="[symptomGroup.icon, symptomGroup.color]" class="wh-4" />
-            <span class="symptom-label">{{ symptomGroup.label }}</span>
+    <!-- 表单主体 -->
+    <div class="form-body">
+      <form class="period-form" @submit.prevent="handleSubmit">
+        <!-- 日期设置区域 -->
+        <div class="section-card">
+          <div class="section-header">
+            <LucideCalendar class="wh-5" />
+            <h3 class="section-title">
+              日期设置
+            </h3>
           </div>
-          <div class="intensity-selector">
+
+          <div class="date-inputs">
+            <!-- 开始日期 -->
+            <div class="input-group">
+              <label class="required input-label">
+                开始日期
+              </label>
+              <div class="input-wrapper">
+                <input
+                  v-model="formData.startDate" type="date" class="date-input"
+                  :class="{ 'input-error': hasFieldError('startDate') }" :max="maxDate" required
+                  @change="onStartDateChange"
+                >
+                <div class="input-icon">
+                  <i class="i-tabler-calendar-event text-gray-400 wh-4" />
+                </div>
+              </div>
+              <InputError :errors="getFieldErrors('startDate')" />
+            </div>
+
+            <!-- 结束日期 -->
+            <div class="input-group">
+              <label class="input-label required">
+                结束日期
+              </label>
+              <div class="input-wrapper">
+                <input
+                  v-model="formData.endDate" type="date" class="date-input"
+                  :class="{ 'input-error': hasFieldError('endDate') }" :min="formData.startDate" required
+                  @change="validateDates"
+                >
+                <div class="input-icon">
+                  <i class="i-tabler-calendar-check text-gray-400 wh-4" />
+                </div>
+              </div>
+              <InputError :errors="getFieldErrors('endDate')" />
+            </div>
+          </div>
+
+          <!-- 快速设置按钮 -->
+          <div class="quick-actions">
+            <span class="quick-label">快速设置:</span>
+            <div class="quick-buttons">
+              <button
+                v-for="preset in durationPresets"
+                :key="preset.days"
+                type="button"
+                class="preset-btn"
+                :class="{ 'preset-active': periodDuration === preset.days }"
+                :disabled="!formData.startDate"
+                @click="setDurationPreset(preset.days)"
+              >
+                {{ preset.label }}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 经期信息显示 -->
+        <div v-if="showPeriodInfo" class="info-card">
+          <div class="info-header">
+            <LucideInfo class="mr-2 wh-5" />
+            <span class="info-title">经期信息</span>
+          </div>
+          <div class="info-grid">
+            <div class="info-item">
+              <span class="info-label">持续时间</span>
+              <span class="info-value duration">{{ periodDuration }} 天</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">距离上次</span>
+              <span class="info-value cycle" :class="cycleColorClass">
+                {{ cycleText }}
+              </span>
+            </div>
+            <div v-if="predictedNext" class="info-item">
+              <span class="info-label">预测下次</span>
+              <span class="info-value">{{ predictedNext }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 症状记录区域 -->
+        <div class="section-card">
+          <div class="section-header">
+            <i class="i-tabler-medical-cross text-green-500 wh-4" />
+            <h3 class="section-title">
+              症状记录
+            </h3>
+            <span class="section-subtitle">选择本次经期的症状程度</span>
+          </div>
+
+          <div class="symptoms-grid">
+            <div v-for="symptomGroup in symptomGroups" :key="symptomGroup.type" class="symptom-card">
+              <div class="symptom-header">
+                <i :class="[symptomGroup.icon, symptomGroup.color]" class="wh-4" />
+                <span class="symptom-label">{{ symptomGroup.label }}</span>
+              </div>
+              <div class="intensity-selector">
+                <button
+                  v-for="intensity in intensityLevels" :key="intensity.value" type="button"
+                  class="intensity-btn" :class="{
+                    'intensity-active': symptoms[symptomGroup.type] === intensity.value,
+                    [`intensity-${intensity.value.toLowerCase()}`]: symptoms[symptomGroup.type] === intensity.value,
+                  }" @click="updateSymptom(symptomGroup.type, intensity.value)"
+                >
+                  <span class="intensity-dot" />
+                  <span class="intensity-text">{{ intensity.label }}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 备注区域 -->
+        <div class="section-card">
+          <div class="input-group">
+            <textarea
+              v-model="formData.notes" class="notes-textarea" placeholder="记录本次经期的特殊情况、身体感受或其他想要记录的内容..."
+              maxlength="500" rows="4"
+            />
+            <div class="textarea-footer">
+              <span class="char-count">{{ notesLength }}/500</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 表单操作按钮 -->
+        <div class="form-actions">
+          <div class="actions-left">
             <button
-              v-for="intensity in intensityLevels" :key="intensity.value" type="button"
-              class="intensity-btn" :class="{
-                'intensity-active': symptoms[symptomGroup.type] === intensity.value,
-                [`intensity-${intensity.value.toLowerCase()}`]: symptoms[symptomGroup.type] === intensity.value,
-              }" @click="updateSymptom(symptomGroup.type, intensity.value)"
+              v-if="isEditing" type="button" class="btn-danger" :disabled="loading"
+              @click="showDeleteConfirm = true"
             >
-              <span class="intensity-dot" />
-              <span class="intensity-text">{{ intensity.label }}</span>
+              <LucideTrash class="wh-5" />
+            </button>
+          </div>
+          <div class="actions-right">
+            <button type="button" class="btn-secondary" :disabled="loading" @click="handleCancel">
+              <LucideX class="wh-5" />
+            </button>
+            <button type="submit" class="btn-primary" :disabled="!canSubmit || loading">
+              <i v-if="loading" class="i-tabler-loader-2 mr-2 wh-4 animate-spin" />
+              <LucideCheck class="wh-5" />
             </button>
           </div>
         </div>
-      </div>
+      </form>
     </div>
 
-    <!-- 备注区域 -->
-    <FormRow label="" full-width>
-      <textarea
-        v-model="formData.notes"
-        class="modal-input-select w-full"
-        placeholder="记录本次经期的特殊情况、身体感受或其他想要记录的内容..."
-        maxlength="500"
-        rows="4"
-      />
-      <div class="character-count">
-        {{ notesLength }}/500
+    <!-- 删除确认弹窗 -->
+    <ConfirmDialog
+      v-model:show="showDeleteConfirm" title="删除经期记录" type="danger" :loading="loading"
+      @confirm="handleDelete"
+    >
+      <p class="confirmation-text">
+        确定要删除这条经期记录吗？
+      </p>
+      <div class="deletion-info">
+        <div class="info-row">
+          <span class="info-key">记录时间:</span>
+          <span class="info-val">{{ deletionInfo.dateRange }}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-key">持续时间:</span>
+          <span class="info-val">{{ deletionInfo.duration }}</span>
+        </div>
       </div>
-    </FormRow>
-  </BaseModal>
+      <div class="warning-note">
+        <LucideTriangle class="wh-5" />
+        <span>此操作无法撤销，请谨慎操作</span>
+      </div>
+    </ConfirmDialog>
 
-  <!-- 删除确认弹窗 -->
-  <ConfirmDialog
-    v-model:show="showDeleteConfirm" title="删除经期记录" type="danger" :loading="loading"
-    @confirm="handleDelete"
-  >
-    <p class="confirmation-text">
-      确定要删除这条经期记录吗？
-    </p>
-    <div class="deletion-info">
-      <div class="info-row">
-        <span class="info-key">记录时间:</span>
-        <span class="info-val">{{ deletionInfo.dateRange }}</span>
+    <!-- 重叠警告弹窗 -->
+    <WarningDialog
+      v-model:show="showOverlapWarning" title="日期重叠提醒" @confirm="handleOverlapConfirm"
+      @cancel="showOverlapWarning = false"
+    >
+      <p class="warning-text">
+        检测到您选择的日期与已有记录存在重叠：
+      </p>
+      <div class="overlap-details">
+        <div class="overlap-record">
+          <i class="i-tabler-calendar text-red-500 wh-4" />
+          <span>{{ overlapInfo.dateRange }}</span>
+        </div>
       </div>
-      <div class="info-row">
-        <span class="info-key">持续时间:</span>
-        <span class="info-val">{{ deletionInfo.duration }}</span>
-      </div>
-    </div>
-    <div class="warning-note">
-      <LucideTriangle class="wh-5" />
-      <span>此操作无法撤销，请谨慎操作</span>
-    </div>
-  </ConfirmDialog>
-
-  <!-- 重叠警告弹窗 -->
-  <WarningDialog
-    v-model:show="showOverlapWarning" title="日期重叠提醒" @confirm="handleOverlapConfirm"
-    @cancel="showOverlapWarning = false"
-  >
-    <p class="warning-text">
-      检测到您选择的日期与已有记录存在重叠：
-    </p>
-    <div class="overlap-details">
-      <div class="overlap-record">
-        <i class="i-tabler-calendar text-red-500 wh-4" />
-        <span>{{ overlapInfo.dateRange }}</span>
-      </div>
-    </div>
-    <p class="warning-question">
-      是否继续保存？这可能会影响数据的准确性。
-    </p>
-  </WarningDialog>
+      <p class="warning-question">
+        是否继续保存？这可能会影响数据的准确性。
+      </p>
+    </WarningDialog>
+  </div>
 </template>
 
 <style scoped lang="postcss">
-/* 自定义样式 - 大部分样式已由BaseModal和FormRow提供 */
+.period-record-form {
+  max-height: 80vh; /* 根据需要调整高度 */
+  overflow-y: scroll;
+  -ms-overflow-style: none; /* IE 10+ */
+  scrollbar-width: none; /* Firefox */
+}
+
+.period-record-form::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Edge */
+}
+
+/* 表单头部 */
+.form-header {
+  background: linear-gradient(to right, #fef2f2, #fce7f3);
+  border-bottom: 1px solid #e5e7eb;
+  padding: 1rem 1.5rem;
+}
+
+.dark .form-header {
+  background: linear-gradient(to right, rgba(127, 29, 29, 0.2), rgba(157, 23, 77, 0.2));
+  border-color: #374151;
+}
+
+.header-content {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.title-section {
+  flex: 1;
+}
+
+.form-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #111827;
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.25rem;
+}
+
+.dark .form-title {
+  color: white;
+}
+
+.form-subtitle {
+  font-size: 0.875rem;
+  color: #4b5563;
+}
+
+.dark .form-subtitle {
+  color: #9ca3af;
+}
+
+.close-btn {
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  color: #6b7280;
+  transition: all 0.2s ease-in-out;
+}
+
+.close-btn:hover {
+  background-color: #f3f4f6;
+  color: #374151;
+}
+
+.close-btn:disabled {
+  opacity: 0.5;
+}
+
+.dark .close-btn {
+  color: #9ca3af;
+}
+
+.dark .close-btn:hover {
+  background-color: #374151;
+  color: #d1d5db;
+}
+
+/* 表单主体 */
+.form-body {
+  padding: 1.5rem;
+}
+
+.period-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
 
 /* 区域卡片 */
 .section-card {
-  background-color: var(--color-base-100);
+  background-color: #f9fafb;
   border-radius: 0.5rem;
   padding: 1rem;
-  border: 1px solid var(--color-base-300);
-  border-left-width: 4px;
-  border-left-color: var(--color-primary);
+  border: 1px solid #e5e7eb;
 }
 
 .dark .section-card {
-  background-color: var(--color-base-200);
-  border-color: var(--color-base-300);
-  border-left-color: var(--color-primary);
-}
-
-.section-card-success {
-  border-left-color: var(--color-success);
-}
-
-.dark .section-card-success {
-  border-left-color: var(--color-success);
-}
-
-.section-card-success .section-title {
-  color: var(--color-success);
-}
-
-.dark .section-card-success .section-title {
-  color: var(--color-success);
+  background-color: rgba(17, 24, 39, 0.5);
+  border-color: #374151;
 }
 
 .section-header {
@@ -611,39 +737,175 @@ defineExpose({
 }
 
 .section-title {
-  font-size: 1rem;
+  font-size: 1.125rem;
   font-weight: 600;
-  color: var(--color-primary);
+  color: #111827;
 }
 
 .dark .section-title {
-  color: var(--color-primary);
+  color: white;
 }
 
 .section-subtitle {
   font-size: 0.875rem;
-  color: var(--color-neutral);
+  color: #6b7280;
   margin-left: auto;
 }
 
 .dark .section-subtitle {
-  color: var(--color-neutral);
+  color: #9ca3af;
+}
+
+/* 日期输入 */
+.date-inputs {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+@media (min-width: 640px) {
+  .date-inputs {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.input-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+}
+
+.dark .input-label {
+  color: #d1d5db;
+}
+
+.input-label.required::after {
+  content: '*';
+  color: #ef4444;
+  margin-left: 0.25rem;
+}
+
+.input-wrapper {
+  position: relative;
+}
+
+.date-input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  background-color: white;
+  color: #111827;
+  font-size: 0.875rem;
+  transition: all 0.2s ease-in-out;
+}
+
+.date-input:focus {
+  outline: none;
+  ring: 2px;
+  ring-color: #3b82f6;
+  border-color: #3b82f6;
+}
+
+.dark .date-input {
+  border-color: #4b5563;
+  background-color: #1f2937;
+  color: white;
+}
+
+.date-input.input-error {
+  border-color: #ef4444;
+}
+
+.date-input.input-error:focus {
+  ring-color: #ef4444;
+  border-color: #ef4444;
+}
+
+.input-icon {
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+/* 快速操作 */
+.quick-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.quick-label {
+  font-size: 0.875rem;
+  color: #4b5563;
+  font-weight: 500;
+}
+
+.dark .quick-label {
+  color: #9ca3af;
+}
+
+.quick-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.preset-btn {
+  padding: 0.375rem 0.75rem;
+  font-size: 0.875rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  transition: all 0.2s ease-in-out;
+}
+
+.preset-btn:hover {
+  border-color: #3b82f6;
+  color: #2563eb;
+}
+
+.preset-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.dark .preset-btn {
+  border-color: #4b5563;
+}
+
+.preset-btn.preset-active {
+  border-color: #3b82f6;
+  background-color: #eff6ff;
+  color: #2563eb;
+}
+
+.dark .preset-btn.preset-active {
+  background-color: rgba(59, 130, 246, 0.3);
+  color: #60a5fa;
 }
 
 /* 信息卡片 */
 .info-card {
-  background-color: var(--color-base-100);
-  border: 1px solid var(--color-info);
+  background-color: #eff6ff;
+  border: 1px solid #bfdbfe;
   border-radius: 0.5rem;
   padding: 1rem;
-  border-left-width: 4px;
-  margin-top: 1.5rem;
-  margin-bottom: 1.5rem;
 }
 
 .dark .info-card {
-  background-color: var(--color-base-200);
-  border-color: var(--color-info);
+  background-color: rgba(30, 58, 138, 0.2);
+  border-color: #1e40af;
 }
 
 .info-header {
@@ -654,13 +916,13 @@ defineExpose({
 }
 
 .info-title {
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--color-info);
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #1e3a8a;
 }
 
 .dark .info-title {
-  color: var(--color-info);
+  color: #93c5fd;
 }
 
 .info-grid {
@@ -677,13 +939,11 @@ defineExpose({
 
 .info-label {
   font-size: 0.875rem;
-  color: var(--color-base-content);
-  opacity: 0.8;
+  color: #1d4ed8;
 }
 
 .dark .info-label {
-  color: var(--color-base-content);
-  opacity: 0.7;
+  color: #60a5fa;
 }
 
 .info-value {
@@ -692,11 +952,11 @@ defineExpose({
 }
 
 .info-value.duration {
-  color: var(--color-error);
+  color: #dc2626;
 }
 
 .dark .info-value.duration {
-  color: var(--color-error);
+  color: #f87171;
 }
 
 .info-value.cycle {
@@ -711,15 +971,15 @@ defineExpose({
 }
 
 .symptom-card {
-  background-color: var(--color-base-100);
+  background-color: white;
   border-radius: 0.5rem;
   padding: 1rem;
-  border: 1px solid var(--color-base-300);
+  border: 1px solid #e5e7eb;
 }
 
 .dark .symptom-card {
-  background-color: var(--color-base-200);
-  border-color: var(--color-base-300);
+  background-color: #1f2937;
+  border-color: #374151;
 }
 
 .symptom-header {
@@ -732,11 +992,11 @@ defineExpose({
 .symptom-label {
   font-size: 0.875rem;
   font-weight: 500;
-  color: var(--color-base-content);
+  color: #111827;
 }
 
 .dark .symptom-label {
-  color: var(--color-base-content);
+  color: white;
 }
 
 .intensity-selector {
@@ -751,22 +1011,22 @@ defineExpose({
   justify-content: center;
   gap: 0.5rem;
   padding: 0.5rem 0.75rem;
-  border: 1px solid var(--color-base-300);
+  border: 1px solid #d1d5db;
   border-radius: 0.5rem;
   font-size: 0.875rem;
   transition: all 0.2s ease-in-out;
 }
 
 .intensity-btn:hover {
-  border-color: var(--color-neutral);
+  border-color: #9ca3af;
 }
 
 .dark .intensity-btn {
-  border-color: var(--color-base-300);
+  border-color: #4b5563;
 }
 
 .dark .intensity-btn:hover {
-  border-color: var(--color-neutral);
+  border-color: #6b7280;
 }
 
 .intensity-btn.intensity-active {
@@ -818,74 +1078,201 @@ defineExpose({
   font-weight: 500;
 }
 
-/* 字符计数 */
-.character-count {
-  font-size: 0.75rem;
-  color: var(--color-neutral);
-  text-align: right;
+/* 备注区域 */
+.notes-textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  background-color: white;
+  color: #111827;
+  font-size: 0.875rem;
+  resize: none;
+  transition: all 0.2s ease-in-out;
+}
+
+.notes-textarea:focus {
+  outline: none;
+  ring: 2px;
+  ring-color: #3b82f6;
+  border-color: #3b82f6;
+}
+
+.dark .notes-textarea {
+  border-color: #4b5563;
+  background-color: #1f2937;
+  color: white;
+}
+
+.textarea-footer {
+  display: flex;
+  justify-content: flex-end;
   margin-top: 0.25rem;
 }
 
-.dark .character-count {
-  color: var(--color-base-content);
+.char-count {
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+.dark .char-count {
+  color: #9ca3af;
+}
+
+/* 表单操作 */
+.form-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.dark .form-actions {
+  border-color: #374151;
+}
+
+.actions-left,
+.actions-right {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.btn-primary {
+  padding: 0.625rem 1.5rem;
+  background-color: #2563eb;
+  color: white;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  transition: all 0.2s ease-in-out;
+  display: flex;
+  align-items: center;
+}
+
+.btn-primary:hover {
+  background-color: #1d4ed8;
+}
+
+.btn-primary:focus {
+  outline: none;
+  ring: 2px;
+  ring-color: #3b82f6;
+  ring-offset: 2px;
+}
+
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  padding: 0.625rem 1.5rem;
+  background-color: #e5e7eb;
+  color: #374151;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  transition: all 0.2s ease-in-out;
+}
+
+.btn-secondary:hover {
+  background-color: #d1d5db;
+}
+
+.btn-secondary:focus {
+  outline: none;
+  ring: 2px;
+  ring-color: #6b7280;
+  ring-offset: 2px;
+}
+
+.btn-secondary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.dark .btn-secondary {
+  background-color: #374151;
+  color: #d1d5db;
+}
+
+.dark .btn-secondary:hover {
+  background-color: #4b5563;
+}
+
+.btn-danger {
+  padding: 0.5rem 1rem;
+  background-color: #dc2626;
+  color: white;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  transition: all 0.2s ease-in-out;
+  display: flex;
+  align-items: center;
+}
+
+.btn-danger:hover {
+  background-color: #b91c1c;
+}
+
+.btn-danger:focus {
+  outline: none;
+  ring: 2px;
+  ring-color: #ef4444;
+  ring-offset: 2px;
+}
+
+.btn-danger:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 /* 弹窗样式 */
 .confirmation-text {
-  color: var(--color-base-content);
+  color: #374151;
   margin-bottom: 1rem;
 }
 
 .dark .confirmation-text {
-  color: var(--color-base-content);
+  color: #d1d5db;
 }
 
 .deletion-info {
-  background-color: var(--color-base-100);
+  background-color: #f9fafb;
   border-radius: 0.5rem;
   padding: 0.75rem;
   margin-bottom: 1rem;
-  border: 1px solid var(--color-base-300);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 
 .dark .deletion-info {
-  background-color: var(--color-base-200);
+  background-color: #111827;
 }
 
 .info-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0.5rem 0;
-  border-bottom: 1px solid var(--color-base-200);
-}
-
-.info-row:last-child {
-  border-bottom: none;
-}
-
-.dark .info-row {
-  border-color: var(--color-base-300);
 }
 
 .info-key {
   font-size: 0.875rem;
-  color: var(--color-neutral);
-  font-weight: 500;
+  color: #4b5563;
 }
 
 .dark .info-key {
-  color: var(--color-neutral);
+  color: #9ca3af;
 }
 
 .info-val {
   font-size: 0.875rem;
-  color: var(--color-base-content);
-  font-weight: 600;
+  font-weight: 500;
+  color: #111827;
 }
 
 .dark .info-val {
-  color: var(--color-base-content);
+  color: white;
 }
 
 .warning-note {
@@ -962,6 +1349,21 @@ defineExpose({
 
   .info-grid {
     grid-template-columns: 1fr;
+  }
+
+  .quick-actions {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .quick-buttons {
+    width: 100%;
+  }
+
+  .preset-btn {
+    flex: 1;
+    min-width: 0;
   }
 
   .symptoms-grid {
