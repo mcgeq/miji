@@ -366,7 +366,7 @@ export const usePeriodStore = defineStore('period', {
     async periodDailyRecordDelete(serialNum: string) {
       return this.withLoadingAndError(async () => {
         await HealthsDb.deletePeriodDailyRecord(serialNum);
-        await this.updatePeriodDailyRecords();
+        // 删除成功后不立即刷新，由调用方统一刷新，避免重复请求
         Lg.i('Period', 'Daily record deleted:', serialNum);
       }, 'Failed to delete daily record');
     },

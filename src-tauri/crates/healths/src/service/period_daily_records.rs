@@ -320,11 +320,42 @@ impl PeriodDailyRecordService {
                     existing_record.serial_num
                 } else {
                     let service = PeriodSettingsService::default();
-                    let period_length = service
+                    // 尝试获取设置，失败时自动创建默认设置
+                    let period_length = match service
                         .period_settings_get(db, "".to_string())
                         .await
-                        .map(|s| s.average_period_length)
-                        .unwrap_or(7);
+                    {
+                        Ok(settings) => settings.average_period_length,
+                        Err(_) => {
+                            // 首次使用，创建默认设置
+                            use crate::dto::period_settings::{
+                                Notifications, PeriodSettingsBase, PeriodSettingsCreate, Privacy,
+                            };
+                            let default_settings = PeriodSettingsCreate {
+                                core: PeriodSettingsBase {
+                                    average_cycle_length: 28,
+                                    average_period_length: 7,
+                                    notifications: Notifications {
+                                        period_reminder: true,
+                                        ovulation_reminder: false,
+                                        pms_reminder: false,
+                                        reminder_days: 1,
+                                    },
+                                    privacy: Privacy {
+                                        data_sync: false,
+                                        analytics: true,
+                                    },
+                                },
+                            };
+                            match service.period_settings_create(db, default_settings).await {
+                                Ok(created) => {
+                                    info!("自动创建默认经期设置");
+                                    created.average_period_length
+                                },
+                                Err(_) => 7, // 创建失败时使用硬编码默认值
+                            }
+                        },
+                    };
                     info!("period_length {:?}", period_length);
                     let period_record_create = PeriodRecordsCreate {
                         core: PeriodRecordsBase {
@@ -396,7 +427,20 @@ impl PeriodDailyRecordService {
     }
 
     pub async fn period_daily_record_delete(&self, db: &DbConn, id: String) -> MijiResult<()> {
-        let model = self.get_by_id(db, id.clone()).await?;
+        // 先检查记录是否存在，避免在日志中记录不必要的错误
+        let exists = entity::period_daily_records::Entity::find_by_id(id.clone())
+            .one(db)
+            .await?;
+        
+        if exists.is_none() {
+            // 记录不存在，认为删除成功（幂等操作）
+            info!("记录已不存在，删除操作视为成功");
+            return Ok(());
+        }
+        
+        let model = exists.unwrap();
+        
+        // 检查是否是该经期记录的最后一条每日记录
         let daily_count = entity::period_daily_records::Entity::find()
             .filter(
                 entity::period_daily_records::Column::PeriodSerialNum
@@ -404,12 +448,20 @@ impl PeriodDailyRecordService {
             )
             .count(db)
             .await?;
+        
+        // 如果是最后一条，同时删除经期记录
         if daily_count == 1 {
             entity::period_records::Entity::delete_by_id(model.period_serial_num.clone())
                 .exec(db)
                 .await?;
         }
-        self.delete(db, id).await
+        
+        // 直接删除每日记录，不通过 self.delete 避免重复查询
+        entity::period_daily_records::Entity::delete_by_id(id)
+            .exec(db)
+            .await?;
+        
+        Ok(())
     }
 
     pub async fn period_daily_record_list_paged(

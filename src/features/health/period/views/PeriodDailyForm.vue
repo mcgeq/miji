@@ -59,7 +59,7 @@ const emit = defineEmits<{
 const { t } = useI18n();
 
 // Store & Composables
-const { validateDailyRecord, getFieldErrors, hasErrors, clearValidationErrors }
+const { validateDailyRecord, getFieldErrors, hasErrors, clearValidationErrors, clearFieldError }
   = usePeriodValidation();
 
 // Reactive state
@@ -279,6 +279,7 @@ defineExpose({
         class="modal-input-select w-full"
         :max="today"
         :disabled="isEditing"
+        @change="clearFieldError('date')"
       >
     </FormRow>
 
@@ -322,6 +323,7 @@ defineExpose({
         class="modal-input-select w-full"
         :placeholder="t('period.placeholders.dietRecord')"
         rows="3"
+        @input="clearFieldError('diet')"
       />
     </FormRow>
 
@@ -336,6 +338,7 @@ defineExpose({
           min="0"
           max="5000"
           step="100"
+          @input="clearFieldError('waterIntake')"
         >
         <PresetButtons
           v-model="formData.waterIntake"
@@ -356,6 +359,7 @@ defineExpose({
           min="0"
           max="24"
           step="1"
+          @input="clearFieldError('sleepHours')"
         >
         <PresetButtons
           v-model="formData.sleepHours"
@@ -398,6 +402,7 @@ defineExpose({
         :placeholder="t('period.placeholders.notesPlaceholder')"
         maxlength="500"
         rows="3"
+        @input="clearFieldError('notes')"
       />
       <div class="character-count">
         {{ (formData.notes || '').length }}/500

@@ -98,6 +98,12 @@ export function usePeriodValidation() {
     validationErrors.value = {};
   };
 
+  const clearFieldError = (field: string) => {
+    if (validationErrors.value[field]) {
+      delete validationErrors.value[field];
+    }
+  };
+
   const getFieldErrors = (field: string): string[] => {
     return validationErrors.value[field] || [];
   };
@@ -111,6 +117,7 @@ export function usePeriodValidation() {
     validateDailyRecord,
     validatePeriodRecord,
     clearValidationErrors,
+    clearFieldError,
     getFieldErrors,
     hasErrors,
   };
