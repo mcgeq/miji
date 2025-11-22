@@ -1,41 +1,5 @@
 pub use sea_orm_migration::prelude::*;
 
-// 新的重构迁移文件
-mod new {
-    pub mod m20251122_001_create_users;
-    pub mod m20251122_002_create_currency;
-    pub mod m20251122_003_create_account;
-    pub mod m20251122_004_create_categories;
-    pub mod m20251122_005_create_sub_categories;
-    pub mod m20251122_006_create_transactions;
-    pub mod m20251122_007_create_budget;
-    pub mod m20251122_008_create_budget_allocations;
-    pub mod m20251122_009_create_installment_plans;
-    pub mod m20251122_010_create_installment_details;
-    pub mod m20251122_011_create_family_ledger;
-    pub mod m20251122_012_create_family_member;
-    pub mod m20251122_013_create_family_ledger_account;
-    pub mod m20251122_014_create_family_ledger_transaction;
-    pub mod m20251122_015_create_family_ledger_member;
-    pub mod m20251122_016_create_split_rules;
-    pub mod m20251122_017_create_split_records;
-    pub mod m20251122_018_create_split_record_details;
-    pub mod m20251122_019_create_debt_relations;
-    pub mod m20251122_020_create_settlement_records;
-    pub mod m20251122_021_create_bil_reminder;
-    pub mod m20251122_022_create_project;
-    pub mod m20251122_023_create_tag;
-    pub mod m20251122_024_create_todo;
-    pub mod m20251122_025_027_create_todo_relations;
-    pub mod m20251122_028_create_attachment;
-    pub mod m20251122_029_create_reminder;
-    pub mod m20251122_030_032_create_notifications;
-    pub mod m20251122_033_038_create_health_period;
-    pub mod m20251122_039_create_operation_log;
-}
-
-// 旧的迁移模块已被注释，改用新迁移
-/*
 mod m20250101_000000_insert_default_user;
 mod m20250101_120000_add_is_virtual_to_account;
 mod m20250102_000000_add_installment_fields_to_transactions;
@@ -97,7 +61,6 @@ mod m20251121_000001_add_currency_flags;
 mod m20251916_221213_create_sub_categories;
 mod m20251917_223412_create_sub_category_insert;
 mod m20251918_120000_add_sub_category_property_rental;
-*/
 
 pub mod schema;
 
@@ -107,42 +70,8 @@ pub struct Migrator;
 impl MigratorTrait for Migrator {
     fn migrations() -> Vec<Box<dyn MigrationTrait>> {
         vec![
-            // 使用新的重构迁移文件
-            Box::new(new::m20251122_001_create_users::Migration),
-            Box::new(new::m20251122_002_create_currency::Migration),
-            Box::new(new::m20251122_003_create_account::Migration),
-            Box::new(new::m20251122_004_create_categories::Migration),
-            Box::new(new::m20251122_005_create_sub_categories::Migration),
-            Box::new(new::m20251122_006_create_transactions::Migration),
-            Box::new(new::m20251122_007_create_budget::Migration),
-            Box::new(new::m20251122_008_create_budget_allocations::Migration),
-            Box::new(new::m20251122_009_create_installment_plans::Migration),
-            Box::new(new::m20251122_010_create_installment_details::Migration),
-            Box::new(new::m20251122_011_create_family_ledger::Migration),
-            Box::new(new::m20251122_012_create_family_member::Migration),
-            Box::new(new::m20251122_013_create_family_ledger_account::Migration),
-            Box::new(new::m20251122_014_create_family_ledger_transaction::Migration),
-            Box::new(new::m20251122_015_create_family_ledger_member::Migration),
-            Box::new(new::m20251122_016_create_split_rules::Migration),
-            Box::new(new::m20251122_017_create_split_records::Migration),
-            Box::new(new::m20251122_018_create_split_record_details::Migration),
-            Box::new(new::m20251122_019_create_debt_relations::Migration),
-            Box::new(new::m20251122_020_create_settlement_records::Migration),
-            Box::new(new::m20251122_021_create_bil_reminder::Migration),
-            Box::new(new::m20251122_022_create_project::Migration),
-            Box::new(new::m20251122_023_create_tag::Migration),
-            Box::new(new::m20251122_024_create_todo::Migration),
-            Box::new(new::m20251122_025_027_create_todo_relations::Migration),
-            Box::new(new::m20251122_028_create_attachment::Migration),
-            Box::new(new::m20251122_029_create_reminder::Migration),
-            Box::new(new::m20251122_030_032_create_notifications::Migration),
-            Box::new(new::m20251122_033_038_create_health_period::Migration),
-            Box::new(new::m20251122_039_create_operation_log::Migration),
-            // 旧的迁移（已注释，改用上面的新迁移）
-            // Box::new(m20250803_114611_create_user::Migration),
-            // Box::new(m20250803_122150_create_tags::Migration),
-            // 以下所有旧迁移已被上面的新迁移替代
-            /*
+            Box::new(m20250803_114611_create_user::Migration),
+            Box::new(m20250803_122150_create_tags::Migration),
             Box::new(m20250803_122206_create_projects::Migration),
             Box::new(m20250803_124210_create_todo::Migration),
             Box::new(m20250803_124220_create_todo_project::Migration),
@@ -183,11 +112,12 @@ impl MigratorTrait for Migrator {
             Box::new(m20250101_000000_insert_default_user::Migration),
             Box::new(m20250102_000000_add_installment_fields_to_transactions::Migration),
             Box::new(m20250116_000000_create_installment_tables::Migration),
-            Box::new(m20250117_160622_create_transaction_alert::Migration),
+            Box::new(m20251017_160622_create_transaction_alert::Migration),
             Box::new(m20250115_000001_enhance_todo_reminder_fields::Migration),
             Box::new(m20250115_000002_enhance_bil_reminder_fields::Migration),
             Box::new(m20250115_000003_enhance_reminder_fields::Migration),
             Box::new(m20250115_000004_create_notification_tables::Migration),
+            // 新增的家庭账本功能迁移
             Box::new(m20251112_000001_enhance_family_ledger_fields::Migration),
             Box::new(m20251112_000002_enhance_family_member_fields::Migration),
             Box::new(m20251112_000003_create_split_rules_table::Migration),
@@ -197,12 +127,15 @@ impl MigratorTrait for Migrator {
             Box::new(m20251115_000000_add_settlement_day_to_family_ledger::Migration),
             Box::new(m20251115_000007_change_family_ledger_counts_to_integer::Migration),
             Box::new(m20251116_000001_add_family_ledger_financial_stats::Migration),
+            // 废弃 split_members JSON 字段，使用 split_records 表
             Box::new(m20251116_drop_split_members::Migration),
+            // 为 family_member.name 添加唯一约束
             Box::new(m20251116_add_unique_constraint_family_member_name::Migration),
             Box::new(m20251116_create_split_record_details::Migration),
+            // Phase 6: 扩展Budget表支持家庭预算
             Box::new(m20251116_000007_enhance_budget_for_family::Migration),
+            // 为 Currency 表添加 is_default 和 is_active 字段
             Box::new(m20251121_000001_add_currency_flags::Migration),
-            */
         ]
     }
 }

@@ -1,0 +1,71 @@
+use sea_orm_migration::prelude::*;
+use crate::schema::{Todo, Users};
+
+#[derive(DeriveMigrationName)]
+pub struct Migration;
+
+#[async_trait::async_trait]
+impl MigrationTrait for Migration {
+    async fn up(&self, manager: &SchemaManager) -> Result<(), DbErr> {
+        // 创建 todo 表 - 整合了5个源文件的所有字段
+        manager.create_table(Table::create().table(Todo::Table).if_not_exists()
+            // 基础字段
+            .col(ColumnDef::new(Todo::SerialNum).string_len(38).not_null().primary_key())
+            .col(ColumnDef::new(Todo::Title).string().not_null())
+            .col(ColumnDef::new(Todo::Description).string_len(400).null())
+            .col(ColumnDef::new(Todo::Status).string().not_null().default("NotStarted"))
+            .col(ColumnDef::new(Todo::Priority).string().not_null().default("Low"))
+            .col(ColumnDef::new(Todo::DueAt).timestamp_with_time_zone().not_null())
+            .col(ColumnDef::new(Todo::CompletedAt).timestamp_with_time_zone().null())
+            // 重复和周期字段
+            .col(ColumnDef::new(Todo::Repeat).json().null())
+            .col(ColumnDef::new(Todo::RepeatPeriodType).string().null())
+            // 关联字段
+            .col(ColumnDef::new(Todo::AssigneeId).string_len(38).null())
+            .col(ColumnDef::new(Todo::OwnerId).string_len(38).null())
+            .col(ColumnDef::new(Todo::ParentId).string_len(38).null())
+            // 任务属性
+            .col(ColumnDef::new(Todo::Progress).integer().not_null().default(0)
+                .check(Expr::cust("progress BETWEEN 0 AND 100")))
+            .col(ColumnDef::new(Todo::Location).string().null())
+            .col(ColumnDef::new(Todo::EstimateMinutes).integer().null())
+            .col(ColumnDef::new(Todo::SubtaskOrder).integer().null())
+            .col(ColumnDef::new(Todo::IsArchived).boolean().not_null().default(false))
+            .col(ColumnDef::new(Todo::IsPinned).boolean().not_null().default(false))
+            .col(ColumnDef::new(Todo::ReminderCount).integer().not_null().default(0))
+            // 提醒相关字段 (来自 enhance_todo_reminder_fields)
+            .col(ColumnDef::new(Todo::ReminderEnabled).boolean().not_null().default(true))
+            .col(ColumnDef::new(Todo::ReminderAdvanceValue).integer().null())
+            .col(ColumnDef::new(Todo::ReminderAdvanceUnit).string_len(20).null())
+            .col(ColumnDef::new(Todo::LastReminderSentAt).timestamp_with_time_zone().null())
+            .col(ColumnDef::new(Todo::ReminderFrequency).string_len(20).null().default("once"))
+            .col(ColumnDef::new(Todo::SnoozeUntil).timestamp_with_time_zone().null())
+            .col(ColumnDef::new(Todo::ReminderMethods).json_binary().null())
+            .col(ColumnDef::new(Todo::Timezone).string_len(50).null().default("UTC"))
+            .col(ColumnDef::new(Todo::SmartReminderEnabled).boolean().not_null().default(false))
+            .col(ColumnDef::new(Todo::LocationBasedReminder).boolean().not_null().default(false))
+            .col(ColumnDef::new(Todo::WeatherDependent).boolean().not_null().default(false))
+            .col(ColumnDef::new(Todo::PriorityBoostEnabled).boolean().not_null().default(false))
+            .col(ColumnDef::new(Todo::BatchReminderId).string_len(38).null())
+            // 时间戳
+            .col(ColumnDef::new(Todo::CreatedAt).timestamp_with_time_zone().not_null())
+            .col(ColumnDef::new(Todo::UpdatedAt).timestamp_with_time_zone().null())
+            // 外键约束
+            .foreign_key(ForeignKey::create().name("fk_todo_owner")
+                .from(Todo::Table, Todo::OwnerId).to(Users::Table, Users::SerialNum)
+                .on_delete(ForeignKeyAction::SetNull).on_update(ForeignKeyAction::Cascade))
+            .to_owned()).await?;
+        
+        // 创建索引
+        manager.create_index(Index::create().name("idx_todo_status").table(Todo::Table).col(Todo::Status).to_owned()).await?;
+        manager.create_index(Index::create().name("idx_todo_due_date").table(Todo::Table).col(Todo::DueAt).to_owned()).await?;
+        manager.create_index(Index::create().name("idx_todo_reminder_scan").table(Todo::Table)
+            .col(Todo::ReminderEnabled).col(Todo::DueAt).to_owned()).await?;
+        manager.create_index(Index::create().name("idx_todo_snooze").table(Todo::Table).col(Todo::SnoozeUntil).to_owned()).await?;
+        manager.create_index(Index::create().name("idx_todo_batch_reminder").table(Todo::Table).col(Todo::BatchReminderId).to_owned()).await?;
+        Ok(())
+    }
+    async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
+        manager.drop_table(Table::drop().table(Todo::Table).to_owned()).await
+    }
+}

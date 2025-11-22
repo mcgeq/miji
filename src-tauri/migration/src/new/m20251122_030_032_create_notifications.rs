@@ -1,0 +1,63 @@
+use sea_orm_migration::prelude::*;
+use crate::schema::{BatchReminders, NotificationLogs, NotificationSettings};
+
+#[derive(DeriveMigrationName)]
+pub struct Migration;
+
+#[async_trait::async_trait]
+impl MigrationTrait for Migration {
+    async fn up(&self, manager: &SchemaManager) -> Result<(), DbErr> {
+        // NotificationLogs
+        manager.create_table(Table::create().table(NotificationLogs::Table).if_not_exists()
+            .col(ColumnDef::new(NotificationLogs::SerialNum).string_len(38).not_null().primary_key())
+            .col(ColumnDef::new(NotificationLogs::ReminderSerialNum).string_len(38).not_null())
+            .col(ColumnDef::new(NotificationLogs::NotificationType).string().not_null())
+            .col(ColumnDef::new(NotificationLogs::Status).string().not_null())
+            .col(ColumnDef::new(NotificationLogs::SentAt).timestamp_with_time_zone().null())
+            .col(ColumnDef::new(NotificationLogs::ErrorMessage).text().null())
+            .col(ColumnDef::new(NotificationLogs::RetryCount).integer().not_null().default(0))
+            .col(ColumnDef::new(NotificationLogs::LastRetryAt).timestamp_with_time_zone().null())
+            .col(ColumnDef::new(NotificationLogs::CreatedAt).timestamp_with_time_zone().not_null())
+            .col(ColumnDef::new(NotificationLogs::UpdatedAt).timestamp_with_time_zone().null())
+            .to_owned()).await?;
+        
+        // NotificationSettings
+        manager.create_table(Table::create().table(NotificationSettings::Table).if_not_exists()
+            .col(ColumnDef::new(NotificationSettings::SerialNum).string_len(38).not_null().primary_key())
+            .col(ColumnDef::new(NotificationSettings::UserId).string_len(38).not_null())
+            .col(ColumnDef::new(NotificationSettings::NotificationType).string().not_null())
+            .col(ColumnDef::new(NotificationSettings::Enabled).boolean().not_null().default(true))
+            .col(ColumnDef::new(NotificationSettings::QuietHoursStart).string().null())
+            .col(ColumnDef::new(NotificationSettings::QuietHoursEnd).string().null())
+            .col(ColumnDef::new(NotificationSettings::QuietDays).string().null())
+            .col(ColumnDef::new(NotificationSettings::SoundEnabled).boolean().not_null().default(true))
+            .col(ColumnDef::new(NotificationSettings::VibrationEnabled).boolean().not_null().default(true))
+            .col(ColumnDef::new(NotificationSettings::CreatedAt).timestamp_with_time_zone().not_null())
+            .col(ColumnDef::new(NotificationSettings::UpdatedAt).timestamp_with_time_zone().null())
+            .to_owned()).await?;
+        
+        // BatchReminders
+        manager.create_table(Table::create().table(BatchReminders::Table).if_not_exists()
+            .col(ColumnDef::new(BatchReminders::SerialNum).string_len(38).not_null().primary_key())
+            .col(ColumnDef::new(BatchReminders::Name).string().not_null())
+            .col(ColumnDef::new(BatchReminders::Description).text().null())
+            .col(ColumnDef::new(BatchReminders::ScheduledAt).timestamp_with_time_zone().not_null())
+            .col(ColumnDef::new(BatchReminders::Status).string().not_null())
+            .col(ColumnDef::new(BatchReminders::TotalCount).integer().not_null().default(0))
+            .col(ColumnDef::new(BatchReminders::SentCount).integer().not_null().default(0))
+            .col(ColumnDef::new(BatchReminders::FailedCount).integer().not_null().default(0))
+            .col(ColumnDef::new(BatchReminders::CreatedAt).timestamp_with_time_zone().not_null())
+            .col(ColumnDef::new(BatchReminders::UpdatedAt).timestamp_with_time_zone().null())
+            .to_owned()).await?;
+        
+        manager.create_index(Index::create().name("idx_notification_logs_type").table(NotificationLogs::Table).col(NotificationLogs::NotificationType).to_owned()).await?;
+        manager.create_index(Index::create().name("idx_notification_settings_type").table(NotificationSettings::Table).col(NotificationSettings::NotificationType).to_owned()).await?;
+        Ok(())
+    }
+    async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
+        manager.drop_table(Table::drop().table(BatchReminders::Table).to_owned()).await?;
+        manager.drop_table(Table::drop().table(NotificationSettings::Table).to_owned()).await?;
+        manager.drop_table(Table::drop().table(NotificationLogs::Table).to_owned()).await?;
+        Ok(())
+    }
+}
