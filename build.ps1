@@ -2,10 +2,10 @@
 # Supports Windows Desktop, Android, and iOS builds
 
 param(
-    [Parameter(Mandatory=$false)]
+    [Parameter(Mandatory=$false, Position=0)]
     [ValidateSet("windows", "android", "ios", "all")]
     [Alias("t")]
-    [string]$Target = "windows",
+    [string]$Target,
     
     [Parameter(Mandatory=$false)]
     [Alias("c")]
@@ -255,8 +255,8 @@ function Build-iOS {
 function Main {
     $startTime = Get-Date
     
-    # Show menu if no parameters
-    if (-not $PSBoundParameters.ContainsKey('Target')) {
+    # Show menu if no target specified
+    if ([string]::IsNullOrWhiteSpace($Target)) {
         Show-Menu
         $choice = Read-Host "Select build target (default: 1)"
         

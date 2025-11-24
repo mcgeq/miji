@@ -6,12 +6,14 @@ setlocal enabledelayedexpansion
 :: 支持 Windows 桌面端和 Android/iOS 移动端构建
 
 :: 解析命令行参数
-set "TARGET=windows"
+set "TARGET="
 set "CLEAN_BUILD=0"
 set "DEV_MODE=0"
+set "HAS_ARGS=0"
 
 :parse_args
 if "%~1"=="" goto end_parse
+set "HAS_ARGS=1"
 if /i "%~1"=="-t" (
     set "TARGET=%~2"
     shift
@@ -63,8 +65,9 @@ if /i not "%TARGET%"=="windows" (
     )
 )
 
-:: 如果没有指定参数，显示菜单
-if "%~1"=="" goto show_menu
+:: 如果没有指定目标，显示菜单
+if "%HAS_ARGS%"=="0" goto show_menu
+if "%TARGET%"=="" goto show_menu
 
 :start_build
 cls
