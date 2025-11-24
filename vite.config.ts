@@ -23,6 +23,8 @@ function LucideResolver(componentName: string) {
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  // Tauri 需要使用相对路径，避免打包后白屏
+  base: './',
   plugins: [
     VueRouter({
       extensions: ['.vue', '.md'],
@@ -142,34 +144,8 @@ export default defineConfig({
           }
 
           // 应用代码分组
+          // 注意: 不对 stores 和 features 进行独立打包，避免循环依赖导致的初始化错误
           if (id.includes('/src/')) {
-            if (id.includes('/src/stores/')) {
-              return 'stores';
-            }
-            if (id.includes('/src/features/money/')) {
-              return 'money-feature';
-            }
-            if (id.includes('/src/features/todos/')) {
-              return 'todos-feature';
-            }
-            if (id.includes('/src/features/health/')) {
-              return 'health-feature';
-            }
-            if (id.includes('/src/features/settings/')) {
-              return 'settings-feature';
-            }
-            if (id.includes('/src/pages/')) {
-              return 'pages';
-            }
-            if (id.includes('/src/components/')) {
-              return 'components';
-            }
-            if (id.includes('/src/composables/')) {
-              return 'composables';
-            }
-            if (id.includes('/src/services/')) {
-              return 'services';
-            }
             if (id.includes('/src/utils/')) {
               return 'utils';
             }
@@ -203,12 +179,5 @@ export default defineConfig({
     exclude: ['@tauri-apps/api'],
     // Vite 7.x 新增：强制预构建
     force: false,
-  },
-  // Vite 7.x 新增：实验性功能
-  experimental: {
-    // 启用更快的构建
-    renderBuiltUrl: (filename: string) => {
-      return `/${filename}`;
-    },
   },
 });

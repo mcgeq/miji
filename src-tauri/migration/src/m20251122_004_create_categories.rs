@@ -76,7 +76,7 @@ impl MigrationTrait for Migration {
         .cloned()
         .collect();
 
-        // 插入初始数据
+        // 插入初始数据（使用 on_conflict 避免重复插入）
         for (name, icon) in categories {
             let insert = Query::insert()
                 .into_table(Categories::Table)
@@ -92,6 +92,11 @@ impl MigrationTrait for Migration {
                     Expr::current_timestamp().into(),
                     Expr::current_timestamp().into(),
                 ])
+                .on_conflict(
+                    sea_query::OnConflict::column(Categories::Name)
+                        .do_nothing()
+                        .to_owned()
+                )
                 .to_owned();
             manager.exec_stmt(insert).await?;
         }

@@ -48,102 +48,50 @@ impl MigrationTrait for Migration {
             )
             .await?;
 
-        // 插入初始货币数据
-        manager
-            .exec_stmt(
-                Query::insert()
-                    .into_table(Currency::Table)
-                    .columns([
-                        Currency::Code,
-                        Currency::Locale,
-                        Currency::Symbol,
-                        Currency::IsDefault,
-                        Currency::IsActive,
-                        Currency::CreatedAt,
-                    ])
-                    .values_panic([
-                        "USD".into(),
-                        "en-US".into(),
-                        "$".into(),
-                        false.into(),
-                        true.into(),
-                        "2025-07-26T13:13:24.487000+08:00".into(),
-                    ])
-                    .values_panic([
-                        "EUR".into(),
-                        "en-EU".into(),
-                        "€".into(),
-                        false.into(),
-                        true.into(),
-                        "2025-07-26T13:13:24.487000+08:00".into(),
-                    ])
-                    .values_panic([
-                        "CNY".into(),
-                        "zh-CN".into(),
-                        "¥".into(),
-                        true.into(), // CNY 设置为默认货币
-                        true.into(),
-                        "2025-07-26T13:13:24.487000+08:00".into(),
-                    ])
-                    .values_panic([
-                        "GBP".into(),
-                        "en-GB".into(),
-                        "£".into(),
-                        false.into(),
-                        true.into(),
-                        "2025-07-26T13:13:24.487000+08:00".into(),
-                    ])
-                    .values_panic([
-                        "JPY".into(),
-                        "ja-JP".into(),
-                        "¥".into(),
-                        false.into(),
-                        true.into(),
-                        "2025-07-26T13:13:24.487000+08:00".into(),
-                    ])
-                    .values_panic([
-                        "AUD".into(),
-                        "en-AU".into(),
-                        "$".into(),
-                        false.into(),
-                        true.into(),
-                        "2025-07-26T13:13:24.487000+08:00".into(),
-                    ])
-                    .values_panic([
-                        "CAD".into(),
-                        "en-CA".into(),
-                        "$".into(),
-                        false.into(),
-                        true.into(),
-                        "2025-07-26T13:13:24.487000+08:00".into(),
-                    ])
-                    .values_panic([
-                        "CHF".into(),
-                        "en-CH".into(),
-                        "CHF".into(),
-                        false.into(),
-                        true.into(),
-                        "2025-07-26T13:13:24.487000+08:00".into(),
-                    ])
-                    .values_panic([
-                        "SEK".into(),
-                        "sv-SE".into(),
-                        "kr".into(),
-                        false.into(),
-                        true.into(),
-                        "2025-07-26T13:13:24.487000+08:00".into(),
-                    ])
-                    .values_panic([
-                        "INR".into(),
-                        "hi-IN".into(),
-                        "₹".into(),
-                        false.into(),
-                        true.into(),
-                        "2025-07-26T13:13:24.487000+08:00".into(),
-                    ])
-                    .to_owned(),
-            )
-            .await?;
+        // 插入初始货币数据（使用循环避免 SQLite 批量插入 + on_conflict 兼容性问题）
+        let currencies = vec![
+            ("USD", "en-US", "$", false),
+            ("EUR", "en-EU", "€", false),
+            ("CNY", "zh-CN", "¥", true), // CNY 设置为默认货币
+            ("GBP", "en-GB", "£", false),
+            ("JPY", "ja-JP", "¥", false),
+            ("AUD", "en-AU", "$", false),
+            ("CAD", "en-CA", "$", false),
+            ("CHF", "en-CH", "CHF", false),
+            ("SEK", "sv-SE", "kr", false),
+            ("INR", "hi-IN", "₹", false),
+        ];
+
+        for (code, locale, symbol, is_default) in currencies {
+            manager
+                .exec_stmt(
+                    Query::insert()
+                        .into_table(Currency::Table)
+                        .columns([
+                            Currency::Code,
+                            Currency::Locale,
+                            Currency::Symbol,
+                            Currency::IsDefault,
+                            Currency::IsActive,
+                            Currency::CreatedAt,
+                        ])
+                        .values_panic([
+                            code.into(),
+                            locale.into(),
+                            symbol.into(),
+                            is_default.into(),
+                            true.into(),
+                            "2025-07-26T13:13:24.487000+08:00".into(),
+                        ])
+                        .on_conflict(
+                            sea_query::OnConflict::column(Currency::Code)
+                                .do_nothing()
+                                .to_owned(),
+                        )
+                        .to_owned(),
+                )
+                .await?;
+        }
 
         Ok(())
     }

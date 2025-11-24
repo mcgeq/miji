@@ -52,10 +52,11 @@ impl MigrationTrait for Migration {
             )
             .await?;
 
-        // 创建索引
+        // 创建索引（IF NOT EXISTS）
         manager
             .create_index(
                 Index::create()
+                    .if_not_exists()
                     .name("idx_subcategories_category_name")
                     .table(SubCategories::Table)
                     .col(SubCategories::CategoryName)
@@ -223,7 +224,7 @@ impl MigrationTrait for Migration {
             ("Other", "Others", "❓"),
         ];
 
-        // 插入初始数据
+        // 插入初始数据（使用 on_conflict 避免重复插入）
         for (name, category_name, icon) in subcategories {
             let insert = Query::insert()
                 .into_table(SubCategories::Table)
@@ -241,6 +242,14 @@ impl MigrationTrait for Migration {
                     Expr::current_timestamp().into(),
                     Expr::current_timestamp().into(),
                 ])
+                .on_conflict(
+                    sea_query::OnConflict::columns([
+                        SubCategories::Name,
+                        SubCategories::CategoryName,
+                    ])
+                    .do_nothing()
+                    .to_owned()
+                )
                 .to_owned();
             manager.exec_stmt(insert).await?;
         }
