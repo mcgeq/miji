@@ -197,7 +197,7 @@ const { t } = useI18n();
 .budget-form-fields {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.1rem;
 }
 
 /* Alert Section */
@@ -238,7 +238,7 @@ const { t } = useI18n();
 /* RepeatPeriodSelector 样式统一 */
 :deep(.repeat-period-selector .field-row) {
   gap: 1rem !important;
-  margin-bottom: 0.75rem !important;
+  margin-bottom: 0.5rem !important;
 }
 
 :deep(.repeat-period-selector .label) {

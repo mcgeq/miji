@@ -61,6 +61,7 @@ const mergedQuickCategories = computed(() => {
 // 响应式状态
 const selectedCategories = ref<string[]>(props.modelValue);
 const inputId = useId();
+const showAllCategories = ref(false);
 
 const { t } = useI18n();
 // 计算属性：快捷选择分类
@@ -164,6 +165,9 @@ defineExpose({
       role="group"
       :aria-label="quickSelectLabel"
     >
+      <div class="quick-select-label">
+        {{ quickSelectLabel }}
+      </div>
       <div class="quick-select-container">
         <button
           v-for="category in quickSelectCategories"
@@ -179,6 +183,40 @@ defineExpose({
           @click="selectQuickCategory(category.code)"
         >
           {{ category.icon }}
+        </button>
+      </div>
+    </div>
+
+    <!-- 全部分类列表 -->
+    <div v-if="mergedCategories.length > 0" class="mb-3">
+      <div class="all-categories-header">
+        <div class="all-categories-label">
+          全部分类
+        </div>
+        <button
+          type="button"
+          class="toggle-btn"
+          @click="showAllCategories = !showAllCategories"
+        >
+          {{ showAllCategories ? '收起' : '展开' }}
+          <span class="toggle-icon">{{ showAllCategories ? '▲' : '▼' }}</span>
+        </button>
+      </div>
+      <div v-show="showAllCategories" class="all-categories-container">
+        <button
+          v-for="category in mergedCategories"
+          :key="category.code"
+          type="button"
+          class="category-item"
+          :class="{
+            'category-item-active': isCategorySelected(category.code),
+          }"
+          :disabled="disabled"
+          :title="t(`common.categories.${lowercaseFirstLetter(category.code)}`)"
+          @click="toggleCategory(category.code)"
+        >
+          <span v-if="showIcons" class="category-icon">{{ category.icon }}</span>
+          <span class="category-name">{{ t(`common.categories.${lowercaseFirstLetter(category.code)}`) }}</span>
         </button>
       </div>
     </div>
@@ -203,12 +241,51 @@ defineExpose({
 
 <style scoped>
 .category-selector {
-  margin-bottom: 1rem;
+  margin-bottom: 0;
 }
 
 .category-selector select {
   height: 8rem; /* 32 * 0.25rem */
   outline: none;
+}
+
+/* 标签样式 */
+.quick-select-label,
+.all-categories-label {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--color-base-content);
+  opacity: 0.8;
+}
+
+/* 全部分类头部 */
+.all-categories-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+/* 展开/折叠按钮 */
+.toggle-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  color: var(--color-primary);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.toggle-btn:hover {
+  opacity: 0.7;
+}
+
+.toggle-icon {
+  font-size: 0.625rem;
 }
 
 /* 快捷选择容器 */
@@ -306,6 +383,58 @@ defineExpose({
   background-color: var(--color-base-content);
 }
 
+/* 全部分类容器 */
+.all-categories-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(75px, 1fr));
+  gap: 0.25rem;
+  max-height: none;
+  overflow-y: visible;
+  padding: 0.375rem;
+  background: var(--color-base-200);
+  border-radius: 0.375rem;
+}
+
+/* 分类项按钮 */
+.category-item {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.375rem 0.5rem;
+  border-radius: 0.25rem;
+  border: 1px solid var(--color-base-300);
+  background-color: var(--color-base-100);
+  color: var(--color-base-content);
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.75rem;
+}
+
+.category-item:hover {
+  border-color: var(--color-primary);
+  background-color: var(--color-primary-soft);
+  transform: translateY(-1px);
+}
+
+.category-item-active {
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-primary-content);
+}
+
+.category-icon {
+  font-size: 0.875rem;
+  flex-shrink: 0;
+}
+
+.category-name {
+  flex: 1;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 /* 响应式：小屏幕 */
 @media (max-width: 640px) {
   .category-selector select {
@@ -315,6 +444,19 @@ defineExpose({
   .quick-select-btn {
     font-size: 0.75rem;
     padding: 0.25rem 0.5rem;
+  }
+
+  .all-categories-container {
+    grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+  }
+
+  .category-item {
+    padding: 0.25rem 0.375rem;
+    font-size: 0.6875rem;
+  }
+
+  .category-icon {
+    font-size: 0.75rem;
   }
 }
 </style>

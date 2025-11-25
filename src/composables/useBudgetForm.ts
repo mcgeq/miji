@@ -2,6 +2,7 @@ import { COLORS_MAP, CURRENCY_CNY } from '@/constants/moneyConst';
 import { getLocalCurrencyInfo } from '@/features/money/utils/money';
 import { BudgetTypeSchema } from '@/schema/common';
 import { BudgetScopeTypeSchema } from '@/schema/money';
+import { useCategoryStore } from '@/stores/money';
 import { DateUtils } from '@/utils/date';
 import type { RepeatPeriod } from '@/schema/common';
 import type { Budget } from '@/schema/money';
@@ -59,7 +60,7 @@ export function useBudgetForm(initialBudget?: Budget | null) {
       rolloverHistory: [],
       sharingSettings: { sharedWith: [], permissionLevel: 'ViewOnly' },
       attachments: [],
-      budgetScopeType: BudgetScopeTypeSchema.enum.Category,
+      budgetScopeType: BudgetScopeTypeSchema.enum.Account,
       accountScope: null,
       categoryScope: [],
       advancedRules: null,
@@ -113,8 +114,15 @@ export function useBudgetForm(initialBudget?: Budget | null) {
 
   // 初始化
   onMounted(async () => {
+    // 加载货币信息
     const cny = await getLocalCurrencyInfo();
     currency.value = cny;
+
+    // 加载分类数据
+    const categoryStore = useCategoryStore();
+    if (categoryStore.categories.length === 0) {
+      await categoryStore.fetchCategories();
+    }
   });
 
   // 监听重复周期变化
