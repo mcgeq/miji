@@ -313,24 +313,19 @@ onMounted(async () => {
         </div>
       </div>
     </form>
-
-    <!-- 分配编辑器模态框 -->
-    <Teleport to="body">
-      <div v-if="showAllocationEditor" class="allocation-editor-overlay" @click="showAllocationEditor = false">
-        <div class="allocation-editor-container" @click.stop>
-          <BudgetAllocationEditor
-            :is-edit="!!editingAllocation"
-            :allocation="editingAllocation as any"
-            :members="members"
-            :categories="categories"
-            :budget-total="form.amount"
-            @submit="handleSaveAllocation"
-            @cancel="showAllocationEditor = false"
-          />
-        </div>
-      </div>
-    </Teleport>
   </BaseModal>
+
+  <!-- 分配编辑器模态框 -->
+  <BudgetAllocationEditor
+    v-if="showAllocationEditor"
+    :is-edit="!!editingAllocation"
+    :allocation="editingAllocation as any"
+    :members="members"
+    :categories="categories"
+    :budget-total="form.amount"
+    @submit="handleSaveAllocation"
+    @cancel="showAllocationEditor = false"
+  />
 </template>
 
 <style scoped>
@@ -482,36 +477,5 @@ onMounted(async () => {
   color: var(--color-base-content);
   opacity: 0.6;
   font-size: 0.875rem;
-}
-
-/* 分配编辑器覆盖层 */
-.allocation-editor-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 10000000;
-  padding: 1rem;
-}
-
-.allocation-editor-container {
-  background: var(--color-base-100);
-  border-radius: 1rem;
-  padding: 1.5rem;
-  max-width: 450px;
-  width: 100%;
-  max-height: 90vh;
-  overflow-y: auto;
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE and Edge */
-}
-
-.allocation-editor-container::-webkit-scrollbar {
-  display: none; /* Chrome, Safari, Opera */
 }
 </style>

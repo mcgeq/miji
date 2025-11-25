@@ -196,9 +196,9 @@ defineExpose({
         <button
           type="button"
           class="toggle-btn"
+          :title="showAllCategories ? '收起' : '展开'"
           @click="showAllCategories = !showAllCategories"
         >
-          {{ showAllCategories ? '收起' : '展开' }}
           <span class="toggle-icon">{{ showAllCategories ? '▲' : '▼' }}</span>
         </button>
       </div>

@@ -13,6 +13,7 @@ declare module 'vue' {
     BudgetAlertPanel: typeof import('./src/components/common/money/BudgetAlertPanel.vue')['default']
     BudgetAllocationCard: typeof import('./src/components/common/money/BudgetAllocationCard.vue')['default']
     BudgetAllocationEditor: typeof import('./src/components/common/money/BudgetAllocationEditor.vue')['default']
+    'BudgetAllocationEditor.refactored': typeof import('./src/components/common/money/BudgetAllocationEditor.refactored.vue')['default']
     BudgetProgressBar: typeof import('./src/components/common/money/BudgetProgressBar.vue')['default']
     CategorySelector: typeof import('./src/components/common/CategorySelector.vue')['default']
     CloseDialog: typeof import('./src/components/common/CloseDialog.vue')['default']

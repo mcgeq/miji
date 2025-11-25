@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import BaseModal from '@/components/common/BaseModal.vue';
+import CategorySelector from '@/components/common/CategorySelector.vue';
+import FormRow from '@/components/common/FormRow.vue';
 import {
   OverspendLimitType,
 } from '@/types/budget-allocation';
@@ -8,9 +11,9 @@ import type {
 } from '@/types/budget-allocation';
 
 interface FormData {
-  target: 'member' | 'category' | 'both';
+  allocationType: 'member' | 'member-category';
   memberSerialNum?: string;
-  categorySerialNum?: string;
+  selectedCategories: string[]; // 分类名称数组
   amountType: 'fixed' | 'percentage';
   allocatedAmount?: number;
   percentage?: number;
@@ -59,7 +62,8 @@ const emit = defineEmits<Emits>();
  * 表单数据
  */
 const formData = ref<FormData>({
-  target: 'member',
+  allocationType: 'member',
+  selectedCategories: [],
   amountType: 'fixed',
   allowOverspend: false,
   overspendLimitType: OverspendLimitType.NONE,
@@ -73,17 +77,13 @@ const formData = ref<FormData>({
  * 表单验证
  */
 const isValid = computed(() => {
-  // 必须选择成员或分类
-  if (formData.value.target === 'member' && !formData.value.memberSerialNum) {
+  // 必须选择成员
+  if (!formData.value.memberSerialNum) {
     return false;
   }
-  if (formData.value.target === 'category' && !formData.value.categorySerialNum) {
-    return false;
-  }
-  if (
-    formData.value.target === 'both' &&
-    (!formData.value.memberSerialNum || !formData.value.categorySerialNum)
-  ) {
+
+  // 如果是成员+分类，必须选择分类
+  if (formData.value.allocationType === 'member-category' && formData.value.selectedCategories.length === 0) {
     return false;
   }
 
@@ -102,68 +102,75 @@ const isValid = computed(() => {
 });
 
 /**
- * 处理提交
+ * 提交表单
  */
 function handleSubmit() {
   if (!isValid.value) return;
 
+  // 将分类名称转换为 serialNum（从 categories 中查找）
+  let categorySerialNum: string | undefined;
+  if (formData.value.allocationType === 'member-category' && formData.value.selectedCategories.length > 0) {
+    const categoryName = formData.value.selectedCategories[0];
+    const category = props.categories?.find(c => c.name === categoryName);
+    categorySerialNum = category?.serialNum;
+  }
+
   const data: BudgetAllocationCreateRequest = {
-    memberSerialNum: formData.value.memberSerialNum || undefined,
-    categorySerialNum: formData.value.categorySerialNum || undefined,
-    allocatedAmount:
-      formData.value.amountType === 'fixed'
-        ? formData.value.allocatedAmount
-        : undefined,
-    percentage:
-      formData.value.amountType === 'percentage'
-        ? formData.value.percentage
-        : undefined,
+    memberSerialNum: formData.value.memberSerialNum,
+    categorySerialNum,
+    allocatedAmount: formData.value.amountType === 'fixed' ? formData.value.allocatedAmount : undefined,
+    percentage: formData.value.amountType === 'percentage' ? formData.value.percentage : undefined,
     allowOverspend: formData.value.allowOverspend,
-    overspendLimitType: formData.value.allowOverspend
-      ? formData.value.overspendLimitType
-      : undefined,
-    overspendLimitValue:
-      formData.value.allowOverspend && formData.value.overspendLimitType !== 'NONE'
-        ? formData.value.overspendLimitValue
-        : undefined,
+    overspendLimitType: formData.value.overspendLimitType,
+    overspendLimitValue: formData.value.overspendLimitValue,
     alertEnabled: formData.value.alertEnabled,
-    alertThreshold: formData.value.alertEnabled
-      ? formData.value.alertThreshold
-      : undefined,
+    alertThreshold: formData.value.alertThreshold,
     priority: formData.value.priority,
     isMandatory: formData.value.isMandatory,
-    notes: formData.value.notes || undefined,
+    notes: formData.value.notes,
   };
 
   emit('submit', data);
 }
 
 /**
- * 初始化表单（编辑模式）
+ * 取消
+ */
+function handleCancel() {
+  emit('cancel');
+}
+
+/**
+ * 初始化表单数据
  */
 watch(
   () => props.allocation,
-  allocation => {
-    if (allocation && props.isEdit) {
+  newValue => {
+    if (newValue) {
+      // 将 categorySerialNum 转换为分类名称
+      const selectedCategories: string[] = [];
+      if (newValue.categorySerialNum) {
+        const category = props.categories?.find(c => c.serialNum === newValue.categorySerialNum);
+        if (category) {
+          selectedCategories.push(category.name);
+        }
+      }
+
       formData.value = {
-        target: allocation.memberSerialNum && allocation.categorySerialNum
-          ? 'both'
-          : allocation.memberSerialNum
-            ? 'member'
-            : 'category',
-        memberSerialNum: allocation.memberSerialNum || undefined,
-        categorySerialNum: allocation.categorySerialNum || undefined,
-        amountType: allocation.percentage ? 'percentage' : 'fixed',
-        allocatedAmount: allocation.allocatedAmount,
-        percentage: allocation.percentage || undefined,
-        allowOverspend: allocation.allowOverspend,
-        overspendLimitType: allocation.overspendLimitType || OverspendLimitType.NONE,
-        overspendLimitValue: allocation.overspendLimitValue || undefined,
-        alertEnabled: allocation.alertEnabled,
-        alertThreshold: allocation.alertThreshold,
-        priority: allocation.priority,
-        isMandatory: allocation.isMandatory,
-        notes: allocation.notes || undefined,
+        allocationType: newValue.categorySerialNum ? 'member-category' : 'member',
+        memberSerialNum: newValue.memberSerialNum,
+        selectedCategories,
+        amountType: newValue.allocatedAmount ? 'fixed' : 'percentage',
+        allocatedAmount: newValue.allocatedAmount,
+        percentage: newValue.percentage,
+        allowOverspend: newValue.allowOverspend || false,
+        overspendLimitType: newValue.overspendLimitType || OverspendLimitType.NONE,
+        overspendLimitValue: newValue.overspendLimitValue,
+        alertEnabled: newValue.alertEnabled ?? true,
+        alertThreshold: newValue.alertThreshold || 80,
+        priority: newValue.priority || 3,
+        isMandatory: newValue.isMandatory || false,
+        notes: newValue.notes,
       };
     }
   },
@@ -172,413 +179,161 @@ watch(
 </script>
 
 <template>
-  <div class="budget-allocation-editor">
-    <form @submit.prevent="handleSubmit">
+  <BaseModal
+    :model-value="true"
+    :title="isEdit ? '编辑分配' : '添加分配'"
+    size="md"
+    :confirm-loading="loading"
+    :confirm-disabled="!isValid"
+    @close="handleCancel"
+    @confirm="handleSubmit"
+  >
+    <form class="allocation-form" @submit.prevent="handleSubmit">
       <!-- 分配目标 -->
-      <section class="editor-section">
+      <div class="form-section">
         <h3 class="section-title">
           分配目标
         </h3>
 
-        <!-- 目标类型选择 -->
-        <div class="target-type-selector">
-          <label class="radio-label">
-            <input
-              v-model="formData.target"
-              type="radio"
-              value="member"
-            >
-            <span>成员</span>
-          </label>
-          <label class="radio-label">
-            <input
-              v-model="formData.target"
-              type="radio"
-              value="category"
-            >
-            <span>分类</span>
-          </label>
-          <label class="radio-label">
-            <input
-              v-model="formData.target"
-              type="radio"
-              value="both"
-            >
-            <span>成员+分类</span>
-          </label>
-        </div>
+        <!-- 分配类型 -->
+        <FormRow label="分配类型" required>
+          <div class="radio-group">
+            <label class="radio-label">
+              <input v-model="formData.allocationType" type="radio" value="member">
+              <span>成员</span>
+            </label>
+            <label class="radio-label">
+              <input v-model="formData.allocationType" type="radio" value="member-category">
+              <span>成员+分类</span>
+            </label>
+          </div>
+        </FormRow>
 
         <!-- 成员选择 -->
-        <div v-if="['member', 'both'].includes(formData.target)" class="form-group">
-          <label class="form-label">选择成员</label>
-          <select v-model="formData.memberSerialNum" class="form-select" required>
+        <FormRow label="选择成员" required>
+          <select v-model="formData.memberSerialNum" class="modal-input-select w-full" required>
             <option value="">
               请选择成员
             </option>
-            <option
-              v-for="member in members"
-              :key="member.serialNum"
-              :value="member.serialNum"
-            >
+            <option v-for="member in members" :key="member.serialNum" :value="member.serialNum">
               {{ member.name }}
             </option>
           </select>
-        </div>
+        </FormRow>
 
-        <!-- 分类选择 -->
-        <div v-if="['category', 'both'].includes(formData.target)" class="form-group">
-          <label class="form-label">选择分类</label>
-          <select v-model="formData.categorySerialNum" class="form-select" required>
-            <option value="">
-              请选择分类
-            </option>
-            <option
-              v-for="category in categories"
-              :key="category.serialNum"
-              :value="category.serialNum"
-            >
-              {{ category.name }}
-            </option>
-          </select>
+        <!-- 分类选择（仅成员+分类时显示） -->
+        <div v-if="formData.allocationType === 'member-category'">
+          <CategorySelector
+            v-model="formData.selectedCategories"
+            label="选择分类"
+            :required="true"
+            :multiple="false"
+            :show-quick-select="true"
+            help-text="选择此成员在此预算中可使用的具体分类"
+          />
         </div>
-      </section>
+      </div>
 
       <!-- 金额设置 -->
-      <section class="editor-section">
+      <div class="form-section">
         <h3 class="section-title">
           金额设置
         </h3>
 
         <!-- 金额类型 -->
-        <div class="amount-type-selector">
-          <label class="radio-label">
-            <input
-              v-model="formData.amountType"
-              type="radio"
-              value="fixed"
-            >
-            <span>固定金额</span>
-          </label>
-          <label class="radio-label">
-            <input
-              v-model="formData.amountType"
-              type="radio"
-              value="percentage"
-            >
-            <span>百分比</span>
-          </label>
-        </div>
+        <FormRow label="分配方式" required>
+          <div class="radio-group">
+            <label class="radio-label">
+              <input v-model="formData.amountType" type="radio" value="fixed">
+              <span>固定金额</span>
+            </label>
+            <label class="radio-label">
+              <input v-model="formData.amountType" type="radio" value="percentage">
+              <span>百分比</span>
+            </label>
+          </div>
+        </FormRow>
 
-        <!-- 固定金额输入 -->
-        <div v-if="formData.amountType === 'fixed'" class="form-group">
-          <label class="form-label">分配金额</label>
+        <!-- 固定金额 -->
+        <FormRow v-if="formData.amountType === 'fixed'" label="分配金额" required>
           <div class="input-with-prefix">
             <span class="prefix">¥</span>
             <input
               v-model.number="formData.allocatedAmount"
               type="number"
-              class="form-input"
+              class="modal-input-select"
               placeholder="0.00"
               step="0.01"
               min="0"
               required
             >
           </div>
-        </div>
+        </FormRow>
 
-        <!-- 百分比输入 -->
-        <div v-else class="form-group">
-          <label class="form-label">百分比</label>
+        <!-- 百分比 -->
+        <FormRow v-else label="百分比" required>
           <div class="input-with-suffix">
             <input
               v-model.number="formData.percentage"
               type="number"
-              class="form-input"
+              class="modal-input-select"
               placeholder="0"
-              step="1"
               min="0"
               max="100"
               required
             >
             <span class="suffix">%</span>
           </div>
-          <p v-if="budgetTotal && formData.percentage" class="form-hint">
-            约等于 ¥{{ ((budgetTotal * formData.percentage!) / 100).toFixed(2) }}
-          </p>
-        </div>
-      </section>
-
-      <!-- 超支控制 -->
-      <section class="editor-section">
-        <h3 class="section-title">
-          超支控制
-        </h3>
-
-        <div class="form-group">
-          <label class="checkbox-label">
-            <input
-              v-model="formData.allowOverspend"
-              type="checkbox"
-            >
-            <span>允许超支</span>
-          </label>
-        </div>
-
-        <div v-if="formData.allowOverspend" class="overspend-config">
-          <div class="form-group">
-            <label class="form-label">超支限额类型</label>
-            <select v-model="formData.overspendLimitType" class="form-select">
-              <option value="NONE">
-                无限制
-              </option>
-              <option value="PERCENTAGE">
-                百分比限制
-              </option>
-              <option value="FIXED_AMOUNT">
-                固定金额限制
-              </option>
-            </select>
-          </div>
-
-          <div
-            v-if="formData.overspendLimitType !== 'NONE'"
-            class="form-group"
-          >
-            <label class="form-label">
-              {{ formData.overspendLimitType === 'PERCENTAGE' ? '超支百分比' : '超支金额' }}
-            </label>
-            <div
-              :class="{
-                'input-with-suffix': formData.overspendLimitType === 'PERCENTAGE',
-                'input-with-prefix': formData.overspendLimitType === 'FIXED_AMOUNT',
-              }"
-            >
-              <span
-                v-if="formData.overspendLimitType === 'FIXED_AMOUNT'"
-                class="prefix"
-              >
-                ¥
-              </span>
-              <input
-                v-model.number="formData.overspendLimitValue"
-                type="number"
-                class="form-input"
-                placeholder="0"
-                step="0.01"
-                min="0"
-              >
-              <span
-                v-if="formData.overspendLimitType === 'PERCENTAGE'"
-                class="suffix"
-              >
-                %
-              </span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- 预警设置 -->
-      <section class="editor-section">
-        <h3 class="section-title">
-          预警设置
-        </h3>
-
-        <div class="form-group">
-          <label class="checkbox-label">
-            <input
-              v-model="formData.alertEnabled"
-              type="checkbox"
-            >
-            <span>启用预警</span>
-          </label>
-        </div>
-
-        <div v-if="formData.alertEnabled" class="alert-config">
-          <div class="form-group">
-            <label class="form-label">
-              预警阈值
-              <span class="threshold-value">{{ formData.alertThreshold }}%</span>
-            </label>
-            <input
-              v-model.number="formData.alertThreshold"
-              type="range"
-              class="range-slider"
-              min="50"
-              max="100"
-              step="5"
-            >
-            <div class="range-labels">
-              <span>50%</span>
-              <span>75%</span>
-              <span>100%</span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- 管理设置 -->
-      <section class="editor-section">
-        <h3 class="section-title">
-          管理设置
-        </h3>
-
-        <div class="form-group">
-          <label class="form-label">优先级</label>
-          <select v-model.number="formData.priority" class="form-select">
-            <option :value="1">
-              1 - 最低
-            </option>
-            <option :value="2">
-              2 - 较低
-            </option>
-            <option :value="3">
-              3 - 中等
-            </option>
-            <option :value="4">
-              4 - 较高
-            </option>
-            <option :value="5">
-              5 - 最高
-            </option>
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label class="checkbox-label">
-            <input
-              v-model="formData.isMandatory"
-              type="checkbox"
-            >
-            <span>强制保障（不可削减）</span>
-          </label>
-        </div>
-
-        <div class="form-group">
-          <label class="form-label">备注</label>
-          <textarea
-            v-model="formData.notes"
-            class="form-textarea"
-            rows="3"
-            placeholder="可选的备注信息..."
-          />
-        </div>
-      </section>
-
-      <!-- 操作按钮 -->
-      <div class="editor-actions">
-        <button
-          type="button"
-          class="btn-round btn-cancel"
-          :disabled="loading"
-          title="取消"
-          @click="$emit('cancel')"
-        >
-          ✕
-        </button>
-        <button
-          type="submit"
-          class="btn-round btn-save"
-          :disabled="!isValid || loading"
-          :title="loading ? '保存中...' : isEdit ? '更新' : '保存'"
-        >
-          ✓
-        </button>
+        </FormRow>
       </div>
+
+      <!-- 备注 -->
+      <textarea
+        v-model="formData.notes"
+        class="modal-input-select w-full"
+        rows="3"
+        placeholder="可选的备注信息..."
+      />
     </form>
-  </div>
+  </BaseModal>
 </template>
 
 <style scoped>
-.budget-allocation-editor {
-  width: 100%;
-  max-width: 600px;
+.allocation-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }
 
-.editor-section {
-  margin-bottom: 24px;
-  padding: 16px;
+.form-section {
+  padding: 0.75rem;
   background: var(--color-base-200);
-  border-radius: 8px;
+  border-radius: 0.5rem;
 }
 
 .section-title {
-  margin: 0 0 16px 0;
-  font-size: 14px;
+  font-size: 0.875rem;
   font-weight: 600;
   color: var(--color-base-content);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  margin-bottom: 0.75rem;
 }
 
-.target-type-selector,
-.amount-type-selector {
+.radio-group {
   display: flex;
-  gap: 12px;
-  margin-bottom: 16px;
+  gap: 1rem;
+  flex-wrap: wrap;
 }
 
-.radio-label,
-.checkbox-label {
+.radio-label {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 0.5rem;
   cursor: pointer;
-  user-select: none;
+  font-size: 0.875rem;
 }
 
-.radio-label input[type='radio'],
-.checkbox-label input[type='checkbox'] {
-  width: 16px;
-  height: 16px;
+.radio-label input[type="radio"] {
   cursor: pointer;
-}
-
-.form-group {
-  margin-bottom: 16px;
-}
-
-.form-group:last-child {
-  margin-bottom: 0;
-}
-
-.form-label {
-  display: block;
-  margin-bottom: 6px;
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--color-base-content);
-}
-
-.threshold-value {
-  float: right;
-  color: var(--color-primary);
-  font-weight: 600;
-}
-
-.form-select,
-.form-input,
-.form-textarea {
-  width: 100%;
-  padding: 8px 12px;
-  background: var(--color-base-100);
-  border: 1px solid var(--color-base-300);
-  border-radius: 6px;
-  font-size: 14px;
-  color: var(--color-base-content);
-  transition: border-color 0.2s;
-}
-
-.form-select:focus,
-.form-input:focus,
-.form-textarea:focus {
-  outline: none;
-  border-color: var(--color-primary);
-}
-
-.form-textarea {
-  resize: vertical;
-  font-family: inherit;
 }
 
 .input-with-prefix,
@@ -586,120 +341,24 @@ watch(
   display: flex;
   align-items: center;
   border: 1px solid var(--color-base-300);
-  border-radius: 6px;
+  border-radius: 0.375rem;
   overflow: hidden;
+  background: var(--color-base-100);
 }
 
-.input-with-prefix .form-input,
-.input-with-suffix .form-input {
+.input-with-prefix .modal-input-select,
+.input-with-suffix .modal-input-select {
   border: none;
   flex: 1;
+  min-width: 0;
 }
 
 .prefix,
 .suffix {
-  padding: 0 12px;
+  padding: 0 0.75rem;
   background-color: var(--color-base-200);
-  color: var(--color-neutral);
-  font-size: 14px;
+  color: var(--color-base-content);
+  font-size: 0.875rem;
   font-weight: 500;
 }
-
-.form-hint {
-  margin-top: 4px;
-  font-size: 12px;
-  color: var(--color-neutral);
-}
-
-.range-slider {
-  width: 100%;
-  height: 6px;
-  background: var(--color-base-300);
-  border-radius: 3px;
-  outline: none;
-  cursor: pointer;
-}
-
-.range-slider::-webkit-slider-thumb {
-  width: 18px;
-  height: 18px;
-  background: var(--color-primary);
-  border-radius: 50%;
-  cursor: pointer;
-}
-
-.range-slider::-moz-range-thumb {
-  width: 18px;
-  height: 18px;
-  background: var(--color-primary);
-  border-radius: 50%;
-  cursor: pointer;
-  border: none;
-}
-
-.range-labels {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 4px;
-  font-size: 11px;
-  color: var(--color-neutral);
-}
-
-.overspend-config,
-.alert-config {
-  margin-top: 12px;
-  padding: 12px;
-  background: var(--color-base-100);
-  border-radius: 6px;
-  border: 1px solid var(--color-base-300);
-}
-
-.editor-actions {
-  display: flex;
-  gap: 1rem;
-  justify-content: center;
-  padding-top: 16px;
-  border-top: 1px solid var(--color-base-300);
-}
-
-.btn-round {
-  width: 3rem;
-  height: 3rem;
-  border-radius: 50%;
-  border: none;
-  font-size: 1.25rem;
-  font-weight: bold;
-  cursor: pointer;
-  transition: all 0.2s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.btn-save {
-  background-color: var(--color-primary);
-  color: white;
-}
-
-.btn-save:hover:not(:disabled) {
-  background-color: var(--color-primary-focus);
-  transform: scale(1.05);
-}
-
-.btn-cancel {
-  background-color: var(--color-base-300);
-  color: var(--color-base-content);
-}
-
-.btn-cancel:hover:not(:disabled) {
-  background-color: var(--color-base-400);
-  transform: scale(1.05);
-}
-
-.btn-round:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-/* 深色模式通过主题变量自动适配 */
 </style>
