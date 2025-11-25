@@ -4,13 +4,16 @@ import {
   LucideCalculator,
   LucideCalendarClock,
   LucideCoins,
+  LucideTarget,
   LucideUsers,
   LucideWallet,
 } from 'lucide-vue-next';
 import { storeToRefs } from 'pinia';
+import { useFamilyBudgetActions } from '@/composables/useFamilyBudgetActions';
 import { MoneyDb } from '@/services/money/money';
 import { useFamilyLedgerStore } from '@/stores/money';
 import { toast } from '@/utils/toast';
+import FamilyBudgetModal from '../components/FamilyBudgetModal.vue';
 import TransactionTable from '../components/TransactionTable.vue';
 import FamilyStatsView from './FamilyStatsView.vue';
 import SettlementView from './SettlementView.vue';
@@ -25,6 +28,14 @@ const router = useRouter();
 const { t } = useI18n();
 const familyLedgerStore = useFamilyLedgerStore();
 const { currentLedger, currentLedgerStats } = storeToRefs(familyLedgerStore);
+
+// 家庭预算相关
+const {
+  showModal: showBudgetModal,
+  showCreateModal: showCreateBudgetModal,
+  closeModal: closeBudgetModal,
+  createFamilyBudget,
+} = useFamilyBudgetActions();
 
 const pageLoading = ref(true);
 const transactionsLoading = ref(false);
@@ -214,6 +225,20 @@ const memberCount = computed(() => currentLedger.value?.members || members.value
 const accountCount = computed(() => currentLedger.value?.accounts);
 const activeTransactions = computed(() => calculatedStats.value.activeTransactionCount);
 
+// 处理家庭预算创建
+async function handleCreateFamilyBudget(
+  budgetData: any,
+  allocations: any[],
+) {
+  const success = await createFamilyBudget(budgetData, allocations, async () => {
+    toast.success('家庭预算创建成功！');
+  });
+
+  if (success) {
+    closeBudgetModal();
+  }
+}
+
 function getTabIcon(iconName: string) {
   const iconMap = {
     Calculator: LucideCalculator,
@@ -320,6 +345,10 @@ function getTabIcon(iconName: string) {
           <div class="members-panel">
             <div class="panel-header">
               <h2>成员概览</h2>
+              <button class="btn-budget" @click="showCreateBudgetModal">
+                <LucideTarget class="icon" />
+                创建家庭预算
+              </button>
             </div>
             <div v-if="members.length" class="members-grid">
               <article
@@ -403,6 +432,14 @@ function getTabIcon(iconName: string) {
         <p>暂无账本数据</p>
       </div>
     </template>
+
+    <!-- 家庭预算模态框 -->
+    <FamilyBudgetModal
+      v-if="showBudgetModal && currentLedger"
+      :family-ledger-serial-num="currentLedger.serialNum"
+      @close="closeBudgetModal"
+      @save="handleCreateFamilyBudget"
+    />
   </div>
 </template>
 
@@ -619,6 +656,12 @@ function getTabIcon(iconName: string) {
   box-shadow: 0 10px 30px rgb(15 23 42 / 0.08);
 }
 
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
 .panel-header h2 {
   margin: 0;
   font-size: 20px;
@@ -628,6 +671,32 @@ function getTabIcon(iconName: string) {
 .panel-header p {
   margin: 4px 0 0;
   color: var(--color-gray-500);
+}
+
+.btn-budget {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1rem;
+  background: var(--color-primary);
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-budget:hover {
+  background: var(--color-primary-focus);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.btn-budget .icon {
+  width: 1rem;
+  height: 1rem;
 }
 
 .members-grid {
