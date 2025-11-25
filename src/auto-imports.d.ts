@@ -180,6 +180,7 @@ declare global {
   const useBroadcastChannel: typeof import('@vueuse/core')['useBroadcastChannel']
   const useBrowserLocation: typeof import('@vueuse/core')['useBrowserLocation']
   const useBudgetActions: typeof import('./composables/useBudgetActions')['useBudgetActions']
+  const useBudgetForm: typeof import('./composables/useBudgetForm')['useBudgetForm']
   const useBudgetStats: typeof import('./composables/useBudgetStats')['useBudgetStats']
   const useCached: typeof import('@vueuse/core')['useCached']
   const useClipboard: typeof import('@vueuse/core')['useClipboard']
@@ -218,6 +219,7 @@ declare global {
   const useEventListener: typeof import('@vueuse/core')['useEventListener']
   const useEventSource: typeof import('@vueuse/core')['useEventSource']
   const useEyeDropper: typeof import('@vueuse/core')['useEyeDropper']
+  const useFamilyBudgetActions: typeof import('./composables/useFamilyBudgetActions')['useFamilyBudgetActions']
   const useFamilyMemberSearch: typeof import('./composables/useFamilyMemberSearch')['useFamilyMemberSearch']
   const useFavicon: typeof import('@vueuse/core')['useFavicon']
   const useFetch: typeof import('@vueuse/core')['useFetch']
@@ -589,6 +591,7 @@ declare module 'vue' {
     readonly useBroadcastChannel: UnwrapRef<typeof import('@vueuse/core')['useBroadcastChannel']>
     readonly useBrowserLocation: UnwrapRef<typeof import('@vueuse/core')['useBrowserLocation']>
     readonly useBudgetActions: UnwrapRef<typeof import('./composables/useBudgetActions')['useBudgetActions']>
+    readonly useBudgetForm: UnwrapRef<typeof import('./composables/useBudgetForm')['useBudgetForm']>
     readonly useBudgetStats: UnwrapRef<typeof import('./composables/useBudgetStats')['useBudgetStats']>
     readonly useCached: UnwrapRef<typeof import('@vueuse/core')['useCached']>
     readonly useClipboard: UnwrapRef<typeof import('@vueuse/core')['useClipboard']>
@@ -627,6 +630,7 @@ declare module 'vue' {
     readonly useEventListener: UnwrapRef<typeof import('@vueuse/core')['useEventListener']>
     readonly useEventSource: UnwrapRef<typeof import('@vueuse/core')['useEventSource']>
     readonly useEyeDropper: UnwrapRef<typeof import('@vueuse/core')['useEyeDropper']>
+    readonly useFamilyBudgetActions: UnwrapRef<typeof import('./composables/useFamilyBudgetActions')['useFamilyBudgetActions']>
     readonly useFamilyMemberSearch: UnwrapRef<typeof import('./composables/useFamilyMemberSearch')['useFamilyMemberSearch']>
     readonly useFavicon: UnwrapRef<typeof import('@vueuse/core')['useFavicon']>
     readonly useFetch: UnwrapRef<typeof import('@vueuse/core')['useFetch']>

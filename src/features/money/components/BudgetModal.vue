@@ -2,25 +2,16 @@
 import * as _ from 'es-toolkit/compat';
 import z from 'zod';
 import BaseModal from '@/components/common/BaseModal.vue';
-import CategorySelector from '@/components/common/CategorySelector.vue';
-import ColorSelector from '@/components/common/ColorSelector.vue';
-import FormRow from '@/components/common/FormRow.vue';
-import AccountSelector from '@/components/common/money/AccountSelector.vue';
-import RepeatPeriodSelector from '@/components/common/RepeatPeriodSelector.vue';
-import { COLORS_MAP, CURRENCY_CNY } from '@/constants/moneyConst';
-import { BudgetTypeSchema } from '@/schema/common';
-import { BudgetCreateSchema, BudgetScopeTypeSchema, BudgetUpdateSchema } from '@/schema/money';
-import { DateUtils } from '@/utils/date';
+import { useBudgetForm } from '@/composables/useBudgetForm';
+import { BudgetCreateSchema, BudgetUpdateSchema } from '@/schema/money';
 import { deepDiff } from '@/utils/diffObject';
-import { getLocalCurrencyInfo } from '../utils/money';
-import type { RepeatPeriod } from '@/schema/common';
+import BudgetFormFields from './BudgetFormFields.vue';
 import type { Budget, BudgetCreate, BudgetUpdate } from '@/schema/money';
 
 interface Props {
   budget: Budget | null;
 }
 
-// 定义 props
 const props = defineProps<Props>();
 const emit = defineEmits<{
   close: [];
@@ -29,118 +20,41 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n();
-const colorNameMap = ref(COLORS_MAP);
-const currency = ref(CURRENCY_CNY);
-const categoryError = ref('');
-const accountError = ref('');
-const isSubmitting = ref(false);
 
-// 验证错误
-const validationErrors = reactive({
-  name: '',
-  type: '',
-  amount: '',
-  remindDate: '',
-  repeatPeriod: '',
-  priority: '',
-});
+// 使用共享的表单逻辑
+const {
+  form,
+  colorNameMap,
+  categoryError,
+  accountError,
+  isSubmitting,
+  validationErrors,
+  scopeTypes,
+  isFormValid,
+  handleCategoryValidation,
+  handleAccountValidation,
+  handleRepeatPeriodValidation,
+  handleRepeatPeriodChange,
+  formatFormData,
+} = useBudgetForm(props.budget);
 
-const form = reactive<Budget>(props.budget ? { ...props.budget } : getDefaultBudget());
-const types = Object.values(BudgetScopeTypeSchema.enum).map(type => ({
-  original: type,
-  snake: toCamelCase(type),
-}));
-
+// 提交处理
 function onSubmit() {
+  if (!isFormValid.value) {
+    return;
+  }
+
   try {
-    const defaultValues: Record<string, unknown> = {
-      accountSerialNum: null,
-      currency: null,
-      alertThreshold: null,
-      budgetType: null,
-      accountScope: null,
-      advancedRules: null,
-      currentPeriodUsed: 0,
-      currentPeriodStart: null,
-      progress: 0,
-      linkedGoal: null,
-      reminders: [],
-      priority: 0,
-      tags: [],
-      autoRollover: false,
-      rolloverHistory: [],
-      sharingSettings: null,
-      attachments: [],
-    };
+    isSubmitting.value = true;
 
-    const formattedData = _.mapValues({
-      name: form.name,
-      description: form.description,
-      accountSerialNum: form.accountSerialNum,
-      amount: form.amount,
-      currency: form.currency?.code,
-      repeatPeriodType: form.repeatPeriodType,
-      repeatPeriod: form.repeatPeriod,
-      startDate: form.startDate,
-      endDate: form.endDate,
-      usedAmount: form.usedAmount,
-      isActive: form.isActive,
-      alertEnabled: form.alertEnabled,
-      alertThreshold: form.alertThreshold,
-      color: form.color,
-      budgetType: form.budgetType,
-      budgetScopeType: form.budgetScopeType,
-      categoryScope: form.categoryScope,
-      accountScope: form.accountScope,
-      advancedRules: form.advancedRules,
-      currentPeriodUsed: form.currentPeriodUsed,
-      currentPeriodStart: form.currentPeriodStart,
-      progress: form.progress,
-      linkedGoal: form.linkedGoal,
-      reminders: form.reminders,
-      priority: form.priority,
-      tags: form.tags,
-      autoRollover: form.autoRollover,
-      rolloverHistory: form.rolloverHistory,
-      sharingSettings: form.sharingSettings,
-      attachments: form.attachments,
-    }, (value: unknown, key: string) => {
-      // 特殊处理日期字段 - 确保传入字符串
-      if (key.endsWith('Date')) {
-        if (value) {
-          const dateValue = typeof value === 'string' ?
-            value :
-            value instanceof Date ?
-                value.toISOString() :
-                String(value);
-          if (key === 'startDate') {
-            return DateUtils.toLocalISOFromDateInput(dateValue);
-          }
-          if (key === 'endDate') {
-            return DateUtils.toLocalISOFromDateInput(dateValue, true);
-          }
-        }
-        return null;
-      }
-      // 应用默认值
-      return _.defaultTo(value, defaultValues[key] ?? null);
-    });
+    // 使用共享的格式化函数
+    const formattedData = formatFormData();
 
-    // 2. 直接基于 formattedData 做类型转换和兜底（替换原 createData 的逻辑）
-    if (formattedData.amount != null) formattedData.amount = Number(formattedData.amount);
-    if (formattedData.usedAmount != null) formattedData.usedAmount = Number(formattedData.usedAmount);
-    if (formattedData.currentPeriodUsed != null) formattedData.currentPeriodUsed = Number(formattedData.currentPeriodUsed);
-    if (formattedData.progress != null) formattedData.progress = Number(formattedData.progress);
-    if (formattedData.priority != null) formattedData.priority = Math.round(Number(formattedData.priority));
-
-    // 兜底默认值（确保字段符合接口要求）
-    formattedData.currentPeriodUsed = formattedData.currentPeriodUsed ?? 0;
-    formattedData.progress = formattedData.progress ?? 0;
-    formattedData.priority = formattedData.priority ?? 0;
-    formattedData.autoRollover = formattedData.autoRollover ?? false;
     if (props.budget) {
+      // 编辑模式：计算差异
       const changes = _.omitBy(formattedData, (value: unknown, key: string) =>
         _.isEqual(value, _.get(props.budget, key)));
+
       // 特殊处理需要序列化为JSON的字段
       const jsonFields = [
         'repeatPeriod',
@@ -154,6 +68,7 @@ function onSubmit() {
         'attachments',
         'tags',
       ];
+
       const serializedChanges = _.mapValues(changes, (value, key) => {
         if (jsonFields.includes(key) && value !== null && value !== undefined) {
           try {
@@ -164,15 +79,22 @@ function onSubmit() {
         }
         return value;
       });
+
       if (!_.isEmpty(serializedChanges)) {
-        const updateParital = deepDiff(props.budget, formattedData, { ignoreKeys: ['repeatPeriod'] }) as BudgetUpdate;
-        const budgetUpdate = BudgetUpdateSchema.parse(updateParital);
+        const updatePartial = deepDiff(
+          props.budget,
+          formattedData,
+          { ignoreKeys: ['repeatPeriod'] },
+        ) as BudgetUpdate;
+        const budgetUpdate = BudgetUpdateSchema.parse(updatePartial);
         emit('update', props.budget.serialNum, budgetUpdate);
       }
     } else {
+      // 创建模式
       const budgetCreate = BudgetCreateSchema.parse(formattedData);
       emit('save', budgetCreate);
     }
+
     closeModal();
   } catch (err: unknown) {
     if (err instanceof z.ZodError) {
@@ -180,116 +102,33 @@ function onSubmit() {
     } else {
       console.error('Unexpected error:', err);
     }
+  } finally {
+    isSubmitting.value = false;
   }
-}
-
-function handleRepeatPeriodChange(_value: RepeatPeriod) {
-  validationErrors.repeatPeriod = '';
-}
-function handleAccountValidation(isValid: boolean) {
-  accountError.value = isValid ? '' : '请至少选择一个账户';
-}
-
-function handleRepeatPeriodValidation(isValid: boolean) {
-  if (!isValid) {
-    validationErrors.repeatPeriod = t('validation.repeatPeriodIncomplete');
-  } else {
-    validationErrors.repeatPeriod = '';
-  }
-}
-
-function getDefaultBudget(): Budget {
-  const day = DateUtils.getTodayDate();
-  return {
-    serialNum: '',
-    accountSerialNum: null,
-    name: '',
-    description: '',
-    amount: 0,
-    currency: currency.value,
-    repeatPeriodType: 'None',
-    repeatPeriod: { type: 'None' },
-    startDate: day,
-    endDate: DateUtils.addDays(day, 30),
-    usedAmount: 0,
-    isActive: true,
-    alertEnabled: false,
-    alertThreshold: null,
-    color: COLORS_MAP[0].code,
-    account: null,
-    createdAt: DateUtils.getLocalISODateTimeWithOffset(),
-    updatedAt: null,
-    currentPeriodUsed: 0,
-    currentPeriodStart: DateUtils.getTodayDate(),
-    budgetType: BudgetTypeSchema.enum.Standard,
-    progress: 0,
-    linkedGoal: null,
-    reminders: [],
-    priority: 0,
-    tags: [],
-    autoRollover: false,
-    rolloverHistory: [],
-    sharingSettings: { sharedWith: [], permissionLevel: 'ViewOnly' },
-    attachments: [],
-    budgetScopeType: BudgetScopeTypeSchema.enum.Category,
-    accountScope: null,
-    categoryScope: [],
-    advancedRules: null,
-  };
-}
-
-function handleCategoryValidation(isValid: boolean) {
-  if (!isValid) {
-    categoryError.value = '请至少选择一个分类';
-  } else {
-    categoryError.value = '';
-  }
-}
-
-function toCamelCase(str: string) {
-  return str.charAt(0).toLowerCase() + str.slice(1);
 }
 
 function closeModal() {
   emit('close');
 }
 
+// 编辑模式：监听 props.budget 变化并更新表单
 watch(
   () => props.budget,
   newVal => {
     if (newVal) {
-      const clonedAccount = JSON.parse(JSON.stringify(newVal));
-      if (clonedAccount.startDate) {
-        clonedAccount.startDate = clonedAccount.startDate.split('T')[0];
+      const clonedBudget = JSON.parse(JSON.stringify(newVal));
+      // 转换日期格式为 input[type="date"] 所需的格式
+      if (clonedBudget.startDate) {
+        clonedBudget.startDate = clonedBudget.startDate.split('T')[0];
       }
-      if (clonedAccount.endDate) {
-        clonedAccount.endDate = clonedAccount.endDate.split('T')[0];
+      if (clonedBudget.endDate) {
+        clonedBudget.endDate = clonedBudget.endDate.split('T')[0];
       }
-      Object.assign(form, clonedAccount);
+      Object.assign(form, clonedBudget);
     }
   },
   { immediate: true, deep: true },
 );
-
-watch(() => form.repeatPeriod, repeatPeriodType => {
-  form.repeatPeriodType = repeatPeriodType.type;
-});
-watch(
-  () => form.alertEnabled,
-  enabled => {
-    if (enabled && !form.alertThreshold) {
-      form.alertThreshold = { type: 'Percentage', value: 80 };
-    }
-    if (!enabled) {
-      form.alertThreshold = null;
-    }
-  },
-);
-
-onMounted(async () => {
-  const cny = await getLocalCurrencyInfo();
-  currency.value = cny;
-});
 </script>
 
 <template>
@@ -297,224 +136,30 @@ onMounted(async () => {
     :title="props.budget ? t('financial.budget.editBudget') : t('financial.budget.addBudget')"
     size="md"
     :confirm-loading="isSubmitting"
+    :confirm-disabled="!isFormValid"
     @close="closeModal"
     @confirm="onSubmit"
   >
     <form @submit.prevent="onSubmit">
-      <FormRow :label="t('financial.budget.budgetName')" required>
-        <input
-          v-model="form.name" type="text" required class="modal-input-select w-full"
-          :placeholder="t('validation.budgetName')"
-        >
-      </FormRow>
-
-      <FormRow :label="t('financial.budget.budgetScopeType')" required>
-        <select v-model="form.budgetScopeType" required class="modal-input-select w-full">
-          <option
-            v-for="ty in types"
-            :key="ty.original"
-            :value="ty.original"
-          >
-            {{ t(`financial.budgetScopeTypes.${ty.snake}`) }}
-          </option>
-        </select>
-      </FormRow>
-
-      <div
-        v-if="form.budgetScopeType === 'Category' || form.budgetScopeType === 'Hybrid'"
-      >
-        <CategorySelector
-          v-model="form.categoryScope"
-          :required="true"
-          label="预算类别"
-          placeholder="请选择分类"
-          help-text="选择适用于此预算的分类"
-          :error-message="categoryError"
-          @validate="handleCategoryValidation"
-        />
-      </div>
-
-      <div
-        v-if="form.budgetScopeType === 'Account'"
-      >
-        <AccountSelector
-          v-model="form.accountSerialNum"
-          :required="true"
-          label="账户选择"
-          placeholder="请选择账户"
-          help-text="选择适用于此预算的账户"
-          @validate="handleAccountValidation"
-        />
-      </div>
-
-      <FormRow :label="t('financial.budget.budgetAmount')" required>
-        <input
-          v-model.number="form.amount" type="number" step="0.01" required class="modal-input-select w-full"
-          placeholder="0.00"
-        >
-      </FormRow>
-
-      <!-- 重复频率  -->
-      <RepeatPeriodSelector
-        v-model="form.repeatPeriod"
-        :label="t('date.repeat.frequency')"
-        :error-message="validationErrors.repeatPeriod"
-        :help-text="t('helpTexts.repeatPeriod')"
-        @change="handleRepeatPeriodChange"
-        @validate="handleRepeatPeriodValidation"
+      <!-- 使用共享的表单字段组件 -->
+      <BudgetFormFields
+        :form="form"
+        :color-names="colorNameMap"
+        :scope-types="scopeTypes"
+        :category-error="categoryError"
+        :account-error="accountError"
+        :repeat-period-error="validationErrors.repeatPeriod"
+        :show-account-selector="true"
+        :is-family-budget="false"
+        @validate-category="handleCategoryValidation"
+        @validate-account="handleAccountValidation"
+        @validate-repeat-period="handleRepeatPeriodValidation"
+        @change-repeat-period="handleRepeatPeriodChange"
       />
-
-      <FormRow :label="t('date.startDate')" required>
-        <input v-model="form.startDate" type="date" required class="modal-input-select w-full">
-      </FormRow>
-
-      <FormRow :label="t('date.endDate')" optional>
-        <input v-model="form.endDate" type="date" class="modal-input-select w-full">
-      </FormRow>
-
-      <FormRow :label="t('common.misc.color')" optional>
-        <ColorSelector
-          v-model="form.color"
-          width="full"
-          :color-names="colorNameMap"
-          :extended="true"
-          :show-categories="true"
-          :show-custom-color="true"
-          :show-random-button="true"
-        />
-      </FormRow>
-      <div class="alert-section">
-        <!-- 左边复选框 -->
-        <div class="alert-checkbox">
-          <label class="checkbox-label">
-            <input
-              v-model="form.alertEnabled"
-              type="checkbox"
-              class="checkbox-radius"
-            >
-            <span class="checkbox-text">
-              {{ t('financial.budget.overBudgetAlert') }}
-            </span>
-          </label>
-        </div>
-
-        <!-- 右边 阈值设置 -->
-        <div v-if="form.alertEnabled && form.alertThreshold" class="threshold-settings">
-          <!-- 阈值类型选择 -->
-          <select
-            v-model="form.alertThreshold.type"
-            class="modal-input-select w-2/3"
-          >
-            <option value="Percentage">
-              {{ t('financial.budget.threshold.percentage') }}
-            </option>
-            <option value="FixedAmount">
-              {{ t('financial.budget.threshold.fixedAmount') }}
-            </option>
-          </select>
-
-          <!-- 阈值输入框 -->
-          <input
-            v-model.number="form.alertThreshold.value"
-            type="number"
-            class="modal-input-select w-1/3"
-            :min="form.alertThreshold.type === 'Percentage' ? 0 : 1"
-            :max="form.alertThreshold.type === 'Percentage' ? 100 : undefined"
-            :placeholder="form.alertThreshold.type === 'Percentage' ? '80%' : '100.00'"
-          >
-        </div>
-      </div>
-      <div class="form-textarea">
-        <textarea
-          v-model="form.description" rows="3" class="modal-input-select w-full"
-          :placeholder="t('placeholders.budgetDescription')"
-        />
-      </div>
     </form>
   </BaseModal>
 </template>
 
 <style scoped>
-/* RepeatPeriodSelector 样式统一 */
-:deep(.repeat-period-selector .field-row) {
-  gap: 1rem !important;
-  margin-bottom: 0.75rem !important;
-}
-
-:deep(.repeat-period-selector .label) {
-  flex: 0 0 6rem !important;
-  width: 6rem !important;
-  min-width: 6rem !important;
-  max-width: 6rem !important;
-}
-
-:deep(.repeat-period-selector .input-field) {
-  flex: 1 !important;
-  width: 100% !important;
-}
-
-.form-textarea {
-  margin-bottom: 0.5rem;
-}
-
-/* Alert Section */
-.alert-section {
-  margin-bottom: 0.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.alert-checkbox {
-  width: 33.333333%;
-}
-
-.checkbox-label {
-  display: flex;
-  align-items: center;
-}
-
-.checkbox-text {
-  font-size: 0.875rem;
-  color: #374151;
-  font-weight: 500;
-}
-
-.threshold-settings {
-  display: flex;
-  gap: 0.5rem;
-  flex: 1;
-  align-items: center;
-}
-
-/* Modal Header */
-.modal-header {
-  margin-bottom: 1rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.modal-title {
-  font-size: 1.125rem;
-  font-weight: 600;
-}
-
-.modal-close-btn {
-  color: #6b7280;
-  transition: color 0.2s ease-in-out;
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 0.25rem;
-}
-
-.modal-close-btn:hover {
-  color: #374151;
-}
-
-.close-icon {
-  height: 1.5rem;
-  width: 1.5rem;
-}
+/* 样式已移至 BudgetFormFields.vue */
 </style>

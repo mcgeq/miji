@@ -233,9 +233,9 @@ onMounted(async () => {
           :repeat-period-error="validationErrors.repeatPeriod"
           :show-account-selector="false"
           :is-family-budget="true"
-          @validate:category="handleCategoryValidation"
-          @validate:repeat-period="handleRepeatPeriodValidation"
-          @change:repeat-period="handleRepeatPeriodChange"
+          @validate-category="handleCategoryValidation"
+          @validate-repeat-period="handleRepeatPeriodValidation"
+          @change-repeat-period="handleRepeatPeriodChange"
         />
       </div>
 
