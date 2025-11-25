@@ -68,7 +68,8 @@ async function main() {
       icon: true,
       rtl: false,
       teleport: 'body',
-      containerClassName: 'z-[2147483647] pointer-events-none',
+      // 提升层级到最高，确保在所有 modal 之上（BaseModal 最高 z-index: 9999999）
+      containerClassName: '!z-[99999999] pointer-events-none',
     });
     Lg.i('Main', '✓ Toast 配置完成');
 

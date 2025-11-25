@@ -19,5 +19,16 @@ body {
   color: var(--color-base-content);
 }
 
+/* Toast 容器样式 - 确保始终在最顶层 */
+/* vue-toastification 默认容器类名 */
+.Vue-Toastification__container {
+  z-index: 99999999 !important;
+  pointer-events: none;
+}
+
+/* toast 单个项目可以接收点击事件 */
+.Vue-Toastification__toast {
+  pointer-events: auto;
+}
 
 /* 这些样式已移动到 utilities.css 中，这里保留作为备用 */

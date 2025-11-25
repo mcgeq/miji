@@ -23,8 +23,8 @@ function baseClasses(color: string) {
 
     bodyClassName: 'text-sm',
     titleClassName: 'font-semibold text-white',
-    // 提升层级，容器不拦截事件，恢复原实现
-    containerClassName: 'z-[2147483647] pointer-events-none',
+    // 提升层级到最高，确保在所有 modal 之上（BaseModal 最高 z-index: 9999999）
+    containerClassName: '!z-[99999999] pointer-events-none',
   };
 }
 
