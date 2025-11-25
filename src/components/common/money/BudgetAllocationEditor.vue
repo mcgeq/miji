@@ -468,19 +468,21 @@ watch(
       <!-- 操作按钮 -->
       <div class="editor-actions">
         <button
-          type="submit"
-          class="btn btn-primary"
-          :disabled="!isValid || loading"
-        >
-          {{ loading ? '保存中...' : isEdit ? '更新' : '创建' }}
-        </button>
-        <button
           type="button"
-          class="btn btn-secondary"
+          class="btn-round btn-cancel"
           :disabled="loading"
+          title="取消"
           @click="$emit('cancel')"
         >
-          取消
+          ✕
+        </button>
+        <button
+          type="submit"
+          class="btn-round btn-save"
+          :disabled="!isValid || loading"
+          :title="loading ? '保存中...' : isEdit ? '更新' : '保存'"
+        >
+          ✓
         </button>
       </div>
     </form>
@@ -654,43 +656,49 @@ watch(
 
 .editor-actions {
   display: flex;
-  gap: 12px;
-  justify-content: flex-end;
+  gap: 1rem;
+  justify-content: center;
   padding-top: 16px;
   border-top: 1px solid var(--color-base-300);
 }
 
-.btn {
-  padding: 10px 20px;
+.btn-round {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50%;
   border: none;
-  border-radius: 6px;
-  font-size: 14px;
-  font-weight: 500;
+  font-size: 1.25rem;
+  font-weight: bold;
   cursor: pointer;
   transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.btn-primary {
+.btn-save {
   background-color: var(--color-primary);
-  color: var(--color-primary-content);
+  color: white;
 }
 
-.btn-primary:hover:not(:disabled) {
-  background-color: var(--color-primary-hover);
+.btn-save:hover:not(:disabled) {
+  background-color: var(--color-primary-focus);
+  transform: scale(1.05);
 }
 
-.btn-secondary {
-  background-color: var(--color-base-200);
+.btn-cancel {
+  background-color: var(--color-base-300);
   color: var(--color-base-content);
 }
 
-.btn-secondary:hover:not(:disabled) {
-  background-color: var(--color-base-300);
+.btn-cancel:hover:not(:disabled) {
+  background-color: var(--color-base-400);
+  transform: scale(1.05);
+}
+
+.btn-round:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 /* 深色模式通过主题变量自动适配 */

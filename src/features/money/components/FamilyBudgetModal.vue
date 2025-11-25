@@ -503,9 +503,15 @@ onMounted(async () => {
   background: var(--color-base-100);
   border-radius: 1rem;
   padding: 1.5rem;
-  max-width: 600px;
+  max-width: 450px;
   width: 100%;
   max-height: 90vh;
   overflow-y: auto;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+.allocation-editor-container::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
 }
 </style>
