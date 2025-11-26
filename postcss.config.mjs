@@ -14,6 +14,8 @@ export default {
       stage: 1,
       features: {
         'custom-properties': true,
+        'relative-color-syntax': true, // 启用相对颜色语法支持
+        'oklab-function': true, // 启用 oklch 函数支持
       },
     }),
     postcssNested(),
