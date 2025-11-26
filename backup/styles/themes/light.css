@@ -1,0 +1,65 @@
+/* themes/light.css - 浅色主题变量 - 增强版 */
+
+:root,
+.theme-light {
+  /* 基础背景分层（从浅到深）- 增强对比度 */
+  --color-base-100: oklch(94% 0.015 90); /* 页面最外层背景 - 更纯净的白色 */
+  --color-base-200: oklch(90% 0.025 90); /* 中间层背景（如卡片）- 增加微妙对比 */
+  --color-base-300: oklch(85% 0.035 90); /* 深层背景 - 更明显的层次感 */
+  --color-base-content: oklch(25% 0.015 45); /* 基础背景上的文字色 - 更高对比度 */
+
+  /* 组件主色系列（含文字色）- 增强饱和度 */
+  --color-primary: oklch(65% 0.18 25); /* 主按钮/核心强调色 - 更饱满的蓝色 */
+  --color-primary-soft: oklch(75% 0.08 25); /* 主色柔和版本 */
+  --color-primary-content: oklch(95% 0.01 25); /* 主色背景上的文字 - 高对比度 */
+  --color-primary-hover: oklch(60% 0.20 25); /* 主色悬停状态 */
+  --color-primary-active: oklch(55% 0.22 25); /* 主色激活状态 */
+  
+  --color-secondary: oklch(70% 0.12 160); /* 次要按钮/装饰色 - 更饱满的青色 */
+  --color-secondary-content: oklch(20% 0.02 160); /* 次要色背景上的文字 */
+  --color-secondary-hover: oklch(65% 0.14 160); /* 次要色悬停状态 */
+  --color-secondary-active: oklch(60% 0.16 160); /* 次要色激活状态 */
+  
+  --color-accent: oklch(60% 0.20 75); /* 警告/高亮操作色 - 更饱满的黄色 */
+  --color-accent-content: oklch(20% 0.02 75); /* 警告色背景上的文字 */
+  --color-accent-hover: oklch(55% 0.22 75); /* 警告色悬停状态 */
+  --color-accent-active: oklch(50% 0.24 75); /* 警告色激活状态 */
+  
+  --color-neutral: oklch(50% 0.02 45); /* 中性按钮/分割线 - 增强对比度 */
+  --color-neutral-content: oklch(90% 0.01 45); /* 中性色背景上的文字 */
+  --color-neutral-hover: oklch(45% 0.03 45); /* 中性色悬停状态 */
+  --color-neutral-active: oklch(40% 0.04 45); /* 中性色激活状态 */
+  
+  /* 状态色系列 - 增强饱和度和对比度 */
+  --color-info: oklch(55% 0.20 240); /* 信息提示色 - 更饱满的蓝色 */
+  --color-info-content: oklch(95% 0.01 240); /* 信息色背景上的文字 */
+  --color-info-hover: oklch(50% 0.22 240); /* 信息色悬停状态 */
+  --color-info-active: oklch(45% 0.24 240); /* 信息色激活状态 */
+  
+  --color-success: oklch(50% 0.15 140); /* 成功操作色 - 更饱满的绿色 */
+  --color-success-content: oklch(95% 0.01 140); /* 成功色背景上的文字 */
+  --color-success-hover: oklch(45% 0.17 140); /* 成功色悬停状态 */
+  --color-success-active: oklch(40% 0.19 140); /* 成功色激活状态 */
+  
+  --color-warning: oklch(60% 0.25 50); /* 警告操作色 - 更饱满的橙色 */
+  --color-warning-content: oklch(20% 0.02 50); /* 警告色背景上的文字 */
+  --color-warning-hover: oklch(55% 0.27 50); /* 警告色悬停状态 */
+  --color-warning-active: oklch(50% 0.29 50); /* 警告色激活状态 */
+  
+  --color-error: oklch(60% 0.22 15); /* 错误操作色 - 更饱满的红色 */
+  --color-error-content: oklch(95% 0.01 15); /* 错误色背景上的文字 */
+  --color-error-hover: oklch(55% 0.24 15); /* 错误色悬停状态 */
+  --color-error-active: oklch(50% 0.26 15); /* 错误色激活状态 */
+
+  /* 新增渐变和阴影变量 */
+  --color-primary-gradient: linear-gradient(135deg, var(--color-primary), var(--color-primary-hover));
+  --color-secondary-gradient: linear-gradient(135deg, var(--color-secondary), var(--color-secondary-hover));
+  --color-accent-gradient: linear-gradient(135deg, var(--color-accent), var(--color-accent-hover));
+  
+  /* 阴影变量 */
+  --shadow-sm: 0 1px 2px 0 oklch(0% 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px oklch(0% 0 0 / 0.1), 0 2px 4px -2px oklch(0% 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px oklch(0% 0 0 / 0.1), 0 4px 6px -4px oklch(0% 0 0 / 0.1);
+
+  color-scheme: light; /* 声明为浅色主题 */
+}

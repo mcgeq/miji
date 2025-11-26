@@ -1,0 +1,607 @@
+/* components/modals.css - 统一模态框组件样式系统 */
+
+/* ==================== 原始模态框样式（保持兼容性） ==================== */
+.modal-mask {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: color-mix(in oklch, var(--color-neutral) 60%, transparent);
+  backdrop-filter: blur(6px);
+  z-index: 10002;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow-y: auto;
+  padding: 1rem;
+}
+
+.modal-mask-window {
+  width: 10rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem;
+  background-color: transparent;
+  position: relative;
+  z-index: 10003;
+}
+
+/* ==================== 模态框覆盖层 ==================== */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(5px);
+  z-index: 1001;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 1rem;
+}
+
+/* ==================== 模态框内容 ==================== */
+.modal-content {
+  box-shadow: var(--shadow-xl);
+  max-height: 80vh;
+  overflow-y: auto;
+  position: relative;
+  z-index: 10002;
+}
+
+.modal-content-sm {
+  max-width: 400px;
+}
+
+.modal-content-md {
+  max-width: 500px;
+}
+
+.modal-content-lg {
+  max-width: 700px;
+}
+
+.modal-content-xl {
+  max-width: 900px;
+}
+
+.modal-content-full {
+  max-width: 95vw;
+  max-height: 95vh;
+}
+
+/* ==================== 模态框结构 ==================== */
+.modal-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--color-base-content);
+  margin: 0;
+}
+
+.modal-subtitle {
+  font-size: 0.875rem;
+  color: var(--color-gray-600);
+  margin-top: 0.25rem;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: var(--color-gray-500);
+  padding: 0.25rem;
+  border-radius: 0.25rem;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background-color: var(--color-base-200);
+    color: var(--color-gray-700);
+  }
+
+  &:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--color-primary-soft);
+  }
+}
+
+.modal-body {
+  padding: 1.5rem;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.modal-footer-center {
+  justify-content: center;
+}
+
+.modal-footer-space-between {
+  justify-content: space-between;
+}
+
+.modal-mask-window-money {
+  max-height: calc(100vh - 4rem);
+  min-height: 0;
+  overflow-y: auto;
+  background-color: var(--color-base-100);
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+  width: 100%;
+  max-width: 28rem;
+  margin: 0 1rem;
+  display: flex;
+  flex-direction: column;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+  @media (prefers-color-scheme: dark) {
+    background-color: #1f2937;
+    border: 1px solid #374151;
+  }
+}
+
+.modal-content-scrollable {
+  flex: 1;
+  overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.modal-header-fixed {
+  flex-shrink: 0;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.modal-footer-fixed {
+  flex-shrink: 0;
+  padding-top: 1rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.screening-filtering {
+  width: 100%;
+  margin-bottom: 1.25rem;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  background-color: var(--color-base-100);
+  border: 1px solid var(--color-base-300);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 桌面端固定宽度 */
+@media (min-width: 768px) {
+  .screening-filtering {
+    width: 55rem;
+    max-width: 100%;
+  }
+}
+
+.screening-filtering-select {
+  font-size: 0.875rem;
+  padding: 0.375rem 0.75rem;
+  background-color: var(--color-base-200);
+  border: 1px solid var(--color-base-300);
+  border-radius: 0.375rem;
+  outline: none;
+  transition: box-shadow 0.2s;
+}
+
+.screening-filtering-select:focus {
+  box-shadow: 0 0 0 2px #3b82f6;
+}
+
+.money-tab-min {
+  min-height: 6.25rem;
+}
+
+/* 列表 操作按钮 */
+.money-option-btn {
+  display: inline-flex; /* inline-flex */
+  align-items: center; /* items-center */
+  justify-content: center; /* justify-center */
+  width: 2rem; /* w-8 对应 32px = 2rem */
+  height: 2rem; /* h-8 对应 32px = 2rem */
+  border-radius: 0.5rem; /* rounded-lg 对应 8px = 0.5rem */
+  border: 1px solid var(--color-base-300); /* border + border-gray-300 */
+  color: var(--color-neutral); /* text-gray-600 */
+  background-color: var(--color-base-100); /* bg-white */
+  transition: all 0.2s; /* transition-all + duration-200 */
+}
+
+.money-option-btn:hover {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* hover:shadow-md 对应中等阴影 */
+}
+
+.money-option-ben-hover:hover {
+  color: #16a34a;
+  border: 1px solid #16a34a;
+}
+
+.money-option-edit-hover:hover {
+  color: #3b82f6;
+  border: 1px solid #3b82f6;
+}
+
+.money-option-trash-hover:hover {
+  color: #ef4444;
+  border: 1px solid #ef4444;
+}
+
+/* ==================== 模态框标题变体 ==================== */
+.modal-title-danger {
+  color: var(--color-error);
+}
+
+/* ==================== 模态框描述 ==================== */
+.modal-description {
+  color: var(--color-base-content);
+  opacity: 0.8;
+  margin-bottom: 1rem;
+}
+
+.modal-description-warning {
+  color: var(--color-base-content);
+  opacity: 0.8;
+  line-height: 1.625;
+  margin-bottom: 1rem;
+}
+
+/* ==================== 模态框表单 ==================== */
+.modal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.modal-form-group label {
+  font-size: 0.875rem;
+  color: var(--color-base-content);
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+  display: block;
+}
+
+.modal-form-input {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--color-neutral);
+  border-radius: 0.5rem;
+  width: 100%;
+}
+
+.modal-form-input:focus {
+  border-color: var(--color-primary);
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+}
+
+.modal-form-input-danger:focus {
+  border-color: var(--color-error);
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.5);
+}
+
+/* ==================== 按钮 ==================== */
+.modal-actions {
+  display: flex;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.modal-actions-full {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.modal-button {
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  flex: 1 1 0%;
+  transition: all 200ms;
+}
+
+.modal-button-cancel {
+  color: var(--color-base-content);
+  background-color: var(--color-base-100);
+}
+
+.modal-button-cancel:hover {
+  background-color: var(--color-neutral);
+}
+
+.modal-button-confirm {
+  color: var(--color-base-200);
+  background-color: var(--color-primary);
+}
+
+.modal-button-confirm:hover {
+  background-color: var(--color-primary);
+}
+
+.modal-button-danger {
+  color: var(--color-base-200);
+  background-color: var(--color-error);
+  transition: all 200ms;
+}
+
+.modal-button-danger:hover:not(:disabled) {
+  background-color: var(--color-error);
+}
+
+.modal-button-danger:disabled {
+  background-color: var(--color-error);
+  cursor: not-allowed;
+}
+
+/* ==================== 模态框动画 ==================== */
+.modal-overlay-enter-active,
+.modal-overlay-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.modal-enter-active,
+.modal-leave-active {
+  transition: all 0.3s ease;
+}
+
+.btn-close,
+.btn-submit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+}
+
+.btn-close {
+  background-color: var(--color-neutral);
+  color: var(--color-neutral-content);
+}
+
+.btn-close:hover {
+  background-color: var(--color-neutral-content);
+  color: var(--color-neutral);
+}
+
+.btn-submit {
+  background-color: var(--color-primary);
+  color: var(--color-primary-content);
+}
+
+.btn-submit:hover {
+  background-color: var(--color-primary-content);
+  color: var(--color-primary);
+}
+
+.icon-btn {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+/* ==================== Teleport模态框样式 ==================== */
+/* 用于所有Teleport到body的模态框组件 */
+
+/* 覆盖现有的modal-overlay，提供更高的z-index和更好的动画 */
+.modal-overlay.teleport {
+  z-index: 10005;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.modal-overlay.teleport.visible {
+  opacity: 1;
+}
+
+/* 新的模态框内容样式 */
+.modal-content.teleport {
+  background: var(--color-base-100);
+  border-radius: 1rem;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  max-width: 500px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  transform: scale(0.9);
+  transition: transform 0.2s ease;
+  /* 隐藏滚动条但保留滚动功能 */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+.modal-content.teleport::-webkit-scrollbar {
+  display: none; /* Chrome, Safari and Opera */
+}
+
+.modal-overlay.teleport.visible .modal-content.teleport {
+  transform: scale(1);
+}
+
+/* 模态框头部样式 */
+.modal-header.teleport {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem 1.5rem 0;
+}
+
+.modal-header.teleport h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.close-btn.teleport {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: var(--color-base-content);
+  padding: 0.25rem;
+  border-radius: 0.25rem;
+}
+
+.close-btn.teleport:hover {
+  background: var(--color-base-200);
+}
+
+/* 模态框主体样式 */
+.modal-body.teleport {
+  padding: 1.5rem;
+}
+
+/* 模态框底部样式 */
+.modal-footer.teleport {
+  display: flex;
+  justify-content: space-between;
+  padding: 1.5rem;
+  border-top: 1px solid var(--color-base-200);
+}
+
+/* 按钮样式 */
+.btn-secondary.teleport,
+.btn-primary.teleport {
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+/* ==================== 模态框输入框样式（兼容性） ==================== */
+.modal-input-select {
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--color-base-300);
+  border-radius: 0.75rem;
+  background-color: var(--color-base-100);
+  color: var(--color-base-content);
+  transition: all 200ms ease;
+  font-size: 1rem;
+  line-height: 1.5;
+  outline: none;
+
+  &::placeholder {
+    color: var(--color-gray-400);
+  }
+
+  /* 悬停状态 - 背景色深一点 */
+  &:hover:not(:disabled):not(:focus) {
+    background-color: var(--color-base-200);
+  }
+
+  /* 有值状态 - 背景色深一点（支持自动检测和手动类） */
+  &:not(:placeholder-shown):not(:focus),
+  &.has-value:not(:focus) {
+    background-color: var(--color-base-200);
+  }
+
+  /* 聚焦状态优先级最高 */
+  &:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 2px var(--color-primary-soft);
+    background-color: var(--color-base-100);
+  }
+
+  &:disabled {
+    background-color: var(--color-base-200);
+    color: var(--color-gray-500);
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    background-color: var(--color-gray-800);
+    border-color: var(--color-gray-600);
+    color: var(--color-gray-100);
+
+    &::placeholder {
+      color: var(--color-gray-500);
+    }
+
+    /* 暗色模式下的悬停和有值状态 */
+    &:hover:not(:disabled):not(:focus),
+    &:not(:placeholder-shown):not(:focus),
+    &.has-value:not(:focus) {
+      background-color: var(--color-gray-700);
+    }
+
+    &:focus {
+      background-color: var(--color-gray-800);
+    }
+  }
+}
+
+/* 圆形图标按钮样式覆盖 */
+.btn-icon.btn-secondary.teleport,
+.btn-icon.btn-primary.teleport {
+  width: 3rem !important;
+  height: 3rem !important;
+  border-radius: 50% !important;
+  padding: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.btn-secondary.teleport {
+  background: var(--color-base-200);
+  color: var(--color-base-content);
+  border: 1px solid var(--color-base-300);
+}
+
+.btn-secondary.teleport:hover {
+  background: var(--color-base-300);
+}
+
+.btn-primary.teleport {
+  background: var(--color-primary);
+  color: var(--color-primary-content);
+  border: 1px solid var(--color-primary);
+}
+
+.btn-primary.teleport:hover {
+  background: var(--color-primary-focus);
+}
+
+/* Teleport模态框响应式设计 */
+@media (max-width: 768px) {
+  .modal-content.teleport {
+    width: 95%;
+    margin: 1rem;
+  }
+
+  .modal-footer.teleport {
+    flex-direction: row !important;
+    gap: 1.5rem !important;
+    justify-content: center !important;
+  }
+
+  .btn-icon.btn-secondary.teleport,
+  .btn-icon.btn-primary.teleport {
+    width: 2.5rem !important;
+    height: 2.5rem !important;
+  }
+
+  .btn-secondary.teleport:not(.btn-icon),
+  .btn-primary.teleport:not(.btn-icon) {
+    width: 100%;
+  }
+}
+

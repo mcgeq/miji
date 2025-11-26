@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import BaseModal from '@/components/common/BaseModal.vue';
-import FormRow from '@/components/common/FormRow.vue';
+import { Checkbox, FormRow, Input, Textarea } from '@/components/ui';
 import type { SplitRuleType } from '@/schema/money';
 
 interface Props {
@@ -101,26 +101,21 @@ function getTypeName(type: SplitRuleType): string {
     <form @submit.prevent="save">
       <!-- 模板名称 -->
       <FormRow label="模板名称" required :error="errors.name">
-        <input
+        <Input
           v-model="form.name"
-          v-has-value
           type="text"
-          class="modal-input-select w-full"
-          :class="{ 'border-red-500': errors.name }"
           placeholder="例如：家庭日常开销"
-          maxlength="50"
-        >
+        />
         <span class="form-hint">{{ form.name.length }}/50</span>
       </FormRow>
 
       <!-- 模板描述 -->
-      <FormRow label="模板描述" optional>
-        <textarea
+      <FormRow full-width>
+        <Textarea
           v-model="form.description"
-          class="modal-input-select w-full"
           placeholder="描述此模板的使用场景（可选）"
-          rows="3"
-          maxlength="200"
+          :rows="3"
+          :max-length="200"
         />
         <span class="form-hint">{{ form.description.length }}/200</span>
       </FormRow>
@@ -146,17 +141,15 @@ function getTypeName(type: SplitRuleType): string {
       </FormRow>
 
       <!-- 设为默认 -->
-      <FormRow label="" optional>
-        <label class="checkbox-label">
-          <input
-            v-model="form.isDefault"
-            type="checkbox"
-            class="checkbox-input"
-          >
-          <span class="checkbox-text">设为默认模板</span>
-          <span class="checkbox-hint">新建交易时自动应用此模板</span>
-        </label>
-      </FormRow>
+      <div class="mb-3">
+        <Checkbox
+          v-model="form.isDefault"
+          label="设为默认模板"
+        />
+        <p class="text-xs text-gray-500 mt-1 ml-6">
+          新建交易时自动应用此模板
+        </p>
+      </div>
     </form>
   </BaseModal>
 </template>
@@ -200,33 +193,6 @@ function getTypeName(type: SplitRuleType): string {
 .type-option span {
   font-size: 0.875rem;
   font-weight: 500;
-}
-
-/* Checkbox */
-.checkbox-label {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  cursor: pointer;
-}
-
-.checkbox-input {
-  width: 18px;
-  height: 18px;
-  cursor: pointer;
-  margin-right: 0.5rem;
-}
-
-.checkbox-text {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--color-base-content);
-}
-
-.checkbox-hint {
-  font-size: 0.75rem;
-  color: var(--color-neutral);
-  margin-left: 1.5rem;
 }
 
 /* Responsive */

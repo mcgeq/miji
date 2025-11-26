@@ -2,9 +2,9 @@
 /* eslint-disable vue/no-mutating-props */
 import CategorySelector from '@/components/common/CategorySelector.vue';
 import ColorSelector from '@/components/common/ColorSelector.vue';
-import FormRow from '@/components/common/FormRow.vue';
 import AccountSelector from '@/components/common/money/AccountSelector.vue';
 import RepeatPeriodSelector from '@/components/common/RepeatPeriodSelector.vue';
+import FormRow from '@/components/ui/FormRow.vue';
 import type { RepeatPeriod } from '@/schema/common';
 
 interface Props {

@@ -1,0 +1,174 @@
+/* components/cards.css - 统一卡片组件样式系统 */
+
+/* ==================== 基础卡片样式 ==================== */
+.card {
+  display: flex;
+  flex-direction: column;
+  background-color: var(--color-base-200);
+  border: var(--border) solid var(--color-neutral);
+  border-radius: var(--radius-box);
+  padding: var(--size-field);
+  margin: 1rem 0;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+/* ==================== 卡片变体 ==================== */
+.card-base {
+  background-color: var(--color-base-100);
+  border: 1px solid var(--color-gray-200);
+  border-radius: 1rem;
+  box-shadow: var(--shadow-sm);
+  
+  @media (prefers-color-scheme: dark) {
+    background-color: var(--color-gray-800);
+    border-color: var(--color-gray-700);
+  }
+}
+
+.card-elevated {
+  background-color: var(--color-base-100);
+  border: 1px solid var(--color-gray-200);
+  border-radius: 1rem;
+  box-shadow: var(--shadow-md);
+  
+  @media (prefers-color-scheme: dark) {
+    background-color: var(--color-gray-800);
+    border-color: var(--color-gray-700);
+  }
+}
+
+.card-flat {
+  background-color: var(--color-base-200);
+  border: 1px solid var(--color-neutral);
+  border-radius: var(--radius-box);
+  box-shadow: none;
+}
+
+.card-outlined {
+  background-color: transparent;
+  border: 2px solid var(--color-primary);
+  border-radius: var(--radius-box);
+  box-shadow: none;
+}
+
+.card-glass {
+  background-color: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: var(--shadow-lg);
+  
+  @media (prefers-color-scheme: dark) {
+    background-color: rgba(17, 24, 39, 0.8);
+    border-color: rgba(55, 65, 81, 0.3);
+  }
+}
+
+/* ==================== 卡片状态 ==================== */
+.card-hover {
+  transition: all 0.2s ease;
+  cursor: pointer;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+  }
+}
+
+.card-interactive {
+  transition: all 0.2s ease;
+  cursor: pointer;
+  
+  &:hover {
+    background-color: var(--color-base-300);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+  }
+  
+  &:active {
+    transform: translateY(0);
+    box-shadow: var(--shadow-sm);
+  }
+}
+
+.card-disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* ==================== 卡片尺寸变体 ==================== */
+.card-sm {
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+}
+
+.card-md {
+  padding: 1rem;
+  border-radius: 0.75rem;
+}
+
+.card-lg {
+  padding: 1.5rem;
+  border-radius: 1rem;
+}
+
+.card-xl {
+  padding: 2rem;
+  border-radius: 1.25rem;
+}
+
+/* ==================== 卡片内容区域 ==================== */
+.card-header {
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--color-neutral);
+  margin-bottom: 1rem;
+}
+
+.card-body {
+  flex: 1;
+  padding: 0;
+}
+
+.card-footer {
+  padding-top: 1rem;
+  border-top: 1px solid var(--color-neutral);
+  margin-top: 1rem;
+}
+
+/* ==================== 卡片标题和内容 ==================== */
+.card-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--color-base-content);
+  margin-bottom: 0.5rem;
+}
+
+.card-subtitle {
+  font-size: 0.875rem;
+  color: var(--color-base-content);
+  opacity: 0.7;
+  margin-bottom: 1rem;
+}
+
+.card-text {
+  color: var(--color-base-content);
+  line-height: 1.6;
+}
+
+/* ==================== 响应式设计 ==================== */
+@media (max-width: 768px) {
+  .card {
+    margin: 0.5rem 0;
+    padding: 0.75rem;
+  }
+  
+  .card-lg {
+    padding: 1rem;
+  }
+  
+  .card-xl {
+    padding: 1.25rem;
+  }
+}

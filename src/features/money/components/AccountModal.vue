@@ -2,7 +2,7 @@
 import { isNaN } from 'es-toolkit/compat';
 import BaseModal from '@/components/common/BaseModal.vue';
 import ColorSelector from '@/components/common/ColorSelector.vue';
-import FormRow from '@/components/common/FormRow.vue';
+import { Checkbox, FormRow, Input, Select, Textarea } from '@/components/ui';
 import { useFormValidation } from '@/composables/useFormValidation';
 import { COLORS_MAP } from '@/constants/moneyConst';
 import { AccountTypeSchema, CreateAccountRequestSchema, UpdateAccountRequestSchema } from '@/schema/money';
@@ -10,6 +10,7 @@ import { MoneyDb } from '@/services/money/money';
 import { DateUtils } from '@/utils/date';
 import { Lg } from '@/utils/debugLog';
 import { toast } from '@/utils/toast';
+import type { SelectOption } from '@/components/ui';
 import type { Currency } from '@/schema/common';
 import type { Account, CreateAccountRequest, UpdateAccountRequest } from '@/schema/money';
 
@@ -27,15 +28,8 @@ const props = defineProps<Props>();
 const emit = defineEmits(['close', 'save', 'update']);
 const { t } = useI18n();
 
-// 响应式数据
-const colorNameMap = ref(COLORS_MAP);
-const accountTypes = computed(() => AccountTypeSchema.options);
-const isSubmitting = ref(false);
-
-// 表单验证
-const validation = useFormValidation(
-  props.account ? UpdateAccountRequestSchema : CreateAccountRequestSchema,
-);
+// 定义响应式数据（必须在使用前定义）
+const currencies = ref<Currency[]>([]);
 const currentUser = computed(() => getCurrentUser());
 const familyMembers = computedAsync(async () => {
   try {
@@ -45,6 +39,7 @@ const familyMembers = computedAsync(async () => {
     return [];
   }
 }, []);
+
 const users = computed<User[]>(() => {
   const usersSet = new Set('');
   const userList: User[] = [];
@@ -71,8 +66,36 @@ const users = computed<User[]>(() => {
   return userList;
 });
 
-// Use ref instead of computed for async data
-const currencies = ref<Currency[]>([]);
+// 响应式数据
+const colorNameMap = ref(COLORS_MAP);
+const isSubmitting = ref(false);
+
+// 选项数据（依赖上面定义的响应式数据）
+const accountTypeOptions = computed<SelectOption[]>(() =>
+  Object.values(AccountTypeSchema.enum).map(type => ({
+    value: type,
+    label: t(`financial.accountTypes.${type.toLowerCase()}`),
+  })),
+);
+
+const currencyOptions = computed<SelectOption[]>(() =>
+  currencies.value.map(currency => ({
+    value: currency.code,
+    label: t(`currency.${currency.code}`),
+  })),
+);
+
+const userOptions = computed<SelectOption[]>(() =>
+  users.value.map(user => ({
+    value: user.serialNum,
+    label: user.name,
+  })),
+);
+
+// 表单验证
+const validation = useFormValidation(
+  props.account ? UpdateAccountRequestSchema : CreateAccountRequestSchema,
+);
 
 // Fetch currencies asynchronously
 async function loadCurrencies() {
@@ -260,13 +283,10 @@ watch(() => form.initialBalance, newBalance => {
         required
         :error="validation.shouldShowError('name') ? validation.getError('name') : ''"
       >
-        <input
+        <Input
           v-model="form.name"
-          type="text"
-          required
-          class="modal-input-select w-full"
           :placeholder="t('common.placeholders.enterName')"
-        >
+        />
       </FormRow>
 
       <!-- 账户类型 -->
@@ -275,11 +295,11 @@ watch(() => form.initialBalance, newBalance => {
         required
         :error="validation.shouldShowError('type') ? validation.getError('type') : ''"
       >
-        <select v-model="form.type" required class="modal-input-select w-full">
-          <option v-for="type in accountTypes" :key="type" :value="type">
-            {{ t(`financial.accountTypes.${type.toLowerCase()}`) }}
-          </option>
-        </select>
+        <Select
+          v-model="form.type"
+          :options="accountTypeOptions"
+          :placeholder="t('financial.account.accountType')"
+        />
       </FormRow>
 
       <!-- 初始余额 -->
@@ -288,15 +308,13 @@ watch(() => form.initialBalance, newBalance => {
         required
         :error="validation.shouldShowError('initialBalance') ? validation.getError('initialBalance') : ''"
       >
-        <input
+        <Input
           v-model="form.initialBalance"
           type="text"
-          required
-          class="modal-input-select w-full"
           placeholder="0.00"
           @input="handleBalanceInput($event)"
           @blur="form.initialBalance = formatBalance(form.initialBalance)"
-        >
+        />
       </FormRow>
 
       <!-- 货币 -->
@@ -305,11 +323,11 @@ watch(() => form.initialBalance, newBalance => {
         required
         :error="validation.shouldShowError('currency') ? validation.getError('currency') : ''"
       >
-        <select v-model="form.currency.code" required class="modal-input-select w-full">
-          <option v-for="currency in currencies" :key="currency.code" :value="currency.code">
-            {{ t(`currency.${currency.code}`) }}
-          </option>
-        </select>
+        <Select
+          v-model="form.currency.code"
+          :options="currencyOptions"
+          :placeholder="t('financial.currency')"
+        />
       </FormRow>
 
       <!-- 所有者 -->
@@ -318,35 +336,23 @@ watch(() => form.initialBalance, newBalance => {
         required
         :error="validation.shouldShowError('ownerId') ? validation.getError('ownerId') : ''"
       >
-        <select v-model="form.ownerId" required class="modal-input-select w-full">
-          <option v-for="user in users" :key="user.serialNum" :value="user.serialNum">
-            {{ user.name }}
-          </option>
-        </select>
+        <Select
+          v-model="form.ownerId!"
+          :options="userOptions"
+          :placeholder="t('financial.account.owner')"
+        />
       </FormRow>
 
       <!-- 共享和激活 -->
-      <div class="checkbox-row">
-        <div class="checkbox-group">
-          <label class="checkbox-label">
-            <input
-              v-model="form.isShared"
-              type="checkbox"
-              class="checkbox-radius"
-            >
-            <span class="checkbox-text">{{ t('financial.account.shared') }}</span>
-          </label>
-        </div>
-        <div class="checkbox-group">
-          <label class="checkbox-label">
-            <input
-              v-model="form.isActive"
-              type="checkbox"
-              class="checkbox-radius"
-            >
-            <span class="checkbox-text-secondary">{{ t('financial.account.activate') }}</span>
-          </label>
-        </div>
+      <div class="flex gap-4 mb-3">
+        <Checkbox
+          v-model="form.isShared"
+          :label="t('financial.account.shared')"
+        />
+        <Checkbox
+          v-model="form.isActive"
+          :label="t('financial.account.activate')"
+        />
       </div>
 
       <!-- 颜色 -->
@@ -363,118 +369,17 @@ watch(() => form.initialBalance, newBalance => {
       </FormRow>
 
       <!-- 描述 -->
-      <div class="form-textarea">
-        <textarea
+      <FormRow
+        :error="validation.shouldShowError('description') ? validation.getError('description') : ''"
+        full-width
+      >
+        <Textarea
           v-model="form.description"
-          rows="3"
-          class="modal-input-select w-full"
-          :placeholder="`${t('common.misc.description')}（${t('common.misc.optional')}）`"
+          :rows="3"
+          :max-length="200"
+          :placeholder="t('common.misc.description')"
         />
-        <span v-if="validation.shouldShowError('description')" class="form-error">{{ validation.getError('description') }}</span>
-      </div>
+      </FormRow>
     </form>
   </BaseModal>
 </template>
-
-<style scoped lang="postcss">
-/* 引入共享的 Modal 表单样式 */
-@import '@/assets/styles/modal-forms.css';
-
-/* Form Textarea */
-.form-textarea {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  margin-bottom: 0.75rem;
-}
-
-.form-error {
-  font-size: 0.875rem;
-  color: var(--color-error);
-  text-align: right;
-}
-
-/* Checkbox Layout */
-.checkbox-row {
-  margin-bottom: 0.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.checkbox-group {
-  width: 50%;
-}
-
-.checkbox-label {
-  display: flex;
-  align-items: center;
-}
-
-.checkbox-text {
-  font-size: 0.875rem;
-  color: #374151;
-  font-weight: 500;
-}
-
-.checkbox-text-secondary {
-  font-size: 0.875rem;
-  color: #6b7280;
-  font-weight: 500;
-}
-
-/* Checkbox Styling */
-.checkbox-radius {
-  -webkit-appearance: none; /* 去掉浏览器默认样式 */
-  appearance: none;
-  display: inline-block;
-  height: 1.5rem;           /* h-6 */
-  width: 1.5rem;            /* w-6 */
-  border-radius: 50%;        /* rounded-full */
-  margin-left: 0.5rem;      /* ml-2 */
-  margin-right: 0.5rem;     /* mr-2 */
-  padding-top: 0;           /* py-0 */
-  padding-bottom: 0;        /* py-0 */
-  padding-left: 0.5rem;     /* px-2 */
-  padding-right: 0.5rem;    /* px-2 */
-  border: 1px solid #D1D5DB; /* border-gray-300 */
-  color: #111827;           /* text-gray-900 */
-  background-color: #ffffff; /* 默认背景 */
-  cursor: pointer;
-  transition: all 0.2s ease-in-out; /* transition-all duration-200 */
-  vertical-align: middle;
-}
-
-.checkbox-radius:focus {
-  outline: none; /* 去掉默认轮廓 */
-  border-color: transparent; /* focus:border-transparent */
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5); /* focus:ring-2 focus:ring-blue-500 */
-}
-
-/* placeholder 样式 */
-.checkbox-radius::placeholder {
-  color: #9CA3AF;              /* placeholder-gray-400 */
-}
-
-/* checked 状态 */
-.checkbox-radius:checked {
-  background-color: #3B82F6;  /* bg-blue-500 */
-  border-color: #4B5563;      /* border-gray-600 */
-}
-
-/* dark mode */
-@media (prefers-color-scheme: dark) {
-  .checkbox-radius {
-    color: #ffffff; /* dark:text-white */
-    border-color: #4B5563; /* dark:border-gray-600 */
-    background-color: #1F2937; /* dark:bg-gray-800 */
-  }
-  .checkbox-radius::placeholder {
-    color: #6B7280;            /* dark:placeholder-gray-500 */
-  }
-  .checkbox-radius:checked {
-    background-color: #3B82F6;
-    border-color: #4B5563;
-  }
-}
-</style>

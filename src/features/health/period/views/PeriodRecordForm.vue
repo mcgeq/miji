@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import BaseModal from '@/components/common/BaseModal.vue';
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue';
-import FormRow from '@/components/common/FormRow.vue';
 import PresetButtons from '@/components/common/PresetButtons.vue';
 import WarningDialog from '@/components/common/WarningDialog.vue';
+import FormRow from '@/components/ui/FormRow.vue';
 import { usePeriodStore } from '@/stores/periodStore';
 import { DateUtils } from '@/utils/date';
 import { deepDiff } from '@/utils/diff';

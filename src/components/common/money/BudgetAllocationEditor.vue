@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import BaseModal from '@/components/common/BaseModal.vue';
 import CategorySelector from '@/components/common/CategorySelector.vue';
-import FormRow from '@/components/common/FormRow.vue';
+import FormRow from '@/components/ui/FormRow.vue';
 import {
   OverspendLimitType,
 } from '@/types/budget-allocation';

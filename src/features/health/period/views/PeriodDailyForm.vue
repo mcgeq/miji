@@ -19,9 +19,9 @@ import {
   Smile,
 } from 'lucide-vue-next';
 import BaseModal from '@/components/common/BaseModal.vue';
-import FormRow from '@/components/common/FormRow.vue';
 import IconButtonGroup from '@/components/common/IconButtonGroup.vue';
 import PresetButtons from '@/components/common/PresetButtons.vue';
+import FormRow from '@/components/ui/FormRow.vue';
 import { DateUtils } from '@/utils/date';
 import { Lg } from '@/utils/debugLog';
 import { deepDiff } from '@/utils/diff';

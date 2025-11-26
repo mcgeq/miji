@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import BaseModal from '@/components/common/BaseModal.vue';
-import FormRow from '@/components/common/FormRow.vue';
+import { Checkbox, FormRow, Input, Select, Textarea } from '@/components/ui';
 import { MemberUserRoleSchema } from '@/schema/userRole';
 import { useFamilyMemberStore } from '@/stores/money';
 import { Lg } from '@/utils/debugLog';
 import { toast } from '@/utils/toast';
+import type { SelectOption } from '@/components/ui';
 import type { FamilyMember, FamilyMemberCreate, FamilyMemberUpdate } from '@/schema/money';
 
 interface Props {
@@ -26,6 +27,16 @@ const form = reactive({
   avatar: props.member?.avatar || null,
   colorTag: props.member?.colorTag || null,
 });
+
+// 角色选项
+const roleOptions = computed<SelectOption[]>(() => [
+  { value: 'Owner', label: '所有者' },
+  { value: 'Admin', label: '管理员' },
+  { value: 'User', label: '用户' },
+  { value: 'Moderator', label: '协调员' },
+  { value: 'Editor', label: '编辑者' },
+  { value: 'Guest', label: '访客' },
+]);
 
 function closeModal() {
   emit('close');
@@ -115,82 +126,36 @@ watch(
   >
     <form @submit.prevent="saveMember">
       <FormRow label="姓名" required>
-        <input
+        <Input
           v-model="form.name"
-          v-has-value
           type="text"
-          required
-          class="modal-input-select w-full"
           placeholder="请输入成员姓名"
-        >
+        />
       </FormRow>
 
       <FormRow label="角色" required>
-        <select
+        <Select
           v-model="form.role"
-          v-has-value
-          required
-          class="modal-input-select w-full"
-        >
-          <option value="">
-            请选择角色
-          </option>
-          <option value="Owner">
-            所有者
-          </option>
-          <option value="Admin">
-            管理员
-          </option>
-          <option value="User">
-            用户
-          </option>
-          <option value="Moderator">
-            协调员
-          </option>
-          <option value="Editor">
-            编辑者
-          </option>
-          <option value="Guest">
-            访客
-          </option>
-        </select>
+          :options="roleOptions"
+          placeholder="请选择角色"
+        />
       </FormRow>
 
-      <FormRow label="权限设置" optional>
-        <textarea
+      <FormRow full-width>
+        <Textarea
           v-model="form.permissions"
-          rows="3"
-          class="modal-input-select w-full"
+          :rows="3"
+          :max-length="200"
           placeholder="权限描述（可选）"
         />
       </FormRow>
 
-      <FormRow label="" optional>
-        <label class="checkbox-label">
-          <input v-model="form.isPrimary" type="checkbox" class="checkbox-input">
-          <span class="checkbox-text">设为主要成员</span>
-        </label>
-      </FormRow>
+      <div class="mb-3">
+        <Checkbox
+          v-model="form.isPrimary"
+          label="设为主要成员"
+        />
+      </div>
     </form>
   </BaseModal>
 </template>
-
-<style scoped>
-/* 复选框样式 */
-.checkbox-label {
-  display: flex;
-  align-items: center;
-  cursor: pointer;
-}
-
-.checkbox-input {
-  margin-right: 0.5rem;
-  cursor: pointer;
-}
-
-.checkbox-text {
-  font-size: 0.875rem;
-  color: var(--color-base-content);
-  font-weight: 500;
-}
-</style>

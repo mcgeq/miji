@@ -4,17 +4,18 @@ import z from 'zod';
 import BaseModal from '@/components/common/BaseModal.vue';
 import ColorSelector from '@/components/common/ColorSelector.vue';
 import DateTimePicker from '@/components/common/DateTimePicker.vue';
-import FormRow from '@/components/common/FormRow.vue';
 import CurrencySelector from '@/components/common/money/CurrencySelector.vue';
 import PrioritySelector from '@/components/common/PrioritySelector.vue';
 import ReminderSelector from '@/components/common/ReminderSelector.vue';
 import RepeatPeriodSelector from '@/components/common/RepeatPeriodSelector.vue';
+import { Checkbox, FormRow, Input, Select, Textarea } from '@/components/ui';
 import { COLORS_MAP, CURRENCY_CNY } from '@/constants/moneyConst';
 import {
   PrioritySchema,
 } from '@/schema/common';
 import { BilReminderCreateSchema, BilReminderUpdateSchema, ReminderTypesSchema } from '@/schema/money';
 import { DateUtils } from '@/utils/date';
+import type { SelectOption } from '@/components/ui';
 import type { Priority, RepeatPeriod } from '@/schema/common';
 import type { BilReminder, ReminderTypes } from '@/schema/money';
 
@@ -34,7 +35,22 @@ const { t } = useI18n();
 // 响应式状态
 const isSubmitting = ref(false);
 const locale = ref<'zh-CN' | 'en'>('zh-CN');
-const today = ref(DateUtils.getTodayDate());
+
+// 提前提醒单位选项
+const advanceUnitOptions = computed<SelectOption[]>(() => [
+  { value: 'minutes', label: t('units.minutes') },
+  { value: 'hours', label: t('units.hours') },
+  { value: 'days', label: t('units.days') },
+  { value: 'weeks', label: t('units.weeks') },
+]);
+
+// 提醒频率详细选项
+const reminderFrequencyOptions = computed<SelectOption[]>(() => [
+  { value: 'once', label: t('common.frequency.once') },
+  { value: '15m', label: t('common.frequency.q15m') },
+  { value: '1h', label: t('common.frequency.hourly') },
+  { value: '1d', label: t('common.frequency.daily') },
+]);
 
 // 验证错误
 const validationErrors = reactive({
@@ -114,6 +130,49 @@ const descriptionPlaceholder = computed(() => {
   } catch {
     return t(defaultKey);
   }
+});
+
+// 处理 nullable 字段的计算属性
+const billDateComputed = computed<string>({
+  get: () => form.billDate ?? '',
+  set: (value: string) => {
+    form.billDate = value || null;
+  },
+});
+
+const advanceUnitComputed = computed<string>({
+  get: () => form.advanceUnit ?? 'days',
+  set: (value: string) => {
+    form.advanceUnit = value || undefined;
+  },
+});
+
+const reminderFrequencyComputed = computed<string>({
+  get: () => form.reminderFrequency ?? 'once',
+  set: (value: string) => {
+    form.reminderFrequency = value || null;
+  },
+});
+
+const escalationAfterHoursComputed = computed<number>({
+  get: () => form.escalationAfterHours ?? 24,
+  set: (value: number) => {
+    form.escalationAfterHours = value || null;
+  },
+});
+
+const timezoneComputed = computed<string>({
+  get: () => form.timezone ?? '',
+  set: (value: string) => {
+    form.timezone = value || null;
+  },
+});
+
+const descriptionComputed = computed<string>({
+  get: () => form.description ?? '',
+  set: (value: string) => {
+    form.description = value || null;
+  },
 });
 
 const isFormValid = computed(() => {
@@ -620,11 +679,13 @@ watch(
         required
         :error="validationErrors.name"
       >
-        <input
-          v-model="form.name" type="text" required class="modal-input-select w-full"
-          :class="{ 'border-red-500': validationErrors.name }" :placeholder="t('validation.reminderTitle')"
+        <Input
+          v-model="form.name"
+          type="text"
+          :max-length="50"
+          :placeholder="t('validation.reminderTitle')"
           @blur="validateName"
-        >
+        />
       </FormRow>
 
       <ReminderSelector
@@ -656,15 +717,12 @@ watch(
         <div class="form-input-2-3">
           <div class="amount-input-group">
             <div class="amount-input">
-              <input
+              <Input
                 v-model.number="form.amount"
                 type="number"
-                step="0.01"
-                min="0"
-                class="modal-input-select w-full"
-                :class="{ 'border-red-500': validationErrors.amount }" :placeholder="amountPlaceholder"
-                :required="isFinanceType" @blur="validateAmount"
-              >
+                :placeholder="amountPlaceholder"
+                @blur="validateAmount"
+              />
             </div>
             <div class="currency-selector">
               <CurrencySelector v-model="form.currency" width="full" />
@@ -678,14 +736,11 @@ watch(
         :label="t('date.billDate')"
         required
       >
-        <input
-          v-model="form.billDate"
+        <Input
+          v-model="billDateComputed"
           type="date"
-          required
-          class="modal-input-select w-full"
-          :class="{ 'border-red-500': validationErrors.remindDate }" :min="today"
           @blur="validateRemindDate"
-        >
+        />
       </FormRow>
 
       <!-- 提醒日期 -->
@@ -694,14 +749,11 @@ watch(
         required
         :error="validationErrors.remindDate"
       >
-        <input
+        <Input
           v-model="form.remindDate"
           type="date"
-          required
-          class="modal-input-select w-full"
-          :class="{ 'border-red-500': validationErrors.remindDate }" :min="today"
           @blur="validateRemindDate"
-        >
+        />
       </FormRow>
 
       <!-- 重复频率  -->
@@ -729,43 +781,26 @@ watch(
           {{ t('financial.reminder.advanceReminder') }}
         </label>
         <div class="advance-reminder-group">
-          <input
-            v-model.number="form.advanceValue" type="number" min="0" max="999"
-            class="modal-input-select flex-1 w-1/2" placeholder="0"
-          >
-          <select v-model="form.advanceUnit" class="modal-input-select">
-            <option value="minutes">
-              {{ t('units.minutes') }}
-            </option>
-            <option value="hours">
-              {{ t('units.hours') }}
-            </option>
-            <option value="days">
-              {{ t('units.days') }}
-            </option>
-            <option value="weeks">
-              {{ t('units.weeks') }}
-            </option>
-          </select>
+          <Input
+            v-model.number="form.advanceValue"
+            type="number"
+            placeholder="0"
+            class="flex-1 w-1/2"
+          />
+          <Select
+            v-model="advanceUnitComputed"
+            :options="advanceUnitOptions"
+            class="flex-1"
+          />
         </div>
       </div>
 
       <!-- 提醒频率 -->
       <FormRow :label="t('financial.reminder.frequency')" optional>
-        <select v-model="form.reminderFrequency" class="modal-input-select w-full">
-          <option value="once">
-            {{ t('common.frequency.once') }}
-          </option>
-          <option value="15m">
-            {{ t('common.frequency.q15m') }}
-          </option>
-          <option value="1h">
-            {{ t('common.frequency.hourly') }}
-          </option>
-          <option value="1d">
-            {{ t('common.frequency.daily') }}
-          </option>
-        </select>
+        <Select
+          v-model="reminderFrequencyComputed"
+          :options="reminderFrequencyOptions"
+        />
       </FormRow>
 
       <!-- 稍后提醒（打盹） -->
@@ -784,10 +819,10 @@ watch(
       <div class="form-row">
         <label class="form-label form-label-block">{{ t('financial.reminder.methods') }}</label>
         <div class="form-input-2-3">
-          <label class="checkbox-label"><input v-model="methodsState.system" type="checkbox" class="mr-2">系统</label>
+          <Checkbox v-model="methodsState.system" label="系统" />
           <div class="mt-1 flex gap-2">
-            <label class="checkbox-label"><input v-model="methodsState.email" type="checkbox" class="mr-1">邮件</label>
-            <label class="checkbox-label"><input v-model="methodsState.sms" type="checkbox" class="mr-1">短信</label>
+            <Checkbox v-model="methodsState.email" label="邮件" />
+            <Checkbox v-model="methodsState.sms" label="短信" />
           </div>
         </div>
       </div>
@@ -798,21 +833,35 @@ watch(
           {{ t('financial.reminder.advancedSettings') }}
         </summary>
         <div class="mt-2 flex flex-col gap-2">
-          <label class="checkbox-label"><input v-model="form.escalationEnabled" type="checkbox" class="mr-2">升级提醒</label>
+          <Checkbox v-model="form.escalationEnabled" label="升级提醒" />
           <div class="form-row">
             <label class="form-label">升级间隔(小时)</label>
-            <input v-model.number="form.escalationAfterHours" type="number" min="1" class="modal-input-select w-2/3">
+            <Input
+              v-model.number="escalationAfterHoursComputed"
+              type="number"
+              class="w-2/3"
+            />
           </div>
-          <label class="checkbox-label"><input v-model="form.smartReminderEnabled" type="checkbox" class="mr-2">智能提醒</label>
-          <label class="checkbox-label"><input v-model="form.autoReschedule" type="checkbox" class="mr-2">自动顺延</label>
-          <label class="checkbox-label"><input v-model="form.paymentReminderEnabled" type="checkbox" class="mr-2">支付提醒</label>
+          <Checkbox v-model="form.smartReminderEnabled" label="智能提醒" />
+          <Checkbox v-model="form.autoReschedule" label="自动顺延" />
+          <Checkbox v-model="form.paymentReminderEnabled" label="支付提醒" />
           <div class="form-row">
             <label class="form-label">时区</label>
-            <input v-model="form.timezone" type="text" class="modal-input-select w-2/3" placeholder="例如: Asia/Shanghai">
+            <Input
+              v-model="timezoneComputed"
+              type="text"
+              placeholder="例如: Asia/Shanghai"
+              class="w-2/3"
+            />
           </div>
           <div v-if="form.lastReminderSentAt" class="form-row">
             <label class="form-label">上次提醒时间</label>
-            <input class="modal-input-select w-2/3" :value="form.lastReminderSentAt" readonly>
+            <Input
+              :model-value="form.lastReminderSentAt"
+              type="text"
+              readonly
+              class="w-2/3"
+            />
           </div>
         </div>
       </details>
@@ -832,24 +881,21 @@ watch(
 
       <!-- 启用状态 -->
       <div class="checkbox-section">
-        <label class="checkbox-label">
-          <input v-model="form.enabled" type="checkbox" class="mr-2">
-          <span class="checkbox-text">
-            {{ t('financial.reminder.enabled') }}
-          </span>
-        </label>
+        <Checkbox
+          v-model="form.enabled"
+          :label="t('financial.reminder.enabled')"
+        />
       </div>
 
       <!-- 描述 -->
-      <div class="form-textarea">
-        <textarea
-          v-model="form.description" rows="3" class="modal-input-select w-full"
-          :placeholder="descriptionPlaceholder" maxlength="200"
+      <FormRow full-width>
+        <Textarea
+          v-model="descriptionComputed"
+          :rows="3"
+          :max-length="200"
+          :placeholder="descriptionPlaceholder"
         />
-        <div class="character-count">
-          {{ t('common.misc.maxLength', { current: form.description?.length || 0, max: 200 }) }}
-        </div>
-      </div>
+      </FormRow>
     </form>
   </BaseModal>
 </template>
@@ -1046,28 +1092,9 @@ watch(
   margin-bottom: 0.5rem;
 }
 
-.checkbox-label {
-  display: flex;
-  align-items: center;
-}
-
-.checkbox-text {
-  font-size: 0.875rem;
-  color: var(--color-base-content);
-  font-weight: 500;
-}
-
 /* Optional text */
 .optional-text {
   color: var(--color-neutral);
-}
-
-/* Character count */
-.character-count {
-  font-size: 0.75rem;
-  color: var(--color-neutral);
-  margin-top: 0.25rem;
-  text-align: right;
 }
 
 /* Submit button loading state */

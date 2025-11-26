@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import BaseModal from '@/components/common/BaseModal.vue';
 import DateTimePicker from '@/components/common/DateTimePicker.vue';
-import FormRow from '@/components/common/FormRow.vue';
 import CurrencySelector from '@/components/common/money/CurrencySelector.vue';
+import { FormRow, Input, Select, Textarea } from '@/components/ui';
 import {
   TransactionStatusSchema,
   TransactionTypeSchema,
@@ -26,6 +26,7 @@ import { formatCurrency } from '../utils/money';
 import { safeToFixed } from '../utils/numberUtils';
 import { initializeFormData } from '../utils/transactionFormUtils';
 import TransactionSplitSection from './TransactionSplitSection.vue';
+import type { SelectOption } from '@/components/ui';
 import type {
   TransactionType,
 } from '@/schema/common';
@@ -119,6 +120,14 @@ const { selectableAccounts: selectAccounts } = useAccountFilter(
   computed(() => form.value.category),
 );
 
+// Select 组件选项数据
+const accountOptions = computed<SelectOption[]>(() =>
+  selectAccounts.value.map(account => ({
+    value: account.serialNum,
+    label: `${account.name} (${formatCurrency(account.balance)})`,
+  })),
+);
+
 // 支付方式管理
 const {
   availablePaymentMethods,
@@ -128,6 +137,29 @@ const {
   computed(() => form.value.accountSerialNum),
   computed(() => form.value.transactionType),
 );
+
+const paymentMethodOptions = computed<SelectOption[]>(() =>
+  availablePaymentMethods.value.map(method => ({
+    value: method,
+    label: t(`financial.paymentMethods.${method.toLowerCase()}`),
+  })),
+);
+
+const categoryOptions = computed<SelectOption[]>(() =>
+  Array.from(categoryMap.value.entries()).map(([_key, category]) => ({
+    value: category.name,
+    label: t(`common.categories.${lowercaseFirstLetter(category.name)}`),
+  })),
+);
+
+const subCategoryOptions = computed<SelectOption[]>(() => {
+  if (!form.value.category) return [];
+  const subs = categoryMap.value.get(form.value.category)?.subs || [];
+  return subs.map(sub => ({
+    value: sub,
+    label: t(`common.subCategories.${lowercaseFirstLetter(sub)}`),
+  }));
+});
 
 // 账本和成员关联功能
 const {
@@ -160,6 +192,38 @@ const isTransferReadonly = computed(() => {
 
 const isEditMode = computed<boolean>(() => !!props.transaction);
 const isAccountDisabled = computed<boolean>(() => isTransferReadonly.value || isEditMode.value);
+
+// 转入账户的计算属性，处理 nullable 转换
+const toAccountSerialNum = computed<string>({
+  get: () => form.value.toAccountSerialNum ?? '',
+  set: (value: string) => {
+    form.value.toAccountSerialNum = value || undefined;
+  },
+});
+
+// 子分类的计算属性，处理 nullable 转换
+const subCategory = computed<string>({
+  get: () => form.value.subCategory ?? '',
+  set: (value: string) => {
+    form.value.subCategory = value || undefined;
+  },
+});
+
+// 首次到期日的计算属性，处理 nullable 转换
+const firstDueDate = computed<string>({
+  get: () => form.value.firstDueDate ?? '',
+  set: (value: string) => {
+    form.value.firstDueDate = value || undefined;
+  },
+});
+
+// 关联交易序列号的计算属性，处理 optional 转换
+const relatedTransactionSerialNum = computed<string>({
+  get: () => form.value.relatedTransactionSerialNum ?? '',
+  set: (value: string) => {
+    form.value.relatedTransactionSerialNum = value || undefined;
+  },
+});
 
 // 分摊配置状态
 const splitConfig = ref<{
@@ -456,10 +520,6 @@ const isPaymentMethodEditable = computed(() => {
   return true;
 });
 
-const selectToAccounts = computed(() => {
-  return selectAccounts.value.filter(account => account.serialNum !== form.value.accountSerialNum);
-});
-
 function clearMemberSelection() {
   selectedMembers.value = [];
   toast.info('已清空成员选择');
@@ -681,17 +741,14 @@ watch(
 
       <!-- 金额 -->
       <FormRow :label="t('financial.money')" required>
-        <input
+        <Input
           v-model="form.amount"
           v-has-value
           type="number"
-          class="modal-input-select w-full"
           :placeholder="t('common.placeholders.enterAmount')"
           :disabled="isInstallmentFieldsDisabled || isInstallmentTransactionFieldsDisabled || isReadonlyMode"
-          step="0.01"
-          required
           @input="handleAmountInput"
-        >
+        />
       </FormRow>
 
       <!-- 币种 -->
@@ -710,14 +767,13 @@ watch(
         :label="isTransferReadonly || form.transactionType === TransactionTypeSchema.enum.Transfer ? t('financial.transaction.fromAccount') : t('financial.account.account')"
         required
       >
-        <select v-model="form.accountSerialNum" v-has-value class="modal-input-select w-full" required :disabled="isAccountDisabled || isReadonlyMode">
-          <option value="">
-            {{ t('common.placeholders.selectAccount') }}
-          </option>
-          <option v-for="account in selectAccounts" :key="account.serialNum" :value="account.serialNum">
-            {{ account.name }} ({{ formatCurrency(account.balance) }})
-          </option>
-        </select>
+        <Select
+          v-model="form.accountSerialNum"
+          v-has-value
+          :options="accountOptions"
+          :placeholder="t('common.placeholders.selectAccount')"
+          :disabled="isAccountDisabled || isReadonlyMode"
+        />
       </FormRow>
 
       <!-- 转入账户 -->
@@ -726,33 +782,25 @@ watch(
         :label="t('financial.transaction.toAccount')"
         required
       >
-        <select v-model="form.toAccountSerialNum" v-has-value class="modal-input-select w-full" required :disabled="isAccountDisabled || isReadonlyMode">
-          <option value="">
-            {{ t('common.placeholders.selectAccount') }}
-          </option>
-          <option v-for="account in selectToAccounts" :key="account.serialNum" :value="account.serialNum">
-            {{ account.name }} ({{ formatCurrency(account.balance) }})
-          </option>
-        </select>
+        <Select
+          v-model="toAccountSerialNum"
+          v-has-value
+          :options="accountOptions.filter(opt => opt.value !== form.accountSerialNum)"
+          :placeholder="t('common.placeholders.selectAccount')"
+          :disabled="isAccountDisabled || isReadonlyMode"
+        />
       </FormRow>
 
       <!-- 支付渠道 -->
       <FormRow :label="t('financial.transaction.paymentMethod')" required>
-        <select
+        <Select
           v-if="isPaymentMethodEditable"
           v-model="form.paymentMethod"
           v-has-value
+          :options="paymentMethodOptions"
+          :placeholder="t('common.placeholders.selectOption')"
           :disabled="isTransferReadonly || isReadonlyMode"
-          class="modal-input-select w-full"
-          required
-        >
-          <option value="">
-            {{ t('common.placeholders.selectOption') }}
-          </option>
-          <option v-for="method in availablePaymentMethods" :key="method" :value="method">
-            {{ t(`financial.paymentMethods.${method.toLowerCase()}`) }}
-          </option>
-        </select>
+        />
         <div v-else class="form-display">
           {{ t(`financial.paymentMethods.${form.paymentMethod.toLowerCase()}`) }}
         </div>
@@ -760,20 +808,13 @@ watch(
 
       <!-- 分类 -->
       <FormRow :label="t('categories.category')" required>
-        <select
+        <Select
           v-model="form.category"
           v-has-value
-          class="modal-input-select w-full"
-          required
+          :options="categoryOptions"
+          :placeholder="t('common.placeholders.selectCategory')"
           :disabled="isTransferReadonly || isInstallmentTransactionFieldsDisabled || isReadonlyMode"
-        >
-          <option value="">
-            {{ t('common.placeholders.selectCategory') }}
-          </option>
-          <option v-for="[key, category] in categoryMap" :key="key" :value="category.name">
-            {{ t(`common.categories.${lowercaseFirstLetter(category.name)}`) }}
-          </option>
-        </select>
+        />
       </FormRow>
 
       <!-- 子分类 -->
@@ -782,19 +823,13 @@ watch(
         :label="t('categories.subCategory')"
         optional
       >
-        <select
-          v-model="form.subCategory"
+        <Select
+          v-model="subCategory"
           v-has-value
-          class="modal-input-select w-full"
+          :options="subCategoryOptions"
+          :placeholder="t('common.placeholders.selectOption')"
           :disabled="isTransferReadonly || isInstallmentTransactionFieldsDisabled || isReadonlyMode"
-        >
-          <option value="">
-            {{ t('common.placeholders.selectOption') }}
-          </option>
-          <option v-for="sub in categoryMap.get(form.category)?.subs" :key="sub" :value="sub">
-            {{ t(`common.subCategories.${lowercaseFirstLetter(sub)}`) }}
-          </option>
-        </select>
+        />
       </FormRow>
 
       <!-- 关联账本 -->
@@ -984,20 +1019,12 @@ watch(
 
       <!-- 交易状态 -->
       <FormRow :label="t('financial.transaction.status')" required>
-        <select
+        <Select
           v-model="form.transactionStatus"
           v-has-value
-          class="modal-input-select w-full"
+          :options="availableTransactionStatuses"
           :disabled="isInstallmentTransactionFieldsDisabled || isReadonlyMode"
-        >
-          <option
-            v-for="status in availableTransactionStatuses"
-            :key="status.value"
-            :value="status.value"
-          >
-            {{ status.label }}
-          </option>
-        </select>
+        />
       </FormRow>
 
       <!-- 分期选项 -->
@@ -1020,40 +1047,35 @@ watch(
           <span class="warning-text">分期计划已开始执行，部分设置不可修改</span>
         </div>
         <FormRow :label="t('financial.transaction.totalPeriods')" required>
-          <input
+          <Input
             v-model.number="form.totalPeriods"
             type="number"
-            min="2"
-            class="modal-input-select w-full"
             :disabled="isInstallmentFieldsDisabled || isReadonlyMode"
-          >
+          />
         </FormRow>
 
         <FormRow :label="t('financial.transaction.installmentAmount')" required>
-          <input
+          <Input
             :value="safeToFixed(calculatedInstallmentAmount)"
             type="text"
             readonly
-            class="modal-input-select w-full"
-          >
+          />
         </FormRow>
 
         <FormRow :label="t('financial.transaction.firstDueDate')" required>
-          <input
-            v-model="form.firstDueDate"
+          <Input
+            v-model="firstDueDate"
             type="date"
-            class="modal-input-select w-full"
             :disabled="isInstallmentFieldsDisabled || isReadonlyMode"
-          >
+          />
         </FormRow>
 
         <FormRow :label="t('financial.transaction.relatedTransaction')" optional>
-          <input
-            v-model="form.relatedTransactionSerialNum"
+          <Input
+            v-model="relatedTransactionSerialNum"
             type="text"
-            class="modal-input-select w-full"
             :placeholder="t('common.misc.optional')"
-          >
+          />
         </FormRow>
 
         <!-- 分期计划详情 -->
@@ -1156,13 +1178,15 @@ watch(
       </FormRow>
 
       <!-- 备注 -->
-      <textarea
-        v-model="form.description"
-        class="modal-input-select w-full"
-        rows="3"
-        :placeholder="`${t('common.misc.remark')}（${t('common.misc.optional')}）`"
-        :disabled="isReadonlyMode"
-      />
+      <FormRow full-width>
+        <Textarea
+          v-model="form.description"
+          :rows="3"
+          :max-length="1000"
+          :placeholder="t('common.misc.remark')"
+          :disabled="isReadonlyMode"
+        />
+      </FormRow>
     </form>
   </BaseModal>
 </template>

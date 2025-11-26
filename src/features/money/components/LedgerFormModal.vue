@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n';
 import BaseModal from '@/components/common/BaseModal.vue';
-import FormRow from '@/components/common/FormRow.vue';
+import { Checkbox, FormRow, Input, Select, Textarea } from '@/components/ui';
 import { CURRENCY_CNY } from '@/constants/moneyConst';
 import { MoneyDb } from '@/services/money/money';
 import { useFamilyLedgerStore } from '@/stores/money';
 import { Lg } from '@/utils/debugLog';
 import { toast } from '@/utils/toast';
+import type { SelectOption } from '@/components/ui';
 import type { Currency } from '@/schema/common';
 import type { FamilyLedger, FamilyLedgerCreate, FamilyLedgerUpdate, FamilyMember } from '@/schema/money';
 
@@ -28,6 +29,22 @@ const saving = ref(false);
 const isSubmitting = ref(false);
 const isEdit = computed(() => !!props.ledger);
 const currencies = ref<Currency[]>([]);
+
+// 货币选项
+const currencyOptions = computed<SelectOption[]>(() =>
+  currencies.value.map(currency => ({
+    value: currency.code,
+    label: `${currency.symbol} ${currency.code} - ${t(currency.code)}`,
+  })),
+);
+
+// 角色选项
+const roleOptions = computed<SelectOption[]>(() => [
+  { value: 'Owner', label: t('roles.owner') },
+  { value: 'Admin', label: t('roles.admin') },
+  { value: 'Member', label: t('roles.member') },
+  { value: 'Viewer', label: t('roles.viewer') },
+]);
 
 // Fetch currencies asynchronously
 async function loadCurrencies() {
@@ -304,37 +321,21 @@ onMounted(() => {
         </h3>
 
         <FormRow :label="t('familyLedger.ledgerName')" required>
-          <div class="input-with-hint">
-            <input
-              id="name"
-              v-model="form.name"
-              v-has-value
-              type="text"
-              required
-              maxlength="50"
-              :placeholder="t('common.placeholders.enterName')"
-              class="modal-input-select w-full"
-            >
-            <p class="form-help">
-              {{ form.name.length }}/50
-            </p>
-          </div>
+          <Input
+            v-model="form.name"
+            type="text"
+            :max-length="50"
+            :placeholder="t('common.placeholders.enterName')"
+          />
         </FormRow>
 
-        <FormRow :label="t('familyLedger.ledgerDescription')" optional>
-          <div class="input-with-hint">
-            <textarea
-              id="description"
-              v-model="form.description"
-              rows="3"
-              maxlength="200"
-              :placeholder="t('common.placeholders.enterDescription')"
-              class="modal-input-select w-full"
-            />
-            <p class="form-help">
-              {{ form.description.length }}/200
-            </p>
-          </div>
+        <FormRow full-width>
+          <Textarea
+            v-model="form.description"
+            :rows="3"
+            :max-length="200"
+            :placeholder="t('common.placeholders.enterDescription')"
+          />
         </FormRow>
       </div>
 
@@ -345,26 +346,15 @@ onMounted(() => {
         </h3>
 
         <FormRow :label="t('financial.baseCurrency')" required>
-          <div class="input-with-hint">
-            <select
-              id="currency"
-              v-model="form.baseCurrency.code"
-              v-has-value
-              required
-              class="modal-input-select w-full"
-              @change="updateCurrencyInfo"
-            >
-              <option value="">
-                {{ t('messages.selectCurrency') }}
-              </option>
-              <option v-for="currency in currencies" :key="currency.code" :value="currency.code">
-                {{ currency.symbol }} {{ currency.code }} - {{ t(currency.code) }}
-              </option>
-            </select>
-            <p class="form-help">
-              {{ t('messages.selectedAsDefault') }}
-            </p>
-          </div>
+          <Select
+            v-model="form.baseCurrency.code"
+            :options="currencyOptions"
+            :placeholder="t('messages.selectCurrency')"
+            @update:model-value="updateCurrencyInfo"
+          />
+          <p class="form-help">
+            {{ t('messages.selectedAsDefault') }}
+          </p>
         </FormRow>
       </div>
 
@@ -397,36 +387,25 @@ onMounted(() => {
             class="p-3 border border-gray-200 rounded-md flex gap-3 items-center"
           >
             <div class="flex-1">
-              <input
-                v-model="member.name" type="text" :placeholder="t('familyLedger.memberName')" required
-                maxlength="20"
-                class="text-sm px-2 py-1 border border-gray-300 rounded w-full focus:outline-none focus:border-blue-500"
-              >
+              <Input
+                v-model="member.name"
+                type="text"
+                size="sm"
+                :placeholder="t('familyLedger.memberName')"
+              />
             </div>
             <div class="flex-1">
-              <select
+              <Select
                 v-model="member.role"
-                class="text-sm px-2 py-1 border border-gray-300 rounded w-full focus:outline-none focus:border-blue-500"
-              >
-                <option value="Owner">
-                  {{ t('roles.owner') }}
-                </option>
-                <option value="Admin">
-                  {{ t('roles.admin') }}
-                </option>
-                <option value="Member">
-                  {{ t('roles.member') }}
-                </option>
-                <option value="Viewer">
-                  {{ t('roles.viewer') }}
-                </option>
-              </select>
+                :options="roleOptions"
+                size="sm"
+              />
             </div>
             <div class="flex gap-2 items-center">
-              <label class="text-sm text-gray-600 flex gap-1 items-center">
-                <input v-model="member.isPrimary" type="checkbox" class="border-gray-300 rounded">
-                {{ t('familyLedger.primaryMember') }}
-              </label>
+              <Checkbox
+                v-model="member.isPrimary"
+                :label="t('familyLedger.primaryMember')"
+              />
               <button
                 type="button" class="text-red-500 p-1 hover:text-red-700" :disabled="form.memberList && form.memberList.length === 1"
                 @click="removeMember(index)"
@@ -457,14 +436,6 @@ onMounted(() => {
   padding-bottom: 0.5rem;
   margin-bottom: 0.75rem;
   border-bottom: 1px solid #e5e7eb;
-}
-
-/* 输入框带提示文字的包装器 */
-.input-with-hint {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  width: 100%;
 }
 
 .form-help {

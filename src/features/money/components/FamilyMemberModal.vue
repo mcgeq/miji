@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import BaseModal from '@/components/common/BaseModal.vue';
 import ColorSelector from '@/components/common/ColorSelector.vue';
-import FormRow from '@/components/common/FormRow.vue';
+import { Checkbox, FormRow, Input, Select } from '@/components/ui';
 import FamilyMemberSelector from '@/components/ui/FamilyMemberSelector.vue';
 import { useFamilyMemberStore } from '@/stores/money';
 import { toast } from '@/utils/toast';
 import { userPreferences } from '@/utils/userPreferences';
+import type { SelectOption } from '@/components/ui';
 import type { FamilyMember as SearchableFamilyMember } from '@/composables/useFamilyMemberSearch';
 import type { FamilyMember, FamilyMemberCreate, FamilyMemberUpdate } from '@/schema/money';
 
@@ -37,6 +38,14 @@ const form = reactive({
   colorTag: '#3b82f6',
   permissions: '[]',
 });
+
+// 角色选项
+const roleOptions = computed<SelectOption[]>(() => [
+  { value: 'Owner', label: '所有者' },
+  { value: 'Admin', label: '管理员' },
+  { value: 'Member', label: '成员' },
+  { value: 'Viewer', label: '观察者' },
+]);
 
 // 权限选项
 const permissionOptions = [
@@ -300,42 +309,27 @@ function handleMemberClear() {
         </h4>
 
         <FormRow label="姓名" required>
-          <input
+          <Input
             v-model="form.name"
-            v-has-value
             type="text"
-            class="modal-input-select w-full"
-            placeholder="请输入成员姓名"
-            required
-          >
+            placeholder="请输入姓名"
+          />
         </FormRow>
 
         <FormRow label="角色" required>
-          <select v-model="form.role" v-has-value class="modal-input-select w-full">
-            <option value="">
-              请选择角色
-            </option>
-            <option value="Owner">
-              所有者
-            </option>
-            <option value="Admin">
-              管理员
-            </option>
-            <option value="Member">
-              成员
-            </option>
-            <option value="Viewer">
-              查看者
-            </option>
-          </select>
+          <Select
+            v-model="form.role"
+            :options="roleOptions"
+            placeholder="请选择角色"
+          />
         </FormRow>
 
-        <FormRow label="" optional>
-          <label class="checkbox-label">
-            <input v-model="form.isPrimary" type="checkbox" class="checkbox-input">
-            <span class="checkbox-text">设为主要成员</span>
-          </label>
-        </FormRow>
+        <div class="mb-3">
+          <Checkbox
+            v-model="form.isPrimary"
+            label="设为主要成员"
+          />
+        </div>
 
         <!-- 关联成员信息显示 -->
         <div v-if="selectedExistingMember" class="form-row">
@@ -378,13 +372,11 @@ function handleMemberClear() {
         </h4>
 
         <FormRow label="头像URL" optional>
-          <input
+          <Input
             v-model="form.avatar"
-            v-has-value
             type="url"
-            class="modal-input-select w-full"
-            placeholder="可选，头像图片链接"
-          >
+            placeholder="请输入头像URL（可选）"
+          />
         </FormRow>
 
         <FormRow label="标识颜色" optional>
@@ -555,26 +547,6 @@ function handleMemberClear() {
   color: var(--color-base-content);
   min-width: 6rem;
   flex-shrink: 0;
-}
-
-/* 复选框样式 */
-.checkbox-label {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  cursor: pointer;
-}
-
-.checkbox-input {
-  width: 1rem;
-  height: 1rem;
-  cursor: pointer;
-}
-
-.checkbox-text {
-  font-size: 0.875rem;
-  color: var(--color-base-content);
-  font-weight: 500;
 }
 
 .member-preview {

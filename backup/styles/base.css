@@ -1,0 +1,34 @@
+/* base.css - 全局基础样式和重置 */
+
+@import "./variables.css";
+@import "./themes/light.css";
+@import "./themes/dark.css";
+@import "./themes/enhanced.css";
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: system-ui, sans-serif;
+  margin: 0;
+  line-height: 1.5;
+  background-color: var(--color-base-100);
+  color: var(--color-base-content);
+}
+
+/* Toast 容器样式 - 确保始终在最顶层 */
+/* vue-toastification 默认容器类名 */
+.Vue-Toastification__container {
+  z-index: 99999999 !important;
+  pointer-events: none;
+}
+
+/* toast 单个项目可以接收点击事件 */
+.Vue-Toastification__toast {
+  pointer-events: auto;
+}
+
+/* 这些样式已移动到 utilities.css 中，这里保留作为备用 */
