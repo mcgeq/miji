@@ -1,5 +1,7 @@
 // src/stores/money/family-member-store.ts
 import { defineStore } from 'pinia';
+import { MoneyDb } from '@/services/money/money';
+import { emitStoreEvent } from './store-events';
 import type {
   FamilyMember,
   FamilyMemberCreate,
@@ -131,8 +133,6 @@ export const useFamilyMemberStore = defineStore('family-member', {
       this.error = null;
 
       try {
-        const { MoneyDb } = await import('@/services/money/money');
-
         if (ledgerSerialNum) {
           // 获取特定账本的成员
           const ledgerMembers = await MoneyDb.listFamilyLedgerMembers();
@@ -164,7 +164,6 @@ export const useFamilyMemberStore = defineStore('family-member', {
       this.error = null;
 
       try {
-        const { MoneyDb } = await import('@/services/money/money');
         const member = await MoneyDb.createFamilyMember(data);
 
         // 添加到本地状态
@@ -198,7 +197,6 @@ export const useFamilyMemberStore = defineStore('family-member', {
       this.error = null;
 
       try {
-        const { MoneyDb } = await import('@/services/money/money');
         const updatedMember = await MoneyDb.updateFamilyMember(serialNum, data);
 
         // 更新本地状态
@@ -224,7 +222,6 @@ export const useFamilyMemberStore = defineStore('family-member', {
       this.error = null;
 
       try {
-        const { MoneyDb } = await import('@/services/money/money');
         await MoneyDb.deleteFamilyMember(serialNum);
 
         // 更新本地状态
@@ -339,8 +336,6 @@ export const useFamilyMemberStore = defineStore('family-member', {
      */
     async updateLedgerMemberCount(ledgerSerialNum: string): Promise<void> {
       try {
-        const { MoneyDb } = await import('@/services/money/money');
-
         // 获取该账本的所有成员关联
         const ledgerMembers = await MoneyDb.listFamilyLedgerMembers();
         const memberCount = ledgerMembers.filter(
@@ -350,10 +345,8 @@ export const useFamilyMemberStore = defineStore('family-member', {
         // 更新账本的成员数量
         await MoneyDb.updateFamilyLedger(ledgerSerialNum, { memberCount });
 
-        // 同步更新 ledger store
-        const { useFamilyLedgerStore } = await import('./family-ledger-store');
-        const ledgerStore = useFamilyLedgerStore();
-        await ledgerStore.fetchLedgers();
+        // 使用事件总线通知 ledger store 刷新数据（解耦，避免循环依赖）
+        emitStoreEvent('ledger:updated', { serialNum: ledgerSerialNum });
       } catch (error) {
         console.error('Failed to update ledger member count:', error);
       }

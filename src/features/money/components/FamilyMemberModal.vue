@@ -3,6 +3,7 @@ import BaseModal from '@/components/common/BaseModal.vue';
 import ColorSelector from '@/components/common/ColorSelector.vue';
 import FormRow from '@/components/common/FormRow.vue';
 import FamilyMemberSelector from '@/components/ui/FamilyMemberSelector.vue';
+import { MoneyDb } from '@/services/money/money';
 import { useFamilyMemberStore } from '@/stores/money';
 import { toast } from '@/utils/toast';
 import { userPreferences } from '@/utils/userPreferences';
@@ -171,7 +172,6 @@ async function saveMember() {
     } else {
       // 创建成员前，先检查名称是否已存在
       // Checking if member name exists
-      const { MoneyDb } = await import('@/services/money/money');
       const existingMembers = await MoneyDb.listFamilyMembers();
       const existingMember = existingMembers.find((m: FamilyMember) => m.name === form.name);
 
