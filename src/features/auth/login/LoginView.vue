@@ -53,8 +53,8 @@ async function handleSubmit() {
 </script>
 
 <template>
-  <div class="container">
-    <div class="card">
+  <div class="flex items-center justify-center min-h-screen p-4 bg-[var(--color-base-100)]">
+    <div class="w-full max-w-md p-8 bg-[var(--color-base-200)] rounded-2xl border border-[var(--color-base-300)] shadow-[0_10px_15px_rgba(0,0,0,0.1)] backdrop-blur-[10px] flex flex-col gap-6">
       <!-- 标题 -->
       <h2 class="title">
         {{ t('auth.login') }}

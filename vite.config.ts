@@ -9,6 +9,7 @@ import { VueRouterAutoImports } from 'unplugin-vue-router';
 import VueRouter from 'unplugin-vue-router/vite';
 import { defineConfig } from 'vite';
 import vueDevTools from 'vite-plugin-vue-devtools';
+import tailwindcss from '@tailwindcss/vite';
 
 const host = env.TAURI_DEV_HOST;
 function LucideResolver(componentName: string) {
@@ -26,6 +27,7 @@ export default defineConfig({
   // Tauri 需要使用相对路径，避免打包后白屏
   base: './',
   plugins: [
+    tailwindcss(),
     VueRouter({
       extensions: ['.vue', '.md'],
       dts: 'src/typed-router.d.ts',
@@ -86,10 +88,10 @@ export default defineConfig({
     host: host || false,
     hmr: host
       ? {
-          protocol: 'ws',
-          host,
-          port: 9429,
-        }
+        protocol: 'ws',
+        host,
+        port: 9429,
+      }
       : undefined,
     watch: {
       // 3. tell vite to ignore watching `src-tauri`
