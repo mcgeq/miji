@@ -313,6 +313,7 @@ function handleDelete() {
   border: 1px solid transparent;
   cursor: pointer;
   transition: all 0.2s ease;
+  flex-shrink: 0;
 }
 
 .base-modal-btn:disabled {
@@ -320,37 +321,40 @@ function handleDelete() {
   cursor: not-allowed;
 }
 
+/* 取消按钮 */
 .base-modal-btn-cancel {
-  background-color: var(--color-neutral);
-  color: var(--color-neutral-content);
-  border: none;
+  background-color: var(--color-neutral) !important;
+  color: var(--color-neutral-content) !important;
+  border: none !important;
 }
 
 .base-modal-btn-cancel:hover:not(:disabled) {
-  background-color: var(--color-neutral-hover);
-  color: var(--color-neutral-content);
+  background-color: var(--color-neutral-hover) !important;
+  color: var(--color-neutral-content) !important;
 }
 
+/* 确认按钮 */
 .base-modal-btn-confirm {
-  background-color: var(--color-primary);
-  color: var(--color-primary-content);
-  border: none;
+  background-color: var(--color-primary) !important;
+  color: var(--color-primary-content) !important;
+  border: none !important;
 }
 
 .base-modal-btn-confirm:hover:not(:disabled) {
-  background-color: var(--color-primary-hover);
-  color: var(--color-primary-content);
+  background-color: var(--color-primary-hover) !important;
+  color: var(--color-primary-content) !important;
 }
 
+/* 删除按钮 */
 .base-modal-btn-delete {
-  background-color: var(--color-error);
-  color: var(--color-error-content);
-  border: none;
+  background-color: var(--color-error) !important;
+  color: var(--color-error-content) !important;
+  border: none !important;
 }
 
 .base-modal-btn-delete:hover:not(:disabled) {
-  background-color: var(--color-error-hover);
-  color: var(--color-error-content);
+  background-color: var(--color-error-hover) !important;
+  color: var(--color-error-content) !important;
 }
 
 /* 按钮图标 */
@@ -402,7 +406,7 @@ function handleDelete() {
     padding: 1rem;
   }
 
-  /* 移动端按钮保持圆形和居中，不改变布局方向 */
+  /* 移动端按钮 - 保持圆形和居中布局 */
   .base-modal-footer {
     gap: 1rem;
   }
@@ -410,37 +414,6 @@ function handleDelete() {
   .base-modal-btn {
     width: 3rem;
     height: 3rem;
-    border-radius: 50%;
-    flex-shrink: 0;
-  }
-
-  /* 移动端按钮颜色 - 明确声明以确保正确显示 */
-  .base-modal-btn-cancel {
-    background-color: var(--color-neutral) !important;
-    color: var(--color-neutral-content) !important;
-  }
-
-  .base-modal-btn-confirm {
-    background-color: var(--color-primary) !important;
-    color: var(--color-primary-content) !important;
-  }
-
-  .base-modal-btn-delete {
-    background-color: var(--color-error) !important;
-    color: var(--color-error-content) !important;
-  }
-
-  /* 移动端按钮 hover 状态 */
-  .base-modal-btn-cancel:hover:not(:disabled) {
-    background-color: var(--color-neutral-hover) !important;
-  }
-
-  .base-modal-btn-confirm:hover:not(:disabled) {
-    background-color: var(--color-primary-hover) !important;
-  }
-
-  .base-modal-btn-delete:hover:not(:disabled) {
-    background-color: var(--color-error-hover) !important;
   }
 }
 </style>
