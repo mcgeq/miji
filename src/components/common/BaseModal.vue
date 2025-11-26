@@ -327,8 +327,8 @@ function handleDelete() {
 }
 
 .base-modal-btn-cancel:hover:not(:disabled) {
-  background-color: var(--color-neutral-content);
-  color: var(--color-neutral);
+  background-color: var(--color-neutral-hover);
+  color: var(--color-neutral-content);
 }
 
 .base-modal-btn-confirm {
@@ -338,8 +338,8 @@ function handleDelete() {
 }
 
 .base-modal-btn-confirm:hover:not(:disabled) {
-  background-color: var(--color-primary-content);
-  color: var(--color-primary);
+  background-color: var(--color-primary-hover);
+  color: var(--color-primary-content);
 }
 
 .base-modal-btn-delete {
@@ -349,8 +349,8 @@ function handleDelete() {
 }
 
 .base-modal-btn-delete:hover:not(:disabled) {
-  background-color: var(--color-error-content);
-  color: var(--color-error);
+  background-color: var(--color-error-hover);
+  color: var(--color-error-content);
 }
 
 /* 按钮图标 */
@@ -377,15 +377,15 @@ function handleDelete() {
 /* 移动端适配 */
 @media (max-width: 768px) {
   .base-modal-mask {
-    padding: 0;
+    padding: 0.5rem;
   }
 
   .base-modal-container {
     width: 100%;
-    max-width: 100%;
-    height: 100%;
-    max-height: 100%;
-    border-radius: 0;
+    max-width: calc(100vw - 1rem);
+    height: auto;
+    max-height: calc(100vh - 1rem);
+    border-radius: 1rem;
   }
 
   .base-modal-sm,
@@ -393,7 +393,7 @@ function handleDelete() {
   .base-modal-lg,
   .base-modal-xl {
     width: 100%;
-    max-width: 100%;
+    max-width: calc(100vw - 1rem);
   }
 
   .base-modal-header,
@@ -402,12 +402,45 @@ function handleDelete() {
     padding: 1rem;
   }
 
+  /* 移动端按钮保持圆形和居中，不改变布局方向 */
   .base-modal-footer {
-    flex-direction: column-reverse;
+    gap: 1rem;
   }
 
   .base-modal-btn {
-    width: 100%;
+    width: 3rem;
+    height: 3rem;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  /* 移动端按钮颜色 - 明确声明以确保正确显示 */
+  .base-modal-btn-cancel {
+    background-color: var(--color-neutral) !important;
+    color: var(--color-neutral-content) !important;
+  }
+
+  .base-modal-btn-confirm {
+    background-color: var(--color-primary) !important;
+    color: var(--color-primary-content) !important;
+  }
+
+  .base-modal-btn-delete {
+    background-color: var(--color-error) !important;
+    color: var(--color-error-content) !important;
+  }
+
+  /* 移动端按钮 hover 状态 */
+  .base-modal-btn-cancel:hover:not(:disabled) {
+    background-color: var(--color-neutral-hover) !important;
+  }
+
+  .base-modal-btn-confirm:hover:not(:disabled) {
+    background-color: var(--color-primary-hover) !important;
+  }
+
+  .base-modal-btn-delete:hover:not(:disabled) {
+    background-color: var(--color-error-hover) !important;
   }
 }
 </style>
