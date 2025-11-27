@@ -562,7 +562,7 @@ defineExpose({
 </template>
 
 <style scoped lang="postcss">
-/* 自定义样式 - 大部分样式已由BaseModal和FormRow提供 */
+/* 自定义样式 - 大部分样式已由Modal和FormRow提供 */
 
 /* 区域卡片 */
 .section-card {

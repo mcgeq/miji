@@ -413,7 +413,7 @@ defineExpose({
 </template>
 
 <style scoped>
-/* 自定义样式 - 大部分样式已由BaseModal和FormRow提供 */
+/* 自定义样式 - 大部分样式已由Modal和FormRow提供 */
 
 /* 表单字段带预设按钮 */
 .form-field-with-presets {
