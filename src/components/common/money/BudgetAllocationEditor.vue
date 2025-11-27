@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import BaseModal from '@/components/common/BaseModal.vue';
 import CategorySelector from '@/components/common/CategorySelector.vue';
+import { Modal } from '@/components/ui';
 import FormRow from '@/components/ui/FormRow.vue';
 import {
   OverspendLimitType,
@@ -179,7 +179,8 @@ watch(
 </script>
 
 <template>
-  <BaseModal
+  <Modal
+    :open="true"
     :model-value="true"
     :title="isEdit ? '编辑分配' : '添加分配'"
     size="md"
@@ -295,7 +296,7 @@ watch(
         placeholder="可选的备注信息..."
       />
     </form>
-  </BaseModal>
+  </Modal>
 </template>
 
 <style scoped>
