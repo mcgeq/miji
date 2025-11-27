@@ -18,9 +18,9 @@ import {
   ShieldX,
   Smile,
 } from 'lucide-vue-next';
-import BaseModal from '@/components/common/BaseModal.vue';
 import IconButtonGroup from '@/components/common/IconButtonGroup.vue';
 import PresetButtons from '@/components/common/PresetButtons.vue';
+import { Modal } from '@/components/ui';
 import FormRow from '@/components/ui/FormRow.vue';
 import { DateUtils } from '@/utils/date';
 import { Lg } from '@/utils/debugLog';
@@ -263,13 +263,14 @@ defineExpose({
 </script>
 
 <template>
-  <BaseModal
+  <Modal
+    :open="true"
     :title="isEditing ? t('period.forms.editDaily') : t('period.forms.recordDaily')"
     size="md"
     :confirm-loading="loading"
     :confirm-disabled="hasErrors()"
     @confirm="handleSubmit"
-    @cancel="$emit('cancel')"
+    @close="$emit('cancel')"
   >
     <!-- 日期选择 -->
     <FormRow :label="t('period.fields.date')" required :error="getFieldErrors('date')[0]">
@@ -408,7 +409,7 @@ defineExpose({
         {{ (formData.notes || '').length }}/500
       </div>
     </FormRow>
-  </BaseModal>
+  </Modal>
 </template>
 
 <style scoped>

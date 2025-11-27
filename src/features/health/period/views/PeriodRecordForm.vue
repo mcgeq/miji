@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import BaseModal from '@/components/common/BaseModal.vue';
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue';
 import PresetButtons from '@/components/common/PresetButtons.vue';
 import WarningDialog from '@/components/common/WarningDialog.vue';
+import { Modal } from '@/components/ui';
 import FormRow from '@/components/ui/FormRow.vue';
 import { usePeriodStore } from '@/stores/periodStore';
 import { DateUtils } from '@/utils/date';
@@ -307,14 +307,6 @@ async function handleDelete() {
   }
 }
 
-function handleCancel() {
-  if (hasUnsavedChanges()) {
-    emit('cancel');
-  } else {
-    emit('cancel');
-  }
-}
-
 function hasUnsavedChanges(): boolean {
   if (!props.record) {
     return !!(
@@ -397,7 +389,8 @@ defineExpose({
 </script>
 
 <template>
-  <BaseModal
+  <Modal
+    :open="true"
     :title="isEditing ? '编辑经期记录' : '添加经期记录'"
     size="md"
     :confirm-text="isEditing ? '更新' : '创建'"
@@ -406,7 +399,7 @@ defineExpose({
     :show-delete="!!isEditing"
     @confirm="handleSubmit"
     @delete="showDeleteConfirm = true"
-    @cancel="handleCancel"
+    @close="$emit('cancel')"
   >
     <!-- 日期设置区域 -->
     <div class="section-card">
@@ -522,7 +515,7 @@ defineExpose({
         {{ notesLength }}/500
       </div>
     </FormRow>
-  </BaseModal>
+  </Modal>
 
   <!-- 删除确认弹窗 -->
   <ConfirmDialog
