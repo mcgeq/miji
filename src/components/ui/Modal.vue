@@ -7,7 +7,7 @@
  */
 
 import { Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot } from '@headlessui/vue';
-import { Check, X } from 'lucide-vue-next';
+import { Check, Trash2, X } from 'lucide-vue-next';
 
 interface Props {
   /** 是否显示 */
@@ -126,7 +126,7 @@ const sizeClasses = {
             </div>
 
             <!-- 内容区 -->
-            <div class="flex-1 overflow-y-auto px-6 py-4">
+            <div class="modal-content flex-1 overflow-y-auto px-6 py-4">
               <slot />
             </div>
 
@@ -145,7 +145,7 @@ const sizeClasses = {
                     :disabled="props.confirmLoading"
                     @click="emit('delete')"
                   >
-                    {{ props.deleteText }}
+                    <Trash2 class="w-5 h-5" />
                   </button>
 
                   <!-- 取消按钮 -->
@@ -156,7 +156,7 @@ const sizeClasses = {
                     :disabled="props.confirmLoading"
                     @click="emit('cancel'); emit('close')"
                   >
-                    {{ props.cancelText }}
+                    <X class="w-5 h-5" />
                   </button>
 
                   <!-- 确认按钮 -->
@@ -190,3 +190,15 @@ const sizeClasses = {
     </Dialog>
   </TransitionRoot>
 </template>
+
+<style scoped>
+/* 隐藏滚动条但保持滚动功能 */
+.modal-content::-webkit-scrollbar {
+  display: none;
+}
+
+.modal-content {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+</style>

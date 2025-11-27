@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { isNaN } from 'es-toolkit/compat';
-import BaseModal from '@/components/common/BaseModal.vue';
 import ColorSelector from '@/components/common/ColorSelector.vue';
-import { Checkbox, FormRow, Input, Select, Textarea } from '@/components/ui';
+import { Checkbox, FormRow, Input, Modal, Select, Textarea } from '@/components/ui';
 import { useFormValidation } from '@/composables/useFormValidation';
 import { COLORS_MAP } from '@/constants/moneyConst';
 import { AccountTypeSchema, CreateAccountRequestSchema, UpdateAccountRequestSchema } from '@/schema/money';
@@ -267,7 +266,8 @@ watch(() => form.initialBalance, newBalance => {
 </script>
 
 <template>
-  <BaseModal
+  <Modal
+    :open="true"
     :title="props.account ? t('financial.account.editAccount') : t('financial.account.addAccount')"
     size="md"
     :confirm-text="props.account ? t('common.actions.update') : t('common.actions.create')"
@@ -381,5 +381,5 @@ watch(() => form.initialBalance, newBalance => {
         />
       </FormRow>
     </form>
-  </BaseModal>
+  </Modal>
 </template>
