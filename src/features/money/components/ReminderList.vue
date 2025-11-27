@@ -7,7 +7,7 @@ import {
   MoreHorizontal,
   RotateCcw,
 } from 'lucide-vue-next';
-import SimplePagination from '@/components/common/SimplePagination.vue';
+import { Pagination } from '@/components/ui';
 import { useReminderStore } from '@/stores/money';
 import { getRepeatTypeName, lowercaseFirstLetter } from '@/utils/common';
 import { DateUtils } from '@/utils/date';
@@ -376,7 +376,7 @@ onUnmounted(() => {
       v-if="pagination.totalItems.value > pagination.pageSize.value"
       class="pagination-container"
     >
-      <SimplePagination
+      <Pagination
         :current-page="pagination.currentPage.value"
         :total-pages="pagination.totalPages.value"
         :total-items="pagination.totalItems.value"

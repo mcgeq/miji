@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import SimplePagination from '@/components/common/SimplePagination.vue';
+import { Pagination } from '@/components/ui';
 import { SortDirection, TransactionTypeSchema } from '@/schema/common';
 import { useTransactionStore } from '@/stores/money';
 import { lowercaseFirstLetter } from '@/utils/common';
@@ -332,7 +332,7 @@ defineExpose({
     <!-- 分页组件 - 移动端优化版 -->
     <div v-if="pagination.totalItems > pagination.pageSize" class="pagination-container">
       <!-- 桌面端完整分页 -->
-      <SimplePagination
+      <Pagination
         :current-page="pagination.currentPage"
         :total-pages="pagination.totalPages"
         :total-items="pagination.totalItems"

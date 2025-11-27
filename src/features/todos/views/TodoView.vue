@@ -1,6 +1,7 @@
 <!-- src/features/todo/views/TodoView.vue -->
 <script setup lang="ts">
 import { Plus, X } from 'lucide-vue-next';
+import { Pagination } from '@/components/ui';
 import { FilterBtnSchema, PrioritySchema, StatusSchema } from '@/schema/common';
 import { TodoCreateSchema } from '@/schema/todos';
 import { DateUtils } from '@/utils/date';
@@ -165,7 +166,7 @@ onMounted(async () => {
       v-if="pagination.totalItems.value > pagination.pageSize.value"
       class="pagination-wrapper"
     >
-      <SimplePagination
+      <Pagination
         :current-page="pagination.currentPage.value"
         :total-pages="pagination.totalPages.value"
         :total-items="pagination.totalItems.value"

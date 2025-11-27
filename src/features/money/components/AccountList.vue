@@ -10,7 +10,7 @@ import {
   Wallet,
   Wallet2,
 } from 'lucide-vue-next';
-import SimplePagination from '@/components/common/SimplePagination.vue';
+import { Pagination } from '@/components/ui';
 import { useAccountStore, useMoneyConfigStore } from '@/stores/money';
 import { useAccountFilters } from '../composables/useAccountFilters';
 import { formatCurrency } from '../utils/money';
@@ -354,7 +354,7 @@ const gridLayoutClass = computed(() => {
 
     <!-- 分页组件 -->
     <div v-if="pagination.totalPages.value > 1" class="pagination-container">
-      <SimplePagination
+      <Pagination
         :current-page="pagination.currentPage.value"
         :total-pages="pagination.totalPages.value"
         :total-items="pagination.totalItems.value"

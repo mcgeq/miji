@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { BarChart3, MoreHorizontal, RotateCcw } from 'lucide-vue-next';
-import SimplePagination from '@/components/common/SimplePagination.vue';
+import { Pagination } from '@/components/ui';
 import { useBudgetStore, useCategoryStore } from '@/stores/money';
 import { getRepeatTypeName, lowercaseFirstLetter } from '@/utils/common';
 import { useBudgetFilters } from '../composables/useBudgetFilters';
@@ -381,7 +381,7 @@ defineExpose({
 
     <!-- 分页组件 -->
     <div v-if="pagination.totalItems.value > pagination.pageSize.value" class="pagination-container">
-      <SimplePagination
+      <Pagination
         :current-page="pagination.currentPage.value"
         :total-pages="pagination.totalPages.value"
         :total-items="pagination.totalItems.value"

@@ -27,6 +27,7 @@ export { default as FormRow } from './FormRow.vue';
 export { default as Input } from './Input.vue';
 // 核心组件
 export { default as Modal } from './Modal.vue';
+export { default as Pagination } from './Pagination.vue';
 export { default as Progress } from './Progress.vue';
 export { default as Radio } from './Radio.vue';
 export type { RadioOption } from './Radio.vue';
