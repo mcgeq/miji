@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
+import { LucideCheckCheck, LucideMinimize2, LucideX } from 'lucide-vue-next';
+import { Checkbox } from '@/components/ui';
 import { isDesktop } from '@/utils/platform';
 import { toast } from '@/utils/toast';
 
@@ -107,180 +109,80 @@ function handleCancel() {
 </script>
 
 <template>
-  <div v-if="isVisible" class="dialog-overlay" @click="handleCancel">
-    <div class="dialog-content" @click.stop>
-      <div class="dialog-body">
-        <div class="remember-choice">
-          <label class="checkbox-label">
-            <input
-              v-model="rememberChoice"
-              type="checkbox"
-              class="checkbox-input"
-            >
-            <span class="checkbox-text">记住我的选择</span>
-          </label>
-        </div>
-
-        <div class="dialog-actions">
-          <button
-            v-if="isDesktopPlatform"
-            class="action-btn minimize-btn"
-            title="最小化到托盘"
-            @click="handleMinimizeToTray"
+  <!-- 使用 Transition 和现代化的对话框设计 -->
+  <Teleport to="body">
+    <Transition
+      enter-active-class="duration-200 ease-out"
+      enter-from-class="opacity-0"
+      leave-active-class="duration-150 ease-in"
+      leave-to-class="opacity-0"
+    >
+      <div v-if="isVisible" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[999999] flex items-center justify-center p-4" @click="handleCancel">
+        <Transition
+          enter-active-class="duration-200 ease-out"
+          enter-from-class="opacity-0 scale-95"
+          leave-active-class="duration-150 ease-in"
+          leave-to-class="opacity-0 scale-95"
+        >
+          <div
+            v-if="isVisible"
+            class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden"
+            @click.stop
           >
-            <LucideMinimize2 :size="16" />
-          </button>
+            <!-- 标题区 -->
+            <div class="px-6 pt-6 pb-4 text-center">
+              <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                关闭应用
+              </h3>
+              <p class="text-sm text-gray-600 dark:text-gray-400">
+                选择您希望的操作
+              </p>
+            </div>
 
-          <button class="action-btn close-app-btn" title="关闭应用" @click="handleCloseApp">
-            <LucideCheckCheck :size="16" />
-          </button>
+            <!-- 内容区 -->
+            <div class="px-6 pb-6">
+              <!-- 记住选择 -->
+              <div class="mb-6 flex justify-center">
+                <Checkbox
+                  v-model="rememberChoice"
+                  label="记住我的选择"
+                />
+              </div>
 
-          <button class="action-btn cancel-btn" title="取消" @click="handleCancel">
-            <LucideX :size="16" />
-          </button>
-        </div>
+              <!-- 操作按钮 -->
+              <div class="flex items-center justify-center gap-3">
+                <!-- 最小化到托盘 -->
+                <button
+                  v-if="isDesktopPlatform"
+                  class="flex items-center justify-center w-14 h-14 rounded-full bg-blue-600 hover:bg-blue-700 text-white transition-all hover:scale-110 active:scale-95"
+                  title="最小化到托盘"
+                  @click="handleMinimizeToTray"
+                >
+                  <LucideMinimize2 :size="22" />
+                </button>
+
+                <!-- 完全关闭 -->
+                <button
+                  class="flex items-center justify-center w-14 h-14 rounded-full bg-red-600 hover:bg-red-700 text-white transition-all hover:scale-110 active:scale-95"
+                  title="完全关闭应用"
+                  @click="handleCloseApp"
+                >
+                  <LucideCheckCheck :size="22" />
+                </button>
+
+                <!-- 取消 -->
+                <button
+                  class="flex items-center justify-center w-14 h-14 rounded-full bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-900 dark:text-white transition-all hover:scale-110 active:scale-95"
+                  title="取消"
+                  @click="handleCancel"
+                >
+                  <LucideX :size="22" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </Transition>
       </div>
-    </div>
-  </div>
+    </Transition>
+  </Teleport>
 </template>
-
-<style scoped>
-.dialog-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 9999;
-}
-
-.dialog-content {
-  background: var(--color-base-200);
-  border-radius: 0.75rem;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-  max-width: 400px;
-  max-height: 90vh;
-  overflow: hidden;
-}
-
-.dialog-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: flex-end;
-  padding: 1rem 1rem 0 1rem;
-  position: relative;
-}
-
-.header-close-btn {
-  background: none;
-  border: none;
-  padding: 0.5rem;
-  border-radius: 0.375rem;
-  cursor: pointer;
-  color: var(--color-base-500);
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.header-close-btn:hover {
-  background-color: var(--color-base-100);
-  color: var(--color-base-700);
-}
-
-.dialog-body {
-  padding: 1.5rem;
-}
-
-.remember-choice {
-  margin-bottom: 1.5rem;
-  display: flex;
-  justify-content: center;
-}
-
-.checkbox-label {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  cursor: pointer;
-  font-size: 0.875rem;
-  color: var(--color-base-600);
-}
-
-.checkbox-input {
-  width: 1rem;
-  height: 1rem;
-  accent-color: var(--color-primary-500);
-}
-
-.checkbox-text {
-  user-select: none;
-}
-
-.dialog-actions {
-  display: flex;
-  flex-direction: row;
-  gap: 0.5rem;
-  justify-content: center;
-  align-items: center;
-}
-
-.action-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1rem;
-  border-radius: 0.375rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  border: none;
-  min-width: 5rem;
-  height: 2.75rem;
-}
-
-.minimize-btn {
-  background-color: var(--color-primary-500, #3b82f6);
-  color: white;
-}
-
-.minimize-btn:hover {
-  background-color: var(--color-primary-600, #2563eb);
-}
-
-.close-app-btn {
-  background-color: var(--color-error-500, #ef4444);
-  color: white;
-}
-
-.close-app-btn:hover {
-  background-color: var(--color-error-600, #dc2626);
-}
-
-.cancel-btn {
-  background-color: var(--color-base-300, #e5e7eb);
-  color: var(--color-base-700, #374151);
-}
-
-.cancel-btn:hover {
-  background-color: var(--color-base-300, #d1d5db);
-}
-
-@media (max-width: 480px) {
-  .dialog-actions {
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-
-  .action-btn {
-    width: 100%;
-  }
-}
-</style>
