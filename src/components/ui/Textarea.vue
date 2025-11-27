@@ -103,7 +103,7 @@ const shouldShowCount = computed(() => {
     />
 
     <!-- 底部信息栏：错误/帮助文本 + 字数统计 -->
-    <div v-if="hint || error || shouldShowCount" class="flex items-start justify-between mt-1.5 gap-2">
+    <div v-if="hint || error || shouldShowCount" class="flex items-start justify-between mt-0.25 gap-2">
       <!-- 帮助文本或错误信息 -->
       <p
         v-if="hint && !error"
