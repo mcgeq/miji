@@ -181,9 +181,9 @@ function handleDelete() {
 
 /* Modal Container - 模态框容器 */
 .base-modal-container {
-  background: var(--color-base-100);
+  background: rgb(255 255 255);
   border-radius: 1rem;
-  box-shadow: var(--shadow-2xl);
+  box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
   display: flex;
   flex-direction: column;
   max-height: calc(100vh - 2rem);
@@ -192,6 +192,12 @@ function handleDelete() {
   position: relative;
   z-index: 9999999 !important;
   isolation: isolate;
+}
+
+@media (prefers-color-scheme: dark) {
+  .base-modal-container {
+    background: rgb(31 41 55);
+  }
 }
 
 @keyframes slideUp {
@@ -238,15 +244,27 @@ function handleDelete() {
   align-items: center;
   justify-content: space-between;
   padding: 1.5rem;
-  border-bottom: 1px solid var(--color-gray-200);
+  border-bottom: 1px solid rgb(229 231 235);
   flex-shrink: 0;
+}
+
+@media (prefers-color-scheme: dark) {
+  .base-modal-header {
+    border-bottom-color: rgb(55 65 81);
+  }
 }
 
 .base-modal-title {
   font-size: 1.25rem;
   font-weight: 600;
-  color: var(--color-base-content);
+  color: rgb(17 24 39);
   margin: 0;
+}
+
+@media (prefers-color-scheme: dark) {
+  .base-modal-title {
+    color: rgb(243 244 246);
+  }
 }
 
 .base-modal-close-btn {
@@ -258,14 +276,24 @@ function handleDelete() {
   border-radius: 0.5rem;
   border: none;
   background: transparent;
-  color: var(--color-gray-500);
+  color: rgb(107 114 128);
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .base-modal-close-btn:hover {
-  background: var(--color-gray-100);
-  color: var(--color-gray-700);
+  background: rgb(243 244 246);
+  color: rgb(55 65 81);
+}
+
+@media (prefers-color-scheme: dark) {
+  .base-modal-close-btn {
+    color: rgb(156 163 175);
+  }
+  .base-modal-close-btn:hover {
+    background: rgb(55 65 81);
+    color: rgb(229 231 235);
+  }
 }
 
 .base-modal-close-icon {
@@ -297,8 +325,14 @@ function handleDelete() {
   justify-content: center;
   gap: 0.75rem;
   padding: 1.5rem;
-  border-top: 1px solid var(--color-gray-200);
+  border-top: 1px solid rgb(229 231 235);
   flex-shrink: 0;
+}
+
+@media (prefers-color-scheme: dark) {
+  .base-modal-footer {
+    border-top-color: rgb(55 65 81);
+  }
 }
 
 /* Modal Buttons - 圆形按钮 */
@@ -321,36 +355,47 @@ function handleDelete() {
 }
 
 .base-modal-btn-cancel {
-  background-color: var(--color-neutral);
-  color: var(--color-neutral-content);
+  background-color: rgb(229 231 235);
+  color: rgb(55 65 81);
   border: none;
 }
 
 .base-modal-btn-cancel:hover:not(:disabled) {
-  background-color: var(--color-neutral-content);
-  color: var(--color-neutral);
+  background-color: rgb(209 213 219);
+  color: rgb(31 41 55);
+}
+
+@media (prefers-color-scheme: dark) {
+  .base-modal-btn-cancel {
+    background-color: rgb(55 65 81);
+    color: rgb(229 231 235);
+  }
+  .base-modal-btn-cancel:hover:not(:disabled) {
+    background-color: rgb(75 85 99);
+    color: rgb(243 244 246);
+  }
 }
 
 .base-modal-btn-confirm {
-  background-color: var(--color-primary);
-  color: var(--color-primary-content);
+  background-color: rgb(37 99 235);
+  color: rgb(255 255 255);
   border: none;
 }
 
 .base-modal-btn-confirm:hover:not(:disabled) {
-  background-color: var(--color-primary-content);
-  color: var(--color-primary);
+  background-color: rgb(29 78 216);
+  color: rgb(255 255 255);
 }
 
 .base-modal-btn-delete {
-  background-color: var(--color-error);
-  color: var(--color-error-content);
+  background-color: rgb(220 38 38);
+  color: rgb(255 255 255);
   border: none;
 }
 
 .base-modal-btn-delete:hover:not(:disabled) {
-  background-color: var(--color-error-content);
-  color: var(--color-error);
+  background-color: rgb(185 28 28);
+  color: rgb(255 255 255);
 }
 
 /* 按钮图标 */
