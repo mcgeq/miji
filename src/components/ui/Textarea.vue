@@ -72,25 +72,13 @@ const shouldShowCount = computed(() => {
 <template>
   <div class="relative" :class="[fullWidth && 'w-full']">
     <!-- 标签 -->
-    <div v-if="label || shouldShowCount" class="flex items-center justify-between mb-1.5">
-      <label
-        v-if="label"
-        class="block text-sm font-medium text-gray-700 dark:text-gray-300"
-      >
-        {{ label }}
-        <span v-if="required" class="text-red-500 ml-0.5">*</span>
-      </label>
-
-      <!-- 字数统计 -->
-      <span
-        v-if="shouldShowCount"
-        class="text-sm" :class="[
-          isOverLimit ? 'text-red-600 dark:text-red-400' : 'text-gray-500 dark:text-gray-400',
-        ]"
-      >
-        {{ characterCount }}{{ maxLength ? `/${maxLength}` : '' }}
-      </span>
-    </div>
+    <label
+      v-if="label"
+      class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5"
+    >
+      {{ label }}
+      <span v-if="required" class="text-red-500 ml-0.5">*</span>
+    </label>
 
     <!-- 文本框 -->
     <textarea
@@ -114,20 +102,32 @@ const shouldShowCount = computed(() => {
       @focus="emit('focus', $event)"
     />
 
-    <!-- 帮助文本 -->
-    <p
-      v-if="hint && !error"
-      class="mt-1.5 text-sm text-gray-500 dark:text-gray-400"
-    >
-      {{ hint }}
-    </p>
+    <!-- 底部信息栏：错误/帮助文本 + 字数统计 -->
+    <div v-if="hint || error || shouldShowCount" class="flex items-start justify-between mt-1.5 gap-2">
+      <!-- 帮助文本或错误信息 -->
+      <p
+        v-if="hint && !error"
+        class="text-sm text-gray-500 dark:text-gray-400 flex-1"
+      >
+        {{ hint }}
+      </p>
+      <p
+        v-else-if="error"
+        class="text-sm text-red-600 dark:text-red-400 flex-1"
+      >
+        {{ error }}
+      </p>
+      <div v-else class="flex-1" />
 
-    <!-- 错误信息 -->
-    <p
-      v-if="error"
-      class="mt-1.5 text-sm text-red-600 dark:text-red-400"
-    >
-      {{ error }}
-    </p>
+      <!-- 字数统计（右下角） -->
+      <span
+        v-if="shouldShowCount"
+        class="text-sm shrink-0" :class="[
+          isOverLimit ? 'text-red-600 dark:text-red-400' : 'text-gray-500 dark:text-gray-400',
+        ]"
+      >
+        {{ characterCount }}{{ maxLength ? `/${maxLength}` : '' }}
+      </span>
+    </div>
   </div>
 </template>
