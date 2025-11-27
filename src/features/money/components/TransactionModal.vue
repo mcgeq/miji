@@ -2,7 +2,7 @@
 import BaseModal from '@/components/common/BaseModal.vue';
 import DateTimePicker from '@/components/common/DateTimePicker.vue';
 import CurrencySelector from '@/components/common/money/CurrencySelector.vue';
-import { FormRow, Input, Select, Textarea } from '@/components/ui';
+import { Checkbox, FormRow, Input, Select, Textarea } from '@/components/ui';
 import {
   TransactionStatusSchema,
   TransactionTypeSchema,
@@ -888,19 +888,19 @@ watch(
             </button>
           </div>
           <div class="dropdown-content">
-            <label
+            <div
               v-for="ledger in availableLedgers"
               :key="ledger.serialNum"
               class="checkbox-item"
             >
-              <input
+              <Checkbox
                 v-model="selectedLedgers"
-                type="checkbox"
                 :value="ledger.serialNum"
               >
-              <span class="item-name">{{ ledger.name }}</span>
-              <span class="item-type">{{ ledger.ledgerType }}</span>
-            </label>
+                <span class="item-name">{{ ledger.name }}</span>
+                <span class="item-type">{{ ledger.ledgerType }}</span>
+              </Checkbox>
+            </div>
           </div>
         </div>
       </div>
@@ -989,18 +989,17 @@ watch(
             </div>
           </div>
           <div class="dropdown-content">
-            <label
+            <div
               v-for="member in availableMembers"
               :key="member.serialNum"
               class="checkbox-item"
             >
-              <input
+              <Checkbox
                 v-model="selectedMembers"
-                type="checkbox"
                 :value="member.serialNum"
-              >
-              <span class="item-name">{{ member.name }}</span>
-            </label>
+                :label="member.name"
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -1029,14 +1028,11 @@ watch(
 
       <!-- 分期选项 -->
       <div v-if="form.transactionType === 'Expense' && !isCurrentTransactionInstallment" class="form-row">
-        <label class="checkbox-label">
-          <input
-            v-model="form.isInstallment"
-            type="checkbox"
-            :disabled="isInstallmentFieldsDisabled || isReadonlyMode"
-          >
-          {{ t('financial.transaction.installment') }}
-        </label>
+        <Checkbox
+          v-model="form.isInstallment"
+          :label="t('financial.transaction.installment')"
+          :disabled="isInstallmentFieldsDisabled || isReadonlyMode"
+        />
       </div>
 
       <!-- 分期详情 -->
@@ -1216,13 +1212,6 @@ watch(
 :deep(.currency-selector__select:disabled) {
   background-color: var(--color-base-300) !important;
   cursor: not-allowed !important;
-}
-
-.checkbox-label {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  cursor: pointer;
 }
 
 .installment-warning {
@@ -1905,12 +1894,6 @@ watch(
   background: var(--color-base-200);
 }
 
-.checkbox-item input[type="checkbox"] {
-  width: 1rem;
-  height: 1rem;
-  cursor: pointer;
-}
-
 .item-name {
   flex: 1;
   font-size: 0.875rem;
@@ -2036,11 +2019,6 @@ watch(
   .checkbox-item {
     padding: 1rem;
     font-size: 0.875rem;
-  }
-
-  .checkbox-item input[type="checkbox"] {
-    width: 1.25rem;
-    height: 1.25rem;
   }
 
   /* 移除按钮触摸区域优化 */

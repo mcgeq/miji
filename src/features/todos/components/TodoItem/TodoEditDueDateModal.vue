@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Check, X } from 'lucide-vue-next';
+import { Input } from '@/components/ui';
 import {
   DateUtils,
 } from '@/utils/date';
@@ -24,11 +25,11 @@ const isChanged = computed(() => {
       <div v-if="show" class="modal-overlay" @click="emit('close')">
         <transition name="scale">
           <div v-if="show" class="modal-window" @click.stop>
-            <input
+            <Input
               v-model="localDueDate"
               type="datetime-local"
-              class="input-datetime"
-            >
+              full-width
+            />
             <div class="modal-actions">
               <button class="btn-cancel" @click="emit('close')">
                 <X class="icon" />
@@ -74,23 +75,6 @@ const isChanged = computed(() => {
   gap: 1rem;
   box-shadow: 0 10px 20px color-mix(in oklch, var(--color-neutral) 30%, transparent);
   transition: all 0.2s ease;
-}
-
-/* Input datetime */
-.input-datetime {
-  width: 100%;
-  padding: 0.75rem;
-  border-radius: 1rem;
-  border: 1px solid var(--color-neutral, #d1d5db);
-  background-color: var(--color-base-100, #fff);
-  color: var(--color-base-content, #111827);
-  outline: none;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
-}
-
-.input-datetime:focus {
-  border-color: var(--color-primary, #2563eb);
-  box-shadow: 0 0 0 2px rgba(59,130,246,0.3);
 }
 
 /* Buttons container */
@@ -175,10 +159,6 @@ const isChanged = computed(() => {
 @media (prefers-color-scheme: dark) {
   .modal-window {
     background-color: var(--color-base-200);
-    border-color: var(--color-base-300);
-  }
-  .input-datetime {
-    background-color: var(--color-base-100);
     border-color: var(--color-base-300);
   }
 }

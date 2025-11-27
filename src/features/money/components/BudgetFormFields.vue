@@ -4,7 +4,8 @@ import CategorySelector from '@/components/common/CategorySelector.vue';
 import ColorSelector from '@/components/common/ColorSelector.vue';
 import AccountSelector from '@/components/common/money/AccountSelector.vue';
 import RepeatPeriodSelector from '@/components/common/RepeatPeriodSelector.vue';
-import FormRow from '@/components/ui/FormRow.vue';
+import { Checkbox, FormRow, Input, Select, Textarea } from '@/components/ui';
+import type { SelectOption } from '@/components/ui';
 import type { RepeatPeriod } from '@/schema/common';
 
 interface Props {
@@ -34,7 +35,7 @@ interface Emits {
   (e: 'update:modelValue', value: any): void;
 }
 
-withDefaults(defineProps<Props>(), {
+const props = withDefaults(defineProps<Props>(), {
   categoryError: '',
   accountError: '',
   repeatPeriodError: '',
@@ -45,44 +46,54 @@ withDefaults(defineProps<Props>(), {
 const emit = defineEmits<Emits>();
 
 const { t } = useI18n();
+
+// 预算范围类型选项
+const scopeTypeOptions = computed<SelectOption[]>(() =>
+  props.scopeTypes.map(ty => ({
+    value: ty.original,
+    label: t(`financial.budgetScopeTypes.${ty.snake}`),
+  })),
+);
+
+// 预警阈值类型选项
+const alertTypeOptions = computed<SelectOption[]>(() => [
+  { value: 'Percentage', label: t('financial.budget.threshold.percentage') },
+  { value: 'FixedAmount', label: t('financial.budget.threshold.fixedAmount') },
+]);
 </script>
 
 <template>
   <div class="budget-form-fields">
     <!-- 预算名称 -->
     <FormRow :label="t('financial.budget.budgetName')" required>
-      <input
+      <Input
         v-model="form.name"
         type="text"
         required
-        class="modal-input-select w-full"
+        full-width
         :placeholder="t('validation.budgetName')"
-      >
+      />
     </FormRow>
 
     <!-- 预算金额 -->
     <FormRow :label="t('financial.budget.budgetAmount')" required>
-      <input
-        v-model.number="form.amount"
+      <Input
+        v-model="form.amount"
         type="number"
-        step="0.01"
         required
-        class="modal-input-select w-full"
+        full-width
         placeholder="0.00"
-      >
+      />
     </FormRow>
 
     <!-- 预算范围类型 -->
     <FormRow :label="t('financial.budget.budgetScopeType')" required>
-      <select v-model="form.budgetScopeType" required class="modal-input-select w-full">
-        <option
-          v-for="ty in scopeTypes"
-          :key="ty.original"
-          :value="ty.original"
-        >
-          {{ t(`financial.budgetScopeTypes.${ty.snake}`) }}
-        </option>
-      </select>
+      <Select
+        v-model="form.budgetScopeType"
+        :options="scopeTypeOptions"
+        required
+        full-width
+      />
     </FormRow>
 
     <!-- 分类选择器 -->
@@ -122,11 +133,11 @@ const { t } = useI18n();
 
     <!-- 起止日期 -->
     <FormRow :label="t('date.startDate')" required>
-      <input v-model="form.startDate" type="date" required class="modal-input-select w-full">
+      <Input v-model="form.startDate" type="date" required full-width />
     </FormRow>
 
     <FormRow :label="t('date.endDate')" optional>
-      <input v-model="form.endDate" type="date" class="modal-input-select w-full">
+      <Input v-model="form.endDate" type="date" full-width />
     </FormRow>
 
     <!-- 颜色选择器 -->
@@ -145,48 +156,33 @@ const { t } = useI18n();
     <!-- 预警设置 -->
     <div class="alert-section">
       <div class="alert-checkbox">
-        <label class="checkbox-label">
-          <input
-            v-model="form.alertEnabled"
-            type="checkbox"
-            class="checkbox-radius"
-          >
-          <span class="checkbox-text">
-            {{ t('financial.budget.overBudgetAlert') }}
-          </span>
-        </label>
+        <Checkbox
+          v-model="form.alertEnabled"
+          :label="t('financial.budget.overBudgetAlert')"
+        />
       </div>
 
       <div v-if="form.alertEnabled && form.alertThreshold" class="threshold-settings">
-        <select
+        <Select
           v-model="form.alertThreshold.type"
-          class="modal-input-select w-2/3"
-        >
-          <option value="Percentage">
-            {{ t('financial.budget.threshold.percentage') }}
-          </option>
-          <option value="FixedAmount">
-            {{ t('financial.budget.threshold.fixedAmount') }}
-          </option>
-        </select>
+          :options="alertTypeOptions"
+          class="w-2/3"
+        />
 
-        <input
-          v-model.number="form.alertThreshold.value"
+        <Input
+          v-model="form.alertThreshold.value"
           type="number"
-          class="modal-input-select w-1/3"
-          :min="form.alertThreshold.type === 'Percentage' ? 0 : 1"
-          :max="form.alertThreshold.type === 'Percentage' ? 100 : undefined"
+          class="w-1/3"
           :placeholder="form.alertThreshold.type === 'Percentage' ? '80%' : '100.00'"
-        >
+        />
       </div>
     </div>
 
     <!-- 描述 -->
     <div class="form-textarea">
-      <textarea
+      <Textarea
         v-model="form.description"
-        rows="3"
-        class="modal-input-select w-full"
+        :rows="3"
         :placeholder="t('placeholders.budgetDescription')"
       />
     </div>
@@ -210,18 +206,6 @@ const { t } = useI18n();
 
 .alert-checkbox {
   width: 33.333333%;
-}
-
-.checkbox-label {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.checkbox-text {
-  font-size: 0.875rem;
-  color: var(--color-base-content);
-  font-weight: 500;
 }
 
 .threshold-settings {

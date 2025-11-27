@@ -10,7 +10,7 @@ interface Props {
   /** 输入值 */
   modelValue?: string | number;
   /** 输入类型 */
-  type?: 'text' | 'password' | 'email' | 'number' | 'tel' | 'url' | 'search' | 'date';
+  type?: 'text' | 'password' | 'email' | 'number' | 'tel' | 'url' | 'search' | 'date' | 'datetime-local' | 'time' | 'month' | 'week';
   /** 占位符 */
   placeholder?: string;
   /** 标签 */

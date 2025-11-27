@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { AlertCircle, Clock, FileText, Globe, Mail, Phone, Save, User, X } from 'lucide-vue-next';
+import { Clock, FileText, Globe, Mail, Phone, Save, User, X } from 'lucide-vue-next';
 import ConfirmModal from '@/components/common/ConfirmModal.vue';
+import { Input, Select, Textarea } from '@/components/ui';
 import { useAuthStore } from '@/stores/auth';
 import type { AuthUser } from '@/schema/user';
 
@@ -329,8 +330,8 @@ function handleOverlayClick(event: MouseEvent) {
   }
 }
 
-function handleInput(key: keyof FormData, value: string) {
-  formData.value[key] = value;
+function handleInput(key: keyof FormData, value: string | number) {
+  formData.value[key] = value as any;
 
   // 实时验证
   if (errors.value[key]) {
@@ -452,58 +453,35 @@ onUnmounted(() => {
                         </label>
 
                         <!-- 文本输入框 -->
-                        <div v-if="field.type === 'text' || field.type === 'email' || field.type === 'tel'" class="profile-modal-input-wrapper">
-                          <component
-                            :is="field.icon"
-                            class="profile-modal-input-icon"
-                          />
-                          <input
+                        <div v-if="field.type === 'text' || field.type === 'email' || field.type === 'tel'">
+                          <Input
                             :ref="field.key === 'name' ? (el) => { nameInputRef = el as HTMLInputElement } : undefined"
+                            :model-value="formData[field.key]"
                             :type="field.type"
                             :placeholder="field.placeholder"
-                            :maxlength="field.maxLength"
-                            :value="formData[field.key]"
-                            :data-field="field.key"
-                            class="profile-modal-input"
-                            :class="{ 'profile-modal-input-error': errors[field.key] }"
-                            @input="handleInput(field.key, ($event.target as HTMLInputElement).value)"
+                            :max-length="field.maxLength"
+                            :prefix-icon="field.icon"
+                            :error="errors[field.key]"
+                            full-width
+                            @update:model-value="handleInput(field.key, $event)"
                             @blur="validateSingleField(field.key)"
-                          >
+                          />
                         </div>
 
                         <!-- 文本域 -->
-                        <div v-else-if="field.type === 'textarea'" class="profile-modal-input-wrapper">
-                          <component
-                            :is="field.icon"
-                            class="profile-modal-textarea-icon"
-                          />
-                          <textarea
+                        <div v-else-if="field.type === 'textarea'">
+                          <Textarea
+                            :model-value="formData[field.key]"
                             :placeholder="field.placeholder"
-                            :maxlength="field.maxLength"
+                            :max-length="field.maxLength"
                             :rows="field.rows"
-                            :value="formData[field.key]"
-                            :data-field="field.key"
-                            class="profile-modal-textarea"
-                            :class="{ 'profile-modal-textarea-error': errors[field.key] }"
-                            @input="handleInput(field.key, ($event.target as HTMLTextAreaElement).value)"
+                            :error="errors[field.key]"
+                            @update:model-value="handleInput(field.key, $event)"
                             @blur="validateSingleField(field.key)"
                           />
                         </div>
 
-                        <!-- 错误信息和字符计数 -->
-                        <div v-if="errors[field.key] || field.maxLength" class="field-footer">
-                          <p v-if="errors[field.key]" class="profile-modal-error-message">
-                            <AlertCircle class="profile-modal-error-icon" />
-                            {{ errors[field.key] }}
-                          </p>
-                          <p
-                            v-if="field.maxLength"
-                            class="profile-modal-char-count"
-                            :class="formData[field.key].length > field.maxLength * 0.8 ? 'profile-modal-char-count-warning' : 'profile-modal-char-count-normal'"
-                          >
-                            {{ formData[field.key].length }}/{{ field.maxLength }}
-                          </p>
-                        </div>
+                        <!-- 错误信息和字符计数（Input 和 Textarea 组件已内置错误显示和字符计数） -->
                       </div>
                     </template>
                   </div>
@@ -525,26 +503,12 @@ onUnmounted(() => {
                         <label class="profile-modal-label">
                           {{ field.label }}
                         </label>
-                        <div class="profile-modal-select-wrapper">
-                          <component
-                            :is="field.icon"
-                            class="profile-modal-select-icon"
-                          />
-                          <select
-                            :value="formData[field.key]"
-                            :data-field="field.key"
-                            class="profile-modal-select"
-                            @change="handleInput(field.key, ($event.target as HTMLSelectElement).value)"
-                          >
-                            <option
-                              v-for="option in field.options"
-                              :key="option.value"
-                              :value="option.value"
-                            >
-                              {{ option.label }}
-                            </option>
-                          </select>
-                        </div>
+                        <Select
+                          :model-value="formData[field.key]"
+                          :options="(field.options as any) || []"
+                          full-width
+                          @update:model-value="(value) => handleInput(field.key, value as string)"
+                        />
                       </div>
                     </template>
                   </div>

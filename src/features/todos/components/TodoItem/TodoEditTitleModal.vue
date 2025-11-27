@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { Input } from '@/components/ui';
+
 const props = defineProps<{ title: string; show: boolean }>();
 const emit = defineEmits(['save', 'close']);
 const show = computed(() => props.show);
@@ -22,11 +24,11 @@ const isEditable = computed(
             class="modal-mask-window-money"
             @click.stop
           >
-            <input
+            <Input
               v-model="localTitle"
-              class="modal-input"
               placeholder="输入任务标题"
-            >
+              full-width
+            />
             <div class="modal-actions">
               <button class="btn-cancel" @click="emit('close')">
                 <LucideX class="icon" />
@@ -73,24 +75,6 @@ const isEditable = computed(
   gap: 1.25rem;
   box-shadow: 0 10px 20px color-mix(in oklch, var(--color-neutral) 30%, transparent);
   transition: background-color 0.2s ease, border-color 0.2s ease;
-}
-
-/* 输入框 */
-.modal-input {
-  width: 100%;
-  padding: 0.75rem; /* p-3 */
-  border-radius: 1rem; /* rounded-xl */
-  border: 1px solid var(--color-neutral, #e5e7eb);
-  font-size: 1rem;
-  color: var(--color-base-content, #111827);
-  background-color: var(--color-base-100, #fff);
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
-}
-
-.modal-input:focus {
-  outline: none;
-  border-color: var(--color-primary, #2563eb);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
 }
 
 /* 动作按钮容器 */
@@ -187,10 +171,6 @@ const isEditable = computed(
 @media (prefers-color-scheme: dark) {
   .modal-content {
     background-color: var(--color-base-200);
-    border-color: var(--color-base-300);
-  }
-  .modal-input {
-    background-color: var(--color-base-100);
     border-color: var(--color-base-300);
   }
 }
