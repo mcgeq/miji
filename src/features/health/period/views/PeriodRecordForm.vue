@@ -519,6 +519,7 @@ defineExpose({
   <!-- 删除确认弹窗 -->
   <ConfirmDialog
     v-model:show="showDeleteConfirm" title="删除经期记录" type="danger" :loading="loading"
+    :icon-buttons="true"
     @confirm="handleDelete"
   >
     <p class="confirmation-text">

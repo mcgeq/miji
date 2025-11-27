@@ -27,6 +27,7 @@ interface Props {
   persistent?: boolean;
   zIndex?: number;
   confirmButtonType?: 'primary' | 'danger' | 'warning' | 'success';
+  iconButtons?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -46,6 +47,7 @@ const props = withDefaults(defineProps<Props>(), {
   persistent: false,
   zIndex: 1000,
   confirmButtonType: 'primary',
+  iconButtons: false,
 });
 
 const emit = defineEmits<{
@@ -97,6 +99,7 @@ function handleCancel() {
     :show-cancel="showCancel"
     :loading="loading"
     :confirm-disabled="confirmDisabled"
+    :icon-buttons="iconButtons"
     @close="handleClose"
     @confirm="handleConfirm"
     @cancel="handleCancel"

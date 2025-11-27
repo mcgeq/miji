@@ -7,7 +7,7 @@
  */
 
 import { Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot } from '@headlessui/vue';
-import { AlertCircle, AlertTriangle, CheckCircle, Info, X } from 'lucide-vue-next';
+import { AlertCircle, AlertTriangle, Check, CheckCircle, Info, X } from 'lucide-vue-next';
 import { computed } from 'vue';
 
 interface Props {
@@ -29,6 +29,8 @@ interface Props {
   loading?: boolean;
   /** 确认按钮禁用 */
   confirmDisabled?: boolean;
+  /** 使用图标按钮（圆形，无文字） */
+  iconButtons?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -38,6 +40,7 @@ const props = withDefaults(defineProps<Props>(), {
   showCancel: true,
   loading: false,
   confirmDisabled: false,
+  iconButtons: false,
 });
 
 const emit = defineEmits<{
@@ -136,33 +139,63 @@ function handleCancel() {
             </div>
 
             <!-- 底部按钮 -->
-            <div class="bg-gray-50 dark:bg-gray-900/50 px-6 py-4 flex justify-end gap-3">
-              <button
-                v-if="showCancel"
-                type="button"
-                :disabled="loading"
-                class="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 transition-colors"
-                @click="handleCancel"
-              >
-                {{ cancelText }}
-              </button>
-              <button
-                type="button"
-                :disabled="loading || confirmDisabled"
-                class="px-4 py-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                :class="[
-                  typeConfig.btnClass,
-                ]" @click="emit('confirm')"
-              >
-                <span v-if="loading" class="flex items-center gap-2">
-                  <svg class="animate-spin w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <div class="bg-gray-50 dark:bg-gray-900/50 px-6 py-4" :class="iconButtons ? 'flex justify-center gap-3' : 'flex justify-end gap-3'">
+              <!-- 图标按钮模式 -->
+              <template v-if="iconButtons">
+                <button
+                  v-if="showCancel"
+                  type="button"
+                  :disabled="loading"
+                  :title="cancelText"
+                  class="flex items-center justify-center w-14 h-14 rounded-full bg-gray-300 hover:bg-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500 text-gray-900 dark:text-white transition-all hover:scale-110 active:scale-95 disabled:opacity-50"
+                  @click="handleCancel"
+                >
+                  <X :size="22" />
+                </button>
+                <button
+                  type="button"
+                  :disabled="loading || confirmDisabled"
+                  :title="confirmText"
+                  class="flex items-center justify-center w-14 h-14 rounded-full transition-all hover:scale-110 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed text-white"
+                  :class="typeConfig.btnClass"
+                  @click="emit('confirm')"
+                >
+                  <Check v-if="!loading" :size="22" :stroke-width="3" />
+                  <svg v-else class="animate-spin w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                   </svg>
-                  处理中...
-                </span>
-                <span v-else>{{ confirmText }}</span>
-              </button>
+                </button>
+              </template>
+
+              <!-- 文字按钮模式 -->
+              <template v-else>
+                <button
+                  v-if="showCancel"
+                  type="button"
+                  :disabled="loading"
+                  class="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 transition-colors"
+                  @click="handleCancel"
+                >
+                  {{ cancelText }}
+                </button>
+                <button
+                  type="button"
+                  :disabled="loading || confirmDisabled"
+                  class="px-4 py-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  :class="typeConfig.btnClass"
+                  @click="emit('confirm')"
+                >
+                  <span v-if="loading" class="flex items-center gap-2">
+                    <svg class="animate-spin w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    处理中...
+                  </span>
+                  <span v-else>{{ confirmText }}</span>
+                </button>
+              </template>
             </div>
           </DialogPanel>
         </TransitionChild>

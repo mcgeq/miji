@@ -469,6 +469,7 @@ onUnmounted(() => {
       :confirm-button-type="confirmState.confirmButtonType"
       :show-cancel="confirmState.showCancel"
       :loading="confirmState.loading"
+      :icon-buttons="true"
       @confirm="handleConfirm"
       @cancel="handleCancel"
       @close="handleClose"

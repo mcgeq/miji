@@ -307,6 +307,7 @@ onMounted(() => {
       cancel-text="取消"
       confirm-button-type="danger"
       :loading="deletingLedger"
+      :icon-buttons="true"
       @confirm="confirmDelete"
       @cancel="cancelDelete"
       @close="cancelDelete"

@@ -343,6 +343,7 @@ const userInitial = computed(() => {
       confirm-text="删除"
       cancel-text="取消"
       :loading="isUploading"
+      :icon-buttons="true"
       @confirm="confirmDeleteAvatar"
       @cancel="cancelDeleteAvatar"
     />
