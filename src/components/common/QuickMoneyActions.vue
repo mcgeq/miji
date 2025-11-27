@@ -1,14 +1,19 @@
 <script setup lang="ts">
+// 閲嶆瀯鍚庣殑QuickMoneyActions - 浣跨敤缁勪欢鍖栨灦鏋?
 import ConfirmDialog from '@/components/common/ConfirmDialogCompat.vue';
+import QuickMoneyAccountList from '@/components/common/QuickMoneyAccountList.vue';
+import QuickMoneyActionButtons from '@/components/common/QuickMoneyActionButtons.vue';
+import QuickMoneyBudgetList from '@/components/common/QuickMoneyBudgetList.vue';
+import QuickMoneyHeader from '@/components/common/QuickMoneyHeader.vue';
+import QuickMoneyReminderList from '@/components/common/QuickMoneyReminderList.vue';
+import QuickMoneyTabs from '@/components/common/QuickMoneyTabs.vue';
+import QuickMoneyTransactionList from '@/components/common/QuickMoneyTransactionList.vue';
 import AccountModal from '@/features/money/components/AccountModal.vue';
 import BudgetModal from '@/features/money/components/BudgetModal.vue';
 import ReminderModal from '@/features/money/components/ReminderModal.vue';
 import TransactionModal from '@/features/money/components/TransactionModal.vue';
-import { formatCurrency } from '@/features/money/utils/money';
 import { TransactionTypeSchema } from '@/schema/common';
 import { useAccountStore, useCategoryStore } from '@/stores/money';
-import { getRepeatTypeName, lowercaseFirstLetter } from '@/utils/common';
-import { DateUtils } from '@/utils/date';
 import type {
   BilReminderCreate,
   BilReminderUpdate,
@@ -30,13 +35,12 @@ const props = withDefaults(defineProps<Props>(), {
   showAmountToggle: false,
 });
 
-const { t } = useI18n();
 const accountStore = useAccountStore();
 const categoryStore = useCategoryStore();
 const mediaQueries = useMediaQueriesStore();
 const { confirmState, handleConfirm, handleCancel, handleClose } = useConfirm();
 
-// 使用各个功能模块的 hooks
+// 浣跨敤鍚勪釜鍔熻兘妯″潡鐨?hooks
 const {
   showTransaction,
   selectedTransaction,
@@ -96,7 +100,7 @@ const {
   switchTab,
 } = useTabManager();
 
-// 关闭所有模态框
+// 鍏抽棴鎵€鏈夋ā鎬佹
 function closeAllModals() {
   closeTransactionModal();
   closeAccountModal();
@@ -104,12 +108,12 @@ function closeAllModals() {
   closeReminderModal();
 }
 
-// 切换金额可见性
+// 鍒囨崲閲戦鍙鎬?
 function toggleAmountVisibility() {
   accountStore.toggleGlobalAmountHidden();
 }
 
-// 数据刷新函数
+// 鏁版嵁鍒锋柊鍑芥暟
 async function refreshTransactionData() {
   await Promise.all([loadTransactions(), loadAccounts(), loadBudgets()]);
 }
@@ -126,7 +130,7 @@ async function refreshReminderData() {
   await loadReminders();
 }
 
-// 使用composables中的handle方法，通过回调实现数据刷新
+// 浣跨敤composables涓殑handle鏂规硶锛岄€氳繃鍥炶皟瀹炵幇鏁版嵁鍒锋柊
 async function handleSaveTransaction(transaction: TransactionCreate) {
   return await saveTransaction(transaction, refreshTransactionData);
 }
@@ -167,7 +171,7 @@ async function handleUpdateReminder(serialNum: string, reminder: BilReminderUpda
   return await updateReminder(serialNum, reminder, refreshReminderData);
 }
 
-// 创建键盘事件处理器
+// 鍒涘缓閿洏浜嬩欢澶勭悊鍣?
 const handleKeyPress = createKeyboardHandler(
   {
     showTransaction,
@@ -184,10 +188,10 @@ const handleKeyPress = createKeyboardHandler(
   },
 );
 
-// 添加键盘事件监听器
+// 娣诲姞閿洏浜嬩欢鐩戝惉鍣?
 addKeyboardListener(handleKeyPress);
 
-// 标签切换处理
+// 鏍囩鍒囨崲澶勭悊
 function handleSwitchTab(tab: 'accounts' | 'transactions' | 'budgets' | 'reminders') {
   switchTab(tab, {
     loadAccounts,
@@ -197,25 +201,11 @@ function handleSwitchTab(tab: 'accounts' | 'transactions' | 'budgets' | 'reminde
   });
 }
 
-// -------- 预算展示辅助 --------
-function getBudgetProgress(budget: any) {
-  const progress = Number(budget?.progress ?? 0);
-  return Number.isFinite(progress) ? Math.min(Math.max(progress, 0), 100) : 0;
-}
-
-function isBudgetOver(budget: any) {
-  return Number(budget?.usedAmount ?? 0) > Number(budget?.amount ?? 0);
-}
-
-function getBudgetPeriodText(budget: any) {
-  return getRepeatTypeName(budget?.repeatPeriod);
-}
-
 onMounted(async () => {
   await loadAccounts();
   await categoryStore.fetchCategories();
   await categoryStore.fetchSubCategories();
-  // 初始加载所有数据
+  // 鍒濆鍔犺浇鎵€鏈夋暟鎹?
   await loadTransactions();
   await loadBudgets();
   await loadReminders();
@@ -223,228 +213,64 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="qm-quick-money-container">
-    <!-- 快捷键帮助提示 - 左上角 -->
-    <div class="qm-keyboard-help" :class="{ show: showKeyboardHelp }">
-      <div class="qm-help-header">
-        <h4>快捷键</h4>
-        <button class="qm-close-btn" @click="showKeyboardHelp = false">
-          <LucideX :size="16" />
-        </button>
-      </div>
-      <div class="qm-shortcuts-list">
-        <div v-for="shortcut in keyboardShortcuts" :key="shortcut.key" class="qm-shortcut-item">
-          <kbd class="qm-shortcut-key">{{ shortcut.key }}</kbd>
-          <span class="qm-shortcut-label">{{ shortcut.label }}</span>
-        </div>
-      </div>
+  <div class="w-full relative flex flex-col items-center justify-start h-full p-1 pt-1 overflow-hidden">
+    <!-- 蹇嵎閿府鍔╃郴缁? -->
+    <QuickMoneyHeader
+      :show="showKeyboardHelp"
+      :shortcuts="keyboardShortcuts"
+      :is-mobile="mediaQueries.isMobile"
+      @toggle="showKeyboardHelp = !showKeyboardHelp"
+      @close="showKeyboardHelp = false"
+    />
+
+    <!-- 蹇嵎鎿嶄綔鎸夐挳 -->
+    <QuickMoneyActionButtons
+      :show-amount-toggle="props.showAmountToggle"
+      :amount-hidden="accountStore.globalAmountHidden"
+      @add-account="showAccountModal"
+      @add-income="showTransactionModal(TransactionTypeSchema.enum.Income)"
+      @add-expense="showTransactionModal(TransactionTypeSchema.enum.Expense)"
+      @add-transfer="showTransactionModal(TransactionTypeSchema.enum.Transfer)"
+      @add-budget="showBudgetModal"
+      @add-reminder="showReminderModal"
+      @toggle-amount="toggleAmountVisibility"
+    />
+
+    <!-- Tab鍒囨崲 -->
+    <QuickMoneyTabs
+      :active-tab="activeTab"
+      @switch="handleSwitchTab"
+    />
+
+    <!-- 鍒楄〃瀹瑰櫒 -->
+    <div class="w-full flex-1 overflow-y-auto max-h-[calc(100%-8rem)] scrollbar-none">
+      <!-- 璐︽埛鍒楄〃 -->
+      <QuickMoneyAccountList
+        v-if="activeTab === 'accounts'"
+        :accounts="accounts"
+        :amount-hidden="accountStore.globalAmountHidden"
+      />
+
+      <!-- 浜ゆ槗鍒楄〃 -->
+      <QuickMoneyTransactionList
+        v-if="activeTab === 'transactions'"
+        :transactions="transactions"
+      />
+
+      <!-- 棰勭畻鍒楄〃 -->
+      <QuickMoneyBudgetList
+        v-if="activeTab === 'budgets'"
+        :budgets="budgets"
+      />
+
+      <!-- 鎻愰啋鍒楄〃 -->
+      <QuickMoneyReminderList
+        v-if="activeTab === 'reminders'"
+        :reminders="reminders"
+      />
     </div>
 
-    <!-- 快捷键提示按钮 - 右上角 -->
-    <button v-if="!mediaQueries.isMobile" class="qm-help-toggle" title="快捷键帮助 (?)" @click="showKeyboardHelp = !showKeyboardHelp">
-      <LucideKeyboard :size="20" />
-    </button>
-
-    <div class="qm-quick-actions">
-      <button class="qm-btn qm-btn-purple" title="添加账户" @click="showAccountModal">
-        <LucideCreditCard :size="12" />
-      </button>
-      <button class="qm-btn qm-btn-green" title="记录收入" @click="showTransactionModal(TransactionTypeSchema.enum.Income)">
-        <LucidePlusCircle :size="12" />
-      </button>
-      <button class="qm-btn qm-btn-red" title="记录支出" @click="showTransactionModal(TransactionTypeSchema.enum.Expense)">
-        <LucideMinusCircle :size="12" />
-      </button>
-      <button class="qm-btn qm-btn-blue" title="记录转账" @click="showTransactionModal(TransactionTypeSchema.enum.Transfer)">
-        <LucideArrowRightLeft :size="12" />
-      </button>
-      <button class="qm-btn qm-btn-orange" title="设置预算" @click="showBudgetModal">
-        <LucideTarget :size="12" />
-      </button>
-      <button class="qm-btn qm-btn-yellow" title="设置提醒" @click="showReminderModal">
-        <LucideBell :size="12" />
-      </button>
-      <!-- 隐藏金额按钮 -->
-      <button
-        v-if="props.showAmountToggle"
-        class="qm-btn"
-        :class="accountStore.globalAmountHidden ? 'qm-btn-gray' : 'qm-btn-blue'"
-        :title="accountStore.globalAmountHidden ? '显示金额' : '隐藏金额'"
-        @click="toggleAmountVisibility"
-      >
-        <LucideEye v-if="!accountStore.globalAmountHidden" :size="12" />
-        <LucideEyeOff v-else :size="12" />
-      </button>
-    </div>
-
-    <!-- 标签切换 -->
-    <div class="qm-tabs-container">
-      <button
-        class="qm-tab-btn"
-        :class="{ active: activeTab === 'accounts' }"
-        @click="handleSwitchTab('accounts')"
-      >
-        账户
-      </button>
-      <button
-        class="qm-tab-btn"
-        :class="{ active: activeTab === 'transactions' }"
-        @click="handleSwitchTab('transactions')"
-      >
-        交易
-      </button>
-      <button
-        class="qm-tab-btn"
-        :class="{ active: activeTab === 'budgets' }"
-        @click="handleSwitchTab('budgets')"
-      >
-        预算
-      </button>
-      <button
-        class="qm-tab-btn"
-        :class="{ active: activeTab === 'reminders' }"
-        @click="handleSwitchTab('reminders')"
-      >
-        提醒
-      </button>
-    </div>
-
-    <!-- 列表内容 -->
-    <div class="qm-list-container">
-      <!-- 账户列表 -->
-      <div v-if="activeTab === 'accounts'" class="qm-list-content">
-        <div v-if="accounts.length === 0" class="qm-empty-state">
-          暂无账户
-        </div>
-        <div v-else class="qm-list-items">
-          <div v-for="account in accounts" :key="account.serialNum" class="qm-list-item">
-            <div class="qm-item-icon" :style="account.color ? { backgroundColor: account.color } : undefined">
-              <LucideCreditCard :size="14" />
-            </div>
-            <div class="qm-item-content">
-              <div class="qm-item-name">
-                {{ account.name }}
-              </div>
-              <div class="qm-item-desc">
-                {{ t(`financial.accountTypes.${account.type.toLocaleLowerCase()}`) }}
-              </div>
-            </div>
-            <div class="qm-item-value">
-              {{ accountStore.globalAmountHidden ? '***' : formatCurrency(account.balance ?? 0) }}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 交易列表 -->
-      <div v-if="activeTab === 'transactions'" class="qm-list-content">
-        <div v-if="transactions.length === 0" class="qm-empty-state">
-          暂无交易
-        </div>
-        <div v-else class="qm-list-items">
-          <div v-for="transaction in transactions" :key="transaction.serialNum" class="qm-list-item">
-            <div class="qm-item-icon" :class="`qm-icon-${transaction.transactionType.toLowerCase()}`">
-              <LucidePlusCircle v-if="transaction.transactionType === 'Income'" :size="14" />
-              <LucideMinusCircle v-else-if="transaction.transactionType === 'Expense'" :size="14" />
-              <LucideArrowRightLeft v-else :size="14" />
-            </div>
-            <div class="qm-item-content">
-              <div class="qm-item-name">
-                {{ transaction.description }}
-              </div>
-              <div class="qm-item-desc">
-                {{ t(`common.categories.${lowercaseFirstLetter(transaction.category)}`) }}<template v-if="transaction.subCategory">
-                  -{{ t(`common.subCategories.${lowercaseFirstLetter(transaction.subCategory)}`) }}
-                </template>
-              </div>
-            </div>
-            <div class="qm-item-value-wrapper">
-              <div class="qm-item-value" :class="`value-${transaction.transactionType.toLowerCase()}`">
-                {{ transaction.transactionType === 'Income' ? '+' : '-' }}{{ formatCurrency(transaction.amount ?? 0) }}
-              </div>
-              <div class="qm-item-date">
-                {{ DateUtils.formatDateTime(transaction.date) }}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 预算列表 -->
-      <div v-if="activeTab === 'budgets'" class="qm-list-content">
-        <div v-if="budgets.length === 0" class="qm-empty-state">
-          暂无预算
-        </div>
-        <div v-else class="qm-list-items">
-          <div v-for="budget in budgets" :key="budget.serialNum" class="qm-list-item qm-budget-item">
-            <div class="item-icon icon-budget">
-              <LucideTarget :size="14" />
-            </div>
-            <div class="qm-item-content">
-              <div class="qm-item-name">
-                {{ budget.name }}
-              </div>
-              <!-- 周期信息 -->
-              <div class="qm-item-desc">
-                {{ getBudgetPeriodText(budget) }}
-              </div>
-            </div>
-            <!-- 进度条 -->
-            <div class="qm-budget-progress">
-              <div class="qm-budget-progress-bar">
-                <div
-                  class="qm-budget-progress-fill"
-                  :class="{ over: isBudgetOver(budget) }"
-                  :style="{ width: `${getBudgetProgress(budget)}%` }"
-                />
-              </div>
-              <div class="qm-budget-progress-text" :class="{ over: isBudgetOver(budget) }">
-                {{ getBudgetProgress(budget) }}%
-              </div>
-            </div>
-            <!-- 金额信息 -->
-            <div class="qm-budget-amounts">
-              <div class="qm-budget-total">
-                {{ formatCurrency(budget.amount ?? 0) }}
-              </div>
-              <div class="qm-budget-used" :class="{ over: isBudgetOver(budget) }">
-                已用: {{ formatCurrency(budget.usedAmount ?? 0) }}
-              </div>
-              <div class="qm-budget-remaining" :class="{ over: isBudgetOver(budget) }">
-                剩余: {{ formatCurrency((Number(budget.amount ?? 0) - Number(budget.usedAmount ?? 0))) }}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 提醒列表 -->
-      <div v-if="activeTab === 'reminders'" class="qm-list-content">
-        <div v-if="reminders.length === 0" class="qm-empty-state">
-          暂无提醒
-        </div>
-        <div v-else class="qm-list-items">
-          <div v-for="reminder in reminders" :key="reminder.serialNum" class="qm-list-item">
-            <div class="item-icon icon-reminder">
-              <LucideBell :size="14" />
-            </div>
-            <div class="qm-item-content">
-              <div class="qm-item-name">
-                {{ reminder.name }}
-              </div>
-              <div class="qm-item-desc">
-                {{ reminder.billDate }}
-              </div>
-            </div>
-            <div class="qm-item-value">
-              {{ formatCurrency(reminder.amount ?? 0) }}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Modals - 使用 Teleport 传送到 body，确保覆盖整个页面 -->
+    <!-- Modals - 浣跨敤 Teleport 浼犻€佸埌 body锛岀‘淇濊鐩栨暣涓〉闈? -->
     <Teleport to="body">
       <TransactionModal
         v-if="showTransaction"
@@ -496,691 +322,3 @@ onMounted(async () => {
     </Teleport>
   </div>
 </template>
-
-<style scoped>
-.qm-quick-money-container {
-  width: 100%;
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-start;
-  height: 100%;
-  padding: 0.25rem;
-  padding-top: 0.25rem;
-  overflow: hidden;
-  box-sizing: border-box;
-}
-
-/* 快捷键帮助提示框 - 左上角 */
-.qm-keyboard-help {
-  position: absolute;
-  top: 0.5rem;
-  left: 0.5rem;
-  background-color: var(--color-base-100);
-  border: 1px solid var(--color-base-300);
-  border-radius: 0.5rem;
-  padding: 0.75rem;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  z-index: 100;
-  opacity: 0;
-  transform: translateY(-10px);
-  pointer-events: none;
-  transition: all 0.2s ease;
-  max-width: 200px;
-}
-
-.qm-keyboard-help.show {
-  opacity: 1;
-  transform: translateY(0);
-  pointer-events: auto;
-}
-
-.qm-help-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 0.5rem;
-  padding-bottom: 0.5rem;
-  border-bottom: 1px solid var(--color-base-300);
-}
-
-.qm-help-header h4 {
-  margin: 0;
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: var(--color-base-content);
-}
-
-.qm-close-btn {
-  padding: 0.25rem;
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  color: var(--color-base-content);
-  opacity: 0.6;
-  transition: opacity 0.2s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.qm-close-btn:hover {
-  opacity: 1;
-}
-
-.qm-shortcuts-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.qm-shortcut-item {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.75rem;
-}
-
-.qm-shortcut-key {
-  min-width: 1.5rem;
-  padding: 0.125rem 0.375rem;
-  font-size: 0.75rem;
-  font-weight: 600;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  color: var(--color-base-content);
-  background-color: var(--color-base-200);
-  border: 1px solid var(--color-base-300);
-  border-radius: 0.25rem;
-  text-align: center;
-}
-
-.qm-shortcut-label {
-  color: var(--color-base-content);
-}
-
-/* 快捷键帮助按钮 - 右上角 */
-.qm-help-toggle {
-  position: absolute;
-  top: 0.5rem;
-  right: 0.5rem;
-  padding: 0.5rem;
-  background-color: var(--color-base-100);
-  border: 1px solid var(--color-base-300);
-  border-radius: 0.5rem;
-  cursor: pointer;
-  transition: all 0.2s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--color-base-content);
-  opacity: 0.7;
-  z-index: 10;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.qm-help-toggle:hover {
-  opacity: 1;
-  background-color: var(--color-base-200);
-  transform: scale(1.05);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-}
-
-.qm-quick-actions {
-  display: flex;
-  flex-wrap: nowrap;
-  gap: 0.375rem;
-  width: 100%;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 0.25rem;
-  overflow-x: auto;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-  padding: 0.125rem 0;
-}
-
-.qm-quick-actions::-webkit-scrollbar {
-  display: none;
-}
-
-/* 标签切换 */
-.qm-tabs-container {
-  display: flex;
-  gap: 0.25rem;
-  width: 100%;
-  border-bottom: 2px solid var(--color-base-300);
-  margin-bottom: 0.75rem;
-}
-
-.qm-tab-btn {
-  flex: 1;
-  padding: 0.2rem;
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--color-base-content);
-  opacity: 0.6;
-  transition: all 0.2s;
-  position: relative;
-  border-radius: 0.25rem 0.25rem 0 0;
-}
-
-.qm-tab-btn:hover {
-  opacity: 1;
-  background-color: var(--color-base-200);
-}
-
-.qm-tab-btn.active {
-  opacity: 1;
-  color: var(--color-neutral);
-  font-weight: 600;
-}
-
-.qm-tab-btn.active::after {
-  content: '';
-  position: absolute;
-  bottom: -2px;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background-color: var(--color-neutral);
-}
-
-/* 列表容器 */
-.qm-list-container {
-  width: 100%;
-  flex: 1;
-  overflow-y: auto;
-  max-height: calc(100% - 8rem);
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-
-.qm-list-container::-webkit-scrollbar {
-  display: none;
-}
-
-.qm-list-content {
-  width: 100%;
-}
-
-.qm-list-items {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.qm-list-item {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.75rem;
-  background-color: var(--color-base-100);
-  border: 1px solid var(--color-base-300);
-  border-radius: 0.5rem;
-  transition: all 0.2s;
-  cursor: pointer;
-}
-
-.qm-list-item:hover {
-  background-color: var(--color-base-200);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.qm-item-icon {
-  width: 2rem;
-  height: 2rem;
-  border-radius: 0.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  flex-shrink: 0;
-  overflow: hidden;
-  box-sizing: border-box;
-}
-
-.qm-icon-income {
-  background-color: var(--color-success-100);
-  color: var(--color-success);
-}
-
-.qm-icon-expense {
-  background-color: var(--color-error-100);
-  color: var(--color-error);
-}
-
-.qm-icon-transfer {
-  background-color: var(--color-info-100);
-  color: var(--color-info);
-}
-
-.qm-icon-budget {
-  background-color: var(--color-warning-100);
-  color: var(--color-warning);
-}
-
-.qm-icon-reminder {
-  background-color: var(--color-warning-100);
-  color: var(--color-warning);
-}
-
-.qm-item-content {
-  flex: 1;
-  min-width: 0;
-}
-
-.qm-item-name {
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: var(--color-base-content);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.qm-item-desc {
-  font-size: 0.75rem;
-  color: var(--color-base-content);
-  opacity: 0.6;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* 预算项目特殊布局 */
-.qm-budget-item {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.75rem;
-}
-
-/* 预算进度 */
-.qm-budget-progress {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  min-width: 120px;
-  flex: 1;
-  max-width: 200px;
-}
-
-.qm-budget-progress-bar {
-  flex: 1;
-  height: 8px;
-  background-color: var(--color-gray-100); /* 未使用部分 - 更明显的浅灰色 */
-  border-radius: 9999px;
-  overflow: hidden;
-  position: relative;
-  border: 1px solid var(--color-gray-200);
-}
-
-.qm-budget-progress-fill {
-  height: 100%;
-  background: linear-gradient(90deg, var(--color-info) 0%, var(--color-info-hover) 100%); /* 已使用部分 - 蓝色渐变 */
-  transition: width 0.3s ease;
-  border-radius: 9999px;
-  box-shadow: 0 1px 2px rgba(59, 130, 246, 0.3);
-}
-
-.qm-budget-progress-fill.over {
-  background: linear-gradient(90deg, var(--color-error) 0%, var(--color-error-hover) 100%); /* 超预算 - 红色渐变 */
-  box-shadow: 0 1px 2px rgba(239, 68, 68, 0.3);
-}
-
-.qm-budget-progress-text {
-  font-size: 0.75rem;
-  color: var(--color-base-content);
-  opacity: 0.8;
-  min-width: 2.5rem;
-  height: 1.5rem;
-  text-align: center;
-  line-height: 1.5rem;
-  font-weight: 600;
-  flex-shrink: 0;
-  background-color: rgba(255, 255, 255, 0.9);
-  border-radius: 0.75rem;
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  padding: 0 0.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.qm-budget-progress-text.over {
-  color: #ef4444;
-  opacity: 1;
-  font-weight: 700;
-  background-color: rgba(254, 226, 226, 0.9);
-  border-color: rgba(239, 68, 68, 0.3);
-}
-
-/* 预算金额信息 */
-.qm-budget-amounts {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 0.25rem;
-  min-width: 0;
-  flex-shrink: 0;
-}
-
-.qm-budget-total {
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: var(--color-base-content);
-  white-space: nowrap;
-}
-
-.qm-budget-used {
-  font-size: 0.75rem;
-  color: #3b82f6; /* 已用金额 - 蓝色 */
-  font-weight: 500;
-  white-space: nowrap;
-}
-
-.qm-budget-used.over {
-  color: #ef4444; /* 超预算 - 红色 */
-  font-weight: 600;
-}
-
-.qm-budget-remaining {
-  font-size: 0.75rem;
-  color: #16a34a; /* 剩余金额 - 绿色 */
-  font-weight: 500;
-  white-space: nowrap;
-}
-
-.qm-budget-remaining.over {
-  color: #ef4444; /* 超预算 - 红色 */
-  font-weight: 600;
-}
-
-/* 移动端响应式布局 */
-@media (max-width: 768px) {
-  .qm-budget-item {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem;
-  }
-
-  /* 移动端只显示百分比，隐藏进度条 */
-  .qm-budget-progress {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    min-width: auto;
-    max-width: none;
-    flex: 0 0 auto;
-  }
-
-  .qm-budget-progress-bar {
-    display: none; /* 隐藏进度条 */
-  }
-
-  .qm-budget-progress-text {
-    font-size: 0.6875rem;
-    min-width: 2rem;
-    height: 1.25rem;
-    line-height: 1.25rem;
-  }
-
-  .qm-budget-total {
-    font-size: 0.8125rem;
-  }
-
-  .qm-budget-used,
-  .qm-budget-remaining {
-    font-size: 0.6875rem;
-  }
-}
-
-.qm-item-value-wrapper {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 0.25rem;
-  flex-shrink: 0;
-}
-
-.qm-item-value {
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: var(--color-base-content);
-}
-
-.qm-item-date {
-  font-size: 0.625rem;
-  color: var(--color-base-content);
-  opacity: 0.5;
-  text-align: right;
-}
-
-.qm-value-income {
-  color: #16a34a;
-}
-
-.qm-value-expense {
-  color: #ef4444;
-}
-
-.qm-empty-state {
-  text-align: center;
-  padding: 2rem 1rem;
-  color: var(--color-base-content);
-  opacity: 0.5;
-  font-size: 0.875rem;
-}
-
-.qm-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.875rem;
-  border-radius: 0.75rem;
-  border: 1px solid var(--color-base-100);
-  cursor: pointer;
-  transition: all 0.2s;
-  background-color: var(--color-base-200);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  flex-shrink: 0;
-  min-width: 3rem;
-  height: 3rem;
-}
-
-.qm-btn:hover {
-  background-color: var(--color-base-300);
-  border: 1px groove var(--color-base-200);
-  transform: translateY(-1px);
-  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.12);
-}
-
-.qm-btn:active {
-  transform: translateY(0);
-}
-
-.qm-btn-purple {
-  color: var(--color-purple-500);
-}
-
-.qm-btn-green {
-  color: var(--color-success);
-}
-
-.qm-btn-red {
-  color: var(--color-error);
-}
-
-.qm-btn-blue {
-  color: var(--color-info);
-}
-
-.qm-btn-orange {
-  color: var(--color-warning);
-}
-
-.qm-btn-yellow {
-  color: var(--color-warning);
-}
-
-.qm-btn-gray {
-  background-color: var(--color-gray-100);
-  color: var(--color-gray-500);
-}
-
-.qm-btn-gray:hover {
-  background-color: var(--color-gray-200);
-}
-
-/* 响应式调整 */
-@media (max-width: 768px) {
-  .qm-quick-money-container {
-    padding: 0.125rem;
-    padding-top: 0.125rem;
-  }
-
-  .qm-btn {
-    padding: 0.375rem;
-    min-width: 1.75rem;
-    height: 1.75rem;
-  }
-
-  .qm-help-toggle {
-    top: 0.25rem;
-    right: 0.25rem;
-    padding: 0.375rem;
-  }
-
-  .qm-keyboard-help {
-    top: 0.25rem;
-    left: 0.25rem;
-    max-width: 160px;
-    font-size: 0.75rem;
-  }
-  .qm-quick-actions {
-    gap: 0.25rem;
-    justify-content: center;
-    padding: 0.0625rem 0;
-    margin-bottom: 0.125rem;
-  }
-
-  .qm-tab-btn {
-    padding: 0.25rem 0.375rem;
-    font-size: 0.6875rem;
-  }
-
-  .qm-list-item {
-    padding: 0.375rem;
-    gap: 0.375rem;
-  }
-
-  .qm-item-icon {
-    width: 1.5rem;
-    height: 1.5rem;
-    min-width: 1.5rem;
-    min-height: 1.5rem;
-    max-width: 1.5rem;
-    max-height: 1.5rem;
-  }
-
-  .qm-item-icon svg {
-    width: 12px !important;
-    height: 12px !important;
-    max-width: 12px !important;
-    max-height: 12px !important;
-  }
-
-  .qm-item-name {
-    font-size: 0.75rem;
-  }
-
-  .qm-item-desc {
-    font-size: 0.625rem;
-  }
-
-  .qm-item-value {
-    font-size: 0.75rem;
-  }
-
-  .qm-item-date {
-    font-size: 0.5625rem;
-  }
-
-  .qm-item-value-wrapper {
-    min-width: 0;
-  }
-}
-
-/* 超小屏幕优化 */
-@media (max-width: 480px) {
-  .qm-quick-money-container {
-    padding: 0.0625rem;
-    padding-top: 0.0625rem;
-  }
-
-  .qm-quick-actions {
-    gap: 0.1875rem;
-    padding: 0.03125rem 0;
-    margin-bottom: 0.0625rem;
-  }
-
-  .qm-btn {
-    padding: 0.25rem;
-    min-width: 1.5rem;
-    height: 1.5rem;
-  }
-
-  .qm-tab-btn {
-    padding: 0.1875rem 0.25rem;
-    font-size: 0.625rem;
-  }
-
-  .qm-list-item {
-    padding: 0.25rem;
-    gap: 0.25rem;
-  }
-
-  .qm-item-icon {
-    width: 1.25rem;
-    height: 1.25rem;
-    min-width: 1.25rem;
-    min-height: 1.25rem;
-    max-width: 1.25rem;
-    max-height: 1.25rem;
-  }
-
-  .qm-item-icon svg {
-    width: 10px !important;
-    height: 10px !important;
-    max-width: 10px !important;
-    max-height: 10px !important;
-  }
-
-  .qm-item-name {
-    font-size: 0.6875rem;
-  }
-
-  .qm-item-desc {
-    font-size: 0.5625rem;
-  }
-
-  .qm-item-value {
-    font-size: 0.6875rem;
-  }
-
-  .qm-item-date {
-    font-size: 0.5rem;
-  }
-}
-
-@media (min-width: 1024px) {
-  .qm-btn {
-    padding: 1rem;
-  }
-}
-</style>
