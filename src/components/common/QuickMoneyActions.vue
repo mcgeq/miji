@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// 閲嶆瀯鍚庣殑QuickMoneyActions - 浣跨敤缁勪欢鍖栨灦鏋?
+// 重构后的QuickMoneyActions - 使用组件化架构
 import ConfirmDialog from '@/components/common/ConfirmDialogCompat.vue';
 import QuickMoneyAccountList from '@/components/common/QuickMoneyAccountList.vue';
 import QuickMoneyActionButtons from '@/components/common/QuickMoneyActionButtons.vue';
@@ -40,7 +40,7 @@ const categoryStore = useCategoryStore();
 const mediaQueries = useMediaQueriesStore();
 const { confirmState, handleConfirm, handleCancel, handleClose } = useConfirm();
 
-// 浣跨敤鍚勪釜鍔熻兘妯″潡鐨?hooks
+// 使用各个功能模块的 hooks
 const {
   showTransaction,
   selectedTransaction,
@@ -100,7 +100,7 @@ const {
   switchTab,
 } = useTabManager();
 
-// 鍏抽棴鎵€鏈夋ā鎬佹
+// 关闭所有模态框
 function closeAllModals() {
   closeTransactionModal();
   closeAccountModal();
@@ -108,12 +108,12 @@ function closeAllModals() {
   closeReminderModal();
 }
 
-// 鍒囨崲閲戦鍙鎬?
+// 切换金额可见性
 function toggleAmountVisibility() {
   accountStore.toggleGlobalAmountHidden();
 }
 
-// 鏁版嵁鍒锋柊鍑芥暟
+// 刷新交易数据
 async function refreshTransactionData() {
   await Promise.all([loadTransactions(), loadAccounts(), loadBudgets()]);
 }
@@ -130,7 +130,7 @@ async function refreshReminderData() {
   await loadReminders();
 }
 
-// 浣跨敤composables涓殑handle鏂规硶锛岄€氳繃鍥炶皟瀹炵幇鏁版嵁鍒锋柊
+// 钱包操作相关处理函数
 async function handleSaveTransaction(transaction: TransactionCreate) {
   return await saveTransaction(transaction, refreshTransactionData);
 }
@@ -171,7 +171,7 @@ async function handleUpdateReminder(serialNum: string, reminder: BilReminderUpda
   return await updateReminder(serialNum, reminder, refreshReminderData);
 }
 
-// 鍒涘缓閿洏浜嬩欢澶勭悊鍣?
+// 创建键盘事件处理器
 const handleKeyPress = createKeyboardHandler(
   {
     showTransaction,
@@ -188,10 +188,10 @@ const handleKeyPress = createKeyboardHandler(
   },
 );
 
-// 娣诲姞閿洏浜嬩欢鐩戝惉鍣?
+// 添加键盘事件监听器
 addKeyboardListener(handleKeyPress);
 
-// 鏍囩鍒囨崲澶勭悊
+// 标签切换处理
 function handleSwitchTab(tab: 'accounts' | 'transactions' | 'budgets' | 'reminders') {
   switchTab(tab, {
     loadAccounts,
@@ -205,7 +205,7 @@ onMounted(async () => {
   await loadAccounts();
   await categoryStore.fetchCategories();
   await categoryStore.fetchSubCategories();
-  // 鍒濆鍔犺浇鎵€鏈夋暟鎹?
+  // 初始加载所有数据
   await loadTransactions();
   await loadBudgets();
   await loadReminders();
@@ -214,7 +214,7 @@ onMounted(async () => {
 
 <template>
   <div class="w-full relative flex flex-col items-center justify-start h-full p-1 pt-1 overflow-hidden">
-    <!-- 蹇嵎閿府鍔╃郴缁? -->
+    <!-- 快捷键帮助系统 -->
     <QuickMoneyHeader
       :show="showKeyboardHelp"
       :shortcuts="keyboardShortcuts"
@@ -223,7 +223,7 @@ onMounted(async () => {
       @close="showKeyboardHelp = false"
     />
 
-    <!-- 蹇嵎鎿嶄綔鎸夐挳 -->
+    <!-- 快捷操作按钮 -->
     <QuickMoneyActionButtons
       :show-amount-toggle="props.showAmountToggle"
       :amount-hidden="accountStore.globalAmountHidden"
@@ -236,41 +236,41 @@ onMounted(async () => {
       @toggle-amount="toggleAmountVisibility"
     />
 
-    <!-- Tab鍒囨崲 -->
+    <!-- Tab切换 -->
     <QuickMoneyTabs
       :active-tab="activeTab"
       @switch="handleSwitchTab"
     />
 
-    <!-- 鍒楄〃瀹瑰櫒 -->
+    <!-- 列表容器 -->
     <div class="w-full flex-1 overflow-y-auto max-h-[calc(100%-8rem)] scrollbar-none">
-      <!-- 璐︽埛鍒楄〃 -->
+      <!-- 账户列表 -->
       <QuickMoneyAccountList
         v-if="activeTab === 'accounts'"
         :accounts="accounts"
         :amount-hidden="accountStore.globalAmountHidden"
       />
 
-      <!-- 浜ゆ槗鍒楄〃 -->
+      <!-- 交易列表 -->
       <QuickMoneyTransactionList
         v-if="activeTab === 'transactions'"
         :transactions="transactions"
       />
 
-      <!-- 棰勭畻鍒楄〃 -->
+      <!-- 预算列表 -->
       <QuickMoneyBudgetList
         v-if="activeTab === 'budgets'"
         :budgets="budgets"
       />
 
-      <!-- 鎻愰啋鍒楄〃 -->
+      <!-- 提醒列表 -->
       <QuickMoneyReminderList
         v-if="activeTab === 'reminders'"
         :reminders="reminders"
       />
     </div>
 
-    <!-- Modals - 浣跨敤 Teleport 浼犻€佸埌 body锛岀‘淇濊鐩栨暣涓〉闈? -->
+    <!-- Modals - 使用 Teleport 传送到 body，确保覆盖整个页面 -->
     <Teleport to="body">
       <TransactionModal
         v-if="showTransaction"
