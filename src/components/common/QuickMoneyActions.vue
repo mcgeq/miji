@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import ConfirmModal from '@/components/common/ConfirmModal.vue';
+import ConfirmDialog from '@/components/common/ConfirmDialogCompat.vue';
 import AccountModal from '@/features/money/components/AccountModal.vue';
 import BudgetModal from '@/features/money/components/BudgetModal.vue';
 import ReminderModal from '@/features/money/components/ReminderModal.vue';
@@ -479,7 +479,7 @@ onMounted(async () => {
         @update="handleUpdateReminder"
       />
 
-      <ConfirmModal
+      <ConfirmDialog
         :visible="confirmState.visible"
         :title="confirmState.title"
         :message="confirmState.message"

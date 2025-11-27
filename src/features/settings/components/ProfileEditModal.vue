@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Clock, FileText, Globe, Mail, Phone, Save, User, X } from 'lucide-vue-next';
-import ConfirmModal from '@/components/common/ConfirmModal.vue';
+import ConfirmDialog from '@/components/common/ConfirmDialogCompat.vue';
 import { Input, Select, Textarea } from '@/components/ui';
 import { useAuthStore } from '@/stores/auth';
 import type { AuthUser } from '@/schema/user';
@@ -78,7 +78,7 @@ const errors = ref<Partial<Record<keyof FormData, string>>>({});
 const isSubmitting = ref(false);
 const isDirty = ref(false);
 const nameInputRef = ref<HTMLInputElement>();
-const showConfirmModal = ref(false);
+const showConfirmDialog = ref(false);
 
 // ============= 常量配置 =============
 const LANGUAGE_OPTIONS: readonly SelectOption[] = [
@@ -308,7 +308,7 @@ function handleClose() {
 
   // 如果有未保存的更改，显示确认对话框
   if (isDirty.value) {
-    showConfirmModal.value = true;
+    showConfirmDialog.value = true;
     return;
   }
 
@@ -316,12 +316,12 @@ function handleClose() {
 }
 
 function handleConfirmClose() {
-  showConfirmModal.value = false;
+  showConfirmDialog.value = false;
   emit('close');
 }
 
 function handleCancelClose() {
-  showConfirmModal.value = false;
+  showConfirmDialog.value = false;
 }
 
 function handleOverlayClick(event: MouseEvent) {
@@ -550,8 +550,8 @@ onUnmounted(() => {
     </Transition>
 
     <!-- 确认关闭模态框 -->
-    <ConfirmModal
-      v-model:visible="showConfirmModal"
+    <ConfirmDialog
+      v-model:visible="showConfirmDialog"
       title="确认关闭"
       message="您有未保存的更改，确定要关闭吗？关闭后所有更改将丢失。"
       type="warning"

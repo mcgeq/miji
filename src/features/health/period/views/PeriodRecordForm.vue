@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import ConfirmDialog from '@/components/common/ConfirmDialog.vue';
+import ConfirmDialog from '@/components/common/ConfirmDialogCompat.vue';
 import PresetButtons from '@/components/common/PresetButtons.vue';
 import WarningDialog from '@/components/common/WarningDialog.vue';
 import { Modal } from '@/components/ui';

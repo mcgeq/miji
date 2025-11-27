@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { listen } from '@tauri-apps/api/event';
-import ConfirmModal from '@/components/common/ConfirmModal.vue';
+import ConfirmDialog from '@/components/common/ConfirmDialogCompat.vue';
 import { useMoneyStats } from '@/composables/useMoneyStats';
 import { CURRENCY_CNY } from '@/constants/moneyConst';
 import { TransactionTypeSchema } from '@/schema/common';
@@ -459,7 +459,7 @@ onUnmounted(() => {
       @update="(serialNum, reminder) => handleUpdateReminder(serialNum, reminder, finalizeReminderChange)"
     />
 
-    <ConfirmModal
+    <ConfirmDialog
       :visible="confirmState.visible"
       :title="confirmState.title"
       :message="confirmState.message"

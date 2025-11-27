@@ -3,7 +3,7 @@ import { LucidePlus } from 'lucide-vue-next';
 import { storeToRefs } from 'pinia';
 import { computed, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import ConfirmModal from '@/components/common/ConfirmModal.vue';
+import ConfirmDialog from '@/components/common/ConfirmDialogCompat.vue';
 import { useFamilyLedgerStore } from '@/stores/money';
 import { deepDiff } from '@/utils/diffObject';
 import { toast } from '@/utils/toast';
@@ -298,7 +298,7 @@ onMounted(() => {
     />
 
     <!-- 删除确认弹窗 -->
-    <ConfirmModal
+    <ConfirmDialog
       :visible="showDeleteConfirm"
       title="确认删除"
       message="确定要删除这个家庭账本吗？删除后将无法恢复，所有相关的交易记录、成员信息等数据都将被永久删除。"
