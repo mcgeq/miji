@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n';
-import BaseModal from '@/components/common/BaseModal.vue';
-import { Checkbox, FormRow, Input, Select } from '@/components/ui';
+import { Checkbox, FormRow, Input, Modal, Select } from '@/components/ui';
 import { CURRENCY_CNY } from '@/constants/moneyConst';
 import { MoneyDb } from '@/services/money/money';
 import { DateUtils } from '@/utils/date';
@@ -482,7 +481,8 @@ onMounted(() => {
 </script>
 
 <template>
-  <BaseModal
+  <Modal
+    :open="true"
     :title="props.ledger ? '编辑家庭账本' : '创建家庭账本'"
     size="md"
     :confirm-loading="isSubmitting"
@@ -677,7 +677,7 @@ onMounted(() => {
       @close="closeMemberModal"
       @save="saveMember"
     />
-  </BaseModal>
+  </Modal>
 </template>
 
 <style scoped>

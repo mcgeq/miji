@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import BaseModal from '@/components/common/BaseModal.vue';
 import DateTimePicker from '@/components/common/DateTimePicker.vue';
 import CurrencySelector from '@/components/common/money/CurrencySelector.vue';
-import { Checkbox, FormRow, Input, Select, Textarea } from '@/components/ui';
+import { Checkbox, FormRow, Input, Modal, Select, Textarea } from '@/components/ui';
 import {
   TransactionStatusSchema,
   TransactionTypeSchema,
@@ -721,7 +720,8 @@ watch(
 </script>
 
 <template>
-  <BaseModal
+  <Modal
+    :open="true"
     :title="modalTitle"
     size="md"
     :confirm-loading="isSubmitting"
@@ -1184,7 +1184,7 @@ watch(
         />
       </FormRow>
     </form>
-  </BaseModal>
+  </Modal>
 </template>
 
 <style scoped lang="postcss">

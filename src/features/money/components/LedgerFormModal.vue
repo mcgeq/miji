@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n';
-import BaseModal from '@/components/common/BaseModal.vue';
-import { Checkbox, FormRow, Input, Select, Textarea } from '@/components/ui';
+import { Checkbox, FormRow, Input, Modal, Select, Textarea } from '@/components/ui';
 import { CURRENCY_CNY } from '@/constants/moneyConst';
 import { MoneyDb } from '@/services/money/money';
 import { useFamilyLedgerStore } from '@/stores/money';
@@ -306,7 +305,8 @@ onMounted(() => {
 </script>
 
 <template>
-  <BaseModal
+  <Modal
+    :open="true"
     :title="isEdit ? t('familyLedger.editLedger') : t('familyLedger.createNewLedger')"
     size="md"
     :confirm-loading="isSubmitting || saving"
@@ -417,7 +417,7 @@ onMounted(() => {
         </div>
       </div>
     </form>
-  </BaseModal>
+  </Modal>
 </template>
 
 <style scoped lang="postcss">

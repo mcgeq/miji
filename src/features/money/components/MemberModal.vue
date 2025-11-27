@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import BaseModal from '@/components/common/BaseModal.vue';
-import { Checkbox, FormRow, Input, Select, Textarea } from '@/components/ui';
+import { Checkbox, FormRow, Input, Modal, Select, Textarea } from '@/components/ui';
 import { MemberUserRoleSchema } from '@/schema/userRole';
 import { useFamilyMemberStore } from '@/stores/money';
 import { Lg } from '@/utils/debugLog';
@@ -117,7 +116,8 @@ watch(
 </script>
 
 <template>
-  <BaseModal
+  <Modal
+    :open="true"
     :title="props.member ? '编辑成员' : '添加成员'"
     size="md"
     :confirm-loading="isSubmitting"
@@ -157,5 +157,5 @@ watch(
         />
       </div>
     </form>
-  </BaseModal>
+  </Modal>
 </template>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import BaseModal from '@/components/common/BaseModal.vue';
+import { Modal } from '@/components/ui';
 import { Lg } from '@/utils/debugLog';
 import { toast } from '@/utils/toast';
 import LedgerFormModal from './LedgerFormModal.vue';
@@ -103,7 +103,8 @@ function formatDate(dateString?: string) {
 </script>
 
 <template>
-  <BaseModal
+  <Modal
+    :open="true"
     title="家庭账本管理"
     size="lg"
     :show-footer="false"
@@ -249,7 +250,7 @@ function formatDate(dateString?: string) {
       @cancel="handleCancelClose"
       @close="handleCancelClose"
     />
-  </BaseModal>
+  </Modal>
 </template>
 
 <style scoped>

@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import BaseModal from '@/components/common/BaseModal.vue';
 import ColorSelector from '@/components/common/ColorSelector.vue';
-import { Checkbox, FormRow, Input, Select } from '@/components/ui';
+import { Checkbox, FormRow, Input, Modal, Select } from '@/components/ui';
 import FamilyMemberSelector from '@/components/ui/FamilyMemberSelector.vue';
 import { useFamilyMemberStore } from '@/stores/money';
 import { toast } from '@/utils/toast';
@@ -247,7 +246,8 @@ function handleMemberClear() {
 </script>
 
 <template>
-  <BaseModal
+  <Modal
+    :open="true"
     :title="props.member ? '编辑成员' : '添加成员'"
     size="md"
     :confirm-loading="isSubmitting"
@@ -437,7 +437,7 @@ function handleMemberClear() {
         </div>
       </div>
     </form>
-  </BaseModal>
+  </Modal>
 </template>
 
 <style scoped>

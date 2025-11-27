@@ -8,7 +8,7 @@ import {
   LucideScale,
   LucideUsers,
 } from 'lucide-vue-next';
-import BaseModal from '@/components/common/BaseModal.vue';
+import { Modal } from '@/components/ui';
 import type { SplitRuleType } from '@/schema/money';
 
 interface SplitDetail {
@@ -113,7 +113,8 @@ function close() {
 </script>
 
 <template>
-  <BaseModal
+  <Modal
+    :open="true"
     title="分摊详情"
     size="lg"
     :show-footer="false"
@@ -235,7 +236,7 @@ function close() {
         </div>
       </div>
     </div>
-  </BaseModal>
+  </Modal>
 </template>
 
 <style scoped>

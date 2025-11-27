@@ -5,7 +5,7 @@ import {
   DollarSign,
   Users,
 } from 'lucide-vue-next';
-import BaseModal from '@/components/common/BaseModal.vue';
+import { Modal } from '@/components/ui';
 
 // ==================== Props & Emits ====================
 
@@ -105,7 +105,8 @@ function formatDateTime(dateString: string): string {
 </script>
 
 <template>
-  <BaseModal
+  <Modal
+    :open="true"
     title="结算详情"
     size="lg"
     :show-footer="false"
@@ -248,7 +249,7 @@ function formatDateTime(dateString: string): string {
         </div>
       </div>
     </div>
-  </BaseModal>
+  </Modal>
 </template>
 
 <style scoped>

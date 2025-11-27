@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import z from 'zod';
-import BaseModal from '@/components/common/BaseModal.vue';
 import BudgetAllocationEditor from '@/components/common/money/BudgetAllocationEditor.vue';
+import { Modal } from '@/components/ui';
 import { useBudgetForm } from '@/composables/useBudgetForm';
 import { BudgetCreateSchema } from '@/schema/money';
 import { useCategoryStore, useFamilyMemberStore } from '@/stores/money';
@@ -209,7 +209,8 @@ onMounted(async () => {
 </script>
 
 <template>
-  <BaseModal
+  <Modal
+    :open="true"
     :title="props.budget ? '编辑家庭预算' : '创建家庭预算'"
     size="md"
     :confirm-loading="isSubmitting"
@@ -313,7 +314,7 @@ onMounted(async () => {
         </div>
       </div>
     </form>
-  </BaseModal>
+  </Modal>
 
   <!-- 分配编辑器模态框 -->
   <BudgetAllocationEditor

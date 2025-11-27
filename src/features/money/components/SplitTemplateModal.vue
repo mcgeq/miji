@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import BaseModal from '@/components/common/BaseModal.vue';
-import { Checkbox, FormRow, Input, Textarea } from '@/components/ui';
+import { FormRow, Input, Modal } from '@/components/ui';
 import type { SplitRuleType } from '@/schema/money';
 
 interface Props {
@@ -91,7 +90,8 @@ function getTypeName(type: SplitRuleType): string {
 </script>
 
 <template>
-  <BaseModal
+  <Modal
+    :open="true"
     :title="mode === 'create' ? '创建模板' : '编辑模板'"
     size="md"
     :confirm-loading="isSubmitting"
@@ -151,7 +151,7 @@ function getTypeName(type: SplitRuleType): string {
         </p>
       </div>
     </form>
-  </BaseModal>
+  </Modal>
 </template>
 
 <style scoped>

@@ -1,14 +1,13 @@
 <script setup lang="ts">
 import * as _ from 'es-toolkit/compat';
 import z from 'zod';
-import BaseModal from '@/components/common/BaseModal.vue';
 import ColorSelector from '@/components/common/ColorSelector.vue';
 import DateTimePicker from '@/components/common/DateTimePicker.vue';
 import CurrencySelector from '@/components/common/money/CurrencySelector.vue';
 import PrioritySelector from '@/components/common/PrioritySelector.vue';
 import ReminderSelector from '@/components/common/ReminderSelector.vue';
 import RepeatPeriodSelector from '@/components/common/RepeatPeriodSelector.vue';
-import { Checkbox, FormRow, Input, Select, Textarea } from '@/components/ui';
+import { Checkbox, FormRow, Input, Modal, Select, Textarea } from '@/components/ui';
 import { COLORS_MAP, CURRENCY_CNY } from '@/constants/moneyConst';
 import {
   PrioritySchema,
@@ -665,7 +664,8 @@ watch(
 </script>
 
 <template>
-  <BaseModal
+  <Modal
+    :open="true"
     :title="props.reminder ? t('financial.reminder.editReminder') : t('financial.reminder.addReminder')"
     size="md"
     :confirm-loading="isSubmitting"
@@ -897,7 +897,7 @@ watch(
         />
       </FormRow>
     </form>
-  </BaseModal>
+  </Modal>
 </template>
 
 <style scoped lang="postcss">
