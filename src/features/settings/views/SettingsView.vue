@@ -40,38 +40,41 @@ const currentTabComponent = computed(() => {
 </script>
 
 <template>
-  <div class="settings-container">
-    <div class="settings-layout">
+  <div class="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
+    <div class="max-w-7xl mx-auto space-y-6">
       <!-- 顶部：用户信息卡片和标签导航 -->
-      <div class="settings-top-section">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <!-- 用户信息卡片 - 占2/3宽度 -->
-        <div class="settings-user-card">
+        <div class="lg:col-span-2">
           <UserDisplayCard />
         </div>
 
         <!-- 标签导航 - 占1/3宽度 -->
-        <div class="settings-tabs-card">
-          <div class="settings-card">
-            <div>
-              <div class="settings-tabs-grid">
-                <button
-                  v-for="tab in tabs"
-                  :key="tab.id"
-                  class="settings-tab-button"
-                  :class="activeTab === tab.id ? 'settings-tab-active' : 'settings-tab-inactive'"
-                  @click="activeTab = tab.id"
-                >
-                  <component :is="tab.icon" class="settings-tab-button-icon" />
-                  <span class="settings-tab-button-label">{{ tab.label }}</span>
-                </button>
-              </div>
+        <div class="lg:col-span-1">
+          <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
+            <div class="grid grid-cols-2 gap-2">
+              <button
+                v-for="tab in tabs"
+                :key="tab.id"
+                class="flex flex-col items-center justify-center gap-2 p-4 rounded-lg transition-all duration-200"
+                :class="activeTab === tab.id
+                  ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 shadow-sm'
+                  : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/50'"
+                @click="activeTab = tab.id"
+              >
+                <component :is="tab.icon" class="w-5 h-5" />
+                <span class="text-sm font-medium">{{ tab.label }}</span>
+              </button>
             </div>
           </div>
         </div>
       </div>
 
       <!-- 设置内容区域 - 下方铺满 -->
-      <div class="settings-content-card" :class="{ 'settings-content-card-account': activeTab === 'account' }">
+      <div
+        class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700"
+        :class="activeTab === 'account' ? 'p-0' : 'p-6'"
+      >
         <component :is="currentTabComponent" />
       </div>
     </div>
