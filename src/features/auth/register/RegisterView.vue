@@ -37,187 +37,89 @@ const onSubmit = handleSubmit(async values => {
 </script>
 
 <template>
-  <div class="page-container">
-    <div class="card">
-      <h2 class="card__title">
+  <div class="flex items-center justify-center min-h-screen p-4 bg-gray-50 dark:bg-gray-900">
+    <div class="w-full max-w-md p-6 sm:p-8 bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-xl backdrop-blur-sm flex flex-col gap-6">
+      <!-- 标题 -->
+      <h2 class="text-3xl font-bold text-center text-gray-900 dark:text-white tracking-tight">
         {{ t('auth.register') }}
       </h2>
 
-      <form class="form" @submit.prevent="onSubmit">
-        <div class="form__group">
-          <input v-model="username" name="username" type="text" :placeholder="t('auth.username')" class="input">
-          <p v-if="errors.username" class="form__error">
+      <!-- 注册表单 -->
+      <form class="flex flex-col gap-4" @submit.prevent="onSubmit">
+        <div class="flex flex-col">
+          <input
+            v-model="username"
+            name="username"
+            type="text"
+            :placeholder="t('auth.username')"
+            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white bg-white dark:bg-gray-800 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+          >
+          <p v-if="errors.username" class="mt-1 text-sm text-red-600 dark:text-red-400">
             {{ errors.username }}
           </p>
         </div>
 
-        <div class="form__group">
-          <input v-model="email" name="email" type="email" :placeholder="t('auth.email')" class="input">
-          <p v-if="errors.email" class="form__error">
+        <div class="flex flex-col">
+          <input
+            v-model="email"
+            name="email"
+            type="email"
+            :placeholder="t('auth.email')"
+            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white bg-white dark:bg-gray-800 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+          >
+          <p v-if="errors.email" class="mt-1 text-sm text-red-600 dark:text-red-400">
             {{ errors.email }}
           </p>
         </div>
 
-        <div class="form__group">
-          <input v-model="password" name="password" type="password" :placeholder="t('auth.password')" class="input">
-          <p v-if="errors.password" class="form__error">
+        <div class="flex flex-col">
+          <input
+            v-model="password"
+            name="password"
+            type="password"
+            :placeholder="t('auth.password')"
+            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white bg-white dark:bg-gray-800 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+          >
+          <p v-if="errors.password" class="mt-1 text-sm text-red-600 dark:text-red-400">
             {{ errors.password }}
           </p>
         </div>
 
-        <div class="form__group">
-          <input v-model="code" name="code" type="text" :placeholder="t('auth.code')" class="input">
-          <p v-if="errors.code" class="form__error">
+        <div class="flex flex-col">
+          <input
+            v-model="code"
+            name="code"
+            type="text"
+            :placeholder="t('auth.code')"
+            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white bg-white dark:bg-gray-800 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+          >
+          <p v-if="errors.code" class="mt-1 text-sm text-red-600 dark:text-red-400">
             {{ errors.code }}
           </p>
         </div>
 
+        <!-- 注册按钮 -->
         <button
           type="submit"
           :disabled="isSubmitting"
-          class="btn-submit"
+          class="w-full px-4 py-2.5 font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-blue-600"
         >
-          <template v-if="isSubmitting">
-            {{ t('auth.loading.registering') }}
-          </template>
-          <template v-else>
-            {{ t('auth.register') }}
-          </template>
+          {{ isSubmitting ? t('auth.loading.registering') : t('auth.register') }}
         </button>
       </form>
 
-      <p class="form__text">
+      <!-- 登录跳转 -->
+      <p class="text-center text-sm text-gray-600 dark:text-gray-400">
         {{ t('auth.haveAccount') }}
-        <router-link to="/auth/login" class="form__link">
+        <router-link to="/auth/login" class="ml-1 text-blue-600 dark:text-blue-400 font-medium hover:underline">
           {{ t('auth.login') }}
         </router-link>
       </p>
 
-      <p v-if="success" class="form__success">
+      <!-- 成功消息 -->
+      <p v-if="success" class="text-sm font-semibold text-center text-green-600 dark:text-green-400 select-text">
         {{ t('auth.messages.registerSuccess') }}
       </p>
     </div>
   </div>
 </template>
-
-<style scoped lang="postcss">
-.page-container {
-  padding: 1rem;
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--color-base-100);
-}
-
-.card {
-  width: 100%;
-  max-width: 28rem; /* 等于 max-w-md */
-  padding: 1.5rem;
-  border: 1px solid var(--color-base-200);
-  border-radius: 0.75rem;
-  background-color: var(--color-base-200);
-  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1),
-              0 4px 6px -4px rgb(0 0 0 / 0.1);
-  backdrop-filter: blur(20px);
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-@media (min-width: 640px) {
-  .card {
-    padding: 2rem;
-  }
-}
-
-.card__title {
-  font-size: 1.875rem; /* text-3xl */
-  font-weight: 700;
-  text-align: center;
-  color: var(--color-base-content);
-  letter-spacing: -0.01em;
-}
-
-.form {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.form__group {
-  display: flex;
-  flex-direction: column;
-}
-
-.input {
-  width: 100%;
-  padding: 0.5rem 0.75rem;
-  border: 1px solid var(--color-neutral);
-  border-radius: 0.375rem;
-  font-size: 1rem;
-  color: var(--color-base-content);
-  background-color: var(--color-base-100);
-  transition: border-color 0.2s, box-shadow 0.2s;
-}
-
-.input:focus {
-  outline: none;
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px var(--color-primary-soft);
-}
-
-.form__error {
-  margin-top: 0.25rem;
-  font-size: 0.875rem;
-  color: var(--color-error);
-}
-
-.btn-submit {
-  width: 100%;
-  padding: 0.5rem 1rem;
-  font-weight: 600;
-  color: white;
-  border: none;
-  border-radius: 0.375rem;
-  cursor: pointer;
-  background: var(--color-neutral);
-  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1),
-              0 2px 4px -2px rgb(0 0 0 / 0.1);
-  transition: filter 0.2s;
-}
-
-.btn-submit:hover:not(:disabled) {
-  filter: brightness(1.1);
-}
-
-.btn-submit:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.form__text {
-  font-size: 0.875rem;
-  text-align: center;
-  color: var(--color-neutral);
-}
-
-.form__link {
-  margin-left: 0.25rem;
-  color: var(--color-info);
-  font-weight: 500;
-  text-decoration: none;
-}
-
-.form__link:hover {
-  text-decoration: underline;
-}
-
-.form__success {
-  font-size: 0.875rem;
-  font-weight: 600;
-  text-align: center;
-  color: var(--color-success);
-  user-select: text;
-}
-</style>

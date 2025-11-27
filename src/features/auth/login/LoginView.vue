@@ -53,14 +53,15 @@ async function handleSubmit() {
 </script>
 
 <template>
-  <div class="flex items-center justify-center min-h-screen p-4 bg-[var(--color-base-100)]">
-    <div class="w-full max-w-md p-8 bg-[var(--color-base-200)] rounded-2xl border border-[var(--color-base-300)] shadow-[0_10px_15px_rgba(0,0,0,0.1)] backdrop-blur-[10px] flex flex-col gap-6">
+  <div class="flex items-center justify-center min-h-screen p-4 bg-gray-50 dark:bg-gray-900">
+    <div class="w-full max-w-md p-8 bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-xl backdrop-blur-sm flex flex-col gap-6">
       <!-- 标题 -->
-      <h2 class="title">
+      <h2 class="text-3xl font-bold text-center text-gray-900 dark:text-white tracking-tight">
         {{ t('auth.login') }}
       </h2>
+
       <!-- 登录表单 -->
-      <form class="form" @submit.prevent="handleSubmit">
+      <form class="flex flex-col gap-4" @submit.prevent="handleSubmit">
         <Input
           v-model="form.email"
           name="email"
@@ -76,11 +77,13 @@ async function handleSubmit() {
           :error="errors.password"
           full-width
         />
+
         <!-- 记住我（移动设备自动记住，不显示） -->
-        <label v-if="!isMobileDevice" class="remember-me">
+        <label v-if="!isMobileDevice" class="inline-flex items-center gap-2 cursor-pointer text-sm text-gray-700 dark:text-gray-300">
           <input
             v-model="rememberMe"
             type="checkbox"
+            class="w-4 h-4 text-blue-600 bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-blue-500/20 transition-all"
           >
           <span>{{ t('auth.rememberMe') }}</span>
         </label>
@@ -89,163 +92,19 @@ async function handleSubmit() {
         <button
           type="submit"
           :disabled="isSubmitting"
-          class="btn-submit"
+          class="w-full px-4 py-2.5 font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-blue-600"
         >
           {{ isSubmitting ? t('auth.loading.loggingIn') : t('auth.login') }}
         </button>
       </form>
 
       <!-- 注册跳转 -->
-      <p class="register-text">
+      <p class="text-center text-sm text-gray-600 dark:text-gray-400">
         {{ t('auth.noAccount') }}
-        <router-link to="/auth/register" class="register-link">
+        <router-link to="/auth/register" class="ml-1 text-blue-600 dark:text-blue-400 font-medium hover:underline">
           {{ t('auth.register') }}
         </router-link>
       </p>
     </div>
   </div>
 </template>
-
-<style scoped>
-/* 页面容器 */
-.container {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 100vh;
-  padding: 1rem;
-  background-color: var(--color-base-100);
-}
-
-/* 卡片 */
-.card {
-  width: 100%;
-  max-width: 28rem;
-  padding: 2rem;
-  background-color: var(--color-base-200);
-  border-radius: 1rem;
-  border: 1px solid var(--color-base-300);
-  box-shadow: 0 10px 15px rgba(0,0,0,0.1);
-  backdrop-filter: blur(10px);
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-/* 标题 */
-.title {
-  font-size: 1.875rem; /* 3xl */
-  font-weight: bold;
-  text-align: center;
-  color: var(--color-base-content);
-  letter-spacing: -0.015em;
-}
-
-/* 表单 */
-.form {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-/* 记住我 */
-.remember-me {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  cursor: pointer;
-  font-size: 0.875rem;
-  color: rgb(0,0,0,0.8);
-}
-
-/* 复选框基础 */
-.remember-me input[type="checkbox"] {
-  appearance: none;         /* 移除系统默认样式 */
-  -webkit-appearance: none;
-  -moz-appearance: none;
-
-  width: 1.1rem;
-  height: 1.1rem;
-  border: 2px solid var(--color-neutral);
-  border-radius: 0.375rem;  /* 圆角方形 */
-  background-color: var(--color-base-100);
-  cursor: pointer;
-  position: relative;
-  transition: all 0.2s ease;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-}
-
-/* hover 效果 */
-.remember-me input[type="checkbox"]:hover {
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px color-mix(in oklch, var(--color-primary) 25%, transparent);
-}
-
-/* 选中状态 */
-.remember-me input[type="checkbox"]:checked {
-  background-color: var(--color-info);
-  border-color: var(--color-base-300);
-  box-shadow: 0 0 0 3px color-mix(in oklch, var(--color-base-300) 35%, transparent);
-}
-
-/* 选中时的对勾 */
-.remember-me input[type="checkbox"]:checked::after {
-  content: "√";
-  color: var(--color-primary-content);
-  font-size: 0.75rem;
-  font-weight: bold;
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -60%);
-}
-
-/* 禁用状态 */
-.remember-me input[type="checkbox"]:disabled {
-  background-color: var(--color-neutral);
-  border-color: var(--color-neutral);
-  cursor: not-allowed;
-  opacity: 0.6;
-}
-
-/* 登录按钮 */
-.btn-submit {
-  width: 100%;
-  padding: 0.5rem 1rem;
-  font-weight: 600;
-  color: white;
-  border: none;
-  border-radius: 0.375rem;
-  background: var(--color-neutral);
-  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.btn-submit:hover:not(:disabled) {
-  filter: brightness(1.1);
-}
-
-.btn-submit:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-/* 注册文字 */
-.register-text {
-  text-align: center;
-  font-size: 0.875rem;
-  color: var(--color-neutral);
-}
-
-.register-link {
-  margin-left: 0.25rem;
-  color: var(--color-info);
-  font-weight: 500;
-  text-decoration: none;
-}
-
-.register-link:hover {
-  text-decoration: underline;
-}
-</style>
