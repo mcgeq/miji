@@ -31,6 +31,7 @@ declare module 'vue' {
     DateInput: typeof import('./src/components/common/datetime/DateInput.vue')['default']
     DateTimePanel: typeof import('./src/components/common/datetime/DateTimePanel.vue')['default']
     DateTimePicker: typeof import('./src/components/common/DateTimePicker.vue')['default']
+    DateTimePickerDebug: typeof import('./src/components/common/DateTimePickerDebug.vue')['default']
     DateTimePickerV2: typeof import('./src/components/common/DateTimePickerV2.vue')['default']
     Descriptions: typeof import('./src/components/ui/Descriptions.vue')['default']
     Divider: typeof import('./src/components/ui/Divider.vue')['default']

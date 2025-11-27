@@ -56,9 +56,15 @@ const selectedHour = ref(0);
 const selectedMinute = ref(0);
 const selectedSecond = ref(0);
 const panelPosition = ref({ top: 0, left: 0 });
+const ignoreNextOutsideClick = ref(false);
 
 // 打开/关闭选择器
 function openPicker() {
+  if (props.disabled) return;
+
+  // 设置标记，忽略本次点击触发的 document 点击事件
+  ignoreNextOutsideClick.value = true;
+
   isOpen.value = true;
   updatePanelPosition();
 
@@ -82,6 +88,11 @@ function openPicker() {
     selectedMinute.value = now.getMinutes();
     selectedSecond.value = now.getSeconds();
   }
+
+  // 在下一个事件循环后重置标记
+  setTimeout(() => {
+    ignoreNextOutsideClick.value = false;
+  }, 0);
 }
 
 function closePicker() {
@@ -191,8 +202,22 @@ function clearValue() {
 
 // 点击外部关闭
 function handleClickOutside(event: Event) {
+  // 如果标记为忽略，则跳过
+  if (ignoreNextOutsideClick.value) {
+    return;
+  }
+
+  // 如果面板未打开，不需要处理
+  if (!isOpen.value) {
+    return;
+  }
+
   const target = event.target as HTMLElement;
-  if (!target.closest('.datetime-input') && !target.closest('.datetime-panel') && !target.closest('.numpad-keyboard')) {
+  const inInput = target.closest('.datetime-input');
+  const inPanel = target.closest('.datetime-panel');
+  const inKeyboard = target.closest('.numpad-keyboard');
+
+  if (!inInput && !inPanel && !inKeyboard) {
     closePicker();
   }
 }
@@ -246,32 +271,47 @@ watch(() => props.modelValue, newValue => {
 
   <!-- 选择面板 -->
   <Teleport to="body">
-    <DateTimePanel
-      v-if="isOpen"
-      :current-date="currentDate"
-      :selected-date="selectedDate"
-      :hour="selectedHour"
-      :minute="selectedMinute"
-      :second="selectedSecond"
-      :disabled="disabled"
-      :position="panelPosition"
-      @select-date="handleSelectDate"
-      @update:hour="updateTime('hour', $event)"
-      @update:minute="updateTime('minute', $event)"
-      @update:second="updateTime('second', $event)"
-      @previous-month="previousMonth"
-      @next-month="nextMonth"
-      @confirm="confirmSelection"
-      @cancel="cancelSelection"
-    />
+    <Transition name="fade">
+      <DateTimePanel
+        v-if="isOpen"
+        :current-date="currentDate"
+        :selected-date="selectedDate"
+        :hour="selectedHour"
+        :minute="selectedMinute"
+        :second="selectedSecond"
+        :disabled="disabled"
+        :position="panelPosition"
+        @select-date="handleSelectDate"
+        @update:hour="updateTime('hour', $event)"
+        @update:minute="updateTime('minute', $event)"
+        @update:second="updateTime('second', $event)"
+        @previous-month="previousMonth"
+        @next-month="nextMonth"
+        @confirm="confirmSelection"
+        @cancel="cancelSelection"
+      />
+    </Transition>
   </Teleport>
 
   <!-- 遮罩层 -->
   <Teleport to="body">
     <div
       v-if="isOpen"
-      class="fixed inset-0 z-[10003] bg-transparent"
+      class="fixed inset-0 z-[9999998] bg-transparent"
       @click="closePicker"
     />
   </Teleport>
 </template>
+
+<style scoped>
+/* 过渡动画 */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+</style>

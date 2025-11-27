@@ -55,7 +55,7 @@ const panelStyle = computed(() => ({
   position: 'fixed' as const,
   top: `${props.position.top}px`,
   left: `${props.position.left}px`,
-  zIndex: 10004,
+  zIndex: 9999999, // 必须高于 Modal 的 z-index (999999)
 }));
 
 const timePickerRef = ref<InstanceType<typeof TimePicker>>();

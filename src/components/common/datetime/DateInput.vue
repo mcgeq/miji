@@ -35,6 +35,12 @@ const emit = defineEmits<{
   clear: [];
 }>();
 
+function handleClick() {
+  if (!props.disabled) {
+    emit('click');
+  }
+}
+
 // 格式化日期
 function formatDate(date: Date, format: string): string {
   const year = date.getFullYear();
@@ -80,7 +86,7 @@ function handleClear(event: Event) {
       'border-blue-500 ring-2 ring-blue-500/20': isFocused && !disabled,
       'border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-900 cursor-not-allowed opacity-60': disabled,
     }"
-    @click="!disabled && emit('click')"
+    @click="handleClick"
   >
     <div class="flex items-center justify-between w-full">
       <span

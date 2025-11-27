@@ -71,7 +71,7 @@ const keyboardStyle = computed(() => {
     top: `${top}px`,
     left: `${left}px`,
     width: `${width}px`,
-    zIndex: 10005, // 确保在日期选择面板之上
+    zIndex: 99999999, // 必须在 DateTimePanel (9999999) 和 Modal (999999) 之上
   };
 });
 
