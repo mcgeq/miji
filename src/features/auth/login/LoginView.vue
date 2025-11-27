@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router';
-import FormInput from '@/components/common/FormInput.vue';
+import { Input } from '@/components/ui';
 import { LoginSchema } from '@/schema/auth';
 import { login } from '@/services/auth';
 import { Lg } from '@/utils/debugLog';
@@ -61,18 +61,20 @@ async function handleSubmit() {
       </h2>
       <!-- 登录表单 -->
       <form class="form" @submit.prevent="handleSubmit">
-        <FormInput
+        <Input
           v-model="form.email"
           name="email"
           :placeholder="t('auth.email')"
           :error="errors.email"
+          full-width
         />
-        <FormInput
+        <Input
           v-model="form.password"
           name="password"
           type="password"
           :placeholder="t('auth.password')"
           :error="errors.password"
+          full-width
         />
         <!-- 记住我（移动设备自动记住，不显示） -->
         <label v-if="!isMobileDevice" class="remember-me">

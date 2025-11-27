@@ -1,10 +1,10 @@
 <!-- src/features/todo/views/TodoView.vue -->
 <script setup lang="ts">
 import { Plus, X } from 'lucide-vue-next';
-import InputCommon from '@/components/common/InputCommon.vue';
 import { FilterBtnSchema, PrioritySchema, StatusSchema } from '@/schema/common';
 import { TodoCreateSchema } from '@/schema/todos';
 import { DateUtils } from '@/utils/date';
+import TodoInput from '../components/TodoInput.vue';
 import TodoList from '../components/TodoList.vue';
 import { useTodosFilters } from '../composables/useTodosFilters';
 import type { FilterBtn, Status } from '@/schema/common';
@@ -130,7 +130,7 @@ onMounted(async () => {
       <!-- 展开输入区域 -->
       <Transition name="fade-slide">
         <div v-show="showInput" class="input-area">
-          <InputCommon v-model="newT" @add="handleAdd" />
+          <TodoInput v-model="newT" :on-add="handleAdd" />
         </div>
       </Transition>
 

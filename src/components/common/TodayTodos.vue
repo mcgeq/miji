@@ -1,6 +1,6 @@
 <!-- src/components/common/TodayTodos.vue -->
 <script setup lang="ts">
-import InputCommon from '@/components/common/InputCommon.vue';
+import TodoInput from '@/features/todos/components/TodoInput.vue';
 import TodoList from '@/features/todos/components/TodoList.vue';
 import { useTodosFilters } from '@/features/todos/composables/useTodosFilters';
 import { FilterBtnSchema, PrioritySchema, StatusSchema } from '@/schema/common';
@@ -161,7 +161,7 @@ defineExpose({
               </h3>
             </div>
             <div class="modal-body">
-              <InputCommon v-model="newT" @add="handleAdd" />
+              <TodoInput v-model="newT" :on-add="handleAdd" />
             </div>
           </div>
         </div>
