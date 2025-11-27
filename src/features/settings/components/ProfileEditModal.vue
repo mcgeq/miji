@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { Clock, FileText, Globe, Mail, Phone, Save, User, X } from 'lucide-vue-next';
+import { Clock, FileText, Globe, Mail, Phone, Save, User } from 'lucide-vue-next';
 import ConfirmDialog from '@/components/common/ConfirmDialogCompat.vue';
-import { Input, Select, Textarea } from '@/components/ui';
+import { Input, Modal, Select, Textarea } from '@/components/ui';
 import { useAuthStore } from '@/stores/auth';
 import type { AuthUser } from '@/schema/user';
 
@@ -324,12 +324,6 @@ function handleCancelClose() {
   showConfirmDialog.value = false;
 }
 
-function handleOverlayClick(event: MouseEvent) {
-  if (event.target === event.currentTarget) {
-    handleClose();
-  }
-}
-
 function handleInput(key: keyof FormData, value: string | number) {
   formData.value[key] = value as any;
 
@@ -373,201 +367,150 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <Teleport to="body">
-    <Transition
-      name="modal-overlay"
-      enter-active-class="duration-300 ease-out"
-      enter-from-class="opacity-0"
-      enter-to-class="opacity-100"
-      leave-active-class="duration-200 ease-in"
-      leave-from-class="opacity-100"
-      leave-to-class="opacity-0"
-    >
-      <div
-        v-if="isOpen"
-        class="profile-modal-overlay"
-        @click="handleOverlayClick"
-      >
-        <Transition
-          name="modal"
-          enter-active-class="duration-300 ease-out"
-          enter-from-class="scale-95 opacity-0"
-          enter-to-class="scale-100 opacity-100"
-          leave-active-class="duration-200 ease-in"
-          leave-from-class="scale-100 opacity-100"
-          leave-to-class="scale-95 opacity-0"
-        >
-          <div
-            v-if="isOpen"
-            class="profile-modal-content"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="modal-title"
-          >
-            <!-- Modal 头部 -->
-            <div class="profile-modal-header">
-              <div class="profile-modal-header-content">
-                <div class="profile-modal-header-info">
-                  <div class="profile-modal-header-icon-wrapper">
-                    <User class="profile-modal-header-icon" />
-                  </div>
-                  <div>
-                    <h2 id="modal-title" class="profile-modal-title">
-                      编辑资料
-                    </h2>
-                    <p class="profile-modal-subtitle">
-                      更新您的个人信息和偏好设置
-                    </p>
-                  </div>
-                </div>
-                <button
-                  class="profile-modal-close-button"
-                  :disabled="isSubmitting"
-                  aria-label="关闭对话框"
-                  @click="handleClose"
-                >
-                  <X class="profile-modal-close-icon" />
-                </button>
-              </div>
-            </div>
-
-            <!-- 表单内容 -->
-            <div class="profile-modal-body">
-              <form class="profile-modal-form" @submit.prevent="handleSubmit">
-                <!-- 基本信息 -->
-                <section class="profile-modal-section">
-                  <div class="profile-modal-section-header">
-                    <User class="profile-modal-section-icon" />
-                    <h3 class="profile-modal-section-title">
-                      基本信息
-                    </h3>
-                  </div>
-
-                  <div class="profile-modal-fields-grid">
-                    <!-- 动态渲染基本信息字段 -->
-                    <template v-for="field in FORM_FIELDS.slice(0, 4)" :key="field.key">
-                      <div :class="field.type === 'textarea' ? 'profile-modal-field-full' : ''">
-                        <label class="profile-modal-label">
-                          {{ field.label }}
-                          <span v-if="field.required" class="profile-modal-label-required">*</span>
-                        </label>
-
-                        <!-- 文本输入框 -->
-                        <div v-if="field.type === 'text' || field.type === 'email' || field.type === 'tel'">
-                          <Input
-                            :ref="field.key === 'name' ? (el) => { nameInputRef = el as HTMLInputElement } : undefined"
-                            :model-value="formData[field.key]"
-                            :type="field.type"
-                            :placeholder="field.placeholder"
-                            :max-length="field.maxLength"
-                            :prefix-icon="field.icon"
-                            :error="errors[field.key]"
-                            full-width
-                            @update:model-value="handleInput(field.key, $event)"
-                            @blur="validateSingleField(field.key)"
-                          />
-                        </div>
-
-                        <!-- 文本域 -->
-                        <div v-else-if="field.type === 'textarea'">
-                          <Textarea
-                            :model-value="formData[field.key]"
-                            :placeholder="field.placeholder"
-                            :max-length="field.maxLength"
-                            :rows="field.rows"
-                            :error="errors[field.key]"
-                            @update:model-value="handleInput(field.key, $event)"
-                            @blur="validateSingleField(field.key)"
-                          />
-                        </div>
-
-                        <!-- 错误信息和字符计数（Input 和 Textarea 组件已内置错误显示和字符计数） -->
-                      </div>
-                    </template>
-                  </div>
-                </section>
-
-                <!-- 偏好设置 -->
-                <section class="profile-modal-section">
-                  <div class="profile-modal-section-header">
-                    <Globe class="profile-modal-section-icon" />
-                    <h3 class="profile-modal-section-title">
-                      偏好设置
-                    </h3>
-                  </div>
-
-                  <div class="profile-modal-fields-grid">
-                    <!-- 动态渲染偏好设置字段 -->
-                    <template v-for="field in FORM_FIELDS.slice(4)" :key="field.key">
-                      <div>
-                        <label class="profile-modal-label">
-                          {{ field.label }}
-                        </label>
-                        <Select
-                          :model-value="formData[field.key]"
-                          :options="(field.options as any) || []"
-                          full-width
-                          @update:model-value="(value) => handleInput(field.key, value as string)"
-                        />
-                      </div>
-                    </template>
-                  </div>
-                </section>
-              </form>
-            </div>
-
-            <!-- 底部操作栏 -->
-            <div class="profile-modal-footer">
-              <div class="profile-modal-footer-actions">
-                <button
-                  type="button"
-                  :disabled="!canSubmit"
-                  class="profile-modal-button profile-modal-button-primary"
-                  @click="handleSubmit"
-                >
-                  <Save class="profile-modal-button-icon" />
-                  {{ isSubmitting ? '保存中...' : '保存更改' }}
-                </button>
-                <button
-                  type="button"
-                  :disabled="isSubmitting"
-                  class="profile-modal-button profile-modal-button-secondary"
-                  @click="handleClose"
-                >
-                  取消
-                </button>
-              </div>
-
-              <!-- 状态指示器 -->
-              <div v-if="isDirty" class="profile-modal-dirty-indicator">
-                <div class="profile-modal-dirty-dot" />
-                有未保存的更改
-              </div>
-            </div>
-          </div>
-        </Transition>
+  <Modal
+    :open="isOpen"
+    size="lg"
+    :show-footer="false"
+    :close-on-overlay="false"
+    @close="handleClose"
+  >
+    <template #header>
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+          <User class="w-5 h-5 text-blue-600 dark:text-blue-400" />
+        </div>
+        <div>
+          <h2 class="text-xl font-semibold text-gray-900 dark:text-white">
+            编辑资料
+          </h2>
+          <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+            更新您的个人信息和偏好设置
+          </p>
+        </div>
       </div>
-    </Transition>
+    </template>
 
-    <!-- 确认关闭模态框 -->
-    <ConfirmDialog
-      v-model:visible="showConfirmDialog"
-      title="确认关闭"
-      message="您有未保存的更改，确定要关闭吗？关闭后所有更改将丢失。"
-      type="warning"
-      confirm-text="确定关闭"
-      cancel-text="继续编辑"
-      confirm-button-type="warning"
-      @confirm="handleConfirmClose"
-      @cancel="handleCancelClose"
-    />
-  </Teleport>
+    <!-- 表单内容 -->
+    <form @submit.prevent="handleSubmit">
+      <!-- 基本信息 -->
+      <section class="mb-6">
+        <div class="flex items-center gap-2 mb-4">
+          <User class="w-5 h-5 text-gray-600 dark:text-gray-400" />
+          <h3 class="text-base font-semibold text-gray-900 dark:text-white">
+            基本信息
+          </h3>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- 动态渲染基本信息字段 -->
+          <template v-for="field in FORM_FIELDS.slice(0, 4)" :key="field.key">
+            <div :class="field.type === 'textarea' ? 'md:col-span-2' : ''">
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                {{ field.label }}
+                <span v-if="field.required" class="text-red-500">*</span>
+              </label>
+
+              <!-- 文本输入框 -->
+              <div v-if="field.type === 'text' || field.type === 'email' || field.type === 'tel'">
+                <Input
+                  :ref="field.key === 'name' ? (el) => { nameInputRef = el as HTMLInputElement } : undefined"
+                  :model-value="formData[field.key]"
+                  :type="field.type"
+                  :placeholder="field.placeholder"
+                  :max-length="field.maxLength"
+                  :prefix-icon="field.icon"
+                  :error="errors[field.key]"
+                  full-width
+                  @update:model-value="handleInput(field.key, $event)"
+                  @blur="validateSingleField(field.key)"
+                />
+              </div>
+
+              <!-- 文本域 -->
+              <div v-else-if="field.type === 'textarea'">
+                <Textarea
+                  :model-value="formData[field.key]"
+                  :placeholder="field.placeholder"
+                  :max-length="field.maxLength"
+                  :rows="field.rows"
+                  :error="errors[field.key]"
+                  @update:model-value="handleInput(field.key, $event)"
+                  @blur="validateSingleField(field.key)"
+                />
+              </div>
+            </div>
+          </template>
+        </div>
+      </section>
+
+      <!-- 偏好设置 -->
+      <section class="mb-6">
+        <div class="flex items-center gap-2 mb-4">
+          <Globe class="w-5 h-5 text-gray-600 dark:text-gray-400" />
+          <h3 class="text-base font-semibold text-gray-900 dark:text-white">
+            偏好设置
+          </h3>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- 动态渲染偏好设置字段 -->
+          <template v-for="field in FORM_FIELDS.slice(4)" :key="field.key">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                {{ field.label }}
+              </label>
+              <Select
+                :model-value="formData[field.key]"
+                :options="(field.options as any) || []"
+                full-width
+                @update:model-value="(value) => handleInput(field.key, value as string)"
+              />
+            </div>
+          </template>
+        </div>
+      </section>
+
+      <!-- 底部操作栏 -->
+      <div class="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
+        <div class="flex gap-3">
+          <button
+            type="button"
+            :disabled="!canSubmit"
+            class="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            @click="handleSubmit"
+          >
+            <Save class="w-4 h-4" />
+            {{ isSubmitting ? '保存中...' : '保存更改' }}
+          </button>
+          <button
+            type="button"
+            :disabled="isSubmitting"
+            class="px-4 py-2 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg disabled:opacity-50 transition-colors"
+            @click="handleClose"
+          >
+            取消
+          </button>
+        </div>
+
+        <!-- 状态指示器 -->
+        <div v-if="isDirty" class="flex items-center gap-2 text-sm text-amber-600 dark:text-amber-400">
+          <div class="w-2 h-2 rounded-full bg-amber-600 dark:bg-amber-400 animate-pulse" />
+          有未保存的更改
+        </div>
+      </div>
+    </form>
+  </Modal>
+
+  <!-- 确认关闭模态框 -->
+  <ConfirmDialog
+    v-model:visible="showConfirmDialog"
+    title="确认关闭"
+    message="您有未保存的更改，确定要关闭吗？关闭后所有更改将丢失。"
+    type="warning"
+    confirm-text="确定关闭"
+    cancel-text="继续编辑"
+    confirm-button-type="warning"
+    @confirm="handleConfirmClose"
+    @cancel="handleCancelClose"
+  />
 </template>
-
-<style scoped lang="postcss">
-.field-footer {
-  margin-top: 0.25rem;
-  display: flex;
-  justify-content: space-between;
-}
-</style>
