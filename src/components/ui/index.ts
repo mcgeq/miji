@@ -14,6 +14,7 @@ export { default as Card } from './Card.vue';
 export { default as Checkbox } from './Checkbox.vue';
 
 export { default as ConfirmDialog } from './ConfirmDialog.vue';
+export { default as Descriptions } from './Descriptions.vue';
 export { default as Divider } from './Divider.vue';
 export { default as Dropdown } from './Dropdown.vue';
 // 类型导出

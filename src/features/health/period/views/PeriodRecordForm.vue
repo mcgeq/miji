@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import ConfirmDialog from '@/components/common/ConfirmDialogCompat.vue';
 import PresetButtons from '@/components/common/PresetButtons.vue';
-import WarningDialog from '@/components/common/WarningDialog.vue';
 import { Modal } from '@/components/ui';
 import FormRow from '@/components/ui/FormRow.vue';
 import { usePeriodStore } from '@/stores/periodStore';
@@ -542,23 +541,30 @@ defineExpose({
   </ConfirmDialog>
 
   <!-- 重叠警告弹窗 -->
-  <WarningDialog
-    v-model:show="showOverlapWarning" title="日期重叠提醒" @confirm="handleOverlapConfirm"
+  <ConfirmDialog
+    v-model:show="showOverlapWarning"
+    title="日期重叠提醒"
+    type="warning"
+    confirm-text="继续保存"
+    cancel-text="取消"
+    @confirm="handleOverlapConfirm"
     @cancel="showOverlapWarning = false"
   >
-    <p class="warning-text">
-      检测到您选择的日期与已有记录存在重叠：
-    </p>
-    <div class="overlap-details">
-      <div class="overlap-record">
-        <i class="i-tabler-calendar text-red-500 wh-4" />
-        <span>{{ overlapInfo.dateRange }}</span>
+    <div class="space-y-3">
+      <p class="text-sm text-gray-700 dark:text-gray-300">
+        检测到您选择的日期与已有记录存在重叠：
+      </p>
+      <div class="bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded-lg">
+        <div class="flex items-center gap-2 text-sm text-yellow-800 dark:text-yellow-300">
+          <i class="i-tabler-calendar wh-4" />
+          <span>{{ overlapInfo.dateRange }}</span>
+        </div>
       </div>
+      <p class="text-sm font-medium text-gray-900 dark:text-white">
+        是否继续保存？这可能会影响数据的准确性。
+      </p>
     </div>
-    <p class="warning-question">
-      是否继续保存？这可能会影响数据的准确性。
-    </p>
-  </WarningDialog>
+  </ConfirmDialog>
 </template>
 
 <style scoped lang="postcss">

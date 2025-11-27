@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import Descriptions from '@/components/common/Descriptions.vue';
 import PopupWrapper from '@/components/common/PopupWrapper.vue';
 import PriorityBadge from '@/components/common/PriorityBadge.vue';
+import { Descriptions } from '@/components/ui';
 import ProjectsView from '@/features/projects/views/ProjectsView.vue';
 import TagsView from '@/features/tags/views/TagsView.vue';
 import { StatusSchema } from '@/schema/common';
