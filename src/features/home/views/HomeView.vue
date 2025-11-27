@@ -47,304 +47,61 @@ const todoCount = computed(() => {
 </script>
 
 <template>
-  <div class="tab-container">
+  <div class="flex flex-col w-full h-full min-h-0 overflow-hidden">
     <!-- Tab导航 -->
-    <div class="tab-nav">
+    <div class="flex items-center justify-center gap-2 md:gap-2 p-2 md:p-3 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 border-b border-gray-200/50 dark:border-gray-700/50 backdrop-blur-xl shadow-sm flex-shrink-0 overflow-x-auto scrollbar-none">
       <button
         v-for="tab in tabs"
         :key="tab.id"
-        class="tab-btn"
-        :class="{ active: activeTab === tab.id }"
+        class="flex flex-col items-center justify-center gap-0.5 md:gap-1 px-3 py-2 md:px-5 md:py-3 min-w-10 md:min-w-14 flex-shrink-0 bg-transparent border-none rounded-2xl cursor-pointer transition-all duration-300 text-gray-700 dark:text-gray-300 font-medium text-center backdrop-blur-sm relative"
+        :class="activeTab === tab.id
+          ? 'opacity-100 text-blue-600 dark:text-blue-400 bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-900/20 dark:to-blue-800/10 font-semibold shadow-lg shadow-blue-500/20 -translate-y-0.5 border border-blue-200/50 dark:border-blue-700/50'
+          : 'opacity-70 hover:opacity-100 hover:bg-blue-50/50 dark:hover:bg-blue-900/10 hover:-translate-y-0.5 hover:shadow-md hover:shadow-blue-500/10 hover:text-blue-600 dark:hover:text-blue-400'"
         @click="switchTab(tab.id)"
       >
-        <span class="tab-label">{{ tab.label }}</span>
+        <span class="text-xs md:text-sm font-medium whitespace-nowrap leading-tight tracking-wide">{{ tab.label }}</span>
+        <!-- Active indicator -->
+        <span v-if="activeTab === tab.id" class="absolute -bottom-1 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-gradient-to-r from-blue-600 to-blue-400 rounded-full shadow-sm shadow-blue-500/30" />
       </button>
+
       <!-- 待办任务操作区域 - 只在待办tab激活时显示 -->
-      <div v-if="activeTab === 'todos'" class="todo-actions">
+      <div v-if="activeTab === 'todos'" class="flex items-center gap-2 flex-shrink-0 ml-2">
         <button
-          class="todo-header-btn"
+          class="flex items-center justify-center w-8 h-8 rounded-full bg-blue-600 hover:bg-blue-700 border-2 border-blue-500 cursor-pointer transition-all duration-300 text-white shadow-lg shadow-blue-500/30 hover:scale-110 hover:shadow-xl hover:shadow-blue-500/40 active:scale-95"
           aria-label="Add Todo"
           @click="openTodoModal"
         >
-          <LucidePlus class="todo-header-icon" />
+          <LucidePlus class="w-5 h-5 transition-transform duration-300" />
         </button>
-        <span class="todo-count">{{ todoCount }}</span>
+        <span class="text-sm font-semibold text-blue-600 dark:text-blue-400 px-2 py-1 bg-blue-50 dark:bg-blue-900/30 rounded-lg border border-blue-200/50 dark:border-blue-700/50">{{ todoCount }}</span>
       </div>
     </div>
 
     <!-- Tab内容 -->
-    <div class="tab-content">
-      <div v-if="activeTab === 'money'" class="tab-panel">
+    <div class="flex-1 overflow-hidden relative min-h-0">
+      <div v-if="activeTab === 'money'" class="w-full h-full p-0.5 overflow-hidden flex flex-col">
         <QuickMoneyActions
           :show-amount-toggle="true"
           @toggle-amount-visibility="toggleGlobalAmountVisibility"
         />
       </div>
-      <div v-if="activeTab === 'period'" class="tab-panel">
+      <div v-if="activeTab === 'period'" class="w-full h-full p-0.5 overflow-hidden flex flex-col">
         <TodayPeriod />
       </div>
-      <div v-if="activeTab === 'todos'" class="tab-panel tab-panel-scrollable">
+      <div v-if="activeTab === 'todos'" class="w-full h-full p-0.5 overflow-y-auto flex flex-col scrollbar-none">
         <TodayTodos ref="todayTodosRef" />
       </div>
-      <div v-if="activeTab === 'stats'" class="tab-panel">
-        <div class="stats-placeholder">
-          <LucideBarChart3 class="placeholder-icon" />
-          <h3>统计面板</h3>
-          <p>这里将显示数据统计信息</p>
+      <div v-if="activeTab === 'stats'" class="w-full h-full p-0.5 overflow-hidden flex flex-col">
+        <div class="flex flex-col items-center justify-center h-full gap-4 text-gray-600 dark:text-gray-400 opacity-60 text-center">
+          <LucideBarChart3 class="w-12 h-12 opacity-50" />
+          <h3 class="m-0 text-xl font-semibold">
+            统计面板
+          </h3>
+          <p class="m-0 text-sm opacity-70">
+            这里将显示数据统计信息
+          </p>
         </div>
       </div>
     </div>
   </div>
 </template>
-
-<style lang="postcss">
-/* Tab容器 */
-.tab-container {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  height: 100%;
-  min-height: 0; /* 允许 flex 子项缩小 */
-  box-sizing: border-box;
-  overflow: hidden;
-}
-
-/* Tab导航 */
-.tab-nav {
-  display: flex;
-  background: linear-gradient(135deg,
-    var(--color-base-100) 0%,
-    color-mix(in oklch, var(--color-base-100) 95%, transparent) 100%);
-  border-bottom: 1px solid color-mix(in oklch, var(--color-base-300) 50%, transparent);
-  padding: 0.75rem;
-  gap: 0.5rem;
-  flex-shrink: 0;
-  overflow-x: auto;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-  justify-content: center;
-  align-items: center;
-  backdrop-filter: blur(12px);
-  box-shadow: 0 2px 8px color-mix(in oklch, var(--color-neutral) 5%, transparent);
-}
-
-/* 移动端Tab导航优化 */
-@media (max-width: 768px) {
-  .tab-nav {
-    padding: 0.5rem;
-    gap: 0.25rem;
-  }
-}
-
-.tab-nav::-webkit-scrollbar {
-  display: none;
-}
-
-/* 待办任务操作区域 */
-.todo-actions {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  flex-shrink: 0;
-}
-
-/* 待办任务添加按钮样式 */
-.todo-header-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 2rem;
-  height: 2rem;
-  border-radius: 50%;
-  background-color: var(--color-primary);
-  border: 2px solid var(--color-primary-hover);
-  cursor: pointer;
-  transition: all 0.3s ease-in-out;
-  color: var(--color-primary-content);
-  box-shadow: 0 4px 12px color-mix(in oklch, var(--color-primary) 30%, transparent);
-  position: relative;
-}
-
-.todo-header-btn:hover {
-  background-color: var(--color-primary-hover);
-  border-color: var(--color-primary-active);
-  transform: scale(1.1);
-  box-shadow: 0 6px 16px color-mix(in oklch, var(--color-primary) 40%, transparent);
-}
-
-.todo-header-btn:active {
-  transform: scale(0.95);
-  background-color: var(--color-primary-active);
-}
-
-.todo-header-icon {
-  width: 1.25rem;
-  height: 1.25rem;
-  transition: transform 0.3s ease-in-out;
-}
-
-/* 待办任务数量样式 */
-.todo-count {
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: var(--color-primary);
-  opacity: 0.9;
-  padding: 0.25rem 0.5rem;
-  background-color: color-mix(in oklch, var(--color-primary) 10%, transparent);
-  border-radius: 0.5rem;
-  border: 1px solid color-mix(in oklch, var(--color-primary) 20%, transparent);
-}
-
-.tab-btn {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0.25rem;
-  padding: 0.75rem 1.25rem;
-  background: transparent;
-  border: none;
-  border-radius: 0.875rem;
-  cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  color: var(--color-base-content);
-  opacity: 0.7;
-  min-width: 3.5rem;
-  flex-shrink: 0;
-  position: relative;
-  flex: 0 0 auto;
-  text-align: center;
-  width: auto;
-  font-weight: 500;
-  backdrop-filter: blur(8px);
-}
-
-/* 移动端Tab按钮优化 */
-@media (max-width: 768px) {
-  .tab-btn {
-    padding: 0.5rem 0.75rem;
-    min-width: 2.5rem;
-    gap: 0.125rem;
-  }
-}
-
-.tab-btn:hover {
-  opacity: 1;
-  background-color: color-mix(in oklch, var(--color-primary) 8%, transparent);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px color-mix(in oklch, var(--color-primary) 15%, transparent);
-  color: var(--color-primary);
-}
-
-.tab-btn.active {
-  opacity: 1;
-  color: var(--color-primary);
-  background: linear-gradient(135deg,
-    color-mix(in oklch, var(--color-primary) 12%, transparent) 0%,
-    color-mix(in oklch, var(--color-primary) 8%, transparent) 100%);
-  font-weight: 600;
-  box-shadow:
-    0 4px 16px color-mix(in oklch, var(--color-primary) 20%, transparent),
-    0 1px 3px color-mix(in oklch, var(--color-primary) 10%, transparent);
-  transform: translateY(-1px);
-  border: 1px solid color-mix(in oklch, var(--color-primary) 20%, transparent);
-}
-
-.tab-btn.active::after {
-  content: '';
-  position: absolute;
-  bottom: -0.25rem;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 2rem;
-  height: 3px;
-  background: linear-gradient(90deg,
-    var(--color-primary) 0%,
-    color-mix(in oklch, var(--color-primary) 80%, transparent) 100%);
-  border-radius: 2px;
-  box-shadow: 0 2px 4px color-mix(in oklch, var(--color-primary) 30%, transparent);
-}
-
-.tab-btn:hover .tab-icon {
-  transform: scale(1.1);
-}
-
-.tab-label {
-  font-size: 0.8rem;
-  font-weight: 500;
-  white-space: nowrap;
-  text-align: center;
-  width: 100%;
-  display: block;
-  line-height: 1.2;
-  letter-spacing: 0.025em;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* 移动端Tab标签优化 */
-@media (max-width: 768px) {
-  .tab-label {
-    font-size: 0.75rem;
-    line-height: 1.1;
-  }
-}
-
-/* Tab内容 */
-.tab-content {
-  flex: 1;
-  overflow: hidden;
-  position: relative;
-  min-height: 0; /* 允许 flex 子项缩小 */
-}
-
-.tab-panel {
-  width: 100%;
-  height: 100%;
-  padding: 0.125rem;
-  box-sizing: border-box;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-}
-
-.tab-panel-scrollable {
-  overflow-y: auto;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-
-.tab-panel-scrollable::-webkit-scrollbar {
-  display: none;
-}
-
-/* 统计面板占位符 */
-.stats-placeholder {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-  gap: 1rem;
-  color: var(--color-base-content);
-  opacity: 0.6;
-  text-align: center;
-}
-
-.placeholder-icon {
-  width: 3rem;
-  height: 3rem;
-  opacity: 0.5;
-}
-
-.stats-placeholder h3 {
-  margin: 0;
-  font-size: 1.25rem;
-  font-weight: 600;
-}
-
-.stats-placeholder p {
-  margin: 0;
-  font-size: 0.875rem;
-  opacity: 0.7;
-}
-</style>
