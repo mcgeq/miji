@@ -51,6 +51,12 @@ pub fn init_commands(builder: Builder<Wry>) -> Builder<Wry> {
         todo_cmd::todo_toggle,
         todo_cmd::todo_list,
         todo_cmd::todo_list_paged,
+        // 项目命令
+        todo_cmd::project_list,
+        todo_cmd::project_get,
+        // 标签命令
+        todo_cmd::tag_list,
+        todo_cmd::tag_get,
         // 财务命令
         money_cmd::total_assets,
         money_cmd::account_get,
