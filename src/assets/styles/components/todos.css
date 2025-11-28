@@ -1,0 +1,253 @@
+/**
+ * Todos 模块 Tailwind 组件类
+ * 提取的通用样式，使用 Tailwind CSS 4
+ */
+
+@layer components {
+  /* ============================================
+     Todo 按钮基础样式
+     ============================================ */
+  
+  .todo-btn-base {
+    @apply flex items-center gap-1.5 px-2 py-1 min-w-0
+           border rounded-lg text-xs
+           bg-base-100 text-base-content border-base-300
+           hover:bg-base-200 hover:border-primary
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2
+           transition-all duration-200 cursor-pointer
+           disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  
+  /* 按钮尺寸变体 */
+  .todo-btn-sm {
+    @apply px-1.5 py-0.5 text-[10px] gap-1;
+  }
+  
+  .todo-btn-lg {
+    @apply px-3 py-1.5 text-sm gap-2;
+  }
+  
+  .todo-btn-icon {
+    @apply p-1 justify-center gap-0;
+  }
+  
+  /* 按钮颜色变体 */
+  .todo-btn-primary {
+    @apply bg-primary text-primary-content border-primary
+           hover:bg-primary/90;
+  }
+  
+  .todo-btn-success {
+    @apply bg-success text-success-content border-success
+           hover:bg-success/90;
+  }
+  
+  .todo-btn-warning {
+    @apply bg-warning text-warning-content border-warning
+           hover:bg-warning/90;
+  }
+  
+  .todo-btn-error {
+    @apply bg-error text-error-content border-error
+           hover:bg-error/90;
+  }
+  
+  /* 按钮状态 */
+  .todo-btn-active {
+    @apply bg-base-200 border-base-content font-semibold;
+  }
+  
+  .todo-btn-readonly {
+    @apply cursor-default opacity-60;
+  }
+  
+  /* ============================================
+     优先级渐变样式
+     ============================================ */
+  
+  .priority-gradient-low {
+    @apply bg-gradient-to-br from-base-100 to-success/5 
+           border-success/20;
+  }
+  
+  .priority-gradient-medium {
+    @apply bg-gradient-to-br from-base-100 to-warning/5 
+           border-warning/20;
+  }
+  
+  .priority-gradient-high {
+    @apply bg-gradient-to-br from-base-100 to-error/5 
+           border-error/20;
+  }
+  
+  .priority-gradient-urgent {
+    @apply bg-gradient-to-br from-base-100 to-error/10 
+           border-error shadow-md shadow-error/30;
+  }
+  
+  /* 暗色模式优先级渐变 */
+  @media (prefers-color-scheme: dark) {
+    .priority-gradient-low {
+      @apply from-base-200/98 to-success/10;
+    }
+    
+    .priority-gradient-medium {
+      @apply from-base-200/98 to-warning/10;
+    }
+    
+    .priority-gradient-high {
+      @apply from-base-200/98 to-error/10;
+    }
+    
+    .priority-gradient-urgent {
+      @apply from-base-200/96 to-error/15;
+    }
+  }
+  
+  /* ============================================
+     Todo 卡片样式
+     ============================================ */
+  
+  .todo-card {
+    @apply mb-1 p-4 lg:p-6 rounded-2xl 
+           border border-base-300 bg-base-100
+           shadow-sm backdrop-blur-sm
+           hover:shadow-lg hover:border-primary hover:-translate-y-0.5
+           transition-all duration-300 ease-out
+           relative overflow-visible z-[1] w-full max-w-full box-border;
+  }
+  
+  /* 移动端优化 */
+  @media (max-width: 768px) {
+    .todo-card {
+      @apply p-3.5 mb-2.5 rounded-2xl;
+    }
+  }
+  
+  /* ============================================
+     输入容器样式
+     ============================================ */
+  
+  .todo-input-container {
+    @apply p-3 rounded-2xl bg-base-100 
+           shadow-sm hover:shadow-md
+           transition-all duration-200 ease-in-out
+           flex flex-col gap-2;
+  }
+  
+  /* ============================================
+     过滤按钮组
+     ============================================ */
+  
+  .filter-btn-group {
+    @apply inline-flex gap-2 px-3 py-2
+           bg-base-100 border border-base-200
+           rounded-full shadow-sm
+           transition-all duration-300;
+  }
+  
+  .filter-btn {
+    @apply text-sm font-semibold px-3 py-1
+           rounded-full border border-transparent
+           bg-neutral-content text-base-content
+           cursor-pointer transition-all duration-300
+           hover:bg-base-300 hover:text-base-content;
+  }
+  
+  .filter-btn-active {
+    @apply bg-base-content text-base-200;
+  }
+  
+  /* ============================================
+     动画类
+     ============================================ */
+  
+  .fade-slide-enter-active,
+  .fade-slide-leave-active {
+    @apply transition-all duration-300 ease-out;
+    will-change: opacity, transform;
+  }
+  
+  .fade-slide-enter-from,
+  .fade-slide-leave-to {
+    @apply opacity-0 scale-95 -translate-y-1.5;
+  }
+  
+  .fade-enter-active,
+  .fade-leave-active {
+    @apply transition-all duration-300 ease-out;
+  }
+  
+  .fade-enter-from,
+  .fade-leave-to {
+    @apply opacity-0 translate-y-2;
+  }
+  
+  .scale-enter-active,
+  .scale-leave-active {
+    @apply transition-transform duration-200 ease-out;
+  }
+  
+  .scale-enter-from,
+  .scale-leave-to {
+    @apply scale-90;
+  }
+  
+  /* ============================================
+     辅助工具类
+     ============================================ */
+  
+  .text-ellipsis-2 {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  
+  .scrollbar-thin-custom {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-base-300) transparent;
+  }
+  
+  .scrollbar-thin-custom::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  
+  .scrollbar-thin-custom::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  .scrollbar-thin-custom::-webkit-scrollbar-thumb {
+    background: var(--color-base-300);
+    border-radius: 3px;
+  }
+  
+  .scrollbar-thin-custom::-webkit-scrollbar-thumb:hover {
+    background: var(--color-base-400);
+  }
+}
+
+/* ============================================
+   响应式辅助 - 媒体查询支持
+   ============================================ */
+   
+@media (prefers-reduced-motion: reduce) {
+  .todo-btn-base,
+  .todo-card,
+  .todo-input-container,
+  .filter-btn {
+    @apply transition-none;
+  }
+}
+
+@media (prefers-contrast: high) {
+  .todo-btn-base {
+    @apply border-2;
+  }
+  
+  .todo-btn-base:focus-visible {
+    @apply ring-4;
+  }
+}

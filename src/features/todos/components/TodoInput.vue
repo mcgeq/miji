@@ -80,30 +80,30 @@ export default defineComponent({
 </script>
 
 <template>
-  <div class="todo-input-wrapper">
-    <div class="input-container">
+  <div class="todo-input-container">
+    <div class="flex items-center gap-2 w-full min-w-0">
       <!-- 字符数提示 -->
       <div
-        class="char-counter"
+        class="text-xs px-2 py-1 rounded-md transition-all flex items-center gap-1 flex-shrink-0 min-w-fit"
         :class="{
-          'char-counter-normal': !isNearLimit && !isOverLimit,
-          'char-counter-warning': isNearLimit,
-          'char-counter-error': isOverLimit,
+          'text-gray-500 bg-gray-500/5': !isNearLimit && !isOverLimit,
+          'text-amber-500 bg-amber-500/10': isNearLimit,
+          'text-red-500 bg-red-500/10': isOverLimit,
         }"
       >
-        <span class="char-count">{{ currentLength }}/{{ MAX_LENGTH }}</span>
+        <span class="font-medium">{{ currentLength }}/{{ MAX_LENGTH }}</span>
       </div>
       <input
         v-model="newT"
         :maxlength="MAX_LENGTH"
         type="text"
         :placeholder="t('todos.inputPlace')"
-        class="todo-input"
-        :class="{ 'input-warning': isNearLimit, 'input-error': isOverLimit }"
+        class="flex-1 text-base px-3 py-1 border rounded-lg bg-transparent outline-none transition-all text-base-content border-gray-300 placeholder:text-gray-400 caret-info focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:border-gray-600 dark:text-white dark:placeholder:text-gray-400 dark:focus:border-blue-400 dark:focus:ring-blue-900/30"
+        :class="{ 'border-amber-500 focus:ring-amber-200': isNearLimit, 'border-red-500 focus:ring-red-200': isOverLimit }"
       >
       <button
         :disabled="!canAdd"
-        class="todo-add-btn"
+        class="flex items-center justify-center gap-1.5 text-sm font-semibold px-3 py-1.5 rounded-full bg-base-300 text-base-content shadow-sm transition-all cursor-pointer border-none hover:enabled:bg-neutral hover:enabled:shadow-md active:enabled:scale-95 disabled:opacity-60 disabled:cursor-not-allowed"
         @click="handleAdd"
       >
         <Plus class="h-5 w-5" />
@@ -112,187 +112,36 @@ export default defineComponent({
   </div>
 </template>
 
-<style scoped lang="postcss">
-/* 容器样式 */
-.todo-input-wrapper {
-  padding: 0.75rem;
-  border-radius: 1rem;
-  background-color: var(--color-base-100);
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  transition: all 0.2s ease-in-out;
-}
-
-/* 输入容器 */
-.input-container {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  width: 100%;
-  min-width: 0; /* 防止flex子元素溢出 */
-}
-
-.todo-input-wrapper:hover {
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15); /* hover:shadow-lg */
-}
-
-/* 输入框样式 */
-.todo-input {
-  flex: 1;                          /* flex-1 */
-  font-size: 1rem;                  /* text-base */
-  padding: 0.25rem 0.75rem;        /* px-3 py-1 */
-  border: 1px solid var(--color-gray-300);       /* border-gray-300 */
-  border-radius: 0.5rem;            /* rounded-lg */
-  background-color: transparent;    /* bg-transparent */
-  outline: none;
-  transition: all 0.2s ease-in-out;
-  color: var(--color-base-content);                   /* 默认文字色 */
-  caret-color: var(--color-info);             /* 蓝色光标 */
-}
-
-.todo-input::placeholder {
-  color: #9CA3AF;                   /* placeholder-gray-400 */
-}
-
-/* 输入框聚焦状态 */
-.todo-input:focus {
-  border-color: #3B82F6;            /* focus:border-blue-500 */
-  box-shadow: 0 0 0 2px rgba(59,130,246,0.2); /* focus:ring-2 focus:ring-blue-200 */
-}
-
-/* 输入框警告状态 */
-.todo-input.input-warning {
-  border-color: #F59E0B;            /* border-amber-500 */
-}
-
-.todo-input.input-warning:focus {
-  border-color: #F59E0B;
-  box-shadow: 0 0 0 2px rgba(245,158,11,0.2);
-}
-
-/* 输入框错误状态 */
-.todo-input.input-error {
-  border-color: #EF4444;            /* border-red-500 */
-}
-
-.todo-input.input-error:focus {
-  border-color: #EF4444;
-  box-shadow: 0 0 0 2px rgba(239,68,68,0.2);
-}
-
-/* 暗黑模式输入框 */
-@media (prefers-color-scheme: dark) {
-  .todo-input-wrapper {
-    background-color: #1F2937;      /* dark:bg-gray-800 */
-  }
-
-  .todo-input {
-    border-color: #4B5563;          /* dark:border-gray-600 */
-    color: #F9FAFB;                 /* dark:text */
-  }
-
-  .todo-input:focus {
-    border-color: #3B82F6;          /* dark:focus:border-blue-400 */
-    box-shadow: 0 0 0 2px rgba(59,130,246,0.15); /* dark:focus:ring-blue-900/30 */
-  }
-
-  .todo-input::placeholder {
-    color: #9CA3AF;
-  }
-}
-
-/* 添加按钮样式 */
-.todo-add-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.375rem;                     /* gap-1.5 */
-  font-size: 0.875rem;               /* text-sm */
-  font-weight: 600;                   /* font-semibold */
-  padding: 0.375rem 0.75rem;         /* px-3 py-1.5 */
-  border-radius: 9999px;              /* rounded-full */
-  background-color: var(--color-base-300);          /* bg-blue-500 */
-  color: var(--color-base-content);                     /* text-white */
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1); /* shadow-md */
-  transition: all 0.15s ease-in-out;  /* transition-transform duration-150 */
-  cursor: pointer;
-  border: none;
-}
-
-/* 按钮 hover */
-.todo-add-btn:hover:enabled {
-  background-color: var(--color-neutral);          /* hover:bg-blue-600 */
-  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-}
-
-/* 按钮 active */
-.todo-add-btn:active:enabled {
-  transform: scale(0.95);            /* active:scale-95 */
-}
-
-/* 按钮禁用状态 */
-.todo-add-btn:disabled {
-  opacity: 0.6;                       /* disabled:opacity-60 */
-  cursor: not-allowed;                /* disabled:cursor-not-allowed */
-}
-
-/* 字符计数器样式 */
-.char-counter {
-  font-size: 0.75rem;
-  padding: 0.25rem 0.5rem;
-  border-radius: 0.375rem;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  flex-shrink: 0;
-  min-width: fit-content;
-}
-
+<style scoped>
 /* 移动端响应式设计 */
 @media (max-width: 768px) {
-  .input-container {
+  .todo-input-container > div {
     flex-direction: column;
     align-items: stretch;
     gap: 0.375rem;
   }
 
-  .char-counter {
+  .todo-input-container > div > div:first-child {
     align-self: flex-end;
     order: 1;
   }
 
-  .todo-input {
+  .todo-input-container > div > input {
     order: 2;
     width: 100%;
     min-width: 0;
   }
 
-  .todo-add-btn {
+  .todo-input-container > div > button {
     order: 3;
     align-self: center;
     width: fit-content;
   }
 }
 
-.char-counter-normal {
-  color: #6B7280;                     /* text-gray-500 */
-  background-color: rgba(107,114,128,0.05);
-}
-
-.char-counter-warning {
-  color: #F59E0B;                    /* text-amber-500 */
-  background-color: rgba(245,158,11,0.1);
-}
-
-.char-counter-error {
-  color: #EF4444;                     /* text-red-500 */
-  background-color: rgba(239,68,68,0.1);
-}
-
-.char-count {
-  font-weight: 500;
+@media (prefers-color-scheme: dark) {
+  .todo-input-container {
+    background-color: #1F2937;
+  }
 }
 </style>
