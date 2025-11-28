@@ -88,205 +88,78 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <aside class="sidebar">
-    <div class="sidebar-top">
-      <img src="" alt="avatar" class="avatar">
+  <aside class="w-12 h-screen fixed top-0 left-0 z-[1000] flex flex-col justify-between bg-[var(--color-base-300)] text-[var(--color-base-content)] border-r border-[var(--color-base-200)] shadow-[2px_0_8px_rgba(0,0,0,0.05)] transition-all duration-300 ease-in-out overflow-visible">
+    <!-- 顶部头像 -->
+    <div class="pt-6 pb-2 flex justify-center">
+      <img src="" alt="avatar" class="w-8 h-8 rounded-full border border-[var(--color-neutral)]">
     </div>
 
-    <nav class="sidebar-menu">
-      <ul>
+    <!-- 菜单区域 -->
+    <nav class="flex-1 py-4">
+      <ul class="list-none p-0 m-0">
         <li
           v-for="item in menu"
           :key="item.name"
-          :class="{ 'active': isActive(item), 'has-submenu': item.hasSubmenu }"
+          class="relative my-1"
         >
+          <!-- 菜单项 -->
           <div
-            class="menu-item"
+            class="flex justify-center items-center p-3 rounded-md cursor-pointer transition-all duration-300 relative hover:bg-[var(--color-base-100)]" :class="[
+              isActive(item) && 'bg-[var(--color-primary)] text-[var(--color-primary-content)]',
+            ]"
             :title="item.title"
             @click="navigate(item)"
           >
-            <component :is="item.icon" class="icon" />
+            <component
+              :is="item.icon"
+              class="w-5 h-5" :class="[
+                isActive(item) ? 'text-[var(--color-base-content)]' : 'text-[var(--color-neutral)]',
+              ]"
+            />
           </div>
 
           <!-- 子菜单 -->
-          <ul v-if="item.hasSubmenu && isExpanded(item.name)" class="submenu">
-            <li
-              v-for="submenuItem in item.submenu"
-              :key="submenuItem.name"
-              :class="{ active: isSubmenuActive(submenuItem) }"
-              :title="submenuItem.title"
-              @click="navigateSubmenu(submenuItem)"
+          <Transition
+            enter-active-class="transition-all duration-200 ease-out"
+            enter-from-class="opacity-0 -translate-x-2"
+            enter-to-class="opacity-100 translate-x-0"
+            leave-active-class="transition-all duration-200 ease-in"
+            leave-from-class="opacity-100 translate-x-0"
+            leave-to-class="opacity-0 -translate-x-2"
+          >
+            <ul
+              v-if="item.hasSubmenu && isExpanded(item.name)"
+              class="absolute left-full top-0 w-12 bg-[var(--color-base-200)] rounded-lg shadow-[0_4px_12px_rgba(0,0,0,0.15)] z-[1001] overflow-hidden"
             >
-              <component
-                :is="submenuItem.icon || BarChart3"
-                class="submenu-icon"
-              />
-            </li>
-          </ul>
+              <li
+                v-for="submenuItem in item.submenu"
+                :key="submenuItem.name"
+                class="p-3 cursor-pointer transition-colors duration-200 border-b border-[var(--color-base-300)] flex justify-center items-center last:border-b-0 hover:bg-[var(--color-base-100)]" :class="[
+                  isSubmenuActive(submenuItem) && 'bg-[var(--color-primary)] text-[var(--color-primary-content)]',
+                ]"
+                :title="submenuItem.title"
+                @click="navigateSubmenu(submenuItem)"
+              >
+                <component
+                  :is="submenuItem.icon || BarChart3"
+                  class="w-4 h-4" :class="[
+                    isSubmenuActive(submenuItem) ? 'text-[var(--color-primary-content)]' : 'text-[var(--color-neutral)]',
+                  ]"
+                />
+              </li>
+            </ul>
+          </Transition>
         </li>
       </ul>
     </nav>
 
-    <button class="logout-btn" title="Logout" @click="logout">
-      <LogOut class="icon" />
+    <!-- 登出按钮 -->
+    <button
+      class="h-16 border-t border-[var(--color-base-200)] bg-transparent flex justify-center items-center cursor-pointer transition-all duration-300 ease-in-out text-[var(--color-base-content)] hover:text-[var(--color-error-content)] hover:scale-105 active:scale-95"
+      title="Logout"
+      @click="logout"
+    >
+      <LogOut class="w-5 h-5" />
     </button>
   </aside>
 </template>
-
-<style scoped lang="postcss">
-.sidebar {
-  background-color: var(--color-base-300);
-  color: var(--color-base-content);
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  width: 3rem; /* 固定宽度，不变化 */
-  height: 100vh;
-  position: fixed;
-  top: 0;
-  left: 0;
-  z-index: 1000;
-  transition: all 0.3s ease-in-out;
-  border-right: 1px solid var(--color-base-200);
-  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.05);
-  overflow: visible; /* 允许子菜单溢出 */
-}
-
-.sidebar-top {
-  padding: 1.5rem 0 0.5rem 0;
-  display: flex;
-  justify-content: center;
-}
-
-.avatar {
-  width: 2rem;
-  height: 2rem;
-  border-radius: 50%;
-  border: 1px solid var(--color-neutral);
-}
-
-.sidebar-menu {
-  flex: 1;
-  padding: 1rem 0;
-}
-
-.sidebar-menu ul {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.sidebar-menu li {
-  position: relative;
-  margin: 0.25rem 0;
-}
-
-.menu-item {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 0.75rem;
-  border-radius: 0.375rem;
-  cursor: pointer;
-  transition: all 0.3s;
-  position: relative;
-}
-
-.menu-item:hover {
-  background-color: var(--color-base-100);
-}
-
-.sidebar-menu li.active .menu-item {
-  background-color: var(--color-primary);
-  color: var(--color-primary-content);
-}
-
-/* 子菜单样式 */
-.submenu {
-  position: absolute;
-  left: 100%;
-  top: 0;
-  background-color: var(--color-base-200);
-  border-radius: 0.5rem;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  width: 3rem; /* 固定宽度，与主侧边栏一致 */
-  z-index: 1001;
-  overflow: hidden;
-  animation: slideIn 0.2s ease-out;
-}
-
-@keyframes slideIn {
-  from {
-    opacity: 0;
-    transform: translateX(-0.5rem);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-.submenu li {
-  margin: 0;
-  padding: 0.75rem;
-  cursor: pointer;
-  transition: background-color 0.2s;
-  border-bottom: 1px solid var(--color-base-300);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.submenu li:last-child {
-  border-bottom: none;
-}
-
-.submenu li:hover {
-  background-color: var(--color-base-100);
-}
-
-.submenu li.active {
-  background-color: var(--color-primary);
-  color: var(--color-primary-content);
-}
-
-.submenu-icon {
-  width: 1rem;
-  height: 1rem;
-  color: var(--color-neutral);
-}
-
-.submenu li.active .submenu-icon {
-  color: var(--color-primary-content);
-}
-
-.icon {
-  width: 1.25rem;
-  height: 1.25rem;
-  color: var(--color-neutral);
-}
-
-.sidebar-menu li.active .icon {
-  color: var(--color-base-content);
-}
-
-.logout-btn {
-  height: 4rem;
-  border-top: 1px solid var(--color-base-200);
-  background: none;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  cursor: pointer;
-  transition: background-color 0.3s ease, transform 0.1s ease;
-  color: var(--color-base-content);
-}
-
-.logout-btn:hover {
-  color: var(--color-error-content);
-  transform: scale(1.05);
-}
-.logout-btn:active {
-  transform: scale(0.95);
-}
-</style>

@@ -43,18 +43,18 @@ function onInput(event: Event) {
 </script>
 
 <template>
-  <div class="usage-card">
+  <div class="ml-2 p-3 border rounded-lg bg-[light-dark(white,#1f2937)] border-[light-dark(#e5e7eb,#374151)] w-[6.5rem] shadow-md hover:shadow-lg relative transition-shadow max-sm:ml-1 max-sm:p-2 max-sm:w-[5.5rem]">
     <!-- 计数徽章 -->
-    <div class="usage-badge">
+    <div class="absolute -left-2 -top-2 flex h-6 w-6 items-center justify-center text-xs text-white font-bold rounded-full bg-[var(--color-primary)] max-sm:h-5 max-sm:w-5 max-sm:text-[0.625rem]">
       {{ totalUsageCount }}
     </div>
 
     <!-- 输入框 -->
-    <div class="usage-input-wrapper">
+    <div class="mb-0">
       <input
         :value="modelValue[keyToEdit]"
-        class="usage-input"
-        :readonly="readonly"
+        class="w-20 px-3 py-2 text-[light-dark(#374151,#f9fafb)] bg-[light-dark(#f9fafb,#111827)] border border-[light-dark(#d1d5db,#4b5563)] rounded-md outline-none transition-all focus:border-transparent focus:ring-2 focus:ring-[var(--color-primary)] max-sm:w-[4.5rem] max-sm:px-2 max-sm:py-1.5 max-sm:text-sm"
+        :readonly="props.readonly"
         :placeholder="String(keyToEdit)"
         :title="String(modelValue[keyToEdit])"
         @input="onInput"
@@ -62,118 +62,11 @@ function onInput(event: Event) {
     </div>
 
     <!-- 删除按钮 -->
-    <div class="usage-remove">
+    <div class="absolute -right-2 -top-2">
       <X
-        class="usage-remove-btn"
+        class="flex h-6 w-6 items-center justify-center rounded-full bg-[light-dark(white,#1f2937)] text-[light-dark(#ef4444,#f87171)] cursor-pointer transition-all hover:text-[light-dark(#b91c1c,#dc2626)] hover:scale-110 max-sm:h-5 max-sm:w-5"
         @click="$emit('remove')"
       />
     </div>
   </div>
 </template>
-
-<style scoped lang="postcss">
-/* 外层卡片 */
-.usage-card {
-  margin-left: 0.5rem; /* ml-2 */
-  padding: 0.75rem;    /* p-3 */
-  border: 1px solid #E5E7EB; /* border-gray-200 */
-  border-radius: 0.5rem;      /* rounded-lg */
-  background-color: #FFFFFF;   /* bg-white */
-  width: 6.5rem;               /* w-26 -> 26*0.25rem */
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1); /* shadow-md */
-  position: relative;
-  transition: box-shadow 0.2s;
-}
-
-.usage-card:hover {
-  box-shadow: 0 4px 6px rgba(0,0,0,0.15); /* hover:shadow-lg */
-}
-
-/* 徽章 */
-.usage-badge {
-  font-size: 0.75rem;            /* text-xs */
-  color: #FFFFFF;                /* text-white */
-  font-weight: bold;             /* font-bold */
-  border-radius: 9999px;         /* rounded-full */
-  background-color: #3B82F6;     /* bg-blue-500 */
-  display: flex;
-  height: 1.5rem;                /* h-6 */
-  width: 1.5rem;                 /* w-6 */
-  align-items: center;           /* items-center */
-  justify-content: center;       /* justify-center */
-  position: absolute;
-  left: -0.5rem;                 /* -left-2 */
-  top: -0.5rem;                  /* -top-2 */
-}
-
-/* 输入框 */
-.usage-input-wrapper {
-  margin-bottom: 0; /* mb-0 */
-}
-
-.usage-input {
-  color: #374151;                 /* text-gray-700 */
-  padding: 0.5rem 0.75rem;        /* px-3 py-2 */
-  border: 1px solid #D1D5DB;      /* border-gray-300 */
-  border-radius: 0.375rem;        /* rounded-md */
-  background-color: #F9FAFB;      /* bg-gray-50 */
-  width: 5rem;                     /* w-20 */
-  outline: none;
-  transition: all 0.2s;
-}
-
-.usage-input:focus {
-  border-color: transparent;
-  box-shadow: 0 0 0 2px #3B82F6; /* focus:ring-2 focus:ring-blue-500 */
-}
-
-/* 删除按钮外层定位 */
-.usage-remove {
-  position: absolute;
-  right: -0.5rem;  /* -right-2 */
-  top: -0.5rem;    /* -top-2 */
-}
-
-/* 删除按钮样式 */
-.usage-remove-btn {
-  color: #EF4444;                 /* text-red-500 */
-  border-radius: 9999px;          /* rounded-full */
-  background-color: #FFFFFF;      /* bg-white */
-  display: flex;
-  height: 1.5rem;                 /* h-6 */
-  width: 1.5rem;                  /* w-6 */
-  cursor: pointer;
-  align-items: center;            /* items-center */
-  justify-content: center;        /* justify-center */
-  transition: transform 0.2s, color 0.2s;
-}
-
-.usage-remove-btn:hover {
-  color: #B91C1C;                 /* hover:text-red-700 */
-  transform: scale(1.1);          /* hover:scale-110 */
-}
-
-/* 可选：深色模式兼容 */
-@media (prefers-color-scheme: dark) {
-  .usage-card {
-    background-color: #1F2937;    /* gray-900 */
-    border-color: #374151;        /* gray-700 */
-    box-shadow: 0 1px 3px rgba(255,255,255,0.05);
-  }
-  .usage-input {
-    background-color: #111827;    /* gray-800 */
-    color: #F9FAFB;               /* text-white */
-    border-color: #4B5563;        /* gray-600 */
-  }
-  .usage-input:focus {
-    box-shadow: 0 0 0 2px #3B82F6; /* 保持focus颜色 */
-  }
-  .usage-badge {
-    background-color: #3B82F6;     /* 蓝色徽章不变 */
-  }
-  .usage-remove-btn {
-    background-color: #1F2937;     /* 深色背景 */
-    color: #F87171;                 /* 红色 */
-  }
-}
-</style>

@@ -1,9 +1,10 @@
 <script setup lang="ts">
+import Select from '@/components/ui/Select.vue';
 import { CURRENCY_CNY } from '@/constants/moneyConst';
 import { CurrencySchema } from '@/schema/common';
 import { MoneyDb } from '@/services/money/money';
 import { Lg } from '@/utils/debugLog';
-import { uuid } from '@/utils/uuid';
+import type { SelectOption } from '@/components/ui/Select.vue';
 import type { Currency } from '@/schema/common';
 
 // 类型定义
@@ -42,9 +43,6 @@ const emit = defineEmits<{
   (e: 'validate', isValid: boolean): void;
 }>();
 
-// 生成唯一ID
-const inputId = ref(`currency-selector-${uuid(38)}`);
-
 // 当前值
 const currentValue = ref<Currency>(
   props.modelValue && validateValue(props.modelValue) ? props.modelValue : CURRENCY_CNY,
@@ -74,13 +72,14 @@ loadCurrencies();
 const widthClass = computed(() => {
   const widthMap: Record<string, string> = {
     'full': 'w-full',
-    'half': 'w-half',
-    'third': 'w-third',
-    'two-thirds': 'w-two-thirds',
-    'quarter': 'w-quarter',
-    'three-quarters': 'w-three-quarters',
+    'half': 'w-1/2',
+    'third': 'w-1/3',
+    'two-thirds': 'w-2/3',
+    '2/3': 'w-2/3',
+    'quarter': 'w-1/4',
+    'three-quarters': 'w-3/4',
   };
-  return widthMap[props.width] || 'w-two-thirds';
+  return widthMap[props.width] || 'w-2/3';
 });
 
 // 是否有错误
@@ -103,9 +102,8 @@ function validateValue(value: Currency): boolean {
 }
 
 // 处理 change 事件
-function handleChange(event: Event) {
-  const target = event.target as HTMLSelectElement;
-  const selectedCode = target.value;
+function handleChange(value: string | number | (string | number)[]) {
+  const selectedCode = value as string;
 
   const selectedCurrency = currencies.value.find(
     curr => curr.code === selectedCode,
@@ -121,11 +119,26 @@ function handleChange(event: Event) {
   }
 }
 
-// 处理 blur 事件
-function handleBlur() {
-  const isValid = validateValue(currentValue.value);
-  emit('validate', isValid);
-}
+// 转换为 SelectOption 格式
+const selectOptions = computed<SelectOption[]>(() => {
+  if (props.customOptions) {
+    return props.customOptions
+      .filter(opt =>
+        opt.value &&
+        typeof opt.value === 'object' &&
+        'code' in opt.value,
+      )
+      .map(opt => ({
+        value: opt.value.code,
+        label: `${opt.value.code} - ${opt.value.symbol}`,
+        disabled: opt.disabled,
+      }));
+  }
+  return currencies.value.map(currency => ({
+    value: currency.code,
+    label: `${currency.code} - ${currency.symbol}`,
+  }));
+});
 
 const currencyOptions = computed(() => {
   if (props.customOptions) {
@@ -144,10 +157,7 @@ const currencyOptions = computed(() => {
 
 // 公开方法
 function focus() {
-  const element = document.getElementById(inputId.value);
-  if (element) {
-    element.focus();
-  }
+  // Select 组件没有直接的 focus 方法，可以考虑添加 ref
 }
 
 function reset() {
@@ -194,125 +204,23 @@ defineExpose({
 </script>
 
 <template>
-  <div id="currency-selector" class="currency-selector">
-    <div class="currency-selector__wrapper" :class="widthClass">
-      <select
-        :id="inputId"
-        v-model="currentValue.code"
-        class="currency-selector__select"
-        :class="{ 'has-error': hasError }"
+  <div class="mb-2 flex items-center justify-between max-sm:flex-col max-sm:items-stretch">
+    <div class="flex flex-col" :class="[widthClass]">
+      <Select
+        :model-value="currentValue.code"
+        :options="selectOptions"
+        :placeholder="label"
+        size="md"
         :required="required"
         :disabled="disabled"
-        @blur="handleBlur"
-        @change="handleChange"
-      >
-        <option
-          v-for="option in currencyOptions"
-          :key="option.value.code"
-          :value="option.value.code"
-          :disabled="option.disabled"
-        >
-          {{ option.label }}
-        </option>
-      </select>
+        :error="hasError ? errorMessage : undefined"
+        full-width
+        @update:model-value="handleChange"
+      />
 
-      <div v-if="hasError && errorMessage" class="currency-selector__error" role="alert">
-        {{ errorMessage }}
-      </div>
-
-      <div v-if="helpText && !hasError" class="currency-selector__help">
+      <div v-if="helpText && !hasError" class="mt-2 text-xs text-right text-[var(--color-neutral-content)]">
         {{ helpText }}
       </div>
     </div>
   </div>
 </template>
-
-<style scoped lang="postcss">
-.currency-selector {
-  margin-bottom: 0.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.currency-selector__wrapper {
-  display: flex;
-  flex-direction: column;
-}
-
-.w-full {
-  width: 100%;
-}
-.w-half {
-  width: 50%;
-}
-.w-third {
-  width: 33.3333%;
-}
-.w-two-thirds {
-  width: 66.6666%;
-}
-.w-quarter {
-  width: 25%;
-}
-.w-three-quarters {
-  width: 75%;
-}
-
-.currency-selector__select {
-  padding: 0.5rem 0.75rem;
-  border: 1px solid var(--color-neutral);
-  border-radius: 0.375rem;
-  background-color: var(--color-base-100);
-  color: var(--color-base-content);
-  transition: border-color 0.2s, box-shadow 0.2s;
-}
-
-.currency-selector__select:focus {
-  outline: none;
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 2px var(--color-primary-soft);
-}
-
-.currency-selector__select:disabled {
-  background-color: var(--color-base-200);
-  color: var(--color-neutral-content);
-  cursor: not-allowed;
-}
-
-.currency-selector__select.has-error {
-  border-color: var(--color-error);
-}
-
-.currency-selector__select.has-error:focus {
-  box-shadow: 0 0 0 2px var(--color-error);
-}
-
-.currency-selector__select option {
-  padding: 0.5rem 0.75rem;
-}
-
-.currency-selector__select option:disabled {
-  color: var(--color-neutral-content);
-}
-
-.currency-selector__error {
-  margin-top: 0.25rem;
-  font-size: 0.875rem;
-  color: var(--color-error);
-}
-
-.currency-selector__help {
-  margin-top: 0.5rem;
-  font-size: 0.75rem;
-  text-align: right;
-  color: var(--color-neutral-content);
-}
-
-@media (max-width: 640px) {
-  .currency-selector {
-    flex-direction: column;
-    align-items: stretch;
-  }
-}
-</style>

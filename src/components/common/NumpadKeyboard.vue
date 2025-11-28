@@ -75,10 +75,54 @@ const keyboardStyle = computed(() => {
   };
 });
 
+// 获取按键样式类
+function getKeyClass(key: string) {
+  const baseClasses = [
+    'aspect-square min-h-10',
+    'flex items-center justify-center',
+    'rounded-md font-medium text-lg',
+    'transition-all duration-150 ease-out',
+    'select-none cursor-pointer',
+    'border',
+  ];
+
+  if (key === 'delete') {
+    return [
+      ...baseClasses,
+      'bg-[light-dark(#f3f4f6,#374151)]',
+      'border-[light-dark(#e5e7eb,#4b5563)]',
+      'text-[light-dark(#374151,#f9fafb)]',
+      'hover:bg-[var(--color-error)] hover:text-white hover:border-[var(--color-error)]',
+      'active:bg-[var(--color-error)] active:scale-95',
+    ].join(' ');
+  }
+
+  if (key === 'confirm') {
+    return [
+      ...baseClasses,
+      'bg-[var(--color-primary)]',
+      'border-[var(--color-primary)]',
+      'text-white',
+      'hover:opacity-90 hover:scale-[0.98]',
+      'active:opacity-80 active:scale-95',
+    ].join(' ');
+  }
+
+  return [
+    ...baseClasses,
+    'bg-[light-dark(#f9fafb,#374151)]',
+    'border-[light-dark(#e5e7eb,#4b5563)]',
+    'text-[light-dark(#111827,#f9fafb)]',
+    'hover:bg-[light-dark(#e5e7eb,#4b5563)] hover:border-[var(--color-primary)]',
+    'active:bg-[var(--color-primary)] active:text-white active:scale-95',
+  ].join(' ');
+}
+
 // 点击外部关闭
 function handleClickOutside(event: Event) {
   const target = event.target as HTMLElement;
-  if (!target.closest('.numpad-keyboard')) {
+  const keyboard = document.querySelector('[class*="bg-\\[light-dark"]');
+  if (keyboard && !keyboard.contains(target)) {
     emit('close');
   }
 }
@@ -96,28 +140,32 @@ onUnmounted(() => {
   <Teleport to="body">
     <div
       v-if="visible"
-      class="numpad-keyboard"
       :style="keyboardStyle"
+      class="bg-[light-dark(white,#1f2937)] border border-[light-dark(#e5e7eb,#374151)] rounded-lg shadow-lg p-2 flex flex-col gap-2"
       @click.stop
     >
       <!-- 当前输入值显示 -->
-      <div v-if="activeType" class="keyboard-preview">
-        <span class="preview-label">{{ inputLabel }}</span>
-        <span class="preview-value">{{ currentValue || '--' }}</span>
+      <div
+        v-if="activeType"
+        class="flex items-center justify-between p-2 bg-[light-dark(#f9fafb,#111827)] rounded-md mb-1"
+      >
+        <span class="text-sm text-[light-dark(#6b7280,#9ca3af)]">{{ inputLabel }}</span>
+        <span class="text-lg font-semibold text-[light-dark(#111827,#f9fafb)] min-w-8 text-right">
+          {{ currentValue || '--' }}
+        </span>
       </div>
 
       <!-- 数字键盘行 -->
       <div
         v-for="(row, rowIndex) in keys"
         :key="rowIndex"
-        class="keyboard-row"
+        class="grid grid-cols-4 gap-2"
       >
         <button
           v-for="key in row.keys"
           :key="key"
           type="button"
-          class="keyboard-key"
-          :class="{ 'key-delete': key === 'delete', 'key-confirm': key === 'confirm' }"
+          :class="getKeyClass(key)"
           @click="handleKeyClick(key)"
         >
           <Delete v-if="key === 'delete'" :size="20" />
@@ -128,126 +176,3 @@ onUnmounted(() => {
     </div>
   </Teleport>
 </template>
-
-<style scoped>
-.numpad-keyboard {
-  background-color: var(--color-base-100);
-  border: 1px solid var(--color-base-300);
-  border-radius: 8px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  padding: 0.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.keyboard-row {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 0.5rem;
-}
-
-.keyboard-preview {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.5rem;
-  background-color: var(--color-base-200);
-  border-radius: 6px;
-  margin-bottom: 0.25rem;
-}
-
-.preview-label {
-  font-size: 0.875rem;
-  color: var(--color-base-content-soft);
-}
-
-.preview-value {
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: var(--color-base-content);
-  min-width: 2rem;
-  text-align: right;
-}
-
-.keyboard-key {
-  aspect-ratio: 1;
-  min-height: 2.5rem;
-  border: 1px solid var(--color-base-300);
-  border-radius: 6px;
-  background-color: var(--color-base-200);
-  color: var(--color-base-content);
-  font-size: 1.125rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  user-select: none;
-}
-
-.keyboard-key:hover {
-  background-color: var(--color-base-300);
-  border-color: var(--color-primary);
-}
-
-.keyboard-key:active {
-  background-color: var(--color-primary);
-  color: var(--color-primary-content);
-  transform: scale(0.95);
-}
-
-.keyboard-key.key-delete {
-  background-color: var(--color-base-300);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.keyboard-key.key-delete:hover {
-  background-color: var(--color-error);
-  color: var(--color-error-content);
-}
-
-.keyboard-key.key-delete:hover :deep(svg) {
-  color: var(--color-error-content);
-}
-
-.keyboard-key.key-delete:active {
-  background-color: var(--color-error);
-  color: var(--color-error-content);
-}
-
-.keyboard-key.key-delete:active :deep(svg) {
-  color: var(--color-error-content);
-}
-
-.keyboard-key.key-confirm {
-  background-color: var(--color-primary);
-  color: var(--color-primary-content);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.keyboard-key.key-confirm:hover {
-  background-color: var(--color-primary);
-  opacity: 0.9;
-  transform: scale(0.98);
-}
-
-.keyboard-key.key-confirm:hover :deep(svg) {
-  color: var(--color-primary-content);
-}
-
-.keyboard-key.key-confirm:active {
-  background-color: var(--color-primary);
-  opacity: 0.8;
-  transform: scale(0.95);
-}
-
-.keyboard-key.key-confirm:active :deep(svg) {
-  color: var(--color-primary-content);
-}
-</style>

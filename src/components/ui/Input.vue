@@ -3,6 +3,7 @@
  * Input - 输入框组件
  *
  * 支持多种类型、尺寸和状态
+ * 支持前缀/后缀插槽
  * 100% Tailwind CSS 4
  */
 
@@ -52,6 +53,11 @@ const emit = defineEmits<{
   'focus': [event: FocusEvent];
 }>();
 
+// 检测插槽
+const slots = useSlots();
+const hasPrefix = computed(() => !!slots.prefix || !!props.prefixIcon);
+const hasSuffix = computed(() => !!slots.suffix || !!props.suffixIcon);
+
 // 尺寸样式
 const sizeClasses = {
   sm: 'px-3 py-1.5 text-sm',
@@ -79,11 +85,24 @@ const iconSizes = {
     </label>
 
     <!-- 输入框容器 -->
-    <div class="relative">
-      <!-- 前置图标 -->
+    <div class="relative flex items-stretch">
+      <!-- 前缀插槽 -->
       <div
-        v-if="props.prefixIcon"
-        class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+        v-if="$slots.prefix"
+        class="flex items-center px-3 bg-gray-100 dark:bg-gray-700 border border-r-0 rounded-l-lg text-sm font-medium text-gray-700 dark:text-gray-300"
+        :class="[
+          props.error
+            ? 'border-red-300 dark:border-red-700'
+            : 'border-gray-300 dark:border-gray-600',
+        ]"
+      >
+        <slot name="prefix" />
+      </div>
+
+      <!-- 前置图标（向后兼容） -->
+      <div
+        v-else-if="props.prefixIcon"
+        class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 z-10"
       >
         <component :is="props.prefixIcon" :class="iconSizes[props.size]" />
       </div>
@@ -97,13 +116,21 @@ const iconSizes = {
         :readonly="props.readonly"
         :required="props.required"
         :maxlength="props.maxLength"
-        class="w-full rounded-lg border transition-colors focus:outline-none focus:ring-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500" :class="[
+        class="flex-1 transition-colors focus:outline-none focus:ring-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 border" :class="[
           sizeClasses[props.size],
-          props.prefixIcon && 'pl-10',
-          props.suffixIcon && 'pr-10',
+          // 动态圆角
+          $slots.prefix && !$slots.suffix ? 'rounded-r-lg border-l-0' : '',
+          !$slots.prefix && $slots.suffix ? 'rounded-l-lg border-r-0' : '',
+          $slots.prefix && $slots.suffix ? 'border-x-0' : '',
+          !$slots.prefix && !$slots.suffix ? 'rounded-lg' : '',
+          // 图标内边距
+          hasPrefix && !$slots.prefix ? 'pl-10' : '',
+          hasSuffix && !$slots.suffix ? 'pr-10' : '',
+          // 边框颜色
           props.error
             ? 'border-red-300 dark:border-red-700 focus:ring-red-500 focus:border-red-500'
             : 'border-gray-300 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500',
+          // 状态
           props.disabled && 'opacity-50 cursor-not-allowed bg-gray-50 dark:bg-gray-900',
           props.readonly && 'cursor-default bg-gray-50 dark:bg-gray-900',
         ]"
@@ -112,10 +139,23 @@ const iconSizes = {
         @focus="emit('focus', $event)"
       >
 
-      <!-- 后置图标 -->
+      <!-- 后缀插槽 -->
       <div
-        v-if="props.suffixIcon"
-        class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
+        v-if="$slots.suffix"
+        class="flex items-center px-3 bg-gray-100 dark:bg-gray-700 border border-l-0 rounded-r-lg text-sm font-medium text-gray-700 dark:text-gray-300"
+        :class="[
+          props.error
+            ? 'border-red-300 dark:border-red-700'
+            : 'border-gray-300 dark:border-gray-600',
+        ]"
+      >
+        <slot name="suffix" />
+      </div>
+
+      <!-- 后置图标（向后兼容） -->
+      <div
+        v-else-if="props.suffixIcon"
+        class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 z-10"
       >
         <component :is="props.suffixIcon" :class="iconSizes[props.size]" />
       </div>

@@ -49,131 +49,48 @@ function formatValue(value: T): string {
   if (props.suffix) display = display + props.suffix;
   return display;
 }
+
+function getButtonClass(preset: T) {
+  const isActive = props.modelValue === preset;
+  const sizeClasses = {
+    small: 'py-1 px-2 text-xs max-md:py-0.5 max-md:px-1.5 max-md:text-[0.7rem]',
+    medium: 'py-2 px-4 text-sm max-md:py-1 max-md:px-2 max-md:text-xs',
+  };
+
+  return [
+    // 基础样式
+    'border rounded-lg font-medium whitespace-nowrap',
+    'transition-all duration-200 ease-in-out',
+    sizeClasses[props.size],
+    // 禁用状态
+    props.disabled
+      ? 'opacity-50 cursor-not-allowed'
+      : 'cursor-pointer',
+    // 激活状态
+    isActive
+      ? 'border-[var(--color-primary)] bg-[var(--color-primary)] text-white font-semibold'
+      : [
+          'border-[light-dark(#e5e7eb,#374151)]',
+          'bg-[light-dark(white,#1f2937)]',
+          'text-[light-dark(#111827,#f9fafb)]',
+          !props.disabled && 'hover:border-[var(--color-primary)] hover:bg-[light-dark(#f3f4f6,#374151)] hover:-translate-y-0.5',
+          !props.disabled && 'active:translate-y-0',
+        ].filter(Boolean).join(' '),
+  ].filter(Boolean).join(' ');
+}
 </script>
 
 <template>
-  <div class="preset-buttons">
+  <div class="flex flex-wrap gap-2 mt-2 max-md:gap-1.5">
     <button
       v-for="preset in presets"
       :key="String(preset)"
       type="button"
-      class="preset-btn"
-      :class="[
-        `preset-btn-${size}`,
-        {
-          'preset-btn-active': modelValue === preset,
-          'preset-btn-disabled': disabled,
-        },
-      ]"
-      :disabled="disabled"
+      :class="getButtonClass(preset)"
+      :disabled="props.disabled"
       @click="handleSelect(preset)"
     >
       {{ formatValue(preset) }}
     </button>
   </div>
 </template>
-
-<style scoped>
-/* 容器 */
-.preset-buttons {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-top: 0.5rem;
-}
-
-/* 按钮基础样式 */
-.preset-btn {
-  padding: 0.375rem 0.75rem;
-  border: 1px solid var(--color-base-300);
-  border-radius: 0.5rem;
-  background-color: var(--color-base-100);
-  color: var(--color-base-content);
-  font-size: 0.875rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease-in-out;
-  white-space: nowrap;
-}
-
-.preset-btn:hover:not(:disabled) {
-  border-color: var(--color-primary);
-  background-color: var(--color-base-200);
-  transform: translateY(-1px);
-}
-
-.preset-btn:active:not(:disabled) {
-  transform: translateY(0);
-}
-
-/* 尺寸变体 */
-.preset-btn-small {
-  padding: 0.25rem 0.5rem;
-  font-size: 0.75rem;
-}
-
-.preset-btn-medium {
-  padding: 0.5rem 1rem;
-  font-size: 0.875rem;
-}
-
-/* 激活状态 */
-.preset-btn-active {
-  border-color: var(--color-primary);
-  background-color: var(--color-primary);
-  color: var(--color-primary-content);
-  font-weight: 600;
-}
-
-.preset-btn-active:hover:not(:disabled) {
-  border-color: var(--color-primary);
-  background-color: var(--color-primary);
-  transform: translateY(-1px);
-}
-
-/* 禁用状态 */
-.preset-btn-disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.preset-btn-disabled:hover {
-  transform: none;
-  border-color: var(--color-base-300);
-  background-color: var(--color-base-100);
-}
-
-/* 深色模式 */
-.dark .preset-btn {
-  border-color: var(--color-base-300);
-  background-color: var(--color-base-200);
-  color: var(--color-base-content);
-}
-
-.dark .preset-btn:hover:not(:disabled) {
-  background-color: var(--color-base-300);
-}
-
-.dark .preset-btn-active {
-  border-color: var(--color-primary);
-  background-color: var(--color-primary);
-  color: var(--color-primary-content);
-}
-
-/* 移动端适配 */
-@media (max-width: 768px) {
-  .preset-buttons {
-    gap: 0.375rem;
-  }
-
-  .preset-btn {
-    padding: 0.25rem 0.5rem;
-    font-size: 0.75rem;
-  }
-
-  .preset-btn-small {
-    padding: 0.2rem 0.4rem;
-    font-size: 0.7rem;
-  }
-}
-</style>

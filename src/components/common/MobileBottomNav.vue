@@ -52,179 +52,81 @@ function closeSubmenu() {
 </script>
 
 <template>
-  <div class="mobile-nav-container">
+  <div class="relative">
     <!-- 背景遮罩 -->
-    <div
-      v-if="showSubmenu"
-      class="submenu-overlay"
-      @click="closeSubmenu"
-    />
-
-    <!-- 子菜单弹窗 -->
-    <div
-      v-if="showSubmenu"
-      class="mobile-submenu"
+    <Transition
+      enter-active-class="transition-opacity duration-200 ease-out"
+      leave-active-class="transition-opacity duration-150 ease-in"
+      enter-from-class="opacity-0"
+      enter-to-class="opacity-100"
+      leave-from-class="opacity-100"
+      leave-to-class="opacity-0"
     >
       <div
-        v-for="submenuItem in menu.find(item => item.name === showSubmenu)?.submenu"
-        :key="submenuItem.name"
-        :class="{ active: isSubmenuActive(submenuItem) }"
-        :title="submenuItem.title"
-        class="submenu-item"
-        @click="navigateSubmenu(submenuItem)"
+        v-if="showSubmenu"
+        class="fixed inset-0 bg-black/30 z-[1001]"
+        @click="closeSubmenu"
+      />
+    </Transition>
+
+    <!-- 子菜单弹窗 -->
+    <Transition
+      enter-active-class="transition-all duration-300 ease-out"
+      leave-active-class="transition-all duration-200 ease-in"
+      enter-from-class="opacity-0 translate-y-4"
+      enter-to-class="opacity-100 translate-y-0"
+      leave-from-class="opacity-100 translate-y-0"
+      leave-to-class="opacity-0 translate-y-4"
+    >
+      <div
+        v-if="showSubmenu"
+        class="fixed bottom-16 left-1/2 -translate-x-1/2 bg-[light-dark(white,#1f2937)] rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.2)] z-[1002] overflow-hidden flex gap-2 p-2"
       >
-        <component
-          :is="submenuItem.icon"
-          class="submenu-icon"
-        />
+        <div
+          v-for="submenuItem in menu.find(item => item.name === showSubmenu)?.submenu"
+          :key="submenuItem.name"
+          :title="submenuItem.title"
+          class="p-4 cursor-pointer transition-colors duration-200 flex justify-center items-center rounded-lg min-w-12 min-h-12" :class="[
+            isSubmenuActive(submenuItem)
+              ? 'bg-[var(--color-primary)] text-white'
+              : 'hover:bg-[light-dark(#f3f4f6,#374151)] text-[light-dark(#6b7280,#d1d5db)]',
+          ]"
+          @click="navigateSubmenu(submenuItem)"
+        >
+          <component
+            :is="submenuItem.icon"
+            class="w-6 h-6" :class="[
+              isSubmenuActive(submenuItem) ? 'text-white' : '',
+            ]"
+          />
+        </div>
       </div>
-    </div>
+    </Transition>
 
     <!-- 底部导航 -->
-    <nav class="mobile-nav">
-      <ul>
+    <nav class="fixed bottom-0 left-0 right-0 h-12 bg-[light-dark(#f3f4f6,#1f2937)] flex items-center justify-center shadow-[0_-1px_3px_0_rgba(0,0,0,0.1),0_-1px_2px_-1px_rgba(0,0,0,0.1)] border-t border-[light-dark(#e5e7eb,#374151)] z-[1000]">
+      <ul class="flex w-full justify-around items-center list-none m-0 p-0">
         <li
           v-for="item in menu"
           :key="item.name"
           :title="item.title"
-          :class="{ active: isActive(item) }"
+          class="flex flex-col items-center justify-center py-1 px-2 rounded-md cursor-pointer transition-all duration-300 ease-in-out" :class="[
+            isActive(item)
+              ? 'bg-[light-dark(#dbeafe,rgba(59,130,246,0.1))] shadow-[inset_0_0_0_1px_var(--color-primary)]'
+              : 'hover:bg-[light-dark(#e5e7eb,#374151)]',
+          ]"
           @click="navigate(item)"
         >
-          <component :is="item.icon" class="icon" />
+          <component
+            :is="item.icon"
+            class="w-5 h-5" :class="[
+              isActive(item)
+                ? 'text-[var(--color-primary)]'
+                : 'text-[light-dark(#6b7280,#9ca3af)]',
+            ]"
+          />
         </li>
       </ul>
     </nav>
   </div>
 </template>
-
-<style scoped lang="postcss">
-.mobile-nav-container {
-  position: relative;
-}
-
-/* 背景遮罩 */
-.submenu-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.3);
-  z-index: 1001;
-}
-
-/* 移动端子菜单弹窗 */
-.mobile-submenu {
-  position: fixed;
-  bottom: 4rem; /* 在底部导航上方 */
-  left: 50%;
-  transform: translateX(-50%);
-  background-color: var(--color-base-100);
-  border-radius: 0.75rem;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-  z-index: 1002;
-  overflow: hidden;
-  animation: slideUp 0.3s ease-out;
-  display: flex;
-  gap: 0.5rem;
-  padding: 0.5rem;
-}
-
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateX(-50%) translateY(1rem);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(-50%) translateY(0);
-  }
-}
-
-.submenu-item {
-  padding: 1rem;
-  cursor: pointer;
-  transition: background-color 0.2s;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  border-radius: 0.5rem;
-  min-width: 3rem;
-  min-height: 3rem;
-}
-
-.submenu-item:hover {
-  background-color: var(--color-base-200);
-}
-
-.submenu-item.active {
-  background-color: var(--color-primary);
-  color: var(--color-primary-content);
-}
-
-.submenu-icon {
-  width: 1.5rem;
-  height: 1.5rem;
-  color: var(--color-neutral);
-}
-
-.submenu-item.active .submenu-icon {
-  color: var(--color-primary-content);
-}
-
-/* 底部导航样式 */
-.mobile-nav {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 3rem;
-  background-color: var(--color-base-300);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: var(--shadow-lg);
-  border-top: 1px solid var(--color-neutral);
-  z-index: 1000;
-}
-
-.mobile-nav ul {
-  display: flex;
-  width: 100%;
-  justify-content: space-around;
-  align-items: center;
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.mobile-nav li {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 0.25rem 0.5rem;
-  border-radius: 0.375rem;
-  cursor: pointer;
-  transition: all 0.3s ease-in-out;
-}
-
-.mobile-nav li:hover {
-  background-color: var(--color-base-200);
-}
-
-.mobile-nav li.active {
-  background-color: var(--color-primary-soft);
-  box-shadow: inset 0 0 0 1px var(--color-primary);
-}
-
-.icon {
-  width: 1.25rem;
-  height: 1.25rem;
-  color: var(--color-neutral);
-}
-
-.mobile-nav li.active .icon {
-  color: var(--color-primary);
-}
-</style>

@@ -1,4 +1,5 @@
 <script setup lang="ts" generic="T extends string | number | boolean | null | undefined">
+import { computed } from 'vue';
 import type { Component } from 'vue';
 
 /**
@@ -61,278 +62,111 @@ const gridClass = computed(() => {
     3: 'grid-cols-3',
     4: 'grid-cols-4',
     5: 'grid-cols-5',
-    6: 'grid-cols-6',
+    6: 'grid-cols-6 max-md:gap-1',
   };
   return cols[props.gridCols];
 });
 
-const sizeClass = computed(() => {
+const buttonBaseClass = computed(() => {
+  const sizeClasses = {
+    small: 'p-2 max-md:p-2',
+    medium: 'p-3 max-md:p-2.5',
+    large: 'p-4 max-md:p-3.5',
+  };
+
+  return [
+    // 基础布局
+    'flex items-center justify-center',
+    'w-full aspect-square',
+    // 边框和背景
+    'border-2 rounded-[0.875rem] max-md:rounded-xl',
+    'border-[light-dark(#e5e7eb,#374151)]',
+    'bg-[light-dark(white,#1f2937)]',
+    'text-[light-dark(#374151,#f9fafb)]',
+    // 过渡和阴影
+    'transition-all duration-250 ease-[cubic-bezier(0.4,0,0.2,1)]',
+    'shadow-sm',
+    // 尺寸
+    sizeClasses[props.size],
+    // 触摸目标（移动端）
+    'max-md:min-h-[2.75rem]',
+    // 禁用状态
+    props.disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer',
+  ].join(' ');
+});
+
+const buttonHoverClass = computed(() => {
+  if (props.disabled) return '';
+  return [
+    'hover:border-[light-dark(#93c5fd,#3b82f6)]',
+    'hover:bg-[light-dark(#f3f4f6,#374151)]',
+    'hover:-translate-y-0.5 hover:scale-[1.02]',
+    'hover:shadow-[0_4px_12px_-2px_rgba(0,0,0,0.15)]',
+    'max-md:hover:translate-y-0 max-md:hover:scale-100',
+    'max-md:hover:shadow-[0_2px_6px_-1px_rgba(0,0,0,0.1)]',
+    'active:translate-y-0 active:scale-[0.98]',
+  ].join(' ');
+});
+
+const buttonActiveClass = computed(() => {
+  const themeColors = {
+    primary: 'border-[var(--color-primary)] bg-[var(--color-primary)] text-white',
+    error: 'border-[var(--color-error)] bg-[var(--color-error)] text-white',
+    info: 'border-[#0ea5e9] bg-[#0ea5e9] text-white',
+    success: 'border-[var(--color-success)] bg-[var(--color-success)] text-white',
+    warning: 'border-[var(--color-warning)] bg-[var(--color-warning)] text-white',
+  };
+
+  return [
+    themeColors[props.theme],
+    'font-semibold',
+    'shadow-[0_4px_8px_-2px_rgba(0,0,0,0.2),0_0_0_1px_rgba(0,0,0,0.05)]',
+    'scale-105 max-md:scale-[1.02]',
+  ].join(' ');
+});
+
+const iconSizeClass = computed(() => {
   const sizes = {
-    small: 'icon-btn-small',
-    medium: 'icon-btn-medium',
-    large: 'icon-btn-large',
+    small: 'w-5 h-5 max-md:w-[1.125rem] max-md:h-[1.125rem]',
+    medium: 'w-6 h-6 max-md:w-[1.375rem] max-md:h-[1.375rem]',
+    large: 'w-8 h-8 max-md:w-7 max-md:h-7',
   };
   return sizes[props.size];
 });
 
-const themeClass = computed(() => {
-  const themes = {
-    primary: 'icon-btn-theme-primary',
-    error: 'icon-btn-theme-error',
-    info: 'icon-btn-theme-info',
-    success: 'icon-btn-theme-success',
-    warning: 'icon-btn-theme-warning',
+const iconStrokeClass = computed(() => {
+  const strokes = {
+    small: 'stroke-[2.25] max-md:stroke-[2.5]',
+    medium: 'stroke-2 max-md:stroke-[2.25]',
+    large: 'stroke-[1.75] max-md:stroke-2',
   };
-  return themes[props.theme];
+  return strokes[props.size];
 });
+
+function getButtonClass(isActive: boolean) {
+  return [
+    buttonBaseClass.value,
+    !isActive && buttonHoverClass.value,
+    isActive && buttonActiveClass.value,
+  ].filter(Boolean).join(' ');
+}
 </script>
 
 <template>
-  <div class="icon-button-group" :class="gridClass">
+  <div class="grid gap-2 w-full max-md:gap-1.5" :class="gridClass">
     <button
       v-for="option in options"
       :key="String(option.value)"
       type="button"
       :title="option.label"
-      class="icon-btn"
-      :class="[
-        sizeClass,
-        {
-          'icon-btn-active': modelValue === option.value,
-          [themeClass]: modelValue === option.value,
-          'icon-btn-disabled': disabled,
-        },
-      ]"
-      :disabled="disabled"
+      :class="getButtonClass(modelValue === option.value)"
+      :disabled="props.disabled"
       @click="handleSelect(option.value)"
     >
-      <component :is="option.icon" class="icon-btn-icon" />
+      <component
+        :is="option.icon"
+        class="shrink-0" :class="[iconSizeClass, iconStrokeClass]"
+      />
     </button>
   </div>
 </template>
-
-<style scoped>
-/* 容器 - 网格布局 */
-.icon-button-group {
-  display: grid;
-  gap: 0.5rem;
-  width: 100%;
-}
-
-.grid-cols-2 {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.grid-cols-3 {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-.grid-cols-4 {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-}
-
-.grid-cols-5 {
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-}
-
-.grid-cols-6 {
-  grid-template-columns: repeat(6, minmax(0, 1fr));
-}
-
-/* 按钮基础样式 */
-.icon-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 2px solid var(--color-base-300);
-  border-radius: 0.875rem;
-  background-color: var(--color-base-100);
-  color: var(--color-base-content);
-  cursor: pointer;
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-  aspect-ratio: 1 / 1; /* 保持正方形 */
-  width: 100%;
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-}
-
-.icon-btn:hover:not(:disabled):not(.icon-btn-active) {
-  border-color: var(--color-primary-soft);
-  background-color: var(--color-base-200);
-  transform: translateY(-2px) scale(1.02);
-  box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.15);
-}
-
-.icon-btn:active:not(:disabled) {
-  transform: translateY(0) scale(0.98);
-}
-
-/* 尺寸变体 */
-.icon-btn-small {
-  padding: 0.5rem;
-  /* aspect-ratio 会自动计算高度 */
-}
-
-.icon-btn-medium {
-  padding: 0.75rem;
-  /* aspect-ratio 会自动计算高度 */
-}
-
-.icon-btn-large {
-  padding: 1rem;
-  /* aspect-ratio 会自动计算高度 */
-}
-
-/* 图标样式 */
-.icon-btn-icon {
-  stroke-width: 2;
-  flex-shrink: 0;
-}
-
-/* 图标尺寸 */
-.icon-btn-small .icon-btn-icon {
-  width: 1.25rem;
-  height: 1.25rem;
-  stroke-width: 2.25;
-}
-
-.icon-btn-medium .icon-btn-icon {
-  width: 1.5rem;
-  height: 1.5rem;
-  stroke-width: 2;
-}
-
-.icon-btn-large .icon-btn-icon {
-  width: 2rem;
-  height: 2rem;
-  stroke-width: 1.75;
-}
-
-/* 激活状态 */
-.icon-btn-active {
-  border-width: 2px;
-  font-weight: 600;
-  box-shadow: 0 4px 8px -2px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(0, 0, 0, 0.05);
-  transform: scale(1.05);
-}
-
-/* 主题色 */
-.icon-btn-theme-primary.icon-btn-active {
-  border-color: var(--color-primary);
-  background-color: var(--color-primary);
-  color: var(--color-primary-content);
-}
-
-.icon-btn-theme-error.icon-btn-active {
-  border-color: var(--color-error);
-  background-color: var(--color-error);
-  color: var(--color-error-content);
-}
-
-.icon-btn-theme-info.icon-btn-active {
-  border-color: var(--color-info);
-  background-color: var(--color-info);
-  color: var(--color-info-content);
-}
-
-.icon-btn-theme-success.icon-btn-active {
-  border-color: var(--color-success);
-  background-color: var(--color-success);
-  color: var(--color-success-content);
-}
-
-.icon-btn-theme-warning.icon-btn-active {
-  border-color: var(--color-warning);
-  background-color: var(--color-warning);
-  color: var(--color-warning-content);
-}
-
-/* 禁用状态 */
-.icon-btn-disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.icon-btn-disabled:hover {
-  transform: none;
-  border-color: var(--color-base-300);
-  background-color: var(--color-base-100);
-  box-shadow: none;
-}
-
-/* 深色模式 */
-.dark .icon-btn {
-  border-color: var(--color-base-300);
-  background-color: var(--color-base-200);
-  color: var(--color-base-content);
-}
-
-.dark .icon-btn:hover:not(:disabled) {
-  background-color: var(--color-base-300);
-}
-
-/* 移动端适配 */
-@media (max-width: 768px) {
-  .icon-button-group {
-    gap: 0.375rem;
-  }
-
-  /* 5列布局时减小间距 */
-  .grid-cols-5 {
-    gap: 0.25rem;
-  }
-
-  .icon-btn {
-    border-radius: 0.75rem;
-    /* 移动端触摸目标至少44x44px */
-    min-height: 2.75rem;
-  }
-
-  /* 5列布局时适当减小按钮尺寸 */
-  .grid-cols-5 .icon-btn {
-    min-height: 2.5rem;
-  }
-
-  .icon-btn-small {
-    padding: 0.5rem;
-    /* aspect-ratio 保持正方形 */
-  }
-
-  .icon-btn-small .icon-btn-icon {
-    width: 1.125rem;
-    height: 1.125rem;
-    stroke-width: 2.5;
-  }
-
-  .icon-btn-medium {
-    padding: 0.625rem;
-    /* aspect-ratio 保持正方形 */
-  }
-
-  .icon-btn-medium .icon-btn-icon {
-    width: 1.375rem;
-    height: 1.375rem;
-    stroke-width: 2.25;
-  }
-
-  .icon-btn-large {
-    padding: 0.875rem;
-    /* aspect-ratio 保持正方形 */
-  }
-
-  .icon-btn-large .icon-btn-icon {
-    width: 1.75rem;
-    height: 1.75rem;
-    stroke-width: 2;
-  }
-
-  /* 移动端减少动画效果，避免过度占用性能 */
-  .icon-btn:hover:not(:disabled):not(.icon-btn-active) {
-    transform: none;
-    box-shadow: 0 2px 6px -1px rgba(0, 0, 0, 0.1);
-  }
-
-  .icon-btn-active {
-    transform: scale(1.02);
-  }
-}
-</style>

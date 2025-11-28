@@ -86,42 +86,91 @@ function selectPriority(serialNum: string, p: Priority) {
   showMenu.value = false;
   emit('changePriority', serialNum, p);
 }
+
+// 获取优先级按钮类名
+function getPriorityButtonClass() {
+  const baseClasses = [
+    'absolute top-2 left-3',
+    'flex items-center justify-center',
+    'h-5 w-5 shrink-0',
+    'border-2 border-white/30 rounded-full',
+    'text-xs font-bold',
+    'backdrop-blur-md',
+    'shadow-[0_2px_8px_rgba(0,0,0,0.2)]',
+    'transition-all duration-300 ease-out',
+    'cursor-pointer z-10',
+    `bg-gradient-to-br ${priorityClasses.value.gradient}`,
+    priorityClasses.value.text,
+  ];
+
+  const hoverClasses = [
+    'hover:shadow-[0_10px_15px_rgba(0,0,0,0.25)]',
+    'hover:scale-125',
+  ];
+
+  const disabledClasses = props.completed
+    ? ['cursor-not-allowed', 'opacity-60']
+    : [];
+
+  const urgentClasses = normalizedPriority.value === 'URGENT'
+    ? ['animate-[urgent-pulse_2s_ease-in-out_infinite]', 'shadow-[0_0_12px_rgba(220,38,38,0.5)]']
+    : [];
+
+  return [...baseClasses, ...hoverClasses, ...disabledClasses, ...urgentClasses].join(' ');
+}
+
+// 获取菜单选项类名
+function getMenuOptionClass(p: Priority) {
+  const baseClasses = [
+    'block w-full',
+    'px-2.5 py-1',
+    'text-[13px] font-medium',
+    'rounded-md text-left',
+    'transition-all duration-150 ease-in-out',
+  ];
+
+  const isActive = p === props.priority;
+
+  const stateClasses = isActive
+    ? [
+        'bg-[light-dark(#e5e7eb,#4b5563)]',
+        'font-semibold',
+        'text-[light-dark(#000,#fff)]',
+      ]
+    : [
+        'text-[light-dark(#1f2937,#f9fafb)]',
+        'hover:bg-[light-dark(#f3f4f6,#374151)]',
+        'active:scale-[0.98]',
+      ];
+
+  return [...baseClasses, ...stateClasses].join(' ');
+}
 </script>
 
 <template>
   <!-- 优先级按钮 -->
   <button
-    class="priority-btn"
-    :class="[
-      priorityClasses.gradient,
-      priorityClasses.text,
-      { urgent: normalizedPriority === 'URGENT' },
-    ]"
+    :class="getPriorityButtonClass()"
     :title="priorityLabel"
     :aria-label="priorityLabel"
     :disabled="completed"
     :data-priority-btn="serialNum"
     @click="showMenu = !showMenu"
   >
-    <span class="priority-label">{{ priorityLabel }}</span>
+    <span class="drop-shadow-[0_1px_2px_rgba(0,0,0,0.25)]">{{ priorityLabel }}</span>
   </button>
 
   <!-- 下拉菜单 -->
   <Teleport to="body">
     <div
       v-if="showMenu"
-      class="priority-menu"
       :style="menuStyle"
+      class="w-10 p-1 border border-[light-dark(#e5e7eb,#374151)] rounded-lg bg-[light-dark(white,#1f2937)] backdrop-blur-md shadow-[0_8px_16px_rgba(0,0,0,0.2)] dark:shadow-[0_12px_24px_rgba(0,0,0,0.5)]"
     >
       <button
         v-for="p in priorities"
         :key="p"
-        class="priority-option"
-        :class="[
-          p === priority
-            ? 'priority-option--active'
-            : 'priority-option--inactive',
-        ]"
+        :class="getMenuOptionClass(p)"
         @click="selectPriority(serialNum, p)"
       >
         {{ t(priorityKeyMap[p.toUpperCase() as keyof typeof priorityKeyMap] || priorityKeyMap.LOW) }}
@@ -129,137 +178,3 @@ function selectPriority(serialNum: string, p: Priority) {
     </div>
   </Teleport>
 </template>
-
-<style scoped lang="postcss">
-/* 优先级按钮 */
-.priority-btn {
-  position: absolute;
-  top: 0.5rem;
-  left: 0.75rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 1.25rem; /* h-5 */
-  width: 1.25rem;  /* w-5 */
-  flex-shrink: 0;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  border-radius: 9999px; /* rounded-full */
-  font-size: 0.75rem; /* text-xs */
-  font-weight: 700; /* font-bold */
-  background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
-  backdrop-filter: blur(8px); /* backdrop-blur-md */
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-  transition: all 0.3s ease-out;
-  cursor: pointer;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-  z-index: 10;
-}
-.priority-btn:hover {
-  box-shadow: 0 10px 15px rgba(0, 0, 0, 0.25);
-  transform: scale(1.25);
-}
-
-/* 紧急优先级特殊效果 */
-.priority-btn.urgent {
-  animation: urgent-pulse 2s ease-in-out infinite;
-  box-shadow: 0 0 12px rgba(220, 38, 38, 0.5);
-}
-
-@keyframes urgent-pulse {
-  0%, 100% {
-    box-shadow: 0 0 12px rgba(220, 38, 38, 0.5);
-  }
-  50% {
-    box-shadow: 0 0 20px rgba(220, 38, 38, 0.8);
-  }
-}
-.priority-btn:disabled {
-  cursor: not-allowed;
-  opacity: 0.6;
-}
-
-/* 内部文字 */
-.priority-label {
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25); /* drop-shadow-sm */
-}
-
-/* 动画 */
-.priority-btn:hover {
-  animation: pulse-subtle 2s ease-in-out infinite;
-}
-@keyframes pulse-subtle {
-  0%, 100% {
-    transform: scale(1);
-    opacity: 1;
-  }
-  50% {
-    transform: scale(1.1);
-    opacity: 0.8;
-  }
-}
-
-/* 下拉菜单容器 */
-.priority-menu {
-  width: 2.5rem; /* w-10 */
-  padding: 0.25rem; /* p-1 */
-  border: 1px solid var(--color-base-300); /* border-gray-200 */
-  border-radius: 0.5rem; /* rounded-lg */
-  background: var(--color-base-100);
-  backdrop-filter: blur(8px);
-  box-shadow: 0 8px 16px rgba(0,0,0,0.2);
-}
-
-/* 深色模式 */
-@media (prefers-color-scheme: dark) {
-  .priority-btn {
-    box-shadow: 0 0 10px rgba(255, 255, 255, 0.15);
-  }
-  .priority-menu {
-    background: #1f2937; /* neutral-800 */
-    border-color: #374151; /* neutral-700 */
-    box-shadow: 0 12px 24px rgba(0,0,0,0.5);
-  }
-}
-
-/* 菜单项 */
-.priority-option {
-  display: block;
-  width: 100%;
-  padding: 0.25rem 0.625rem; /* px-2.5 py-1 */
-  font-size: 13px;
-  font-weight: 500;
-  border-radius: 0.375rem; /* rounded-md */
-  text-align: left;
-  transition: background-color 0.15s ease-in-out, transform 0.1s ease-in-out;
-}
-.priority-option:hover {
-  background: #f3f4f6; /* hover:bg-gray-100 */
-}
-.priority-option:active {
-  transform: scale(0.98); /* active:scale-[0.98] */
-}
-
-/* 激活状态 */
-.priority-option--active {
-  background: var(--color-neutral-content); /* bg-gray-200 */
-  font-weight: 600;
-  color: #000;
-}
-.priority-option--inactive {
-  color: #1f2937; /* text-gray-800 */
-}
-
-/* 深色模式菜单项 */
-@media (prefers-color-scheme: dark) {
-  .priority-option--active {
-    background: #4b5563; /* neutral-600 */
-    color: #fff;
-  }
-  .priority-option--inactive {
-    color: #f9fafb; /* gray-100 */
-  }
-  .priority-option:hover {
-    background: #374151; /* neutral-700 */
-  }
-}
-</style>

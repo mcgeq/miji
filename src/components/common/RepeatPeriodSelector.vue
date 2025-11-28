@@ -1,4 +1,8 @@
 <script setup lang="ts">
+import Input from '@/components/ui/Input.vue';
+import Select from '@/components/ui/Select.vue';
+import Textarea from '@/components/ui/Textarea.vue';
+import type { SelectOption } from '@/components/ui/Select.vue';
 import type { RepeatPeriod, Weekday } from '@/schema/common';
 
 interface Props {
@@ -48,6 +52,41 @@ const monthOptions = [
   '11',
   '12',
 ];
+
+// 重复类型选项
+const repeatTypeOptions = computed<SelectOption[]>(() => [
+  { value: 'None', label: '不重复' },
+  { value: 'Daily', label: '日' },
+  { value: 'Weekly', label: '周' },
+  { value: 'Monthly', label: '月' },
+  { value: 'Yearly', label: '年' },
+  { value: 'Custom', label: '自定义' },
+]);
+
+// 每月日期选项
+const monthlyDayOptions = computed<SelectOption[]>(() => [
+  ...Array.from({ length: 31 }, (_, i) => ({
+    value: i + 1,
+    label: String(i + 1),
+  })),
+  { value: 'last', label: '每月最后一天' },
+]);
+
+// 每年月份选项
+const yearlyMonthOptions = computed<SelectOption[]>(() =>
+  monthOptions.map((month, index) => ({
+    value: index + 1,
+    label: month,
+  })),
+);
+
+// 每年日期选项（动态）
+const yearlyDayOptions = computed<SelectOption[]>(() =>
+  Array.from({ length: getMaxDaysInMonth() }, (_, i) => ({
+    value: i + 1,
+    label: String(i + 1),
+  })),
+);
 
 // 工具函数
 function validateValue(value: RepeatPeriod) {
@@ -282,89 +321,75 @@ watch(
 </script>
 
 <template>
-  <div class="repeat-period-selector">
+  <div class="flex flex-col gap-2">
     <!-- 通用输入行 -->
-    <div class="field-row">
-      <label class="label">
+    <div class="flex justify-between items-center mb-2 max-sm:flex-wrap">
+      <label class="text-sm font-medium text-[light-dark(#374151,#d1d5db)] mb-0 max-sm:shrink-0">
         {{ label }}
-        <span v-if="required" class="required">*</span>
+        <span v-if="required" class="text-[var(--color-primary)] ml-1">*</span>
       </label>
-      <select
-        :value="modelValue.type"
-        class="input-field"
-        :class="{ 'input-error': errorMessage }"
-        @change="handleTypeChange"
-      >
-        <option value="None">
-          不重复
-        </option>
-        <option value="Daily">
-          日
-        </option>
-        <option value="Weekly">
-          周
-        </option>
-        <option value="Monthly">
-          月
-        </option>
-        <option value="Yearly">
-          年
-        </option>
-        <option value="Custom">
-          自定义
-        </option>
-      </select>
+      <div class="w-2/3 max-sm:flex-1 max-sm:w-full">
+        <Select
+          :model-value="modelValue.type"
+          :options="repeatTypeOptions"
+          size="sm"
+          :error="errorMessage"
+          full-width
+          @update:model-value="(val) => handleTypeChange({ target: { value: val } } as any)"
+        />
+      </div>
     </div>
 
-    <div v-if="errorMessage" class="error-message">
+    <div v-if="errorMessage" class="text-sm text-[#dc2626] text-right">
       {{ errorMessage }}
     </div>
 
     <!-- 重复类型分区 -->
-    <div v-if="modelValue.type !== 'None'" class="field-section">
+    <div v-if="modelValue.type !== 'None'" class="flex flex-col gap-3">
       <!-- Daily -->
-      <div v-if="modelValue.type === 'Daily'" class="field-row">
-        <label class="label">间隔天数</label>
-        <div class="input-row">
-          <span class="input-text">每</span>
-          <input
+      <div v-if="modelValue.type === 'Daily'" class="flex justify-between items-center mb-2 max-sm:flex-wrap">
+        <label class="text-sm font-medium text-[light-dark(#374151,#d1d5db)] mb-0 max-sm:shrink-0">间隔天数</label>
+        <div class="flex items-center gap-1 flex-1 max-sm:w-full">
+          <span class="text-sm text-[light-dark(#6b7280,#9ca3af)]">每</span>
+          <Input
             type="number"
-            min="1"
-            max="365"
-            class="input-field flex"
-            :value="getDailyInterval()"
-            @input="handleDailyIntervalChange"
-          >
-          <span class="input-text">天</span>
+            :model-value="getDailyInterval()"
+            size="sm"
+            class="flex-1"
+            @update:model-value="(val) => handleDailyIntervalChange({ target: { value: val } } as any)"
+          />
+          <span class="text-sm text-[light-dark(#6b7280,#9ca3af)]">天</span>
         </div>
       </div>
 
       <!-- Weekly -->
-      <div v-if="modelValue.type === 'Weekly'" class="field-section">
-        <div class="field-row">
-          <label class="label">间隔周数</label>
-          <div class="input-row">
-            <span class="input-text">每</span>
-            <input
+      <div v-if="modelValue.type === 'Weekly'" class="flex flex-col gap-3">
+        <div class="flex justify-between items-center mb-2 max-sm:flex-wrap">
+          <label class="text-sm font-medium text-[light-dark(#374151,#d1d5db)] mb-0 max-sm:shrink-0">间隔周数</label>
+          <div class="flex items-center gap-1 flex-1 max-sm:w-full">
+            <span class="text-sm text-[light-dark(#6b7280,#9ca3af)]">每</span>
+            <Input
               type="number"
-              min="1"
-              max="52"
-              class="input-field flex"
-              :value="getWeeklyInterval()"
-              @input="handleWeeklyIntervalChange"
-            >
-            <span class="input-text">周</span>
+              :model-value="getWeeklyInterval()"
+              size="sm"
+              class="flex-1"
+              @update:model-value="(val) => handleWeeklyIntervalChange({ target: { value: val } } as any)"
+            />
+            <span class="text-sm text-[light-dark(#6b7280,#9ca3af)]">周</span>
           </div>
         </div>
-        <div class="field-row">
-          <label class="label">重复星期</label>
-          <div class="grid-weekdays">
+        <div class="flex justify-between items-center mb-2 max-sm:flex-wrap">
+          <label class="text-sm font-medium text-[light-dark(#374151,#d1d5db)] mb-0 max-sm:shrink-0">重复星期</label>
+          <div class="grid grid-cols-7 gap-1">
             <button
               v-for="day in weekdayOptions"
               :key="day.value"
               type="button"
-              class="weekday-btn"
-              :class="{ selected: isWeekdaySelected(day.value) }"
+              class="min-w-10 min-h-10 flex justify-center items-center text-xs font-medium rounded-full transition-all duration-200" :class="[
+                isWeekdaySelected(day.value)
+                  ? 'bg-[#3b82f6] text-white'
+                  : 'bg-[light-dark(#f3f4f6,#374151)] text-[light-dark(#374151,#d1d5db)] hover:bg-[light-dark(#e5e7eb,#4b5563)]',
+              ]"
               @click="toggleWeekday(day.value)"
             >
               {{ day.label }}
@@ -374,219 +399,98 @@ watch(
       </div>
 
       <!-- Monthly -->
-      <div v-if="modelValue.type === 'Monthly'" class="field-section">
-        <div class="field-row">
-          <label class="label">间隔月数</label>
-          <div class="input-row">
-            <span class="input-text">每</span>
-            <input
+      <div v-if="modelValue.type === 'Monthly'" class="flex flex-col gap-3">
+        <div class="flex justify-between items-center mb-2 max-sm:flex-wrap">
+          <label class="text-sm font-medium text-[light-dark(#374151,#d1d5db)] mb-0 max-sm:shrink-0">间隔月数</label>
+          <div class="flex items-center gap-1 flex-1 max-sm:w-full">
+            <span class="text-sm text-[light-dark(#6b7280,#9ca3af)]">每</span>
+            <Input
               type="number"
-              min="1"
-              max="12"
-              class="input-field flex"
-              :value="getMonthlyInterval()"
-              @input="handleMonthlyIntervalChange"
-            >
-            <span class="input-text">月</span>
+              :model-value="getMonthlyInterval()"
+              size="sm"
+              class="flex-1"
+              @update:model-value="(val) => handleMonthlyIntervalChange({ target: { value: val } } as any)"
+            />
+            <span class="text-sm text-[light-dark(#6b7280,#9ca3af)]">月</span>
           </div>
         </div>
-        <div class="field-row">
-          <label class="label">日期</label>
-          <select
-            class="input-field"
-            :value="getMonthlyDay()"
-            @change="handleMonthlyDayChange"
-          >
-            <option v-for="day in 31" :key="day" :value="day">
-              {{ day }}
-            </option>
-            <option value="last">
-              每月最后一天
-            </option>
-          </select>
+        <div class="flex justify-between items-center mb-2 max-sm:flex-wrap">
+          <label class="text-sm font-medium text-[light-dark(#374151,#d1d5db)] mb-0 max-sm:shrink-0">日期</label>
+          <div class="w-2/3 max-sm:flex-1 max-sm:w-full">
+            <Select
+              :model-value="getMonthlyDay()"
+              :options="monthlyDayOptions"
+              size="sm"
+              full-width
+              @update:model-value="(val) => handleMonthlyDayChange({ target: { value: val } } as any)"
+            />
+          </div>
         </div>
       </div>
 
       <!-- Yearly -->
-      <div v-if="modelValue.type === 'Yearly'" class="field-section">
-        <div class="field-row">
-          <label class="label">间隔年数</label>
-          <div class="input-row">
-            <span class="input-text">每</span>
-            <input
+      <div v-if="modelValue.type === 'Yearly'" class="flex flex-col gap-3">
+        <div class="flex justify-between items-center mb-2 max-sm:flex-wrap">
+          <label class="text-sm font-medium text-[light-dark(#374151,#d1d5db)] mb-0 max-sm:shrink-0">间隔年数</label>
+          <div class="flex items-center gap-1 flex-1 max-sm:w-full">
+            <span class="text-sm text-[light-dark(#6b7280,#9ca3af)]">每</span>
+            <Input
               type="number"
-              min="1"
-              max="10"
-              class="input-field flex"
-              :value="getYearlyInterval()"
-              @input="handleYearlyIntervalChange"
-            >
-            <span class="input-text">年</span>
+              :model-value="getYearlyInterval()"
+              size="sm"
+              class="flex-1"
+              @update:model-value="(val) => handleYearlyIntervalChange({ target: { value: val } } as any)"
+            />
+            <span class="text-sm text-[light-dark(#6b7280,#9ca3af)]">年</span>
           </div>
         </div>
-        <div class="field-row">
-          <label class="label">月份</label>
-          <select
-            class="input-field"
-            :value="getYearlyMonth()"
-            @change="handleYearlyMonthChange"
-          >
-            <option v-for="(month, index) in monthOptions" :key="index + 1" :value="index + 1">
-              {{ month }}
-            </option>
-          </select>
+        <div class="flex justify-between items-center mb-2 max-sm:flex-wrap">
+          <label class="text-sm font-medium text-[light-dark(#374151,#d1d5db)] mb-0 max-sm:shrink-0">月份</label>
+          <div class="w-2/3 max-sm:flex-1 max-sm:w-full">
+            <Select
+              :model-value="getYearlyMonth()"
+              :options="yearlyMonthOptions"
+              size="sm"
+              full-width
+              @update:model-value="(val) => handleYearlyMonthChange({ target: { value: val } } as any)"
+            />
+          </div>
         </div>
-        <div class="field-row">
-          <label class="label">日期</label>
-          <select
-            class="input-field"
-            :value="getYearlyDay()"
-            @change="handleYearlyDayChange"
-          >
-            <option v-for="day in getMaxDaysInMonth()" :key="day" :value="day">
-              {{ day }}
-            </option>
-          </select>
+        <div class="flex justify-between items-center mb-2 max-sm:flex-wrap">
+          <label class="text-sm font-medium text-[light-dark(#374151,#d1d5db)] mb-0 max-sm:shrink-0">日期</label>
+          <div class="w-2/3 max-sm:flex-1 max-sm:w-full">
+            <Select
+              :model-value="getYearlyDay()"
+              :options="yearlyDayOptions"
+              size="sm"
+              full-width
+              @update:model-value="(val) => handleYearlyDayChange({ target: { value: val } } as any)"
+            />
+          </div>
         </div>
       </div>
 
       <!-- Custom -->
-      <div v-if="modelValue.type === 'Custom'" class="field-section">
-        <div class="field-row">
-          <label class="label">自定义描述</label>
-          <textarea
-            class="input-field"
-            rows="2"
-            maxlength="100"
-            :value="getCustomDescription()"
-            placeholder="请描述重复规则，如：每月第二个周一、每季度末等"
-            @input="handleCustomDescriptionChange"
-          />
-          <div class="text-counter">
-            {{ getCustomDescription()?.length || 0 }}/100
+      <div v-if="modelValue.type === 'Custom'" class="flex flex-col gap-3">
+        <div class="flex justify-between items-start mb-2 max-sm:flex-wrap">
+          <label class="text-sm font-medium text-[light-dark(#374151,#d1d5db)] mb-0 max-sm:shrink-0 pt-2">自定义描述</label>
+          <div class="w-2/3 max-sm:flex-1 max-sm:w-full">
+            <Textarea
+              :model-value="getCustomDescription()"
+              :rows="2"
+              :max-length="100"
+              placeholder="请描述重复规则，如：每月第二个周一、每季度末等"
+              show-count
+              full-width
+              @update:model-value="(val) => handleCustomDescriptionChange({ target: { value: val } } as any)"
+            />
           </div>
         </div>
       </div>
     </div>
 
-    <div v-if="helpText" class="help-text">
+    <div v-if="helpText" class="text-xs text-[light-dark(#6b7280,#9ca3af)] text-right mt-1">
       {{ helpText }}
     </div>
   </div>
 </template>
-
-<style scoped lang="postcss">
-/* 基础容器 */
-.repeat-period-selector {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-/* 通用行 */
-.field-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 0.5rem;
-}
-
-/* 标签 */
-.label {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: #374151;
-  margin-bottom: 0;
-}
-.required {
-  color: var(--color-primary);
-  margin-left: 0.25rem;
-}
-
-/* 输入框/选择框/文本域 */
-.input-field {
-  width: 66.6667%;
-  padding: 0.375rem 0.5rem;
-  font-size: 0.875rem;
-  border: 1px solid var(--color-base-300);
-  border-radius: 0.375rem;
-  transition: all 0.2s;
-  background-color: var(--color-base-100);
-  color: #374151;
-}
-.input-field:focus {
-  outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 2px rgba(59,130,246,0.5);
-}
-.input-error {
-  border-color: #ef4444;
-  box-shadow: 0 0 0 2px rgba(239,68,68,0.5);
-}
-
-/* 输入行内文本 */
-.input-row {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-}
-.input-text { font-size:0.875rem; color:#6b7280; }
-.flex { flex: 1; }
-
-/* 分区 */
-.field-section { display:flex; flex-direction: column; gap:0.75rem; }
-
-/* 错误提示和帮助文本 */
-.error-message { font-size:0.875rem; color:#dc2626; text-align:right; }
-.help-text, .text-counter { font-size:0.75rem; color:#6b7280; text-align:right; margin-top:0.25rem; }
-
-/* 星期按钮网格 */
-.grid-weekdays {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 0.25rem;
-}
-.weekday-btn {
-  min-width:2.5rem; min-height:2.5rem;
-  display:flex; justify-content:center; align-items:center;
-  font-size:0.75rem; font-weight:500;
-  color:#374151; background:#f3f4f6; border-radius:9999px;
-  transition: background-color 0.2s, color 0.2s;
-}
-.weekday-btn:hover { background:#e5e7eb; }
-.weekday-btn.selected { background:#3b82f6; color:#fff; }
-
-/* 响应式 */
-@media (max-width: 640px){
-  .field-row {
-    flex-wrap: wrap;
-  }
-
-  .label {
-    flex-shrink: 0;
-  }
-
-  .input-field {
-    flex: 1;
-    min-width: 0;
-    width: auto;
-  }
-
-  .grid-weekdays { gap:0.25rem; }
-  .weekday-btn { min-width:2.5rem; min-height:2.5rem; font-size:0.75rem; }
-}
-
-/* 暗黑模式 */
-@media (prefers-color-scheme: dark) {
-  .label { color:#d1d5db; }
-  .input-field { background:#1f2937; color:#d1d5db; border-color:#374151; }
-  .input-field:focus { border-color:#3b82f6; box-shadow:0 0 0 2px rgba(59,130,246,0.5);}
-  .input-error { border-color:#f87171; box-shadow:0 0 0 2px rgba(248,113,113,0.5);}
-  .input-text { color:#9ca3af; }
-  .error-message { color:#fca5a5; }
-  .help-text, .text-counter { color:#9ca3af; }
-  .weekday-btn { background:#374151; color:#d1d5db; }
-  .weekday-btn:hover { background:#4b5563; }
-  .weekday-btn.selected { background:#3b82f6; color:#fff; }
-}
-</style>

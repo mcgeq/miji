@@ -48,116 +48,32 @@ const labelStyle = computed(() => {
 
 <template>
   <div
-    class="form-row"
-    :class="{ 'form-row-full-width': fullWidth }"
+    class="flex justify-between mb-3 gap-4 max-md:gap-2"
+    :class="fullWidth ? 'flex-col items-start' : 'items-center max-md:items-center'"
   >
     <label
-      class="form-label"
+      class="text-sm font-medium text-[light-dark(#0f172a,white)] mb-0 flex-none w-24 min-w-[6rem] whitespace-nowrap text-left max-md:w-16 max-md:min-w-[4rem] max-md:text-[0.8rem]"
+      :class="fullWidth && 'w-full mb-2'"
       :style="labelStyle"
     >
       {{ label }}
-      <span v-if="required" class="required-mark">*</span>
-      <span v-if="optional" class="optional-mark">(可选)</span>
+      <span v-if="required" class="text-[var(--color-error)] ml-1">*</span>
+      <span v-if="optional" class="text-[light-dark(#6b7280,#94a3b8)] font-normal text-xs ml-1">(可选)</span>
     </label>
 
-    <div class="form-control-wrapper">
+    <div
+      class="flex-1 w-2/3 block max-md:flex-1 max-md:w-auto"
+      :class="fullWidth && 'w-full'"
+    >
       <slot />
 
-      <span v-if="error" class="form-error" role="alert">
+      <span v-if="error" class="block text-sm text-[var(--color-error)] text-right mt-1" role="alert">
         {{ error }}
       </span>
 
-      <span v-if="helpText && !error" class="form-help">
+      <span v-if="helpText && !error" class="block text-xs text-[light-dark(#6b7280,#94a3b8)] mt-1">
         {{ helpText }}
       </span>
     </div>
   </div>
 </template>
-
-<style scoped>
-.form-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 0.75rem;
-  gap: 1rem;
-}
-
-.form-row-full-width {
-  flex-direction: column;
-  align-items: flex-start;
-}
-
-.form-label {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--color-base-content);
-  margin-bottom: 0;
-  flex: 0 0 auto;
-  width: 6rem;
-  min-width: 6rem;
-  white-space: nowrap;
-  text-align: left;
-}
-
-.form-row-full-width .form-label {
-  width: 100%;
-  margin-bottom: 0.5rem;
-}
-
-.required-mark {
-  color: var(--color-error);
-  margin-left: 0.25rem;
-}
-
-.optional-mark {
-  color: var(--color-neutral);
-  font-weight: normal;
-  font-size: 0.75rem;
-  margin-left: 0.25rem;
-}
-
-.form-control-wrapper {
-  flex: 1;
-  width: 66%;
-  display: block;
-}
-
-.form-row-full-width .form-control-wrapper {
-  width: 100%;
-}
-
-.form-error {
-  display: block;
-  font-size: 0.875rem;
-  color: var(--color-error);
-  text-align: right;
-  margin-top: 0.25rem;
-}
-
-.form-help {
-  display: block;
-  font-size: 0.75rem;
-  color: var(--color-neutral);
-  margin-top: 0.25rem;
-}
-
-@media (max-width: 768px) {
-  .form-row {
-    flex-direction: row;
-    align-items: center;
-    gap: 0.5rem;
-  }
-
-  .form-label {
-    width: 4rem;
-    min-width: 4rem;
-    font-size: 0.8rem;
-  }
-
-  .form-control-wrapper {
-    flex: 1;
-    width: auto;
-  }
-}
-</style>

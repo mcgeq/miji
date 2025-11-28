@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { Disclosure, DisclosureButton, DisclosurePanel, Popover, PopoverButton, PopoverPanel, RadioGroup, RadioGroupOption } from '@headlessui/vue';
+import { ChevronDown } from 'lucide-vue-next';
 import { COLORS_MAP, EXTENDED_COLORS_MAP } from '@/constants/moneyConst';
 import type { DefaultColors } from '@/schema/common';
 
@@ -60,11 +62,8 @@ const colorCategories = computed(() => {
 const colors = computed(() => availableColors.value.map(v => v.code));
 
 // 响应式数据
-const isOpen = ref(false);
-const colorSelectorRef = ref<HTMLElement | null>(null);
 const activeCategory = ref('all');
 const customColor = ref('');
-const showCustomInput = ref(false);
 
 // 专业颜色选择器相关状态
 const hue = ref(0); // 色相 (0-360)
@@ -194,17 +193,12 @@ function getColorName(colorValue: string): string {
     : '自定义颜色';
 }
 
-// 切换下拉状态
-function toggleDropdown() {
-  isOpen.value = !isOpen.value;
-  if (isOpen.value) {
-    // 重置自定义颜色输入状态
-    showCustomInput.value = false;
-    customColor.value = '';
-    // 初始化专业颜色选择器
-    if (props.professional) {
-      initializeColor(props.modelValue);
-    }
+// 初始化面板（Popover 打开时调用）
+function initializePanel() {
+  customColor.value = '';
+  // 初始化专业颜色选择器
+  if (props.professional) {
+    initializeColor(props.modelValue);
   }
 }
 
@@ -279,15 +273,19 @@ function copyColorValue(value: string) {
 }
 
 // 选择颜色
-function selectColor(color: string) {
+function selectColor(color: string, close?: () => void) {
   emit('update:modelValue', color);
-  isOpen.value = false;
+  close?.();
 }
 
-// 切换颜色分类
-function switchCategory(category: string) {
-  activeCategory.value = category;
-}
+// 颜色分类选项
+const categoryOptions = computed(() => [
+  { value: 'all', label: locale.value === 'zh-CN' ? '全部' : 'All' },
+  { value: 'basic', label: locale.value === 'zh-CN' ? '基础色' : 'Basic' },
+  { value: 'extended', label: locale.value === 'zh-CN' ? '扩展色' : 'Extended' },
+  { value: 'light', label: locale.value === 'zh-CN' ? '柔和色' : 'Light' },
+  { value: 'special', label: locale.value === 'zh-CN' ? '特殊色' : 'Special' },
+]);
 
 // 获取当前分类的颜色
 function getCurrentCategoryColors() {
@@ -299,9 +297,9 @@ function getCurrentCategoryColors() {
 }
 
 // 处理自定义颜色输入
-function handleCustomColorInput() {
+function handleCustomColorInput(close?: () => void) {
   if (customColor.value && isValidHexColor(customColor.value)) {
-    selectColor(customColor.value);
+    selectColor(customColor.value, close);
   }
 }
 
@@ -310,16 +308,8 @@ function isValidHexColor(color: string): boolean {
   return /^#[a-f0-9]{6}$|^#[a-f0-9]{3}$/i.test(color);
 }
 
-// 切换自定义颜色输入显示
-function toggleCustomColorInput() {
-  showCustomInput.value = !showCustomInput.value;
-  if (showCustomInput.value) {
-    customColor.value = props.modelValue;
-  }
-}
-
 // 生成随机颜色
-function generateRandomColor() {
+function generateRandomColor(close?: () => void) {
   if (props.randomColorMode === 'full') {
     // 完全随机（0-F）
     const chars = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'];
@@ -337,30 +327,7 @@ function generateRandomColor() {
     const hex = rgbToHex(rgb.r, rgb.g, rgb.b);
     emit('update:modelValue', hex);
   }
-  isOpen.value = false;
-}
-
-// 点击外部关闭下拉
-function handleClickOutside(event: Event) {
-  if (
-    colorSelectorRef.value
-    && !colorSelectorRef.value.contains(event.target as Node)
-  ) {
-    isOpen.value = false;
-    showCustomInput.value = false;
-  }
-}
-
-// 获取分类名称
-function getCategoryName(category: string): string {
-  const categoryNames = {
-    all: locale.value === 'zh-CN' ? '全部' : 'All',
-    basic: locale.value === 'zh-CN' ? '基础色' : 'Basic',
-    extended: locale.value === 'zh-CN' ? '扩展色' : 'Extended',
-    light: locale.value === 'zh-CN' ? '柔和色' : 'Light',
-    special: locale.value === 'zh-CN' ? '特殊色' : 'Special',
-  };
-  return categoryNames[category as keyof typeof categoryNames] || category;
+  close?.();
 }
 
 // 计算宽度类
@@ -376,775 +343,251 @@ const widthClass = computed(() => {
   };
   return widthMap[props.width] || 'w-two-thirds';
 });
-
-// 监听 modelValue 变化，更新自定义颜色输入框
-watch(() => props.modelValue, newValue => {
-  if (showCustomInput.value) {
-    customColor.value = newValue;
-  }
-});
-
-// 生命周期钩子
-onMounted(() => {
-  document.addEventListener('mousedown', handleClickOutside);
-});
-
-onUnmounted(() => {
-  document.removeEventListener('mousedown', handleClickOutside);
-});
 </script>
 
 <template>
-  <div ref="colorSelectorRef" class="color-selector" :class="widthClass">
+  <Popover class="relative" :class="widthClass">
     <!-- 触发按钮 -->
-    <button
-      type="button"
-      class="color-selector__trigger"
-      @click="toggleDropdown"
+    <PopoverButton
+      class="flex items-center justify-between w-full px-3 py-2 border rounded-lg bg-[light-dark(white,#1e293b)] border-[light-dark(#e5e7eb,#334155)] transition-all duration-200 cursor-pointer hover:border-[light-dark(#d1d5db,#475569)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:ring-offset-2"
+      @click="initializePanel"
     >
-      <div class="color-selector__preview">
+      <div class="flex items-center gap-2">
         <div
-          class="color-selector__circle"
+          class="w-5 h-5 rounded-full border-2 border-[light-dark(#e5e7eb,#334155)]"
           :style="{ backgroundColor: modelValue }"
         />
-        <span class="color-selector__label">{{ getColorName(modelValue) }}</span>
+        <span class="text-sm text-[light-dark(#0f172a,white)]">{{ getColorName(modelValue) }}</span>
       </div>
-      <svg
-        class="color-selector__arrow"
-        :class="{ rotate: isOpen }"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-      </svg>
-    </button>
+      <ChevronDown class="w-4 h-4 text-[light-dark(#9ca3af,#64748b)] transition-transform duration-200 ui-open:rotate-180" />
+    </PopoverButton>
 
     <!-- 颜色选择下拉 -->
-    <div
-      v-if="isOpen"
-      class="color-selector__dropdown"
-      :class="{ professional }"
+    <transition
+      enter-active-class="transition duration-100 ease-out"
+      enter-from-class="transform scale-95 opacity-0"
+      leave-active-class="transition duration-75 ease-in"
+      leave-to-class="transform scale-95 opacity-0"
     >
-      <!-- 专业颜色选择器 -->
-      <div v-if="professional" class="color-selector__professional">
-        <div class="color-selector__professional-left">
-          <!-- 颜色预览 -->
-          <div class="color-selector__preview-large">
+      <PopoverPanel
+        v-slot="{ close }"
+        class="absolute top-full left-0 right-0 mt-1 p-3 border rounded-lg bg-[light-dark(white,#1e293b)] border-[light-dark(#e5e7eb,#334155)] shadow-lg z-50 focus:outline-none"
+        :class="{ 'w-[400px] p-4': professional }"
+      >
+        <!-- 专业颜色选择器 -->
+        <div v-if="professional" class="flex gap-4">
+          <div class="flex-1 flex flex-col gap-4">
+            <!-- 颜色预览 -->
+            <div class="w-full h-[60px] border border-[light-dark(#e5e7eb,#334155)] rounded-lg overflow-hidden">
+              <div
+                class="w-full h-full"
+                :style="{ backgroundColor: hex }"
+              />
+            </div>
+            <!-- 十六进制输入 -->
+            <div class="flex flex-col gap-2">
+              <label class="text-sm font-medium text-[light-dark(#0f172a,white)]">
+                {{ locale === 'zh-CN' ? '十六进制' : 'Hexadecimal' }}
+              </label>
+              <div class="flex gap-2">
+                <input
+                  v-model="hex"
+                  type="text"
+                  class="flex-1 px-2 py-2 text-sm text-[light-dark(#0f172a,white)] bg-[light-dark(white,#1e293b)] border border-[light-dark(#e5e7eb,#334155)] rounded-md outline-none transition-all focus:border-[var(--color-primary)] focus:shadow-[0_0_0_1px_var(--color-primary)]"
+                  @blur="handleHexInput"
+                  @keyup.enter="handleHexInput"
+                >
+                <button
+                  type="button"
+                  class="px-2 py-2 text-[light-dark(#9ca3af,#64748b)] bg-transparent border border-[light-dark(#e5e7eb,#334155)] rounded-md cursor-pointer transition-all hover:text-[light-dark(#0f172a,white)] hover:bg-[light-dark(#f3f4f6,#334155)]"
+                  @click="copyColorValue(hex)"
+                >
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <!-- RGB 输入 -->
+            <div class="flex flex-col gap-2">
+              <label class="text-sm font-medium text-[light-dark(#0f172a,white)]">RGB</label>
+              <div class="flex gap-1">
+                <input
+                  v-model.number="rgb.r"
+                  type="number"
+                  min="0"
+                  max="255"
+                  class="flex-1 px-2 py-2 text-sm text-[light-dark(#0f172a,white)] bg-[light-dark(white,#1e293b)] border border-[light-dark(#e5e7eb,#334155)] rounded-md outline-none transition-all focus:border-[var(--color-primary)] focus:shadow-[0_0_0_1px_var(--color-primary)]"
+                  @blur="handleRgbInput"
+                  @keyup.enter="handleRgbInput"
+                >
+                <input
+                  v-model.number="rgb.g"
+                  type="number"
+                  min="0"
+                  max="255"
+                  class="flex-1 px-2 py-2 text-sm text-[light-dark(#0f172a,white)] bg-[light-dark(white,#1e293b)] border border-[light-dark(#e5e7eb,#334155)] rounded-md outline-none transition-all focus:border-[var(--color-primary)] focus:shadow-[0_0_0_1px_var(--color-primary)]"
+                  @blur="handleRgbInput"
+                  @keyup.enter="handleRgbInput"
+                >
+                <input
+                  v-model.number="rgb.b"
+                  type="number"
+                  min="0"
+                  max="255"
+                  class="flex-1 px-2 py-2 text-sm text-[light-dark(#0f172a,white)] bg-[light-dark(white,#1e293b)] border border-[light-dark(#e5e7eb,#334155)] rounded-md outline-none transition-all focus:border-[var(--color-primary)] focus:shadow-[0_0_0_1px_var(--color-primary)]"
+                  @blur="handleRgbInput"
+                  @keyup.enter="handleRgbInput"
+                >
+                <button
+                  type="button"
+                  class="px-2 py-2 text-[light-dark(#9ca3af,#64748b)] bg-transparent border border-[light-dark(#e5e7eb,#334155)] rounded-md cursor-pointer transition-all hover:text-[light-dark(#0f172a,white)] hover:bg-[light-dark(#f3f4f6,#334155)]"
+                  @click="copyColorValue(`${rgb.r}, ${rgb.g}, ${rgb.b}`)"
+                >
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <!-- 基本颜色 -->
+            <div class="flex flex-col gap-2">
+              <label class="text-sm font-medium text-[light-dark(#0f172a,white)]">
+                {{ locale === 'zh-CN' ? '基本颜色' : 'Basic Colors' }}
+              </label>
+              <div class="grid grid-cols-9 gap-1 max-sm:gap-[0.15rem]">
+                <button
+                  v-for="color in ['#000000', '#CECECE', '#FF0000', '#FFA500', '#FFFF00', '#00FF00', '#00FFFF', '#0000FF', '#800080', '#FFFFFF', '#808080', '#8B4513', '#FFC0CB', '#F5DEB3', '#00FF00', '#87CEEB', '#FFFFFF', '#DDA0DD']"
+                  :key="color"
+                  type="button"
+                  class="w-6 h-6 rounded border-2 border-[light-dark(#e5e7eb,#334155)] cursor-pointer transition-all hover:scale-110 hover:border-[light-dark(#0f172a,white)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:ring-offset-1 max-sm:w-5 max-sm:h-5 max-sm:border-[1.5px]"
+                  :class="{ 'border-[var(--color-primary)]! shadow-[0_0_0_2px_light-dark(#dbeafe,#1e3a8a)]': hex === color }"
+                  :style="{ backgroundColor: color }"
+                  @click="selectColor(color, close)"
+                />
+              </div>
+            </div>
+          </div>
+          <div class="flex-1 flex flex-col gap-2">
+            <!-- 颜色渐变选择器 -->
             <div
-              class="color-selector__preview-swatch"
-              :style="{ backgroundColor: hex }"
-            />
-          </div>
-          <!-- 十六进制输入 -->
-          <div class="color-selector__input-group">
-            <label class="color-selector__input-label">
-              {{ locale === 'zh-CN' ? '十六进制' : 'Hexadecimal' }}
-            </label>
-            <div class="color-selector__input-wrapper">
-              <input
-                v-model="hex"
-                type="text"
-                class="color-selector__hex-input-pro"
-                @blur="handleHexInput"
-                @keyup.enter="handleHexInput"
-              >
-              <button
-                type="button"
-                class="color-selector__copy-btn"
-                @click="copyColorValue(hex)"
-              >
-                <svg class="color-selector__copy-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                </svg>
-              </button>
+              class="relative w-[200px] h-[200px] rounded-lg cursor-crosshair overflow-hidden"
+              :style="{ backgroundColor: `hsl(${hue}, 100%, 50%)` }"
+              @mousedown="handleSaturationMouseDown"
+            >
+              <div class="absolute inset-0 bg-gradient-to-r from-white/100 to-white/0" />
+              <div class="absolute inset-0 bg-gradient-to-b from-black/0 to-black/100" />
+              <div
+                class="absolute w-3 h-3 border-2 border-white rounded-full -translate-x-1/2 -translate-y-1/2 shadow-[0_0_0_1px_rgba(0,0,0,0.3)] pointer-events-none"
+                :style="{
+                  left: `${saturation}%`,
+                  top: `${100 - lightness}%`,
+                }"
+              />
             </div>
-          </div>
-          <!-- RGB 输入 -->
-          <div class="color-selector__input-group">
-            <label class="color-selector__input-label">RGB</label>
-            <div class="color-selector__rgb-inputs">
-              <input
-                v-model.number="rgb.r"
-                type="number"
-                min="0"
-                max="255"
-                class="color-selector__rgb-input"
-                @blur="handleRgbInput"
-                @keyup.enter="handleRgbInput"
-              >
-              <input
-                v-model.number="rgb.g"
-                type="number"
-                min="0"
-                max="255"
-                class="color-selector__rgb-input"
-                @blur="handleRgbInput"
-                @keyup.enter="handleRgbInput"
-              >
-              <input
-                v-model.number="rgb.b"
-                type="number"
-                min="0"
-                max="255"
-                class="color-selector__rgb-input"
-                @blur="handleRgbInput"
-                @keyup.enter="handleRgbInput"
-              >
-              <button
-                type="button"
-                class="color-selector__copy-btn"
-                @click="copyColorValue(`${rgb.r}, ${rgb.g}, ${rgb.b}`)"
-              >
-                <svg class="color-selector__copy-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                </svg>
-              </button>
-            </div>
-          </div>
-          <!-- 基本颜色 -->
-          <div class="color-selector__basic-colors">
-            <label class="color-selector__input-label">
-              {{ locale === 'zh-CN' ? '基本颜色' : 'Basic Colors' }}
-            </label>
-            <div class="color-selector__basic-grid">
-              <button
-                v-for="color in ['#000000', '#CECECE', '#FF0000', '#FFA500', '#FFFF00', '#00FF00', '#00FFFF', '#0000FF', '#800080', '#FFFFFF', '#808080', '#8B4513', '#FFC0CB', '#F5DEB3', '#00FF00', '#87CEEB', '#FFFFFF', '#DDA0DD']"
-                :key="color"
-                type="button"
-                class="color-selector__basic-color"
-                :class="{ active: hex === color }"
-                :style="{ backgroundColor: color }"
-                @click="selectColor(color)"
+            <!-- 色相滑块 -->
+            <div
+              class="relative w-5 h-[200px] bg-gradient-to-b from-[#ff0000] via-[#ffff00_16.66%] via-[#00ff00_33.33%] via-[#00ffff_50%] via-[#0000ff_66.66%] via-[#ff00ff_83.33%] to-[#ff0000] rounded cursor-pointer"
+              @mousedown="handleHueMouseDown"
+            >
+              <div
+                class="absolute -left-[2px] -right-[2px] h-1 bg-white border border-black/30 rounded-sm -translate-y-1/2 pointer-events-none"
+                :style="{ top: `${(hue / 360) * 100}%` }"
               />
             </div>
           </div>
         </div>
-        <div class="color-selector__professional-right">
-          <!-- 颜色渐变选择器 -->
-          <div
-            class="color-selector__gradient-area"
-            :style="{ backgroundColor: `hsl(${hue}, 100%, 50%)` }"
-            @mousedown="handleSaturationMouseDown"
-          >
-            <div class="color-selector__gradient-white" />
-            <div class="color-selector__gradient-black" />
-            <div
-              class="color-selector__gradient-handle"
-              :style="{
-                left: `${saturation}%`,
-                top: `${100 - lightness}%`,
-              }"
-            />
-          </div>
-          <!-- 色相滑块 -->
-          <div
-            class="color-selector__hue-slider"
-            @mousedown="handleHueMouseDown"
-          >
-            <div
-              class="color-selector__hue-handle"
-              :style="{ top: `${(hue / 360) * 100}%` }"
-            />
-          </div>
-        </div>
-      </div>
-      <!-- 传统颜色选择器 -->
-      <div v-else>
-        <!-- 随机颜色按钮 -->
-        <div v-if="showRandomButton" class="color-selector__actions">
-          <button
-            type="button"
-            class="color-selector__random-btn"
-            @click="generateRandomColor"
-          >
-            <svg class="color-selector__random-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-            </svg>
-            {{ locale === 'zh-CN' ? '随机颜色' : 'Random Color' }}
-          </button>
-        </div>
-
-        <!-- 颜色分类标签 -->
-        <div v-if="showCategories && extended" class="color-selector__categories">
-          <button
-            v-for="(_, category) in colorCategories"
-            :key="category"
-            type="button"
-            class="color-selector__category-tab"
-            :class="{ active: activeCategory === category }"
-            @click="switchCategory(category)"
-          >
-            {{ getCategoryName(category) }}
-          </button>
-        </div>
-
-        <!-- 颜色网格 -->
-        <div class="color-selector__grid" :class="{ 'extended-grid': extended }">
-          <button
-            v-for="color in getCurrentCategoryColors()"
-            :key="color"
-            type="button"
-            class="color-selector__option"
-            :class="{ active: modelValue === color }"
-            :style="{ backgroundColor: color }"
-            :title="getColorName(color)"
-            @click="selectColor(color)"
-          />
-        </div>
-
-        <!-- 自定义颜色选择器 -->
-        <div v-if="showCustomColor" class="color-selector__custom">
-          <button
-            type="button"
-            class="color-selector__custom-toggle"
-            @click="toggleCustomColorInput"
-          >
-            <svg class="color-selector__custom-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-            </svg>
-            {{ locale === 'zh-CN' ? '自定义颜色' : 'Custom Color' }}
-          </button>
-          <div v-if="showCustomInput" class="color-selector__custom-input">
-            <input
-              v-model="customColor"
-              type="text"
-              class="color-selector__hex-input"
-              placeholder="#000000"
-              @keyup.enter="handleCustomColorInput"
-            >
+        <!-- 传统颜色选择器 -->
+        <div v-else>
+          <!-- 随机颜色按钮 -->
+          <div v-if="showRandomButton" class="mb-3 pb-3 border-b border-[light-dark(#e5e7eb,#334155)]">
             <button
               type="button"
-              class="color-selector__apply-btn"
-              :disabled="!isValidHexColor(customColor)"
-              @click="handleCustomColorInput"
+              class="flex items-center justify-center gap-2 w-full px-2 py-2 text-sm text-[var(--color-primary)] bg-transparent border border-[light-dark(#dbeafe,#1e3a8a)] rounded-md cursor-pointer transition-all hover:bg-[light-dark(#dbeafe,#1e3a8a)] hover:border-[var(--color-primary)]"
+              @click="generateRandomColor(close)"
             >
-              {{ locale === 'zh-CN' ? '应用' : 'Apply' }}
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              {{ locale === 'zh-CN' ? '随机颜色' : 'Random Color' }}
             </button>
           </div>
+
+          <!-- 颜色分类标签 -->
+          <RadioGroup v-if="showCategories && extended" v-model="activeCategory" class="mb-3 pb-2 border-b border-[light-dark(#e5e7eb,#334155)]">
+            <div class="flex gap-1">
+              <RadioGroupOption
+                v-for="option in categoryOptions"
+                :key="option.value"
+                v-slot="{ checked }"
+                :value="option.value"
+                as="template"
+              >
+                <button
+                  type="button"
+                  class="px-2 py-1 text-xs border rounded cursor-pointer transition-all focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:ring-offset-1"
+                  :class="checked
+                    ? 'text-[light-dark(#1e3a8a,#dbeafe)] bg-[light-dark(#dbeafe,#1e3a8a)] border-[var(--color-primary)]'
+                    : 'text-[light-dark(#9ca3af,#64748b)] bg-transparent border-transparent hover:text-[light-dark(#0f172a,white)] hover:bg-[light-dark(#f3f4f6,#334155)]'"
+                >
+                  {{ option.label }}
+                </button>
+              </RadioGroupOption>
+            </div>
+          </RadioGroup>
+
+          <!-- 颜色网格 -->
+          <div class="grid gap-2 max-sm:gap-1" :class="extended ? 'grid-cols-6' : 'grid-cols-5'">
+            <button
+              v-for="color in getCurrentCategoryColors()"
+              :key="color"
+              type="button"
+              class="w-8 h-8 rounded-full border-2 border-[#d1d5db] cursor-pointer transition-all hover:scale-110 hover:border-[light-dark(#0f172a,white)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:ring-offset-1 max-sm:w-6 max-sm:h-6 max-sm:border-[1.5px]"
+              :class="{ 'border-[var(--color-primary)]! shadow-[0_4px_6px_rgba(0,0,0,0.15)] shadow-[0_0_0_2px_light-dark(#dbeafe,#1e3a8a)]!': modelValue === color }"
+              :style="{ backgroundColor: color }"
+              :title="getColorName(color)"
+              @click="selectColor(color, close)"
+            />
+          </div>
+
+          <!-- 自定义颜色选择器 -->
+          <Disclosure v-if="showCustomColor" v-slot="{ open }" as="div" class="mt-3 pt-3 border-t border-[light-dark(#e5e7eb,#334155)]">
+            <DisclosureButton
+              class="flex items-center gap-2 w-full px-2 py-2 text-sm text-[light-dark(#9ca3af,#64748b)] bg-transparent border border-dashed border-[light-dark(#e5e7eb,#334155)] rounded-md cursor-pointer transition-all hover:text-[light-dark(#0f172a,white)] hover:border-[light-dark(#0f172a,white)] hover:bg-[light-dark(#f3f4f6,#334155)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:ring-offset-1"
+              @click="customColor = open ? '' : modelValue"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+              </svg>
+              {{ locale === 'zh-CN' ? '自定义颜色' : 'Custom Color' }}
+            </DisclosureButton>
+            <transition
+              enter-active-class="transition duration-100 ease-out"
+              enter-from-class="transform scale-95 opacity-0"
+              leave-active-class="transition duration-75 ease-in"
+              leave-to-class="transform scale-95 opacity-0"
+            >
+              <DisclosurePanel class="flex gap-2 mt-2">
+                <input
+                  v-model="customColor"
+                  type="text"
+                  class="flex-1 px-2 py-1.5 text-sm text-[light-dark(#0f172a,white)] bg-[light-dark(white,#1e293b)] border border-[light-dark(#e5e7eb,#334155)] rounded-md outline-none transition-all focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)] focus:ring-offset-1 invalid:border-[var(--color-error)]"
+                  placeholder="#000000"
+                  @keyup.enter="handleCustomColorInput(close)"
+                >
+                <button
+                  type="button"
+                  class="px-3 py-1.5 text-sm text-[light-dark(white,white)] bg-[var(--color-primary)] border-none rounded-md cursor-pointer transition-colors hover:bg-[var(--color-primary-hover)] disabled:bg-[light-dark(#e5e7eb,#334155)] disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:ring-offset-1"
+                  :disabled="!isValidHexColor(customColor)"
+                  @click="handleCustomColorInput(close)"
+                >
+                  {{ locale === 'zh-CN' ? '应用' : 'Apply' }}
+                </button>
+              </DisclosurePanel>
+            </transition>
+          </Disclosure>
         </div>
-      </div>
-    </div>
-  </div>
+      </PopoverPanel>
+    </transition>
+  </Popover>
 </template>
-
-<style scoped>
-.color-selector {
-  position: relative;
-}
-
-/* 当在 FormRow 中使用 width="full" 时，填充整个宽度 */
-.color-selector.w-full {
-  width: 100%;
-}
-
-.color-selector.w-two-thirds {
-  width: 66.666%;
-}
-
-.color-selector.w-half {
-  width: 50%;
-}
-
-.color-selector.w-third {
-  width: 33.333%;
-}
-
-/* 触发按钮 */
-.color-selector__trigger {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  padding: 0.5rem 0.75rem; /* px-3 py-2 */
-  border: 1px solid var(--color-base-300);
-  border-radius: 0.5rem; /* rounded-lg */
-  background-color: var(--color-base-100);
-  transition: all 0.2s ease-in-out;
-  cursor: pointer;
-}
-
-.color-selector__trigger:hover {
-  border-color: var(--color-base-300);
-}
-
-.color-selector__trigger:focus {
-  outline: none;
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 2px var(--color-primary-soft);
-}
-
-/* 左侧预览 */
-.color-selector__preview {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.color-selector__circle {
-  width: 1.25rem;  /* h-5 */
-  height: 1.25rem; /* w-5 */
-  border-radius: 9999px;
-  border: 2px solid var(--color-base-300);
-}
-
-.color-selector__label {
-  font-size: 0.875rem; /* text-sm */
-  color: var(--color-base-content);
-}
-
-/* 下拉箭头 */
-.color-selector__arrow {
-  width: 1rem;
-  height: 1rem;
-  color: var(--color-base-300);
-  transition: transform 0.2s ease-in-out;
-}
-
-.color-selector__arrow.rotate {
-  transform: rotate(180deg);
-}
-
-/* 下拉容器 */
-.color-selector__dropdown {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  margin-top: 0.25rem; /* mt-1 */
-  padding: 0.75rem; /* p-3 */
-  border: 1px solid var(--color-base-300);
-  border-radius: 0.5rem;
-  background-color: var(--color-base-100);
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* shadow-lg */
-  z-index: 50;
-}
-
-.color-selector__dropdown.professional {
-  width: 400px;
-  padding: 1rem;
-}
-
-/* 颜色分类标签 */
-.color-selector__categories {
-  display: flex;
-  gap: 0.25rem;
-  margin-bottom: 0.75rem;
-  padding-bottom: 0.5rem;
-  border-bottom: 1px solid var(--color-base-300);
-}
-
-.color-selector__category-tab {
-  padding: 0.25rem 0.5rem;
-  font-size: 0.75rem;
-  color: var(--color-base-300);
-  background-color: transparent;
-  border: 1px solid transparent;
-  border-radius: 0.25rem;
-  cursor: pointer;
-  transition: all 0.2s ease-in-out;
-}
-
-.color-selector__category-tab:hover {
-  color: var(--color-base-content);
-  background-color: var(--color-base-200);
-}
-
-.color-selector__category-tab.active {
-  color: var(--color-primary-content);
-  background-color: var(--color-primary-soft);
-  border-color: var(--color-primary);
-}
-
-/* 网格 */
-.color-selector__grid {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 0.5rem;
-}
-
-.color-selector__grid.extended-grid {
-  grid-template-columns: repeat(6, minmax(0, 1fr));
-}
-
-/* 颜色按钮 */
-.color-selector__option {
-  width: 2rem;  /* h-8 */
-  height: 2rem; /* w-8 */
-  border-radius: 9999px;
-  border: 2px solid #d1d5db; /* gray-300 */
-  transition: all 0.2s ease-in-out;
-  cursor: pointer;
-}
-
-/* 移动端适配 */
-@media (max-width: 640px) {
-  .color-selector__grid {
-    gap: 0.25rem;
-  }
-
-  .color-selector__option {
-    width: 1.5rem;  /* 移动端缩小 */
-    height: 1.5rem;
-    border-width: 1.5px;
-  }
-
-  .color-selector__grid.extended-grid {
-    grid-template-columns: repeat(6, minmax(0, 1fr));
-  }
-}
-
-.color-selector__option:hover {
-  transform: scale(1.1);
-  border-color: var(--color-base-content);
-}
-
-.color-selector__option:focus {
-  outline: none;
-}
-
-.color-selector__option.active {
-  border-color: var(--color-primary);
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
-  box-shadow: 0 0 0 2px var(--color-primary-soft);
-}
-
-/* 随机颜色按钮 */
-.color-selector__actions {
-  margin-bottom: 0.75rem;
-  padding-bottom: 0.75rem;
-  border-bottom: 1px solid var(--color-base-300);
-}
-
-.color-selector__random-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  width: 100%;
-  padding: 0.5rem;
-  font-size: 0.875rem;
-  color: var(--color-primary);
-  background-color: transparent;
-  border: 1px solid var(--color-primary-soft);
-  border-radius: 0.375rem;
-  cursor: pointer;
-  transition: all 0.2s ease-in-out;
-}
-
-.color-selector__random-btn:hover {
-  background-color: var(--color-primary-soft);
-  border-color: var(--color-primary);
-}
-
-.color-selector__random-icon {
-  width: 1rem;
-  height: 1rem;
-}
-
-/* 自定义颜色选择器 */
-.color-selector__custom {
-  margin-top: 0.75rem;
-  padding-top: 0.75rem;
-  border-top: 1px solid var(--color-base-300);
-}
-
-.color-selector__custom-toggle {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  width: 100%;
-  padding: 0.5rem;
-  font-size: 0.875rem;
-  color: var(--color-base-300);
-  background-color: transparent;
-  border: 1px dashed var(--color-base-300);
-  border-radius: 0.375rem;
-  cursor: pointer;
-  transition: all 0.2s ease-in-out;
-}
-
-.color-selector__custom-toggle:hover {
-  color: var(--color-base-content);
-  border-color: var(--color-base-content);
-  background-color: var(--color-base-200);
-}
-
-.color-selector__custom-icon {
-  width: 1rem;
-  height: 1rem;
-}
-
-.color-selector__custom-input {
-  display: flex;
-  gap: 0.5rem;
-  margin-top: 0.5rem;
-}
-
-.color-selector__hex-input {
-  flex: 1;
-  padding: 0.375rem 0.5rem;
-  font-size: 0.875rem;
-  color: var(--color-base-content);
-  background-color: var(--color-base-100);
-  border: 1px solid var(--color-base-300);
-  border-radius: 0.375rem;
-  outline: none;
-  transition: border-color 0.2s ease-in-out;
-}
-
-.color-selector__hex-input:focus {
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 1px var(--color-primary);
-}
-
-.color-selector__hex-input:invalid {
-  border-color: var(--color-error);
-}
-
-.color-selector__apply-btn {
-  padding: 0.375rem 0.75rem;
-  font-size: 0.875rem;
-  color: var(--color-primary-content);
-  background-color: var(--color-primary);
-  border: none;
-  border-radius: 0.375rem;
-  cursor: pointer;
-  transition: background-color 0.2s ease-in-out;
-}
-
-.color-selector__apply-btn:hover:not(:disabled) {
-  background-color: var(--color-primary-hover);
-}
-
-.color-selector__apply-btn:disabled {
-  background-color: var(--color-base-300);
-  cursor: not-allowed;
-}
-
-/* 专业颜色选择器样式 */
-.color-selector__professional {
-  display: flex;
-  gap: 1rem;
-}
-
-.color-selector__professional-left {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.color-selector__professional-right {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-/* 颜色预览 */
-.color-selector__preview-large {
-  width: 100%;
-  height: 60px;
-  border: 1px solid var(--color-base-300);
-  border-radius: 0.5rem;
-  overflow: hidden;
-}
-
-.color-selector__preview-swatch {
-  width: 100%;
-  height: 100%;
-}
-
-/* 输入组 */
-.color-selector__input-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.color-selector__input-label {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--color-base-content);
-}
-
-.color-selector__input-wrapper {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.color-selector__hex-input-pro {
-  flex: 1;
-  padding: 0.5rem;
-  font-size: 0.875rem;
-  color: var(--color-base-content);
-  background-color: var(--color-base-100);
-  border: 1px solid var(--color-base-300);
-  border-radius: 0.375rem;
-  outline: none;
-  transition: border-color 0.2s ease-in-out;
-}
-
-.color-selector__hex-input-pro:focus {
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 1px var(--color-primary);
-}
-
-.color-selector__copy-btn {
-  padding: 0.5rem;
-  color: var(--color-base-300);
-  background-color: transparent;
-  border: 1px solid var(--color-base-300);
-  border-radius: 0.375rem;
-  cursor: pointer;
-  transition: all 0.2s ease-in-out;
-}
-
-.color-selector__copy-btn:hover {
-  color: var(--color-base-content);
-  background-color: var(--color-base-200);
-}
-
-.color-selector__copy-icon {
-  width: 1rem;
-  height: 1rem;
-}
-
-/* RGB 输入 */
-.color-selector__rgb-inputs {
-  display: flex;
-  gap: 0.25rem;
-}
-
-.color-selector__rgb-input {
-  flex: 1;
-  padding: 0.5rem;
-  font-size: 0.875rem;
-  color: var(--color-base-content);
-  background-color: var(--color-base-100);
-  border: 1px solid var(--color-base-300);
-  border-radius: 0.375rem;
-  outline: none;
-  transition: border-color 0.2s ease-in-out;
-}
-
-.color-selector__rgb-input:focus {
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 1px var(--color-primary);
-}
-
-/* 基本颜色 */
-.color-selector__basic-colors {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.color-selector__basic-grid {
-  display: grid;
-  grid-template-columns: repeat(9, 1fr);
-  gap: 0.25rem;
-}
-
-.color-selector__basic-color {
-  width: 1.5rem;
-  height: 1.5rem;
-  border-radius: 0.25rem;
-  border: 2px solid var(--color-base-300);
-  cursor: pointer;
-  transition: all 0.2s ease-in-out;
-}
-
-/* 移动端基本颜色适配 */
-@media (max-width: 640px) {
-  .color-selector__basic-grid {
-    gap: 0.15rem;
-  }
-
-  .color-selector__basic-color {
-    width: 1.25rem;
-    height: 1.25rem;
-    border-width: 1.5px;
-  }
-}
-
-.color-selector__basic-color:hover {
-  transform: scale(1.1);
-  border-color: var(--color-base-content);
-}
-
-.color-selector__basic-color.active {
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 2px var(--color-primary-soft);
-}
-
-/* 颜色渐变选择器 */
-.color-selector__gradient-area {
-  position: relative;
-  width: 200px;
-  height: 200px;
-  border-radius: 0.5rem;
-  cursor: crosshair;
-  overflow: hidden;
-}
-
-.color-selector__gradient-white {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(to right, rgba(255,255,255,1), rgba(255,255,255,0));
-}
-
-.color-selector__gradient-black {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(to bottom, rgba(0, 0, 0, 0), rgba(0, 0, 0, 1));
-}
-
-.color-selector__gradient-handle {
-  position: absolute;
-  width: 12px;
-  height: 12px;
-  border: 2px solid #fff;
-  border-radius: 50%;
-  transform: translate(-50%, -50%);
-  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.3);
-  pointer-events: none;
-}
-
-/* 色相滑块 */
-.color-selector__hue-slider {
-  position: relative;
-  width: 20px;
-  height: 200px;
-  background: linear-gradient(to bottom,
-    #ff0000 0%,
-    #ffff00 16.66%,
-    #00ff00 33.33%,
-    #00ffff 50%,
-    #0000ff 66.66%,
-    #ff00ff 83.33%,
-    #ff0000 100%
-  );
-  border-radius: 0.25rem;
-  cursor: pointer;
-}
-
-.color-selector__hue-handle {
-  position: absolute;
-  left: -2px;
-  right: -2px;
-  height: 4px;
-  background-color: #fff;
-  border: 1px solid rgba(0, 0, 0, 0.3);
-  border-radius: 2px;
-  transform: translateY(-50%);
-  pointer-events: none;
-}
-</style>
