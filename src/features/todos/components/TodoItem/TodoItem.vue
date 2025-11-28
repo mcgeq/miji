@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import PopupWrapper from '@/components/common/PopupWrapper.vue';
 import PriorityBadge from '@/components/common/PriorityBadge.vue';
-import { Descriptions } from '@/components/ui';
+import { Descriptions, Modal } from '@/components/ui';
 import ProjectsView from '@/features/projects/views/ProjectsView.vue';
 import TagsView from '@/features/tags/views/TagsView.vue';
 import { StatusSchema } from '@/schema/common';
@@ -345,15 +344,39 @@ function handleMouseLeave() {
     />
 
     <!-- Popups -->
-    <PopupWrapper v-if="currentPopup === 'description'" @close="closeMenu">
+    <Modal
+      :open="currentPopup === 'description'"
+      title="编辑描述"
+      size="lg"
+      :show-footer="false"
+      @close="closeMenu"
+    >
       <Descriptions v-model="todoCopy.description" @close="closeMenu" />
-    </PopupWrapper>
-    <PopupWrapper v-if="currentPopup === 'tags'" @close="closeMenu">
+    </Modal>
+
+    <Modal
+      :open="currentPopup === 'tags'"
+      title="选择标签"
+      size="lg"
+      cancel-text="关闭"
+      :show-confirm="false"
+      @close="closeMenu"
+      @cancel="closeMenu"
+    >
       <TagsView />
-    </PopupWrapper>
-    <PopupWrapper v-if="currentPopup === 'projects'" @close="closeMenu">
+    </Modal>
+
+    <Modal
+      :open="currentPopup === 'projects'"
+      title="选择项目"
+      size="lg"
+      cancel-text="关闭"
+      :show-confirm="false"
+      @close="closeMenu"
+      @cancel="closeMenu"
+    >
       <ProjectsView />
-    </PopupWrapper>
+    </Modal>
   </div>
 </template>
 
