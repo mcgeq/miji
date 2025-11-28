@@ -166,5 +166,20 @@ export const useTodoStore = defineStore('todos', {
         return result;
       }, '获取TODO信息失败');
     },
+
+    // ===== 子任务操作 =====
+    async listSubtasks(parentId: string): Promise<Todo[]> {
+      return this.withLoadingSafe(async () => {
+        return await TodoDb.listSubtasks(parentId);
+      }, '获取子任务失败');
+    },
+
+    async createSubtask(parentId: string, todo: TodoCreate): Promise<Todo> {
+      return this.withLoadingSafe(async () => {
+        const result = await TodoDb.createSubtask(parentId, todo);
+        await this.fetchdPagedTodos(); // 刷新列表
+        return result;
+      }, '创建子任务失败');
+    },
   },
 });
