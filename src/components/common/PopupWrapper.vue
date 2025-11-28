@@ -7,11 +7,17 @@ const onClose = () => emit('close');
 
 <template>
   <Teleport to="body">
-    <div class="modal-backdrop" @click.self="onClose">
-      <div class="modal">
+    <div
+      class="fixed inset-0 flex items-center justify-center bg-black/40 z-[1000000]"
+      @click.self="onClose"
+    >
+      <div class="relative w-[90vw] max-w-xl p-5 rounded-xl bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 shadow-2xl transition-colors duration-300">
         <!-- 关闭按钮 -->
-        <button class="modal-close" @click="onClose">
-          <X class="icon" />
+        <button
+          class="absolute top-2 right-2 bg-transparent border-none cursor-pointer text-gray-500 hover:text-red-500 transition-colors duration-200"
+          @click="onClose"
+        >
+          <X class="w-5 h-5" />
         </button>
 
         <!-- 插槽内容 -->
@@ -21,57 +27,6 @@ const onClose = () => emit('close');
   </Teleport>
 </template>
 
-<style scoped lang="postcss">
-/* 遮罩层 */
-.modal-backdrop {
-  position: fixed;
-  inset: 0; /* top/right/bottom/left = 0 */
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: rgba(0, 0, 0, 0.4); /* bg-black/40 */
-  z-index: 10002; /* 确保在 TodoAddMenus 和移动端底部导航之上 */
-}
-
-/* 内容容器 */
-.modal {
-  position: relative;
-  width: 90vw;
-  max-width: 36rem; /* 576px ≈ max-w-xl */
-  padding: 1.25rem; /* 20px */
-  border-radius: 0.75rem; /* 12px */
-  background: var(--color-base-100, #fff);
-  color: var(--color-base-content, #111);
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25); /* shadow-xl */
-  transition: background-color 0.3s ease, color 0.3s ease;
-}
-
-/* 深色模式 */
-@media (prefers-color-scheme: dark) {
-  .modal {
-    background: var(--color-base-200, #111827); /* dark:bg-gray-900 */
-    color: var(--color-base-content, #e5e7eb);
-  }
-}
-
-/* 关闭按钮 */
-.modal-close {
-  position: absolute;
-  top: 0.5rem; /* 8px */
-  right: 0.5rem;
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: #6b7280; /* text-gray-500 */
-  transition: color 0.2s ease-in-out;
-}
-.modal-close:hover {
-  color: #ef4444; /* hover:text-red-500 */
-}
-
-/* 图标 */
-.icon {
-  width: 1.25rem;  /* 20px */
-  height: 1.25rem;
-}
+<style scoped>
+/* 所有样式已使用 Tailwind CSS 4 */
 </style>

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Modal } from '@/components/ui';
 import type { TodoUpdate } from '@/schema/todos';
 
 const props = defineProps<{
@@ -69,101 +70,85 @@ function updateProgress(newProgress: number) {
     </div>
 
     <!-- 进度编辑模态框 -->
-    <Teleport to="body">
-      <div v-if="showEditModal" class="modal-overlay teleport" :class="{ visible: isModalVisible }" @click="closeEditModal">
-        <div class="modal-content teleport" @click.stop>
-          <div class="modal-header">
-            <h3>设置进度</h3>
-            <button class="close-btn" @click="closeEditModal">
-              ×
-            </button>
+    <Modal
+      :open="showEditModal"
+      title="设置进度"
+      size="md"
+      @close="closeEditModal"
+      @confirm="updateProgress(editingProgress)"
+    >
+      <div class="space-y-6">
+        <!-- 滑块输入 -->
+        <div class="space-y-2">
+          <label class="block text-sm font-medium mb-2">进度: {{ editingProgress }}%</label>
+          <input
+            v-model="editingProgress"
+            type="range"
+            min="0"
+            max="100"
+            step="5"
+            class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer progress-slider"
+          >
+          <div class="flex justify-between text-xs text-gray-500 mt-1">
+            <span>0%</span>
+            <span>25%</span>
+            <span>50%</span>
+            <span>75%</span>
+            <span>100%</span>
           </div>
+        </div>
 
-          <div class="modal-body">
-            <!-- 滑块输入 -->
-            <div class="slider-container">
-              <label for="progress-slider">进度: {{ editingProgress }}%</label>
-              <input
-                id="progress-slider"
-                v-model="editingProgress"
-                type="range"
-                min="0"
-                max="100"
-                step="5"
-                class="progress-slider"
-              >
-              <div class="slider-labels">
-                <span>0%</span>
-                <span>25%</span>
-                <span>50%</span>
-                <span>75%</span>
-                <span>100%</span>
-              </div>
-            </div>
+        <!-- 数字输入 -->
+        <div class="flex items-center gap-2">
+          <label class="text-sm font-medium">精确数值:</label>
+          <input
+            v-model="editingProgress"
+            type="number"
+            min="0"
+            max="100"
+            class="w-20 px-3 py-2 border border-gray-300 rounded-lg text-center"
+          >
+          <span>%</span>
+        </div>
 
-            <!-- 数字输入 -->
-            <div class="number-input-container">
-              <label for="progress-number">精确数值:</label>
-              <input
-                id="progress-number"
-                v-model="editingProgress"
-                type="number"
-                min="0"
-                max="100"
-                class="progress-number"
-              >
-              <span>%</span>
-            </div>
-
-            <!-- 快速选择 -->
-            <div class="quick-select">
-              <label>快速选择:</label>
-              <div class="quick-options">
-                <button
-                  v-for="value in quickProgressOptions"
-                  :key="value"
-                  class="quick-option"
-                  :class="{ active: editingProgress === value }"
-                  @click="editingProgress = value"
-                >
-                  <LucidePlay v-if="value === 0" class="modal-icon" :size="16" />
-                  <LucideCheckCircle v-else-if="value === 100" class="modal-icon" :size="16" />
-                  <span v-else>{{ value }}%</span>
-                </button>
-              </div>
-            </div>
-
-            <!-- 预览 -->
-            <div class="progress-preview">
-              <label>预览:</label>
-              <div class="preview-bar">
-                <div
-                  class="preview-fill"
-                  :style="{
-                    width: `${Math.min(Math.max(editingProgress, 0), 100)}%`,
-                    backgroundColor: progressColor,
-                  }"
-                />
-              </div>
-              <div class="preview-text">
-                <LucidePlay v-if="editingProgress === 0" class="preview-icon" :size="16" />
-                <LucideCheckCircle v-else-if="editingProgress === 100" class="preview-icon" :size="16" />
-                <span v-else>{{ editingProgress }}%</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="modal-footer">
-            <button class="btn-icon btn-secondary" title="取消" @click="closeEditModal">
-              <LucideX :size="20" />
-            </button>
-            <button class="btn-icon btn-primary" title="保存" @click="updateProgress(editingProgress)">
-              <LucideCheck :size="20" />
+        <!-- 快速选择 -->
+        <div class="space-y-2">
+          <label class="block text-sm font-medium">快速选择:</label>
+          <div class="grid grid-cols-5 gap-2">
+            <button
+              v-for="value in quickProgressOptions"
+              :key="value"
+              class="px-3 py-2 text-sm border rounded-lg transition-colors"
+              :class="editingProgress === value ? 'bg-blue-600 text-white border-blue-600' : 'bg-white border-gray-300 hover:border-blue-500'"
+              @click="editingProgress = value"
+            >
+              <LucidePlay v-if="value === 0" class="w-4 h-4" />
+              <LucideCheckCircle v-else-if="value === 100" class="w-4 h-4" />
+              <span v-else>{{ value }}%</span>
             </button>
           </div>
         </div>
+
+        <!-- 预览 -->
+        <div class="space-y-2">
+          <label class="block text-sm font-medium">预览:</label>
+          <div class="h-4 bg-gray-200 rounded-full overflow-hidden">
+            <div
+              class="h-full rounded-full transition-all duration-300"
+              :style="{
+                width: `${Math.min(Math.max(editingProgress, 0), 100)}%`,
+                backgroundColor: progressColor,
+              }"
+            />
+          </div>
+          <div class="flex items-center justify-center gap-1 text-sm font-medium">
+            <LucidePlay v-if="editingProgress === 0" class="w-4 h-4" />
+            <LucideCheckCircle v-else-if="editingProgress === 100" class="w-4 h-4" />
+            <span v-else>{{ editingProgress }}%</span>
+          </div>
+        </div>
       </div>
-    </Teleport>
+    </Modal>
   </div>
 </template>
 
@@ -261,89 +246,9 @@ function updateProgress(newProgress: number) {
   100% { transform: translateX(100%); }
 }
 
-/* 模态框样式 */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 10001;
-}
-
-.modal-content {
-  background: var(--color-base-100);
-  border-radius: 1rem;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-  max-width: 400px;
-  width: 90%;
-  max-height: 80vh;
-  overflow-y: auto;
-  /* 隐藏滚动条但保留滚动功能 */
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE and Edge */
-}
-
-.modal-content::-webkit-scrollbar {
-  display: none; /* Chrome, Safari and Opera */
-}
-
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1.5rem 1.5rem 0;
-}
-
-.modal-header h3 {
-  margin: 0;
-  font-size: 1.25rem;
-  font-weight: 600;
-}
-
-.close-btn {
-  background: none;
-  border: none;
-  font-size: 1.5rem;
-  cursor: pointer;
-  color: var(--color-base-content);
-  padding: 0.25rem;
-  border-radius: 0.25rem;
-}
-
-.close-btn:hover {
-  background: var(--color-base-200);
-}
-
-.modal-body {
-  padding: 1.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-.slider-container {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.slider-container label {
-  font-weight: 500;
-  color: var(--color-base-content);
-}
-
+/* 滑块自定义样式 */
 .progress-slider {
-  width: 100%;
-  height: 0.5rem;
-  border-radius: 0.25rem;
-  background: var(--color-base-300);
   outline: none;
-  cursor: pointer;
 }
 
 .progress-slider::-webkit-slider-thumb {
@@ -367,148 +272,6 @@ function updateProgress(newProgress: number) {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.slider-labels {
-  display: flex;
-  justify-content: space-between;
-  font-size: 0.75rem;
-  color: var(--color-base-content);
-  margin-top: 0.25rem;
-}
-
-.number-input-container {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.number-input-container label {
-  font-weight: 500;
-  color: var(--color-base-content);
-}
-
-.progress-number {
-  width: 4rem;
-  padding: 0.5rem;
-  border: 1px solid var(--color-base-300);
-  border-radius: 0.375rem;
-  text-align: center;
-}
-
-.quick-select {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.quick-select label {
-  font-weight: 500;
-  color: var(--color-base-content);
-}
-
-.quick-options {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 0.5rem;
-}
-
-.quick-option {
-  padding: 0.5rem;
-  border: 1px solid var(--color-base-300);
-  border-radius: 0.375rem;
-  background: var(--color-base-100);
-  color: var(--color-base-content);
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-size: 0.875rem;
-}
-
-.quick-option:hover {
-  background: var(--color-base-200);
-  border-color: var(--color-primary);
-}
-
-.quick-option.active {
-  background: var(--color-base-200);
-  color: var(--color-base-content);
-  border-color: var(--color-base-content);
-  font-weight: 600;
-}
-
-.modal-icon {
-  color: currentColor;
-}
-
-.progress-preview {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.progress-preview label {
-  font-weight: 500;
-  color: var(--color-base-content);
-}
-
-.preview-bar {
-  height: 1rem;
-  background: var(--color-base-300);
-  border-radius: 0.5rem;
-  overflow: hidden;
-}
-
-.preview-fill {
-  height: 100%;
-  border-radius: 0.5rem;
-  transition: width 0.3s ease;
-}
-
-.preview-text {
-  text-align: center;
-  font-weight: 500;
-  color: var(--color-base-content);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.25rem;
-}
-
-.preview-icon {
-  color: currentColor;
-}
-
-/* modal-footer样式已移至全局buttons.css */
-
-.btn-secondary,
-.btn-primary {
-  padding: 0.75rem 1.5rem;
-  border-radius: 0.5rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.btn-secondary {
-  background: var(--color-base-200);
-  color: var(--color-base-content);
-  border: 1px solid var(--color-base-300);
-}
-
-.btn-secondary:hover {
-  background: var(--color-base-300);
-}
-
-.btn-primary {
-  background: var(--color-primary);
-  color: var(--color-primary-content);
-  border: 1px solid var(--color-primary);
-}
-
-.btn-primary:hover {
-  background: var(--color-primary-focus);
-}
-
-/* 圆形图标按钮样式已移至全局buttons.css */
-
 /* 响应式设计 */
 @media (max-width: 768px) {
   .todo-progress {
@@ -519,21 +282,6 @@ function updateProgress(newProgress: number) {
     width: 100%;
     flex: none;
     max-width: none;
-  }
-
-  .quick-options {
-    grid-template-columns: repeat(3, 1fr);
-  }
-
-  .modal-footer {
-    flex-direction: row;
-    gap: 1.5rem;
-    justify-content: center;
-  }
-
-  .btn-icon {
-    width: 2.5rem !important;
-    height: 2.5rem !important;
   }
 }
 </style>

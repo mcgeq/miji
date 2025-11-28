@@ -6,7 +6,9 @@
 /* 导入公共表单样式 */
 @import "./form.css";
 
-/* 导入 Todos 组件样式 */
+/* 导入组件样式 */
+@import "./components/modals.css";
+@import "./components/buttons.css";
 @import "./components/todos.css";
 
 /* ========================================

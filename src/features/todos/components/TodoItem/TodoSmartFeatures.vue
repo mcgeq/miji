@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { Brain, Check, Cloud, MapPin, Settings, X } from 'lucide-vue-next';
+import { Brain, Check, Cloud, MapPin, Settings } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
+import { Modal } from '@/components/ui';
 import type { TodoUpdate } from '@/schema/todos';
 
 const props = defineProps<{
@@ -19,7 +20,6 @@ const emit = defineEmits<{
 }>();
 
 const showModal = ref(false);
-const isModalVisible = ref(false);
 
 // 智能功能状态
 const smartFeatures = ref({
@@ -78,18 +78,10 @@ const timezones = [
 function openModal() {
   if (props.readonly) return;
   showModal.value = true;
-  // 延迟设置可见性，防止闪烁
-  setTimeout(() => {
-    isModalVisible.value = true;
-  }, 10);
 }
 
 function closeModal() {
-  isModalVisible.value = false;
-  // 延迟关闭，等待动画完成
-  setTimeout(() => {
-    showModal.value = false;
-  }, 200);
+  showModal.value = false;
 }
 
 function saveSmartFeatures() {
@@ -155,7 +147,7 @@ function resetToDefaults() {
 </script>
 
 <template>
-  <div class="todo-smart-features">
+  <div class="relative">
     <!-- 智能功能显示按钮 -->
     <button
       class="todo-btn"
@@ -166,602 +158,230 @@ function resetToDefaults() {
       :title="hasSmartFeatures ? `智能功能: ${smartFeatureCount}项已启用` : '设置智能功能'"
       @click="openModal"
     >
-      <Brain class="icon" :size="14" />
-      <span class="features-text">
+      <Brain class="w-3.5 h-3.5 shrink-0" :size="14" />
+      <span class="whitespace-nowrap overflow-hidden text-ellipsis max-w-16">
         {{ hasSmartFeatures ? `智能${smartFeatureCount}` : '' }}
       </span>
-      <div v-if="hasSmartFeatures" class="feature-indicators">
-        <span v-if="smartFeatures.smartReminder" class="indicator" title="智能提醒">🧠</span>
-        <span v-if="smartFeatures.locationBased" class="indicator" title="位置提醒">📍</span>
-        <span v-if="smartFeatures.weatherDependent" class="indicator" title="天气提醒">🌤</span>
-        <span v-if="smartFeatures.priorityBoost" class="indicator" title="优先级增强">⚡</span>
+      <div v-if="hasSmartFeatures" class="flex gap-0.5 ml-1">
+        <span v-if="smartFeatures.smartReminder" class="text-[10px] leading-none" title="智能提醒">🧠</span>
+        <span v-if="smartFeatures.locationBased" class="text-[10px] leading-none" title="位置提醒">📍</span>
+        <span v-if="smartFeatures.weatherDependent" class="text-[10px] leading-none" title="天气提醒">🌤</span>
+        <span v-if="smartFeatures.priorityBoost" class="text-[10px] leading-none" title="优先级增强">⚡</span>
       </div>
     </button>
 
     <!-- 智能功能设置模态框 -->
-    <Teleport to="body">
-      <div v-if="showModal" class="modal-overlay teleport" :class="{ visible: isModalVisible }" @click="closeModal">
-        <div class="modal-content teleport" @click.stop>
-          <div class="modal-header teleport">
-            <h3>智能功能设置</h3>
-            <button class="close-btn teleport" @click="closeModal">
-              <X :size="20" />
-            </button>
+    <Modal
+      :open="showModal"
+      title="智能功能设置"
+      size="lg"
+      :show-footer="false"
+      @close="closeModal"
+    >
+      <div class="space-y-6">
+        <!-- 基础智能功能 -->
+        <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+          <div class="flex items-start gap-4">
+            <label class="relative inline-flex items-center cursor-pointer shrink-0 mt-1">
+              <input
+                v-model="smartFeatures.smartReminder"
+                type="checkbox"
+                class="sr-only peer"
+              >
+              <div class="w-11 h-6 bg-gray-200 dark:bg-gray-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600" />
+            </label>
+            <div class="flex-1">
+              <span class="block font-medium text-gray-900 dark:text-white">启用智能提醒</span>
+              <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                基于用户行为和学习习惯优化提醒时间
+              </p>
+            </div>
           </div>
+        </div>
 
-          <div class="modal-body teleport">
-            <!-- 基础智能功能 -->
-            <div class="section">
-              <div class="setting-row">
-                <label class="switch">
-                  <input
-                    v-model="smartFeatures.smartReminder"
-                    type="checkbox"
-                  >
-                  <span class="slider" />
-                </label>
-                <div class="setting-info">
-                  <span class="label">启用智能提醒</span>
-                  <p class="description">
-                    基于用户行为和学习习惯优化提醒时间
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <!-- 位置相关功能 -->
-            <div class="section">
-              <div class="setting-row">
-                <label class="switch">
-                  <input
-                    v-model="smartFeatures.locationBased"
-                    type="checkbox"
-                    :disabled="!smartFeatures.smartReminder"
-                  >
-                  <span class="slider" />
-                </label>
-                <div class="setting-info">
-                  <span class="label">基于位置的提醒</span>
-                  <p class="description">
-                    当您到达特定位置时发送提醒
-                  </p>
-                </div>
-              </div>
-
-              <div v-if="smartFeatures.locationBased" class="location-settings">
-                <div class="location-input-group">
-                  <label>位置设置</label>
-                  <div class="input-row">
-                    <input
-                      v-model="locationInfo.address"
-                      type="text"
-                      placeholder="输入地址或位置名称..."
-                      class="location-input"
-                    >
-                    <button class="location-btn" @click="getCurrentLocation">
-                      <MapPin class="icon" :size="16" />
-                      获取当前位置
-                    </button>
-                  </div>
-                </div>
-
-                <div class="radius-setting">
-                  <label>提醒半径: {{ locationInfo.radius }}米</label>
-                  <input
-                    v-model="locationInfo.radius"
-                    type="range"
-                    min="50"
-                    max="1000"
-                    step="50"
-                    class="radius-slider"
-                  >
-                </div>
-              </div>
-            </div>
-
-            <!-- 天气相关功能 -->
-            <div class="section">
-              <div class="setting-row">
-                <label class="switch">
-                  <input
-                    v-model="smartFeatures.weatherDependent"
-                    type="checkbox"
-                    :disabled="!smartFeatures.smartReminder"
-                  >
-                  <span class="slider" />
-                </label>
-                <div class="setting-info">
-                  <span class="label">天气相关提醒</span>
-                  <p class="description">
-                    根据天气条件调整提醒策略
-                  </p>
-                </div>
-              </div>
-
-              <div v-if="smartFeatures.weatherDependent" class="weather-settings">
-                <div class="weather-info">
-                  <button class="weather-btn" @click="getCurrentWeather">
-                    <Cloud class="icon" :size="16" />
-                    获取天气信息
-                  </button>
-
-                  <div v-if="weatherInfo.condition" class="weather-display">
-                    <div class="weather-icon">
-                      {{ weatherInfo.condition === 'sunny' ? '☀'
-                        : weatherInfo.condition === 'cloudy' ? '☁'
-                          : weatherInfo.condition === 'rainy' ? '🌧' : '❄' }}
-                    </div>
-                    <div class="weather-details">
-                      <span class="temperature">{{ weatherInfo.temperature }}°C</span>
-                      <span class="humidity">湿度: {{ weatherInfo.humidity }}%</span>
-                      <span class="wind">风速: {{ weatherInfo.windSpeed }}m/s</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- 优先级增强 -->
-            <div class="section">
-              <div class="setting-row">
-                <label class="switch">
-                  <input
-                    v-model="smartFeatures.priorityBoost"
-                    type="checkbox"
-                    :disabled="!smartFeatures.smartReminder"
-                  >
-                  <span class="slider" />
-                </label>
-                <div class="setting-info">
-                  <span class="label">优先级增强提醒</span>
-                  <p class="description">
-                    高优先级任务获得更多提醒和特殊处理
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <!-- 时区设置 -->
-            <div class="section">
-              <div class="setting-row">
-                <label>时区设置</label>
-                <select v-model="smartFeatures.timezone" class="timezone-select">
-                  <option v-for="tz in timezones" :key="tz" :value="tz">
-                    {{ tz }}
-                  </option>
-                </select>
-              </div>
-            </div>
-
-            <!-- 功能预览 -->
-            <div v-if="hasSmartFeatures" class="features-preview">
-              <h4>功能预览</h4>
-              <div class="preview-grid">
-                <div v-if="smartFeatures.smartReminder" class="preview-item">
-                  <span class="preview-icon">🧠</span>
-                  <span>智能提醒已启用</span>
-                </div>
-                <div v-if="smartFeatures.locationBased" class="preview-item">
-                  <span class="preview-icon">📍</span>
-                  <span>位置提醒已启用</span>
-                </div>
-                <div v-if="smartFeatures.weatherDependent" class="preview-item">
-                  <span class="preview-icon">🌤</span>
-                  <span>天气提醒已启用</span>
-                </div>
-                <div v-if="smartFeatures.priorityBoost" class="preview-item">
-                  <span class="preview-icon">⚡</span>
-                  <span>优先级增强已启用</span>
-                </div>
-              </div>
+        <!-- 位置相关功能 -->
+        <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+          <div class="flex items-start gap-4">
+            <label class="relative inline-flex items-center cursor-pointer shrink-0 mt-1">
+              <input
+                v-model="smartFeatures.locationBased"
+                type="checkbox"
+                :disabled="!smartFeatures.smartReminder"
+                class="sr-only peer"
+              >
+              <div class="w-11 h-6 bg-gray-200 dark:bg-gray-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed" />
+            </label>
+            <div class="flex-1">
+              <span class="block font-medium text-gray-900 dark:text-white">基于位置的提醒</span>
+              <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                当您到达特定位置时发送提醒
+              </p>
             </div>
           </div>
 
-          <div class="modal-footer teleport">
-            <button class="btn-icon btn-secondary teleport" title="重置默认" @click="resetToDefaults">
-              <Settings :size="20" />
+          <div v-if="smartFeatures.locationBased" class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 space-y-4">
+            <div class="flex flex-col gap-2">
+              <label class="text-sm font-medium text-gray-900 dark:text-white">位置设置</label>
+              <div class="flex flex-col sm:flex-row gap-2">
+                <input
+                  v-model="locationInfo.address"
+                  type="text"
+                  placeholder="输入地址或位置名称..."
+                  class="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                <button
+                  class="flex items-center justify-center gap-1 px-3 py-2 border border-blue-500 rounded-md bg-blue-500 text-white hover:bg-blue-600 transition-colors text-sm whitespace-nowrap"
+                  @click="getCurrentLocation"
+                >
+                  <MapPin :size="16" />
+                  获取当前位置
+                </button>
+              </div>
+            </div>
+
+            <div class="flex flex-col gap-2">
+              <label class="text-sm font-medium text-gray-900 dark:text-white">提醒半径: {{ locationInfo.radius }}米</label>
+              <input
+                v-model="locationInfo.radius"
+                type="range"
+                min="50"
+                max="1000"
+                step="50"
+                class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
+              >
+            </div>
+          </div>
+        </div>
+
+        <!-- 天气相关功能 -->
+        <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+          <div class="flex items-start gap-4">
+            <label class="relative inline-flex items-center cursor-pointer shrink-0 mt-1">
+              <input
+                v-model="smartFeatures.weatherDependent"
+                type="checkbox"
+                :disabled="!smartFeatures.smartReminder"
+                class="sr-only peer"
+              >
+              <div class="w-11 h-6 bg-gray-200 dark:bg-gray-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed" />
+            </label>
+            <div class="flex-1">
+              <span class="block font-medium text-gray-900 dark:text-white">天气相关提醒</span>
+              <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                根据天气条件调整提醒策略
+              </p>
+            </div>
+          </div>
+
+          <div v-if="smartFeatures.weatherDependent" class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+            <button
+              class="flex items-center gap-2 px-4 py-3 border border-amber-500 rounded-lg bg-amber-500 text-white hover:bg-amber-600 transition-colors font-medium"
+              @click="getCurrentWeather"
+            >
+              <Cloud :size="16" />
+              获取天气信息
             </button>
-            <button class="btn-icon btn-secondary teleport" title="取消" @click="closeModal">
-              <X :size="20" />
-            </button>
-            <button class="btn-icon btn-primary teleport" title="保存设置" @click="saveSmartFeatures">
-              <Check :size="20" />
-            </button>
+
+            <div v-if="weatherInfo.condition" class="mt-4 flex flex-col sm:flex-row items-center sm:items-start gap-4 p-4 bg-gray-100 dark:bg-gray-800 rounded-lg text-center sm:text-left">
+              <div class="text-4xl">
+                {{ weatherInfo.condition === 'sunny' ? '☀'
+                  : weatherInfo.condition === 'cloudy' ? '☁'
+                    : weatherInfo.condition === 'rainy' ? '🌧' : '❄' }}
+              </div>
+              <div class="flex flex-col gap-1">
+                <span class="text-xl font-semibold text-gray-900 dark:text-white">{{ weatherInfo.temperature }}°C</span>
+                <span class="text-sm text-gray-500 dark:text-gray-400">湿度: {{ weatherInfo.humidity }}%</span>
+                <span class="text-sm text-gray-500 dark:text-gray-400">风速: {{ weatherInfo.windSpeed }}m/s</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 优先级增强 -->
+        <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+          <div class="flex items-start gap-4">
+            <label class="relative inline-flex items-center cursor-pointer shrink-0 mt-1">
+              <input
+                v-model="smartFeatures.priorityBoost"
+                type="checkbox"
+                :disabled="!smartFeatures.smartReminder"
+                class="sr-only peer"
+              >
+              <div class="w-11 h-6 bg-gray-200 dark:bg-gray-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed" />
+            </label>
+            <div class="flex-1">
+              <span class="block font-medium text-gray-900 dark:text-white">优先级增强提醒</span>
+              <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                高优先级任务获得更多提醒和特殊处理
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- 时区设置 -->
+        <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+          <div class="flex items-center justify-between gap-4">
+            <label class="font-medium text-gray-900 dark:text-white">时区设置</label>
+            <select
+              v-model="smartFeatures.timezone"
+              class="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option v-for="tz in timezones" :key="tz" :value="tz">
+                {{ tz }}
+              </option>
+            </select>
+          </div>
+        </div>
+
+        <!-- 功能预览 -->
+        <div v-if="hasSmartFeatures" class="p-4 bg-gray-100 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+          <h4 class="mb-4 text-base font-semibold text-gray-900 dark:text-white">
+            功能预览
+          </h4>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div v-if="smartFeatures.smartReminder" class="flex items-center gap-2 p-2 bg-white dark:bg-gray-900 rounded-md text-sm">
+              <span class="text-base">🧠</span>
+              <span class="text-gray-900 dark:text-white">智能提醒已启用</span>
+            </div>
+            <div v-if="smartFeatures.locationBased" class="flex items-center gap-2 p-2 bg-white dark:bg-gray-900 rounded-md text-sm">
+              <span class="text-base">📍</span>
+              <span class="text-gray-900 dark:text-white">位置提醒已启用</span>
+            </div>
+            <div v-if="smartFeatures.weatherDependent" class="flex items-center gap-2 p-2 bg-white dark:bg-gray-900 rounded-md text-sm">
+              <span class="text-base">🌤</span>
+              <span class="text-gray-900 dark:text-white">天气提醒已启用</span>
+            </div>
+            <div v-if="smartFeatures.priorityBoost" class="flex items-center gap-2 p-2 bg-white dark:bg-gray-900 rounded-md text-sm">
+              <span class="text-base">⚡</span>
+              <span class="text-gray-900 dark:text-white">优先级增强已启用</span>
+            </div>
           </div>
         </div>
       </div>
-    </Teleport>
+
+      <!-- 自定义footer -->
+      <template #footer>
+        <div class="flex justify-center gap-3">
+          <button
+            class="flex items-center justify-center w-12 h-12 rounded-full border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            title="重置默认"
+            @click="resetToDefaults"
+          >
+            <Settings :size="20" />
+          </button>
+          <button
+            class="flex items-center justify-center w-12 h-12 rounded-full bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+            title="保存设置"
+            @click="saveSmartFeatures"
+          >
+            <Check :size="20" />
+          </button>
+        </div>
+      </template>
+    </Modal>
   </div>
 </template>
 
-<style scoped lang="postcss">
-.todo-smart-features {
-  position: relative;
-}
-
-/* 按钮样式现在使用全局 .todo-btn 样式 */
-
-.icon {
-  width: 0.875rem;
-  height: 0.875rem;
-  flex-shrink: 0;
-}
-
-.features-text {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 4rem;
-}
-
-.feature-indicators {
-  display: flex;
-  gap: 0.125rem;
-  margin-left: 0.25rem;
-}
-
-.indicator {
-  font-size: 0.625rem;
-  line-height: 1;
-}
-
-/* 模态框样式 */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 10001;
-  backdrop-filter: blur(4px);
-}
-
-.modal-content {
-  background: var(--color-base-100);
-  border-radius: 1rem;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-  max-width: 600px;
-  width: 90%;
-  max-height: 80vh;
-  overflow-y: auto;
-  /* 隐藏滚动条但保留滚动功能 */
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE and Edge */
-}
-
-.modal-content::-webkit-scrollbar {
-  display: none; /* Chrome, Safari and Opera */
-}
-
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1.5rem 1.5rem 0;
-}
-
-.modal-header h3 {
-  margin: 0;
-  font-size: 1.25rem;
-  font-weight: 600;
-}
-
-.close-btn {
-  background: none;
-  border: none;
-  font-size: 1.5rem;
-  cursor: pointer;
-  color: var(--color-base-content);
-  padding: 0.25rem;
-  border-radius: 0.25rem;
-}
-
-.close-btn:hover {
-  background: var(--color-base-200);
-}
-
-.modal-body {
-  padding: 1.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-.section {
-  border: 1px solid var(--color-base-300);
-  border-radius: 0.5rem;
-  padding: 1rem;
-}
-
-.setting-row {
-  display: flex;
-  align-items: flex-start;
-  gap: 1rem;
-}
-
-.setting-info {
-  flex: 1;
-}
-
-.setting-info .label {
-  font-weight: 500;
-  color: var(--color-base-content);
-  display: block;
-  margin-bottom: 0.25rem;
-}
-
-.setting-info .description {
-  font-size: 0.875rem;
-  color: var(--color-base-content);
-  opacity: 0.7;
-  margin: 0;
-}
-
-/* 开关样式 */
-.switch {
-  position: relative;
-  display: inline-block;
-  width: 2.5rem;
-  height: 1.25rem;
-  flex-shrink: 0;
-}
-
-.switch input {
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
-
-.slider {
-  position: absolute;
-  cursor: pointer;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: var(--color-base-300);
-  transition: 0.2s;
-  border-radius: 1.25rem;
-}
-
-.slider:before {
-  position: absolute;
-  content: "";
-  height: 1rem;
-  width: 1rem;
-  left: 0.125rem;
-  bottom: 0.125rem;
-  background-color: white;
-  transition: 0.2s;
-  border-radius: 50%;
-}
-
-input:checked + .slider {
-  background-color: var(--color-primary);
-}
-
-input:checked + .slider:before {
-  transform: translateX(1.25rem);
-}
-
-input:disabled + .slider {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-/* 位置设置 */
-.location-settings {
-  margin-top: 1rem;
-  padding-top: 1rem;
-  border-top: 1px solid var(--color-base-300);
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.location-input-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.input-row {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.location-input {
-  flex: 1;
-  padding: 0.5rem;
-  border: 1px solid var(--color-base-300);
-  border-radius: 0.375rem;
-  background: var(--color-base-100);
-  color: var(--color-base-content);
-}
-
-.location-btn {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  padding: 0.5rem 0.75rem;
-  border: 1px solid var(--color-info);
-  border-radius: 0.375rem;
-  background: var(--color-info);
-  color: var(--color-info-content);
-  cursor: pointer;
-  font-size: 0.875rem;
-}
-
-.radius-setting {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.radius-slider {
-  width: 100%;
-}
-
-/* 天气设置 */
-.weather-settings {
-  margin-top: 1rem;
-  padding-top: 1rem;
-  border-top: 1px solid var(--color-base-300);
-}
-
-.weather-btn {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1rem;
-  border: 1px solid var(--color-warning);
-  border-radius: 0.5rem;
-  background: var(--color-warning);
-  color: var(--color-warning-content);
-  cursor: pointer;
-  font-weight: 500;
-}
-
-.weather-display {
-  margin-top: 1rem;
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 1rem;
-  background: var(--color-base-200);
-  border-radius: 0.5rem;
-}
-
-.weather-icon {
-  font-size: 2rem;
-}
-
-.weather-details {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.temperature {
-  font-size: 1.25rem;
-  font-weight: 600;
-}
-
-.humidity,
-.wind {
-  font-size: 0.875rem;
-  opacity: 0.7;
-}
-
-/* 时区选择 */
-.timezone-select {
-  padding: 0.5rem;
-  border: 1px solid var(--color-base-300);
-  border-radius: 0.375rem;
-  background: var(--color-base-100);
-  color: var(--color-base-content);
-}
-
-/* 功能预览 */
-.features-preview {
-  padding: 1rem;
-  background: var(--color-base-200);
-  border-radius: 0.5rem;
-  border: 1px solid var(--color-base-300);
-}
-
-.features-preview h4 {
-  margin: 0 0 1rem 0;
-  font-size: 1rem;
-  font-weight: 600;
-}
-
-.preview-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 0.75rem;
-}
-
-.preview-item {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem;
-  background: var(--color-base-100);
-  border-radius: 0.375rem;
-  font-size: 0.875rem;
-}
-
-.preview-icon {
-  font-size: 1rem;
-}
-
-/* modal-footer样式已移至全局buttons.css */
-
-.btn-secondary,
-.btn-primary {
-  padding: 0.75rem 1.5rem;
-  border-radius: 0.5rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.btn-secondary {
-  background: var(--color-base-200);
-  color: var(--color-base-content);
-  border: 1px solid var(--color-base-300);
-}
-
-.btn-secondary:hover {
-  background: var(--color-base-300);
-}
-
-.btn-primary {
-  background: var(--color-primary);
-  color: var(--color-primary-content);
-  border: 1px solid var(--color-primary);
-}
-
-.btn-primary:hover {
-  background: var(--color-primary-focus);
-}
-
-/* 圆形图标按钮样式已移至全局buttons.css */
-
-/* 响应式设计 */
-@media (max-width: 768px) {
-  .modal-content {
-    width: 95%;
-    margin: 1rem;
-  }
-
-  .preview-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .input-row {
-    flex-direction: column;
-  }
-
-  .weather-display {
-    flex-direction: column;
-    text-align: center;
-  }
-
-  .modal-footer {
-    flex-direction: row;
-    gap: 1.5rem;
-    justify-content: center;
-  }
-
-  .btn-icon {
-    width: 2.5rem !important;
-    height: 2.5rem !important;
-  }
-}
+<style scoped>
+/* 所有样式已使用 Tailwind CSS 4 */
 </style>
