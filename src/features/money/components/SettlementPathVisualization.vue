@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { Download, Maximize2, RotateCcw } from 'lucide-vue-next';
+import Button from '@/components/ui/Button.vue';
+import Checkbox from '@/components/ui/Checkbox.vue';
 import { toast } from '@/utils/toast';
 
 // ==================== Props ====================
@@ -233,11 +235,11 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="settlement-path-visualization">
-    <div ref="canvasRef" class="visualization-canvas">
+  <div class="flex flex-col gap-4 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
+    <div ref="canvasRef" class="bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden">
       <!-- SVG图形容器 -->
       <svg
-        class="path-svg"
+        class="block w-full"
         :width="canvasWidth"
         :height="canvasHeight"
         @mousedown="handleCanvasMouseDown"
@@ -350,57 +352,63 @@ onMounted(() => {
     </div>
 
     <!-- 控制面板 -->
-    <div class="control-panel">
-      <div class="control-group">
-        <label class="control-label">
-          <input
-            v-model="showLabels"
-            type="checkbox"
-            class="control-checkbox"
-          >
-          <span>显示金额标签</span>
-        </label>
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 bg-white dark:bg-gray-800 rounded-lg shadow-sm">
+      <div class="flex flex-wrap items-center gap-4">
+        <Checkbox
+          v-model="showLabels"
+          label="显示金额标签"
+          size="sm"
+        />
 
-        <label class="control-label">
-          <input
-            v-model="showBalance"
-            type="checkbox"
-            class="control-checkbox"
-          >
-          <span>显示成员净额</span>
-        </label>
+        <Checkbox
+          v-model="showBalance"
+          label="显示成员净额"
+          size="sm"
+        />
       </div>
 
-      <div class="control-group">
-        <button class="control-btn" @click="resetLayout">
-          <component :is="RotateCcw" class="w-4 h-4" />
-          <span>重置布局</span>
-        </button>
+      <div class="flex flex-wrap items-center gap-2">
+        <Button
+          variant="secondary"
+          size="sm"
+          :icon="RotateCcw"
+          @click="resetLayout"
+        >
+          重置布局
+        </Button>
 
-        <button class="control-btn" @click="centerView">
-          <component :is="Maximize2" class="w-4 h-4" />
-          <span>居中显示</span>
-        </button>
+        <Button
+          variant="secondary"
+          size="sm"
+          :icon="Maximize2"
+          @click="centerView"
+        >
+          居中显示
+        </Button>
 
-        <button class="control-btn" @click="downloadImage">
-          <component :is="Download" class="w-4 h-4" />
-          <span>导出图片</span>
-        </button>
+        <Button
+          variant="secondary"
+          size="sm"
+          :icon="Download"
+          @click="downloadImage"
+        >
+          导出图片
+        </Button>
       </div>
     </div>
 
     <!-- 图例 -->
-    <div class="legend">
-      <div class="legend-item">
-        <div class="legend-icon legend-icon-positive" />
+    <div class="flex flex-wrap items-center justify-center gap-6 p-3 bg-white dark:bg-gray-800 rounded-lg shadow-sm">
+      <div class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+        <div class="w-4 h-4 rounded-full bg-green-500" />
         <span>债权人（收款）</span>
       </div>
-      <div class="legend-item">
-        <div class="legend-icon legend-icon-negative" />
+      <div class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+        <div class="w-4 h-4 rounded-full bg-red-500" />
         <span>债务人（付款）</span>
       </div>
-      <div class="legend-item">
-        <div class="legend-icon legend-icon-neutral" />
+      <div class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+        <div class="w-4 h-4 rounded-full bg-gray-400 dark:bg-gray-600" />
         <span>平衡</span>
       </div>
     </div>
@@ -408,38 +416,7 @@ onMounted(() => {
 </template>
 
 <style scoped>
-/* 主容器 */
-.settlement-path-visualization {
-  background-color: #f9fafb;
-  border-radius: 0.5rem;
-  padding: 1rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-:global(.dark) .settlement-path-visualization {
-  background-color: #111827;
-}
-
-.visualization-canvas {
-  background-color: white;
-  border-radius: 0.5rem;
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  overflow: hidden;
-}
-
-:global(.dark) .visualization-canvas {
-  background-color: #1f2937;
-}
-
-/* SVG样式 */
-.path-svg {
-  display: block;
-  width: 100%;
-}
-
-/* 连线样式 */
+/* SVG 连线样式 */
 .connection-line {
   stroke: #3b82f6;
   stroke-width: 2;
@@ -469,7 +446,7 @@ onMounted(() => {
   }
 }
 
-/* 标签样式 */
+/* SVG 标签样式 */
 .label-bg {
   fill: #dbeafe;
   stroke: #3b82f6;
@@ -491,7 +468,7 @@ onMounted(() => {
   fill: #93c5fd;
 }
 
-/* 节点样式 */
+/* SVG 节点样式 */
 .node-group {
   cursor: move;
   transition: all 0.2s;
@@ -552,132 +529,5 @@ onMounted(() => {
 
 :global(.dark) .balance-negative {
   fill: #f87171;
-}
-
-/* 控制面板 */
-.control-panel {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 1rem;
-  background-color: white;
-  border-radius: 0.5rem;
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-}
-
-:global(.dark) .control-panel {
-  background-color: #1f2937;
-}
-
-.control-group {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.control-label {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.875rem;
-  color: #374151;
-  cursor: pointer;
-}
-
-:global(.dark) .control-label {
-  color: #d1d5db;
-}
-
-.control-checkbox {
-  width: 1rem;
-  height: 1rem;
-  border-radius: 0.25rem;
-  border-color: #d1d5db;
-  color: #2563eb;
-}
-
-:global(.dark) .control-checkbox {
-  border-color: #4b5563;
-}
-
-.control-checkbox:focus {
-  outline: 2px solid #3b82f6;
-  outline-offset: 2px;
-}
-
-.control-btn {
-  padding: 0.5rem 0.75rem;
-  background-color: #f3f4f6;
-  color: #111827;
-  border-radius: 0.5rem;
-  font-size: 0.875rem;
-  transition: background-color 0.15s;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.control-btn:hover {
-  background-color: #e5e7eb;
-}
-
-:global(.dark) .control-btn {
-  background-color: #374151;
-  color: #f3f4f6;
-}
-
-:global(.dark) .control-btn:hover {
-  background-color: #4b5563;
-}
-
-/* 图例 */
-.legend {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 1.5rem;
-  padding: 0.75rem;
-  background-color: white;
-  border-radius: 0.5rem;
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-}
-
-:global(.dark) .legend {
-  background-color: #1f2937;
-}
-
-.legend-item {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.875rem;
-  color: #374151;
-}
-
-:global(.dark) .legend-item {
-  color: #d1d5db;
-}
-
-.legend-icon {
-  width: 1rem;
-  height: 1rem;
-  border-radius: 9999px;
-}
-
-.legend-icon-positive {
-  background-color: #10b981;
-}
-
-.legend-icon-negative {
-  background-color: #ef4444;
-}
-
-.legend-icon-neutral {
-  background-color: #9ca3af;
-}
-
-:global(.dark) .legend-icon-neutral {
-  background-color: #4b5563;
 }
 </style>

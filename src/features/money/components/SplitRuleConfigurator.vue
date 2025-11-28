@@ -10,6 +10,7 @@ import {
   LucideScale,
   LucideX,
 } from 'lucide-vue-next';
+import Button from '@/components/ui/Button.vue';
 import { useFamilyMemberStore } from '@/stores/money';
 import type { FamilyMember, SplitRuleType } from '@/schema/money';
 
@@ -286,31 +287,56 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="split-rule-configurator">
-    <div class="configurator-overlay" @click="close" />
+  <div class="fixed inset-0 z-[1000] flex items-center justify-center">
+    <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" @click="close" />
 
-    <div class="configurator-modal">
+    <div class="relative w-[90%] max-w-[800px] max-h-[90vh] bg-white dark:bg-gray-800 rounded-2xl shadow-2xl flex flex-col overflow-hidden">
       <!-- Header -->
-      <div class="modal-header">
-        <h3>分摊规则配置</h3>
-        <button class="btn-close" @click="close">
-          <LucideX class="icon" />
+      <div class="flex justify-between items-center px-6 md:px-8 py-6 border-b border-gray-200 dark:border-gray-700">
+        <h3 class="m-0 text-xl font-semibold text-gray-900 dark:text-white">
+          分摆规则配置
+        </h3>
+        <button
+          class="p-2 bg-transparent border-0 rounded-md cursor-pointer transition-all hover:bg-gray-100 dark:hover:bg-gray-700"
+          @click="close"
+        >
+          <LucideX class="w-5 h-5 text-gray-600 dark:text-gray-300" />
         </button>
       </div>
 
       <!-- 步骤指示器 -->
-      <div class="step-indicator">
+      <div class="flex justify-between p-8 bg-gray-50 dark:bg-gray-700">
         <div
           v-for="step in 4"
           :key="step"
-          class="step-item"
-          :class="{ active: currentStep === step, completed: currentStep > step }"
+          class="flex flex-col items-center gap-2 flex-1 relative"
         >
-          <div class="step-number">
-            <LucideCheck v-if="currentStep > step" class="icon" />
+          <!-- 连接线 -->
+          <div
+            v-if="step < 4"
+            class="absolute top-5 left-1/2 right-[-50%] h-0.5 z-0" :class="[
+              currentStep > step ? 'bg-blue-600 dark:bg-blue-500' : 'bg-gray-200 dark:bg-gray-600',
+            ]"
+          />
+
+          <!-- 步骤圆圈 -->
+          <div
+            class="w-10 h-10 rounded-full flex items-center justify-center font-semibold z-10 transition-all duration-300" :class="[
+              currentStep === step ? 'border-2 border-blue-600 dark:border-blue-500 bg-blue-600 dark:bg-blue-500 text-white'
+              : currentStep > step ? 'border-2 border-blue-600 dark:border-blue-500 bg-blue-600 dark:bg-blue-500 text-white'
+                : 'bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400',
+            ]"
+          >
+            <LucideCheck v-if="currentStep > step" class="w-4 h-4" />
             <span v-else>{{ step }}</span>
           </div>
-          <span class="step-label">
+
+          <!-- 标签 -->
+          <span
+            class="text-sm font-medium" :class="[
+              currentStep === step ? 'text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-gray-400',
+            ]"
+          >
             {{
               step === 1 ? '选择类型'
               : step === 2 ? '选择成员'
@@ -322,21 +348,25 @@ onMounted(() => {
       </div>
 
       <!-- 内容区域 -->
-      <div class="modal-content">
+      <div class="flex-1 overflow-y-auto p-8">
         <!-- 步骤 1: 选择分摊类型 -->
-        <div v-if="currentStep === 1" class="step-content">
-          <h4>选择分摊类型</h4>
-          <p class="step-description">
+        <div v-if="currentStep === 1" class="flex flex-col gap-6">
+          <h4 class="m-0 text-lg font-semibold text-gray-900 dark:text-white">
+            选择分摊类型
+          </h4>
+          <p class="m-0 text-gray-600 dark:text-gray-400 text-sm">
             选择适合您需求的分摊方式
           </p>
 
-          <div class="split-type-grid">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <label
               v-for="type in splitTypes"
               :key="type.value"
-              class="type-option"
-              :class="{ selected: config.splitType === type.value }"
-              :style="{ '--type-color': type.color }"
+              class="p-6 border-2 rounded-xl cursor-pointer transition-all duration-300 text-center" :class="[
+                config.splitType === type.value
+                  ? 'border-blue-600 dark:border-blue-500 bg-blue-50/50 dark:bg-blue-900/20 shadow-md'
+                  : 'border-gray-200 dark:border-gray-600 hover:border-blue-500 dark:hover:border-blue-400 hover:shadow-md',
+              ]"
             >
               <input
                 v-model="config.splitType"
@@ -344,64 +374,87 @@ onMounted(() => {
                 :value="type.value"
                 hidden
               >
-              <div class="type-icon-wrapper">
-                <component :is="type.icon" class="type-icon" />
+              <div
+                class="w-16 h-16 mx-auto mb-4 rounded-xl flex items-center justify-center"
+                :style="{ backgroundColor: `${type.color}26` }"
+              >
+                <component :is="type.icon" class="w-9 h-9" :style="{ color: type.color }" />
               </div>
-              <h5>{{ type.label }}</h5>
-              <p>{{ type.description }}</p>
+              <h5 class="m-0 mb-2 text-base font-semibold text-gray-900 dark:text-white">{{ type.label }}</h5>
+              <p class="m-0 text-sm text-gray-600 dark:text-gray-400">{{ type.description }}</p>
             </label>
           </div>
         </div>
 
         <!-- 步骤 2: 选择参与成员 -->
-        <div v-if="currentStep === 2" class="step-content">
-          <div class="step-header">
+        <div v-if="currentStep === 2" class="flex flex-col gap-6">
+          <div class="flex justify-between items-start">
             <div>
-              <h4>选择参与成员</h4>
-              <p class="step-description">
+              <h4 class="m-0 text-lg font-semibold text-gray-900 dark:text-white">
+                选择参与成员
+              </h4>
+              <p class="m-0 mt-1 text-gray-600 dark:text-gray-400 text-sm">
                 选择参与此次分摊的成员
               </p>
             </div>
-            <div class="quick-actions">
-              <button class="btn-text" @click="selectAllMembers">
+            <div class="flex gap-2">
+              <button
+                class="px-4 py-2 bg-transparent border border-gray-300 dark:border-gray-600 rounded-md text-sm cursor-pointer transition-all hover:bg-gray-100 dark:hover:bg-gray-600 hover:border-blue-500 dark:hover:border-blue-400"
+                @click="selectAllMembers"
+              >
                 全选
               </button>
-              <button class="btn-text" @click="clearMembers">
+              <button
+                class="px-4 py-2 bg-transparent border border-gray-300 dark:border-gray-600 rounded-md text-sm cursor-pointer transition-all hover:bg-gray-100 dark:hover:bg-gray-600 hover:border-blue-500 dark:hover:border-blue-400"
+                @click="clearMembers"
+              >
                 清空
               </button>
             </div>
           </div>
 
-          <div class="member-selection-grid">
+          <div class="grid grid-cols-2 md:grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-4">
             <label
               v-for="member in availableMembers"
               :key="member.serialNum"
-              class="member-checkbox"
+              class="cursor-pointer"
             >
               <input
                 v-model="config.selectedMembers"
                 type="checkbox"
                 :value="member.serialNum"
+                class="hidden"
                 @change="onMemberSelectionChange"
               >
-              <div class="member-card">
-                <div class="member-avatar" :style="{ backgroundColor: member.colorTag || '#3b82f6' }">
+              <div
+                class="flex flex-col items-center gap-3 p-4 border-2 rounded-xl transition-all" :class="[
+                  config.selectedMembers.includes(member.serialNum)
+                    ? 'border-blue-600 dark:border-blue-500 bg-blue-50/50 dark:bg-blue-900/10'
+                    : 'border-gray-200 dark:border-gray-600',
+                ]"
+              >
+                <div
+                  class="w-12 h-12 rounded-full flex items-center justify-center text-white font-semibold text-lg"
+                  :style="{ backgroundColor: member.colorTag || '#3b82f6' }"
+                >
                   {{ member.name.charAt(0) }}
                 </div>
-                <span class="member-name">{{ member.name }}</span>
+                <span class="text-sm font-medium text-center text-gray-900 dark:text-white">{{ member.name }}</span>
               </div>
             </label>
           </div>
 
-          <div v-if="config.selectedMembers.length > 0" class="selection-summary">
+          <div v-if="config.selectedMembers.length > 0" class="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg text-center text-sm text-gray-600 dark:text-gray-400">
             已选择 {{ config.selectedMembers.length }} 位成员
           </div>
         </div>
 
         <!-- 步骤 3: 配置分摊参数 -->
-        <div v-if="currentStep === 3" class="step-content">
-          <h4>配置分摊参数</h4>
-          <p class="step-description">
+        <div v-if="currentStep === 3" class="flex flex-col gap-6">
+          <h4 class="m-0 text-lg font-semibold text-gray-900 dark:text-white">
+            配置分摊参数
+          </h4>
+          <p class="m-0 text-gray-600 dark:text-gray-400 text-sm">
             为每位成员设置
             {{
               config.splitType === 'PERCENTAGE' ? '分摊比例'
@@ -412,147 +465,165 @@ onMounted(() => {
           </p>
 
           <!-- 均摊：无需配置 -->
-          <div v-if="config.splitType === 'EQUAL'" class="config-equal">
-            <div class="info-card">
-              <LucideEqual class="info-icon" />
-              <p>均等分摊无需额外配置，每位成员将平均分摊费用</p>
+          <div v-if="config.splitType === 'EQUAL'">
+            <div class="flex items-center gap-4 p-6 bg-blue-50/50 dark:bg-blue-900/10 border border-blue-600 dark:border-blue-500 rounded-xl">
+              <LucideEqual class="w-8 h-8 text-blue-600 dark:text-blue-400 flex-shrink-0" />
+              <p class="m-0 text-gray-900 dark:text-white">
+                均等分摊无需额外配置，每位成员将平均分摊费用
+              </p>
             </div>
           </div>
 
           <!-- 按比例 -->
-          <div v-if="config.splitType === 'PERCENTAGE'" class="config-params">
+          <div v-if="config.splitType === 'PERCENTAGE'" class="flex flex-col gap-4">
             <div
               v-for="member in selectedMemberDetails"
               :key="member.serialNum"
-              class="param-row"
+              class="flex justify-between items-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg"
             >
-              <span class="param-label">{{ member.name }}</span>
-              <div class="param-input-group">
+              <span class="font-medium text-gray-900 dark:text-white">{{ member.name }}</span>
+              <div class="flex items-center gap-2">
                 <input
                   v-model.number="config.splitParams[member.serialNum].percentage"
                   type="number"
                   min="0"
                   max="100"
                   step="0.1"
-                  class="param-input"
+                  class="w-[120px] px-2 py-1.5 border border-gray-300 dark:border-gray-600 rounded-md text-right text-base bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
-                <span class="param-unit">%</span>
+                <span class="text-gray-500 dark:text-gray-400 text-sm">%</span>
               </div>
             </div>
 
-            <div class="validation-summary" :class="{ error: !isValid }">
+            <div
+              class="p-4 rounded-lg text-center font-medium" :class="[
+                isValid
+                  ? 'bg-emerald-100 dark:bg-emerald-900/20 border border-emerald-600 dark:border-emerald-500 text-emerald-700 dark:text-emerald-300'
+                  : 'bg-red-100 dark:bg-red-900/20 border border-red-600 dark:border-red-500 text-red-700 dark:text-red-300',
+              ]"
+            >
               总计: {{ config.selectedMembers.reduce((sum, id) => sum + (config.splitParams[id]?.percentage || 0), 0).toFixed(1) }}%
-              <span v-if="isValid" class="valid-icon">✓</span>
-              <span v-else class="error-text">必须为 100%</span>
+              <span v-if="isValid" class="ml-2 text-emerald-600 dark:text-emerald-400">✓</span>
+              <span v-else class="ml-2 text-red-600 dark:text-red-400">必须为 100%</span>
             </div>
           </div>
 
           <!-- 固定金额 -->
-          <div v-if="config.splitType === 'FIXED_AMOUNT'" class="config-params">
+          <div v-if="config.splitType === 'FIXED_AMOUNT'" class="flex flex-col gap-4">
             <div
               v-for="member in selectedMemberDetails"
               :key="member.serialNum"
-              class="param-row"
+              class="flex justify-between items-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg"
             >
-              <span class="param-label">{{ member.name }}</span>
-              <div class="param-input-group">
-                <span class="param-prefix">¥</span>
+              <span class="font-medium text-gray-900 dark:text-white">{{ member.name }}</span>
+              <div class="flex items-center gap-2">
+                <span class="text-gray-500 dark:text-gray-400 text-sm">¥</span>
                 <input
                   v-model.number="config.splitParams[member.serialNum].amount"
                   type="number"
                   min="0"
                   step="0.01"
-                  class="param-input"
+                  class="w-[120px] px-2 py-1.5 border border-gray-300 dark:border-gray-600 rounded-md text-right text-base bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
               </div>
             </div>
 
-            <div class="validation-summary" :class="{ error: !isValid }">
+            <div
+              class="p-4 rounded-lg text-center font-medium" :class="[
+                isValid
+                  ? 'bg-emerald-100 dark:bg-emerald-900/20 border border-emerald-600 dark:border-emerald-500 text-emerald-700 dark:text-emerald-300'
+                  : 'bg-red-100 dark:bg-red-900/20 border border-red-600 dark:border-red-500 text-red-700 dark:text-red-300',
+              ]"
+            >
               总计: ¥{{ config.selectedMembers.reduce((sum, id) => sum + (config.splitParams[id]?.amount || 0), 0).toFixed(2) }}
               / ¥{{ amount.toFixed(2) }}
-              <span v-if="isValid" class="valid-icon">✓</span>
-              <span v-else class="error-text">必须等于交易金额</span>
+              <span v-if="isValid" class="ml-2 text-emerald-600 dark:text-emerald-400">✓</span>
+              <span v-else class="ml-2 text-red-600 dark:text-red-400">必须等于交易金额</span>
             </div>
           </div>
 
           <!-- 按权重 -->
-          <div v-if="config.splitType === 'WEIGHTED'" class="config-params">
+          <div v-if="config.splitType === 'WEIGHTED'" class="flex flex-col gap-4">
             <div
               v-for="member in selectedMemberDetails"
               :key="member.serialNum"
-              class="param-row"
+              class="flex justify-between items-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg"
             >
-              <span class="param-label">{{ member.name }}</span>
-              <div class="param-input-group">
+              <span class="font-medium text-gray-900 dark:text-white">{{ member.name }}</span>
+              <div class="flex items-center gap-2">
                 <input
                   v-model.number="config.splitParams[member.serialNum].weight"
                   type="number"
                   min="1"
                   step="1"
-                  class="param-input"
+                  class="w-[120px] px-2 py-1.5 border border-gray-300 dark:border-gray-600 rounded-md text-right text-base bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
-                <span class="param-unit">权重</span>
+                <span class="text-gray-500 dark:text-gray-400 text-sm">权重</span>
               </div>
             </div>
 
-            <div class="validation-summary">
+            <div class="p-4 bg-emerald-100 dark:bg-emerald-900/20 border border-emerald-600 dark:border-emerald-500 rounded-lg text-center font-medium text-emerald-700 dark:text-emerald-300">
               总权重: {{ config.selectedMembers.reduce((sum, id) => sum + (config.splitParams[id]?.weight || 0), 0) }}
             </div>
           </div>
         </div>
 
         <!-- 步骤 4: 预览结果 -->
-        <div v-if="currentStep === 4" class="step-content">
-          <h4>预览分摊结果</h4>
-          <p class="step-description">
+        <div v-if="currentStep === 4" class="flex flex-col gap-6">
+          <h4 class="m-0 text-lg font-semibold text-gray-900 dark:text-white">
+            预览分摊结果
+          </h4>
+          <p class="m-0 text-gray-600 dark:text-gray-400 text-sm">
             确认分摊结果无误后，可以保存或应用
           </p>
 
-          <div class="preview-section">
-            <div class="preview-summary">
-              <div class="summary-item">
-                <label>交易金额</label>
-                <strong>{{ formatAmount(amount) }}</strong>
+          <div class="flex flex-col gap-6">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 p-6 bg-gray-50 dark:bg-gray-700 rounded-xl">
+              <div class="flex flex-col gap-2">
+                <label class="text-sm text-gray-600 dark:text-gray-400">交易金额</label>
+                <strong class="text-lg font-semibold text-gray-900 dark:text-white">{{ formatAmount(amount) }}</strong>
               </div>
-              <div class="summary-item">
-                <label>分摊类型</label>
-                <strong>{{ splitTypes.find(t => t.value === config.splitType)?.label }}</strong>
+              <div class="flex flex-col gap-2">
+                <label class="text-sm text-gray-600 dark:text-gray-400">分摊类型</label>
+                <strong class="text-lg font-semibold text-gray-900 dark:text-white">{{ splitTypes.find(t => t.value === config.splitType)?.label }}</strong>
               </div>
-              <div class="summary-item">
-                <label>参与人数</label>
-                <strong>{{ config.selectedMembers.length }} 人</strong>
+              <div class="flex flex-col gap-2">
+                <label class="text-sm text-gray-600 dark:text-gray-400">参与人数</label>
+                <strong class="text-lg font-semibold text-gray-900 dark:text-white">{{ config.selectedMembers.length }} 人</strong>
               </div>
             </div>
 
-            <div class="preview-results">
+            <div class="flex flex-col gap-3">
               <div
                 v-for="result in calculatedSplit"
                 :key="result.memberSerialNum"
-                class="result-item"
+                class="flex justify-between items-center p-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg"
               >
-                <span class="result-name">{{ result.memberName }}</span>
-                <div class="result-amount-group">
-                  <span v-if="result.percentage" class="result-percentage">
+                <span class="font-medium text-gray-900 dark:text-white">{{ result.memberName }}</span>
+                <div class="flex items-center gap-4">
+                  <span v-if="result.percentage" class="text-sm text-gray-500 dark:text-gray-400">
                     {{ result.percentage.toFixed(1) }}%
                   </span>
-                  <strong class="result-amount">{{ formatAmount(result.amount) }}</strong>
+                  <strong class="text-lg font-semibold text-blue-600 dark:text-blue-400">{{ formatAmount(result.amount) }}</strong>
                 </div>
               </div>
             </div>
 
             <!-- 保存为模板 -->
-            <div class="template-save-section">
-              <h5>保存为模板（可选）</h5>
+            <div class="p-6 bg-gray-50 dark:bg-gray-700 rounded-xl flex flex-col gap-4">
+              <h5 class="m-0 text-base font-semibold text-gray-900 dark:text-white">
+                保存为模板（可选）
+              </h5>
               <input
                 v-model="config.templateName"
                 type="text"
                 placeholder="模板名称"
-                class="template-name-input"
+                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
               <textarea
                 v-model="config.templateDescription"
                 placeholder="模板描述（可选）"
-                class="template-desc-input"
+                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white resize-y focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 rows="2"
               />
             </div>
@@ -561,41 +632,39 @@ onMounted(() => {
       </div>
 
       <!-- Footer -->
-      <div class="modal-footer">
-        <button v-if="currentStep > 1" class="btn-secondary" @click="prevStep">
-          <LucideChevronLeft class="icon" />
+      <div class="flex gap-4 px-6 md:px-8 py-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700">
+        <Button v-if="currentStep > 1" variant="secondary" @click="prevStep">
+          <LucideChevronLeft class="w-4 h-4" />
           上一步
-        </button>
+        </Button>
 
-        <div class="footer-spacer" />
+        <div class="flex-1" />
 
-        <button
+        <Button
           v-if="currentStep < 4"
-          class="btn-primary"
+          variant="primary"
           :disabled="!isValid"
           @click="nextStep"
         >
           下一步
-          <LucideChevronRight class="icon" />
-        </button>
+          <LucideChevronRight class="w-4 h-4" />
+        </Button>
 
         <template v-if="currentStep === 4">
-          <button
+          <Button
             v-if="config.templateName"
-            class="btn-secondary"
+            variant="secondary"
             @click="saveAsTemplate"
           >
-            <LucideSave class="icon" />
+            <LucideSave class="w-4 h-4" />
             保存模板
-          </button>
-          <button class="btn-primary" @click="saveConfig">
-            <LucideCheck class="icon" />
+          </Button>
+          <Button variant="primary" @click="saveConfig">
+            <LucideCheck class="w-4 h-4" />
             应用分摊
-          </button>
+          </Button>
         </template>
       </div>
     </div>
   </div>
 </template>
-
-<style scoped src="./SplitRuleConfigurator.css"></style>

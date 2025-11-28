@@ -1,16 +1,22 @@
 <script setup lang="ts">
 import {
+  ArrowUpDown,
+  Ban,
   Cloud,
   CreditCard,
   DollarSign,
+  Edit,
+  Eye,
+  EyeOff,
   MoreHorizontal,
   PiggyBank,
   RotateCcw,
+  Trash,
   TrendingUp,
   Wallet,
   Wallet2,
 } from 'lucide-vue-next';
-import { Pagination } from '@/components/ui';
+import { Button, Card, Pagination } from '@/components/ui';
 import { useAccountStore, useMoneyConfigStore } from '@/stores/money';
 import { useAccountFilters } from '../composables/useAccountFilters';
 import { formatCurrency } from '../utils/money';
@@ -120,96 +126,79 @@ function getAccountTypeName(type: AccountType): string {
 function toggleAccountAmountVisibility(accountSerialNum: string) {
   accountStore.toggleAccountAmountHidden(accountSerialNum);
 }
-
-// 根据设备类型决定网格布局
-const gridLayoutClass = computed(() => {
-  if (mediaQueries.isMobile) {
-    // 移动端布局：一行一个，100%宽度
-    return 'grid-template-columns-mobile-single';
-  } else {
-    // 桌面端布局：一行两个
-    return 'grid-template-columns-desktop-two';
-  }
-});
 </script>
 
 <template>
-  <div class="money-tab-25">
+  <div class="space-y-4">
     <!-- 过滤选项区域 -->
-    <div class="screening-filtering">
-      <div class="filter-main-group">
+    <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+      <div class="flex flex-wrap gap-3 items-center">
         <!-- 账户状态过滤 -->
-        <div class="filter-flex-wrap">
-          <div class="filter-status-buttons">
-            <button
-              class="account-select" :class="[
-                filters.status === 'all'
-                  ? 'account-select-all'
-                  : 'account-select-gray',
-              ]" @click="setActiveFilter('all')"
-            >
-              {{ t('common.actions.all') }}<span class="text-xs ml-1 opacity-75">[{{ pagination.totalItems.value }}]</span>
-            </button>
-            <button
-              class="account-select" :class="[
-                filters.status === 'active'
-                  ? 'account-select-green'
-                  : 'account-select-gray',
-              ]" @click="setActiveFilter('active')"
-            >
-              {{ t('common.status.active') }}<span class="text-xs ml-1 opacity-75">({{ activeAccounts }})</span>
-            </button>
-            <button
-              class="account-select" :class="[
-                filters.status === 'inactive'
-                  ? 'account-select-back'
-                  : 'account-select-gray',
-              ]" @click="setActiveFilter('inactive')"
-            >
-              {{ t('common.status.inactive') }}<span class="text-xs ml-1 opacity-75">({{ inactiveAccounts }})</span>
-            </button>
-          </div>
+        <div class="flex gap-2">
+          <button
+            class="px-3 py-1.5 text-xs font-medium rounded-full border transition-all"
+            :class="filters.status === 'all'
+              ? 'bg-blue-600 text-white border-blue-600'
+              : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'"
+            @click="setActiveFilter('all')"
+          >
+            {{ t('common.actions.all') }}<span class="ml-1 opacity-75">[{{ pagination.totalItems.value }}]</span>
+          </button>
+          <button
+            class="px-3 py-1.5 text-xs font-medium rounded-full border transition-all"
+            :class="filters.status === 'active'
+              ? 'bg-green-600 text-white border-green-600'
+              : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'"
+            @click="setActiveFilter('active')"
+          >
+            {{ t('common.status.active') }}<span class="ml-1 opacity-75">({{ activeAccounts }})</span>
+          </button>
+          <button
+            class="px-3 py-1.5 text-xs font-medium rounded-full border transition-all"
+            :class="filters.status === 'inactive'
+              ? 'bg-gray-600 text-white border-gray-600'
+              : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'"
+            @click="setActiveFilter('inactive')"
+          >
+            {{ t('common.status.inactive') }}<span class="ml-1 opacity-75">({{ inactiveAccounts }})</span>
+          </button>
         </div>
 
         <!-- 移动端展开的额外过滤器 -->
         <template v-if="showMoreFilters">
           <!-- 账户类型过滤 -->
-          <div class="filter-flex-wrap">
-            <select
-              v-model="filters.type"
-              class="screening-filtering-select"
-              @change="handleTypeFilter"
-            >
-              <option value="">
-                {{ t('common.actions.all') }}{{ t('common.misc.types') }}
-              </option>
-              <option v-for="type in accountTypes" :key="type" :value="type">
-                {{ getAccountTypeName(type) }}
-              </option>
-            </select>
-          </div>
+          <select
+            v-model="filters.type"
+            class="px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+            @change="handleTypeFilter"
+          >
+            <option value="">
+              {{ t('common.actions.all') }}{{ t('common.misc.types') }}
+            </option>
+            <option v-for="type in accountTypes" :key="type" :value="type">
+              {{ getAccountTypeName(type) }}
+            </option>
+          </select>
 
           <!-- 币种过滤 -->
-          <div class="filter-flex-wrap">
-            <select
-              v-model="filters.currency"
-              class="screening-filtering-select"
-              @change="handleCurrencyFilter"
-            >
-              <option value="">
-                {{ t('common.actions.all') }}{{ t('financial.currency') }}
-              </option>
-              <option v-for="currency in currencies" :key="currency" :value="currency">
-                {{ currency }}
-              </option>
-            </select>
-          </div>
+          <select
+            v-model="filters.currency"
+            class="px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+            @change="handleCurrencyFilter"
+          >
+            <option value="">
+              {{ t('common.actions.all') }}{{ t('financial.currency') }}
+            </option>
+            <option v-for="currency in currencies" :key="currency" :value="currency">
+              {{ currency }}
+            </option>
+          </select>
 
           <!-- 排序选项 -->
-          <div class="filter-flex-wrap">
+          <div class="flex gap-2">
             <select
               v-model="filters.sortBy"
-              class="screening-filtering-select"
+              class="px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
               @change="handleSortChange"
             >
               <option value="updatedAt">
@@ -218,7 +207,6 @@ const gridLayoutClass = computed(() => {
               <option value="createdAt">
                 {{ t('date.createDate') }}
               </option>
-
               <option value="name">
                 {{ t('financial.account.name') }}
               </option>
@@ -230,29 +218,29 @@ const gridLayoutClass = computed(() => {
               </option>
             </select>
             <button
-              class="screening-filtering-select"
+              class="px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
               :title="filters.sortOrder === 'asc' ? t('common.sorting.asc') : t('common.sorting.desc')"
               @click="toggleSortOrder"
             >
-              <LucideArrowUpDown class="btn-lucide" :class="filters.sortOrder === 'desc' && 'rotate-180'" />
+              <ArrowUpDown :size="16" :class="filters.sortOrder === 'desc' && 'rotate-180'" class="text-gray-600 dark:text-gray-300 transition-transform" />
             </button>
           </div>
         </template>
 
         <!-- 操作按钮组 -->
-        <div class="filter-button-group">
-          <button
-            class="screening-filtering-select"
+        <div class="flex gap-2 ml-auto">
+          <Button
+            variant="secondary"
+            size="sm"
+            :icon="MoreHorizontal"
             @click="toggleFilters"
-          >
-            <MoreHorizontal class="wh-4 mr-1" />
-          </button>
-          <button
-            class="screening-filtering-select"
+          />
+          <Button
+            variant="secondary"
+            size="sm"
+            :icon="RotateCcw"
             @click="resetFilters"
-          >
-            <RotateCcw class="wh-4 mr-1" />
-          </button>
+          />
         </div>
       </div>
     </div>
@@ -260,82 +248,90 @@ const gridLayoutClass = computed(() => {
     <!-- 账户列表区域 -->
     <div
       v-if="loading"
-      class="loading-container"
+      class="flex items-center justify-center h-48 text-gray-500 dark:text-gray-400"
     >
       {{ t('common.loading') }}
     </div>
 
     <div
       v-else-if="pagination.totalItems.value === 0"
-      class="empty-state-container"
+      class="flex flex-col items-center justify-center h-48 text-gray-400 dark:text-gray-500"
     >
-      <div class="empty-state-icon">
-        <LucideCreditCard class="empty-icon" />
-      </div>
-      <div class="empty-state-text">
+      <CreditCard :size="60" class="mb-4 opacity-50" />
+      <div class="text-base">
         {{ pagination.totalItems.value === 0 ? t('financial.messages.noPatternAccount') : t('financial.noAccount') }}
       </div>
     </div>
 
     <div
       v-else
-      class="accounts-grid"
-      :class="gridLayoutClass"
+      class="grid gap-4 mb-4"
+      :class="mediaQueries.isMobile ? 'grid-cols-1' : 'grid-cols-2'"
     >
-      <div
+      <Card
         v-for="account in pagination.paginatedItems.value"
         :key="account.serialNum"
-        class="account-card"
+        padding="md"
+        hoverable
+        class="relative overflow-hidden transition-all duration-300"
         :class="{
-          'account-card-inactive': !account.isActive,
-        }" :style="{
-          borderColor: account.color || 'var(--color-gray-200)',
+          'opacity-60': !account.isActive,
+        }"
+        :style="{
+          borderLeftColor: account.color || '#e5e7eb',
+          borderLeftWidth: '4px',
         }"
       >
-        <div class="account-header">
+        <!-- 顶部渐变条 -->
+        <div
+          class="absolute top-0 left-0 right-0 h-1 opacity-0 hover:opacity-100 transition-opacity duration-300"
+          :style="{ background: `linear-gradient(90deg, ${account.color || '#3b82f6'}, transparent)` }"
+        />
+
+        <div class="flex items-start justify-between mb-3 gap-2">
           <!-- 账户信息区域 -->
-          <div class="account-info">
-            <div class="account-info-top">
-              <component :is="getAccountTypeIcon(account.type)" class="account-type-icon" />
-              <span class="account-name">{{ account.name }}</span>
+          <div class="flex flex-col gap-1 flex-1 min-w-0">
+            <div class="flex items-center gap-2">
+              <component :is="getAccountTypeIcon(account.type)" :size="20" class="text-blue-600 dark:text-blue-400 shrink-0" />
+              <span class="font-semibold text-gray-900 dark:text-white truncate">{{ account.name }}</span>
             </div>
-            <span class="account-type-name">{{ getAccountTypeName(account.type) }}</span>
+            <span class="text-xs text-gray-500 dark:text-gray-400 ml-7">{{ getAccountTypeName(account.type) }}</span>
           </div>
 
           <!-- 操作按钮区域 -->
-          <div class="account-actions">
+          <div class="flex gap-1 shrink-0">
             <button
-              class="money-option-btn money-option-eye-hover"
+              class="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:border-blue-500 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all active:scale-95"
               :title="isAccountAmountHidden(account.serialNum) ? '显示金额' : '隐藏金额'"
               @click="toggleAccountAmountVisibility(account.serialNum)"
             >
-              <LucideEye v-if="!isAccountAmountHidden(account.serialNum)" class="wh-4" />
-              <LucideEyeOff v-else class="wh-4" />
+              <Eye v-if="!isAccountAmountHidden(account.serialNum)" :size="16" />
+              <EyeOff v-else :size="16" />
             </button>
             <!-- 虚拟账户不显示禁用、编辑、删除按钮 -->
             <template v-if="!account.isVirtual">
               <button
-                class="money-option-btn money-option-ben-hover"
+                class="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:border-yellow-500 hover:text-yellow-600 dark:hover:text-yellow-400 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 transition-all active:scale-95"
                 :title="account.isActive ? t('common.status.stop') : t('common.status.enabled')"
                 @click="emit('toggleActive', account.serialNum, !account.isActive)"
               >
-                <LucideBan class="wh-4" />
+                <Ban :size="16" />
               </button>
               <!-- 禁用状态的账户不显示编辑、删除按钮 -->
               <template v-if="account.isActive">
                 <button
-                  class="money-option-btn money-option-edit-hover"
+                  class="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:border-blue-500 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all active:scale-95"
                   :title="t('common.actions.edit')"
                   @click="emit('edit', account)"
                 >
-                  <LucideEdit class="wh-4" />
+                  <Edit :size="16" />
                 </button>
                 <button
-                  class="money-option-btn money-option-trash-hover"
+                  class="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:border-red-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all active:scale-95"
                   :title="t('common.actions.delete')"
                   @click="emit('delete', account.serialNum)"
                 >
-                  <LucideTrash class="wh-4" />
+                  <Trash :size="16" />
                 </button>
               </template>
             </template>
@@ -343,17 +339,17 @@ const gridLayoutClass = computed(() => {
         </div>
 
         <!-- 账户余额区域 -->
-        <div class="account-balance">
-          <span class="account-currency">{{ account.currency?.code }}</span>
-          <span class="balance-amount">
+        <div class="flex items-baseline gap-2 mt-2">
+          <span class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{{ account.currency?.code }}</span>
+          <span class="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">
             {{ isAccountAmountHidden(account.serialNum) ? '***' : formatCurrency(account.balance) }}
           </span>
         </div>
-      </div>
+      </Card>
     </div>
 
     <!-- 分页组件 -->
-    <div v-if="pagination.totalPages.value > 1" class="pagination-container">
+    <div v-if="pagination.totalPages.value > 1" class="flex justify-center" :class="mediaQueries.isMobile && 'mb-16 pb-4'">
       <Pagination
         :current-page="pagination.currentPage.value"
         :total-pages="pagination.totalPages.value"
@@ -368,381 +364,3 @@ const gridLayoutClass = computed(() => {
     </div>
   </div>
 </template>
-
-<style lang="postcss">
-/* Loading and Empty States */
-.loading-container {
-  color: var(--color-gray-500);
-  height: 12.5rem;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.empty-state-container {
-  color: var(--color-gray-400);
-  display: flex;
-  flex-direction: column;
-  height: 12.5rem;
-  justify-content: center;
-  align-items: center;
-}
-
-.empty-state-icon {
-  font-size: 3.75rem;
-  margin-bottom: 1rem;
-  opacity: 0.5;
-}
-
-.empty-icon {
-  width: 1.25rem;
-  height: 1.25rem;
-}
-
-.empty-state-text {
-  font-size: 1rem;
-}
-
-/* Accounts Grid - 优化网格布局 */
-.accounts-grid {
-  margin-bottom: 1rem;
-  gap: 1rem;
-  display: grid;
-}
-
-/* 网格布局类 - 响应式设计 */
-.grid-template-columns-mobile-single {
-  grid-template-columns: 1fr;
-}
-
-.grid-template-columns-desktop-two {
-  grid-template-columns: repeat(2, 1fr);
-  gap: 1rem;
-}
-
-/* 移动端优化 */
-@media (max-width: 768px) {
-  .accounts-grid {
-    gap: 0.75rem;
-    margin-bottom: 0.75rem;
-  }
-
-  .grid-template-columns-mobile-single {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* 桌面端优化 */
-@media (min-width: 769px) {
-  .accounts-grid {
-    gap: 1rem;
-    margin-bottom: 1rem;
-  }
-
-  .grid-template-columns-desktop-two {
-    grid-template-columns: repeat(2, 1fr);
-    max-width: none;
-  }
-}
-
-/* Account Card - 重新设计为更紧凑美观的卡片 */
-.account-card {
-  background: linear-gradient(135deg, var(--color-base-100) 0%, var(--color-base-200) 100%);
-  padding: 1rem;
-  border: 1px solid var(--color-primary-soft);
-  border-radius: 0.75rem;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  position: relative;
-  overflow: hidden;
-  box-shadow: var(--shadow-sm);
-}
-
-.account-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: var(--color-primary-gradient);
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.account-card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-lg);
-  border-color: var(--color-primary);
-}
-
-.account-card:hover::before {
-  opacity: 1;
-}
-
-.account-card-inactive {
-  opacity: 0.6;
-  background: var(--color-gray-100);
-  border-color: var(--color-gray-300);
-}
-
-.account-card-inactive::before {
-  background: var(--color-gray-400);
-}
-
-/* Account Header - 更紧凑的布局 */
-.account-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  margin-bottom: 0.75rem;
-  gap: 0.5rem;
-}
-
-.account-info {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  flex: 1;
-  min-width: 0;
-}
-
-.account-info-top {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.account-type-icon {
-  color: var(--color-primary);
-  height: 1.25rem;
-  width: 1.25rem;
-  flex-shrink: 0;
-}
-
-.account-name {
-  font-size: 1rem;
-  color: var(--color-base-content);
-  font-weight: 600;
-  line-height: 1.2;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.account-type-name {
-  font-size: 0.75rem;
-  color: var(--color-gray-500);
-  font-weight: 500;
-  margin-left: 1.75rem;
-}
-
-/* Account Actions - 更优雅的操作按钮 */
-.account-actions {
-  display: flex;
-  gap: 0.25rem;
-  flex-shrink: 0;
-}
-
-.money-option-btn {
-  width: 2rem;
-  height: 2rem;
-  border-radius: 0.5rem;
-  border: 1px solid var(--color-gray-200);
-  background: var(--color-base-100);
-  color: var(--color-gray-600);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s ease;
-  cursor: pointer;
-  position: relative;
-  overflow: hidden;
-}
-
-.money-option-btn::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: var(--color-primary);
-  opacity: 0;
-  transition: opacity 0.2s ease;
-}
-
-.money-option-btn:hover {
-  border-color: var(--color-primary);
-  color: var(--color-primary);
-  transform: scale(1.05);
-}
-
-.money-option-btn:hover::before {
-  opacity: 0.1;
-}
-
-.money-option-btn:active {
-  transform: scale(0.95);
-}
-
-.money-option-eye-hover:hover {
-  background-color: var(--color-info);
-  color: var(--color-info-content);
-  border-color: var(--color-info);
-}
-
-.money-option-ben-hover:hover {
-  background-color: var(--color-warning);
-  color: var(--color-warning-content);
-  border-color: var(--color-warning);
-}
-
-.money-option-edit-hover:hover {
-  background-color: var(--color-primary);
-  color: var(--color-primary-content);
-  border-color: var(--color-primary);
-}
-
-.money-option-trash-hover:hover {
-  background-color: var(--color-error);
-  color: var(--color-error-content);
-  border-color: var(--color-error);
-}
-
-/* Account Balance - 更突出的余额显示 */
-.account-balance {
-  display: flex;
-  align-items: baseline;
-  gap: 0.5rem;
-  margin-top: 0.5rem;
-}
-
-.account-currency {
-  font-size: 0.75rem;
-  color: var(--color-gray-500);
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.balance-amount {
-  font-size: 1.5rem;
-  color: var(--color-base-content);
-  font-weight: 700;
-  line-height: 1;
-  letter-spacing: -0.025em;
-}
-
-/* 移动端优化 */
-@media (max-width: 768px) {
-  .account-card {
-    padding: 0.875rem;
-  }
-
-  .account-header {
-    margin-bottom: 0.625rem;
-  }
-
-  .account-name {
-    font-size: 0.9375rem;
-  }
-
-  .account-type-name {
-    font-size: 0.6875rem;
-    margin-left: 1.5rem;
-  }
-
-  .balance-amount {
-    font-size: 1.375rem;
-  }
-
-  .money-option-btn {
-    width: 1.75rem;
-    height: 1.75rem;
-  }
-
-  .account-type-icon {
-    height: 1.125rem;
-    width: 1.125rem;
-  }
-}
-
-/* Account Select Buttons */
-.account-select {
-  font-size: 0.75rem;
-  font-weight: 500;
-  padding: 0.375rem 0.75rem;
-  border: 1px solid var(--color-gray-300);
-  border-radius: 9999px;
-  transition: all 0.2s;
-}
-
-.account-select-all {
-  background-color: var(--color-info);
-  color: var(--color-info-content);
-  border: 1px solid var(--color-info);
-}
-
-.account-select-green {
-  background-color: var(--color-success);
-  border-color: var(--color-success);
-}
-
-.account-select-gray {
-  background-color: var(--color-neutral-content);
-  border-color: var(--color-neutral);
-}
-.account-select-back {
-  background-color: var(--color-gray-600);
-  border-color: var(--color-gray-600);
-}
-
-.account-select-blue {
-  background-color: var(--color-info);
-  border-color: var(--color-info);
-}
-
-.account-select-green:hover {
-  border-color: var(--color-success);
-}
-
-.account-select-blue:hover {
-  border-color: var(--color-info);
-}
-
-.account-select-gray:hover {
-  border-color: var(--color-gray-400);
-}
-
-/* Additional utility styles */
-.filter-main-group {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  align-items: center;
-}
-
-.filter-status-buttons {
-  display: flex;
-  gap: 0.25rem;
-}
-
-.filter-button-group {
-  display: flex;
-  gap: 0.25rem;
-}
-
-.pagination-container {
-  margin-top: 1rem;
-  display: flex;
-  justify-content: center;
-}
-
-/* 移动端分页组件底部安全间距 */
-@media (max-width: 768px) {
-  .pagination-container {
-    margin-bottom: 4rem; /* 为底部导航栏预留空间 */
-    padding-bottom: 1rem; /* 额外的底部内边距 */
-  }
-}
-</style>

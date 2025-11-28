@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n';
+import { Button, Card, Input, Modal } from '@/components/ui';
 import { invokeCommand } from '@/types/api';
 import { DateUtils } from '@/utils/date';
 import { toast } from '@/utils/toast';
@@ -75,303 +76,102 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="installment-management">
-    <div class="header">
-      <h2>{{ t('financial.installment.title') }}</h2>
-      <button class="refresh-btn" @click="refreshData">
+  <div class="p-5 max-w-6xl mx-auto">
+    <div class="flex justify-between items-center mb-8">
+      <h2 class="text-2xl font-semibold text-gray-900 dark:text-white">
+        {{ t('financial.installment.title') }}
+      </h2>
+      <Button variant="primary" size="sm" @click="refreshData">
+        <LucideRefreshCw :size="16" class="mr-2" />
         {{ t('common.action.refresh') }}
-      </button>
+      </Button>
     </div>
 
     <!-- 待还款列表 -->
-    <div class="pending-section">
-      <h3>{{ t('financial.installment.pendingPayments') }}</h3>
-      <div v-if="pendingInstallments.length === 0" class="empty-state">
+    <div>
+      <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-5">
+        {{ t('financial.installment.pendingPayments') }}
+      </h3>
+      <div v-if="pendingInstallments.length === 0" class="text-center py-10 text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-900/50 rounded-lg">
         {{ t('financial.installment.noPendingPayments') }}
       </div>
-      <div v-else class="installment-list">
-        <div
+      <div v-else class="flex flex-col gap-4">
+        <Card
           v-for="installment in pendingInstallments"
           :key="installment.serial_num"
-          class="installment-item"
+          padding="lg"
+          hoverable
         >
-          <div class="installment-info">
-            <div class="plan-header">
-              <h4>{{ installment.description }}</h4>
-              <span class="plan-status">{{ installment.status }}</span>
+          <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+            <div class="flex-1">
+              <div class="flex flex-wrap justify-between items-center mb-2 gap-2">
+                <h4 class="text-base font-semibold text-gray-900 dark:text-white">
+                  {{ installment.description }}
+                </h4>
+                <span class="px-2 py-1 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400 rounded text-xs font-medium">{{ installment.status }}</span>
+              </div>
+              <div class="space-y-1">
+                <p class="text-sm text-gray-600 dark:text-gray-400">
+                  {{ t('financial.installment.totalAmount') }}: ¥{{ installment.totalAmount.toFixed(2) }}
+                </p>
+                <p class="text-sm text-gray-600 dark:text-gray-400">
+                  {{ t('financial.installment.remainingPeriods') }}: {{ installment.remainingPeriods }}/{{ installment.totalPeriods }}
+                </p>
+              </div>
             </div>
-            <div class="plan-details">
-              <p>{{ t('financial.installment.totalAmount') }}: ¥{{ installment.totalAmount.toFixed(2) }}</p>
-              <p>{{ t('financial.installment.remainingPeriods') }}: {{ installment.remainingPeriods }}/{{ installment.totalPeriods }}</p>
+            <div class="flex gap-2 flex-wrap">
+              <button
+                v-for="detail in installment.details.filter((d: any) => d.status === 'PENDING')"
+                :key="detail.serial_num"
+                class="px-3 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 dark:disabled:bg-gray-600 text-white rounded transition-colors text-xs text-center disabled:cursor-not-allowed"
+                :disabled="isPaying"
+                @click="payInstallment(detail)"
+              >
+                <div>{{ t('financial.installment.payPeriod', { period: detail.period }) }}</div>
+                <div class="text-xs opacity-90">
+                  ¥{{ detail.amount.toFixed(2) }}
+                </div>
+              </button>
             </div>
           </div>
-          <div class="installment-actions">
-            <button
-              v-for="detail in installment.details.filter((d: any) => d.status === 'PENDING')"
-              :key="detail.serial_num"
-              class="pay-btn"
-              :disabled="isPaying"
-              @click="payInstallment(detail)"
-            >
-              {{ t('financial.installment.payPeriod', { period: detail.period }) }}
-              <br>
-              <small>¥{{ detail.amount.toFixed(2) }}</small>
-            </button>
-          </div>
-        </div>
+        </Card>
       </div>
     </div>
 
     <!-- 还款对话框 -->
-    <div v-if="showPaymentModal" class="payment-modal-overlay" @click="closePaymentModal">
-      <div class="payment-modal" @click.stop>
-        <h3>{{ t('financial.installment.paymentModal.title') }}</h3>
-        <div class="payment-form">
-          <div class="form-row">
-            <label>{{ t('financial.installment.paymentModal.period') }}</label>
-            <span>{{ selectedDetail?.period }}</span>
-          </div>
-          <div class="form-row">
-            <label>{{ t('financial.installment.paymentModal.dueDate') }}</label>
-            <span>{{ selectedDetail?.dueDate }}</span>
-          </div>
-          <div class="form-row">
-            <label>{{ t('financial.installment.paymentModal.amount') }}</label>
-            <span>¥{{ selectedDetail?.amount.toFixed(2) }}</span>
-          </div>
-          <div class="form-row">
-            <label>{{ t('financial.installment.paymentModal.paidAmount') }}</label>
-            <input
-              v-model="paidAmount"
-              type="number"
-              step="0.01"
-              class="form-control"
-              :placeholder="t('financial.installment.paymentModal.enterAmount')"
-            >
-          </div>
+    <Modal
+      :open="showPaymentModal"
+      :title="t('financial.installment.paymentModal.title')"
+      size="sm"
+      :confirm-loading="isPaying"
+      :confirm-disabled="!canConfirmPayment"
+      @close="closePaymentModal"
+      @confirm="confirmPayment"
+    >
+      <div class="space-y-3">
+        <div class="flex justify-between items-center">
+          <label class="text-sm font-medium text-gray-900 dark:text-white">{{ t('financial.installment.paymentModal.period') }}</label>
+          <span class="text-sm text-gray-600 dark:text-gray-400">{{ selectedDetail?.period }}</span>
         </div>
-        <div class="modal-actions">
-          <button class="btn-secondary" @click="closePaymentModal">
-            {{ t('common.action.cancel') }}
-          </button>
-          <button class="btn-primary" :disabled="!canConfirmPayment" @click="confirmPayment">
-            {{ t('financial.installment.paymentModal.confirmPayment') }}
-          </button>
+        <div class="flex justify-between items-center">
+          <label class="text-sm font-medium text-gray-900 dark:text-white">{{ t('financial.installment.paymentModal.dueDate') }}</label>
+          <span class="text-sm text-gray-600 dark:text-gray-400">{{ selectedDetail?.dueDate }}</span>
+        </div>
+        <div class="flex justify-between items-center">
+          <label class="text-sm font-medium text-gray-900 dark:text-white">{{ t('financial.installment.paymentModal.amount') }}</label>
+          <span class="text-sm text-gray-600 dark:text-gray-400">¥{{ selectedDetail?.amount.toFixed(2) }}</span>
+        </div>
+        <div class="flex justify-between items-center gap-4">
+          <label class="text-sm font-medium text-gray-900 dark:text-white whitespace-nowrap">{{ t('financial.installment.paymentModal.paidAmount') }}</label>
+          <Input
+            v-model.number="paidAmount"
+            type="number"
+            step="0.01"
+            class="w-32"
+            :placeholder="t('financial.installment.paymentModal.enterAmount')"
+          />
         </div>
       </div>
-    </div>
+    </Modal>
   </div>
 </template>
-
-<style scoped>
-.installment-management {
-  padding: 20px;
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 30px;
-}
-
-.header h2 {
-  margin: 0;
-  color: var(--color-text-primary);
-}
-
-.refresh-btn {
-  padding: 8px 16px;
-  background: var(--color-primary);
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.refresh-btn:hover {
-  background: var(--color-primary-dark);
-}
-
-.pending-section h3 {
-  margin-bottom: 20px;
-  color: var(--color-text-primary);
-}
-
-.empty-state {
-  text-align: center;
-  padding: 40px;
-  color: var(--color-text-secondary);
-  background: var(--color-background-secondary);
-  border-radius: 8px;
-}
-
-.installment-list {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.installment-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 20px;
-  background: var(--color-background-secondary);
-  border-radius: 8px;
-  border: 1px solid var(--color-border);
-}
-
-.installment-info {
-  flex: 1;
-}
-
-.plan-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 8px;
-}
-
-.plan-header h4 {
-  margin: 0;
-  color: var(--color-text-primary);
-}
-
-.plan-status {
-  padding: 4px 8px;
-  background: var(--color-warning);
-  color: white;
-  border-radius: 4px;
-  font-size: 12px;
-}
-
-.plan-details p {
-  margin: 4px 0;
-  color: var(--color-text-secondary);
-  font-size: 14px;
-}
-
-.installment-actions {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.pay-btn {
-  padding: 8px 12px;
-  background: var(--color-success);
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background-color 0.2s;
-  font-size: 12px;
-  text-align: center;
-}
-
-.pay-btn:hover:not(:disabled) {
-  background: var(--color-success-dark);
-}
-
-.pay-btn:disabled {
-  background: var(--color-disabled);
-  cursor: not-allowed;
-}
-
-.payment-modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-}
-
-.payment-modal {
-  background: var(--color-background-primary);
-  padding: 24px;
-  border-radius: 8px;
-  min-width: 400px;
-  max-width: 500px;
-}
-
-.payment-modal h3 {
-  margin: 0 0 20px 0;
-  color: var(--color-text-primary);
-}
-
-.payment-form {
-  margin-bottom: 20px;
-}
-
-.form-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
-}
-
-.form-row label {
-  font-weight: 500;
-  color: var(--color-text-primary);
-}
-
-.form-row span {
-  color: var(--color-text-secondary);
-}
-
-.form-control {
-  width: 120px;
-  padding: 6px 8px;
-  border: 1px solid var(--color-border);
-  border-radius: 4px;
-  background: var(--color-background-primary);
-  color: var(--color-text-primary);
-}
-
-.modal-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-}
-
-.btn-primary, .btn-secondary {
-  padding: 8px 16px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.btn-primary {
-  background: var(--color-primary);
-  color: white;
-}
-
-.btn-primary:hover:not(:disabled) {
-  background: var(--color-primary-dark);
-}
-
-.btn-primary:disabled {
-  background: var(--color-disabled);
-  cursor: not-allowed;
-}
-
-.btn-secondary {
-  background: var(--color-background-secondary);
-  color: var(--color-text-primary);
-  border: 1px solid var(--color-border);
-}
-
-.btn-secondary:hover {
-  background: var(--color-background-tertiary);
-}
-</style>

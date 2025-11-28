@@ -241,14 +241,14 @@ function handleMouseLeave() {
 
 <template>
   <div
-    class="todo-card"
+    class="relative w-full mb-1 p-4 md:p-6 lg:p-6 rounded-xl md:rounded-[1.25rem] border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm backdrop-blur-sm transition-all duration-300 ease-out hover:shadow-lg hover:border-blue-500 dark:hover:border-blue-400 hover:-translate-y-0.5 overflow-visible z-[1]"
     :class="priorityClass"
     @mouseenter="handleMouseEnter"
     @mouseleave="handleMouseLeave"
   >
     <!-- Left Section: Checkbox, Priority, Title -->
     <div class="flex justify-between items-center flex-1 w-full max-w-full min-w-0 overflow-hidden">
-      <div class="flex items-center gap-2 flex-1 min-w-0 max-w-full pl-2 overflow-hidden">
+      <div class="flex items-center gap-2 md:gap-2 flex-1 min-w-0 max-w-full pl-0.5 md:pl-2 overflow-hidden">
         <PriorityBadge
           v-if="todoCopy.priority"
           :serial-num="todoCopy.serialNum"
@@ -271,7 +271,7 @@ function handleMouseLeave() {
     </div>
 
     <!-- 扩展信息区域 -->
-    <div v-if="!completed" class="flex flex-wrap gap-3 mt-1.5 pt-1.5 border-t border-base-300 relative z-0 rounded-b-2xl -mx-5 px-5 justify-center items-center lg:-mx-6 lg:px-6">
+    <div v-if="!completed" class="flex flex-wrap gap-3 mt-1.5 pt-1.5 border-t border-gray-200 dark:border-gray-700 relative z-0 rounded-b-2xl -mx-4 md:-mx-6 lg:-mx-6 px-4 md:px-6 lg:px-6 justify-center items-center">
       <!-- 进度条 -->
       <TodoProgress
         :progress="todoCopy.progress"
@@ -379,28 +379,3 @@ function handleMouseLeave() {
     </Modal>
   </div>
 </template>
-
-<style scoped>
-/* 动画类 - 其余样式全部使用Tailwind */
-.rotating {
-  animation: rotating 0.5s linear;
-}
-@keyframes rotating {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
-/* 移动端优化 */
-@media (max-width: 768px) {
-  .todo-card {
-    padding: 0.875rem 1rem;
-    margin-bottom: 0.625rem;
-    border-radius: 1rem;
-  }
-
-  .flex.items-center.gap-2 {
-    padding-left: 0.5rem;
-    gap: 0.5rem;
-  }
-}
-</style>

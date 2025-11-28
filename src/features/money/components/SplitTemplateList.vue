@@ -8,6 +8,7 @@ import {
   LucideScale,
   LucideTrash2,
 } from 'lucide-vue-next';
+import Button from '@/components/ui/Button.vue';
 import { useFamilySplitStore } from '@/stores/money';
 import type { SplitRuleType } from '@/schema/money';
 
@@ -112,101 +113,128 @@ function getSplitTypeName(type: SplitRuleType): string {
 </script>
 
 <template>
-  <div class="split-template-list">
-    <div class="list-header">
-      <h3>分摊模板</h3>
-      <button class="btn-create" @click="createNewTemplate">
-        <LucidePlus class="icon" />
+  <div class="flex flex-col gap-8">
+    <div class="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4">
+      <h3 class="m-0 text-2xl font-semibold text-gray-900 dark:text-white">
+        分摆模板
+      </h3>
+      <Button variant="primary" class="w-full sm:w-auto justify-center" @click="createNewTemplate">
+        <LucidePlus class="w-4 h-4" />
         新建模板
-      </button>
+      </Button>
     </div>
 
     <!-- 预设模板 -->
-    <section class="templates-section">
-      <h4 class="section-title">
+    <section class="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-sm">
+      <h4 class="m-0 mb-2 text-lg font-semibold text-gray-900 dark:text-white">
         预设模板
       </h4>
-      <p class="section-description">
-        系统提供的常用分摊方式，可直接应用到交易中
+      <p class="m-0 mb-6 text-gray-600 dark:text-gray-400 text-sm">
+        系统提供的常用分摆方式，可直接应用到交易中
       </p>
 
-      <div class="template-grid">
+      <div class="grid grid-cols-1 md:grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-6">
         <div
           v-for="template in presetTemplates"
           :key="template.id"
-          class="template-card preset"
-          :style="{ '--template-color': template.color }"
+          class="flex flex-col gap-4 p-6 bg-white dark:bg-gray-700 border-2 rounded-xl transition-all duration-300 hover:shadow-md hover:-translate-y-0.5"
+          :style="{ borderColor: template.color }"
         >
-          <div class="template-icon-wrapper">
-            <component :is="template.icon" class="template-icon" />
+          <div
+            class="w-16 h-16 rounded-xl flex items-center justify-center"
+            :style="{ backgroundColor: `${template.color}26` }"
+          >
+            <component :is="template.icon" class="w-9 h-9" :style="{ color: template.color }" />
           </div>
 
-          <div class="template-content">
-            <h5 class="template-name">
+          <div class="flex-1 flex flex-col gap-2">
+            <h5 class="m-0 text-lg font-semibold text-gray-900 dark:text-white">
               {{ template.name }}
             </h5>
-            <p class="template-description">
+            <p class="m-0 text-gray-600 dark:text-gray-400 text-sm leading-relaxed">
               {{ template.description }}
             </p>
-            <span class="template-type">{{ getSplitTypeName(template.splitType) }}</span>
+            <span
+              class="inline-block self-start px-3 py-1 rounded-xl text-xs font-medium text-white"
+              :style="{ backgroundColor: template.color, opacity: 0.9 }"
+            >
+              {{ getSplitTypeName(template.splitType) }}
+            </span>
           </div>
 
-          <div class="template-actions">
-            <button class="btn-apply" @click="applyTemplate(template)">
+          <div class="flex gap-2 items-center">
+            <Button
+              variant="primary"
+              class="flex-1"
+              :style="{ backgroundColor: template.color, borderColor: template.color }"
+              @click="applyTemplate(template)"
+            >
               应用
-            </button>
+            </Button>
           </div>
         </div>
       </div>
     </section>
 
     <!-- 自定义模板 -->
-    <section class="templates-section">
-      <h4 class="section-title">
+    <section class="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-sm">
+      <h4 class="m-0 mb-2 text-lg font-semibold text-gray-900 dark:text-white">
         自定义模板
       </h4>
-      <p class="section-description">
-        保存的自定义分摊规则，可以快速应用到类似场景
+      <p class="m-0 mb-6 text-gray-600 dark:text-gray-400 text-sm">
+        保存的自定义分摆规则，可以快速应用到类似场景
       </p>
 
-      <div v-if="customTemplates.length > 0" class="template-grid">
+      <div v-if="customTemplates.length > 0" class="grid grid-cols-1 md:grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-6">
         <div
           v-for="template in customTemplates"
           :key="template.serialNum"
-          class="template-card custom"
+          class="flex flex-col gap-4 p-6 bg-white dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 rounded-xl transition-all duration-300 hover:shadow-md hover:-translate-y-0.5"
         >
-          <div class="template-content">
-            <h5 class="template-name">
+          <div class="flex-1 flex flex-col gap-2">
+            <h5 class="m-0 text-lg font-semibold text-gray-900 dark:text-white">
               {{ template.name }}
             </h5>
-            <p v-if="template.description" class="template-description">
+            <p v-if="template.description" class="m-0 text-gray-600 dark:text-gray-400 text-sm leading-relaxed">
               {{ template.description }}
             </p>
-            <div class="template-meta">
-              <span class="template-type">{{ getSplitTypeName(template.ruleType) }}</span>
-              <span class="template-members">
+            <div class="flex gap-4 mt-2">
+              <span class="inline-block px-3 py-1 bg-gray-100 dark:bg-gray-600 rounded-xl text-xs font-medium text-gray-700 dark:text-gray-200">
+                {{ getSplitTypeName(template.ruleType) }}
+              </span>
+              <span class="text-xs text-gray-500 dark:text-gray-400">
                 {{ template.participants?.length || 0 }} 人参与
               </span>
             </div>
           </div>
 
-          <div class="template-actions">
-            <button class="btn-icon" title="编辑" @click="editTemplate(template)">
-              <LucideEdit class="icon" />
+          <div class="flex gap-2 items-center">
+            <button
+              class="p-2 bg-transparent border border-gray-200 dark:border-gray-600 rounded-md cursor-pointer transition-all hover:bg-gray-100 dark:hover:bg-gray-600 hover:border-blue-500 dark:hover:border-blue-400"
+              title="编辑"
+              @click="editTemplate(template)"
+            >
+              <LucideEdit class="w-4 h-4 text-gray-600 dark:text-gray-300" />
             </button>
-            <button class="btn-icon" title="删除" @click="deleteTemplate(template)">
-              <LucideTrash2 class="icon" />
+            <button
+              class="p-2 bg-transparent border border-gray-200 dark:border-gray-600 rounded-md cursor-pointer transition-all hover:bg-gray-100 dark:hover:bg-gray-600 hover:border-blue-500 dark:hover:border-blue-400"
+              title="删除"
+              @click="deleteTemplate(template)"
+            >
+              <LucideTrash2 class="w-4 h-4 text-gray-600 dark:text-gray-300" />
             </button>
-            <button class="btn-apply" @click="applyTemplate(template)">
+            <Button variant="primary" class="flex-1" @click="applyTemplate(template)">
               应用
-            </button>
+            </Button>
           </div>
         </div>
       </div>
 
-      <div v-else class="empty-state">
-        <p>暂无自定义模板</p>
-        <span>点击"新建模板"创建您的第一个自定义分摊规则</span>
+      <div v-else class="flex flex-col items-center gap-2 py-12 text-center">
+        <p class="m-0 text-base text-gray-600 dark:text-gray-400">
+          暂无自定义模板
+        </p>
+        <span class="text-sm text-gray-400 dark:text-gray-500">点击“新建模板”创建您的第一个自定义分摆规则</span>
       </div>
     </section>
 
@@ -219,259 +247,3 @@ function getSplitTypeName(type: SplitRuleType): string {
     /> -->
   </div>
 </template>
-
-<style scoped>
-.split-template-list {
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
-}
-
-/* Header */
-.list-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.list-header h3 {
-  margin: 0;
-  font-size: 1.5rem;
-  font-weight: 600;
-}
-
-.btn-create {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1.5rem;
-  background: var(--color-primary);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 0.875rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.btn-create:hover {
-  background: var(--color-primary-dark);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-md);
-}
-
-.btn-create .icon {
-  width: 18px;
-  height: 18px;
-}
-
-/* Section */
-.templates-section {
-  background: white;
-  padding: 2rem;
-  border-radius: 12px;
-  box-shadow: var(--shadow-sm);
-}
-
-.section-title {
-  margin: 0 0 0.5rem 0;
-  font-size: 1.125rem;
-  font-weight: 600;
-}
-
-.section-description {
-  margin: 0 0 1.5rem 0;
-  color: var(--color-gray-600);
-  font-size: 0.875rem;
-}
-
-/* Template Grid */
-.template-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 1.5rem;
-}
-
-.template-card {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  padding: 1.5rem;
-  background: white;
-  border: 2px solid var(--color-base-300);
-  border-radius: 12px;
-  transition: all 0.3s;
-}
-
-.template-card:hover {
-  box-shadow: var(--shadow-md);
-  transform: translateY(-2px);
-}
-
-.template-card.preset {
-  border-color: var(--template-color);
-  background: linear-gradient(135deg, var(--template-color) 0%, transparent 100%);
-  background-size: 200% 200%;
-  background-position: 100% 100%;
-}
-
-.template-card.preset:hover {
-  background-position: 0% 0%;
-  border-color: var(--template-color);
-}
-
-/* Template Icon */
-.template-icon-wrapper {
-  width: 64px;
-  height: 64px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--template-color);
-  opacity: 0.15;
-}
-
-.template-icon {
-  width: 36px;
-  height: 36px;
-  color: var(--template-color);
-  opacity: 10;
-}
-
-/* Template Content */
-.template-content {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.template-name {
-  margin: 0;
-  font-size: 1.125rem;
-  font-weight: 600;
-}
-
-.template-description {
-  margin: 0;
-  color: var(--color-gray-600);
-  font-size: 0.875rem;
-  line-height: 1.6;
-}
-
-.template-meta {
-  display: flex;
-  gap: 1rem;
-  margin-top: 0.5rem;
-}
-
-.template-type {
-  display: inline-block;
-  padding: 0.25rem 0.75rem;
-  background: var(--color-base-200);
-  border-radius: 12px;
-  font-size: 0.75rem;
-  font-weight: 500;
-  color: var(--color-gray-700);
-}
-
-.template-card.preset .template-type {
-  background: var(--template-color);
-  color: white;
-  opacity: 0.9;
-}
-
-.template-members {
-  font-size: 0.75rem;
-  color: var(--color-gray-500);
-}
-
-/* Template Actions */
-.template-actions {
-  display: flex;
-  gap: 0.5rem;
-  align-items: center;
-}
-
-.btn-icon {
-  padding: 0.5rem;
-  background: transparent;
-  border: 1px solid var(--color-base-300);
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.btn-icon:hover {
-  background: var(--color-base-200);
-  border-color: var(--color-primary);
-}
-
-.btn-icon .icon {
-  width: 16px;
-  height: 16px;
-  color: var(--color-gray-600);
-}
-
-.btn-apply {
-  flex: 1;
-  padding: 0.5rem 1rem;
-  background: var(--color-primary);
-  color: white;
-  border: none;
-  border-radius: 6px;
-  font-size: 0.875rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.btn-apply:hover {
-  background: var(--color-primary-dark);
-}
-
-.template-card.preset .btn-apply {
-  background: var(--template-color);
-}
-
-/* Empty State */
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 3rem 0;
-  text-align: center;
-}
-
-.empty-state p {
-  margin: 0;
-  font-size: 1rem;
-  color: var(--color-gray-600);
-}
-
-.empty-state span {
-  font-size: 0.875rem;
-  color: var(--color-gray-400);
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-  .template-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .list-header {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 1rem;
-  }
-
-  .btn-create {
-    width: 100%;
-    justify-content: center;
-  }
-}
-</style>

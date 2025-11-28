@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Modal } from '@/components/ui';
+import { Button, Modal } from '@/components/ui';
 import { Lg } from '@/utils/debugLog';
 import { toast } from '@/utils/toast';
 import LedgerFormModal from './LedgerFormModal.vue';
@@ -113,75 +113,76 @@ function formatDate(dateString?: string) {
     <div>
       <!-- 操作栏 -->
       <div class="mb-6 flex items-center justify-between">
-        <div class="text-sm text-gray-600">
+        <div class="text-sm text-gray-600 dark:text-gray-400">
           共 {{ ledgers.length }} 个账本
         </div>
-        <button
-          class="text-white px-4 py-2 rounded-md bg-blue-600 flex gap-2 transition-colors items-center hover:bg-blue-700"
-          @click="showCreateForm = true"
-        >
-          <LucidePlus class="h-4 w-4" />
-          创建新账本
-        </button>
+        <Button variant="primary" size="sm" @click="showCreateForm = true">
+          <LucidePlus :size="16" />
+          <span class="ml-2">创建新账本</span>
+        </Button>
       </div>
 
       <!-- 账本列表 -->
-      <div v-if="ledgers.length > 0" class="gap-4 grid">
+      <div v-if="ledgers.length > 0" class="grid gap-4">
         <div
-          v-for="ledger in ledgers" :key="ledger.serialNum" class="p-4 border rounded-lg cursor-pointer transition-all hover:shadow-md" :class="[
+          v-for="ledger in ledgers" :key="ledger.serialNum"
+          class="p-4 border rounded-lg cursor-pointer transition-all hover:shadow-md"
+          :class="[
             currentLedgerId === ledger.serialNum
-              ? 'border-blue-500 bg-blue-50 shadow-md'
-              : 'border-gray-200 hover:border-gray-300',
-          ]" @click="selectLedger(ledger.serialNum)"
+              ? 'border-blue-500 dark:border-blue-600 bg-blue-50 dark:bg-blue-900/20 shadow-md'
+              : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 bg-white dark:bg-gray-900/50',
+          ]"
+          @click="selectLedger(ledger.serialNum)"
         >
-          <div class="flex items-start justify-between">
-            <div class="flex-1">
-              <div class="mb-2 flex gap-3 items-center">
-                <h3 class="text-lg text-gray-900 font-semibold">
+          <div class="flex flex-col sm:flex-row items-start justify-between gap-3">
+            <div class="flex-1 min-w-0">
+              <div class="mb-2 flex flex-wrap gap-2 items-center">
+                <h3 class="text-lg text-gray-900 dark:text-white font-semibold">
                   {{ ledger.name }}
                 </h3>
                 <span
                   v-if="currentLedgerId === ledger.serialNum"
-                  class="text-xs text-blue-800 font-medium px-2 py-1 rounded-full bg-blue-100"
+                  class="text-xs text-blue-800 dark:text-blue-200 font-medium px-2 py-1 rounded-full bg-blue-100 dark:bg-blue-900/50 whitespace-nowrap"
                 >
                   当前使用
                 </span>
               </div>
 
-              <p class="text-sm text-gray-600 mb-3">
+              <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">
                 {{ ledger.description || '暂无描述' }}
               </p>
 
-              <div class="text-xs text-gray-500 flex gap-6 items-center">
-                <div class="flex gap-1 items-center">
-                  <LucideCreditCard class="h-3 w-3" />
+              <div class="text-xs text-gray-500 dark:text-gray-500 flex flex-wrap gap-3 sm:gap-6 items-center">
+                <div class="flex gap-1 items-center whitespace-nowrap">
+                  <LucideCreditCard :size="12" />
                   <span>货币: {{ ledger.baseCurrency?.symbol || '¥' }} {{ ledger.baseCurrency?.code || 'CNY' }}</span>
                 </div>
-                <div class="flex gap-1 items-center">
-                  <LucideUsers class="h-3 w-3" />
+                <div class="flex gap-1 items-center whitespace-nowrap">
+                  <LucideUsers :size="12" />
                   <span>成员: {{ ledger.members || 0 }}人</span>
                 </div>
-                <div class="flex gap-1 items-center">
-                  <LucideCalendar class="h-3 w-3" />
+                <div class="flex gap-1 items-center whitespace-nowrap">
+                  <LucideCalendar :size="12" />
                   <span>创建: {{ formatDate(ledger.createdAt) }}</span>
                 </div>
               </div>
             </div>
 
-            <div class="ml-4 flex gap-2">
+            <div class="flex gap-2 shrink-0">
               <button
-                class="text-gray-400 p-2 rounded-md transition-colors hover:text-blue-600 hover:bg-blue-50"
+                class="text-gray-400 dark:text-gray-500 p-2 rounded-md transition-colors hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20"
                 title="编辑账本"
                 @click.stop="editLedger(ledger)"
               >
-                <LucideEdit class="h-4 w-4" />
+                <LucideEdit :size="16" />
               </button>
               <button
-                class="text-gray-400 p-2 rounded-md transition-colors hover:text-red-600 hover:bg-red-50"
-                title="删除账本" :disabled="currentLedgerId === ledger.serialNum"
+                class="text-gray-400 dark:text-gray-500 p-2 rounded-md transition-colors hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                title="删除账本"
+                :disabled="currentLedgerId === ledger.serialNum"
                 @click.stop="handleDeleteLedger(ledger)"
               >
-                <LucideTrash2 class="h-4 w-4" />
+                <LucideTrash2 :size="16" />
               </button>
             </div>
           </div>
@@ -190,45 +191,41 @@ function formatDate(dateString?: string) {
 
       <!-- 空状态 -->
       <div v-else class="py-16 text-center">
-        <LucideHandCoins class="text-gray-300 mx-auto mb-6 h-20 w-20" />
-        <h3 class="text-xl text-gray-900 font-medium mb-3">
+        <LucideHandCoins :size="80" class="text-gray-300 dark:text-gray-600 mx-auto mb-6" />
+        <h3 class="text-xl text-gray-900 dark:text-white font-medium mb-3">
           还没有账本
         </h3>
-        <p class="text-gray-500 mx-auto mb-8 max-w-md">
+        <p class="text-gray-500 dark:text-gray-400 mx-auto mb-8 max-w-md">
           创建您的第一个家庭账本，开始管理家庭财务。每个账本可以有不同的成员和货币设置。
         </p>
-        <button
-          class="text-white px-6 py-3 rounded-md bg-blue-600 transition-colors hover:bg-blue-700"
-          @click="showCreateForm = true"
-        >
+        <Button variant="primary" @click="showCreateForm = true">
           创建第一个账本
-        </button>
+        </Button>
       </div>
     </div>
 
     <!-- 底部操作栏 -->
-    <div class="p-6 border-t border-gray-200 bg-gray-50 flex items-center justify-between">
-      <div class="text-sm text-gray-600">
+    <div class="p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div class="text-sm text-gray-600 dark:text-gray-400">
         <span v-if="currentLedgerId">
-          当前使用: <strong>{{ currentLedger?.name }}</strong>
+          当前使用: <strong class="text-gray-900 dark:text-white">{{ currentLedger?.name }}</strong>
         </span>
-        <span v-else class="text-amber-600">
+        <span v-else class="text-amber-600 dark:text-amber-500">
           ! 请选择一个账本
         </span>
       </div>
-      <div class="flex gap-3">
-        <button
-          class="text-gray-700 px-4 py-2 border border-gray-300 rounded-md transition-colors hover:bg-gray-50"
-          @click="$emit('close')"
-        >
+      <div class="flex gap-3 w-full sm:w-auto">
+        <Button variant="secondary" class="flex-1 sm:flex-initial" @click="$emit('close')">
           关闭
-        </button>
-        <button
-          v-if="currentLedgerId && currentLedgerId !== props.currentLedgerId" class="text-white px-4 py-2 rounded-md bg-blue-600 transition-colors hover:bg-blue-700"
+        </Button>
+        <Button
+          v-if="currentLedgerId && currentLedgerId !== props.currentLedgerId"
+          variant="primary"
+          class="flex-1 sm:flex-initial"
           @click="confirmSelection"
         >
           确认选择
-        </button>
+        </Button>
       </div>
     </div>
 
@@ -252,24 +249,3 @@ function formatDate(dateString?: string) {
     />
   </Modal>
 </template>
-
-<style scoped>
-/* 自定义滚动条样式 */
-.overflow-y-auto::-webkit-scrollbar {
-  width: 6px;
-}
-
-.overflow-y-auto::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 3px;
-}
-
-.overflow-y-auto::-webkit-scrollbar-thumb {
-  background: #c1c1c1;
-  border-radius: 3px;
-}
-
-.overflow-y-auto::-webkit-scrollbar-thumb:hover {
-  background: #a1a1a1;
-}
-</style>

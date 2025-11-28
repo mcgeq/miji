@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { FormRow, Input, Modal } from '@/components/ui';
+import { Checkbox, FormRow, Input, Modal, Textarea } from '@/components/ui';
 import type { SplitRuleType } from '@/schema/money';
 
 interface Props {
@@ -106,7 +106,7 @@ function getTypeName(type: SplitRuleType): string {
           type="text"
           placeholder="例如：家庭日常开销"
         />
-        <span class="form-hint">{{ form.name.length }}/50</span>
+        <span class="block mt-1 text-xs text-gray-500 dark:text-gray-400">{{ form.name.length }}/50</span>
       </FormRow>
 
       <!-- 模板描述 -->
@@ -117,17 +117,20 @@ function getTypeName(type: SplitRuleType): string {
           :rows="3"
           :max-length="200"
         />
-        <span class="form-hint">{{ form.description.length }}/200</span>
+        <span class="block mt-1 text-xs text-gray-500 dark:text-gray-400">{{ form.description.length }}/200</span>
       </FormRow>
 
-      <!-- 分摇类型 -->
-      <FormRow label="分摇类型" required>
-        <div class="type-selector">
+      <!-- 分摊类型 -->
+      <FormRow label="分摊类型" required>
+        <div class="grid grid-cols-2 md:grid-cols-2 gap-3">
           <label
             v-for="type in ['EQUAL', 'PERCENTAGE', 'FIXED_AMOUNT', 'WEIGHTED'] as SplitRuleType[]"
             :key="type"
-            class="type-option"
-            :class="{ selected: form.ruleType === type }"
+            class="px-3 py-2 border-2 rounded-lg text-center cursor-pointer transition-all" :class="[
+              form.ruleType === type
+                ? 'border-blue-600 dark:border-blue-500 bg-blue-600 dark:bg-blue-500 text-white'
+                : 'border-gray-200 dark:border-gray-600 hover:border-blue-500 dark:hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/10 text-gray-900 dark:text-white',
+            ]"
           >
             <input
               v-model="form.ruleType"
@@ -135,7 +138,7 @@ function getTypeName(type: SplitRuleType): string {
               :value="type"
               hidden
             >
-            <span>{{ getTypeName(type) }}</span>
+            <span class="text-sm font-medium">{{ getTypeName(type) }}</span>
           </label>
         </div>
       </FormRow>
@@ -146,59 +149,10 @@ function getTypeName(type: SplitRuleType): string {
           v-model="form.isDefault"
           label="设为默认模板"
         />
-        <p class="text-xs text-gray-500 mt-1 ml-6">
+        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1 ml-6">
           新建交易时自动应用此模板
         </p>
       </div>
     </form>
   </Modal>
 </template>
-
-<style scoped>
-/* 表单提示文字 */
-.form-hint {
-  display: block;
-  margin-top: 0.25rem;
-  font-size: 0.75rem;
-  color: var(--color-neutral);
-}
-
-/* Type Selector */
-.type-selector {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 0.75rem;
-}
-
-.type-option {
-  padding: 0.75rem;
-  border: 2px solid var(--color-base-300);
-  border-radius: 8px;
-  text-align: center;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.type-option:hover {
-  border-color: var(--color-primary);
-  background: oklch(from var(--color-primary) l c h / 0.05);
-}
-
-.type-option.selected {
-  border-color: var(--color-primary);
-  background: var(--color-primary);
-  color: white;
-}
-
-.type-option span {
-  font-size: 0.875rem;
-  font-weight: 500;
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-  .type-selector {
-    grid-template-columns: 1fr;
-  }
-}
-</style>

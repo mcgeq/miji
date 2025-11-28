@@ -63,7 +63,7 @@ const alertTypeOptions = computed<SelectOption[]>(() => [
 </script>
 
 <template>
-  <div class="budget-form-fields">
+  <div class="flex flex-col gap-0">
     <!-- 预算名称 -->
     <FormRow :label="t('financial.budget.budgetName')" required>
       <Input
@@ -154,32 +154,32 @@ const alertTypeOptions = computed<SelectOption[]>(() => [
     </FormRow>
 
     <!-- 预警设置 -->
-    <div class="alert-section">
-      <div class="alert-checkbox">
+    <div class="mb-2 flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:justify-between">
+      <div class="w-full sm:w-1/3">
         <Checkbox
           v-model="form.alertEnabled"
           :label="t('financial.budget.overBudgetAlert')"
         />
       </div>
 
-      <div v-if="form.alertEnabled && form.alertThreshold" class="threshold-settings">
+      <div v-if="form.alertEnabled && form.alertThreshold" class="flex gap-2 flex-1 items-center w-full">
         <Select
           v-model="form.alertThreshold.type"
           :options="alertTypeOptions"
-          class="w-2/3"
+          class="flex-[2]"
         />
 
         <Input
           v-model="form.alertThreshold.value"
           type="number"
-          class="w-1/3"
+          class="flex-1"
           :placeholder="form.alertThreshold.type === 'Percentage' ? '80%' : '100.00'"
         />
       </div>
     </div>
 
     <!-- 描述 -->
-    <div class="form-textarea">
+    <div class="mb-2">
       <Textarea
         v-model="form.description"
         :rows="3"
@@ -188,52 +188,3 @@ const alertTypeOptions = computed<SelectOption[]>(() => [
     </div>
   </div>
 </template>
-
-<style scoped>
-.budget-form-fields {
-  display: flex;
-  flex-direction: column;
-  gap: 0.1rem;
-}
-
-/* Alert Section */
-.alert-section {
-  margin-bottom: 0.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.alert-checkbox {
-  width: 33.333333%;
-}
-
-.threshold-settings {
-  display: flex;
-  gap: 0.5rem;
-  flex: 1;
-  align-items: center;
-}
-
-.form-textarea {
-  margin-bottom: 0.5rem;
-}
-
-/* RepeatPeriodSelector 样式统一 */
-:deep(.repeat-period-selector .field-row) {
-  gap: 1rem !important;
-  margin-bottom: 0.5rem !important;
-}
-
-:deep(.repeat-period-selector .label) {
-  flex: 0 0 6rem !important;
-  width: 6rem !important;
-  min-width: 6rem !important;
-  max-width: 6rem !important;
-}
-
-:deep(.repeat-period-selector .input-field) {
-  flex: 1 !important;
-  width: 100% !important;
-}
-</style>

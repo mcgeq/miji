@@ -6,6 +6,7 @@ import {
   Users,
 } from 'lucide-vue-next';
 import { Modal } from '@/components/ui';
+import Badge from '@/components/ui/Badge.vue';
 
 // ==================== Props & Emits ====================
 
@@ -112,111 +113,115 @@ function formatDateTime(dateString: string): string {
     :show-footer="false"
     @close="handleClose"
   >
-    <div>
+    <div class="flex flex-col gap-6">
       <!-- 基本信息 -->
-      <div class="info-section">
-        <h3 class="section-title">
+      <div>
+        <h3 class="text-base font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
           基本信息
         </h3>
-        <div class="info-grid">
-          <div class="info-item">
-            <span class="info-label">结算序号</span>
-            <span class="info-value">{{ record.serialNum }}</span>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div class="flex flex-col gap-1">
+            <span class="text-xs text-gray-500 dark:text-gray-400">结算序号</span>
+            <span class="text-sm font-medium text-gray-900 dark:text-white">{{ record.serialNum }}</span>
           </div>
-          <div class="info-item">
-            <span class="info-label">结算类型</span>
-            <span class="info-value">{{ getTypeText(record.settlementType) }}</span>
+          <div class="flex flex-col gap-1">
+            <span class="text-xs text-gray-500 dark:text-gray-400">结算类型</span>
+            <span class="text-sm font-medium text-gray-900 dark:text-white">{{ getTypeText(record.settlementType) }}</span>
           </div>
-          <div class="info-item">
-            <span class="info-label">结算周期</span>
-            <span class="info-value">
+          <div class="flex flex-col gap-1">
+            <span class="text-xs text-gray-500 dark:text-gray-400">结算周期</span>
+            <span class="text-sm font-medium text-gray-900 dark:text-white">
               {{ formatDate(record.periodStart) }} ~ {{ formatDate(record.periodEnd) }}
             </span>
           </div>
-          <div class="info-item">
-            <span class="info-label">结算金额</span>
-            <span class="info-value amount">¥{{ formatAmount(record.totalAmount) }}</span>
+          <div class="flex flex-col gap-1">
+            <span class="text-xs text-gray-500 dark:text-gray-400">结算金额</span>
+            <span class="text-xl font-bold text-blue-600 dark:text-blue-400">¥{{ formatAmount(record.totalAmount) }}</span>
           </div>
-          <div class="info-item">
-            <span class="info-label">发起人</span>
-            <span class="info-value">{{ record.initiatedBy }}</span>
+          <div class="flex flex-col gap-1">
+            <span class="text-xs text-gray-500 dark:text-gray-400">发起人</span>
+            <span class="text-sm font-medium text-gray-900 dark:text-white">{{ record.initiatedBy }}</span>
           </div>
-          <div class="info-item">
-            <span class="info-label">发起时间</span>
-            <span class="info-value">{{ formatDateTime(record.createdAt) }}</span>
+          <div class="flex flex-col gap-1">
+            <span class="text-xs text-gray-500 dark:text-gray-400">发起时间</span>
+            <span class="text-sm font-medium text-gray-900 dark:text-white">{{ formatDateTime(record.createdAt) }}</span>
           </div>
-          <div v-if="record.completedAt" class="info-item">
-            <span class="info-label">完成时间</span>
-            <span class="info-value">{{ formatDateTime(record.completedAt) }}</span>
+          <div v-if="record.completedAt" class="flex flex-col gap-1">
+            <span class="text-xs text-gray-500 dark:text-gray-400">完成时间</span>
+            <span class="text-sm font-medium text-gray-900 dark:text-white">{{ formatDateTime(record.completedAt) }}</span>
           </div>
-          <div v-if="record.completedBy" class="info-item">
-            <span class="info-label">完成人</span>
-            <span class="info-value">{{ record.completedBy }}</span>
+          <div v-if="record.completedBy" class="flex flex-col gap-1">
+            <span class="text-xs text-gray-500 dark:text-gray-400">完成人</span>
+            <span class="text-sm font-medium text-gray-900 dark:text-white">{{ record.completedBy }}</span>
           </div>
         </div>
       </div>
 
       <!-- 参与成员 -->
-      <div class="members-section">
-        <h3 class="section-title">
+      <div>
+        <h3 class="text-base font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
           参与成员
-          <span class="count-badge">{{ record.participantMembers.length }}人</span>
+          <Badge variant="primary" size="sm">
+            {{ record.participantMembers.length }}人
+          </Badge>
         </h3>
-        <div class="members-grid">
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
           <div
             v-for="(member, index) in record.participantMembers"
             :key="index"
-            class="member-card"
+            class="flex flex-col items-center gap-2 p-3 bg-gray-50 dark:bg-gray-900 rounded-lg"
           >
             <div
-              class="member-avatar"
+              class="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg"
               :style="{ backgroundColor: getMemberColor(member) }"
             >
               {{ getInitials(member) }}
             </div>
-            <span class="member-name">{{ member }}</span>
+            <span class="text-sm font-medium text-gray-900 dark:text-white truncate w-full text-center">{{ member }}</span>
           </div>
         </div>
       </div>
 
       <!-- 转账明细 -->
-      <div v-if="optimizedTransfers.length > 0" class="transfers-section">
-        <h3 class="section-title">
+      <div v-if="optimizedTransfers.length > 0">
+        <h3 class="text-base font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
           转账明细
-          <span class="count-badge">{{ optimizedTransfers.length }}笔</span>
+          <Badge variant="primary" size="sm">
+            {{ optimizedTransfers.length }}笔
+          </Badge>
         </h3>
-        <div class="transfers-list">
+        <div class="flex flex-col gap-3">
           <div
             v-for="(transfer, index) in optimizedTransfers"
             :key="index"
-            class="transfer-item"
+            class="flex items-center gap-3 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700"
           >
-            <div class="transfer-index">
+            <div class="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 flex items-center justify-center font-bold text-sm shrink-0">
               {{ index + 1 }}
             </div>
-            <div class="transfer-content">
-              <div class="transfer-members">
-                <div class="transfer-member">
+            <div class="flex-1 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div class="flex items-center gap-3 flex-wrap">
+                <div class="flex items-center gap-2 text-sm text-gray-900 dark:text-white">
                   <div
-                    class="mini-avatar"
+                    class="w-7 h-7 rounded-full flex items-center justify-center text-white font-bold text-xs shrink-0"
                     :style="{ backgroundColor: getMemberColor(transfer.fromName) }"
                   >
                     {{ getInitials(transfer.fromName) }}
                   </div>
-                  <span>{{ transfer.fromName }}</span>
+                  <span class="font-medium">{{ transfer.fromName }}</span>
                 </div>
-                <component :is="ArrowRight" class="arrow-icon" />
-                <div class="transfer-member">
+                <ArrowRight class="w-5 h-5 text-blue-600 dark:text-blue-400 shrink-0" />
+                <div class="flex items-center gap-2 text-sm text-gray-900 dark:text-white">
                   <div
-                    class="mini-avatar"
+                    class="w-7 h-7 rounded-full flex items-center justify-center text-white font-bold text-xs shrink-0"
                     :style="{ backgroundColor: getMemberColor(transfer.toName) }"
                   >
                     {{ getInitials(transfer.toName) }}
                   </div>
-                  <span>{{ transfer.toName }}</span>
+                  <span class="font-medium">{{ transfer.toName }}</span>
                 </div>
               </div>
-              <div class="transfer-amount">
+              <div class="text-base font-bold text-gray-900 dark:text-white shrink-0">
                 ¥{{ formatAmount(transfer.amount) }}
               </div>
             </div>
@@ -225,493 +230,35 @@ function formatDateTime(dateString: string): string {
       </div>
 
       <!-- 统计信息 -->
-      <div class="stats-section">
-        <div class="stat-card">
-          <component :is="Users" class="stat-icon" />
-          <div class="stat-content">
-            <span class="stat-label">参与成员</span>
-            <span class="stat-value">{{ record.participantMembers.length }}人</span>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div class="p-4 bg-gray-50 dark:bg-gray-900 rounded-lg flex items-center gap-3">
+          <div class="w-10 h-10 p-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg shrink-0">
+            <Users class="w-full h-full" />
+          </div>
+          <div class="flex flex-col gap-0.5">
+            <span class="text-xs text-gray-500 dark:text-gray-400">参与成员</span>
+            <span class="text-lg font-bold text-gray-900 dark:text-white">{{ record.participantMembers.length }}人</span>
           </div>
         </div>
-        <div class="stat-card">
-          <component :is="ArrowRightLeft" class="stat-icon" />
-          <div class="stat-content">
-            <span class="stat-label">转账次数</span>
-            <span class="stat-value">{{ optimizedTransfers.length }}笔</span>
+        <div class="p-4 bg-gray-50 dark:bg-gray-900 rounded-lg flex items-center gap-3">
+          <div class="w-10 h-10 p-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg shrink-0">
+            <ArrowRightLeft class="w-full h-full" />
+          </div>
+          <div class="flex flex-col gap-0.5">
+            <span class="text-xs text-gray-500 dark:text-gray-400">转账次数</span>
+            <span class="text-lg font-bold text-gray-900 dark:text-white">{{ optimizedTransfers.length }}笔</span>
           </div>
         </div>
-        <div class="stat-card">
-          <component :is="DollarSign" class="stat-icon" />
-          <div class="stat-content">
-            <span class="stat-label">结算金额</span>
-            <span class="stat-value">¥{{ formatAmount(record.totalAmount) }}</span>
+        <div class="p-4 bg-gray-50 dark:bg-gray-900 rounded-lg flex items-center gap-3">
+          <div class="w-10 h-10 p-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg shrink-0">
+            <DollarSign class="w-full h-full" />
+          </div>
+          <div class="flex flex-col gap-0.5">
+            <span class="text-xs text-gray-500 dark:text-gray-400">结算金额</span>
+            <span class="text-lg font-bold text-gray-900 dark:text-white">¥{{ formatAmount(record.totalAmount) }}</span>
           </div>
         </div>
       </div>
     </div>
   </Modal>
 </template>
-
-<style scoped>
-/* 模态框遮罩 */
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 50;
-  padding: 1rem;
-}
-
-/* 模态框容器 */
-.modal-container {
-  background-color: white;
-  border-radius: 0.75rem;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-  max-width: 48rem;
-  width: 100%;
-  max-height: 90vh;
-  display: flex;
-  flex-direction: column;
-}
-
-:global(.dark) .modal-container {
-  background-color: #1f2937;
-}
-
-/* 模态框头部 */
-.modal-header {
-  padding: 1.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  border-bottom: 1px solid #e5e7eb;
-}
-
-:global(.dark) .modal-header {
-  border-bottom-color: #374151;
-}
-
-.header-left {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.modal-title {
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: #111827;
-}
-
-:global(.dark) .modal-title {
-  color: #f3f4f6;
-}
-
-.close-btn {
-  padding: 0.5rem;
-  border-radius: 0.375rem;
-  color: #6b7280;
-  transition: background-color 0.15s;
-}
-
-.close-btn:hover {
-  background-color: #f3f4f6;
-}
-
-:global(.dark) .close-btn:hover {
-  background-color: #374151;
-}
-
-/* 状态徽章 */
-.status-badge {
-  padding: 0.25rem 0.75rem;
-  border-radius: 9999px;
-  font-size: 0.75rem;
-  font-weight: 500;
-}
-
-.status-pending {
-  background-color: #fef3c7;
-  color: #92400e;
-}
-
-:global(.dark) .status-pending {
-  background-color: rgba(120, 53, 15, 0.3);
-  color: #fcd34d;
-}
-
-.status-completed {
-  background-color: #d1fae5;
-  color: #065f46;
-}
-
-:global(.dark) .status-completed {
-  background-color: rgba(6, 95, 70, 0.3);
-  color: #6ee7b7;
-}
-
-.status-cancelled {
-  background-color: #fee2e2;
-  color: #991b1b;
-}
-
-:global(.dark) .status-cancelled {
-  background-color: rgba(127, 29, 29, 0.3);
-  color: #fca5a5;
-}
-
-/* 模态框主体 */
-.modal-body {
-  flex: 1;
-  overflow-y: auto;
-  padding: 1.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-/* 区域标题 */
-.section-title {
-  font-size: 1rem;
-  font-weight: 600;
-  color: #111827;
-  margin-bottom: 1rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-:global(.dark) .section-title {
-  color: #f3f4f6;
-}
-
-.count-badge {
-  padding: 0.125rem 0.5rem;
-  background-color: #dbeafe;
-  color: #1d4ed8;
-  border-radius: 9999px;
-  font-size: 0.75rem;
-  font-weight: 500;
-}
-
-:global(.dark) .count-badge {
-  background-color: rgba(30, 58, 138, 0.3);
-  color: #93c5fd;
-}
-
-/* 基本信息 */
-.info-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1rem;
-}
-
-@media (max-width: 640px) {
-  .info-grid {
-    grid-template-columns: repeat(1, minmax(0, 1fr));
-  }
-}
-
-.info-item {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.info-label {
-  font-size: 0.75rem;
-  color: #6b7280;
-}
-
-.info-value {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: #111827;
-}
-
-:global(.dark) .info-value {
-  color: #f3f4f6;
-}
-
-.info-value.amount {
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: #2563eb;
-}
-
-:global(.dark) .info-value.amount {
-  color: #60a5fa;
-}
-
-/* 参与成员 */
-.members-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-  gap: 0.75rem;
-}
-
-.member-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem;
-  background-color: #f9fafb;
-  border-radius: 0.5rem;
-}
-
-:global(.dark) .member-card {
-  background-color: rgba(17, 24, 39, 0.5);
-}
-
-.member-avatar {
-  width: 3rem;
-  height: 3rem;
-  border-radius: 9999px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-weight: 700;
-  font-size: 1.125rem;
-}
-
-.member-name {
-  font-size: 0.875rem;
-  color: #111827;
-  font-weight: 500;
-}
-
-:global(.dark) .member-name {
-  color: #f3f4f6;
-}
-
-/* 转账明细 */
-.transfers-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.transfer-item {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 1rem;
-  background-color: #f9fafb;
-  border-radius: 0.5rem;
-  border: 1px solid #e5e7eb;
-}
-
-:global(.dark) .transfer-item {
-  background-color: rgba(17, 24, 39, 0.5);
-  border-color: #374151;
-}
-
-.transfer-index {
-  width: 2rem;
-  height: 2rem;
-  border-radius: 9999px;
-  background-color: #dbeafe;
-  color: #1d4ed8;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  font-size: 0.875rem;
-  flex-shrink: 0;
-}
-
-:global(.dark) .transfer-index {
-  background-color: rgba(30, 58, 138, 0.3);
-  color: #93c5fd;
-}
-
-.transfer-content {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-}
-
-.transfer-members {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.transfer-member {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.875rem;
-  color: #111827;
-}
-
-:global(.dark) .transfer-member {
-  color: #f3f4f6;
-}
-
-.mini-avatar {
-  width: 1.75rem;
-  height: 1.75rem;
-  border-radius: 9999px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-weight: 700;
-  font-size: 0.75rem;
-  flex-shrink: 0;
-}
-
-.arrow-icon {
-  width: 1.25rem;
-  height: 1.25rem;
-  color: #3b82f6;
-  flex-shrink: 0;
-}
-
-:global(.dark) .arrow-icon {
-  color: #60a5fa;
-}
-
-.transfer-amount {
-  font-size: 1rem;
-  font-weight: 700;
-  color: #111827;
-  flex-shrink: 0;
-}
-
-:global(.dark) .transfer-amount {
-  color: #f3f4f6;
-}
-
-/* 统计卡片 */
-.stats-section {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 1rem;
-}
-
-@media (max-width: 640px) {
-  .stats-section {
-    grid-template-columns: repeat(1, minmax(0, 1fr));
-  }
-}
-
-.stat-card {
-  padding: 1rem;
-  background-color: #f9fafb;
-  border-radius: 0.5rem;
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-:global(.dark) .stat-card {
-  background-color: rgba(17, 24, 39, 0.5);
-}
-
-.stat-icon {
-  width: 2.5rem;
-  height: 2.5rem;
-  padding: 0.5rem;
-  background-color: #dbeafe;
-  color: #2563eb;
-  border-radius: 0.5rem;
-  flex-shrink: 0;
-}
-
-:global(.dark) .stat-icon {
-  background-color: rgba(30, 58, 138, 0.3);
-  color: #60a5fa;
-}
-
-.stat-content {
-  display: flex;
-  flex-direction: column;
-  gap: 0.125rem;
-}
-
-.stat-label {
-  font-size: 0.75rem;
-  color: #6b7280;
-}
-
-.stat-value {
-  font-size: 1.125rem;
-  font-weight: 700;
-  color: #111827;
-}
-
-:global(.dark) .stat-value {
-  color: #f3f4f6;
-}
-
-/* 模态框底部 */
-.modal-footer {
-  padding: 1.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 0.75rem;
-  border-top: 1px solid #e5e7eb;
-}
-
-:global(.dark) .modal-footer {
-  border-top-color: #374151;
-}
-
-/* 按钮 */
-.btn-primary {
-  padding: 0.5rem 1rem;
-  background-color: #2563eb;
-  color: white;
-  border-radius: 0.5rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  transition: background-color 0.15s;
-  border: none;
-  cursor: pointer;
-}
-
-.btn-primary:hover {
-  background-color: #1d4ed8;
-}
-
-.btn-secondary {
-  padding: 0.5rem 1rem;
-  background-color: #f3f4f6;
-  color: #111827;
-  border-radius: 0.5rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  transition: background-color 0.15s;
-  border: none;
-  cursor: pointer;
-}
-
-.btn-secondary:hover {
-  background-color: #e5e7eb;
-}
-
-:global(.dark) .btn-secondary {
-  background-color: #374151;
-  color: #f3f4f6;
-}
-
-:global(.dark) .btn-secondary:hover {
-  background-color: #4b5563;
-}
-</style>

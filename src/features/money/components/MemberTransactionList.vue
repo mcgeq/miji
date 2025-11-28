@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { LucideArrowDown, LucideArrowUp, LucideFilter, LucideSearch } from 'lucide-vue-next';
+import { Card, Spinner } from '@/components/ui';
 import { MoneyDb } from '@/services/money/money';
 import type { Transaction } from '@/schema/money';
 
@@ -74,11 +75,6 @@ function formatAmount(amount: number): string {
   return `¥${amount.toFixed(2)}`;
 }
 
-// 获取交易类型样式
-function getTypeClass(type: string): string {
-  return type === 'Income' ? 'income' : 'expense';
-}
-
 // 获取交易类型图标
 function getTypeIcon(type: string) {
   return type === 'Income' ? LucideArrowDown : LucideArrowUp;
@@ -86,22 +82,25 @@ function getTypeIcon(type: string) {
 </script>
 
 <template>
-  <div class="member-transaction-list">
+  <div class="flex flex-col gap-4">
     <!-- 工具栏 -->
-    <div class="toolbar">
-      <div class="search-box">
-        <LucideSearch class="search-icon" />
+    <div class="flex gap-4 flex-wrap">
+      <div class="flex-1 min-w-[200px] relative flex items-center">
+        <LucideSearch :size="18" class="absolute left-3 text-gray-400 dark:text-gray-500 pointer-events-none" />
         <input
           v-model="searchKeyword"
           type="text"
           placeholder="搜索交易..."
-          class="search-input"
+          class="w-full py-2 pl-10 pr-3 border border-gray-300 dark:border-gray-600 rounded-lg text-sm transition-all bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-600 focus:border-blue-500 dark:focus:border-blue-600"
         >
       </div>
 
-      <div class="filter-group">
-        <LucideFilter class="filter-icon" />
-        <select v-model="filterType" class="filter-select">
+      <div class="flex items-center gap-2">
+        <LucideFilter :size="18" class="text-gray-500 dark:text-gray-400" />
+        <select
+          v-model="filterType"
+          class="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm cursor-pointer transition-all bg-white dark:bg-gray-800 text-gray-900 dark:text-white hover:border-blue-500 dark:hover:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-600"
+        >
           <option value="all">
             全部类型
           </option>
@@ -116,37 +115,49 @@ function getTypeIcon(type: string) {
     </div>
 
     <!-- 加载状态 -->
-    <div v-if="loading" class="loading-state">
-      <div class="spinner" />
+    <div v-if="loading" class="flex flex-col items-center gap-2 py-12 text-gray-500 dark:text-gray-400">
+      <Spinner size="lg" />
       <span>加载中...</span>
     </div>
 
     <!-- 交易列表 -->
-    <div v-else-if="filteredTransactions.length > 0" class="transaction-list">
+    <div v-else-if="filteredTransactions.length > 0" class="flex flex-col gap-3">
       <div
         v-for="transaction in filteredTransactions"
         :key="transaction.serialNum"
-        class="transaction-item"
+        class="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-900/50 border border-gray-300 dark:border-gray-700 rounded-lg transition-all hover:bg-white dark:hover:bg-gray-800 hover:shadow-sm hover:-translate-y-0.5"
       >
-        <div class="transaction-icon" :class="getTypeClass(transaction.transactionType)">
-          <component :is="getTypeIcon(transaction.transactionType)" class="icon" />
+        <div
+          class="w-10 h-10 rounded-lg flex items-center justify-center shrink-0" :class="[
+            transaction.transactionType === 'Income'
+              ? 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400'
+              : 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400',
+          ]"
+        >
+          <component :is="getTypeIcon(transaction.transactionType)" :size="20" />
         </div>
 
-        <div class="transaction-info">
-          <div class="transaction-header">
-            <h4 class="transaction-desc">
+        <div class="flex-1 min-w-0">
+          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-4 mb-2">
+            <h4 class="text-base font-medium text-gray-900 dark:text-white truncate">
               {{ transaction.description }}
             </h4>
-            <span class="transaction-amount" :class="getTypeClass(transaction.transactionType)">
+            <span
+              class="text-lg font-semibold whitespace-nowrap" :class="[
+                transaction.transactionType === 'Income'
+                  ? 'text-green-600 dark:text-green-400'
+                  : 'text-red-600 dark:text-red-400',
+              ]"
+            >
               {{ transaction.transactionType === 'Income' ? '+' : '-' }}
               {{ formatAmount(transaction.amount) }}
             </span>
           </div>
 
-          <div class="transaction-meta">
-            <span class="transaction-date">{{ formatDate(transaction.date) }}</span>
-            <span class="transaction-category">{{ transaction.category }}</span>
-            <span v-if="transaction.splitMembers && transaction.splitMembers.length > 0" class="split-badge">
+          <div class="flex gap-2 sm:gap-4 flex-wrap text-sm text-gray-500 dark:text-gray-400">
+            <span>{{ formatDate(transaction.date) }}</span>
+            <span class="px-2 py-0.5 bg-gray-200 dark:bg-gray-700 rounded text-gray-700 dark:text-gray-300">{{ transaction.category }}</span>
+            <span v-if="transaction.splitMembers && transaction.splitMembers.length > 0" class="px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 rounded font-medium">
               分摊 {{ transaction.splitMembers.length }} 人
             </span>
           </div>
@@ -155,244 +166,13 @@ function getTypeIcon(type: string) {
     </div>
 
     <!-- 空状态 -->
-    <div v-else class="empty-state">
+    <div v-else class="text-center py-12 text-gray-500 dark:text-gray-400">
       <p>暂无交易记录</p>
     </div>
 
     <!-- 统计信息 -->
-    <div v-if="!loading && filteredTransactions.length > 0" class="summary">
-      <span>共 {{ filteredTransactions.length }} 笔交易</span>
-    </div>
+    <Card v-if="!loading && filteredTransactions.length > 0" padding="md" class="bg-gray-50 dark:bg-gray-900/50 text-center">
+      <span class="text-sm text-gray-600 dark:text-gray-400">共 {{ filteredTransactions.length }} 笔交易</span>
+    </Card>
   </div>
 </template>
-
-<style scoped>
-.member-transaction-list {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-/* 工具栏 */
-.toolbar {
-  display: flex;
-  gap: 1rem;
-  flex-wrap: wrap;
-}
-
-.search-box {
-  flex: 1;
-  min-width: 200px;
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-
-.search-icon {
-  position: absolute;
-  left: 0.75rem;
-  width: 18px;
-  height: 18px;
-  color: var(--color-gray-400);
-  pointer-events: none;
-}
-
-.search-input {
-  width: 100%;
-  padding: 0.5rem 0.75rem 0.5rem 2.5rem;
-  border: 1px solid var(--color-base-300);
-  border-radius: 8px;
-  font-size: 0.875rem;
-  transition: all 0.2s;
-}
-
-.search-input:focus {
-  outline: none;
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px oklch(from var(--color-primary) l c h / 0.1);
-}
-
-.filter-group {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.filter-icon {
-  width: 18px;
-  height: 18px;
-  color: var(--color-gray-500);
-}
-
-.filter-select {
-  padding: 0.5rem 0.75rem;
-  border: 1px solid var(--color-base-300);
-  border-radius: 8px;
-  font-size: 0.875rem;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.filter-select:hover {
-  border-color: var(--color-primary);
-}
-
-/* 加载状态 */
-.loading-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 3rem 0;
-  color: var(--color-gray-500);
-}
-
-.spinner {
-  width: 32px;
-  height: 32px;
-  border: 3px solid var(--color-base-300);
-  border-top-color: var(--color-primary);
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-/* 交易列表 */
-.transaction-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.transaction-item {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 1rem;
-  background: var(--color-base-100);
-  border: 1px solid var(--color-base-300);
-  border-radius: 8px;
-  transition: all 0.2s;
-}
-
-.transaction-item:hover {
-  background: white;
-  box-shadow: var(--shadow-sm);
-  transform: translateY(-1px);
-}
-
-.transaction-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.transaction-icon.income {
-  background: #d1fae5;
-  color: #059669;
-}
-
-.transaction-icon.expense {
-  background: #fee2e2;
-  color: #dc2626;
-}
-
-.transaction-icon .icon {
-  width: 20px;
-  height: 20px;
-}
-
-.transaction-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.transaction-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 1rem;
-  margin-bottom: 0.5rem;
-}
-
-.transaction-desc {
-  margin: 0;
-  font-size: 1rem;
-  font-weight: 500;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.transaction-amount {
-  font-size: 1.125rem;
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-.transaction-amount.income {
-  color: #059669;
-}
-
-.transaction-amount.expense {
-  color: #dc2626;
-}
-
-.transaction-meta {
-  display: flex;
-  gap: 1rem;
-  flex-wrap: wrap;
-  font-size: 0.875rem;
-  color: var(--color-gray-500);
-}
-
-.transaction-category {
-  padding: 0.125rem 0.5rem;
-  background: var(--color-base-200);
-  border-radius: 4px;
-}
-
-.split-badge {
-  padding: 0.125rem 0.5rem;
-  background: #dbeafe;
-  color: #1e40af;
-  border-radius: 4px;
-  font-weight: 500;
-}
-
-/* 空状态 */
-.empty-state {
-  text-align: center;
-  padding: 3rem 0;
-  color: var(--color-gray-500);
-}
-
-/* 统计信息 */
-.summary {
-  padding: 0.75rem 1rem;
-  background: var(--color-base-100);
-  border-radius: 8px;
-  text-align: center;
-  font-size: 0.875rem;
-  color: var(--color-gray-600);
-}
-
-/* 响应式 */
-@media (max-width: 768px) {
-  .transaction-header {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .transaction-meta {
-    gap: 0.5rem;
-  }
-}
-</style>

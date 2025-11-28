@@ -73,11 +73,11 @@ const changeIcon = computed(
 );
 
 const colorMap = {
-  primary: { border: 'border-primary', text: 'text-primary' },
-  success: { border: 'border-success', text: 'text-success' },
-  danger: { border: 'border-danger', text: 'text-danger' },
-  warning: { border: 'border-warning', text: 'text-warning' },
-  info: { border: 'border-info', text: 'text-info' },
+  primary: { border: 'border-l-blue-500', text: 'text-blue-500', bg: 'bg-blue-500' },
+  success: { border: 'border-l-green-500', text: 'text-green-500', bg: 'bg-green-500' },
+  danger: { border: 'border-l-red-500', text: 'text-red-500', bg: 'bg-red-500' },
+  warning: { border: 'border-l-amber-500', text: 'text-amber-500', bg: 'bg-amber-500' },
+  info: { border: 'border-l-teal-500', text: 'text-teal-500', bg: 'bg-teal-500' },
 };
 
 const colorBorderClass = computed(() => colorMap[props.color].border);
@@ -86,22 +86,22 @@ const iconColorClass = computed(() => colorMap[props.color].text);
 const trendTextClass = computed(() => {
   switch (props.trendType) {
     case 'up':
-      return 'text-success';
+      return 'text-green-600 dark:text-green-400';
     case 'down':
-      return 'text-danger';
+      return 'text-red-600 dark:text-red-400';
     default:
-      return 'text-gray';
+      return 'text-gray-500 dark:text-gray-400';
   }
 });
 
 const changeTextClass = computed(() => {
   switch (props.changeType) {
     case 'increase':
-      return 'text-success';
+      return 'text-green-600 dark:text-green-400';
     case 'decrease':
-      return 'text-danger';
+      return 'text-red-600 dark:text-red-400';
     default:
-      return 'text-gray';
+      return 'text-gray-500 dark:text-gray-400';
   }
 });
 
@@ -109,57 +109,63 @@ const formattedValue = computed(() => props.value);
 </script>
 
 <template>
-  <div class="stat-card" :class="[colorBorderClass]">
-    <div class="stat-header">
-      <div class="stat-title">
+  <div
+    class="relative overflow-hidden bg-white dark:bg-gray-800 rounded-lg border-l-4 p-4 shadow-sm transition-all duration-300 hover:shadow-md"
+    :class="[colorBorderClass]"
+  >
+    <div class="flex items-center justify-between mb-2">
+      <div class="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 tracking-wider">
         {{ title }}
       </div>
-      <div class="stat-icon" :class="[iconColorClass]">
+      <div class="opacity-80 transition-opacity duration-300 hover:opacity-100" :class="[iconColorClass]">
         <component :is="iconComponent" :size="24" />
       </div>
     </div>
 
-    <div class="stat-body">
-      <div class="stat-value">
-        <span class="currency">{{ currency }}</span>
-        <span class="value" :class="[loading ? 'loading' : '']">
+    <div class="relative z-10">
+      <div class="flex gap-1 items-baseline mb-1">
+        <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">{{ currency }}</span>
+        <span
+          class="text-2xl font-bold leading-none text-gray-900 dark:text-white"
+          :class="[loading ? 'loading-shimmer' : '']"
+        >
           {{ formattedValue }}
         </span>
       </div>
 
-      <div v-if="subtitle" class="subtitle">
+      <div v-if="subtitle" class="text-[11px] text-gray-500 dark:text-gray-400 mb-1">
         {{ subtitle }}
       </div>
 
       <!-- Comparison Mode -->
-      <div v-if="showComparison" class="comparison">
-        <div class="compare-label">
+      <div v-if="showComparison" class="mb-3">
+        <div class="text-xs text-gray-500 dark:text-gray-400">
           {{ compareLabel }}: {{ currency }}{{ compareValue }}
         </div>
-        <div class="compare-change">
-          <component :is="changeIcon" :size="16" :class="changeTextClass" />
-          <span :class="changeTextClass">
+        <div class="mt-1 flex gap-1 items-center text-sm font-medium" :class="changeTextClass">
+          <component :is="changeIcon" :size="16" />
+          <span>
             {{ changeAmount }} ({{ changePercentage }})
           </span>
         </div>
       </div>
 
       <!-- Trend -->
-      <div v-else-if="trend" class="trend">
+      <div v-else-if="trend" class="flex gap-1 items-center text-sm font-medium" :class="trendTextClass">
         <component :is="trendIcon" :size="16" />
-        <span :class="trendTextClass">{{ trend }}</span>
+        <span>{{ trend }}</span>
       </div>
 
       <!-- Extra Stats -->
-      <div v-if="extraStats && extraStats.length" class="extra-stats">
+      <div v-if="extraStats && extraStats.length" class="mt-3 space-y-1">
         <div
           v-for="stat in extraStats"
           :key="stat.label"
-          class="extra-stat"
+          class="text-xs flex justify-between"
         >
-          <span class="extra-label">{{ stat.label }}</span>
+          <span class="text-gray-500 dark:text-gray-400">{{ stat.label }}</span>
           <span
-            :class="[stat.color ? colorMap[stat.color].text : 'text-gray']"
+            :class="[stat.color ? colorMap[stat.color].text : 'text-gray-500 dark:text-gray-400']"
           >
             {{ stat.value }}
           </span>
@@ -168,174 +174,34 @@ const formattedValue = computed(() => props.value);
     </div>
 
     <!-- Decorative overlay -->
-    <div class="overlay" />
+    <div class="absolute top-0 right-0 w-24 h-24 rounded-full bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.1),transparent)] translate-x-8 -translate-y-8 dark:bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.05),transparent)]" />
   </div>
 </template>
 
 <style scoped>
-/* ---------- 基础卡片 ---------- */
-.stat-card {
-  position: relative;
-  overflow: hidden;
-  background: var(--color-base-100);
-  border-radius: 8px;
-  border-left: 3px solid #3b82f6; /* 默认蓝色 */
-  padding: 16px;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
-  transition: all 0.3s ease;
-}
-.stat-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 8px;
-}
-.stat-title {
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  color: var(--color-neutral);
-  letter-spacing: 0.05em;
-}
-.stat-icon {
-  opacity: 0.8;
-  transition: opacity 0.3s ease;
-}
-.stat-card:hover .stat-icon {
-  opacity: 1;
-}
-
-/* ---------- 数值部分 ---------- */
-.stat-body {
-  position: relative;
-  z-index: 10;
-}
-.stat-value {
-  display: flex;
-  gap: 4px;
-  align-items: baseline;
-  margin-bottom: 4px;
-}
-.currency {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--color-accent);
-}
-.value {
-  font-size: 24px;
-  font-weight: bold;
-  line-height: 1;
-  color: var(--color-accent-content);
-}
-.value.loading {
+/* 加载动画（无法用 Tailwind 替代） */
+.loading-shimmer {
   color: transparent;
   background: linear-gradient(90deg, #f3f4f6, #e5e7eb, #f3f4f6);
   background-size: 200% 100%;
   -webkit-background-clip: text;
   background-clip: text;
-  animation: pulse 1.5s infinite;
+  animation: shimmer 1.5s infinite;
 }
-@keyframes pulse {
+
+:global(.dark) .loading-shimmer {
+  background: linear-gradient(90deg, #374151, #4b5563, #374151);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+@keyframes shimmer {
   0% {
     background-position: 200% 0;
   }
   100% {
     background-position: -200% 0;
   }
-}
-.subtitle {
-  font-size: 11px;
-  color: var(--color-neutral);
-  margin-bottom: 4px;
-}
-
-/* ---------- 比较数据 ---------- */
-.comparison {
-  margin-bottom: 12px;
-}
-.compare-label {
-  font-size: 12px;
-  color: #6b7280;
-}
-.compare-change {
-  margin-top: 4px;
-  display: flex;
-  gap: 4px;
-  align-items: center;
-  font-size: 14px;
-  font-weight: 500;
-}
-
-/* ---------- 趋势 ---------- */
-.trend {
-  display: flex;
-  gap: 4px;
-  align-items: center;
-  font-size: 14px;
-  font-weight: 500;
-}
-
-/* ---------- 附加数据 ---------- */
-.extra-stats {
-  margin-top: 12px;
-}
-.extra-stat {
-  font-size: 12px;
-  display: flex;
-  justify-content: space-between;
-}
-.extra-label {
-  color: #6b7280;
-}
-
-/* ---------- 颜色 ---------- */
-.text-primary {
-  color: #3b82f6;
-}
-.text-success {
-  color: #10b981;
-}
-.text-danger {
-  color: #ef4444;
-}
-.text-warning {
-  color: #f59e0b;
-}
-.text-info {
-  color: #14b8a6;
-}
-.text-gray {
-  color: #6b7280;
-}
-.border-primary {
-  border-left-color: #3b82f6 !important;
-}
-.border-success {
-  border-left-color: #10b981 !important;
-}
-.border-danger {
-  border-left-color: #ef4444 !important;
-}
-.border-warning {
-  border-left-color: #f59e0b !important;
-}
-.border-info {
-  border-left-color: #14b8a6 !important;
-}
-
-/* ---------- 装饰 ---------- */
-.overlay {
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: 96px;
-  height: 96px;
-  border-radius: 50%;
-  background: radial-gradient(
-    circle at center,
-    rgba(255, 255, 255, 0.1),
-    transparent
-  );
-  transform: translate(32px, -32px);
 }
 </style>

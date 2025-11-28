@@ -315,8 +315,8 @@ onMounted(() => {
   >
     <form @submit.prevent="handleSubmit">
       <!-- 基本信息 -->
-      <div class="form-section">
-        <h3 class="section-title">
+      <div class="flex flex-col gap-0 mb-6">
+        <h3 class="text-lg text-gray-900 dark:text-white font-medium pb-2 mb-3 border-b border-gray-200 dark:border-gray-700">
           {{ t('familyLedger.basicInfo') }}
         </h3>
 
@@ -340,8 +340,8 @@ onMounted(() => {
       </div>
 
       <!-- 货币设置 -->
-      <div class="form-section">
-        <h3 class="section-title">
+      <div class="flex flex-col gap-0 mb-6">
+        <h3 class="text-lg text-gray-900 dark:text-white font-medium pb-2 mb-3 border-b border-gray-200 dark:border-gray-700">
           {{ t('familyLedger.currencySettings') }}
         </h3>
 
@@ -352,7 +352,7 @@ onMounted(() => {
             :placeholder="t('messages.selectCurrency')"
             @update:model-value="updateCurrencyInfo"
           />
-          <p class="form-help">
+          <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
             {{ t('messages.selectedAsDefault') }}
           </p>
         </FormRow>
@@ -360,23 +360,25 @@ onMounted(() => {
 
       <!-- 成员管理 -->
       <div class="space-y-4">
-        <div class="pb-2 border-b border-gray-200 flex items-center justify-between">
-          <h3 class="text-lg text-gray-900 font-medium">
+        <div class="pb-2 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+          <h3 class="text-lg text-gray-900 dark:text-white font-medium">
             {{ t('familyLedger.members') }}
           </h3>
           <button
-            type="button" class="text-sm text-blue-600 flex gap-1 items-center hover:text-blue-700"
+            type="button" class="text-sm text-blue-600 dark:text-blue-400 flex gap-1 items-center hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
             @click="addMember"
           >
-            <LucidePlus class="h-4 w-4" />
+            <LucidePlus :size="16" />
             {{ t('familyLedger.addMember') }}
           </button>
         </div>
 
-        <div v-if="form.memberList && form.memberList.length === 0" class="text-gray-500 py-6 text-center">
-          <LucideUsers class="text-gray-300 mx-auto mb-2 h-12 w-12" />
-          <p>{{ t('familyLedger.noMembers') }}</p>
-          <p class="text-sm">
+        <div v-if="form.memberList && form.memberList.length === 0" class="text-gray-500 dark:text-gray-400 py-6 text-center">
+          <LucideUsers :size="48" class="text-gray-300 dark:text-gray-600 mx-auto mb-2" />
+          <p class="mb-1">
+            {{ t('familyLedger.noMembers') }}
+          </p>
+          <p class="text-sm text-gray-400 dark:text-gray-500">
             {{ t('familyLedger.clickAddMember') }}
           </p>
         </div>
@@ -384,7 +386,7 @@ onMounted(() => {
         <div v-else class="space-y-3">
           <div
             v-for="(member, index) in form.memberList" :key="index"
-            class="p-3 border border-gray-200 rounded-md flex gap-3 items-center"
+            class="p-3 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900/50 flex flex-col sm:flex-row gap-3 items-start sm:items-center"
           >
             <div class="flex-1">
               <Input
@@ -401,16 +403,18 @@ onMounted(() => {
                 size="sm"
               />
             </div>
-            <div class="flex gap-2 items-center">
+            <div class="flex gap-2 items-center shrink-0">
               <Checkbox
                 v-model="member.isPrimary"
                 :label="t('familyLedger.primaryMember')"
               />
               <button
-                type="button" class="text-red-500 p-1 hover:text-red-700" :disabled="form.memberList && form.memberList.length === 1"
+                type="button"
+                class="text-red-500 dark:text-red-400 p-1.5 rounded hover:text-red-700 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                :disabled="form.memberList && form.memberList.length === 1"
                 @click="removeMember(index)"
               >
-                <LucideTrash2 class="h-4 w-4" />
+                <LucideTrash2 :size="16" />
               </button>
             </div>
           </div>
@@ -419,28 +423,3 @@ onMounted(() => {
     </form>
   </Modal>
 </template>
-
-<style scoped lang="postcss">
-/* 表单区块 */
-.form-section {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-  margin-bottom: 1.5rem;
-}
-
-.section-title {
-  font-size: 1.125rem;
-  color: #111827;
-  font-weight: 500;
-  padding-bottom: 0.5rem;
-  margin-bottom: 0.75rem;
-  border-bottom: 1px solid #e5e7eb;
-}
-
-.form-help {
-  font-size: 0.75rem;
-  color: #6b7280;
-  margin-top: 0.25rem;
-}
-</style>

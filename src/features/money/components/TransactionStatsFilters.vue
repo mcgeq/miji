@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import Button from '@/components/ui/Button.vue';
 import { MoneyDb } from '@/services/money/money';
 import { DateUtils } from '@/utils/date';
 
@@ -218,32 +219,33 @@ loadReferenceData();
 </script>
 
 <template>
-  <div class="transaction-stats-filters">
+  <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-6">
     <!-- 桌面端布局 -->
-    <div class="desktop-layout">
+    <div class="hidden md:block">
       <!-- 第一行：过去时间按钮 + 开始日期 + 时间维度 + 账户 + 分类 -->
-      <div class="filter-row">
+      <div class="flex items-center gap-2 flex-wrap mb-3">
         <!-- 过去时间按钮组 -->
-        <div class="preset-buttons">
-          <button
+        <div class="flex gap-1 flex-wrap">
+          <Button
             v-for="preset in [presetRanges[0], presetRanges[2], presetRanges[4], presetRanges[6]]"
             :key="preset.value"
-            class="preset-btn"
+            variant="primary"
+            size="xs"
             @click="applyPresetRange(preset)"
           >
             {{ preset.label }}
-          </button>
+          </Button>
         </div>
         <!-- 开始日期输入框 -->
         <input
           v-model="localFilters.dateRange.start"
           type="date"
-          class="date-input"
+          class="px-2 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-xs min-w-[140px] max-w-[160px] focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
         <!-- 时间维度 -->
         <select
           v-model="localFilters.timeDimension"
-          class="filter-select"
+          class="px-2 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-xs cursor-pointer min-w-[120px] max-w-[160px] focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <option
             v-for="dimension in timeDimensions"
@@ -256,7 +258,7 @@ loadReferenceData();
         <!-- 账户 -->
         <select
           v-model="localFilters.accountSerialNum"
-          class="filter-select"
+          class="px-2 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-xs cursor-pointer min-w-[120px] max-w-[160px] focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <option value="">
             全部账户
@@ -272,7 +274,7 @@ loadReferenceData();
         <!-- 分类 -->
         <select
           v-model="localFilters.category"
-          class="filter-select"
+          class="px-2 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-xs cursor-pointer min-w-[120px] max-w-[160px] focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <option value="">
             全部分类
@@ -288,28 +290,29 @@ loadReferenceData();
       </div>
 
       <!-- 第二行：当前时间按钮 + 结束日期 + 交易类型 + 货币 + 子分类 + 重置 -->
-      <div class="filter-row">
+      <div class="flex items-center gap-2 flex-wrap">
         <!-- 当前时间按钮组 -->
-        <div class="preset-buttons">
-          <button
+        <div class="flex gap-1 flex-wrap">
+          <Button
             v-for="preset in [presetRanges[1], presetRanges[3], presetRanges[5], presetRanges[7]]"
             :key="preset.value"
-            class="preset-btn"
+            variant="primary"
+            size="xs"
             @click="applyPresetRange(preset)"
           >
             {{ preset.label }}
-          </button>
+          </Button>
         </div>
         <!-- 结束日期输入框 -->
         <input
           v-model="localFilters.dateRange.end"
           type="date"
-          class="date-input"
+          class="px-2 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-xs min-w-[140px] max-w-[160px] focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
         <!-- 交易类型 -->
         <select
           v-model="localFilters.transactionType"
-          class="filter-select"
+          class="px-2 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-xs cursor-pointer min-w-[120px] max-w-[160px] focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <option
             v-for="type in transactionTypes"
@@ -322,7 +325,7 @@ loadReferenceData();
         <!-- 货币 -->
         <select
           v-model="localFilters.currency"
-          class="filter-select"
+          class="px-2 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-xs cursor-pointer min-w-[120px] max-w-[160px] focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <option value="">
             全部货币
@@ -338,7 +341,7 @@ loadReferenceData();
         <!-- 子分类 -->
         <select
           v-model="localFilters.subCategory"
-          class="filter-select"
+          class="px-2 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-xs cursor-pointer min-w-[120px] max-w-[160px] focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-200 dark:disabled:bg-gray-600 disabled:text-gray-500 dark:disabled:text-gray-400 disabled:cursor-not-allowed"
           :disabled="!localFilters.category"
         >
           <option value="">
@@ -353,60 +356,65 @@ loadReferenceData();
           </option>
         </select>
         <!-- 重置按钮 -->
-        <button
-          class="reset-btn"
+        <Button
+          variant="secondary"
+          size="xs"
           @click="resetFilters"
         >
           重置
-        </button>
+        </Button>
       </div>
     </div>
 
     <!-- 移动端布局 -->
-    <div class="mobile-layout">
+    <div class="block md:hidden">
       <!-- 第一行：过去时间按钮 -->
-      <div class="filter-row">
-        <button
+      <div class="flex items-center gap-2 flex-wrap justify-center mb-3">
+        <Button
           v-for="preset in [presetRanges[0], presetRanges[2], presetRanges[4], presetRanges[6]]"
           :key="preset.value"
-          class="preset-btn"
+          variant="primary"
+          size="xs"
+          class="flex-1 min-w-0"
           @click="applyPresetRange(preset)"
         >
           {{ preset.label }}
-        </button>
+        </Button>
       </div>
 
       <!-- 第二行：当前时间按钮 -->
-      <div class="filter-row">
-        <button
+      <div class="flex items-center gap-2 flex-wrap justify-center mb-3">
+        <Button
           v-for="preset in [presetRanges[1], presetRanges[3], presetRanges[5], presetRanges[7]]"
           :key="preset.value"
-          class="preset-btn"
+          variant="primary"
+          size="xs"
+          class="flex-1 min-w-0"
           @click="applyPresetRange(preset)"
         >
           {{ preset.label }}
-        </button>
+        </Button>
       </div>
 
       <!-- 第三行：日期范围选择 -->
-      <div class="filter-row">
+      <div class="flex items-center gap-2 flex-wrap justify-center mb-3">
         <input
           v-model="localFilters.dateRange.start"
           type="date"
-          class="date-input"
+          class="flex-1 min-w-0 px-2 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
         <input
           v-model="localFilters.dateRange.end"
           type="date"
-          class="date-input"
+          class="flex-1 min-w-0 px-2 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
       </div>
 
       <!-- 第四行：通用筛选器 -->
-      <div class="filter-row">
+      <div class="flex items-center gap-2 flex-wrap justify-center mb-3">
         <select
           v-model="localFilters.transactionType"
-          class="filter-select"
+          class="flex-1 min-w-0 px-2 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-xs cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <option
             v-for="type in transactionTypes"
@@ -418,7 +426,7 @@ loadReferenceData();
         </select>
         <select
           v-model="localFilters.accountSerialNum"
-          class="filter-select"
+          class="flex-1 min-w-0 px-2 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-xs cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <option value="">
             全部账户
@@ -433,7 +441,7 @@ loadReferenceData();
         </select>
         <select
           v-model="localFilters.category"
-          class="filter-select"
+          class="flex-1 min-w-0 px-2 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-xs cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <option value="">
             全部分类
@@ -449,10 +457,10 @@ loadReferenceData();
       </div>
 
       <!-- 第五行：附加筛选器 -->
-      <div class="filter-row">
+      <div class="flex items-center gap-2 flex-wrap justify-center">
         <select
           v-model="localFilters.timeDimension"
-          class="filter-select"
+          class="flex-1 min-w-0 px-2 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-xs cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <option
             v-for="dimension in timeDimensions"
@@ -464,7 +472,7 @@ loadReferenceData();
         </select>
         <select
           v-model="localFilters.currency"
-          class="filter-select"
+          class="flex-1 min-w-0 px-2 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-xs cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <option value="">
             货币
@@ -479,7 +487,7 @@ loadReferenceData();
         </select>
         <select
           v-model="localFilters.subCategory"
-          class="filter-select"
+          class="flex-1 min-w-0 px-2 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-xs cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-200 dark:disabled:bg-gray-600 disabled:text-gray-500 dark:disabled:text-gray-400 disabled:cursor-not-allowed"
           :disabled="!localFilters.category"
         >
           <option value="">
@@ -493,236 +501,15 @@ loadReferenceData();
             {{ subCategory.name }}
           </option>
         </select>
-        <button
-          class="reset-btn"
+        <Button
+          variant="secondary"
+          size="xs"
+          class="flex-1 min-w-0"
           @click="resetFilters"
         >
           重置
-        </button>
+        </Button>
       </div>
     </div>
   </div>
 </template>
-
-<style scoped lang="postcss">
-.transaction-stats-filters {
-  background: var(--color-base-100);
-  border: 1px solid var(--color-base-300);
-  border-radius: 0.5rem;
-  padding: 1rem;
-  margin-bottom: 1.5rem;
-}
-
-/* 桌面端布局 - 默认显示 */
-.desktop-layout {
-  display: block;
-}
-
-.mobile-layout {
-  display: none;
-}
-
-/* 通用样式 */
-.filter-row {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-  margin-bottom: 0.75rem;
-}
-
-.preset-buttons {
-  display: flex;
-  gap: 0.25rem;
-  flex-wrap: wrap;
-}
-
-.preset-btn {
-  padding: 0.375rem 0.75rem;
-  background: var(--color-primary);
-  color: white;
-  border: none;
-  border-radius: 0.375rem;
-  font-size: 0.75rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  white-space: nowrap;
-}
-
-.preset-btn:hover {
-  background: var(--color-primary-dark);
-}
-
-.date-input {
-  padding: 0.5rem;
-  border: 1px solid var(--color-base-300);
-  border-radius: 0.375rem;
-  background: var(--color-base-100);
-  color: var(--color-accent-content);
-  font-size: 0.75rem;
-  min-width: 140px;
-  max-width: 160px;
-}
-
-.filter-select {
-  padding: 0.5rem;
-  border: 1px solid var(--color-base-300);
-  border-radius: 0.375rem;
-  background: var(--color-base-100);
-  color: var(--color-accent-content);
-  font-size: 0.75rem;
-  cursor: pointer;
-  min-width: 120px;
-  max-width: 160px;
-}
-
-.filter-select:disabled {
-  background: var(--color-base-200);
-  color: var(--color-neutral);
-  cursor: not-allowed;
-}
-
-.reset-btn {
-  padding: 0.5rem 1rem;
-  background: var(--color-base-200);
-  border: 1px solid var(--color-base-300);
-  border-radius: 0.375rem;
-  color: var(--color-neutral);
-  font-size: 0.75rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  white-space: nowrap;
-  min-width: 80px;
-  max-width: 120px;
-}
-
-.reset-btn:hover {
-  background: var(--color-base-300);
-}
-
-/* 桌面端布局样式 */
-.desktop-layout .filter-row {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-}
-
-.desktop-layout .preset-buttons {
-  display: flex;
-  gap: 0.25rem;
-  flex-wrap: wrap;
-}
-
-/* 移动端布局 - 在移动设备上显示 */
-@media (max-width: 768px) {
-  .desktop-layout {
-    display: none;
-  }
-
-  .mobile-layout {
-    display: block;
-  }
-
-  .mobile-layout .filter-row {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-    justify-content: center;
-  }
-
-  .mobile-layout .preset-btn {
-    flex: 1;
-    min-width: 0;
-    font-size: 0.75rem;
-    padding: 0.5rem 0.75rem;
-  }
-
-  .mobile-layout .date-input {
-    flex: 1;
-    min-width: 0;
-    max-width: none;
-    font-size: 0.75rem;
-  }
-
-  .mobile-layout .filter-select {
-    flex: 1;
-    min-width: 0;
-    max-width: none;
-    font-size: 0.75rem;
-  }
-
-  .mobile-layout .reset-btn {
-    flex: 1;
-    min-width: 0;
-    max-width: none;
-    font-size: 0.75rem;
-  }
-}
-
-/* 超小屏幕优化 */
-@media (max-width: 480px) {
-  .transaction-stats-filters {
-    padding: 0.75rem;
-  }
-
-  .preset-btn {
-    font-size: 0.625rem;
-    padding: 0.25rem 0.375rem;
-  }
-
-  .date-input {
-    font-size: 0.625rem;
-    padding: 0.25rem;
-  }
-
-  .filter-select {
-    font-size: 0.625rem;
-    padding: 0.25rem;
-  }
-
-  .reset-btn {
-    font-size: 0.625rem;
-    padding: 0.25rem 0.5rem;
-  }
-}
-
-/* 中等屏幕优化 */
-@media (max-width: 1024px) and (min-width: 769px) {
-  .filter-row {
-    gap: 0.375rem;
-  }
-  .preset-btn {
-    padding: 0.375rem 0.625rem;
-    font-size: 0.75rem;
-  }
-  .date-input {
-    min-width: 120px;
-    max-width: 140px;
-  }
-  .filter-select {
-    min-width: 100px;
-    max-width: 140px;
-  }
-}
-
-/* 大屏幕优化 */
-@media (min-width: 1200px) {
-  .filter-row {
-    gap: 0.5rem;
-  }
-  .preset-btn {
-    padding: 0.5rem 0.875rem;
-    font-size: 0.75rem;
-  }
-  .date-input {
-    min-width: 140px;
-    max-width: 160px;
-  }
-  .filter-select {
-    min-width: 120px;
-    max-width: 160px;
-  }
-}
-</style>

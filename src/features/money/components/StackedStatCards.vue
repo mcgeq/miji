@@ -302,7 +302,7 @@ defineExpose({
 
 <template>
   <div
-    class="stacked-cards-container"
+    class="relative overflow-hidden [perspective:1200px]"
     :style="containerStyle"
     role="tablist"
     :aria-label="`统计卡片轮播，共 ${cards.length} 张`"
@@ -312,13 +312,13 @@ defineExpose({
     @touchend="handleTouchEnd"
   >
     <!-- 卡片容器 -->
-    <div class="cards-wrapper" :style="{ height: `${cardHeight}px` }">
+    <div class="relative w-full h-full" :style="{ height: `${cardHeight}px` }">
       <div
         v-for="(card, index) in cards"
         :key="card.id"
         ref="cardRefs"
         class="stat-card-stacked"
-        :class="[disabled ? 'card-disabled' : 'card-active']"
+        :class="disabled ? 'pointer-events-none opacity-75' : 'cursor-pointer'"
         :style="getCardStyle(index)"
         :tabindex="disabled ? -1 : (selectedIndex === index ? 0 : -1)"
         :aria-selected="selectedIndex === index"
@@ -338,18 +338,23 @@ defineExpose({
           :subtitle="card.subtitle"
           :trend="card.trend"
           :trend-type="card.trendType"
-          class="inner-card"
+          class="h-full shadow-md hover:shadow-xl transition-shadow duration-300"
         />
       </div>
     </div>
 
     <!-- 底部指示器 -->
-    <div class="indicator-wrapper" role="tablist" aria-label="卡片导航指示器">
+    <div class="mt-4 flex gap-2 justify-center" role="tablist" aria-label="卡片导航指示器">
       <button
         v-for="(card, index) in cards"
         :key="`indicator-${index}`"
-        class="indicator-dot"
-        :class="[selectedIndex === index ? 'indicator-active' : '']"
+        class="w-3 h-3 rounded-full border-0 transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+        :class="[
+          selectedIndex === index
+            ? 'bg-blue-600 scale-110 shadow-md'
+            : 'bg-gray-300 hover:bg-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500',
+          (disabled || isTransitioning) && 'opacity-50 cursor-not-allowed',
+        ]"
         :aria-label="`切换到第 ${index + 1} 张卡片: ${card.title}`"
         :aria-pressed="selectedIndex === index"
         :disabled="disabled || isTransitioning"
@@ -362,191 +367,55 @@ defineExpose({
     <Transition name="nav-fade">
       <button
         v-if="showNavButtons && cards.length > 1"
-        class="nav-btn nav-btn-prev"
+        class="absolute top-1/2 -translate-y-1/2 left-4 md:left-4 w-10 h-10 md:w-10 md:h-10 sm:w-8 sm:h-8 rounded-full bg-blue-600/15 dark:bg-blue-500/20 border border-blue-600/50 dark:border-blue-500/50 backdrop-blur-md flex items-center justify-center text-gray-600 dark:text-gray-300 transition-all duration-300 hover:bg-blue-600/30 hover:shadow-lg hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:opacity-30 disabled:cursor-not-allowed"
         :aria-label="isPrevDisabled ? '已是第一张卡片' : '上一张卡片'"
         :disabled="isTransitioning || isPrevDisabled"
         :tabindex="disabled ? -1 : 0"
         @click="previousCard"
       >
-        <LucideChevronLeft class="icon" />
+        <LucideChevronLeft class="w-5 h-5" />
       </button>
     </Transition>
 
     <Transition name="nav-fade">
       <button
         v-if="showNavButtons && cards.length > 1"
-        class="nav-btn nav-btn-next"
+        class="absolute top-1/2 -translate-y-1/2 right-4 md:right-4 w-10 h-10 md:w-10 md:h-10 sm:w-8 sm:h-8 rounded-full bg-blue-600/15 dark:bg-blue-500/20 border border-blue-600/50 dark:border-blue-500/50 backdrop-blur-md flex items-center justify-center text-gray-600 dark:text-gray-300 transition-all duration-300 hover:bg-blue-600/30 hover:shadow-lg hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:opacity-30 disabled:cursor-not-allowed"
         :aria-label="isNextDisabled ? '已是最后一张卡片' : '下一张卡片'"
         :disabled="isTransitioning || isNextDisabled"
         :tabindex="disabled ? -1 : 0"
         @click="nextCard"
       >
-        <LucideChevronRight class="icon" />
+        <LucideChevronRight class="w-5 h-5" />
       </button>
     </Transition>
 
     <!-- 播放按钮 -->
     <button
       v-if="showPlayControl"
-      class="play-control"
+      class="absolute top-4 right-4 z-50 w-8 h-8 rounded-full border border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md flex items-center justify-center text-gray-600 dark:text-gray-400 transition-colors hover:text-blue-600 dark:hover:text-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
       :aria-label="isAutoPlaying ? '暂停自动播放' : '开始自动播放'"
       :disabled="disabled"
       :tabindex="disabled ? -1 : 0"
       @click="toggleAutoPlay"
     >
-      <LucidePause v-if="isAutoPlaying" class="icon-small" />
-      <LucidePlay v-else class="icon-small" />
+      <LucidePause v-if="isAutoPlaying" class="w-4 h-4" />
+      <LucidePlay v-else class="w-4 h-4" />
     </button>
   </div>
 </template>
 
 <style scoped>
-/* 容器基础 */
-.stacked-cards-container {
-  position: relative;
-  overflow: hidden;
-  perspective: 1200px;
-  contain: layout style paint;
-}
-.cards-wrapper {
-  position: relative;
-  width: 100%;
-  height: 100%;
-}
+/* 3D 变换样式（无法用 Tailwind 替代） */
 .stat-card-stacked {
   position: absolute;
   top: 0;
   transform-style: preserve-3d;
   will-change: transform, opacity, z-index;
   backface-visibility: hidden;
-  contain: layout style paint;
-}
-.card-active {
-  cursor: pointer;
-}
-.card-disabled {
-  pointer-events: none;
-  opacity: 0.75;
-}
-.inner-card {
-  height: 100%;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-  transition: box-shadow 0.3s ease;
-}
-.inner-card:hover {
-  box-shadow: 0 8px 20px rgba(0,0,0,0.15);
 }
 
-/* 导航按钮 */
-.nav-btn {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: rgba(59, 130, 246, 0.15);
-  border: 1px solid rgba(59, 130, 246, 0.5);
-  backdrop-filter: blur(6px);
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #4b5563;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.3s;
-}
-.nav-btn:hover:not(:disabled) {
-  background: rgba(59, 130, 246, 0.3); /* Hover 加深背景 */
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-  transform: translateY(-50%) scale(1.15);
-}
-.nav-btn:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 3px #3b82f6, 0 0 0 5px #ffffff; /* 蓝色 focus 环 + 白色间距 */
-}
-.nav-btn:disabled {
-  opacity: 0.3;
-  cursor: not-allowed;
-}
-.nav-btn-prev {
-  left: 16px;
-}
-.nav-btn-next {
-  right: 16px;
-}
-.icon {
-  width: 20px;
-  height: 20px;
-  color: inherit;
-}
-
-/* focus 高亮 */
-.nav-btn:focus-visible,
-.play-control:focus-visible,
-.indicator-dot:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 2px #3b82f6, 0 0 0 4px #ffffff;
-}
-
-/* 播放控制 */
-.play-control {
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  z-index: 50;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  border: 1px solid #e5e7eb;
-  background: rgba(255,255,255,0.8);
-  backdrop-filter: blur(6px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #4b5563;
-  transition: color 0.2s;
-}
-.play-control:hover {
-  color: #3b82f6;
-}
-.play-control:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-.icon-small {
-  width: 16px;
-  height: 16px;
-}
-
-/* 指示器 */
-.indicator-wrapper {
-  margin-top: 16px;
-  display: flex;
-  gap: 8px;
-  justify-content: center;
-}
-.indicator-dot {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: #d1d5db;
-  transition: all 0.3s;
-  box-shadow: none;
-  border: none;
-}
-.indicator-dot:hover {
-  background: #9ca3af;
-}
-.indicator-active {
-  background: #3b82f6;
-  transform: scale(1.1);
-  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-}
-.indicator-dot:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-/* 动画 */
+/* 动画过渡 */
 .nav-fade-enter-active,
 .nav-fade-leave-active {
   transition: opacity 0.3s ease;
@@ -556,33 +425,8 @@ defineExpose({
   opacity: 0;
 }
 
-/* 响应式 */
-@media (max-width: 768px) {
-  .nav-btn {
-    width: 32px;
-    height: 32px;
-  }
-  .nav-btn-prev {
-    left: 8px;
-  }
-  .nav-btn-next {
-    right: 8px;
-  }
-}
-@media (max-width: 480px) {
-  .nav-btn {
-    width: 28px;
-    height: 28px;
-  }
-}
-
 /* 打印模式 */
 @media print {
-  .nav-btn,
-  .play-control,
-  .indicator-dot {
-    display: none !important;
-  }
   .stat-card-stacked {
     position: static !important;
     transform: none !important;

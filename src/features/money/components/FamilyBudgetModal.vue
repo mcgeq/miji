@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import z from 'zod';
 import BudgetAllocationEditor from '@/components/common/money/BudgetAllocationEditor.vue';
-import { Modal } from '@/components/ui';
+import { Button, Modal } from '@/components/ui';
 import { useBudgetForm } from '@/composables/useBudgetForm';
 import { BudgetCreateSchema } from '@/schema/money';
 import { useCategoryStore, useFamilyMemberStore } from '@/stores/money';
@@ -218,10 +218,10 @@ onMounted(async () => {
     @close="closeModal"
     @confirm="onSubmit"
   >
-    <form class="family-budget-form" @submit.prevent="onSubmit">
+    <form class="flex flex-col gap-6" @submit.prevent="onSubmit">
       <!-- 基本信息 -->
-      <div class="form-section">
-        <h3 class="section-title">
+      <div class="p-4 bg-gray-50 dark:bg-gray-900/50 rounded-xl">
+        <h3 class="text-base font-semibold text-gray-900 dark:text-white mb-4">
           📋 基本信息
         </h3>
 
@@ -241,66 +241,67 @@ onMounted(async () => {
       </div>
 
       <!-- 成员预算分配 -->
-      <div class="form-section">
-        <div class="section-header">
-          <h3 class="section-title">
+      <div class="p-4 bg-gray-50 dark:bg-gray-900/50 rounded-xl">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-base font-semibold text-gray-900 dark:text-white">
             👥 成员预算分配（可选）
           </h3>
-          <button
+          <Button
             type="button"
-            class="btn-add-allocation"
+            variant="primary"
+            size="sm"
             @click="handleAddAllocation"
           >
             + 添加分配
-          </button>
+          </Button>
         </div>
 
         <!-- 分配统计 -->
-        <div v-if="allocations.length > 0" class="allocations-summary">
-          <div class="summary-item">
-            <span class="label">已分配金额：</span>
-            <span class="value">¥{{ allocationsSummary.totalFixed.toFixed(2) }}</span>
-            <span class="remaining">(剩余: ¥{{ allocationsSummary.remainingFixed.toFixed(2) }})</span>
+        <div v-if="allocations.length > 0" class="p-4 bg-white dark:bg-gray-800 rounded-lg mb-4 flex flex-col gap-2">
+          <div class="flex items-center gap-2 text-sm">
+            <span class="text-gray-600 dark:text-gray-400">已分配金额：</span>
+            <span class="font-semibold text-blue-600 dark:text-blue-400">¥{{ allocationsSummary.totalFixed.toFixed(2) }}</span>
+            <span class="text-gray-500 dark:text-gray-500 text-xs">(剩余: ¥{{ allocationsSummary.remainingFixed.toFixed(2) }})</span>
           </div>
-          <div class="summary-item">
-            <span class="label">已分配百分比：</span>
-            <span class="value">{{ allocationsSummary.totalPercentage.toFixed(1) }}%</span>
-            <span class="remaining">(剩余: {{ allocationsSummary.remainingPercentage.toFixed(1) }}%)</span>
+          <div class="flex items-center gap-2 text-sm">
+            <span class="text-gray-600 dark:text-gray-400">已分配百分比：</span>
+            <span class="font-semibold text-blue-600 dark:text-blue-400">{{ allocationsSummary.totalPercentage.toFixed(1) }}%</span>
+            <span class="text-gray-500 dark:text-gray-500 text-xs">(剩余: {{ allocationsSummary.remainingPercentage.toFixed(1) }}%)</span>
           </div>
         </div>
 
         <!-- 分配列表 -->
-        <div v-if="allocations.length > 0" class="allocations-list">
+        <div v-if="allocations.length > 0" class="flex flex-col gap-3">
           <div
             v-for="(allocation, index) in allocations"
             :key="index"
-            class="allocation-item"
+            class="flex justify-between items-center p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 transition-all hover:border-blue-500 hover:shadow-sm"
           >
-            <div class="allocation-info">
-              <span v-if="allocation.memberSerialNum" class="member-name">
+            <div class="flex items-center gap-2 flex-1">
+              <span v-if="allocation.memberSerialNum" class="font-semibold text-gray-900 dark:text-white">
                 {{ allMembers.find(m => m.serialNum === allocation.memberSerialNum)?.name || '未知成员' }}
               </span>
-              <span v-if="allocation.categorySerialNum" class="category-name">
+              <span v-if="allocation.categorySerialNum" class="text-gray-600 dark:text-gray-400 text-sm">
                 · {{ allocation.categorySerialNum }}
               </span>
-              <span class="amount">
+              <span class="ml-auto font-semibold text-blue-600 dark:text-blue-400">
                 {{ allocation.allocatedAmount
                   ? `¥${Number(allocation.allocatedAmount).toFixed(2)}`
                   : `${Number(allocation.percentage).toFixed(1)}%`
                 }}
               </span>
             </div>
-            <div class="allocation-actions">
+            <div class="flex gap-2">
               <button
                 type="button"
-                class="btn-icon btn-edit"
+                class="p-1 border-none bg-transparent cursor-pointer text-base transition-transform hover:scale-125"
                 @click="handleEditAllocation(index)"
               >
                 ✏️
               </button>
               <button
                 type="button"
-                class="btn-icon btn-delete"
+                class="p-1 border-none bg-transparent cursor-pointer text-base transition-transform hover:scale-125"
                 @click="handleDeleteAllocation(index)"
               >
                 🗑️
@@ -309,8 +310,8 @@ onMounted(async () => {
           </div>
         </div>
 
-        <div v-else class="empty-allocations">
-          <p>暂无成员预算分配，点击"添加分配"开始配置</p>
+        <div v-else class="py-8 text-center text-gray-500 dark:text-gray-400 text-sm">
+          <p>暂无成员预算分配，点击“添加分配”开始配置</p>
         </div>
       </div>
     </form>
@@ -328,155 +329,3 @@ onMounted(async () => {
     @cancel="showAllocationEditor = false"
   />
 </template>
-
-<style scoped>
-.family-budget-form {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-/* 表单区块 */
-.form-section {
-  padding: 1rem;
-  background: var(--color-base-200);
-  border-radius: 0.75rem;
-}
-
-.section-title {
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--color-base-content);
-  margin-bottom: 1rem;
-}
-
-.section-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1rem;
-}
-
-.btn-add-allocation {
-  padding: 0.5rem 1rem;
-  background: var(--color-primary);
-  color: white;
-  border: none;
-  border-radius: 0.5rem;
-  font-size: 0.875rem;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.btn-add-allocation:hover {
-  background: var(--color-primary-focus);
-  transform: translateY(-1px);
-}
-
-/* 分配统计 */
-.allocations-summary {
-  padding: 1rem;
-  background: var(--color-base-100);
-  border-radius: 0.5rem;
-  margin-bottom: 1rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.summary-item {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.875rem;
-}
-
-.summary-item .label {
-  color: var(--color-base-content);
-  opacity: 0.7;
-}
-
-.summary-item .value {
-  font-weight: 600;
-  color: var(--color-primary);
-}
-
-.summary-item .remaining {
-  color: var(--color-base-content);
-  opacity: 0.6;
-  font-size: 0.75rem;
-}
-
-/* 分配列表 */
-.allocations-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.allocation-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.75rem;
-  background: var(--color-base-100);
-  border-radius: 0.5rem;
-  border: 1px solid var(--color-base-300);
-  transition: all 0.2s;
-}
-
-.allocation-item:hover {
-  border-color: var(--color-primary);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.allocation-info {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  flex: 1;
-}
-
-.member-name {
-  font-weight: 600;
-  color: var(--color-base-content);
-}
-
-.category-name {
-  color: var(--color-base-content);
-  opacity: 0.7;
-  font-size: 0.875rem;
-}
-
-.amount {
-  margin-left: auto;
-  font-weight: 600;
-  color: var(--color-primary);
-}
-
-.allocation-actions {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.btn-icon {
-  padding: 0.25rem 0.5rem;
-  border: none;
-  background: transparent;
-  cursor: pointer;
-  font-size: 1rem;
-  transition: transform 0.2s;
-}
-
-.btn-icon:hover {
-  transform: scale(1.2);
-}
-
-.empty-allocations {
-  padding: 2rem;
-  text-align: center;
-  color: var(--color-base-content);
-  opacity: 0.6;
-  font-size: 0.875rem;
-}
-</style>

@@ -32,9 +32,11 @@ function navigate(item: MenuItem) {
   }
 }
 
-function navigateSubmenu(submenuItem: { name: string; title: string; path: string }) {
+function navigateSubmenu(submenuItem: { name: string; title: string; path: string }, event: Event) {
+  // 阻止事件冒泡，防止触发 handleClickOutside
+  event.stopPropagation();
   router.push(submenuItem.path);
-  // 导航后关闭所有子菜单
+  // 导航后关闭子菜单
   expandedMenus.value.clear();
 }
 
@@ -61,7 +63,8 @@ function logout() {
 // 点击外部关闭子菜单
 function handleClickOutside(event: Event) {
   const target = event.target as Element;
-  if (!target.closest('.sidebar')) {
+  // 检查点击是否在侧边栏或子菜单内
+  if (!target.closest('aside') && !target.closest('.submenu-container')) {
     expandedMenus.value.clear();
   }
 }
@@ -129,7 +132,7 @@ onUnmounted(() => {
           >
             <ul
               v-if="item.hasSubmenu && isExpanded(item.name)"
-              class="absolute left-full top-0 w-12 bg-[var(--color-base-200)] rounded-lg shadow-[0_4px_12px_rgba(0,0,0,0.15)] z-[1001] overflow-hidden"
+              class="submenu-container absolute left-full top-0 w-12 bg-[var(--color-base-200)] rounded-lg shadow-[0_4px_12px_rgba(0,0,0,0.15)] z-[1001] overflow-hidden"
             >
               <li
                 v-for="submenuItem in item.submenu"
@@ -138,7 +141,7 @@ onUnmounted(() => {
                   isSubmenuActive(submenuItem) && 'bg-[var(--color-primary)] text-[var(--color-primary-content)]',
                 ]"
                 :title="submenuItem.title"
-                @click="navigateSubmenu(submenuItem)"
+                @click="navigateSubmenu(submenuItem, $event)"
               >
                 <component
                   :is="submenuItem.icon || BarChart3"

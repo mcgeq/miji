@@ -111,20 +111,20 @@ onMounted(async () => {
 </script>
 
 <template>
-  <main class="mx-auto px-4 py-4 flex flex-col w-full max-w-2xl min-h-screen relative bg-base-200 z-0">
+  <main class="mx-auto px-1 md:px-4 py-1 md:py-4 pb-16 md:pb-4 flex flex-col w-full max-w-2xl min-h-screen relative bg-gray-100 dark:bg-gray-900 z-0">
     <!-- 输入框容器 -->
     <div class="mb-4 h-[60px] relative z-[10000]">
       <!-- 切换按钮 -->
       <button
         v-if="showBtn"
-        class="absolute top-1/2 left-0 z-10 flex h-8 w-8 items-center justify-center bg-base-300 text-base-content rounded-full border border-base-200 shadow-sm -translate-y-1/2 transition-all duration-300 hover:bg-neutral hover:text-neutral-content active:scale-95"
+        class="absolute top-1/2 left-0 z-10 flex h-8 w-8 items-center justify-center bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white rounded-full border border-gray-300 dark:border-gray-600 shadow-sm -translate-y-1/2 transition-all duration-300 hover:bg-gray-800 dark:hover:bg-gray-600 hover:text-white active:scale-95"
         aria-label="Toggle Input"
         @click="toggleInput"
       >
         <component
           :is="showInput ? X : Plus"
           class="h-4 w-4"
-          :class="showInput ? 'text-error' : ''"
+          :class="showInput ? 'text-red-600 dark:text-red-400' : ''"
         />
       </button>
 
@@ -138,12 +138,16 @@ onMounted(async () => {
       <!-- 过滤按钮 -->
       <Transition name="fade-slide">
         <div v-show="!showInput" class="absolute inset-0 flex items-center justify-center transition-opacity duration-300">
-          <div class="filter-btn-group">
+          <div class="inline-flex gap-2 px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-full shadow-sm transition-all">
             <button
               v-for="item in filterButtons"
               :key="item.value"
-              class="filter-btn"
-              :class="filterBtn === item.value ? 'filter-btn-active' : ''"
+              class="text-sm font-semibold px-3 py-1 rounded-full border border-transparent transition-all"
+              :class="[
+                filterBtn === item.value
+                  ? 'bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900'
+                  : 'bg-transparent text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700',
+              ]"
               @click="changeFilter(item.value)"
             >
               {{ item.label }}
@@ -164,7 +168,7 @@ onMounted(async () => {
     <!-- 分页器 -->
     <div
       v-if="pagination.totalItems.value > pagination.pageSize.value"
-      class="mb-1 mt-auto md:mb-0 md:[&>:deep(.pagination-container)]:shadow-none md:[&>:deep(.pagination-container)]:!bg-transparent"
+      class="mb-16 md:mb-1 mt-auto sticky md:relative bottom-0 md:bottom-auto bg-transparent p-1 md:p-0 rounded-lg md:rounded-none shadow-[0_-2px_8px_rgba(0,0,0,0.1)] md:shadow-none md:[&>:deep(.pagination-container)]:shadow-none md:[&>:deep(.pagination-container)]:!bg-transparent"
     >
       <Pagination
         :current-page="pagination.currentPage.value"
@@ -182,38 +186,13 @@ onMounted(async () => {
 </template>
 
 <style scoped>
-/* Toast 全局z-index */
-
+/* Toast 全局z-index - 保留必要的全局样式 */
 :global(.Vue-Toastification__container) {
   z-index: 2147483647 !important;
   pointer-events: none !important;
 }
+
 :global(.Vue-Toastification__toast) {
   pointer-events: auto !important;
-}
-
-/* 移动端样式 */
-@media (max-width: 768px) {
-  main {
-    width: 100%;
-    padding: 0.25rem;
-    padding-bottom: 4rem;
-  }
-
-  main > div:last-child {
-    margin-bottom: 4rem;
-    margin-top: 0.5rem;
-    position: sticky;
-    bottom: 0;
-    background-color: transparent;
-    padding: 0.25rem 0.5rem;
-    border-radius: 0.5rem;
-    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
-  }
-
-  main > div:last-child :deep(.pagination-container) {
-    box-shadow: none;
-    background-color: transparent !important;
-  }
 }
 </style>

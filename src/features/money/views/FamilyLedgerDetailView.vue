@@ -1,14 +1,21 @@
 <script setup lang="ts">
 import {
+  LucideArrowLeft,
   LucideBarChart3,
   LucideCalculator,
   LucideCalendarClock,
   LucideCoins,
+  LucideLoader2,
+  LucideReceiptText,
   LucideTarget,
+  LucideTrendingDown,
+  LucideTrendingUp,
+  LucideUserCheck,
   LucideUsers,
   LucideWallet,
 } from 'lucide-vue-next';
 import { storeToRefs } from 'pinia';
+import Button from '@/components/ui/Button.vue';
 import { useFamilyBudgetActions } from '@/composables/useFamilyBudgetActions';
 import { MoneyDb } from '@/services/money/money';
 import { useFamilyLedgerStore } from '@/stores/money';
@@ -249,59 +256,62 @@ function getTabIcon(iconName: string) {
 </script>
 
 <template>
-  <div class="ledger-detail-view">
-    <div v-if="pageLoading" class="page-loader">
-      <LucideLoader2 class="spinner" />
+  <div class="min-h-screen p-6 bg-gray-50 dark:bg-gray-900">
+    <div v-if="pageLoading" class="flex items-center gap-3 text-gray-500 dark:text-gray-400">
+      <LucideLoader2 class="w-6 h-6 animate-spin" />
       <span>正在加载账本详情...</span>
     </div>
 
     <template v-else>
-      <div v-if="currentLedger" class="detail-content">
-        <header class="detail-header">
-          <button class="ghost-button" @click="goBack">
-            <LucideArrowLeft class="icon" />
+      <div v-if="currentLedger" class="flex flex-col gap-6">
+        <header class="flex flex-col md:flex-row md:items-start md:justify-between gap-6">
+          <button class="inline-flex items-center gap-2 px-3 py-2 border border-blue-200 dark:border-blue-800 rounded-lg bg-white dark:bg-gray-800 cursor-pointer text-gray-900 dark:text-gray-100 hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors" @click="goBack">
+            <LucideArrowLeft class="w-4 h-4" />
           </button>
-          <div class="title-block">
-            <div class="title-main">
-              <h1 class="title-name">
+          <div class="flex flex-col gap-2 flex-1">
+            <div class="flex items-baseline gap-2">
+              <h1 class="m-0 text-3xl font-bold text-gray-900 dark:text-gray-100">
                 {{ currentLedger.name || currentLedger.description || '未命名账本' }}
               </h1>
-              <p class="title-description text-sm text-muted">
+              <p class="m-0 text-sm text-gray-500 dark:text-gray-400">
                 {{ currentLedger.description || '暂未填写描述' }}
               </p>
             </div>
-            <div class="title-footer">
-              <div class="tabs-nav">
+            <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
+              <div class="flex items-center gap-2">
                 <button
                   v-for="tab in tabs"
                   :key="tab.key"
-                  class="tab-btn"
-                  :class="{ active: activeTab === tab.key }"
+                  class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full border transition-all text-xs" :class="[
+                    activeTab === tab.key
+                      ? 'bg-gray-200 dark:bg-gray-700 border-gray-400 dark:border-gray-600 text-blue-600 dark:text-blue-400'
+                      : 'bg-transparent border-transparent text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:border-gray-200 dark:hover:border-gray-700',
+                  ]"
                   :title="tab.label"
                   @click="activeTab = tab.key as 'settlement' | 'statistics'"
                 >
-                  <component :is="getTabIcon(tab.icon)" class="tab-icon" />
+                  <component :is="getTabIcon(tab.icon)" class="w-4 h-4" />
                 </button>
               </div>
-              <div class="meta">
-                <span class="meta-item">
-                  <LucideCoins class="meta-icon" />
+              <div class="flex flex-wrap gap-4 mt-3 text-sm text-gray-600 dark:text-gray-400">
+                <span class="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-gray-800 rounded-md font-medium transition-all hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-100">
+                  <LucideCoins class="w-4 h-4 flex-shrink-0 text-blue-600 dark:text-blue-400" />
                   {{ currentLedger.baseCurrency?.code || 'CNY' }}
                 </span>
-                <span class="meta-item">
-                  <LucideCalendarClock class="meta-icon" />
+                <span class="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-gray-800 rounded-md font-medium transition-all hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-100">
+                  <LucideCalendarClock class="w-4 h-4 flex-shrink-0 text-blue-600 dark:text-blue-400" />
                   {{ getSettlementCycleName(currentLedger.settlementCycle) }}
                 </span>
-                <span class="meta-item">
-                  <LucideUsers class="meta-icon" />
+                <span class="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-gray-800 rounded-md font-medium transition-all hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-100">
+                  <LucideUsers class="w-4 h-4 flex-shrink-0 text-blue-600 dark:text-blue-400" />
                   {{ memberCount }}
                 </span>
-                <span class="meta-item">
-                  <LucideWallet class="meta-icon" />
+                <span class="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-gray-800 rounded-md font-medium transition-all hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-100">
+                  <LucideWallet class="w-4 h-4 flex-shrink-0 text-blue-600 dark:text-blue-400" />
                   {{ accountCount }}
                 </span>
-                <span class="meta-item">
-                  <LucideBarChart3 class="meta-icon" />
+                <span class="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-gray-800 rounded-md font-medium transition-all hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-100">
+                  <LucideBarChart3 class="w-4 h-4 flex-shrink-0 text-blue-600 dark:text-blue-400" />
                   {{ activeTransactions }}
                 </span>
               </div>
@@ -309,100 +319,123 @@ function getTabIcon(iconName: string) {
           </div>
         </header>
 
-        <section class="summary-grid">
-          <article class="summary-card income">
-            <LucideTrendingUp class="card-icon" />
+        <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <article class="flex items-center gap-4 p-4 rounded-2xl bg-gray-100 dark:bg-gray-800 shadow-sm border-l-4 border-green-500">
+            <LucideTrendingUp class="w-8 h-8 text-gray-600 dark:text-gray-400" />
             <div>
-              <p>总收入</p>
-              <h3>{{ formatCurrency(currentStats?.totalIncome) }}</h3>
+              <p class="m-0 text-gray-600 dark:text-gray-400">
+                总收入
+              </p>
+              <h3 class="m-0 mt-1 text-2xl text-gray-900 dark:text-gray-100">
+                {{ formatCurrency(currentStats?.totalIncome) }}
+              </h3>
             </div>
           </article>
-          <article class="summary-card expense">
-            <LucideTrendingDown class="card-icon" />
+          <article class="flex items-center gap-4 p-4 rounded-2xl bg-gray-100 dark:bg-gray-800 shadow-sm border-l-4 border-red-500">
+            <LucideTrendingDown class="w-8 h-8 text-gray-600 dark:text-gray-400" />
             <div>
-              <p>总支出</p>
-              <h3>{{ formatCurrency(currentStats?.totalExpense) }}</h3>
+              <p class="m-0 text-gray-600 dark:text-gray-400">
+                总支出
+              </p>
+              <h3 class="m-0 mt-1 text-2xl text-gray-900 dark:text-gray-100">
+                {{ formatCurrency(currentStats?.totalExpense) }}
+              </h3>
             </div>
           </article>
-          <article class="summary-card neutral">
-            <LucideWallet class="card-icon" />
+          <article class="flex items-center gap-4 p-4 rounded-2xl bg-gray-100 dark:bg-gray-800 shadow-sm border-l-4 border-gray-500">
+            <LucideWallet class="w-8 h-8 text-gray-600 dark:text-gray-400" />
             <div>
-              <p>净余额</p>
-              <h3>{{ formatCurrency(calculatedStats.netBalance) }}</h3>
+              <p class="m-0 text-gray-600 dark:text-gray-400">
+                净余额
+              </p>
+              <h3 class="m-0 mt-1 text-2xl text-gray-900 dark:text-gray-100">
+                {{ formatCurrency(calculatedStats.netBalance) }}
+              </h3>
             </div>
           </article>
-          <article class="summary-card warning">
-            <LucideReceiptText class="card-icon" />
+          <article class="flex items-center gap-4 p-4 rounded-2xl bg-gray-100 dark:bg-gray-800 shadow-sm border-l-4 border-yellow-500">
+            <LucideReceiptText class="w-8 h-8 text-gray-600 dark:text-gray-400" />
             <div>
-              <p>待结算</p>
-              <h3>{{ formatCurrency(currentStats?.pendingSettlement) }}</h3>
+              <p class="m-0 text-gray-600 dark:text-gray-400">
+                待结算
+              </p>
+              <h3 class="m-0 mt-1 text-2xl text-gray-900 dark:text-gray-100">
+                {{ formatCurrency(currentStats?.pendingSettlement) }}
+              </h3>
             </div>
           </article>
         </section>
 
         <!-- 成员概览 / 交易记录 -->
-        <section class="detail-body">
-          <div class="members-panel">
-            <div class="panel-header">
-              <h2>成员概览</h2>
-              <button class="btn-budget" @click="showCreateBudgetModal">
-                <LucideTarget class="icon" />
+        <section class="grid grid-cols-1 lg:grid-cols-[minmax(280px,360px)_1fr] gap-6 mt-8">
+          <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg">
+            <div class="flex justify-between items-center">
+              <h2 class="m-0 text-xl text-gray-900 dark:text-gray-100">
+                成员概览
+              </h2>
+              <Button variant="primary" @click="showCreateBudgetModal">
+                <LucideTarget class="w-4 h-4" />
                 创建家庭预算
-              </button>
+              </Button>
             </div>
-            <div v-if="members.length" class="members-grid">
+            <div v-if="members.length" class="grid grid-cols-1 gap-5 mt-5 max-h-[350px] md:max-h-none overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
               <article
                 v-for="member in members"
                 :key="member.serialNum"
-                class="member-card"
-                :class="{ active: member.serialNum === selectedMember?.serialNum }"
+                class="relative border rounded-2xl p-5 cursor-pointer transition-all bg-white dark:bg-gray-900 flex flex-col h-full shadow-sm overflow-hidden before:content-[''] before:absolute before:top-0 before:left-0 before:right-0 before:h-1 before:bg-gradient-to-r before:from-blue-600 before:to-purple-600 before:opacity-0 before:transition-opacity" :class="[
+                  member.serialNum === selectedMember?.serialNum
+                    ? 'border-blue-600 shadow-lg shadow-blue-600/10 bg-gradient-to-br from-white to-blue-50/20 dark:from-gray-900 dark:to-blue-900/10 -translate-y-1 scale-[1.02] before:opacity-100'
+                    : 'border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-700 hover:shadow-md hover:-translate-y-0.5',
+                ]"
                 @click="selectMember(member.serialNum)"
               >
-                <div class="member-header">
-                  <div class="avatar">
+                <div class="flex items-center gap-3">
+                  <div class="w-13 h-13 rounded-xl bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center font-bold text-xl text-white flex-shrink-0 shadow-sm">
                     {{ member.name.charAt(0).toUpperCase() }}
                   </div>
                   <div>
-                    <p class="member-name">
+                    <p class="m-0 font-bold text-base text-gray-900 dark:text-gray-100 tracking-tight">
                       {{ member.name }}
                     </p>
-                    <p class="member-role">
+                    <p class="m-0 mt-1.5 text-xs text-gray-600 dark:text-gray-400 font-medium px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded inline-block w-fit">
                       {{ getRoleName(member.role) }}
                     </p>
                   </div>
                 </div>
-                <div class="member-metrics">
-                  <div>
-                    <span>交易笔数</span>
-                    <strong>{{ member.transactionCount ?? 0 }}</strong>
+                <div class="grid grid-cols-3 gap-4 mt-5 pt-4 border-t border-gray-200 dark:border-gray-700">
+                  <div class="flex flex-col items-center gap-1 px-2 py-2 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-100 dark:border-gray-700 transition-all hover:bg-gray-100 dark:hover:bg-gray-700 hover:-translate-y-px min-w-0">
+                    <span class="text-[9px] text-gray-600 dark:text-gray-400 font-semibold tracking-wider whitespace-nowrap text-center">交易笔数</span>
+                    <strong class="text-xs font-bold text-gray-900 dark:text-gray-100 tracking-tight whitespace-nowrap overflow-hidden text-ellipsis max-w-full">{{ member.transactionCount ?? 0 }}</strong>
                   </div>
-                  <div>
-                    <span>总支付</span>
-                    <strong>{{ formatCurrency(member.totalPaid) }}</strong>
+                  <div class="flex flex-col items-center gap-1 px-2 py-2 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-100 dark:border-gray-700 transition-all hover:bg-gray-100 dark:hover:bg-gray-700 hover:-translate-y-px min-w-0">
+                    <span class="text-[9px] text-gray-600 dark:text-gray-400 font-semibold tracking-wider whitespace-nowrap text-center">总支付</span>
+                    <strong class="text-xs font-bold text-gray-900 dark:text-gray-100 tracking-tight whitespace-nowrap overflow-hidden text-ellipsis max-w-full">{{ formatCurrency(member.totalPaid) }}</strong>
                   </div>
-                  <div>
-                    <span>应分摊</span>
-                    <strong>{{ formatCurrency(member.totalOwed) }}</strong>
+                  <div class="flex flex-col items-center gap-1 px-2 py-2 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-100 dark:border-gray-700 transition-all hover:bg-gray-100 dark:hover:bg-gray-700 hover:-translate-y-px min-w-0">
+                    <span class="text-[9px] text-gray-600 dark:text-gray-400 font-semibold tracking-wider whitespace-nowrap text-center">应分摆</span>
+                    <strong class="text-xs font-bold text-gray-900 dark:text-gray-100 tracking-tight whitespace-nowrap overflow-hidden text-ellipsis max-w-full">{{ formatCurrency(member.totalOwed) }}</strong>
                   </div>
                 </div>
               </article>
             </div>
-            <div v-else class="empty-state">
-              <LucideUserCheck class="empty-icon" />
-              <p>尚未添加成员</p>
+            <div v-else class="p-8 text-center text-gray-400 dark:text-gray-600">
+              <LucideUserCheck class="w-9 h-9 mb-3 mx-auto" />
+              <p class="m-0">
+                尚未添加成员
+              </p>
             </div>
           </div>
 
-          <div class="transactions-panel">
-            <div class="panel-header">
+          <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg">
+            <div class="flex justify-between items-center">
               <div>
-                <h2>
+                <h2 class="m-0 text-xl text-gray-900 dark:text-gray-100">
                   {{ selectedMember ? `${selectedMember.name} 的交易` : '交易记录' }}
                 </h2>
               </div>
             </div>
 
-            <div class="transactions-scroll-container">
+            <div class="max-h-[480px] md:max-h-[480px] overflow-y-auto overflow-x-hidden rounded-lg [scrollbar-width:thin] [scrollbar-color:rgb(209_213_219)_rgb(249_250_251)] [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-gray-50 [&::-webkit-scrollbar-track]:rounded [&::-webkit-scrollbar-thumb]:bg-gray-300 [&::-webkit-scrollbar-thumb]:rounded [&::-webkit-scrollbar-thumb:hover]:bg-blue-300">
               <TransactionTable
                 :transactions="memberTransactions"
                 :loading="transactionsLoading"
@@ -415,21 +448,23 @@ function getTabIcon(iconName: string) {
         </section>
 
         <!-- 结算中心 / 统计报表 -->
-        <section class="detail-tabs">
-          <div class="tab-content">
-            <div v-if="activeTab === 'settlement'" class="tab-panel">
+        <section class="mt-4 mx-auto">
+          <div class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-lg">
+            <div v-if="activeTab === 'settlement'" class="w-full">
               <SettlementView />
             </div>
-            <div v-else-if="activeTab === 'statistics'" class="tab-panel">
+            <div v-else-if="activeTab === 'statistics'" class="w-full">
               <FamilyStatsView />
             </div>
           </div>
         </section>
       </div>
 
-      <div v-else class="empty-state">
-        <LucideUsers class="empty-icon" />
-        <p>暂无账本数据</p>
+      <div v-else class="p-8 text-center text-gray-400 dark:text-gray-600">
+        <LucideUsers class="w-9 h-9 mb-3 mx-auto" />
+        <p class="m-0">
+          暂无账本数据
+        </p>
       </div>
     </template>
 
@@ -442,543 +477,3 @@ function getTabIcon(iconName: string) {
     />
   </div>
 </template>
-
-<style scoped>
-.ledger-detail-view {
-  min-height: 100vh;
-  padding: 24px;
-  background: var(--color-base-100);
-}
-
-.page-loader,
-.panel-loading {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  color: var(--color-gray-500);
-}
-
-.spinner {
-  width: 24px;
-  height: 24px;
-  animation: spin 1s linear infinite;
-}
-
-.detail-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 24px;
-  margin-bottom: 24px;
-}
-
-.ghost-button {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  border: 1px solid var(--color-primary-soft);
-  border-radius: 8px;
-  background: var(--color-base-100);
-  cursor: pointer;
-  color: var(--color-base-content);
-}
-
-.icon {
-  width: 16px;
-  height: 16px;
-}
-
-.title-block {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.title-main {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-}
-
-.title-name {
-  margin: 0;
-  font-size: 28px;
-  color: var(--color-base-content);
-}
-
-.title-description {
-  margin: 0;
-}
-
-.title-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-}
-
-.tabs-nav {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.tab-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 10px;
-  border-radius: 999px;
-  border: 1px solid transparent;
-  background: transparent;
-  color: var(--color-gray-600);
-  cursor: pointer;
-  font-size: 13px;
-  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
-}
-
-.tab-btn:hover {
-  background: var(--color-base-200);
-  border-color: var(--color-gray-200);
-}
-
-.tab-btn.active {
-  background: var(--color-base-300);
-  border-color: var(--color-neutral);
-  color: var(--color-accent);
-}
-
-.tab-icon {
-  width: 1rem;
-  height: 1rem;
-}
-
-.meta {
-  display: flex;
-  gap: 16px;
-  margin-top: 12px;
-  font-size: 0.875rem;
-  color: var(--color-gray-600);
-}
-
-.meta-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 12px;
-  background: var(--color-base-100);
-  border-radius: 6px;
-  font-weight: 500;
-  transition: all 0.2s ease;
-}
-
-.meta-item:hover {
-  background: var(--color-base-200);
-  color: var(--color-base-content);
-}
-
-.meta-icon {
-  width: 16px;
-  height: 16px;
-  flex-shrink: 0;
-  color: var(--color-primary);
-}
-
-.summary-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 16px;
-}
-
-.summary-card {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 16px;
-  border-radius: 16px;
-  background: var(--color-base-200);
-  box-shadow: 0 1px 3px rgb(15 23 42 / 0.08);
-}
-
-.summary-card p {
-  margin: 0;
-  color: var(--color-gray-600);
-}
-
-.summary-card h3 {
-  margin: 4px 0 0;
-  font-size: 24px;
-  color: var(--color-base-content);
-}
-
-.summary-card.neutral { border-left: 4px solid var(--color-neutral); }
-.summary-card.income { border-left: 4px solid var(--color-success); }
-.summary-card.expense { border-left: 4px solid var(--color-error); }
-.summary-card.warning { border-left: 4px solid var(--color-warning); }
-.summary-card.info { border-left: 4px solid var(--color-info); }
-
-.card-icon {
-  width: 32px;
-  height: 32px;
-  color: var(--color-gray-600);
-}
-
-.detail-body {
-  display: grid;
-  grid-template-columns: minmax(280px, 360px) 1fr;
-  gap: 24px;
-  margin-top: 32px;
-}
-
-.detail-tabs {
-  margin-top: 1em;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-.tab-content {
-  background: var(--color-base-100);
-  border-radius: 1rem;
-  padding: 1rem;
-  box-shadow: 0 10px 30px rgb(15 23 42 / 0.08);
-}
-
-.tab-panel {
-  width: 100%;
-}
-
-.members-panel,
-.transactions-panel {
-  background: var(--color-base-100);
-  border-radius: 16px;
-  padding: 24px;
-  box-shadow: 0 10px 30px rgb(15 23 42 / 0.08);
-}
-
-.panel-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.panel-header h2 {
-  margin: 0;
-  font-size: 20px;
-  color: var(--color-base-content);
-}
-
-.panel-header p {
-  margin: 4px 0 0;
-  color: var(--color-gray-500);
-}
-
-.btn-budget {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.625rem 1rem;
-  background: var(--color-primary);
-  color: white;
-  border: none;
-  border-radius: 0.5rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.btn-budget:hover {
-  background: var(--color-primary-focus);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-.btn-budget .icon {
-  width: 1rem;
-  height: 1rem;
-}
-
-.members-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 20px;
-  margin-top: 20px;
-}
-
-.member-card {
-  position: relative;
-  border: 1px solid var(--color-base-300);
-  border-radius: 16px;
-  padding: 20px;
-  cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  background: white;
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  box-shadow: var(--shadow-sm);
-  overflow: hidden;
-}
-
-.member-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: var(--color-primary-gradient);
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.member-card.active {
-  border-color: var(--color-primary);
-  box-shadow: var(--shadow-lg), 0 0 0 3px oklch(from var(--color-primary) l c h / 0.1);
-  background: linear-gradient(135deg, white 0%, oklch(from var(--color-primary) l c h / 0.02) 100%);
-  transform: translateY(-4px) scale(1.02);
-}
-
-.member-card.active::before {
-  opacity: 1;
-}
-
-.member-card:hover {
-  border-color: var(--color-primary-soft);
-  box-shadow: var(--shadow-md);
-  transform: translateY(-2px);
-}
-
-.member-header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.avatar {
-  width: 52px;
-  height: 52px;
-  border-radius: 14px;
-  background: var(--color-primary-gradient);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  font-size: 1.35rem;
-  color: var(--color-primary-content);
-  flex-shrink: 0;
-  box-shadow: var(--shadow-sm), inset 0 1px 0 oklch(from var(--color-primary) l c h / 0.2);
-  position: relative;
-  overflow: hidden;
-}
-
-.avatar::after {
-  content: '';
-  position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: linear-gradient(45deg, transparent, oklch(from var(--color-primary) l c h / 0.15), transparent);
-  transform: rotate(45deg);
-}
-
-.member-name {
-  margin: 0;
-  font-weight: 700;
-  font-size: 1.05rem;
-  color: var(--color-base-content);
-  letter-spacing: -0.01em;
-}
-
-.member-role {
-  margin: 6px 0 0;
-  font-size: 0.8rem;
-  color: var(--color-neutral);
-  font-weight: 500;
-  padding: 2px 8px;
-  background: var(--color-base-200);
-  border-radius: 6px;
-  display: inline-block;
-  width: fit-content;
-}
-
-.member-metrics {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
-  margin-top: 20px;
-  padding-top: 16px;
-  border-top: 1px solid var(--color-base-300);
-}
-
-.member-metrics > div {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  padding: 8px 8px;
-  background: var(--color-base-100);
-  border-radius: 10px;
-  border: 1px solid var(--color-base-200);
-  transition: all 0.2s ease;
-  min-width: 0;
-}
-
-.member-metrics > div:hover {
-  background: var(--color-base-200);
-  transform: translateY(-1px);
-}
-
-.member-metrics span {
-  font-size: 9px;
-  color: var(--color-neutral);
-  font-weight: 600;
-  letter-spacing: 0.3px;
-  white-space: nowrap;
-  text-align: center;
-}
-
-.member-metrics strong {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--color-base-content);
-  letter-spacing: -0.02em;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 100%;
-}
-
-/* 交易列表滚动容器 */
-.transactions-scroll-container {
-  max-height: 480px; /* 约6条记录的高度 (每条约80px) */
-  overflow-y: auto;
-  overflow-x: hidden;
-  border-radius: 8px;
-}
-
-/* 自定义滚动条样式 */
-.transactions-scroll-container::-webkit-scrollbar {
-  width: 8px;
-}
-
-.transactions-scroll-container::-webkit-scrollbar-track {
-  background: var(--color-base-100);
-  border-radius: 4px;
-}
-
-.transactions-scroll-container::-webkit-scrollbar-thumb {
-  background: var(--color-base-300);
-  border-radius: 4px;
-}
-
-.transactions-scroll-container::-webkit-scrollbar-thumb:hover {
-  background: var(--color-primary-soft);
-}
-
-.empty-state {
-  padding: 32px;
-  text-align: center;
-  color: var(--color-gray-400);
-}
-
-.empty-icon {
-  width: 36px;
-  height: 36px;
-  margin-bottom: 12px;
-}
-
-@media (max-width: 1024px) {
-  .detail-body {
-    grid-template-columns: 1fr;
-  }
-
-  .members-grid {
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-    gap: 14px;
-  }
-}
-
-@media (max-width: 768px) {
-  .title-footer {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
-  }
-
-  .meta {
-    margin-top: 4px;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-
-  .meta-item {
-    padding: 3px 8px;
-    font-size: 0.8rem;
-  }
-
-  .meta-icon {
-    width: 14px;
-    height: 14px;
-  }
-
-  .members-grid {
-    grid-template-columns: 1fr;
-    gap: 12px;
-    /* 限制高度，约显示2个成员卡片 */
-    max-height: 350px;
-    overflow-y: auto;
-    /* 隐藏滚动条 */
-    scrollbar-width: none; /* Firefox */
-    -ms-overflow-style: none; /* IE and Edge */
-  }
-
-  .members-grid::-webkit-scrollbar {
-    display: none; /* Chrome, Safari, Opera */
-  }
-
-  .member-card {
-    padding: 16px;
-  }
-
-  .avatar {
-    width: 44px;
-    height: 44px;
-    font-size: 1.15rem;
-  }
-
-  .member-metrics {
-    gap: 8px;
-    margin-top: 14px;
-    padding-top: 14px;
-  }
-
-  .member-metrics > div {
-    padding: 6px 6px;
-  }
-
-  .member-metrics span {
-    font-size: 8px;
-  }
-
-  .member-metrics strong {
-    font-size: 12px;
-  }
-
-  /* 移动端交易列表高度调整 */
-  .transactions-scroll-container {
-    max-height: 400px; /* 移动端显示约5条记录 */
-  }
-}
-
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-</style>

@@ -9,6 +9,8 @@ import {
   X,
   Zap,
 } from 'lucide-vue-next';
+import Button from '@/components/ui/Button.vue';
+import Spinner from '@/components/ui/Spinner.vue';
 import { toast } from '@/utils/toast';
 
 interface Props {
@@ -134,131 +136,157 @@ function formatAmount(amount: number): string {
 </script>
 
 <template>
-  <div class="wizard-overlay" @click.self="handleClose">
-    <div class="wizard-container">
-      <div class="wizard-header">
-        <h2 class="wizard-title">
+  <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" @click.self="handleClose">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col">
+      <div class="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+        <h2 class="text-xl font-bold text-gray-900 dark:text-white">
           {{ currentStep === 1 ? '选择结算范围' : currentStep === 2 ? '确认结算方案' : '执行结算' }}
         </h2>
-        <button class="close-btn" @click="handleClose">
-          <component :is="X" class="w-5 h-5" />
+        <button class="p-2 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors" @click="handleClose">
+          <X class="w-5 h-5" />
         </button>
       </div>
 
-      <div class="progress-indicator">
+      <div class="flex items-center justify-around p-8">
         <div
           v-for="step in 3"
           :key="step"
-          class="progress-step"
-          :class="{ 'step-active': step === currentStep, 'step-completed': step < currentStep }"
+          class="flex flex-col items-center gap-2"
         >
-          <div class="step-circle">
-            <component :is="CheckCircle2" v-if="step < currentStep" class="w-5 h-5" />
+          <div
+            class="w-12 h-12 rounded-full flex items-center justify-center font-bold transition-all"
+            :class="[
+              step === currentStep ? 'bg-blue-600 text-white shadow-[0_0_0_4px_rgba(59,130,246,0.2)]' : '',
+              step < currentStep ? 'bg-green-500 text-white' : '',
+              step > currentStep ? 'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400' : '',
+            ]"
+          >
+            <CheckCircle2 v-if="step < currentStep" class="w-5 h-5" />
             <span v-else>{{ step }}</span>
           </div>
-          <span class="step-label">
+          <span
+            class="text-sm font-medium"
+            :class="[
+              step === currentStep ? 'text-blue-600 dark:text-blue-400 font-semibold' : '',
+              step < currentStep ? 'text-green-600 dark:text-green-400' : '',
+              step > currentStep ? 'text-gray-500 dark:text-gray-400' : '',
+            ]"
+          >
             {{ step === 1 ? '选择范围' : step === 2 ? '确认方案' : '执行结算' }}
           </span>
         </div>
       </div>
 
-      <div class="wizard-body">
+      <div class="flex-1 overflow-y-auto p-6">
         <!-- 步骤1 -->
-        <div v-if="currentStep === 1" class="step-content">
-          <div class="form-section">
-            <h3 class="form-title">
-              <component :is="Calendar" class="w-5 h-5" />
+        <div v-if="currentStep === 1" class="flex flex-col gap-6">
+          <div class="flex flex-col gap-4">
+            <h3 class="flex items-center gap-2 text-base font-semibold text-gray-900 dark:text-white">
+              <Calendar class="w-5 h-5" />
               <span>结算周期</span>
             </h3>
-            <div class="date-inputs">
-              <input v-model="settlementRange.startDate" type="date" class="date-input">
-              <span>至</span>
-              <input v-model="settlementRange.endDate" type="date" class="date-input">
+            <div class="flex items-center gap-4">
+              <input
+                v-model="settlementRange.startDate"
+                type="date"
+                class="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+              <span class="text-gray-500 dark:text-gray-400">至</span>
+              <input
+                v-model="settlementRange.endDate"
+                type="date"
+                class="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
             </div>
           </div>
 
-          <div class="form-section">
-            <h3 class="form-title">
-              <component :is="Calculator" class="w-5 h-5" />
+          <div class="flex flex-col gap-4">
+            <h3 class="flex items-center gap-2 text-base font-semibold text-gray-900 dark:text-white">
+              <Calculator class="w-5 h-5" />
               <span>结算类型</span>
             </h3>
-            <div class="radio-group">
-              <label class="radio-option">
-                <input v-model="settlementRange.settlementType" type="radio" value="optimized">
-                <div class="radio-content">
-                  <component :is="Zap" class="w-5 h-5" />
+            <div class="flex flex-col gap-3">
+              <label class="flex items-center gap-3 p-4 border-2 rounded-lg cursor-pointer transition-all hover:border-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20" :class="settlementRange.settlementType === 'optimized' ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/20' : 'border-gray-200 dark:border-gray-700'">
+                <input v-model="settlementRange.settlementType" type="radio" value="optimized" class="sr-only">
+                <div class="flex-1 flex items-center gap-3 text-blue-600">
+                  <Zap class="w-5 h-5" />
                   <div>
-                    <div class="radio-title">优化结算</div>
-                    <div class="radio-desc">自动优化转账次数</div>
+                    <div class="font-semibold text-gray-900 dark:text-white">优化结算</div>
+                    <div class="text-sm text-gray-500 dark:text-gray-400 mt-1">自动优化转账次数</div>
                   </div>
                 </div>
               </label>
-              <label class="radio-option">
-                <input v-model="settlementRange.settlementType" type="radio" value="manual">
-                <div class="radio-content">
-                  <component :is="Users" class="w-5 h-5" />
+              <label class="flex items-center gap-3 p-4 border-2 rounded-lg cursor-pointer transition-all hover:border-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20" :class="settlementRange.settlementType === 'manual' ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/20' : 'border-gray-200 dark:border-gray-700'">
+                <input v-model="settlementRange.settlementType" type="radio" value="manual" class="sr-only">
+                <div class="flex-1 flex items-center gap-3 text-blue-600">
+                  <Users class="w-5 h-5" />
                   <div>
-                    <div class="radio-title">手动结算</div>
-                    <div class="radio-desc">按原始债务关系</div>
+                    <div class="font-semibold text-gray-900 dark:text-white">手动结算</div>
+                    <div class="text-sm text-gray-500 dark:text-gray-400 mt-1">按原始债务关系</div>
                   </div>
                 </div>
               </label>
             </div>
           </div>
 
-          <div class="form-section">
-            <h3 class="form-title">
-              <component :is="Users" class="w-5 h-5" />
+          <div class="flex flex-col gap-4">
+            <h3 class="flex items-center gap-2 text-base font-semibold text-gray-900 dark:text-white">
+              <Users class="w-5 h-5" />
               <span>参与成员 ({{ selectedMembers.length }}/{{ members.length }})</span>
             </h3>
-            <div class="members-grid">
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
               <div
                 v-for="member in members"
                 :key="member.serialNum"
-                class="member-option"
-                :class="{ 'member-selected': member.selected }"
+                class="relative p-4 border-2 rounded-lg flex flex-col items-center gap-2 cursor-pointer transition-all hover:border-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                :class="member.selected ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/20' : 'border-gray-200 dark:border-gray-700'"
                 @click="toggleMember(member)"
               >
-                <div class="member-avatar" :style="{ backgroundColor: getMemberColor(member.name) }">
+                <div
+                  class="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg"
+                  :style="{ backgroundColor: getMemberColor(member.name) }"
+                >
                   {{ getInitials(member.name) }}
                 </div>
-                <span class="member-name">{{ member.name }}</span>
-                <component :is="CheckCircle2" v-if="member.selected" class="check-icon" />
+                <span class="text-sm font-medium text-gray-900 dark:text-white">{{ member.name }}</span>
+                <CheckCircle2 v-if="member.selected" class="absolute top-2 right-2 w-5 h-5 text-blue-600" />
               </div>
             </div>
           </div>
         </div>
 
         <!-- 步骤2 -->
-        <div v-else-if="currentStep === 2" class="step-content">
-          <div v-if="processing" class="loading-state">
-            <div class="loading-spinner" />
-            <p>正在计算...</p>
+        <div v-else-if="currentStep === 2" class="flex flex-col gap-6">
+          <div v-if="processing" class="flex flex-col items-center justify-center py-16 gap-4">
+            <Spinner size="lg" />
+            <p class="text-gray-600 dark:text-gray-400">
+              正在计算...
+            </p>
           </div>
-          <div v-else-if="settlementSuggestion" class="suggestion-content">
-            <div class="summary-cards">
-              <div class="summary-card">
-                <span class="summary-label">结算金额</span>
-                <span class="summary-value">¥{{ formatAmount(settlementSuggestion.totalAmount) }}</span>
+          <div v-else-if="settlementSuggestion">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div class="p-5 bg-gray-50 dark:bg-gray-900 rounded-lg flex flex-col gap-2">
+                <span class="text-sm text-gray-500 dark:text-gray-400">结算金额</span>
+                <span class="text-2xl font-bold text-gray-900 dark:text-white">¥{{ formatAmount(settlementSuggestion.totalAmount) }}</span>
               </div>
-              <div class="summary-card">
-                <span class="summary-label">转账次数</span>
-                <span class="summary-value">{{ settlementSuggestion.transfers.length }}笔</span>
+              <div class="p-5 bg-gray-50 dark:bg-gray-900 rounded-lg flex flex-col gap-2">
+                <span class="text-sm text-gray-500 dark:text-gray-400">转账次数</span>
+                <span class="text-2xl font-bold text-gray-900 dark:text-white">{{ settlementSuggestion.transfers.length }}笔</span>
               </div>
-              <div class="summary-card">
-                <span class="summary-label">优化节省</span>
-                <span class="summary-value">{{ settlementSuggestion.savings }}笔</span>
+              <div class="p-5 bg-gray-50 dark:bg-gray-900 rounded-lg flex flex-col gap-2">
+                <span class="text-sm text-gray-500 dark:text-gray-400">优化节省</span>
+                <span class="text-2xl font-bold text-gray-900 dark:text-white">{{ settlementSuggestion.savings }}笔</span>
               </div>
             </div>
-            <div class="transfers-list">
-              <div v-for="(t, i) in settlementSuggestion.transfers" :key="i" class="transfer-row">
-                <div class="transfer-index">
+            <div class="flex flex-col gap-3 mt-4">
+              <div v-for="(t, i) in settlementSuggestion.transfers" :key="i" class="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
+                <div class="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 flex items-center justify-center font-bold text-sm shrink-0">
                   {{ i + 1 }}
                 </div>
-                <div class="transfer-info">
+                <div class="flex-1 text-gray-900 dark:text-white">
                   <span>{{ t.fromName }} → {{ t.toName }}</span>
                 </div>
-                <div class="transfer-amount">
+                <div class="font-bold text-gray-900 dark:text-white">
                   ¥{{ formatAmount(t.amount) }}
                 </div>
               </div>
@@ -267,584 +295,63 @@ function formatAmount(amount: number): string {
         </div>
 
         <!-- 步骤3 -->
-        <div v-else-if="currentStep === 3" class="step-content">
-          <div v-if="processing" class="loading-state">
-            <div class="loading-spinner" />
-            <p>正在执行结算...</p>
+        <div v-else-if="currentStep === 3" class="flex flex-col gap-6">
+          <div v-if="processing" class="flex flex-col items-center justify-center py-16 gap-4">
+            <Spinner size="lg" />
+            <p class="text-gray-600 dark:text-gray-400">
+              正在执行结算...
+            </p>
           </div>
-          <div v-else-if="executionResult" class="result-content">
-            <div class="result-icon" :class="executionResult.success ? 'result-success' : 'result-error'">
-              <component :is="CheckCircle2" class="w-16 h-16" />
+          <div v-else-if="executionResult" class="flex flex-col items-center justify-center py-12 gap-4">
+            <div
+              class="w-20 h-20 rounded-full flex items-center justify-center"
+              :class="executionResult.success ? 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400' : 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400'"
+            >
+              <CheckCircle2 class="w-16 h-16" />
             </div>
-            <h3 class="result-title">
+            <h3 class="text-2xl font-bold text-gray-900 dark:text-white">
               {{ executionResult.success ? '结算完成' : '结算失败' }}
             </h3>
-            <p class="result-message">
+            <p class="text-gray-500 dark:text-gray-400 text-center">
               {{ executionResult.message }}
             </p>
-            <div v-if="executionResult.serialNum" class="result-detail">
+            <div v-if="executionResult.serialNum" class="mt-4 px-6 py-3 bg-gray-50 dark:bg-gray-900 rounded-lg text-sm text-gray-900 dark:text-white">
               <span>结算单号：{{ executionResult.serialNum }}</span>
             </div>
           </div>
         </div>
       </div>
 
-      <div class="wizard-footer">
-        <button v-if="currentStep > 1 && currentStep < 3" class="btn-secondary" @click="handlePrev">
-          <component :is="ChevronLeft" class="w-4 h-4" />
-          <span>上一步</span>
-        </button>
-        <div class="footer-spacer" />
-        <button
+      <div class="flex items-center gap-3 p-6 border-t border-gray-200 dark:border-gray-700">
+        <Button
+          v-if="currentStep > 1 && currentStep < 3"
+          variant="secondary"
+          size="sm"
+          :icon="ChevronLeft"
+          @click="handlePrev"
+        >
+          上一步
+        </Button>
+        <div class="flex-1" />
+        <Button
           v-if="currentStep < 3"
-          class="btn-primary"
+          variant="primary"
+          size="sm"
+          :icon-right="ChevronRight"
           :disabled="(currentStep === 1 && !canProceedStep1) || (currentStep === 2 && processing)"
           @click="handleNext"
         >
-          <span>{{ currentStep === 2 ? '执行结算' : '下一步' }}</span>
-          <component :is="ChevronRight" class="w-4 h-4" />
-        </button>
-        <button v-else class="btn-primary" @click="handleComplete">
+          {{ currentStep === 2 ? '执行结算' : '下一步' }}
+        </Button>
+        <Button
+          v-else
+          variant="primary"
+          size="sm"
+          @click="handleComplete"
+        >
           完成
-        </button>
+        </Button>
       </div>
     </div>
   </div>
 </template>
-
-<style scoped>
-.wizard-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 50;
-  padding: 1rem;
-}
-
-.wizard-container {
-  background: white;
-  border-radius: 0.75rem;
-  box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
-  max-width: 56rem;
-  width: 100%;
-  max-height: 90vh;
-  display: flex;
-  flex-direction: column;
-}
-
-:global(.dark) .wizard-container {
-  background: #1f2937;
-}
-
-.wizard-header {
-  padding: 1.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  border-bottom: 1px solid #e5e7eb;
-}
-
-:global(.dark) .wizard-header {
-  border-color: #374151;
-}
-
-.wizard-title {
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: #111827;
-}
-
-:global(.dark) .wizard-title {
-  color: #f3f4f6;
-}
-
-.close-btn {
-  padding: 0.5rem;
-  border-radius: 0.375rem;
-  color: #6b7280;
-  transition: background-color 0.15s;
-}
-
-.close-btn:hover {
-  background: #f3f4f6;
-}
-
-:global(.dark) .close-btn:hover {
-  background: #374151;
-}
-
-.progress-indicator {
-  padding: 2rem 1.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-around;
-}
-
-.progress-step {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.step-circle {
-  width: 3rem;
-  height: 3rem;
-  border-radius: 9999px;
-  background: #e5e7eb;
-  color: #6b7280;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  transition: all 0.3s;
-}
-
-.step-active .step-circle {
-  background: #3b82f6;
-  color: white;
-  box-shadow: 0 0 0 4px rgba(59,130,246,0.2);
-}
-
-.step-completed .step-circle {
-  background: #10b981;
-  color: white;
-}
-
-.step-label {
-  font-size: 0.875rem;
-  color: #6b7280;
-  font-weight: 500;
-}
-
-.step-active .step-label {
-  color: #3b82f6;
-  font-weight: 600;
-}
-
-.step-completed .step-label {
-  color: #10b981;
-}
-
-.wizard-body {
-  flex: 1;
-  overflow-y: auto;
-  padding: 1.5rem;
-}
-
-.step-content {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-.form-section {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.form-title {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 1rem;
-  font-weight: 600;
-  color: #111827;
-}
-
-:global(.dark) .form-title {
-  color: #f3f4f6;
-}
-
-.date-inputs {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.date-input {
-  flex: 1;
-  padding: 0.75rem;
-  border: 1px solid #d1d5db;
-  border-radius: 0.5rem;
-  font-size: 0.875rem;
-}
-
-.date-input:focus {
-  outline: 2px solid #3b82f6;
-  outline-offset: 2px;
-  border-color: transparent;
-}
-
-:global(.dark) .date-input {
-  background: #374151;
-  border-color: #4b5563;
-  color: #f3f4f6;
-}
-
-.radio-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.radio-option {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 1rem;
-  border: 2px solid #e5e7eb;
-  border-radius: 0.5rem;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-
-.radio-option:hover {
-  border-color: #3b82f6;
-  background: #eff6ff;
-}
-
-.radio-option:has(input:checked) {
-  border-color: #3b82f6;
-  background: #eff6ff;
-}
-
-:global(.dark) .radio-option {
-  border-color: #374151;
-}
-
-:global(.dark) .radio-option:hover,
-:global(.dark) .radio-option:has(input:checked) {
-  border-color: #60a5fa;
-  background: rgba(30,58,138,0.2);
-}
-
-.radio-content {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  color: #3b82f6;
-}
-
-.radio-title {
-  font-weight: 600;
-  color: #111827;
-}
-
-:global(.dark) .radio-title {
-  color: #f3f4f6;
-}
-
-.radio-desc {
-  font-size: 0.875rem;
-  color: #6b7280;
-  margin-top: 0.25rem;
-}
-
-.members-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-  gap: 0.75rem;
-}
-
-.member-option {
-  padding: 1rem;
-  border: 2px solid #e5e7eb;
-  border-radius: 0.5rem;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.5rem;
-  cursor: pointer;
-  transition: all 0.15s;
-  position: relative;
-}
-
-.member-option:hover {
-  border-color: #3b82f6;
-  background: #eff6ff;
-}
-
-.member-selected {
-  border-color: #3b82f6;
-  background: #eff6ff;
-}
-
-:global(.dark) .member-option {
-  border-color: #374151;
-}
-
-:global(.dark) .member-option:hover,
-:global(.dark) .member-selected {
-  border-color: #60a5fa;
-  background: rgba(30,58,138,0.2);
-}
-
-.member-avatar {
-  width: 3rem;
-  height: 3rem;
-  border-radius: 9999px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-weight: 700;
-  font-size: 1.125rem;
-}
-
-.member-name {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: #111827;
-}
-
-:global(.dark) .member-name {
-  color: #f3f4f6;
-}
-
-.check-icon {
-  position: absolute;
-  top: 0.5rem;
-  right: 0.5rem;
-  color: #3b82f6;
-}
-
-.loading-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 4rem 0;
-  gap: 1rem;
-}
-
-.loading-spinner {
-  width: 3rem;
-  height: 3rem;
-  border: 4px solid #3b82f6;
-  border-top-color: transparent;
-  border-radius: 9999px;
-  animation: spin 1s linear infinite;
-}
-
-.summary-cards {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1rem;
-}
-
-.summary-card {
-  padding: 1.25rem;
-  background: #f9fafb;
-  border-radius: 0.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-:global(.dark) .summary-card {
-  background: rgba(17,24,39,0.5);
-}
-
-.summary-label {
-  font-size: 0.875rem;
-  color: #6b7280;
-}
-
-.summary-value {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #111827;
-}
-
-:global(.dark) .summary-value {
-  color: #f3f4f6;
-}
-
-.transfers-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  margin-top: 1rem;
-}
-
-.transfer-row {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 1rem;
-  background: #f9fafb;
-  border-radius: 0.5rem;
-  border: 1px solid #e5e7eb;
-}
-
-:global(.dark) .transfer-row {
-  background: rgba(17,24,39,0.5);
-  border-color: #374151;
-}
-
-.transfer-index {
-  width: 2rem;
-  height: 2rem;
-  border-radius: 9999px;
-  background: #dbeafe;
-  color: #1d4ed8;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  font-size: 0.875rem;
-}
-
-.transfer-info {
-  flex: 1;
-  color: #111827;
-}
-
-:global(.dark) .transfer-info {
-  color: #f3f4f6;
-}
-
-.transfer-amount {
-  font-weight: 700;
-  color: #111827;
-}
-
-:global(.dark) .transfer-amount {
-  color: #f3f4f6;
-}
-
-.result-content {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 3rem 0;
-  gap: 1rem;
-}
-
-.result-icon {
-  width: 5rem;
-  height: 5rem;
-  border-radius: 9999px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.result-success {
-  background: #d1fae5;
-  color: #059669;
-}
-
-.result-error {
-  background: #fee2e2;
-  color: #dc2626;
-}
-
-.result-title {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #111827;
-}
-
-:global(.dark) .result-title {
-  color: #f3f4f6;
-}
-
-.result-message {
-  color: #6b7280;
-  text-align: center;
-}
-
-.result-detail {
-  margin-top: 1rem;
-  padding: 0.75rem 1.5rem;
-  background: #f9fafb;
-  border-radius: 0.5rem;
-  font-size: 0.875rem;
-  color: #111827;
-}
-
-:global(.dark) .result-detail {
-  background: rgba(17,24,39,0.5);
-  color: #f3f4f6;
-}
-
-.wizard-footer {
-  padding: 1.5rem;
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  border-top: 1px solid #e5e7eb;
-}
-
-:global(.dark) .wizard-footer {
-  border-color: #374151;
-}
-
-.footer-spacer {
-  flex: 1;
-}
-
-.btn-primary {
-  padding: 0.5rem 1rem;
-  background: #2563eb;
-  color: white;
-  border-radius: 0.5rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  transition: background-color 0.15s;
-  border: none;
-  cursor: pointer;
-}
-
-.btn-primary:hover:not(:disabled) {
-  background: #1d4ed8;
-}
-
-.btn-primary:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.btn-secondary {
-  padding: 0.5rem 1rem;
-  background: #f3f4f6;
-  color: #111827;
-  border-radius: 0.5rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  border: none;
-  cursor: pointer;
-}
-
-.btn-secondary:hover {
-  background: #e5e7eb;
-}
-
-:global(.dark) .btn-secondary {
-  background: #374151;
-  color: #f3f4f6;
-}
-
-:global(.dark) .btn-secondary:hover {
-  background: #4b5563;
-}
-
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-</style>

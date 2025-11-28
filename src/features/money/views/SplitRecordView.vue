@@ -8,6 +8,7 @@ import {
   LucideSearch,
   LucideUsers,
 } from 'lucide-vue-next';
+import Button from '@/components/ui/Button.vue';
 import type { SplitRecord } from '@/schema/money';
 
 // 搜索和筛选
@@ -150,87 +151,90 @@ function resetFilters() {
 </script>
 
 <template>
-  <div class="split-record-view">
+  <div class="flex flex-col gap-6 p-8 max-w-7xl mx-auto">
     <!-- 页面头部 -->
-    <div class="page-header">
-      <div class="header-content">
-        <h1>分摊记录</h1>
-        <p class="header-description">
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div>
+        <h1 class="text-3xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
+          分摊记录
+        </h1>
+        <p class="text-sm text-gray-600 dark:text-gray-400">
           查看和管理所有费用分摊记录
         </p>
       </div>
 
-      <button class="btn-export" @click="exportData">
-        <LucideDownload class="icon" />
+      <Button variant="primary" @click="exportData">
+        <LucideDownload class="w-4 h-4" />
         导出数据
-      </button>
+      </Button>
     </div>
 
     <!-- 统计卡片 -->
-    <div class="statistics-grid">
-      <div class="stat-card">
-        <LucideUsers class="stat-icon" />
-        <div class="stat-info">
-          <label>总记录数</label>
-          <strong>{{ statistics.total }}</strong>
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div class="flex items-center gap-4 p-6 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-700 rounded-xl shadow-sm">
+        <LucideUsers class="w-8 h-8 text-gray-700 dark:text-gray-300 flex-shrink-0" />
+        <div class="flex flex-col gap-1">
+          <label class="text-sm text-gray-600 dark:text-gray-400">总记录数</label>
+          <strong class="text-2xl font-semibold text-gray-900 dark:text-gray-100">{{ statistics.total }}</strong>
         </div>
       </div>
 
-      <div class="stat-card completed">
-        <LucideCheck class="stat-icon" />
-        <div class="stat-info">
-          <label>已完成</label>
-          <strong>{{ statistics.completed }}</strong>
+      <div class="flex items-center gap-4 p-6 bg-green-100 dark:bg-green-900/30 border-2 border-green-600 dark:border-green-700 rounded-xl shadow-sm">
+        <LucideCheck class="w-8 h-8 text-green-600 dark:text-green-400 flex-shrink-0" />
+        <div class="flex flex-col gap-1">
+          <label class="text-sm text-gray-600 dark:text-gray-400">已完成</label>
+          <strong class="text-2xl font-semibold text-gray-900 dark:text-gray-100">{{ statistics.completed }}</strong>
         </div>
       </div>
 
-      <div class="stat-card pending">
-        <LucideClock class="stat-icon" />
-        <div class="stat-info">
-          <label>进行中</label>
-          <strong>{{ statistics.pending }}</strong>
+      <div class="flex items-center gap-4 p-6 bg-yellow-100 dark:bg-yellow-900/30 border-2 border-yellow-500 dark:border-yellow-700 rounded-xl shadow-sm">
+        <LucideClock class="w-8 h-8 text-yellow-600 dark:text-yellow-400 flex-shrink-0" />
+        <div class="flex flex-col gap-1">
+          <label class="text-sm text-gray-600 dark:text-gray-400">进行中</label>
+          <strong class="text-2xl font-semibold text-gray-900 dark:text-gray-100">{{ statistics.pending }}</strong>
         </div>
       </div>
 
-      <div class="stat-card amount">
-        <LucideCalendar class="stat-icon" />
-        <div class="stat-info">
-          <label>总金额</label>
-          <strong>{{ formatAmount(statistics.totalAmount) }}</strong>
+      <div class="flex items-center gap-4 p-6 bg-blue-100 dark:bg-blue-900/30 border-2 border-blue-600 dark:border-blue-700 rounded-xl shadow-sm">
+        <LucideCalendar class="w-8 h-8 text-blue-600 dark:text-blue-400 flex-shrink-0" />
+        <div class="flex flex-col gap-1">
+          <label class="text-sm text-gray-600 dark:text-gray-400">总金额</label>
+          <strong class="text-2xl font-semibold text-gray-900 dark:text-gray-100">{{ formatAmount(statistics.totalAmount) }}</strong>
         </div>
       </div>
     </div>
 
     <!-- 搜索和筛选栏 -->
-    <div class="toolbar">
-      <div class="search-box">
-        <LucideSearch class="search-icon" />
+    <div class="flex flex-col sm:flex-row gap-4 items-center">
+      <div class="flex-1 relative w-full">
+        <LucideSearch class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
         <input
           v-model="searchKeyword"
           type="text"
           placeholder="搜索分摊记录..."
-          class="search-input"
+          class="w-full pl-12 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-2 focus:outline-blue-600 focus:outline-offset-2 focus:border-transparent"
         >
       </div>
 
       <button
-        class="btn-filter"
-        :class="{ active: showFilters }"
+        class="relative flex items-center gap-2 px-6 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-sm transition-all" :class="[
+          showFilters ? 'bg-gray-100 dark:bg-gray-700 border-blue-600 dark:border-blue-500' : 'hover:bg-gray-100 dark:hover:bg-gray-700',
+        ]"
         @click="showFilters = !showFilters"
       >
-        <LucideFilter class="icon" />
+        <LucideFilter class="w-4 h-4" />
         筛选
-        <span v-if="filterStatus !== 'all' || filterMember" class="filter-badge">
+        <span v-if="filterStatus !== 'all' || filterMember" class="absolute -top-2 -right-2 w-5 h-5 bg-blue-600 text-white rounded-full text-xs flex items-center justify-center">
           {{ (filterStatus !== 'all' ? 1 : 0) + (filterMember ? 1 : 0) }}
         </span>
       </button>
     </div>
 
     <!-- 筛选面板 -->
-    <div v-if="showFilters" class="filter-panel">
-      <div class="filter-group">
-        <label class="filter-label">状态</label>
-        <select v-model="filterStatus" class="filter-select">
+    <div v-if="showFilters" class="flex flex-col sm:flex-row gap-4 p-6 bg-white dark:bg-gray-800 rounded-xl border border-gray-300 dark:border-gray-700">
+      <div class="flex-1 flex flex-col gap-2">
+        <label class="text-sm font-medium text-gray-700 dark:text-gray-300">状态</label>
+        <select v-model="filterStatus" class="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100">
           <option value="all">
             全部
           </option>
@@ -243,93 +247,99 @@ function resetFilters() {
         </select>
       </div>
 
-      <div class="filter-group">
-        <label class="filter-label">日期范围</label>
-        <div class="date-range">
+      <div class="flex-1 flex flex-col gap-2">
+        <label class="text-sm font-medium text-gray-700 dark:text-gray-300">日期范围</label>
+        <div class="flex items-center gap-2">
           <input
             v-model="dateRange.start"
             type="date"
-            class="date-input"
+            class="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
           >
-          <span>至</span>
+          <span class="text-gray-600 dark:text-gray-400">至</span>
           <input
             v-model="dateRange.end"
             type="date"
-            class="date-input"
+            class="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
           >
         </div>
       </div>
 
-      <div class="filter-actions">
-        <button class="btn-reset" @click="resetFilters">
+      <div class="flex items-end">
+        <button class="px-4 py-2 bg-transparent border border-gray-300 dark:border-gray-600 rounded-md text-sm transition-colors hover:bg-gray-100 dark:hover:bg-gray-700" @click="resetFilters">
           重置
         </button>
       </div>
     </div>
 
     <!-- 记录列表 -->
-    <div v-if="loading" class="loading-state">
-      <div class="spinner" />
-      <span>加载中...</span>
+    <div v-if="loading" class="flex flex-col items-center gap-4 py-12">
+      <div class="w-8 h-8 border-3 border-gray-300 dark:border-gray-600 border-t-blue-600 rounded-full animate-spin" />
+      <span class="text-gray-600 dark:text-gray-400">加载中...</span>
     </div>
 
-    <div v-else-if="filteredRecords.length > 0" class="records-list">
+    <div v-else-if="filteredRecords.length > 0" class="flex flex-col gap-4">
       <div
         v-for="record in filteredRecords"
         :key="record.serialNum"
-        class="record-card"
+        class="p-6 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl cursor-pointer transition-all hover:shadow-md hover:-translate-y-0.5"
         @click="viewDetail(record)"
       >
-        <div class="record-header">
-          <div class="record-info">
-            <h3 class="record-title">
+        <div class="flex justify-between items-center mb-4">
+          <div class="flex flex-col gap-1">
+            <h3 class="text-base font-semibold text-gray-900 dark:text-gray-100">
               分摊记录
             </h3>
-            <span class="record-date">{{ formatDate(record.createdAt) }}</span>
+            <span class="text-xs text-gray-500 dark:text-gray-400">{{ formatDate(record.createdAt) }}</span>
           </div>
-          <div class="record-status" :class="getRecordStatus(record)">
+          <div
+            class="flex items-center gap-2 px-4 py-2 rounded-full text-xs font-medium" :class="[
+              getRecordStatus(record) === 'completed'
+                ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
+                : 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300',
+            ]"
+          >
             <component
               :is="getRecordStatus(record) === 'completed' ? LucideCheck : LucideClock"
-              class="status-icon"
+              class="w-3.5 h-3.5"
             />
             <span>{{ getRecordStatus(record) === 'completed' ? '已完成' : '进行中' }}</span>
           </div>
         </div>
 
-        <div class="record-body">
-          <div class="record-amount">
-            <label>总金额</label>
-            <strong>{{ formatAmount(record.totalAmount) }}</strong>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div>
+            <label class="block mb-2 text-xs text-gray-600 dark:text-gray-400">总金额</label>
+            <strong class="text-xl font-semibold text-blue-600 dark:text-blue-400">{{ formatAmount(record.totalAmount) }}</strong>
           </div>
 
-          <div class="record-members">
-            <label>参与成员</label>
-            <div class="member-avatars">
+          <div>
+            <label class="block mb-2 text-xs text-gray-600 dark:text-gray-400">参与成员</label>
+            <div class="flex items-center">
               <div
                 v-for="(detail, index) in record.splitDetails.slice(0, 3)"
                 :key="detail.memberSerialNum"
-                class="member-avatar"
+                class="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-sm font-semibold border-2 border-white dark:border-gray-800 -ml-2 first:ml-0"
                 :style="{ zIndex: 10 - index }"
               >
                 {{ detail.memberSerialNum.charAt(0) }}
               </div>
-              <div v-if="record.splitDetails.length > 3" class="member-more">
+              <div v-if="record.splitDetails.length > 3" class="w-8 h-8 rounded-full bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300 flex items-center justify-center text-xs font-semibold border-2 border-white dark:border-gray-800 -ml-2">
                 +{{ record.splitDetails.length - 3 }}
               </div>
             </div>
           </div>
 
-          <div class="record-progress">
-            <label>支付进度</label>
-            <div class="progress-bar">
+          <div>
+            <label class="block mb-2 text-xs text-gray-600 dark:text-gray-400">支付进度</label>
+            <div class="h-2 bg-gray-300 dark:bg-gray-600 rounded-full overflow-hidden mb-2">
               <div
-                class="progress-fill"
+                class="h-full bg-gradient-to-r from-blue-600 to-green-500 rounded-full transition-all"
                 :style="{
                   width: `${(record.splitDetails.filter(d => d.isPaid).length / record.splitDetails.length) * 100}%`,
                 }"
               />
             </div>
-            <span class="progress-text">
+            <span class="text-xs text-gray-600 dark:text-gray-400">
               {{ record.splitDetails.filter(d => d.isPaid).length }} / {{ record.splitDetails.length }}
             </span>
           </div>
@@ -337,495 +347,12 @@ function resetFilters() {
       </div>
     </div>
 
-    <div v-else class="empty-state">
-      <LucideUsers class="empty-icon" />
-      <p>暂无分摊记录</p>
-      <span class="empty-hint">创建交易并启用分摊后，记录将显示在这里</span>
+    <div v-else class="flex flex-col items-center gap-4 py-16 text-center">
+      <LucideUsers class="w-16 h-16 text-gray-300 dark:text-gray-600" />
+      <p class="text-lg text-gray-600 dark:text-gray-400">
+        暂无分摊记录
+      </p>
+      <span class="text-sm text-gray-400 dark:text-gray-500">创建交易并启用分摊后，记录将显示在这里</span>
     </div>
   </div>
 </template>
-
-<style scoped>
-.split-record-view {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-  padding: 2rem;
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-/* Page Header */
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-}
-
-.header-content h1 {
-  margin: 0 0 0.5rem 0;
-  font-size: 1.75rem;
-  font-weight: 600;
-}
-
-.header-description {
-  margin: 0;
-  color: var(--color-gray-600);
-  font-size: 0.875rem;
-}
-
-.btn-export {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1.5rem;
-  background: var(--color-primary);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 0.875rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.btn-export:hover {
-  background: var(--color-primary-dark);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-md);
-}
-
-.btn-export .icon {
-  width: 18px;
-  height: 18px;
-}
-
-/* Statistics */
-.statistics-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 1rem;
-}
-
-.stat-card {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 1.5rem;
-  background: white;
-  border-radius: 12px;
-  border: 2px solid var(--color-base-300);
-  box-shadow: var(--shadow-sm);
-}
-
-.stat-card.completed {
-  background: #d1fae5;
-  border-color: #059669;
-}
-
-.stat-card.pending {
-  background: #fef3c7;
-  border-color: #f59e0b;
-}
-
-.stat-card.amount {
-  background: #dbeafe;
-  border-color: #3b82f6;
-}
-
-.stat-icon {
-  width: 32px;
-  height: 32px;
-  flex-shrink: 0;
-}
-
-.stat-card.completed .stat-icon {
-  color: #059669;
-}
-
-.stat-card.pending .stat-icon {
-  color: #f59e0b;
-}
-
-.stat-card.amount .stat-icon {
-  color: #3b82f6;
-}
-
-.stat-info {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.stat-info label {
-  font-size: 0.875rem;
-  color: var(--color-gray-600);
-}
-
-.stat-info strong {
-  font-size: 1.5rem;
-  font-weight: 600;
-}
-
-/* Toolbar */
-.toolbar {
-  display: flex;
-  gap: 1rem;
-  align-items: center;
-}
-
-.search-box {
-  flex: 1;
-  position: relative;
-}
-
-.search-icon {
-  position: absolute;
-  left: 1rem;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 18px;
-  height: 18px;
-  color: var(--color-gray-400);
-}
-
-.search-input {
-  width: 100%;
-  padding: 0.75rem 1rem 0.75rem 3rem;
-  border: 1px solid var(--color-base-300);
-  border-radius: 8px;
-  font-size: 0.875rem;
-}
-
-.search-input:focus {
-  outline: none;
-  border-color: var(--color-primary);
-}
-
-.btn-filter {
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1.5rem;
-  background: white;
-  border: 1px solid var(--color-base-300);
-  border-radius: 8px;
-  font-size: 0.875rem;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.btn-filter:hover,
-.btn-filter.active {
-  background: var(--color-base-200);
-  border-color: var(--color-primary);
-}
-
-.btn-filter .icon {
-  width: 18px;
-  height: 18px;
-}
-
-.filter-badge {
-  position: absolute;
-  top: -0.5rem;
-  right: -0.5rem;
-  width: 20px;
-  height: 20px;
-  background: var(--color-primary);
-  color: white;
-  border-radius: 50%;
-  font-size: 0.75rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-/* Filter Panel */
-.filter-panel {
-  display: flex;
-  gap: 1rem;
-  padding: 1.5rem;
-  background: white;
-  border-radius: 12px;
-  border: 1px solid var(--color-base-300);
-}
-
-.filter-group {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.filter-label {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--color-gray-700);
-}
-
-.filter-select,
-.date-input {
-  padding: 0.5rem;
-  border: 1px solid var(--color-base-300);
-  border-radius: 6px;
-  font-size: 0.875rem;
-}
-
-.date-range {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.filter-actions {
-  display: flex;
-  align-items: flex-end;
-}
-
-.btn-reset {
-  padding: 0.5rem 1rem;
-  background: transparent;
-  border: 1px solid var(--color-base-300);
-  border-radius: 6px;
-  font-size: 0.875rem;
-  cursor: pointer;
-}
-
-.btn-reset:hover {
-  background: var(--color-base-200);
-}
-
-/* Loading */
-.loading-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1rem;
-  padding: 3rem 0;
-}
-
-.spinner {
-  width: 32px;
-  height: 32px;
-  border: 3px solid var(--color-base-300);
-  border-top-color: var(--color-primary);
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-/* Records List */
-.records-list {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.record-card {
-  padding: 1.5rem;
-  background: white;
-  border: 1px solid var(--color-base-300);
-  border-radius: 12px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.record-card:hover {
-  box-shadow: var(--shadow-md);
-  transform: translateY(-2px);
-}
-
-.record-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1rem;
-}
-
-.record-info {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.record-title {
-  margin: 0;
-  font-size: 1rem;
-  font-weight: 600;
-}
-
-.record-date {
-  font-size: 0.75rem;
-  color: var(--color-gray-500);
-}
-
-.record-status {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  border-radius: 20px;
-  font-size: 0.75rem;
-  font-weight: 500;
-}
-
-.record-status.completed {
-  background: #d1fae5;
-  color: #065f46;
-}
-
-.record-status.pending {
-  background: #fef3c7;
-  color: #92400e;
-}
-
-.status-icon {
-  width: 14px;
-  height: 14px;
-}
-
-.record-body {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1.5rem;
-}
-
-.record-amount label,
-.record-members label,
-.record-progress label {
-  display: block;
-  margin-bottom: 0.5rem;
-  font-size: 0.75rem;
-  color: var(--color-gray-600);
-}
-
-.record-amount strong {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: var(--color-primary);
-}
-
-.member-avatars {
-  display: flex;
-  align-items: center;
-}
-
-.member-avatar {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: var(--color-primary);
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.875rem;
-  font-weight: 600;
-  border: 2px solid white;
-  margin-left: -0.5rem;
-}
-
-.member-avatar:first-child {
-  margin-left: 0;
-}
-
-.member-more {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: var(--color-base-300);
-  color: var(--color-gray-700);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.75rem;
-  font-weight: 600;
-  border: 2px solid white;
-  margin-left: -0.5rem;
-}
-
-.progress-bar {
-  height: 8px;
-  background: var(--color-base-300);
-  border-radius: 4px;
-  overflow: hidden;
-  margin-bottom: 0.5rem;
-}
-
-.progress-fill {
-  height: 100%;
-  background: linear-gradient(90deg, var(--color-primary), #10b981);
-  border-radius: 4px;
-  transition: width 0.3s;
-}
-
-.progress-text {
-  font-size: 0.75rem;
-  color: var(--color-gray-600);
-}
-
-/* Empty State */
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1rem;
-  padding: 4rem 0;
-  text-align: center;
-}
-
-.empty-icon {
-  width: 64px;
-  height: 64px;
-  color: var(--color-gray-300);
-}
-
-.empty-state p {
-  margin: 0;
-  font-size: 1.125rem;
-  color: var(--color-gray-600);
-}
-
-.empty-hint {
-  font-size: 0.875rem;
-  color: var(--color-gray-400);
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-  .split-record-view {
-    padding: 1rem;
-  }
-
-  .page-header {
-    flex-direction: column;
-    gap: 1rem;
-  }
-
-  .btn-export {
-    width: 100%;
-    justify-content: center;
-  }
-
-  .statistics-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .toolbar {
-    flex-direction: column;
-  }
-
-  .filter-panel {
-    flex-direction: column;
-  }
-
-  .record-body {
-    grid-template-columns: 1fr;
-  }
-}
-</style>

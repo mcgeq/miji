@@ -69,31 +69,39 @@ function getRoleName(role: string): string {
 </script>
 
 <template>
-  <div class="member-detail-view">
-    <div v-if="loading" class="page-loader">
-      <div class="spinner" />
-      <span>加载中...</span>
+  <div class="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
+    <div v-if="loading" class="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+      <div class="w-10 h-10 border-3 border-gray-300 dark:border-gray-700 border-t-blue-600 rounded-full animate-spin" />
+      <span class="text-gray-600 dark:text-gray-400">加载中...</span>
     </div>
 
     <template v-else-if="member">
       <!-- 头部 -->
-      <header class="detail-header">
-        <button class="btn-back" @click="goBack">
-          <LucideArrowLeft class="icon" />
+      <header class="flex gap-4 mb-8">
+        <button class="p-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg cursor-pointer transition-all hover:bg-gray-100 dark:hover:bg-gray-700" @click="goBack">
+          <LucideArrowLeft class="w-5 h-5" />
         </button>
-        <div class="member-header-info">
+        <div class="flex items-center gap-6 flex-1 bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm">
           <div
-            class="member-avatar-large"
+            class="w-20 h-20 rounded-full flex items-center justify-center text-white text-3xl font-semibold flex-shrink-0"
             :style="{ backgroundColor: member.colorTag || '#3b82f6' }"
           >
             {{ member.name.charAt(0).toUpperCase() }}
           </div>
-          <div class="member-info-section">
-            <h1>{{ member.name }}</h1>
-            <span class="role-badge" :class="member.role">
+          <div>
+            <h1 class="text-2xl font-semibold m-0 mb-2 text-gray-900 dark:text-gray-100">
+              {{ member.name }}
+            </h1>
+            <span
+              class="inline-block px-3 py-1 rounded-xl text-sm font-medium" :class="[
+                member.role === 'Owner' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300'
+                : member.role === 'Admin' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'
+                  : 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
+              ]"
+            >
               {{ getRoleName(member.role) }}
             </span>
-            <p v-if="member.userSerialNum" class="member-user-id">
+            <p v-if="member.userSerialNum" class="mt-2 mb-0 text-gray-500 dark:text-gray-400 text-sm">
               ID: {{ member.userSerialNum }}
             </p>
           </div>
@@ -101,316 +109,115 @@ function getRoleName(role: string): string {
       </header>
 
       <!-- 财务统计卡片 -->
-      <section class="stats-grid">
-        <div class="stat-card">
-          <LucideWallet class="stat-icon" />
+      <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm flex items-center gap-4">
+          <LucideWallet class="w-10 h-10 p-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-blue-600 dark:text-blue-400" />
           <div>
-            <label>总支付</label>
-            <h3>{{ formatCurrency(memberStats?.totalPaid) }}</h3>
+            <label class="block text-sm text-gray-500 dark:text-gray-400 mb-1">总支付</label>
+            <h3 class="m-0 text-2xl font-semibold text-gray-900 dark:text-gray-100">
+              {{ formatCurrency(memberStats?.totalPaid) }}
+            </h3>
           </div>
         </div>
-        <div class="stat-card">
-          <LucideCoins class="stat-icon" />
+        <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm flex items-center gap-4">
+          <LucideCoins class="w-10 h-10 p-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-blue-600 dark:text-blue-400" />
           <div>
-            <label>应分摊</label>
-            <h3>{{ formatCurrency(memberStats?.totalOwed) }}</h3>
+            <label class="block text-sm text-gray-500 dark:text-gray-400 mb-1">应分摆</label>
+            <h3 class="m-0 text-2xl font-semibold text-gray-900 dark:text-gray-100">
+              {{ formatCurrency(memberStats?.totalOwed) }}
+            </h3>
           </div>
         </div>
-        <div class="stat-card" :class="getBalanceClass(memberStats?.netBalance)">
-          <LucideTrendingUp class="stat-icon" />
+        <div
+          class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm flex items-center gap-4"
+        >
+          <LucideTrendingUp
+            class="w-10 h-10 p-2 rounded-lg" :class="[
+              getBalanceClass(memberStats?.netBalance) === 'positive' ? 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400'
+              : getBalanceClass(memberStats?.netBalance) === 'negative' ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400'
+                : 'bg-gray-100 dark:bg-gray-700 text-blue-600 dark:text-blue-400',
+            ]"
+          />
           <div>
-            <label>净余额</label>
-            <h3>{{ formatCurrency(memberStats?.netBalance) }}</h3>
+            <label class="block text-sm text-gray-500 dark:text-gray-400 mb-1">净余额</label>
+            <h3
+              class="m-0 text-2xl font-semibold" :class="[
+                getBalanceClass(memberStats?.netBalance) === 'positive' ? 'text-green-600 dark:text-green-400'
+                : getBalanceClass(memberStats?.netBalance) === 'negative' ? 'text-red-600 dark:text-red-400'
+                  : 'text-gray-900 dark:text-gray-100',
+              ]"
+            >
+              {{ formatCurrency(memberStats?.netBalance) }}
+            </h3>
           </div>
         </div>
-        <div class="stat-card">
-          <LucideActivity class="stat-icon" />
+        <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm flex items-center gap-4">
+          <LucideActivity class="w-10 h-10 p-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-blue-600 dark:text-blue-400" />
           <div>
-            <label>交易笔数</label>
-            <h3>{{ memberStats?.transactionCount || 0 }}</h3>
+            <label class="block text-sm text-gray-500 dark:text-gray-400 mb-1">交易笔数</label>
+            <h3 class="m-0 text-2xl font-semibold text-gray-900 dark:text-gray-100">
+              {{ memberStats?.transactionCount || 0 }}
+            </h3>
           </div>
         </div>
       </section>
 
       <!-- 标签页 -->
-      <section class="detail-tabs">
-        <div class="tabs-nav">
+      <section class="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden">
+        <div class="flex border-b border-gray-200 dark:border-gray-700">
           <button
-            :class="{ active: activeTab === 'transactions' }"
+            class="flex-1 px-4 py-4 bg-transparent border-none cursor-pointer text-base font-medium transition-all border-b-2" :class="[
+              activeTab === 'transactions'
+                ? 'text-blue-600 dark:text-blue-400 border-blue-600 dark:border-blue-400'
+                : 'text-gray-500 dark:text-gray-400 border-transparent hover:bg-gray-50 dark:hover:bg-gray-700',
+            ]"
             @click="activeTab = 'transactions'"
           >
             交易记录
           </button>
           <button
-            :class="{ active: activeTab === 'splits' }"
+            class="flex-1 px-4 py-4 bg-transparent border-none cursor-pointer text-base font-medium transition-all border-b-2" :class="[
+              activeTab === 'splits'
+                ? 'text-blue-600 dark:text-blue-400 border-blue-600 dark:border-blue-400'
+                : 'text-gray-500 dark:text-gray-400 border-transparent hover:bg-gray-50 dark:hover:bg-gray-700',
+            ]"
             @click="activeTab = 'splits'"
           >
-            分摊记录
+            分摆记录
           </button>
           <button
-            :class="{ active: activeTab === 'debts' }"
+            class="flex-1 px-4 py-4 bg-transparent border-none cursor-pointer text-base font-medium transition-all border-b-2" :class="[
+              activeTab === 'debts'
+                ? 'text-blue-600 dark:text-blue-400 border-blue-600 dark:border-blue-400'
+                : 'text-gray-500 dark:text-gray-400 border-transparent hover:bg-gray-50 dark:hover:bg-gray-700',
+            ]"
             @click="activeTab = 'debts'"
           >
             债务关系
           </button>
         </div>
 
-        <div class="tab-content">
-          <div v-if="activeTab === 'transactions'" class="tab-panel">
+        <div class="p-8">
+          <div v-if="activeTab === 'transactions'" class="min-h-[400px]">
             <MemberTransactionList :member-serial-num="memberSerialNum" />
           </div>
-          <div v-if="activeTab === 'splits'" class="tab-panel">
+          <div v-if="activeTab === 'splits'" class="min-h-[400px]">
             <MemberSplitRecordList :member-serial-num="memberSerialNum" />
           </div>
-          <div v-if="activeTab === 'debts'" class="tab-panel">
+          <div v-if="activeTab === 'debts'" class="min-h-[400px]">
             <MemberDebtRelations :member-serial-num="memberSerialNum" />
           </div>
         </div>
       </section>
     </template>
 
-    <div v-else class="error-state">
-      <p>未找到成员信息</p>
-      <button @click="goBack">
+    <div v-else class="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+      <p class="text-gray-600 dark:text-gray-400">
+        未找到成员信息
+      </p>
+      <button class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors" @click="goBack">
         返回
       </button>
     </div>
   </div>
 </template>
-
-<style scoped>
-.member-detail-view {
-  min-height: 100vh;
-  background: var(--color-base-100);
-  padding: 1.5rem;
-}
-
-.page-loader,
-.error-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 60vh;
-  gap: 1rem;
-}
-
-.spinner {
-  width: 40px;
-  height: 40px;
-  border: 3px solid var(--color-base-300);
-  border-top-color: var(--color-primary);
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-/* Header */
-.detail-header {
-  display: flex;
-  gap: 1rem;
-  margin-bottom: 2rem;
-}
-
-.btn-back {
-  padding: 0.5rem;
-  background: white;
-  border: 1px solid var(--color-base-300);
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.btn-back:hover {
-  background: var(--color-base-200);
-}
-
-.icon {
-  width: 20px;
-  height: 20px;
-}
-
-.member-header-info {
-  display: flex;
-  align-items: center;
-  gap: 1.5rem;
-  flex: 1;
-  background: white;
-  padding: 1.5rem;
-  border-radius: 12px;
-  box-shadow: var(--shadow-sm);
-}
-
-.member-avatar-large {
-  width: 80px;
-  height: 80px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-size: 2rem;
-  font-weight: 600;
-  flex-shrink: 0;
-}
-
-.member-info-section h1 {
-  font-size: 1.5rem;
-  font-weight: 600;
-  margin: 0 0 0.5rem 0;
-}
-
-.role-badge {
-  display: inline-block;
-  padding: 0.25rem 0.75rem;
-  border-radius: 12px;
-  font-size: 0.875rem;
-  font-weight: 500;
-}
-
-.role-badge.Owner {
-  background: #fef3c7;
-  color: #92400e;
-}
-
-.role-badge.Admin {
-  background: #dbeafe;
-  color: #1e40af;
-}
-
-.role-badge.Member {
-  background: #d1fae5;
-  color: #065f46;
-}
-
-.member-user-id {
-  margin: 0.5rem 0 0 0;
-  color: var(--color-gray-500);
-  font-size: 0.875rem;
-}
-
-/* Stats Grid */
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1rem;
-  margin-bottom: 2rem;
-}
-
-.stat-card {
-  background: white;
-  padding: 1.5rem;
-  border-radius: 12px;
-  box-shadow: var(--shadow-sm);
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.stat-icon {
-  width: 40px;
-  height: 40px;
-  padding: 0.5rem;
-  border-radius: 8px;
-  background: var(--color-base-200);
-  color: var(--color-primary);
-}
-
-.stat-card.positive .stat-icon {
-  background: #d1fae5;
-  color: #059669;
-}
-
-.stat-card.negative .stat-icon {
-  background: #fee2e2;
-  color: #dc2626;
-}
-
-.stat-card label {
-  display: block;
-  font-size: 0.875rem;
-  color: var(--color-gray-500);
-  margin-bottom: 0.25rem;
-}
-
-.stat-card h3 {
-  margin: 0;
-  font-size: 1.5rem;
-  font-weight: 600;
-}
-
-.stat-card.positive h3 {
-  color: #059669;
-}
-
-.stat-card.negative h3 {
-  color: #dc2626;
-}
-
-/* Tabs */
-.detail-tabs {
-  background: white;
-  border-radius: 12px;
-  box-shadow: var(--shadow-sm);
-  overflow: hidden;
-}
-
-.tabs-nav {
-  display: flex;
-  border-bottom: 1px solid var(--color-base-300);
-}
-
-.tabs-nav button {
-  flex: 1;
-  padding: 1rem;
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 1rem;
-  font-weight: 500;
-  color: var(--color-gray-500);
-  transition: all 0.2s;
-  border-bottom: 2px solid transparent;
-}
-
-.tabs-nav button:hover {
-  background: var(--color-base-100);
-}
-
-.tabs-nav button.active {
-  color: var(--color-primary);
-  border-bottom-color: var(--color-primary);
-}
-
-.tab-content {
-  padding: 2rem;
-}
-
-.tab-panel {
-  min-height: 400px;
-}
-
-/* 响应式 */
-@media (max-width: 768px) {
-  .member-detail-view {
-    padding: 1rem;
-  }
-
-  .member-header-info {
-    flex-direction: column;
-    text-align: center;
-  }
-
-  .stats-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .tabs-nav button {
-    font-size: 0.875rem;
-    padding: 0.75rem 0.5rem;
-  }
-}
-</style>

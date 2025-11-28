@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import Button from '@/components/ui/Button.vue';
+import Spinner from '@/components/ui/Spinner.vue';
 import { useCategoryStore } from '@/stores/money';
 import { lowercaseFirstLetter } from '@/utils/common';
 import type { Category } from '@/schema/money/category';
@@ -101,15 +103,18 @@ function getCategoryIcon(category: string) {
 </script>
 
 <template>
-  <div class="transaction-stats-table">
-    <div class="table-header">
-      <h3 class="table-title">
+  <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+    <div class="flex flex-wrap justify-between items-center px-4 md:px-6 py-4 bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600 gap-4">
+      <h3 class="text-base md:text-lg font-semibold text-gray-900 dark:text-white whitespace-nowrap flex-shrink-0">
         {{ categoryTypeName }}分类详细统计
       </h3>
-      <div class="table-controls">
-        <div class="control-group">
-          <label class="control-label">交易类型:</label>
-          <select v-model="categoryType" class="control-select">
+      <div class="flex items-center flex-shrink-0">
+        <div class="flex items-center gap-2">
+          <label class="text-sm text-gray-500 dark:text-gray-400 font-medium hidden md:inline">交易类型:</label>
+          <select
+            v-model="categoryType"
+            class="px-2 md:px-3 py-1 md:py-1.5 text-xs md:text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white cursor-pointer transition-all hover:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[80px] md:min-w-0"
+          >
             <option value="expense">
               支出
             </option>
@@ -122,58 +127,58 @@ function getCategoryIcon(category: string) {
           </select>
         </div>
       </div>
-      <div class="table-summary">
-        <div class="summary-item">
-          <span class="summary-label">总金额:</span>
-          <span class="summary-value">¥{{ formatAmount(totalAmount) }}</span>
+      <div class="flex gap-4 items-center ml-auto flex-shrink-0">
+        <div class="flex items-center gap-2 whitespace-nowrap">
+          <span class="text-xs md:text-sm text-gray-500 dark:text-gray-400">总金额:</span>
+          <span class="text-xs md:text-sm font-semibold text-gray-900 dark:text-white">¥{{ formatAmount(totalAmount) }}</span>
         </div>
-        <div class="summary-item">
-          <span class="summary-label">总笔数:</span>
-          <span class="summary-value">{{ totalCount }}笔</span>
+        <div class="flex items-center gap-2 whitespace-nowrap">
+          <span class="text-xs md:text-sm text-gray-500 dark:text-gray-400">总笔数:</span>
+          <span class="text-xs md:text-sm font-semibold text-gray-900 dark:text-white">{{ totalCount }}笔</span>
         </div>
       </div>
     </div>
 
-    <div class="table-content">
-      <div v-if="loading" class="table-loading">
-        <div class="loading-spinner" />
-        <div class="loading-text">
+    <div class="min-h-[400px]">
+      <div v-if="loading" class="flex flex-col items-center justify-center h-[400px] gap-4">
+        <Spinner size="lg" />
+        <div class="text-gray-500 dark:text-gray-400 text-sm">
           加载中...
         </div>
       </div>
 
-      <div v-else-if="currentCategories.length === 0" class="table-empty">
-        <div class="empty-icon">
+      <div v-else-if="currentCategories.length === 0" class="flex flex-col items-center justify-center h-[400px] gap-4">
+        <div class="text-5xl opacity-50">
           📊
         </div>
-        <div class="empty-text">
+        <div class="text-gray-500 dark:text-gray-400 text-sm">
           暂无统计数据
         </div>
       </div>
 
-      <div v-else class="table-wrapper">
-        <table class="stats-table">
+      <div v-else class="overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent">
+        <table class="w-full border-collapse">
           <thead>
             <tr>
-              <th class="col-rank">
+              <th class="bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-400 text-sm font-semibold text-center px-4 py-3 border-b border-gray-200 dark:border-gray-600 w-[60px]">
                 排名
               </th>
-              <th class="col-category">
+              <th class="bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-400 text-sm font-semibold text-left px-4 py-3 border-b border-gray-200 dark:border-gray-600 min-w-[120px]">
                 分类
               </th>
-              <th class="col-amount">
+              <th class="bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-400 text-sm font-semibold text-right px-4 py-3 border-b border-gray-200 dark:border-gray-600 min-w-[100px]">
                 金额
               </th>
-              <th class="col-percentage">
+              <th class="bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-400 text-sm font-semibold text-left px-4 py-3 border-b border-gray-200 dark:border-gray-600 min-w-[120px] hidden md:table-cell">
                 占比
               </th>
-              <th class="col-count">
+              <th class="bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-400 text-sm font-semibold text-center px-4 py-3 border-b border-gray-200 dark:border-gray-600 min-w-[80px]">
                 笔数
               </th>
-              <th class="col-average">
+              <th class="bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-400 text-sm font-semibold text-right px-4 py-3 border-b border-gray-200 dark:border-gray-600 min-w-[100px] hidden md:table-cell">
                 平均
               </th>
-              <th class="col-trend">
+              <th class="bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-400 text-sm font-semibold text-center px-4 py-3 border-b border-gray-200 dark:border-gray-600 min-w-[80px] hidden md:table-cell">
                 趋势
               </th>
             </tr>
@@ -182,66 +187,70 @@ function getCategoryIcon(category: string) {
             <tr
               v-for="(category, index) in sortedCategories"
               :key="category.category"
-              class="table-row"
+              class="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
             >
-              <td class="col-rank">
-                <div class="rank-badge" :class="`rank-${index + 1}`">
+              <td class="text-center px-2 md:px-4 py-3 border-b border-gray-100 dark:border-gray-700">
+                <div
+                  class="inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-semibold text-white"
+                  :class="[
+                    index === 0 ? 'bg-[#ffd700]'
+                    : index === 1 ? 'bg-[#c0c0c0]'
+                      : index === 2 ? 'bg-[#cd7f32]'
+                        : 'bg-gray-300 dark:bg-gray-600 text-gray-600 dark:text-gray-300',
+                  ]"
+                >
                   {{ index + 1 }}
                 </div>
               </td>
-              <td class="col-category">
-                <div class="category-cell">
-                  <span class="category-icon">
+              <td class="px-2 md:px-4 py-3 border-b border-gray-100 dark:border-gray-700">
+                <div class="flex items-center gap-2">
+                  <span class="text-base">
                     {{ getCategoryIcon(category.category) }}
                   </span>
-                  <span class="category-name">
+                  <span class="text-xs md:text-sm text-gray-900 dark:text-white font-medium">
                     {{ t(`common.categories.${lowercaseFirstLetter(category.category)}`) }}
                   </span>
                 </div>
               </td>
-              <td class="col-amount">
-                <div class="amount-cell">
-                  <span class="amount-value">
-                    ¥{{ formatAmount(category.amount) }}
-                  </span>
-                </div>
+              <td class="text-right px-2 md:px-4 py-3 border-b border-gray-100 dark:border-gray-700">
+                <span class="text-xs md:text-sm font-semibold text-gray-900 dark:text-white">
+                  ¥{{ formatAmount(category.amount) }}
+                </span>
               </td>
-              <td class="col-percentage">
-                <div class="percentage-cell">
-                  <div class="percentage-bar">
+              <td class="px-4 py-3 border-b border-gray-100 dark:border-gray-700 hidden md:table-cell">
+                <div class="flex items-center gap-2">
+                  <div class="flex-1 h-1.5 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden">
                     <div
-                      class="percentage-fill"
+                      class="h-full bg-blue-500 dark:bg-blue-400 rounded-full transition-all duration-300"
                       :style="{ width: `${formatPercentage(category.amount)}%` }"
                     />
                   </div>
-                  <span class="percentage-text">
+                  <span class="text-xs text-gray-500 dark:text-gray-400 min-w-[40px] text-right">
                     {{ formatPercentage(category.amount) }}%
                   </span>
                 </div>
               </td>
-              <td class="col-count">
-                <div class="count-cell">
-                  <span class="count-value">
+              <td class="text-center px-2 md:px-4 py-3 border-b border-gray-100 dark:border-gray-700">
+                <div class="flex items-center justify-center gap-1">
+                  <span class="text-xs md:text-sm font-semibold text-gray-900 dark:text-white">
                     {{ category.count }}
                   </span>
-                  <span class="count-unit">
+                  <span class="text-xs text-gray-500 dark:text-gray-400">
                     笔
                   </span>
                 </div>
               </td>
-              <td class="col-average">
-                <div class="average-cell">
-                  <span class="average-value">
-                    ¥{{ formatAmount(category.amount / category.count) }}
-                  </span>
-                </div>
+              <td class="text-right px-4 py-3 border-b border-gray-100 dark:border-gray-700 hidden md:table-cell">
+                <span class="text-sm text-gray-500 dark:text-gray-400">
+                  ¥{{ formatAmount(category.amount / category.count) }}
+                </span>
               </td>
-              <td class="col-trend">
-                <div class="trend-cell">
-                  <div class="trend-indicator">
-                    <div class="trend-bar">
+              <td class="px-4 py-3 border-b border-gray-100 dark:border-gray-700 hidden md:table-cell">
+                <div class="flex items-center justify-center">
+                  <div class="w-full">
+                    <div class="h-1 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden">
                       <div
-                        class="trend-fill"
+                        class="h-full bg-gradient-to-r from-blue-500 to-purple-500 dark:from-blue-400 dark:to-purple-400 rounded-full transition-all duration-300"
                         :style="{ width: `${(category.amount / totalAmount) * 100}%` }"
                       />
                     </div>
@@ -255,592 +264,13 @@ function getCategoryIcon(category: string) {
     </div>
 
     <!-- 导出功能 -->
-    <div class="table-actions">
-      <button class="export-btn">
+    <div class="flex flex-col md:flex-row justify-center gap-4 px-4 md:px-6 py-4 bg-gray-50 dark:bg-gray-700 border-t border-gray-200 dark:border-gray-600">
+      <Button variant="primary" size="sm" class="w-full md:w-auto">
         📊 导出数据
-      </button>
-      <button class="export-btn">
+      </Button>
+      <Button variant="primary" size="sm" class="w-full md:w-auto">
         📈 生成报告
-      </button>
+      </Button>
     </div>
   </div>
 </template>
-
-<style scoped lang="postcss">
-.transaction-stats-table {
-  background: var(--color-base-100);
-  border: 1px solid var(--color-base-300);
-  border-radius: 0.5rem;
-  overflow: hidden;
-}
-
-.table-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem 1.5rem;
-  background: var(--color-base-200);
-  border-bottom: 1px solid var(--color-base-300);
-}
-
-.table-title {
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: var(--color-accent-content);
-}
-
-.table-controls {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.control-group {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.control-label {
-  font-size: 0.875rem;
-  color: var(--color-neutral);
-  font-weight: 500;
-}
-
-.control-select {
-  padding: 0.375rem 0.75rem;
-  border: 1px solid var(--color-base-300);
-  border-radius: 0.25rem;
-  background: var(--color-base-100);
-  color: var(--color-accent-content);
-  font-size: 0.875rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.control-select:hover {
-  border-color: var(--color-primary);
-}
-
-.control-select:focus {
-  outline: none;
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 2px var(--color-primary-light);
-}
-
-.table-summary {
-  display: flex;
-  gap: 1rem;
-}
-
-.summary-item {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.summary-label {
-  font-size: 0.875rem;
-  color: var(--color-neutral);
-}
-
-.summary-value {
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: var(--color-accent-content);
-}
-
-.table-content {
-  min-height: 400px;
-}
-
-.table-loading {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 400px;
-  gap: 1rem;
-}
-
-.loading-spinner {
-  width: 40px;
-  height: 40px;
-  border: 3px solid var(--color-base-300);
-  border-top: 3px solid var(--color-primary);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-.loading-text {
-  color: var(--color-neutral);
-  font-size: 0.875rem;
-}
-
-.table-empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 400px;
-  gap: 1rem;
-}
-
-.empty-icon {
-  font-size: 3rem;
-  opacity: 0.5;
-}
-
-.empty-text {
-  color: var(--color-neutral);
-  font-size: 0.875rem;
-}
-
-.table-wrapper {
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: thin;
-  scrollbar-color: var(--color-base-300) transparent;
-}
-
-.table-wrapper::-webkit-scrollbar {
-  height: 6px;
-}
-
-.table-wrapper::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.table-wrapper::-webkit-scrollbar-thumb {
-  background: var(--color-base-300);
-  border-radius: 3px;
-}
-
-.table-wrapper::-webkit-scrollbar-thumb:hover {
-  background: var(--color-base-400);
-}
-
-.stats-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.stats-table th {
-  background: var(--color-base-200);
-  color: var(--color-neutral);
-  font-size: 0.875rem;
-  font-weight: 600;
-  text-align: left;
-  padding: 0.75rem 1rem;
-  border-bottom: 1px solid var(--color-base-300);
-}
-
-.stats-table td {
-  padding: 0.75rem 1rem;
-  border-bottom: 1px solid var(--color-base-200);
-  vertical-align: middle;
-}
-
-.table-row:hover {
-  background: var(--color-base-50);
-}
-
-.table-row:last-child td {
-  border-bottom: none;
-}
-
-/* 排名列 */
-.col-rank {
-  width: 60px;
-  text-align: center;
-}
-
-.rank-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: white;
-}
-
-.rank-1 {
-  background: #ffd700;
-}
-
-.rank-2 {
-  background: #c0c0c0;
-}
-
-.rank-3 {
-  background: #cd7f32;
-}
-
-.rank-badge:not(.rank-1):not(.rank-2):not(.rank-3) {
-  background: var(--color-base-300);
-  color: var(--color-neutral);
-}
-
-/* 分类列 */
-.col-category {
-  min-width: 120px;
-}
-
-.category-cell {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.category-icon {
-  font-size: 1rem;
-}
-
-.category-name {
-  font-size: 0.875rem;
-  color: var(--color-accent-content);
-  font-weight: 500;
-}
-
-/* 金额列 */
-.col-amount {
-  text-align: right;
-  min-width: 100px;
-}
-
-.amount-value {
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: var(--color-accent-content);
-}
-
-/* 占比列 */
-.col-percentage {
-  min-width: 120px;
-}
-
-.percentage-cell {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.percentage-bar {
-  flex: 1;
-  height: 6px;
-  background: var(--color-base-200);
-  border-radius: 3px;
-  overflow: hidden;
-}
-
-.percentage-fill {
-  height: 100%;
-  background: var(--color-primary);
-  border-radius: 3px;
-  transition: width 0.3s ease;
-}
-
-.percentage-text {
-  font-size: 0.75rem;
-  color: var(--color-neutral);
-  min-width: 40px;
-  text-align: right;
-}
-
-/* 笔数列 */
-.col-count {
-  text-align: center;
-  min-width: 80px;
-}
-
-.count-cell {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.25rem;
-}
-
-.count-value {
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: var(--color-accent-content);
-}
-
-.count-unit {
-  font-size: 0.75rem;
-  color: var(--color-neutral);
-}
-
-/* 平均列 */
-.col-average {
-  text-align: right;
-  min-width: 100px;
-}
-
-.average-value {
-  font-size: 0.875rem;
-  color: var(--color-neutral);
-}
-
-/* 趋势列 */
-.col-trend {
-  min-width: 80px;
-}
-
-.trend-cell {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.trend-indicator {
-  width: 100%;
-}
-
-.trend-bar {
-  height: 4px;
-  background: var(--color-base-200);
-  border-radius: 2px;
-  overflow: hidden;
-}
-
-.trend-fill {
-  height: 100%;
-  background: linear-gradient(90deg, var(--color-primary), var(--color-secondary));
-  border-radius: 2px;
-  transition: width 0.3s ease;
-}
-
-/* 表格操作 */
-.table-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 1rem;
-  padding: 1rem 1.5rem;
-  background: var(--color-base-200);
-  border-top: 1px solid var(--color-base-300);
-}
-
-.export-btn {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  background: var(--color-primary);
-  color: white;
-  border: none;
-  border-radius: 0.25rem;
-  font-size: 0.875rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.export-btn:hover {
-  background: var(--color-primary-dark);
-}
-
-/* 移动端优化 */
-@media (max-width: 768px) {
-  .transaction-stats-table {
-    margin: 0;
-    border-radius: 0;
-  }
-
-  .table-header {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    gap: 1rem;
-    padding: 1rem;
-    flex-wrap: wrap;
-  }
-
-  .table-title {
-    font-size: 1rem;
-    white-space: nowrap;
-    flex-shrink: 0;
-  }
-
-  .table-controls {
-    display: flex;
-    align-items: center;
-    flex-shrink: 0;
-  }
-
-  .control-group {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-
-  .control-label {
-    display: none; /* 移动端隐藏标签 */
-  }
-
-  .control-select {
-    font-size: 0.75rem;
-    padding: 0.25rem 0.5rem;
-    min-width: 80px;
-    max-width: 100px;
-  }
-
-  .table-summary {
-    display: flex;
-    flex-direction: row;
-    gap: 1rem;
-    align-items: center;
-    margin-left: auto;
-    flex-shrink: 0;
-  }
-
-  .summary-item {
-    display: flex;
-    align-items: center;
-    gap: 0.25rem;
-    white-space: nowrap;
-  }
-
-  .summary-label {
-    font-size: 0.75rem;
-    color: var(--color-neutral);
-  }
-
-  .summary-value {
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: var(--color-accent-content);
-  }
-
-  .stats-table th,
-  .stats-table td {
-    padding: 0.5rem 0.25rem;
-    font-size: 0.75rem;
-  }
-
-  /* 隐藏部分列以节省空间 */
-  .col-average,
-  .col-trend {
-    display: none;
-  }
-
-  .col-percentage {
-    min-width: 80px;
-  }
-
-  .percentage-text {
-    font-size: 0.625rem;
-    min-width: 30px;
-  }
-
-  .col-count {
-    min-width: 60px;
-  }
-
-  .col-amount {
-    min-width: 80px;
-  }
-
-  .amount-value {
-    font-size: 0.75rem;
-  }
-
-  .table-actions {
-    flex-direction: column;
-    padding: 1rem;
-  }
-
-  .export-btn {
-    justify-content: center;
-    width: 100%;
-  }
-}
-
-/* 超小屏幕优化 */
-@media (max-width: 480px) {
-  .table-header {
-    padding: 0.75rem;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-  }
-
-  .table-title {
-    font-size: 0.875rem;
-    flex: 1;
-    min-width: 0;
-  }
-
-  .table-controls {
-    flex-shrink: 0;
-  }
-
-  .control-select {
-    font-size: 0.625rem;
-    padding: 0.125rem 0.25rem;
-    min-width: 70px;
-    max-width: 80px;
-  }
-
-  .table-summary {
-    gap: 0.5rem;
-    flex-wrap: wrap;
-  }
-
-  .summary-item {
-    gap: 0.125rem;
-  }
-
-  .summary-label {
-    font-size: 0.625rem;
-  }
-
-  .summary-value {
-    font-size: 0.625rem;
-  }
-
-  .stats-table th,
-  .stats-table td {
-    padding: 0.375rem 0.125rem;
-    font-size: 0.625rem;
-  }
-
-  /* 进一步隐藏列 */
-  .col-percentage {
-    display: none;
-  }
-
-  .col-count {
-    min-width: 50px;
-  }
-
-  .col-amount {
-    min-width: 70px;
-  }
-
-  .category-name {
-    font-size: 0.75rem;
-  }
-
-  .rank-badge {
-    width: 20px;
-    height: 20px;
-    font-size: 0.625rem;
-  }
-
-  .table-actions {
-    padding: 0.75rem;
-  }
-
-  .export-btn {
-    font-size: 0.75rem;
-    padding: 0.375rem 0.75rem;
-  }
-}
-</style>

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { LucideBarChart3 } from 'lucide-vue-next';
+
 // 成员贡献度图表组件
 interface MemberData {
   name: string;
@@ -56,65 +58,62 @@ function formatAmount(amount: number | undefined | null): string {
   }
   return amount.toFixed(2);
 }
-
-// 获取余额状态样式
-function getBalanceClass(balance: number): string {
-  if (balance > 0) return 'positive';
-  if (balance < 0) return 'negative';
-  return 'neutral';
-}
 </script>
 
 <template>
-  <div class="contribution-chart" :style="{ height }">
-    <h4 v-if="title" class="chart-title">
+  <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4" :style="{ height }">
+    <h4 v-if="title" class="text-base font-semibold text-gray-900 dark:text-white mb-4 text-center">
       {{ title }}
     </h4>
 
-    <div class="chart-content">
+    <div class="flex flex-col md:flex-row gap-6" :class="{ 'h-[calc(100%-3rem)]': title }">
       <!-- 柱状图 -->
-      <div class="bar-chart">
-        <div class="chart-grid">
+      <div class="flex-[2] min-h-0">
+        <div class="flex h-full">
           <!-- Y轴标签 -->
-          <div class="y-axis">
-            <div class="y-label">
+          <div class="flex flex-col w-20 mr-4">
+            <div class="text-xs text-gray-500 dark:text-gray-400 text-center mb-2 [writing-mode:vertical-rl]">
               支付金额 (¥)
             </div>
-            <div class="y-scale">
-              <div v-for="i in 5" :key="i" class="scale-line">
-                <span class="scale-value">{{ formatAmount(totalPaid * (5 - i + 1) / 5) }}</span>
+            <div class="flex-1 flex flex-col justify-between relative">
+              <div v-for="i in 5" :key="i" class="flex items-center justify-end relative after:content-[''] after:absolute after:right-[-8px] after:w-1 after:h-px after:bg-gray-300 dark:after:bg-gray-600">
+                <span class="text-xs text-gray-500 dark:text-gray-400 mr-2">{{ formatAmount(totalPaid * (5 - i + 1) / 5) }}</span>
               </div>
             </div>
           </div>
 
           <!-- 图表区域 -->
-          <div class="chart-area">
-            <div class="bars-container">
+          <div class="flex-1 relative border-l border-b border-gray-200 dark:border-gray-700">
+            <div class="flex items-end justify-around h-[calc(100%-2rem)] pt-4 px-2 pb-0">
               <div
                 v-for="member in chartData"
                 :key="member.name"
-                class="bar-group"
+                class="flex flex-col items-center flex-1 max-w-[80px]"
               >
                 <!-- 支付金额柱 -->
-                <div class="bar-wrapper">
+                <div class="relative w-full h-full flex items-end justify-center">
                   <div
-                    class="bar paid-bar"
+                    class="w-[60%] min-h-[4px] rounded-t relative transition-all duration-300 cursor-pointer hover:opacity-80 hover:scale-x-110 group"
                     :style="{
                       height: `${member.percentage}%`,
                       backgroundColor: member.color,
                     }"
                   >
-                    <div class="bar-tooltip">
-                      <div class="tooltip-title">
+                    <div class="absolute bottom-full left-1/2 -translate-x-1/2 bg-black/80 text-white px-2 py-2 rounded text-xs whitespace-nowrap opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10">
+                      <div class="font-semibold mb-1">
                         {{ member.name }}
                       </div>
-                      <div class="tooltip-item">
+                      <div class="mb-0.5">
                         <span>支付: ¥{{ formatAmount(member.totalPaid) }}</span>
                       </div>
-                      <div class="tooltip-item">
-                        <span>应分摊: ¥{{ formatAmount(member.totalOwed) }}</span>
+                      <div class="mb-0.5">
+                        <span>应分摆: ¥{{ formatAmount(member.totalOwed) }}</span>
                       </div>
-                      <div class="tooltip-item" :class="getBalanceClass(member.netBalance)">
+                      <div
+                        class="mb-0.5" :class="[
+                          member.netBalance > 0 ? 'text-emerald-400' : member.netBalance < 0 ? 'text-red-400' : '',
+                        ]"
+                      >
                         <span>净余额: ¥{{ formatAmount(Math.abs(member.netBalance)) }}</span>
                       </div>
                     </div>
@@ -122,7 +121,7 @@ function getBalanceClass(balance: number): string {
                 </div>
 
                 <!-- X轴标签 -->
-                <div class="x-label">
+                <div class="text-xs text-gray-500 dark:text-gray-400 text-center mt-2 max-w-full overflow-hidden text-ellipsis">
                   {{ member.name }}
                 </div>
               </div>
@@ -132,44 +131,50 @@ function getBalanceClass(balance: number): string {
       </div>
 
       <!-- 统计信息 -->
-      <div class="stats-panel">
-        <div class="stats-header">
-          <h5 class="stats-title">
+      <div class="flex-1 min-w-[200px] border-t md:border-t-0 md:border-l border-gray-200 dark:border-gray-700 pt-4 md:pt-0 md:pl-4">
+        <div class="mb-4">
+          <h5 class="text-sm font-semibold text-gray-900 dark:text-white">
             详细统计
           </h5>
         </div>
 
-        <div class="stats-list">
+        <div class="flex flex-col gap-4 max-h-[calc(100%-3rem)] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           <div
             v-for="member in chartData"
             :key="member.name"
-            class="stats-item"
+            class="p-3 bg-gray-50 dark:bg-gray-700 rounded-md border border-gray-200 dark:border-gray-600"
           >
-            <div class="member-info">
-              <div class="member-indicator" :style="{ backgroundColor: member.color }" />
-              <span class="member-name">{{ member.name }}</span>
+            <div class="flex items-center gap-2 mb-2">
+              <div class="w-3 h-3 rounded-full" :style="{ backgroundColor: member.color }" />
+              <span class="text-sm font-medium text-gray-900 dark:text-white">{{ member.name }}</span>
             </div>
 
-            <div class="member-stats">
-              <div class="stat-row">
-                <span class="stat-label">支付金额:</span>
-                <span class="stat-value">¥{{ formatAmount(member.totalPaid) }}</span>
+            <div class="flex flex-col gap-1">
+              <div class="flex justify-between items-center">
+                <span class="text-xs text-gray-600 dark:text-gray-400">支付金额:</span>
+                <span class="text-xs font-medium text-gray-900 dark:text-white">¥{{ formatAmount(member.totalPaid) }}</span>
               </div>
-              <div class="stat-row">
-                <span class="stat-label">应分摊:</span>
-                <span class="stat-value">¥{{ formatAmount(member.totalOwed) }}</span>
+              <div class="flex justify-between items-center">
+                <span class="text-xs text-gray-600 dark:text-gray-400">应分摆:</span>
+                <span class="text-xs font-medium text-gray-900 dark:text-white">¥{{ formatAmount(member.totalOwed) }}</span>
               </div>
-              <div class="stat-row">
-                <span class="stat-label">净余额:</span>
-                <span class="stat-value" :class="getBalanceClass(member.netBalance)">
+              <div class="flex justify-between items-center">
+                <span class="text-xs text-gray-600 dark:text-gray-400">净余额:</span>
+                <span
+                  class="text-xs font-medium" :class="[
+                    member.netBalance > 0 ? 'text-emerald-600 dark:text-emerald-400'
+                    : member.netBalance < 0 ? 'text-red-600 dark:text-red-400'
+                      : 'text-gray-600 dark:text-gray-400',
+                  ]"
+                >
                   <span v-if="member.netBalance > 0">+</span>
                   <span v-else-if="member.netBalance < 0">-</span>
                   ¥{{ formatAmount(Math.abs(member.netBalance)) }}
                 </span>
               </div>
-              <div class="stat-row">
-                <span class="stat-label">贡献度:</span>
-                <span class="stat-value">{{ member.percentage.toFixed(1) }}%</span>
+              <div class="flex justify-between items-center">
+                <span class="text-xs text-gray-600 dark:text-gray-400">贡献度:</span>
+                <span class="text-xs font-medium text-gray-900 dark:text-white">{{ member.percentage.toFixed(1) }}%</span>
               </div>
             </div>
           </div>
@@ -178,324 +183,11 @@ function getBalanceClass(balance: number): string {
     </div>
 
     <!-- 空状态 -->
-    <div v-if="data.length === 0" class="empty-state">
-      <LucideBarChart3 class="empty-icon" />
-      <p class="empty-text">
+    <div v-if="data.length === 0" class="flex flex-col items-center justify-center h-full text-gray-400 dark:text-gray-500">
+      <LucideBarChart3 class="w-8 h-8 mb-2" />
+      <p class="text-sm">
         暂无数据
       </p>
     </div>
   </div>
 </template>
-
-<style scoped>
-.contribution-chart {
-  background: white;
-  border-radius: 0.5rem;
-  border: 1px solid #e5e7eb;
-  padding: 1rem;
-}
-
-.chart-title {
-  font-size: 1rem;
-  font-weight: 600;
-  color: #1f2937;
-  margin-bottom: 1rem;
-  text-align: center;
-}
-
-.chart-content {
-  display: flex;
-  gap: 1.5rem;
-  height: calc(100% - 3rem);
-}
-
-.bar-chart {
-  flex: 2;
-  min-height: 0;
-}
-
-.chart-grid {
-  display: flex;
-  height: 100%;
-}
-
-.y-axis {
-  display: flex;
-  flex-direction: column;
-  width: 80px;
-  margin-right: 1rem;
-}
-
-.y-label {
-  font-size: 0.75rem;
-  color: #6b7280;
-  text-align: center;
-  margin-bottom: 0.5rem;
-  writing-mode: vertical-rl;
-  text-orientation: mixed;
-}
-
-.y-scale {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  position: relative;
-}
-
-.scale-line {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  position: relative;
-}
-
-.scale-line::after {
-  content: '';
-  position: absolute;
-  right: -8px;
-  width: 4px;
-  height: 1px;
-  background-color: #d1d5db;
-}
-
-.scale-value {
-  font-size: 0.75rem;
-  color: #6b7280;
-  margin-right: 0.5rem;
-}
-
-.chart-area {
-  flex: 1;
-  position: relative;
-  border-left: 1px solid #e5e7eb;
-  border-bottom: 1px solid #e5e7eb;
-}
-
-.bars-container {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-around;
-  height: calc(100% - 2rem);
-  padding: 1rem 0.5rem 0;
-}
-
-.bar-group {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  flex: 1;
-  max-width: 80px;
-}
-
-.bar-wrapper {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-}
-
-.bar {
-  width: 60%;
-  min-height: 4px;
-  border-radius: 4px 4px 0 0;
-  position: relative;
-  transition: all 0.3s ease;
-  cursor: pointer;
-}
-
-.bar:hover {
-  opacity: 0.8;
-  transform: scaleX(1.1);
-}
-
-.bar-tooltip {
-  position: absolute;
-  bottom: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  background: rgba(0, 0, 0, 0.8);
-  color: white;
-  padding: 0.5rem;
-  border-radius: 0.25rem;
-  font-size: 0.75rem;
-  white-space: nowrap;
-  opacity: 0;
-  visibility: hidden;
-  transition: all 0.2s;
-  z-index: 10;
-}
-
-.bar:hover .bar-tooltip {
-  opacity: 1;
-  visibility: visible;
-}
-
-.tooltip-title {
-  font-weight: 600;
-  margin-bottom: 0.25rem;
-}
-
-.tooltip-item {
-  margin-bottom: 0.125rem;
-}
-
-.tooltip-item.positive {
-  color: #10b981;
-}
-
-.tooltip-item.negative {
-  color: #f87171;
-}
-
-.x-label {
-  font-size: 0.75rem;
-  color: #6b7280;
-  text-align: center;
-  margin-top: 0.5rem;
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.stats-panel {
-  flex: 1;
-  min-width: 200px;
-  border-left: 1px solid #e5e7eb;
-  padding-left: 1rem;
-}
-
-.stats-header {
-  margin-bottom: 1rem;
-}
-
-.stats-title {
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: #1f2937;
-}
-
-.stats-list {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  max-height: calc(100% - 3rem);
-  overflow-y: auto;
-  /* 隐藏滚动条 */
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE and Edge */
-}
-
-.stats-list::-webkit-scrollbar {
-  display: none; /* Chrome, Safari, Opera */
-}
-
-.stats-item {
-  padding: 0.75rem;
-  background-color: #f9fafb;
-  border-radius: 0.375rem;
-  border: 1px solid #e5e7eb;
-}
-
-.member-info {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 0.5rem;
-}
-
-.member-indicator {
-  width: 0.75rem;
-  height: 0.75rem;
-  border-radius: 50%;
-}
-
-.member-name {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: #1f2937;
-}
-
-.member-stats {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.stat-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.stat-label {
-  font-size: 0.75rem;
-  color: #6b7280;
-}
-
-.stat-value {
-  font-size: 0.75rem;
-  font-weight: 500;
-  color: #1f2937;
-}
-
-.stat-value.positive {
-  color: #10b981;
-}
-
-.stat-value.negative {
-  color: #ef4444;
-}
-
-.stat-value.neutral {
-  color: #6b7280;
-}
-
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-  color: #9ca3af;
-}
-
-.empty-icon {
-  width: 2rem;
-  height: 2rem;
-  margin-bottom: 0.5rem;
-}
-
-.empty-text {
-  font-size: 0.875rem;
-}
-
-/* 响应式设计 */
-@media (max-width: 768px) {
-  .chart-content {
-    flex-direction: column;
-  }
-
-  .stats-panel {
-    border-left: none;
-    border-top: 1px solid #e5e7eb;
-    padding-left: 0;
-    padding-top: 1rem;
-  }
-
-  .stats-list {
-    /* 限制高度，约显示2个成员统计 */
-    max-height: 280px;
-    overflow-y: auto;
-    /* 隐藏滚动条 */
-    scrollbar-width: none; /* Firefox */
-    -ms-overflow-style: none; /* IE and Edge */
-  }
-
-  .stats-list::-webkit-scrollbar {
-    display: none; /* Chrome, Safari, Opera */
-  }
-}
-</style>

@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { BarChart3, MoreHorizontal, RotateCcw } from 'lucide-vue-next';
-import { Pagination } from '@/components/ui';
+import { Ban, BarChart3, Edit, MoreHorizontal, Repeat, RotateCcw, StopCircle, Target, Trash } from 'lucide-vue-next';
+import { Button, Card, Pagination } from '@/components/ui';
 import { useBudgetStore, useCategoryStore } from '@/stores/money';
 import { getRepeatTypeName, lowercaseFirstLetter } from '@/utils/common';
 import { useBudgetFilters } from '../composables/useBudgetFilters';
@@ -106,24 +106,6 @@ onMounted(() => {
   loadBudgets();
 });
 
-// 根据项目数量决定网格布局
-const gridLayoutClass = computed(() => {
-  const itemCount = pagination.paginatedItems.value.length;
-
-  if (mediaQueries.isMobile) {
-    // 移动端布局：一行一个，100%宽度
-    return 'grid-template-columns-mobile-single';
-  } else {
-    // 桌面端布局
-    if (itemCount === 1) {
-      return 'grid-template-columns-single-50';
-    } else {
-      // 2个或更多项目时，强制每行最多2个项目
-      return 'grid-template-columns-320-max2';
-    }
-  }
-});
-
 // 暴露刷新方法给父组件
 defineExpose({
   refresh: loadBudgets,
@@ -131,24 +113,23 @@ defineExpose({
 </script>
 
 <template>
-  <div class="budget-container">
+  <div class="space-y-4">
     <!-- 过滤器区域 -->
-    <div class="screening-filtering">
-      <!-- 统计按钮组 - 移到最前面 -->
-      <div class="stats-button-group">
-        <button
-          class="screening-filtering-select stats-button"
+    <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+      <div class="flex flex-wrap gap-3 items-center">
+        <!-- 统计按钮 -->
+        <Button
+          variant="primary"
+          size="sm"
+          :icon="BarChart3"
           :title="t('financial.budget.statsAndTrends')"
           @click="navigateToStats"
-        >
-          <BarChart3 class="wh-4" />
-        </button>
-      </div>
+        />
 
-      <div class="filter-flex-wrap">
+        <!-- 状态过滤 -->
         <select
           v-model="filters.isActive"
-          class="screening-filtering-select"
+          class="px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
         >
           <option value="">
             {{ t('common.actions.all') }}{{ t('common.status.status') }}
@@ -160,35 +141,34 @@ defineExpose({
             {{ t('common.status.inactive') }}
           </option>
         </select>
-      </div>
 
-      <!-- <div class="filter-flex-wrap"> -->
-      <!--   <label class="show-on-desktop text-sm text-gray-700 font-medium"> {{ t('common.status.completed') }}{{ -->
-      <!--     t('common.status.status') }} </label> -->
-      <!--   <select -->
-      <!--     v-model="filters.completion" -->
-      <!--     class="border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" -->
-      <!--   > -->
-      <!--     <option value=""> -->
-      <!--       {{ t('common.actions.all') }} -->
-      <!--     </option> -->
-      <!--     <option value="normal"> -->
-      <!--       {{ t('common.status.normal') }} -->
-      <!--     </option> -->
-      <!--     <option value="warning"> -->
-      <!--       {{ t('common.status.warning') }}(>70%) -->
-      <!--     </option> -->
-      <!--     <option value="exceeded"> -->
-      <!--       {{ t('common.status.exceeded') }} -->
-      <!--     </option> -->
-      <!--   </select> -->
-      <!-- </div> -->
+        <!-- <div class="filter-flex-wrap"> -->
+        <!--   <label class="show-on-desktop text-sm text-gray-700 font-medium"> {{ t('common.status.completed') }}{{ -->
+        <!--     t('common.status.status') }} </label> -->
+        <!--   <select -->
+        <!--     v-model="filters.completion" -->
+        <!--     class="border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" -->
+        <!--   > -->
+        <!--     <option value=""> -->
+        <!--       {{ t('common.actions.all') }} -->
+        <!--     </option> -->
+        <!--     <option value="normal"> -->
+        <!--       {{ t('common.status.normal') }} -->
+        <!--     </option> -->
+        <!--     <option value="warning"> -->
+        <!--       {{ t('common.status.warning') }}(>70%) -->
+        <!--     </option> -->
+        <!--     <option value="exceeded"> -->
+        <!--       {{ t('common.status.exceeded') }} -->
+        <!--     </option> -->
+        <!--   </select> -->
+        <!-- </div> -->
 
-      <template v-if="showMoreFilters">
-        <div class="filter-flex-wrap">
+        <!-- 更多过滤器 -->
+        <template v-if="showMoreFilters">
           <select
             v-model="filters.repeatPeriodType"
-            class="screening-filtering-select"
+            class="px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
           >
             <option value="">
               {{ t('common.actions.all') }}
@@ -212,12 +192,10 @@ defineExpose({
               {{ t('date.repeat.custom') }}
             </option>
           </select>
-        </div>
 
-        <div class="filter-flex-wrap">
           <select
             v-model="filters.category"
-            class="screening-filtering-select"
+            class="px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
           >
             <option :value="null">
               {{ t('categories.allCategory') }}
@@ -226,38 +204,37 @@ defineExpose({
               {{ t(`common.categories.${lowercaseFirstLetter(category)}`) }}
             </option>
           </select>
-        </div>
-      </template>
+        </template>
 
-      <div class="filter-button-group">
-        <button
-          class="screening-filtering-select"
-          :title="t('common.actions.moreFilters')"
-          @click="toggleFilters"
-        >
-          <MoreHorizontal class="wh-4 mr-1" />
-        </button>
-        <button
-          class="screening-filtering-select"
-          :title="t('common.actions.reset')"
-          @click="resetFilters"
-        >
-          <RotateCcw class="wh-4 mr-1" />
-        </button>
+        <!-- 操作按钮 -->
+        <div class="flex gap-2 ml-auto">
+          <Button
+            variant="secondary"
+            size="sm"
+            :icon="MoreHorizontal"
+            :title="t('common.actions.moreFilters')"
+            @click="toggleFilters"
+          />
+          <Button
+            variant="secondary"
+            size="sm"
+            :icon="RotateCcw"
+            :title="t('common.actions.reset')"
+            @click="resetFilters"
+          />
+        </div>
       </div>
     </div>
 
     <!-- 加载状态 -->
-    <div v-if="loading" class="loading-container">
+    <div v-if="loading" class="flex items-center justify-center h-24 text-gray-500 dark:text-gray-400">
       {{ t('common.loading') }}
     </div>
 
     <!-- 空状态 -->
-    <div v-else-if="pagination.paginatedItems.value.length === 0" class="empty-state-container">
-      <div class="empty-state-icon">
-        <i class="icon-target" />
-      </div>
-      <div class="empty-state-text">
+    <div v-else-if="pagination.paginatedItems.value.length === 0" class="flex flex-col items-center justify-center h-24 text-gray-400 dark:text-gray-500 gap-2">
+      <Target :size="32" class="opacity-50" />
+      <div class="text-sm">
         {{ pagination.totalItems.value === 0 ? t('financial.messages.noBudget') : t('messages.noPatternResult') }}
       </div>
     </div>
@@ -265,122 +242,122 @@ defineExpose({
     <!-- 预算网格 -->
     <div
       v-else
-      class="budget-grid"
-      :class="gridLayoutClass"
+      class="grid gap-4 mb-4"
+      :class="mediaQueries.isMobile ? 'grid-cols-1' : (pagination.paginatedItems.value.length === 1 ? 'grid-cols-1 max-w-[50%]' : 'grid-cols-2')"
     >
-      <div
+      <Card
         v-for="budget in decoratedBudgets"
         :key="budget.serialNum"
-        class="budget-card"
-        :class="[
-          { 'budget-card-inactive': !budget.isActive },
-        ]" :style="{
-          borderColor: budget.color || 'var(--color-gray-200)',
+        padding="md"
+        hoverable
+        class="relative overflow-hidden transition-all duration-300"
+        :class="{
+          'opacity-60': !budget.isActive,
+        }"
+        :style="{
+          borderLeftColor: budget.color || '#e5e7eb',
+          borderLeftWidth: '4px',
         }"
       >
         <!-- Header -->
-        <div class="budget-header">
-          <!-- 左侧预算名称 -->
-          <div class="budget-info">
-            <span class="budget-name">{{ budget.name }}</span>
+        <div class="flex items-start justify-between mb-3 gap-2">
+          <!-- 预算名称和状态 -->
+          <div class="flex items-center gap-2 flex-1 min-w-0">
+            <span class="font-semibold text-gray-900 dark:text-white truncate">{{ budget.name }}</span>
             <!-- 状态标签 -->
-            <span v-if="!budget.isActive" class="status-tag status-inactive">
+            <span v-if="!budget.isActive" class="text-[11px] px-1.5 py-0.5 rounded-md font-medium whitespace-nowrap bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400">
               {{ t('common.status.inactive') }}
             </span>
-            <span v-else-if="isOverBudget(budget)" class="status-tag status-exceeded">
+            <span v-else-if="isOverBudget(budget)" class="text-[11px] px-1.5 py-0.5 rounded-md font-medium whitespace-nowrap bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400">
               {{ t('common.status.exceeded') }}
             </span>
-            <span
-              v-else-if="isLowOnBudget(budget)"
-              class="status-tag status-warning"
-            >
+            <span v-else-if="isLowOnBudget(budget)" class="text-[11px] px-1.5 py-0.5 rounded-md font-medium whitespace-nowrap bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400">
               {{ t('common.status.warning') }}
             </span>
           </div>
 
-          <!-- 右侧按钮组 -->
-          <div class="budget-actions">
+          <!-- 操作按钮组 -->
+          <div class="flex gap-1 shrink-0">
             <button
-              class="money-option-btn money-option-ben-hover"
+              class="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:border-yellow-500 hover:text-yellow-600 dark:hover:text-yellow-400 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 transition-all active:scale-95"
               :title="budget.isActive ? t('common.status.stop') : t('common.status.enabled')"
               @click="emit('toggleActive', budget.serialNum, !budget.isActive)"
             >
-              <LucideBan v-if="budget.isActive" class="wh-4" />
-              <LucideStopCircle v-else class="wh-4" />
+              <Ban v-if="budget.isActive" :size="16" />
+              <StopCircle v-else :size="16" />
             </button>
-            <!-- 禁用状态的预算不显示编辑、删除按钮 -->
             <template v-if="budget.isActive">
               <button
-                class="money-option-btn money-option-edit-hover"
+                class="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:border-blue-500 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all active:scale-95"
                 :title="t('common.actions.edit')"
                 @click="emit('edit', budget)"
               >
-                <LucideEdit class="wh-4" />
+                <Edit :size="16" />
               </button>
               <button
-                class="money-option-btn money-option-trash-hover"
+                class="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:border-red-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all active:scale-95"
                 :title="t('common.actions.delete')"
                 @click="emit('delete', budget.serialNum)"
               >
-                <LucideTrash class="wh-4" />
+                <Trash :size="16" />
               </button>
             </template>
           </div>
         </div>
 
         <!-- Period -->
-        <div class="budget-period">
-          <LucideRepeat class="period-icon" />
+        <div class="text-xs text-gray-500 dark:text-gray-400 mb-2 flex gap-1.5 items-center justify-end">
+          <Repeat :size="14" />
           <span>{{ getRepeatTypeName(budget.repeatPeriod) }}</span>
         </div>
 
         <!-- Progress -->
-        <div class="budget-progress">
-          <div class="progress-header">
-            <span class="used-amount">{{ formatCurrency(budget.usedAmount) }}</span>
-            <span class="total-amount">/ {{ formatCurrency(budget.amount) }}</span>
-            <div class="remaining-amount-container">
+        <div class="mb-3">
+          <div class="flex items-baseline gap-2 mb-2">
+            <span class="text-xl font-bold text-gray-900 dark:text-white tracking-tight">{{ formatCurrency(budget.usedAmount) }}</span>
+            <span class="text-sm text-gray-500 dark:text-gray-400">/ {{ formatCurrency(budget.amount) }}</span>
+            <div class="ml-auto px-2.5 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-700">
               <div
-                class="remaining-amount" :class="[
-                  shouldHighlightRed(budget) ? 'remaining-amount-error' : 'remaining-amount-success',
-                ]"
+                class="text-[15px] font-semibold"
+                :class="shouldHighlightRed(budget) ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'"
               >
                 {{ formatCurrency(getRemainingAmount(budget)) }}
               </div>
             </div>
           </div>
-          <div class="progress-bar">
+          <div class="mb-1.5 rounded-lg bg-gray-200 dark:bg-gray-700 h-2 w-full overflow-hidden">
             <div
-              class="progress-fill" :style="{ width: `${getProgressPercent(budget)}%` }"
-              :class="isOverBudget(budget) ? 'progress-fill-error' : 'progress-fill-primary'"
+              class="h-full transition-all duration-300"
+              :style="{ width: `${getProgressPercent(budget)}%` }"
+              :class="isOverBudget(budget) ? 'bg-red-500 dark:bg-red-600' : 'bg-blue-500 dark:bg-blue-600'"
             />
           </div>
-          <div class="progress-percentage" :class="shouldHighlightRed(budget) ? 'progress-percentage-error' : 'progress-percentage-normal'">
+          <div class="text-sm text-center font-semibold" :class="shouldHighlightRed(budget) ? 'text-red-600 dark:text-red-400' : 'text-gray-600 dark:text-gray-400'">
             {{ getProgressPercent(budget) }}%
           </div>
         </div>
 
         <!-- Info -->
-        <div class="budget-info-section">
-          <div class="info-row">
-            <span class="info-label"> {{ t('categories.category') }} </span>
+        <div class="pt-3 border-t border-gray-200 dark:border-gray-700">
+          <div class="text-[13px] mb-1.5 flex justify-between items-center gap-3">
+            <span class="text-gray-500 dark:text-gray-400 font-medium shrink-0">{{ t('categories.category') }}</span>
             <span
-              class="info-value"
+              class="text-gray-900 dark:text-white font-medium text-right truncate"
               :title="budget.tooltipCategories"
             >
               {{ budget.displayCategories }}
             </span>
           </div>
-          <div v-if="budget.description" class="info-row info-row-last">
-            <span class="info-label">{{ t('common.misc.remark') }}</span>
-            <span class="info-value">{{ budget.description }}</span>
+          <div v-if="budget.description" class="text-[13px] flex justify-between items-center gap-3">
+            <span class="text-gray-500 dark:text-gray-400 font-medium shrink-0">{{ t('common.misc.remark') }}</span>
+            <span class="text-gray-900 dark:text-white font-medium text-right truncate">{{ budget.description }}</span>
           </div>
         </div>
-      </div>
+      </Card>
     </div>
 
     <!-- 分页组件 -->
-    <div v-if="pagination.totalItems.value > pagination.pageSize.value" class="pagination-container">
+    <div v-if="pagination.totalItems.value > pagination.pageSize.value" class="flex justify-center" :class="mediaQueries.isMobile && 'mb-16 pb-4'">
       <Pagination
         :current-page="pagination.currentPage.value"
         :total-pages="pagination.totalPages.value"
@@ -392,473 +369,3 @@ defineExpose({
     </div>
   </div>
 </template>
-
-<style scoped lang="postcss">
-/* Container */
-.budget-container {
-  min-height: 6.25rem;
-}
-
-/* 移动端滚动优化 */
-@media (max-width: 768px) {
-  .budget-container {
-    min-height: auto; /* 移动端允许内容自适应高度 */
-    padding-bottom: 1rem; /* 额外的底部空间 */
-  }
-}
-
-/* Loading and Empty States */
-.loading-container {
-  color: var(--color-gray-600);
-  height: 6.25rem;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.empty-state-container {
-  color: #999;
-  display: flex;
-  flex-direction: column;
-  height: 6.25rem;
-  justify-content: center;
-  align-items: center;
-}
-
-.empty-state-icon {
-  font-size: 0.875rem;
-  margin-bottom: 0.5rem;
-  opacity: 0.5;
-}
-
-.empty-state-text {
-  font-size: 0.875rem;
-}
-
-/* Budget Grid - 优化网格布局 */
-.budget-grid {
-  margin-bottom: 1rem;
-  gap: 1rem;
-  display: grid;
-}
-
-/* 网格布局类 - 响应式设计 */
-.grid-template-columns-mobile-single {
-  grid-template-columns: 1fr;
-}
-
-/* 桌面端单个项目占50%宽度 */
-.grid-template-columns-single-50 {
-  grid-template-columns: 1fr;
-  max-width: 50%;
-}
-
-/* 桌面端布局 */
-.grid-template-columns-320-two-items,
-.grid-template-columns-320-max2 {
-  grid-template-columns: repeat(2, 1fr);
-}
-
-/* 移动端优化 */
-@media (max-width: 768px) {
-  .budget-grid {
-    gap: 0.75rem;
-    margin-bottom: 0.75rem;
-  }
-
-  .grid-template-columns-mobile-single,
-  .grid-template-columns-single-50,
-  .grid-template-columns-320-two-items,
-  .grid-template-columns-320-max2 {
-    grid-template-columns: 1fr;
-    max-width: 100%;
-  }
-}
-
-/* 桌面端优化 */
-@media (min-width: 769px) {
-  .budget-grid {
-    gap: 1rem;
-    margin-bottom: 1rem;
-  }
-
-  .grid-template-columns-single-50 {
-    grid-template-columns: 1fr;
-    max-width: 50%;
-  }
-
-  .grid-template-columns-320-max2 {
-    grid-template-columns: repeat(2, 1fr);
-    max-width: none;
-  }
-}
-
-/* Budget Card - 重新设计为更紧凑美观的卡片 */
-.budget-card {
-  background: linear-gradient(135deg, var(--color-base-100) 0%, var(--color-base-200) 100%);
-  padding: 1rem;
-  border: 1px solid var(--color-primary-soft);
-  border-radius: 0.75rem;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  position: relative;
-  overflow: hidden;
-  box-shadow: var(--shadow-sm);
-}
-
-.budget-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: var(--color-primary-gradient);
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.budget-card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-lg);
-  border-color: var(--color-primary);
-}
-
-.budget-card:hover::before {
-  opacity: 1;
-}
-
-.budget-card-inactive {
-  opacity: 0.6;
-  background: var(--color-gray-100);
-  border-color: var(--color-gray-300);
-}
-
-.budget-card-inactive::before {
-  background: var(--color-gray-400);
-}
-
-/* Budget Header - 更紧凑的布局 */
-.budget-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  margin-bottom: 0.75rem;
-  gap: 0.5rem;
-}
-
-.budget-info {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  flex: 1;
-  min-width: 0;
-}
-
-.budget-name {
-  font-size: 1rem;
-  color: var(--color-base-content);
-  font-weight: 600;
-  line-height: 1.2;
-}
-
-/* Status Tags */
-.status-tag {
-  font-size: 0.6875rem;
-  padding: 0.125rem 0.375rem;
-  border-radius: 0.375rem;
-  font-weight: 500;
-  white-space: nowrap;
-}
-
-.status-inactive {
-  color: var(--color-gray-600);
-  background-color: var(--color-gray-200);
-}
-
-.status-exceeded {
-  color: var(--color-error);
-  background-color: var(--color-error-soft);
-}
-
-.status-warning {
-  color: var(--color-warning);
-  background-color: var(--color-warning-soft);
-}
-
-/* Budget Actions - 更优雅的操作按钮 */
-.budget-actions {
-  display: flex;
-  gap: 0.25rem;
-  flex-shrink: 0;
-}
-
-/* Budget Period - 紧凑布局 */
-.budget-period {
-  font-size: 0.75rem;
-  color: var(--color-gray-500);
-  margin-bottom: 0.5rem;
-  display: flex;
-  gap: 0.375rem;
-  align-items: center;
-  justify-content: flex-end;
-}
-
-.period-icon {
-  color: var(--color-gray-500);
-  height: 0.875rem;
-  width: 0.875rem;
-  flex-shrink: 0;
-}
-
-/* Budget Progress - 优化进度条显示 */
-.budget-progress {
-  margin-bottom: 0.75rem;
-}
-
-.progress-header {
-  display: flex;
-  align-items: baseline;
-  gap: 0.5rem;
-  margin-bottom: 0.5rem;
-}
-
-.used-amount {
-  font-size: 1.25rem;
-  color: var(--color-base-content);
-  font-weight: 700;
-  line-height: 1;
-  letter-spacing: -0.025em;
-}
-
-.total-amount {
-  font-size: 0.875rem;
-  color: var(--color-gray-500);
-}
-
-.remaining-amount-container {
-  margin-left: auto;
-  padding: 0.375rem 0.625rem;
-  border-radius: 0.5rem;
-  background: var(--color-base-200);
-}
-
-.remaining-amount {
-  font-size: 0.9375rem;
-  font-weight: 600;
-}
-
-.remaining-amount-success {
-  color: var(--color-success);
-}
-
-.remaining-amount-error {
-  color: var(--color-error);
-}
-
-.progress-bar {
-  margin-bottom: 0.375rem;
-  border-radius: 0.5rem;
-  background-color: var(--color-gray-200);
-  height: 0.5rem;
-  width: 100%;
-  overflow: hidden;
-}
-
-.progress-fill {
-  height: 100%;
-  transition: width 0.3s ease;
-}
-
-.progress-fill-primary {
-  background-color: var(--color-primary);
-}
-
-.progress-fill-error {
-  background-color: var(--color-error);
-}
-
-.progress-percentage {
-  font-size: 0.875rem;
-  text-align: center;
-  font-weight: 600;
-}
-
-.progress-percentage-normal {
-  color: var(--color-gray-600);
-}
-
-.progress-percentage-error {
-  color: var(--color-error);
-}
-
-/* 操作按钮样式 - 与 AccountList 一致 */
-.money-option-btn {
-  width: 2rem;
-  height: 2rem;
-  border-radius: 0.5rem;
-  border: 1px solid var(--color-gray-200);
-  background: var(--color-base-100);
-  color: var(--color-gray-600);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s ease;
-  cursor: pointer;
-  position: relative;
-  overflow: hidden;
-}
-
-.money-option-btn::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: var(--color-primary);
-  opacity: 0;
-  transition: opacity 0.2s ease;
-}
-
-.money-option-btn:hover {
-  border-color: var(--color-primary);
-  color: var(--color-primary);
-  transform: scale(1.05);
-}
-
-.money-option-btn:hover::before {
-  opacity: 0.1;
-}
-
-.money-option-btn:active {
-  transform: scale(0.95);
-}
-
-.money-option-ben-hover:hover {
-  background-color: var(--color-warning);
-  color: var(--color-warning-content);
-  border-color: var(--color-warning);
-}
-
-.money-option-edit-hover:hover {
-  background-color: var(--color-primary);
-  color: var(--color-primary-content);
-  border-color: var(--color-primary);
-}
-
-.money-option-trash-hover:hover {
-  background-color: var(--color-error);
-  color: var(--color-error-content);
-  border-color: var(--color-error);
-}
-
-/* Budget Info Section - 紧凑布局 */
-.budget-info-section {
-  padding-top: 0.75rem;
-  border-top: 1px solid var(--color-gray-200);
-}
-
-.info-row {
-  font-size: 0.8125rem;
-  margin-bottom: 0.375rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.info-row-last {
-  margin-bottom: 0;
-}
-
-.info-label {
-  color: var(--color-gray-500);
-  font-weight: 500;
-  flex-shrink: 0;
-}
-
-.info-value {
-  color: var(--color-base-content);
-  font-weight: 500;
-  text-align: right;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* Additional utility styles */
-.pagination-container {
-  display: flex;
-  justify-content: center;
-}
-
-/* 移动端分页组件底部安全间距 */
-@media (max-width: 768px) {
-  .pagination-container {
-    margin-bottom: 4rem; /* 为底部导航栏预留空间 */
-    padding-bottom: 1rem; /* 额外的底部内边距 */
-  }
-}
-
-/* 统计按钮组样式 */
-.stats-button-group {
-  display: flex;
-  gap: 8px;
-  margin-right: 16px;
-}
-
-.stats-button {
-  background-color: #1890ff;
-  color: white;
-  font-weight: 500;
-  padding: 8px 12px;
-  min-width: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.stats-button:hover {
-  background-color: #40a9ff;
-}
-
-.filter-button-group {
-  display: flex;
-  gap: 0.25rem;
-}
-
-/* 移动端优化 */
-@media (max-width: 768px) {
-  .budget-card {
-    padding: 0.875rem;
-  }
-
-  .budget-header {
-    margin-bottom: 0.625rem;
-  }
-
-  .budget-name {
-    font-size: 0.9375rem;
-  }
-
-  .money-option-btn {
-    width: 1.75rem;
-    height: 1.75rem;
-  }
-
-  .used-amount {
-    font-size: 1.125rem;
-  }
-
-  .budget-info-section {
-    padding-top: 0.625rem;
-  }
-
-  .info-row {
-    font-size: 0.75rem;
-  }
-
-  .budget-period {
-    font-size: 0.6875rem;
-  }
-}
-</style>
