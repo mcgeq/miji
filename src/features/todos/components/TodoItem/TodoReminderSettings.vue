@@ -149,7 +149,7 @@ function resetToDefaults() {
 </script>
 
 <template>
-  <div class="reminder-settings">
+  <div class="relative">
     <!-- 提醒开关按钮 -->
     <button
       class="todo-btn"
@@ -157,8 +157,8 @@ function resetToDefaults() {
       :title="todo.reminderEnabled ? '编辑提醒设置' : '设置提醒'"
       @click="openModal"
     >
-      <Bell class="icon" :size="14" />
-      <span v-if="todo.reminderEnabled && todo.reminderAdvanceValue" class="advance-info">
+      <Bell class="w-4 h-4" :size="14" />
+      <span v-if="todo.reminderEnabled && todo.reminderAdvanceValue" class="text-xs opacity-90">
         {{ todo.reminderAdvanceValue }}{{ todo.reminderAdvanceUnit === 'minutes' ? '分钟' : todo.reminderAdvanceUnit === 'hours' ? '小时' : '天' }}前
       </span>
     </button>
@@ -199,24 +199,24 @@ function resetToDefaults() {
                 type="checkbox"
                 class="sr-only peer"
               >
-              <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600" />
+              <div class="w-11 h-6 bg-gray-200 dark:bg-gray-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600 dark:peer-checked:bg-blue-500" />
             </label>
-            <span class="text-sm font-medium">启用提醒</span>
+            <span class="text-sm font-medium text-gray-900 dark:text-white">启用提醒</span>
           </div>
 
-          <div v-if="reminderSettings.enabled" class="space-y-4 pl-4 border-l-2 border-blue-600">
+          <div v-if="reminderSettings.enabled" class="space-y-4 pl-4 border-l-2 border-blue-600 dark:border-blue-400">
             <!-- 提前时间设置 -->
             <div class="space-y-2">
-              <label class="block text-sm font-medium">提前提醒时间</label>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">提前提醒时间</label>
               <div class="flex gap-2">
                 <input
                   v-model="reminderSettings.advanceValue"
                   type="number"
                   min="1"
                   max="999"
-                  class="w-24 px-3 py-2 border border-gray-300 rounded-lg text-center"
+                  class="w-24 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-center bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
-                <select v-model="reminderSettings.advanceUnit" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg">
+                <select v-model="reminderSettings.advanceUnit" class="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                   <option v-for="unit in advanceUnits" :key="unit.value" :value="unit.value">
                     {{ unit.label }}
                   </option>
@@ -226,8 +226,8 @@ function resetToDefaults() {
 
             <!-- 提醒频率 -->
             <div class="space-y-2">
-              <label class="block text-sm font-medium">提醒频率</label>
-              <select v-model="reminderSettings.frequency" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">提醒频率</label>
+              <select v-model="reminderSettings.frequency" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                 <option v-for="option in frequencyOptions" :key="option.value" :value="option.value">
                   {{ option.label }}
                 </option>
@@ -236,21 +236,21 @@ function resetToDefaults() {
 
             <!-- 提醒方式（系统合并） -->
             <div class="space-y-2">
-              <label class="block text-sm font-medium">提醒方式</label>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">提醒方式</label>
               <div class="flex gap-3">
                 <label
                   v-for="method in reminderMethods"
                   :key="method.key"
                   class="flex items-center gap-2 px-3 py-2 border rounded-lg cursor-pointer transition-colors"
-                  :class="reminderSettings.methods[method.key] ? 'bg-blue-50 border-blue-600' : 'border-gray-300 hover:border-blue-500'"
+                  :class="reminderSettings.methods[method.key] ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-600 dark:border-blue-400' : 'border-gray-300 dark:border-gray-600 hover:border-blue-500 dark:hover:border-blue-400 bg-white dark:bg-gray-800'"
                 >
                   <input
                     type="checkbox"
                     :checked="reminderSettings.methods[method.key]"
-                    class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                    class="w-4 h-4 text-blue-600 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 dark:focus:ring-blue-400"
                     @change="toggleMethod(method.key)"
                   >
-                  <span class="text-sm">{{ method.label }}</span>
+                  <span class="text-sm text-gray-900 dark:text-white">{{ method.label }}</span>
                 </label>
               </div>
             </div>
@@ -259,32 +259,32 @@ function resetToDefaults() {
 
         <!-- 智能提醒设置 -->
         <div class="space-y-4">
-          <h4 class="text-sm font-semibold text-gray-700">
+          <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300">
             智能提醒
           </h4>
           <div class="space-y-3">
             <div class="flex items-center gap-3">
               <label class="relative inline-flex items-center cursor-pointer">
                 <input v-model="reminderSettings.smartEnabled" type="checkbox" class="sr-only peer">
-                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600" />
+                <div class="w-11 h-6 bg-gray-200 dark:bg-gray-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600 dark:peer-checked:bg-blue-500" />
               </label>
-              <span class="text-sm font-medium">启用智能提醒</span>
+              <span class="text-sm font-medium text-gray-900 dark:text-white">启用智能提醒</span>
             </div>
 
-            <div v-if="reminderSettings.smartEnabled" class="space-y-3 pl-4 border-l-2 border-green-600">
+            <div v-if="reminderSettings.smartEnabled" class="space-y-3 pl-4 border-l-2 border-green-600 dark:border-green-400">
               <label class="flex items-center gap-3 cursor-pointer">
-                <input v-model="reminderSettings.locationBased" type="checkbox" class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
-                <span class="text-sm">基于位置的提醒</span>
+                <input v-model="reminderSettings.locationBased" type="checkbox" class="w-4 h-4 text-blue-600 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 dark:focus:ring-blue-400">
+                <span class="text-sm text-gray-900 dark:text-white">基于位置的提醒</span>
               </label>
 
               <label class="flex items-center gap-3 cursor-pointer">
-                <input v-model="reminderSettings.weatherDependent" type="checkbox" class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
-                <span class="text-sm">天气相关提醒</span>
+                <input v-model="reminderSettings.weatherDependent" type="checkbox" class="w-4 h-4 text-blue-600 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 dark:focus:ring-blue-400">
+                <span class="text-sm text-gray-900 dark:text-white">天气相关提醒</span>
               </label>
 
               <label class="flex items-center gap-3 cursor-pointer">
-                <input v-model="reminderSettings.priorityBoost" type="checkbox" class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
-                <span class="text-sm">高优先级增强提醒</span>
+                <input v-model="reminderSettings.priorityBoost" type="checkbox" class="w-4 h-4 text-blue-600 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 dark:focus:ring-blue-400">
+                <span class="text-sm text-gray-900 dark:text-white">高优先级增强提醒</span>
               </label>
             </div>
           </div>
@@ -294,20 +294,6 @@ function resetToDefaults() {
   </div>
 </template>
 
-<style scoped lang="postcss">
-.reminder-settings {
-  position: relative;
-}
-
-/* 按钮样式现在使用全局 .todo-btn 样式 */
-
-.icon {
-  width: 1rem;
-  height: 1rem;
-}
-
-.advance-info {
-  font-size: 0.7rem;
-  opacity: 0.9;
-}
+<style scoped>
+/* 所有样式已使用 Tailwind CSS 4 */
 </style>

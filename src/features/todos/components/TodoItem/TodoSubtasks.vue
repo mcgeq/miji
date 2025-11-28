@@ -17,7 +17,6 @@ const emit = defineEmits<{
 }>();
 
 const showModal = ref(false);
-const isModalVisible = ref(false);
 const newSubtaskTitle = ref('');
 const editingSubtask = ref<Todo | null>(null);
 const showCreateForm = ref(false);
@@ -37,17 +36,11 @@ const subtaskProgress = computed(() => {
 function openModal() {
   if (props.readonly) return;
   showModal.value = true;
-  // 延迟设置可见性，防止闪烁
-  setTimeout(() => {
-    isModalVisible.value = true;
-  }, 10);
 }
 
 function closeModal() {
-  isModalVisible.value = false;
-  // 延迟关闭，等待动画完成
+  showModal.value = false;
   setTimeout(() => {
-    showModal.value = false;
     newSubtaskTitle.value = '';
     editingSubtask.value = null;
     showCreateForm.value = false;
@@ -105,7 +98,7 @@ function cancelCreate() {
 </script>
 
 <template>
-  <div class="todo-subtasks">
+  <div class="relative">
     <!-- 子任务显示按钮 -->
     <button
       class="todo-btn"
@@ -116,13 +109,13 @@ function cancelCreate() {
       :title="hasSubtasks ? `子任务: ${completedSubtasks}/${subtaskCount} (${subtaskProgress}%)` : '添加子任务'"
       @click="openModal"
     >
-      <ListTodo class="icon" :size="14" />
-      <span class="subtasks-text">
+      <ListTodo class="w-3.5 h-3.5 shrink-0" :size="14" />
+      <span class="whitespace-nowrap overflow-hidden text-ellipsis max-w-16">
         {{ hasSubtasks ? `${completedSubtasks}/${subtaskCount}` : '' }}
       </span>
-      <div v-if="hasSubtasks" class="progress-bar">
+      <div v-if="hasSubtasks" class="absolute bottom-0 left-0 right-0 h-0.5 bg-white/30 dark:bg-gray-700/30 rounded-b-lg">
         <div
-          class="progress-fill"
+          class="h-full bg-green-500 dark:bg-green-400 rounded-b-lg transition-all duration-300"
           :style="{ width: `${subtaskProgress}%` }"
         />
       </div>
@@ -150,7 +143,7 @@ function cancelCreate() {
         <!-- 创建新子任务 -->
         <div v-if="!showCreateForm">
           <button
-            class="w-full flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors"
+            class="w-full flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg hover:border-blue-500 dark:hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors text-gray-700 dark:text-gray-300"
             @click="showCreateSubtaskForm"
           >
             <Plus :size="16" />
@@ -163,18 +156,18 @@ function cancelCreate() {
             v-model="newSubtaskTitle"
             type="text"
             placeholder="输入子任务标题..."
-            class="flex-1 px-3 py-2 border border-gray-300 rounded-lg"
+            class="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             @keyup.enter="createSubtask"
             @keyup.escape="cancelCreate"
           >
           <button
-            class="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-100"
+            class="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
             @click="cancelCreate"
           >
             <X :size="20" />
           </button>
           <button
-            class="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+            class="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 disabled:opacity-50 transition-colors"
             :disabled="!newSubtaskTitle.trim()"
             @click="createSubtask"
           >
@@ -185,8 +178,8 @@ function cancelCreate() {
         <!-- 子任务列表 -->
         <div v-if="hasSubtasks" class="space-y-3">
           <div class="flex items-center justify-between text-sm">
-            <span class="font-medium">子任务列表</span>
-            <span class="text-gray-500">{{ subtaskCount }} 项</span>
+            <span class="font-medium text-gray-900 dark:text-white">子任务列表</span>
+            <span class="text-gray-500 dark:text-gray-400">{{ subtaskCount }} 项</span>
           </div>
 
           <div class="space-y-2">
@@ -201,18 +194,18 @@ function cancelCreate() {
                 <input
                   v-model="editingSubtask.title"
                   type="text"
-                  class="flex-1 px-3 py-2 border border-gray-300 rounded-lg"
+                  class="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   @keyup.enter="saveSubtaskEdit"
                   @keyup.escape="cancelEdit"
                 >
                 <button
-                  class="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  class="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 transition-colors"
                   @click="saveSubtaskEdit"
                 >
                   <Check :size="20" />
                 </button>
                 <button
-                  class="p-2 border border-gray-300 rounded-lg hover:bg-gray-100"
+                  class="p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                   @click="cancelEdit"
                 >
                   <X :size="20" />
@@ -230,8 +223,8 @@ function cancelCreate() {
                 </button>
 
                 <span
-                  class="flex-1 cursor-pointer"
-                  :class="{ 'line-through text-gray-500': subtask.status === 'Completed' }"
+                  class="flex-1 cursor-pointer text-gray-900 dark:text-white"
+                  :class="{ 'line-through text-gray-500 dark:text-gray-400': subtask.status === 'Completed' }"
                   @dblclick="editSubtask(subtask)"
                 >
                   {{ subtask.title }}
@@ -239,14 +232,14 @@ function cancelCreate() {
 
                 <div class="flex items-center gap-1">
                   <button
-                    class="p-2 rounded-lg hover:bg-gray-200 text-gray-600"
+                    class="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400 transition-colors"
                     title="编辑"
                     @click="editSubtask(subtask)"
                   >
                     <Edit :size="16" />
                   </button>
                   <button
-                    class="p-2 rounded-lg hover:bg-red-50 text-red-600 disabled:opacity-30"
+                    class="p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400 disabled:opacity-30 transition-colors"
                     title="删除"
                     @click="deleteSubtask(subtask)"
                   >
@@ -259,13 +252,13 @@ function cancelCreate() {
         </div>
 
         <!-- 空状态 -->
-        <div v-else class="text-center py-8 text-gray-400">
+        <div v-else class="text-center py-8 text-gray-400 dark:text-gray-500">
           <ListTodo class="mx-auto mb-2" :size="48" />
           <p class="text-sm">
             还没有子任务
           </p>
           <p class="text-xs mt-1">
-            点击"添加子任务"开始创建
+            点击“添加子任务”开始创建
           </p>
         </div>
       </div>
@@ -273,38 +266,6 @@ function cancelCreate() {
   </div>
 </template>
 
-<style scoped lang="postcss">
-.todo-subtasks {
-  position: relative;
-}
-
-.icon {
-  width: 0.875rem;
-  height: 0.875rem;
-  flex-shrink: 0;
-}
-
-.subtasks-text {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 4rem;
-}
-
-.progress-bar {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: rgba(255, 255, 255, 0.3);
-  border-radius: 0 0 0.5rem 0.5rem;
-}
-
-.progress-fill {
-  height: 100%;
-  background: var(--color-success);
-  border-radius: 0 0 0.5rem 0.5rem;
-  transition: width 0.3s ease;
-}
+<style scoped>
+/* 所有样式已使用 Tailwind CSS 4 */
 </style>
