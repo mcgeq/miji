@@ -14,7 +14,6 @@ const emit = defineEmits<{
 }>();
 
 const showModal = ref(false);
-const isModalVisible = ref(false);
 const editingLocation = ref(props.location || '');
 const showLocationPicker = ref(false);
 
@@ -52,19 +51,11 @@ function openModal() {
   if (props.readonly) return;
   editingLocation.value = props.location || '';
   showModal.value = true;
-  // 延迟设置可见性，防止闪烁
-  setTimeout(() => {
-    isModalVisible.value = true;
-  }, 10);
 }
 
 function closeModal() {
-  isModalVisible.value = false;
-  // 延迟关闭，等待动画完成
-  setTimeout(() => {
-    showModal.value = false;
-    showLocationPicker.value = false;
-  }, 200);
+  showModal.value = false;
+  showLocationPicker.value = false;
 }
 
 function saveLocation() {
@@ -110,7 +101,7 @@ async function getCurrentLocation() {
 </script>
 
 <template>
-  <div class="todo-location">
+  <div class="relative">
     <!-- 位置显示按钮 -->
     <button
       class="todo-btn"
@@ -121,8 +112,8 @@ async function getCurrentLocation() {
       :title="hasLocation ? `位置: ${props.location}` : '设置位置'"
       @click="openModal"
     >
-      <MapPin class="icon" :size="14" />
-      <span class="location-text">{{ locationDisplay }}</span>
+      <MapPin class="w-3.5 h-3.5 shrink-0" :size="14" />
+      <span class="whitespace-nowrap overflow-hidden text-ellipsis max-w-24">{{ locationDisplay }}</span>
     </button>
 
     <!-- 位置设置模态框 -->
@@ -138,17 +129,17 @@ async function getCurrentLocation() {
       <div class="space-y-6">
         <!-- 位置输入 -->
         <div class="space-y-2">
-          <label class="block text-sm font-medium">位置名称</label>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">位置名称</label>
           <div class="flex gap-2">
             <input
               v-model="editingLocation"
               type="text"
               placeholder="输入位置名称..."
-              class="flex-1 px-3 py-2 border border-gray-300 rounded-lg"
+              class="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               maxlength="100"
             >
             <button
-              class="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-100 disabled:opacity-50"
+              class="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 transition-colors"
               :disabled="!editingLocation"
               title="清空位置"
               @click="clearLocation"
@@ -160,7 +151,7 @@ async function getCurrentLocation() {
 
         <!-- 获取当前位置 -->
         <button
-          class="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          class="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 transition-colors"
           @click="getCurrentLocation"
         >
           <Navigation :size="16" />
@@ -170,9 +161,9 @@ async function getCurrentLocation() {
         <!-- 常用位置 -->
         <div class="space-y-3">
           <div class="flex items-center justify-between">
-            <label class="text-sm font-medium">常用位置</label>
+            <label class="text-sm font-medium text-gray-700 dark:text-gray-300">常用位置</label>
             <button
-              class="text-sm text-blue-600 hover:text-blue-700"
+              class="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
               @click="openLocationPicker"
             >
               {{ showLocationPicker ? '收起' : '展开' }}
@@ -184,7 +175,7 @@ async function getCurrentLocation() {
               v-for="locationOption in commonLocations"
               :key="locationOption"
               class="px-3 py-2 text-sm border rounded-lg transition-colors"
-              :class="editingLocation === locationOption ? 'bg-blue-600 text-white border-blue-600' : 'bg-white border-gray-300 hover:border-blue-500'"
+              :class="editingLocation === locationOption ? 'bg-blue-600 text-white border-blue-600' : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 hover:border-blue-500 dark:hover:border-blue-400 text-gray-900 dark:text-gray-100'"
               @click="selectLocation(locationOption)"
             >
               {{ locationOption }}
@@ -193,11 +184,11 @@ async function getCurrentLocation() {
         </div>
 
         <!-- 位置预览 -->
-        <div v-if="editingLocation" class="p-3 bg-gray-100 dark:bg-gray-800 rounded-lg">
-          <label class="block text-sm font-medium mb-2">位置预览:</label>
+        <div v-if="editingLocation" class="p-3 bg-gray-100 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">位置预览:</label>
           <div class="flex items-center gap-2">
-            <MapPin class="w-4 h-4 text-blue-600" />
-            <span class="font-medium">{{ editingLocation }}</span>
+            <MapPin class="w-4 h-4 text-blue-600 dark:text-blue-400" />
+            <span class="font-medium text-gray-900 dark:text-white">{{ editingLocation }}</span>
           </div>
         </div>
       </div>
@@ -205,21 +196,6 @@ async function getCurrentLocation() {
   </div>
 </template>
 
-<style scoped lang="postcss">
-.todo-location {
-  position: relative;
-}
-
-.icon {
-  width: 0.875rem;
-  height: 0.875rem;
-  flex-shrink: 0;
-}
-
-.location-text {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 6rem;
-}
+<style scoped>
+/* 所有样式已使用 Tailwind CSS 4 */
 </style>

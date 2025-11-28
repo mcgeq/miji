@@ -14,7 +14,6 @@ const emit = defineEmits<{
 }>();
 
 const showModal = ref(false);
-const isModalVisible = ref(false);
 const editingMinutes = ref(props.estimateMinutes || 0);
 const editingHours = ref(0);
 const editingDays = ref(0);
@@ -82,18 +81,10 @@ function openModal() {
   if (props.readonly) return;
   parseTime(props.estimateMinutes || 0);
   showModal.value = true;
-  // 延迟设置可见性，防止闪烁
-  setTimeout(() => {
-    isModalVisible.value = true;
-  }, 10);
 }
 
 function closeModal() {
-  isModalVisible.value = false;
-  // 延迟关闭，等待动画完成
-  setTimeout(() => {
-    showModal.value = false;
-  }, 200);
+  showModal.value = false;
 }
 
 function saveEstimate() {
@@ -123,7 +114,7 @@ watch([editingDays, editingHours, editingMinutes], validateInput);
 </script>
 
 <template>
-  <div class="todo-estimate">
+  <div class="relative">
     <!-- 时间估算显示按钮 -->
     <button
       class="todo-btn"
@@ -134,7 +125,7 @@ watch([editingDays, editingHours, editingMinutes], validateInput);
       :title="hasEstimate ? `时间估算: ${formatTime(props.estimateMinutes!)}` : '设置时间估算'"
       @click="openModal"
     >
-      <Clock class="icon" :size="14" />
+      <Clock class="w-3.5 h-3.5 shrink-0" :size="14" />
     </button>
 
     <!-- 时间估算设置模态框 -->
@@ -150,36 +141,36 @@ watch([editingDays, editingHours, editingMinutes], validateInput);
       <div class="space-y-6">
         <!-- 时间输入 -->
         <div class="space-y-3">
-          <label class="block text-sm font-medium">预计完成时间</label>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">预计完成时间</label>
           <div class="grid grid-cols-3 gap-4">
             <div>
-              <label class="block text-xs text-gray-500 mb-1">天</label>
+              <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">天</label>
               <input
                 v-model.number="editingDays"
                 type="number"
                 min="0"
                 max="365"
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-center"
+                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-center bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
             </div>
             <div>
-              <label class="block text-xs text-gray-500 mb-1">小时</label>
+              <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">小时</label>
               <input
                 v-model.number="editingHours"
                 type="number"
                 min="0"
                 max="23"
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-center"
+                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-center bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
             </div>
             <div>
-              <label class="block text-xs text-gray-500 mb-1">分钟</label>
+              <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">分钟</label>
               <input
                 v-model.number="editingMinutes"
                 type="number"
                 min="0"
                 max="59"
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-center"
+                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-center bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
             </div>
           </div>
@@ -187,13 +178,13 @@ watch([editingDays, editingHours, editingMinutes], validateInput);
 
         <!-- 快速选择 -->
         <div class="space-y-3">
-          <label class="block text-sm font-medium">快速选择</label>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">快速选择</label>
           <div class="grid grid-cols-2 gap-2">
             <button
               v-for="estimate in quickEstimates"
               :key="estimate.minutes"
               class="px-3 py-2 text-sm border rounded-lg transition-colors"
-              :class="totalMinutes === estimate.minutes ? 'bg-blue-600 text-white border-blue-600' : 'bg-white border-gray-300 hover:border-blue-500'"
+              :class="totalMinutes === estimate.minutes ? 'bg-blue-600 text-white border-blue-600' : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 hover:border-blue-500 dark:hover:border-blue-400 text-gray-900 dark:text-gray-100'"
               @click="setQuickEstimate(estimate.minutes)"
             >
               {{ estimate.label }}
@@ -203,37 +194,37 @@ watch([editingDays, editingHours, editingMinutes], validateInput);
 
         <!-- 时间预览 -->
         <div class="space-y-2">
-          <label class="block text-sm font-medium">时间预览:</label>
-          <div class="flex items-center gap-2 p-3 bg-gray-100 dark:bg-gray-800 rounded-lg">
-            <Clock class="w-4 h-4 text-blue-600" />
-            <span class="font-medium">{{ totalMinutes > 0 ? formatTime(totalMinutes) : '未设置时间' }}</span>
-            <span class="text-sm text-gray-500">({{ totalMinutes }}分钟)</span>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">时间预览:</label>
+          <div class="flex items-center gap-2 p-3 bg-gray-100 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+            <Clock class="w-4 h-4 text-blue-600 dark:text-blue-400" />
+            <span class="font-medium text-gray-900 dark:text-white">{{ totalMinutes > 0 ? formatTime(totalMinutes) : '未设置时间' }}</span>
+            <span class="text-sm text-gray-500 dark:text-gray-400">({{ totalMinutes }}分钟)</span>
           </div>
         </div>
 
         <!-- 时间统计 -->
-        <div v-if="totalMinutes > 0" class="grid grid-cols-3 gap-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+        <div v-if="totalMinutes > 0" class="grid grid-cols-3 gap-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-100 dark:border-blue-800/30">
           <div class="text-center">
-            <div class="text-xs text-gray-500 mb-1">
+            <div class="text-xs text-gray-500 dark:text-gray-400 mb-1">
               总时间
             </div>
-            <div class="text-sm font-semibold">
+            <div class="text-sm font-semibold text-gray-900 dark:text-white">
               {{ formatTime(totalMinutes) }}
             </div>
           </div>
           <div class="text-center">
-            <div class="text-xs text-gray-500 mb-1">
+            <div class="text-xs text-gray-500 dark:text-gray-400 mb-1">
               工作日
             </div>
-            <div class="text-sm font-semibold">
+            <div class="text-sm font-semibold text-gray-900 dark:text-white">
               {{ Math.ceil(totalMinutes / 480) }}天
             </div>
           </div>
           <div class="text-center">
-            <div class="text-xs text-gray-500 mb-1">
+            <div class="text-xs text-gray-500 dark:text-gray-400 mb-1">
               总分钟
             </div>
-            <div class="text-sm font-semibold">
+            <div class="text-sm font-semibold text-gray-900 dark:text-white">
               {{ totalMinutes }}分钟
             </div>
           </div>
@@ -243,14 +234,6 @@ watch([editingDays, editingHours, editingMinutes], validateInput);
   </div>
 </template>
 
-<style scoped lang="postcss">
-.todo-estimate {
-  position: relative;
-}
-
-.icon {
-  width: 0.875rem;
-  height: 0.875rem;
-  flex-shrink: 0;
-}
+<style scoped>
+/* 所有样式已使用 Tailwind CSS 4 */
 </style>
