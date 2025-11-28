@@ -112,7 +112,7 @@ function save() {
     <div class="space-y-4">
       <!-- Repeat Type -->
       <div>
-        <label class="form-label">
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
           {{ t('todos.repeat.title') }}
         </label>
         <Select
@@ -125,7 +125,7 @@ function save() {
 
       <!-- Daily -->
       <div v-if="form.type === 'Daily'" class="space-y-2">
-        <label class="form-label">
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
           {{ t('todos.repeat.labels.daily') }}
         </label>
         <Input
@@ -139,7 +139,7 @@ function save() {
       <!-- Weekly -->
       <div v-if="form.type === 'Weekly'" class="space-y-3">
         <div>
-          <label class="form-label">
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             {{ t('todos.repeat.labels.weekly') }}
           </label>
           <Input
@@ -162,7 +162,7 @@ function save() {
 
       <!-- Monthly -->
       <div v-if="form.type === 'Monthly'" class="space-y-3">
-        <label class="form-label">
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
           {{ t('todos.repeat.labels.monthly') }}
         </label>
         <Input
@@ -180,7 +180,7 @@ function save() {
 
       <!-- Yearly -->
       <div v-if="form.type === 'Yearly'" class="space-y-3">
-        <label class="form-label">
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
           {{ t('todos.repeat.labels.yearly') }}
         </label>
         <Input
@@ -203,7 +203,7 @@ function save() {
 
       <!-- Custom -->
       <div v-if="form.type === 'Custom'" class="space-y-2">
-        <label class="form-label">
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
           {{ t('todos.repeat.types.custom') }}
         </label>
         <Input
@@ -217,13 +217,6 @@ function save() {
   </Modal>
 </template>
 
-<style scoped lang="postcss">
-/* Form Label */
-.form-label {
-  display: block;
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--color-base-content, #374151);
-  margin-bottom: 0.25rem;
-}
+<style scoped>
+/* 所有样式已使用 Tailwind CSS 4 */
 </style>
