@@ -866,12 +866,12 @@ watch(
             <button
               v-if="!isReadonlyMode"
               type="button"
-              class="btn-add-ledger btn-icon-only"
+              class="w-8 h-8 flex items-center justify-center rounded-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:border-blue-500 dark:hover:border-blue-400 transition-all"
               :title="showLedgerSelector ? '收起' : '选择账本'"
               @click="showLedgerSelector = !showLedgerSelector"
             >
-              <LucideChevronDown v-if="!showLedgerSelector" />
-              <LucideChevronUp v-else />
+              <LucideChevronDown v-if="!showLedgerSelector" class="w-4 h-4" />
+              <LucideChevronUp v-else class="w-4 h-4" />
             </button>
           </div>
         </div>
@@ -940,12 +940,12 @@ watch(
               <button
                 v-if="!isReadonlyMode"
                 type="button"
-                class="btn-add-member btn-icon-only"
+                class="w-8 h-8 flex items-center justify-center rounded-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:border-blue-500 dark:hover:border-blue-400 transition-all"
                 :title="showMemberSelector ? '收起' : '选择成员'"
                 @click="showMemberSelector = !showMemberSelector"
               >
-                <LucideChevronDown v-if="!showMemberSelector" />
-                <LucideChevronUp v-else />
+                <LucideChevronDown v-if="!showMemberSelector" class="w-4 h-4" />
+                <LucideChevronUp v-else class="w-4 h-4" />
               </button>
             </div>
           </div>
@@ -966,21 +966,21 @@ watch(
               <button
                 v-if="availableMembers.length > 0"
                 type="button"
-                class="btn-quick"
+                class="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
                 title="全选成员"
                 @click="selectAllMembers"
               >
-                <LucideUserPlus class="icon-sm" />
+                <LucideUserPlus class="w-4 h-4" />
                 全选
               </button>
               <button
                 v-if="selectedMembers.length > 0"
                 type="button"
-                class="btn-quick"
+                class="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                 title="清空成员"
                 @click="clearMemberSelection"
               >
-                <LucideX class="icon-sm" />
+                <LucideX class="w-4 h-4" />
                 清空
               </button>
               <button type="button" @click="showMemberSelector = false">
