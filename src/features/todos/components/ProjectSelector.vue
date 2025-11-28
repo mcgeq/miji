@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Folder, Plus, Search, X } from 'lucide-vue-next';
 import { Modal } from '@/components/ui';
+import { ProjectDb } from '@/services/projects';
 import type { Projects } from '@/schema/todos';
 
 const props = defineProps<{
@@ -17,39 +18,33 @@ const emit = defineEmits<{
 // 搜索关键词
 const searchQuery = ref('');
 
-// Mock 项目数据 - 实际应该从 store 或 API 获取
-const availableProjects = ref<Projects[]>([
-  {
-    serialNum: 'P001',
-    name: '工作项目',
-    description: '工作相关任务',
-    ownerId: 'U123',
-    color: '#3B82F6',
-    isArchived: false,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    serialNum: 'P002',
-    name: '个人项目',
-    description: '个人学习和成长',
-    ownerId: 'U123',
-    color: '#10B981',
-    isArchived: false,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    serialNum: 'P003',
-    name: '家庭事务',
-    description: '家庭相关任务',
-    ownerId: 'U123',
-    color: '#F59E0B',
-    isArchived: false,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-]);
+// 从后端获取项目数据
+const availableProjects = ref<Projects[]>([]);
+const loading = ref(false);
+const error = ref<string | null>(null);
+
+// 加载项目列表
+async function loadProjects() {
+  loading.value = true;
+  error.value = null;
+  try {
+    const projects = await ProjectDb.listProjects();
+    // 只显示未归档的项目
+    availableProjects.value = projects.filter(p => !p.isArchived);
+  } catch (err) {
+    error.value = '加载项目失败';
+    console.error('加载项目失败:', err);
+  } finally {
+    loading.value = false;
+  }
+}
+
+// 监听 open 属性，当打开时加载数据
+watch(() => props.open, isOpen => {
+  if (isOpen && availableProjects.value.length === 0) {
+    loadProjects();
+  }
+});
 
 // 筛选项目
 const filteredProjects = computed(() => {
@@ -132,8 +127,29 @@ function handleClose() {
         </div>
       </div>
 
+      <!-- 加载状态 -->
+      <div v-if="loading" class="text-center py-12 text-gray-400 dark:text-gray-500">
+        <div class="animate-spin w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-3" />
+        <p class="text-sm">
+          加载项目中...
+        </p>
+      </div>
+
+      <!-- 错误状态 -->
+      <div v-else-if="error" class="text-center py-12">
+        <p class="text-sm text-red-600 dark:text-red-400 mb-4">
+          {{ error }}
+        </p>
+        <button
+          class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          @click="loadProjects"
+        >
+          重新加载
+        </button>
+      </div>
+
       <!-- 项目列表 -->
-      <div class="space-y-2">
+      <div v-else class="space-y-2">
         <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300">
           可选项目 ({{ filteredProjects.length }})
         </h4>

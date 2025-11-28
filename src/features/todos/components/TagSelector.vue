@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Plus, Search, Tag, X } from 'lucide-vue-next';
 import { Modal } from '@/components/ui';
+import { TagDb } from '@/services/tags';
 import type { Tags } from '@/schema/tags';
 
 const props = defineProps<{
@@ -17,44 +18,32 @@ const emit = defineEmits<{
 // 搜索关键词
 const searchQuery = ref('');
 
-// Mock 标签数据 - 实际应该从 store 或 API 获取
-const availableTags = ref<Tags[]>([
-  {
-    serialNum: 'T001',
-    name: '重要',
-    description: '重要的任务',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    serialNum: 'T002',
-    name: '紧急',
-    description: '紧急的任务',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    serialNum: 'T003',
-    name: '学习',
-    description: '学习相关',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    serialNum: 'T004',
-    name: '工作',
-    description: '工作相关',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    serialNum: 'T005',
-    name: '个人',
-    description: '个人事务',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-]);
+// 从后端获取标签数据
+const availableTags = ref<Tags[]>([]);
+const loading = ref(false);
+const error = ref<string | null>(null);
+
+// 加载标签列表
+async function loadTags() {
+  loading.value = true;
+  error.value = null;
+  try {
+    const tags = await TagDb.listTags();
+    availableTags.value = tags;
+  } catch (err) {
+    error.value = '加载标签失败';
+    console.error('加载标签失败:', err);
+  } finally {
+    loading.value = false;
+  }
+}
+
+// 监听 open 属性，当打开时加载数据
+watch(() => props.open, isOpen => {
+  if (isOpen && availableTags.value.length === 0) {
+    loadTags();
+  }
+});
 
 // 筛选标签
 const filteredTags = computed(() => {
@@ -159,8 +148,29 @@ function getTagColor(tagId: string): string {
         </div>
       </div>
 
+      <!-- 加载状态 -->
+      <div v-if="loading" class="text-center py-12 text-gray-400 dark:text-gray-500">
+        <div class="animate-spin w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-3" />
+        <p class="text-sm">
+          加载标签中...
+        </p>
+      </div>
+
+      <!-- 错误状态 -->
+      <div v-else-if="error" class="text-center py-12">
+        <p class="text-sm text-red-600 dark:text-red-400 mb-4">
+          {{ error }}
+        </p>
+        <button
+          class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          @click="loadTags"
+        >
+          重新加载
+        </button>
+      </div>
+
       <!-- 标签列表 -->
-      <div class="space-y-2">
+      <div v-else class="space-y-2">
         <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300">
           可选标签 ({{ filteredTags.length }})
         </h4>
