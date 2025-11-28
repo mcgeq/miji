@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import ConfirmDialog from '@/components/common/ConfirmDialogCompat.vue';
+import { AlertTriangle, Calendar, Info } from 'lucide-vue-next';
 import PresetButtons from '@/components/common/PresetButtons.vue';
-import { Modal } from '@/components/ui';
+import { Badge, Card, ConfirmDialog, Modal } from '@/components/ui';
 import FormRow from '@/components/ui/FormRow.vue';
 import { usePeriodStore } from '@/stores/periodStore';
 import { DateUtils } from '@/utils/date';
@@ -391,7 +391,7 @@ defineExpose({
   <Modal
     :open="true"
     :title="isEditing ? '编辑经期记录' : '添加经期记录'"
-    size="md"
+    size="lg"
     :confirm-text="isEditing ? '更新' : '创建'"
     :confirm-loading="loading"
     :confirm-disabled="!canSubmit"
@@ -401,10 +401,10 @@ defineExpose({
     @close="$emit('cancel')"
   >
     <!-- 日期设置区域 -->
-    <div class="section-card">
-      <div class="section-header">
-        <LucideCalendar class="wh-5" />
-        <h3 class="section-title">
+    <Card shadow="sm" class="border-l-4 border-l-blue-500 mb-4">
+      <div class="flex items-center gap-2 mb-4">
+        <Calendar :size="20" class="text-blue-600 dark:text-blue-400" />
+        <h3 class="text-base font-semibold text-blue-600 dark:text-blue-400">
           日期设置
         </h3>
       </div>
@@ -414,7 +414,7 @@ defineExpose({
         <input
           v-model="formData.startDate"
           type="date"
-          class="modal-input-select w-full"
+          class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
           :max="maxDate"
           required
           @change="onStartDateChange"
@@ -426,7 +426,7 @@ defineExpose({
         <input
           v-model="formData.endDate"
           type="date"
-          class="modal-input-select w-full"
+          class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
           :min="formData.startDate"
           required
           @change="validateDates"
@@ -443,74 +443,89 @@ defineExpose({
           @update:model-value="setDurationPreset"
         />
       </FormRow>
-    </div>
+    </Card>
 
     <!-- 经期信息显示 -->
-    <div v-if="showPeriodInfo" class="info-card">
-      <div class="info-header">
-        <LucideInfo class="mr-2 wh-5" />
-        <span class="info-title">经期信息</span>
+    <Card v-if="showPeriodInfo" shadow="sm" class="border-l-4 border-l-blue-500 my-4 bg-blue-50 dark:bg-blue-900/20">
+      <div class="flex items-center gap-2 mb-3">
+        <Info :size="20" class="text-blue-600 dark:text-blue-400" />
+        <span class="text-base font-semibold text-blue-600 dark:text-blue-400">经期信息</span>
       </div>
-      <div class="info-grid">
-        <div class="info-item">
-          <span class="info-label">持续时间</span>
-          <span class="info-value duration">{{ periodDuration }} 天</span>
+      <div class="space-y-2">
+        <div class="flex justify-between items-center">
+          <span class="text-sm text-gray-600 dark:text-gray-400">持续时间</span>
+          <Badge variant="danger" size="sm">
+            {{ periodDuration }} 天
+          </Badge>
         </div>
-        <div class="info-item">
-          <span class="info-label">距离上次</span>
-          <span class="info-value cycle" :class="cycleColorClass">
+        <div class="flex justify-between items-center">
+          <span class="text-sm text-gray-600 dark:text-gray-400">距离上次</span>
+          <span class="text-sm font-bold" :class="cycleColorClass">
             {{ cycleText }}
           </span>
         </div>
-        <div v-if="predictedNext" class="info-item">
-          <span class="info-label">预测下次</span>
-          <span class="info-value">{{ predictedNext }}</span>
+        <div v-if="predictedNext" class="flex justify-between items-center">
+          <span class="text-sm text-gray-600 dark:text-gray-400">预测下次</span>
+          <span class="text-sm font-semibold text-gray-900 dark:text-white">{{ predictedNext }}</span>
         </div>
       </div>
-    </div>
+    </Card>
 
     <!-- 症状记录区域 -->
-    <div class="section-card section-card-success">
-      <div class="section-header">
-        <i class="i-tabler-medical-cross text-green-500 wh-4" />
-        <h3 class="section-title">
-          症状记录
-        </h3>
-        <span class="section-subtitle">选择本次经期的症状程度</span>
+    <Card shadow="sm" class="border-l-4 border-l-green-500 mb-4">
+      <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center gap-2">
+          <div class="w-5 h-5 text-green-500">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+            </svg>
+          </div>
+          <h3 class="text-base font-semibold text-green-600 dark:text-green-400">
+            症状记录
+          </h3>
+        </div>
+        <span class="text-xs text-gray-500 dark:text-gray-400">选择本次经期的症状程度</span>
       </div>
 
-      <div class="symptoms-grid">
-        <div v-for="symptomGroup in symptomGroups" :key="symptomGroup.type" class="symptom-card">
-          <div class="symptom-header">
-            <i :class="[symptomGroup.icon, symptomGroup.color]" class="wh-4" />
-            <span class="symptom-label">{{ symptomGroup.label }}</span>
+      <div class="space-y-4">
+        <div v-for="symptomGroup in symptomGroups" :key="symptomGroup.type" class="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600">
+          <div class="flex items-center gap-2 mb-3">
+            <i :class="[symptomGroup.icon, symptomGroup.color]" class="w-4 h-4" />
+            <span class="text-sm font-medium text-gray-900 dark:text-white">{{ symptomGroup.label }}</span>
           </div>
-          <div class="intensity-selector">
+          <div class="grid grid-cols-3 gap-2">
             <button
-              v-for="intensity in intensityLevels" :key="intensity.value" type="button"
-              class="intensity-btn" :class="{
-                'intensity-active': symptoms[symptomGroup.type] === intensity.value,
-                [`intensity-${intensity.value.toLowerCase()}`]: symptoms[symptomGroup.type] === intensity.value,
-              }" @click="updateSymptom(symptomGroup.type, intensity.value)"
+              v-for="intensity in intensityLevels"
+              :key="intensity.value"
+              type="button"
+              class="flex items-center justify-center gap-2 px-3 py-2 rounded-lg border transition-all text-sm font-medium"
+              :class="symptoms[symptomGroup.type] === intensity.value
+                ? intensity.value === 'Light'
+                  ? 'bg-yellow-100 dark:bg-yellow-900/30 border-yellow-500 text-yellow-800 dark:text-yellow-300'
+                  : intensity.value === 'Medium'
+                    ? 'bg-orange-100 dark:bg-orange-900/30 border-orange-500 text-orange-800 dark:text-orange-300'
+                    : 'bg-red-100 dark:bg-red-900/30 border-red-500 text-red-800 dark:text-red-300'
+                : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 text-gray-700 dark:text-gray-300'"
+              @click="updateSymptom(symptomGroup.type, intensity.value)"
             >
-              <span class="intensity-dot" />
-              <span class="intensity-text">{{ intensity.label }}</span>
+              <span class="w-2 h-2 rounded-full" :class="symptoms[symptomGroup.type] === intensity.value ? 'bg-current' : 'bg-gray-400'" />
+              <span>{{ intensity.label }}</span>
             </button>
           </div>
         </div>
       </div>
-    </div>
+    </Card>
 
     <!-- 备注区域 -->
-    <FormRow label="" full-width>
+    <FormRow full-width>
       <textarea
         v-model="formData.notes"
-        class="modal-input-select w-full"
+        class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none"
         placeholder="记录本次经期的特殊情况、身体感受或其他想要记录的内容..."
         maxlength="500"
         rows="4"
       />
-      <div class="character-count">
+      <div class="text-xs text-gray-500 dark:text-gray-400 text-right mt-1">
         {{ notesLength }}/500
       </div>
     </FormRow>
@@ -518,46 +533,53 @@ defineExpose({
 
   <!-- 删除确认弹窗 -->
   <ConfirmDialog
-    v-model:show="showDeleteConfirm" title="删除经期记录" type="danger" :loading="loading"
-    :icon-buttons="true"
+    :open="showDeleteConfirm"
+    title="删除经期记录"
+    type="error"
+    :loading="loading"
+    icon-buttons
     @confirm="handleDelete"
+    @close="showDeleteConfirm = false"
   >
-    <p class="confirmation-text">
-      确定要删除这条经期记录吗？
-    </p>
-    <div class="deletion-info">
-      <div class="info-row">
-        <span class="info-key">记录时间:</span>
-        <span class="info-val">{{ deletionInfo.dateRange }}</span>
+    <div class="space-y-3">
+      <p class="text-sm text-gray-700 dark:text-gray-300">
+        确定要删除这条经期记录吗？
+      </p>
+      <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 border border-gray-200 dark:border-gray-600">
+        <div class="flex justify-between items-center py-2 border-b border-gray-200 dark:border-gray-600">
+          <span class="text-sm text-gray-600 dark:text-gray-400">记录时间:</span>
+          <span class="text-sm font-semibold text-gray-900 dark:text-white">{{ deletionInfo.dateRange }}</span>
+        </div>
+        <div class="flex justify-between items-center py-2">
+          <span class="text-sm text-gray-600 dark:text-gray-400">持续时间:</span>
+          <span class="text-sm font-semibold text-gray-900 dark:text-white">{{ deletionInfo.duration }}</span>
+        </div>
       </div>
-      <div class="info-row">
-        <span class="info-key">持续时间:</span>
-        <span class="info-val">{{ deletionInfo.duration }}</span>
+      <div class="flex items-center gap-2 text-sm text-orange-800 dark:text-orange-300 bg-orange-50 dark:bg-orange-900/20 rounded-lg p-3">
+        <AlertTriangle :size="18" />
+        <span>此操作无法撤销，请谨慎操作</span>
       </div>
-    </div>
-    <div class="warning-note">
-      <LucideTriangle class="wh-5" />
-      <span>此操作无法撤销，请谨慎操作</span>
     </div>
   </ConfirmDialog>
 
   <!-- 重叠警告弹窗 -->
   <ConfirmDialog
-    v-model:show="showOverlapWarning"
+    :open="showOverlapWarning"
     title="日期重叠提醒"
     type="warning"
     confirm-text="继续保存"
     cancel-text="取消"
     @confirm="handleOverlapConfirm"
     @cancel="showOverlapWarning = false"
+    @close="showOverlapWarning = false"
   >
     <div class="space-y-3">
       <p class="text-sm text-gray-700 dark:text-gray-300">
         检测到您选择的日期与已有记录存在重叠：
       </p>
-      <div class="bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded-lg">
+      <div class="bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded-lg border border-yellow-200 dark:border-yellow-800">
         <div class="flex items-center gap-2 text-sm text-yellow-800 dark:text-yellow-300">
-          <i class="i-tabler-calendar wh-4" />
+          <Calendar :size="16" />
           <span>{{ overlapInfo.dateRange }}</span>
         </div>
       </div>
@@ -567,617 +589,3 @@ defineExpose({
     </div>
   </ConfirmDialog>
 </template>
-
-<style scoped lang="postcss">
-/* 自定义样式 - 大部分样式已由Modal和FormRow提供 */
-
-/* 区域卡片 */
-.section-card {
-  background-color: var(--color-base-100);
-  border-radius: 0.5rem;
-  padding: 1rem;
-  border: 1px solid var(--color-base-300);
-  border-left-width: 4px;
-  border-left-color: var(--color-primary);
-}
-
-.dark .section-card {
-  background-color: var(--color-base-200);
-  border-color: var(--color-base-300);
-  border-left-color: var(--color-primary);
-}
-
-.section-card-success {
-  border-left-color: var(--color-success);
-}
-
-.dark .section-card-success {
-  border-left-color: var(--color-success);
-}
-
-.section-card-success .section-title {
-  color: var(--color-success);
-}
-
-.dark .section-card-success .section-title {
-  color: var(--color-success);
-}
-
-.section-header {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
-}
-
-.section-title {
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--color-primary);
-}
-
-.dark .section-title {
-  color: var(--color-primary);
-}
-
-.section-subtitle {
-  font-size: 0.875rem;
-  color: var(--color-neutral);
-  margin-left: auto;
-}
-
-.dark .section-subtitle {
-  color: var(--color-neutral);
-}
-
-/* 信息卡片 */
-.info-card {
-  background-color: var(--color-base-100);
-  border: 1px solid var(--color-info);
-  border-radius: 0.5rem;
-  padding: 1rem;
-  border-left-width: 4px;
-  margin-top: 1.5rem;
-  margin-bottom: 1.5rem;
-}
-
-.dark .info-card {
-  background-color: var(--color-base-200);
-  border-color: var(--color-info);
-}
-
-.info-header {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 0.75rem;
-}
-
-.info-title {
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--color-info);
-}
-
-.dark .info-title {
-  color: var(--color-info);
-}
-
-.info-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 0.75rem;
-}
-
-.info-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.info-label {
-  font-size: 0.875rem;
-  color: var(--color-base-content);
-  opacity: 0.8;
-}
-
-.dark .info-label {
-  color: var(--color-base-content);
-  opacity: 0.7;
-}
-
-.info-value {
-  font-size: 0.875rem;
-  font-weight: 600;
-}
-
-.info-value.duration {
-  color: var(--color-error);
-}
-
-.dark .info-value.duration {
-  color: var(--color-error);
-}
-
-.info-value.cycle {
-  font-weight: 700;
-}
-
-/* 症状选择 */
-.symptoms-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 1rem;
-}
-
-.symptom-card {
-  background-color: var(--color-base-100);
-  border-radius: 0.5rem;
-  padding: 1rem;
-  border: 1px solid var(--color-base-300);
-}
-
-.dark .symptom-card {
-  background-color: var(--color-base-200);
-  border-color: var(--color-base-300);
-}
-
-.symptom-header {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 0.75rem;
-}
-
-.symptom-label {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--color-base-content);
-}
-
-.dark .symptom-label {
-  color: var(--color-base-content);
-}
-
-.intensity-selector {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.intensity-btn {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  padding: 0.5rem 0.75rem;
-  border: 1px solid var(--color-base-300);
-  border-radius: 0.5rem;
-  font-size: 0.875rem;
-  transition: all 0.2s ease-in-out;
-}
-
-.intensity-btn:hover {
-  border-color: var(--color-neutral);
-}
-
-.dark .intensity-btn {
-  border-color: var(--color-base-300);
-}
-
-.dark .intensity-btn:hover {
-  border-color: var(--color-neutral);
-}
-
-.intensity-btn.intensity-active {
-  border-color: transparent;
-}
-
-.intensity-btn.intensity-active.intensity-light {
-  background-color: #fef3c7;
-  color: #92400e;
-  border-color: #f59e0b;
-}
-
-.dark .intensity-btn.intensity-active.intensity-light {
-  background-color: rgba(146, 64, 14, 0.3);
-  color: #fbbf24;
-}
-
-.intensity-btn.intensity-active.intensity-medium {
-  background-color: #fed7aa;
-  color: #c2410c;
-  border-color: #f97316;
-}
-
-.dark .intensity-btn.intensity-active.intensity-medium {
-  background-color: rgba(194, 65, 12, 0.3);
-  color: #fb923c;
-}
-
-.intensity-btn.intensity-active.intensity-heavy {
-  background-color: #fecaca;
-  color: #dc2626;
-  border-color: #ef4444;
-}
-
-.dark .intensity-btn.intensity-active.intensity-heavy {
-  background-color: rgba(220, 38, 38, 0.3);
-  color: #f87171;
-}
-
-.intensity-dot {
-  width: 0.5rem;
-  height: 0.5rem;
-  border-radius: 50%;
-  background-color: currentColor;
-  opacity: 0.7;
-}
-
-.intensity-text {
-  font-weight: 500;
-}
-
-/* 字符计数 */
-.character-count {
-  font-size: 0.75rem;
-  color: var(--color-neutral);
-  text-align: right;
-  margin-top: 0.25rem;
-}
-
-.dark .character-count {
-  color: var(--color-base-content);
-}
-
-/* 弹窗样式 */
-.confirmation-text {
-  color: var(--color-base-content);
-  margin-bottom: 1rem;
-}
-
-.dark .confirmation-text {
-  color: var(--color-base-content);
-}
-
-.deletion-info {
-  background-color: var(--color-base-100);
-  border-radius: 0.5rem;
-  padding: 0.75rem;
-  margin-bottom: 1rem;
-  border: 1px solid var(--color-base-300);
-}
-
-.dark .deletion-info {
-  background-color: var(--color-base-200);
-}
-
-.info-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.5rem 0;
-  border-bottom: 1px solid var(--color-base-200);
-}
-
-.info-row:last-child {
-  border-bottom: none;
-}
-
-.dark .info-row {
-  border-color: var(--color-base-300);
-}
-
-.info-key {
-  font-size: 0.875rem;
-  color: var(--color-neutral);
-  font-weight: 500;
-}
-
-.dark .info-key {
-  color: var(--color-neutral);
-}
-
-.info-val {
-  font-size: 0.875rem;
-  color: var(--color-base-content);
-  font-weight: 600;
-}
-
-.dark .info-val {
-  color: var(--color-base-content);
-}
-
-.warning-note {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.875rem;
-  color: #c2410c;
-  background-color: #fef3c7;
-  border-radius: 0.5rem;
-  padding: 0.75rem;
-}
-
-.dark .warning-note {
-  color: #fb923c;
-  background-color: rgba(146, 64, 14, 0.2);
-}
-
-.warning-text {
-  color: #374151;
-  margin-bottom: 0.75rem;
-}
-
-.dark .warning-text {
-  color: #d1d5db;
-}
-
-.overlap-details {
-  background-color: #fefce8;
-  border-radius: 0.5rem;
-  padding: 0.75rem;
-  margin-bottom: 1rem;
-}
-
-.dark .overlap-details {
-  background-color: rgba(146, 64, 14, 0.2);
-}
-
-.overlap-record {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: #a16207;
-}
-
-.dark .overlap-record {
-  color: #fbbf24;
-}
-
-.warning-question {
-  color: #374151;
-  font-weight: 500;
-}
-
-.dark .warning-question {
-  color: #d1d5db;
-}
-
-/* 响应式设计 */
-@media (max-width: 640px) {
-  .form-header {
-    padding: 0.75rem 1rem;
-  }
-
-  .form-body {
-    padding: 1rem;
-  }
-
-  .date-inputs {
-    grid-template-columns: 1fr;
-  }
-
-  .info-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .symptoms-grid {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-  }
-
-  .intensity-selector {
-    flex-direction: column;
-    gap: 0.25rem;
-  }
-
-  .intensity-btn {
-    justify-content: flex-start;
-  }
-
-  .form-actions {
-    flex-direction: column;
-    gap: 0.75rem;
-  }
-
-  .actions-left,
-  .actions-right {
-    width: 100%;
-    justify-content: center;
-  }
-}
-
-/* 动画效果 */
-.section-card {
-  animation: slideInUp 0.3s ease-out;
-}
-
-.info-card {
-  animation: fadeInScale 0.4s ease-out;
-}
-
-@keyframes slideInUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes fadeInScale {
-  from {
-    opacity: 0;
-    transform: scale(0.95);
-  }
-
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-/* 焦点状态增强 */
-.date-input:focus {
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-}
-
-.notes-textarea:focus {
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-}
-
-/* 禁用状态 */
-.preset-btn:disabled {
-  background-color: #f3f4f6;
-  color: #9ca3af;
-  border-color: #e5e7eb;
-}
-
-.dark .preset-btn:disabled {
-  background-color: #1f2937;
-  color: #4b5563;
-  border-color: #374151;
-}
-
-/* 加载状态 */
-.btn-primary:disabled,
-.btn-danger:disabled {
-  position: relative;
-  overflow: hidden;
-}
-
-.btn-primary:disabled::after,
-.btn-danger:disabled::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background-color: rgba(255, 255, 255, 0.1);
-  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
-
-/* 错误状态增强 */
-.input-error {
-  animation: shake 0.5s ease-in-out;
-}
-
-@keyframes shake {
-
-  0%,
-  100% {
-    transform: translateX(0);
-  }
-
-  25% {
-    transform: translateX(-5px);
-  }
-
-  75% {
-    transform: translateX(5px);
-  }
-}
-
-/* 成功状态 */
-.success-indicator {
-  color: #16a34a;
-  animation: bounce 0.5s ease-in-out;
-}
-
-.dark .success-indicator {
-  color: #4ade80;
-}
-
-@keyframes bounce {
-
-  0%,
-  100% {
-    transform: scale(1);
-  }
-
-  50% {
-    transform: scale(1.1);
-  }
-}
-
-/* 深色模式优化 */
-@media (prefers-color-scheme: dark) {
-  .section-card {
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  }
-
-  .info-card {
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  }
-
-  .symptom-card {
-    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  }
-}
-
-/* 无障碍访问增强 */
-.input-label[aria-required="true"]::after {
-  content: '*';
-  color: #ef4444;
-  margin-left: 0.25rem;
-}
-
-.btn-primary:focus-visible,
-.btn-secondary:focus-visible,
-.btn-danger:focus-visible {
-  outline: 2px solid #3b82f6;
-  outline-offset: 2px;
-}
-
-.date-input:focus-visible,
-.notes-textarea:focus-visible {
-  outline: 2px solid #3b82f6;
-  outline-offset: 2px;
-}
-
-/* 高对比度模式支持 */
-@media (prefers-contrast: high) {
-  .section-card {
-    border-width: 2px;
-  }
-
-  .info-card {
-    border-width: 2px;
-    border-color: #3b82f6;
-  }
-
-  .btn-primary {
-    background-color: #1d4ed8;
-    border-width: 2px;
-    border-color: #1e40af;
-  }
-
-  .btn-danger {
-    background-color: #b91c1c;
-    border-width: 2px;
-    border-color: #991b1b;
-  }
-}
-
-/* 减少动画模式 */
-@media (prefers-reduced-motion: reduce) {
-
-  .section-card,
-  .info-card {
-    animation: none;
-  }
-
-  .input-error {
-    animation: none;
-  }
-
-  .success-indicator {
-    animation: none;
-  }
-}
-</style>

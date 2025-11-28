@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { CalendarCheck, Eye, Plus, Trash } from 'lucide-vue-next';
+import Badge from '@/components/ui/Badge.vue';
+import Card from '@/components/ui/Card.vue';
 import type { PeriodDailyRecords } from '@/schema/health/period';
 
 defineProps<{
@@ -17,194 +20,95 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <div class="today-info-card">
-    <div class="today-info-header">
-      <div class="today-info-icon">
-        <LucideCalendarCheck class="today-info-icon-svg" />
+  <Card
+    shadow="md"
+    padding="md"
+    class="flex-1 self-stretch border-l-4 border-l-blue-500 dark:border-l-blue-400"
+  >
+    <!-- 自定义头部 -->
+    <template #header>
+      <div class="flex items-center gap-2.5 pb-2.5 border-b-2 border-blue-500 dark:border-blue-400">
+        <CalendarCheck class="w-5 h-5 text-blue-600 dark:text-blue-400" />
+        <h3 class="text-base font-bold text-blue-600 dark:text-blue-400 m-0">
+          {{ t('period.todayInfo.title') }}
+        </h3>
       </div>
-      <h3 class="today-info-title">
-        {{ t('period.todayInfo.title') }}
-      </h3>
-    </div>
-    <div class="today-info-content">
-      <div class="info-item">
-        <span class="info-label">{{ t('period.todayInfo.currentPhase') }}</span>
-        <span class="info-value phase-badge">
+    </template>
+
+    <!-- 内容区域 -->
+    <div class="flex flex-col gap-2.5">
+      <!-- 当前阶段 -->
+      <div class="flex items-center justify-between px-3 py-2.5 rounded-lg bg-gray-50 dark:bg-gray-700/50 transition-colors hover:bg-gray-100 dark:hover:bg-gray-700">
+        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">
+          {{ t('period.todayInfo.currentPhase') }}
+        </span>
+        <Badge variant="info" size="md">
           {{ currentPhaseLabel }}
+        </Badge>
+      </div>
+
+      <!-- 距离下次天数 -->
+      <div class="flex items-center justify-between px-3 py-2.5 rounded-lg bg-gray-50 dark:bg-gray-700/50 transition-colors hover:bg-gray-100 dark:hover:bg-gray-700">
+        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">
+          {{ t('period.todayInfo.daysUntilNext') }}
+        </span>
+        <span class="text-sm font-bold text-rose-600 dark:text-rose-400">
+          {{ daysUntilNext }}
         </span>
       </div>
-      <div class="info-item">
-        <span class="info-label">{{ t('period.todayInfo.daysUntilNext') }}</span>
-        <span class="info-value">{{ daysUntilNext }}</span>
-      </div>
-      <div v-if="todayRecord" class="info-item">
-        <span class="info-label">{{ t('period.todayInfo.todayRecord') }}</span>
-        <div class="info-actions">
-          <button class="action-icon-btn view-btn" :title="t('common.actions.view')" @click="emit('viewRecord', todayRecord)">
-            <LucideEye class="wh-4" />
-          </button>
+
+      <!-- 今日记录 - 有记录 -->
+      <div
+        v-if="todayRecord"
+        class="flex items-center justify-between px-3 py-2.5 rounded-lg bg-gray-50 dark:bg-gray-700/50 transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
+      >
+        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">
+          {{ t('period.todayInfo.todayRecord') }}
+        </span>
+        <div class="flex items-center gap-2">
+          <!-- 查看按钮 -->
           <button
-            class="action-icon-btn delete-btn" :title="t('common.actions.delete')"
+            :title="t('common.actions.view')"
+            class="flex items-center justify-center w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 transition-all hover:bg-blue-200 dark:hover:bg-blue-900/50 hover:scale-105 shadow-sm"
+            @click="emit('viewRecord', todayRecord)"
+          >
+            <Eye class="w-4 h-4" />
+          </button>
+
+          <!-- 删除按钮 -->
+          <button
+            :title="t('common.actions.delete')"
+            class="flex items-center justify-center w-8 h-8 rounded-lg bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 transition-all hover:bg-rose-200 dark:hover:bg-rose-900/50 hover:scale-105 shadow-sm"
             @click="emit('deleteRecord', todayRecord.serialNum)"
           >
-            <LucideTrash class="wh-4" />
+            <Trash class="w-4 h-4" />
           </button>
         </div>
       </div>
-      <div v-else class="info-item">
-        <span class="info-label">{{ t('period.todayInfo.todayRecord') }}</span>
-        <span class="info-no-record">{{ t('period.todayInfo.noRecord') }}</span>
-        <button class="action-icon-btn add-btn" :title="t('common.actions.add')" @click="emit('addRecord')">
-          <LucidePlus class="wh-4" />
-        </button>
+
+      <!-- 今日记录 - 无记录 -->
+      <div
+        v-else
+        class="flex items-center justify-between px-3 py-2.5 rounded-lg bg-gray-50 dark:bg-gray-700/50 transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
+      >
+        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">
+          {{ t('period.todayInfo.todayRecord') }}
+        </span>
+        <div class="flex items-center gap-2">
+          <span class="text-xs italic text-gray-500 dark:text-gray-400">
+            {{ t('period.todayInfo.noRecord') }}
+          </span>
+
+          <!-- 添加按钮 -->
+          <button
+            :title="t('common.actions.add')"
+            class="flex items-center justify-center w-8 h-8 rounded-lg bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 transition-all hover:bg-green-200 dark:hover:bg-green-900/50 hover:scale-105 shadow-sm"
+            @click="emit('addRecord')"
+          >
+            <Plus class="w-4 h-4" />
+          </button>
+        </div>
       </div>
     </div>
-  </div>
+  </Card>
 </template>
-
-<style scoped lang="postcss">
-.today-info-card {
-  border: 1px solid var(--color-base-300);
-  border-left-width: 4px;
-  border-left-color: var(--color-info);
-  background-color: var(--color-base-100);
-  border-radius: 0.75rem;
-  padding: 0.75rem;
-  display: flex;
-  flex-direction: column;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  flex: 1;
-  align-self: stretch;
-  box-sizing: border-box;
-}
-
-.today-info-header {
-  display: flex;
-  align-items: center;
-  gap: 0.625rem;
-  margin-bottom: 0.75rem;
-  padding-bottom: 0.625rem;
-  border-bottom: 2px solid var(--color-info);
-}
-
-.today-info-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.today-info-icon-svg {
-  width: 1.125rem;
-  height: 1.125rem;
-  color: var(--color-info);
-}
-
-.today-info-title {
-  font-size: 1rem;
-  font-weight: 700;
-  color: var(--color-info);
-  margin: 0;
-}
-
-.today-info-content {
-  display: flex;
-  flex-direction: column;
-  gap: 0.625rem;
-  flex: 1;
-  min-height: 0;
-}
-
-.info-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.625rem 0.75rem;
-  background-color: var(--color-base-200);
-  border-radius: 0.5rem;
-  transition: all 0.2s;
-}
-
-.info-item:hover {
-  background-color: var(--color-base-300);
-}
-
-.info-label {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--color-base-content);
-}
-
-.info-value {
-  font-size: 0.875rem;
-  font-weight: 700;
-  color: var(--color-error);
-}
-
-.phase-badge {
-  padding: 0.25rem 0.75rem;
-  border-radius: 0.5rem;
-  background-color: var(--color-info);
-  color: var(--color-info-content);
-  font-size: 0.875rem;
-  font-weight: 700;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.info-no-record {
-  font-size: 0.8125rem;
-  color: color-mix(in oklch, var(--color-base-content) 50%, transparent);
-  font-style: italic;
-  flex: 1;
-}
-
-.info-actions {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.action-icon-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 2rem;
-  height: 2rem;
-  border-radius: 0.5rem;
-  border: none;
-  cursor: pointer;
-  transition: all 0.2s;
-  flex-shrink: 0;
-  overflow: hidden;
-  padding: 0.375rem;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.action-icon-btn.add-btn {
-  background-color: color-mix(in oklch, var(--color-success) 15%, transparent);
-  color: var(--color-success);
-}
-
-.action-icon-btn.add-btn:hover {
-  background-color: color-mix(in oklch, var(--color-success) 25%, transparent);
-  transform: scale(1.05);
-}
-
-.action-icon-btn.view-btn {
-  background-color: color-mix(in oklch, var(--color-primary) 10%, transparent);
-  color: var(--color-primary);
-}
-
-.action-icon-btn.view-btn:hover {
-  background-color: color-mix(in oklch, var(--color-primary) 20%, transparent);
-  transform: scale(1.05);
-}
-
-.action-icon-btn.delete-btn {
-  background-color: color-mix(in oklch, var(--color-error) 10%, transparent);
-  color: var(--color-error);
-}
-
-.action-icon-btn.delete-btn:hover {
-  background-color: color-mix(in oklch, var(--color-error) 20%, transparent);
-  transform: scale(1.05);
-}
-</style>

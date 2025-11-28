@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { AlertCircle, Bell, ChartNoAxesCombined, Check, Database, FileDown, FileUp, Lightbulb, Settings, ShieldUser, Trash, X } from 'lucide-vue-next';
+import { Button, Card, ConfirmDialog, Switch } from '@/components/ui';
 import { PeriodDataManager } from '../utils/periodUtils';
 import { mergeSettings } from '../utils/utils';
 import type { PeriodSettings } from '@/schema/health/period';
@@ -279,55 +281,55 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="period-settings">
+  <div class="space-y-6">
     <!-- 周期设置和提醒设置 - 并排显示 -->
-    <div class="settings-row">
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
       <!-- 周期设置 -->
-      <div class="settings-section card-base">
-        <h2 class="section-title">
-          <LucideSettings class="section-icon" />
+      <Card shadow="md" padding="lg" hoverable>
+        <h2 class="flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white mb-6">
+          <Settings :size="20" class="text-blue-600 dark:text-blue-400" />
           周期设置
         </h2>
 
-        <div class="settings-grid">
-          <div class="setting-item">
-            <label class="setting-label">
+        <div class="space-y-6">
+          <div class="space-y-3">
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
               平均周期长度 (天)
             </label>
-            <div class="setting-control">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4">
               <input
                 v-model.number="localSettings.averageCycleLength"
                 type="number"
-                class="input-base input-number"
+                class="w-20 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                 min="21"
                 max="35"
                 @change="validateAndUpdate"
               >
-              <div class="setting-range">
+              <div class="flex-1 w-full">
                 <input
                   v-model.number="localSettings.averageCycleLength"
                   type="range"
-                  class="range-slider"
+                  class="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-blue-600"
                   min="21"
                   max="35"
                   @input="validateAndUpdate"
                 >
               </div>
             </div>
-            <div class="setting-info">
-              <p class="setting-description">
+            <div class="space-y-2">
+              <p class="text-xs text-gray-500 dark:text-gray-400">
                 正常范围：21-35天，大部分女性为28天
               </p>
               <div
                 v-if="calculatedStats.averageCycleLength && calculatedStats.averageCycleLength !== localSettings.averageCycleLength"
-                class="calculated-hint"
+                class="flex flex-col sm:flex-row items-start sm:items-center gap-2 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg"
               >
-                <LucideLightbulb class="calculated-hint-icon" />
-                <span class="calculated-hint-text">
+                <Lightbulb :size="16" class="text-yellow-600 dark:text-yellow-400 shrink-0" />
+                <span class="text-sm text-yellow-800 dark:text-yellow-300">
                   根据历史数据计算：{{ calculatedStats.averageCycleLength }}天
                 </span>
                 <button
-                  class="btn-hint"
+                  class="px-3 py-1 text-xs font-medium bg-yellow-600 hover:bg-yellow-700 text-white rounded-md transition-colors"
                   @click="useCalculatedValue('averageCycleLength')"
                 >
                   采用
@@ -336,44 +338,44 @@ onMounted(() => {
             </div>
           </div>
 
-          <div class="setting-item">
-            <label class="setting-label">
+          <div class="space-y-3">
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
               平均经期长度 (天)
             </label>
-            <div class="setting-control">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4">
               <input
                 v-model.number="localSettings.averagePeriodLength"
                 type="number"
-                class="input-base input-number"
+                class="w-20 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                 min="2"
                 max="8"
                 @change="validateAndUpdate"
               >
-              <div class="setting-range">
+              <div class="flex-1 w-full">
                 <input
                   v-model.number="localSettings.averagePeriodLength"
                   type="range"
-                  class="range-slider"
+                  class="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-blue-600"
                   min="2"
                   max="8"
                   @input="validateAndUpdate"
                 >
               </div>
             </div>
-            <div class="setting-info">
-              <p class="setting-description">
+            <div class="space-y-2">
+              <p class="text-xs text-gray-500 dark:text-gray-400">
                 正常范围：2-8天，大部分女性为3-7天
               </p>
               <div
                 v-if="calculatedStats.averagePeriodLength && calculatedStats.averagePeriodLength !== localSettings.averagePeriodLength"
-                class="calculated-hint"
+                class="flex flex-col sm:flex-row items-start sm:items-center gap-2 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg"
               >
-                <LucideLightbulb class="calculated-hint-icon" />
-                <span class="calculated-hint-text">
+                <Lightbulb :size="16" class="text-yellow-600 dark:text-yellow-400 shrink-0" />
+                <span class="text-sm text-yellow-800 dark:text-yellow-300">
                   根据历史数据计算：{{ calculatedStats.averagePeriodLength }}天
                 </span>
                 <button
-                  class="btn-hint"
+                  class="px-3 py-1 text-xs font-medium bg-yellow-600 hover:bg-yellow-700 text-white rounded-md transition-colors"
                   @click="useCalculatedValue('averagePeriodLength')"
                 >
                   采用
@@ -383,721 +385,240 @@ onMounted(() => {
           </div>
 
           <!-- 智能分析卡片 -->
-          <div v-if="periodStore.periodRecords.length >= 2" class="analysis-card">
-            <div class="analysis-header">
-              <LucideChartNoAxesCombined class="mr-2 wh-5" />
-              <span class="text-sm text-gray-700 font-medium dark:text-gray-300">智能分析</span>
+          <div v-if="periodStore.periodRecords.length >= 2" class="mt-4 p-4 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg">
+            <div class="flex items-center gap-2 mb-3">
+              <ChartNoAxesCombined :size="18" class="text-gray-600 dark:text-gray-400" />
+              <span class="text-sm font-medium text-gray-700 dark:text-gray-300">智能分析</span>
             </div>
-            <div class="analysis-content">
-              <div class="analysis-item">
-                <span class="analysis-label">周期规律性：</span>
-                <span class="analysis-value" :class="regularityColor">{{ regularityText }}</span>
+            <div class="space-y-2">
+              <div class="flex justify-between items-center text-xs">
+                <span class="text-gray-600 dark:text-gray-400">周期规律性：</span>
+                <span class="font-medium" :class="regularityColor">{{ regularityText }}</span>
               </div>
-              <div class="analysis-item">
-                <span class="analysis-label">记录数量：</span>
-                <span class="analysis-value">{{ periodStore.periodRecords.length }} 个周期</span>
+              <div class="flex justify-between items-center text-xs">
+                <span class="text-gray-600 dark:text-gray-400">记录数量：</span>
+                <span class="font-medium text-gray-900 dark:text-white">{{ periodStore.periodRecords.length }} 个周期</span>
               </div>
-              <div class="analysis-item">
-                <span class="analysis-label">数据置信度：</span>
-                <span class="analysis-value" :class="confidenceColor">{{ confidenceText }}</span>
+              <div class="flex justify-between items-center text-xs">
+                <span class="text-gray-600 dark:text-gray-400">数据置信度：</span>
+                <span class="font-medium" :class="confidenceColor">{{ confidenceText }}</span>
               </div>
             </div>
           </div>
         </div>
-      </div>
+      </Card>
 
       <!-- 提醒设置 -->
-      <div class="settings-section card-base">
-        <h2 class="section-title">
-          <LucideBell class="mr-2 wh-5" />
+      <Card shadow="md" padding="lg" hoverable>
+        <h2 class="flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white mb-6">
+          <Bell :size="20" class="text-green-600 dark:text-green-400" />
           提醒设置
         </h2>
-        <div class="settings-grid grid grid-cols-1 sm:grid-cols-2">
-          <div class="setting-item">
-            <div class="setting-toggle">
-              <label class="toggle-label">
-                <input
-                  v-model="localSettings.notifications.periodReminder"
-                  type="checkbox"
-                  class="toggle-input"
-                  @change="updateSettings"
-                >
-                <span class="toggle-slider" />
-                <span class="toggle-text">经期提醒</span>
-              </label>
-            </div>
-            <p class="setting-description">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          <div class="space-y-2">
+            <Switch
+              v-model="localSettings.notifications.periodReminder"
+              label="经期提醒"
+              @update:model-value="updateSettings"
+            />
+            <p class="text-xs text-gray-500 dark:text-gray-400 ml-1">
               在经期开始前几天发送提醒
             </p>
           </div>
 
-          <div class="setting-item">
-            <div class="setting-toggle">
-              <label class="toggle-label">
-                <input
-                  v-model="localSettings.notifications.ovulationReminder"
-                  type="checkbox"
-                  class="toggle-input"
-                  @change="updateSettings"
-                >
-                <span class="toggle-slider" />
-                <span class="toggle-text">排卵期提醒</span>
-              </label>
-            </div>
-            <p class="setting-description">
+          <div class="space-y-2">
+            <Switch
+              v-model="localSettings.notifications.ovulationReminder"
+              label="排卵期提醒"
+              @update:model-value="updateSettings"
+            />
+            <p class="text-xs text-gray-500 dark:text-gray-400 ml-1">
               在排卵期到来时发送提醒
             </p>
           </div>
 
-          <div class="setting-item">
-            <div class="setting-toggle">
-              <label class="toggle-label">
-                <input
-                  v-model="localSettings.notifications.pmsReminder"
-                  type="checkbox"
-                  class="toggle-input"
-                  @change="updateSettings"
-                >
-                <span class="toggle-slider" />
-                <span class="toggle-text">PMS提醒</span>
-              </label>
-            </div>
-            <p class="setting-description">
+          <div class="space-y-2">
+            <Switch
+              v-model="localSettings.notifications.pmsReminder"
+              label="PMS提醒"
+              @update:model-value="updateSettings"
+            />
+            <p class="text-xs text-gray-500 dark:text-gray-400 ml-1">
               在可能出现经前症状时发送提醒
             </p>
           </div>
 
-          <div class="setting-item">
-            <div class="setting-control">
-              <select
-                v-model.number="localSettings.notifications.reminderDays"
-                class="select-base"
-                @change="updateSettings"
-              >
-                <option value="1">
-                  1天
-                </option>
-                <option value="2">
-                  2天
-                </option>
-                <option value="3">
-                  3天
-                </option>
-                <option value="5">
-                  5天
-                </option>
-                <option value="7">
-                  7天
-                </option>
-              </select>
-            </div>
-            <p class="setting-description">
+          <div class="space-y-2">
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">提醒天数</label>
+            <select
+              v-model.number="localSettings.notifications.reminderDays"
+              class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+              @change="updateSettings"
+            >
+              <option value="1">
+                1天
+              </option>
+              <option value="2">
+                2天
+              </option>
+              <option value="3">
+                3天
+              </option>
+              <option value="5">
+                5天
+              </option>
+              <option value="7">
+                7天
+              </option>
+            </select>
+            <p class="text-xs text-gray-500 dark:text-gray-400">
               在经期开始前多少天发送提醒
             </p>
           </div>
         </div>
-      </div>
+      </Card>
     </div>
 
     <!-- 隐私设置和数据管理 - 并排显示 -->
-    <div class="settings-row">
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
       <!-- 隐私设置 -->
-      <div class="settings-section card-base">
-        <h2 class="section-title">
-          <LucideShieldUser class="mr-2 wh-5" />
+      <Card shadow="md" padding="lg" hoverable>
+        <h2 class="flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white mb-6">
+          <ShieldUser :size="20" class="text-purple-600 dark:text-purple-400" />
           隐私设置
         </h2>
-        <div class="settings-grid">
-          <div class="setting-item">
-            <div class="setting-toggle">
-              <label class="toggle-label">
-                <input
-                  v-model="localSettings.privacy.dataSync"
-                  type="checkbox"
-                  class="toggle-input"
-                  @change="updateSettings"
-                >
-                <span class="toggle-slider" />
-                <span class="toggle-text">数据同步</span>
-              </label>
-            </div>
-            <p class="setting-description">
+        <div class="space-y-6">
+          <div class="space-y-2">
+            <Switch
+              v-model="localSettings.privacy.dataSync"
+              label="数据同步"
+              @update:model-value="updateSettings"
+            />
+            <p class="text-xs text-gray-500 dark:text-gray-400 ml-1">
               将数据同步到云端，便于在多设备间使用
             </p>
           </div>
-          <div class="setting-item">
-            <div class="setting-toggle">
-              <label class="toggle-label">
-                <input
-                  v-model="localSettings.privacy.analytics"
-                  type="checkbox"
-                  class="toggle-input"
-                  @change="updateSettings"
-                >
-                <span class="toggle-slider" />
-                <span class="toggle-text">匿名统计</span>
-              </label>
-            </div>
-            <p class="setting-description">
+          <div class="space-y-2">
+            <Switch
+              v-model="localSettings.privacy.analytics"
+              label="匿名统计"
+              @update:model-value="updateSettings"
+            />
+            <p class="text-xs text-gray-500 dark:text-gray-400 ml-1">
               帮助改进应用功能，所有数据都是匿名的
             </p>
           </div>
         </div>
-      </div>
+      </Card>
 
       <!-- 数据管理 -->
-      <div class="settings-section card-base">
-        <h2 class="section-title">
-          <LucideDatabase class="mr-2 wh-5" />
+      <Card shadow="md" padding="lg" hoverable>
+        <h2 class="flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white mb-6">
+          <Database :size="20" class="text-orange-600 dark:text-orange-400" />
           数据管理
         </h2>
-        <div class="settings-grid">
-          <div class="gap-4 grid grid-cols-2">
-            <div class="setting-item">
-              <label class="setting-label">导出数据</label>
-              <button class="btn-secondary" :disabled="loading" @click="exportData">
-                <LucideFileDown class="mr-2 wh-5" />
+        <div class="space-y-6">
+          <div class="grid grid-cols-2 gap-4">
+            <div class="space-y-3">
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">导出数据</label>
+              <Button variant="secondary" size="sm" full-width :disabled="loading" @click="exportData">
+                <FileDown :size="16" class="mr-2" />
                 导出为JSON
-              </button>
-              <p class="setting-description">
+              </Button>
+              <p class="text-xs text-gray-500 dark:text-gray-400">
                 导出所有经期数据到本地文件
               </p>
             </div>
-            <div class="setting-item">
-              <label class="setting-label">导入数据</label>
-              <div class="import-control">
-                <input ref="fileInput" type="file" accept=".json" class="hidden" @change="handleFileImport">
-                <button class="btn-secondary" :disabled="loading" @click="triggerFileInput">
-                  <LucideFileUp class="mr-2 wh-5" />
-                  选择文件
-                </button>
-              </div>
-              <p class="setting-description">
+            <div class="space-y-3">
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">导入数据</label>
+              <input ref="fileInput" type="file" accept=".json" class="hidden" @change="handleFileImport">
+              <Button variant="secondary" size="sm" full-width :disabled="loading" @click="triggerFileInput">
+                <FileUp :size="16" class="mr-2" />
+                选择文件
+              </Button>
+              <p class="text-xs text-gray-500 dark:text-gray-400">
                 从JSON文件导入经期数据
               </p>
             </div>
           </div>
 
-          <div class="setting-item mt-4">
-            <div class="flex gap-2 items-center">
-              <button class="btn-danger" :disabled="loading" @click="showResetModal = true">
-                <LucideTrash class="wh-5" />
-              </button>
-            </div>
-            <p class="setting-description">
+          <div class="space-y-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+            <Button variant="danger" size="sm" circle :icon="Trash" :disabled="loading" @click="showResetModal = true" />
+            <p class="text-xs text-gray-500 dark:text-gray-400">
               删除所有经期记录，此操作不可撤销
             </p>
           </div>
         </div>
-      </div>
+      </Card>
     </div>
 
     <!-- 重置确认弹窗 -->
-    <div
-      v-if="showResetModal" class="bg-black/50 flex items-center inset-0 justify-center fixed z-50"
-      @click.self="showResetModal = false"
+    <ConfirmDialog
+      :open="showResetModal"
+      type="error"
+      title="确认重置"
+      :confirm-disabled="resetConfirmText !== '确认重置' || loading"
+      :loading="loading"
+      @confirm="confirmReset"
+      @close="showResetModal = false"
     >
-      <div class="mx-4 p-6 rounded-lg bg-white max-w-sm dark:bg-gray-800">
-        <h3 class="text-lg text-gray-900 font-semibold mb-4 dark:text-white">
-          确认重置
-        </h3>
-        <p class="text-gray-600 mb-6 dark:text-gray-400">
+      <div class="space-y-4">
+        <p class="text-sm text-gray-600 dark:text-gray-400">
           确定要清空所有数据吗？此操作将删除所有经期记录、日常记录和设置，且无法撤销。
         </p>
-        <div class="space-y-3">
-          <input v-model="resetConfirmText" type="text" placeholder="输入 '确认重置' 来确认操作" class="input-base w-full">
-          <div class="flex gap-3">
-            <button class="btn-secondary flex-1" @click="showResetModal = false">
-              <LucideX class="wh-5" />
-            </button>
-            <button class="btn-danger flex-1" :disabled="resetConfirmText !== '确认重置' || loading" @click="confirmReset">
-              <LucideListRestart class="=wh-5" />
-            </button>
-          </div>
+        <input
+          v-model="resetConfirmText"
+          type="text"
+          placeholder="输入 '确认重置' 来确认操作"
+          class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
+        >
+        <div class="flex items-center gap-2 text-sm text-orange-800 dark:text-orange-300 bg-orange-50 dark:bg-orange-900/20 rounded-lg p-3">
+          <AlertCircle :size="18" />
+          <span>请谨慎操作，此操作不可恢复</span>
         </div>
       </div>
-    </div>
+    </ConfirmDialog>
 
     <!-- 导入结果提示 -->
     <div
       v-if="importMessage"
-      class="p-4 border border-gray-200 rounded-lg bg-white max-w-sm shadow-lg bottom-4 right-4 fixed dark:border-gray-700 dark:bg-gray-800"
+      class="fixed bottom-4 right-4 max-w-sm p-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg animate-slide-up"
     >
-      <div class="flex gap-3 items-start">
-        <i
-          :class="importSuccess ? 'i-tabler-check text-green-500' : 'i-tabler-x text-red-500'"
-          class="mt-0.5 flex-shrink-0 wh-5"
-        />
-        <div>
-          <p class="text-sm text-gray-900 font-medium dark:text-white">
+      <div class="flex items-start gap-3">
+        <div class="shrink-0 mt-0.5">
+          <Check v-if="importSuccess" :size="20" class="text-green-500" />
+          <X v-else :size="20" class="text-red-500" />
+        </div>
+        <div class="flex-1">
+          <p class="text-sm font-medium text-gray-900 dark:text-white">
             {{ importSuccess ? '导入成功' : '导入失败' }}
           </p>
-          <p class="text-xs text-gray-600 mt-1 dark:text-gray-400">
+          <p class="text-xs text-gray-600 dark:text-gray-400 mt-1">
             {{ importMessage }}
           </p>
         </div>
-        <button class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" @click="importMessage = ''">
-          <LucideX class="wh-5" />
+        <button class="shrink-0 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors" @click="importMessage = ''">
+          <X :size="18" />
         </button>
       </div>
     </div>
   </div>
 </template>
 
-<style scoped lang="postcss">
-/* Layout and Structure Styles */
-.settings-row {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 1.5rem;
-}
-
-@media (min-width: 640px) {
-  .settings-row {
-    grid-template-columns: repeat(2, 1fr);
+<style scoped>
+/* 添加简单动画 */
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
-.settings-section {
-  background-color: var(--color-base-100);
-  border: 1px solid var(--color-base-300);
-  border-radius: 0.75rem;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  padding: 1.25rem;
-  transition: box-shadow 0.2s ease-in-out;
-}
-
-.settings-section:hover {
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-}
-
-.dark .settings-section {
-  background-color: var(--color-base-200);
-  border-color: var(--color-base-300);
-}
-
-@media (min-width: 640px) {
-  .settings-section {
-    padding: 1.5rem;
-  }
-}
-
-.section-title {
-  display: flex;
-  align-items: center;
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: var(--color-base-content);
-  margin-bottom: 1.5rem;
-}
-
-.dark .section-title {
-  color: var(--color-base-content);
-}
-
-.settings-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-@media (min-width: 640px) {
-  .settings-grid {
-    gap: 1.5rem;
-  }
-}
-
-.setting-item {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.analysis-card {
-  margin-top: 1rem;
-  padding: 0.75rem;
-  background-color: var(--color-base-200);
-  border-radius: 0.5rem;
-  border: 1px solid var(--color-base-300);
-}
-
-.dark .analysis-card {
-  background-color: var(--color-base-300);
-  border-color: var(--color-neutral);
-}
-
-.analysis-header {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 0.5rem;
-}
-
-.analysis-content {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.analysis-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 0.75rem;
-}
-
-/* Typography and Colors */
-.setting-label {
-  display: block;
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--color-base-content);
-}
-
-.dark .setting-label {
-  color: var(--color-base-content);
-}
-
-.setting-description {
-  font-size: 0.75rem;
-  color: var(--color-neutral);
-}
-
-.dark .setting-description {
-  color: var(--color-neutral-content);
-}
-
-.analysis-label {
-  color: var(--color-neutral);
-}
-
-.dark .analysis-label {
-  color: var(--color-neutral-content);
-}
-
-.analysis-value {
-  font-weight: 500;
-}
-
-.toggle-text {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--color-base-content);
-}
-
-.dark .toggle-text {
-  color: var(--color-base-content);
-}
-
-/* Form Controls */
-.setting-control {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.5rem;
-}
-
-@media (min-width: 640px) {
-  .setting-control {
-    flex-direction: row;
-    align-items: center;
-    gap: 1rem;
-  }
-}
-
-.setting-range {
-  width: 100%;
-}
-
-@media (min-width: 640px) {
-  .setting-range {
-    flex: 1;
-  }
-}
-
-.input-base {
-  padding: 0.5rem 0.75rem;
-  border: 1px solid var(--color-base-300);
-  border-radius: 0.5rem;
-  background-color: var(--color-base-100);
-  color: var(--color-base-content);
-  transition: all 0.2s ease-in-out;
-}
-
-.input-base:focus {
-  outline: none;
-  ring: 2px;
-  ring-color: var(--color-primary);
-  border-color: var(--color-primary);
-}
-
-.dark .input-base {
-  border-color: var(--color-base-300);
-  background-color: var(--color-base-200);
-  color: var(--color-base-content);
-}
-
-.dark .input-base:focus {
-  ring-color: var(--color-primary);
-  border-color: var(--color-primary);
-}
-
-.select-base {
-  padding: 0.5rem 0.75rem;
-  border: 1px solid var(--color-base-300);
-  border-radius: 0.5rem;
-  background-color: var(--color-base-100);
-  color: var(--color-base-content);
-  transition: all 0.2s ease-in-out;
-}
-
-.select-base:focus {
-  outline: none;
-  ring: 2px;
-  ring-color: var(--color-primary);
-  border-color: var(--color-primary);
-}
-
-.dark .select-base {
-  border-color: var(--color-base-300);
-  background-color: var(--color-base-200);
-  color: var(--color-base-content);
-}
-
-.dark .select-base:focus {
-  ring-color: var(--color-primary);
-  border-color: var(--color-primary);
-}
-
-.range-slider {
-  width: 100%;
-  height: 0.5rem;
-  background-color: var(--color-base-300);
-  border-radius: 0.5rem;
-  appearance: none;
-  cursor: pointer;
-}
-
-.dark .range-slider {
-  background-color: var(--color-neutral);
-}
-
-.range-slider::-webkit-slider-thumb {
-  appearance: none;
-  width: 1rem;
-  height: 1rem;
-  background-color: var(--color-primary);
-  border-radius: 50%;
-  cursor: pointer;
-}
-
-.range-slider::-moz-range-thumb {
-  width: 1rem;
-  height: 1rem;
-  background-color: var(--color-primary);
-  border-radius: 50%;
-  cursor: pointer;
-  border: 0;
-}
-
-.setting-toggle {
-  display: flex;
-  align-items: center;
-}
-
-.toggle-label {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  cursor: pointer;
-}
-
-.toggle-input {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
-}
-
-.toggle-slider {
-  position: relative;
-  display: inline-block;
-  width: 2.75rem;
-  height: 1.5rem;
-  background-color: var(--color-base-300);
-  border-radius: 9999px;
-  transition: background-color 0.2s ease-in-out;
-}
-
-.dark .toggle-slider {
-  background-color: var(--color-neutral);
-}
-
-.toggle-slider::after {
-  content: '';
-  position: absolute;
-  top: 0.125rem;
-  left: 0.125rem;
-  width: 1.25rem;
-  height: 1.25rem;
-  background-color: var(--color-base-100);
-  border-radius: 50%;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
-  transition: transform 0.2s ease-in-out;
-}
-
-.toggle-input:checked + .toggle-slider {
-  background-color: var(--color-primary);
-}
-
-.toggle-input:checked + .toggle-slider::after {
-  transform: translateX(1.25rem);
-}
-
-/* Buttons and Hints */
-.calculated-hint {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.5rem;
-  padding: 0.5rem;
-  background-color: var(--color-warning);
-  border-radius: 0.5rem;
-  border: 1px solid var(--color-warning-content);
-}
-
-@media (min-width: 640px) {
-  .calculated-hint {
-    flex-direction: row;
-    align-items: center;
-  }
-}
-
-.dark .calculated-hint {
-  background-color: color-mix(in oklch, var(--color-warning) 20%, transparent);
-  border-color: var(--color-warning-content);
-}
-
-.btn-hint {
-  padding: 0.25rem 0.5rem;
-  font-size: 0.75rem;
-  background-color: var(--color-warning);
-  color: var(--color-warning-content);
-  border-radius: 0.25rem;
-  transition: all 0.2s ease-in-out;
-}
-
-.btn-hint:hover {
-  background-color: color-mix(in oklch, var(--color-warning) 80%, white);
-}
-
-.dark .btn-hint {
-  background-color: var(--color-warning-content);
-  color: var(--color-warning);
-}
-
-.dark .btn-hint:hover {
-  background-color: color-mix(in oklch, var(--color-warning-content) 80%, white);
-}
-
-/* 计算提示图标 */
-.calculated-hint-icon {
-  color: var(--color-warning-content);
-  height: 1rem;
-  width: 1rem;
-}
-
-/* 计算提示文本 */
-.calculated-hint-text {
-  font-size: 0.875rem;
-  color: var(--color-warning-content);
-}
-
-/* 数字输入框 */
-.input-number {
-  width: 5rem;
-}
-
-.btn-secondary {
-  padding: 0.5rem 1rem;
-  background-color: var(--color-secondary);
-  color: var(--color-secondary-content);
-  border-radius: 0.5rem;
-  transition: all 0.2s ease-in-out;
-  display: flex;
-  align-items: center;
-}
-
-.btn-secondary:hover {
-  background-color: color-mix(in oklch, var(--color-secondary) 80%, black);
-}
-
-.btn-secondary:focus {
-  outline: none;
-  ring: 2px;
-  ring-color: var(--color-secondary);
-}
-
-.btn-secondary:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.dark .btn-secondary {
-  background-color: var(--color-secondary);
-  color: var(--color-secondary-content);
-}
-
-.dark .btn-secondary:hover {
-  background-color: color-mix(in oklch, var(--color-secondary) 70%, white);
-}
-
-.btn-danger {
-  padding: 0.5rem 1rem;
-  background-color: var(--color-error);
-  color: var(--color-error-content);
-  border-radius: 0.5rem;
-  transition: all 0.2s ease-in-out;
-  display: flex;
-  align-items: center;
-}
-
-.btn-danger:hover {
-  background-color: color-mix(in oklch, var(--color-error) 80%, black);
-}
-
-.btn-danger:focus {
-  outline: none;
-  ring: 2px;
-  ring-color: var(--color-error);
-}
-
-.btn-danger:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.import-control {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-/* 模板样式 */
-.period-settings {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-.section-icon {
-  margin-right: 0.5rem;
-  height: 1.25rem;
-  width: 1.25rem;
+.animate-slide-up {
+  animation: slide-up 0.3s ease-out;
 }
 </style>
