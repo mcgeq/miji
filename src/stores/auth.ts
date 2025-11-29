@@ -2,6 +2,7 @@ import { defineStore } from 'pinia';
 import { clearAuthCache } from '@/router/guards/auth.guard';
 import { verifyToken } from '@/services/auth';
 import { Role, RolePermissions } from '@/types/auth';
+import { authAudit } from '@/utils/auth-audit';
 import { Lg } from '@/utils/debugLog';
 import { toAuthUser } from '../utils/user';
 import type { AuthUser, TokenResponse, User } from '@/schema/user';
@@ -96,6 +97,12 @@ export const useAuthStore = defineStore('auth', () => {
         effectivePermissions: effectivePermissions.value.length,
       });
 
+      // 记录审计日志
+      authAudit.logLogin(authUser.serialNum, role.value, {
+        rememberMe: rememberMe.value,
+        effectivePermissions: effectivePermissions.value.length,
+      });
+
       // 注意：autosave 已在 storeStart() 中启用
       // 状态变化后会在 300ms 内自动保存到磁盘
 
@@ -114,6 +121,10 @@ export const useAuthStore = defineStore('auth', () => {
   async function logout(): Promise<void> {
     try {
       isLoading.value = true;
+
+      // 记录审计日志（在清除前记录）
+      const userId = user.value?.serialNum || 'unknown';
+      authAudit.logLogout(userId);
 
       user.value = null;
       token.value = null;
@@ -153,6 +164,22 @@ export const useAuthStore = defineStore('auth', () => {
           await logout();
           return false;
         }
+
+        // Token自动刷新：如果在5分钟内过期，尝试刷新
+        const timeUntilExpiry = tokenExpiresAt.value - currentTime;
+        if (timeUntilExpiry < 5 * 60) { // 5分钟
+          Lg.i('Auth', 'Token expires soon, attempting refresh...', {
+            expiresIn: `${Math.round(timeUntilExpiry / 60)} minutes`,
+          });
+
+          try {
+            await refreshToken();
+            Lg.i('Auth', 'Token refreshed successfully');
+          } catch (error) {
+            Lg.w('Auth', 'Token refresh failed:', error);
+            // 刷新失败不立即登出，继续使用旧token直到完全过期
+          }
+        }
       }
 
       // 验证 token
@@ -167,6 +194,41 @@ export const useAuthStore = defineStore('auth', () => {
       Lg.e('Auth', 'Auth check failed:', error);
       await logout();
       return false;
+    }
+  }
+
+  /**
+   * 刷新Token
+   *
+   * 自动刷新机制：
+   * - Token在1小时内过期时自动刷新
+   * - 使用旧Token换取新Token（延长7天）
+   * - 刷新失败不立即登出，继续使用旧Token直到完全过期
+   */
+  async function refreshToken(): Promise<void> {
+    if (!token.value || !user.value) {
+      throw new Error('No token or user to refresh');
+    }
+
+    try {
+      isLoading.value = true;
+
+      // 调用后端刷新Token API
+      const { refreshToken: refreshTokenApi } = await import('@/services/auth');
+      const tokenResponse = await refreshTokenApi(token.value);
+
+      // 更新Token和过期时间
+      token.value = tokenResponse.token;
+      tokenExpiresAt.value = tokenResponse.expiresAt;
+
+      Lg.i('Auth', 'Token refreshed successfully', {
+        newExpiresAt: new Date(tokenResponse.expiresAt * 1000).toISOString(),
+      });
+    } catch (error) {
+      Lg.e('Auth', 'Token refresh error:', error);
+      throw error;
+    } finally {
+      isLoading.value = false;
     }
   }
 
@@ -194,7 +256,23 @@ export const useAuthStore = defineStore('auth', () => {
    */
   function hasAnyPermission(perms?: Permission[]): boolean {
     if (!perms || perms.length === 0) return true;
-    return perms.some(p => effectivePermissions.value.includes(p));
+
+    const hasPermission = perms.some(p => effectivePermissions.value.includes(p));
+    const userId = user.value?.serialNum || 'unknown';
+
+    // 记录审计日志
+    if (hasPermission) {
+      authAudit.logPermissionGranted(userId, role.value, perms);
+    } else {
+      authAudit.logPermissionDenied(
+        userId,
+        role.value,
+        perms,
+        effectivePermissions.value,
+      );
+    }
+
+    return hasPermission;
   }
 
   /**
@@ -436,6 +514,7 @@ export const useAuthStore = defineStore('auth', () => {
     login,
     logout,
     checkAuthStatus,
+    refreshToken,
     updateUser,
     getCurrentUser,
 

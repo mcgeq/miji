@@ -28,6 +28,7 @@ pub fn init_commands(builder: Builder<Wry>) -> Builder<Wry> {
         crate::system_commands::check_pwd,
         crate::system_commands::generate_token,
         crate::system_commands::is_verify_token,
+        crate::system_commands::refresh_token,
         crate::system_commands::minimize_to_tray,
         crate::system_commands::restore_from_tray,
         crate::system_commands::toggle_window_visibility,

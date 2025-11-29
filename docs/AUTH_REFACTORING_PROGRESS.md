@@ -79,6 +79,14 @@
 - ✅ effectivePermissions 自动从 RolePermissions 获取权限
 - ✅ 创建 `AUTH_DEFAULT_PERMISSIONS.md` 说明文档
 
+### 7. 系统优化（新增）✨
+- ✅ 应用启动时权限修复机制 (`App.vue`)
+- ✅ Token自动刷新机制（5分钟内过期自动刷新）
+- ✅ 组件级权限守卫 Composable (`useAuthGuard.ts`)
+- ✅ 权限审计日志系统 (`auth-audit.ts`)
+- ✅ 集成审计日志到 Auth Store
+- ✅ 改进的错误处理和用户提示
+
 ---
 
 ## 🔄 待实施
