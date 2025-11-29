@@ -688,48 +688,53 @@ watch(
         />
       </FormRow>
 
-      <ReminderSelector
-        v-model="form.type"
+      <!-- 提醒类型 -->
+      <FormRow
         :label="t('financial.reminder.reminderType')"
-        :placeholder="t('common.placeholders.selectType')"
-        :required="true"
-        :error-message="validationErrors.type"
-        :show-grouped="true"
-        :show-quick-select="true"
-        :show-icons="true"
-        :popular-only="false"
-        :locale="locale"
-        width="2/3" quick-select-label="常用类型"
+        required
+        :error="validationErrors.type"
         :help-text="t('helpTexts.reminderType')"
-        @change="handleTypeChange"
-        @validate="handleTypeValidation"
-      />
+      >
+        <ReminderSelector
+          v-model="form.type"
+          label=""
+          :placeholder="t('common.placeholders.selectType')"
+          :required="false"
+          error-message=""
+          :show-grouped="true"
+          :show-quick-select="true"
+          :show-icons="true"
+          :popular-only="false"
+          :locale="locale"
+          width="full"
+          quick-select-label="常用类型"
+          help-text=""
+          @change="handleTypeChange"
+          @validate="handleTypeValidation"
+        />
+      </FormRow>
 
       <!-- 金额 -->
-      <div
+      <FormRow
         v-if="isFinanceType"
-        class="flex items-center gap-4 mb-3 mt-2"
+        :label="t('financial.money')"
+        required
       >
-        <label class="text-sm font-medium text-gray-900 dark:text-white shrink-0 w-24 text-left">
-          {{ t('financial.money') }}
-          <span v-if="isFinanceType" class="text-red-600 dark:text-red-400 ml-1">*</span>
-        </label>
-        <div class="flex-1">
-          <div class="flex items-center gap-2">
-            <div class="flex-1">
-              <Input
-                v-model.number="form.amount"
-                type="number"
-                :placeholder="amountPlaceholder"
-                @blur="validateAmount"
-              />
-            </div>
-            <div class="flex-1">
-              <CurrencySelector v-model="form.currency" width="full" />
-            </div>
+        <div class="flex gap-2">
+          <div class="flex-1">
+            <input
+              v-model.number="form.amount"
+              type="number"
+              class="w-full px-4 py-2 text-base transition-colors focus:outline-none focus:ring-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 border border-gray-300 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500 rounded-lg"
+              :placeholder="amountPlaceholder"
+              @blur="validateAmount"
+            >
+          </div>
+          <div class="flex-[2]">
+            <CurrencySelector v-model="form.currency" width="full" />
           </div>
         </div>
-      </div>
+      </FormRow>
       <!-- 账单日期 -->
       <FormRow
         v-if="isFinanceType"
@@ -756,44 +761,60 @@ watch(
         />
       </FormRow>
 
-      <!-- 重复频率  -->
-      <RepeatPeriodSelector
-        v-model="form.repeatPeriod"
+      <!-- 重复频率 -->
+      <FormRow
         :label="t('date.repeat.frequency')"
-        :error-message="validationErrors.repeatPeriod"
+        :error="validationErrors.repeatPeriod"
         :help-text="t('helpTexts.repeatPeriod')"
-        @change="handleRepeatPeriodChange"
-        @validate="handleRepeatPeriodValidation"
-      />
+      >
+        <RepeatPeriodSelector
+          v-model="form.repeatPeriod"
+          label=""
+          error-message=""
+          help-text=""
+          @change="handleRepeatPeriodChange"
+          @validate="handleRepeatPeriodValidation"
+        />
+      </FormRow>
 
       <!-- 优先级 -->
-      <div class="mb-2 mt-2">
+      <FormRow
+        :label="t('common.misc.priority')"
+        :error="validationErrors.priority"
+        :help-text="t('helpTexts.priority')"
+      >
         <PrioritySelector
-          v-model="form.priority" :label="t('common.misc.priority')"
-          :error-message="validationErrors.priority" :locale="locale" :show-icons="true" width="2/3"
-          :help-text="t('helpTexts.priority')" @change="handlePriorityChange" @validate="handlePriorityValidation"
+          v-model="form.priority"
+          label=""
+          error-message=""
+          :locale="locale"
+          :show-icons="true"
+          width="full"
+          help-text=""
+          @change="handlePriorityChange"
+          @validate="handlePriorityValidation"
         />
-      </div>
+      </FormRow>
 
       <!-- 提前提醒 -->
-      <div class="flex items-center gap-4 mb-3">
-        <label class="text-sm font-medium text-gray-900 dark:text-white shrink-0 w-24 text-left">
-          {{ t('financial.reminder.advanceReminder') }}
-        </label>
-        <div class="flex flex-1 items-center gap-1">
-          <Input
-            v-model.number="form.advanceValue"
-            type="number"
-            placeholder="0"
-            class="flex-1"
-          />
-          <Select
-            v-model="advanceUnitComputed"
-            :options="advanceUnitOptions"
-            class="flex-1"
-          />
+      <FormRow :label="t('financial.reminder.advanceReminder')">
+        <div class="flex gap-2">
+          <div class="w-1/3">
+            <input
+              v-model.number="form.advanceValue"
+              type="number"
+              placeholder="0"
+              class="w-full px-4 py-2 text-base transition-colors focus:outline-none focus:ring-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 border border-gray-300 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500 rounded-lg"
+            >
+          </div>
+          <div class="flex-1">
+            <Select
+              v-model="advanceUnitComputed"
+              :options="advanceUnitOptions"
+            />
+          </div>
         </div>
-      </div>
+      </FormRow>
 
       <!-- 提醒频率 -->
       <FormRow :label="t('financial.reminder.frequency')" optional>
@@ -804,28 +825,21 @@ watch(
       </FormRow>
 
       <!-- 稍后提醒（打盹） -->
-      <div class="flex items-center gap-4 mb-3">
-        <label class="text-sm font-medium text-gray-900 dark:text-white shrink-0 w-24 text-left">
-          {{ t('financial.reminder.snoozeUntil') }}
-        </label>
+      <FormRow :label="t('financial.reminder.snoozeUntil')">
         <DateTimePicker
           v-model="snoozeUntilDate"
-          class="flex-1"
           :placeholder="t('common.selectDate')"
         />
-      </div>
+      </FormRow>
 
       <!-- 提醒方式（系统合并） -->
-      <div class="flex items-start gap-4 mb-3">
-        <label class="text-sm font-medium text-gray-900 dark:text-white shrink-0 w-24 text-left pt-2">{{ t('financial.reminder.methods') }}</label>
-        <div class="flex-1">
+      <FormRow :label="t('financial.reminder.methods')">
+        <div class="flex flex-wrap gap-4">
           <Checkbox v-model="methodsState.system" label="系统" />
-          <div class="mt-1 flex gap-2">
-            <Checkbox v-model="methodsState.email" label="邮件" />
-            <Checkbox v-model="methodsState.sms" label="短信" />
-          </div>
+          <Checkbox v-model="methodsState.email" label="邮件" />
+          <Checkbox v-model="methodsState.sms" label="短信" />
         </div>
-      </div>
+      </FormRow>
 
       <!-- 高级设置（可折叠） -->
       <details class="mt-2 mb-2">

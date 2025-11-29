@@ -322,8 +322,8 @@ watch(
 
 <template>
   <div class="flex flex-col gap-2">
-    <!-- 通用输入行 -->
-    <div class="flex justify-between items-center mb-2 max-sm:flex-wrap">
+    <!-- 通用输入行 - 有标签时显示完整布局 -->
+    <div v-if="label" class="flex justify-between items-center mb-2 max-sm:flex-wrap">
       <label class="text-sm font-medium text-[light-dark(#374151,#d1d5db)] mb-0 max-sm:shrink-0">
         {{ label }}
         <span v-if="required" class="text-[var(--color-primary)] ml-1">*</span>
@@ -340,7 +340,18 @@ watch(
       </div>
     </div>
 
-    <div v-if="errorMessage" class="text-sm text-[#dc2626] text-right">
+    <!-- 无标签时只显示 Select - 用于 FormRow 场景 -->
+    <Select
+      v-else
+      :model-value="modelValue.type"
+      :options="repeatTypeOptions"
+      size="md"
+      :error="errorMessage"
+      full-width
+      @update:model-value="(val) => handleTypeChange({ target: { value: val } } as any)"
+    />
+
+    <div v-if="errorMessage && label" class="text-sm text-[#dc2626] text-right">
       {{ errorMessage }}
     </div>
 

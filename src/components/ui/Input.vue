@@ -74,7 +74,7 @@ const iconSizes = {
 </script>
 
 <template>
-  <div class="inline-block" :class="[props.fullWidth && 'w-full']">
+  <div class="w-full">
     <!-- 标签 -->
     <label
       v-if="props.label"

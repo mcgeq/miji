@@ -97,39 +97,60 @@ const alertTypeOptions = computed<SelectOption[]>(() => [
     </FormRow>
 
     <!-- 分类选择器 -->
-    <div v-if="form.budgetScopeType === 'Category' || form.budgetScopeType === 'Hybrid'">
+    <FormRow
+      v-if="form.budgetScopeType === 'Category' || form.budgetScopeType === 'Hybrid'"
+      label="预算类别"
+      required
+      :error="categoryError"
+      help-text="选择适用于此预算的分类"
+    >
       <CategorySelector
         v-model="form.categoryScope"
-        :required="true"
-        label="预算类别"
+        :required="false"
+        label=""
         placeholder="请选择分类"
-        help-text="选择适用于此预算的分类"
-        :error-message="categoryError"
+        help-text=""
+        error-message=""
+        width="full"
         @validate="emit('validateCategory', $event)"
       />
-    </div>
+    </FormRow>
 
     <!-- 账户选择器（仅个人预算） -->
-    <div v-if="!isFamilyBudget && showAccountSelector && form.budgetScopeType === 'Account'">
+    <FormRow
+      v-if="!isFamilyBudget && showAccountSelector && form.budgetScopeType === 'Account'"
+      label="账户选择"
+      required
+      :error="accountError"
+    >
       <AccountSelector
         v-model="form.accountSerialNum"
-        :required="true"
-        label="账户选择"
+        :required="false"
+        label=""
         placeholder="请选择账户"
-        help-text="选择适用于此预算的账户"
+        help-text=""
+        :show-quick-select="false"
+        width="full"
         @validate="emit('validateAccount', $event)"
       />
-    </div>
+    </FormRow>
 
     <!-- 重复周期 -->
-    <RepeatPeriodSelector
-      v-model="form.repeatPeriod"
+    <FormRow
       :label="t('date.repeat.frequency')"
-      :error-message="repeatPeriodError"
+      :error="repeatPeriodError"
       :help-text="t('helpTexts.repeatPeriod')"
-      @change="emit('changeRepeatPeriod', $event)"
-      @validate="emit('validateRepeatPeriod', $event)"
-    />
+    >
+      <RepeatPeriodSelector
+        v-model="form.repeatPeriod"
+        label=""
+        :required="false"
+        error-message=""
+        help-text=""
+        @change="emit('changeRepeatPeriod', $event)"
+        @validate="emit('validateRepeatPeriod', $event)"
+      />
+    </FormRow>
 
     <!-- 起止日期 -->
     <FormRow :label="t('date.startDate')" required>
@@ -153,38 +174,39 @@ const alertTypeOptions = computed<SelectOption[]>(() => [
       />
     </FormRow>
 
-    <!-- 预警设置 -->
-    <div class="mb-2 flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:justify-between">
-      <div class="w-full sm:w-1/3">
-        <Checkbox
-          v-model="form.alertEnabled"
-          :label="t('financial.budget.overBudgetAlert')"
-        />
-      </div>
+    <!-- 预警设置 - 第一行：标签和复选框 -->
+    <FormRow :label="t('financial.budget.overBudgetAlert')" optional>
+      <Checkbox v-model="form.alertEnabled" />
+    </FormRow>
 
-      <div v-if="form.alertEnabled && form.alertThreshold" class="flex gap-2 flex-1 items-center w-full">
-        <Select
-          v-model="form.alertThreshold.type"
-          :options="alertTypeOptions"
-          class="flex-[2]"
-        />
+    <!-- 预警设置 - 第二行：下拉框和输入框 -->
+    <FormRow v-if="form.alertEnabled && form.alertThreshold">
+      <div class="flex gap-2">
+        <div class="flex-1">
+          <Select
+            v-model="form.alertThreshold.type"
+            :options="alertTypeOptions"
+          />
+        </div>
 
-        <Input
-          v-model="form.alertThreshold.value"
-          type="number"
-          class="flex-1"
-          :placeholder="form.alertThreshold.type === 'Percentage' ? '80%' : '100.00'"
-        />
+        <div class="flex-1">
+          <input
+            v-model="form.alertThreshold.value"
+            type="number"
+            class="w-full px-4 py-2 text-base transition-colors focus:outline-none focus:ring-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 border border-gray-300 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500 rounded-lg"
+            :placeholder="form.alertThreshold.type === 'Percentage' ? '80' : '100.00'"
+          >
+        </div>
       </div>
-    </div>
+    </FormRow>
 
     <!-- 描述 -->
-    <div class="mb-2">
+    <FormRow full-width>
       <Textarea
         v-model="form.description"
         :rows="3"
         :placeholder="t('placeholders.budgetDescription')"
       />
-    </div>
+    </FormRow>
   </div>
 </template>
