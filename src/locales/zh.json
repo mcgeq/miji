@@ -13,7 +13,9 @@
       "loginSuccess": "登录成功！欢迎回来。",
       "loginFailed": "登录失败，账号或密码不正确。",
       "registerSuccess": "注册成功！欢迎加入。",
-      "registerFailed": "注册失败，可能是邮箱已被使用或信息填写有误。"
+      "registerFailed": "注册失败，可能是邮箱已被使用或信息填写有误。",
+      "pleaseLogin": "请先登录",
+      "noPermission": "您没有权限访问此页面"
     },
     "loading": {
       "loggingIn": "登录中...",

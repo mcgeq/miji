@@ -1,8 +1,11 @@
 import { defineStore } from 'pinia';
+import { clearAuthCache } from '@/router/guards/auth.guard';
 import { verifyToken } from '@/services/auth';
+import { Role, RolePermissions } from '@/types/auth';
 import { Lg } from '@/utils/debugLog';
 import { toAuthUser } from '../utils/user';
 import type { AuthUser, TokenResponse, User } from '@/schema/user';
+import type { Permission } from '@/types/auth';
 
 // =============================================================================
 // Pinia Store with Tauri Persistence
@@ -20,12 +23,22 @@ export const useAuthStore = defineStore('auth', () => {
   const rememberMe = ref<boolean>(false);
   const isLoading = ref<boolean>(false);
 
+  // 权限相关状态
+  const permissions = ref<Permission[]>([]);
+  const role = ref<Role>(Role.GUEST);
+
   // 计算属性
   const isAuthenticated = computed(() => !!user.value && !!token.value);
 
   const isTokenExpired = computed(() => {
     if (!tokenExpiresAt.value) return false;
     return tokenExpiresAt.value < Date.now() / 1000;
+  });
+
+  // 计算有效权限（角色权限 + 额外权限）
+  const effectivePermissions = computed(() => {
+    const rolePerms = RolePermissions[role.value] || [];
+    return [...new Set([...rolePerms, ...permissions.value])];
   });
 
   // =============================================================================
@@ -58,10 +71,21 @@ export const useAuthStore = defineStore('auth', () => {
         }
       }
 
+      // 设置角色和权限
+      // 注意：User 类型可能还没有 role 和 permissions 字段
+      // 这里使用类型断言，如果字段不存在则使用默认值
+      role.value = ((userData as any).role as Role) || Role.USER;
+      permissions.value = ((userData as any).permissions as Permission[]) || [];
+
+      // 清除路由守卫缓存
+      clearAuthCache();
+
       Lg.i('Auth', 'User logged in successfully', {
         hasUser: !!user.value,
         hasToken: !!token.value,
         rememberMe: rememberMe.value,
+        role: role.value,
+        permissionsCount: permissions.value.length,
       });
 
       // 注意：autosave 已在 storeStart() 中启用
@@ -87,6 +111,13 @@ export const useAuthStore = defineStore('auth', () => {
       token.value = null;
       tokenExpiresAt.value = null;
       rememberMe.value = false;
+
+      // 清除权限和角色
+      permissions.value = [];
+      role.value = Role.GUEST;
+
+      // 清除路由守卫缓存
+      clearAuthCache();
 
       Lg.i('Auth', 'User logged out successfully');
     } catch (error) {
@@ -148,6 +179,37 @@ export const useAuthStore = defineStore('auth', () => {
    */
   function getCurrentUser(): AuthUser | null {
     return user.value;
+  }
+
+  /**
+   * 检查是否有指定权限（满足任一即可）
+   */
+  function hasAnyPermission(perms?: Permission[]): boolean {
+    if (!perms || perms.length === 0) return true;
+    return perms.some(p => effectivePermissions.value.includes(p));
+  }
+
+  /**
+   * 检查是否有所有指定权限
+   */
+  function hasAllPermissions(perms?: Permission[]): boolean {
+    if (!perms || perms.length === 0) return true;
+    return perms.every(p => effectivePermissions.value.includes(p));
+  }
+
+  /**
+   * 检查是否有指定角色（满足任一即可）
+   */
+  function hasAnyRole(roles?: Role[]): boolean {
+    if (!roles || roles.length === 0) return true;
+    return roles.includes(role.value);
+  }
+
+  /**
+   * 检查是否有指定权限
+   */
+  function hasPermission(permission: Permission): boolean {
+    return effectivePermissions.value.includes(permission);
   }
 
   // =============================================================================
@@ -354,10 +416,13 @@ export const useAuthStore = defineStore('auth', () => {
     tokenExpiresAt,
     rememberMe,
     isLoading,
+    permissions,
+    role,
 
     // 计算属性
     isAuthenticated,
     isTokenExpired,
+    effectivePermissions,
 
     // 核心方法
     login,
@@ -365,6 +430,12 @@ export const useAuthStore = defineStore('auth', () => {
     checkAuthStatus,
     updateUser,
     getCurrentUser,
+
+    // 权限检查方法
+    hasAnyPermission,
+    hasAllPermissions,
+    hasAnyRole,
+    hasPermission,
 
     // 扩展方法
     updateProfile,
