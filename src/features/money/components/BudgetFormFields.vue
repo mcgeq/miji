@@ -205,6 +205,8 @@ const alertTypeOptions = computed<SelectOption[]>(() => [
       <Textarea
         v-model="form.description"
         :rows="3"
+        :max-length="200"
+        :show-count="true"
         :placeholder="t('placeholders.budgetDescription')"
       />
     </FormRow>

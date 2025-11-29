@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import { MoreHorizontal, RotateCcw } from 'lucide-vue-next';
-import { Pagination } from '@/components/ui';
-import Button from '@/components/ui/Button.vue';
-import Spinner from '@/components/ui/Spinner.vue';
+import { Button, EmptyState, LoadingState, Pagination } from '@/components/ui';
 import { SortDirection, TransactionTypeSchema } from '@/schema/common';
 import { useTransactionStore } from '@/stores/money';
 import { lowercaseFirstLetter } from '@/utils/common';
@@ -220,13 +218,14 @@ defineExpose({
 </script>
 
 <template>
-  <div class="space-y-4">
+  <div class="space-y-4 w-full">
     <!-- 过滤器区域 -->
-    <div class="flex flex-wrap items-center gap-2 p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-      <div class="flex-1 min-w-[140px]">
+    <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 w-full">
+      <div class="flex flex-wrap gap-3 items-center justify-center">
+        <!-- 交易类型过滤 -->
         <select
           v-model="filters.transactionType"
-          class="w-full px-3 py-2 text-sm bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          class="px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
         >
           <option value="">
             {{ t('common.actions.all') }}
@@ -241,13 +240,12 @@ defineExpose({
             {{ t('financial.transaction.transfer') }}
           </option>
         </select>
-      </div>
 
-      <template v-if="showMoreFilters">
-        <div class="flex-1 min-w-[140px]">
+        <!-- 更多过滤器 -->
+        <template v-if="showMoreFilters">
           <select
             v-model="filters.accountSerialNum"
-            class="w-full px-3 py-2 text-sm bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            class="px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
           >
             <option value="">
               {{ t('common.actions.all') }}{{ t('financial.account.account') }}
@@ -256,12 +254,10 @@ defineExpose({
               {{ account.name }}
             </option>
           </select>
-        </div>
 
-        <div class="flex-1 min-w-[140px]">
           <select
             v-model="filters.category"
-            class="w-full px-3 py-2 text-sm bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            class="px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
           >
             <option value="">
               {{ t('categories.allCategory') }}
@@ -270,56 +266,47 @@ defineExpose({
               {{ category.option }}
             </option>
           </select>
-        </div>
 
-        <div class="flex-1 min-w-[140px]">
           <input
             v-model="filters.dateStart"
             type="date"
-            class="w-full px-3 py-2 text-sm bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            class="px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
           >
-        </div>
 
-        <div class="flex-1 min-w-[140px]">
           <input
             v-model="filters.dateEnd"
             type="date"
-            class="w-full px-3 py-2 text-sm bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            class="px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
           >
-        </div>
-      </template>
+        </template>
 
-      <div class="flex gap-1">
-        <Button
-          variant="secondary"
-          size="sm"
-          :icon="MoreHorizontal"
-          @click="toggleFilters"
-        />
-        <Button
-          variant="secondary"
-          size="sm"
-          :icon="RotateCcw"
-          @click="resetFilters"
-        />
+        <!-- 操作按钮组 -->
+        <div class="flex gap-2 ml-auto">
+          <Button
+            variant="secondary"
+            size="sm"
+            :icon="MoreHorizontal"
+            @click="toggleFilters"
+          />
+          <Button
+            variant="secondary"
+            size="sm"
+            :icon="RotateCcw"
+            @click="resetFilters"
+          />
+        </div>
       </div>
     </div>
 
     <!-- 加载状态 -->
-    <div v-if="loading" class="flex flex-col items-center gap-4 py-16 text-center text-gray-500 dark:text-gray-400 bg-gradient-to-b from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 rounded-lg border-2 border-gray-200 dark:border-gray-700 my-4">
-      <Spinner size="lg" />
-      <span>{{ t('common.loading') }}</span>
-    </div>
+    <LoadingState v-if="loading" :message="t('common.loading')" />
 
     <!-- 空状态 -->
-    <div v-else-if="transactions.length === 0" class="flex flex-col items-center gap-4 py-16 text-center text-gray-500 dark:text-gray-400 bg-gradient-to-b from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-700 my-4">
-      <div class="text-6xl opacity-30">
-        📝
-      </div>
-      <div class="text-base font-medium">
-        暂无交易记录
-      </div>
-    </div>
+    <EmptyState
+      v-else-if="transactions.length === 0"
+      icon="📝"
+      message="暂无交易记录"
+    />
 
     <!-- 交易列表 -->
     <TransactionTable

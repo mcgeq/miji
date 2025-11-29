@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { Ban, BarChart3, Edit, MoreHorizontal, Repeat, RotateCcw, StopCircle, Target, Trash } from 'lucide-vue-next';
-import { Button, Card, Pagination } from '@/components/ui';
+import { Ban, BarChart3, Edit, MoreHorizontal, Repeat, RotateCcw, StopCircle, Trash } from 'lucide-vue-next';
+import { Button, Card, EmptyState, LoadingState, Pagination } from '@/components/ui';
 import { useBudgetStore, useCategoryStore } from '@/stores/money';
 import { getRepeatTypeName, lowercaseFirstLetter } from '@/utils/common';
 import { useBudgetFilters } from '../composables/useBudgetFilters';
@@ -113,10 +113,10 @@ defineExpose({
 </script>
 
 <template>
-  <div class="space-y-4">
+  <div class="space-y-4 w-full">
     <!-- 过滤器区域 -->
-    <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
-      <div class="flex flex-wrap gap-3 items-center">
+    <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 w-full">
+      <div class="flex flex-wrap gap-3 items-center justify-center">
         <!-- 统计按钮 -->
         <Button
           variant="primary"
@@ -227,23 +227,20 @@ defineExpose({
     </div>
 
     <!-- 加载状态 -->
-    <div v-if="loading" class="flex items-center justify-center h-24 text-gray-500 dark:text-gray-400">
-      {{ t('common.loading') }}
-    </div>
+    <LoadingState v-if="loading" :message="t('common.loading')" />
 
     <!-- 空状态 -->
-    <div v-else-if="pagination.paginatedItems.value.length === 0" class="flex flex-col items-center justify-center h-24 text-gray-400 dark:text-gray-500 gap-2">
-      <Target :size="32" class="opacity-50" />
-      <div class="text-sm">
-        {{ pagination.totalItems.value === 0 ? t('financial.messages.noBudget') : t('messages.noPatternResult') }}
-      </div>
-    </div>
+    <EmptyState
+      v-else-if="pagination.paginatedItems.value.length === 0"
+      icon="🎯"
+      :message="pagination.totalItems.value === 0 ? t('financial.messages.noBudget') : t('messages.noPatternResult')"
+    />
 
     <!-- 预算网格 -->
     <div
       v-else
       class="grid gap-4 mb-4"
-      :class="mediaQueries.isMobile ? 'grid-cols-1' : (pagination.paginatedItems.value.length === 1 ? 'grid-cols-1 max-w-[50%]' : 'grid-cols-2')"
+      :class="mediaQueries.isMobile ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-2'"
     >
       <Card
         v-for="budget in decoratedBudgets"

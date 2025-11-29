@@ -4,10 +4,15 @@ import {
   AlertCircle,
   CheckCircle,
   Clock,
+  CheckCircle as LucideCheckCircle,
+  Clock as LucideClock,
+  Edit as LucideEdit,
+  Repeat as LucideRepeat,
+  Trash as LucideTrash,
   MoreHorizontal,
   RotateCcw,
 } from 'lucide-vue-next';
-import { Card, Pagination, Spinner } from '@/components/ui';
+import { Button, Card, EmptyState, LoadingState, Pagination } from '@/components/ui';
 import { useReminderStore } from '@/stores/money';
 import { getRepeatTypeName, lowercaseFirstLetter } from '@/utils/common';
 import { DateUtils } from '@/utils/date';
@@ -110,13 +115,14 @@ defineExpose({
 </script>
 
 <template>
-  <div class="min-h-[100px]">
+  <div class="space-y-4 w-full">
     <!-- 过滤器区域 -->
-    <div class="screening-filtering mb-4">
-      <div class="filter-flex-wrap">
+    <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 w-full">
+      <div class="flex flex-wrap gap-3 items-center justify-center">
+        <!-- 状态过滤 -->
         <select
           v-model="filters.status"
-          class="screening-filtering-select"
+          class="px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
         >
           <option value="">
             {{ t('common.actions.all') }}{{ t('common.status.status') }}
@@ -124,20 +130,19 @@ defineExpose({
           <option value="paid">
             {{ t('common.status.paid') }}
           </option>
+          <option value="unpaid">
+            {{ t('common.status.unpaid') }}
+          </option>
           <option value="overdue">
             {{ t('common.status.overdue') }}
           </option>
-          <option value="pending">
-            {{ t('common.status.pending') }}
-          </option>
         </select>
-      </div>
 
-      <template v-if="showMoreFilters">
-        <div class="filter-flex-wrap">
+        <!-- 更多过滤器 -->
+        <template v-if="showMoreFilters">
           <select
             v-model="filters.repeatPeriodType"
-            class="screening-filtering-select"
+            class="px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
           >
             <option value="undefined">
               {{ t('common.actions.all') }}{{ t('todos.repeat.periodType') }}
@@ -161,91 +166,76 @@ defineExpose({
               {{ t('date.repeat.custom') }}
             </option>
           </select>
-        </div>
 
-        <div class="filter-flex-wrap">
           <select
             v-model="filters.category"
-            class="screening-filtering-select"
+            class="px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
           >
             <option value="undefined">
               {{ t('categories.allCategory') }}
             </option>
-            <option
-              v-for="category in uniqueCategories"
-              :key="category"
-              :value="category"
-            >
-              {{ category }}
+            <option v-for="category in uniqueCategories" :key="category" :value="category">
+              {{ t(`common.categories.${lowercaseFirstLetter(category)}`) }}
             </option>
           </select>
-        </div>
 
-        <div class="filter-flex-wrap">
           <select
             v-model="filters.dateRange"
-            class="screening-filtering-select"
+            class="px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
           >
             <option value="">
               {{ t('common.actions.all') }}
             </option>
             <option value="today">
-              {{ t('date.periods.today') }}
+              {{ t('date.today') }}
             </option>
-            <option value="week">
-              {{ t('date.periods.week') }}
+            <option value="thisWeek">
+              {{ t('date.thisWeek') }}
             </option>
-            <option value="month">
-              {{ t('date.periods.month') }}
+            <option value="thisMonth">
+              {{ t('date.thisMonth') }}
             </option>
-            <option value="overdue">
-              {{ t('common.status.overdue') }}
+            <option value="custom">
+              {{ t('common.custom') }}
             </option>
           </select>
-        </div>
-      </template>
+        </template>
 
-      <div class="filter-button-group">
-        <button
-          class="screening-filtering-select"
-          @click="toggleFilters"
-        >
-          <MoreHorizontal class="wh-4 mr-1" />
-        </button>
-        <button
-          class="screening-filtering-select"
-          @click="resetFilters"
-        >
-          <RotateCcw class="wh-4 mr-1" />
-        </button>
+        <!-- 操作按钮组 -->
+        <div class="flex gap-2 ml-auto">
+          <Button
+            variant="secondary"
+            size="sm"
+            :icon="MoreHorizontal"
+            :title="t('common.actions.moreFilters')"
+            @click="toggleFilters"
+          />
+          <Button
+            variant="secondary"
+            size="sm"
+            :icon="RotateCcw"
+            :title="t('common.actions.reset')"
+            @click="resetFilters"
+          />
+        </div>
       </div>
     </div>
 
     <!-- 加载状态 -->
-    <div v-if="loading" class="flex flex-col items-center justify-center h-[100px] text-gray-600 dark:text-gray-400">
-      <Spinner size="lg" />
-      <span class="mt-2">{{ t('common.loading') }}</span>
-    </div>
+    <LoadingState v-if="loading" :message="t('common.loading')" />
 
     <!-- 空状态 -->
-    <div v-else-if="pagination.paginatedItems.value.length === 0" class="flex flex-col items-center justify-center h-[100px] text-gray-400 dark:text-gray-500">
-      <div class="text-sm mb-2 opacity-50">
-        <i class="icon-bell" />
-      </div>
-      <div class="text-sm">
-        {{ pagination.totalItems.value === 0 ? t('messages.noReminder') : t('messages.noPatternResult') }}
-      </div>
-    </div>
+    <EmptyState
+      v-else-if="pagination.paginatedItems.value.length === 0"
+      icon="🔔"
+      :message="pagination.totalItems.value === 0 ? t('messages.noReminder') : t('messages.noPatternResult')"
+    />
 
     <!-- 提醒网格 -->
     <div
       v-else
       class="grid gap-4 mb-4"
-      :class="[
-        mediaQueries.isMobile ? 'grid-cols-1'
-        : pagination.paginatedItems.value.length === 1 ? 'grid-cols-1 max-w-[50%]'
-          : 'grid-cols-1 lg:grid-cols-2',
-      ]"
+      :class="mediaQueries.isMobile ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-2'"
     >
       <Card
         v-for="reminder in pagination.paginatedItems.value" :key="reminder.serialNum"

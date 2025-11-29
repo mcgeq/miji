@@ -324,53 +324,53 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="max-w-7xl mx-auto p-5 md:p-8 overflow-x-hidden">
+  <div class="w-full max-w-7xl mx-auto p-5 md:p-8 overflow-x-hidden">
     <!-- 统计卡片轮播 -->
-    <StackedStatCards
-      ref="stackedCardsRef"
-      :cards="statCards"
-      :auto-play="true"
-      :auto-play-delay="8000"
-      :show-nav-buttons="true"
-      :show-play-control="false"
-      :card-width="cardDimensions.width"
-      :card-height="cardDimensions.height"
-      :enable-keyboard="true"
-      :max-visible-cards="4"
-      :transition-duration="600"
-      :disabled="hasModalOpen"
-      @card-change="handleCardChange"
-      @card-click="handleCardClick"
-    />
+    <div class="w-full max-w-[55rem] mx-auto">
+      <StackedStatCards
+        ref="stackedCardsRef"
+        :cards="statCards"
+        :auto-play="true"
+        :auto-play-delay="8000"
+        :show-nav-buttons="true"
+        :show-play-control="false"
+        :card-width="cardDimensions.width"
+        :card-height="cardDimensions.height"
+        :enable-keyboard="true"
+        :max-visible-cards="4"
+        :transition-duration="600"
+        :disabled="hasModalOpen"
+        @card-change="handleCardChange"
+        @card-click="handleCardClick"
+      />
+    </div>
 
     <!-- 快捷操作 & Tabs -->
-    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden mt-0.5">
-      <div class="flex flex-wrap justify-center items-center p-5 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
-        <div class="w-full">
-          <div class="flex gap-3 overflow-x-auto py-2 scrollbar-hide">
-            <button class="flex-shrink-0 flex items-center justify-center gap-1.5 px-4 py-2 text-sm font-medium bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 border-none rounded-md cursor-pointer transition-opacity hover:opacity-80" @click="showAccountModal">
-              <LucideCreditCard class="w-4 h-4 flex-shrink-0" /><span class="whitespace-nowrap hidden md:inline">{{ t('financial.quickActions.account') }}</span>
-            </button>
-            <button class="flex-shrink-0 flex items-center justify-center gap-1.5 px-4 py-2 text-sm font-medium bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 border-none rounded-md cursor-pointer transition-opacity hover:opacity-80" @click="showTransactionModal(TransactionTypeSchema.enum.Income)">
-              <LucidePlusCircle class="w-4 h-4 flex-shrink-0" /><span class="whitespace-nowrap hidden md:inline">{{ t('financial.quickActions.income') }}</span>
-            </button>
-            <button class="flex-shrink-0 flex items-center justify-center gap-1.5 px-4 py-2 text-sm font-medium bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 border-none rounded-md cursor-pointer transition-opacity hover:opacity-80" @click="showTransactionModal(TransactionTypeSchema.enum.Expense)">
-              <LucideMinusCircle class="w-4 h-4 flex-shrink-0" /><span class="whitespace-nowrap hidden md:inline">{{ t('financial.quickActions.expense') }}</span>
-            </button>
-            <button class="flex-shrink-0 flex items-center justify-center gap-1.5 px-4 py-2 text-sm font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border-none rounded-md cursor-pointer transition-opacity hover:opacity-80" @click="showTransactionModal(TransactionTypeSchema.enum.Transfer)">
-              <LucideArrowRightLeft class="w-4 h-4 flex-shrink-0" /><span class="whitespace-nowrap hidden md:inline">{{ t('financial.quickActions.transfer') }}</span>
-            </button>
-            <button class="flex-shrink-0 flex items-center justify-center gap-1.5 px-4 py-2 text-sm font-medium bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 border-none rounded-md cursor-pointer transition-opacity hover:opacity-80" @click="showBudgetModal">
-              <LucideTarget class="w-4 h-4 flex-shrink-0" /><span class="whitespace-nowrap hidden md:inline">{{ t('financial.quickActions.budget') }}</span>
-            </button>
-            <button class="flex-shrink-0 flex items-center justify-center gap-1.5 px-4 py-2 text-sm font-medium bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400 border-none rounded-md cursor-pointer transition-opacity hover:opacity-80" @click="showReminderModal">
-              <LucideBell class="w-4 h-4 flex-shrink-0" /><span class="whitespace-nowrap hidden md:inline">{{ t('financial.quickActions.reminder') }}</span>
-            </button>
-          </div>
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden mt-0.5 w-full max-w-[55rem] mx-auto">
+      <div class="flex justify-center items-center px-3 py-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+        <div class="flex flex-wrap justify-center gap-2 md:gap-3">
+          <button class="flex-shrink-0 flex items-center justify-center gap-1.5 px-3 md:px-4 py-2 text-sm font-medium bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 border-none rounded-md cursor-pointer transition-opacity hover:opacity-80" @click="showAccountModal">
+            <LucideCreditCard class="w-4 h-4 flex-shrink-0" /><span class="whitespace-nowrap hidden sm:inline">{{ t('financial.quickActions.account') }}</span>
+          </button>
+          <button class="flex-shrink-0 flex items-center justify-center gap-1.5 px-3 md:px-4 py-2 text-sm font-medium bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 border-none rounded-md cursor-pointer transition-opacity hover:opacity-80" @click="showTransactionModal(TransactionTypeSchema.enum.Income)">
+            <LucidePlusCircle class="w-4 h-4 flex-shrink-0" /><span class="whitespace-nowrap hidden sm:inline">{{ t('financial.quickActions.income') }}</span>
+          </button>
+          <button class="flex-shrink-0 flex items-center justify-center gap-1.5 px-3 md:px-4 py-2 text-sm font-medium bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 border-none rounded-md cursor-pointer transition-opacity hover:opacity-80" @click="showTransactionModal(TransactionTypeSchema.enum.Expense)">
+            <LucideMinusCircle class="w-4 h-4 flex-shrink-0" /><span class="whitespace-nowrap hidden sm:inline">{{ t('financial.quickActions.expense') }}</span>
+          </button>
+          <button class="flex-shrink-0 flex items-center justify-center gap-1.5 px-3 md:px-4 py-2 text-sm font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border-none rounded-md cursor-pointer transition-opacity hover:opacity-80" @click="showTransactionModal(TransactionTypeSchema.enum.Transfer)">
+            <LucideArrowRightLeft class="w-4 h-4 flex-shrink-0" /><span class="whitespace-nowrap hidden sm:inline">{{ t('financial.quickActions.transfer') }}</span>
+          </button>
+          <button class="flex-shrink-0 flex items-center justify-center gap-1.5 px-3 md:px-4 py-2 text-sm font-medium bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 border-none rounded-md cursor-pointer transition-opacity hover:opacity-80" @click="showBudgetModal">
+            <LucideTarget class="w-4 h-4 flex-shrink-0" /><span class="whitespace-nowrap hidden sm:inline">{{ t('financial.quickActions.budget') }}</span>
+          </button>
+          <button class="flex-shrink-0 flex items-center justify-center gap-1.5 px-3 md:px-4 py-2 text-sm font-medium bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400 border-none rounded-md cursor-pointer transition-opacity hover:opacity-80" @click="showReminderModal">
+            <LucideBell class="w-4 h-4 flex-shrink-0" /><span class="whitespace-nowrap hidden sm:inline">{{ t('financial.quickActions.reminder') }}</span>
+          </button>
         </div>
       </div>
       <!-- Tabs -->
-      <div class="flex overflow-x-auto border border-gray-300 dark:border-gray-700 justify-center bg-white dark:bg-gray-800">
+      <div class="flex overflow-x-auto border-t border-gray-300 dark:border-gray-700 justify-center bg-white dark:bg-gray-800">
         <button
           v-for="tab in tabs"
           :key="tab.key"
@@ -393,7 +393,7 @@ onUnmounted(() => {
       </div>
 
       <!-- Tab 内容 -->
-      <div class="p-5 md:p-8 pb-8 bg-white dark:bg-gray-800 min-h-full">
+      <div class="bg-white dark:bg-gray-800 min-h-full p-4 sm:p-6 md:p-8">
         <AccountList
           v-if="activeTab === 'accounts'"
           :accounts="accounts"

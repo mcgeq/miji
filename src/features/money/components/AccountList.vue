@@ -16,7 +16,7 @@ import {
   Wallet,
   Wallet2,
 } from 'lucide-vue-next';
-import { Button, Card, Pagination } from '@/components/ui';
+import { Button, Card, EmptyState, LoadingState, Pagination } from '@/components/ui';
 import { useAccountStore, useMoneyConfigStore } from '@/stores/money';
 import { useAccountFilters } from '../composables/useAccountFilters';
 import { formatCurrency } from '../utils/money';
@@ -129,10 +129,10 @@ function toggleAccountAmountVisibility(accountSerialNum: string) {
 </script>
 
 <template>
-  <div class="space-y-4">
+  <div class="space-y-4 w-full">
     <!-- 过滤选项区域 -->
-    <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
-      <div class="flex flex-wrap gap-3 items-center">
+    <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 w-full">
+      <div class="flex flex-wrap gap-3 items-center justify-center">
         <!-- 账户状态过滤 -->
         <div class="flex gap-2">
           <button
@@ -246,22 +246,13 @@ function toggleAccountAmountVisibility(accountSerialNum: string) {
     </div>
 
     <!-- 账户列表区域 -->
-    <div
-      v-if="loading"
-      class="flex items-center justify-center h-48 text-gray-500 dark:text-gray-400"
-    >
-      {{ t('common.loading') }}
-    </div>
+    <LoadingState v-if="loading" :message="t('common.loading')" />
 
-    <div
+    <EmptyState
       v-else-if="pagination.totalItems.value === 0"
-      class="flex flex-col items-center justify-center h-48 text-gray-400 dark:text-gray-500"
-    >
-      <CreditCard :size="60" class="mb-4 opacity-50" />
-      <div class="text-base">
-        {{ pagination.totalItems.value === 0 ? t('financial.messages.noPatternAccount') : t('financial.noAccount') }}
-      </div>
-    </div>
+      icon="💳"
+      :message="pagination.totalItems.value === 0 ? t('financial.messages.noPatternAccount') : t('financial.noAccount')"
+    />
 
     <div
       v-else
