@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { listen } from '@tauri-apps/api/event';
-import ConfirmModal from '@/components/common/ConfirmModal.vue';
+import { Eye, EyeOff } from 'lucide-vue-next';
+import ConfirmDialog from '@/components/common/ConfirmDialogCompat.vue';
+import { Button as UiButton } from '@/components/ui';
 import { useMoneyStats } from '@/composables/useMoneyStats';
 import { CURRENCY_CNY } from '@/constants/moneyConst';
 import { TransactionTypeSchema } from '@/schema/common';
@@ -322,75 +324,76 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="container">
+  <div class="w-full max-w-7xl mx-auto p-5 md:p-8 overflow-x-hidden">
     <!-- 统计卡片轮播 -->
-    <StackedStatCards
-      ref="stackedCardsRef"
-      :cards="statCards"
-      :auto-play="true"
-      :auto-play-delay="8000"
-      :show-nav-buttons="true"
-      :show-play-control="false"
-      :card-width="cardDimensions.width"
-      :card-height="cardDimensions.height"
-      :enable-keyboard="true"
-      :max-visible-cards="4"
-      :transition-duration="600"
-      :disabled="hasModalOpen"
-      @card-change="handleCardChange"
-      @card-click="handleCardClick"
-    />
+    <div class="w-full max-w-[55rem] mx-auto">
+      <StackedStatCards
+        ref="stackedCardsRef"
+        :cards="statCards"
+        :auto-play="true"
+        :auto-play-delay="8000"
+        :show-nav-buttons="true"
+        :show-play-control="false"
+        :card-width="cardDimensions.width"
+        :card-height="cardDimensions.height"
+        :enable-keyboard="true"
+        :max-visible-cards="4"
+        :transition-duration="600"
+        :disabled="hasModalOpen"
+        @card-change="handleCardChange"
+        @card-click="handleCardClick"
+      />
+    </div>
 
     <!-- 快捷操作 & Tabs -->
-    <div class="panel">
-      <div class="panel-header">
-        <div class="quick-actions-wrapper">
-          <div class="quick-actions scroll-x">
-            <button class="btn btn-purple" @click="showAccountModal">
-              <LucideCreditCard /><span>{{ t('financial.quickActions.account') }}</span>
-            </button>
-            <button class="btn btn-green" @click="showTransactionModal(TransactionTypeSchema.enum.Income)">
-              <LucidePlusCircle /><span>{{ t('financial.quickActions.income') }}</span>
-            </button>
-            <button class="btn btn-red" @click="showTransactionModal(TransactionTypeSchema.enum.Expense)">
-              <LucideMinusCircle /><span>{{ t('financial.quickActions.expense') }}</span>
-            </button>
-            <button class="btn btn-blue" @click="showTransactionModal(TransactionTypeSchema.enum.Transfer)">
-              <LucideArrowRightLeft /><span>{{ t('financial.quickActions.transfer') }}</span>
-            </button>
-            <button class="btn btn-orange" @click="showBudgetModal">
-              <LucideTarget /><span>{{ t('financial.quickActions.budget') }}</span>
-            </button>
-            <button class="btn btn-yellow" @click="showReminderModal">
-              <LucideBell /><span>{{ t('financial.quickActions.reminder') }}</span>
-            </button>
-            <!-- 可以继续添加按钮 -->
-          </div>
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden mt-0.5 w-full max-w-[55rem] mx-auto">
+      <div class="flex justify-center items-center px-3 py-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+        <div class="flex flex-wrap justify-center gap-2 md:gap-3">
+          <button class="flex-shrink-0 flex items-center justify-center gap-1.5 px-3 md:px-4 py-2 text-sm font-medium bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 border-none rounded-md cursor-pointer transition-opacity hover:opacity-80" @click="showAccountModal">
+            <LucideCreditCard class="w-4 h-4 flex-shrink-0" /><span class="whitespace-nowrap hidden sm:inline">{{ t('financial.quickActions.account') }}</span>
+          </button>
+          <button class="flex-shrink-0 flex items-center justify-center gap-1.5 px-3 md:px-4 py-2 text-sm font-medium bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 border-none rounded-md cursor-pointer transition-opacity hover:opacity-80" @click="showTransactionModal(TransactionTypeSchema.enum.Income)">
+            <LucidePlusCircle class="w-4 h-4 flex-shrink-0" /><span class="whitespace-nowrap hidden sm:inline">{{ t('financial.quickActions.income') }}</span>
+          </button>
+          <button class="flex-shrink-0 flex items-center justify-center gap-1.5 px-3 md:px-4 py-2 text-sm font-medium bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 border-none rounded-md cursor-pointer transition-opacity hover:opacity-80" @click="showTransactionModal(TransactionTypeSchema.enum.Expense)">
+            <LucideMinusCircle class="w-4 h-4 flex-shrink-0" /><span class="whitespace-nowrap hidden sm:inline">{{ t('financial.quickActions.expense') }}</span>
+          </button>
+          <button class="flex-shrink-0 flex items-center justify-center gap-1.5 px-3 md:px-4 py-2 text-sm font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border-none rounded-md cursor-pointer transition-opacity hover:opacity-80" @click="showTransactionModal(TransactionTypeSchema.enum.Transfer)">
+            <LucideArrowRightLeft class="w-4 h-4 flex-shrink-0" /><span class="whitespace-nowrap hidden sm:inline">{{ t('financial.quickActions.transfer') }}</span>
+          </button>
+          <button class="flex-shrink-0 flex items-center justify-center gap-1.5 px-3 md:px-4 py-2 text-sm font-medium bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 border-none rounded-md cursor-pointer transition-opacity hover:opacity-80" @click="showBudgetModal">
+            <LucideTarget class="w-4 h-4 flex-shrink-0" /><span class="whitespace-nowrap hidden sm:inline">{{ t('financial.quickActions.budget') }}</span>
+          </button>
+          <button class="flex-shrink-0 flex items-center justify-center gap-1.5 px-3 md:px-4 py-2 text-sm font-medium bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400 border-none rounded-md cursor-pointer transition-opacity hover:opacity-80" @click="showReminderModal">
+            <LucideBell class="w-4 h-4 flex-shrink-0" /><span class="whitespace-nowrap hidden sm:inline">{{ t('financial.quickActions.reminder') }}</span>
+          </button>
         </div>
       </div>
       <!-- Tabs -->
-      <div class="tabs">
+      <div class="flex overflow-x-auto border-t border-gray-300 dark:border-gray-700 justify-center bg-white dark:bg-gray-800">
         <button
           v-for="tab in tabs"
           :key="tab.key"
-          class="m-tab-btn"
-          :class="[activeTab === tab.key ? 'active' : '']"
+          class="flex-shrink-0 px-6 py-3 text-sm font-medium border-b-3 cursor-pointer transition-all" :class="[
+            activeTab === tab.key
+              ? 'text-gray-900 dark:text-gray-100 border-gray-600 dark:border-gray-400 bg-gray-100 dark:bg-gray-700 rounded-t-md'
+              : 'text-gray-600 dark:text-gray-400 border-transparent bg-transparent',
+          ]"
           @click="activeTab = tab.key"
         >
           {{ tab.label }}
         </button>
-        <button
-          class="btn-hide"
-          :class="moneyConfigStore.globalAmountHidden ? 'btn-gray' : 'btn-blue'"
+        <UiButton
+          variant="ghost"
+          size="md"
+          circle
+          :icon="moneyConfigStore.globalAmountHidden ? EyeOff : Eye"
           @click="toggleGlobalAmountVisibility"
-        >
-          <LucideEye v-if="!moneyConfigStore.globalAmountHidden" />
-          <LucideEyeOff v-else />
-        </button>
+        />
       </div>
 
       <!-- Tab 内容 -->
-      <div class="tab-content">
+      <div class="bg-white dark:bg-gray-800 min-h-full p-4 sm:p-6 md:p-8">
         <AccountList
           v-if="activeTab === 'accounts'"
           :accounts="accounts"
@@ -459,7 +462,7 @@ onUnmounted(() => {
       @update="(serialNum, reminder) => handleUpdateReminder(serialNum, reminder, finalizeReminderChange)"
     />
 
-    <ConfirmModal
+    <ConfirmDialog
       :visible="confirmState.visible"
       :title="confirmState.title"
       :message="confirmState.message"
@@ -469,255 +472,10 @@ onUnmounted(() => {
       :confirm-button-type="confirmState.confirmButtonType"
       :show-cancel="confirmState.showCancel"
       :loading="confirmState.loading"
+      :icon-buttons="true"
       @confirm="handleConfirm"
       @cancel="handleCancel"
       @close="handleClose"
     />
   </div>
 </template>
-
-<style>
-/* 快捷操作横向滚动 */
-.scroll-x {
-  display: flex;
-  flex-wrap: nowrap; /* 不换行 */
-  gap: 12px;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch; /* 平滑滚动 */
-  scrollbar-width: none; /* Firefox 隐藏滚动条 */
-  position: relative;
-  padding: 8px 0; /* 给渐变遮罩留空间 */
-}
-
-.scroll-x::-webkit-scrollbar {
-  display: none; /* Chrome/Safari 隐藏滚动条 */
-}
-
-/* 容器 */
-.container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 20px;
-}
-
-/* 面板 */
-.panel {
-  background-color: var(--color-base-100);
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  overflow: hidden;
-  margin-top: 2px;
-}
-
-.panel-header {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  align-items: center;
-  padding: 20px;
-  border-bottom: 1px solid #e5e5e5;
-  background-color: var(--color-base-100);
-}
-
-.panel-header h3 {
-  margin: 0;
-  color: #333;
-  margin-right: 20px; /* 标题与按钮之间的间距 */
-}
-
-/* 快捷操作按钮 */
-.quick-actions {
-  display: flex;
-  flex-wrap: wrap; /* 允许换行 */
-  gap: 12px;
-  justify-content: center; /* 居中对齐 */
-  padding: 8px 0; /* 给渐变遮罩留空间 */
-}
-
-/* 快速操作按钮样式 - 使用更高优先级的选择器 */
-.quick-actions .btn {
-  flex-shrink: 0 !important; /* 防止按钮被压缩 */
-  display: flex !important; /* 强制使用 flex 布局 */
-  align-items: center !important;
-  justify-content: center !important; /* 水平居中 */
-  gap: 6px !important;
-  padding: 0.5rem 1rem !important;
-  font-size: 14px !important;
-  font-weight: 500 !important;
-  border: none !important;
-  border-radius: 6px !important;
-  cursor: pointer !important;
-  transition: opacity 0.2s !important;
-  flex-direction: row !important; /* 确保水平排列 */
-  white-space: nowrap !important; /* 防止文字换行 */
-}
-
-.quick-actions .btn svg {
-  flex-shrink: 0 !important; /* 防止图标被压缩 */
-  width: 18px !important; /* 固定图标大小 */
-  height: 18px !important;
-}
-
-.quick-actions .btn span {
-  flex-shrink: 0 !important; /* 防止文字被压缩 */
-}
-
-.btn:hover {
-  opacity: 0.8;
-}
-
-.btn-purple { background-color: #f3e8ff; color: #8b5cf6; }
-.btn-green { background-color: #dcfce7; color: #16a34a; }
-.btn-red { background-color: #fee2e2; color: #ef4444; }
-.btn-blue { background-color: #dbeafe; color: #3b82f6; }
-.btn-orange { background-color: #ffedd5; color: #f97316; }
-.btn-yellow { background-color: #fef9c3; color: #ca8a04; }
-.btn-gray { background-color: #f3f4f6; color: #6b7280; }
-
-.btn-hide {
-  flex-shrink: 0; /* 防止按钮被压缩 */
-  padding: 0.5rem 1rem;
-  font-weight: 500;
-  border-radius: 0.5rem;
-  cursor: pointer;
-  transition: opacity 0.2s;
-}
-
-.btn-hide:hover {
-  opacity: 0.8;
-}
-
-/* Tabs */
-.tabs {
-  display: flex;
-  overflow-x: auto;
-  border: 1px solid var(--color-base-300);
-  justify-content: center;
-  background-color: var(--color-base-100);
-}
-
-.m-tab-btn {
-  flex-shrink: 0;
-  padding: 12px 24px;
-  font-size: 14px;
-  font-weight: 500;
-  color: #666;
-  background: transparent;
-  border: none;
-  border-bottom: 3px solid transparent;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.m-tab-btn.active {
-  color: var(--color-base-content);
-  border-color: var(--color-neutral);
-  background-color: var(--color-base-200);
-  border-top-left-radius: 6px;
-  border-top-right-radius: 6px;
-}
-
-/* Tab 内容 */
-.tab-content {
-  padding: 20px;
-  background-color: var(--color-base-100);
-  min-height: 100%; /* 确保内容区域有足够的高度 */
-}
-
-/* 移动端Tab内容优化 */
-@media (max-width: 768px) {
-  .tab-content {
-    padding: 10px; /* 移动端减少内边距 */
-    padding-bottom: 2rem; /* 额外的底部空间 */
-  }
-}
-
-/* 滚动条隐藏 */
-.container::-webkit-scrollbar {
-  display: none;
-}
-.container {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
-
-/* 响应式调整 */
-@media (max-width: 768px) {
-  .panel-header {
-    flex-direction: column; /* 移动端标题和按钮垂直排列 */
-    text-align: center; /* 标题居中 */
-  }
-
-  .panel-header h3 {
-    margin-right: 0; /* 移除标题与按钮的间距 */
-    margin-bottom: 10px; /* 标题与按钮之间的间距 */
-  }
-
-  /* 移动端快捷操作容器 */
-  .quick-actions {
-    flex-wrap: nowrap !important; /* 不换行，单行显示 */
-    justify-content: center !important; /* 居中对齐 */
-    gap: 6px !important; /* 减少间距 */
-    padding: 8px 0 !important;
-  }
-
-  .quick-actions .btn {
-    padding: 0.5rem !important; /* 移动端圆形按钮，更小 */
-    font-size: 0.8rem !important; /* 缩小字体 */
-    display: flex !important; /* 确保 flex 布局 */
-    align-items: center !important; /* 垂直居中对齐 */
-    gap: 0 !important; /* 无间距（因为没有文字） */
-    flex-direction: row !important; /* 水平排列图标和文字 */
-    white-space: nowrap !important; /* 防止文字换行 */
-    min-width: auto !important; /* 允许按钮自适应宽度 */
-    flex: 0 0 auto !important; /* 不伸缩，保持原始大小 */
-    border-radius: 50% !important; /* 圆形按钮 */
-    aspect-ratio: 1 !important; /* 保持正方形 */
-  }
-
-  .quick-actions .btn svg {
-    flex-shrink: 0 !important; /* 防止图标被压缩 */
-    width: 1.25rem !important; /* 移动端图标大小 */
-    height: 1.25rem !important;
-  }
-
-  .quick-actions .btn span {
-    display: none !important; /* 移动端隐藏文字 */
-  }
-
-  .container {
-    padding: 10px; /* 减少内边距 */
-  }
-}
-
-/* 小屏幕优化 */
-@media (max-width: 480px) {
-  .quick-actions {
-    flex-wrap: nowrap !important; /* 不换行，单行显示 */
-    gap: 4px !important; /* 更小的按钮间距 */
-  }
-
-  .quick-actions .btn {
-    padding: 0.4rem !important; /* 小屏幕圆形按钮，更小 */
-    font-size: 0.85rem !important; /* 更小的字体 */
-    gap: 0 !important; /* 无间距（因为没有文字） */
-    border-radius: 50% !important; /* 圆形按钮 */
-    aspect-ratio: 1 !important; /* 保持正方形 */
-  }
-
-  .quick-actions .btn svg {
-    width: 1rem !important; /* 小屏幕图标大小 */
-    height: 1rem !important;
-  }
-}
-
-@media (min-width: 769px) and (max-width: 1200px) {
-  .container {
-    max-width: 1000px; /* 中等屏幕适配 */
-  }
-
-  .btn {
-    padding: 8px 14px; /* 适中内边距 */
-  }
-}
-</style>

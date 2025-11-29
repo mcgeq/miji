@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n';
-import BaseModal from '@/components/common/BaseModal.vue';
-import FormRow from '@/components/common/FormRow.vue';
+import { Checkbox, FormRow, FormSection, Input, Modal, Select } from '@/components/ui';
 import { CURRENCY_CNY } from '@/constants/moneyConst';
 import { MoneyDb } from '@/services/money/money';
 import { DateUtils } from '@/utils/date';
 import { Lg } from '@/utils/debugLog';
 import { getRoleName } from '../utils/family';
 import FamilyMemberModal from './FamilyMemberModal.vue';
+import type { SelectOption } from '@/components/ui';
 import type { Currency } from '@/schema/common';
 import type { FamilyLedger, FamilyMember } from '@/schema/money';
 import type { Account } from '@/schema/money/account';
@@ -22,6 +22,32 @@ const { t, te } = useI18n();
 
 const currencies = ref<Currency[]>([]);
 const accounts = ref<Account[]>([]);
+
+// 账本类型选项
+const ledgerTypeOptions = computed<SelectOption[]>(() => [
+  { value: 'FAMILY', label: '家庭账本' },
+  { value: 'COUPLE', label: '情侣账本' },
+  { value: 'ROOMMATE', label: '室友账本' },
+  { value: 'GROUP', label: '团体账本' },
+]);
+
+// 货币选项
+const currencyOptions = computed<SelectOption[]>(() =>
+  currencies.value.map(currency => ({
+    value: currency.code,
+    label: `${currency.symbol} ${currency.code} - ${getCurrencyDisplayName(currency.code)}`,
+  })),
+);
+
+// 结算周期选项
+const settlementCycleOptions = computed<SelectOption[]>(() => [
+  { value: 'WEEKLY', label: '每周' },
+  { value: 'MONTHLY', label: '每月' },
+  { value: 'QUARTERLY', label: '每季度' },
+  { value: 'YEARLY', label: '每年' },
+  { value: 'MANUAL', label: '手动结算' },
+]);
+
 const showMemberModal = ref(false);
 const editingMember = ref<FamilyMember | null>(null);
 const editingMemberIndex = ref(-1);
@@ -151,6 +177,15 @@ const settlementDayOptions = computed(() => {
         options: [],
       };
   }
+});
+
+// 结算日选项（动态）- 定义在 settlementDayOptions 之后
+const settlementDaySelectOptions = computed<SelectOption[]>(() => {
+  const opts = settlementDayOptions.value.options;
+  return opts.map(opt => ({
+    value: opt.value,
+    label: opt.label,
+  }));
 });
 
 // 当结算周期改变时，重置结算日到合理的默认值
@@ -446,7 +481,8 @@ onMounted(() => {
 </script>
 
 <template>
-  <BaseModal
+  <Modal
+    :open="true"
     :title="props.ledger ? '编辑家庭账本' : '创建家庭账本'"
     size="md"
     :confirm-loading="isSubmitting"
@@ -455,153 +491,119 @@ onMounted(() => {
   >
     <form @submit.prevent="saveLedger">
       <!-- 基本信息 -->
-      <div class="form-section">
+      <FormSection title="基本信息">
         <FormRow label="账本名称" required>
-          <input
+          <Input
             v-model="form.name"
-            v-has-value
             type="text"
-            required
-            class="modal-input-select w-full"
             placeholder="请输入账本名称"
-          >
+          />
         </FormRow>
 
         <FormRow label="账本描述" optional>
-          <input
+          <Input
             v-model="form.description"
-            v-has-value
             type="text"
-            class="modal-input-select w-full"
+            :max-length="200"
             placeholder="请输入账本描述（可选）"
-          >
+          />
         </FormRow>
 
         <FormRow label="账本类型" required>
-          <select v-model="form.ledgerType" v-has-value required class="modal-input-select w-full">
-            <option value="">
-              请选择账本类型
-            </option>
-            <option value="FAMILY">
-              家庭账本
-            </option>
-            <option value="SHARED">
-              共享账本
-            </option>
-            <option value="PROJECT">
-              项目账本
-            </option>
-          </select>
+          <Select
+            v-model="form.ledgerType"
+            :options="ledgerTypeOptions"
+            placeholder="请选择账本类型"
+          />
         </FormRow>
 
         <FormRow label="基础币种" required>
-          <select v-model="form.baseCurrency.code" v-has-value required class="modal-input-select w-full">
-            <option value="">
-              请选择币种
-            </option>
-            <option v-for="currency in currencies" :key="currency.code" :value="currency.code">
-              {{ getCurrencyDisplayName(currency.code) }} ({{ currency.code }})
-            </option>
-          </select>
+          <Select
+            v-model="form.baseCurrency.code"
+            :options="currencyOptions"
+            placeholder="请选择币种"
+          />
         </FormRow>
-      </div>
+      </FormSection>
 
       <!-- 结算设置 -->
-      <div class="form-section">
+      <FormSection title="结算设置">
         <FormRow label="结算周期" optional>
-          <select v-model="form.settlementCycle" v-has-value class="modal-input-select w-full">
-            <option value="WEEKLY">
-              每周
-            </option>
-            <option value="MONTHLY">
-              每月
-            </option>
-            <option value="QUARTERLY">
-              每季度
-            </option>
-            <option value="YEARLY">
-              每年
-            </option>
-            <option value="MANUAL">
-              手动结算
-            </option>
-          </select>
+          <Select
+            v-model="form.settlementCycle"
+            :options="settlementCycleOptions"
+          />
         </FormRow>
 
         <FormRow label="结算日" optional>
-          <div class="settlement-day-wrapper">
-            <select
+          <div class="flex flex-col gap-1 w-full">
+            <Select
               v-if="settlementDayOptions.options.length > 0"
-              v-model.number="form.settlementDay"
-              v-has-value
-              class="modal-input-select w-full"
-            >
-              <option
-                v-for="option in settlementDayOptions.options"
-                :key="option.value"
-                :value="option.value"
-              >
-                {{ option.label }}
-              </option>
-            </select>
-            <input
+              v-model="form.settlementDay"
+              :options="settlementDaySelectOptions"
+            />
+            <Input
               v-else
               v-model.number="form.settlementDay"
-              v-has-value
               type="number"
-              :min="settlementDayOptions.min"
-              :max="settlementDayOptions.max"
-              class="modal-input-select w-full"
               :placeholder="settlementDayOptions.placeholder"
-            >
-            <div class="form-hint">
+            />
+            <div class="text-xs text-gray-500 dark:text-gray-400 italic mt-1">
               {{ getSettlementDayHint() }}
             </div>
           </div>
         </FormRow>
 
-        <FormRow label="" optional>
-          <label class="checkbox-label">
-            <input v-model="form.autoSettlement" type="checkbox" class="checkbox-input">
-            <span class="checkbox-text">启用自动结算</span>
-          </label>
-        </FormRow>
-      </div>
+        <div class="mb-3">
+          <Checkbox
+            v-model="form.autoSettlement"
+            label="启用自动结算"
+          />
+        </div>
+      </FormSection>
 
       <!-- 成员管理 -->
-      <div class="members-section">
-        <div class="members-header">
-          <label class="form-label">成员管理</label>
+      <div class="flex flex-col gap-3">
+        <div class="flex items-center justify-between">
+          <label class="text-sm font-medium text-gray-700 dark:text-gray-300">成员管理</label>
           <button
             type="button"
-            class="btn-close add-member-btn"
+            class="w-12 h-12 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 transition-colors hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center justify-center"
             aria-label="添加成员"
             @click="showMemberModal = true"
           >
-            <LucidePlus class="icon-btn" />
+            <LucidePlus :size="12" />
           </button>
         </div>
 
-        <div class="members-list">
+        <div class="max-h-40 overflow-y-auto flex flex-col gap-2">
           <div
             v-for="(member, index) in memberList" :key="member.serialNum"
-            class="member-item"
+            class="p-2 rounded-lg bg-gray-50 dark:bg-gray-900/50 flex items-center justify-between"
           >
-            <div class="member-info">
-              <LucideCrown v-if="member.isPrimary" class="member-icon member-icon-primary" />
-              <LucideUser v-else class="member-icon member-icon-default" />
-              <span class="member-name">{{ member.name }}</span>
-              <span class="member-role">({{ getRoleName(member.role) }})</span>
+            <div class="flex gap-2 items-center">
+              <LucideCrown v-if="member.isPrimary" :size="16" class="text-yellow-500" />
+              <LucideUser v-else :size="16" class="text-gray-500 dark:text-gray-400" />
+              <span class="text-sm font-medium text-gray-900 dark:text-white whitespace-nowrap">{{ member.name }}</span>
+              <span class="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">({{ getRoleName(member.role) }})</span>
             </div>
-            <div class="member-actions">
-              <button type="button" class="action-btn" title="编辑" @click="editMember(index)">
-                <LucideEdit class="action-icon" />
+            <div class="flex gap-1">
+              <button
+                type="button"
+                class="p-2 rounded-md transition-all bg-transparent text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white"
+                title="编辑"
+                @click="editMember(index)"
+              >
+                <LucideEdit :size="12" />
               </button>
               <button
-                type="button" class="action-btn-danger" title="移除" :disabled="member.isPrimary"
+                type="button"
+                class="p-2 rounded-md transition-all bg-transparent text-red-600 dark:text-red-400 hover:bg-red-600 dark:hover:bg-red-500 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                title="移除"
+                :disabled="member.isPrimary"
                 @click="removeMember(index)"
               >
-                <LucideTrash class="action-icon" />
+                <LucideTrash :size="12" />
               </button>
             </div>
           </div>
@@ -609,66 +611,71 @@ onMounted(() => {
       </div>
 
       <!-- 账户管理 -->
-      <div class="accounts-section">
-        <div class="accounts-header">
-          <label class="form-label">账户管理</label>
+      <div class="flex flex-col gap-3">
+        <div class="flex items-center justify-between">
+          <label class="text-sm font-medium text-gray-700 dark:text-gray-300">账户管理</label>
           <button
             type="button"
-            class="btn-close add-account-btn"
+            class="w-12 h-12 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 transition-colors hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center justify-center"
             aria-label="选择账户"
             @click="toggleAccountSelector"
           >
-            <LucidePlus class="icon-btn" />
+            <LucidePlus :size="12" />
           </button>
         </div>
 
         <!-- 已选账户列表 -->
-        <div v-if="selectedAccounts.length > 0" class="accounts-list">
+        <div v-if="selectedAccounts.length > 0" class="max-h-40 overflow-y-auto flex flex-col gap-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           <div
             v-for="account in selectedAccounts"
             :key="account.serialNum"
-            class="account-item"
+            class="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-between transition-colors hover:bg-gray-200 dark:hover:bg-gray-700"
           >
-            <div class="account-info" style="display: flex; flex-direction: row; align-items: center; gap: 0.5rem;">
-              <LucideWallet class="account-icon" />
-              <span style="white-space: nowrap; display: inline;">
+            <div class="flex items-center gap-2">
+              <LucideWallet :size="16" class="text-blue-600 dark:text-blue-400" />
+              <span class="text-sm font-medium text-gray-900 dark:text-white whitespace-nowrap">
                 {{ account.name }} ({{ account.type }})
               </span>
             </div>
-            <div class="account-actions">
+            <div class="flex gap-1">
               <button
                 type="button"
-                class="action-btn-danger"
+                class="p-2 rounded-md transition-all bg-transparent text-red-600 dark:text-red-400 hover:bg-red-600 dark:hover:bg-red-500 hover:text-white"
                 title="移除"
                 @click="removeAccount(account)"
               >
-                <LucideTrash class="action-icon" />
+                <LucideTrash :size="12" />
               </button>
             </div>
           </div>
         </div>
 
         <!-- 账户选择器下拉 -->
-        <div v-if="showAccountSelector" class="account-selector">
-          <div class="selector-header">
+        <div v-if="showAccountSelector" class="mt-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 max-h-60 overflow-hidden flex flex-col shadow-md">
+          <div class="px-3 py-3 border-b border-gray-300 dark:border-gray-700 flex items-center justify-between font-medium text-sm text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-900/50">
             <span>选择账户</span>
-            <button type="button" class="btn-close-selector" @click="toggleAccountSelector">
-              <LucideX class="icon-sm" />
+            <button
+              type="button"
+              class="p-1 transition-colors text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+              @click="toggleAccountSelector"
+            >
+              <LucideX :size="16" />
             </button>
           </div>
-          <div class="selector-list">
+          <div class="overflow-y-auto p-2 flex flex-col gap-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
             <label
               v-for="account in accounts"
               :key="account.serialNum"
-              class="selector-item"
+              class="flex items-center gap-2 p-2 rounded-md cursor-pointer transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
             >
               <input
                 type="checkbox"
+                class="w-4 h-4 accent-blue-600 cursor-pointer"
                 :checked="isAccountSelected(account)"
                 @change="toggleAccountSelection(account)"
               >
-              <span class="selector-item-name">{{ account.name }}</span>
-              <span class="selector-item-type">({{ account.type }})</span>
+              <span class="text-sm font-medium text-gray-900 dark:text-white">{{ account.name }}</span>
+              <span class="text-xs text-gray-500 dark:text-gray-400">({{ account.type }})</span>
             </label>
           </div>
         </div>
@@ -683,397 +690,5 @@ onMounted(() => {
       @close="closeMemberModal"
       @save="saveMember"
     />
-  </BaseModal>
+  </Modal>
 </template>
-
-<style scoped>
-/* 模态框头部 */
-.modal-header {
-  margin-bottom: 1.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.modal-title {
-  font-size: 1.125rem;
-  font-weight: 600;
-}
-
-.modal-close-btn {
-  color: #6b7280;
-  transition: color 0.2s ease-in-out;
-}
-
-.modal-close-btn:hover {
-  color: #374151;
-}
-
-.modal-icon {
-  height: 1.5rem;
-  width: 1.5rem;
-}
-
-/* 表单样式 */
-.modal-form {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.form-section {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-  margin-bottom: 1rem;
-}
-
-/* 结算日包装器 */
-.settlement-day-wrapper {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  width: 100%;
-}
-
-.form-hint {
-  font-size: 0.75rem;
-  color: #6b7280;
-  margin-top: 0.25rem;
-  font-style: italic;
-}
-
-.checkbox-label {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  cursor: pointer;
-}
-
-.checkbox-input {
-  width: 1rem;
-  height: 1rem;
-  accent-color: #3b82f6;
-}
-
-.checkbox-text {
-  font-size: 0.875rem;
-  color: #374151;
-}
-
-/* 成员管理样式 */
-.members-section {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.members-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.add-member-btn {
-  background-color: #f3f4f6;
-  color: #374151;
-  border-radius: 50%;
-  padding: 0;
-  width: 3rem;
-  height: 3rem;
-}
-
-.add-member-btn:hover {
-  background-color: #e2e6eb;
-}
-
-.btn-icon {
-  height: 0.75rem;
-  width: 0.75rem;
-}
-
-.members-list {
-  max-height: 10rem;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.member-item {
-  padding: 0.5rem;
-  border-radius: 0.5rem;
-  background-color: #f9fafb;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.member-info {
-  display: flex;
-  gap: 0.5rem;
-  align-items: center;
-}
-
-.member-icon {
-  height: 1rem;
-  width: 1rem;
-}
-
-.member-icon-primary {
-  color: #eab308;
-}
-
-.member-icon-default {
-  color: #6b7280;
-}
-
-.member-name {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--color-base-content);
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
-.member-role {
-  font-size: 0.75rem;
-  color: var(--color-neutral);
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
-.member-actions {
-  display: flex;
-  gap: 0.25rem;
-}
-
-.action-icon {
-  height: 0.75rem;
-  width: 0.75rem;
-}
-
-/* 账户管理样式 */
-.accounts-section {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.accounts-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.add-account-btn {
-  background-color: var(--color-base-200);
-  color: var(--color-base-content);
-  border-radius: 50%;
-  padding: 0;
-  width: 3rem;
-  height: 3rem;
-  transition: background-color 0.2s;
-}
-
-.add-account-btn:hover {
-  background-color: var(--color-base-300);
-}
-
-.accounts-list {
-  max-height: 10rem;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  /* 隐藏滚动条但保持滚动功能 */
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE/Edge */
-}
-
-.accounts-list::-webkit-scrollbar {
-  display: none; /* Chrome/Safari/Opera */
-}
-
-.account-item {
-  padding: 0.5rem;
-  border-radius: 0.5rem;
-  background-color: var(--color-base-200);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  transition: background-color 0.2s;
-}
-
-.account-item:hover {
-  background-color: var(--color-base-300);
-}
-
-.account-info {
-  display: flex;
-  gap: 0.5rem;
-  align-items: center;
-}
-
-.account-info span {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--color-base-content);
-  white-space: nowrap;
-}
-
-.account-icon {
-  height: 1rem;
-  width: 1rem;
-  color: var(--color-primary);
-}
-
-.account-actions {
-  display: flex;
-  gap: 0.25rem;
-}
-
-.account-selector {
-  margin-top: 0.5rem;
-  border: 1px solid var(--color-base-300);
-  border-radius: 0.5rem;
-  background-color: var(--color-base-100);
-  max-height: 15rem;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  box-shadow: var(--shadow-md);
-}
-
-.selector-header {
-  padding: 0.75rem;
-  border-bottom: 1px solid var(--color-base-300);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-weight: 500;
-  font-size: 0.875rem;
-  color: var(--color-base-content);
-  background-color: var(--color-base-200);
-}
-
-.btn-close-selector {
-  background: none;
-  border: none;
-  padding: 0.25rem;
-  cursor: pointer;
-  color: var(--color-neutral);
-  transition: color 0.2s;
-}
-
-.btn-close-selector:hover {
-  color: var(--color-base-content);
-}
-
-.icon-sm {
-  height: 1rem;
-  width: 1rem;
-}
-
-.selector-list {
-  overflow-y: auto;
-  padding: 0.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  /* 隐藏滚动条但保持滚动功能 */
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE/Edge */
-}
-
-.selector-list::-webkit-scrollbar {
-  display: none; /* Chrome/Safari/Opera */
-}
-
-.selector-item {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem;
-  border-radius: 0.375rem;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.selector-item:hover {
-  background-color: var(--color-base-200);
-}
-
-.selector-item input[type="checkbox"] {
-  width: 1rem;
-  height: 1rem;
-  accent-color: var(--color-primary);
-  cursor: pointer;
-}
-
-.selector-item-name {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--color-base-content);
-}
-
-.selector-item-type {
-  font-size: 0.75rem;
-  color: var(--color-neutral);
-}
-
-/* 模态框操作按钮 */
-.modal-actions {
-  padding-top: 1rem;
-  display: flex;
-  justify-content: center;
-  gap: 0.75rem;
-}
-
-/* 账户和成员的操作按钮样式 */
-.action-btn {
-  padding: 0.5rem;
-  border-radius: 0.375rem;
-  border: none;
-  background-color: transparent;
-  color: var(--color-neutral);
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.action-btn:hover {
-  background-color: var(--color-base-300);
-  color: var(--color-base-content);
-}
-
-.action-btn-danger {
-  padding: 0.5rem;
-  border-radius: 0.375rem;
-  border: none;
-  background-color: transparent;
-  color: var(--color-error);
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.action-btn-danger:hover {
-  background-color: var(--color-error);
-  color: var(--color-error-content);
-}
-
-.action-btn-danger:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.action-icon {
-  width: 0.75rem;
-  height: 0.75rem;
-}
-</style>

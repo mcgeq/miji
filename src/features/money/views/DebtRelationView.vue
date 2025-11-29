@@ -13,6 +13,7 @@ import {
   Users,
 } from 'lucide-vue-next';
 import { useRouter } from 'vue-router';
+import Button from '@/components/ui/Button.vue';
 import { useMoneyAuth } from '@/composables/useMoneyAuth';
 import { debtService } from '@/services/money/debt';
 import { handleApiError } from '@/utils/apiHelper';
@@ -237,23 +238,15 @@ async function markAsSettled(relation: DebtRelation) {
   }
 }
 
-// 获取关系样式类
-function getRelationClass(relation: DebtRelation) {
-  const classes = [];
-
+// 获取边框颜色
+function getBorderColor(relation: DebtRelation) {
   if (relation.debtorMemberSerialNum === currentMemberSerialNum.value) {
-    classes.push('debt-card-debt');
+    return 'border-l-red-500';
   }
-
   if (relation.creditorMemberSerialNum === currentMemberSerialNum.value) {
-    classes.push('debt-card-credit');
+    return 'border-l-green-500';
   }
-
-  if (relation.status !== 'active') {
-    classes.push('debt-card-inactive');
-  }
-
-  return classes.join(' ');
+  return 'border-l-transparent';
 }
 
 // 获取成员颜色
@@ -313,94 +306,94 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="debt-relation-view">
+  <div class="p-6 flex flex-col gap-6">
     <!-- 页面标题 -->
-    <div class="page-header">
-      <div class="header-left">
-        <h1 class="page-title">
+    <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+      <div class="flex-1">
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100">
           债务关系
         </h1>
-        <p class="page-subtitle">
+        <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
           查看和管理成员间的债务关系
         </p>
       </div>
-      <div class="header-right">
-        <button class="btn-secondary" @click="handleSync">
+      <div class="flex items-center gap-3">
+        <Button variant="secondary" @click="handleSync">
           <component :is="RefreshCw" :class="{ 'animate-spin': syncing }" class="w-4 h-4" />
           <span>同步债务</span>
-        </button>
-        <button class="btn-primary" @click="handleSettlement">
+        </Button>
+        <Button variant="primary" @click="handleSettlement">
           <component :is="TrendingUp" class="w-4 h-4" />
           <span>发起结算</span>
-        </button>
+        </Button>
       </div>
     </div>
 
     <!-- 统计卡片 -->
-    <div class="stats-cards">
-      <div class="stat-card stat-card-red">
-        <div class="stat-icon">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div class="bg-white dark:bg-gray-800 rounded-lg p-5 flex items-center gap-4 shadow-sm hover:shadow-md transition-shadow">
+        <div class="w-12 h-12 rounded-lg bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 flex items-center justify-center">
           <component :is="TrendingDown" class="w-6 h-6" />
         </div>
-        <div class="stat-content">
-          <div class="stat-label">
+        <div class="flex-1">
+          <div class="text-sm text-gray-600 dark:text-gray-400">
             我欠别人
           </div>
-          <div class="stat-value">
+          <div class="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-1">
             ¥{{ formatAmount(statistics.totalDebt) }}
           </div>
-          <div class="stat-hint">
+          <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
             {{ statistics.debtCount }}笔债务
           </div>
         </div>
       </div>
 
-      <div class="stat-card stat-card-green">
-        <div class="stat-icon">
+      <div class="bg-white dark:bg-gray-800 rounded-lg p-5 flex items-center gap-4 shadow-sm hover:shadow-md transition-shadow">
+        <div class="w-12 h-12 rounded-lg bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 flex items-center justify-center">
           <component :is="TrendingUp" class="w-6 h-6" />
         </div>
-        <div class="stat-content">
-          <div class="stat-label">
+        <div class="flex-1">
+          <div class="text-sm text-gray-600 dark:text-gray-400">
             别人欠我
           </div>
-          <div class="stat-value">
+          <div class="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-1">
             ¥{{ formatAmount(statistics.totalCredit) }}
           </div>
-          <div class="stat-hint">
+          <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
             {{ statistics.creditCount }}笔债权
           </div>
         </div>
       </div>
 
-      <div class="stat-card stat-card-blue">
-        <div class="stat-icon">
+      <div class="bg-white dark:bg-gray-800 rounded-lg p-5 flex items-center gap-4 shadow-sm hover:shadow-md transition-shadow">
+        <div class="w-12 h-12 rounded-lg bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center">
           <component :is="DollarSign" class="w-6 h-6" />
         </div>
-        <div class="stat-content">
-          <div class="stat-label">
+        <div class="flex-1">
+          <div class="text-sm text-gray-600 dark:text-gray-400">
             净额
           </div>
-          <div class="stat-value" :class="netAmountClass">
+          <div class="text-2xl font-bold mt-1" :class="netAmountClass">
             {{ netAmountText }}
           </div>
-          <div class="stat-hint">
+          <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
             {{ netAmountHint }}
           </div>
         </div>
       </div>
 
-      <div class="stat-card stat-card-gray">
-        <div class="stat-icon">
+      <div class="bg-white dark:bg-gray-800 rounded-lg p-5 flex items-center gap-4 shadow-sm hover:shadow-md transition-shadow">
+        <div class="w-12 h-12 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 flex items-center justify-center">
           <component :is="Users" class="w-6 h-6" />
         </div>
-        <div class="stat-content">
-          <div class="stat-label">
+        <div class="flex-1">
+          <div class="text-sm text-gray-600 dark:text-gray-400">
             涉及成员
           </div>
-          <div class="stat-value">
+          <div class="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-1">
             {{ statistics.memberCount }}
           </div>
-          <div class="stat-hint">
+          <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
             {{ statistics.totalRelations }}条关系
           </div>
         </div>
@@ -408,10 +401,10 @@ onMounted(() => {
     </div>
 
     <!-- 筛选和操作栏 -->
-    <div class="filter-bar">
-      <div class="filter-left">
+    <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm">
+      <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
         <!-- 成员筛选 -->
-        <select v-model="filters.memberSerialNum" class="filter-select">
+        <select v-model="filters.memberSerialNum" class="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-2 focus:outline-blue-600 focus:outline-offset-2 focus:border-transparent">
           <option value="">
             全部成员
           </option>
@@ -421,7 +414,7 @@ onMounted(() => {
         </select>
 
         <!-- 状态筛选 -->
-        <select v-model="filters.status" class="filter-select">
+        <select v-model="filters.status" class="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-2 focus:outline-blue-600 focus:outline-offset-2 focus:border-transparent">
           <option value="all">
             全部状态
           </option>
@@ -437,7 +430,7 @@ onMounted(() => {
         </select>
 
         <!-- 排序 -->
-        <select v-model="sortBy" class="filter-select">
+        <select v-model="sortBy" class="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-2 focus:outline-blue-600 focus:outline-offset-2 focus:border-transparent">
           <option value="amount">
             按金额
           </option>
@@ -450,68 +443,72 @@ onMounted(() => {
         </select>
       </div>
 
-      <div class="filter-right">
-        <div class="search-box">
-          <component :is="Search" class="search-icon" />
+      <div class="flex items-center gap-3">
+        <div class="relative">
+          <component :is="Search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input
             v-model="searchQuery"
             type="text"
             placeholder="搜索成员..."
-            class="search-input"
+            class="pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 w-full sm:w-64 focus:outline-2 focus:outline-blue-600 focus:outline-offset-2 focus:border-transparent"
           >
         </div>
       </div>
     </div>
 
     <!-- 债务关系列表 -->
-    <div v-if="loading" class="loading-state">
-      <div class="loading-spinner" />
-      <p>加载中...</p>
+    <div v-if="loading" class="flex flex-col items-center justify-center py-20">
+      <div class="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+      <p class="mt-4 text-gray-600 dark:text-gray-400">
+        加载中...
+      </p>
     </div>
 
-    <div v-else-if="filteredRelations.length === 0" class="empty-state">
-      <component :is="Inbox" class="empty-icon" />
-      <p class="empty-text">
+    <div v-else-if="filteredRelations.length === 0" class="flex flex-col items-center justify-center py-20 bg-white dark:bg-gray-800 rounded-lg">
+      <component :is="Inbox" class="w-16 h-16 text-gray-400 dark:text-gray-600" />
+      <p class="mt-4 text-lg font-medium text-gray-900 dark:text-gray-100">
         暂无债务关系
       </p>
-      <p class="empty-hint">
-        分摊记录产生后会自动生成债务关系
+      <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
+        分摆记录产生后会自动生成债务关系
       </p>
-      <button class="btn-primary mt-4" @click="handleSync">
+      <Button variant="primary" class="mt-4" @click="handleSync">
         <component :is="RefreshCw" class="w-4 h-4" />
         <span>同步债务关系</span>
-      </button>
+      </Button>
     </div>
 
-    <div v-else class="debt-list">
+    <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       <!-- 债务关系卡片 -->
       <div
         v-for="relation in paginatedRelations"
         :key="relation.serialNum"
-        class="debt-card"
-        :class="getRelationClass(relation)"
+        class="bg-white dark:bg-gray-800 rounded-lg shadow-sm hover:shadow-md transition-shadow border-l-4" :class="[
+          getBorderColor(relation),
+          relation.status !== 'active' ? 'opacity-50' : '',
+        ]"
       >
-        <div class="debt-card-header">
-          <div class="debt-members">
+        <div class="p-4 flex items-center justify-between border-b border-gray-200 dark:border-gray-700">
+          <div class="flex items-center gap-2">
             <!-- 债务人头像 -->
-            <div class="member-avatar" :style="{ backgroundColor: getMemberColor(relation.debtorMemberSerialNum) }">
+            <div class="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm" :style="{ backgroundColor: getMemberColor(relation.debtorMemberSerialNum) }">
               {{ getInitials(relation.debtorMemberName) }}
             </div>
 
             <!-- 箭头 -->
-            <div class="debt-arrow">
+            <div class="text-gray-400">
               <component :is="ArrowRight" class="w-5 h-5" />
             </div>
 
             <!-- 债权人头像 -->
-            <div class="member-avatar" :style="{ backgroundColor: getMemberColor(relation.creditorMemberSerialNum) }">
+            <div class="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm" :style="{ backgroundColor: getMemberColor(relation.creditorMemberSerialNum) }">
               {{ getInitials(relation.creditorMemberName) }}
             </div>
           </div>
 
-          <div class="debt-actions">
+          <div class="flex items-center gap-2">
             <button
-              class="icon-btn"
+              class="p-2 rounded-lg transition-colors text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-100"
               title="查看详情"
               @click="viewRelationDetail(relation)"
             >
@@ -519,7 +516,7 @@ onMounted(() => {
             </button>
             <button
               v-if="relation.status === 'active'"
-              class="icon-btn"
+              class="p-2 rounded-lg transition-colors text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-100"
               title="标记为已结算"
               @click="markAsSettled(relation)"
             >
@@ -528,27 +525,31 @@ onMounted(() => {
           </div>
         </div>
 
-        <div class="debt-card-body">
-          <div class="debt-description">
-            <span class="debtor-name">{{ relation.debtorMemberName }}</span>
-            <span class="debt-text">欠</span>
-            <span class="creditor-name">{{ relation.creditorMemberName }}</span>
+        <div class="p-4 flex flex-col gap-3">
+          <div class="text-sm text-gray-600 dark:text-gray-400">
+            <span class="font-medium text-gray-900 dark:text-gray-100">{{ relation.debtorMemberName }}</span>
+            <span class="mx-1">欠</span>
+            <span class="font-medium text-gray-900 dark:text-gray-100">{{ relation.creditorMemberName }}</span>
           </div>
 
-          <div class="debt-amount">
-            <span class="amount-value">¥{{ formatAmount(relation.amount) }}</span>
-            <span class="amount-currency">{{ relation.currency }}</span>
+          <div class="flex items-baseline gap-2">
+            <span class="text-2xl font-bold text-gray-900 dark:text-gray-100">¥{{ formatAmount(relation.amount) }}</span>
+            <span class="text-sm text-gray-500">{{ relation.currency }}</span>
           </div>
 
-          <div class="debt-meta">
-            <span class="meta-item">
+          <div class="flex items-center justify-between text-xs text-gray-500">
+            <span class="flex items-center gap-1">
               <component :is="Clock" class="w-3 h-3" />
               {{ formatTime(relation.lastCalculatedAt) }}
             </span>
-            <span class="meta-item">
-              <span class="status-badge" :class="`status-${relation.status}`">
-                {{ getStatusText(relation.status) }}
-              </span>
+            <span
+              class="px-2 py-1 rounded-full text-xs font-medium" :class="[
+                relation.status === 'active' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300'
+                : relation.status === 'settled' ? 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                  : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300',
+              ]"
+            >
+              {{ getStatusText(relation.status) }}
             </span>
           </div>
         </div>
@@ -556,19 +557,19 @@ onMounted(() => {
     </div>
 
     <!-- 分页 -->
-    <div v-if="filteredRelations.length > pageSize" class="pagination">
+    <div v-if="filteredRelations.length > pageSize" class="flex items-center justify-center gap-4 mt-6">
       <button
-        class="pagination-btn"
+        class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 transition-colors hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
         :disabled="currentPage === 1"
         @click="currentPage--"
       >
         上一页
       </button>
-      <span class="pagination-info">
+      <span class="text-sm text-gray-600 dark:text-gray-400">
         第 {{ currentPage }} / {{ totalPages }} 页，共 {{ filteredRelations.length }} 条
       </span>
       <button
-        class="pagination-btn"
+        class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 transition-colors hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
         :disabled="currentPage === totalPages"
         @click="currentPage++"
       >
@@ -577,638 +578,3 @@ onMounted(() => {
     </div>
   </div>
 </template>
-
-<style scoped>
-/* 页面布局 */
-.debt-relation-view {
-  padding: 1.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-/* 页面标题 */
-.page-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-}
-
-.header-left {
-  flex: 1;
-}
-
-.page-title {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #111827;
-}
-
-:global(.dark) .page-title {
-  color: #f3f4f6;
-}
-
-.page-subtitle {
-  margin-top: 0.25rem;
-  font-size: 0.875rem;
-  color: #4b5563;
-}
-
-:global(.dark) .page-subtitle {
-  color: #9ca3af;
-}
-
-.header-right {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-/* 统计卡片 */
-.stats-cards {
-  display: grid;
-  grid-template-columns: repeat(1, minmax(0, 1fr));
-  gap: 1rem;
-}
-
-@media (min-width: 768px) {
-  .stats-cards {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (min-width: 1024px) {
-  .stats-cards {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-}
-
-.stat-card {
-  background-color: white;
-  border-radius: 0.5rem;
-  padding: 1.25rem;
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  transition: box-shadow 0.15s;
-}
-
-.stat-card:hover {
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-}
-
-:global(.dark) .stat-card {
-  background-color: #1f2937;
-}
-
-.stat-icon {
-  width: 3rem;
-  height: 3rem;
-  border-radius: 0.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.stat-card-red .stat-icon {
-  background-color: #fee2e2;
-  color: #dc2626;
-}
-
-:global(.dark) .stat-card-red .stat-icon {
-  background-color: rgba(127, 29, 29, 0.3);
-  color: #f87171;
-}
-
-.stat-card-green .stat-icon {
-  background-color: #d1fae5;
-  color: #059669;
-}
-
-:global(.dark) .stat-card-green .stat-icon {
-  background-color: rgba(6, 95, 70, 0.3);
-  color: #34d399;
-}
-
-.stat-card-blue .stat-icon {
-  background-color: #dbeafe;
-  color: #2563eb;
-}
-
-:global(.dark) .stat-card-blue .stat-icon {
-  background-color: rgba(30, 58, 138, 0.3);
-  color: #60a5fa;
-}
-
-.stat-card-gray .stat-icon {
-  background-color: #f3f4f6;
-  color: #4b5563;
-}
-
-:global(.dark) .stat-card-gray .stat-icon {
-  background-color: #374151;
-  color: #9ca3af;
-}
-
-.stat-content {
-  flex: 1;
-}
-
-.stat-label {
-  font-size: 0.875rem;
-  color: #4b5563;
-}
-
-:global(.dark) .stat-label {
-  color: #9ca3af;
-}
-
-.stat-value {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #111827;
-  margin-top: 0.25rem;
-}
-
-:global(.dark) .stat-value {
-  color: #f3f4f6;
-}
-
-.stat-hint {
-  font-size: 0.75rem;
-  color: #6b7280;
-  margin-top: 0.25rem;
-}
-
-/* 筛选栏 */
-.filter-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  background-color: white;
-  border-radius: 0.5rem;
-  padding: 1rem;
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-}
-
-:global(.dark) .filter-bar {
-  background-color: #1f2937;
-}
-
-.filter-left {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.filter-select {
-  padding: 0.5rem 0.75rem;
-  border: 1px solid #d1d5db;
-  border-radius: 0.5rem;
-  font-size: 0.875rem;
-  background-color: white;
-  color: #111827;
-}
-
-.filter-select:focus {
-  outline: 2px solid #3b82f6;
-  outline-offset: 2px;
-  border-color: transparent;
-}
-
-:global(.dark) .filter-select {
-  border-color: #4b5563;
-  background-color: #374151;
-  color: #f3f4f6;
-}
-
-.filter-right {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.search-box {
-  position: relative;
-}
-
-.search-icon {
-  position: absolute;
-  left: 0.75rem;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 1rem;
-  height: 1rem;
-  color: #9ca3af;
-}
-
-.search-input {
-  padding-left: 2.5rem;
-  padding-right: 1rem;
-  padding-top: 0.5rem;
-  padding-bottom: 0.5rem;
-  border: 1px solid #d1d5db;
-  border-radius: 0.5rem;
-  font-size: 0.875rem;
-  background-color: white;
-  color: #111827;
-  width: 16rem;
-}
-
-.search-input:focus {
-  outline: 2px solid #3b82f6;
-  outline-offset: 2px;
-  border-color: transparent;
-}
-
-:global(.dark) .search-input {
-  border-color: #4b5563;
-  background-color: #374151;
-  color: #f3f4f6;
-}
-
-/* 加载状态 */
-.loading-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding-top: 5rem;
-  padding-bottom: 5rem;
-}
-
-.loading-spinner {
-  width: 3rem;
-  height: 3rem;
-  border: 4px solid #3b82f6;
-  border-top-color: transparent;
-  border-radius: 9999px;
-  animation: spin 1s linear infinite;
-}
-
-/* 空状态 */
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding-top: 5rem;
-  padding-bottom: 5rem;
-  background-color: white;
-  border-radius: 0.5rem;
-}
-
-:global(.dark) .empty-state {
-  background-color: #1f2937;
-}
-
-.empty-icon {
-  width: 4rem;
-  height: 4rem;
-  color: #9ca3af;
-}
-
-:global(.dark) .empty-icon {
-  color: #4b5563;
-}
-
-.empty-text {
-  margin-top: 1rem;
-  font-size: 1.125rem;
-  font-weight: 500;
-  color: #111827;
-}
-
-:global(.dark) .empty-text {
-  color: #f3f4f6;
-}
-
-.empty-hint {
-  margin-top: 0.5rem;
-  font-size: 0.875rem;
-  color: #4b5563;
-}
-
-:global(.dark) .empty-hint {
-  color: #9ca3af;
-}
-
-/* 债务列表 */
-.debt-list {
-  display: grid;
-  grid-template-columns: repeat(1, minmax(0, 1fr));
-  gap: 1rem;
-}
-
-@media (min-width: 768px) {
-  .debt-list {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (min-width: 1024px) {
-  .debt-list {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-
-/* 债务卡片 */
-.debt-card {
-  background-color: white;
-  border-radius: 0.5rem;
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  transition: box-shadow 0.15s;
-  border-left: 4px solid transparent;
-}
-
-.debt-card:hover {
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-}
-
-:global(.dark) .debt-card {
-  background-color: #1f2937;
-}
-
-.debt-card-debt {
-  border-left-color: #ef4444;
-}
-
-.debt-card-credit {
-  border-left-color: #10b981;
-}
-
-.debt-card-inactive {
-  opacity: 0.5;
-}
-
-.debt-card-header {
-  padding: 1rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  border-bottom: 1px solid #e5e7eb;
-}
-
-:global(.dark) .debt-card-header {
-  border-bottom-color: #374151;
-}
-
-.debt-members {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.member-avatar {
-  width: 2.5rem;
-  height: 2.5rem;
-  border-radius: 9999px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-weight: 700;
-  font-size: 0.875rem;
-}
-
-.debt-arrow {
-  color: #9ca3af;
-}
-
-.debt-actions {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.debt-card-body {
-  padding: 1rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.debt-description {
-  font-size: 0.875rem;
-  color: #4b5563;
-}
-
-:global(.dark) .debt-description {
-  color: #9ca3af;
-}
-
-.debtor-name,
-.creditor-name {
-  font-weight: 500;
-  color: #111827;
-}
-
-:global(.dark) .debtor-name,
-:global(.dark) .creditor-name {
-  color: #f3f4f6;
-}
-
-.debt-text {
-  margin-left: 0.25rem;
-  margin-right: 0.25rem;
-}
-
-.debt-amount {
-  display: flex;
-  align-items: baseline;
-  gap: 0.5rem;
-}
-
-.amount-value {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #111827;
-}
-
-:global(.dark) .amount-value {
-  color: #f3f4f6;
-}
-
-.amount-currency {
-  font-size: 0.875rem;
-  color: #6b7280;
-}
-
-.debt-meta {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: 0.75rem;
-  color: #6b7280;
-}
-
-.meta-item {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-}
-
-.status-badge {
-  padding: 0.25rem 0.5rem;
-  border-radius: 9999px;
-  font-size: 0.75rem;
-  font-weight: 500;
-}
-
-.status-active {
-  background-color: #dbeafe;
-  color: #1d4ed8;
-}
-
-:global(.dark) .status-active {
-  background-color: rgba(30, 58, 138, 0.3);
-  color: #93c5fd;
-}
-
-.status-settled {
-  background-color: #f3f4f6;
-  color: #374151;
-}
-
-:global(.dark) .status-settled {
-  background-color: #374151;
-  color: #d1d5db;
-}
-
-.status-cancelled {
-  background-color: #fee2e2;
-  color: #991b1b;
-}
-
-:global(.dark) .status-cancelled {
-  background-color: rgba(127, 29, 29, 0.3);
-  color: #fca5a5;
-}
-
-/* 分页 */
-.pagination {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 1rem;
-  margin-top: 1.5rem;
-}
-
-.pagination-btn {
-  padding: 0.5rem 1rem;
-  border: 1px solid #d1d5db;
-  border-radius: 0.5rem;
-  font-size: 0.875rem;
-  background-color: white;
-  color: #111827;
-  transition: background-color 0.15s;
-}
-
-.pagination-btn:hover:not(:disabled) {
-  background-color: #f9fafb;
-}
-
-.pagination-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-:global(.dark) .pagination-btn {
-  border-color: #4b5563;
-  background-color: #1f2937;
-  color: #f3f4f6;
-}
-
-:global(.dark) .pagination-btn:hover:not(:disabled) {
-  background-color: #374151;
-}
-
-.pagination-info {
-  font-size: 0.875rem;
-  color: #4b5563;
-}
-
-:global(.dark) .pagination-info {
-  color: #9ca3af;
-}
-
-/* 按钮 */
-.btn-primary {
-  padding: 0.5rem 1rem;
-  background-color: #2563eb;
-  color: white;
-  border-radius: 0.5rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-  transition: background-color 0.15s;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.btn-primary:hover {
-  background-color: #1d4ed8;
-}
-
-.btn-secondary {
-  padding: 0.5rem 1rem;
-  background-color: #f3f4f6;
-  color: #111827;
-  border-radius: 0.5rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-  transition: background-color 0.15s;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.btn-secondary:hover {
-  background-color: #e5e7eb;
-}
-
-:global(.dark) .btn-secondary {
-  background-color: #374151;
-  color: #f3f4f6;
-}
-
-:global(.dark) .btn-secondary:hover {
-  background-color: #4b5563;
-}
-
-.icon-btn {
-  padding: 0.5rem;
-  border-radius: 0.5rem;
-  transition: background-color 0.15s, color 0.15s;
-  color: #4b5563;
-}
-
-.icon-btn:hover {
-  background-color: #f3f4f6;
-  color: #111827;
-}
-
-:global(.dark) .icon-btn {
-  color: #9ca3af;
-}
-
-:global(.dark) .icon-btn:hover {
-  background-color: #374151;
-  color: #f3f4f6;
-}
-
-.animate-spin {
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-</style>

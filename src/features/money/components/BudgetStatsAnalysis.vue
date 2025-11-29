@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { BarChart3, PieChart, TrendingUp } from 'lucide-vue-next';
+import { AlertCircle, BarChart3, PieChart, TrendingUp, X } from 'lucide-vue-next';
 import VChart from 'vue-echarts';
 import { useRouter } from 'vue-router';
+import { Button, Card, Spinner } from '@/components/ui';
 import { useBudgetStats } from '@/composables/useBudgetStats';
 import { initECharts } from '@/utils/echarts';
 
@@ -312,189 +313,193 @@ const currentChartOption = computed(() => {
 </script>
 
 <template>
-  <div class="budget-stats-container">
+  <div class="space-y-6">
     <!-- 加载状态 -->
-    <div v-if="state.loading" class="loading-container">
-      <div class="loading-spinner" />
-      <div class="loading-text">
+    <div v-if="state.loading" class="flex flex-col items-center justify-center py-10">
+      <Spinner size="lg" />
+      <div class="text-sm text-gray-500 dark:text-gray-400 mt-4">
         加载统计数据中...
       </div>
     </div>
 
     <!-- 空状态 -->
-    <div v-else-if="!hasData" class="empty-state">
-      <div class="empty-icon">
+    <div v-else-if="!hasData" class="flex flex-col items-center justify-center py-10 text-gray-500 dark:text-gray-400">
+      <div class="text-5xl mb-4">
         📊
       </div>
-      <div class="empty-text">
+      <div class="text-base font-medium mb-2">
         暂无统计数据
       </div>
-      <div class="empty-description">
-        <p>
+      <div class="text-sm text-center max-w-md mb-4">
+        <p class="my-1">
           系统中还没有预算数据，无法进行统计分析。
         </p>
-        <p>
+        <p class="my-1">
           请先创建一些预算，然后再查看统计结果。
         </p>
       </div>
-      <div class="debug-info">
-        <p>
+      <div class="bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 my-4 text-xs text-gray-600 dark:text-gray-400 text-left max-w-xs">
+        <p class="my-1">
           调试信息:
         </p>
-        <p>
+        <p class="my-1">
           Loading: {{ state.loading }}
         </p>
-        <p>
+        <p class="my-1">
           Has Data: {{ hasData }}
         </p>
-        <p>
+        <p class="my-1">
           Overview: {{ state.overview ? `有数据 (${state.overview.budgetCount} 个预算)` : '无数据' }}
         </p>
-        <p>
+        <p class="my-1">
           Error: {{ state.error || '无错误' }}
         </p>
       </div>
-      <div class="empty-actions">
-        <button class="empty-button primary" @click="goToBudgetList">
+      <div class="flex gap-3 justify-center flex-wrap">
+        <Button variant="primary" @click="goToBudgetList">
           去创建预算
-        </button>
-        <button class="empty-button secondary" @click="loadAllStats">
+        </Button>
+        <Button variant="secondary" @click="loadAllStats">
           刷新数据
-        </button>
-        <button class="empty-button test" @click="createTestData">
+        </Button>
+        <Button variant="success" @click="createTestData">
           创建测试数据
-        </button>
+        </Button>
       </div>
     </div>
 
     <!-- 统计概览卡片 -->
-    <div v-if="state.overview" class="stats-overview">
-      <div class="stats-grid">
-        <!-- 总预算 -->
-        <div class="stat-card">
-          <div class="stat-icon">
-            <PieChart class="w-6 h-6 text-blue-500" />
+    <div v-if="state.overview" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <!-- 总预算 -->
+      <Card padding="md" hoverable>
+        <div class="flex items-center">
+          <div class="mr-3 shrink-0">
+            <PieChart :size="24" class="text-blue-500" />
           </div>
-          <div class="stat-content">
-            <div class="stat-label">
+          <div class="flex-1">
+            <div class="text-sm text-gray-600 dark:text-gray-400 mb-1">
               总预算
             </div>
-            <div class="stat-value">
+            <div class="text-xl font-bold text-gray-900 dark:text-white">
               {{ formatCurrency(state.overview.totalBudgetAmount) }}
             </div>
           </div>
         </div>
+      </Card>
 
-        <!-- 已使用 -->
-        <div class="stat-card">
-          <div class="stat-icon">
-            <TrendingUp class="w-6 h-6 text-green-500" />
+      <!-- 已使用 -->
+      <Card padding="md" hoverable>
+        <div class="flex items-center">
+          <div class="mr-3 shrink-0">
+            <TrendingUp :size="24" class="text-green-500" />
           </div>
-          <div class="stat-content">
-            <div class="stat-label">
+          <div class="flex-1">
+            <div class="text-sm text-gray-600 dark:text-gray-400 mb-1">
               已使用
             </div>
-            <div class="stat-value">
+            <div class="text-xl font-bold text-gray-900 dark:text-white">
               {{ formatCurrency(state.overview.usedAmount) }}
             </div>
           </div>
         </div>
+      </Card>
 
-        <!-- 剩余金额 -->
-        <div class="stat-card">
-          <div class="stat-icon">
-            <BarChart3 class="w-6 h-6 text-orange-500" />
+      <!-- 剩余金额 -->
+      <Card padding="md" hoverable>
+        <div class="flex items-center">
+          <div class="mr-3 shrink-0">
+            <BarChart3 :size="24" class="text-orange-500" />
           </div>
-          <div class="stat-content">
-            <div class="stat-label">
+          <div class="flex-1">
+            <div class="text-sm text-gray-600 dark:text-gray-400 mb-1">
               剩余金额
             </div>
-            <div class="stat-value">
+            <div class="text-xl font-bold text-gray-900 dark:text-white">
               {{ formatCurrency(state.overview.remainingAmount) }}
             </div>
           </div>
         </div>
+      </Card>
 
-        <!-- 完成率 -->
-        <div class="stat-card">
-          <div class="stat-icon">
-            <div class="w-6 h-6 flex items-center justify-center">
-              <span class="text-lg">{{ statusIcon }}</span>
-            </div>
+      <!-- 完成率 -->
+      <Card padding="md" hoverable>
+        <div class="flex items-center">
+          <div class="w-6 h-6 flex items-center justify-center mr-3 shrink-0">
+            <span class="text-lg">{{ statusIcon }}</span>
           </div>
-          <div class="stat-content">
-            <div class="stat-label">
+          <div class="flex-1">
+            <div class="text-sm text-gray-600 dark:text-gray-400 mb-1">
               完成率
             </div>
-            <div class="stat-value" :class="statusColor">
+            <div class="text-xl font-bold" :class="statusColor">
               {{ formatPercentage(state.overview.completionRate) }}
             </div>
-            <div class="stat-status" :class="statusColor">
+            <div class="text-xs mt-1" :class="statusColor">
               {{ statusText }}
             </div>
           </div>
         </div>
+      </Card>
 
-        <!-- 预算数量 -->
-        <div class="stat-card">
-          <div class="stat-icon">
-            <div class="w-6 h-6 flex items-center justify-center">
-              <span class="text-lg">📊</span>
-            </div>
+      <!-- 预算数量 -->
+      <Card padding="md" hoverable>
+        <div class="flex items-center">
+          <div class="w-6 h-6 flex items-center justify-center mr-3 shrink-0">
+            <span class="text-lg">📊</span>
           </div>
-          <div class="stat-content">
-            <div class="stat-label">
+          <div class="flex-1">
+            <div class="text-sm text-gray-600 dark:text-gray-400 mb-1">
               预算数量
             </div>
-            <div class="stat-value">
+            <div class="text-xl font-bold text-gray-900 dark:text-white">
               {{ state.overview.budgetCount }}
             </div>
           </div>
         </div>
+      </Card>
 
-        <!-- 超预算数量 -->
-        <div v-if="state.overview.overBudgetCount > 0" class="stat-card warning">
-          <div class="stat-icon">
-            <div class="w-6 h-6 flex items-center justify-center">
-              <span class="text-lg">!</span>
-            </div>
+      <!-- 超预算数量 -->
+      <Card v-if="state.overview.overBudgetCount > 0" padding="md" hoverable class="bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800">
+        <div class="flex items-center">
+          <div class="w-6 h-6 flex items-center justify-center mr-3 shrink-0">
+            <span class="text-lg">!</span>
           </div>
-          <div class="stat-content">
-            <div class="stat-label">
+          <div class="flex-1">
+            <div class="text-sm text-gray-600 dark:text-gray-400 mb-1">
               超预算
             </div>
-            <div class="stat-value text-red-500">
+            <div class="text-xl font-bold text-red-600 dark:text-red-400">
               {{ state.overview.overBudgetCount }}
             </div>
-            <div class="stat-status text-red-500">
+            <div class="text-xs mt-1 text-red-600 dark:text-red-400">
               超预算金额: {{ formatCurrency(state.overview.overBudgetAmount) }}
             </div>
           </div>
         </div>
-      </div>
+      </Card>
     </div>
 
     <!-- 筛选器 -->
-    <div v-if="showFilters" class="filters-section">
-      <div class="filters-header">
-        <h3 class="filters-title">
+    <Card v-if="showFilters" padding="lg">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
           筛选条件
         </h3>
         <button
-          class="close-button"
+          class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
           @click="toggleFilters"
         >
-          ✕
+          <X :size="20" class="text-gray-500 dark:text-gray-400" />
         </button>
       </div>
-      <div class="filters-content">
-        <div class="filter-row">
-          <label class="filter-label">
+      <div class="space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center gap-2">
+          <label class="text-sm font-medium text-gray-700 dark:text-gray-300 sm:w-24">
             基础货币
           </label>
           <select
             v-model="filters.baseCurrency"
-            class="filter-select"
+            class="flex-1 px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
           >
             <option value="CNY">
               人民币 (CNY)
@@ -511,48 +516,48 @@ const currentChartOption = computed(() => {
           </select>
         </div>
 
-        <div class="filter-row">
-          <label class="filter-label">计算日期</label>
+        <div class="flex flex-col sm:flex-row sm:items-center gap-2">
+          <label class="text-sm font-medium text-gray-700 dark:text-gray-300 sm:w-24">计算日期</label>
           <input
             v-model="filters.calculationDate"
             type="date"
-            class="filter-input"
+            class="flex-1 px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
           >
         </div>
 
-        <div class="filter-row">
-          <label class="filter-label">
-            <input
-              v-model="filters.includeInactive"
-              type="checkbox"
-              class="filter-checkbox"
-            >
+        <div class="flex items-center gap-2">
+          <input
+            v-model="filters.includeInactive"
+            type="checkbox"
+            class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+          >
+          <label class="text-sm text-gray-700 dark:text-gray-300">
             包含非激活预算
           </label>
         </div>
 
-        <div class="filter-row">
-          <label class="filter-label">时间范围</label>
-          <div class="date-range">
+        <div class="flex flex-col gap-2">
+          <label class="text-sm font-medium text-gray-700 dark:text-gray-300">时间范围</label>
+          <div class="flex items-center gap-2">
             <input
               v-model="filters.timeRange.startDate"
               type="date"
-              class="filter-input"
+              class="flex-1 px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
             >
-            <span class="date-separator">至</span>
+            <span class="text-sm text-gray-500 dark:text-gray-400">至</span>
             <input
               v-model="filters.timeRange.endDate"
               type="date"
-              class="filter-input"
+              class="flex-1 px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
             >
           </div>
         </div>
 
-        <div class="filter-row">
-          <label class="filter-label">时间维度</label>
+        <div class="flex flex-col sm:flex-row sm:items-center gap-2">
+          <label class="text-sm font-medium text-gray-700 dark:text-gray-300 sm:w-24">时间维度</label>
           <select
             v-model="filters.period"
-            class="filter-select"
+            class="flex-1 px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
           >
             <option value="month">
               按月
@@ -563,493 +568,74 @@ const currentChartOption = computed(() => {
           </select>
         </div>
 
-        <div class="filter-actions">
-          <button
-            class="filter-button secondary"
-            @click="handleResetFilters"
-          >
+        <div class="flex gap-3 justify-end">
+          <Button variant="secondary" @click="handleResetFilters">
             重置
-          </button>
-          <button
-            class="filter-button primary"
-            @click="toggleFilters"
-          >
+          </Button>
+          <Button variant="primary" @click="toggleFilters">
             应用
-          </button>
+          </Button>
         </div>
       </div>
-    </div>
+    </Card>
 
-    <div v-if="state.error" class="error-message">
-      <div class="error-icon">
-        !
-      </div>
-      <div class="error-text">
+    <div v-if="state.error" class="flex items-center p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+      <AlertCircle :size="20" class="text-red-600 dark:text-red-400 mr-3" />
+      <div class="text-sm text-red-600 dark:text-red-400">
         {{ state.error }}
       </div>
     </div>
 
     <!-- 图表区域 -->
-    <div v-if="hasData" class="charts-section">
-      <div class="charts-header">
-        <h3>
+    <Card v-if="hasData" padding="lg">
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-5">
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white m-0">
           图表分析
         </h3>
-        <div class="chart-controls">
+        <div class="flex gap-2 flex-wrap">
           <button
-            class="control-button"
-            :class="{ active: chartType === 'trend' }"
+            class="flex items-center justify-center px-3 py-2 min-w-10 min-h-10 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 transition-all"
+            :class="chartType === 'trend' ? 'bg-blue-500 border-blue-500 text-white' : 'bg-gray-100 dark:bg-gray-700 hover:bg-blue-100 dark:hover:bg-blue-900/30 hover:border-blue-500 hover:text-blue-600 dark:hover:text-blue-400'"
             title="趋势分析"
             @click="chartType = 'trend'"
           >
-            <TrendingUp class="w-4 h-4" />
+            <TrendingUp :size="16" />
           </button>
           <button
-            class="control-button"
-            :class="{ active: chartType === 'category' }"
+            class="flex items-center justify-center px-3 py-2 min-w-10 min-h-10 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 transition-all"
+            :class="chartType === 'category' ? 'bg-blue-500 border-blue-500 text-white' : 'bg-gray-100 dark:bg-gray-700 hover:bg-blue-100 dark:hover:bg-blue-900/30 hover:border-blue-500 hover:text-blue-600 dark:hover:text-blue-400'"
             title="分类分析"
             @click="chartType = 'category'"
           >
-            <PieChart class="w-4 h-4" />
+            <PieChart :size="16" />
           </button>
         </div>
       </div>
 
       <!-- 图表容器 -->
-      <div class="chart-container">
+      <div class="w-full h-96 relative">
         <VChart
           v-if="!state.loading && hasData"
           ref="chartRef"
           :key="chartKey"
           :option="currentChartOption"
-          class="chart"
+          class="w-full h-full"
           autoresize
           :loading="false"
           @finished="ensureChartRender"
         />
-        <div v-else-if="state.loading" class="loading-container">
-          <div class="loading-spinner" />
-          <div class="loading-text">
+        <div v-else-if="state.loading" class="flex flex-col items-center justify-center h-full">
+          <Spinner size="lg" />
+          <div class="text-sm text-gray-500 dark:text-gray-400 mt-4">
             加载中...
           </div>
         </div>
-        <div v-else class="empty-chart">
-          <div class="empty-chart-text">
+        <div v-else class="flex items-center justify-center h-full text-gray-500 dark:text-gray-400">
+          <div class="text-sm">
             暂无图表数据
           </div>
         </div>
       </div>
-    </div>
+    </Card>
   </div>
 </template>
-
-<style scoped>
-/* 使用现有的 CSS 变量和工具类 */
-.budget-stats-container {
-  background-color: var(--color-base-100);
-  border-radius: var(--radius-box);
-  box-shadow: var(--shadow-md);
-  overflow: hidden;
-}
-
-.stats-overview {
-  padding: var(--spacing-4);
-  border-bottom: var(--border) solid var(--color-base-300);
-}
-
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(12.5rem, 1fr));
-  gap: var(--spacing-4);
-}
-
-.stat-card {
-  display: flex;
-  align-items: center;
-  padding: var(--spacing-4);
-  background-color: var(--color-base-200);
-  border-radius: var(--radius-box);
-  border: var(--border) solid var(--color-base-300);
-  transition: var(--transition-normal);
-}
-
-.stat-card:hover {
-  box-shadow: var(--shadow-lg);
-}
-
-.stat-card.warning {
-  background-color: var(--color-red-50);
-  border-color: var(--color-red-100);
-}
-
-.stat-icon {
-  margin-right: var(--spacing-3);
-  flex-shrink: 0;
-}
-
-.stat-content {
-  flex: 1;
-}
-
-.stat-label {
-  font-size: 0.875rem;
-  color: var(--color-gray-600);
-  margin-bottom: var(--spacing-1);
-}
-
-.stat-value {
-  font-size: 1.25rem;
-  font-weight: bold;
-  color: var(--color-base-content);
-}
-
-.stat-sub-value {
-  font-size: 0.75rem;
-  color: var(--color-gray-500);
-  margin-top: var(--spacing-1);
-}
-
-.filter-section {
-  padding: var(--spacing-4);
-  border-bottom: var(--border) solid var(--color-base-300);
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--spacing-3);
-  align-items: center;
-  justify-content: space-between;
-}
-
-.filter-group {
-  display: flex;
-  gap: var(--spacing-2);
-  flex-wrap: wrap;
-  align-items: center;
-}
-
-.filter-label {
-  font-size: 0.875rem;
-  color: var(--color-base-content);
-  font-weight: 500;
-}
-
-.filter-select,
-.filter-input {
-  padding: var(--spacing-2) var(--spacing-3);
-  border: var(--border) solid var(--color-base-300);
-  border-radius: var(--radius-field);
-  font-size: 0.875rem;
-  color: var(--color-base-content);
-  background-color: var(--color-base-100);
-  transition: var(--transition-normal);
-}
-
-.filter-select:focus,
-.filter-input:focus {
-  outline: none;
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 2px var(--color-primary-soft);
-}
-
-.filter-button {
-  display: flex;
-  align-items: center;
-  padding: var(--spacing-2) var(--spacing-4);
-  background-color: var(--color-base-200);
-  border: var(--border) solid var(--color-base-300);
-  border-radius: var(--radius-field);
-  font-size: 0.875rem;
-  color: var(--color-gray-600);
-  cursor: pointer;
-  transition: var(--transition-normal);
-}
-
-.filter-button:hover {
-  background-color: var(--color-blue-100);
-  border-color: var(--color-blue-500);
-  color: var(--color-blue-500);
-}
-
-.filter-button.primary {
-  background-color: var(--color-primary);
-  border-color: var(--color-primary);
-  color: var(--color-primary-content);
-}
-
-.filter-button.primary:hover {
-  background-color: var(--color-primary-hover);
-}
-
-.filter-button.secondary {
-  background-color: var(--color-base-100);
-  color: var(--color-gray-600);
-}
-
-.filter-button.secondary:hover {
-  background-color: var(--color-base-200);
-  border-color: var(--color-blue-500);
-  color: var(--color-blue-500);
-}
-
-.loading-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 2.5rem;
-  color: var(--color-gray-500);
-}
-
-.loading-spinner {
-  width: 2rem;
-  height: 2rem;
-  border: 3px solid var(--color-base-300);
-  border-top: 3px solid var(--color-primary);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-  margin-bottom: var(--spacing-2);
-}
-
-.loading-text {
-  font-size: 0.875rem;
-}
-
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 2.5rem;
-  color: var(--color-gray-500);
-}
-
-.empty-icon {
-  font-size: 3rem;
-  margin-bottom: var(--spacing-4);
-}
-
-.empty-text {
-  font-size: 1rem;
-  margin-bottom: var(--spacing-2);
-  font-weight: 500;
-}
-
-.empty-description {
-  font-size: 0.875rem;
-  margin-bottom: var(--spacing-4);
-  text-align: center;
-  max-width: 25rem;
-}
-
-.empty-description p {
-  margin: var(--spacing-1) 0;
-}
-
-.empty-actions {
-  display: flex;
-  gap: var(--spacing-3);
-  justify-content: center;
-  flex-wrap: wrap;
-}
-
-.empty-button.primary {
-  padding: 0.625rem 1.25rem;
-  background-color: var(--color-primary);
-  color: var(--color-primary-content);
-  border: none;
-  border-radius: var(--radius-field);
-  font-size: 0.875rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: var(--transition-normal);
-}
-
-.empty-button.primary:hover {
-  background-color: var(--color-primary-hover);
-}
-
-.empty-button.secondary {
-  padding: 0.625rem 1.25rem;
-  background-color: var(--color-base-100);
-  color: var(--color-gray-600);
-  border: var(--border) solid var(--color-base-300);
-  border-radius: var(--radius-field);
-  font-size: 0.875rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: var(--transition-normal);
-}
-
-.empty-button.secondary:hover {
-  background-color: var(--color-base-200);
-  border-color: var(--color-blue-500);
-  color: var(--color-blue-500);
-}
-
-.empty-button.test {
-  padding: 0.625rem 1.25rem;
-  background-color: var(--color-success);
-  color: var(--color-success-content);
-  border: none;
-  border-radius: var(--radius-field);
-  font-size: 0.875rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: var(--transition-normal);
-}
-
-.empty-button.test:hover {
-  background-color: var(--color-success-hover);
-}
-
-.debug-info {
-  background-color: var(--color-base-200);
-  border: var(--border) solid var(--color-base-300);
-  border-radius: var(--radius-selector);
-  padding: var(--spacing-3);
-  margin: var(--spacing-4) 0;
-  font-size: 0.75rem;
-  color: var(--color-gray-600);
-  text-align: left;
-  max-width: 18.75rem;
-}
-
-.debug-info p {
-  margin: var(--spacing-1) 0;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-/* 图表区域样式 */
-.charts-section {
-  margin-top: 1.5rem;
-  background-color: var(--color-base-100);
-  border-radius: var(--radius-box);
-  padding: 1.25rem;
-  box-shadow: var(--shadow-md);
-}
-
-.charts-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1.25rem;
-  flex-wrap: wrap;
-  gap: var(--spacing-4);
-}
-
-.charts-header h3 {
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: var(--color-base-content);
-  margin: 0;
-}
-
-.chart-controls {
-  display: flex;
-  gap: var(--spacing-2);
-  flex-wrap: wrap;
-}
-
-.control-button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: var(--spacing-2);
-  background-color: var(--color-base-200);
-  border: var(--border) solid var(--color-base-300);
-  border-radius: var(--radius-field);
-  font-size: 0.875rem;
-  color: var(--color-gray-600);
-  cursor: pointer;
-  transition: var(--transition-normal);
-  min-width: 2.5rem;
-  min-height: 2.5rem;
-}
-
-.control-button:hover {
-  background-color: var(--color-blue-100);
-  border-color: var(--color-blue-500);
-  color: var(--color-blue-500);
-}
-
-.control-button.active {
-  background-color: var(--color-primary);
-  border-color: var(--color-primary);
-  color: var(--color-primary-content);
-}
-
-.chart-container {
-  width: 100%;
-  height: 25rem;
-  position: relative;
-}
-
-.chart {
-  width: 100%;
-  height: 100%;
-}
-
-.empty-chart {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-  color: var(--color-gray-500);
-}
-
-.empty-chart-text {
-  font-size: 0.875rem;
-}
-
-/* 错误消息样式 */
-.error-message {
-  display: flex;
-  align-items: center;
-  padding: var(--spacing-4);
-  background-color: var(--color-red-50);
-  border: var(--border) solid var(--color-red-100);
-  border-radius: var(--radius-box);
-  margin: var(--spacing-4) 0;
-}
-
-.error-icon {
-  font-size: 1.25rem;
-  margin-right: var(--spacing-3);
-  color: var(--color-red-500);
-}
-
-.error-text {
-  color: var(--color-red-600);
-  font-size: 0.875rem;
-}
-
-/* 响应式设计 */
-@media (max-width: var(--breakpoint-md)) {
-  .stats-grid {
-    grid-template-columns: 1fr;
-  }
-  .filter-row {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  .filter-group {
-    width: 100%;
-    justify-content: space-between;
-  }
-  .filter-button-group {
-    width: 100%;
-    justify-content: flex-end;
-  }
-  .charts-header {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-  .chart-controls {
-    width: 100%;
-    justify-content: center;
-  }
-}
-</style>

@@ -28,6 +28,7 @@ pub fn init_commands(builder: Builder<Wry>) -> Builder<Wry> {
         crate::system_commands::check_pwd,
         crate::system_commands::generate_token,
         crate::system_commands::is_verify_token,
+        crate::system_commands::refresh_token,
         crate::system_commands::minimize_to_tray,
         crate::system_commands::restore_from_tray,
         crate::system_commands::toggle_window_visibility,
@@ -51,6 +52,12 @@ pub fn init_commands(builder: Builder<Wry>) -> Builder<Wry> {
         todo_cmd::todo_toggle,
         todo_cmd::todo_list,
         todo_cmd::todo_list_paged,
+        // 项目命令
+        todo_cmd::project_list,
+        todo_cmd::project_get,
+        // 标签命令
+        todo_cmd::tag_list,
+        todo_cmd::tag_get,
         // 财务命令
         money_cmd::total_assets,
         money_cmd::account_get,

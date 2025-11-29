@@ -1,10 +1,11 @@
 <!-- src/features/todo/views/TodoView.vue -->
 <script setup lang="ts">
 import { Plus, X } from 'lucide-vue-next';
-import InputCommon from '@/components/common/InputCommon.vue';
+import { Pagination } from '@/components/ui';
 import { FilterBtnSchema, PrioritySchema, StatusSchema } from '@/schema/common';
 import { TodoCreateSchema } from '@/schema/todos';
 import { DateUtils } from '@/utils/date';
+import TodoInput from '../components/TodoInput.vue';
 import TodoList from '../components/TodoList.vue';
 import { useTodosFilters } from '../composables/useTodosFilters';
 import type { FilterBtn, Status } from '@/schema/common';
@@ -110,39 +111,43 @@ onMounted(async () => {
 </script>
 
 <template>
-  <main class="main-container">
+  <main class="mx-auto px-1 md:px-4 py-1 md:py-4 pb-16 md:pb-4 flex flex-col w-full max-w-2xl min-h-screen relative bg-gray-100 dark:bg-gray-900 z-0">
     <!-- 输入框容器 -->
-    <div class="input-wrapper">
+    <div class="mb-4 h-[60px] relative z-[10000]">
       <!-- 切换按钮 -->
       <button
         v-if="showBtn"
-        class="toggle-btn"
+        class="absolute top-1/2 left-0 z-10 flex h-8 w-8 items-center justify-center bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white rounded-full border border-gray-300 dark:border-gray-600 shadow-sm -translate-y-1/2 transition-all duration-300 hover:bg-gray-800 dark:hover:bg-gray-600 hover:text-white active:scale-95"
         aria-label="Toggle Input"
         @click="toggleInput"
       >
         <component
           :is="showInput ? X : Plus"
-          class="toggle-icon"
-          :class="showInput ? 'toggle-icon-close' : ''"
+          class="h-4 w-4"
+          :class="showInput ? 'text-red-600 dark:text-red-400' : ''"
         />
       </button>
 
       <!-- 展开输入区域 -->
       <Transition name="fade-slide">
-        <div v-show="showInput" class="input-area">
-          <InputCommon v-model="newT" @add="handleAdd" />
+        <div v-show="showInput" class="w-full pl-[2.1rem]">
+          <TodoInput v-model="newT" :on-add="handleAdd" />
         </div>
       </Transition>
 
       <!-- 过滤按钮 -->
       <Transition name="fade-slide">
-        <div v-show="!showInput" class="filter-container">
-          <div class="filter-group">
+        <div v-show="!showInput" class="absolute inset-0 flex items-center justify-center transition-opacity duration-300">
+          <div class="inline-flex gap-2 px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-full shadow-sm transition-all">
             <button
               v-for="item in filterButtons"
               :key="item.value"
-              :data-active="filterBtn === item.value"
-              class="filter-btn"
+              class="text-sm font-semibold px-3 py-1 rounded-full border border-transparent transition-all"
+              :class="[
+                filterBtn === item.value
+                  ? 'bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900'
+                  : 'bg-transparent text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700',
+              ]"
               @click="changeFilter(item.value)"
             >
               {{ item.label }}
@@ -163,9 +168,9 @@ onMounted(async () => {
     <!-- 分页器 -->
     <div
       v-if="pagination.totalItems.value > pagination.pageSize.value"
-      class="pagination-wrapper"
+      class="mb-16 md:mb-1 mt-auto sticky md:relative bottom-0 md:bottom-auto bg-transparent p-1 md:p-0 rounded-lg md:rounded-none shadow-[0_-2px_8px_rgba(0,0,0,0.1)] md:shadow-none md:[&>:deep(.pagination-container)]:shadow-none md:[&>:deep(.pagination-container)]:!bg-transparent"
     >
-      <SimplePagination
+      <Pagination
         :current-page="pagination.currentPage.value"
         :total-pages="pagination.totalPages.value"
         :total-items="pagination.totalItems.value"
@@ -180,206 +185,27 @@ onMounted(async () => {
   </main>
 </template>
 
-<style scoped lang="postcss">
-.main-container {
-  margin: 0 auto;
-  padding: 1rem;
-  display: flex;
-  flex-direction: column;
-  width: 40rem;
-  min-height: 100vh;
-  position: relative;
-  background-color: var(--color-base-200);
-  /* 创建较低的层叠上下文，避免覆盖全局 toast */
-  z-index: 0;
-}
-
+<style scoped>
+/* Toast 全局z-index - 保留必要的全局样式 */
 :global(.Vue-Toastification__container) {
   z-index: 2147483647 !important;
   pointer-events: none !important;
 }
+
 :global(.Vue-Toastification__toast) {
   pointer-events: auto !important;
 }
 
-/* 输入框容器 */
-.input-wrapper {
-  margin-bottom: 1rem;
-  height: 60px;
-  position: relative;
-  z-index: 10000; /* 确保输入框在TodoList之上 */
-}
-
-/* 切换按钮 */
-.toggle-btn {
-  position: absolute;
-  top: 50%;
-  left: 0;
-  z-index: 10;
-  display: flex;
-  height: 2rem;
-  width: 2rem;
-  align-items: center;
-  justify-content: center;
-  background-color: var(--color-base-300);
-  color: var(--color-base-content);
-  border-radius: 9999px;
-  border: 1px solid var(--color-base-200);
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  transform: translateY(-50%);
-  transition: all 0.3s ease;
-}
-
-.toggle-btn:hover {
-  background-color: var(--color-neutral);
-  color: var(--color-neutral-content);
-}
-
-.toggle-btn:active {
-  transform: translateY(-50%) scale(0.95);
-}
-
-/* 按钮里的图标 */
-.toggle-icon {
-  height: 1rem;
-  width: 1rem;
-}
-
-.toggle-icon-close {
-  color: var(--color-error, #ef4444);
-}
-
-/* 输入框展开区域 */
-.input-area {
-  width: 100%;
-  padding-left: 2.1rem;
-}
-
-/* 过滤容器 */
-.filter-container {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: opacity 0.3s ease-in-out;
-}
-
-.filter-group {
-  display: inline-flex;
-  gap: 0.5rem;
-  padding: 0.5rem 0.75rem;
-  background-color: var(--color-base-100);
-  border: 1px solid var(--color-base-200);
-  border-radius: 9999px;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-  transition: all 0.3s ease;
-}
-
-/* 单个过滤按钮 */
-.filter-btn {
-  font-size: 0.875rem;
-  font-weight: 600;
-  padding: 0.25rem 0.75rem;
-  border-radius: 9999px;
-  border: 1px solid transparent;
-  background-color: var(--color-neutral-content);
-  color: var(--color-base-content);
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.filter-btn:hover {
-  background-color: var(--color-base-300);
-  color: var(--color-base-content);
-}
-
-/* 激活状态 */
-.filter-btn[data-active="true"] {
-  background-color: var(--color-base-content);
-  color: var(--color-base-200);
-}
-
-/* 分页容器 */
-.pagination-wrapper {
-  margin-bottom: 0.25rem;
-  margin-top: auto;
-}
-
-/* 移除分页组件自身的阴影和背景色 */
-.pagination-wrapper :deep(.pagination-container) {
-  box-shadow: none;
-  background-color: transparent !important;
-}
-
-/* 动画 */
+/* fade-slide 过渡动画 */
 .fade-slide-enter-active,
 .fade-slide-leave-active {
-  transition: opacity 0.3s ease, transform 0.3s ease;
+  transition: all 0.3s ease-out;
   will-change: opacity, transform;
 }
 
 .fade-slide-enter-from,
 .fade-slide-leave-to {
   opacity: 0;
-  transform: scale(0.95) translateY(-6px);
-}
-
-.fade-slide-enter-to,
-.fade-slide-leave-from {
-  opacity: 1;
-  transform: scale(1) translateY(0);
-}
-.fade-slide-enter-active,
-.fade-slide-leave-active {
-  transition: opacity 0.3s ease, transform 0.3s ease;
-  will-change: opacity, transform;
-}
-
-.fade-slide-enter-from,
-.fade-slide-leave-to {
-  opacity: 0;
-  transform: scale(0.95) translateY(-6px);
-}
-
-.fade-slide-enter-to,
-.fade-slide-leave-from {
-  opacity: 1;
-  transform: scale(1) translateY(0);
-}
-
-@media (max-width: 768px) {
-  .main-container {
-    width: 100%;
-    padding: 0.25rem;
-    padding-bottom: 4rem; /* 为底部导航留出空间 */
-  }
-  .input-area {
-    padding-left: 0.5rem;
-    z-index: 10001; /* 确保输入区域在TodoList之上 */
-  }
-  .toggle-btn {
-    left: 0.25rem;
-  }
-  .input-wrapper {
-    padding: 0.5rem;
-  }
-
-  .pagination-wrapper {
-    margin-bottom: 4rem; /* 为底部导航栏预留空间 */
-    margin-top: 0.5rem;
-    position: sticky;
-    bottom: 0;
-    background-color: transparent;
-    padding: 0.25rem 0.5rem;
-    border-radius: 0.5rem;
-    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
-  }
-
-  /* 移除分页组件自身的阴影和背景色，避免双重阴影 */
-  .pagination-wrapper :deep(.pagination-container) {
-    box-shadow: none;
-    background-color: transparent !important;
-  }
+  transform: scale(0.95) translateY(-0.375rem);
 }
 </style>

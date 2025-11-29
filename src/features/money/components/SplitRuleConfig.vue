@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { LucidePlus, LucideTrash, LucideUser, LucideX } from 'lucide-vue-next';
+import Button from '@/components/ui/Button.vue';
 import { useFamilyMemberStore, useFamilySplitStore } from '@/stores/money';
 import { toast } from '@/utils/toast';
 import type { SplitResult, SplitRuleConfig, SplitRuleType } from '@/schema/money';
@@ -227,46 +229,46 @@ function closeDialog() {
 </script>
 
 <template>
-  <div class="modal-mask">
-    <div class="modal-window">
-      <div class="modal-header">
-        <h3 class="modal-title">
-          {{ props.rule ? '编辑分摊规则' : '创建分摊规则' }}
+  <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-[1000]">
+    <div class="bg-white dark:bg-gray-800 rounded-lg w-[90%] max-w-[600px] max-h-[90vh] overflow-hidden flex flex-col">
+      <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+          {{ props.rule ? '编辑分摆规则' : '创建分摆规则' }}
         </h3>
-        <button class="modal-close-btn" @click="closeDialog">
+        <button class="text-gray-600 dark:text-gray-400 transition-colors hover:text-gray-900 dark:hover:text-white" @click="closeDialog">
           <LucideX class="w-5 h-5" />
         </button>
       </div>
 
-      <div class="modal-content">
+      <div class="flex-1 overflow-y-auto px-6 py-4">
         <!-- 基本信息 -->
-        <div class="form-section">
-          <div class="form-row">
-            <label class="form-label">规则名称</label>
+        <div class="mb-6">
+          <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">规则名称</label>
             <input
               v-model="form.name"
               type="text"
-              class="form-input"
+              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               placeholder="请输入规则名称"
               required
             >
           </div>
 
-          <div class="form-row">
-            <label class="form-label">描述</label>
+          <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">描述</label>
             <textarea
               v-model="form.description"
-              class="form-textarea"
+              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               placeholder="可选的规则描述"
               rows="2"
             />
           </div>
 
-          <div class="form-row">
-            <label class="form-label">分摊类型</label>
-            <select v-model="form.ruleType" class="form-select">
+          <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">分摆类型</label>
+            <select v-model="form.ruleType" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
               <option value="EQUAL">
-                均摊
+                均摆
               </option>
               <option value="PERCENTAGE">
                 按比例
@@ -280,82 +282,86 @@ function closeDialog() {
             </select>
           </div>
 
-          <div class="form-row">
-            <label class="checkbox-label">
-              <input v-model="form.isTemplate" type="checkbox" class="checkbox">
-              <span>保存为模板</span>
+          <div class="mb-4">
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input v-model="form.isTemplate" type="checkbox" class="w-4 h-4">
+              <span class="text-sm text-gray-900 dark:text-white">保存为模板</span>
             </label>
           </div>
         </div>
 
         <!-- 参与者配置 -->
-        <div class="form-section">
-          <div class="section-header">
-            <h4 class="section-title">
+        <div class="mb-6">
+          <div class="flex items-center justify-between mb-4">
+            <h4 class="text-base font-semibold text-gray-900 dark:text-white">
               参与者配置
             </h4>
-            <button type="button" class="add-btn" @click="addParticipant">
+            <button
+              type="button"
+              class="flex items-center gap-1 px-2 py-1 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded text-xs transition-colors hover:bg-gray-300 dark:hover:bg-gray-500"
+              @click="addParticipant"
+            >
               <LucidePlus class="w-4 h-4" />
               添加参与者
             </button>
           </div>
 
-          <div class="participants-list">
+          <div class="flex flex-col gap-3">
             <div
               v-for="(participant, index) in form.participants"
               :key="participant.memberSerialNum"
-              class="participant-item"
+              class="flex items-center gap-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"
             >
-              <div class="participant-info">
-                <LucideUser class="w-4 h-4 text-gray-500" />
-                <span class="participant-name">{{ getMemberName(participant.memberSerialNum) }}</span>
+              <div class="flex items-center gap-2 flex-1">
+                <LucideUser class="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                <span class="font-medium text-gray-900 dark:text-white">{{ getMemberName(participant.memberSerialNum) }}</span>
               </div>
 
-              <div class="participant-config">
+              <div class="flex-1">
                 <!-- 百分比配置 -->
-                <div v-if="form.ruleType === 'PERCENTAGE'" class="config-item">
+                <div v-if="form.ruleType === 'PERCENTAGE'" class="flex items-center gap-2">
                   <input
                     v-model.number="participant.percentage"
                     type="number"
                     min="0"
                     max="100"
                     step="0.01"
-                    class="config-input"
+                    class="w-20 px-2 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                     placeholder="0"
                   >
-                  <span class="config-unit">%</span>
+                  <span class="text-xs text-gray-600 dark:text-gray-400">%</span>
                 </div>
 
                 <!-- 固定金额配置 -->
-                <div v-else-if="form.ruleType === 'FIXED_AMOUNT'" class="config-item">
+                <div v-else-if="form.ruleType === 'FIXED_AMOUNT'" class="flex items-center gap-2">
                   <input
                     v-model.number="participant.fixedAmount"
                     type="number"
                     min="0"
                     step="0.01"
-                    class="config-input"
+                    class="w-20 px-2 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                     placeholder="0"
                   >
-                  <span class="config-unit">元</span>
+                  <span class="text-xs text-gray-600 dark:text-gray-400">元</span>
                 </div>
 
                 <!-- 权重配置 -->
-                <div v-else-if="form.ruleType === 'WEIGHTED'" class="config-item">
+                <div v-else-if="form.ruleType === 'WEIGHTED'" class="flex items-center gap-2">
                   <input
                     v-model.number="participant.weight"
                     type="number"
                     min="0.1"
                     step="0.1"
-                    class="config-input"
+                    class="w-20 px-2 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                     placeholder="1"
                   >
-                  <span class="config-unit">权重</span>
+                  <span class="text-xs text-gray-600 dark:text-gray-400">权重</span>
                 </div>
               </div>
 
               <button
                 type="button"
-                class="remove-btn"
+                class="text-red-600 dark:text-red-400 p-1 rounded transition-colors hover:bg-red-50 dark:hover:bg-red-900/20"
                 @click="removeParticipant(index)"
               >
                 <LucideTrash class="w-4 h-4" />
@@ -365,311 +371,47 @@ function closeDialog() {
         </div>
 
         <!-- 预览 -->
-        <div class="form-section">
-          <div class="section-header">
-            <h4 class="section-title">
+        <div class="mb-6">
+          <div class="flex items-center justify-between mb-4">
+            <h4 class="text-base font-semibold text-gray-900 dark:text-white">
               预览
             </h4>
-            <div class="preview-amount">
-              <label>测试金额:</label>
+            <div class="flex items-center gap-2 text-sm">
+              <label class="text-gray-700 dark:text-gray-300">测试金额:</label>
               <input
                 v-model.number="previewAmount"
                 type="number"
                 min="1"
                 step="0.01"
-                class="amount-input"
+                class="w-[100px] px-2 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
               >
-              <span>元</span>
+              <span class="text-gray-700 dark:text-gray-300">元</span>
             </div>
           </div>
 
-          <div class="preview-results">
+          <div class="flex flex-col gap-2">
             <div
               v-for="result in previewResults"
               :key="result.memberSerialNum"
-              class="preview-item"
+              class="flex items-center justify-between p-2 bg-gray-100 dark:bg-gray-700 rounded-md"
             >
-              <span class="preview-name">{{ result.memberName }}</span>
-              <span class="preview-amount">{{ result.amount.toFixed(2) }}元</span>
-              <span class="preview-percentage">({{ result.percentage.toFixed(1) }}%)</span>
+              <span class="font-medium text-gray-900 dark:text-white">{{ result.memberName }}</span>
+              <span class="font-semibold text-emerald-600 dark:text-emerald-400">{{ result.amount.toFixed(2) }}元</span>
+              <span class="text-xs text-gray-600 dark:text-gray-400">({{ result.percentage.toFixed(1) }}%)</span>
             </div>
           </div>
         </div>
       </div>
 
       <!-- 操作按钮 -->
-      <div class="modal-actions">
-        <button type="button" class="btn-cancel" @click="closeDialog">
+      <div class="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-3">
+        <Button variant="secondary" @click="closeDialog">
           取消
-        </button>
-        <button type="button" class="btn-save" @click="saveRule">
+        </Button>
+        <Button variant="primary" @click="saveRule">
           保存
-        </button>
+        </Button>
       </div>
     </div>
   </div>
 </template>
-
-<style scoped>
-.modal-mask {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-
-.modal-window {
-  background: white;
-  border-radius: 8px;
-  width: 90%;
-  max-width: 600px;
-  max-height: 90vh;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-}
-
-.modal-header {
-  padding: 1rem 1.5rem;
-  border-bottom: 1px solid #e5e7eb;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.modal-title {
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: #1f2937;
-}
-
-.modal-close-btn {
-  color: #6b7280;
-  transition: color 0.2s;
-}
-
-.modal-close-btn:hover {
-  color: #374151;
-}
-
-.modal-content {
-  flex: 1;
-  overflow-y: auto;
-  padding: 1.5rem;
-}
-
-.form-section {
-  margin-bottom: 1.5rem;
-}
-
-.form-row {
-  margin-bottom: 1rem;
-}
-
-.form-label {
-  display: block;
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: #374151;
-  margin-bottom: 0.25rem;
-}
-
-.form-input, .form-select, .form-textarea {
-  width: 100%;
-  padding: 0.5rem 0.75rem;
-  border: 1px solid #d1d5db;
-  border-radius: 0.375rem;
-  font-size: 0.875rem;
-}
-
-.form-input:focus, .form-select:focus, .form-textarea:focus {
-  outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-}
-
-.checkbox-label {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  cursor: pointer;
-}
-
-.checkbox {
-  width: 1rem;
-  height: 1rem;
-}
-
-.section-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 1rem;
-}
-
-.section-title {
-  font-size: 1rem;
-  font-weight: 600;
-  color: #1f2937;
-}
-
-.add-btn {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  padding: 0.25rem 0.5rem;
-  background-color: #e5e7eb;
-  color: #374151;
-  border-radius: 0.25rem;
-  font-size: 0.75rem;
-  transition: background-color 0.2s;
-}
-
-.add-btn:hover {
-  background-color: #d1d5db;
-}
-
-.participants-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.participant-item {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 0.75rem;
-  background-color: #f9fafb;
-  border-radius: 0.5rem;
-}
-
-.participant-info {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  flex: 1;
-}
-
-.participant-name {
-  font-weight: 500;
-}
-
-.participant-config {
-  flex: 1;
-}
-
-.config-item {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.config-input {
-  width: 80px;
-  padding: 0.25rem 0.5rem;
-  border: 1px solid #d1d5db;
-  border-radius: 0.25rem;
-  font-size: 0.875rem;
-}
-
-.config-unit {
-  font-size: 0.75rem;
-  color: #6b7280;
-}
-
-.remove-btn {
-  color: #dc2626;
-  padding: 0.25rem;
-  border-radius: 0.25rem;
-  transition: background-color 0.2s;
-}
-
-.remove-btn:hover {
-  background-color: #fef2f2;
-}
-
-.preview-amount {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.875rem;
-}
-
-.amount-input {
-  width: 100px;
-  padding: 0.25rem 0.5rem;
-  border: 1px solid #d1d5db;
-  border-radius: 0.25rem;
-}
-
-.preview-results {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.preview-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.5rem;
-  background-color: #f3f4f6;
-  border-radius: 0.375rem;
-}
-
-.preview-name {
-  font-weight: 500;
-}
-
-.preview-amount {
-  font-weight: 600;
-  color: #059669;
-}
-
-.preview-percentage {
-  font-size: 0.75rem;
-  color: #6b7280;
-}
-
-.modal-actions {
-  padding: 1rem 1.5rem;
-  border-top: 1px solid #e5e7eb;
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.75rem;
-}
-
-.btn-cancel {
-  padding: 0.5rem 1rem;
-  border: 1px solid #d1d5db;
-  background-color: white;
-  color: #374151;
-  border-radius: 0.375rem;
-  font-size: 0.875rem;
-  transition: all 0.2s;
-}
-
-.btn-cancel:hover {
-  background-color: #f9fafb;
-}
-
-.btn-save {
-  padding: 0.5rem 1rem;
-  background-color: #3b82f6;
-  color: white;
-  border-radius: 0.375rem;
-  font-size: 0.875rem;
-  transition: background-color 0.2s;
-}
-
-.btn-save:hover {
-  background-color: #2563eb;
-}
-</style>

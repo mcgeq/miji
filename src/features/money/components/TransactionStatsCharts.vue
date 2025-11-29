@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import VChart from 'vue-echarts';
+import Spinner from '@/components/ui/Spinner.vue';
 import { chartUtils, defaultTheme, initECharts } from '@/utils/echarts';
 
 const props = defineProps<Props>();
@@ -179,32 +180,34 @@ const chartLoading = ref(false);
 </script>
 
 <template>
-  <div class="transaction-stats-charts">
-    <div class="charts-grid">
+  <div class="mb-8 md:mb-8 w-full">
+    <div class="grid grid-cols-1 gap-6 md:gap-6 w-full">
       <!-- 收支趋势图 -->
-      <div class="chart-card">
-        <div class="chart-header">
-          <h3 class="chart-title">
-            收支趋势
-          </h3>
-          <div class="chart-subtitle">
-            {{ timeDimension === 'week' ? '周度' : timeDimension === 'year' ? '年度' : '月度' }}趋势分析
+      <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 md:p-6 sm:p-4 shadow-sm w-full overflow-hidden">
+        <div class="flex justify-between items-center mb-4 flex-wrap gap-2">
+          <div>
+            <h3 class="text-lg md:text-lg sm:text-base font-semibold text-gray-900 dark:text-white mb-1 break-words">
+              收支趋势
+            </h3>
+            <div class="text-sm text-gray-500 dark:text-gray-400 break-words">
+              {{ timeDimension === 'week' ? '周度' : timeDimension === 'year' ? '年度' : '月度' }}趋势分析
+            </div>
           </div>
         </div>
 
-        <div class="chart-content">
-          <div v-if="loading" class="chart-loading">
-            <div class="loading-spinner" />
-            <div class="loading-text">
+        <div class="min-h-[400px] md:min-h-[300px] sm:min-h-[250px] w-full overflow-hidden">
+          <div v-if="loading" class="flex flex-col items-center justify-center h-[400px] md:h-[300px] sm:h-[250px] gap-4">
+            <Spinner size="lg" />
+            <div class="text-gray-500 dark:text-gray-400 text-sm">
               加载中...
             </div>
           </div>
 
-          <div v-else-if="currentTrends.length === 0" class="chart-empty">
-            <div class="empty-icon">
+          <div v-else-if="currentTrends.length === 0" class="flex flex-col items-center justify-center h-[400px] md:h-[300px] sm:h-[250px] gap-4">
+            <div class="text-5xl opacity-50">
               📊
             </div>
-            <div class="empty-text">
+            <div class="text-gray-500 dark:text-gray-400 text-sm">
               暂无数据
             </div>
           </div>
@@ -213,7 +216,7 @@ const chartLoading = ref(false);
             v-else
             :option="trendChartOption"
             :loading="chartLoading"
-            class="chart"
+            class="w-full h-[400px] md:h-[300px] sm:h-[250px] max-w-full"
             autoresize
           />
         </div>
@@ -221,241 +224,3 @@ const chartLoading = ref(false);
     </div>
   </div>
 </template>
-
-<style scoped lang="postcss">
-.transaction-stats-charts {
-  margin-bottom: 2rem;
-  width: 100%;
-  box-sizing: border-box;
-}
-
-.charts-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 1.5rem;
-  width: 100%;
-}
-
-.chart-card {
-  background: var(--color-base-100);
-  border: 1px solid var(--color-base-300);
-  border-radius: 0.5rem;
-  padding: 1.5rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  width: 100%;
-  box-sizing: border-box;
-  overflow: hidden;
-}
-
-.chart-card.full-width {
-  grid-column: 1 / -1;
-}
-
-.chart-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1rem;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-.chart-controls {
-  display: flex;
-  gap: 1rem;
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-.control-group {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-}
-
-.control-label {
-  font-size: 0.875rem;
-  color: var(--color-neutral);
-  font-weight: 500;
-  white-space: nowrap;
-}
-
-.control-select {
-  padding: 0.375rem 0.75rem;
-  border: 1px solid var(--color-base-300);
-  border-radius: 0.375rem;
-  background: var(--color-base-100);
-  color: var(--color-accent-content);
-  font-size: 0.875rem;
-  min-width: 100px;
-  max-width: 150px;
-}
-
-.control-select:focus {
-  outline: none;
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px rgba(var(--color-primary-rgb), 0.1);
-}
-
-.chart-title {
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: var(--color-accent-content);
-  margin-bottom: 0.25rem;
-  word-break: break-word;
-}
-
-.chart-subtitle {
-  font-size: 0.875rem;
-  color: var(--color-neutral);
-  word-break: break-word;
-}
-
-.chart-content {
-  min-height: 400px;
-  width: 100%;
-  overflow: hidden;
-}
-
-.chart {
-  width: 100%;
-  height: 400px;
-  max-width: 100%;
-}
-
-.chart-loading {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 400px;
-  gap: 1rem;
-}
-
-.loading-spinner {
-  width: 40px;
-  height: 40px;
-  border: 3px solid var(--color-base-300);
-  border-top: 3px solid var(--color-primary);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-.loading-text {
-  color: var(--color-neutral);
-  font-size: 0.875rem;
-}
-
-.chart-empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 400px;
-  gap: 1rem;
-}
-
-.empty-icon {
-  font-size: 3rem;
-  opacity: 0.5;
-}
-
-.empty-text {
-  color: var(--color-neutral);
-  font-size: 0.875rem;
-}
-
-/* 移动端优化 */
-@media (max-width: 768px) {
-  .transaction-stats-charts {
-    margin-bottom: 1rem;
-  }
-
-  .charts-grid {
-    gap: 1rem;
-  }
-
-  .chart-card {
-    padding: 1rem;
-    margin: 0;
-  }
-
-  .chart-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.75rem;
-  }
-
-  .chart-controls {
-    width: 100%;
-    justify-content: flex-start;
-  }
-
-  .control-group {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.25rem;
-  }
-
-  .control-select {
-    width: 100%;
-    max-width: 200px;
-  }
-
-  .chart-content {
-    min-height: 300px;
-  }
-
-  .chart {
-    height: 300px;
-  }
-
-  .chart-loading,
-  .chart-empty {
-    height: 300px;
-  }
-
-  .chart-title {
-    font-size: 1rem;
-  }
-}
-
-/* 超小屏幕优化 */
-@media (max-width: 480px) {
-  .chart-card {
-    padding: 0.75rem;
-  }
-
-  .chart-content {
-    min-height: 250px;
-  }
-
-  .chart {
-    height: 250px;
-  }
-
-  .chart-loading,
-  .chart-empty {
-    height: 250px;
-  }
-
-  .chart-title {
-    font-size: 0.875rem;
-  }
-
-  .control-label {
-    font-size: 0.75rem;
-  }
-
-  .control-select {
-    font-size: 0.75rem;
-    padding: 0.25rem 0.5rem;
-  }
-}
-</style>

@@ -23,7 +23,7 @@ function updateTodo(serialNum: string, updated: TodoUpdate) {
 </script>
 
 <template>
-  <div class="todolist-main">
+  <div class="flex flex-col gap-2 p-1 w-full max-w-full box-border overflow-hidden">
     <TodoItem
       v-for="todo in todoList"
       :key="todo.serialNum"
@@ -34,28 +34,3 @@ function updateTodo(serialNum: string, updated: TodoUpdate) {
     />
   </div>
 </template>
-
-<style scoped>
-.todolist-main {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  padding: 0.25rem;
-  width: 100%;
-  max-width: 100%;
-  box-sizing: border-box;
-  overflow: hidden;
-}
-
-.slide-fade-enter-active,
-.slide-fade-leave-active {
-  transition: opacity 0.5s ease, transform 0.5s ease;
-  will-change: opacity, transform;
-}
-
-.slide-fade-enter-from,
-.slide-fade-leave-to {
-  opacity: 0;
-  transform: translateX(-20px); /* 从左侧滑入/滑出 */
-}
-</style>

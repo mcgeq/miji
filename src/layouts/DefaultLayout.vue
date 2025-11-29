@@ -61,37 +61,16 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="app-container">
+  <div class="flex min-h-screen">
     <Sidebar v-if="!isMobile" :menu="menuItems" @logout="logout" />
     <div
-      class="main-content"
-      :class="{ 'with-bottom-nav': isMobile }"
-      :style="{ marginLeft: !isMobile ? '3rem' : '0' }"
+      class="flex-1 flex flex-col bg-gray-100 dark:bg-gray-900 transition-all duration-300"
+      :class="[
+        isMobile ? 'min-h-[calc(100vh-3rem)] pb-16 overflow-y-auto' : 'min-h-screen ml-12',
+      ]"
     >
       <slot />
     </div>
     <MobileBottomNav v-if="isMobile" :menu="menuItems" />
   </div>
 </template>
-
-<style scoped>
-.app-container {
-  display: flex;
-  min-height: 100vh;
-}
-
-.main-content {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  background-color: var(--color-base-200);
-  min-height: 100vh; /* 恢复最小高度，确保内容足够高 */
-  transition: margin-left 0.3s ease;
-}
-
-.main-content.with-bottom-nav {
-  min-height: calc(100vh - 3rem); /* 移动端：最小高度减去底部导航高度 */
-  padding-bottom: 4rem; /* 为底部导航栏预留空间，确保内容不被遮挡 */
-  overflow-y: auto; /* 允许垂直滚动 */
-}
-</style>

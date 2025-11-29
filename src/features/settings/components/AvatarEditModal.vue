@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { Camera, Trash2, Upload, X } from 'lucide-vue-next';
-import ConfirmModal from '@/components/common/ConfirmModal.vue';
+import { Camera, Trash2, Upload } from 'lucide-vue-next';
+import ConfirmDialog from '@/components/common/ConfirmDialogCompat.vue';
+import { Modal } from '@/components/ui';
 import { useAuthStore } from '@/stores/auth';
 import { Lg } from '@/utils/debugLog';
 import { toast } from '@/utils/toast';
@@ -165,13 +166,6 @@ function handleClose() {
   }
 }
 
-// 点击遮罩层关闭
-function handleOverlayClick(event: MouseEvent) {
-  if (event.target === event.currentTarget) {
-    handleClose();
-  }
-}
-
 // 获取当前显示的头像URL，修复类型错误
 const currentAvatarUrl = computed(() => {
   return previewUrl.value || user.value?.avatarUrl || '';
@@ -184,167 +178,131 @@ const userInitial = computed(() => {
 </script>
 
 <template>
-  <Teleport to="body">
-    <Transition
-      enter-active-class="duration-300 ease-out"
-      enter-from-class="opacity-0"
-      enter-to-class="opacity-100"
-      leave-active-class="duration-200 ease-in"
-      leave-from-class="opacity-100"
-      leave-to-class="opacity-0"
-    >
-      <div
-        v-if="props.isOpen"
-        class="avatar-modal-overlay"
-        @click="handleOverlayClick"
-      >
-        <Transition
-          enter-active-class="duration-300 ease-out"
-          enter-from-class="scale-95 opacity-0"
-          enter-to-class="scale-100 opacity-100"
-          leave-active-class="duration-200 ease-in"
-          leave-from-class="scale-100 opacity-100"
-          leave-to-class="scale-95 opacity-0"
-        >
-          <div
-            v-if="props.isOpen"
-            class="avatar-modal-content"
+  <Modal
+    :open="props.isOpen"
+    title="编辑头像"
+    size="md"
+    :show-footer="false"
+    @close="handleClose"
+  >
+    <!-- 当前头像显示 -->
+    <div class="flex justify-center mb-6">
+      <div class="relative">
+        <div class="w-32 h-32 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+          <img
+            v-if="currentAvatarUrl"
+            :src="currentAvatarUrl"
+            :alt="user?.name || '用户头像'"
+            class="w-full h-full object-cover"
           >
-            <!-- Modal 头部 -->
-            <div class="avatar-modal-header">
-              <h2 class="avatar-modal-title">
-                编辑头像
-              </h2>
-              <button
-                class="avatar-modal-close-button"
-                :disabled="isUploading"
-                @click="handleClose"
-              >
-                <X class="avatar-modal-close-icon" />
-              </button>
-            </div>
-
-            <!-- 当前头像显示 -->
-            <div class="avatar-modal-preview">
-              <div class="avatar-modal-preview-wrapper">
-                <div class="avatar-modal-preview-container">
-                  <img
-                    v-if="currentAvatarUrl"
-                    :src="currentAvatarUrl"
-                    :alt="user?.name || '用户头像'"
-                    class="avatar-modal-preview-image"
-                  >
-                  <div
-                    v-else
-                    class="avatar-modal-preview-fallback"
-                  >
-                    {{ userInitial }}
-                  </div>
-                </div>
-
-                <!-- 预览标识 -->
-                <div
-                  v-if="previewUrl"
-                  class="avatar-modal-preview-badge"
-                >
-                  预览
-                </div>
-              </div>
-            </div>
-
-            <!-- 文件选择区域 -->
-            <div
-              class="avatar-modal-dropzone"
-              :class="dragActive ? 'avatar-modal-dropzone-active' : 'avatar-modal-dropzone-inactive'"
-              @click="triggerFileSelect"
-              @dragover="handleDragOver"
-              @dragleave="handleDragLeave"
-              @drop="handleDrop"
-            >
-              <input
-                ref="fileInput"
-                type="file"
-                accept="image/*"
-                style="display: none;"
-                @change="handleFileSelect"
-              >
-
-              <div class="avatar-modal-dropzone-content">
-                <div class="avatar-modal-upload-icon-wrapper">
-                  <Upload class="avatar-modal-upload-icon" />
-                </div>
-                <div>
-                  <p class="avatar-modal-upload-text">
-                    点击或拖拽上传图片
-                  </p>
-                  <p class="avatar-modal-upload-hint">
-                    支持 JPG、PNG、GIF，最大 5MB
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <!-- 操作按钮 -->
-            <div class="avatar-modal-actions">
-              <!-- 上传按钮 -->
-              <button
-                v-if="selectedFile"
-                :disabled="isUploading"
-                class="avatar-modal-button avatar-modal-button-primary"
-                @click="handleUpload"
-              >
-                <Camera class="avatar-modal-button-icon" />
-                {{ isUploading ? '上传中...' : '确认上传' }}
-              </button>
-
-              <div class="avatar-modal-button-group">
-                <!-- 清除选择 -->
-                <button
-                  v-if="selectedFile"
-                  :disabled="isUploading"
-                  class="avatar-modal-button avatar-modal-button-secondary"
-                  @click="clearSelection"
-                >
-                  清除选择
-                </button>
-
-                <!-- 删除头像 -->
-                <button
-                  v-if="user?.avatarUrl && !selectedFile"
-                  :disabled="isUploading"
-                  class="avatar-modal-button avatar-modal-button-danger"
-                  @click="showDeleteConfirmDialog"
-                >
-                  <Trash2 class="avatar-modal-button-icon" />
-                  删除头像
-                </button>
-
-                <!-- 取消按钮 -->
-                <button
-                  :disabled="isUploading"
-                  class="avatar-modal-button avatar-modal-button-secondary"
-                  @click="handleClose"
-                >
-                  {{ selectedFile ? '取消' : '关闭' }}
-                </button>
-              </div>
-            </div>
+          <div
+            v-else
+            class="text-4xl font-semibold text-gray-500 dark:text-gray-400"
+          >
+            {{ userInitial }}
           </div>
-        </Transition>
-      </div>
-    </Transition>
+        </div>
 
-    <!-- 删除确认对话框 -->
-    <ConfirmModal
-      v-model:visible="showDeleteConfirm"
-      title="删除头像"
-      message="确定要删除当前头像吗？删除后将显示默认头像。"
-      type="danger"
-      confirm-text="删除"
-      cancel-text="取消"
-      :loading="isUploading"
-      @confirm="confirmDeleteAvatar"
-      @cancel="cancelDeleteAvatar"
-    />
-  </Teleport>
+        <!-- 预览标识 -->
+        <div
+          v-if="previewUrl"
+          class="absolute -top-2 -right-2 bg-blue-600 text-white text-xs px-2 py-1 rounded-full"
+        >
+          预览
+        </div>
+      </div>
+    </div>
+
+    <!-- 文件选择区域 -->
+    <div
+      class="border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors"
+      :class="dragActive ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'"
+      @click="triggerFileSelect"
+      @dragover="handleDragOver"
+      @dragleave="handleDragLeave"
+      @drop="handleDrop"
+    >
+      <input
+        ref="fileInput"
+        type="file"
+        accept="image/*"
+        class="hidden"
+        @change="handleFileSelect"
+      >
+
+      <div class="flex flex-col items-center gap-3">
+        <div class="w-12 h-12 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
+          <Upload class="w-6 h-6 text-gray-600 dark:text-gray-300" />
+        </div>
+        <div>
+          <p class="text-sm font-medium text-gray-900 dark:text-white">
+            点击或拖拽上传图片
+          </p>
+          <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+            支持 JPG、PNG、GIF，最大 5MB
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 操作按钮 -->
+    <div class="flex flex-col gap-3 mt-6">
+      <!-- 上传按钮 -->
+      <button
+        v-if="selectedFile"
+        :disabled="isUploading"
+        class="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        @click="handleUpload"
+      >
+        <Camera class="w-5 h-5" />
+        {{ isUploading ? '上传中...' : '确认上传' }}
+      </button>
+
+      <div class="flex gap-3">
+        <!-- 清除选择 -->
+        <button
+          v-if="selectedFile"
+          :disabled="isUploading"
+          class="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg disabled:opacity-50 transition-colors"
+          @click="clearSelection"
+        >
+          清除选择
+        </button>
+
+        <!-- 删除头像 -->
+        <button
+          v-if="user?.avatarUrl && !selectedFile"
+          :disabled="isUploading"
+          class="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg disabled:opacity-50 transition-colors"
+          @click="showDeleteConfirmDialog"
+        >
+          <Trash2 class="w-4 h-4" />
+          删除头像
+        </button>
+
+        <!-- 关闭按钮 -->
+        <button
+          :disabled="isUploading"
+          class="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg disabled:opacity-50 transition-colors"
+          @click="handleClose"
+        >
+          {{ selectedFile ? '取消' : '关闭' }}
+        </button>
+      </div>
+    </div>
+  </Modal>
+
+  <!-- 删除确认对话框 -->
+  <ConfirmDialog
+    v-model:visible="showDeleteConfirm"
+    title="删除头像"
+    message="确定要删除当前头像吗？删除后将显示默认头像。"
+    type="danger"
+    confirm-text="删除"
+    cancel-text="取消"
+    :loading="isUploading"
+    :icon-buttons="true"
+    @confirm="confirmDeleteAvatar"
+    @cancel="cancelDeleteAvatar"
+  />
 </template>

@@ -1,10 +1,14 @@
 <script setup lang="ts">
-import BaseModal from '@/components/common/BaseModal.vue';
 import CategorySelector from '@/components/common/CategorySelector.vue';
-import FormRow from '@/components/common/FormRow.vue';
+import { Modal } from '@/components/ui';
+import FormRow from '@/components/ui/FormRow.vue';
+import Input from '@/components/ui/Input.vue';
+import Select from '@/components/ui/Select.vue';
+import Textarea from '@/components/ui/Textarea.vue';
 import {
   OverspendLimitType,
 } from '@/types/budget-allocation';
+import type { SelectOption } from '@/components/ui/Select.vue';
 import type {
   BudgetAllocationCreateRequest,
   BudgetAllocationResponse,
@@ -57,6 +61,17 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const emit = defineEmits<Emits>();
+
+/**
+ * 成员选项
+ */
+const memberOptions = computed<SelectOption[]>(() => [
+  { value: '', label: '请选择成员' },
+  ...props.members.map(m => ({
+    value: m.serialNum,
+    label: m.name,
+  })),
+]);
 
 /**
  * 表单数据
@@ -179,7 +194,8 @@ watch(
 </script>
 
 <template>
-  <BaseModal
+  <Modal
+    :open="true"
     :model-value="true"
     :title="isEdit ? '编辑分配' : '添加分配'"
     size="md"
@@ -188,22 +204,22 @@ watch(
     @close="handleCancel"
     @confirm="handleSubmit"
   >
-    <form class="allocation-form" @submit.prevent="handleSubmit">
+    <form class="flex flex-col gap-4" @submit.prevent="handleSubmit">
       <!-- 分配目标 -->
-      <div class="form-section">
-        <h3 class="section-title">
+      <div class="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
+        <h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-3">
           分配目标
         </h3>
 
         <!-- 分配类型 -->
         <FormRow label="分配类型" required>
-          <div class="radio-group">
-            <label class="radio-label">
-              <input v-model="formData.allocationType" type="radio" value="member">
+          <div class="flex gap-4 flex-wrap">
+            <label class="flex items-center gap-2 cursor-pointer text-sm">
+              <input v-model="formData.allocationType" type="radio" value="member" class="cursor-pointer">
               <span>成员</span>
             </label>
-            <label class="radio-label">
-              <input v-model="formData.allocationType" type="radio" value="member-category">
+            <label class="flex items-center gap-2 cursor-pointer text-sm">
+              <input v-model="formData.allocationType" type="radio" value="member-category" class="cursor-pointer">
               <span>成员+分类</span>
             </label>
           </div>
@@ -211,14 +227,15 @@ watch(
 
         <!-- 成员选择 -->
         <FormRow label="选择成员" required>
-          <select v-model="formData.memberSerialNum" class="modal-input-select w-full" required>
-            <option value="">
-              请选择成员
-            </option>
-            <option v-for="member in members" :key="member.serialNum" :value="member.serialNum">
-              {{ member.name }}
-            </option>
-          </select>
+          <Select
+            :model-value="formData.memberSerialNum || ''"
+            :options="memberOptions"
+            placeholder="请选择成员"
+            size="sm"
+            required
+            full-width
+            @update:model-value="(val) => formData.memberSerialNum = val as string"
+          />
         </FormRow>
 
         <!-- 分类选择（仅成员+分类时显示） -->
@@ -235,20 +252,20 @@ watch(
       </div>
 
       <!-- 金额设置 -->
-      <div class="form-section">
-        <h3 class="section-title">
+      <div class="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
+        <h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-3">
           金额设置
         </h3>
 
         <!-- 金额类型 -->
         <FormRow label="分配方式" required>
-          <div class="radio-group">
-            <label class="radio-label">
-              <input v-model="formData.amountType" type="radio" value="fixed">
+          <div class="flex gap-4 flex-wrap">
+            <label class="flex items-center gap-2 cursor-pointer text-sm">
+              <input v-model="formData.amountType" type="radio" value="fixed" class="cursor-pointer">
               <span>固定金额</span>
             </label>
-            <label class="radio-label">
-              <input v-model="formData.amountType" type="radio" value="percentage">
+            <label class="flex items-center gap-2 cursor-pointer text-sm">
+              <input v-model="formData.amountType" type="radio" value="percentage" class="cursor-pointer">
               <span>百分比</span>
             </label>
           </div>
@@ -256,109 +273,46 @@ watch(
 
         <!-- 固定金额 -->
         <FormRow v-if="formData.amountType === 'fixed'" label="分配金额" required>
-          <div class="input-with-prefix">
-            <span class="prefix">¥</span>
-            <input
-              v-model.number="formData.allocatedAmount"
-              type="number"
-              class="modal-input-select"
-              placeholder="0.00"
-              step="0.01"
-              min="0"
-              required
-            >
-          </div>
+          <Input
+            v-model="formData.allocatedAmount"
+            type="number"
+            placeholder="0.00"
+            size="md"
+            :required="true"
+            full-width
+          >
+            <template #prefix>
+              ¥
+            </template>
+          </Input>
         </FormRow>
 
         <!-- 百分比 -->
         <FormRow v-else label="百分比" required>
-          <div class="input-with-suffix">
-            <input
-              v-model.number="formData.percentage"
-              type="number"
-              class="modal-input-select"
-              placeholder="0"
-              min="0"
-              max="100"
-              required
-            >
-            <span class="suffix">%</span>
-          </div>
+          <Input
+            v-model="formData.percentage"
+            type="number"
+            placeholder="0"
+            size="md"
+            :required="true"
+            full-width
+          >
+            <template #suffix>
+              %
+            </template>
+          </Input>
         </FormRow>
       </div>
 
       <!-- 备注 -->
-      <textarea
+      <Textarea
         v-model="formData.notes"
-        class="modal-input-select w-full"
-        rows="3"
+        :rows="3"
+        :max-length="200"
         placeholder="可选的备注信息..."
+        show-count
+        full-width
       />
     </form>
-  </BaseModal>
+  </Modal>
 </template>
-
-<style scoped>
-.allocation-form {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.form-section {
-  padding: 0.75rem;
-  background: var(--color-base-200);
-  border-radius: 0.5rem;
-}
-
-.section-title {
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: var(--color-base-content);
-  margin-bottom: 0.75rem;
-}
-
-.radio-group {
-  display: flex;
-  gap: 1rem;
-  flex-wrap: wrap;
-}
-
-.radio-label {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  cursor: pointer;
-  font-size: 0.875rem;
-}
-
-.radio-label input[type="radio"] {
-  cursor: pointer;
-}
-
-.input-with-prefix,
-.input-with-suffix {
-  display: flex;
-  align-items: center;
-  border: 1px solid var(--color-base-300);
-  border-radius: 0.375rem;
-  overflow: hidden;
-  background: var(--color-base-100);
-}
-
-.input-with-prefix .modal-input-select,
-.input-with-suffix .modal-input-select {
-  border: none;
-  flex: 1;
-  min-width: 0;
-}
-
-.prefix,
-.suffix {
-  padding: 0 0.75rem;
-  background-color: var(--color-base-200);
-  color: var(--color-base-content);
-  font-size: 0.875rem;
-  font-weight: 500;
-}
-</style>

@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import BaseModal from '@/components/common/BaseModal.vue';
 import DateTimePicker from '@/components/common/DateTimePicker.vue';
-import FormRow from '@/components/common/FormRow.vue';
 import CurrencySelector from '@/components/common/money/CurrencySelector.vue';
+import { Checkbox, FormRow, Input, Modal, Select, Textarea } from '@/components/ui';
 import {
   TransactionStatusSchema,
   TransactionTypeSchema,
@@ -26,6 +25,7 @@ import { formatCurrency } from '../utils/money';
 import { safeToFixed } from '../utils/numberUtils';
 import { initializeFormData } from '../utils/transactionFormUtils';
 import TransactionSplitSection from './TransactionSplitSection.vue';
+import type { SelectOption } from '@/components/ui';
 import type {
   TransactionType,
 } from '@/schema/common';
@@ -68,9 +68,12 @@ const modalTitle = computed(() => {
     Transfer: 'financial.transaction.recordTransfer',
   };
 
-  return props.transaction
-    ? t('financial.transaction.editTransaction')
-    : t(titles[props.type]);
+  if (props.transaction) {
+    return props.readonly
+      ? t('financial.transaction.viewTransaction')
+      : t('financial.transaction.editTransaction');
+  }
+  return t(titles[props.type]);
 });
 
 // 使用验证 Composable
@@ -119,6 +122,14 @@ const { selectableAccounts: selectAccounts } = useAccountFilter(
   computed(() => form.value.category),
 );
 
+// Select 组件选项数据
+const accountOptions = computed<SelectOption[]>(() =>
+  selectAccounts.value.map(account => ({
+    value: account.serialNum,
+    label: `${account.name} (${formatCurrency(account.balance)})`,
+  })),
+);
+
 // 支付方式管理
 const {
   availablePaymentMethods,
@@ -128,6 +139,29 @@ const {
   computed(() => form.value.accountSerialNum),
   computed(() => form.value.transactionType),
 );
+
+const paymentMethodOptions = computed<SelectOption[]>(() =>
+  availablePaymentMethods.value.map(method => ({
+    value: method,
+    label: t(`financial.paymentMethods.${method.toLowerCase()}`),
+  })),
+);
+
+const categoryOptions = computed<SelectOption[]>(() =>
+  Array.from(categoryMap.value.entries()).map(([_key, category]) => ({
+    value: category.name,
+    label: t(`common.categories.${lowercaseFirstLetter(category.name)}`),
+  })),
+);
+
+const subCategoryOptions = computed<SelectOption[]>(() => {
+  if (!form.value.category) return [];
+  const subs = categoryMap.value.get(form.value.category)?.subs || [];
+  return subs.map(sub => ({
+    value: sub,
+    label: t(`common.subCategories.${lowercaseFirstLetter(sub)}`),
+  }));
+});
 
 // 账本和成员关联功能
 const {
@@ -160,6 +194,38 @@ const isTransferReadonly = computed(() => {
 
 const isEditMode = computed<boolean>(() => !!props.transaction);
 const isAccountDisabled = computed<boolean>(() => isTransferReadonly.value || isEditMode.value);
+
+// 转入账户的计算属性，处理 nullable 转换
+const toAccountSerialNum = computed<string>({
+  get: () => form.value.toAccountSerialNum ?? '',
+  set: (value: string) => {
+    form.value.toAccountSerialNum = value || undefined;
+  },
+});
+
+// 子分类的计算属性，处理 nullable 转换
+const subCategory = computed<string>({
+  get: () => form.value.subCategory ?? '',
+  set: (value: string) => {
+    form.value.subCategory = value || undefined;
+  },
+});
+
+// 首次到期日的计算属性，处理 nullable 转换
+const firstDueDate = computed<string>({
+  get: () => form.value.firstDueDate ?? '',
+  set: (value: string) => {
+    form.value.firstDueDate = value || undefined;
+  },
+});
+
+// 关联交易序列号的计算属性，处理 optional 转换
+const relatedTransactionSerialNum = computed<string>({
+  get: () => form.value.relatedTransactionSerialNum ?? '',
+  set: (value: string) => {
+    form.value.relatedTransactionSerialNum = value || undefined;
+  },
+});
 
 // 分摊配置状态
 const splitConfig = ref<{
@@ -456,10 +522,6 @@ const isPaymentMethodEditable = computed(() => {
   return true;
 });
 
-const selectToAccounts = computed(() => {
-  return selectAccounts.value.filter(account => account.serialNum !== form.value.accountSerialNum);
-});
-
 function clearMemberSelection() {
   selectedMembers.value = [];
   toast.info('已清空成员选择');
@@ -661,7 +723,8 @@ watch(
 </script>
 
 <template>
-  <BaseModal
+  <Modal
+    :open="true"
     :title="modalTitle"
     size="md"
     :confirm-loading="isSubmitting"
@@ -670,9 +733,9 @@ watch(
     @confirm="handleSubmit"
   >
     <form @submit.prevent="handleSubmit">
-      <!-- 交易类型 -->
-      <FormRow :label="t('financial.transaction.transType')" required>
-        <div class="form-display">
+      <!-- 交易类型 - 仅在编辑/查看模式显示 -->
+      <FormRow v-if="props.transaction" :label="t('financial.transaction.transType')" required>
+        <div class="px-4 py-2.5 rounded-lg bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white font-medium">
           {{ form.transactionType === 'Income' ? t('financial.transaction.income')
             : form.transactionType === 'Expense' ? t('financial.transaction.expense')
               : t('financial.transaction.transfer') }}
@@ -681,17 +744,14 @@ watch(
 
       <!-- 金额 -->
       <FormRow :label="t('financial.money')" required>
-        <input
+        <Input
           v-model="form.amount"
           v-has-value
           type="number"
-          class="modal-input-select w-full"
           :placeholder="t('common.placeholders.enterAmount')"
           :disabled="isInstallmentFieldsDisabled || isInstallmentTransactionFieldsDisabled || isReadonlyMode"
-          step="0.01"
-          required
           @input="handleAmountInput"
-        >
+        />
       </FormRow>
 
       <!-- 币种 -->
@@ -710,14 +770,13 @@ watch(
         :label="isTransferReadonly || form.transactionType === TransactionTypeSchema.enum.Transfer ? t('financial.transaction.fromAccount') : t('financial.account.account')"
         required
       >
-        <select v-model="form.accountSerialNum" v-has-value class="modal-input-select w-full" required :disabled="isAccountDisabled || isReadonlyMode">
-          <option value="">
-            {{ t('common.placeholders.selectAccount') }}
-          </option>
-          <option v-for="account in selectAccounts" :key="account.serialNum" :value="account.serialNum">
-            {{ account.name }} ({{ formatCurrency(account.balance) }})
-          </option>
-        </select>
+        <Select
+          v-model="form.accountSerialNum"
+          v-has-value
+          :options="accountOptions"
+          :placeholder="t('common.placeholders.selectAccount')"
+          :disabled="isAccountDisabled || isReadonlyMode"
+        />
       </FormRow>
 
       <!-- 转入账户 -->
@@ -726,54 +785,39 @@ watch(
         :label="t('financial.transaction.toAccount')"
         required
       >
-        <select v-model="form.toAccountSerialNum" v-has-value class="modal-input-select w-full" required :disabled="isAccountDisabled || isReadonlyMode">
-          <option value="">
-            {{ t('common.placeholders.selectAccount') }}
-          </option>
-          <option v-for="account in selectToAccounts" :key="account.serialNum" :value="account.serialNum">
-            {{ account.name }} ({{ formatCurrency(account.balance) }})
-          </option>
-        </select>
+        <Select
+          v-model="toAccountSerialNum"
+          v-has-value
+          :options="accountOptions.filter(opt => opt.value !== form.accountSerialNum)"
+          :placeholder="t('common.placeholders.selectAccount')"
+          :disabled="isAccountDisabled || isReadonlyMode"
+        />
       </FormRow>
 
       <!-- 支付渠道 -->
       <FormRow :label="t('financial.transaction.paymentMethod')" required>
-        <select
+        <Select
           v-if="isPaymentMethodEditable"
           v-model="form.paymentMethod"
           v-has-value
+          :options="paymentMethodOptions"
+          :placeholder="t('common.placeholders.selectOption')"
           :disabled="isTransferReadonly || isReadonlyMode"
-          class="modal-input-select w-full"
-          required
-        >
-          <option value="">
-            {{ t('common.placeholders.selectOption') }}
-          </option>
-          <option v-for="method in availablePaymentMethods" :key="method" :value="method">
-            {{ t(`financial.paymentMethods.${method.toLowerCase()}`) }}
-          </option>
-        </select>
-        <div v-else class="form-display">
+        />
+        <div v-else class="px-4 py-2.5 rounded-lg bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white font-medium">
           {{ t(`financial.paymentMethods.${form.paymentMethod.toLowerCase()}`) }}
         </div>
       </FormRow>
 
       <!-- 分类 -->
       <FormRow :label="t('categories.category')" required>
-        <select
+        <Select
           v-model="form.category"
           v-has-value
-          class="modal-input-select w-full"
-          required
+          :options="categoryOptions"
+          :placeholder="t('common.placeholders.selectCategory')"
           :disabled="isTransferReadonly || isInstallmentTransactionFieldsDisabled || isReadonlyMode"
-        >
-          <option value="">
-            {{ t('common.placeholders.selectCategory') }}
-          </option>
-          <option v-for="[key, category] in categoryMap" :key="key" :value="category.name">
-            {{ t(`common.categories.${lowercaseFirstLetter(category.name)}`) }}
-          </option>
-        </select>
+        />
       </FormRow>
 
       <!-- 子分类 -->
@@ -782,189 +826,182 @@ watch(
         :label="t('categories.subCategory')"
         optional
       >
-        <select
-          v-model="form.subCategory"
+        <Select
+          v-model="subCategory"
           v-has-value
-          class="modal-input-select w-full"
+          :options="subCategoryOptions"
+          :placeholder="t('common.placeholders.selectOption')"
           :disabled="isTransferReadonly || isInstallmentTransactionFieldsDisabled || isReadonlyMode"
-        >
-          <option value="">
-            {{ t('common.placeholders.selectOption') }}
-          </option>
-          <option v-for="sub in categoryMap.get(form.category)?.subs" :key="sub" :value="sub">
-            {{ t(`common.subCategories.${lowercaseFirstLetter(sub)}`) }}
-          </option>
-        </select>
+        />
       </FormRow>
 
       <!-- 关联账本 -->
-      <div v-if="!isReadonlyMode || selectedLedgers.length > 0" class="form-row">
-        <label class="label-with-hint">
-          关联账本
-        </label>
-        <div class="ledger-selector-compact">
-          <div class="selector-row">
-            <div v-if="selectedLedgers.length === 0" class="empty-selection">
-              <LucideInbox class="empty-icon" />
-              <span>未选择账本</span>
+      <FormRow v-if="!isReadonlyMode || selectedLedgers.length > 0" label="关联账本" optional>
+        <div class="flex items-center gap-2 w-full">
+          <div class="flex-1 flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 min-h-[42px]">
+            <div v-if="selectedLedgers.length === 0" class="flex items-center gap-2 text-gray-400 dark:text-gray-500">
+              <LucideInbox class="w-4 h-4" />
+              <span class="text-sm">未选择账本</span>
             </div>
-            <div v-else class="selected-items-compact">
-              <span class="selected-item">
+            <div v-else class="flex items-center gap-2 flex-wrap">
+              <span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 rounded-md text-sm font-medium">
                 {{ availableLedgers.find(l => l.serialNum === selectedLedgers[0])?.name || selectedLedgers[0] }}
                 <button
                   v-if="!isReadonlyMode"
                   type="button"
-                  class="remove-btn"
+                  class="ml-1 hover:bg-blue-100 dark:hover:bg-blue-900/40 rounded p-0.5 transition-colors"
                   @click="selectedLedgers = selectedLedgers.filter(id => id !== selectedLedgers[0])"
                 >
-                  <LucideX />
+                  <LucideX class="w-3 h-3" />
                 </button>
               </span>
               <span
                 v-if="selectedLedgers.length > 1"
-                class="more-count"
+                class="inline-flex items-center px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-md text-xs font-medium"
                 :title="selectedLedgers.slice(1).map(id => availableLedgers.find(l => l.serialNum === id)?.name || id).join('\n')"
               >
                 +{{ selectedLedgers.length - 1 }}
               </span>
             </div>
-            <button
-              v-if="!isReadonlyMode"
-              type="button"
-              class="btn-add-ledger btn-icon-only"
-              :title="showLedgerSelector ? '收起' : '选择账本'"
-              @click="showLedgerSelector = !showLedgerSelector"
-            >
-              <LucideChevronDown v-if="!showLedgerSelector" />
-              <LucideChevronUp v-else />
-            </button>
           </div>
+          <button
+            v-if="!isReadonlyMode"
+            type="button"
+            class="w-9 h-9 flex items-center justify-center rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-blue-500 dark:hover:border-blue-400 transition-all"
+            :title="showLedgerSelector ? '收起' : '选择账本'"
+            @click="showLedgerSelector = !showLedgerSelector"
+          >
+            <LucideChevronDown v-if="!showLedgerSelector" class="w-4 h-4" />
+            <LucideChevronUp v-else class="w-4 h-4" />
+          </button>
         </div>
-      </div>
+      </FormRow>
 
       <!-- 账本选择下拉 -->
-      <div v-if="!isReadonlyMode && showLedgerSelector" class="form-row">
-        <label />
-        <div class="selector-dropdown">
-          <div class="dropdown-header">
-            <span>选择账本</span>
-            <button type="button" @click="showLedgerSelector = false">
-              <LucideX />
+      <div v-if="!isReadonlyMode && showLedgerSelector" class="mb-4 -mt-2">
+        <div class="p-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-900">
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-sm font-semibold text-gray-900 dark:text-white">选择账本</span>
+            <button
+              type="button"
+              class="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors"
+              @click="showLedgerSelector = false"
+            >
+              <LucideX class="w-4 h-4 text-gray-500 dark:text-gray-400" />
             </button>
           </div>
-          <div class="dropdown-content">
+          <div class="flex flex-col gap-2 max-h-60 overflow-y-auto">
             <label
               v-for="ledger in availableLedgers"
               :key="ledger.serialNum"
-              class="checkbox-item"
+              class="flex items-center gap-3 p-3 rounded-lg hover:bg-white dark:hover:bg-gray-800 border border-transparent hover:border-gray-200 dark:hover:border-gray-700 cursor-pointer transition-all"
             >
-              <input
+              <Checkbox
                 v-model="selectedLedgers"
-                type="checkbox"
                 :value="ledger.serialNum"
-              >
-              <span class="item-name">{{ ledger.name }}</span>
-              <span class="item-type">{{ ledger.ledgerType }}</span>
+              />
+              <div class="flex-1 flex items-center justify-between">
+                <span class="text-sm font-medium text-gray-900 dark:text-white">{{ ledger.name }}</span>
+                <span class="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded">{{ ledger.ledgerType }}</span>
+              </div>
             </label>
           </div>
         </div>
       </div>
 
-      <!-- 分摊成员 -->
-      <div v-if="selectedLedgers.length > 0 && (!isReadonlyMode || selectedMembers.length > 0)" class="form-row">
-        <label class="label-with-hint">
-          分摊成员
-        </label>
-        <div class="member-selector-with-hint">
-          <div class="member-selector-compact">
-            <div class="selector-row">
-              <div v-if="selectedMembers.length === 0" class="empty-selection">
-                <LucideUsers class="empty-icon" />
-                <span>未选择成员</span>
+      <!-- 分摆成员 -->
+      <FormRow v-if="selectedLedgers.length > 0 && (!isReadonlyMode || selectedMembers.length > 0)" label="分摆成员" optional>
+        <div class="flex flex-col gap-1.5 w-full">
+          <div class="flex items-center gap-2">
+            <div class="flex-1 flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 min-h-[42px]">
+              <div v-if="selectedMembers.length === 0" class="flex items-center gap-2 text-gray-400 dark:text-gray-500">
+                <LucideUsers class="w-4 h-4" />
+                <span class="text-sm">未选择成员</span>
               </div>
-              <div v-else class="selected-items-compact">
-                <span class="selected-item">
+              <div v-else class="flex items-center gap-2 flex-wrap">
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 rounded-md text-sm font-medium">
                   {{ availableMembers.find(m => m.serialNum === selectedMembers[0])?.name || selectedMembers[0] }}
                   <button
                     v-if="!isReadonlyMode"
                     type="button"
-                    class="remove-btn"
+                    class="ml-1 hover:bg-green-100 dark:hover:bg-green-900/40 rounded p-0.5 transition-colors"
                     @click="selectedMembers = selectedMembers.filter(id => id !== selectedMembers[0])"
                   >
-                    <LucideX />
+                    <LucideX class="w-3 h-3" />
                   </button>
                 </span>
                 <span
                   v-if="selectedMembers.length > 1"
-                  class="more-count"
+                  class="inline-flex items-center px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-md text-xs font-medium"
                   :title="selectedMembers.slice(1).map(id => availableMembers.find(m => m.serialNum === id)?.name || id).join('\n')"
                 >
                   +{{ selectedMembers.length - 1 }}
                 </span>
               </div>
-              <button
-                v-if="!isReadonlyMode"
-                type="button"
-                class="btn-add-member btn-icon-only"
-                :title="showMemberSelector ? '收起' : '选择成员'"
-                @click="showMemberSelector = !showMemberSelector"
-              >
-                <LucideChevronDown v-if="!showMemberSelector" />
-                <LucideChevronUp v-else />
-              </button>
             </div>
+            <button
+              v-if="!isReadonlyMode"
+              type="button"
+              class="w-9 h-9 flex items-center justify-center rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-blue-500 dark:hover:border-blue-400 transition-all"
+              :title="showMemberSelector ? '收起' : '选择成员'"
+              @click="showMemberSelector = !showMemberSelector"
+            >
+              <LucideChevronDown v-if="!showMemberSelector" class="w-4 h-4" />
+              <LucideChevronUp v-else class="w-4 h-4" />
+            </button>
           </div>
-          <!-- 小字提示 -->
-          <div v-if="!isReadonlyMode && selectedMembers.length === 0" class="member-hint-text">
+          <div v-if="!isReadonlyMode && selectedMembers.length === 0" class="text-xs text-gray-500 dark:text-gray-400">
             如不选择成员，则为个人交易
           </div>
         </div>
-      </div>
+      </FormRow>
 
       <!-- 成员选择下拉 -->
-      <div v-if="!isReadonlyMode && selectedLedgers.length > 0 && showMemberSelector" class="form-row">
-        <label />
-        <div class="selector-dropdown">
-          <div class="dropdown-header">
-            <span>选择成员</span>
-            <div class="quick-actions">
+      <div v-if="!isReadonlyMode && selectedLedgers.length > 0 && showMemberSelector" class="mb-4 -mt-2">
+        <div class="p-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-900">
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-sm font-semibold text-gray-900 dark:text-white">选择成员</span>
+            <div class="flex items-center gap-2">
               <button
                 v-if="availableMembers.length > 0"
                 type="button"
-                class="btn-quick"
+                class="flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
                 title="全选成员"
                 @click="selectAllMembers"
               >
-                <LucideUserPlus class="icon-sm" />
+                <LucideUserPlus class="w-3.5 h-3.5" />
                 全选
               </button>
               <button
                 v-if="selectedMembers.length > 0"
                 type="button"
-                class="btn-quick"
+                class="flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
                 title="清空成员"
                 @click="clearMemberSelection"
               >
-                <LucideX class="icon-sm" />
+                <LucideX class="w-3.5 h-3.5" />
                 清空
               </button>
-              <button type="button" @click="showMemberSelector = false">
-                <LucideX />
+              <button
+                type="button"
+                class="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors"
+                @click="showMemberSelector = false"
+              >
+                <LucideX class="w-4 h-4 text-gray-500 dark:text-gray-400" />
               </button>
             </div>
           </div>
-          <div class="dropdown-content">
+          <div class="flex flex-col gap-2 max-h-60 overflow-y-auto">
             <label
               v-for="member in availableMembers"
               :key="member.serialNum"
-              class="checkbox-item"
+              class="flex items-center gap-3 p-3 rounded-lg hover:bg-white dark:hover:bg-gray-800 border border-transparent hover:border-gray-200 dark:hover:border-gray-700 cursor-pointer transition-all"
             >
-              <input
+              <Checkbox
                 v-model="selectedMembers"
-                type="checkbox"
                 :value="member.serialNum"
-              >
-              <span class="item-name">{{ member.name }}</span>
+              />
+              <span class="text-sm font-medium text-gray-900 dark:text-white">{{ member.name }}</span>
             </label>
           </div>
         </div>
@@ -984,32 +1021,21 @@ watch(
 
       <!-- 交易状态 -->
       <FormRow :label="t('financial.transaction.status')" required>
-        <select
+        <Select
           v-model="form.transactionStatus"
           v-has-value
-          class="modal-input-select w-full"
+          :options="availableTransactionStatuses"
           :disabled="isInstallmentTransactionFieldsDisabled || isReadonlyMode"
-        >
-          <option
-            v-for="status in availableTransactionStatuses"
-            :key="status.value"
-            :value="status.value"
-          >
-            {{ status.label }}
-          </option>
-        </select>
+        />
       </FormRow>
 
       <!-- 分期选项 -->
-      <div v-if="form.transactionType === 'Expense' && !isCurrentTransactionInstallment" class="form-row">
-        <label class="checkbox-label">
-          <input
-            v-model="form.isInstallment"
-            type="checkbox"
-            :disabled="isInstallmentFieldsDisabled || isReadonlyMode"
-          >
-          {{ t('financial.transaction.installment') }}
-        </label>
+      <div v-if="form.transactionType === 'Expense' && !isCurrentTransactionInstallment" class="flex items-center gap-4 mb-3">
+        <Checkbox
+          v-model="form.isInstallment"
+          :label="t('financial.transaction.installment')"
+          :disabled="isInstallmentFieldsDisabled || isReadonlyMode"
+        />
       </div>
 
       <!-- 分期详情 -->
@@ -1020,121 +1046,142 @@ watch(
           <span class="warning-text">分期计划已开始执行，部分设置不可修改</span>
         </div>
         <FormRow :label="t('financial.transaction.totalPeriods')" required>
-          <input
+          <Input
             v-model.number="form.totalPeriods"
             type="number"
-            min="2"
-            class="modal-input-select w-full"
             :disabled="isInstallmentFieldsDisabled || isReadonlyMode"
-          >
+          />
         </FormRow>
 
         <FormRow :label="t('financial.transaction.installmentAmount')" required>
-          <input
-            :value="safeToFixed(calculatedInstallmentAmount)"
+          <Input
+            :model-value="String(calculatedInstallmentAmount > 0 ? safeToFixed(calculatedInstallmentAmount) : '计算中...')"
             type="text"
             readonly
-            class="modal-input-select w-full"
           >
+            <template #prefix>
+              ¥
+            </template>
+          </Input>
         </FormRow>
 
         <FormRow :label="t('financial.transaction.firstDueDate')" required>
-          <input
-            v-model="form.firstDueDate"
+          <Input
+            v-model="firstDueDate"
             type="date"
-            class="modal-input-select w-full"
             :disabled="isInstallmentFieldsDisabled || isReadonlyMode"
-          >
+          />
         </FormRow>
 
         <FormRow :label="t('financial.transaction.relatedTransaction')" optional>
-          <input
-            v-model="form.relatedTransactionSerialNum"
+          <Input
+            v-model="relatedTransactionSerialNum"
             type="text"
-            class="modal-input-select w-full"
             :placeholder="t('common.misc.optional')"
-          >
+          />
         </FormRow>
 
         <!-- 分期计划详情 -->
-        <div v-if="installmentDetails" class="installment-plan">
-          <div class="plan-header">
-            <h4>{{ t('financial.transaction.installmentPlan') }}</h4>
+        <div v-if="installmentDetails" class="mt-4 p-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-900">
+          <div class="flex items-center justify-between mb-4">
+            <h4 class="text-base font-semibold text-gray-900 dark:text-white">
+              {{ t('financial.transaction.installmentPlan') }}
+            </h4>
             <button
               v-if="hasMorePeriods"
               type="button"
-              class="toggle-btn"
+              class="px-3 py-1.5 text-sm text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-md transition-colors"
               @click="installmentManager.toggleExpanded()"
             >
               {{ isExpanded ? t('common.actions.collapse') : t('common.actions.expand') }}
             </button>
           </div>
 
-          <div class="plan-list">
+          <div class="flex flex-col gap-3">
             <div
               v-for="(detail, index) in visibleDetails"
               :key="detail.period || index"
-              class="plan-item"
-              :class="{ paid: detail.status === 'PAID', pending: detail.status === 'PENDING', overdue: detail.status === 'OVERDUE' }"
+              class="p-3 rounded-lg border transition-all" :class="[
+                detail.status === 'PAID' ? 'bg-green-50 dark:bg-green-900/10 border-green-200 dark:border-green-800' : '',
+                detail.status === 'PENDING' ? 'bg-blue-50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-800' : '',
+                detail.status === 'OVERDUE' ? 'bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-800' : '',
+                !detail.status ? 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700' : '',
+              ]"
             >
-              <div class="period-info">
-                <div class="period-header">
-                  <span class="period-label">第 {{ detail.period || (index + 1) }} 期</span>
-                  <span v-if="detail.status" class="status-text" :class="`status-${detail.status.toLowerCase()}`">
-                    {{ getStatusText(detail.status) }}
-                  </span>
-                </div>
-                <div class="due-date-wrapper">
-                  <span class="due-date-icon">📅</span>
-                  <span class="due-date-label">应还日:</span>
-                  <span class="due-date-value">{{ detail.dueDate || '未设置' }}</span>
-                </div>
-              </div>
-              <div class="amount-info">
-                <span class="amount-label">¥{{ detail.amount ? safeToFixed(detail.amount) : '0.00' }}</span>
-                <div v-if="detail.status === 'PAID'" class="payment-details">
-                  <div class="paid-date-wrapper">
-                    <span class="paid-icon">✓</span>
-                    <span class="paid-label">入账:</span>
-                    <span class="paid-value">{{ detail.paidDate || detail.dueDate || '日期未记录' }}</span>
+              <div class="flex items-start justify-between">
+                <div class="flex-1">
+                  <div class="flex items-center gap-2 mb-2">
+                    <span class="text-sm font-medium text-gray-900 dark:text-white">第 {{ detail.period || (index + 1) }} 期</span>
+                    <span
+                      v-if="detail.status" class="px-2 py-0.5 text-xs rounded-full" :class="[
+                        detail.status === 'PAID' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : '',
+                        detail.status === 'PENDING' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400' : '',
+                        detail.status === 'OVERDUE' ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400' : '',
+                      ]"
+                    >
+                      {{ getStatusText(detail.status) }}
+                    </span>
                   </div>
-                  <div v-if="detail.paidAmount" class="paid-amount-wrapper">
-                    <span class="amount-icon">💰</span>
-                    <span class="amount-paid-label">实付:</span>
-                    <span class="amount-paid-value">¥{{ safeToFixed(detail.paidAmount) }}</span>
+                  <div class="flex items-center gap-1.5 text-sm text-gray-600 dark:text-gray-400">
+                    <span>📅</span>
+                    <span>应还日:</span>
+                    <span class="text-gray-900 dark:text-white font-medium">{{ detail.dueDate || '未设置' }}</span>
                   </div>
                 </div>
-                <div v-else-if="detail.status === 'PENDING'" class="pending-info">
-                  <span class="status-badge pending-badge">⏳ 待入账</span>
-                </div>
-                <div v-else-if="detail.status === 'OVERDUE'" class="overdue-info">
-                  <span class="status-badge overdue-badge">⚠️ 已逾期</span>
+                <div class="text-right">
+                  <div class="text-lg font-semibold text-gray-900 dark:text-white">
+                    ¥{{ detail.amount ? safeToFixed(detail.amount) : '0.00' }}
+                  </div>
+                  <div v-if="detail.status === 'PAID'" class="mt-2 flex flex-col gap-1">
+                    <div class="flex items-center justify-end gap-1.5 text-xs text-green-600 dark:text-green-400">
+                      <span>✓</span>
+                      <span>入账:</span>
+                      <span>{{ detail.paidDate || detail.dueDate || '日期未记录' }}</span>
+                    </div>
+                    <div v-if="detail.paidAmount" class="flex items-center justify-end gap-1.5 text-xs text-green-600 dark:text-green-400">
+                      <span>💰</span>
+                      <span>实付:</span>
+                      <span>¥{{ safeToFixed(detail.paidAmount) }}</span>
+                    </div>
+                  </div>
+                  <div v-else-if="detail.status === 'PENDING'" class="mt-2">
+                    <span class="inline-flex items-center gap-1 px-2 py-1 text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded">
+                      ⏳ 待入账
+                    </span>
+                  </div>
+                  <div v-else-if="detail.status === 'OVERDUE'" class="mt-2">
+                    <span class="inline-flex items-center gap-1 px-2 py-1 text-xs bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded">
+                      ⚠️ 已逾期
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
 
-          <div class="plan-summary">
-            <div class="summary-stats">
-              <div class="stat-item">
-                <span class="stat-label">已入账:</span>
-                <span class="stat-value paid">{{ paidPeriodsCount }} 期</span>
-              </div>
-              <div class="stat-item">
-                <span class="stat-label">待入账:</span>
-                <span class="stat-value pending">{{ pendingPeriodsCount }} 期</span>
-              </div>
-              <div class="stat-item">
-                <span class="stat-label">总期数:</span>
-                <span class="stat-value">{{ totalPeriodsCount }} 期</span>
+          <div class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+            <div class="flex items-center justify-between mb-3">
+              <div class="flex gap-4">
+                <div class="flex items-center gap-1.5 text-sm">
+                  <span class="text-gray-600 dark:text-gray-400">已入账:</span>
+                  <span class="font-medium text-green-600 dark:text-green-400">{{ paidPeriodsCount }} 期</span>
+                </div>
+                <div class="flex items-center gap-1.5 text-sm">
+                  <span class="text-gray-600 dark:text-gray-400">待入账:</span>
+                  <span class="font-medium text-blue-600 dark:text-blue-400">{{ pendingPeriodsCount }} 期</span>
+                </div>
+                <div class="flex items-center gap-1.5 text-sm">
+                  <span class="text-gray-600 dark:text-gray-400">总期数:</span>
+                  <span class="font-medium text-gray-900 dark:text-white">{{ totalPeriodsCount }} 期</span>
+                </div>
               </div>
             </div>
-            <div class="total-amount">
-              <strong>{{ t('financial.transaction.totalAmount') }}: ¥{{ safeToFixed(form.amount) }}</strong>
+            <div class="flex items-center justify-between">
+              <strong class="text-base text-gray-900 dark:text-white">{{ t('financial.transaction.totalAmount') }}: ¥{{ safeToFixed(form.amount) }}</strong>
               <button
                 v-if="hasMorePeriods"
                 type="button"
-                class="toggle-btn"
+                class="px-3 py-1.5 text-sm text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-md transition-colors"
                 @click="installmentManager.toggleExpanded()"
               >
                 {{ isExpanded ? t('common.actions.collapse') : t('common.actions.expand') }}
@@ -1145,7 +1192,7 @@ watch(
       </div>
 
       <!-- 日期 -->
-      <FormRow :label="t('date.transactionDate')" required>
+      <FormRow :label="t('date.transactionDate')" required :class="{ 'mt-6': form.isInstallment }">
         <DateTimePicker
           v-model="form.date"
           class="datetime-picker"
@@ -1156,880 +1203,15 @@ watch(
       </FormRow>
 
       <!-- 备注 -->
-      <textarea
-        v-model="form.description"
-        class="modal-input-select w-full"
-        rows="3"
-        :placeholder="`${t('common.misc.remark')}（${t('common.misc.optional')}）`"
-        :disabled="isReadonlyMode"
-      />
+      <FormRow full-width>
+        <Textarea
+          v-model="form.description"
+          :rows="3"
+          :max-length="1000"
+          :placeholder="t('common.misc.remark')"
+          :disabled="isReadonlyMode"
+        />
+      </FormRow>
     </form>
-  </BaseModal>
+  </Modal>
 </template>
-
-<style scoped lang="postcss">
-/* CurrencySelector 样式统一 */
-:deep(.currency-selector) {
-  margin-bottom: 0 !important;
-}
-
-:deep(.currency-selector__select) {
-  border: 2px solid var(--color-base-300) !important;
-  border-radius: 0.5rem !important;
-  background-color: var(--color-base-100) !important;
-  transition: all 0.2s ease !important;
-}
-
-:deep(.currency-selector__select:hover:not(:disabled)) {
-  background-color: var(--color-base-200) !important;
-}
-
-:deep(.currency-selector__select:focus) {
-  border-color: var(--color-primary) !important;
-  box-shadow: 0 0 0 3px oklch(from var(--color-primary) l c h / 0.1) !important;
-}
-
-:deep(.currency-selector__select:disabled) {
-  background-color: var(--color-base-300) !important;
-  cursor: not-allowed !important;
-}
-
-.checkbox-label {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  cursor: pointer;
-}
-
-.installment-warning {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem;
-  margin-bottom: 1rem;
-  background-color: color-mix(in oklch, var(--color-warning) 10%, transparent);
-  border: 1px solid color-mix(in oklch, var(--color-warning) 30%, transparent);
-  border-radius: 0.375rem;
-  font-size: 0.875rem;
-}
-
-.warning-icon {
-  font-size: 1rem;
-}
-
-.warning-text {
-  color: var(--color-warning);
-  font-weight: 500;
-}
-
-.installment-section {
-  background: linear-gradient(to bottom, var(--color-base-100), var(--color-base-200));
-  border: 2px solid var(--color-primary-soft);
-  border-radius: 0.75rem;
-  padding: 1.25rem;
-  margin: 1rem 0;
-  box-shadow: var(--shadow-sm);
-  transition: all 0.3s ease;
-}
-
-.installment-section:hover {
-  box-shadow: var(--shadow-md);
-  border-color: var(--color-primary);
-}
-
-.installment-section .form-row {
-  margin-bottom: 0.75rem;
-}
-
-.installment-section .form-row:last-child {
-  margin-bottom: 0;
-}
-
-.installment-plan {
-  margin-top: 0.75rem;
-  padding: 0.75rem;
-  background: var(--color-base-100);
-  border-radius: 0.5rem;
-  border: 1px solid var(--color-base-300);
-}
-
-.plan-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 0.5rem;
-}
-
-.plan-header h4 {
-  margin: 0;
-  font-size: 0.8125rem;
-  font-weight: 600;
-  color: var(--color-base-content);
-}
-
-.plan-list {
-  margin-bottom: 0.75rem;
-}
-
-.plan-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.375rem 0.5rem;
-  border-bottom: 1px solid var(--color-base-200);
-}
-
-.plan-item:last-child {
-  border-bottom: none;
-}
-
-.period-info {
-  display: flex;
-  flex-direction: column;
-  gap: 0.125rem;
-}
-
-.period-label {
-  font-size: 0.8125rem;
-  color: var(--color-base-content);
-  font-weight: 500;
-}
-
-.due-date-wrapper {
-  display: flex;
-  align-items: center;
-  gap: 0.2rem;
-  padding: 0.15rem 0.4rem;
-  background: color-mix(in oklch, var(--color-info) 8%, transparent);
-  border-radius: 0.2rem;
-  font-size: 0.6875rem;
-}
-
-.due-date-icon {
-  font-size: 0.75rem;
-}
-
-.due-date-label {
-  color: var(--color-info);
-  font-weight: 500;
-}
-
-.due-date-value {
-  color: var(--color-base-content);
-  font-family: 'SF Mono', Monaco, 'Courier New', monospace;
-  font-weight: 500;
-}
-
-.amount-label {
-  font-size: 0.8125rem;
-  font-weight: 600;
-  color: var(--color-primary);
-}
-
-/* 入账详情样式 */
-.payment-details {
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-  font-size: 0.6875rem;
-}
-
-.paid-date-wrapper,
-.paid-amount-wrapper {
-  display: flex;
-  align-items: center;
-  gap: 0.2rem;
-}
-
-.paid-icon,
-.amount-icon {
-  font-size: 0.75rem;
-}
-
-.paid-icon {
-  color: var(--color-success);
-  font-weight: bold;
-}
-
-.paid-label,
-.amount-paid-label {
-  color: var(--color-success);
-  font-weight: 500;
-}
-
-.paid-value,
-.amount-paid-value {
-  color: var(--color-base-content);
-  font-family: 'SF Mono', Monaco, 'Courier New', monospace;
-  font-weight: 500;
-}
-
-/* 状态徽章样式 */
-.status-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.2rem;
-  padding: 0.15rem 0.4rem;
-  border-radius: 0.2rem;
-  font-size: 0.6875rem;
-  font-weight: 500;
-}
-
-.pending-badge {
-  background: color-mix(in oklch, var(--color-warning) 15%, transparent);
-  color: var(--color-warning);
-  border: 1px solid color-mix(in oklch, var(--color-warning) 30%, transparent);
-}
-
-.overdue-badge {
-  background: color-mix(in oklch, var(--color-error) 15%, transparent);
-  color: var(--color-error);
-  border: 1px solid color-mix(in oklch, var(--color-error) 30%, transparent);
-}
-
-/* 分期计划状态样式 */
-.plan-item.paid {
-  background-color: color-mix(in oklch, var(--color-success) 8%, transparent);
-  border: 1px solid color-mix(in oklch, var(--color-success) 25%, transparent);
-  border-radius: 0.25rem;
-  padding: 0.375rem 0.5rem;
-  margin: 0.2rem 0;
-}
-
-.plan-item.pending {
-  background-color: color-mix(in oklch, var(--color-warning) 8%, transparent);
-  border: 1px solid color-mix(in oklch, var(--color-warning) 25%, transparent);
-  border-radius: 0.25rem;
-  padding: 0.375rem 0.5rem;
-  margin: 0.2rem 0;
-}
-
-.plan-item.overdue {
-  background-color: color-mix(in oklch, var(--color-error) 8%, transparent);
-  border: 1px solid color-mix(in oklch, var(--color-error) 25%, transparent);
-  border-radius: 0.25rem;
-  padding: 0.375rem 0.5rem;
-  margin: 0.2rem 0;
-}
-
-.status-badge {
-  font-size: 0.625rem;
-  padding: 0.125rem 0.375rem;
-  border-radius: 0.25rem;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.025em;
-}
-
-.status-badge.status-paid {
-  background-color: var(--color-success);
-  color: var(--color-base-content);
-}
-
-.status-badge.status-pending {
-  background-color: var(--color-warning);
-  color: var(--color-base-content);
-}
-
-.status-badge.status-overdue {
-  background-color: var(--color-error);
-  color: var(--color-base-content);
-}
-
-.period-header {
-  display: flex;
-  align-items: center;
-  gap: 0.375rem;
-  margin-bottom: 0.125rem;
-}
-
-.status-text {
-  font-size: 0.6875rem;
-  font-weight: 500;
-  padding: 0.1rem 0.4rem;
-  border-radius: 0.2rem;
-  border: 1px solid;
-}
-
-.status-text.status-paid {
-  color: var(--color-success);
-  background-color: rgba(var(--color-success-rgb), 0.1);
-  border-color: var(--color-success);
-}
-
-.status-text.status-pending {
-  color: var(--color-warning);
-  background-color: rgba(var(--color-warning-rgb), 0.1);
-  border-color: var(--color-warning);
-}
-
-.status-text.status-overdue {
-  color: var(--color-error);
-  background-color: rgba(var(--color-error-rgb), 0.1);
-  border-color: var(--color-error);
-}
-
-.amount-info {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 0.15rem;
-}
-
-.payment-details {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 0.125rem;
-}
-
-.paid-date {
-  font-size: 0.625rem;
-  color: var(--color-success);
-  font-style: italic;
-}
-
-.paid-amount {
-  font-size: 0.625rem;
-  color: var(--color-success);
-  font-weight: 500;
-}
-
-.pending-info {
-  display: flex;
-  align-items: center;
-}
-
-.pending-text {
-  font-size: 0.625rem;
-  color: var(--color-warning);
-  font-weight: 500;
-}
-
-.overdue-info {
-  display: flex;
-  align-items: center;
-}
-
-.overdue-text {
-  font-size: 0.625rem;
-  color: var(--color-error);
-  font-weight: 500;
-}
-
-.first-due-date-row {
-  margin-top: 1.5rem !important;
-}
-
-.plan-summary {
-  padding-top: 0.5rem;
-  border-top: 1px solid var(--color-base-300);
-  color: var(--color-base-content);
-}
-
-.summary-stats {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 0.75rem;
-  padding: 0.5rem;
-  background-color: var(--color-base-100);
-  border-radius: 0.375rem;
-}
-
-.stat-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.25rem;
-}
-
-.stat-label {
-  font-size: 0.75rem;
-  color: var(--color-base-content-soft);
-}
-
-.stat-value {
-  font-size: 0.875rem;
-  font-weight: 600;
-}
-
-.stat-value.paid {
-  color: var(--color-success);
-}
-
-.stat-value.pending {
-  color: var(--color-warning);
-}
-
-.total-amount {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding-top: 0.5rem;
-  border-top: 1px solid var(--color-base-200);
-}
-
-.toggle-btn {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  background: transparent;
-  border: 1px solid var(--color-base-300);
-  border-radius: 0.375rem;
-  padding: 0.5rem 1rem;
-  color: var(--color-base-content);
-  font-size: 0.875rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.toggle-btn:hover {
-  background: var(--color-base-100);
-  border-color: var(--color-primary);
-  color: var(--color-primary);
-}
-
-.toggle-icon {
-  width: 1rem;
-  height: 1rem;
-  transition: transform 0.2s ease;
-}
-
-.toggle-icon.expanded {
-  transform: rotate(180deg);
-}
-
-.icon {
-  width: 1.5rem;
-  height: 1.5rem;
-}
-
-/* ==================== 账本和成员选择器样式 ==================== */
-.label-with-hint {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.label-hint {
-  font-size: 0.75rem;
-  color: var(--color-neutral);
-  font-weight: normal;
-}
-
-.form-row .ledger-selector-compact,
-.form-row .member-selector-compact {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-  padding: 0.75rem;
-  border: 1px solid var(--color-base-300);
-  border-radius: 0.375rem;
-  background: var(--color-base-200);
-  flex: 1;
-}
-
-.form-row .member-selector-with-hint {
-  flex: 1;
-}
-
-.selector-row {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-  flex-wrap: nowrap;
-  width: 100%;
-}
-
-.empty-selection {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  color: var(--color-neutral);
-  font-size: 0.875rem;
-  flex: 0 1 auto;
-  white-space: nowrap;
-}
-
-.empty-icon {
-  width: 1rem;
-  height: 1rem;
-}
-
-.selected-items {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  flex: 0 1 auto;
-  min-width: 0;
-}
-
-.selected-items-compact {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  flex: 0 1 auto;
-  min-width: 0;
-}
-
-.selected-item {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.25rem 0.5rem;
-  background: var(--color-primary-soft);
-  color: var(--color-primary);
-  border-radius: 0.25rem;
-  font-size: 0.875rem;
-}
-
-.more-count {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 1.5rem;
-  height: 1.5rem;
-  padding: 0 0.375rem;
-  background: var(--color-neutral);
-  color: var(--color-neutral-content);
-  border-radius: 0.75rem;
-  font-size: 0.75rem;
-  font-weight: 600;
-  cursor: help;
-  transition: all 0.2s;
-}
-
-.more-count:hover {
-  background: var(--color-primary);
-  color: var(--color-primary-content);
-  transform: scale(1.1);
-}
-
-.remove-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  background: transparent;
-  border: none;
-  color: var(--color-primary);
-  cursor: pointer;
-  width: 1rem;
-  height: 1rem;
-}
-
-.remove-btn:hover {
-  color: var(--color-error);
-}
-
-.btn-add-ledger,
-.btn-add-member {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 0.75rem;
-  background: var(--color-base-100);
-  border: 1px dashed var(--color-base-300);
-  border-radius: 0.25rem;
-  color: var(--color-base-content);
-  font-size: 0.875rem;
-  cursor: pointer;
-  transition: all 0.2s;
-  flex-shrink: 0;
-  white-space: nowrap;
-}
-
-.btn-add-ledger:hover,
-.btn-add-member:hover {
-  border-color: var(--color-primary);
-  color: var(--color-primary);
-  background: var(--color-primary-soft);
-}
-
-.btn-icon-only {
-  padding: 0.5rem;
-  min-width: 2rem;
-  min-height: 2rem;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 0.375rem;
-}
-
-.btn-icon-only svg {
-  width: 1.25rem;
-  height: 1.25rem;
-}
-
-.selector-dropdown {
-  width: 100%;
-  padding: 0;
-  background: var(--color-base-100);
-  border: 1px solid var(--color-base-300);
-  border-radius: 0.375rem;
-  box-shadow: var(--shadow-md);
-  max-height: 300px;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-}
-
-/* 成员选择器包装容器 */
-.member-selector-with-hint {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  gap: 0;
-}
-
-.member-selector-with-hint .member-selector-compact {
-  width: 100%;
-}
-
-/* 成员小字提示 */
-.member-hint-text {
-  font-size: 0.75rem;
-  color: var(--color-base-content-soft);
-  margin-top: 0.375rem;
-  padding-left: 0.25rem;
-}
-
-.dropdown-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.75rem 1rem;
-  border-bottom: 1px solid var(--color-base-300);
-  font-weight: 500;
-  background: var(--color-base-200);
-  color: var(--color-base-content);
-}
-
-/* 快捷操作按钮容器 */
-.dropdown-header .quick-actions {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.dropdown-header button {
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  color: var(--color-neutral);
-  padding: 0.25rem;
-  display: flex;
-  align-items: center;
-  transition: color 0.2s;
-}
-
-.dropdown-header button:hover {
-  color: var(--color-error);
-}
-
-/* 快捷操作按钮 */
-.btn-quick {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.375rem;
-  padding: 0.375rem 0.75rem;
-  background: var(--color-primary-soft);
-  border: 1px solid var(--color-primary);
-  border-radius: 0.375rem;
-  color: var(--color-primary);
-  font-size: 0.8125rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.btn-quick:hover {
-  background: var(--color-primary);
-  color: var(--color-primary-content);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-sm);
-}
-
-.btn-quick:active {
-  transform: translateY(0);
-}
-
-.btn-quick .icon-sm {
-  width: 0.875rem;
-  height: 0.875rem;
-}
-
-.dropdown-content {
-  overflow-y: auto;
-  max-height: 240px;
-  background: var(--color-base-100);
-}
-
-.checkbox-item {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.75rem 1rem;
-  cursor: pointer;
-  transition: background 0.2s;
-  background: var(--color-base-100);
-}
-
-.checkbox-item:hover {
-  background: var(--color-base-200);
-}
-
-.checkbox-item input[type="checkbox"] {
-  width: 1rem;
-  height: 1rem;
-  cursor: pointer;
-}
-
-.item-name {
-  flex: 1;
-  font-size: 0.875rem;
-  color: var(--color-base-content);
-}
-
-.item-type,
-.item-role {
-  font-size: 0.75rem;
-  padding: 0.125rem 0.5rem;
-  background: var(--color-base-300);
-  border-radius: 0.25rem;
-  color: var(--color-base-content);
-}
-
-/* ==================== 表单行横向布局（用于复杂区块） ==================== */
-.form-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 0.75rem;
-  gap: 1rem;
-}
-
-.form-row label {
-  font-size: 0.875rem;
-  font-weight: 500;
-  margin-bottom: 0;
-  flex: 0 0 auto;
-  width: 6rem;
-  min-width: 6rem;
-  white-space: nowrap;
-}
-
-/* 只读显示样式 */
-.form-display {
-  padding: 0.625rem 0.875rem;
-  border-radius: 0.5rem;
-  background-color: var(--color-base-200);
-  color: var(--color-neutral);
-  font-size: 0.875rem;
-  font-weight: 600;
-}
-
-/* 移动端响应式布局 - 保持同一行显示 */
-@media (max-width: 768px) {
-  .form-row {
-    flex-direction: row;
-    align-items: center;
-    gap: 0.5rem;
-  }
-  .form-row label {
-    flex: 0 0 auto;
-    min-width: 4rem;
-    width: 4rem;
-    white-space: nowrap;
-    font-size: 0.8rem;
-  }
-
-  /* 选择器容器移动端优化 */
-  .form-row .ledger-selector-compact,
-  .form-row .member-selector-compact {
-    flex: 1;
-    padding: 0.5rem;
-  }
-
-  .form-row .member-selector-with-hint {
-    flex: 1;
-  }
-
-  /* 选择器行移动端优化 */
-  .selector-row {
-    gap: 0.5rem;
-  }
-
-  /* 空状态文字缩小 */
-  .empty-selection {
-    font-size: 0.75rem;
-  }
-
-  /* 选中项文字缩小 */
-  .selected-item {
-    font-size: 0.75rem;
-    padding: 0.125rem 0.375rem;
-  }
-
-  /* 更多计数徽章缩小 */
-  .more-count {
-    min-width: 1.25rem;
-    height: 1.25rem;
-    font-size: 0.625rem;
-  }
-
-  /* 按钮触摸区域优化 */
-  .btn-add-ledger,
-  .btn-add-member {
-    min-width: 2.5rem;
-    min-height: 2.5rem;
-    padding: 0.625rem;
-  }
-
-  .btn-icon-only {
-    min-width: 2.5rem;
-    min-height: 2.5rem;
-    padding: 0.625rem;
-  }
-
-  .btn-icon-only svg {
-    width: 1rem;
-    height: 1rem;
-  }
-
-  /* 下拉弹窗移动端优化 */
-  .selector-dropdown {
-    max-height: 250px;
-  }
-
-  .dropdown-content {
-    max-height: 190px;
-  }
-
-  /* 复选框项触摸区域优化 */
-  .checkbox-item {
-    padding: 1rem;
-    font-size: 0.875rem;
-  }
-
-  .checkbox-item input[type="checkbox"] {
-    width: 1.25rem;
-    height: 1.25rem;
-  }
-
-  /* 移除按钮触摸区域优化 */
-  .remove-btn {
-    width: 1.25rem;
-    height: 1.25rem;
-    padding: 0.125rem;
-  }
-}
-
-.textarea-max {
-  max-width: 400px;
-  width: 100%;
-  box-sizing: border-box;
-}
-</style>

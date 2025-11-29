@@ -9,26 +9,26 @@ const completed = computed(() => props.completed);
 </script>
 
 <template>
-  <div v-if="show" class="todo-actions">
+  <div v-if="show" class="flex gap-3 items-center">
     <!-- 编辑按钮：只在未完成时显示 -->
     <button
       v-if="!completed"
       type="button"
       aria-label="Edit task"
-      class="action-btn edit"
+      class="inline-flex items-center justify-center bg-transparent border-none p-1 rounded-lg cursor-pointer transition-all duration-200 outline-none hover:not-disabled:scale-110 focus:not-disabled:scale-110 disabled:cursor-not-allowed disabled:opacity-50 text-neutral hover:not-disabled:text-primary dark:text-neutral dark:hover:not-disabled:text-primary"
       @click="emit('edit')"
     >
-      <Pencil class="icon" />
+      <Pencil class="w-5 h-5 transition-all duration-200" />
     </button>
 
     <!-- 添加按钮：始终显示 -->
     <button
       type="button"
       aria-label="Add task"
-      class="action-btn add"
+      class="inline-flex items-center justify-center bg-transparent border-none p-1 rounded-lg cursor-pointer transition-all duration-200 outline-none hover:not-disabled:scale-110 focus:not-disabled:scale-110 disabled:cursor-not-allowed disabled:opacity-50 text-primary hover:not-disabled:text-primary-hover dark:text-primary dark:hover:not-disabled:text-primary-hover"
       @click="emit('add')"
     >
-      <Plus class="icon" />
+      <Plus class="w-5 h-5 transition-all duration-200" />
     </button>
 
     <!-- 删除按钮：只在未完成时显示 -->
@@ -36,100 +36,10 @@ const completed = computed(() => props.completed);
       v-if="!completed"
       type="button"
       aria-label="Delete task"
-      class="action-btn delete"
+      class="inline-flex items-center justify-center bg-transparent border-none p-1 rounded-lg cursor-pointer transition-all duration-200 outline-none hover:not-disabled:scale-110 focus:not-disabled:scale-110 disabled:cursor-not-allowed disabled:opacity-50 text-error hover:not-disabled:text-error-hover dark:text-error dark:hover:not-disabled:text-error-hover"
       @click="emit('remove')"
     >
-      <Trash2 class="icon" />
+      <Trash2 class="w-5 h-5 transition-all duration-200" />
     </button>
   </div>
 </template>
-
-<style scoped lang="postcss">
-.todo-actions {
-  display: flex;
-  gap: 0.75rem; /* 间距 */
-  align-items: center;
-}
-
-/* 公共按钮样式 */
-.action-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: transparent;
-  border: none;
-  padding: 0.25rem;
-  border-radius: 0.5rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  outline: none;
-}
-
-/* 悬停和聚焦 */
-.action-btn:hover:not(:disabled),
-.action-btn:focus:not(:disabled) {
-  transform: scale(1.1);
-}
-
-/* 禁用状态 */
-.action-btn:disabled {
-  cursor: not-allowed;
-  opacity: 0.5;
-}
-
-/* 图标通用样式 */
-.icon {
-  width: 1.25rem; /* wh-5 */
-  height: 1.25rem;
-  transition: color 0.2s ease, transform 0.2s ease;
-}
-
-/* 编辑按钮颜色 */
-.action-btn.edit {
-  color: var(--color-neutral, #9ca3af);
-}
-
-.action-btn.edit:hover:not(:disabled) {
-  color: var(--color-primary, #2563eb);
-}
-
-/* 添加按钮颜色 */
-.action-btn.add {
-  color: var(--color-primary, #2563eb);
-}
-
-.action-btn.add:hover:not(:disabled) {
-  color: var(--color-primary-hover, #1d4ed8);
-}
-
-/* 删除按钮颜色 */
-.action-btn.delete {
-  color: var(--color-error, #dc2626);
-}
-
-.action-btn.delete:hover:not(:disabled) {
-  color: var(--color-error-hover, #b91c1c);
-}
-
-/* Dark theme */
-@media (prefers-color-scheme: dark) {
-  .action-btn.edit {
-    color: var(--color-neutral, #6b7280);
-  }
-  .action-btn.edit:hover:not(:disabled) {
-    color: var(--color-primary, #60a5fa);
-  }
-  .action-btn.add {
-    color: var(--color-primary, #60a5fa);
-  }
-  .action-btn.add:hover:not(:disabled) {
-    color: var(--color-primary-hover, #3b82f6);
-  }
-  .action-btn.delete {
-    color: var(--color-error, #f87171);
-  }
-  .action-btn.delete:hover:not(:disabled) {
-    color: var(--color-error-hover, #ef4444);
-  }
-}
-</style>

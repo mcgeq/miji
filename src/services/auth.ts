@@ -190,6 +190,33 @@ export async function verifyToken(token: string): Promise<TokenStatus> {
   }
 }
 
+/**
+ * 刷新Token
+ * @param token 当前的Token
+ * @returns 新的Token响应
+ */
+export async function refreshToken(token: string): Promise<TokenResponse> {
+  try {
+    const tokenResponse = await invokeCommand<TokenResponse>('refresh_token', {
+      token,
+    });
+    Lg.i('Api Token refresh', 'Token refreshed successfully');
+    return tokenResponse;
+  } catch (error) {
+    Lg.e('Api Token refresh', error);
+
+    if (isBusinessError(error)) {
+      throw new AuthError(
+        error.code,
+        `Token refresh failed: ${error.description}`,
+        error,
+      );
+    }
+
+    throw new AuthError('TOKEN_REFRESH_ERROR', 'Failed to refresh token');
+  }
+}
+
 export async function maybeLogoutOnExit() {
   const authStore = useAuthStore();
   if (authStore.token && !authStore.rememberMe) {

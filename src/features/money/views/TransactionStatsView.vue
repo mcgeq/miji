@@ -180,7 +180,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="transaction-stats-view">
+  <div class="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 w-full space-y-6">
     <!-- 筛选器 -->
     <TransactionStatsFilters
       v-model:filters="filters"
@@ -188,8 +188,8 @@ onMounted(() => {
     />
 
     <!-- 统计概览卡片 -->
-    <div class="stats-overview">
-      <div class="stats-grid">
+    <div class="mb-8">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <StatCard
           title="总收入"
           :value="statsData.totalIncome.toFixed(2)"
@@ -227,28 +227,28 @@ onMounted(() => {
     </div>
 
     <!-- 图表分析 -->
-    <div class="charts-section">
-      <div class="charts-header">
-        <h2 class="charts-title">
+    <div class="mb-8">
+      <div class="flex flex-row items-center justify-between mb-4">
+        <h2 class="text-2xl sm:text-3xl font-semibold text-gray-900 dark:text-gray-100">
           数据分析
         </h2>
-        <div class="charts-toggle">
-          <label class="toggle-label">
+        <div class="flex items-center flex-shrink-0">
+          <label class="flex items-center gap-2 cursor-pointer text-sm text-gray-700 dark:text-gray-300">
             <input
               v-model="useAdvancedCharts"
               type="checkbox"
-              class="toggle-input"
+              class="w-4 h-4 accent-blue-600 dark:accent-blue-500"
             >
-            <span class="toggle-text">
+            <span class="font-medium">
               {{ useAdvancedCharts ? '高级图表' : '基础图表' }}
             </span>
           </label>
         </div>
       </div>
       <!-- 基础图表：收支趋势 + 分类图表切换器 -->
-      <div v-if="!useAdvancedCharts" class="basic-charts">
+      <div v-if="!useAdvancedCharts" class="flex flex-col gap-6">
         <!-- 收支趋势图 -->
-        <div class="trend-chart-section">
+        <div class="w-full">
           <TransactionStatsCharts
             :monthly-trends="statsData.monthlyTrends"
             :weekly-trends="statsData.weeklyTrends"
@@ -261,7 +261,7 @@ onMounted(() => {
           />
         </div>
         <!-- 分类图表切换器 -->
-        <div class="category-charts-section">
+        <div class="w-full">
           <CategoryChartsSwitcher
             :top-categories="statsData.topCategories"
             :top-income-categories="statsData.topIncomeCategories"
@@ -271,7 +271,7 @@ onMounted(() => {
           />
         </div>
         <!-- 支付渠道图表切换器 -->
-        <div class="payment-method-charts-section">
+        <div class="w-full mb-6">
           <PaymentMethodChartsSwitcher
             :top-payment-methods="statsData.topPaymentMethods"
             :top-income-payment-methods="statsData.topIncomePaymentMethods"
@@ -282,9 +282,9 @@ onMounted(() => {
         </div>
       </div>
       <!-- 高级图表：收支趋势 + 分类图表切换器 -->
-      <div v-else class="advanced-charts">
+      <div v-else class="flex flex-col gap-6">
         <!-- 收支趋势图 -->
-        <div class="trend-chart-section">
+        <div class="w-full">
           <AdvancedTransactionCharts
             :monthly-trends="statsData.monthlyTrends"
             :weekly-trends="statsData.weeklyTrends"
@@ -297,7 +297,7 @@ onMounted(() => {
           />
         </div>
         <!-- 分类图表切换器 -->
-        <div class="category-charts-section">
+        <div class="w-full">
           <CategoryChartsSwitcher
             :top-categories="statsData.topCategories"
             :top-income-categories="statsData.topIncomeCategories"
@@ -307,7 +307,7 @@ onMounted(() => {
           />
         </div>
         <!-- 支付渠道图表切换器 -->
-        <div class="payment-method-charts-section">
+        <div class="w-full mb-6">
           <PaymentMethodChartsSwitcher
             :top-payment-methods="statsData.topPaymentMethods"
             :top-income-payment-methods="statsData.topIncomePaymentMethods"
@@ -320,7 +320,7 @@ onMounted(() => {
     </div>
 
     <!-- 详细统计表格 -->
-    <div class="table-section">
+    <div class="mb-8">
       <TransactionStatsTable
         :top-categories="statsData.topCategories"
         :top-income-categories="statsData.topIncomeCategories"
@@ -331,149 +331,3 @@ onMounted(() => {
     </div>
   </div>
 </template>
-
-<style scoped lang="postcss">
-.transaction-stats-view {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 1rem;
-  width: 100%;
-  box-sizing: border-box;
-}
-
-.transaction-stats-view > * + * {
-  margin-top: 1.5rem;
-}
-
-.stats-overview {
-  margin-bottom: 2rem;
-}
-
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 0.75rem;
-}
-
-.charts-section {
-  margin-bottom: 2rem;
-}
-
-.basic-charts {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-.trend-chart-section {
-  width: 100%;
-}
-
-.category-charts-section {
-  width: 100%;
-}
-
-.advanced-charts {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-.charts-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1rem;
-}
-
-.charts-title {
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: var(--color-accent-content);
-}
-
-.charts-toggle {
-  display: flex;
-  align-items: center;
-}
-
-.toggle-label {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  cursor: pointer;
-  font-size: 0.875rem;
-  color: var(--color-neutral);
-}
-
-.toggle-input {
-  width: 1rem;
-  height: 1rem;
-  accent-color: var(--color-primary);
-}
-
-.toggle-text {
-  font-weight: 500;
-}
-
-.payment-method-charts-section {
-  margin-bottom: 1.5rem;
-}
-
-.table-section {
-  margin-bottom: 2rem;
-}
-
-/* 移动端优化 */
-@media (max-width: 768px) {
-  .transaction-stats-view {
-    padding: 0.5rem;
-    max-width: 100%;
-    margin: 0;
-  }
-
-  .stats-grid {
-    grid-template-columns: 1fr;
-    gap: 0.5rem;
-  }
-
-  .charts-header {
-    flex-direction: row;
-    gap: 1rem;
-    align-items: center;
-    justify-content: space-between;
-  }
-
-  .charts-title {
-    font-size: 1.25rem;
-  }
-
-  .charts-toggle {
-    flex-shrink: 0;
-    justify-content: flex-end;
-  }
-}
-
-/* 超小屏幕优化 */
-@media (max-width: 480px) {
-  .transaction-stats-view {
-    padding: 0.25rem;
-  }
-
-  .stats-grid {
-    gap: 0.25rem;
-  }
-
-  .charts-title {
-    font-size: 1.125rem;
-  }
-
-  .charts-header {
-    gap: 0.5rem;
-  }
-
-  .charts-toggle {
-    flex-shrink: 0;
-  }
-}
-</style>

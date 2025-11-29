@@ -1,6 +1,6 @@
 <!-- src/components/common/TodayTodos.vue -->
 <script setup lang="ts">
-import InputCommon from '@/components/common/InputCommon.vue';
+import TodoInput from '@/features/todos/components/TodoInput.vue';
 import TodoList from '@/features/todos/components/TodoList.vue';
 import { useTodosFilters } from '@/features/todos/composables/useTodosFilters';
 import { FilterBtnSchema, PrioritySchema, StatusSchema } from '@/schema/common';
@@ -132,9 +132,9 @@ defineExpose({
 </script>
 
 <template>
-  <div class="today-todos">
+  <div class="w-full h-full flex flex-col gap-2 p-1 max-w-full overflow-hidden relative">
     <!-- 今日待办任务列表 - 支持滚动但隐藏滚动条 -->
-    <div class="todo-list-container">
+    <div class="flex-1 overflow-y-auto overflow-x-hidden flex flex-col w-full max-w-full scrollbar-none">
       <TodoList
         :todos="pagination.paginatedItems.value"
         @toggle="handleToggle"
@@ -145,173 +145,40 @@ defineExpose({
 
     <!-- Modal弹窗 -->
     <Teleport to="body">
-      <Transition name="modal-fade">
+      <Transition
+        enter-active-class="transition-all duration-300 ease-in-out"
+        leave-active-class="transition-all duration-300 ease-in-out"
+        enter-from-class="opacity-0"
+        leave-to-class="opacity-0"
+      >
         <div
           v-if="showModal"
-          class="modal-overlay"
+          class="fixed inset-0 bg-black/60 dark:bg-black/70 backdrop-blur-md flex items-center justify-center z-[2147483647] p-4 sm:p-2 overflow-y-auto isolate"
           @click="closeModal"
         >
-          <div
-            class="modal-content"
-            @click.stop
+          <Transition
+            enter-active-class="transition-transform duration-300 ease-in-out"
+            leave-active-class="transition-transform duration-300 ease-in-out"
+            enter-from-class="scale-90 translate-y-5"
+            leave-to-class="scale-90 translate-y-5"
           >
-            <div class="modal-header">
-              <h3 class="modal-title">
-                {{ $t('todos.addTodo') || '添加待办' }}
-              </h3>
+            <div
+              v-if="showModal"
+              class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 w-full max-w-lg max-h-[85vh] sm:max-h-[90vh] overflow-hidden flex flex-col m-auto"
+              @click.stop
+            >
+              <div class="px-6 py-4 sm:px-4 sm:py-3 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 flex-shrink-0">
+                <h3 class="text-lg sm:text-base font-semibold m-0 text-gray-900 dark:text-white">
+                  {{ $t('todos.addTodo') || '添加待办' }}
+                </h3>
+              </div>
+              <div class="px-6 py-6 sm:px-4 sm:py-4 overflow-y-auto bg-white dark:bg-gray-800 flex-1 min-h-0">
+                <TodoInput v-model="newT" :on-add="handleAdd" />
+              </div>
             </div>
-            <div class="modal-body">
-              <InputCommon v-model="newT" @add="handleAdd" />
-            </div>
-          </div>
+          </Transition>
         </div>
       </Transition>
     </Teleport>
   </div>
 </template>
-
-<style scoped lang="postcss">
-.today-todos {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  padding: 0.25rem;
-  max-width: 100%;
-  overflow: hidden;
-  box-sizing: border-box;
-  position: relative; /* 确保z-index生效 */
-}
-
-/* 列表容器 - 支持滚动但隐藏滚动条 */
-.todo-list-container {
-  flex: 1;
-  overflow-y: auto;
-  overflow-x: hidden;
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  max-width: 100%;
-  box-sizing: border-box;
-  /* 隐藏滚动条 - Firefox */
-  scrollbar-width: none;
-  /* 隐藏滚动条 - IE/Edge */
-  -ms-overflow-style: none;
-}
-
-/* 隐藏滚动条 - Chrome/Safari/Opera */
-.todo-list-container::-webkit-scrollbar {
-  display: none;
-}
-
-/* 确保TodoList组件也能铺满容器 */
-.todo-list-container :deep(.todolist-main) {
-  display: flex;
-  flex-direction: column;
-}
-
-/* Modal 样式 */
-.modal-overlay {
-  position: fixed !important;
-  inset: 0 !important;
-  background-color: color-mix(in oklch, var(--color-neutral) 60%, transparent);
-  backdrop-filter: blur(6px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 2147483647 !important; /* 使用最大可能的z-index值 */
-  padding: 1rem;
-  /* 确保在移动端也能正常滚动 */
-  overflow-y: auto;
-  /* 确保模态框在最顶层 */
-  isolation: isolate;
-}
-
-.modal-content {
-  background-color: var(--color-base-100);
-  border-radius: 1rem;
-  box-shadow: 0 10px 40px color-mix(in oklch, var(--color-neutral) 30%, transparent);
-  border: 1px solid var(--color-base-300);
-  width: 100%;
-  max-width: 500px;
-  max-height: 85vh;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  /* 移动端优化 */
-  margin: auto;
-}
-
-.modal-header {
-  padding: 1rem 1.5rem 0.75rem;
-  border-bottom: 1px solid var(--color-base-300);
-  background-color: var(--color-base-200);
-  flex-shrink: 0;
-}
-
-.modal-title {
-  font-size: 1.125rem;
-  font-weight: 600;
-  margin: 0;
-  color: var(--color-base-content);
-}
-
-.modal-body {
-  padding: 1rem 1.5rem 1.5rem;
-  overflow-y: auto;
-  background-color: var(--color-base-100);
-  flex: 1;
-  min-height: 0;
-}
-
-/* Modal 过渡动画 */
-.modal-fade-enter-active,
-.modal-fade-leave-active {
-  transition: all 0.3s ease-in-out;
-}
-
-.modal-fade-enter-from,
-.modal-fade-leave-to {
-  opacity: 0;
-}
-
-.modal-fade-enter-from .modal-content,
-.modal-fade-leave-to .modal-content {
-  transform: scale(0.9) translateY(20px);
-}
-
-.modal-fade-enter-active .modal-content,
-.modal-fade-leave-active .modal-content {
-  transition: transform 0.3s ease-in-out;
-}
-
-/* 响应式 */
-@media (max-width: 640px) {
-  .modal-overlay {
-    padding: 0.5rem;
-    align-items: center; /* 垂直居中，避免遮挡输入框 */
-    justify-content: center; /* 水平居中 */
-    padding-top: 0; /* 移除顶部间距 */
-    padding-bottom: 0; /* 移除底部间距 */
-  }
-
-  .modal-content {
-    max-width: 95vw;
-    max-height: 90vh; /* 增加最大高度 */
-    margin: 0; /* 确保没有额外的边距 */
-  }
-
-  .modal-header {
-    padding: 0.75rem 1rem 0.5rem;
-  }
-
-  .modal-title {
-    font-size: 1rem;
-  }
-
-  .modal-body {
-    padding: 0.75rem 1rem 1rem;
-  }
-}
-</style>

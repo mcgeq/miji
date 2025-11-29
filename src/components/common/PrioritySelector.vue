@@ -1,6 +1,7 @@
 <script setup lang="ts">
+import Select from '@/components/ui/Select.vue';
 import { PrioritySchema } from '@/schema/common';
-import { uuid } from '@/utils/uuid';
+import type { SelectOption } from '@/components/ui/Select.vue';
 import type { Priority } from '@/schema/common';
 
 interface PriorityOption {
@@ -41,9 +42,6 @@ const emit = defineEmits<{
   'change': [value: Priority];
   'validate': [isValid: boolean];
 }>();
-
-// 生成唯一ID
-const inputId = ref(`priority-selector-${uuid(38)}`);
 
 // 当前值
 const currentValue = ref<Priority>(props.modelValue);
@@ -109,6 +107,15 @@ const priorityOptions = computed(() => {
   return props.customOptions || defaultPriorityOptions.value;
 });
 
+// 转换为 Select 组件的选项格式
+const selectOptions = computed<SelectOption[]>(() => {
+  return priorityOptions.value.map(option => ({
+    value: option.value,
+    label: option.label,
+    disabled: option.disabled,
+  }));
+});
+
 // 样式类
 const widthClass = computed(() => {
   const widthMap: Record<string, string> = {
@@ -143,23 +150,18 @@ function validateValue(value: Priority): boolean {
 }
 
 // 事件处理
-function handleChange(event: Event) {
-  const target = event.target as HTMLSelectElement;
-  const value = target.value as Priority;
+function handleChange(value: string | number | (string | number)[]) {
+  // Select 组件在单选模式下只返回单个值
+  const priorityValue = value as Priority;
 
-  if (validateValue(value)) {
-    currentValue.value = value;
-    emit('update:modelValue', value);
-    emit('change', value);
+  if (validateValue(priorityValue)) {
+    currentValue.value = priorityValue;
+    emit('update:modelValue', priorityValue);
+    emit('change', priorityValue);
     emit('validate', true);
   } else {
     emit('validate', false);
   }
-}
-
-function handleBlur() {
-  const isValid = validateValue(currentValue.value);
-  emit('validate', isValid);
 }
 
 // 监听器
@@ -180,12 +182,9 @@ watch(currentValue, newValue => {
   }
 });
 
-// 公开方法
+// 公开方法 - Select 组件内部管理 focus
 function focus() {
-  const element = document.getElementById(inputId.value);
-  if (element) {
-    element.focus();
-  }
+  // TODO: 如果需要，可以通过 ref 访问 Select 组件
 }
 
 function reset() {
@@ -212,175 +211,32 @@ defineExpose({
 </script>
 
 <template>
-  <div class="form-group">
-    <label
-      :for="inputId"
-      class="form-label"
-    >
+  <div class="mb-2 flex items-center justify-between max-sm:flex-wrap">
+    <label class="text-sm font-medium text-[light-dark(#374151,#d1d5db)] mb-0 max-sm:shrink-0">
       {{ label }}
-      <span v-if="required" class="form-required" aria-label="必填">*</span>
+      <span v-if="required" class="text-[var(--color-error)] ml-1" aria-label="必填">*</span>
     </label>
 
-    <div class="form-field" :class="widthClass">
-      <select
-        :id="inputId"
-        v-model="currentValue"
-        class="modal-input-select"
-        :class="{ 'is-error': hasError }"
-        :required="required"
+    <div class="max-sm:flex-1 max-sm:min-w-0" :class="[widthClass]">
+      <Select
+        :model-value="currentValue"
+        :options="selectOptions"
+        :placeholder="label"
+        size="sm"
         :disabled="disabled"
-        @blur="handleBlur"
-        @change="handleChange"
-      >
-        <option
-          v-for="option in priorityOptions"
-          :key="option.value"
-          :value="option.value"
-          :disabled="option.disabled"
-        >
-          {{ option.label }}
-        </option>
-      </select>
-
-      <!-- 错误提示 -->
-      <div
-        v-if="hasError && errorMessage"
-        class="form-error"
-        role="alert"
-      >
-        {{ errorMessage }}
-      </div>
+        :required="required"
+        :error="hasError ? errorMessage : undefined"
+        full-width
+        @update:model-value="handleChange"
+      />
 
       <!-- 帮助文本 -->
       <div
         v-if="helpText && !hasError"
-        class="form-help"
+        class="mt-2 text-xs text-[light-dark(#6b7280,#9ca3af)] text-right"
       >
         {{ helpText }}
       </div>
     </div>
   </div>
 </template>
-
-<style scoped lang="postcss">
-/* 容器 */
-.form-group {
-  margin-bottom: 0.5rem; /* mb-2 */
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-/* 标签 */
-.form-label {
-  font-size: 0.875rem; /* text-sm */
-  font-weight: 500; /* font-medium */
-  color: var(--color-gray-700);
-  margin-bottom: 0;
-}
-.form-required {
-  color: var(--color-error);
-  margin-left: 0.25rem;
-}
-
-/* 字段容器 */
-.form-field {
-  display: flex;
-  flex-direction: column;
-  width: 66.666667%;
-}
-
-/* 下拉框 */
-.modal-input-select {
-  padding: 0.5rem 0.75rem; /* px-3 py-2 */
-  border: 1px solid var(--color-base-300);
-  border-radius: 0.375rem; /* rounded-md */
-  background: var(--color-base-100);
-  color: var(--color-base-content);
-  font-size: 0.875rem;
-  line-height: 1.25rem;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
-}
-.modal-input-select:focus {
-  outline: none;
-  border-color: transparent;
-  box-shadow: 0 0 0 2px var(--color-primary);
-}
-.modal-input-select.is-error {
-  border-color: var(--color-error);
-}
-.modal-input-select.is-error:focus {
-  box-shadow: 0 0 0 2px var(--color-error-soft);
-}
-
-/* 禁用状态 */
-.modal-input-select:disabled {
-  background: var(--color-base-200);
-  color: var(--color-gray-500);
-  cursor: not-allowed;
-}
-
-/* 下拉选项 */
-.modal-input-select option {
-  padding: 0.5rem 0.75rem;
-}
-.modal-input-select option:disabled {
-  color: var(--color-gray-400);
-}
-
-/* 错误提示 */
-.form-error {
-  margin-top: 0.25rem;
-  font-size: 0.875rem;
-  color: var(--color-error);
-}
-
-/* 帮助文本 */
-.form-help {
-  margin-top: 0.5rem;
-  font-size: 0.75rem;
-  color: var(--color-gray-500);
-  text-align: right;
-}
-
-/* 响应式 */
-@media (max-width: 640px) {
-  .form-group {
-    flex-wrap: wrap;
-  }
-
-  .form-label {
-    flex-shrink: 0;
-  }
-
-  .form-field {
-    flex: 1;
-    min-width: 0;
-  }
-}
-
-/* 暗黑模式 */
-@media (prefers-color-scheme: dark) {
-  .form-label {
-    color: var(--color-gray-300);
-  }
-  .modal-input-select {
-    background: var(--color-gray-800);
-    color: var(--color-gray-100);
-    border-color: var(--color-gray-600);
-  }
-  .modal-input-select:focus {
-    box-shadow: 0 0 0 2px var(--color-info);
-  }
-  .modal-input-select:disabled {
-    background: var(--color-gray-700);
-    color: var(--color-gray-400);
-  }
-  .form-error {
-    color: var(--color-error);
-  }
-  .form-help {
-    color: var(--color-gray-400);
-  }
-}
-</style>

@@ -8,7 +8,11 @@ use tracing::{error, info, instrument};
 
 use crate::{
     dto::todo::{Todo, TodoCreate, TodoUpdate},
-    service::todo::{TodosFilter, TodosService},
+    service::{
+        todo::{TodosFilter, TodosService},
+        projects::ProjectsService,
+        tags::TagsService,
+    },
 };
 
 // ========================== Start ==========================
@@ -233,6 +237,102 @@ pub async fn todo_list_paged(
             error!(
                 error = %e,
                 "分页列出待办事项失败"
+            );
+            Err(e.to_string())
+        }
+    }
+}
+
+// ========================== Projects Commands ==========================
+#[tauri::command]
+#[instrument(skip(state))]
+pub async fn project_list(
+    state: State<'_, AppState>,
+) -> Result<ApiResponse<Vec<entity::project::Model>>, String> {
+    info!("开始获取项目列表");
+
+    let service = ProjectsService::default();
+
+    match service.project_list(&state.db).await {
+        Ok(projects) => {
+            info!(count = projects.len(), "获取项目列表成功");
+            Ok(ApiResponse::from_result(Ok(projects)))
+        }
+        Err(e) => {
+            error!(error = %e, "获取项目列表失败");
+            Err(e.to_string())
+        }
+    }
+}
+
+#[tauri::command]
+#[instrument(skip(state), fields(serial_num = %serial_num))]
+pub async fn project_get(
+    state: State<'_, AppState>,
+    serial_num: String,
+) -> Result<ApiResponse<entity::project::Model>, String> {
+    info!(serial_num = %serial_num, "开始获取项目详情");
+
+    let service = ProjectsService::default();
+
+    match service.project_get(&state.db, serial_num.clone()).await {
+        Ok(project) => {
+            info!(serial_num = %serial_num, "获取项目详情成功");
+            Ok(ApiResponse::from_result(Ok(project)))
+        }
+        Err(e) => {
+            error!(
+                error = %e,
+                serial_num = %serial_num,
+                "获取项目详情失败"
+            );
+            Err(e.to_string())
+        }
+    }
+}
+
+// ========================== Tags Commands ==========================
+#[tauri::command]
+#[instrument(skip(state))]
+pub async fn tag_list(
+    state: State<'_, AppState>,
+) -> Result<ApiResponse<Vec<entity::tag::Model>>, String> {
+    info!("开始获取标签列表");
+
+    let service = TagsService::default();
+
+    match service.tag_list(&state.db).await {
+        Ok(tags) => {
+            info!(count = tags.len(), "获取标签列表成功");
+            Ok(ApiResponse::from_result(Ok(tags)))
+        }
+        Err(e) => {
+            error!(error = %e, "获取标签列表失败");
+            Err(e.to_string())
+        }
+    }
+}
+
+#[tauri::command]
+#[instrument(skip(state), fields(serial_num = %serial_num))]
+pub async fn tag_get(
+    state: State<'_, AppState>,
+    serial_num: String,
+) -> Result<ApiResponse<entity::tag::Model>, String> {
+    info!(serial_num = %serial_num, "开始获取标签详情");
+
+    let service = TagsService::default();
+
+    match service.tag_get(&state.db, serial_num.clone()).await {
+        Ok(tag) => {
+            info!(serial_num = %serial_num, "获取标签详情成功");
+            Ok(ApiResponse::from_result(Ok(tag)))
+        }
+        Err(e) => {
+            error!(
+                error = %e,
+                serial_num = %serial_num,
+                "获取标签详情失败"
             );
             Err(e.to_string())
         }

@@ -40,8 +40,16 @@ export class ThemeInitializer {
     const effectiveTheme = themeStore.getEffectiveThemeValue();
 
     const root = document.documentElement;
-    root.classList.remove('theme-light', 'theme-dark');
-    root.classList.add(`theme-${effectiveTheme}`);
+
+    // Tailwind CSS 4 标准：使用 'dark' 类
+    if (effectiveTheme === 'dark') {
+      root.classList.add('dark');
+      root.classList.remove('light');
+    } else {
+      root.classList.remove('dark');
+      root.classList.add('light');
+    }
+
     root.style.colorScheme = effectiveTheme;
 
     // 设置 meta theme-color（用于移动端浏览器）

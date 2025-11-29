@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n';
-import BaseModal from '@/components/common/BaseModal.vue';
-import FormRow from '@/components/common/FormRow.vue';
+import { Checkbox, FormRow, Input, Modal, Select, Textarea } from '@/components/ui';
 import { CURRENCY_CNY } from '@/constants/moneyConst';
 import { MoneyDb } from '@/services/money/money';
 import { useFamilyLedgerStore } from '@/stores/money';
 import { Lg } from '@/utils/debugLog';
 import { toast } from '@/utils/toast';
+import type { SelectOption } from '@/components/ui';
 import type { Currency } from '@/schema/common';
 import type { FamilyLedger, FamilyLedgerCreate, FamilyLedgerUpdate, FamilyMember } from '@/schema/money';
 
@@ -28,6 +28,22 @@ const saving = ref(false);
 const isSubmitting = ref(false);
 const isEdit = computed(() => !!props.ledger);
 const currencies = ref<Currency[]>([]);
+
+// 货币选项
+const currencyOptions = computed<SelectOption[]>(() =>
+  currencies.value.map(currency => ({
+    value: currency.code,
+    label: `${currency.symbol} ${currency.code} - ${t(currency.code)}`,
+  })),
+);
+
+// 角色选项
+const roleOptions = computed<SelectOption[]>(() => [
+  { value: 'Owner', label: t('roles.owner') },
+  { value: 'Admin', label: t('roles.admin') },
+  { value: 'Member', label: t('roles.member') },
+  { value: 'Viewer', label: t('roles.viewer') },
+]);
 
 // Fetch currencies asynchronously
 async function loadCurrencies() {
@@ -289,7 +305,8 @@ onMounted(() => {
 </script>
 
 <template>
-  <BaseModal
+  <Modal
+    :open="true"
     :title="isEdit ? t('familyLedger.editLedger') : t('familyLedger.createNewLedger')"
     size="md"
     :confirm-loading="isSubmitting || saving"
@@ -298,95 +315,70 @@ onMounted(() => {
   >
     <form @submit.prevent="handleSubmit">
       <!-- 基本信息 -->
-      <div class="form-section">
-        <h3 class="section-title">
+      <div class="flex flex-col gap-0 mb-6">
+        <h3 class="text-lg text-gray-900 dark:text-white font-medium pb-2 mb-3 border-b border-gray-200 dark:border-gray-700">
           {{ t('familyLedger.basicInfo') }}
         </h3>
 
         <FormRow :label="t('familyLedger.ledgerName')" required>
-          <div class="input-with-hint">
-            <input
-              id="name"
-              v-model="form.name"
-              v-has-value
-              type="text"
-              required
-              maxlength="50"
-              :placeholder="t('common.placeholders.enterName')"
-              class="modal-input-select w-full"
-            >
-            <p class="form-help">
-              {{ form.name.length }}/50
-            </p>
-          </div>
+          <Input
+            v-model="form.name"
+            type="text"
+            :max-length="50"
+            :placeholder="t('common.placeholders.enterName')"
+          />
         </FormRow>
 
-        <FormRow :label="t('familyLedger.ledgerDescription')" optional>
-          <div class="input-with-hint">
-            <textarea
-              id="description"
-              v-model="form.description"
-              rows="3"
-              maxlength="200"
-              :placeholder="t('common.placeholders.enterDescription')"
-              class="modal-input-select w-full"
-            />
-            <p class="form-help">
-              {{ form.description.length }}/200
-            </p>
-          </div>
+        <FormRow full-width>
+          <Textarea
+            v-model="form.description"
+            :rows="3"
+            :max-length="200"
+            :placeholder="t('common.placeholders.enterDescription')"
+          />
         </FormRow>
       </div>
 
       <!-- 货币设置 -->
-      <div class="form-section">
-        <h3 class="section-title">
+      <div class="flex flex-col gap-0 mb-6">
+        <h3 class="text-lg text-gray-900 dark:text-white font-medium pb-2 mb-3 border-b border-gray-200 dark:border-gray-700">
           {{ t('familyLedger.currencySettings') }}
         </h3>
 
         <FormRow :label="t('financial.baseCurrency')" required>
-          <div class="input-with-hint">
-            <select
-              id="currency"
-              v-model="form.baseCurrency.code"
-              v-has-value
-              required
-              class="modal-input-select w-full"
-              @change="updateCurrencyInfo"
-            >
-              <option value="">
-                {{ t('messages.selectCurrency') }}
-              </option>
-              <option v-for="currency in currencies" :key="currency.code" :value="currency.code">
-                {{ currency.symbol }} {{ currency.code }} - {{ t(currency.code) }}
-              </option>
-            </select>
-            <p class="form-help">
-              {{ t('messages.selectedAsDefault') }}
-            </p>
-          </div>
+          <Select
+            v-model="form.baseCurrency.code"
+            :options="currencyOptions"
+            :placeholder="t('messages.selectCurrency')"
+            @update:model-value="updateCurrencyInfo"
+          />
+          <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+            {{ t('messages.selectedAsDefault') }}
+          </p>
         </FormRow>
       </div>
 
       <!-- 成员管理 -->
       <div class="space-y-4">
-        <div class="pb-2 border-b border-gray-200 flex items-center justify-between">
-          <h3 class="text-lg text-gray-900 font-medium">
+        <div class="pb-2 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+          <h3 class="text-lg text-gray-900 dark:text-white font-medium">
             {{ t('familyLedger.members') }}
           </h3>
           <button
-            type="button" class="text-sm text-blue-600 flex gap-1 items-center hover:text-blue-700"
+            type="button" class="text-sm text-blue-600 dark:text-blue-400 flex gap-1 items-center hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
             @click="addMember"
           >
-            <LucidePlus class="h-4 w-4" />
+            <LucidePlus :size="16" />
             {{ t('familyLedger.addMember') }}
           </button>
         </div>
 
-        <div v-if="form.memberList && form.memberList.length === 0" class="text-gray-500 py-6 text-center">
-          <LucideUsers class="text-gray-300 mx-auto mb-2 h-12 w-12" />
-          <p>{{ t('familyLedger.noMembers') }}</p>
-          <p class="text-sm">
+        <div v-if="form.memberList && form.memberList.length === 0" class="text-gray-500 dark:text-gray-400 py-6 text-center">
+          <LucideUsers :size="48" class="text-gray-300 dark:text-gray-600 mx-auto mb-2" />
+          <p class="mb-1">
+            {{ t('familyLedger.noMembers') }}
+          </p>
+          <p class="text-sm text-gray-400 dark:text-gray-500">
             {{ t('familyLedger.clickAddMember') }}
           </p>
         </div>
@@ -394,82 +386,40 @@ onMounted(() => {
         <div v-else class="space-y-3">
           <div
             v-for="(member, index) in form.memberList" :key="index"
-            class="p-3 border border-gray-200 rounded-md flex gap-3 items-center"
+            class="p-3 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900/50 flex flex-col sm:flex-row gap-3 items-start sm:items-center"
           >
             <div class="flex-1">
-              <input
-                v-model="member.name" type="text" :placeholder="t('familyLedger.memberName')" required
-                maxlength="20"
-                class="text-sm px-2 py-1 border border-gray-300 rounded w-full focus:outline-none focus:border-blue-500"
-              >
+              <Input
+                v-model="member.name"
+                type="text"
+                size="sm"
+                :placeholder="t('familyLedger.memberName')"
+              />
             </div>
             <div class="flex-1">
-              <select
+              <Select
                 v-model="member.role"
-                class="text-sm px-2 py-1 border border-gray-300 rounded w-full focus:outline-none focus:border-blue-500"
-              >
-                <option value="Owner">
-                  {{ t('roles.owner') }}
-                </option>
-                <option value="Admin">
-                  {{ t('roles.admin') }}
-                </option>
-                <option value="Member">
-                  {{ t('roles.member') }}
-                </option>
-                <option value="Viewer">
-                  {{ t('roles.viewer') }}
-                </option>
-              </select>
+                :options="roleOptions"
+                size="sm"
+              />
             </div>
-            <div class="flex gap-2 items-center">
-              <label class="text-sm text-gray-600 flex gap-1 items-center">
-                <input v-model="member.isPrimary" type="checkbox" class="border-gray-300 rounded">
-                {{ t('familyLedger.primaryMember') }}
-              </label>
+            <div class="flex gap-2 items-center shrink-0">
+              <Checkbox
+                v-model="member.isPrimary"
+                :label="t('familyLedger.primaryMember')"
+              />
               <button
-                type="button" class="text-red-500 p-1 hover:text-red-700" :disabled="form.memberList && form.memberList.length === 1"
+                type="button"
+                class="text-red-500 dark:text-red-400 p-1.5 rounded hover:text-red-700 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                :disabled="form.memberList && form.memberList.length === 1"
                 @click="removeMember(index)"
               >
-                <LucideTrash2 class="h-4 w-4" />
+                <LucideTrash2 :size="16" />
               </button>
             </div>
           </div>
         </div>
       </div>
     </form>
-  </BaseModal>
+  </Modal>
 </template>
-
-<style scoped lang="postcss">
-/* 表单区块 */
-.form-section {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-  margin-bottom: 1.5rem;
-}
-
-.section-title {
-  font-size: 1.125rem;
-  color: #111827;
-  font-weight: 500;
-  padding-bottom: 0.5rem;
-  margin-bottom: 0.75rem;
-  border-bottom: 1px solid #e5e7eb;
-}
-
-/* 输入框带提示文字的包装器 */
-.input-with-hint {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  width: 100%;
-}
-
-.form-help {
-  font-size: 0.75rem;
-  color: #6b7280;
-  margin-top: 0.25rem;
-}
-</style>

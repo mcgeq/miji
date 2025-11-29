@@ -1,8 +1,12 @@
 import { defineStore } from 'pinia';
-import { verifyToken } from '@/services/auth';
+import { clearAuthCache } from '@/router/guards/auth.guard';
+import { refreshToken as refreshTokenApi, verifyToken } from '@/services/auth';
+import { Role, RolePermissions } from '@/types/auth';
+import { authAudit } from '@/utils/auth-audit';
 import { Lg } from '@/utils/debugLog';
 import { toAuthUser } from '../utils/user';
 import type { AuthUser, TokenResponse, User } from '@/schema/user';
+import type { Permission } from '@/types/auth';
 
 // =============================================================================
 // Pinia Store with Tauri Persistence
@@ -20,12 +24,22 @@ export const useAuthStore = defineStore('auth', () => {
   const rememberMe = ref<boolean>(false);
   const isLoading = ref<boolean>(false);
 
+  // 权限相关状态
+  const permissions = ref<Permission[]>([]);
+  const role = ref<Role>(Role.GUEST);
+
   // 计算属性
   const isAuthenticated = computed(() => !!user.value && !!token.value);
 
   const isTokenExpired = computed(() => {
     if (!tokenExpiresAt.value) return false;
     return tokenExpiresAt.value < Date.now() / 1000;
+  });
+
+  // 计算有效权限（角色权限 + 额外权限）
+  const effectivePermissions = computed(() => {
+    const rolePerms = RolePermissions[role.value] || [];
+    return [...new Set([...rolePerms, ...permissions.value])];
   });
 
   // =============================================================================
@@ -58,10 +72,35 @@ export const useAuthStore = defineStore('auth', () => {
         }
       }
 
+      // 设置角色和权限
+      // 注意：User 类型可能还没有 role 和 permissions 字段
+      // 这里使用类型断言，如果字段不存在则使用默认值
+      const rawRole = (userData as any).role;
+      const userPermissions = ((userData as any).permissions as Permission[]) || [];
+
+      // 将角色转换为小写以匹配枚举值（后端可能返回 'User' 而不是 'user'）
+      const normalizedRole = rawRole?.toLowerCase() as Role;
+      const userRole = normalizedRole || Role.USER;
+
+      role.value = userRole;
+      permissions.value = userPermissions;
+
+      // 清除路由守卫缓存
+      clearAuthCache();
+
       Lg.i('Auth', 'User logged in successfully', {
         hasUser: !!user.value,
         hasToken: !!token.value,
         rememberMe: rememberMe.value,
+        role: role.value,
+        explicitPermissions: permissions.value.length,
+        effectivePermissions: effectivePermissions.value.length,
+      });
+
+      // 记录审计日志
+      authAudit.logLogin(authUser.serialNum, role.value, {
+        rememberMe: rememberMe.value,
+        effectivePermissions: effectivePermissions.value.length,
       });
 
       // 注意：autosave 已在 storeStart() 中启用
@@ -83,10 +122,21 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       isLoading.value = true;
 
+      // 记录审计日志（在清除前记录）
+      const userId = user.value?.serialNum || 'unknown';
+      authAudit.logLogout(userId);
+
       user.value = null;
       token.value = null;
       tokenExpiresAt.value = null;
       rememberMe.value = false;
+
+      // 清除权限和角色
+      permissions.value = [];
+      role.value = Role.GUEST;
+
+      // 清除路由守卫缓存
+      clearAuthCache();
 
       Lg.i('Auth', 'User logged out successfully');
     } catch (error) {
@@ -114,6 +164,22 @@ export const useAuthStore = defineStore('auth', () => {
           await logout();
           return false;
         }
+
+        // Token自动刷新：如果在5分钟内过期，尝试刷新
+        const timeUntilExpiry = tokenExpiresAt.value - currentTime;
+        if (timeUntilExpiry < 5 * 60) { // 5分钟
+          Lg.i('Auth', 'Token expires soon, attempting refresh...', {
+            expiresIn: `${Math.round(timeUntilExpiry / 60)} minutes`,
+          });
+
+          try {
+            await refreshToken();
+            Lg.i('Auth', 'Token refreshed successfully');
+          } catch (error) {
+            Lg.w('Auth', 'Token refresh failed:', error);
+            // 刷新失败不立即登出，继续使用旧token直到完全过期
+          }
+        }
       }
 
       // 验证 token
@@ -128,6 +194,40 @@ export const useAuthStore = defineStore('auth', () => {
       Lg.e('Auth', 'Auth check failed:', error);
       await logout();
       return false;
+    }
+  }
+
+  /**
+   * 刷新Token
+   *
+   * 自动刷新机制：
+   * - Token在1小时内过期时自动刷新
+   * - 使用旧Token换取新Token（延长7天）
+   * - 刷新失败不立即登出，继续使用旧Token直到完全过期
+   */
+  async function refreshToken(): Promise<void> {
+    if (!token.value || !user.value) {
+      throw new Error('No token or user to refresh');
+    }
+
+    try {
+      isLoading.value = true;
+
+      // 调用后端刷新Token API
+      const tokenResponse = await refreshTokenApi(token.value);
+
+      // 更新Token和过期时间
+      token.value = tokenResponse.token;
+      tokenExpiresAt.value = tokenResponse.expiresAt;
+
+      Lg.i('Auth', 'Token refreshed successfully', {
+        newExpiresAt: new Date(tokenResponse.expiresAt * 1000).toISOString(),
+      });
+    } catch (error) {
+      Lg.e('Auth', 'Token refresh error:', error);
+      throw error;
+    } finally {
+      isLoading.value = false;
     }
   }
 
@@ -148,6 +248,53 @@ export const useAuthStore = defineStore('auth', () => {
    */
   function getCurrentUser(): AuthUser | null {
     return user.value;
+  }
+
+  /**
+   * 检查是否有指定权限（满足任一即可）
+   */
+  function hasAnyPermission(perms?: Permission[]): boolean {
+    if (!perms || perms.length === 0) return true;
+
+    const hasPermission = perms.some(p => effectivePermissions.value.includes(p));
+    const userId = user.value?.serialNum || 'unknown';
+
+    // 记录审计日志
+    if (hasPermission) {
+      authAudit.logPermissionGranted(userId, role.value, perms);
+    } else {
+      authAudit.logPermissionDenied(
+        userId,
+        role.value,
+        perms,
+        effectivePermissions.value,
+      );
+    }
+
+    return hasPermission;
+  }
+
+  /**
+   * 检查是否有所有指定权限
+   */
+  function hasAllPermissions(perms?: Permission[]): boolean {
+    if (!perms || perms.length === 0) return true;
+    return perms.every(p => effectivePermissions.value.includes(p));
+  }
+
+  /**
+   * 检查是否有指定角色（满足任一即可）
+   */
+  function hasAnyRole(roles?: Role[]): boolean {
+    if (!roles || roles.length === 0) return true;
+    return roles.includes(role.value);
+  }
+
+  /**
+   * 检查是否有指定权限
+   */
+  function hasPermission(permission: Permission): boolean {
+    return effectivePermissions.value.includes(permission);
   }
 
   // =============================================================================
@@ -354,17 +501,27 @@ export const useAuthStore = defineStore('auth', () => {
     tokenExpiresAt,
     rememberMe,
     isLoading,
+    permissions,
+    role,
 
     // 计算属性
     isAuthenticated,
     isTokenExpired,
+    effectivePermissions,
 
     // 核心方法
     login,
     logout,
     checkAuthStatus,
+    refreshToken,
     updateUser,
     getCurrentUser,
+
+    // 权限检查方法
+    hasAnyPermission,
+    hasAllPermissions,
+    hasAnyRole,
+    hasPermission,
 
     // 扩展方法
     updateProfile,

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import * as _ from 'es-toolkit/compat';
 import z from 'zod';
-import BaseModal from '@/components/common/BaseModal.vue';
+import { Modal } from '@/components/ui';
 import { useBudgetForm } from '@/composables/useBudgetForm';
 import { BudgetCreateSchema, BudgetUpdateSchema } from '@/schema/money';
 import { deepDiff } from '@/utils/diffObject';
@@ -132,7 +132,8 @@ watch(
 </script>
 
 <template>
-  <BaseModal
+  <Modal
+    :open="true"
     :title="props.budget ? t('financial.budget.editBudget') : t('financial.budget.addBudget')"
     size="md"
     :confirm-loading="isSubmitting"
@@ -157,7 +158,7 @@ watch(
         @change-repeat-period="handleRepeatPeriodChange"
       />
     </form>
-  </BaseModal>
+  </Modal>
 </template>
 
 <style scoped>

@@ -18,14 +18,15 @@ import {
   ShieldX,
   Smile,
 } from 'lucide-vue-next';
-import BaseModal from '@/components/common/BaseModal.vue';
-import FormRow from '@/components/common/FormRow.vue';
 import IconButtonGroup from '@/components/common/IconButtonGroup.vue';
 import PresetButtons from '@/components/common/PresetButtons.vue';
+import { Input, Modal, Radio, Textarea } from '@/components/ui';
+import FormRow from '@/components/ui/FormRow.vue';
 import { DateUtils } from '@/utils/date';
 import { Lg } from '@/utils/debugLog';
 import { deepDiff } from '@/utils/diff';
 import { usePeriodValidation } from '../composables/usePeriodValidation';
+import type { RadioOption as BaseRadioOption } from '@/components/ui/Radio.vue';
 import type {
   PeriodDailyRecordCreate,
   PeriodDailyRecords,
@@ -180,6 +181,20 @@ const CONTRACEPTION_METHODS: PeriodOption<'None' | 'Condom' | 'Pill' | 'Iud' | '
 const WATER_PRESETS: number[] = [1000, 1500, 2000, 2500];
 const SLEEP_PRESETS: number[] = [6, 7, 8, 9];
 
+// Radio 选项配置 - 使用字符串值
+const SEXUAL_ACTIVITY_OPTIONS: BaseRadioOption[] = [
+  { value: 'yes', label: t('common.misc.yes') },
+  { value: 'no', label: t('common.misc.no') },
+];
+
+// 计算属性：将 boolean 转换为字符串用于 Radio 组件
+const sexualActivityValue = computed({
+  get: () => formData.sexualActivity ? 'yes' : 'no',
+  set: (value: string | number) => {
+    formData.sexualActivity = value === 'yes';
+  },
+});
+
 // Methods
 async function handleSubmit() {
   clearValidationErrors();
@@ -263,24 +278,25 @@ defineExpose({
 </script>
 
 <template>
-  <BaseModal
+  <Modal
+    :open="true"
     :title="isEditing ? t('period.forms.editDaily') : t('period.forms.recordDaily')"
     size="md"
     :confirm-loading="loading"
     :confirm-disabled="hasErrors()"
     @confirm="handleSubmit"
-    @cancel="$emit('cancel')"
+    @close="$emit('cancel')"
   >
     <!-- 日期选择 -->
     <FormRow :label="t('period.fields.date')" required :error="getFieldErrors('date')[0]">
-      <input
+      <Input
         v-model="formData.date"
         type="date"
-        class="modal-input-select w-full"
         :max="today"
         :disabled="isEditing"
-        @change="clearFieldError('date')"
-      >
+        full-width
+        @blur="clearFieldError('date')"
+      />
     </FormRow>
 
     <!-- 经期流量 -->
@@ -318,28 +334,29 @@ defineExpose({
 
     <!-- 饮食记录 -->
     <FormRow label="" full-width :error="getFieldErrors('diet')[0]">
-      <textarea
+      <Textarea
         v-model="formData.diet"
-        class="modal-input-select w-full"
         :placeholder="t('period.placeholders.dietRecord')"
-        rows="3"
-        @input="clearFieldError('diet')"
+        :rows="3"
+        :show-count="false"
+        full-width
+        @blur="clearFieldError('diet')"
       />
     </FormRow>
 
     <!-- 饮水量 -->
     <FormRow :label="t('period.fields.waterIntake')" :error="getFieldErrors('waterIntake')[0]">
-      <div class="form-field-with-presets">
-        <input
-          v-model.number="formData.waterIntake"
+      <div class="flex flex-col gap-2 w-full">
+        <Input
+          v-model="formData.waterIntake"
           type="number"
-          class="modal-input-select w-full"
           :placeholder="t('period.placeholders.waterIntakeExample')"
           min="0"
           max="5000"
           step="100"
-          @input="clearFieldError('waterIntake')"
-        >
+          full-width
+          @blur="clearFieldError('waterIntake')"
+        />
         <PresetButtons
           v-model="formData.waterIntake"
           :presets="WATER_PRESETS"
@@ -350,17 +367,17 @@ defineExpose({
 
     <!-- 睡眠时间 -->
     <FormRow :label="t('period.fields.sleepHours')" :error="getFieldErrors('sleepHours')[0]">
-      <div class="form-field-with-presets">
-        <input
-          v-model.number="formData.sleepHours"
+      <div class="flex flex-col gap-2 w-full">
+        <Input
+          v-model="formData.sleepHours"
           type="number"
-          class="modal-input-select w-full"
           :placeholder="t('period.placeholders.sleepExample')"
           min="0"
           max="24"
           step="1"
-          @input="clearFieldError('sleepHours')"
-        >
+          full-width
+          @blur="clearFieldError('sleepHours')"
+        />
         <PresetButtons
           v-model="formData.sleepHours"
           :presets="SLEEP_PRESETS"
@@ -371,16 +388,12 @@ defineExpose({
 
     <!-- 性生活 -->
     <FormRow :label="t('period.fields.sexualActivity')">
-      <div class="radio-group">
-        <label class="radio-label">
-          <input v-model="formData.sexualActivity" type="radio" :value="true" class="radio-input">
-          <span class="radio-text">{{ t('common.misc.yes') }}</span>
-        </label>
-        <label class="radio-label">
-          <input v-model="formData.sexualActivity" type="radio" :value="false" class="radio-input">
-          <span class="radio-text">{{ t('common.misc.no') }}</span>
-        </label>
-      </div>
+      <Radio
+        v-model="sexualActivityValue"
+        :options="SEXUAL_ACTIVITY_OPTIONS"
+        orientation="horizontal"
+        size="sm"
+      />
     </FormRow>
 
     <!-- 避孕措施 - 仅在有性生活时显示 -->
@@ -396,67 +409,15 @@ defineExpose({
 
     <!-- 备注 -->
     <FormRow label="" full-width :error="getFieldErrors('notes')[0]">
-      <textarea
-        v-model="formData.notes"
-        class="modal-input-select w-full"
+      <Textarea
+        :model-value="formData.notes || ''"
         :placeholder="t('period.placeholders.notesPlaceholder')"
-        maxlength="500"
-        rows="3"
-        @input="clearFieldError('notes')"
+        :max-length="500"
+        :rows="3"
+        full-width
+        @update:model-value="formData.notes = $event || null"
+        @blur="clearFieldError('notes')"
       />
-      <div class="character-count">
-        {{ (formData.notes || '').length }}/500
-      </div>
     </FormRow>
-  </BaseModal>
+  </Modal>
 </template>
-
-<style scoped>
-/* 自定义样式 - 大部分样式已由BaseModal和FormRow提供 */
-
-/* 表单字段带预设按钮 */
-.form-field-with-presets {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  width: 100%;
-}
-
-/* Radio 按钮组 */
-.radio-group {
-  display: flex;
-  gap: 1rem;
-}
-
-.radio-label {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  cursor: pointer;
-}
-
-.radio-input {
-  width: 1rem;
-  height: 1rem;
-  cursor: pointer;
-}
-
-.radio-text {
-  font-size: 0.875rem;
-  color: var(--color-base-content);
-}
-
-/* 字符计数 */
-.character-count {
-  font-size: 0.75rem;
-  color: var(--color-neutral);
-  text-align: right;
-  margin-top: 0.25rem;
-}
-
-/* 深色模式 */
-.dark .radio-text,
-.dark .character-count {
-  color: var(--color-base-content);
-}
-</style>

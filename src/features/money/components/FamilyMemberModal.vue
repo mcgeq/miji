@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import BaseModal from '@/components/common/BaseModal.vue';
 import ColorSelector from '@/components/common/ColorSelector.vue';
-import FormRow from '@/components/common/FormRow.vue';
+import { Checkbox, FormRow, Input, Modal, Select } from '@/components/ui';
 import FamilyMemberSelector from '@/components/ui/FamilyMemberSelector.vue';
 import { MoneyDb } from '@/services/money/money';
 import { useFamilyMemberStore } from '@/stores/money';
 import { toast } from '@/utils/toast';
 import { userPreferences } from '@/utils/userPreferences';
+import type { SelectOption } from '@/components/ui';
 import type { FamilyMember as SearchableFamilyMember } from '@/composables/useFamilyMemberSearch';
 import type { FamilyMember, FamilyMemberCreate, FamilyMemberUpdate } from '@/schema/money';
 
@@ -38,6 +38,14 @@ const form = reactive({
   colorTag: '#3b82f6',
   permissions: '[]',
 });
+
+// 角色选项
+const roleOptions = computed<SelectOption[]>(() => [
+  { value: 'Owner', label: '所有者' },
+  { value: 'Admin', label: '管理员' },
+  { value: 'Member', label: '成员' },
+  { value: 'Viewer', label: '观察者' },
+]);
 
 // 权限选项
 const permissionOptions = [
@@ -238,7 +246,8 @@ function handleMemberClear() {
 </script>
 
 <template>
-  <BaseModal
+  <Modal
+    :open="true"
     :title="props.member ? '编辑成员' : '添加成员'"
     size="md"
     :confirm-loading="isSubmitting"
@@ -247,46 +256,47 @@ function handleMemberClear() {
   >
     <form @submit.prevent="saveMember">
       <!-- 成员模式选择 -->
-      <div v-if="!props.member" class="form-section">
-        <h4 class="section-title">
+      <div v-if="!props.member" class="mb-6">
+        <h4 class="text-base font-semibold text-gray-900 dark:text-white mb-3 pb-2 border-b border-gray-200 dark:border-gray-700">
           添加方式
         </h4>
 
-        <div class="mode-selector">
+        <div class="flex gap-3 p-1 bg-gray-100 dark:bg-gray-800 rounded-xl">
           <button
             type="button"
-            class="mode-btn"
-            :class="{ active: memberMode === 'select_member' }"
+            class="flex-1 py-3.5 px-4 border-none bg-transparent text-gray-600 dark:text-gray-400 rounded-lg text-sm font-medium flex items-center justify-center gap-2 transition-all cursor-pointer"
+            :class="memberMode === 'select_member' ? 'bg-blue-600 text-white shadow-sm' : 'hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-gray-700'"
             @click="memberMode = 'select_member'"
           >
-            <LucideUserCheck class="w-4 h-4" />
+            <LucideUserCheck :size="16" />
             选择已有成员
           </button>
           <button
             type="button"
-            class="mode-btn"
-            :class="{ active: memberMode === 'create_member' }"
+            class="flex-1 py-3.5 px-4 border-none bg-transparent text-gray-600 dark:text-gray-400 rounded-lg text-sm font-medium flex items-center justify-center gap-2 transition-all cursor-pointer"
+            :class="memberMode === 'create_member' ? 'bg-blue-600 text-white shadow-sm' : 'hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-gray-700'"
             @click="memberMode = 'create_member'"
           >
-            <LucideUserPlus class="w-4 h-4" />
+            <LucideUserPlus :size="16" />
             创建新成员
           </button>
         </div>
       </div>
 
       <!-- 成员选择模式 -->
-      <div v-if="!props.member && memberMode === 'select_member'" class="form-section">
-        <h4 class="section-title">
+      <div v-if="!props.member && memberMode === 'select_member'" class="mb-6">
+        <h4 class="text-base font-semibold text-gray-900 dark:text-white mb-3 pb-2 border-b border-gray-200 dark:border-gray-700">
           选择成员
         </h4>
 
-        <div class="form-row">
-          <label class="form-label">搜索成员</label>
+        <div class="flex items-center gap-4">
+          <label class="text-sm font-medium text-gray-900 dark:text-white min-w-[6rem] shrink-0">搜索成员</label>
           <FamilyMemberSelector
             :selected-member="selectedExistingMember"
             placeholder="搜索家庭成员姓名或邮箱"
             :show-recent-members="true"
             :show-search-history="true"
+            class="flex-1"
             @select="handleMemberSelect"
             @clear="handleMemberClear"
           />
@@ -294,97 +304,80 @@ function handleMemberClear() {
       </div>
 
       <!-- 基本信息 -->
-      <div v-if="props.member || memberMode === 'create_member'" class="form-section">
-        <h4 class="section-title">
+      <div v-if="props.member || memberMode === 'create_member'" class="mb-6">
+        <h4 class="text-base font-semibold text-gray-900 dark:text-white mb-3 pb-2 border-b border-gray-200 dark:border-gray-700">
           基本信息
         </h4>
 
         <FormRow label="姓名" required>
-          <input
+          <Input
             v-model="form.name"
-            v-has-value
             type="text"
-            class="modal-input-select w-full"
-            placeholder="请输入成员姓名"
-            required
-          >
+            placeholder="请输入姓名"
+          />
         </FormRow>
 
         <FormRow label="角色" required>
-          <select v-model="form.role" v-has-value class="modal-input-select w-full">
-            <option value="">
-              请选择角色
-            </option>
-            <option value="Owner">
-              所有者
-            </option>
-            <option value="Admin">
-              管理员
-            </option>
-            <option value="Member">
-              成员
-            </option>
-            <option value="Viewer">
-              查看者
-            </option>
-          </select>
+          <Select
+            v-model="form.role"
+            :options="roleOptions"
+            placeholder="请选择角色"
+          />
         </FormRow>
 
-        <FormRow label="" optional>
-          <label class="checkbox-label">
-            <input v-model="form.isPrimary" type="checkbox" class="checkbox-input">
-            <span class="checkbox-text">设为主要成员</span>
-          </label>
-        </FormRow>
+        <div class="mb-3">
+          <Checkbox
+            v-model="form.isPrimary"
+            label="设为主要成员"
+          />
+        </div>
 
         <!-- 关联成员信息显示 -->
-        <div v-if="selectedExistingMember" class="form-row">
-          <label class="form-label">选择的成员</label>
-          <div class="selected-member-info">
-            <div class="member-avatar">
+        <div v-if="selectedExistingMember" class="mb-4 flex items-center gap-4">
+          <label class="text-sm font-medium text-gray-900 dark:text-white min-w-[6rem] shrink-0">选择的成员</label>
+          <div class="flex items-center gap-3 flex-1 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-500 dark:border-blue-600 rounded-xl">
+            <div class="w-10 h-10 rounded-full overflow-hidden shrink-0 shadow-sm">
               <img
                 v-if="selectedExistingMember.avatarUrl"
                 :src="selectedExistingMember.avatarUrl"
                 :alt="selectedExistingMember.name"
-                class="avatar-image"
+                class="w-full h-full object-cover"
               >
-              <div v-else class="avatar-placeholder" :style="{ backgroundColor: selectedExistingMember.color || '#3b82f6' }">
+              <div v-else class="w-full h-full flex items-center justify-center text-white font-semibold text-base" :style="{ backgroundColor: selectedExistingMember.color || '#3b82f6' }">
                 {{ selectedExistingMember.name.charAt(0).toUpperCase() }}
               </div>
             </div>
-            <div class="member-details">
-              <div class="member-name">
+            <div class="flex-1 min-w-0">
+              <div class="font-semibold text-gray-900 dark:text-white mb-0.5">
                 {{ selectedExistingMember.name }}
               </div>
-              <div class="member-email">
+              <div class="text-xs text-gray-600 dark:text-gray-400">
                 {{ selectedExistingMember.email || selectedExistingMember.phone || selectedExistingMember.serialNum }}
               </div>
             </div>
             <button
               type="button"
-              class="clear-member-btn"
+              class="p-1.5 text-gray-600 dark:text-gray-400 transition-all shrink-0 rounded-lg flex items-center justify-center hover:text-red-600 dark:hover:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-800"
               @click="handleMemberClear"
             >
-              <LucideX class="w-4 h-4" />
+              <LucideX :size="16" />
             </button>
           </div>
         </div>
       </div>
 
       <!-- 外观设置 -->
-      <div class="form-section">
-        <h4 class="section-title">
+      <div class="mb-6">
+        <h4 class="text-base font-semibold text-gray-900 dark:text-white mb-3 pb-2 border-b border-gray-200 dark:border-gray-700">
           外观设置
         </h4>
 
         <FormRow label="头像URL" optional>
-          <input
+          <Input
             v-model="form.avatar"
-            v-has-value
             type="url"
-            class="modal-input-select w-full"
-            placeholder="可选，头像图片链接"
-          >
+            placeholder="请输入头像URL（可选）"
+          />
         </FormRow>
 
         <FormRow label="标识颜色" optional>
@@ -399,413 +392,51 @@ function handleMemberClear() {
 
         <!-- 预览 -->
         <FormRow label="预览" optional>
-          <div class="member-preview">
+          <div class="flex items-center gap-3 p-4 bg-gray-100 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 flex-1">
             <div
-              class="preview-avatar"
+              class="w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold relative overflow-hidden shadow-sm"
               :style="{ backgroundColor: form.colorTag }"
             >
               <img
                 v-if="form.avatar"
                 :src="form.avatar"
                 :alt="form.name"
-                class="preview-avatar-image"
+                class="w-full h-full object-cover"
               >
-              <span v-else class="preview-avatar-text">
+              <span v-else class="text-base">
                 {{ form.name.charAt(0).toUpperCase() || 'A' }}
               </span>
             </div>
-            <span class="preview-name">{{ form.name || '成员姓名' }}</span>
+            <span class="font-medium text-gray-900 dark:text-white">{{ form.name || '成员姓名' }}</span>
           </div>
         </FormRow>
       </div>
 
       <!-- 权限设置 -->
-      <div v-if="form.role !== 'Owner'" class="form-section">
-        <h4 class="section-title">
+      <div v-if="form.role !== 'Owner'" class="mb-6">
+        <h4 class="text-base font-semibold text-gray-900 dark:text-white mb-3 pb-2 border-b border-gray-200 dark:border-gray-700">
           权限设置
         </h4>
-        <p class="section-description">
+        <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
           所有者拥有所有权限，无需单独设置
         </p>
 
-        <div class="permissions-grid">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
           <label
             v-for="option in permissionOptions"
             :key="option.key"
-            class="permission-item"
+            class="flex items-center gap-3 p-3 bg-gray-100 dark:bg-gray-800 rounded-lg cursor-pointer transition-all border border-transparent hover:bg-gray-200 dark:hover:bg-gray-700 hover:border-blue-500 dark:hover:border-blue-600"
           >
             <input
               type="checkbox"
-              class="permission-checkbox"
+              class="w-4.5 h-4.5 accent-blue-600 cursor-pointer"
               :checked="currentPermissions.includes(option.key)"
               @change="togglePermission(option.key)"
             >
-            <span class="permission-label">{{ option.label }}</span>
+            <span class="text-sm text-gray-900 dark:text-white font-medium">{{ option.label }}</span>
           </label>
         </div>
       </div>
     </form>
-  </BaseModal>
+  </Modal>
 </template>
-
-<style scoped>
-.modal-mask {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: oklch(0% 0 0 / 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-
-.modal-window {
-  background: var(--color-base-100);
-  border-radius: 12px;
-  width: 90%;
-  max-width: 520px;
-  max-height: 90vh;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  box-shadow: var(--shadow-lg);
-  border: 1px solid var(--color-base-200);
-}
-
-.modal-header {
-  padding: 1.25rem 1.5rem;
-  border-bottom: 1px solid var(--color-base-200);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: var(--color-base-100);
-}
-
-.modal-title {
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: var(--color-base-content);
-}
-
-.modal-close-btn {
-  color: var(--color-neutral);
-  transition: color 0.2s;
-  padding: 0.375rem;
-  border-radius: 0.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.modal-close-btn:hover {
-  color: var(--color-neutral-hover);
-  background-color: var(--color-base-200);
-}
-
-.modal-content {
-  flex: 1;
-  overflow-y: auto;
-  padding: 1.5rem;
-  background: var(--color-base-100);
-
-  /* 隐藏滚动条但保持滚动功能 */
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* Internet Explorer 10+ */
-}
-
-/* 隐藏 WebKit 浏览器滚动条 */
-.modal-content::-webkit-scrollbar {
-  display: none;
-}
-
-.form-section {
-  margin-bottom: 1.5rem;
-}
-
-.section-title {
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--color-base-content);
-  margin-bottom: 0.75rem;
-  padding-bottom: 0.5rem;
-  border-bottom: 1px solid var(--color-base-200);
-}
-
-.section-description {
-  font-size: 0.875rem;
-  color: var(--color-neutral);
-  margin-bottom: 1rem;
-}
-
-/* 保留已选成员信息的 form-row 样式 */
-.form-row {
-  margin-bottom: 1rem;
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.form-label {
-  display: block;
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--color-base-content);
-  min-width: 6rem;
-  flex-shrink: 0;
-}
-
-/* 复选框样式 */
-.checkbox-label {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  cursor: pointer;
-}
-
-.checkbox-input {
-  width: 1rem;
-  height: 1rem;
-  cursor: pointer;
-}
-
-.checkbox-text {
-  font-size: 0.875rem;
-  color: var(--color-base-content);
-  font-weight: 500;
-}
-
-.member-preview {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 1rem;
-  background-color: var(--color-base-200);
-  border-radius: 0.75rem;
-  border: 1px solid var(--color-base-200);
-  flex: 1;
-}
-
-.preview-avatar {
-  width: 2.5rem;
-  height: 2.5rem;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-weight: 600;
-  position: relative;
-  overflow: hidden;
-  box-shadow: var(--shadow-sm);
-}
-
-.preview-avatar-image {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.preview-avatar-text {
-  font-size: 1rem;
-}
-
-.preview-name {
-  font-weight: 500;
-  color: var(--color-base-content);
-}
-
-.permissions-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 0.5rem;
-}
-
-.permission-item {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.75rem;
-  background-color: var(--color-base-200);
-  border-radius: 0.5rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  border: 1px solid transparent;
-}
-
-.permission-item:hover {
-  background-color: var(--color-base-300);
-  border-color: var(--color-primary);
-}
-
-.permission-checkbox {
-  width: 1.125rem;
-  height: 1.125rem;
-  accent-color: var(--color-primary);
-}
-
-.permission-label {
-  font-size: 0.875rem;
-  color: var(--color-base-content);
-  font-weight: 500;
-}
-
-.modal-actions {
-  padding-top: 1rem;
-  display: flex;
-  justify-content: center;
-  gap: 0.75rem;
-}
-
-.btn-cancel {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 3rem;
-  height: 3rem;
-  border-radius: 50%;
-  border: none;
-  cursor: pointer;
-  background-color: var(--color-neutral);
-  color: var(--color-neutral-content);
-  transition: all 0.2s ease;
-}
-
-.btn-cancel:hover {
-  background-color: var(--color-neutral-content);
-  color: var(--color-neutral);
-}
-
-.btn-save {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 3rem;
-  height: 3rem;
-  border-radius: 50%;
-  border: none;
-  cursor: pointer;
-  background-color: var(--color-primary);
-  color: var(--color-primary-content);
-  transition: all 0.2s ease;
-}
-
-.btn-save:hover {
-  background-color: var(--color-primary-content);
-  color: var(--color-primary);
-}
-
-.icon-btn {
-  width: 1.25rem;
-  height: 1.25rem;
-}
-
-/* 成员模式选择器 */
-.mode-selector {
-  display: flex;
-  gap: 0.75rem;
-  padding: 0.25rem;
-  background-color: var(--color-base-200);
-  border-radius: 0.75rem;
-}
-
-.mode-btn {
-  flex: 1;
-  padding: 0.875rem 1rem;
-  border: none;
-  background-color: transparent;
-  color: var(--color-neutral);
-  border-radius: 0.5rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  transition: all 0.2s ease;
-  cursor: pointer;
-}
-
-.mode-btn:hover {
-  color: var(--color-base-content);
-  background-color: var(--color-base-300);
-}
-
-.mode-btn.active {
-  background: var(--color-primary);
-  color: var(--color-primary-content);
-  box-shadow: var(--shadow-sm);
-}
-
-/* 已选择成员信息 */
-.selected-member-info {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 1rem;
-  background: oklch(from var(--color-primary) l c h / 0.1);
-  border: 1px solid var(--color-primary);
-  border-radius: 0.75rem;
-  flex: 1;
-}
-
-.member-avatar {
-  width: 2.5rem;
-  height: 2.5rem;
-  border-radius: 50%;
-  overflow: hidden;
-  flex-shrink: 0;
-  box-shadow: var(--shadow-sm);
-}
-
-.avatar-image {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.avatar-placeholder {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-weight: 600;
-  font-size: 1rem;
-}
-
-.member-details {
-  flex: 1;
-  min-width: 0;
-}
-
-.member-name {
-  font-weight: 600;
-  color: var(--color-base-content);
-  margin-bottom: 0.125rem;
-}
-
-.member-email {
-  font-size: 0.75rem;
-  color: var(--color-neutral);
-}
-
-.clear-member-btn {
-  padding: 0.375rem;
-  color: var(--color-neutral);
-  transition: all 0.2s ease;
-  flex-shrink: 0;
-  border-radius: 0.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.clear-member-btn:hover {
-  color: var(--color-error);
-  background-color: var(--color-base-200);
-}
-</style>

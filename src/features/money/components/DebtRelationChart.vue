@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Button, Card } from '@/components/ui';
 import { useFamilyMemberStore, useFamilySplitStore } from '@/stores/money';
 // 移除未使用的类型导入
 
@@ -127,728 +128,333 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="debt-chart-container">
+  <div class="p-4 space-y-6">
     <!-- 头部控制 -->
-    <div class="chart-header">
-      <h3 class="chart-title">
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-6">
+      <h3 class="text-xl font-semibold text-gray-900 dark:text-white">
         债务关系图
       </h3>
-      <div class="chart-controls">
-        <label class="toggle-label">
+      <div class="flex items-center gap-4">
+        <label class="flex items-center gap-2 text-sm cursor-pointer">
           <input
             v-model="showSettlementSuggestions"
             type="checkbox"
-            class="toggle-checkbox"
+            class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
           >
-          <span>显示结算建议</span>
+          <span class="text-gray-700 dark:text-gray-300">显示结算建议</span>
         </label>
-        <button class="refresh-btn" @click="fetchSettlementSuggestions">
-          <LucideRefreshCw class="w-4 h-4" />
-          刷新
-        </button>
+        <Button variant="secondary" size="sm" @click="fetchSettlementSuggestions">
+          <LucideRefreshCw :size="16" />
+          <span class="ml-2">刷新</span>
+        </Button>
       </div>
     </div>
 
     <!-- 总览统计 -->
-    <div class="overview-stats">
-      <div class="stat-card stat-creditors">
-        <div class="stat-icon">
-          <LucideTrendingUp class="w-5 h-5" />
-        </div>
-        <div class="stat-content">
-          <div class="stat-value">
-            {{ creditors.length }}
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <Card padding="md" hoverable>
+        <div class="flex items-center gap-3">
+          <div class="p-2 rounded-md bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400">
+            <LucideTrendingUp :size="20" />
           </div>
-          <div class="stat-label">
-            债权人
+          <div class="flex-1">
+            <div class="text-2xl font-semibold text-gray-900 dark:text-white">
+              {{ creditors.length }}
+            </div>
+            <div class="text-sm text-gray-500 dark:text-gray-400">
+              债权人
+            </div>
           </div>
         </div>
-      </div>
+      </Card>
 
-      <div class="stat-card stat-debtors">
-        <div class="stat-icon">
-          <LucideTrendingDown class="w-5 h-5" />
-        </div>
-        <div class="stat-content">
-          <div class="stat-value">
-            {{ debtors.length }}
+      <Card padding="md" hoverable>
+        <div class="flex items-center gap-3">
+          <div class="p-2 rounded-md bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400">
+            <LucideTrendingDown :size="20" />
           </div>
-          <div class="stat-label">
-            债务人
+          <div class="flex-1">
+            <div class="text-2xl font-semibold text-gray-900 dark:text-white">
+              {{ debtors.length }}
+            </div>
+            <div class="text-sm text-gray-500 dark:text-gray-400">
+              债务人
+            </div>
           </div>
         </div>
-      </div>
+      </Card>
 
-      <div class="stat-card stat-balanced">
-        <div class="stat-icon">
-          <LucideEqual class="w-5 h-5" />
-        </div>
-        <div class="stat-content">
-          <div class="stat-value">
-            {{ balanced.length }}
+      <Card padding="md" hoverable>
+        <div class="flex items-center gap-3">
+          <div class="p-2 rounded-md bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400">
+            <LucideEqual :size="20" />
           </div>
-          <div class="stat-label">
-            已平衡
+          <div class="flex-1">
+            <div class="text-2xl font-semibold text-gray-900 dark:text-white">
+              {{ balanced.length }}
+            </div>
+            <div class="text-sm text-gray-500 dark:text-gray-400">
+              已平衡
+            </div>
           </div>
         </div>
-      </div>
+      </Card>
 
-      <div class="stat-card stat-total">
-        <div class="stat-icon">
-          <LucideUsers class="w-5 h-5" />
-        </div>
-        <div class="stat-content">
-          <div class="stat-value">
-            {{ members.length }}
+      <Card padding="md" hoverable>
+        <div class="flex items-center gap-3">
+          <div class="p-2 rounded-md bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400">
+            <LucideUsers :size="20" />
           </div>
-          <div class="stat-label">
-            总成员
+          <div class="flex-1">
+            <div class="text-2xl font-semibold text-gray-900 dark:text-white">
+              {{ members.length }}
+            </div>
+            <div class="text-sm text-gray-500 dark:text-gray-400">
+              总成员
+            </div>
           </div>
         </div>
-      </div>
+      </Card>
     </div>
 
     <!-- 成员余额列表 -->
-    <div class="balance-section">
-      <h4 class="section-title">
+    <div class="mb-8">
+      <h4 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
         成员余额
       </h4>
 
-      <div class="balance-grid">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <!-- 债权人 -->
-        <div v-if="creditors.length > 0" class="balance-group">
-          <h5 class="group-title text-green-600">
+        <Card v-if="creditors.length > 0" padding="none">
+          <h5 class="text-base font-semibold px-4 py-3 bg-gray-50 dark:bg-gray-900/50 border-b border-gray-200 dark:border-gray-700 text-green-600 dark:text-green-400 m-0">
             债权人
           </h5>
-          <div class="member-list">
+          <div class="p-2">
             <div
               v-for="member in creditors"
               :key="member.serialNum"
-              class="member-item creditor"
-              :class="{ active: selectedMember === member.serialNum }"
+              class="flex items-center gap-3 p-3 rounded-md cursor-pointer transition-all hover:bg-gray-50 dark:hover:bg-gray-800"
+              :class="selectedMember === member.serialNum && 'bg-blue-50 dark:bg-blue-900/20 border border-blue-500'"
               @click="selectMember(member.serialNum)"
             >
-              <div class="member-avatar">
+              <div class="shrink-0">
                 <img
                   v-if="member.avatar"
                   :src="member.avatar"
                   :alt="member.name"
-                  class="avatar-image"
+                  class="w-8 h-8 rounded-full object-cover"
                 >
                 <div
                   v-else
-                  class="avatar-placeholder"
+                  class="w-8 h-8 rounded-full flex items-center justify-center text-white font-semibold text-sm"
                   :style="{ backgroundColor: member.colorTag }"
                 >
                   {{ member.name.charAt(0).toUpperCase() }}
                 </div>
               </div>
 
-              <div class="member-info">
-                <div class="member-name">
+              <div class="flex-1">
+                <div class="font-medium text-gray-900 dark:text-white mb-0.5">
                   {{ member.name }}
                 </div>
-                <div class="member-balance positive">
-                  +¥{{ formatAmount(member.balance) }}
+                <div class="text-sm font-semibold text-green-600 dark:text-green-400">
+                  +￥{{ formatAmount(member.balance) }}
                 </div>
               </div>
 
-              <div class="balance-badge positive">
+              <div class="px-2 py-1 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400">
                 {{ getBalanceText(member.balance) }}
               </div>
             </div>
           </div>
-        </div>
+        </Card>
 
         <!-- 债务人 -->
-        <div v-if="debtors.length > 0" class="balance-group">
-          <h5 class="group-title text-red-600">
+        <Card v-if="debtors.length > 0" padding="none">
+          <h5 class="text-base font-semibold px-4 py-3 bg-gray-50 dark:bg-gray-900/50 border-b border-gray-200 dark:border-gray-700 text-red-600 dark:text-red-400 m-0">
             债务人
           </h5>
-          <div class="member-list">
+          <div class="p-2">
             <div
               v-for="member in debtors"
               :key="member.serialNum"
-              class="member-item debtor"
-              :class="{ active: selectedMember === member.serialNum }"
+              class="flex items-center gap-3 p-3 rounded-md cursor-pointer transition-all hover:bg-gray-50 dark:hover:bg-gray-800"
+              :class="selectedMember === member.serialNum && 'bg-blue-50 dark:bg-blue-900/20 border border-blue-500'"
               @click="selectMember(member.serialNum)"
             >
-              <div class="member-avatar">
+              <div class="shrink-0">
                 <img
                   v-if="member.avatar"
                   :src="member.avatar"
                   :alt="member.name"
-                  class="avatar-image"
+                  class="w-8 h-8 rounded-full object-cover"
                 >
                 <div
                   v-else
-                  class="avatar-placeholder"
+                  class="w-8 h-8 rounded-full flex items-center justify-center text-white font-semibold text-sm"
                   :style="{ backgroundColor: member.colorTag }"
                 >
                   {{ member.name.charAt(0).toUpperCase() }}
                 </div>
               </div>
 
-              <div class="member-info">
-                <div class="member-name">
+              <div class="flex-1">
+                <div class="font-medium text-gray-900 dark:text-white mb-0.5">
                   {{ member.name }}
                 </div>
-                <div class="member-balance negative">
+                <div class="text-sm font-semibold text-red-600 dark:text-red-400">
                   -¥{{ formatAmount(member.balance) }}
                 </div>
               </div>
 
-              <div class="balance-badge negative">
+              <div class="px-2 py-1 rounded-full text-xs font-medium bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400">
                 {{ getBalanceText(member.balance) }}
               </div>
             </div>
           </div>
-        </div>
+        </Card>
 
         <!-- 平衡成员 -->
-        <div v-if="balanced.length > 0" class="balance-group">
-          <h5 class="group-title text-gray-600">
+        <Card v-if="balanced.length > 0" padding="none">
+          <h5 class="text-base font-semibold px-4 py-3 bg-gray-50 dark:bg-gray-900/50 border-b border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 m-0">
             已平衡
           </h5>
-          <div class="member-list">
+          <div class="p-2">
             <div
               v-for="member in balanced"
               :key="member.serialNum"
-              class="member-item balanced"
+              class="flex items-center gap-3 p-3 rounded-md"
             >
-              <div class="member-avatar">
+              <div class="shrink-0">
                 <img
                   v-if="member.avatar"
                   :src="member.avatar"
                   :alt="member.name"
-                  class="avatar-image"
+                  class="w-8 h-8 rounded-full object-cover"
                 >
                 <div
                   v-else
-                  class="avatar-placeholder"
+                  class="w-8 h-8 rounded-full flex items-center justify-center text-white font-semibold text-sm"
                   :style="{ backgroundColor: member.colorTag }"
                 >
                   {{ member.name.charAt(0).toUpperCase() }}
                 </div>
               </div>
 
-              <div class="member-info">
-                <div class="member-name">
+              <div class="flex-1">
+                <div class="font-medium text-gray-900 dark:text-white mb-0.5">
                   {{ member.name }}
                 </div>
-                <div class="member-balance neutral">
+                <div class="text-sm font-semibold text-gray-500 dark:text-gray-400">
                   ¥0.00
                 </div>
               </div>
 
-              <div class="balance-badge neutral">
+              <div class="px-2 py-1 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400">
                 {{ getBalanceText(member.balance) }}
               </div>
             </div>
           </div>
-        </div>
+        </Card>
       </div>
     </div>
 
     <!-- 成员详情 -->
-    <div v-if="selectedMember" class="member-details">
-      <h4 class="section-title">
+    <Card v-if="selectedMember" padding="md" class="mb-8">
+      <h4 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
         {{ getMemberInfo(selectedMember).name }} 的债务详情
       </h4>
 
-      <div class="debt-list">
+      <div class="flex flex-col gap-3">
         <div
           v-for="debt in getMemberDebts(selectedMember)"
           :key="debt.serialNum"
-          class="debt-item"
+          class="p-3 bg-gray-50 dark:bg-gray-900/50 rounded-md border border-gray-200 dark:border-gray-700"
         >
-          <div class="debt-info">
-            <div class="debt-participants">
-              <span class="creditor">{{ getMemberInfo(debt.creditorMemberSerialNum).name }}</span>
-              <LucideArrowRight class="w-4 h-4 text-gray-400" />
-              <span class="debtor">{{ getMemberInfo(debt.debtorMemberSerialNum).name }}</span>
+          <div class="flex items-center justify-between mb-2">
+            <div class="flex items-center gap-2">
+              <span class="font-medium text-green-600 dark:text-green-400">{{ getMemberInfo(debt.creditorMemberSerialNum).name }}</span>
+              <LucideArrowRight :size="16" class="text-gray-400 dark:text-gray-600" />
+              <span class="font-medium text-red-600 dark:text-red-400">{{ getMemberInfo(debt.debtorMemberSerialNum).name }}</span>
             </div>
-            <div class="debt-amount">
+            <div class="font-semibold text-gray-900 dark:text-white">
               ¥{{ debt.amount.toFixed(2) }}
             </div>
           </div>
 
-          <div v-if="debt.description" class="debt-description">
+          <div v-if="debt.description" class="text-sm text-gray-600 dark:text-gray-400 mb-2">
             {{ debt.description }}
           </div>
 
-          <div class="debt-meta">
-            <span class="debt-date">
-              {{ new Date(debt.createdAt).toLocaleDateString() }}
-            </span>
+          <div class="text-xs text-gray-400 dark:text-gray-500">
+            {{ new Date(debt.createdAt).toLocaleDateString() }}
           </div>
         </div>
       </div>
-    </div>
+    </Card>
 
     <!-- 结算建议 -->
-    <div v-if="showSettlementSuggestions && settlementSuggestions.length > 0" class="settlement-suggestions">
-      <h4 class="section-title">
+    <Card v-if="showSettlementSuggestions && settlementSuggestions.length > 0" padding="md" class="mb-8">
+      <h4 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
         结算建议
       </h4>
 
-      <div class="suggestion-list">
+      <div class="flex flex-col gap-4">
         <div
           v-for="(suggestion, index) in settlementSuggestions"
           :key="index"
-          class="suggestion-item"
+          class="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800"
         >
-          <div class="suggestion-flow">
-            <div class="flow-from">
-              <div class="flow-avatar">
+          <div class="flex items-center gap-4 mb-2">
+            <div class="flex items-center gap-2 flex-1">
+              <div class="shrink-0">
                 <div
-                  class="avatar-placeholder"
+                  class="w-6 h-6 rounded-full flex items-center justify-center text-white font-semibold text-xs"
                   :style="{ backgroundColor: getMemberInfo(suggestion.fromMemberSerialNum).colorTag }"
                 >
                   {{ suggestion.fromMemberName.charAt(0).toUpperCase() }}
                 </div>
               </div>
-              <span class="flow-name">{{ suggestion.fromMemberName }}</span>
+              <span class="font-medium text-gray-900 dark:text-white">{{ suggestion.fromMemberName }}</span>
             </div>
 
-            <div class="flow-arrow">
-              <LucideArrowRight class="w-5 h-5 text-blue-500" />
-              <div class="flow-amount">
+            <div class="flex flex-col items-center gap-1">
+              <LucideArrowRight :size="20" class="text-blue-500" />
+              <div class="text-sm font-semibold text-blue-600 dark:text-blue-400">
                 ¥{{ suggestion.amount.toFixed(2) }}
               </div>
             </div>
 
-            <div class="flow-to">
-              <div class="flow-avatar">
+            <div class="flex items-center gap-2 flex-1">
+              <div class="shrink-0">
                 <div
-                  class="avatar-placeholder"
+                  class="w-6 h-6 rounded-full flex items-center justify-center text-white font-semibold text-xs"
                   :style="{ backgroundColor: getMemberInfo(suggestion.toMemberSerialNum).colorTag }"
                 >
                   {{ suggestion.toMemberName.charAt(0).toUpperCase() }}
                 </div>
               </div>
-              <span class="flow-name">{{ suggestion.toMemberName }}</span>
+              <span class="font-medium text-gray-900 dark:text-white">{{ suggestion.toMemberName }}</span>
             </div>
           </div>
 
-          <div v-if="suggestion.relatedDebts.length > 0" class="related-debts">
-            <span class="related-label">涉及债务:</span>
-            <span class="related-count">{{ suggestion.relatedDebts.length }} 笔</span>
+          <div v-if="suggestion.relatedDebts.length > 0" class="text-xs text-gray-600 dark:text-gray-400">
+            <span>涉及债务:</span>
+            <span class="font-medium ml-1">{{ suggestion.relatedDebts.length }} 笔</span>
           </div>
         </div>
       </div>
-    </div>
+    </Card>
 
     <!-- 空状态 -->
-    <div v-if="memberBalances.every(m => Math.abs(m.balance) < 0.01)" class="empty-state">
-      <LucideCheckCircle class="empty-icon text-green-500" />
-      <h3 class="empty-title">
+    <div v-if="memberBalances.every(m => Math.abs(m.balance) < 0.01)" class="flex flex-col items-center justify-center py-12 text-center">
+      <LucideCheckCircle :size="64" class="text-green-500 dark:text-green-400 mb-4" />
+      <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">
         所有账务已平衡
       </h3>
-      <p class="empty-description">
+      <p class="text-gray-500 dark:text-gray-400">
         当前没有未结算的债务关系
       </p>
     </div>
   </div>
 </template>
-
-<style scoped>
-.debt-chart-container {
-  padding: 1rem;
-}
-
-.chart-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 1.5rem;
-}
-
-.chart-title {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #1f2937;
-}
-
-.chart-controls {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.toggle-label {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.875rem;
-  cursor: pointer;
-}
-
-.toggle-checkbox {
-  width: 1rem;
-  height: 1rem;
-}
-
-.refresh-btn {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  background-color: #f3f4f6;
-  color: #374151;
-  border-radius: 0.375rem;
-  font-size: 0.875rem;
-  transition: background-color 0.2s;
-}
-
-.refresh-btn:hover {
-  background-color: #e5e7eb;
-}
-
-.overview-stats {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 1rem;
-  margin-bottom: 2rem;
-}
-
-.stat-card {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 1rem;
-  background: white;
-  border-radius: 0.5rem;
-  border: 1px solid #e5e7eb;
-}
-
-.stat-icon {
-  padding: 0.5rem;
-  border-radius: 0.375rem;
-}
-
-.stat-creditors .stat-icon {
-  background-color: #dcfce7;
-  color: #16a34a;
-}
-
-.stat-debtors .stat-icon {
-  background-color: #fee2e2;
-  color: #dc2626;
-}
-
-.stat-balanced .stat-icon {
-  background-color: #f3f4f6;
-  color: #6b7280;
-}
-
-.stat-total .stat-icon {
-  background-color: #dbeafe;
-  color: #2563eb;
-}
-
-.stat-content {
-  flex: 1;
-}
-
-.stat-value {
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: #1f2937;
-}
-
-.stat-label {
-  font-size: 0.875rem;
-  color: #6b7280;
-}
-
-.balance-section {
-  margin-bottom: 2rem;
-}
-
-.section-title {
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: #1f2937;
-  margin-bottom: 1rem;
-}
-
-.balance-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 1.5rem;
-}
-
-.balance-group {
-  background: white;
-  border-radius: 0.5rem;
-  border: 1px solid #e5e7eb;
-  overflow: hidden;
-}
-
-.group-title {
-  font-size: 1rem;
-  font-weight: 600;
-  padding: 0.75rem 1rem;
-  background-color: #f9fafb;
-  border-bottom: 1px solid #e5e7eb;
-  margin: 0;
-}
-
-.member-list {
-  padding: 0.5rem;
-}
-
-.member-item {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.75rem;
-  border-radius: 0.375rem;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.member-item:hover {
-  background-color: #f9fafb;
-}
-
-.member-item.active {
-  background-color: #eff6ff;
-  border: 1px solid #3b82f6;
-}
-
-.member-avatar {
-  flex-shrink: 0;
-}
-
-.avatar-image {
-  width: 2rem;
-  height: 2rem;
-  border-radius: 50%;
-  object-fit: cover;
-}
-
-.avatar-placeholder {
-  width: 2rem;
-  height: 2rem;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-weight: 600;
-  font-size: 0.875rem;
-}
-
-.member-info {
-  flex: 1;
-}
-
-.member-name {
-  font-weight: 500;
-  color: #1f2937;
-  margin-bottom: 0.125rem;
-}
-
-.member-balance {
-  font-size: 0.875rem;
-  font-weight: 600;
-}
-
-.member-balance.positive {
-  color: #16a34a;
-}
-
-.member-balance.negative {
-  color: #dc2626;
-}
-
-.member-balance.neutral {
-  color: #6b7280;
-}
-
-.balance-badge {
-  padding: 0.25rem 0.5rem;
-  border-radius: 9999px;
-  font-size: 0.75rem;
-  font-weight: 500;
-}
-
-.balance-badge.positive {
-  background-color: #dcfce7;
-  color: #16a34a;
-}
-
-.balance-badge.negative {
-  background-color: #fee2e2;
-  color: #dc2626;
-}
-
-.balance-badge.neutral {
-  background-color: #f3f4f6;
-  color: #6b7280;
-}
-
-.member-details {
-  margin-bottom: 2rem;
-  padding: 1rem;
-  background: white;
-  border-radius: 0.5rem;
-  border: 1px solid #e5e7eb;
-}
-
-.debt-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.debt-item {
-  padding: 0.75rem;
-  background-color: #f9fafb;
-  border-radius: 0.375rem;
-  border: 1px solid #e5e7eb;
-}
-
-.debt-info {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 0.5rem;
-}
-
-.debt-participants {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.creditor {
-  color: #16a34a;
-  font-weight: 500;
-}
-
-.debtor {
-  color: #dc2626;
-  font-weight: 500;
-}
-
-.debt-amount {
-  font-weight: 600;
-  color: #1f2937;
-}
-
-.debt-description {
-  font-size: 0.875rem;
-  color: #6b7280;
-  margin-bottom: 0.5rem;
-}
-
-.debt-meta {
-  font-size: 0.75rem;
-  color: #9ca3af;
-}
-
-.settlement-suggestions {
-  margin-bottom: 2rem;
-  padding: 1rem;
-  background: white;
-  border-radius: 0.5rem;
-  border: 1px solid #e5e7eb;
-}
-
-.suggestion-list {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.suggestion-item {
-  padding: 1rem;
-  background-color: #f0f9ff;
-  border-radius: 0.5rem;
-  border: 1px solid #bae6fd;
-}
-
-.suggestion-flow {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  margin-bottom: 0.5rem;
-}
-
-.flow-from, .flow-to {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  flex: 1;
-}
-
-.flow-avatar {
-  flex-shrink: 0;
-}
-
-.flow-avatar .avatar-placeholder {
-  width: 1.5rem;
-  height: 1.5rem;
-  font-size: 0.75rem;
-}
-
-.flow-name {
-  font-weight: 500;
-  color: #1f2937;
-}
-
-.flow-arrow {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.25rem;
-}
-
-.flow-amount {
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: #2563eb;
-}
-
-.related-debts {
-  font-size: 0.75rem;
-  color: #6b7280;
-}
-
-.related-label {
-  margin-right: 0.25rem;
-}
-
-.related-count {
-  font-weight: 500;
-}
-
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 3rem;
-  text-align: center;
-}
-
-.empty-icon {
-  width: 4rem;
-  height: 4rem;
-  margin-bottom: 1rem;
-}
-
-.empty-title {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #1f2937;
-  margin-bottom: 0.5rem;
-}
-
-.empty-description {
-  color: #6b7280;
-}
-</style>

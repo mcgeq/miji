@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { Check, Clock, Trash2, X } from 'lucide-vue-next';
+import { Clock } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
+import { Modal, TodoButton } from '@/components/ui';
 import type { TodoUpdate } from '@/schema/todos';
 
 const props = defineProps<{
@@ -13,7 +14,6 @@ const emit = defineEmits<{
 }>();
 
 const showModal = ref(false);
-const isModalVisible = ref(false);
 const editingMinutes = ref(props.estimateMinutes || 0);
 const editingHours = ref(0);
 const editingDays = ref(0);
@@ -81,18 +81,10 @@ function openModal() {
   if (props.readonly) return;
   parseTime(props.estimateMinutes || 0);
   showModal.value = true;
-  // 延迟设置可见性，防止闪烁
-  setTimeout(() => {
-    isModalVisible.value = true;
-  }, 10);
 }
 
 function closeModal() {
-  isModalVisible.value = false;
-  // 延迟关闭，等待动画完成
-  setTimeout(() => {
-    showModal.value = false;
-  }, 200);
+  showModal.value = false;
 }
 
 function saveEstimate() {
@@ -122,359 +114,122 @@ watch([editingDays, editingHours, editingMinutes], validateInput);
 </script>
 
 <template>
-  <div class="todo-estimate">
+  <div class="relative">
     <!-- 时间估算显示按钮 -->
-    <button
-      class="todo-btn"
-      :class="{
-        'todo-btn--active': hasEstimate,
-        'todo-btn--readonly': readonly,
-      }"
+    <TodoButton
+      :icon="Clock"
+      :active="hasEstimate"
+      :readonly="props.readonly"
       :title="hasEstimate ? `时间估算: ${formatTime(props.estimateMinutes!)}` : '设置时间估算'"
       @click="openModal"
-    >
-      <Clock class="icon" :size="14" />
-    </button>
+    />
 
     <!-- 时间估算设置模态框 -->
-    <Teleport to="body">
-      <div v-if="showModal" class="modal-overlay teleport" :class="{ visible: isModalVisible }" @click="closeModal">
-        <div class="modal-content teleport" @click.stop>
-          <div class="modal-header teleport">
-            <h3>设置时间估算</h3>
-            <button class="close-btn teleport" @click="closeModal">
-              <X :size="20" />
-            </button>
-          </div>
-
-          <div class="modal-body teleport">
-            <!-- 时间输入 -->
-            <div class="time-input-section">
-              <label>预计完成时间</label>
-              <div class="time-inputs">
-                <div class="time-input-group">
-                  <label for="days-input">天</label>
-                  <input
-                    id="days-input"
-                    v-model.number="editingDays"
-                    type="number"
-                    min="0"
-                    max="365"
-                    class="time-input"
-                  >
-                </div>
-                <div class="time-input-group">
-                  <label for="hours-input">小时</label>
-                  <input
-                    id="hours-input"
-                    v-model.number="editingHours"
-                    type="number"
-                    min="0"
-                    max="23"
-                    class="time-input"
-                  >
-                </div>
-                <div class="time-input-group">
-                  <label for="minutes-input">分钟</label>
-                  <input
-                    id="minutes-input"
-                    v-model.number="editingMinutes"
-                    type="number"
-                    min="0"
-                    max="59"
-                    class="time-input"
-                  >
-                </div>
-              </div>
+    <Modal
+      :open="showModal"
+      title="设置时间估算"
+      size="md"
+      :show-delete="true"
+      @close="closeModal"
+      @confirm="saveEstimate"
+      @delete="clearEstimate"
+    >
+      <div class="space-y-6">
+        <!-- 时间输入 -->
+        <div class="space-y-3">
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">预计完成时间</label>
+          <div class="grid grid-cols-3 gap-4">
+            <div>
+              <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">天</label>
+              <input
+                v-model.number="editingDays"
+                type="number"
+                min="0"
+                max="365"
+                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-center bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
             </div>
-
-            <!-- 快速选择 -->
-            <div class="quick-estimates-section">
-              <label>快速选择</label>
-              <div class="quick-options">
-                <button
-                  v-for="estimate in quickEstimates"
-                  :key="estimate.minutes"
-                  class="todo-btn"
-                  :class="{ 'todo-btn--active': totalMinutes === estimate.minutes }"
-                  @click="setQuickEstimate(estimate.minutes)"
-                >
-                  {{ estimate.label }}
-                </button>
-              </div>
+            <div>
+              <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">小时</label>
+              <input
+                v-model.number="editingHours"
+                type="number"
+                min="0"
+                max="23"
+                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-center bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
             </div>
-
-            <!-- 时间预览 -->
-            <div class="time-preview">
-              <label>时间预览:</label>
-              <div class="preview-content">
-                <Clock class="icon" :size="16" />
-                <span>{{ totalMinutes > 0 ? formatTime(totalMinutes) : '未设置时间' }}</span>
-                <span class="minutes-text">({{ totalMinutes }}分钟)</span>
-              </div>
-            </div>
-
-            <!-- 时间统计 -->
-            <div v-if="totalMinutes > 0" class="time-stats">
-              <div class="stat-item">
-                <span class="stat-label">总时间:</span>
-                <span class="stat-value">{{ formatTime(totalMinutes) }}</span>
-              </div>
-              <div class="stat-item">
-                <span class="stat-label">工作日:</span>
-                <span class="stat-value">{{ Math.ceil(totalMinutes / 480) }}天</span>
-              </div>
-              <div class="stat-item">
-                <span class="stat-label">总分钟:</span>
-                <span class="stat-value">{{ totalMinutes }}分钟</span>
-              </div>
+            <div>
+              <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">分钟</label>
+              <input
+                v-model.number="editingMinutes"
+                type="number"
+                min="0"
+                max="59"
+                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-center bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
             </div>
           </div>
+        </div>
 
-          <div class="modal-footer teleport">
-            <button class="btn-icon btn-secondary teleport" title="清空" @click="clearEstimate">
-              <Trash2 :size="20" />
-            </button>
-            <button class="btn-icon btn-secondary teleport" title="取消" @click="closeModal">
-              <X :size="20" />
-            </button>
-            <button class="btn-icon btn-primary teleport" title="保存时间" @click="saveEstimate">
-              <Check :size="20" />
+        <!-- 快速选择 -->
+        <div class="space-y-3">
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">快速选择</label>
+          <div class="grid grid-cols-2 gap-2">
+            <button
+              v-for="estimate in quickEstimates"
+              :key="estimate.minutes"
+              class="px-3 py-2 text-sm border rounded-lg transition-colors"
+              :class="totalMinutes === estimate.minutes ? 'bg-blue-600 text-white border-blue-600' : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 hover:border-blue-500 dark:hover:border-blue-400 text-gray-900 dark:text-gray-100'"
+              @click="setQuickEstimate(estimate.minutes)"
+            >
+              {{ estimate.label }}
             </button>
           </div>
         </div>
+
+        <!-- 时间预览 -->
+        <div class="space-y-2">
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">时间预览:</label>
+          <div class="flex items-center gap-2 p-3 bg-gray-100 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+            <Clock class="w-4 h-4 text-blue-600 dark:text-blue-400" />
+            <span class="font-medium text-gray-900 dark:text-white">{{ totalMinutes > 0 ? formatTime(totalMinutes) : '未设置时间' }}</span>
+            <span class="text-sm text-gray-500 dark:text-gray-400">({{ totalMinutes }}分钟)</span>
+          </div>
+        </div>
+
+        <!-- 时间统计 -->
+        <div v-if="totalMinutes > 0" class="grid grid-cols-3 gap-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-100 dark:border-blue-800/30">
+          <div class="text-center">
+            <div class="text-xs text-gray-500 dark:text-gray-400 mb-1">
+              总时间
+            </div>
+            <div class="text-sm font-semibold text-gray-900 dark:text-white">
+              {{ formatTime(totalMinutes) }}
+            </div>
+          </div>
+          <div class="text-center">
+            <div class="text-xs text-gray-500 dark:text-gray-400 mb-1">
+              工作日
+            </div>
+            <div class="text-sm font-semibold text-gray-900 dark:text-white">
+              {{ Math.ceil(totalMinutes / 480) }}天
+            </div>
+          </div>
+          <div class="text-center">
+            <div class="text-xs text-gray-500 dark:text-gray-400 mb-1">
+              总分钟
+            </div>
+            <div class="text-sm font-semibold text-gray-900 dark:text-white">
+              {{ totalMinutes }}分钟
+            </div>
+          </div>
+        </div>
       </div>
-    </Teleport>
+    </Modal>
   </div>
 </template>
 
-<style scoped lang="postcss">
-.todo-estimate {
-  position: relative;
-}
-
-/* 按钮样式现在使用全局 .todo-btn 样式 */
-
-.icon {
-  width: 0.875rem;
-  height: 0.875rem;
-  flex-shrink: 0;
-}
-
-/* 模态框样式 - 全局样式，因为使用了Teleport */
-
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1.5rem 1.5rem 0;
-}
-
-.modal-header h3 {
-  margin: 0;
-  font-size: 1.25rem;
-  font-weight: 600;
-}
-
-.close-btn {
-  background: none;
-  border: none;
-  font-size: 1.5rem;
-  cursor: pointer;
-  color: var(--color-base-content);
-  padding: 0.25rem;
-  border-radius: 0.25rem;
-}
-
-.close-btn:hover {
-  background: var(--color-base-200);
-}
-
-.modal-body {
-  padding: 1.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-.time-input-section {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.time-input-section > label {
-  font-weight: 500;
-  color: var(--color-base-content);
-}
-
-.time-inputs {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1rem;
-}
-
-.time-input-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.time-input-group > label {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--color-base-content);
-  text-align: center;
-}
-
-.time-input {
-  padding: 0.75rem;
-  border: 1px solid var(--color-base-300);
-  border-radius: 0.5rem;
-  text-align: center;
-  font-size: 1.125rem;
-  font-weight: 600;
-  background: var(--color-base-100);
-  color: var(--color-base-content);
-}
-
-.time-input:focus {
-  outline: none;
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px rgba(var(--color-primary-rgb), 0.1);
-}
-
-.quick-estimates-section {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.quick-estimates-section > label {
-  font-weight: 500;
-  color: var(--color-base-content);
-}
-
-.quick-options {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 0.5rem;
-}
-
-.time-preview {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  padding: 1rem;
-  background: var(--color-base-200);
-  border-radius: 0.5rem;
-  border: 1px solid var(--color-base-300);
-}
-
-.time-preview > label {
-  font-weight: 500;
-  color: var(--color-base-content);
-}
-
-.preview-content {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  color: var(--color-base-content);
-  font-weight: 500;
-}
-
-.minutes-text {
-  font-size: 0.875rem;
-  color: var(--color-base-content);
-  opacity: 0.7;
-}
-
-.time-stats {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  padding: 1rem;
-  background: var(--color-info);
-  background-opacity: 0.1;
-  border-radius: 0.5rem;
-  border: 1px solid var(--color-info);
-}
-
-.stat-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.stat-label {
-  font-weight: 500;
-  color: var(--color-base-content);
-}
-
-.stat-value {
-  font-weight: 600;
-  color: var(--color-info);
-}
-
-/* modal-footer样式已移至全局buttons.css */
-
-.btn-secondary,
-.btn-primary {
-  padding: 0.75rem 1.5rem;
-  border-radius: 0.5rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.btn-secondary {
-  background: var(--color-base-200);
-  color: var(--color-base-content);
-  border: 1px solid var(--color-base-300);
-}
-
-.btn-secondary:hover {
-  background: var(--color-base-300);
-}
-
-.btn-primary {
-  background: var(--color-primary);
-  color: var(--color-primary-content);
-  border: 1px solid var(--color-primary);
-}
-
-.btn-primary:hover {
-  background: var(--color-primary-focus);
-}
-
-/* 圆形图标按钮样式已移至全局buttons.css */
-
-/* 响应式设计 */
-@media (max-width: 768px) {
-  .modal-content {
-    width: 95%;
-    margin: 1rem;
-  }
-
-  .time-inputs {
-    grid-template-columns: 1fr;
-    gap: 0.75rem;
-  }
-
-  .quick-options {
-    grid-template-columns: 1fr;
-  }
-
-  .modal-footer {
-    flex-direction: row;
-    gap: 1.5rem;
-    justify-content: center;
-  }
-
-  .btn-icon {
-    width: 2.5rem !important;
-    height: 2.5rem !important;
-  }
-}
+<style scoped>
+/* 所有样式已使用 Tailwind CSS 4 */
 </style>

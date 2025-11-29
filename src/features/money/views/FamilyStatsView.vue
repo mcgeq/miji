@@ -1,4 +1,13 @@
 <script setup lang="ts">
+import {
+  LucideAlertCircle,
+  LucideBook,
+  LucideChevronDown,
+  LucideDownload,
+  LucideFile,
+  LucideFileSpreadsheet,
+  LucideFileText,
+} from 'lucide-vue-next';
 import { useFamilyLedgerStore } from '@/stores/money';
 import FamilyFinancialStats from '../components/FamilyFinancialStats.vue';
 
@@ -53,35 +62,35 @@ async function exportData(format: 'csv' | 'excel' | 'pdf') {
 </script>
 
 <template>
-  <div class="family-stats-view">
-    <div class="view-header">
-      <div class="header-info">
-        <h2 class="view-title">
+  <div class="p-0">
+    <div class="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 gap-4">
+      <div class="flex items-center gap-4">
+        <h2 class="text-2xl font-semibold text-gray-900 dark:text-gray-100">
           统计报表
         </h2>
-        <div v-if="currentLedger" class="ledger-info">
-          <span class="ledger-name">{{ currentLedger.name }}</span>
+        <div v-if="currentLedger" class="flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-800 rounded-md">
+          <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ currentLedger.name }}</span>
         </div>
       </div>
 
       <!-- 导出按钮 -->
-      <div v-if="currentLedger" class="export-actions">
-        <div class="export-dropdown">
-          <button class="export-btn">
+      <div v-if="currentLedger" class="relative">
+        <div class="relative group">
+          <button class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md text-sm transition-colors hover:bg-blue-700">
             <LucideDownload class="w-4 h-4" />
             导出数据
             <LucideChevronDown class="w-4 h-4" />
           </button>
-          <div class="dropdown-menu">
-            <button class="dropdown-item" @click="exportData('csv')">
+          <div class="absolute top-full right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg z-10 min-w-[150px] opacity-0 invisible -translate-y-2 transition-all duration-200 group-hover:opacity-100 group-hover:visible group-hover:translate-y-0">
+            <button class="flex items-center gap-2 w-full px-4 py-3 text-sm text-gray-700 dark:text-gray-300 text-left transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 first:rounded-t-md last:rounded-b-md" @click="exportData('csv')">
               <LucideFileText class="w-4 h-4" />
               CSV 格式
             </button>
-            <button class="dropdown-item" @click="exportData('excel')">
+            <button class="flex items-center gap-2 w-full px-4 py-3 text-sm text-gray-700 dark:text-gray-300 text-left transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 first:rounded-t-md last:rounded-b-md" @click="exportData('excel')">
               <LucideFileSpreadsheet class="w-4 h-4" />
               Excel 格式
             </button>
-            <button class="dropdown-item" @click="exportData('pdf')">
+            <button class="flex items-center gap-2 w-full px-4 py-3 text-sm text-gray-700 dark:text-gray-300 text-left transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 first:rounded-t-md last:rounded-b-md" @click="exportData('pdf')">
               <LucideFile class="w-4 h-4" />
               PDF 报告
             </button>
@@ -91,22 +100,22 @@ async function exportData(format: 'csv' | 'excel' | 'pdf') {
     </div>
 
     <!-- 统计内容 -->
-    <div class="stats-content">
+    <div class="min-h-[400px]">
       <FamilyFinancialStats
         v-if="currentLedger"
         :family-ledger-serial-num="currentLedger.serialNum"
       />
 
       <!-- 无账本状态 -->
-      <div v-else class="no-ledger-state">
-        <LucideAlertCircle class="warning-icon" />
-        <h3 class="warning-title">
+      <div v-else class="flex flex-col items-center justify-center p-12 text-center">
+        <LucideAlertCircle class="w-12 h-12 text-yellow-500 dark:text-yellow-400 mb-4" />
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
           请先选择账本
         </h3>
-        <p class="warning-description">
+        <p class="text-gray-500 dark:text-gray-400 mb-6">
           需要选择一个家庭账本才能查看统计报表
         </p>
-        <router-link to="/family-ledger" class="select-ledger-btn">
+        <router-link to="/family-ledger" class="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-md text-sm font-medium no-underline transition-colors hover:bg-blue-700">
           <LucideBook class="w-4 h-4" />
           选择账本
         </router-link>
@@ -114,164 +123,3 @@ async function exportData(format: 'csv' | 'excel' | 'pdf') {
     </div>
   </div>
 </template>
-
-<style scoped>
-.family-stats-view {
-  padding: 0;
-}
-
-.view-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 2rem;
-}
-
-.header-info {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.view-title {
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: var(--color-base-content);
-}
-
-.ledger-info {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  background-color: var(--color-gray-100);
-  border-radius: 0.375rem;
-}
-
-.ledger-name {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--color-gray-700);
-}
-
-.export-actions {
-  position: relative;
-}
-
-.export-dropdown {
-  position: relative;
-}
-
-.export-btn {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  background-color: var(--color-primary);
-  color: var(--color-primary-content);
-  border-radius: 0.375rem;
-  font-size: 0.875rem;
-  transition: background-color 0.2s;
-}
-
-.export-btn:hover {
-  background-color: var(--color-primary-hover);
-}
-
-.dropdown-menu {
-  position: absolute;
-  top: 100%;
-  right: 0;
-  margin-top: 0.25rem;
-  background: var(--color-base-100);
-  border: 1px solid var(--color-gray-200);
-  border-radius: 0.375rem;
-  box-shadow: var(--shadow-md);
-  z-index: 10;
-  min-width: 150px;
-  opacity: 0;
-  visibility: hidden;
-  transform: translateY(-10px);
-  transition: all 0.2s;
-}
-
-.export-dropdown:hover .dropdown-menu {
-  opacity: 1;
-  visibility: visible;
-  transform: translateY(0);
-}
-
-.dropdown-item {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  width: 100%;
-  padding: 0.75rem 1rem;
-  font-size: 0.875rem;
-  color: var(--color-gray-700);
-  text-align: left;
-  transition: background-color 0.2s;
-}
-
-.dropdown-item:hover {
-  background-color: var(--color-base-200);
-}
-
-.dropdown-item:first-child {
-  border-radius: 0.375rem 0.375rem 0 0;
-}
-
-.dropdown-item:last-child {
-  border-radius: 0 0 0.375rem 0.375rem;
-}
-
-.stats-content {
-  min-height: 400px;
-}
-
-.no-ledger-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 3rem;
-  text-align: center;
-}
-
-.warning-icon {
-  width: 3rem;
-  height: 3rem;
-  color: var(--color-warning);
-  margin-bottom: 1rem;
-}
-
-.warning-title {
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: var(--color-base-content);
-  margin-bottom: 0.5rem;
-}
-
-.warning-description {
-  color: var(--color-gray-500);
-  margin-bottom: 1.5rem;
-}
-
-.select-ledger-btn {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1.5rem;
-  background-color: var(--color-primary);
-  color: var(--color-primary-content);
-  border-radius: 0.375rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-  text-decoration: none;
-  transition: background-color 0.2s;
-}
-
-.select-ledger-btn:hover {
-  background-color: var(--color-primary-hover);
-}
-</style>

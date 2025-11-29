@@ -1,9 +1,46 @@
 <script setup lang="ts">
+import { CalendarClock, CalendarHeart, Calendar as CalendarIcon, TrendingUp } from 'lucide-vue-next';
+import { Badge, Card } from '@/components/ui';
 import { usePeriodStore as usePeriodStores } from '@/stores/periodStore';
+import { usePeriodRecords } from '../composables/usePeriodRecords';
 import PeriodListView from './PeriodListView.vue';
+import PeriodRecordForm from './PeriodRecordForm.vue';
+import type { PeriodRecords } from '@/schema/health/period';
 
-// Store
+// Store & Composables
 const periodStore = usePeriodStores();
+const { t } = useI18n();
+const periodRecords = usePeriodRecords(t);
+
+// UI State
+const showRecordForm = ref(false);
+const editingRecord = ref<PeriodRecords | undefined>();
+
+// Methods
+function openRecordForm(record?: PeriodRecords) {
+  editingRecord.value = record;
+  showRecordForm.value = true;
+}
+
+function closeRecordForm() {
+  showRecordForm.value = false;
+  editingRecord.value = undefined;
+}
+
+async function handleRecordCreate(record: any) {
+  await periodRecords.create(record);
+  closeRecordForm();
+}
+
+async function handleRecordUpdate(serialNum: string, record: any) {
+  await periodRecords.update(serialNum, record);
+  closeRecordForm();
+}
+
+async function handleRecordDelete(serialNum: string) {
+  await periodRecords.remove(serialNum);
+  closeRecordForm();
+}
 
 // Computed
 const stats = computed(() => periodStore.periodStats);
@@ -157,353 +194,134 @@ const symptomSeverityText = computed(() => {
 </script>
 
 <template>
-  <div class="period-stats-dashboard space-y-6">
+  <div class="max-w-7xl mx-auto space-y-6">
     <!-- 主要统计信息 -->
-    <div class="stats-grid">
-      <div class="stat-card current-phase">
-        <div class="stat-header">
-          <LucideCalendarHeart class="text-pink-500 wh-6" />
-          <h3 class="stat-title">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <Card shadow="md" padding="md" hoverable>
+        <div class="flex items-center gap-2 mb-3">
+          <CalendarHeart :size="24" class="text-pink-500" />
+          <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300">
             当前阶段
           </h3>
         </div>
-        <div class="stat-content">
-          <div class="stat-value">
+        <div class="mb-3">
+          <div class="text-xl font-bold text-gray-900 dark:text-white">
             {{ phaseLabel }}
           </div>
-          <div class="stat-description">
+          <div class="text-sm text-gray-500 dark:text-gray-400 mt-1">
             {{ phaseDescription }}
           </div>
         </div>
-        <div class="phase-indicator">
-          <div class="phase-progress" :style="{ width: `${phaseProgress}%` }" />
+        <div class="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+          <div
+            class="h-full bg-gradient-to-r from-pink-500 to-rose-500 rounded-full transition-all duration-500 ease-in-out"
+            :style="{ width: `${phaseProgress}%` }"
+          />
         </div>
-      </div>
+      </Card>
 
-      <div class="stat-card next-period">
-        <div class="stat-header">
-          <LucideCalendarClock class="text-blue-500 wh-6" />
-          <h3 class="stat-title">
+      <Card shadow="md" padding="md" hoverable>
+        <div class="flex items-center gap-2 mb-3">
+          <CalendarClock :size="24" class="text-blue-500" />
+          <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300">
             下次经期
           </h3>
         </div>
-        <div class="stat-content">
-          <div class="stat-value">
+        <div class="mb-3">
+          <div class="text-xl font-bold text-gray-900 dark:text-white">
             {{ nextPeriodText }}
           </div>
-          <div class="stat-description">
+          <div class="text-sm text-gray-500 dark:text-gray-400 mt-1">
             {{ nextPeriodDate }}
           </div>
         </div>
-        <div class="countdown-ring">
-          <svg class="countdown-svg" width="40" height="40">
+        <div class="relative flex items-center justify-center">
+          <svg class="-rotate-90" width="40" height="40">
             <circle
               cx="20" cy="20" r="16" stroke="currentColor" stroke-width="2" fill="none"
               class="text-gray-300 dark:text-gray-600"
             />
             <circle
-              cx="20" cy="20" r="16" stroke="currentColor" stroke-width="2" fill="none" class="text-blue-500"
+              cx="20" cy="20" r="16" stroke="currentColor" stroke-width="2" fill="none" class="text-blue-500 transition-all duration-500"
               :stroke-dasharray="countdownCircumference" :stroke-dashoffset="countdownOffset" stroke-linecap="round"
-              transform="rotate(-90 20 20)"
             />
           </svg>
-          <span class="countdown-text">{{ stats.daysUntilNext }}</span>
+          <span class="absolute text-xs font-bold text-blue-600 dark:text-blue-400">{{ stats.daysUntilNext }}</span>
         </div>
-      </div>
+      </Card>
 
-      <div class="stat-card cycle-info">
-        <div class="stat-header">
-          <LucideCalendarSync class="text-green-500 wh-6" />
-          <h3 class="stat-title">
+      <Card shadow="md" padding="md" hoverable>
+        <div class="flex items-center gap-2 mb-3">
+          <CalendarIcon :size="24" class="text-green-500" />
+          <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300">
             周期信息
           </h3>
         </div>
-        <div class="stat-content">
-          <div class="cycle-stats">
-            <div class="cycle-stat">
-              <span class="cycle-label">平均周期</span>
-              <span class="cycle-value">{{ stats.averageCycleLength }}天</span>
-            </div>
-            <div class="cycle-stat">
-              <span class="cycle-label">平均经期</span>
-              <span class="cycle-value">{{ stats.averagePeriodLength }}天</span>
-            </div>
+        <div class="space-y-3">
+          <div class="flex justify-between items-center">
+            <span class="text-sm text-gray-500 dark:text-gray-400">平均周期</span>
+            <Badge variant="success" size="sm">
+              {{ stats.averageCycleLength }}天
+            </Badge>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-sm text-gray-500 dark:text-gray-400">平均经期</span>
+            <Badge variant="success" size="sm">
+              {{ stats.averagePeriodLength }}天
+            </Badge>
           </div>
         </div>
-      </div>
+      </Card>
 
-      <div class="stat-card trends">
-        <div class="stat-header">
-          <LucideTrendingUp class="text-purple-500 wh-6" />
-          <h3 class="stat-title">
+      <Card shadow="md" padding="md" hoverable>
+        <div class="flex items-center gap-2 mb-3">
+          <TrendingUp :size="24" class="text-purple-500" />
+          <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300">
             趋势分析
           </h3>
         </div>
-        <div class="stat-content">
-          <div class="trend-item">
-            <span class="trend-label">周期规律性</span>
-            <div class="trend-indicator">
-              <div class="trend-bar" :style="{ width: `${cycleRegularity}%` }" />
-              <span class="trend-text">{{ cycleRegularityText }}</span>
+        <div class="space-y-4">
+          <div class="space-y-1">
+            <div class="flex justify-between items-center mb-1">
+              <span class="text-sm text-gray-500 dark:text-gray-400">周期规律性</span>
+              <span class="text-xs font-medium text-gray-600 dark:text-gray-300">{{ cycleRegularityText }}</span>
+            </div>
+            <div class="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+              <div
+                class="h-full bg-gradient-to-r from-blue-500 to-blue-600 rounded-full transition-all duration-500"
+                :style="{ width: `${cycleRegularity}%` }"
+              />
             </div>
           </div>
-          <div class="trend-item">
-            <span class="trend-label">症状严重度</span>
-            <div class="trend-indicator">
-              <div class="trend-bar severity" :style="{ width: `${symptomSeverity}%` }" />
-              <span class="trend-text">{{ symptomSeverityText }}</span>
+          <div class="space-y-1">
+            <div class="flex justify-between items-center mb-1">
+              <span class="text-sm text-gray-500 dark:text-gray-400">症状严重度</span>
+              <span class="text-xs font-medium text-gray-600 dark:text-gray-300">{{ symptomSeverityText }}</span>
+            </div>
+            <div class="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+              <div
+                class="h-full bg-gradient-to-r from-yellow-500 to-orange-500 rounded-full transition-all duration-500"
+                :style="{ width: `${symptomSeverity}%` }"
+              />
             </div>
           </div>
         </div>
-      </div>
+      </Card>
     </div>
 
-    <PeriodListView />
+    <PeriodListView
+      @add-record="openRecordForm()"
+      @edit-record="openRecordForm($event)"
+    />
+
+    <!-- 经期记录表单 -->
+    <PeriodRecordForm
+      v-if="showRecordForm"
+      :record="editingRecord"
+      @create="handleRecordCreate"
+      @update="handleRecordUpdate"
+      @delete="handleRecordDelete"
+      @cancel="closeRecordForm"
+    />
   </div>
 </template>
-
-<style scoped lang="postcss">
-.period-stats-dashboard {
-  max-width: 80rem;
-  margin: 0 auto;
-}
-
-.stats-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 1rem;
-}
-
-@media (min-width: 768px) {
-  .stats-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (min-width: 1024px) {
-  .stats-grid {
-    grid-template-columns: repeat(4, 1fr);
-  }
-}
-
-.stat-card {
-  background-color: var(--color-base-100);
-  border: 1px solid var(--color-base-300);
-  border-radius: 0.5rem;
-  padding: 1rem;
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  transition: box-shadow 0.2s ease-in-out;
-}
-
-.stat-card:hover {
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-}
-
-.dark .stat-card {
-  background-color: var(--color-base-200);
-  border-color: var(--color-base-300);
-}
-
-.stat-header {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 0.75rem;
-}
-
-.stat-title {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--color-base-content);
-}
-
-.dark .stat-title {
-  color: var(--color-base-content);
-}
-
-.stat-content {
-  margin-bottom: 0.75rem;
-}
-
-.stat-value {
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: var(--color-base-content);
-}
-
-.dark .stat-value {
-  color: var(--color-base-content);
-}
-
-.stat-description {
-  font-size: 0.875rem;
-  color: var(--color-neutral);
-  margin-top: 0.25rem;
-}
-
-.dark .stat-description {
-  color: var(--color-neutral-content);
-}
-
-.phase-indicator {
-  width: 100%;
-  background-color: var(--color-base-300);
-  border-radius: 9999px;
-  height: 0.5rem;
-}
-
-.dark .phase-indicator {
-  background-color: var(--color-neutral);
-}
-
-.phase-progress {
-  background-color: var(--color-accent);
-  height: 0.5rem;
-  border-radius: 9999px;
-  transition: all 0.5s ease-in-out;
-}
-
-.countdown-ring {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.countdown-svg {
-  transform: rotate(-90deg);
-}
-
-.countdown-text {
-  position: absolute;
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: var(--color-info);
-}
-
-.cycle-stats {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.cycle-stat {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.cycle-label {
-  font-size: 0.875rem;
-  color: var(--color-neutral);
-}
-
-.dark .cycle-label {
-  color: var(--color-neutral-content);
-}
-
-.cycle-value {
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: var(--color-base-content);
-}
-
-.dark .cycle-value {
-  color: var(--color-base-content);
-}
-
-.trend-item {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  margin-bottom: 0.75rem;
-}
-
-.trend-item:last-child {
-  margin-bottom: 0;
-}
-
-.trend-label {
-  font-size: 0.875rem;
-  color: var(--color-neutral);
-}
-
-.dark .trend-label {
-  color: var(--color-neutral-content);
-}
-
-.trend-indicator {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.trend-bar {
-  height: 0.5rem;
-  background-color: var(--color-primary);
-  border-radius: 9999px;
-  flex: 1;
-  transition: all 0.5s ease-in-out;
-}
-
-.trend-bar.severity {
-  background-color: var(--color-warning);
-}
-
-.trend-text {
-  font-size: 0.75rem;
-  color: var(--color-neutral);
-  flex-shrink: 0;
-}
-
-.dark .trend-text {
-  color: var(--color-neutral-content);
-}
-
-.flex-between {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.btn-primary {
-  padding: 0.375rem 0.75rem;
-  background-color: var(--color-primary);
-  color: var(--color-primary-content);
-  border-radius: 0.5rem;
-  transition: all 0.2s ease-in-out;
-  display: flex;
-  align-items: center;
-}
-
-.btn-primary:hover {
-  background-color: color-mix(in oklch, var(--color-primary) 85%, black);
-}
-
-.btn-primary:focus {
-  outline: none;
-  ring: 2px;
-  ring-color: var(--color-primary);
-}
-
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 2rem 0;
-}
-
-@media (max-width: 768px) {
-  .stats-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .stat-card {
-    padding: 0.75rem;
-  }
-
-  .stat-value {
-    font-size: 1.125rem;
-  }
-}
-</style>

@@ -157,7 +157,7 @@ defineExpose({
 </script>
 
 <template>
-  <div class="category-selector">
+  <div class="mb-0">
     <!-- 快捷选择区域 -->
     <div
       v-if="showQuickSelect && quickSelectCategories.length > 0"
@@ -165,58 +165,74 @@ defineExpose({
       role="group"
       :aria-label="quickSelectLabel"
     >
-      <div class="quick-select-label">
+      <div class="text-[0.8125rem] font-medium text-[light-dark(#0f172a,white)] opacity-80 mb-2">
         {{ quickSelectLabel }}
       </div>
-      <div class="quick-select-container">
+      <div class="flex flex-wrap gap-2">
         <button
           v-for="category in quickSelectCategories"
           :key="category.code"
           type="button"
-          class="quick-select-btn"
-          :class="{
-            'quick-select-btn-active': isCategorySelected(category.code),
-            'quick-select-btn-multiple': multiple && isCategorySelected(category.code),
-          }"
+          class="text-xs px-3 py-2 rounded-md border transition-all duration-200"
+          :class="[
+            isCategorySelected(category.code)
+              ? 'bg-[light-dark(#dbeafe,#1e3a8a)] border-[var(--color-primary)] text-[light-dark(#1e3a8a,#dbeafe)]'
+              : 'bg-[light-dark(white,#1e293b)] border-[light-dark(#e5e7eb,#334155)] text-[light-dark(#0f172a,white)] hover:bg-[light-dark(#f3f4f6,#334155)]',
+            disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer',
+            multiple && isCategorySelected(category.code) ? 'relative' : '',
+          ]"
           :disabled="disabled"
           :title="t(`common.categories.${lowercaseFirstLetter(category.code)}`)"
           @click="selectQuickCategory(category.code)"
         >
           {{ category.icon }}
+          <!-- 多选勾选标记 -->
+          <span
+            v-if="multiple && isCategorySelected(category.code)"
+            class="absolute -top-1 -right-1 bg-[var(--color-primary)] text-[light-dark(white,white)] rounded-full w-4 h-4 flex items-center justify-center text-xs"
+          >✓</span>
         </button>
       </div>
     </div>
 
     <!-- 全部分类列表 -->
     <div v-if="mergedCategories.length > 0" class="mb-3">
-      <div class="all-categories-header">
-        <div class="all-categories-label">
+      <div class="flex justify-between items-center mb-2">
+        <div class="text-[0.8125rem] font-medium text-[light-dark(#0f172a,white)] opacity-80">
           全部分类
         </div>
         <button
           type="button"
-          class="toggle-btn"
+          class="flex items-center gap-1 px-2 py-1 text-xs text-[var(--color-primary)] bg-transparent border-none cursor-pointer transition-opacity duration-200 hover:opacity-70"
           :title="showAllCategories ? '收起' : '展开'"
           @click="showAllCategories = !showAllCategories"
         >
-          <span class="toggle-icon">{{ showAllCategories ? '▲' : '▼' }}</span>
+          <span class="text-[0.625rem]">{{ showAllCategories ? '▲' : '▼' }}</span>
         </button>
       </div>
-      <div v-show="showAllCategories" class="all-categories-container">
+      <div
+        v-show="showAllCategories"
+        class="grid grid-cols-[repeat(auto-fill,minmax(75px,1fr))] gap-1 p-1.5 bg-[light-dark(#f3f4f6,#1e293b)] rounded-md max-sm:grid-cols-[repeat(auto-fill,minmax(70px,1fr))]"
+      >
         <button
           v-for="category in mergedCategories"
           :key="category.code"
           type="button"
-          class="category-item"
-          :class="{
-            'category-item-active': isCategorySelected(category.code),
-          }"
+          class="flex items-center gap-1 px-2 py-1.5 rounded border transition-all duration-200 text-xs max-sm:px-1.5 max-sm:py-1 max-sm:text-[0.6875rem]"
+          :class="[
+            isCategorySelected(category.code)
+              ? 'bg-[var(--color-primary)] border-[var(--color-primary)] text-[light-dark(white,white)]'
+              : 'bg-[light-dark(white,#1e293b)] border-[light-dark(#e5e7eb,#334155)] text-[light-dark(#0f172a,white)] hover:border-[var(--color-primary)] hover:bg-[light-dark(#dbeafe,#1e3a8a)] hover:-translate-y-0.5',
+            disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer',
+          ]"
           :disabled="disabled"
           :title="t(`common.categories.${lowercaseFirstLetter(category.code)}`)"
           @click="toggleCategory(category.code)"
         >
-          <span v-if="showIcons" class="category-icon">{{ category.icon }}</span>
-          <span class="category-name">{{ t(`common.categories.${lowercaseFirstLetter(category.code)}`) }}</span>
+          <span v-if="showIcons" class="text-sm flex-shrink-0 max-sm:text-xs">{{ category.icon }}</span>
+          <span class="flex-1 text-left whitespace-nowrap overflow-hidden text-ellipsis">
+            {{ t(`common.categories.${lowercaseFirstLetter(category.code)}`) }}
+          </span>
         </button>
       </div>
     </div>
@@ -225,7 +241,7 @@ defineExpose({
     <div
       v-if="errorMessage"
       :id="`${inputId}-error`"
-      class="error-message"
+      class="text-sm mt-1 text-[var(--color-error)]"
       role="alert"
       aria-live="polite"
     >
@@ -233,230 +249,8 @@ defineExpose({
     </div>
 
     <!-- 帮助文本 -->
-    <div v-if="helpText" class="help-text">
+    <div v-if="helpText" class="text-xs mt-2 text-[light-dark(#6b7280,#94a3b8)]">
       {{ helpText }}
     </div>
   </div>
 </template>
-
-<style scoped>
-.category-selector {
-  margin-bottom: 0;
-}
-
-.category-selector select {
-  height: 8rem; /* 32 * 0.25rem */
-  outline: none;
-}
-
-/* 标签样式 */
-.quick-select-label,
-.all-categories-label {
-  font-size: 0.8125rem;
-  font-weight: 500;
-  color: var(--color-base-content);
-  opacity: 0.8;
-}
-
-/* 全部分类头部 */
-.all-categories-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 0.5rem;
-}
-
-/* 展开/折叠按钮 */
-.toggle-btn {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  padding: 0.25rem 0.5rem;
-  font-size: 0.75rem;
-  color: var(--color-primary);
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.toggle-btn:hover {
-  opacity: 0.7;
-}
-
-.toggle-icon {
-  font-size: 0.625rem;
-}
-
-/* 快捷选择容器 */
-.quick-select-container {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-/* 快捷选择按钮 */
-.quick-select-btn {
-  font-size: 0.75rem;
-  padding: 0.5rem 0.75rem;
-  border-radius: 0.375rem;
-  border: 1px solid var(--color-neutral);
-  background-color: var(--color-base-100);
-  color: var(--color-base-content);
-  cursor: pointer;
-  transition: all 0.2s ease-in-out;
-}
-
-.quick-select-btn:hover {
-  background-color: var(--color-base-200);
-  border-color: var(--color-neutral);
-}
-
-.quick-select-btn:focus {
-  outline: none;
-  border-color: transparent;
-  box-shadow: 0 0 0 2px var(--color-primary);
-}
-
-.quick-select-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-/* 激活状态 */
-.quick-select-btn-active {
-  background-color: var(--color-primary-soft);
-  border-color: var(--color-primary);
-  color: var(--color-primary-content);
-}
-
-/* 多选状态 */
-.quick-select-btn-multiple {
-  position: relative;
-}
-
-.quick-select-btn-multiple::after {
-  content: "✓";
-  position: absolute;
-  top: -0.25rem;
-  right: -0.25rem;
-  background-color: var(--color-primary);
-  color: var(--color-primary-content);
-  border-radius: 9999px;
-  width: 1rem;
-  height: 1rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.75rem;
-}
-
-/* 错误提示 */
-.error-message {
-  font-size: 0.875rem;
-  margin-top: 0.25rem;
-  color: var(--color-error);
-}
-
-/* 帮助文本 */
-.help-text {
-  font-size: 0.75rem;
-  margin-top: 0.5rem;
-  color: var(--color-neutral);
-}
-
-/* 滚动条样式 */
-.category-selector select::-webkit-scrollbar {
-  width: 8px;
-}
-
-.category-selector select::-webkit-scrollbar-track {
-  background-color: var(--color-base-200);
-}
-
-.category-selector select::-webkit-scrollbar-thumb {
-  background-color: var(--color-neutral);
-  border-radius: 0.375rem;
-}
-
-.category-selector select::-webkit-scrollbar-thumb:hover {
-  background-color: var(--color-base-content);
-}
-
-/* 全部分类容器 */
-.all-categories-container {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(75px, 1fr));
-  gap: 0.25rem;
-  max-height: none;
-  overflow-y: visible;
-  padding: 0.375rem;
-  background: var(--color-base-200);
-  border-radius: 0.375rem;
-}
-
-/* 分类项按钮 */
-.category-item {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  padding: 0.375rem 0.5rem;
-  border-radius: 0.25rem;
-  border: 1px solid var(--color-base-300);
-  background-color: var(--color-base-100);
-  color: var(--color-base-content);
-  cursor: pointer;
-  transition: all 0.2s;
-  font-size: 0.75rem;
-}
-
-.category-item:hover {
-  border-color: var(--color-primary);
-  background-color: var(--color-primary-soft);
-  transform: translateY(-1px);
-}
-
-.category-item-active {
-  background-color: var(--color-primary);
-  border-color: var(--color-primary);
-  color: var(--color-primary-content);
-}
-
-.category-icon {
-  font-size: 0.875rem;
-  flex-shrink: 0;
-}
-
-.category-name {
-  flex: 1;
-  text-align: left;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* 响应式：小屏幕 */
-@media (max-width: 640px) {
-  .category-selector select {
-    width: 100% !important;
-  }
-
-  .quick-select-btn {
-    font-size: 0.75rem;
-    padding: 0.25rem 0.5rem;
-  }
-
-  .all-categories-container {
-    grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
-  }
-
-  .category-item {
-    padding: 0.25rem 0.375rem;
-    font-size: 0.6875rem;
-  }
-
-  .category-icon {
-    font-size: 0.75rem;
-  }
-}
-</style>

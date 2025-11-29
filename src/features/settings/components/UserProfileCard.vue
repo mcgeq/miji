@@ -22,10 +22,6 @@ function getInitials(name: string): string {
     .slice(0, 2);
 }
 
-function getRoleClass(_role?: string): string {
-  return 'user-profile-role-badge';
-}
-
 function getRoleText(role?: string): string {
   const roleTexts = {
     Admin: '管理员',
@@ -107,84 +103,81 @@ async function handleProfileUpdate(data: Partial<AuthUser>) {
 </script>
 
 <template>
-  <div class="user-profile-card">
+  <div class="relative p-8 rounded-2xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-lg overflow-hidden">
     <!-- 背景装饰 -->
-    <div class="user-profile-pattern" />
+    <div class="absolute inset-0 opacity-5 dark:opacity-10 pointer-events-none" style="background-image: url('data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%239333ea\' fill-opacity=\'1\'%3E%3Ccircle cx=\'30\' cy=\'30\' r=\'2\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')" />
 
-    <div class="user-profile-content">
-      <div class="user-profile-header">
-        <div class="user-profile-avatar-wrapper">
-          <div class="user-profile-avatar-container">
+    <div class="relative z-10">
+      <div class="flex flex-col sm:flex-row items-center sm:items-start gap-6 mb-8">
+        <div class="relative flex-shrink-0 group">
+          <div class="relative w-24 h-24 rounded-full">
             <img
               v-if="user?.avatarUrl"
               :src="user.avatarUrl"
               :alt="user.name"
-              class="user-profile-avatar-image"
+              class="w-full h-full rounded-full border-4 border-gray-200 dark:border-gray-700 object-cover shadow-xl"
             >
-            <div v-else class="user-profile-avatar-fallback">
+            <div v-else class="w-full h-full rounded-full border-4 border-gray-200 dark:border-gray-700 bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-2xl font-bold text-white shadow-xl">
               {{ getInitials(user?.name || '') }}
             </div>
           </div>
           <button
-            class="user-profile-avatar-edit"
+            class="absolute right-0 bottom-0 p-2 rounded-full bg-blue-600 hover:bg-blue-700 text-white border-2 border-white dark:border-gray-800 shadow-lg transition-all hover:scale-110 focus:outline-none focus:ring-4 focus:ring-blue-500/20"
             @click="handleAvatarEdit"
           >
-            <Camera class="user-profile-avatar-edit-icon" />
+            <Camera class="w-4 h-4" />
           </button>
         </div>
 
-        <div class="user-profile-info">
-          <h2 class="user-profile-name">
+        <div class="flex-1 text-center sm:text-left">
+          <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">
             {{ user?.name || '用户' }}
           </h2>
-          <p class="user-profile-email">
+          <p class="text-gray-600 dark:text-gray-400 mb-3">
             {{ user?.email || '' }}
           </p>
           <div>
-            <span
-              class="user-profile-role-badge badge-with-bg"
-              :class="getRoleClass(user?.role)"
-            >
+            <span class="inline-block text-xs font-semibold px-3 py-1.5 rounded-full uppercase tracking-wide bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300">
               {{ getRoleText(user?.role) }}
             </span>
           </div>
         </div>
       </div>
 
-      <div class="user-profile-stats">
-        <div class="user-profile-stat">
-          <div class="user-profile-stat-label">
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
+        <div class="text-center p-4 rounded-lg bg-gray-50 dark:bg-gray-900/50">
+          <div class="text-sm text-gray-600 dark:text-gray-400 mb-1">
             序列号
           </div>
-          <div class="user-profile-stat-value">
+          <div class="text-base font-semibold text-gray-900 dark:text-white break-words">
             {{ formatSerialNum(user?.serialNum) }}
           </div>
         </div>
-        <div class="user-profile-stat">
-          <div class="user-profile-stat-label">
+        <div class="text-center p-4 rounded-lg bg-gray-50 dark:bg-gray-900/50">
+          <div class="text-sm text-gray-600 dark:text-gray-400 mb-1">
             时区
           </div>
-          <div class="user-profile-stat-value">
+          <div class="text-base font-semibold text-gray-900 dark:text-white break-words">
             {{ user?.timezone || 'Asia/Shanghai' }}
           </div>
         </div>
-        <div class="user-profile-stat">
-          <div class="user-profile-stat-label">
+        <div class="text-center p-4 rounded-lg bg-gray-50 dark:bg-gray-900/50">
+          <div class="text-sm text-gray-600 dark:text-gray-400 mb-1">
             语言
           </div>
-          <div class="user-profile-stat-value">
+          <div class="text-base font-semibold text-gray-900 dark:text-white break-words">
             {{ getLanguageText(user?.language) }}
           </div>
         </div>
       </div>
 
       <!-- 只保留编辑资料按钮，移除退出登录按钮 -->
-      <div class="user-profile-actions">
+      <div class="flex justify-center">
         <button
-          class="user-profile-edit-button"
+          class="flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors shadow-md hover:shadow-lg"
           @click="handleEditProfile"
         >
-          <Edit class="user-profile-edit-icon" />
+          <Edit class="w-4 h-4" />
           编辑资料
         </button>
       </div>
@@ -205,9 +198,3 @@ async function handleProfileUpdate(data: Partial<AuthUser>) {
     />
   </div>
 </template>
-
-<style scoped lang="postcss">
-.badge-with-bg {
-  background-color: rgba(255, 255, 255, 0.2);
-}
-</style>

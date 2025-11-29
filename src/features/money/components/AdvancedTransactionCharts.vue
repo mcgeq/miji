@@ -1,5 +1,7 @@
 <script setup lang="ts">
+import { BarChart3 } from 'lucide-vue-next';
 import VChart from 'vue-echarts';
+import { Card, Spinner, Switch } from '@/components/ui';
 import { chartUtils, defaultTheme, initECharts } from '@/utils/echarts';
 
 const props = defineProps<Props>();
@@ -273,220 +275,69 @@ const trendChartOption = computed(() => {
 </script>
 
 <template>
-  <div class="advanced-charts">
-    <div class="charts-grid">
-      <!-- 趋势图控制面板 -->
-      <div class="chart-card full-width">
-        <div class="chart-header">
-          <h3 class="chart-title">
-            收支趋势分析
-          </h3>
-          <div class="chart-controls">
-            <div class="control-group">
-              <label class="control-label">图表类型:</label>
-              <select v-model="chartType" class="control-select">
-                <option value="bar">
-                  柱状图
-                </option>
-                <option value="line">
-                  折线图
-                </option>
-                <option value="area">
-                  面积图
-                </option>
-              </select>
-            </div>
-            <div class="control-group">
-              <label class="control-label">
-                <input v-model="showNetIncome" type="checkbox" class="control-checkbox">
-                显示净收入
-              </label>
-            </div>
-          </div>
-        </div>
+  <div class="mb-8">
+    <Card shadow="md" padding="lg">
+      <!-- 图表头部 -->
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+          收支趋势分析
+        </h3>
 
-        <div class="chart-content">
-          <div v-if="loading" class="chart-loading">
-            <div class="loading-spinner" />
-            <div class="loading-text">
-              加载中...
-            </div>
+        <!-- 控制面板 -->
+        <div class="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+          <!-- 图表类型选择 -->
+          <div class="flex items-center gap-2">
+            <label class="text-sm text-gray-600 dark:text-gray-400">图表类型:</label>
+            <select
+              v-model="chartType"
+              class="px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+            >
+              <option value="bar">
+                柱状图
+              </option>
+              <option value="line">
+                折线图
+              </option>
+              <option value="area">
+                面积图
+              </option>
+            </select>
           </div>
 
-          <div v-else-if="currentTrends.length === 0" class="chart-empty">
-            <div class="empty-icon">
-              📊
-            </div>
-            <div class="empty-text">
-              暂无数据
-            </div>
-          </div>
-
-          <VChart
-            v-else
-            :option="trendChartOption"
-            class="chart"
-            autoresize
+          <!-- 净收入开关 -->
+          <Switch
+            v-model="showNetIncome"
+            label="显示净收入"
           />
         </div>
       </div>
-    </div>
+
+      <!-- 图表内容 -->
+      <div class="min-h-[300px] sm:min-h-[400px]">
+        <!-- 加载状态 -->
+        <div v-if="loading" class="flex flex-col items-center justify-center h-[300px] sm:h-[400px] gap-4">
+          <Spinner size="lg" />
+          <div class="text-sm text-gray-500 dark:text-gray-400">
+            加载中...
+          </div>
+        </div>
+
+        <!-- 空状态 -->
+        <div v-else-if="currentTrends.length === 0" class="flex flex-col items-center justify-center h-[300px] sm:h-[400px] gap-4">
+          <BarChart3 :size="48" class="text-gray-400 dark:text-gray-500 opacity-50" />
+          <div class="text-sm text-gray-500 dark:text-gray-400">
+            暂无数据
+          </div>
+        </div>
+
+        <!-- 图表 -->
+        <VChart
+          v-else
+          :option="trendChartOption"
+          class="w-full h-[300px] sm:h-[400px]"
+          autoresize
+        />
+      </div>
+    </Card>
   </div>
 </template>
-
-<style scoped lang="postcss">
-.advanced-charts {
-  margin-bottom: 2rem;
-}
-
-.charts-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 1.5rem;
-}
-
-.chart-card {
-  background: var(--color-base-100);
-  border: 1px solid var(--color-base-300);
-  border-radius: 0.5rem;
-  padding: 1.5rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.chart-card.full-width {
-  grid-column: 1 / -1;
-}
-
-.chart-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1rem;
-}
-
-.chart-title {
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: var(--color-accent-content);
-  margin-bottom: 0.25rem;
-}
-
-.chart-subtitle {
-  font-size: 0.875rem;
-  color: var(--color-neutral);
-}
-
-.chart-controls {
-  display: flex;
-  gap: 1rem;
-  align-items: center;
-}
-
-.control-group {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.control-label {
-  font-size: 0.875rem;
-  color: var(--color-neutral);
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-}
-
-.control-select {
-  padding: 0.25rem 0.5rem;
-  border: 1px solid var(--color-base-300);
-  border-radius: 0.25rem;
-  background: var(--color-base-100);
-  color: var(--color-accent-content);
-  font-size: 0.875rem;
-}
-
-.control-checkbox {
-  margin: 0;
-}
-
-.chart-content {
-  min-height: 400px;
-}
-
-.chart {
-  width: 100%;
-  height: 400px;
-}
-
-.chart-loading {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 400px;
-  gap: 1rem;
-}
-
-.loading-spinner {
-  width: 40px;
-  height: 40px;
-  border: 3px solid var(--color-base-300);
-  border-top: 3px solid var(--color-primary);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-.loading-text {
-  color: var(--color-neutral);
-  font-size: 0.875rem;
-}
-
-.chart-empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 400px;
-  gap: 1rem;
-}
-
-.empty-icon {
-  font-size: 3rem;
-  opacity: 0.5;
-}
-
-.empty-text {
-  color: var(--color-neutral);
-  font-size: 0.875rem;
-}
-
-@media (max-width: 768px) {
-  .chart-card {
-    padding: 1rem;
-  }
-
-  .chart-controls {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.5rem;
-  }
-
-  .chart-content {
-    min-height: 300px;
-  }
-
-  .chart {
-    height: 300px;
-  }
-
-  .chart-loading,
-  .chart-empty {
-    height: 300px;
-  }
-}
-</style>

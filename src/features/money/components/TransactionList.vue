@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import SimplePagination from '@/components/common/SimplePagination.vue';
+import FilterBar from '@/components/common/FilterBar.vue';
+import { EmptyState, LoadingState, Pagination } from '@/components/ui';
 import { SortDirection, TransactionTypeSchema } from '@/schema/common';
 import { useTransactionStore } from '@/stores/money';
 import { lowercaseFirstLetter } from '@/utils/common';
@@ -112,7 +113,7 @@ function resetFilters() {
     amountMax: undefined,
     currency: undefined,
     accountSerialNum: '',
-    category: undefined,
+    category: '',
     subCategory: undefined,
     paymentMethod: undefined,
     actualPayerAccount: undefined,
@@ -217,13 +218,18 @@ defineExpose({
 </script>
 
 <template>
-  <div class="money-tab-25">
+  <div class="space-y-4 w-full">
     <!-- 过滤器区域 -->
-    <div class="screening-filtering">
-      <div class="filter-flex-wrap">
+    <FilterBar
+      :show-more-filters="showMoreFilters"
+      @toggle-filters="toggleFilters"
+      @reset="resetFilters"
+    >
+      <template #primary>
+        <!-- 交易类型过滤 -->
         <select
           v-model="filters.transactionType"
-          class="screening-filtering-select"
+          class="px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
         >
           <option value="">
             {{ t('common.actions.all') }}
@@ -238,82 +244,56 @@ defineExpose({
             {{ t('financial.transaction.transfer') }}
           </option>
         </select>
-      </div>
-
-      <template v-if="showMoreFilters">
-        <div class="filter-flex-wrap">
-          <select
-            v-model="filters.accountSerialNum"
-            class="screening-filtering-select"
-          >
-            <option value="">
-              {{ t('common.actions.all') }}{{ t('financial.account.account') }}
-            </option>
-            <option v-for="account in props.accounts" :key="account.serialNum" :value="account.serialNum">
-              {{ account.name }}
-            </option>
-          </select>
-        </div>
-
-        <div class="filter-flex-wrap">
-          <select
-            v-model="filters.category"
-            class="screening-filtering-select"
-          >
-            <option value="">
-              {{ t('categories.allCategory') }}
-            </option>
-            <option v-for="category in uniqueCategories" :key="category.type" :value="category.type">
-              {{ category.option }}
-            </option>
-          </select>
-        </div>
-
-        <div class="filter-flex-wrap">
-          <input
-            v-model="filters.dateStart" type="date"
-            class="screening-filtering-select"
-          >
-        </div>
-
-        <div class="filter-flex-wrap">
-          <input
-            v-model="filters.dateEnd" type="date"
-            class="screening-filtering-select"
-          >
-        </div>
       </template>
 
-      <div class="filter-button-group">
-        <button
-          class="screening-filtering-select"
-          @click="toggleFilters"
+      <template #secondary>
+        <select
+          v-model="filters.accountSerialNum"
+          class="px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
         >
-          <LucideMoreHorizontal class="wh-4 mr-1" />
-        </button>
-        <button
-          class="screening-filtering-select"
-          @click="resetFilters"
+          <option value="">
+            {{ t('common.actions.all') }}{{ t('financial.account.account') }}
+          </option>
+          <option v-for="account in props.accounts" :key="account.serialNum" :value="account.serialNum">
+            {{ account.name }}
+          </option>
+        </select>
+
+        <select
+          v-model="filters.category"
+          class="px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
         >
-          <LucideRotateCcw class="wh-4 mr-1" />
-        </button>
-      </div>
-    </div>
+          <option value="">
+            {{ t('categories.allCategory') }}
+          </option>
+          <option v-for="category in uniqueCategories" :key="category.type" :value="category.type">
+            {{ category.option }}
+          </option>
+        </select>
+
+        <input
+          v-model="filters.dateStart"
+          type="date"
+          class="px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+        >
+
+        <input
+          v-model="filters.dateEnd"
+          type="date"
+          class="px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+        >
+      </template>
+    </FilterBar>
 
     <!-- 加载状态 -->
-    <div v-if="loading" class="loading-state">
-      {{ t('common.loading') }}
-    </div>
+    <LoadingState v-if="loading" :message="t('common.loading')" />
 
     <!-- 空状态 -->
-    <div v-else-if="transactions.length === 0" class="empty-state">
-      <div class="text-6xl mb-4 opacity-50">
-        <i class="icon-list" />
-      </div>
-      <div class="text-base">
-        暂无交易记录
-      </div>
-    </div>
+    <EmptyState
+      v-else-if="transactions.length === 0"
+      icon="📝"
+      message="暂无交易记录"
+    />
 
     <!-- 交易列表 -->
     <TransactionTable
@@ -330,9 +310,8 @@ defineExpose({
     />
 
     <!-- 分页组件 - 移动端优化版 -->
-    <div v-if="pagination.totalItems > pagination.pageSize" class="pagination-container">
-      <!-- 桌面端完整分页 -->
-      <SimplePagination
+    <div v-if="pagination.totalItems > pagination.pageSize" class="mt-4 flex justify-center md:mb-0 mb-16 pb-4">
+      <Pagination
         :current-page="pagination.currentPage"
         :total-pages="pagination.totalPages"
         :total-items="pagination.totalItems"
@@ -350,132 +329,3 @@ defineExpose({
     </div>
   </div>
 </template>
-
-<style scoped lang="postcss">
-.money-option-btn {
-  padding: 0.5rem 0.75rem;
-  border: 2px solid var(--color-base-300);
-  border-radius: 0.5rem;
-  color: var(--color-neutral);
-  background-color: var(--color-base-100);
-  transition: all 0.2s ease;
-  font-weight: 500;
-  cursor: pointer;
-}
-
-.money-option-btn:hover {
-  color: var(--color-primary);
-  border-color: var(--color-primary);
-  background-color: var(--color-primary-soft);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-sm);
-}
-
-.money-option-btn:active {
-  transform: translateY(0);
-}
-
-.empty-state {
-  padding: 4rem 1rem;
-  text-align: center;
-  color: var(--color-neutral);
-  background: linear-gradient(to bottom, var(--color-base-100), var(--color-base-200));
-  border-radius: 1rem;
-  border: 2px dashed var(--color-base-300);
-  margin: 1rem 0;
-}
-
-.empty-state .text-6xl {
-  font-size: 3rem;
-  margin-bottom: 1rem;
-  opacity: 0.3;
-}
-
-.empty-state .text-base {
-  font-size: 1rem;
-  font-weight: 500;
-  color: var(--color-neutral);
-}
-
-.loading-state {
-  padding: 4rem 1rem;
-  text-align: center;
-  color: var(--color-neutral);
-  background: linear-gradient(to bottom, var(--color-base-100), var(--color-base-200));
-  border-radius: 1rem;
-  border: 2px solid var(--color-base-300);
-  margin: 1rem 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1rem;
-}
-
-.loading-state::before {
-  content: '';
-  width: 3rem;
-  height: 3rem;
-  border: 3px solid var(--color-base-300);
-  border-top-color: var(--color-primary);
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-.loading-wrapper {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  align-items: center;
-}
-
-.filter-button-group {
-  display: flex;
-  gap: 0.25rem;
-}
-
-.pagination-container {
-  margin-top: 1rem;
-  display: flex;
-  justify-content: center;
-}
-
-/* 移动端分页组件底部安全间距 */
-@media (max-width: 768px) {
-  .pagination-container {
-    margin-bottom: 4rem; /* 为底部导航栏预留空间 */
-    padding-bottom: 1rem; /* 额外的底部内边距 */
-  }
-}
-
-.disabled-btn {
-  color: #6b7280 !important;
-  background-color: #e5e7eb !important;
-  cursor: not-allowed !important;
-  opacity: 0.6 !important;
-}
-
-.disabled-btn:hover {
-  color: #6b7280 !important;
-  background-color: #e5e7eb !important;
-  transform: none !important;
-  box-shadow: none !important;
-}
-
-.money-option-btn:disabled {
-  color: #6b7280 !important;
-  background-color: #e5e7eb !important;
-  cursor: not-allowed !important;
-  opacity: 0.6 !important;
-}
-
-.money-option-btn:disabled:hover {
-  color: #6b7280 !important;
-  background-color: #e5e7eb !important;
-  transform: none !important;
-  box-shadow: none !important;
-}
-</style>

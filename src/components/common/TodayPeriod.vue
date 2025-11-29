@@ -48,14 +48,14 @@ async function handleDailyDelete(serialNum: string) {
 </script>
 
 <template>
-  <div class="today-period">
+  <div class="w-full flex flex-col md:flex-row gap-2 md:gap-3 p-2 md:p-3 overflow-hidden">
     <!-- 日历组件 -->
-    <div class="calendar-card">
+    <div class="flex-1">
       <PeriodCalendar :selected-date="selectedDate" @date-select="handleDateSelect" />
     </div>
 
     <!-- 今日信息组件 -->
-    <div class="today-info-wrapper">
+    <div class="w-full md:w-88 flex-shrink-0 self-stretch min-h-0 flex flex-col">
       <PeriodTodayInfo
         :current-phase-label="currentPhaseLabel"
         :days-until-next="daysUntilNext"
@@ -77,37 +77,3 @@ async function handleDailyDelete(serialNum: string) {
     />
   </div>
 </template>
-
-<style scoped lang="postcss">
-.today-period {
-  width: 100%;
-  display: flex;
-  flex-direction: row;
-  gap: 0.75rem;
-  padding: 0.75rem;
-  overflow: hidden;
-}
-
-/* 今日信息包装容器 */
-.today-info-wrapper {
-  flex-shrink: 0;
-  width: 22rem;
-  align-self: stretch;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-}
-
-/* 移动端布局：上下排列 */
-@media (max-width: 768px) {
-  .today-period {
-    flex-direction: column;
-    gap: 0.5rem;
-    padding: 0.5rem;
-  }
-
-  .today-info-wrapper {
-    width: 100%;
-  }
-}
-</style>

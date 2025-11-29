@@ -1,68 +1,40 @@
 <script setup lang="ts">
-import { Calendar, Pencil, Repeat, X } from 'lucide-vue-next';
+import { Calendar, Pencil, Repeat } from 'lucide-vue-next';
+import { Modal } from '@/components/ui';
 
-const props = defineProps<{ show: boolean }>();
+defineProps<{ show: boolean }>();
 const emit = defineEmits(['editTitle', 'editDueDate', 'editRepeat', 'close']);
-const show = computed(() => props.show);
+
+const options = [
+  { icon: Pencil, label: '编辑标题', action: 'editTitle' },
+  { icon: Calendar, label: '设置日期', action: 'editDueDate' },
+  { icon: Repeat, label: '设置重复', action: 'editRepeat' },
+];
+
+function handleOption(action: string) {
+  emit(action as any);
+  emit('close');
+}
 </script>
 
 <template>
-  <Teleport to="body">
-    <transition name="fade">
-      <div
-        v-if="show"
-        class="modal-mask"
-        @click="emit('close')"
+  <Modal
+    :open="show"
+    title="编辑选项"
+    size="sm"
+    :show-footer="false"
+    @close="emit('close')"
+  >
+    <div class="space-y-2">
+      <button
+        v-for="option in options"
+        :key="option.action"
+        class="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+        @click="handleOption(option.action)"
       >
-        <transition name="scale">
-          <div
-            v-if="show"
-            class="modal-mask-window"
-            @click.stop
-          >
-            <button
-              class="modal-btn-icon"
-              @click="emit('editTitle')"
-            >
-              <Pencil class="wh-5" />
-            </button>
-            <button
-              class="modal-btn-icon"
-              @click="emit('editDueDate')"
-            >
-              <Calendar class="wh-5" />
-            </button>
-            <button
-              class="modal-btn-icon"
-              @click="emit('editRepeat')"
-            >
-              <Repeat class="wh-5" />
-            </button>
-            <button
-              class="modal-btn-x"
-              @click="emit('close')"
-            >
-              <X class="wh-4" />
-            </button>
-          </div>
-        </transition>
-      </div>
-    </transition>
-  </Teleport>
+        <component :is="option.icon" class="w-5 h-5" />
+        <span>{{ option.label }}</span>
+      </button>
+    </div>
+  </Modal>
 </template>
-
-<style scoped>
-.fade-enter-active, .fade-leave-active {
-  transition: opacity 0.25s ease-out, transform 0.25s ease-out;
-}
-.fade-enter-from, .fade-leave-to {
-  opacity: 0;
-  transform: translateY(8px);
-}
-.scale-enter-active, .scale-leave-active {
-  transition: transform 0.2s ease-out;
-}
-.scale-enter-from, .scale-leave-to {
-  transform: scale(0.9);
-}
-</style>

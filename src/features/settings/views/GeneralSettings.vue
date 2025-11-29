@@ -211,25 +211,25 @@ async function handleReset() {
 </script>
 
 <template>
-  <div class="general-settings-container">
+  <div class="max-w-4xl w-full">
     <!-- 语言和地区 -->
-    <div class="general-settings-section">
-      <h3 class="general-settings-title">
+    <div class="mb-10">
+      <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-6 pb-2 border-b-2 border-gray-200 dark:border-gray-700">
         语言和地区
       </h3>
 
-      <div class="general-settings-items">
-        <div class="general-setting-item">
-          <div class="general-setting-label-wrapper">
-            <label class="general-setting-label">界面语言</label>
-            <p class="general-setting-description">
+      <div class="space-y-6">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between py-6 border-b border-gray-200 dark:border-gray-700">
+          <div class="mb-4 sm:mb-0">
+            <label class="block font-medium text-gray-900 dark:text-white mb-1">界面语言</label>
+            <p class="text-sm text-gray-600 dark:text-gray-400">
               选择您偏好的界面语言
             </p>
           </div>
-          <div class="general-setting-control">
+          <div class="sm:ml-8">
             <select
               v-model="selectedLocale"
-              class="general-select"
+              class="w-full sm:w-48 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none"
               @change="handleLocaleChange"
             >
               <option
@@ -243,17 +243,17 @@ async function handleReset() {
           </div>
         </div>
 
-        <div class="general-setting-item">
-          <div class="general-setting-label-wrapper">
-            <label class="general-setting-label">时区</label>
-            <p class="general-setting-description">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between py-6 border-b border-gray-200 dark:border-gray-700">
+          <div class="mb-4 sm:mb-0">
+            <label class="block font-medium text-gray-900 dark:text-white mb-1">时区</label>
+            <p class="text-sm text-gray-600 dark:text-gray-400">
               设置您所在的时区
             </p>
           </div>
-          <div class="general-setting-control">
+          <div class="sm:ml-8">
             <select
               v-model="selectedTimezone"
-              class="general-select"
+              class="w-full sm:w-48 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none"
             >
               <option
                 v-for="timezone in availableTimezones"
@@ -269,51 +269,53 @@ async function handleReset() {
     </div>
 
     <!-- 显示设置 -->
-    <div class="general-settings-section">
-      <h3 class="general-settings-title">
+    <div class="mb-10">
+      <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-6 pb-2 border-b-2 border-gray-200 dark:border-gray-700">
         显示设置
       </h3>
 
-      <div class="general-settings-items">
-        <div class="general-setting-item">
-          <div class="general-setting-label-wrapper">
-            <label class="general-setting-label">主题模式</label>
-            <p class="general-setting-description">
+      <div class="space-y-6">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between py-6 border-b border-gray-200 dark:border-gray-700">
+          <div class="mb-4 sm:mb-0">
+            <label class="block font-medium text-gray-900 dark:text-white mb-1">主题模式</label>
+            <p class="text-sm text-gray-600 dark:text-gray-400">
               选择浅色或深色主题
             </p>
           </div>
-          <div class="general-setting-control">
-            <div class="theme-buttons">
+          <div class="sm:ml-8">
+            <div class="flex gap-2">
               <button
                 v-for="theme in themes"
                 :key="theme.value"
-                class="theme-button"
-                :class="selectedTheme === theme.value ? 'theme-button-active' : 'theme-button-inactive'"
+                class="text-sm font-medium px-4 py-2 border rounded-lg flex items-center gap-2 transition-all"
+                :class="selectedTheme === theme.value
+                  ? 'border-blue-600 bg-blue-600 text-white'
+                  : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white hover:border-blue-600 hover:bg-gray-50 dark:hover:bg-gray-700'"
                 @click="handleThemeChange(theme.value)"
               >
-                <component :is="theme.icon" class="theme-button-icon" />
+                <component :is="theme.icon" class="w-4 h-4" />
                 {{ theme.label }}
               </button>
             </div>
           </div>
         </div>
 
-        <div class="general-setting-item">
-          <div class="general-setting-label-wrapper">
-            <label class="general-setting-label">紧凑模式</label>
-            <p class="general-setting-description">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between py-6 border-b border-gray-200 dark:border-gray-700">
+          <div class="mb-4 sm:mb-0">
+            <label class="block font-medium text-gray-900 dark:text-white mb-1">紧凑模式</label>
+            <p class="text-sm text-gray-600 dark:text-gray-400">
               使用更紧凑的界面布局
             </p>
           </div>
-          <div class="general-setting-control">
-            <label class="toggle-switch">
+          <div class="sm:ml-8">
+            <label class="inline-flex cursor-pointer items-center relative">
               <input
                 v-model="compactMode"
                 type="checkbox"
-                class="toggle-switch-input"
+                class="sr-only peer"
               >
-              <div class="toggle-switch-track">
-                <div class="toggle-switch-thumb" />
+              <div class="w-12 h-6 bg-gray-300 dark:bg-gray-600 rounded-full peer peer-checked:bg-blue-600 transition-colors relative">
+                <div class="absolute w-5 h-5 bg-white rounded-full top-0.5 left-0.5 peer-checked:translate-x-6 transition-transform" />
               </div>
             </label>
           </div>
@@ -322,28 +324,28 @@ async function handleReset() {
     </div>
 
     <!-- 系统设置 -->
-    <div class="general-settings-section">
-      <h3 class="general-settings-title">
+    <div class="mb-10">
+      <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-6 pb-2 border-b-2 border-gray-200 dark:border-gray-700">
         系统设置
       </h3>
 
-      <div class="general-settings-items">
-        <div class="general-setting-item">
-          <div class="general-setting-label-wrapper">
-            <label class="general-setting-label">开机自启动</label>
-            <p class="general-setting-description">
+      <div class="space-y-6">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between py-6 border-b border-gray-200 dark:border-gray-700">
+          <div class="mb-4 sm:mb-0">
+            <label class="block font-medium text-gray-900 dark:text-white mb-1">开机自启动</label>
+            <p class="text-sm text-gray-600 dark:text-gray-400">
               系统启动时自动运行应用
             </p>
           </div>
-          <div class="general-setting-control">
-            <label class="toggle-switch">
+          <div class="sm:ml-8">
+            <label class="inline-flex cursor-pointer items-center relative">
               <input
                 v-model="autoStart"
                 type="checkbox"
-                class="toggle-switch-input"
+                class="sr-only peer"
               >
-              <div class="toggle-switch-track">
-                <div class="toggle-switch-thumb" />
+              <div class="w-12 h-6 bg-gray-300 dark:bg-gray-600 rounded-full peer peer-checked:bg-blue-600 transition-colors relative">
+                <div class="absolute w-5 h-5 bg-white rounded-full top-0.5 left-0.5 peer-checked:translate-x-6 transition-transform" />
               </div>
             </label>
           </div>
@@ -351,38 +353,38 @@ async function handleReset() {
 
         <!-- 只在桌面端显示托盘相关设置 -->
         <template v-if="isDesktopPlatform">
-          <div class="general-setting-item">
-            <div class="general-setting-label-wrapper">
-              <label class="general-setting-label">最小化到系统托盘</label>
-              <p class="general-setting-description">
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between py-6 border-b border-gray-200 dark:border-gray-700">
+            <div class="mb-4 sm:mb-0">
+              <label class="block font-medium text-gray-900 dark:text-white mb-1">最小化到系统托盘</label>
+              <p class="text-sm text-gray-600 dark:text-gray-400">
                 关闭窗口时最小化到系统托盘
               </p>
             </div>
-            <div class="general-setting-control">
-              <label class="toggle-switch">
+            <div class="sm:ml-8">
+              <label class="inline-flex cursor-pointer items-center relative">
                 <input
                   v-model="minimizeToTray"
                   type="checkbox"
-                  class="toggle-switch-input"
+                  class="sr-only peer"
                 >
-                <div class="toggle-switch-track">
-                  <div class="toggle-switch-thumb" />
+                <div class="w-12 h-6 bg-gray-300 dark:bg-gray-600 rounded-full peer peer-checked:bg-blue-600 transition-colors relative">
+                  <div class="absolute w-5 h-5 bg-white rounded-full top-0.5 left-0.5 peer-checked:translate-x-6 transition-transform" />
                 </div>
               </label>
             </div>
           </div>
 
-          <div class="general-setting-item">
-            <div class="general-setting-label-wrapper">
-              <label class="general-setting-label">关闭行为偏好</label>
-              <p class="general-setting-description">
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between py-6 border-b border-gray-200 dark:border-gray-700">
+            <div class="mb-4 sm:mb-0">
+              <label class="block font-medium text-gray-900 dark:text-white mb-1">关闭行为偏好</label>
+              <p class="text-sm text-gray-600 dark:text-gray-400">
                 设置点击关闭按钮时的默认行为
               </p>
             </div>
-            <div class="general-setting-control">
+            <div class="sm:ml-8">
               <select
                 v-model="closeBehaviorPreference"
-                class="general-select"
+                class="w-full sm:w-48 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none"
                 @change="handleCloseBehaviorChange"
               >
                 <option
@@ -400,19 +402,19 @@ async function handleReset() {
     </div>
 
     <!-- 操作按钮 -->
-    <div class="setting-action-buttons">
+    <div class="pt-8 border-t border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row gap-4">
       <button
-        class="action-button-primary"
+        class="flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
         @click="handleSave"
       >
-        <Save class="action-button-primary-icon" />
+        <Save class="w-4 h-4" />
         保存设置
       </button>
       <button
-        class="action-button-secondary"
+        class="flex items-center justify-center gap-2 px-6 py-3 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-900 dark:text-white font-medium rounded-lg transition-colors"
         @click="handleReset"
       >
-        <RotateCcw class="action-button-secondary-icon" />
+        <RotateCcw class="w-4 h-4" />
         重置为默认
       </button>
     </div>

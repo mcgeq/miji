@@ -41,26 +41,16 @@ function removeEntity(key: string) {
 </script>
 
 <template>
-  <div class="entity-list-wrapper">
+  <div class="p-4 bg-[light-dark(#f9fafb,#111827)] flex flex-wrap gap-3 rounded-lg transition-colors max-sm:p-2 max-sm:gap-2">
     <component
       :is="component"
       v-for="([key, entity]) in entityList"
       :key="String(key)"
       :model-value="entity"
-      :readonly="readonly"
+      :readonly="props.readonly"
       :display-key="displayKey"
       @update:model-value="(val: T) => updateEntity(key, val)"
       @remove="() => removeEntity(key)"
     />
   </div>
 </template>
-
-<style scoped lang="postcss">
-.entity-list-wrapper {
-  padding: 1rem;                  /* p-4 */
-  background-color: #F3F4F6;       /* bg-gray-100 */
-  display: flex;                   /* flex */
-  flex-wrap: wrap;                 /* flex-wrap */
-  gap: 0.75rem;                    /* gap-3 */
-}
-</style>

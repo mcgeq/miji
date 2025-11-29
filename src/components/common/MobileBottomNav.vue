@@ -23,8 +23,9 @@ function navigate(item: MenuItem) {
     // 切换子菜单显示状态
     showSubmenu.value = showSubmenu.value === item.name ? null : item.name;
   } else if (item.path) {
+    // 点击一级菜单时关闭子菜单并导航
+    showSubmenu.value = null;
     router.push(item.path);
-    showSubmenu.value = null; // 导航后关闭子菜单
   }
 }
 
@@ -52,179 +53,111 @@ function closeSubmenu() {
 </script>
 
 <template>
-  <div class="mobile-nav-container">
+  <div class="relative">
     <!-- 背景遮罩 -->
-    <div
-      v-if="showSubmenu"
-      class="submenu-overlay"
-      @click="closeSubmenu"
-    />
-
-    <!-- 子菜单弹窗 -->
-    <div
-      v-if="showSubmenu"
-      class="mobile-submenu"
+    <Transition
+      enter-active-class="transition-opacity duration-200 ease-out"
+      leave-active-class="transition-opacity duration-150 ease-in"
+      enter-from-class="opacity-0"
+      enter-to-class="opacity-100"
+      leave-from-class="opacity-100"
+      leave-to-class="opacity-0"
     >
       <div
-        v-for="submenuItem in menu.find(item => item.name === showSubmenu)?.submenu"
-        :key="submenuItem.name"
-        :class="{ active: isSubmenuActive(submenuItem) }"
-        :title="submenuItem.title"
-        class="submenu-item"
-        @click="navigateSubmenu(submenuItem)"
+        v-if="showSubmenu"
+        class="fixed inset-0 bg-black/40 backdrop-blur-sm z-[1001]"
+        @click="closeSubmenu"
+      />
+    </Transition>
+
+    <!-- 子菜单弹窗 -->
+    <Transition
+      enter-active-class="transition-all duration-300 ease-out"
+      leave-active-class="transition-all duration-200 ease-in"
+      enter-from-class="opacity-0 translate-y-4"
+      enter-to-class="opacity-100 translate-y-0"
+      leave-from-class="opacity-100 translate-y-0"
+      leave-to-class="opacity-0 translate-y-4"
+    >
+      <div
+        v-if="showSubmenu"
+        class="fixed bottom-16 left-1/2 -translate-x-1/2 bg-white/90 dark:bg-gray-900/90 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 z-[1002] overflow-hidden flex items-center px-3 py-2.5 gap-3 backdrop-blur-lg"
       >
-        <component
-          :is="submenuItem.icon"
-          class="submenu-icon"
-        />
+        <template
+          v-for="(submenuItem, index) in menu.find(item => item.name === showSubmenu)?.submenu"
+          :key="submenuItem.name"
+        >
+          <div
+            :title="submenuItem.title"
+            class="relative flex flex-col items-center justify-center py-2 px-3 rounded-xl cursor-pointer transition-all duration-200 group" :class="[
+              isSubmenuActive(submenuItem)
+                ? 'bg-blue-50 dark:bg-blue-900/30'
+                : 'hover:bg-gray-100 dark:hover:bg-gray-800',
+            ]"
+            @click="navigateSubmenu(submenuItem)"
+          >
+            <!-- 选中指示器 -->
+            <div
+              v-if="isSubmenuActive(submenuItem)"
+              class="absolute -top-0.5 left-1/2 -translate-x-1/2 w-8 h-1 bg-blue-500 dark:bg-blue-400 rounded-b-full"
+            />
+            <component
+              :is="submenuItem.icon"
+              class="w-6 h-6 transition-all duration-200" :class="[
+                isSubmenuActive(submenuItem)
+                  ? 'text-blue-600 dark:text-blue-400 scale-110'
+                  : 'text-gray-600 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-200 group-hover:scale-110',
+              ]"
+            />
+            <!-- 激活动画点 -->
+            <div
+              v-if="isSubmenuActive(submenuItem)"
+              class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 bg-blue-500/10 dark:bg-blue-400/10 rounded-full animate-ping"
+            />
+          </div>
+          <!-- 分隔线 -->
+          <div
+            v-if="index < menu.find(item => item.name === showSubmenu)!.submenu!.length - 1"
+            class="w-px h-8 bg-gray-200 dark:bg-gray-700"
+          />
+        </template>
       </div>
-    </div>
+    </Transition>
 
     <!-- 底部导航 -->
-    <nav class="mobile-nav">
-      <ul>
+    <nav class="fixed bottom-0 left-0 right-0 h-14 bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg flex items-center justify-center shadow-[0_-4px_16px_rgba(0,0,0,0.1)] border-t border-gray-200 dark:border-gray-800 z-[1000]">
+      <ul class="flex w-full justify-around items-center list-none m-0 p-0 px-2">
         <li
           v-for="item in menu"
           :key="item.name"
           :title="item.title"
-          :class="{ active: isActive(item) }"
+          class="flex flex-col items-center justify-center py-2 px-3 rounded-xl cursor-pointer transition-all duration-200 relative group" :class="[
+            isActive(item)
+              ? 'bg-blue-50 dark:bg-blue-900/30'
+              : 'hover:bg-gray-100 dark:hover:bg-gray-800',
+          ]"
           @click="navigate(item)"
         >
-          <component :is="item.icon" class="icon" />
+          <!-- 选中指示器 -->
+          <div
+            v-if="isActive(item)"
+            class="absolute -top-0.5 left-1/2 -translate-x-1/2 w-8 h-1 bg-blue-500 dark:bg-blue-400 rounded-b-full"
+          />
+          <component
+            :is="item.icon"
+            class="w-6 h-6 transition-all duration-200" :class="[
+              isActive(item)
+                ? 'text-blue-600 dark:text-blue-400 scale-110'
+                : 'text-gray-600 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-200 group-hover:scale-110',
+            ]"
+          />
+          <!-- 激活动画点 -->
+          <div
+            v-if="isActive(item)"
+            class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 bg-blue-500/10 dark:bg-blue-400/10 rounded-full animate-ping"
+          />
         </li>
       </ul>
     </nav>
   </div>
 </template>
-
-<style scoped lang="postcss">
-.mobile-nav-container {
-  position: relative;
-}
-
-/* 背景遮罩 */
-.submenu-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.3);
-  z-index: 1001;
-}
-
-/* 移动端子菜单弹窗 */
-.mobile-submenu {
-  position: fixed;
-  bottom: 4rem; /* 在底部导航上方 */
-  left: 50%;
-  transform: translateX(-50%);
-  background-color: var(--color-base-100);
-  border-radius: 0.75rem;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-  z-index: 1002;
-  overflow: hidden;
-  animation: slideUp 0.3s ease-out;
-  display: flex;
-  gap: 0.5rem;
-  padding: 0.5rem;
-}
-
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateX(-50%) translateY(1rem);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(-50%) translateY(0);
-  }
-}
-
-.submenu-item {
-  padding: 1rem;
-  cursor: pointer;
-  transition: background-color 0.2s;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  border-radius: 0.5rem;
-  min-width: 3rem;
-  min-height: 3rem;
-}
-
-.submenu-item:hover {
-  background-color: var(--color-base-200);
-}
-
-.submenu-item.active {
-  background-color: var(--color-primary);
-  color: var(--color-primary-content);
-}
-
-.submenu-icon {
-  width: 1.5rem;
-  height: 1.5rem;
-  color: var(--color-neutral);
-}
-
-.submenu-item.active .submenu-icon {
-  color: var(--color-primary-content);
-}
-
-/* 底部导航样式 */
-.mobile-nav {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 3rem;
-  background-color: var(--color-base-300);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: var(--shadow-lg);
-  border-top: 1px solid var(--color-neutral);
-  z-index: 1000;
-}
-
-.mobile-nav ul {
-  display: flex;
-  width: 100%;
-  justify-content: space-around;
-  align-items: center;
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.mobile-nav li {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 0.25rem 0.5rem;
-  border-radius: 0.375rem;
-  cursor: pointer;
-  transition: all 0.3s ease-in-out;
-}
-
-.mobile-nav li:hover {
-  background-color: var(--color-base-200);
-}
-
-.mobile-nav li.active {
-  background-color: var(--color-primary-soft);
-  box-shadow: inset 0 0 0 1px var(--color-primary);
-}
-
-.icon {
-  width: 1.25rem;
-  height: 1.25rem;
-  color: var(--color-neutral);
-}
-
-.mobile-nav li.active .icon {
-  color: var(--color-primary);
-}
-</style>

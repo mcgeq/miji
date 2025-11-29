@@ -1,20 +1,20 @@
 <script setup lang="ts">
 import * as _ from 'es-toolkit/compat';
 import z from 'zod';
-import BaseModal from '@/components/common/BaseModal.vue';
 import ColorSelector from '@/components/common/ColorSelector.vue';
 import DateTimePicker from '@/components/common/DateTimePicker.vue';
-import FormRow from '@/components/common/FormRow.vue';
 import CurrencySelector from '@/components/common/money/CurrencySelector.vue';
 import PrioritySelector from '@/components/common/PrioritySelector.vue';
 import ReminderSelector from '@/components/common/ReminderSelector.vue';
 import RepeatPeriodSelector from '@/components/common/RepeatPeriodSelector.vue';
+import { Checkbox, FormRow, Input, Modal, Select, Textarea } from '@/components/ui';
 import { COLORS_MAP, CURRENCY_CNY } from '@/constants/moneyConst';
 import {
   PrioritySchema,
 } from '@/schema/common';
 import { BilReminderCreateSchema, BilReminderUpdateSchema, ReminderTypesSchema } from '@/schema/money';
 import { DateUtils } from '@/utils/date';
+import type { SelectOption } from '@/components/ui';
 import type { Priority, RepeatPeriod } from '@/schema/common';
 import type { BilReminder, ReminderTypes } from '@/schema/money';
 
@@ -34,7 +34,22 @@ const { t } = useI18n();
 // 响应式状态
 const isSubmitting = ref(false);
 const locale = ref<'zh-CN' | 'en'>('zh-CN');
-const today = ref(DateUtils.getTodayDate());
+
+// 提前提醒单位选项
+const advanceUnitOptions = computed<SelectOption[]>(() => [
+  { value: 'minutes', label: t('units.minutes') },
+  { value: 'hours', label: t('units.hours') },
+  { value: 'days', label: t('units.days') },
+  { value: 'weeks', label: t('units.weeks') },
+]);
+
+// 提醒频率详细选项
+const reminderFrequencyOptions = computed<SelectOption[]>(() => [
+  { value: 'once', label: t('common.frequency.once') },
+  { value: '15m', label: t('common.frequency.q15m') },
+  { value: '1h', label: t('common.frequency.hourly') },
+  { value: '1d', label: t('common.frequency.daily') },
+]);
 
 // 验证错误
 const validationErrors = reactive({
@@ -114,6 +129,49 @@ const descriptionPlaceholder = computed(() => {
   } catch {
     return t(defaultKey);
   }
+});
+
+// 处理 nullable 字段的计算属性
+const billDateComputed = computed<string>({
+  get: () => form.billDate ?? '',
+  set: (value: string) => {
+    form.billDate = value || null;
+  },
+});
+
+const advanceUnitComputed = computed<string>({
+  get: () => form.advanceUnit ?? 'days',
+  set: (value: string) => {
+    form.advanceUnit = value || undefined;
+  },
+});
+
+const reminderFrequencyComputed = computed<string>({
+  get: () => form.reminderFrequency ?? 'once',
+  set: (value: string) => {
+    form.reminderFrequency = value || null;
+  },
+});
+
+const escalationAfterHoursComputed = computed<number>({
+  get: () => form.escalationAfterHours ?? 24,
+  set: (value: number) => {
+    form.escalationAfterHours = value || null;
+  },
+});
+
+const timezoneComputed = computed<string>({
+  get: () => form.timezone ?? '',
+  set: (value: string) => {
+    form.timezone = value || null;
+  },
+});
+
+const descriptionComputed = computed<string>({
+  get: () => form.description ?? '',
+  set: (value: string) => {
+    form.description = value || null;
+  },
 });
 
 const isFormValid = computed(() => {
@@ -606,7 +664,8 @@ watch(
 </script>
 
 <template>
-  <BaseModal
+  <Modal
+    :open="true"
     :title="props.reminder ? t('financial.reminder.editReminder') : t('financial.reminder.addReminder')"
     size="md"
     :confirm-loading="isSubmitting"
@@ -620,72 +679,73 @@ watch(
         required
         :error="validationErrors.name"
       >
-        <input
-          v-model="form.name" type="text" required class="modal-input-select w-full"
-          :class="{ 'border-red-500': validationErrors.name }" :placeholder="t('validation.reminderTitle')"
+        <Input
+          v-model="form.name"
+          type="text"
+          :max-length="50"
+          :placeholder="t('validation.reminderTitle')"
           @blur="validateName"
-        >
+        />
       </FormRow>
 
-      <ReminderSelector
-        v-model="form.type"
+      <!-- 提醒类型 -->
+      <FormRow
         :label="t('financial.reminder.reminderType')"
-        :placeholder="t('common.placeholders.selectType')"
-        :required="true"
-        :error-message="validationErrors.type"
-        :show-grouped="true"
-        :show-quick-select="true"
-        :show-icons="true"
-        :popular-only="false"
-        :locale="locale"
-        width="2/3" quick-select-label="常用类型"
+        required
+        :error="validationErrors.type"
         :help-text="t('helpTexts.reminderType')"
-        @change="handleTypeChange"
-        @validate="handleTypeValidation"
-      />
+      >
+        <ReminderSelector
+          v-model="form.type"
+          label=""
+          :placeholder="t('common.placeholders.selectType')"
+          :required="false"
+          error-message=""
+          :show-grouped="true"
+          :show-quick-select="true"
+          :show-icons="true"
+          :popular-only="false"
+          :locale="locale"
+          width="full"
+          quick-select-label="常用类型"
+          help-text=""
+          @change="handleTypeChange"
+          @validate="handleTypeValidation"
+        />
+      </FormRow>
 
       <!-- 金额 -->
-      <div
+      <FormRow
         v-if="isFinanceType"
-        class="form-row form-row-with-margin"
+        :label="t('financial.money')"
+        required
       >
-        <label class="form-label">
-          {{ t('financial.money') }}
-          <span v-if="isFinanceType" class="required-asterisk">*</span>
-        </label>
-        <div class="form-input-2-3">
-          <div class="amount-input-group">
-            <div class="amount-input">
-              <input
-                v-model.number="form.amount"
-                type="number"
-                step="0.01"
-                min="0"
-                class="modal-input-select w-full"
-                :class="{ 'border-red-500': validationErrors.amount }" :placeholder="amountPlaceholder"
-                :required="isFinanceType" @blur="validateAmount"
-              >
-            </div>
-            <div class="currency-selector">
-              <CurrencySelector v-model="form.currency" width="full" />
-            </div>
+        <div class="flex gap-2">
+          <div class="flex-1">
+            <input
+              v-model.number="form.amount"
+              type="number"
+              class="w-full px-4 py-2 text-base transition-colors focus:outline-none focus:ring-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 border border-gray-300 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500 rounded-lg"
+              :placeholder="amountPlaceholder"
+              @blur="validateAmount"
+            >
+          </div>
+          <div class="flex-[2]">
+            <CurrencySelector v-model="form.currency" width="full" />
           </div>
         </div>
-      </div>
+      </FormRow>
       <!-- 账单日期 -->
       <FormRow
         v-if="isFinanceType"
         :label="t('date.billDate')"
         required
       >
-        <input
-          v-model="form.billDate"
+        <Input
+          v-model="billDateComputed"
           type="date"
-          required
-          class="modal-input-select w-full"
-          :class="{ 'border-red-500': validationErrors.remindDate }" :min="today"
           @blur="validateRemindDate"
-        >
+        />
       </FormRow>
 
       <!-- 提醒日期 -->
@@ -694,125 +754,128 @@ watch(
         required
         :error="validationErrors.remindDate"
       >
-        <input
+        <Input
           v-model="form.remindDate"
           type="date"
-          required
-          class="modal-input-select w-full"
-          :class="{ 'border-red-500': validationErrors.remindDate }" :min="today"
           @blur="validateRemindDate"
-        >
+        />
       </FormRow>
 
-      <!-- 重复频率  -->
-      <RepeatPeriodSelector
-        v-model="form.repeatPeriod"
+      <!-- 重复频率 -->
+      <FormRow
         :label="t('date.repeat.frequency')"
-        :error-message="validationErrors.repeatPeriod"
+        :error="validationErrors.repeatPeriod"
         :help-text="t('helpTexts.repeatPeriod')"
-        @change="handleRepeatPeriodChange"
-        @validate="handleRepeatPeriodValidation"
-      />
+      >
+        <RepeatPeriodSelector
+          v-model="form.repeatPeriod"
+          label=""
+          error-message=""
+          help-text=""
+          @change="handleRepeatPeriodChange"
+          @validate="handleRepeatPeriodValidation"
+        />
+      </FormRow>
 
       <!-- 优先级 -->
-      <div class="mb-2 mt-2">
+      <FormRow
+        :label="t('common.misc.priority')"
+        :error="validationErrors.priority"
+        :help-text="t('helpTexts.priority')"
+      >
         <PrioritySelector
-          v-model="form.priority" :label="t('common.misc.priority')"
-          :error-message="validationErrors.priority" :locale="locale" :show-icons="true" width="2/3"
-          :help-text="t('helpTexts.priority')" @change="handlePriorityChange" @validate="handlePriorityValidation"
+          v-model="form.priority"
+          label=""
+          error-message=""
+          :locale="locale"
+          :show-icons="true"
+          width="full"
+          help-text=""
+          @change="handlePriorityChange"
+          @validate="handlePriorityValidation"
         />
-      </div>
+      </FormRow>
 
       <!-- 提前提醒 -->
-      <div class="form-row">
-        <label class="form-label form-label-block">
-          {{ t('financial.reminder.advanceReminder') }}
-        </label>
-        <div class="advance-reminder-group">
-          <input
-            v-model.number="form.advanceValue" type="number" min="0" max="999"
-            class="modal-input-select flex-1 w-1/2" placeholder="0"
-          >
-          <select v-model="form.advanceUnit" class="modal-input-select">
-            <option value="minutes">
-              {{ t('units.minutes') }}
-            </option>
-            <option value="hours">
-              {{ t('units.hours') }}
-            </option>
-            <option value="days">
-              {{ t('units.days') }}
-            </option>
-            <option value="weeks">
-              {{ t('units.weeks') }}
-            </option>
-          </select>
+      <FormRow :label="t('financial.reminder.advanceReminder')">
+        <div class="flex gap-2">
+          <div class="w-1/3">
+            <input
+              v-model.number="form.advanceValue"
+              type="number"
+              placeholder="0"
+              class="w-full px-4 py-2 text-base transition-colors focus:outline-none focus:ring-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 border border-gray-300 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500 rounded-lg"
+            >
+          </div>
+          <div class="flex-1">
+            <Select
+              v-model="advanceUnitComputed"
+              :options="advanceUnitOptions"
+            />
+          </div>
         </div>
-      </div>
+      </FormRow>
 
       <!-- 提醒频率 -->
       <FormRow :label="t('financial.reminder.frequency')" optional>
-        <select v-model="form.reminderFrequency" class="modal-input-select w-full">
-          <option value="once">
-            {{ t('common.frequency.once') }}
-          </option>
-          <option value="15m">
-            {{ t('common.frequency.q15m') }}
-          </option>
-          <option value="1h">
-            {{ t('common.frequency.hourly') }}
-          </option>
-          <option value="1d">
-            {{ t('common.frequency.daily') }}
-          </option>
-        </select>
+        <Select
+          v-model="reminderFrequencyComputed"
+          :options="reminderFrequencyOptions"
+        />
       </FormRow>
 
       <!-- 稍后提醒（打盹） -->
-      <div class="form-row">
-        <label class="form-label">
-          {{ t('financial.reminder.snoozeUntil') }}
-        </label>
+      <FormRow :label="t('financial.reminder.snoozeUntil')">
         <DateTimePicker
           v-model="snoozeUntilDate"
-          class="w-2/3"
           :placeholder="t('common.selectDate')"
         />
-      </div>
+      </FormRow>
 
       <!-- 提醒方式（系统合并） -->
-      <div class="form-row">
-        <label class="form-label form-label-block">{{ t('financial.reminder.methods') }}</label>
-        <div class="form-input-2-3">
-          <label class="checkbox-label"><input v-model="methodsState.system" type="checkbox" class="mr-2">系统</label>
-          <div class="mt-1 flex gap-2">
-            <label class="checkbox-label"><input v-model="methodsState.email" type="checkbox" class="mr-1">邮件</label>
-            <label class="checkbox-label"><input v-model="methodsState.sms" type="checkbox" class="mr-1">短信</label>
-          </div>
+      <FormRow :label="t('financial.reminder.methods')">
+        <div class="flex flex-wrap gap-4">
+          <Checkbox v-model="methodsState.system" label="系统" />
+          <Checkbox v-model="methodsState.email" label="邮件" />
+          <Checkbox v-model="methodsState.sms" label="短信" />
         </div>
-      </div>
+      </FormRow>
 
       <!-- 高级设置（可折叠） -->
       <details class="mt-2 mb-2">
-        <summary class="form-label">
+        <summary class="text-sm font-medium text-gray-900 dark:text-white cursor-pointer">
           {{ t('financial.reminder.advancedSettings') }}
         </summary>
         <div class="mt-2 flex flex-col gap-2">
-          <label class="checkbox-label"><input v-model="form.escalationEnabled" type="checkbox" class="mr-2">升级提醒</label>
-          <div class="form-row">
-            <label class="form-label">升级间隔(小时)</label>
-            <input v-model.number="form.escalationAfterHours" type="number" min="1" class="modal-input-select w-2/3">
+          <Checkbox v-model="form.escalationEnabled" label="升级提醒" />
+          <div class="flex items-center gap-4">
+            <label class="text-sm font-medium text-gray-900 dark:text-white shrink-0 w-24 text-left">升级间隔(小时)</label>
+            <Input
+              v-model.number="escalationAfterHoursComputed"
+              type="number"
+              class="flex-1"
+            />
           </div>
-          <label class="checkbox-label"><input v-model="form.smartReminderEnabled" type="checkbox" class="mr-2">智能提醒</label>
-          <label class="checkbox-label"><input v-model="form.autoReschedule" type="checkbox" class="mr-2">自动顺延</label>
-          <label class="checkbox-label"><input v-model="form.paymentReminderEnabled" type="checkbox" class="mr-2">支付提醒</label>
-          <div class="form-row">
-            <label class="form-label">时区</label>
-            <input v-model="form.timezone" type="text" class="modal-input-select w-2/3" placeholder="例如: Asia/Shanghai">
+          <Checkbox v-model="form.smartReminderEnabled" label="智能提醒" />
+          <Checkbox v-model="form.autoReschedule" label="自动顺延" />
+          <Checkbox v-model="form.paymentReminderEnabled" label="支付提醒" />
+          <div class="flex items-center gap-4">
+            <label class="text-sm font-medium text-gray-900 dark:text-white shrink-0 w-24 text-left">时区</label>
+            <Input
+              v-model="timezoneComputed"
+              type="text"
+              placeholder="例如: Asia/Shanghai"
+              class="flex-1"
+            />
           </div>
-          <div v-if="form.lastReminderSentAt" class="form-row">
-            <label class="form-label">上次提醒时间</label>
-            <input class="modal-input-select w-2/3" :value="form.lastReminderSentAt" readonly>
+          <div v-if="form.lastReminderSentAt" class="flex items-center gap-4">
+            <label class="text-sm font-medium text-gray-900 dark:text-white shrink-0 w-24 text-left">上次提醒时间</label>
+            <Input
+              :model-value="form.lastReminderSentAt"
+              type="text"
+              readonly
+              class="flex-1"
+            />
           </div>
         </div>
       </details>
@@ -831,266 +894,22 @@ watch(
       </FormRow>
 
       <!-- 启用状态 -->
-      <div class="checkbox-section">
-        <label class="checkbox-label">
-          <input v-model="form.enabled" type="checkbox" class="mr-2">
-          <span class="checkbox-text">
-            {{ t('financial.reminder.enabled') }}
-          </span>
-        </label>
+      <div class="mb-2">
+        <Checkbox
+          v-model="form.enabled"
+          :label="t('financial.reminder.enabled')"
+        />
       </div>
 
       <!-- 描述 -->
-      <div class="form-textarea">
-        <textarea
-          v-model="form.description" rows="3" class="modal-input-select w-full"
-          :placeholder="descriptionPlaceholder" maxlength="200"
+      <FormRow full-width>
+        <Textarea
+          v-model="descriptionComputed"
+          :rows="3"
+          :max-length="200"
+          :placeholder="descriptionPlaceholder"
         />
-        <div class="character-count">
-          {{ t('common.misc.maxLength', { current: form.description?.length || 0, max: 200 }) }}
-        </div>
-      </div>
+      </FormRow>
     </form>
-  </BaseModal>
+  </Modal>
 </template>
-
-<style scoped lang="postcss">
-/* Form Layout */
-.form-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 0.75rem;
-  gap: 1rem;
-}
-
-.form-row-with-margin {
-  margin-top: 0.5rem;
-}
-
-.form-label {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--color-base-content);
-  margin-bottom: 0;
-  margin-right: 0;
-  flex: 0 0 6rem;
-  width: 6rem;
-  min-width: 6rem;
-  max-width: 6rem;
-  white-space: nowrap;
-  text-align: left;
-}
-
-.form-input-2-3 {
-  flex: 1;
-}
-
-/* 覆盖 Tailwind w-2/3 类，使其在 form-row 中自适应 */
-.form-row > .w-2\/3 {
-  flex: 1 !important;
-  width: auto !important;
-}
-
-.form-row .modal-input-select.w-2\/3 {
-  flex: 1 !important;
-  width: auto !important;
-}
-
-/* ColorSelector 已使用 FormRow，不需要额外样式 */
-
-.form-label-block {
-  display: block;
-}
-
-.form-textarea {
-  margin-bottom: 1rem;
-}
-
-.form-error {
-  font-size: 0.875rem;
-  color: var(--color-error-hover);
-  margin-bottom: 0.5rem;
-  text-align: right;
-}
-
-/* Required asterisk */
-.required-asterisk {
-  color: var(--color-error);
-  margin-left: 0.25rem;
-}
-
-/* Amount input group */
-.amount-input-group {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.amount-input {
-  flex: 1;
-}
-
-.currency-selector {
-  flex: 1;
-}
-
-/* CurrencySelector 样式 - 与普通input保持一致 */
-:deep(.currency-selector) {
-  margin-bottom: 0 !important;
-  display: block !important;
-  width: 100% !important;
-  padding: 0 !important;
-}
-
-:deep(.currency-selector__wrapper) {
-  display: block !important;
-  width: 100% !important;
-  background-color: transparent !important;
-  padding: 0 !important;
-  margin: 0 !important;
-}
-
-:deep(.currency-selector__select) {
-  background-color: var(--color-base-200) !important;
-  border: 1px solid var(--color-base-300) !important;
-  color: var(--color-neutral) !important;
-  padding: 0.5rem 0.75rem !important;
-  border-radius: 0.75rem !important;
-  width: 100% !important;
-  font-size: 0.875rem !important;
-  box-sizing: border-box !important;
-}
-
-:deep(.currency-selector__select option) {
-  color: var(--color-neutral) !important;
-  background-color: var(--color-base-200) !important;
-}
-
-:deep(.currency-selector__select option:disabled) {
-  color: var(--color-neutral) !important;
-}
-
-:deep(.currency-selector__select:focus) {
-  border-color: var(--color-primary) !important;
-  box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.2) !important;
-}
-
-:deep(.currency-selector__select:disabled) {
-  background-color: var(--color-base-300) !important;
-  color: var(--color-neutral) !important;
-}
-
-/* ReminderSelector 样式统一 */
-:deep(.reminder-selector-row) {
-  gap: 1rem !important;
-}
-
-:deep(.reminder-selector-row .label-text) {
-  flex: 0 0 6rem !important;
-  width: 6rem !important;
-  min-width: 6rem !important;
-  max-width: 6rem !important;
-}
-
-:deep(.reminder-selector-row .modal-input-select) {
-  flex: 1 !important;
-  width: 100% !important;
-}
-
-/* PrioritySelector 样式统一 */
-:deep(.form-group) {
-  gap: 1rem !important;
-}
-
-:deep(.form-group .form-label) {
-  flex: 0 0 6rem !important;
-  width: 6rem !important;
-  min-width: 6rem !important;
-  max-width: 6rem !important;
-}
-
-:deep(.form-group .form-field) {
-  flex: 1 !important;
-  width: 100% !important;
-}
-
-/* RepeatPeriodSelector 样式统一 */
-:deep(.repeat-period-selector .field-row) {
-  gap: 1rem !important;
-  margin-bottom: 0.75rem !important;
-}
-
-:deep(.repeat-period-selector .label) {
-  flex: 0 0 6rem !important;
-  width: 6rem !important;
-  min-width: 6rem !important;
-  max-width: 6rem !important;
-}
-
-:deep(.repeat-period-selector .input-field) {
-  flex: 1 !important;
-  width: 100% !important;
-}
-
-/* Advance reminder group */
-.advance-reminder-group {
-  display: flex;
-  flex: 1;
-  align-items: center;
-  gap: 0.25rem;
-}
-
-/* Checkbox section */
-.checkbox-section {
-  margin-bottom: 0.5rem;
-}
-
-.checkbox-label {
-  display: flex;
-  align-items: center;
-}
-
-.checkbox-text {
-  font-size: 0.875rem;
-  color: var(--color-base-content);
-  font-weight: 500;
-}
-
-/* Optional text */
-.optional-text {
-  color: var(--color-neutral);
-}
-
-/* Character count */
-.character-count {
-  font-size: 0.75rem;
-  color: var(--color-neutral);
-  margin-top: 0.25rem;
-  text-align: right;
-}
-
-/* Submit button loading state */
-.modal-btn-check:disabled {
-  background-color: var(--color-base-200);
-  color: var(--color-neutral);
-  cursor: not-allowed;
-}
-
-/* Responsive optimization */
-@media (max-width: 640px) {
-  .form-row {
-    flex-wrap: wrap;
-  }
-
-  .form-label {
-    margin-bottom: 0.25rem;
-    flex-shrink: 0;
-  }
-
-  .modal-input-select {
-    flex: 1;
-    min-width: 0;
-  }
-}
-</style>

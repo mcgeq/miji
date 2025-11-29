@@ -29,6 +29,17 @@ onMounted(async () => {
 
     Lg.i('App', 'Auth check - token:', authStore.token ? 'exists' : 'null', 'rememberMe:', authStore.rememberMe);
 
+    // 权限修复：如果用户已登录但没有有效权限，触发重新计算
+    if (authStore.isAuthenticated && authStore.effectivePermissions.length === 0) {
+      Lg.w('App', 'Detected zero effective permissions for authenticated user, fixing...');
+      // 触发 effectivePermissions 重新计算（通过访问计算属性）
+      const perms = authStore.effectivePermissions;
+      Lg.i('App', 'Permissions fixed:', {
+        role: authStore.role,
+        effectiveCount: perms.length,
+      });
+    }
+
     // 仅在桌面端清理 session（移动设备保持登录状态）
     if (PlatformService.isDesktop()) {
       await checkAndCleanSession();
@@ -73,7 +84,7 @@ function layoutComponent(route: RouteLocationNormalizedLoaded) {
 </script>
 
 <template>
-  <div v-if="isLoading" class="loading">
+  <div v-if="isLoading" class="flex items-center justify-center h-screen text-xl text-gray-900 dark:text-white">
     {{ t('common.loading') }}
   </div>
   <!-- 使用动态过渡名称 -->
@@ -93,7 +104,7 @@ function layoutComponent(route: RouteLocationNormalizedLoaded) {
 </template>
 
 <style>
-/* 新增：隐藏滚动条 */
+/* 全局：隐藏滚动条 */
 html,
 body {
   scrollbar-width: none;
@@ -106,15 +117,6 @@ html::-webkit-scrollbar,
 body::-webkit-scrollbar {
   display: none;
   /* Chrome, Safari, Opera */
-}
-
-.loading {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
-  font-size: 1.2rem;
-  color: var(--color-base-content);
 }
 
 /* 可以在 App.vue 或全局样式中定义 */

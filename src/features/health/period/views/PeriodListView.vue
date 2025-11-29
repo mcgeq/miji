@@ -1,7 +1,19 @@
 <script setup lang="ts">
+import { Calendar, CalendarHeart, Clock, Edit, ListFilter, Plus, Repeat, RotateCcw, Search, Stethoscope, Trash, TrendingUp } from 'lucide-vue-next';
+import { Badge, Button, Card, Input, Pagination, Select } from '@/components/ui';
 import { calculatePeriodDuration } from '@/features/health/period/utils/periodUtils';
 import { usePeriodStore } from '@/stores/periodStore';
 import type { PeriodRecords } from '@/schema/health/period';
+
+interface SortOption {
+  value: 'startDate' | 'duration' | 'cycleLength';
+  label: string;
+}
+
+interface OrderOption {
+  value: 'asc' | 'desc';
+  label: string;
+}
 
 // Emits
 const emit = defineEmits<{
@@ -29,6 +41,18 @@ const filters = ref({
   minCycle: undefined as number | undefined,
   maxCycle: undefined as number | undefined,
 });
+
+// 排序选项
+const sortOptions: SortOption[] = [
+  { value: 'startDate', label: '按开始日期' },
+  { value: 'duration', label: '按持续时间' },
+  { value: 'cycleLength', label: '按周期长度' },
+];
+
+const orderOptions: OrderOption[] = [
+  { value: 'desc', label: '降序' },
+  { value: 'asc', label: '升序' },
+];
 
 // Computed
 const hasActiveFilters = computed(() => {
@@ -237,600 +261,268 @@ watch(
 </script>
 
 <template>
-  <div class="period-list-view">
+  <div class="flex flex-col gap-6">
     <!-- 过滤和搜索 -->
-    <div class="filters-section mb-6 p-4 card-base">
-      <div class="flex flex-col gap-4 items-start sm:flex-row sm:items-center">
+    <Card shadow="sm" padding="md">
+      <div class="flex flex-col gap-4 sm:flex-row sm:items-center">
+        <!-- 搜索框 -->
         <div class="flex-1">
-          <div class="relative">
-            <i class="i-tabler-search text-gray-400 wh-4 transform left-3 top-1/2 absolute -translate-y-1/2" />
-            <input v-model="searchQuery" type="text" placeholder="搜索记录..." class="input-base pl-10 w-full">
-          </div>
+          <Input
+            v-model="searchQuery"
+            type="search"
+            placeholder="搜索记录..."
+            :prefix-icon="Search"
+            full-width
+          />
         </div>
+
+        <!-- 排序和筛选按钮 -->
         <div class="flex flex-wrap gap-2">
-          <select v-model="sortBy" class="select-base">
-            <option value="startDate">
-              按开始日期
-            </option>
-            <option value="duration">
-              按持续时间
-            </option>
-            <option value="cycleLength">
-              按周期长度
-            </option>
-          </select>
-          <select v-model="sortOrder" class="select-base">
-            <option value="desc">
-              降序
-            </option>
-            <option value="asc">
-              升序
-            </option>
-          </select>
-          <button
-            class="btn-secondary" :class="{ 'bg-blue-50 dark:bg-blue-900/30': hasActiveFilters }"
+          <Select
+            v-model="sortBy"
+            :options="sortOptions"
+            size="sm"
+          />
+          <Select
+            v-model="sortOrder"
+            :options="orderOptions"
+            size="sm"
+          />
+          <Button
+            variant="secondary"
+            size="sm"
+            :class="{ 'bg-blue-50 dark:bg-blue-900/30': hasActiveFilters }"
             @click="showFilters = !showFilters"
           >
-            <LucideListFilterPlus class="ml-2 wh-5" />
-          </button>
-          <div v-if="showFilters">
-            <button class="text-sm btn-secondary self-end" @click="clearFilters">
-              <LucideListRestart class="ml-2 wh-5" />
-            </button>
-          </div>
+            <ListFilter class="w-5 h-5" />
+          </Button>
+          <Button
+            v-if="showFilters"
+            variant="secondary"
+            size="sm"
+            @click="clearFilters"
+          >
+            <RotateCcw class="w-5 h-5" />
+          </Button>
         </div>
       </div>
+
       <!-- 高级筛选 -->
       <div v-if="showFilters" class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-        <div class="gap-4 grid grid-cols-1 sm:grid-cols-3">
-          <!-- 第一组：日期范围 -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <!-- 日期范围 -->
           <div class="flex flex-col gap-2">
-            <label class="filter-label">日期范围</label>
-            <input v-model="filters.startDate" type="date" class="text-sm input-base w-full" placeholder="开始">
-            <input v-model="filters.endDate" type="date" class="text-sm input-base w-full" placeholder="结束">
+            <label class="text-xs font-medium text-gray-700 dark:text-gray-300">日期范围</label>
+            <Input
+              v-model="filters.startDate"
+              type="date"
+              size="sm"
+              full-width
+            />
+            <Input
+              v-model="filters.endDate"
+              type="date"
+              size="sm"
+              full-width
+            />
           </div>
 
-          <!-- 第二组：持续时间 -->
+          <!-- 持续时间 -->
           <div class="flex flex-col gap-2">
-            <label class="filter-label">持续时间</label>
-            <input
-              v-model.number="filters.minDuration" type="number" class="text-sm input-base w-full" placeholder="最少天数"
+            <label class="text-xs font-medium text-gray-700 dark:text-gray-300">持续时间</label>
+            <Input
+              v-model="filters.minDuration"
+              type="number"
+              placeholder="最少天数"
               min="1"
-            >
-            <input
-              v-model.number="filters.maxDuration" type="number" class="text-sm input-base w-full" placeholder="最多天数"
+              size="sm"
+              full-width
+            />
+            <Input
+              v-model="filters.maxDuration"
+              type="number"
+              placeholder="最多天数"
               min="1"
-            >
+              size="sm"
+              full-width
+            />
           </div>
 
-          <!-- 第三组：周期长度 + 按钮 -->
-          <div class="flex flex-col gap-4 justify-between">
-            <div class="flex flex-col gap-2">
-              <label class="filter-label">周期长度</label>
-              <input
-                v-model.number="filters.minCycle" type="number" class="text-sm input-base w-full" placeholder="最短周期"
-                min="1"
-              >
-              <input
-                v-model.number="filters.maxCycle" type="number" class="text-sm input-base w-full" placeholder="最长周期"
-                min="1"
-              >
-            </div>
+          <!-- 周期长度 -->
+          <div class="flex flex-col gap-2">
+            <label class="text-xs font-medium text-gray-700 dark:text-gray-300">周期长度</label>
+            <Input
+              v-model="filters.minCycle"
+              type="number"
+              placeholder="最短周期"
+              min="1"
+              size="sm"
+              full-width
+            />
+            <Input
+              v-model="filters.maxCycle"
+              type="number"
+              placeholder="最长周期"
+              min="1"
+              size="sm"
+              full-width
+            />
           </div>
         </div>
       </div>
-    </div>
+    </Card>
 
     <!-- 统计概览 -->
-    <div class="stats-overview mb-2 gap-2 grid grid-cols-4">
-      <div class="stat-card">
-        <div class="stat-icon bg-red-100 dark:bg-red-900/30">
-          <i class="i-tabler-calendar-heart text-red-600 wh-5 dark:text-red-400" />
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <Card shadow="sm" padding="md" class="flex items-center gap-3">
+        <div class="flex items-center justify-center w-10 h-10 rounded-lg bg-rose-100 dark:bg-rose-900/30 flex-shrink-0">
+          <CalendarHeart class="w-5 h-5 text-rose-600 dark:text-rose-400" />
         </div>
-        <div class="stat-content">
-          <div class="stat-value">
+        <div class="flex-1 min-w-0">
+          <div class="text-lg font-bold text-gray-900 dark:text-white">
             {{ filteredRecords.length }}
           </div>
-          <div class="stat-label">
+          <div class="text-xs text-gray-500 dark:text-gray-400">
             总记录数
           </div>
         </div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon bg-blue-100 dark:bg-blue-900/30">
-          <i class="i-tabler-clock text-blue-600 wh-5 dark:text-blue-400" />
+      </Card>
+
+      <Card shadow="sm" padding="md" class="flex items-center gap-3">
+        <div class="flex items-center justify-center w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex-shrink-0">
+          <Clock class="w-5 h-5 text-blue-600 dark:text-blue-400" />
         </div>
-        <div class="stat-content">
-          <div class="stat-value">
+        <div class="flex-1 min-w-0">
+          <div class="text-lg font-bold text-gray-900 dark:text-white">
             {{ averageDuration.toFixed(1) }}
           </div>
-          <div class="stat-label">
+          <div class="text-xs text-gray-500 dark:text-gray-400">
             平均持续天数
           </div>
         </div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon bg-green-100 dark:bg-green-900/30">
-          <i class="i-tabler-repeat text-green-600 wh-5 dark:text-green-400" />
+      </Card>
+
+      <Card shadow="sm" padding="md" class="flex items-center gap-3">
+        <div class="flex items-center justify-center w-10 h-10 rounded-lg bg-green-100 dark:bg-green-900/30 flex-shrink-0">
+          <Repeat class="w-5 h-5 text-green-600 dark:text-green-400" />
         </div>
-        <div class="stat-content">
-          <div class="stat-value">
+        <div class="flex-1 min-w-0">
+          <div class="text-lg font-bold text-gray-900 dark:text-white">
             {{ averageCycle.toFixed(1) }}
           </div>
-          <div class="stat-label">
+          <div class="text-xs text-gray-500 dark:text-gray-400">
             平均周期天数
           </div>
         </div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon bg-purple-100 dark:bg-purple-900/30">
-          <i class="i-tabler-trending-up text-purple-600 wh-5 dark:text-purple-400" />
+      </Card>
+
+      <Card shadow="sm" padding="md" class="flex items-center gap-3">
+        <div class="flex items-center justify-center w-10 h-10 rounded-lg bg-purple-100 dark:bg-purple-900/30 flex-shrink-0">
+          <TrendingUp class="w-5 h-5 text-purple-600 dark:text-purple-400" />
         </div>
-        <div class="stat-content">
-          <div class="stat-value">
+        <div class="flex-1 min-w-0">
+          <div class="text-lg font-bold text-gray-900 dark:text-white">
             {{ regularity }}%
           </div>
-          <div class="stat-label">
+          <div class="text-xs text-gray-500 dark:text-gray-400">
             规律性
           </div>
         </div>
-      </div>
+      </Card>
     </div>
 
     <!-- 记录列表 -->
-    <div class="records-list">
-      <div v-if="filteredRecords.length === 0" class="empty-state p-8 card-base">
-        <h3 class="text-lg text-gray-900 font-medium mb-2 dark:text-white">
+    <div>
+      <!-- 空状态 -->
+      <Card v-if="filteredRecords.length === 0" shadow="sm" padding="lg" class="text-center">
+        <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">
           {{ searchQuery || hasActiveFilters ? '未找到匹配的记录' : '还没有经期记录' }}
         </h3>
-        <p class="text-gray-500 mb-4 dark:text-gray-400">
+        <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
           {{ searchQuery || hasActiveFilters ? '试试调整搜索条件或筛选器' : '开始记录你的经期数据吧' }}
         </p>
-        <button v-if="!searchQuery && !hasActiveFilters" class="btn-primary" @click="emit('addRecord')">
-          <i class="i-tabler-plus mr-2 wh-4" />
+        <Button
+          v-if="!searchQuery && !hasActiveFilters"
+          variant="primary"
+          @click="emit('addRecord')"
+        >
+          <Plus class="w-4 h-4 mr-2" />
           添加记录
-        </button>
-      </div>
+        </Button>
+      </Card>
 
-      <div v-else class="space-y-4">
-        <div
-          v-for="record in paginatedRecords" :key="record.serialNum"
-          class="record-card p-4 card-base cursor-pointer transition-shadow hover:shadow-md"
+      <!-- 记录列表 -->
+      <div v-else class="flex flex-col gap-3">
+        <Card
+          v-for="record in paginatedRecords"
+          :key="record.serialNum"
+          shadow="sm"
+          padding="md"
+          hoverable
+          class="cursor-pointer"
           @click="emit('editRecord', record)"
         >
-          <div class="flex items-start justify-between">
-            <div class="flex-1">
-              <div class="record-header">
-                <h3 class="record-title">
+          <div class="flex items-start justify-between gap-4">
+            <div class="flex-1 min-w-0">
+              <!-- 记录头部 -->
+              <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-3">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
                   {{ formatDateRange(record.startDate, record.endDate) }}
                 </h3>
-                <div class="record-badges">
-                  <span class="duration-badge">
+                <div class="flex gap-2">
+                  <Badge variant="danger" size="sm">
                     {{ calculatePeriodDuration(record) }}天
-                  </span>
-                  <span v-if="calculateCycleLength(record) > 0" class="cycle-badge">
+                  </Badge>
+                  <Badge v-if="calculateCycleLength(record) > 0" variant="info" size="sm">
                     周期{{ calculateCycleLength(record) }}天
-                  </span>
+                  </Badge>
                 </div>
               </div>
-              <div class="record-details">
-                <div class="detail-item">
-                  <i class="i-tabler-calendar text-gray-400 wh-4" />
+
+              <!-- 记录详情 -->
+              <div class="flex flex-col gap-1">
+                <div class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                  <Calendar class="w-4 h-4 flex-shrink-0" />
                   <span>{{ formatDate(record.startDate) }} - {{ formatDate(record.endDate) }}</span>
                 </div>
-                <div v-if="getRecordSymptoms(record).length > 0" class="detail-item">
-                  <i class="i-tabler-medical-cross text-gray-400 wh-4" />
+                <div v-if="getRecordSymptoms(record).length > 0" class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                  <Stethoscope class="w-4 h-4 flex-shrink-0" />
                   <span>{{ getRecordSymptoms(record).join(', ') }}</span>
                 </div>
               </div>
             </div>
-            <div class="record-actions">
-              <button class="action-btn" title="编辑" @click.stop="emit('editRecord', record)">
-                <i class="i-tabler-edit wh-4" />
+
+            <!-- 操作按钮 -->
+            <div class="flex items-center gap-1 opacity-0 sm:opacity-100 group-hover:opacity-100 transition-opacity">
+              <button
+                class="p-2 rounded-lg transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400"
+                title="编辑"
+                @click.stop="emit('editRecord', record)"
+              >
+                <Edit class="w-4 h-4" />
               </button>
               <button
-                class="action-btn text-red-500 hover:text-red-700"
-                title="删除" @click.stop="emit('deleteRecord', record.serialNum)"
+                class="p-2 rounded-lg transition-colors hover:bg-rose-100 dark:hover:bg-rose-900/30 text-rose-600 dark:text-rose-400"
+                title="删除"
+                @click.stop="emit('deleteRecord', record.serialNum)"
               >
-                <i class="i-tabler-trash wh-4" />
+                <Trash class="w-4 h-4" />
               </button>
             </div>
           </div>
-        </div>
+        </Card>
       </div>
     </div>
 
     <!-- 分页 -->
-    <div v-if="totalPages > 1" class="pagination-section mt-6">
-      <div class="flex items-center justify-between">
-        <div class="text-sm text-gray-500 dark:text-gray-400">
-          显示 {{ startIndex + 1 }}-{{ Math.min(endIndex, filteredRecords.length) }}
-          共 {{ filteredRecords.length }} 条记录
-        </div>
-        <div class="flex gap-2">
-          <button :disabled="currentPage === 1" class="pagination-btn" @click="currentPage = 1">
-            <i class="i-tabler-chevrons-left wh-4" />
-          </button>
-          <button :disabled="currentPage === 1" class="pagination-btn" @click="currentPage--">
-            <i class="i-tabler-chevron-left wh-4" />
-          </button>
-          <span class="pagination-info">
-            {{ currentPage }} / {{ totalPages }}
-          </span>
-          <button :disabled="currentPage === totalPages" class="pagination-btn" @click="currentPage++">
-            <i class="i-tabler-chevron-right wh-4" />
-          </button>
-          <button :disabled="currentPage === totalPages" class="pagination-btn" @click="currentPage = totalPages">
-            <i class="i-tabler-chevrons-right wh-4" />
-          </button>
-        </div>
-      </div>
-    </div>
+    <Pagination
+      v-if="totalPages > 1"
+      :current-page="currentPage"
+      :total-pages="totalPages"
+      :total-items="filteredRecords.length"
+      :page-size="pageSize"
+      show-total
+      @page-change="currentPage = $event"
+    />
   </div>
 </template>
-
-<style scoped lang="postcss">
-.card-base {
-  background-color: var(--color-base-100);
-  border: 1px solid var(--color-base-300);
-  border-radius: 0.5rem;
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-}
-
-.dark .card-base {
-  background-color: var(--color-base-200);
-  border-color: var(--color-base-300);
-}
-
-.input-base {
-  padding: 0.5rem 0.75rem;
-  border: 1px solid var(--color-base-300);
-  border-radius: 0.5rem;
-  background-color: var(--color-base-100);
-  color: var(--color-base-content);
-  transition: all 0.2s ease-in-out;
-}
-
-.input-base:focus {
-  outline: none;
-  box-shadow: 0 0 0 2px var(--color-primary);
-  border-color: var(--color-primary);
-}
-
-.dark .input-base {
-  border-color: var(--color-base-300);
-  background-color: var(--color-base-200);
-  color: var(--color-base-content);
-}
-
-.dark .input-base:focus {
-  box-shadow: 0 0 0 2px var(--color-primary);
-  border-color: var(--color-primary);
-}
-
-.select-base {
-  padding: 0.5rem 0.75rem;
-  border: 1px solid var(--color-base-300);
-  border-radius: 0.5rem;
-  background-color: var(--color-base-100);
-  color: var(--color-base-content);
-  transition: all 0.2s ease-in-out;
-}
-
-.select-base:focus {
-  outline: none;
-  box-shadow: 0 0 0 2px var(--color-primary);
-  border-color: var(--color-primary);
-}
-
-.dark .select-base {
-  border-color: var(--color-base-300);
-  background-color: var(--color-base-200);
-  color: var(--color-base-content);
-}
-
-.dark .select-base:focus {
-  box-shadow: 0 0 0 2px var(--color-primary);
-  border-color: var(--color-primary);
-}
-
-.btn-secondary {
-  padding: 0.5rem 0.75rem;
-  background-color: var(--color-secondary);
-  color: var(--color-secondary-content);
-  border-radius: 0.5rem;
-  transition: all 0.2s ease-in-out;
-  display: flex;
-  align-items: center;
-}
-
-.btn-secondary:hover {
-  background-color: color-mix(in oklch, var(--color-secondary) 80%, black);
-}
-
-.btn-secondary:focus {
-  outline: none;
-  box-shadow: 0 0 0 2px var(--color-secondary);
-}
-
-.dark .btn-secondary {
-  background-color: var(--color-secondary);
-  color: var(--color-secondary-content);
-}
-
-.dark .btn-secondary:hover {
-  background-color: color-mix(in oklch, var(--color-secondary) 70%, white);
-}
-
-.btn-primary {
-  padding: 0.5rem 1rem;
-  background-color: var(--color-primary);
-  color: var(--color-primary-content);
-  border-radius: 0.5rem;
-  transition: all 0.2s ease-in-out;
-  display: flex;
-  align-items: center;
-}
-
-.btn-primary:hover {
-  background-color: color-mix(in oklch, var(--color-primary) 85%, black);
-}
-
-.btn-primary:focus {
-  outline: none;
-  box-shadow: 0 0 0 2px var(--color-primary);
-}
-
-.filter-label {
-  display: block;
-  font-size: 0.75rem;
-  font-weight: 500;
-  color: var(--color-base-content);
-  margin-bottom: 0.25rem;
-}
-
-.dark .filter-label {
-  color: var(--color-base-content);
-}
-
-.stats-overview .stat-card {
-  background-color: var(--color-base-100);
-  border: 1px solid var(--color-base-300);
-  border-radius: 0.5rem;
-  padding: 1rem;
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.dark .stats-overview .stat-card {
-  background-color: var(--color-base-200);
-  border-color: var(--color-base-300);
-}
-
-.stat-icon {
-  width: 2.5rem;
-  height: 2.5rem;
-  border-radius: 0.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.stat-content {
-  flex: 1;
-}
-
-.stat-value {
-  font-size: 1.125rem;
-  font-weight: 700;
-  color: var(--color-base-content);
-}
-
-.dark .stat-value {
-  color: var(--color-base-content);
-}
-
-.stat-label {
-  font-size: 0.75rem;
-  color: var(--color-neutral);
-}
-
-.dark .stat-label {
-  color: var(--color-neutral-content);
-}
-
-.empty-state {
-  text-align: center;
-}
-
-.record-card {
-  transition: all 0.2s ease-in-out;
-}
-
-.record-card:hover {
-  transform: translateY(-0.25rem);
-}
-
-.record-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  margin-bottom: 0.5rem;
-}
-
-.record-title {
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: var(--color-base-content);
-}
-
-.dark .record-title {
-  color: var(--color-base-content);
-}
-
-.record-badges {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.duration-badge {
-  padding: 0.25rem 0.5rem;
-  background-color: var(--color-error);
-  color: var(--color-error-content);
-  border-radius: 9999px;
-  font-size: 0.75rem;
-  font-weight: 500;
-}
-
-.dark .duration-badge {
-  background-color: color-mix(in oklch, var(--color-error) 30%, transparent);
-  color: var(--color-error-content);
-}
-
-.cycle-badge {
-  padding: 0.25rem 0.5rem;
-  background-color: var(--color-info);
-  color: var(--color-info-content);
-  border-radius: 9999px;
-  font-size: 0.75rem;
-  font-weight: 500;
-}
-
-.dark .cycle-badge {
-  background-color: color-mix(in oklch, var(--color-info) 30%, transparent);
-  color: var(--color-info-content);
-}
-
-.record-details {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.detail-item {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.875rem;
-  color: var(--color-neutral);
-}
-
-.dark .detail-item {
-  color: var(--color-neutral-content);
-}
-
-.record-actions {
-  display: flex;
-  gap: 0.25rem;
-  opacity: 0;
-  transition: opacity 0.2s ease-in-out;
-}
-
-.record-card:hover .record-actions {
-  opacity: 1;
-}
-
-.action-btn {
-  padding: 0.5rem;
-  border-radius: 0.5rem;
-  transition: all 0.2s ease-in-out;
-  color: var(--color-neutral);
-}
-
-.action-btn:hover {
-  background-color: var(--color-base-200);
-  color: var(--color-base-content);
-}
-
-.dark .action-btn {
-  color: var(--color-neutral-content);
-}
-
-.dark .action-btn:hover {
-  background-color: var(--color-base-300);
-  color: var(--color-base-content);
-}
-
-.pagination-section {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.pagination-btn {
-  padding: 0.5rem;
-  border-radius: 0.5rem;
-  border: 1px solid var(--color-base-300);
-  transition: all 0.2s ease-in-out;
-}
-
-.pagination-btn:hover {
-  background-color: var(--color-base-200);
-}
-
-.pagination-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.dark .pagination-btn {
-  border-color: var(--color-base-300);
-}
-
-.dark .pagination-btn:hover {
-  background-color: var(--color-base-300);
-}
-
-.pagination-info {
-  padding: 0.5rem 0.75rem;
-  font-size: 0.875rem;
-  color: var(--color-neutral);
-}
-
-.dark .pagination-info {
-  color: var(--color-neutral-content);
-}
-
-@media (max-width: 640px) {
-  .stats-overview {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 0.5rem;
-  }
-
-  .stat-card {
-    padding: 0.75rem;
-  }
-
-  .stat-value {
-    font-size: 1rem;
-  }
-
-  .record-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.5rem;
-  }
-
-  .record-actions {
-    opacity: 1;
-  }
-
-  .filters-section .flex {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .filters-section .grid {
-    grid-template-columns: 1fr;
-    gap: 0.5rem;
-  }
-}
-
-@media (max-width: 768px) {
-  .stats-overview {
-    grid-template-columns: 1fr;
-  }
-}
-</style>

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { LucideArrowRight, LucideTrendingDown, LucideTrendingUp } from 'lucide-vue-next';
+import { Card, Spinner } from '@/components/ui';
 import type { DebtRelation } from '@/schema/money';
 
 interface Props {
@@ -56,373 +57,139 @@ function formatAmount(amount: number): string {
 </script>
 
 <template>
-  <div class="member-debt-relations">
+  <div class="flex flex-col gap-6">
     <!-- 加载状态 -->
-    <div v-if="loading" class="loading-state">
-      <div class="spinner" />
+    <div v-if="loading" class="flex flex-col items-center gap-2 py-12 text-gray-500 dark:text-gray-400">
+      <Spinner size="lg" />
       <span>加载中...</span>
     </div>
 
     <template v-else>
       <!-- 净余额卡片 -->
-      <div class="net-balance-card" :class="netBalance > 0 ? 'positive' : netBalance < 0 ? 'negative' : 'neutral'">
-        <div class="balance-info">
-          <label>净余额</label>
-          <h2 class="balance-amount">
+      <Card
+        padding="lg"
+        class="flex items-center justify-between"
+        :class="[
+          netBalance > 0 ? 'bg-gradient-to-br from-green-50 to-white dark:from-green-900/20 dark:to-gray-900 border-2 border-green-600 dark:border-green-500'
+          : netBalance < 0 ? 'bg-gradient-to-br from-red-50 to-white dark:from-red-900/20 dark:to-gray-900 border-2 border-red-600 dark:border-red-500'
+            : 'border-2 border-gray-300 dark:border-gray-600',
+        ]"
+      >
+        <div>
+          <label class="block text-sm text-gray-600 dark:text-gray-400 mb-2">净余额</label>
+          <h2
+            class="text-4xl md:text-5xl font-bold mb-2" :class="[
+              netBalance > 0 ? 'text-green-600 dark:text-green-400'
+              : netBalance < 0 ? 'text-red-600 dark:text-red-400'
+                : 'text-gray-900 dark:text-white',
+            ]"
+          >
             {{ netBalance > 0 ? '+' : netBalance < 0 ? '-' : '' }}
             {{ formatAmount(netBalance) }}
           </h2>
-          <p class="balance-desc">
+          <p class="text-sm text-gray-600 dark:text-gray-400">
             {{ netBalance > 0 ? '您有应收款项' : netBalance < 0 ? '您有应付款项' : '已结清' }}
           </p>
         </div>
         <component
           :is="netBalance > 0 ? LucideTrendingUp : netBalance < 0 ? LucideTrendingDown : LucideArrowRight"
-          class="balance-icon"
+          :size="64"
+          class="opacity-20"
+          :class="[
+            netBalance > 0 ? 'text-green-600 dark:text-green-500'
+            : netBalance < 0 ? 'text-red-600 dark:text-red-500'
+              : 'text-gray-400 dark:text-gray-600',
+          ]"
         />
-      </div>
+      </Card>
 
       <!-- 债务列表 -->
-      <div class="relations-container">
+      <div class="flex flex-col gap-6">
         <!-- 应收款（别人欠我的） -->
-        <section v-if="credits.length > 0" class="relations-section">
-          <h3 class="section-title credit">
-            <LucideTrendingUp class="title-icon" />
+        <Card v-if="credits.length > 0" padding="none" class="overflow-hidden">
+          <h3 class="flex items-center gap-2 px-5 py-4 text-base font-semibold bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 border-b border-green-200 dark:border-green-800">
+            <LucideTrendingUp :size="20" />
             应收款
           </h3>
-          <div class="relation-list">
+          <div class="flex flex-col">
             <div
               v-for="credit in credits"
               :key="credit.serialNum"
-              class="relation-item credit"
+              class="px-5 py-4 border-b border-gray-200 dark:border-gray-700 last:border-b-0 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/50"
             >
-              <div class="relation-header">
-                <span class="relation-member">成员 {{ credit.debtorMemberSerialNum.slice(0, 8) }}</span>
-                <span class="relation-amount">{{ formatAmount(credit.amount) }}</span>
+              <div class="flex justify-between items-center mb-2">
+                <span class="text-base font-medium text-gray-900 dark:text-white">成员 {{ credit.debtorMemberSerialNum.slice(0, 8) }}</span>
+                <span class="text-lg font-semibold text-green-600 dark:text-green-400">{{ formatAmount(credit.amount) }}</span>
               </div>
-              <div class="relation-footer">
-                <span class="relation-status" :class="[credit.isSettled ? 'settled' : 'pending']">
+              <div class="flex justify-between items-center text-sm">
+                <span
+                  class="px-3 py-1 rounded-xl font-medium" :class="[
+                    credit.isSettled
+                      ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
+                      : 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300',
+                  ]"
+                >
                   {{ credit.isSettled ? '已结算' : '待结算' }}
                 </span>
-                <span class="relation-date">
+                <span class="text-gray-500 dark:text-gray-400">
                   {{ new Date(credit.createdAt).toLocaleDateString('zh-CN') }}
                 </span>
               </div>
             </div>
           </div>
-          <div class="section-summary">
-            <span>小计</span>
-            <strong>{{ formatAmount(credits.reduce((sum, r) => sum + r.amount, 0)) }}</strong>
+          <div class="flex justify-between items-center px-5 py-4 bg-gray-50 dark:bg-gray-900/50 text-sm">
+            <span class="text-gray-600 dark:text-gray-400">小计</span>
+            <strong class="text-lg font-semibold text-gray-900 dark:text-white">{{ formatAmount(credits.reduce((sum, r) => sum + r.amount, 0)) }}</strong>
           </div>
-        </section>
+        </Card>
 
         <!-- 应付款（我欠别人的） -->
-        <section v-if="debts.length > 0" class="relations-section">
-          <h3 class="section-title debt">
-            <LucideTrendingDown class="title-icon" />
+        <Card v-if="debts.length > 0" padding="none" class="overflow-hidden">
+          <h3 class="flex items-center gap-2 px-5 py-4 text-base font-semibold bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 border-b border-red-200 dark:border-red-800">
+            <LucideTrendingDown :size="20" />
             应付款
           </h3>
-          <div class="relation-list">
+          <div class="flex flex-col">
             <div
               v-for="debt in debts"
               :key="debt.serialNum"
-              class="relation-item debt"
+              class="px-5 py-4 border-b border-gray-200 dark:border-gray-700 last:border-b-0 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/50"
             >
-              <div class="relation-header">
-                <span class="relation-member">成员 {{ debt.creditorMemberSerialNum.slice(0, 8) }}</span>
-                <span class="relation-amount">{{ formatAmount(debt.amount) }}</span>
+              <div class="flex justify-between items-center mb-2">
+                <span class="text-base font-medium text-gray-900 dark:text-white">成员 {{ debt.creditorMemberSerialNum.slice(0, 8) }}</span>
+                <span class="text-lg font-semibold text-red-600 dark:text-red-400">{{ formatAmount(debt.amount) }}</span>
               </div>
-              <div class="relation-footer">
-                <span class="relation-status" :class="[debt.isSettled ? 'settled' : 'pending']">
+              <div class="flex justify-between items-center text-sm">
+                <span
+                  class="px-3 py-1 rounded-xl font-medium" :class="[
+                    debt.isSettled
+                      ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
+                      : 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300',
+                  ]"
+                >
                   {{ debt.isSettled ? '已结算' : '待结算' }}
                 </span>
-                <span class="relation-date">
+                <span class="text-gray-500 dark:text-gray-400">
                   {{ new Date(debt.createdAt).toLocaleDateString('zh-CN') }}
                 </span>
               </div>
             </div>
           </div>
-          <div class="section-summary">
-            <span>小计</span>
-            <strong>{{ formatAmount(debts.reduce((sum, r) => sum + r.amount, 0)) }}</strong>
+          <div class="flex justify-between items-center px-5 py-4 bg-gray-50 dark:bg-gray-900/50 text-sm">
+            <span class="text-gray-600 dark:text-gray-400">小计</span>
+            <strong class="text-lg font-semibold text-gray-900 dark:text-white">{{ formatAmount(debts.reduce((sum, r) => sum + r.amount, 0)) }}</strong>
           </div>
-        </section>
+        </Card>
 
         <!-- 空状态 -->
-        <div v-if="credits.length === 0 && debts.length === 0" class="empty-state">
-          <LucideArrowRight class="empty-icon" />
-          <p>暂无债务关系</p>
-          <span class="empty-hint">参与分摊后，债务关系将显示在这里</span>
+        <div v-if="credits.length === 0 && debts.length === 0" class="flex flex-col items-center gap-3 py-12 text-center">
+          <LucideArrowRight :size="48" class="text-gray-300 dark:text-gray-600" />
+          <p class="text-base text-gray-600 dark:text-gray-400">
+            暂无债务关系
+          </p>
+          <span class="text-sm text-gray-400 dark:text-gray-500">参与分摆后，债务关系将显示在这里</span>
         </div>
       </div>
     </template>
   </div>
 </template>
-
-<style scoped>
-.member-debt-relations {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-/* 加载状态 */
-.loading-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 3rem 0;
-  color: var(--color-gray-500);
-}
-
-.spinner {
-  width: 32px;
-  height: 32px;
-  border: 3px solid var(--color-base-300);
-  border-top-color: var(--color-primary);
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-/* 净余额卡片 */
-.net-balance-card {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 2rem;
-  background: white;
-  border: 2px solid var(--color-base-300);
-  border-radius: 16px;
-  box-shadow: var(--shadow-lg);
-}
-
-.net-balance-card.positive {
-  background: linear-gradient(135deg, #d1fae5 0%, white 100%);
-  border-color: #059669;
-}
-
-.net-balance-card.negative {
-  background: linear-gradient(135deg, #fee2e2 0%, white 100%);
-  border-color: #dc2626;
-}
-
-.balance-info label {
-  display: block;
-  font-size: 0.875rem;
-  color: var(--color-gray-600);
-  margin-bottom: 0.5rem;
-}
-
-.balance-amount {
-  margin: 0 0 0.5rem 0;
-  font-size: 2.5rem;
-  font-weight: 700;
-}
-
-.net-balance-card.positive .balance-amount {
-  color: #059669;
-}
-
-.net-balance-card.negative .balance-amount {
-  color: #dc2626;
-}
-
-.balance-desc {
-  margin: 0;
-  font-size: 0.875rem;
-  color: var(--color-gray-600);
-}
-
-.balance-icon {
-  width: 64px;
-  height: 64px;
-  opacity: 0.2;
-}
-
-.net-balance-card.positive .balance-icon {
-  color: #059669;
-}
-
-.net-balance-card.negative .balance-icon {
-  color: #dc2626;
-}
-
-/* 关系列表容器 */
-.relations-container {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-.relations-section {
-  background: white;
-  border: 1px solid var(--color-base-300);
-  border-radius: 12px;
-  overflow: hidden;
-}
-
-.section-title {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 1rem 1.25rem;
-  font-size: 1rem;
-  font-weight: 600;
-  margin: 0;
-  border-bottom: 1px solid var(--color-base-200);
-}
-
-.section-title.credit {
-  background: #d1fae5;
-  color: #065f46;
-}
-
-.section-title.debt {
-  background: #fee2e2;
-  color: #991b1b;
-}
-
-.title-icon {
-  width: 20px;
-  height: 20px;
-}
-
-.relation-list {
-  display: flex;
-  flex-direction: column;
-}
-
-.relation-item {
-  padding: 1rem 1.25rem;
-  border-bottom: 1px solid var(--color-base-200);
-  transition: background 0.2s;
-}
-
-.relation-item:last-child {
-  border-bottom: none;
-}
-
-.relation-item:hover {
-  background: var(--color-base-100);
-}
-
-.relation-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 0.5rem;
-}
-
-.relation-member {
-  font-size: 1rem;
-  font-weight: 500;
-}
-
-.relation-amount {
-  font-size: 1.125rem;
-  font-weight: 600;
-}
-
-.relation-item.credit .relation-amount {
-  color: #059669;
-}
-
-.relation-item.debt .relation-amount {
-  color: #dc2626;
-}
-
-.relation-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 0.875rem;
-}
-
-.relation-status {
-  padding: 0.25rem 0.75rem;
-  border-radius: 12px;
-  font-weight: 500;
-}
-
-.relation-status.pending {
-  background: #fef3c7;
-  color: #92400e;
-}
-
-.relation-status.confirmed {
-  background: #dbeafe;
-  color: #1e40af;
-}
-
-.relation-status.settled {
-  background: #d1fae5;
-  color: #065f46;
-}
-
-.relation-date {
-  color: var(--color-gray-500);
-}
-
-.section-summary {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem 1.25rem;
-  background: var(--color-base-100);
-  font-size: 0.875rem;
-}
-
-.section-summary strong {
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: var(--color-gray-900);
-}
-
-/* 空状态 */
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 3rem 0;
-  text-align: center;
-}
-
-.empty-icon {
-  width: 48px;
-  height: 48px;
-  color: var(--color-gray-300);
-}
-
-.empty-state p {
-  margin: 0;
-  font-size: 1rem;
-  color: var(--color-gray-600);
-}
-
-.empty-hint {
-  font-size: 0.875rem;
-  color: var(--color-gray-400);
-}
-
-/* 响应式 */
-@media (max-width: 768px) {
-  .net-balance-card {
-    padding: 1.5rem;
-  }
-
-  .balance-amount {
-    font-size: 2rem;
-  }
-
-  .balance-icon {
-    width: 48px;
-    height: 48px;
-  }
-}
-</style>

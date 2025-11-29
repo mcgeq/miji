@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import VChart from 'vue-echarts';
+import { Card, Spinner } from '@/components/ui';
 import { chartUtils, defaultTheme, initECharts } from '@/utils/echarts';
 
 const props = defineProps<Props>();
@@ -402,44 +403,47 @@ const chartLoading = ref(false);
 </script>
 
 <template>
-  <div class="payment-method-charts-switcher">
-    <div class="chart-card">
-      <div class="chart-header">
-        <h3 class="chart-title">
+  <div class="mb-8 w-full">
+    <Card padding="lg" class="overflow-hidden">
+      <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-4 gap-3 flex-wrap">
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white break-words">
           {{ chartViewTypeName }}
         </h3>
-        <div class="chart-controls">
+        <div class="flex gap-4 items-center flex-wrap w-full lg:w-auto">
           <!-- 图表类型切换按钮 -->
-          <div class="view-type-buttons">
+          <div class="flex gap-2 bg-gray-200 dark:bg-gray-800 rounded-lg p-1 w-full lg:w-auto justify-center">
             <button
-              class="view-type-btn" :class="[{ active: chartViewType === 'pie' }]"
+              class="flex items-center gap-1 px-3 py-2 rounded-md bg-transparent text-gray-600 dark:text-gray-400 text-sm font-medium cursor-pointer transition-all whitespace-nowrap hover:bg-gray-300 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white"
+              :class="chartViewType === 'pie' ? 'bg-blue-600 !text-white shadow-sm' : ''"
               @click="chartViewType = 'pie'"
             >
-              <span class="btn-icon">🥧</span>
-              <span class="btn-text">占比</span>
+              <span class="text-base">🥧</span>
+              <span class="text-xs hidden sm:inline">占比</span>
             </button>
             <button
-              class="view-type-btn" :class="[{ active: chartViewType === 'bar' }]"
+              class="flex items-center gap-1 px-3 py-2 rounded-md bg-transparent text-gray-600 dark:text-gray-400 text-sm font-medium cursor-pointer transition-all whitespace-nowrap hover:bg-gray-300 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white"
+              :class="chartViewType === 'bar' ? 'bg-blue-600 !text-white shadow-sm' : ''"
               @click="chartViewType = 'bar'"
             >
-              <span class="btn-icon">📊</span>
-              <span class="btn-text">排行</span>
+              <span class="text-base">📊</span>
+              <span class="text-xs hidden sm:inline">排行</span>
             </button>
             <button
-              class="view-type-btn" :class="[{ active: chartViewType === 'radar' }]"
+              class="flex items-center gap-1 px-3 py-2 rounded-md bg-transparent text-gray-600 dark:text-gray-400 text-sm font-medium cursor-pointer transition-all whitespace-nowrap hover:bg-gray-300 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white"
+              :class="chartViewType === 'radar' ? 'bg-blue-600 !text-white shadow-sm' : ''"
               @click="chartViewType = 'radar'"
             >
-              <span class="btn-icon">🕸</span>
-              <span class="btn-text">雷达</span>
+              <span class="text-base">🕸</span>
+              <span class="text-xs hidden sm:inline">雷达</span>
             </button>
           </div>
 
           <!-- 支付渠道类型选择 -->
-          <div class="control-group">
-            <label class="control-label">交易类型:</label>
+          <div class="flex items-center gap-2 flex-wrap w-full lg:w-auto justify-between lg:justify-start">
+            <label class="text-sm text-gray-600 dark:text-gray-400 font-medium whitespace-nowrap">交易类型:</label>
             <select
               v-model="paymentMethodType"
-              class="control-select"
+              class="px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm min-w-[100px] max-w-[150px] focus:outline-none focus:border-blue-500 dark:focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-blue-600/20"
             >
               <option value="expense">
                 支出
@@ -455,19 +459,19 @@ const chartLoading = ref(false);
         </div>
       </div>
 
-      <div class="chart-content">
-        <div v-if="loading" class="chart-loading">
-          <div class="loading-spinner" />
-          <div class="loading-text">
+      <div class="min-h-[400px] sm:min-h-[300px] lg:min-h-[400px] w-full overflow-hidden">
+        <div v-if="loading" class="flex flex-col items-center justify-center h-[400px] sm:h-[300px] lg:h-[400px] gap-4">
+          <Spinner size="lg" />
+          <div class="text-gray-600 dark:text-gray-400 text-sm">
             加载中...
           </div>
         </div>
 
-        <div v-else-if="currentPaymentMethods.length === 0" class="chart-empty">
-          <div class="empty-icon">
+        <div v-else-if="currentPaymentMethods.length === 0" class="flex flex-col items-center justify-center h-[400px] sm:h-[300px] lg:h-[400px] gap-4">
+          <div class="text-5xl opacity-50">
             {{ chartViewType === 'pie' ? '🥧' : chartViewType === 'bar' ? '📊' : '🕸' }}
           </div>
-          <div class="empty-text">
+          <div class="text-gray-600 dark:text-gray-400 text-sm">
             暂无数据
           </div>
         </div>
@@ -476,259 +480,10 @@ const chartLoading = ref(false);
           v-else
           :option="currentChartOption"
           :loading="chartLoading"
-          class="chart"
+          class="w-full h-[400px] sm:h-[300px] lg:h-[400px] max-w-full"
           autoresize
         />
       </div>
-    </div>
+    </Card>
   </div>
 </template>
-
-<style scoped lang="postcss">
-.payment-method-charts-switcher {
-  margin-bottom: 2rem;
-  width: 100%;
-  box-sizing: border-box;
-}
-
-.chart-card {
-  background: var(--color-base-100);
-  border: 1px solid var(--color-base-300);
-  border-radius: 0.5rem;
-  padding: 1.5rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  width: 100%;
-  box-sizing: border-box;
-  overflow: hidden;
-}
-
-.chart-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1rem;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-.chart-title {
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: var(--color-accent-content);
-  margin-bottom: 0.25rem;
-  word-break: break-word;
-}
-
-.chart-controls {
-  display: flex;
-  gap: 1rem;
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-.view-type-buttons {
-  display: flex;
-  gap: 0.5rem;
-  background: var(--color-base-200);
-  border-radius: 0.5rem;
-  padding: 0.25rem;
-}
-
-.view-type-btn {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  padding: 0.5rem 0.75rem;
-  border: none;
-  border-radius: 0.375rem;
-  background: transparent;
-  color: var(--color-neutral);
-  font-size: 0.875rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  white-space: nowrap;
-}
-
-.view-type-btn:hover {
-  background: var(--color-base-300);
-  color: var(--color-accent-content);
-}
-
-.view-type-btn.active {
-  background: var(--color-primary);
-  color: var(--color-primary-content);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.btn-icon {
-  font-size: 1rem;
-}
-
-.btn-text {
-  font-size: 0.75rem;
-}
-
-.control-group {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-}
-
-.control-label {
-  font-size: 0.875rem;
-  color: var(--color-neutral);
-  font-weight: 500;
-  white-space: nowrap;
-}
-
-.control-select {
-  padding: 0.375rem 0.75rem;
-  border: 1px solid var(--color-base-300);
-  border-radius: 0.375rem;
-  background: var(--color-base-100);
-  color: var(--color-accent-content);
-  font-size: 0.875rem;
-  min-width: 100px;
-  max-width: 150px;
-}
-
-.control-select:focus {
-  outline: none;
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px rgba(var(--color-primary-rgb), 0.1);
-}
-
-.chart-content {
-  min-height: 400px;
-  width: 100%;
-  overflow: hidden;
-}
-
-.chart {
-  width: 100%;
-  height: 400px;
-  max-width: 100%;
-}
-
-.chart-loading {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 400px;
-  gap: 1rem;
-}
-
-.loading-spinner {
-  width: 40px;
-  height: 40px;
-  border: 3px solid var(--color-base-300);
-  border-top: 3px solid var(--color-primary);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-.loading-text {
-  color: var(--color-neutral);
-  font-size: 0.875rem;
-}
-
-.chart-empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 400px;
-  gap: 1rem;
-}
-
-.empty-icon {
-  font-size: 3rem;
-  opacity: 0.5;
-}
-
-.empty-text {
-  color: var(--color-neutral);
-  font-size: 0.875rem;
-}
-
-/* 移动端优化 */
-@media (max-width: 768px) {
-  .payment-method-charts-switcher {
-    margin-bottom: 1rem;
-  }
-
-  .chart-card {
-    padding: 1rem;
-    margin: 0;
-  }
-
-  .chart-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.75rem;
-  }
-
-  .chart-controls {
-    width: 100%;
-    justify-content: flex-start;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.75rem;
-  }
-
-  .view-type-buttons {
-    width: 100%;
-    justify-content: center;
-  }
-
-  .control-group {
-    width: 100%;
-    justify-content: space-between;
-  }
-
-  .chart {
-    height: 300px;
-  }
-}
-
-/* 超小屏幕优化 */
-@media (max-width: 480px) {
-  .chart-card {
-    padding: 0.75rem;
-  }
-
-  .chart-title {
-    font-size: 1rem;
-  }
-
-  .view-type-btn {
-    padding: 0.375rem 0.5rem;
-    font-size: 0.75rem;
-  }
-
-  .btn-text {
-    display: none;
-  }
-
-  .control-label {
-    font-size: 0.75rem;
-  }
-
-  .control-select {
-    font-size: 0.75rem;
-    padding: 0.25rem 0.5rem;
-  }
-
-  .chart {
-    height: 250px;
-  }
-}
-</style>

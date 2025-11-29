@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import Descriptions from '@/components/common/Descriptions.vue';
-import PopupWrapper from '@/components/common/PopupWrapper.vue';
 import PriorityBadge from '@/components/common/PriorityBadge.vue';
+import { Descriptions, Modal } from '@/components/ui';
 import ProjectsView from '@/features/projects/views/ProjectsView.vue';
 import TagsView from '@/features/tags/views/TagsView.vue';
 import { StatusSchema } from '@/schema/common';
@@ -35,6 +34,21 @@ const menuStore = useMenuStore();
 // 本地副本，初始值为 props.todo，但后续只通过 updateTodo 更新
 const todoCopy = ref<Todo>({ ...props.todo });
 
+// 组件挂载时，如果当前任务的菜单是打开的，清除它
+// 这可以防止页面刷新或导航后菜单状态残留
+onMounted(() => {
+  if (menuStore.getMenuSerialNum === todoCopy.value.serialNum) {
+    menuStore.setMenuSerialNum('');
+  }
+});
+
+// 组件卸载时，如果当前任务的菜单是打开的，关闭它
+onBeforeUnmount(() => {
+  if (menuStore.getMenuSerialNum === todoCopy.value.serialNum) {
+    menuStore.setMenuSerialNum('');
+  }
+});
+
 // UI 状态控制
 const currentPopup = ref('');
 const showActions = ref(false);
@@ -56,20 +70,20 @@ const hasModalOpen = computed(() => {
   return showEditOptions.value || showMenu.value || showEditModal.value || showDueDateModal.value || showEditRepeatModal.value || !!currentPopup.value;
 });
 
-// 优先级样式计算
+// 优先级样式计算 - 使用通用组件类
 const priorityClass = computed(() => {
   if (!todoCopy.value.priority) return '';
 
   const priority = todoCopy.value.priority.toUpperCase();
   switch (priority) {
     case 'LOW':
-      return 'priority-low';
+      return 'priority-gradient-low';
     case 'MEDIUM':
-      return 'priority-medium';
+      return 'priority-gradient-medium';
     case 'HIGH':
-      return 'priority-high';
+      return 'priority-gradient-high';
     case 'URGENT':
-      return 'priority-urgent';
+      return 'priority-gradient-urgent';
     default:
       return '';
   }
@@ -105,9 +119,11 @@ function onRemoveClick() {
 function toggleMenu() {
   isRotatingAdd.value = true;
   const currentSerial = todoCopy.value.serialNum;
-  menuStore.setMenuSerialNum(
-    menuStore.getMenuSerialNum === currentSerial ? '' : currentSerial,
-  );
+  const isCurrentlyOpen = menuStore.getMenuSerialNum === currentSerial;
+  const newSerial = isCurrentlyOpen ? '' : currentSerial;
+
+  menuStore.setMenuSerialNum(newSerial);
+
   setTimeout(() => (isRotatingAdd.value = false), 500);
 }
 
@@ -225,14 +241,14 @@ function handleMouseLeave() {
 
 <template>
   <div
-    class="todo-item"
+    class="relative w-full mb-1 p-4 md:p-6 lg:p-6 rounded-xl md:rounded-[1.25rem] border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm backdrop-blur-sm transition-all duration-300 ease-out hover:shadow-lg hover:border-blue-500 dark:hover:border-blue-400 hover:-translate-y-0.5 overflow-visible z-[1]"
     :class="priorityClass"
     @mouseenter="handleMouseEnter"
     @mouseleave="handleMouseLeave"
   >
     <!-- Left Section: Checkbox, Priority, Title -->
-    <div class="todo-main">
-      <div class="todo-left">
+    <div class="flex justify-between items-center flex-1 w-full max-w-full min-w-0 overflow-hidden">
+      <div class="flex items-center gap-2 md:gap-2 flex-1 min-w-0 max-w-full pl-0.5 md:pl-2 overflow-hidden">
         <PriorityBadge
           v-if="todoCopy.priority"
           :serial-num="todoCopy.serialNum"
@@ -255,7 +271,7 @@ function handleMouseLeave() {
     </div>
 
     <!-- 扩展信息区域 -->
-    <div v-if="!completed" class="todo-extended">
+    <div v-if="!completed" class="flex flex-wrap gap-3 mt-1.5 pt-1.5 border-t border-gray-200 dark:border-gray-700 relative z-0 rounded-b-2xl -mx-4 md:-mx-6 lg:-mx-6 px-4 md:px-6 lg:px-6 justify-center items-center">
       <!-- 进度条 -->
       <TodoProgress
         :progress="todoCopy.progress"
@@ -263,7 +279,7 @@ function handleMouseLeave() {
       />
 
       <!-- 功能按钮组 -->
-      <div class="todo-actions">
+      <div class="flex flex-wrap gap-3 items-center justify-center">
         <!-- 时间估算 -->
         <TodoEstimate
           :estimate-minutes="todoCopy.estimateMinutes"
@@ -328,271 +344,72 @@ function handleMouseLeave() {
     />
 
     <!-- Popups -->
-    <PopupWrapper v-if="currentPopup === 'description'" @close="closeMenu">
+    <Modal
+      :open="currentPopup === 'description'"
+      title="编辑描述"
+      size="lg"
+      :show-footer="false"
+      @close="closeMenu"
+    >
       <Descriptions v-model="todoCopy.description" @close="closeMenu" />
-    </PopupWrapper>
-    <PopupWrapper v-if="currentPopup === 'tags'" @close="closeMenu">
+    </Modal>
+
+    <Modal
+      :open="currentPopup === 'tags'"
+      title="选择标签"
+      size="lg"
+      cancel-text="关闭"
+      :show-confirm="false"
+      @close="closeMenu"
+      @cancel="closeMenu"
+    >
       <TagsView />
-    </PopupWrapper>
-    <PopupWrapper v-if="currentPopup === 'projects'" @close="closeMenu">
+    </Modal>
+
+    <Modal
+      :open="currentPopup === 'projects'"
+      title="选择项目"
+      size="lg"
+      cancel-text="关闭"
+      :show-confirm="false"
+      @close="closeMenu"
+      @cancel="closeMenu"
+    >
       <ProjectsView />
-    </PopupWrapper>
+    </Modal>
   </div>
 </template>
 
-<style scoped lang="postcss">
-.todo-item {
-  margin-bottom: 0.25rem;
-  padding: 1rem 1.5rem;
-  border-radius: 1.25rem;
-  border: 1px solid var(--color-base-300);
-  background: var(--color-base-100);
-  display: flex;
-  flex-direction: column;
-  position: relative;
-  min-height: 4.5rem;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  overflow: visible;
-  z-index: 1;
-  box-shadow: var(--shadow-sm);
-  width: 100%;
-  max-width: 100%;
-  box-sizing: border-box;
-  backdrop-filter: blur(10px);
+<style scoped>
+/* 优先级渐变样式 - 使用 Tailwind CSS 4 的 light-dark() 函数 */
+.priority-gradient-low {
+  background: linear-gradient(to bottom right,
+    light-dark(oklch(94% 0.015 90), color-mix(in srgb, oklch(20% 0.01 45) 98%, transparent)),
+    color-mix(in srgb, var(--color-success) light-dark(5%, 10%), transparent));
+  border-color: color-mix(in srgb, var(--color-success) 20%, transparent);
 }
 
-.priority-low {
-  background: linear-gradient(
-    135deg,
-    var(--color-base-100) 0%,
-    color-mix(in oklch, var(--color-base-100) 98%, var(--color-success)) 100%
-  );
-  border-color: color-mix(in oklch, var(--color-success) 20%, transparent);
+.priority-gradient-medium {
+  background: linear-gradient(to bottom right,
+    light-dark(oklch(94% 0.015 90), color-mix(in srgb, oklch(20% 0.01 45) 98%, transparent)),
+    color-mix(in srgb, var(--color-warning) light-dark(5%, 10%), transparent));
+  border-color: color-mix(in srgb, var(--color-warning) 20%, transparent);
 }
 
-.priority-medium {
-  background: linear-gradient(
-    135deg,
-    var(--color-base-100) 0%,
-    color-mix(in oklch, var(--color-base-100) 98%, var(--color-warning)) 100%
-  );
-  border-color: color-mix(in oklch, var(--color-warning) 20%, transparent);
+.priority-gradient-high {
+  background: linear-gradient(to bottom right,
+    light-dark(oklch(94% 0.015 90), color-mix(in srgb, oklch(20% 0.01 45) 98%, transparent)),
+    color-mix(in srgb, var(--color-error) light-dark(5%, 10%), transparent));
+  border-color: color-mix(in srgb, var(--color-error) 20%, transparent);
 }
 
-.priority-high {
-  background: linear-gradient(
-    135deg,
-    var(--color-base-100) 0%,
-    color-mix(in oklch, var(--color-base-100) 98%, var(--color-error)) 100%
-  );
-  border-color: color-mix(in oklch, var(--color-error) 20%, transparent);
-}
-
-.priority-urgent {
-  background: linear-gradient(
-    135deg,
-    var(--color-base-100) 0%,
-    color-mix(in oklch, var(--color-base-100) 96%, var(--color-error)) 100%
-  );
+.priority-gradient-urgent {
+  background: linear-gradient(to bottom right,
+    light-dark(oklch(94% 0.015 90), color-mix(in srgb, oklch(20% 0.01 45) 96%, transparent)),
+    color-mix(in srgb, var(--color-error) light-dark(10%, 15%), transparent));
   border-color: var(--color-error);
-  box-shadow: var(--shadow-md), 0 0 20px color-mix(in oklch, var(--color-error) 30%, transparent);
-}
-
-@keyframes urgent-pulse {
-  0%, 100% {
-    box-shadow: 0 0 16px var(--color-error);
-  }
-  50% {
-    box-shadow: 0 0 24px var(--color-error);
-  }
-}
-
-.todo-item:hover {
-  box-shadow: var(--shadow-lg);
-  border-color: var(--color-primary);
-  transform: translateY(-2px);
-  background: linear-gradient(
-    135deg,
-    var(--color-base-100) 0%,
-    color-mix(in oklch, var(--color-base-100) 95%, var(--color-primary)) 100%
-  );
-}
-
-.todo-item:hover::before {
-  width: 6px;
-  opacity: 1;
-  box-shadow: 0 0 16px rgba(0, 0, 0, 0.15);
-}
-
-/* 主行容器 */
-.todo-main {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex: 1;
-  width: 100%;
-  max-width: 100%;
-  min-width: 0;
-  overflow: hidden;
-}
-
-/* 左侧: 优先级、复选框、标题 */
-.todo-left {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  flex: 1;
-  min-width: 0;
-  max-width: 100%;
-  padding-left: 0.5rem;
-  overflow: hidden;
-}
-
-/* 移动端优化 */
-@media (max-width: 768px) {
-  .todo-item {
-    padding: 0.875rem 1rem;
-    margin-bottom: 0.625rem;
-    border-radius: 1rem;
-  }
-
-  .todo-left {
-    padding-left: 0.5rem;
-    gap: 0.5rem;
-  }
-
-  .todo-extended {
-    flex-direction: column;
-    gap: 0.5rem;
-    margin-left: -0.875rem;
-    margin-right: -0.875rem;
-    padding-left: 0.875rem;
-    padding-right: 0.875rem;
-    border-radius: 0 0 0.75rem 0.75rem;
-  }
-
-  .todo-actions {
-    gap: 0.5rem;
-    justify-content: flex-start;
-  }
-}
-
-/* 扩展信息区域 - 现代化设计 */
-.todo-extended {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  margin-top: 0.3rem;
-  padding-top: 0.3rem;
-  border-top: 1px solid var(--color-base-300);
-  position: relative;
-  z-index: 0;
-  border-radius: 0 0 1rem 1rem;
-  margin-left: -1.25rem;
-  margin-right: -1.25rem;
-  padding-left: 1.25rem;
-  padding-right: 1.25rem;
-  justify-content: center;
-  align-items: center;
-}
-
-/* 功能按钮组 */
-.todo-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  align-items: center;
-  justify-content: center;
-}
-
-/* 到期时间 */
-.todo-due-date {
-  position: absolute;
-  bottom: 0.25rem;
-  right: 1rem;
-  font-size: 0.75rem;
-  color: var(--color-neutral-content, #6b7280);
-}
-
-/* 动画类 */
-.rotating {
-  animation: rotating 0.5s linear;
-}
-@keyframes rotating {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
-/* 淡入淡出 */
-.fade-enter-active, .fade-leave-active {
-  transition: opacity 0.25s ease-out, transform 0.25s ease-out;
-}
-.fade-enter-from, .fade-leave-to {
-  opacity: 0;
-  transform: translateY(8px);
-}
-
-/* 缩放动画 */
-.scale-enter-active, .scale-leave-active {
-  transition: transform 0.2s ease-out;
-}
-.scale-enter-from, .scale-leave-to {
-  transform: scale(0.9);
-}
-
-/* Dark Theme 支持 */
-@media (prefers-color-scheme: dark) {
-  .todo-item {
-    border-color: color-mix(in oklch, var(--color-base-300) 40%, transparent);
-    background: linear-gradient(
-      135deg,
-      var(--color-base-200) 0%,
-      color-mix(in oklch, var(--color-base-200) 95%, var(--color-primary)) 100%
-    );
-  }
-
-  .todo-item:hover {
-    background: linear-gradient(
-      135deg,
-      var(--color-base-200) 0%,
-      color-mix(in oklch, var(--color-base-200) 92%, var(--color-primary)) 100%
-    );
-  }
-
-  .priority-low {
-    background: linear-gradient(
-      135deg,
-      color-mix(in oklch, var(--color-base-200) 98%, var(--color-success)) 0%,
-      color-mix(in oklch, var(--color-base-200) 95%, var(--color-success)) 100%
-    );
-  }
-
-  .priority-medium {
-    background: linear-gradient(
-      135deg,
-      color-mix(in oklch, var(--color-base-200) 98%, var(--color-warning)) 0%,
-      color-mix(in oklch, var(--color-base-200) 95%, var(--color-warning)) 100%
-    );
-  }
-
-  .priority-high {
-    background: linear-gradient(
-      135deg,
-      color-mix(in oklch, var(--color-base-200) 98%, var(--color-error)) 0%,
-      color-mix(in oklch, var(--color-base-200) 95%, var(--color-error)) 100%
-    );
-  }
-
-  .priority-urgent {
-    background: linear-gradient(
-      135deg,
-      color-mix(in oklch, var(--color-base-200) 96%, var(--color-error)) 0%,
-      color-mix(in oklch, var(--color-base-200) 92%, var(--color-error)) 100%
-    );
-  }
-
-  .todo-due-date {
-    color: var(--color-neutral-content);
-  }
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+              0 2px 4px -1px rgba(0, 0, 0, 0.06),
+              0 0 15px color-mix(in srgb, var(--color-error) 30%, transparent);
 }
 </style>

@@ -2,13 +2,16 @@
 import { useMoneyAuth } from '@/composables/useMoneyAuth';
 import FamilyMemberList from '@/features/money/components/FamilyMemberList.vue';
 import FamilyMemberModal from '@/features/money/components/FamilyMemberModal.vue';
+import { Permission } from '@/types/auth';
 import type { FamilyMember } from '@/schema/money';
 
 definePage({
   name: 'members',
   meta: {
     requiresAuth: true,
+    permissions: [Permission.MEMBER_VIEW],
     title: '成员管理',
+    icon: 'users',
   },
 });
 
@@ -38,7 +41,7 @@ function handleCloseModal() {
 </script>
 
 <template>
-  <div class="members-page">
+  <div class="w-full h-full">
     <FamilyMemberList
       :family-ledger-serial-num="currentLedgerSerialNum"
       @add-member="handleAddMember"
@@ -53,10 +56,3 @@ function handleCloseModal() {
     />
   </div>
 </template>
-
-<style scoped>
-.members-page {
-  width: 100%;
-  height: 100%;
-}
-</style>

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Check, CheckCircle, Edit, ListTodo, Plus, Trash2, X } from 'lucide-vue-next';
+import { Modal, TodoButton } from '@/components/ui';
 import type { Todo, TodoUpdate } from '@/schema/todos';
 
 const props = defineProps<{
@@ -16,7 +17,6 @@ const emit = defineEmits<{
 }>();
 
 const showModal = ref(false);
-const isModalVisible = ref(false);
 const newSubtaskTitle = ref('');
 const editingSubtask = ref<Todo | null>(null);
 const showCreateForm = ref(false);
@@ -36,17 +36,11 @@ const subtaskProgress = computed(() => {
 function openModal() {
   if (props.readonly) return;
   showModal.value = true;
-  // 延迟设置可见性，防止闪烁
-  setTimeout(() => {
-    isModalVisible.value = true;
-  }, 10);
 }
 
 function closeModal() {
-  isModalVisible.value = false;
-  // 延迟关闭，等待动画完成
+  showModal.value = false;
   setTimeout(() => {
-    showModal.value = false;
     newSubtaskTitle.value = '';
     editingSubtask.value = null;
     showCreateForm.value = false;
@@ -101,650 +95,174 @@ function cancelCreate() {
   showCreateForm.value = false;
   newSubtaskTitle.value = '';
 }
-
-// 排序子任务
-function moveSubtaskUp(subtask: Todo) {
-  const currentOrder = subtask.subtaskOrder || 0;
-  updateSubtask(subtask, { subtaskOrder: currentOrder - 1 });
-}
-
-function moveSubtaskDown(subtask: Todo) {
-  const currentOrder = subtask.subtaskOrder || 0;
-  updateSubtask(subtask, { subtaskOrder: currentOrder + 1 });
-}
 </script>
 
 <template>
-  <div class="todo-subtasks">
+  <div class="relative">
     <!-- 子任务显示按钮 -->
-    <button
-      class="todo-btn"
-      :class="{
-        'todo-btn--active': hasSubtasks,
-        'todo-btn--readonly': readonly,
-      }"
-      :title="hasSubtasks ? `子任务: ${completedSubtasks}/${subtaskCount} (${subtaskProgress}%)` : '添加子任务'"
-      @click="openModal"
-    >
-      <ListTodo class="icon" :size="14" />
-      <span class="subtasks-text">
-        {{ hasSubtasks ? `${completedSubtasks}/${subtaskCount}` : '' }}
-      </span>
-      <div v-if="hasSubtasks" class="progress-bar">
+    <div class="relative">
+      <TodoButton
+        :icon="ListTodo"
+        :text="hasSubtasks ? `${completedSubtasks}/${subtaskCount}` : ''"
+        :active="hasSubtasks"
+        :readonly="props.readonly"
+        :title="hasSubtasks ? `子任务: ${completedSubtasks}/${subtaskCount} (${subtaskProgress}%)` : '添加子任务'"
+        @click="openModal"
+      />
+      <!-- 进度条 -->
+      <div v-if="hasSubtasks" class="absolute bottom-0 left-0 right-0 h-0.5 bg-white/30 dark:bg-gray-700/30 rounded-b-lg">
         <div
-          class="progress-fill"
+          class="h-full bg-green-500 dark:bg-green-400 rounded-b-lg transition-all duration-300"
           :style="{ width: `${subtaskProgress}%` }"
         />
       </div>
-    </button>
+    </div>
 
     <!-- 子任务模态框 -->
-    <Teleport to="body">
-      <div v-if="showModal" class="modal-overlay teleport" :class="{ visible: isModalVisible }" @click="closeModal">
-        <div class="modal-content teleport" @click.stop>
-          <div class="modal-header teleport">
-            <h3>子任务</h3>
-            <div class="header-actions">
-              <span v-if="hasSubtasks" class="progress-text">
-                {{ completedSubtasks }}/{{ subtaskCount }} ({{ subtaskProgress }}%)
-              </span>
-              <button class="close-btn teleport" @click="closeModal">
-                <X :size="20" />
-              </button>
-            </div>
+    <Modal
+      :open="showModal"
+      title="子任务"
+      size="lg"
+      :show-footer="false"
+      @close="closeModal"
+    >
+      <template #header>
+        <div class="flex items-center justify-between w-full">
+          <h3 class="text-xl font-semibold">
+            子任务
+          </h3>
+          <span v-if="hasSubtasks" class="text-sm text-gray-500">
+            {{ completedSubtasks }}/{{ subtaskCount }} ({{ subtaskProgress }}%)
+          </span>
+        </div>
+      </template>
+      <div class="space-y-4">
+        <!-- 创建新子任务 -->
+        <div v-if="!showCreateForm">
+          <button
+            class="w-full flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg hover:border-blue-500 dark:hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors text-gray-700 dark:text-gray-300"
+            @click="showCreateSubtaskForm"
+          >
+            <Plus :size="16" />
+            添加子任务
+          </button>
+        </div>
+
+        <div v-else class="flex gap-2">
+          <input
+            v-model="newSubtaskTitle"
+            type="text"
+            placeholder="输入子任务标题..."
+            class="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            @keyup.enter="createSubtask"
+            @keyup.escape="cancelCreate"
+          >
+          <button
+            class="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            @click="cancelCreate"
+          >
+            <X :size="20" />
+          </button>
+          <button
+            class="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 disabled:opacity-50 transition-colors"
+            :disabled="!newSubtaskTitle.trim()"
+            @click="createSubtask"
+          >
+            <Plus :size="20" />
+          </button>
+        </div>
+
+        <!-- 子任务列表 -->
+        <div v-if="hasSubtasks" class="space-y-3">
+          <div class="flex items-center justify-between text-sm">
+            <span class="font-medium text-gray-900 dark:text-white">子任务列表</span>
+            <span class="text-gray-500 dark:text-gray-400">{{ subtaskCount }} 项</span>
           </div>
 
-          <div class="modal-body teleport">
-            <!-- 创建新子任务 -->
-            <div class="create-section">
-              <div v-if="!showCreateForm" class="create-toggle">
-                <button class="create-btn" @click="showCreateSubtaskForm">
-                  <Plus class="icon" :size="16" />
-                  添加子任务
+          <div class="space-y-2">
+            <div
+              v-for="subtask in subtasks"
+              :key="subtask.serialNum"
+              class="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 transition-colors"
+              :class="{ 'opacity-60': subtask.status === 'Completed' }"
+            >
+              <!-- 编辑模式 -->
+              <div v-if="editingSubtask?.serialNum === subtask.serialNum" class="flex items-center gap-2 flex-1">
+                <input
+                  v-model="editingSubtask.title"
+                  type="text"
+                  class="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  @keyup.enter="saveSubtaskEdit"
+                  @keyup.escape="cancelEdit"
+                >
+                <button
+                  class="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 transition-colors"
+                  @click="saveSubtaskEdit"
+                >
+                  <Check :size="20" />
+                </button>
+                <button
+                  class="p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                  @click="cancelEdit"
+                >
+                  <X :size="20" />
                 </button>
               </div>
 
-              <div v-else class="create-form">
-                <div class="input-group">
-                  <input
-                    v-model="newSubtaskTitle"
-                    type="text"
-                    placeholder="输入子任务标题..."
-                    class="subtask-input"
-                    @keyup.enter="createSubtask"
-                    @keyup.escape="cancelCreate"
-                  >
-                  <div class="form-actions">
-                    <button class="btn-icon btn-secondary" title="取消" @click="cancelCreate">
-                      <X :size="20" />
-                    </button>
-                    <button
-                      class="btn-icon btn-primary"
-                      :disabled="!newSubtaskTitle.trim()"
-                      title="添加"
-                      @click="createSubtask"
-                    >
-                      <Plus :size="20" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- 子任务列表 -->
-            <div v-if="hasSubtasks" class="subtasks-list">
-              <div class="list-header">
-                <span>子任务列表</span>
-                <span class="count">{{ subtaskCount }} 项</span>
-              </div>
-
-              <div class="subtasks-container">
-                <div
-                  v-for="(subtask, index) in subtasks"
-                  :key="subtask.serialNum"
-                  class="subtask-item"
-                  :class="{ completed: subtask.status === 'Completed' }"
+              <!-- 显示模式 -->
+              <template v-else>
+                <button
+                  class="flex-shrink-0 w-5 h-5 rounded border-2 flex items-center justify-center transition-colors"
+                  :class="subtask.status === 'Completed' ? 'bg-green-500 border-green-500' : 'border-gray-300 hover:border-green-500'"
+                  @click="toggleSubtaskStatus(subtask)"
                 >
-                  <!-- 编辑模式 -->
-                  <div v-if="editingSubtask?.serialNum === subtask.serialNum" class="edit-mode">
-                    <input
-                      v-model="editingSubtask.title"
-                      type="text"
-                      class="edit-input"
-                      @keyup.enter="saveSubtaskEdit"
-                      @keyup.escape="cancelEdit"
-                    >
-                    <div class="edit-actions">
-                      <button class="btn-icon btn-primary" title="保存" @click="saveSubtaskEdit">
-                        <Check :size="20" />
-                      </button>
-                      <button class="btn-icon btn-secondary" title="取消" @click="cancelEdit">
-                        <X :size="20" />
-                      </button>
-                    </div>
-                  </div>
+                  <CheckCircle v-if="subtask.status === 'Completed'" class="text-white" :size="16" />
+                </button>
 
-                  <!-- 显示模式 -->
-                  <div v-else class="view-mode">
-                    <div class="subtask-main">
-                      <button
-                        class="status-btn"
-                        :class="{ completed: subtask.status === 'Completed' }"
-                        @click="toggleSubtaskStatus(subtask)"
-                      >
-                        <CheckCircle v-if="subtask.status === 'Completed'" class="check-icon" :size="16" />
-                      </button>
+                <span
+                  class="flex-1 cursor-pointer text-gray-900 dark:text-white"
+                  :class="{ 'line-through text-gray-500 dark:text-gray-400': subtask.status === 'Completed' }"
+                  @dblclick="editSubtask(subtask)"
+                >
+                  {{ subtask.title }}
+                </span>
 
-                      <span
-                        class="subtask-title"
-                        :class="{ completed: subtask.status === 'Completed' }"
-                        @dblclick="editSubtask(subtask)"
-                      >
-                        {{ subtask.title }}
-                      </span>
-                    </div>
-
-                    <div class="subtask-actions">
-                      <button
-                        class="action-btn"
-                        title="编辑"
-                        @click="editSubtask(subtask)"
-                      >
-                        <Edit class="icon" :size="16" />
-                      </button>
-
-                      <button
-                        class="action-btn"
-                        :disabled="index === 0"
-                        title="上移"
-                        @click="moveSubtaskUp(subtask)"
-                      >
-                        <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
-                          <path d="M13,20H11V8L5.5,13.5L4.08,12.08L12,4.16L19.92,12.08L18.5,13.5L13,8V20Z" />
-                        </svg>
-                      </button>
-
-                      <button
-                        class="action-btn"
-                        :disabled="index === subtasks!.length - 1"
-                        title="下移"
-                        @click="moveSubtaskDown(subtask)"
-                      >
-                        <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
-                          <path d="M11,4H13V16L18.5,10.5L19.92,11.92L12,19.84L4.08,11.92L5.5,10.5L11,16V4Z" />
-                        </svg>
-                      </button>
-
-                      <button
-                        class="action-btn delete"
-                        title="删除"
-                        @click="deleteSubtask(subtask)"
-                      >
-                        <Trash2 class="icon" :size="16" />
-                      </button>
-                    </div>
-                  </div>
+                <div class="flex items-center gap-1">
+                  <button
+                    class="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400 transition-colors"
+                    title="编辑"
+                    @click="editSubtask(subtask)"
+                  >
+                    <Edit :size="16" />
+                  </button>
+                  <button
+                    class="p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400 disabled:opacity-30 transition-colors"
+                    title="删除"
+                    @click="deleteSubtask(subtask)"
+                  >
+                    <Trash2 :size="16" />
+                  </button>
                 </div>
-              </div>
+              </template>
             </div>
-
-            <!-- 空状态 -->
-            <div v-else class="empty-state">
-              <svg class="empty-icon" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M3,3V21H21V3H3M19,19H5V5H19V19M11,7H13V9H11V7M11,11H13V13H11V11M11,15H13V17H11V15M7,7H9V9H7V7M7,11H9V13H7V11M7,15H9V17H7V15M15,7H17V9H15V7M15,11H17V13H15V11M15,15H17V17H15V15Z" />
-              </svg>
-              <p>还没有子任务</p>
-              <p class="empty-hint">
-                点击"添加子任务"开始创建
-              </p>
-            </div>
-          </div>
-
-          <div class="modal-footer teleport">
-            <button class="btn-icon btn-secondary teleport" title="取消" @click="closeModal">
-              <X :size="20" />
-            </button>
-            <button class="btn-icon btn-primary teleport" title="完成" @click="closeModal">
-              <Check :size="20" />
-            </button>
           </div>
         </div>
+
+        <!-- 空状态 -->
+        <div v-else class="text-center py-8 text-gray-400 dark:text-gray-500">
+          <ListTodo class="mx-auto mb-2" :size="48" />
+          <p class="text-sm">
+            还没有子任务
+          </p>
+          <p class="text-xs mt-1">
+            点击“添加子任务”开始创建
+          </p>
+        </div>
       </div>
-    </Teleport>
+    </Modal>
   </div>
 </template>
 
-<style scoped lang="postcss">
-.todo-subtasks {
-  position: relative;
-}
-
-/* 按钮样式现在使用全局 .todo-btn 样式 */
-
-.icon {
-  width: 0.875rem;
-  height: 0.875rem;
-  flex-shrink: 0;
-}
-
-.subtasks-text {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 4rem;
-}
-
-.progress-bar {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: rgba(255, 255, 255, 0.3);
-  border-radius: 0 0 0.5rem 0.5rem;
-}
-
-.progress-fill {
-  height: 100%;
-  background: var(--color-success);
-  border-radius: 0 0 0.5rem 0.5rem;
-  transition: width 0.3s ease;
-}
-
-/* 模态框样式 */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 10001;
-  backdrop-filter: blur(4px);
-}
-
-.modal-content {
-  background: var(--color-base-100);
-  border-radius: 1rem;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-  max-width: 600px;
-  width: 90%;
-  max-height: 80vh;
-  overflow-y: auto;
-  /* 隐藏滚动条但保留滚动功能 */
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE and Edge */
-}
-
-.modal-content::-webkit-scrollbar {
-  display: none; /* Chrome, Safari and Opera */
-}
-
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1.5rem 1.5rem 0;
-}
-
-.modal-header h3 {
-  margin: 0;
-  font-size: 1.25rem;
-  font-weight: 600;
-}
-
-.header-actions {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.progress-text {
-  font-size: 0.875rem;
-  color: var(--color-base-content);
-  font-weight: 500;
-}
-
-.close-btn {
-  background: none;
-  border: none;
-  font-size: 1.5rem;
-  cursor: pointer;
-  color: var(--color-base-content);
-  padding: 0.25rem;
-  border-radius: 0.25rem;
-}
-
-.close-btn:hover {
-  background: var(--color-base-200);
-}
-
-.modal-body {
-  padding: 1.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-/* 创建子任务部分 */
-.create-section {
-  border: 1px solid var(--color-base-300);
-  border-radius: 0.5rem;
-  overflow: hidden;
-}
-
-.create-toggle {
-  padding: 1rem;
-}
-
-.create-btn {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1rem;
-  border: 1px dashed var(--color-base-300);
-  border-radius: 0.5rem;
-  background: var(--color-base-100);
-  color: var(--color-base-content);
-  cursor: pointer;
-  transition: all 0.2s ease;
-  width: 100%;
-}
-
-.create-btn:hover {
-  border-color: var(--color-primary);
-  background: var(--color-base-200);
-}
-
-.create-form {
-  padding: 1rem;
-  background: var(--color-base-200);
-}
-
-.input-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.subtask-input {
-  padding: 0.75rem;
-  border: 1px solid var(--color-base-300);
-  border-radius: 0.5rem;
-  font-size: 1rem;
-  background: var(--color-base-100);
-  color: var(--color-base-content);
-}
-
-.subtask-input:focus {
-  outline: none;
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px rgba(var(--color-primary-rgb), 0.1);
-}
-
-.form-actions {
-  display: flex;
-  gap: 0.5rem;
-  justify-content: flex-end;
-}
-
-/* 子任务列表 */
-.subtasks-list {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.list-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-weight: 500;
-  color: var(--color-base-content);
-}
-
-.count {
-  font-size: 0.875rem;
-  color: var(--color-base-content);
-  opacity: 0.7;
-}
-
-.subtasks-container {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.subtask-item {
-  border: 1px solid var(--color-base-300);
-  border-radius: 0.5rem;
-  background: var(--color-base-100);
-  transition: all 0.2s ease;
-}
-
-.subtask-item.completed {
-  background: var(--color-base-200);
-  opacity: 0.8;
-}
-
-.subtask-item:hover {
-  border-color: var(--color-primary);
-}
-
-/* 编辑模式 */
-.edit-mode {
-  padding: 1rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.edit-input {
-  padding: 0.75rem;
-  border: 1px solid var(--color-primary);
-  border-radius: 0.5rem;
-  font-size: 1rem;
-  background: var(--color-base-100);
-  color: var(--color-base-content);
-}
-
-.edit-input:focus {
-  outline: none;
-  box-shadow: 0 0 0 3px rgba(var(--color-primary-rgb), 0.1);
-}
-
-.edit-actions {
-  display: flex;
-  gap: 0.5rem;
-  justify-content: flex-end;
-}
-
-/* 显示模式 */
-.view-mode {
-  padding: 1rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.subtask-main {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  flex: 1;
-  min-width: 0;
-}
-
-.status-btn {
-  width: 1.25rem;
-  height: 1.25rem;
-  border: 2px solid var(--color-base-300);
-  border-radius: 0.25rem;
-  background: var(--color-base-100);
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.status-btn:hover {
-  border-color: var(--color-primary);
-}
-
-.status-btn.completed {
-  background: var(--color-success);
-  border-color: var(--color-success);
-  color: var(--color-success-content);
-}
-
-.check-icon {
-  width: 0.875rem;
-  height: 0.875rem;
-}
-
-.subtask-title {
-  flex: 1;
-  min-width: 0;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.subtask-title:hover {
-  color: var(--color-primary);
-}
-
-.subtask-title.completed {
-  text-decoration: line-through;
-  opacity: 0.7;
-}
-
-.subtask-actions {
-  display: flex;
-  gap: 0.25rem;
-  flex-shrink: 0;
-}
-
-.action-btn {
-  width: 2rem;
-  height: 2rem;
-  border: 1px solid var(--color-base-300);
-  border-radius: 0.375rem;
-  background: var(--color-base-100);
-  color: var(--color-base-content);
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.action-btn:hover:not(:disabled) {
-  background: var(--color-base-200);
-  border-color: var(--color-primary);
-}
-
-.action-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.action-btn.delete:hover:not(:disabled) {
-  background: var(--color-error);
-  color: var(--color-error-content);
-  border-color: var(--color-error);
-}
-
-.action-btn .icon {
-  width: 0.875rem;
-  height: 0.875rem;
-}
-
-/* 空状态 */
-.empty-state {
-  text-align: center;
-  padding: 2rem;
-  color: var(--color-base-content);
-  opacity: 0.7;
-}
-
-.empty-icon {
-  width: 3rem;
-  height: 3rem;
-  margin: 0 auto 1rem;
-  opacity: 0.5;
-}
-
-.empty-hint {
-  font-size: 0.875rem;
-  margin-top: 0.5rem;
-}
-
-/* modal-footer样式已移至全局buttons.css */
-
-.btn-secondary,
-.btn-primary {
-  padding: 0.75rem 1.5rem;
-  border-radius: 0.5rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.btn-secondary {
-  background: var(--color-base-200);
-  color: var(--color-base-content);
-  border: 1px solid var(--color-base-300);
-}
-
-.btn-secondary:hover {
-  background: var(--color-base-300);
-}
-
-.btn-primary {
-  background: var(--color-primary);
-  color: var(--color-primary-content);
-  border: 1px solid var(--color-primary);
-}
-
-.btn-primary:hover:not(:disabled) {
-  background: var(--color-primary-focus);
-}
-
-/* 圆形图标按钮样式已移至全局buttons.css */
-
-.btn-primary:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-/* 响应式设计 */
-@media (max-width: 768px) {
-  .modal-content {
-    width: 95%;
-    margin: 1rem;
-  }
-
-  .subtask-main {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.5rem;
-  }
-
-  .subtask-actions {
-    align-self: flex-end;
-  }
-
-  .form-actions {
-    flex-direction: column;
-  }
-
-  .edit-actions {
-    flex-direction: column;
-  }
-}
+<style scoped>
+/* 所有样式已使用 Tailwind CSS 4 */
 </style>

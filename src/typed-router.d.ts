@@ -21,9 +21,7 @@ declare module 'vue-router/auto-routes' {
     'home': RouteRecordInfo<'home', '/', Record<never, never>, Record<never, never>>,
     'auth-login': RouteRecordInfo<'auth-login', '/auth/login', Record<never, never>, Record<never, never>>,
     'auth-register': RouteRecordInfo<'auth-register', '/auth/register', Record<never, never>, Record<never, never>>,
-    '/budget-stats': RouteRecordInfo<'/budget-stats', '/budget-stats', Record<never, never>, Record<never, never>>,
-    '/color-selector-test': RouteRecordInfo<'/color-selector-test', '/color-selector-test', Record<never, never>, Record<never, never>>,
-    '/datetime-test': RouteRecordInfo<'/datetime-test', '/datetime-test', Record<never, never>, Record<never, never>>,
+    'budget-stats': RouteRecordInfo<'budget-stats', '/budget-stats', Record<never, never>, Record<never, never>>,
     'family-ledger': RouteRecordInfo<'family-ledger', '/family-ledger', Record<never, never>, Record<never, never>, 'family-ledger-detail' | 'family-member-detail'>,
     'family-ledger-detail': RouteRecordInfo<'family-ledger-detail', '/family-ledger/:serialNum', { serialNum: ParamValue<true> }, { serialNum: ParamValue<false> }>,
     'family-member-detail': RouteRecordInfo<'family-member-detail', '/family-ledger/member/:memberSerialNum', { memberSerialNum: ParamValue<true> }, { memberSerialNum: ParamValue<false> }>,
@@ -41,7 +39,6 @@ declare module 'vue-router/auto-routes' {
     'settings': RouteRecordInfo<'settings', '/settings', Record<never, never>, Record<never, never>>,
     'splashscreen': RouteRecordInfo<'splashscreen', '/splash', Record<never, never>, Record<never, never>>,
     'tags': RouteRecordInfo<'tags', '/tags', Record<never, never>, Record<never, never>>,
-    'theme-demo': RouteRecordInfo<'theme-demo', '/theme-demo', Record<never, never>, Record<never, never>>,
     'todos': RouteRecordInfo<'todos', '/todos', Record<never, never>, Record<never, never>>,
     'transaction-stats': RouteRecordInfo<'transaction-stats', '/transaction-stats', Record<never, never>, Record<never, never>>,
   }

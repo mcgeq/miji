@@ -481,75 +481,83 @@ watch([enableSplit, splitConfig, splitPreview], () => {
 </script>
 
 <template>
-  <div class="transaction-split-section">
+  <div class="flex flex-col gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
     <!-- 分摊开关 -->
-    <div class="split-toggle">
-      <label class="toggle-label">
+    <div class="flex justify-between items-center">
+      <label class="flex items-center gap-3 cursor-pointer">
         <input
           v-model="enableSplit"
           type="checkbox"
-          class="toggle-input"
+          class="w-5 h-5 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
           :disabled="props.readonly"
         >
-        <span class="toggle-text">
-          <LucideUsers class="icon" />
+        <span class="flex items-center gap-2 text-sm font-medium text-gray-900 dark:text-white">
+          <LucideUsers class="w-4 h-4 text-blue-600 dark:text-blue-400" />
           启用费用分摊
         </span>
       </label>
-      <span v-if="enableSplit" class="toggle-hint">
+      <span v-if="enableSplit" class="text-xs text-gray-500 dark:text-gray-400">
         {{ splitConfig.selectedMembers.length }} 人参与分摊
       </span>
     </div>
 
     <!-- 分摊配置区域 -->
-    <div v-if="enableSplit" class="split-config">
+    <div v-if="enableSplit" class="flex flex-col gap-4 pt-4 border-t border-gray-200 dark:border-gray-700">
       <!-- 快速模板选择 -->
-      <div class="quick-templates">
-        <label class="section-label">快速选择</label>
-        <div class="template-buttons">
+      <div class="flex flex-col gap-3">
+        <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">快速选择</label>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
           <button
             v-for="template in quickTemplates"
             :key="template.id"
             type="button"
-            class="template-btn"
-            :class="{ active: selectedTemplate?.id === template.id }"
-            :style="{ '--template-color': template.color }"
+            class="flex flex-col items-center gap-1 px-2 py-2 border-2 rounded-md cursor-pointer transition-all text-xs disabled:cursor-not-allowed disabled:opacity-60" :class="[
+              selectedTemplate?.id === template.id
+                ? 'border-current bg-opacity-15'
+                : 'border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 hover:border-current hover:bg-opacity-5',
+            ]"
+            :style="{ color: template.color, backgroundColor: selectedTemplate?.id === template.id ? `${template.color}26` : undefined }"
             :disabled="props.readonly"
             @click="applyQuickTemplate(template)"
           >
-            <component :is="template.icon" class="btn-icon" />
+            <component :is="template.icon" class="w-4 h-4" :style="{ color: template.color }" />
             <span>{{ template.name }}</span>
           </button>
         </div>
       </div>
 
       <!-- 参数配置（按比例、固定金额、按权重） -->
-      <div v-if="splitConfig.splitType !== 'EQUAL'" class="params-config">
-        <div class="params-header">
-          <div class="header-left">
-            <label class="section-label">设置分摊参数</label>
-            <span v-if="splitConfig.splitType === 'WEIGHTED'" class="helper-text">
+      <div v-if="splitConfig.splitType !== 'EQUAL'" class="flex flex-col gap-3">
+        <div class="flex justify-between items-center">
+          <div class="flex flex-col gap-1">
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">设置分摊参数</label>
+            <span v-if="splitConfig.splitType === 'WEIGHTED'" class="text-xs text-gray-500 dark:text-gray-400 italic">
               权重数字越大，分摊金额越多
             </span>
           </div>
-          <button type="button" class="btn-distribute" :disabled="props.readonly" @click="distributeEvenly">
-            <LucideEqual class="icon-sm" />
+          <button
+            type="button"
+            class="flex items-center gap-1 px-3 py-1.5 bg-blue-600 dark:bg-blue-500 text-white border-0 rounded-md text-xs cursor-pointer transition-all hover:bg-blue-700 dark:hover:bg-blue-600 disabled:bg-gray-200 dark:disabled:bg-gray-700 disabled:text-gray-500 dark:disabled:text-gray-400 disabled:cursor-not-allowed disabled:opacity-60"
+            :disabled="props.readonly"
+            @click="distributeEvenly"
+          >
+            <LucideEqual class="w-3.5 h-3.5" />
             平均分配
           </button>
         </div>
-        <div class="params-list">
+        <div class="flex flex-col gap-2">
           <div
             v-for="memberId in splitConfig.selectedMembers"
             :key="memberId"
-            class="param-item"
+            class="flex items-center justify-between px-3 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg gap-4"
           >
-            <span class="param-member">{{ props.availableMembers?.find((m: any) => m.serialNum === memberId)?.name || 'Unknown' }}</span>
-            <div class="param-input-group">
+            <span class="text-sm font-medium text-gray-700 dark:text-gray-200 min-w-[80px]">{{ props.availableMembers?.find((m: any) => m.serialNum === memberId)?.name || 'Unknown' }}</span>
+            <div class="flex items-center gap-2 flex-1 justify-end">
               <input
                 v-if="splitConfig.splitType === 'PERCENTAGE'"
                 v-model.number="splitConfig.splitParams[memberId].percentage"
                 type="number"
-                class="param-input"
+                class="w-[100px] px-2 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md text-sm text-right transition-all focus:outline-none focus:bg-white focus:border-blue-600 focus:ring-2 focus:ring-blue-600/10 read-only:bg-gray-100 dark:read-only:bg-gray-600 read-only:text-gray-600 dark:read-only:text-gray-400 read-only:cursor-not-allowed"
                 placeholder="比例"
                 min="0"
                 :max="getMaxPercentage(memberId)"
@@ -557,12 +565,12 @@ watch([enableSplit, splitConfig, splitPreview], () => {
                 :readonly="props.readonly"
                 @input="handlePercentageInput(memberId, splitConfig.splitParams[memberId].percentage || 0)"
               >
-              <span v-if="splitConfig.splitType === 'PERCENTAGE'" class="param-unit">%</span>
+              <span v-if="splitConfig.splitType === 'PERCENTAGE'" class="text-sm text-gray-500 dark:text-gray-400 font-medium min-w-[20px]">%</span>
               <input
                 v-if="splitConfig.splitType === 'FIXED_AMOUNT'"
                 v-model.number="splitConfig.splitParams[memberId].amount"
                 type="number"
-                class="param-input"
+                class="w-[100px] px-2 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md text-sm text-right transition-all focus:outline-none focus:bg-white focus:border-blue-600 focus:ring-2 focus:ring-blue-600/10 read-only:bg-gray-100 dark:read-only:bg-gray-600 read-only:text-gray-600 dark:read-only:text-gray-400 read-only:cursor-not-allowed"
                 placeholder="金额"
                 min="0"
                 :max="getMaxAmount(memberId)"
@@ -570,18 +578,18 @@ watch([enableSplit, splitConfig, splitPreview], () => {
                 :readonly="props.readonly"
                 @input="handleAmountInput(memberId, splitConfig.splitParams[memberId].amount || 0)"
               >
-              <span v-if="splitConfig.splitType === 'FIXED_AMOUNT'" class="param-unit">¥</span>
+              <span v-if="splitConfig.splitType === 'FIXED_AMOUNT'" class="text-sm text-gray-500 dark:text-gray-400 font-medium min-w-[20px]">¥</span>
               <input
                 v-if="splitConfig.splitType === 'WEIGHTED'"
                 v-model.number="splitConfig.splitParams[memberId].weight"
                 type="number"
-                class="param-input"
+                class="w-[100px] px-2 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md text-sm text-right transition-all focus:outline-none focus:bg-white focus:border-blue-600 focus:ring-2 focus:ring-blue-600/10 read-only:bg-gray-100 dark:read-only:bg-gray-600 read-only:text-gray-600 dark:read-only:text-gray-400 read-only:cursor-not-allowed"
                 placeholder="权重"
                 min="0"
                 step="1"
                 :readonly="props.readonly"
               >
-              <span v-if="splitConfig.splitType === 'WEIGHTED'" class="param-percentage">
+              <span v-if="splitConfig.splitType === 'WEIGHTED'" class="text-xs text-blue-600 dark:text-blue-400 font-semibold px-2 py-1 bg-blue-600/10 dark:bg-blue-500/20 rounded min-w-[50px] text-center">
                 {{ getWeightPercentage(memberId) }}
               </span>
             </div>
@@ -590,33 +598,40 @@ watch([enableSplit, splitConfig, splitPreview], () => {
       </div>
 
       <!-- 高级配置按钮 -->
-      <button v-if="!props.readonly" type="button" class="btn-advanced" @click="openConfigurator">
-        <LucideSettings class="icon" />
+      <button
+        v-if="!props.readonly"
+        type="button"
+        class="flex items-center justify-center gap-2 px-3 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm cursor-pointer transition-all hover:bg-gray-100 dark:hover:bg-gray-600 hover:border-blue-600 dark:hover:border-blue-500"
+        @click="openConfigurator"
+      >
+        <LucideSettings class="w-4 h-4" />
         高级配置
-        <LucideChevronDown class="icon-arrow" />
+        <LucideChevronDown class="w-3.5 h-3.5 ml-auto" />
       </button>
 
       <!-- 分摊预览 -->
-      <div v-if="splitPreview.length > 0" class="split-preview">
-        <div class="preview-header">
-          <label class="section-label">分摊预览</label>
-          <span class="preview-type">{{ getTypeName(splitConfig.splitType) }}</span>
+      <div v-if="splitPreview.length > 0" class="flex flex-col gap-3 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
+        <div class="flex justify-between items-center">
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">分摊预览</label>
+          <span class="px-3 py-1 bg-gray-100 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-xl text-xs font-medium">
+            {{ getTypeName(splitConfig.splitType) }}
+          </span>
         </div>
 
-        <div class="preview-list">
+        <div class="flex flex-col gap-2">
           <div
             v-for="item in splitPreview"
             :key="item.memberSerialNum"
-            class="preview-item"
+            class="flex justify-between items-center px-3 py-2 bg-white dark:bg-gray-800 rounded-md border border-gray-200 dark:border-gray-600"
           >
-            <span class="member-name">{{ item.memberName }}</span>
-            <strong class="member-amount">{{ formatAmount(item.amount) }}</strong>
+            <span class="text-sm text-gray-900 dark:text-white">{{ item.memberName }}</span>
+            <strong class="text-sm font-semibold text-gray-700 dark:text-gray-200">{{ formatAmount(item.amount) }}</strong>
           </div>
         </div>
 
-        <div class="preview-summary">
-          <span>总计</span>
-          <strong>{{ formatAmount(splitPreview.reduce((sum, item) => sum + item.amount, 0)) }}</strong>
+        <div class="flex justify-between items-center pt-3 border-t-2 border-gray-200 dark:border-gray-600 text-sm font-semibold">
+          <span class="text-gray-900 dark:text-white">总计</span>
+          <strong class="text-base font-semibold text-gray-900 dark:text-white">{{ formatAmount(splitPreview.reduce((sum, item) => sum + item.amount, 0)) }}</strong>
         </div>
       </div>
     </div>
@@ -630,407 +645,3 @@ watch([enableSplit, splitConfig, splitPreview], () => {
     />
   </div>
 </template>
-
-<style scoped>
-.transaction-split-section {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  padding: 1rem;
-  background: var(--color-base-100);
-  border-radius: 12px;
-  border: 1px solid var(--color-base-300);
-}
-
-/* Toggle */
-.split-toggle {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.toggle-label {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  cursor: pointer;
-}
-
-.toggle-input {
-  width: 20px;
-  height: 20px;
-  cursor: pointer;
-}
-
-.toggle-input:disabled {
-  cursor: not-allowed;
-  opacity: 0.6;
-}
-
-.toggle-text {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-}
-
-.toggle-text .icon {
-  width: 18px;
-  height: 18px;
-  color: var(--color-primary);
-}
-
-.toggle-hint {
-  font-size: 0.75rem;
-  color: var(--color-gray-500);
-}
-
-/* Config */
-.split-config {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  padding-top: 1rem;
-  border-top: 1px solid var(--color-base-300);
-}
-
-.section-label {
-  display: block;
-  margin-bottom: 0.5rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--color-gray-700);
-}
-
-/* Quick Templates */
-.quick-templates {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.template-buttons {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 0.5rem;
-}
-
-.template-btn {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.25rem;
-  padding: 0.5rem 0.375rem;
-  background: var(--color-base-100);
-  border: 1.5px solid var(--color-base-300);
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.2s;
-  font-size: 0.7rem;
-}
-
-.template-btn:hover:not(:disabled) {
-  border-color: var(--template-color);
-  background: oklch(from var(--template-color) l c h / 0.05);
-}
-
-.template-btn:disabled {
-  cursor: not-allowed;
-  opacity: 0.6;
-}
-
-.template-btn.active {
-  border-color: var(--template-color);
-  background: oklch(from var(--template-color) l c h / 0.15);
-  color: var(--template-color);
-}
-
-.template-btn .btn-icon {
-  width: 18px;
-  height: 18px;
-  color: var(--template-color);
-}
-
-.template-btn.active .btn-icon {
-  color: var(--template-color);
-}
-
-/* Advanced Button */
-.btn-advanced {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  padding: 0.75rem;
-  background: var(--color-base-100);
-  border: 1px solid var(--color-base-300);
-  border-radius: 8px;
-  font-size: 0.875rem;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.btn-advanced:hover {
-  background: var(--color-base-200);
-  border-color: var(--color-primary);
-}
-
-.btn-advanced .icon {
-  width: 16px;
-  height: 16px;
-}
-
-.icon-arrow {
-  width: 14px;
-  height: 14px;
-  margin-left: auto;
-}
-
-/* Params Config */
-.params-config {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.params-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.header-left {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.helper-text {
-  font-size: 0.75rem;
-  color: var(--color-gray-500);
-  font-style: italic;
-}
-
-.btn-distribute {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  padding: 0.375rem 0.75rem;
-  background: var(--color-primary);
-  color: white;
-  border: none;
-  border-radius: 6px;
-  font-size: 0.75rem;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.btn-distribute:hover:not(:disabled) {
-  background: oklch(from var(--color-primary) calc(l * 0.9) c h);
-}
-
-.btn-distribute:disabled {
-  background-color: var(--color-base-300);
-  color: var(--color-gray-500);
-  cursor: not-allowed;
-  opacity: 0.6;
-}
-
-.btn-distribute .icon-sm {
-  width: 14px;
-  height: 14px;
-}
-
-.params-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.param-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.75rem;
-  background: var(--color-base-100);
-  border: 1px solid var(--color-base-300);
-  border-radius: 8px;
-  gap: 1rem;
-}
-
-.param-member {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--color-gray-700);
-  min-width: 80px;
-}
-
-.param-input-group {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  flex: 1;
-  justify-content: flex-end;
-}
-
-.param-input {
-  width: 100px;
-  padding: 0.5rem;
-  background: var(--color-base-100);
-  border: 1px solid var(--color-base-300);
-  border-radius: 6px;
-  font-size: 0.875rem;
-  text-align: right;
-  transition: all 0.2s;
-}
-
-.param-input:focus {
-  outline: none;
-  background: white;
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px oklch(from var(--color-primary) l c h / 0.1);
-}
-
-.param-input:read-only,
-.param-input[readonly] {
-  background-color: var(--color-base-200);
-  color: var(--color-gray-600);
-  cursor: not-allowed;
-}
-
-.param-unit {
-  font-size: 0.875rem;
-  color: var(--color-gray-500);
-  font-weight: 500;
-  min-width: 20px;
-}
-
-.param-percentage {
-  font-size: 0.75rem;
-  color: var(--color-primary);
-  font-weight: 600;
-  padding: 0.25rem 0.5rem;
-  background: oklch(from var(--color-primary) l c h / 0.1);
-  border-radius: 4px;
-  min-width: 50px;
-  text-align: center;
-}
-
-/* Validation Hint */
-.validation-hint {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem;
-  background: oklch(from var(--color-primary) l c h / 0.1);
-  border: 1px solid var(--color-primary);
-  border-radius: 8px;
-  font-size: 0.875rem;
-}
-
-.validation-hint.validation-error {
-  background: oklch(from #ef4444 l c h / 0.1);
-  border-color: #ef4444;
-}
-
-.validation-label {
-  color: var(--color-gray-600);
-}
-
-.validation-value {
-  color: var(--color-gray-900);
-  font-size: 1rem;
-}
-
-.validation-error .validation-value {
-  color: #ef4444;
-}
-
-.validation-target {
-  color: var(--color-gray-500);
-  font-size: 0.75rem;
-}
-
-.validation-success {
-  margin-left: auto;
-  color: #10b981;
-  font-size: 1rem;
-  font-weight: bold;
-}
-
-/* Preview */
-.split-preview {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  padding: 1rem;
-  background: var(--color-base-100);
-  border-radius: 8px;
-  border: 1px solid var(--color-base-300);
-}
-
-.preview-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.preview-type {
-  padding: 0.25rem 0.75rem;
-  background: var(--color-base-200);
-  color: var(--color-gray-700);
-  border-radius: 12px;
-  font-size: 0.75rem;
-  font-weight: 500;
-}
-
-.preview-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.preview-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.5rem 0.75rem;
-  background: var(--color-base-100);
-  border-radius: 6px;
-  border: 1px solid var(--color-base-300);
-}
-
-.member-name {
-  font-size: 0.875rem;
-}
-
-.member-amount {
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: var(--color-gray-700);
-}
-
-.preview-summary {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding-top: 0.75rem;
-  border-top: 2px solid var(--color-base-300);
-  font-size: 0.875rem;
-  font-weight: 600;
-}
-
-.preview-summary strong {
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--color-gray-900);
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-  .template-buttons {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-</style>

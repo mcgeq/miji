@@ -5,6 +5,7 @@ import Toast from 'vue-toastification';
 import z from 'zod';
 import App from './App.vue';
 import { AppBootstrapper } from './bootstrap/app-bootstrapper';
+import { vAuthPermission, vAuthRole } from './directives/auth-permission';
 import { vPermission } from './directives/permission';
 import { vHasValue } from './directives/vHasValue';
 import { initI18n } from './i18n/i18n';
@@ -68,7 +69,7 @@ async function main() {
       icon: true,
       rtl: false,
       teleport: 'body',
-      // 提升层级到最高，确保在所有 modal 之上（BaseModal 最高 z-index: 9999999）
+      // 提升层级到最高，确保在所有 modal 之上（Modal 最高 z-index: 999999）
       containerClassName: '!z-[99999999] pointer-events-none',
     });
     Lg.i('Main', '✓ Toast 配置完成');
@@ -83,6 +84,8 @@ async function main() {
     Lg.i('Main', '注册全局指令...');
     app.directive('permission', vPermission);
     app.directive('has-value', vHasValue);
+    app.directive('auth-permission', vAuthPermission);
+    app.directive('auth-role', vAuthRole);
     Lg.i('Main', '✓ 全局指令注册完成');
 
     // 初始化 Money Store 事件监听器

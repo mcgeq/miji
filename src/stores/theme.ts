@@ -68,6 +68,7 @@ function getSystemTheme(): 'light' | 'dark' {
 
 /**
  * 应用主题到DOM
+ * 兼容 Tailwind CSS 4 标准：使用 'dark' 类而不是 'theme-dark'
  */
 function applyThemeToDOM(theme: 'light' | 'dark'): void {
   try {
@@ -77,19 +78,23 @@ function applyThemeToDOM(theme: 'light' | 'dark'): void {
 
     const root = document.documentElement;
 
-    // 移除现有的主题类
-    root.classList.remove('theme-light', 'theme-dark');
+    // Tailwind CSS 4 标准方式：使用 'dark' 类
+    if (theme === 'dark') {
+      root.classList.add('dark');
+      root.classList.remove('light');
+    } else {
+      root.classList.remove('dark');
+      root.classList.add('light');
+    }
 
-    // 添加新的主题类
-    root.classList.add(`theme-${theme}`);
-
-    // 设置 color-scheme 属性
+    // 设置 color-scheme 属性（触发 light-dark() CSS 函数）
     root.style.colorScheme = theme;
 
-    // 设置 meta theme-color（用于移动端浏览器）
+    // 设置 meta theme-color（用于移动端浏览器地址栏颜色）
     const metaThemeColor = document.querySelector('meta[name="theme-color"]');
     if (metaThemeColor) {
-      metaThemeColor.setAttribute('content', theme === 'dark' ? '#1a1a1a' : '#ffffff');
+      // 使用 Tailwind 的 gray-900 和 white
+      metaThemeColor.setAttribute('content', theme === 'dark' ? '#111827' : '#ffffff');
     }
 
     safeLog(`Theme applied to DOM: ${theme}`);
@@ -204,7 +209,8 @@ export const useThemeStore = defineStore(
           // 额外检查：确保DOM确实被更新
           setTimeout(() => {
             const root = document.documentElement;
-            if (!root.classList.contains(`theme-${themeToApply}`)) {
+            const expectedClass = themeToApply === 'dark' ? 'dark' : 'light';
+            if (!root.classList.contains(expectedClass)) {
               console.warn('Theme class not applied, retrying...');
               applyThemeToDOM(themeToApply);
             }
@@ -296,13 +302,15 @@ export const useThemeStore = defineStore(
     // 调试函数
     function debugThemeState(): void {
       const root = document.documentElement;
-      const appliedClasses = Array.from(root.classList).filter(cls => cls.startsWith('theme-'));
+      const hasDarkClass = root.classList.contains('dark');
+      const hasLightClass = root.classList.contains('light');
       const colorScheme = root.style.colorScheme;
 
       Lg.i('Theme Debug Info:', {
         currentTheme: currentTheme.value,
         effectiveTheme: effectiveTheme.value,
-        appliedClasses,
+        hasDarkClass,
+        hasLightClass,
         colorScheme,
         isDarkMode: isDarkMode.value,
         isSystemMode: isSystemMode.value,

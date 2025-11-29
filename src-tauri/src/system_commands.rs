@@ -168,6 +168,51 @@ pub async fn is_verify_token(
     Ok(ApiResponse::success(status))
 }
 
+#[tauri::command]
+pub async fn refresh_token(
+    state: State<'_, AppState>,
+    token: String,
+) -> Result<ApiResponse<TokenResponse>, String> {
+    let credentials = &state.credentials.lock().await;
+    let jwt_helper = JwtHelper::new(credentials.jwt_secret.to_string());
+
+    let result = (|| -> MijiResult<TokenResponse> {
+        // 验证旧token
+        let claims = jwt_helper.verify_token(&token)
+            .map_err(|_| AppError::simple(BusinessCode::TokenInvalid, "无效的Token"))?;
+
+        // 检查是否过期（允许已过期的token刷新，但需要在合理时间内）
+        let now = Utc::now().timestamp() as usize;
+        let expired_grace_period = 24 * 3600; // 允许过期后24小时内刷新
+        
+        if claims.exp + expired_grace_period < now {
+            return Err(AppError::simple(
+                BusinessCode::RefreshTokenExpired,
+                "Token已过期太久，请重新登录"
+            ));
+        }
+
+        // 使用旧token中的user_id和role生成新token
+        let new_token = jwt_helper.generate_token(
+            &claims.sub,  // user_id
+            &claims.role,  // role
+            credentials.expired_at
+        )?;
+
+        let expires_at = Utc::now()
+            .checked_add_signed(Duration::hours(credentials.expired_at))
+            .expect("valid timestamp")
+            .timestamp() as usize;
+
+        Ok(TokenResponse {
+            token: new_token,
+            expires_at,
+        })
+    })();
+
+    Ok(ApiResponse::from_result(result))
+}
+
 // ==================== 窗口管理命令 ====================
 
 #[tauri::command]

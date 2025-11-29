@@ -76,7 +76,7 @@ const calendarDays = computed((): CalendarDay[] => {
   const days: CalendarDay[] = [];
   const today = DateUtils.getTodayDate();
 
-  // 使用 storeToRefs 的响应式引用来确保依赖追踪
+  // 使用 storeToRefs 的响应式引用来确保依赖追�?
   // 访问 .value 以触发响应式更新
   void (periodRecords.value.length + periodDailyRecords.value.length);
 
@@ -85,7 +85,7 @@ const calendarDays = computed((): CalendarDay[] => {
     endDate.toISOString().split('T')[0],
   );
 
-  // 计算总天数
+  // 计算总天�?
   const totalDays = Math.floor((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
 
   for (let i = 0; i < totalDays; i++) {
@@ -143,75 +143,117 @@ function selectDate(date: string) {
   emit('dateSelect', date);
 }
 
-function getCellClasses(day: CalendarDay): string[] {
-  const classes = [];
-  if (!day.isCurrentMonth) classes.push('other-month');
-  if (day.isToday) classes.push('today');
-  if (selectedDate.value === day.date) classes.push('selected'); // Use internal state
-  if (day.events.length > 0) classes.push('has-events');
+function getCellClasses(day: CalendarDay): string {
+  const baseClasses = [
+    'relative w-8 h-8 flex flex-col items-center justify-center cursor-pointer transition-all duration-150 rounded-md',
+    'hover:bg-gray-100 dark:hover:bg-gray-700',
+    'hover:scale-105',
+    'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2',
+  ];
 
-  const predictedEvents = day.events.filter(e => e.isPredicted);
-  if (predictedEvents.length > 0) {
-    classes.push('has-predicted');
-    predictedEvents.forEach(event => {
-      switch (event.type) {
-        case 'predicted-period':
-          classes.push('predicted-period', 'has-predicted-period');
-          break;
-        case 'predicted-ovulation':
-          classes.push('predicted-ovulation', 'has-predicted-ovulation');
-          break;
-        case 'predicted-fertile':
-          classes.push('predicted-fertile', 'has-predicted-fertile');
-          break;
-      }
-    });
+  if (!day.isCurrentMonth) {
+    baseClasses.push('text-gray-400 dark:text-gray-600');
   }
-  return classes;
+
+  if (day.isToday) {
+    baseClasses.push('bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400 font-semibold rounded-md');
+  }
+
+  if (selectedDate.value === day.date) {
+    baseClasses.push('ring-1 ring-blue-500 bg-blue-50 dark:bg-blue-900/50 rounded-md');
+  }
+
+  if (day.events.length > 0) {
+    baseClasses.push('font-medium');
+  }
+
+  const hasPredictedPeriod = day.events.some(e => e.type === 'predicted-period');
+  const hasPredictedOvulation = day.events.some(e => e.type === 'predicted-ovulation');
+  const hasPredictedFertile = day.events.some(e => e.type === 'predicted-fertile');
+
+  const hasPredicted = hasPredictedPeriod || hasPredictedOvulation || hasPredictedFertile;
+
+  if (hasPredicted) {
+    baseClasses.push("before:content-[''] before:absolute before:inset-0 before:border-2 before:border-dashed before:rounded-md before:pointer-events-none");
+
+    if (hasPredictedPeriod) {
+      baseClasses.push('before:border-green-300 dark:before:border-green-600 bg-green-50 dark:bg-green-950 text-green-700 dark:text-green-400');
+    }
+    if (hasPredictedOvulation) {
+      baseClasses.push('before:border-red-300 dark:before:border-red-600 bg-red-50 dark:bg-red-950 text-red-700 dark:text-red-400');
+    }
+    if (hasPredictedFertile) {
+      baseClasses.push('before:border-orange-300 dark:before:border-orange-600 bg-orange-50 dark:bg-orange-950 text-orange-700 dark:text-orange-400');
+    }
+  }
+
+  return baseClasses.join(' ');
 }
 
 function getEventDotClass(event: PeriodCalendarEvent): string {
-  const predictedClass = event.isPredicted ? 'predicted' : '';
+  const baseClasses = ['w-1 h-1 rounded-full'];
+
+  if (event.isPredicted) {
+    baseClasses.push('border-2 border-white dark:border-gray-800 bg-[repeating-linear-gradient(45deg,transparent,transparent_1px,currentColor_1px,currentColor_2px)]');
+  }
+
   switch (event.type) {
     case 'period':
-      return 'bg-green-500';
+      baseClasses.push('bg-green-500');
+      break;
     case 'predicted-period':
-      return `${predictedClass} predicted-period bg-green-500`;
+      baseClasses.push('text-green-500');
+      break;
     case 'ovulation':
-      return 'bg-red-500';
+      baseClasses.push('bg-red-500');
+      break;
     case 'predicted-ovulation':
-      return `${predictedClass} predicted-ovulation bg-red-500`;
+      baseClasses.push('text-red-500');
+      break;
     case 'fertile':
-      return 'bg-orange-500';
+      baseClasses.push('bg-orange-500');
+      break;
     case 'predicted-fertile':
-      return `${predictedClass} predicted-fertile bg-orange-500`;
+      baseClasses.push('text-orange-500');
+      break;
     case 'pms':
-      return 'bg-yellow-500';
+      baseClasses.push('bg-yellow-500');
+      break;
     default:
-      return 'bg-gray-400';
+      baseClasses.push('bg-gray-400');
   }
+
+  return baseClasses.join(' ');
 }
 
 function getEventBadgeClass(event: PeriodCalendarEvent): string {
-  const predictedClass = event.isPredicted ? 'predicted' : '';
+  const baseClasses = ['py-1 px-2 rounded-md text-xs font-semibold shadow-sm transition-all duration-150 hover:scale-105'];
+
+  if (event.isPredicted) {
+    baseClasses.push('border border-dashed');
+  }
+
   switch (event.type) {
     case 'period':
-      return 'badge-green';
     case 'predicted-period':
-      return `badge-green ${predictedClass}`;
+      baseClasses.push('bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400');
+      break;
     case 'ovulation':
-      return 'badge-red';
     case 'predicted-ovulation':
-      return `badge-red ${predictedClass}`;
+      baseClasses.push('bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400');
+      break;
     case 'fertile':
-      return 'badge-orange';
     case 'predicted-fertile':
-      return `badge-orange ${predictedClass}`;
+      baseClasses.push('bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400');
+      break;
     case 'pms':
-      return 'badge-yellow';
+      baseClasses.push('bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400');
+      break;
     default:
-      return 'badge-gray';
+      baseClasses.push('bg-gray-100 dark:bg-gray-900/30 text-gray-700 dark:text-gray-400');
   }
+
+  return baseClasses.join(' ');
 }
 
 function getEventLabel(event: PeriodCalendarEvent): string {
@@ -340,19 +382,19 @@ function hideTooltip() {
   tooltip.value.show = false;
 }
 
-function getTooltipEventClass(event: PeriodCalendarEvent): string {
+function getTooltipRiskClass(event: PeriodCalendarEvent): string {
   switch (event.type) {
     case 'period':
     case 'predicted-period':
-      return 'tooltip-event-period';
+      return 'text-green-500';
     case 'ovulation':
     case 'predicted-ovulation':
-      return 'tooltip-event-ovulation';
+      return 'text-red-500';
     case 'fertile':
     case 'predicted-fertile':
-      return 'tooltip-event-fertile';
+      return 'text-orange-500';
     case 'pms':
-      return 'tooltip-event-pms';
+      return 'text-yellow-500';
     default:
       return '';
   }
@@ -427,26 +469,40 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="period-calendar">
+  <div class="h-full flex flex-col bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden shadow-md">
     <!-- 头部导航 -->
-    <div class="calendar-header">
-      <div class="month-navigation">
-        <button class="nav-button" aria-label="上个月" @click="goToPreviousMonth">
+    <div class="flex items-center justify-between px-3 py-2 bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
+      <div class="flex items-center gap-2">
+        <button
+          class="w-7 h-7 flex items-center justify-center rounded-md text-gray-500 dark:text-gray-400 transition-all duration-200 hover:text-gray-700 hover:bg-gray-200 dark:hover:text-gray-200 dark:hover:bg-gray-700"
+          aria-label="上个月"
+          @click="goToPreviousMonth"
+        >
           <ChevronUp class="wh-5" />
         </button>
-        <h2 class="month-title">
+        <h2 class="text-base font-semibold text-gray-900 dark:text-white px-3">
           {{ currentMonthYear }}
         </h2>
-        <button class="nav-button" aria-label="下个月" @click="goToNextMonth">
+        <button
+          class="w-7 h-7 flex items-center justify-center rounded-md text-gray-500 dark:text-gray-400 transition-all duration-200 hover:text-gray-700 hover:bg-gray-200 dark:hover:text-gray-200 dark:hover:bg-gray-700"
+          aria-label="下个月"
+          @click="goToNextMonth"
+        >
           <ChevronDown class="wh-5" />
         </button>
       </div>
 
-      <div class="view-controls">
-        <button class="control-button" @click="goToToday">
+      <div class="flex items-center gap-2">
+        <button
+          class="py-1 px-2 text-xs font-medium rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 transition-all duration-200 hover:bg-gray-100 dark:hover:bg-gray-600 flex items-center"
+          @click="goToToday"
+        >
           今天
         </button>
-        <button class="control-button" @click="toggleView">
+        <button
+          class="py-1 px-2 text-xs font-medium rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 transition-all duration-200 hover:bg-gray-100 dark:hover:bg-gray-600 flex items-center"
+          @click="toggleView"
+        >
           <i :class="viewMode === 'calendar' ? 'i-tabler-list' : 'i-tabler-calendar'" class="wh-3 mr-1" />
           {{ viewMode === 'calendar' ? '列表' : '日历' }}
         </button>
@@ -454,98 +510,98 @@ onMounted(() => {
     </div>
 
     <!-- 日历视图 -->
-    <div v-if="viewMode === 'calendar'" class="calendar-container">
+    <div v-if="viewMode === 'calendar'" class="flex flex-col bg-gray-50 dark:bg-gray-900 px-2 pt-2 pb-0">
       <!-- 星期标题 -->
-      <div class="weekdays-header">
-        <div v-for="day in weekDays" :key="day" class="weekday-label">
+      <div class="grid grid-cols-7 mb-1">
+        <div v-for="day in weekDays" :key="day" class="text-center text-xs font-medium text-gray-500 dark:text-gray-400 py-1">
           {{ day }}
         </div>
       </div>
 
       <!-- 日期网格 -->
-      <div class="calendar-grid">
+      <div class="grid grid-cols-7 mb-0">
         <div
           v-for="day in calendarDays"
           :key="day.date"
-          class="calendar-cell"
           :class="getCellClasses(day)"
           @click="selectDate(day.date)"
           @mouseenter="showTooltip($event, day)"
           @mouseleave="hideTooltip"
         >
-          <span class="day-number">{{ day.day }}</span>
+          <span class="text-sm leading-none">{{ day.day }}</span>
           <!-- 事件指示器 -->
-          <div v-if="day.events.length > 0" class="event-indicators">
+          <div v-if="day.events.length > 0" class="absolute bottom-0 left-1/2 -translate-x-1/2 flex gap-0.5">
             <div
-              v-for="event in day.events.slice(0, 3)" :key="event.type" class="event-dot"
+              v-for="event in day.events.slice(0, 3)" :key="event.type"
               :class="getEventDotClass(event)"
             />
-            <div v-if="day.events.length > 3" class="event-dot more-events" />
+            <div v-if="day.events.length > 3" class="w-1 h-1 rounded-full bg-gray-400" />
           </div>
         </div>
       </div>
     </div>
 
     <!-- 列表视图 -->
-    <div v-else class="list-container">
+    <div v-else class="flex-1 p-3 flex flex-col gap-2 overflow-y-auto bg-white dark:bg-gray-900 rounded-lg scrollbar-hide">
       <div
-        v-for="day in calendarDays.filter(d => d.events.length > 0)" :key="day.date" class="list-item"
+        v-for="day in calendarDays.filter(d => d.events.length > 0)" :key="day.date"
+        class="p-3 rounded-lg border border-gray-200 border-l-4 border-l-blue-500 bg-gray-50 dark:bg-gray-800 cursor-pointer transition-all duration-200 shadow-sm hover:bg-gray-100 dark:hover:bg-gray-700 hover:border-l-red-500 hover:translate-x-0.5 hover:shadow-md"
         @click="selectDate(day.date)"
       >
-        <div class="list-item-content">
-          <div class="date-info">
-            <div class="date-primary">
+        <div class="flex items-center justify-between">
+          <div class="flex flex-col">
+            <div class="text-base font-semibold text-gray-900 dark:text-white mb-0.5">
               {{ formatDateShort(day.date) }}
             </div>
-            <div class="date-secondary">
+            <div class="text-xs text-gray-600 dark:text-gray-400 font-medium">
               {{ formatDateFull(day.date) }}
             </div>
           </div>
-          <div class="event-badges">
-            <div v-for="event in day.events" :key="event.type" class="event-badge" :class="getEventBadgeClass(event)">
+          <div class="flex gap-1 flex-wrap">
+            <div v-for="event in day.events" :key="event.type" :class="getEventBadgeClass(event)">
               {{ getEventLabel(event) }}
             </div>
           </div>
         </div>
       </div>
 
-      <div v-if="calendarDays.filter(d => d.events.length > 0).length === 0" class="empty-state">
+      <div v-if="calendarDays.filter(d => d.events.length > 0).length === 0" class="flex flex-col items-center justify-center py-8 text-gray-500">
         <i class="i-tabler-calendar-x text-gray-400 wh-8" />
-        <p class="text-sm text-gray-500 mt-2">
+        <p class="text-sm mt-2">
           本月暂无记录
         </p>
       </div>
     </div>
 
     <!-- 图例 -->
-    <div class="legend">
-      <div class="legend-item">
-        <div class="legend-dot bg-green-500" />
-        <span>经期</span>
+    <div class="flex items-center justify-center gap-4 px-3 py-1.5 bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 max-sm:gap-2 max-sm:py-1.5 max-sm:flex-wrap">
+      <div class="flex items-center gap-1.5">
+        <div class="w-2 h-2 rounded-full bg-green-500" />
+        <span class="text-xs text-gray-600 dark:text-gray-400">经期</span>
       </div>
-      <div class="legend-item">
-        <div class="legend-dot predicted predicted-period bg-green-500" />
-        <span>预测经期</span>
+      <div class="flex items-center gap-1.5">
+        <div class="w-2 h-2 rounded-full border-2 border-white dark:border-gray-800 bg-[repeating-linear-gradient(45deg,transparent,transparent_1px,#22c55e_1px,#22c55e_2px)]" />
+        <span class="text-xs text-gray-600 dark:text-gray-400">预测经期</span>
       </div>
-      <div class="legend-item">
-        <div class="legend-dot bg-red-500" />
-        <span>排卵期</span>
+      <div class="flex items-center gap-1.5">
+        <div class="w-2 h-2 rounded-full bg-red-500" />
+        <span class="text-xs text-gray-600 dark:text-gray-400">排卵期</span>
       </div>
-      <div class="legend-item">
-        <div class="legend-dot predicted predicted-ovulation bg-red-500" />
-        <span>预测排卵期</span>
+      <div class="flex items-center gap-1.5">
+        <div class="w-2 h-2 rounded-full border-2 border-white dark:border-gray-800 bg-[repeating-linear-gradient(45deg,transparent,transparent_1px,#ef4444_1px,#ef4444_2px)]" />
+        <span class="text-xs text-gray-600 dark:text-gray-400">预测排卵期</span>
       </div>
-      <div class="legend-item">
-        <div class="legend-dot bg-orange-500" />
-        <span>易孕期</span>
+      <div class="flex items-center gap-1.5">
+        <div class="w-2 h-2 rounded-full bg-orange-500" />
+        <span class="text-xs text-gray-600 dark:text-gray-400">易孕期</span>
       </div>
-      <div class="legend-item">
-        <div class="legend-dot predicted predicted-fertile bg-orange-500" />
-        <span>预测易孕期</span>
+      <div class="flex items-center gap-1.5">
+        <div class="w-2 h-2 rounded-full border-2 border-white dark:border-gray-800 bg-[repeating-linear-gradient(45deg,transparent,transparent_1px,#f97316_1px,#f97316_2px)]" />
+        <span class="text-xs text-gray-600 dark:text-gray-400">预测易孕期</span>
       </div>
-      <div class="legend-item">
-        <div class="legend-dot bg-yellow-500" />
-        <span>PMS</span>
+      <div class="flex items-center gap-1.5">
+        <div class="w-2 h-2 rounded-full bg-yellow-500" />
+        <span class="text-xs text-gray-600 dark:text-gray-400">PMS</span>
       </div>
     </div>
   </div>
@@ -554,35 +610,33 @@ onMounted(() => {
   <Teleport to="body">
     <div
       v-if="tooltip.show"
-      class="tooltip"
-      :class="tooltip.position"
+      class="fixed pointer-events-none z-[9999] isolate animate-[tooltipFadeIn_0.2s_ease-out]"
       :style="{
         left: `${tooltip.x}px`,
         top: `${tooltip.y}px`,
       }"
     >
-      <div class="tooltip-content">
+      <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 min-w-[250px] max-w-[320px] shadow-[0_25px_50px_-12px_rgba(0,0,0,0.25),0_0_0_1px_rgba(0,0,0,0.05)] dark:shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5),0_0_0_1px_rgba(255,255,255,0.1)] relative z-1">
         <!-- 日期标题 -->
-        <div class="tooltip-header">
-          <span class="tooltip-date">{{ tooltip.date }}</span>
-          <span v-if="tooltip.isToday" class="tooltip-today-badge">今天</span>
+        <div class="flex items-center justify-center mb-2">
+          <span class="text-sm font-semibold">{{ tooltip.date }}</span>
+          <span v-if="tooltip.isToday" class="py-0.5 px-2 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 text-xs rounded-full ml-2">今天</span>
         </div>
 
         <!-- 事件列表 -->
-        <div class="tooltip-events">
+        <div class="flex flex-col gap-2 text-center">
           <div
             v-for="event in tooltip.events"
             :key="event.type"
-            class="tooltip-event-item"
-            :class="getTooltipEventClass(event)"
+            class="flex items-start gap-2 justify-center"
           >
-            <div class="tooltip-event-icon" :class="getEventDotClass(event)" />
-            <div class="tooltip-event-text">
-              <span class="tooltip-event-name">{{ getEventLabel(event) }}</span>
-              <span v-if="event.intensity" class="tooltip-event-detail">
+            <div :class="getEventDotClass(event)" class="w-3 h-3 shrink-0 mt-0.5" />
+            <div class="flex-1 text-left max-w-[200px]">
+              <span class="block text-sm font-medium">{{ getEventLabel(event) }}</span>
+              <span v-if="event.intensity" class="block text-xs opacity-75">
                 强度: {{ getIntensityLabel(event.intensity) }}
               </span>
-              <span v-if="getRiskLevel(event)" class="tooltip-risk-level">
+              <span v-if="getRiskLevel(event)" :class="getTooltipRiskClass(event)" class="block text-xs font-medium mt-1">
                 {{ getRiskLevel(event) }}
               </span>
             </div>
@@ -590,9 +644,9 @@ onMounted(() => {
         </div>
 
         <!-- 额外信息 -->
-        <div v-if="tooltip.extraInfo" class="tooltip-extra-info">
-          <div class="tooltip-divider" />
-          <div class="tooltip-extra-text">
+        <div v-if="tooltip.extraInfo" class="mt-2 text-left">
+          <div class="border-t border-gray-200 dark:border-gray-600 mb-2" />
+          <div class="text-xs leading-relaxed opacity-75">
             {{ tooltip.extraInfo }}
           </div>
         </div>
@@ -601,855 +655,21 @@ onMounted(() => {
   </Teleport>
 </template>
 
-<style scoped lang="postcss">
-/* Base Styles */
-.period-calendar {
-  background-color: white;
-  border-radius: 0.5rem;
-  border: 1px solid #e5e7eb;
-  overflow: hidden;
-  position: relative;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
-}
-
-.dark .period-calendar {
-  background-color: #1f2937;
-  border-color: #374151;
-}
-
-.calendar-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.75rem;
-  background-color: var(--color-base-200);
-  border-bottom: 1px solid var(--color-base-300);
-}
-
-.dark .calendar-header {
-  background-color: #111827;
-  border-bottom-color: var(--color-base-300);
-}
-
-.month-navigation {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.nav-button {
-  width: 1.75rem;
-  height: 1.75rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 0.375rem;
-  color: #6b7280;
-  transition: all 0.2s ease-in-out;
-}
-
-.nav-button:hover {
-  color: #374151;
-  background-color: #e5e7eb;
-}
-
-.dark .nav-button {
-  color: #9ca3af;
-}
-
-.dark .nav-button:hover {
-  color: #e5e7eb;
-  background-color: #374151;
-}
-
-.month-title {
-  font-size: 1rem;
-  font-weight: 600;
-  color: #111827;
-  padding: 0 0.75rem;
-}
-
-.dark .month-title {
-  color: white;
-}
-
-.view-controls {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.control-button {
-  padding: 0.25rem 0.5rem;
-  font-size: 0.75rem;
-  font-weight: 500;
-  border-radius: 0.375rem;
-  border: 1px solid var(--color-base-300);
-  background-color: var(--color-base-200);
-  color: var(--color-base-content);
-  transition: all 0.2s ease-in-out;
-  display: flex;
-  align-items: center;
-}
-
-.control-button:hover {
-  background-color: #f9fafb;
-}
-
-.dark .control-button {
-  border-color: #4b5563;
-  background-color: #374151;
-  color: #d1d5db;
-}
-
-.dark .control-button:hover {
-  background-color: #4b5563;
-}
-
-.calendar-container {
-  background-color: var(--color-base-200);
-  padding: 0.5rem;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-}
-
-.weekdays-header {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  margin-bottom: 0.25rem;
-}
-
-.weekday-label {
-  text-align: center;
-  font-size: 0.75rem;
-  font-weight: 500;
-  color: #6b7280;
-  padding: 0.25rem 0;
-}
-
-.dark .weekday-label {
-  color: #9ca3af;
-}
-
-.calendar-grid {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-}
-
-.calendar-cell {
-  position: relative;
-  width: 2rem;
-  height: 2rem;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.15s ease-in-out;
-  border-radius: 0.375rem;
-}
-
-.calendar-cell:hover {
-  background-color: #f3f4f6;
-}
-
-.dark .calendar-cell:hover {
-  background-color: #374151;
-}
-
-.calendar-cell.other-month {
-  color: #9ca3af;
-}
-
-.dark .calendar-cell.other-month {
-  color: #4b5563;
-}
-
-.calendar-cell.today {
-  background-color: #dbeafe;
-  color: #2563eb;
-  font-weight: 600;
-  border-radius: 0.375rem;
-}
-
-.dark .calendar-cell.today {
-  background-color: #1e3a8a;
-  color: #60a5fa;
-}
-
-.calendar-cell.selected {
-  outline: 1px solid #3b82f6;
-  background-color: #eff6ff;
-  border-radius: 0.375rem;
-}
-
-.dark .calendar-cell.selected {
-  background-color: rgba(30, 58, 138, 0.5);
-}
-
-.calendar-cell.has-events {
-  font-weight: 500;
-}
-
-.calendar-cell.has-predicted::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border: 2px dashed;
-  border-radius: 0.375rem;
-  pointer-events: none;
-}
-
-.calendar-cell.has-predicted-period::before {
-  border-color: #86efac;
-}
-
-.dark .calendar-cell.has-predicted-period::before {
-  border-color: #16a34a;
-}
-
-.calendar-cell.has-predicted-ovulation::before {
-  border-color: #fca5a5;
-}
-
-.dark .calendar-cell.has-predicted-ovulation::before {
-  border-color: #dc2626;
-}
-
-.calendar-cell.has-predicted-fertile::before {
-  border-color: #fdba74;
-}
-
-.dark .calendar-cell.has-predicted-fertile::before {
-  border-color: #ea580c;
-}
-
-.calendar-cell.predicted-period {
-  background-color: #f0fdf4;
-  color: #15803d;
-}
-
-.dark .calendar-cell.predicted-period {
-  background-color: #052e16;
-  color: #4ade80;
-}
-
-.calendar-cell.predicted-ovulation {
-  background-color: #fef2f2;
-  color: #dc2626;
-}
-
-.dark .calendar-cell.predicted-ovulation {
-  background-color: #450a0a;
-  color: #f87171;
-}
-
-.calendar-cell.predicted-fertile {
-  background-color: #fff7ed;
-  color: #ea580c;
-}
-
-.dark .calendar-cell.predicted-fertile {
-  background-color: #431407;
-  color: #fb923c;
-}
-
-.day-number {
-  font-size: 0.875rem;
-  line-height: 1;
-}
-
-.event-indicators {
-  position: absolute;
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  gap: 0.125rem;
-}
-
-.event-dot {
-  width: 0.25rem;
-  height: 0.25rem;
-  border-radius: 50%;
-}
-
-.event-dot.predicted {
-  border: 2px solid white;
-  background: repeating-linear-gradient(45deg, transparent, transparent 1px, currentColor 1px, currentColor 2px);
-}
-
-.dark .event-dot.predicted {
-  border-color: #1f2937;
-}
-
-.event-dot.predicted-period {
-  color: #22c55e;
-}
-
-.event-dot.predicted-ovulation {
-  color: #ef4444;
-}
-
-.event-dot.predicted-fertile {
-  color: #f97316;
-}
-
-.more-events {
-  background-color: #9ca3af;
-  width: 0.25rem;
-  height: 0.25rem;
-  border-radius: 50%;
-}
-
-.list-container {
-  padding: 0.75rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  max-height: 12.75rem;
-  overflow-y: auto;
-  background-color: var(--color-base-100);
-  border-radius: 0.5rem;
-  /* 隐藏滚动条但保留功能 */
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE/Edge */
-}
-
-/* Webkit浏览器（Chrome, Safari）隐藏滚动条 */
-.list-container::-webkit-scrollbar {
-  width: 0px;
-  background: transparent;
-}
-
-.dark .list-container {
-  background-color: var(--color-base-200);
-}
-
-.list-item {
-  padding: 0.75rem;
-  border-radius: 0.5rem;
-  border: 1px solid var(--color-base-300);
-  border-left-width: 4px;
-  border-left-color: var(--color-primary);
-  background-color: var(--color-base-200);
-  cursor: pointer;
-  transition: all 0.2s ease-in-out;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
-}
-
-.list-item:hover {
-  background-color: var(--color-base-300);
-  border-left-color: var(--color-error);
-  transform: translateX(2px);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-}
-
-.dark .list-item {
-  background-color: var(--color-base-300);
-  border-color: var(--color-base-300);
-  border-left-color: var(--color-primary);
-}
-
-.dark .list-item:hover {
-  background-color: var(--color-base-content);
-  border-left-color: var(--color-error);
-}
-
-.list-item-content {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.date-info {
-  display: flex;
-  flex-direction: column;
-}
-
-.date-primary {
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--color-base-content);
-  margin-bottom: 0.125rem;
-}
-
-.dark .date-primary {
-  color: var(--color-base-content);
-}
-
-.date-secondary {
-  font-size: 0.75rem;
-  color: var(--color-neutral);
-  font-weight: 500;
-}
-
-.dark .date-secondary {
-  color: var(--color-neutral);
-}
-
-.event-badges {
-  display: flex;
-  gap: 0.25rem;
-  flex-wrap: wrap;
-}
-
-.event-badge {
-  padding: 0.25rem 0.5rem;
-  border-radius: 0.375rem;
-  font-size: 0.75rem;
-  font-weight: 600;
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  transition: all 0.15s ease-in-out;
-}
-
-.event-badge:hover {
-  transform: scale(1.05);
-}
-
-.badge-green {
-  background-color: #dcfce7;
-  color: #15803d;
-}
-
-.dark .badge-green {
-  background-color: rgba(5, 46, 22, 0.3);
-  color: #4ade80;
-}
-
-.badge-orange {
-  background-color: #fed7aa;
-  color: #ea580c;
-}
-
-.dark .badge-orange {
-  background-color: rgba(67, 20, 7, 0.3);
-  color: #fb923c;
-}
-
-.badge-red {
-  background-color: #fee2e2;
-  color: #dc2626;
-}
-
-.dark .badge-red {
-  background-color: rgba(69, 10, 10, 0.3);
-  color: #f87171;
-}
-
-.badge-yellow {
-  background-color: #fef3c7;
-  color: #d97706;
-}
-
-.dark .badge-yellow {
-  background-color: rgba(69, 26, 3, 0.3);
-  color: #fbbf24;
-}
-
-.badge-gray {
-  background-color: #f3f4f6;
-  color: #374151;
-}
-
-.dark .badge-gray {
-  background-color: rgba(17, 24, 39, 0.3);
-  color: #9ca3af;
-}
-
-.event-badge.predicted {
-  border: 1px dashed;
-}
-
-.event-badge.predicted::before {
-  content: '预测 ';
-  font-size: 0.75rem;
-  opacity: 0.75;
-}
-
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 2rem 0;
-  color: #6b7280;
-}
-
-.legend {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 1rem;
-  padding: 0.75rem;
-  background-color: var(--color-base-200);
-  border-top: 1px solid var(--color-base-300);
-}
-
-.dark .legend {
-  background-color: #111827;
-  border-top-color: #374151;
-}
-
-.legend-item {
-  display: flex;
-  align-items: center;
-  gap: 0.375rem;
-}
-
-.legend-dot {
-  width: 0.5rem;
-  height: 0.5rem;
-  border-radius: 50%;
-}
-
-.legend-item span {
-  font-size: 0.75rem;
-  color: #4b5563;
-}
-
-.dark .legend-item span {
-  color: #9ca3af;
-}
-
-/* Tooltip Styles */
-.tooltip {
-  position: fixed;
-  pointer-events: none;
-  z-index: 9999;
-  isolation: isolate;
-  animation: tooltipFadeIn 0.2s ease-out;
-}
-
+<style scoped>
+/* Tailwind 动画 */
 @keyframes tooltipFadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
 }
 
-.tooltip.top {
-  transform: translateX(-50%) translateY(-100%);
+/* 隐藏滚动条但保留功能 */
+.scrollbar-hide {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
 }
 
-.tooltip.bottom {
-  transform: translateX(-50%) translateY(0%);
-}
-
-.tooltip.left {
-  transform: translateX(-100%) translateY(-50%);
-}
-
-.tooltip.right {
-  transform: translateX(0%) translateY(-50%);
-}
-
-.tooltip-content {
-  background-color: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 0.5rem;
-  padding: 1rem;
-  min-width: 250px;
-  max-width: 320px;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(0, 0, 0, 0.05);
-  position: relative;
-  z-index: 1;
-}
-
-.dark .tooltip-content {
-  background-color: #1f2937;
-  border-color: #374151;
-}
-
-.tooltip.top .tooltip-content::after {
-  content: '';
-  position: absolute;
-  top: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  border-left: 8px solid transparent;
-  border-right: 8px solid transparent;
-  border-top: 8px solid white;
-}
-
-.dark .tooltip.top .tooltip-content::after {
-  border-top-color: #1f2937;
-}
-
-.tooltip.bottom .tooltip-content::after {
-  content: '';
-  position: absolute;
-  bottom: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  border-left: 8px solid transparent;
-  border-right: 8px solid transparent;
-  border-bottom: 8px solid white;
-}
-
-.dark .tooltip.bottom .tooltip-content::after {
-  border-bottom-color: #1f2937;
-}
-
-.tooltip.left .tooltip-content::after {
-  content: '';
-  position: absolute;
-  left: 100%;
-  top: 50%;
-  transform: translateY(-50%);
-  border-top: 8px solid transparent;
-  border-bottom: 8px solid transparent;
-  border-left: 8px solid white;
-}
-
-.dark .tooltip.left .tooltip-content::after {
-  border-left-color: #1f2937;
-}
-
-.tooltip.right .tooltip-content::after {
-  content: '';
-  position: absolute;
-  right: 100%;
-  top: 50%;
-  transform: translateY(-50%);
-  border-top: 8px solid transparent;
-  border-bottom: 8px solid transparent;
-  border-right: 8px solid white;
-}
-
-.dark .tooltip.right .tooltip-content::after {
-  border-right-color: #1f2937;
-}
-
-.dark .tooltip-content {
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.1);
-  background-color: #1f2937;
-}
-
-.tooltip-header {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 0.5rem;
-}
-
-.tooltip-date {
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: inherit;
-}
-
-.tooltip-today-badge {
-  padding: 0.125rem 0.5rem;
-  background-color: #dbeafe;
-  color: #1d4ed8;
-  font-size: 0.75rem;
-  border-radius: 9999px;
-}
-
-.dark .tooltip-today-badge {
-  background-color: #1e3a8a;
-  color: #93c5fd;
-}
-
-.tooltip-events {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  text-align: center;
-}
-
-.tooltip-event-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.5rem;
-  justify-content: center;
-}
-
-.tooltip-event-icon {
-  width: 0.75rem;
-  height: 0.75rem;
-  border-radius: 50%;
-  flex-shrink: 0;
-  margin-top: 0.125rem;
-}
-
-.tooltip-event-text {
-  flex: 1;
-  text-align: left;
-  max-width: 200px;
-}
-
-.tooltip-event-name {
-  display: block;
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: inherit;
-}
-
-.tooltip-event-detail {
-  display: block;
-  font-size: 0.75rem;
-  opacity: 0.75;
-  color: inherit;
-}
-
-.tooltip-risk-level {
-  display: block;
-  font-size: 0.75rem;
-  font-weight: 500;
-  margin-top: 0.25rem;
-}
-
-.tooltip-event-period .tooltip-risk-level {
-  color: #22c55e;
-}
-
-.tooltip-event-ovulation .tooltip-risk-level {
-  color: #ef4444;
-}
-
-.tooltip-event-fertile .tooltip-risk-level {
-  color: #f97316;
-}
-
-.tooltip-event-pms .tooltip-risk-level {
-  color: #eab308;
-}
-
-.tooltip-extra-info {
-  margin-top: 0.5rem;
-  text-align: left;
-}
-
-.tooltip-divider {
-  border-top: 1px solid #e5e7eb;
-  margin-bottom: 0.5rem;
-}
-
-.dark .tooltip-divider {
-  border-color: #4b5563;
-}
-
-.tooltip-extra-text {
-  font-size: 0.75rem;
-  line-height: 1.625;
-  opacity: 0.75;
-  color: inherit;
-}
-
-/* Media Queries */
-@media (max-width: 640px) {
-  .calendar-header {
-    padding: 0.5rem;
-  }
-  .month-title {
-    font-size: 0.875rem;
-    padding: 0 0.5rem;
-  }
-  .nav-button {
-    width: 1.5rem;
-    height: 1.5rem;
-  }
-  .control-button {
-    padding: 0.375rem 0.5rem;
-  }
-  .calendar-container {
-    padding: 0.25rem;
-  }
-  .calendar-cell {
-    width: 1.75rem;
-    height: 1.75rem;
-  }
-  .day-number {
-    font-size: 0.75rem;
-  }
-  .weekdays-header {
-    margin-bottom: 0.125rem;
-  }
-  .calendar-cell.has-predicted::before {
-    border-width: 1px;
-  }
-  .legend {
-    gap: 0.5rem;
-    padding: 0.5rem;
-    flex-wrap: wrap;
-  }
-  .legend-item {
-    font-size: 0.75rem;
-  }
-  .legend-item span {
-    font-size: 0.75rem;
-  }
-  .tooltip-content {
-    min-width: 180px;
-    max-width: 250px;
-    font-size: 0.75rem;
-  }
-  .tooltip-event-name {
-    font-size: 0.75rem;
-  }
-  .tooltip-risk-level {
-    font-size: 0.75rem;
-  }
-}
-
-@media (prefers-color-scheme: dark) {
-  .calendar-cell.today {
-    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  }
-  .calendar-cell.selected {
-    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  }
-  .tooltip-content {
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-  }
-}
-
-.calendar-cell:hover {
-  transform: scale(1.05);
-}
-.list-item:hover {
-  transform: translateX(1px);
-}
-
-.calendar-cell:focus, .list-item:focus {
-  outline: none;
-  box-shadow: 0 0 0 2px #3b82f6, 0 0 0 4px rgba(59, 130, 246, 0.1);
-}
-
-@media (prefers-contrast: high) {
-  .tooltip-content {
-    border: 2px solid #111827;
-  }
-  .dark .tooltip-content {
-    border-color: white;
-  }
-  .event-dot {
-    border: 1px solid #111827;
-  }
-  .dark .event-dot {
-    border-color: white;
-  }
-}
-
-@media print {
-  .calendar-header {
-    background-color: white;
-    border-bottom: 1px solid #9ca3af;
-  }
-  .legend {
-    background-color: white;
-    border-top: 1px solid #9ca3af;
-  }
-  .calendar-cell:hover {
-    background-color: white;
-  }
-  .tooltip {
-    display: none;
-  }
+.scrollbar-hide::-webkit-scrollbar {
+  width: 0px;
+  background: transparent;
 }
 </style>

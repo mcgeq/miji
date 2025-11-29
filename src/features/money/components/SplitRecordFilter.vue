@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { LucideCalendar, LucideFilter, LucideX } from 'lucide-vue-next';
+import Button from '@/components/ui/Button.vue';
 import { useFamilyMemberStore } from '@/stores/money';
 import type { SplitRuleType } from '@/schema/money';
 
@@ -94,53 +95,61 @@ const activeFiltersCount = computed(() => {
 </script>
 
 <template>
-  <div class="split-record-filter">
-    <div class="filter-header">
-      <div class="header-title">
-        <LucideFilter class="icon" />
-        <h3>高级筛选</h3>
-        <span v-if="activeFiltersCount > 0" class="filter-count">
+  <div class="flex flex-col bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+    <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700">
+      <div class="flex items-center gap-3">
+        <LucideFilter class="w-5 h-5 text-blue-600 dark:text-blue-400" />
+        <h3 class="m-0 text-lg font-semibold text-gray-900 dark:text-white">
+          高级筛选
+        </h3>
+        <span v-if="activeFiltersCount > 0" class="inline-flex items-center justify-center min-w-[24px] h-6 px-2 bg-blue-600 dark:bg-blue-500 text-white rounded-xl text-xs font-semibold">
           {{ activeFiltersCount }}
         </span>
       </div>
     </div>
 
-    <div class="filter-content">
+    <div class="px-6 py-4 flex flex-col gap-6 max-h-[500px] overflow-y-auto">
       <!-- 状态筛选 -->
-      <div class="filter-group">
-        <label class="filter-label">状态</label>
-        <div class="radio-group">
-          <label class="radio-option">
+      <div class="flex flex-col gap-3">
+        <label class="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">状态</label>
+        <div class="flex gap-4">
+          <label class="flex items-center gap-2 cursor-pointer">
             <input
               v-model="localConfig.status"
               type="radio"
               value="all"
+              class="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 cursor-pointer"
             >
-            <span>全部</span>
+            <span class="text-sm text-gray-900 dark:text-white">全部</span>
           </label>
-          <label class="radio-option">
+          <label class="flex items-center gap-2 cursor-pointer">
             <input
               v-model="localConfig.status"
               type="radio"
               value="pending"
+              class="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 cursor-pointer"
             >
-            <span>进行中</span>
+            <span class="text-sm text-gray-900 dark:text-white">进行中</span>
           </label>
-          <label class="radio-option">
+          <label class="flex items-center gap-2 cursor-pointer">
             <input
               v-model="localConfig.status"
               type="radio"
               value="completed"
+              class="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 cursor-pointer"
             >
-            <span>已完成</span>
+            <span class="text-sm text-gray-900 dark:text-white">已完成</span>
           </label>
         </div>
       </div>
 
       <!-- 分摊类型 -->
-      <div class="filter-group">
-        <label class="filter-label">分摊类型</label>
-        <select v-model="localConfig.splitType" class="filter-select">
+      <div class="flex flex-col gap-3">
+        <label class="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">分摊类型</label>
+        <select
+          v-model="localConfig.splitType"
+          class="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        >
           <option
             v-for="option in splitTypeOptions"
             :key="option.value"
@@ -152,9 +161,12 @@ const activeFiltersCount = computed(() => {
       </div>
 
       <!-- 成员筛选 -->
-      <div class="filter-group">
-        <label class="filter-label">参与成员</label>
-        <select v-model="localConfig.memberSerialNum" class="filter-select">
+      <div class="flex flex-col gap-3">
+        <label class="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">参与成员</label>
+        <select
+          v-model="localConfig.memberSerialNum"
+          class="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        >
           <option value="">
             全部成员
           </option>
@@ -169,60 +181,69 @@ const activeFiltersCount = computed(() => {
       </div>
 
       <!-- 日期范围 -->
-      <div class="filter-group">
-        <label class="filter-label">
-          <LucideCalendar class="label-icon" />
+      <div class="flex flex-col gap-3">
+        <label class="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+          <LucideCalendar class="w-4 h-4 text-gray-500 dark:text-gray-400" />
           日期范围
         </label>
 
         <!-- 快速选择 -->
-        <div class="quick-dates">
-          <button class="quick-date-btn" @click="setQuickDate(7)">
+        <div class="flex flex-col sm:flex-row gap-2">
+          <button
+            class="flex-1 px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-xs text-gray-900 dark:text-white cursor-pointer transition-all hover:bg-gray-100 dark:hover:bg-gray-600 hover:border-blue-500 dark:hover:border-blue-400"
+            @click="setQuickDate(7)"
+          >
             最近7天
           </button>
-          <button class="quick-date-btn" @click="setQuickDate(30)">
+          <button
+            class="flex-1 px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-xs text-gray-900 dark:text-white cursor-pointer transition-all hover:bg-gray-100 dark:hover:bg-gray-600 hover:border-blue-500 dark:hover:border-blue-400"
+            @click="setQuickDate(30)"
+          >
             最近30天
           </button>
-          <button class="quick-date-btn" @click="setQuickDate(90)">
+          <button
+            class="flex-1 px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-xs text-gray-900 dark:text-white cursor-pointer transition-all hover:bg-gray-100 dark:hover:bg-gray-600 hover:border-blue-500 dark:hover:border-blue-400"
+            @click="setQuickDate(90)"
+          >
             最近90天
           </button>
         </div>
 
         <!-- 自定义日期 -->
-        <div class="date-range">
+        <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
           <input
             v-model="localConfig.dateRange.start"
             type="date"
-            class="date-input"
+            class="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             placeholder="开始日期"
           >
-          <span class="date-separator">至</span>
+          <span class="text-sm text-gray-500 dark:text-gray-400 text-center sm:text-left">至</span>
           <input
             v-model="localConfig.dateRange.end"
             type="date"
-            class="date-input"
+            class="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             placeholder="结束日期"
           >
         </div>
       </div>
 
       <!-- 金额范围 -->
-      <div class="filter-group">
-        <label class="filter-label">金额范围</label>
-        <div class="amount-range">
+      <div class="flex flex-col gap-3">
+        <label class="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">金额范围</label>
+        <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
           <input
             v-model.number="localConfig.amountRange.min"
             type="number"
-            class="amount-input"
+            class="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             placeholder="最小金额"
             min="0"
             step="0.01"
           >
-          <span class="amount-separator">至</span>
+          <span class="text-sm text-gray-500 dark:text-gray-400 text-center sm:text-left">至</span>
           <input
             v-model.number="localConfig.amountRange.max"
             type="number"
-            class="amount-input"
+            class="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             placeholder="最大金额"
             min="0"
             step="0.01"
@@ -232,275 +253,23 @@ const activeFiltersCount = computed(() => {
     </div>
 
     <!-- 操作按钮 -->
-    <div class="filter-footer">
-      <button class="btn-reset" @click="resetFilter">
-        <LucideX class="icon" />
+    <div class="flex gap-4 px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700">
+      <Button
+        variant="secondary"
+        class="flex-1"
+        @click="resetFilter"
+      >
+        <LucideX class="w-4 h-4" />
         重置
-      </button>
-      <button class="btn-apply" @click="applyFilter">
-        <LucideFilter class="icon" />
+      </Button>
+      <Button
+        variant="primary"
+        class="flex-1"
+        @click="applyFilter"
+      >
+        <LucideFilter class="w-4 h-4" />
         应用筛选
-      </button>
+      </Button>
     </div>
   </div>
 </template>
-
-<style scoped>
-.split-record-filter {
-  display: flex;
-  flex-direction: column;
-  background: white;
-  border-radius: 12px;
-  border: 1px solid var(--color-base-300);
-  box-shadow: var(--shadow-sm);
-  overflow: hidden;
-}
-
-/* Header */
-.filter-header {
-  padding: 1.5rem;
-  border-bottom: 1px solid var(--color-base-200);
-  background: var(--color-base-100);
-}
-
-.header-title {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.header-title .icon {
-  width: 20px;
-  height: 20px;
-  color: var(--color-primary);
-}
-
-.header-title h3 {
-  margin: 0;
-  font-size: 1.125rem;
-  font-weight: 600;
-}
-
-.filter-count {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 24px;
-  height: 24px;
-  padding: 0 0.5rem;
-  background: var(--color-primary);
-  color: white;
-  border-radius: 12px;
-  font-size: 0.75rem;
-  font-weight: 600;
-}
-
-/* Content */
-.filter-content {
-  padding: 1.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-  max-height: 500px;
-  overflow-y: auto;
-}
-
-.filter-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.filter-label {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--color-gray-700);
-}
-
-.label-icon {
-  width: 16px;
-  height: 16px;
-  color: var(--color-gray-500);
-}
-
-/* Radio Group */
-.radio-group {
-  display: flex;
-  gap: 1rem;
-}
-
-.radio-option {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  cursor: pointer;
-}
-
-.radio-option input[type="radio"] {
-  cursor: pointer;
-}
-
-.radio-option span {
-  font-size: 0.875rem;
-}
-
-/* Select */
-.filter-select {
-  padding: 0.75rem;
-  border: 1px solid var(--color-base-300);
-  border-radius: 8px;
-  font-size: 0.875rem;
-  background: white;
-  cursor: pointer;
-}
-
-.filter-select:focus {
-  outline: none;
-  border-color: var(--color-primary);
-}
-
-/* Quick Dates */
-.quick-dates {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.quick-date-btn {
-  flex: 1;
-  padding: 0.5rem;
-  background: var(--color-base-100);
-  border: 1px solid var(--color-base-300);
-  border-radius: 6px;
-  font-size: 0.75rem;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.quick-date-btn:hover {
-  background: var(--color-base-200);
-  border-color: var(--color-primary);
-}
-
-/* Date Range */
-.date-range {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.date-input {
-  flex: 1;
-  padding: 0.75rem;
-  border: 1px solid var(--color-base-300);
-  border-radius: 8px;
-  font-size: 0.875rem;
-}
-
-.date-input:focus {
-  outline: none;
-  border-color: var(--color-primary);
-}
-
-.date-separator {
-  font-size: 0.875rem;
-  color: var(--color-gray-500);
-}
-
-/* Amount Range */
-.amount-range {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.amount-input {
-  flex: 1;
-  padding: 0.75rem;
-  border: 1px solid var(--color-base-300);
-  border-radius: 8px;
-  font-size: 0.875rem;
-}
-
-.amount-input:focus {
-  outline: none;
-  border-color: var(--color-primary);
-}
-
-.amount-separator {
-  font-size: 0.875rem;
-  color: var(--color-gray-500);
-}
-
-/* Footer */
-.filter-footer {
-  display: flex;
-  gap: 1rem;
-  padding: 1.5rem;
-  border-top: 1px solid var(--color-base-200);
-  background: var(--color-base-100);
-}
-
-.btn-reset,
-.btn-apply {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  padding: 0.75rem;
-  border: none;
-  border-radius: 8px;
-  font-size: 0.875rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.btn-reset {
-  background: white;
-  border: 1px solid var(--color-base-300);
-  color: var(--color-gray-700);
-}
-
-.btn-reset:hover {
-  background: var(--color-base-200);
-}
-
-.btn-apply {
-  background: var(--color-primary);
-  color: white;
-}
-
-.btn-apply:hover {
-  background: var(--color-primary-dark);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-md);
-}
-
-.btn-reset .icon,
-.btn-apply .icon {
-  width: 16px;
-  height: 16px;
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-  .quick-dates {
-    flex-direction: column;
-  }
-
-  .date-range,
-  .amount-range {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .date-separator,
-  .amount-separator {
-    text-align: center;
-  }
-}
-</style>

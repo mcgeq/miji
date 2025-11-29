@@ -9,66 +9,12 @@ const completed = computed(() => props.completed);
 <template>
   <button
     type="button"
-    class="todo-checkbox"
+    class="flex items-center justify-center border-none bg-transparent cursor-pointer p-1 rounded-full transition-all duration-200 outline-none hover:not-disabled:scale-110 focus:not-disabled:scale-110 disabled:cursor-not-allowed disabled:opacity-60"
     :aria-pressed="completed"
     :disabled="completed"
     @click="emit('toggle')"
   >
-    <CheckCircle v-if="completed" class="icon checked" />
-    <Circle v-else class="icon unchecked" />
+    <CheckCircle v-if="completed" class="w-5 h-5 transition-all duration-200 text-success dark:text-success" />
+    <Circle v-else class="w-5 h-5 transition-all duration-200 text-neutral dark:text-neutral" />
   </button>
 </template>
-
-<style scoped lang="postcss">
-.todo-checkbox {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: none;
-  background: transparent;
-  cursor: pointer;
-  padding: 0.25rem;
-  border-radius: 50%;
-  transition: all 0.2s ease;
-  outline: none;
-}
-
-/* 悬停和聚焦效果 */
-.todo-checkbox:hover:not(:disabled),
-.todo-checkbox:focus:not(:disabled) {
-  transform: scale(1.1);
-}
-
-/* 禁用状态 */
-.todo-checkbox:disabled {
-  cursor: not-allowed;
-  opacity: 0.6;
-}
-
-/* 图标样式 */
-.icon {
-  width: 1.25rem; /* wh-5 */
-  height: 1.25rem;
-  transition: all 0.2s ease;
-}
-
-/* 选中状态图标 */
-.icon.checked {
-  color: var(--color-success, #16a34a); /* 绿色，主题可覆盖 */
-}
-
-/* 未选中状态图标 */
-.icon.unchecked {
-  color: var(--color-neutral, #9ca3af); /* 灰色，主题可覆盖 */
-}
-
-/* Dark theme */
-@media (prefers-color-scheme: dark) {
-  .icon.checked {
-    color: var(--color-success, #4ade80);
-  }
-  .icon.unchecked {
-    color: var(--color-neutral, #6b7280);
-  }
-}
-</style>

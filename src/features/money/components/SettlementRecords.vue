@@ -1,4 +1,8 @@
 <script setup lang="ts">
+import { ArrowRight, FileText, RefreshCw } from 'lucide-vue-next';
+import Button from '@/components/ui/Button.vue';
+import Modal from '@/components/ui/Modal.vue';
+import Spinner from '@/components/ui/Spinner.vue';
 import { useFamilyMemberStore } from '@/stores/money';
 import type { SettlementRecord } from '@/schema/money';
 
@@ -63,389 +67,129 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="settlement-records">
+  <div class="p-4">
     <!-- 头部 -->
-    <div class="records-header">
-      <h3 class="records-title">
+    <div class="flex items-center justify-between mb-6">
+      <h3 class="text-xl font-semibold text-gray-900 dark:text-white">
         结算记录
       </h3>
-      <button class="refresh-btn" @click="fetchSettlementRecords">
-        <LucideRefreshCw class="w-4 h-4" />
+      <Button
+        variant="secondary"
+        size="sm"
+        :icon="RefreshCw"
+        @click="fetchSettlementRecords"
+      >
         刷新
-      </button>
+      </Button>
     </div>
 
     <!-- 加载状态 -->
-    <div v-if="loading" class="loading-state">
-      <div class="loading-spinner" />
+    <div v-if="loading" class="flex items-center justify-center gap-2 p-8 text-gray-500 dark:text-gray-400">
+      <Spinner size="sm" />
       <span>加载中...</span>
     </div>
 
     <!-- 空状态 -->
-    <div v-else-if="settlementRecords.length === 0" class="empty-state">
-      <LucideFileText class="empty-icon" />
-      <h3 class="empty-title">
+    <div v-else-if="settlementRecords.length === 0" class="flex flex-col items-center justify-center p-12 text-center">
+      <FileText class="w-12 h-12 text-gray-400 dark:text-gray-600 mb-4" />
+      <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">
         暂无结算记录
       </h3>
-      <p class="empty-description">
+      <p class="text-gray-500 dark:text-gray-400">
         还没有进行过结算操作
       </p>
     </div>
 
     <!-- 记录列表 -->
-    <div v-else class="records-list">
+    <div v-else class="flex flex-col gap-4">
       <div
         v-for="record in settlementRecords"
         :key="record.serialNum"
-        class="record-item"
+        class="p-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg cursor-pointer transition-all hover:shadow-md hover:-translate-y-0.5"
         @click="viewDetails(record)"
       >
-        <div class="record-header">
-          <div class="record-date">
+        <div class="flex items-center justify-between mb-2">
+          <div class="font-semibold text-gray-900 dark:text-white">
             {{ formatDate(record.settlementDate) }}
           </div>
-          <div class="record-amount">
+          <div class="font-semibold text-green-600 dark:text-green-500">
             ¥{{ formatAmount(record.totalSettlementAmount) }}
           </div>
         </div>
 
-        <div class="record-period">
+        <div class="text-sm text-gray-500 dark:text-gray-400 mb-1">
           结算周期: {{ formatDate(record.periodStart) }} - {{ formatDate(record.periodEnd) }}
         </div>
 
-        <div class="record-summary">
+        <div class="text-sm text-gray-700 dark:text-gray-300">
           {{ record.settlements.length }} 笔转账
         </div>
       </div>
     </div>
 
     <!-- 详情模态框 -->
-    <div v-if="selectedRecord" class="modal-mask" @click="closeDetails">
-      <div class="modal-content" @click.stop>
-        <div class="modal-header">
-          <h3 class="modal-title">
-            结算详情
-          </h3>
-          <button class="modal-close" @click="closeDetails">
-            <LucideX class="w-5 h-5" />
-          </button>
+    <Modal
+      v-if="selectedRecord"
+      :open="true"
+      title="结算详情"
+      size="md"
+      :show-footer="false"
+      @close="closeDetails"
+    >
+      <div class="flex flex-col gap-6">
+        <div>
+          <h4 class="text-base font-semibold text-gray-900 dark:text-white mb-3">
+            基本信息
+          </h4>
+          <div class="grid gap-3">
+            <div class="flex justify-between items-center">
+              <span class="text-sm text-gray-500 dark:text-gray-400">结算日期:</span>
+              <span class="text-sm font-medium text-gray-900 dark:text-white">{{ formatDate(selectedRecord.settlementDate) }}</span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-sm text-gray-500 dark:text-gray-400">结算周期:</span>
+              <span class="text-sm font-medium text-gray-900 dark:text-white">
+                {{ formatDate(selectedRecord.periodStart) }} - {{ formatDate(selectedRecord.periodEnd) }}
+              </span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-sm text-gray-500 dark:text-gray-400">总金额:</span>
+              <span class="text-sm font-medium text-gray-900 dark:text-white">¥{{ formatAmount(selectedRecord.totalSettlementAmount) }}</span>
+            </div>
+          </div>
         </div>
 
-        <div class="modal-body">
-          <div class="detail-section">
-            <h4 class="section-title">
-              基本信息
-            </h4>
-            <div class="detail-grid">
-              <div class="detail-item">
-                <span class="detail-label">结算日期:</span>
-                <span class="detail-value">{{ formatDate(selectedRecord.settlementDate) }}</span>
+        <div>
+          <h4 class="text-base font-semibold text-gray-900 dark:text-white mb-3">
+            转账明细
+          </h4>
+          <div class="flex flex-col gap-3">
+            <div
+              v-for="(settlement, index) in selectedRecord.settlements"
+              :key="index"
+              class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-900 rounded-lg"
+            >
+              <div class="flex items-center gap-2">
+                <span class="text-red-600 dark:text-red-400 font-medium">{{ getMemberName(settlement.fromMemberSerialNum) }}</span>
+                <ArrowRight class="w-4 h-4 text-gray-400 dark:text-gray-600" />
+                <span class="text-green-600 dark:text-green-400 font-medium">{{ getMemberName(settlement.toMemberSerialNum) }}</span>
               </div>
-              <div class="detail-item">
-                <span class="detail-label">结算周期:</span>
-                <span class="detail-value">
-                  {{ formatDate(selectedRecord.periodStart) }} - {{ formatDate(selectedRecord.periodEnd) }}
-                </span>
-              </div>
-              <div class="detail-item">
-                <span class="detail-label">总金额:</span>
-                <span class="detail-value">¥{{ formatAmount(selectedRecord.totalSettlementAmount) }}</span>
+              <div class="font-semibold text-gray-900 dark:text-white">
+                ¥{{ formatAmount(settlement.amount) }}
               </div>
             </div>
           </div>
+        </div>
 
-          <div class="detail-section">
-            <h4 class="section-title">
-              转账明细
-            </h4>
-            <div class="settlement-list">
-              <div
-                v-for="(settlement, index) in selectedRecord.settlements"
-                :key="index"
-                class="settlement-item"
-              >
-                <div class="settlement-flow">
-                  <span class="from-member">{{ getMemberName(settlement.fromMemberSerialNum) }}</span>
-                  <LucideArrowRight class="w-4 h-4 text-gray-400" />
-                  <span class="to-member">{{ getMemberName(settlement.toMemberSerialNum) }}</span>
-                </div>
-                <div class="settlement-amount">
-                  ¥{{ formatAmount(settlement.amount) }}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div v-if="selectedRecord.notes" class="detail-section">
-            <h4 class="section-title">
-              备注
-            </h4>
-            <p class="notes-text">
-              {{ selectedRecord.notes }}
-            </p>
-          </div>
+        <div v-if="selectedRecord.notes">
+          <h4 class="text-base font-semibold text-gray-900 dark:text-white mb-3">
+            备注
+          </h4>
+          <p class="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+            {{ selectedRecord.notes }}
+          </p>
         </div>
       </div>
-    </div>
+    </Modal>
   </div>
 </template>
-
-<style scoped>
-.settlement-records {
-  padding: 1rem;
-}
-
-.records-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 1.5rem;
-}
-
-.records-title {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #1f2937;
-}
-
-.refresh-btn {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  background-color: #f3f4f6;
-  color: #374151;
-  border-radius: 0.375rem;
-  font-size: 0.875rem;
-  transition: background-color 0.2s;
-}
-
-.refresh-btn:hover {
-  background-color: #e5e7eb;
-}
-
-.loading-state {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  padding: 2rem;
-  color: #6b7280;
-}
-
-.loading-spinner {
-  width: 1rem;
-  height: 1rem;
-  border: 2px solid #e5e7eb;
-  border-top-color: #3b82f6;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 3rem;
-  text-align: center;
-}
-
-.empty-icon {
-  width: 3rem;
-  height: 3rem;
-  color: #9ca3af;
-  margin-bottom: 1rem;
-}
-
-.empty-title {
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: #1f2937;
-  margin-bottom: 0.5rem;
-}
-
-.empty-description {
-  color: #6b7280;
-}
-
-.records-list {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.record-item {
-  padding: 1rem;
-  background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 0.5rem;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.record-item:hover {
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  transform: translateY(-1px);
-}
-
-.record-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 0.5rem;
-}
-
-.record-date {
-  font-weight: 600;
-  color: #1f2937;
-}
-
-.record-amount {
-  font-weight: 600;
-  color: #059669;
-}
-
-.record-period {
-  font-size: 0.875rem;
-  color: #6b7280;
-  margin-bottom: 0.25rem;
-}
-
-.record-summary {
-  font-size: 0.875rem;
-  color: #374151;
-}
-
-.modal-mask {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-
-.modal-content {
-  background: white;
-  border-radius: 0.5rem;
-  width: 90%;
-  max-width: 600px;
-  max-height: 90vh;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-}
-
-.modal-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 1rem 1.5rem;
-  border-bottom: 1px solid #e5e7eb;
-}
-
-.modal-title {
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: #1f2937;
-}
-
-.modal-close {
-  color: #6b7280;
-  transition: color 0.2s;
-}
-
-.modal-close:hover {
-  color: #374151;
-}
-
-.modal-body {
-  flex: 1;
-  overflow-y: auto;
-  padding: 1.5rem;
-}
-
-.detail-section {
-  margin-bottom: 1.5rem;
-}
-
-.section-title {
-  font-size: 1rem;
-  font-weight: 600;
-  color: #1f2937;
-  margin-bottom: 0.75rem;
-}
-
-.detail-grid {
-  display: grid;
-  gap: 0.75rem;
-}
-
-.detail-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.detail-label {
-  font-size: 0.875rem;
-  color: #6b7280;
-}
-
-.detail-value {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: #1f2937;
-}
-
-.settlement-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.settlement-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.75rem;
-  background-color: #f9fafb;
-  border-radius: 0.375rem;
-}
-
-.settlement-flow {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.from-member {
-  color: #dc2626;
-  font-weight: 500;
-}
-
-.to-member {
-  color: #16a34a;
-  font-weight: 500;
-}
-
-.settlement-amount {
-  font-weight: 600;
-  color: #1f2937;
-}
-
-.notes-text {
-  font-size: 0.875rem;
-  color: #374151;
-  line-height: 1.5;
-}
-</style>

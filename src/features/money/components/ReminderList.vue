@@ -4,10 +4,14 @@ import {
   AlertCircle,
   CheckCircle,
   Clock,
-  MoreHorizontal,
-  RotateCcw,
+  CheckCircle as LucideCheckCircle,
+  Clock as LucideClock,
+  Edit as LucideEdit,
+  Repeat as LucideRepeat,
+  Trash as LucideTrash,
 } from 'lucide-vue-next';
-import SimplePagination from '@/components/common/SimplePagination.vue';
+import FilterBar from '@/components/common/FilterBar.vue';
+import { Card, EmptyState, LoadingState, Pagination } from '@/components/ui';
 import { useReminderStore } from '@/stores/money';
 import { getRepeatTypeName, lowercaseFirstLetter } from '@/utils/common';
 import { DateUtils } from '@/utils/date';
@@ -75,34 +79,6 @@ watch(() => filters.value.repeatPeriodType, repeatPeriodType => {
   }
 });
 
-onMounted(() => {
-  loadReminders();
-},
-);
-
-// 根据项目数量决定网格布局
-const gridLayoutClass = computed(() => {
-  const itemCount = pagination.paginatedItems.value.length;
-
-  if (mediaQueries.isMobile) {
-    // 移动端布局：一行一个，100%宽度
-    return 'grid-template-columns-mobile-single';
-  } else {
-    // 桌面端布局
-    if (itemCount === 1) {
-      return 'grid-template-columns-single-50';
-    } else {
-      // 2个或更多项目时，强制每行最多2个项目
-      return 'grid-template-columns-320-max2';
-    }
-  }
-});
-
-// 暴露刷新方法给父组件
-defineExpose({
-  refresh: loadReminders,
-});
-
 // 监听后端账单提醒事件，自动刷新列表（防抖）
 let unlistenBilReminder: (() => void) | null = null;
 function useDebounceFn<T extends (...args: any[]) => any>(fn: T, wait: number) {
@@ -130,16 +106,26 @@ onUnmounted(() => {
 
   }
 });
+
+// 暴露刷新方法给父组件
+defineExpose({
+  refresh: loadReminders,
+});
 </script>
 
 <template>
-  <div class="reminder-container">
+  <div class="space-y-4 w-full">
     <!-- 过滤器区域 -->
-    <div class="screening-filtering">
-      <div class="filter-flex-wrap">
+    <FilterBar
+      :show-more-filters="showMoreFilters"
+      @toggle-filters="toggleFilters"
+      @reset="resetFilters"
+    >
+      <template #primary>
+        <!-- 状态过滤 -->
         <select
           v-model="filters.status"
-          class="screening-filtering-select"
+          class="px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
         >
           <option value="">
             {{ t('common.actions.all') }}{{ t('common.status.status') }}
@@ -147,177 +133,150 @@ onUnmounted(() => {
           <option value="paid">
             {{ t('common.status.paid') }}
           </option>
+          <option value="unpaid">
+            {{ t('common.status.unpaid') }}
+          </option>
           <option value="overdue">
             {{ t('common.status.overdue') }}
           </option>
-          <option value="pending">
-            {{ t('common.status.pending') }}
-          </option>
         </select>
-      </div>
-
-      <template v-if="showMoreFilters">
-        <div class="filter-flex-wrap">
-          <select
-            v-model="filters.repeatPeriodType"
-            class="screening-filtering-select"
-          >
-            <option value="undefined">
-              {{ t('common.actions.all') }}{{ t('todos.repeat.periodType') }}
-            </option>
-            <option value="None">
-              {{ t('date.repeat.none') }}
-            </option>
-            <option value="Daily">
-              {{ t('date.repeat.daily') }}
-            </option>
-            <option value="Weekly">
-              {{ t('date.repeat.weekly') }}
-            </option>
-            <option value="Monthly">
-              {{ t('date.repeat.monthly') }}
-            </option>
-            <option value="Yearly">
-              {{ t('date.repeat.yearly') }}
-            </option>
-            <option value="Custom">
-              {{ t('date.repeat.custom') }}
-            </option>
-          </select>
-        </div>
-
-        <div class="filter-flex-wrap">
-          <select
-            v-model="filters.category"
-            class="screening-filtering-select"
-          >
-            <option value="undefined">
-              {{ t('categories.allCategory') }}
-            </option>
-            <option
-              v-for="category in uniqueCategories"
-              :key="category"
-              :value="category"
-            >
-              {{ category }}
-            </option>
-          </select>
-        </div>
-
-        <div class="filter-flex-wrap">
-          <select
-            v-model="filters.dateRange"
-            class="screening-filtering-select"
-          >
-            <option value="">
-              {{ t('common.actions.all') }}
-            </option>
-            <option value="today">
-              {{ t('date.periods.today') }}
-            </option>
-            <option value="week">
-              {{ t('date.periods.week') }}
-            </option>
-            <option value="month">
-              {{ t('date.periods.month') }}
-            </option>
-            <option value="overdue">
-              {{ t('common.status.overdue') }}
-            </option>
-          </select>
-        </div>
       </template>
 
-      <div class="filter-button-group">
-        <button
-          class="screening-filtering-select"
-          @click="toggleFilters"
+      <template #secondary>
+        <select
+          v-model="filters.repeatPeriodType"
+          class="px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
         >
-          <MoreHorizontal class="wh-4 mr-1" />
-        </button>
-        <button
-          class="screening-filtering-select"
-          @click="resetFilters"
+          <option value="undefined">
+            {{ t('common.actions.all') }}{{ t('todos.repeat.periodType') }}
+          </option>
+          <option value="None">
+            {{ t('date.repeat.none') }}
+          </option>
+          <option value="Daily">
+            {{ t('date.repeat.daily') }}
+          </option>
+          <option value="Weekly">
+            {{ t('date.repeat.weekly') }}
+          </option>
+          <option value="Monthly">
+            {{ t('date.repeat.monthly') }}
+          </option>
+          <option value="Yearly">
+            {{ t('date.repeat.yearly') }}
+          </option>
+          <option value="Custom">
+            {{ t('date.repeat.custom') }}
+          </option>
+        </select>
+
+        <select
+          v-model="filters.category"
+          class="px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
         >
-          <RotateCcw class="wh-4 mr-1" />
-        </button>
-      </div>
-    </div>
+          <option value="undefined">
+            {{ t('categories.allCategory') }}
+          </option>
+          <option v-for="category in uniqueCategories" :key="category" :value="category">
+            {{ t(`common.categories.${lowercaseFirstLetter(category)}`) }}
+          </option>
+        </select>
+
+        <select
+          v-model="filters.dateRange"
+          class="px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+        >
+          <option value="">
+            {{ t('common.actions.all') }}
+          </option>
+          <option value="today">
+            {{ t('date.today') }}
+          </option>
+          <option value="thisWeek">
+            {{ t('date.thisWeek') }}
+          </option>
+          <option value="thisMonth">
+            {{ t('date.thisMonth') }}
+          </option>
+          <option value="custom">
+            {{ t('common.custom') }}
+          </option>
+        </select>
+      </template>
+    </FilterBar>
 
     <!-- 加载状态 -->
-    <div v-if="loading" class="loading-container">
-      {{ t('common.loading') }}
-    </div>
+    <LoadingState v-if="loading" :message="t('common.loading')" />
 
     <!-- 空状态 -->
-    <div v-else-if="pagination.paginatedItems.value.length === 0" class="empty-state-container">
-      <div class="empty-state-icon">
-        <i class="icon-bell" />
-      </div>
-      <div class="empty-state-text">
-        {{ pagination.totalItems.value === 0 ? t('messages.noReminder') : t('messages.noPatternResult') }}
-      </div>
-    </div>
+    <EmptyState
+      v-else-if="pagination.paginatedItems.value.length === 0"
+      icon="🔔"
+      :message="pagination.totalItems.value === 0 ? t('messages.noReminder') : t('messages.noPatternResult')"
+    />
 
     <!-- 提醒网格 -->
     <div
       v-else
-      class="reminder-grid"
-      :class="gridLayoutClass"
+      class="grid gap-4 mb-4"
+      :class="mediaQueries.isMobile ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-2'"
     >
-      <div
+      <Card
         v-for="reminder in pagination.paginatedItems.value" :key="reminder.serialNum"
-        class="reminder-card"
+        padding="md"
+        class="relative overflow-hidden transition-all hover:-translate-y-0.5 hover:shadow-lg"
         :class="[
-          {
-            'reminder-card-overdue': isOverdue(reminder),
-            'reminder-card-paid': reminder.isPaid,
-          },
+          isOverdue(reminder) ? 'opacity-90 border-2 border-red-500 dark:border-red-600 bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-900/30'
+          : reminder.isPaid ? 'opacity-80 border-2 border-green-500 dark:border-green-600 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-900/30'
+            : 'border border-blue-200 dark:border-blue-800 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800',
         ]"
       >
-        <div class="reminder-header">
-          <div class="reminder-title">
+        <div class="flex items-start justify-between mb-3 gap-2">
+          <div class="text-base font-semibold text-gray-900 dark:text-white leading-tight flex-1 min-w-0">
             {{ reminder.name }}
           </div>
-          <div class="reminder-actions">
+          <div class="flex gap-1 shrink-0 items-center">
             <div
-              class="status-badge" :class="[
-                getStatusClass(reminder) === 'paid' ? 'status-badge-paid'
-                : getStatusClass(reminder) === 'overdue' ? 'status-badge-overdue'
-                  : 'status-badge-pending',
+              class="text-xs font-medium px-2 py-1 rounded-md inline-flex gap-1 items-center whitespace-nowrap"
+              :class="[
+                getStatusClass(reminder) === 'paid' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
+                : getStatusClass(reminder) === 'overdue' ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'
+                  : 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300',
               ]"
             >
-              <component :is="getStatusIcon(reminder)" class="status-icon" />
+              <component :is="getStatusIcon(reminder)" :size="14" class="shrink-0" />
               <span>{{ getStatusText(reminder) }}</span>
             </div>
-            <div class="action-buttons">
+            <div class="flex gap-1">
               <button
                 v-if="!reminder.isPaid"
-                class="money-option-btn money-option-ben-hover)"
+                class="w-8 h-8 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 flex items-center justify-center transition-all hover:scale-105 active:scale-95 hover:bg-green-500 hover:text-white hover:border-green-500 dark:hover:bg-green-600 dark:hover:border-green-600"
                 :title="t('financial.transaction.markPaid')"
                 @click="emit('markPaid', reminder.serialNum, !reminder.isPaid)"
               >
-                <LucideCheckCircle class="wh-4" />
+                <LucideCheckCircle :size="16" />
               </button>
               <!-- 稍后提醒（+1小时） -->
               <button
-                class="money-option-btn money-option-edit-hover"
+                class="w-8 h-8 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 flex items-center justify-center transition-all hover:scale-105 active:scale-95 hover:bg-blue-500 hover:text-white hover:border-blue-500 dark:hover:bg-blue-600 dark:hover:border-blue-600"
                 :title="t('financial.reminder.snooze')"
                 @click="$emit('edit', { ...reminder, snoozeUntil: DateUtils.getLocalISODateTimeWithOffset({ hours: 1 }) })"
               >
-                <LucideClock class="wh-4" />
+                <LucideClock :size="16" />
               </button>
               <button
-                class="money-option-btn money-option-edit-hover" :title="t('common.actions.edit')"
+                class="w-8 h-8 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 flex items-center justify-center transition-all hover:scale-105 active:scale-95 hover:bg-blue-500 hover:text-white hover:border-blue-500 dark:hover:bg-blue-600 dark:hover:border-blue-600"
+                :title="t('common.actions.edit')"
                 @click="emit('edit', reminder)"
               >
-                <LucideEdit class="wh-4" />
+                <LucideEdit :size="16" />
               </button>
               <button
-                class="money-option-btn money-option-trash-hover"
-                :title="t('common.actions.delete')" @click="emit('delete', reminder.serialNum)"
+                class="w-8 h-8 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 flex items-center justify-center transition-all hover:scale-105 active:scale-95 hover:bg-red-500 hover:text-white hover:border-red-500 dark:hover:bg-red-600 dark:hover:border-red-600"
+                :title="t('common.actions.delete')"
+                @click="emit('delete', reminder.serialNum)"
               >
-                <LucideTrash class="wh-4" />
+                <LucideTrash :size="16" />
               </button>
             </div>
           </div>
@@ -325,58 +284,58 @@ onUnmounted(() => {
 
         <div
           v-if="reminder.amount"
-          class="reminder-amount"
+          class="mb-3 flex items-baseline gap-2"
         >
-          <span class="amount-value">
+          <span class="text-2xl font-bold text-gray-900 dark:text-white leading-none tracking-tight">
             {{ formatCurrency(reminder.amount) }}
           </span>
           <span
             v-if="reminder.currency"
-            class="amount-currency"
+            class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
           >
             {{ reminder.currency.code }}
           </span>
         </div>
 
-        <div class="reminder-dates">
-          <div v-if="reminder.billDate" class="date-row">
-            <span class="date-label">{{ t('financial.billDate') }}</span>
-            <span class="date-value">{{ DateUtils.formatDate(reminder.billDate) }}</span>
+        <div class="mb-2 flex flex-col gap-1">
+          <div v-if="reminder.billDate" class="text-xs flex justify-between items-center gap-3">
+            <span class="text-gray-500 dark:text-gray-400 font-medium shrink-0">{{ t('financial.billDate') }}</span>
+            <span class="text-gray-900 dark:text-white font-medium text-right">{{ DateUtils.formatDate(reminder.billDate) }}</span>
           </div>
-          <div class="date-row">
-            <span class="date-label">{{ t('date.reminderDate') }}</span>
-            <span class="date-value">{{ DateUtils.formatDate(reminder.remindDate) }}</span>
+          <div class="text-xs flex justify-between items-center gap-3">
+            <span class="text-gray-500 dark:text-gray-400 font-medium shrink-0">{{ t('date.reminderDate') }}</span>
+            <span class="text-gray-900 dark:text-white font-medium text-right">{{ DateUtils.formatDate(reminder.remindDate) }}</span>
           </div>
-          <div v-if="reminder.lastReminderSentAt" class="date-row">
-            <span class="date-label">{{ t('financial.reminder.lastReminderSentAt') }}</span>
-            <span class="date-value">{{ DateUtils.formatDateTime(reminder.lastReminderSentAt) }}</span>
+          <div v-if="reminder.lastReminderSentAt" class="text-xs flex justify-between items-center gap-3">
+            <span class="text-gray-500 dark:text-gray-400 font-medium shrink-0">{{ t('financial.reminder.lastReminderSentAt') }}</span>
+            <span class="text-gray-900 dark:text-white font-medium text-right">{{ DateUtils.formatDateTime(reminder.lastReminderSentAt) }}</span>
           </div>
         </div>
 
-        <div class="reminder-period">
-          <LucideRepeat class="period-icon" />
+        <div class="text-xs text-gray-500 dark:text-gray-400 mb-2 flex gap-1.5 items-center justify-end">
+          <LucideRepeat :size="14" class="shrink-0" />
           <span>{{ getRepeatTypeName(reminder.repeatPeriod) }}</span>
         </div>
 
-        <div class="reminder-info">
-          <div class="info-row">
-            <span class="info-label"> {{ t('common.misc.types') }} </span>
-            <span class="info-value">{{ t(`financial.reminder.types.${lowercaseFirstLetter(reminder.type)}`) }}</span>
+        <div class="pt-3 border-t border-gray-200 dark:border-gray-700 flex flex-col gap-1">
+          <div class="text-xs flex justify-between items-center gap-3">
+            <span class="text-gray-500 dark:text-gray-400 font-medium shrink-0"> {{ t('common.misc.types') }} </span>
+            <span class="text-gray-900 dark:text-white font-medium text-right">{{ t(`financial.reminder.types.${lowercaseFirstLetter(reminder.type)}`) }}</span>
           </div>
-          <div v-if="reminder.description" class="info-row">
-            <span class="info-label"> {{ t('common.misc.remark') }} </span>
-            <span class="info-value">{{ reminder.description }}</span>
+          <div v-if="reminder.description" class="text-xs flex justify-between items-center gap-3">
+            <span class="text-gray-500 dark:text-gray-400 font-medium shrink-0"> {{ t('common.misc.remark') }} </span>
+            <span class="text-gray-900 dark:text-white font-medium text-right truncate">{{ reminder.description }}</span>
           </div>
         </div>
-      </div>
+      </Card>
     </div>
 
     <!-- 分页组件 -->
     <div
       v-if="pagination.totalItems.value > pagination.pageSize.value"
-      class="pagination-container"
+      class="flex justify-center mb-16 lg:mb-4 pb-4"
     >
-      <SimplePagination
+      <Pagination
         :current-page="pagination.currentPage.value"
         :total-pages="pagination.totalPages.value"
         :total-items="pagination.totalItems.value"
@@ -387,451 +346,3 @@ onUnmounted(() => {
     </div>
   </div>
 </template>
-
-<style scoped lang="postcss">
-/* Container */
-.reminder-container {
-  min-height: 6.25rem;
-}
-
-/* 移动端滚动优化 */
-@media (max-width: 768px) {
-  .reminder-container {
-    min-height: auto; /* 移动端允许内容自适应高度 */
-    padding-bottom: 1rem; /* 额外的底部空间 */
-  }
-}
-
-/* Loading and Empty States */
-.loading-container {
-  color: var(--color-gray-600);
-  height: 6.25rem;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.empty-state-container {
-  color: var(--color-gray-400);
-  display: flex;
-  flex-direction: column;
-  height: 6.25rem;
-  justify-content: center;
-  align-items: center;
-}
-
-.empty-state-icon {
-  font-size: 0.875rem;
-  margin-bottom: 0.5rem;
-  opacity: 0.5;
-}
-
-.empty-state-text {
-  font-size: 0.875rem;
-}
-
-/* Reminder Grid - 优化网格布局 */
-.reminder-grid {
-  margin-bottom: 1rem;
-  gap: 1rem;
-  display: grid;
-}
-
-/* 网格布局类 - 响应式设计 */
-.grid-template-columns-mobile-single {
-  grid-template-columns: 1fr;
-}
-
-/* 桌面端单个项目占50%宽度 */
-.grid-template-columns-single-50 {
-  grid-template-columns: 1fr;
-  max-width: 50%;
-}
-
-/* 桌面端布局 */
-.grid-template-columns-320-two-items,
-.grid-template-columns-320-max2 {
-  grid-template-columns: repeat(2, 1fr);
-}
-
-/* 移动端优化 */
-@media (max-width: 768px) {
-  .reminder-grid {
-    gap: 0.75rem;
-    margin-bottom: 0.75rem;
-  }
-
-  .grid-template-columns-mobile-single,
-  .grid-template-columns-single-50,
-  .grid-template-columns-320-two-items,
-  .grid-template-columns-320-max2 {
-    grid-template-columns: 1fr;
-    max-width: 100%;
-  }
-}
-
-/* 桌面端优化 */
-@media (min-width: 769px) {
-  .reminder-grid {
-    gap: 1rem;
-    margin-bottom: 1rem;
-  }
-
-  .grid-template-columns-single-50 {
-    grid-template-columns: 1fr;
-    max-width: 50%;
-  }
-
-  .grid-template-columns-320-two-items,
-  .grid-template-columns-320-max2 {
-    grid-template-columns: repeat(2, 1fr);
-    max-width: none;
-  }
-}
-
-/* Reminder Card - 重新设计为更紧凑美观的卡片 */
-.reminder-card {
-  background: linear-gradient(135deg, var(--color-base-100) 0%, var(--color-base-200) 100%);
-  padding: 1rem;
-  border: 1px solid var(--color-primary-soft);
-  border-radius: 0.75rem;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  position: relative;
-  overflow: hidden;
-  box-shadow: var(--shadow-sm);
-}
-
-.reminder-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: var(--color-primary-gradient);
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.reminder-card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-lg);
-  border-color: var(--color-primary);
-}
-
-.reminder-card:hover::before {
-  opacity: 1;
-}
-
-.reminder-card-overdue {
-  opacity: 0.9;
-  border-color: var(--color-error);
-  background: linear-gradient(135deg, var(--color-error-50) 0%, var(--color-error-100) 100%);
-}
-
-.reminder-card-overdue::before {
-  background: var(--color-error);
-  opacity: 0;
-}
-
-.reminder-card-overdue:hover::before {
-  opacity: 1;
-}
-
-.reminder-card-paid {
-  opacity: 0.8;
-  background: linear-gradient(135deg, var(--color-success-50) 0%, var(--color-success-100) 100%);
-  border-color: var(--color-success);
-}
-
-.reminder-card-paid::before {
-  background: var(--color-success);
-  opacity: 0;
-}
-
-.reminder-card-paid:hover::before {
-  opacity: 1;
-}
-
-/* Reminder Header - 更紧凑的布局 */
-.reminder-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  margin-bottom: 0.75rem;
-  gap: 0.5rem;
-}
-
-.reminder-title {
-  font-size: 1rem;
-  color: var(--color-base-content);
-  font-weight: 600;
-  line-height: 1.2;
-  flex: 1;
-  min-width: 0;
-}
-
-.reminder-actions {
-  display: flex;
-  gap: 0.25rem;
-  flex-shrink: 0;
-  align-items: center;
-}
-
-/* Status Badge */
-.status-badge {
-  font-size: 0.6875rem;
-  font-weight: 500;
-  padding: 0.25rem 0.5rem;
-  border-radius: 0.375rem;
-  display: inline-flex;
-  gap: 0.25rem;
-  align-items: center;
-  white-space: nowrap;
-}
-
-.status-badge-paid {
-  background-color: var(--color-success-soft);
-  color: var(--color-success);
-}
-
-.status-badge-overdue {
-  background-color: var(--color-error-soft);
-  color: var(--color-error);
-}
-
-.status-badge-pending {
-  background-color: var(--color-info-soft);
-  color: var(--color-info);
-}
-
-.status-icon {
-  height: 0.875rem;
-  width: 0.875rem;
-  flex-shrink: 0;
-}
-
-/* Action Buttons - 更优雅的按钮 */
-.action-buttons {
-  display: flex;
-  gap: 0.25rem;
-}
-
-/* Reminder Amount - 突出显示 */
-.reminder-amount {
-  margin-bottom: 0.75rem;
-  display: flex;
-  align-items: baseline;
-  gap: 0.5rem;
-}
-
-.amount-value {
-  font-size: 1.375rem;
-  color: var(--color-base-content);
-  font-weight: 700;
-  line-height: 1;
-  letter-spacing: -0.025em;
-}
-
-.amount-currency {
-  font-size: 0.8125rem;
-  color: var(--color-gray-500);
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-/* Reminder Dates - 紧凑布局 */
-.reminder-dates {
-  margin-bottom: 0.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.date-row {
-  font-size: 0.8125rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.date-label {
-  color: var(--color-gray-500);
-  font-weight: 500;
-  flex-shrink: 0;
-}
-
-.date-value {
-  color: var(--color-base-content);
-  font-weight: 500;
-  text-align: right;
-}
-
-/* Reminder Period - 紧凑布局 */
-.reminder-period {
-  font-size: 0.75rem;
-  color: var(--color-gray-500);
-  margin-bottom: 0.5rem;
-  display: flex;
-  gap: 0.375rem;
-  align-items: center;
-  justify-content: flex-end;
-}
-
-.period-icon {
-  height: 0.875rem;
-  width: 0.875rem;
-  flex-shrink: 0;
-  color: var(--color-gray-500);
-}
-
-/* Reminder Info - 紧凑布局 */
-.reminder-info {
-  padding-top: 0.75rem;
-  border-top: 1px solid var(--color-gray-200);
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.info-row {
-  font-size: 0.8125rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.info-label {
-  color: var(--color-gray-500);
-  font-weight: 500;
-  flex-shrink: 0;
-}
-
-.info-value {
-  color: var(--color-base-content);
-  font-weight: 500;
-  text-align: right;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* Additional utility styles */
-.filter-button-group {
-  display: flex;
-  gap: 0.25rem;
-}
-
-/* 操作按钮样式 - 与 AccountList 一致 */
-.money-option-btn {
-  width: 2rem;
-  height: 2rem;
-  border-radius: 0.5rem;
-  border: 1px solid var(--color-gray-200);
-  background: var(--color-base-100);
-  color: var(--color-gray-600);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s ease;
-  cursor: pointer;
-  position: relative;
-  overflow: hidden;
-}
-
-.money-option-btn::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: var(--color-primary);
-  opacity: 0;
-  transition: opacity 0.2s ease;
-}
-
-.money-option-btn:hover {
-  border-color: var(--color-primary);
-  color: var(--color-primary);
-  transform: scale(1.05);
-}
-
-.money-option-btn:hover::before {
-  opacity: 0.1;
-}
-
-.money-option-btn:active {
-  transform: scale(0.95);
-}
-
-.money-option-ben-hover:hover {
-  background-color: var(--color-success);
-  color: var(--color-success-content);
-  border-color: var(--color-success);
-}
-
-.money-option-edit-hover:hover {
-  background-color: var(--color-primary);
-  color: var(--color-primary-content);
-  border-color: var(--color-primary);
-}
-
-.money-option-trash-hover:hover {
-  background-color: var(--color-error);
-  color: var(--color-error-content);
-  border-color: var(--color-error);
-}
-
-.pagination-container {
-  display: flex;
-  justify-content: center;
-}
-
-/* 移动端优化 */
-@media (max-width: 768px) {
-  .reminder-card {
-    padding: 0.875rem;
-  }
-
-  .reminder-header {
-    margin-bottom: 0.625rem;
-  }
-
-  .reminder-title {
-    font-size: 0.9375rem;
-  }
-
-  .money-option-btn {
-    width: 1.75rem;
-    height: 1.75rem;
-  }
-
-  .amount-value {
-    font-size: 1.25rem;
-  }
-
-  .reminder-info {
-    padding-top: 0.625rem;
-  }
-
-  .info-row {
-    font-size: 0.75rem;
-  }
-
-  .date-row {
-    font-size: 0.75rem;
-  }
-
-  .reminder-period {
-    font-size: 0.6875rem;
-  }
-
-  .pagination-container {
-    margin-bottom: 4rem; /* 为底部导航栏预留空间 */
-    padding-bottom: 1rem; /* 额外的底部内边距 */
-  }
-}
-</style>

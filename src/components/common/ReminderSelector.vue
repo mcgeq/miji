@@ -1,10 +1,10 @@
 <script setup lang="ts">
+import Select from '@/components/ui/Select.vue';
 import {
-  CATEGORY_NAMES,
   DEFAULT_REMINDER_TYPES,
   POPULAR_REMINDER_TYPES,
-
 } from '@/constants/commonConstant';
+import type { SelectOption } from '@/components/ui/Select.vue';
 import type { ReminderTypeI18 } from '@/constants/commonConstant';
 
 // 组件 Props 接口
@@ -65,8 +65,6 @@ const emit = defineEmits<ReminderSelectorEmits>();
 
 // 响应式状态
 const selectedValue = ref<string>(props.modelValue);
-const inputId = useId();
-const isFirstFocus = ref(true);
 
 // 显示的提醒类型列表
 const displayTypes = computed(() => {
@@ -78,47 +76,7 @@ const displayTypes = computed(() => {
   return props.reminderTypes;
 });
 
-// 分组的提醒类型
-const groupedTypes = computed(() => {
-  if (!props.showGrouped)
-    return {};
-
-  const grouped: Record<string, ReminderTypeI18[]> = {};
-
-  displayTypes.value.forEach(type => {
-    const category = type.category || 'general';
-    if (!grouped[category]) {
-      grouped[category] = [];
-    }
-    grouped[category].push(type);
-  });
-
-  // 按分类排序
-  const sortedGrouped: Record<string, ReminderTypeI18[]> = {};
-  const categoryOrder = [
-    'finance',
-    'work',
-    'health',
-    'lifestyle',
-    'social',
-    'general',
-  ];
-
-  categoryOrder.forEach(category => {
-    if (grouped[category]) {
-      sortedGrouped[category] = grouped[category];
-    }
-  });
-
-  // 添加其他未排序的分类
-  Object.keys(grouped).forEach(category => {
-    if (!categoryOrder.includes(category)) {
-      sortedGrouped[category] = grouped[category];
-    }
-  });
-
-  return sortedGrouped;
-});
+// 分组功能已由 Select 组件内部处理，这里不再需要
 
 // 快捷选择类型
 const quickSelectTypes = computed(() => {
@@ -156,13 +114,6 @@ function getQuickSelectDisplayName(type: ReminderTypeI18): string {
   return type.icon ? `${type.icon} ${name}` : name;
 }
 
-function getCategoryName(category: string): string {
-  const categoryInfo = CATEGORY_NAMES[category as keyof typeof CATEGORY_NAMES];
-  if (!categoryInfo)
-    return category;
-  return props.locale === 'zh-CN' ? categoryInfo.zh : categoryInfo.en;
-}
-
 // 事件处理
 function handleChange(event: Event) {
   const target = event.target as HTMLSelectElement;
@@ -180,24 +131,7 @@ function handleChange(event: Event) {
   });
 }
 
-function handleBlur(event: FocusEvent) {
-  emit('blur', event);
-
-  // 失焦时触发验证
-  nextTick(() => {
-    emit('validate', isValid.value);
-  });
-}
-
-function handleFocus(event: FocusEvent) {
-  emit('focus', event);
-
-  // 首次聚焦时的特殊处理
-  if (isFirstFocus.value) {
-    isFirstFocus.value = false;
-    // 可以在这里添加首次聚焦的逻辑
-  }
-}
+// blur 和 focus 事件由 Select 组件内部处理
 
 function selectQuickType(type: ReminderTypeI18) {
   if (props.disabled || props.loading)
@@ -213,19 +147,13 @@ function selectQuickType(type: ReminderTypeI18) {
   });
 }
 
-// 公共方法
+// 公共方法 - Select 组件内部管理 focus/blur
 function focus() {
-  const selectElement = document.getElementById(inputId);
-  if (selectElement) {
-    selectElement.focus();
-  }
+  // TODO: 如果需要，可以通过 ref 访问 Select 组件
 }
 
 function blur() {
-  const selectElement = document.getElementById(inputId);
-  if (selectElement) {
-    selectElement.blur();
-  }
+  // TODO: 如果需要，可以通过 ref 访问 Select 组件
 }
 
 function validate(): boolean {
@@ -257,6 +185,37 @@ watch(
   { immediate: true },
 );
 
+// 转换为 Select 组件的选项格式
+const selectOptions = computed<SelectOption[]>(() => {
+  return displayTypes.value.map(type => ({
+    value: type.code,
+    label: getCurrentDisplayName(type),
+    // 不传递 icon，因为 emoji 已经包含在 label 中
+  }));
+});
+
+// Select 尺寸映射
+const selectSize = computed(() => {
+  const sizeMap = {
+    sm: 'sm' as const,
+    base: 'md' as const,
+    lg: 'lg' as const,
+  };
+  return sizeMap[props.size];
+});
+
+// 宽度类
+const widthClass = computed(() => {
+  const widthMap = {
+    'full': 'w-full',
+    'auto': 'w-auto',
+    '2/3': 'w-2/3',
+    '1/2': 'w-1/2',
+    '1/3': 'w-1/3',
+  };
+  return widthMap[props.width];
+});
+
 // 暴露组件方法
 defineExpose({
   focus,
@@ -269,69 +228,37 @@ defineExpose({
 </script>
 
 <template>
-  <div class="reminder-selector">
-    <div class="reminder-selector-row">
-      <label :for="inputId" class="label-text">
+  <div>
+    <div class="mb-2 flex items-center justify-between max-sm:flex-wrap">
+      <label class="text-sm font-medium text-[light-dark(#111827,#f9fafb)] max-sm:shrink-0">
         {{ label }}
-        <span v-if="required" class="required-asterisk" aria-label="必填">*</span>
+        <span v-if="required" class="text-[var(--color-error)] ml-1" aria-label="必填">*</span>
       </label>
 
-      <!-- 基础选择器 -->
-      <select
-        v-if="!showGrouped"
-        :id="inputId"
-        v-model="selectedValue"
-        :required="required"
-        :disabled="disabled"
-        class="modal-input-select"
-        :data-size="size"
-        :data-width="width"
-        :data-error="!!errorMessage"
-        :data-disabled="disabled"
-        :data-loading="loading"
-        @change="handleChange"
-        @blur="handleBlur"
-        @focus="handleFocus"
-      >
-        <option value="" disabled>
-          {{ placeholder }}
-        </option>
-        <option v-for="type in displayTypes" :key="type.code" :value="type.code">
-          {{ getCurrentDisplayName(type) }}
-        </option>
-      </select>
-
-      <!-- 分组选择器 -->
-      <select
-        v-else
-        :id="inputId"
-        v-model="selectedValue"
-        :required="required"
-        :disabled="disabled"
-        class="modal-input-select"
-        :data-size="size"
-        :data-width="width"
-        :data-error="!!errorMessage"
-        :data-disabled="disabled"
-        :data-loading="loading"
-        @change="handleChange"
-        @blur="handleBlur"
-        @focus="handleFocus"
-      >
-        <option value="" disabled>
-          {{ placeholder }}
-        </option>
-        <optgroup v-for="(types, category) in groupedTypes" :key="category" :label="getCategoryName(category)">
-          <option v-for="type in types" :key="type.code" :value="type.code">
-            {{ getCurrentDisplayName(type) }}
-          </option>
-        </optgroup>
-      </select>
+      <div class="max-sm:flex-1 max-sm:w-full" :class="[widthClass]">
+        <Select
+          :model-value="selectedValue"
+          :options="selectOptions"
+          :placeholder="placeholder"
+          :size="selectSize"
+          :disabled="disabled"
+          :required="required"
+          :error="errorMessage"
+          :searchable="displayTypes.length > 10"
+          full-width
+          @update:model-value="(val) => { selectedValue = val as string; handleChange({ target: { value: val } } as any); }"
+        />
+      </div>
     </div>
 
     <!-- 快捷选择按钮 -->
-    <div v-if="showQuickSelect && quickSelectTypes.length > 0" class="quick-select-group" role="group" :aria-label="quickSelectLabel">
-      <div class="quick-select-label">
+    <div
+      v-if="showQuickSelect && quickSelectTypes.length > 0"
+      class="mb-2"
+      role="group"
+      :aria-label="quickSelectLabel"
+    >
+      <div class="text-xs text-[light-dark(#6b7280,#9ca3af)] mb-1">
         {{ quickSelectLabel }}：
       </div>
       <div class="flex flex-wrap gap-1">
@@ -339,8 +266,12 @@ defineExpose({
           v-for="type in quickSelectTypes"
           :key="type.code"
           type="button"
-          class="quick-select-btn"
-          :class="{ 'quick-select-btn-active': selectedValue === type.code }"
+          class="text-xs py-1 px-2 rounded-md border cursor-pointer transition-all duration-200 ease-in-out max-sm:py-0.5 max-sm:px-1.5 max-sm:text-[0.6875rem]" :class="[
+            selectedValue === type.code
+              ? 'bg-[light-dark(#dbeafe,rgba(59,130,246,0.1))] border-[var(--color-primary)] text-[var(--color-primary)]'
+              : 'bg-[light-dark(white,#1f2937)] border-[light-dark(#d1d5db,#4b5563)] text-[light-dark(#111827,#f9fafb)] hover:bg-[light-dark(#f3f4f6,#374151)]',
+            disabled && 'opacity-50 cursor-not-allowed',
+          ]"
           :disabled="disabled"
           @click="selectQuickType(type)"
         >
@@ -350,164 +281,21 @@ defineExpose({
     </div>
 
     <!-- 错误提示 -->
-    <div v-if="errorMessage" :id="`${inputId}-error`" class="error-text" role="alert" aria-live="polite">
+    <div
+      v-if="errorMessage"
+      class="mt-1 text-sm text-[var(--color-error)]"
+      role="alert"
+      aria-live="polite"
+    >
       {{ errorMessage }}
     </div>
 
     <!-- 帮助文本 -->
-    <div v-if="helpText" class="help-text">
+    <div
+      v-if="helpText"
+      class="mt-2 text-xs text-[light-dark(#6b7280,#9ca3af)] text-right"
+    >
       {{ helpText }}
     </div>
   </div>
 </template>
-
-<style scoped lang="postcss">
-/* 基础选择器 */
-.modal-input-select {
-  border: 1px solid var(--color-base-300);
-  border-radius: 0.375rem;
-  background-color: var(--color-base-100);
-  color: var(--color-base-content);
-  transition: all 0.2s ease-in-out;
-  font-family: inherit;
-}
-
-/* 尺寸 */
-.modal-input-select[data-size="sm"] { padding: 0.25rem 0.5rem; font-size: 0.875rem; }
-.modal-input-select[data-size="base"] { padding: 0.5rem 0.75rem; font-size: 1rem; }
-.modal-input-select[data-size="lg"] { padding: 0.75rem 1rem; font-size: 1.125rem; }
-
-/* 宽度 */
-.modal-input-select[data-width="full"] { width: 100%; }
-.modal-input-select[data-width="auto"] { width: auto; }
-.modal-input-select[data-width="2/3"] { width: 66.666%; }
-.modal-input-select[data-width="1/2"] { width: 50%; }
-.modal-input-select[data-width="1/3"] { width: 33.333%; }
-
-/* 错误状态 */
-.modal-input-select[data-error="true"] { border-color: var(--color-error); }
-.modal-input-select[data-error="true"]:focus { outline: 2px solid var(--color-error); outline-offset: 2px; }
-
-/* 禁用状态 */
-.modal-input-select[data-disabled="true"] {
-  opacity: 0.5;
-  cursor: not-allowed;
-  background-color: var(--color-base-200);
-}
-
-/* 加载状态 */
-.modal-input-select[data-loading="true"] { opacity: 0.75; cursor: wait; }
-
-/* focus 样式 */
-.modal-input-select:focus {
-  outline: 2px solid var(--color-primary);
-  outline-offset: 2px;
-}
-
-/* optgroup 样式 */
-.modal-input-select optgroup {
-  font-weight: 600;
-  color: var(--color-base-content);
-}
-.modal-input-select optgroup option {
-  font-weight: 400;
-  padding-left: 1rem;
-}
-
-/* 禁用 option */
-.modal-input-select option:disabled {
-  color: var(--color-neutral);
-}
-
-/* 快捷选择按钮 */
-.quick-select-btn {
-  font-size: 0.75rem;
-  padding: 0.25rem 0.5rem;
-  border-radius: 0.375rem;
-  border: 1px solid var(--color-base-300);
-  background-color: var(--color-base-100);
-  color: var(--color-base-content);
-  cursor: pointer;
-  transition: all 0.2s ease-in-out;
-}
-.quick-select-btn:hover {
-  background-color: var(--color-base-200);
-  border-color: var(--color-base-300);
-}
-.quick-select-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-/* 激活状态 */
-.quick-select-btn-active {
-  background-color: var(--color-primary-soft);
-  border-color: var(--color-primary);
-  color: var(--color-primary);
-}
-
-/* label */
-.label-text {
-  font-size: 0.875rem;
-  color: var(--color-base-content);
-  font-weight: 500;
-}
-.required-asterisk {
-  color: var(--color-error);
-  margin-left: 0.25rem;
-}
-
-/* 错误文本 */
-.error-text {
-  font-size: 0.875rem;
-  color: var(--color-error);
-  margin-top: 0.25rem;
-}
-
-/* 帮助文本 */
-.help-text {
-  font-size: 0.75rem;
-  color: var(--color-neutral);
-  margin-top: 0.5rem;
-  text-align: right;
-}
-
-/* 快捷选择组 */
-.quick-select-group {
-  margin-bottom: 0.5rem;
-}
-.quick-select-label {
-  font-size: 0.75rem;
-  color: var(--color-neutral);
-  margin-bottom: 0.25rem;
-}
-
-/* 容器基础布局 */
-.reminder-selector-row {
-  display: flex;
-  align-items: center;        /* items-center */
-  justify-content: space-between; /* justify-between */
-  margin-bottom: 0.5rem;      /* mb-2 -> 0.5rem = 8px */
-}
-
-/* 响应式：小屏幕水平排列 */
-@media (max-width: 640px) {
-  .reminder-selector-row {
-    flex-wrap: wrap;
-  }
-
-  .label-text {
-    flex-shrink: 0;
-  }
-
-  .modal-input-select {
-    flex: 1;
-    min-width: 0;
-  }
-}
-
-/* 响应式 - 快捷选择按钮 */
-@media (max-width: 640px) {
-  .quick-select-btn { padding: 0.125rem 0.375rem; font-size: 0.6875rem; }
-}
-</style>

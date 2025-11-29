@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { LucidePieChart } from 'lucide-vue-next';
+
 // 简化的支出分析图表组件
 interface ExpenseData {
   category: string;
@@ -49,15 +51,15 @@ function formatAmount(amount: number): string {
 </script>
 
 <template>
-  <div class="expense-chart" :style="{ height }">
-    <h4 v-if="title" class="chart-title">
+  <div :style="{ height }">
+    <h4 v-if="title" class="text-base font-semibold text-gray-900 dark:text-white mb-4 text-center">
       {{ title }}
     </h4>
 
-    <div class="chart-container">
+    <div class="flex flex-col sm:flex-row items-center gap-8 sm:gap-8" :class="{ 'h-[calc(100%-3rem)]': title }">
       <!-- 饼图可视化 -->
-      <div class="pie-chart">
-        <svg viewBox="0 0 200 200" class="pie-svg">
+      <div class="flex-shrink-0 w-[200px] h-[200px]">
+        <svg viewBox="0 0 200 200" class="w-full h-full">
           <g transform="translate(100,100)">
             <circle
               v-for="(item, index) in chartData"
@@ -68,36 +70,36 @@ function formatAmount(amount: number): string {
               :stroke-dasharray="`${item.percentage * 5.03} 502`"
               :stroke-dashoffset="`${-chartData.slice(0, index).reduce((sum, prev) => sum + prev.percentage, 0) * 5.03}`"
               fill="none"
-              class="pie-segment"
+              class="transition-all duration-300 hover:stroke-[25]"
             />
           </g>
 
           <!-- 中心文字 -->
-          <text x="100" y="95" text-anchor="middle" class="center-text-label">总支出</text>
-          <text x="100" y="115" text-anchor="middle" class="center-text-value">
+          <text x="100" y="95" text-anchor="middle" class="text-xs fill-gray-500 dark:fill-gray-400">总支出</text>
+          <text x="100" y="115" text-anchor="middle" class="text-sm font-semibold fill-gray-900 dark:fill-white">
             ¥{{ formatAmount(totalAmount) }}
           </text>
         </svg>
       </div>
 
       <!-- 图例 -->
-      <div class="chart-legend">
+      <div class="flex-1 flex flex-col gap-3 max-h-[200px] sm:max-h-[200px] overflow-y-auto">
         <div
           v-for="(item, index) in chartData"
           :key="item.category"
-          class="legend-item"
+          class="flex items-center gap-3 p-2 rounded-md transition-colors hover:bg-gray-50 dark:hover:bg-gray-700"
         >
           <div
-            class="legend-color"
+            class="w-4 h-4 rounded flex-shrink-0"
             :style="{ backgroundColor: item.color || defaultColors[index % defaultColors.length] }"
           />
-          <div class="legend-content">
-            <div class="legend-label">
+          <div class="flex-1">
+            <div class="text-sm font-medium text-gray-700 dark:text-gray-200 mb-0.5">
               {{ item.category }}
             </div>
-            <div class="legend-value">
+            <div class="text-xs text-gray-600 dark:text-gray-400">
               ¥{{ formatAmount(item.amount) }}
-              <span class="legend-percentage">({{ item.percentage.toFixed(1) }}%)</span>
+              <span class="text-gray-400 dark:text-gray-500">({{ item.percentage.toFixed(1) }}%)</span>
             </div>
           </div>
         </div>
@@ -105,148 +107,11 @@ function formatAmount(amount: number): string {
     </div>
 
     <!-- 空状态 -->
-    <div v-if="data.length === 0" class="empty-state">
-      <LucidePieChart class="empty-icon" />
-      <p class="empty-text">
+    <div v-if="data.length === 0" class="flex flex-col items-center justify-center h-full text-gray-400 dark:text-gray-500">
+      <LucidePieChart class="w-8 h-8 mb-2" />
+      <p class="text-sm">
         暂无数据
       </p>
     </div>
   </div>
 </template>
-
-<style scoped>
-.expense-chart {
-  background: white;
-  border-radius: 0.5rem;
-  border: 1px solid #e5e7eb;
-  padding: 1rem;
-}
-
-.chart-title {
-  font-size: 1rem;
-  font-weight: 600;
-  color: #1f2937;
-  margin-bottom: 1rem;
-  text-align: center;
-}
-
-.chart-container {
-  display: flex;
-  align-items: center;
-  gap: 2rem;
-  height: calc(100% - 3rem);
-}
-
-.pie-chart {
-  flex: 0 0 200px;
-  height: 200px;
-}
-
-.pie-svg {
-  width: 100%;
-  height: 100%;
-}
-
-.pie-segment {
-  transition: stroke-width 0.3s ease;
-}
-
-.pie-segment:hover {
-  stroke-width: 25;
-}
-
-.center-text-label {
-  font-size: 12px;
-  fill: #6b7280;
-}
-
-.center-text-value {
-  font-size: 14px;
-  font-weight: 600;
-  fill: #1f2937;
-}
-
-.chart-legend {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  max-height: 200px;
-  overflow-y: auto;
-}
-
-.legend-item {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.5rem;
-  border-radius: 0.375rem;
-  transition: background-color 0.2s;
-}
-
-.legend-item:hover {
-  background-color: #f9fafb;
-}
-
-.legend-color {
-  width: 1rem;
-  height: 1rem;
-  border-radius: 0.25rem;
-  flex-shrink: 0;
-}
-
-.legend-content {
-  flex: 1;
-}
-
-.legend-label {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: #374151;
-  margin-bottom: 0.125rem;
-}
-
-.legend-value {
-  font-size: 0.75rem;
-  color: #6b7280;
-}
-
-.legend-percentage {
-  color: #9ca3af;
-}
-
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-  color: #9ca3af;
-}
-
-.empty-icon {
-  width: 2rem;
-  height: 2rem;
-  margin-bottom: 0.5rem;
-}
-
-.empty-text {
-  font-size: 0.875rem;
-}
-
-/* 响应式设计 */
-@media (max-width: 640px) {
-  .chart-container {
-    flex-direction: column;
-    gap: 1rem;
-  }
-
-  .pie-chart {
-    flex: none;
-  }
-
-  .chart-legend {
-    max-height: none;
-  }
-}
-</style>
