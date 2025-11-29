@@ -471,7 +471,7 @@ onMounted(() => {
 <template>
   <div class="h-full flex flex-col bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
     <!-- 头部导航 -->
-    <div class="flex items-center justify-between px-3 py-2 bg-[var(--color-base-200)] dark:bg-gray-900 border-b border-[var(--color-base-300)] dark:border-gray-700">
+    <div class="flex items-center justify-between px-3 py-2 bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
       <div class="flex items-center gap-2">
         <button
           class="w-7 h-7 flex items-center justify-center rounded-md text-gray-500 dark:text-gray-400 transition-all duration-200 hover:text-gray-700 hover:bg-gray-200 dark:hover:text-gray-200 dark:hover:bg-gray-700"
@@ -494,13 +494,13 @@ onMounted(() => {
 
       <div class="flex items-center gap-2">
         <button
-          class="py-1 px-2 text-xs font-medium rounded-md border border-[var(--color-base-300)] dark:border-gray-600 bg-[var(--color-base-200)] dark:bg-gray-700 text-[var(--color-base-content)] dark:text-gray-300 transition-all duration-200 hover:bg-gray-50 dark:hover:bg-gray-600 flex items-center"
+          class="py-1 px-2 text-xs font-medium rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 transition-all duration-200 hover:bg-gray-100 dark:hover:bg-gray-600 flex items-center"
           @click="goToToday"
         >
           今天
         </button>
         <button
-          class="py-1 px-2 text-xs font-medium rounded-md border border-[var(--color-base-300)] dark:border-gray-600 bg-[var(--color-base-200)] dark:bg-gray-700 text-[var(--color-base-content)] dark:text-gray-300 transition-all duration-200 hover:bg-gray-50 dark:hover:bg-gray-600 flex items-center"
+          class="py-1 px-2 text-xs font-medium rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 transition-all duration-200 hover:bg-gray-100 dark:hover:bg-gray-600 flex items-center"
           @click="toggleView"
         >
           <i :class="viewMode === 'calendar' ? 'i-tabler-list' : 'i-tabler-calendar'" class="wh-3 mr-1" />
@@ -510,7 +510,7 @@ onMounted(() => {
     </div>
 
     <!-- 日历视图 -->
-    <div v-if="viewMode === 'calendar'" class="flex-1 flex flex-col min-h-0 bg-[var(--color-base-200)] p-2">
+    <div v-if="viewMode === 'calendar'" class="flex-1 flex flex-col min-h-0 bg-gray-50 dark:bg-gray-900 p-2">
       <!-- 星期标题 -->
       <div class="grid grid-cols-7 mb-1">
         <div v-for="day in weekDays" :key="day" class="text-center text-xs font-medium text-gray-500 dark:text-gray-400 py-1">
@@ -542,18 +542,18 @@ onMounted(() => {
     </div>
 
     <!-- 列表视图 -->
-    <div v-else class="p-3 flex flex-col gap-2 max-h-[204px] overflow-y-auto bg-[var(--color-base-100)] dark:bg-[var(--color-base-200)] rounded-lg scrollbar-hide">
+    <div v-else class="p-3 flex flex-col gap-2 max-h-[204px] overflow-y-auto bg-white dark:bg-gray-900 rounded-lg scrollbar-hide">
       <div
         v-for="day in calendarDays.filter(d => d.events.length > 0)" :key="day.date"
-        class="p-3 rounded-lg border border-[var(--color-base-300)] border-l-4 border-l-[var(--color-primary)] bg-[var(--color-base-200)] dark:bg-[var(--color-base-300)] cursor-pointer transition-all duration-200 shadow-sm hover:bg-[var(--color-base-300)] dark:hover:bg-[var(--color-base-content)] hover:border-l-[var(--color-error)] hover:translate-x-0.5 hover:shadow-md"
+        class="p-3 rounded-lg border border-gray-200 border-l-4 border-l-blue-500 bg-gray-50 dark:bg-gray-800 cursor-pointer transition-all duration-200 shadow-sm hover:bg-gray-100 dark:hover:bg-gray-700 hover:border-l-red-500 hover:translate-x-0.5 hover:shadow-md"
         @click="selectDate(day.date)"
       >
         <div class="flex items-center justify-between">
           <div class="flex flex-col">
-            <div class="text-base font-semibold text-[var(--color-base-content)] mb-0.5">
+            <div class="text-base font-semibold text-gray-900 dark:text-white mb-0.5">
               {{ formatDateShort(day.date) }}
             </div>
-            <div class="text-xs text-[var(--color-neutral)] font-medium">
+            <div class="text-xs text-gray-600 dark:text-gray-400 font-medium">
               {{ formatDateFull(day.date) }}
             </div>
           </div>
@@ -574,7 +574,7 @@ onMounted(() => {
     </div>
 
     <!-- 图例 -->
-    <div class="flex items-center justify-center gap-4 px-3 py-2 bg-[var(--color-base-200)] dark:bg-gray-900 border-t border-[var(--color-base-300)] dark:border-gray-700 max-sm:gap-2 max-sm:py-2 max-sm:flex-wrap">
+    <div class="flex items-center justify-center gap-4 px-3 py-2 bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 max-sm:gap-2 max-sm:py-2 max-sm:flex-wrap">
       <div class="flex items-center gap-1.5">
         <div class="w-2 h-2 rounded-full bg-green-500" />
         <span class="text-xs text-gray-600 dark:text-gray-400">经期</span>
