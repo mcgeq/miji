@@ -74,8 +74,15 @@ export const useAuthStore = defineStore('auth', () => {
       // 设置角色和权限
       // 注意：User 类型可能还没有 role 和 permissions 字段
       // 这里使用类型断言，如果字段不存在则使用默认值
-      role.value = ((userData as any).role as Role) || Role.USER;
-      permissions.value = ((userData as any).permissions as Permission[]) || [];
+      const rawRole = (userData as any).role;
+      const userPermissions = ((userData as any).permissions as Permission[]) || [];
+
+      // 将角色转换为小写以匹配枚举值（后端可能返回 'User' 而不是 'user'）
+      const normalizedRole = rawRole?.toLowerCase() as Role;
+      const userRole = normalizedRole || Role.USER;
+
+      role.value = userRole;
+      permissions.value = userPermissions;
 
       // 清除路由守卫缓存
       clearAuthCache();
@@ -85,7 +92,8 @@ export const useAuthStore = defineStore('auth', () => {
         hasToken: !!token.value,
         rememberMe: rememberMe.value,
         role: role.value,
-        permissionsCount: permissions.value.length,
+        explicitPermissions: permissions.value.length,
+        effectivePermissions: effectivePermissions.value.length,
       });
 
       // 注意：autosave 已在 storeStart() 中启用

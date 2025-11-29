@@ -87,14 +87,24 @@ export async function authGuard(
 
   // 5. 检查权限
   if (to.meta.permissions && to.meta.permissions.length > 0) {
+    // 详细日志
+    Lg.d('AuthGuard', 'Checking permissions for route:', {
+      route: routeName,
+      required: to.meta.permissions,
+      userRole: authStore.role,
+      explicitPermissions: authStore.permissions,
+      effectivePermissions: authStore.effectivePermissions,
+    });
+
     const hasPermission = authStore.hasAnyPermission(to.meta.permissions);
 
     if (!hasPermission) {
       toast.error(t('auth.messages.noPermission') || '您没有权限访问此页面');
-      Lg.w('AuthGuard', 'Permission denied:', {
+      Lg.e('AuthGuard', 'Permission denied:', {
         route: routeName,
         required: to.meta.permissions,
-        userPermissions: authStore.effectivePermissions,
+        userRole: authStore.role,
+        effectivePermissions: authStore.effectivePermissions,
       });
       next({ name: 'home' });
       return;

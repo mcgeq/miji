@@ -73,6 +73,12 @@
 - ✅ 添加 `auth.messages.pleaseLogin`
 - ✅ 添加 `auth.messages.noPermission`
 
+### 6. 默认权限修复
+- ✅ 修复默认用户无权限问题
+- ✅ 用户默认获得 Role.USER 角色
+- ✅ effectivePermissions 自动从 RolePermissions 获取权限
+- ✅ 创建 `AUTH_DEFAULT_PERMISSIONS.md` 说明文档
+
 ---
 
 ## 🔄 待实施
