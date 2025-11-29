@@ -8,9 +8,9 @@ import {
   TrendingDown,
   TrendingUp,
 } from 'lucide-vue-next';
+import { EmptyState, LoadingState } from '@/components/ui';
 import Badge from '@/components/ui/Badge.vue';
 import Button from '@/components/ui/Button.vue';
-import Spinner from '@/components/ui/Spinner.vue';
 import { TransactionTypeSchema } from '@/schema/common';
 import { lowercaseFirstLetter } from '@/utils/common';
 import { DateUtils } from '@/utils/date';
@@ -123,140 +123,139 @@ function viewSplitDetail(transaction: Transaction) {
 </script>
 
 <template>
-  <div class="mt-4" :class="layout === 'table' ? 'overflow-x-auto rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm' : ''">
-    <div v-if="loading" class="flex flex-col items-center gap-3 p-12 text-gray-500 dark:text-gray-400">
-      <Spinner size="md" />
-      <span class="text-sm">加载中...</span>
-    </div>
+  <div class="mt-4">
+    <LoadingState v-if="loading" message="加载中..." />
 
-    <div v-else-if="transactions.length === 0" class="flex items-center justify-center p-16 text-center text-gray-500 dark:text-gray-400 bg-gradient-to-b from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 rounded-xl mx-4">
-      <p class="m-0 text-base font-medium">
-        {{ emptyText }}
-      </p>
-    </div>
+    <EmptyState
+      v-else-if="transactions.length === 0"
+      icon="📝"
+      :message="emptyText"
+    />
 
     <!-- Table 布局 -->
-    <table v-else-if="layout === 'table'" class="w-full border-separate border-spacing-0">
-      <thead class="bg-gradient-to-b from-white to-gray-50 dark:from-gray-800 dark:to-gray-700 border-b-2 border-gray-200 dark:border-gray-600">
-        <tr>
-          <th v-if="showColumn('date')" :class="compact ? 'px-3 py-2.5 text-[10px]' : 'px-4 py-3.5 text-[11px]'" class="text-left font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap border-b-2 border-gray-200 dark:border-gray-600">
-            日期
-          </th>
-          <th v-if="showColumn('type')" :class="compact ? 'px-3 py-2.5 text-[10px]' : 'px-4 py-3.5 text-[11px]'" class="text-left font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap border-b-2 border-gray-200 dark:border-gray-600">
-            类型
-          </th>
-          <th v-if="showColumn('category')" :class="compact ? 'px-3 py-2.5 text-[10px]' : 'px-4 py-3.5 text-[11px]'" class="text-left font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap border-b-2 border-gray-200 dark:border-gray-600">
-            分类
-          </th>
-          <th v-if="showColumn('amount')" :class="compact ? 'px-3 py-2.5 text-[10px]' : 'px-4 py-3.5 text-[11px]'" class="text-left font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap border-b-2 border-gray-200 dark:border-gray-600">
-            金额
-          </th>
-          <th v-if="showColumn('account')" :class="compact ? 'px-3 py-2.5 text-[10px]' : 'px-4 py-3.5 text-[11px]'" class="text-left font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap border-b-2 border-gray-200 dark:border-gray-600">
-            账户
-          </th>
-          <th v-if="showColumn('description')" :class="compact ? 'px-3 py-2.5 text-[10px]' : 'px-4 py-3.5 text-[11px]'" class="text-left font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap border-b-2 border-gray-200 dark:border-gray-600">
-            说明
-          </th>
-          <th :class="compact ? 'px-3 py-2.5 text-[10px]' : 'px-4 py-3.5 text-[11px]'" class="text-left font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap border-b-2 border-gray-200 dark:border-gray-600">
-            分摆
-          </th>
-          <th v-if="showActions" :class="compact ? 'px-3 py-2.5 text-[10px]' : 'px-4 py-3.5 text-[11px]'" class="text-center font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap border-b-2 border-gray-200 dark:border-gray-600">
-            操作
-          </th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr
-          v-for="transaction in transactions"
-          :key="transaction.serialNum"
-          class="transition-all duration-200 border-b border-gray-100 dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 last:border-b-0"
-          @click="emit('view', transaction)"
-        >
-          <!-- 日期 -->
-          <td v-if="showColumn('date')" :class="compact ? 'px-3 py-2.5 text-xs' : 'px-4 py-3.5 text-[13px]'" class="text-gray-500 dark:text-gray-400 font-medium tabular-nums border-b border-gray-100 dark:border-gray-700">
-            {{ formatDate(transaction.date) }}
-          </td>
-
-          <!-- 类型 -->
-          <td v-if="showColumn('type')" :class="compact ? 'px-3 py-2.5' : 'px-4 py-3.5'" class="border-b border-gray-100 dark:border-gray-700">
-            <Badge :variant="getTransactionTypeBadgeVariant(transaction.transactionType)" size="sm">
-              {{ getTransactionTypeText(transaction.transactionType) }}
-            </Badge>
-          </td>
-
-          <!-- 分类 -->
-          <td v-if="showColumn('category')" :class="compact ? 'px-3 py-2.5' : 'px-4 py-3.5'" class="min-w-[100px] border-b border-gray-100 dark:border-gray-700">
-            <div class="flex flex-col gap-0.5">
-              <span class="font-medium text-gray-900 dark:text-white text-[13px]">{{ getCategoryName(transaction.category) }}</span>
-              <span v-if="transaction.subCategory" class="text-[11px] text-gray-500 dark:text-gray-400">
-                {{ getSubCategoryName(transaction.subCategory) }}
-              </span>
-            </div>
-          </td>
-
-          <!-- 金额 -->
-          <td
-            v-if="showColumn('amount')"
-            :class="[
-              compact ? 'px-3 py-2.5 text-xs' : 'px-4 py-3.5 text-[13px]',
-              transaction.transactionType === 'Expense' ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400',
-            ]"
-            class="font-semibold tabular-nums border-b border-gray-100 dark:border-gray-700"
+    <div v-else-if="layout === 'table'" class="overflow-x-auto rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm">
+      <table class="w-full border-separate border-spacing-0">
+        <thead class="bg-gradient-to-b from-white to-gray-50 dark:from-gray-800 dark:to-gray-700 border-b-2 border-gray-200 dark:border-gray-600">
+          <tr>
+            <th v-if="showColumn('date')" :class="compact ? 'px-3 py-2.5 text-[10px]' : 'px-4 py-3.5 text-[11px]'" class="text-left font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap border-b-2 border-gray-200 dark:border-gray-600">
+              日期
+            </th>
+            <th v-if="showColumn('type')" :class="compact ? 'px-3 py-2.5 text-[10px]' : 'px-4 py-3.5 text-[11px]'" class="text-left font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap border-b-2 border-gray-200 dark:border-gray-600">
+              类型
+            </th>
+            <th v-if="showColumn('category')" :class="compact ? 'px-3 py-2.5 text-[10px]' : 'px-4 py-3.5 text-[11px]'" class="text-left font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap border-b-2 border-gray-200 dark:border-gray-600">
+              分类
+            </th>
+            <th v-if="showColumn('amount')" :class="compact ? 'px-3 py-2.5 text-[10px]' : 'px-4 py-3.5 text-[11px]'" class="text-left font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap border-b-2 border-gray-200 dark:border-gray-600">
+              金额
+            </th>
+            <th v-if="showColumn('account')" :class="compact ? 'px-3 py-2.5 text-[10px]' : 'px-4 py-3.5 text-[11px]'" class="text-left font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap border-b-2 border-gray-200 dark:border-gray-600">
+              账户
+            </th>
+            <th v-if="showColumn('description')" :class="compact ? 'px-3 py-2.5 text-[10px]' : 'px-4 py-3.5 text-[11px]'" class="text-left font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap border-b-2 border-gray-200 dark:border-gray-600">
+              说明
+            </th>
+            <th :class="compact ? 'px-3 py-2.5 text-[10px]' : 'px-4 py-3.5 text-[11px]'" class="text-left font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap border-b-2 border-gray-200 dark:border-gray-600">
+              分摆
+            </th>
+            <th v-if="showActions" :class="compact ? 'px-3 py-2.5 text-[10px]' : 'px-4 py-3.5 text-[11px]'" class="text-center font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap border-b-2 border-gray-200 dark:border-gray-600">
+              操作
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr
+            v-for="transaction in transactions"
+            :key="transaction.serialNum"
+            class="transition-all duration-200 border-b border-gray-100 dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 last:border-b-0"
+            @click="emit('view', transaction)"
           >
-            {{ transaction.transactionType === 'Expense' ? '-' : '' }}
-            {{ formatCurrency(transaction.amount) }}
-          </td>
+            <!-- 日期 -->
+            <td v-if="showColumn('date')" :class="compact ? 'px-3 py-2.5 text-xs' : 'px-4 py-3.5 text-[13px]'" class="text-gray-500 dark:text-gray-400 font-medium tabular-nums border-b border-gray-100 dark:border-gray-700">
+              {{ formatDate(transaction.date) }}
+            </td>
 
-          <!-- 账户 -->
-          <td v-if="showColumn('account')" :class="compact ? 'px-3 py-2.5 text-xs' : 'px-4 py-3.5 text-[13px]'" class="font-medium text-gray-900 dark:text-white border-b border-gray-100 dark:border-gray-700">
-            {{ transaction.account?.name || '—' }}
-          </td>
+            <!-- 类型 -->
+            <td v-if="showColumn('type')" :class="compact ? 'px-3 py-2.5' : 'px-4 py-3.5'" class="border-b border-gray-100 dark:border-gray-700">
+              <Badge :variant="getTransactionTypeBadgeVariant(transaction.transactionType)" size="sm">
+                {{ getTransactionTypeText(transaction.transactionType) }}
+              </Badge>
+            </td>
 
-          <!-- 说明 -->
-          <td v-if="showColumn('description')" :class="compact ? 'px-3 py-2.5 text-xs' : 'px-4 py-3.5 text-[13px]'" class="text-gray-500 dark:text-gray-400 max-w-[200px] md:max-w-[120px] overflow-hidden text-ellipsis whitespace-nowrap border-b border-gray-100 dark:border-gray-700">
-            {{ transaction.description || '—' }}
-          </td>
+            <!-- 分类 -->
+            <td v-if="showColumn('category')" :class="compact ? 'px-3 py-2.5' : 'px-4 py-3.5'" class="min-w-[100px] border-b border-gray-100 dark:border-gray-700">
+              <div class="flex flex-col gap-0.5">
+                <span class="font-medium text-gray-900 dark:text-white text-[13px]">{{ getCategoryName(transaction.category) }}</span>
+                <span v-if="transaction.subCategory" class="text-[11px] text-gray-500 dark:text-gray-400">
+                  {{ getSubCategoryName(transaction.subCategory) }}
+                </span>
+              </div>
+            </td>
 
-          <!-- 分摆标识 -->
-          <td :class="compact ? 'px-3 py-2.5' : 'px-4 py-3.5'" class="border-b border-gray-100 dark:border-gray-700">
-            <button
-              v-if="hasSplit(transaction)"
-              class="inline-flex items-center gap-1.5 px-2 py-1 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 rounded-md text-xs font-medium hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
-              @click.stop="viewSplitDetail(transaction)"
+            <!-- 金额 -->
+            <td
+              v-if="showColumn('amount')"
+              :class="[
+                compact ? 'px-3 py-2.5 text-xs' : 'px-4 py-3.5 text-[13px]',
+                transaction.transactionType === 'Expense' ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400',
+              ]"
+              class="font-semibold tabular-nums border-b border-gray-100 dark:border-gray-700"
             >
-              <LucideUsers class="w-3 h-3" />
-              <span>分摆</span>
-            </button>
-            <span v-else class="text-gray-400 dark:text-gray-500">—</span>
-          </td>
+              {{ transaction.transactionType === 'Expense' ? '-' : '' }}
+              {{ formatCurrency(transaction.amount) }}
+            </td>
 
-          <!-- 操作按钮 -->
-          <td v-if="showActions" :class="compact ? 'px-3 py-2.5' : 'px-4 py-3.5'" class="text-center border-b border-gray-100 dark:border-gray-700">
-            <div class="flex gap-2 justify-center items-center md:flex-col md:gap-1">
-              <Button
-                variant="secondary"
-                size="xs"
-                class="md:w-full"
-                @click.stop="emit('edit', transaction)"
+            <!-- 账户 -->
+            <td v-if="showColumn('account')" :class="compact ? 'px-3 py-2.5 text-xs' : 'px-4 py-3.5 text-[13px]'" class="font-medium text-gray-900 dark:text-white border-b border-gray-100 dark:border-gray-700">
+              {{ transaction.account?.name || '—' }}
+            </td>
+
+            <!-- 说明 -->
+            <td v-if="showColumn('description')" :class="compact ? 'px-3 py-2.5 text-xs' : 'px-4 py-3.5 text-[13px]'" class="text-gray-500 dark:text-gray-400 max-w-[200px] md:max-w-[120px] overflow-hidden text-ellipsis whitespace-nowrap border-b border-gray-100 dark:border-gray-700">
+              {{ transaction.description || '—' }}
+            </td>
+
+            <!-- 分摆标识 -->
+            <td :class="compact ? 'px-3 py-2.5' : 'px-4 py-3.5'" class="border-b border-gray-100 dark:border-gray-700">
+              <button
+                v-if="hasSplit(transaction)"
+                class="inline-flex items-center gap-1.5 px-2 py-1 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 rounded-md text-xs font-medium hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
+                @click.stop="viewSplitDetail(transaction)"
               >
-                编辑
-              </Button>
-              <Button
-                variant="danger"
-                size="xs"
-                class="md:w-full"
-                @click.stop="emit('delete', transaction)"
-              >
-                删除
-              </Button>
-            </div>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+                <LucideUsers class="w-3 h-3" />
+                <span>分摆</span>
+              </button>
+              <span v-else class="text-gray-400 dark:text-gray-500">—</span>
+            </td>
+
+            <!-- 操作按钮 -->
+            <td v-if="showActions" :class="compact ? 'px-3 py-2.5' : 'px-4 py-3.5'" class="text-center border-b border-gray-100 dark:border-gray-700">
+              <div class="flex gap-2 justify-center items-center md:flex-col md:gap-1">
+                <Button
+                  variant="secondary"
+                  size="xs"
+                  class="md:w-full"
+                  @click.stop="emit('edit', transaction)"
+                >
+                  编辑
+                </Button>
+                <Button
+                  variant="danger"
+                  size="xs"
+                  class="md:w-full"
+                  @click.stop="emit('delete', transaction)"
+                >
+                  删除
+                </Button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
 
     <!-- Card 布局 -->
-    <div v-else class="flex flex-col gap-3 py-2">
+    <div v-else-if="layout === 'card'" class="flex flex-col gap-3 py-2">
       <div
         v-for="transaction in transactions"
         :key="transaction.serialNum"

@@ -6,7 +6,7 @@ import {
   LucideTrendingUp,
   LucideWallet,
 } from 'lucide-vue-next';
-import { useFamilyMemberStore } from '@/stores/money';
+import { useFamilyLedgerStore, useFamilyMemberStore } from '@/stores/money';
 import MemberDebtRelations from '../components/MemberDebtRelations.vue';
 import MemberSplitRecordList from '../components/MemberSplitRecordList.vue';
 import MemberTransactionList from '../components/MemberTransactionList.vue';
@@ -14,6 +14,7 @@ import MemberTransactionList from '../components/MemberTransactionList.vue';
 const route = useRoute();
 const router = useRouter();
 const memberStore = useFamilyMemberStore();
+const familyLedgerStore = useFamilyLedgerStore();
 
 const memberSerialNum = computed(() => {
   const params = route.params as { memberSerialNum?: string };
@@ -21,8 +22,11 @@ const memberSerialNum = computed(() => {
 });
 const activeTab = ref<'transactions' | 'splits' | 'debts'>('transactions');
 
-// 获取成员信息
-const member = computed(() => memberStore.getMemberById(memberSerialNum.value));
+// 获取成员信息 - 从当前家庭账本的成员列表中查找
+const member = computed(() => {
+  const members = familyLedgerStore.currentLedger?.memberList ?? [];
+  return members.find(m => m.serialNum === memberSerialNum.value);
+});
 
 // 获取成员统计
 const memberStats = computed(() => memberStore.getMemberStats(memberSerialNum.value));
@@ -32,10 +36,17 @@ const loading = ref(true);
 
 onMounted(async () => {
   try {
-    if (!member.value) {
-      await memberStore.fetchMembers();
+    // 确保家庭账本数据已加载
+    if (!familyLedgerStore.currentLedger) {
+      const ledgerSerialNum = route.query.ledgerSerialNum as string | undefined;
+      if (ledgerSerialNum) {
+        await familyLedgerStore.switchLedger(ledgerSerialNum);
+      }
     }
-    await memberStore.fetchMemberStats(memberSerialNum.value);
+    // 加载成员统计数据
+    if (member.value) {
+      await memberStore.fetchMemberStats(memberSerialNum.value);
+    }
   } catch (error) {
     console.error('Failed to load member details:', error);
   } finally {

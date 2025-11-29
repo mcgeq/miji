@@ -163,11 +163,8 @@ async function loadLedgerTransactions(serialNum: string) {
 }
 
 function selectMember(serialNum: string) {
-  // 跳转到成员详情页
-  router.push({
-    name: 'family-member-detail',
-    params: { memberSerialNum: serialNum },
-  });
+  // 更新选中的成员，右侧显示该成员的交易
+  selectedMemberSerial.value = serialNum;
 }
 
 function goBack() {
