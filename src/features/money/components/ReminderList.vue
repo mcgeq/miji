@@ -9,10 +9,9 @@ import {
   Edit as LucideEdit,
   Repeat as LucideRepeat,
   Trash as LucideTrash,
-  MoreHorizontal,
-  RotateCcw,
 } from 'lucide-vue-next';
-import { Button, Card, EmptyState, LoadingState, Pagination } from '@/components/ui';
+import FilterBar from '@/components/common/FilterBar.vue';
+import { Card, EmptyState, LoadingState, Pagination } from '@/components/ui';
 import { useReminderStore } from '@/stores/money';
 import { getRepeatTypeName, lowercaseFirstLetter } from '@/utils/common';
 import { DateUtils } from '@/utils/date';
@@ -117,8 +116,12 @@ defineExpose({
 <template>
   <div class="space-y-4 w-full">
     <!-- 过滤器区域 -->
-    <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 w-full">
-      <div class="flex flex-wrap gap-3 items-center justify-center">
+    <FilterBar
+      :show-more-filters="showMoreFilters"
+      @toggle-filters="toggleFilters"
+      @reset="resetFilters"
+    >
+      <template #primary>
         <!-- 状态过滤 -->
         <select
           v-model="filters.status"
@@ -137,89 +140,70 @@ defineExpose({
             {{ t('common.status.overdue') }}
           </option>
         </select>
+      </template>
 
-        <!-- 更多过滤器 -->
-        <template v-if="showMoreFilters">
-          <select
-            v-model="filters.repeatPeriodType"
-            class="px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-          >
-            <option value="undefined">
-              {{ t('common.actions.all') }}{{ t('todos.repeat.periodType') }}
-            </option>
-            <option value="None">
-              {{ t('date.repeat.none') }}
-            </option>
-            <option value="Daily">
-              {{ t('date.repeat.daily') }}
-            </option>
-            <option value="Weekly">
-              {{ t('date.repeat.weekly') }}
-            </option>
-            <option value="Monthly">
-              {{ t('date.repeat.monthly') }}
-            </option>
-            <option value="Yearly">
-              {{ t('date.repeat.yearly') }}
-            </option>
-            <option value="Custom">
-              {{ t('date.repeat.custom') }}
-            </option>
-          </select>
+      <template #secondary>
+        <select
+          v-model="filters.repeatPeriodType"
+          class="px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+        >
+          <option value="undefined">
+            {{ t('common.actions.all') }}{{ t('todos.repeat.periodType') }}
+          </option>
+          <option value="None">
+            {{ t('date.repeat.none') }}
+          </option>
+          <option value="Daily">
+            {{ t('date.repeat.daily') }}
+          </option>
+          <option value="Weekly">
+            {{ t('date.repeat.weekly') }}
+          </option>
+          <option value="Monthly">
+            {{ t('date.repeat.monthly') }}
+          </option>
+          <option value="Yearly">
+            {{ t('date.repeat.yearly') }}
+          </option>
+          <option value="Custom">
+            {{ t('date.repeat.custom') }}
+          </option>
+        </select>
 
-          <select
-            v-model="filters.category"
-            class="px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-          >
-            <option value="undefined">
-              {{ t('categories.allCategory') }}
-            </option>
-            <option v-for="category in uniqueCategories" :key="category" :value="category">
-              {{ t(`common.categories.${lowercaseFirstLetter(category)}`) }}
-            </option>
-          </select>
+        <select
+          v-model="filters.category"
+          class="px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+        >
+          <option value="undefined">
+            {{ t('categories.allCategory') }}
+          </option>
+          <option v-for="category in uniqueCategories" :key="category" :value="category">
+            {{ t(`common.categories.${lowercaseFirstLetter(category)}`) }}
+          </option>
+        </select>
 
-          <select
-            v-model="filters.dateRange"
-            class="px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-          >
-            <option value="">
-              {{ t('common.actions.all') }}
-            </option>
-            <option value="today">
-              {{ t('date.today') }}
-            </option>
-            <option value="thisWeek">
-              {{ t('date.thisWeek') }}
-            </option>
-            <option value="thisMonth">
-              {{ t('date.thisMonth') }}
-            </option>
-            <option value="custom">
-              {{ t('common.custom') }}
-            </option>
-          </select>
-        </template>
-
-        <!-- 操作按钮组 -->
-        <div class="flex gap-2 ml-auto">
-          <Button
-            variant="secondary"
-            size="sm"
-            :icon="MoreHorizontal"
-            :title="t('common.actions.moreFilters')"
-            @click="toggleFilters"
-          />
-          <Button
-            variant="secondary"
-            size="sm"
-            :icon="RotateCcw"
-            :title="t('common.actions.reset')"
-            @click="resetFilters"
-          />
-        </div>
-      </div>
-    </div>
+        <select
+          v-model="filters.dateRange"
+          class="px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+        >
+          <option value="">
+            {{ t('common.actions.all') }}
+          </option>
+          <option value="today">
+            {{ t('date.today') }}
+          </option>
+          <option value="thisWeek">
+            {{ t('date.thisWeek') }}
+          </option>
+          <option value="thisMonth">
+            {{ t('date.thisMonth') }}
+          </option>
+          <option value="custom">
+            {{ t('common.custom') }}
+          </option>
+        </select>
+      </template>
+    </FilterBar>
 
     <!-- 加载状态 -->
     <LoadingState v-if="loading" :message="t('common.loading')" />

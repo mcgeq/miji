@@ -39,6 +39,7 @@ declare module 'vue' {
     EmptyState: typeof import('./src/components/ui/EmptyState.vue')['default']
     EnhancedUserSelector: typeof import('./src/components/ui/EnhancedUserSelector.vue')['default']
     FamilyMemberSelector: typeof import('./src/components/ui/FamilyMemberSelector.vue')['default']
+    FilterBar: typeof import('./src/components/common/FilterBar.vue')['default']
     FloatingErrorTip: typeof import('./src/components/common/FloatingErrorTip.vue')['default']
     FormInput: typeof import('./src/components/common/FormInput.vue')['default']
     FormRow: typeof import('./src/components/common/FormRow.vue')['default']

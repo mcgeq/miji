@@ -8,15 +8,14 @@ import {
   Edit,
   Eye,
   EyeOff,
-  MoreHorizontal,
   PiggyBank,
-  RotateCcw,
   Trash,
   TrendingUp,
   Wallet,
   Wallet2,
 } from 'lucide-vue-next';
-import { Button, Card, EmptyState, LoadingState, Pagination } from '@/components/ui';
+import FilterBar from '@/components/common/FilterBar.vue';
+import { Card, EmptyState, LoadingState, Pagination } from '@/components/ui';
 import { useAccountStore, useMoneyConfigStore } from '@/stores/money';
 import { useAccountFilters } from '../composables/useAccountFilters';
 import { formatCurrency } from '../utils/money';
@@ -131,8 +130,12 @@ function toggleAccountAmountVisibility(accountSerialNum: string) {
 <template>
   <div class="space-y-4 w-full">
     <!-- 过滤选项区域 -->
-    <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 w-full">
-      <div class="flex flex-wrap gap-3 items-center justify-center">
+    <FilterBar
+      :show-more-filters="showMoreFilters"
+      @toggle-filters="toggleFilters"
+      @reset="resetFilters"
+    >
+      <template #primary>
         <!-- 账户状态过滤 -->
         <div class="flex gap-2">
           <button
@@ -163,87 +166,70 @@ function toggleAccountAmountVisibility(accountSerialNum: string) {
             {{ t('common.status.inactive') }}<span class="ml-1 opacity-75">({{ inactiveAccounts }})</span>
           </button>
         </div>
+      </template>
 
-        <!-- 移动端展开的额外过滤器 -->
-        <template v-if="showMoreFilters">
-          <!-- 账户类型过滤 -->
+      <template #secondary>
+        <!-- 账户类型过滤 -->
+        <select
+          v-model="filters.type"
+          class="px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+          @change="handleTypeFilter"
+        >
+          <option value="">
+            {{ t('common.actions.all') }}{{ t('common.misc.types') }}
+          </option>
+          <option v-for="type in accountTypes" :key="type" :value="type">
+            {{ getAccountTypeName(type) }}
+          </option>
+        </select>
+
+        <!-- 币种过滤 -->
+        <select
+          v-model="filters.currency"
+          class="px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+          @change="handleCurrencyFilter"
+        >
+          <option value="">
+            {{ t('common.actions.all') }}{{ t('financial.currency') }}
+          </option>
+          <option v-for="currency in currencies" :key="currency" :value="currency">
+            {{ currency }}
+          </option>
+        </select>
+
+        <!-- 排序选项 -->
+        <div class="flex gap-2">
           <select
-            v-model="filters.type"
+            v-model="filters.sortBy"
             class="px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-            @change="handleTypeFilter"
+            @change="handleSortChange"
           >
-            <option value="">
-              {{ t('common.actions.all') }}{{ t('common.misc.types') }}
+            <option value="updatedAt">
+              {{ t('date.updatedDate') }}
             </option>
-            <option v-for="type in accountTypes" :key="type" :value="type">
-              {{ getAccountTypeName(type) }}
+            <option value="createdAt">
+              {{ t('date.createDate') }}
+            </option>
+            <option value="name">
+              {{ t('financial.account.name') }}
+            </option>
+            <option value="balance">
+              {{ t('financial.balance') }}
+            </option>
+            <option value="type">
+              {{ t('financial.account.type') }}
             </option>
           </select>
-
-          <!-- 币种过滤 -->
-          <select
-            v-model="filters.currency"
-            class="px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-            @change="handleCurrencyFilter"
+          <button
+            class="px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
+            :title="filters.sortOrder === 'asc' ? t('common.sorting.asc') : t('common.sorting.desc')"
+            @click="toggleSortOrder"
           >
-            <option value="">
-              {{ t('common.actions.all') }}{{ t('financial.currency') }}
-            </option>
-            <option v-for="currency in currencies" :key="currency" :value="currency">
-              {{ currency }}
-            </option>
-          </select>
-
-          <!-- 排序选项 -->
-          <div class="flex gap-2">
-            <select
-              v-model="filters.sortBy"
-              class="px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-              @change="handleSortChange"
-            >
-              <option value="updatedAt">
-                {{ t('date.updatedDate') }}
-              </option>
-              <option value="createdAt">
-                {{ t('date.createDate') }}
-              </option>
-              <option value="name">
-                {{ t('financial.account.name') }}
-              </option>
-              <option value="balance">
-                {{ t('financial.balance') }}
-              </option>
-              <option value="type">
-                {{ t('financial.account.type') }}
-              </option>
-            </select>
-            <button
-              class="px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
-              :title="filters.sortOrder === 'asc' ? t('common.sorting.asc') : t('common.sorting.desc')"
-              @click="toggleSortOrder"
-            >
-              <ArrowUpDown :size="16" :class="filters.sortOrder === 'desc' && 'rotate-180'" class="text-gray-600 dark:text-gray-300 transition-transform" />
-            </button>
-          </div>
-        </template>
-
-        <!-- 操作按钮组 -->
-        <div class="flex gap-2 ml-auto">
-          <Button
-            variant="secondary"
-            size="sm"
-            :icon="MoreHorizontal"
-            @click="toggleFilters"
-          />
-          <Button
-            variant="secondary"
-            size="sm"
-            :icon="RotateCcw"
-            @click="resetFilters"
-          />
+            <ArrowUpDown :size="16" :class="filters.sortOrder === 'desc' && 'rotate-180'" class="text-gray-600 dark:text-gray-300 transition-transform" />
+          </button>
         </div>
-      </div>
-    </div>
+      </template>
+    </FilterBar>
 
     <!-- 账户列表区域 -->
     <LoadingState v-if="loading" :message="t('common.loading')" />

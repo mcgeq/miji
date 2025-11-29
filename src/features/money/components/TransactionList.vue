@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { MoreHorizontal, RotateCcw } from 'lucide-vue-next';
-import { Button, EmptyState, LoadingState, Pagination } from '@/components/ui';
+import FilterBar from '@/components/common/FilterBar.vue';
+import { EmptyState, LoadingState, Pagination } from '@/components/ui';
 import { SortDirection, TransactionTypeSchema } from '@/schema/common';
 import { useTransactionStore } from '@/stores/money';
 import { lowercaseFirstLetter } from '@/utils/common';
@@ -220,8 +220,12 @@ defineExpose({
 <template>
   <div class="space-y-4 w-full">
     <!-- 过滤器区域 -->
-    <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 w-full">
-      <div class="flex flex-wrap gap-3 items-center justify-center">
+    <FilterBar
+      :show-more-filters="showMoreFilters"
+      @toggle-filters="toggleFilters"
+      @reset="resetFilters"
+    >
+      <template #primary>
         <!-- 交易类型过滤 -->
         <select
           v-model="filters.transactionType"
@@ -240,63 +244,46 @@ defineExpose({
             {{ t('financial.transaction.transfer') }}
           </option>
         </select>
+      </template>
 
-        <!-- 更多过滤器 -->
-        <template v-if="showMoreFilters">
-          <select
-            v-model="filters.accountSerialNum"
-            class="px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-          >
-            <option value="">
-              {{ t('common.actions.all') }}{{ t('financial.account.account') }}
-            </option>
-            <option v-for="account in props.accounts" :key="account.serialNum" :value="account.serialNum">
-              {{ account.name }}
-            </option>
-          </select>
+      <template #secondary>
+        <select
+          v-model="filters.accountSerialNum"
+          class="px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+        >
+          <option value="">
+            {{ t('common.actions.all') }}{{ t('financial.account.account') }}
+          </option>
+          <option v-for="account in props.accounts" :key="account.serialNum" :value="account.serialNum">
+            {{ account.name }}
+          </option>
+        </select>
 
-          <select
-            v-model="filters.category"
-            class="px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-          >
-            <option value="">
-              {{ t('categories.allCategory') }}
-            </option>
-            <option v-for="category in uniqueCategories" :key="category.type" :value="category.type">
-              {{ category.option }}
-            </option>
-          </select>
+        <select
+          v-model="filters.category"
+          class="px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+        >
+          <option value="">
+            {{ t('categories.allCategory') }}
+          </option>
+          <option v-for="category in uniqueCategories" :key="category.type" :value="category.type">
+            {{ category.option }}
+          </option>
+        </select>
 
-          <input
-            v-model="filters.dateStart"
-            type="date"
-            class="px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-          >
+        <input
+          v-model="filters.dateStart"
+          type="date"
+          class="px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+        >
 
-          <input
-            v-model="filters.dateEnd"
-            type="date"
-            class="px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-          >
-        </template>
-
-        <!-- 操作按钮组 -->
-        <div class="flex gap-2 ml-auto">
-          <Button
-            variant="secondary"
-            size="sm"
-            :icon="MoreHorizontal"
-            @click="toggleFilters"
-          />
-          <Button
-            variant="secondary"
-            size="sm"
-            :icon="RotateCcw"
-            @click="resetFilters"
-          />
-        </div>
-      </div>
-    </div>
+        <input
+          v-model="filters.dateEnd"
+          type="date"
+          class="px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+        >
+      </template>
+    </FilterBar>
 
     <!-- 加载状态 -->
     <LoadingState v-if="loading" :message="t('common.loading')" />
