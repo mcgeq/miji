@@ -118,6 +118,9 @@ declare global {
   const refDefault: typeof import('@vueuse/core')['refDefault']
   const refThrottled: typeof import('@vueuse/core')['refThrottled']
   const refWithControl: typeof import('@vueuse/core')['refWithControl']
+  const requireAuth: typeof import('./composables/useAuthGuard')['requireAuth']
+  const requirePermission: typeof import('./composables/useAuthGuard')['requirePermission']
+  const requireRole: typeof import('./composables/useAuthGuard')['requireRole']
   const resetLocale: typeof import('./stores/locales')['resetLocale']
   const resetTheme: typeof import('./stores/theme')['resetTheme']
   const resolveComponent: typeof import('vue')['resolveComponent']
@@ -172,6 +175,7 @@ declare global {
   const useAsyncQueue: typeof import('@vueuse/core')['useAsyncQueue']
   const useAsyncState: typeof import('@vueuse/core')['useAsyncState']
   const useAttrs: typeof import('vue')['useAttrs']
+  const useAuthGuard: typeof import('./composables/useAuthGuard')['useAuthGuard']
   const useAuthPermission: typeof import('./composables/useAuthPermission')['useAuthPermission']
   const useAuthStore: typeof import('./stores/auth')['useAuthStore']
   const useBase64: typeof import('@vueuse/core')['useBase64']
@@ -399,6 +403,9 @@ declare global {
   export type { TodoStoreErrorCode } from './stores/todoStore'
   import('./stores/todoStore')
   // @ts-ignore
+  export type { AuthGuardOptions } from './composables/useAuthGuard'
+  import('./composables/useAuthGuard')
+  // @ts-ignore
   export type { BudgetStatsState, BudgetStatsFilters } from './composables/useBudgetStats'
   import('./composables/useBudgetStats')
   // @ts-ignore
@@ -530,6 +537,9 @@ declare module 'vue' {
     readonly refDefault: UnwrapRef<typeof import('@vueuse/core')['refDefault']>
     readonly refThrottled: UnwrapRef<typeof import('@vueuse/core')['refThrottled']>
     readonly refWithControl: UnwrapRef<typeof import('@vueuse/core')['refWithControl']>
+    readonly requireAuth: UnwrapRef<typeof import('./composables/useAuthGuard')['requireAuth']>
+    readonly requirePermission: UnwrapRef<typeof import('./composables/useAuthGuard')['requirePermission']>
+    readonly requireRole: UnwrapRef<typeof import('./composables/useAuthGuard')['requireRole']>
     readonly resetLocale: UnwrapRef<typeof import('./stores/locales')['resetLocale']>
     readonly resetTheme: UnwrapRef<typeof import('./stores/theme')['resetTheme']>
     readonly resolveComponent: UnwrapRef<typeof import('vue')['resolveComponent']>
@@ -584,6 +594,7 @@ declare module 'vue' {
     readonly useAsyncQueue: UnwrapRef<typeof import('@vueuse/core')['useAsyncQueue']>
     readonly useAsyncState: UnwrapRef<typeof import('@vueuse/core')['useAsyncState']>
     readonly useAttrs: UnwrapRef<typeof import('vue')['useAttrs']>
+    readonly useAuthGuard: UnwrapRef<typeof import('./composables/useAuthGuard')['useAuthGuard']>
     readonly useAuthPermission: UnwrapRef<typeof import('./composables/useAuthPermission')['useAuthPermission']>
     readonly useAuthStore: UnwrapRef<typeof import('./stores/auth')['useAuthStore']>
     readonly useBase64: UnwrapRef<typeof import('@vueuse/core')['useBase64']>
