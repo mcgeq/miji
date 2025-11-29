@@ -25,9 +25,13 @@ function navigate(item: MenuItem) {
     if (expandedMenus.value.has(item.name)) {
       expandedMenus.value.delete(item.name);
     } else {
+      // 关闭其他所有子菜单，只展开当前的
+      expandedMenus.value.clear();
       expandedMenus.value.add(item.name);
     }
   } else if (item.path) {
+    // 点击一级菜单时关闭所有子菜单
+    expandedMenus.value.clear();
     router.push(item.path);
   }
 }

@@ -23,8 +23,9 @@ function navigate(item: MenuItem) {
     // 切换子菜单显示状态
     showSubmenu.value = showSubmenu.value === item.name ? null : item.name;
   } else if (item.path) {
+    // 点击一级菜单时关闭子菜单并导航
+    showSubmenu.value = null;
     router.push(item.path);
-    showSubmenu.value = null; // 导航后关闭子菜单
   }
 }
 
