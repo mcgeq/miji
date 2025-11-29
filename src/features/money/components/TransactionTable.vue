@@ -259,7 +259,7 @@ function viewSplitDetail(transaction: Transaction) {
       <div
         v-for="transaction in transactions"
         :key="transaction.serialNum"
-        class="border-2 border-gray-200 dark:border-gray-700 bg-gradient-to-b from-white to-gray-50 dark:from-gray-800 dark:to-gray-700 rounded-xl transition-all duration-300 cursor-pointer overflow-hidden shadow-sm relative hover:border-blue-500/60 dark:hover:border-blue-400/60 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 before:absolute before:top-0 before:left-0 before:w-1 before:h-full before:bg-blue-500 before:opacity-0 hover:before:opacity-80 lg:grid lg:grid-cols-[120px_140px_180px_140px_140px_1fr] lg:items-center"
+        class="border-2 border-gray-200 dark:border-gray-700 bg-gradient-to-b from-white to-gray-50 dark:from-gray-800 dark:to-gray-700 rounded-xl transition-all duration-300 cursor-pointer overflow-hidden shadow-sm relative hover:border-blue-500/60 dark:hover:border-blue-400/60 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 before:absolute before:top-0 before:left-0 before:w-1 before:h-full before:bg-blue-500 before:opacity-0 hover:before:opacity-80 lg:grid lg:grid-cols-[110px_130px_140px_1fr_130px_130px] lg:items-center"
         @click="emit('view', transaction)"
       >
         <!-- 类型列 -->
@@ -323,29 +323,29 @@ function viewSplitDetail(transaction: Transaction) {
         </div>
 
         <!-- 操作列 -->
-        <div v-if="showActions" class="text-sm px-4 py-2 pb-3 flex justify-end items-center gap-2 flex-shrink-0 lg:py-3 lg:pr-4 lg:px-2">
+        <div v-if="showActions" class="text-sm px-2 py-2 pb-3 flex justify-center items-center gap-1 flex-shrink-0 lg:py-3 lg:px-1">
           <button
-            class="p-2 border-2 border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 rounded-lg cursor-pointer transition-all duration-200 flex items-center justify-center min-w-[2.5rem] min-h-[2.5rem] hover:bg-blue-500 hover:border-blue-500 hover:text-white dark:hover:bg-blue-600 dark:hover:border-blue-600 hover:-translate-y-0.5 hover:shadow-md active:translate-y-0 disabled:opacity-40 disabled:cursor-not-allowed disabled:bg-gray-200 dark:disabled:bg-gray-700"
+            class="p-1.5 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 rounded-md cursor-pointer transition-all duration-200 flex items-center justify-center w-8 h-8 hover:bg-blue-500 hover:border-blue-500 hover:text-white dark:hover:bg-blue-600 dark:hover:border-blue-600 hover:shadow active:translate-y-0.5"
             :title="t('common.actions.view')"
             @click.stop="emit('view', transaction)"
           >
-            <LucideEye class="w-4 h-4" />
+            <LucideEye class="w-3.5 h-3.5" />
           </button>
           <button
-            class="p-2 border-2 border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 rounded-lg cursor-pointer transition-all duration-200 flex items-center justify-center min-w-[2.5rem] min-h-[2.5rem] hover:bg-blue-500 hover:border-blue-500 hover:text-white dark:hover:bg-blue-600 dark:hover:border-blue-600 hover:-translate-y-0.5 hover:shadow-md active:translate-y-0 disabled:opacity-40 disabled:cursor-not-allowed disabled:bg-gray-200 dark:disabled:bg-gray-700"
+            class="p-1.5 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 rounded-md cursor-pointer transition-all duration-200 flex items-center justify-center w-8 h-8 hover:bg-blue-500 hover:border-blue-500 hover:text-white dark:hover:bg-blue-600 dark:hover:border-blue-600 hover:shadow active:translate-y-0.5 disabled:opacity-40 disabled:cursor-not-allowed disabled:bg-gray-100 dark:disabled:bg-gray-700 disabled:hover:bg-gray-100 dark:disabled:hover:bg-gray-700 disabled:hover:border-gray-300 dark:disabled:hover:border-gray-600"
             :title="t('common.actions.edit')"
             :disabled="disabledEditTransactions.has(transaction.serialNum)"
             @click.stop="emit('edit', transaction)"
           >
-            <LucidePencil class="w-4 h-4" />
+            <LucidePencil class="w-3.5 h-3.5" />
           </button>
           <button
-            class="p-2 border-2 border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 rounded-lg cursor-pointer transition-all duration-200 flex items-center justify-center min-w-[2.5rem] min-h-[2.5rem] hover:bg-blue-500 hover:border-blue-500 hover:text-white dark:hover:bg-blue-600 dark:hover:border-blue-600 hover:-translate-y-0.5 hover:shadow-md active:translate-y-0 disabled:opacity-40 disabled:cursor-not-allowed disabled:bg-gray-200 dark:disabled:bg-gray-700"
+            class="p-1.5 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 rounded-md cursor-pointer transition-all duration-200 flex items-center justify-center w-8 h-8 hover:bg-red-500 hover:border-red-500 hover:text-white dark:hover:bg-red-600 dark:hover:border-red-600 hover:shadow active:translate-y-0.5 disabled:opacity-40 disabled:cursor-not-allowed disabled:bg-gray-100 dark:disabled:bg-gray-700 disabled:hover:bg-gray-100 dark:disabled:hover:bg-gray-700 disabled:hover:border-gray-300 dark:disabled:hover:border-gray-600"
             :title="t('common.actions.delete')"
             :disabled="disabledDeleteTransactions.has(transaction.serialNum)"
             @click.stop="emit('delete', transaction)"
           >
-            <LucideTrash2 class="w-4 h-4" />
+            <LucideTrash2 class="w-3.5 h-3.5" />
           </button>
         </div>
       </div>

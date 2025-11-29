@@ -68,9 +68,12 @@ const modalTitle = computed(() => {
     Transfer: 'financial.transaction.recordTransfer',
   };
 
-  return props.transaction
-    ? t('financial.transaction.editTransaction')
-    : t(titles[props.type]);
+  if (props.transaction) {
+    return props.readonly
+      ? t('financial.transaction.viewTransaction')
+      : t('financial.transaction.editTransaction');
+  }
+  return t(titles[props.type]);
 });
 
 // 使用验证 Composable
