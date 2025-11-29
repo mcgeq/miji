@@ -730,9 +730,9 @@ watch(
     @confirm="handleSubmit"
   >
     <form @submit.prevent="handleSubmit">
-      <!-- 交易类型 -->
-      <FormRow :label="t('financial.transaction.transType')" required>
-        <div class="form-display">
+      <!-- 交易类型 - 仅在编辑/查看模式显示 -->
+      <FormRow v-if="props.transaction" :label="t('financial.transaction.transType')" required>
+        <div class="px-4 py-2.5 rounded-lg bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white font-medium">
           {{ form.transactionType === 'Income' ? t('financial.transaction.income')
             : form.transactionType === 'Expense' ? t('financial.transaction.expense')
               : t('financial.transaction.transfer') }}
@@ -801,7 +801,7 @@ watch(
           :placeholder="t('common.placeholders.selectOption')"
           :disabled="isTransferReadonly || isReadonlyMode"
         />
-        <div v-else class="form-display">
+        <div v-else class="px-4 py-2.5 rounded-lg bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white font-medium">
           {{ t(`financial.paymentMethods.${form.paymentMethod.toLowerCase()}`) }}
         </div>
       </FormRow>
