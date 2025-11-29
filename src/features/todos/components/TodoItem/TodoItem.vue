@@ -379,3 +379,37 @@ function handleMouseLeave() {
     </Modal>
   </div>
 </template>
+
+<style scoped>
+/* 优先级渐变样式 - 使用 Tailwind CSS 4 的 light-dark() 函数 */
+.priority-gradient-low {
+  background: linear-gradient(to bottom right,
+    light-dark(oklch(94% 0.015 90), color-mix(in srgb, oklch(20% 0.01 45) 98%, transparent)),
+    color-mix(in srgb, var(--color-success) light-dark(5%, 10%), transparent));
+  border-color: color-mix(in srgb, var(--color-success) 20%, transparent);
+}
+
+.priority-gradient-medium {
+  background: linear-gradient(to bottom right,
+    light-dark(oklch(94% 0.015 90), color-mix(in srgb, oklch(20% 0.01 45) 98%, transparent)),
+    color-mix(in srgb, var(--color-warning) light-dark(5%, 10%), transparent));
+  border-color: color-mix(in srgb, var(--color-warning) 20%, transparent);
+}
+
+.priority-gradient-high {
+  background: linear-gradient(to bottom right,
+    light-dark(oklch(94% 0.015 90), color-mix(in srgb, oklch(20% 0.01 45) 98%, transparent)),
+    color-mix(in srgb, var(--color-error) light-dark(5%, 10%), transparent));
+  border-color: color-mix(in srgb, var(--color-error) 20%, transparent);
+}
+
+.priority-gradient-urgent {
+  background: linear-gradient(to bottom right,
+    light-dark(oklch(94% 0.015 90), color-mix(in srgb, oklch(20% 0.01 45) 96%, transparent)),
+    color-mix(in srgb, var(--color-error) light-dark(10%, 15%), transparent));
+  border-color: var(--color-error);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+              0 2px 4px -1px rgba(0, 0, 0, 0.06),
+              0 0 15px color-mix(in srgb, var(--color-error) 30%, transparent);
+}
+</style>

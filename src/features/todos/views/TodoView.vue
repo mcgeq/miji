@@ -195,4 +195,17 @@ onMounted(async () => {
 :global(.Vue-Toastification__toast) {
   pointer-events: auto !important;
 }
+
+/* fade-slide 过渡动画 */
+.fade-slide-enter-active,
+.fade-slide-leave-active {
+  transition: all 0.3s ease-out;
+  will-change: opacity, transform;
+}
+
+.fade-slide-enter-from,
+.fade-slide-leave-to {
+  opacity: 0;
+  transform: scale(0.95) translateY(-0.375rem);
+}
 </style>
