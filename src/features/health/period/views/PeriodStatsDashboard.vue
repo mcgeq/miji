@@ -2,10 +2,45 @@
 import { CalendarClock, CalendarHeart, Calendar as CalendarIcon, TrendingUp } from 'lucide-vue-next';
 import { Badge, Card } from '@/components/ui';
 import { usePeriodStore as usePeriodStores } from '@/stores/periodStore';
+import { usePeriodRecords } from '../composables/usePeriodRecords';
 import PeriodListView from './PeriodListView.vue';
+import PeriodRecordForm from './PeriodRecordForm.vue';
+import type { PeriodRecords } from '@/schema/health/period';
 
-// Store
+// Store & Composables
 const periodStore = usePeriodStores();
+const { t } = useI18n();
+const periodRecords = usePeriodRecords(t);
+
+// UI State
+const showRecordForm = ref(false);
+const editingRecord = ref<PeriodRecords | undefined>();
+
+// Methods
+function openRecordForm(record?: PeriodRecords) {
+  editingRecord.value = record;
+  showRecordForm.value = true;
+}
+
+function closeRecordForm() {
+  showRecordForm.value = false;
+  editingRecord.value = undefined;
+}
+
+async function handleRecordCreate(record: any) {
+  await periodRecords.create(record);
+  closeRecordForm();
+}
+
+async function handleRecordUpdate(serialNum: string, record: any) {
+  await periodRecords.update(serialNum, record);
+  closeRecordForm();
+}
+
+async function handleRecordDelete(serialNum: string) {
+  await periodRecords.remove(serialNum);
+  closeRecordForm();
+}
 
 // Computed
 const stats = computed(() => periodStore.periodStats);
@@ -274,6 +309,19 @@ const symptomSeverityText = computed(() => {
       </Card>
     </div>
 
-    <PeriodListView />
+    <PeriodListView
+      @add-record="openRecordForm()"
+      @edit-record="openRecordForm($event)"
+    />
+
+    <!-- 经期记录表单 -->
+    <PeriodRecordForm
+      v-if="showRecordForm"
+      :record="editingRecord"
+      @create="handleRecordCreate"
+      @update="handleRecordUpdate"
+      @delete="handleRecordDelete"
+      @cancel="closeRecordForm"
+    />
   </div>
 </template>
