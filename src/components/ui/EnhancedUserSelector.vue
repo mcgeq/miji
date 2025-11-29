@@ -169,18 +169,20 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="enhanced-user-selector">
+  <div class="relative w-full">
     <!-- 输入框 -->
-    <div class="input-container">
+    <div class="relative flex items-center">
       <input
         ref="inputRef"
         v-model="searchQuery"
         type="text"
-        class="user-input"
-        :class="{
-          'has-selection': selectedUser,
-          'is-error': error,
-        }"
+        class="w-full pr-10 pl-3 py-2 border rounded-md text-sm transition-all duration-200"
+        :class="[
+          selectedUser ? 'bg-sky-50 dark:bg-sky-950/30 border-sky-500 dark:border-sky-500' : '',
+          error ? 'border-red-500 dark:border-red-500' : 'border-gray-300 dark:border-gray-600',
+          disabled ? 'bg-gray-50 dark:bg-gray-900 text-gray-500 dark:text-gray-500 cursor-not-allowed' : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white',
+          !disabled && !error && !selectedUser ? 'focus:outline-none focus:border-blue-500 focus:ring-3 focus:ring-blue-500/10' : '',
+        ]"
         :placeholder="placeholder"
         :disabled="disabled"
         @focus="handleInputFocus"
@@ -192,7 +194,7 @@ onUnmounted(() => {
       <button
         v-if="selectedUser && !disabled"
         type="button"
-        class="clear-btn"
+        class="absolute right-2 p-1 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors z-10"
         @click="handleClear"
       >
         <LucideX class="w-4 h-4" />
@@ -201,17 +203,17 @@ onUnmounted(() => {
       <!-- 搜索图标 -->
       <LucideSearch
         v-else-if="!loading"
-        class="search-icon"
+        class="absolute right-3 w-4 h-4 text-gray-500 dark:text-gray-400 pointer-events-none"
       />
 
       <!-- 加载状态 -->
-      <div v-else class="loading-icon">
+      <div v-else class="absolute right-3 text-gray-500 dark:text-gray-400 pointer-events-none">
         <LucideLoader2 class="w-4 h-4 animate-spin" />
       </div>
     </div>
 
     <!-- 错误提示 -->
-    <div v-if="error" class="error-message">
+    <div v-if="error" class="mt-1 text-xs text-red-600 dark:text-red-400 whitespace-pre-line">
       {{ error }}
     </div>
 
@@ -219,19 +221,19 @@ onUnmounted(() => {
     <div
       v-if="showDropdown"
       ref="dropdownRef"
-      class="dropdown"
+      class="absolute top-full left-0 right-0 z-50 mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg shadow-xl max-h-80 overflow-y-auto"
       tabindex="-1"
     >
       <!-- 搜索历史 -->
       <div
         v-if="!searchQuery.trim() && props.showSearchHistory && searchHistory.length > 0"
-        class="dropdown-section"
+        class="border-b border-gray-100 dark:border-gray-700"
       >
-        <div class="section-header">
-          <span class="section-title">搜索历史</span>
+        <div class="p-2 px-3 flex items-center justify-between bg-gray-50 dark:bg-gray-800/50">
+          <span class="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">搜索历史</span>
           <button
             type="button"
-            class="clear-history-btn"
+            class="p-0.5 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
             @click="clearSearchHistory"
           >
             <LucideX class="w-3 h-3" />
@@ -240,8 +242,10 @@ onUnmounted(() => {
         <div
           v-for="(historyItem, index) in searchHistory.slice(0, 5)"
           :key="`history-${index}`"
-          class="history-item"
-          :class="{ highlighted: index + displayUsers.length === highlightedIndex }"
+          class="py-2 px-3 flex items-center gap-2 cursor-pointer transition-colors text-sm text-gray-600 dark:text-gray-400"
+          :class="[
+            index + displayUsers.length === highlightedIndex ? 'bg-gray-100 dark:bg-gray-700/50' : 'hover:bg-gray-50 dark:hover:bg-gray-700/30',
+          ]"
           @click="searchQuery = historyItem; debouncedSearch()"
         >
           <LucideHistory class="w-4 h-4" />
@@ -252,55 +256,57 @@ onUnmounted(() => {
       <!-- 最近用户 -->
       <div
         v-if="!searchQuery.trim() && props.showRecentUsers && recentUsers.length > 0"
-        class="dropdown-section"
+        class="border-b border-gray-100 dark:border-gray-700"
       >
-        <div class="section-header">
-          <span class="section-title">最近用户</span>
+        <div class="p-2 px-3 bg-gray-50 dark:bg-gray-800/50">
+          <span class="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">最近用户</span>
         </div>
       </div>
 
       <!-- 加载状态 -->
-      <div v-if="loading" class="dropdown-item loading-item">
+      <div v-if="loading" class="p-3 flex items-center justify-center gap-2 text-gray-600 dark:text-gray-400 text-sm">
         <LucideLoader2 class="w-4 h-4 animate-spin" />
         <span>搜索中...</span>
       </div>
 
       <!-- 用户列表 -->
-      <div v-else-if="displayUsers.length > 0" class="user-list">
+      <div v-else-if="displayUsers.length > 0" class="max-h-60 overflow-y-auto">
         <div
           v-for="(user, index) in displayUsers"
           :key="user.serialNum"
-          class="user-item"
-          :class="{ highlighted: index === highlightedIndex }"
+          class="p-3 flex items-center gap-3 cursor-pointer transition-colors border-b border-gray-100 dark:border-gray-700 last:border-b-0"
+          :class="[
+            index === highlightedIndex ? 'bg-gray-50 dark:bg-gray-700/50' : 'hover:bg-gray-50 dark:hover:bg-gray-700/50',
+          ]"
           @click="handleUserSelect(user)"
           @mouseenter="highlightedIndex = index"
         >
-          <div class="user-avatar">
+          <div class="w-10 h-10 rounded-full overflow-hidden shrink-0">
             <img
               v-if="user.avatarUrl"
               :src="user.avatarUrl"
               :alt="user.name"
-              class="avatar-image"
+              class="w-full h-full object-cover"
             >
-            <div v-else class="avatar-placeholder">
+            <div v-else class="w-full h-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-gray-600 dark:text-gray-400 font-semibold text-base">
               {{ user.name.charAt(0).toUpperCase() }}
             </div>
           </div>
 
-          <div class="user-info">
-            <div class="user-name">
+          <div class="flex-1 min-w-0">
+            <div class="font-medium text-gray-900 dark:text-white whitespace-nowrap overflow-hidden text-ellipsis">
               {{ user.name }}
             </div>
-            <div class="user-email">
+            <div class="text-xs text-gray-600 dark:text-gray-400 whitespace-nowrap overflow-hidden text-ellipsis">
               {{ user.email }}
             </div>
           </div>
 
-          <div class="user-badges">
-            <div v-if="user.isVerified" class="verified-badge" title="已验证用户">
+          <div class="flex items-center gap-2 shrink-0">
+            <div v-if="user.isVerified" class="text-green-500 dark:text-green-400" title="已验证用户">
               <LucideShieldCheck class="w-4 h-4" />
             </div>
-            <div v-if="user.lastActiveAt" class="active-badge" title="最近活跃">
+            <div v-if="user.lastActiveAt" class="text-green-500 dark:text-green-400" title="最近活跃">
               <LucideCircle class="w-2 h-2 fill-current" />
             </div>
           </div>
@@ -308,250 +314,16 @@ onUnmounted(() => {
       </div>
 
       <!-- 无结果 -->
-      <div v-else-if="searchQuery.trim()" class="dropdown-item no-results">
+      <div v-else-if="searchQuery.trim()" class="p-3 flex items-center justify-center gap-2 text-gray-600 dark:text-gray-400 text-sm">
         <LucideUserX class="w-4 h-4" />
         <span>未找到用户</span>
       </div>
 
       <!-- 空状态提示 -->
-      <div v-else class="dropdown-item empty-state">
+      <div v-else class="p-3 flex items-center justify-center gap-2 text-gray-600 dark:text-gray-400 text-sm">
         <LucideUsers class="w-4 h-4" />
         <span>输入邮箱地址开始搜索</span>
       </div>
     </div>
   </div>
 </template>
-
-<style scoped>
-.enhanced-user-selector {
-  position: relative;
-  width: 100%;
-}
-
-.input-container {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-
-.user-input {
-  width: 100%;
-  padding: 0.5rem 2.5rem 0.5rem 0.75rem;
-  border: 1px solid #d1d5db;
-  border-radius: 0.375rem;
-  font-size: 0.875rem;
-  transition: all 0.2s;
-}
-
-.user-input:focus {
-  outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-}
-
-.user-input.has-selection {
-  background-color: #f0f9ff;
-  border-color: #0ea5e9;
-}
-
-.user-input.is-error {
-  border-color: #ef4444;
-}
-
-.user-input:disabled {
-  background-color: #f9fafb;
-  color: #6b7280;
-  cursor: not-allowed;
-}
-
-.clear-btn {
-  position: absolute;
-  right: 0.5rem;
-  padding: 0.25rem;
-  color: #6b7280;
-  transition: color 0.2s;
-  z-index: 1;
-}
-
-.clear-btn:hover {
-  color: #374151;
-}
-
-.search-icon, .loading-icon {
-  position: absolute;
-  right: 0.75rem;
-  color: #6b7280;
-  pointer-events: none;
-}
-
-.error-message {
-  margin-top: 0.25rem;
-  font-size: 0.75rem;
-  color: #ef4444;
-  white-space: pre-line;
-}
-
-.dropdown {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  z-index: 50;
-  margin-top: 0.25rem;
-  background: white;
-  border: 1px solid #d1d5db;
-  border-radius: 0.5rem;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-  max-height: 20rem;
-  overflow-y: auto;
-}
-
-.dropdown-section {
-  border-bottom: 1px solid #f3f4f6;
-}
-
-.dropdown-section:last-child {
-  border-bottom: none;
-}
-
-.section-header {
-  padding: 0.5rem 0.75rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background-color: #f9fafb;
-}
-
-.section-title {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: #6b7280;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.clear-history-btn {
-  padding: 0.125rem;
-  color: #6b7280;
-  transition: color 0.2s;
-}
-
-.clear-history-btn:hover {
-  color: #374151;
-}
-
-.dropdown-item {
-  padding: 0.75rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  color: #6b7280;
-  font-size: 0.875rem;
-}
-
-.loading-item, .no-results, .empty-state {
-  justify-content: center;
-}
-
-.history-item {
-  padding: 0.5rem 0.75rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  cursor: pointer;
-  transition: background-color 0.2s;
-  font-size: 0.875rem;
-  color: #6b7280;
-}
-
-.history-item:hover,
-.history-item.highlighted {
-  background-color: #f3f4f6;
-}
-
-.user-list {
-  max-height: 15rem;
-  overflow-y: auto;
-}
-
-.user-item {
-  padding: 0.75rem;
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  cursor: pointer;
-  transition: background-color 0.2s;
-  border-bottom: 1px solid #f3f4f6;
-}
-
-.user-item:last-child {
-  border-bottom: none;
-}
-
-.user-item:hover,
-.user-item.highlighted {
-  background-color: #f9fafb;
-}
-
-.user-avatar {
-  width: 2.5rem;
-  height: 2.5rem;
-  border-radius: 50%;
-  overflow: hidden;
-  flex-shrink: 0;
-}
-
-.avatar-image {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.avatar-placeholder {
-  width: 100%;
-  height: 100%;
-  background-color: #e5e7eb;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #6b7280;
-  font-weight: 600;
-  font-size: 1rem;
-}
-
-.user-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.user-name {
-  font-weight: 500;
-  color: #1f2937;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.user-email {
-  font-size: 0.75rem;
-  color: #6b7280;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.user-badges {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  flex-shrink: 0;
-}
-
-.verified-badge {
-  color: #10b981;
-}
-
-.active-badge {
-  color: #22c55e;
-}
-</style>
