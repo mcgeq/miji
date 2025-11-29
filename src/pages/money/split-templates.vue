@@ -3,12 +3,15 @@ import Button from '@/components/ui/Button.vue';
 import SplitRuleConfigurator from '@/features/money/components/SplitRuleConfigurator.vue';
 import SplitTemplateList from '@/features/money/components/SplitTemplateList.vue';
 import SplitTemplateModal from '@/features/money/components/SplitTemplateModal.vue';
+import { Permission } from '@/types/auth';
 
 definePage({
   name: 'split-templates',
   meta: {
     requiresAuth: true,
-    title: '分摊模板管理',
+    permissions: [Permission.TRANSACTION_VIEW],
+    title: '分摆模板管理',
+    icon: 'layout-template',
   },
 });
 

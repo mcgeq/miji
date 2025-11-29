@@ -80,28 +80,29 @@
 ### 阶段3：应用权限（进行中）🔄
 
 #### 3.1 更新路由元信息
-**核心页面（已完成）** ✅
-- ✅ `src/pages/money.vue` - 财务管理
-- ✅ `src/pages/settings.vue` - 设置
-- ✅ `src/pages/family-ledger.vue` - 家庭账本
-- ✅ `src/pages/money/statistics.vue` - 统计分析
+**核心页面** ✅
+- ✅ `src/pages/money.vue` - 财务管理 (TRANSACTION_VIEW)
+- ✅ `src/pages/settings.vue` - 设置 (SETTINGS_VIEW)
+- ✅ `src/pages/family-ledger.vue` - 家庭账本 (LEDGER_VIEW)
+- ✅ `src/pages/money/statistics.vue` - 统计分析 (STATS_VIEW)
 
-**财务页面（待完成）** ⏳
-- [ ] `src/pages/money/budget-allocations.vue` - 预算分配
-- [ ] `src/pages/money/debt-relations.vue` - 债务关系
-- [ ] `src/pages/money/members.vue` - 成员管理
-- [ ] `src/pages/money/settlement-records.vue` - 结算记录
-- [ ] `src/pages/money/settlement-suggestion.vue` - 结算建议
-- [ ] `src/pages/money/split-records.vue` - 分摊记录
-- [ ] `src/pages/money/split-templates.vue` - 分摊模板
+**财务页面** ✅
+- ✅ `src/pages/money/members.vue` - 成员管理 (MEMBER_VIEW)
+- ✅ `src/pages/money/debt-relations.vue` - 债务关系 (TRANSACTION_VIEW)
+- ✅ `src/pages/money/settlement-records.vue` - 结算记录 (TRANSACTION_VIEW)
+- ✅ `src/pages/money/settlement-suggestion.vue` - 结算建议 (TRANSACTION_VIEW)
+- ✅ `src/pages/money/split-records.vue` - 分摊记录 (TRANSACTION_VIEW)
+- ✅ `src/pages/money/split-templates.vue` - 分摊模板 (TRANSACTION_VIEW)
 
-**其他页面（待完成）** ⏳
-- [ ] `src/pages/budget-stats.vue` - 预算统计
-- [ ] `src/pages/transaction-stats.vue` - 交易统计
-- [ ] `src/pages/family-ledger/[serialNum].vue` - 账本详情
-- [ ] `src/pages/family-ledger/member/[memberSerialNum].vue` - 成员详情
+**统计页面** ✅
+- ✅ `src/pages/budget-stats.vue` - 预算统计 (BUDGET_VIEW, STATS_VIEW)
+- ✅ `src/pages/transaction-stats.vue` - 交易统计 (TRANSACTION_VIEW, STATS_VIEW)
 
-**当前进度: 4/19 (21%)**
+**详情页面** ✅
+- ✅ `src/pages/family-ledger/[serialNum].vue` - 账本详情 (LEDGER_VIEW)
+- ✅ `src/pages/family-ledger/member/[memberSerialNum].vue` - 成员详情 (MEMBER_VIEW)
+
+**当前进度: 15/15 (100%)** 🎉
 
 #### 3.2 文档
 - ✅ 创建 `AUTH_PAGE_PERMISSIONS.md` - 页面权限配置清单

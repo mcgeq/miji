@@ -4,6 +4,17 @@ import { useRouter } from 'vue-router';
 import Button from '@/components/ui/Button.vue';
 import { useBudgetStats } from '@/composables/useBudgetStats';
 import BudgetStatsAnalysis from '@/features/money/components/BudgetStatsAnalysis.vue';
+import { Permission } from '@/types/auth';
+
+definePage({
+  name: 'budget-stats',
+  meta: {
+    requiresAuth: true,
+    permissions: [Permission.BUDGET_VIEW, Permission.STATS_VIEW],
+    title: '预算统计',
+    icon: 'pie-chart',
+  },
+});
 
 const { t } = useI18n();
 const router = useRouter();

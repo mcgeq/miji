@@ -2,13 +2,16 @@
 import { useMoneyAuth } from '@/composables/useMoneyAuth';
 import FamilyMemberList from '@/features/money/components/FamilyMemberList.vue';
 import FamilyMemberModal from '@/features/money/components/FamilyMemberModal.vue';
+import { Permission } from '@/types/auth';
 import type { FamilyMember } from '@/schema/money';
 
 definePage({
   name: 'members',
   meta: {
     requiresAuth: true,
+    permissions: [Permission.MEMBER_VIEW],
     title: '成员管理',
+    icon: 'users',
   },
 });
 

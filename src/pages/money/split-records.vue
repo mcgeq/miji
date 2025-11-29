@@ -1,11 +1,14 @@
 <script setup lang="ts">
 import SplitRecordView from '@/features/money/views/SplitRecordView.vue';
+import { Permission } from '@/types/auth';
 
 definePage({
   name: 'split-records',
   meta: {
     requiresAuth: true,
-    title: '分摊记录查询',
+    permissions: [Permission.TRANSACTION_VIEW],
+    title: '分摆记录查询',
+    icon: 'split',
   },
 });
 </script>
