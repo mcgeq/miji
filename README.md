@@ -41,14 +41,18 @@ Built with **Tauri 2**, **Vue 3**, and **Rust**, Miji combines the performance o
 - **Health Statistics** - Visualize trends and patterns
 
 ### 🎨 User Experience
-- **Modern UI** - Beautiful, responsive interface with smooth animations
-- **Dark Mode** - Easy on the eyes with automatic theme switching
+- **Modern UI** - Beautiful, responsive interface built with Tailwind CSS v4
+- **Dark Mode** - Seamless dark mode with `dark:` utility classes
+- **Component Library** - Comprehensive UI component system (Button, Modal, Input, Select, etc.)
 - **Multi-Language** - Full support for English and Chinese (中文)
 - **Keyboard Shortcuts** - Boost productivity with hotkeys
+- **Responsive Design** - Mobile-first approach with breakpoint utilities
 
 ### 🔒 Privacy & Security
 - **Local-First** - All data stored locally, no cloud sync
+- **RBAC System** - Role-Based Access Control (Guest, User, Admin, Owner)
 - **Secure Authentication** - JWT-based auth with Argon2 password hashing
+- **Permission Guards** - Route and component-level permission checks
 - **Data Encryption** - Sensitive data encrypted at rest
 - **Offline Access** - Works completely offline
 
@@ -58,10 +62,11 @@ Built with **Tauri 2**, **Vue 3**, and **Rust**, Miji combines the performance o
 - **Framework**: Vue 3.5 with Composition API (`<script setup>`)
 - **Language**: TypeScript 5.8 (strict mode)
 - **Build Tool**: Vite 7
+- **Styling**: Tailwind CSS v4 (via @tailwindcss/vite)
 - **Router**: Vue Router 4 with unplugin-vue-router (auto-import)
-- **State Management**: Pinia 3 (modular stores)
+- **State Management**: Pinia 3 (modular stores with event bus)
 - **Form Validation**: Vee-Validate + Zod
-- **UI Components**: Custom components with Lucide icons
+- **UI Components**: Custom component library (100% Tailwind CSS v4)
 - **Charts**: Vue ECharts
 - **Date Handling**: date-fns 4
 - **I18n**: Vue I18n 11
@@ -160,13 +165,26 @@ The compiled application will be available in:
 ```
 miji/
 ├── src/                          # Frontend (Vue 3 + TypeScript)
-│   ├── assets/                  # Static assets (CSS, images)
+│   ├── assets/                  # Static assets
+│   │   └── styles/             # Tailwind CSS v4 entry point
 │   ├── bootstrap/               # App initialization modules
-│   │   ├── stores.ts           # Pinia store initialization
-│   │   ├── router.ts           # Router setup
-│   │   └── schedulers.ts       # Background job schedulers
+│   │   ├── app-bootstrapper.ts # Main app initialization
+│   │   ├── splashscreen-manager.ts # Splashscreen control
+│   │   └── store-initializer.ts # Pinia store initialization
 │   ├── components/              # Reusable Vue components
-│   │   └── common/             # Generic UI components
+│   │   ├── common/             # Generic components (DateTimePicker, CategorySelector)
+│   │   └── ui/                 # UI component library (Tailwind CSS v4)
+│   │       ├── Button.vue      # Button component
+│   │       ├── Modal.vue       # Modal dialog
+│   │       ├── Input.vue       # Text input
+│   │       ├── Select.vue      # Select dropdown
+│   │       ├── Textarea.vue    # Textarea input
+│   │       ├── FormRow.vue     # Form row layout
+│   │       ├── Pagination.vue  # Pagination component
+│   │       ├── Card.vue        # Card container
+│   │       ├── Alert.vue       # Alert message
+│   │       ├── Badge.vue       # Badge/label
+│   │       └── ... (20+ components)
 │   ├── composables/             # Vue composables (hooks)
 │   │   ├── useAccountActions.ts
 │   │   ├── useTransactionActions.ts
@@ -291,16 +309,27 @@ Miji follows a **modular, feature-based architecture** for maintainability and s
 - **Stores**: Reactive state management with getters and actions
 - **Components**: Presentational components with clear props/events
 
-#### Recent Improvements
-- ✅ **Store Refactoring**: Split monolithic `moneyStore` into 5 modular stores:
-  - `account-store` (165 lines) - Account management
-  - `transaction-store` (282 lines) - Transactions & transfers
-  - `budget-store` (149 lines) - Budget tracking
-  - `reminder-store` (182 lines) - Bill reminders
-  - `category-store` (138 lines) - Categories with caching
-- ✅ **Error Handling**: Unified error handling with `MoneyStoreError`
-- ✅ **Performance**: ~20% improvement with optimized stores
-- ✅ **Type Safety**: 100% TypeScript coverage in strict mode
+#### Recent Improvements (2025)
+- ✅ **Tailwind CSS v4 Migration**: Complete migration from custom CSS (~28k lines removed)
+  - Zero PostCSS plugins needed (all built into Tailwind v4)
+  - 100% utility-first styling with `dark:` mode support
+  - Build time improved: 45.20s → 15.78s (3x faster)
+- ✅ **UI Component System**: 20+ reusable components (Button, Modal, Input, Select, etc.)
+  - All components use pure Tailwind CSS v4 (no custom CSS)
+  - Full TypeScript support with strict props validation
+  - Consistent design system across the entire app
+- ✅ **RBAC Authentication**: Role-Based Access Control system
+  - 4 roles: Guest, User, Admin, Owner
+  - Route guards and permission directives
+  - Audit logging for security events
+- ✅ **Store Architecture**: Event-driven modular stores
+  - Split monolithic stores into 8+ domain-specific stores
+  - Event bus pattern eliminates circular dependencies
+  - Smart caching and optimized reactivity
+- ✅ **Performance**: Multiple optimization layers
+  - Build time: 3x faster with Tailwind v4
+  - Bundle size: Reduced with tree-shaking
+  - Runtime: ~20% improvement with optimized stores
 
 ### Backend Architecture
 
