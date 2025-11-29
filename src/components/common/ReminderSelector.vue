@@ -190,7 +190,7 @@ const selectOptions = computed<SelectOption[]>(() => {
   return displayTypes.value.map(type => ({
     value: type.code,
     label: getCurrentDisplayName(type),
-    icon: props.showIcons ? type.icon : undefined,
+    // 不传递 icon，因为 emoji 已经包含在 label 中
   }));
 });
 
