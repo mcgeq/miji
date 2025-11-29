@@ -3,538 +3,106 @@
 <div align="center">
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Tauri](https://img.shields.io/badge/Tauri-2.0-blue.svg)](https://tauri.app/)
+[![Tauri](https://img.shields.io/badge/Tauri-2.5-blue.svg)](https://tauri.app/)
 [![Vue](https://img.shields.io/badge/Vue-3.5-green.svg)](https://vuejs.org/)
-[![Rust](https://img.shields.io/badge/Rust-2024-orange.svg)](https://www.rust-lang.org/)
+[![Tailwind](https://img.shields.io/badge/Tailwind-4.0-06B6D4.svg)](https://tailwindcss.com/)
 
-A modular, cross-platform productivity and health management application built with Tauri and Rust.
+A privacy-focused personal management app for finance, health, and productivity.
 
-[English](./README.md) | [中文](./README.zh-CN.md)
+[English](./README.md) | [中文](./README-ZH-CN.md)
 
 </div>
 
-## 📖 Introduction
+## 💡 About
 
-Miji (米记) is a modern, privacy-focused desktop application for managing your daily life. Track your finances, monitor your health, organize tasks, and manage projects - all in one beautiful, cross-platform application.
+**Miji** (米记) is a cross-platform desktop application built with **Tauri 2**, **Vue 3**, and **Rust**. 
 
-Built with **Tauri 2**, **Vue 3**, and **Rust**, Miji combines the performance of native applications with the flexibility of modern web technologies. All your data is stored locally in SQLite, ensuring complete privacy and offline access.
+All data is stored locally in SQLite - no cloud sync, no tracking, complete privacy.
 
 ## ✨ Features
 
-### 💰 Finance Management
-- **Multi-Account Support** - Manage multiple accounts with different currencies
-- **Transaction Tracking** - Record income, expenses, and transfers with categories
-- **Budget Planning** - Set and monitor budgets with spending alerts
-- **Bill Reminders** - Never miss a payment with recurring reminders
-- **Family Ledger** - Shared family accounting with member management and expense splitting
-- **Statistics & Charts** - Visualize your financial data with ECharts
+**💰 Finance**
+- Multi-account & multi-currency support
+- Transaction tracking with categories
+- Budget planning & reminders
+- Family ledger with expense splitting
+- Charts & statistics
 
-### 📝 Todo & Project Management
-- **Task Organization** - Create, organize, and track tasks with priorities
-- **Project Hierarchies** - Manage projects with nested tasks
-- **Tags & Categories** - Flexible tagging for better organization
-- **Checklists** - Break down complex tasks into smaller steps
+**📝 Productivity**
+- Task & project management
+- Priorities & tags
+- Checklists & subtasks
 
-### 🏥 Health Tracking
-- **Period Tracking** - Monitor menstrual cycles with calendar view
-- **Daily Health Records** - Track various health metrics
-- **Health Statistics** - Visualize trends and patterns
+**🏥 Health**
+- Period tracking & calendar
+- Daily health records
+- Statistics & trends
 
-### 🎨 User Experience
-- **Modern UI** - Beautiful, responsive interface built with Tailwind CSS v4
-- **Dark Mode** - Seamless dark mode with `dark:` utility classes
-- **Component Library** - Comprehensive UI component system (Button, Modal, Input, Select, etc.)
-- **Multi-Language** - Full support for English and Chinese (中文)
-- **Keyboard Shortcuts** - Boost productivity with hotkeys
-- **Responsive Design** - Mobile-first approach with breakpoint utilities
+**🎨 Experience**
+- Modern UI with Tailwind CSS v4
+- Dark mode & responsive design
+- Multi-language (English/中文)
 
-### 🔒 Privacy & Security
-- **Local-First** - All data stored locally, no cloud sync
-- **RBAC System** - Role-Based Access Control (Guest, User, Admin, Owner)
-- **Secure Authentication** - JWT-based auth with Argon2 password hashing
-- **Permission Guards** - Route and component-level permission checks
-- **Data Encryption** - Sensitive data encrypted at rest
-- **Offline Access** - Works completely offline
+**🔒 Security**
+- Local-first (no cloud sync)
+- RBAC permission system
+- Encrypted data storage
 
 ## 🛠️ Tech Stack
 
-### Frontend
-- **Framework**: Vue 3.5 with Composition API (`<script setup>`)
-- **Language**: TypeScript 5.8 (strict mode)
-- **Build Tool**: Vite 7
-- **Styling**: Tailwind CSS v4 (via @tailwindcss/vite)
-- **Router**: Vue Router 4 with unplugin-vue-router (auto-import)
-- **State Management**: Pinia 3 (modular stores with event bus)
-- **Form Validation**: Vee-Validate + Zod
-- **UI Components**: Custom component library (100% Tailwind CSS v4)
-- **Charts**: Vue ECharts
-- **Date Handling**: date-fns 4
-- **I18n**: Vue I18n 11
-- **Utilities**: VueUse, es-toolkit
+**Frontend:** Vue 3 · TypeScript · Tailwind CSS v4 · Vite
 
-### Backend
-- **Framework**: Tauri 2.5
-- **Language**: Rust 2024 Edition
-- **Database**: SQLite 3 with SeaORM 1.1
-- **Authentication**: JWT (jsonwebtoken) + Argon2 password hashing
-- **Logging**: tracing + tauri-plugin-log
-- **Background Tasks**: Tokio async runtime with scheduled jobs
-- **Plugins**: Auto-start, Dialog, FS, Notification, OS, SQL
+**Backend:** Tauri 2 · Rust · SQLite · SeaORM
 
-### Development Tools
-- **Linting**: ESLint 9 (@antfu/eslint-config) + Biome 2.2
-- **Formatting**: Biome
-- **Git Hooks**: Husky 9 + lint-staged
-- **Commit Convention**: Commitizen + Commitlint (Gitmoji)
-- **Testing**: Vitest 3
-- **Type Checking**: vue-tsc
-- **Auto Import**: unplugin-auto-import + unplugin-vue-components
+**Tools:** Biome · Vitest · Husky
 
-## 📋 Prerequisites
+## 🚀 Quick Start
 
-Before you begin, ensure you have the following installed:
+### Prerequisites
 
-- **Node.js**: v20 or higher (recommended: v22)
-- **Package Manager**: npm, yarn, pnpm, or bun
-- **Rust**: 1.70 or higher (with cargo)
-- **System Dependencies**: Follow the [Tauri prerequisites guide](https://tauri.app/v2/guides/prerequisites/)
-
-### Platform-Specific Requirements
-
-#### Windows
-- Microsoft Visual Studio C++ Build Tools
-- WebView2 (usually pre-installed on Windows 10/11)
-
-#### macOS
-- Xcode Command Line Tools
-
-#### Linux
-- Dependencies vary by distribution. See [Tauri Linux setup](https://tauri.app/v2/guides/prerequisites/#linux)
-
-## 🚀 Getting Started
+- Node.js 20+ · Rust 1.70+ · [Tauri prerequisites](https://tauri.app/v2/guides/prerequisites/)
 
 ### Installation
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/yourusername/miji.git
-   cd miji
-   ```
-
-2. **Install dependencies**
-   ```bash
-   npm install
-   # or
-   bun install
-   ```
-
-### Development
-
-Run the application in development mode:
-
 ```bash
-npm run tauri dev
-# or
+# Clone repository
+git clone https://github.com/mcgeq/miji.git
+cd miji
+
+# Install dependencies
+bun install
+
+# Run development mode
 bun run tauri dev
-```
 
-This will:
-1. Start the Vite dev server (http://localhost:9428)
-2. Launch the Tauri application
-3. Enable hot-reload for both frontend and backend changes
-
-**First run**: The Rust backend will compile, which may take a few minutes.
-
-### Building
-
-Build the application for production:
-
-```bash
-npm run tauri build
-# or
+# Build for production
 bun run tauri build
 ```
 
-The compiled application will be available in:
-- **Windows**: `src-tauri/target/release/bundle/msi/` or `nsis/`
-- **macOS**: `src-tauri/target/release/bundle/dmg/` or `macos/`
-- **Linux**: `src-tauri/target/release/bundle/deb/`, `appimage/`, or `rpm/`
-
-## 📂 Project Structure
-
-```
-miji/
-├── src/                          # Frontend (Vue 3 + TypeScript)
-│   ├── assets/                  # Static assets
-│   │   └── styles/             # Tailwind CSS v4 entry point
-│   ├── bootstrap/               # App initialization modules
-│   │   ├── app-bootstrapper.ts # Main app initialization
-│   │   ├── splashscreen-manager.ts # Splashscreen control
-│   │   └── store-initializer.ts # Pinia store initialization
-│   ├── components/              # Reusable Vue components
-│   │   ├── common/             # Generic components (DateTimePicker, CategorySelector)
-│   │   └── ui/                 # UI component library (Tailwind CSS v4)
-│   │       ├── Button.vue      # Button component
-│   │       ├── Modal.vue       # Modal dialog
-│   │       ├── Input.vue       # Text input
-│   │       ├── Select.vue      # Select dropdown
-│   │       ├── Textarea.vue    # Textarea input
-│   │       ├── FormRow.vue     # Form row layout
-│   │       ├── Pagination.vue  # Pagination component
-│   │       ├── Card.vue        # Card container
-│   │       ├── Alert.vue       # Alert message
-│   │       ├── Badge.vue       # Badge/label
-│   │       └── ... (20+ components)
-│   ├── composables/             # Vue composables (hooks)
-│   │   ├── useAccountActions.ts
-│   │   ├── useTransactionActions.ts
-│   │   ├── useBudgetActions.ts
-│   │   └── ...
-│   ├── features/                # Feature modules (domain logic)
-│   │   ├── auth/               # Authentication & user management
-│   │   ├── health/             # Period & health tracking
-│   │   ├── home/               # Dashboard & home views
-│   │   ├── money/              # Finance management
-│   │   │   ├── components/    # Money-specific components
-│   │   │   ├── composables/   # Money-specific composables
-│   │   │   ├── utils/         # Money utilities
-│   │   │   └── views/         # Money views
-│   │   ├── projects/           # Project management
-│   │   ├── settings/           # App settings
-│   │   ├── tags/               # Tag system
-│   │   └── todos/              # Todo management
-│   ├── i18n/                    # I18n configuration
-│   ├── layouts/                 # Layout components
-│   ├── locales/                 # Translation files (en, zh)
-│   ├── pages/                   # Auto-generated page routes
-│   ├── router/                  # Vue Router setup
-│   ├── schema/                  # Zod schemas & TypeScript types
-│   ├── services/                # API service layer
-│   │   ├── money/              # Money services (MoneyDb)
-│   │   ├── healths/            # Health services
-│   │   └── todo.ts             # Todo services
-│   ├── stores/                  # Pinia stores (state management)
-│   │   ├── money/              # Modular money stores
-│   │   │   ├── account-store.ts
-│   │   │   ├── transaction-store.ts
-│   │   │   ├── budget-store.ts
-│   │   │   ├── reminder-store.ts
-│   │   │   ├── category-store.ts
-│   │   │   ├── family-ledger-store.ts
-│   │   │   ├── family-member-store.ts
-│   │   │   ├── family-split-store.ts
-│   │   │   └── money-errors.ts
-│   │   ├── periodStore.ts      # Health/period store
-│   │   ├── todoStore.ts        # Todo store
-│   │   └── ...
-│   ├── types/                   # TypeScript types & interfaces
-│   ├── utils/                   # Utility functions
-│   ├── App.vue                  # Root component
-│   └── main.ts                  # Application entry point
-│
-├── src-tauri/                    # Backend (Rust + Tauri 2)
-│   ├── crates/                  # Modular Rust crates
-│   │   ├── auth/               # Authentication module
-│   │   │   ├── src/commands.rs # Tauri commands
-│   │   │   └── src/lib.rs
-│   │   ├── healths/            # Health tracking module
-│   │   ├── money/              # Finance module
-│   │   └── todos/              # Todo module
-│   ├── common/                  # Shared utilities
-│   │   ├── db_utils.rs         # Database helpers
-│   │   ├── error.rs            # Error handling
-│   │   └── types.rs            # Common types
-│   ├── entity/                  # SeaORM database entities
-│   ├── migration/               # Database migrations
-│   ├── src/                     # Main application
-│   │   ├── commands.rs         # Tauri commands registry
-│   │   ├── lib.rs              # Library root
-│   │   ├── main.rs             # Application entry
-│   │   └── schedulers.rs       # Background job schedulers
-│   ├── Cargo.toml              # Rust dependencies
-│   └── tauri.conf.json         # Tauri configuration
-│
-├── public/                       # Public static files
-├── dist/                         # Build output (generated)
-├── package.json                  # Node.js dependencies & scripts
-├── vite.config.ts               # Vite configuration
-├── tsconfig.json                # TypeScript configuration
-└── README.md                     # This file
-```
-
-## 🔧 Development Scripts
+## 📝 Development
 
 ```bash
-# Development
-npm run dev              # Start Vite dev server only
-npm run tauri dev        # Start full Tauri app with hot-reload
-
-# Building
-npm run build            # Build frontend only
-npm run tauri build      # Build complete Tauri app
-npm run preview          # Preview production build
-
-# Code Quality
-npm run lint             # Run ESLint + Biome checks
-npm run lint:fix         # Auto-fix linting issues
-npm run format           # Format code with Biome
-
-# Testing
-npm run test             # Run Vitest tests
-
-# Git & Commits
-npm run commit           # Commit with Commitizen (interactive)
-npm run prepare          # Setup Husky git hooks
-
-# Tauri specific
-npm run tauri            # Run Tauri CLI commands
+# Scripts
+npm run tauri dev    # Development mode
+npm run tauri build  # Production build
+npm run lint         # Code linting
+npm run test         # Run tests
 ```
 
-## 🏗️ Architecture
+## 📂 Structure
 
-### Frontend Architecture
-
-Miji follows a **modular, feature-based architecture** for maintainability and scalability:
-
-#### Core Principles
-1. **Feature Modules**: Each domain (money, health, todos) is self-contained
-2. **Composition API**: Leverages Vue 3's Composition API for logic reuse
-3. **Type Safety**: Strict TypeScript with Zod schema validation
-4. **Modular Stores**: Pinia stores split by domain (not monolithic)
-5. **Service Layer**: Clean separation between UI and data access
-
-#### Key Patterns
-- **Composables**: Reusable logic (e.g., `useAccountActions`, `useFilters`)
-- **Services**: Direct database access via Tauri commands (e.g., `MoneyDb`)
-- **Stores**: Reactive state management with getters and actions
-- **Components**: Presentational components with clear props/events
-
-#### Recent Improvements (2025)
-- ✅ **Tailwind CSS v4 Migration**: Complete migration from custom CSS (~28k lines removed)
-  - Zero PostCSS plugins needed (all built into Tailwind v4)
-  - 100% utility-first styling with `dark:` mode support
-  - Build time improved: 45.20s → 15.78s (3x faster)
-- ✅ **UI Component System**: 20+ reusable components (Button, Modal, Input, Select, etc.)
-  - All components use pure Tailwind CSS v4 (no custom CSS)
-  - Full TypeScript support with strict props validation
-  - Consistent design system across the entire app
-- ✅ **RBAC Authentication**: Role-Based Access Control system
-  - 4 roles: Guest, User, Admin, Owner
-  - Route guards and permission directives
-  - Audit logging for security events
-- ✅ **Store Architecture**: Event-driven modular stores
-  - Split monolithic stores into 8+ domain-specific stores
-  - Event bus pattern eliminates circular dependencies
-  - Smart caching and optimized reactivity
-- ✅ **Performance**: Multiple optimization layers
-  - Build time: 3x faster with Tailwind v4
-  - Bundle size: Reduced with tree-shaking
-  - Runtime: ~20% improvement with optimized stores
-
-### Backend Architecture
-
-Rust backend organized as a **workspace** with modular crates:
-
-#### Workspace Structure
-```rust
-[workspace]
-members = [
-    "crates/auth",      // JWT auth, user management
-    "crates/todos",     // Todo & project CRUD
-    "crates/money",     // Finance tracking
-    "crates/healths",   // Health records
-]
 ```
-
-#### Core Components
-- **Commands**: Tauri IPC commands exposed to frontend
-- **Services**: Business logic layer
-- **Entities**: SeaORM models (database schema)
-- **Migrations**: Versioned database migrations
-- **Schedulers**: Background jobs (e.g., installment processing)
-
-#### Key Features
-- **Async Runtime**: Tokio for concurrent operations
-- **Database Pool**: Efficient connection management
-- **Error Propagation**: Custom error types with context
-- **Logging**: Structured logging with `tracing`
-
-### Database Architecture
-
-- **Database**: SQLite 3 (file-based, portable)
-- **ORM**: SeaORM 1.1 (async, type-safe)
-- **Migrations**: Auto-run on startup (via `migration` crate)
-- **Schema**:
-  - Users & authentication
-  - Accounts, transactions, budgets, categories
-  - Family ledgers, members, split rules, debt relations
-  - Todos, projects, tags
-  - Health records (periods, daily records)
-  - System settings
-
-### Performance Optimizations
-
-1. **Frontend**:
-   - Modular stores (reduce reactivity overhead)
-   - Smart caching (CategoryStore: 5-min cache)
-   - Lazy loading (features loaded on demand)
-   - Virtual scrolling (for large lists)
-
-2. **Backend**:
-   - Connection pooling
-   - Indexed database queries
-   - Batch operations (bulk inserts)
-   - Background job scheduling
-
-## 🌐 Internationalization
-
-Miji supports multiple languages with Vue I18n:
-
-- **English** (en-US)
-- **简体中文** (zh-CN)
-
-### Translation Files
+src/          # Frontend (Vue 3 + Tailwind CSS v4)
+src-tauri/    # Backend (Rust + Tauri 2)
 ```
-src/locales/
-├── en.json    # English translations
-└── zh.json    # Chinese translations
-```
-
-### Adding a New Language
-
-1. Create translation file:
-   ```bash
-   cp src/locales/en.json src/locales/ja.json
-   ```
-
-2. Update i18n config in `src/i18n/i18n.ts`:
-   ```typescript
-   import ja from '@/locales/ja.json'
-   
-   const i18n = createI18n({
-     legacy: false,
-     locale: 'en',
-     messages: { en, zh, ja },
-   })
-   ```
-
-3. Add to settings UI
-
-### Usage in Components
-```vue
-<script setup>
-const { t } = useI18n()
-</script>
-
-<template>
-  <h1>{{ t('common.appName') }}</h1>
-</template>
-```
-
-## 🔐 Security
-
-### Authentication
-- **Password Hashing**: Argon2id (memory-hard, GPU-resistant)
-- **Token System**: JWT with RS256 (asymmetric signing)
-- **Session Management**: Secure token storage and refresh
-- **Rate Limiting**: Brute-force protection on login
-
-### Data Security
-- **Local Storage**: All data stored in local SQLite database
-- **No Cloud Sync**: Zero data transmission to external servers
-- **Encryption**: Sensitive fields encrypted at rest
-- **Access Control**: User-based data isolation
-
-### Application Security
-- **CSP**: Content Security Policy enabled
-- **Input Validation**: Zod schemas validate all inputs
-- **SQL Injection**: SeaORM prevents SQL injection
-- **XSS Protection**: Vue.js auto-escapes templates
-
-### Privacy
-- **No Analytics**: No usage tracking or telemetry
-- **No Ads**: Completely ad-free
-- **Open Source**: Transparent and auditable code
-
-## 🤝 Contributing
-
-Contributions are welcome! Follow these steps:
-
-### Setup
-1. **Fork** the repository
-2. **Clone** your fork:
-   ```bash
-   git clone https://github.com/YOUR_USERNAME/miji.git
-   cd miji
-   ```
-3. **Install** dependencies:
-   ```bash
-   npm install
-   ```
-4. **Create** a feature branch:
-   ```bash
-   git checkout -b feature/amazing-feature
-   ```
-
-### Development
-1. **Make** your changes
-2. **Test** thoroughly:
-   ```bash
-   npm run lint
-   npm run test
-   npm run tauri dev
-   ```
-3. **Commit** with Commitizen:
-   ```bash
-   npm run commit
-   ```
-   (Follows Gitmoji convention)
-
-### Submission
-1. **Push** to your fork:
-   ```bash
-   git push origin feature/amazing-feature
-   ```
-2. **Open** a Pull Request
-3. **Wait** for review
-
-### Guidelines
-- Follow existing code style (ESLint + Biome)
-- Add tests for new features
-- Update documentation if needed
-- Keep commits atomic and well-described
-- Use Gitmoji for commit messages
 
 ## 📝 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+MIT License - see [LICENSE](LICENSE) file for details.
 
 ## 👨‍💻 Author
 
 **mcgeq**
-
-## 🙏 Acknowledgments
-
-### Frameworks & Libraries
-- [Tauri](https://tauri.app/) - Amazing Rust-powered framework
-- [Vue.js](https://vuejs.org/) - Progressive JavaScript framework
-- [Rust](https://www.rust-lang.org/) - Systems programming language
-- [SeaORM](https://www.sea-ql.org/SeaORM/) - Elegant async ORM
-- [Pinia](https://pinia.vuejs.org/) - Intuitive state management
-- [Vite](https://vitejs.dev/) - Lightning-fast build tool
-
-### UI & Icons
-- [Lucide](https://lucide.dev/) - Beautiful open-source icons
-- [ECharts](https://echarts.apache.org/) - Powerful charting library
-- [VueUse](https://vueuse.org/) - Collection of Vue Composition utilities
-
-### Tools
-- [Biome](https://biomejs.dev/) - Fast formatter and linter
-- [Vitest](https://vitest.dev/) - Blazing fast unit test framework
-- [TypeScript](https://www.typescriptlang.org/) - Typed JavaScript
-
-### Special Thanks
-To all open-source contributors who make projects like this possible!
 
 ---
 
