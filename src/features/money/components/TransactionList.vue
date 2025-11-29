@@ -113,7 +113,7 @@ function resetFilters() {
     amountMax: undefined,
     currency: undefined,
     accountSerialNum: '',
-    category: undefined,
+    category: '',
     subCategory: undefined,
     paymentMethod: undefined,
     actualPayerAccount: undefined,
