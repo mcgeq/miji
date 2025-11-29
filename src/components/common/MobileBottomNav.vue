@@ -81,28 +81,36 @@ function closeSubmenu() {
     >
       <div
         v-if="showSubmenu"
-        class="fixed bottom-16 left-1/2 -translate-x-1/2 bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 z-[1002] overflow-hidden flex gap-2 p-3 backdrop-blur-md"
+        class="fixed bottom-16 left-1/2 -translate-x-1/2 bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 z-[1002] overflow-hidden flex items-center p-2 backdrop-blur-md"
       >
-        <div
-          v-for="submenuItem in menu.find(item => item.name === showSubmenu)?.submenu"
+        <template
+          v-for="(submenuItem, index) in menu.find(item => item.name === showSubmenu)?.submenu"
           :key="submenuItem.name"
-          :title="submenuItem.title"
-          class="p-4 cursor-pointer transition-all duration-200 flex justify-center items-center rounded-xl min-w-12 min-h-12 group" :class="[
-            isSubmenuActive(submenuItem)
-              ? 'bg-blue-500 dark:bg-blue-600 shadow-lg shadow-blue-500/30'
-              : 'hover:bg-gray-100 dark:hover:bg-gray-700',
-          ]"
-          @click="navigateSubmenu(submenuItem)"
         >
-          <component
-            :is="submenuItem.icon"
-            class="w-6 h-6 transition-all duration-200" :class="[
+          <div
+            :title="submenuItem.title"
+            class="w-12 h-12 cursor-pointer transition-all duration-200 flex justify-center items-center rounded-xl group" :class="[
               isSubmenuActive(submenuItem)
-                ? 'text-white'
-                : 'text-gray-600 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-200 group-hover:scale-110',
+                ? 'bg-blue-500 dark:bg-blue-600 shadow-lg shadow-blue-500/30'
+                : 'hover:bg-gray-100 dark:hover:bg-gray-700',
             ]"
+            @click="navigateSubmenu(submenuItem)"
+          >
+            <component
+              :is="submenuItem.icon"
+              class="w-6 h-6 transition-all duration-200" :class="[
+                isSubmenuActive(submenuItem)
+                  ? 'text-white'
+                  : 'text-gray-600 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-200 group-hover:scale-110',
+              ]"
+            />
+          </div>
+          <!-- 分隔线 -->
+          <div
+            v-if="index < menu.find(item => item.name === showSubmenu)!.submenu!.length - 1"
+            class="w-px h-4/5 bg-gray-200 dark:bg-gray-700 mx-2"
           />
-        </div>
+        </template>
       </div>
     </Transition>
 

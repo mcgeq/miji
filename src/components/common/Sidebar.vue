@@ -145,28 +145,36 @@ onUnmounted(() => {
           >
             <ul
               v-if="item.hasSubmenu && isExpanded(item.name)"
-              class="submenu-container absolute left-full top-0 ml-2 w-12 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 z-[1001] overflow-hidden backdrop-blur-sm"
+              class="submenu-container absolute left-full top-1/2 -translate-y-1/2 ml-2 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 z-[1001] overflow-hidden backdrop-blur-sm flex flex-col p-1.5"
             >
-              <li
-                v-for="submenuItem in item.submenu"
+              <template
+                v-for="(submenuItem, index) in item.submenu"
                 :key="submenuItem.name"
-                class="p-3 cursor-pointer transition-all duration-200 border-b border-gray-100 dark:border-gray-700 flex justify-center items-center last:border-b-0 group" :class="[
-                  isSubmenuActive(submenuItem)
-                    ? 'bg-blue-50 dark:bg-blue-900/30'
-                    : 'hover:bg-gray-50 dark:hover:bg-gray-700',
-                ]"
-                :title="submenuItem.title"
-                @click="navigateSubmenu(submenuItem, $event)"
               >
-                <component
-                  :is="submenuItem.icon || BarChart3"
-                  class="w-4 h-4 transition-all duration-200" :class="[
+                <li
+                  class="w-9 h-9 flex justify-center items-center rounded-lg cursor-pointer transition-all duration-200 group" :class="[
                     isSubmenuActive(submenuItem)
-                      ? 'text-blue-600 dark:text-blue-400 scale-110'
-                      : 'text-gray-600 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-200 group-hover:scale-110',
+                      ? 'bg-blue-500 dark:bg-blue-600 shadow-md shadow-blue-500/30'
+                      : 'hover:bg-gray-100 dark:hover:bg-gray-700',
                   ]"
+                  :title="submenuItem.title"
+                  @click="navigateSubmenu(submenuItem, $event)"
+                >
+                  <component
+                    :is="submenuItem.icon || BarChart3"
+                    class="w-4 h-4 transition-all duration-200" :class="[
+                      isSubmenuActive(submenuItem)
+                        ? 'text-white'
+                        : 'text-gray-600 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-200 group-hover:scale-110',
+                    ]"
+                  />
+                </li>
+                <!-- 分隔线 -->
+                <div
+                  v-if="index < item.submenu!.length - 1"
+                  class="h-px w-4/5 bg-gray-200 dark:bg-gray-700 mx-auto my-1"
                 />
-              </li>
+              </template>
             </ul>
           </Transition>
         </li>
