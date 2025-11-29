@@ -91,14 +91,14 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <aside class="w-12 h-screen fixed top-0 left-0 z-[1000] flex flex-col justify-between bg-[var(--color-base-300)] text-[var(--color-base-content)] border-r border-[var(--color-base-200)] shadow-[2px_0_8px_rgba(0,0,0,0.05)] transition-all duration-300 ease-in-out overflow-visible">
+  <aside class="w-12 h-screen fixed top-0 left-0 z-[1000] flex flex-col justify-between bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-950 text-gray-700 dark:text-gray-300 border-r border-gray-200 dark:border-gray-800 shadow-lg transition-all duration-300 ease-in-out overflow-visible backdrop-blur-sm">
     <!-- 顶部头像 -->
     <div class="pt-6 pb-2 flex justify-center">
-      <img src="" alt="avatar" class="w-8 h-8 rounded-full border border-[var(--color-neutral)]">
+      <img src="" alt="avatar" class="w-8 h-8 rounded-full border-2 border-gray-300 dark:border-gray-700 shadow-md hover:scale-110 transition-transform duration-200">
     </div>
 
     <!-- 菜单区域 -->
-    <nav class="flex-1 py-4">
+    <nav class="flex-1 py-4 px-1.5">
       <ul class="list-none p-0 m-0">
         <li
           v-for="item in menu"
@@ -107,16 +107,25 @@ onUnmounted(() => {
         >
           <!-- 菜单项 -->
           <div
-            class="flex justify-center items-center p-3 rounded-md cursor-pointer transition-all duration-300 relative hover:bg-[var(--color-base-100)]" :class="[
-              isActive(item) && 'bg-[var(--color-primary)] text-[var(--color-primary-content)]',
+            class="flex justify-center items-center p-2.5 rounded-lg cursor-pointer transition-all duration-200 relative group" :class="[
+              isActive(item)
+                ? 'bg-blue-500 dark:bg-blue-600 shadow-lg shadow-blue-500/30 dark:shadow-blue-600/30'
+                : 'hover:bg-gray-200 dark:hover:bg-gray-800',
             ]"
             :title="item.title"
             @click="navigate(item)"
           >
+            <!-- 选中指示器 -->
+            <div
+              v-if="isActive(item)"
+              class="absolute -left-1 top-1/2 -translate-y-1/2 w-1 h-6 bg-blue-500 dark:bg-blue-400 rounded-r-full"
+            />
             <component
               :is="item.icon"
-              class="w-5 h-5" :class="[
-                isActive(item) ? 'text-[var(--color-base-content)]' : 'text-[var(--color-neutral)]',
+              class="w-5 h-5 transition-all duration-200" :class="[
+                isActive(item)
+                  ? 'text-white'
+                  : 'text-gray-600 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-200 group-hover:scale-110',
               ]"
             />
           </div>
@@ -132,21 +141,25 @@ onUnmounted(() => {
           >
             <ul
               v-if="item.hasSubmenu && isExpanded(item.name)"
-              class="submenu-container absolute left-full top-0 w-12 bg-[var(--color-base-200)] rounded-lg shadow-[0_4px_12px_rgba(0,0,0,0.15)] z-[1001] overflow-hidden"
+              class="submenu-container absolute left-full top-0 ml-2 w-12 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 z-[1001] overflow-hidden backdrop-blur-sm"
             >
               <li
                 v-for="submenuItem in item.submenu"
                 :key="submenuItem.name"
-                class="p-3 cursor-pointer transition-colors duration-200 border-b border-[var(--color-base-300)] flex justify-center items-center last:border-b-0 hover:bg-[var(--color-base-100)]" :class="[
-                  isSubmenuActive(submenuItem) && 'bg-[var(--color-primary)] text-[var(--color-primary-content)]',
+                class="p-3 cursor-pointer transition-all duration-200 border-b border-gray-100 dark:border-gray-700 flex justify-center items-center last:border-b-0 group" :class="[
+                  isSubmenuActive(submenuItem)
+                    ? 'bg-blue-50 dark:bg-blue-900/30'
+                    : 'hover:bg-gray-50 dark:hover:bg-gray-700',
                 ]"
                 :title="submenuItem.title"
                 @click="navigateSubmenu(submenuItem, $event)"
               >
                 <component
                   :is="submenuItem.icon || BarChart3"
-                  class="w-4 h-4" :class="[
-                    isSubmenuActive(submenuItem) ? 'text-[var(--color-primary-content)]' : 'text-[var(--color-neutral)]',
+                  class="w-4 h-4 transition-all duration-200" :class="[
+                    isSubmenuActive(submenuItem)
+                      ? 'text-blue-600 dark:text-blue-400 scale-110'
+                      : 'text-gray-600 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-200 group-hover:scale-110',
                   ]"
                 />
               </li>
@@ -158,11 +171,11 @@ onUnmounted(() => {
 
     <!-- 登出按钮 -->
     <button
-      class="h-16 border-t border-[var(--color-base-200)] bg-transparent flex justify-center items-center cursor-pointer transition-all duration-300 ease-in-out text-[var(--color-base-content)] hover:text-[var(--color-error-content)] hover:scale-105 active:scale-95"
+      class="h-16 border-t border-gray-200 dark:border-gray-800 bg-transparent flex justify-center items-center cursor-pointer transition-all duration-200 group"
       title="Logout"
       @click="logout"
     >
-      <LogOut class="w-5 h-5" />
+      <LogOut class="w-5 h-5 text-gray-500 dark:text-gray-400 group-hover:text-red-500 dark:group-hover:text-red-400 group-hover:scale-110 group-active:scale-95 transition-all duration-200" />
     </button>
   </aside>
 </template>

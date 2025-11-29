@@ -64,7 +64,7 @@ function closeSubmenu() {
     >
       <div
         v-if="showSubmenu"
-        class="fixed inset-0 bg-black/30 z-[1001]"
+        class="fixed inset-0 bg-black/40 backdrop-blur-sm z-[1001]"
         @click="closeSubmenu"
       />
     </Transition>
@@ -80,23 +80,25 @@ function closeSubmenu() {
     >
       <div
         v-if="showSubmenu"
-        class="fixed bottom-16 left-1/2 -translate-x-1/2 bg-[light-dark(white,#1f2937)] rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.2)] z-[1002] overflow-hidden flex gap-2 p-2"
+        class="fixed bottom-16 left-1/2 -translate-x-1/2 bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 z-[1002] overflow-hidden flex gap-2 p-3 backdrop-blur-md"
       >
         <div
           v-for="submenuItem in menu.find(item => item.name === showSubmenu)?.submenu"
           :key="submenuItem.name"
           :title="submenuItem.title"
-          class="p-4 cursor-pointer transition-colors duration-200 flex justify-center items-center rounded-lg min-w-12 min-h-12" :class="[
+          class="p-4 cursor-pointer transition-all duration-200 flex justify-center items-center rounded-xl min-w-12 min-h-12 group" :class="[
             isSubmenuActive(submenuItem)
-              ? 'bg-[var(--color-primary)] text-white'
-              : 'hover:bg-[light-dark(#f3f4f6,#374151)] text-[light-dark(#6b7280,#d1d5db)]',
+              ? 'bg-blue-500 dark:bg-blue-600 shadow-lg shadow-blue-500/30'
+              : 'hover:bg-gray-100 dark:hover:bg-gray-700',
           ]"
           @click="navigateSubmenu(submenuItem)"
         >
           <component
             :is="submenuItem.icon"
-            class="w-6 h-6" :class="[
-              isSubmenuActive(submenuItem) ? 'text-white' : '',
+            class="w-6 h-6 transition-all duration-200" :class="[
+              isSubmenuActive(submenuItem)
+                ? 'text-white'
+                : 'text-gray-600 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-200 group-hover:scale-110',
             ]"
           />
         </div>
@@ -104,26 +106,36 @@ function closeSubmenu() {
     </Transition>
 
     <!-- 底部导航 -->
-    <nav class="fixed bottom-0 left-0 right-0 h-12 bg-[light-dark(#f3f4f6,#1f2937)] flex items-center justify-center shadow-[0_-1px_3px_0_rgba(0,0,0,0.1),0_-1px_2px_-1px_rgba(0,0,0,0.1)] border-t border-[light-dark(#e5e7eb,#374151)] z-[1000]">
-      <ul class="flex w-full justify-around items-center list-none m-0 p-0">
+    <nav class="fixed bottom-0 left-0 right-0 h-14 bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg flex items-center justify-center shadow-[0_-4px_16px_rgba(0,0,0,0.1)] border-t border-gray-200 dark:border-gray-800 z-[1000]">
+      <ul class="flex w-full justify-around items-center list-none m-0 p-0 px-2">
         <li
           v-for="item in menu"
           :key="item.name"
           :title="item.title"
-          class="flex flex-col items-center justify-center py-1 px-2 rounded-md cursor-pointer transition-all duration-300 ease-in-out" :class="[
+          class="flex flex-col items-center justify-center py-2 px-3 rounded-xl cursor-pointer transition-all duration-200 relative group" :class="[
             isActive(item)
-              ? 'bg-[light-dark(#dbeafe,rgba(59,130,246,0.1))] shadow-[inset_0_0_0_1px_var(--color-primary)]'
-              : 'hover:bg-[light-dark(#e5e7eb,#374151)]',
+              ? 'bg-blue-50 dark:bg-blue-900/30'
+              : 'hover:bg-gray-100 dark:hover:bg-gray-800',
           ]"
           @click="navigate(item)"
         >
+          <!-- 选中指示器 -->
+          <div
+            v-if="isActive(item)"
+            class="absolute -top-0.5 left-1/2 -translate-x-1/2 w-8 h-1 bg-blue-500 dark:bg-blue-400 rounded-b-full"
+          />
           <component
             :is="item.icon"
-            class="w-5 h-5" :class="[
+            class="w-6 h-6 transition-all duration-200" :class="[
               isActive(item)
-                ? 'text-[var(--color-primary)]'
-                : 'text-[light-dark(#6b7280,#9ca3af)]',
+                ? 'text-blue-600 dark:text-blue-400 scale-110'
+                : 'text-gray-600 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-200 group-hover:scale-110',
             ]"
+          />
+          <!-- 激活动画点 -->
+          <div
+            v-if="isActive(item)"
+            class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 bg-blue-500/10 dark:bg-blue-400/10 rounded-full animate-ping"
           />
         </li>
       </ul>
