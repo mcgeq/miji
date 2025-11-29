@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { CalendarCheck, Eye, Plus, Trash } from 'lucide-vue-next';
 import Badge from '@/components/ui/Badge.vue';
-import Card from '@/components/ui/Card.vue';
+import PeriodInfoCard from './PeriodInfoCard.vue';
 import type { PeriodDailyRecords } from '@/schema/health/period';
 
 defineProps<{
@@ -20,21 +20,7 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <Card
-    shadow="md"
-    padding="md"
-    class="flex-1 self-stretch border-l-4 border-l-blue-500 dark:border-l-blue-400"
-  >
-    <!-- 自定义头部 -->
-    <template #header>
-      <div class="flex items-center gap-2.5 pb-2.5 border-b-2 border-blue-500 dark:border-blue-400">
-        <CalendarCheck class="w-5 h-5 text-blue-600 dark:text-blue-400" />
-        <h3 class="text-base font-bold text-blue-600 dark:text-blue-400 m-0">
-          {{ t('period.todayInfo.title') }}
-        </h3>
-      </div>
-    </template>
-
+  <PeriodInfoCard :title="t('period.todayInfo.title')" :icon="CalendarCheck" color="blue">
     <!-- 内容区域 -->
     <div class="flex flex-col gap-2.5">
       <!-- 当前阶段 -->
@@ -110,5 +96,5 @@ const { t } = useI18n();
         </div>
       </div>
     </div>
-  </Card>
+  </PeriodInfoCard>
 </template>
