@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Clock } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
-import { Modal } from '@/components/ui';
+import { Modal, TodoButton } from '@/components/ui';
 import type { TodoUpdate } from '@/schema/todos';
 
 const props = defineProps<{
@@ -116,17 +116,13 @@ watch([editingDays, editingHours, editingMinutes], validateInput);
 <template>
   <div class="relative">
     <!-- 时间估算显示按钮 -->
-    <button
-      class="todo-btn"
-      :class="{
-        'todo-btn--active': hasEstimate,
-        'todo-btn--readonly': readonly,
-      }"
+    <TodoButton
+      :icon="Clock"
+      :active="hasEstimate"
+      :readonly="props.readonly"
       :title="hasEstimate ? `时间估算: ${formatTime(props.estimateMinutes!)}` : '设置时间估算'"
       @click="openModal"
-    >
-      <Clock class="w-3.5 h-3.5 shrink-0" :size="14" />
-    </button>
+    />
 
     <!-- 时间估算设置模态框 -->
     <Modal

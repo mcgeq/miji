@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Check, CheckCircle, Edit, ListTodo, Plus, Trash2, X } from 'lucide-vue-next';
-import { Modal } from '@/components/ui';
+import { Modal, TodoButton } from '@/components/ui';
 import type { Todo, TodoUpdate } from '@/schema/todos';
 
 const props = defineProps<{
@@ -100,26 +100,23 @@ function cancelCreate() {
 <template>
   <div class="relative">
     <!-- 子任务显示按钮 -->
-    <button
-      class="todo-btn"
-      :class="{
-        'todo-btn--active': hasSubtasks,
-        'todo-btn--readonly': readonly,
-      }"
-      :title="hasSubtasks ? `子任务: ${completedSubtasks}/${subtaskCount} (${subtaskProgress}%)` : '添加子任务'"
-      @click="openModal"
-    >
-      <ListTodo class="w-3.5 h-3.5 shrink-0" :size="14" />
-      <span class="whitespace-nowrap overflow-hidden text-ellipsis max-w-16">
-        {{ hasSubtasks ? `${completedSubtasks}/${subtaskCount}` : '' }}
-      </span>
+    <div class="relative">
+      <TodoButton
+        :icon="ListTodo"
+        :text="hasSubtasks ? `${completedSubtasks}/${subtaskCount}` : ''"
+        :active="hasSubtasks"
+        :readonly="props.readonly"
+        :title="hasSubtasks ? `子任务: ${completedSubtasks}/${subtaskCount} (${subtaskProgress}%)` : '添加子任务'"
+        @click="openModal"
+      />
+      <!-- 进度条 -->
       <div v-if="hasSubtasks" class="absolute bottom-0 left-0 right-0 h-0.5 bg-white/30 dark:bg-gray-700/30 rounded-b-lg">
         <div
           class="h-full bg-green-500 dark:bg-green-400 rounded-b-lg transition-all duration-300"
           :style="{ width: `${subtaskProgress}%` }"
         />
       </div>
-    </button>
+    </div>
 
     <!-- 子任务模态框 -->
     <Modal

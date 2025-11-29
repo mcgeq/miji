@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n';
-import { Checkbox, FormRow, Input, Modal, Select } from '@/components/ui';
+import { Checkbox, FormRow, FormSection, Input, Modal, Select } from '@/components/ui';
 import { CURRENCY_CNY } from '@/constants/moneyConst';
 import { MoneyDb } from '@/services/money/money';
 import { DateUtils } from '@/utils/date';
@@ -491,7 +491,7 @@ onMounted(() => {
   >
     <form @submit.prevent="saveLedger">
       <!-- 基本信息 -->
-      <div class="form-section">
+      <FormSection title="基本信息">
         <FormRow label="账本名称" required>
           <Input
             v-model="form.name"
@@ -524,10 +524,10 @@ onMounted(() => {
             placeholder="请选择币种"
           />
         </FormRow>
-      </div>
+      </FormSection>
 
       <!-- 结算设置 -->
-      <div class="form-section">
+      <FormSection title="结算设置">
         <FormRow label="结算周期" optional>
           <Select
             v-model="form.settlementCycle"
@@ -560,7 +560,7 @@ onMounted(() => {
             label="启用自动结算"
           />
         </div>
-      </div>
+      </FormSection>
 
       <!-- 成员管理 -->
       <div class="flex flex-col gap-3">

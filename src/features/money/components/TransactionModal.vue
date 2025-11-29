@@ -833,7 +833,7 @@ watch(
       </FormRow>
 
       <!-- 关联账本 -->
-      <div v-if="!isReadonlyMode || selectedLedgers.length > 0" class="form-row">
+      <div v-if="!isReadonlyMode || selectedLedgers.length > 0" class="flex items-center gap-4 mb-3">
         <label class="label-with-hint">
           关联账本
         </label>
@@ -878,7 +878,7 @@ watch(
       </div>
 
       <!-- 账本选择下拉 -->
-      <div v-if="!isReadonlyMode && showLedgerSelector" class="form-row">
+      <div v-if="!isReadonlyMode && showLedgerSelector" class="flex items-center gap-4 mb-3">
         <label />
         <div class="selector-dropdown">
           <div class="dropdown-header">
@@ -906,7 +906,7 @@ watch(
       </div>
 
       <!-- 分摊成员 -->
-      <div v-if="selectedLedgers.length > 0 && (!isReadonlyMode || selectedMembers.length > 0)" class="form-row">
+      <div v-if="selectedLedgers.length > 0 && (!isReadonlyMode || selectedMembers.length > 0)" class="flex items-center gap-4 mb-3">
         <label class="label-with-hint">
           分摊成员
         </label>
@@ -957,7 +957,7 @@ watch(
       </div>
 
       <!-- 成员选择下拉 -->
-      <div v-if="!isReadonlyMode && selectedLedgers.length > 0 && showMemberSelector" class="form-row">
+      <div v-if="!isReadonlyMode && selectedLedgers.length > 0 && showMemberSelector" class="flex items-center gap-4 mb-3">
         <label />
         <div class="selector-dropdown">
           <div class="dropdown-header">
@@ -1027,7 +1027,7 @@ watch(
       </FormRow>
 
       <!-- 分期选项 -->
-      <div v-if="form.transactionType === 'Expense' && !isCurrentTransactionInstallment" class="form-row">
+      <div v-if="form.transactionType === 'Expense' && !isCurrentTransactionInstallment" class="flex items-center gap-4 mb-3">
         <Checkbox
           v-model="form.isInstallment"
           :label="t('financial.transaction.installment')"

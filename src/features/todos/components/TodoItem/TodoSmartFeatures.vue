@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Brain, Check, Cloud, MapPin, Settings } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
-import { Modal } from '@/components/ui';
+import { Modal, TodoButton } from '@/components/ui';
 import type { TodoUpdate } from '@/schema/todos';
 
 const props = defineProps<{
@@ -149,26 +149,23 @@ function resetToDefaults() {
 <template>
   <div class="relative">
     <!-- 智能功能显示按钮 -->
-    <button
-      class="todo-btn"
-      :class="{
-        'todo-btn--active': hasSmartFeatures,
-        'todo-btn--readonly': readonly,
-      }"
+    <TodoButton
+      :icon="Brain"
+      :active="hasSmartFeatures"
+      :readonly="props.readonly"
       :title="hasSmartFeatures ? `智能功能: ${smartFeatureCount}项已启用` : '设置智能功能'"
       @click="openModal"
     >
-      <Brain class="w-3.5 h-3.5 shrink-0" :size="14" />
-      <span class="whitespace-nowrap overflow-hidden text-ellipsis max-w-16">
-        {{ hasSmartFeatures ? `智能${smartFeatureCount}` : '' }}
-      </span>
-      <div v-if="hasSmartFeatures" class="flex gap-0.5 ml-1">
-        <span v-if="smartFeatures.smartReminder" class="text-[10px] leading-none" title="智能提醒">🧠</span>
-        <span v-if="smartFeatures.locationBased" class="text-[10px] leading-none" title="位置提醒">📍</span>
-        <span v-if="smartFeatures.weatherDependent" class="text-[10px] leading-none" title="天气提醒">🌤</span>
-        <span v-if="smartFeatures.priorityBoost" class="text-[10px] leading-none" title="优先级增强">⚡</span>
-      </div>
-    </button>
+      <template v-if="hasSmartFeatures">
+        <span class="whitespace-nowrap text-ellipsis max-w-16 inline-flex items-center gap-1">
+          智能{{ smartFeatureCount }}
+          <span v-if="smartFeatures.smartReminder" class="text-[10px]" title="智能提醒">🧠</span>
+          <span v-if="smartFeatures.locationBased" class="text-[10px]" title="位置提醒">📍</span>
+          <span v-if="smartFeatures.weatherDependent" class="text-[10px] leading-none" title="天气提醒">🌤</span>
+          <span v-if="smartFeatures.priorityBoost" class="text-[10px] leading-none" title="优先级增强">⚡</span>
+        </span>
+      </template>
+    </TodoButton>
 
     <!-- 智能功能设置模态框 -->
     <Modal

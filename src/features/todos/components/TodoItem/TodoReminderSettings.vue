@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Bell, Check, Settings } from 'lucide-vue-next';
-import { Modal } from '@/components/ui';
+import { Modal, TodoButton } from '@/components/ui';
 import type { TodoUpdate } from '@/schema/todos';
 
 type ReminderMethod = 'system' | 'email' | 'sms';
@@ -151,17 +151,13 @@ function resetToDefaults() {
 <template>
   <div class="relative">
     <!-- 提醒开关按钮 -->
-    <button
-      class="todo-btn"
-      :class="{ 'todo-btn--active': todo.reminderEnabled }"
+    <TodoButton
+      :icon="Bell"
+      :text="todo.reminderEnabled && todo.reminderAdvanceValue ? `${todo.reminderAdvanceValue}${todo.reminderAdvanceUnit === 'minutes' ? '分钟' : todo.reminderAdvanceUnit === 'hours' ? '小时' : '天'}前` : ''"
+      :active="todo.reminderEnabled"
       :title="todo.reminderEnabled ? '编辑提醒设置' : '设置提醒'"
       @click="openModal"
-    >
-      <Bell class="w-4 h-4" :size="14" />
-      <span v-if="todo.reminderEnabled && todo.reminderAdvanceValue" class="text-xs opacity-90">
-        {{ todo.reminderAdvanceValue }}{{ todo.reminderAdvanceUnit === 'minutes' ? '分钟' : todo.reminderAdvanceUnit === 'hours' ? '小时' : '天' }}前
-      </span>
-    </button>
+    />
 
     <!-- 提醒设置模态框 -->
     <Modal

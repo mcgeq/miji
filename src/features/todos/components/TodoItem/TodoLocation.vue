@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { MapPin, Navigation, Trash2 } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
-import { Modal } from '@/components/ui';
+import { Modal, TodoButton } from '@/components/ui';
 import type { TodoUpdate } from '@/schema/todos';
 
 const props = defineProps<{
@@ -103,18 +103,14 @@ async function getCurrentLocation() {
 <template>
   <div class="relative">
     <!-- 位置显示按钮 -->
-    <button
-      class="todo-btn"
-      :class="{
-        'todo-btn--active': hasLocation,
-        'todo-btn--readonly': readonly,
-      }"
+    <TodoButton
+      :icon="MapPin"
+      :text="locationDisplay"
+      :active="hasLocation"
+      :readonly="props.readonly"
       :title="hasLocation ? `位置: ${props.location}` : '设置位置'"
       @click="openModal"
-    >
-      <MapPin class="w-3.5 h-3.5 shrink-0" :size="14" />
-      <span class="whitespace-nowrap overflow-hidden text-ellipsis max-w-24">{{ locationDisplay }}</span>
-    </button>
+    />
 
     <!-- 位置设置模态框 -->
     <Modal

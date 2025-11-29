@@ -24,6 +24,7 @@ export { default as EnhancedUserSelector } from './EnhancedUserSelector.vue';
 export { default as FamilyMemberSelector } from './FamilyMemberSelector.vue';
 // 表单组件
 export { default as FormRow } from './FormRow.vue';
+export { default as FormSection } from './FormSection.vue';
 
 export { default as Input } from './Input.vue';
 // 核心组件
@@ -41,5 +42,6 @@ export { default as Tabs } from './Tabs.vue';
 
 export type { TabItem } from './Tabs.vue';
 export { default as Textarea } from './Textarea.vue';
+export { default as TodoButton } from './TodoButton.vue';
 export { default as Tooltip } from './Tooltip.vue';
 export { default as UserSelector } from './UserSelector.vue';
