@@ -73,7 +73,7 @@ function layoutComponent(route: RouteLocationNormalizedLoaded) {
 </script>
 
 <template>
-  <div v-if="isLoading" class="loading">
+  <div v-if="isLoading" class="flex items-center justify-center h-screen text-xl text-gray-900 dark:text-white">
     {{ t('common.loading') }}
   </div>
   <!-- 使用动态过渡名称 -->
@@ -93,7 +93,7 @@ function layoutComponent(route: RouteLocationNormalizedLoaded) {
 </template>
 
 <style>
-/* 新增：隐藏滚动条 */
+/* 全局：隐藏滚动条 */
 html,
 body {
   scrollbar-width: none;
@@ -106,15 +106,6 @@ html::-webkit-scrollbar,
 body::-webkit-scrollbar {
   display: none;
   /* Chrome, Safari, Opera */
-}
-
-.loading {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
-  font-size: 1.2rem;
-  color: var(--color-base-content);
 }
 
 /* 可以在 App.vue 或全局样式中定义 */

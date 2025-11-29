@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ArrowLeft, RefreshCw } from 'lucide-vue-next';
 import { useRouter } from 'vue-router';
+import Button from '@/components/ui/Button.vue';
 import { useBudgetStats } from '@/composables/useBudgetStats';
 import BudgetStatsAnalysis from '@/features/money/components/BudgetStatsAnalysis.vue';
 
@@ -39,181 +40,57 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="budget-stats-page">
+  <div class="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
     <!-- 页面头部 -->
-    <div class="page-header">
-      <div class="page-title">
-        <h1>{{ pageTitle }}</h1>
-        <p class="page-description">
+    <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
+      <div class="flex-1 min-w-0">
+        <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2 truncate">
+          {{ pageTitle }}
+        </h1>
+        <p class="text-sm text-gray-600 dark:text-gray-400">
           {{ t('financial.budget.statsDescription') }}
         </p>
       </div>
-      <div class="page-actions">
-        <button
-          class="refresh-button"
+      <div class="flex items-center gap-2 shrink-0">
+        <Button
+          variant="primary"
+          size="sm"
+          circle
           :disabled="state.loading"
+          :title="t('common.actions.refresh')"
           @click="refresh"
         >
           <RefreshCw
             class="w-4 h-4"
             :class="{ 'animate-spin': state.loading }"
           />
-        </button>
-        <button class="back-button" :title="t('common.actions.back')" @click="goBack">
-          <ArrowLeft class="w-4 h-4 mr-1" />
-        </button>
+        </Button>
+        <Button
+          variant="secondary"
+          size="sm"
+          :title="t('common.actions.back')"
+          @click="goBack"
+        >
+          <ArrowLeft class="w-4 h-4 sm:mr-1" />
+          <span class="hidden sm:inline">{{ t('common.actions.back') }}</span>
+        </Button>
       </div>
     </div>
 
     <!-- 错误状态 -->
-    <div v-if="state.error" class="error-container">
-      <div class="error-icon">
+    <div v-if="state.error" class="flex flex-col items-center justify-center py-12 sm:py-16 px-4 bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800 rounded-xl mb-4">
+      <div class="text-5xl sm:text-6xl mb-4 text-red-500">
         !
       </div>
-      <div class="error-message">
+      <div class="text-base sm:text-lg text-red-600 dark:text-red-400 mb-4 text-center">
         {{ state.error }}
       </div>
-      <button class="retry-button" @click="refresh">
-        重试
-      </button>
+      <Button variant="danger" size="md" @click="refresh">
+        {{ t('common.actions.retry') }}
+      </Button>
     </div>
 
     <!-- 统计分析组件 -->
     <BudgetStatsAnalysis />
   </div>
 </template>
-
-<style scoped>
-.budget-stats-page {
-  padding: 20px;
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-.page-header {
-  margin-bottom: 24px;
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  flex-wrap: wrap;
-  gap: 16px;
-}
-
-.page-title h1 {
-  font-size: 24px;
-  font-weight: bold;
-  color: #333;
-  margin: 0 0 8px 0;
-}
-
-.page-description {
-  color: #666;
-  font-size: 14px;
-  margin: 0;
-}
-
-.page-actions {
-  display: flex;
-  gap: 8px;
-}
-
-.refresh-button {
-  padding: 8px 16px;
-  background: #1890ff;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  font-size: 14px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.refresh-button:hover {
-  background: #40a9ff;
-}
-
-.refresh-button:disabled {
-  background: #d9d9d9;
-  cursor: not-allowed;
-}
-
-/* 旋转动画 */
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.animate-spin {
-  animation: spin 1s linear infinite;
-}
-
-.back-button {
-  display: flex;
-  align-items: center;
-  padding: 8px 16px;
-  background: #f5f5f5;
-  border: 1px solid #d9d9d9;
-  border-radius: 4px;
-  font-size: 14px;
-  color: #666;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.back-button:hover {
-  background: #e6f7ff;
-  border-color: #40a9ff;
-  color: #1890ff;
-}
-
-.error-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 40px;
-  background: #fff2f0;
-  border: 1px solid #ffccc7;
-  border-radius: 8px;
-  margin-bottom: 16px;
-}
-
-.error-icon {
-  font-size: 48px;
-  margin-bottom: 16px;
-}
-
-.error-message {
-  color: #ff4d4f;
-  font-size: 16px;
-  margin-bottom: 16px;
-  text-align: center;
-}
-
-.retry-button {
-  padding: 8px 16px;
-  background: #ff4d4f;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  font-size: 14px;
-  cursor: pointer;
-}
-
-.retry-button:hover {
-  background: #ff7875;
-}
-
-@media (max-width: 768px) {
-  .budget-stats-page {
-    padding: 16px;
-  }
-  .page-title h1 {
-    font-size: 20px;
-  }
-}
-</style>

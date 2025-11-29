@@ -42,23 +42,34 @@ function handleSaveTemplate() {
 </script>
 
 <template>
-  <div class="split-templates-page">
-    <div class="page-header">
-      <div class="header-left">
-        <h1 class="page-title">
+  <div class="w-full h-full p-4 sm:p-6 lg:p-8">
+    <!-- 页面头部 -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 sm:mb-8">
+      <!-- 左侧标题区域 -->
+      <div class="flex-1 min-w-0">
+        <h1 class="text-2xl sm:text-3xl font-semibold text-gray-900 dark:text-white mb-2 truncate">
           分摊模板管理
         </h1>
-        <p class="page-subtitle">
+        <p class="text-sm text-gray-600 dark:text-gray-400">
           创建和管理分摊规则模板
         </p>
       </div>
-      <div class="header-right">
-        <Button variant="primary" size="sm" @click="handleConfigureRule">
-          创建新模板
+
+      <!-- 右侧操作区域 -->
+      <div class="flex items-center gap-3 shrink-0">
+        <Button
+          variant="primary"
+          size="sm"
+          class="w-full sm:w-auto"
+          @click="handleConfigureRule"
+        >
+          <span class="hidden sm:inline">创建新模板</span>
+          <span class="sm:hidden">新建</span>
         </Button>
       </div>
     </div>
 
+    <!-- 模板列表 -->
     <SplitTemplateList
       @edit-template="handleEditTemplate"
       @configure-rule="handleConfigureRule"
@@ -80,40 +91,3 @@ function handleSaveTemplate() {
     />
   </div>
 </template>
-
-<style scoped>
-.split-templates-page {
-  width: 100%;
-  height: 100%;
-  padding: 24px;
-}
-
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 24px;
-}
-
-.header-left {
-  flex: 1;
-}
-
-.page-title {
-  font-size: 24px;
-  font-weight: 600;
-  color: #1f2937;
-  margin: 0 0 8px 0;
-}
-
-.page-subtitle {
-  font-size: 14px;
-  color: #6b7280;
-  margin: 0;
-}
-
-.header-right {
-  display: flex;
-  gap: 12px;
-}
-</style>

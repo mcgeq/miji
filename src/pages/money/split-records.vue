@@ -11,14 +11,7 @@ definePage({
 </script>
 
 <template>
-  <div class="split-records-page">
+  <div class="w-full h-full">
     <SplitRecordView />
   </div>
 </template>
-
-<style scoped>
-.split-records-page {
-  width: 100%;
-  height: 100%;
-}
-</style>

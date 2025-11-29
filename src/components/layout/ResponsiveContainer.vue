@@ -1,15 +1,11 @@
 <script setup lang="ts">
 // 响应式容器组件，优化移动端体验
 interface Props {
-  maxWidth?: string;
-  padding?: string;
-  mobilePadding?: string;
+  maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '4xl' | '5xl' | '6xl' | '7xl' | 'full';
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  maxWidth: '1200px',
-  padding: '1rem',
-  mobilePadding: '0.75rem',
+  maxWidth: '5xl', // 对应 1200px 左右
 });
 
 // 检测屏幕尺寸
@@ -31,44 +27,36 @@ onUnmounted(() => {
   window.removeEventListener('resize', updateScreenSize);
 });
 
-// 动态样式
-const containerStyle = computed(() => ({
-  maxWidth: props.maxWidth,
-  padding: isMobile.value ? props.mobilePadding : props.padding,
-  margin: '0 auto',
-}));
+// 最大宽度映射
+const maxWidthClass = computed(() => {
+  const widthMap = {
+    'sm': 'max-w-sm',
+    'md': 'max-w-md',
+    'lg': 'max-w-lg',
+    'xl': 'max-w-xl',
+    '2xl': 'max-w-2xl',
+    '4xl': 'max-w-4xl',
+    '5xl': 'max-w-5xl',
+    '6xl': 'max-w-6xl',
+    '7xl': 'max-w-7xl',
+    'full': 'max-w-full',
+  };
+  return widthMap[props.maxWidth];
+});
 </script>
 
 <template>
   <div
-    class="responsive-container"
-    :class="{
-      'is-mobile': isMobile,
-      'is-tablet': isTablet,
-      'is-desktop': !isMobile && !isTablet,
-    }"
-    :style="containerStyle"
+    class="w-full mx-auto p-3 sm:p-4 transition-all duration-300"
+    :class="[
+      maxWidthClass,
+      {
+        'is-mobile': isMobile,
+        'is-tablet': isTablet,
+        'is-desktop': !isMobile && !isTablet,
+      },
+    ]"
   >
     <slot :is-mobile="isMobile" :is-tablet="isTablet" />
   </div>
 </template>
-
-<style scoped>
-.responsive-container {
-  width: 100%;
-  transition: padding 0.3s ease;
-}
-
-/* 移动端优化 */
-.responsive-container.is-mobile {
-  /* 移动端特定样式 */
-}
-
-.responsive-container.is-tablet {
-  /* 平板端特定样式 */
-}
-
-.responsive-container.is-desktop {
-  /* 桌面端特定样式 */
-}
-</style>

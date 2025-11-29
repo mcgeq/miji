@@ -4,9 +4,13 @@ import { useRoute } from 'vue-router';
 import BudgetAlertPanel from '@/components/common/money/BudgetAlertPanel.vue';
 import BudgetAllocationCard from '@/components/common/money/BudgetAllocationCard.vue';
 import BudgetAllocationEditor from '@/components/common/money/BudgetAllocationEditor.vue';
+import Button from '@/components/ui/Button.vue';
 import Modal from '@/components/ui/Modal.vue';
+import Select from '@/components/ui/Select.vue';
+import Spinner from '@/components/ui/Spinner.vue';
 import { useBudgetStore, useCategoryStore, useFamilyMemberStore } from '@/stores/money';
 import { useBudgetAllocationStore } from '@/stores/money/budget-allocation-store';
+import type { SelectOption } from '@/components/ui/Select.vue';
 import type {
   BudgetAlertResponse,
   BudgetAllocationCreateRequest,
@@ -188,32 +192,53 @@ watch(budgetSerialNum, newId => {
     loadData();
   }
 });
+
+// 状态选项
+const statusOptions: SelectOption[] = [
+  { value: '', label: '全部状态' },
+  { value: 'ACTIVE', label: '活动中' },
+  { value: 'PAUSED', label: '已暂停' },
+  { value: 'COMPLETED', label: '已完成' },
+];
+
+// 预警状态选项
+const alertStatusOptions: SelectOption[] = [
+  { value: '', label: '全部预警' },
+  { value: 'exceeded', label: '已超支' },
+  { value: 'warning', label: '预警中' },
+  { value: 'normal', label: '正常' },
+];
 </script>
 
 <template>
-  <div class="budget-allocations-page">
+  <div class="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
     <!-- 页面头部 -->
-    <div class="page-header">
-      <div class="header-content">
-        <h1 class="page-title">
+    <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 pb-5 sm:pb-6 mb-6 border-b border-gray-200 dark:border-gray-700">
+      <div class="flex-1 min-w-0">
+        <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2 truncate">
           预算分配管理
         </h1>
-        <p class="page-description">
+        <p class="text-sm text-gray-600 dark:text-gray-400">
           家庭预算分配、超支控制和智能预警
         </p>
       </div>
-      <div class="header-actions">
-        <button class="btn-create" @click="showEditor = true">
-          <span class="icon">➕</span>
-          <span>创建分配</span>
-        </button>
+      <div class="flex items-center gap-3 shrink-0">
+        <Button
+          variant="primary"
+          size="md"
+          class="w-full sm:w-auto"
+          @click="showEditor = true"
+        >
+          <span class="hidden sm:inline">➕ 创建分配</span>
+          <span class="sm:hidden">➕ 创建</span>
+        </Button>
       </div>
     </div>
 
     <!-- 预警面板 -->
     <BudgetAlertPanel
       v-if="alerts.length > 0"
-      class="alerts-container"
+      class="mb-6"
       :alerts="alerts"
       :show-clear-button="true"
       :show-stats="true"
@@ -222,126 +247,125 @@ watch(budgetSerialNum, newId => {
     />
 
     <!-- 统计信息 -->
-    <div class="stats-section">
-      <div class="stat-card">
-        <div class="stat-value">
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 mb-6">
+      <!-- 总分配 -->
+      <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 sm:p-5 text-center transition-all hover:-translate-y-0.5 hover:shadow-lg">
+        <div class="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">
           ¥{{ statistics.totalAllocated.toFixed(2) }}
         </div>
-        <div class="stat-label">
+        <div class="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400">
           总分配
         </div>
       </div>
-      <div class="stat-card">
-        <div class="stat-value">
+
+      <!-- 已使用 -->
+      <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 sm:p-5 text-center transition-all hover:-translate-y-0.5 hover:shadow-lg">
+        <div class="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">
           ¥{{ statistics.totalUsed.toFixed(2) }}
         </div>
-        <div class="stat-label">
+        <div class="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400">
           已使用
         </div>
       </div>
-      <div class="stat-card">
-        <div class="stat-value">
+
+      <!-- 使用率 -->
+      <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 sm:p-5 text-center transition-all hover:-translate-y-0.5 hover:shadow-lg">
+        <div class="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">
           {{ statistics.overallUsageRate.toFixed(1) }}%
         </div>
-        <div class="stat-label">
+        <div class="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400">
           使用率
         </div>
       </div>
-      <div class="stat-card exceeded">
-        <div class="stat-value">
+
+      <!-- 超支数 -->
+      <div class="bg-white dark:bg-gray-800 border-l-4 border-l-red-500 border-r border-r-gray-200 dark:border-r-gray-700 border-t border-t-gray-200 dark:border-t-gray-700 border-b border-b-gray-200 dark:border-b-gray-700 rounded-xl p-4 sm:p-5 text-center transition-all hover:-translate-y-0.5 hover:shadow-lg">
+        <div class="text-2xl sm:text-3xl font-bold text-red-600 dark:text-red-400 mb-2">
           {{ statistics.exceeded }}
         </div>
-        <div class="stat-label">
+        <div class="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400">
           超支数
         </div>
       </div>
-      <div class="stat-card warning">
-        <div class="stat-value">
+
+      <!-- 预警数 -->
+      <div class="bg-white dark:bg-gray-800 border-l-4 border-l-yellow-500 border-r border-r-gray-200 dark:border-r-gray-700 border-t border-t-gray-200 dark:border-t-gray-700 border-b border-b-gray-200 dark:border-b-gray-700 rounded-xl p-4 sm:p-5 text-center transition-all hover:-translate-y-0.5 hover:shadow-lg">
+        <div class="text-2xl sm:text-3xl font-bold text-yellow-600 dark:text-yellow-400 mb-2">
           {{ statistics.warning }}
         </div>
-        <div class="stat-label">
+        <div class="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400">
           预警数
         </div>
       </div>
     </div>
 
     <!-- 筛选和排序 -->
-    <div class="filters-section">
-      <div class="section-header">
-        <h2>分配列表</h2>
-        <span class="count">共 {{ filteredAllocations.length }} 项</span>
+    <div class="mb-5">
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3">
+        <h2 class="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white">
+          分配列表
+        </h2>
+        <span class="text-sm text-gray-600 dark:text-gray-400">
+          共 {{ filteredAllocations.length }} 项
+        </span>
       </div>
-      <div class="filters">
-        <select v-model="filter.status" class="filter-select">
-          <option value="">
-            全部状态
-          </option>
-          <option value="ACTIVE">
-            活动中
-          </option>
-          <option value="PAUSED">
-            已暂停
-          </option>
-          <option value="COMPLETED">
-            已完成
-          </option>
-        </select>
-        <select v-model="filter.alertStatus" class="filter-select">
-          <option value="">
-            全部预警
-          </option>
-          <option value="exceeded">
-            已超支
-          </option>
-          <option value="warning">
-            预警中
-          </option>
-          <option value="normal">
-            正常
-          </option>
-        </select>
+      <div class="flex flex-col sm:flex-row gap-3">
+        <Select
+          v-model="filter.status"
+          :options="statusOptions"
+          placeholder="全部状态"
+          size="md"
+          class="w-full sm:w-48"
+        />
+        <Select
+          v-model="filter.alertStatus"
+          :options="alertStatusOptions"
+          placeholder="全部预警"
+          size="md"
+          class="w-full sm:w-48"
+        />
       </div>
     </div>
 
     <!-- 加载状态 -->
-    <div v-if="loading" class="loading-container">
-      <div class="loading-spinner" />
-      <div class="loading-text">
+    <div v-if="loading" class="flex flex-col items-center justify-center py-16 sm:py-20">
+      <Spinner size="lg" variant="spin" color="primary" />
+      <div class="mt-4 text-sm text-gray-600 dark:text-gray-400">
         加载中...
       </div>
     </div>
 
     <!-- 错误状态 -->
-    <div v-else-if="error" class="error-container">
-      <div class="error-icon">
+    <div v-else-if="error" class="flex flex-col items-center justify-center py-16 sm:py-20 px-4 bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800 rounded-xl">
+      <div class="text-5xl sm:text-6xl mb-4">
         ⚠️
       </div>
-      <div class="error-message">
+      <div class="text-base sm:text-lg text-red-600 dark:text-red-400 mb-4 text-center">
         {{ error }}
       </div>
-      <button class="btn-retry" @click="loadData">
+      <Button variant="danger" size="md" @click="loadData">
         重试
-      </button>
+      </Button>
     </div>
 
     <!-- 空状态 -->
-    <div v-else-if="filteredAllocations.length === 0" class="empty-container">
-      <div class="empty-icon">
+    <div v-else-if="filteredAllocations.length === 0" class="flex flex-col items-center justify-center py-16 sm:py-20 px-4 bg-gray-50 dark:bg-gray-800/50 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-xl text-center">
+      <div class="text-5xl sm:text-6xl mb-4 opacity-50">
         📊
       </div>
-      <div class="empty-text">
+      <div class="text-lg font-semibold text-gray-900 dark:text-white mb-2">
         暂无预算分配
       </div>
-      <div class="empty-subtitle">
+      <div class="text-sm text-gray-600 dark:text-gray-400 mb-6">
         点击"创建分配"开始管理家庭预算
       </div>
-      <button class="btn-create-empty" @click="showEditor = true">
+      <Button variant="primary" size="md" @click="showEditor = true">
         创建第一个分配
-      </button>
+      </Button>
     </div>
 
     <!-- 分配列表 -->
-    <div v-else class="allocations-grid">
+    <div v-else class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
       <BudgetAllocationCard
         v-for="allocation in filteredAllocations"
         :key="allocation.serialNum"
@@ -373,317 +397,3 @@ watch(budgetSerialNum, newId => {
     </Modal>
   </div>
 </template>
-
-<style scoped>
-.budget-allocations-page {
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 24px;
-}
-
-/* 页面头部 */
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 24px;
-  padding-bottom: 20px;
-  border-bottom: 1px solid var(--color-base-300);
-}
-
-.header-content {
-  flex: 1;
-}
-
-.page-title {
-  margin: 0 0 8px 0;
-  font-size: 28px;
-  font-weight: 700;
-  color: var(--color-base-content);
-}
-
-.page-description {
-  margin: 0;
-  font-size: 14px;
-  color: var(--color-neutral);
-}
-
-.header-actions {
-  display: flex;
-  gap: 12px;
-}
-
-.btn-create {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 20px;
-  background-color: var(--color-primary);
-  color: var(--color-primary-content);
-  border: none;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.btn-create:hover {
-  background-color: var(--color-primary-hover);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-md);
-}
-
-.btn-create .icon {
-  font-size: 16px;
-}
-
-/* 预警容器 */
-.alerts-container {
-  margin-bottom: 24px;
-}
-
-/* 统计信息 */
-.stats-section {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 16px;
-  margin-bottom: 24px;
-}
-
-.stat-card {
-  background: var(--color-base-100);
-  border: 1px solid var(--color-base-300);
-  border-radius: 12px;
-  padding: 20px;
-  text-align: center;
-  transition: all 0.2s;
-}
-
-.stat-card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
-}
-
-.stat-card.exceeded {
-  border-left: 4px solid var(--color-error);
-}
-
-.stat-card.warning {
-  border-left: 4px solid var(--color-warning);
-}
-
-.stat-value {
-  font-size: 32px;
-  font-weight: 700;
-  color: var(--color-base-content);
-  margin-bottom: 8px;
-}
-
-.stat-card.exceeded .stat-value {
-  color: var(--color-error);
-}
-
-.stat-card.warning .stat-value {
-  color: var(--color-warning);
-}
-
-.stat-label {
-  font-size: 12px;
-  color: var(--color-neutral);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-/* 筛选区域 */
-.filters-section {
-  margin-bottom: 20px;
-}
-
-.section-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
-}
-
-.section-header h2 {
-  margin: 0;
-  font-size: 20px;
-  font-weight: 600;
-  color: var(--color-base-content);
-}
-
-.count {
-  font-size: 14px;
-  color: var(--color-neutral);
-}
-
-.filters {
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-.filter-select {
-  padding: 8px 12px;
-  background: var(--color-base-100);
-  border: 1px solid var(--color-base-300);
-  border-radius: 6px;
-  font-size: 14px;
-  color: var(--color-base-content);
-  cursor: pointer;
-  transition: border-color 0.2s;
-}
-
-.filter-select:hover {
-  border-color: var(--color-neutral);
-}
-
-.filter-select:focus {
-  outline: none;
-  border-color: var(--color-primary);
-}
-
-/* 加载状态 */
-.loading-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 64px 24px;
-}
-
-.loading-spinner {
-  width: 48px;
-  height: 48px;
-  border: 4px solid var(--color-base-300);
-  border-top-color: var(--color-primary);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.loading-text {
-  margin-top: 16px;
-  font-size: 14px;
-  color: var(--color-neutral);
-}
-
-/* 错误状态 */
-.error-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 64px 24px;
-  background: color-mix(in oklch, var(--color-error) 10%, var(--color-base-100));
-  border: 1px solid var(--color-error);
-  border-radius: 12px;
-}
-
-.error-icon {
-  font-size: 48px;
-  margin-bottom: 16px;
-}
-
-.error-message {
-  font-size: 16px;
-  color: var(--color-error);
-  margin-bottom: 16px;
-}
-
-.btn-retry {
-  padding: 8px 16px;
-  background: var(--color-error);
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.btn-retry:hover {
-  background: var(--color-error-hover);
-}
-
-/* 空状态 */
-.empty-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 64px 24px;
-  background: var(--color-base-100);
-  border: 2px dashed var(--color-base-300);
-  border-radius: 12px;
-  text-align: center;
-}
-
-.empty-icon {
-  font-size: 64px;
-  margin-bottom: 16px;
-  opacity: 0.5;
-}
-
-.empty-text {
-  font-size: 18px;
-  font-weight: 600;
-  color: var(--color-base-content);
-  margin-bottom: 8px;
-}
-
-.empty-subtitle {
-  font-size: 14px;
-  color: var(--color-neutral);
-  margin-bottom: 24px;
-}
-
-.btn-create-empty {
-  padding: 12px 24px;
-  background: var(--color-primary);
-  color: var(--color-primary-content);
-  border: none;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.btn-create-empty:hover {
-  background: var(--color-primary-hover);
-}
-
-/* 分配列表网格 */
-.allocations-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
-  gap: 16px;
-}
-
-/* 响应式 */
-@media (max-width: 768px) {
-  .budget-allocations-page {
-    padding: 16px;
-  }
-
-  .page-header {
-    flex-direction: column;
-    gap: 16px;
-  }
-
-  .stats-section {
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  }
-
-  .allocations-grid {
-    grid-template-columns: 1fr;
-  }
-}
-</style>

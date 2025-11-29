@@ -38,7 +38,7 @@ function handleCloseModal() {
 </script>
 
 <template>
-  <div class="members-page">
+  <div class="w-full h-full">
     <FamilyMemberList
       :family-ledger-serial-num="currentLedgerSerialNum"
       @add-member="handleAddMember"
@@ -53,10 +53,3 @@ function handleCloseModal() {
     />
   </div>
 </template>
-
-<style scoped>
-.members-page {
-  width: 100%;
-  height: 100%;
-}
-</style>

@@ -625,7 +625,7 @@ onMounted(() => {
         </div>
 
         <!-- 已选账户列表 -->
-        <div v-if="selectedAccounts.length > 0" class="max-h-40 overflow-y-auto flex flex-col gap-2 scrollbar-none">
+        <div v-if="selectedAccounts.length > 0" class="max-h-40 overflow-y-auto flex flex-col gap-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           <div
             v-for="account in selectedAccounts"
             :key="account.serialNum"
@@ -662,7 +662,7 @@ onMounted(() => {
               <LucideX :size="16" />
             </button>
           </div>
-          <div class="overflow-y-auto p-2 flex flex-col gap-1 scrollbar-none">
+          <div class="overflow-y-auto p-2 flex flex-col gap-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
             <label
               v-for="account in accounts"
               :key="account.serialNum"
@@ -692,14 +692,3 @@ onMounted(() => {
     />
   </Modal>
 </template>
-
-<style scoped>
-.scrollbar-none {
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE/Edge */
-}
-
-.scrollbar-none::-webkit-scrollbar {
-  display: none; /* Chrome/Safari/Opera */
-}
-</style>
