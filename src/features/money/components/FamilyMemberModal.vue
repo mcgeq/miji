@@ -2,6 +2,7 @@
 import ColorSelector from '@/components/common/ColorSelector.vue';
 import { Checkbox, FormRow, Input, Modal, Select } from '@/components/ui';
 import FamilyMemberSelector from '@/components/ui/FamilyMemberSelector.vue';
+import { MoneyDb } from '@/services/money/money';
 import { useFamilyMemberStore } from '@/stores/money';
 import { toast } from '@/utils/toast';
 import { userPreferences } from '@/utils/userPreferences';
@@ -179,7 +180,6 @@ async function saveMember() {
     } else {
       // 创建成员前，先检查名称是否已存在
       // Checking if member name exists
-      const { MoneyDb } = await import('@/services/money/money');
       const existingMembers = await MoneyDb.listFamilyMembers();
       const existingMember = existingMembers.find((m: FamilyMember) => m.name === form.name);
 

@@ -190,15 +190,20 @@ function Build-Android {
             bun run tauri android dev
         }
         else {
-            bun run tauri android build
+            # 只构建 arm64 架构的 APK，避免 universal APK 导致体积过大
+            # arm64 (aarch64) 是现代 Android 设备的主流架构
+            # 这样可以将 APK 大小从 160M 降低到 40M
+            bun run tauri android build --apk --target aarch64
         }
         
         if ($LASTEXITCODE -eq 0) {
             Write-Success "Android Mobile build successful!"
             Write-Host ""
             Write-ColorOutput "APK Location:" "Yellow"
-            Write-Host "  * Debug: src-tauri\gen\android\app\build\outputs\apk\debug\"
-            Write-Host "  * Release: src-tauri\gen\android\app\build\outputs\apk\release\"
+            Write-Host "  * arm64-v8a APK: src-tauri\gen\android\app\build\outputs\apk\arm64-v8a\release\"
+            Write-Host ""
+            Write-ColorOutput "Note: Built for arm64 only (modern devices)" "Cyan"
+            Write-Host "  For universal APK (all architectures), remove --target flag"
         }
         else {
             Write-Error "Android Mobile build failed"

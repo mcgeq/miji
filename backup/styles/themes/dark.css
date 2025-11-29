@@ -59,6 +59,8 @@
     --shadow-sm: 0 1px 2px 0 oklch(0% 0 0 / 0.3);
     --shadow-md: 0 4px 6px -1px oklch(0% 0 0 / 0.4), 0 2px 4px -2px oklch(0% 0 0 / 0.3);
     --shadow-lg: 0 10px 15px -3px oklch(0% 0 0 / 0.5), 0 4px 6px -4px oklch(0% 0 0 / 0.4);
+    --shadow-xl: 0 20px 25px -5px oklch(0% 0 0 / 0.6), 0 8px 10px -6px oklch(0% 0 0 / 0.5);
+    --shadow-2xl: 0 25px 50px -12px oklch(0% 0 0 / 0.7);
 
     color-scheme: dark; /* 声明为深色主题 */
 }

@@ -1,6 +1,7 @@
 // src/stores/money/family-ledger-store.ts
 import { defineStore } from 'pinia';
 import { MoneyDb } from '@/services/money/money';
+import { onStoreEvent } from './store-events';
 import type {
   FamilyLedger,
   FamilyLedgerCreate,
@@ -270,6 +271,27 @@ export const useFamilyLedgerStore = defineStore('family-ledger', {
       this.loading = false;
       this.error = null;
       localStorage.removeItem('currentFamilyLedger');
+    },
+
+    /**
+     * 初始化事件监听器
+     * 监听其他 Store 发出的账本相关事件
+     */
+    initEventListeners() {
+      // 监听账本更新事件（例如成员数量变化）
+      onStoreEvent('ledger:updated', async ({ serialNum }) => {
+        try {
+          // 重新获取账本列表以更新数据
+          await this.fetchLedgers();
+
+          // 如果是当前账本，也刷新统计数据
+          if (this.currentLedger?.serialNum === serialNum) {
+            await this.fetchLedgerStats(serialNum);
+          }
+        } catch (error) {
+          console.error('Failed to handle ledger:updated event:', error);
+        }
+      });
     },
   },
 });

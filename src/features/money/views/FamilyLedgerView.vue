@@ -5,6 +5,7 @@ import { computed, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import ConfirmDialog from '@/components/common/ConfirmDialogCompat.vue';
 import Button from '@/components/ui/Button.vue';
+import { MoneyDb } from '@/services/money/money';
 import { useFamilyLedgerStore } from '@/stores/money';
 import { deepDiff } from '@/utils/diffObject';
 import { toast } from '@/utils/toast';
@@ -142,8 +143,6 @@ async function saveLedger(ledgerData: FamilyLedger & { selectedAccounts?: any[] 
 // 保存账本的成员
 async function saveLedgerMembers(ledgerSerialNum: string, members: FamilyMember[]) {
   try {
-    const { MoneyDb } = await import('@/services/money/money');
-
     // 获取现有的成员关联
     const existingLedgerMembers = await MoneyDb.listFamilyLedgerMembers();
     const existingMemberIds = existingLedgerMembers
@@ -221,8 +220,6 @@ async function saveLedgerMembers(ledgerSerialNum: string, members: FamilyMember[
 // 保存账本的账户关联
 async function saveLedgerAccounts(ledgerSerialNum: string, accounts: any[]) {
   try {
-    const { MoneyDb } = await import('@/services/money/money');
-
     // 获取现有的账户关联
     const existingLedgerAccounts = await MoneyDb.listFamilyLedgerAccountsByLedger(ledgerSerialNum);
     const existingAccountIds = existingLedgerAccounts.map(la => la.accountSerialNum);
