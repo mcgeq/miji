@@ -70,7 +70,7 @@ const shouldShowCount = computed(() => {
 </script>
 
 <template>
-  <div class="relative" :class="[fullWidth && 'w-full']">
+  <div class="relative w-full">
     <!-- 标签 -->
     <label
       v-if="label"

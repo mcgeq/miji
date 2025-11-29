@@ -81,7 +81,7 @@ function closeSubmenu() {
     >
       <div
         v-if="showSubmenu"
-        class="fixed bottom-16 left-1/2 -translate-x-1/2 bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 z-[1002] overflow-hidden flex items-center p-2 backdrop-blur-md"
+        class="fixed bottom-16 left-1/2 -translate-x-1/2 bg-white/90 dark:bg-gray-900/90 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 z-[1002] overflow-hidden flex items-center px-3 py-2.5 gap-3 backdrop-blur-lg"
       >
         <template
           v-for="(submenuItem, index) in menu.find(item => item.name === showSubmenu)?.submenu"
@@ -89,26 +89,36 @@ function closeSubmenu() {
         >
           <div
             :title="submenuItem.title"
-            class="w-12 h-12 cursor-pointer transition-all duration-200 flex justify-center items-center rounded-xl group" :class="[
+            class="relative flex flex-col items-center justify-center py-2 px-3 rounded-xl cursor-pointer transition-all duration-200 group" :class="[
               isSubmenuActive(submenuItem)
-                ? 'bg-blue-500 dark:bg-blue-600 shadow-lg shadow-blue-500/30'
-                : 'hover:bg-gray-100 dark:hover:bg-gray-700',
+                ? 'bg-blue-50 dark:bg-blue-900/30'
+                : 'hover:bg-gray-100 dark:hover:bg-gray-800',
             ]"
             @click="navigateSubmenu(submenuItem)"
           >
+            <!-- 选中指示器 -->
+            <div
+              v-if="isSubmenuActive(submenuItem)"
+              class="absolute -top-0.5 left-1/2 -translate-x-1/2 w-8 h-1 bg-blue-500 dark:bg-blue-400 rounded-b-full"
+            />
             <component
               :is="submenuItem.icon"
               class="w-6 h-6 transition-all duration-200" :class="[
                 isSubmenuActive(submenuItem)
-                  ? 'text-white'
+                  ? 'text-blue-600 dark:text-blue-400 scale-110'
                   : 'text-gray-600 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-200 group-hover:scale-110',
               ]"
+            />
+            <!-- 激活动画点 -->
+            <div
+              v-if="isSubmenuActive(submenuItem)"
+              class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 bg-blue-500/10 dark:bg-blue-400/10 rounded-full animate-ping"
             />
           </div>
           <!-- 分隔线 -->
           <div
             v-if="index < menu.find(item => item.name === showSubmenu)!.submenu!.length - 1"
-            class="w-px h-4/5 bg-gray-200 dark:bg-gray-700 mx-2"
+            class="w-px h-8 bg-gray-200 dark:bg-gray-700"
           />
         </template>
       </div>

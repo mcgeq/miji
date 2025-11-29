@@ -55,28 +55,28 @@ const labelAlignClass = computed(() => {
 
 <template>
   <div
-    class="flex gap-4 mb-3" :class="[
-      fullWidth ? 'flex-col items-start' : 'items-center',
+    class="flex items-center mb-3" :class="[
+      fullWidth ? 'flex-col items-start gap-1.5' : 'max-sm:gap-2 gap-4',
     ]"
   >
     <!-- 标签 -->
     <label
       v-if="label"
-      class="text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap shrink-0" :class="[
-        labelWidthClass,
+      class="text-sm font-medium text-gray-700 dark:text-gray-300 shrink-0" :class="[
+        fullWidth ? 'w-full' : 'max-sm:w-16 max-sm:text-xs',
+        !fullWidth && labelWidthClass,
         labelAlignClass,
-        fullWidth && 'mb-1.5',
       ]"
     >
       {{ label }}
       <!-- 必填标记 -->
-      <span v-if="required" class="text-red-500 ml-1">*</span>
+      <span v-if="required" class="text-red-500 ml-0.5">*</span>
       <!-- 可选标记 -->
       <span v-if="optional" class="text-gray-400 font-normal text-xs ml-1">(可选)</span>
     </label>
 
     <!-- 输入框容器 -->
-    <div class="flex-1" :class="[fullWidth ? 'w-full' : 'min-w-0']">
+    <div :class="[fullWidth ? 'w-full' : 'flex-1 min-w-0']">
       <slot />
 
       <!-- 错误消息 -->
