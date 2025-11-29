@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
+import Button from '@/components/ui/Button.vue';
 import { useMoneyAuth } from '@/composables/useMoneyAuth';
 import AdvancedTransactionCharts from '@/features/money/components/AdvancedTransactionCharts.vue';
 import CategoryChartsSwitcher from '@/features/money/components/CategoryChartsSwitcher.vue';
@@ -138,13 +139,13 @@ onMounted(() => {
           <span class="date-separator">至</span>
           <input v-model="dateRange.end" type="date" class="date-input">
         </div>
-        <button class="btn-secondary" @click="loadStatistics">
+        <Button variant="secondary" size="sm" @click="loadStatistics">
           刷新
-        </button>
+        </Button>
         <div class="export-dropdown">
-          <button class="btn-primary">
+          <Button variant="primary" size="sm">
             导出
-          </button>
+          </Button>
           <div class="dropdown-menu">
             <button @click="handleExport('csv')">
               CSV格式
@@ -305,35 +306,6 @@ onMounted(() => {
 .date-separator {
   color: #6b7280;
   font-size: 14px;
-}
-
-.btn-primary,
-.btn-secondary {
-  padding: 8px 16px;
-  border: none;
-  border-radius: 6px;
-  font-size: 14px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.btn-primary {
-  background-color: #3b82f6;
-  color: white;
-}
-
-.btn-primary:hover {
-  background-color: #2563eb;
-}
-
-.btn-secondary {
-  background-color: #f3f4f6;
-  color: #374151;
-  border: 1px solid #d1d5db;
-}
-
-.btn-secondary:hover {
-  background-color: #e5e7eb;
 }
 
 .export-dropdown {

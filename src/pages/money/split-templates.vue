@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import Button from '@/components/ui/Button.vue';
 import SplitRuleConfigurator from '@/features/money/components/SplitRuleConfigurator.vue';
 import SplitTemplateList from '@/features/money/components/SplitTemplateList.vue';
 import SplitTemplateModal from '@/features/money/components/SplitTemplateModal.vue';
@@ -52,9 +53,9 @@ function handleSaveTemplate() {
         </p>
       </div>
       <div class="header-right">
-        <button class="btn-primary" @click="handleConfigureRule">
+        <Button variant="primary" size="sm" @click="handleConfigureRule">
           创建新模板
-        </button>
+        </Button>
       </div>
     </div>
 
@@ -114,20 +115,5 @@ function handleSaveTemplate() {
 .header-right {
   display: flex;
   gap: 12px;
-}
-
-.btn-primary {
-  padding: 8px 16px;
-  background-color: #3b82f6;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  font-size: 14px;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.btn-primary:hover {
-  background-color: #2563eb;
 }
 </style>
