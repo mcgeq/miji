@@ -36,7 +36,7 @@ declare module 'vue' {
     EnhancedUserSelector: typeof import('./src/components/ui/EnhancedUserSelector.vue')['default']
     FamilyMemberSelector: typeof import('./src/components/ui/FamilyMemberSelector.vue')['default']
     FilterBar: typeof import('./src/components/common/FilterBar.vue')['default']
-    FormRow: typeof import('./src/components/common/FormRow.vue')['default']
+    FormRow: typeof import('./src/components/ui/FormRow.vue')['default']
     FormSection: typeof import('./src/components/ui/FormSection.vue')['default']
     GenericItem: typeof import('./src/components/common/GenericItem.vue')['default']
     GenericViewItem: typeof import('./src/components/common/GenericViewItem.vue')['default']
