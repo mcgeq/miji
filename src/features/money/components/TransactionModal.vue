@@ -833,173 +833,173 @@ watch(
       </FormRow>
 
       <!-- 关联账本 -->
-      <div v-if="!isReadonlyMode || selectedLedgers.length > 0" class="flex items-center gap-4 mb-3">
-        <label class="label-with-hint">
-          关联账本
-        </label>
-        <div class="ledger-selector-compact">
-          <div class="selector-row">
-            <div v-if="selectedLedgers.length === 0" class="empty-selection">
-              <LucideInbox class="empty-icon" />
-              <span>未选择账本</span>
+      <FormRow v-if="!isReadonlyMode || selectedLedgers.length > 0" label="关联账本" optional>
+        <div class="flex items-center gap-2 w-full">
+          <div class="flex-1 flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 min-h-[42px]">
+            <div v-if="selectedLedgers.length === 0" class="flex items-center gap-2 text-gray-400 dark:text-gray-500">
+              <LucideInbox class="w-4 h-4" />
+              <span class="text-sm">未选择账本</span>
             </div>
-            <div v-else class="selected-items-compact">
-              <span class="selected-item">
+            <div v-else class="flex items-center gap-2 flex-wrap">
+              <span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 rounded-md text-sm font-medium">
                 {{ availableLedgers.find(l => l.serialNum === selectedLedgers[0])?.name || selectedLedgers[0] }}
                 <button
                   v-if="!isReadonlyMode"
                   type="button"
-                  class="remove-btn"
+                  class="ml-1 hover:bg-blue-100 dark:hover:bg-blue-900/40 rounded p-0.5 transition-colors"
                   @click="selectedLedgers = selectedLedgers.filter(id => id !== selectedLedgers[0])"
                 >
-                  <LucideX />
+                  <LucideX class="w-3 h-3" />
                 </button>
               </span>
               <span
                 v-if="selectedLedgers.length > 1"
-                class="more-count"
+                class="inline-flex items-center px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-md text-xs font-medium"
                 :title="selectedLedgers.slice(1).map(id => availableLedgers.find(l => l.serialNum === id)?.name || id).join('\n')"
               >
                 +{{ selectedLedgers.length - 1 }}
               </span>
             </div>
-            <button
-              v-if="!isReadonlyMode"
-              type="button"
-              class="w-8 h-8 flex items-center justify-center rounded-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:border-blue-500 dark:hover:border-blue-400 transition-all"
-              :title="showLedgerSelector ? '收起' : '选择账本'"
-              @click="showLedgerSelector = !showLedgerSelector"
-            >
-              <LucideChevronDown v-if="!showLedgerSelector" class="w-4 h-4" />
-              <LucideChevronUp v-else class="w-4 h-4" />
-            </button>
           </div>
+          <button
+            v-if="!isReadonlyMode"
+            type="button"
+            class="w-9 h-9 flex items-center justify-center rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-blue-500 dark:hover:border-blue-400 transition-all"
+            :title="showLedgerSelector ? '收起' : '选择账本'"
+            @click="showLedgerSelector = !showLedgerSelector"
+          >
+            <LucideChevronDown v-if="!showLedgerSelector" class="w-4 h-4" />
+            <LucideChevronUp v-else class="w-4 h-4" />
+          </button>
         </div>
-      </div>
+      </FormRow>
 
       <!-- 账本选择下拉 -->
-      <div v-if="!isReadonlyMode && showLedgerSelector" class="flex items-center gap-4 mb-3">
-        <label />
-        <div class="selector-dropdown">
-          <div class="dropdown-header">
-            <span>选择账本</span>
-            <button type="button" @click="showLedgerSelector = false">
-              <LucideX />
+      <div v-if="!isReadonlyMode && showLedgerSelector" class="mb-4 -mt-2">
+        <div class="p-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-900">
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-sm font-semibold text-gray-900 dark:text-white">选择账本</span>
+            <button
+              type="button"
+              class="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors"
+              @click="showLedgerSelector = false"
+            >
+              <LucideX class="w-4 h-4 text-gray-500 dark:text-gray-400" />
             </button>
           </div>
-          <div class="dropdown-content">
-            <div
+          <div class="flex flex-col gap-2 max-h-60 overflow-y-auto">
+            <label
               v-for="ledger in availableLedgers"
               :key="ledger.serialNum"
-              class="checkbox-item"
+              class="flex items-center gap-3 p-3 rounded-lg hover:bg-white dark:hover:bg-gray-800 border border-transparent hover:border-gray-200 dark:hover:border-gray-700 cursor-pointer transition-all"
             >
               <Checkbox
                 v-model="selectedLedgers"
                 :value="ledger.serialNum"
-              >
-                <span class="item-name">{{ ledger.name }}</span>
-                <span class="item-type">{{ ledger.ledgerType }}</span>
-              </Checkbox>
-            </div>
+              />
+              <div class="flex-1 flex items-center justify-between">
+                <span class="text-sm font-medium text-gray-900 dark:text-white">{{ ledger.name }}</span>
+                <span class="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded">{{ ledger.ledgerType }}</span>
+              </div>
+            </label>
           </div>
         </div>
       </div>
 
-      <!-- 分摊成员 -->
-      <div v-if="selectedLedgers.length > 0 && (!isReadonlyMode || selectedMembers.length > 0)" class="flex items-center gap-4 mb-3">
-        <label class="label-with-hint">
-          分摊成员
-        </label>
-        <div class="member-selector-with-hint">
-          <div class="member-selector-compact">
-            <div class="selector-row">
-              <div v-if="selectedMembers.length === 0" class="empty-selection">
-                <LucideUsers class="empty-icon" />
-                <span>未选择成员</span>
+      <!-- 分摆成员 -->
+      <FormRow v-if="selectedLedgers.length > 0 && (!isReadonlyMode || selectedMembers.length > 0)" label="分摆成员" optional>
+        <div class="flex flex-col gap-1.5 w-full">
+          <div class="flex items-center gap-2">
+            <div class="flex-1 flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 min-h-[42px]">
+              <div v-if="selectedMembers.length === 0" class="flex items-center gap-2 text-gray-400 dark:text-gray-500">
+                <LucideUsers class="w-4 h-4" />
+                <span class="text-sm">未选择成员</span>
               </div>
-              <div v-else class="selected-items-compact">
-                <span class="selected-item">
+              <div v-else class="flex items-center gap-2 flex-wrap">
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 rounded-md text-sm font-medium">
                   {{ availableMembers.find(m => m.serialNum === selectedMembers[0])?.name || selectedMembers[0] }}
                   <button
                     v-if="!isReadonlyMode"
                     type="button"
-                    class="remove-btn"
+                    class="ml-1 hover:bg-green-100 dark:hover:bg-green-900/40 rounded p-0.5 transition-colors"
                     @click="selectedMembers = selectedMembers.filter(id => id !== selectedMembers[0])"
                   >
-                    <LucideX />
+                    <LucideX class="w-3 h-3" />
                   </button>
                 </span>
                 <span
                   v-if="selectedMembers.length > 1"
-                  class="more-count"
+                  class="inline-flex items-center px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-md text-xs font-medium"
                   :title="selectedMembers.slice(1).map(id => availableMembers.find(m => m.serialNum === id)?.name || id).join('\n')"
                 >
                   +{{ selectedMembers.length - 1 }}
                 </span>
               </div>
-              <button
-                v-if="!isReadonlyMode"
-                type="button"
-                class="w-8 h-8 flex items-center justify-center rounded-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:border-blue-500 dark:hover:border-blue-400 transition-all"
-                :title="showMemberSelector ? '收起' : '选择成员'"
-                @click="showMemberSelector = !showMemberSelector"
-              >
-                <LucideChevronDown v-if="!showMemberSelector" class="w-4 h-4" />
-                <LucideChevronUp v-else class="w-4 h-4" />
-              </button>
             </div>
+            <button
+              v-if="!isReadonlyMode"
+              type="button"
+              class="w-9 h-9 flex items-center justify-center rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-blue-500 dark:hover:border-blue-400 transition-all"
+              :title="showMemberSelector ? '收起' : '选择成员'"
+              @click="showMemberSelector = !showMemberSelector"
+            >
+              <LucideChevronDown v-if="!showMemberSelector" class="w-4 h-4" />
+              <LucideChevronUp v-else class="w-4 h-4" />
+            </button>
           </div>
-          <!-- 小字提示 -->
-          <div v-if="!isReadonlyMode && selectedMembers.length === 0" class="member-hint-text">
+          <div v-if="!isReadonlyMode && selectedMembers.length === 0" class="text-xs text-gray-500 dark:text-gray-400">
             如不选择成员，则为个人交易
           </div>
         </div>
-      </div>
+      </FormRow>
 
       <!-- 成员选择下拉 -->
-      <div v-if="!isReadonlyMode && selectedLedgers.length > 0 && showMemberSelector" class="flex items-center gap-4 mb-3">
-        <label />
-        <div class="selector-dropdown">
-          <div class="dropdown-header">
-            <span>选择成员</span>
-            <div class="quick-actions">
+      <div v-if="!isReadonlyMode && selectedLedgers.length > 0 && showMemberSelector" class="mb-4 -mt-2">
+        <div class="p-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-900">
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-sm font-semibold text-gray-900 dark:text-white">选择成员</span>
+            <div class="flex items-center gap-2">
               <button
                 v-if="availableMembers.length > 0"
                 type="button"
-                class="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
+                class="flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
                 title="全选成员"
                 @click="selectAllMembers"
               >
-                <LucideUserPlus class="w-4 h-4" />
+                <LucideUserPlus class="w-3.5 h-3.5" />
                 全选
               </button>
               <button
                 v-if="selectedMembers.length > 0"
                 type="button"
-                class="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                class="flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
                 title="清空成员"
                 @click="clearMemberSelection"
               >
-                <LucideX class="w-4 h-4" />
+                <LucideX class="w-3.5 h-3.5" />
                 清空
               </button>
-              <button type="button" @click="showMemberSelector = false">
-                <LucideX />
+              <button
+                type="button"
+                class="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors"
+                @click="showMemberSelector = false"
+              >
+                <LucideX class="w-4 h-4 text-gray-500 dark:text-gray-400" />
               </button>
             </div>
           </div>
-          <div class="dropdown-content">
-            <div
+          <div class="flex flex-col gap-2 max-h-60 overflow-y-auto">
+            <label
               v-for="member in availableMembers"
               :key="member.serialNum"
-              class="checkbox-item"
+              class="flex items-center gap-3 p-3 rounded-lg hover:bg-white dark:hover:bg-gray-800 border border-transparent hover:border-gray-200 dark:hover:border-gray-700 cursor-pointer transition-all"
             >
               <Checkbox
                 v-model="selectedMembers"
                 :value="member.serialNum"
-                :label="member.name"
               />
-            </div>
+              <span class="text-sm font-medium text-gray-900 dark:text-white">{{ member.name }}</span>
+            </label>
           </div>
         </div>
       </div>
