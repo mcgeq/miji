@@ -260,7 +260,7 @@ function getTabIcon(iconName: string) {
     </div>
 
     <template v-else>
-      <div v-if="currentLedger" class="flex flex-col gap-6">
+      <div v-if="currentLedger" class="flex flex-col gap-6 max-w-7xl mx-auto">
         <header class="flex flex-col md:flex-row md:items-start md:justify-between gap-6">
           <button class="inline-flex items-center gap-2 px-3 py-2 border border-blue-200 dark:border-blue-800 rounded-lg bg-white dark:bg-gray-800 cursor-pointer text-gray-900 dark:text-gray-100 hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors" @click="goBack">
             <LucideArrowLeft class="w-4 h-4" />
@@ -375,7 +375,7 @@ function getTabIcon(iconName: string) {
                 创建家庭预算
               </Button>
             </div>
-            <div v-if="members.length" class="grid grid-cols-1 gap-5 mt-5 max-h-[350px] md:max-h-none overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+            <div v-if="members.length" class="grid grid-cols-1 gap-5 mt-5 max-h-[360px] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
               <article
                 v-for="member in members"
                 :key="member.serialNum"
@@ -432,7 +432,7 @@ function getTabIcon(iconName: string) {
               </div>
             </div>
 
-            <div class="max-h-[480px] md:max-h-[480px] overflow-y-auto overflow-x-hidden rounded-lg [scrollbar-width:thin] [scrollbar-color:rgb(209_213_219)_rgb(249_250_251)] [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-gray-50 [&::-webkit-scrollbar-track]:rounded [&::-webkit-scrollbar-thumb]:bg-gray-300 [&::-webkit-scrollbar-thumb]:rounded [&::-webkit-scrollbar-thumb:hover]:bg-blue-300">
+            <div class="max-h-[360px] overflow-y-auto overflow-x-hidden rounded-lg [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
               <TransactionTable
                 :transactions="memberTransactions"
                 :loading="transactionsLoading"
@@ -445,7 +445,7 @@ function getTabIcon(iconName: string) {
         </section>
 
         <!-- 结算中心 / 统计报表 -->
-        <section class="mt-4 mx-auto">
+        <section class="mt-8">
           <div class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-lg">
             <div v-if="activeTab === 'settlement'" class="w-full">
               <SettlementView />

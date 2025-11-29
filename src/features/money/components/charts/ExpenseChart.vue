@@ -51,7 +51,7 @@ function formatAmount(amount: number): string {
 </script>
 
 <template>
-  <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4" :style="{ height }">
+  <div :style="{ height }">
     <h4 v-if="title" class="text-base font-semibold text-gray-900 dark:text-white mb-4 text-center">
       {{ title }}
     </h4>
