@@ -134,73 +134,86 @@ const sizeClasses = {
           leave-to-class="opacity-0"
         >
           <ListboxOptions
-            class="absolute z-10 mt-1 w-full max-h-60 overflow-auto rounded-lg bg-white dark:bg-gray-800 py-1 shadow-lg ring-1 ring-black/5 dark:ring-white/10 focus:outline-none"
+            class="absolute z-10 mt-1 w-full max-h-60 overflow-auto rounded-xl bg-white dark:bg-gray-800 py-2 shadow-xl border border-gray-200 dark:border-gray-700 focus:outline-none [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
           >
             <!-- 搜索框 -->
-            <div v-if="searchable" class="px-2 py-2 border-b border-gray-200 dark:border-gray-700">
+            <div v-if="searchable" class="px-3 py-2 mb-1">
               <div class="relative">
                 <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
                   v-model="searchQuery"
                   type="text"
                   placeholder="搜索..."
-                  class="w-full pl-10 pr-8 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  class="w-full pl-10 pr-8 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-900/50 text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                   @click.stop
                 >
                 <button
                   v-if="searchQuery"
-                  class="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+                  class="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors"
                   @click="searchQuery = ''"
                 >
-                  <X class="w-3 h-3 text-gray-400" />
+                  <X class="w-3 h-3 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" />
                 </button>
               </div>
             </div>
 
             <!-- 选项列表 -->
             <ListboxOption
-              v-for="option in filteredOptions"
+              v-for="(option, index) in filteredOptions"
               :key="option.value"
               v-slot="{ active, selected }"
               :value="option.value"
               :disabled="option.disabled"
               as="template"
             >
-              <li
-                class="relative cursor-pointer select-none py-2 pl-10 pr-4" :class="[
-                  active ? 'bg-blue-600 text-white' : 'text-gray-900 dark:text-white',
-                  option.disabled && 'opacity-50 cursor-not-allowed',
-                ]"
-              >
-                <!-- 图标 -->
-                <component
-                  :is="option.icon"
-                  v-if="option.icon"
-                  class="inline-block w-4 h-4 mr-2"
-                />
+              <li class="px-2">
+                <!-- 分隔线 - 第一项除外 -->
+                <div v-if="index > 0" class="flex items-center justify-center py-1">
+                  <div class="w-[80%] h-px bg-gray-200 dark:bg-gray-700/50" />
+                </div>
 
-                <!-- 文本 -->
-                <span class="block truncate" :class="[selected ? 'font-medium' : 'font-normal']">
-                  {{ option.label }}
-                </span>
-
-                <!-- 选中标记 -->
-                <span
-                  v-if="selected"
-                  class="absolute inset-y-0 left-0 flex items-center pl-3"
-                  :class="active ? 'text-white' : 'text-blue-600'"
+                <!-- 选项内容 -->
+                <div
+                  class="relative cursor-pointer select-none py-3 pl-10 pr-4 rounded-lg transition-all duration-150" :class="[
+                    active ? 'bg-blue-500 text-white shadow-sm' : 'text-gray-700 dark:text-gray-200',
+                    !active && selected ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300' : '',
+                    !active && !selected ? 'hover:bg-gray-100 dark:hover:bg-gray-700/60' : '',
+                    option.disabled && 'opacity-50 cursor-not-allowed',
+                  ]"
                 >
-                  <Check class="w-5 h-5" />
-                </span>
+                  <!-- 图标 -->
+                  <component
+                    :is="option.icon"
+                    v-if="option.icon"
+                    class="inline-block w-4 h-4 mr-2"
+                  />
+
+                  <!-- 文本 -->
+                  <span class="block truncate" :class="[selected ? 'font-medium' : 'font-normal']">
+                    {{ option.label }}
+                  </span>
+
+                  <!-- 选中标记 -->
+                  <span
+                    v-if="selected"
+                    class="absolute inset-y-0 left-0 flex items-center pl-3"
+                    :class="active ? 'text-white' : 'text-blue-600 dark:text-blue-400'"
+                  >
+                    <Check class="w-5 h-5" />
+                  </span>
+                </div>
               </li>
             </ListboxOption>
 
             <!-- 空状态 -->
             <div
               v-if="filteredOptions.length === 0"
-              class="px-4 py-6 text-center text-sm text-gray-500 dark:text-gray-400"
+              class="px-4 py-8 text-center text-sm text-gray-400 dark:text-gray-500"
             >
-              没有找到匹配的选项
+              <div class="text-4xl mb-2 opacity-30">
+                🔍
+              </div>
+              <div>没有找到匹配的选项</div>
             </div>
           </ListboxOptions>
         </transition>
