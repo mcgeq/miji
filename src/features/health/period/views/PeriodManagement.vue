@@ -181,28 +181,25 @@ onMounted(async () => {
 
         <!-- 日历视图 -->
         <div v-else-if="currentView === 'calendar'" class="space-y-6">
-          <!-- 日历和今日信息网格 -->
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <!-- 日历组件 -->
-            <Card shadow="md" padding="lg">
+          <!-- 日历、今日信息、健康建议 - 三列布局 -->
+          <div class="grid grid-cols-1 lg:grid-cols-[2fr_1.3fr_1.2fr] gap-4">
+            <!-- 日历组件 - 固定高度 -->
+            <div class="h-[340px]">
               <PeriodCalendar :selected-date="selectedDate" @date-select="handleDateSelect" />
-            </Card>
-
-            <!-- 今日信息和健康提示 -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 gap-4">
-              <PeriodTodayInfo
-                :current-phase-label="currentPhaseLabel"
-                :days-until-next="daysUntilNext"
-                :today-record="todayRecord"
-                @view-record="openDailyForm"
-                @delete-record="handleDeleteDailyRecord"
-                @add-record="openDailyForm()"
-              />
-
-              <Card shadow="md" padding="lg" class="backdrop-blur-sm border-gray-200 dark:border-gray-700 hover:shadow-lg transition-shadow">
-                <PeriodHealthTip :stats="currentPhase" />
-              </Card>
             </div>
+
+            <!-- 今日信息 -->
+            <PeriodTodayInfo
+              :current-phase-label="currentPhaseLabel"
+              :days-until-next="daysUntilNext"
+              :today-record="todayRecord"
+              @view-record="openDailyForm"
+              @delete-record="handleDeleteDailyRecord"
+              @add-record="openDailyForm()"
+            />
+
+            <!-- 健康建议 -->
+            <PeriodHealthTip :stats="currentPhase" />
           </div>
 
           <!-- 最近记录 -->

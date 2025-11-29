@@ -469,7 +469,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="h-full flex flex-col bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+  <div class="h-full flex flex-col bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden shadow-md">
     <!-- 头部导航 -->
     <div class="flex items-center justify-between px-3 py-2 bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
       <div class="flex items-center gap-2">
@@ -510,7 +510,7 @@ onMounted(() => {
     </div>
 
     <!-- 日历视图 -->
-    <div v-if="viewMode === 'calendar'" class="flex-1 flex flex-col min-h-0 bg-gray-50 dark:bg-gray-900 p-2">
+    <div v-if="viewMode === 'calendar'" class="flex flex-col bg-gray-50 dark:bg-gray-900 px-2 pt-2 pb-0">
       <!-- 星期标题 -->
       <div class="grid grid-cols-7 mb-1">
         <div v-for="day in weekDays" :key="day" class="text-center text-xs font-medium text-gray-500 dark:text-gray-400 py-1">
@@ -519,7 +519,7 @@ onMounted(() => {
       </div>
 
       <!-- 日期网格 -->
-      <div class="grid grid-cols-7">
+      <div class="grid grid-cols-7 mb-0">
         <div
           v-for="day in calendarDays"
           :key="day.date"
@@ -542,7 +542,7 @@ onMounted(() => {
     </div>
 
     <!-- 列表视图 -->
-    <div v-else class="p-3 flex flex-col gap-2 max-h-[204px] overflow-y-auto bg-white dark:bg-gray-900 rounded-lg scrollbar-hide">
+    <div v-else class="flex-1 p-3 flex flex-col gap-2 overflow-y-auto bg-white dark:bg-gray-900 rounded-lg scrollbar-hide">
       <div
         v-for="day in calendarDays.filter(d => d.events.length > 0)" :key="day.date"
         class="p-3 rounded-lg border border-gray-200 border-l-4 border-l-blue-500 bg-gray-50 dark:bg-gray-800 cursor-pointer transition-all duration-200 shadow-sm hover:bg-gray-100 dark:hover:bg-gray-700 hover:border-l-red-500 hover:translate-x-0.5 hover:shadow-md"
@@ -574,7 +574,7 @@ onMounted(() => {
     </div>
 
     <!-- 图例 -->
-    <div class="flex items-center justify-center gap-4 px-3 py-2 bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 max-sm:gap-2 max-sm:py-2 max-sm:flex-wrap">
+    <div class="flex items-center justify-center gap-4 px-3 py-1.5 bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 max-sm:gap-2 max-sm:py-1.5 max-sm:flex-wrap">
       <div class="flex items-center gap-1.5">
         <div class="w-2 h-2 rounded-full bg-green-500" />
         <span class="text-xs text-gray-600 dark:text-gray-400">经期</span>

@@ -15,7 +15,7 @@ const healthTips = computed(() => {
 </script>
 
 <template>
-  <Card shadow="sm" padding="md" class="overflow-hidden">
+  <Card shadow="sm" padding="md" class="overflow-hidden border-l-4 border-l-green-500 dark:border-l-green-400">
     <!-- 自定义头部 -->
     <template #header>
       <div class="flex items-center gap-2">
