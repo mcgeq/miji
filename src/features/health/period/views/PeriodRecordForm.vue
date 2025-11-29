@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { AlertTriangle, Calendar, Info } from 'lucide-vue-next';
+import { AlertTriangle, Calendar, Info, Plus } from 'lucide-vue-next';
 import PresetButtons from '@/components/common/PresetButtons.vue';
-import { Badge, Card, ConfirmDialog, Modal } from '@/components/ui';
+import { Badge, ConfirmDialog, Modal } from '@/components/ui';
 import FormRow from '@/components/ui/FormRow.vue';
 import { usePeriodStore } from '@/stores/periodStore';
 import { DateUtils } from '@/utils/date';
 import { deepDiff } from '@/utils/diff';
+import PeriodInfoCard from '../components/PeriodInfoCard.vue';
 import { usePeriodValidation } from '../composables/usePeriodValidation';
 import { durationPresets, intensityLevels, symptomGroups } from '../constants/periodConstants';
 import {
@@ -401,14 +402,13 @@ defineExpose({
     @close="$emit('cancel')"
   >
     <!-- 日期设置区域 -->
-    <Card shadow="sm" class="border-l-4 border-l-blue-500 mb-4">
-      <div class="flex items-center gap-2 mb-4">
-        <Calendar :size="20" class="text-blue-600 dark:text-blue-400" />
-        <h3 class="text-base font-semibold text-blue-600 dark:text-blue-400">
-          日期设置
-        </h3>
-      </div>
-
+    <PeriodInfoCard
+      title="日期设置"
+      :icon="Calendar"
+      color="blue"
+      :show-bottom-border="false"
+      class="mb-4"
+    >
       <!-- 开始日期 -->
       <FormRow label="开始日期" required :error="getFieldErrors('startDate')[0]">
         <input
@@ -443,14 +443,18 @@ defineExpose({
           @update:model-value="setDurationPreset"
         />
       </FormRow>
-    </Card>
+    </PeriodInfoCard>
 
     <!-- 经期信息显示 -->
-    <Card v-if="showPeriodInfo" shadow="sm" class="border-l-4 border-l-blue-500 my-4 bg-blue-50 dark:bg-blue-900/20">
-      <div class="flex items-center gap-2 mb-3">
-        <Info :size="20" class="text-blue-600 dark:text-blue-400" />
-        <span class="text-base font-semibold text-blue-600 dark:text-blue-400">经期信息</span>
-      </div>
+    <PeriodInfoCard
+      v-if="showPeriodInfo"
+      title="经期信息"
+      :icon="Info"
+      color="blue"
+      :show-bottom-border="false"
+      bg-class="bg-blue-50 dark:bg-blue-900/20"
+      class="my-4"
+    >
       <div class="space-y-2">
         <div class="flex justify-between items-center">
           <span class="text-sm text-gray-600 dark:text-gray-400">持续时间</span>
@@ -469,24 +473,17 @@ defineExpose({
           <span class="text-sm font-semibold text-gray-900 dark:text-white">{{ predictedNext }}</span>
         </div>
       </div>
-    </Card>
+    </PeriodInfoCard>
 
     <!-- 症状记录区域 -->
-    <Card shadow="sm" class="border-l-4 border-l-green-500 mb-4">
-      <div class="flex items-center justify-between mb-4">
-        <div class="flex items-center gap-2">
-          <div class="w-5 h-5 text-green-500">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-            </svg>
-          </div>
-          <h3 class="text-base font-semibold text-green-600 dark:text-green-400">
-            症状记录
-          </h3>
-        </div>
-        <span class="text-xs text-gray-500 dark:text-gray-400">选择本次经期的症状程度</span>
-      </div>
-
+    <PeriodInfoCard
+      title="症状记录"
+      :icon="Plus"
+      color="green"
+      help-text="选择本次经期的症状程度"
+      :show-bottom-border="false"
+      class="mb-4"
+    >
       <div class="space-y-4">
         <div v-for="symptomGroup in symptomGroups" :key="symptomGroup.type" class="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600">
           <div class="flex items-center gap-2 mb-3">
@@ -514,7 +511,7 @@ defineExpose({
           </div>
         </div>
       </div>
-    </Card>
+    </PeriodInfoCard>
 
     <!-- 备注区域 -->
     <FormRow full-width>
