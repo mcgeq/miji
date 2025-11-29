@@ -38,11 +38,13 @@ interface Props {
   confirmDisabled?: boolean;
   /** 确认按钮加载状态 */
   confirmLoading?: boolean;
+  /** 自定义z-index层级 */
+  zIndex?: number;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   size: 'md',
-  closeOnOverlay: true,
+  closeOnOverlay: false,
   showHeader: true,
   showFooter: true,
   confirmText: '确认',
@@ -53,6 +55,7 @@ const props = withDefaults(defineProps<Props>(), {
   deleteText: '删除',
   confirmDisabled: false,
   confirmLoading: false,
+  zIndex: 999999,
 });
 
 const emit = defineEmits<{
@@ -70,14 +73,23 @@ const sizeClasses = {
   xl: 'max-w-xl',
   full: 'max-w-[90vw]',
 };
+
+// 处理关闭事件
+function handleClose() {
+  if (props.closeOnOverlay) {
+    emit('close');
+  }
+  // 如果 closeOnOverlay 为 false，什么都不做，阻止关闭
+}
 </script>
 
 <template>
   <TransitionRoot :show="open" as="template">
     <Dialog
       :open="open"
-      class="relative z-[999999]"
-      @close="props.closeOnOverlay && emit('close')"
+      class="relative"
+      :style="{ zIndex: props.zIndex }"
+      @close="handleClose"
     >
       <!-- 遮罩层 -->
       <TransitionChild
@@ -100,9 +112,10 @@ const sizeClasses = {
           leave-to="opacity-0 scale-95 translate-y-4"
         >
           <DialogPanel
-            class="w-full rounded-xl shadow-2xl bg-white dark:bg-gray-800 max-h-[90vh] overflow-hidden flex flex-col" :class="[
+            class="w-full rounded-xl shadow-2xl bg-white dark:bg-gray-800 max-h-[90vh] overflow-visible flex flex-col" :class="[
               sizeClasses[props.size],
             ]"
+            @click.stop
           >
             <!-- 头部 -->
             <div

@@ -134,7 +134,7 @@ const sizeClasses = {
           leave-to-class="opacity-0"
         >
           <ListboxOptions
-            class="absolute z-10 mt-1 w-full max-h-60 overflow-auto rounded-xl bg-white dark:bg-gray-800 py-2 shadow-xl border border-gray-200 dark:border-gray-700 focus:outline-none [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+            class="absolute z-50 mt-1 w-full max-h-60 overflow-auto rounded-xl bg-white dark:bg-gray-800 py-2 shadow-xl border border-gray-200 dark:border-gray-700 focus:outline-none [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
           >
             <!-- 搜索框 -->
             <div v-if="searchable" class="px-3 py-2 mb-1">

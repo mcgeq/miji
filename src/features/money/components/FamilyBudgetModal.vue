@@ -315,17 +315,17 @@ onMounted(async () => {
         </div>
       </div>
     </form>
-  </Modal>
 
-  <!-- 分配编辑器模态框 -->
-  <BudgetAllocationEditor
-    v-if="showAllocationEditor"
-    :is-edit="!!editingAllocation"
-    :allocation="editingAllocation as any"
-    :members="members"
-    :categories="categories"
-    :budget-total="form.amount"
-    @submit="handleSaveAllocation"
-    @cancel="showAllocationEditor = false"
-  />
+    <!-- 分配编辑器模态框 -->
+    <BudgetAllocationEditor
+      v-if="showAllocationEditor"
+      :is-edit="!!editingAllocation"
+      :allocation="editingAllocation as any"
+      :members="members"
+      :categories="categories"
+      :budget-total="form.amount"
+      @submit="handleSaveAllocation"
+      @cancel="showAllocationEditor = false"
+    />
+  </Modal>
 </template>

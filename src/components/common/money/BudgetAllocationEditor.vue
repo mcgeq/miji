@@ -206,8 +206,8 @@ watch(
   >
     <form class="flex flex-col gap-4" @submit.prevent="handleSubmit">
       <!-- 分配目标 -->
-      <div class="p-3 bg-[var(--color-base-200)] rounded-lg">
-        <h3 class="text-sm font-semibold text-[var(--color-base-content)] mb-3">
+      <div class="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
+        <h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-3">
           分配目标
         </h3>
 
@@ -252,8 +252,8 @@ watch(
       </div>
 
       <!-- 金额设置 -->
-      <div class="p-3 bg-[var(--color-base-200)] rounded-lg">
-        <h3 class="text-sm font-semibold text-[var(--color-base-content)] mb-3">
+      <div class="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
+        <h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-3">
           金额设置
         </h3>
 
@@ -308,7 +308,9 @@ watch(
       <Textarea
         v-model="formData.notes"
         :rows="3"
+        :max-length="200"
         placeholder="可选的备注信息..."
+        show-count
         full-width
       />
     </form>
