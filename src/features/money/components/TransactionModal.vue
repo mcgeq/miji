@@ -1052,10 +1052,14 @@ watch(
 
         <FormRow :label="t('financial.transaction.installmentAmount')" required>
           <Input
-            :value="safeToFixed(calculatedInstallmentAmount)"
+            :model-value="String(calculatedInstallmentAmount > 0 ? safeToFixed(calculatedInstallmentAmount) : '计算中...')"
             type="text"
             readonly
-          />
+          >
+            <template #prefix>
+              ¥
+            </template>
+          </Input>
         </FormRow>
 
         <FormRow :label="t('financial.transaction.firstDueDate')" required>
@@ -1075,84 +1079,106 @@ watch(
         </FormRow>
 
         <!-- 分期计划详情 -->
-        <div v-if="installmentDetails" class="installment-plan">
-          <div class="plan-header">
-            <h4>{{ t('financial.transaction.installmentPlan') }}</h4>
+        <div v-if="installmentDetails" class="mt-4 p-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-900">
+          <div class="flex items-center justify-between mb-4">
+            <h4 class="text-base font-semibold text-gray-900 dark:text-white">
+              {{ t('financial.transaction.installmentPlan') }}
+            </h4>
             <button
               v-if="hasMorePeriods"
               type="button"
-              class="toggle-btn"
+              class="px-3 py-1.5 text-sm text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-md transition-colors"
               @click="installmentManager.toggleExpanded()"
             >
               {{ isExpanded ? t('common.actions.collapse') : t('common.actions.expand') }}
             </button>
           </div>
 
-          <div class="plan-list">
+          <div class="flex flex-col gap-3">
             <div
               v-for="(detail, index) in visibleDetails"
               :key="detail.period || index"
-              class="plan-item"
-              :class="{ paid: detail.status === 'PAID', pending: detail.status === 'PENDING', overdue: detail.status === 'OVERDUE' }"
+              class="p-3 rounded-lg border transition-all" :class="[
+                detail.status === 'PAID' ? 'bg-green-50 dark:bg-green-900/10 border-green-200 dark:border-green-800' : '',
+                detail.status === 'PENDING' ? 'bg-blue-50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-800' : '',
+                detail.status === 'OVERDUE' ? 'bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-800' : '',
+                !detail.status ? 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700' : '',
+              ]"
             >
-              <div class="period-info">
-                <div class="period-header">
-                  <span class="period-label">第 {{ detail.period || (index + 1) }} 期</span>
-                  <span v-if="detail.status" class="status-text" :class="`status-${detail.status.toLowerCase()}`">
-                    {{ getStatusText(detail.status) }}
-                  </span>
-                </div>
-                <div class="due-date-wrapper">
-                  <span class="due-date-icon">📅</span>
-                  <span class="due-date-label">应还日:</span>
-                  <span class="due-date-value">{{ detail.dueDate || '未设置' }}</span>
-                </div>
-              </div>
-              <div class="amount-info">
-                <span class="amount-label">¥{{ detail.amount ? safeToFixed(detail.amount) : '0.00' }}</span>
-                <div v-if="detail.status === 'PAID'" class="payment-details">
-                  <div class="paid-date-wrapper">
-                    <span class="paid-icon">✓</span>
-                    <span class="paid-label">入账:</span>
-                    <span class="paid-value">{{ detail.paidDate || detail.dueDate || '日期未记录' }}</span>
+              <div class="flex items-start justify-between">
+                <div class="flex-1">
+                  <div class="flex items-center gap-2 mb-2">
+                    <span class="text-sm font-medium text-gray-900 dark:text-white">第 {{ detail.period || (index + 1) }} 期</span>
+                    <span
+                      v-if="detail.status" class="px-2 py-0.5 text-xs rounded-full" :class="[
+                        detail.status === 'PAID' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : '',
+                        detail.status === 'PENDING' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400' : '',
+                        detail.status === 'OVERDUE' ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400' : '',
+                      ]"
+                    >
+                      {{ getStatusText(detail.status) }}
+                    </span>
                   </div>
-                  <div v-if="detail.paidAmount" class="paid-amount-wrapper">
-                    <span class="amount-icon">💰</span>
-                    <span class="amount-paid-label">实付:</span>
-                    <span class="amount-paid-value">¥{{ safeToFixed(detail.paidAmount) }}</span>
+                  <div class="flex items-center gap-1.5 text-sm text-gray-600 dark:text-gray-400">
+                    <span>📅</span>
+                    <span>应还日:</span>
+                    <span class="text-gray-900 dark:text-white font-medium">{{ detail.dueDate || '未设置' }}</span>
                   </div>
                 </div>
-                <div v-else-if="detail.status === 'PENDING'" class="pending-info">
-                  <span class="status-badge pending-badge">⏳ 待入账</span>
-                </div>
-                <div v-else-if="detail.status === 'OVERDUE'" class="overdue-info">
-                  <span class="status-badge overdue-badge">⚠️ 已逾期</span>
+                <div class="text-right">
+                  <div class="text-lg font-semibold text-gray-900 dark:text-white">
+                    ¥{{ detail.amount ? safeToFixed(detail.amount) : '0.00' }}
+                  </div>
+                  <div v-if="detail.status === 'PAID'" class="mt-2 flex flex-col gap-1">
+                    <div class="flex items-center justify-end gap-1.5 text-xs text-green-600 dark:text-green-400">
+                      <span>✓</span>
+                      <span>入账:</span>
+                      <span>{{ detail.paidDate || detail.dueDate || '日期未记录' }}</span>
+                    </div>
+                    <div v-if="detail.paidAmount" class="flex items-center justify-end gap-1.5 text-xs text-green-600 dark:text-green-400">
+                      <span>💰</span>
+                      <span>实付:</span>
+                      <span>¥{{ safeToFixed(detail.paidAmount) }}</span>
+                    </div>
+                  </div>
+                  <div v-else-if="detail.status === 'PENDING'" class="mt-2">
+                    <span class="inline-flex items-center gap-1 px-2 py-1 text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded">
+                      ⏳ 待入账
+                    </span>
+                  </div>
+                  <div v-else-if="detail.status === 'OVERDUE'" class="mt-2">
+                    <span class="inline-flex items-center gap-1 px-2 py-1 text-xs bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded">
+                      ⚠️ 已逾期
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
 
-          <div class="plan-summary">
-            <div class="summary-stats">
-              <div class="stat-item">
-                <span class="stat-label">已入账:</span>
-                <span class="stat-value paid">{{ paidPeriodsCount }} 期</span>
-              </div>
-              <div class="stat-item">
-                <span class="stat-label">待入账:</span>
-                <span class="stat-value pending">{{ pendingPeriodsCount }} 期</span>
-              </div>
-              <div class="stat-item">
-                <span class="stat-label">总期数:</span>
-                <span class="stat-value">{{ totalPeriodsCount }} 期</span>
+          <div class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+            <div class="flex items-center justify-between mb-3">
+              <div class="flex gap-4">
+                <div class="flex items-center gap-1.5 text-sm">
+                  <span class="text-gray-600 dark:text-gray-400">已入账:</span>
+                  <span class="font-medium text-green-600 dark:text-green-400">{{ paidPeriodsCount }} 期</span>
+                </div>
+                <div class="flex items-center gap-1.5 text-sm">
+                  <span class="text-gray-600 dark:text-gray-400">待入账:</span>
+                  <span class="font-medium text-blue-600 dark:text-blue-400">{{ pendingPeriodsCount }} 期</span>
+                </div>
+                <div class="flex items-center gap-1.5 text-sm">
+                  <span class="text-gray-600 dark:text-gray-400">总期数:</span>
+                  <span class="font-medium text-gray-900 dark:text-white">{{ totalPeriodsCount }} 期</span>
+                </div>
               </div>
             </div>
-            <div class="total-amount">
-              <strong>{{ t('financial.transaction.totalAmount') }}: ¥{{ safeToFixed(form.amount) }}</strong>
+            <div class="flex items-center justify-between">
+              <strong class="text-base text-gray-900 dark:text-white">{{ t('financial.transaction.totalAmount') }}: ¥{{ safeToFixed(form.amount) }}</strong>
               <button
                 v-if="hasMorePeriods"
                 type="button"
-                class="toggle-btn"
+                class="px-3 py-1.5 text-sm text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-md transition-colors"
                 @click="installmentManager.toggleExpanded()"
               >
                 {{ isExpanded ? t('common.actions.collapse') : t('common.actions.expand') }}
@@ -1163,7 +1189,7 @@ watch(
       </div>
 
       <!-- 日期 -->
-      <FormRow :label="t('date.transactionDate')" required>
+      <FormRow :label="t('date.transactionDate')" required :class="{ 'mt-6': form.isInstallment }">
         <DateTimePicker
           v-model="form.date"
           class="datetime-picker"

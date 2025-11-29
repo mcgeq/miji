@@ -116,7 +116,7 @@ const iconSizes = {
         :readonly="props.readonly"
         :required="props.required"
         :maxlength="props.maxLength"
-        class="flex-1 transition-colors focus:outline-none focus:ring-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 border" :class="[
+        class="flex-1 transition-colors focus:outline-none focus:ring-2 bg-white dark:bg-gray-800 placeholder:text-gray-400 dark:placeholder:text-gray-500 border" :class="[
           sizeClasses[props.size],
           // 动态圆角
           $slots.prefix && !$slots.suffix ? 'rounded-r-lg border-l-0' : '',
@@ -131,8 +131,9 @@ const iconSizes = {
             ? 'border-red-300 dark:border-red-700 focus:ring-red-500 focus:border-red-500'
             : 'border-gray-300 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500',
           // 状态
-          props.disabled && 'opacity-50 cursor-not-allowed bg-gray-50 dark:bg-gray-900',
-          props.readonly && 'cursor-default bg-gray-50 dark:bg-gray-900',
+          props.disabled && 'opacity-50 cursor-not-allowed bg-gray-50 dark:bg-gray-900 text-gray-500 dark:text-gray-500',
+          props.readonly && 'cursor-default bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white font-medium',
+          !props.disabled && !props.readonly && 'text-gray-900 dark:text-white',
         ]"
         @input="emit('update:modelValue', ($event.target as HTMLInputElement).value)"
         @blur="emit('blur', $event)"
