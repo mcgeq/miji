@@ -8,13 +8,16 @@ import CategoryChartsSwitcher from '@/features/money/components/CategoryChartsSw
 import MemberContributionChart from '@/features/money/components/charts/MemberContributionChart.vue';
 import DebtRelationChart from '@/features/money/components/DebtRelationChart.vue';
 import PaymentMethodChartsSwitcher from '@/features/money/components/PaymentMethodChartsSwitcher.vue';
+import { Permission } from '@/types/auth';
 import type { DropdownOption } from '@/components/ui/Dropdown.vue';
 
 definePage({
   name: 'statistics',
   meta: {
     requiresAuth: true,
+    permissions: [Permission.STATS_VIEW],
     title: '家庭财务统计',
+    icon: 'bar-chart',
   },
 });
 

@@ -77,21 +77,39 @@
 
 ## 🔄 待实施
 
-### 阶段3：应用权限（优先级：低）
-
----
-
-### 阶段3：页面更新（优先级：低）
+### 阶段3：应用权限（进行中）🔄
 
 #### 3.1 更新路由元信息
-- [ ] `src/pages/money/` - 财务相关页面
-- [ ] `src/pages/family-ledger/` - 家庭账本页面
-- [ ] `src/pages/settings.vue` - 设置页面
-- [ ] 其他需要权限控制的页面
+**核心页面（已完成）** ✅
+- ✅ `src/pages/money.vue` - 财务管理
+- ✅ `src/pages/settings.vue` - 设置
+- ✅ `src/pages/family-ledger.vue` - 家庭账本
+- ✅ `src/pages/money/statistics.vue` - 统计分析
 
-#### 3.2 应用权限控制
-- [ ] 在组件中使用 `usePermission()`
-- [ ] 在模板中使用 `v-permission` 指令
+**财务页面（待完成）** ⏳
+- [ ] `src/pages/money/budget-allocations.vue` - 预算分配
+- [ ] `src/pages/money/debt-relations.vue` - 债务关系
+- [ ] `src/pages/money/members.vue` - 成员管理
+- [ ] `src/pages/money/settlement-records.vue` - 结算记录
+- [ ] `src/pages/money/settlement-suggestion.vue` - 结算建议
+- [ ] `src/pages/money/split-records.vue` - 分摊记录
+- [ ] `src/pages/money/split-templates.vue` - 分摊模板
+
+**其他页面（待完成）** ⏳
+- [ ] `src/pages/budget-stats.vue` - 预算统计
+- [ ] `src/pages/transaction-stats.vue` - 交易统计
+- [ ] `src/pages/family-ledger/[serialNum].vue` - 账本详情
+- [ ] `src/pages/family-ledger/member/[memberSerialNum].vue` - 成员详情
+
+**当前进度: 4/19 (21%)**
+
+#### 3.2 文档
+- ✅ 创建 `AUTH_PAGE_PERMISSIONS.md` - 页面权限配置清单
+- ✅ 创建 `AUTH_QUICK_UPDATE_GUIDE.md` - 快速更新指南
+
+#### 3.3 应用权限控制（后续）
+- [ ] 在组件中使用 `useAuthPermission()`
+- [ ] 在模板中使用 `v-auth-permission` 指令
 - [ ] 移除硬编码的权限判断
 
 ---
