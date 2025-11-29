@@ -4,6 +4,7 @@ import { useRoute } from 'vue-router';
 import BudgetAlertPanel from '@/components/common/money/BudgetAlertPanel.vue';
 import BudgetAllocationCard from '@/components/common/money/BudgetAllocationCard.vue';
 import BudgetAllocationEditor from '@/components/common/money/BudgetAllocationEditor.vue';
+import Modal from '@/components/ui/Modal.vue';
 import { useBudgetStore, useCategoryStore, useFamilyMemberStore } from '@/stores/money';
 import { useBudgetAllocationStore } from '@/stores/money/budget-allocation-store';
 import type {
@@ -352,28 +353,24 @@ watch(budgetSerialNum, newId => {
     </div>
 
     <!-- 编辑器模态框 -->
-    <div v-if="showEditor" class="modal-overlay" @click.self="handleCancelEdit">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h3>{{ editingAllocation ? '编辑分配' : '创建分配' }}</h3>
-          <button class="modal-close" @click="handleCancelEdit">
-            ✕
-          </button>
-        </div>
-        <div class="modal-body">
-          <BudgetAllocationEditor
-            :is-edit="!!editingAllocation"
-            :allocation="editingAllocation"
-            :members="members"
-            :categories="categories"
-            :budget-total="budgetTotal"
-            :loading="submitting"
-            @submit="handleSubmit"
-            @cancel="handleCancelEdit"
-          />
-        </div>
-      </div>
-    </div>
+    <Modal
+      :open="showEditor"
+      :title="editingAllocation ? '编辑分配' : '创建分配'"
+      size="lg"
+      :show-footer="false"
+      @close="handleCancelEdit"
+    >
+      <BudgetAllocationEditor
+        :is-edit="!!editingAllocation"
+        :allocation="editingAllocation"
+        :members="members"
+        :categories="categories"
+        :budget-total="budgetTotal"
+        :loading="submitting"
+        @submit="handleSubmit"
+        @cancel="handleCancelEdit"
+      />
+    </Modal>
   </div>
 </template>
 
@@ -670,74 +667,6 @@ watch(budgetSerialNum, newId => {
   gap: 16px;
 }
 
-/* 模态框 */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  padding: 20px;
-}
-
-.modal-content {
-  background: var(--color-base-100);
-  border-radius: 12px;
-  max-width: 640px;
-  width: 100%;
-  max-height: 90vh;
-  overflow-y: auto;
-  box-shadow: var(--shadow-lg);
-}
-
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 20px 24px;
-  border-bottom: 1px solid var(--color-base-300);
-  position: sticky;
-  top: 0;
-  background: var(--color-base-100);
-  z-index: 10;
-}
-
-.modal-header h3 {
-  margin: 0;
-  font-size: 20px;
-  font-weight: 600;
-  color: var(--color-base-content);
-}
-
-.modal-close {
-  width: 32px;
-  height: 32px;
-  border: none;
-  background: transparent;
-  font-size: 20px;
-  color: var(--color-neutral);
-  cursor: pointer;
-  border-radius: 6px;
-  transition: all 0.2s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.modal-close:hover {
-  background-color: var(--color-base-200);
-  color: var(--color-base-content);
-}
-
-.modal-body {
-  padding: 24px;
-}
-
 /* 响应式 */
 @media (max-width: 768px) {
   .budget-allocations-page {
@@ -755,15 +684,6 @@ watch(budgetSerialNum, newId => {
 
   .allocations-grid {
     grid-template-columns: 1fr;
-  }
-
-  .modal-overlay {
-    padding: 0;
-  }
-
-  .modal-content {
-    max-height: 100vh;
-    border-radius: 0;
   }
 }
 </style>
