@@ -90,34 +90,36 @@ function handlePageSizeChange() {
 
 <template>
   <div
-    class="pagination-container"
-    :class="[{ compact: props.compact, responsive: props.responsive }]"
+    class="flex flex-wrap justify-between items-center gap-3"
+    :class="[
+      compact ? 'p-2 bg-transparent' : 'p-2 rounded-xl bg-white dark:bg-gray-800 shadow-md',
+    ]"
   >
     <!-- 左侧按钮 -->
-    <div class="pagination-left">
+    <div class="flex items-center gap-2">
       <button
         v-if="showFirstLast && !mediaQueries.isMobile"
         :disabled="currentPage <= 1 || disabled"
-        class="pagination-button"
+        class="inline-flex items-center justify-center rounded-xl border px-3 py-2 text-sm font-semibold transition-all duration-200 bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-800 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 shadow-sm hover:shadow-md hover:from-gray-100 hover:to-gray-50 dark:hover:from-gray-800 dark:hover:to-gray-700 active:translate-y-0.5 active:shadow-inner disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
         :aria-label="t('pagination.home')"
         @click="goToFirst"
       >
-        <ChevronsLeft class="icon" />
+        <ChevronsLeft class="w-4 h-4" />
       </button>
       <button
         :disabled="currentPage <= 1 || disabled"
-        class="pagination-button"
+        class="inline-flex items-center justify-center rounded-xl border px-3 py-2 text-sm font-semibold transition-all duration-200 bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-800 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 shadow-sm hover:shadow-md hover:from-gray-100 hover:to-gray-50 dark:hover:from-gray-800 dark:hover:to-gray-700 active:translate-y-0.5 active:shadow-inner disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
         :aria-label="t('pagination.prev')"
         @click="goToPrev"
       >
-        <ChevronLeft class="icon" />
+        <ChevronLeft class="w-4 h-4" />
       </button>
     </div>
 
     <!-- 中间页码/跳转 -->
-    <div class="pagination-center">
-      <span class="page-info">{{ currentPage }}/{{ totalPages }}</span>
-      <span v-if="showTotal && totalItems > 0" class="total-info">(共 {{ totalItems }} 条)</span>
+    <div class="flex flex-wrap items-center gap-2">
+      <span class="text-sm font-semibold text-gray-900 dark:text-white">{{ currentPage }}/{{ totalPages }}</span>
+      <span v-if="showTotal && totalItems > 0" class="text-sm text-gray-600 dark:text-gray-400">(共 {{ totalItems }} 条)</span>
       <input
         v-if="showJump"
         v-model.number="pageInput"
@@ -125,7 +127,7 @@ function handlePageSizeChange() {
         :min="1"
         :max="totalPages"
         :disabled="disabled"
-        class="page-jump-input"
+        class="w-16 px-2 py-1 text-sm rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         aria-label="Jump to page"
         @change="handlePageJump"
         @keydown.enter="handlePageJump"
@@ -133,23 +135,23 @@ function handlePageSizeChange() {
     </div>
 
     <!-- 右侧按钮 -->
-    <div class="pagination-right">
+    <div class="flex items-center gap-2">
       <button
         :disabled="currentPage >= totalPages || disabled"
-        class="pagination-button"
+        class="inline-flex items-center justify-center rounded-xl border px-3 py-2 text-sm font-semibold transition-all duration-200 bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-800 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 shadow-sm hover:shadow-md hover:from-gray-100 hover:to-gray-50 dark:hover:from-gray-800 dark:hover:to-gray-700 active:translate-y-0.5 active:shadow-inner disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
         :aria-label="t('pagination.next')"
         @click="goToNext"
       >
-        <ChevronRight class="icon" />
+        <ChevronRight class="w-4 h-4" />
       </button>
       <button
         v-if="showFirstLast && !mediaQueries.isMobile"
         :disabled="currentPage >= totalPages || disabled"
-        class="pagination-button"
+        class="inline-flex items-center justify-center rounded-xl border px-3 py-2 text-sm font-semibold transition-all duration-200 bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-800 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 shadow-sm hover:shadow-md hover:from-gray-100 hover:to-gray-50 dark:hover:from-gray-800 dark:hover:to-gray-700 active:translate-y-0.5 active:shadow-inner disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
         :aria-label="t('pagination.last')"
         @click="goToLast"
       >
-        <ChevronsRight class="icon" />
+        <ChevronsRight class="w-4 h-4" />
       </button>
     </div>
 
@@ -158,7 +160,7 @@ function handlePageSizeChange() {
       v-if="showPageSize"
       v-model="internalPageSize"
       :disabled="disabled"
-      class="page-size-select"
+      class="px-2 py-1 text-sm rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
       aria-label="Select items per page"
       @change="handlePageSizeChange"
     >
@@ -168,149 +170,3 @@ function handlePageSizeChange() {
     </select>
   </div>
 </template>
-
-<style lang="postcss" scoped>
-.pagination-container {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.5rem;
-  border-radius: 0.8rem;
-  background-color: var(--color-base-100);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-  gap: 0.75rem;
-}
-
-/* 控制 compact 模式 */
-.pagination-container.compact {
-  padding: 0.5rem;
-  background-color: transparent;
-  box-shadow: none;
-}
-
-/* 左/中/右布局 */
-.pagination-left,
-.pagination-center,
-.pagination-right {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.pagination-center {
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-.page-info {
-  font-weight: 600;
-  color: var(--color-base-content);
-  font-size: 0.875rem;
-}
-
-.total-info {
-  font-size: 0.875rem;
-  color: var(--color-neutral-content);
-}
-
-.page-jump-input,
-.page-size-select {
-  --mix-ratio: clamp(15%, 20%, 25%);
-  padding: 0.25rem 0.5rem;
-  font-size: 0.875rem;
-  border-radius: 0.375rem;
-  border: 1px solid var(--color-base-content);
-  color: var(--color-base-content);
-  background: linear-gradient(
-    180deg,
-    color-mix(in oklch, var(--color-base-200) var(--mix-ratio), var(--color-base-100)) 0%,
-    var(--color-base-200) 100%
-  );
-  outline: none;
-  transition: all 0.2s ease-in-out;
-}
-
-.page-jump-input:focus,
-.page-size-select:focus {
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 2px color-mix(in oklch, var(--color-primary) var(--mix-ratio), var(--color-base-200));
-}
-
-.page-jump-input:disabled,
-.page-size-select:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.pagination-button {
-  --mix-ratio: clamp(15%, 20%, 25%);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 0.75rem;
-  border: 1px solid var(--color-base-content);
-  font-size: 0.875rem;
-  font-weight: 600;
-  padding: 0.5rem 0.75rem;
-  cursor: pointer;
-  transition: all 0.2s ease-in-out;
-  /* 默认动态渐变 */
-  background: linear-gradient(
-    180deg,
-    color-mix(in oklch, var(--color-base-200) var(--mix-ratio), var(--color-base-100)) 0%,
-    var(--color-base-200) 100%
-  );
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.6), 0 2px 4px rgba(0,0,0,0.1);
-  color: var(--color-base-content);
-}
-
-.pagination-button:hover:not(:disabled) {
-  background: linear-gradient(
-    180deg,
-    var(--color-base-200) 0%,
-    color-mix(in oklch, var(--color-base-200) var(--mix-ratio), var(--color-base-100)) 100%
-  );
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.4), 0 4px 6px rgba(0,0,0,0.15);
-}
-
-.pagination-button:active:not(:disabled) {
-  transform: translateY(1px);
-  box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
-}
-
-.pagination-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  box-shadow: none;
-}
-
-.icon {
-  width: 1rem;
-  height: 1rem;
-}
-
-/* 大屏幕调整按钮渐变角度 */
-@media (min-width: 768px) {
-  .pagination-left .pagination-button { --gradient-angle: 135deg; }
-  .pagination-right .pagination-button { --gradient-angle: 225deg; }
-  .pagination-center .page-jump-input,
-  .pagination-center .page-size-select { --gradient-angle: 180deg; }
-
-  .pagination-button {
-    background: linear-gradient(
-      var(--gradient-angle, 180deg),
-      color-mix(in oklch, var(--color-base-200) var(--mix-ratio), var(--color-base-100)) 0%,
-      var(--color-base-200) 100%
-    );
-  }
-
-  .pagination-button:hover:not(:disabled) {
-    background: linear-gradient(
-      var(--gradient-angle, 180deg),
-      var(--color-base-200) 0%,
-      color-mix(in oklch, var(--color-base-200) var(--mix-ratio), var(--color-base-100)) 100%
-    );
-  }
-}
-</style>
