@@ -74,9 +74,7 @@ export default defineConfig({
       '@': resolve(__dirname, 'src'),
     },
   },
-  css: {
-    postcss: './postcss.config.mjs',
-  },
+  // PostCSS配置已移除 - Tailwind CSS v4通过@tailwindcss/vite插件直接处理
   // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
   //
   // 1. prevent vite from obscuring rust errors
