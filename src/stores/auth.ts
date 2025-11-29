@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 import { clearAuthCache } from '@/router/guards/auth.guard';
-import { verifyToken } from '@/services/auth';
+import { refreshToken as refreshTokenApi, verifyToken } from '@/services/auth';
 import { Role, RolePermissions } from '@/types/auth';
 import { authAudit } from '@/utils/auth-audit';
 import { Lg } from '@/utils/debugLog';
@@ -214,7 +214,6 @@ export const useAuthStore = defineStore('auth', () => {
       isLoading.value = true;
 
       // 调用后端刷新Token API
-      const { refreshToken: refreshTokenApi } = await import('@/services/auth');
       const tokenResponse = await refreshTokenApi(token.value);
 
       // 更新Token和过期时间

@@ -94,7 +94,7 @@ const shouldShowCount = computed(() => {
           ? 'border-red-300 dark:border-red-700 focus:ring-red-500 focus:border-red-500'
           : 'border-gray-300 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500',
         disabled && 'opacity-50 cursor-not-allowed bg-gray-50 dark:bg-gray-900',
-        readonly && 'cursor-default bg-gray-50 dark:bg-gray-900',
+        props.readonly && 'cursor-default bg-gray-50 dark:bg-gray-900',
         autoResize && 'resize-none',
       ]"
       @input="emit('update:modelValue', ($event.target as HTMLTextAreaElement).value)"

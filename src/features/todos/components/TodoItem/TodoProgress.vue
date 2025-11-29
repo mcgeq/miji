@@ -60,7 +60,7 @@ function updateProgress(newProgress: number) {
     <div
       class="flex w-32 md:w-32 items-center px-3 py-1.5 rounded-lg border-2 shadow-sm backdrop-blur-sm transition-all duration-300 ease-out flex-1"
       :class="[
-        readonly
+        props.readonly
           ? 'cursor-default opacity-80 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-800/95 border-gray-300 dark:border-gray-600'
           : 'cursor-pointer bg-gradient-to-br from-white to-blue-50/50 dark:from-gray-800 dark:to-gray-800/90 border-gray-300 dark:border-gray-600 hover:to-blue-100/60 dark:hover:to-gray-700/90 hover:border-blue-500 dark:hover:border-blue-400 hover:shadow-md hover:-translate-y-px',
       ]"
