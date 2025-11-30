@@ -1,6 +1,7 @@
+import { debounce } from 'es-toolkit';
 import { computed, ref } from 'vue';
-import { invokeCommand } from '@/types/api';
 import type { User } from '@/schema/user';
+import { invokeCommand } from '@/types/api';
 
 // 搜索结果缓存
 const searchCache = new Map<string, { users: User[]; timestamp: number }>();
@@ -215,7 +216,7 @@ export function useUserSearch() {
   }
 
   /**
-   * 防抖搜索
+   * 防抖搜索 - 使用 es-toolkit 的 debounce
    */
   const debouncedSearch = debounce(searchUsers, 300);
 
@@ -241,19 +242,5 @@ export function useUserSearch() {
     debouncedSearch,
     clearSearchCache,
     clearSearchHistory,
-  };
-}
-
-/**
- * 防抖函数
- */
-function debounce<T extends (...args: any[]) => any>(
-  func: T,
-  wait: number,
-): (...args: Parameters<T>) => void {
-  let timeout: ReturnType<typeof setTimeout>;
-  return (...args: Parameters<T>) => {
-    clearTimeout(timeout);
-    timeout = setTimeout(() => func(...args), wait);
   };
 }

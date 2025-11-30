@@ -1,3 +1,4 @@
+import { debounce } from 'es-toolkit';
 import { computed, ref } from 'vue';
 import { invokeCommand } from '@/types/api';
 import { userPreferences } from '@/utils/userPreferences';
@@ -56,8 +57,8 @@ export function useFamilyMemberSearch() {
     return members.value.filter(
       member =>
         member.name.toLowerCase().includes(query) ||
-        (member.email && member.email.toLowerCase().includes(query)) ||
-        (member.phone && member.phone.includes(query)),
+        member.email?.toLowerCase().includes(query) ||
+        member.phone?.includes(query),
     );
   });
 
@@ -129,8 +130,8 @@ export function useFamilyMemberSearch() {
             .filter(
               member =>
                 member.name.toLowerCase().includes(query_lower) ||
-                (member.email && member.email.toLowerCase().includes(query_lower)) ||
-                (member.phone && member.phone.includes(searchTerm)),
+                member.email?.toLowerCase().includes(query_lower) ||
+                member.phone?.includes(searchTerm),
             )
             .slice(0, 20);
         } catch {
@@ -244,6 +245,9 @@ export function useFamilyMemberSearch() {
     localStorage.removeItem('familyMemberSearchHistory');
   }
 
+  /**
+   * 防抖搜索 - 使用 es-toolkit 的 debounce
+   */
   const debouncedSearch = debounce(searchFamilyMembers, 300);
 
   return {
@@ -268,19 +272,5 @@ export function useFamilyMemberSearch() {
     debouncedSearch,
     clearSearchCache,
     clearSearchHistory,
-  };
-}
-
-/**
- * 防抖函数
- */
-function debounce<T extends (...args: any[]) => any>(
-  func: T,
-  wait: number,
-): (...args: Parameters<T>) => void {
-  let timeout: NodeJS.Timeout;
-  return (...args: Parameters<T>) => {
-    clearTimeout(timeout);
-    timeout = setTimeout(() => func(...args), wait);
   };
 }
