@@ -1,8 +1,8 @@
 {
   "src/**/*.{js,jsx,ts,tsx,vue,svelte,astro,mjs}": [
-    "eslint --fix"
+    "biome check --write --unsafe"
   ],
-  "*.{yaml,yml,json}": [
-    "eslint --fix"
+  "*.{json}": [
+    "biome check --write --unsafe"
   ]
 }

@@ -1,5 +1,5 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.2.3/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.3.8/schema.json",
   "vcs": {
     "enabled": true,
     "clientKind": "git",
@@ -8,15 +8,8 @@
   },
   "files": {
     "ignoreUnknown": false,
-    "includes": ["src/**/*.{js,jsx,ts,tsx,json,css,scss,less}"],
-    "experimentalScannerIgnores": [
-      "**/*.vue",
-      "node_modules/**",
-      "dist/**",
-      "**/*.svelte",
-      "**/.astro",
-      "**/*.md"
-    ]
+    "includes": ["src/**/*.{js,jsx,ts,tsx,vue,html,json,css,scss,less}"],
+    "maxSize": 5242880
   },
   "formatter": {
     "enabled": true,
@@ -24,80 +17,176 @@
     "lineWidth": 100,
     "indentWidth": 2,
     "lineEnding": "lf",
-    "useEditorconfig": true,
-    "formatWithErrors": true,
-    "attributePosition": "multiline",
-    "bracketSameLine": true
-  },
-  "assist": {
-    "enabled": true,
-    "actions": {
-      "source": {
-        "organizeImports": "off"
-      }
-    }
+    "formatWithErrors": false
   },
   "linter": {
     "enabled": true,
-    "includes": ["*.js", "*.jsx", "*.ts", "*.tsx"],
     "rules": {
       "recommended": true,
       "correctness": {
-        "noUnusedImports": "error",
-        "noUndeclaredDependencies": "error"
+        "noUnusedImports": "warn",
+        "noUnusedVariables": "warn"
       },
       "suspicious": {
-        "noVar": "on"
-      },
-      "nursery": {
-        "noFloatingPromises": "error",
-        "noImportCycles": "error"
+        "noDebugger": "warn",
+        "noConsole": "off",
+        "noDoubleEquals": "error",
+        "noExplicitAny": "warn"
       },
       "style": {
         "noParameterAssign": "error",
         "useDefaultParameterLast": "error",
         "useSingleVarDeclarator": "error",
-        "useConst": "error",
-        "noInferrableTypes": "error",
-        "noUselessElse": "error",
-        "useSelfClosingElements": "error",
-        "useNumberNamespace": "error",
-        "useAsConstAssertion": "error",
-        "noUnusedTemplateLiteral": "error",
-        "useTemplate": "error",
-        "useEnumInitializers": "error"
+        "useConst": "warn",
+        "noInferrableTypes": "warn",
+        "noUselessElse": "warn",
+        "useSelfClosingElements": "warn",
+        "useNumberNamespace": "warn",
+        "useAsConstAssertion": "warn",
+        "noUnusedTemplateLiteral": "warn",
+        "useTemplate": "warn",
+        "useEnumInitializers": "warn"
+      },
+      "a11y": {
+        "noAutofocus": "warn",
+        "useButtonType": "warn",
+        "useKeyWithClickEvents": "warn",
+        "useAltText": "error",
+        "useValidAnchor": "warn",
+        "useSemanticElements": "warn",
+        "noAccessKey": "warn",
+        "useAriaPropsForRole": "error"
+      },
+      "complexity": {
+        "noExcessiveCognitiveComplexity": "warn",
+        "noForEach": "off",
+        "useLiteralKeys": "warn",
+        "useSimplifiedLogicExpression": "warn"
+      },
+      "performance": {
+        "noAccumulatingSpread": "warn",
+        "noDelete": "warn"
+      },
+      "security": {
+        "noDangerouslySetInnerHtml": "warn",
+        "noDangerouslySetInnerHtmlWithChildren": "error"
       }
     }
   },
-  "html": {
-    "formatter": {
-      "enabled": true
-    }
-  },
   "javascript": {
-    "linter": {
-      "enabled": true
-    },
-    "assist": {
-      "enabled": true
-    },
     "parser": {
       "unsafeParameterDecoratorsEnabled": true
     },
     "formatter": {
+      "enabled": true,
       "quoteStyle": "single",
-      "lineWidth": 100,
+      "jsxQuoteStyle": "single",
+      "quoteProperties": "asNeeded",
       "trailingCommas": "all",
-      "bracketSameLine": true,
       "semicolons": "always",
-      "attributePosition": "auto",
       "arrowParentheses": "asNeeded",
-      "bracketSpacing": true
-    }
+      "bracketSpacing": true,
+      "bracketSameLine": false,
+      "lineWidth": 100,
+      "indentWidth": 2,
+      "indentStyle": "space"
+    },
+    "globals": [
+      "vi",
+      "vitest",
+      "describe",
+      "it",
+      "test",
+      "expect",
+      "beforeEach",
+      "afterEach",
+      "beforeAll",
+      "afterAll"
+    ]
   },
   "json": {
+    "parser": {
+      "allowComments": true,
+      "allowTrailingCommas": false
+    },
     "formatter": {
+      "enabled": true,
+      "indentStyle": "space",
+      "indentWidth": 2,
+      "lineWidth": 100
+    }
+  },
+  "css": {
+    "parser": {
+      "cssModules": false,
+      "tailwindDirectives": true
+    },
+    "formatter": {
+      "enabled": true,
+      "indentStyle": "space",
+      "indentWidth": 2,
+      "lineWidth": 100,
+      "quoteStyle": "double"
+    },
+    "linter": {
       "enabled": true
     }
-  }
+  },
+  "html": {
+    "experimentalFullSupportEnabled": true,
+    "parser": {
+      "interpolation": true
+    },
+    "formatter": {
+      "enabled": true,
+      "indentStyle": "space",
+      "indentScriptAndStyle": true,
+      "indentWidth": 2,
+      "lineWidth": 100,
+      "lineEnding": "lf",
+      "selfCloseVoidElements": "always"
+    }
+  },
+  "overrides": [
+    {
+      "includes": ["**/*.vue"],
+      "linter": {
+        "rules": {
+          "correctness": {
+            "noUnusedImports": "off",
+            "noUnusedVariables": "off"
+          },
+          "suspicious": {
+            "noConsole": "off"
+          },
+          "style": {
+            "useConst": "warn"
+          }
+        }
+      }
+    },
+    {
+      "includes": ["**/*.test.{js,ts,jsx,tsx}", "**/*.spec.{js,ts,jsx,tsx}", "**/__tests__/**"],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noExplicitAny": "off"
+          },
+          "style": {
+            "noParameterAssign": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": ["*.config.js", "*.config.ts", "vite.config.*", "nuxt.config.*"],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noExplicitAny": "off"
+          }
+        }
+      }
+    }
+  ]
 }

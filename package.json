@@ -22,12 +22,9 @@
     "build:clean:bat": "build.bat -c",
     "test": "vitest",
     "commit": "git add . && cz",
-    "format": "biome format --write src && eslint --fix src",
-    "lint": "biome check src && eslint src",
-    "lint:fix": "biome check --write --unsafe src && eslint --fix src",
-    "eslint": "eslint src",
-    "eslint:fix": "eslint --fix src",
-    "eslint:cache": "eslint --cache src",
+    "format": "biome format --write src",
+    "lint": "biome check src",
+    "lint:fix": "biome check --write --unsafe",
     "prepare": "husky"
   },
   "dependencies": {
@@ -64,8 +61,7 @@
     "zod": "^4.0.5"
   },
   "devDependencies": {
-    "@antfu/eslint-config": "^5.2.2",
-    "@biomejs/biome": "2.2.6",
+    "@biomejs/biome": "2.3.8",
     "@commitlint/config-conventional": "^19.8.1",
     "@iconify-json/tabler": "^1.2.23",
     "@tauri-apps/cli": "^2",
@@ -75,10 +71,6 @@
     "commitlint": "^19.8.1",
     "commitlint-config-gitmoji": "^2.3.1",
     "cz-customizable": "^7.4.0",
-    "eslint": "^9.39.1",
-    "eslint-plugin-astro": "^1.3.1",
-    "eslint-plugin-format": "^1.0.1",
-    "eslint-plugin-svelte": "^3.11.0",
     "husky": "^9.1.7",
     "lint-staged": "^16.1.2",
     "npm-check-updates": "^18.0.1",
