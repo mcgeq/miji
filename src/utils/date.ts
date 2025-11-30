@@ -87,7 +87,8 @@ export class DateUtils {
   static daysBetween(startDate: string, endDate: string): number {
     const start = new Date(startDate);
     const end = new Date(endDate);
-    return Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+    const diffTime = end.getTime() - start.getTime();
+    return Math.ceil(diffTime / 86400000); // 86400000 = 1000 * 60 * 60 * 24
   }
 
   /**
@@ -106,12 +107,21 @@ export class DateUtils {
    * // 处理无效日期
    * DateUtils.daysBetweenInclusive('', '2025-01-05'); // 0
    * DateUtils.daysBetweenInclusive('2025-01-01', ''); // 0
+   * 
+   * @performance
+   * 优化后的实现，避免重复计算和函数调用
    */
   static daysBetweenInclusive(startDate: string, endDate: string): number {
+    // 提前验证，避免无效的 Date 对象创建
     if (!startDate || !endDate) {
       return 0;
     }
-    return this.daysBetween(startDate, endDate) + 1;
+    
+    // 直接计算，避免调用 daysBetween（减少一次函数调用）
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const diffTime = end.getTime() - start.getTime();
+    return Math.ceil(diffTime / 86400000) + 1; // 86400000 = 1000 * 60 * 60 * 24
   }
 
   /**
