@@ -1,429 +1,593 @@
 <script setup lang="ts">
-import * as _ from 'es-toolkit/compat';
-import z from 'zod';
-import ColorSelector from '@/components/common/ColorSelector.vue';
-import DateTimePicker from '@/components/common/DateTimePicker.vue';
-import CurrencySelector from '@/components/common/money/CurrencySelector.vue';
-import PrioritySelector from '@/components/common/PrioritySelector.vue';
-import ReminderSelector from '@/components/common/ReminderSelector.vue';
-import RepeatPeriodSelector from '@/components/common/RepeatPeriodSelector.vue';
-import { Checkbox, FormRow, Input, Modal, Select, Textarea } from '@/components/ui';
-import { COLORS_MAP, CURRENCY_CNY } from '@/constants/moneyConst';
-import {
-  PrioritySchema,
-} from '@/schema/common';
-import { BilReminderCreateSchema, BilReminderUpdateSchema, ReminderTypesSchema } from '@/schema/money';
-import { DateUtils } from '@/utils/date';
-import type { SelectOption } from '@/components/ui';
-import type { Priority, RepeatPeriod } from '@/schema/common';
-import type { BilReminder, ReminderTypes } from '@/schema/money';
+  import * as _ from 'es-toolkit/compat';
+  import z from 'zod';
+  import ColorSelector from '@/components/common/ColorSelector.vue';
+  import DateTimePicker from '@/components/common/DateTimePicker.vue';
+  import CurrencySelector from '@/components/common/money/CurrencySelector.vue';
+  import PrioritySelector from '@/components/common/PrioritySelector.vue';
+  import ReminderSelector from '@/components/common/ReminderSelector.vue';
+  import RepeatPeriodSelector from '@/components/common/RepeatPeriodSelector.vue';
+  import type { SelectOption } from '@/components/ui';
+  import { Checkbox, FormRow, Input, Modal, Select, Textarea } from '@/components/ui';
+  import { COLORS_MAP, CURRENCY_CNY } from '@/constants/moneyConst';
+  import type { Priority, RepeatPeriod } from '@/schema/common';
+  import { PrioritySchema } from '@/schema/common';
+  import type { BilReminder, ReminderTypes } from '@/schema/money';
+  import {
+    BilReminderCreateSchema,
+    BilReminderUpdateSchema,
+    ReminderTypesSchema,
+  } from '@/schema/money';
+  import { DateUtils } from '@/utils/date';
+  import { deepClone } from '@/utils/objectUtils';
 
-interface Props {
-  reminder: BilReminder | null;
-}
-
-const props = defineProps<Props>();
-
-const emit = defineEmits(['close', 'save', 'update']);
-
-const colorNameMap = ref(COLORS_MAP);
-
-// 假设已注入 t 函数
-const { t } = useI18n();
-
-// 响应式状态
-const isSubmitting = ref(false);
-const locale = ref<'zh-CN' | 'en'>('zh-CN');
-
-// 提前提醒单位选项
-const advanceUnitOptions = computed<SelectOption[]>(() => [
-  { value: 'minutes', label: t('units.minutes') },
-  { value: 'hours', label: t('units.hours') },
-  { value: 'days', label: t('units.days') },
-  { value: 'weeks', label: t('units.weeks') },
-]);
-
-// 提醒频率详细选项
-const reminderFrequencyOptions = computed<SelectOption[]>(() => [
-  { value: 'once', label: t('common.frequency.once') },
-  { value: '15m', label: t('common.frequency.q15m') },
-  { value: '1h', label: t('common.frequency.hourly') },
-  { value: '1d', label: t('common.frequency.daily') },
-]);
-
-// 验证错误
-const validationErrors = reactive({
-  name: '',
-  type: '',
-  amount: '',
-  remindDate: '',
-  repeatPeriod: '',
-  priority: '',
-});
-
-const financeTypes: ReminderTypes[] = [
-  ReminderTypesSchema.enum.Bill,
-  ReminderTypesSchema.enum.Income,
-  ReminderTypesSchema.enum.Budget,
-  ReminderTypesSchema.enum.Investment,
-  ReminderTypesSchema.enum.Savings,
-  ReminderTypesSchema.enum.Tax,
-  ReminderTypesSchema.enum.Insurance,
-  ReminderTypesSchema.enum.Loan,
-];
-
-const form = reactive<BilReminder>(props.reminder ? { ...props.reminder } : getBilReminderDefault());
-
-// 合并后的提醒方式（系统=desktop/mobile 二合一），其余渠道占位
-const methodsState = reactive({
-  system: props.reminder?.reminderMethods
-    ? !!(props.reminder?.reminderMethods.desktop || props.reminder?.reminderMethods.mobile)
-    : true,
-  email: !!props.reminder?.reminderMethods?.email,
-  sms: !!props.reminder?.reminderMethods?.sms,
-});
-
-// 计算属性
-const isFinanceType = computed(() => {
-  if (ReminderTypesSchema.options.includes(form.type)) {
-    return financeTypes.includes(form.type);
+  interface Props {
+    reminder: BilReminder | null;
   }
-  return false;
-});
 
-const amountPlaceholder = computed(() => {
-  if (isFinanceType.value) {
-    return t('validation.amountRequired');
-  }
-  return t('placeholders.amountOptional');
-});
+  const props = defineProps<Props>();
 
-// 处理 snoozeUntil 的 Date 对象转换
-const snoozeUntilDate = computed({
-  get: () => {
-    if (!form.snoozeUntil) return null;
-    try {
-      const date = new Date(form.snoozeUntil);
-      return Number.isNaN(date.getTime()) ? null : date;
-    } catch {
-      return null;
-    }
-  },
-  set: (value: Date | null) => {
-    if (value) {
-      // 直接使用 ISO 字符串格式，不需要转换
-      form.snoozeUntil = value.toISOString();
-    } else {
-      form.snoozeUntil = null;
-    }
-  },
-});
+  const emit = defineEmits(['close', 'save', 'update']);
 
-const descriptionPlaceholder = computed(() => {
-  // 修复：正确的类型检查和动态键访问
-  const placeholderKey = `placeholders.reminderDetails.${form.type}`;
-  const defaultKey = 'placeholders.reminderDetails.default';
+  const colorNameMap = ref(COLORS_MAP);
 
-  try {
-    return t(placeholderKey);
-  } catch {
-    return t(defaultKey);
-  }
-});
+  // 假设已注入 t 函数
+  const { t } = useI18n();
 
-// 处理 nullable 字段的计算属性
-const billDateComputed = computed<string>({
-  get: () => form.billDate ?? '',
-  set: (value: string) => {
-    form.billDate = value || null;
-  },
-});
+  // 响应式状态
+  const isSubmitting = ref(false);
+  const locale = ref<'zh-CN' | 'en'>('zh-CN');
 
-const advanceUnitComputed = computed<string>({
-  get: () => form.advanceUnit ?? 'days',
-  set: (value: string) => {
-    form.advanceUnit = value || undefined;
-  },
-});
+  // 提前提醒单位选项
+  const advanceUnitOptions = computed<SelectOption[]>(() => [
+    { value: 'minutes', label: t('units.minutes') },
+    { value: 'hours', label: t('units.hours') },
+    { value: 'days', label: t('units.days') },
+    { value: 'weeks', label: t('units.weeks') },
+  ]);
 
-const reminderFrequencyComputed = computed<string>({
-  get: () => form.reminderFrequency ?? 'once',
-  set: (value: string) => {
-    form.reminderFrequency = value || null;
-  },
-});
+  // 提醒频率详细选项
+  const reminderFrequencyOptions = computed<SelectOption[]>(() => [
+    { value: 'once', label: t('common.frequency.once') },
+    { value: '15m', label: t('common.frequency.q15m') },
+    { value: '1h', label: t('common.frequency.hourly') },
+    { value: '1d', label: t('common.frequency.daily') },
+  ]);
 
-const escalationAfterHoursComputed = computed<number>({
-  get: () => form.escalationAfterHours ?? 24,
-  set: (value: number) => {
-    form.escalationAfterHours = value || null;
-  },
-});
+  // 验证错误
+  const validationErrors = reactive({
+    name: '',
+    type: '',
+    amount: '',
+    remindDate: '',
+    repeatPeriod: '',
+    priority: '',
+  });
 
-const timezoneComputed = computed<string>({
-  get: () => form.timezone ?? '',
-  set: (value: string) => {
-    form.timezone = value || null;
-  },
-});
+  const financeTypes: ReminderTypes[] = [
+    ReminderTypesSchema.enum.Bill,
+    ReminderTypesSchema.enum.Income,
+    ReminderTypesSchema.enum.Budget,
+    ReminderTypesSchema.enum.Investment,
+    ReminderTypesSchema.enum.Savings,
+    ReminderTypesSchema.enum.Tax,
+    ReminderTypesSchema.enum.Insurance,
+    ReminderTypesSchema.enum.Loan,
+  ];
 
-const descriptionComputed = computed<string>({
-  get: () => form.description ?? '',
-  set: (value: string) => {
-    form.description = value || null;
-  },
-});
-
-const isFormValid = computed(() => {
-  return !!(
-    form.name.trim()
-    && form.type
-    && form.remindDate
-    && form.priority
-    && !validationErrors.name
-    && !validationErrors.type
-    && !validationErrors.amount
-    && !validationErrors.remindDate
-    && !validationErrors.repeatPeriod
-    && !validationErrors.priority
-    && (!isFinanceType.value || (form.amount && form.amount > 0))
+  const form = reactive<BilReminder>(
+    props.reminder ? { ...props.reminder } : getBilReminderDefault(),
   );
-});
 
-// 验证方法
-function validateName() {
-  if (!form.name.trim()) {
-    validationErrors.name = t('validation.reminderTitle');
-  } else if (form.name.trim().length < 2) {
-    validationErrors.name = t('validation.titleMinLength');
-  } else if (form.name.trim().length > 50) {
-    validationErrors.name = t('validation.titleMaxLength');
-  } else {
-    validationErrors.name = '';
+  // 合并后的提醒方式（系统=desktop/mobile 二合一），其余渠道占位
+  const methodsState = reactive({
+    system: props.reminder?.reminderMethods
+      ? !!(props.reminder?.reminderMethods.desktop || props.reminder?.reminderMethods.mobile)
+      : true,
+    email: !!props.reminder?.reminderMethods?.email,
+    sms: !!props.reminder?.reminderMethods?.sms,
+  });
+
+  // 计算属性
+  const isFinanceType = computed(() => {
+    if (ReminderTypesSchema.options.includes(form.type)) {
+      return financeTypes.includes(form.type);
+    }
+    return false;
+  });
+
+  const amountPlaceholder = computed(() => {
+    if (isFinanceType.value) {
+      return t('validation.amountRequired');
+    }
+    return t('placeholders.amountOptional');
+  });
+
+  // 处理 snoozeUntil 的 Date 对象转换
+  const snoozeUntilDate = computed({
+    get: () => {
+      if (!form.snoozeUntil) return null;
+      try {
+        const date = new Date(form.snoozeUntil);
+        return Number.isNaN(date.getTime()) ? null : date;
+      } catch {
+        return null;
+      }
+    },
+    set: (value: Date | null) => {
+      if (value) {
+        // 直接使用 ISO 字符串格式，不需要转换
+        form.snoozeUntil = value.toISOString();
+      } else {
+        form.snoozeUntil = null;
+      }
+    },
+  });
+
+  const descriptionPlaceholder = computed(() => {
+    // 修复：正确的类型检查和动态键访问
+    const placeholderKey = `placeholders.reminderDetails.${form.type}`;
+    const defaultKey = 'placeholders.reminderDetails.default';
+
+    try {
+      return t(placeholderKey);
+    } catch {
+      return t(defaultKey);
+    }
+  });
+
+  // 处理 nullable 字段的计算属性
+  const billDateComputed = computed<string>({
+    get: () => form.billDate ?? '',
+    set: (value: string) => {
+      form.billDate = value || null;
+    },
+  });
+
+  const advanceUnitComputed = computed<string>({
+    get: () => form.advanceUnit ?? 'days',
+    set: (value: string) => {
+      form.advanceUnit = value || undefined;
+    },
+  });
+
+  const reminderFrequencyComputed = computed<string>({
+    get: () => form.reminderFrequency ?? 'once',
+    set: (value: string) => {
+      form.reminderFrequency = value || null;
+    },
+  });
+
+  const escalationAfterHoursComputed = computed<number>({
+    get: () => form.escalationAfterHours ?? 24,
+    set: (value: number) => {
+      form.escalationAfterHours = value || null;
+    },
+  });
+
+  const timezoneComputed = computed<string>({
+    get: () => form.timezone ?? '',
+    set: (value: string) => {
+      form.timezone = value || null;
+    },
+  });
+
+  const descriptionComputed = computed<string>({
+    get: () => form.description ?? '',
+    set: (value: string) => {
+      form.description = value || null;
+    },
+  });
+
+  const isFormValid = computed(() => {
+    return !!(
+      form.name.trim() &&
+      form.type &&
+      form.remindDate &&
+      form.priority &&
+      !validationErrors.name &&
+      !validationErrors.type &&
+      !validationErrors.amount &&
+      !validationErrors.remindDate &&
+      !validationErrors.repeatPeriod &&
+      !validationErrors.priority &&
+      (!isFinanceType.value || (form.amount && form.amount > 0))
+    );
+  });
+
+  // 验证方法
+  function validateName() {
+    if (!form.name.trim()) {
+      validationErrors.name = t('validation.reminderTitle');
+    } else if (form.name.trim().length < 2) {
+      validationErrors.name = t('validation.titleMinLength');
+    } else if (form.name.trim().length > 50) {
+      validationErrors.name = t('validation.titleMaxLength');
+    } else {
+      validationErrors.name = '';
+    }
   }
-}
 
-function validateAmount() {
-  if (isFinanceType.value) {
-    if (!form.amount || form.amount <= 0) {
-      validationErrors.amount = t('validation.financeTypeAmount');
-    } else if (form.amount > 999999999) {
-      validationErrors.amount = t('validation.maxAmount');
+  function validateAmount() {
+    if (isFinanceType.value) {
+      if (!form.amount || form.amount <= 0) {
+        validationErrors.amount = t('validation.financeTypeAmount');
+      } else if (form.amount > 999999999) {
+        validationErrors.amount = t('validation.maxAmount');
+      } else {
+        validationErrors.amount = '';
+      }
     } else {
       validationErrors.amount = '';
     }
-  } else {
-    validationErrors.amount = '';
   }
-}
 
-function validateRemindDate() {
-  if (!form.remindDate) {
-    validationErrors.remindDate = t('validation.reminderDate');
-  } else {
-    const selectedDate = new Date(form.remindDate);
-    form.dueAt = form.remindDate;
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    if (selectedDate < today) {
-      validationErrors.remindDate = t('validation.dateNotPast');
+  function validateRemindDate() {
+    if (!form.remindDate) {
+      validationErrors.remindDate = t('validation.reminderDate');
     } else {
-      validationErrors.remindDate = '';
+      const selectedDate = new Date(form.remindDate);
+      form.dueAt = form.remindDate;
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      if (selectedDate < today) {
+        validationErrors.remindDate = t('validation.dateNotPast');
+      } else {
+        validationErrors.remindDate = '';
+      }
     }
   }
-}
 
-// 事件处理
-function handleTypeChange(value: string) {
-  validationErrors.type = '';
-
-  // 根据不同类型设置智能默认值
-  switch (value) {
-    case 'Bill':
-      form.priority = 'High';
-      form.advanceValue = 3;
-      form.advanceUnit = 'days';
-      form.color = 'var(--color-error)'; // 红色
-      break;
-    case 'Income':
-      form.priority = 'Medium';
-      form.advanceValue = 1;
-      form.advanceUnit = 'days';
-      form.color = 'var(--color-success)'; // 绿色
-      break;
-    case 'Investment':
-      form.priority = 'Medium';
-      form.advanceValue = 1;
-      form.advanceUnit = 'days';
-      form.color = 'var(--color-info)'; // 蓝色
-      break;
-    case 'Health':
-      form.priority = 'High';
-      form.advanceValue = 1;
-      form.advanceUnit = 'days';
-      form.color = 'var(--color-warning)'; // 橙色
-      break;
-    case 'Meeting':
-      form.priority = 'Medium';
-      form.advanceValue = 30;
-      form.advanceUnit = 'minutes';
-      form.color = 'var(--color-purple-500)'; // 紫色
-      break;
-    case 'Birthday':
-    case 'Anniversary':
-      form.priority = 'Medium';
-      form.advanceValue = 1;
-      form.advanceUnit = 'days';
-      form.color = 'var(--color-pink-500)'; // 粉色
-      form.repeatPeriod = { type: 'Yearly', interval: 1, month: 1, day: 1 };
-      break;
-    case 'Exercise':
-      form.priority = 'Low';
-      form.advanceValue = 1;
-      form.advanceUnit = 'hours';
-      form.color = 'var(--color-cyan-500)'; // 青色
-      break;
-    case 'Medicine':
-      form.priority = 'Urgent';
-      form.advanceValue = 30;
-      form.advanceUnit = 'minutes';
-      form.color = 'var(--color-error)'; // 红色
-      break;
-    default:
-      form.priority = 'Medium';
-      form.advanceValue = 1;
-      form.advanceUnit = 'hours';
-      break;
-  }
-
-  // 验证金额字段
-  validateAmount();
-}
-
-function handleTypeValidation(isValid: boolean) {
-  if (!isValid) {
-    validationErrors.type = t('validation.selectReminderType');
-  } else {
+  // 事件处理
+  function handleTypeChange(value: string) {
     validationErrors.type = '';
-  }
-}
 
-function handleRepeatPeriodChange(value: RepeatPeriod) {
-  // 确保 advanceValue 有值，如果为 undefined 或 null 则设为 0
-  const currentAdvanceValue = form.advanceValue ?? 0;
-
-  // 根据重复类型调整提前提醒时间的合理性
-  if (value.type === 'Daily' && currentAdvanceValue > 12) {
-    form.advanceValue = 1;
-    form.advanceUnit = 'hours';
-  } else if (value.type === 'Weekly' && currentAdvanceValue > 168) {
-    // 168小时 = 7天
-    form.advanceValue = 1;
-    form.advanceUnit = 'days';
-  } else if (value.type === 'Monthly' && currentAdvanceValue > 720) {
-    // 720小时 = 30天
-    form.advanceValue = 3;
-    form.advanceUnit = 'days';
-  }
-
-  // 清除验证错误
-  validationErrors.repeatPeriod = '';
-}
-
-function handleRepeatPeriodValidation(isValid: boolean) {
-  if (!isValid) {
-    validationErrors.repeatPeriod = t('validation.repeatPeriodIncomplete');
-  } else {
-    validationErrors.repeatPeriod = '';
-  }
-}
-
-function handlePriorityChange(value: Priority) {
-  validationErrors.priority = '';
-
-  // 确保 advanceValue 有值，如果为 undefined 或 null 则设为 0
-  const currentAdvanceValue = form.advanceValue ?? 0;
-
-  // 根据优先级调整提前提醒时间的建议
-  switch (value) {
-    case 'Urgent':
-      // 紧急事项建议提前30分钟或1小时提醒
-      if (currentAdvanceValue === 0 || currentAdvanceValue > 24) {
-        form.advanceValue = 1;
-        form.advanceUnit = 'hours';
-      }
-      break;
-    case 'High':
-      // 高优先级建议提前几小时或1天提醒
-      if (currentAdvanceValue === 0 || currentAdvanceValue < 2) {
+    // 根据不同类型设置智能默认值
+    switch (value) {
+      case 'Bill':
+        form.priority = 'High';
         form.advanceValue = 3;
-        form.advanceUnit = 'hours';
-      }
-      break;
-    case 'Medium':
-      // 中等优先级保持当前设置或使用默认值
-      if (currentAdvanceValue === 0) {
-        form.advanceValue = 1;
-        form.advanceUnit = 'hours';
-      }
-      break;
-    case 'Low':
-      // 低优先级可以设置较长的提前时间
-      if (currentAdvanceValue === 0) {
+        form.advanceUnit = 'days';
+        form.color = 'var(--color-error)'; // 红色
+        break;
+      case 'Income':
+        form.priority = 'Medium';
         form.advanceValue = 1;
         form.advanceUnit = 'days';
-      }
-      break;
-  }
-}
+        form.color = 'var(--color-success)'; // 绿色
+        break;
+      case 'Investment':
+        form.priority = 'Medium';
+        form.advanceValue = 1;
+        form.advanceUnit = 'days';
+        form.color = 'var(--color-info)'; // 蓝色
+        break;
+      case 'Health':
+        form.priority = 'High';
+        form.advanceValue = 1;
+        form.advanceUnit = 'days';
+        form.color = 'var(--color-warning)'; // 橙色
+        break;
+      case 'Meeting':
+        form.priority = 'Medium';
+        form.advanceValue = 30;
+        form.advanceUnit = 'minutes';
+        form.color = 'var(--color-purple-500)'; // 紫色
+        break;
+      case 'Birthday':
+      case 'Anniversary':
+        form.priority = 'Medium';
+        form.advanceValue = 1;
+        form.advanceUnit = 'days';
+        form.color = 'var(--color-pink-500)'; // 粉色
+        form.repeatPeriod = { type: 'Yearly', interval: 1, month: 1, day: 1 };
+        break;
+      case 'Exercise':
+        form.priority = 'Low';
+        form.advanceValue = 1;
+        form.advanceUnit = 'hours';
+        form.color = 'var(--color-cyan-500)'; // 青色
+        break;
+      case 'Medicine':
+        form.priority = 'Urgent';
+        form.advanceValue = 30;
+        form.advanceUnit = 'minutes';
+        form.color = 'var(--color-error)'; // 红色
+        break;
+      default:
+        form.priority = 'Medium';
+        form.advanceValue = 1;
+        form.advanceUnit = 'hours';
+        break;
+    }
 
-function handlePriorityValidation(isValid: boolean) {
-  if (!isValid) {
-    validationErrors.priority = t('validation.selectPriority');
-  } else {
+    // 验证金额字段
+    validateAmount();
+  }
+
+  function handleTypeValidation(isValid: boolean) {
+    if (!isValid) {
+      validationErrors.type = t('validation.selectReminderType');
+    } else {
+      validationErrors.type = '';
+    }
+  }
+
+  function handleRepeatPeriodChange(value: RepeatPeriod) {
+    // 确保 advanceValue 有值，如果为 undefined 或 null 则设为 0
+    const currentAdvanceValue = form.advanceValue ?? 0;
+
+    // 根据重复类型调整提前提醒时间的合理性
+    if (value.type === 'Daily' && currentAdvanceValue > 12) {
+      form.advanceValue = 1;
+      form.advanceUnit = 'hours';
+    } else if (value.type === 'Weekly' && currentAdvanceValue > 168) {
+      // 168小时 = 7天
+      form.advanceValue = 1;
+      form.advanceUnit = 'days';
+    } else if (value.type === 'Monthly' && currentAdvanceValue > 720) {
+      // 720小时 = 30天
+      form.advanceValue = 3;
+      form.advanceUnit = 'days';
+    }
+
+    // 清除验证错误
+    validationErrors.repeatPeriod = '';
+  }
+
+  function handleRepeatPeriodValidation(isValid: boolean) {
+    if (!isValid) {
+      validationErrors.repeatPeriod = t('validation.repeatPeriodIncomplete');
+    } else {
+      validationErrors.repeatPeriod = '';
+    }
+  }
+
+  function handlePriorityChange(value: Priority) {
     validationErrors.priority = '';
+
+    // 确保 advanceValue 有值，如果为 undefined 或 null 则设为 0
+    const currentAdvanceValue = form.advanceValue ?? 0;
+
+    // 根据优先级调整提前提醒时间的建议
+    switch (value) {
+      case 'Urgent':
+        // 紧急事项建议提前30分钟或1小时提醒
+        if (currentAdvanceValue === 0 || currentAdvanceValue > 24) {
+          form.advanceValue = 1;
+          form.advanceUnit = 'hours';
+        }
+        break;
+      case 'High':
+        // 高优先级建议提前几小时或1天提醒
+        if (currentAdvanceValue === 0 || currentAdvanceValue < 2) {
+          form.advanceValue = 3;
+          form.advanceUnit = 'hours';
+        }
+        break;
+      case 'Medium':
+        // 中等优先级保持当前设置或使用默认值
+        if (currentAdvanceValue === 0) {
+          form.advanceValue = 1;
+          form.advanceUnit = 'hours';
+        }
+        break;
+      case 'Low':
+        // 低优先级可以设置较长的提前时间
+        if (currentAdvanceValue === 0) {
+          form.advanceValue = 1;
+          form.advanceUnit = 'days';
+        }
+        break;
+    }
   }
-}
 
-function closeModal() {
-  emit('close');
-}
-
-async function saveReminder() {
-  // 执行所有验证
-  validateName();
-  validateAmount();
-  validateRemindDate();
-
-  if (!isFormValid.value) {
-    return;
+  function handlePriorityValidation(isValid: boolean) {
+    if (!isValid) {
+      validationErrors.priority = t('validation.selectPriority');
+    } else {
+      validationErrors.priority = '';
+    }
   }
 
-  isSubmitting.value = true;
+  function closeModal() {
+    emit('close');
+  }
 
-  try {
-    const defaultValues: Record<string, unknown> = {
-      name: null,
+  async function saveReminder() {
+    // 执行所有验证
+    validateName();
+    validateAmount();
+    validateRemindDate();
+
+    if (!isFormValid.value) {
+      return;
+    }
+
+    isSubmitting.value = true;
+
+    try {
+      const defaultValues: Record<string, unknown> = {
+        name: null,
+        enabled: true,
+        type: null,
+        description: null,
+        category: null,
+        amount: 0,
+        currency: null,
+        dueAt: null,
+        billDate: null,
+        remindDate: null,
+        repeatPeriodType: 'None',
+        repeatPeriod: null,
+        isPaid: false,
+        isDeleted: false,
+        priority: null,
+        advanceValue: 0,
+        advanceUnit: null,
+        color: null,
+        relatedTransactionSerialNum: null,
+        // 新增高级提醒功能字段默认值
+        lastReminderSentAt: null,
+        reminderFrequency: null,
+        snoozeUntil: null,
+        reminderMethods: null,
+        escalationEnabled: false,
+        escalationAfterHours: 24,
+        timezone: null,
+        smartReminderEnabled: false,
+        autoReschedule: false,
+        paymentReminderEnabled: false,
+        batchReminderId: null,
+      };
+      // eslint-disable-next-line complexity
+      const formattedData = _.mapValues(
+        {
+          name: form.name,
+          enabled: form.enabled,
+          type: form.type,
+          description: form.description,
+          category: form.category,
+          amount: form.amount,
+          currency: form.currency?.code || CURRENCY_CNY.code,
+          dueAt: form.dueAt,
+          billDate: form.billDate,
+          remindDate: form.remindDate,
+          repeatPeriodType: form.repeatPeriodType,
+          repeatPeriod: form.repeatPeriod,
+          isPaid: form.isPaid,
+          priority: form.priority,
+          advanceValue: form.advanceValue ?? 0,
+          advanceUnit: form.advanceUnit,
+          color: form.color,
+          relatedTransactionSerialNum: form.relatedTransactionSerialNum,
+          isDeleted: form.isDeleted,
+          // 新增高级提醒功能字段
+          lastReminderSentAt: form.lastReminderSentAt,
+          reminderFrequency: form.reminderFrequency,
+          snoozeUntil: form.snoozeUntil,
+          reminderMethods: {
+            desktop: methodsState.system,
+            mobile: methodsState.system,
+            email: methodsState.email,
+            sms: methodsState.sms,
+          },
+          escalationEnabled: form.escalationEnabled,
+          escalationAfterHours: form.escalationAfterHours,
+          timezone: form.timezone,
+          smartReminderEnabled: form.smartReminderEnabled,
+          autoReschedule: form.autoReschedule,
+          paymentReminderEnabled: form.paymentReminderEnabled,
+          batchReminderId: form.batchReminderId,
+        },
+        (value: unknown, key: string) => {
+          if (key.endsWith('Date') || key === 'dueAt' || key === 'snoozeUntil') {
+            if (value) {
+              // snoozeUntil 已经是 ISO 格式，不需要转换
+              if (key === 'snoozeUntil') {
+                return value;
+              }
+
+              // 其他日期字段需要格式化
+              const dateValue =
+                typeof value === 'string'
+                  ? value
+                  : value instanceof Date
+                    ? value.toISOString()
+                    : String(value);
+              return DateUtils.toLocalISOFromDateInput(dateValue);
+            }
+            return null;
+          }
+          // 应用默认值
+          return _.defaultTo(value, defaultValues[key] ?? null);
+        },
+      );
+      if (props.reminder) {
+        const changes = _.omitBy(formattedData, (value: unknown, key: string) =>
+          _.isEqual(value, _.get(props.reminder, key)),
+        );
+        // 特殊处理需要序列化为JSON的字段
+        const jsonFields = ['repeatPeriod'];
+        const serializedChanges = _.mapValues(changes, (value, key) => {
+          if (jsonFields.includes(key) && value !== null && value !== undefined) {
+            try {
+              return JSON.stringify(value);
+            } catch {
+              return value;
+            }
+          }
+          return value;
+        });
+        if (!_.isEmpty(serializedChanges)) {
+          const bilReminderUpdate = BilReminderUpdateSchema.parse(changes);
+          emit('update', props.reminder.serialNum, bilReminderUpdate);
+        }
+      } else {
+        const createBilReminder = BilReminderCreateSchema.parse(formattedData);
+        emit('save', createBilReminder);
+      }
+      closeModal();
+    } catch (err: unknown) {
+      if (err instanceof z.ZodError) {
+        console.error('Validation failed:', err.issues);
+      } else {
+        console.error('Unexpected error:', err);
+      }
+    } finally {
+      isSubmitting.value = false;
+    }
+  }
+
+  // 监听器
+  watch(
+    () => props.reminder,
+    newVal => {
+      if (newVal) {
+        const clonedReminder = deepClone(newVal);
+        // 确保 advanceValue 有默认值，使用空值合并运算符
+        clonedReminder.advanceValue = clonedReminder.advanceValue ?? 0;
+        if (!clonedReminder.currency) {
+          clonedReminder.currency = CURRENCY_CNY;
+        }
+        methodsState.system = !!(
+          clonedReminder.reminderMethods?.desktop || clonedReminder.reminderMethods?.mobile
+        );
+        methodsState.email = !!clonedReminder.reminderMethods?.email;
+        methodsState.sms = !!clonedReminder.reminderMethods?.sms;
+        Object.assign(form, clonedReminder);
+      }
+    },
+    { immediate: true, deep: true },
+  );
+
+  function getBilReminderDefault(): BilReminder {
+    const today = DateUtils.getTodayDate();
+    return {
+      serialNum: '',
+      name: '',
       enabled: true,
-      type: null,
-      description: null,
-      category: null,
+      type: ReminderTypesSchema.enum.Bill,
+      description: '',
+      category: 'Food',
       amount: 0,
-      currency: null,
-      dueAt: null,
-      billDate: null,
-      remindDate: null,
+      currency: CURRENCY_CNY,
+      dueAt: DateUtils.getEndOfTodayISOWithOffset(),
+      billDate: today,
+      remindDate: today,
       repeatPeriodType: 'None',
-      repeatPeriod: null,
+      repeatPeriod: { type: 'None' } as RepeatPeriod,
       isPaid: false,
-      isDeleted: false,
-      priority: null,
+      priority: PrioritySchema.enum.Medium,
       advanceValue: 0,
-      advanceUnit: null,
-      color: null,
+      advanceUnit: 'hours',
+      color: COLORS_MAP[0].code,
       relatedTransactionSerialNum: null,
-      // 新增高级提醒功能字段默认值
+      isDeleted: false,
+      createdAt: '',
+      updatedAt: '',
+      // 新增高级提醒功能字段
       lastReminderSentAt: null,
       reminderFrequency: null,
       snoozeUntil: null,
@@ -436,231 +600,81 @@ async function saveReminder() {
       paymentReminderEnabled: false,
       batchReminderId: null,
     };
-    const formattedData = _.mapValues({
-      name: form.name,
-      enabled: form.enabled,
-      type: form.type,
-      description: form.description,
-      category: form.category,
-      amount: form.amount,
-      currency: form.currency?.code || CURRENCY_CNY.code,
-      dueAt: form.dueAt,
-      billDate: form.billDate,
-      remindDate: form.remindDate,
-      repeatPeriodType: form.repeatPeriodType,
-      repeatPeriod: form.repeatPeriod,
-      isPaid: form.isPaid,
-      priority: form.priority,
-      advanceValue: form.advanceValue ?? 0,
-      advanceUnit: form.advanceUnit,
-      color: form.color,
-      relatedTransactionSerialNum: form.relatedTransactionSerialNum,
-      isDeleted: form.isDeleted,
-      // 新增高级提醒功能字段
-      lastReminderSentAt: form.lastReminderSentAt,
-      reminderFrequency: form.reminderFrequency,
-      snoozeUntil: form.snoozeUntil,
-      reminderMethods: {
-        desktop: methodsState.system,
-        mobile: methodsState.system,
-        email: methodsState.email,
-        sms: methodsState.sms,
-      },
-      escalationEnabled: form.escalationEnabled,
-      escalationAfterHours: form.escalationAfterHours,
-      timezone: form.timezone,
-      smartReminderEnabled: form.smartReminderEnabled,
-      autoReschedule: form.autoReschedule,
-      paymentReminderEnabled: form.paymentReminderEnabled,
-      batchReminderId: form.batchReminderId,
-    }, (value: unknown, key: string) => {
-      if (key.endsWith('Date') || key === 'dueAt' || key === 'snoozeUntil') {
-        if (value) {
-          // snoozeUntil 已经是 ISO 格式，不需要转换
-          if (key === 'snoozeUntil') {
-            return value;
-          }
-
-          // 其他日期字段需要格式化
-          const dateValue = typeof value === 'string' ?
-            value :
-            value instanceof Date ?
-                value.toISOString() :
-                String(value);
-          return DateUtils.toLocalISOFromDateInput(dateValue);
-        }
-        return null;
-      }
-      // 应用默认值
-      return _.defaultTo(value, defaultValues[key] ?? null);
-    });
-    if (props.reminder) {
-      const changes = _.omitBy(formattedData, (value: unknown, key: string) =>
-        _.isEqual(value, _.get(props.reminder, key)));
-      // 特殊处理需要序列化为JSON的字段
-      const jsonFields = [
-        'repeatPeriod',
-      ];
-      const serializedChanges = _.mapValues(changes, (value, key) => {
-        if (jsonFields.includes(key) && value !== null && value !== undefined) {
-          try {
-            return JSON.stringify(value);
-          } catch {
-            return value;
-          }
-        }
-        return value;
-      });
-      if (!_.isEmpty(serializedChanges)) {
-        const bilReminderUpdate = BilReminderUpdateSchema.parse(changes);
-        emit('update', props.reminder.serialNum, bilReminderUpdate);
-      }
-    } else {
-      const createBilReminder = BilReminderCreateSchema.parse(formattedData);
-      emit('save', createBilReminder);
-    }
-    closeModal();
-  } catch (err: unknown) {
-    if (err instanceof z.ZodError) {
-      console.error('Validation failed:', err.issues);
-    } else {
-      console.error('Unexpected error:', err);
-    }
-  } finally {
-    isSubmitting.value = false;
   }
-}
 
-// 监听器
-watch(
-  () => props.reminder,
-  newVal => {
-    if (newVal) {
-      const clonedReminder = JSON.parse(JSON.stringify(newVal));
-      // 确保 advanceValue 有默认值，使用空值合并运算符
-      clonedReminder.advanceValue = clonedReminder.advanceValue ?? 0;
-      if (!clonedReminder.currency) {
-        clonedReminder.currency = CURRENCY_CNY;
+  // 监听类型变化，自动验证金额
+  watch(
+    () => form.type,
+    () => {
+      nextTick(() => {
+        validateAmount();
+      });
+    },
+  );
+
+  watch(
+    () => form.repeatPeriod,
+    repeatPeriod => {
+      form.repeatPeriodType = repeatPeriod.type;
+    },
+  );
+
+  // 清理验证错误
+  watch(
+    () => form.name,
+    () => {
+      if (validationErrors.name) {
+        validateName();
       }
-      methodsState.system = !!(clonedReminder.reminderMethods?.desktop || clonedReminder.reminderMethods?.mobile);
-      methodsState.email = !!clonedReminder.reminderMethods?.email;
-      methodsState.sms = !!clonedReminder.reminderMethods?.sms;
-      Object.assign(form, clonedReminder);
-    }
-  },
-  { immediate: true, deep: true },
-);
+    },
+  );
 
-function getBilReminderDefault(): BilReminder {
-  const today = DateUtils.getTodayDate();
-  return {
-    serialNum: '',
-    name: '',
-    enabled: true,
-    type: ReminderTypesSchema.enum.Bill,
-    description: '',
-    category: 'Food',
-    amount: 0,
-    currency: CURRENCY_CNY,
-    dueAt: DateUtils.getEndOfTodayISOWithOffset(),
-    billDate: today,
-    remindDate: today,
-    repeatPeriodType: 'None',
-    repeatPeriod: { type: 'None' } as RepeatPeriod,
-    isPaid: false,
-    priority: PrioritySchema.enum.Medium,
-    advanceValue: 0,
-    advanceUnit: 'hours',
-    color: COLORS_MAP[0].code,
-    relatedTransactionSerialNum: null,
-    isDeleted: false,
-    createdAt: '',
-    updatedAt: '',
-    // 新增高级提醒功能字段
-    lastReminderSentAt: null,
-    reminderFrequency: null,
-    snoozeUntil: null,
-    reminderMethods: null,
-    escalationEnabled: false,
-    escalationAfterHours: 24,
-    timezone: null,
-    smartReminderEnabled: false,
-    autoReschedule: false,
-    paymentReminderEnabled: false,
-    batchReminderId: null,
-  };
-}
-
-// 监听类型变化，自动验证金额
-watch(
-  () => form.type,
-  () => {
-    nextTick(() => {
-      validateAmount();
-    });
-  },
-);
-
-watch(() => form.repeatPeriod, repeatPeriod => {
-  form.repeatPeriodType = repeatPeriod.type;
-});
-
-// 清理验证错误
-watch(
-  () => form.name,
-  () => {
-    if (validationErrors.name) {
-      validateName();
-    }
-  },
-);
-
-watch(
-  () => form.type,
-  () => {
-    if (isFinanceType.value) {
-      form.billDate = DateUtils.getTodayDate();
-    } else {
-      form.billDate = null;
-    }
-  },
-);
-
-watch(
-  () => form.remindDate,
-  () => {
-    if (validationErrors.remindDate) {
-      validateRemindDate();
-    }
-  },
-);
-
-// 确保 advanceValue 始终有值
-watch(
-  () => form.advanceValue,
-  newVal => {
-    if (newVal === undefined || newVal === null) {
-      form.advanceValue = 0;
-    }
-  },
-);
-
-watch(
-  () => props.reminder,
-  newVal => {
-    if (newVal) {
-      const clonedReminder = JSON.parse(JSON.stringify(newVal));
-      if (clonedReminder.remindDate) {
-        clonedReminder.remindDate = clonedReminder.remindDate.split('T')[0];
+  watch(
+    () => form.type,
+    () => {
+      if (isFinanceType.value) {
+        form.billDate = DateUtils.getTodayDate();
+      } else {
+        form.billDate = null;
       }
-      if (clonedReminder.billDate) {
-        clonedReminder.billDate = clonedReminder.billDate.split('T')[0];
+    },
+  );
+
+  watch(
+    () => form.remindDate,
+    () => {
+      if (validationErrors.remindDate) {
+        validateRemindDate();
       }
-      Object.assign(form, clonedReminder);
-    }
-  },
-  { immediate: true, deep: true },
-);
+    },
+  );
+
+  // 确保 advanceValue 始终有值
+  watch(
+    () => form.advanceValue,
+    newVal => {
+      if (newVal === undefined || newVal === null) {
+        form.advanceValue = 0;
+      }
+    },
+  );
+
+  watch(
+    () => props.reminder,
+    newVal => {
+      if (newVal) {
+        const clonedReminder = deepClone(newVal);
+        if (clonedReminder.remindDate) {
+          clonedReminder.remindDate = clonedReminder.remindDate.split('T')[0];
+        }
+        if (clonedReminder.billDate) {
+          clonedReminder.billDate = clonedReminder.billDate.split('T')[0];
+        }
+        Object.assign(form, clonedReminder);
+      }
+    },
+    { immediate: true, deep: true },
+  );
 </script>
 
 <template>
@@ -715,11 +729,7 @@ watch(
       </FormRow>
 
       <!-- 金额 -->
-      <FormRow
-        v-if="isFinanceType"
-        :label="t('financial.money')"
-        required
-      >
+      <FormRow v-if="isFinanceType" :label="t('financial.money')" required>
         <div class="flex gap-2">
           <div class="flex-1">
             <input
@@ -728,7 +738,7 @@ watch(
               class="w-full px-4 py-2 text-base transition-colors focus:outline-none focus:ring-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 border border-gray-300 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500 rounded-lg"
               :placeholder="amountPlaceholder"
               @blur="validateAmount"
-            >
+            />
           </div>
           <div class="flex-[2]">
             <CurrencySelector v-model="form.currency" width="full" />
@@ -736,29 +746,13 @@ watch(
         </div>
       </FormRow>
       <!-- 账单日期 -->
-      <FormRow
-        v-if="isFinanceType"
-        :label="t('date.billDate')"
-        required
-      >
-        <Input
-          v-model="billDateComputed"
-          type="date"
-          @blur="validateRemindDate"
-        />
+      <FormRow v-if="isFinanceType" :label="t('date.billDate')" required>
+        <Input v-model="billDateComputed" type="date" @blur="validateRemindDate" />
       </FormRow>
 
       <!-- 提醒日期 -->
-      <FormRow
-        :label="t('date.reminderDate')"
-        required
-        :error="validationErrors.remindDate"
-      >
-        <Input
-          v-model="form.remindDate"
-          type="date"
-          @blur="validateRemindDate"
-        />
+      <FormRow :label="t('date.reminderDate')" required :error="validationErrors.remindDate">
+        <Input v-model="form.remindDate" type="date" @blur="validateRemindDate" />
       </FormRow>
 
       <!-- 重复频率 -->
@@ -805,31 +799,22 @@ watch(
               type="number"
               placeholder="0"
               class="w-full px-4 py-2 text-base transition-colors focus:outline-none focus:ring-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 border border-gray-300 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500 rounded-lg"
-            >
+            />
           </div>
           <div class="flex-1">
-            <Select
-              v-model="advanceUnitComputed"
-              :options="advanceUnitOptions"
-            />
+            <Select v-model="advanceUnitComputed" :options="advanceUnitOptions" />
           </div>
         </div>
       </FormRow>
 
       <!-- 提醒频率 -->
       <FormRow :label="t('financial.reminder.frequency')" optional>
-        <Select
-          v-model="reminderFrequencyComputed"
-          :options="reminderFrequencyOptions"
-        />
+        <Select v-model="reminderFrequencyComputed" :options="reminderFrequencyOptions" />
       </FormRow>
 
       <!-- 稍后提醒（打盹） -->
       <FormRow :label="t('financial.reminder.snoozeUntil')">
-        <DateTimePicker
-          v-model="snoozeUntilDate"
-          :placeholder="t('common.selectDate')"
-        />
+        <DateTimePicker v-model="snoozeUntilDate" :placeholder="t('common.selectDate')" />
       </FormRow>
 
       <!-- 提醒方式（系统合并） -->
@@ -849,18 +834,22 @@ watch(
         <div class="mt-2 flex flex-col gap-2">
           <Checkbox v-model="form.escalationEnabled" label="升级提醒" />
           <div class="flex items-center gap-4">
-            <label class="text-sm font-medium text-gray-900 dark:text-white shrink-0 w-24 text-left">升级间隔(小时)</label>
-            <Input
-              v-model.number="escalationAfterHoursComputed"
-              type="number"
-              class="flex-1"
-            />
+            <label
+              class="text-sm font-medium text-gray-900 dark:text-white shrink-0 w-24 text-left"
+            >
+              升级间隔(小时)
+            </label>
+            <Input v-model.number="escalationAfterHoursComputed" type="number" class="flex-1" />
           </div>
           <Checkbox v-model="form.smartReminderEnabled" label="智能提醒" />
           <Checkbox v-model="form.autoReschedule" label="自动顺延" />
           <Checkbox v-model="form.paymentReminderEnabled" label="支付提醒" />
           <div class="flex items-center gap-4">
-            <label class="text-sm font-medium text-gray-900 dark:text-white shrink-0 w-24 text-left">时区</label>
+            <label
+              class="text-sm font-medium text-gray-900 dark:text-white shrink-0 w-24 text-left"
+            >
+              时区
+            </label>
             <Input
               v-model="timezoneComputed"
               type="text"
@@ -869,13 +858,12 @@ watch(
             />
           </div>
           <div v-if="form.lastReminderSentAt" class="flex items-center gap-4">
-            <label class="text-sm font-medium text-gray-900 dark:text-white shrink-0 w-24 text-left">上次提醒时间</label>
-            <Input
-              :model-value="form.lastReminderSentAt"
-              type="text"
-              readonly
-              class="flex-1"
-            />
+            <label
+              class="text-sm font-medium text-gray-900 dark:text-white shrink-0 w-24 text-left"
+            >
+              上次提醒时间
+            </label>
+            <Input :model-value="form.lastReminderSentAt" type="text" readonly class="flex-1" />
           </div>
         </div>
       </details>
@@ -895,10 +883,7 @@ watch(
 
       <!-- 启用状态 -->
       <div class="mb-2">
-        <Checkbox
-          v-model="form.enabled"
-          :label="t('financial.reminder.enabled')"
-        />
+        <Checkbox v-model="form.enabled" :label="t('financial.reminder.enabled')" />
       </div>
 
       <!-- 描述 -->
