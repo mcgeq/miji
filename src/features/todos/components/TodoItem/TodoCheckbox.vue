@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { CheckCircle, Circle } from 'lucide-vue-next';
-
 const props = defineProps<{ completed: boolean }>();
 const emit = defineEmits(['toggle']);
 const completed = computed(() => props.completed);
@@ -14,7 +12,7 @@ const completed = computed(() => props.completed);
     :disabled="completed"
     @click="emit('toggle')"
   >
-    <CheckCircle v-if="completed" class="w-5 h-5 transition-all duration-200 text-success dark:text-success" />
-    <Circle v-else class="w-5 h-5 transition-all duration-200 text-neutral dark:text-neutral" />
+    <LucideCheckCircle v-if="completed" class="w-5 h-5 transition-all duration-200 text-success dark:text-success" />
+    <LucideCircle v-else class="w-5 h-5 transition-all duration-200 text-neutral dark:text-neutral" />
   </button>
 </template>
