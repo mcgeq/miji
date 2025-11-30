@@ -70,6 +70,9 @@ export function isValidPercentage(percentage: number): boolean {
 
 /**
  * 格式化货币显示
+ * 
+ * @deprecated 请使用 currency.ts 中的 formatCNY 或 formatCurrency
+ * 
  * @param amount - 金额
  * @param currency - 货币符号，默认¥
  * @returns 格式化的货币字符串
