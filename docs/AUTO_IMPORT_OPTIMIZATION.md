@@ -1,7 +1,56 @@
 # 自动导入优化指南
 
 > 分析和移除不必要的手动导入  
-> 创建时间：2025-11-30
+> 创建时间：2025-11-30  
+> 最后更新：2025-11-30 22:58
+
+---
+
+## ⚠️ 重要发现：必须使用 Lucide 前缀！
+
+根据 `vite.config.ts` 中的 `LucideResolver` 配置：
+
+```typescript
+function LucideResolver(componentName: string) {
+  if (componentName.startsWith('Lucide')) {
+    return {
+      name: componentName.slice(6), // LucideCheck -> Check
+      from: 'lucide-vue-next',
+    };
+  }
+}
+```
+
+**自动导入只识别以 `Lucide` 开头的组件名！**
+
+### ✅ 正确的使用方式
+
+```vue
+<script setup>
+// 无需任何导入
+</script>
+
+<template>
+  <LucideCheck />
+  <LucideHome />
+  <LucideChevronDown />
+  <LucideX />
+</template>
+```
+
+### ❌ 错误的使用方式
+
+```vue
+<script setup>
+// 这样需要手动导入才能工作
+import { Check, Home, ChevronDown, X } from 'lucide-vue-next';
+</script>
+
+<template>
+  <Check />  <!-- ❌ 无法自动导入 -->
+  <Home />   <!-- ❌ 无法自动导入 -->
+</template>
+```
 
 ---
 
