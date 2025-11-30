@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useCategoryStore } from '@/stores/money';
-import { lowercaseFirstLetter } from '@/utils/common';
+import { lowercaseFirstLetter } from '@/utils/string';
 import type { CategoryDefinition } from '@/constants/commonConstant';
 
 // Props 接口

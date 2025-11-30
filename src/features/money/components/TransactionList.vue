@@ -3,7 +3,7 @@ import FilterBar from '@/components/common/FilterBar.vue';
 import { EmptyState, LoadingState, Pagination } from '@/components/ui';
 import { SortDirection, TransactionTypeSchema } from '@/schema/common';
 import { useTransactionStore } from '@/stores/money';
-import { lowercaseFirstLetter } from '@/utils/common';
+import { lowercaseFirstLetter } from '@/utils/string';
 import { Lg } from '@/utils/debugLog';
 import { isInstallmentTransaction } from '@/utils/transaction';
 import TransactionTable from './TransactionTable.vue';

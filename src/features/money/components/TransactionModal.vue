@@ -7,7 +7,7 @@ import {
   TransactionTypeSchema,
 } from '@/schema/common';
 import { useCategoryStore } from '@/stores/money';
-import { lowercaseFirstLetter } from '@/utils/common';
+import { lowercaseFirstLetter } from '@/utils/string';
 import { DateUtils } from '@/utils/date';
 import { Lg } from '@/utils/debugLog';
 import { toast } from '@/utils/toast';

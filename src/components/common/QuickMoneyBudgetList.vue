@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // 预算列表组件
 import { formatCurrency } from '@/features/money/utils/money';
-import { getRepeatTypeName } from '@/utils/common';
+import { getRepeatTypeName } from '@/utils/business/repeat';
 import type { Budget } from '@/schema/money';
 
 interface Props {

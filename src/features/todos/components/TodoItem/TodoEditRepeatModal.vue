@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Checkbox, Input, Modal, Select } from '@/components/ui';
 import { RepeatPeriodSchema, weekdays } from '@/schema/common';
-import { buildRepeatPeriod } from '@/utils/common';
+import { buildRepeatPeriod } from '@/utils/business/repeat';
 import type { SelectOption } from '@/components/ui';
 import type { RepeatPeriod } from '@/schema/common';
 

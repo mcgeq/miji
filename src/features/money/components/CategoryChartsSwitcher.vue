@@ -2,7 +2,7 @@
 import { computed, ref } from 'vue';
 import VChart from 'vue-echarts';
 import { Card, Spinner } from '@/components/ui';
-import { lowercaseFirstLetter } from '@/utils/common';
+import { lowercaseFirstLetter } from '@/utils/string';
 import { chartUtils, defaultTheme, initECharts } from '@/utils/echarts';
 
 const props = defineProps<Props>();

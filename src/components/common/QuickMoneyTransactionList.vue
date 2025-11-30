@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // 交易列表组件
 import { formatCurrency } from '@/features/money/utils/money';
-import { lowercaseFirstLetter } from '@/utils/common';
+import { lowercaseFirstLetter } from '@/utils/string';
 import { DateUtils } from '@/utils/date';
 import type { Transaction } from '@/schema/money';
 

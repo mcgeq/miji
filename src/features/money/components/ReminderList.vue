@@ -13,7 +13,8 @@ import {
 import FilterBar from '@/components/common/FilterBar.vue';
 import { Card, EmptyState, LoadingState, Pagination } from '@/components/ui';
 import { useReminderStore } from '@/stores/money';
-import { getRepeatTypeName, lowercaseFirstLetter } from '@/utils/common';
+import { lowercaseFirstLetter } from '@/utils/string';
+import { getRepeatTypeName } from '@/utils/business/repeat';
 import { DateUtils } from '@/utils/date';
 import { toast } from '@/utils/toast';
 import { useBilReminderFilters } from '../composables/useBilReminderFilters';

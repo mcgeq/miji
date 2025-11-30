@@ -12,7 +12,7 @@ import { EmptyState, LoadingState } from '@/components/ui';
 import Badge from '@/components/ui/Badge.vue';
 import Button from '@/components/ui/Button.vue';
 import { TransactionTypeSchema } from '@/schema/common';
-import { lowercaseFirstLetter } from '@/utils/common';
+import { lowercaseFirstLetter } from '@/utils/string';
 import { DateUtils } from '@/utils/date';
 import { formatCurrency } from '../utils/money';
 import type { Transaction } from '@/schema/money';

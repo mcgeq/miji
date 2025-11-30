@@ -2,7 +2,7 @@
 import Button from '@/components/ui/Button.vue';
 import Spinner from '@/components/ui/Spinner.vue';
 import { useCategoryStore } from '@/stores/money';
-import { lowercaseFirstLetter } from '@/utils/common';
+import { lowercaseFirstLetter } from '@/utils/string';
 import type { Category } from '@/schema/money/category';
 
 interface TopCategory {

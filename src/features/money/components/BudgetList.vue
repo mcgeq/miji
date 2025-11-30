@@ -3,7 +3,8 @@ import { Ban, BarChart3, Edit, Repeat, StopCircle, Trash } from 'lucide-vue-next
 import FilterBar from '@/components/common/FilterBar.vue';
 import { Button, Card, EmptyState, LoadingState, Pagination } from '@/components/ui';
 import { useBudgetStore, useCategoryStore } from '@/stores/money';
-import { getRepeatTypeName, lowercaseFirstLetter } from '@/utils/common';
+import { lowercaseFirstLetter } from '@/utils/string';
+import { getRepeatTypeName } from '@/utils/business/repeat';
 import { useBudgetFilters } from '../composables/useBudgetFilters';
 import { formatCurrency } from '../utils/money';
 import type { Budget } from '@/schema/money';
