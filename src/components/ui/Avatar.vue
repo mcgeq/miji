@@ -6,9 +6,6 @@
  * 100% Tailwind CSS 4
  */
 
-import { User } from 'lucide-vue-next';
-import { computed } from 'vue';
-
 interface Props {
   /** 头像图片URL */
   src?: string;

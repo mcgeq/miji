@@ -6,8 +6,6 @@
  * 100% Tailwind CSS 4
  */
 
-import { Check, Minus } from 'lucide-vue-next';
-
 interface Props {
   /** 选中状态 */
   modelValue?: boolean | (string | number)[];

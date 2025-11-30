@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { Disclosure, DisclosureButton, DisclosurePanel, Popover, PopoverButton, PopoverPanel, RadioGroup, RadioGroupOption } from '@headlessui/vue';
-import { ChevronDown } from 'lucide-vue-next';
 import { COLORS_MAP, EXTENDED_COLORS_MAP } from '@/constants/moneyConst';
 import type { DefaultColors } from '@/schema/common';
 
