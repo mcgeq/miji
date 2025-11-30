@@ -15,6 +15,7 @@
   import { MoneyDb } from '@/services/money/money';
   import { DateUtils } from '@/utils/date';
   import { Lg } from '@/utils/debugLog';
+  import { deepDiff } from '@/utils/diffObject';
   import { deepClone } from '@/utils/objectUtils';
   import { toast } from '@/utils/toast';
 
@@ -207,21 +208,39 @@
     form.balance = formatBalance(form.balance);
 
     const commonRequestFields = buildCommonRequestFields(form);
-    const requestData: CreateAccountRequest | UpdateAccountRequest = commonRequestFields;
-
-    // 使用 useFormValidation 验证
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    if (!validation.validateAll(requestData as any)) {
-      toast.error(t('financial.account.validationFailed'));
-      return;
-    }
 
     isSubmitting.value = true;
     try {
       if (!props.account) {
+        // 创建模式：直接发送完整数据
+        const requestData: CreateAccountRequest = commonRequestFields;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        if (!validation.validateAll(requestData as any)) {
+          toast.error(t('financial.account.validationFailed'));
+          return;
+        }
         emit('save', requestData);
       } else {
-        emit('update', props.account.serialNum, requestData);
+        // 编辑模式：只发送改变的字段
+        const updatePartial = deepDiff(props.account, commonRequestFields, {
+          ignoreKeys: ['createdAt', 'updatedAt'],
+        }) as UpdateAccountRequest;
+
+        // 如果没有任何改变，直接关闭
+        if (Object.keys(updatePartial).length === 0) {
+          toast.info(t('common.messages.noChanges'));
+          closeModal();
+          return;
+        }
+
+        // 验证改变的字段
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        if (!validation.validateAll(updatePartial as any)) {
+          toast.error(t('financial.account.validationFailed'));
+          return;
+        }
+
+        emit('update', props.account.serialNum, updatePartial);
       }
       closeModal();
     } catch (err: unknown) {
