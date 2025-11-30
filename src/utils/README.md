@@ -231,16 +231,21 @@ const transTotal = sumBy(transactions, 'amount'); // 350
 
 ## 💾 缓存工具使用
 
-### cacheUtils.ts
+### cache/ (统一缓存系统)
 
 ```typescript
 import {
+  // 全局缓存实例
+  globalCache,
+  apiCache,
+  cacheKeys,
+  // 函数缓存工具
   memoizeFunction,
   onceFunction,
   createTTLCache,
   createLRUCache,
   createRefreshableCache
-} from '@/utils/cacheUtils';
+} from '@/utils/cache';
 
 // 1. 函数结果缓存
 const expensiveCalc = memoizeFunction((n: number) => {

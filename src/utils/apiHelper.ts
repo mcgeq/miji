@@ -4,6 +4,7 @@
  * 提供统一的错误处理、请求缓存、请求去重等功能
  */
 
+import { apiCache, cacheKeys } from './cache';
 import { toast } from './toast';
 
 // ==================== 错误处理 ====================
@@ -54,66 +55,8 @@ export async function safeApiCall<T>(
 }
 
 // ==================== 请求缓存 ====================
-
-interface CacheEntry<T> {
-  data: T;
-  timestamp: number;
-  expiresIn: number;
-}
-
-class ApiCache {
-  private cache: Map<string, CacheEntry<any>> = new Map();
-
-  /**
-   * 获取缓存
-   */
-  get<T>(key: string): T | null {
-    const entry = this.cache.get(key);
-    if (!entry) return null;
-
-    const now = Date.now();
-    if (now - entry.timestamp > entry.expiresIn) {
-      this.cache.delete(key);
-      return null;
-    }
-
-    return entry.data;
-  }
-
-  /**
-   * 设置缓存
-   */
-  set<T>(key: string, data: T, expiresIn: number = 5 * 60 * 1000): void {
-    this.cache.set(key, {
-      data,
-      timestamp: Date.now(),
-      expiresIn,
-    });
-  }
-
-  /**
-   * 删除缓存
-   */
-  delete(key: string): void {
-    this.cache.delete(key);
-  }
-
-  /**
-   * 清空缓存
-   */
-  clear(): void {
-    this.cache.clear();
-  }
-
-  /**
-   * 生成缓存key
-   */
-  generateKey(method: string, params: any): string {
-    return `${method}_${JSON.stringify(params)}`;
-  }
-}
-
-export const apiCache = new ApiCache();
+// 使用统一的缓存系统 @/utils/cache
+// apiCache 和 cacheKeys 已在顶部导入
 
 /**
  * 带缓存的API调用
@@ -124,7 +67,7 @@ export async function cachedApiCall<T>(
   expiresIn?: number,
 ): Promise<T> {
   // 尝试从缓存获取
-  const cached = apiCache.get<T>(cacheKey);
+  const cached = apiCache.get(cacheKey) as T | null;
   if (cached !== null) {
     return cached;
   }
@@ -369,7 +312,7 @@ export function createOptimizedApiCall<T>(
   },
 ) {
   return async (params: any): Promise<T | null> => {
-    const cacheKey = options?.cache ? apiCache.generateKey(method, params) : '';
+    const cacheKey = options?.cache ? cacheKeys.api(method, params) : '';
 
     const executeCall = async () => {
       if (options?.cache) {

@@ -1,31 +1,27 @@
 /**
- * 缓存工具函数
- * 提供基于 es-toolkit 的函数缓存和相关工具
+ * 函数缓存工具
  *
- * @note 与 simpleCache.ts 的区别：
- * - simpleCache: 全局数据缓存，手动 set/get，支持 TTL
- * - cacheUtils: 函数结果缓存，自动缓存函数返回值
+ * 提供基于 es-toolkit 的函数结果缓存
+ *
+ * @note 与 TTLCache 的区别：
+ * - TTLCache: 全局数据缓存，手动 set/get
+ * - functions: 函数结果缓存，自动缓存函数返回值
  */
 
 import { memoize, once } from 'es-toolkit';
 
-// ==================== 函数缓存 ====================
+// ==================== 基础函数缓存 ====================
 
 /**
  * 缓存函数结果（基于参数）
+ *
  * @param fn - 要缓存的函数
  * @returns 缓存版本的函数
  *
  * @example
- * // 缓存昂贵的计算
- * const expensiveCalc = memoizeFunction((n: number) => {
- *   console.log('Computing...');
- *   return n * 2;
- * });
- *
- * expensiveCalc(5); // 输出 "Computing..." 返回 10
- * expensiveCalc(5); // 直接返回 10（从缓存）
- * expensiveCalc(10); // 输出 "Computing..." 返回 20
+ * const expensiveCalc = memoizeFunction((n: number) => n * 2);
+ * expensiveCalc(5); // 计算并缓存
+ * expensiveCalc(5); // 从缓存返回
  */
 export function memoizeFunction<T extends (...args: any[]) => any>(fn: T): T {
   return memoize(fn);
@@ -33,25 +29,20 @@ export function memoizeFunction<T extends (...args: any[]) => any>(fn: T): T {
 
 /**
  * 确保函数只执行一次
+ *
  * @param fn - 要包装的函数
  * @returns 只执行一次的函数
  *
  * @example
- * let count = 0;
- * const increment = onceFunction(() => {
- *   count++;
- *   console.log('Incremented');
- * });
- *
- * increment(); // 输出 "Incremented", count = 1
- * increment(); // 什么都不做, count = 1
- * increment(); // 什么都不做, count = 1
+ * const initialize = onceFunction(() => console.log('Init'));
+ * initialize(); // 输出 "Init"
+ * initialize(); // 什么都不做
  */
 export function onceFunction<T extends (...args: any[]) => any>(fn: T): T {
   return once(fn);
 }
 
-// ==================== 缓存装饰器（用于类方法） ====================
+// ==================== 缓存装饰器 ====================
 
 /**
  * 缓存方法结果的装饰器
@@ -60,14 +51,9 @@ export function onceFunction<T extends (...args: any[]) => any>(fn: T): T {
  * class DataService {
  *   @CacheResult
  *   fetchData(id: string) {
- *     console.log('Fetching data...');
  *     return fetch(`/api/data/${id}`);
  *   }
  * }
- *
- * const service = new DataService();
- * await service.fetchData('123'); // 实际请求
- * await service.fetchData('123'); // 从缓存返回
  */
 export function CacheResult(_target: any, _propertyKey: string, descriptor: PropertyDescriptor) {
   const originalMethod = descriptor.value;
@@ -84,23 +70,16 @@ interface TTLCacheEntry<T> {
 
 /**
  * 创建带 TTL 的函数缓存
+ *
  * @param fn - 要缓存的函数
  * @param ttl - 过期时间（毫秒）
  * @returns 带 TTL 的缓存函数
  *
  * @example
  * const fetchUser = createTTLCache(
- *   async (id: string) => {
- *     const response = await fetch(`/api/users/${id}`);
- *     return response.json();
- *   },
+ *   async (id: string) => api.getUser(id),
  *   5 * 60 * 1000 // 5分钟缓存
  * );
- *
- * await fetchUser('123'); // 实际请求
- * await fetchUser('123'); // 从缓存返回（5分钟内）
- * // 5分钟后
- * await fetchUser('123'); // 重新请求
  */
 export function createTTLCache<T extends (...args: unknown[]) => unknown>(
   fn: T,
@@ -131,7 +110,6 @@ export function createTTLCache<T extends (...args: unknown[]) => unknown>(
     return result;
   }) as T & { clear: () => void };
 
-  // 添加清除缓存的方法
   cachedFn.clear = () => cache.clear();
 
   return cachedFn;
@@ -141,16 +119,14 @@ export function createTTLCache<T extends (...args: unknown[]) => unknown>(
 
 /**
  * 创建 LRU（最近最少使用）缓存函数
+ *
  * @param fn - 要缓存的函数
  * @param maxSize - 最大缓存数量
  * @returns LRU 缓存函数
  *
  * @example
  * const fetchData = createLRUCache(
- *   async (id: string) => {
- *     const response = await fetch(`/api/data/${id}`);
- *     return response.json();
- *   },
+ *   async (id: string) => api.getData(id),
  *   100 // 最多缓存 100 个结果
  * );
  */
@@ -210,6 +186,7 @@ export function createLRUCache<T extends (...args: unknown[]) => unknown>(
 
 /**
  * 创建缓存键生成器
+ *
  * @param prefix - 键前缀
  * @returns 键生成函数
  *
@@ -226,13 +203,12 @@ export function createCacheKey(prefix: string) {
 
 /**
  * 批量使缓存失效
+ *
  * @param caches - 缓存函数数组
  *
  * @example
  * const cache1 = createTTLCache(fn1, 1000);
  * const cache2 = createTTLCache(fn2, 1000);
- *
- * // 清除所有缓存
  * invalidateCaches([cache1, cache2]);
  */
 export function invalidateCaches(caches: Array<{ clear: () => void }>) {
@@ -245,6 +221,7 @@ export function invalidateCaches(caches: Array<{ clear: () => void }>) {
 
 /**
  * 创建带刷新功能的缓存
+ *
  * @param fn - 异步函数
  * @param ttl - 过期时间
  * @param refreshInterval - 自动刷新间隔（可选）
@@ -256,10 +233,6 @@ export function invalidateCaches(caches: Array<{ clear: () => void }>) {
  *   10 * 60 * 1000, // 10分钟缓存
  *   5 * 60 * 1000   // 5分钟自动刷新
  * );
- *
- * const config = await execute(); // 获取配置
- * await refresh(); // 手动刷新
- * clear(); // 清除缓存
  */
 export function createRefreshableCache<T>(
   fn: () => Promise<T>,
