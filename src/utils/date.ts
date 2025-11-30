@@ -75,12 +75,43 @@ export class DateUtils {
   }
 
   /**
-   * 计算两个日期之间的天数
+   * 计算两个日期之间的天数（不包含首尾）
+   * 
+   * @param startDate - 开始日期（YYYY-MM-DD）
+   * @param endDate - 结束日期（YYYY-MM-DD）
+   * @returns 天数差（不包含首尾两天）
+   * 
+   * @example
+   * DateUtils.daysBetween('2025-01-01', '2025-01-05'); // 4
    */
   static daysBetween(startDate: string, endDate: string): number {
     const start = new Date(startDate);
     const end = new Date(endDate);
     return Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+  }
+
+  /**
+   * 计算两个日期之间的天数（包含首尾两天）
+   * 
+   * @param startDate - 开始日期（YYYY-MM-DD 或 ISO 格式）
+   * @param endDate - 结束日期（YYYY-MM-DD 或 ISO 格式）
+   * @returns 天数差（包含首尾两天），如果日期无效则返回 0
+   * 
+   * @example
+   * // 计算经期持续天数
+   * DateUtils.daysBetweenInclusive('2025-01-01', '2025-01-05'); // 5 天
+   * DateUtils.daysBetweenInclusive('2025-11-22', '2025-11-28'); // 7 天
+   * 
+   * @example
+   * // 处理无效日期
+   * DateUtils.daysBetweenInclusive('', '2025-01-05'); // 0
+   * DateUtils.daysBetweenInclusive('2025-01-01', ''); // 0
+   */
+  static daysBetweenInclusive(startDate: string, endDate: string): number {
+    if (!startDate || !endDate) {
+      return 0;
+    }
+    return this.daysBetween(startDate, endDate) + 1;
   }
 
   /**
