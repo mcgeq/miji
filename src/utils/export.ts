@@ -4,67 +4,111 @@
  * 提供CSV、Excel、PDF等格式的数据导出功能
  */
 
+// ==================== 辅助函数 ====================
+
+/**
+ * 转义 CSV 值
+ *
+ * @param value - 要转义的值
+ * @returns 转义后的字符串
+ */
+function escapeCSVValue(value: any): string {
+  if (value == null) return '';
+
+  const str = String(value);
+
+  // 如果包含特殊字符，需要引号包裹
+  if (str.includes(',') || str.includes('\n') || str.includes('"')) {
+    return `"${str.replace(/"/g, '""')}`;
+  }
+
+  return str;
+}
+
+/**
+ * 生成 CSV 内容
+ *
+ * @param headers - 表头数组
+ * @param rows - 数据行数组
+ * @returns CSV 字符串
+ */
+function generateCSVContent(headers: string[], rows: string[][]): string {
+  return [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
+}
+
+/**
+ * 下载 Blob 对象
+ *
+ * @param blob - Blob 对象
+ * @param filename - 文件名
+ */
+function downloadBlob(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
 // ==================== CSV导出 ====================
 
 /**
  * 导出为CSV格式
+ *
+ * @param data - 数据数组
+ * @param filename - 文件名（不含扩展名）
+ * @param headers - 可选的自定义表头
  */
 export function exportToCSV(data: any[], filename: string, headers?: string[]) {
+  if (data.length === 0) {
+    console.warn('No data to export');
+    return;
+  }
+
   // 获取表头
-  const csvHeaders = headers || (data.length > 0 ? Object.keys(data[0]) : []);
+  const csvHeaders = headers || Object.keys(data[0]);
+
+  // 生成数据行
+  const rows = data.map(row => csvHeaders.map(header => escapeCSVValue(row[header])));
 
   // 生成CSV内容
-  const csvContent = [
-    // 表头行
-    csvHeaders.join(','),
-    // 数据行
-    ...data.map(row =>
-      csvHeaders
-        .map(header => {
-          const value = row[header];
-          // 处理包含逗号或换行符的值
-          if (typeof value === 'string' && (value.includes(',') || value.includes('\n'))) {
-            return `"${value.replace(/"/g, '""')}"`;
-          }
-          return value ?? '';
-        })
-        .join(','),
-    ),
-  ].join('\n');
+  const csvContent = generateCSVContent(csvHeaders, rows);
 
-  // 创建Blob并下载
+  // 创建Blob并下载（添加 BOM 以支持 Excel 中文）
   const blob = new Blob([`\uFEFF${csvContent}`], { type: 'text/csv;charset=utf-8;' });
   downloadBlob(blob, `${filename}.csv`);
 }
 
 /**
  * 导出对象数组为CSV（带中文表头）
+ *
+ * @param data - 数据数组
+ * @param filename - 文件名（不含扩展名）
+ * @param fieldMapping - 字段映射（键: 字段名, 值: 中文表头）
  */
 export function exportToCSVWithMapping(
   data: any[],
   filename: string,
   fieldMapping: Record<string, string>,
 ) {
+  if (data.length === 0) {
+    console.warn('No data to export');
+    return;
+  }
+
   const fields = Object.keys(fieldMapping);
   const headers = Object.values(fieldMapping);
 
-  const csvContent = [
-    // 表头行
-    headers.join(','),
-    // 数据行
-    ...data.map(row =>
-      fields
-        .map(field => {
-          const value = row[field];
-          if (typeof value === 'string' && (value.includes(',') || value.includes('\n'))) {
-            return `"${value.replace(/"/g, '""')}"`;
-          }
-          return value ?? '';
-        })
-        .join(','),
-    ),
-  ].join('\n');
+  // 生成数据行
+  const rows = data.map(row => fields.map(field => escapeCSVValue(row[field])));
 
+  // 生成CSV内容
+  const csvContent = generateCSVContent(headers, rows);
+
+  // 创建Blob并下载
   const blob = new Blob([`\uFEFF${csvContent}`], { type: 'text/csv;charset=utf-8;' });
   downloadBlob(blob, `${filename}.csv`);
 }
@@ -309,21 +353,7 @@ export async function exportElementToImage(
   }
 }
 
-// ==================== 辅助函数 ====================
-
-/**
- * 下载Blob对象
- */
-function downloadBlob(blob: Blob, filename: string) {
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = filename;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
-}
+// ==================== 其他格式导出 ====================
 
 /**
  * 格式化日期为字符串
