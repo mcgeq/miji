@@ -15,7 +15,7 @@
   import { MoneyDb } from '@/services/money/money';
   import { DateUtils } from '@/utils/date';
   import { Lg } from '@/utils/debugLog';
-  import { deepDiff } from '@/utils/diffObject';
+  import { deepDiff } from '@/utils/diff';
   import { deepClone } from '@/utils/objectUtils';
   import { toast } from '@/utils/toast';
 

@@ -5,7 +5,7 @@
   import { useBudgetForm } from '@/composables/useBudgetForm';
   import type { Budget, BudgetCreate, BudgetUpdate } from '@/schema/money';
   import { BudgetCreateSchema, BudgetUpdateSchema } from '@/schema/money';
-  import { deepDiff } from '@/utils/diffObject';
+  import { deepDiff } from '@/utils/diff';
   import { deepClone } from '@/utils/objectUtils';
   import BudgetFormFields from './BudgetFormFields.vue';
 
