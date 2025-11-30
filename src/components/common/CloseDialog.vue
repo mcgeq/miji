@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
-import { LucideCheckCheck, LucideMinimize2, LucideX } from 'lucide-vue-next';
 import { Checkbox } from '@/components/ui';
 import { isDesktop } from '@/utils/platform';
 import { toast } from '@/utils/toast';
