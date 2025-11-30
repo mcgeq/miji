@@ -184,10 +184,6 @@ export { DateUtils } from './date';
 // ==================== 通用工具 ====================
 
 /**
- * 安全数组访问
- */
-export { safeGet } from './common';
-/**
  * 调试日志
  */
 export { Lg } from './debugLog';
