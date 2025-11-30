@@ -43,8 +43,7 @@ export function createComparisonCard(
   const current = Number.parseFloat(currentValue.replace(/[^\d.-]/g, ''));
   const compare = Number.parseFloat(compareValue.replace(/[^\d.-]/g, ''));
   const change = current - compare;
-  const changePercentage =
-    compare !== 0 ? ((change / compare) * 100).toFixed(1) : '0';
+  const changePercentage = compare !== 0 ? ((change / compare) * 100).toFixed(1) : '0';
 
   return {
     id,

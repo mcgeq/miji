@@ -37,10 +37,7 @@ export function useSplitCalculator() {
   /**
    * 平均分摊计算
    */
-  function calculateEqualSplit(
-    totalAmount: number,
-    members: FamilyMember[],
-  ): SplitResult[] {
+  function calculateEqualSplit(totalAmount: number, members: FamilyMember[]): SplitResult[] {
     if (members.length === 0) return [];
 
     const perPersonAmount = totalAmount / members.length;

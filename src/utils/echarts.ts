@@ -69,7 +69,8 @@ export const defaultTheme = {
   ],
   backgroundColor: 'transparent',
   textStyle: {
-    fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+    fontFamily:
+      'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
     fontSize: 12,
     color: '#374151',
   },
@@ -154,7 +155,8 @@ export const darkTheme = {
   ],
   backgroundColor: 'transparent',
   textStyle: {
-    fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+    fontFamily:
+      'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
     fontSize: 12,
     color: '#d1d5db',
   },

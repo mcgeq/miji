@@ -119,7 +119,7 @@ function getEffectiveTheme(themeMode: ThemeMode): 'light' | 'dark' {
 function watchSystemThemeChange(callback: (theme: 'light' | 'dark') => void): () => void {
   try {
     if (typeof window === 'undefined' || !window.matchMedia) {
-      return () => { };
+      return () => {};
     }
 
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
@@ -137,7 +137,7 @@ function watchSystemThemeChange(callback: (theme: 'light' | 'dark') => void): ()
     };
   } catch (error) {
     console.error('Failed to watch system theme changes:', error);
-    return () => { };
+    return () => {};
   }
 }
 

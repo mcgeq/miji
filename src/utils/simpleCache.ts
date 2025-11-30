@@ -65,9 +65,10 @@ export const globalCache = new SimpleCache();
 export const cacheKeys = {
   familyLedgers: () => 'family_ledgers',
   familyLedger: (id: string) => `family_ledger:${id}`,
-  familyMembers: (ledgerId?: string) => ledgerId ? `family_members:${ledgerId}` : 'family_members',
+  familyMembers: (ledgerId?: string) =>
+    ledgerId ? `family_members:${ledgerId}` : 'family_members',
   familyMember: (id: string) => `family_member:${id}`,
-  splitRules: (ledgerId?: string) => ledgerId ? `split_rules:${ledgerId}` : 'split_rules',
+  splitRules: (ledgerId?: string) => (ledgerId ? `split_rules:${ledgerId}` : 'split_rules'),
   debtRelations: (ledgerId: string) => `debt_relations:${ledgerId}`,
   settlementSuggestions: (ledgerId: string) => `settlement_suggestions:${ledgerId}`,
   settlementRecords: (ledgerId: string) => `settlement_records:${ledgerId}`,

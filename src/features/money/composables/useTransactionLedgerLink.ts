@@ -45,7 +45,10 @@ export function useTransactionLedgerLink() {
       // 根据选中的账本获取成员
       const members = await getMembersByLedgers(selectedLedgers.value);
       availableMembers.value = members;
-      Lg.d('useTransactionLedgerLink', `Loaded ${availableMembers.value.length} members for selected ledgers`);
+      Lg.d(
+        'useTransactionLedgerLink',
+        `Loaded ${availableMembers.value.length} members for selected ledgers`,
+      );
     } catch (error) {
       Lg.e('useTransactionLedgerLink', 'Failed to load members:', error);
       availableMembers.value = [];
@@ -105,9 +108,7 @@ export function useTransactionLedgerLink() {
       const memberPromises = Array.from(memberIds).map(id => MoneyDb.getFamilyMember(id));
       const members = await Promise.all(memberPromises);
 
-      return members
-        .filter(m => m !== null)
-        .map(m => convertToSplitMember(m as FamilyMember));
+      return members.filter(m => m !== null).map(m => convertToSplitMember(m as FamilyMember));
     } catch (error) {
       Lg.e('useTransactionLedgerLink', 'Failed to get members:', error);
       return [];
@@ -174,7 +175,10 @@ export function useTransactionLedgerLink() {
     try {
       // 1. 更新账本关联
       await MoneyDb.updateTransactionLedgers(transactionSerialNum, ledgerIds);
-      Lg.d('useTransactionLedgerLink', `Updated ledger links for transaction ${transactionSerialNum}`);
+      Lg.d(
+        'useTransactionLedgerLink',
+        `Updated ledger links for transaction ${transactionSerialNum}`,
+      );
 
       // 2. 更新成员关联
       if (memberIds.length > 0) {
@@ -187,7 +191,10 @@ export function useTransactionLedgerLink() {
         await MoneyDb.updateTransaction(transactionSerialNum, {
           splitMembers: members,
         });
-        Lg.d('useTransactionLedgerLink', `Updated member links for transaction ${transactionSerialNum}`);
+        Lg.d(
+          'useTransactionLedgerLink',
+          `Updated member links for transaction ${transactionSerialNum}`,
+        );
       }
     } catch (error) {
       Lg.e('useTransactionLedgerLink', 'Failed to update transaction links:', error);
@@ -206,9 +213,8 @@ export function useTransactionLedgerLink() {
   }> {
     try {
       // 1. 获取账本关联
-      const ledgerAssociations = await MoneyDb.listFamilyLedgerTransactionsByTransaction(
-        transactionSerialNum,
-      );
+      const ledgerAssociations =
+        await MoneyDb.listFamilyLedgerTransactionsByTransaction(transactionSerialNum);
       const ledgerIds = ledgerAssociations.map(a => a.familyLedgerSerialNum);
       const ledgerPromises = ledgerIds.map(id => MoneyDb.getFamilyLedger(id));
       const ledgers = (await Promise.all(ledgerPromises)).filter(l => l !== null) as FamilyLedger[];
@@ -218,7 +224,11 @@ export function useTransactionLedgerLink() {
       let members: SplitMember[] = [];
 
       // 优先从 splitConfig 获取分摊成员（从独立表 split_records 查询）
-      if (transaction?.splitConfig?.enabled && transaction.splitConfig.members && Array.isArray(transaction.splitConfig.members)) {
+      if (
+        transaction?.splitConfig?.enabled &&
+        transaction.splitConfig.members &&
+        Array.isArray(transaction.splitConfig.members)
+      ) {
         members = transaction.splitConfig.members.map(m => ({
           serialNum: m.memberSerialNum,
           name: m.memberName,

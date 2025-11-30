@@ -10,12 +10,7 @@ export const UserRoleSchema = z.enum([
   'Owner',
 ]);
 
-export const MemberUserRoleSchema = z.enum([
-  'Owner',
-  'Admin',
-  'Member',
-  'Viewer',
-]);
+export const MemberUserRoleSchema = z.enum(['Owner', 'Admin', 'Member', 'Viewer']);
 
 export type UserRole = z.infer<typeof UserRoleSchema>;
 export type MemberUserRole = z.infer<typeof MemberUserRoleSchema>;

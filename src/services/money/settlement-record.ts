@@ -54,9 +54,7 @@ export const settlementRecordService = {
   /**
    * 获取结算记录列表
    */
-  async listRecords(
-    params: SettlementRecordListParams,
-  ): Promise<PagedResult<SettlementRecord>> {
+  async listRecords(params: SettlementRecordListParams): Promise<PagedResult<SettlementRecord>> {
     return invokeCommand('settlement_records_list', {
       family_ledger_serial_num: params.familyLedgerSerialNum,
     });
@@ -72,9 +70,7 @@ export const settlementRecordService = {
   /**
    * 获取结算记录统计
    */
-  async getStatistics(
-    familyLedgerSerialNum: string,
-  ): Promise<SettlementRecordStatistics> {
+  async getStatistics(familyLedgerSerialNum: string): Promise<SettlementRecordStatistics> {
     return invokeCommand('settlement_records_stats', {
       family_ledger_serial_num: familyLedgerSerialNum,
     });
@@ -103,7 +99,10 @@ export const settlementRecordService = {
   /**
    * 导出结算记录
    */
-  async exportRecord(serialNum: string, format: 'pdf' | 'excel'): Promise<{
+  async exportRecord(
+    serialNum: string,
+    format: 'pdf' | 'excel',
+  ): Promise<{
     filename: string;
     data: string;
     format: string;

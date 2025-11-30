@@ -6,7 +6,7 @@ import type {
   PeriodSettingsUpdate,
 } from '@/schema/health/period';
 
-export interface PeriodSettingsFilter { }
+export interface PeriodSettingsFilter {}
 
 /**
  * 账户数据映射器

@@ -37,13 +37,15 @@ export type SplitMember = z.infer<typeof SplitMemberSchema>;
 export const SplitConfigSchema = z.object({
   enabled: z.boolean(),
   splitType: z.enum(['EQUAL', 'PERCENTAGE', 'FIXED_AMOUNT', 'WEIGHTED']),
-  members: z.array(z.object({
-    memberSerialNum: SerialNumSchema,
-    memberName: z.string(),
-    amount: z.number(),
-    percentage: z.number().optional(),
-    weight: z.number().optional(),
-  })),
+  members: z.array(
+    z.object({
+      memberSerialNum: SerialNumSchema,
+      memberName: z.string(),
+      amount: z.number(),
+      percentage: z.number().optional(),
+      weight: z.number().optional(),
+    }),
+  ),
 });
 
 export type SplitConfig = z.infer<typeof SplitConfigSchema>;

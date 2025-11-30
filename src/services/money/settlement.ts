@@ -60,13 +60,13 @@ export const settlementService = {
    * 计算结算建议
    * 使用智能算法优化转账次数
    */
-  async calculateSuggestion(
-    params: SettlementCalculateParams,
-  ): Promise<SettlementSuggestion> {
+  async calculateSuggestion(params: SettlementCalculateParams): Promise<SettlementSuggestion> {
     // 后端期期period_start和period_end
     return invokeCommand('settlement_generate_suggestion', {
       family_ledger_serial_num: params.familyLedgerSerialNum,
-      period_start: params.startDate || new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0],
+      period_start:
+        params.startDate ||
+        new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0],
       period_end: params.endDate || new Date().toISOString().split('T')[0],
     });
   },
@@ -75,9 +75,7 @@ export const settlementService = {
    * 执行结算
    * 创建结算记录并更新债务关系
    */
-  async executeSettlement(
-    params: SettlementExecuteParams,
-  ): Promise<SettlementExecuteResult> {
+  async executeSettlement(params: SettlementExecuteParams): Promise<SettlementExecuteResult> {
     return invokeCommand('settlement_execute', {
       family_ledger_serial_num: params.familyLedgerSerialNum,
       settlement_type: params.settlementType,
@@ -95,9 +93,7 @@ export const settlementService = {
    * 获取结算优化详情
    * 包含优化前后对比
    */
-  async getOptimizationDetails(
-    familyLedgerSerialNum: string,
-  ): Promise<{
+  async getOptimizationDetails(familyLedgerSerialNum: string): Promise<{
     before: {
       transferCount: number;
       complexity: string;

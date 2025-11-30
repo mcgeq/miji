@@ -369,9 +369,7 @@ export function createOptimizedApiCall<T>(
   },
 ) {
   return async (params: any): Promise<T | null> => {
-    const cacheKey = options?.cache
-      ? apiCache.generateKey(method, params)
-      : '';
+    const cacheKey = options?.cache ? apiCache.generateKey(method, params) : '';
 
     const executeCall = async () => {
       if (options?.cache) {

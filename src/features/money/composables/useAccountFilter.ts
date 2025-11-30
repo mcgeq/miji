@@ -33,9 +33,7 @@ export function useAccountFilter(
     // 收入类型：排除信用卡账户
     // 原因：收入不应该直接到信用卡（通常是还款操作）
     if (transactionType.value === 'Income') {
-      return activeAccounts.filter(
-        acc => acc.type !== AccountTypeSchema.enum.CreditCard,
-      );
+      return activeAccounts.filter(acc => acc.type !== AccountTypeSchema.enum.CreditCard);
     }
 
     // 支出类型：返回所有激活账户
@@ -46,9 +44,7 @@ export function useAccountFilter(
    * 检查账户是否可用
    */
   function isAccountSelectable(accountSerialNum: string): boolean {
-    return selectableAccounts.value.some(
-      acc => acc.serialNum === accountSerialNum,
-    );
+    return selectableAccounts.value.some(acc => acc.serialNum === accountSerialNum);
   }
 
   /**

@@ -6,11 +6,7 @@ import type { Category, CategoryCreate, CategoryUpdate } from '@/schema/money/ca
 /**
  * 货币数据映射器
  */
-export class CategoryMapper extends BaseMapper<
-  CategoryCreate,
-  CategoryUpdate,
-  Category
-> {
+export class CategoryMapper extends BaseMapper<CategoryCreate, CategoryUpdate, Category> {
   protected entityName = 'categories';
 
   async create(subCategory: CategoryCreate): Promise<Category> {
@@ -49,9 +45,7 @@ export class CategoryMapper extends BaseMapper<
 
   async list(): Promise<Category[]> {
     try {
-      const tauriCurrencies = await invokeCommand<Category[]>(
-        'category_list',
-      );
+      const tauriCurrencies = await invokeCommand<Category[]>('category_list');
       return tauriCurrencies;
     } catch (error) {
       this.handleError('list', error);

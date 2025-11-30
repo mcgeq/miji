@@ -81,7 +81,10 @@ export function useBudgetForm(initialBudget?: Budget | null) {
   // 表单验证
   const isFormValid = computed(() => {
     if (!form.name || form.amount <= 0) return false;
-    if (form.budgetScopeType === 'Category' && (!form.categoryScope || form.categoryScope.length === 0)) {
+    if (
+      form.budgetScopeType === 'Category' &&
+      (!form.categoryScope || form.categoryScope.length === 0)
+    ) {
       return false;
     }
     if (form.budgetScopeType === 'Account' && !form.accountSerialNum) {
@@ -126,19 +129,25 @@ export function useBudgetForm(initialBudget?: Budget | null) {
   });
 
   // 监听重复周期变化
-  watch(() => form.repeatPeriod, repeatPeriodType => {
-    form.repeatPeriodType = repeatPeriodType.type;
-  });
+  watch(
+    () => form.repeatPeriod,
+    repeatPeriodType => {
+      form.repeatPeriodType = repeatPeriodType.type;
+    },
+  );
 
   // 监听预警开关
-  watch(() => form.alertEnabled, enabled => {
-    if (enabled && !form.alertThreshold) {
-      form.alertThreshold = { type: 'Percentage', value: 80 };
-    }
-    if (!enabled) {
-      form.alertThreshold = null;
-    }
-  });
+  watch(
+    () => form.alertEnabled,
+    enabled => {
+      if (enabled && !form.alertThreshold) {
+        form.alertThreshold = { type: 'Percentage', value: 80 };
+      }
+      if (!enabled) {
+        form.alertThreshold = null;
+      }
+    },
+  );
 
   // 格式化表单数据用于提交
   function formatFormData() {

@@ -317,7 +317,10 @@ export class FamilyLedgerAccountMapper extends BaseMapper<
         ledgerSerialNum,
       });
     } catch (_error) {
-      Lg.w('MoneyDb', 'family_ledger_account_list_by_ledger command not found, returning empty array');
+      Lg.w(
+        'MoneyDb',
+        'family_ledger_account_list_by_ledger command not found, returning empty array',
+      );
       return [];
     }
   }
@@ -328,7 +331,10 @@ export class FamilyLedgerAccountMapper extends BaseMapper<
         accountSerialNum,
       });
     } catch (_error) {
-      Lg.w('MoneyDb', 'family_ledger_account_list_by_account command not found, returning empty array');
+      Lg.w(
+        'MoneyDb',
+        'family_ledger_account_list_by_account command not found, returning empty array',
+      );
       return [];
     }
   }
@@ -491,7 +497,9 @@ export class FamilyLedgerTransactionMapper extends BaseMapper<
   /**
    * 批量创建交易与账本的关联
    */
-  async batchCreate(associations: FamilyLedgerTransactionCreate[]): Promise<FamilyLedgerTransaction[]> {
+  async batchCreate(
+    associations: FamilyLedgerTransactionCreate[],
+  ): Promise<FamilyLedgerTransaction[]> {
     try {
       const result = await invokeCommand<FamilyLedgerTransaction[]>(
         'family_ledger_transaction_batch_create',
@@ -570,7 +578,10 @@ export class FamilyLedgerMemberMapper extends BaseMapper<
       const result = await invokeCommand<FamilyLedgerMember>('family_ledger_member_create', {
         data: assoc,
       });
-      Lg.d('MoneyDb', `FamilyLedgerMember created: ${result.familyLedgerSerialNum} - ${result.familyMemberSerialNum}`);
+      Lg.d(
+        'MoneyDb',
+        `FamilyLedgerMember created: ${result.familyLedgerSerialNum} - ${result.familyMemberSerialNum}`,
+      );
       return result;
     } catch (error) {
       this.handleError('create', error);

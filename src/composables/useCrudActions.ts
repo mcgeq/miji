@@ -53,11 +53,7 @@ export interface CrudActionsOptions {
  * );
  * ```
  */
-export function useCrudActions<
-  T extends { serialNum: string },
-  C = Partial<T>,
-  U = Partial<T>,
->(
+export function useCrudActions<T extends { serialNum: string }, C = Partial<T>, U = Partial<T>>(
   store: CrudStore<T, C, U>,
   options: CrudActionsOptions = {},
 ) {

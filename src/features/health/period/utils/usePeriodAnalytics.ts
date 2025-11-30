@@ -48,28 +48,19 @@ export function usePeriodAnalytics(
   const calculatePeriodLength = (record: PeriodRecords): number => {
     const start = new Date(record.startDate);
     const end = new Date(record.endDate);
-    return (
-      Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1
-    );
+    return Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
   };
 
-  const calculateCycleLength = (
-    current: PeriodRecords,
-    previous: PeriodRecords,
-  ): number => {
+  const calculateCycleLength = (current: PeriodRecords, previous: PeriodRecords): number => {
     const currentStart = new Date(current.startDate);
     const previousStart = new Date(previous.startDate);
-    return Math.ceil(
-      (currentStart.getTime() - previousStart.getTime()) /
-      (1000 * 60 * 60 * 24),
-    );
+    return Math.ceil((currentStart.getTime() - previousStart.getTime()) / (1000 * 60 * 60 * 24));
   };
 
   // 排序后的记录
   const sortedRecords = computed(() => {
     return [...periodRecords].sort(
-      (a, b) =>
-        new Date(a.startDate).getTime() - new Date(b.startDate).getTime(),
+      (a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime(),
     );
   });
 
@@ -102,21 +93,15 @@ export function usePeriodAnalytics(
 
     // 平均值计算
     const avgCycleLength =
-      cycles.length > 0
-        ? cycles.reduce((sum, length) => sum + length, 0) / cycles.length
-        : 28;
+      cycles.length > 0 ? cycles.reduce((sum, length) => sum + length, 0) / cycles.length : 28;
 
     const avgPeriodLength =
-      periods.length > 0
-        ? periods.reduce((sum, length) => sum + length, 0) / periods.length
-        : 5;
+      periods.length > 0 ? periods.reduce((sum, length) => sum + length, 0) / periods.length : 5;
 
     // 变异系数计算
-    const cycleLengthVariation =
-      cycles.length > 1 ? calculateVariationCoefficient(cycles) : 0;
+    const cycleLengthVariation = cycles.length > 1 ? calculateVariationCoefficient(cycles) : 0;
 
-    const periodLengthVariation =
-      periods.length > 1 ? calculateVariationCoefficient(periods) : 0;
+    const periodLengthVariation = periods.length > 1 ? calculateVariationCoefficient(periods) : 0;
 
     // 规律性评分 (0-100)
     const cycleRegularity = Math.max(0, 100 - cycleLengthVariation * 100);
@@ -128,10 +113,7 @@ export function usePeriodAnalytics(
     const nextPeriodDate = predictNextPeriod(records, avgCycleLength);
 
     // 排卵期和易孕期
-    const ovulationDate = calculateOvulationDate(
-      nextPeriodDate,
-      avgCycleLength,
-    );
+    const ovulationDate = calculateOvulationDate(nextPeriodDate, avgCycleLength);
     const fertilityWindow = calculateFertilityWindow(ovulationDate);
 
     // 健康评分
@@ -141,11 +123,7 @@ export function usePeriodAnalytics(
     const riskFactors = identifyRiskFactors(cycles, periods, dailyRecords);
 
     // 建议
-    const recommendations = generateRecommendations(
-      cycleRegularity,
-      healthScore,
-      riskFactors,
-    );
+    const recommendations = generateRecommendations(cycleRegularity, healthScore, riskFactors);
 
     return {
       totalRecords: records.length,
@@ -171,8 +149,7 @@ export function usePeriodAnalytics(
 
     records.forEach((record, index) => {
       const periodLength = calculatePeriodLength(record);
-      const cycleLength =
-        index > 0 ? calculateCycleLength(record, records[index - 1]) : 0;
+      const cycleLength = index > 0 ? calculateCycleLength(record, records[index - 1]) : 0;
 
       // 获取该周期的日常记录
       const periodDailyRecords = dailyRecords.filter(daily => {
@@ -255,16 +232,13 @@ export function usePeriodAnalytics(
     if (values.length < 2) return 0;
 
     const mean = values.reduce((sum, val) => sum + val, 0) / values.length;
-    const variance =
-      values.reduce((sum, val) => sum + (val - mean) ** 2, 0) / values.length;
+    const variance = values.reduce((sum, val) => sum + (val - mean) ** 2, 0) / values.length;
     const standardDeviation = Math.sqrt(variance);
 
     return mean > 0 ? standardDeviation / mean : 0;
   }
 
-  function analyzeTrend(
-    cycles: number[],
-  ): 'stable' | 'increasing' | 'decreasing' {
+  function analyzeTrend(cycles: number[]): 'stable' | 'increasing' | 'decreasing' {
     if (cycles.length < 3) return 'stable';
 
     const recentCycles = cycles.slice(-6); // 最近6个周期
@@ -272,10 +246,8 @@ export function usePeriodAnalytics(
 
     if (earlierCycles.length === 0) return 'stable';
 
-    const recentAvg =
-      recentCycles.reduce((sum, val) => sum + val, 0) / recentCycles.length;
-    const earlierAvg =
-      earlierCycles.reduce((sum, val) => sum + val, 0) / earlierCycles.length;
+    const recentAvg = recentCycles.reduce((sum, val) => sum + val, 0) / recentCycles.length;
+    const earlierAvg = earlierCycles.reduce((sum, val) => sum + val, 0) / earlierCycles.length;
 
     const difference = recentAvg - earlierAvg;
 
@@ -283,10 +255,7 @@ export function usePeriodAnalytics(
     return difference > 0 ? 'increasing' : 'decreasing';
   }
 
-  function predictNextPeriod(
-    records: PeriodRecords[],
-    avgCycleLength: number,
-  ): string {
+  function predictNextPeriod(records: PeriodRecords[], avgCycleLength: number): string {
     if (records.length === 0) return '';
 
     const lastRecord = records[records.length - 1];
@@ -297,10 +266,7 @@ export function usePeriodAnalytics(
     return nextPeriodDate.toISOString().split('T')[0];
   }
 
-  function calculateOvulationDate(
-    nextPeriodDate: string,
-    _cycleLength: number,
-  ): string {
+  function calculateOvulationDate(nextPeriodDate: string, _cycleLength: number): string {
     if (!nextPeriodDate) return '';
 
     const nextPeriod = new Date(nextPeriodDate);
@@ -341,8 +307,7 @@ export function usePeriodAnalytics(
     score -= Math.min(40, cycleVariation * 200);
 
     // 经期长度合理性 (30分)
-    const avgPeriodLength =
-      periods.reduce((sum, val) => sum + val, 0) / periods.length;
+    const avgPeriodLength = periods.reduce((sum, val) => sum + val, 0) / periods.length;
     if (avgPeriodLength < 3 || avgPeriodLength > 7) {
       score -= 15;
     }
@@ -374,8 +339,7 @@ export function usePeriodAnalytics(
     }
 
     // 周期过长或过短
-    const avgCycleLength =
-      cycles.reduce((sum, val) => sum + val, 0) / cycles.length;
+    const avgCycleLength = cycles.reduce((sum, val) => sum + val, 0) / cycles.length;
     if (avgCycleLength < 21) {
       risks.push('周期过短');
     } else if (avgCycleLength > 35) {
@@ -383,8 +347,7 @@ export function usePeriodAnalytics(
     }
 
     // 经期过长或过短
-    const avgPeriodLength =
-      periods.reduce((sum, val) => sum + val, 0) / periods.length;
+    const avgPeriodLength = periods.reduce((sum, val) => sum + val, 0) / periods.length;
     if (avgPeriodLength < 3) {
       risks.push('经期过短');
     } else if (avgPeriodLength > 7) {
@@ -423,10 +386,7 @@ export function usePeriodAnalytics(
     return recommendations;
   }
 
-  function getCurrentPhase(
-    record: PeriodRecords,
-    currentDate: Date,
-  ): PeriodPhase {
+  function getCurrentPhase(record: PeriodRecords, currentDate: Date): PeriodPhase {
     const periodStart = new Date(record.startDate);
     const periodEnd = new Date(record.endDate);
     const daysSinceStart = Math.floor(
@@ -467,17 +427,14 @@ export function usePeriodAnalytics(
   }
 
   function calculateAverageFlow(dailyRecords: PeriodDailyRecords[]): string {
-    const flowLevels = dailyRecords
-      .map(record => record.flowLevel)
-      .filter(level => level !== null);
+    const flowLevels = dailyRecords.map(record => record.flowLevel).filter(level => level !== null);
 
     if (flowLevels.length === 0) return '未记录';
 
     const flowValues = { Light: 1, Medium: 2, Heavy: 3 };
     const average =
       flowLevels.reduce(
-        (sum, level) =>
-          sum + (flowValues[level as keyof typeof flowValues] || 0),
+        (sum, level) => sum + (flowValues[level as keyof typeof flowValues] || 0),
         0,
       ) / flowLevels.length;
 
@@ -487,18 +444,13 @@ export function usePeriodAnalytics(
   }
 
   function extractMoodData(dailyRecords: PeriodDailyRecords[]): string[] {
-    const moods = dailyRecords
-      .map(record => record.mood)
-      .filter(mood => mood !== null) as string[];
+    const moods = dailyRecords.map(record => record.mood).filter(mood => mood !== null) as string[];
 
     return Array.from(new Set(moods));
   }
 
   // 生成日历事件
-  function generateCalendarEvents(
-    startDate: string,
-    endDate: string,
-  ): PeriodCalendarEvent[] {
+  function generateCalendarEvents(startDate: string, endDate: string): PeriodCalendarEvent[] {
     const events: PeriodCalendarEvent[] = [];
 
     // 添加已记录的经期
@@ -527,9 +479,7 @@ export function usePeriodAnalytics(
     const avgCycleLength = analytics.value.averageCycleLength;
     sortedRecords.value.forEach(record => {
       const ovulationDate = new Date(record.startDate);
-      ovulationDate.setDate(
-        ovulationDate.getDate() + Math.floor(avgCycleLength / 2),
-      );
+      ovulationDate.setDate(ovulationDate.getDate() + Math.floor(avgCycleLength / 2));
       const dateStr = ovulationDate.toISOString().split('T')[0];
       if (dateStr >= startDate && dateStr <= endDate) {
         events.push({

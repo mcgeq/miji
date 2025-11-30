@@ -4,9 +4,7 @@ import { z } from 'zod';
  * 表单验证 Composable
  * 提供基于 Zod Schema 的表单验证功能
  */
-export function useFormValidation<T extends Record<string, any>>(
-  schema: z.ZodSchema<T>,
-) {
+export function useFormValidation<T extends Record<string, any>>(schema: z.ZodSchema<T>) {
   const errors = ref<Partial<Record<keyof T, string>>>({});
   const touched = ref<Partial<Record<keyof T, boolean>>>({});
   const isValidating = ref(false);

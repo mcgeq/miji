@@ -4,9 +4,7 @@ import type { PeriodDailyRecords, PeriodRecords } from '@/schema/health/period';
 export function usePeriodValidation() {
   const validationErrors = ref<Record<string, string[]>>({});
 
-  const validateDailyRecord = (
-    record: Partial<PeriodDailyRecords>,
-  ): boolean => {
+  const validateDailyRecord = (record: Partial<PeriodDailyRecords>): boolean => {
     validationErrors.value = {};
 
     try {
@@ -25,17 +23,11 @@ export function usePeriodValidation() {
         addValidationError('diet', '饮食记录不能为空');
       }
 
-      if (
-        record.waterIntake
-        && (record.waterIntake < 0 || record.waterIntake > 5000)
-      ) {
+      if (record.waterIntake && (record.waterIntake < 0 || record.waterIntake > 5000)) {
         addValidationError('waterIntake', '饮水量应在0-5000ml之间');
       }
 
-      if (
-        record.sleepHours
-        && (record.sleepHours < 0 || record.sleepHours > 24)
-      ) {
+      if (record.sleepHours && (record.sleepHours < 0 || record.sleepHours > 24)) {
         addValidationError('sleepHours', '睡眠时间应在0-24小时之间');
       }
 

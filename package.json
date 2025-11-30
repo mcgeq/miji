@@ -25,6 +25,9 @@
     "format": "biome format --write src && eslint --fix src",
     "lint": "biome check src && eslint src",
     "lint:fix": "biome check --write --unsafe src && eslint --fix src",
+    "eslint": "eslint src",
+    "eslint:fix": "eslint --fix src",
+    "eslint:cache": "eslint --cache src",
     "prepare": "husky"
   },
   "dependencies": {
@@ -72,7 +75,7 @@
     "commitlint": "^19.8.1",
     "commitlint-config-gitmoji": "^2.3.1",
     "cz-customizable": "^7.4.0",
-    "eslint": "^9.35.0",
+    "eslint": "^9.39.1",
     "eslint-plugin-astro": "^1.3.1",
     "eslint-plugin-format": "^1.0.1",
     "eslint-plugin-svelte": "^3.11.0",

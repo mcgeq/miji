@@ -1,10 +1,5 @@
 import { z } from 'zod';
-import {
-  AmountSchema,
-  DateTimeSchema,
-  DescriptionSchema,
-  SerialNumSchema,
-} from '../common';
+import { AmountSchema, DateTimeSchema, DescriptionSchema, SerialNumSchema } from '../common';
 
 // 分摊规则类型枚举
 export const SplitRuleTypeSchema = z.enum([
@@ -23,12 +18,14 @@ export const SplitRuleConfigSchema = z.object({
   ruleType: SplitRuleTypeSchema,
   isTemplate: z.boolean().default(false),
   isActive: z.boolean().default(true),
-  participants: z.array(z.object({
-    memberSerialNum: SerialNumSchema,
-    percentage: z.number().min(0).max(100).optional(),
-    fixedAmount: AmountSchema.optional(),
-    weight: z.number().min(0).optional(),
-  })),
+  participants: z.array(
+    z.object({
+      memberSerialNum: SerialNumSchema,
+      percentage: z.number().min(0).max(100).optional(),
+      fixedAmount: AmountSchema.optional(),
+      weight: z.number().min(0).optional(),
+    }),
+  ),
   createdAt: DateTimeSchema,
   updatedAt: DateTimeSchema.optional().nullable(),
 });
@@ -51,13 +48,15 @@ export const SplitRecordSchema = z.object({
   familyLedgerSerialNum: SerialNumSchema,
   ruleConfigSerialNum: SerialNumSchema.optional(),
   totalAmount: AmountSchema,
-  splitDetails: z.array(z.object({
-    memberSerialNum: SerialNumSchema,
-    amount: AmountSchema,
-    percentage: z.number().min(0).max(100).optional(),
-    isPaid: z.boolean().default(false),
-    paidAt: DateTimeSchema.optional().nullable(),
-  })),
+  splitDetails: z.array(
+    z.object({
+      memberSerialNum: SerialNumSchema,
+      amount: AmountSchema,
+      percentage: z.number().min(0).max(100).optional(),
+      isPaid: z.boolean().default(false),
+      paidAt: DateTimeSchema.optional().nullable(),
+    }),
+  ),
   createdAt: DateTimeSchema,
   updatedAt: DateTimeSchema.optional().nullable(),
 });
@@ -107,12 +106,14 @@ export const SettlementRecordSchema = z.object({
   settlementDate: DateTimeSchema,
   periodStart: DateTimeSchema,
   periodEnd: DateTimeSchema,
-  settlements: z.array(z.object({
-    fromMemberSerialNum: SerialNumSchema,
-    toMemberSerialNum: SerialNumSchema,
-    amount: AmountSchema,
-    relatedDebtSerialNums: z.array(SerialNumSchema),
-  })),
+  settlements: z.array(
+    z.object({
+      fromMemberSerialNum: SerialNumSchema,
+      toMemberSerialNum: SerialNumSchema,
+      amount: AmountSchema,
+      relatedDebtSerialNums: z.array(SerialNumSchema),
+    }),
+  ),
   totalSettlementAmount: AmountSchema,
   notes: DescriptionSchema.optional(),
   createdAt: DateTimeSchema,
@@ -146,11 +147,13 @@ export const SettlementSuggestionSchema = z.object({
   toMemberSerialNum: SerialNumSchema,
   toMemberName: z.string(),
   amount: AmountSchema,
-  relatedDebts: z.array(z.object({
-    debtSerialNum: SerialNumSchema,
-    originalAmount: AmountSchema,
-    settledAmount: AmountSchema,
-  })),
+  relatedDebts: z.array(
+    z.object({
+      debtSerialNum: SerialNumSchema,
+      originalAmount: AmountSchema,
+      settledAmount: AmountSchema,
+    }),
+  ),
 });
 
 // 成员财务统计

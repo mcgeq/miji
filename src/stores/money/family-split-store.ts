@@ -43,8 +43,8 @@ export const useFamilySplitStore = defineStore('family-split', {
      */
     currentLedgerSplitRules: state => {
       if (!state.currentLedgerSerialNum) return [];
-      return state.splitRules.filter(rule =>
-        rule.familyLedgerSerialNum === state.currentLedgerSerialNum,
+      return state.splitRules.filter(
+        rule => rule.familyLedgerSerialNum === state.currentLedgerSerialNum,
       );
     },
 
@@ -77,8 +77,8 @@ export const useFamilySplitStore = defineStore('family-split', {
      */
     currentLedgerSplitRecords: state => {
       if (!state.currentLedgerSerialNum) return [];
-      return state.splitRecords.filter(record =>
-        record.familyLedgerSerialNum === state.currentLedgerSerialNum,
+      return state.splitRecords.filter(
+        record => record.familyLedgerSerialNum === state.currentLedgerSerialNum,
       );
     },
 
@@ -96,8 +96,8 @@ export const useFamilySplitStore = defineStore('family-split', {
      */
     currentLedgerDebtRelations: state => {
       if (!state.currentLedgerSerialNum) return [];
-      return state.debtRelations.filter(debt =>
-        debt.familyLedgerSerialNum === state.currentLedgerSerialNum,
+      return state.debtRelations.filter(
+        debt => debt.familyLedgerSerialNum === state.currentLedgerSerialNum,
       );
     },
 
@@ -110,8 +110,8 @@ export const useFamilySplitStore = defineStore('family-split', {
      * 获取成员的债务关系
      */
     getMemberDebts: state => (memberSerialNum: string) => {
-      return state.debtRelations.filter(debt =>
-        debt.debtorMemberSerialNum === memberSerialNum && !debt.isSettled,
+      return state.debtRelations.filter(
+        debt => debt.debtorMemberSerialNum === memberSerialNum && !debt.isSettled,
       );
     },
 
@@ -119,8 +119,8 @@ export const useFamilySplitStore = defineStore('family-split', {
      * 获取成员的债权关系
      */
     getMemberCredits: state => (memberSerialNum: string) => {
-      return state.debtRelations.filter(debt =>
-        debt.creditorMemberSerialNum === memberSerialNum && !debt.isSettled,
+      return state.debtRelations.filter(
+        debt => debt.creditorMemberSerialNum === memberSerialNum && !debt.isSettled,
       );
     },
 
@@ -208,7 +208,10 @@ export const useFamilySplitStore = defineStore('family-split', {
     /**
      * 更新分摊规则
      */
-    async updateSplitRule(serialNum: string, data: SplitRuleConfigUpdate): Promise<SplitRuleConfig> {
+    async updateSplitRule(
+      serialNum: string,
+      data: SplitRuleConfigUpdate,
+    ): Promise<SplitRuleConfig> {
       this.loading = true;
       this.error = null;
 

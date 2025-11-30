@@ -50,55 +50,44 @@ const DEFAULT_CONFIG: Required<SplashscreenConfig> = {
  * @param config Configuration options for the splashscreen
  * @returns The created splashscreen HTML element
  */
-export function createFrontendSplashscreen(
-  config: SplashscreenConfig = {},
-): HTMLElement {
+export function createFrontendSplashscreen(config: SplashscreenConfig = {}): HTMLElement {
   const finalConfig = { ...DEFAULT_CONFIG, ...config };
 
   // Ensure styles are loaded
   if (!document.querySelector('link[href*="splashscreen.css"]')) {
     // Styles should be imported in main.ts, but we check just in case
-    console.warn(
-      'Splashscreen styles may not be loaded. Ensure splashscreen.css is imported.',
-    );
+    console.warn('Splashscreen styles may not be loaded. Ensure splashscreen.css is imported.');
   }
 
   const splashscreen = document.createElement('div');
   splashscreen.id = 'frontend-splashscreen';
 
   const container = document.createElement('div');
-  container.className =
-    finalConfig.customClasses.container ||
-    'frontend-splashscreen-container';
+  container.className = finalConfig.customClasses.container || 'frontend-splashscreen-container';
 
   // Logo
   const logo = document.createElement('div');
-  logo.className =
-    finalConfig.customClasses.logo || 'frontend-splashscreen-logo';
+  logo.className = finalConfig.customClasses.logo || 'frontend-splashscreen-logo';
   logo.textContent = finalConfig.logoText;
   container.appendChild(logo);
 
   // App Name
   const appName = document.createElement('div');
-  appName.className =
-    finalConfig.customClasses.appName || 'frontend-splashscreen-app-name';
+  appName.className = finalConfig.customClasses.appName || 'frontend-splashscreen-app-name';
   appName.textContent = finalConfig.appName;
   container.appendChild(appName);
 
   // Loading Text
   const loadingText = document.createElement('div');
   loadingText.className =
-    finalConfig.customClasses.loadingText ||
-    'frontend-splashscreen-loading-text';
+    finalConfig.customClasses.loadingText || 'frontend-splashscreen-loading-text';
   loadingText.textContent = finalConfig.loadingText;
   container.appendChild(loadingText);
 
   // Spinner
   if (finalConfig.showSpinner) {
     const spinner = document.createElement('div');
-    spinner.className =
-      finalConfig.customClasses.spinner ||
-      'frontend-splashscreen-spinner';
+    spinner.className = finalConfig.customClasses.spinner || 'frontend-splashscreen-spinner';
     container.appendChild(spinner);
   }
 
@@ -106,8 +95,7 @@ export function createFrontendSplashscreen(
   if (finalConfig.showProgressBar) {
     const progressBar = document.createElement('div');
     progressBar.className =
-      finalConfig.customClasses.progressBar ||
-      'frontend-splashscreen-progress-bar';
+      finalConfig.customClasses.progressBar || 'frontend-splashscreen-progress-bar';
     const progressFill = document.createElement('div');
     progressFill.className = 'frontend-splashscreen-progress-fill';
     progressBar.appendChild(progressFill);
@@ -157,17 +145,12 @@ export function closeFrontendSplashscreen(
  * @param splashscreen The splashscreen element
  * @param newText The new loading text
  */
-export function updateSplashscreenText(
-  splashscreen: HTMLElement | null,
-  newText: string,
-): void {
+export function updateSplashscreenText(splashscreen: HTMLElement | null, newText: string): void {
   if (!splashscreen) {
     return;
   }
 
-  const loadingTextElement = splashscreen.querySelector(
-    '.frontend-splashscreen-loading-text',
-  );
+  const loadingTextElement = splashscreen.querySelector('.frontend-splashscreen-loading-text');
   if (loadingTextElement) {
     loadingTextElement.textContent = newText;
   }

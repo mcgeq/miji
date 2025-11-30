@@ -14,10 +14,7 @@ import { Lg } from '@/utils/debugLog';
 import { toast } from '@/utils/toast';
 import { INSTALLMENT_CONSTANTS, InstallmentStatus } from '../constants/transactionConstants';
 import { parseAmount } from '../utils/numberUtils';
-import type {
-  InstallmentCalculationRequest,
-  InstallmentCalculationResponse,
-} from '@/schema/money';
+import type { InstallmentCalculationRequest, InstallmentCalculationResponse } from '@/schema/money';
 import type { InstallmentPlanResponse } from '@/services/money/transactions';
 
 /**
@@ -95,9 +92,7 @@ export function useInstallmentManagement() {
   const visibleDetails = computed(() => {
     if (!installmentDetails.value) return null;
 
-    return isExpanded.value
-      ? installmentDetails.value
-      : installmentDetails.value.slice(0, 2);
+    return isExpanded.value ? installmentDetails.value : installmentDetails.value.slice(0, 2);
   });
 
   /**
@@ -153,7 +148,12 @@ export function useInstallmentManagement() {
     transactionDate?: string,
   ): Promise<boolean> {
     // 验证必需参数
-    if (!amount || amount <= 0 || !totalPeriods || totalPeriods < INSTALLMENT_CONSTANTS.MIN_PERIODS) {
+    if (
+      !amount ||
+      amount <= 0 ||
+      !totalPeriods ||
+      totalPeriods < INSTALLMENT_CONSTANTS.MIN_PERIODS
+    ) {
       calculationResult.value = null;
       return false;
     }
@@ -199,10 +199,9 @@ export function useInstallmentManagement() {
    */
   async function loadPlanBySerialNum(planSerialNum: string): Promise<boolean> {
     try {
-      const response = await invokeCommand<InstallmentPlanResponse>(
-        'installment_plan_get',
-        { planSerialNum },
-      );
+      const response = await invokeCommand<InstallmentPlanResponse>('installment_plan_get', {
+        planSerialNum,
+      });
 
       processPlanResponse(response);
       return true;
@@ -243,10 +242,9 @@ export function useInstallmentManagement() {
     }
 
     try {
-      const response = await invokeCommand<boolean>(
-        'installment_has_paid',
-        { transactionSerialNum },
-      );
+      const response = await invokeCommand<boolean>('installment_has_paid', {
+        transactionSerialNum,
+      });
       hasPaidInstallments.value = response;
     } catch (error) {
       Lg.e('useInstallmentManagement', 'Failed to check paid status:', error);
@@ -291,14 +289,15 @@ export function useInstallmentManagement() {
     const firstPeriodAmount = parseAmount(sourceDetails[0]?.amount);
 
     return sourceDetails.map((detail: any, index: number) => ({
-      period: detail.periodNumber || detail.period_number || detail.period || (index + 1),
+      period: detail.periodNumber || detail.period_number || detail.period || index + 1,
       amount: parseAmount(detail.amount) || firstPeriodAmount,
       dueDate: detail.dueDate || detail.due_date || '',
       status: parseInstallmentStatus(detail.status),
       paidDate: detail.paidDate || detail.paid_date || undefined,
-      paidAmount: detail.paidAmount || detail.paid_amount
-        ? parseAmount(detail.paidAmount || detail.paid_amount)
-        : undefined,
+      paidAmount:
+        detail.paidAmount || detail.paid_amount
+          ? parseAmount(detail.paidAmount || detail.paid_amount)
+          : undefined,
     }));
   }
 
@@ -309,7 +308,9 @@ export function useInstallmentManagement() {
     if (!status) return InstallmentStatus.PENDING;
 
     const upperStatus = status.toUpperCase();
-    return InstallmentStatus[upperStatus as keyof typeof InstallmentStatus] || InstallmentStatus.PENDING;
+    return (
+      InstallmentStatus[upperStatus as keyof typeof InstallmentStatus] || InstallmentStatus.PENDING
+    );
   }
 
   return {

@@ -58,10 +58,7 @@ function addTag(input?: Partial<Tags>): Tags {
 }
 
 // 更新标签（不可修改 serialNum 与 createdAt）
-function updateTag(
-  serialNum: string,
-  input: Partial<Omit<Tags, 'serialNum' | 'createdAt'>>,
-): Tags {
+function updateTag(serialNum: string, input: Partial<Omit<Tags, 'serialNum' | 'createdAt'>>): Tags {
   const existing = tags.value.get(serialNum);
   if (!existing) {
     throw new Error(`Tag with serialNum ${serialNum} not found.`);
@@ -125,13 +122,11 @@ function searchTags(options: TagFilterOptions = {}) {
     const lower = keyword.toLowerCase();
     results = results.filter(
       tag =>
-        tag.name.toLowerCase().includes(lower) ||
-        tag.description?.toLowerCase().includes(lower),
+        tag.name.toLowerCase().includes(lower) || tag.description?.toLowerCase().includes(lower),
     );
   }
   if (name) results = results.filter(tag => tag.name === name);
-  if (description)
-    results = results.filter(tag => tag.description === description);
+  if (description) results = results.filter(tag => tag.description === description);
 
   results.sort((a, b) => {
     const fieldA = a[sortBy];

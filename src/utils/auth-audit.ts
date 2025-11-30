@@ -124,12 +124,7 @@ class AuthAuditLogger {
   /**
    * 记录角色变更
    */
-  logRoleChange(
-    userId: string,
-    oldRole: Role,
-    newRole: Role,
-    metadata?: Record<string, any>,
-  ) {
+  logRoleChange(userId: string, oldRole: Role, newRole: Role, metadata?: Record<string, any>) {
     this.addLog({
       type: 'role_change',
       userId,
@@ -187,18 +182,14 @@ class AuthAuditLogger {
    * 获取被拒绝的权限检查日志
    */
   getDeniedLogs(): AuditLogEntry[] {
-    return this.logs.filter(
-      log => log.type === 'permission_denied' || log.result === 'denied',
-    );
+    return this.logs.filter(log => log.type === 'permission_denied' || log.result === 'denied');
   }
 
   /**
    * 获取指定时间范围的日志
    */
   getLogsByTimeRange(startTime: number, endTime: number): AuditLogEntry[] {
-    return this.logs.filter(
-      log => log.timestamp >= startTime && log.timestamp <= endTime,
-    );
+    return this.logs.filter(log => log.timestamp >= startTime && log.timestamp <= endTime);
   }
 
   /**
@@ -245,7 +236,7 @@ class AuthAuditLogger {
       loginCount,
       logoutCount,
       deniedCount,
-      denialRate: totalLogs > 0 ? `${(deniedCount / totalLogs * 100).toFixed(2)}%` : '0%',
+      denialRate: totalLogs > 0 ? `${((deniedCount / totalLogs) * 100).toFixed(2)}%` : '0%',
       roleDistribution,
       topDeniedPermissions: Object.entries(permissionDenialCount)
         .sort(([, a], [, b]) => b - a)

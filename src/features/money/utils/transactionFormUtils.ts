@@ -15,10 +15,7 @@ import type { Account, Transaction } from '@/schema/money';
  * @param type - 交易类型
  * @param _accounts - 账户列表（保留参数以保持向后兼容，不再使用）
  */
-export function createDefaultTransaction(
-  type: TransactionType,
-  _accounts: Account[],
-): Transaction {
+export function createDefaultTransaction(type: TransactionType, _accounts: Account[]): Transaction {
   return {
     serialNum: '',
     transactionType: type,

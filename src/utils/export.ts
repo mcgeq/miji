@@ -19,14 +19,16 @@ export function exportToCSV(data: any[], filename: string, headers?: string[]) {
     csvHeaders.join(','),
     // 数据行
     ...data.map(row =>
-      csvHeaders.map(header => {
-        const value = row[header];
-        // 处理包含逗号或换行符的值
-        if (typeof value === 'string' && (value.includes(',') || value.includes('\n'))) {
-          return `"${value.replace(/"/g, '""')}"`;
-        }
-        return value ?? '';
-      }).join(','),
+      csvHeaders
+        .map(header => {
+          const value = row[header];
+          // 处理包含逗号或换行符的值
+          if (typeof value === 'string' && (value.includes(',') || value.includes('\n'))) {
+            return `"${value.replace(/"/g, '""')}"`;
+          }
+          return value ?? '';
+        })
+        .join(','),
     ),
   ].join('\n');
 
@@ -51,13 +53,15 @@ export function exportToCSVWithMapping(
     headers.join(','),
     // 数据行
     ...data.map(row =>
-      fields.map(field => {
-        const value = row[field];
-        if (typeof value === 'string' && (value.includes(',') || value.includes('\n'))) {
-          return `"${value.replace(/"/g, '""')}"`;
-        }
-        return value ?? '';
-      }).join(','),
+      fields
+        .map(field => {
+          const value = row[field];
+          if (typeof value === 'string' && (value.includes(',') || value.includes('\n'))) {
+            return `"${value.replace(/"/g, '""')}"`;
+          }
+          return value ?? '';
+        })
+        .join(','),
     ),
   ].join('\n');
 
@@ -218,13 +222,9 @@ export function exportTableToPDF(
   filename: string,
   headers: string[] | Record<string, string>,
 ) {
-  const headerArray = Array.isArray(headers)
-    ? headers
-    : Object.values(headers);
+  const headerArray = Array.isArray(headers) ? headers : Object.values(headers);
 
-  const fields = Array.isArray(headers)
-    ? Object.keys(data[0] || {})
-    : Object.keys(headers);
+  const fields = Array.isArray(headers) ? Object.keys(data[0] || {}) : Object.keys(headers);
 
   let html = '<table>';
 
@@ -254,7 +254,11 @@ export function exportTableToPDF(
 /**
  * 导出ECharts图表为图片
  */
-export function exportChartImage(chartInstance: any, filename: string, type: 'png' | 'jpeg' = 'png') {
+export function exportChartImage(
+  chartInstance: any,
+  filename: string,
+  type: 'png' | 'jpeg' = 'png',
+) {
   if (!chartInstance) {
     console.error('Chart instance is required');
     return;
@@ -408,7 +412,10 @@ export interface SettlementRecordExportData {
   createdAt: string;
 }
 
-export function exportSettlementRecords(records: SettlementRecordExportData[], filename = '结算记录') {
+export function exportSettlementRecords(
+  records: SettlementRecordExportData[],
+  filename = '结算记录',
+) {
   const fieldMapping = {
     serialNum: '结算编号',
     type: '结算类型',

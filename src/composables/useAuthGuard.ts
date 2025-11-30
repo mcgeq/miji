@@ -47,13 +47,7 @@ export interface AuthGuardOptions {
  * ```
  */
 export function useAuthGuard(options: AuthGuardOptions = {}) {
-  const {
-    permissions,
-    roles,
-    onDenied,
-    showToast = true,
-    redirectTo = '/home',
-  } = options;
+  const { permissions, roles, onDenied, showToast = true, redirectTo = '/home' } = options;
 
   const authStore = useAuthStore();
   const router = useRouter();

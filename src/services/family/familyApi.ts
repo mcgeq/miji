@@ -22,10 +22,7 @@ import type {
 const API_BASE_URL = '/api/family';
 
 // 通用请求函数
-async function request<T>(
-  endpoint: string,
-  options: RequestInit = {},
-): Promise<T> {
+async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const url = `${API_BASE_URL}${endpoint}`;
 
   const defaultOptions: RequestInit = {
@@ -228,7 +225,9 @@ export const DebtRelationApi = {
 export const SettlementApi = {
   // 获取结算建议
   async getSettlementSuggestions(ledgerSerialNum: string): Promise<SettlementSuggestion[]> {
-    return request<SettlementSuggestion[]>(`/settlement/suggestions?ledgerSerialNum=${ledgerSerialNum}`);
+    return request<SettlementSuggestion[]>(
+      `/settlement/suggestions?ledgerSerialNum=${ledgerSerialNum}`,
+    );
   },
 
   // 获取结算记录
@@ -237,7 +236,10 @@ export const SettlementApi = {
   },
 
   // 执行结算
-  async executeSettlement(ledgerSerialNum: string, suggestions: SettlementSuggestion[]): Promise<SettlementRecord> {
+  async executeSettlement(
+    ledgerSerialNum: string,
+    suggestions: SettlementSuggestion[],
+  ): Promise<SettlementRecord> {
     return request<SettlementRecord>('/settlement/execute', {
       method: 'POST',
       body: JSON.stringify({ ledgerSerialNum, suggestions }),
@@ -285,10 +287,7 @@ export const ExportApi = {
   },
 
   // 导出分摊记录
-  async exportSplitRecords(
-    ledgerSerialNum: string,
-    format: 'csv' | 'excel',
-  ): Promise<Blob> {
+  async exportSplitRecords(ledgerSerialNum: string, format: 'csv' | 'excel'): Promise<Blob> {
     const params = new URLSearchParams({ ledgerSerialNum, format });
 
     const response = await fetch(`${API_BASE_URL}/export/split-records?${params}`, {

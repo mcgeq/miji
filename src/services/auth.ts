@@ -24,10 +24,7 @@ export class AuthError extends Error {
   }
 }
 
-export async function login(
-  credentials: CredentialsLogin,
-  rememberMe = false,
-): Promise<User> {
+export async function login(credentials: CredentialsLogin, rememberMe = false): Promise<User> {
   try {
     const { email, password } = credentials;
 
@@ -71,10 +68,7 @@ export async function login(
   }
 }
 
-export async function register(
-  credentials: Credentials,
-  rememberMe = false,
-): Promise<User> {
+export async function register(credentials: Credentials, rememberMe = false): Promise<User> {
   try {
     const { email, username, password } = credentials;
 
@@ -106,13 +100,10 @@ export async function register(
     const result = await invokeCommand<User>('create_user', { data: user });
 
     if (rememberMe) {
-      const tokenResponse = await invokeCommand<TokenResponse>(
-        'generate_token',
-        {
-          userId: result.email,
-          role: result.role,
-        },
-      );
+      const tokenResponse = await invokeCommand<TokenResponse>('generate_token', {
+        userId: result.email,
+        role: result.role,
+      });
       await loginUser(result, tokenResponse);
     }
 
@@ -139,10 +130,7 @@ export async function hashPassword(password: string): Promise<string> {
   }
 }
 
-export async function checkPassword(
-  password: string,
-  user_id: string,
-): Promise<boolean> {
+export async function checkPassword(password: string, user_id: string): Promise<boolean> {
   try {
     return await invokeCommand<boolean>('check_pwd', {
       pwd: password,
@@ -206,11 +194,7 @@ export async function refreshToken(token: string): Promise<TokenResponse> {
     Lg.e('Api Token refresh', error);
 
     if (isBusinessError(error)) {
-      throw new AuthError(
-        error.code,
-        `Token refresh failed: ${error.description}`,
-        error,
-      );
+      throw new AuthError(error.code, `Token refresh failed: ${error.description}`, error);
     }
 
     throw new AuthError('TOKEN_REFRESH_ERROR', 'Failed to refresh token');
@@ -240,15 +224,11 @@ function handleAuthError(error: unknown): AuthError {
 
   // 如果是业务错误，转换为认证错误
   if (isBusinessError(error)) {
-    return new AuthError(
-      error.code,
-      `Authentication failed: ${error.description}`,
-      {
-        category: error.category,
-        module: error.module,
-        details: error.details,
-      },
-    );
+    return new AuthError(error.code, `Authentication failed: ${error.description}`, {
+      category: error.category,
+      module: error.module,
+      details: error.details,
+    });
   }
 
   // 如果是系统错误，转换为认证错误
@@ -266,10 +246,7 @@ function handleAuthError(error: unknown): AuthError {
   }
 
   // 未知错误
-  return new AuthError(
-    'UNKNOWN_ERROR',
-    'Unknown error occurred during authentication',
-  );
+  return new AuthError('UNKNOWN_ERROR', 'Unknown error occurred during authentication');
 }
 
 // 错误类型守卫

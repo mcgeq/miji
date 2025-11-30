@@ -88,8 +88,7 @@ export async function switchLocale(newLocale: LocaleType) {
   try {
     if (!i18nInstance.global.availableLocales.includes(newLocale)) {
       const messages = await loadLocaleMessages(newLocale);
-      if (!messages)
-        throw new Error('语言包加载失败');
+      if (!messages) throw new Error('语言包加载失败');
       i18nInstance.global.setLocaleMessage(newLocale, messages);
     }
     if (i18nInstance) {

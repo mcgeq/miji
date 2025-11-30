@@ -20,11 +20,8 @@
 ### 导入方式
 
 ```typescript
-// 单个导入
-import Modal from '@/components/ui/Modal.vue'
-
 // 批量导入
-import { Modal, Button, Dropdown } from '@/components/ui'
+// 单个导入
 ```
 
 ### 使用示例
@@ -33,14 +30,16 @@ import { Modal, Button, Dropdown } from '@/components/ui'
 
 ```vue
 <script setup>
-import { Modal } from '@/components/ui'
-import { ref } from 'vue'
+import { ref } from 'vue';
+import { Modal } from '@/components/ui';
 
-const isOpen = ref(false)
+const isOpen = ref(false);
 </script>
 
 <template>
-  <button @click="isOpen = true">打开</button>
+  <button @click="isOpen = true">
+    打开
+  </button>
 
   <Modal
     :open="isOpen"
@@ -57,10 +56,10 @@ const isOpen = ref(false)
 
 ```vue
 <script setup>
-import { ConfirmDialog } from '@/components/ui'
-import { ref } from 'vue'
+import { ref } from 'vue';
+import { ConfirmDialog } from '@/components/ui';
 
-const isOpen = ref(false)
+const isOpen = ref(false);
 </script>
 
 <template>
@@ -97,15 +96,15 @@ const isOpen = ref(false)
 
 ```vue
 <script setup>
-import { Dropdown } from '@/components/ui'
+import { Dropdown } from '@/components/ui';
 
 const options = [
   { value: '1', label: '选项 1' },
   { value: '2', label: '选项 2' },
   { value: '3', label: '选项 3' }
-]
+];
 
-const selected = ref('1')
+const selected = ref('1');
 </script>
 
 <template>
@@ -122,20 +121,26 @@ const selected = ref('1')
 
 ```vue
 <script setup>
-import { Tabs } from '@/components/ui'
+import { Tabs } from '@/components/ui';
 
 const tabs = [
   { name: '标签 1', value: 'tab1' },
   { name: '标签 2', value: 'tab2' },
   { name: '标签 3', value: 'tab3', badge: 5 }
-]
+];
 </script>
 
 <template>
   <Tabs :tabs="tabs" variant="pills">
-    <template #panel-0>内容 1</template>
-    <template #panel-1>内容 2</template>
-    <template #panel-2>内容 3</template>
+    <template #panel-0>
+      内容 1
+    </template>
+    <template #panel-1>
+      内容 2
+    </template>
+    <template #panel-2>
+      内容 3
+    </template>
   </Tabs>
 </template>
 ```
@@ -272,7 +277,7 @@ const tabs = [
   </template>
 
   <!-- 自定义内容 -->
-  
+
   <!-- 自定义底部 -->
   <div class="flex justify-center gap-3 mt-4">
     <Button>自定义按钮</Button>

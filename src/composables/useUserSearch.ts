@@ -18,16 +18,17 @@ export function useUserSearch() {
   const loading = ref(false);
   const error = ref<string | null>(null);
   const selectedUser = ref<User | null>(null);
-  const searchHistory = ref<string[]>(JSON.parse(localStorage.getItem('userSearchHistory') || '[]'));
+  const searchHistory = ref<string[]>(
+    JSON.parse(localStorage.getItem('userSearchHistory') || '[]'),
+  );
 
   // 计算属性：过滤用户列表
   const filteredUsers = computed(() => {
     if (!searchQuery.value.trim()) return users.value;
 
     const query = searchQuery.value.toLowerCase();
-    return users.value.filter(user =>
-      user.name.toLowerCase().includes(query) ||
-      user.email.toLowerCase().includes(query),
+    return users.value.filter(
+      user => user.name.toLowerCase().includes(query) || user.email.toLowerCase().includes(query),
     );
   });
 
@@ -85,12 +86,13 @@ export function useUserSearch() {
 
       // 使用统一的搜索API
       try {
-        const result = await invokeCommand<{ users: User[]; total: number; hasMore: boolean }>('search_users', {
-          query: searchTerm.includes('@')
-            ? { email: searchTerm }
-            : { keyword: searchTerm },
-          limit: 20,
-        });
+        const result = await invokeCommand<{ users: User[]; total: number; hasMore: boolean }>(
+          'search_users',
+          {
+            query: searchTerm.includes('@') ? { email: searchTerm } : { keyword: searchTerm },
+            limit: 20,
+          },
+        );
         searchResults = result.users || [];
       } catch (_err: any) {
         // 如果新API不存在，根据搜索类型降级

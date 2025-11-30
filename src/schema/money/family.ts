@@ -87,31 +87,35 @@ export const FamilyLedgerSchema = z.object({
   updatedAt: DateTimeSchema.optional().nullable(),
 });
 
-export const FamilyLedgerCreateSchema = z.object({
-  name: z.string().min(1, 'Name is required'),
-  description: DescriptionSchema,
-  baseCurrency: z.string().length(3),
-  memberList: z.array(FamilyMemberSchema).default([]),
-  ledgerType: LedgerTypeSchema.default('FAMILY'),
-  settlementCycle: SettlementCycleSchema.default('MONTHLY'),
-  autoSettlement: z.boolean().default(false),
-  settlementDay: z.number().int().min(1).max(31).default(1),
-  defaultSplitRule: SerialNumSchema.optional().nullable(),
-}).strict();
+export const FamilyLedgerCreateSchema = z
+  .object({
+    name: z.string().min(1, 'Name is required'),
+    description: DescriptionSchema,
+    baseCurrency: z.string().length(3),
+    memberList: z.array(FamilyMemberSchema).default([]),
+    ledgerType: LedgerTypeSchema.default('FAMILY'),
+    settlementCycle: SettlementCycleSchema.default('MONTHLY'),
+    autoSettlement: z.boolean().default(false),
+    settlementDay: z.number().int().min(1).max(31).default(1),
+    defaultSplitRule: SerialNumSchema.optional().nullable(),
+  })
+  .strict();
 
-export const FamilyLedgerUpdateSchema = z.object({
-  name: z.string().min(1, 'Name is required').optional(),
-  description: DescriptionSchema.optional(),
-  baseCurrency: z.string().length(3).optional(),
-  memberList: z.array(FamilyMemberSchema).optional(),
-  ledgerType: LedgerTypeSchema.optional(),
-  settlementCycle: SettlementCycleSchema.optional(),
-  autoSettlement: z.boolean().optional(),
-  settlementDay: z.number().int().min(1).max(31).optional(),
-  defaultSplitRule: SerialNumSchema.optional().nullable(),
-  memberCount: z.number().int().min(0).optional(),
-  activeTransactionCount: z.number().int().min(0).optional(),
-}).strict();
+export const FamilyLedgerUpdateSchema = z
+  .object({
+    name: z.string().min(1, 'Name is required').optional(),
+    description: DescriptionSchema.optional(),
+    baseCurrency: z.string().length(3).optional(),
+    memberList: z.array(FamilyMemberSchema).optional(),
+    ledgerType: LedgerTypeSchema.optional(),
+    settlementCycle: SettlementCycleSchema.optional(),
+    autoSettlement: z.boolean().optional(),
+    settlementDay: z.number().int().min(1).max(31).optional(),
+    defaultSplitRule: SerialNumSchema.optional().nullable(),
+    memberCount: z.number().int().min(0).optional(),
+    activeTransactionCount: z.number().int().min(0).optional(),
+  })
+  .strict();
 
 export const FamilyLedgerAccountSchema = z.object({
   serialNum: SerialNumSchema,
@@ -163,9 +167,7 @@ export type FamilyLedgerAccount = z.infer<typeof FamilyLedgerAccountSchema>;
 export type FamilyLedgerAccountCreate = z.infer<typeof FamilyLedgerAccountCreateSchema>;
 export type FamilyLedgerAccountUpdate = z.infer<typeof FamilyLedgerAccountUpdateSchema>;
 
-export type FamilyLedgerTransaction = z.infer<
-  typeof FamilyLedgerTransactionSchema
->;
+export type FamilyLedgerTransaction = z.infer<typeof FamilyLedgerTransactionSchema>;
 export type FamilyLedgerTransactionCreate = z.infer<typeof FamilyLedgerTransactionCreateSchema>;
 export type FamilyLedgerTransactionUpdate = z.infer<typeof FamilyLedgerTransactionUpdateSchema>;
 

@@ -35,16 +35,12 @@ export const useBudgetAllocationStore = defineStore('budget-allocation', () => {
   /**
    * 活动的分配
    */
-  const activeAllocations = computed(() =>
-    allocations.value.filter(a => a.status === 'ACTIVE'),
-  );
+  const activeAllocations = computed(() => allocations.value.filter(a => a.status === 'ACTIVE'));
 
   /**
    * 已超支的分配
    */
-  const exceededAllocations = computed(() =>
-    allocations.value.filter(a => a.isExceeded),
-  );
+  const exceededAllocations = computed(() => allocations.value.filter(a => a.isExceeded));
 
   /**
    * 预警中的分配
@@ -56,9 +52,7 @@ export const useBudgetAllocationStore = defineStore('budget-allocation', () => {
   /**
    * 强制保障的分配
    */
-  const mandatoryAllocations = computed(() =>
-    allocations.value.filter(a => a.isMandatory),
-  );
+  const mandatoryAllocations = computed(() => allocations.value.filter(a => a.isMandatory));
 
   /**
    * 按优先级排序的分配
@@ -314,9 +308,7 @@ export const useBudgetAllocationStore = defineStore('budget-allocation', () => {
 
       // 更新本地数据
       if (data.allocationSerialNum) {
-        const index = allocations.value.findIndex(
-          a => a.serialNum === data.allocationSerialNum,
-        );
+        const index = allocations.value.findIndex(a => a.serialNum === data.allocationSerialNum);
         if (index !== -1) {
           allocations.value[index] = response.data;
         }

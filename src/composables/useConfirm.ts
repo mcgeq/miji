@@ -48,8 +48,7 @@ export function useConfirm() {
         confirmText: options.confirmText || '确定',
         cancelText: options.cancelText || '取消',
         confirmButtonType:
-          options.confirmButtonType
-          || (options.type === 'error' ? 'danger' : 'primary'),
+          options.confirmButtonType || (options.type === 'error' ? 'danger' : 'primary'),
         showCancel: options.showCancel ?? true,
         loading: false,
         resolve,
@@ -59,8 +58,7 @@ export function useConfirm() {
 
   // 处理确认
   const handleConfirm = async () => {
-    if (confirmState.value.loading)
-      return;
+    if (confirmState.value.loading) return;
 
     confirmState.value.loading = true;
 
@@ -74,8 +72,7 @@ export function useConfirm() {
 
   // 处理取消
   const handleCancel = () => {
-    if (confirmState.value.loading)
-      return;
+    if (confirmState.value.loading) return;
 
     confirmState.value.visible = false;
     confirmState.value.resolve?.(false);
@@ -83,8 +80,7 @@ export function useConfirm() {
 
   // 处理关闭
   const handleClose = () => {
-    if (confirmState.value.loading)
-      return;
+    if (confirmState.value.loading) return;
 
     confirmState.value.visible = false;
     confirmState.value.resolve?.(false);

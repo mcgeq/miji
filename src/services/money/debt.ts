@@ -89,9 +89,7 @@ export const debtService = {
   /**
    * 获取债务统计信息
    */
-  async getStatistics(
-    familyLedgerSerialNum: string,
-  ): Promise<DebtStatistics> {
+  async getStatistics(familyLedgerSerialNum: string): Promise<DebtStatistics> {
     return invokeCommand('debt_relations_stats', {
       family_ledger_serial_num: familyLedgerSerialNum,
     });

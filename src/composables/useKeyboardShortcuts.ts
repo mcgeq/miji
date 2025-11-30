@@ -40,7 +40,8 @@ export function useKeyboardShortcuts() {
   ) {
     return function handleKeyPress(event: KeyboardEvent) {
       // 如果任何模态框已打开，只处理 ESC 键
-      const anyModalOpen = modalStates.showTransaction.value ||
+      const anyModalOpen =
+        modalStates.showTransaction.value ||
         modalStates.showAccount.value ||
         modalStates.showBudget.value ||
         modalStates.showReminder.value;

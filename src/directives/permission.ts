@@ -70,10 +70,13 @@ function checkPermission(el: HTMLElement, binding: DirectiveBinding) {
 /**
  * 权限检查函数，用于在JavaScript中检查权限
  */
-export function checkElementPermission(permission: string | string[], options?: {
-  mode?: 'and' | 'or';
-  role?: string | string[];
-}): boolean {
+export function checkElementPermission(
+  permission: string | string[],
+  options?: {
+    mode?: 'and' | 'or';
+    role?: string | string[];
+  },
+): boolean {
   const { hasPermission, currentRole } = usePermission();
 
   if (options?.role) {

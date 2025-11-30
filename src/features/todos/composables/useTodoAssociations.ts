@@ -25,10 +25,7 @@ export function useTodoAssociations(_todoId: string) {
    */
   async function loadMasterData() {
     try {
-      const [projects, tags] = await Promise.all([
-        ProjectDb.listProjects(),
-        TagDb.listTags(),
-      ]);
+      const [projects, tags] = await Promise.all([ProjectDb.listProjects(), TagDb.listTags()]);
 
       projectsMap.value = new Map(projects.map(p => [p.serialNum, p]));
       tagsMap.value = new Map(tags.map(t => [t.serialNum, t]));

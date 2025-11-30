@@ -56,9 +56,7 @@ function createProject(input?: Partial<Projects>): Projects {
 function addProject(input?: Partial<Projects>): Projects {
   const project = createProject(input);
   if (projects.value.has(project.serialNum)) {
-    throw new Error(
-      `Project with serialNum ${project.serialNum} already exists.`,
-    );
+    throw new Error(`Project with serialNum ${project.serialNum} already exists.`);
   }
   projects.value.set(project.serialNum, project);
   return project;
@@ -128,16 +126,13 @@ function searchProjects(options: ProjectFilterOptions = {}) {
   if (keyword?.trim()) {
     const lower = keyword.toLowerCase();
     results = results.filter(
-      p =>
-        p.name.toLowerCase().includes(lower) ||
-        p.description?.toLowerCase().includes(lower),
+      p => p.name.toLowerCase().includes(lower) || p.description?.toLowerCase().includes(lower),
     );
   }
   if (name) results = results.filter(p => p.name === name);
   if (description) results = results.filter(p => p.description === description);
   if (ownerId) results = results.filter(p => p.ownerId === ownerId);
-  if (typeof isArchived === 'boolean')
-    results = results.filter(p => p.isArchived === isArchived);
+  if (typeof isArchived === 'boolean') results = results.filter(p => p.isArchived === isArchived);
 
   results.sort((a, b) => {
     const valA = a[sortBy];

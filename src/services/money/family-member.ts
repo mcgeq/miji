@@ -110,10 +110,7 @@ export const familyMemberService = {
   /**
    * 更新成员
    */
-  async updateMember(
-    serialNum: string,
-    data: FamilyMemberUpdate,
-  ): Promise<FamilyMember> {
+  async updateMember(serialNum: string, data: FamilyMemberUpdate): Promise<FamilyMember> {
     return invokeCommand('family_member_update', {
       serial_num: serialNum,
       name: data.name,
@@ -150,10 +147,7 @@ export const familyMemberService = {
   /**
    * 更新成员权限
    */
-  async updateMemberPermissions(
-    serialNum: string,
-    permissions: string[],
-  ): Promise<FamilyMember> {
+  async updateMemberPermissions(serialNum: string, permissions: string[]): Promise<FamilyMember> {
     return this.updateMember(serialNum, {
       permissions: JSON.stringify(permissions),
     });
@@ -240,10 +234,7 @@ export const familyMemberService = {
    * 获取成员债务关系
    * 使用已有的debt service
    */
-  async getMemberDebtRelations(
-    memberSerialNum: string,
-    familyLedgerSerialNum: string,
-  ) {
+  async getMemberDebtRelations(memberSerialNum: string, familyLedgerSerialNum: string) {
     const { debtService } = await import('./debt');
     return debtService.listRelations({
       familyLedgerSerialNum,

@@ -34,12 +34,7 @@ import {
 } from 'lucide-vue-next';
 import { DateUtils } from '@/utils/date';
 import type { ExerciseIntensity, FlowLevel, Intensity } from '@/schema/common';
-import type {
-  Mood,
-  PeriodDailyRecords,
-  PeriodPhase,
-  PeriodRecords,
-} from '@/schema/health/period';
+import type { Mood, PeriodDailyRecords, PeriodPhase, PeriodRecords } from '@/schema/health/period';
 import type { LucideIcon } from 'lucide-vue-next';
 
 type PeriodCategory = 'Diet' | 'Exercise' | 'Sleep' | 'Care' | 'Mood';
@@ -48,7 +43,9 @@ type PeriodCategory = 'Diet' | 'Exercise' | 'Sleep' | 'Care' | 'Mood';
  * 计算经期持续天数（包含首尾两天）
  * 例如：11/22 到 11/28 = 7 天
  */
-export function calculatePeriodDuration(record: PeriodRecords | { startDate: string; endDate: string }): number {
+export function calculatePeriodDuration(
+  record: PeriodRecords | { startDate: string; endDate: string },
+): number {
   if (!record.startDate || !record.endDate) {
     return 0;
   }
@@ -143,10 +140,7 @@ export class PeriodDateUtils {
   /**
    * 获取月份的第一天和最后一天
    */
-  static getMonthRange(
-    year: number,
-    month: number,
-  ): { start: string; end: string } {
+  static getMonthRange(year: number, month: number): { start: string; end: string } {
     const start = new Date(year, month - 1, 1);
     const end = new Date(year, month, 0);
 
@@ -181,10 +175,7 @@ export class PeriodDateUtils {
       return '明天';
     }
 
-    const daysDiff = DateUtils.daysBetween(
-      today.toISOString().split('T')[0],
-      dateStr,
-    );
+    const daysDiff = DateUtils.daysBetween(today.toISOString().split('T')[0], dateStr);
     if (daysDiff > 0) {
       return `${daysDiff}天后`;
     } else {
@@ -214,11 +205,7 @@ export class PeriodDateUtils {
   /**
    * 检查日期是否在范围内
    */
-  static isDateInRange(
-    date: string,
-    startDate: string,
-    endDate: string,
-  ): boolean {
+  static isDateInRange(date: string, startDate: string, endDate: string): boolean {
     const target = new Date(date);
     const start = new Date(startDate);
     const end = new Date(endDate);
@@ -376,8 +363,7 @@ export class PeriodValidator {
    */
   static isValidDate(dateStr: string): boolean {
     const dateObj = new Date(dateStr);
-    const isValidDateObj =
-      dateObj instanceof Date && !Number.isNaN(dateObj.getTime());
+    const isValidDateObj = dateObj instanceof Date && !Number.isNaN(dateObj.getTime());
     const matchesFormat = /^\d{4}-\d{2}-\d{2}$/.test(dateStr);
     return isValidDateObj && matchesFormat;
   }
@@ -484,17 +470,11 @@ export class PeriodValidator {
       errors.push('饮食记录不能为空');
     }
 
-    if (
-      record.waterIntake !== undefined &&
-      (record.waterIntake < 0 || record.waterIntake > 5000)
-    ) {
+    if (record.waterIntake !== undefined && (record.waterIntake < 0 || record.waterIntake > 5000)) {
       errors.push('饮水量应在0-5000ml之间');
     }
 
-    if (
-      record.sleepHours !== undefined &&
-      (record.sleepHours < 0 || record.sleepHours > 24)
-    ) {
+    if (record.sleepHours !== undefined && (record.sleepHours < 0 || record.sleepHours > 24)) {
       errors.push('睡眠时间应在0-24小时之间');
     }
 
@@ -584,15 +564,12 @@ export class PeriodDataManager {
     dailyRecords: PeriodDailyRecords[],
   ): string {
     const sortedRecords = [...periodRecords].sort(
-      (a, b) =>
-        new Date(a.startDate).getTime() - new Date(b.startDate).getTime(),
+      (a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime(),
     );
 
     const cycleLengths = sortedRecords
       .slice(1)
-      .map((record, index) =>
-        PeriodCalculator.calculateCycleLength(record, sortedRecords[index]),
-      );
+      .map((record, index) => PeriodCalculator.calculateCycleLength(record, sortedRecords[index]));
 
     const periodLengths = sortedRecords.map(record =>
       PeriodCalculator.calculatePeriodLength(record),
@@ -685,10 +662,7 @@ export class HealthTipsManager {
   ];
 
   // 经期阶段特定提示
-  private static readonly PHASE_SPECIFIC_TIPS: Record<
-    PeriodPhase,
-    HealthTip[]
-  > = {
+  private static readonly PHASE_SPECIFIC_TIPS: Record<PeriodPhase, HealthTip[]> = {
     Menstrual: [
       {
         id: 101,
@@ -954,9 +928,7 @@ export class HealthTipsManager {
     }
 
     // 按优先级排序并返回指定数量的提示
-    return tips
-      .sort((a, b) => (a.priority || 999) - (b.priority || 999))
-      .slice(0, maxTips);
+    return tips.sort((a, b) => (a.priority || 999) - (b.priority || 999)).slice(0, maxTips);
   }
 
   /**
@@ -978,10 +950,7 @@ export class HealthTipsManager {
   /**
    * 根据分类获取提示
    */
-  static getTipsByCategory(
-    category: HealthTip['category'],
-    phase?: PeriodPhase,
-  ): HealthTip[] {
+  static getTipsByCategory(category: HealthTip['category'], phase?: PeriodPhase): HealthTip[] {
     const allTips = [...this.GENERAL_TIPS];
 
     if (phase) {
@@ -1047,19 +1016,14 @@ export class HealthTipsManager {
       (tip, index, arr) => arr.findIndex(t => t.id === tip.id) === index,
     );
 
-    return uniqueTips
-      .sort((a, b) => (a.priority || 999) - (b.priority || 999))
-      .slice(0, maxTips);
+    return uniqueTips.sort((a, b) => (a.priority || 999) - (b.priority || 999)).slice(0, maxTips);
   }
 
   /**
    * 获取随机提示
    */
   static getRandomTips(count: number = 3): HealthTip[] {
-    const allTips = [
-      ...this.GENERAL_TIPS,
-      ...Object.values(this.PHASE_SPECIFIC_TIPS).flat(),
-    ];
+    const allTips = [...this.GENERAL_TIPS, ...Object.values(this.PHASE_SPECIFIC_TIPS).flat()];
 
     const shuffled = [...allTips].sort(() => Math.random() - 0.5);
     return shuffled.slice(0, count);
@@ -1093,20 +1057,14 @@ export class PeriodCalculator {
   /**
    * 计算周期长度
    */
-  static calculateCycleLength(
-    current: PeriodRecords,
-    previous: PeriodRecords,
-  ): number {
+  static calculateCycleLength(current: PeriodRecords, previous: PeriodRecords): number {
     return DateUtils.daysBetween(previous.startDate, current.startDate);
   }
 
   /**
    * 预测下次经期开始日期
    */
-  static predictNextPeriod(
-    lastPeriod: PeriodRecords,
-    averageCycleLength: number,
-  ): string {
+  static predictNextPeriod(lastPeriod: PeriodRecords, averageCycleLength: number): string {
     return DateUtils.addDays(lastPeriod.startDate, averageCycleLength);
   }
 
@@ -1183,10 +1141,7 @@ export class PeriodCalculator {
     averagePeriodLength: number,
     currentDate: string = DateUtils.getTodayDate(),
   ): PeriodPhase {
-    const daysSinceLastPeriod = DateUtils.daysBetween(
-      lastPeriod.startDate,
-      currentDate,
-    );
+    const daysSinceLastPeriod = DateUtils.daysBetween(lastPeriod.startDate, currentDate);
 
     if (daysSinceLastPeriod <= averagePeriodLength) {
       return 'Menstrual';
@@ -1224,10 +1179,7 @@ export class PeriodCalculator {
   /**
    * 获取指定日期的经期记录
    */
-  static getPeriodForDate(
-    date: string,
-    periods: PeriodRecords[],
-  ): PeriodRecords | null {
+  static getPeriodForDate(date: string, periods: PeriodRecords[]): PeriodRecords | null {
     return (
       periods.find(period => {
         const targetDate = new Date(date);
@@ -1264,21 +1216,12 @@ export class PeriodCalculator {
 
     const averageCycleLength =
       cycleLengths.length > 0
-        ? Math.round(
-            cycleLengths.reduce((sum, len) => sum + len, 0) /
-            cycleLengths.length,
-          )
+        ? Math.round(cycleLengths.reduce((sum, len) => sum + len, 0) / cycleLengths.length)
         : 28;
 
     const lastPeriod = periods[periods.length - 1];
-    const nextPeriodDate = this.predictNextPeriod(
-      lastPeriod,
-      averageCycleLength,
-    );
-    const ovulationInfo = this.calculateOvulationInfo(
-      nextPeriodDate,
-      averageCycleLength,
-    );
+    const nextPeriodDate = this.predictNextPeriod(lastPeriod, averageCycleLength);
+    const ovulationInfo = this.calculateOvulationInfo(nextPeriodDate, averageCycleLength);
 
     // 计算预测置信度
     const confidence = this.calculatePredictionConfidence(cycleLengths);
@@ -1299,11 +1242,9 @@ export class PeriodCalculator {
   private static calculatePredictionConfidence(cycleLengths: number[]): number {
     if (cycleLengths.length < 2) return 50;
 
-    const avg =
-      cycleLengths.reduce((sum, len) => sum + len, 0) / cycleLengths.length;
+    const avg = cycleLengths.reduce((sum, len) => sum + len, 0) / cycleLengths.length;
     const variance =
-      cycleLengths.reduce((sum, len) => sum + (len - avg) ** 2, 0) /
-      cycleLengths.length;
+      cycleLengths.reduce((sum, len) => sum + (len - avg) ** 2, 0) / cycleLengths.length;
     const standardDeviation = Math.sqrt(variance);
 
     // 标准差越小，置信度越高
@@ -1399,8 +1340,7 @@ export class PeriodAnalyzer {
   static calculateStandardDeviation(values: number[]): number {
     if (values.length === 0) return 0;
     const mean = this.calculateAverage(values);
-    const variance =
-      values.reduce((sum, val) => sum + (val - mean) ** 2, 0) / values.length;
+    const variance = values.reduce((sum, val) => sum + (val - mean) ** 2, 0) / values.length;
     return Math.sqrt(variance);
   }
 
@@ -1479,10 +1419,7 @@ export class PeriodAnalyzer {
   /**
    * 评估健康风险
    */
-  static assessHealthRisk(
-    cycleLengths: number[],
-    periodLengths: number[],
-  ): string[] {
+  static assessHealthRisk(cycleLengths: number[], periodLengths: number[]): string[] {
     const risks: string[] = [];
     const cycleVariation = this.calculateVariationCoefficient(cycleLengths);
     const periodVariation = this.calculateVariationCoefficient(periodLengths);
@@ -1512,9 +1449,7 @@ export class PeriodAnalyzer {
     _dailyRecords: PeriodDailyRecords[],
   ): AnalysisResult {
     const cycleLengths = this.calculateCycleLengths(periods);
-    const periodLengths = periods.map(
-      p => DateUtils.daysBetween(p.startDate, p.endDate) + 1,
-    );
+    const periodLengths = periods.map(p => DateUtils.daysBetween(p.startDate, p.endDate) + 1);
 
     const cycleMean = this.calculateAverage(cycleLengths);
     const cycleStdDev = this.calculateStandardDeviation(cycleLengths);
@@ -1563,8 +1498,7 @@ export class PeriodAnalyzer {
       const currentStart = new Date(periods[i].startDate);
       const previousStart = new Date(periods[i - 1].startDate);
       const cycleLength = Math.ceil(
-        (currentStart.getTime() - previousStart.getTime()) /
-        (1000 * 60 * 60 * 24),
+        (currentStart.getTime() - previousStart.getTime()) / (1000 * 60 * 60 * 24),
       );
       cycleLengths.push(cycleLength);
     }

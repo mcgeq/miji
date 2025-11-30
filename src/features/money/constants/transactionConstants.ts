@@ -32,15 +32,10 @@ export enum InstallmentStatus {
 }
 
 // 收入类别白名单
-export const INCOME_ALLOWED_CATEGORIES = [
-  'Salary',
-  'Investment',
-  'Savings',
-  'Gift',
-] as const;
+export const INCOME_ALLOWED_CATEGORIES = ['Salary', 'Investment', 'Savings', 'Gift'] as const;
 
 // 收入类别类型
-export type IncomeAllowedCategory = typeof INCOME_ALLOWED_CATEGORIES[number];
+export type IncomeAllowedCategory = (typeof INCOME_ALLOWED_CATEGORIES)[number];
 
 // 转账类别
 export const TRANSFER_CATEGORY = 'Transfer' as const;

@@ -160,10 +160,7 @@ const DEFAULT_CONFIG: Required<Omit<ErrorPageConfig, 'onRetry' | 'details'>> &
  * @param config Configuration options
  * @returns The created error page HTML element
  */
-export function showBootstrapErrorPage(
-  error: unknown,
-  config: ErrorPageConfig = {},
-): HTMLElement {
+export function showBootstrapErrorPage(error: unknown, config: ErrorPageConfig = {}): HTMLElement {
   const finalConfig = { ...DEFAULT_CONFIG, ...config };
 
   // Inject inline styles first (ensures display even if CSS fails to load)
@@ -176,13 +173,11 @@ export function showBootstrapErrorPage(
 
   // Create error page container
   const container = document.createElement('div');
-  container.className =
-    finalConfig.customClasses.container || 'bootstrap-error-page';
+  container.className = finalConfig.customClasses.container || 'bootstrap-error-page';
 
   // Create error page content
   const content = document.createElement('div');
-  content.className =
-    finalConfig.customClasses.content || 'bootstrap-error-page-content';
+  content.className = finalConfig.customClasses.content || 'bootstrap-error-page-content';
   container.appendChild(content);
 
   // Error icon (optional)
@@ -193,23 +188,20 @@ export function showBootstrapErrorPage(
 
   // Error title
   const title = document.createElement('h1');
-  title.className =
-    finalConfig.customClasses.title || 'bootstrap-error-page-title';
+  title.className = finalConfig.customClasses.title || 'bootstrap-error-page-title';
   title.textContent = finalConfig.title;
   content.appendChild(title);
 
   // Error message
   const message = document.createElement('p');
-  message.className =
-    finalConfig.customClasses.message || 'bootstrap-error-page-message';
+  message.className = finalConfig.customClasses.message || 'bootstrap-error-page-message';
   message.textContent = finalConfig.message;
   content.appendChild(message);
 
   // Error details (if enabled)
   if (finalConfig.showDetails) {
     const details = document.createElement('div');
-    details.className =
-      finalConfig.customClasses.details || 'bootstrap-error-page-details';
+    details.className = finalConfig.customClasses.details || 'bootstrap-error-page-details';
 
     const errorText =
       finalConfig.details ||
@@ -237,8 +229,7 @@ export function showBootstrapErrorPage(
   if (finalConfig.showReloadButton) {
     const reloadButton = document.createElement('button');
     reloadButton.className =
-      finalConfig.customClasses.reloadButton ||
-      'bootstrap-error-page-button';
+      finalConfig.customClasses.reloadButton || 'bootstrap-error-page-button';
     reloadButton.textContent = 'Reload';
     reloadButton.onclick = () => {
       window.location.reload();

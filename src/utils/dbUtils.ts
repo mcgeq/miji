@@ -79,8 +79,7 @@ export class DatabaseManager {
     });
 
     // Detect environment - in Tauri we can use window.__TAURI__ to check
-    this.isProduction =
-      typeof window !== 'undefined' && !!(window as any).__TAURI__;
+    this.isProduction = typeof window !== 'undefined' && !!(window as any).__TAURI__;
 
     // Start connection cleanup timer
     this.startCleanupTimer();
@@ -115,14 +114,11 @@ export class DatabaseManager {
 
       // 检查是否超过最大生存时间或空闲超时
       const isExpired = now - pooledConn.createdAt > this.CONNECTION_MAX_AGE;
-      const isIdle =
-        !pooledConn.inUse &&
-        now - pooledConn.lastUsed > this.CONNECTION_IDLE_TIMEOUT;
+      const isIdle = !pooledConn.inUse && now - pooledConn.lastUsed > this.CONNECTION_IDLE_TIMEOUT;
 
       // 保持最小连接数，只清理超出目标池大小的连接
       const shouldCleanup =
-        (isExpired || isIdle) &&
-        (this.connectionPool.length > this.POOL_SIZE || isExpired);
+        (isExpired || isIdle) && (this.connectionPool.length > this.POOL_SIZE || isExpired);
 
       if (shouldCleanup && !pooledConn.inUse) {
         connectionsToClose.push(pooledConn);
@@ -136,19 +132,12 @@ export class DatabaseManager {
         await pooledConn.connection.close();
         Lg.d('DatabaseManager', `Closed stale connection: ${pooledConn.id}`);
       } catch (error) {
-        Lg.w(
-          'DatabaseManager',
-          `Failed to close stale connection: ${pooledConn.id}`,
-          error,
-        );
+        Lg.w('DatabaseManager', `Failed to close stale connection: ${pooledConn.id}`, error);
       }
     }
 
     if (connectionsToClose.length > 0) {
-      Lg.i(
-        'DatabaseManager',
-        `Cleaned up ${connectionsToClose.length} stale connections`,
-      );
+      Lg.i('DatabaseManager', `Cleaned up ${connectionsToClose.length} stale connections`);
     }
   }
 
@@ -188,23 +177,14 @@ export class DatabaseManager {
   public async getConnection(): Promise<Database> {
     return new Promise((resolve, reject) => {
       const timeoutId = setTimeout(() => {
-        reject(
-          new DatabaseError(
-            'Connection timeout',
-            'DB_CONN_TIMEOUT',
-            'getConnection',
-          ),
-        );
+        reject(new DatabaseError('Connection timeout', 'DB_CONN_TIMEOUT', 'getConnection'));
       }, this.CONNECTION_TIMEOUT);
 
       const handleConnection = async () => {
         try {
           // 首先尝试获取空闲连接
           for (const pooledConn of this.connectionPool) {
-            if (
-              !pooledConn.inUse &&
-              (await this.checkConnectionHealth(pooledConn.connection))
-            ) {
+            if (!pooledConn.inUse && (await this.checkConnectionHealth(pooledConn.connection))) {
               pooledConn.inUse = true;
               pooledConn.lastUsed = Date.now();
               clearTimeout(timeoutId);
@@ -216,10 +196,7 @@ export class DatabaseManager {
           }
 
           // 如果没有空闲连接且池未满，创建新连接
-          if (
-            this.connectionPool.length + this.pendingConnections <
-              this.MAX_POOL_SIZE
-          ) {
+          if (this.connectionPool.length + this.pendingConnections < this.MAX_POOL_SIZE) {
             this.pendingConnections++;
 
             try {
@@ -342,9 +319,7 @@ export class DatabaseManager {
   private async optimizeDatabase(db: Database): Promise<void> {
     try {
       // Enable WAL mode
-      const walResult = await db.select<{ journal_mode: string }[]>(
-        'PRAGMA journal_mode=WAL',
-      );
+      const walResult = await db.select<{ journal_mode: string }[]>('PRAGMA journal_mode=WAL');
 
       if (walResult[0]?.journal_mode !== 'wal') {
         throw new Error('Failed to enable WAL mode');
@@ -367,11 +342,7 @@ export class DatabaseManager {
         await db.execute('PRAGMA synchronous=FULL');
         await db.execute('PRAGMA busy_timeout=5000');
       } catch (fallbackError) {
-        Lg.w(
-          'DatabaseManager',
-          'Fallback optimization failed: ',
-          fallbackError,
-        );
+        Lg.w('DatabaseManager', 'Fallback optimization failed: ', fallbackError);
       }
     }
   }
@@ -379,11 +350,7 @@ export class DatabaseManager {
   /**
    * Execute Query (自动管理连接)
    */
-  public async select<T = any>(
-    sql: string,
-    params: any[] = [],
-    useCache = false,
-  ): Promise<T> {
+  public async select<T = any>(sql: string, params: any[] = [], useCache = false): Promise<T> {
     // 参数验证
     this.validateQuery(sql, params);
 
@@ -449,26 +416,18 @@ export class DatabaseManager {
     }
 
     if (!Array.isArray(params)) {
-      throw new DatabaseError(
-        'Parameters must be an array',
-        'DB_INVALID_PARAMS',
-        'validateQuery',
-      );
+      throw new DatabaseError('Parameters must be an array', 'DB_INVALID_PARAMS', 'validateQuery');
     }
 
     // 检查参数中的特殊值
     for (let i = 0; i < params.length; i++) {
       const param = params[i];
       if (param === undefined) {
-        Lg.w(
-          'DatabaseManager',
-          `Parameter at index ${i} is undefined, converting to null`,
-          {
-            sql: sql.slice(0, 100),
-            paramIndex: i,
-            allParams: params,
-          },
-        );
+        Lg.w('DatabaseManager', `Parameter at index ${i} is undefined, converting to null`, {
+          sql: sql.slice(0, 100),
+          paramIndex: i,
+          allParams: params,
+        });
         params[i] = null; // 将undefined转换为null
       }
     }
@@ -487,9 +446,7 @@ export class DatabaseManager {
   /**
    * Execute transaction (优化版本，改进重试策略)
    */
-  public async transaction<T>(
-    callback: (db: Database) => Promise<T>,
-  ): Promise<T> {
+  public async transaction<T>(callback: (db: Database) => Promise<T>): Promise<T> {
     let lastError: Error | undefined;
 
     for (let attempt = 1; attempt <= this.MAX_RETRIES; attempt++) {
@@ -497,26 +454,14 @@ export class DatabaseManager {
 
       try {
         // 使用更安全的事务开始方式
-        await this.executeQuery(
-          conn,
-          'execute',
-          'BEGIN IMMEDIATE TRANSACTION',
-          [],
-        );
+        await this.executeQuery(conn, 'execute', 'BEGIN IMMEDIATE TRANSACTION', []);
 
         // Execute callback with timeout
         const result = await Promise.race<T>([
           callback(conn),
           new Promise<never>((_, reject) =>
             setTimeout(
-              () =>
-                reject(
-                  new DatabaseError(
-                    'Transaction timeout',
-                    'DB_TIMEOUT',
-                    'transaction',
-                  ),
-                ),
+              () => reject(new DatabaseError('Transaction timeout', 'DB_TIMEOUT', 'transaction')),
               this.TRANSACTION_TIMEOUT,
             ),
           ),
@@ -540,10 +485,7 @@ export class DatabaseManager {
         }
 
         // 判断是否应该重试
-        const shouldRetry = this.shouldRetryTransaction(
-          error as Error,
-          attempt,
-        );
+        const shouldRetry = this.shouldRetryTransaction(error as Error, attempt);
 
         if (shouldRetry && attempt < this.MAX_RETRIES) {
           // 智能退避策略
@@ -589,8 +531,7 @@ export class DatabaseManager {
     ];
 
     return (
-      retryableErrors.some(errType => errorMessage.includes(errType)) &&
-      attempt < this.MAX_RETRIES
+      retryableErrors.some(errType => errorMessage.includes(errType)) && attempt < this.MAX_RETRIES
     );
   }
 
@@ -607,9 +548,7 @@ export class DatabaseManager {
   /**
    * Batch Execute (优化版本，更好的错误处理)
    */
-  public async executeBatch(
-    operations: Array<{ sql: string; params: any[] }>,
-  ): Promise<void> {
+  public async executeBatch(operations: Array<{ sql: string; params: any[] }>): Promise<void> {
     if (operations.length === 0) return;
 
     await this.transaction(async conn => {
@@ -620,19 +559,13 @@ export class DatabaseManager {
         const batch = operations.slice(i, i + batchSize);
 
         // 并发执行独立操作
-        const independentOps = batch.filter(
-          op => !op.sql.toLowerCase().includes('update account'),
-        );
-        const dependentOps = batch.filter(op =>
-          op.sql.toLowerCase().includes('update account'),
-        );
+        const independentOps = batch.filter(op => !op.sql.toLowerCase().includes('update account'));
+        const dependentOps = batch.filter(op => op.sql.toLowerCase().includes('update account'));
 
         // Execute independent operations in parallel
         if (independentOps.length > 0) {
           await Promise.all(
-            independentOps.map(op =>
-              this.executeQuery(conn, 'execute', op.sql, op.params),
-            ),
+            independentOps.map(op => this.executeQuery(conn, 'execute', op.sql, op.params)),
           );
         }
 
@@ -669,9 +602,7 @@ export class DatabaseManager {
 
       const startTime = Date.now();
       const result =
-        method === 'select'
-          ? await conn.select(sql, params)
-          : await conn.execute(sql, params);
+        method === 'select' ? await conn.select(sql, params) : await conn.execute(sql, params);
       const duration = Date.now() - startTime;
 
       // Log performance for slow queries
@@ -759,9 +690,7 @@ export class DatabaseManager {
     if (typeof error === 'object') {
       const keys = Object.keys(error);
       if (keys.length > 0) {
-        const errorDetails = keys
-          .map(key => `${key}: ${error[key]}`)
-          .join(', ');
+        const errorDetails = keys.map(key => `${key}: ${error[key]}`).join(', ');
         return `Error details: ${errorDetails}`;
       }
     }
@@ -867,9 +796,7 @@ export class DatabaseManager {
     activeConnections: number;
     pendingConnections: number;
   }> {
-    const activeConnections = this.connectionPool.filter(
-      conn => conn.inUse,
-    ).length;
+    const activeConnections = this.connectionPool.filter(conn => conn.inUse).length;
 
     return {
       cacheSize: this.queryCache.size,
@@ -898,11 +825,7 @@ export class DatabaseManager {
       try {
         await pooledConn.connection.close();
       } catch (error) {
-        Lg.w(
-          'DatabaseManager',
-          `Error closing connection ${pooledConn.id}:`,
-          error,
-        );
+        Lg.w('DatabaseManager', `Error closing connection ${pooledConn.id}:`, error);
       }
     });
 
@@ -944,9 +867,7 @@ export class DatabaseManager {
     }
   }
 
-  private async closeSpecificConnection(
-    pooledConn: PooledConnection,
-  ): Promise<void> {
+  private async closeSpecificConnection(pooledConn: PooledConnection): Promise<void> {
     const index = this.connectionPool.indexOf(pooledConn);
     if (index !== -1) {
       this.connectionPool.splice(index, 1);
@@ -954,11 +875,7 @@ export class DatabaseManager {
         await pooledConn.connection.close();
         Lg.i('DatabaseManager', `Force closed connection: ${pooledConn.id}`);
       } catch (error) {
-        Lg.w(
-          'DatabaseManager',
-          `Error force closing connection ${pooledConn.id}:`,
-          error,
-        );
+        Lg.w('DatabaseManager', `Error force closing connection ${pooledConn.id}:`, error);
       }
     }
   }
@@ -978,11 +895,7 @@ export const db = {
   /**
    * Execute query
    */
-  select: <T = any>(
-    sql: string,
-    params: any[] = [],
-    useCache = false,
-  ): Promise<T> => {
+  select: <T = any>(sql: string, params: any[] = [], useCache = false): Promise<T> => {
     return DatabaseManager.getInstance().select<T>(sql, params, useCache);
   },
 
@@ -1003,9 +916,7 @@ export const db = {
   /**
    * Batch execute
    */
-  executeBatch: (
-    operations: Array<{ sql: string; params: any[] }>,
-  ): Promise<void> => {
+  executeBatch: (operations: Array<{ sql: string; params: any[] }>): Promise<void> => {
     return DatabaseManager.getInstance().executeBatch(operations);
   },
 

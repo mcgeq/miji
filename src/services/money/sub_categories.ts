@@ -49,9 +49,7 @@ export class SubCategoryMapper extends BaseMapper<
 
   async list(): Promise<SubCategory[]> {
     try {
-      const tauriCurrencies = await invokeCommand<SubCategory[]>(
-        'sub_category_list',
-      );
+      const tauriCurrencies = await invokeCommand<SubCategory[]>('sub_category_list');
       return tauriCurrencies;
     } catch (error) {
       this.handleError('list', error);

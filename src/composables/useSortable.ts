@@ -5,13 +5,9 @@ import type { SortOptions } from '@/schema/common';
 export function useSort(defaultSortOptions: Partial<SortOptions> = {}) {
   // 默认值
   const sortBy = ref<string | undefined>(defaultSortOptions.sortBy);
-  const sortDir = ref<SortDirection>(
-    defaultSortOptions.sortDir ?? SortDirection.Desc,
-  );
+  const sortDir = ref<SortDirection>(defaultSortOptions.sortDir ?? SortDirection.Desc);
   const desc = ref<boolean>(defaultSortOptions.desc ?? true);
-  const customOrderBy = ref<string | undefined>(
-    defaultSortOptions.customOrderBy,
-  );
+  const customOrderBy = ref<string | undefined>(defaultSortOptions.customOrderBy);
 
   // 响应式的 sortOptions 对象
   const sortOptions = computed<SortOptions>(() => ({
@@ -39,10 +35,7 @@ export function useSort(defaultSortOptions: Partial<SortOptions> = {}) {
 
   // 切换排序方向（Asc <-> Desc）
   function toggleSortDirection() {
-    sortDir.value =
-      sortDir.value === SortDirection.Asc
-        ? SortDirection.Desc
-        : SortDirection.Asc;
+    sortDir.value = sortDir.value === SortDirection.Asc ? SortDirection.Desc : SortDirection.Asc;
     desc.value = sortDir.value === SortDirection.Desc;
   }
 

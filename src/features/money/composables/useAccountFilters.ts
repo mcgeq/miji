@@ -20,14 +20,19 @@ export function useAccountFilters(accounts: () => Account[], defaultPageSize = 4
   const allAccounts = computed(() => [...accounts()]);
   // 获取所有账户类型（排除虚账户）
   const accountTypes = computed(() => {
-    const types = new Set(allAccounts.value.filter(account => !account.isVirtual).map(account => account.type));
+    const types = new Set(
+      allAccounts.value.filter(account => !account.isVirtual).map(account => account.type),
+    );
     return Array.from(types);
   });
 
   // 获取所有币种（排除虚账户）
   const currencies = computed(() => {
     const currencies = new Set(
-      allAccounts.value.filter(account => !account.isVirtual).map(account => account.currency?.code).filter(Boolean),
+      allAccounts.value
+        .filter(account => !account.isVirtual)
+        .map(account => account.currency?.code)
+        .filter(Boolean),
     );
     return Array.from(currencies);
   });

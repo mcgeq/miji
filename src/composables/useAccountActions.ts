@@ -63,9 +63,7 @@ export function useAccountActions() {
    * 切换账户激活状态
    * Store 会自动更新状态，无需手动刷新
    */
-  async function toggleAccountActive(
-    serialNum: string,
-  ): Promise<boolean> {
+  async function toggleAccountActive(serialNum: string): Promise<boolean> {
     try {
       const account = accountStore.getAccountById(serialNum);
       // 保存切换前的状态，因为 account 可能是响应式对象
@@ -108,13 +106,21 @@ export function useAccountActions() {
     return result;
   };
 
-  const updateAccount = async (serialNum: string, data: UpdateAccountRequest, onSuccess?: () => void) => {
+  const updateAccount = async (
+    serialNum: string,
+    data: UpdateAccountRequest,
+    onSuccess?: () => void,
+  ) => {
     const result = await crudActions.handleUpdate(serialNum, data);
     if (result && onSuccess) onSuccess();
     return result;
   };
 
-  const deleteAccount = async (serialNum: string, onConfirm?: () => Promise<boolean>, onSuccess?: () => void) => {
+  const deleteAccount = async (
+    serialNum: string,
+    onConfirm?: () => Promise<boolean>,
+    onSuccess?: () => void,
+  ) => {
     if (onConfirm && !(await onConfirm())) return false;
     const result = await crudActions.handleDelete(serialNum);
     if (result && onSuccess) onSuccess();

@@ -48,16 +48,13 @@ export const useFamilyMemberStore = defineStore('family-member', {
     /**
      * 获取管理员成员
      */
-    adminMembers: state => state.members.filter(member =>
-      member.role === 'Admin' || member.role === 'Owner',
-    ),
+    adminMembers: state =>
+      state.members.filter(member => member.role === 'Admin' || member.role === 'Owner'),
 
     /**
      * 获取普通成员
      */
-    regularMembers: state => state.members.filter(member =>
-      member.role === 'Member',
-    ),
+    regularMembers: state => state.members.filter(member => member.role === 'Member'),
 
     /**
      * 根据ID获取成员
@@ -290,9 +287,7 @@ export const useFamilyMemberStore = defineStore('family-member', {
      * 刷新所有成员统计
      */
     async refreshAllMemberStats(): Promise<void> {
-      const promises = this.members.map(member =>
-        this.fetchMemberStats(member.serialNum),
-      );
+      const promises = this.members.map(member => this.fetchMemberStats(member.serialNum));
       await Promise.all(promises);
     },
 
@@ -307,7 +302,6 @@ export const useFamilyMemberStore = defineStore('family-member', {
         // TODO: 替换为实际的API调用
         // await FamilyApi.inviteUser(email, role);
         // console.log('Inviting user:', email, role);
-
         // 临时模拟邀请逻辑
         // 实际实现中应该发送邀请邮件或通知
       } catch (error: any) {

@@ -40,13 +40,7 @@ async function list(): Promise<Tags[]> {
 
 async function insert(tag: Tags): Promise<Tags> {
   const db = await getDb();
-  const values = [
-    tag.serialNum,
-    tag.name,
-    tag.description,
-    tag.createdAt,
-    tag.updatedAt,
-  ];
+  const values = [tag.serialNum, tag.name, tag.description, tag.createdAt, tag.updatedAt];
   try {
     await db.execute(
       `INSERT INTO tags (serial_num, name, description, created_at, updated_at)

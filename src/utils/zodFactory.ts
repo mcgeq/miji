@@ -11,15 +11,10 @@ import type { z, ZodObject, ZodRawShape } from 'zod';
  * @param input 可选输入值，将覆盖默认值
  * @returns 满足 schema 的对象
  */
-export function createWithDefaults<
-  T extends ZodRawShape,
-  Schema extends ZodObject<T>,
->(
+export function createWithDefaults<T extends ZodRawShape, Schema extends ZodObject<T>>(
   schema: Schema,
   defaults: Partial<{
-    [K in keyof z.infer<Schema>]:
-      | z.infer<Schema>[K]
-      | (() => z.infer<Schema>[K]);
+    [K in keyof z.infer<Schema>]: z.infer<Schema>[K] | (() => z.infer<Schema>[K]);
   }>,
   input: Partial<z.infer<Schema>> = {},
 ): z.infer<Schema> {
@@ -27,8 +22,7 @@ export function createWithDefaults<
 
   for (const key in defaults) {
     const value = defaults[key];
-    resolvedDefaults[key] =
-      typeof value === 'function' ? (value as () => any)() : value;
+    resolvedDefaults[key] = typeof value === 'function' ? (value as () => any)() : value;
   }
 
   const merged: Partial<z.infer<Schema>> = {
@@ -45,9 +39,7 @@ export function createWithDefaults<
   return parsed.data;
 }
 
-export function createRepeatPeriod(
-  input?: Partial<RepeatPeriod>,
-): RepeatPeriod {
+export function createRepeatPeriod(input?: Partial<RepeatPeriod>): RepeatPeriod {
   const type = input?.type ?? 'None';
 
   // 根据 type 提供对应默认值

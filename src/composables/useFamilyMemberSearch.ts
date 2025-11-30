@@ -44,17 +44,20 @@ export function useFamilyMemberSearch() {
   const loading = ref(false);
   const error = ref<string | null>(null);
   const selectedMember = ref<FamilyMember | null>(null);
-  const searchHistory = ref<string[]>(JSON.parse(localStorage.getItem('familyMemberSearchHistory') || '[]'));
+  const searchHistory = ref<string[]>(
+    JSON.parse(localStorage.getItem('familyMemberSearchHistory') || '[]'),
+  );
 
   // 计算属性：过滤成员列表
   const filteredMembers = computed(() => {
     if (!searchQuery.value.trim()) return members.value;
 
     const query = searchQuery.value.toLowerCase();
-    return members.value.filter(member =>
-      member.name.toLowerCase().includes(query) ||
-      (member.email && member.email.toLowerCase().includes(query)) ||
-      (member.phone && member.phone.includes(query)),
+    return members.value.filter(
+      member =>
+        member.name.toLowerCase().includes(query) ||
+        (member.email && member.email.toLowerCase().includes(query)) ||
+        (member.phone && member.phone.includes(query)),
     );
   });
 
@@ -113,9 +116,7 @@ export function useFamilyMemberSearch() {
       // 使用家庭成员搜索API
       try {
         const result = await invokeCommand<FamilyMemberSearchResponse>('search_family_members', {
-          query: searchTerm.includes('@')
-            ? { email: searchTerm }
-            : { keyword: searchTerm },
+          query: searchTerm.includes('@') ? { email: searchTerm } : { keyword: searchTerm },
           limit: 20,
         });
         searchResults = result.members || [];
@@ -124,11 +125,14 @@ export function useFamilyMemberSearch() {
         try {
           const allMembers = await invokeCommand<FamilyMember[]>('family_member_list');
           const query_lower = searchTerm.toLowerCase();
-          searchResults = allMembers.filter(member =>
-            member.name.toLowerCase().includes(query_lower) ||
-            (member.email && member.email.toLowerCase().includes(query_lower)) ||
-            (member.phone && member.phone.includes(searchTerm)),
-          ).slice(0, 20);
+          searchResults = allMembers
+            .filter(
+              member =>
+                member.name.toLowerCase().includes(query_lower) ||
+                (member.email && member.email.toLowerCase().includes(query_lower)) ||
+                (member.phone && member.phone.includes(searchTerm)),
+            )
+            .slice(0, 20);
         } catch {
           searchResults = [];
           error.value = '搜索功能暂不可用，请稍后重试。';
@@ -160,7 +164,9 @@ export function useFamilyMemberSearch() {
       loading.value = true;
       error.value = null;
 
-      const member = await invokeCommand<FamilyMember>('family_member_get', { serial_num: serialNum });
+      const member = await invokeCommand<FamilyMember>('family_member_get', {
+        serial_num: serialNum,
+      });
       return member;
     } catch (err: any) {
       error.value = err.message || '获取家庭成员信息失败';

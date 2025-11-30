@@ -212,8 +212,8 @@ export const mockSplitService = {
 
     // 模拟筛选
     if (params.family_ledger_serial_num) {
-      filtered = filtered.filter(r =>
-        r.family_ledger_serial_num === params.family_ledger_serial_num,
+      filtered = filtered.filter(
+        r => r.family_ledger_serial_num === params.family_ledger_serial_num,
       );
     }
 
@@ -231,12 +231,8 @@ export const mockSplitService = {
     // 模拟统计
     const statistics = {
       total_records: filtered.length,
-      completed_records: filtered.filter(r =>
-        r.split_details.every((d: any) => d.is_paid),
-      ).length,
-      pending_records: filtered.filter(r =>
-        !r.split_details.every((d: any) => d.is_paid),
-      ).length,
+      completed_records: filtered.filter(r => r.split_details.every((d: any) => d.is_paid)).length,
+      pending_records: filtered.filter(r => !r.split_details.every((d: any) => d.is_paid)).length,
       total_amount: filtered.reduce((sum, r) => sum + r.total_amount, 0),
       paid_amount: 0,
       unpaid_amount: 0,
@@ -303,7 +299,7 @@ export const mockSplitService = {
 
       if (detail) {
         detail.is_paid = data.is_paid;
-        detail.paid_at = data.is_paid ? (data.paid_at || new Date().toISOString()) : undefined;
+        detail.paid_at = data.is_paid ? data.paid_at || new Date().toISOString() : undefined;
 
         return {
           success: true,

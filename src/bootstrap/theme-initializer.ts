@@ -55,10 +55,7 @@ export class ThemeInitializer {
     // 设置 meta theme-color（用于移动端浏览器）
     const metaThemeColor = document.querySelector('meta[name="theme-color"]');
     if (metaThemeColor) {
-      metaThemeColor.setAttribute(
-        'content',
-        effectiveTheme === 'dark' ? '#1a1a1a' : '#ffffff',
-      );
+      metaThemeColor.setAttribute('content', effectiveTheme === 'dark' ? '#1a1a1a' : '#ffffff');
     }
   }
 }

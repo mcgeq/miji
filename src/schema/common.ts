@@ -109,7 +109,10 @@ export const TimesSchema = z.iso.time();
  * 实体引用基础类型
  * 用于统一处理实体关联，支持响应包含完整数据，创建时仅需标识符
  */
-export function EntityRefSchema<T extends z.ZodTypeAny>(identifierSchema: z.ZodString, dataSchema: T) {
+export function EntityRefSchema<T extends z.ZodTypeAny>(
+  identifierSchema: z.ZodString,
+  dataSchema: T,
+) {
   return z.union([
     // 创建/更新时：仅标识符
     identifierSchema,
@@ -124,12 +127,14 @@ export function EntityRefSchema<T extends z.ZodTypeAny>(identifierSchema: z.ZodS
  */
 export const CategoryRefSchema = z.union([
   CategoryNameSchema, // 创建时：仅名称
-  z.lazy(() => z.object({
-    name: CategoryNameSchema,
-    icon: z.string(),
-    createdAt: DateTimeSchema.optional(),
-    updatedAt: DateTimeSchema.optional().nullable(),
-  })), // 响应时：完整对象（可选）
+  z.lazy(() =>
+    z.object({
+      name: CategoryNameSchema,
+      icon: z.string(),
+      createdAt: DateTimeSchema.optional(),
+      updatedAt: DateTimeSchema.optional().nullable(),
+    }),
+  ), // 响应时：完整对象（可选）
 ]);
 
 /**
@@ -138,13 +143,15 @@ export const CategoryRefSchema = z.union([
  */
 export const SubCategoryRefSchema = z.union([
   SubCategoryNameSchema, // 创建时：仅名称
-  z.lazy(() => z.object({
-    name: SubCategoryNameSchema,
-    icon: z.string(),
-    categoryName: CategoryNameSchema,
-    createdAt: DateTimeSchema.optional(),
-    updatedAt: DateTimeSchema.optional().nullable(),
-  })), // 响应时：完整对象（可选）
+  z.lazy(() =>
+    z.object({
+      name: SubCategoryNameSchema,
+      icon: z.string(),
+      categoryName: CategoryNameSchema,
+      createdAt: DateTimeSchema.optional(),
+      updatedAt: DateTimeSchema.optional().nullable(),
+    }),
+  ), // 响应时：完整对象（可选）
 ]);
 
 // ======================
@@ -165,7 +172,9 @@ export const CurrencySchema = z.object({
  * 创建时传 code (string)，响应时返回完整 Currency 对象
  */
 export const CurrencyRefSchema = z.union([
-  z.string().length(3), // 创建时：仅 code
+  z
+    .string()
+    .length(3), // 创建时：仅 code
   z.lazy(() => CurrencySchema), // 响应时：完整对象
 ]);
 
@@ -175,16 +184,18 @@ export const CurrencyRefSchema = z.union([
  */
 export const AccountRefSchema = z.union([
   SerialNumSchema, // 创建时：仅 serialNum
-  z.lazy(() => z.object({
-    serialNum: SerialNumSchema,
-    name: NameSchema,
-    type: z.string(),
-    balance: z.string(),
-    currency: CurrencyRefSchema,
-    isActive: z.boolean(),
-    createdAt: DateTimeSchema.optional(),
-    updatedAt: DateTimeSchema.optional().nullable(),
-  })), // 响应时：完整对象（简化版）
+  z.lazy(() =>
+    z.object({
+      serialNum: SerialNumSchema,
+      name: NameSchema,
+      type: z.string(),
+      balance: z.string(),
+      currency: CurrencyRefSchema,
+      isActive: z.boolean(),
+      createdAt: DateTimeSchema.optional(),
+      updatedAt: DateTimeSchema.optional().nullable(),
+    }),
+  ), // 响应时：完整对象（简化版）
 ]);
 
 export const CurrencyCreateSchema = CurrencySchema.omit({

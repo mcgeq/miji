@@ -113,4 +113,11 @@ export default antfu({
     //   "allow": ['info', 'debug', "warn", "error", "log", "group", "groupCollapsed", "table", "trace", 'groupEnd']
     // }]
   }
+}, {
+  // Markdown 文件配置 - 禁用需要类型信息的 TypeScript 规则
+  files: ['**/*.md'],
+  rules: {
+    '@typescript-eslint/consistent-type-imports': 'off',
+    'ts/consistent-type-imports': 'off',
+  }
 });

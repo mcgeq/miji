@@ -6,9 +6,7 @@ import {
   NameSchema,
   SerialNumSchema,
 } from '../common';
-import type {
-  UsageDetail,
-} from '../common';
+import type { UsageDetail } from '../common';
 
 export const ProjectSchema = z.object({
   serialNum: SerialNumSchema,

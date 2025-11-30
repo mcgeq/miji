@@ -19,10 +19,9 @@ type UpdatableFields = Partial<Record<keyof Projects, string | boolean | null>>;
 async function getProject(serialNum: string): Promise<Projects | null> {
   try {
     const db = await getDb();
-    const rows = (await db.select(
-      'SELECT * FROM projects WHERE serial_num = ?',
-      [serialNum],
-    )) as Projects[];
+    const rows = (await db.select('SELECT * FROM projects WHERE serial_num = ?', [
+      serialNum,
+    ])) as Projects[];
 
     if (!rows.length) return null;
 

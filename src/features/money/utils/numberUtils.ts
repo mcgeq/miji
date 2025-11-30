@@ -22,7 +22,10 @@ export function parseAmount(value: string | number | null | undefined): number {
  * @param decimals - 小数位数，默认2位
  * @returns 格式化后的字符串
  */
-export function safeToFixed(value: string | number | null | undefined, decimals: number = AMOUNT_CONSTANTS.DECIMAL_PLACES): string {
+export function safeToFixed(
+  value: string | number | null | undefined,
+  decimals: number = AMOUNT_CONSTANTS.DECIMAL_PLACES,
+): string {
   const numValue = parseAmount(value);
   return numValue.toFixed(decimals);
 }
@@ -33,9 +36,11 @@ export function safeToFixed(value: string | number | null | undefined, decimals:
  * @returns 是否有效
  */
 export function isValidAmount(amount: number): boolean {
-  return !Number.isNaN(amount)
-    && amount >= AMOUNT_CONSTANTS.MIN_AMOUNT
-    && amount <= AMOUNT_CONSTANTS.MAX_AMOUNT;
+  return (
+    !Number.isNaN(amount) &&
+    amount >= AMOUNT_CONSTANTS.MIN_AMOUNT &&
+    amount <= AMOUNT_CONSTANTS.MAX_AMOUNT
+  );
 }
 
 /**

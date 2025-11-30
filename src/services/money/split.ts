@@ -148,10 +148,7 @@ export function calculateEqualSplit(totalAmount: number, memberCount: number): n
 /**
  * 计算按比例分摊
  */
-export function calculatePercentageSplit(
-  totalAmount: number,
-  percentages: number[],
-): number[] {
+export function calculatePercentageSplit(totalAmount: number, percentages: number[]): number[] {
   const amounts = percentages.map(p => (totalAmount * p) / 100);
   const total = amounts.reduce((sum, amount) => sum + amount, 0);
   const remainder = totalAmount - total;
@@ -166,10 +163,7 @@ export function calculatePercentageSplit(
 /**
  * 计算按权重分摊
  */
-export function calculateWeightedSplit(
-  totalAmount: number,
-  weights: number[],
-): number[] {
+export function calculateWeightedSplit(totalAmount: number, weights: number[]): number[] {
   const totalWeight = weights.reduce((sum, w) => sum + w, 0);
   const amounts = weights.map(w => (totalAmount * w) / totalWeight);
   const total = amounts.reduce((sum, amount) => sum + amount, 0);
@@ -215,10 +209,7 @@ export function validateSplitConfig(
 
     case 'PERCENTAGE': {
       // 百分比：验证总和为100%
-      const totalPercentage = details.reduce(
-        (sum, d) => sum + (d.percentage || 0),
-        0,
-      );
+      const totalPercentage = details.reduce((sum, d) => sum + (d.percentage || 0), 0);
       if (Math.abs(totalPercentage - 100) > 0.01) {
         errors.push(`比例总和必须为100%，当前为${totalPercentage}%`);
       }
@@ -228,9 +219,7 @@ export function validateSplitConfig(
         if (detail.percentage) {
           const expectedAmount = (totalAmount * detail.percentage) / 100;
           if (Math.abs(detail.amount - expectedAmount) > 0.01) {
-            errors.push(
-              `比例金额计算错误: 期望${expectedAmount}, 实际${detail.amount}`,
-            );
+            errors.push(`比例金额计算错误: 期望${expectedAmount}, 实际${detail.amount}`);
             break;
           }
         }
@@ -242,9 +231,7 @@ export function validateSplitConfig(
       // 固定金额：验证总和等于交易金额
       const calculatedTotal = details.reduce((sum, d) => sum + d.amount, 0);
       if (Math.abs(totalAmount - calculatedTotal) > 0.01) {
-        errors.push(
-          `固定金额总和(${calculatedTotal})必须等于交易金额(${totalAmount})`,
-        );
+        errors.push(`固定金额总和(${calculatedTotal})必须等于交易金额(${totalAmount})`);
       }
       break;
     }
@@ -261,9 +248,7 @@ export function validateSplitConfig(
         if (detail.weight) {
           const expectedAmount = (totalAmount * detail.weight) / totalWeight;
           if (Math.abs(detail.amount - expectedAmount) > 0.01) {
-            errors.push(
-              `权重金额计算错误: 期望${expectedAmount}, 实际${detail.amount}`,
-            );
+            errors.push(`权重金额计算错误: 期望${expectedAmount}, 实际${detail.amount}`);
             break;
           }
         }
@@ -298,10 +283,7 @@ export function formatPercentage(percentage: number): string {
 /**
  * 计算支付进度百分比
  */
-export function calculatePaymentProgress(
-  paidAmount: number,
-  totalAmount: number,
-): number {
+export function calculatePaymentProgress(paidAmount: number, totalAmount: number): number {
   if (totalAmount === 0) return 0;
   return Math.round((paidAmount / totalAmount) * 100);
 }

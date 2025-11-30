@@ -95,9 +95,10 @@ export function useTransactionValidation() {
     }
 
     if (!canWithdraw(amount, fromBalance)) {
-      const errorMsg = fromAccount.type === AccountTypeSchema.enum.CreditCard
-        ? '信用卡转出金额不能大于账户余额'
-        : '转出金额超过账户余额';
+      const errorMsg =
+        fromAccount.type === AccountTypeSchema.enum.CreditCard
+          ? '信用卡转出金额不能大于账户余额'
+          : '转出金额超过账户余额';
       return { valid: false, error: errorMsg };
     }
 
@@ -136,9 +137,10 @@ export function useTransactionValidation() {
     }
 
     if (!canWithdraw(amount, balance)) {
-      const errorMsg = account.type === AccountTypeSchema.enum.CreditCard
-        ? '信用卡支出金额不能大于账户余额'
-        : '支出金额超过账户余额';
+      const errorMsg =
+        account.type === AccountTypeSchema.enum.CreditCard
+          ? '信用卡支出金额不能大于账户余额'
+          : '支出金额超过账户余额';
       return { valid: false, error: errorMsg };
     }
 
@@ -181,8 +183,12 @@ export function useTransactionValidation() {
     const missingFields: string[] = [];
 
     Object.entries(fields).forEach(([key, value]) => {
-      if (value === null || value === undefined || value === '' ||
-        (typeof value === 'number' && Number.isNaN(value))) {
+      if (
+        value === null ||
+        value === undefined ||
+        value === '' ||
+        (typeof value === 'number' && Number.isNaN(value))
+      ) {
         missingFields.push(key);
       }
     });

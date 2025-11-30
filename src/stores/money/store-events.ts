@@ -148,9 +148,6 @@ export function onStoreEvent<K extends keyof StoreEvents>(
 /**
  * 辅助函数：发送 Store 事件
  */
-export function emitStoreEvent<K extends keyof StoreEvents>(
-  event: K,
-  data: StoreEvents[K],
-): void {
+export function emitStoreEvent<K extends keyof StoreEvents>(event: K, data: StoreEvents[K]): void {
   storeEventBus.emit(event, data);
 }

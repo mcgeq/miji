@@ -16,32 +16,30 @@ export function useBudgetActions() {
     create: (data: BudgetCreate) => budgetStore.createBudget(data),
     update: (id: string, data: BudgetUpdate) => budgetStore.updateBudget(id, data),
     delete: (id: string) => budgetStore.deleteBudget(id),
-    fetchAll: () => budgetStore.fetchBudgetsPaged({
-      currentPage: 1,
-      pageSize: 10,
-      sortOptions: { desc: true },
-      filter: {},
-    }),
+    fetchAll: () =>
+      budgetStore.fetchBudgetsPaged({
+        currentPage: 1,
+        pageSize: 10,
+        sortOptions: { desc: true },
+        filter: {},
+      }),
   };
 
   // 使用通用 CRUD Actions
-  const crudActions = useCrudActions<Budget, BudgetCreate, BudgetUpdate>(
-    storeAdapter,
-    {
-      successMessages: {
-        create: t('financial.messages.budgetCreated'),
-        update: t('financial.messages.budgetUpdated'),
-        delete: t('financial.messages.budgetDeleted'),
-      },
-      errorMessages: {
-        create: t('financial.messages.budgetCreateFailed'),
-        update: t('financial.messages.budgetUpdateFailed'),
-        delete: t('financial.messages.budgetDeleteFailed'),
-      },
-      autoRefresh: true,
-      autoClose: true,
+  const crudActions = useCrudActions<Budget, BudgetCreate, BudgetUpdate>(storeAdapter, {
+    successMessages: {
+      create: t('financial.messages.budgetCreated'),
+      update: t('financial.messages.budgetUpdated'),
+      delete: t('financial.messages.budgetDeleted'),
     },
-  );
+    errorMessages: {
+      create: t('financial.messages.budgetCreateFailed'),
+      update: t('financial.messages.budgetUpdateFailed'),
+      delete: t('financial.messages.budgetDeleteFailed'),
+    },
+    autoRefresh: true,
+    autoClose: true,
+  });
 
   // 预算列表状态
   const budgets = computed(() => budgetStore.budgetsPaged.rows);
@@ -50,9 +48,7 @@ export function useBudgetActions() {
    * 切换预算激活状态
    * Store 会自动更新状态，无需手动刷新
    */
-  async function toggleBudgetActive(
-    serialNum: string,
-  ): Promise<boolean> {
+  async function toggleBudgetActive(serialNum: string): Promise<boolean> {
     try {
       const budget = budgets.value.find(b => b.serialNum === serialNum);
       // toggleBudgetActive 内部已经更新了 store 中的预算状态
@@ -97,7 +93,11 @@ export function useBudgetActions() {
     return result;
   };
 
-  const deleteBudget = async (serialNum: string, onConfirm?: () => Promise<boolean>, onSuccess?: () => void) => {
+  const deleteBudget = async (
+    serialNum: string,
+    onConfirm?: () => Promise<boolean>,
+    onSuccess?: () => void,
+  ) => {
     if (onConfirm && !(await onConfirm())) return false;
     const result = await crudActions.handleDelete(serialNum);
     if (result && onSuccess) onSuccess();

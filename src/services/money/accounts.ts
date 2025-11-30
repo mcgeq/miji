@@ -1,16 +1,8 @@
 import { invokeCommand } from '@/types/api';
 import { BaseMapper } from './baseManager';
 import type { PagedResult } from './baseManager';
-import type {
-  AccountBalanceSummary,
-  DateRange,
-  PageQuery,
-} from '@/schema/common';
-import type {
-  Account,
-  CreateAccountRequest,
-  UpdateAccountRequest,
-} from '@/schema/money';
+import type { AccountBalanceSummary, DateRange, PageQuery } from '@/schema/common';
+import type { Account, CreateAccountRequest, UpdateAccountRequest } from '@/schema/money';
 
 // 查询过滤器接口
 export interface AccountFilters {
@@ -27,11 +19,7 @@ export interface AccountFilters {
 /**
  * 账户数据映射器
  */
-export class AccountMapper extends BaseMapper<
-  CreateAccountRequest,
-  UpdateAccountRequest,
-  Account
-> {
+export class AccountMapper extends BaseMapper<CreateAccountRequest, UpdateAccountRequest, Account> {
   protected entityName = 'Account';
 
   async create(account: CreateAccountRequest): Promise<Account> {
@@ -61,10 +49,7 @@ export class AccountMapper extends BaseMapper<
     }
   }
 
-  async update(
-    serialNum: string,
-    account: UpdateAccountRequest,
-  ): Promise<Account> {
+  async update(serialNum: string, account: UpdateAccountRequest): Promise<Account> {
     try {
       const result = await invokeCommand<Account>('account_update', {
         serialNum,
@@ -76,10 +61,7 @@ export class AccountMapper extends BaseMapper<
     }
   }
 
-  async updateAccountActive(
-    serialNum: string,
-    isActive: boolean,
-  ): Promise<Account> {
+  async updateAccountActive(serialNum: string, isActive: boolean): Promise<Account> {
     try {
       return await invokeCommand<Account>('account_update_active', {
         serialNum,

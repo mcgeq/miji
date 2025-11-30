@@ -6,11 +6,7 @@ import type { Currency, CurrencyCrate, CurrencyUpdate } from '@/schema/common';
 /**
  * 货币数据映射器
  */
-export class CurrencyMapper extends BaseMapper<
-  CurrencyCrate,
-  CurrencyUpdate,
-  Currency
-> {
+export class CurrencyMapper extends BaseMapper<CurrencyCrate, CurrencyUpdate, Currency> {
   protected entityName = 'currency';
 
   async create(currency: CurrencyCrate): Promise<Currency> {
@@ -49,12 +45,9 @@ export class CurrencyMapper extends BaseMapper<
 
   async list(): Promise<Currency[]> {
     try {
-      const tauriCurrencies = await invokeCommand<Currency[]>(
-        'currencies_list',
-        {
-          filter: {},
-        },
-      );
+      const tauriCurrencies = await invokeCommand<Currency[]>('currencies_list', {
+        filter: {},
+      });
       return tauriCurrencies;
     } catch (error) {
       this.handleError('list', error);

@@ -46,10 +46,7 @@ export function useReminderActions() {
    * 标记提醒已付/未付
    * Store 会自动更新状态，无需手动刷新
    */
-  async function markReminderPaid(
-    serialNum: string,
-    isPaid: boolean,
-  ): Promise<boolean> {
+  async function markReminderPaid(serialNum: string, isPaid: boolean): Promise<boolean> {
     try {
       // TODO: 添加到 reminderStore 中
       await MoneyDb.updateBilReminderActive(serialNum, isPaid);
@@ -88,13 +85,21 @@ export function useReminderActions() {
     return result;
   };
 
-  const updateReminder = async (serialNum: string, data: BilReminderUpdate, onSuccess?: () => void) => {
+  const updateReminder = async (
+    serialNum: string,
+    data: BilReminderUpdate,
+    onSuccess?: () => void,
+  ) => {
     const result = await crudActions.handleUpdate(serialNum, data);
     if (result && onSuccess) onSuccess();
     return result;
   };
 
-  const deleteReminder = async (serialNum: string, onConfirm?: () => Promise<boolean>, onSuccess?: () => void) => {
+  const deleteReminder = async (
+    serialNum: string,
+    onConfirm?: () => Promise<boolean>,
+    onSuccess?: () => void,
+  ) => {
     if (onConfirm && !(await onConfirm())) return false;
     const result = await crudActions.handleDelete(serialNum);
     if (result && onSuccess) onSuccess();

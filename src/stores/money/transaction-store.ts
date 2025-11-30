@@ -53,20 +53,17 @@ export const useTransactionStore = defineStore('money-transactions', {
     /**
      * 获取收入交易
      */
-    incomeTransactions: state =>
-      state.transactions.filter(t => t.transactionType === 'Income'),
+    incomeTransactions: state => state.transactions.filter(t => t.transactionType === 'Income'),
 
     /**
      * 获取支出交易
      */
-    expenseTransactions: state =>
-      state.transactions.filter(t => t.transactionType === 'Expense'),
+    expenseTransactions: state => state.transactions.filter(t => t.transactionType === 'Expense'),
 
     /**
      * 获取转账交易
      */
-    transferTransactions: state =>
-      state.transactions.filter(t => t.transactionType === 'Transfer'),
+    transferTransactions: state => state.transactions.filter(t => t.transactionType === 'Transfer'),
   },
 
   actions: {
