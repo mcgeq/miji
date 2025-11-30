@@ -178,15 +178,6 @@ function formatCurrency(value?: number | string | null) {
   return `￥${numValue.toFixed(2)}`;
 }
 
-function getRoleName(role: FamilyMember['role']) {
-  const mapper: Record<string, string> = {
-    Owner: '所有者',
-    Admin: '管理员',
-    Member: '成员',
-    Viewer: '观察者',
-  };
-  return mapper[role] || role;
-}
 
 function getSettlementCycleName(cycle: string) {
   if (!cycle) return '';
@@ -395,7 +386,7 @@ function getTabIcon(iconName: string) {
                       {{ member.name }}
                     </p>
                     <p class="m-0 mt-1.5 text-xs text-gray-600 dark:text-gray-400 font-medium px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded inline-block w-fit">
-                      {{ getRoleName(member.role) }}
+                      {{ t(`roles.${member.role.toLowerCase()}`) }}
                     </p>
                   </div>
                 </div>

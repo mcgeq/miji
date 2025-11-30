@@ -13,6 +13,7 @@ import MemberTransactionList from '../components/MemberTransactionList.vue';
 
 const route = useRoute();
 const router = useRouter();
+const { t } = useI18n();
 const memberStore = useFamilyMemberStore();
 const familyLedgerStore = useFamilyLedgerStore();
 
@@ -68,15 +69,6 @@ function getBalanceClass(balance: number | undefined): string {
   return balance > 0 ? 'positive' : balance < 0 ? 'negative' : 'neutral';
 }
 
-function getRoleName(role: string): string {
-  const roleMap: Record<string, string> = {
-    Owner: '所有者',
-    Admin: '管理员',
-    Member: '成员',
-    Viewer: '查看者',
-  };
-  return roleMap[role] || role;
-}
 </script>
 
 <template>
@@ -110,7 +102,7 @@ function getRoleName(role: string): string {
                   : 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
               ]"
             >
-              {{ getRoleName(member.role) }}
+              {{ t(`roles.${member.role.toLowerCase()}`) }}
             </span>
             <p v-if="member.userSerialNum" class="mt-2 mb-0 text-gray-500 dark:text-gray-400 text-sm">
               ID: {{ member.userSerialNum }}

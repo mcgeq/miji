@@ -10,7 +10,6 @@
   import { DateUtils } from '@/utils/date';
   import { Lg } from '@/utils/debugLog';
   import { deepClone } from '@/utils/objectUtils';
-  import { getRoleName } from '../utils/family';
   import FamilyMemberModal from './FamilyMemberModal.vue';
 
   interface Props {
@@ -588,7 +587,7 @@
                 >{{ member.name }}</span
               >
               <span class="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap"
-                >({{ getRoleName(member.role) }})</span
+                >({{ t(`roles.${member.role.toLowerCase()}`) }})</span
               >
             </div>
             <div class="flex gap-1">
