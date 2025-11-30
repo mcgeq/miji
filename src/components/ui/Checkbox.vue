@@ -103,12 +103,12 @@ const sizeConfig = {
         ]"
       >
         <!-- 选中图标 -->
-        <Check
+        <LucideCheck
           v-if="isChecked() && !indeterminate"
           class="text-white" :class="[sizeConfig[size].icon]"
         />
         <!-- 不确定状态图标 -->
-        <Minus
+        <LucideMinus
           v-else-if="indeterminate"
           class="text-white" :class="[sizeConfig[size].icon]"
         />

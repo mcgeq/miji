@@ -7,8 +7,6 @@
  */
 
 import { Listbox, ListboxButton, ListboxOption, ListboxOptions } from '@headlessui/vue';
-import { Check, ChevronDown, Search, X } from 'lucide-vue-next';
-import { computed, ref } from 'vue';
 
 export interface SelectOption {
   /** 选项值 */
@@ -123,7 +121,7 @@ const sizeClasses = {
         >
           <span class="block truncate">{{ displayValue }}</span>
           <span class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-            <ChevronDown class="w-5 h-5 text-gray-400" />
+            <LucideChevronDown class="w-5 h-5 text-gray-400" />
           </span>
         </ListboxButton>
 
@@ -139,7 +137,7 @@ const sizeClasses = {
             <!-- 搜索框 -->
             <div v-if="searchable" class="px-3 py-2 mb-1">
               <div class="relative">
-                <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <LucideSearch class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
                   v-model="searchQuery"
                   type="text"
@@ -152,7 +150,7 @@ const sizeClasses = {
                   class="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors"
                   @click="searchQuery = ''"
                 >
-                  <X class="w-3 h-3 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" />
+                  <LucideX class="w-3 h-3 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" />
                 </button>
               </div>
             </div>
@@ -199,7 +197,7 @@ const sizeClasses = {
                     class="absolute inset-y-0 left-0 flex items-center pl-3"
                     :class="active ? 'text-white' : 'text-blue-600 dark:text-blue-400'"
                   >
-                    <Check class="w-5 h-5" />
+                    <LucideCheck class="w-5 h-5" />
                   </span>
                 </div>
               </li>

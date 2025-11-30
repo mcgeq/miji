@@ -358,7 +358,7 @@ const widthClass = computed(() => {
         />
         <span class="text-sm text-[light-dark(#0f172a,white)]">{{ getColorName(modelValue) }}</span>
       </div>
-      <ChevronDown class="w-4 h-4 text-[light-dark(#9ca3af,#64748b)] transition-transform duration-200 ui-open:rotate-180" />
+      <LucideChevronDown class="w-4 h-4 text-[light-dark(#9ca3af,#64748b)] transition-transform duration-200 ui-open:rotate-180" />
     </PopoverButton>
 
     <!-- 颜色选择下拉 -->

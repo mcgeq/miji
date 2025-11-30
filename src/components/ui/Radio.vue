@@ -7,7 +7,6 @@
  */
 
 import { RadioGroup, RadioGroupOption } from '@headlessui/vue';
-import { Check } from 'lucide-vue-next';
 
 export interface RadioOption {
   /** 选项值 */
@@ -134,7 +133,7 @@ const sizeConfig = {
             </div>
 
             <!-- 选中图标 -->
-            <Check
+            <LucideCheck
               v-if="checked"
               class="w-5 h-5 text-blue-600 dark:text-blue-400 shrink-0"
             />

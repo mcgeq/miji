@@ -7,7 +7,6 @@
  */
 
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/vue';
-import { Check, ChevronDown } from 'lucide-vue-next';
 
 export interface DropdownOption {
   /** 选项值 */
@@ -78,7 +77,7 @@ function handleSelect(value: string) {
     >
       <slot name="button">
         <span>{{ label }}</span>
-        <ChevronDown class="w-4 h-4" />
+        <LucideChevronDown class="w-4 h-4" />
       </slot>
     </MenuButton>
 
@@ -105,7 +104,7 @@ function handleSelect(value: string) {
                 @click="handleSelect(option.value)"
               >
                 <!-- 选中标记 -->
-                <Check
+                <LucideCheck
                   v-if="showCheck && modelValue === option.value"
                   class="w-4 h-4"
                 />

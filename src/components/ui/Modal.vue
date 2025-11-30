@@ -7,7 +7,6 @@
  */
 
 import { Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot } from '@headlessui/vue';
-import { Check, Trash2, X } from 'lucide-vue-next';
 
 interface Props {
   /** 是否显示 */
@@ -134,7 +133,7 @@ function handleClose() {
                 aria-label="关闭"
                 @click="emit('close')"
               >
-                <X class="w-5 h-5" />
+                <LucideX class="w-5 h-5" />
               </button>
             </div>
 
@@ -158,7 +157,7 @@ function handleClose() {
                     :disabled="props.confirmLoading"
                     @click="emit('delete')"
                   >
-                    <Trash2 class="w-5 h-5" />
+                    <LucideTrash2 class="w-5 h-5" />
                   </button>
 
                   <!-- 取消按钮 -->
@@ -169,7 +168,7 @@ function handleClose() {
                     :disabled="props.confirmLoading"
                     @click="emit('cancel'); emit('close')"
                   >
-                    <X class="w-5 h-5" />
+                    <LucideX class="w-5 h-5" />
                   </button>
 
                   <!-- 确认按钮 -->
@@ -192,7 +191,7 @@ function handleClose() {
                       <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                     </svg>
                     <!-- 确认图标 -->
-                    <Check v-else class="w-5 h-5" />
+                    <LucideCheck v-else class="w-5 h-5" />
                   </button>
                 </div>
               </slot>

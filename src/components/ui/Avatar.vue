@@ -103,7 +103,7 @@ const initials = computed(() => {
       </span>
 
       <!-- 默认图标 -->
-      <User
+      <LucideUser
         v-else
         :class="[
           size === 'xs' && 'w-3 h-3',
