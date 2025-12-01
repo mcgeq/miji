@@ -41,7 +41,6 @@
     "@tauri-apps/plugin-os": "~2.3.0",
     "@tauri-apps/plugin-sql": "~2.3.0",
     "@tauri-store/pinia": "^4.1.0",
-    "@tauri-store/vue": "^1.0.0",
     "@vee-validate/zod": "^4.15.1",
     "@vueuse/core": "^13.9.0",
     "date-fns": "^4.1.0",
