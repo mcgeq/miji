@@ -1,8 +1,5 @@
 {
   "src/**/*.{js,jsx,ts,tsx,vue,svelte,astro,mjs}": [
     "biome check --write --unsafe"
-  ],
-  "*.{json}": [
-    "biome check --write --unsafe"
   ]
 }
