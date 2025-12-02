@@ -1,13 +1,21 @@
 <script setup lang="ts">
+import { ref, computed } from 'vue';
 import {
   Key as KeyIcon,
   Mail,
   Monitor,
+  RotateCcw,
   Smartphone as Phone,
   Smartphone,
   Trash2,
 } from 'lucide-vue-next';
+import { useI18n } from 'vue-i18n';
+import { useAutoSaveSettings, createDatabaseSetting } from '@/composables/useAutoSaveSettings';
+import ToggleSwitch from '@/components/ToggleSwitch.vue';
 import { useAuthStore } from '@/stores/auth';
+import { toast } from '@/utils/toast';
+
+const { t } = useI18n();
 
 const authStore = useAuthStore();
 const user = computed(() => authStore.user);
@@ -20,10 +28,22 @@ const passwordForm = ref({
   confirm: '',
 });
 
-// 两步验证
-const twoFactorEnabled = ref(false);
+// 使用自动保存设置系统
+const { fields, isSaving, resetAll } = useAutoSaveSettings({
+  moduleName: 'security',
+  fields: {
+    twoFactorEnabled: createDatabaseSetting({
+      key: 'settings.security.twoFactorEnabled',
+      defaultValue: false,
+    }),
+    autoLockTime: createDatabaseSetting({
+      key: 'settings.security.autoLockTime',
+      defaultValue: 15,
+    }),
+  },
+});
 
-// 登录会话
+// 登录会话（只读，不保存）
 const loginSessions = ref([
   {
     id: '1',
@@ -49,7 +69,6 @@ const loginSessions = ref([
 ]);
 
 // 账户安全
-const autoLockTime = ref(15);
 const showDeleteAccount = ref(false);
 const deleteConfirmEmail = ref('');
 
@@ -96,6 +115,12 @@ function handleDeleteAccount() {
   showDeleteAccount.value = false;
   deleteConfirmEmail.value = '';
 }
+
+// 重置设置
+async function handleReset() {
+  await resetAll();
+  toast.info(t('settings.security.resetSecurity'));
+}
 </script>
 
 <template>
@@ -103,15 +128,15 @@ function handleDeleteAccount() {
     <!-- 密码安全 -->
     <div class="mb-10">
       <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-6 pb-2 border-b-2 border-gray-200 dark:border-gray-700">
-        密码安全
+        {{ $t('settings.security.passwordSecurity') }}
       </h3>
 
       <div class="space-y-6">
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between py-6 border-b border-gray-200 dark:border-gray-700">
           <div class="mb-4 sm:mb-0">
-            <label class="block font-medium text-gray-900 dark:text-white mb-1">修改密码</label>
+            <label class="block font-medium text-gray-900 dark:text-white mb-1">{{ $t('settings.security.changePassword') }}</label>
             <p class="text-sm text-gray-600 dark:text-gray-400">
-              定期更改密码以保护账户安全
+              {{ $t('settings.security.changePasswordDesc') }}
             </p>
           </div>
           <div class="sm:ml-8">
@@ -120,16 +145,16 @@ function handleDeleteAccount() {
               @click="showChangePassword = true"
             >
               <KeyIcon class="w-4 h-4" />
-              修改密码
+              {{ $t('settings.security.changePassword') }}
             </button>
           </div>
         </div>
 
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between py-6 border-b border-gray-200 dark:border-gray-700">
           <div class="mb-4 sm:mb-0">
-            <label class="block font-medium text-gray-900 dark:text-white mb-1">密码强度</label>
+            <label class="block font-medium text-gray-900 dark:text-white mb-1">{{ $t('settings.security.passwordStrength') }}</label>
             <p class="text-sm text-gray-600 dark:text-gray-400">
-              您的密码安全强度评估
+              {{ $t('settings.security.passwordStrengthDesc') }}
             </p>
           </div>
           <div class="sm:ml-8">
@@ -140,7 +165,7 @@ function handleDeleteAccount() {
                   style="width: 60%"
                 />
               </div>
-              <span class="text-sm font-medium text-green-600 dark:text-green-400">良好</span>
+              <span class="text-sm font-medium text-green-600 dark:text-green-400">{{ $t('settings.security.strengthLevels.good') }}</span>
             </div>
           </div>
         </div>
@@ -150,51 +175,42 @@ function handleDeleteAccount() {
     <!-- 两步验证 -->
     <div class="mb-10">
       <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-6 pb-2 border-b-2 border-gray-200 dark:border-gray-700">
-        两步验证
+        {{ $t('settings.security.twoFactor') }}
       </h3>
 
       <div class="space-y-6">
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between py-6 border-b border-gray-200 dark:border-gray-700">
           <div class="mb-4 sm:mb-0">
-            <label class="block font-medium text-gray-900 dark:text-white mb-1">启用两步验证</label>
+            <label class="block font-medium text-gray-900 dark:text-white mb-1">{{ $t('settings.security.enableTwoFactor') }}</label>
             <p class="text-sm text-gray-600 dark:text-gray-400">
-              使用手机应用或短信验证码增强账户安全
+              {{ $t('settings.security.enableTwoFactorDesc') }}
             </p>
           </div>
           <div class="sm:ml-8">
-            <label class="inline-flex cursor-pointer items-center relative">
-              <input
-                v-model="twoFactorEnabled"
-                type="checkbox"
-                class="sr-only peer"
-              >
-              <div class="w-12 h-6 bg-gray-300 dark:bg-gray-600 rounded-full peer peer-checked:bg-blue-600 transition-colors relative">
-                <div class="absolute w-5 h-5 bg-white rounded-full top-0.5 left-0.5 peer-checked:translate-x-6 transition-transform" />
-              </div>
-            </label>
+            <ToggleSwitch v-model="fields.twoFactorEnabled.value.value" />
           </div>
         </div>
 
-        <div v-if="twoFactorEnabled" class="flex flex-col sm:flex-row sm:items-center sm:justify-between py-6 border-b border-gray-200 dark:border-gray-700">
+        <div v-if="fields.twoFactorEnabled.value.value" class="flex flex-col sm:flex-row sm:items-center sm:justify-between py-6 border-b border-gray-200 dark:border-gray-700">
           <div class="mb-4 sm:mb-0">
-            <label class="block font-medium text-gray-900 dark:text-white mb-1">验证方式</label>
+            <label class="block font-medium text-gray-900 dark:text-white mb-1">{{ $t('settings.security.verificationMethod') }}</label>
             <p class="text-sm text-gray-600 dark:text-gray-400">
-              选择接收验证码的方式
+              {{ $t('settings.security.verificationMethodDesc') }}
             </p>
           </div>
           <div class="sm:ml-8">
             <div class="flex flex-wrap gap-2 max-w-full">
               <button class="text-sm font-medium px-4 py-2 border rounded-lg flex items-center gap-2 border-blue-600 bg-blue-600 text-white">
                 <Smartphone class="w-4 h-4" />
-                验证器应用
+                {{ $t('settings.security.methods.app') }}
               </button>
               <button class="text-sm font-medium px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg flex items-center gap-2 hover:border-blue-600">
                 <Phone class="w-4 h-4" />
-                短信验证
+                {{ $t('settings.security.methods.sms') }}
               </button>
               <button class="text-sm font-medium px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg flex items-center gap-2 hover:border-blue-600">
                 <Mail class="w-4 h-4" />
-                邮箱验证
+                {{ $t('settings.security.methods.email') }}
               </button>
             </div>
           </div>
@@ -205,7 +221,7 @@ function handleDeleteAccount() {
     <!-- 登录历史 -->
     <div class="mb-10">
       <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-6 pb-2 border-b-2 border-gray-200 dark:border-gray-700">
-        登录历史
+        {{ $t('settings.security.loginHistory') }}
       </h3>
 
       <div class="space-y-4">
@@ -230,14 +246,14 @@ function handleDeleteAccount() {
           </div>
           <div class="flex-shrink-0">
             <span v-if="session.current" class="inline-flex items-center text-xs font-medium px-3 py-1.5 rounded-full bg-green-500 text-white">
-              当前会话
+              {{ $t('settings.security.currentSession') }}
             </span>
             <button
               v-else
               class="text-sm font-medium text-red-600 dark:text-red-400 px-2 py-1 rounded-md hover:bg-red-600 hover:text-white transition-colors"
               @click="handleTerminateSession(session.id)"
             >
-              终止
+              {{ $t('settings.security.terminate') }}
             </button>
           </div>
         </div>
@@ -247,36 +263,36 @@ function handleDeleteAccount() {
     <!-- 账户安全 -->
     <div class="mb-10">
       <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-6 pb-2 border-b-2 border-gray-200 dark:border-gray-700">
-        账户安全
+        {{ $t('settings.security.accountSecurity') }}
       </h3>
 
       <div class="space-y-6">
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between py-6 border-b border-gray-200 dark:border-gray-700">
           <div class="mb-4 sm:mb-0">
-            <label class="block font-medium text-gray-900 dark:text-white mb-1">自动锁定</label>
+            <label class="block font-medium text-gray-900 dark:text-white mb-1">{{ $t('settings.security.autoLock') }}</label>
             <p class="text-sm text-gray-600 dark:text-gray-400">
-              闲置指定时间后自动锁定应用
+              {{ $t('settings.security.autoLockDesc') }}
             </p>
           </div>
           <div class="sm:ml-8">
             <select
-              v-model="autoLockTime"
+              v-model.number="fields.autoLockTime.value.value"
               class="w-full sm:w-48 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none"
             >
-              <option value="0">
-                从不
+              <option :value="0">
+                {{ $t('settings.security.lockTimeOptions.never') }}
               </option>
-              <option value="5">
-                5 分钟
+              <option :value="5">
+                {{ $t('settings.security.lockTimeOptions.5min') }}
               </option>
-              <option value="15">
-                15 分钟
+              <option :value="15">
+                {{ $t('settings.security.lockTimeOptions.15min') }}
               </option>
-              <option value="30">
-                30 分钟
+              <option :value="30">
+                {{ $t('settings.security.lockTimeOptions.30min') }}
               </option>
-              <option value="60">
-                1 小时
+              <option :value="60">
+                {{ $t('settings.security.lockTimeOptions.1hour') }}
               </option>
             </select>
           </div>
@@ -284,9 +300,9 @@ function handleDeleteAccount() {
 
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between py-6 border-b border-gray-200 dark:border-gray-700">
           <div class="mb-4 sm:mb-0">
-            <label class="block font-medium text-gray-900 dark:text-white mb-1">删除账户</label>
+            <label class="block font-medium text-gray-900 dark:text-white mb-1">{{ $t('settings.security.deleteAccount') }}</label>
             <p class="text-sm text-gray-600 dark:text-gray-400">
-              永久删除您的账户和所有数据
+              {{ $t('settings.security.deleteAccountDesc') }}
             </p>
           </div>
           <div class="sm:ml-8">
@@ -295,22 +311,37 @@ function handleDeleteAccount() {
               @click="showDeleteAccount = true"
             >
               <Trash2 class="w-4 h-4" />
-              删除账户
+              {{ $t('settings.security.deleteAccountButton') }}
             </button>
           </div>
         </div>
       </div>
     </div>
 
+    <!-- 操作按钮 -->
+    <div class="pt-8 border-t border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row gap-4">
+      <button
+        class="flex items-center justify-center gap-2 px-6 py-3 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-900 dark:text-white font-medium rounded-lg transition-colors"
+        @click="handleReset"
+      >
+        <RotateCcw class="w-4 h-4" />
+        {{ $t('settings.general.resetSettings') }}
+      </button>
+      <span v-if="isSaving" class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+        <span class="inline-block w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+        {{ $t('settings.general.saving') }}
+      </span>
+    </div>
+
     <!-- 修改密码对话框 -->
     <div v-if="showChangePassword" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
       <div class="w-full max-w-md bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-6">
         <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-6">
-          修改密码
+          {{ $t('settings.security.changePasswordDialog.title') }}
         </h3>
         <form class="space-y-4" @submit.prevent="handleChangePassword">
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">当前密码</label>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">{{ $t('settings.security.changePasswordDialog.currentPassword') }}</label>
             <input
               v-model="passwordForm.current"
               type="password"
@@ -319,7 +350,7 @@ function handleDeleteAccount() {
             >
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">新密码</label>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">{{ $t('settings.security.changePasswordDialog.newPassword') }}</label>
             <input
               v-model="passwordForm.new"
               type="password"
@@ -328,7 +359,7 @@ function handleDeleteAccount() {
             >
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">确认新密码</label>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">{{ $t('settings.security.changePasswordDialog.confirmPassword') }}</label>
             <input
               v-model="passwordForm.confirm"
               type="password"
@@ -342,13 +373,13 @@ function handleDeleteAccount() {
               class="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-900 dark:text-white rounded-lg transition-colors"
               @click="showChangePassword = false"
             >
-              取消
+              {{ $t('settings.security.changePasswordDialog.cancel') }}
             </button>
             <button
               type="submit"
               class="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
             >
-              确认修改
+              {{ $t('settings.security.changePasswordDialog.confirm') }}
             </button>
           </div>
         </form>
@@ -359,13 +390,13 @@ function handleDeleteAccount() {
     <div v-if="showDeleteAccount" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
       <div class="w-full max-w-md bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-6">
         <h3 class="text-xl font-semibold text-red-600 dark:text-red-400 mb-4">
-          删除账户
+          {{ $t('settings.security.deleteAccountDialog.title') }}
         </h3>
         <p class="text-sm text-gray-700 dark:text-gray-300 mb-6 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
-          此操作无法撤销。删除账户将永久移除您的所有数据，包括设置、文件和历史记录。
+          {{ $t('settings.security.deleteAccountDialog.warning') }}
         </p>
         <div class="mb-6">
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">请输入您的邮箱地址确认删除</label>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">{{ $t('settings.security.deleteAccountDialog.confirmPlaceholder') }}</label>
           <input
             v-model="deleteConfirmEmail"
             type="email"
@@ -378,14 +409,14 @@ function handleDeleteAccount() {
             class="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-900 dark:text-white rounded-lg transition-colors"
             @click="showDeleteAccount = false"
           >
-            取消
+            {{ $t('settings.security.deleteAccountDialog.cancel') }}
           </button>
           <button
             class="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             :disabled="deleteConfirmEmail !== user?.email"
             @click="handleDeleteAccount"
           >
-            确认删除
+            {{ $t('settings.security.deleteAccountDialog.confirmDelete') }}
           </button>
         </div>
       </div>

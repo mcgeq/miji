@@ -1,12 +1,16 @@
-﻿use common::{
+﻿use std::collections::HashMap;
+
+use common::{
     ApiResponse, AppState,
     crud::service::CrudService,
     error::AppError,
     paginations::{PagedQuery, PagedResult},
 };
 use sea_orm::{prelude::Decimal, ActiveModelTrait, ActiveValue};
+use serde_json::Value as JsonValue;
 use tauri::State;
 use tracing::{error, info, instrument, warn};
+use validator::Validate;
 
 use crate::{
     dto::{
@@ -52,6 +56,9 @@ use crate::{
             CreateTransactionRequest, IncomeExpense, TransactionResponse, TransactionStatsRequest,
             TransactionStatsResponse, TransferRequest, UpdateTransactionRequest,
         },
+        user_settings::{
+            SaveSettingCommand, UserSettingResponse,
+        },
     },
     services::{
         account::{AccountFilter, AccountService},
@@ -75,6 +82,7 @@ use crate::{
         split_rules::SplitRulesService,
         sub_categories::{SubCategoryFilter, SubCategoryService},
         transaction::{TransactionFilter, TransactionService},
+        user_settings::UserSettingExtService,
     },
 };
 
@@ -2832,4 +2840,143 @@ pub async fn budget_allocation_check_alerts(
 
 // ============================================================================
 // end 预算分配相关
+// ============================================================================
+
+// ============================================================================
+// start 用户设置相关
+// ============================================================================
+
+/// 获取单个用户设置
+#[tauri::command]
+#[instrument(skip(state))]
+pub async fn user_setting_get(
+    state: State<'_, AppState>,
+    key: String,
+) -> Result<ApiResponse<Option<JsonValue>>, String> {
+    // TODO: 从认证系统获取当前用户ID
+    let user_serial_num = "user-default".to_string(); // 临时硬编码，实际应从session获取
+    
+    Ok(ApiResponse::from_result(
+        UserSettingExtService::get_setting(&state.db, &user_serial_num, &key).await,
+    ))
+}
+
+/// 保存单个用户设置
+#[tauri::command]
+#[instrument(skip(state, command), fields(key = %command.key, setting_type = %command.setting_type, module = %command.module))]
+pub async fn user_setting_save(
+    state: State<'_, AppState>,
+    command: SaveSettingCommand,
+) -> Result<ApiResponse<UserSettingResponse>, String> {
+    info!("Saving user setting");
+    
+    // 验证命令
+    command.validate()
+        .map_err(|e| {
+            warn!("Validation failed: {}", e);
+            format!("Validation error: {}", e)
+        })?;
+    
+    // TODO: 从认证系统获取当前用户ID
+    let user_serial_num = "user-default".to_string();
+    info!("User ID: {}", user_serial_num);
+    
+    // 转换为内部请求
+    let request = command.to_create_request(user_serial_num);
+    
+    // 调用服务层保存
+    let result = UserSettingExtService::save_setting(
+        &state.db,
+        &request.user_serial_num,
+        &request.setting_key,
+        request.setting_value,
+        request.setting_type,
+        request.module,
+    )
+    .await;
+    
+    match &result {
+        Ok(_) => info!("Setting saved successfully"),
+        Err(e) => error!("Failed to save setting: {:?}", e),
+    }
+    
+    Ok(ApiResponse::from_result(result))
+}
+
+/// 获取模块所有设置
+#[tauri::command]
+#[instrument(skip(state))]
+pub async fn user_setting_get_module(
+    state: State<'_, AppState>,
+    module: String,
+) -> Result<ApiResponse<HashMap<String, JsonValue>>, String> {
+    // TODO: 从认证系统获取当前用户ID
+    let user_serial_num = "user-default".to_string();
+    
+    Ok(ApiResponse::from_result(
+        UserSettingExtService::get_module_settings(&state.db, &user_serial_num, &module).await,
+    ))
+}
+
+/// 批量保存设置
+#[tauri::command]
+#[instrument(skip(state))]
+pub async fn user_setting_save_batch(
+    state: State<'_, AppState>,
+    settings: HashMap<String, (JsonValue, String, String)>, // (value, type, module)
+) -> Result<ApiResponse<Vec<UserSettingResponse>>, String> {
+    // TODO: 从认证系统获取当前用户ID
+    let user_serial_num = "user-default".to_string();
+    
+    Ok(ApiResponse::from_result(
+        UserSettingExtService::save_settings_batch(&state.db, &user_serial_num, settings).await,
+    ))
+}
+
+/// 删除单个设置
+#[tauri::command]
+#[instrument(skip(state))]
+pub async fn user_setting_delete(
+    state: State<'_, AppState>,
+    key: String,
+) -> Result<ApiResponse<bool>, String> {
+    // TODO: 从认证系统获取当前用户ID
+    let user_serial_num = "user-default".to_string();
+    
+    Ok(ApiResponse::from_result(
+        UserSettingExtService::delete_setting(&state.db, &user_serial_num, &key).await,
+    ))
+}
+
+/// 重置模块所有设置
+#[tauri::command]
+#[instrument(skip(state))]
+pub async fn user_setting_reset_module(
+    state: State<'_, AppState>,
+    module: String,
+) -> Result<ApiResponse<u64>, String> {
+    // TODO: 从认证系统获取当前用户ID
+    let user_serial_num = "user-default".to_string();
+    
+    Ok(ApiResponse::from_result(
+        UserSettingExtService::reset_module_settings(&state.db, &user_serial_num, &module).await,
+    ))
+}
+
+/// 获取用户所有设置
+#[tauri::command]
+#[instrument(skip(state))]
+pub async fn user_setting_get_all(
+    state: State<'_, AppState>,
+) -> Result<ApiResponse<HashMap<String, JsonValue>>, String> {
+    // TODO: 从认证系统获取当前用户ID
+    let user_serial_num = "user-default".to_string();
+    
+    Ok(ApiResponse::from_result(
+        UserSettingExtService::get_all_user_settings(&state.db, &user_serial_num).await,
+    ))
+}
+
+// ============================================================================
+// end 用户设置相关
 // ============================================================================

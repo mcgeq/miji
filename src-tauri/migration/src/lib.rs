@@ -31,6 +31,9 @@ mod m20251122_029_create_reminder;
 mod m20251122_030_032_create_notifications;
 mod m20251122_033_038_create_health_period;
 mod m20251122_039_create_operation_log;
+mod m20251202_040_create_user_settings;
+mod m20251202_041_create_user_setting_profiles;
+mod m20251202_042_create_user_setting_history;
 
 pub mod schema;
 
@@ -70,6 +73,9 @@ impl MigratorTrait for Migrator {
             Box::new(m20251122_030_032_create_notifications::Migration),
             Box::new(m20251122_033_038_create_health_period::Migration),
             Box::new(m20251122_039_create_operation_log::Migration),
+            Box::new(m20251202_040_create_user_settings::Migration),
+            Box::new(m20251202_041_create_user_setting_profiles::Migration),
+            Box::new(m20251202_042_create_user_setting_history::Migration),
         ]
     }
 }

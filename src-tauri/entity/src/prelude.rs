@@ -32,3 +32,7 @@ pub use super::split_rules::Entity as SplitRules;
 pub use super::split_records::Entity as SplitRecords;
 pub use super::debt_relations::Entity as DebtRelations;
 pub use super::settlement_records::Entity as SettlementRecords;
+// 用户设置相关entity
+pub use super::user_settings::Entity as UserSettings;
+pub use super::user_setting_profiles::Entity as UserSettingProfiles;
+pub use super::user_setting_history::Entity as UserSettingHistory;

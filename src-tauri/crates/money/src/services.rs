@@ -38,3 +38,4 @@ pub mod sub_categories;
 pub mod sub_categories_hooks;
 pub mod transaction;
 pub mod transaction_hooks;
+pub mod user_settings; // Phase 7: 用户设置服务

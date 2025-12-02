@@ -742,3 +742,50 @@ pub enum BudgetAllocations {
     CreatedAt,
     UpdatedAt,
 }
+
+// 用户设置表
+#[derive(DeriveIden)]
+pub enum UserSettings {
+    Table,
+    SerialNum,
+    UserSerialNum,
+    SettingKey,
+    SettingValue,
+    SettingType,
+    Module,
+    Description,
+    IsDefault,
+    CreatedAt,
+    UpdatedAt,
+}
+
+// 用户设置配置文件表
+#[derive(DeriveIden)]
+pub enum UserSettingProfiles {
+    Table,
+    SerialNum,
+    UserSerialNum,
+    ProfileName,
+    ProfileData,
+    IsActive,
+    IsDefault,
+    Description,
+    CreatedAt,
+    UpdatedAt,
+}
+
+// 用户设置历史记录表
+#[derive(DeriveIden)]
+pub enum UserSettingHistory {
+    Table,
+    SerialNum,
+    UserSerialNum,
+    SettingKey,
+    OldValue,
+    NewValue,
+    ChangeType,
+    ChangedBy,
+    IpAddress,
+    UserAgent,
+    CreatedAt,
+}

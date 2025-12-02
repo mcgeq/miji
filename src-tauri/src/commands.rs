@@ -188,6 +188,14 @@ pub fn init_commands(builder: Builder<Wry>) -> Builder<Wry> {
         money_cmd::budget_allocation_record_usage,
         money_cmd::budget_allocation_can_spend,
         money_cmd::budget_allocation_check_alerts,
+        // Phase 7: 用户设置命令
+        money_cmd::user_setting_get,
+        money_cmd::user_setting_save,
+        money_cmd::user_setting_get_module,
+        money_cmd::user_setting_save_batch,
+        money_cmd::user_setting_delete,
+        money_cmd::user_setting_reset_module,
+        money_cmd::user_setting_get_all,
         // 健康命令
         health_cmd::period_record_create,
         health_cmd::period_record_update,

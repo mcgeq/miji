@@ -41,6 +41,10 @@ pub mod debt_relations;
 pub mod settlement_records;
 // Phase 6: 预算分配模块
 pub mod budget_allocations;
+// Phase 7: 用户设置模块
+pub mod user_settings;
+pub mod user_setting_profiles;
+pub mod user_setting_history;
 
 pub mod enums;
 pub mod localize;

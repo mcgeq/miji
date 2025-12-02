@@ -1,52 +1,51 @@
 <script setup lang="ts">
 import {
   AlertTriangle,
-  Bell,
   Mail,
   MessageSquare,
   Monitor,
-  Save,
+  RotateCcw,
   Smartphone,
   Users,
   Volume2,
 } from 'lucide-vue-next';
-import { ref } from 'vue';
-import { Lg } from '@/utils/debugLog';
+import { useI18n } from 'vue-i18n';
+import { useAutoSaveSettings, createDatabaseSetting } from '@/composables/useAutoSaveSettings';
+import ToggleSwitch from '@/components/ToggleSwitch.vue';
 import { toast } from '@/utils/toast';
 
-// 通知总开关
-const notificationsEnabled = ref(true);
+const { t } = useI18n();
 
-// 通知类型
-const notificationTypes = ref([
+// 默认通知类型配置
+const defaultNotificationTypes = computed(() => [
   {
     id: 'messages',
-    name: '消息通知',
-    description: '新消息和聊天通知',
+    name: t('settings.notification.messages'),
+    description: t('settings.notification.messagesDesc'),
     icon: MessageSquare,
     enabled: true,
     methods: ['desktop', 'mobile'],
   },
   {
     id: 'emails',
-    name: '邮件通知',
-    description: '新邮件提醒',
+    name: t('settings.notification.emails'),
+    description: t('settings.notification.emailsDesc'),
     icon: Mail,
     enabled: true,
     methods: ['desktop', 'email'],
   },
   {
     id: 'alerts',
-    name: '系统警报',
-    description: '重要系统消息和警告',
+    name: t('settings.notification.alerts'),
+    description: t('settings.notification.alertsDesc'),
     icon: AlertTriangle,
     enabled: true,
     methods: ['desktop', 'mobile', 'email'],
   },
   {
     id: 'social',
-    name: '社交通知',
-    description: '好友请求、提及等社交活动',
+    name: t('settings.notification.social'),
+    description: t('settings.notification.socialDesc'),
     icon: Users,
     enabled: false,
     methods: ['desktop'],
@@ -54,66 +53,82 @@ const notificationTypes = ref([
 ]);
 
 // 通知方式
-const notificationMethods = [
-  { id: 'desktop', name: '桌面通知', icon: Monitor },
-  { id: 'mobile', name: '移动推送', icon: Smartphone },
-  { id: 'email', name: '邮件', icon: Mail },
-];
+const notificationMethods = computed(() => [
+  { id: 'desktop', name: t('settings.notification.desktop'), icon: Monitor },
+  { id: 'mobile', name: t('settings.notification.mobile'), icon: Smartphone },
+  { id: 'email', name: t('settings.notification.email'), icon: Mail },
+]);
 
-// 免打扰模式
-const doNotDisturbEnabled = ref(false);
-const dndSchedule = ref({
-  start: '22:00',
-  end: '08:00',
-  days: ['1', '2', '3', '4', '5'],
+// 使用自动保存设置系统
+const { fields, isSaving, resetAll } = useAutoSaveSettings({
+  moduleName: 'notification',
+  fields: {
+    notificationsEnabled: createDatabaseSetting({
+      key: 'settings.notification.enabled',
+      defaultValue: true,
+    }),
+    notificationTypes: createDatabaseSetting({
+      key: 'settings.notification.types',
+      defaultValue: defaultNotificationTypes.value,
+    }),
+    doNotDisturbEnabled: createDatabaseSetting({
+      key: 'settings.notification.doNotDisturb',
+      defaultValue: false,
+    }),
+    dndSchedule: createDatabaseSetting({
+      key: 'settings.notification.dndSchedule',
+      defaultValue: {
+        start: '22:00',
+        end: '08:00',
+        days: ['1', '2', '3', '4', '5'],
+      },
+    }),
+    selectedSound: createDatabaseSetting({
+      key: 'settings.notification.sound',
+      defaultValue: 'default',
+    }),
+    notificationDuration: createDatabaseSetting({
+      key: 'settings.notification.duration',
+      defaultValue: 5,
+    }),
+    emailSummaryFrequency: createDatabaseSetting({
+      key: 'settings.notification.emailSummaryFrequency',
+      defaultValue: 'weekly',
+    }),
+    marketingEmails: createDatabaseSetting({
+      key: 'settings.notification.marketingEmails',
+      defaultValue: false,
+    }),
+  },
 });
 
-const weekDays = [
-  { id: '1', name: '周一' },
-  { id: '2', name: '周二' },
-  { id: '3', name: '周三' },
-  { id: '4', name: '周四' },
-  { id: '5', name: '周五' },
-  { id: '6', name: '周六' },
-  { id: '0', name: '周日' },
-];
+const weekDays = computed(() => [
+  { id: '1', name: t('settings.notification.weekDays.monday') },
+  { id: '2', name: t('settings.notification.weekDays.tuesday') },
+  { id: '3', name: t('settings.notification.weekDays.wednesday') },
+  { id: '4', name: t('settings.notification.weekDays.thursday') },
+  { id: '5', name: t('settings.notification.weekDays.friday') },
+  { id: '6', name: t('settings.notification.weekDays.saturday') },
+  { id: '0', name: t('settings.notification.weekDays.sunday') },
+]);
 
-// 通知声音
-const selectedSound = ref('default');
-const notificationSounds = [
-  { id: 'default', name: '默认' },
-  { id: 'gentle', name: '轻柔' },
-  { id: 'alert', name: '警报' },
-  { id: 'chime', name: '钟声' },
-  { id: 'none', name: '静音' },
-];
-
-// 通知持续时间
-const notificationDuration = ref(5);
-
-// 邮件设置
-const emailSummaryFrequency = ref('weekly');
-const marketingEmails = ref(false);
+const notificationSounds = computed(() => [
+  { id: 'default', name: t('settings.notification.soundOptions.default') },
+  { id: 'gentle', name: t('settings.notification.soundOptions.gentle') },
+  { id: 'alert', name: t('settings.notification.soundOptions.alert') },
+  { id: 'chime', name: t('settings.notification.soundOptions.chime') },
+  { id: 'none', name: t('settings.notification.soundOptions.none') },
+]);
 
 // 播放声音
 function playSound() {
-  toast.info(`播放声音: ${selectedSound.value}`);
+  toast.info(`播放声音: ${fields.selectedSound.value.value}`);
 }
 
-// 保存设置
-function handleSave() {
-  const settings = {
-    notificationsEnabled: notificationsEnabled.value,
-    notificationTypes: notificationTypes.value,
-    doNotDisturbEnabled: doNotDisturbEnabled.value,
-    dndSchedule: dndSchedule.value,
-    selectedSound: selectedSound.value,
-    notificationDuration: notificationDuration.value,
-    emailSummaryFrequency: emailSummaryFrequency.value,
-    marketingEmails: marketingEmails.value,
-  };
-
-  Lg.i('Settings Notification', '保存通知设置:', settings);
+// 重置设置
+async function handleReset() {
+  await resetAll();
+  toast.info(t('settings.notification.resetNotification'));
 }
 </script>
 
@@ -122,34 +137,25 @@ function handleSave() {
     <!-- 通知偏好 -->
     <div class="mb-10">
       <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-6 pb-2 border-b-2 border-gray-200 dark:border-gray-700">
-        通知偏好
+        {{ $t('settings.notification.preferences') }}
       </h3>
 
       <div class="space-y-6">
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between py-6 border-b border-gray-200 dark:border-gray-700">
           <div class="mb-4 sm:mb-0">
-            <label class="block font-medium text-gray-900 dark:text-white mb-1">启用通知</label>
+            <label class="block font-medium text-gray-900 dark:text-white mb-1">{{ $t('settings.notification.enable') }}</label>
             <p class="text-sm text-gray-600 dark:text-gray-400">
-              接收应用和系统通知
+              {{ $t('settings.notification.enableDesc') }}
             </p>
           </div>
           <div class="sm:ml-8">
-            <label class="inline-flex cursor-pointer items-center relative">
-              <input
-                v-model="notificationsEnabled"
-                type="checkbox"
-                class="sr-only peer"
-              >
-              <div class="w-12 h-6 bg-gray-300 dark:bg-gray-600 rounded-full peer peer-checked:bg-blue-600 transition-colors relative">
-                <div class="absolute w-5 h-5 bg-white rounded-full top-0.5 left-0.5 peer-checked:translate-x-6 transition-transform" />
-              </div>
-            </label>
+            <ToggleSwitch v-model="fields.notificationsEnabled.value.value" />
           </div>
         </div>
 
-        <div v-if="notificationsEnabled" class="space-y-4">
+        <div v-if="fields.notificationsEnabled.value.value" class="space-y-4">
           <div
-            v-for="type in notificationTypes"
+            v-for="type in fields.notificationTypes.value.value"
             :key="type.id"
             class="p-6 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800"
           >
@@ -165,21 +171,12 @@ function handleSave() {
                   </p>
                 </div>
               </div>
-              <label class="inline-flex cursor-pointer items-center relative">
-                <input
-                  v-model="type.enabled"
-                  type="checkbox"
-                  class="sr-only peer"
-                >
-                <div class="w-12 h-6 bg-gray-300 dark:bg-gray-600 rounded-full peer peer-checked:bg-blue-600 transition-colors relative">
-                  <div class="absolute w-5 h-5 bg-white rounded-full top-0.5 left-0.5 peer-checked:translate-x-6 transition-transform" />
-                </div>
-              </label>
+              <ToggleSwitch v-model="type.enabled" />
             </div>
 
             <div v-if="type.enabled" class="pt-4 border-t border-gray-200 dark:border-gray-700">
               <div class="flex flex-col sm:flex-row sm:items-center gap-4">
-                <span class="text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">通知方式:</span>
+                <span class="text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">{{ $t('settings.notification.methodsLabel') }}</span>
                 <div class="flex flex-wrap gap-2">
                   <label
                     v-for="method in notificationMethods"
@@ -204,47 +201,38 @@ function handleSave() {
     </div>
 
     <!-- 推送设置 -->
-    <div v-if="notificationsEnabled" class="mb-10">
+    <div v-if="fields.notificationsEnabled.value.value" class="mb-10">
       <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-6 pb-2 border-b-2 border-gray-200 dark:border-gray-700">
-        推送设置
+        {{ $t('settings.notification.pushSettings') }}
       </h3>
 
       <div class="space-y-6">
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between py-6 border-b border-gray-200 dark:border-gray-700">
           <div class="mb-4 sm:mb-0">
-            <label class="block font-medium text-gray-900 dark:text-white mb-1">免打扰模式</label>
+            <label class="block font-medium text-gray-900 dark:text-white mb-1">{{ $t('settings.notification.doNotDisturb') }}</label>
             <p class="text-sm text-gray-600 dark:text-gray-400">
-              在指定时间段内静音所有通知
+              {{ $t('settings.notification.doNotDisturbDesc') }}
             </p>
           </div>
           <div class="sm:ml-8">
-            <label class="inline-flex cursor-pointer items-center relative">
-              <input
-                v-model="doNotDisturbEnabled"
-                type="checkbox"
-                class="sr-only peer"
-              >
-              <div class="w-12 h-6 bg-gray-300 dark:bg-gray-600 rounded-full peer peer-checked:bg-blue-600 transition-colors relative">
-                <div class="absolute w-5 h-5 bg-white rounded-full top-0.5 left-0.5 peer-checked:translate-x-6 transition-transform" />
-              </div>
-            </label>
+            <ToggleSwitch v-model="fields.doNotDisturbEnabled.value.value" />
           </div>
         </div>
 
-        <div v-if="doNotDisturbEnabled" class="p-6 rounded-lg bg-gray-50 dark:bg-gray-900/50">
+        <div v-if="fields.doNotDisturbEnabled.value.value" class="p-6 rounded-lg bg-gray-50 dark:bg-gray-900/50">
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">开始时间</label>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">{{ $t('settings.notification.startTime') }}</label>
               <input
-                v-model="dndSchedule.start"
+                v-model="fields.dndSchedule.value.value.start"
                 type="time"
                 class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none"
               >
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">结束时间</label>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">{{ $t('settings.notification.endTime') }}</label>
               <input
-                v-model="dndSchedule.end"
+                v-model="fields.dndSchedule.value.value.end"
                 type="time"
                 class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none"
               >
@@ -252,7 +240,7 @@ function handleSave() {
           </div>
           <div>
             <div class="mb-3">
-              <span class="text-sm font-medium text-gray-700 dark:text-gray-300">重复:</span>
+              <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ $t('settings.notification.repeat') }}</span>
             </div>
             <div class="flex flex-wrap gap-2">
               <label
@@ -261,7 +249,7 @@ function handleSave() {
                 class="flex items-center gap-2 cursor-pointer"
               >
                 <input
-                  v-model="dndSchedule.days"
+                  v-model="fields.dndSchedule.value.value.days"
                   :value="day.id"
                   type="checkbox"
                   class="w-4 h-4 text-blue-600 bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-blue-500/20"
@@ -274,15 +262,15 @@ function handleSave() {
 
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between py-6 border-b border-gray-200 dark:border-gray-700">
           <div class="mb-4 sm:mb-0">
-            <label class="block font-medium text-gray-900 dark:text-white mb-1">通知声音</label>
+            <label class="block font-medium text-gray-900 dark:text-white mb-1">{{ $t('settings.notification.sound') }}</label>
             <p class="text-sm text-gray-600 dark:text-gray-400">
-              选择通知提示音
+              {{ $t('settings.notification.soundDesc') }}
             </p>
           </div>
           <div class="sm:ml-8">
             <div class="flex gap-2">
               <select
-                v-model="selectedSound"
+                v-model="fields.selectedSound.value.value"
                 class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none"
               >
                 <option
@@ -298,7 +286,7 @@ function handleSave() {
                 @click="playSound"
               >
                 <Volume2 class="w-4 h-4" />
-                试听
+                {{ $t('settings.notification.testSound') }}
               </button>
             </div>
           </div>
@@ -306,27 +294,27 @@ function handleSave() {
 
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between py-6 border-b border-gray-200 dark:border-gray-700">
           <div class="mb-4 sm:mb-0">
-            <label class="block font-medium text-gray-900 dark:text-white mb-1">通知持续时间</label>
+            <label class="block font-medium text-gray-900 dark:text-white mb-1">{{ $t('settings.notification.duration') }}</label>
             <p class="text-sm text-gray-600 dark:text-gray-400">
-              通知在屏幕上显示的时间
+              {{ $t('settings.notification.durationDesc') }}
             </p>
           </div>
           <div class="sm:ml-8">
             <select
-              v-model="notificationDuration"
+              v-model="fields.notificationDuration.value.value"
               class="w-full sm:w-48 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none"
             >
               <option :value="3">
-                3 秒
+                {{ $t('settings.notification.durationOptions.3s') }}
               </option>
               <option :value="5">
-                5 秒
+                {{ $t('settings.notification.durationOptions.5s') }}
               </option>
               <option :value="10">
-                10 秒
+                {{ $t('settings.notification.durationOptions.10s') }}
               </option>
               <option :value="0">
-                手动关闭
+                {{ $t('settings.notification.durationOptions.manual') }}
               </option>
             </select>
           </div>
@@ -335,35 +323,35 @@ function handleSave() {
     </div>
 
     <!-- 邮件通知 -->
-    <div v-if="notificationsEnabled" class="mb-10">
+    <div v-if="fields.notificationsEnabled.value.value" class="mb-10">
       <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-6 pb-2 border-b-2 border-gray-200 dark:border-gray-700">
-        邮件通知
+        {{ $t('settings.notification.emailNotification') }}
       </h3>
 
       <div class="space-y-6">
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between py-6 border-b border-gray-200 dark:border-gray-700">
           <div class="mb-4 sm:mb-0">
-            <label class="block font-medium text-gray-900 dark:text-white mb-1">邮件摘要</label>
+            <label class="block font-medium text-gray-900 dark:text-white mb-1">{{ $t('settings.notification.emailSummary') }}</label>
             <p class="text-sm text-gray-600 dark:text-gray-400">
-              定期发送活动摘要到您的邮箱
+              {{ $t('settings.notification.emailSummaryDesc') }}
             </p>
           </div>
           <div class="sm:ml-8">
             <select
-              v-model="emailSummaryFrequency"
+              v-model="fields.emailSummaryFrequency.value.value"
               class="w-full sm:w-48 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none"
             >
               <option value="never">
-                从不
+                {{ $t('settings.notification.frequencyOptions.never') }}
               </option>
               <option value="daily">
-                每日
+                {{ $t('settings.notification.frequencyOptions.daily') }}
               </option>
               <option value="weekly">
-                每周
+                {{ $t('settings.notification.frequencyOptions.weekly') }}
               </option>
               <option value="monthly">
-                每月
+                {{ $t('settings.notification.frequencyOptions.monthly') }}
               </option>
             </select>
           </div>
@@ -371,22 +359,13 @@ function handleSave() {
 
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between py-6 border-b border-gray-200 dark:border-gray-700">
           <div class="mb-4 sm:mb-0">
-            <label class="block font-medium text-gray-900 dark:text-white mb-1">营销邮件</label>
+            <label class="block font-medium text-gray-900 dark:text-white mb-1">{{ $t('settings.notification.marketingEmails') }}</label>
             <p class="text-sm text-gray-600 dark:text-gray-400">
-              接收产品更新和营销信息
+              {{ $t('settings.notification.marketingEmailsDesc') }}
             </p>
           </div>
           <div class="sm:ml-8">
-            <label class="inline-flex cursor-pointer items-center relative">
-              <input
-                v-model="marketingEmails"
-                type="checkbox"
-                class="sr-only peer"
-              >
-              <div class="w-12 h-6 bg-gray-300 dark:bg-gray-600 rounded-full peer peer-checked:bg-blue-600 transition-colors relative">
-                <div class="absolute w-5 h-5 bg-white rounded-full top-0.5 left-0.5 peer-checked:translate-x-6 transition-transform" />
-              </div>
-            </label>
+            <ToggleSwitch v-model="fields.marketingEmails.value.value" />
           </div>
         </div>
       </div>
@@ -395,18 +374,23 @@ function handleSave() {
     <!-- 操作按钮 -->
     <div class="pt-8 border-t border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row gap-4">
       <button
-        class="flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
-        @click="handleSave"
+        class="flex items-center justify-center gap-2 px-6 py-3 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-900 dark:text-white font-medium rounded-lg transition-colors"
+        @click="handleReset"
       >
-        <Save class="w-4 h-4" />
-        保存设置
+        <RotateCcw class="w-4 h-4" />
+        {{ $t('settings.general.resetSettings') }}
       </button>
       <button
         class="flex items-center justify-center gap-2 px-6 py-3 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-900 dark:text-white font-medium rounded-lg transition-colors"
+        @click="playSound"
       >
-        <Bell class="w-4 h-4" />
-        测试通知
+        <Volume2 class="w-4 h-4" />
+        {{ $t('settings.notification.testNotification') }}
       </button>
+      <span v-if="isSaving" class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+        <span class="inline-block w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+        {{ $t('settings.general.saving') }}
+      </span>
     </div>
   </div>
 </template>

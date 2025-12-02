@@ -122,6 +122,7 @@ declare module 'vue' {
     TodayPeriod: typeof import('./src/components/common/TodayPeriod.vue')['default']
     TodayTodos: typeof import('./src/components/common/TodayTodos.vue')['default']
     TodoButton: typeof import('./src/components/ui/TodoButton.vue')['default']
+    ToggleSwitch: typeof import('./src/components/ToggleSwitch.vue')['default']
     Tooltip: typeof import('./src/components/ui/Tooltip.vue')['default']
     UserSelector: typeof import('./src/components/ui/UserSelector.vue')['default']
   }

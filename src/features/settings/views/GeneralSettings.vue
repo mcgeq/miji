@@ -1,9 +1,14 @@
 <script setup lang="ts">
 import { invoke } from '@tauri-apps/api/core';
-import { Monitor, Moon, RotateCcw, Save, Sun } from 'lucide-vue-next';
+import { Monitor, Moon, RotateCcw, Sun } from 'lucide-vue-next';
+import { useI18n } from 'vue-i18n';
+import { useAutoSaveSettings, createDatabaseSetting } from '@/composables/useAutoSaveSettings';
 import { useLocaleStore } from '@/stores/locales';
 import { useThemeStore } from '@/stores/theme';
 import { isDesktop } from '@/utils/platform';
+import ToggleSwitch from '@/components/ToggleSwitch.vue';
+
+const { t } = useI18n();
 
 const localeStore = useLocaleStore();
 const themeStore = useThemeStore();
@@ -11,107 +16,158 @@ const themeStore = useThemeStore();
 // 平台检测
 const isDesktopPlatform = ref(isDesktop());
 
-// 使用响应式引用，初始值从 store 获取
-const selectedLocale = ref(localeStore.currentLocale || 'zh-CN');
-const selectedTimezone = ref('Asia/Shanghai');
-const selectedTheme = ref(themeStore.currentTheme || 'system');
-const compactMode = ref(false);
-const autoStart = ref(false);
-const minimizeToTray = ref(false); // 默认关闭最小化到托盘
-const closeBehaviorPreference = ref('ask'); // 默认每次询问
-const isLoadingSettings = ref(false); // 标志是否正在加载设置
+// 使用自动保存设置系统
+const { fields, isSaving, resetAll, loadAll } = useAutoSaveSettings({
+  moduleName: 'general',
+  fields: {
+    locale: {
+      key: 'settings.general.locale',
+      defaultValue: 'zh-CN',
+      saveFn: async (val) => {
+        await localeStore.setLocale(val);
+      },
+      loadFn: async () => {
+        return localeStore.currentLocale || 'zh-CN';
+      },
+    },
+    timezone: createDatabaseSetting({
+      key: 'settings.general.timezone',
+      defaultValue: 'Asia/Shanghai',
+    }),
+    theme: {
+      key: 'settings.general.theme',
+      defaultValue: 'system',
+      saveFn: async (val) => {
+        await themeStore.setTheme(val as 'light' | 'dark' | 'system');
+      },
+      loadFn: async () => {
+        return themeStore.currentTheme || 'system';
+      },
+    },
+    compactMode: createDatabaseSetting({
+      key: 'settings.general.compactMode',
+      defaultValue: false,
+    }),
+    autoStart: createDatabaseSetting({
+      key: 'settings.general.autoStart',
+      defaultValue: false,
+    }),
+    minimizeToTray: createDatabaseSetting({
+      key: 'settings.general.minimizeToTray',
+      defaultValue: false,
+    }),
+    closeBehaviorPreference: createDatabaseSetting({
+      key: 'settings.general.closeBehaviorPreference',
+      defaultValue: 'ask',
+    }),
+  },
+});
+
+// 保留原有的关闭行为选项逻辑
+const isLoadingSettings = ref(false);
 
 // 关闭行为选项
 const closeBehaviorOptions = computed(() => {
   const options = [
-    { value: 'ask', label: '每次询问' },
-    { value: 'close', label: '直接关闭' },
+    { value: 'ask', label: t('settings.general.closeBehaviorOptions.ask') },
+    { value: 'close', label: t('settings.general.closeBehaviorOptions.close') },
   ];
 
   // 如果启用了最小化到托盘，添加最小化选项
-  if (minimizeToTray.value) {
-    options.splice(1, 0, { value: 'minimize', label: '最小化到托盘' });
+  if (fields.minimizeToTray.value.value) {
+    options.splice(1, 0, { value: 'minimize', label: t('settings.general.closeBehaviorOptions.minimize') });
   }
 
   return options;
 });
 
-// 监听 store 的变化，同步到 selectedLocale
+// 监听 store 的变化，同步到设置
 watch(() => localeStore.currentLocale, newLocale => {
-  if (newLocale && newLocale !== selectedLocale.value) {
-    selectedLocale.value = newLocale;
+  if (newLocale && newLocale !== fields.locale.value.value) {
+    fields.locale.value.value = newLocale;
   }
 }, { immediate: true });
 
-// 监听主题store的变化，同步到 selectedTheme
+// 监听主题store的变化，同步到设置
 watch(() => themeStore.currentTheme, newTheme => {
-  if (newTheme && newTheme !== selectedTheme.value) {
-    selectedTheme.value = newTheme;
+  if (newTheme && newTheme !== fields.theme.value.value) {
+    fields.theme.value.value = newTheme;
   }
 }, { immediate: true });
 
 // 监听最小化到托盘开关的变化
-watch(minimizeToTray, async newValue => {
+watch(() => fields.minimizeToTray.value.value, async newValue => {
   if (isLoadingSettings.value) return; // 加载设置时不触发保存
 
   if (newValue) {
-    // 如果开启了最小化到托盘，则关闭行为偏好应选择最小化到托盘
-    closeBehaviorPreference.value = 'minimize';
+    fields.closeBehaviorPreference.value.value = 'minimize';
   } else {
-    // 如果关闭了最小化到托盘，则关闭行为偏好应选择每次询问
-    closeBehaviorPreference.value = 'ask';
+    fields.closeBehaviorPreference.value.value = 'ask';
   }
-  await handleCloseBehaviorChange(); // 保存新的偏好设置
+  await handleCloseBehaviorChange();
 });
 
 // 监听关闭行为偏好的变化
-watch(closeBehaviorPreference, async newValue => {
+watch(() => fields.closeBehaviorPreference.value.value, async newValue => {
   if (isLoadingSettings.value) return; // 加载设置时不触发保存
 
   if (newValue === 'minimize') {
-    // 如果选择最小化到托盘，则开启最小化到托盘开关
-    minimizeToTray.value = true;
+    fields.minimizeToTray.value.value = true;
   } else if (newValue === 'ask' || newValue === 'close') {
-    // 如果选择每次询问或直接关闭，则关闭最小化到托盘开关
-    minimizeToTray.value = false;
+    fields.minimizeToTray.value.value = false;
   }
-  await handleCloseBehaviorChange(); // 保存新的偏好设置
+  await handleCloseBehaviorChange();
 });
 
 // 事件处理器引用，用于清理
 let handlePreferenceChange: ((event: CustomEvent) => void) | null = null;
 
-// 组件挂载时加载关闭行为偏好
+// 组件挂载时加载所有设置
 onMounted(async () => {
-  isLoadingSettings.value = true; // 开始加载设置
+  isLoadingSettings.value = true;
 
+  // 加载所有自动保存的设置
+  await loadAll();
+  
+  // 确保时区有默认值（防止显示空白）
+  if (!fields.timezone.value.value) {
+    console.log('[GeneralSettings] Timezone is empty, setting default value');
+    fields.timezone.value.value = 'Asia/Shanghai';
+  }
+  
+  console.log('[GeneralSettings] Settings loaded:', {
+    locale: fields.locale.value.value,
+    timezone: fields.timezone.value.value,
+    theme: fields.theme.value.value,
+  });
+
+  // 加载关闭行为偏好（Tauri 特定）
   try {
     const preference = await invoke('get_close_behavior_preference') as string | null;
     if (preference) {
-      closeBehaviorPreference.value = preference;
-      // 根据偏好设置同步最小化开关
+      fields.closeBehaviorPreference.value.value = preference;
       if (preference === 'minimize') {
-        minimizeToTray.value = true;
+        fields.minimizeToTray.value.value = true;
       } else {
-        minimizeToTray.value = false;
+        fields.minimizeToTray.value.value = false;
       }
     }
   } catch (error) {
     console.error('Failed to load close behavior preference:', error);
   } finally {
-    isLoadingSettings.value = false; // 结束加载设置
+    isLoadingSettings.value = false;
   }
 
   // 监听关闭偏好变化事件
   handlePreferenceChange = (event: CustomEvent) => {
     const { preference } = event.detail;
-    isLoadingSettings.value = true; // 防止触发保存
+    isLoadingSettings.value = true;
 
-    closeBehaviorPreference.value = preference;
+    fields.closeBehaviorPreference.value.value = preference;
     if (preference === 'minimize') {
-      minimizeToTray.value = true;
+      fields.minimizeToTray.value.value = true;
     } else {
-      minimizeToTray.value = false;
+      fields.minimizeToTray.value.value = false;
     }
 
     isLoadingSettings.value = false;
@@ -145,63 +201,26 @@ const availableTimezones = [
   { value: 'Europe/Berlin', label: '中欧时间 (UTC+1)' },
 ];
 
-const themes = [
-  { value: 'light', label: '浅色', icon: Sun },
-  { value: 'dark', label: '深色', icon: Moon },
-  { value: 'system', label: '跟随系统', icon: Monitor },
-];
-
-async function handleLocaleChange() {
-  await localeStore.setLocale(selectedLocale.value);
-}
-
-async function handleThemeChange(theme: string) {
-  selectedTheme.value = theme as 'light' | 'dark' | 'system';
-  await themeStore.setTheme(theme as 'light' | 'dark' | 'system');
-}
+const themes = computed(() => [
+  { value: 'light', label: t('settings.general.themes.light'), icon: Sun },
+  { value: 'dark', label: t('settings.general.themes.dark'), icon: Moon },
+  { value: 'system', label: t('settings.general.themes.system'), icon: Monitor },
+]);
 
 async function handleCloseBehaviorChange() {
   try {
-    await invoke('set_close_behavior_preference', { preference: closeBehaviorPreference.value });
+    await invoke('set_close_behavior_preference', { preference: fields.closeBehaviorPreference.value.value });
   } catch (error) {
     console.error('Failed to save close behavior preference:', error);
   }
 }
 
-function handleSave() {
-  const settings = {
-    locale: selectedLocale.value,
-    timezone: selectedTimezone.value,
-    theme: selectedTheme.value,
-    compactMode: compactMode.value,
-    autoStart: autoStart.value,
-    minimizeToTray: minimizeToTray.value,
-    closeBehaviorPreference: closeBehaviorPreference.value,
-  };
-
-  // 在开发环境下显示设置信息
-  if (import.meta.env?.DEV) {
-    console.warn('保存设置', settings);
-  }
-
-  // TODO: 实现实际的保存逻辑
-  // await saveUserSettings(settings)
-}
-
+// 重置函数使用 resetAll
 async function handleReset() {
-  selectedLocale.value = 'zh-CN';
-  selectedTimezone.value = 'Asia/Shanghai';
-  selectedTheme.value = 'system';
-  compactMode.value = false;
-  autoStart.value = false;
-  minimizeToTray.value = false; // 重置为关闭状态
-  closeBehaviorPreference.value = 'ask'; // 重置为每次询问
+  // 使用自动保存系统的重置功能
+  await resetAll();
 
-  // 重置store中的值
-  await localeStore.setLocale('zh-CN');
-  await themeStore.setTheme('system');
-
-  // 重置关闭行为偏好
+  // 重置 Tauri 特定的关闭行为偏好
   try {
     await invoke('set_close_behavior_preference', { preference: 'ask' });
   } catch (error) {
@@ -215,22 +234,21 @@ async function handleReset() {
     <!-- 语言和地区 -->
     <div class="mb-10">
       <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-6 pb-2 border-b-2 border-gray-200 dark:border-gray-700">
-        语言和地区
+        {{ $t('settings.general.language') }}
       </h3>
 
       <div class="space-y-6">
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between py-6 border-b border-gray-200 dark:border-gray-700">
           <div class="mb-4 sm:mb-0">
-            <label class="block font-medium text-gray-900 dark:text-white mb-1">界面语言</label>
+            <label class="block font-medium text-gray-900 dark:text-white mb-1">{{ $t('settings.general.language') }}</label>
             <p class="text-sm text-gray-600 dark:text-gray-400">
-              选择您偏好的界面语言
+              {{ $t('settings.general.languageDesc') }}
             </p>
           </div>
-          <div class="sm:ml-8">
+          <div class="sm:ml-8 flex items-center gap-2">
             <select
-              v-model="selectedLocale"
+              v-model="fields.locale.value.value"
               class="w-full sm:w-48 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none"
-              @change="handleLocaleChange"
             >
               <option
                 v-for="locale in availableLocales"
@@ -240,19 +258,22 @@ async function handleReset() {
                 {{ locale.name }}
               </option>
             </select>
+            <span v-if="fields.locale.isSaving.value" class="text-xs text-gray-500 whitespace-nowrap">
+              {{ $t('settings.general.saving') }}
+            </span>
           </div>
         </div>
 
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between py-6 border-b border-gray-200 dark:border-gray-700">
           <div class="mb-4 sm:mb-0">
-            <label class="block font-medium text-gray-900 dark:text-white mb-1">时区</label>
+            <label class="block font-medium text-gray-900 dark:text-white mb-1">{{ $t('settings.general.timezone') }}</label>
             <p class="text-sm text-gray-600 dark:text-gray-400">
-              设置您所在的时区
+              {{ $t('settings.general.timezoneDesc') }}
             </p>
           </div>
-          <div class="sm:ml-8">
+          <div class="sm:ml-8 flex items-center gap-2">
             <select
-              v-model="selectedTimezone"
+              v-model="fields.timezone.value.value"
               class="w-full sm:w-48 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none"
             >
               <option
@@ -263,6 +284,9 @@ async function handleReset() {
                 {{ timezone.label }}
               </option>
             </select>
+            <span v-if="fields.timezone.isSaving.value" class="text-xs text-gray-500 whitespace-nowrap">
+              {{ $t('settings.general.saving') }}
+            </span>
           </div>
         </div>
       </div>
@@ -271,53 +295,47 @@ async function handleReset() {
     <!-- 显示设置 -->
     <div class="mb-10">
       <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-6 pb-2 border-b-2 border-gray-200 dark:border-gray-700">
-        显示设置
+        {{ $t('settings.general.theme') }}
       </h3>
 
       <div class="space-y-6">
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between py-6 border-b border-gray-200 dark:border-gray-700">
           <div class="mb-4 sm:mb-0">
-            <label class="block font-medium text-gray-900 dark:text-white mb-1">主题模式</label>
+            <label class="block font-medium text-gray-900 dark:text-white mb-1">{{ $t('settings.general.theme') }}</label>
             <p class="text-sm text-gray-600 dark:text-gray-400">
-              选择浅色或深色主题
+              {{ $t('settings.general.themeDesc') }}
             </p>
           </div>
           <div class="sm:ml-8">
             <div class="flex gap-2">
               <button
-                v-for="theme in themes"
-                :key="theme.value"
+                v-for="themeOption in themes"
+                :key="themeOption.value"
                 class="text-sm font-medium px-4 py-2 border rounded-lg flex items-center gap-2 transition-all"
-                :class="selectedTheme === theme.value
+                :class="fields.theme.value.value === themeOption.value
                   ? 'border-blue-600 bg-blue-600 text-white'
                   : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white hover:border-blue-600 hover:bg-gray-50 dark:hover:bg-gray-700'"
-                @click="handleThemeChange(theme.value)"
+                @click="fields.theme.value.value = themeOption.value"
               >
-                <component :is="theme.icon" class="w-4 h-4" />
-                {{ theme.label }}
+                <component :is="themeOption.icon" class="w-4 h-4" />
+                {{ themeOption.label }}
               </button>
             </div>
+            <span v-if="fields.theme.isSaving.value" class="text-xs text-gray-500 ml-2">
+              {{ $t('settings.general.saving') }}
+            </span>
           </div>
         </div>
 
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between py-6 border-b border-gray-200 dark:border-gray-700">
           <div class="mb-4 sm:mb-0">
-            <label class="block font-medium text-gray-900 dark:text-white mb-1">紧凑模式</label>
+            <label class="block font-medium text-gray-900 dark:text-white mb-1">{{ $t('settings.general.compactMode') }}</label>
             <p class="text-sm text-gray-600 dark:text-gray-400">
-              使用更紧凑的界面布局
+              {{ $t('settings.general.compactModeDesc') }}
             </p>
           </div>
           <div class="sm:ml-8">
-            <label class="inline-flex cursor-pointer items-center relative">
-              <input
-                v-model="compactMode"
-                type="checkbox"
-                class="sr-only peer"
-              >
-              <div class="w-12 h-6 bg-gray-300 dark:bg-gray-600 rounded-full peer peer-checked:bg-blue-600 transition-colors relative">
-                <div class="absolute w-5 h-5 bg-white rounded-full top-0.5 left-0.5 peer-checked:translate-x-6 transition-transform" />
-              </div>
-            </label>
+            <ToggleSwitch v-model="fields.compactMode.value.value" />
           </div>
         </div>
       </div>
@@ -326,28 +344,19 @@ async function handleReset() {
     <!-- 系统设置 -->
     <div class="mb-10">
       <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-6 pb-2 border-b-2 border-gray-200 dark:border-gray-700">
-        系统设置
+        {{ $t('settings.general.title') }}
       </h3>
 
       <div class="space-y-6">
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between py-6 border-b border-gray-200 dark:border-gray-700">
           <div class="mb-4 sm:mb-0">
-            <label class="block font-medium text-gray-900 dark:text-white mb-1">开机自启动</label>
+            <label class="block font-medium text-gray-900 dark:text-white mb-1">{{ $t('settings.general.autoStart') }}</label>
             <p class="text-sm text-gray-600 dark:text-gray-400">
-              系统启动时自动运行应用
+              {{ $t('settings.general.autoStartDesc') }}
             </p>
           </div>
           <div class="sm:ml-8">
-            <label class="inline-flex cursor-pointer items-center relative">
-              <input
-                v-model="autoStart"
-                type="checkbox"
-                class="sr-only peer"
-              >
-              <div class="w-12 h-6 bg-gray-300 dark:bg-gray-600 rounded-full peer peer-checked:bg-blue-600 transition-colors relative">
-                <div class="absolute w-5 h-5 bg-white rounded-full top-0.5 left-0.5 peer-checked:translate-x-6 transition-transform" />
-              </div>
-            </label>
+            <ToggleSwitch v-model="fields.autoStart.value.value" />
           </div>
         </div>
 
@@ -355,37 +364,27 @@ async function handleReset() {
         <template v-if="isDesktopPlatform">
           <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between py-6 border-b border-gray-200 dark:border-gray-700">
             <div class="mb-4 sm:mb-0">
-              <label class="block font-medium text-gray-900 dark:text-white mb-1">最小化到系统托盘</label>
+              <label class="block font-medium text-gray-900 dark:text-white mb-1">{{ $t('settings.general.minimizeToTray') }}</label>
               <p class="text-sm text-gray-600 dark:text-gray-400">
-                关闭窗口时最小化到系统托盘
+                {{ $t('settings.general.minimizeToTrayDesc') }}
               </p>
             </div>
             <div class="sm:ml-8">
-              <label class="inline-flex cursor-pointer items-center relative">
-                <input
-                  v-model="minimizeToTray"
-                  type="checkbox"
-                  class="sr-only peer"
-                >
-                <div class="w-12 h-6 bg-gray-300 dark:bg-gray-600 rounded-full peer peer-checked:bg-blue-600 transition-colors relative">
-                  <div class="absolute w-5 h-5 bg-white rounded-full top-0.5 left-0.5 peer-checked:translate-x-6 transition-transform" />
-                </div>
-              </label>
+              <ToggleSwitch v-model="fields.minimizeToTray.value.value" />
             </div>
           </div>
 
           <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between py-6 border-b border-gray-200 dark:border-gray-700">
             <div class="mb-4 sm:mb-0">
-              <label class="block font-medium text-gray-900 dark:text-white mb-1">关闭行为偏好</label>
+              <label class="block font-medium text-gray-900 dark:text-white mb-1">{{ $t('settings.general.closeBehavior') }}</label>
               <p class="text-sm text-gray-600 dark:text-gray-400">
-                设置点击关闭按钮时的默认行为
+                {{ $t('settings.general.closeBehaviorDesc') }}
               </p>
             </div>
             <div class="sm:ml-8">
               <select
-                v-model="closeBehaviorPreference"
+                v-model="fields.closeBehaviorPreference.value.value"
                 class="w-full sm:w-48 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none"
-                @change="handleCloseBehaviorChange"
               >
                 <option
                   v-for="option in closeBehaviorOptions"
@@ -404,19 +403,19 @@ async function handleReset() {
     <!-- 操作按钮 -->
     <div class="pt-8 border-t border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row gap-4">
       <button
-        class="flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
-        @click="handleSave"
-      >
-        <Save class="w-4 h-4" />
-        保存设置
-      </button>
-      <button
-        class="flex items-center justify-center gap-2 px-6 py-3 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-900 dark:text-white font-medium rounded-lg transition-colors"
+        :disabled="isSaving"
+        class="flex items-center justify-center gap-2 px-6 py-3 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-900 dark:text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         @click="handleReset"
       >
         <RotateCcw class="w-4 h-4" />
-        重置为默认
+        {{ $t('settings.general.resetSettings') }}
       </button>
+      
+      <!-- 全局保存状态提示 -->
+      <div v-if="isSaving" class="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+        <span class="animate-spin">⏳</span>
+        <span class="text-sm">{{ $t('settings.general.saving') }}</span>
+      </div>
     </div>
   </div>
 </template>

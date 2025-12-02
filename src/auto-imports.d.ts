@@ -18,6 +18,7 @@ declare global {
   const asyncComputed: typeof import('@vueuse/core')['asyncComputed']
   const authStore: typeof import('./stores/auth')['authStore']
   const autoResetRef: typeof import('@vueuse/core')['autoResetRef']
+  const clearAllSettingsCache: typeof import('./composables/useSettingsCache')['clearAllSettingsCache']
   const compareTodos: typeof import('./stores/todoStore')['compareTodos']
   const computed: typeof import('vue')['computed']
   const computedAsync: typeof import('@vueuse/core')['computedAsync']
@@ -27,6 +28,7 @@ declare global {
   const controlledComputed: typeof import('@vueuse/core')['controlledComputed']
   const controlledRef: typeof import('@vueuse/core')['controlledRef']
   const createApp: typeof import('vue')['createApp']
+  const createDatabaseSetting: typeof import('./composables/useAutoSaveSettings')['createDatabaseSetting']
   const createEventHook: typeof import('@vueuse/core')['createEventHook']
   const createFieldValidator: typeof import('./composables/useFormValidation')['createFieldValidator']
   const createGlobalState: typeof import('@vueuse/core')['createGlobalState']
@@ -36,6 +38,8 @@ declare global {
   const createRef: typeof import('@vueuse/core')['createRef']
   const createReusableTemplate: typeof import('@vueuse/core')['createReusableTemplate']
   const createSharedComposable: typeof import('@vueuse/core')['createSharedComposable']
+  const createSimpleSetting: typeof import('./composables/useAutoSaveSettings')['createSimpleSetting']
+  const createTauriSetting: typeof import('./composables/useAutoSaveSettings')['createTauriSetting']
   const createTemplatePromise: typeof import('@vueuse/core')['createTemplatePromise']
   const createUnrefFn: typeof import('@vueuse/core')['createUnrefFn']
   const customRef: typeof import('vue')['customRef']
@@ -56,6 +60,7 @@ declare global {
   const getCurrentUser: typeof import('./stores/auth')['getCurrentUser']
   const getLocaleFlag: typeof import('./stores/locales')['getLocaleFlag']
   const getLocaleName: typeof import('./stores/locales')['getLocaleName']
+  const getSettingsCacheManager: typeof import('./composables/useSettingsCache')['getSettingsCacheManager']
   const getSupportedLocales: typeof import('./stores/locales')['getSupportedLocales']
   const h: typeof import('vue')['h']
   const ignorableWatch: typeof import('@vueuse/core')['ignorableWatch']
@@ -178,6 +183,7 @@ declare global {
   const useAuthGuard: typeof import('./composables/useAuthGuard')['useAuthGuard']
   const useAuthPermission: typeof import('./composables/useAuthPermission')['useAuthPermission']
   const useAuthStore: typeof import('./stores/auth')['useAuthStore']
+  const useAutoSaveSettings: typeof import('./composables/useAutoSaveSettings')['useAutoSaveSettings']
   const useBase64: typeof import('@vueuse/core')['useBase64']
   const useBattery: typeof import('@vueuse/core')['useBattery']
   const useBluetooth: typeof import('@vueuse/core')['useBluetooth']
@@ -308,6 +314,7 @@ declare global {
   const useScroll: typeof import('@vueuse/core')['useScroll']
   const useScrollLock: typeof import('@vueuse/core')['useScrollLock']
   const useSessionStorage: typeof import('@vueuse/core')['useSessionStorage']
+  const useSettingsCache: typeof import('./composables/useSettingsCache')['useSettingsCache']
   const useShare: typeof import('@vueuse/core')['useShare']
   const useSlots: typeof import('vue')['useSlots']
   const useSort: typeof import('./composables/useSortable')['useSort']
@@ -406,6 +413,9 @@ declare global {
   export type { AuthGuardOptions } from './composables/useAuthGuard'
   import('./composables/useAuthGuard')
   // @ts-ignore
+  export type { SettingField, AutoSaveSettingsConfig } from './composables/useAutoSaveSettings'
+  import('./composables/useAutoSaveSettings')
+  // @ts-ignore
   export type { BudgetStatsState, BudgetStatsFilters } from './composables/useBudgetStats'
   import('./composables/useBudgetStats')
   // @ts-ignore
@@ -417,6 +427,9 @@ declare global {
   // @ts-ignore
   export type { KeyboardShortcut } from './composables/useKeyboardShortcuts'
   import('./composables/useKeyboardShortcuts')
+  // @ts-ignore
+  export type { SettingsConfig } from './composables/useSettingsCache'
+  import('./composables/useSettingsCache')
   // @ts-ignore
   export type { SplitType, SplitResult } from './composables/useSplitCalculator'
   import('./composables/useSplitCalculator')
@@ -439,6 +452,7 @@ declare module 'vue' {
     readonly acceptHMRUpdate: UnwrapRef<typeof import('pinia')['acceptHMRUpdate']>
     readonly asyncComputed: UnwrapRef<typeof import('@vueuse/core')['asyncComputed']>
     readonly autoResetRef: UnwrapRef<typeof import('@vueuse/core')['autoResetRef']>
+    readonly clearAllSettingsCache: UnwrapRef<typeof import('./composables/useSettingsCache')['clearAllSettingsCache']>
     readonly compareTodos: UnwrapRef<typeof import('./stores/todoStore')['compareTodos']>
     readonly computed: UnwrapRef<typeof import('vue')['computed']>
     readonly computedAsync: UnwrapRef<typeof import('@vueuse/core')['computedAsync']>
@@ -448,6 +462,7 @@ declare module 'vue' {
     readonly controlledComputed: UnwrapRef<typeof import('@vueuse/core')['controlledComputed']>
     readonly controlledRef: UnwrapRef<typeof import('@vueuse/core')['controlledRef']>
     readonly createApp: UnwrapRef<typeof import('vue')['createApp']>
+    readonly createDatabaseSetting: UnwrapRef<typeof import('./composables/useAutoSaveSettings')['createDatabaseSetting']>
     readonly createEventHook: UnwrapRef<typeof import('@vueuse/core')['createEventHook']>
     readonly createFieldValidator: UnwrapRef<typeof import('./composables/useFormValidation')['createFieldValidator']>
     readonly createGlobalState: UnwrapRef<typeof import('@vueuse/core')['createGlobalState']>
@@ -457,6 +472,8 @@ declare module 'vue' {
     readonly createRef: UnwrapRef<typeof import('@vueuse/core')['createRef']>
     readonly createReusableTemplate: UnwrapRef<typeof import('@vueuse/core')['createReusableTemplate']>
     readonly createSharedComposable: UnwrapRef<typeof import('@vueuse/core')['createSharedComposable']>
+    readonly createSimpleSetting: UnwrapRef<typeof import('./composables/useAutoSaveSettings')['createSimpleSetting']>
+    readonly createTauriSetting: UnwrapRef<typeof import('./composables/useAutoSaveSettings')['createTauriSetting']>
     readonly createTemplatePromise: UnwrapRef<typeof import('@vueuse/core')['createTemplatePromise']>
     readonly createUnrefFn: UnwrapRef<typeof import('@vueuse/core')['createUnrefFn']>
     readonly customRef: UnwrapRef<typeof import('vue')['customRef']>
@@ -477,6 +494,7 @@ declare module 'vue' {
     readonly getCurrentUser: UnwrapRef<typeof import('./stores/auth')['getCurrentUser']>
     readonly getLocaleFlag: UnwrapRef<typeof import('./stores/locales')['getLocaleFlag']>
     readonly getLocaleName: UnwrapRef<typeof import('./stores/locales')['getLocaleName']>
+    readonly getSettingsCacheManager: UnwrapRef<typeof import('./composables/useSettingsCache')['getSettingsCacheManager']>
     readonly getSupportedLocales: UnwrapRef<typeof import('./stores/locales')['getSupportedLocales']>
     readonly h: UnwrapRef<typeof import('vue')['h']>
     readonly ignorableWatch: UnwrapRef<typeof import('@vueuse/core')['ignorableWatch']>
@@ -597,6 +615,7 @@ declare module 'vue' {
     readonly useAuthGuard: UnwrapRef<typeof import('./composables/useAuthGuard')['useAuthGuard']>
     readonly useAuthPermission: UnwrapRef<typeof import('./composables/useAuthPermission')['useAuthPermission']>
     readonly useAuthStore: UnwrapRef<typeof import('./stores/auth')['useAuthStore']>
+    readonly useAutoSaveSettings: UnwrapRef<typeof import('./composables/useAutoSaveSettings')['useAutoSaveSettings']>
     readonly useBase64: UnwrapRef<typeof import('@vueuse/core')['useBase64']>
     readonly useBattery: UnwrapRef<typeof import('@vueuse/core')['useBattery']>
     readonly useBluetooth: UnwrapRef<typeof import('@vueuse/core')['useBluetooth']>
@@ -725,6 +744,7 @@ declare module 'vue' {
     readonly useScroll: UnwrapRef<typeof import('@vueuse/core')['useScroll']>
     readonly useScrollLock: UnwrapRef<typeof import('@vueuse/core')['useScrollLock']>
     readonly useSessionStorage: UnwrapRef<typeof import('@vueuse/core')['useSessionStorage']>
+    readonly useSettingsCache: UnwrapRef<typeof import('./composables/useSettingsCache')['useSettingsCache']>
     readonly useShare: UnwrapRef<typeof import('@vueuse/core')['useShare']>
     readonly useSlots: UnwrapRef<typeof import('vue')['useSlots']>
     readonly useSort: UnwrapRef<typeof import('./composables/useSortable')['useSort']>
