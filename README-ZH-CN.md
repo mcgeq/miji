@@ -89,6 +89,36 @@ npm run lint         # 代码检查
 npm run test         # 运行测试
 ```
 
+### 版本控制
+
+项目支持 **Jujutsu** 和 **Git** 双版本控制系统（colocate 模式）：
+
+```bash
+# 使用 Jujutsu（推荐）
+jj status           # 查看状态
+jj commit -m "msg"  # 提交变更
+jj git push         # 推送到 GitHub
+
+# 或使用 Git（传统方式）
+git status
+git commit -m "msg"
+git push
+```
+
+**新电脑或新克隆仓库？**
+```bash
+git clone https://github.com/mcgeq/miji.git
+cd miji
+jj git init --colocate  # 初始化 Jujutsu
+jj bookmark track main@origin
+# ✅ 所有历史自动从 .git/ 导入，不会丢失！
+```
+
+📖 详细指南：
+- [快速参考](./docs/JUJUTSU_QUICK_REFERENCE.md) - 速查表 ⭐
+- [新电脑设置](./docs/JUJUTSU_NEW_MACHINE_SETUP.md) - 换电脑必读
+- [分支操作](./docs/JUJUTSU_BRANCH_GUIDE.md) - 分支管理
+
 ## 📂 结构
 
 ```

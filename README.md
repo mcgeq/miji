@@ -89,6 +89,36 @@ npm run lint         # Code linting
 npm run test         # Run tests
 ```
 
+### Version Control
+
+This project supports both **Jujutsu** and **Git** version control systems (colocate mode):
+
+```bash
+# Using Jujutsu (Recommended)
+jj status           # View status
+jj commit -m "msg"  # Commit changes
+jj git push         # Push to GitHub
+
+# Or using Git (Traditional)
+git status
+git commit -m "msg"
+git push
+```
+
+**New machine or fresh clone?**
+```bash
+git clone https://github.com/mcgeq/miji.git
+cd miji
+jj git init --colocate  # Initialize Jujutsu
+jj bookmark track main@origin
+# ✅ All history auto-imported from .git/, nothing lost!
+```
+
+📖 Guides:
+- [Quick Reference](./docs/JUJUTSU_QUICK_REFERENCE.md) - Cheat sheet ⭐
+- [New Machine Setup](./docs/JUJUTSU_NEW_MACHINE_SETUP.md) - Must read
+- [Branch Operations](./docs/JUJUTSU_BRANCH_GUIDE.md) - Branch management
+
 ## 📂 Structure
 
 ```
