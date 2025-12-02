@@ -12,6 +12,7 @@ import {
 import { useI18n } from 'vue-i18n';
 import { useAutoSaveSettings, createDatabaseSetting } from '@/composables/useAutoSaveSettings';
 import ToggleSwitch from '@/components/ToggleSwitch.vue';
+import Modal from '@/components/ui/Modal.vue';
 import { useAuthStore } from '@/stores/auth';
 import { toast } from '@/utils/toast';
 
@@ -319,84 +320,84 @@ async function handleReset() {
     </div>
 
     <!-- 操作按钮 -->
-    <div class="pt-8 border-t border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row gap-4">
+    <div class="pt-8 border-t border-gray-200 dark:border-gray-700 flex justify-center gap-4">
       <button
-        class="flex items-center justify-center gap-2 px-6 py-3 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-900 dark:text-white font-medium rounded-lg transition-colors"
+        :title="$t('settings.general.resetSettings')"
+        class="flex items-center justify-center w-12 h-12 rounded-full bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-900 dark:text-white transition-colors"
         @click="handleReset"
       >
-        <RotateCcw class="w-4 h-4" />
-        {{ $t('settings.general.resetSettings') }}
+        <RotateCcw class="w-5 h-5" />
       </button>
-      <span v-if="isSaving" class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-        <span class="inline-block w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
-        {{ $t('settings.general.saving') }}
-      </span>
-    </div>
-
-    <!-- 修改密码对话框 -->
-    <div v-if="showChangePassword" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div class="w-full max-w-md bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-6">
-        <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-6">
-          {{ $t('settings.security.changePasswordDialog.title') }}
-        </h3>
-        <form class="space-y-4" @submit.prevent="handleChangePassword">
-          <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">{{ $t('settings.security.changePasswordDialog.currentPassword') }}</label>
-            <input
-              v-model="passwordForm.current"
-              type="password"
-              class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none"
-              required
-            >
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">{{ $t('settings.security.changePasswordDialog.newPassword') }}</label>
-            <input
-              v-model="passwordForm.new"
-              type="password"
-              class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none"
-              required
-            >
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">{{ $t('settings.security.changePasswordDialog.confirmPassword') }}</label>
-            <input
-              v-model="passwordForm.confirm"
-              type="password"
-              class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none"
-              required
-            >
-          </div>
-          <div class="flex gap-3 pt-4">
-            <button
-              type="button"
-              class="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-900 dark:text-white rounded-lg transition-colors"
-              @click="showChangePassword = false"
-            >
-              {{ $t('settings.security.changePasswordDialog.cancel') }}
-            </button>
-            <button
-              type="submit"
-              class="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
-            >
-              {{ $t('settings.security.changePasswordDialog.confirm') }}
-            </button>
-          </div>
-        </form>
+      <div v-if="isSaving" class="flex items-center justify-center w-12 h-12 text-gray-600 dark:text-gray-400">
+        <span class="animate-spin text-xl">⏳</span>
       </div>
     </div>
 
+    <!-- 修改密码对话框 -->
+    <Modal
+      :open="showChangePassword"
+      :title="$t('settings.security.changePasswordDialog.title')"
+      size="md"
+      @close="showChangePassword = false"
+      @confirm="handleChangePassword"
+      @cancel="showChangePassword = false"
+    >
+      <form class="space-y-4" @submit.prevent="handleChangePassword">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+            {{ $t('settings.security.changePasswordDialog.currentPassword') }}
+          </label>
+          <input
+            v-model="passwordForm.current"
+            type="password"
+            class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none"
+            required
+          >
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+            {{ $t('settings.security.changePasswordDialog.newPassword') }}
+          </label>
+          <input
+            v-model="passwordForm.new"
+            type="password"
+            class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none"
+            required
+          >
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+            {{ $t('settings.security.changePasswordDialog.confirmPassword') }}
+          </label>
+          <input
+            v-model="passwordForm.confirm"
+            type="password"
+            class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none"
+            required
+          >
+        </div>
+      </form>
+    </Modal>
+
     <!-- 删除账户确认对话框 -->
-    <div v-if="showDeleteAccount" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div class="w-full max-w-md bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-6">
-        <h3 class="text-xl font-semibold text-red-600 dark:text-red-400 mb-4">
-          {{ $t('settings.security.deleteAccountDialog.title') }}
-        </h3>
-        <p class="text-sm text-gray-700 dark:text-gray-300 mb-6 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+    <Modal
+      :open="showDeleteAccount"
+      :title="$t('settings.security.deleteAccountDialog.title')"
+      size="md"
+      show-delete
+      :confirm-disabled="deleteConfirmEmail !== user?.email"
+      @close="showDeleteAccount = false"
+      @delete="handleDeleteAccount"
+      @cancel="showDeleteAccount = false"
+    >
+      <div class="space-y-4">
+        <p class="text-sm text-gray-700 dark:text-gray-300 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
           {{ $t('settings.security.deleteAccountDialog.warning') }}
         </p>
-        <div class="mb-6">
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">{{ $t('settings.security.deleteAccountDialog.confirmPlaceholder') }}</label>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+            {{ $t('settings.security.deleteAccountDialog.confirmPlaceholder') }}
+          </label>
           <input
             v-model="deleteConfirmEmail"
             type="email"
@@ -404,22 +405,7 @@ async function handleReset() {
             :placeholder="user?.email || ''"
           >
         </div>
-        <div class="flex gap-3">
-          <button
-            class="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-900 dark:text-white rounded-lg transition-colors"
-            @click="showDeleteAccount = false"
-          >
-            {{ $t('settings.security.deleteAccountDialog.cancel') }}
-          </button>
-          <button
-            class="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            :disabled="deleteConfirmEmail !== user?.email"
-            @click="handleDeleteAccount"
-          >
-            {{ $t('settings.security.deleteAccountDialog.confirmDelete') }}
-          </button>
-        </div>
       </div>
-    </div>
+    </Modal>
   </div>
 </template>

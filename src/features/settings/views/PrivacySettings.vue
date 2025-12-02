@@ -12,6 +12,7 @@ import {
 import { useI18n } from 'vue-i18n';
 import { useAutoSaveSettings, createDatabaseSetting } from '@/composables/useAutoSaveSettings';
 import ToggleSwitch from '@/components/ToggleSwitch.vue';
+import Modal from '@/components/ui/Modal.vue';
 import { toast } from '@/utils/toast';
 
 const { t } = useI18n();
@@ -355,38 +356,42 @@ async function handleReset() {
       </div>
     </div>
     <!-- 操作按钮 -->
-    <div class="pt-8 border-t border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row gap-4">
+    <div class="pt-8 border-t border-gray-200 dark:border-gray-700 flex justify-center gap-4">
       <button
-        class="flex items-center justify-center gap-2 px-6 py-3 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-900 dark:text-white font-medium rounded-lg transition-colors"
+        :title="$t('settings.general.resetSettings')"
+        class="flex items-center justify-center w-12 h-12 rounded-full bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-900 dark:text-white transition-colors"
         @click="handleReset"
       >
-        <RotateCcw class="w-4 h-4" />
-        {{ $t('settings.general.resetSettings') }}
+        <RotateCcw class="w-5 h-5" />
       </button>
       <button
-        class="flex items-center justify-center gap-2 px-6 py-3 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-900 dark:text-white font-medium rounded-lg transition-colors"
+        :title="$t('settings.privacy.downloadData')"
+        class="flex items-center justify-center w-12 h-12 rounded-full border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-900 dark:text-white transition-colors"
         @click="requestDataExport"
       >
-        <Download class="w-4 h-4" />
-        {{ $t('settings.privacy.downloadData') }}
+        <Download class="w-5 h-5" />
       </button>
-      <span v-if="isSaving" class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-        <span class="inline-block w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
-        {{ $t('settings.general.saving') }}
-      </span>
+      <div v-if="isSaving" class="flex items-center justify-center w-12 h-12 text-gray-600 dark:text-gray-400">
+        <span class="animate-spin text-xl">⏳</span>
+      </div>
     </div>
 
     <!-- 清除数据对话框 -->
-    <div v-if="showClearData" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div class="w-full max-w-md bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-6">
-        <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-          {{ $t('settings.privacy.clearDataDialog.title') }}
-        </h3>
-        <p class="text-sm text-gray-600 dark:text-gray-400 mb-6">
+    <Modal
+      :open="showClearData"
+      :title="$t('settings.privacy.clearDataDialog.title')"
+      size="md"
+      show-delete
+      @close="showClearData = false"
+      @delete="clearSelectedData"
+      @cancel="showClearData = false"
+    >
+      <div class="space-y-4">
+        <p class="text-sm text-gray-600 dark:text-gray-400">
           {{ $t('settings.privacy.clearDataDialog.description') }}
         </p>
 
-        <div class="space-y-3 mb-6">
+        <div class="space-y-3">
           <label
             v-for="dataType in clearDataTypes"
             :key="dataType.id"
@@ -404,22 +409,7 @@ async function handleReset() {
             </div>
           </label>
         </div>
-
-        <div class="flex gap-3">
-          <button
-            class="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-900 dark:text-white rounded-lg transition-colors"
-            @click="showClearData = false"
-          >
-            {{ $t('settings.privacy.clearDataDialog.cancel') }}
-          </button>
-          <button
-            class="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
-            @click="clearSelectedData"
-          >
-            {{ $t('settings.privacy.clearDataDialog.clear') }}
-          </button>
-        </div>
       </div>
-    </div>
+    </Modal>
   </div>
 </template>

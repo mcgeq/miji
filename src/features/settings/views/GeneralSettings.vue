@@ -401,20 +401,19 @@ async function handleReset() {
     </div>
 
     <!-- 操作按钮 -->
-    <div class="pt-8 border-t border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row gap-4">
+    <div class="pt-8 border-t border-gray-200 dark:border-gray-700 flex justify-center gap-4">
       <button
         :disabled="isSaving"
-        class="flex items-center justify-center gap-2 px-6 py-3 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-900 dark:text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        :title="$t('settings.general.resetSettings')"
+        class="flex items-center justify-center w-12 h-12 rounded-full border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-900 dark:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         @click="handleReset"
       >
-        <RotateCcw class="w-4 h-4" />
-        {{ $t('settings.general.resetSettings') }}
+        <RotateCcw class="w-5 h-5" />
       </button>
       
       <!-- 全局保存状态提示 -->
-      <div v-if="isSaving" class="flex items-center gap-2 text-gray-600 dark:text-gray-400">
-        <span class="animate-spin">⏳</span>
-        <span class="text-sm">{{ $t('settings.general.saving') }}</span>
+      <div v-if="isSaving" class="flex items-center justify-center w-12 h-12 text-gray-600 dark:text-gray-400">
+        <span class="animate-spin text-xl">⏳</span>
       </div>
     </div>
   </div>
