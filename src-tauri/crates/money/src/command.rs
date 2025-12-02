@@ -34,7 +34,6 @@ use crate::{
         family_member::{
             FamilyMemberCreate, FamilyMemberResponse, FamilyMemberUpdate, FamilyMemberSearchQuery, FamilyMemberSearchResponse
         },
-        migration::MigrationResult,
         installment::{
             InstallmentCalculationRequest, InstallmentCalculationResponse, InstallmentPlanResponse,
         },
@@ -2526,9 +2525,13 @@ pub async fn family_ledger_detail(
 // ============================================================================
 
 // ============================================================================
-// 数据迁移相关
+// 数据迁移相关 - 已废弃
 // ============================================================================
+// 注意：此功能已废弃，split_members 字段已从数据库中完全移除
+// 所有新数据直接使用 split_records 和 split_record_details 表
+// 相关前端 UI 保留但功能已禁用
 
+/* 已废弃 - 注释掉以避免编译错误
 /// 迁移历史交易的 split_members 到 split_records 表
 #[tauri::command]
 #[instrument]
@@ -2598,6 +2601,7 @@ pub async fn get_split_records_stats(
     info!("Split records stats: {:?}", stats);
     Ok(ApiResponse::success(stats))
 }
+*/
 
 // ============================================================================
 // end 数据迁移相关
