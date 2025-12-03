@@ -1,15 +1,15 @@
 <script setup lang="ts">
-import TagsView from '@/features/tags/views/TagsView.vue';
-
+// 重定向到统一的数据字典管理页面
 definePage({
   name: 'tags',
   meta: {
     requiresAuth: true,
     layout: 'default',
   },
+  redirect: '/dictionaries',
 });
 </script>
 
 <template>
-  <TagsView />
+  <div />
 </template>

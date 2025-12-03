@@ -22,6 +22,7 @@ declare module 'vue-router/auto-routes' {
     'auth-login': RouteRecordInfo<'auth-login', '/auth/login', Record<never, never>, Record<never, never>>,
     'auth-register': RouteRecordInfo<'auth-register', '/auth/register', Record<never, never>, Record<never, never>>,
     'budget-stats': RouteRecordInfo<'budget-stats', '/budget-stats', Record<never, never>, Record<never, never>>,
+    'dictionaries': RouteRecordInfo<'dictionaries', '/dictionaries', Record<never, never>, Record<never, never>>,
     'family-ledger': RouteRecordInfo<'family-ledger', '/family-ledger', Record<never, never>, Record<never, never>, 'family-ledger-detail' | 'family-member-detail'>,
     'family-ledger-detail': RouteRecordInfo<'family-ledger-detail', '/family-ledger/:serialNum', { serialNum: ParamValue<true> }, { serialNum: ParamValue<false> }>,
     'family-member-detail': RouteRecordInfo<'family-member-detail', '/family-ledger/member/:memberSerialNum', { memberSerialNum: ParamValue<true> }, { memberSerialNum: ParamValue<false> }>,
