@@ -2,7 +2,9 @@
 import { Plus, RefreshCw } from 'lucide-vue-next';
 import { useCategoryStore } from '@/stores/money';
 import CategoryItem from '../components/CategoryItem.vue';
+import CategoryAddModal from '../components/CategoryAddModal.vue';
 import type { Category } from '@/schema/money/category';
+import { toast } from '@/utils/toast';
 
 const categoryStore = useCategoryStore();
 
@@ -22,10 +24,25 @@ async function refresh() {
   }
 }
 
-// 添加新分类
-function addCategory() {
-  // TODO: 实现添加分类的逻辑（需要后端 API 支持）
-  console.log('添加分类');
+// 添加分类模态框
+const showAddModal = ref(false);
+
+function openAddModal() {
+  showAddModal.value = true;
+}
+
+async function handleAddCategory(name: string, icon: string) {
+  try {
+    // TODO: 调用后端 API 添加分类
+    console.log('添加分类:', { name, icon });
+    toast.success(`分类 "${name}" 添加成功`);
+    showAddModal.value = false;
+    // 刷新列表
+    await refresh();
+  } catch (error: any) {
+    console.error('添加分类失败:', error);
+    toast.error(error.message || '添加分类失败');
+  }
 }
 
 // 更新分类
@@ -63,12 +80,19 @@ function removeCategory(category: Category) {
         <button
           class="p-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
           title="添加分类"
-          @click="addCategory"
+          @click="openAddModal"
         >
           <Plus class="w-4 h-4" />
         </button>
       </div>
     </div>
+
+    <!-- 添加分类模态框 -->
+    <CategoryAddModal
+      :open="showAddModal"
+      @close="showAddModal = false"
+      @confirm="handleAddCategory"
+    />
 
     <!-- 加载状态 -->
     <div v-if="categoryStore.loading" class="text-center py-8 text-gray-500">

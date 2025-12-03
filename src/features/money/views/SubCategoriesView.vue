@@ -2,7 +2,9 @@
 import { ChevronDown, ChevronRight, ChevronsDown, ChevronsUp, Plus, RefreshCw } from 'lucide-vue-next';
 import { useCategoryStore } from '@/stores/money';
 import SubCategoryItem from '../components/SubCategoryItem.vue';
+import SubCategoryAddModal from '../components/SubCategoryAddModal.vue';
 import type { SubCategory } from '@/schema/money/category';
+import { toast } from '@/utils/toast';
 
 const categoryStore = useCategoryStore();
 
@@ -69,10 +71,37 @@ function collapseAll() {
   expandedCategories.value.clear();
 }
 
-// 添加新子分类
-function addSubCategory(categoryName: string) {
-  // TODO: 实现添加子分类的逻辑（需要后端 API 支持）
-  console.log('添加子分类到', categoryName);
+// 添加子分类模态框
+const showAddModal = ref(false);
+const selectedCategoryForAdd = ref('');
+const showCategorySelector = ref(false);
+
+// 从特定分类打开添加模态框
+function openAddModal(categoryName: string) {
+  selectedCategoryForAdd.value = categoryName;
+  showCategorySelector.value = false;
+  showAddModal.value = true;
+}
+
+// 全局添加按钮打开模态框（需要选择父分类）
+function openGlobalAddModal() {
+  selectedCategoryForAdd.value = '';
+  showCategorySelector.value = true;
+  showAddModal.value = true;
+}
+
+async function handleAddSubCategory(name: string, icon: string, categoryName: string) {
+  try {
+    // TODO: 调用后端 API 添加子分类
+    console.log('添加子分类:', { name, icon, categoryName });
+    toast.success(`子分类 "${name}" 添加成功`);
+    showAddModal.value = false;
+    // 刷新列表
+    await refresh();
+  } catch (error: any) {
+    console.error('添加子分类失败:', error);
+    toast.error(error.message || '添加子分类失败');
+  }
 }
 
 // 更新子分类
@@ -124,6 +153,13 @@ function removeSubCategory(subCategory: SubCategory) {
         >
           <RefreshCw class="w-4 h-4" :class="{ 'animate-spin': isRefreshing }" />
         </button>
+        <button
+          class="p-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+          title="添加子分类"
+          @click="openGlobalAddModal"
+        >
+          <Plus class="w-4 h-4" />
+        </button>
       </div>
     </div>
 
@@ -165,7 +201,7 @@ function removeSubCategory(subCategory: SubCategory) {
           <button
             class="p-1.5 bg-green-500 text-white rounded hover:bg-green-600 transition-colors"
             title="添加子分类"
-            @click.stop="addSubCategory(category.name)"
+            @click.stop="openAddModal(category.name)"
           >
             <Plus class="w-3.5 h-3.5" />
           </button>
@@ -195,5 +231,15 @@ function removeSubCategory(subCategory: SubCategory) {
         </div>
       </div>
     </div>
+
+    <!-- 添加子分类模态框 -->
+    <SubCategoryAddModal
+      :open="showAddModal"
+      :category-name="selectedCategoryForAdd ? selectedCategoryForAdd : undefined"
+      :categories="categoryStore.categories"
+      :show-category-selector="showCategorySelector"
+      @close="showAddModal = false"
+      @confirm="handleAddSubCategory"
+    />
   </div>
 </template>
