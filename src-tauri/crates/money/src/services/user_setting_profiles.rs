@@ -4,8 +4,8 @@ use common::{
     BusinessCode,
 };
 use sea_orm::{
-    ActiveModelTrait, ActiveValue::Set, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter,
-    QueryOrder,
+    ActiveModelTrait, ActiveValue::Set, ColumnTrait, DatabaseConnection, EntityTrait,
+    IntoActiveModel, QueryFilter, QueryOrder,
 };
 use serde_json::Value as JsonValue;
 use tracing::{debug, info};
