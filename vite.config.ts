@@ -97,10 +97,11 @@ export default defineConfig({
     },
   },
   build: {
-    rollupOptions: {
+    // Vite 8.x: 使用 rolldownOptions 替代 rollupOptions
+    rolldownOptions: {
       output: {
         manualChunks: (id: string) => {
-          // Vite 7.x 优化的 chunk 分割策略
+          // Vite 8.x 优化的 chunk 分割策略
           // 核心Vue相关库
           if (id.includes('vue') && !id.includes('node_modules')) {
             return 'vue-core';
@@ -152,6 +153,10 @@ export default defineConfig({
           }
         },
       },
+      // 确保 JSON 文件作为 JSON 模块处理
+      moduleTypes: {
+        '.json': 'json',
+      },
     },
     // 增加chunk大小警告限制到1.5MB
     chunkSizeWarningLimit: 1500,
@@ -161,7 +166,7 @@ export default defineConfig({
     // 启用CSS代码分割
     cssCodeSplit: true,
   },
-  // 优化依赖预构建 - Vite 7.x 优化
+  // 优化依赖预构建 - Vite 8.x 优化
   optimizeDeps: {
     include: [
       'vue',
@@ -177,7 +182,5 @@ export default defineConfig({
       '@tauri-apps/api',
     ],
     exclude: ['@tauri-apps/api'],
-    // Vite 7.x 新增：强制预构建
-    force: false,
   },
 });
