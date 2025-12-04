@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { Download, FileUp, Plus, Save, Settings, Trash2 } from 'lucide-vue-next';
+import { Download, FileUp, Plus, Settings, Trash2 } from 'lucide-vue-next';
 import { invokeCommand, isBusinessError } from '@/types/api';
 import { toast } from '@/utils/toast';
+import Modal from '@/components/ui/Modal.vue';
 
 interface SettingProfile {
   serialNum: string;
@@ -280,91 +281,58 @@ onMounted(() => {
     </div>
 
     <!-- 新建配置方案模态框 -->
-    <div
-      v-if="showCreateModal"
-      class="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
-      @click.self="showCreateModal = false"
+    <Modal
+      :open="showCreateModal"
+      :title="$t('settings.profiles.createFromCurrent') || '保存当前配置为方案'"
+      size="md"
+      :confirm-disabled="!newProfileName.trim()"
+      @close="showCreateModal = false; newProfileName = ''; newProfileDescription = ''"
+      @confirm="createFromCurrent"
+      @cancel="showCreateModal = false; newProfileName = ''; newProfileDescription = ''"
     >
-      <div class="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
-        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-          {{ $t('settings.profiles.createFromCurrent') || '保存当前配置为方案' }}
-        </h3>
-
-        <div class="space-y-4">
-          <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              {{ $t('settings.profiles.profileName') || '方案名称' }} *
-            </label>
-            <input
-              v-model="newProfileName"
-              type="text"
-              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-              :placeholder="$t('settings.profiles.profileNamePlaceholder') || '例如：工作配置'"
-            >
-          </div>
-
-          <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              {{ $t('settings.profiles.description') || '描述' }}
-            </label>
-            <textarea
-              v-model="newProfileDescription"
-              rows="3"
-              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-              :placeholder="$t('settings.profiles.descriptionPlaceholder') || '可选，描述此配置方案的用途'"
-            />
-          </div>
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            {{ $t('settings.profiles.profileName') || '方案名称' }} *
+          </label>
+          <input
+            v-model="newProfileName"
+            type="text"
+            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            :placeholder="$t('settings.profiles.profileNamePlaceholder') || '例如：工作配置'"
+          >
         </div>
 
-        <div class="flex justify-end gap-3 mt-6">
-          <button
-            class="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-            @click="showCreateModal = false; newProfileName = ''; newProfileDescription = ''"
-          >
-            {{ $t('common.cancel') || '取消' }}
-          </button>
-          <button
-            class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-            :disabled="!newProfileName.trim()"
-            @click="createFromCurrent"
-          >
-            <Save class="w-4 h-4" />
-            {{ $t('common.save') || '保存' }}
-          </button>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            {{ $t('settings.profiles.description') || '描述' }}
+          </label>
+          <textarea
+            v-model="newProfileDescription"
+            rows="3"
+            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            :placeholder="$t('settings.profiles.descriptionPlaceholder') || '可选，描述此配置方案的用途'"
+          />
         </div>
       </div>
-    </div>
+    </Modal>
 
     <!-- 删除确认模态框 -->
-    <div
-      v-if="showDeleteModal && selectedProfile"
-      class="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
-      @click.self="showDeleteModal = false"
+    <Modal
+      v-if="selectedProfile"
+      :open="showDeleteModal"
+      :title="$t('settings.profiles.deleteConfirm') || '确认删除'"
+      size="md"
+      :show-confirm="false"
+      :show-cancel="true"
+      :show-delete="true"
+      @close="showDeleteModal = false; selectedProfile = null"
+      @cancel="showDeleteModal = false; selectedProfile = null"
+      @delete="deleteProfile"
     >
-      <div class="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
-        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-          {{ $t('settings.profiles.deleteConfirm') || '确认删除' }}
-        </h3>
-        <p class="text-gray-600 dark:text-gray-400 mb-6">
-          {{ $t('settings.profiles.deleteMessage') || '确定要删除配置方案' }} "{{ selectedProfile.profileName }}"{{ $t('settings.profiles.deleteMessageEnd') || ' 吗？此操作无法撤销。' }}
-        </p>
-
-        <div class="flex justify-end gap-3">
-          <button
-            class="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-            @click="showDeleteModal = false; selectedProfile = null"
-          >
-            {{ $t('common.cancel') || '取消' }}
-          </button>
-          <button
-            class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2"
-            @click="deleteProfile"
-          >
-            <Trash2 class="w-4 h-4" />
-            {{ $t('common.delete') || '删除' }}
-          </button>
-        </div>
-      </div>
-    </div>
+      <p class="text-gray-600 dark:text-gray-400">
+        {{ $t('settings.profiles.deleteMessage') || '确定要删除配置方案' }} "{{ selectedProfile.profileName }}"{{ $t('settings.profiles.deleteMessageEnd') || ' 吗？此操作无法撤销。' }}
+      </p>
+    </Modal>
   </div>
 </template>
