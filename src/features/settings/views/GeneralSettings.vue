@@ -3,6 +3,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { Monitor, Moon, RotateCcw, Sun } from 'lucide-vue-next';
 import { useI18n } from 'vue-i18n';
 import { useAutoSaveSettings, createDatabaseSetting } from '@/composables/useAutoSaveSettings';
+import { switchLocale } from '@/i18n/i18n';
 import { useLocaleStore } from '@/stores/locales';
 import { useThemeStore } from '@/stores/theme';
 import { isDesktop } from '@/utils/platform';
@@ -16,6 +17,19 @@ const themeStore = useThemeStore();
 // 平台检测
 const isDesktopPlatform = ref(isDesktop());
 
+// 语言映射：将所有语言映射到 i18n 支持的语言
+function mapToSupportedLocale(locale: string): 'zh-CN' | 'en-US' | 'es-ES' {
+  // zh-TW 使用简体中文作为后备
+  if (locale.startsWith('zh')) return 'zh-CN';
+  // ja-JP, ko-KR 使用英文作为后备
+  if (locale === 'ja-JP' || locale === 'ko-KR') return 'en-US';
+  // 默认返回对应的语言或英文
+  if (locale === 'zh-CN' || locale === 'en-US' || locale === 'es-ES') {
+    return locale as 'zh-CN' | 'en-US' | 'es-ES';
+  }
+  return 'en-US';
+}
+
 // 使用自动保存设置系统
 const { fields, isSaving, resetAll, loadAll } = useAutoSaveSettings({
   moduleName: 'general',
@@ -24,7 +38,9 @@ const { fields, isSaving, resetAll, loadAll } = useAutoSaveSettings({
       key: 'settings.general.locale',
       defaultValue: 'zh-CN',
       saveFn: async (val) => {
-        await localeStore.setLocale(val);
+        // 映射到支持的语言并更新 store 和 i18n 实例
+        const mappedLocale = mapToSupportedLocale(val);
+        await switchLocale(mappedLocale);
       },
       loadFn: async () => {
         return localeStore.currentLocale || 'zh-CN';
