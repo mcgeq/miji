@@ -1,12 +1,11 @@
 // src/i18n/i18n.ts
 
 import { createI18n } from 'vue-i18n';
+import enMessagesRaw from '@/locales/en.json?raw';
+import zhMessagesRaw from '@/locales/zh.json?raw';
+import { useLocaleStore } from '@/stores/locales';
 import { Lg } from '@/utils/debugLog';
 import { toast } from '@/utils/toast';
-import { getCurrentLocale, updateLocale } from '../stores/locales';
-// Vite 8.0: 使用 ?raw 导入并手动解析 JSON
-import zhMessagesRaw from '@/locales/zh.json?raw';
-import enMessagesRaw from '@/locales/en.json?raw';
 
 type LocaleType = 'zh-CN' | 'en-US' | 'es-ES';
 
@@ -31,7 +30,8 @@ export async function initI18n() {
   try {
     Lg.i('I18n', '开始初始化国际化...');
 
-    const savedLocale = getCurrentLocale();
+    const localeStore = useLocaleStore();
+    const savedLocale = localeStore.getCurrentLocale();
     const browserLocale = navigator.language;
     const initialLocale = savedLocale || browserLocale || 'zh-CN';
 
@@ -49,7 +49,7 @@ export async function initI18n() {
     i18nInstance.global.locale.value = validLocale;
     Lg.i('I18n', `✓ 当前语言设置为: ${validLocale}`);
 
-    updateLocale(initialLocale);
+    await localeStore.setLocale(initialLocale);
     Lg.i('I18n', '✓ 国际化初始化完成');
 
     return i18nInstance;
@@ -62,17 +62,18 @@ export async function initI18n() {
   }
 }
 
-export function switchLocale(newLocale: LocaleType) {
+export async function switchLocale(newLocale: LocaleType) {
   if (!i18nInstance) {
     toast.error('i18n 尚未初始化');
     return;
   }
 
   try {
+    const localeStore = useLocaleStore();
     // 语言包已预加载，直接切换
     const localeRef = i18nInstance.global.locale as Ref<string>;
     localeRef.value = newLocale;
-    updateLocale(newLocale);
+    await localeStore.setLocale(newLocale);
     toast.success('语言切换成功');
     Lg.i('I18n', `✓ 语言已切换至: ${newLocale}`);
   } catch (error) {
