@@ -196,6 +196,16 @@ pub fn init_commands(builder: Builder<Wry>) -> Builder<Wry> {
         money_cmd::user_setting_delete,
         money_cmd::user_setting_reset_module,
         money_cmd::user_setting_get_all,
+        // Phase 7: 用户设置配置方案命令
+        money_cmd::user_setting_profile_create,
+        money_cmd::user_setting_profile_list,
+        money_cmd::user_setting_profile_get_active,
+        money_cmd::user_setting_profile_switch,
+        money_cmd::user_setting_profile_create_from_current,
+        money_cmd::user_setting_profile_update,
+        money_cmd::user_setting_profile_delete,
+        money_cmd::user_setting_profile_export,
+        money_cmd::user_setting_profile_import,
         // 健康命令
         health_cmd::period_record_create,
         health_cmd::period_record_update,

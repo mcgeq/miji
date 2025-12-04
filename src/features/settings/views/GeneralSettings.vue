@@ -8,6 +8,7 @@ import { useLocaleStore } from '@/stores/locales';
 import { useThemeStore } from '@/stores/theme';
 import { isDesktop } from '@/utils/platform';
 import ToggleSwitch from '@/components/ToggleSwitch.vue';
+import SettingProfileManager from '../components/SettingProfileManager.vue';
 
 const { t } = useI18n();
 
@@ -431,6 +432,11 @@ async function handleReset() {
       <div v-if="isSaving" class="flex items-center justify-center w-12 h-12 text-gray-600 dark:text-gray-400">
         <span class="animate-spin text-xl">⏳</span>
       </div>
+    </div>
+
+    <!-- 配置方案管理 -->
+    <div class="mt-10 pt-10 border-t-2 border-gray-200 dark:border-gray-700">
+      <SettingProfileManager />
     </div>
   </div>
 </template>

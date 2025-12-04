@@ -57,7 +57,8 @@ use crate::{
             TransactionStatsResponse, TransferRequest, UpdateTransactionRequest,
         },
         user_settings::{
-            SaveSettingCommand, UserSettingResponse,
+            CreateUserSettingProfileRequest, SaveSettingCommand, UserSettingProfileResponse,
+            UserSettingResponse,
         },
     },
     services::{
@@ -83,6 +84,7 @@ use crate::{
         sub_categories::{SubCategoryFilter, SubCategoryService},
         transaction::{TransactionFilter, TransactionService},
         user_settings::UserSettingExtService,
+        user_setting_profiles::UserSettingProfileService,
     },
 };
 
@@ -2979,4 +2981,163 @@ pub async fn user_setting_get_all(
 
 // ============================================================================
 // end 用户设置相关
+// ============================================================================
+
+// ============================================================================
+// start 用户设置配置方案相关
+// ============================================================================
+
+/// 创建配置方案
+#[tauri::command]
+#[instrument(skip(state))]
+pub async fn user_setting_profile_create(
+    state: State<'_, AppState>,
+    request: CreateUserSettingProfileRequest,
+) -> Result<ApiResponse<UserSettingProfileResponse>, String> {
+    Ok(ApiResponse::from_result(
+        UserSettingProfileService::create_profile(&state.db, request).await,
+    ))
+}
+
+/// 获取用户的所有配置方案
+#[tauri::command]
+#[instrument(skip(state))]
+pub async fn user_setting_profile_list(
+    state: State<'_, AppState>,
+) -> Result<ApiResponse<Vec<UserSettingProfileResponse>>, String> {
+    // TODO: 从认证系统获取当前用户ID
+    let user_serial_num = "user-default".to_string();
+
+    Ok(ApiResponse::from_result(
+        UserSettingProfileService::get_user_profiles(&state.db, &user_serial_num).await,
+    ))
+}
+
+/// 获取当前激活的配置方案
+#[tauri::command]
+#[instrument(skip(state))]
+pub async fn user_setting_profile_get_active(
+    state: State<'_, AppState>,
+) -> Result<ApiResponse<Option<UserSettingProfileResponse>>, String> {
+    // TODO: 从认证系统获取当前用户ID
+    let user_serial_num = "user-default".to_string();
+
+    Ok(ApiResponse::from_result(
+        UserSettingProfileService::get_active_profile(&state.db, &user_serial_num).await,
+    ))
+}
+
+/// 切换到指定配置方案
+#[tauri::command]
+#[instrument(skip(state))]
+pub async fn user_setting_profile_switch(
+    state: State<'_, AppState>,
+    profile_serial_num: String,
+) -> Result<ApiResponse<UserSettingProfileResponse>, String> {
+    // TODO: 从认证系统获取当前用户ID
+    let user_serial_num = "user-default".to_string();
+
+    Ok(ApiResponse::from_result(
+        UserSettingProfileService::switch_profile(&state.db, &user_serial_num, &profile_serial_num)
+            .await,
+    ))
+}
+
+/// 从当前设置创建配置方案
+#[tauri::command]
+#[instrument(skip(state))]
+pub async fn user_setting_profile_create_from_current(
+    state: State<'_, AppState>,
+    profile_name: String,
+    description: Option<String>,
+) -> Result<ApiResponse<UserSettingProfileResponse>, String> {
+    // TODO: 从认证系统获取当前用户ID
+    let user_serial_num = "user-default".to_string();
+
+    Ok(ApiResponse::from_result(
+        UserSettingProfileService::create_from_current(
+            &state.db,
+            &user_serial_num,
+            profile_name,
+            description,
+        )
+        .await,
+    ))
+}
+
+/// 更新配置方案
+#[tauri::command]
+#[instrument(skip(state))]
+pub async fn user_setting_profile_update(
+    state: State<'_, AppState>,
+    profile_serial_num: String,
+    profile_name: Option<String>,
+    profile_data: Option<JsonValue>,
+    description: Option<String>,
+) -> Result<ApiResponse<UserSettingProfileResponse>, String> {
+    // TODO: 从认证系统获取当前用户ID
+    let user_serial_num = "user-default".to_string();
+
+    Ok(ApiResponse::from_result(
+        UserSettingProfileService::update_profile(
+            &state.db,
+            &user_serial_num,
+            &profile_serial_num,
+            profile_name,
+            profile_data,
+            description,
+        )
+        .await,
+    ))
+}
+
+/// 删除配置方案
+#[tauri::command]
+#[instrument(skip(state))]
+pub async fn user_setting_profile_delete(
+    state: State<'_, AppState>,
+    profile_serial_num: String,
+) -> Result<ApiResponse<bool>, String> {
+    // TODO: 从认证系统获取当前用户ID
+    let user_serial_num = "user-default".to_string();
+
+    Ok(ApiResponse::from_result(
+        UserSettingProfileService::delete_profile(&state.db, &user_serial_num, &profile_serial_num)
+            .await,
+    ))
+}
+
+/// 导出配置方案
+#[tauri::command]
+#[instrument(skip(state))]
+pub async fn user_setting_profile_export(
+    state: State<'_, AppState>,
+    profile_serial_num: String,
+) -> Result<ApiResponse<JsonValue>, String> {
+    // TODO: 从认证系统获取当前用户ID
+    let user_serial_num = "user-default".to_string();
+
+    Ok(ApiResponse::from_result(
+        UserSettingProfileService::export_profile(&state.db, &user_serial_num, &profile_serial_num)
+            .await,
+    ))
+}
+
+/// 导入配置方案
+#[tauri::command]
+#[instrument(skip(state))]
+pub async fn user_setting_profile_import(
+    state: State<'_, AppState>,
+    import_data: JsonValue,
+) -> Result<ApiResponse<UserSettingProfileResponse>, String> {
+    // TODO: 从认证系统获取当前用户ID
+    let user_serial_num = "user-default".to_string();
+
+    Ok(ApiResponse::from_result(
+        UserSettingProfileService::import_profile(&state.db, &user_serial_num, import_data).await,
+    ))
+}
+
+// ============================================================================
+// end 用户设置配置方案相关
 // ============================================================================

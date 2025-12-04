@@ -12,7 +12,7 @@ use sea_orm::{
 };
 use serde::{Deserialize, Serialize};
 use serde_json::Value as JsonValue;
-use tracing::{debug, info, warn};
+use tracing::{debug, info};
 use validator::Validate;
 
 use crate::dto::user_settings::{
