@@ -26,4 +26,8 @@ dist-ssr
 target/*
 
 # Jujutsu version control
-.jj/
+.jj/*
+!.jj/hooks.toml
+!.jj/*.ps1
+!.jj/*.md
+!.jj/.gitkeep
