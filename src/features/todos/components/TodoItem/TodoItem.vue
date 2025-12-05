@@ -13,13 +13,8 @@ import TodoEditDueDateModal from './TodoEditDueDateModal.vue';
 import TodoEditOptionsModal from './TodoEditOptionsModal.vue';
 import TodoEditRepeatModal from './TodoEditRepeatModal.vue';
 import TodoEditTitleModal from './TodoEditTitleModal.vue';
-import TodoEstimate from './TodoEstimate.vue';
-import TodoLocation from './TodoLocation.vue';
-import TodoProgress from './TodoProgress.vue';
-import TodoReminderSettings from './TodoReminderSettings.vue';
-import TodoSmartFeatures from './TodoSmartFeatures.vue';
-import TodoSubtasks from './TodoSubtasks.vue';
 import TodoTitle from './TodoTitle.vue';
+import { useTimeProgress } from '../../composables/useTimeProgress';
 import type { Priority, RepeatPeriod } from '@/schema/common';
 import type { Todo, TodoUpdate } from '@/schema/todos';
 
@@ -34,12 +29,20 @@ const menuStore = useMenuStore();
 // 本地副本，初始值为 props.todo，但后续只通过 updateTodo 更新
 const todoCopy = ref<Todo>({ ...props.todo });
 
+// 时间进度追踪
+const { timeProgress, urgency, refresh: refreshTimeProgress } = useTimeProgress(
+  todoCopy.value.createdAt,
+  todoCopy.value.dueAt,
+);
+
 // 组件挂载时，如果当前任务的菜单是打开的，清除它
 // 这可以防止页面刷新或导航后菜单状态残留
 onMounted(() => {
   if (menuStore.getMenuSerialNum === todoCopy.value.serialNum) {
     menuStore.setMenuSerialNum('');
   }
+  // 刷新时间进度
+  refreshTimeProgress();
 });
 
 // 组件卸载时，如果当前任务的菜单是打开的，关闭它
@@ -88,6 +91,26 @@ const priorityClass = computed(() => {
       return '';
   }
 });
+
+// 优先级边框样式 - 与 PriorityBadge 颜色保持一致
+const priorityBorderClass = computed(() => {
+  if (!todoCopy.value.priority || completed.value) return '';
+
+  const priority = todoCopy.value.priority.toUpperCase();
+  switch (priority) {
+    case 'LOW':
+      return 'border-l-4 !border-l-emerald-500 dark:!border-l-emerald-400';
+    case 'MEDIUM':
+      return 'border-l-4 !border-l-amber-500 dark:!border-l-amber-400';
+    case 'HIGH':
+      return 'border-l-4 !border-l-red-500 dark:!border-l-red-400';
+    case 'URGENT':
+      return 'border-l-4 !border-l-red-600 dark:!border-l-red-500';
+    default:
+      return '';
+  }
+});
+
 
 // 👇 所有修改 todo 都使用这个函数
 function updateTodo(serialNum: string, partial: TodoUpdate) {
@@ -241,11 +264,24 @@ function handleMouseLeave() {
 
 <template>
   <div
-    class="relative w-full mb-1 p-4 md:p-6 lg:p-6 rounded-xl md:rounded-[1.25rem] border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm backdrop-blur-sm transition-all duration-300 ease-out hover:shadow-lg hover:border-blue-500 dark:hover:border-blue-400 hover:-translate-y-0.5 overflow-visible z-[1]"
-    :class="priorityClass"
+    class="relative w-full mb-1 p-4 md:p-6 lg:p-6 rounded-xl md:rounded-[1.25rem] border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm backdrop-blur-sm transition-all duration-300 ease-out hover:shadow-lg hover:border-blue-500 dark:hover:border-blue-400 hover:-translate-y-0.5 overflow-visible z-[1] time-progress-card"
+    :class="[
+      priorityClass,
+      priorityBorderClass,
+      todoCopy.dueAt ? `urgency-${urgency}` : ''
+    ]"
+    :style="todoCopy.dueAt && timeProgress !== null ? {
+      '--time-progress': `${timeProgress}%`,
+    } : {}"
     @mouseenter="handleMouseEnter"
     @mouseleave="handleMouseLeave"
   >
+    <!-- 时间进度边框 - 使用伪元素 -->
+    <div 
+      v-if="!completed && todoCopy.dueAt && timeProgress !== null"
+      class="absolute inset-0 rounded-xl md:rounded-[1.25rem] pointer-events-none time-progress-overlay"
+    />
+    
     <!-- Left Section: Checkbox, Priority, Title -->
     <div class="flex justify-between items-center flex-1 w-full max-w-full min-w-0 overflow-hidden">
       <div class="flex items-center gap-2 md:gap-2 flex-1 min-w-0 max-w-full pl-0.5 md:pl-2 overflow-hidden">
@@ -270,58 +306,19 @@ function handleMouseLeave() {
       />
     </div>
 
-    <!-- 扩展信息区域 -->
-    <div v-if="!completed" class="flex flex-wrap gap-3 mt-1.5 pt-1.5 border-t border-gray-200 dark:border-gray-700 relative z-0 rounded-b-2xl -mx-4 md:-mx-6 lg:-mx-6 px-4 md:px-6 lg:px-6 justify-center items-center">
-      <!-- 进度条 -->
-      <TodoProgress
-        :progress="todoCopy.progress"
-        @update="(update) => updateTodo(todoCopy.serialNum, update)"
-      />
-
-      <!-- 功能按钮组 -->
-      <div class="flex flex-wrap gap-3 items-center justify-center">
-        <!-- 时间估算 -->
-        <TodoEstimate
-          :estimate-minutes="todoCopy.estimateMinutes"
-          @update="(update) => updateTodo(todoCopy.serialNum, update)"
-        />
-
-        <!-- 位置 -->
-        <TodoLocation
-          :location="todoCopy.location"
-          @update="(update) => updateTodo(todoCopy.serialNum, update)"
-        />
-
-        <!-- 提醒设置 -->
-        <TodoReminderSettings
-          :todo="todoCopy"
-          @update="(update) => updateTodo(todoCopy.serialNum, update)"
-        />
-
-        <!-- 子任务 -->
-        <TodoSubtasks
-          :todo="todoCopy"
-          :subtasks="subtasks"
-          @create-subtask="onCreateSubtask"
-          @update-subtask="onUpdateSubtask"
-          @delete-subtask="onDeleteSubtask"
-        />
-
-        <!-- 智能功能 -->
-        <TodoSmartFeatures
-          :todo="todoCopy"
-          @update="(update) => updateTodo(todoCopy.serialNum, update)"
-        />
-      </div>
-    </div>
-
     <!-- Menus and Modals -->
     <TodoAddMenus :show="showMenu" @open-popup="openPopup" @close="toggleMenu" />
     <TodoEditOptionsModal
       :show="showEditOptions"
+      :todo="todoCopy"
+      :subtasks="subtasks"
       @edit-title="openEditModal"
       @edit-due-date="openDueDateModal"
       @edit-repeat="openEditRepeatModal"
+      @update="(update) => updateTodo(todoCopy.serialNum, update)"
+      @create-subtask="onCreateSubtask"
+      @update-subtask="onUpdateSubtask"
+      @delete-subtask="onDeleteSubtask"
       @close="closeEditOptions"
     />
     <TodoEditTitleModal
@@ -381,35 +378,77 @@ function handleMouseLeave() {
 </template>
 
 <style scoped>
-/* 优先级渐变样式 - 使用 Tailwind CSS 4 的 light-dark() 函数 */
+/* 优先级样式 - 背景渐变与 PriorityBadge 颜色一致 */
 .priority-gradient-low {
   background: linear-gradient(to bottom right,
     light-dark(oklch(94% 0.015 90), color-mix(in srgb, oklch(20% 0.01 45) 98%, transparent)),
-    color-mix(in srgb, var(--color-success) light-dark(5%, 10%), transparent));
-  border-color: color-mix(in srgb, var(--color-success) 20%, transparent);
+    color-mix(in srgb, rgb(16, 185, 129) light-dark(3%, 5%), transparent)); /* emerald-500 */
 }
 
 .priority-gradient-medium {
   background: linear-gradient(to bottom right,
     light-dark(oklch(94% 0.015 90), color-mix(in srgb, oklch(20% 0.01 45) 98%, transparent)),
-    color-mix(in srgb, var(--color-warning) light-dark(5%, 10%), transparent));
-  border-color: color-mix(in srgb, var(--color-warning) 20%, transparent);
+    color-mix(in srgb, rgb(245, 158, 11) light-dark(3%, 5%), transparent)); /* amber-500 */
 }
 
 .priority-gradient-high {
   background: linear-gradient(to bottom right,
     light-dark(oklch(94% 0.015 90), color-mix(in srgb, oklch(20% 0.01 45) 98%, transparent)),
-    color-mix(in srgb, var(--color-error) light-dark(5%, 10%), transparent));
-  border-color: color-mix(in srgb, var(--color-error) 20%, transparent);
+    color-mix(in srgb, rgb(239, 68, 68) light-dark(3%, 5%), transparent)); /* red-500 */
 }
 
 .priority-gradient-urgent {
   background: linear-gradient(to bottom right,
     light-dark(oklch(94% 0.015 90), color-mix(in srgb, oklch(20% 0.01 45) 96%, transparent)),
-    color-mix(in srgb, var(--color-error) light-dark(10%, 15%), transparent));
-  border-color: var(--color-error);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
-              0 2px 4px -1px rgba(0, 0, 0, 0.06),
-              0 0 15px color-mix(in srgb, var(--color-error) 30%, transparent);
+    color-mix(in srgb, rgb(220, 38, 38) light-dark(5%, 8%), transparent)); /* red-600 */
+}
+
+/* 时间进度边框 */
+.time-progress-card {
+  position: relative;
+}
+
+/* 时间进度边框叠加层 */
+.time-progress-overlay {
+  border: 2px solid transparent;
+  border-radius: inherit;
+  background: var(--border-gradient) border-box;
+  -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+}
+
+/* 时间进度边框 - 统一使用灰色渐变，随进度加深 */
+.time-progress-overlay {
+  --border-gradient: conic-gradient(
+    from -90deg,
+    rgb(107, 114, 128) 0%,
+    rgb(107, 114, 128) calc(var(--time-progress) * 1%),
+    rgb(209, 213, 219) calc(var(--time-progress) * 1%),
+    rgb(209, 213, 219) 100%
+  );
+}
+
+/* 脉冲动画 */
+@keyframes pulse-border {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+
+/* 深色模式适配 - 使用更亮的灰色 */
+.dark .time-progress-overlay {
+  --border-gradient: conic-gradient(
+    from -90deg,
+    rgb(156, 163, 175) 0%,
+    rgb(156, 163, 175) calc(var(--time-progress) * 1%),
+    rgb(75, 85, 99) calc(var(--time-progress) * 1%),
+    rgb(75, 85, 99) 100%
+  );
 }
 </style>
