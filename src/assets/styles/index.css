@@ -13,122 +13,39 @@
    使用 light-dark() 自动处理深浅色主题
    ======================================== */
 @theme {
-  /* ===== 基础颜色系统 ===== */
+  /* ===== 语义化颜色系统 ===== */
   /* 背景分层 - 自动适配深浅色 */
   --color-base-100: light-dark(oklch(94% 0.015 90), oklch(20% 0.01 45));
   --color-base-200: light-dark(oklch(90% 0.025 90), oklch(16% 0.015 45));
   --color-base-300: light-dark(oklch(85% 0.035 90), oklch(12% 0.02 45));
   --color-base-content: light-dark(oklch(25% 0.015 45), oklch(85% 0.01 45));
 
-  /* 主色系统 */
+  /* 品牌主色 */
   --color-primary: light-dark(oklch(65% 0.18 25), oklch(70% 0.15 25));
   --color-primary-soft: light-dark(oklch(75% 0.08 25), oklch(60% 0.08 25));
   --color-primary-content: light-dark(oklch(95% 0.01 25), oklch(10% 0.01 25));
   --color-primary-hover: light-dark(oklch(60% 0.2 25), oklch(75% 0.17 25));
   --color-primary-active: light-dark(oklch(55% 0.22 25), oklch(80% 0.19 25));
-  --color-primary-focus: light-dark(oklch(60% 0.2 25), oklch(75% 0.17 25));
 
-  /* 次要色系统 */
-  --color-secondary: light-dark(oklch(70% 0.12 160), oklch(65% 0.12 160));
-  --color-secondary-content: light-dark(oklch(20% 0.02 160), oklch(10% 0.01 160));
-  --color-secondary-hover: light-dark(oklch(65% 0.14 160), oklch(70% 0.14 160));
-  --color-secondary-active: light-dark(oklch(60% 0.16 160), oklch(75% 0.16 160));
-  --color-secondary-focus: light-dark(oklch(65% 0.14 160), oklch(70% 0.14 160));
-
-  /* 强调色系统 */
-  --color-accent: light-dark(oklch(60% 0.2 75), oklch(75% 0.15 75));
-  --color-accent-content: light-dark(oklch(20% 0.02 75), oklch(15% 0.01 75));
-  --color-accent-hover: light-dark(oklch(55% 0.22 75), oklch(80% 0.17 75));
-  --color-accent-active: light-dark(oklch(50% 0.24 75), oklch(85% 0.19 75));
-
-  /* 中性色系统 */
-  --color-neutral: light-dark(oklch(50% 0.02 45), oklch(35% 0.02 45));
-  --color-neutral-content: light-dark(oklch(90% 0.01 45), oklch(80% 0.01 45));
-  --color-neutral-hover: light-dark(oklch(45% 0.03 45), oklch(40% 0.03 45));
-  --color-neutral-active: light-dark(oklch(40% 0.04 45), oklch(45% 0.04 45));
-
-  /* ===== 状态色系统 ===== */
-  --color-info: light-dark(oklch(55% 0.2 240), oklch(70% 0.15 240));
-  --color-info-content: light-dark(oklch(95% 0.01 240), oklch(10% 0.01 240));
-  --color-info-hover: light-dark(oklch(50% 0.22 240), oklch(75% 0.17 240));
-  --color-info-active: light-dark(oklch(45% 0.24 240), oklch(80% 0.19 240));
-
+  /* 状态色（仅保留常用的） */
   --color-success: light-dark(oklch(50% 0.15 140), oklch(65% 0.12 140));
-  --color-success-content: light-dark(oklch(95% 0.01 140), oklch(10% 0.01 140));
-  --color-success-hover: light-dark(oklch(45% 0.17 140), oklch(70% 0.14 140));
-  --color-success-active: light-dark(oklch(40% 0.19 140), oklch(75% 0.16 140));
   --color-success-soft: light-dark(oklch(90% 0.05 140), oklch(30% 0.1 140));
-  --color-success-focus: light-dark(oklch(45% 0.17 140), oklch(70% 0.14 140));
-
+  
   --color-warning: light-dark(oklch(60% 0.25 50), oklch(75% 0.18 50));
-  --color-warning-content: light-dark(oklch(20% 0.02 50), oklch(15% 0.01 50));
-  --color-warning-hover: light-dark(oklch(55% 0.27 50), oklch(80% 0.2 50));
-  --color-warning-active: light-dark(oklch(50% 0.29 50), oklch(85% 0.22 50));
   --color-warning-soft: light-dark(oklch(90% 0.1 50), oklch(35% 0.15 50));
-  --color-warning-focus: light-dark(oklch(55% 0.27 50), oklch(80% 0.2 50));
-
+  
   --color-error: light-dark(oklch(60% 0.22 15), oklch(70% 0.15 15));
-  --color-error-content: light-dark(oklch(95% 0.01 15), oklch(10% 0.01 15));
-  --color-error-hover: light-dark(oklch(55% 0.24 15), oklch(75% 0.17 15));
-  --color-error-active: light-dark(oklch(50% 0.26 15), oklch(80% 0.19 15));
   --color-error-soft: light-dark(oklch(92% 0.08 15), oklch(35% 0.12 15));
-  --color-error-focus: light-dark(oklch(55% 0.24 15), oklch(75% 0.17 15));
 
-  /* ===== 灰度颜色系统 ===== */
-  --color-gray-50: #f9fafb;
-  --color-gray-100: #f3f4f6;
-  --color-gray-200: #e5e7eb;
-  --color-gray-300: #d1d5db;
-  --color-gray-400: #9ca3af;
-  --color-gray-500: #6b7280;
-  --color-gray-600: #4b5563;
-  --color-gray-700: #374151;
-  --color-gray-800: #1f2937;
+  /* 中性色（用于滚动条等） */
+  --color-neutral: light-dark(oklch(50% 0.02 45), oklch(35% 0.02 45));
+  --color-neutral-hover: light-dark(oklch(45% 0.03 45), oklch(40% 0.03 45));
 
-  /* 其他颜色 */
-  --color-red-50: #fef2f2;
-  --color-red-100: #fee2e2;
-  --color-red-500: #ef4444;
-  --color-red-600: #dc2626;
-
-  --color-green-50: #f0fdf4;
-  --color-green-100: #dcfce7;
-  --color-green-500: #22c55e;
-  --color-green-600: #16a34a;
-
-  --color-blue-100: #dbeafe;
-  --color-blue-500: #3b82f6;
-  --color-blue-600: #2563eb;
-
-  --color-yellow-100: #fef3c7;
-  --color-yellow-500: #eab308;
-
-  --color-orange-500: #f97316;
-  --color-purple-50: #f3e8ff;
-  --color-purple-100: #e9d5ff;
-  --color-purple-500: #8b5cf6;
-  --color-pink-500: #ec4899;
-  --color-cyan-500: #06b6d4;
-
-  /* ===== 尺寸系统 ===== */
-  --radius-selector: 0.25rem;
-  --radius-field: 0.25rem;
-  --radius-box: 0.5rem;
+  /* ===== 设计令牌 ===== */
+  /* 圆角（可覆盖 Tailwind 默认值以统一品牌风格） */
   --radius-sm: 0.375rem;
   --radius-md: 0.5rem;
   --radius-lg: 0.75rem;
-
-  --size-selector: 0.25rem;
-  --size-field: 0.25rem;
-  --border: 1px;
-
-  /* ===== 间距系统 ===== */
-  --spacing-1: 0.25rem;
-  --spacing-2: 0.5rem;
-  --spacing-3: 0.75rem;
-  --spacing-4: 1rem;
-  --spacing-5: 1.25rem;
-  --spacing-6: 1.5rem;
 
   /* ===== 阴影系统 ===== */
   --shadow-sm: light-dark(0 1px 2px 0 oklch(0% 0 0 / 0.05), 0 1px 2px 0 oklch(0% 0 0 / 0.3));
@@ -168,15 +85,11 @@ body {
 }
 
 /* ========================================
-   动画定义 (@keyframes)
+   自定义动画
    ======================================== */
 @keyframes fade-in {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 @keyframes slide-up {
@@ -202,8 +115,7 @@ body {
 }
 
 @keyframes urgent-pulse {
-  0%,
-  100% {
+  0%, 100% {
     box-shadow: 0 0 12px rgba(220, 38, 38, 0.5);
   }
   50% {
@@ -211,24 +123,7 @@ body {
   }
 }
 
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* ========================================
-   动画 Utility 类
-   ======================================== */
-.animate-fadeIn {
-  animation: fadeIn 0.2s ease-in-out;
-}
-
+/* 动画 Utility 类 */
 .animate-fade-in {
   animation: fade-in 200ms ease-out;
 }
@@ -242,16 +137,9 @@ body {
 }
 
 /* ========================================
-   自定义 Utilities (@utility)
+   自定义 Utilities
    ======================================== */
-/* 居中布局 */
-@utility center-flex {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-/* 玻璃态效果 */
+/* 玻璃态效果（不适合用 Tailwind 原子类组合的复合样式） */
 @utility glass {
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(10px);
@@ -280,7 +168,7 @@ body {
 }
 
 /* ========================================
-   第三方库样式（必要时保留）
+   第三方库样式
    ======================================== */
 /* Toast 容器 */
 .Vue-Toastification__container {

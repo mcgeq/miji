@@ -61,7 +61,7 @@ function switchTab(tab: 'overview' | 'records') {
 
     <!-- 内容区域 -->
     <div class="min-h-[400px]">
-      <div v-if="activeTab === 'overview'" class="animate-fadeIn">
+      <div v-if="activeTab === 'overview'" class="animate-fade-in">
         <DebtRelationChart
           v-if="currentLedger"
           :family-ledger-serial-num="currentLedger.serialNum"
@@ -77,7 +77,7 @@ function switchTab(tab: 'overview' | 'records') {
         </div>
       </div>
 
-      <div v-if="activeTab === 'records'" class="animate-fadeIn">
+      <div v-if="activeTab === 'records'" class="animate-fade-in">
         <SettlementRecords
           v-if="currentLedger"
           :family-ledger-serial-num="currentLedger.serialNum"
