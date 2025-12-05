@@ -1,24 +1,22 @@
 // src/i18n/utils.ts
 
 import { i18nInstance } from './i18n';
-import type { Composer } from 'vue-i18n';
 
-export function $t(key: string, values?: Record<string, any>): string {
+export function $t(key: string, values?: Record<string, unknown>): string {
   if (!i18nInstance) {
     console.warn('i18n instance not initialized');
     return key;
   }
 
-  // 强制断言为 Composition 模式下的 t 函数
-  const t = i18nInstance.global.t as Composer['t'];
-
+  // 处理 bigint 值
   if (values) {
-    Object.keys(values).forEach(k => {
-      if (typeof values[k] === 'bigint') {
-        values[k] = values[k].toString();
-      }
-    });
+    const processedValues: Record<string, unknown> = {};
+    for (const k of Object.keys(values)) {
+      processedValues[k] = typeof values[k] === 'bigint' ? String(values[k]) : values[k];
+    }
+    // @ts-expect-error - vue-i18n 类型过于复杂，使用运行时验证
+    return i18nInstance.global.t(key, processedValues);
   }
 
-  return t(key, values ?? {});
+  return i18nInstance.global.t(key) as string;
 }

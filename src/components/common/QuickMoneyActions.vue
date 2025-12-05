@@ -8,12 +8,15 @@ import QuickMoneyHeader from '@/components/common/QuickMoneyHeader.vue';
 import QuickMoneyReminderList from '@/components/common/QuickMoneyReminderList.vue';
 import QuickMoneyTabs from '@/components/common/QuickMoneyTabs.vue';
 import QuickMoneyTransactionList from '@/components/common/QuickMoneyTransactionList.vue';
-import AccountModal from '@/features/money/components/AccountModal.vue';
-import BudgetModal from '@/features/money/components/BudgetModal.vue';
-import ReminderModal from '@/features/money/components/ReminderModal.vue';
-import TransactionModal from '@/features/money/components/TransactionModal.vue';
 import { TransactionTypeSchema } from '@/schema/common';
 import { useAccountStore, useCategoryStore } from '@/stores/money';
+
+// 懒加载模态框组件 (Task 27: 按需加载，减少首屏加载时间)
+const AccountModal = defineAsyncComponent(() => import('@/features/money/components/AccountModal.vue'));
+const BudgetModal = defineAsyncComponent(() => import('@/features/money/components/BudgetModal.vue'));
+const ReminderModal = defineAsyncComponent(() => import('@/features/money/components/ReminderModal.vue'));
+const TransactionModal = defineAsyncComponent(() => import('@/features/money/components/TransactionModal.vue'));
+
 import type {
   BilReminderCreate,
   BilReminderUpdate,

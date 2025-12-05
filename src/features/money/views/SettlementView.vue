@@ -1,8 +1,14 @@
 <script setup lang="ts">
 import { LucideAlertCircle, LucideBarChart3, LucideFileText } from 'lucide-vue-next';
 import { useFamilyLedgerStore } from '@/stores/money';
-import DebtRelationChart from '../components/DebtRelationChart.vue';
 import SettlementRecords from '../components/SettlementRecords.vue';
+
+// 懒加载图表组件 (Task 27: 按需加载重型组件)
+const DebtRelationChart = defineAsyncComponent({
+  loader: () => import('../components/DebtRelationChart.vue'),
+  loadingComponent: { template: '<div class="animate-pulse bg-gray-200 dark:bg-gray-700 rounded-lg h-64" />' },
+  delay: 200,
+});
 
 const familyLedgerStore = useFamilyLedgerStore();
 const { currentLedger } = storeToRefs(familyLedgerStore);

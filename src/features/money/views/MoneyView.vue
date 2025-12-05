@@ -10,16 +10,20 @@ import { MoneyDb } from '@/services/money/money';
 import { useCategoryStore, useMoneyConfigStore } from '@/stores/money';
 import { Lg } from '@/utils/debugLog';
 import { toast } from '@/utils/toast';
+import { getLocalCurrencyInfo } from '../utils/money';
+
+// 静态导入列表组件（首屏需要）
 import AccountList from '../components/AccountList.vue';
-import AccountModal from '../components/AccountModal.vue';
 import BudgetList from '../components/BudgetList.vue';
-import BudgetModal from '../components/BudgetModal.vue';
 import ReminderList from '../components/ReminderList.vue';
-import ReminderModal from '../components/ReminderModal.vue';
 import StackedStatCards from '../components/StackedStatCards.vue';
 import TransactionList from '../components/TransactionList.vue';
-import TransactionModal from '../components/TransactionModal.vue';
-import { getLocalCurrencyInfo } from '../utils/money';
+
+// 懒加载模态框组件 (Task 27: 按需加载，减少首屏加载时间)
+const AccountModal = defineAsyncComponent(() => import('../components/AccountModal.vue'));
+const BudgetModal = defineAsyncComponent(() => import('../components/BudgetModal.vue'));
+const ReminderModal = defineAsyncComponent(() => import('../components/ReminderModal.vue'));
+const TransactionModal = defineAsyncComponent(() => import('../components/TransactionModal.vue'));
 // 事件类型定义
 interface InstallmentProcessedEvent {
   processed_count: number;

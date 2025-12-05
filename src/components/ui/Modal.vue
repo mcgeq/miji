@@ -2,11 +2,15 @@
 /**
  * Modal - 基于 Headless UI 的模态框组件
  *
- * 使用 @headlessui/vue 提供逻辑，Tailwind CSS 4 提供样式
+ * 使用 @headlessui/vue 提供逻辑，Tailwind CSS 4 设计令牌提供样式
+ * 完整的无障碍支持：焦点陷阱、键盘导航、ARIA 属性
  * 100% 可定制，无自定义 CSS
  */
 
 import { Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot } from '@headlessui/vue';
+
+/** 模态框尺寸 */
+type ModalSize = 'sm' | 'md' | 'lg' | 'xl' | 'full';
 
 interface Props {
   /** 是否显示 */
@@ -14,7 +18,7 @@ interface Props {
   /** 标题 */
   title?: string;
   /** 尺寸 */
-  size?: 'sm' | 'md' | 'lg' | 'xl' | 'full';
+  size?: ModalSize;
   /** 点击遮罩层是否关闭 */
   closeOnOverlay?: boolean;
   /** 是否显示头部 */
@@ -39,6 +43,8 @@ interface Props {
   confirmLoading?: boolean;
   /** 自定义z-index层级 */
   zIndex?: number;
+  /** 模态框描述（用于无障碍） */
+  description?: string;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -65,7 +71,7 @@ const emit = defineEmits<{
 }>();
 
 // 尺寸映射
-const sizeClasses = {
+const sizeClasses: Record<ModalSize, string> = {
   sm: 'max-w-sm',
   md: 'max-w-md',
   lg: 'max-w-lg',
@@ -78,7 +84,13 @@ function handleClose() {
   if (props.closeOnOverlay) {
     emit('close');
   }
-  // 如果 closeOnOverlay 为 false，什么都不做，阻止关闭
+}
+
+// 处理 Escape 键关闭
+function handleKeydown(event: KeyboardEvent) {
+  if (event.key === 'Escape') {
+    emit('close');
+  }
 }
 </script>
 
@@ -89,6 +101,7 @@ function handleClose() {
       class="relative"
       :style="{ zIndex: props.zIndex }"
       @close="handleClose"
+      @keydown="handleKeydown"
     >
       <!-- 遮罩层 -->
       <TransitionChild
@@ -111,9 +124,8 @@ function handleClose() {
           leave-to="opacity-0 scale-95 translate-y-4"
         >
           <DialogPanel
-            class="w-full rounded-xl shadow-2xl bg-white dark:bg-gray-800 max-h-[90vh] overflow-visible flex flex-col" :class="[
-              sizeClasses[props.size],
-            ]"
+            class="w-full rounded-xl shadow-lg bg-white dark:bg-gray-800 max-h-[90vh] overflow-visible flex flex-col"
+            :class="[sizeClasses[props.size]]"
             @click.stop
           >
             <!-- 头部 -->
@@ -129,13 +141,18 @@ function handleClose() {
 
               <button
                 type="button"
-                class="p-2 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                class="p-2 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 active:bg-gray-200 dark:active:bg-gray-600 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
                 aria-label="关闭"
                 @click="emit('close')"
               >
-                <LucideX class="w-5 h-5" />
+                <LucideX class="w-5 h-5" aria-hidden="true" />
               </button>
             </div>
+
+            <!-- 描述（用于无障碍，可选） -->
+            <p v-if="props.description" class="sr-only">
+              {{ props.description }}
+            </p>
 
             <!-- 内容区 -->
             <div class="modal-content flex-1 overflow-y-auto px-6 py-4">
@@ -153,22 +170,24 @@ function handleClose() {
                   <button
                     v-if="props.showDelete"
                     type="button"
-                    class="flex items-center justify-center w-12 h-12 rounded-full bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 transition-colors"
+                    class="flex items-center justify-center w-12 h-12 rounded-full bg-red-600 text-white hover:bg-red-700 active:bg-red-800 disabled:opacity-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 dark:bg-red-500 dark:hover:bg-red-600"
                     :disabled="props.confirmLoading"
+                    :aria-label="props.deleteText"
                     @click="emit('delete')"
                   >
-                    <LucideTrash2 class="w-5 h-5" />
+                    <LucideTrash2 class="w-5 h-5" aria-hidden="true" />
                   </button>
 
                   <!-- 取消按钮 -->
                   <button
                     v-if="props.showCancel"
                     type="button"
-                    class="flex items-center justify-center w-12 h-12 rounded-full border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                    class="flex items-center justify-center w-12 h-12 rounded-full border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 active:bg-gray-200 dark:active:bg-gray-600 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-500 focus-visible:ring-offset-2"
                     :disabled="props.confirmLoading"
+                    :aria-label="props.cancelText"
                     @click="emit('cancel'); emit('close')"
                   >
-                    <LucideX class="w-5 h-5" />
+                    <LucideX class="w-5 h-5" aria-hidden="true" />
                   </button>
 
                   <!-- 确认按钮 -->
@@ -176,7 +195,9 @@ function handleClose() {
                     v-if="props.showConfirm"
                     type="button"
                     :disabled="props.confirmDisabled || props.confirmLoading"
-                    class="flex items-center justify-center w-12 h-12 rounded-full bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    :aria-label="props.confirmText"
+                    :aria-busy="props.confirmLoading"
+                    class="flex items-center justify-center w-12 h-12 rounded-full bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:bg-blue-500 dark:hover:bg-blue-600"
                     @click="emit('confirm')"
                   >
                     <!-- 加载状态 -->
@@ -186,12 +207,13 @@ function handleClose() {
                       xmlns="http://www.w3.org/2000/svg"
                       fill="none"
                       viewBox="0 0 24 24"
+                      aria-hidden="true"
                     >
                       <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
                       <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                     </svg>
                     <!-- 确认图标 -->
-                    <LucideCheck v-else class="w-5 h-5" />
+                    <LucideCheck v-else class="w-5 h-5" aria-hidden="true" />
                   </button>
                 </div>
               </slot>

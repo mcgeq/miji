@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type { Component } from 'vue';
+
 /**
  * Tabs - 标签页组件
  *
@@ -14,7 +16,7 @@ export interface TabItem {
   /** 标签值（唯一标识） */
   value?: string;
   /** 图标组件 */
-  icon?: any;
+  icon?: Component;
   /** 是否禁用 */
   disabled?: boolean;
   /** 徽章数字 */

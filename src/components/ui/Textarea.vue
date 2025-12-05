@@ -35,6 +35,10 @@ interface Props {
   showCount?: boolean;
   /** 是否全宽 */
   fullWidth?: boolean;
+  /** 文本框 ID（用于无障碍关联） */
+  id?: string;
+  /** 文本框名称 */
+  name?: string;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -67,6 +71,19 @@ const isOverLimit = computed(() => {
 const shouldShowCount = computed(() => {
   return (props.showCount && props.maxLength) || (props.showCount && characterCount.value > 0);
 });
+
+// 生成唯一 ID
+const textareaId = computed(() => props.id || `textarea-${Math.random().toString(36).slice(2, 9)}`);
+const hintId = computed(() => `${textareaId.value}-hint`);
+const errorId = computed(() => `${textareaId.value}-error`);
+
+// 计算 aria-describedby
+const ariaDescribedBy = computed(() => {
+  const ids: string[] = [];
+  if (props.error) ids.push(errorId.value);
+  else if (props.hint) ids.push(hintId.value);
+  return ids.length > 0 ? ids.join(' ') : undefined;
+});
 </script>
 
 <template>
@@ -74,14 +91,17 @@ const shouldShowCount = computed(() => {
     <!-- 标签 -->
     <label
       v-if="label"
+      :for="textareaId"
       class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5"
     >
       {{ label }}
-      <span v-if="required" class="text-red-500 ml-0.5">*</span>
+      <span v-if="required" class="text-red-500 ml-0.5" aria-hidden="true">*</span>
     </label>
 
     <!-- 文本框 -->
     <textarea
+      :id="textareaId"
+      :name="name"
       :value="modelValue"
       :placeholder="placeholder"
       :rows="rows"
@@ -89,6 +109,9 @@ const shouldShowCount = computed(() => {
       :disabled="disabled"
       :readonly="readonly"
       :required="required"
+      :aria-invalid="!!error"
+      :aria-describedby="ariaDescribedBy"
+      :aria-required="required"
       class="w-full rounded-lg border transition-colors resize-y focus:outline-none focus:ring-2 px-4 py-2 text-base bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500" :class="[
         error
           ? 'border-red-300 dark:border-red-700 focus:ring-red-500 focus:border-red-500'
@@ -107,12 +130,16 @@ const shouldShowCount = computed(() => {
       <!-- 帮助文本或错误信息 -->
       <p
         v-if="hint && !error"
+        :id="hintId"
         class="text-sm text-gray-500 dark:text-gray-400 flex-1"
       >
         {{ hint }}
       </p>
       <p
         v-else-if="error"
+        :id="errorId"
+        role="alert"
+        aria-live="polite"
         class="text-sm text-red-600 dark:text-red-400 flex-1"
       >
         {{ error }}

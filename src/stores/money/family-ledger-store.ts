@@ -1,7 +1,10 @@
 // src/stores/money/family-ledger-store.ts
 import { defineStore } from 'pinia';
+import { AppError } from '@/errors/appError';
 import { MoneyDb } from '@/services/money/money';
-import { onStoreEvent } from './store-events';
+import { Lg } from '@/utils/debugLog';
+import { toast } from '@/utils/toast';
+import { onStoreEvent, type EventCleanup } from './store-events';
 import type {
   FamilyLedger,
   FamilyLedgerCreate,
@@ -9,12 +12,47 @@ import type {
   FamilyLedgerUpdate,
 } from '@/schema/money';
 
+// ==================== Store Constants ====================
+const STORE_MODULE = 'FamilyLedgerStore';
+
+/** FamilyLedgerStore 错误代码 */
+export enum FamilyLedgerStoreErrorCode {
+  FETCH_FAILED = 'FETCH_FAILED',
+  CREATE_FAILED = 'CREATE_FAILED',
+  UPDATE_FAILED = 'UPDATE_FAILED',
+  DELETE_FAILED = 'DELETE_FAILED',
+  SWITCH_FAILED = 'SWITCH_FAILED',
+  STATS_FAILED = 'STATS_FAILED',
+  NOT_FOUND = 'NOT_FOUND',
+}
+
 interface FamilyLedgerStoreState {
+  /** 账本列表 */
   ledgers: FamilyLedger[];
+  /** 当前选中的账本 */
   currentLedger: FamilyLedger | null;
+  /** 账本统计数据 */
   ledgerStats: Record<string, FamilyLedgerStats>;
+  /** 加载状态 */
   loading: boolean;
-  error: string | null;
+  /** 错误信息 */
+  error: AppError | null;
+  /** 事件监听器清理函数 */
+  eventCleanups: EventCleanup[];
+}
+
+/**
+ * 创建初始状态
+ */
+function createInitialState(): FamilyLedgerStoreState {
+  return {
+    ledgers: [],
+    currentLedger: null,
+    ledgerStats: {},
+    loading: false,
+    error: null,
+    eventCleanups: [],
+  };
 }
 
 /**
@@ -22,13 +60,7 @@ interface FamilyLedgerStoreState {
  * 负责家庭账本的CRUD操作、切换和统计
  */
 export const useFamilyLedgerStore = defineStore('family-ledger', {
-  state: (): FamilyLedgerStoreState => ({
-    ledgers: [],
-    currentLedger: null,
-    ledgerStats: {},
-    loading: false,
-    error: null,
-  }),
+  state: (): FamilyLedgerStoreState => createInitialState(),
 
   getters: {
     /**
@@ -84,21 +116,81 @@ export const useFamilyLedgerStore = defineStore('family-ledger', {
           ledger.pendingSettlement > 0,
       );
     },
+
+    /**
+     * 获取用户友好的错误消息
+     */
+    errorMessage: (state): string | null => {
+      return state.error?.getUserMessage() ?? null;
+    },
   },
 
   actions: {
+    // ==================== 错误处理 ====================
+
+    /**
+     * 统一错误处理
+     */
+    handleError(
+      err: unknown,
+      code: FamilyLedgerStoreErrorCode,
+      message: string,
+      showToast = true,
+    ): AppError {
+      const appError = AppError.wrap(STORE_MODULE, err, code, message);
+      this.error = appError;
+      appError.log();
+      if (showToast) {
+        toast.error(appError.getUserMessage());
+      }
+      return appError;
+    },
+
+    /**
+     * 清空错误状态
+     */
+    clearError() {
+      this.error = null;
+    },
+
+    /**
+     * 带加载状态和错误处理的操作包装器
+     */
+    async withLoadingSafe<T>(
+      operation: () => Promise<T>,
+      errorCode: FamilyLedgerStoreErrorCode,
+      errorMsg: string,
+      showToast = true,
+    ): Promise<T> {
+      this.loading = true;
+      this.error = null;
+      try {
+        return await operation();
+      } catch (err) {
+        const appError = this.handleError(err, errorCode, errorMsg, showToast);
+        throw appError;
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    // ==================== CRUD 操作 ====================
+
     /**
      * 获取账本列表
      */
     async fetchLedgers() {
+      Lg.i(STORE_MODULE, '获取账本列表');
       this.loading = true;
       this.error = null;
 
       try {
-        this.ledgers = await MoneyDb.listFamilyLedgers();
-      } catch (error: any) {
-        this.error = error.message || '获取账本列表失败';
-        console.error('Failed to fetch ledgers:', error);
+        const result = await MoneyDb.listFamilyLedgers();
+        // 不可变更新
+        this.ledgers = [...result];
+        Lg.i(STORE_MODULE, '账本列表获取成功', { count: result.length });
+      } catch (err) {
+        this.handleError(err, FamilyLedgerStoreErrorCode.FETCH_FAILED, '获取账本列表失败');
         this.ledgers = [];
       } finally {
         this.loading = false;
@@ -109,100 +201,102 @@ export const useFamilyLedgerStore = defineStore('family-ledger', {
      * 创建账本
      */
     async createLedger(data: FamilyLedgerCreate): Promise<FamilyLedger> {
-      this.loading = true;
-      this.error = null;
-
-      try {
-        const ledger = await MoneyDb.createFamilyLedger(data);
-        this.ledgers.push(ledger);
-        return ledger;
-      } catch (error: any) {
-        this.error = error.message || '创建账本失败';
-        console.error('Failed to create ledger:', error);
-        throw error;
-      } finally {
-        this.loading = false;
-      }
+      Lg.i(STORE_MODULE, '创建账本', { name: data.name, type: data.ledgerType });
+      return this.withLoadingSafe(
+        async () => {
+          const ledger = await MoneyDb.createFamilyLedger(data);
+          // 不可变更新
+          this.ledgers = [...this.ledgers, ledger];
+          Lg.i(STORE_MODULE, '账本创建成功', { serialNum: ledger.serialNum });
+          return ledger;
+        },
+        FamilyLedgerStoreErrorCode.CREATE_FAILED,
+        '创建账本失败',
+      );
     },
 
     /**
      * 更新账本
      */
     async updateLedger(serialNum: string, data: FamilyLedgerUpdate): Promise<FamilyLedger> {
-      this.loading = true;
-      this.error = null;
+      Lg.i(STORE_MODULE, '更新账本', { serialNum, updates: Object.keys(data) });
+      return this.withLoadingSafe(
+        async () => {
+          const updatedLedger = await MoneyDb.updateFamilyLedger(serialNum, data);
 
-      try {
-        const updatedLedger = await MoneyDb.updateFamilyLedger(serialNum, data);
+          // 不可变更新
+          this.ledgers = this.ledgers.map(l => (l.serialNum === serialNum ? updatedLedger : l));
 
-        const index = this.ledgers.findIndex(l => l.serialNum === serialNum);
-        if (index !== -1) {
-          this.ledgers[index] = updatedLedger;
-        }
+          // 如果更新的是当前账本，同步更新
+          if (this.currentLedger?.serialNum === serialNum) {
+            this.currentLedger = updatedLedger;
+          }
 
-        // 如果更新的是当前账本，同步更新
-        if (this.currentLedger?.serialNum === serialNum) {
-          this.currentLedger = updatedLedger;
-        }
-
-        return updatedLedger;
-      } catch (error: any) {
-        this.error = error.message || '更新账本失败';
-        console.error('Failed to update ledger:', error);
-        throw error;
-      } finally {
-        this.loading = false;
-      }
+          Lg.i(STORE_MODULE, '账本更新成功', { serialNum });
+          return updatedLedger;
+        },
+        FamilyLedgerStoreErrorCode.UPDATE_FAILED,
+        '更新账本失败',
+      );
     },
 
     /**
      * 删除账本
      */
     async deleteLedger(serialNum: string): Promise<void> {
-      this.loading = true;
-      this.error = null;
+      Lg.i(STORE_MODULE, '删除账本', { serialNum });
+      return this.withLoadingSafe(
+        async () => {
+          await MoneyDb.deleteFamilyLedger(serialNum);
 
-      try {
-        await MoneyDb.deleteFamilyLedger(serialNum);
+          // 不可变更新
+          this.ledgers = this.ledgers.filter(l => l.serialNum !== serialNum);
 
-        this.ledgers = this.ledgers.filter(l => l.serialNum !== serialNum);
+          // 如果删除的是当前账本，清空当前账本
+          if (this.currentLedger?.serialNum === serialNum) {
+            this.currentLedger = null;
+          }
 
-        // 如果删除的是当前账本，清空当前账本
-        if (this.currentLedger?.serialNum === serialNum) {
-          this.currentLedger = null;
-        }
+          // 不可变更新：清理统计数据
+          const { [serialNum]: _, ...restStats } = this.ledgerStats;
+          this.ledgerStats = restStats;
 
-        // 清理统计数据
-        delete this.ledgerStats[serialNum];
-      } catch (error: any) {
-        this.error = error.message || '删除账本失败';
-        console.error('Failed to delete ledger:', error);
-        throw error;
-      } finally {
-        this.loading = false;
-      }
+          Lg.i(STORE_MODULE, '账本删除成功', { serialNum });
+        },
+        FamilyLedgerStoreErrorCode.DELETE_FAILED,
+        '删除账本失败',
+      );
     },
 
     /**
      * 切换当前账本
      */
     async switchLedger(serialNum: string): Promise<void> {
-      // 使用详情 API，一次获取所有数据（包含成员和账户列表）
-      const ledger = await MoneyDb.getFamilyLedgerDetail(serialNum);
+      Lg.i(STORE_MODULE, '切换账本', { serialNum });
+      try {
+        // 使用详情 API，一次获取所有数据（包含成员和账户列表）
+        const ledger = await MoneyDb.getFamilyLedgerDetail(serialNum);
 
-      this.currentLedger = ledger;
+        this.currentLedger = ledger;
 
-      // 获取账本统计信息
-      await this.fetchLedgerStats(serialNum);
+        // 获取账本统计信息
+        await this.fetchLedgerStats(serialNum);
 
-      // 保存到本地存储
-      localStorage.setItem('currentFamilyLedger', serialNum);
+        // 保存到本地存储
+        localStorage.setItem('currentFamilyLedger', serialNum);
+
+        Lg.i(STORE_MODULE, '账本切换成功', { serialNum });
+      } catch (err) {
+        this.handleError(err, FamilyLedgerStoreErrorCode.SWITCH_FAILED, '切换账本失败');
+        throw err;
+      }
     },
 
     /**
      * 获取账本统计信息
      */
     async fetchLedgerStats(serialNum: string): Promise<FamilyLedgerStats> {
+      Lg.d(STORE_MODULE, '获取账本统计', { serialNum });
       try {
         // 目前后端还没有统计API，先返回基础统计数据
         // TODO: 等后端实现统计API后替换
@@ -223,11 +317,13 @@ export const useFamilyLedgerStore = defineStore('family-ledger', {
           memberStats: [],
         };
 
-        this.ledgerStats[serialNum] = stats;
+        // 不可变更新
+        this.ledgerStats = { ...this.ledgerStats, [serialNum]: stats };
+        Lg.d(STORE_MODULE, '账本统计获取成功', { serialNum });
         return stats;
-      } catch (error: any) {
-        console.error('获取账本统计失败:', error);
-        throw error;
+      } catch (err) {
+        Lg.e(STORE_MODULE, '获取账本统计失败', { serialNum, error: err });
+        throw err;
       }
     },
 
@@ -246,6 +342,7 @@ export const useFamilyLedgerStore = defineStore('family-ledger', {
     async initCurrentLedger(): Promise<void> {
       const savedLedgerId = localStorage.getItem('currentFamilyLedger');
       if (savedLedgerId) {
+        Lg.d(STORE_MODULE, '从本地存储恢复账本', { serialNum: savedLedgerId });
         const ledger = this.getLedgerById(savedLedgerId);
         if (ledger) {
           this.currentLedger = ledger;
@@ -254,44 +351,68 @@ export const useFamilyLedgerStore = defineStore('family-ledger', {
       }
     },
 
-    /**
-     * 清空错误状态
-     */
-    clearError() {
-      this.error = null;
-    },
+    // ==================== 状态重置 ====================
 
     /**
      * 重置store状态
      */
-    reset() {
-      this.ledgers = [];
-      this.currentLedger = null;
-      this.ledgerStats = {};
-      this.loading = false;
-      this.error = null;
+    $reset() {
+      Lg.i(STORE_MODULE, '重置 store 状态');
+      
+      // 先清理事件监听器
+      this.cleanupEventListeners();
+      
+      const initialState = createInitialState();
+      this.ledgers = initialState.ledgers;
+      this.currentLedger = initialState.currentLedger;
+      this.ledgerStats = initialState.ledgerStats;
+      this.loading = initialState.loading;
+      this.error = initialState.error;
+      this.eventCleanups = initialState.eventCleanups;
       localStorage.removeItem('currentFamilyLedger');
     },
+
+    // ==================== 事件监听 ====================
 
     /**
      * 初始化事件监听器
      * 监听其他 Store 发出的账本相关事件
      */
     initEventListeners() {
-      // 监听账本更新事件（例如成员数量变化）
-      onStoreEvent('ledger:updated', async ({ serialNum }) => {
-        try {
-          // 重新获取账本列表以更新数据
-          await this.fetchLedgers();
+      Lg.i(STORE_MODULE, '初始化事件监听器');
 
-          // 如果是当前账本，也刷新统计数据
-          if (this.currentLedger?.serialNum === serialNum) {
-            await this.fetchLedgerStats(serialNum);
+      // 先清理旧的监听器
+      this.cleanupEventListeners();
+
+      // 监听账本更新事件（例如成员数量变化）
+      this.eventCleanups.push(
+        onStoreEvent('ledger:updated', async ({ serialNum }) => {
+          try {
+            // 重新获取账本列表以更新数据
+            await this.fetchLedgers();
+
+            // 如果是当前账本，也刷新统计数据
+            if (this.currentLedger?.serialNum === serialNum) {
+              await this.fetchLedgerStats(serialNum);
+            }
+          } catch (err) {
+            Lg.e(STORE_MODULE, '处理 ledger:updated 事件失败', { serialNum, error: err });
           }
-        } catch (error) {
-          console.error('Failed to handle ledger:updated event:', error);
-        }
-      });
+        }),
+      );
+
+      Lg.i(STORE_MODULE, '事件监听器初始化完成', { count: this.eventCleanups.length });
+    },
+
+    /**
+     * 清理事件监听器
+     */
+    cleanupEventListeners() {
+      if (this.eventCleanups.length > 0) {
+        Lg.i(STORE_MODULE, '清理事件监听器', { count: this.eventCleanups.length });
+        this.eventCleanups.forEach(cleanup => cleanup());
+        this.eventCleanups = [];
+      }
     },
   },
 });

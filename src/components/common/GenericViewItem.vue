@@ -1,9 +1,10 @@
 <script lang="ts" setup generic="T extends { [key: string]: unknown }">
+import type { Component } from 'vue';
 import { computed, shallowRef, watch } from 'vue';
 
 const props = defineProps<{
   entities: Map<string, T>;
-  component: any;
+  component: Component;
   readonly?: boolean;
   displayKey?: keyof T;
 }>();

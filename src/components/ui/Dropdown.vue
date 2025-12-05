@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type { Component } from 'vue';
+
 /**
  * Dropdown - 下拉菜单组件
  *
@@ -16,7 +18,7 @@ export interface DropdownOption {
   /** 是否禁用 */
   disabled?: boolean;
   /** 图标组件 */
-  icon?: any;
+  icon?: Component;
   /** 分隔线（在此选项后显示） */
   divider?: boolean;
 }

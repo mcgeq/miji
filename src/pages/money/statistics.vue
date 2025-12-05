@@ -3,13 +3,35 @@ import { computed, onMounted, ref } from 'vue';
 import Button from '@/components/ui/Button.vue';
 import Dropdown from '@/components/ui/Dropdown.vue';
 import { useMoneyAuth } from '@/composables/useMoneyAuth';
-import AdvancedTransactionCharts from '@/features/money/components/AdvancedTransactionCharts.vue';
-import CategoryChartsSwitcher from '@/features/money/components/CategoryChartsSwitcher.vue';
-import MemberContributionChart from '@/features/money/components/charts/MemberContributionChart.vue';
-import DebtRelationChart from '@/features/money/components/DebtRelationChart.vue';
-import PaymentMethodChartsSwitcher from '@/features/money/components/PaymentMethodChartsSwitcher.vue';
 import { Permission } from '@/types/auth';
 import type { DropdownOption } from '@/components/ui/Dropdown.vue';
+
+// 懒加载重型图表组件 (Task 27: 大于50KB的组件使用动态导入)
+const AdvancedTransactionCharts = defineAsyncComponent({
+  loader: () => import('@/features/money/components/AdvancedTransactionCharts.vue'),
+  loadingComponent: { template: '<div class="animate-pulse bg-gray-200 dark:bg-gray-700 rounded-lg h-64" />' },
+  delay: 200,
+});
+const CategoryChartsSwitcher = defineAsyncComponent({
+  loader: () => import('@/features/money/components/CategoryChartsSwitcher.vue'),
+  loadingComponent: { template: '<div class="animate-pulse bg-gray-200 dark:bg-gray-700 rounded-lg h-48" />' },
+  delay: 200,
+});
+const MemberContributionChart = defineAsyncComponent({
+  loader: () => import('@/features/money/components/charts/MemberContributionChart.vue'),
+  loadingComponent: { template: '<div class="animate-pulse bg-gray-200 dark:bg-gray-700 rounded-lg h-48" />' },
+  delay: 200,
+});
+const DebtRelationChart = defineAsyncComponent({
+  loader: () => import('@/features/money/components/DebtRelationChart.vue'),
+  loadingComponent: { template: '<div class="animate-pulse bg-gray-200 dark:bg-gray-700 rounded-lg h-48" />' },
+  delay: 200,
+});
+const PaymentMethodChartsSwitcher = defineAsyncComponent({
+  loader: () => import('@/features/money/components/PaymentMethodChartsSwitcher.vue'),
+  loadingComponent: { template: '<div class="animate-pulse bg-gray-200 dark:bg-gray-700 rounded-lg h-48" />' },
+  delay: 200,
+});
 
 definePage({
   name: 'statistics',
@@ -32,59 +54,24 @@ const dateRange = ref({
   end: new Date().toISOString().split('T')[0],
 });
 
-// 分类数据（示例）
-const topCategories = ref([
-  { category: 'Food', amount: 3500, count: 45, percentage: 35 },
-  { category: 'Transport', amount: 1500, count: 30, percentage: 15 },
-  { category: 'Shopping', amount: 2000, count: 20, percentage: 20 },
-  { category: 'Entertainment', amount: 1000, count: 15, percentage: 10 },
-  { category: 'Healthcare', amount: 800, count: 8, percentage: 8 },
-  { category: 'Education', amount: 600, count: 6, percentage: 6 },
-  { category: 'Housing', amount: 400, count: 4, percentage: 4 },
-  { category: 'Other', amount: 200, count: 2, percentage: 2 },
-]);
+// 分类数据 - 从API加载
+const topCategories = ref<{ category: string; amount: number; count: number; percentage: number }[]>([]);
+const topIncomeCategories = ref<{ category: string; amount: number; count: number; percentage: number }[]>([]);
 
-const topIncomeCategories = ref([
-  { category: 'Salary', amount: 15000, count: 2, percentage: 75 },
-  { category: 'Bonus', amount: 3000, count: 1, percentage: 15 },
-  { category: 'Investment', amount: 2000, count: 5, percentage: 10 },
-]);
+// 支付方式数据 - 从API加载
+const paymentMethods = ref<{ paymentMethod: string; amount: number; count: number; percentage: number }[]>([]);
 
-// 支付方式数据（示例）
-const paymentMethods = ref([
-  { paymentMethod: 'Alipay', amount: 5000, count: 50, percentage: 50 },
-  { paymentMethod: 'WeChat', amount: 3000, count: 30, percentage: 30 },
-  { paymentMethod: 'Cash', amount: 1000, count: 15, percentage: 10 },
-  { paymentMethod: 'BankCard', amount: 1000, count: 5, percentage: 10 },
-]);
-
-// 成员数据（示例）
-const memberData = ref([
-  { name: '张三', totalPaid: 5000, totalOwed: 3000, netBalance: 2000, color: '#3b82f6' },
-  { name: '李四', totalPaid: 4000, totalOwed: 4500, netBalance: -500, color: '#10b981' },
-  { name: '王五', totalPaid: 3000, totalOwed: 2500, netBalance: 500, color: '#f59e0b' },
-]);
+// 成员数据 - 从API加载
+const memberData = ref<{ name: string; totalPaid: number; totalOwed: number; netBalance: number; color: string }[]>([]);
 
 // 时间维度选择
 const timeDimension = ref<'year' | 'month' | 'week'>('month');
 
-// 月度趋势数据（示例）
-const monthlyTrends = ref([
-  { month: '1月', income: 20000, expense: 8000, netIncome: 12000 },
-  { month: '2月', income: 18000, expense: 9000, netIncome: 9000 },
-  { month: '3月', income: 22000, expense: 8500, netIncome: 13500 },
-  { month: '4月', income: 21000, expense: 9500, netIncome: 11500 },
-  { month: '5月', income: 23000, expense: 10000, netIncome: 13000 },
-  { month: '6月', income: 25000, expense: 11000, netIncome: 14000 },
-]);
+// 月度趋势数据 - 从API加载
+const monthlyTrends = ref<{ month: string; income: number; expense: number; netIncome: number }[]>([]);
 
-// 周度趋势数据（示例）
-const weeklyTrends = ref([
-  { week: '第1周', income: 5000, expense: 2000, netIncome: 3000 },
-  { week: '第2周', income: 4500, expense: 2200, netIncome: 2300 },
-  { week: '第3周', income: 5500, expense: 2500, netIncome: 3000 },
-  { week: '第4周', income: 6000, expense: 2800, netIncome: 3200 },
-]);
+// 周度趋势数据 - 从API加载
+const weeklyTrends = ref<{ week: string; income: number; expense: number; netIncome: number }[]>([]);
 
 // 统计汇总
 const summary = computed(() => ({
@@ -97,16 +84,22 @@ const summary = computed(() => ({
 
 // 加载数据
 async function loadStatistics() {
+  if (!_currentLedgerSerialNum.value) return;
+
   loading.value = true;
   try {
-    // TODO: 调用实际的API获取统计数据
+    // TODO: 实现统计数据API调用
     // const stats = await statisticsService.getFamilyStats({
     //   familyLedgerSerialNum: _currentLedgerSerialNum.value,
     //   startDate: dateRange.value.start,
     //   endDate: dateRange.value.end,
     // });
-
-    await new Promise(resolve => setTimeout(resolve, 500));
+    // topCategories.value = stats.topCategories;
+    // topIncomeCategories.value = stats.topIncomeCategories;
+    // paymentMethods.value = stats.paymentMethods;
+    // memberData.value = stats.memberData;
+    // monthlyTrends.value = stats.monthlyTrends;
+    // weeklyTrends.value = stats.weeklyTrends;
   } catch (error) {
     console.error('加载统计数据失败:', error);
   } finally {

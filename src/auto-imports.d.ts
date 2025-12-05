@@ -6,6 +6,7 @@
 // biome-ignore lint: disable
 export {}
 declare global {
+  const CrudActionErrorCode: typeof import('./composables/useCrudActions')['CrudActionErrorCode']
   const EffectScope: typeof import('vue')['EffectScope']
   const HealthDbError: typeof import('./stores/periodStore')['HealthDbError']
   const HealthStoreErrorCode: typeof import('./stores/periodStore')['HealthStoreErrorCode']
@@ -419,14 +420,20 @@ declare global {
   export type { BudgetStatsState, BudgetStatsFilters } from './composables/useBudgetStats'
   import('./composables/useBudgetStats')
   // @ts-ignore
-  export type { CrudStore, CrudActionsOptions } from './composables/useCrudActions'
+  export type { CrudActionErrorCode, CrudStore, BatchOperationResult, OptimisticUpdateConfig, CrudActionsOptions } from './composables/useCrudActions'
   import('./composables/useCrudActions')
   // @ts-ignore
   export type { FamilyMember } from './composables/useFamilyMemberSearch'
   import('./composables/useFamilyMemberSearch')
   // @ts-ignore
+  export type { FormValidationOptions } from './composables/useFormValidation'
+  import('./composables/useFormValidation')
+  // @ts-ignore
   export type { KeyboardShortcut } from './composables/useKeyboardShortcuts'
   import('./composables/useKeyboardShortcuts')
+  // @ts-ignore
+  export type { PaginationOptions, PaginationReturn } from './composables/usePagination'
+  import('./composables/usePagination')
   // @ts-ignore
   export type { SettingsConfig } from './composables/useSettingsCache'
   import('./composables/useSettingsCache')
@@ -443,6 +450,7 @@ import { UnwrapRef } from 'vue'
 declare module 'vue' {
   interface GlobalComponents {}
   interface ComponentCustomProperties {
+    readonly CrudActionErrorCode: UnwrapRef<typeof import('./composables/useCrudActions')['CrudActionErrorCode']>
     readonly EffectScope: UnwrapRef<typeof import('vue')['EffectScope']>
     readonly HealthDbError: UnwrapRef<typeof import('./stores/periodStore')['HealthDbError']>
     readonly HealthStoreErrorCode: UnwrapRef<typeof import('./stores/periodStore')['HealthStoreErrorCode']>

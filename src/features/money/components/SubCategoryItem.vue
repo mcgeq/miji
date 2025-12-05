@@ -8,7 +8,7 @@ const props = defineProps<{
   readonly?: boolean;
 }>();
 
-const emit = defineEmits<{
+defineEmits<{
   (e: 'update:modelValue', val: SubCategory): void;
   (e: 'remove'): void;
 }>();

@@ -1,11 +1,20 @@
 <script setup lang="ts">
+import type { Component } from 'vue';
+
+interface SubmenuItem {
+  name: string;
+  title: string;
+  path: string;
+  icon?: Component;
+}
+
 interface MenuItem {
   name: string;
   title: string;
-  icon: any;
+  icon: Component;
   path: string;
   hasSubmenu?: boolean;
-  submenu?: Array<{ name: string; title: string; path: string; icon?: any }>;
+  submenu?: SubmenuItem[];
 }
 
 const { menu } = defineProps<{
@@ -29,7 +38,7 @@ function navigate(item: MenuItem) {
   }
 }
 
-function navigateSubmenu(submenuItem: { name: string; title: string; path: string; icon?: any }) {
+function navigateSubmenu(submenuItem: SubmenuItem) {
   router.push(submenuItem.path);
   showSubmenu.value = null; // 导航后关闭子菜单
 }
@@ -42,7 +51,7 @@ function isActive(item: MenuItem) {
   return item.path === route.path;
 }
 
-function isSubmenuActive(submenuItem: { name: string; title: string; path: string; icon?: any }) {
+function isSubmenuActive(submenuItem: SubmenuItem) {
   return submenuItem.path === route.path;
 }
 

@@ -1,17 +1,37 @@
 <script setup lang="ts">
-import AdvancedTransactionCharts from '@/features/money/components/AdvancedTransactionCharts.vue';
-import CategoryChartsSwitcher from '@/features/money/components/CategoryChartsSwitcher.vue';
-import PaymentMethodChartsSwitcher from '@/features/money/components/PaymentMethodChartsSwitcher.vue';
-import StatCard from '@/features/money/components/StatCard.vue';
-import TransactionStatsCharts from '@/features/money/components/TransactionStatsCharts.vue';
-import TransactionStatsFilters from '@/features/money/components/TransactionStatsFilters.vue';
-import TransactionStatsTable from '@/features/money/components/TransactionStatsTable.vue';
 import { MoneyDb } from '@/services/money/money';
 import { DateUtils } from '@/utils/date';
 import type {
   TransactionStatsRequest,
   TransactionStatsResponse,
 } from '@/services/money/transactions';
+
+// 懒加载重型图表组件 (Task 27: 大于50KB的组件使用动态导入)
+const AdvancedTransactionCharts = defineAsyncComponent({
+  loader: () => import('@/features/money/components/AdvancedTransactionCharts.vue'),
+  loadingComponent: { template: '<div class="animate-pulse bg-gray-200 dark:bg-gray-700 rounded-lg h-64" />' },
+  delay: 200,
+});
+const CategoryChartsSwitcher = defineAsyncComponent({
+  loader: () => import('@/features/money/components/CategoryChartsSwitcher.vue'),
+  loadingComponent: { template: '<div class="animate-pulse bg-gray-200 dark:bg-gray-700 rounded-lg h-48" />' },
+  delay: 200,
+});
+const PaymentMethodChartsSwitcher = defineAsyncComponent({
+  loader: () => import('@/features/money/components/PaymentMethodChartsSwitcher.vue'),
+  loadingComponent: { template: '<div class="animate-pulse bg-gray-200 dark:bg-gray-700 rounded-lg h-48" />' },
+  delay: 200,
+});
+const TransactionStatsCharts = defineAsyncComponent({
+  loader: () => import('@/features/money/components/TransactionStatsCharts.vue'),
+  loadingComponent: { template: '<div class="animate-pulse bg-gray-200 dark:bg-gray-700 rounded-lg h-64" />' },
+  delay: 200,
+});
+
+// 静态导入轻量组件
+import StatCard from '@/features/money/components/StatCard.vue';
+import TransactionStatsFilters from '@/features/money/components/TransactionStatsFilters.vue';
+import TransactionStatsTable from '@/features/money/components/TransactionStatsTable.vue';
 
 // 响应式数据
 const loading = ref(false);

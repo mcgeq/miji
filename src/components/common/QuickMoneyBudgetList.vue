@@ -10,16 +10,16 @@ interface Props {
 
 defineProps<Props>();
 
-function getBudgetProgress(budget: any) {
+function getBudgetProgress(budget: Budget) {
   const progress = Number(budget?.progress ?? 0);
   return Number.isFinite(progress) ? Math.min(Math.max(progress, 0), 100) : 0;
 }
 
-function isBudgetOver(budget: any) {
+function isBudgetOver(budget: Budget) {
   return Number(budget?.usedAmount ?? 0) > Number(budget?.amount ?? 0);
 }
 
-function getBudgetPeriodText(budget: any) {
+function getBudgetPeriodText(budget: Budget) {
   return getRepeatTypeName(budget?.repeatPeriod);
 }
 </script>

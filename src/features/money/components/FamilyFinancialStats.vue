@@ -1,9 +1,19 @@
 <script setup lang="ts">
 import { Card, Spinner } from '@/components/ui';
 import { MoneyDb } from '@/services/money/money';
-import ExpenseChart from './charts/ExpenseChart.vue';
-import MemberContributionChart from './charts/MemberContributionChart.vue';
 import type { FamilyLedgerStats } from '@/schema/money';
+
+// 懒加载图表组件 (Task 27: 按需加载重型组件)
+const ExpenseChart = defineAsyncComponent({
+  loader: () => import('./charts/ExpenseChart.vue'),
+  loadingComponent: { template: '<div class="animate-pulse bg-gray-200 dark:bg-gray-700 rounded-lg h-64" />' },
+  delay: 200,
+});
+const MemberContributionChart = defineAsyncComponent({
+  loader: () => import('./charts/MemberContributionChart.vue'),
+  loadingComponent: { template: '<div class="animate-pulse bg-gray-200 dark:bg-gray-700 rounded-lg h-64" />' },
+  delay: 200,
+});
 
 interface Props {
   familyLedgerSerialNum: string;

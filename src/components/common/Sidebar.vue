@@ -1,13 +1,14 @@
 <script setup lang="ts">
+import type { Component } from 'vue';
 import { BarChart3, LogOut } from 'lucide-vue-next';
 
 interface MenuItem {
   name: string;
   title: string;
-  icon: any;
+  icon: Component;
   path: string;
   hasSubmenu?: boolean;
-  submenu?: Array<{ name: string; title: string; path: string; icon?: any }>;
+  submenu?: Array<{ name: string; title: string; path: string; icon?: Component }>;
 }
 
 const { menu } = defineProps<{ menu: Array<MenuItem> }>();

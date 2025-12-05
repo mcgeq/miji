@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type { Component } from 'vue';
+
 /**
  * Avatar - 头像组件
  *
@@ -18,7 +20,7 @@ interface Props {
   /** 状态指示器 */
   status?: 'online' | 'offline' | 'busy' | 'away' | null;
   /** 自定义图标 */
-  icon?: any;
+  icon?: Component;
 }
 
 const props = withDefaults(defineProps<Props>(), {

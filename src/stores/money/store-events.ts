@@ -27,6 +27,20 @@ export interface StoreEvents {
     relatedAccountSerialNum?: string;
   };
 
+  // 批量交易事件（避免事件风暴）
+  'transactions:batch-created': {
+    transactionSerialNums: string[];
+    accountSerialNums: string[];  // 受影响的账户列表（去重）
+  };
+  'transactions:batch-updated': {
+    transactionSerialNums: string[];
+    accountSerialNums: string[];
+  };
+  'transactions:batch-deleted': {
+    transactionSerialNums: string[];
+    accountSerialNums: string[];
+  };
+
   // 转账事件（同时影响两个账户）
   'transfer:created': {
     fromAccountSerialNum: string;
@@ -66,6 +80,10 @@ export interface StoreEvents {
   'budget:created': { serialNum: string };
   'budget:updated': { serialNum: string };
   'budget:deleted': { serialNum: string };
+
+  // 批量预算事件
+  'budgets:batch-created': { serialNums: string[] };
+  'budgets:batch-deleted': { serialNums: string[] };
 
   // 家庭账本事件
   'ledger:created': { serialNum: string };
@@ -118,7 +136,9 @@ class StoreEventBus {
         try {
           handler(data);
         } catch (error) {
-          console.error(`Error in event handler for ${String(event)}:`, error);
+          // 使用简单的 console.error 避免循环依赖
+          // 事件总线是底层模块，不应依赖其他模块
+          console.error(`[StoreEventBus] Error in handler for ${String(event)}:`, error);
         }
       });
     }

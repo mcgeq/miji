@@ -28,24 +28,33 @@ export {
   averageBy,
   // 其他
   chunkArray,
+  // 过滤
+  compactArray,
   flattenArray,
   getPaginationInfo,
   // 分组和分区
   groupArrayBy,
   maxBy,
+  maxValue,
   minBy,
+  minValue,
   paginateArray,
   partitionArray,
   randomElement,
   shuffleArray,
+  // 截取
+  skipFirst,
   // 排序
   sortArray,
   // 统计
   sumArray,
   sumBy,
+  takeFirst,
   // 去重
   uniqueArray,
   uniqueArrayBy,
+  // 合并
+  zipArrays,
 } from './arrayUtils';
 /**
  * 差异比较工具
@@ -67,13 +76,22 @@ export {
   // 深度比较
   deepEqual,
   deepMerge,
+  // 对象扁平化
+  flattenObject,
+  // 对象差异
+  getObjectDiff,
   // 空值检查
   isEmptyValue,
   omitFields,
   // 字段选择
   pickFields,
+  // 安全更新
+  safeUpdate,
   // 对象转换
   transformKeys,
+  transformValues,
+  // 反扁平化
+  unflattenObject,
 } from './objectUtils';
 
 // ==================== 字符串处理 ====================
