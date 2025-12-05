@@ -8,6 +8,8 @@ import {
   Smartphone,
   Users,
   Volume2,
+  Bell,
+  BarChart3,
 } from 'lucide-vue-next';
 import { useI18n } from 'vue-i18n';
 import { useAutoSaveSettings, createDatabaseSetting } from '@/composables/useAutoSaveSettings';
@@ -136,9 +138,27 @@ async function handleReset() {
   <div class="max-w-4xl w-full">
     <!-- 通知偏好 -->
     <div class="mb-10">
-      <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-6 pb-2 border-b-2 border-gray-200 dark:border-gray-700">
-        {{ $t('settings.notification.preferences') }}
-      </h3>
+      <div class="flex items-center justify-between mb-6 pb-2 border-b-2 border-gray-200 dark:border-gray-700">
+        <h3 class="text-xl font-semibold text-gray-900 dark:text-white">
+          {{ $t('settings.notification.preferences') }}
+        </h3>
+        <div class="flex gap-2">
+          <button
+            @click="$router.push('/notifications')"
+            title="通知历史"
+            class="p-2 flex items-center justify-center border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-gray-700 dark:text-gray-300"
+          >
+            <Bell class="w-4 h-4" />
+          </button>
+          <button
+            @click="$router.push('/notification-dashboard')"
+            title="查看统计"
+            class="p-2 flex items-center justify-center border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-gray-700 dark:text-gray-300"
+          >
+            <BarChart3 class="w-4 h-4" />
+          </button>
+        </div>
+      </div>
 
       <div class="space-y-6">
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between py-6 border-b border-gray-200 dark:border-gray-700">

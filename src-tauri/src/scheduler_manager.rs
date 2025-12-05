@@ -28,6 +28,8 @@ pub enum SchedulerTask {
     TodoNotification,
     /// 账单提醒任务（桌面60秒，移动300秒）
     BilReminder,
+    /// 经期提醒任务（每天一次）
+    PeriodReminder,
     /// 预算自动创建任务（每2小时）
     Budget,
 }
@@ -52,6 +54,7 @@ impl SchedulerTask {
                     Duration::from_secs(60) // 桌面端1分钟
                 }
             }
+            Self::PeriodReminder => Duration::from_secs(60 * 60 * 24), // 每天一次
             Self::Budget => Duration::from_secs(60 * 60 * 2), // 2小时
         }
     }
@@ -63,6 +66,7 @@ impl SchedulerTask {
             Self::Todo => "todo",
             Self::TodoNotification => "todo_notification",
             Self::BilReminder => "bil_reminder",
+            Self::PeriodReminder => "period_reminder",
             Self::Budget => "budget",
         }
     }
@@ -98,6 +102,8 @@ impl SchedulerManager {
             .await;
         self.start_task(SchedulerTask::BilReminder, app.clone())
             .await;
+        self.start_task(SchedulerTask::PeriodReminder, app.clone())
+            .await;
         self.start_task(SchedulerTask::Budget, app.clone()).await;
 
         log::info!("All scheduler tasks started successfully");
@@ -116,10 +122,9 @@ impl SchedulerManager {
         let handle = match task_type {
             SchedulerTask::Transaction => tokio::spawn(Self::run_transaction_task(app.clone())),
             SchedulerTask::Todo => tokio::spawn(Self::run_todo_task(app.clone())),
-            SchedulerTask::TodoNotification => {
-                tokio::spawn(Self::run_todo_notification_task(app.clone()))
-            }
+            SchedulerTask::TodoNotification => tokio::spawn(Self::run_todo_notification_task(app.clone())),
             SchedulerTask::BilReminder => tokio::spawn(Self::run_bil_reminder_task(app.clone())),
+            SchedulerTask::PeriodReminder => tokio::spawn(Self::run_period_reminder_task(app.clone())),
             SchedulerTask::Budget => tokio::spawn(Self::run_budget_task(app.clone())),
         };
 
@@ -252,6 +257,25 @@ impl SchedulerManager {
                 Ok(n) if n > 0 => log::info!("发送 {} 条账单提醒", n),
                 Ok(_) => {}
                 Err(e) => log::error!("账单提醒处理失败: {}", e),
+            }
+        }
+    }
+
+    /// 经期提醒任务
+    async fn run_period_reminder_task(app: AppHandle) {
+        let mut ticker = interval(SchedulerTask::PeriodReminder.interval());
+
+        loop {
+            ticker.tick().await;
+
+            let app_state = app.state::<AppState>();
+            let db = app_state.db.clone();
+            let service = healths::service::period_reminder::PeriodReminderService::default();
+
+            match service.process_period_reminders(&app, &db).await {
+                Ok(n) if n > 0 => log::info!("发送 {} 条健康提醒", n),
+                Ok(_) => {}
+                Err(e) => log::error!("健康提醒处理失败: {}", e),
             }
         }
     }

@@ -36,11 +36,15 @@ declare module 'vue-router/auto-routes' {
     'split-records': RouteRecordInfo<'split-records', '/money/split-records', Record<never, never>, Record<never, never>>,
     'split-templates': RouteRecordInfo<'split-templates', '/money/split-templates', Record<never, never>, Record<never, never>>,
     'statistics': RouteRecordInfo<'statistics', '/money/statistics', Record<never, never>, Record<never, never>>,
+    '/notification-dashboard': RouteRecordInfo<'/notification-dashboard', '/notification-dashboard', Record<never, never>, Record<never, never>>,
+    '/notifications': RouteRecordInfo<'/notifications', '/notifications', Record<never, never>, Record<never, never>>,
     'projects': RouteRecordInfo<'projects', '/projects', Record<never, never>, Record<never, never>>,
-    'settings': RouteRecordInfo<'settings', '/settings', Record<never, never>, Record<never, never>>,
+    'settings': RouteRecordInfo<'settings', '/settings', Record<never, never>, Record<never, never>, '/settings/notifications'>,
+    '/settings/notifications': RouteRecordInfo<'/settings/notifications', '/settings/notifications', Record<never, never>, Record<never, never>>,
     'splashscreen': RouteRecordInfo<'splashscreen', '/splash', Record<never, never>, Record<never, never>>,
     'tags': RouteRecordInfo<'tags', '/tags', Record<never, never>, Record<never, never>>,
     'todos': RouteRecordInfo<'todos', '/todos', Record<never, never>, Record<never, never>>,
     'transaction-stats': RouteRecordInfo<'transaction-stats', '/transaction-stats', Record<never, never>, Record<never, never>>,
+    '/welcome': RouteRecordInfo<'/welcome', '/welcome', Record<never, never>, Record<never, never>>,
   }
 }

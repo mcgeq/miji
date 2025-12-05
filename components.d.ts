@@ -89,6 +89,7 @@ declare module 'vue' {
     LucideX: typeof import('lucide-vue-next')['X']
     MobileBottomNav: typeof import('./src/components/common/MobileBottomNav.vue')['default']
     Modal: typeof import('./src/components/ui/Modal.vue')['default']
+    NotificationPermissionDialog: typeof import('./src/components/notification/NotificationPermissionDialog.vue')['default']
     NumpadKeyboard: typeof import('./src/components/common/NumpadKeyboard.vue')['default']
     Pagination: typeof import('./src/components/ui/Pagination.vue')['default']
     PresetButtons: typeof import('./src/components/common/PresetButtons.vue')['default']
@@ -123,5 +124,6 @@ declare module 'vue' {
     ToggleSwitch: typeof import('./src/components/ToggleSwitch.vue')['default']
     Tooltip: typeof import('./src/components/ui/Tooltip.vue')['default']
     UserSelector: typeof import('./src/components/ui/UserSelector.vue')['default']
+    Welcome: typeof import('./src/components/onboarding/Welcome.vue')['default']
   }
 }

@@ -646,7 +646,100 @@ impl BilReminderService {
         }
     }
 
-    // ======= 发送系统通知 =======
+    // ======= 发送账单提醒通知（使用统一通知服务）=======
+    pub async fn send_bill_reminder(
+        &self,
+        app: &tauri::AppHandle,
+        db: &sea_orm::DatabaseConnection,
+        br: &entity::bil_reminder::Model,
+    ) -> MijiResult<()> {
+        use common::{
+            NotificationPriority, NotificationRequest, NotificationService, NotificationType,
+        };
+
+        let now = DateUtils::local_now();
+        let is_overdue = now > br.due_at;
+        let is_escalation = br.escalation_enabled && is_overdue;
+
+        // 构建标题和内容
+        let (title, body) = if is_escalation {
+            // 升级提醒
+            let urgency = if br.priority == "high" {
+                "紧急"
+            } else if br.priority == "medium" {
+                "重要"
+            } else {
+                ""
+            };
+            (
+                format!("⚠️ {}账单升级提醒: {}", urgency, br.name),
+                self.build_escalation_body(br),
+            )
+        } else if is_overdue && !br.is_paid {
+            // 已过期未支付
+            (
+                format!("💰 账单逾期: {}", br.name),
+                self.build_overdue_body(br),
+            )
+        } else if br.is_paid && br.payment_reminder_enabled {
+            // 支付确认提醒
+            (
+                format!("✅ 支付确认: {}", br.name),
+                "请确认账单已支付完成。".to_string(),
+            )
+        } else {
+            // 正常提醒
+            (
+                format!("账单提醒: {}", br.name),
+                br.description
+                    .clone()
+                    .unwrap_or_else(|| "您有一条账单提醒".to_string()),
+            )
+        };
+
+        // 确定优先级
+        let priority = if is_escalation {
+            // 升级提醒使用紧急优先级（忽略用户设置）
+            NotificationPriority::Urgent
+        } else if br.priority == "high" {
+            NotificationPriority::High
+        } else if br.priority == "medium" {
+            NotificationPriority::Normal
+        } else {
+            NotificationPriority::Low
+        };
+
+        // 创建通知服务
+        let notification_service = NotificationService::new();
+
+        // 构建通知请求
+        let request = NotificationRequest {
+            notification_type: NotificationType::BillReminder,
+            title,
+            body,
+            priority,
+            reminder_id: Some(br.serial_num.clone()),
+            user_id: "system".to_string(), // 账单提醒是系统级别的
+            icon: Some("assets/bill-icon.png".to_string()),
+            actions: None,
+            event_name: Some("bil-reminder-fired".to_string()),
+            event_payload: Some(serde_json::json!({
+                "serialNum": br.serial_num,
+                "dueAt": br.due_at.timestamp(),
+                "isOverdue": is_overdue,
+                "isEscalation": is_escalation,
+                "isPaid": br.is_paid,
+                "priority": br.priority,
+            })),
+        };
+
+        // 发送通知
+        notification_service.send(app, db, request).await
+    }
+
+    /// 【已废弃】旧的通知发送方法，保留用于兼容性
+    /// 请使用 send_bill_reminder 替代
+    #[deprecated(since = "0.1.0", note = "请使用 send_bill_reminder 替代")]
     pub async fn send_bil_system_notification(
         &self,
         app: &tauri::AppHandle,
@@ -1322,7 +1415,8 @@ impl BilReminderService {
         let mut auto_rescheduled = 0usize;
 
         for br in rows {
-            match self.send_bil_system_notification(app, &br).await {
+            // 使用新的统一通知服务
+            match self.send_bill_reminder(app, db, &br).await {
                 Ok(_) => {
                     // 检查是否需要自动重新安排
                     let needs_reschedule = br.auto_reschedule && now > br.due_at;
@@ -1335,11 +1429,11 @@ impl BilReminderService {
                         auto_rescheduled += 1;
                     }
                 }
-                Err(e) => tracing::error!("发送账单提醒失败: {}", e),
+                Err(e) => tracing::error!("发送账单提醒失败: {} - {}", br.name, e),
             }
         }
 
-        tracing::info!("发送 {} 条账单提醒", sent);
+        tracing::info!("✅ 发送 {} 条账单提醒（使用统一通知服务）", sent);
         if auto_rescheduled > 0 {
             tracing::info!("自动重新安排了 {} 个过期账单", auto_rescheduled);
         }

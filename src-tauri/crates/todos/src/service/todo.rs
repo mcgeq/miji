@@ -139,7 +139,56 @@ impl TodosService {
         }
     }
 
-    /// 发送系统通知（跨端）：使用 tauri_plugin_notification
+    /// 发送待办提醒通知（使用统一通知服务）
+    pub async fn send_todo_reminder(
+        &self,
+        app: &tauri::AppHandle,
+        db: &DbConn,
+        todo: &entity::todo::Model,
+    ) -> MijiResult<()> {
+        use common::{
+            NotificationPriority, NotificationRequest, NotificationService, NotificationType,
+        };
+
+        // 创建通知服务
+        let notification_service = NotificationService::new();
+
+        // 映射优先级
+        let priority = match todo.priority {
+            entity::todo::Priority::Urgent => NotificationPriority::Urgent,
+            entity::todo::Priority::High => NotificationPriority::High,
+            entity::todo::Priority::Medium => NotificationPriority::Normal,
+            entity::todo::Priority::Low => NotificationPriority::Low,
+        };
+
+        // 构建通知请求
+        let request = NotificationRequest {
+            notification_type: NotificationType::TodoReminder,
+            title: format!("待办提醒: {}", todo.title),
+            body: todo
+                .description
+                .clone()
+                .unwrap_or_else(|| "您有一条待办需要关注".to_string()),
+            priority,
+            reminder_id: Some(todo.serial_num.clone()),
+            user_id: todo.owner_id.clone().unwrap_or_else(|| "system".to_string()),
+            icon: None,
+            actions: None,
+            event_name: Some("todo-reminder-fired".to_string()),
+            event_payload: Some(serde_json::json!({
+                "serialNum": todo.serial_num,
+                "dueAt": todo.due_at.timestamp(),
+                "priority": format!("{:?}", todo.priority),
+            })),
+        };
+
+        // 发送通知
+        notification_service.send(app, db, request).await
+    }
+
+    /// 【已废弃】旧的通知发送方法，保留用于兼容性
+    /// 请使用 send_todo_reminder 替代
+    #[deprecated(since = "0.1.0", note = "请使用 send_todo_reminder 替代")]
     pub async fn send_system_notification(
         &self,
         app: &tauri::AppHandle,
@@ -196,18 +245,19 @@ impl TodosService {
                 td.serial_num,
                 td.title
             );
-            match self.send_system_notification(app, &td).await {
+            // 使用新的统一通知服务
+            match self.send_todo_reminder(app, db, &td).await {
                 Ok(_) => {
                     self.mark_reminded(db, &td.serial_num, now, batch_id.clone())
                         .await?;
                     sent += 1;
                 }
                 Err(e) => {
-                    tracing::error!("发送通知失败: {}", e);
+                    tracing::error!("发送待办提醒失败: {} - {}", td.title, e);
                 }
             }
         }
-        tracing::info!("发送 {} 条待办提醒", sent);
+        tracing::info!("✅ 发送 {} 条待办提醒（使用统一通知服务）", sent);
         Ok(sent)
     }
     /// 计算提前提醒时长（根据 advance value + unit），默认 0

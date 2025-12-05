@@ -15,6 +15,9 @@ use money::command as money_cmd;
 use tauri::{Builder, Wry};
 use todos::command as todo_cmd;
 
+// 通知命令模块
+mod notification_commands;
+
 // 重新导出system_commands中的类型供外部使用
 pub use crate::system_commands::{set_complete, AppPreferences};
 
@@ -219,5 +222,9 @@ pub fn init_commands(builder: Builder<Wry>) -> Builder<Wry> {
         health_cmd::period_settings_get,
         health_cmd::period_settings_create,
         health_cmd::period_settings_update,
+        // 通知命令
+        notification_commands::request_notification_permission,
+        notification_commands::check_notification_permission,
+        notification_commands::open_notification_settings,
     ])
 }

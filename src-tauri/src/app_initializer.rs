@@ -133,6 +133,22 @@ impl AppInitializer {
             log::info!("✓ 默认虚拟账户创建完成");
         }
 
+        // 初始化移动端通知（Android 渠道，iOS 配置）
+        #[cfg(any(target_os = "android", target_os = "ios"))]
+        {
+            use crate::mobiles::notification_setup;
+            log::info!("🔔 开始初始化移动端通知...");
+            match notification_setup::setup_mobile_notifications(&app_handle) {
+                Ok(_) => {
+                    log::info!("✓ 移动端通知初始化完成");
+                }
+                Err(e) => {
+                    log::error!("❌ 移动端通知初始化失败: {}", e);
+                    // 不中断启动流程，继续执行
+                }
+            }
+        }
+
         // 启动定时任务调度器
         let scheduler = SchedulerManager::new();
         scheduler.start_all(app_handle.clone()).await;

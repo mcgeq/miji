@@ -1,22 +1,30 @@
 <script setup lang="ts">
 import { invoke } from '@tauri-apps/api/core';
-import { Monitor, Moon, RotateCcw, Sun } from 'lucide-vue-next';
+import { Monitor, Moon, RotateCcw, Sun, Code2, RefreshCcw } from 'lucide-vue-next';
 import { useI18n } from 'vue-i18n';
+import { useRouter } from 'vue-router';
 import { useAutoSaveSettings, createDatabaseSetting } from '@/composables/useAutoSaveSettings';
 import { switchLocale } from '@/i18n/i18n';
 import { useLocaleStore } from '@/stores/locales';
 import { useThemeStore } from '@/stores/theme';
+import { useFirstLaunch } from '@/composables/useFirstLaunch';
 import { isDesktop } from '@/utils/platform';
 import ToggleSwitch from '@/components/ToggleSwitch.vue';
 import SettingProfileManager from '../components/SettingProfileManager.vue';
 
 const { t } = useI18n();
+const router = useRouter();
 
 const localeStore = useLocaleStore();
 const themeStore = useThemeStore();
+const firstLaunch = useFirstLaunch();
 
 // 平台检测
 const isDesktopPlatform = ref(isDesktop());
+
+// 开发者选项
+const isDev = ref(import.meta.env.DEV);
+const resettingWelcome = ref(false);
 
 // 语言映射：将所有语言映射到 i18n 支持的语言
 function mapToSupportedLocale(locale: string): 'zh-CN' | 'en-US' | 'es-ES' {
@@ -244,6 +252,26 @@ async function handleReset() {
     console.error('Failed to reset close behavior preference:', error);
   }
 }
+
+// 重置首次启动引导
+async function handleResetWelcome() {
+  if (resettingWelcome.value) return;
+  
+  resettingWelcome.value = true;
+  try {
+    await firstLaunch.resetFirstLaunch();
+    alert('首次启动引导已重置！\n刷新页面后将再次显示欢迎界面。');
+    // 延迟1秒后刷新页面
+    setTimeout(() => {
+      router.push('/welcome');
+    }, 1000);
+  } catch (error) {
+    console.error('重置首次启动引导失败:', error);
+    alert('重置失败，请查看控制台错误信息');
+  } finally {
+    resettingWelcome.value = false;
+  }
+}
 </script>
 
 <template>
@@ -437,6 +465,50 @@ async function handleReset() {
     <!-- 配置方案管理 -->
     <div class="mt-10 pt-10 border-t-2 border-gray-200 dark:border-gray-700">
       <SettingProfileManager />
+    </div>
+
+    <!-- 开发者选项 (仅开发环境显示) -->
+    <div v-if="isDev" class="mt-10 pt-10 border-t-2 border-gray-200 dark:border-gray-700">
+      <div class="flex items-center gap-2 mb-6">
+        <component :is="Code2" class="w-5 h-5 text-gray-500" />
+        <h3 class="text-xl font-semibold text-gray-900 dark:text-white">
+          开发者选项
+        </h3>
+        <span class="text-xs px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full">
+          仅开发环境
+        </span>
+      </div>
+
+      <div class="space-y-6">
+        <!-- 重置首次启动引导 -->
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between py-6 border-b border-gray-200 dark:border-gray-700">
+          <div class="mb-4 sm:mb-0">
+            <label class="block font-medium text-gray-900 dark:text-white mb-1">
+              重置首次启动引导
+            </label>
+            <p class="text-sm text-gray-600 dark:text-gray-400">
+              清除首次启动标记，再次显示欢迎页面和权限请求
+            </p>
+          </div>
+          <div class="sm:ml-8">
+            <button
+              :disabled="resettingWelcome"
+              class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              @click="handleResetWelcome"
+            >
+              <component :is="RefreshCcw" class="w-4 h-4" :class="{ 'animate-spin': resettingWelcome }" />
+              {{ resettingWelcome ? '重置中...' : '重置引导' }}
+            </button>
+          </div>
+        </div>
+
+        <!-- 可以在这里添加更多开发者选项 -->
+        <div class="py-4">
+          <p class="text-xs text-gray-500 dark:text-gray-400">
+            💡 提示：这些选项仅在开发环境中可见，生产环境不会显示
+          </p>
+        </div>
+      </div>
     </div>
   </div>
 </template>
