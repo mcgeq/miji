@@ -39,6 +39,7 @@ pub enum SchedulerTask {
 
 impl SchedulerTask {
     /// 获取任务执行间隔
+    #[allow(dead_code)]
     pub fn interval(&self) -> Duration {
         match self {
             Self::Transaction => Duration::from_secs(60 * 60 * 2), // 2小时
@@ -90,6 +91,7 @@ impl SchedulerTask {
 /// 任务句柄
 struct TaskHandle {
     handle: JoinHandle<()>,
+    #[allow(dead_code)]
     task_type: SchedulerTask,
 }
 
@@ -305,6 +307,7 @@ impl SchedulerManager {
     }
 
     /// 停止所有任务
+    #[allow(dead_code)]
     pub async fn stop_all(&self) {
         let mut tasks = self.tasks.lock().await;
         for (task_type, task_handle) in tasks.drain() {
@@ -314,6 +317,7 @@ impl SchedulerManager {
     }
 
     /// 停止单个任务
+    #[allow(dead_code)]
     pub async fn stop_task(&self, task_type: SchedulerTask) {
         let mut tasks = self.tasks.lock().await;
         if let Some(task_handle) = tasks.remove(&task_type) {
@@ -323,6 +327,7 @@ impl SchedulerManager {
     }
 
     /// 获取任务状态
+    #[allow(dead_code)]
     pub async fn is_running(&self, task_type: SchedulerTask) -> bool {
         let tasks = self.tasks.lock().await;
         tasks.contains_key(&task_type)

@@ -156,6 +156,7 @@ impl UserSettingExtService {
     }
     
     /// 脱敏设置值（日志用）
+    #[allow(dead_code)]
     fn mask_value(value: &JsonValue, setting_type: &str) -> String {
         match setting_type {
             "string" => {

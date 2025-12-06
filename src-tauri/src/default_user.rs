@@ -119,6 +119,7 @@ async fn create_default_family_member(
 }
 
 /// 删除 miji 用户及其家庭成员
+#[allow(dead_code)]
 pub async fn delete_miji_user(db: &DatabaseConnection) -> Result<(), AppError> {
     println!("Deleting miji user and family member...");
 
@@ -158,6 +159,7 @@ pub async fn delete_miji_user(db: &DatabaseConnection) -> Result<(), AppError> {
 }
 
 /// 删除 miji 家庭成员
+#[allow(dead_code)]
 async fn delete_miji_family_member(db: &DatabaseConnection, user_serial_num: &str) -> Result<(), AppError> {
     // 查找对应的家庭成员
     let family_member = FamilyMember::find()
