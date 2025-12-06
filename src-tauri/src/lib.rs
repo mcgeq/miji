@@ -22,11 +22,11 @@ mod desktops;
 #[cfg(any(target_os = "android", target_os = "ios"))]
 mod mobiles;
 
+mod app_initializer;
 mod commands;
 mod default_account;
 mod default_user;
 mod plugins;
-mod app_initializer;
 mod scheduler_manager;
 mod system_commands;
 #[cfg(desktop)]
@@ -42,11 +42,11 @@ use init::MijiInit;
 #[cfg(any(target_os = "android", target_os = "ios"))]
 use mobiles::init;
 
-use commands::init_commands;
+use crate::commands::AppPreferences;
 use app_initializer::AppInitializer;
+use commands::init_commands;
 use dotenvy::dotenv;
 use plugins::generic_plugins;
-use crate::commands::AppPreferences;
 
 #[cfg(desktop)]
 use tray_manager::{create_system_tray, setup_window_close_handler};
@@ -72,9 +72,8 @@ pub fn run() {
 
             // 使用新的初始化器执行初始化
             let initializer = AppInitializer::new(app_handle.clone());
-            let app_state = tauri::async_runtime::block_on(async {
-                initializer.initialize().await
-            })?;
+            let app_state =
+                tauri::async_runtime::block_on(async { initializer.initialize().await })?;
 
             // 管理应用状态
             app.manage(app_state);
@@ -85,8 +84,8 @@ pub fn run() {
             // 桌面平台特定初始化
             #[cfg(desktop)]
             {
-                create_system_tray(&app_handle)?;
-                setup_window_close_handler(&app_handle)?;
+                create_system_tray(app_handle)?;
+                setup_window_close_handler(app_handle)?;
             }
 
             // 启动后台任务
@@ -100,4 +99,3 @@ pub fn run() {
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
-

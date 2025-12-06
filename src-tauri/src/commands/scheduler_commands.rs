@@ -61,9 +61,7 @@ pub async fn scheduler_config_get(
             battery_threshold: default_config.battery_threshold,
             network_required: default_config.network_required,
             wifi_only: default_config.wifi_only,
-            active_hours_start: default_config
-                .active_hours
-                .map(|(s, _)| s.to_string()),
+            active_hours_start: default_config.active_hours.map(|(s, _)| s.to_string()),
             active_hours_end: default_config.active_hours.map(|(_, e)| e.to_string()),
             priority: default_config.priority,
             description: None,
@@ -263,7 +261,10 @@ pub async fn scheduler_config_reset(
         query = query.filter(scheduler_config::Column::UserSerialNum.is_null());
     }
 
-    query.exec(state.db.as_ref()).await.map_err(|e| e.to_string())?;
+    query
+        .exec(state.db.as_ref())
+        .await
+        .map_err(|e| e.to_string())?;
 
     // 清除缓存
     service.clear_cache().await;

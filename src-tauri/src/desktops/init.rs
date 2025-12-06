@@ -155,8 +155,8 @@ fn cleanup_old_logs(root_dir: &Path, relative_path: &str, days: i64) -> std::io:
 }
 
 pub fn init_tracing_subscriber() {
-    let filter_layer = EnvFilter::try_from_default_env()
-        .unwrap_or_else(|_| EnvFilter::new("info,sqlx=warn"));
+    let filter_layer =
+        EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info,sqlx=warn"));
 
     // 彩色控制台输出
     let console_layer = fmt::layer()
@@ -169,7 +169,7 @@ pub fn init_tracing_subscriber() {
 
     // JSON 文件输出，放在 logs/tracing/2025-08-11/app.log
     let root_dir = MijiFiles::root_path().unwrap_or_else(|_| ".".into());
-    
+
     // 普通日志文件
     let log_file_path = today_log_path(&root_dir, &["logs", "tracing"], "app.log");
     let file = OpenOptions::new()

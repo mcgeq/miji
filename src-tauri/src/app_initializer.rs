@@ -11,15 +11,15 @@ use crate::default_account::create_default_virtual_account;
 use crate::default_user::create_default_user;
 use crate::scheduler_manager::SchedulerManager;
 use common::{
-    config::Config, error::AppError, business_code::BusinessCode, ApiCredentials, AppState,
-    SetupState,
+    ApiCredentials, AppState, SetupState, business_code::BusinessCode, config::Config,
+    error::AppError,
 };
 use migration::{Migrator, MigratorTrait};
 use sea_orm::DatabaseConnection;
 use std::sync::Arc;
 use tauri::{AppHandle, Manager};
 use tokio::sync::Mutex;
-use tokio::time::{sleep, Duration};
+use tokio::time::{Duration, sleep};
 
 /// 应用初始化器
 pub struct AppInitializer {
@@ -61,21 +61,13 @@ impl AppInitializer {
     /// 初始化数据库连接和迁移
     async fn initialize_database(&self, db_url: &str) -> Result<DatabaseConnection, AppError> {
         // 连接数据库
-        let db = sea_orm::Database::connect(db_url)
-            .await
-            .map_err(|e| {
-                AppError::simple(
-                    BusinessCode::DatabaseError,
-                    format!("数据库连接失败: {e}"),
-                )
-            })?;
+        let db = sea_orm::Database::connect(db_url).await.map_err(|e| {
+            AppError::simple(BusinessCode::DatabaseError, format!("数据库连接失败: {e}"))
+        })?;
 
         // 执行数据库迁移
         Migrator::up(&db, None).await.map_err(|e| {
-            AppError::simple(
-                BusinessCode::DatabaseError,
-                format!("数据库迁移失败: {e}"),
-            )
+            AppError::simple(BusinessCode::DatabaseError, format!("数据库迁移失败: {e}"))
         })?;
 
         Ok(db)
@@ -158,8 +150,12 @@ impl AppInitializer {
 
         // 设置后端任务为完成状态
         use crate::commands::set_complete;
-        set_complete(app_handle.clone(), app_handle.state::<AppState>(), "backend".to_string())
-            .await?;
+        set_complete(
+            app_handle.clone(),
+            app_handle.state::<AppState>(),
+            "backend".to_string(),
+        )
+        .await?;
 
         Ok(())
     }

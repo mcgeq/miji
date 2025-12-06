@@ -21,7 +21,7 @@ mod notification_commands;
 mod scheduler_commands;
 
 // 重新导出system_commands中的类型供外部使用
-pub use crate::system_commands::{set_complete, AppPreferences};
+pub use crate::system_commands::{AppPreferences, set_complete};
 
 /// 注册所有Tauri命令
 pub fn init_commands(builder: Builder<Wry>) -> Builder<Wry> {

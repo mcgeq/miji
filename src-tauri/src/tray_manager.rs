@@ -9,10 +9,9 @@
 
 #[cfg(desktop)]
 use tauri::{
-    AppHandle, Emitter, Manager,
+    AppHandle, Emitter, Manager, WindowEvent,
     menu::{MenuBuilder, MenuItem},
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
-    WindowEvent,
 };
 
 /// 创建系统托盘
@@ -96,7 +95,7 @@ pub fn setup_window_close_handler(app: &AppHandle) -> Result<(), Box<dyn std::er
         window.on_window_event(move |event| {
             if let WindowEvent::CloseRequested { api, .. } = event {
                 log::info!("检测到窗口关闭请求");
-                
+
                 // 阻止默认关闭行为
                 api.prevent_close();
 
@@ -117,6 +116,6 @@ pub fn setup_window_close_handler(app: &AppHandle) -> Result<(), Box<dyn std::er
     } else {
         log::warn!("未找到主窗口，无法设置关闭处理器");
     }
-    
+
     Ok(())
 }

@@ -60,13 +60,13 @@ pub mod macros {
             let start = std::time::Instant::now();
             let result = $body;
             let duration = start.elapsed();
-            
+
             perf_log!(
                 $operation,
                 duration_ms = duration.as_millis(),
                 duration_ns = duration.as_nanos()
             );
-            
+
             result
         }};
     }

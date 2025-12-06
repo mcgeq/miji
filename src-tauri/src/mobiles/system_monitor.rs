@@ -19,12 +19,12 @@ impl SystemMonitor {
     pub fn battery_level() -> i32 {
         // Android: 使用 tauri-plugin-os 或自定义 JNI 调用
         // 这里提供模拟实现，实际应该调用 Android BatteryManager API
-        
+
         // TODO: 集成 Android BatteryManager
         // 参考: https://developer.android.com/reference/android/os/BatteryManager
-        
+
         log::debug!("Android: 获取电池电量（模拟实现）");
-        
+
         // 模拟实现：在开发时返回随机值用于测试
         #[cfg(debug_assertions)]
         {
@@ -34,7 +34,7 @@ impl SystemMonitor {
             log::debug!("Android: 模拟电池电量 = {}%", level);
             return level;
         }
-        
+
         #[cfg(not(debug_assertions))]
         {
             // 生产环境：尝试通过 Tauri 插件获取
@@ -47,12 +47,12 @@ impl SystemMonitor {
     pub fn battery_level() -> i32 {
         // iOS: 使用 UIDevice.current.batteryLevel
         // 需要通过 Objective-C/Swift 桥接
-        
+
         // TODO: 集成 iOS UIDevice API
         // 参考: https://developer.apple.com/documentation/uikit/uidevice/1620042-batterylevel
-        
+
         log::debug!("iOS: 获取电池电量（模拟实现）");
-        
+
         #[cfg(debug_assertions)]
         {
             use rand::Rng;
@@ -61,7 +61,7 @@ impl SystemMonitor {
             log::debug!("iOS: 模拟电池电量 = {}%", level);
             return level;
         }
-        
+
         #[cfg(not(debug_assertions))]
         {
             100
@@ -81,19 +81,19 @@ impl SystemMonitor {
     #[cfg(target_os = "android")]
     pub fn has_network() -> bool {
         // Android: 使用 ConnectivityManager
-        
+
         // TODO: 集成 Android ConnectivityManager
         // 参考: https://developer.android.com/reference/android/net/ConnectivityManager
-        
+
         log::debug!("Android: 检查网络连接（模拟实现）");
-        
+
         #[cfg(debug_assertions)]
         {
             // 开发模式：模拟有网络
             log::debug!("Android: 模拟有网络连接");
             true
         }
-        
+
         #[cfg(not(debug_assertions))]
         {
             // 生产环境：尝试实际检测
@@ -105,18 +105,18 @@ impl SystemMonitor {
     #[cfg(target_os = "ios")]
     pub fn has_network() -> bool {
         // iOS: 使用 Network framework 或 Reachability
-        
+
         // TODO: 集成 iOS Network framework
         // 参考: https://developer.apple.com/documentation/network
-        
+
         log::debug!("iOS: 检查网络连接（模拟实现）");
-        
+
         #[cfg(debug_assertions)]
         {
             log::debug!("iOS: 模拟有网络连接");
             true
         }
-        
+
         #[cfg(not(debug_assertions))]
         {
             Self::check_network_connectivity()
@@ -136,19 +136,19 @@ impl SystemMonitor {
     #[cfg(target_os = "android")]
     pub fn is_wifi() -> bool {
         // Android: 检查 ConnectivityManager 的网络类型
-        
+
         // TODO: 集成 Android NetworkCapabilities
         // 参考: https://developer.android.com/reference/android/net/NetworkCapabilities
-        
+
         log::debug!("Android: 检查 Wi-Fi 连接（模拟实现）");
-        
+
         #[cfg(debug_assertions)]
         {
             // 开发模式：模拟 Wi-Fi
             log::debug!("Android: 模拟 Wi-Fi 连接");
             true
         }
-        
+
         #[cfg(not(debug_assertions))]
         {
             // 生产环境：返回 false（保守策略）
@@ -159,18 +159,18 @@ impl SystemMonitor {
     #[cfg(target_os = "ios")]
     pub fn is_wifi() -> bool {
         // iOS: 使用 Network framework 检查接口类型
-        
+
         // TODO: 集成 iOS NWPathMonitor
         // 参考: https://developer.apple.com/documentation/network/nwpathmonitor
-        
+
         log::debug!("iOS: 检查 Wi-Fi 连接（模拟实现）");
-        
+
         #[cfg(debug_assertions)]
         {
             log::debug!("iOS: 模拟 Wi-Fi 连接");
             true
         }
-        
+
         #[cfg(not(debug_assertions))]
         {
             false
@@ -192,16 +192,13 @@ impl SystemMonitor {
 
         // 尝试连接到 Google DNS 的 53 端口
         let addresses = [
-            "8.8.8.8:53",      // Google DNS
-            "1.1.1.1:53",      // Cloudflare DNS
+            "8.8.8.8:53",         // Google DNS
+            "1.1.1.1:53",         // Cloudflare DNS
             "114.114.114.114:53", // 国内 DNS
         ];
 
         for addr in &addresses {
-            match TcpStream::connect_timeout(
-                &addr.parse().unwrap(),
-                Duration::from_secs(2),
-            ) {
+            match TcpStream::connect_timeout(&addr.parse().unwrap(), Duration::from_secs(2)) {
                 Ok(_) => {
                     log::debug!("网络连接检测成功: {}", addr);
                     return true;
@@ -221,7 +218,11 @@ impl SystemMonitor {
         format!(
             "电量: {}%, 网络: {}, Wi-Fi: {}",
             Self::battery_level(),
-            if Self::has_network() { "连接" } else { "断开" },
+            if Self::has_network() {
+                "连接"
+            } else {
+                "断开"
+            },
             if Self::is_wifi() { "是" } else { "否" }
         )
     }

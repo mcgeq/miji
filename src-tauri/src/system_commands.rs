@@ -178,25 +178,26 @@ pub async fn refresh_token(
 
     let result = (|| -> MijiResult<TokenResponse> {
         // 验证旧token
-        let claims = jwt_helper.verify_token(&token)
+        let claims = jwt_helper
+            .verify_token(&token)
             .map_err(|_| AppError::simple(BusinessCode::TokenInvalid, "无效的Token"))?;
 
         // 检查是否过期（允许已过期的token刷新，但需要在合理时间内）
         let now = Utc::now().timestamp() as usize;
         let expired_grace_period = 24 * 3600; // 允许过期后24小时内刷新
-        
+
         if claims.exp + expired_grace_period < now {
             return Err(AppError::simple(
                 BusinessCode::RefreshTokenExpired,
-                "Token已过期太久，请重新登录"
+                "Token已过期太久，请重新登录",
             ));
         }
 
         // 使用旧token中的user_id和role生成新token
         let new_token = jwt_helper.generate_token(
             &claims.sub,  // user_id
-            &claims.role,  // role
-            credentials.expired_at
+            &claims.role, // role
+            credentials.expired_at,
         )?;
 
         let expires_at = Utc::now()

@@ -59,7 +59,7 @@ impl SchedulerTask {
                 }
             }
             Self::PeriodReminder => Duration::from_secs(60 * 60 * 24), // 每天一次
-            Self::Budget => Duration::from_secs(60 * 60 * 2), // 2小时
+            Self::Budget => Duration::from_secs(60 * 60 * 2),          // 2小时
         }
     }
 
@@ -172,54 +172,42 @@ impl SchedulerManager {
 
         // 根据任务类型启动对应的任务（传入配置）
         let handle = match task_type {
-            SchedulerTask::Transaction => {
-                tokio::spawn(Self::run_task_with_config(
-                    app.clone(),
-                    task_type,
-                    config,
-                    Self::execute_transaction_task,
-                ))
-            }
-            SchedulerTask::Todo => {
-                tokio::spawn(Self::run_task_with_config(
-                    app.clone(),
-                    task_type,
-                    config,
-                    Self::execute_todo_task,
-                ))
-            }
-            SchedulerTask::TodoNotification => {
-                tokio::spawn(Self::run_task_with_config(
-                    app.clone(),
-                    task_type,
-                    config,
-                    Self::execute_todo_notification_task,
-                ))
-            }
-            SchedulerTask::BilReminder => {
-                tokio::spawn(Self::run_task_with_config(
-                    app.clone(),
-                    task_type,
-                    config,
-                    Self::execute_bil_reminder_task,
-                ))
-            }
-            SchedulerTask::PeriodReminder => {
-                tokio::spawn(Self::run_task_with_config(
-                    app.clone(),
-                    task_type,
-                    config,
-                    Self::execute_period_reminder_task,
-                ))
-            }
-            SchedulerTask::Budget => {
-                tokio::spawn(Self::run_task_with_config(
-                    app.clone(),
-                    task_type,
-                    config,
-                    Self::execute_budget_task,
-                ))
-            }
+            SchedulerTask::Transaction => tokio::spawn(Self::run_task_with_config(
+                app.clone(),
+                task_type,
+                config,
+                Self::execute_transaction_task,
+            )),
+            SchedulerTask::Todo => tokio::spawn(Self::run_task_with_config(
+                app.clone(),
+                task_type,
+                config,
+                Self::execute_todo_task,
+            )),
+            SchedulerTask::TodoNotification => tokio::spawn(Self::run_task_with_config(
+                app.clone(),
+                task_type,
+                config,
+                Self::execute_todo_notification_task,
+            )),
+            SchedulerTask::BilReminder => tokio::spawn(Self::run_task_with_config(
+                app.clone(),
+                task_type,
+                config,
+                Self::execute_bil_reminder_task,
+            )),
+            SchedulerTask::PeriodReminder => tokio::spawn(Self::run_task_with_config(
+                app.clone(),
+                task_type,
+                config,
+                Self::execute_period_reminder_task,
+            )),
+            SchedulerTask::Budget => tokio::spawn(Self::run_task_with_config(
+                app.clone(),
+                task_type,
+                config,
+                Self::execute_budget_task,
+            )),
         };
 
         tasks.insert(task_type, TaskHandle { handle, task_type });
@@ -427,7 +415,7 @@ impl SchedulerManager {
         tokio::spawn(async move {
             let app_state = app.state::<AppState>();
             let db = app_state.db.clone();
-            let service = healths::service::period_reminder::PeriodReminderService::default();
+            let service = healths::service::period_reminder::PeriodReminderService;
 
             match service.process_period_reminders(&app, &db).await {
                 Ok(n) if n > 0 => log::info!("发送 {} 条健康提醒", n),
