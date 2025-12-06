@@ -88,7 +88,7 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 # Only set bookmark if commit succeeded
-Write-Host "Commit successful!" -ForegroundColor Green -BackgroundColor DarkGreen
+Write-Host "Commit successful!" -ForegroundColor Green
 Write-Host ""
 Write-Host "[3/3] " -ForegroundColor Yellow -NoNewline
 Write-Host "Setting bookmark..." -ForegroundColor Cyan
