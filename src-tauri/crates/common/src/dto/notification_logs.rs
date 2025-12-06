@@ -10,6 +10,7 @@ use validator::Validate;
 pub struct NotificationLogBase {
     pub reminder_serial_num: String,
     pub notification_type: String,
+    pub priority: String,
     pub status: String,
     pub sent_at: Option<DateTime<FixedOffset>>,
     pub error_message: Option<String>,
@@ -40,6 +41,7 @@ pub struct NotificationLogCreate {
 pub struct NotificationLogUpdate {
     pub reminder_serial_num: Option<String>,
     pub notification_type: Option<String>,
+    pub priority: Option<String>,
     pub status: Option<String>,
     pub sent_at: Option<Option<DateTime<FixedOffset>>>,
     pub error_message: Option<Option<String>>,
@@ -56,6 +58,7 @@ impl TryFrom<NotificationLogCreate> for entity::notification_logs::ActiveModel {
             serial_num: ActiveValue::Set(McgUuid::uuid(38)),
             reminder_serial_num: ActiveValue::Set(value.core.reminder_serial_num),
             notification_type: ActiveValue::Set(value.core.notification_type),
+            priority: ActiveValue::Set(value.core.priority),
             status: ActiveValue::Set(value.core.status),
             sent_at: ActiveValue::Set(value.core.sent_at),
             error_message: ActiveValue::Set(value.core.error_message),
@@ -76,6 +79,7 @@ impl TryFrom<NotificationLogUpdate> for entity::notification_logs::ActiveModel {
             serial_num: ActiveValue::NotSet,
             reminder_serial_num: set_active_value_opt!(value.reminder_serial_num),
             notification_type: set_active_value_opt!(value.notification_type),
+            priority: set_active_value_opt!(value.priority),
             status: set_active_value_opt!(value.status),
             sent_at: set_active_value_opt!(value.sent_at),
             error_message: set_active_value_opt!(value.error_message),

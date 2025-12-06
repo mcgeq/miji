@@ -37,56 +37,16 @@ const store = useNotificationStore();
 const loading = ref(false);
 const selectedPeriod = ref<'7d' | '30d' | '90d'>('7d');
 
-const statistics = computed<NotificationDashboardData>(() => {
+const statistics = computed<NotificationDashboardData | null>(() => {
   if (!store.statistics) {
-    const mockData: NotificationDashboardData = {
-      total: 156,
-      success: 142,
-      failed: 8,
-      pending: 6,
-      byType: {
-        TodoReminder: 68,
-        BillReminder: 45,
-        PeriodReminder: 25,
-        OvulationReminder: 12,
-        PmsReminder: 6,
-        SystemAlert: 0,
-      },
-      byPriority: {
-        Urgent: 15,
-        High: 48,
-        Normal: 78,
-        Low: 15,
-      },
-      growthRate: 12,
-      typeDistribution: [
-        { type: 'TodoReminder', count: 68 },
-        { type: 'BillReminder', count: 45 },
-        { type: 'PeriodReminder', count: 25 },
-        { type: 'OvulationReminder', count: 12 },
-        { type: 'PmsReminder', count: 6 },
-      ],
-      priorityDistribution: [
-        { priority: 'Urgent', count: 15 },
-        { priority: 'High', count: 48 },
-        { priority: 'Normal', count: 78 },
-        { priority: 'Low', count: 15 },
-      ],
-      dailyTrend: Array.from({ length: 7 }, (_, i) => ({
-        date: new Date(Date.now() - (6 - i) * 24 * 60 * 60 * 1000).toISOString(),
-        success: Math.floor(Math.random() * 30) + 10,
-        failed: Math.floor(Math.random() * 5),
-      })),
-      recentLogs: store.recentLogs.length > 0 ? store.recentLogs : [],
-    };
-    return mockData;
+    return null;
   }
   return {
     ...store.statistics,
-    growthRate: 12,
+    growthRate: 0, // TODO: 计算增长率需要对比历史数据
     typeDistribution: Object.entries(store.statistics.byType).map(([type, count]) => ({ type, count })),
     priorityDistribution: Object.entries(store.statistics.byPriority).map(([priority, count]) => ({ priority, count })),
-    dailyTrend: [],
+    dailyTrend: [], // TODO: 后端添加每日趋势数据
     recentLogs: store.recentLogs,
   };
 });
@@ -122,7 +82,7 @@ function getPriorityColor(priority: string): string {
 }
 
 function getBarHeight(value: number): number {
-  if (!statistics.value.dailyTrend || statistics.value.dailyTrend.length === 0) return 0;
+  if (!statistics.value || !statistics.value.dailyTrend || statistics.value.dailyTrend.length === 0) return 0;
   const max = Math.max(
     ...statistics.value.dailyTrend.map((d: { success: number; failed: number }) => Math.max(d.success, d.failed))
   );

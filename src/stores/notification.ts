@@ -205,6 +205,9 @@ export const useNotificationStore = defineStore('notification', () => {
         log.status = 'Pending';
       }
       console.log('✅ 通知重试成功', id);
+      
+      // 刷新统计数据（后台异步）
+      refreshStatistics();
     } catch (err) {
       error.value = err instanceof Error ? err.message : '重试通知失败';
       console.error('❌ 重试通知失败:', err);
@@ -227,6 +230,9 @@ export const useNotificationStore = defineStore('notification', () => {
       logs.value = logs.value.filter((l) => l.id !== id);
       logsTotal.value -= 1;
       console.log('✅ 通知日志删除成功', id);
+      
+      // 刷新统计数据（后台异步）
+      refreshStatistics();
     } catch (err) {
       error.value = err instanceof Error ? err.message : '删除通知日志失败';
       console.error('❌ 删除通知日志失败:', err);
@@ -249,12 +255,33 @@ export const useNotificationStore = defineStore('notification', () => {
       logs.value = logs.value.filter((l) => !ids.includes(l.id));
       logsTotal.value -= ids.length;
       console.log('✅ 通知日志批量删除成功', ids.length);
+      
+      // 刷新统计数据（后台异步）
+      refreshStatistics();
     } catch (err) {
       error.value = err instanceof Error ? err.message : '批量删除通知日志失败';
       console.error('❌ 批量删除通知日志失败:', err);
       throw err;
     } finally {
       loading.value = false;
+    }
+  }
+
+  /**
+   * 后台刷新统计数据（不阻塞用户操作）
+   */
+  function refreshStatistics() {
+    if (statistics.value) {
+      // 只有在统计数据已经加载过的情况下才刷新
+      notificationStatisticsApi.get('7d')
+        .then((data) => {
+          statistics.value = data;
+          console.log('✅ 统计数据已刷新');
+        })
+        .catch((err) => {
+          console.warn('⚠️ 统计数据刷新失败:', err);
+          // 不抛出错误，避免影响用户操作
+        });
     }
   }
 

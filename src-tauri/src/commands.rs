@@ -226,5 +226,6 @@ pub fn init_commands(builder: Builder<Wry>) -> Builder<Wry> {
         notification_commands::request_notification_permission,
         notification_commands::check_notification_permission,
         notification_commands::open_notification_settings,
+        notification_commands::notification_statistics_get,
     ])
 }

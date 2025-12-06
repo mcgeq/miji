@@ -34,6 +34,7 @@ mod m20251122_039_create_operation_log;
 mod m20251202_040_create_user_settings;
 mod m20251202_041_create_user_setting_profiles;
 mod m20251202_042_create_user_setting_history;
+mod m20251206_043_add_priority_to_notification_logs;
 
 pub mod schema;
 
@@ -76,6 +77,7 @@ impl MigratorTrait for Migrator {
             Box::new(m20251202_040_create_user_settings::Migration),
             Box::new(m20251202_041_create_user_setting_profiles::Migration),
             Box::new(m20251202_042_create_user_setting_history::Migration),
+            Box::new(m20251206_043_add_priority_to_notification_logs::Migration),
         ]
     }
 }

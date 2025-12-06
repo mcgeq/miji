@@ -50,7 +50,7 @@ impl NotificationType {
 
 /// 通知优先级
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
-#[serde(rename_all = "lowercase")]
+#[serde(rename_all = "PascalCase")]
 pub enum NotificationPriority {
     /// 低优先级（普通通知）
     Low,
@@ -60,6 +60,18 @@ pub enum NotificationPriority {
     High,
     /// 紧急通知（忽略免打扰设置）
     Urgent,
+}
+
+impl NotificationPriority {
+    /// 转换为字符串
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Low => "Low",
+            Self::Normal => "Normal",
+            Self::High => "High",
+            Self::Urgent => "Urgent",
+        }
+    }
 }
 
 /// 通知操作按钮
@@ -437,6 +449,7 @@ impl LogRecorder {
             serial_num: Set(log_id.clone()),
             reminder_serial_num: Set(request.reminder_id.clone().unwrap_or_default()),
             notification_type: Set(request.notification_type.as_str().to_string()),
+            priority: Set(request.priority.as_str().to_string()),
             status: Set("Pending".to_string()),
             sent_at: Set(None),
             error_message: Set(None),
@@ -569,6 +582,192 @@ impl Default for PermissionManager {
     fn default() -> Self {
         Self::new()
     }
+}
+
+// ============================================================================
+// 统计服务
+// ============================================================================
+
+/// 通知统计服务
+pub struct StatisticsService;
+
+impl StatisticsService {
+    pub fn new() -> Self {
+        Self
+    }
+
+    /// 获取通知统计信息
+    ///
+    /// # Arguments
+    /// * `db` - 数据库连接
+    /// * `period` - 时间范围（天数）
+    /// * `user_id` - 可选的用户ID筛选
+    ///
+    /// # Returns
+    /// * `MijiResult<NotificationStatistics>` - 统计信息
+    pub async fn get_statistics(
+        &self,
+        db: &DatabaseConnection,
+        period_days: i64,
+        user_id: Option<String>,
+    ) -> MijiResult<NotificationStatistics> {
+        use ::entity::{notification_logs, reminder};
+        use chrono::{Duration, Utc};
+        use sea_orm::*;
+        use std::collections::HashMap;
+
+        // 计算起始时间
+        let start_date = Utc::now() - Duration::days(period_days);
+
+        // 构建查询
+        let mut query = notification_logs::Entity::find()
+            .filter(notification_logs::Column::CreatedAt.gte(start_date));
+
+        // 如果有用户ID筛选，需要通过 reminder 表关联
+        if let Some(uid) = user_id {
+            query = query
+                .inner_join(reminder::Entity)
+                .filter(reminder::Column::UserId.eq(uid));
+        }
+
+        // 获取所有记录
+        let logs = query.all(db).await?;
+
+        // 统计数据
+        let mut total = 0i64;
+        let mut success = 0i64;
+        let mut failed = 0i64;
+        let mut pending = 0i64;
+        let mut by_type: HashMap<String, i64> = HashMap::new();
+        let mut by_priority: HashMap<String, i64> = HashMap::new();
+
+        for log in logs {
+            total += 1;
+
+            // 按状态统计
+            match log.status.as_str() {
+                "Sent" => success += 1,
+                "Failed" => failed += 1,
+                "Pending" => pending += 1,
+                _ => {}
+            }
+
+            // 按类型统计
+            *by_type.entry(log.notification_type.clone()).or_insert(0) += 1;
+
+            // 按优先级统计
+            *by_priority.entry(log.priority.clone()).or_insert(0) += 1;
+        }
+
+        Ok(NotificationStatistics {
+            total,
+            success,
+            failed,
+            pending,
+            by_type,
+            by_priority,
+        })
+    }
+
+    /// 获取每日趋势数据
+    ///
+    /// # Arguments
+    /// * `db` - 数据库连接
+    /// * `period_days` - 时间范围（天数）
+    /// * `user_id` - 可选的用户ID筛选
+    ///
+    /// # Returns
+    /// * `MijiResult<Vec<DailyTrend>>` - 每日趋势数据
+    pub async fn get_daily_trend(
+        &self,
+        db: &DatabaseConnection,
+        period_days: i64,
+        user_id: Option<String>,
+    ) -> MijiResult<Vec<DailyTrend>> {
+        use ::entity::{notification_logs, reminder};
+        use chrono::{Duration, TimeZone, Utc};
+        use sea_orm::*;
+        use std::collections::HashMap;
+
+        // 计算起始时间
+        let start_date = Utc::now() - Duration::days(period_days);
+
+        // 构建查询
+        let mut query = notification_logs::Entity::find()
+            .filter(notification_logs::Column::CreatedAt.gte(start_date));
+
+        // 如果有用户ID筛选
+        if let Some(uid) = user_id {
+            query = query
+                .inner_join(reminder::Entity)
+                .filter(reminder::Column::UserId.eq(uid));
+        }
+
+        // 获取所有记录
+        let logs = query.all(db).await?;
+
+        // 按日期分组统计
+        let mut daily_stats: HashMap<String, (i64, i64)> = HashMap::new();
+
+        for log in logs {
+            let date = log.created_at.date_naive().to_string();
+            let stats = daily_stats.entry(date).or_insert((0, 0));
+
+            match log.status.as_str() {
+                "Sent" => stats.0 += 1,
+                "Failed" => stats.1 += 1,
+                _ => {}
+            }
+        }
+
+        // 转换为趋势数据
+        let mut trends: Vec<DailyTrend> = daily_stats
+            .into_iter()
+            .map(|(date_str, (success, failed))| {
+                let date = chrono::NaiveDate::parse_from_str(&date_str, "%Y-%n-%d")
+                    .unwrap_or_else(|_| Utc::now().naive_utc().date());
+                let datetime = Utc.from_utc_datetime(&date.and_hms_opt(0, 0, 0).unwrap());
+                
+                DailyTrend {
+                    date: datetime.with_timezone(&chrono::FixedOffset::east_opt(8 * 3600).unwrap()),
+                    success,
+                    failed,
+                }
+            })
+            .collect();
+
+        // 按日期排序
+        trends.sort_by(|a, b| a.date.cmp(&b.date));
+
+        Ok(trends)
+    }
+}
+
+impl Default for StatisticsService {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+/// 通知统计信息
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct NotificationStatistics {
+    pub total: i64,
+    pub success: i64,
+    pub failed: i64,
+    pub pending: i64,
+    pub by_type: std::collections::HashMap<String, i64>,
+    pub by_priority: std::collections::HashMap<String, i64>,
+}
+
+/// 每日趋势数据点
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DailyTrend {
+    pub date: chrono::DateTime<chrono::FixedOffset>,
+    pub success: i64,
+    pub failed: i64,
 }
 
 #[cfg(test)]

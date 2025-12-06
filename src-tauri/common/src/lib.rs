@@ -17,8 +17,9 @@ pub mod services {
     pub mod notification_service;
     
     pub use notification_service::{
-        LogRecorder, NotificationAction, NotificationPriority, NotificationRequest,
-        NotificationService, NotificationType, PermissionManager, SettingsChecker,
+        DailyTrend, LogRecorder, NotificationAction, NotificationPriority, NotificationRequest,
+        NotificationService, NotificationStatistics, NotificationType, PermissionManager, 
+        SettingsChecker, StatisticsService,
     };
 }
 
@@ -26,7 +27,8 @@ pub use business_code::{BusinessCode, ErrorCategory, ErrorModule};
 pub use error::{AppError, MijiResult};
 pub use response::{ApiResponse, ErrorPayload};
 pub use services::{
-    LogRecorder, NotificationAction, NotificationPriority, NotificationRequest,
-    NotificationService, NotificationType, PermissionManager, SettingsChecker,
+    DailyTrend, LogRecorder, NotificationAction, NotificationPriority, NotificationRequest,
+    NotificationService, NotificationStatistics, NotificationType, PermissionManager, 
+    SettingsChecker, StatisticsService,
 };
 pub use state::{ApiCredentials, AppState, SetupState, TokenResponse, TokenStatus};

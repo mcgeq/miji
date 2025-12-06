@@ -7,7 +7,9 @@
 // Create   Date:  2025-12-06
 // -----------------------------------------------------------------------------
 
-use tauri::AppHandle;
+use common::{NotificationStatistics, StatisticsService};
+use tauri::{AppHandle, State};
+use crate::AppStateInner;
 
 /// 请求通知权限
 ///
@@ -70,4 +72,44 @@ pub fn open_notification_settings(_app: AppHandle) -> Result<(), String> {
     {
         Err("桌面端不支持此功能".to_string())
     }
+}
+
+/// 获取通知统计信息
+///
+/// # Arguments
+/// * `state` - 应用状态
+/// * `period` - 时间范围 (7d, 30d, 90d)
+///
+/// # Returns
+/// * `Result<NotificationStatistics, String>` - 统计信息
+#[tauri::command]
+pub async fn notification_statistics_get(
+    state: State<'_, AppStateInner>,
+    period: String,
+) -> Result<NotificationStatistics, String> {
+    tracing::debug!("获取通知统计: period={}", period);
+
+    // 解析时间范围
+    let period_days = match period.as_str() {
+        "7d" => 7,
+        "30d" => 30,
+        "90d" => 90,
+        _ => return Err(format!("不支持的时间范围: {}", period)),
+    };
+
+    // 创建统计服务
+    let service = StatisticsService::new();
+
+    // 获取当前用户ID（如果需要按用户筛选）
+    // TODO: 从 state 或 session 获取当前用户ID
+    let user_id: Option<String> = None;
+
+    // 查询统计数据
+    service
+        .get_statistics(&state.db, period_days, user_id)
+        .await
+        .map_err(|e| {
+            tracing::error!("获取通知统计失败: {}", e);
+            e.to_string()
+        })
 }

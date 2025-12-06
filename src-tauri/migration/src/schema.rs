@@ -559,6 +559,7 @@ pub enum NotificationLogs {
     SerialNum,
     ReminderSerialNum,
     NotificationType,
+    Priority,
     Status,
     SentAt,
     ErrorMessage,

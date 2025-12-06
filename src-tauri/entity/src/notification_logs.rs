@@ -12,6 +12,7 @@ pub struct Model {
     pub serial_num: String,
     pub reminder_serial_num: String,
     pub notification_type: String,
+    pub priority: String,
     pub status: String,
     pub sent_at: Option<DateTimeWithTimeZone>,
     pub error_message: Option<String>,
