@@ -4,18 +4,19 @@
  */
 
 import { defineStore } from 'pinia';
-import { ref, computed } from 'vue';
+import { computed, ref } from 'vue';
+import {
+  notificationLogsApi,
+  notificationSettingsApi,
+  notificationStatisticsApi,
+} from '@/api/notification';
 import type {
-  NotificationSettings,
   NotificationLog,
+  NotificationSettings,
+  NotificationSettingsForm,
   NotificationStatistics,
   NotificationType,
 } from '@/types/notification';
-import {
-  notificationSettingsApi,
-  notificationLogsApi,
-  notificationStatisticsApi,
-} from '@/api/notification';
 
 export const useNotificationStore = defineStore('notification', () => {
   // ==================== 状态 ====================
@@ -56,9 +57,7 @@ export const useNotificationStore = defineStore('notification', () => {
    * 已启用的通知类型
    */
   const enabledTypes = computed(() => {
-    return settings.value
-      .filter((s) => s.enabled)
-      .map((s) => s.notificationType);
+    return settings.value.filter(s => s.enabled).map(s => s.notificationType);
   });
 
   /**
@@ -72,14 +71,14 @@ export const useNotificationStore = defineStore('notification', () => {
    * 失败的通知数量
    */
   const failedCount = computed(() => {
-    return logs.value.filter((log) => log.status === 'Failed').length;
+    return logs.value.filter(log => log.status === 'Failed').length;
   });
 
   /**
    * 待发送的通知数量
    */
   const pendingCount = computed(() => {
-    return logs.value.filter((log) => log.status === 'Pending').length;
+    return logs.value.filter(log => log.status === 'Pending').length;
   });
 
   /**
@@ -87,7 +86,7 @@ export const useNotificationStore = defineStore('notification', () => {
    */
   const settingsMap = computed(() => {
     const map = new Map<NotificationType, NotificationSettings>();
-    settings.value.forEach((s) => {
+    settings.value.forEach(s => {
       map.set(s.notificationType, s);
     });
     return map;
@@ -98,12 +97,12 @@ export const useNotificationStore = defineStore('notification', () => {
   /**
    * 加载通知设置
    */
-  async function loadSettings() {
+  async function loadSettings(userId: string) {
     loading.value = true;
     error.value = null;
 
     try {
-      settings.value = await notificationSettingsApi.getAll();
+      settings.value = await notificationSettingsApi.getAll(userId);
       console.log('✅ 通知设置加载成功', settings.value.length);
     } catch (err) {
       error.value = err instanceof Error ? err.message : '加载通知设置失败';
@@ -117,20 +116,23 @@ export const useNotificationStore = defineStore('notification', () => {
   /**
    * 更新通知设置
    */
-  async function updateSettings(newSettings: Partial<NotificationSettings>[]) {
+  async function updateSettings(userId: string, newSettings: NotificationSettingsForm[]) {
     loading.value = true;
     error.value = null;
 
     try {
-      // TODO: 实现批量更新 API
-      console.log('✅ 通知设置更新成功', newSettings);
+      const updated = await notificationSettingsApi.batchUpdate(userId, newSettings);
+      console.log('✅ 通知设置更新成功', updated.length);
+
       // 更新本地状态
-      newSettings.forEach((newSetting) => {
+      updated.forEach(updatedSetting => {
         const index = settings.value.findIndex(
-          (s) => s.notificationType === newSetting.notificationType
+          s => s.notificationType === updatedSetting.notificationType,
         );
-        if (index !== -1 && newSetting) {
-          settings.value[index] = { ...settings.value[index], ...newSetting };
+        if (index !== -1) {
+          settings.value[index] = updatedSetting;
+        } else {
+          settings.value.push(updatedSetting);
         }
       });
     } catch (err) {
@@ -145,13 +147,13 @@ export const useNotificationStore = defineStore('notification', () => {
   /**
    * 重置通知设置
    */
-  async function resetSettings() {
+  async function resetSettings(userId: string) {
     loading.value = true;
     error.value = null;
 
     try {
-      await notificationSettingsApi.reset();
-      await loadSettings(); // 重新加载
+      await notificationSettingsApi.reset(userId);
+      await loadSettings(userId); // 重新加载
       console.log('✅ 通知设置重置成功');
     } catch (err) {
       error.value = err instanceof Error ? err.message : '重置通知设置失败';
@@ -200,12 +202,12 @@ export const useNotificationStore = defineStore('notification', () => {
     try {
       await notificationLogsApi.retry(id);
       // 更新本地状态
-      const log = logs.value.find((l) => l.id === id);
+      const log = logs.value.find(l => l.id === id);
       if (log) {
         log.status = 'Pending';
       }
       console.log('✅ 通知重试成功', id);
-      
+
       // 刷新统计数据（后台异步）
       refreshStatistics();
     } catch (err) {
@@ -227,10 +229,10 @@ export const useNotificationStore = defineStore('notification', () => {
     try {
       await notificationLogsApi.delete(id);
       // 从本地状态移除
-      logs.value = logs.value.filter((l) => l.id !== id);
+      logs.value = logs.value.filter(l => l.id !== id);
       logsTotal.value -= 1;
       console.log('✅ 通知日志删除成功', id);
-      
+
       // 刷新统计数据（后台异步）
       refreshStatistics();
     } catch (err) {
@@ -252,10 +254,10 @@ export const useNotificationStore = defineStore('notification', () => {
     try {
       await notificationLogsApi.batchDelete(ids);
       // 从本地状态移除
-      logs.value = logs.value.filter((l) => !ids.includes(l.id));
+      logs.value = logs.value.filter(l => !ids.includes(l.id));
       logsTotal.value -= ids.length;
       console.log('✅ 通知日志批量删除成功', ids.length);
-      
+
       // 刷新统计数据（后台异步）
       refreshStatistics();
     } catch (err) {
@@ -273,12 +275,13 @@ export const useNotificationStore = defineStore('notification', () => {
   function refreshStatistics() {
     if (statistics.value) {
       // 只有在统计数据已经加载过的情况下才刷新
-      notificationStatisticsApi.get('7d')
-        .then((data) => {
+      notificationStatisticsApi
+        .get('7d')
+        .then(data => {
           statistics.value = data;
           console.log('✅ 统计数据已刷新');
         })
-        .catch((err) => {
+        .catch(err => {
           console.warn('⚠️ 统计数据刷新失败:', err);
           // 不抛出错误，避免影响用户操作
         });

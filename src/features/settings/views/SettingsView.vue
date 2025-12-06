@@ -1,5 +1,6 @@
 <script setup lang="ts">
   import { Bell, Clock, Database, Lock, Settings, Shield, User } from 'lucide-vue-next';
+  import { useRoute } from 'vue-router';
   import DataMigration from '../components/DataMigration.vue';
   import SchedulerSettings from '../components/SchedulerSettings.vue';
   import UserDisplayCard from '../components/UserDisplayCard.vue';
@@ -9,7 +10,10 @@
   import PrivacySettings from './PrivacySettings.vue';
   import SecuritySettings from './SecuritySettings.vue';
 
-  const activeTab = ref('general');
+  const route = useRoute();
+
+  // 从路由查询参数中读取标签，默认为 'general'
+  const activeTab = ref((route.query.tab as string) || 'general');
 
   const tabs = [
     { id: 'general', label: '通用', icon: Settings },

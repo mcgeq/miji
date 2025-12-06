@@ -1289,8 +1289,8 @@
       "preferences": "Notification Preferences",
       "enable": "Enable Notifications",
       "enableDesc": "Receive app and system notifications",
-      "types": "Notification Types",
-      "messages": "Message Notifications",
+      "typesLabel": "Notification Types",
+      "messagesLabel": "Message Notifications",
       "messagesDesc": "New messages and chat notifications",
       "emails": "Email Notifications",
       "emailsDesc": "New email alerts",
@@ -1348,7 +1348,93 @@
       "marketingEmails": "Marketing Emails",
       "marketingEmailsDesc": "Receive product updates and marketing information",
       "testNotification": "Test Notification Sound",
-      "resetNotification": "Notification settings have been reset"
+      "resetNotification": "Notification settings have been reset",
+      "permission": {
+        "title": "Notification Permission",
+        "status": "Permission Status",
+        "granted": "Granted",
+        "denied": "Denied",
+        "default": "Not Requested",
+        "grantPermission": "Grant Permission",
+        "openSettings": "Open System Settings",
+        "refreshStatus": "Refresh Status",
+        "permissionRequired": "Notification permission required to receive reminders",
+        "checking": "Checking...",
+        "messages": {
+          "granted": "Notification permission granted",
+          "denied": "Notification permission denied, please enable it in system settings",
+          "error": "Failed to request permission"
+        }
+      },
+      "types": {
+        "title": "Notification Types",
+        "todoReminder": "Todo Reminder",
+        "todoReminderDesc": "Reminders for due todos",
+        "billReminder": "Bill Reminder",
+        "billReminderDesc": "Bill due date and payment reminders",
+        "periodReminder": "Period Reminder",
+        "periodReminderDesc": "Period prediction and health reminders",
+        "ovulationReminder": "Ovulation Reminder",
+        "ovulationReminderDesc": "Ovulation period prediction reminders",
+        "pmsReminder": "PMS Reminder",
+        "pmsReminderDesc": "Pre-menstrual symptoms and health tips",
+        "systemAlert": "System Alert",
+        "systemAlertDesc": "System messages and important notifications"
+      },
+      "history": {
+        "title": "Notification History",
+        "viewHistory": "Notification History",
+        "noRecords": "No notification records",
+        "totalNotifications": "Total Notifications",
+        "successSent": "Successfully Sent",
+        "failed": "Failed",
+        "pending": "Pending",
+        "status": {
+          "sent": "Sent",
+          "failed": "Failed",
+          "pending": "Pending"
+        },
+        "retry": "Retry",
+        "delete": "Delete",
+        "confirmDelete": "Are you sure you want to delete this notification record?"
+      },
+      "statistics": {
+        "title": "Notification Statistics",
+        "viewStatistics": "View Statistics",
+        "dashboard": "Statistics Dashboard",
+        "total": "Total Notifications",
+        "success": "Successfully Sent",
+        "failure": "Failed",
+        "successRate": "Success Rate",
+        "failureRate": "Failure Rate",
+        "typeDistribution": "Type Distribution",
+        "priorityDistribution": "Priority Distribution",
+        "sendTrend": "Send Trend",
+        "period": {
+          "7d": "Last 7 Days",
+          "30d": "Last 30 Days",
+          "90d": "Last 90 Days"
+        },
+        "refresh": "Refresh",
+        "loading": "Loading statistics...",
+        "noData": "No statistics data"
+      },
+      "actions": {
+        "test": "Test Notification",
+        "reset": "Reset Settings",
+        "save": "Save Settings",
+        "cancel": "Cancel"
+      },
+      "messages": {
+        "saveSuccess": "Notification settings saved successfully",
+        "saveFailed": "Failed to save settings",
+        "resetSuccess": "Settings reset successfully",
+        "resetFailed": "Failed to reset settings",
+        "testSent": "Test notification sent",
+        "testFailed": "Failed to send test notification",
+        "permissionGranted": "Notification permission granted",
+        "permissionDenied": "Notification permission denied"
+      }
     },
     "privacy": {
       "title": "Privacy Settings",

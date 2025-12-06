@@ -1357,8 +1357,8 @@
       "preferences": "通知偏好",
       "enable": "启用通知",
       "enableDesc": "接收应用和系统通知",
-      "types": "通知类型",
-      "messages": "消息通知",
+      "typesLabel": "通知类型",
+      "messagesLabel": "消息通知",
       "messagesDesc": "新消息和聊天通知",
       "emails": "邮件通知",
       "emailsDesc": "新邮件提醒",
@@ -1416,7 +1416,93 @@
       "marketingEmails": "营销邮件",
       "marketingEmailsDesc": "接收产品更新和营销信息",
       "testNotification": "测试通知声音",
-      "resetNotification": "通知设置已重置"
+      "resetNotification": "通知设置已重置",
+      "permission": {
+        "title": "通知权限",
+        "status": "权限状态",
+        "granted": "已授权",
+        "denied": "已拒绝",
+        "default": "未请求",
+        "grantPermission": "授予权限",
+        "openSettings": "打开系统设置",
+        "refreshStatus": "刷新状态",
+        "permissionRequired": "需要通知权限才能接收提醒",
+        "checking": "检查中...",
+        "messages": {
+          "granted": "通知权限已授予",
+          "denied": "通知权限被拒绝，请在系统设置中手动开启",
+          "error": "请求权限失败"
+        }
+      },
+      "types": {
+        "title": "通知类型",
+        "todoReminder": "待办提醒",
+        "todoReminderDesc": "待办事项到期提醒",
+        "billReminder": "账单提醒",
+        "billReminderDesc": "账单到期和付款提醒",
+        "periodReminder": "经期提醒",
+        "periodReminderDesc": "经期预测和健康提醒",
+        "ovulationReminder": "排卵提醒",
+        "ovulationReminderDesc": "排卵期预测提醒",
+        "pmsReminder": "经前综合症提醒",
+        "pmsReminderDesc": "经前症状和健康建议",
+        "systemAlert": "系统提醒",
+        "systemAlertDesc": "系统消息和重要通知"
+      },
+      "history": {
+        "title": "通知历史",
+        "viewHistory": "通知历史",
+        "noRecords": "暂无通知记录",
+        "totalNotifications": "总通知数",
+        "successSent": "成功发送",
+        "failed": "发送失败",
+        "pending": "待发送",
+        "status": {
+          "sent": "已发送",
+          "failed": "失败",
+          "pending": "待发送"
+        },
+        "retry": "重试",
+        "delete": "删除",
+        "confirmDelete": "确定要删除这条通知记录吗？"
+      },
+      "statistics": {
+        "title": "通知统计",
+        "viewStatistics": "查看统计",
+        "dashboard": "统计面板",
+        "total": "总通知数",
+        "success": "成功发送",
+        "failure": "发送失败",
+        "successRate": "成功率",
+        "failureRate": "失败率",
+        "typeDistribution": "通知类型分布",
+        "priorityDistribution": "优先级分布",
+        "sendTrend": "发送趋势",
+        "period": {
+          "7d": "最近 7 天",
+          "30d": "最近 30 天",
+          "90d": "最近 90 天"
+        },
+        "refresh": "刷新",
+        "loading": "加载统计数据中...",
+        "noData": "暂无统计数据"
+      },
+      "actions": {
+        "test": "测试通知",
+        "reset": "重置设置",
+        "save": "保存设置",
+        "cancel": "取消"
+      },
+      "messages": {
+        "saveSuccess": "通知设置保存成功",
+        "saveFailed": "保存设置失败",
+        "resetSuccess": "设置已重置",
+        "resetFailed": "重置失败",
+        "testSent": "测试通知已发送",
+        "testFailed": "发送测试通知失败",
+        "permissionGranted": "通知权限已授予",
+        "permissionDenied": "通知权限被拒绝"
+      }
     },
     "privacy": {
       "title": "隐私设置",

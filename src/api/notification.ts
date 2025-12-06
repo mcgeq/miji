@@ -5,10 +5,10 @@
 
 import { invoke } from '@tauri-apps/api/core';
 import type {
-  NotificationSettings,
   NotificationLog,
-  NotificationStatistics,
+  NotificationSettings,
   NotificationSettingsForm,
+  NotificationStatistics,
 } from '@/types/notification';
 
 /**
@@ -18,9 +18,24 @@ export const notificationSettingsApi = {
   /**
    * 获取所有通知设置
    */
-  async getAll(): Promise<NotificationSettings[]> {
+  async getAll(userId: string): Promise<NotificationSettings[]> {
     try {
-      return await invoke<NotificationSettings[]>('notification_settings_get_all');
+      return await invoke<NotificationSettings[]>('notification_settings_get_all', { userId });
+    } catch (error) {
+      console.error('获取通知设置失败:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * 获取单个通知类型的设置
+   */
+  async get(userId: string, notificationType: string): Promise<NotificationSettings | null> {
+    try {
+      return await invoke<NotificationSettings | null>('notification_settings_get', {
+        userId,
+        notificationType,
+      });
     } catch (error) {
       console.error('获取通知设置失败:', error);
       throw error;
@@ -30,9 +45,12 @@ export const notificationSettingsApi = {
   /**
    * 更新通知设置
    */
-  async update(settings: NotificationSettingsForm): Promise<void> {
+  async update(userId: string, settings: NotificationSettingsForm): Promise<NotificationSettings> {
     try {
-      await invoke('notification_settings_update', { settings });
+      return await invoke<NotificationSettings>('notification_settings_update', {
+        userId,
+        settings,
+      });
     } catch (error) {
       console.error('更新通知设置失败:', error);
       throw error;
@@ -42,9 +60,15 @@ export const notificationSettingsApi = {
   /**
    * 批量更新通知设置
    */
-  async batchUpdate(settingsList: NotificationSettings[]): Promise<void> {
+  async batchUpdate(
+    userId: string,
+    settingsList: NotificationSettingsForm[],
+  ): Promise<NotificationSettings[]> {
     try {
-      await invoke('notification_settings_batch_update', { settingsList });
+      return await invoke<NotificationSettings[]>('notification_settings_batch_update', {
+        userId,
+        settingsList,
+      });
     } catch (error) {
       console.error('批量更新通知设置失败:', error);
       throw error;
@@ -54,9 +78,9 @@ export const notificationSettingsApi = {
   /**
    * 重置通知设置为默认值
    */
-  async reset(): Promise<void> {
+  async reset(userId: string): Promise<void> {
     try {
-      await invoke('notification_settings_reset');
+      await invoke('notification_settings_reset', { userId });
     } catch (error) {
       console.error('重置通知设置失败:', error);
       throw error;

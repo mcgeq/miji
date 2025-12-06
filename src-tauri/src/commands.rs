@@ -229,6 +229,18 @@ pub fn init_commands(builder: Builder<Wry>) -> Builder<Wry> {
         notification_commands::check_notification_permission,
         notification_commands::open_notification_settings,
         notification_commands::notification_statistics_get,
+        // 通知设置管理
+        notification_commands::notification_settings_get_all,
+        notification_commands::notification_settings_get,
+        notification_commands::notification_settings_update,
+        notification_commands::notification_settings_batch_update,
+        notification_commands::notification_settings_reset,
+        // 通知日志管理
+        notification_commands::notification_logs_list,
+        notification_commands::notification_log_get,
+        notification_commands::notification_log_delete,
+        notification_commands::notification_logs_batch_delete,
+        notification_commands::notification_log_retry,
         // 调度器配置命令
         scheduler_commands::scheduler_config_get,
         scheduler_commands::scheduler_config_list,

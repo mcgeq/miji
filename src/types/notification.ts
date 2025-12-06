@@ -96,18 +96,26 @@ export const NotificationPriorityColor: Record<NotificationPriority, string> = {
  * 通知设置接口
  */
 export interface NotificationSettings {
+  /** 序列号 */
+  serialNum: string;
+  /** 用户 ID */
+  userId: string;
   /** 通知类型 */
-  notificationType: NotificationType;
+  notificationType: string;
   /** 是否启用 */
   enabled: boolean;
   /** 免打扰时段开始 (HH:mm 格式) */
   quietHoursStart?: string;
   /** 免打扰时段结束 (HH:mm 格式) */
   quietHoursEnd?: string;
-  /** 免打扰日期 (星期几，1-7) */
-  quietDays?: number[];
+  /** 免打扰日期 (星期几，0-6) */
+  quietDays?: string[];
+  /** 是否启用声音 */
+  soundEnabled: boolean;
+  /** 是否启用震动 */
+  vibrationEnabled: boolean;
   /** 创建时间 */
-  createdAt?: string;
+  createdAt: string;
   /** 更新时间 */
   updatedAt?: string;
 }
@@ -190,22 +198,18 @@ export interface NotificationDashboardData extends NotificationStatistics {
  * 通知设置表单
  */
 export interface NotificationSettingsForm {
-  /** 待办提醒 */
-  todoReminder: boolean;
-  /** 账单提醒 */
-  billReminder: boolean;
-  /** 经期提醒 */
-  periodReminder: boolean;
-  /** 排卵期提醒 */
-  ovulationReminder: boolean;
-  /** PMS 提醒 */
-  pmsReminder: boolean;
-  /** 系统警报 */
-  systemAlert: boolean;
-  /** 免打扰时段开始 */
+  /** 通知类型 */
+  notificationType: string;
+  /** 是否启用 */
+  enabled: boolean;
+  /** 免打扰时段开始 (HH:mm 格式) */
   quietHoursStart?: string;
-  /** 免打扰时段结束 */
+  /** 免打扰时段结束 (HH:mm 格式) */
   quietHoursEnd?: string;
-  /** 免打扰日期 */
-  quietDays?: number[];
+  /** 免打扰日期 (星期几，0-6) */
+  quietDays?: string[];
+  /** 是否启用声音 */
+  soundEnabled?: boolean;
+  /** 是否启用震动 */
+  vibrationEnabled?: boolean;
 }
