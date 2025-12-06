@@ -18,6 +18,7 @@ if ($help) {
     Write-Host "Steps:" -ForegroundColor Yellow
     Write-Host "  1. Formats changed files by language"
     Write-Host "  2. Commits if formatting succeeds"
+    Write-Host "  3. Sets bookmark 'main' to parent commit"
     Write-Host ""
     Write-Host "Examples:" -ForegroundColor Yellow
     Write-Host "  .\jjc.ps1 -m `":sparkles: feat: add feature`""
@@ -49,7 +50,7 @@ Write-Host "--------------------------------------------------------------------
 Write-Host ""
 
 # Step 1: Format
-Write-Host "[1/2] Formatting changed files..." -ForegroundColor Cyan
+Write-Host "[1/3] Formatting changed files..." -ForegroundColor Cyan
 & .\jj-fmt.ps1
 
 if ($LASTEXITCODE -ne 0) {
@@ -62,7 +63,7 @@ if ($LASTEXITCODE -ne 0) {
 
 # Step 2: Commit
 Write-Host ""
-Write-Host "[2/2] Committing changes..." -ForegroundColor Cyan
+Write-Host "[2/3] Committing changes..." -ForegroundColor Cyan
 Write-Host ""
 
 if ($m) {
@@ -82,6 +83,20 @@ if ($LASTEXITCODE -ne 0) {
     Write-Host "Error: Commit failed" -ForegroundColor Red
     Write-Host "--------------------------------------------------------------------------------" -ForegroundColor Cyan
     exit 1
+}
+
+# Only set bookmark if commit succeeded
+Write-Host "Commit successful" -ForegroundColor Green
+Write-Host ""
+Write-Host "[3/3] Setting bookmark..." -ForegroundColor Cyan
+jj bookmark set main -r "@-"
+
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "Warning: Failed to set bookmark (you may need to set it manually)" -ForegroundColor Yellow
+    Write-Host "You can manually run: jj bookmark set main -r '@-'" -ForegroundColor Yellow
+}
+else {
+    Write-Host "Bookmark 'main' set to parent commit successfully" -ForegroundColor Green
 }
 
 Write-Host ""

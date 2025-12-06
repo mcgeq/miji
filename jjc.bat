@@ -35,7 +35,7 @@ echo ---------------------------------------------------------------------------
 echo.
 
 REM Run formatting script
-echo [1/2] Formatting changed files...
+echo [1/3] Formatting changed files...
 powershell -ExecutionPolicy Bypass -File .\jj-fmt.ps1
 
 if errorlevel 1 (
@@ -48,7 +48,7 @@ if errorlevel 1 (
 )
 
 echo.
-echo [2/2] Committing changes...
+echo [2/3] Committing changes...
 echo.
 
 if "%USE_EDITOR%"=="1" (
@@ -66,6 +66,19 @@ if errorlevel 1 (
     echo --------------------------------------------------------------------------------
     echo Please check the error message above
     exit /b 1
+)
+
+REM Only set bookmark if commit succeeded
+echo Commit successful
+echo.
+echo [3/3] Setting bookmark...
+jj bookmark set main -r "@-"
+
+if errorlevel 1 (
+    echo Warning: Failed to set bookmark (you may need to set it manually)
+    echo You can manually run: jj bookmark set main -r "@-"
+) else (
+    echo Bookmark 'main' set to parent commit successfully
 )
 
 echo.
@@ -95,6 +108,7 @@ echo      - Zig: zig fmt
 echo      - Python: ruff / black / autopep8
 echo      - C/C++: clang-format
 echo   3. Commits if formatting succeeds
+echo   4. Sets bookmark 'main' to parent commit
 echo.
 echo Examples:
 echo   Single-line commit:
