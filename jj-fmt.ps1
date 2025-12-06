@@ -242,7 +242,7 @@ $totalSteps = 2
 # Format Rust files
 if ($rustFiles) {
     if (-not $Quiet) {
-        Write-Host "`n[$backendStep/$totalSteps] Formatting Rust files..." -ForegroundColor Cyan
+        Write-Host "`n[$backendStep/$totalSteps] Processing Rust files..." -ForegroundColor Cyan
         if ($Verbose) {
             $rustFiles | ForEach-Object {
                 Write-Host "  > $_" -ForegroundColor Gray
@@ -251,6 +251,45 @@ if ($rustFiles) {
     }
     
     $rustStartTime = Get-Date
+    
+    # Step 1: Run clippy --fix
+    if (-not $Quiet) {
+        Write-Host "  [1/2] Running clippy --fix..." -ForegroundColor Cyan
+    }
+    
+    Push-Location src-tauri
+    try {
+        if ($Verbose) {
+            & cargo clippy --fix --allow-dirty --allow-staged
+        }
+        else {
+            & cargo clippy --fix --allow-dirty --allow-staged 2>&1 | Out-Null
+        }
+        
+        if ($LASTEXITCODE -eq 0) {
+            if (-not $Quiet) {
+                Write-Host "    [OK] Clippy fixes applied" -ForegroundColor Green
+            }
+        }
+        else {
+            if (-not $Quiet) {
+                Write-Host "    [WARN] Clippy returned non-zero exit code: $LASTEXITCODE" -ForegroundColor Yellow
+            }
+        }
+    }
+    catch {
+        if (-not $Quiet) {
+            Write-Host "    [WARN] Clippy error: $_" -ForegroundColor Yellow
+        }
+    }
+    finally {
+        Pop-Location
+    }
+    
+    # Step 2: Format code
+    if (-not $Quiet) {
+        Write-Host "  [2/2] Formatting code..." -ForegroundColor Cyan
+    }
     
     # Check if rustfmt is available
     try {
