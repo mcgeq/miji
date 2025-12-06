@@ -1,4 +1,5 @@
 <script setup lang="ts">
+  import { Save, Trash2 } from 'lucide-vue-next';
   import { schedulerApi } from '@/api/scheduler';
   import {
     formatInterval,
@@ -367,26 +368,32 @@
     </div>
 
     <!-- 底部操作栏 -->
-    <div v-if="!loading && !error" class="mt-6 pt-4 border-t flex items-center justify-between">
-      <div class="text-sm text-gray-500">
-        <span>最后更新: {{ lastUpdateTime }}</span>
-      </div>
-      <div class="flex gap-3">
-        <button
-          @click="clearCache"
-          :disabled="saving"
-          class="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-        >
-          🗑️ 清除缓存
-        </button>
-        <button
-          @click="saveAllConfigs"
-          :disabled="saving"
-          class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
-        >
-          <span v-if="saving">⏳ 保存中...</span>
-          <span v-else>💾 保存所有配置</span>
-        </button>
+    <div v-if="!loading && !error" class="mt-6 pt-4 border-t">
+      <div class="flex flex-col items-center gap-4">
+        <!-- 最后更新时间 -->
+        <div class="text-sm text-gray-500">
+          <span>最后更新: {{ lastUpdateTime }}</span>
+        </div>
+
+        <!-- 按钮组 -->
+        <div class="flex gap-3">
+          <button
+            @click="clearCache"
+            :disabled="saving"
+            title="清除配置缓存"
+            class="p-2.5 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            <Trash2 class="w-5 h-5" />
+          </button>
+          <button
+            @click="saveAllConfigs"
+            :disabled="saving"
+            :title="saving ? '保存中...' : '保存所有配置更改'"
+            class="p-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            <Save class="w-5 h-5" :class="{ 'animate-pulse': saving }" />
+          </button>
+        </div>
       </div>
     </div>
   </div>

@@ -307,7 +307,8 @@ if ($rustFiles) {
         $rustFailed = 0
         
         foreach ($rustFile in $rustFiles) {
-            $file = $rustFile -replace '^src-tauri/', ''
+            # Handle both forward and backward slashes
+            $file = $rustFile -replace '^src-tauri[/\\]', ''
             if (Test-Path $file) {
                 if ($Verbose) {
                     & rustfmt $file

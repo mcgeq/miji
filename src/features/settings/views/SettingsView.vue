@@ -48,20 +48,20 @@
         <!-- 标签导航 - 占1/3宽度 -->
         <div class="lg:col-span-1">
           <div
-            class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4"
+            class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-3 h-full flex flex-col justify-center"
           >
-            <div class="grid grid-cols-2 gap-2">
+            <div class="grid grid-cols-3 gap-2">
               <button
                 v-for="tab in tabs"
                 :key="tab.id"
-                class="flex flex-col items-center justify-center gap-2 p-4 rounded-lg transition-all duration-200"
+                class="flex flex-col items-center justify-center gap-1 p-2.5 rounded-lg transition-all duration-200"
                 :class="activeTab === tab.id
                   ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 shadow-sm'
                   : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/50'"
                 @click="activeTab = tab.id"
               >
-                <component :is="tab.icon" class="w-5 h-5" />
-                <span class="text-sm font-medium">{{ tab.label }}</span>
+                <component :is="tab.icon" class="w-4 h-4" />
+                <span class="text-xs font-medium">{{ tab.label }}</span>
               </button>
             </div>
           </div>
