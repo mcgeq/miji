@@ -1,0 +1,12 @@
+# Jujutsu Project Configuration
+# Using PowerShell-based formatting (no Python required)
+
+# Recommended workflow:
+# 1. Format changed files: bun run jj:c (runs jj-fmt.ps1)
+# 2. Commit: jj commit -m "message"
+# 
+# Or use the batch script for both:
+# .\jjc.bat -m "message"
+#
+# Note: jj aliases in Windows are tricky for multi-step commands.
+# The batch script (jjc.bat) is the simplest and most reliable solution.

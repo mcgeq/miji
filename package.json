@@ -25,6 +25,9 @@
     "format": "biome format --write src",
     "lint": "biome check src",
     "lint:fix": "biome check --write --unsafe",
+    "fmt:rust": "cd src-tauri && cargo fmt",
+    "fmt:all": "biome check --write --unsafe --files-ignore-unknown=true --no-errors-on-unmatched . && cd src-tauri && cargo fmt",
+    "jj:c": "powershell -ExecutionPolicy Bypass -File ./jj-fmt.ps1",
     "prepare": "husky"
   },
   "dependencies": {

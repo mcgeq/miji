@@ -1,5 +1,8 @@
 {
-  "src/**/*.{js,jsx,ts,tsx,vue,svelte,astro,mjs}": [
-    "biome check --write --unsafe"
+  "*.{js,ts,cjs,mjs,jsx,tsx,vue,json,jsonc}": [
+    "biome check --write --unsafe --no-errors-on-unmatched"
+  ],
+  "src-tauri/**/*.rs": [
+    "cargo fmt --manifest-path src-tauri/Cargo.toml --"
   ]
 }
