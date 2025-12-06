@@ -17,6 +17,8 @@ use todos::command as todo_cmd;
 
 // 通知命令模块
 mod notification_commands;
+// 调度器命令模块
+mod scheduler_commands;
 
 // 重新导出system_commands中的类型供外部使用
 pub use crate::system_commands::{set_complete, AppPreferences};
@@ -227,5 +229,13 @@ pub fn init_commands(builder: Builder<Wry>) -> Builder<Wry> {
         notification_commands::check_notification_permission,
         notification_commands::open_notification_settings,
         notification_commands::notification_statistics_get,
+        // 调度器配置命令
+        scheduler_commands::scheduler_config_get,
+        scheduler_commands::scheduler_config_list,
+        scheduler_commands::scheduler_config_update,
+        scheduler_commands::scheduler_config_create,
+        scheduler_commands::scheduler_config_delete,
+        scheduler_commands::scheduler_config_reset,
+        scheduler_commands::scheduler_config_clear_cache,
     ])
 }

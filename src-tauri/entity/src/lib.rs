@@ -45,6 +45,8 @@ pub mod budget_allocations;
 pub mod user_settings;
 pub mod user_setting_profiles;
 pub mod user_setting_history;
+// Phase 8: 调度器配置模块
+pub mod scheduler_config;
 
 pub mod enums;
 pub mod localize;

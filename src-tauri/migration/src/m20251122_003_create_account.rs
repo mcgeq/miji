@@ -1,4 +1,5 @@
-use sea_orm_migration::{prelude::*, sea_orm::prelude::Decimal};
+use sea_orm_migration::prelude::*;
+use rust_decimal::Decimal;
 
 use crate::schema::{Account, Currency, FamilyMember};
 

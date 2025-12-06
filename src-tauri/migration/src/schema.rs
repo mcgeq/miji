@@ -790,3 +790,27 @@ pub enum UserSettingHistory {
     UserAgent,
     CreatedAt,
 }
+
+// 调度器配置表
+#[derive(DeriveIden)]
+pub enum SchedulerConfig {
+    Table,
+    SerialNum,
+    UserSerialNum,
+    TaskType,
+    Enabled,
+    IntervalSeconds,
+    MaxRetryCount,
+    RetryDelaySeconds,
+    Platform,
+    BatteryThreshold,
+    NetworkRequired,
+    WifiOnly,
+    ActiveHoursStart,
+    ActiveHoursEnd,
+    Priority,
+    Description,
+    IsDefault,
+    CreatedAt,
+    UpdatedAt,
+}

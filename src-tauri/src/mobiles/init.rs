@@ -3,13 +3,15 @@
 // Author:         mcge
 // Email:          <mcgeq@outlook.com>
 // File:           init.rs
-// Description:    About mobile init plugins
-// Create   Date:  2025-06-22 17:38:35
-// Last Modified:  2025-06-28 10:42:44
-// Modified   By:  mcgeq <mcgeq@outlook.com>
+// Description:    移动端初始化
+// Create   Date:  2025-11-12 16:08:08
 // -----------------------------------------------------------------------------
 
-use tauri::Runtime;
+pub mod notification_setup;
+pub mod system_monitor;
+
+use tauri::{App, AppHandle, Manager};
+
 pub trait MijiInit {
     fn init_plugin(self) -> Self;
 }

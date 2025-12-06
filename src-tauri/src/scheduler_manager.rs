@@ -7,7 +7,7 @@
 // Create   Date:  2025-11-11
 // -----------------------------------------------------------------------------
 
-use common::AppState;
+use common::{AppState, SchedulerConfigService};
 use std::collections::HashMap;
 use std::sync::Arc;
 use tauri::{AppHandle, Emitter, Manager};
@@ -16,6 +16,9 @@ use tokio::task::JoinHandle;
 use tokio::time::{Duration, interval};
 
 use crate::{InstallmentProcessFailedEvent, InstallmentProcessedEvent};
+
+#[cfg(any(target_os = "android", target_os = "ios"))]
+use crate::mobiles::system_monitor::SystemMonitor;
 
 /// 定时任务类型
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -59,7 +62,19 @@ impl SchedulerTask {
         }
     }
 
-    /// 获取任务名称
+    /// 获取任务名称（对应数据库task_type）
+    pub fn task_type(&self) -> &'static str {
+        match self {
+            Self::Transaction => "TransactionProcess",
+            Self::Todo => "TodoAutoCreate",
+            Self::TodoNotification => "TodoReminderCheck",
+            Self::BilReminder => "BillReminderCheck",
+            Self::PeriodReminder => "PeriodReminderCheck",
+            Self::Budget => "BudgetAutoCreate",
+        }
+    }
+
+    /// 获取任务名称（用于日志）
     pub fn name(&self) -> &'static str {
         match self {
             Self::Transaction => "transaction",
@@ -81,6 +96,7 @@ struct TaskHandle {
 /// 调度器管理器
 pub struct SchedulerManager {
     tasks: Arc<Mutex<HashMap<SchedulerTask, TaskHandle>>>,
+    config_service: SchedulerConfigService,
 }
 
 impl SchedulerManager {
@@ -88,6 +104,7 @@ impl SchedulerManager {
     pub fn new() -> Self {
         Self {
             tasks: Arc::new(Mutex::new(HashMap::new())),
+            config_service: SchedulerConfigService::new(),
         }
     }
 
@@ -109,27 +126,182 @@ impl SchedulerManager {
         log::info!("All scheduler tasks started successfully");
     }
 
-    /// 启动单个任务
+    /// 启动单个任务（使用配置）
     async fn start_task(&self, task_type: SchedulerTask, app: AppHandle) {
+        let app_state = app.state::<AppState>();
+        let db = app_state.db.clone();
+
+        // 从数据库加载配置
+        let config = match self
+            .config_service
+            .get_config(&db, task_type.task_type(), None)
+            .await
+        {
+            Ok(cfg) => cfg,
+            Err(e) => {
+                log::error!(
+                    "加载任务配置失败，使用默认配置: {} - {}",
+                    task_type.name(),
+                    e
+                );
+                SchedulerConfigService::default_config(task_type.task_type())
+            }
+        };
+
+        // 检查是否启用
+        if !config.enabled {
+            log::info!("任务已禁用，跳过: {}", task_type.name());
+            return;
+        }
+
+        log::info!(
+            "启动任务: {} (间隔: {:?}秒)",
+            task_type.name(),
+            config.interval.as_secs()
+        );
+
         let mut tasks = self.tasks.lock().await;
 
         // 如果任务已存在，先停止
         if let Some(old_task) = tasks.remove(&task_type) {
             old_task.handle.abort();
-            log::warn!("Task {} was already running, restarted", task_type.name());
+            log::warn!("任务已在运行，重新启动: {}", task_type.name());
         }
 
+        // 根据任务类型启动对应的任务（传入配置）
         let handle = match task_type {
-            SchedulerTask::Transaction => tokio::spawn(Self::run_transaction_task(app.clone())),
-            SchedulerTask::Todo => tokio::spawn(Self::run_todo_task(app.clone())),
-            SchedulerTask::TodoNotification => tokio::spawn(Self::run_todo_notification_task(app.clone())),
-            SchedulerTask::BilReminder => tokio::spawn(Self::run_bil_reminder_task(app.clone())),
-            SchedulerTask::PeriodReminder => tokio::spawn(Self::run_period_reminder_task(app.clone())),
-            SchedulerTask::Budget => tokio::spawn(Self::run_budget_task(app.clone())),
+            SchedulerTask::Transaction => {
+                tokio::spawn(Self::run_task_with_config(
+                    app.clone(),
+                    task_type,
+                    config,
+                    Self::execute_transaction_task,
+                ))
+            }
+            SchedulerTask::Todo => {
+                tokio::spawn(Self::run_task_with_config(
+                    app.clone(),
+                    task_type,
+                    config,
+                    Self::execute_todo_task,
+                ))
+            }
+            SchedulerTask::TodoNotification => {
+                tokio::spawn(Self::run_task_with_config(
+                    app.clone(),
+                    task_type,
+                    config,
+                    Self::execute_todo_notification_task,
+                ))
+            }
+            SchedulerTask::BilReminder => {
+                tokio::spawn(Self::run_task_with_config(
+                    app.clone(),
+                    task_type,
+                    config,
+                    Self::execute_bil_reminder_task,
+                ))
+            }
+            SchedulerTask::PeriodReminder => {
+                tokio::spawn(Self::run_task_with_config(
+                    app.clone(),
+                    task_type,
+                    config,
+                    Self::execute_period_reminder_task,
+                ))
+            }
+            SchedulerTask::Budget => {
+                tokio::spawn(Self::run_task_with_config(
+                    app.clone(),
+                    task_type,
+                    config,
+                    Self::execute_budget_task,
+                ))
+            }
         };
 
         tasks.insert(task_type, TaskHandle { handle, task_type });
-        log::info!("Started scheduler task: {}", task_type.name());
+        log::info!("任务已启动: {}", task_type.name());
+    }
+
+    /// 使用配置运行任务
+    async fn run_task_with_config<F>(
+        app: AppHandle,
+        task_type: SchedulerTask,
+        config: common::SchedulerConfig,
+        executor: F,
+    ) where
+        F: Fn(AppHandle) + Send + 'static,
+    {
+        let mut ticker = interval(config.interval);
+
+        loop {
+            ticker.tick().await;
+
+            // 检查活动时段
+            if let Some((start, end)) = config.active_hours {
+                let now = chrono::Local::now().time();
+                if now < start || now > end {
+                    log::debug!(
+                        "当前不在活动时段，跳过任务: {} ({:?} - {:?})",
+                        task_type.name(),
+                        start,
+                        end
+                    );
+                    continue;
+                }
+            }
+
+            // 移动端条件检查
+            #[cfg(any(target_os = "android", target_os = "ios"))]
+            {
+                // 电量检查
+                if let Some(threshold) = config.battery_threshold {
+                    if Self::battery_level() < threshold {
+                        log::debug!(
+                            "电量低于阈值，跳过任务: {} (阈值: {}%)",
+                            task_type.name(),
+                            threshold
+                        );
+                        continue;
+                    }
+                }
+
+                // 网络检查
+                if config.network_required && !Self::has_network() {
+                    log::debug!("无网络连接，跳过任务: {}", task_type.name());
+                    continue;
+                }
+
+                if config.wifi_only && !Self::is_wifi() {
+                    log::debug!("非Wi-Fi连接，跳过任务: {}", task_type.name());
+                    continue;
+                }
+            }
+
+            // 执行实际任务
+            executor(app.clone());
+        }
+    }
+
+    // ==================== 移动端辅助方法 ====================
+
+    /// 获取电池电量（移动端）
+    #[cfg(any(target_os = "android", target_os = "ios"))]
+    fn battery_level() -> i32 {
+        SystemMonitor::battery_level()
+    }
+
+    /// 检查是否有网络连接
+    #[cfg(any(target_os = "android", target_os = "ios"))]
+    fn has_network() -> bool {
+        SystemMonitor::has_network()
+    }
+
+    /// 检查是否为Wi-Fi连接
+    #[cfg(any(target_os = "android", target_os = "ios"))]
+    fn is_wifi() -> bool {
+        SystemMonitor::is_wifi()
     }
 
     /// 停止所有任务
@@ -158,13 +330,9 @@ impl SchedulerManager {
 
     // ==================== 具体任务实现 ====================
 
-    /// 交易处理任务
-    async fn run_transaction_task(app: AppHandle) {
-        let mut ticker = interval(SchedulerTask::Transaction.interval());
-
-        loop {
-            ticker.tick().await;
-
+    /// 执行交易处理任务
+    fn execute_transaction_task(app: AppHandle) {
+        tokio::spawn(async move {
             let app_state = app.state::<AppState>();
             let db = app_state.db.clone();
             let installment_service = money::services::installment::InstallmentService::default();
@@ -201,16 +369,12 @@ impl SchedulerManager {
                     }
                 }
             }
-        }
+        });
     }
 
-    /// 待办自动创建任务
-    async fn run_todo_task(app: AppHandle) {
-        let mut ticker = interval(SchedulerTask::Todo.interval());
-
-        loop {
-            ticker.tick().await;
-
+    /// 执行待办自动创建任务
+    fn execute_todo_task(app: AppHandle) {
+        tokio::spawn(async move {
             let app_state = app.state::<AppState>();
             let db = app_state.db.clone();
 
@@ -220,16 +384,12 @@ impl SchedulerManager {
             } else {
                 log::info!("自动创建重复待办执行完成");
             }
-        }
+        });
     }
 
-    /// 待办提醒任务
-    async fn run_todo_notification_task(app: AppHandle) {
-        let mut ticker = interval(SchedulerTask::TodoNotification.interval());
-
-        loop {
-            ticker.tick().await;
-
+    /// 执行待办提醒任务
+    fn execute_todo_notification_task(app: AppHandle) {
+        tokio::spawn(async move {
             let app_state = app.state::<AppState>();
             let db = app_state.db.clone();
             let todos_service = todos::service::todo::TodosService::default();
@@ -239,16 +399,12 @@ impl SchedulerManager {
                 Ok(_) => {}
                 Err(e) => log::error!("待办提醒处理失败: {}", e),
             }
-        }
+        });
     }
 
-    /// 账单提醒任务
-    async fn run_bil_reminder_task(app: AppHandle) {
-        let mut ticker = interval(SchedulerTask::BilReminder.interval());
-
-        loop {
-            ticker.tick().await;
-
+    /// 执行账单提醒任务
+    fn execute_bil_reminder_task(app: AppHandle) {
+        tokio::spawn(async move {
             let app_state = app.state::<AppState>();
             let db = app_state.db.clone();
             let service = money::services::bil_reminder::BilReminderService::default();
@@ -258,16 +414,12 @@ impl SchedulerManager {
                 Ok(_) => {}
                 Err(e) => log::error!("账单提醒处理失败: {}", e),
             }
-        }
+        });
     }
 
-    /// 经期提醒任务
-    async fn run_period_reminder_task(app: AppHandle) {
-        let mut ticker = interval(SchedulerTask::PeriodReminder.interval());
-
-        loop {
-            ticker.tick().await;
-
+    /// 执行经期提醒任务
+    fn execute_period_reminder_task(app: AppHandle) {
+        tokio::spawn(async move {
             let app_state = app.state::<AppState>();
             let db = app_state.db.clone();
             let service = healths::service::period_reminder::PeriodReminderService::default();
@@ -277,16 +429,12 @@ impl SchedulerManager {
                 Ok(_) => {}
                 Err(e) => log::error!("健康提醒处理失败: {}", e),
             }
-        }
+        });
     }
 
-    /// 预算自动创建任务
-    async fn run_budget_task(app: AppHandle) {
-        let mut ticker = interval(SchedulerTask::Budget.interval());
-
-        loop {
-            ticker.tick().await;
-
+    /// 执行预算自动创建任务
+    fn execute_budget_task(app: AppHandle) {
+        tokio::spawn(async move {
             let app_state = app.state::<AppState>();
             let db = app_state.db.clone();
             let service = money::services::bil_reminder::BilReminderService::default();
@@ -297,7 +445,7 @@ impl SchedulerManager {
                 }
                 Err(e) => log::error!("自动创建重复预算失败: {}", e),
             }
-        }
+        });
     }
 }
 

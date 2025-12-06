@@ -1,42 +1,38 @@
 <script setup lang="ts">
-import {
-  Bell,
-  Database,
-  Lock,
-  Settings,
-  Shield,
-  User,
-} from 'lucide-vue-next';
-import DataMigration from '../components/DataMigration.vue';
-import UserDisplayCard from '../components/UserDisplayCard.vue';
-import UserProfileCard from '../components/UserProfileCard.vue';
-import GeneralSettings from './GeneralSettings.vue';
-import NotificationSettings from './NotificationSettings.vue';
-import PrivacySettings from './PrivacySettings.vue';
-import SecuritySettings from './SecuritySettings.vue';
+  import { Bell, Clock, Database, Lock, Settings, Shield, User } from 'lucide-vue-next';
+  import DataMigration from '../components/DataMigration.vue';
+  import SchedulerSettings from '../components/SchedulerSettings.vue';
+  import UserDisplayCard from '../components/UserDisplayCard.vue';
+  import UserProfileCard from '../components/UserProfileCard.vue';
+  import GeneralSettings from './GeneralSettings.vue';
+  import NotificationSettings from './NotificationSettings.vue';
+  import PrivacySettings from './PrivacySettings.vue';
+  import SecuritySettings from './SecuritySettings.vue';
 
-const activeTab = ref('general');
+  const activeTab = ref('general');
 
-const tabs = [
-  { id: 'general', label: '通用', icon: Settings },
-  { id: 'account', label: '账户', icon: User },
-  { id: 'security', label: '安全', icon: Shield },
-  { id: 'notifications', label: '通知', icon: Bell },
-  { id: 'privacy', label: '隐私', icon: Lock },
-  { id: 'data', label: '数据', icon: Database },
-];
+  const tabs = [
+    { id: 'general', label: '通用', icon: Settings },
+    { id: 'account', label: '账户', icon: User },
+    { id: 'security', label: '安全', icon: Shield },
+    { id: 'notifications', label: '通知', icon: Bell },
+    { id: 'scheduler', label: '调度器', icon: Clock },
+    { id: 'privacy', label: '隐私', icon: Lock },
+    { id: 'data', label: '数据', icon: Database },
+  ];
 
-const currentTabComponent = computed(() => {
-  const componentMap = {
-    general: GeneralSettings,
-    account: UserProfileCard,
-    security: SecuritySettings,
-    notifications: NotificationSettings,
-    privacy: PrivacySettings,
-    data: DataMigration,
-  };
-  return componentMap[activeTab.value as keyof typeof componentMap] || GeneralSettings;
-});
+  const currentTabComponent = computed(() => {
+    const componentMap = {
+      general: GeneralSettings,
+      account: UserProfileCard,
+      security: SecuritySettings,
+      notifications: NotificationSettings,
+      scheduler: SchedulerSettings,
+      privacy: PrivacySettings,
+      data: DataMigration,
+    };
+    return componentMap[activeTab.value as keyof typeof componentMap] || GeneralSettings;
+  });
 </script>
 
 <template>
@@ -51,7 +47,9 @@ const currentTabComponent = computed(() => {
 
         <!-- 标签导航 - 占1/3宽度 -->
         <div class="lg:col-span-1">
-          <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
+          <div
+            class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4"
+          >
             <div class="grid grid-cols-2 gap-2">
               <button
                 v-for="tab in tabs"

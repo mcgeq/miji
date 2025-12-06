@@ -8,6 +8,7 @@ description = "About Migration"
 [dependencies]
 tokio = { workspace = true, features = ["rt-multi-thread"] }
 tauri-plugin-sql = { workspace = true }
+rust_decimal = { workspace = true }
 
 
 [dependencies.sea-orm-migration]
