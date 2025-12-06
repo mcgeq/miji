@@ -1,5 +1,5 @@
-use sea_orm_migration::prelude::*;
 use crate::schema::NotificationLogs;
+use sea_orm_migration::prelude::*;
 
 #[derive(DeriveMigrationName)]
 pub struct Migration;
@@ -16,7 +16,7 @@ impl MigrationTrait for Migration {
                         ColumnDef::new(NotificationLogs::Priority)
                             .string()
                             .not_null()
-                            .default("Normal") // 默认优先级为 Normal
+                            .default("Normal"), // 默认优先级为 Normal
                     )
                     .to_owned(),
             )

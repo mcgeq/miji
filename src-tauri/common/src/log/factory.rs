@@ -1,8 +1,8 @@
-use std::sync::Arc;
 use super::{
-    config::{LoggingConfig, LogFilterConfig},
-    logger::{OperationLogger, ConsoleLogger, FileLogger, CompositeLogger, NoopLogger},
+    config::{LogFilterConfig, LoggingConfig},
+    logger::{CompositeLogger, ConsoleLogger, FileLogger, NoopLogger, OperationLogger},
 };
+use std::sync::Arc;
 use tracing::error;
 
 /// 创建组合日志记录器
@@ -25,7 +25,9 @@ pub async fn create_logger(
                 config.max_file_size,
                 config.max_files,
                 filter.clone(),
-            ).await {
+            )
+            .await
+            {
                 Ok(file_logger) => {
                     loggers.push(Arc::new(file_logger));
                 }

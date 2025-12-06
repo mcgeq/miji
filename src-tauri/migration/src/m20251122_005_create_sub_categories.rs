@@ -248,7 +248,7 @@ impl MigrationTrait for Migration {
                         SubCategories::CategoryName,
                     ])
                     .do_nothing()
-                    .to_owned()
+                    .to_owned(),
                 )
                 .to_owned();
             manager.exec_stmt(insert).await?;

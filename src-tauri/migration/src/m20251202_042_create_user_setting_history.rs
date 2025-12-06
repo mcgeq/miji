@@ -49,12 +49,8 @@ impl MigrationTrait for Migration {
                             .not_null()
                             .comment("变更类型: create, update, delete, reset")
                             .check(
-                                Expr::col(UserSettingHistory::ChangeType).is_in(vec![
-                                    "create",
-                                    "update",
-                                    "delete",
-                                    "reset",
-                                ]),
+                                Expr::col(UserSettingHistory::ChangeType)
+                                    .is_in(vec!["create", "update", "delete", "reset"]),
                             ),
                     )
                     .col(
@@ -155,14 +151,9 @@ impl MigrationTrait for Migration {
             .await?;
 
         manager
-            .drop_table(
-                Table::drop()
-                    .table(UserSettingHistory::Table)
-                    .to_owned(),
-            )
+            .drop_table(Table::drop().table(UserSettingHistory::Table).to_owned())
             .await?;
 
         Ok(())
     }
 }
-

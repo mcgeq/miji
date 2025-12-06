@@ -18,7 +18,10 @@ pub struct FamilyLedgerMemberService;
 
 impl FamilyLedgerMemberService {
     /// 获取所有账本成员关联
-    pub async fn list(&self, db: &DatabaseConnection) -> Result<Vec<family_ledger_member::Model>, AppError> {
+    pub async fn list(
+        &self,
+        db: &DatabaseConnection,
+    ) -> Result<Vec<family_ledger_member::Model>, AppError> {
         FamilyLedgerMember::find()
             .all(db)
             .await
@@ -85,27 +88,30 @@ impl FamilyLedgerMemberService {
             .map_err(AppError::from)?;
 
         // 更新账本的成员数量
-        self.update_ledger_member_count(db, &ledger_serial_num).await?;
+        self.update_ledger_member_count(db, &ledger_serial_num)
+            .await?;
 
         Ok(result)
     }
-    
+
     /// 更新账本的成员数量
     async fn update_ledger_member_count(
         &self,
         db: &DatabaseConnection,
         ledger_serial_num: &str,
     ) -> Result<(), AppError> {
-        use sea_orm::QueryFilter;
         use entity::prelude::*;
-        
+        use sea_orm::QueryFilter;
+
         // 查询成员数量
         let count = FamilyLedgerMember::find()
-            .filter(entity::family_ledger_member::Column::FamilyLedgerSerialNum.eq(ledger_serial_num))
+            .filter(
+                entity::family_ledger_member::Column::FamilyLedgerSerialNum.eq(ledger_serial_num),
+            )
             .count(db)
             .await
             .map_err(AppError::from)?;
-        
+
         // 更新账本
         FamilyLedger::update_many()
             .col_expr(
@@ -116,7 +122,7 @@ impl FamilyLedgerMemberService {
             .exec(db)
             .await
             .map_err(AppError::from)?;
-        
+
         Ok(())
     }
 
@@ -135,7 +141,8 @@ impl FamilyLedgerMemberService {
             .map_err(AppError::from)?;
 
         // 更新账本的成员数量
-        self.update_ledger_member_count(db, ledger_serial_num).await?;
+        self.update_ledger_member_count(db, ledger_serial_num)
+            .await?;
 
         Ok(())
     }

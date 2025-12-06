@@ -79,10 +79,11 @@ impl MigrationTrait for Migration {
                             .string_len(20)
                             .not_null()
                             .default("Active")
-                            .check(
-                                Expr::col(FamilyLedger::Status)
-                                    .is_in(vec!["Active", "Archived", "Suspended"]),
-                            ),
+                            .check(Expr::col(FamilyLedger::Status).is_in(vec![
+                                "Active",
+                                "Archived",
+                                "Suspended",
+                            ])),
                     )
                     // 结算相关字段
                     .col(
@@ -90,19 +91,20 @@ impl MigrationTrait for Migration {
                             .string_len(20)
                             .not_null()
                             .default("Monthly")
-                            .check(
-                                Expr::col(FamilyLedger::SettlementCycle)
-                                    .is_in(vec!["Weekly", "Monthly", "Quarterly", "Yearly", "Manual"]),
-                            ),
+                            .check(Expr::col(FamilyLedger::SettlementCycle).is_in(vec![
+                                "Weekly",
+                                "Monthly",
+                                "Quarterly",
+                                "Yearly",
+                                "Manual",
+                            ])),
                     )
                     .col(
                         ColumnDef::new(FamilyLedger::SettlementDay)
                             .integer()
                             .not_null()
                             .default(1)
-                            .check(
-                                Expr::col(FamilyLedger::SettlementDay).between(1, 366),
-                            ),
+                            .check(Expr::col(FamilyLedger::SettlementDay).between(1, 366)),
                     )
                     .col(
                         ColumnDef::new(FamilyLedger::AutoSettlement)
@@ -110,11 +112,7 @@ impl MigrationTrait for Migration {
                             .not_null()
                             .default(false),
                     )
-                    .col(
-                        ColumnDef::new(FamilyLedger::DefaultSplitRule)
-                            .json()
-                            .null(),
-                    )
+                    .col(ColumnDef::new(FamilyLedger::DefaultSplitRule).json().null())
                     .col(
                         ColumnDef::new(FamilyLedger::LastSettlementAt)
                             .timestamp_with_time_zone()
@@ -206,19 +204,11 @@ impl MigrationTrait for Migration {
 
     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
         manager
-            .drop_index(
-                Index::drop()
-                    .name("idx_family_ledger_type")
-                    .to_owned(),
-            )
+            .drop_index(Index::drop().name("idx_family_ledger_type").to_owned())
             .await?;
 
         manager
-            .drop_index(
-                Index::drop()
-                    .name("idx_family_ledger_status")
-                    .to_owned(),
-            )
+            .drop_index(Index::drop().name("idx_family_ledger_status").to_owned())
             .await?;
 
         manager

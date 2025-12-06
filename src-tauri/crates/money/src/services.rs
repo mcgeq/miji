@@ -28,15 +28,15 @@ pub mod settlement_optimizer;
 pub mod settlement_records;
 pub mod settlement_records_hooks;
 pub mod split_calculator;
-pub mod split_record;  // 新增的分摊记录辅助服务
+pub mod split_record; // 新增的分摊记录辅助服务
+pub mod split_record_details;
 pub mod split_records;
 pub mod split_records_hooks;
-pub mod split_record_details;
 pub mod split_rules;
 pub mod split_rules_hooks;
 pub mod sub_categories;
 pub mod sub_categories_hooks;
 pub mod transaction;
 pub mod transaction_hooks;
-pub mod user_settings; // Phase 7: 用户设置服务
-pub mod user_setting_profiles; // Phase 7: 用户设置配置方案服务
+pub mod user_setting_profiles;
+pub mod user_settings; // Phase 7: 用户设置服务 // Phase 7: 用户设置配置方案服务

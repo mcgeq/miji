@@ -3,20 +3,20 @@ pub mod bil_reminder;
 pub mod budget;
 pub mod categories;
 pub mod currency;
+pub mod debt_relations;
+pub mod family_budget; // Phase 6: 家庭预算
 pub mod family_ledger;
 pub mod family_ledger_account;
 pub mod family_ledger_member;
 pub mod family_ledger_transaction;
 pub mod family_member;
-pub mod split_rules;
-pub mod split_records;
-pub mod split_record_details;
-pub mod debt_relations;
-pub mod settlement_records;
-pub mod family_budget; // Phase 6: 家庭预算
 pub mod installment;
+pub mod migration;
 pub mod reminder;
+pub mod settlement_records;
+pub mod split_record_details;
+pub mod split_records;
+pub mod split_rules;
 pub mod sub_categories;
 pub mod transactions;
-pub mod migration;
 pub mod user_settings; // Phase 7: 用户设置

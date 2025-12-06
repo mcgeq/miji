@@ -1,8 +1,8 @@
 use common::{crud::hooks::Hooks, error::MijiResult, utils::date::DateUtils};
 use entity::family_member;
 use sea_orm::{
-    ActiveModelTrait, ActiveValue::Set, DatabaseTransaction, prelude::async_trait::async_trait,
-    prelude::Decimal,
+    ActiveModelTrait, ActiveValue::Set, DatabaseTransaction, prelude::Decimal,
+    prelude::async_trait::async_trait,
 };
 
 use crate::dto::users::{CreateUserDto, UpdateUserDto};

@@ -1,6 +1,5 @@
-use common::{error::common::ErrorExt, business_code::BusinessCode};
-use snafu::{Snafu, Backtrace};
-
+use common::{business_code::BusinessCode, error::common::ErrorExt};
+use snafu::{Backtrace, Snafu};
 
 /// 认证相关错误
 #[derive(Debug, Snafu)]
@@ -101,12 +100,14 @@ impl ErrorExt for AuthError {
     fn extra_data(&self) -> Option<serde_json::Value> {
         match self {
             Self::InvalidParameter { param, .. } => Some(serde_json::json!({ "param": param })),
-            Self::AuthenticationFailed { reason, .. } => Some(
-                serde_json::json!({ "reason": reason })),
+            Self::AuthenticationFailed { reason, .. } => {
+                Some(serde_json::json!({ "reason": reason }))
+            }
             Self::SessionExpired { .. } => None,
             Self::TokenInvalid { token, .. } => Some(serde_json::json!({ "token": token })),
-            Self::InsufficientPermissions { resource, .. } => Some(
-                serde_json::json!({ "resource": resource })),
+            Self::InsufficientPermissions { resource, .. } => {
+                Some(serde_json::json!({ "resource": resource }))
+            }
             Self::RefreshTokenExpired { .. } => None,
             Self::InvalidCredentials { .. } => None,
             Self::AccountLocked { .. } => None,

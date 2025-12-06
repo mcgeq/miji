@@ -13,7 +13,10 @@ use chrono::{Duration, Utc};
 use jsonwebtoken::{DecodingKey, EncodingKey, Header, TokenData, Validation, decode, encode};
 use serde::{Deserialize, Serialize};
 
-use crate::{error::{AppError, MijiResult}, BusinessCode};
+use crate::{
+    BusinessCode,
+    error::{AppError, MijiResult},
+};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Claims {
@@ -52,10 +55,10 @@ impl JwtHelper {
             &EncodingKey::from_secret(self.secret.as_bytes()),
         )
         .map_err(|e| {
-           AppError::simple(
-               BusinessCode::TokenGenerationFailed,
-               format!("Failed to generate token: {}", e)
-           )
+            AppError::simple(
+                BusinessCode::TokenGenerationFailed,
+                format!("Failed to generate token: {}", e),
+            )
         })?;
         Ok(token)
     }
@@ -66,15 +69,11 @@ impl JwtHelper {
             &DecodingKey::from_secret(self.secret.as_bytes()),
             &Validation::default(),
         )
-        .map_err(|e| {
-            match e.kind() {
-                jsonwebtoken::errors::ErrorKind::ExpiredSignature => {
-                    AppError::simple(BusinessCode::TokenExpired, "Token has expired")
-                }
-                _ => {
-                    AppError::simple(BusinessCode::TokenInvalid, format!("Invalid token: {e}"))
-                }
+        .map_err(|e| match e.kind() {
+            jsonwebtoken::errors::ErrorKind::ExpiredSignature => {
+                AppError::simple(BusinessCode::TokenExpired, "Token has expired")
             }
+            _ => AppError::simple(BusinessCode::TokenInvalid, format!("Invalid token: {e}")),
         })?;
         Ok(token_data.claims)
     }
@@ -85,21 +84,11 @@ impl JwtHelper {
             &DecodingKey::from_secret(self.secret.as_bytes()),
             &Validation::default(),
         )
-        .map_err(|e| {
-            match e.kind() {
+        .map_err(|e| match e.kind() {
             jsonwebtoken::errors::ErrorKind::ExpiredSignature => {
-                AppError::simple(
-                    BusinessCode::TokenExpired,
-                    "Token has expired"
-                )
+                AppError::simple(BusinessCode::TokenExpired, "Token has expired")
             }
-            _ => {
-                AppError::simple(
-                    BusinessCode::TokenInvalid,
-                    format!("Invalid token: {}", e)
-                )
-            }
-        }
+            _ => AppError::simple(BusinessCode::TokenInvalid, format!("Invalid token: {}", e)),
         })?;
         Ok(true)
     }

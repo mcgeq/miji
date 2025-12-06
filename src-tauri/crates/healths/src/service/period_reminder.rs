@@ -8,8 +8,8 @@
 // -----------------------------------------------------------------------------
 
 use common::{
-    utils::date::DateUtils, MijiResult, NotificationPriority,
-    NotificationRequest, NotificationService, NotificationType,
+    MijiResult, NotificationPriority, NotificationRequest, NotificationService, NotificationType,
+    utils::date::DateUtils,
 };
 use entity::period_records;
 use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter};
@@ -137,7 +137,7 @@ impl PeriodReminderService {
 
         // PMS 通常在经期前 3-7 天出现
         let days_until = (period_date - DateUtils::local_now()).num_days();
-        
+
         let body = if days_until >= 3 && days_until <= 7 {
             "经期将至，如有不适症状属于正常现象。建议保持心情愉悦，适度运动".to_string()
         } else {
@@ -200,9 +200,9 @@ impl PeriodReminderService {
         // 2. 根据历史周期计算预测日期
         // 3. 判断距离预测日期的天数
         // 4. 在合适的时间点发送提醒
-        
+
         let system_user_id = "system"; // 临时使用系统用户ID
-        
+
         for record in recent_records.iter().take(5) {
             // 假设平均周期 28 天
             let cycle_days = 28;
@@ -227,7 +227,11 @@ impl PeriodReminderService {
                         tracing::info!("✅ 成功发送经期提醒: record={}", record.serial_num);
                     }
                     Err(e) => {
-                        tracing::error!("❌ 发送经期提醒失败: record={}, error={}", record.serial_num, e);
+                        tracing::error!(
+                            "❌ 发送经期提醒失败: record={}, error={}",
+                            record.serial_num,
+                            e
+                        );
                     }
                 }
             }
@@ -246,7 +250,11 @@ impl PeriodReminderService {
                         tracing::info!("✅ 成功发送排卵期提醒: record={}", record.serial_num);
                     }
                     Err(e) => {
-                        tracing::error!("❌ 发送排卵期提醒失败: record={}, error={}", record.serial_num, e);
+                        tracing::error!(
+                            "❌ 发送排卵期提醒失败: record={}, error={}",
+                            record.serial_num,
+                            e
+                        );
                     }
                 }
             }
@@ -262,17 +270,18 @@ impl PeriodReminderService {
                         tracing::info!("✅ 成功发送 PMS 提醒: record={}", record.serial_num);
                     }
                     Err(e) => {
-                        tracing::error!("❌ 发送 PMS 提醒失败: record={}, error={}", record.serial_num, e);
+                        tracing::error!(
+                            "❌ 发送 PMS 提醒失败: record={}, error={}",
+                            record.serial_num,
+                            e
+                        );
                     }
                 }
             }
         }
 
         if sent_count > 0 {
-            tracing::info!(
-                "✅ 发送 {} 条健康提醒（使用统一通知服务）",
-                sent_count
-            );
+            tracing::info!("✅ 发送 {} 条健康提醒（使用统一通知服务）", sent_count);
         }
 
         Ok(sent_count)

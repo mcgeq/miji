@@ -251,12 +251,12 @@ impl UserService {
     ) -> MijiResult<Vec<entity::users::Model>> {
         use entity::users::Entity as UserEntity;
         use sea_orm::{QueryOrder, QuerySelect};
-        
+
         let mut conditions = Condition::all();
-        
+
         // 添加基础过滤条件 - 排除已删除用户
         conditions = conditions.add(entity::users::Column::DeletedAt.is_null());
-        
+
         // 关键词搜索 - 支持姓名或邮箱模糊匹配
         if let Some(keyword) = &query.keyword {
             if !keyword.trim().is_empty() {
@@ -266,45 +266,42 @@ impl UserService {
                 conditions = conditions.add(keyword_condition);
             }
         }
-        
+
         // 精确姓名搜索
         if let Some(name) = &query.name {
             if !name.trim().is_empty() {
                 conditions = conditions.add(entity::users::Column::Name.contains(name.trim()));
             }
         }
-        
+
         // 精确邮箱搜索
         if let Some(email) = &query.email {
             if !email.trim().is_empty() {
                 conditions = conditions.add(entity::users::Column::Email.contains(email.trim()));
             }
         }
-        
+
         // 状态过滤
         if let Some(status) = &query.status {
             conditions = conditions.add(entity::users::Column::Status.eq(status));
         }
-        
+
         // 角色过滤
         if let Some(role) = &query.role {
             conditions = conditions.add(entity::users::Column::Role.eq(role));
         }
-        
+
         let mut query_builder = UserEntity::find()
             .filter(conditions)
             .order_by_desc(entity::users::Column::LastActiveAt)
             .order_by_desc(entity::users::Column::CreatedAt);
-            
+
         // 应用限制
         if let Some(limit) = limit {
             query_builder = query_builder.limit(limit as u64);
         }
-        
-        query_builder
-            .all(db)
-            .await
-            .map_err(AppError::from)
+
+        query_builder.all(db).await.map_err(AppError::from)
     }
 
     /// 获取最近活跃的用户
@@ -314,19 +311,23 @@ impl UserService {
         limit: Option<u32>,
         days_back: Option<u32>,
     ) -> MijiResult<Vec<entity::users::Model>> {
+        use chrono::{Duration, Utc};
         use entity::users::Entity as UserEntity;
         use sea_orm::{QueryOrder, QuerySelect};
-        use chrono::{Duration, Utc};
-        
+
         let limit = limit.unwrap_or(10);
         let days = days_back.unwrap_or(30);
-        
+
         // 计算日期范围
         let cutoff_date = Utc::now() - Duration::days(days as i64);
-        
+
         UserEntity::find()
             .filter(entity::users::Column::DeletedAt.is_null())
-            .filter(entity::users::Column::LastActiveAt.gte(cutoff_date.with_timezone(&chrono::FixedOffset::east_opt(8 * 3600).unwrap())))
+            .filter(
+                entity::users::Column::LastActiveAt.gte(
+                    cutoff_date.with_timezone(&chrono::FixedOffset::east_opt(8 * 3600).unwrap()),
+                ),
+            )
             .order_by_desc(entity::users::Column::LastActiveAt)
             .limit(limit as u64)
             .all(db)

@@ -47,11 +47,7 @@ impl MigrationTrait for Migration {
                             .not_null(),
                     )
                     // 用户关联和个人信息
-                    .col(
-                        ColumnDef::new(FamilyMember::UserId)
-                            .string_len(38)
-                            .null(),
-                    )
+                    .col(ColumnDef::new(FamilyMember::UserId).string_len(38).null())
                     .col(
                         ColumnDef::new(FamilyMember::AvatarUrl)
                             .string_len(500)
@@ -63,16 +59,8 @@ impl MigrationTrait for Migration {
                             .null()
                             .default("#3B82F6"),
                     )
-                    .col(
-                        ColumnDef::new(FamilyMember::Email)
-                            .string_len(255)
-                            .null(),
-                    )
-                    .col(
-                        ColumnDef::new(FamilyMember::Phone)
-                            .string_len(20)
-                            .null(),
-                    )
+                    .col(ColumnDef::new(FamilyMember::Email).string_len(255).null())
+                    .col(ColumnDef::new(FamilyMember::Phone).string_len(20).null())
                     // 财务统计字段
                     .col(
                         ColumnDef::new(FamilyMember::TotalPaid)
@@ -98,10 +86,11 @@ impl MigrationTrait for Migration {
                             .string_len(20)
                             .not_null()
                             .default("Active")
-                            .check(
-                                Expr::col(FamilyMember::Status)
-                                    .is_in(vec!["Active", "Inactive", "Suspended"]),
-                            ),
+                            .check(Expr::col(FamilyMember::Status).is_in(vec![
+                                "Active",
+                                "Inactive",
+                                "Suspended",
+                            ])),
                     )
                     // 时间戳
                     .col(
@@ -165,19 +154,11 @@ impl MigrationTrait for Migration {
 
     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
         manager
-            .drop_index(
-                Index::drop()
-                    .name("idx_family_member_status")
-                    .to_owned(),
-            )
+            .drop_index(Index::drop().name("idx_family_member_status").to_owned())
             .await?;
 
         manager
-            .drop_index(
-                Index::drop()
-                    .name("idx_family_member_user")
-                    .to_owned(),
-            )
+            .drop_index(Index::drop().name("idx_family_member_user").to_owned())
             .await?;
 
         manager

@@ -1,5 +1,5 @@
 //! 家庭预算扩展 DTO 定义
-//! 
+//!
 //! 注意：家庭预算使用现有的 Budget 表，通过 family_ledger_serial_num 字段区分
 //! - 如果 account_serial_num 有值 = 个人预算
 //! - 如果 family_ledger_serial_num 有值 = 家庭预算
@@ -53,13 +53,13 @@ pub struct FamilyBudgetCreateRequest {
     pub family_ledger_serial_num: String, // 家庭账本序列号
     pub name: String,
     pub description: Option<String>,
-    pub budget_type: String,  // 使用现有Budget的budget_type字段
-    pub amount: Decimal,      // total_amount (使用Budget的amount字段)
-    pub start_date: String,   // YYYY-MM-DD
-    pub end_date: String,     // YYYY-MM-DD
+    pub budget_type: String,          // 使用现有Budget的budget_type字段
+    pub amount: Decimal,              // total_amount (使用Budget的amount字段)
+    pub start_date: String,           // YYYY-MM-DD
+    pub end_date: String,             // YYYY-MM-DD
     pub alert_threshold: Option<i32>, // 预警阈值，默认 80%
-    pub currency: String,     // 币种
-    pub created_by: String,   // 创建者
+    pub currency: String,             // 币种
+    pub created_by: String,           // 创建者
     pub allocations: Option<Vec<BudgetAllocationCreateRequest>>,
 }
 

@@ -1,8 +1,11 @@
 use chrono::{DateTime, FixedOffset, NaiveDate};
-use common::utils::{date::DateUtils, uuid::McgUuid};
 use common::paginations::Filter;
+use common::utils::{date::DateUtils, uuid::McgUuid};
 use sea_orm::prelude::Decimal;
-use sea_orm::{ActiveValue::{self, Set}, Condition};
+use sea_orm::{
+    ActiveValue::{self, Set},
+    Condition,
+};
 use serde::{Deserialize, Serialize};
 use validator::Validate;
 
@@ -75,30 +78,30 @@ impl From<entity::split_records::Model> for SplitRecordResponse {
 pub struct SplitRecordCreate {
     #[validate(length(min = 1, message = "交易ID不能为空"))]
     pub transaction_serial_num: String,
-    
+
     pub split_rule_serial_num: Option<String>,
-    
+
     #[validate(length(min = 1, message = "付款人ID不能为空"))]
     pub payer_member_serial_num: String,
-    
+
     #[validate(length(min = 1, message = "欠款人ID不能为空"))]
     pub owe_member_serial_num: String,
-    
+
     pub total_amount: Decimal,
-    
+
     pub split_amount: Decimal,
-    
+
     pub split_percentage: Option<Decimal>,
-    
+
     #[validate(length(min = 1, max = 3, message = "货币代码长度必须为3位"))]
     pub currency: String,
-    
+
     #[validate(length(min = 1, message = "分摊类型不能为空"))]
     pub split_type: String,
-    
+
     #[validate(length(max = 500, message = "描述长度不能超过500字符"))]
     pub description: Option<String>,
-    
+
     pub notes: Option<String>,
     pub due_date: Option<NaiveDate>,
 }

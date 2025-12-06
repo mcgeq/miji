@@ -1,11 +1,17 @@
 use common::{crud::hooks::Hooks, error::MijiResult};
-use sea_orm::{prelude::async_trait::async_trait, DatabaseTransaction};
+use sea_orm::{DatabaseTransaction, prelude::async_trait::async_trait};
 
 #[derive(Debug)]
 pub struct SplitRecordsHooks;
 
 #[async_trait]
-impl Hooks<entity::split_records::Entity, crate::dto::split_records::SplitRecordCreate, crate::dto::split_records::SplitRecordUpdate> for SplitRecordsHooks {
+impl
+    Hooks<
+        entity::split_records::Entity,
+        crate::dto::split_records::SplitRecordCreate,
+        crate::dto::split_records::SplitRecordUpdate,
+    > for SplitRecordsHooks
+{
     async fn before_create(
         &self,
         _tx: &DatabaseTransaction,

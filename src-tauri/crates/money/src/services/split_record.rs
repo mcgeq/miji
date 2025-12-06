@@ -1,4 +1,7 @@
-use common::{error::AppError, utils::{date::DateUtils, uuid::McgUuid}};
+use common::{
+    error::AppError,
+    utils::{date::DateUtils, uuid::McgUuid},
+};
 use entity::{split_record_details, split_records};
 use sea_orm::{
     ActiveModelTrait, ActiveValue::Set, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter,
@@ -100,7 +103,10 @@ pub async fn get_split_config(
         .await?;
 
     // 查询成员名称
-    let member_serial_nums: Vec<String> = details.iter().map(|d| d.member_serial_num.clone()).collect();
+    let member_serial_nums: Vec<String> = details
+        .iter()
+        .map(|d| d.member_serial_num.clone())
+        .collect();
     let members_map = entity::family_member::Entity::find()
         .filter(entity::family_member::Column::SerialNum.is_in(member_serial_nums))
         .all(db)

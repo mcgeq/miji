@@ -167,7 +167,7 @@ impl MigrationTrait for Migration {
             ("idx_budget_start_date", Budget::StartDate),
             ("idx_budget_scope_type", Budget::BudgetScopeType),
         ];
-        
+
         for (name, column) in indexes {
             manager
                 .create_index(

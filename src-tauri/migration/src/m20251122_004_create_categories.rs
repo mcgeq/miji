@@ -95,7 +95,7 @@ impl MigrationTrait for Migration {
                 .on_conflict(
                     sea_query::OnConflict::column(Categories::Name)
                         .do_nothing()
-                        .to_owned()
+                        .to_owned(),
                 )
                 .to_owned();
             manager.exec_stmt(insert).await?;

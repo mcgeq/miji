@@ -9,23 +9,13 @@ use entity::{
     prelude::{FamilyLedger, Transactions},
 };
 use sea_orm::{
-    ActiveModelTrait,
-    ActiveValue::Set,
-    Condition,
-    ColumnTrait,
-    DatabaseConnection,
-    EntityTrait,
-    PaginatorTrait,
-    QueryFilter,
-    QueryOrder,
-    QuerySelect,
+    ActiveModelTrait, ActiveValue::Set, ColumnTrait, Condition, DatabaseConnection, EntityTrait,
+    PaginatorTrait, QueryFilter, QueryOrder, QuerySelect,
 };
 use validator::Validate;
 
 use crate::dto::family_ledger_transaction::{
-    FamilyLedgerTransactionCreate,
-    FamilyLedgerTransactionFilter,
-    FamilyLedgerTransactionUpdate,
+    FamilyLedgerTransactionCreate, FamilyLedgerTransactionFilter, FamilyLedgerTransactionUpdate,
 };
 
 #[derive(Debug)]
@@ -41,9 +31,7 @@ impl FamilyLedgerTransactionService {
         db: &DatabaseConnection,
         filter: Option<FamilyLedgerTransactionFilter>,
     ) -> MijiResult<Vec<family_ledger_transaction::Model>> {
-        let condition = filter
-            .unwrap_or_default()
-            .into_condition();
+        let condition = filter.unwrap_or_default().into_condition();
 
         family_ledger_transaction::Entity::find()
             .filter(condition)
@@ -58,8 +46,7 @@ impl FamilyLedgerTransactionService {
         db: &DatabaseConnection,
         data: FamilyLedgerTransactionCreate,
     ) -> MijiResult<family_ledger_transaction::Model> {
-        data.validate()
-            .map_err(AppError::from_validation_errors)?;
+        data.validate().map_err(AppError::from_validation_errors)?;
 
         self.ensure_family_ledger_exists(db, &data.family_ledger_serial_num)
             .await?;
@@ -97,8 +84,7 @@ impl FamilyLedgerTransactionService {
         serial_num: String,
         data: FamilyLedgerTransactionUpdate,
     ) -> MijiResult<family_ledger_transaction::Model> {
-        data.validate()
-            .map_err(AppError::from_validation_errors)?;
+        data.validate().map_err(AppError::from_validation_errors)?;
 
         let (ledger_serial, transaction_serial) = Self::parse_serial(&serial_num)?;
         let existing = self
@@ -106,12 +92,8 @@ impl FamilyLedgerTransactionService {
             .await?
             .ok_or_else(|| AppError::simple(BusinessCode::NotFound, "关联不存在"))?;
 
-        let new_ledger = data
-            .family_ledger_serial_num
-            .unwrap_or(ledger_serial);
-        let new_transaction = data
-            .transaction_serial_num
-            .unwrap_or(transaction_serial);
+        let new_ledger = data.family_ledger_serial_num.unwrap_or(ledger_serial);
+        let new_transaction = data.transaction_serial_num.unwrap_or(transaction_serial);
 
         if new_ledger != existing.family_ledger_serial_num {
             self.ensure_family_ledger_exists(db, &new_ledger).await?;
@@ -159,9 +141,7 @@ impl FamilyLedgerTransactionService {
         db: &DatabaseConnection,
         query: PagedQuery<FamilyLedgerTransactionFilter>,
     ) -> MijiResult<PagedResult<family_ledger_transaction::Model>> {
-        query
-            .validate()
-            .map_err(AppError::from_validation_errors)?;
+        query.validate().map_err(AppError::from_validation_errors)?;
 
         let condition = query.filter.clone().into_condition();
         let base_query = family_ledger_transaction::Entity::find().filter(condition);
@@ -290,9 +270,8 @@ impl LedgerTransactionFilterExt for FamilyLedgerTransactionFilter {
     fn into_condition(self) -> Condition {
         let mut condition = Condition::all();
         if let Some(ledger_serial) = self.family_ledger_serial_num {
-            condition = condition.add(
-                family_ledger_transaction::Column::FamilyLedgerSerialNum.eq(ledger_serial),
-            );
+            condition = condition
+                .add(family_ledger_transaction::Column::FamilyLedgerSerialNum.eq(ledger_serial));
         }
         if let Some(transaction_serial) = self.transaction_serial_num {
             condition = condition.add(

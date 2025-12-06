@@ -1,7 +1,7 @@
 use common::{
+    BusinessCode,
     error::{AppError, MijiResult},
     utils::date::DateUtils,
-    BusinessCode,
 };
 use sea_orm::{
     ActiveModelTrait, ActiveValue::Set, ColumnTrait, DatabaseConnection, EntityTrait,
@@ -10,9 +10,7 @@ use sea_orm::{
 use serde_json::Value as JsonValue;
 use tracing::{debug, info};
 
-use crate::dto::user_settings::{
-    CreateUserSettingProfileRequest, UserSettingProfileResponse,
-};
+use crate::dto::user_settings::{CreateUserSettingProfileRequest, UserSettingProfileResponse};
 
 /// 用户设置配置方案服务
 pub struct UserSettingProfileService;
@@ -30,7 +28,9 @@ impl UserSettingProfileService {
 
         // 检查是否已存在同名配置
         let existing = entity::user_setting_profiles::Entity::find()
-            .filter(entity::user_setting_profiles::Column::UserSerialNum.eq(&request.user_serial_num))
+            .filter(
+                entity::user_setting_profiles::Column::UserSerialNum.eq(&request.user_serial_num),
+            )
             .filter(entity::user_setting_profiles::Column::ProfileName.eq(&request.profile_name))
             .one(db)
             .await?;
@@ -64,7 +64,10 @@ impl UserSettingProfileService {
             .all(db)
             .await?;
 
-        Ok(profiles.into_iter().map(UserSettingProfileResponse::from).collect())
+        Ok(profiles
+            .into_iter()
+            .map(UserSettingProfileResponse::from)
+            .collect())
     }
 
     /// 获取当前激活的配置方案
@@ -187,15 +190,17 @@ impl UserSettingProfileService {
         );
 
         // 获取用户的所有当前设置
-        let settings = super::user_settings::UserSettingExtService::get_all_user_settings(
-            db,
-            user_serial_num,
-        )
-        .await?;
+        let settings =
+            super::user_settings::UserSettingExtService::get_all_user_settings(db, user_serial_num)
+                .await?;
 
         // 转换为 JSON
-        let profile_data = serde_json::to_value(&settings)
-            .map_err(|e| AppError::simple(BusinessCode::SerializationError, format!("序列化失败: {}", e)))?;
+        let profile_data = serde_json::to_value(&settings).map_err(|e| {
+            AppError::simple(
+                BusinessCode::SerializationError,
+                format!("序列化失败: {}", e),
+            )
+        })?;
 
         let request = CreateUserSettingProfileRequest {
             user_serial_num: user_serial_num.to_string(),

@@ -297,7 +297,7 @@ pub enum PaymentMethod {
     Alipay,         // 支付宝支付
     CloudQuickPass, // 云闪付
     JD,             // 京东支付
-    UnionPay,      // 银联支付
+    UnionPay,       // 银联支付
     PayPal,         // PayPal
     ApplePay,       // Apple Pay
     GooglePay,      // Google Pay
@@ -408,7 +408,7 @@ pub struct CreateTransactionRequest {
 
     // 家庭记账本关联（支持多个）
     pub family_ledger_serial_nums: Option<Vec<String>>,
-    
+
     // 分摊配置（使用独立结构）
     pub split_config: Option<SplitConfigRequest>,
 }
@@ -418,7 +418,7 @@ impl TryFrom<CreateTransactionRequest> for entity::transactions::ActiveModel {
     fn try_from(value: CreateTransactionRequest) -> Result<Self, Self::Error> {
         value.validate()?;
         let serial_num = McgUuid::uuid(38);
-        
+
         // 只有当 is_installment 为 true 时才生成分期计划序列号
         let installment_plan_serial_num = if value.is_installment == Some(true) {
             Some(McgUuid::uuid(38))
@@ -524,7 +524,7 @@ pub struct UpdateTransactionRequest {
     pub remaining_periods_amount: Option<Decimal>,
     pub remaining_periods: Option<i32>,
     pub installment_plan_serial_num: Option<String>,
-    
+
     // 分摊配置（使用独立结构）
     pub split_config: Option<SplitConfigRequest>,
 }
@@ -623,10 +623,10 @@ impl TryFrom<UpdateTransactionRequest> for entity::transactions::ActiveModel {
         if let Some(remaining_periods_amount) = value.remaining_periods_amount {
             model.remaining_periods_amount = Set(Some(remaining_periods_amount));
         }
-        
+
         // split_config 不再更新到 transactions 表
         // 而是通过单独的 API 更新 split_records 表
-        
+
         // 更新 updated_at 字段
         model.updated_at = Set(Some(now));
 

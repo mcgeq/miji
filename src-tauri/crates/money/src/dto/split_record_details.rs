@@ -1,7 +1,7 @@
 use chrono::{DateTime, FixedOffset};
 use common::utils::{date::DateUtils, uuid::McgUuid};
-use sea_orm::prelude::Decimal;
 use sea_orm::ActiveValue::Set;
+use sea_orm::prelude::Decimal;
 use serde::{Deserialize, Serialize};
 use validator::Validate;
 
@@ -46,15 +46,15 @@ impl From<entity::split_record_details::Model> for SplitRecordDetailResponse {
 pub struct SplitRecordDetailCreate {
     #[validate(length(min = 1, message = "成员ID不能为空"))]
     pub member_serial_num: String,
-    
+
     pub member_name: String, // 用于显示，不存储
-    
+
     pub amount: Decimal,
-    
+
     pub percentage: Option<Decimal>,
-    
+
     pub weight: Option<i32>,
-    
+
     pub is_paid: bool,
 }
 
@@ -145,20 +145,20 @@ pub struct SplitRecordWithDetails {
 pub struct SplitRecordWithDetailsCreate {
     #[validate(length(min = 1, message = "交易ID不能为空"))]
     pub transaction_serial_num: String,
-    
+
     #[validate(length(min = 1, message = "账本ID不能为空"))]
     pub family_ledger_serial_num: String,
-    
+
     #[validate(length(min = 1, message = "分摊类型不能为空"))]
     pub rule_type: String, // EQUAL, PERCENTAGE, FIXED_AMOUNT, WEIGHTED
-    
+
     pub total_amount: Decimal,
-    
+
     #[validate(length(min = 1, max = 3, message = "货币代码长度必须为3位"))]
     pub currency: String,
-    
+
     pub payer_member_serial_num: Option<String>,
-    
+
     #[validate(length(min = 1, message = "分摊明细不能为空"))]
     pub details: Vec<SplitRecordDetailCreate>,
 }
@@ -185,22 +185,21 @@ impl SplitRecordWithDetailsCreate {
             }
             "PERCENTAGE" => {
                 // 百分比：总和必须为100%
-                let total_percentage: Decimal = self
-                    .details
-                    .iter()
-                    .filter_map(|d| d.percentage)
-                    .sum();
+                let total_percentage: Decimal =
+                    self.details.iter().filter_map(|d| d.percentage).sum();
                 if (total_percentage - Decimal::from(100)).abs()
                     > Decimal::from_f64_retain(0.01).unwrap()
                 {
                     return Err(format!("比例总和必须为100%，当前为{}%", total_percentage));
                 }
-                
+
                 // 验证金额计算正确性
                 for detail in &self.details {
                     if let Some(percentage) = detail.percentage {
                         let expected = self.total_amount * percentage / Decimal::from(100);
-                        if (detail.amount - expected).abs() > Decimal::from_f64_retain(0.01).unwrap() {
+                        if (detail.amount - expected).abs()
+                            > Decimal::from_f64_retain(0.01).unwrap()
+                        {
                             return Err(format!(
                                 "比例金额计算错误: 期望{}, 实际{}",
                                 expected, detail.amount
@@ -212,7 +211,8 @@ impl SplitRecordWithDetailsCreate {
             "FIXED_AMOUNT" => {
                 // 固定金额：总和必须等于交易金额
                 let calculated: Decimal = self.details.iter().map(|d| d.amount).sum();
-                if (self.total_amount - calculated).abs() > Decimal::from_f64_retain(0.01).unwrap() {
+                if (self.total_amount - calculated).abs() > Decimal::from_f64_retain(0.01).unwrap()
+                {
                     return Err(format!(
                         "固定金额总和({})必须等于交易金额({})",
                         calculated, self.total_amount
@@ -225,13 +225,15 @@ impl SplitRecordWithDetailsCreate {
                 if total_weight <= 0 {
                     return Err("权重总和必须大于0".to_string());
                 }
-                
+
                 // 验证金额计算正确性
                 for detail in &self.details {
                     if let Some(weight) = detail.weight {
-                        let expected = self.total_amount * Decimal::from(weight)
-                            / Decimal::from(total_weight);
-                        if (detail.amount - expected).abs() > Decimal::from_f64_retain(0.01).unwrap() {
+                        let expected =
+                            self.total_amount * Decimal::from(weight) / Decimal::from(total_weight);
+                        if (detail.amount - expected).abs()
+                            > Decimal::from_f64_retain(0.01).unwrap()
+                        {
                             return Err(format!(
                                 "权重金额计算错误: 期望{}, 实际{}",
                                 expected, detail.amount
@@ -267,16 +269,12 @@ impl SplitRecordStatistics {
         let total_members = details.len();
         let paid_members = details.iter().filter(|d| d.is_paid).count();
         let unpaid_members = total_members - paid_members;
-        
-        let paid_amount: Decimal = details
-            .iter()
-            .filter(|d| d.is_paid)
-            .map(|d| d.amount)
-            .sum();
-        
+
+        let paid_amount: Decimal = details.iter().filter(|d| d.is_paid).map(|d| d.amount).sum();
+
         let total_amount: Decimal = details.iter().map(|d| d.amount).sum();
         let unpaid_amount = total_amount - paid_amount;
-        
+
         let paid_percentage = if total_amount > Decimal::ZERO {
             (paid_amount / total_amount) * Decimal::from(100)
         } else {

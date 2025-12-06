@@ -300,7 +300,7 @@ impl TryFrom<AccountCreate> for account::ActiveModel {
             is_shared: Set(dto.is_shared),
             owner_id: Set(dto.owner_id),
             color: Set(dto.color),
-            is_active: Set(true), // 默认激活
+            is_active: Set(true),                             // 默认激活
             is_virtual: Set(dto.is_virtual.unwrap_or(false)), // 默认非虚拟账户
             created_at: Set(now),
             updated_at: Set(Some(now)),

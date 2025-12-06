@@ -260,7 +260,9 @@ impl InstallmentService {
             .filter(installment_plans::Column::TransactionSerialNum.eq(transaction_serial_num))
             .one(db)
             .await?
-            .ok_or_else(|| AppError::simple(common::BusinessCode::NotFound, "该交易没有分期计划"))?;
+            .ok_or_else(|| {
+                AppError::simple(common::BusinessCode::NotFound, "该交易没有分期计划")
+            })?;
 
         self.build_installment_plan_response(db, plan).await
     }

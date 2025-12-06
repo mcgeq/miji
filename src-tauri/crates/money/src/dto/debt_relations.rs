@@ -1,8 +1,11 @@
 use chrono::{DateTime, FixedOffset};
-use common::utils::{date::DateUtils, uuid::McgUuid};
 use common::paginations::Filter;
+use common::utils::{date::DateUtils, uuid::McgUuid};
 use sea_orm::prelude::Decimal;
-use sea_orm::{ActiveValue::{self, Set}, Condition};
+use sea_orm::{
+    ActiveValue::{self, Set},
+    Condition,
+};
 use serde::{Deserialize, Serialize};
 use validator::Validate;
 
@@ -57,15 +60,15 @@ impl From<entity::debt_relations::Model> for DebtRelationResponse {
 pub struct DebtRelationCreate {
     #[validate(length(min = 1, message = "债权人ID不能为空"))]
     pub creditor_member_serial_num: String,
-    
+
     #[validate(length(min = 1, message = "债务人ID不能为空"))]
     pub debtor_member_serial_num: String,
-    
+
     pub amount: Decimal,
-    
+
     #[validate(length(min = 1, max = 3, message = "货币代码长度必须为3位"))]
     pub currency: String,
-    
+
     pub notes: Option<String>,
 }
 
@@ -167,9 +170,9 @@ pub struct DebtStats {
 pub struct MemberDebtSummary {
     pub member_serial_num: String,
     pub member_name: String,
-    pub total_credit: Decimal,  // 作为债权人的总金额
-    pub total_debt: Decimal,    // 作为债务人的总金额
-    pub net_balance: Decimal,   // 净余额 (credit - debt)
+    pub total_credit: Decimal, // 作为债权人的总金额
+    pub total_debt: Decimal,   // 作为债务人的总金额
+    pub net_balance: Decimal,  // 净余额 (credit - debt)
     pub active_credits: i64,
     pub active_debts: i64,
 }

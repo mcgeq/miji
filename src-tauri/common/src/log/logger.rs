@@ -55,8 +55,7 @@ impl ConsoleLogger {
     }
 
     fn should_log(&self, target_table: &str) -> bool {
-        self.filter.targets.contains(&LogTarget::Console) &&
-        self.check_table_filter(target_table)
+        self.filter.targets.contains(&LogTarget::Console) && self.check_table_filter(target_table)
     }
 
     fn check_table_filter(&self, target_table: &str) -> bool {
@@ -134,11 +133,7 @@ impl FileLogger {
             .append(true)
             .open(path)
             .await
-            .map_err(|e| {
-                AppError::internal_server_error(
-                    format!("Failed to create log file: {e}")
-                )
-            })
+            .map_err(|e| AppError::internal_server_error(format!("Failed to create log file: {e}")))
     }
 
     async fn rotate_file(&self) -> MijiResult<()> {
@@ -147,16 +142,18 @@ impl FileLogger {
 
         // 关闭当前文件
         file.flush().await.map_err(|e| {
-            AppError::internal_server_error(
-                format!("Failed to flush log file: {e}")
-            )
+            AppError::internal_server_error(format!("Failed to flush log file: {e}"))
         })?;
 
         // 轮转日志文件
-        let base_name = self.file_path.file_stem()
+        let base_name = self
+            .file_path
+            .file_stem()
             .and_then(|s| s.to_str())
             .unwrap_or("log");
-        let extension = self.file_path.extension()
+        let extension = self
+            .file_path
+            .extension()
             .and_then(|s| s.to_str())
             .unwrap_or("log");
 
@@ -167,20 +164,18 @@ impl FileLogger {
 
             if tokio::fs::metadata(&old_name).await.is_ok() {
                 tokio::fs::rename(&old_name, &new_name).await.map_err(|e| {
-                    AppError::internal_server_error(
-                        format!("Failed to rotate log file: {e}")
-                    )
+                    AppError::internal_server_error(format!("Failed to rotate log file: {e}"))
                 })?;
             }
         }
 
         // 重命名当前文件
         let first_backup = format!("{base_name}.1.{extension}");
-        tokio::fs::rename(&self.file_path, &first_backup).await.map_err(|e| {
-            AppError::internal_server_error(
-                format!("Failed to rename log file: {e}")
-            )
-        })?;
+        tokio::fs::rename(&self.file_path, &first_backup)
+            .await
+            .map_err(|e| {
+                AppError::internal_server_error(format!("Failed to rename log file: {e}"))
+            })?;
 
         // 创建新文件
         *file = Self::create_file(&self.file_path).await?;
@@ -190,8 +185,7 @@ impl FileLogger {
     }
 
     fn should_log(&self, target_table: &str) -> bool {
-        self.filter.targets.contains(&LogTarget::File) &&
-        self.check_table_filter(target_table)
+        self.filter.targets.contains(&LogTarget::File) && self.check_table_filter(target_table)
     }
 
     fn check_table_filter(&self, target_table: &str) -> bool {
@@ -249,14 +243,10 @@ impl OperationLogger for FileLogger {
         // 写入日志
         let mut file = self.current_file.lock().await;
         file.write_all(log_bytes).await.map_err(|e| {
-            AppError::internal_server_error(
-                format!("Failed to write to log file: {e}")
-            )
+            AppError::internal_server_error(format!("Failed to write to log file: {e}"))
         })?;
         file.flush().await.map_err(|e| {
-            AppError::internal_server_error(
-                format!("Failed to flush log file: {e}")
-            )
+            AppError::internal_server_error(format!("Failed to flush log file: {e}"))
         })?;
 
         Ok(())
@@ -290,14 +280,16 @@ impl OperationLogger for CompositeLogger {
         tx: Option<&DatabaseTransaction>,
     ) -> MijiResult<()> {
         for logger in &self.loggers {
-            logger.log_operation(
-                operation,
-                target_table,
-                record_id,
-                data_before,
-                data_after,
-                tx,
-            ).await?;
+            logger
+                .log_operation(
+                    operation,
+                    target_table,
+                    record_id,
+                    data_before,
+                    data_after,
+                    tx,
+                )
+                .await?;
         }
         Ok(())
     }

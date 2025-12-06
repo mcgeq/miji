@@ -1,6 +1,6 @@
 use chrono::{DateTime, FixedOffset};
 use common::utils::{date::DateUtils, uuid::McgUuid};
-use macros::{set_active_value_t, set_active_value_opt};
+use macros::{set_active_value_opt, set_active_value_t};
 use sea_orm::ActiveValue;
 use serde::{Deserialize, Serialize};
 use validator::Validate;
@@ -99,12 +99,18 @@ impl TryFrom<ReminderUpdate> for entity::reminder::ActiveModel {
             reminder_method: value
                 .reminder_method
                 .map_or(ActiveValue::NotSet, |v| ActiveValue::Set(Some(v))),
-            retry_count: value.retry_count.map_or(ActiveValue::NotSet, ActiveValue::Set),
+            retry_count: value
+                .retry_count
+                .map_or(ActiveValue::NotSet, ActiveValue::Set),
             last_retry_at: value
                 .last_retry_at
                 .map_or(ActiveValue::NotSet, |v| ActiveValue::Set(Some(v))),
-            snooze_count: value.snooze_count.map_or(ActiveValue::NotSet, ActiveValue::Set),
-            escalation_level: value.escalation_level.map_or(ActiveValue::NotSet, ActiveValue::Set),
+            snooze_count: value
+                .snooze_count
+                .map_or(ActiveValue::NotSet, ActiveValue::Set),
+            escalation_level: value
+                .escalation_level
+                .map_or(ActiveValue::NotSet, ActiveValue::Set),
             notification_id: value
                 .notification_id
                 .map_or(ActiveValue::NotSet, |v| ActiveValue::Set(Some(v))),

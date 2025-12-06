@@ -961,21 +961,23 @@ impl TransactionConverter {
         model: entity::transactions::Model,
     ) -> MijiResult<crate::dto::transactions::TransactionResponse> {
         use crate::dto::transactions::TransactionResponse;
-        
+
         // 1. 获取基础关联数据
         let with_relations = self.model_to_with_relations(db, model).await?;
-        
+
         // 2. 转换为 Response
         let mut response = TransactionResponse::from(with_relations);
-        
+
         // 3. 查询分摊配置
-        if let Ok(Some(split_config)) = super::split_record::get_split_config(db, &response.serial_num).await {
+        if let Ok(Some(split_config)) =
+            super::split_record::get_split_config(db, &response.serial_num).await
+        {
             response.split_config = Some(split_config);
         }
-        
+
         Ok(response)
     }
-    
+
     pub async fn model_to_with_relations(
         &self,
         db: &DbConn,
@@ -994,10 +996,12 @@ impl TransactionConverter {
             async {
                 // 从 split_records 表获取分摊成员
                 let split_records = entity::split_records::Entity::find()
-                    .filter(entity::split_records::Column::TransactionSerialNum.eq(&model.serial_num))
+                    .filter(
+                        entity::split_records::Column::TransactionSerialNum.eq(&model.serial_num),
+                    )
                     .all(db)
                     .await?;
-                
+
                 // 提取所有相关成员的 serial_num（付款人和欠款人）
                 let mut serial_nums: Vec<String> = Vec::new();
                 for record in split_records {
@@ -1006,11 +1010,11 @@ impl TransactionConverter {
                 }
                 serial_nums.sort();
                 serial_nums.dedup(); // 去重
-                
+
                 if serial_nums.is_empty() {
                     return Ok(Vec::new());
                 }
-                
+
                 entity::family_member::Entity::find()
                     .filter(entity::family_member::Column::SerialNum.is_in(serial_nums))
                     .all(db)
@@ -1166,44 +1170,45 @@ impl TransactionService {
         }
 
         // 创建 split_records（如果启用了分摊配置）
-        if let Some(split_cfg) = split_config {
-            if !split_cfg.members.is_empty() {
-                // 获取第一个关联的账本和付款人
-                if let Some(first_ledger) = family_ledger_serial_nums.as_ref().and_then(|l| l.first()) {
-                    // 假设付款人是交易创建者（可以从账户关联的成员获取）
-                    // TODO: 从账户关联获取实际付款人
-                    let payer_serial = split_cfg.members.first()
-                        .map(|m| m.member_serial_num.clone())
-                        .unwrap_or_default();
-                    
-                    if let Err(e) = super::split_record::create_split_records(
-                        db,
-                        model.serial_num.clone(),
-                        first_ledger.clone(),
-                        payer_serial,
-                        split_cfg,
-                        model.amount,
-                        model.currency.clone(),
-                    ).await {
-                        tracing::error!(
-                            "创建 split_records 失败: transaction={}, error={}",
-                            model.serial_num,
-                            e
-                        );
-                        // 不阻塞交易创建，只记录错误
-                    } else {
-                        tracing::info!(
-                            "成功创建 split_records: transaction={}",
-                            model.serial_num
-                        );
-                    }
+        if let Some(split_cfg) = split_config
+            && !split_cfg.members.is_empty()
+        {
+            // 获取第一个关联的账本和付款人
+            if let Some(first_ledger) = family_ledger_serial_nums.as_ref().and_then(|l| l.first()) {
+                // 假设付款人是交易创建者（可以从账户关联的成员获取）
+                // TODO: 从账户关联获取实际付款人
+                let payer_serial = split_cfg
+                    .members
+                    .first()
+                    .map(|m| m.member_serial_num.clone())
+                    .unwrap_or_default();
+
+                if let Err(e) = super::split_record::create_split_records(
+                    db,
+                    model.serial_num.clone(),
+                    first_ledger.clone(),
+                    payer_serial,
+                    split_cfg,
+                    model.amount,
+                    model.currency.clone(),
+                )
+                .await
+                {
+                    tracing::error!(
+                        "创建 split_records 失败: transaction={}, error={}",
+                        model.serial_num,
+                        e
+                    );
+                    // 不阻塞交易创建，只记录错误
+                } else {
+                    tracing::info!("成功创建 split_records: transaction={}", model.serial_num);
                 }
             }
         }
 
         self.converter().model_to_with_relations(db, model).await
     }
-    
+
     /// 创建交易并返回完整响应（包含分摊配置）
     pub async fn trans_create_response(
         &self,
@@ -1211,14 +1216,16 @@ impl TransactionService {
         data: CreateTransactionRequest,
     ) -> MijiResult<crate::dto::transactions::TransactionResponse> {
         let with_relations = self.trans_create_with_relations(db, data).await?;
-        
+
         // 转换为响应并查询分摊配置
         let mut response = crate::dto::transactions::TransactionResponse::from(with_relations);
-        
-        if let Ok(Some(split_config)) = super::split_record::get_split_config(db, &response.serial_num).await {
+
+        if let Ok(Some(split_config)) =
+            super::split_record::get_split_config(db, &response.serial_num).await
+        {
             response.split_config = Some(split_config);
         }
-        
+
         Ok(response)
     }
 
@@ -1230,7 +1237,7 @@ impl TransactionService {
         let model = self.get_by_id(db, id).await?;
         self.converter().model_to_with_relations(db, model).await
     }
-    
+
     /// 获取交易并返回完整响应（包含分摊配置）
     pub async fn trans_get_response(
         &self,

@@ -1,6 +1,9 @@
 use chrono::{DateTime, FixedOffset};
 use common::utils::{date::DateUtils, uuid::McgUuid};
-use sea_orm::{ActiveValue::{self, Set}, prelude::Decimal};
+use sea_orm::{
+    ActiveValue::{self, Set},
+    prelude::Decimal,
+};
 use serde::{Deserialize, Serialize};
 use validator::Validate;
 
@@ -87,7 +90,7 @@ pub struct FamilyMemberCreate {
 
     #[validate(length(min = 1, max = 1000, message = "权限字符串长度必须在1-1000字符之间"))]
     pub permissions: String,
-    
+
     // 新增字段
     pub user_id: Option<String>,
     pub avatar_url: Option<String>,
@@ -127,7 +130,7 @@ pub struct FamilyMemberUpdate {
     pub is_primary: Option<bool>,
 
     pub permissions: Option<String>,
-    
+
     // 新增字段
     pub user_id: Option<String>,
     pub avatar_url: Option<String>,
@@ -183,15 +186,25 @@ impl TryFrom<FamilyMemberUpdate> for entity::family_member::ActiveModel {
                 .permissions
                 .map_or(ActiveValue::NotSet, ActiveValue::Set),
             // 新增字段
-            user_id: value.user_id.map_or(ActiveValue::NotSet, |v| ActiveValue::Set(Some(v))),
-            avatar_url: value.avatar_url.map_or(ActiveValue::NotSet, |v| ActiveValue::Set(Some(v))),
-            color: value.color.map_or(ActiveValue::NotSet, |v| ActiveValue::Set(Some(v))),
+            user_id: value
+                .user_id
+                .map_or(ActiveValue::NotSet, |v| ActiveValue::Set(Some(v))),
+            avatar_url: value
+                .avatar_url
+                .map_or(ActiveValue::NotSet, |v| ActiveValue::Set(Some(v))),
+            color: value
+                .color
+                .map_or(ActiveValue::NotSet, |v| ActiveValue::Set(Some(v))),
             total_paid: ActiveValue::NotSet, // 统计字段不在更新中修改
             total_owed: ActiveValue::NotSet,
             balance: ActiveValue::NotSet,
             status: value.status.map_or(ActiveValue::NotSet, ActiveValue::Set),
-            email: value.email.map_or(ActiveValue::NotSet, |v| ActiveValue::Set(Some(v))),
-            phone: value.phone.map_or(ActiveValue::NotSet, |v| ActiveValue::Set(Some(v))),
+            email: value
+                .email
+                .map_or(ActiveValue::NotSet, |v| ActiveValue::Set(Some(v))),
+            phone: value
+                .phone
+                .map_or(ActiveValue::NotSet, |v| ActiveValue::Set(Some(v))),
             created_at: ActiveValue::NotSet,
             updated_at: ActiveValue::Set(Some(now)),
         })
@@ -214,7 +227,7 @@ impl FamilyMemberUpdate {
         if let Some(permissions) = self.permissions {
             model.permissions = Set(permissions);
         }
-        
+
         // 新增字段
         if let Some(user_id) = self.user_id {
             model.user_id = Set(Some(user_id));

@@ -171,7 +171,10 @@ impl TodosService {
                 .unwrap_or_else(|| "您有一条待办需要关注".to_string()),
             priority,
             reminder_id: Some(todo.serial_num.clone()),
-            user_id: todo.owner_id.clone().unwrap_or_else(|| "system".to_string()),
+            user_id: todo
+                .owner_id
+                .clone()
+                .unwrap_or_else(|| "system".to_string()),
             icon: None,
             actions: None,
             event_name: Some("todo-reminder-fired".to_string()),

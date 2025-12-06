@@ -42,9 +42,7 @@ where
 }
 
 // 反序列化辅助函数：先尝试反序列化为 Option<bool>，再转换为 Option<i32>
-pub fn deserialize_bool_as_option_i32<'de, D>(
-    deserializer: D,
-) -> Result<Option<i32>, D::Error>
+pub fn deserialize_bool_as_option_i32<'de, D>(deserializer: D) -> Result<Option<i32>, D::Error>
 where
     D: Deserializer<'de>,
 {
@@ -54,7 +52,9 @@ where
 }
 
 // 反序列化函数：处理 JSON 布尔值、整数或 null → Option<i32>
-pub fn deserialize_bool_as_option_i32_helper<'de, D>(deserializer: D) -> Result<Option<i32>, D::Error>
+pub fn deserialize_bool_as_option_i32_helper<'de, D>(
+    deserializer: D,
+) -> Result<Option<i32>, D::Error>
 where
     D: Deserializer<'de>,
 {

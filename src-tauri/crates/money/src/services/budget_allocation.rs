@@ -1,6 +1,6 @@
 use crate::dto::family_budget::{
-    BudgetAllocationCreateRequest, BudgetAllocationResponse, BudgetAllocationUpdateRequest,
-    BudgetAlertResponse,
+    BudgetAlertResponse, BudgetAllocationCreateRequest, BudgetAllocationResponse,
+    BudgetAllocationUpdateRequest,
 };
 use common::{
     BusinessCode,
@@ -9,9 +9,8 @@ use common::{
 };
 use num_traits::ToPrimitive;
 use sea_orm::{
-    prelude::Decimal,
     ActiveModelTrait, ColumnTrait, Condition, DbConn, EntityTrait, PaginatorTrait, QueryFilter,
-    QueryOrder, QuerySelect, Set,
+    QueryOrder, QuerySelect, Set, prelude::Decimal,
 };
 
 /// 预算分配服务
@@ -43,11 +42,12 @@ impl BudgetAllocationService {
         let allocated_amount = if let Some(percentage) = data.percentage {
             budget.amount * (percentage / Decimal::from(100))
         } else {
-            data.allocated_amount
-                .ok_or_else(|| AppError::simple(
+            data.allocated_amount.ok_or_else(|| {
+                AppError::simple(
                     BusinessCode::InvalidParameter,
                     "必须指定 allocated_amount 或 percentage",
-                ))?
+                )
+            })?
         };
 
         // 4. 验证总分配不超预算
@@ -136,8 +136,7 @@ impl BudgetAllocationService {
         // 更新基础字段
         if let Some(allocated_amount) = data.allocated_amount {
             active_model.allocated_amount = Set(allocated_amount);
-            active_model.remaining_amount =
-                Set(allocated_amount - allocation.used_amount);
+            active_model.remaining_amount = Set(allocated_amount - allocation.used_amount);
         }
         if let Some(percentage) = data.percentage {
             active_model.percentage = Set(Some(percentage));
@@ -221,7 +220,7 @@ impl BudgetAllocationService {
     }
 
     /// 记录预算使用
-    /// 
+    ///
     /// 当创建交易时调用此方法更新预算分配的使用金额
     pub async fn record_usage(
         db: &DbConn,
@@ -255,10 +254,7 @@ impl BudgetAllocationService {
                             if overspend_amount > max_overspend {
                                 return Err(AppError::simple(
                                     BusinessCode::InvalidParameter,
-                                    format!(
-                                        "超支超过限额 {}%",
-                                        limit_value
-                                    ),
+                                    format!("超支超过限额 {}%", limit_value),
                                 ));
                             }
                         }
@@ -268,10 +264,7 @@ impl BudgetAllocationService {
                             if overspend_amount > limit_value {
                                 return Err(AppError::simple(
                                     BusinessCode::InvalidParameter,
-                                    format!(
-                                        "超支超过限额 {}元",
-                                        limit_value
-                                    ),
+                                    format!("超支超过限额 {}元", limit_value),
                                 ));
                             }
                         }
@@ -291,8 +284,7 @@ impl BudgetAllocationService {
 
         // 4. 检查预警
         let usage_percentage = if allocation.allocated_amount > Decimal::ZERO {
-            (new_used_amount / allocation.allocated_amount * Decimal::from(100))
-                .round_dp(2)
+            (new_used_amount / allocation.allocated_amount * Decimal::from(100)).round_dp(2)
         } else {
             Decimal::ZERO
         };
@@ -334,20 +326,14 @@ impl BudgetAllocationService {
                         let max_overspend =
                             allocation.allocated_amount * (limit_value / Decimal::from(100));
                         if overspend_amount > max_overspend {
-                            return Ok((
-                                false,
-                                Some(format!("超支将超过限额 {}%", limit_value)),
-                            ));
+                            return Ok((false, Some(format!("超支将超过限额 {}%", limit_value))));
                         }
                     }
                 }
                 "FIXED_AMOUNT" => {
                     if let Some(limit_value) = allocation.overspend_limit_value {
                         if overspend_amount > limit_value {
-                            return Ok((
-                                false,
-                                Some(format!("超支将超过限额 {}元", limit_value)),
-                            ));
+                            return Ok((false, Some(format!("超支将超过限额 {}元", limit_value))));
                         }
                     }
                 }

@@ -9,9 +9,7 @@
 
 use crate::{AppError, BusinessCode, MijiResult};
 use ::entity::scheduler_config;
-use sea_orm::{
-    ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, Set,
-};
+use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, Set};
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
@@ -184,7 +182,7 @@ impl SchedulerConfigService {
             }
             "PeriodReminderCheck" => 86400, // 1 天
             "BudgetAutoCreate" => 7200,     // 2 小时
-            _ => 3600,                       // 默认 1 小时
+            _ => 3600,                      // 默认 1 小时
         };
 
         SchedulerConfig {
@@ -367,11 +365,7 @@ impl SchedulerConfigService {
     }
 
     /// 删除配置
-    pub async fn delete_config(
-        &self,
-        db: &DatabaseConnection,
-        serial_num: &str,
-    ) -> MijiResult<()> {
+    pub async fn delete_config(&self, db: &DatabaseConnection, serial_num: &str) -> MijiResult<()> {
         scheduler_config::Entity::delete_by_id(serial_num)
             .exec(db)
             .await?;

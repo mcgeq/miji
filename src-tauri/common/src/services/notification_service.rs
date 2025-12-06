@@ -717,7 +717,7 @@ impl StatisticsService {
                 let date = chrono::NaiveDate::parse_from_str(&date_str, "%Y-%n-%d")
                     .unwrap_or_else(|_| Utc::now().naive_utc().date());
                 let datetime = Utc.from_utc_datetime(&date.and_hms_opt(0, 0, 0).unwrap());
-                
+
                 DailyTrend {
                     date: datetime.with_timezone(&chrono::FixedOffset::east_opt(8 * 3600).unwrap()),
                     success,

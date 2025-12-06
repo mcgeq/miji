@@ -1,4 +1,4 @@
-﻿use std::collections::HashMap;
+use std::collections::HashMap;
 
 use common::{
     ApiResponse, AppState,
@@ -6,7 +6,7 @@ use common::{
     error::AppError,
     paginations::{PagedQuery, PagedResult},
 };
-use sea_orm::{prelude::Decimal, ActiveModelTrait, ActiveValue};
+use sea_orm::{ActiveModelTrait, ActiveValue, prelude::Decimal};
 use serde_json::Value as JsonValue;
 use tauri::State;
 use tracing::{error, info, instrument, warn};
@@ -23,11 +23,12 @@ use crate::{
         currency::{CreateCurrencyRequest, CurrencyResponse, UpdateCurrencyRequest},
         debt_relations::{DebtGraph, DebtRelationResponse, DebtStats, MemberDebtSummary},
         family_budget::{
-            BudgetAllocationCreateRequest, BudgetAllocationResponse, BudgetAllocationUpdateRequest,
-            BudgetAlertResponse, BudgetUsageRequest,
+            BudgetAlertResponse, BudgetAllocationCreateRequest, BudgetAllocationResponse,
+            BudgetAllocationUpdateRequest, BudgetUsageRequest,
         },
         family_ledger::{
-            FamilyLedgerCreate, FamilyLedgerDetailResponse, FamilyLedgerResponse, FamilyLedgerStats, FamilyLedgerUpdate,
+            FamilyLedgerCreate, FamilyLedgerDetailResponse, FamilyLedgerResponse,
+            FamilyLedgerStats, FamilyLedgerUpdate,
         },
         family_ledger_account::{FamilyLedgerAccountCreate, FamilyLedgerAccountResponse},
         family_ledger_member::{FamilyLedgerMemberCreate, FamilyLedgerMemberResponse},
@@ -36,19 +37,20 @@ use crate::{
             FamilyLedgerTransactionResponse, FamilyLedgerTransactionUpdate,
         },
         family_member::{
-            FamilyMemberCreate, FamilyMemberResponse, FamilyMemberUpdate, FamilyMemberSearchQuery, FamilyMemberSearchResponse
+            FamilyMemberCreate, FamilyMemberResponse, FamilyMemberSearchQuery,
+            FamilyMemberSearchResponse, FamilyMemberUpdate,
         },
         installment::{
             InstallmentCalculationRequest, InstallmentCalculationResponse, InstallmentPlanResponse,
         },
         settlement_records::{SettlementRecordResponse, SettlementStats, SettlementSuggestion},
+        split_record_details::{
+            SplitRecordDetailResponse, SplitRecordStatistics, SplitRecordWithDetails,
+            SplitRecordWithDetailsCreate,
+        },
         split_records::{
             SplitRecordConfirm, SplitRecordCreate, SplitRecordPayment, SplitRecordResponse,
             SplitRecordStats,
-        },
-        split_record_details::{
-            SplitRecordDetailResponse, SplitRecordWithDetails, SplitRecordWithDetailsCreate,
-            SplitRecordStatistics,
         },
         split_rules::{SplitRuleCreate, SplitRuleResponse, SplitRuleUpdate},
         sub_categories::{SubCategory, SubCategoryCreate, SubCategoryUpdate},
@@ -78,13 +80,13 @@ use crate::{
         family_statistics::FamilyStatisticsService,
         installment::InstallmentService,
         settlement_records::SettlementRecordsService,
-        split_records::SplitRecordsService,
         split_record_details::SplitRecordDetailService,
+        split_records::SplitRecordsService,
         split_rules::SplitRulesService,
         sub_categories::{SubCategoryFilter, SubCategoryService},
         transaction::{TransactionFilter, TransactionService},
-        user_settings::UserSettingExtService,
         user_setting_profiles::UserSettingProfileService,
+        user_settings::UserSettingExtService,
     },
 };
 
@@ -1427,15 +1429,21 @@ pub async fn search_family_members(
     let service = FamilyMemberService::default();
     let search_limit = limit.unwrap_or(20).min(100); // 最大限制100个结果
 
-    match service.search_family_members(&state.db, query, Some(search_limit)).await {
+    match service
+        .search_family_members(&state.db, query, Some(search_limit))
+        .await
+    {
         Ok(members) => {
             let member_count = members.len();
             let response = FamilyMemberSearchResponse {
-                members: members.into_iter().map(FamilyMemberResponse::from).collect(),
+                members: members
+                    .into_iter()
+                    .map(FamilyMemberResponse::from)
+                    .collect(),
                 total: member_count as u64,
                 has_more: member_count >= search_limit as usize,
             };
-            
+
             info!(
                 result_count = member_count,
                 has_more = response.has_more,
@@ -1469,12 +1477,12 @@ pub async fn list_recent_family_members(
 
     let service = FamilyMemberService::default();
 
-    match service.list_recent_family_members(&state.db, limit, days_back).await {
+    match service
+        .list_recent_family_members(&state.db, limit, days_back)
+        .await
+    {
         Ok(members) => {
-            info!(
-                count = members.len(),
-                "获取最近家庭成员成功"
-            );
+            info!(count = members.len(), "获取最近家庭成员成功");
             Ok(ApiResponse::from_result(Ok(members
                 .into_iter()
                 .map(FamilyMemberResponse::from)
@@ -1499,12 +1507,14 @@ pub async fn family_ledger_member_list(
     state: State<'_, AppState>,
 ) -> Result<ApiResponse<Vec<FamilyLedgerMemberResponse>>, String> {
     let service = FamilyLedgerMemberService::default();
-    Ok(ApiResponse::from_result(
-        service
-            .list(&state.db)
-            .await
-            .map(|models| models.into_iter().map(FamilyLedgerMemberResponse::from).collect()),
-    ))
+    Ok(ApiResponse::from_result(service.list(&state.db).await.map(
+        |models| {
+            models
+                .into_iter()
+                .map(FamilyLedgerMemberResponse::from)
+                .collect()
+        },
+    )))
 }
 
 /// 根据账本ID获取成员关联
@@ -1518,7 +1528,12 @@ pub async fn family_ledger_member_list_by_ledger(
         service
             .list_by_ledger(&state.db, &ledger_serial_num)
             .await
-            .map(|models| models.into_iter().map(FamilyLedgerMemberResponse::from).collect()),
+            .map(|models| {
+                models
+                    .into_iter()
+                    .map(FamilyLedgerMemberResponse::from)
+                    .collect()
+            }),
     ))
 }
 
@@ -1533,7 +1548,12 @@ pub async fn family_ledger_member_list_by_member(
         service
             .list_by_member(&state.db, &member_serial_num)
             .await
-            .map(|models| models.into_iter().map(FamilyLedgerMemberResponse::from).collect()),
+            .map(|models| {
+                models
+                    .into_iter()
+                    .map(FamilyLedgerMemberResponse::from)
+                    .collect()
+            }),
     ))
 }
 
@@ -1546,7 +1566,11 @@ pub async fn family_ledger_member_create(
     let service = FamilyLedgerMemberService::default();
     Ok(ApiResponse::from_result(
         service
-            .create(&state.db, data.family_ledger_serial_num, data.family_member_serial_num)
+            .create(
+                &state.db,
+                data.family_ledger_serial_num,
+                data.family_member_serial_num,
+            )
             .await
             .map(FamilyLedgerMemberResponse::from),
     ))
@@ -1576,12 +1600,14 @@ pub async fn family_ledger_account_list(
     state: State<'_, AppState>,
 ) -> Result<ApiResponse<Vec<FamilyLedgerAccountResponse>>, String> {
     let service = FamilyLedgerAccountService::default();
-    Ok(ApiResponse::from_result(
-        service
-            .list(&state.db)
-            .await
-            .map(|models| models.into_iter().map(FamilyLedgerAccountResponse::from).collect()),
-    ))
+    Ok(ApiResponse::from_result(service.list(&state.db).await.map(
+        |models| {
+            models
+                .into_iter()
+                .map(FamilyLedgerAccountResponse::from)
+                .collect()
+        },
+    )))
 }
 
 /// 根据账本ID获取账户关联
@@ -1595,7 +1621,12 @@ pub async fn family_ledger_account_list_by_ledger(
         service
             .list_by_ledger(&state.db, &ledger_serial_num)
             .await
-            .map(|models| models.into_iter().map(FamilyLedgerAccountResponse::from).collect()),
+            .map(|models| {
+                models
+                    .into_iter()
+                    .map(FamilyLedgerAccountResponse::from)
+                    .collect()
+            }),
     ))
 }
 
@@ -1610,7 +1641,12 @@ pub async fn family_ledger_account_list_by_account(
         service
             .list_by_account(&state.db, &account_serial_num)
             .await
-            .map(|models| models.into_iter().map(FamilyLedgerAccountResponse::from).collect()),
+            .map(|models| {
+                models
+                    .into_iter()
+                    .map(FamilyLedgerAccountResponse::from)
+                    .collect()
+            }),
     ))
 }
 
@@ -1623,7 +1659,11 @@ pub async fn family_ledger_account_create(
     let service = FamilyLedgerAccountService::default();
     Ok(ApiResponse::from_result(
         service
-            .create(&state.db, data.family_ledger_serial_num, data.account_serial_num)
+            .create(
+                &state.db,
+                data.family_ledger_serial_num,
+                data.account_serial_num,
+            )
             .await
             .map(FamilyLedgerAccountResponse::from),
     ))
@@ -1885,7 +1925,11 @@ pub async fn debt_relation_get(
 ) -> Result<ApiResponse<DebtRelationResponse>, String> {
     let service = DebtRelationsService::default();
     Ok(ApiResponse::from_result(
-        service.inner.get_by_id(&state.db, serial_num).await.map(Into::into),
+        service
+            .inner
+            .get_by_id(&state.db, serial_num)
+            .await
+            .map(Into::into),
     ))
 }
 
@@ -1901,7 +1945,10 @@ pub async fn debt_relation_mark_settled(
         amount: None,
         notes: None,
     };
-    service.inner.update(&state.db, serial_num, update).await
+    service
+        .inner
+        .update(&state.db, serial_num, update)
+        .await
         .map_err(|e| e.to_string())?;
     Ok(ApiResponse::success(()))
 }
@@ -1918,7 +1965,10 @@ pub async fn debt_relation_mark_cancelled(
         amount: None,
         notes: None,
     };
-    service.inner.update(&state.db, serial_num, update).await
+    service
+        .inner
+        .update(&state.db, serial_num, update)
+        .await
         .map_err(|e| e.to_string())?;
     Ok(ApiResponse::success(()))
 }
@@ -2003,7 +2053,7 @@ pub async fn settlement_execute(
     let end_date = period_end
         .parse()
         .map_err(|e| format!("Invalid end date: {}", e))?;
-    
+
     let create_data = crate::dto::settlement_records::SettlementRecordCreate {
         settlement_type,
         period_start: start_date,
@@ -2016,7 +2066,7 @@ pub async fn settlement_execute(
         description: None,
         notes: None,
     };
-    
+
     Ok(ApiResponse::from_result(
         async {
             let model = service.inner.create(&state.db, create_data).await?;
@@ -2026,7 +2076,8 @@ pub async fn settlement_execute(
             active_model.initiated_by = ActiveValue::Set(initiated_by);
             let updated_model = active_model.update(state.db.as_ref()).await?;
             Ok::<SettlementRecordResponse, AppError>(updated_model.into())
-        }.await,
+        }
+        .await,
     ))
 }
 
@@ -2042,12 +2093,12 @@ pub async fn settlement_get_optimization_details(
         .find_by_family_ledger(&state.db, &family_ledger_serial_num)
         .await
         .map_err(|e| e.to_string())?;
-    
+
     let original_count = debts.len();
     // 简化计算：假设优化后减少30%的转账次数
     let optimized_count = (original_count as f64 * 0.7) as i32;
     let savings = original_count as i32 - optimized_count;
-    
+
     let details = serde_json::json!({
         "before": {
             "transferCount": original_count,
@@ -2060,7 +2111,7 @@ pub async fn settlement_get_optimization_details(
         "savings": savings,
         "savingsPercentage": ((savings as f64 / original_count as f64) * 100.0).round()
     });
-    
+
     Ok(ApiResponse::success(details))
 }
 
@@ -2072,22 +2123,22 @@ pub async fn settlement_validate(
 ) -> Result<ApiResponse<serde_json::Value>, String> {
     // 验证转账方案是否平衡
     let mut errors = Vec::new();
-    
+
     if transfers.is_empty() {
         errors.push("转账列表不能为空");
     }
-    
+
     // TODO: 添加更多验证逻辑
     // 1. 检查转账是否平衡
     // 2. 检查是否有循环转账
     // 3. 检查金额是否合理
-    
+
     let is_valid = errors.is_empty();
     let result = serde_json::json!({
         "isValid": is_valid,
         "errors": errors
     });
-    
+
     Ok(ApiResponse::success(result))
 }
 
@@ -2099,7 +2150,11 @@ pub async fn settlement_record_get(
 ) -> Result<ApiResponse<SettlementRecordResponse>, String> {
     let service = SettlementRecordsService::default();
     Ok(ApiResponse::from_result(
-        service.inner.get_by_id(&state.db, serial_num).await.map(Into::into),
+        service
+            .inner
+            .get_by_id(&state.db, serial_num)
+            .await
+            .map(Into::into),
     ))
 }
 
@@ -2117,15 +2172,21 @@ pub async fn settlement_record_complete(
         description: None,
         notes: None,
     };
-    
-    let model = service.inner.update(&state.db, serial_num.clone(), update).await
+
+    let model = service
+        .inner
+        .update(&state.db, serial_num.clone(), update)
+        .await
         .map_err(|e| e.to_string())?;
-    
+
     // 更新完成人
     let mut active_model: entity::settlement_records::ActiveModel = model.into();
     active_model.completed_by = ActiveValue::Set(Some(completed_by));
-    active_model.update(state.db.as_ref()).await.map_err(|e| e.to_string())?;
-    
+    active_model
+        .update(state.db.as_ref())
+        .await
+        .map_err(|e| e.to_string())?;
+
     Ok(ApiResponse::success(()))
 }
 
@@ -2143,10 +2204,13 @@ pub async fn settlement_record_cancel(
         description: None,
         notes: cancellation_reason,
     };
-    
-    service.inner.update(&state.db, serial_num, update).await
+
+    service
+        .inner
+        .update(&state.db, serial_num, update)
+        .await
         .map_err(|e| e.to_string())?;
-    
+
     Ok(ApiResponse::success(()))
 }
 
@@ -2158,19 +2222,26 @@ pub async fn settlement_record_export(
     format: String,
 ) -> Result<ApiResponse<serde_json::Value>, String> {
     let service = SettlementRecordsService::default();
-    let record = service.inner.get_by_id(&state.db, serial_num).await
+    let record = service
+        .inner
+        .get_by_id(&state.db, serial_num)
+        .await
         .map_err(|e| e.to_string())?;
-    
+
     // TODO: 实现实际的导出逻辑（PDF/Excel）
-    let filename = format!("settlement_{}_{}.{}", record.serial_num, 
-        chrono::Local::now().format("%Y%m%d"), format);
-    
+    let filename = format!(
+        "settlement_{}_{}.{}",
+        record.serial_num,
+        chrono::Local::now().format("%Y%m%d"),
+        format
+    );
+
     let result = serde_json::json!({
         "filename": filename,
         "data": "base64_encoded_data_here", // TODO: 实际导出数据
         "format": format
     });
-    
+
     Ok(ApiResponse::success(result))
 }
 
@@ -2187,25 +2258,27 @@ pub async fn settlement_records_export(
         .find_by_family_ledger(&state.db, &family_ledger_serial_num)
         .await
         .map_err(|e| e.to_string())?;
-    
+
     // 根据状态筛选
     if let Some(status_filter) = status {
         records.retain(|r| r.status == status_filter);
     }
-    
+
     // TODO: 实现实际的批量导出逻辑
-    let filename = format!("settlements_{}_{}.{}", 
+    let filename = format!(
+        "settlements_{}_{}.{}",
         family_ledger_serial_num,
-        chrono::Local::now().format("%Y%m%d"), 
-        format);
-    
+        chrono::Local::now().format("%Y%m%d"),
+        format
+    );
+
     let result = serde_json::json!({
         "filename": filename,
         "data": "base64_encoded_data_here", // TODO: 实际导出数据
         "format": format,
         "recordCount": records.len()
     });
-    
+
     Ok(ApiResponse::success(result))
 }
 
@@ -2390,7 +2463,11 @@ pub async fn family_ledger_transaction_list(
         service
             .list_associations(&state.db, filter)
             .await
-            .map(|rows| rows.into_iter().map(FamilyLedgerTransactionResponse::from).collect()),
+            .map(|rows| {
+                rows.into_iter()
+                    .map(FamilyLedgerTransactionResponse::from)
+                    .collect()
+            }),
     ))
 }
 
@@ -2549,18 +2626,18 @@ pub async fn migrate_split_records(
     _state: State<'_, AppState>,
 ) -> Result<ApiResponse<MigrationResult>, String> {
     use std::time::Instant;
-    
+
     info!("开始迁移 split_records 数据");
     let start = Instant::now();
-    
+
     let mut result = MigrationResult::new();
-    
+
     // split_members 字段已删除，无需迁移
     // 所有历史数据都是空的，直接返回成功
     info!("split_members 字段已从数据库中删除，无需迁移");
-    
+
     result.duration_ms = start.elapsed().as_millis();
-    
+
     Ok(ApiResponse::success(result))
 }
 
@@ -2571,18 +2648,18 @@ pub async fn get_split_records_stats(
     state: State<'_, AppState>,
 ) -> Result<ApiResponse<serde_json::Value>, String> {
     use sea_orm::{EntityTrait, QuerySelect, PaginatorTrait};
-    
+
     let db = state.db.as_ref();
-    
+
     // 1. 总记录数
     let total_count = entity::split_records::Entity::find()
         .count(db)
         .await
         .map_err(|e| format!("查询失败: {}", e))?;
-    
+
     // 2. 有 split_members 的交易数（字段已删除，返回 0）
     let transactions_with_split_members: u64 = 0;
-    
+
     // 3. 已迁移的交易数（有 split_records 的唯一交易）
     let migrated_transactions = entity::split_records::Entity::find()
         .select_only()
@@ -2592,10 +2669,10 @@ pub async fn get_split_records_stats(
         .await
         .map_err(|e| format!("查询失败: {}", e))?
         .len();
-    
+
     // 4. 待迁移的交易数
     let pending_migrations = transactions_with_split_members.saturating_sub(migrated_transactions as u64);
-    
+
     let stats = serde_json::json!({
         "totalSplitRecords": total_count,
         "transactionsWithSplitMembers": transactions_with_split_members,
@@ -2607,7 +2684,7 @@ pub async fn get_split_records_stats(
             100.0 // 没有需要迁移的数据，进度100%
         },
     });
-    
+
     info!("Split records stats: {:?}", stats);
     Ok(ApiResponse::success(stats))
 }
@@ -2630,7 +2707,7 @@ pub async fn split_record_with_details_create(
 ) -> Result<ApiResponse<SplitRecordWithDetails>, String> {
     let service = SplitRecordDetailService::default();
     info!("Creating split record with {} details", data.details.len());
-    
+
     Ok(ApiResponse::from_result(
         service
             .create_split_record_with_details(&state.db, data)
@@ -2646,7 +2723,7 @@ pub async fn split_record_with_details_get(
     split_record_serial_num: String,
 ) -> Result<ApiResponse<SplitRecordWithDetails>, String> {
     let service = SplitRecordDetailService::default();
-    
+
     Ok(ApiResponse::from_result(
         service
             .get_split_record_with_details(&state.db, split_record_serial_num)
@@ -2663,8 +2740,11 @@ pub async fn split_detail_payment_status_update(
     is_paid: bool,
 ) -> Result<ApiResponse<SplitRecordDetailResponse>, String> {
     let service = SplitRecordDetailService::default();
-    info!("Updating payment status for detail: {}, is_paid: {}", detail_serial_num, is_paid);
-    
+    info!(
+        "Updating payment status for detail: {}, is_paid: {}",
+        detail_serial_num, is_paid
+    );
+
     Ok(ApiResponse::from_result(
         service
             .update_detail_payment_status(&state.db, detail_serial_num, is_paid)
@@ -2680,7 +2760,7 @@ pub async fn split_record_statistics_get(
     split_record_serial_num: String,
 ) -> Result<ApiResponse<SplitRecordStatistics>, String> {
     let service = SplitRecordDetailService::default();
-    
+
     Ok(ApiResponse::from_result(
         service
             .get_statistics(&state.db, split_record_serial_num)
@@ -2698,7 +2778,7 @@ pub async fn member_split_details_list(
     page_size: Option<u64>,
 ) -> Result<ApiResponse<PagedResult<SplitRecordDetailResponse>>, String> {
     let service = SplitRecordDetailService::default();
-    
+
     Ok(ApiResponse::from_result(
         service
             .list_member_split_details(&state.db, member_serial_num, page, page_size)
@@ -2722,8 +2802,11 @@ pub async fn budget_allocation_create(
     budget_serial_num: String,
     data: BudgetAllocationCreateRequest,
 ) -> Result<ApiResponse<entity::budget_allocations::Model>, String> {
-    info!("Creating budget allocation for budget: {}", budget_serial_num);
-    
+    info!(
+        "Creating budget allocation for budget: {}",
+        budget_serial_num
+    );
+
     Ok(ApiResponse::from_result(
         BudgetAllocationService::create(&state.db, &budget_serial_num, data).await,
     ))
@@ -2738,7 +2821,7 @@ pub async fn budget_allocation_update(
     data: BudgetAllocationUpdateRequest,
 ) -> Result<ApiResponse<entity::budget_allocations::Model>, String> {
     info!("Updating budget allocation: {}", serial_num);
-    
+
     Ok(ApiResponse::from_result(
         BudgetAllocationService::update(&state.db, &serial_num, data).await,
     ))
@@ -2752,7 +2835,7 @@ pub async fn budget_allocation_delete(
     serial_num: String,
 ) -> Result<ApiResponse<()>, String> {
     info!("Deleting budget allocation: {}", serial_num);
-    
+
     Ok(ApiResponse::from_result(
         BudgetAllocationService::delete(&state.db, &serial_num).await,
     ))
@@ -2791,14 +2874,16 @@ pub async fn budget_allocation_record_usage(
 ) -> Result<ApiResponse<BudgetAllocationResponse>, String> {
     info!(
         "Recording budget usage: allocation={}, amount={}",
-        data.allocation_serial_num.as_ref().unwrap_or(&"N/A".to_string()),
+        data.allocation_serial_num
+            .as_ref()
+            .unwrap_or(&"N/A".to_string()),
         data.amount
     );
-    
+
     let allocation_sn = data
         .allocation_serial_num
         .ok_or_else(|| "allocation_serial_num is required".to_string())?;
-    
+
     Ok(ApiResponse::from_result(
         BudgetAllocationService::record_usage(
             &state.db,
@@ -2819,10 +2904,9 @@ pub async fn budget_allocation_can_spend(
     amount: String, // 使用String避免精度问题
 ) -> Result<ApiResponse<(bool, Option<String>)>, String> {
     use std::str::FromStr;
-    
-    let amount = Decimal::from_str(&amount)
-        .map_err(|e| format!("Invalid amount: {}", e))?;
-    
+
+    let amount = Decimal::from_str(&amount).map_err(|e| format!("Invalid amount: {}", e))?;
+
     Ok(ApiResponse::from_result(
         BudgetAllocationService::can_spend(&state.db, &allocation_serial_num, amount).await,
     ))
@@ -2857,7 +2941,7 @@ pub async fn user_setting_get(
 ) -> Result<ApiResponse<Option<JsonValue>>, String> {
     // TODO: 从认证系统获取当前用户ID
     let user_serial_num = "user-default".to_string(); // 临时硬编码，实际应从session获取
-    
+
     Ok(ApiResponse::from_result(
         UserSettingExtService::get_setting(&state.db, &user_serial_num, &key).await,
     ))
@@ -2871,21 +2955,20 @@ pub async fn user_setting_save(
     command: SaveSettingCommand,
 ) -> Result<ApiResponse<UserSettingResponse>, String> {
     info!("Saving user setting");
-    
+
     // 验证命令
-    command.validate()
-        .map_err(|e| {
-            warn!("Validation failed: {}", e);
-            format!("Validation error: {}", e)
-        })?;
-    
+    command.validate().map_err(|e| {
+        warn!("Validation failed: {}", e);
+        format!("Validation error: {}", e)
+    })?;
+
     // TODO: 从认证系统获取当前用户ID
     let user_serial_num = "user-default".to_string();
     info!("User ID: {}", user_serial_num);
-    
+
     // 转换为内部请求
     let request = command.to_create_request(user_serial_num);
-    
+
     // 调用服务层保存
     let result = UserSettingExtService::save_setting(
         &state.db,
@@ -2896,12 +2979,12 @@ pub async fn user_setting_save(
         request.module,
     )
     .await;
-    
+
     match &result {
         Ok(_) => info!("Setting saved successfully"),
         Err(e) => error!("Failed to save setting: {:?}", e),
     }
-    
+
     Ok(ApiResponse::from_result(result))
 }
 
@@ -2914,7 +2997,7 @@ pub async fn user_setting_get_module(
 ) -> Result<ApiResponse<HashMap<String, JsonValue>>, String> {
     // TODO: 从认证系统获取当前用户ID
     let user_serial_num = "user-default".to_string();
-    
+
     Ok(ApiResponse::from_result(
         UserSettingExtService::get_module_settings(&state.db, &user_serial_num, &module).await,
     ))
@@ -2929,7 +3012,7 @@ pub async fn user_setting_save_batch(
 ) -> Result<ApiResponse<Vec<UserSettingResponse>>, String> {
     // TODO: 从认证系统获取当前用户ID
     let user_serial_num = "user-default".to_string();
-    
+
     Ok(ApiResponse::from_result(
         UserSettingExtService::save_settings_batch(&state.db, &user_serial_num, settings).await,
     ))
@@ -2944,7 +3027,7 @@ pub async fn user_setting_delete(
 ) -> Result<ApiResponse<bool>, String> {
     // TODO: 从认证系统获取当前用户ID
     let user_serial_num = "user-default".to_string();
-    
+
     Ok(ApiResponse::from_result(
         UserSettingExtService::delete_setting(&state.db, &user_serial_num, &key).await,
     ))
@@ -2959,7 +3042,7 @@ pub async fn user_setting_reset_module(
 ) -> Result<ApiResponse<u64>, String> {
     // TODO: 从认证系统获取当前用户ID
     let user_serial_num = "user-default".to_string();
-    
+
     Ok(ApiResponse::from_result(
         UserSettingExtService::reset_module_settings(&state.db, &user_serial_num, &module).await,
     ))
@@ -2973,7 +3056,7 @@ pub async fn user_setting_get_all(
 ) -> Result<ApiResponse<HashMap<String, JsonValue>>, String> {
     // TODO: 从认证系统获取当前用户ID
     let user_serial_num = "user-default".to_string();
-    
+
     Ok(ApiResponse::from_result(
         UserSettingExtService::get_all_user_settings(&state.db, &user_serial_num).await,
     ))

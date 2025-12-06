@@ -143,7 +143,7 @@ pub enum Permission {
     LedgerDelete,
     #[strum(serialize = "ledger:manage")]
     LedgerManage,
-    
+
     // 成员权限
     #[strum(serialize = "member:view")]
     MemberView,
@@ -153,7 +153,7 @@ pub enum Permission {
     MemberEdit,
     #[strum(serialize = "member:remove")]
     MemberRemove,
-    
+
     // 交易权限
     #[strum(serialize = "transaction:view")]
     TransactionView,
@@ -163,7 +163,7 @@ pub enum Permission {
     TransactionEdit,
     #[strum(serialize = "transaction:delete")]
     TransactionDelete,
-    
+
     // 分摊权限
     #[strum(serialize = "split:view")]
     SplitView,
@@ -173,7 +173,7 @@ pub enum Permission {
     SplitEdit,
     #[strum(serialize = "split:confirm")]
     SplitConfirm,
-    
+
     // 结算权限
     #[strum(serialize = "settlement:view")]
     SettlementView,
@@ -181,7 +181,7 @@ pub enum Permission {
     SettlementInitiate,
     #[strum(serialize = "settlement:complete")]
     SettlementComplete,
-    
+
     // 统计权限
     #[strum(serialize = "stats:view")]
     StatsView,

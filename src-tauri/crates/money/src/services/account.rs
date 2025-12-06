@@ -22,7 +22,8 @@ use validator::Validate;
 
 use crate::{
     dto::account::{
-        AccountBalanceSummary, AccountCreate, AccountResponse, AccountType, AccountUpdate, AccountWithRelations,
+        AccountBalanceSummary, AccountCreate, AccountResponse, AccountType, AccountUpdate,
+        AccountWithRelations,
     },
     services::{account_hooks::AccountHooks, family_member::FamilyMemberService},
 };
@@ -715,21 +716,18 @@ impl AccountService {
         use entity::prelude::*;
 
         let mut response = AccountResponse::from(model.clone());
-        
+
         // 查询 currency 详情
-        if let Ok(Some(currency_model)) = Currency::find_by_id(&model.currency)
-            .one(db)
-            .await 
-        {
+        if let Ok(Some(currency_model)) = Currency::find_by_id(&model.currency).one(db).await {
             response.currency_detail = Some(CurrencyResponse::from(currency_model));
             tracing::debug!("Found currency detail for {}", model.currency);
         } else {
             tracing::warn!("Currency {} not found in database", model.currency);
         }
-        
+
         Ok(response)
     }
-    
+
     /// 批量转换 Models 到 Responses，并填充 Currency 详情（优化版：批量查询）
     pub async fn models_to_responses(
         &self,
@@ -738,43 +736,43 @@ impl AccountService {
     ) -> MijiResult<Vec<AccountResponse>> {
         use crate::dto::currency::CurrencyResponse;
         use entity::prelude::*;
-        use std::collections::{HashSet, HashMap};
+        use std::collections::{HashMap, HashSet};
 
         // 收集所有不同的 currency code
-        let currency_codes: HashSet<String> = models
-            .iter()
-            .map(|m| m.currency.clone())
-            .collect();
-        
-        tracing::debug!("Fetching {} unique currencies for accounts", currency_codes.len());
-        
+        let currency_codes: HashSet<String> = models.iter().map(|m| m.currency.clone()).collect();
+
+        tracing::debug!(
+            "Fetching {} unique currencies for accounts",
+            currency_codes.len()
+        );
+
         // 批量查询所有 currency（避免 N+1 查询）
         let currencies = Currency::find()
             .filter(entity::currency::Column::Code.is_in(currency_codes))
             .all(db)
             .await?;
-        
+
         // 构建 code -> Currency 映射
         let currency_map: HashMap<String, CurrencyResponse> = currencies
             .into_iter()
             .map(|c| (c.code.clone(), CurrencyResponse::from(c)))
             .collect();
-        
+
         tracing::debug!("Found {} currencies in database", currency_map.len());
-        
+
         // 转换
         let mut responses = Vec::with_capacity(models.len());
         for model in models {
             let mut response = AccountResponse::from(model.clone());
             response.currency_detail = currency_map.get(&model.currency).cloned();
-            
+
             if response.currency_detail.is_none() {
                 tracing::warn!("Currency {} not found", model.currency);
             }
-            
+
             responses.push(response);
         }
-        
+
         Ok(responses)
     }
 }

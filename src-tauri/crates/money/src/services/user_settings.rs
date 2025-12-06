@@ -36,25 +36,25 @@ pub struct UserSettingFilter {
 impl Filter<entity::user_settings::Entity> for UserSettingFilter {
     fn to_condition(&self) -> Condition {
         let mut condition = Condition::all();
-        
+
         if let Some(user_serial_num) = &self.user_serial_num {
-            condition = condition.add(entity::user_settings::Column::UserSerialNum.eq(user_serial_num));
+            condition =
+                condition.add(entity::user_settings::Column::UserSerialNum.eq(user_serial_num));
         }
-        
+
         if let Some(module) = &self.module {
             condition = condition.add(entity::user_settings::Column::Module.eq(module));
         }
-        
+
         if let Some(prefix) = &self.setting_key_prefix {
-            condition = condition.add(
-                entity::user_settings::Column::SettingKey.starts_with(prefix)
-            );
+            condition =
+                condition.add(entity::user_settings::Column::SettingKey.starts_with(prefix));
         }
-        
+
         if let Some(true) = self.only_custom {
             condition = condition.add(entity::user_settings::Column::IsDefault.eq(false));
         }
-        
+
         condition
     }
 }
@@ -63,20 +63,17 @@ impl Filter<entity::user_settings::Entity> for UserSettingFilter {
 #[derive(Debug)]
 pub struct UserSettingConverter;
 
-impl CrudConverter<
-    entity::user_settings::Entity,
-    CreateUserSettingRequest,
-    UpdateUserSettingRequest,
-> for UserSettingConverter
+impl
+    CrudConverter<entity::user_settings::Entity, CreateUserSettingRequest, UpdateUserSettingRequest>
+    for UserSettingConverter
 {
     fn create_to_active_model(
         &self,
         data: CreateUserSettingRequest,
     ) -> MijiResult<entity::user_settings::ActiveModel> {
         // 验证数据
-        data.validate()
-            .map_err(AppError::from_validation_errors)?;
-        
+        data.validate().map_err(AppError::from_validation_errors)?;
+
         // 使用 From 转换
         Ok(data.into())
     }
@@ -152,9 +149,9 @@ impl UserSettingExtService {
             return "***".to_string();
         }
         // 只显示前4位和后4位
-        format!("{}***{}", &user_id[..4], &user_id[user_id.len()-4..])
+        format!("{}***{}", &user_id[..4], &user_id[user_id.len() - 4..])
     }
-    
+
     /// 脱敏设置值（日志用）
     #[allow(dead_code)]
     fn mask_value(value: &JsonValue, setting_type: &str) -> String {
@@ -164,17 +161,19 @@ impl UserSettingExtService {
                     if s.len() <= 10 {
                         return "[masked]".to_string();
                     }
-                    format!("{}***{}", &s[..3], &s[s.len()-3..])
+                    format!("{}***{}", &s[..3], &s[s.len() - 3..])
                 } else {
                     "[masked]".to_string()
                 }
-            },
+            }
             "number" | "boolean" => value.to_string(),
-            "object" | "array" => format!("[{} with {} bytes]", setting_type, value.to_string().len()),
+            "object" | "array" => {
+                format!("[{} with {} bytes]", setting_type, value.to_string().len())
+            }
             _ => "[unknown type]".to_string(),
         }
     }
-    
+
     /// 获取用户的单个设置值
     pub async fn get_setting(
         db: &DatabaseConnection,
@@ -202,22 +201,22 @@ impl UserSettingExtService {
         // DEBUG 级别: 显示完整信息（开发环境）
         debug!(
             "Saving setting - user: {}, key: {}, type: {}, module: {}, value: {:?}",
-            user_serial_num,  // 完整用户ID
+            user_serial_num, // 完整用户ID
             setting_key,
             setting_type,
             module,
-            setting_value  // 完整值
+            setting_value // 完整值
         );
-        
+
         // INFO 级别: 脱敏信息（生产环境）
         info!(
             "Saving setting - user: {}, key: {}, type: {}, module: {}",
-            Self::mask_user_id(user_serial_num),  // 脱敏用户ID
+            Self::mask_user_id(user_serial_num), // 脱敏用户ID
             setting_key,
             setting_type,
             module
         );
-        
+
         // 查找现有设置
         let existing = entity::user_settings::Entity::find()
             .filter(entity::user_settings::Column::UserSerialNum.eq(user_serial_num))
@@ -231,13 +230,13 @@ impl UserSettingExtService {
             // 检查值是否真的变化了
             let value_changed = existing_model.setting_value != setting_value;
             let type_changed = existing_model.setting_type != setting_type;
-            
+
             if !value_changed && !type_changed {
                 debug!("Setting value unchanged, skipping update: {}", setting_key);
                 info!("Setting unchanged: {}", setting_key);
                 return Ok(UserSettingResponse::from(existing_model));
             }
-            
+
             debug!(
                 "Updating existing setting: {}, old value: {:?}, new value: {:?}, value_changed: {}, type_changed: {}",
                 setting_key,
@@ -246,25 +245,26 @@ impl UserSettingExtService {
                 value_changed,
                 type_changed
             );
-            
+
             // 更新现有设置 - 只更新变化的字段
             let mut active_model = existing_model.into_active_model();
-            
+
             if value_changed {
                 active_model.setting_value = ActiveValue::Set(setting_value);
             }
             if type_changed {
                 active_model.setting_type = ActiveValue::Set(setting_type);
             }
-            
+
             // 无论如何都更新这些字段
             active_model.is_default = ActiveValue::Set(false);
             active_model.updated_at = ActiveValue::Set(now.into());
 
-            let updated = active_model
-                .update(db)
-                .await?;
-            info!("Setting updated: {} (value_changed: {}, type_changed: {})", setting_key, value_changed, type_changed);
+            let updated = active_model.update(db).await?;
+            info!(
+                "Setting updated: {} (value_changed: {}, type_changed: {})",
+                setting_key, value_changed, type_changed
+            );
             updated
         } else {
             debug!("Creating new setting: {}", setting_key);
@@ -281,9 +281,7 @@ impl UserSettingExtService {
 
             let active_model: entity::user_settings::ActiveModel = request.into();
 
-            let created = active_model
-                .insert(db)
-                .await?;
+            let created = active_model.insert(db).await?;
             info!("Setting created: {}", setting_key);
             created
         };
@@ -321,15 +319,8 @@ impl UserSettingExtService {
         let mut results = Vec::new();
 
         for (key, (value, setting_type, module)) in settings {
-            let response = Self::save_setting(
-                db,
-                user_serial_num,
-                &key,
-                value,
-                setting_type,
-                module,
-            )
-            .await?;
+            let response =
+                Self::save_setting(db, user_serial_num, &key, value, setting_type, module).await?;
             results.push(response);
         }
 

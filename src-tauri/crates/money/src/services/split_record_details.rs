@@ -6,10 +6,8 @@ use common::{
     utils::date::DateUtils,
 };
 use sea_orm::{
-    ActiveModelTrait,
-    ActiveValue::Set,
-    ColumnTrait, Condition, DbConn, EntityTrait, QueryFilter, TransactionTrait,
-    prelude::async_trait::async_trait,
+    ActiveModelTrait, ActiveValue::Set, ColumnTrait, Condition, DbConn, EntityTrait, QueryFilter,
+    TransactionTrait, prelude::async_trait::async_trait,
 };
 use std::sync::Arc;
 use tracing::info;
@@ -34,9 +32,8 @@ impl Filter<entity::split_record_details::Entity> for SplitRecordWithDetailsQuer
         }
 
         if let Some(ref member_serial_num) = self.member_serial_num {
-            condition = condition.add(
-                entity::split_record_details::Column::MemberSerialNum.eq(member_serial_num),
-            );
+            condition = condition
+                .add(entity::split_record_details::Column::MemberSerialNum.eq(member_serial_num));
         }
 
         condition
@@ -48,11 +45,12 @@ impl Filter<entity::split_record_details::Entity> for SplitRecordWithDetailsQuer
 #[derive(Debug)]
 pub struct SplitRecordDetailConverter;
 
-impl CrudConverter<
-    entity::split_record_details::Entity,
-    SplitRecordDetailCreate,
-    SplitRecordDetailUpdate,
-> for SplitRecordDetailConverter
+impl
+    CrudConverter<
+        entity::split_record_details::Entity,
+        SplitRecordDetailCreate,
+        SplitRecordDetailUpdate,
+    > for SplitRecordDetailConverter
 {
     fn create_to_active_model(
         &self,
@@ -125,13 +123,25 @@ impl SplitRecordDetailConverter {
 pub struct SplitRecordDetailHooks;
 
 #[async_trait]
-impl common::crud::hooks::Hooks<entity::split_record_details::Entity, SplitRecordDetailCreate, SplitRecordDetailUpdate>
-    for SplitRecordDetailHooks
+impl
+    common::crud::hooks::Hooks<
+        entity::split_record_details::Entity,
+        SplitRecordDetailCreate,
+        SplitRecordDetailUpdate,
+    > for SplitRecordDetailHooks
 {
-    async fn before_create(&self, _tx: &sea_orm::DatabaseTransaction, _data: &SplitRecordDetailCreate) -> MijiResult<()> {
+    async fn before_create(
+        &self,
+        _tx: &sea_orm::DatabaseTransaction,
+        _data: &SplitRecordDetailCreate,
+    ) -> MijiResult<()> {
         Ok(())
     }
-    async fn after_create(&self, _tx: &sea_orm::DatabaseTransaction, _model: &entity::split_record_details::Model) -> MijiResult<()> {
+    async fn after_create(
+        &self,
+        _tx: &sea_orm::DatabaseTransaction,
+        _model: &entity::split_record_details::Model,
+    ) -> MijiResult<()> {
         Ok(())
     }
     async fn before_update(
@@ -142,13 +152,25 @@ impl common::crud::hooks::Hooks<entity::split_record_details::Entity, SplitRecor
     ) -> MijiResult<()> {
         Ok(())
     }
-    async fn after_update(&self, _tx: &sea_orm::DatabaseTransaction, _model: &entity::split_record_details::Model) -> MijiResult<()> {
+    async fn after_update(
+        &self,
+        _tx: &sea_orm::DatabaseTransaction,
+        _model: &entity::split_record_details::Model,
+    ) -> MijiResult<()> {
         Ok(())
     }
-    async fn before_delete(&self, _tx: &sea_orm::DatabaseTransaction, _model: &entity::split_record_details::Model) -> MijiResult<()> {
+    async fn before_delete(
+        &self,
+        _tx: &sea_orm::DatabaseTransaction,
+        _model: &entity::split_record_details::Model,
+    ) -> MijiResult<()> {
         Ok(())
     }
-    async fn after_delete(&self, _tx: &sea_orm::DatabaseTransaction, _model: &entity::split_record_details::Model) -> MijiResult<()> {
+    async fn after_delete(
+        &self,
+        _tx: &sea_orm::DatabaseTransaction,
+        _model: &entity::split_record_details::Model,
+    ) -> MijiResult<()> {
         Ok(())
     }
 }
@@ -195,7 +217,7 @@ impl SplitRecordDetailService {
     ) -> MijiResult<SplitRecordWithDetails> {
         // 验证数据
         data.validate().map_err(AppError::from_validation_errors)?;
-        
+
         // 验证分摊逻辑
         data.validate_split_logic()
             .map_err(|e| AppError::simple(BusinessCode::ValidationError, e))?;
@@ -247,7 +269,7 @@ impl SplitRecordDetailService {
         for detail in data.details {
             let active_model = detail.to_active_model(main_record_serial_num.clone());
             let saved_detail = active_model.insert(&txn).await?;
-            
+
             let mut response = SplitRecordDetailResponse::from(saved_detail);
             response.member_name = Some(detail.member_name.clone());
             detail_responses.push(response);
@@ -364,7 +386,7 @@ impl SplitRecordDetailService {
         let converter = SplitRecordDetailConverter;
         let active_model = converter.update_to_active_model(detail.clone(), update)?;
         let updated_model = active_model.update(db).await?;
-        
+
         converter.model_to_response(db, updated_model).await
     }
 
@@ -419,7 +441,7 @@ impl SplitRecordDetailService {
             let response = converter.model_to_response(db, model).await?;
             responses.push(response);
         }
-        
+
         let total_count = responses.len();
         let total_pages = (total_count as f64 / page_size as f64).ceil() as usize;
 
@@ -449,12 +471,13 @@ impl std::ops::Deref for SplitRecordDetailService {
 }
 
 #[async_trait]
-impl CrudService<
-    entity::split_record_details::Entity,
-    SplitRecordWithDetailsQuery,
-    SplitRecordDetailCreate,
-    SplitRecordDetailUpdate,
-> for SplitRecordDetailService
+impl
+    CrudService<
+        entity::split_record_details::Entity,
+        SplitRecordWithDetailsQuery,
+        SplitRecordDetailCreate,
+        SplitRecordDetailUpdate,
+    > for SplitRecordDetailService
 {
     async fn create(
         &self,

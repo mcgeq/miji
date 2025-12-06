@@ -9,11 +9,8 @@
 // Modified   By:  mcgeq <mcgeq@outlook.com>
 // -----------------------------------------------------------------------------
 
-use snafu::{Snafu, Backtrace};
-use crate::{
-    error::ErrorExt,
-    BusinessCode,
-};
+use crate::{BusinessCode, error::ErrorExt};
+use snafu::{Backtrace, Snafu};
 
 /// Argon2 密码哈希错误
 #[derive(Debug, Snafu)]
@@ -70,7 +67,9 @@ impl ErrorExt for Argon2ErrorWrapper {
     fn extra_data(&self) -> Option<serde_json::Value> {
         match self {
             Self::HashingFailed { reason, .. } => Some(serde_json::json!({ "reason": reason })),
-            Self::VerificationFailed { reason, .. } => Some(serde_json::json!({ "reason": reason })),
+            Self::VerificationFailed { reason, .. } => {
+                Some(serde_json::json!({ "reason": reason }))
+            }
             Self::InvalidFormat { reason, .. } => Some(serde_json::json!({ "reason": reason })),
             Self::ConfigError { reason, .. } => Some(serde_json::json!({ "reason": reason })),
         }

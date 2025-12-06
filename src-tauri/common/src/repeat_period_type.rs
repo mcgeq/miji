@@ -64,15 +64,42 @@ mod tests {
 
     #[test]
     fn test_from_string() {
-        assert_eq!(RepeatPeriodType::from_string("none"), Some(RepeatPeriodType::None));
-        assert_eq!(RepeatPeriodType::from_string("None"), Some(RepeatPeriodType::None));
-        assert_eq!(RepeatPeriodType::from_string("NONE"), Some(RepeatPeriodType::None));
-        assert_eq!(RepeatPeriodType::from_string("daily"), Some(RepeatPeriodType::Daily));
-        assert_eq!(RepeatPeriodType::from_string("Daily"), Some(RepeatPeriodType::Daily));
-        assert_eq!(RepeatPeriodType::from_string("weekly"), Some(RepeatPeriodType::Weekly));
-        assert_eq!(RepeatPeriodType::from_string("monthly"), Some(RepeatPeriodType::Monthly));
-        assert_eq!(RepeatPeriodType::from_string("yearly"), Some(RepeatPeriodType::Yearly));
-        assert_eq!(RepeatPeriodType::from_string("custom"), Some(RepeatPeriodType::Custom));
+        assert_eq!(
+            RepeatPeriodType::from_string("none"),
+            Some(RepeatPeriodType::None)
+        );
+        assert_eq!(
+            RepeatPeriodType::from_string("None"),
+            Some(RepeatPeriodType::None)
+        );
+        assert_eq!(
+            RepeatPeriodType::from_string("NONE"),
+            Some(RepeatPeriodType::None)
+        );
+        assert_eq!(
+            RepeatPeriodType::from_string("daily"),
+            Some(RepeatPeriodType::Daily)
+        );
+        assert_eq!(
+            RepeatPeriodType::from_string("Daily"),
+            Some(RepeatPeriodType::Daily)
+        );
+        assert_eq!(
+            RepeatPeriodType::from_string("weekly"),
+            Some(RepeatPeriodType::Weekly)
+        );
+        assert_eq!(
+            RepeatPeriodType::from_string("monthly"),
+            Some(RepeatPeriodType::Monthly)
+        );
+        assert_eq!(
+            RepeatPeriodType::from_string("yearly"),
+            Some(RepeatPeriodType::Yearly)
+        );
+        assert_eq!(
+            RepeatPeriodType::from_string("custom"),
+            Some(RepeatPeriodType::Custom)
+        );
         assert_eq!(RepeatPeriodType::from_string("invalid"), None);
     }
 
@@ -108,8 +135,14 @@ mod tests {
 
     #[test]
     fn test_from_str() {
-        assert_eq!("none".parse::<RepeatPeriodType>().unwrap(), RepeatPeriodType::None);
-        assert_eq!("Daily".parse::<RepeatPeriodType>().unwrap(), RepeatPeriodType::Daily);
+        assert_eq!(
+            "none".parse::<RepeatPeriodType>().unwrap(),
+            RepeatPeriodType::None
+        );
+        assert_eq!(
+            "Daily".parse::<RepeatPeriodType>().unwrap(),
+            RepeatPeriodType::Daily
+        );
         assert!("invalid".parse::<RepeatPeriodType>().is_err());
     }
 }

@@ -25,11 +25,7 @@ impl MigrationTrait for Migration {
                             .string_len(38)
                             .not_null(),
                     )
-                    .col(
-                        ColumnDef::new(SplitRules::Name)
-                            .string_len(100)
-                            .not_null(),
-                    )
+                    .col(ColumnDef::new(SplitRules::Name).string_len(100).not_null())
                     .col(
                         ColumnDef::new(SplitRules::Description)
                             .string_len(500)
@@ -39,16 +35,15 @@ impl MigrationTrait for Migration {
                         ColumnDef::new(SplitRules::RuleType)
                             .string_len(20)
                             .not_null()
-                            .check(
-                                Expr::col(SplitRules::RuleType)
-                                    .is_in(vec!["Equal", "Percentage", "FixedAmount", "Weighted", "Custom"]),
-                            ),
+                            .check(Expr::col(SplitRules::RuleType).is_in(vec![
+                                "Equal",
+                                "Percentage",
+                                "FixedAmount",
+                                "Weighted",
+                                "Custom",
+                            ])),
                     )
-                    .col(
-                        ColumnDef::new(SplitRules::RuleConfig)
-                            .json()
-                            .not_null(),
-                    )
+                    .col(ColumnDef::new(SplitRules::RuleConfig).json().not_null())
                     .col(
                         ColumnDef::new(SplitRules::ParticipantMembers)
                             .json()
@@ -66,11 +61,7 @@ impl MigrationTrait for Migration {
                             .not_null()
                             .default(false),
                     )
-                    .col(
-                        ColumnDef::new(SplitRules::Category)
-                            .string_len(50)
-                            .null(),
-                    )
+                    .col(ColumnDef::new(SplitRules::Category).string_len(50).null())
                     .col(
                         ColumnDef::new(SplitRules::SubCategory)
                             .string_len(50)
@@ -86,11 +77,7 @@ impl MigrationTrait for Migration {
                             .decimal_len(15, 2)
                             .null(),
                     )
-                    .col(
-                        ColumnDef::new(SplitRules::Tags)
-                            .json()
-                            .null(),
-                    )
+                    .col(ColumnDef::new(SplitRules::Tags).json().null())
                     .col(
                         ColumnDef::new(SplitRules::Priority)
                             .integer()
@@ -177,7 +164,11 @@ impl MigrationTrait for Migration {
             .await?;
 
         manager
-            .drop_index(Index::drop().name("idx_split_rules_family_ledger").to_owned())
+            .drop_index(
+                Index::drop()
+                    .name("idx_split_rules_family_ledger")
+                    .to_owned(),
+            )
             .await?;
 
         manager

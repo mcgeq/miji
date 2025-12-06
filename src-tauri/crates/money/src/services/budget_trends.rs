@@ -3,8 +3,7 @@ use std::collections::HashMap;
 use chrono::{DateTime, Datelike, FixedOffset, NaiveDate};
 use common::error::MijiResult;
 use sea_orm::{
-    ColumnTrait, Condition, DatabaseConnection, EntityTrait, QueryFilter,
-    prelude::Decimal,
+    ColumnTrait, Condition, DatabaseConnection, EntityTrait, QueryFilter, prelude::Decimal,
 };
 use serde::{Deserialize, Serialize};
 use tracing::{info, warn};

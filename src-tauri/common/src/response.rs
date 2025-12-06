@@ -10,8 +10,8 @@
 // Modified   By:  mcgeq <mcgeq@outlook.com>
 // -----------------------------------------------------------------------------
 
-use serde::Serialize;
 use crate::{business_code::BusinessCode, error::AppError};
+use serde::Serialize;
 
 /// 统一 API 响应结构
 #[derive(Serialize)]

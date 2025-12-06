@@ -286,121 +286,48 @@ if ($rustFiles) {
         Pop-Location
     }
     
-    # Step 2: Format code
+    # Step 2: Format only changed files with cargo fmt
     if (-not $Quiet) {
-        Write-Host "  [2/2] Formatting code..." -ForegroundColor Cyan
+        Write-Host "  [2/2] Formatting changed files only..." -ForegroundColor Cyan
     }
     
-    # Check if rustfmt is available
-    try {
-        $null = Get-Command rustfmt -ErrorAction Stop
-    }
-    catch {
-        if (-not $Quiet) {
-            Write-Host "  Using cargo fmt (rustfmt not in PATH)" -ForegroundColor Yellow
-        }
-        Push-Location src-tauri
-        try {
-            if ($Verbose) {
-                & cargo fmt
-            }
-            else {
-                & cargo fmt 2>&1 | Out-Null
-            }
-            
-            $rustDuration = (Get-Date) - $rustStartTime
-            
-            if ($LASTEXITCODE -eq 0) {
-                $stats.FormattedFiles += $rustFiles.Count
-                if (-not $Quiet) {
-                    Write-Host "  [OK] Completed in $([math]::Round($rustDuration.TotalSeconds, 2))s" -ForegroundColor Green
-                }
-            }
-            else {
-                $errorMsg = "Cargo fmt failed (exit code: $LASTEXITCODE)"
-                $stats.Errors += $errorMsg
-                if (-not $Quiet) {
-                    Write-Host "  [FAIL] Failed" -ForegroundColor Red
-                }
-                $hasError = $true
-            }
-        }
-        catch {
-            $errorMsg = "Rust formatting error: $_"
-            $stats.Errors += $errorMsg
-            if (-not $Quiet) {
-                Write-Host "  [FAIL] Error: $_" -ForegroundColor Red
-            }
-            $hasError = $true
-        }
-        finally {
-            Pop-Location
-        }
-        return
-    }
-    
-    # Use rustfmt for individual files
     Push-Location src-tauri
     try {
-        $rustFormatted = 0
-        $rustFailed = 0
+        # Build file list for cargo fmt (remove src-tauri prefix)
+        $filesToFormat = $rustFiles | ForEach-Object {
+            $_ -replace '^src-tauri[/\\]', ''
+        }
         
-        foreach ($rustFile in $rustFiles) {
-            # Handle both forward and backward slashes
-            $file = $rustFile -replace '^src-tauri[/\\]', ''
-            if (Test-Path $file) {
-                if ($Verbose) {
-                    & rustfmt $file
-                }
-                else {
-                    & rustfmt $file 2>&1 | Out-Null
-                }
-                
-                if ($LASTEXITCODE -eq 0) {
-                    $rustFormatted++
-                    if ($Verbose) {
-                        Write-Host "    [OK] $file" -ForegroundColor Green
-                    }
-                }
-                else {
-                    $rustFailed++
-                    $errorMsg = "rustfmt failed for: $file"
-                    $stats.Errors += $errorMsg
-                    if (-not $Quiet) {
-                        Write-Host "    [FAIL] $file" -ForegroundColor Red
-                    }
-                    $hasError = $true
-                }
-            }
-            else {
-                if (-not $Quiet) {
-                    Write-Host "    [WARN] File not found: $file" -ForegroundColor Yellow
-                }
-            }
+        # Use cargo fmt with specific files
+        if ($Verbose) {
+            & cargo fmt -- $filesToFormat
+        }
+        else {
+            & cargo fmt -- $filesToFormat 2>&1 | Out-Null
         }
         
         $rustDuration = (Get-Date) - $rustStartTime
-        $stats.FormattedFiles += $rustFormatted
         
-        if (-not $hasError) {
+        if ($LASTEXITCODE -eq 0) {
+            $stats.FormattedFiles += $rustFiles.Count
             if (-not $Quiet) {
-                Write-Host "  [OK] Completed in $([math]::Round($rustDuration.TotalSeconds, 2))s" -ForegroundColor Green
-                if ($Verbose) {
-                    Write-Host "    Formatted: $rustFormatted/$($rustFiles.Count)" -ForegroundColor Gray
-                }
+                Write-Host "    [OK] Formatted $($rustFiles.Count) file(s) in $([math]::Round($rustDuration.TotalSeconds, 2))s" -ForegroundColor Green
             }
         }
         else {
+            $errorMsg = "cargo fmt failed (exit code: $LASTEXITCODE)"
+            $stats.Errors += $errorMsg
             if (-not $Quiet) {
-                Write-Host "  [WARN] Completed with errors ($rustFailed failed)" -ForegroundColor Yellow
+                Write-Host "    [FAIL] Failed" -ForegroundColor Red
             }
+            $hasError = $true
         }
     }
     catch {
         $errorMsg = "Rust formatting error: $_"
         $stats.Errors += $errorMsg
         if (-not $Quiet) {
-            Write-Host "  [FAIL] Error: $_" -ForegroundColor Red
+            Write-Host "    [FAIL] Error: $_" -ForegroundColor Red
         }
         $hasError = $true
     }

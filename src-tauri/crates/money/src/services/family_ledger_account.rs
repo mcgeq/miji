@@ -18,7 +18,10 @@ pub struct FamilyLedgerAccountService;
 
 impl FamilyLedgerAccountService {
     /// 获取所有账本账户关联
-    pub async fn list(&self, db: &DatabaseConnection) -> Result<Vec<family_ledger_account::Model>, AppError> {
+    pub async fn list(
+        &self,
+        db: &DatabaseConnection,
+    ) -> Result<Vec<family_ledger_account::Model>, AppError> {
         FamilyLedgerAccount::find()
             .all(db)
             .await
@@ -73,7 +76,7 @@ impl FamilyLedgerAccountService {
 
         let now = common::utils::date::DateUtils::local_now();
         let serial_num = common::utils::uuid::McgUuid::uuid(38);
-        
+
         let active_model = family_ledger_account::ActiveModel {
             serial_num: Set(serial_num),
             family_ledger_serial_num: Set(ledger_serial_num.clone()),
@@ -88,27 +91,30 @@ impl FamilyLedgerAccountService {
             .map_err(AppError::from)?;
 
         // 更新账本的账户数量
-        self.update_ledger_account_count(db, &ledger_serial_num).await?;
+        self.update_ledger_account_count(db, &ledger_serial_num)
+            .await?;
 
         Ok(result)
     }
-    
+
     /// 更新账本的账户数量
     async fn update_ledger_account_count(
         &self,
         db: &DatabaseConnection,
         ledger_serial_num: &str,
     ) -> Result<(), AppError> {
-        use sea_orm::QueryFilter;
         use entity::prelude::*;
-        
+        use sea_orm::QueryFilter;
+
         // 查询账户数量
         let count = FamilyLedgerAccount::find()
-            .filter(entity::family_ledger_account::Column::FamilyLedgerSerialNum.eq(ledger_serial_num))
+            .filter(
+                entity::family_ledger_account::Column::FamilyLedgerSerialNum.eq(ledger_serial_num),
+            )
             .count(db)
             .await
             .map_err(AppError::from)?;
-        
+
         // 更新账本
         FamilyLedger::update_many()
             .col_expr(
@@ -119,7 +125,7 @@ impl FamilyLedgerAccountService {
             .exec(db)
             .await
             .map_err(AppError::from)?;
-        
+
         Ok(())
     }
 
@@ -138,7 +144,8 @@ impl FamilyLedgerAccountService {
             .map_err(AppError::from)?;
 
         // 更新账本的账户数量
-        self.update_ledger_account_count(db, ledger_serial_num).await?;
+        self.update_ledger_account_count(db, ledger_serial_num)
+            .await?;
 
         Ok(())
     }

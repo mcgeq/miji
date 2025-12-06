@@ -17,7 +17,7 @@ use argon2::{
 use base64::{Engine, engine::general_purpose};
 use snafu::GenerateImplicitData;
 
-use crate::{error::MijiResult};
+use crate::error::MijiResult;
 
 use super::{config::Argon2Config, error::Argon2ErrorWrapper, store_hash::StoredHash};
 
@@ -38,9 +38,9 @@ impl<'a> Argon2Helper<'a> {
             config.parallelism,
             Some(config.hash_length as usize),
         )
-            .map_err(|e| Argon2ErrorWrapper::HashingFailed {
-                reason: format!("Invalid params: {e}"),
-                backtrace: snafu::Backtrace::generate(),
+        .map_err(|e| Argon2ErrorWrapper::HashingFailed {
+            reason: format!("Invalid params: {e}"),
+            backtrace: snafu::Backtrace::generate(),
         })?;
         let argon2 = Argon2::new(config.algorithm, config.version, params);
         Ok(Self { config, argon2 })

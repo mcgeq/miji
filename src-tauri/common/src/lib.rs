@@ -17,13 +17,13 @@ pub mod utils;
 pub mod services {
     pub mod notification_service;
     pub mod scheduler_config_service;
-    
+
     pub use notification_service::{
         DailyTrend, LogRecorder, NotificationAction, NotificationPriority, NotificationRequest,
-        NotificationService, NotificationStatistics, NotificationType, PermissionManager, 
+        NotificationService, NotificationStatistics, NotificationType, PermissionManager,
         SettingsChecker, StatisticsService,
     };
-    
+
     pub use scheduler_config_service::{SchedulerConfig, SchedulerConfigService};
 }
 
@@ -35,7 +35,7 @@ pub use scheduler_config::{
 };
 pub use services::{
     DailyTrend, LogRecorder, NotificationAction, NotificationPriority, NotificationRequest,
-    NotificationService, NotificationStatistics, NotificationType, PermissionManager, 
+    NotificationService, NotificationStatistics, NotificationType, PermissionManager,
     SchedulerConfig, SchedulerConfigService, SettingsChecker, StatisticsService,
 };
 pub use state::{ApiCredentials, AppState, SetupState, TokenResponse, TokenStatus};

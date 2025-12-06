@@ -1,8 +1,11 @@
 use chrono::{DateTime, FixedOffset};
-use common::utils::{date::DateUtils, uuid::McgUuid};
 use common::paginations::Filter;
+use common::utils::{date::DateUtils, uuid::McgUuid};
 use sea_orm::prelude::Decimal;
-use sea_orm::{ActiveValue::{self, Set}, Condition};
+use sea_orm::{
+    ActiveValue::{self, Set},
+    Condition,
+};
 use serde::{Deserialize, Serialize};
 use serde_json::Value as JsonValue;
 use validator::Validate;
@@ -64,13 +67,13 @@ impl From<entity::split_rules::Model> for SplitRuleResponse {
 pub struct SplitRuleCreate {
     #[validate(length(min = 1, max = 100, message = "规则名称长度必须在1-100字符之间"))]
     pub name: String,
-    
+
     #[validate(length(max = 500, message = "描述长度不能超过500字符"))]
     pub description: Option<String>,
-    
+
     #[validate(length(min = 1, message = "规则类型不能为空"))]
     pub rule_type: String,
-    
+
     pub rule_config: JsonValue,
     pub participant_members: JsonValue,
     pub is_template: Option<bool>,
@@ -90,10 +93,10 @@ pub struct SplitRuleCreate {
 pub struct SplitRuleUpdate {
     #[validate(length(min = 1, max = 100, message = "规则名称长度必须在1-100字符之间"))]
     pub name: Option<String>,
-    
+
     #[validate(length(max = 500, message = "描述长度不能超过500字符"))]
     pub description: Option<String>,
-    
+
     pub rule_type: Option<String>,
     pub rule_config: Option<JsonValue>,
     pub participant_members: Option<JsonValue>,

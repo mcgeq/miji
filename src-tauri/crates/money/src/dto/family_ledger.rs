@@ -48,10 +48,10 @@ impl TryFrom<FamilyLedgerCreate> for family_ledger::ActiveModel {
             name: Set(Some(value.name)),
             description: Set(value.description.unwrap_or_default()),
             base_currency: Set(value.base_currency),
-            members: Set(0), // 初始为 0，由关联表更新
-            accounts: Set(0), // 初始为 0，由关联表更新
+            members: Set(0),      // 初始为 0，由关联表更新
+            accounts: Set(0),     // 初始为 0，由关联表更新
             transactions: Set(0), // 初始为 0，由关联表更新
-            budgets: Set(0), // 初始为 0，由关联表更新
+            budgets: Set(0),      // 初始为 0，由关联表更新
             audit_logs: Set("[]".to_string()),
             ledger_type: Set(value.ledger_type.unwrap_or_else(|| "Family".to_string())),
             settlement_cycle: Set(value
@@ -157,11 +157,11 @@ impl From<family_ledger::Model> for FamilyLedgerResponse {
             settlement_cycle: model.settlement_cycle,
             auto_settlement: model.auto_settlement,
             settlement_day: model.settlement_day,
-            total_income: Some(0.0),           // TODO: 实现真实统计
-            total_expense: Some(0.0),          // TODO: 实现真实统计
-            shared_expense: Some(0.0),         // TODO: 实现真实统计
-            personal_expense: Some(0.0),       // TODO: 实现真实统计
-            pending_settlement: Some(0.0),     // TODO: 实现真实统计
+            total_income: Some(0.0),       // TODO: 实现真实统计
+            total_expense: Some(0.0),      // TODO: 实现真实统计
+            shared_expense: Some(0.0),     // TODO: 实现真实统计
+            personal_expense: Some(0.0),   // TODO: 实现真实统计
+            pending_settlement: Some(0.0), // TODO: 实现真实统计
             members: Some(model.members),
             accounts: Some(model.accounts),
             transactions: Some(model.transactions),

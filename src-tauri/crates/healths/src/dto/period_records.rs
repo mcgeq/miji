@@ -58,8 +58,12 @@ impl TryFrom<PeriodRecordsUpdate> for entity::period_records::ActiveModel {
     fn try_from(value: PeriodRecordsUpdate) -> Result<Self, Self::Error> {
         Ok(entity::period_records::ActiveModel {
             serial_num: ActiveValue::NotSet,
-            notes: value.notes.map_or(ActiveValue::NotSet, |v| ActiveValue::Set(Some(v))),
-            start_date: value.start_date.map_or(ActiveValue::NotSet, ActiveValue::Set),
+            notes: value
+                .notes
+                .map_or(ActiveValue::NotSet, |v| ActiveValue::Set(Some(v))),
+            start_date: value
+                .start_date
+                .map_or(ActiveValue::NotSet, ActiveValue::Set),
             end_date: value.end_date.map_or(ActiveValue::NotSet, ActiveValue::Set),
             created_at: ActiveValue::NotSet,
             updated_at: ActiveValue::Set(Some(DateUtils::local_now())),
@@ -85,7 +89,7 @@ impl From<entity::period_records::Model> for PeriodRecords {
                 end_date: value.end_date,
             },
             created_at: value.created_at,
-            updated_at: value.updated_at
+            updated_at: value.updated_at,
         }
     }
 }

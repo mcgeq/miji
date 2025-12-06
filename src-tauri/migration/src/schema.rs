@@ -725,21 +725,21 @@ pub enum BudgetAllocations {
     RemainingAmount,
     Percentage,
     // 增强字段 - 分配规则
-    AllocationType,         // 分配类型: FIXED_AMOUNT, PERCENTAGE, SHARED, DYNAMIC
-    RuleConfig,             // 规则配置（JSONB）
+    AllocationType, // 分配类型: FIXED_AMOUNT, PERCENTAGE, SHARED, DYNAMIC
+    RuleConfig,     // 规则配置（JSONB）
     // 增强字段 - 超支控制
-    AllowOverspend,         // 是否允许超支
-    OverspendLimitType,     // 超支限额类型: NONE, PERCENTAGE, FIXED_AMOUNT
-    OverspendLimitValue,    // 超支限额值
+    AllowOverspend,      // 是否允许超支
+    OverspendLimitType,  // 超支限额类型: NONE, PERCENTAGE, FIXED_AMOUNT
+    OverspendLimitValue, // 超支限额值
     // 增强字段 - 预警设置
-    AlertEnabled,           // 启用预警
-    AlertThreshold,         // 预警阈值百分比
-    AlertConfig,            // 预警配置（JSONB）
+    AlertEnabled,   // 启用预警
+    AlertThreshold, // 预警阈值百分比
+    AlertConfig,    // 预警配置（JSONB）
     // 增强字段 - 管理
-    Priority,               // 优先级 1-5
-    IsMandatory,            // 是否强制（不可削减）
-    Status,                 // 状态: ACTIVE, PAUSED, COMPLETED
-    Notes,                  // 备注
+    Priority,    // 优先级 1-5
+    IsMandatory, // 是否强制（不可削减）
+    Status,      // 状态: ACTIVE, PAUSED, COMPLETED
+    Notes,       // 备注
     CreatedAt,
     UpdatedAt,
 }

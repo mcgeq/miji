@@ -1,6 +1,6 @@
-use snafu::{Snafu, Backtrace};
+use crate::{BusinessCode, error::ErrorExt};
+use snafu::{Backtrace, Snafu};
 use std::num::ParseIntError;
-use crate::{error::{ ErrorExt}, BusinessCode};
 
 /// 环境变量相关错误
 #[derive(Debug, Snafu)]
@@ -67,11 +67,15 @@ impl ErrorExt for EnvError {
     fn extra_data(&self) -> Option<serde_json::Value> {
         match self {
             Self::EnvVarEmptyKey { .. } => None,
-            Self::EnvVarNotPresent { var_name, .. } => Some(
-                serde_json::json!({ "var_name": var_name })),
-            Self::EnvVarNotUnicode { var_name, .. } => Some(
-                serde_json::json!({ "var_name": var_name })),
-            Self::EnvVarParseError { var_name, source, .. } => Some(serde_json::json!({
+            Self::EnvVarNotPresent { var_name, .. } => {
+                Some(serde_json::json!({ "var_name": var_name }))
+            }
+            Self::EnvVarNotUnicode { var_name, .. } => {
+                Some(serde_json::json!({ "var_name": var_name }))
+            }
+            Self::EnvVarParseError {
+                var_name, source, ..
+            } => Some(serde_json::json!({
                 "var_name": var_name,
                 "error": source.to_string()
             })),
@@ -86,7 +90,7 @@ impl ErrorExt for EnvError {
             Self::EnvVarNotPresent { backtrace, .. } => Some(backtrace.clone()),
             Self::EnvVarNotUnicode { backtrace, .. } => Some(backtrace.clone()),
             Self::EnvVarParseError { backtrace, .. } => Some(backtrace.clone()),
-            Self::FileSystem {  backtrace, .. } => Some(backtrace.clone()),
+            Self::FileSystem { backtrace, .. } => Some(backtrace.clone()),
             Self::ConfigInit { backtrace, .. } => Some(backtrace.clone()),
         }
     }

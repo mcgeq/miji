@@ -41,4 +41,3 @@ impl Related<super::reminder::Entity> for Entity {
 }
 
 impl ActiveModelBehavior for ActiveModel {}
-

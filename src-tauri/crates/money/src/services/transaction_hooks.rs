@@ -59,7 +59,7 @@ impl Hooks<entity::transactions::Entity, CreateTransactionRequest, UpdateTransac
     ) -> MijiResult<()> {
         // 注意：这里无法直接访问原始的 CreateTransactionRequest 数据
         // family_ledger_serial_num 需要在调用层面处理
-        
+
         if model.is_installment.unwrap() {
             let installment_plan_request = InstallmentPlanCreate {
                 serial_num: model.installment_plan_serial_num.clone().unwrap(),
@@ -109,12 +109,12 @@ impl Hooks<entity::transactions::Entity, CreateTransactionRequest, UpdateTransac
         }
         // 同步家庭记账本统计数据
         sync_family_ledger_after_create(tx, model).await?;
-        
+
         // TODO: split_records 创建需要从原始请求中获取 split_members 数据
         // 由于 after_create hook 无法访问 CreateTransactionRequest，
         // split_records 的创建需要在调用层面手动处理
         // 参考: transaction service 中创建交易后手动调用 create_split_records
-        
+
         Ok(())
     }
 
@@ -321,27 +321,31 @@ async fn sync_family_ledger_after_create(
 ) -> MijiResult<()> {
     // 查找关联的家庭记账本
     let associations = entity::family_ledger_transaction::Entity::find()
-        .filter(entity::family_ledger_transaction::Column::TransactionSerialNum.eq(&transaction.serial_num))
+        .filter(
+            entity::family_ledger_transaction::Column::TransactionSerialNum
+                .eq(&transaction.serial_num),
+        )
         .all(tx)
         .await?;
-    
+
     if associations.is_empty() {
         return Ok(());
     }
-    
+
     for association in associations {
         // 获取记账本
-        let ledger = entity::family_ledger::Entity::find_by_id(&association.family_ledger_serial_num)
-            .one(tx)
-            .await?
-            .ok_or_else(|| AppError::simple(BusinessCode::NotFound, "家庭记账本不存在"))?;
-        
+        let ledger =
+            entity::family_ledger::Entity::find_by_id(&association.family_ledger_serial_num)
+                .one(tx)
+                .await?
+                .ok_or_else(|| AppError::simple(BusinessCode::NotFound, "家庭记账本不存在"))?;
+
         let mut ledger_active = ledger.clone().into_active_model();
-        
+
         // 1. 更新交易数量
         let current_transactions = ledger.transactions;
         ledger_active.transactions = sea_orm::ActiveValue::Set(current_transactions + 1);
-        
+
         // 2. 更新收入/支出统计 - TODO: 需要添加数据库字段
         // let transaction_type = TransactionType::from_str(&transaction.transaction_type)?;
         // match transaction_type {
@@ -353,20 +357,20 @@ async fn sync_family_ledger_after_create(
         //     }
         //     TransactionType::Transfer => {}
         // }
-        
+
         // 3. 更新时间戳
         ledger_active.updated_at = sea_orm::ActiveValue::Set(Some(DateUtils::local_now()));
-        
+
         // 4. 保存更新
         ledger_active.update(tx).await?;
-        
+
         tracing::info!(
             "同步家庭记账本统计成功: ledger={}, transaction={}",
             association.family_ledger_serial_num,
             transaction.serial_num
         );
     }
-    
+
     Ok(())
 }
 
@@ -377,27 +381,31 @@ async fn sync_family_ledger_after_delete(
 ) -> MijiResult<()> {
     // 查找关联的家庭记账本
     let associations = entity::family_ledger_transaction::Entity::find()
-        .filter(entity::family_ledger_transaction::Column::TransactionSerialNum.eq(&transaction.serial_num))
+        .filter(
+            entity::family_ledger_transaction::Column::TransactionSerialNum
+                .eq(&transaction.serial_num),
+        )
         .all(tx)
         .await?;
-    
+
     if associations.is_empty() {
         return Ok(());
     }
-    
+
     for association in associations {
         // 获取记账本
-        let ledger = entity::family_ledger::Entity::find_by_id(&association.family_ledger_serial_num)
-            .one(tx)
-            .await?
-            .ok_or_else(|| AppError::simple(BusinessCode::NotFound, "家庭记账本不存在"))?;
-        
+        let ledger =
+            entity::family_ledger::Entity::find_by_id(&association.family_ledger_serial_num)
+                .one(tx)
+                .await?
+                .ok_or_else(|| AppError::simple(BusinessCode::NotFound, "家庭记账本不存在"))?;
+
         let mut ledger_active = ledger.clone().into_active_model();
-        
+
         // 1. 减少交易数量
         let current_transactions = ledger.transactions;
         ledger_active.transactions = sea_orm::ActiveValue::Set((current_transactions - 1).max(0));
-        
+
         // 2. 减去收入/支出统计 - TODO: 需要添加数据库字段
         // let transaction_type = TransactionType::from_str(&transaction.transaction_type)?;
         // match transaction_type {
@@ -409,20 +417,20 @@ async fn sync_family_ledger_after_delete(
         //     }
         //     TransactionType::Transfer => {}
         // }
-        
+
         // 3. 更新时间戳
         ledger_active.updated_at = sea_orm::ActiveValue::Set(Some(DateUtils::local_now()));
-        
+
         // 4. 保存更新
         ledger_active.update(tx).await?;
-        
+
         tracing::info!(
             "同步家庭记账本统计(删除)成功: ledger={}, transaction={}",
             association.family_ledger_serial_num,
             transaction.serial_num
         );
     }
-    
+
     Ok(())
 }
 
@@ -900,11 +908,11 @@ async fn cleanup_installment_after_deletion(
 }
 
 /// 从交易的 split_members JSON 创建 split_records 记录
-/// 
+///
 /// TODO: 需要重构此函数
 /// 由于 split_members 字段已从 entity 中删除，此函数暂时禁用
 /// 需要在调用层面手动处理，从 CreateTransactionRequest 中获取 split_members 数据
-/// 
+///
 /// 逻辑：
 /// 1. 查询交易关联的所有家庭账本
 /// 2. 从请求参数获取 split_members 数据（不再从 entity 读取）
@@ -917,37 +925,47 @@ async fn create_split_records_from_transaction(
 ) -> MijiResult<()> {
     // 1. 查询交易关联的家庭账本
     let associations = entity::family_ledger_transaction::Entity::find()
-        .filter(entity::family_ledger_transaction::Column::TransactionSerialNum.eq(&transaction.serial_num))
+        .filter(
+            entity::family_ledger_transaction::Column::TransactionSerialNum
+                .eq(&transaction.serial_num),
+        )
         .all(tx)
         .await?;
-    
+
     if associations.is_empty() {
-        tracing::debug!("交易 {} 没有关联账本，跳过创建分摊记录", transaction.serial_num);
+        tracing::debug!(
+            "交易 {} 没有关联账本，跳过创建分摊记录",
+            transaction.serial_num
+        );
         return Ok(());
     }
-    
+
     // 2. 使用传入的 split_members 数据
     let split_members = match split_members_data {
         Some(members) if !members.is_empty() => members,
         _ => {
-            tracing::debug!("交易 {} 没有分摊成员，跳过创建分摊记录", transaction.serial_num);
+            tracing::debug!(
+                "交易 {} 没有分摊成员，跳过创建分摊记录",
+                transaction.serial_num
+            );
             return Ok(());
         }
     };
-    
+
     // 3. 为每个账本和每个成员创建 split_records
     for association in associations {
         let family_ledger_serial_num = &association.family_ledger_serial_num;
-        
+
         // 平均分摊金额（简化版本，后续可以支持更复杂的分摊规则）
         let split_amount = transaction.amount / Decimal::from(split_members.len() as i64);
         let split_percentage = Decimal::from(100) / Decimal::from(split_members.len() as i64);
-        
+
         for split_member in &split_members {
             // 提取成员 serial_num
-            let member_serial_num = match split_member.get("serialNum")
+            let member_serial_num = match split_member
+                .get("serialNum")
                 .or_else(|| split_member.get("serial_num"))
-                .and_then(|v| v.as_str()) 
+                .and_then(|v| v.as_str())
             {
                 Some(serial) => serial.to_string(),
                 None => {
@@ -955,31 +973,35 @@ async fn create_split_records_from_transaction(
                     continue;
                 }
             };
-            
+
             // 生成 split_record 的 serial_num
             let split_record_serial_num = common::utils::uuid::McgUuid::uuid(38);
-            
+
             // 提取自定义金额和付款人信息
-            let custom_amount = split_member.get("amount")
+            let custom_amount = split_member
+                .get("amount")
                 .and_then(|v| v.as_f64())
                 .map(|a| Decimal::from_f64_retain(a).unwrap_or(split_amount));
-            
-            let payer_serial = split_member.get("payerSerialNum")
+
+            let payer_serial = split_member
+                .get("payerSerialNum")
                 .or_else(|| split_member.get("payer_serial_num"))
                 .and_then(|v| v.as_str())
                 .map(|s| s.to_string())
                 .unwrap_or_else(|| member_serial_num.clone());
-            
+
             let final_split_amount = custom_amount.unwrap_or(split_amount);
-            
+
             // 保存用于日志的值（因为 insert 会移动所有权）
             let payer_for_log = payer_serial.clone();
-            
+
             // 创建 split_record（区分付款人和欠款人）
             let split_record = entity::split_records::ActiveModel {
                 serial_num: sea_orm::ActiveValue::Set(split_record_serial_num),
                 transaction_serial_num: sea_orm::ActiveValue::Set(transaction.serial_num.clone()),
-                family_ledger_serial_num: sea_orm::ActiveValue::Set(family_ledger_serial_num.clone()),
+                family_ledger_serial_num: sea_orm::ActiveValue::Set(
+                    family_ledger_serial_num.clone(),
+                ),
                 split_rule_serial_num: sea_orm::ActiveValue::Set(None),
                 payer_member_serial_num: sea_orm::ActiveValue::Set(payer_serial),
                 owe_member_serial_num: sea_orm::ActiveValue::Set(member_serial_num.clone()),
@@ -999,7 +1021,7 @@ async fn create_split_records_from_transaction(
                 created_at: sea_orm::ActiveValue::Set(DateUtils::local_now()),
                 updated_at: sea_orm::ActiveValue::Set(None),
             };
-            
+
             // 插入数据库
             match split_record.insert(tx).await {
                 Ok(_) => {
@@ -1024,6 +1046,6 @@ async fn create_split_records_from_transaction(
             }
         }
     }
-    
+
     Ok(())
 }

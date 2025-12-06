@@ -67,9 +67,15 @@ pub struct LoggingConfig {
     pub async_metadata: bool,
 }
 
-fn default_true() -> bool { true }
-fn default_max_file_size() -> u64 { 100 } // 100MB
-fn default_max_files() -> u32 { 10 } // 保留 10 个日志文件
+fn default_true() -> bool {
+    true
+}
+fn default_max_file_size() -> u64 {
+    100
+} // 100MB
+fn default_max_files() -> u32 {
+    10
+} // 保留 10 个日志文件
 
 impl Default for LoggingConfig {
     fn default() -> Self {

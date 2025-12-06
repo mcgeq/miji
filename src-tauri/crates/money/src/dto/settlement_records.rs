@@ -1,8 +1,11 @@
 use chrono::{DateTime, FixedOffset, NaiveDate};
-use common::utils::{date::DateUtils, uuid::McgUuid};
 use common::paginations::Filter;
+use common::utils::{date::DateUtils, uuid::McgUuid};
 use sea_orm::prelude::Decimal;
-use sea_orm::{ActiveValue::{self, Set}, Condition};
+use sea_orm::{
+    ActiveValue::{self, Set},
+    Condition,
+};
 use serde::{Deserialize, Serialize};
 use serde_json::Value as JsonValue;
 use validator::Validate;
@@ -70,22 +73,22 @@ impl From<entity::settlement_records::Model> for SettlementRecordResponse {
 pub struct SettlementRecordCreate {
     #[validate(length(min = 1, message = "结算类型不能为空"))]
     pub settlement_type: String,
-    
+
     pub period_start: NaiveDate,
     pub period_end: NaiveDate,
-    
+
     pub total_amount: Decimal,
-    
+
     #[validate(length(min = 1, max = 3, message = "货币代码长度必须为3位"))]
     pub currency: String,
-    
+
     pub participant_members: JsonValue,
     pub settlement_details: JsonValue,
     pub optimized_transfers: Option<JsonValue>,
-    
+
     #[validate(length(max = 500, message = "描述长度不能超过500字符"))]
     pub description: Option<String>,
-    
+
     pub notes: Option<String>,
 }
 

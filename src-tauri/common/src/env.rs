@@ -2,7 +2,7 @@ use std::{env, num::ParseIntError};
 
 use snafu::{Backtrace, GenerateImplicitData};
 
-use crate::{error::{EnvError, MijiResult}};
+use crate::error::{EnvError, MijiResult};
 
 pub fn env_get<T>(key: &str) -> MijiResult<T>
 where
@@ -46,19 +46,15 @@ pub fn env_get_string(key: &str) -> MijiResult<String> {
 
     // Attempt to retrieve the environment variable
     env::var(key).map_err(|e| match e {
-        env::VarError::NotPresent => {
-            EnvError::EnvVarNotPresent {
-                var_name: key.to_string(),
-                backtrace: Backtrace::generate(),
-            }
-            .into()
+        env::VarError::NotPresent => EnvError::EnvVarNotPresent {
+            var_name: key.to_string(),
+            backtrace: Backtrace::generate(),
         }
-        env::VarError::NotUnicode(_) => {
-            EnvError::EnvVarNotUnicode {
-                var_name: key.to_string(),
-                backtrace: Backtrace::generate(),
-            }
-            .into()
+        .into(),
+        env::VarError::NotUnicode(_) => EnvError::EnvVarNotUnicode {
+            var_name: key.to_string(),
+            backtrace: Backtrace::generate(),
         }
+        .into(),
     })
 }

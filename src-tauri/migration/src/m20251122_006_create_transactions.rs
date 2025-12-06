@@ -92,7 +92,11 @@ impl MigrationTrait for Migration {
                     // 分期付款相关字段
                     .col(ColumnDef::new(Transactions::IsInstallment).boolean().null())
                     .col(ColumnDef::new(Transactions::TotalPeriods).integer().null())
-                    .col(ColumnDef::new(Transactions::RemainingPeriods).integer().null())
+                    .col(
+                        ColumnDef::new(Transactions::RemainingPeriods)
+                            .integer()
+                            .null(),
+                    )
                     .col(
                         ColumnDef::new(Transactions::InstallmentPlanSerialNum)
                             .string_len(38)

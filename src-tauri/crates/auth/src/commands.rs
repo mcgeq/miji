@@ -8,7 +8,9 @@ use tauri::State;
 use tracing::{error, info, instrument, warn};
 
 use crate::{
-    dto::users::{CreateUserDto, UpdateUserDto, User, UserQuery, UserSearchQuery, UserSearchResponse},
+    dto::users::{
+        CreateUserDto, UpdateUserDto, User, UserQuery, UserSearchQuery, UserSearchResponse,
+    },
     services::user::{UserFilter, UserService},
 };
 
@@ -280,7 +282,7 @@ pub async fn search_users(
 ) -> Result<ApiResponse<UserSearchResponse>, String> {
     info!(
         keyword = ?query.keyword,
-        name = ?query.name, 
+        name = ?query.name,
         email = ?query.email,
         limit = ?limit,
         "开始搜索用户"
@@ -289,7 +291,10 @@ pub async fn search_users(
     let service = UserService::default();
     let search_limit = limit.unwrap_or(20).min(100); // 最大限制100个结果
 
-    match service.search_users(&state.db, query, Some(search_limit)).await {
+    match service
+        .search_users(&state.db, query, Some(search_limit))
+        .await
+    {
         Ok(users) => {
             let user_count = users.len();
             let response = UserSearchResponse {
@@ -297,7 +302,7 @@ pub async fn search_users(
                 total: user_count as u64,
                 has_more: user_count >= search_limit as usize,
             };
-            
+
             info!(
                 result_count = user_count,
                 has_more = response.has_more,
@@ -333,10 +338,7 @@ pub async fn list_recent_users(
 
     match service.list_recent_users(&state.db, limit, days_back).await {
         Ok(users) => {
-            info!(
-                count = users.len(),
-                "获取最近活跃用户成功"
-            );
+            info!(count = users.len(), "获取最近活跃用户成功");
             Ok(ApiResponse::from_result(Ok(users
                 .into_iter()
                 .map(User::from)

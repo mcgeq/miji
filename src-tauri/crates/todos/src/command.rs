@@ -9,9 +9,9 @@ use tracing::{error, info, instrument};
 use crate::{
     dto::todo::{Todo, TodoCreate, TodoUpdate},
     service::{
-        todo::{TodosFilter, TodosService},
         projects::ProjectsService,
         tags::TagsService,
+        todo::{TodosFilter, TodosService},
     },
 };
 
