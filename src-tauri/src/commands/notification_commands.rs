@@ -7,9 +7,8 @@
 // Create   Date:  2025-12-06
 // -----------------------------------------------------------------------------
 
-use common::{NotificationStatistics, StatisticsService};
+use common::{AppState, NotificationStatistics, StatisticsService};
 use tauri::{AppHandle, State};
-use crate::AppStateInner;
 
 /// 请求通知权限
 ///
@@ -84,7 +83,7 @@ pub fn open_notification_settings(_app: AppHandle) -> Result<(), String> {
 /// * `Result<NotificationStatistics, String>` - 统计信息
 #[tauri::command]
 pub async fn notification_statistics_get(
-    state: State<'_, AppStateInner>,
+    state: State<'_, AppState>,
     period: String,
 ) -> Result<NotificationStatistics, String> {
     tracing::debug!("获取通知统计: period={}", period);
