@@ -69,7 +69,8 @@ if errorlevel 1 (
 )
 
 REM Only set bookmark if commit succeeded
-echo Commit successful
+echo.
+echo [SUCCESS] Commit successful!
 echo.
 echo [3/3] Setting bookmark...
 jj bookmark set main -r "@-"

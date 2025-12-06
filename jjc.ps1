@@ -50,7 +50,8 @@ Write-Host "--------------------------------------------------------------------
 Write-Host ""
 
 # Step 1: Format
-Write-Host "[1/3] Formatting changed files..." -ForegroundColor Cyan
+Write-Host "[1/3] " -ForegroundColor Yellow -NoNewline
+Write-Host "Formatting changed files..." -ForegroundColor Cyan
 & .\jj-fmt.ps1
 
 if ($LASTEXITCODE -ne 0) {
@@ -63,7 +64,8 @@ if ($LASTEXITCODE -ne 0) {
 
 # Step 2: Commit
 Write-Host ""
-Write-Host "[2/3] Committing changes..." -ForegroundColor Cyan
+Write-Host "[2/3] " -ForegroundColor Yellow -NoNewline
+Write-Host "Committing changes..." -ForegroundColor Cyan
 Write-Host ""
 
 if ($m) {
@@ -86,9 +88,10 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 # Only set bookmark if commit succeeded
-Write-Host "Commit successful" -ForegroundColor Green
+Write-Host "Commit successful!" -ForegroundColor Green -BackgroundColor DarkGreen
 Write-Host ""
-Write-Host "[3/3] Setting bookmark..." -ForegroundColor Cyan
+Write-Host "[3/3] " -ForegroundColor Yellow -NoNewline
+Write-Host "Setting bookmark..." -ForegroundColor Cyan
 jj bookmark set main -r "@-"
 
 if ($LASTEXITCODE -ne 0) {
