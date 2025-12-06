@@ -5,6 +5,20 @@ use sea_orm::ActiveValue;
 use serde::{Deserialize, Serialize};
 use validator::Validate;
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct UsageDetail {
+    pub count: i64,
+    pub serial_nums: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TagUsage {
+    pub todos: UsageDetail,
+    pub projects: UsageDetail,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 #[serde(rename_all = "camelCase")]
 pub struct TagBase {
@@ -21,6 +35,14 @@ pub struct Tag {
     pub core: TagBase,
     pub created_at: DateTime<FixedOffset>,
     pub updated_at: Option<DateTime<FixedOffset>>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TagWithUsage {
+    #[serde(flatten)]
+    pub tag: Tag,
+    pub usage: TagUsage,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]

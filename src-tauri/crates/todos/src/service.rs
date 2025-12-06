@@ -1,3 +1,4 @@
+pub mod project_tags;
 pub mod projects;
 pub mod projects_hooks;
 pub mod tags;

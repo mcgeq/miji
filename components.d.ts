@@ -116,6 +116,7 @@ declare module 'vue' {
     Splash: typeof import('./src/components/common/Splash.vue')['default']
     Switch: typeof import('./src/components/ui/Switch.vue')['default']
     Tabs: typeof import('./src/components/ui/Tabs.vue')['default']
+    TagSelector: typeof import('./src/components/common/TagSelector.vue')['default']
     Textarea: typeof import('./src/components/ui/Textarea.vue')['default']
     TimePicker: typeof import('./src/components/common/datetime/TimePicker.vue')['default']
     TodayPeriod: typeof import('./src/components/common/TodayPeriod.vue')['default']

@@ -114,6 +114,16 @@ pub enum TodoProject {
 }
 
 #[derive(DeriveIden)]
+pub enum ProjectTag {
+    Table,
+    ProjectSerialNum,
+    TagSerialNum,
+    Orders,
+    CreatedAt,
+    UpdatedAt,
+}
+
+#[derive(DeriveIden)]
 pub enum TaskDependency {
     Table,
     TaskSerialNum,

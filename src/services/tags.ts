@@ -1,5 +1,15 @@
-import { invokeCommand } from '@/types/api';
 import type { Tags } from '@/schema/tags';
+import { invokeCommand } from '@/types/api';
+
+export interface TagCreate {
+  name: string;
+  description?: string | null;
+}
+
+export interface TagUpdate {
+  name?: string;
+  description?: string | null;
+}
 
 /**
  * 标签数据映射器
@@ -24,6 +34,33 @@ export class TagMapper {
       return null;
     }
   }
+
+  async create(data: TagCreate): Promise<Tags> {
+    try {
+      return await invokeCommand<Tags>('tag_create', { data });
+    } catch (error) {
+      console.error(`[${this.entityName}] 创建失败:`, error);
+      throw error;
+    }
+  }
+
+  async update(serialNum: string, data: TagUpdate): Promise<Tags> {
+    try {
+      return await invokeCommand<Tags>('tag_update', { serialNum, data });
+    } catch (error) {
+      console.error(`[${this.entityName}] 更新失败:`, error);
+      throw error;
+    }
+  }
+
+  async delete(serialNum: string): Promise<void> {
+    try {
+      await invokeCommand<void>('tag_delete', { serialNum });
+    } catch (error) {
+      console.error(`[${this.entityName}] 删除失败:`, error);
+      throw error;
+    }
+  }
 }
 
 /**
@@ -33,10 +70,22 @@ export class TagDb {
   private static tagMapper = new TagMapper();
 
   static async listTags(): Promise<Tags[]> {
-    return this.tagMapper.list();
+    return TagDb.tagMapper.list();
   }
 
   static async getTag(serialNum: string): Promise<Tags | null> {
-    return this.tagMapper.getById(serialNum);
+    return TagDb.tagMapper.getById(serialNum);
+  }
+
+  static async createTag(data: TagCreate): Promise<Tags> {
+    return TagDb.tagMapper.create(data);
+  }
+
+  static async updateTag(serialNum: string, data: TagUpdate): Promise<Tags> {
+    return TagDb.tagMapper.update(serialNum, data);
+  }
+
+  static async deleteTag(serialNum: string): Promise<void> {
+    return TagDb.tagMapper.delete(serialNum);
   }
 }

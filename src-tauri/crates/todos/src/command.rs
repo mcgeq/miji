@@ -1,5 +1,6 @@
 use common::{
     ApiResponse, AppState,
+    crud::service::CrudService,
     paginations::{PagedQuery, PagedResult},
 };
 use entity::todo::Status;
@@ -7,8 +8,13 @@ use tauri::State;
 use tracing::{error, info, instrument};
 
 use crate::{
-    dto::todo::{Todo, TodoCreate, TodoUpdate},
+    dto::{
+        projects::{ProjectCreate as ProjectCreateDto, ProjectUpdate as ProjectUpdateDto},
+        tags::{TagCreate as TagCreateDto, TagUpdate as TagUpdateDto},
+        todo::{Todo, TodoCreate, TodoUpdate},
+    },
     service::{
+        project_tags::ProjectTagsService,
         projects::ProjectsService,
         tags::TagsService,
         todo::{TodosFilter, TodosService},
@@ -248,12 +254,12 @@ pub async fn todo_list_paged(
 #[instrument(skip(state))]
 pub async fn project_list(
     state: State<'_, AppState>,
-) -> Result<ApiResponse<Vec<entity::project::Model>>, String> {
-    info!("开始获取项目列表");
+) -> Result<ApiResponse<Vec<crate::dto::projects::ProjectWithUsage>>, String> {
+    info!("开始获取项目列表（带引用统计）");
 
     let service = ProjectsService::default();
 
-    match service.project_list(&state.db).await {
+    match service.project_list_with_usage(&state.db).await {
         Ok(projects) => {
             info!(count = projects.len(), "获取项目列表成功");
             Ok(ApiResponse::from_result(Ok(projects)))
@@ -270,7 +276,7 @@ pub async fn project_list(
 pub async fn project_get(
     state: State<'_, AppState>,
     serial_num: String,
-) -> Result<ApiResponse<entity::project::Model>, String> {
+) -> Result<ApiResponse<crate::dto::projects::Project>, String> {
     info!(serial_num = %serial_num, "开始获取项目详情");
 
     let service = ProjectsService::default();
@@ -278,7 +284,7 @@ pub async fn project_get(
     match service.project_get(&state.db, serial_num.clone()).await {
         Ok(project) => {
             info!(serial_num = %serial_num, "获取项目详情成功");
-            Ok(ApiResponse::from_result(Ok(project)))
+            Ok(ApiResponse::from_result(Ok(project.into())))
         }
         Err(e) => {
             error!(
@@ -291,17 +297,87 @@ pub async fn project_get(
     }
 }
 
+#[tauri::command]
+#[instrument(skip(state, data))]
+pub async fn project_create(
+    state: State<'_, AppState>,
+    data: ProjectCreateDto,
+) -> Result<ApiResponse<crate::dto::projects::Project>, String> {
+    info!("开始创建项目");
+
+    let service = ProjectsService::default();
+
+    match service.project_create(&state.db, data).await {
+        Ok(project) => {
+            info!(serial_num = %project.serial_num, "创建项目成功");
+            Ok(ApiResponse::from_result(Ok(project.into())))
+        }
+        Err(e) => {
+            error!(error = %e, "创建项目失败");
+            Err(e.to_string())
+        }
+    }
+}
+
+#[tauri::command]
+#[instrument(skip(state, data), fields(serial_num = %serial_num))]
+pub async fn project_update(
+    state: State<'_, AppState>,
+    serial_num: String,
+    data: ProjectUpdateDto,
+) -> Result<ApiResponse<crate::dto::projects::Project>, String> {
+    info!(serial_num = %serial_num, "开始更新项目");
+
+    let service = ProjectsService::default();
+
+    match service
+        .project_update(&state.db, serial_num.clone(), data)
+        .await
+    {
+        Ok(project) => {
+            info!(serial_num = %serial_num, "更新项目成功");
+            Ok(ApiResponse::from_result(Ok(project.into())))
+        }
+        Err(e) => {
+            error!(error = %e, serial_num = %serial_num, "更新项目失败");
+            Err(e.to_string())
+        }
+    }
+}
+
+#[tauri::command]
+#[instrument(skip(state), fields(serial_num = %serial_num))]
+pub async fn project_delete(
+    state: State<'_, AppState>,
+    serial_num: String,
+) -> Result<ApiResponse<()>, String> {
+    info!(serial_num = %serial_num, "开始删除项目");
+
+    let service = ProjectsService::default();
+
+    match service.delete(&state.db, serial_num.clone()).await {
+        Ok(_) => {
+            info!(serial_num = %serial_num, "删除项目成功");
+            Ok(ApiResponse::from_result(Ok(())))
+        }
+        Err(e) => {
+            error!(error = %e, serial_num = %serial_num, "删除项目失败");
+            Err(e.to_string())
+        }
+    }
+}
+
 // ========================== Tags Commands ==========================
 #[tauri::command]
 #[instrument(skip(state))]
 pub async fn tag_list(
     state: State<'_, AppState>,
-) -> Result<ApiResponse<Vec<entity::tag::Model>>, String> {
-    info!("开始获取标签列表");
+) -> Result<ApiResponse<Vec<crate::dto::tags::TagWithUsage>>, String> {
+    info!("开始获取标签列表（带引用统计）");
 
     let service = TagsService::default();
 
-    match service.tag_list(&state.db).await {
+    match service.tag_list_with_usage(&state.db).await {
         Ok(tags) => {
             info!(count = tags.len(), "获取标签列表成功");
             Ok(ApiResponse::from_result(Ok(tags)))
@@ -318,7 +394,7 @@ pub async fn tag_list(
 pub async fn tag_get(
     state: State<'_, AppState>,
     serial_num: String,
-) -> Result<ApiResponse<entity::tag::Model>, String> {
+) -> Result<ApiResponse<crate::dto::tags::Tag>, String> {
     info!(serial_num = %serial_num, "开始获取标签详情");
 
     let service = TagsService::default();
@@ -326,7 +402,7 @@ pub async fn tag_get(
     match service.tag_get(&state.db, serial_num.clone()).await {
         Ok(tag) => {
             info!(serial_num = %serial_num, "获取标签详情成功");
-            Ok(ApiResponse::from_result(Ok(tag)))
+            Ok(ApiResponse::from_result(Ok(tag.into())))
         }
         Err(e) => {
             error!(
@@ -334,6 +410,133 @@ pub async fn tag_get(
                 serial_num = %serial_num,
                 "获取标签详情失败"
             );
+            Err(e.to_string())
+        }
+    }
+}
+
+#[tauri::command]
+#[instrument(skip(state, data))]
+pub async fn tag_create(
+    state: State<'_, AppState>,
+    data: TagCreateDto,
+) -> Result<ApiResponse<crate::dto::tags::Tag>, String> {
+    info!("开始创建标签");
+
+    let service = TagsService::default();
+
+    match service.tag_create(&state.db, data).await {
+        Ok(tag) => {
+            info!(serial_num = %tag.serial_num, "创建标签成功");
+            Ok(ApiResponse::from_result(Ok(tag.into())))
+        }
+        Err(e) => {
+            error!(error = %e, "创建标签失败");
+            Err(e.to_string())
+        }
+    }
+}
+
+#[tauri::command]
+#[instrument(skip(state, data), fields(serial_num = %serial_num))]
+pub async fn tag_update(
+    state: State<'_, AppState>,
+    serial_num: String,
+    data: TagUpdateDto,
+) -> Result<ApiResponse<crate::dto::tags::Tag>, String> {
+    info!(serial_num = %serial_num, "开始更新标签");
+
+    let service = TagsService::default();
+
+    match service
+        .tag_update(&state.db, serial_num.clone(), data)
+        .await
+    {
+        Ok(tag) => {
+            info!(serial_num = %serial_num, "更新标签成功");
+            Ok(ApiResponse::from_result(Ok(tag.into())))
+        }
+        Err(e) => {
+            error!(error = %e, serial_num = %serial_num, "更新标签失败");
+            Err(e.to_string())
+        }
+    }
+}
+
+#[tauri::command]
+#[instrument(skip(state), fields(serial_num = %serial_num))]
+pub async fn tag_delete(
+    state: State<'_, AppState>,
+    serial_num: String,
+) -> Result<ApiResponse<()>, String> {
+    info!(serial_num = %serial_num, "开始删除标签");
+
+    let service = TagsService::default();
+
+    match service.tag_delete(&state.db, serial_num.clone()).await {
+        Ok(_) => {
+            info!(serial_num = %serial_num, "删除标签成功");
+            Ok(ApiResponse::from_result(Ok(())))
+        }
+        Err(e) => {
+            error!(error = %e, serial_num = %serial_num, "删除标签失败");
+            Err(e.to_string())
+        }
+    }
+}
+
+// ========================== Project Tags Commands ==========================
+#[tauri::command]
+#[instrument(skip(state))]
+pub async fn project_tags_get(
+    state: State<'_, AppState>,
+    project_serial_num: String,
+) -> Result<ApiResponse<Vec<crate::dto::tags::Tag>>, String> {
+    info!(project_serial_num = %project_serial_num, "开始获取项目标签");
+
+    let service = ProjectTagsService::default();
+
+    match service
+        .get_project_tags(&state.db, project_serial_num.clone())
+        .await
+    {
+        Ok(tags) => {
+            info!(project_serial_num = %project_serial_num, count = tags.len(), "获取项目标签成功");
+            let tag_dtos: Vec<crate::dto::tags::Tag> = tags.into_iter().map(|t| t.into()).collect();
+            Ok(ApiResponse::from_result(Ok(tag_dtos)))
+        }
+        Err(e) => {
+            error!(error = %e, project_serial_num = %project_serial_num, "获取项目标签失败");
+            Err(e.to_string())
+        }
+    }
+}
+
+#[tauri::command]
+#[instrument(skip(state))]
+pub async fn project_tags_update(
+    state: State<'_, AppState>,
+    project_serial_num: String,
+    tag_serial_nums: Vec<String>,
+) -> Result<ApiResponse<()>, String> {
+    info!(
+        project_serial_num = %project_serial_num,
+        tag_count = tag_serial_nums.len(),
+        "开始更新项目标签"
+    );
+
+    let service = ProjectTagsService::default();
+
+    match service
+        .update_project_tags(&state.db, project_serial_num.clone(), tag_serial_nums)
+        .await
+    {
+        Ok(_) => {
+            info!(project_serial_num = %project_serial_num, "更新项目标签成功");
+            Ok(ApiResponse::from_result(Ok(())))
+        }
+        Err(e) => {
+            error!(error = %e, project_serial_num = %project_serial_num, "更新项目标签失败");
             Err(e.to_string())
         }
     }

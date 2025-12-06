@@ -36,6 +36,7 @@ mod m20251202_041_create_user_setting_profiles;
 mod m20251202_042_create_user_setting_history;
 mod m20251206_043_add_priority_to_notification_logs;
 mod m20251206_044_create_scheduler_config;
+mod m20251206_046_create_project_tag;
 
 pub mod schema;
 
@@ -80,6 +81,7 @@ impl MigratorTrait for Migrator {
             Box::new(m20251202_042_create_user_setting_history::Migration),
             Box::new(m20251206_043_add_priority_to_notification_logs::Migration),
             Box::new(m20251206_044_create_scheduler_config::Migration),
+            Box::new(m20251206_046_create_project_tag::Migration),
         ]
     }
 }

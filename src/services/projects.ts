@@ -1,5 +1,21 @@
-import { invokeCommand } from '@/types/api';
 import type { Projects } from '@/schema/todos';
+import { invokeCommand } from '@/types/api';
+
+export interface ProjectCreate {
+  name: string;
+  description?: string | null;
+  ownerId?: string | null;
+  color?: string | null;
+  isArchived: boolean;
+}
+
+export interface ProjectUpdate {
+  name?: string;
+  description?: string | null;
+  ownerId?: string | null;
+  color?: string | null;
+  isArchived?: boolean;
+}
 
 /**
  * 项目数据映射器
@@ -24,6 +40,33 @@ export class ProjectMapper {
       return null;
     }
   }
+
+  async create(data: ProjectCreate): Promise<Projects> {
+    try {
+      return await invokeCommand<Projects>('project_create', { data });
+    } catch (error) {
+      console.error(`[${this.entityName}] 创建失败:`, error);
+      throw error;
+    }
+  }
+
+  async update(serialNum: string, data: ProjectUpdate): Promise<Projects> {
+    try {
+      return await invokeCommand<Projects>('project_update', { serialNum, data });
+    } catch (error) {
+      console.error(`[${this.entityName}] 更新失败:`, error);
+      throw error;
+    }
+  }
+
+  async delete(serialNum: string): Promise<void> {
+    try {
+      await invokeCommand<void>('project_delete', { serialNum });
+    } catch (error) {
+      console.error(`[${this.entityName}] 删除失败:`, error);
+      throw error;
+    }
+  }
 }
 
 /**
@@ -33,10 +76,22 @@ export class ProjectDb {
   private static projectMapper = new ProjectMapper();
 
   static async listProjects(): Promise<Projects[]> {
-    return this.projectMapper.list();
+    return ProjectDb.projectMapper.list();
   }
 
   static async getProject(serialNum: string): Promise<Projects | null> {
-    return this.projectMapper.getById(serialNum);
+    return ProjectDb.projectMapper.getById(serialNum);
+  }
+
+  static async createProject(data: ProjectCreate): Promise<Projects> {
+    return ProjectDb.projectMapper.create(data);
+  }
+
+  static async updateProject(serialNum: string, data: ProjectUpdate): Promise<Projects> {
+    return ProjectDb.projectMapper.update(serialNum, data);
+  }
+
+  static async deleteProject(serialNum: string): Promise<void> {
+    return ProjectDb.projectMapper.delete(serialNum);
   }
 }

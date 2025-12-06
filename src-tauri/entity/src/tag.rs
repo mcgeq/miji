@@ -21,11 +21,19 @@ pub struct Model {
 pub enum Relation {
     #[sea_orm(has_many = "super::todo_tag::Entity")]
     TodoTag,
+    #[sea_orm(has_many = "super::project_tag::Entity")]
+    ProjectTag,
 }
 
 impl Related<super::todo_tag::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::TodoTag.def()
+    }
+}
+
+impl Related<super::project_tag::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::ProjectTag.def()
     }
 }
 
@@ -35,6 +43,15 @@ impl Related<super::todo::Entity> for Entity {
     }
     fn via() -> Option<RelationDef> {
         Some(super::todo_tag::Relation::Tag.def().rev())
+    }
+}
+
+impl Related<super::project::Entity> for Entity {
+    fn to() -> RelationDef {
+        super::project_tag::Relation::Project.def()
+    }
+    fn via() -> Option<RelationDef> {
+        Some(super::project_tag::Relation::Tag.def().rev())
     }
 }
 

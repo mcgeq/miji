@@ -262,6 +262,8 @@ pub enum BusinessCode {
     TodoAlreadyExists,
     /// 待办外部服务错误
     TodoExternalService,
+    /// 引用存在，无法删除
+    ReferenceExists,
 
     // ===== 待办提醒类错误码 (2100-2199) =====
     /// 提醒时间无效
@@ -385,6 +387,7 @@ impl BusinessCode {
             Self::TodoCompleted => 2,
             Self::TodoAlreadyExists => 3,
             Self::TodoExternalService => 4,
+            Self::ReferenceExists => 5,
 
             // 待办提醒类错误码
             Self::TodoReminderInvalidTime => 1,
@@ -474,6 +477,7 @@ impl BusinessCode {
             Self::TodoCompleted => "Todo already completed",
             Self::TodoAlreadyExists => "Todo already exists",
             Self::TodoExternalService => "External service error",
+            Self::ReferenceExists => "Cannot delete, references exist",
 
             // 待办提醒类错误描述
             Self::TodoReminderInvalidTime => "Reminder time is invalid",
@@ -561,6 +565,7 @@ impl BusinessCode {
             Self::TodoCompleted => ErrorCategory::Todo,
             Self::TodoAlreadyExists => ErrorCategory::Todo,
             Self::TodoExternalService => ErrorCategory::Todo,
+            Self::ReferenceExists => ErrorCategory::Todo,
 
             // 待办提醒类错误分类
             Self::TodoReminderInvalidTime => ErrorCategory::Reminder,
@@ -650,6 +655,7 @@ impl BusinessCode {
             Self::TodoCompleted => ErrorModule::Todo,
             Self::TodoAlreadyExists => ErrorModule::Todo,
             Self::TodoExternalService => ErrorModule::Todo,
+            Self::ReferenceExists => ErrorModule::Todo,
 
             // 待办提醒类错误模块
             Self::TodoReminderInvalidTime => ErrorModule::TodoReminder,

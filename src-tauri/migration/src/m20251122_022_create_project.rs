@@ -20,6 +20,7 @@ impl MigrationTrait for Migration {
                     )
                     .col(ColumnDef::new(Project::Name).string_len(200).not_null())
                     .col(ColumnDef::new(Project::Description).text().null())
+                    .col(ColumnDef::new(Project::OwnerId).string_len(38).null())
                     .col(ColumnDef::new(Project::Color).string_len(7).null())
                     .col(
                         ColumnDef::new(Project::IsArchived)

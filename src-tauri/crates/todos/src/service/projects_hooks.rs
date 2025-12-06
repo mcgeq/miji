@@ -1,5 +1,12 @@
-use common::{crud::hooks::Hooks, error::MijiResult};
-use sea_orm::{DatabaseTransaction, prelude::async_trait::async_trait};
+use common::{
+    BusinessCode,
+    crud::hooks::Hooks,
+    error::{AppError, MijiResult},
+};
+use sea_orm::{
+    ColumnTrait, DatabaseTransaction, EntityTrait, PaginatorTrait, QueryFilter,
+    prelude::async_trait::async_trait,
+};
 
 use crate::dto::projects::{ProjectCreate, ProjectUpdate};
 
@@ -39,9 +46,25 @@ impl Hooks<entity::project::Entity, ProjectCreate, ProjectUpdate> for ProjectHoo
     }
     async fn before_delete(
         &self,
-        _tx: &DatabaseTransaction,
-        _model: &entity::project::Model,
+        tx: &DatabaseTransaction,
+        model: &entity::project::Model,
     ) -> MijiResult<()> {
+        // 检查是否有待办事项关联到该项目
+        let todo_count = entity::todo_project::Entity::find()
+            .filter(entity::todo_project::Column::ProjectSerialNum.eq(&model.serial_num))
+            .count(tx)
+            .await?;
+
+        if todo_count > 0 {
+            return Err(AppError::simple(
+                BusinessCode::ReferenceExists,
+                format!(
+                    "无法删除项目 '{}'，因为有 {} 个待办事项正在使用该项目",
+                    model.name, todo_count
+                ),
+            ));
+        }
+
         Ok(())
     }
     async fn after_delete(

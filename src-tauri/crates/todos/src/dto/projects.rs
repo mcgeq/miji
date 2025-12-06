@@ -5,6 +5,14 @@ use sea_orm::ActiveValue;
 use serde::{Deserialize, Serialize};
 use validator::Validate;
 
+use super::tags::UsageDetail;
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ProjectUsage {
+    pub todos: UsageDetail,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 #[serde(rename_all = "camelCase")]
 pub struct ProjectBase {
@@ -24,6 +32,14 @@ pub struct Project {
     pub core: ProjectBase,
     pub created_at: DateTime<FixedOffset>,
     pub updated_at: Option<DateTime<FixedOffset>>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ProjectWithUsage {
+    #[serde(flatten)]
+    pub project: Project,
+    pub usage: ProjectUsage,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]

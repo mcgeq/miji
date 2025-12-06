@@ -24,6 +24,7 @@ pub mod period_records;
 pub mod period_settings;
 pub mod period_symptoms;
 pub mod project;
+pub mod project_tag;
 pub mod reminder;
 pub mod sub_categories;
 pub mod tag;

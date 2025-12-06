@@ -141,6 +141,62 @@ impl TagsService {
         self.converter().localize_models(models).await
     }
 
+    // ✅ 列表查询（带引用统计）
+    pub async fn tag_list_with_usage(
+        &self,
+        db: &DbConn,
+    ) -> MijiResult<Vec<crate::dto::tags::TagWithUsage>> {
+        use entity::{project_tag, todo_tag};
+        use sea_orm::{ColumnTrait, EntityTrait, QueryFilter};
+
+        let tags = self.tag_list(db).await?;
+        let mut result = Vec::new();
+
+        for tag_model in tags {
+            // 查询被多少个 todo 引用
+            let todo_refs = todo_tag::Entity::find()
+                .filter(todo_tag::Column::TagSerialNum.eq(&tag_model.serial_num))
+                .all(db)
+                .await?;
+
+            let todo_count = todo_refs.len() as i64;
+            let todo_serial_nums: Vec<String> =
+                todo_refs.into_iter().map(|r| r.todo_serial_num).collect();
+
+            // 查询被多少个 project 引用
+            let project_refs = project_tag::Entity::find()
+                .filter(project_tag::Column::TagSerialNum.eq(&tag_model.serial_num))
+                .all(db)
+                .await?;
+
+            let project_count = project_refs.len() as i64;
+            let project_serial_nums: Vec<String> = project_refs
+                .into_iter()
+                .map(|r| r.project_serial_num)
+                .collect();
+
+            // 转换为 Tag DTO
+            let tag_dto: crate::dto::tags::Tag = tag_model.into();
+
+            // 组装带 usage 的 DTO
+            result.push(crate::dto::tags::TagWithUsage {
+                tag: tag_dto,
+                usage: crate::dto::tags::TagUsage {
+                    todos: crate::dto::tags::UsageDetail {
+                        count: todo_count,
+                        serial_nums: todo_serial_nums,
+                    },
+                    projects: crate::dto::tags::UsageDetail {
+                        count: project_count,
+                        serial_nums: project_serial_nums,
+                    },
+                },
+            });
+        }
+
+        Ok(result)
+    }
+
     // ✅ 列表查询（带过滤）
     pub async fn tag_list_with_filter(
         &self,

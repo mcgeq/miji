@@ -154,6 +154,46 @@ impl ProjectsService {
         self.converter().localize_models(models).await
     }
 
+    // ✅ 列表查询（带引用统计）
+    pub async fn project_list_with_usage(
+        &self,
+        db: &DbConn,
+    ) -> MijiResult<Vec<crate::dto::projects::ProjectWithUsage>> {
+        use entity::todo_project;
+        use sea_orm::{ColumnTrait, EntityTrait, QueryFilter};
+
+        let projects = self.project_list(db).await?;
+        let mut result = Vec::new();
+
+        for project_model in projects {
+            // 查询被多少个 todo 引用
+            let todo_refs = todo_project::Entity::find()
+                .filter(todo_project::Column::ProjectSerialNum.eq(&project_model.serial_num))
+                .all(db)
+                .await?;
+
+            let todo_count = todo_refs.len() as i64;
+            let todo_serial_nums: Vec<String> =
+                todo_refs.into_iter().map(|r| r.todo_serial_num).collect();
+
+            // 转换为 Project DTO
+            let project_dto: crate::dto::projects::Project = project_model.into();
+
+            // 组装带 usage 的 DTO
+            result.push(crate::dto::projects::ProjectWithUsage {
+                project: project_dto,
+                usage: crate::dto::projects::ProjectUsage {
+                    todos: crate::dto::tags::UsageDetail {
+                        count: todo_count,
+                        serial_nums: todo_serial_nums,
+                    },
+                },
+            });
+        }
+
+        Ok(result)
+    }
+
     pub async fn project_list_with_filter(
         &self,
         db: &DbConn,

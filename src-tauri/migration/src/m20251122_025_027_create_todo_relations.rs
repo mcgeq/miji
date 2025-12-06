@@ -23,10 +23,16 @@ impl MigrationTrait for Migration {
                             .string_len(38)
                             .not_null(),
                     )
+                    .col(ColumnDef::new(TodoProject::OrderIndex).integer().null())
                     .col(
                         ColumnDef::new(TodoProject::CreatedAt)
                             .timestamp_with_time_zone()
                             .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(TodoProject::UpdatedAt)
+                            .timestamp_with_time_zone()
+                            .null(),
                     )
                     .primary_key(
                         Index::create()
@@ -65,10 +71,16 @@ impl MigrationTrait for Migration {
                             .string_len(38)
                             .not_null(),
                     )
+                    .col(ColumnDef::new(TodoTag::Orders).integer().null())
                     .col(
                         ColumnDef::new(TodoTag::CreatedAt)
                             .timestamp_with_time_zone()
                             .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(TodoTag::UpdatedAt)
+                            .timestamp_with_time_zone()
+                            .null(),
                     )
                     .primary_key(
                         Index::create()
