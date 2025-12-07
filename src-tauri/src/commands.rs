@@ -72,6 +72,14 @@ pub fn init_commands(builder: Builder<Wry>) -> Builder<Wry> {
         // 项目标签命令
         todo_cmd::project_tags_get,
         todo_cmd::project_tags_update,
+        // 待办事项-项目关联命令
+        todo_cmd::todo_project_add,
+        todo_cmd::todo_project_remove,
+        todo_cmd::todo_project_list,
+        // 待办事项-标签关联命令
+        todo_cmd::todo_tag_add,
+        todo_cmd::todo_tag_remove,
+        todo_cmd::todo_tag_list,
         // 财务命令
         money_cmd::total_assets,
         money_cmd::account_get,

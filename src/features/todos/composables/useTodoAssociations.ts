@@ -1,17 +1,14 @@
-import { ProjectDb } from '@/services/projects';
-import { TagDb } from '@/services/tags';
 import type { Tags } from '@/schema/tags';
 import type { Projects } from '@/schema/todos';
+import { ProjectDb } from '@/services/projects';
+import { TagDb } from '@/services/tags';
+import { TodoDb } from '@/services/todos';
 
 /**
  * Todo 项目和标签关联管理的组合式函数
- * @param _todoId - Todo 的序列号（当前未使用，等待后端 API 实施后启用）
+ * @param todoId - Todo 的序列号
  */
-export function useTodoAssociations(_todoId: string) {
-  // 注意: _todoId 参数在后端 API 实施后会被使用
-  // 当前暂时保留以保持接口一致性，使用下划线前缀表示预留参数
-  // 示例: 后端实施后将用于 TodoDb.listProjects(_todoId)
-
+export function useTodoAssociations(todoId: string) {
   // 状态
   const selectedProjects = ref<string[]>([]);
   const selectedTags = ref<string[]>([]);
@@ -46,19 +43,14 @@ export function useTodoAssociations(_todoId: string) {
       // 先加载主数据
       await loadMasterData();
 
-      // TODO: 从后端加载当前 todo 的关联
-      // 需要实施后端 Commands 后取消注释:
-      // import { TodoDb } from '@/services/todos';
-      // const [todoProjects, todoTags] = await Promise.all([
-      //   TodoDb.listProjects(todoId),
-      //   TodoDb.listTags(todoId),
-      // ]);
-      // selectedProjects.value = todoProjects.map(p => p.serialNum);
-      // selectedTags.value = todoTags.map(t => t.serialNum);
+      // 从后端加载当前 todo 的关联
+      const [todoProjects, todoTags] = await Promise.all([
+        TodoDb.listProjects(todoId),
+        TodoDb.listTags(todoId),
+      ]);
 
-      // 临时: 初始化为空数组
-      selectedProjects.value = [];
-      selectedTags.value = [];
+      selectedProjects.value = todoProjects.map(p => p.serialNum);
+      selectedTags.value = todoTags.map(t => t.serialNum);
     } catch (err) {
       error.value = '加载关联数据失败';
       console.error('加载关联失败:', err);
@@ -72,9 +64,7 @@ export function useTodoAssociations(_todoId: string) {
    */
   async function addProject(projectId: string) {
     try {
-      // TODO: 调用后端 API
-      // 需要实施后端 Commands 后取消注释:
-      // await TodoDb.addProject(todoId, projectId);
+      await TodoDb.addProject(todoId, projectId);
 
       if (!selectedProjects.value.includes(projectId)) {
         selectedProjects.value.push(projectId);
@@ -90,9 +80,7 @@ export function useTodoAssociations(_todoId: string) {
    */
   async function removeProject(projectId: string) {
     try {
-      // TODO: 调用后端 API
-      // 需要实施后端 Commands 后取消注释:
-      // await TodoDb.removeProject(todoId, projectId);
+      await TodoDb.removeProject(todoId, projectId);
 
       selectedProjects.value = selectedProjects.value.filter(id => id !== projectId);
     } catch (err) {
@@ -106,9 +94,7 @@ export function useTodoAssociations(_todoId: string) {
    */
   async function addTag(tagId: string) {
     try {
-      // TODO: 调用后端 API
-      // 需要实施后端 Commands 后取消注释:
-      // await TodoDb.addTag(todoId, tagId);
+      await TodoDb.addTag(todoId, tagId);
 
       if (!selectedTags.value.includes(tagId)) {
         selectedTags.value.push(tagId);
@@ -124,9 +110,7 @@ export function useTodoAssociations(_todoId: string) {
    */
   async function removeTag(tagId: string) {
     try {
-      // TODO: 调用后端 API
-      // 需要实施后端 Commands 后取消注释:
-      // await TodoDb.removeTag(todoId, tagId);
+      await TodoDb.removeTag(todoId, tagId);
 
       selectedTags.value = selectedTags.value.filter(id => id !== tagId);
     } catch (err) {

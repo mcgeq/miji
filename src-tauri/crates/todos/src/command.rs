@@ -12,12 +12,16 @@ use crate::{
         projects::{ProjectCreate as ProjectCreateDto, ProjectUpdate as ProjectUpdateDto},
         tags::{TagCreate as TagCreateDto, TagUpdate as TagUpdateDto},
         todo::{Todo, TodoCreate, TodoUpdate},
+        todo_project::{TodoProject, TodoProjectCreate},
+        todo_tag::{TodoTag, TodoTagCreate},
     },
     service::{
         project_tags::ProjectTagsService,
         projects::ProjectsService,
         tags::TagsService,
         todo::{TodosFilter, TodosService},
+        todo_project::TodoProjectsService,
+        todo_tag::TodoTagsService,
     },
 };
 
@@ -541,3 +545,274 @@ pub async fn project_tags_update(
         }
     }
 }
+
+// ========================== Todo Project Commands Start ==========================
+/// 添加项目到待办事项
+#[tauri::command]
+#[instrument(skip(state))]
+pub async fn todo_project_add(
+    state: State<'_, AppState>,
+    todo_serial_num: String,
+    project_serial_num: String,
+) -> Result<ApiResponse<TodoProject>, String> {
+    info!(
+        todo_serial_num = %todo_serial_num,
+        project_serial_num = %project_serial_num,
+        "开始添加项目到待办事项"
+    );
+
+    let service = TodoProjectsService::default();
+    let data = TodoProjectCreate {
+        todo_serial_num: todo_serial_num.clone(),
+        project_serial_num: project_serial_num.clone(),
+        core: crate::dto::todo_project::TodoProjectBase { order_index: None },
+    };
+
+    match service.todo_project_create(&state.db, data).await {
+        Ok(result) => {
+            info!(
+                todo_serial_num = %todo_serial_num,
+                project_serial_num = %project_serial_num,
+                "添加项目成功"
+            );
+            Ok(ApiResponse::from_result(Ok(TodoProject::from(result))))
+        }
+        Err(e) => {
+            error!(
+                error = %e,
+                todo_serial_num = %todo_serial_num,
+                project_serial_num = %project_serial_num,
+                "添加项目失败"
+            );
+            Err(e.to_string())
+        }
+    }
+}
+
+/// 移除待办事项的项目关联
+#[tauri::command]
+#[instrument(skip(state))]
+pub async fn todo_project_remove(
+    state: State<'_, AppState>,
+    todo_serial_num: String,
+    project_serial_num: String,
+) -> Result<ApiResponse<()>, String> {
+    info!(
+        todo_serial_num = %todo_serial_num,
+        project_serial_num = %project_serial_num,
+        "开始移除项目关联"
+    );
+
+    let service = TodoProjectsService::default();
+    let id = format!("{}:{}", todo_serial_num, project_serial_num);
+
+    match service.todo_project_delete(&state.db, id).await {
+        Ok(_) => {
+            info!(
+                todo_serial_num = %todo_serial_num,
+                project_serial_num = %project_serial_num,
+                "移除项目成功"
+            );
+            Ok(ApiResponse::from_result(Ok(())))
+        }
+        Err(e) => {
+            error!(
+                error = %e,
+                todo_serial_num = %todo_serial_num,
+                project_serial_num = %project_serial_num,
+                "移除项目失败"
+            );
+            Err(e.to_string())
+        }
+    }
+}
+
+/// 获取待办事项的所有项目
+#[tauri::command]
+#[instrument(skip(state))]
+pub async fn todo_project_list(
+    state: State<'_, AppState>,
+    todo_serial_num: String,
+) -> Result<ApiResponse<Vec<crate::dto::projects::Project>>, String> {
+    info!(
+        todo_serial_num = %todo_serial_num,
+        "开始获取待办事项的项目列表"
+    );
+
+    let service = TodoProjectsService::default();
+
+    // 获取所有 todo_project 关联
+    match service.todo_project_list(&state.db).await {
+        Ok(todo_projects) => {
+            // 筛选出属于指定 todo 的项目
+            let project_serial_nums: Vec<String> = todo_projects
+                .iter()
+                .filter(|tp| tp.todo_serial_num == todo_serial_num)
+                .map(|tp| tp.project_serial_num.clone())
+                .collect();
+
+            // 获取项目详情
+            let projects_service = ProjectsService::default();
+            let mut projects = Vec::new();
+
+            for project_serial_num in project_serial_nums {
+                if let Ok(project) = projects_service
+                    .project_get(&state.db, project_serial_num)
+                    .await
+                {
+                    projects.push(project.into());
+                }
+            }
+
+            info!(
+                todo_serial_num = %todo_serial_num,
+                count = projects.len(),
+                "获取项目列表成功"
+            );
+            Ok(ApiResponse::from_result(Ok(projects)))
+        }
+        Err(e) => {
+            error!(
+                error = %e,
+                todo_serial_num = %todo_serial_num,
+                "获取项目列表失败"
+            );
+            Err(e.to_string())
+        }
+    }
+}
+// ========================== Todo Project Commands End ==========================
+
+// ========================== Todo Tag Commands Start ==========================
+/// 添加标签到待办事项
+#[tauri::command]
+#[instrument(skip(state))]
+pub async fn todo_tag_add(
+    state: State<'_, AppState>,
+    todo_serial_num: String,
+    tag_serial_num: String,
+) -> Result<ApiResponse<TodoTag>, String> {
+    info!(
+        todo_serial_num = %todo_serial_num,
+        tag_serial_num = %tag_serial_num,
+        "开始添加标签到待办事项"
+    );
+
+    let service = TodoTagsService::default();
+    let data = TodoTagCreate {
+        todo_serial_num: todo_serial_num.clone(),
+        tag_serial_num: tag_serial_num.clone(),
+        core: crate::dto::todo_tag::TodoTagBase { orders: None },
+    };
+
+    match service.todo_tag_create(&state.db, data).await {
+        Ok(result) => {
+            info!(
+                todo_serial_num = %todo_serial_num,
+                tag_serial_num = %tag_serial_num,
+                "添加标签成功"
+            );
+            Ok(ApiResponse::from_result(Ok(TodoTag::from(result))))
+        }
+        Err(e) => {
+            error!(
+                error = %e,
+                todo_serial_num = %todo_serial_num,
+                tag_serial_num = %tag_serial_num,
+                "添加标签失败"
+            );
+            Err(e.to_string())
+        }
+    }
+}
+
+/// 移除待办事项的标签关联
+#[tauri::command]
+#[instrument(skip(state))]
+pub async fn todo_tag_remove(
+    state: State<'_, AppState>,
+    todo_serial_num: String,
+    tag_serial_num: String,
+) -> Result<ApiResponse<()>, String> {
+    info!(
+        todo_serial_num = %todo_serial_num,
+        tag_serial_num = %tag_serial_num,
+        "开始移除标签关联"
+    );
+
+    let service = TodoTagsService::default();
+    let id = format!("{}:{}", todo_serial_num, tag_serial_num);
+
+    match service.todo_tag_delete(&state.db, id).await {
+        Ok(_) => {
+            info!(
+                todo_serial_num = %todo_serial_num,
+                tag_serial_num = %tag_serial_num,
+                "移除标签成功"
+            );
+            Ok(ApiResponse::from_result(Ok(())))
+        }
+        Err(e) => {
+            error!(
+                error = %e,
+                todo_serial_num = %todo_serial_num,
+                tag_serial_num = %tag_serial_num,
+                "移除标签失败"
+            );
+            Err(e.to_string())
+        }
+    }
+}
+
+/// 获取待办事项的所有标签
+#[tauri::command]
+#[instrument(skip(state))]
+pub async fn todo_tag_list(
+    state: State<'_, AppState>,
+    todo_serial_num: String,
+) -> Result<ApiResponse<Vec<crate::dto::tags::Tag>>, String> {
+    info!(
+        todo_serial_num = %todo_serial_num,
+        "开始获取待办事项的标签列表"
+    );
+
+    let service = TodoTagsService::default();
+
+    // 获取所有 todo_tag 关联
+    match service.todo_tag_list(&state.db).await {
+        Ok(todo_tags) => {
+            // 筛选出属于指定 todo 的标签
+            let tag_serial_nums: Vec<String> = todo_tags
+                .iter()
+                .filter(|tt| tt.todo_serial_num == todo_serial_num)
+                .map(|tt| tt.tag_serial_num.clone())
+                .collect();
+
+            // 获取标签详情
+            let tags_service = TagsService::default();
+            let mut tags = Vec::new();
+
+            for tag_serial_num in tag_serial_nums {
+                if let Ok(tag) = tags_service.tag_get(&state.db, tag_serial_num).await {
+                    tags.push(tag.into());
+                }
+            }
+
+            info!(
+                todo_serial_num = %todo_serial_num,
+                count = tags.len(),
+                "获取标签列表成功"
+            );
+            Ok(ApiResponse::from_result(Ok(tags)))
+        }
+        Err(e) => {
+            error!(
+                error = %e,
+                todo_serial_num = %todo_serial_num,
+                "获取标签列表失败"
+            );
+            Err(e.to_string())
+        }
+    }
+}
+// ========================== Todo Tag Commands End ==========================

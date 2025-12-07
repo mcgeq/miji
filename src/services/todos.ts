@@ -1,71 +1,95 @@
-import { TodoMapper } from './todo';
+import type { PageQuery, Status } from '@/schema/common';
+import type { Tags } from '@/schema/tags';
+import type { Projects, Todo, TodoCreate, TodoUpdate } from '@/schema/todos';
+import { invokeCommand } from '@/types/api';
 import type { PagedResult } from './money/baseManager';
 import type { TodoFilters } from './todo';
-import type { PageQuery, Status } from '@/schema/common';
-import type { Todo, TodoCreate, TodoUpdate } from '@/schema/todos';
+import { TodoMapper } from './todo';
 
 export class TodoDb {
   private static todoMapper = new TodoMapper();
   // ========================= Account Start=========================
   // Account 操作
   static async createTodo(todo: TodoCreate): Promise<Todo> {
-    return this.todoMapper.create(todo);
+    return TodoDb.todoMapper.create(todo);
   }
 
   static async getTodo(serialNum: string): Promise<Todo | null> {
-    return this.todoMapper.getById(serialNum);
+    return TodoDb.todoMapper.getById(serialNum);
   }
 
   static async listTodo(): Promise<Todo[]> {
-    return this.todoMapper.list();
+    return TodoDb.todoMapper.list();
   }
 
   static async updateTodo(serialNum: string, todo: TodoUpdate): Promise<Todo> {
-    return this.todoMapper.update(serialNum, todo);
+    return TodoDb.todoMapper.update(serialNum, todo);
   }
 
   static async toggleTodo(serialNum: string, status: Status): Promise<Todo> {
-    return this.todoMapper.toggle(serialNum, status);
+    return TodoDb.todoMapper.toggle(serialNum, status);
   }
 
   static async deleteTodo(serialNum: string): Promise<void> {
-    return this.todoMapper.deleteById(serialNum);
+    return TodoDb.todoMapper.deleteById(serialNum);
   }
 
   static async listTodosPaged(query: PageQuery<TodoFilters>): Promise<PagedResult<Todo>> {
-    return this.todoMapper.listPaged(query);
+    return TodoDb.todoMapper.listPaged(query);
   }
 
   // ========================= 子任务操作 Start =========================
   static async listSubtasks(parentId: string): Promise<Todo[]> {
-    return this.todoMapper.listSubtasks(parentId);
+    return TodoDb.todoMapper.listSubtasks(parentId);
   }
 
   static async createSubtask(parentId: string, todo: TodoCreate): Promise<Todo> {
-    return this.todoMapper.createSubtask(parentId, todo);
+    return TodoDb.todoMapper.createSubtask(parentId, todo);
   }
   // ========================= 子任务操作 End =========================
 
   // ========================= 项目关联操作 Start =========================
-  // 注：目前后端有 todo_project service 但没有暴露 Tauri commands
-  // 需要后端添加以下 commands 才能完整实现：
-  // - todo_project_add(todo_id, project_id)
-  // - todo_project_remove(todo_id, project_id)
-  // - todo_project_list(todo_id)
-  //
-  // 临时方案：可以通过 TodoUpdate 在前端管理项目 ID 列表
-  // 完整方案：等待后端添加 commands 后实现
+  static async addProject(todoSerialNum: string, projectSerialNum: string): Promise<void> {
+    await invokeCommand('todo_project_add', {
+      todoSerialNum,
+      projectSerialNum,
+    });
+  }
+
+  static async removeProject(todoSerialNum: string, projectSerialNum: string): Promise<void> {
+    await invokeCommand('todo_project_remove', {
+      todoSerialNum,
+      projectSerialNum,
+    });
+  }
+
+  static async listProjects(todoSerialNum: string): Promise<Projects[]> {
+    return invokeCommand<Projects[]>('todo_project_list', {
+      todoSerialNum,
+    });
+  }
   // ========================= 项目关联操作 End =========================
 
   // ========================= 标签关联操作 Start =========================
-  // 注：目前后端有 todo_tag service 但没有暴露 Tauri commands
-  // 需要后端添加以下 commands 才能完整实现：
-  // - todo_tag_add(todo_id, tag_id)
-  // - todo_tag_remove(todo_id, tag_id)
-  // - todo_tag_list(todo_id)
-  //
-  // 临时方案：可以通过 TodoUpdate 在前端管理标签 ID 列表
-  // 完整方案：等待后端添加 commands 后实现
+  static async addTag(todoSerialNum: string, tagSerialNum: string): Promise<void> {
+    await invokeCommand('todo_tag_add', {
+      todoSerialNum,
+      tagSerialNum,
+    });
+  }
+
+  static async removeTag(todoSerialNum: string, tagSerialNum: string): Promise<void> {
+    await invokeCommand('todo_tag_remove', {
+      todoSerialNum,
+      tagSerialNum,
+    });
+  }
+
+  static async listTags(todoSerialNum: string): Promise<Tags[]> {
+    return invokeCommand<Tags[]>('todo_tag_list', {
+      todoSerialNum,
+    });
+  }
   // ========================= 标签关联操作 End =========================
   // ========================= Account End =========================
 }

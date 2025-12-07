@@ -1,6 +1,6 @@
 <script setup lang="ts">
   import { FileCheck, Hash, Pencil, Plus, Trash2 } from 'lucide-vue-next';
-  import Card from '@/components/ui/Card.vue';
+  import { Card, Tooltip } from '@/components/ui';
   import type { Tags, TagsWithUsageStats } from '@/schema/tags';
   import type { TagCreate, TagUpdate } from '@/services/tags';
   import { TagDb } from '@/services/tags';
@@ -126,13 +126,13 @@
       </div>
 
       <!-- 标签卡片 -->
-      <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+      <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 py-4">
         <Card
           v-for="[serialNum, tag] in tagsMap"
           :key="serialNum"
           shadow="md"
           padding="md"
-          class="border-l-4 border-l-blue-500 dark:border-l-blue-400 h-32 flex flex-col hover:shadow-lg transition-shadow"
+          class="border-l-4 border-l-blue-500 dark:border-l-blue-400 h-32 flex flex-col hover:shadow-lg transition-shadow overflow-visible"
         >
           <!-- 标题栏 -->
           <div class="flex items-center justify-between mb-2">
@@ -146,14 +146,18 @@
             <!-- 操作按钮 -->
             <div class="flex items-center gap-1 flex-shrink-0">
               <!-- 引用计数 -->
-              <span
+              <Tooltip
                 v-if="'usage' in tag && tag.usage.todos.count > 0"
-                class="flex items-center gap-1 px-2 py-1 text-xs text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 rounded"
-                :title="`被 ${tag.usage.todos.count} 个待办事项引用`"
+                :content="`被 ${tag.usage.todos.count} 个待办事项引用`"
+                placement="auto"
               >
-                <FileCheck :size="14" />
-                {{ tag.usage.todos.count }}
-              </span>
+                <span
+                  class="flex items-center gap-1 px-2 py-1 text-xs text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 rounded cursor-help"
+                >
+                  <FileCheck :size="14" />
+                  {{ tag.usage.todos.count }}
+                </span>
+              </Tooltip>
 
               <button
                 class="p-1.5 text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors"
@@ -173,14 +177,14 @@
           </div>
 
           <!-- 描述 - 只显示一行，超出部分隐藏 -->
-          <p
-            v-if="tag.description"
-            class="text-sm text-gray-600 dark:text-gray-400 line-clamp-1 flex-1"
-            :title="tag.description"
-          >
-            {{ tag.description }}
-          </p>
-          <p v-else class="text-sm text-gray-400 dark:text-gray-500 italic flex-1">暂无描述</p>
+          <div class="relative flex-1">
+            <Tooltip v-if="tag.description" :content="tag.description" placement="auto">
+              <p class="text-sm text-gray-600 dark:text-gray-400 line-clamp-1 cursor-help">
+                {{ tag.description }}
+              </p>
+            </Tooltip>
+            <p v-else class="text-sm text-gray-400 dark:text-gray-500 italic">暂无描述</p>
+          </div>
         </Card>
       </div>
     </div>
