@@ -87,7 +87,7 @@ export const useNotificationStore = defineStore('notification', () => {
   const settingsMap = computed(() => {
     const map = new Map<NotificationType, NotificationSettings>();
     settings.value.forEach(s => {
-      map.set(s.notificationType, s);
+      map.set(s.notificationType as NotificationType, s);
     });
     return map;
   });

@@ -280,12 +280,15 @@
     </div>
 
     <!-- 加载状态 -->
-    <div v-if="isLoading && settings.length === 0" class="flex items-center justify-center py-12">
+    <div
+      v-else-if="isLoading && settings.length === 0"
+      class="flex items-center justify-center py-12"
+    >
       <Loader2 class="w-8 h-8 animate-spin text-blue-600" />
       <span class="ml-3 text-gray-600 dark:text-gray-400">加载通知设置中...</span>
     </div>
 
-    <template v-else-if="isAuthenticated">
+    <template v-else>
       <!-- 通知权限卡片 -->
       <Card>
         <template #header>
