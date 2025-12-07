@@ -2,17 +2,20 @@
   import { FileCheck, FolderOpen, Pencil, Plus, Trash2 } from 'lucide-vue-next';
   import Card from '@/components/ui/Card.vue';
   import type { Projects, ProjectWithUsageStats } from '@/schema/todos';
-  import type { ProjectCreate } from '@/services/projects';
+  import type { ProjectCreate, ProjectUpdate } from '@/services/projects';
   import { ProjectDb } from '@/services/projects';
   import { ProjectTagsDb } from '@/services/projectTags';
   import { toast } from '@/utils/toast';
   import ProjectCreateModal from '../components/ProjectCreateModal.vue';
+  import ProjectEditModal from '../components/ProjectEditModal.vue';
 
   // 使用联合类型，支持有或没有 usage 字段的项目
   type ProjectWithOptionalUsage = Projects | ProjectWithUsageStats;
   const projectsMap = ref(new Map<string, ProjectWithOptionalUsage>());
   const loading = ref(false);
   const showCreateModal = ref(false);
+  const showEditModal = ref(false);
+  const editingProject = ref<ProjectWithOptionalUsage | null>(null);
 
   // 加载项目列表
   async function loadProjects() {
@@ -52,13 +55,31 @@
     }
   }
 
-  // 编辑项目（TODO: 待实现）
+  // 打开编辑模态框
   function handleEdit(serialNum: string) {
     const project = projectsMap.value.get(serialNum);
     if (!project) return;
 
-    toast.info('编辑功能待实现');
-    console.log('编辑项目:', project);
+    editingProject.value = project;
+    showEditModal.value = true;
+  }
+
+  // 编辑项目
+  async function handleEditConfirm(serialNum: string, data: ProjectUpdate, tags: string[]) {
+    try {
+      const updatedProject = await ProjectDb.updateProject(serialNum, data);
+
+      // 更新标签关联
+      await ProjectTagsDb.updateProjectTags(serialNum, tags);
+
+      projectsMap.value.set(serialNum, updatedProject);
+      toast.success(`项目"${updatedProject.name}"更新成功`);
+      showEditModal.value = false;
+      editingProject.value = null;
+    } catch (error) {
+      console.error('更新项目失败:', error);
+      toast.error(`更新失败: ${String(error)}`);
+    }
   }
 
   // 删除项目
@@ -204,6 +225,14 @@
       :open="showCreateModal"
       @close="showCreateModal = false"
       @confirm="handleCreateConfirm"
+    />
+
+    <!-- 编辑项目模态框 -->
+    <ProjectEditModal
+      :open="showEditModal"
+      :project="editingProject"
+      @close="showEditModal = false"
+      @confirm="handleEditConfirm"
     />
   </div>
 </template>

@@ -146,6 +146,16 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
+/* 隐藏滚动条但保持滚动功能 */
+.scrollbar-hide {
+  /* Firefox */
+  scrollbar-width: none;
+  /* Chrome, Safari, Edge */
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 /* ========================================
    滚动条样式
    ======================================== */

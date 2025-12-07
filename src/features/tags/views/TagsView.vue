@@ -2,16 +2,19 @@
   import { FileCheck, Hash, Pencil, Plus, Trash2 } from 'lucide-vue-next';
   import Card from '@/components/ui/Card.vue';
   import type { Tags, TagsWithUsageStats } from '@/schema/tags';
-  import type { TagCreate } from '@/services/tags';
+  import type { TagCreate, TagUpdate } from '@/services/tags';
   import { TagDb } from '@/services/tags';
   import { toast } from '@/utils/toast';
   import TagCreateModal from '../components/TagCreateModal.vue';
+  import TagEditModal from '../components/TagEditModal.vue';
 
   // 使用联合类型，支持有或没有 usage 字段的标签
   type TagWithOptionalUsage = Tags | TagsWithUsageStats;
   const tagsMap = ref(new Map<string, TagWithOptionalUsage>());
   const loading = ref(false);
   const showCreateModal = ref(false);
+  const showEditModal = ref(false);
+  const editingTag = ref<TagWithOptionalUsage | null>(null);
 
   // 加载标签列表
   async function loadTags() {
@@ -45,13 +48,27 @@
     }
   }
 
-  // 编辑标签（TODO: 待实现）
+  // 打开编辑模态框
   function handleEdit(serialNum: string) {
     const tag = tagsMap.value.get(serialNum);
     if (!tag) return;
 
-    toast.info('编辑功能待实现');
-    console.log('编辑标签:', tag);
+    editingTag.value = tag;
+    showEditModal.value = true;
+  }
+
+  // 编辑标签
+  async function handleEditConfirm(serialNum: string, data: TagUpdate) {
+    try {
+      const updatedTag = await TagDb.updateTag(serialNum, data);
+      tagsMap.value.set(serialNum, updatedTag);
+      toast.success(`标签"${updatedTag.name}"更新成功`);
+      showEditModal.value = false;
+      editingTag.value = null;
+    } catch (error) {
+      console.error('更新标签失败:', error);
+      toast.error(`更新失败: ${String(error)}`);
+    }
   }
 
   // 删除标签
@@ -173,6 +190,14 @@
       :open="showCreateModal"
       @close="showCreateModal = false"
       @confirm="handleCreateConfirm"
+    />
+
+    <!-- 编辑标签模态框 -->
+    <TagEditModal
+      :open="showEditModal"
+      :tag="editingTag"
+      @close="showEditModal = false"
+      @confirm="handleEditConfirm"
     />
   </div>
 </template>
