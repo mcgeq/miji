@@ -1,6 +1,6 @@
 /**
  * 设置缓存管理器
- * 
+ *
  * 功能：
  * - 内存缓存，减少数据库查询
  * - 自动同步到持久化存储
@@ -8,10 +8,10 @@
  * - 提供重置功能
  */
 
-import { ref, watch, type Ref } from 'vue';
 import { debounce } from 'es-toolkit';
+import { type Ref, ref, watch } from 'vue';
 
-export interface SettingsConfig<T = any> {
+export interface SettingsConfig<T = unknown> {
   /** 设置键名（唯一标识） */
   key: string;
   /** 默认值 */
@@ -28,14 +28,14 @@ export interface SettingsConfig<T = any> {
  * 设置缓存管理器类
  */
 class SettingsCacheManager {
-  private cache = new Map<string, any>();
-  private watchers = new Map<string, (() => void)>();
+  private cache = new Map<string, unknown>();
+  private watchers = new Map<string, () => void>();
 
   /**
    * 获取缓存值
    */
   get<T>(key: string): T | undefined {
-    return this.cache.get(key);
+    return this.cache.get(key) as T | undefined;
   }
 
   /**
@@ -102,7 +102,7 @@ const cacheManager = new SettingsCacheManager();
 
 /**
  * 使用设置缓存的 Composable
- * 
+ *
  * @example
  * ```ts
  * const { value, save, reset, isLoading } = useSettingsCache({
@@ -111,25 +111,19 @@ const cacheManager = new SettingsCacheManager();
  *   saveFn: async (val) => await saveTheme(val),
  *   loadFn: async () => await loadTheme(),
  * });
- * 
+ *
  * // 值会自动保存（带防抖）
  * value.value = 'dark';
- * 
+ *
  * // 手动保存（立即）
  * await save();
- * 
+ *
  * // 重置为默认值
  * await reset();
  * ```
  */
 export function useSettingsCache<T>(config: SettingsConfig<T>) {
-  const {
-    key,
-    defaultValue,
-    saveFn,
-    loadFn,
-    debounceMs = 500,
-  } = config;
+  const { key, defaultValue, saveFn, loadFn, debounceMs = 500 } = config;
 
   // 状态
   const isLoading = ref(false);
@@ -152,9 +146,9 @@ export function useSettingsCache<T>(config: SettingsConfig<T>) {
     try {
       isSaving.value = true;
       error.value = null;
-      
+
       await saveFn(value.value);
-      
+
       // 更新缓存
       cacheManager.set(key, value.value);
     } catch (err) {
@@ -175,7 +169,7 @@ export function useSettingsCache<T>(config: SettingsConfig<T>) {
       error.value = null;
 
       const loadedValue = await loadFn();
-      
+
       if (loadedValue !== null && loadedValue !== undefined) {
         value.value = loadedValue;
         cacheManager.set(key, loadedValue);
@@ -187,7 +181,7 @@ export function useSettingsCache<T>(config: SettingsConfig<T>) {
     } catch (err) {
       error.value = err as Error;
       console.error(`Failed to load setting "${key}":`, err);
-      
+
       // 加载失败时使用默认值
       value.value = defaultValue;
       cacheManager.set(key, defaultValue);
@@ -222,7 +216,7 @@ export function useSettingsCache<T>(config: SettingsConfig<T>) {
     () => {
       debouncedSave();
     },
-    { deep: true }
+    { deep: true },
   );
 
   // 注册 watcher 到管理器

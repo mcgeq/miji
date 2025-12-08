@@ -1,8 +1,7 @@
 // composables/usePermission.ts
-import { computed } from 'vue';
+import type { FamilyMember } from '@/schema/money';
 import { useAuthStore } from '@/stores/auth';
 import { useFamilyLedgerStore, useFamilyMemberStore } from '@/stores/money';
-import type { FamilyMember } from '@/schema/money';
 
 /**
  * 权限管理 Composable
@@ -18,7 +17,7 @@ export function usePermission() {
    */
   const currentMember = computed<FamilyMember | null>(() => {
     const currentUser = authStore.user;
-    if (!currentUser || !familyLedgerStore.currentLedger) {
+    if (!(currentUser && familyLedgerStore.currentLedger)) {
       return null;
     }
 
@@ -50,7 +49,7 @@ export function usePermission() {
    * 检查是否是主要成员
    */
   const isPrimary = computed(() => {
-    return currentMember.value?.isPrimary || false;
+    return currentMember.value?.isPrimary;
   });
 
   /**
@@ -156,7 +155,7 @@ export function usePermission() {
    * 检查是否可以查看财务统计
    */
   const canViewStats = computed(() => {
-    return hasPermission('stats:view') || true; // 默认所有成员都可以查看基础统计
+    return true; // 默认所有成员都可以查看基础统计
   });
 
   /**
@@ -177,7 +176,7 @@ export function usePermission() {
    * 检查是否可以查看结算记录
    */
   const canViewSettlement = computed(() => {
-    return hasPermission('settlement:view') || true; // 默认所有成员都可以查看
+    return true; // 默认所有成员都可以查看
   });
 
   /**
@@ -198,10 +197,10 @@ export function usePermission() {
    * 权限检查装饰器函数
    */
   function requirePermission(permission: string, errorMessage?: string) {
-    return function (_target: any, _propertyKey: string, descriptor: PropertyDescriptor) {
+    return (_target: object, _propertyKey: string, descriptor: PropertyDescriptor) => {
       const originalMethod = descriptor.value;
 
-      descriptor.value = function (...args: any[]) {
+      descriptor.value = function (...args: unknown[]) {
         if (!hasPermission(permission)) {
           throw new Error(errorMessage || getPermissionErrorMessage(permission));
         }

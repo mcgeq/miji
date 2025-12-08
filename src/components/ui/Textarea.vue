@@ -131,7 +131,7 @@
     <!-- 底部信息栏：错误/帮助文本 + 字数统计 -->
     <div
       v-if="hint || error || shouldShowCount"
-      class="flex items-start justify-between mt-0.25 gap-2"
+      class="flex items-start justify-between mt-px gap-2"
     >
       <!-- 帮助文本或错误信息 -->
       <p v-if="hint && !error" :id="hintId" class="text-sm text-gray-500 dark:text-gray-400 flex-1">

@@ -1,9 +1,9 @@
+import type { MaybeRefOrGetter } from 'vue';
 import { computed, toValue } from 'vue';
+import type { CardData } from '@/features/money/common/moneyCommon';
 import { createComparisonCard } from '@/features/money/common/moneyCommon';
 import { formatCurrency } from '@/features/money/utils/money';
 import { useCurrencyStore } from '@/stores/money';
-import type { CardData } from '@/features/money/common/moneyCommon';
-import type { MaybeRefOrGetter } from 'vue';
 
 interface MoneyStatsData {
   totalAssets: number;

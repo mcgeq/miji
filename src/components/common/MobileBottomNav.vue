@@ -1,64 +1,64 @@
 <script setup lang="ts">
-import type { Component } from 'vue';
+  import type { Component } from 'vue';
 
-interface SubmenuItem {
-  name: string;
-  title: string;
-  path: string;
-  icon?: Component;
-}
+  interface SubmenuItem {
+    name: string;
+    title: string;
+    path: string;
+    icon?: Component;
+  }
 
-interface MenuItem {
-  name: string;
-  title: string;
-  icon: Component;
-  path: string;
-  hasSubmenu?: boolean;
-  submenu?: SubmenuItem[];
-}
+  interface MenuItem {
+    name: string;
+    title: string;
+    icon: Component;
+    path: string;
+    hasSubmenu?: boolean;
+    submenu?: SubmenuItem[];
+  }
 
-const { menu } = defineProps<{
-  menu: Array<MenuItem>;
-}>();
+  const { menu } = defineProps<{
+    menu: Array<MenuItem>;
+  }>();
 
-const router = useRouter();
-const route = useRoute();
+  const router = useRouter();
+  const route = useRoute();
 
-// 显示子菜单的状态
-const showSubmenu = ref<string | null>(null);
+  // 显示子菜单的状态
+  const showSubmenu = ref<string | null>(null);
 
-function navigate(item: MenuItem) {
-  if (item.hasSubmenu) {
-    // 切换子菜单显示状态
-    showSubmenu.value = showSubmenu.value === item.name ? null : item.name;
-  } else if (item.path) {
-    // 点击一级菜单时关闭子菜单并导航
+  function navigate(item: MenuItem) {
+    if (item.hasSubmenu) {
+      // 切换子菜单显示状态
+      showSubmenu.value = showSubmenu.value === item.name ? null : item.name;
+    } else if (item.path) {
+      // 点击一级菜单时关闭子菜单并导航
+      showSubmenu.value = null;
+      router.push(item.path);
+    }
+  }
+
+  function navigateSubmenu(submenuItem: SubmenuItem) {
+    router.push(submenuItem.path);
+    showSubmenu.value = null; // 导航后关闭子菜单
+  }
+
+  function isActive(item: MenuItem) {
+    if (item.hasSubmenu && item.submenu) {
+      // 如果是父菜单，检查子菜单是否有激活的
+      return item.submenu.some(sub => sub.path === route.path);
+    }
+    return item.path === route.path;
+  }
+
+  function isSubmenuActive(submenuItem: SubmenuItem) {
+    return submenuItem.path === route.path;
+  }
+
+  // 点击外部关闭子菜单
+  function closeSubmenu() {
     showSubmenu.value = null;
-    router.push(item.path);
   }
-}
-
-function navigateSubmenu(submenuItem: SubmenuItem) {
-  router.push(submenuItem.path);
-  showSubmenu.value = null; // 导航后关闭子菜单
-}
-
-function isActive(item: MenuItem) {
-  if (item.hasSubmenu && item.submenu) {
-    // 如果是父菜单，检查子菜单是否有激活的
-    return item.submenu.some(sub => sub.path === route.path);
-  }
-  return item.path === route.path;
-}
-
-function isSubmenuActive(submenuItem: SubmenuItem) {
-  return submenuItem.path === route.path;
-}
-
-// 点击外部关闭子菜单
-function closeSubmenu() {
-  showSubmenu.value = null;
-}
 </script>
 
 <template>
@@ -98,7 +98,8 @@ function closeSubmenu() {
         >
           <div
             :title="submenuItem.title"
-            class="relative flex flex-col items-center justify-center py-2 px-3 rounded-xl cursor-pointer transition-all duration-200 group" :class="[
+            class="relative flex flex-col items-center justify-center py-2 px-3 rounded-xl cursor-pointer transition-all duration-200 group"
+            :class="[
               isSubmenuActive(submenuItem)
                 ? 'bg-blue-50 dark:bg-blue-900/30'
                 : 'hover:bg-gray-100 dark:hover:bg-gray-800',
@@ -112,7 +113,8 @@ function closeSubmenu() {
             />
             <component
               :is="submenuItem.icon"
-              class="w-6 h-6 transition-all duration-200" :class="[
+              class="w-6 h-6 transition-all duration-200"
+              :class="[
                 isSubmenuActive(submenuItem)
                   ? 'text-blue-600 dark:text-blue-400 scale-110'
                   : 'text-gray-600 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-200 group-hover:scale-110',
@@ -134,13 +136,16 @@ function closeSubmenu() {
     </Transition>
 
     <!-- 底部导航 -->
-    <nav class="fixed bottom-0 left-0 right-0 h-14 bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg flex items-center justify-center shadow-[0_-4px_16px_rgba(0,0,0,0.1)] border-t border-gray-200 dark:border-gray-800 z-[1000]">
+    <nav
+      class="fixed bottom-0 left-0 right-0 h-14 bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg flex items-center justify-center shadow-[0_-4px_16px_rgba(0,0,0,0.1)] border-t border-gray-200 dark:border-gray-800 z-[1000]"
+    >
       <ul class="flex w-full justify-around items-center list-none m-0 p-0 px-2">
         <li
           v-for="item in menu"
           :key="item.name"
           :title="item.title"
-          class="flex flex-col items-center justify-center py-2 px-3 rounded-xl cursor-pointer transition-all duration-200 relative group" :class="[
+          class="flex flex-col items-center justify-center py-2 px-3 rounded-xl cursor-pointer transition-all duration-200 relative group"
+          :class="[
             isActive(item)
               ? 'bg-blue-50 dark:bg-blue-900/30'
               : 'hover:bg-gray-100 dark:hover:bg-gray-800',
@@ -154,7 +159,8 @@ function closeSubmenu() {
           />
           <component
             :is="item.icon"
-            class="w-6 h-6 transition-all duration-200" :class="[
+            class="w-6 h-6 transition-all duration-200"
+            :class="[
               isActive(item)
                 ? 'text-blue-600 dark:text-blue-400 scale-110'
                 : 'text-gray-600 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-200 group-hover:scale-110',

@@ -1,68 +1,70 @@
 <script setup lang="ts">
-/**
- * FormRow - 表单行组件
- *
- * 用于 Modal 表单的标准行布局
- * 100% Tailwind CSS 4 - 零自定义 CSS
- *
- * @example
- * <FormRow label="账户名称" required>
- *   <Input v-model="form.name" />
- * </FormRow>
- */
+  /**
+   * FormRow - 表单行组件
+   *
+   * 用于 Modal 表单的标准行布局
+   * 100% Tailwind CSS 4 - 零自定义 CSS
+   *
+   * @example
+   * <FormRow label="账户名称" required>
+   *   <Input v-model="form.name" />
+   * </FormRow>
+   */
 
-import { computed } from 'vue';
+  import { computed } from 'vue';
 
-interface Props {
-  /** 标签文本 */
-  label?: string;
-  /** 是否必填 */
-  required?: boolean;
-  /** 是否可选（显示"可选"标记） */
-  optional?: boolean;
-  /** 错误消息 */
-  error?: string;
-  /** 帮助文本 */
-  helpText?: string;
-  /** 标签宽度类名 */
-  labelWidth?: string;
-  /** 是否全宽（标签和输入框各占一行） */
-  fullWidth?: boolean;
-  /** 标签对齐方式 */
-  labelAlign?: 'left' | 'right';
-}
+  interface Props {
+    /** 标签文本 */
+    label?: string;
+    /** 是否必填 */
+    required?: boolean;
+    /** 是否可选（显示"可选"标记） */
+    optional?: boolean;
+    /** 错误消息 */
+    error?: string;
+    /** 帮助文本 */
+    helpText?: string;
+    /** 标签宽度类名 */
+    labelWidth?: string;
+    /** 是否全宽（标签和输入框各占一行） */
+    fullWidth?: boolean;
+    /** 标签对齐方式 */
+    labelAlign?: 'left' | 'right';
+  }
 
-const props = withDefaults(defineProps<Props>(), {
-  label: '',
-  required: false,
-  optional: false,
-  labelWidth: 'w-24',
-  fullWidth: false,
-  labelAlign: 'left',
-});
+  const props = withDefaults(defineProps<Props>(), {
+    label: '',
+    required: false,
+    optional: false,
+    labelWidth: 'w-24',
+    fullWidth: false,
+    labelAlign: 'left',
+  });
 
-// 标签宽度类
-const labelWidthClass = computed(() => {
-  return props.fullWidth ? 'w-full' : props.labelWidth;
-});
+  // 标签宽度类
+  const labelWidthClass = computed(() => {
+    return props.fullWidth ? 'w-full' : props.labelWidth;
+  });
 
-// 标签对齐类
-const labelAlignClass = computed(() => {
-  if (props.fullWidth) return 'text-left';
-  return props.labelAlign === 'right' ? 'text-right' : 'text-left';
-});
+  // 标签对齐类
+  const labelAlignClass = computed(() => {
+    if (props.fullWidth) return 'text-left';
+    return props.labelAlign === 'right' ? 'text-right' : 'text-left';
+  });
 </script>
 
 <template>
   <div
-    class="flex items-center mb-3" :class="[
+    class="flex items-center mb-3"
+    :class="[
       fullWidth ? 'flex-col items-start gap-1.5' : 'max-sm:gap-2 gap-4',
     ]"
   >
     <!-- 标签 -->
     <label
       v-if="label"
-      class="text-sm font-medium text-gray-700 dark:text-gray-300 shrink-0" :class="[
+      class="text-sm font-medium text-gray-700 dark:text-gray-300 shrink-0"
+      :class="[
         fullWidth ? 'w-full' : 'max-sm:w-16 max-sm:text-xs',
         !fullWidth && labelWidthClass,
         labelAlignClass,
@@ -80,19 +82,12 @@ const labelAlignClass = computed(() => {
       <slot />
 
       <!-- 错误消息 -->
-      <p
-        v-if="error"
-        class="mt-1.5 text-sm text-red-600 dark:text-red-400 text-right"
-        role="alert"
-      >
+      <p v-if="error" class="mt-1.5 text-sm text-red-600 dark:text-red-400 text-right" role="alert">
         {{ error }}
       </p>
 
       <!-- 帮助文本 -->
-      <p
-        v-if="helpText && !error"
-        class="mt-1.5 text-xs text-gray-500 dark:text-gray-400"
-      >
+      <p v-if="helpText && !error" class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
         {{ helpText }}
       </p>
     </div>

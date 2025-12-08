@@ -1,16 +1,16 @@
 <script setup lang="ts">
-// Tab切换组件
-type TabType = 'accounts' | 'transactions' | 'budgets' | 'reminders';
+  // Tab切换组件
+  type TabType = 'accounts' | 'transactions' | 'budgets' | 'reminders';
 
-interface Props {
-  activeTab: TabType;
-}
+  interface Props {
+    activeTab: TabType;
+  }
 
-defineProps<Props>();
+  defineProps<Props>();
 
-const emit = defineEmits<{
-  switch: [tab: TabType];
-}>();
+  const emit = defineEmits<{
+    switch: [tab: TabType];
+  }>();
 </script>
 
 <template>

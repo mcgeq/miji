@@ -1,172 +1,176 @@
 <script setup lang="ts">
-import { computed, onUnmounted, ref, watch } from 'vue';
-import { useFamilyMemberSearch } from '@/composables/useFamilyMemberSearch';
-import type { FamilyMember } from '@/composables/useFamilyMemberSearch';
+  import type { FamilyMember } from '@/composables/useFamilyMemberSearch';
+  import { useFamilyMemberSearch } from '@/composables/useFamilyMemberSearch';
 
-interface Props {
-  selectedMember?: FamilyMember | null;
-  placeholder?: string;
-  disabled?: boolean;
-  showRecentMembers?: boolean;
-  showSearchHistory?: boolean;
-}
-
-interface Emits {
-  select: [member: FamilyMember];
-  clear: [];
-}
-
-const props = withDefaults(defineProps<Props>(), {
-  placeholder: '搜索家庭成员姓名或邮箱',
-  disabled: false,
-  showRecentMembers: true,
-  showSearchHistory: true,
-});
-
-const emit = defineEmits<Emits>();
-
-const {
-  searchQuery,
-  members,
-  recentMembers,
-  loading,
-  error,
-  selectedMember,
-  searchHistory,
-  selectFamilyMember,
-  clearSelection,
-  debouncedSearch,
-  loadRecentFamilyMembers,
-  clearSearchHistory,
-  reset,
-} = useFamilyMemberSearch();
-
-// 响应式状态
-const showDropdown = ref(false);
-const inputRef = ref<HTMLInputElement>();
-const dropdownRef = ref<HTMLElement>();
-
-// 当前显示的成员列表
-const displayMembers = computed(() => {
-  if (searchQuery.value.trim()) {
-    return members.value;
+  interface Props {
+    selectedMember?: FamilyMember | null;
+    placeholder?: string;
+    disabled?: boolean;
+    showRecentMembers?: boolean;
+    showSearchHistory?: boolean;
   }
-  if (props.showRecentMembers && recentMembers.value.length > 0) {
-    return recentMembers.value;
-  }
-  return [];
-});
 
-// 监听搜索查询变化
-watch(searchQuery, newQuery => {
-  if (newQuery.trim()) {
-    debouncedSearch();
-    showDropdown.value = true;
-  } else {
-    showDropdown.value = !!displayMembers.value.length;
+  interface Emits {
+    select: [member: FamilyMember];
+    clear: [];
   }
-});
 
-// 监听外部选中成员变化
-watch(() => props.selectedMember, newMember => {
-  if (newMember) {
-    selectFamilyMember(newMember);
-    searchQuery.value = `${newMember.name} (${newMember.email || newMember.serialNum})`;
+  const props = withDefaults(defineProps<Props>(), {
+    placeholder: '搜索家庭成员姓名或邮箱',
+    disabled: false,
+    showRecentMembers: true,
+    showSearchHistory: true,
+  });
+
+  const emit = defineEmits<Emits>();
+
+  const {
+    searchQuery,
+    members,
+    recentMembers,
+    loading,
+    error,
+    selectedMember,
+    searchHistory,
+    selectFamilyMember,
+    clearSelection,
+    debouncedSearch,
+    loadRecentFamilyMembers,
+    clearSearchHistory,
+    reset,
+  } = useFamilyMemberSearch();
+
+  // 响应式状态
+  const showDropdown = ref(false);
+  const inputRef = ref<HTMLInputElement>();
+  const dropdownRef = ref<HTMLElement>();
+
+  // 当前显示的成员列表
+  const displayMembers = computed(() => {
+    if (searchQuery.value.trim()) {
+      return members.value;
+    }
+    if (props.showRecentMembers && recentMembers.value.length > 0) {
+      return recentMembers.value;
+    }
+    return [];
+  });
+
+  // 监听搜索查询变化
+  watch(searchQuery, newQuery => {
+    if (newQuery.trim()) {
+      debouncedSearch();
+      showDropdown.value = true;
+    } else {
+      showDropdown.value = !!displayMembers.value.length;
+    }
+  });
+
+  // 监听外部选中成员变化
+  watch(
+    () => props.selectedMember,
+    newMember => {
+      if (newMember) {
+        selectFamilyMember(newMember);
+        searchQuery.value = `${newMember.name} (${newMember.email || newMember.serialNum})`;
+        showDropdown.value = false;
+      } else {
+        clearSelection();
+        searchQuery.value = '';
+      }
+    },
+    { immediate: true },
+  );
+
+  // 选择成员
+  function handleMemberSelect(member: FamilyMember) {
+    selectFamilyMember(member);
+    searchQuery.value = `${member.name} (${member.email || member.serialNum})`;
     showDropdown.value = false;
-  } else {
+    emit('select', member);
+  }
+
+  // 清除选择
+  function handleClear() {
     clearSelection();
     searchQuery.value = '';
-  }
-}, { immediate: true });
-
-// 选择成员
-function handleMemberSelect(member: FamilyMember) {
-  selectFamilyMember(member);
-  searchQuery.value = `${member.name} (${member.email || member.serialNum})`;
-  showDropdown.value = false;
-  emit('select', member);
-}
-
-// 清除选择
-function handleClear() {
-  clearSelection();
-  searchQuery.value = '';
-  showDropdown.value = false;
-  emit('clear');
-  inputRef.value?.focus();
-}
-
-// 处理输入框焦点
-function handleInputFocus() {
-  if (displayMembers.value.length > 0 || searchHistory.value.length > 0) {
-    showDropdown.value = true;
-  }
-  // 加载最近成员
-  if (props.showRecentMembers) {
-    loadRecentFamilyMembers();
-  }
-}
-
-// 处理输入框失焦
-function handleInputBlur(event: FocusEvent) {
-  // 如果焦点转移到下拉框内，不关闭
-  if (dropdownRef.value?.contains(event.relatedTarget as Node)) {
-    return;
-  }
-  // 延迟关闭下拉框，以便点击选择生效
-  setTimeout(() => {
     showDropdown.value = false;
-  }, 200);
-}
+    emit('clear');
+    inputRef.value?.focus();
+  }
 
-// 处理键盘导航
-const highlightedIndex = ref(-1);
+  // 处理输入框焦点
+  function handleInputFocus() {
+    if (displayMembers.value.length > 0 || searchHistory.value.length > 0) {
+      showDropdown.value = true;
+    }
+    // 加载最近成员
+    if (props.showRecentMembers) {
+      loadRecentFamilyMembers();
+    }
+  }
 
-function handleKeyDown(event: KeyboardEvent) {
-  if (!showDropdown.value) return;
+  // 处理输入框失焦
+  function handleInputBlur(event: FocusEvent) {
+    // 如果焦点转移到下拉框内，不关闭
+    if (dropdownRef.value?.contains(event.relatedTarget as Node)) {
+      return;
+    }
+    // 延迟关闭下拉框，以便点击选择生效
+    setTimeout(() => {
+      showDropdown.value = false;
+    }, 200);
+  }
 
-  const totalItems = displayMembers.value.length + (props.showSearchHistory ? searchHistory.value.length : 0);
+  // 处理键盘导航
+  const highlightedIndex = ref(-1);
 
-  switch (event.key) {
-    case 'ArrowDown':
-      event.preventDefault();
-      highlightedIndex.value = Math.min(highlightedIndex.value + 1, totalItems - 1);
-      break;
-    case 'ArrowUp':
-      event.preventDefault();
-      highlightedIndex.value = Math.max(highlightedIndex.value - 1, -1);
-      break;
-    case 'Enter':
-      event.preventDefault();
-      if (highlightedIndex.value >= 0) {
-        if (highlightedIndex.value < displayMembers.value.length) {
-          handleMemberSelect(displayMembers.value[highlightedIndex.value]);
-        } else {
-          // 选择搜索历史
-          const historyIndex = highlightedIndex.value - displayMembers.value.length;
-          if (historyIndex < searchHistory.value.length) {
-            searchQuery.value = searchHistory.value[historyIndex];
-            debouncedSearch();
+  function handleKeyDown(event: KeyboardEvent) {
+    if (!showDropdown.value) return;
+
+    const totalItems =
+      displayMembers.value.length + (props.showSearchHistory ? searchHistory.value.length : 0);
+
+    switch (event.key) {
+      case 'ArrowDown':
+        event.preventDefault();
+        highlightedIndex.value = Math.min(highlightedIndex.value + 1, totalItems - 1);
+        break;
+      case 'ArrowUp':
+        event.preventDefault();
+        highlightedIndex.value = Math.max(highlightedIndex.value - 1, -1);
+        break;
+      case 'Enter':
+        event.preventDefault();
+        if (highlightedIndex.value >= 0) {
+          if (highlightedIndex.value < displayMembers.value.length) {
+            handleMemberSelect(displayMembers.value[highlightedIndex.value]);
+          } else {
+            // 选择搜索历史
+            const historyIndex = highlightedIndex.value - displayMembers.value.length;
+            if (historyIndex < searchHistory.value.length) {
+              searchQuery.value = searchHistory.value[historyIndex];
+              debouncedSearch();
+            }
           }
         }
-      }
-      break;
-    case 'Escape':
-      showDropdown.value = false;
-      highlightedIndex.value = -1;
-      break;
+        break;
+      case 'Escape':
+        showDropdown.value = false;
+        highlightedIndex.value = -1;
+        break;
+    }
   }
-}
 
-// 重置高亮索引
-watch([displayMembers, searchHistory], () => {
-  highlightedIndex.value = -1;
-});
+  // 重置高亮索引
+  watch([displayMembers, searchHistory], () => {
+    highlightedIndex.value = -1;
+  });
 
-// 组件卸载时清理
-onUnmounted(() => {
-  reset();
-});
+  // 组件卸载时清理
+  onUnmounted(() => {
+    reset();
+  });
 </script>
 
 <template>
@@ -189,7 +193,7 @@ onUnmounted(() => {
         @focus="handleInputFocus"
         @blur="handleInputBlur"
         @keydown="handleKeyDown"
-      >
+      />
 
       <!-- 清除按钮 -->
       <button
@@ -231,7 +235,10 @@ onUnmounted(() => {
         class="border-b border-gray-100 dark:border-gray-700"
       >
         <div class="p-2 px-3 flex items-center justify-between bg-gray-50 dark:bg-gray-800/50">
-          <span class="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">搜索历史</span>
+          <span
+            class="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider"
+            >搜索历史</span
+          >
           <button
             type="button"
             class="p-0.5 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
@@ -260,12 +267,18 @@ onUnmounted(() => {
         class="border-b border-gray-100 dark:border-gray-700"
       >
         <div class="p-2 px-3 bg-gray-50 dark:bg-gray-800/50">
-          <span class="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">最近成员</span>
+          <span
+            class="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider"
+            >最近成员</span
+          >
         </div>
       </div>
 
       <!-- 加载状态 -->
-      <div v-if="loading" class="p-3 flex items-center justify-center gap-2 text-gray-600 dark:text-gray-400 text-sm">
+      <div
+        v-if="loading"
+        class="p-3 flex items-center justify-center gap-2 text-gray-600 dark:text-gray-400 text-sm"
+      >
         <LucideLoader2 class="w-4 h-4 animate-spin" />
         <span>搜索中...</span>
       </div>
@@ -288,7 +301,7 @@ onUnmounted(() => {
               :src="member.avatarUrl"
               :alt="member.name"
               class="w-full h-full object-cover"
-            >
+            />
             <div
               v-else
               class="w-full h-full flex items-center justify-center text-white font-semibold text-base"
@@ -299,11 +312,19 @@ onUnmounted(() => {
           </div>
 
           <div class="flex-1 min-w-0">
-            <div class="font-medium text-gray-900 dark:text-white whitespace-nowrap overflow-hidden text-ellipsis flex items-center gap-2">
+            <div
+              class="font-medium text-gray-900 dark:text-white whitespace-nowrap overflow-hidden text-ellipsis flex items-center gap-2"
+            >
               {{ member.name }}
-              <span v-if="member.isPrimary" class="bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-[10px] font-semibold px-1.5 py-0.5 rounded">主要</span>
+              <span
+                v-if="member.isPrimary"
+                class="bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-[10px] font-semibold px-1.5 py-0.5 rounded"
+                >主要</span
+              >
             </div>
-            <div class="text-xs text-gray-600 dark:text-gray-400 whitespace-nowrap overflow-hidden text-ellipsis">
+            <div
+              class="text-xs text-gray-600 dark:text-gray-400 whitespace-nowrap overflow-hidden text-ellipsis"
+            >
               <span v-if="member.email" class="member-email">{{ member.email }}</span>
               <span v-else-if="member.phone" class="member-phone">{{ member.phone }}</span>
               <span v-else class="member-id">ID: {{ member.serialNum.slice(-8) }}</span>
@@ -312,7 +333,8 @@ onUnmounted(() => {
 
           <div class="flex items-center gap-2 shrink-0">
             <div
-              class="text-[10px] font-medium px-1.5 py-0.5 rounded uppercase tracking-wider" :class="[
+              class="text-[10px] font-medium px-1.5 py-0.5 rounded uppercase tracking-wider"
+              :class="[
                 member.role === 'Owner' ? 'bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400' : '',
                 member.role === 'Admin' ? 'bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400' : '',
                 member.role === 'Member' ? 'bg-green-50 dark:bg-green-950/30 text-green-600 dark:text-green-400' : '',
@@ -321,7 +343,11 @@ onUnmounted(() => {
             >
               {{ member.role }}
             </div>
-            <div v-if="member.status === 'Active'" class="text-green-500 dark:text-green-400" title="活跃">
+            <div
+              v-if="member.status === 'Active'"
+              class="text-green-500 dark:text-green-400"
+              title="活跃"
+            >
               <LucideCircle class="w-2 h-2 fill-current" />
             </div>
           </div>
@@ -329,13 +355,19 @@ onUnmounted(() => {
       </div>
 
       <!-- 无结果 -->
-      <div v-else-if="searchQuery.trim()" class="p-3 flex items-center justify-center gap-2 text-gray-600 dark:text-gray-400 text-sm">
+      <div
+        v-else-if="searchQuery.trim()"
+        class="p-3 flex items-center justify-center gap-2 text-gray-600 dark:text-gray-400 text-sm"
+      >
         <LucideUserX class="w-4 h-4" />
         <span>未找到成员</span>
       </div>
 
       <!-- 空状态提示 -->
-      <div v-else class="p-3 flex items-center justify-center gap-2 text-gray-600 dark:text-gray-400 text-sm">
+      <div
+        v-else
+        class="p-3 flex items-center justify-center gap-2 text-gray-600 dark:text-gray-400 text-sm"
+      >
         <LucideUsers class="w-4 h-4" />
         <span>输入姓名或邮箱开始搜索</span>
       </div>

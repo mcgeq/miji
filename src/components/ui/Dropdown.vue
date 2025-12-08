@@ -1,78 +1,67 @@
 <script setup lang="ts">
-import type { Component } from 'vue';
+  import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/vue';
+  import type { DropdownOption } from './types';
 
-/**
- * Dropdown - 下拉菜单组件
- *
- * 基于 Headless UI Menu 组件
- * 支持键盘导航和完整的可访问性
- */
+  /**
+   * Dropdown - 下拉菜单组件
+   *
+   * 基于 Headless UI Menu 组件
+   * 支持键盘导航和完整的可访问性
+   */
 
-import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/vue';
+  interface Props {
+    /** 选项列表 */
+    options: DropdownOption[];
+    /** 按钮文本 */
+    label?: string;
+    /** 当前选中值 */
+    modelValue?: string;
+    /** 是否显示选中状态 */
+    showCheck?: boolean;
+    /** 按钮变体 */
+    variant?: 'default' | 'outline' | 'ghost';
+    /** 尺寸 */
+    size?: 'sm' | 'md' | 'lg';
+  }
 
-export interface DropdownOption {
-  /** 选项值 */
-  value: string;
-  /** 显示文本 */
-  label: string;
-  /** 是否禁用 */
-  disabled?: boolean;
-  /** 图标组件 */
-  icon?: Component;
-  /** 分隔线（在此选项后显示） */
-  divider?: boolean;
-}
+  withDefaults(defineProps<Props>(), {
+    label: '选择选项',
+    showCheck: false,
+    variant: 'default',
+    size: 'md',
+  });
 
-interface Props {
-  /** 选项列表 */
-  options: DropdownOption[];
-  /** 按钮文本 */
-  label?: string;
-  /** 当前选中值 */
-  modelValue?: string;
-  /** 是否显示选中状态 */
-  showCheck?: boolean;
-  /** 按钮变体 */
-  variant?: 'default' | 'outline' | 'ghost';
-  /** 尺寸 */
-  size?: 'sm' | 'md' | 'lg';
-}
+  const emit = defineEmits<{
+    'update:modelValue': [value: string];
+    select: [value: string];
+  }>();
 
-withDefaults(defineProps<Props>(), {
-  label: '选择选项',
-  showCheck: false,
-  variant: 'default',
-  size: 'md',
-});
+  // 按钮样式
+  const buttonVariants = {
+    default:
+      'bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-900 dark:text-white',
+    outline:
+      'border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-900 dark:text-white',
+    ghost: 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-900 dark:text-white',
+  };
 
-const emit = defineEmits<{
-  'update:modelValue': [value: string];
-  'select': [value: string];
-}>();
+  const buttonSizes = {
+    sm: 'px-3 py-1.5 text-sm',
+    md: 'px-4 py-2 text-base',
+    lg: 'px-5 py-2.5 text-lg',
+  };
 
-// 按钮样式
-const buttonVariants = {
-  default: 'bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-900 dark:text-white',
-  outline: 'border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-900 dark:text-white',
-  ghost: 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-900 dark:text-white',
-};
-
-const buttonSizes = {
-  sm: 'px-3 py-1.5 text-sm',
-  md: 'px-4 py-2 text-base',
-  lg: 'px-5 py-2.5 text-lg',
-};
-
-function handleSelect(value: string) {
-  emit('update:modelValue', value);
-  emit('select', value);
-}
+  function handleSelect(value: string) {
+    emit('update:modelValue', value);
+    emit('select', value);
+  }
 </script>
 
 <template>
   <Menu as="div" class="relative inline-block text-left">
     <MenuButton
-      class="inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2" :class="[
+      class="inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+      :class="[
         buttonVariants[variant],
         buttonSizes[size],
       ]"
@@ -94,30 +83,21 @@ function handleSelect(value: string) {
       >
         <div class="p-1">
           <template v-for="(option, index) in options" :key="option.value">
-            <MenuItem
-              v-slot="{ active }"
-              :disabled="option.disabled"
-            >
+            <MenuItem v-slot="{ active }" :disabled="option.disabled">
               <button
-                class="group flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors" :class="[
+                class="group flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors"
+                :class="[
                   active ? 'bg-blue-600 text-white' : 'text-gray-900 dark:text-gray-100',
                   option.disabled && 'opacity-50 cursor-not-allowed',
                 ]"
                 @click="handleSelect(option.value)"
               >
                 <!-- 选中标记 -->
-                <LucideCheck
-                  v-if="showCheck && modelValue === option.value"
-                  class="w-4 h-4"
-                />
+                <LucideCheck v-if="showCheck && modelValue === option.value" class="w-4 h-4" />
                 <span v-else-if="showCheck" class="w-4" />
 
                 <!-- 图标 -->
-                <component
-                  :is="option.icon"
-                  v-if="option.icon"
-                  class="w-4 h-4"
-                />
+                <component :is="option.icon" v-if="option.icon" class="w-4 h-4" />
 
                 <!-- 文本 -->
                 <span class="flex-1 text-left">{{ option.label }}</span>

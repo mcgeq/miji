@@ -3,8 +3,6 @@
  * @module composables/useFirstLaunch
  */
 
-import { ref, onMounted } from 'vue';
-
 const FIRST_LAUNCH_KEY = 'app.first_launch_completed';
 const NOTIFICATION_PERMISSION_ASKED_KEY = 'notification.permission_asked';
 

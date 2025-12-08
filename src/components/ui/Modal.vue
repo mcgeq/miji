@@ -1,97 +1,103 @@
 <script setup lang="ts">
-/**
- * Modal - 基于 Headless UI 的模态框组件
- *
- * 使用 @headlessui/vue 提供逻辑，Tailwind CSS 4 设计令牌提供样式
- * 完整的无障碍支持：焦点陷阱、键盘导航、ARIA 属性
- * 100% 可定制，无自定义 CSS
- */
+  /**
+   * Modal - 基于 Headless UI 的模态框组件
+   *
+   * 使用 @headlessui/vue 提供逻辑，Tailwind CSS 4 设计令牌提供样式
+   * 完整的无障碍支持：焦点陷阱、键盘导航、ARIA 属性
+   * 100% 可定制，无自定义 CSS
+   */
 
-import { Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot } from '@headlessui/vue';
+  import {
+    Dialog,
+    DialogPanel,
+    DialogTitle,
+    TransitionChild,
+    TransitionRoot,
+  } from '@headlessui/vue';
 
-/** 模态框尺寸 */
-type ModalSize = 'sm' | 'md' | 'lg' | 'xl' | 'full';
+  /** 模态框尺寸 */
+  type ModalSize = 'sm' | 'md' | 'lg' | 'xl' | 'full';
 
-interface Props {
-  /** 是否显示 */
-  open: boolean;
-  /** 标题 */
-  title?: string;
-  /** 尺寸 */
-  size?: ModalSize;
-  /** 点击遮罩层是否关闭 */
-  closeOnOverlay?: boolean;
-  /** 是否显示头部 */
-  showHeader?: boolean;
-  /** 是否显示底部 */
-  showFooter?: boolean;
-  /** 确认按钮文本 */
-  confirmText?: string;
-  /** 取消按钮文本 */
-  cancelText?: string;
-  /** 是否显示确认按钮 */
-  showConfirm?: boolean;
-  /** 是否显示取消按钮 */
-  showCancel?: boolean;
-  /** 是否显示删除按钮 */
-  showDelete?: boolean;
-  /** 删除按钮文本 */
-  deleteText?: string;
-  /** 确认按钮禁用状态 */
-  confirmDisabled?: boolean;
-  /** 确认按钮加载状态 */
-  confirmLoading?: boolean;
-  /** 自定义z-index层级 */
-  zIndex?: number;
-  /** 模态框描述（用于无障碍） */
-  description?: string;
-}
-
-const props = withDefaults(defineProps<Props>(), {
-  size: 'md',
-  closeOnOverlay: false,
-  showHeader: true,
-  showFooter: true,
-  confirmText: '确认',
-  cancelText: '取消',
-  showConfirm: true,
-  showCancel: true,
-  showDelete: false,
-  deleteText: '删除',
-  confirmDisabled: false,
-  confirmLoading: false,
-  zIndex: 999999,
-});
-
-const emit = defineEmits<{
-  close: [];
-  confirm: [];
-  cancel: [];
-  delete: [];
-}>();
-
-// 尺寸映射
-const sizeClasses: Record<ModalSize, string> = {
-  sm: 'max-w-sm',
-  md: 'max-w-md',
-  lg: 'max-w-lg',
-  xl: 'max-w-xl',
-  full: 'max-w-[90vw]',
-};
-
-// 处理关闭事件
-function handleClose() {
-  if (props.closeOnOverlay) {
-    emit('close');
+  interface Props {
+    /** 是否显示 */
+    open: boolean;
+    /** 标题 */
+    title?: string;
+    /** 尺寸 */
+    size?: ModalSize;
+    /** 点击遮罩层是否关闭 */
+    closeOnOverlay?: boolean;
+    /** 是否显示头部 */
+    showHeader?: boolean;
+    /** 是否显示底部 */
+    showFooter?: boolean;
+    /** 确认按钮文本 */
+    confirmText?: string;
+    /** 取消按钮文本 */
+    cancelText?: string;
+    /** 是否显示确认按钮 */
+    showConfirm?: boolean;
+    /** 是否显示取消按钮 */
+    showCancel?: boolean;
+    /** 是否显示删除按钮 */
+    showDelete?: boolean;
+    /** 删除按钮文本 */
+    deleteText?: string;
+    /** 确认按钮禁用状态 */
+    confirmDisabled?: boolean;
+    /** 确认按钮加载状态 */
+    confirmLoading?: boolean;
+    /** 自定义z-index层级 */
+    zIndex?: number;
+    /** 模态框描述（用于无障碍） */
+    description?: string;
   }
-}
 
-// 处理 Escape 键关闭
-function handleKeydown(event: KeyboardEvent) {
-  if (event.key === 'Escape') {
-    emit('close');
+  const props = withDefaults(defineProps<Props>(), {
+    size: 'md',
+    closeOnOverlay: false,
+    showHeader: true,
+    showFooter: true,
+    confirmText: '确认',
+    cancelText: '取消',
+    showConfirm: true,
+    showCancel: true,
+    showDelete: false,
+    deleteText: '删除',
+    confirmDisabled: false,
+    confirmLoading: false,
+    zIndex: 999999,
+  });
+
+  const emit = defineEmits<{
+    close: [];
+    confirm: [];
+    cancel: [];
+    delete: [];
+  }>();
+
+  // 尺寸映射
+  const sizeClasses: Record<ModalSize, string> = {
+    sm: 'max-w-sm',
+    md: 'max-w-md',
+    lg: 'max-w-lg',
+    xl: 'max-w-xl',
+    full: 'max-w-[90vw]',
+  };
+
+  // 处理关闭事件
+  function handleClose() {
+    if (props.closeOnOverlay) {
+      emit('close');
+    }
   }
-}
+
+  // 处理 Escape 键关闭
+  function handleKeydown(event: KeyboardEvent) {
+    if (event.key === 'Escape') {
+      emit('close');
+    }
+  }
 </script>
 
 <template>
@@ -134,9 +140,7 @@ function handleKeydown(event: KeyboardEvent) {
               class="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700 shrink-0"
             >
               <DialogTitle class="text-xl font-semibold text-gray-900 dark:text-white">
-                <slot name="header">
-                  {{ props.title }}
-                </slot>
+                <slot name="header">{{ props.title }}</slot>
               </DialogTitle>
 
               <button
@@ -150,9 +154,7 @@ function handleKeydown(event: KeyboardEvent) {
             </div>
 
             <!-- 描述（用于无障碍，可选） -->
-            <p v-if="props.description" class="sr-only">
-              {{ props.description }}
-            </p>
+            <p v-if="props.description" class="sr-only">{{ props.description }}</p>
 
             <!-- 内容区 -->
             <div class="modal-content flex-1 overflow-y-auto px-6 py-4">
@@ -209,8 +211,19 @@ function handleKeydown(event: KeyboardEvent) {
                       viewBox="0 0 24 24"
                       aria-hidden="true"
                     >
-                      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
-                      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                      <circle
+                        class="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        stroke-width="4"
+                      />
+                      <path
+                        class="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      />
                     </svg>
                     <!-- 确认图标 -->
                     <LucideCheck v-else class="w-5 h-5" aria-hidden="true" />
@@ -226,13 +239,13 @@ function handleKeydown(event: KeyboardEvent) {
 </template>
 
 <style scoped>
-/* 隐藏滚动条但保持滚动功能 */
-.modal-content::-webkit-scrollbar {
-  display: none;
-}
+  /* 隐藏滚动条但保持滚动功能 */
+  .modal-content::-webkit-scrollbar {
+    display: none;
+  }
 
-.modal-content {
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;  /* Firefox */
-}
+  .modal-content {
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
+  }
 </style>

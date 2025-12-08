@@ -14,7 +14,7 @@ export class ThemeInitializer {
       const themeStore = useThemeStore();
 
       // 如果主题store还没有初始化，先初始化
-      if (!themeStore.isInitializing && !themeStore.isLoading) {
+      if (!(themeStore.isInitializing || themeStore.isLoading)) {
         await themeStore.init();
       }
 

@@ -220,14 +220,14 @@ export function useSplitCalculator() {
   /**
    * 格式化金额显示
    */
-  function formatAmount(amount: number, decimals: number = 2): string {
+  function formatAmount(amount: number, decimals = 2): string {
     return amount.toFixed(decimals);
   }
 
   /**
    * 格式化百分比显示
    */
-  function formatPercentage(percentage: number, decimals: number = 1): string {
+  function formatPercentage(percentage: number, decimals = 1): string {
     return `${percentage.toFixed(decimals)}%`;
   }
 

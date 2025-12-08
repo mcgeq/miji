@@ -1,91 +1,92 @@
 <!-- src/components/SimplePagination.vue -->
 <script lang="ts" setup>
-import {
-  ChevronLeft,
-  ChevronRight,
-  ChevronsLeft,
-  ChevronsRight,
-} from 'lucide-vue-next';
-import { useI18n } from 'vue-i18n';
-import { useMediaQueriesStore } from '@/stores/mediaQueries';
+  import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-vue-next';
+  import { useI18n } from 'vue-i18n';
+  import { useMediaQueriesStore } from '@/stores/mediaQueries';
 
-interface Props {
-  currentPage: number;
-  totalPages: number;
-  totalItems?: number;
-  pageSize?: number;
-  showPageSize?: boolean;
-  showTotal?: boolean;
-  showJump?: boolean;
-  showFirstLast?: boolean;
-  compact?: boolean;
-  responsive?: boolean;
-  pageSizeOptions?: number[];
-  disabled?: boolean;
-}
-
-interface Emits {
-  pageChange: [page: number];
-  pageSizeChange: [size: number];
-}
-
-const props = withDefaults(defineProps<Props>(), {
-  totalItems: 0,
-  pageSize: 10,
-  showPageSize: false,
-  showTotal: false,
-  showJump: true,
-  showFirstLast: true,
-  compact: false,
-  responsive: true,
-  pageSizeOptions: () => [10, 20, 50, 100],
-});
-
-const emit = defineEmits<Emits>();
-const { t } = useI18n();
-const mediaQueries = useMediaQueriesStore();
-
-const pageInput = ref(props.currentPage);
-const internalPageSize = ref(props.pageSize);
-
-watch(() => props.currentPage, newPage => {
-  pageInput.value = newPage;
-}, { immediate: true });
-
-watch(() => props.pageSize, newSize => {
-  internalPageSize.value = newSize;
-}, { immediate: true });
-
-function goToFirst() {
-  if (!props.disabled && pageInput.value > 1)
-    emit('pageChange', 1);
-}
-function goToPrev() {
-  if (!props.disabled && pageInput.value > 1) emit('pageChange', props.currentPage - 1);
-}
-function goToNext() {
-  if (!props.disabled && pageInput.value < props.totalPages)
-    emit('pageChange', props.currentPage + 1);
-}
-function goToLast() {
-  if (!props.disabled && pageInput.value < props.totalPages)
-    emit('pageChange', props.totalPages);
-}
-
-function handlePageJump() {
-  if (props.disabled) return;
-  const targetPage = pageInput.value;
-  if (targetPage >= 1 && targetPage <= props.totalPages && targetPage !== props.currentPage) {
-    emit('pageChange', targetPage);
-  } else {
-    pageInput.value = props.currentPage;
+  interface Props {
+    currentPage: number;
+    totalPages: number;
+    totalItems?: number;
+    pageSize?: number;
+    showPageSize?: boolean;
+    showTotal?: boolean;
+    showJump?: boolean;
+    showFirstLast?: boolean;
+    compact?: boolean;
+    responsive?: boolean;
+    pageSizeOptions?: number[];
+    disabled?: boolean;
   }
-}
 
-function handlePageSizeChange() {
-  if (props.disabled) return;
-  emit('pageSizeChange', internalPageSize.value);
-}
+  interface Emits {
+    pageChange: [page: number];
+    pageSizeChange: [size: number];
+  }
+
+  const props = withDefaults(defineProps<Props>(), {
+    totalItems: 0,
+    pageSize: 10,
+    showPageSize: false,
+    showTotal: false,
+    showJump: true,
+    showFirstLast: true,
+    compact: false,
+    responsive: true,
+    pageSizeOptions: () => [10, 20, 50, 100],
+  });
+
+  const emit = defineEmits<Emits>();
+  const { t } = useI18n();
+  const mediaQueries = useMediaQueriesStore();
+
+  const pageInput = ref(props.currentPage);
+  const internalPageSize = ref(props.pageSize);
+
+  watch(
+    () => props.currentPage,
+    newPage => {
+      pageInput.value = newPage;
+    },
+    { immediate: true },
+  );
+
+  watch(
+    () => props.pageSize,
+    newSize => {
+      internalPageSize.value = newSize;
+    },
+    { immediate: true },
+  );
+
+  function goToFirst() {
+    if (!props.disabled && pageInput.value > 1) emit('pageChange', 1);
+  }
+  function goToPrev() {
+    if (!props.disabled && pageInput.value > 1) emit('pageChange', props.currentPage - 1);
+  }
+  function goToNext() {
+    if (!props.disabled && pageInput.value < props.totalPages)
+      emit('pageChange', props.currentPage + 1);
+  }
+  function goToLast() {
+    if (!props.disabled && pageInput.value < props.totalPages) emit('pageChange', props.totalPages);
+  }
+
+  function handlePageJump() {
+    if (props.disabled) return;
+    const targetPage = pageInput.value;
+    if (targetPage >= 1 && targetPage <= props.totalPages && targetPage !== props.currentPage) {
+      emit('pageChange', targetPage);
+    } else {
+      pageInput.value = props.currentPage;
+    }
+  }
+
+  function handlePageSizeChange() {
+    if (props.disabled) return;
+    emit('pageSizeChange', internalPageSize.value);
+  }
 </script>
 
 <template>
@@ -118,8 +119,12 @@ function handlePageSizeChange() {
 
     <!-- 中间页码/跳转 -->
     <div class="flex flex-wrap items-center gap-2">
-      <span class="text-sm font-semibold text-gray-900 dark:text-white">{{ currentPage }}/{{ totalPages }}</span>
-      <span v-if="showTotal && totalItems > 0" class="text-sm text-gray-600 dark:text-gray-400">(共 {{ totalItems }} 条)</span>
+      <span class="text-sm font-semibold text-gray-900 dark:text-white"
+        >{{ currentPage }}/{{ totalPages }}</span
+      >
+      <span v-if="showTotal && totalItems > 0" class="text-sm text-gray-600 dark:text-gray-400"
+        >(共 {{ totalItems }}条)</span
+      >
       <input
         v-if="showJump"
         v-model.number="pageInput"
@@ -131,7 +136,7 @@ function handlePageSizeChange() {
         aria-label="Jump to page"
         @change="handlePageJump"
         @keydown.enter="handlePageJump"
-      >
+      />
     </div>
 
     <!-- 右侧按钮 -->
@@ -164,9 +169,7 @@ function handlePageSizeChange() {
       aria-label="Select items per page"
       @change="handlePageSizeChange"
     >
-      <option v-for="size in pageSizeOptions" :key="size" :value="size">
-        {{ size }}
-      </option>
+      <option v-for="size in pageSizeOptions" :key="size" :value="size">{{ size }}</option>
     </select>
   </div>
 </template>

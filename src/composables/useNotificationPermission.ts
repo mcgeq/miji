@@ -4,7 +4,6 @@
  * @description 管理通知权限的请求、检查和状态
  */
 
-import { ref, computed, onMounted } from 'vue';
 import { invoke } from '@tauri-apps/api/core';
 import type { NotificationPermission } from '@/types/notification';
 
@@ -13,7 +12,7 @@ import type { NotificationPermission } from '@/types/notification';
  */
 export function useNotificationPermission() {
   // ==================== 状态 ====================
-  
+
   const permission = ref<NotificationPermission>({
     granted: false,
     supported: true,
@@ -38,9 +37,7 @@ export function useNotificationPermission() {
   /**
    * 是否正在处理
    */
-  const isProcessing = computed(
-    () => permission.value.requesting || checking.value
-  );
+  const isProcessing = computed(() => permission.value.requesting || checking.value);
 
   /**
    * 权限状态文本
@@ -134,7 +131,7 @@ export function useNotificationPermission() {
     } catch (err) {
       console.error('❌ 打开系统设置失败:', err);
       error.value = err instanceof Error ? err.message : String(err);
-      
+
       // 桌面端可能不支持，给出友好提示
       if (String(err).includes('桌面端不支持')) {
         error.value = '桌面端请在系统设置中手动配置通知权限';

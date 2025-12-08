@@ -1,31 +1,31 @@
 <script setup lang="ts">
-/**
- * FormSection - 表单区块组件
- *
- * 用于将相关的表单字段分组
- * 100% Tailwind CSS 4 - 零自定义 CSS
- *
- * @example
- * <FormSection title="基本信息">
- *   <FormRow label="姓名">
- *     <Input v-model="form.name" />
- *   </FormRow>
- *   <FormRow label="邮箱">
- *     <Input v-model="form.email" />
- *   </FormRow>
- * </FormSection>
- */
+  /**
+   * FormSection - 表单区块组件
+   *
+   * 用于将相关的表单字段分组
+   * 100% Tailwind CSS 4 - 零自定义 CSS
+   *
+   * @example
+   * <FormSection title="基本信息">
+   *   <FormRow label="姓名">
+   *     <Input v-model="form.name" />
+   *   </FormRow>
+   *   <FormRow label="邮箱">
+   *     <Input v-model="form.email" />
+   *   </FormRow>
+   * </FormSection>
+   */
 
-interface Props {
-  /** 区块标题 */
-  title?: string;
-  /** 是否显示分隔线 */
-  showDivider?: boolean;
-}
+  interface Props {
+    /** 区块标题 */
+    title?: string;
+    /** 是否显示分隔线 */
+    showDivider?: boolean;
+  }
 
-withDefaults(defineProps<Props>(), {
-  showDivider: true,
-});
+  withDefaults(defineProps<Props>(), {
+    showDivider: true,
+  });
 </script>
 
 <template>

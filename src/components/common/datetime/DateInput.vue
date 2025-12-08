@@ -1,81 +1,80 @@
 <script setup lang="ts">
-/**
- * DateInput - 日期时间输入框
- *
- * 功能：
- * - 显示选中的日期时间
- * - 清除按钮
- * - 点击打开选择面板
- */
+  /**
+   * DateInput - 日期时间输入框
+   *
+   * 功能：
+   * - 显示选中的日期时间
+   * - 清除按钮
+   * - 点击打开选择面板
+   */
 
-import { X } from 'lucide-vue-next';
+  import { X } from 'lucide-vue-next';
 
-interface Props {
-  /** 显示的值 */
-  modelValue?: Date | string | null;
-  /** 占位符 */
-  placeholder?: string;
-  /** 日期格式 */
-  format?: string;
-  /** 是否禁用 */
-  disabled?: boolean;
-  /** 是否聚焦 */
-  isFocused?: boolean;
-}
-
-const props = withDefaults(defineProps<Props>(), {
-  placeholder: '选择日期时间',
-  format: 'yyyy-MM-dd HH:mm:ss',
-  disabled: false,
-  isFocused: false,
-});
-
-const emit = defineEmits<{
-  click: [];
-  clear: [];
-}>();
-
-function handleClick() {
-  if (!props.disabled) {
-    emit('click');
+  interface Props {
+    /** 显示的值 */
+    modelValue?: Date | string | null;
+    /** 占位符 */
+    placeholder?: string;
+    /** 日期格式 */
+    format?: string;
+    /** 是否禁用 */
+    disabled?: boolean;
+    /** 是否聚焦 */
+    isFocused?: boolean;
   }
-}
 
-// 格式化日期
-function formatDate(date: Date, format: string): string {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  const hour = String(date.getHours()).padStart(2, '0');
-  const minute = String(date.getMinutes()).padStart(2, '0');
-  const second = String(date.getSeconds()).padStart(2, '0');
+  const props = withDefaults(defineProps<Props>(), {
+    placeholder: '选择日期时间',
+    format: 'yyyy-MM-dd HH:mm:ss',
+    disabled: false,
+    isFocused: false,
+  });
 
-  return format
-    .replace('yyyy', String(year))
-    .replace('MM', month)
-    .replace('dd', day)
-    .replace('HH', hour)
-    .replace('mm', minute)
-    .replace('ss', second);
-}
+  const emit = defineEmits<{
+    click: [];
+    clear: [];
+  }>();
 
-// 显示值
-const displayValue = computed(() => {
-  if (!props.modelValue) return props.placeholder;
+  function handleClick() {
+    if (!props.disabled) {
+      emit('click');
+    }
+  }
 
-  const date = typeof props.modelValue === 'string'
-    ? new Date(props.modelValue)
-    : props.modelValue;
+  // 格式化日期
+  function formatDate(date: Date, format: string): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hour = String(date.getHours()).padStart(2, '0');
+    const minute = String(date.getMinutes()).padStart(2, '0');
+    const second = String(date.getSeconds()).padStart(2, '0');
 
-  if (Number.isNaN(date.getTime())) return props.placeholder;
+    return format
+      .replace('yyyy', String(year))
+      .replace('MM', month)
+      .replace('dd', day)
+      .replace('HH', hour)
+      .replace('mm', minute)
+      .replace('ss', second);
+  }
 
-  return formatDate(date, props.format);
-});
+  // 显示值
+  const displayValue = computed(() => {
+    if (!props.modelValue) return props.placeholder;
 
-function handleClear(event: Event) {
-  event.stopPropagation();
-  emit('clear');
-}
+    const date =
+      typeof props.modelValue === 'string' ? new Date(props.modelValue) : props.modelValue;
+
+    if (Number.isNaN(date.getTime())) return props.placeholder;
+
+    return formatDate(date, props.format);
+  });
+
+  function handleClear(event: Event) {
+    event.stopPropagation();
+    emit('clear');
+  }
 </script>
 
 <template>

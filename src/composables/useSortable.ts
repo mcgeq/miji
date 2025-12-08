@@ -1,5 +1,5 @@
-import { SortDirection } from '@/schema/common';
 import type { SortOptions } from '@/schema/common';
+import { SortDirection } from '@/schema/common';
 
 // 定义 useSort composable
 export function useSort(defaultSortOptions: Partial<SortOptions> = {}) {

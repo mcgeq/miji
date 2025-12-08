@@ -1,5 +1,4 @@
 import { debounce } from 'es-toolkit';
-import { computed, ref } from 'vue';
 import type { User } from '@/schema/user';
 import { invokeCommand } from '@/types/api';
 

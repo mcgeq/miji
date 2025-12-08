@@ -1,8 +1,8 @@
 import { useCrudActions } from '@/composables/useCrudActions';
+import type { BilReminder, BilReminderCreate, BilReminderUpdate } from '@/schema/money';
 import { MoneyDb } from '@/services/money/money';
 import { useReminderStore } from '@/stores/money';
 import { toast } from '@/utils/toast';
-import type { BilReminder, BilReminderCreate, BilReminderUpdate } from '@/schema/money';
 
 /**
  * 提醒操作 Composable - 重构版本
@@ -57,8 +57,10 @@ export function useReminderActions() {
       );
 
       return true;
-    } catch (error: any) {
-      toast.error(error.message || t('financial.messages.reminderMarkFailed'));
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : t('financial.messages.reminderMarkFailed');
+      toast.error(message);
       return false;
     }
   }
@@ -114,8 +116,10 @@ export function useReminderActions() {
       // 直接使用 store 的 fetchReminders，它会触发全局刷新
       await storeAdapter.fetchAll();
       return true;
-    } catch (error: any) {
-      toast.error(error.message || t('financial.messages.reminderLoadFailed'));
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : t('financial.messages.reminderLoadFailed');
+      toast.error(message);
       return false;
     }
   };

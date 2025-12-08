@@ -1,48 +1,48 @@
 <script lang="ts" setup generic="T extends { [key: string]: unknown }">
-import type { Component } from 'vue';
-import { computed, shallowRef, watch } from 'vue';
+  import type { Component } from 'vue';
+  import { computed, shallowRef, watch } from 'vue';
 
-const props = defineProps<{
-  entities: Map<string, T>;
-  component: Component;
-  readonly?: boolean;
-  displayKey?: keyof T;
-}>();
+  const props = defineProps<{
+    entities: Map<string, T>;
+    component: Component;
+    readonly?: boolean;
+    displayKey?: keyof T;
+  }>();
 
-const emit = defineEmits<{
-  (e: 'update:entities', val: Map<string, T>): void;
-}>();
+  const emit = defineEmits<(e: 'update:entities', val: Map<string, T>) => void>();
 
-// 使用 shallowRef 来防止类型被 Vue 展开为 UnwrapRef<T>
-const internalMap = shallowRef<Map<string, T>>(new Map(props.entities));
+  // 使用 shallowRef 来防止类型被 Vue 展开为 UnwrapRef<T>
+  const internalMap = shallowRef<Map<string, T>>(new Map(props.entities));
 
-// 当 props.entities 更新时同步更新 internalMap
-watch(
-  () => props.entities,
-  val => {
-    internalMap.value = new Map(val);
-  },
-  { deep: false }, // 因为 shallowRef 不需要 deep
-);
+  // 当 props.entities 更新时同步更新 internalMap
+  watch(
+    () => props.entities,
+    val => {
+      internalMap.value = new Map(val);
+    },
+    { deep: false }, // 因为 shallowRef 不需要 deep
+  );
 
-// 将 Map 转为 Array 供 v-for 渲染
-const entityList = computed(() => Array.from(internalMap.value.entries()));
+  // 将 Map 转为 Array 供 v-for 渲染
+  const entityList = computed(() => Array.from(internalMap.value.entries()));
 
-// 更新单个元素
-function updateEntity(key: string, val: T) {
-  internalMap.value.set(key, val);
-  emit('update:entities', new Map(internalMap.value));
-}
+  // 更新单个元素
+  function updateEntity(key: string, val: T) {
+    internalMap.value.set(key, val);
+    emit('update:entities', new Map(internalMap.value));
+  }
 
-// 删除单个元素
-function removeEntity(key: string) {
-  internalMap.value.delete(key);
-  emit('update:entities', new Map(internalMap.value));
-}
+  // 删除单个元素
+  function removeEntity(key: string) {
+    internalMap.value.delete(key);
+    emit('update:entities', new Map(internalMap.value));
+  }
 </script>
 
 <template>
-  <div class="p-4 bg-[light-dark(#f9fafb,#111827)] flex flex-wrap gap-3 rounded-lg transition-colors max-sm:p-2 max-sm:gap-2">
+  <div
+    class="p-4 bg-[light-dark(#f9fafb,#111827)] flex flex-wrap gap-3 rounded-lg transition-colors max-sm:p-2 max-sm:gap-2"
+  >
     <component
       :is="component"
       v-for="([key, entity]) in entityList"

@@ -1,110 +1,110 @@
 <script setup lang="ts">
-import type { BudgetAlertResponse } from '@/types/budget-allocation';
+  import type { BudgetAlertResponse } from '@/types/budget-allocation';
 
-interface Props {
-  /** 预警列表 */
-  alerts: BudgetAlertResponse[];
-  /** 是否显示清除按钮 */
-  showClearButton?: boolean;
-  /** 是否显示统计 */
-  showStats?: boolean;
-  /** 是否显示空状态 */
-  showEmpty?: boolean;
-}
-
-interface Emits {
-  (e: 'view', alert: BudgetAlertResponse): void;
-  (e: 'clear'): void;
-}
-
-const props = withDefaults(defineProps<Props>(), {
-  showClearButton: false,
-  showStats: true,
-  showEmpty: true,
-});
-
-defineEmits<Emits>();
-
-/**
- * 是否有预警
- */
-const hasAlerts = computed(() => props.alerts.length > 0);
-
-/**
- * 排序后的预警（超支优先）
- */
-const sortedAlerts = computed(() => {
-  return [...props.alerts].sort((a, b) => {
-    // 超支的排在前面
-    if (a.alertType === 'EXCEEDED' && b.alertType !== 'EXCEEDED') return -1;
-    if (a.alertType !== 'EXCEEDED' && b.alertType === 'EXCEEDED') return 1;
-
-    // 使用率高的排在前面
-    return b.usagePercentage - a.usagePercentage;
-  });
-});
-
-/**
- * 已超支数量
- */
-const exceededCount = computed(() => {
-  return props.alerts.filter(a => a.alertType === 'EXCEEDED').length;
-});
-
-/**
- * 预警中数量
- */
-const warningCount = computed(() => {
-  return props.alerts.filter(a => a.alertType === 'WARNING').length;
-});
-
-/**
- * 获取预警项样式类（Tailwind）
- */
-function getAlertClasses(alert: BudgetAlertResponse) {
-  const baseClasses = [
-    'flex items-start gap-3 p-4 border-b border-[var(--color-base-200)] last:border-b-0',
-    'cursor-pointer transition-colors duration-200',
-    'hover:bg-[var(--color-base-200)]',
-  ];
-
-  if (alert.alertType === 'EXCEEDED') {
-    return [
-      ...baseClasses,
-      'bg-[color-mix(in_oklch,var(--color-error)_10%,var(--color-base-100))]',
-      'border-l-[3px] border-l-[var(--color-error)]',
-    ].join(' ');
+  interface Props {
+    /** 预警列表 */
+    alerts: BudgetAlertResponse[];
+    /** 是否显示清除按钮 */
+    showClearButton?: boolean;
+    /** 是否显示统计 */
+    showStats?: boolean;
+    /** 是否显示空状态 */
+    showEmpty?: boolean;
   }
 
-  if (alert.alertType === 'WARNING') {
-    return [
-      ...baseClasses,
-      'bg-[color-mix(in_oklch,var(--color-warning)_10%,var(--color-base-100))]',
-      'border-l-[3px] border-l-[var(--color-warning)]',
-    ].join(' ');
+  interface Emits {
+    (e: 'view', alert: BudgetAlertResponse): void;
+    (e: 'clear'): void;
   }
 
-  return baseClasses.join(' ');
-}
-
-/**
- * 获取使用率样式类（Tailwind）
- */
-function getUsageRateClasses(rate: number) {
-  if (rate >= 100) return 'text-[var(--color-error)] font-medium';
-  if (rate >= 80) return 'text-[var(--color-warning)] font-medium';
-  return 'text-[var(--color-base-content)] font-medium';
-}
-
-/**
- * 格式化金额
- */
-function formatAmount(amount: number): string {
-  return Math.abs(amount).toLocaleString('zh-CN', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
+  const props = withDefaults(defineProps<Props>(), {
+    showClearButton: false,
+    showStats: true,
+    showEmpty: true,
   });
-}
+
+  defineEmits<Emits>();
+
+  /**
+   * 是否有预警
+   */
+  const hasAlerts = computed(() => props.alerts.length > 0);
+
+  /**
+   * 排序后的预警（超支优先）
+   */
+  const sortedAlerts = computed(() => {
+    return [...props.alerts].sort((a, b) => {
+      // 超支的排在前面
+      if (a.alertType === 'EXCEEDED' && b.alertType !== 'EXCEEDED') return -1;
+      if (a.alertType !== 'EXCEEDED' && b.alertType === 'EXCEEDED') return 1;
+
+      // 使用率高的排在前面
+      return b.usagePercentage - a.usagePercentage;
+    });
+  });
+
+  /**
+   * 已超支数量
+   */
+  const exceededCount = computed(() => {
+    return props.alerts.filter(a => a.alertType === 'EXCEEDED').length;
+  });
+
+  /**
+   * 预警中数量
+   */
+  const warningCount = computed(() => {
+    return props.alerts.filter(a => a.alertType === 'WARNING').length;
+  });
+
+  /**
+   * 获取预警项样式类（Tailwind）
+   */
+  function getAlertClasses(alert: BudgetAlertResponse) {
+    const baseClasses = [
+      'flex items-start gap-3 p-4 border-b border-[var(--color-base-200)] last:border-b-0',
+      'cursor-pointer transition-colors duration-200',
+      'hover:bg-[var(--color-base-200)]',
+    ];
+
+    if (alert.alertType === 'EXCEEDED') {
+      return [
+        ...baseClasses,
+        'bg-[color-mix(in_oklch,var(--color-error)_10%,var(--color-base-100))]',
+        'border-l-[3px] border-l-[var(--color-error)]',
+      ].join(' ');
+    }
+
+    if (alert.alertType === 'WARNING') {
+      return [
+        ...baseClasses,
+        'bg-[color-mix(in_oklch,var(--color-warning)_10%,var(--color-base-100))]',
+        'border-l-[3px] border-l-[var(--color-warning)]',
+      ].join(' ');
+    }
+
+    return baseClasses.join(' ');
+  }
+
+  /**
+   * 获取使用率样式类（Tailwind）
+   */
+  function getUsageRateClasses(rate: number) {
+    if (rate >= 100) return 'text-[var(--color-error)] font-medium';
+    if (rate >= 80) return 'text-[var(--color-warning)] font-medium';
+    return 'text-[var(--color-base-content)] font-medium';
+  }
+
+  /**
+   * 格式化金额
+   */
+  function formatAmount(amount: number): string {
+    return Math.abs(amount).toLocaleString('zh-CN', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+  }
 </script>
 
 <template>
@@ -113,8 +113,12 @@ function formatAmount(amount: number): string {
     class="bg-[var(--color-base-100)] border border-[var(--color-base-300)] rounded-xl overflow-hidden"
   >
     <!-- 面板头部 -->
-    <div class="flex justify-between items-center p-4 border-b border-[var(--color-base-300)] bg-[var(--color-base-200)]">
-      <h3 class="flex items-center gap-2 m-0 text-base font-semibold text-[var(--color-base-content)]">
+    <div
+      class="flex justify-between items-center p-4 border-b border-[var(--color-base-300)] bg-[var(--color-base-200)]"
+    >
+      <h3
+        class="flex items-center gap-2 m-0 text-base font-semibold text-[var(--color-base-content)]"
+      >
         <span class="text-lg">🔔</span>
         <span>预算预警</span>
         <span class="text-[var(--color-neutral)] text-sm font-normal">({{ alerts.length }})</span>
@@ -162,7 +166,8 @@ function formatAmount(amount: number): string {
             <span class="flex items-center gap-1">
               <span class="text-[var(--color-neutral)]">剩余:</span>
               <span
-                class="font-medium" :class="[
+                class="font-medium"
+                :class="[
                   alert.remainingAmount < 0 ? 'text-[var(--color-error)]' : 'text-[var(--color-base-content)]',
                 ]"
               >
@@ -206,14 +211,8 @@ function formatAmount(amount: number): string {
     v-else-if="showEmpty"
     class="flex flex-col items-center justify-center py-12 px-6 bg-[var(--color-base-100)] border border-[var(--color-base-300)] rounded-xl text-center"
   >
-    <div class="text-5xl mb-4">
-      ✅
-    </div>
-    <div class="text-base font-semibold text-[var(--color-base-content)] mb-2">
-      暂无预警
-    </div>
-    <div class="text-sm text-[var(--color-neutral)]">
-      所有预算使用正常
-    </div>
+    <div class="text-5xl mb-4">✅</div>
+    <div class="text-base font-semibold text-[var(--color-base-content)] mb-2">暂无预警</div>
+    <div class="text-sm text-[var(--color-neutral)]">所有预算使用正常</div>
   </div>
 </template>

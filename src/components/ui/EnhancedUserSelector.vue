@@ -1,171 +1,176 @@
 <script setup lang="ts">
-import { useUserSearch } from '@/composables/useUserSearch';
-import type { User } from '@/schema/user';
+  import { useUserSearch } from '@/composables/useUserSearch';
+  import type { User } from '@/schema/user';
 
-interface Props {
-  selectedUser?: User | null;
-  placeholder?: string;
-  disabled?: boolean;
-  showRecentUsers?: boolean;
-  showSearchHistory?: boolean;
-}
-
-interface Emits {
-  select: [user: User];
-  clear: [];
-}
-
-const props = withDefaults(defineProps<Props>(), {
-  placeholder: '输入完整邮箱地址搜索用户',
-  disabled: false,
-  showRecentUsers: true,
-  showSearchHistory: true,
-});
-
-const emit = defineEmits<Emits>();
-
-const {
-  searchQuery,
-  users,
-  recentUsers,
-  loading,
-  error,
-  selectedUser,
-  searchHistory,
-  selectUser,
-  clearSelection,
-  debouncedSearch,
-  loadRecentUsers,
-  clearSearchHistory,
-  reset,
-} = useUserSearch();
-
-// 响应式状态
-const showDropdown = ref(false);
-const inputRef = ref<HTMLInputElement>();
-const dropdownRef = ref<HTMLElement>();
-
-// 当前显示的用户列表
-const displayUsers = computed(() => {
-  if (searchQuery.value.trim()) {
-    return users.value;
+  interface Props {
+    selectedUser?: User | null;
+    placeholder?: string;
+    disabled?: boolean;
+    showRecentUsers?: boolean;
+    showSearchHistory?: boolean;
   }
-  if (props.showRecentUsers && recentUsers.value.length > 0) {
-    return recentUsers.value;
-  }
-  return [];
-});
 
-// 监听搜索查询变化
-watch(searchQuery, newQuery => {
-  if (newQuery.trim()) {
-    debouncedSearch();
-    showDropdown.value = true;
-  } else {
-    showDropdown.value = !!displayUsers.value.length;
+  interface Emits {
+    select: [user: User];
+    clear: [];
   }
-});
 
-// 监听外部选中用户变化
-watch(() => props.selectedUser, newUser => {
-  if (newUser) {
-    selectUser(newUser);
-    searchQuery.value = `${newUser.name} (${newUser.email})`;
+  const props = withDefaults(defineProps<Props>(), {
+    placeholder: '输入完整邮箱地址搜索用户',
+    disabled: false,
+    showRecentUsers: true,
+    showSearchHistory: true,
+  });
+
+  const emit = defineEmits<Emits>();
+
+  const {
+    searchQuery,
+    users,
+    recentUsers,
+    loading,
+    error,
+    selectedUser,
+    searchHistory,
+    selectUser,
+    clearSelection,
+    debouncedSearch,
+    loadRecentUsers,
+    clearSearchHistory,
+    reset,
+  } = useUserSearch();
+
+  // 响应式状态
+  const showDropdown = ref(false);
+  const inputRef = ref<HTMLInputElement>();
+  const dropdownRef = ref<HTMLElement>();
+
+  // 当前显示的用户列表
+  const displayUsers = computed(() => {
+    if (searchQuery.value.trim()) {
+      return users.value;
+    }
+    if (props.showRecentUsers && recentUsers.value.length > 0) {
+      return recentUsers.value;
+    }
+    return [];
+  });
+
+  // 监听搜索查询变化
+  watch(searchQuery, newQuery => {
+    if (newQuery.trim()) {
+      debouncedSearch();
+      showDropdown.value = true;
+    } else {
+      showDropdown.value = !!displayUsers.value.length;
+    }
+  });
+
+  // 监听外部选中用户变化
+  watch(
+    () => props.selectedUser,
+    newUser => {
+      if (newUser) {
+        selectUser(newUser);
+        searchQuery.value = `${newUser.name} (${newUser.email})`;
+        showDropdown.value = false;
+      } else {
+        clearSelection();
+        searchQuery.value = '';
+      }
+    },
+    { immediate: true },
+  );
+
+  // 选择用户
+  function handleUserSelect(user: User) {
+    selectUser(user);
+    searchQuery.value = `${user.name} (${user.email})`;
     showDropdown.value = false;
-  } else {
+    emit('select', user);
+  }
+
+  // 清除选择
+  function handleClear() {
     clearSelection();
     searchQuery.value = '';
-  }
-}, { immediate: true });
-
-// 选择用户
-function handleUserSelect(user: User) {
-  selectUser(user);
-  searchQuery.value = `${user.name} (${user.email})`;
-  showDropdown.value = false;
-  emit('select', user);
-}
-
-// 清除选择
-function handleClear() {
-  clearSelection();
-  searchQuery.value = '';
-  showDropdown.value = false;
-  emit('clear');
-  inputRef.value?.focus();
-}
-
-// 处理输入框焦点
-function handleInputFocus() {
-  if (displayUsers.value.length > 0 || searchHistory.value.length > 0) {
-    showDropdown.value = true;
-  }
-  // 加载最近用户
-  if (props.showRecentUsers) {
-    loadRecentUsers();
-  }
-}
-
-// 处理输入框失焦
-function handleInputBlur(event: FocusEvent) {
-  // 如果焦点转移到下拉框内，不关闭
-  if (dropdownRef.value?.contains(event.relatedTarget as Node)) {
-    return;
-  }
-  // 延迟关闭下拉框，以便点击选择生效
-  setTimeout(() => {
     showDropdown.value = false;
-  }, 200);
-}
+    emit('clear');
+    inputRef.value?.focus();
+  }
 
-// 处理键盘导航
-const highlightedIndex = ref(-1);
+  // 处理输入框焦点
+  function handleInputFocus() {
+    if (displayUsers.value.length > 0 || searchHistory.value.length > 0) {
+      showDropdown.value = true;
+    }
+    // 加载最近用户
+    if (props.showRecentUsers) {
+      loadRecentUsers();
+    }
+  }
 
-function handleKeyDown(event: KeyboardEvent) {
-  if (!showDropdown.value) return;
+  // 处理输入框失焦
+  function handleInputBlur(event: FocusEvent) {
+    // 如果焦点转移到下拉框内，不关闭
+    if (dropdownRef.value?.contains(event.relatedTarget as Node)) {
+      return;
+    }
+    // 延迟关闭下拉框，以便点击选择生效
+    setTimeout(() => {
+      showDropdown.value = false;
+    }, 200);
+  }
 
-  const totalItems = displayUsers.value.length + (props.showSearchHistory ? searchHistory.value.length : 0);
+  // 处理键盘导航
+  const highlightedIndex = ref(-1);
 
-  switch (event.key) {
-    case 'ArrowDown':
-      event.preventDefault();
-      highlightedIndex.value = Math.min(highlightedIndex.value + 1, totalItems - 1);
-      break;
-    case 'ArrowUp':
-      event.preventDefault();
-      highlightedIndex.value = Math.max(highlightedIndex.value - 1, -1);
-      break;
-    case 'Enter':
-      event.preventDefault();
-      if (highlightedIndex.value >= 0) {
-        if (highlightedIndex.value < displayUsers.value.length) {
-          handleUserSelect(displayUsers.value[highlightedIndex.value]);
-        } else {
-          // 选择搜索历史
-          const historyIndex = highlightedIndex.value - displayUsers.value.length;
-          if (historyIndex < searchHistory.value.length) {
-            searchQuery.value = searchHistory.value[historyIndex];
-            debouncedSearch();
+  function handleKeyDown(event: KeyboardEvent) {
+    if (!showDropdown.value) return;
+
+    const totalItems =
+      displayUsers.value.length + (props.showSearchHistory ? searchHistory.value.length : 0);
+
+    switch (event.key) {
+      case 'ArrowDown':
+        event.preventDefault();
+        highlightedIndex.value = Math.min(highlightedIndex.value + 1, totalItems - 1);
+        break;
+      case 'ArrowUp':
+        event.preventDefault();
+        highlightedIndex.value = Math.max(highlightedIndex.value - 1, -1);
+        break;
+      case 'Enter':
+        event.preventDefault();
+        if (highlightedIndex.value >= 0) {
+          if (highlightedIndex.value < displayUsers.value.length) {
+            handleUserSelect(displayUsers.value[highlightedIndex.value]);
+          } else {
+            // 选择搜索历史
+            const historyIndex = highlightedIndex.value - displayUsers.value.length;
+            if (historyIndex < searchHistory.value.length) {
+              searchQuery.value = searchHistory.value[historyIndex];
+              debouncedSearch();
+            }
           }
         }
-      }
-      break;
-    case 'Escape':
-      showDropdown.value = false;
-      highlightedIndex.value = -1;
-      break;
+        break;
+      case 'Escape':
+        showDropdown.value = false;
+        highlightedIndex.value = -1;
+        break;
+    }
   }
-}
 
-// 重置高亮索引
-watch([displayUsers, searchHistory], () => {
-  highlightedIndex.value = -1;
-});
+  // 重置高亮索引
+  watch([displayUsers, searchHistory], () => {
+    highlightedIndex.value = -1;
+  });
 
-// 组件卸载时清理
-onUnmounted(() => {
-  reset();
-});
+  // 组件卸载时清理
+  onUnmounted(() => {
+    reset();
+  });
 </script>
 
 <template>
@@ -188,7 +193,7 @@ onUnmounted(() => {
         @focus="handleInputFocus"
         @blur="handleInputBlur"
         @keydown="handleKeyDown"
-      >
+      />
 
       <!-- 清除按钮 -->
       <button
@@ -230,7 +235,10 @@ onUnmounted(() => {
         class="border-b border-gray-100 dark:border-gray-700"
       >
         <div class="p-2 px-3 flex items-center justify-between bg-gray-50 dark:bg-gray-800/50">
-          <span class="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">搜索历史</span>
+          <span
+            class="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider"
+            >搜索历史</span
+          >
           <button
             type="button"
             class="p-0.5 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
@@ -259,12 +267,18 @@ onUnmounted(() => {
         class="border-b border-gray-100 dark:border-gray-700"
       >
         <div class="p-2 px-3 bg-gray-50 dark:bg-gray-800/50">
-          <span class="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">最近用户</span>
+          <span
+            class="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider"
+            >最近用户</span
+          >
         </div>
       </div>
 
       <!-- 加载状态 -->
-      <div v-if="loading" class="p-3 flex items-center justify-center gap-2 text-gray-600 dark:text-gray-400 text-sm">
+      <div
+        v-if="loading"
+        class="p-3 flex items-center justify-center gap-2 text-gray-600 dark:text-gray-400 text-sm"
+      >
         <LucideLoader2 class="w-4 h-4 animate-spin" />
         <span>搜索中...</span>
       </div>
@@ -287,26 +301,41 @@ onUnmounted(() => {
               :src="user.avatarUrl"
               :alt="user.name"
               class="w-full h-full object-cover"
+            />
+            <div
+              v-else
+              class="w-full h-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-gray-600 dark:text-gray-400 font-semibold text-base"
             >
-            <div v-else class="w-full h-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-gray-600 dark:text-gray-400 font-semibold text-base">
               {{ user.name.charAt(0).toUpperCase() }}
             </div>
           </div>
 
           <div class="flex-1 min-w-0">
-            <div class="font-medium text-gray-900 dark:text-white whitespace-nowrap overflow-hidden text-ellipsis">
+            <div
+              class="font-medium text-gray-900 dark:text-white whitespace-nowrap overflow-hidden text-ellipsis"
+            >
               {{ user.name }}
             </div>
-            <div class="text-xs text-gray-600 dark:text-gray-400 whitespace-nowrap overflow-hidden text-ellipsis">
+            <div
+              class="text-xs text-gray-600 dark:text-gray-400 whitespace-nowrap overflow-hidden text-ellipsis"
+            >
               {{ user.email }}
             </div>
           </div>
 
           <div class="flex items-center gap-2 shrink-0">
-            <div v-if="user.isVerified" class="text-green-500 dark:text-green-400" title="已验证用户">
+            <div
+              v-if="user.isVerified"
+              class="text-green-500 dark:text-green-400"
+              title="已验证用户"
+            >
               <LucideShieldCheck class="w-4 h-4" />
             </div>
-            <div v-if="user.lastActiveAt" class="text-green-500 dark:text-green-400" title="最近活跃">
+            <div
+              v-if="user.lastActiveAt"
+              class="text-green-500 dark:text-green-400"
+              title="最近活跃"
+            >
               <LucideCircle class="w-2 h-2 fill-current" />
             </div>
           </div>
@@ -314,13 +343,19 @@ onUnmounted(() => {
       </div>
 
       <!-- 无结果 -->
-      <div v-else-if="searchQuery.trim()" class="p-3 flex items-center justify-center gap-2 text-gray-600 dark:text-gray-400 text-sm">
+      <div
+        v-else-if="searchQuery.trim()"
+        class="p-3 flex items-center justify-center gap-2 text-gray-600 dark:text-gray-400 text-sm"
+      >
         <LucideUserX class="w-4 h-4" />
         <span>未找到用户</span>
       </div>
 
       <!-- 空状态提示 -->
-      <div v-else class="p-3 flex items-center justify-center gap-2 text-gray-600 dark:text-gray-400 text-sm">
+      <div
+        v-else
+        class="p-3 flex items-center justify-center gap-2 text-gray-600 dark:text-gray-400 text-sm"
+      >
         <LucideUsers class="w-4 h-4" />
         <span>输入邮箱地址开始搜索</span>
       </div>

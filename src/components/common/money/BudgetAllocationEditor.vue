@@ -1,196 +1,206 @@
 <script setup lang="ts">
-import CategorySelector from '@/components/common/CategorySelector.vue';
-import { Modal } from '@/components/ui';
-import FormRow from '@/components/ui/FormRow.vue';
-import Input from '@/components/ui/Input.vue';
-import Select from '@/components/ui/Select.vue';
-import Textarea from '@/components/ui/Textarea.vue';
-import {
-  OverspendLimitType,
-} from '@/types/budget-allocation';
-import type { SelectOption } from '@/components/ui/Select.vue';
-import type {
-  BudgetAllocationCreateRequest,
-  BudgetAllocationResponse,
-} from '@/types/budget-allocation';
+  import CategorySelector from '@/components/common/CategorySelector.vue';
+  import { Modal } from '@/components/ui';
+  import FormRow from '@/components/ui/FormRow.vue';
+  import FormInput from '@/components/ui/Input.vue';
+  import type { SelectOption } from '@/components/ui/Select.vue';
+  import Select from '@/components/ui/Select.vue';
+  import Textarea from '@/components/ui/Textarea.vue';
+  import type {
+    BudgetAllocationCreateRequest,
+    BudgetAllocationResponse,
+  } from '@/types/budget-allocation';
+  import { OverspendLimitType } from '@/types/budget-allocation';
 
-interface FormData {
-  allocationType: 'member' | 'member-category';
-  memberSerialNum?: string;
-  selectedCategories: string[]; // 分类名称数组
-  amountType: 'fixed' | 'percentage';
-  allocatedAmount?: number;
-  percentage?: number;
-  allowOverspend: boolean;
-  overspendLimitType: OverspendLimitType;
-  overspendLimitValue?: number;
-  alertEnabled: boolean;
-  alertThreshold: number;
-  priority: number;
-  isMandatory: boolean;
-  notes?: string;
-}
-
-interface Props {
-  /** 是否为编辑模式 */
-  isEdit?: boolean;
-  /** 编辑的分配数据 */
-  allocation?: BudgetAllocationResponse;
-  /** 可用成员列表 */
-  members?: Array<{ serialNum: string; name: string }>;
-  /** 可用分类列表 */
-  categories?: Array<{ serialNum: string; name: string }>;
-  /** 预算总额（用于百分比计算） */
-  budgetTotal?: number;
-  /** 是否加载中 */
-  loading?: boolean;
-}
-
-interface Emits {
-  (e: 'submit', data: BudgetAllocationCreateRequest): void;
-  (e: 'cancel'): void;
-}
-
-const props = withDefaults(defineProps<Props>(), {
-  isEdit: false,
-  allocation: undefined,
-  members: () => [],
-  categories: () => [],
-  budgetTotal: 0,
-  loading: false,
-});
-
-const emit = defineEmits<Emits>();
-
-/**
- * 成员选项
- */
-const memberOptions = computed<SelectOption[]>(() => [
-  { value: '', label: '请选择成员' },
-  ...props.members.map(m => ({
-    value: m.serialNum,
-    label: m.name,
-  })),
-]);
-
-/**
- * 表单数据
- */
-const formData = ref<FormData>({
-  allocationType: 'member',
-  selectedCategories: [],
-  amountType: 'fixed',
-  allowOverspend: false,
-  overspendLimitType: OverspendLimitType.NONE,
-  alertEnabled: true,
-  alertThreshold: 80,
-  priority: 3,
-  isMandatory: false,
-});
-
-/**
- * 表单验证
- */
-const isValid = computed(() => {
-  // 必须选择成员
-  if (!formData.value.memberSerialNum) {
-    return false;
+  interface FormData {
+    allocationType: 'member' | 'member-category';
+    memberSerialNum?: string;
+    selectedCategories: string[]; // 分类名称数组
+    amountType: 'fixed' | 'percentage';
+    allocatedAmount?: number;
+    percentage?: number;
+    allowOverspend: boolean;
+    overspendLimitType: OverspendLimitType;
+    overspendLimitValue?: number;
+    alertEnabled: boolean;
+    alertThreshold: number;
+    priority: number;
+    isMandatory: boolean;
+    notes?: string;
   }
 
-  // 如果是成员+分类，必须选择分类
-  if (formData.value.allocationType === 'member-category' && formData.value.selectedCategories.length === 0) {
-    return false;
+  interface Props {
+    /** 是否为编辑模式 */
+    isEdit?: boolean;
+    /** 编辑的分配数据 */
+    allocation?: BudgetAllocationResponse;
+    /** 可用成员列表 */
+    members?: Array<{ serialNum: string; name: string }>;
+    /** 可用分类列表 */
+    categories?: Array<{ serialNum: string; name: string }>;
+    /** 预算总额（用于百分比计算） */
+    budgetTotal?: number;
+    /** 是否加载中 */
+    loading?: boolean;
   }
 
-  // 必须输入金额或百分比
-  if (formData.value.amountType === 'fixed') {
-    if (!formData.value.allocatedAmount || formData.value.allocatedAmount <= 0) {
+  interface Emits {
+    (e: 'submit', data: BudgetAllocationCreateRequest): void;
+    (e: 'cancel'): void;
+  }
+
+  const props = withDefaults(defineProps<Props>(), {
+    isEdit: false,
+    allocation: undefined,
+    members: () => [],
+    categories: () => [],
+    budgetTotal: 0,
+    loading: false,
+  });
+
+  const emit = defineEmits<Emits>();
+
+  /**
+   * 成员选项
+   */
+  const memberOptions = computed<SelectOption[]>(() => [
+    { value: '', label: '请选择成员' },
+    ...props.members.map(m => ({
+      value: m.serialNum,
+      label: m.name,
+    })),
+  ]);
+
+  /**
+   * 表单数据
+   */
+  const formData = ref<FormData>({
+    allocationType: 'member',
+    selectedCategories: [],
+    amountType: 'fixed',
+    allowOverspend: false,
+    overspendLimitType: OverspendLimitType.NONE,
+    alertEnabled: true,
+    alertThreshold: 80,
+    priority: 3,
+    isMandatory: false,
+  });
+
+  /**
+   * 表单验证
+   */
+  const isValid = computed(() => {
+    // 必须选择成员
+    if (!formData.value.memberSerialNum) {
       return false;
     }
-  } else {
-    if (!formData.value.percentage || formData.value.percentage <= 0 || formData.value.percentage > 100) {
+
+    // 如果是成员+分类，必须选择分类
+    if (
+      formData.value.allocationType === 'member-category' &&
+      formData.value.selectedCategories.length === 0
+    ) {
       return false;
     }
-  }
 
-  return true;
-});
-
-/**
- * 提交表单
- */
-function handleSubmit() {
-  if (!isValid.value) return;
-
-  // 将分类名称转换为 serialNum（从 categories 中查找）
-  let categorySerialNum: string | undefined;
-  if (formData.value.allocationType === 'member-category' && formData.value.selectedCategories.length > 0) {
-    const categoryName = formData.value.selectedCategories[0];
-    const category = props.categories?.find(c => c.name === categoryName);
-    categorySerialNum = category?.serialNum;
-  }
-
-  const data: BudgetAllocationCreateRequest = {
-    memberSerialNum: formData.value.memberSerialNum,
-    categorySerialNum,
-    allocatedAmount: formData.value.amountType === 'fixed' ? formData.value.allocatedAmount : undefined,
-    percentage: formData.value.amountType === 'percentage' ? formData.value.percentage : undefined,
-    allowOverspend: formData.value.allowOverspend,
-    overspendLimitType: formData.value.overspendLimitType,
-    overspendLimitValue: formData.value.overspendLimitValue,
-    alertEnabled: formData.value.alertEnabled,
-    alertThreshold: formData.value.alertThreshold,
-    priority: formData.value.priority,
-    isMandatory: formData.value.isMandatory,
-    notes: formData.value.notes,
-  };
-
-  emit('submit', data);
-}
-
-/**
- * 取消
- */
-function handleCancel() {
-  emit('cancel');
-}
-
-/**
- * 初始化表单数据
- */
-watch(
-  () => props.allocation,
-  newValue => {
-    if (newValue) {
-      // 将 categorySerialNum 转换为分类名称
-      const selectedCategories: string[] = [];
-      if (newValue.categorySerialNum) {
-        const category = props.categories?.find(c => c.serialNum === newValue.categorySerialNum);
-        if (category) {
-          selectedCategories.push(category.name);
-        }
+    // 必须输入金额或百分比
+    if (formData.value.amountType === 'fixed') {
+      if (!formData.value.allocatedAmount || formData.value.allocatedAmount <= 0) {
+        return false;
       }
+    } else {
+      if (
+        !formData.value.percentage ||
+        formData.value.percentage <= 0 ||
+        formData.value.percentage > 100
+      ) {
+        return false;
+      }
+    }
+
+    return true;
+  });
+
+  /**
+   * 提交表单
+   */
+  function handleSubmit() {
+    if (!isValid.value) return;
+
+    // 将分类名称转换为 serialNum（从 categories 中查找）
+    let categorySerialNum: string | undefined;
+    if (
+      formData.value.allocationType === 'member-category' &&
+      formData.value.selectedCategories.length > 0
+    ) {
+      const categoryName = formData.value.selectedCategories[0];
+      const category = props.categories?.find(c => c.name === categoryName);
+      categorySerialNum = category?.serialNum;
+    }
+
+    const data: BudgetAllocationCreateRequest = {
+      memberSerialNum: formData.value.memberSerialNum,
+      categorySerialNum,
+      allocatedAmount:
+        formData.value.amountType === 'fixed' ? formData.value.allocatedAmount : undefined,
+      percentage:
+        formData.value.amountType === 'percentage' ? formData.value.percentage : undefined,
+      allowOverspend: formData.value.allowOverspend,
+      overspendLimitType: formData.value.overspendLimitType,
+      overspendLimitValue: formData.value.overspendLimitValue,
+      alertEnabled: formData.value.alertEnabled,
+      alertThreshold: formData.value.alertThreshold,
+      priority: formData.value.priority,
+      isMandatory: formData.value.isMandatory,
+      notes: formData.value.notes,
+    };
+
+    emit('submit', data);
+  }
+
+  /**
+   * 取消
+   */
+  function handleCancel() {
+    emit('cancel');
+  }
+
+  /**
+   * 获取分类名称
+   */
+  function getCategoryNames(categorySerialNum: string | undefined): string[] {
+    if (!categorySerialNum) return [];
+    const category = props.categories?.find(c => c.serialNum === categorySerialNum);
+    return category ? [category.name] : [];
+  }
+
+  /**
+   * 初始化表单数据
+   */
+  watch(
+    () => props.allocation,
+    newValue => {
+      if (!newValue) return;
 
       formData.value = {
         allocationType: newValue.categorySerialNum ? 'member-category' : 'member',
         memberSerialNum: newValue.memberSerialNum,
-        selectedCategories,
+        selectedCategories: getCategoryNames(newValue.categorySerialNum),
         amountType: newValue.allocatedAmount ? 'fixed' : 'percentage',
         allocatedAmount: newValue.allocatedAmount,
         percentage: newValue.percentage,
-        allowOverspend: newValue.allowOverspend || false,
+        allowOverspend: Boolean(newValue.allowOverspend),
         overspendLimitType: newValue.overspendLimitType || OverspendLimitType.NONE,
         overspendLimitValue: newValue.overspendLimitValue,
         alertEnabled: newValue.alertEnabled ?? true,
         alertThreshold: newValue.alertThreshold || 80,
         priority: newValue.priority || 3,
-        isMandatory: newValue.isMandatory || false,
+        isMandatory: Boolean(newValue.isMandatory),
         notes: newValue.notes,
       };
-    }
-  },
-  { immediate: true },
-);
+    },
+    { immediate: true },
+  );
 </script>
 
 <template>
@@ -207,19 +217,27 @@ watch(
     <form class="flex flex-col gap-4" @submit.prevent="handleSubmit">
       <!-- 分配目标 -->
       <div class="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
-        <h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-3">
-          分配目标
-        </h3>
+        <h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-3">分配目标</h3>
 
         <!-- 分配类型 -->
         <FormRow label="分配类型" required>
           <div class="flex gap-4 flex-wrap">
             <label class="flex items-center gap-2 cursor-pointer text-sm">
-              <input v-model="formData.allocationType" type="radio" value="member" class="cursor-pointer">
+              <input
+                v-model="formData.allocationType"
+                type="radio"
+                value="member"
+                class="cursor-pointer"
+              />
               <span>成员</span>
             </label>
             <label class="flex items-center gap-2 cursor-pointer text-sm">
-              <input v-model="formData.allocationType" type="radio" value="member-category" class="cursor-pointer">
+              <input
+                v-model="formData.allocationType"
+                type="radio"
+                value="member-category"
+                class="cursor-pointer"
+              />
               <span>成员+分类</span>
             </label>
           </div>
@@ -253,19 +271,27 @@ watch(
 
       <!-- 金额设置 -->
       <div class="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
-        <h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-3">
-          金额设置
-        </h3>
+        <h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-3">金额设置</h3>
 
         <!-- 金额类型 -->
         <FormRow label="分配方式" required>
           <div class="flex gap-4 flex-wrap">
             <label class="flex items-center gap-2 cursor-pointer text-sm">
-              <input v-model="formData.amountType" type="radio" value="fixed" class="cursor-pointer">
+              <input
+                v-model="formData.amountType"
+                type="radio"
+                value="fixed"
+                class="cursor-pointer"
+              />
               <span>固定金额</span>
             </label>
             <label class="flex items-center gap-2 cursor-pointer text-sm">
-              <input v-model="formData.amountType" type="radio" value="percentage" class="cursor-pointer">
+              <input
+                v-model="formData.amountType"
+                type="radio"
+                value="percentage"
+                class="cursor-pointer"
+              />
               <span>百分比</span>
             </label>
           </div>
@@ -273,7 +299,7 @@ watch(
 
         <!-- 固定金额 -->
         <FormRow v-if="formData.amountType === 'fixed'" label="分配金额" required>
-          <Input
+          <FormInput
             v-model="formData.allocatedAmount"
             type="number"
             placeholder="0.00"
@@ -281,15 +307,13 @@ watch(
             :required="true"
             full-width
           >
-            <template #prefix>
-              ¥
-            </template>
-          </Input>
+            <template #prefix>¥</template>
+          </FormInput>
         </FormRow>
 
         <!-- 百分比 -->
         <FormRow v-else label="百分比" required>
-          <Input
+          <FormInput
             v-model="formData.percentage"
             type="number"
             placeholder="0"
@@ -297,10 +321,8 @@ watch(
             :required="true"
             full-width
           >
-            <template #suffix>
-              %
-            </template>
-          </Input>
+            <template #suffix>%</template>
+          </FormInput>
         </FormRow>
       </div>
 

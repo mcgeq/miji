@@ -1,76 +1,76 @@
 <script setup lang="ts">
-/**
- * DateTimePanel - 日期时间选择面板
- *
- * 整合 CalendarPanel 和 TimePicker
- */
+  /**
+   * DateTimePanel - 日期时间选择面板
+   *
+   * 整合 CalendarPanel 和 TimePicker
+   */
 
-import { Check, X } from 'lucide-vue-next';
-import CalendarPanel from './CalendarPanel.vue';
-import TimePicker from './TimePicker.vue';
+  import { Check, X } from 'lucide-vue-next';
+  import CalendarPanel from './CalendarPanel.vue';
+  import type TimePicker from './TimePicker.vue';
 
-interface Props {
-  /** 当前显示的月份 */
-  currentDate: Date;
-  /** 选中的日期时间 */
-  selectedDate: Date | null;
-  /** 小时 */
-  hour: number;
-  /** 分钟 */
-  minute: number;
-  /** 秒 */
-  second: number;
-  /** 是否禁用 */
-  disabled?: boolean;
-  /** 面板位置 */
-  position: { top: number; left: number };
-}
+  interface Props {
+    /** 当前显示的月份 */
+    currentDate: Date;
+    /** 选中的日期时间 */
+    selectedDate: Date | null;
+    /** 小时 */
+    hour: number;
+    /** 分钟 */
+    minute: number;
+    /** 秒 */
+    second: number;
+    /** 是否禁用 */
+    disabled?: boolean;
+    /** 面板位置 */
+    position: { top: number; left: number };
+  }
 
-interface CalendarDay {
-  date: number;
-  month: number;
-  year: number;
-  isOtherMonth: boolean;
-  isToday: boolean;
-  isSelected: boolean;
-  fullDate: Date;
-}
+  interface CalendarDay {
+    date: number;
+    month: number;
+    year: number;
+    isOtherMonth: boolean;
+    isToday: boolean;
+    isSelected: boolean;
+    fullDate: Date;
+  }
 
-const props = withDefaults(defineProps<Props>(), {
-  disabled: false,
-});
+  const props = withDefaults(defineProps<Props>(), {
+    disabled: false,
+  });
 
-const emit = defineEmits<{
-  'selectDate': [day: CalendarDay];
-  'update:hour': [value: number];
-  'update:minute': [value: number];
-  'update:second': [value: number];
-  'previousMonth': [];
-  'nextMonth': [];
-  'confirm': [];
-  'cancel': [];
-}>();
+  const emit = defineEmits<{
+    selectDate: [day: CalendarDay];
+    'update:hour': [value: number];
+    'update:minute': [value: number];
+    'update:second': [value: number];
+    previousMonth: [];
+    nextMonth: [];
+    confirm: [];
+    cancel: [];
+  }>();
 
-const panelStyle = computed(() => ({
-  position: 'fixed' as const,
-  top: `${props.position.top}px`,
-  left: `${props.position.left}px`,
-  zIndex: 9999999, // 必须高于 Modal 的 z-index (999999)
-}));
+  const panelStyle = computed(() => ({
+    position: 'fixed' as const,
+    top: `${props.position.top}px`,
+    left: `${props.position.left}px`,
+    zIndex: 9999999, // 必须高于 Modal 的 z-index (999999)
+  }));
 
-const timePickerRef = ref<InstanceType<typeof TimePicker>>();
+  const timePickerRef = ref<InstanceType<typeof TimePicker>>();
 
-function handleCancel() {
-  // 关闭虚拟键盘
-  timePickerRef.value?.hideNumpadKeyboard();
-  emit('cancel');
-}
+  function handleCancel() {
+    // 关闭虚拟键盘
+    timePickerRef.value?.hideNumpadKeyboard();
+    emit('cancel');
+  }
 
-function handleConfirm() {
-  // 关闭虚拟键盘
-  timePickerRef.value?.hideNumpadKeyboard();
-  emit('confirm');
-}
+  function handleConfirm() {
+    // 关闭虚拟键盘
+    timePickerRef.value?.hideNumpadKeyboard();
+    emit('confirm');
+  }
 </script>
 
 <template>
@@ -102,7 +102,9 @@ function handleConfirm() {
     />
 
     <!-- 操作按钮 -->
-    <div class="flex items-center justify-center gap-3 mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+    <div
+      class="flex items-center justify-center gap-3 mt-4 pt-4 border-t border-gray-200 dark:border-gray-700"
+    >
       <button
         type="button"
         title="取消"

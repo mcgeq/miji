@@ -84,6 +84,55 @@ export interface PaginationReturn<T> {
  * <button @click="pagination.nextPage" :disabled="!pagination.hasNextPage.value">下一页</button>
  * ```
  */
+/**
+ * 从 URL 参数中解析页码
+ */
+function parsePageFromUrl(urlSearchParams: URLSearchParams, paramName: string): number | null {
+  const value = urlSearchParams.get(paramName);
+  if (!value) return null;
+
+  const parsed = Number.parseInt(value, 10);
+  return !Number.isNaN(parsed) && parsed > 0 ? parsed : null;
+}
+
+/**
+ * 从 URL 参数中解析每页大小
+ */
+function parsePageSizeFromUrl(
+  urlSearchParams: URLSearchParams,
+  paramName: string,
+  validOptions: number[],
+): number | null {
+  const value = urlSearchParams.get(paramName);
+  if (!value) return null;
+
+  const parsed = Number.parseInt(value, 10);
+  return !Number.isNaN(parsed) && validOptions.includes(parsed) ? parsed : null;
+}
+
+/**
+ * 从 URL 初始化分页状态
+ */
+function initializeFromUrl(
+  syncToUrl: boolean,
+  urlParams: { page?: string; pageSize?: string },
+  pageSizeOptions: number[],
+): { page: number | null; pageSize: number | null } {
+  if (!syncToUrl || typeof window === 'undefined') {
+    return { page: null, pageSize: null };
+  }
+
+  const urlSearchParams = new URLSearchParams(window.location.search);
+  const page = parsePageFromUrl(urlSearchParams, urlParams.page || 'page');
+  const pageSize = parsePageSizeFromUrl(
+    urlSearchParams,
+    urlParams.pageSize || 'pageSize',
+    pageSizeOptions,
+  );
+
+  return { page, pageSize };
+}
+
 export function usePagination<T>(
   items: () => T[],
   options: PaginationOptions | number = {},
@@ -101,31 +150,13 @@ export function usePagination<T>(
     onPageChange,
   } = opts;
 
-  // 状态
-  const currentPage = ref(defaultPage);
-  const pageSize = ref(defaultPageSize);
-  const loading = ref(false);
-
   // 从 URL 初始化（如果启用）
-  if (syncToUrl && typeof window !== 'undefined') {
-    const urlSearchParams = new URLSearchParams(window.location.search);
-    const urlPage = urlSearchParams.get(urlParams.page || 'page');
-    const urlPageSize = urlSearchParams.get(urlParams.pageSize || 'pageSize');
+  const urlState = initializeFromUrl(syncToUrl, urlParams, pageSizeOptions);
 
-    if (urlPage) {
-      const parsedPage = Number.parseInt(urlPage, 10);
-      if (!Number.isNaN(parsedPage) && parsedPage > 0) {
-        currentPage.value = parsedPage;
-      }
-    }
-
-    if (urlPageSize) {
-      const parsedSize = Number.parseInt(urlPageSize, 10);
-      if (!Number.isNaN(parsedSize) && pageSizeOptions.includes(parsedSize)) {
-        pageSize.value = parsedSize;
-      }
-    }
-  }
+  // 状态
+  const currentPage = ref(urlState.page ?? defaultPage);
+  const pageSize = ref(urlState.pageSize ?? defaultPageSize);
+  const loading = ref(false);
 
   // 计算属性
   const totalItems = computed(() => items().length);

@@ -87,6 +87,50 @@ export function useFamilyMemberSearch() {
   }
 
   /**
+   * 使用搜索 API 获取结果
+   */
+  async function fetchWithSearchApi(searchTerm: string): Promise<FamilyMember[]> {
+    const result = await invokeCommand<FamilyMemberSearchResponse>('search_family_members', {
+      query: searchTerm.includes('@') ? { email: searchTerm } : { keyword: searchTerm },
+      limit: 20,
+    });
+    return result.members || [];
+  }
+
+  /**
+   * 使用列表 API + 前端过滤获取结果（降级方案）
+   */
+  async function fetchWithListApi(searchTerm: string): Promise<FamilyMember[]> {
+    const allMembers = await invokeCommand<FamilyMember[]>('family_member_list');
+    const queryLower = searchTerm.toLowerCase();
+    return allMembers
+      .filter(
+        member =>
+          member.name.toLowerCase().includes(queryLower) ||
+          member.email?.toLowerCase().includes(queryLower) ||
+          member.phone?.includes(searchTerm),
+      )
+      .slice(0, 20);
+  }
+
+  /**
+   * 执行搜索并处理降级
+   */
+  async function executeSearch(searchTerm: string): Promise<FamilyMember[]> {
+    try {
+      return await fetchWithSearchApi(searchTerm);
+    } catch {
+      // 如果搜索API不可用，降级到列表API然后在前端过滤
+      try {
+        return await fetchWithListApi(searchTerm);
+      } catch {
+        error.value = '搜索功能暂不可用，请稍后重试。';
+        return [];
+      }
+    }
+  }
+
+  /**
    * 搜索家庭成员
    */
   async function searchFamilyMembers(query?: string): Promise<void> {
@@ -112,34 +156,8 @@ export function useFamilyMemberSearch() {
       // 保存搜索历史
       saveSearchHistory(searchTerm);
 
-      let searchResults: FamilyMember[] = [];
-
-      // 使用家庭成员搜索API
-      try {
-        const result = await invokeCommand<FamilyMemberSearchResponse>('search_family_members', {
-          query: searchTerm.includes('@') ? { email: searchTerm } : { keyword: searchTerm },
-          limit: 20,
-        });
-        searchResults = result.members || [];
-      } catch (_err: any) {
-        // 如果搜索API不可用，降级到列表API然后在前端过滤
-        try {
-          const allMembers = await invokeCommand<FamilyMember[]>('family_member_list');
-          const query_lower = searchTerm.toLowerCase();
-          searchResults = allMembers
-            .filter(
-              member =>
-                member.name.toLowerCase().includes(query_lower) ||
-                member.email?.toLowerCase().includes(query_lower) ||
-                member.phone?.includes(searchTerm),
-            )
-            .slice(0, 20);
-        } catch {
-          searchResults = [];
-          error.value = '搜索功能暂不可用，请稍后重试。';
-        }
-      }
-
+      // 执行搜索
+      const searchResults = await executeSearch(searchTerm);
       members.value = searchResults;
 
       // 缓存结果
@@ -149,8 +167,9 @@ export function useFamilyMemberSearch() {
           timestamp: Date.now(),
         });
       }
-    } catch (err: any) {
-      error.value = err.message || '搜索家庭成员失败';
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : '搜索家庭成员失败';
+      error.value = message;
       members.value = [];
     } finally {
       loading.value = false;
@@ -169,8 +188,9 @@ export function useFamilyMemberSearch() {
         serial_num: serialNum,
       });
       return member;
-    } catch (err: any) {
-      error.value = err.message || '获取家庭成员信息失败';
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : '获取家庭成员信息失败';
+      error.value = message;
       return null;
     } finally {
       loading.value = false;

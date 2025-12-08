@@ -1,45 +1,47 @@
 <script setup>
-const props = defineProps({
-  modelValue: {
-    type: String,
-    default: '',
-  },
-  placeholder: {
-    type: String,
-    default: '',
-  },
-  showToggle: {
-    type: Boolean,
-    default: true,
-  },
-});
-const emit = defineEmits(['update:modelValue', 'close']);
-const { t } = useI18n();
-const editable = ref(false);
-const localValue = ref(props.modelValue);
+  const props = defineProps({
+    modelValue: {
+      type: String,
+      default: '',
+    },
+    placeholder: {
+      type: String,
+      default: '',
+    },
+    showToggle: {
+      type: Boolean,
+      default: true,
+    },
+  });
+  const emit = defineEmits(['update:modelValue', 'close']);
+  const { t } = useI18n();
+  const editable = ref(false);
+  const localValue = ref(props.modelValue);
 
-watch(
-  () => props.modelValue,
-  val => {
-    if (!editable.value) {
-      localValue.value = val;
-    }
-  },
-);
-if (!props.modelValue || props.modelValue.trim() === '') {
-  editable.value = true;
-}
-function toggleEdit() {
-  if (editable.value) {
-    emit('update:modelValue', localValue.value.trim());
-    emit('close');
+  watch(
+    () => props.modelValue,
+    val => {
+      if (!editable.value) {
+        localValue.value = val;
+      }
+    },
+  );
+  if (!props.modelValue || props.modelValue.trim() === '') {
+    editable.value = true;
   }
-  editable.value = !editable.value;
-}
+  function toggleEdit() {
+    if (editable.value) {
+      emit('update:modelValue', localValue.value.trim());
+      emit('close');
+    }
+    editable.value = !editable.value;
+  }
 </script>
 
 <template>
-  <div class="flex items-center gap-2 w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 shadow-sm transition-all duration-300 max-sm:flex-col max-sm:items-stretch">
+  <div
+    class="flex items-center gap-2 w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 shadow-sm transition-all duration-300 max-sm:flex-col max-sm:items-stretch"
+  >
     <transition
       enter-active-class="transition-opacity duration-250"
       leave-active-class="transition-opacity duration-250"
@@ -48,7 +50,11 @@ function toggleEdit() {
       leave-from-class="opacity-100"
       leave-to-class="opacity-0"
     >
-      <span v-if="!editable" key="display" class="flex-1 text-gray-700 dark:text-gray-300 break-words transition-opacity duration-300">
+      <span
+        v-if="!editable"
+        key="display"
+        class="flex-1 text-gray-700 dark:text-gray-300 wrap-break-word transition-opacity duration-300"
+      >
         <slot>{{ modelValue || placeholder }}</slot>
       </span>
     </transition>
@@ -67,7 +73,7 @@ function toggleEdit() {
         type="text"
         class="flex-1 px-2 py-1 border border-gray-300 dark:border-gray-600 rounded-md outline-none shadow-inner bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all duration-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 focus:scale-[1.02]"
         :placeholder="placeholder"
-      >
+      />
     </transition>
     <button
       v-if="showToggle"

@@ -1,11 +1,11 @@
+// src/bootstrap/app-bootstrapper.ts
+import type { App } from 'vue';
 import { PlatformService } from '@/services/platform-service';
 import { Lg } from '@/utils/debugLog';
 import { showBootstrapErrorPage } from '@/utils/errorPage';
 import { SplashscreenManager } from './splashscreen-manager';
 import { StoreInitializer } from './store-initializer';
 import { ThemeInitializer } from './theme-initializer';
-// src/bootstrap/app-bootstrapper.ts
-import type { App } from 'vue';
 
 /**
  * 应用启动器

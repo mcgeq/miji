@@ -1,105 +1,117 @@
 <script setup lang="ts">
-import type { Component } from 'vue';
+  import type { Component } from 'vue';
 
-/**
- * Input - 输入框组件
- *
- * 支持多种类型、尺寸和状态
- * 支持前缀/后缀插槽
- * 完整的无障碍支持
- * 100% Tailwind CSS 4 设计令牌
- */
+  /**
+   * Input - 输入框组件
+   *
+   * 支持多种类型、尺寸和状态
+   * 支持前缀/后缀插槽
+   * 完整的无障碍支持
+   * 100% Tailwind CSS 4 设计令牌
+   */
 
-/** 输入框类型 */
-type InputType = 'text' | 'password' | 'email' | 'number' | 'tel' | 'url' | 'search' | 'date' | 'datetime-local' | 'time' | 'month' | 'week';
+  /** 输入框类型 */
+  type InputType =
+    | 'text'
+    | 'password'
+    | 'email'
+    | 'number'
+    | 'tel'
+    | 'url'
+    | 'search'
+    | 'date'
+    | 'datetime-local'
+    | 'time'
+    | 'month'
+    | 'week';
 
-/** 输入框尺寸 */
-type InputSize = 'sm' | 'md' | 'lg';
+  /** 输入框尺寸 */
+  type InputSize = 'sm' | 'md' | 'lg';
 
-interface Props {
-  /** 输入值 */
-  modelValue?: string | number;
-  /** 输入类型 */
-  type?: InputType;
-  /** 占位符 */
-  placeholder?: string;
-  /** 标签 */
-  label?: string;
-  /** 尺寸 */
-  size?: InputSize;
-  /** 错误信息 */
-  error?: string;
-  /** 帮助文本 */
-  hint?: string;
-  /** 是否禁用 */
-  disabled?: boolean;
-  /** 是否只读 */
-  readonly?: boolean;
-  /** 是否必填 */
-  required?: boolean;
-  /** 最大长度 */
-  maxLength?: number;
-  /** 前置图标 */
-  prefixIcon?: Component;
-  /** 后置图标 */
-  suffixIcon?: Component;
-  /** 是否全宽 */
-  fullWidth?: boolean;
-  /** 输入框 ID（用于无障碍关联） */
-  id?: string;
-  /** 自动完成 */
-  autocomplete?: string;
-  /** 输入框名称 */
-  name?: string;
-}
+  interface Props {
+    /** 输入值 */
+    modelValue?: string | number;
+    /** 输入类型 */
+    type?: InputType;
+    /** 占位符 */
+    placeholder?: string;
+    /** 标签 */
+    label?: string;
+    /** 尺寸 */
+    size?: InputSize;
+    /** 错误信息 */
+    error?: string;
+    /** 帮助文本 */
+    hint?: string;
+    /** 是否禁用 */
+    disabled?: boolean;
+    /** 是否只读 */
+    readonly?: boolean;
+    /** 是否必填 */
+    required?: boolean;
+    /** 最大长度 */
+    maxLength?: number;
+    /** 前置图标 */
+    prefixIcon?: Component;
+    /** 后置图标 */
+    suffixIcon?: Component;
+    /** 是否全宽 */
+    fullWidth?: boolean;
+    /** 输入框 ID（用于无障碍关联） */
+    id?: string;
+    /** 自动完成 */
+    autocomplete?: string;
+    /** 输入框名称 */
+    name?: string;
+  }
 
-const props = withDefaults(defineProps<Props>(), {
-  type: 'text',
-  size: 'md',
-  disabled: false,
-  readonly: false,
-  required: false,
-  fullWidth: false,
-});
+  const props = withDefaults(defineProps<Props>(), {
+    type: 'text',
+    size: 'md',
+    disabled: false,
+    readonly: false,
+    required: false,
+    fullWidth: false,
+  });
 
-const emit = defineEmits<{
-  'update:modelValue': [value: string | number];
-  'blur': [event: FocusEvent];
-  'focus': [event: FocusEvent];
-  'change': [event: Event];
-}>();
+  const emit = defineEmits<{
+    'update:modelValue': [value: string | number];
+    blur: [event: FocusEvent];
+    focus: [event: FocusEvent];
+    change: [event: Event];
+  }>();
 
-// 生成唯一 ID
-const inputId = computed(() => props.id || `input-${Math.random().toString(36).slice(2, 9)}`);
-const hintId = computed(() => `${inputId.value}-hint`);
-const errorId = computed(() => `${inputId.value}-error`);
+  // 生成唯一 ID
+  const inputId = computed(() => props.id || `input-${Math.random().toString(36).slice(2, 9)}`);
+  const hintId = computed(() => `${inputId.value}-hint`);
+  const errorId = computed(() => `${inputId.value}-error`);
 
-// 检测插槽
-const slots = useSlots();
-const hasPrefix = computed(() => !!slots.prefix || !!props.prefixIcon);
-const hasSuffix = computed(() => !!slots.suffix || !!props.suffixIcon);
+  // 检测插槽
+  const slots = useSlots();
+  const hasPrefix = computed(() => !!slots.prefix || !!props.prefixIcon);
+  const hasSuffix = computed(() => !!slots.suffix || !!props.suffixIcon);
 
-// 尺寸样式
-const sizeClasses: Record<InputSize, string> = {
-  sm: 'px-3 py-1.5 text-sm',
-  md: 'px-4 py-2 text-base',
-  lg: 'px-5 py-3 text-lg',
-};
+  // 尺寸样式
+  const sizeClasses: Record<InputSize, string> = {
+    sm: 'px-3 py-1.5 text-sm',
+    md: 'px-4 py-2 text-base',
+    lg: 'px-5 py-3 text-lg',
+  };
 
-// 图标尺寸
-const iconSizes: Record<InputSize, string> = {
-  sm: 'w-4 h-4',
-  md: 'w-5 h-5',
-  lg: 'w-6 h-6',
-};
+  // 图标尺寸
+  const iconSizes: Record<InputSize, string> = {
+    sm: 'w-4 h-4',
+    md: 'w-5 h-5',
+    lg: 'w-6 h-6',
+  };
 
-// 计算 aria-describedby
-const ariaDescribedBy = computed(() => {
-  const ids: string[] = [];
-  if (props.error) ids.push(errorId.value);
-  else if (props.hint) ids.push(hintId.value);
-  return ids.length > 0 ? ids.join(' ') : undefined;
-});
+  // 计算 aria-describedby
+  const ariaDescribedBy = computed(() => {
+    const ids: string[] = [];
+    if (props.error) ids.push(errorId.value);
+    else if (props.hint) ids.push(hintId.value);
+    return ids.length > 0 ? ids.join(' ') : undefined;
+  });
 </script>
 
 <template>
@@ -111,7 +123,9 @@ const ariaDescribedBy = computed(() => {
       class="block text-sm font-medium text-gray-900 dark:text-white mb-1.5"
     >
       {{ props.label }}
-      <span v-if="props.required" class="text-red-600 dark:text-red-400 ml-0.5" aria-hidden="true">*</span>
+      <span v-if="props.required" class="text-red-600 dark:text-red-400 ml-0.5" aria-hidden="true"
+        >*</span
+      >
     </label>
 
     <!-- 输入框容器 -->
@@ -176,7 +190,7 @@ const ariaDescribedBy = computed(() => {
         @blur="emit('blur', $event)"
         @focus="emit('focus', $event)"
         @change="emit('change', $event)"
-      >
+      />
 
       <!-- 后缀插槽 -->
       <div

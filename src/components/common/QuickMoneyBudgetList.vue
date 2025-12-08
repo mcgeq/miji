@@ -1,32 +1,35 @@
 <script setup lang="ts">
-// 预算列表组件
-import { formatCurrency } from '@/features/money/utils/money';
-import { getRepeatTypeName } from '@/utils/business/repeat';
-import type { Budget } from '@/schema/money';
+  // 预算列表组件
+  import { formatCurrency } from '@/features/money/utils/money';
+  import type { Budget } from '@/schema/money';
+  import { getRepeatTypeName } from '@/utils/business/repeat';
 
-interface Props {
-  budgets: Budget[];
-}
+  interface Props {
+    budgets: Budget[];
+  }
 
-defineProps<Props>();
+  defineProps<Props>();
 
-function getBudgetProgress(budget: Budget) {
-  const progress = Number(budget?.progress ?? 0);
-  return Number.isFinite(progress) ? Math.min(Math.max(progress, 0), 100) : 0;
-}
+  function getBudgetProgress(budget: Budget) {
+    const progress = Number(budget?.progress ?? 0);
+    return Number.isFinite(progress) ? Math.min(Math.max(progress, 0), 100) : 0;
+  }
 
-function isBudgetOver(budget: Budget) {
-  return Number(budget?.usedAmount ?? 0) > Number(budget?.amount ?? 0);
-}
+  function isBudgetOver(budget: Budget) {
+    return Number(budget?.usedAmount ?? 0) > Number(budget?.amount ?? 0);
+  }
 
-function getBudgetPeriodText(budget: Budget) {
-  return getRepeatTypeName(budget?.repeatPeriod);
-}
+  function getBudgetPeriodText(budget: Budget) {
+    return getRepeatTypeName(budget?.repeatPeriod);
+  }
 </script>
 
 <template>
   <div class="w-full">
-    <div v-if="budgets.length === 0" class="text-center py-8 px-4 text-gray-600 dark:text-gray-400 opacity-50 text-sm">
+    <div
+      v-if="budgets.length === 0"
+      class="text-center py-8 px-4 text-gray-600 dark:text-gray-400 opacity-50 text-sm"
+    >
       暂无预算
     </div>
     <div v-else class="flex flex-col gap-2">
@@ -35,7 +38,9 @@ function getBudgetPeriodText(budget: Budget) {
         :key="budget.serialNum"
         class="flex items-center gap-3 px-3 py-3 md:px-2 md:py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg"
       >
-        <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 bg-yellow-100 text-yellow-600">
+        <div
+          class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 bg-yellow-100 text-yellow-600"
+        >
           <LucideTarget :size="14" />
         </div>
         <div class="flex-1 min-w-0">
@@ -48,10 +53,12 @@ function getBudgetPeriodText(budget: Budget) {
         </div>
         <!-- 进度条 (桌面端显示) -->
         <div class="hidden md:flex items-center gap-2 min-w-[120px] flex-1 max-w-[200px]">
-          <div class="flex-1 h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden relative border border-gray-200 dark:border-gray-600">
+          <div
+            class="flex-1 h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden relative border border-gray-200 dark:border-gray-600"
+          >
             <div
               class="h-full rounded-full transition-all shadow-sm"
-              :class="isBudgetOver(budget) ? 'bg-gradient-to-r from-red-500 to-red-600' : 'bg-gradient-to-r from-blue-500 to-blue-600'"
+              :class="isBudgetOver(budget) ? 'bg-linear-to-r from-red-500 to-red-600' : 'bg-linear-to-r from-blue-500 to-blue-600'"
               :style="{ width: `${getBudgetProgress(budget)}%` }"
             />
           </div>
@@ -63,7 +70,7 @@ function getBudgetPeriodText(budget: Budget) {
           </div>
         </div>
         <!-- 移动端只显示百分比 -->
-        <div class="flex md:hidden items-center justify-end flex-shrink-0">
+        <div class="flex md:hidden items-center justify-end shrink-0">
           <div
             class="text-xs font-semibold min-w-8 h-5 leading-5 text-center rounded-lg border flex items-center justify-center px-2"
             :class="isBudgetOver(budget) ? 'text-red-600 bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-700' : 'text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-600'"
@@ -72,7 +79,7 @@ function getBudgetPeriodText(budget: Budget) {
           </div>
         </div>
         <!-- 金额信息 -->
-        <div class="flex flex-col items-end gap-0.5 flex-shrink-0">
+        <div class="flex flex-col items-end gap-0.5 shrink-0">
           <div class="text-sm font-semibold text-gray-900 dark:text-white whitespace-nowrap">
             {{ formatCurrency(budget.amount ?? 0) }}
           </div>
@@ -86,7 +93,8 @@ function getBudgetPeriodText(budget: Budget) {
             class="text-xs font-medium whitespace-nowrap"
             :class="isBudgetOver(budget) ? 'text-red-600 font-semibold' : 'text-green-600'"
           >
-            剩余: {{ formatCurrency((Number(budget.amount ?? 0) - Number(budget.usedAmount ?? 0))) }}
+            剩余:
+            {{ formatCurrency((Number(budget.amount ?? 0) - Number(budget.usedAmount ?? 0))) }}
           </div>
         </div>
       </div>

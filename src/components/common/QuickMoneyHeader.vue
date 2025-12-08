@@ -1,24 +1,24 @@
 <script setup lang="ts">
-// 快捷键帮助系统组件
-interface Shortcut {
-  key: string;
-  label: string;
-}
+  // 快捷键帮助系统组件
+  interface Shortcut {
+    key: string;
+    label: string;
+  }
 
-interface Props {
-  show: boolean;
-  shortcuts: Shortcut[];
-  isMobile?: boolean;
-}
+  interface Props {
+    show: boolean;
+    shortcuts: Shortcut[];
+    isMobile?: boolean;
+  }
 
-withDefaults(defineProps<Props>(), {
-  isMobile: false,
-});
+  withDefaults(defineProps<Props>(), {
+    isMobile: false,
+  });
 
-const emit = defineEmits<{
-  toggle: [];
-  close: [];
-}>();
+  const emit = defineEmits<{
+    toggle: [];
+    close: [];
+  }>();
 </script>
 
 <template>
@@ -34,10 +34,10 @@ const emit = defineEmits<{
         v-if="show"
         class="absolute top-2 left-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 shadow-lg z-[100] max-w-[200px]"
       >
-        <div class="flex justify-between items-center mb-2 pb-2 border-b border-gray-200 dark:border-gray-700">
-          <h4 class="m-0 text-sm font-semibold text-gray-900 dark:text-white">
-            快捷键
-          </h4>
+        <div
+          class="flex justify-between items-center mb-2 pb-2 border-b border-gray-200 dark:border-gray-700"
+        >
+          <h4 class="m-0 text-sm font-semibold text-gray-900 dark:text-white">快捷键</h4>
           <button
             class="p-1 bg-transparent border-none cursor-pointer text-gray-600 dark:text-gray-400 opacity-60 hover:opacity-100 transition-opacity flex items-center justify-center"
             @click="emit('close')"
@@ -51,7 +51,9 @@ const emit = defineEmits<{
             :key="shortcut.key"
             class="flex items-center gap-2 text-xs"
           >
-            <kbd class="min-w-6 px-1.5 py-0.5 text-xs font-semibold font-mono text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-center">
+            <kbd
+              class="min-w-6 px-1.5 py-0.5 text-xs font-semibold font-mono text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-center"
+            >
               {{ shortcut.key }}
             </kbd>
             <span class="text-gray-700 dark:text-gray-300">{{ shortcut.label }}</span>

@@ -58,10 +58,12 @@ export function useFormValidation<T extends Record<string, unknown>>(
   /**
    * 验证单个字段
    */
-  function validateField(field: keyof T, value: any): boolean {
+  function validateField(field: keyof T, value: unknown): boolean {
     try {
       // 尝试解析整个 schema 的该字段
-      const fieldSchema = (schema as any).shape?.[field];
+      // 使用类型断言访问 shape（Zod 内部结构）
+      const schemaWithShape = schema as { shape?: Record<string, z.ZodTypeAny> };
+      const fieldSchema = schemaWithShape.shape?.[field as string];
       if (fieldSchema) {
         fieldSchema.parse(value);
         errors.value[field] = undefined;
@@ -88,7 +90,7 @@ export function useFormValidation<T extends Record<string, unknown>>(
     } catch (error) {
       if (error instanceof z.ZodError) {
         const newErrors: Partial<Record<keyof T, string>> = {};
-        error.issues.forEach((err: z.ZodIssue) => {
+        error.issues.forEach(err => {
           const field = err.path[0] as keyof T;
           if (field) {
             newErrors[field] = err.message;
@@ -313,10 +315,10 @@ export function useFormValidation<T extends Record<string, unknown>>(
  * 表单字段验证辅助函数
  * 用于在 @blur 事件中验证字段
  */
-export function createFieldValidator<T extends Record<string, any>>(
+export function createFieldValidator<T extends Record<string, unknown>>(
   validation: ReturnType<typeof useFormValidation<T>>,
 ) {
-  return (field: keyof T, value: any) => {
+  return (field: keyof T, value: unknown) => {
     validation.touchField(field);
     validation.validateField(field, value);
   };

@@ -1,6 +1,5 @@
-import { onMounted, onUnmounted, ref } from 'vue';
-import { TransactionTypeSchema } from '@/schema/common';
 import type { TransactionType } from '@/schema/common';
+import { TransactionTypeSchema } from '@/schema/common';
 
 export interface KeyboardShortcut {
   key: string;

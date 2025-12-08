@@ -1,124 +1,124 @@
 <script setup lang="ts">
-/**
- * CalendarPanel - 日历面板组件
- *
- * 功能：
- * - 显示月份日历
- * - 支持月份切换
- * - 日期选择
- * - 标记今日和选中日期
- */
+  /**
+   * CalendarPanel - 日历面板组件
+   *
+   * 功能：
+   * - 显示月份日历
+   * - 支持月份切换
+   * - 日期选择
+   * - 标记今日和选中日期
+   */
 
-interface Props {
-  /** 当前显示的月份 */
-  currentDate: Date;
-  /** 选中的日期 */
-  selectedDate: Date | null;
-  /** 是否禁用 */
-  disabled?: boolean;
-}
-
-interface CalendarDay {
-  date: number;
-  month: number;
-  year: number;
-  isOtherMonth: boolean;
-  isToday: boolean;
-  isSelected: boolean;
-  fullDate: Date;
-}
-
-const props = withDefaults(defineProps<Props>(), {
-  disabled: false,
-});
-
-const emit = defineEmits<{
-  selectDate: [day: CalendarDay];
-  previousMonth: [];
-  nextMonth: [];
-}>();
-
-// 星期标题
-const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
-
-// 当前月份年份显示
-const currentMonthYear = computed(() => {
-  return `${props.currentDate.getFullYear()}年${props.currentDate.getMonth() + 1}月`;
-});
-
-// 生成日历数据
-const calendarDays = computed(() => {
-  const year = props.currentDate.getFullYear();
-  const month = props.currentDate.getMonth();
-
-  // 获取当月第一天和最后一天
-  const firstDay = new Date(year, month, 1);
-  const lastDay = new Date(year, month + 1, 0);
-
-  // 获取第一天是星期几（0-6，0是星期日）
-  const firstDayOfWeek = firstDay.getDay();
-
-  // 获取上个月的最后几天
-  const prevMonth = new Date(year, month - 1, 0);
-  const prevMonthLastDay = prevMonth.getDate();
-
-  const days: CalendarDay[] = [];
-
-  // 添加上个月的日期
-  for (let i = firstDayOfWeek - 1; i >= 0; i--) {
-    days.push({
-      date: prevMonthLastDay - i,
-      month: month - 1,
-      year,
-      isOtherMonth: true,
-      isToday: false,
-      isSelected: false,
-      fullDate: new Date(year, month - 1, prevMonthLastDay - i),
-    });
+  interface Props {
+    /** 当前显示的月份 */
+    currentDate: Date;
+    /** 选中的日期 */
+    selectedDate: Date | null;
+    /** 是否禁用 */
+    disabled?: boolean;
   }
 
-  // 添加当月的日期
-  const today = new Date();
-  for (let day = 1; day <= lastDay.getDate(); day++) {
-    const fullDate = new Date(year, month, day);
-    const isToday = fullDate.toDateString() === today.toDateString();
-    const isSelected = props.selectedDate
-      ? fullDate.toDateString() === props.selectedDate.toDateString()
-      : false;
-
-    days.push({
-      date: day,
-      month,
-      year,
-      isOtherMonth: false,
-      isToday,
-      isSelected,
-      fullDate,
-    });
+  interface CalendarDay {
+    date: number;
+    month: number;
+    year: number;
+    isOtherMonth: boolean;
+    isToday: boolean;
+    isSelected: boolean;
+    fullDate: Date;
   }
 
-  // 添加下个月的日期（填满6行）
-  const remainingDays = 42 - days.length;
-  for (let day = 1; day <= remainingDays; day++) {
-    days.push({
-      date: day,
-      month: month + 1,
-      year: month === 11 ? year + 1 : year,
-      isOtherMonth: true,
-      isToday: false,
-      isSelected: false,
-      fullDate: new Date(month === 11 ? year + 1 : year, month + 1, day),
-    });
-  }
+  const props = withDefaults(defineProps<Props>(), {
+    disabled: false,
+  });
 
-  return days;
-});
+  const emit = defineEmits<{
+    selectDate: [day: CalendarDay];
+    previousMonth: [];
+    nextMonth: [];
+  }>();
 
-function handleSelectDate(day: CalendarDay) {
-  if (!props.disabled) {
-    emit('selectDate', day);
+  // 星期标题
+  const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
+
+  // 当前月份年份显示
+  const currentMonthYear = computed(() => {
+    return `${props.currentDate.getFullYear()}年${props.currentDate.getMonth() + 1}月`;
+  });
+
+  // 生成日历数据
+  const calendarDays = computed(() => {
+    const year = props.currentDate.getFullYear();
+    const month = props.currentDate.getMonth();
+
+    // 获取当月第一天和最后一天
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+
+    // 获取第一天是星期几（0-6，0是星期日）
+    const firstDayOfWeek = firstDay.getDay();
+
+    // 获取上个月的最后几天
+    const prevMonth = new Date(year, month - 1, 0);
+    const prevMonthLastDay = prevMonth.getDate();
+
+    const days: CalendarDay[] = [];
+
+    // 添加上个月的日期
+    for (let i = firstDayOfWeek - 1; i >= 0; i--) {
+      days.push({
+        date: prevMonthLastDay - i,
+        month: month - 1,
+        year,
+        isOtherMonth: true,
+        isToday: false,
+        isSelected: false,
+        fullDate: new Date(year, month - 1, prevMonthLastDay - i),
+      });
+    }
+
+    // 添加当月的日期
+    const today = new Date();
+    for (let day = 1; day <= lastDay.getDate(); day++) {
+      const fullDate = new Date(year, month, day);
+      const isToday = fullDate.toDateString() === today.toDateString();
+      const isSelected = props.selectedDate
+        ? fullDate.toDateString() === props.selectedDate.toDateString()
+        : false;
+
+      days.push({
+        date: day,
+        month,
+        year,
+        isOtherMonth: false,
+        isToday,
+        isSelected,
+        fullDate,
+      });
+    }
+
+    // 添加下个月的日期（填满6行）
+    const remainingDays = 42 - days.length;
+    for (let day = 1; day <= remainingDays; day++) {
+      days.push({
+        date: day,
+        month: month + 1,
+        year: month === 11 ? year + 1 : year,
+        isOtherMonth: true,
+        isToday: false,
+        isSelected: false,
+        fullDate: new Date(month === 11 ? year + 1 : year, month + 1, day),
+      });
+    }
+
+    return days;
+  });
+
+  function handleSelectDate(day: CalendarDay) {
+    if (!props.disabled) {
+      emit('selectDate', day);
+    }
   }
-}
 </script>
 
 <template>

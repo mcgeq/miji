@@ -1,13 +1,13 @@
-import { TransactionTypeSchema } from '@/schema/common';
-import { useTransactionStore } from '@/stores/money';
-import { toast } from '@/utils/toast';
 import type { TransactionType } from '@/schema/common';
+import { TransactionTypeSchema } from '@/schema/common';
 import type {
   Transaction,
   TransactionCreate,
   TransactionUpdate,
   TransferCreate,
 } from '@/schema/money';
+import { useTransactionStore } from '@/stores/money';
+import { toast } from '@/utils/toast';
 
 /**
  * 交易操作 Composable - 重构版本
@@ -83,8 +83,10 @@ export function useTransactionActions() {
       }
 
       return true;
-    } catch (error: any) {
-      toast.error(error.message || t('financial.messages.transactionCreateFailed'));
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : t('financial.messages.transactionCreateFailed');
+      toast.error(message);
       return false;
     } finally {
       loading.value = false;
@@ -114,8 +116,10 @@ export function useTransactionActions() {
       }
 
       return true;
-    } catch (error: any) {
-      toast.error(error.message || t('financial.messages.transactionUpdateFailed'));
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : t('financial.messages.transactionUpdateFailed');
+      toast.error(message);
       return false;
     } finally {
       loading.value = false;
@@ -150,8 +154,10 @@ export function useTransactionActions() {
       }
 
       return true;
-    } catch (error: any) {
-      toast.error(error.message || t('financial.messages.transactionDeleteFailed'));
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : t('financial.messages.transactionDeleteFailed');
+      toast.error(message);
       return false;
     } finally {
       loading.value = false;
@@ -176,8 +182,10 @@ export function useTransactionActions() {
       }
 
       return true;
-    } catch (error: any) {
-      toast.error(error.message || t('financial.messages.transferCreateFailed'));
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : t('financial.messages.transferCreateFailed');
+      toast.error(message);
       return false;
     } finally {
       loading.value = false;
@@ -203,8 +211,10 @@ export function useTransactionActions() {
       }
 
       return true;
-    } catch (error: any) {
-      toast.error(error.message || t('financial.messages.transferUpdateFailed'));
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : t('financial.messages.transferUpdateFailed');
+      toast.error(message);
       return false;
     } finally {
       loading.value = false;
