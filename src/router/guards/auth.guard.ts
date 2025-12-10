@@ -1,12 +1,12 @@
-import { i18nInstance } from '@/i18n/i18n';
-import { useAuthStore } from '@/stores/auth';
-import { Lg } from '@/utils/debugLog';
-import { toast } from '@/utils/toast';
 import type { Composer } from 'vue-i18n';
 /**
  * 认证路由守卫
  */
 import type { NavigationGuardNext, RouteLocationNormalized } from 'vue-router';
+import { i18nInstance } from '@/i18n/i18n';
+import { useAuthStore } from '@/stores/auth';
+import { Lg } from '@/utils/debugLog';
+import { toast } from '@/utils/toast';
 
 /** 白名单路由（不需要认证检查） */
 const WHITE_LIST = ['auth-login', 'auth-register', 'splash'];
@@ -23,6 +23,119 @@ let authCheckCache: AuthCache | null = null;
 const CACHE_DURATION = 30000;
 
 /**
+ * 获取认证状态（带缓存）
+ */
+async function getAuthStatus(): Promise<boolean> {
+  const authStore = useAuthStore();
+  const now = Date.now();
+
+  try {
+    // 使用缓存（30秒内有效）
+    if (authCheckCache && now - authCheckCache.timestamp < CACHE_DURATION) {
+      Lg.d('AuthGuard', 'Using cached auth status:', authCheckCache.isAuth);
+      return authCheckCache.isAuth;
+    }
+
+    // 重新检查认证状态
+    const isAuth = await authStore.checkAuthStatus();
+    authCheckCache = { isAuth, timestamp: now };
+    Lg.d('AuthGuard', 'Fresh auth check:', isAuth);
+    return isAuth;
+  } catch (error) {
+    Lg.e('AuthGuard', 'Failed to check auth:', error);
+    authCheckCache = null;
+    return false;
+  }
+}
+
+/**
+ * 处理未登录情况
+ */
+function handleUnauthenticated(
+  to: RouteLocationNormalized,
+  next: NavigationGuardNext,
+  t: Composer['t'],
+): void {
+  if (to.meta.requiresAuth) {
+    toast.warning(t('auth.messages.pleaseLogin') || '请先登录');
+    next({
+      name: 'auth-login',
+      query: { redirect: to.fullPath },
+    });
+  } else {
+    next();
+  }
+}
+
+/**
+ * 检查权限
+ */
+function checkPermissions(
+  to: RouteLocationNormalized,
+  routeName: string,
+  next: NavigationGuardNext,
+  t: Composer['t'],
+): boolean {
+  if (!to.meta.permissions || to.meta.permissions.length === 0) {
+    return true;
+  }
+
+  const authStore = useAuthStore();
+  Lg.d('AuthGuard', 'Checking permissions for route:', {
+    route: routeName,
+    required: to.meta.permissions,
+    userRole: authStore.role,
+    explicitPermissions: authStore.permissions,
+    effectivePermissions: authStore.effectivePermissions,
+  });
+
+  const hasPermission = authStore.hasAnyPermission(to.meta.permissions);
+  if (!hasPermission) {
+    toast.error(t('auth.messages.noPermission') || '您没有权限访问此页面');
+    Lg.e('AuthGuard', 'Permission denied:', {
+      route: routeName,
+      required: to.meta.permissions,
+      userRole: authStore.role,
+      effectivePermissions: authStore.effectivePermissions,
+    });
+    next({ name: 'home' });
+    return false;
+  }
+
+  return true;
+}
+
+/**
+ * 检查角色
+ */
+function checkRoles(
+  to: RouteLocationNormalized,
+  routeName: string,
+  next: NavigationGuardNext,
+  t: Composer['t'],
+): boolean {
+  if (!to.meta.roles || to.meta.roles.length === 0) {
+    return true;
+  }
+
+  const authStore = useAuthStore();
+  const hasRole = authStore.hasAnyRole(to.meta.roles);
+
+  if (!hasRole) {
+    toast.error(t('auth.messages.noPermission') || '您没有权限访问此页面');
+    Lg.w('AuthGuard', 'Role check failed:', {
+      route: routeName,
+      required: to.meta.roles,
+      userRole: authStore.role,
+    });
+    next({ name: 'home' });
+    return false;
+  }
+
+  return true;
+}
+
+/**
  * 认证守卫
  */
 export async function authGuard(
@@ -30,104 +143,41 @@ export async function authGuard(
   _from: RouteLocationNormalized,
   next: NavigationGuardNext,
 ) {
-  // 获取 i18n 翻译函数
   const t = i18nInstance ? (i18nInstance.global as Composer).t : (key: string) => key;
-
-  const authStore = useAuthStore();
   const routeName = typeof to.name === 'string' ? to.name : '';
 
-  // 1. 检查白名单 - 无需认证
+  // 1. 检查白名单
   if (WHITE_LIST.includes(routeName)) {
     next();
     return;
   }
 
-  // 2. 获取认证状态（使用缓存优化性能）
-  let isAuth = false;
-  try {
-    const now = Date.now();
-
-    // 使用缓存（30秒内有效）
-    if (authCheckCache && now - authCheckCache.timestamp < CACHE_DURATION) {
-      isAuth = authCheckCache.isAuth;
-      Lg.d('AuthGuard', 'Using cached auth status:', isAuth);
-    } else {
-      // 重新检查认证状态
-      isAuth = await authStore.checkAuthStatus();
-      authCheckCache = { isAuth, timestamp: now };
-      Lg.d('AuthGuard', 'Fresh auth check:', isAuth);
-    }
-  } catch (error) {
-    Lg.e('AuthGuard', 'Failed to check auth:', error);
-    isAuth = false;
-    authCheckCache = null;
-  }
+  // 2. 获取认证状态
+  const isAuth = await getAuthStatus();
 
   // 3. 处理未登录情况
   if (!isAuth) {
-    if (to.meta.requiresAuth) {
-      toast.warning(t('auth.messages.pleaseLogin') || '请先登录');
-      next({
-        name: 'auth-login',
-        query: { redirect: to.fullPath }, // 保存目标路由用于登录后重定向
-      });
-      return;
-    }
-    // 不需要认证的路由，直接放行
-    next();
+    handleUnauthenticated(to, next, t);
     return;
   }
 
   // 4. 已登录，不允许访问登录/注册页
-  const isAuthPage = ['auth-login', 'auth-register'].includes(routeName);
-  if (isAuthPage) {
+  if (['auth-login', 'auth-register'].includes(routeName)) {
     next({ name: 'home' });
     return;
   }
 
   // 5. 检查权限
-  if (to.meta.permissions && to.meta.permissions.length > 0) {
-    // 详细日志
-    Lg.d('AuthGuard', 'Checking permissions for route:', {
-      route: routeName,
-      required: to.meta.permissions,
-      userRole: authStore.role,
-      explicitPermissions: authStore.permissions,
-      effectivePermissions: authStore.effectivePermissions,
-    });
-
-    const hasPermission = authStore.hasAnyPermission(to.meta.permissions);
-
-    if (!hasPermission) {
-      toast.error(t('auth.messages.noPermission') || '您没有权限访问此页面');
-      Lg.e('AuthGuard', 'Permission denied:', {
-        route: routeName,
-        required: to.meta.permissions,
-        userRole: authStore.role,
-        effectivePermissions: authStore.effectivePermissions,
-      });
-      next({ name: 'home' });
-      return;
-    }
+  if (!checkPermissions(to, routeName, next, t)) {
+    return;
   }
 
   // 6. 检查角色
-  if (to.meta.roles && to.meta.roles.length > 0) {
-    const hasRole = authStore.hasAnyRole(to.meta.roles);
-
-    if (!hasRole) {
-      toast.error(t('auth.messages.noPermission') || '您没有权限访问此页面');
-      Lg.w('AuthGuard', 'Role check failed:', {
-        route: routeName,
-        required: to.meta.roles,
-        userRole: authStore.role,
-      });
-      next({ name: 'home' });
-      return;
-    }
+  if (!checkRoles(to, routeName, next, t)) {
+    return;
   }
 
-  // 7. 所有检查通过，放行
+  // 7. 所有检查通过
   next();
 }
 

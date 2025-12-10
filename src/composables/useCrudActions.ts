@@ -230,6 +230,45 @@ export function useCrudActions<T extends { serialNum: string }, C = Partial<T>, 
   }
 
   /**
+   * 应用乐观更新，返回之前的状态
+   */
+  function applyOptimisticUpdate(data: U): T | null {
+    if (!(optimisticUpdate?.enabled && optimisticUpdate.getCurrentState)) {
+      return null;
+    }
+
+    const previousState = optimisticUpdate.getCurrentState();
+    if (optimisticUpdate.applyOptimistic) {
+      optimisticUpdate.applyOptimistic(data as Partial<T>);
+      Lg.d(COMPOSABLE_MODULE, '应用乐观更新');
+    }
+    return previousState;
+  }
+
+  /**
+   * 回滚乐观更新
+   */
+  function rollbackOptimisticUpdate(previousState: T | null, id: string): void {
+    if (optimisticUpdate?.enabled && previousState && optimisticUpdate.rollback) {
+      optimisticUpdate.rollback(previousState);
+      Lg.w(COMPOSABLE_MODULE, '乐观更新回滚', { id });
+    }
+  }
+
+  /**
+   * 更新后的后续处理
+   */
+  async function handlePostUpdate(): Promise<void> {
+    if (autoClose) {
+      closeModal();
+    }
+
+    if (autoRefresh && store.fetchAll) {
+      await store.fetchAll();
+    }
+  }
+
+  /**
    * 更新项目（支持乐观更新）
    */
   async function handleUpdate(id: string, data: U): Promise<T | null> {
@@ -237,37 +276,19 @@ export function useCrudActions<T extends { serialNum: string }, C = Partial<T>, 
     loading.value = true;
     clearError();
 
-    // 乐观更新：保存当前状态
-    let previousState: T | null = null;
-    if (optimisticUpdate?.enabled && optimisticUpdate.getCurrentState) {
-      previousState = optimisticUpdate.getCurrentState();
-      if (optimisticUpdate.applyOptimistic) {
-        optimisticUpdate.applyOptimistic(data as Partial<T>);
-        Lg.d(COMPOSABLE_MODULE, '应用乐观更新');
-      }
-    }
+    // 应用乐观更新
+    const previousState = applyOptimisticUpdate(data);
 
     try {
       const result = await store.update(id, data);
       toast.success(successMessages.update || '更新成功');
       Lg.i(COMPOSABLE_MODULE, '项目更新成功', { id });
 
-      if (autoClose) {
-        closeModal();
-      }
-
-      if (autoRefresh && store.fetchAll) {
-        await store.fetchAll();
-      }
+      await handlePostUpdate();
 
       return result;
     } catch (err) {
-      // 乐观更新回滚
-      if (optimisticUpdate?.enabled && previousState && optimisticUpdate.rollback) {
-        optimisticUpdate.rollback(previousState);
-        Lg.w(COMPOSABLE_MODULE, '乐观更新回滚', { id });
-      }
-
+      rollbackOptimisticUpdate(previousState, id);
       handleError(err, CrudActionErrorCode.UPDATE_FAILED, errorMessages.update || '更新失败');
       return null;
     } finally {

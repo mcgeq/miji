@@ -1,6 +1,6 @@
-import { usePermission } from '@/composables/usePermission';
 // directives/permission.ts
 import type { Directive, DirectiveBinding } from 'vue';
+import { usePermission } from '@/composables/usePermission';
 
 /**
  * 权限控制指令
@@ -19,47 +19,66 @@ export const vPermission: Directive = {
   },
 };
 
+/**
+ * 检查角色权限
+ */
+function checkRoleAccess(value: unknown, currentRole: string | null): boolean {
+  if (typeof value === 'string') {
+    return currentRole === value;
+  }
+  if (Array.isArray(value)) {
+    return value.includes(currentRole);
+  }
+  return false;
+}
+
+/**
+ * 检查功能权限
+ */
+function checkPermissionAccess(
+  value: unknown,
+  hasPermission: (permission: string) => boolean,
+  useAndMode: boolean,
+): boolean {
+  if (typeof value === 'string') {
+    return hasPermission(value);
+  }
+  if (Array.isArray(value)) {
+    return useAndMode
+      ? value.every(permission => hasPermission(permission))
+      : value.some(permission => hasPermission(permission));
+  }
+  return false;
+}
+
+/**
+ * 设置元素显示状态
+ */
+function setElementVisibility(el: HTMLElement, hasAccess: boolean): void {
+  if (!hasAccess) {
+    // 保存原始display样式
+    if (!el.dataset.originalDisplay) {
+      el.dataset.originalDisplay = el.style.display || '';
+    }
+    el.style.display = 'none';
+  } else {
+    // 恢复原始display样式
+    const originalDisplay = el.dataset.originalDisplay || '';
+    el.style.display = originalDisplay;
+  }
+}
+
 function checkPermission(el: HTMLElement, binding: DirectiveBinding) {
   const { hasPermission, currentRole } = usePermission();
   const { value, arg, modifiers } = binding;
 
-  let hasAccess = false;
-
   try {
-    if (arg === 'role') {
-      // 角色检查
-      if (typeof value === 'string') {
-        hasAccess = currentRole.value === value;
-      } else if (Array.isArray(value)) {
-        hasAccess = value.includes(currentRole.value);
-      }
-    } else {
-      // 权限检查
-      if (typeof value === 'string') {
-        hasAccess = hasPermission(value);
-      } else if (Array.isArray(value)) {
-        if (modifiers.and) {
-          // AND关系：所有权限都必须有
-          hasAccess = value.every(permission => hasPermission(permission));
-        } else {
-          // OR关系：至少有一个权限
-          hasAccess = value.some(permission => hasPermission(permission));
-        }
-      }
-    }
+    const hasAccess =
+      arg === 'role'
+        ? checkRoleAccess(value, currentRole.value)
+        : checkPermissionAccess(value, hasPermission, !!modifiers.and);
 
-    // 根据权限结果显示或隐藏元素
-    if (!hasAccess) {
-      // 保存原始display样式
-      if (!el.dataset.originalDisplay) {
-        el.dataset.originalDisplay = el.style.display || '';
-      }
-      el.style.display = 'none';
-    } else {
-      // 恢复原始display样式
-      const originalDisplay = el.dataset.originalDisplay || '';
-      el.style.display = originalDisplay;
-    }
+    setElementVisibility(el, hasAccess);
   } catch (error) {
     console.error('Permission directive error:', error);
     // 出错时隐藏元素，保证安全
@@ -82,19 +101,20 @@ export function checkElementPermission(
   if (options?.role) {
     if (typeof options.role === 'string') {
       return currentRole.value === options.role;
-    } else if (Array.isArray(options.role)) {
+    }
+    if (Array.isArray(options.role)) {
       return options.role.includes(currentRole.value || '');
     }
   }
 
   if (typeof permission === 'string') {
     return hasPermission(permission);
-  } else if (Array.isArray(permission)) {
+  }
+  if (Array.isArray(permission)) {
     if (options?.mode === 'and') {
       return permission.every(p => hasPermission(p));
-    } else {
-      return permission.some(p => hasPermission(p));
     }
+    return permission.some(p => hasPermission(p));
   }
 
   return false;

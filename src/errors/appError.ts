@@ -19,7 +19,7 @@ export enum AppErrorCode {
 
 export abstract class AppError extends Error {
   public readonly code: string;
-  public readonly details?: any;
+  public readonly details?: unknown;
   public readonly timestamp: string;
   public readonly severity: AppErrorSeverity;
   public readonly module: string;
@@ -29,7 +29,7 @@ export abstract class AppError extends Error {
     code: string,
     message: string,
     severity: AppErrorSeverity = AppErrorSeverity.MEDIUM,
-    details?: any,
+    details?: unknown,
   ) {
     super(message);
     this.name = this.constructor.name;
@@ -42,7 +42,7 @@ export abstract class AppError extends Error {
     Error.captureStackTrace?.(this, this.constructor);
   }
 
-  public toJSON(): Record<string, any> {
+  public toJSON(): Record<string, unknown> {
     return {
       name: this.name,
       module: this.module,
@@ -90,7 +90,7 @@ export abstract class AppError extends Error {
     module: string,
     error: unknown,
     defaultCode: string = AppErrorCode.OPERATION_FAILED,
-    defaultMessage: string = 'An unexpected error occurred',
+    defaultMessage = 'An unexpected error occurred',
     severity: AppErrorSeverity = AppErrorSeverity.MEDIUM,
   ): AppError {
     if (error instanceof AppError) {
@@ -112,7 +112,7 @@ class GenericAppError extends AppError {
     code: string,
     message: string,
     severity: AppErrorSeverity,
-    details?: any,
+    details?: unknown,
   ) {
     super(module, code, message, severity, details);
     this.name = 'GenericAppError';

@@ -8,6 +8,7 @@ import type { Directive } from 'vue';
 
 interface HasValueElement extends HTMLElement {
   _hasValueHandler?: () => void;
+  _valueObserver?: MutationObserver;
 }
 
 function checkValue(el: HasValueElement) {
@@ -44,7 +45,7 @@ export const vHasValue: Directive = {
         childList: true,
         subtree: true,
       });
-      (el as any)._valueObserver = observer;
+      el._valueObserver = observer;
     }
   },
 
@@ -58,13 +59,13 @@ export const vHasValue: Directive = {
     if (el._hasValueHandler) {
       el.removeEventListener('input', el._hasValueHandler);
       el.removeEventListener('change', el._hasValueHandler);
-      delete el._hasValueHandler;
+      el._hasValueHandler = undefined;
     }
 
     // 清理 MutationObserver
-    if ((el as any)._valueObserver) {
-      (el as any)._valueObserver.disconnect();
-      delete (el as any)._valueObserver;
+    if (el._valueObserver) {
+      el._valueObserver.disconnect();
+      el._valueObserver = undefined;
     }
   },
 };

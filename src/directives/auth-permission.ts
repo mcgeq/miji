@@ -1,5 +1,3 @@
-import { useAuthStore } from '@/stores/auth';
-import type { Permission, Role } from '@/types/auth';
 /**
  * 认证权限指令
  * 基于 RBAC 的权限控制指令
@@ -12,6 +10,8 @@ import type { Permission, Role } from '@/types/auth';
  * v-auth-role="[Role.ADMIN, Role.OWNER]" - 多角色检查（OR）
  */
 import type { Directive, DirectiveBinding } from 'vue';
+import { useAuthStore } from '@/stores/auth';
+import type { Permission, Role } from '@/types/auth';
 
 /**
  * 权限指令

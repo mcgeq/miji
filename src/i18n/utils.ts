@@ -14,8 +14,8 @@ export function $t(key: string, values?: Record<string, unknown>): string {
     for (const k of Object.keys(values)) {
       processedValues[k] = typeof values[k] === 'bigint' ? String(values[k]) : values[k];
     }
-    // @ts-expect-error - vue-i18n 类型过于复杂，使用运行时验证
-    return i18nInstance.global.t(key, processedValues);
+    // @ts-expect-error - vue-i18n 类型推断过于复杂
+    return i18nInstance.global.t(key, processedValues) as string;
   }
 
   return i18nInstance.global.t(key) as string;

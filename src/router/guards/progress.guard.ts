@@ -42,7 +42,7 @@ class SimpleProgress {
   }
 
   done() {
-    if (!this.isVisible || !this.bar) return;
+    if (!(this.isVisible && this.bar)) return;
 
     this.isVisible = false;
 
@@ -56,7 +56,7 @@ class SimpleProgress {
         this.bar.style.transition = 'width 0.4s ease, opacity 0.2s ease';
 
         setTimeout(() => {
-          if (this.bar && this.bar.parentNode) {
+          if (this.bar?.parentNode) {
             this.bar.parentNode.removeChild(this.bar);
             this.bar = null;
           }

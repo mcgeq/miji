@@ -13,7 +13,7 @@ const FIRST_LAUNCH_KEY = 'app.first_launch_completed';
 export async function firstLaunchGuard(
   to: RouteLocationNormalized,
   _from: RouteLocationNormalized,
-  next: NavigationGuardNext
+  next: NavigationGuardNext,
 ) {
   // 如果目标路由已经是欢迎页，直接通过
   if (to.path === '/welcome') {

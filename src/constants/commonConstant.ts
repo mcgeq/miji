@@ -487,7 +487,7 @@ export function searchReminderTypes(
     const name = locale === 'zh-CN' ? type.nameZh : type.nameEn;
     return (
       name.toLowerCase().includes(searchTerm) ||
-      (type.description && type.description.toLowerCase().includes(searchTerm))
+      type.description?.toLowerCase().includes(searchTerm)
     );
   });
 }
