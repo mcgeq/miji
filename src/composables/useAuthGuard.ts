@@ -2,12 +2,11 @@
  * 认证守卫 Composable
  * 提供组件级别的权限保护和错误处理
  */
-import { computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
+import type { Permission, Role } from '@/types/auth';
 import { Lg } from '@/utils/debugLog';
 import { toast } from '@/utils/toast';
-import type { Permission, Role } from '@/types/auth';
 
 export interface AuthGuardOptions {
   /** 所需权限（满足任一即可） */

@@ -1,7 +1,7 @@
-import { invokeCommand } from '@/types/api';
-import { toast } from '@/utils/toast';
 import type { Budget, BudgetCreate } from '@/schema/money';
+import { invokeCommand } from '@/types/api';
 import type { BudgetAllocationCreateRequest } from '@/types/budget-allocation';
+import { toast } from '@/utils/toast';
 
 /**
  * 家庭预算操作 Composable
@@ -36,6 +36,34 @@ export function useFamilyBudgetActions() {
   }
 
   /**
+   * 创建成员分配
+   */
+  async function createBudgetAllocations(
+    budgetSerialNum: string,
+    allocations: BudgetAllocationCreateRequest[],
+  ): Promise<void> {
+    if (allocations.length === 0) return;
+
+    const allocationPromises = allocations.map(allocation =>
+      invokeCommand('budget_allocation_create', {
+        budgetSerialNum,
+        data: allocation,
+      }),
+    );
+
+    await Promise.all(allocationPromises);
+  }
+
+  /**
+   * 获取创建成功消息
+   */
+  function getSuccessMessage(allocationCount: number): string {
+    return allocationCount > 0
+      ? `预算创建成功，已配置 ${allocationCount} 个成员分配`
+      : '预算创建成功';
+  }
+
+  /**
    * 创建家庭预算及其成员分配
    */
   async function createFamilyBudget(
@@ -52,36 +80,25 @@ export function useFamilyBudgetActions() {
         data: budgetData,
       });
 
-      if (!createdBudget || !createdBudget.serialNum) {
+      if (!createdBudget?.serialNum) {
         throw new Error('预算创建失败');
       }
 
-      // 2. 创建成员分配（如果有）
-      if (allocations.length > 0) {
-        const allocationPromises = allocations.map(allocation =>
-          invokeCommand('budget_allocation_create', {
-            budgetSerialNum: createdBudget.serialNum,
-            data: allocation,
-          }),
-        );
+      // 2. 创建成员分配
+      await createBudgetAllocations(createdBudget.serialNum, allocations);
 
-        await Promise.all(allocationPromises);
-      }
-
-      toast.success(
-        allocations.length > 0
-          ? `预算创建成功，已配置 ${allocations.length} 个成员分配`
-          : '预算创建成功',
-      );
+      // 3. 显示成功消息
+      toast.success(getSuccessMessage(allocations.length));
 
       if (onSuccess) {
         await onSuccess();
       }
 
       return true;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('创建家庭预算失败:', error);
-      toast.error(error.message || '创建家庭预算失败');
+      const message = error instanceof Error ? error.message : '创建家庭预算失败';
+      toast.error(message);
       return false;
     } finally {
       isSubmitting.value = false;
@@ -111,9 +128,10 @@ export function useFamilyBudgetActions() {
       }
 
       return true;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('删除预算失败:', error);
-      toast.error(error.message || '删除预算失败');
+      const message = error instanceof Error ? error.message : '删除预算失败';
+      toast.error(message);
       return false;
     }
   }
@@ -139,9 +157,10 @@ export function useFamilyBudgetActions() {
       }
 
       return true;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('切换预算状态失败:', error);
-      toast.error(error.message || '操作失败');
+      const message = error instanceof Error ? error.message : '操作失败';
+      toast.error(message);
       return false;
     }
   }

@@ -1,13 +1,13 @@
 /**
  * 自动保存设置组合器
- * 
+ *
  * 用于管理一组相关的设置项，提供统一的接口
  */
 
 import { computed, type Ref } from 'vue';
-import { useSettingsCache, type SettingsConfig } from './useSettingsCache';
+import { type SettingsConfig, useSettingsCache } from './useSettingsCache';
 
-export interface SettingField<T = any> {
+export interface SettingField<T = unknown> {
   /** 字段响应式值 */
   value: Ref<T>;
   /** 是否正在保存 */
@@ -31,7 +31,7 @@ export interface AutoSaveSettingsConfig {
 
 /**
  * 使用自动保存设置
- * 
+ *
  * @example
  * ```ts
  * const { fields, isLoading, isSaving, resetAll, loadAll } = useAutoSaveSettings({
@@ -51,45 +51,42 @@ export interface AutoSaveSettingsConfig {
  *     },
  *   },
  * });
- * 
+ *
  * // 访问字段
  * fields.theme.value.value = 'dark'; // 自动保存
  * fields.language.value.value = 'en-US'; // 自动保存
- * 
+ *
  * // 重置所有
  * await resetAll();
  * ```
  */
-export function useAutoSaveSettings(
-  config: AutoSaveSettingsConfig
-) {
+export function useAutoSaveSettings(config: AutoSaveSettingsConfig) {
   const { moduleName = 'settings', fields: fieldsConfig } = config;
 
   // 创建每个字段的设置缓存
-  const fields = Object.entries(fieldsConfig).reduce((acc, [fieldName, fieldConfig]) => {
-    const settingsCache = useSettingsCache(fieldConfig);
-    
-    acc[fieldName] = {
-      value: settingsCache.value,
-      isSaving: settingsCache.isSaving,
-      isLoading: settingsCache.isLoading,
-      save: settingsCache.save,
-      load: settingsCache.load,
-      reset: settingsCache.reset,
-    };
-    
-    return acc;
-  }, {} as Record<string, SettingField>);
+  const fields = Object.entries(fieldsConfig).reduce(
+    (acc, [fieldName, fieldConfig]) => {
+      const settingsCache = useSettingsCache(fieldConfig);
+
+      acc[fieldName] = {
+        value: settingsCache.value,
+        isSaving: settingsCache.isSaving,
+        isLoading: settingsCache.isLoading,
+        save: settingsCache.save,
+        load: settingsCache.load,
+        reset: settingsCache.reset,
+      };
+
+      return acc;
+    },
+    {} as Record<string, SettingField>,
+  );
 
   // 计算是否有任何字段正在加载
-  const isLoading = computed(() =>
-    Object.values(fields).some(field => field.isLoading.value)
-  );
+  const isLoading = computed(() => Object.values(fields).some(field => field.isLoading.value));
 
   // 计算是否有任何字段正在保存
-  const isSaving = computed(() =>
-    Object.values(fields).some(field => field.isSaving.value)
-  );
+  const isSaving = computed(() => Object.values(fields).some(field => field.isSaving.value));
 
   /**
    * 加载所有设置
@@ -136,9 +133,9 @@ export function useAutoSaveSettings(
 
 /**
  * 创建简单的设置项（使用 localStorage）
- * 
+ *
  * 适用于不需要复杂持久化逻辑的设置
- * 
+ *
  * @example
  * ```ts
  * const themeConfig = createSimpleSetting({
@@ -152,7 +149,7 @@ export function createSimpleSetting<T>(params: {
   defaultValue: T;
 }): SettingsConfig<T> {
   const { key, defaultValue } = params;
-  
+
   return {
     key,
     defaultValue,
@@ -181,9 +178,9 @@ export function createSimpleSetting<T>(params: {
 
 /**
  * 创建使用 Tauri 命令的设置项
- * 
+ *
  * 适用于需要通过 Tauri 后端保存的设置
- * 
+ *
  * @example
  * ```ts
  * const themeConfig = createTauriSetting({
@@ -201,10 +198,10 @@ export function createTauriSetting<T>(params: {
   loadCommand: string;
 }): SettingsConfig<T> {
   const { key, defaultValue, saveCommand, loadCommand } = params;
-  
+
   // 动态导入 Tauri API
   const invokePromise = import('@tauri-apps/api/core').then(m => m.invoke);
-  
+
   return {
     key,
     defaultValue,
@@ -227,9 +224,9 @@ export function createTauriSetting<T>(params: {
 
 /**
  * 创建使用数据库存储的设置项（带 localStorage 缓存）
- * 
+ *
  * 通过统一的用户设置 API 保存到数据库，同时使用 localStorage 作为缓存层
- * 
+ *
  * @example
  * ```ts
  * const themeConfig = createDatabaseSetting({
@@ -243,7 +240,7 @@ export function createDatabaseSetting<T>(params: {
   defaultValue: T;
 }): SettingsConfig<T> {
   const { key, defaultValue } = params;
-  
+
   // 从 key 解析模块名 (settings.{module}.{field})
   const parseModule = (settingKey: string): string => {
     const parts = settingKey.split('.');
@@ -252,7 +249,7 @@ export function createDatabaseSetting<T>(params: {
     }
     return 'general'; // 默认模块
   };
-  
+
   // 推断值类型
   const inferType = (value: unknown): string => {
     if (Array.isArray(value)) return 'array';
@@ -261,17 +258,47 @@ export function createDatabaseSetting<T>(params: {
     if (type === 'object') return 'object';
     return type; // string, number, boolean
   };
-  
+
   // 动态导入 Tauri API
   const invokePromise = import('@tauri-apps/api/core').then(m => m.invoke);
-  
+
+  /**
+   * 尝试从 localStorage 读取并解析
+   */
+  function tryLoadFromLocalStorage<T>(key: string): T | null {
+    const cached = localStorage.getItem(key);
+    if (cached === null) return null;
+
+    try {
+      return JSON.parse(cached) as T;
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * 从数据库读取并缓存到 localStorage
+   */
+  async function loadFromDatabase<T>(key: string): Promise<T | null> {
+    const invoke = await invokePromise;
+    const result = (await invoke('user_setting_get', { key })) as T | null;
+
+    if (result !== null) {
+      // 回填 localStorage 缓存
+      localStorage.setItem(key, JSON.stringify(result));
+      return result;
+    }
+
+    return null;
+  }
+
   return {
     key,
     defaultValue,
     saveFn: async (value: T) => {
       try {
         const invoke = await invokePromise;
-        
+
         // 保存到数据库 - 使用 DTO 方式
         await invoke('user_setting_save', {
           command: {
@@ -279,9 +306,9 @@ export function createDatabaseSetting<T>(params: {
             value,
             settingType: inferType(value),
             module: parseModule(key),
-          }
+          },
         });
-        
+
         // 同时保存到 localStorage 作为缓存
         localStorage.setItem(key, JSON.stringify(value));
       } catch (error) {
@@ -290,42 +317,19 @@ export function createDatabaseSetting<T>(params: {
       }
     },
     loadFn: async () => {
+      // 优先尝试从 localStorage 读取
+      const cachedValue = tryLoadFromLocalStorage<T>(key);
+      if (cachedValue !== null) {
+        return cachedValue;
+      }
+
+      // 从数据库读取
       try {
-        // 优先从 localStorage 读取（快速）
-        const cached = localStorage.getItem(key);
-        if (cached !== null) {
-          try {
-            return JSON.parse(cached) as T;
-          } catch {
-            // 缓存解析失败，继续从数据库读取
-          }
-        }
-        
-        // 从数据库读取
-        const invoke = await invokePromise;
-        const result = await invoke<T | null>('user_setting_get', { key });
-        
-        if (result !== null) {
-          // 回填 localStorage 缓存
-          localStorage.setItem(key, JSON.stringify(result));
-          return result;
-        }
-        
-        return null;
+        return await loadFromDatabase<T>(key);
       } catch (error) {
         console.error(`Failed to load setting "${key}" from database:`, error);
-        
-        // 尝试从 localStorage 恢复
-        const cached = localStorage.getItem(key);
-        if (cached !== null) {
-          try {
-            return JSON.parse(cached) as T;
-          } catch {
-            return null;
-          }
-        }
-        
-        return null;
+        // 失败后尝试从 localStorage 恢复
+        return tryLoadFromLocalStorage<T>(key);
       }
     },
   };

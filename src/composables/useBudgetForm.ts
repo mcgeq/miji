@@ -1,11 +1,11 @@
 import { COLORS_MAP, CURRENCY_CNY } from '@/constants/moneyConst';
 import { getLocalCurrencyInfo } from '@/features/money/utils/money';
+import type { RepeatPeriod } from '@/schema/common';
 import { BudgetTypeSchema } from '@/schema/common';
+import type { Budget } from '@/schema/money';
 import { BudgetScopeTypeSchema } from '@/schema/money';
 import { useCategoryStore } from '@/stores/money';
 import { DateUtils } from '@/utils/date';
-import type { RepeatPeriod } from '@/schema/common';
-import type { Budget } from '@/schema/money';
 
 /**
  * 预算表单通用逻辑 Composable
@@ -178,7 +178,7 @@ export function useBudgetForm(initialBudget?: Budget | null) {
       reminders: form.reminders || [],
       priority: form.priority || 0,
       tags: form.tags || [],
-      autoRollover: form.autoRollover || false,
+      autoRollover: form.autoRollover,
       rolloverHistory: form.rolloverHistory || [],
       sharingSettings: form.sharingSettings,
       attachments: form.attachments || [],

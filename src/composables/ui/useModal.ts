@@ -123,9 +123,9 @@ export function useModal(options: UseModalOptions = {}) {
 
     // 属性绑定（用于模态框容器）
     containerProps: computed(() => ({
-      'role': 'dialog',
+      role: 'dialog',
       'aria-modal': 'true',
-      'onClick': (e: Event) => e.stopPropagation(),
+      onClick: (e: Event) => e.stopPropagation(),
     })),
   };
 }

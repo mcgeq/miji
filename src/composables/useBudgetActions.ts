@@ -1,7 +1,7 @@
 import { useCrudActions } from '@/composables/useCrudActions';
+import type { Budget, BudgetCreate, BudgetUpdate } from '@/schema/money';
 import { useBudgetStore } from '@/stores/money';
 import { toast } from '@/utils/toast';
-import type { Budget, BudgetCreate, BudgetUpdate } from '@/schema/money';
 
 /**
  * 预算操作 Composable - 重构版本
@@ -60,8 +60,10 @@ export function useBudgetActions() {
       );
 
       return true;
-    } catch (error: any) {
-      toast.error(error.message || t('financial.messages.budgetToggleFailed'));
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : t('financial.messages.budgetToggleFailed');
+      toast.error(message);
       return false;
     }
   }
@@ -112,8 +114,10 @@ export function useBudgetActions() {
       // 直接使用 store 的 fetchBudgetsPaged，它会触发全局刷新
       await storeAdapter.fetchAll();
       return true;
-    } catch (error: any) {
-      toast.error(error.message || t('financial.messages.budgetLoadFailed'));
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : t('financial.messages.budgetLoadFailed');
+      toast.error(message);
       return false;
     }
   };

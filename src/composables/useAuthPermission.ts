@@ -2,7 +2,6 @@
  * 认证权限 Composable
  * 提供基于 RBAC 的权限检查功能
  */
-import { computed } from 'vue';
 import { useAuthStore } from '@/stores/auth';
 import type { Permission, Role } from '@/types/auth';
 

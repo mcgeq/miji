@@ -1,7 +1,7 @@
 import { useCrudActions } from '@/composables/useCrudActions';
+import type { Account, CreateAccountRequest, UpdateAccountRequest } from '@/schema/money';
 import { useAccountStore } from '@/stores/money';
 import { toast } from '@/utils/toast';
-import type { Account, CreateAccountRequest, UpdateAccountRequest } from '@/schema/money';
 
 /**
  * 账户操作 Composable - 重构版本
@@ -51,8 +51,10 @@ export function useAccountActions() {
       // 直接使用 store 的 fetchAccounts，它会触发全局刷新
       await accountStore.fetchAccounts();
       return true;
-    } catch (error: any) {
-      toast.error(error.message || t('financial.messages.accountLoadFailed'));
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : t('financial.messages.accountLoadFailed');
+      toast.error(message);
       return false;
     } finally {
       accountsLoading.value = false;
@@ -79,8 +81,10 @@ export function useAccountActions() {
       );
 
       return true;
-    } catch (error: any) {
-      toast.error(error.message || t('financial.messages.accountToggleFailed'));
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : t('financial.messages.accountToggleFailed');
+      toast.error(message);
       return false;
     }
   }

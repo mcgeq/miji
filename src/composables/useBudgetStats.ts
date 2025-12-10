@@ -1,4 +1,3 @@
-import { budgetStatsService } from '@/services/money/budgetStats';
 import type {
   BudgetCategoryStats,
   BudgetOverviewRequest,
@@ -7,6 +6,7 @@ import type {
   BudgetTrendData,
   BudgetTypeStats,
 } from '@/services/money/budgetStats';
+import { budgetStatsService } from '@/services/money/budgetStats';
 
 // 预算统计状态
 export interface BudgetStatsState {
